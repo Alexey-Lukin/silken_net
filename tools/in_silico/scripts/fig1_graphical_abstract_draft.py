@@ -8,7 +8,9 @@ vs SHE) so a BioRender / Illustrator pass has an exact, drift-free reference.
 
 Conveys the two synergies the defensive publication protects (docs/00_01 §8 — the patent
 path was rejected 2026-06-07; no claims draft exists, and one must not be re-invented here):
-  A) one EBFC = power source AND zero-instrumental-noise sensor (delta_t → Lorenz)
+  A) one EBFC = power source AND zero-instrumental-noise sensor (delta_t → growth points m(delta_t);
+     the Lorenz attractor gates only the homeostasis STATUS and serves as the device↔server DCI parity,
+     it is NOT a health oracle — ratified 2026-09-04, canon 01_03 §4 / 03_04 §4.3, proof 05_05 §8.1)
   B) one gyroid = xylem-integration + a smaller modulus gap (NOT an isoelastic match) + metal-xylem EBFC electrode
 
     mamba run -n silken_md python tools/in_silico/scripts/fig1_graphical_abstract_draft.py
@@ -78,8 +80,12 @@ def main() -> int:
             fontsize=9, weight="bold", color="#206")
     box(ax, 3.4, 1.2, 1.5, 0.7, "EBFC\n~0.5 V", "#ffe7b7", 8)
     box(ax, 5.1, 1.2, 1.6, 0.7, "supercap\ncharge Δt", "#ffe7b7", 8)
-    box(ax, 6.9, 1.2, 1.4, 0.7, "MCU +\nLoRa mesh", C["box"], 8)
-    box(ax, 8.5, 1.2, 1.7, 0.7, "Lorenz attractor\n→ health", "#d7ecd7", 8)
+    # ⛔ Not «mesh»: the uplink is a STAR to the gateway (02_01 §1 «star-only»); the firmware mesh relay
+    # is a flagged time-beacon path, not the data topology.
+    box(ax, 6.9, 1.2, 1.4, 0.7, "MCU +\nLoRa → gateway", C["box"], 8)
+    # ⛔ Not a health readout: growth is read from Δt directly, and the Lorenz attractor is the DCI
+    # integrity check, not a health oracle (ratified 2026-09-04 — 01_03 §4, proof 05_05 §8.1).
+    box(ax, 8.5, 1.2, 1.7, 0.7, "growth signal\nm(Δt)", "#d7ecd7", 8)
     for x1, x2 in [(4.9, 5.1), (6.7, 6.9), (8.3, 8.5)]:
         arrow(ax, x1, 1.55, x2, 1.55, "black", 1.8)
     ax.text(5.9, 0.95, "Δt (charge-time) IS the physiological signal — no separate transducer",

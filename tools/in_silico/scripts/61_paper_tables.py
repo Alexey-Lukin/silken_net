@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe).
 
-Reads cache/dft + cache/kinetics JSON only (no DFT), asserts the headline numbers
-against the SUMMARY canon at build time, and writes paper/06_tables.md. Same
-discipline as 60_paper_figures.py — re-run after any upstream result changes; if a
-cache drifts from canon the build fails loudly instead of shipping a wrong table.
+Reads cache/dft JSON only — no kinetics cache and no DFT run (`_load` is rooted at
+DFT_CACHE; a change to cache/kinetics does NOT require re-running this script) —
+asserts the headline numbers against the SUMMARY canon at build time, and writes
+paper/06_tables.md. Same discipline as 60_paper_figures.py — re-run after any
+upstream DFT-cache change; if a cache drifts from canon the build fails loudly
+instead of shipping a wrong table.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/61_paper_tables.py
 """
