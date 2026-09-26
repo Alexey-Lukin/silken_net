@@ -132,7 +132,7 @@
 | `OTA_COAP_HEADER_SIZE` | `7` | main.c | [FW.53] CoAP-шар (Rails→Queen): `[0x99][index:2][total:2][len:2]` — явний len |
 | `OTA_COAP_MIN_FRAME` | `10` | main.c | [FW.53] `OTA_COAP_HEADER_SIZE + 1 + OTA_CRC_SIZE` — мін. валідний CoAP-чанк |
 | `AT_INTERBYTE_TIMEOUT_MS` | `150` | main.c | [FW.3] Пауза між байтами UART = «модем дослухав» |
-| `AT_INIT_BUDGET_MS` | `2000` | main.c | [FW.3] Бюджет однієї init-команди (ATE0/AT/CNMP/CPSMS/CEDRXS) |
+| `AT_INIT_BUDGET_MS` | `2000` | main.c | [FW.3] Бюджет однієї init-команди (ATE0/AT/CNMP/CMNB/CGDCONT/CPSMS/CEDRXS/CNACT) |
 | `COAP_CONV_BUDGET_MS` | `15000` | main.c | [FW.3] Повна CoAP-розмова NEW→SEND→NMI→DEL (< вікно IWDG) |
 | `COAP_MAX_RETRIES` | `3` | main.c | [FW.9] Спроби доставки батча |
 | `COAP_SERVER_HOST` | `"api.silkennet.com"` | main.c | [FW.56] Хост для CDNSGIP (CCOAPNEW приймає лише IP) |
@@ -410,13 +410,16 @@ CPU — байти й URC поза вікном читання (запізніл
 
 ### Ініціалізація (один раз при старті, response-driven)
 
+> ⚖️ **Cat-M ⊥ NB-IoT — `AT+CMNB=3` явно, eDRX для обох AcT (ратифіковано founder 2026-09-26 за рекомендацією; [`00_07`](00_07_Action_Plan_Tracker) HW.41).** **Підстава:** до цього дня init не задавав RAT узагалі — `CNMP=38` означає лише «LTE only», а вибір Cat-M ⊥ NB-IoT є окремою `AT+CMNB` у режимі AUTO_SAVE, тож модем тримав те, що в ньому збережено; Kyivstar публічно заявляє NB-IoT, а не LTE-M ([`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §5), і зі збереженим `=1` Королева не підʼєдналась би. Заразом виявилось, що eDRX запитувався з `AcT`=5, тобто лише для NB-IoT (коментар коду казав «LTE Cat M1»). **Ціна:** NB-IoT може взяти гору й там, де є Cat-M — вужчий uplink, інша поведінка PSM/eDRX, повна OTA-серія довша. **Найслабша ланка:** пріоритет RAT при `=3` мануал не описує, а який RAT оператор дає на M2M-SIM, скаже лише активація ([`00_07`](00_07_Action_Plan_Tracker) HW.41, нога SIM). Носії — `firmware/queen/main.c` (init) і `test_queen_logic.c` (`test_hw41_rat_*`, `test_hw41_edrx_requested_for_both_act`; мутація «прибрати AcT=4» → RED).
+
 | AT-команда | Бюджет | Призначення |
 |------------|--------|-------------|
 | `ATE0` | `AT_INIT_BUDGET_MS` | Вимкнути ехо (токенайзер його переживає, але ефір чистіший) |
 | `AT` | `AT_INIT_BUDGET_MS` | Перевірка зв'язку з модемом |
-| `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим «лише LTE» (вимикає GSM, не NB-IoT); вибір Cat-M ⊥ NB-IoT задає окрема `AT+CMNB`, якої init не шле (SIMCom AT Command Manual V1.03 §5.2.16–5.2.17; [`00_07`](00_07_Action_Plan_Tracker) HW.41) |
+| `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим «лише LTE» (вимикає GSM, не NB-IoT) — SIMCom AT Command Manual V1.03 §5.2.16 |
+| `AT+CMNB=3` | `AT_INIT_BUDGET_MS` | [HW.41] Cat-M **і** NB-IoT — вибір RAT явно, а не збереженим у модемі станом (`CMNB` — AUTO_SAVE, дефолт мануал не називає; §5.2.17) |
 | `AT+CGDCONT=1,"IP","<QUEEN_APN>"` | `AT_INIT_BUDGET_MS` | [HW.41] Явний PDP-контекст — `QUEEN_APN` build-time `#ifndef`-override (дефолт `""`, 3GPP-порожній APN, behavior-identical з до-HW.41 auto-APN); граматика зі стандарту (3GPP TS 27.007 §10.1.1) |
-| `AT+CPSMS=…` / `AT+CEDRXS=…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`) |
+| `AT+CPSMS=…` / `AT+CEDRXS=1,4,…` + `AT+CEDRXS=1,5,…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`); eDRX запитано для ОБОХ AcT — 4 = CAT-M, 5 = NB-IoT (§5.2.42), бо RAT обирає мережа (`CMNB=3`) |
 | `AT+CNACT=1,1` | `AT_INIT_BUDGET_MS` | [HW.41] Активація APP-мережі (pdpidx 1). ⚠️ Проти V1.03 не звірено; старша SIM7080 V1.02 (2026-09-25) синтаксис підтверджує, але APN цього контексту в ній задає окрема `AT+CNCFG`, якої ми не шлемо, а «той самий `cid=1`, що CGDCONT» — наше припущення, не текст мануала. Відкрите — `firmware/scripts/bench/RUNBOOK.md` 5.1, [`00_07`](00_07_Action_Plan_Tracker) HW.41 |
 
 Провал init не фатальний: модем міг ще прокидатись — flush-розмова повторить

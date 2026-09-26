@@ -1145,6 +1145,13 @@ int main(void)
   (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
   (void)SIM7070_Transact("AT+CNMP=38\r\n", AT_INIT_BUDGET_MS);
 
+  // [HW.41] Cat-M ⊥ NB-IoT — ЯВНО, не збережений у модемі стан (⚖️ founder 2026-09-26).
+  // CNMP=38 — лише «LTE only»; вибір RAT задає AT+CMNB (1 CAT-M · 2 NB-IoT · 3 обидва),
+  // AUTO_SAVE, дефолт мануал не називає (SIMCom AT Manual V1.03 §5.2.16–5.2.17). =3,
+  // бо Kyivstar публічно заявляє NB-IoT, а не LTE-M: зі збереженим =1 Королева не
+  // підʼєднається. Ціна — NB-IoT може взяти гору й там, де є Cat-M (дім — 03_02 §4).
+  (void)SIM7070_Transact("AT+CMNB=3\r\n", AT_INIT_BUDGET_MS);
+
   // [HW.41] Явний PDP-контекст — БЕЗ цього Королева мовчки покладалась на
   // авто-APN сімки (працює на деяких мережах, ненадійно на інших). cid=1
   // (той самий, що бенч-чеклист 02_04 §10.2 п.4 типує вручну); APN-рядок —
@@ -1172,11 +1179,12 @@ int main(void)
   //     bits 8-6 unit=000 (2s), bits 5-1 value=00000 → 0 × 2s = 0 sec
   (void)SIM7070_Transact("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", AT_INIT_BUDGET_MS);
 
-  // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>:
-  //   mode=1 → enable eDRX, AcT=5 → NB-IoT (SIMCom AT Manual V1.03 §5.2.42:
-  //   4 = CAT-M, 5 = NB-IoT) — тобто eDRX запитано ЛИШЕ для NB-IoT; яке AcT
-  //   правильне, вирішує ⚖️ Cat-M ⊥ NB-IoT (`AT+CMNB`, 00_07 HW.41)
-  //   eDRX="0010" → 20.48 sec (paging window — короткий для downlink-сприйнятливості)
+  // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>: mode=1 → enable eDRX; AcT 4 = CAT-M,
+  //   5 = NB-IoT (SIMCom AT Manual V1.03 §5.2.42). Запит на ОБИДВА, бо CMNB=3 ↑ лишає
+  //   RAT мережі (⚖️ founder 2026-09-26): до цього дня стояв лише AcT=5, тож у Cat-M
+  //   eDRX не запитувався взагалі. eDRX="0010" → 20.48 sec (paging window — короткий
+  //   для downlink-сприйнятливості).
+  (void)SIM7070_Transact("AT+CEDRXS=1,4,\"0010\"\r\n", AT_INIT_BUDGET_MS);
   (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
 
   // [HW.41] Активуємо PDP-контекст, щойно решта init-параметрів на місці —

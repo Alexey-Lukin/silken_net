@@ -138,7 +138,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 Критичний ризик автономності Королеви взимку при використанні Starlink Mini (Phase 3). Повний енергобюджет — §4; нижче — зимова solar-специфіка.
 
-> ⚠️ Phase 2.5 (DTC) цей ризик **не зачіпає** — SIM7070G у LTE-режимі (Cat-M чи NB-IoT — не задано, [`00_07`](00_07_Action_Plan_Tracker) HW.41) споживає ~370 мВт TX burst, а не 20–40 Вт.
+> ⚠️ Phase 2.5 (DTC) цей ризик **не зачіпає** — SIM7070G у LTE-режимі (Cat-M чи NB-IoT — обирає мережа, `CMNB=3`) споживає ~370 мВт TX burst, а не 20–40 Вт.
 
 > 🏠 **SSOT зимових чисел — модель `tools/firmware/queen_energy_budget.rb` (HW.39):** значення нижче — дзеркало її прогону на defaults (правити модель, не таблицю). Повний покомпонентний бюджет — §4.
 
@@ -162,7 +162,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ### Вибір модему: SIM7070G
 
-Модем кластера — **SIM7070G** (не SIM7000G). Firmware вже орієнтований на нього (`AT+CNMP=38` — режим «лише LTE»; вибір Cat-M ⊥ NB-IoT задає окрема `AT+CMNB`, якої init не шле — SIMCom AT Command Manual V1.03 §5.2.16–5.2.17, [`00_07`](00_07_Action_Plan_Tracker) HW.41). Обґрунтування вибору — нижче.
+Модем кластера — **SIM7070G** (не SIM7000G). Firmware вже орієнтований на нього (`AT+CNMP=38` — режим «лише LTE»; Cat-M ⊥ NB-IoT задає окрема `AT+CMNB` — init шле `=3`, обидва, ⚖️ 2026-09-26 — SIMCom AT Command Manual V1.03 §5.2.16–5.2.17; дім присуду — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Обґрунтування вибору — нижче.
 
 **SIM7000G vs SIM7070G — різні пристрої:**
 
@@ -274,7 +274,8 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 ```c
 // firmware/queen/main.c (init: SIM7070_Transact)
 SIM7070_SendATCommand("AT\r\n", 500);          // Перевірка зв'язку
-SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000); // LTE only (Cat-M ⊥ NB-IoT — AT+CMNB, не задано)
+SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000); // LTE only
+SIM7070_SendATCommand("AT+CMNB=3\r\n", 1000);  // Cat-M і NB-IoT (⚖️ 2026-09-26)
 ```
 
 **CoAP Uplink (при кожному flush):**

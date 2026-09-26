@@ -2938,24 +2938,54 @@ static const char* const kQueenInitSequence[] = {
     "ATE0\r\n",
     "AT\r\n",
     "AT+CNMP=38\r\n",
+    "AT+CMNB=3\r\n",                                        /* [HW.41] ⚖️ 2026-09-26 */
     "AT+CGDCONT=1,\"IP\",\"\"\r\n",                       /* [HW.41] */
     "AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n",
-    "AT+CEDRXS=1,5,\"0010\"\r\n",
+    "AT+CEDRXS=1,4,\"0010\"\r\n",                        /* CAT-M  [HW.41] */
+    "AT+CEDRXS=1,5,\"0010\"\r\n",                        /* NB-IoT */
     "AT+CNACT=1,1\r\n",                                    /* [HW.41] */
 };
 #define QUEEN_INIT_SEQUENCE_LEN (sizeof(kQueenInitSequence) / sizeof(kQueenInitSequence[0]))
 
-TEST(test_hw41_cgdcont_immediately_follows_cnmp) {
-    /* Network mode picked (CNMP) → now say which APN, before anything
-     * else. */
-    int cnmp_idx = -1, cgdcont_idx = -1;
+TEST(test_hw41_rat_selection_then_apn) {
+    /* Radio first — network mode (CNMP) then the Cat-M ⊥ NB-IoT choice (CMNB)
+     * — and only then which APN. CMNB sits between them since the ratified
+     * verdict of 2026-09-26 (00_07 HW.41). */
+    int cnmp_idx = -1, cmnb_idx = -1, cgdcont_idx = -1;
     for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
         if (strncmp(kQueenInitSequence[i], "AT+CNMP=", 8) == 0)    cnmp_idx    = (int)i;
+        if (strncmp(kQueenInitSequence[i], "AT+CMNB=", 8) == 0)    cmnb_idx    = (int)i;
         if (strncmp(kQueenInitSequence[i], "AT+CGDCONT=", 11) == 0) cgdcont_idx = (int)i;
     }
     ASSERT_TRUE(cnmp_idx >= 0);
+    ASSERT_TRUE(cmnb_idx >= 0);
     ASSERT_TRUE(cgdcont_idx >= 0);
-    ASSERT_EQ(cgdcont_idx, cnmp_idx + 1);
+    ASSERT_EQ(cmnb_idx, cnmp_idx + 1);
+    ASSERT_EQ(cgdcont_idx, cmnb_idx + 1);
+}
+
+TEST(test_hw41_rat_is_explicit_both) {
+    /* CNMP=38 is only "LTE only"; the Cat-M ⊥ NB-IoT choice is CMNB and is
+     * AUTO_SAVE in the modem (SIMCom AT Manual V1.03 §5.2.17). An absent
+     * CMNB = whatever the modem last saved — with a saved 1 (CAT-M only) the
+     * Queen cannot attach on a carrier that offers NB-IoT alone. */
+    int found = 0;
+    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++)
+        if (strcmp(kQueenInitSequence[i], "AT+CMNB=3\r\n") == 0) found++;
+    ASSERT_EQ(found, 1);
+}
+
+TEST(test_hw41_edrx_requested_for_both_act) {
+    /* AcT 4 = CAT-M, 5 = NB-IoT (V1.03 §5.2.42). Until 2026-09-26 only AcT=5
+     * was sent — the comment called it "LTE Cat M1" — so under Cat-M eDRX was
+     * never requested. With CMNB=3 the network picks the RAT, so both. */
+    int act4 = 0, act5 = 0;
+    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
+        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=1,4,", 14) == 0) act4++;
+        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=1,5,", 14) == 0) act5++;
+    }
+    ASSERT_EQ(act4, 1);
+    ASSERT_EQ(act5, 1);
 }
 
 TEST(test_hw41_cnact_is_last_init_command) {
@@ -3213,7 +3243,9 @@ int main(void)
     printf("\n  SIM7070G Init — APN/PDP Sequence (HW.41):\n");
     RUN(test_hw41_cgdcont_empty_apn_wire_form);
     RUN(test_hw41_cgdcont_configured_apn_wire_form);
-    RUN(test_hw41_cgdcont_immediately_follows_cnmp);
+    RUN(test_hw41_rat_selection_then_apn);
+    RUN(test_hw41_rat_is_explicit_both);
+    RUN(test_hw41_edrx_requested_for_both_act);
     RUN(test_hw41_cnact_is_last_init_command);
     RUN(test_hw41_cnact_follows_cedrxs);
     RUN(test_hw41_pdp_context_defined_before_activated);
