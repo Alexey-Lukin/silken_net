@@ -48,7 +48,11 @@ module SilkenEnergyChain
   # ділиться на ККД active-buck'а. `tx_mj` подає викличник, бо він у двох
   # приладів різного походження — один рахує його з airtime, другий бере
   # фіксовану season-independent цифру §9.4/§9.6.
-  def active_cycle_from_vstor_mj(tinyml_mj:, lorenz_mj:, tx_mj:, eta_buck_active:)
-    (tinyml_mj + lorenz_mj + tx_mj) / eta_buck_active
+  # ⛔ `rx_mj` і `tcxo_mj` ОБОВʼЯЗКОВІ й іменовані, а не дефолтні нулі: пост-TX RX-вікно
+  # прошивка відкриває ЩОЦИКЛУ (ворота `VCAP_LISTEN_THRESHOLD` вироджені), а TCXO живий,
+  # поки живе радіо, — і саме ці два члени бюджет доти мовчки не ніс (ARCH.8, 2026-09-26).
+  # Дефолт 0 повернув би ту саму тиху відсутність, тож викличник мусить назвати число.
+  def active_cycle_from_vstor_mj(tinyml_mj:, lorenz_mj:, tx_mj:, rx_mj:, tcxo_mj:, eta_buck_active:)
+    (tinyml_mj + lorenz_mj + tx_mj + rx_mj + tcxo_mj) / eta_buck_active
   end
 end

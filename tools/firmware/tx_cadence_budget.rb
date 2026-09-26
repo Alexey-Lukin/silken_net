@@ -11,7 +11,7 @@
 #
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/tx_cadence_budget.rb            # H для обох ер кадру + смуга m(Δt)
-#   ruby tools/firmware/tx_cadence_budget.rb --levers   # ціна чотирьох важелів розвилки ARCH.8
+#   ruby tools/firmware/tx_cadence_budget.rb --levers   # ціна кожного важеля розвилки ARCH.8
 #   ruby tools/firmware/tx_cadence_budget.rb --assert   # гейт: модель відтворює надруковані числа
 #   ruby tools/firmware/tx_cadence_budget.rb p_gen_uw=17.13   # override будь-якого параметра
 #
@@ -39,11 +39,22 @@
 #     HW.46. 🔴 Наслідок для читання важеля (б): він виглядає найдешевшим саме
 #     тому, що його вхід найменш певний. Це не аргумент за нього й не проти —
 #     це попередження не цитувати друковане число як інженерний запас.
+#   • РАДІО-ЧЛЕНИ ЦИКЛУ — з обраного фронтенду (⚖️ 2026-09-26: SMPS + TCXO NT2016SF,
+#     `docs/protocols/hardware/rf_frontend_forks.md` §2.5/§3.3), і їх ТРИ, а не один:
+#     TX `RFO_LP` +14 дБм 23.5 мА (DS13105 Табл. 29, Typ 25 °C, узгодження ST — наше інше;
+#     Табл. 25 тієї ж первинки каже 26 мА) · пост-TX RX-вікно 500 мс при 4.82 мА (Табл. 28),
+#     яке прошивка відкриває ЩОЦИКЛУ, бо ворота `VCAP_LISTEN_THRESHOLD` вироджені (скіл
+#     `firmware`, gotcha #9) · TCXO 2.11 мА, живий на TX і на RX-вікні. ⛔ Чого тут НЕМАЄ і
+#     чому: холостого циклу ядра в `LORA_RX_LOOP_MS` = 600 мс (такт ядра ще не обрано; на
+#     48 МГц CoreMark-струм 3.40 мА дав би ≈ 6.7 мДж більше) · TCXO під час обчислень (умова
+#     «SYSCLK від MSI»; від HSE32 — ще +2.44 мДж) · самопрозряду EDLC (`02_03 §9.3`, FAE).
+#     Отже H нижче — НИЖНЯ межа цього ж ланцюга, а η_buck 0.88 при ~24 мА стоїть на краю
+#     діапазону, для якого канон її тримає.
 #   • `t_air_ms` — транскрипція з `lora_airtime.rb` §ENERGY_ANCHORS (той самий
 #     набір, що вже гейтований проти 02_03 §9.6 ВЛАСНИМ асертом сусіда). Транскрипція ЖИВА доводиться
 #     нижче: `--assert` вимагає, щоб виведене E_TX збіглося з числом, надрукованим
 #     у каноні — ⚠️ але це ловить дрейф МОДЕЛІ, а дрейф сусіда ловить сусідів гейт; смуга
-#     тут ±0.38 мс airtime (допуск 0.05 мДж ÷ 40 мА × 3.3 В), тобто пін НЕ тугий.
+#     тут ±0.64 мс airtime (допуск 0.05 мДж ÷ 23.5 мА × 3.3 В), тобто пін НЕ тугий.
 #   • `eta_boost = 0.68` — це точка §9.1 при P_in = 15 µW, і вона є функцією ВХІДНОЇ
 #     ПОТУЖНОСТІ, а не сезону (⚠️ поправка 2026-09-12: доти тут стояло «літня точка»).
 #     🔴 Наслідок для важеля (б): піднімаючи `p_gen_uw` до 15.8/17.1, модель тримає η на
@@ -65,7 +76,10 @@ PARAMS = {
   # ── активний цикл на VOUT (02_03 §9.4 / §9.6 Сценарій C) ──────────────────
   tinyml_mj: 7.92,
   lorenz_mj: 3.96,
-  i_tx_ma: 40.0,            # SX1262 @ +14 dBm (§9.6 Сценарій B, datasheet)
+  i_tx_ma: 23.5,            # STM32WL RFO_LP +14 dBm, SMPS — DS13105 Табл. 29 (⚖️ SMPS 2026-09-26)
+  i_rx_ma: 4.82,            # RX LoRa 125 кГц, SMPS — DS13105 Табл. 28
+  t_rx_ms: 500.0,           # LORA_RX_TIMEOUT_MS — пост-TX вікно, відкрите ЩОЦИКЛУ (soldier/main.c, Фаза 4.5)
+  i_tcxo_ma: 2.11,          # NT2016SF max 2.0 + Iq 0.07 + 2 % (⚖️ TCXO 2026-09-26) — живий на TX і на RX
   v_out: 3.3,
   eta_buck_active: 0.88,
   # ── сон (Сценарій C: STOP2 RTC-only, §9.6) ───────────────────────────────
@@ -85,8 +99,8 @@ PARAMS = {
 # ⛔ Літерал у четвертій колонці — не оздоба: він і є доказом, що транскрипція
 # airtime ще жива. Без нього модель відтворювала б саму себе.
 WIRE_ERAS = [
-  [ "ECB 16 Б (відвантажено сьогодні)", 16, 164.9, "21.78" ],
-  [ "CCM 30 Б (wire-rev2.1, FW.2 bench-gated)", 30, 226.3, "29.9" ]
+  [ "ECB 16 Б (відвантажено сьогодні)", 16, 164.9, "12.79" ],
+  [ "CCM 30 Б (wire-rev2.1, FW.2 bench-gated)", 30, 226.3, "17.55" ]
 ].freeze
 
 params = PARAMS.dup
@@ -99,13 +113,17 @@ ARGV.each do |arg|
 end
 
 def e_tx_mj(p, t_air_ms) = p[:i_tx_ma] * p[:v_out] * t_air_ms / 1000.0
+def e_rx_mj(p) = p[:i_rx_ma] * p[:v_out] * p[:t_rx_ms] / 1000.0
+# TCXO живе рівно стільки, скільки живе радіо: кадр + RX-вікно (умова «SYSCLK від MSI» — шапка).
+def e_tcxo_mj(p, t_air_ms) = p[:i_tcxo_ma] * p[:v_out] * (t_air_ms + p[:t_rx_ms]) / 1000.0
 
 # ⛔ Чотири формули нижче живуть у спільному `lib/energy_chain.rb` (ARCH.8) — той
 # самий ланцюг рахує й `boot_brownout_cycle.rb` під питання HW.44. Прилади
 # свідомо НЕ злиті (різні питання, різні стелі), злито рівно арифметику.
 def e_active_from_vstor_mj(p, t_air_ms)
   EC.active_cycle_from_vstor_mj(tinyml_mj: p[:tinyml_mj], lorenz_mj: p[:lorenz_mj],
-                                tx_mj: e_tx_mj(p, t_air_ms), eta_buck_active: p[:eta_buck_active])
+                                tx_mj: e_tx_mj(p, t_air_ms), rx_mj: e_rx_mj(p),
+                                tcxo_mj: e_tcxo_mj(p, t_air_ms), eta_buck_active: p[:eta_buck_active])
 end
 
 def sleep_drain_uw(p)
@@ -145,7 +163,8 @@ def era_rows(p)
   WIRE_ERAS.map do |label, pl, t_air, literal|
     h = interval_h(p, t_air)
     { label: label, payload_b: pl, t_air_ms: t_air, canon_literal: literal,
-      e_tx_mj: e_tx_mj(p, t_air), e_active_mj: e_active_from_vstor_mj(p, t_air),
+      e_tx_mj: e_tx_mj(p, t_air), e_rx_mj: e_rx_mj(p), e_tcxo_mj: e_tcxo_mj(p, t_air),
+      e_active_mj: e_active_from_vstor_mj(p, t_air),
       h_hours: h, delta_t_s: h * 3600.0, m: metabolic_m(p, h * 3600.0),
       e_net_at_ref_cadence_mj_h: net_mj_h(p) - e_active_from_vstor_mj(p, t_air) / ref_h }
   end
@@ -183,11 +202,23 @@ def report(p)
               p[:delta_t_slow_s] - ecb[:delta_t_s], (p[:delta_t_slow_s] - ecb[:delta_t_s]) / 60.0,
               ccm[:delta_t_s] - ecb[:delta_t_s], (ccm[:delta_t_s] - ecb[:delta_t_s]) / 60.0)
   puts
-  puts format("  ⚠️ Канон друкує робочу точку як 1.77 год = 6372 с (округлена проза); модель дає"\
-              " %.0f с.", ecb[:delta_t_s])
-  puts "     Різниця 0.4 % лежить глибоко всередині ±8 % `u_delta_t_raw_pct` (STK.5) — це"
-  puts "     округлення, не розбіжність. ⛔ Не «виправляти» канон під цей рядок: 6372 стоїть"
-  puts "     дефолтом у scc_rate.rb і uncertainty_budget.rb, і рухати його можна лише присудом."
+  money_default_s = 6372.0 # дефолт `scc_rate.rb` / `uncertainty_budget.rb` — ГРОШОВА робоча точка
+  gap_pct = 100.0 * (ecb[:delta_t_s] / money_default_s - 1.0)
+  puts format("  ⚠️ Грошові моделі (scc_rate.rb, uncertainty_budget.rb) беруть дефолтом %.0f с; ця модель дає"\
+              " %.0f с — різниця %+.1f %%.", money_default_s, ecb[:delta_t_s], gap_pct)
+  if gap_pct.abs <= 8.0
+    puts "     Це всередині ±8 % `u_delta_t_raw_pct` (STK.5): округлення, не розбіжність."
+  else
+    puts "     🔴 Це ПОЗА ±8 % `u_delta_t_raw_pct` (STK.5): уже не округлення, а розбіжність — дефолт"
+    puts "     відстає від ланцюга, який виконує прошивка. ⛔ Рухати його можна лише присудом"
+    puts "     (00_07 ARCH.8, ⚖️-нога): від нього залежать гроші, а не лише цей звіт."
+  end
+  puts format("  → ECB-точка стоїть за %.0f с до підлоги (%.1f %% від Δt) — %s.",
+              p[:delta_t_slow_s] - ecb[:delta_t_s],
+              100.0 * (p[:delta_t_slow_s] - ecb[:delta_t_s]) / ecb[:delta_t_s],
+              (p[:delta_t_slow_s] - ecb[:delta_t_s]) / ecb[:delta_t_s] <= 0.08 ?
+                "ВСЕРЕДИНІ ±8 % невизначеності Δt, тобто «перед підлогою» тут не доведено" :
+                "поза смугою невизначеності Δt")
   0
 end
 
@@ -195,7 +226,7 @@ def levers(p)
   rows = era_rows(p)
   ecb, ccm = rows
   floor_s = p[:delta_t_slow_s]
-  puts "ARCH.8 — ЦІНА ЧОТИРЬОХ ВАЖЕЛІВ РОЗВИЛКИ (вимір, НЕ вибір)"
+  puts "ARCH.8 — ЦІНА ВАЖЕЛІВ РОЗВИЛКИ (вимір, НЕ вибір)"
   puts format("  Предмет: CCM-кадр 30 Б штовхає Δt на %.0f с, а метаболічна підлога стоїть на %.0f с.",
               ccm[:delta_t_s], floor_s)
   puts "  Кожен важіль нижче повертає робочу точку всередину смуги. Ціни НЕ однорідні."
@@ -218,13 +249,13 @@ def levers(p)
   puts "      🔴 АЛЕ Й ДРУГИЙ грошової лінії НЕ ТРИМАЄ — виправлено 2026-09-12 адверсарним ревʼю."
   puts "         Бали нараховуються НА ПАКЕТ, а SCC = пакети/добу × GP/пакет (`scc_rate.rb`)."
   puts "         Важіль (а) повертає ДРУГИЙ множник і не може торкнутись ПЕРШОГО: частота"
-  puts "         пакетів упала разом із Δt і лишається впалою. Порядок величини: 7.92 →"
-  puts "         4.00 → ≈6.4 SCC/дерево/рік, тобто ~19 % нижче за точку ECB назавжди."
+  puts "         пакетів упала разом із Δt і лишається впалою."
   puts "      ⛔ І ЦЕЙ ВАЖІЛЬ СЬОГОДНІ НЕ ПРАЦЮЄ ЖОДНИМ ПРИЛАДОМ. Щоб його оцінити, треба"
-  puts "         рухати ДВА числа — робочу точку (Δt=7876) І стелю (DELTA_T_SLOW_S=8956), —"
+  puts format("         рухати ДВА числа — робочу точку (Δt=%.0f) І стелю (DELTA_T_SLOW_S=%.0f), —",
+              ccm[:delta_t_s], need_same_gp)
   puts "         а `scc_rate.rb` override має лише для першого й бере стелю з константи."
-  puts "         ⚠️ Тому `scc_rate.rb variant_c_s=8956` дасть 3.52, а НЕ 6.4: воно моделює"
-  puts "         «Δt поїхав, стеля лишилась», тобто протилежне до важеля. Не цитувати."
+  puts format("         ⚠️ Тому `scc_rate.rb variant_c_s=%.0f` моделює «Δt поїхав, стеля лишилась»,", need_same_gp)
+  puts "         тобто протилежне до важеля. Не цитувати як його ціну."
   puts "      ціна, якою він коштував би: SHA-пін `metabolic_gp_core` + чотири дзеркала руками."
   puts
   # ── (б) підняти генерацію ───────────────────────────────────────────────
@@ -242,18 +273,21 @@ def levers(p)
   puts format("  (в) стеля airtime: кадр сьогодні %.1f мс.", ccm[:t_air_ms])
   [ [ "щоб H лишився на точці ECB", ecb[:h_hours] ],
     [ "щоб Δt не вийшов за підлогу", floor_s / 3600.0 ] ].each do |why, h_target|
-    allowed_tx = h_target * net_mj_h(p) * p[:eta_buck_active] - p[:tinyml_mj] - p[:lorenz_mj]
-    allowed_ms = allowed_tx / (p[:i_tx_ma] * p[:v_out]) * 1000.0
+    # Кадр платить TX і TCXO на своєму ефірі; RX-вікно й TCXO на ньому — фіксовані.
+    allowed_tx = h_target * net_mj_h(p) * p[:eta_buck_active] - p[:tinyml_mj] - p[:lorenz_mj] -
+                 e_rx_mj(p) - e_tcxo_mj(p, 0.0)
+    allowed_ms = allowed_tx / ((p[:i_tx_ma] + p[:i_tcxo_ma]) * p[:v_out]) * 1000.0
     puts format("      %-34s ≤ %.1f мс", "#{why} . . . . . . . . . ."[0, 34], allowed_ms)
   end
   puts "      → перевести стелю в БАЙТИ просить сусіда, бо ToA має один дім:"
   puts "        ruby tools/firmware/lora_airtime.rb      (таблиця символьних блоків)"
   puts "      ⚠️ ToA ступінчаста, тож стеля між блоками не купує нічого — платить"
   puts "         лише перехід у нижчий блок."
-  puts "      🔴 І СХОДИНКА ПЕРЕКЛАДАЄ ЦЮ СТЕЛЮ В БАЙТИ ЖОРСТКО (вимір 2026-09-22):"
-  puts "         щоб утриматись у підлозі, кадр мусить стати ≤ 21 Б, тобто ВІДДАТИ 9."
+  puts "      🔴 І СХОДИНКА ПЕРЕКЛАДАЄ ЦЮ СТЕЛЮ В БАЙТИ ЖОРСТКО (вимір 2026-09-26, з RX-вікном і TCXO):"
+  puts "         щоб утриматись у підлозі, кадр мусить стати ≤ 17 Б (блок 13..17 = 164.9 мс;"
+  puts "         18..21 = 185.3 мс уже за стелею), тобто ВІДДАТИ 13 — а це й є ECB-довжина."
   puts "         А віддавати нема чого: 30 Б = DID 4 (незнімний) + gossip 1 + FC 3 +"
-  puts "         sensor 14 + MIC 8 (03_05 §2.1). Кожен можливий набір із 9 байтів —"
+  puts "         sensor 14 + MIC 8 (03_05 §2.1). Кожен можливий набір із 13 байтів —"
   puts "         несучий: автентифікація (MIC) ⊥ анти-реплей (FC, та сама вісь, що"
   puts "         born-vuln-нога ARCH.8) ⊥ самі поля свідчення (device_z → DCI,"
   puts "         ema_delta_t → вхід GP, acoustic → пилка, temp/vpd → confounder)."
@@ -274,6 +308,19 @@ def levers(p)
   puts "         чутливості для SF9 навіть не наводить. Отже (г) НЕ ратифікується"
   puts "         сьогодні — він чекає того самого RF-макета, що й HW.33, якщо той"
   puts "         прогнати на ДВОХ SF замість одного."
+  puts
+  # ── (д) ворота RX-вікна ──────────────────────────────────────────────────
+  no_rx = p.merge(t_rx_ms: 0.0)
+  puts "  (д) RX-вікно: прошивка ЗАДУМАЛА його енергетичні ворота («слухаємо, лише якщо багаті"
+  puts "      на енергію», vcap > 2800), але `vcap` читає VDDA, тож вікно відкрите щоциклу."
+  puts format("      Воно коштує %.2f мДж RX + %.2f мДж TCXO на VOUT, тобто %.0f %% E_active ECB-ери.",
+              e_rx_mj(p), e_tcxo_mj(p, 0.0), 100.0 * (e_rx_mj(p) + e_tcxo_mj(p, 0.0)) / p[:eta_buck_active] / ecb[:e_active_mj])
+  puts format("      Без нього в дефіцитному циклі: H ECB %.2f → %.2f год, H CCM %.2f → %.2f год (підлога %.2f).",
+              ecb[:h_hours], interval_h(no_rx, WIRE_ERAS[0][2]), ccm[:h_hours], interval_h(no_rx, WIRE_ERAS[1][2]),
+              floor_s / 3600.0)
+  puts "      🔴 Валюта — ДОСЯЖНІСТЬ вузла: це вікно несе маяк часу, OTA й команди Королеви, тож"
+  puts "         пропуск його — вибір, що саме перестає чути вузол у дефіциті. Справжні ворота"
+  puts "         потребують справжнього каналу запасу енергії — відкрита ⚖️ топології Vcap (FW.50)."
   puts
   puts "  ⛔ ВИБОРУ ТУТ НЕМАЄ І НЕ БУДЕ: розвилка є присудом (00_07 ARCH.8), і поки"
   puts "     вона відкрита, CCM не відвантажується. Значення й точність робочої точки"
@@ -297,18 +344,22 @@ def assert_mode(p)
   end
   ecb, ccm = rows
   # 2. Модель відтворює надруковані в §9.6 проміжні числа Сценарію C.
-  { "E_active ECB (§9.6, 38.25 мДж)" => (ecb[:e_active_mj] - 38.25).abs < 0.05,
+  { "E_RX (§9.4, 7.95 мДж)" => (ecb[:e_rx_mj] - 7.95).abs < 0.01 && canon.include?("7.95 мДж"),
+    "E_TCXO ECB (§9.4, 4.63 мДж)" => (ecb[:e_tcxo_mj] - 4.63).abs < 0.01 && canon.include?("4.63 мДж"),
+    "E_TCXO CCM (§9.6 врізка, 5.06 мДж)" => (ccm[:e_tcxo_mj] - 5.06).abs < 0.01 && canon.include?("5.06 мДж"),
+    "E_active ECB (§9.6, 42.33 мДж)" => (ecb[:e_active_mj] - 42.33).abs < 0.05,
+    "E_active CCM (§9.6 врізка, 48.23 мДж)" => (ccm[:e_active_mj] - 48.23).abs < 0.05,
     "E_sleep (§9.6, 15.04 мДж/год)" => (e_sleep_mj_h(p) - 15.04).abs < 0.02,
     "E_gen (§9.6, 36.7 мДж/год)" => (e_gen_mj_h(p) - 36.7).abs < 0.05,
-    "H ECB (§9.6, 1.77 год)" => (ecb[:h_hours] - 1.77).abs < 0.02,
-    "H CCM (§9.6 врізка, 2.19 год)" => (ccm[:h_hours] - 2.19).abs < 0.02,
+    "H ECB (§9.6, 1.95 год)" => (ecb[:h_hours] - 1.95).abs < 0.02,
+    "H CCM (§9.6 врізка, 2.22 год)" => (ccm[:h_hours] - 2.22).abs < 0.02,
     # ⚠️ Доданий 2026-09-12, і не для повноти: рядок CCM-ери в таблиці §9.7 несе саме це
     # число, а врізка над таблицею обіцяла, що «числа звідси HARD-гейтовані проти моделі» —
     # обіцянка була ШИРША за реалізацію (клас сліпоти #5 `ssot-maintenance`: гейт недовиконує оголошений
     # контракт). Пін вужчий за обіцянку лише в один бік: `+1.4` рядка C НЕ пінеться тут і не
     # може — воно взяте на трохи довшій каденції, ніж беззапасне `H`, тож належить §9.6.
-    "E_net CCM на каденції ECB (§9.7 рядок CCM-ери, −5.2 мДж/год)" =>
-      (ccm[:e_net_at_ref_cadence_mj_h] + 5.2).abs < 0.05 }.each do |label, ok|
+    "E_net CCM на каденції ECB (§9.7 рядок CCM-ери, −3.0 мДж/год)" =>
+      (ccm[:e_net_at_ref_cadence_mj_h] + 3.0).abs < 0.05 }.each do |label, ok|
     problems << "не відтворюється: #{label}" unless ok
   end
   # 3. Присуд, заради якого модель існує: CCM-точка лежить ЗА метаболічною підлогою,
@@ -318,7 +369,8 @@ def assert_mode(p)
   problems.each { |x| warn "FAIL  #{x}" }
   if problems.empty?
     puts format("✅ tx_cadence_budget: H %.2f год (ECB 16 Б) → %.2f год (CCM 30 Б); підлога m на %.0f с — "\
-                "CCM-точка за нею, розвилка ARCH.8 відкрита", ecb[:h_hours], ccm[:h_hours], p[:delta_t_slow_s])
+                "CCM-точка за нею, ECB перед нею на %.0f с (у межах ±8 %% Δt — номінально), розвилка ARCH.8 відкрита",
+                ecb[:h_hours], ccm[:h_hours], p[:delta_t_slow_s], p[:delta_t_slow_s] - ecb[:delta_t_s])
   end
   problems.empty? ? 0 : 1
 end
