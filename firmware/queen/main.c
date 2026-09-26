@@ -1173,7 +1173,9 @@ int main(void)
   (void)SIM7070_Transact("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", AT_INIT_BUDGET_MS);
 
   // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>:
-  //   mode=1 → enable eDRX, AcT=5 → LTE Cat M1
+  //   mode=1 → enable eDRX, AcT=5 → NB-IoT (SIMCom AT Manual V1.03 §5.2.42:
+  //   4 = CAT-M, 5 = NB-IoT) — тобто eDRX запитано ЛИШЕ для NB-IoT; яке AcT
+  //   правильне, вирішує ⚖️ Cat-M ⊥ NB-IoT (`AT+CMNB`, 00_07 HW.41)
   //   eDRX="0010" → 20.48 sec (paging window — короткий для downlink-сприйнятливості)
   (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
 

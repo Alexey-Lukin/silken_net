@@ -138,7 +138,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 Критичний ризик автономності Королеви взимку при використанні Starlink Mini (Phase 3). Повний енергобюджет — §4; нижче — зимова solar-специфіка.
 
-> ⚠️ Phase 2.5 (DTC) цей ризик **не зачіпає** — SIM7070G у LTE-M режимі споживає ~370 мВт TX burst, а не 20–40 Вт.
+> ⚠️ Phase 2.5 (DTC) цей ризик **не зачіпає** — SIM7070G у LTE-режимі (Cat-M чи NB-IoT — не задано, [`00_07`](00_07_Action_Plan_Tracker) HW.41) споживає ~370 мВт TX burst, а не 20–40 Вт.
 
 > 🏠 **SSOT зимових чисел — модель `tools/firmware/queen_energy_budget.rb` (HW.39):** значення нижче — дзеркало її прогону на defaults (правити модель, не таблицю). Повний покомпонентний бюджет — §4.
 
@@ -172,7 +172,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 | LTE-M / NB-IoT | ✅ | ✅ |
 | GPS | ✅ | ✅ |
 | Пікове споживання TX | ~500 мА (LTE-M) | ~400 мА (NB-IoT peak) |
-| max TX power | 23 dBm | power class 5 — тип. 21 дБм (0.125 Вт); 23 дБм — лише варіант -HP (SIMCom, звірено 2026-09-25 — [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §5) |
+| max TX power | 23 dBm | power class 5 (0.125 Вт): сторінка SIMCom — «typ. 21 dBm», HD V1.05 — 20 дБм ±2.7 дБ у таблиці провідної потужності; 23 дБм — лише варіант -HP (SIMCom, звірено 2026-09-25 — [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §5) |
 | **eDRX (Extended DRX)** | ✅ Підтримує | ✅ **Покращена підтримка** (AT+CEDRXS) |
 | **PSM (Power Saving Mode)** | ✅ Підтримує | ✅ **Покращена підтримка** (AT+CPSMS) |
 | **Idle споживання (PSM)** | ~10 мкА | **~3 мкА** (критично для IoT) |
