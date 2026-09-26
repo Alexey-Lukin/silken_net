@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "yaml"
 require_relative "../support/repo_root"
 
 # INF.17 / SEC.22 regression guard. The Ingress Anchor coap daemon (compute.tf systemd
@@ -43,6 +44,21 @@ RSpec.describe "Ingress Anchor coap.env (compute.tf)" do # rubocop:disable RSpec
   # absent falls back to `production` SILENTLY (config/deployment_slot.rb).
   it "carries the three-line intake slot switch (DEPLOYMENT_SLOT · POSTGRES_DATABASE · REDIS_URL — OPS.37)" do
     expect(coap_env_vars).to include("DEPLOYMENT_SLOT", "POSTGRES_DATABASE", "REDIS_URL")
+  end
+
+  # [FW.60] The same switch now also carries the OTA handoff: coap READS campaign packages
+  # from Solid Cache (DB `<POSTGRES_DATABASE>_cache`, namespace DEPLOYMENT_SLOT) that web/job
+  # pack (`Ota::PackageStore` — coap holds no master key, SEC.22). A pair belonging to no
+  # single Kamal slot makes every read miss, and only the 24 h OTA watchdog would notice.
+  it "pairs DEPLOYMENT_SLOT with that same slot's POSTGRES_DATABASE (FW.60 OTA handoff)" do
+    lines  = File.read(REPO_ROOT.join("terraform/compute.tf")).lines
+    values = lines.filter_map { |l| l.match(/\A(DEPLOYMENT_SLOT|POSTGRES_DATABASE)=(\S+)\s*\z/)&.captures }.to_h
+    kamal  = %w[config/deploy.yml config/deploy.canopy.yml].map do |path|
+      clear = YAML.safe_load(File.read(REPO_ROOT.join(path)), aliases: true).dig("env", "clear")
+      [ clear["DEPLOYMENT_SLOT"], clear["POSTGRES_DATABASE"] ]
+    end
+
+    expect(kamal).to include([ values["DEPLOYMENT_SLOT"], values["POSTGRES_DATABASE"] ])
   end
 
   it "omits PROVISIONING (coap-guard skips it), the signing quintet (job-only) and RAILS_MASTER_KEY (Phase-2)" do

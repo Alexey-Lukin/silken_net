@@ -38,11 +38,15 @@ Rails.application.config.after_initialize do
   # app accepts traffic.
   next if ENV["SECRET_KEY_BASE_DUMMY"].present?
 
-  # The CoAP intake daemon (lib/daemons/coap_listener) is pure UDP glue: it
-  # receives datagrams and perform_async's them to UnpackTelemetryWorker. All key
-  # derivation (HardwareKeyService, OtaHmacKeyService) happens in the Sidekiq
-  # workers (OTA) and the provisioning web path — never in this process. So it
-  # needs no PROVISIONING_MASTER_KEY; let it boot without the HKDF crown-jewel,
+  # The CoAP intake daemon (lib/daemons/coap_listener) enqueues telemetry and
+  # answers the Queens' poll/chunk pulls synchronously from the DB and the shared
+  # cache — and derives no keys. The poll path's only master-key consumer, OTA
+  # packaging (OtaHmacKeyService → K_ota), runs in the processes that hold the
+  # key: the campaign dispatcher (web) and the OTA sweeper (job) write
+  # Ota::PackageStore, coap only reads it (FW.60 — until 2026-09-27 coap packed
+  # itself, so every campaign was dark on the anchor). Pinned by the «coap лише
+  # читає» examples in spec/services/downlink/pending_queue_service_spec.rb.
+  # So it needs no PROVISIONING_MASTER_KEY; let it boot without the HKDF crown-jewel,
   # keeping the fleet-wide-forge root off the coap container's plaintext
   # /proc/environ (SEC.22). Mirrors web3_network_guard's process-scoping
   # (signer_process: Sidekiq.server?).

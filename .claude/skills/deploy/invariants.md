@@ -24,8 +24,9 @@
 4. **CoAP-інтейк: PRIMARY = демон на Ingress Anchor, а Kamal-роль `coap` — лише дормантний fallback** (docker+systemd, приватний IP Cloud SQL
   БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`, НЕ metadata). Kamal `coap`-роль
   (`config/deploy.yml`) = дормантний **fallback** (перемикання 2×systemctl); money/web
-  лишаються на Kamal/GCP. **coap.env** = окрема boot-contract поверхня (pure UDP glue,
-  нуль key-derivation → несе AR-encryption-трійку, **НЕ** `PROVISIONING_MASTER_KEY`;
+  лишаються на Kamal/GCP. **coap.env** = окрема boot-contract поверхня (нуль key-derivation:
+  OTA-пакунки пакують web/job, coap їх лише ЧИТАЄ — `Ota::PackageStore`, FW.60; до 2026-09-27
+  пакував сам і кожна кампанія на анкері була темною → несе AR-encryption-трійку, **НЕ** `PROVISIONING_MASTER_KEY`;
   guard `spec/deploy/anchor_coap_env_spec.rb`). ⚠️ **Це твердження про АНКЕРНУ поверхню, не про «coap» узагалі** — дормантна Kamal-роль `coap` вище не має `env:`-оверрайду, тож успадковує ГЛОБАЛЬНИЙ `env.secret` РАЗОМ із `PROVISIONING_MASTER_KEY` (per-role secret-exclude у Kamal немає; названо й прийнято над самою роллю в `config/deploy.yml`). Ризик відкривається лише активацією fallback-ролі — але читач, що бачить у цьому ж пункті ОБИДВІ coap-поверхні й одне PROVISIONING-твердження, узагальнить його на обидві. → `06_01` / `06_04 §5.7`.
 5. **Cloud SQL Auth Proxy авторизує через Google API — це ОРТОГОНАЛЬНО мережевій
   досяжності, не заміняє її.** Обидва інстанси `terraform/database.tf` тепер

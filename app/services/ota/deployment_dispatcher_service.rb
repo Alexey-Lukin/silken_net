@@ -82,6 +82,11 @@ module Ota
             next
           end
 
+          # [FW.60] Пакуємо ТУТ, бо coap-процес, що віддаватиме чанки, master-key
+          # не має (SEC.22) і сам пакувати не сміє — `Ota::PackageStore`. До
+          # спалення hiwater: збій пакування відкочує транзакцію, і та сама версія
+          # лишається диспатчабельною.
+          Ota::PackageStore.warm!(@firmware, cluster.id)
           cluster.update_column(:ota_version_hiwater, @firmware.id)
           # [FW.60] Канарейкова когорта персистується per-gateway: Королева
           # дізнається через OTA-hint на власному poll'і, не push'ем.

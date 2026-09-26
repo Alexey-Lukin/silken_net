@@ -52,17 +52,42 @@ class GatewayStalenessSweepWorker
     # проході, мусить лишити по собі термінований наказ ТИМ САМИМ проходом —
     # інакше він живе зайвий цикл крону. Порядок запінений прикладом.
     reaped    = reap_undeliverable_commands
+    # ОСТАННІМ: після звільнення застряглих (не гріти щойно зняте) і після
+    # safety-кроків вище — пакування не сміє їх затримати.
+    warmed    = rewarm_ota_packages
 
     SilkenNet::Metrics::GATEWAYS_FAULTY.set(Gateway.faulty.count)
     SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED.set(lapsed)
 
     Rails.logger.info(
       "👑 [ARCH.54] Staleness sweep: flagged=#{flagged} recovered=#{recovered} " \
-      "attest_lapsed=#{lapsed} ota_released=#{released} cmd_reaped=#{reaped}"
+      "attest_lapsed=#{lapsed} ota_released=#{released} cmd_reaped=#{reaped} ota_warmed=#{warmed}"
     )
   end
 
   private
+
+  # [FW.60] Писач `Ota::PackageStore` номер два — прогрів на промаху для кожної
+  # живої кампанії (firmware × cluster серед шлюзів із таргетом). Без нього
+  # витіснення Solid Cache ховало б кампанію назавжди: coap сам не пакує (SEC.22),
+  # а ту саму версію повторно не задиспатчиш (hiwater → «rollback»). Dangling
+  # `pending_firmware_id` пропускається — той самий фолбек, що в poll-тракті.
+  def rewarm_ota_packages
+    campaigns = Gateway.where.not(pending_firmware_id: nil).distinct.pluck(:pending_firmware_id, :cluster_id)
+    campaigns.count do |firmware_id, cluster_id|
+      next false if Ota::PackageStore.read(firmware_id, cluster_id)
+
+      firmware = BioContractFirmware.find_by(id: firmware_id)
+      next false unless firmware
+
+      Ota::PackageStore.warm!(firmware, cluster_id)
+      true
+    rescue StandardError => e
+      # Rescue НА КАМПАНІЮ: одна непакована прошивка не сміє лишити холодними решту.
+      Rails.logger.error "🛑 [FW.60] OTA-пакунки #{firmware_id}/cluster #{cluster_id} не прогріто: #{e.message}"
+      false
+    end
+  end
 
   # Мовчазні шлюзи у робочих станах → faulty + алерт. Свідомо ПОЗА скоупом:
   # maintenance (людина вже знає) і last_seen_at IS NULL (шлюз зареєстрований,

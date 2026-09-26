@@ -36,8 +36,8 @@ Rails.application.config.after_initialize do
   next if ENV["SECRET_KEY_BASE_DUMMY"].present?
 
   # The CoAP intake daemon loads the full environment (every initializer runs here)
-  # but is pure UDP glue — it parses datagrams and perform_async's them, and there is
-  # no path from it to a mailer. Demanding a transport would block the telemetry
+  # but only parses datagrams, enqueues telemetry and answers poll/chunk pulls from the DB
+  # and cache — and there is no path from it to a mailer. Demanding a transport would block the telemetry
   # intake over a capability the process does not have. Mirrors
   # master_key_strength_check.rb, which skips the same process for the same reason.
   next if $PROGRAM_NAME.include?("coap_listener")

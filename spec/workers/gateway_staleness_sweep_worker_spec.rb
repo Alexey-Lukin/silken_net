@@ -329,6 +329,48 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
     end
   end
 
+  # [FW.60 · SEC.22] Писач `Ota::PackageStore` номер два: coap сам не пакує, а ту
+  # саму версію вдруге не задиспатчиш (hiwater → «rollback»), тож витіснення кешу
+  # без цього кроку ховало б живу кампанію назавжди.
+  describe "прогрів OTA-пакунків живої кампанії [FW.60]" do
+    let(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
+
+    before do
+      Rails.cache.clear
+      create(:gateway, cluster: cluster, last_seen_at: 1.minute.ago,
+                       pending_firmware_id: firmware.id, ota_started_at: 1.minute.ago)
+    end
+
+    it "пакує кампанію, чиї пакунки кеш втратив" do
+      sweep
+
+      expect(Ota::PackageStore.read(firmware.id, cluster.id)).to be_present
+    end
+
+    it "не перепаковує прогріту" do
+      Ota::PackageStore.warm!(firmware, cluster.id)
+      allow(OtaPackagerService).to receive(:prepare).and_call_original
+
+      sweep
+
+      expect(OtaPackagerService).not_to have_received(:prepare)
+    end
+
+    it "одна непакована прошивка не лишає холодними решту" do
+      broken = create(:bio_contract_firmware, bytecode_payload: "AB" * 64)
+      create(:gateway, cluster: create(:cluster), last_seen_at: 1.minute.ago,
+                       pending_firmware_id: broken.id, ota_started_at: 1.minute.ago)
+      allow(OtaPackagerService).to receive(:prepare).and_wrap_original do |original, fw, **kw|
+        raise ArgumentError, "bytecode is empty" if fw.id == broken.id
+
+        original.call(fw, **kw)
+      end
+
+      expect { sweep }.not_to raise_error
+      expect(Ota::PackageStore.read(firmware.id, cluster.id)).to be_present
+    end
+  end
+
 # 🔴 [ARCH.75] Пʼята нога: наказ, який уже НЕМОЖЛИВО доставити, мусить діставати
 # термінальний стан — і поза poll-трактом.
 #

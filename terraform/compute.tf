@@ -292,8 +292,9 @@ REDIS_URL=REQUIRED_SECRET_NOT_SET
 # would have died «Missing secret_key_base» exactly like the first canopy container did.
 # Same value as the SECRET_KEY_BASE GitHub Secret (slot-invariant).
 SECRET_KEY_BASE=REQUIRED_SECRET_NOT_SET
-# No PROVISIONING_MASTER_KEY — coap_listener is pure UDP glue (enqueue only); key
-# derivation lives in the workers, master_key_strength_check skips this process, so
+# No PROVISIONING_MASTER_KEY — coap_listener derives no keys: it enqueues telemetry and
+# serves poll/OTA pulls, READING OTA packages the key-holding web/job processes packed
+# (Ota::PackageStore, FW.60); master_key_strength_check skips this process, so
 # provisioning the fleet-wide-forge crown-jewel here would expose it for nothing (SEC.22). Do not re-add.
 # 🛑 BOOT-CRITICAL: active_record_encryption_keys_check.rb is production-wide (NOT
 # coap-skipped — these are narrow column keys, not the vault key) → the daemon raises

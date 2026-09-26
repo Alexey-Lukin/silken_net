@@ -56,6 +56,26 @@ RSpec.describe Ota::DeploymentDispatcherService do
       expect(firmware.is_active).to be(true)
       expect(firmware.rollout_percentage).to eq(25)
     end
+
+    # [FW.60 · SEC.22] coap, що віддаватиме чанки, master-key не має і сам не
+    # пакує — тож пакунки кампанії мусять лежати готовими до першого poll'а.
+    it "packages the campaign for the coap reader in the process that holds the key" do
+      call_service
+
+      expect(Ota::PackageStore.read(firmware.id, cluster.id)).to eq(
+        OtaPackagerService.prepare(firmware, chunk_size: OtaChunkable::CHUNK_SIZE,
+                                             cluster_id: cluster.id)[:packages].to_a
+      )
+    end
+
+    it "burns nothing when packaging fails — the same version stays dispatchable" do
+      allow(OtaHmacKeyService).to receive(:fetch_binary_for)
+        .and_raise(SecurityError, "PROVISIONING_MASTER_KEY ENV is required")
+
+      expect { call_service }.to raise_error(SecurityError)
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+      gateways.each { |gw| expect(gw.reload.pending_firmware_id).to be_nil }
+    end
   end
 
   describe "anti-rollback guard (Rails mirror of Soldier Flash-KV 0x15, strictly >)" do

@@ -153,8 +153,8 @@ module Downlink
         # пожежна команда лягає невалідною. Тоді БУДЬ-який AASM-перехід б'ється
         # об `duration_within_safety_envelope` — включно з TTL-прибиранням, тож
         # рядок не вміє навіть померти. Демон виняток ЛОВИТЬ (`rescue StandardError`
-        # у `lib/daemons/coap_listener` — на відміну від `SecurityError` нижче,
-        # що справді летить повз), але `reply` лишається непризначеним, тож
+        # у `lib/daemons/coap_listener`; `SecurityError` < Exception летів би повз,
+        # але його джерело — OTA-пакування — з coap винесено), та `reply` лишається непризначеним, тож
         # `socket.send` не відбувається: poll БЕЗ ВІДПОВІДІ назавжди, і разом із
         # CMD мертві ratchet, OTA-hint і time-sync шлюза. Force-fail через `update_columns`
         # (дзеркало `dispatch_to_edge!`) — єдиний спосіб винести такий рядок із
@@ -294,34 +294,17 @@ module Downlink
       end
     end
 
-    # Пакети кампанії — важке пакування кешується per (firmware, cluster):
-    # той самий масив живить hint (total) і chunk-server (байти чанків).
-    #
-    # [FW.60/SEC.11] `OtaPackagerService.prepare` → `OtaHmacKeyService` кидає
-    # `SecurityError` (< Exception, НЕ StandardError) без PROVISIONING_MASTER_KEY.
-    # Це ЄДИНЕ джерело SecurityError у poll-тракті, а демон-rescue ловить лише
-    # StandardError → без цього guard'а перший hint/chunk активної кампанії валив
-    # би увесь CoAP-інтейк (телеметрія включно) у crash-loop. Fail-closed: nil →
-    # hint пропущено (poll усе одно віддає time-only = RTC-sync Королеви живий),
-    # chunk → 4.04. Rescue ЗЗОВНІ cache.fetch — nil не кешується, redeploy з
-    # ключем одразу відновлює видачу.
+    # Пакети кампанії: той самий масив живить hint (total) і chunk-server (байти).
+    # ⛔ Тут лише ЧИТАННЯ: coap-процес master-key не має (SEC.22), тож пакують
+    # писачі `Ota::PackageStore` — диспетчер і OTA-сторож. Промах → nil: hint
+    # пропущено (poll однаково віддає time-only — RTC-sync Королеви живий),
+    # chunk → 4.04, і сторож прогріває на найближчому проході.
     def ota_packages(firmware_id)
-      Rails.cache.fetch("fw60/ota_packages/#{firmware_id}/#{@gateway.cluster_id}",
-                        expires_in: 1.hour) do
-        # [00_07 FW.60 case 4] Dangling id (видалено/ніколи не існував) — той
-        # самий фолбек-клас, що `observe_delivered_firmware!` вище; LEAVE.
-        firmware = BioContractFirmware.find_by(id: firmware_id)
-        next nil unless firmware
+      packages = Ota::PackageStore.read(firmware_id, @gateway.cluster_id)
+      return packages if packages
 
-        OtaPackagerService.prepare(
-          firmware,
-          chunk_size: OtaChunkable::CHUNK_SIZE,
-          cluster_id: @gateway.cluster_id
-        )[:packages].to_a
-      end
-    rescue SecurityError => e
-      Rails.logger.error "🛑 [FW.60/SEC.11] OTA fail-closed для #{@gateway.uid}: " \
-                         "#{e.message.lines.first&.strip} — кампанія стоїть, інтейк живий"
+      Rails.logger.error "🛑 [FW.60] OTA-пакунки #{firmware_id}/cluster #{@gateway.cluster_id} " \
+                         "не прогріто — #{@gateway.uid} чекає на OTA-сторожа"
       nil
     end
 

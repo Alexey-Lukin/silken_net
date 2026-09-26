@@ -1043,8 +1043,9 @@ Pre-Flight #9 і показувала рівно навпаки (kamal-ролі 
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/
 `REDIS_URL`/`SECRET_KEY_BASE`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
-`_KEY_DERIVATION_SALT`/`SENTRY_DSN`; **НЕ** `PROVISIONING_MASTER_KEY` — coap лише
-enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [SEC.22]; AR-encryption
+`_KEY_DERIVATION_SALT`/`SENTRY_DSN`; **НЕ** `PROVISIONING_MASTER_KEY` — coap ключів не
+деривує (OTA-пакунки пакують web/job, coap їх лише читає — `Ota::PackageStore`, FW.60),
+`master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [SEC.22]; AR-encryption
 ×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
