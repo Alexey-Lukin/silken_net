@@ -67,11 +67,11 @@
 ║    SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000ms)  ← LTE only         ║
 ║    Radio.Rx(LORA_RX_INFINITE)  ← Відкриваємо вуха                      ║
 ║    current_jitter = HRNG() % 60001  ← Thundering Herd prevention        ║
-║                    (fallback: HAL_GetTick(), без XOR-маски)              ║
+║                    (fallback: HAL_GetTick() ^ uid_hash ^ маска)          ║
 ║                                                                          ║
 ║  [MAIN LOOP]                                                             ║
 ║    ┌─────────────────────────────────────────────────────────┐          ║
-║    │  while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi, &rx_snr)):  [FW.3]│  ║
+║    │  while (LoRa_Rx_Ring_Pop(rx_payload,&rx_len,&rx_rssi,&rx_snr)):  │  ║
 ║    │    ├── HAL_CRYP_Decrypt(ECB, rx_payload[16])           │          ║
 ║    │    │     → decrypted_payload[16]                        │          ║
 ║    │    │                                                     │          ║
@@ -118,9 +118,8 @@
 | `FLUSH_JITTER_MAX_MS` | `60 000` | main.c | Макс. jitter (60 сек) |
 | `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c | XOR-маска при відмові HRNG (jitter) |
 | `FLUSH_HEADROOM` | `5` | main.c | Слоти до примусового flush |
-| `QUEEN_HEALTH_GP_MAX` | `31` | main.c | Макс. growth_points для sentinel (5-біт wire — дзеркало [FW.29-PACK], дім формату — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)) |
 | `OTA_MAX_CHUNKS` | `16` | main.c | Макс. CoAP-чанків (bitmap 16 біт) |
-| `CACHE_MAX_ENTRIES` | `50` | main.c | Місткість CIFO EdgeCache |
+| `CACHE_MAX_ENTRIES` | `50` | `queen/cifo_cache.h` | Місткість CIFO EdgeCache |
 | `CMD_DEDUP_SIZE` | `16` | main.c | Розмір кільцевого буфера dedup |
 | `UUID_STR_LEN` | `36` | main.c | Довжина UUID рядка (8-4-4-4-12) |
 | `CMD_DECRYPT_BUF_SIZE` | `544` | main.c | Буфер decrypt CoAP команд/OTA. **Деривація (відновлено 2026-08-22 з git — константа стояла магічною):** `512` OTA payload + `5` header + `2` CRC + `16` AES padding + `9` margin. Міняючи будь-який доданок, перерахуй суму тут, а не підганяй її |
@@ -165,7 +164,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     // (16 слотів) — main loop дренує його після завершення CoAP-flush'у.
     // Якщо ринг переповнений, інкрементується lora_rx_drops, але існуючі
     // голоси недоторкані.
-    LoRa_Rx_Ring_Push(payload, (int8_t)rssi, snr);
+    LoRa_Rx_Ring_Push(payload, (uint8_t)size, (int8_t)rssi, snr);
 }
 ```
 
@@ -182,7 +181,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 
 | Поле | Тип | Розмір | Призначення |
 |------|-----|--------|-------------|
-| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 16 × 18 = 288 B | FIFO слоти (16 байт payload + 1 байт rssi + 1 байт snr — [E.8]) |
+| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 16 × 19 = 304 B (ECB; у CCM-ері payload = air — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) | FIFO слоти (payload + 1 байт `len` [FW.2] + 1 байт rssi + 1 байт snr [E.8]) |
 | `lora_rx_head` | `volatile uint8_t` | 1 B | Куди ISR кладе наступний пакет |
 | `lora_rx_tail` | `volatile uint8_t` | 1 B | Звідки main loop забирає |
 | `lora_rx_drops` | `volatile uint16_t` | 2 B | Лічильник переповнень (видимий для майбутнього gateway-health export) |
@@ -197,34 +196,21 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 
 ### Структура даних
 
-```c
-#define CACHE_MAX_ENTRIES 50
+Слот `EdgeCache` (`uid` · `payload` · `rssi` · `snr` · `is_active` · `fmt`), формати, гейтована ширина payload і вся логіка дедуп/вставки/витіснення — pure-заголовок **`firmware/queen/cifo_cache.h`**, який компілюють і `main.c`, і host-тести. `main.c` тримає лише масив `forest_cache[CACHE_MAX_ENTRIES]`, лічильник `cache_count` (тригер флашу й `fill_pct` health-блоку QATT) і ARCH.35-хук спілу. ⛔ Не повертати рукописну копію структури чи функції в тест: копія вже раз розійшлась із прошивкою так, що сюїта зеленіла, поки прошивка не рахувала вставок. RAM-розміри — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security).
 
-typedef struct {
-    uint32_t uid;        // DID дерева (4 байти)
-    uint8_t payload[16]; // Останні розшифровані дані
-    int8_t  rssi;        // Сила сигналу (dBm)
-    int8_t  snr;         // [E.8] SNR (dB) — tiebreaker у CIFO eviction
-    uint8_t is_active;   // 1 = слот зайнятий
-} EdgeCache;
+> **[FW.2, INERT за `FW2_CCM_ENABLED`]** У CCM-ері слот несе опаковий air-хвіст `air − 4` (rev2.1 = 26 Б — Королева НЕ розшифровує, інверсія довіри [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) + `fmt`-тег (`EDGE_FMT_ECB16|EDGE_FMT_CCM_AIR`); `len`-тегований RX-ринг приймає 16 | air (rev2.1 = 30). bio_status для евікції видно лише в ECB16-слотах (у CCM ті байти — шифртекст; офсет-колізія — firmware-скіл gotcha #7); CCM-записи евіктяться за RSSI/SNR — свідома стеля сліпого кур'єра, довгий лік = ARCH.35-ринг. RAM-ціна фліпа — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) (One-Home чисел).
 
-EdgeCache forest_cache[CACHE_MAX_ENTRIES]; // 50 × 23 байти = 1150 байт
-uint8_t cache_count = 0;
-```
-
-> **[FW.2, INERT за `FW2_CCM_ENABLED`]** У CCM-ері слот несе `payload[24]` (опаковий air-хвіст — Королева НЕ розшифровує, інверсія довіри [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) + `fmt`-тег (`EDGE_FMT_ECB16|CCM24`); `len`-тегований RX-ринг приймає 16|28. bio_status для евікції видно лише в ECB16-слотах (у CCM ті байти — шифртекст; офсет-колізія — firmware-скіл gotcha #7); CCM-записи евіктяться за RSSI/SNR — свідома стеля сліпого кур'єра, довгий лік = ARCH.35-ринг. RAM-ціна фліпа — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) (One-Home чисел).
-
-### Алгоритм `Process_And_Cache_Data(uid, payload, rssi)`
+### Алгоритм `Process_And_Cache_Data(uid, payload, rssi, snr, fmt)` → `Cifo_Upsert`
 
 ```
 Крок 1 — ДЕДУПЛІКАЦІЯ:
   Пошук uid в усіх is_active слотах.
-  Якщо знайдено → оновити payload + rssi → return.
+  Якщо знайдено → оновити payload + rssi + snr + fmt → return (is_active не чіпається).
   (Найсвіжіші дані завжди перемагають старі)
 
 Крок 2 — ВСТАВКА:
-  if (cache_count < 50):
-    Знайти перший is_active==0 слот → записати → cache_count++ → return.
+  Перший is_active==0 слот (незалежно від лічильника) → записати → cache_count++ → return.
+  (Інкремент живе в Cifo_Upsert, не в каллера.)
 
 Крок 3 — CIFO Priority-Aware EVICTION (кеш повний):
   Мета: витіснити некритичне (homeostasis, bio_status==0) дерево з найгіршим RSSI.
@@ -255,7 +241,7 @@ for i in 0..49:
     best_evict_rssi = rssi[i]; best_evict_snr = snr[i]; best_evict_idx = i
 
 evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx
-// Перезаписуємо слот новим uid/payload/rssi/snr (is_active вже = 1, cache_count не змінюється)
+// ARCH.35-хук спілу бачить жертву ДО перезапису; далі uid/payload/rssi/snr/fmt, is_active = 1 (навіть поверх 2), cache_count не змінюється
 ```
 
 **Чому priority-aware важливо:** Без цього виправлення дерево на межі пожежі (найгірший RSSI = найслабший сигнал = найдальше від Queen) могло бути витіснено саме в момент критичного сигналу. Тепер такі записи захищені.
@@ -303,13 +289,13 @@ Buffer size: binary_batch_buffer[2048] — достатньо з запасом
 2. Generate IV: HRNG "Wu-Wei" підхід:
    hrng.Instance = RNG
    HAL_RNG_Init(&hrng)  ← ініціалізація тільки перед використанням
-   for i in 0..3:
-     if HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK:
-       batch_iv[i] = coap_fallback_iv_word(i, tick, uid_hash,
-                                           queen_unix_ts, coap_flush_seq)
-       ← [HRNG-IV harden] pure-деривація з coap_iv.h: унікальність across
-         device (uid_hash) / reboot (queen_unix_ts) / flush (coap_flush_seq);
-         host-tested у firmware/test/test_encryption.c
+   for i in 0..3: HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]); збій → break
+   якщо HRNG збійнув — УВЕСЬ IV з ключової PRF [SEC.12]:
+     coap_fallback_iv(batch_iv, coap_key, tick, uid_hash,
+                      queen_unix_ts, coap_flush_seq)
+       ← HMAC-SHA256(coap_key, label ‖ uid_hash ‖ unix_ts ‖ flush_seq ‖ tick)[0:16]
+         (firmware/queen/coap_iv.h): унікальний І непередбачуваний без
+         ключа; host-tested проти OpenSSL у firmware/test/test_encryption.c
    HAL_RNG_DeInit(&hrng)  ← деініціалізація зразу після
 
 3. Switch CRYP: hcryp.Init.Algorithm = CRYP_AES_CBC
@@ -331,20 +317,21 @@ static uint8_t batch_attest_buffer[QATT_BUFFER_SIZE];  ← static (не стек
 **Два різні HRNG fallback — не плутати:**
 | Місце | Fallback при HRNG fail | Маска | Пояснення |
 |-------|------------------------|-------|-----------|
-| CBC IV generation (batch) | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure, дім: `firmware/queen/coap_iv.h` | per-word, 4 різні слова IV | [HRNG-IV harden] унікальність across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (§HRNG Fallback у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); host-тести `test_encryption.c` |
-| Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) | Один tick, одна маска — простий jitter, криптостійкість не потрібна |
-| Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 | Startup: tick вже унікальний бо залежить від часу включення живлення; жодна маска не додає ентропії у цьому контексті; jitter — не криптографічна операція |
+| CBC IV generation (batch) | `coap_fallback_iv(…)` — HMAC-SHA256 під `coap_key`, дім: `firmware/queen/coap_iv.h` | увесь IV однією PRF (не по словах) | [SEC.12] унікальний І непередбачуваний без ключа (§HRNG Fallback у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); host-тести `test_encryption.c` |
+| Jitter — старт і регенерація після flush | `HAL_GetTick() ^ uid_hash ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` + djb2(UID) | Обидва сайти однакові; `uid_hash` розводить Королеви з однаковим часом увімкнення. Jitter — не криптооперація, стійкість не потрібна |
 
-> **Примітка:** Всі три fallback є слабкими при масовому blackout (стосується лише CoAP CBC IV). Для jitter безпека не потрібна. Різниця в масках — це не помилка, а різні вимоги до ентропії.
+> **Примітка:** слабким при масовому blackout лишається лише jitter-fallback, і йому безпека не потрібна; CoAP CBC IV від HRNG не залежить — PRF під ключем.
 
 ### Крок 3: Відновлення ECB
 
 ```c
-// [FIX: CRITICAL — ECB Restoration]
+// [FIX: CRITICAL — ECB Restoration] — дім: Restore_ECB_Mode() у queen/main.c
 hcryp.Init.Algorithm = CRYP_AES_ECB;
+hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;  // CBC-сесія лишила 256-бітний coap_key
+hcryp.Init.pKey      = aes_key;            // LoRa-ключ Королеви
 hcryp.Init.pInitVect = NULL;
-HAL_CRYP_Init(&hcryp);
-// Без цього — всі наступні LoRa decrypt дають сміття
+HAL_CRYP_Init(&hcryp);                     // відмова → RCC-reset AES → retry → NVIC_SystemReset
+// Без усіх трьох полів — всі наступні LoRa decrypt дають сміття
 ```
 
 > **[FW.3] Порядок:** restore тепер стоїть **одразу після** `HAL_CRYP_Encrypt`,
@@ -591,16 +578,24 @@ if (current_ota_chunk_idx < total_chunks):
   HAL_Delay(60)   ← час для фізичної передачі пакета (~50-60 мс)
 
 current_ota_chunk_idx++
-if (current_ota_chunk_idx >= total_chunks):
-  current_ota_chunk_idx = 0       ← wrap → один повний цикл завершено
-  ota_is_active = 0               ← ✅ скидаємо після одного повного бродкасту (виправлено)
+if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало
+  if (усі 4 трейлер-чанки 0x9B зібрані):        ← [FW.23] печатка (3) + версія (1)
+    hmac_broadcast_phase = 1                     ← фаза печатки: 4 блоки 0x9B як є,
+                                                    без жодного зміненого байта; після
+                                                    четвертого — вікно закривається
+  else:
+    current_ota_chunk_idx = 0; ota_is_active = 0 ← без печатки Солдат не відрізнить
+                                                    істинне слово від спокусника —
+                                                    вікно закривається одразу
 ```
+
+Солдат пише в Flash лише після обох брам — HMAC під K_ota і версія > high-water (SEC.20) — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
 
 **Математика LoRa чанків:**
 - Корисне навантаження: 11 байт (16 − 5 байт заголовка)
 - Для 8192 байт bytecode: `(8192 + 10) / 11 = 745` LoRa-чанків
 - Кожен Солдат при кожному своєму TX отримує **один** послідовний чанк
-- Після 745-го чанка `current_ota_chunk_idx` скидається до 0 і `ota_is_active = 0` (бродкаст зупиняється)
+- Після 745-го чанка йде фаза печатки (4 трейлер-чанки 0x9B), і лише тоді вікно закривається; без зібраного трейлера — одразу
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
@@ -799,7 +794,7 @@ uint32_t ota_last_chunk_rx_tick = 0;   // 0 = ще не чули OTA (марке
 uint8_t  ota_silent_wakeups     = 0;   // тихих пробуджень з відкритим вухом
 #define OTA_REREQUEST_SILENT_WAKEUPS 10 // ≈5 хв wall при циклі 26-32 с
                                         // (tick мертвий у STOP2 — лічимо пробудження)
-#define REREQUEST_MARKER          0x55  // Окремий маркер uplink-запиту
+#define OTA_REQ_MARKER            0x55  // Окремий маркер uplink-запиту
 
 // У Phase 4.5 після обробки RX (новий чанк у RX-гілці скидає лічильник у 0):
 if (ota_total_chunks > 0 &&
@@ -807,63 +802,28 @@ if (ota_total_chunks > 0 &&
     ota_last_chunk_rx_tick != 0) {
     if (ota_silent_wakeups < 255) ota_silent_wakeups++;
     if (ota_silent_wakeups >= OTA_REREQUEST_SILENT_WAKEUPS) {
-        // Збираємо missing-bitmap і шлемо запит; лічильник у нуль —
-        // Королеві стільки ж тихих пробуджень на ретрансляцію
-        Send_OTA_ReRequest(ota_chunk_received, ota_total_chunks);
+        // Build_OTA_ReRequest_Payload → ECB → Radio.Send(…, 16) (лише якщо є пропуски);
+        // лічильник у нуль — Королеві стільки ж тихих пробуджень на ретрансляцію
     }
 }
 
-void Send_OTA_ReRequest(uint8_t* received_map, uint16_t total) {
-    uint8_t req_payload[16] = {0};
-    req_payload[0] = REREQUEST_MARKER;             // 0x55
-    req_payload[1] = (uint8_t)(tree_did >> 24);
-    req_payload[2] = (uint8_t)(tree_did >> 16);
-    req_payload[3] = (uint8_t)(tree_did >> 8);
-    req_payload[4] = (uint8_t)(tree_did & 0xFF);
-    req_payload[5] = (uint8_t)(total & 0xFF);      // up to OTA_MAX_CHUNKS=16
-    // Bitmap of missing (NOT received): bytes 6-7 для 16 chunks
-    for (uint16_t i = 0; i < total && i < 16; i++) {
-        if (!received_map[i]) {
-            req_payload[6 + (i >> 3)] |= (1 << (i & 7));
-        }
-    }
-    // PAD bytes 8-10, TTL=DEFAULT_TTL у [11], FW version у [12-13]
-    req_payload[11] = DEFAULT_TTL;
-    req_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
-    req_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
-
-    // AES-128-ECB шифрування + TX (як стандартний uplink-пакет, post-ARCH.42)
-    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
-                      (uint32_t*)encrypted_payload, 1000);
-    Radio.Send(encrypted_payload, 16);
-}
+// Дім розкладки — Build_OTA_ReRequest_Payload (soldier/main.c); один 16-Б ECB-блок:
+//   [0x55][DID:4 BE][total_chunks:2 BE][bitmap пропущених:9] → ≤72 чанки на один зойк
+//   (OTA_REQ_HEADER_SIZE 7 · OTA_REQ_BITMAP_MAX_BYTES 9). Далі — ECB під KEYB + Radio.Send(…, 16).
 ```
 
-**Queen-side: розпізнавання `REREQUEST_MARKER` в LoRa RX:**
+**Queen-side: розпізнавання `OTA_REQ_MARKER` (0x55) в LoRa RX** (`firmware/queen/main.c`, перед CIFO — у кеш і в CoAP зойк не йде):
 
 ```c
-// У Process_LoRa_RX() поряд з існуючим CIFO insert:
-if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
-    // Не йде в CIFO, не йде у CoAP — тригерить локальний replay
-    uint32_t requestor_did = ((uint32_t)decrypted_lora_buffer[1] << 24) |
-                              ((uint32_t)decrypted_lora_buffer[2] << 16) |
-                              ((uint32_t)decrypted_lora_buffer[3] << 8) |
-                              (uint32_t)decrypted_lora_buffer[4];
-    uint16_t total = decrypted_lora_buffer[5];
-    uint16_t missing_mask = ((uint16_t)decrypted_lora_buffer[6]) |
-                             ((uint16_t)decrypted_lora_buffer[7] << 8);
-
-    // Replay only missing chunks. pending_ota_bytecode має бути ще в RAM
-    // (інакше — ігноруємо, Soldier ребутнеться через IWDG).
-    if (ota_is_active || ota_total_chunks > 0) {
-        for (uint16_t i = 0; i < total && i < OTA_MAX_CHUNKS; i++) {
-            if (missing_mask & (1 << i)) {
-                Send_OTA_Chunk(i, /*from*/pending_ota_bytecode);
-                HAL_Delay(60);
-            }
-        }
-    }
-    return;  // Не класифікуємо як telemetry
+// Дедуп: djb2 над 16-Б plaintext-блоком через cmd_dedup_ring — один зойк, одна відповідь.
+// Обслуговуємо лише коли буфер ще той самий: вікно живе АБО SHA-256 буфера = персистованому
+// (FW.52, ota_sha_guard.h); total з [5..6] BE мусить збігтися з (pending_ota_size+10)/11,
+// інакше Солдат тримає іншу прошивку — мовчимо.
+if (pending_ota_size > 0 &&
+    (ota_is_active || Ota_Sha_Verify(&queen_ota_sha_ops, NULL,
+                                     pending_ota_bytecode, pending_ota_size)) &&
+    soldier_total == total_chunks) {
+    // replay лише чанків із bitmap [7..15] (cap = min(total, 72))
 }
 ```
 
@@ -871,7 +831,7 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 1. **Self-healing:** Soldier ініціює recovery без потреби в TDMA — у нього вже є jitter (`random_jitter % 500ms`) для уникнення collision з іншими uplink-пакетами.
 2. **Targeted re-broadcast:** Queen відправляє лише missing chunks → 60-90% energy saving vs повторний wave.
-3. **Vector OTA на одному пакеті:** 1 ACK-payload фіксує до 16 missing chunks одночасно (bitmap до OTA_MAX_CHUNKS).
+3. **Vector OTA на одному пакеті:** 1 ACK-payload фіксує до 72 missing chunks одночасно (bitmap 9 Б — `OTA_REQ_BITMAP_MAX_BYTES`).
 4. **Power-aware throttle:** Soldier перевіряє `vcap_voltage > VCAP_LISTEN_THRESHOLD` (2800 мВ) перед re-request — слабкі вузли не споживають енергію на uplink.
 
 **Обмеження / залишкові ризики:**
@@ -937,7 +897,7 @@ Queen (LTE-anchored time)
    │  1-hop reach (direct LoRa coverage)
    ▼
 Soldier — direct
-   │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL][magic 'S']`     ✅ FW.20-S2 (2/5)
+   │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL]['S'][vcap:2]` ✅ FW.20-S2 (2/5)
    │     — hot-path wired обабіч ФАЗИ 4: cold-boot hello (ARCH.41-C, 0x56 ЗАМІСТЬ
    │       телеметрії у grace-вікні) + warm-зойк watchdog'а ПОВЕРХ телеметрії
    │       (cooldown ≈1 год; Queen у відповідь перемотує такт маяка → re-sync тим
@@ -970,7 +930,7 @@ Soldier — gossip-uplift (3-hop reach)
 |-------|--------|----------|--------|--------|-----------|
 | CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP, доставка = poll §4а [FW.60]) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
 | Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][TDMA:4 →§5а.2а][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
-| SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][PAD:5]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
+| SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][vcap_mv:2 BE][PAD:3]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
 | Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | 21B ECB: plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`, valid коли `StatusByte & PANIC_FLAG_BIT == 0`. **CCM wire-rev2: AAD byte 4** (cleartext навмисно — сусід читає без per-Soldier ключа, бекенд автентифікує MIC'ом; [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger) | 1 байт задарма обома форматами | FW.20-S2 §5 |
 
 #### 5а.2а TDMA слот-розкладка маяка — байти 5..8 (ARCH.26 L2) — 📐 wire-дім
@@ -1296,7 +1256,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 |--------|-----------------|
 | DJB2 Hash | Детермінізм, відомі значення, NUL-термінатор, UUID формат |
 | Command Dedup Ring | New/duplicate, ring wrap, eviction, stress |
-| CIFO Cache | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
+| CIFO Cache | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI, облік лічильника крізь флаш, повний CCM-хвіст і `fmt` при витісненні, порядок ARCH.35-хука — усе на справжньому `queen/cifo_cache.h`, не на копії |
 | Batch Packing | 21-байтний формат, ендіанність, RSSI -128, round-trip |
 | **[FW.51] Flush Lifecycle** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
 | **[L1 QATT] Attestation конверт** (`test_queen_attest.c`) | layout-інваріанти (residue/зсуви/префікс), crypto-parity Monocypher↔OpenSSL (pubkey + детермінований підпис байт-у-байт + tamper-fail), end-to-end збірка→backend-розбір, golden-KAT (дзеркало RSpec `unpack_telemetry_worker_attest_spec.rb`; чотири незалежні реалізації: Monocypher ↔ OpenSSL ↔ worker-spec ↔ HIL `queen_simulator` signed-режим, e2e `qatt_hil_e2e_spec.rb`) |

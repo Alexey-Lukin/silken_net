@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати детермінований життєвий цикл (Main Loop) вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор), переходи між станами сну та апаратні переривання (ISR) мікроконтролера STM32WLE5JC. Документ слугує SSOT для Factory Flashing (масового виробництва) та OTA-розгортання.
+Зафіксувати детермінований життєвий цикл (Main Loop) вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор), переходи між станами сну та апаратні переривання (ISR) мікроконтролера родини STM32WLE5 (плата вузла — `CC`, стенд — `JC`, §1.1; Королева — `JC`, [`02_05`](02_05_Queen_Hardware_and_Starlink)). Документ слугує SSOT для Factory Flashing (масового виробництва) та OTA-розгортання.
 
 ---
 
@@ -54,7 +54,7 @@
 
 | Аспект | Деталі |
 |--------|--------|
-| **Призначення** | Повноцінна C/C++ IDE для STM32WLE5JC (ARM Cortex-M4 + SX1262 LoRa) |
+| **Призначення** | Повноцінна C/C++ IDE для STM32WLE5xx (ARM Cortex-M4 + радіо SX126x на кристалі) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, TIM2 DMA, RNG, CRYP) до отримання плат |
 | **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power); на TRL 6 baseline: 1.07 µA з SRAM2 retention) |
@@ -498,7 +498,7 @@ Radio.Send(encrypted_payload, 16);
 
 > **Кенозис холодом:** при `temp < -15°C` AND `vcap < 4000 mV` Soldier свідомо пропускає TX-вікно (Should_Defer_TX повертає 1). Логіка — захистити EBFC від глибокої розрядки в умовах, коли ксилема замерзла і регенерація заряду тимчасово зупинена. Поріг температури суворо `<` (не `<=`), тому рівно `-15°C` не вважається холодом — це freeze-contract проти випадкової зміни оператора порівняння.
 
-> 🔴 **[ARCH.99] Vcap-половина кон'юнкції у полі не розрізняє — і це ЧЕТВЕРТИЙ гейт на шині VDDA, чиє виродження доти не було оголошене.** `vcap` тут — той самий `Adc_Vdda_Mv()` ([FW.50](00_07_Action_Plan_Tracker) вище), а шину BQ25570 тримає стабілізованою на 3.3 В ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), тож `< 4000` істинне завжди, поки buck живий, і предикат зводиться до `temp < -15°C`. Клауза «холодне, але заряджене дерево передає» — рядки таблиці нижче з vcap 4001/5000/5500 — недосяжна за побудовою: **host-тести розрізняють, поле ні.** ⊕ Сусідні три гейти на тій самій шині свою виродженість називають (listen 2800 «вухо відкрите» · fauna 4500 «свідомо fail-closed» · CAD panic-преамбула 4500 «extended-half чесно fail-closed») — цей мовчав, а його заголовок стверджував протилежне. Напрямок безпечний (вузол мовчить там, де міг би передати: втрата зимової телеметрії, не шкода залізу); панічний кадр іде окремою функцією повз цей предикат. Присуд про число — [`00_07`](00_07_Action_Plan_Tracker) ARCH.99 ⚖️, разом із живим Vcap-каналом.
+> 🔴 **[ARCH.99] Vcap-половина кон'юнкції у полі не розрізняє — і це ЧЕТВЕРТИЙ гейт на шині VDDA, чиє виродження доти не було оголошене.** `vcap` тут — той самий `Adc_Vdda_Mv()` ([FW.50](00_07_Action_Plan_Tracker) вище), а шину BQ25570 тримає стабілізованою на 3.3 В ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), тож `< 4000` істинне завжди, поки buck живий, і предикат зводиться до `temp < -15°C`. Клауза «холодне, але заряджене дерево передає» — рядки таблиці нижче з vcap 4001/5000/5500 — недосяжна за побудовою: **host-тести розрізняють, поле ні.** ⊕ Сусідні три гейти на тій самій шині свою виродженість називають (listen 2800 «вухо відкрите» · fauna 4500 «свідомо fail-closed» · CAD panic-преамбула 4500 «extended-half чесно fail-closed») — цей мовчав, а його заголовок стверджував протилежне. Напрямок безпечний (вузол мовчить там, де міг би передати: втрата зимової телеметрії, не шкода залізу); панічний кадр іде окремою функцією повз цей предикат. Присуд ARCH.99 ратифіковано (варіант A — дзеркало в прошивці лишено свідомо; архівний рядок ARCH.99 у [`00_07`](00_07_Action_Plan_Tracker)); відкрита вилка — живий Vcap-канал ([`00_07`](00_07_Action_Plan_Tracker) FW.50 ⚖️).
 
 **Граничні випадки** (`firmware/test/test_soldier_logic.c` §FW.10, 13 host-тестів):
 
@@ -536,9 +536,12 @@ _rx_payload[0] == OTA_MARKER (0x99)
   → Bounds check: offset + chunk_size <= 1024
   → Dedup check: ota_chunk_received[chunk_idx]
   → memcpy → ota_buffer[]
-  → Якщо всі чанки → CRC32 verify (хвіст wire-потоку: OtaPackagerService
-    паддить bytecode до (len+4) % 11 == 0 і додає CRC32 BE — §4.6)
-    → Write to Flash → NVIC_SystemReset()
+  → Якщо всі чанки → чекати HMAC-трейлер 0x9B (4 сегменти) → OTA_Try_Finalize:
+    CRC32 (хвіст wire-потоку: OtaPackagerService паддить bytecode до
+    (len+4) % 11 == 0 і додає CRC32 BE — §4.6) + HMAC-SHA256 під K_ota
+    (FW.23, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning))
+    → версія > high-water 0x15 (SEC.20 anti-rollback, строго `>`)
+    → Write to Flash → commit high-water → NVIC_SystemReset()
 
 Сценарій Б: incoming_lora_size == 16 (Mesh Relay)
   → TTL > 0?
@@ -632,13 +635,13 @@ on_lora_rx(payload, did_from_packet):
 
 ```c
 // 1. Зберігаємо стан у RTC Backup Domain (20 регістрів — повне розкладання §2)
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, acoustic_events);
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, dr0_packed); // усі 4 поля DR0 (§2) — часткове слово обнулить сусідів
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
 // ... DR2..DR19 (mesh state, Lorenz state, TinyML thresholds)
 
 // 2. Відключаємо периферію для мінімального споживання
 HAL_RNG_DeInit(&hrng);
-__HAL_RCC_CRYP_CLK_DISABLE();
+__HAL_RCC_AES_CLK_DISABLE();   // CRYP-макросів у WL-HAL немає
 
 // 3. Цільова конфігурація для 300 nA (RTC-only mode):
 //    SRAM2 retention OFF — стан тільки в RTC BKP registers
@@ -654,7 +657,7 @@ HAL_ResumeTick(); // Виконується після пробудження
 
 // 5. Відновлюємо периферію після wake
 HAL_RNG_Init(&hrng);
-__HAL_RCC_CRYP_CLK_ENABLE();
+__HAL_RCC_AES_CLK_ENABLE();
 HAL_CRYP_Init(&hcryp);
 ```
 
@@ -702,13 +705,13 @@ Fallback на `ROLE_SOLDIER` безпечний — переважна біль�
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація [`03_04`](03_04_mruby_Lorenz_Attractor) (Lorenz state), [`03_03`](03_03_TinyML_Acoustic_Inference) (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
 
-> **Політика розширення (cross-ref [ARCH.28](00_07_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] (DR13/DR14 TinyML) + **[FW.2 freeze-contract, 2026-05-24]** (DR15 → CCM Frame Counter) **жодного вільного регістра не лишилось** — нова RTC-resident фіча йде у Flash-KV (§2.3; так уже маршрутизовано FW.20-S2 anti-storm bitmap). Перед будь-якою зміною RTC: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні. DR0-розкладку додатково стереже compile-time `_Static_assert` non-overlap (panic[31:16]/vm_streak[9:8]/acoustic[7:0], `soldier/main.c` [FW.54 guard]) — фіча, що вкраде зайнятий біт-слот, впаде на компіляції, не тихо перекриє money-path-лічильник у полі.
+> **Політика розширення (cross-ref [ARCH.28](00_07_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] (DR13/DR14 TinyML) + **[FW.2 freeze-contract, 2026-05-24]** (DR15 → CCM Frame Counter) **вільний лише DR7** (звільнено FW.54: `tree_did` тепер `f(UID)`) — його витрачають за процедурою §2.2, а далі нова RTC-resident фіча йде у Flash-KV (§2.3; так уже маршрутизовано FW.20-S2 anti-storm bitmap). Перед будь-якою зміною RTC: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні. DR0-розкладку додатково стереже compile-time `_Static_assert` non-overlap (panic[31:16]/vm_streak[9:8]/acoustic[7:0], `soldier/main.c` [FW.54 guard]) — фіча, що вкраде зайнятий біт-слот, впаде на компіляції, не тихо перекриє money-path-лічильник у полі.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
-| `DR0` | `[panic_frame_counter:16 \| rsv:5 \| canary_trip:1 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). **[SEC.21]** `canary_trip` (`DR0[10]`): sticky-слід власного `__stack_chk_fail` (пише напряму `TAMP->BKP0R` перед `NVIC_SystemReset`; усі 4 write-sites preserve); гаситиме майбутній wire-винос — до того читається SWD. Біти `[15:11]` зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення. |
+| `DR0` | `[panic_frame_counter:16 \| rsv:5 \| canary_trip:1 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). **[SEC.21]** `canary_trip` (`DR0[10]`): sticky-слід власного `__stack_chk_fail` (пише напряму `TAMP->BKP0R` перед `NVIC_SystemReset`; усі 4 write-sites preserve); гасить його wire-винос: три best-effort постріли event-кадру 0x57 (`device_event.h`), після третього Фаза 5 пише `DR0[10]=0`; доти — sticky, видимий і SWD'ом. Біти `[15:11]` зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими replay-ключами `Rails.cache` попереднього втілення. |
 | `DR1` | `last_wakeup_timestamp` | uint32 | **[FW.49 S1]** Wall-маркер останнього циклу (`Wall_Seconds_Now()`, unix-секунди RTC-календаря; до 2026-06-12 — заморожений у STOP2 `HAL_GetTick/1000`). Перехід tick→wall значень поглинають guard-и `wall_time.h` (стрибок → baseline). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |
@@ -742,17 +745,17 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | Магічний маркер | Значення (hex) | ASCII | Регістр-прапор | Захищає блок | Документ |
 |-----------------|----------------|-------|----------------|--------------|----------|
 | `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
-| `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
+| `EMA_VALID_MAGIC` (8 біт у DR12) | `0x45` ('E', high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
 
 > Маркер `tree_did != 0` (захист DID у DR7) знято [FW.54 Вісь 2]: DID тепер деривується з UID на кожному boot ([§7](#-7-did-derivation-імя-з-кремнію)) — захищати в RTC нічого.
 
-> **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0xA5` означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0xA5` → EMA reset.
+> **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0x45` (`EMA_VALID_MAGIC`, 'E') означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0x45` → EMA reset.
 
 > **Чому різні маркери:** Lorenz (`"LZST"`) використовує цілий 32-бітний маркер у виділеному регістрі тому що `(0.0, 0.0, 0.0)` — валідний (хоч і нетиповий) стан атрактора, тому zero-check недостатній. EMA використовує 8-бітний sentinel у packed-регістрі через дефіцит DR-простору.
 
 ### 2.2 Procedure для додавання нової RTC Backup фічі [ARCH.28]
 
-> **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий, або **звільнити** під-використаний/mis-allocated DR (§2.3.2 reclamation menu — ширина/частота-запису/durability-клас). STM32WLE5JC має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[FW.18]` + `[SEC.10]` + `[FW.2]` (DR15 → CCM Frame Counter, freeze-contract) **вільних регістрів не лишилось**. Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
+> **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий, або **звільнити** під-використаний/mis-allocated DR (§2.3.2 reclamation menu — ширина/частота-запису/durability-клас). STM32WLE5 (обидва корпуси) має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[FW.18]` + `[SEC.10]` + `[FW.2]` (DR15 → CCM Frame Counter, freeze-contract) **вільний лише DR7** (FW.54). Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
 >
 > - **`[SEC.10]` panic frame counter (uint16) → DR0[31:16]** — спакували поряд з `acoustic_events` у DR0[7:0]. Без packing'у пішов би DR15, і ми залишилися б без жодного резерву.
 > - **`[FW.21]` EMA `ema_vcap_x10` (max 55000 ≤ 2¹⁶) → DR12[15:0]** — спакували разом з `valid:8 | count:8`. Це звільнило DR11 під 3-й слот anti-pingpong (без packing'у `MESH_DID_CACHE_SIZE` упав би з 3 до 2).
@@ -764,7 +767,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 2. **Packing-аудит.** Перевірити для кожного існуючого packed-регістру (DR0, DR12), чи є вільні бітові щілини для нового поля. Реальні розміри:
    - `DR0[15:11]` — 5 біт vacant (`[10]` = `canary_trip` SEC.21, `[9:8]` = `vm_err_streak` SEC.20 — див. §2 DR0-рядок).
    - `DR12[31:24]` — `valid:8` зайнято, але вільних бітів немає.
-   - Більшість «full uint32» регістрів використовують лише частину діапазону (наприклад, `last_wakeup_timestamp` у DR1 — це секунди від boot, рідко перевищує 24 біт за реалістичний час до VBAT-loss).
+   - Більшість «full uint32» регістрів використовують лише частину діапазону (але НЕ `last_wakeup_timestamp` у DR1: це unix-секунди RTC-календаря — ≥ 946 684 800, тобто 30+ біт, і будь-яке звуження обрізало б базу delta_t, що годує GP).
 3. **ASCII bit-field діаграма.** ОБОВ'ЯЗКОВО для будь-якого packed-регістру. Приклад з DR0:
    ```
    DR0 = [panic_frame_counter:16][rsv:5][canary:1][vm_err_streak:2][acoustic_events:8]
@@ -777,7 +780,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*`, `test_sec10_dr0_*`.
 7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 00_07 (відповідний ID).
 
-**DR15 зайнято FW.2 (freeze-contract) — вільних регістрів нема:** будь-яка нова RTC-resident фіча йде у §2.3 (Flash-based KV store). FW.20-S2 anti-storm bitmap уже так маршрутизовано (resolution 2026-05-30).
+**DR15 зайнято FW.2 (freeze-contract) — вільний лише DR7 (FW.54):** нова RTC-resident фіча після нього йде у §2.3 (Flash-based KV store). FW.20-S2 anti-storm bitmap уже так маршрутизовано (resolution 2026-05-30).
 
 ### 2.3 Overflow strategy: Flash-based KV store [ARCH.28]
 
@@ -787,7 +790,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 >
 > **✅ Sibling — OTA contract blob writer (FW.52-г):** `firmware/common/flash_ota.{h,c}` (`Flash_Write_Contract`) reuse'ить ту саму `FlashKvOps`-абстракцію, але пише **простий blob** (не KV-журнал) — зібраний OTA-байткод у contract-сторінку **126** (`MRUBY_CONTRACT_FLASH_ADDR`): erase + dw-program, **power-cut-safe: RITE-magic dw програмиться ОСТАННІМ** (перерваний запис → dw[0]=0xFF → boot не бачить magic → fallback на embedded `lorenz_bytecode`). Host-тести `test_flash_ota.c` (8/8 — round-trip · magic-last · erase-fail · reject); HAL-glue `g_ota_flash_ops` у `main.c` (bench-фаза). Закрив FW.52-г: раніше `Write_OTA_Contract_To_Flash` був порожнім hal_mock-стабом → OTA нефункціональний end-to-end.
 >
-> **Розміщення (freeze-contract):** сторінки **122-123** (`0x0803D000`-`0x0803DFFF`) — хвіст зайнятий: 124 = **per-device identity** (KEYL-session/K_seed/роль — `FLASH_KEY_ADDR`), 125 = **cluster membership** (K_ota `FLASH_OTA_KEY_ADDR 0x0803E800` + **KEYB `FLASH_BCAST_KEY_ADDR` @+40, dw-align** — FW.2 (в) двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); окрема сторінка, бо обидва per-cluster — польова заміна/переїзд між кластерами стирає лише її; K_ota сюди переїхав 2026-06-11: первісний `0x0803D000` мовчки колідував із цим KV-регіоном — mount стер би ключ), 126(-127) = OTA contract (`MRUBY_CONTRACT_FLASH_ADDR`), 127 = Queen UID. Mount + HAL-глю ✅ написано у `main.c` (спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`); верифікація erase/program — bench.
+> **Розміщення (freeze-contract):** сторінки **122-123** (`0x0803D000`-`0x0803DFFF`) — хвіст зайнятий: 124 = **per-device identity** (KEYL-session/K_seed/роль — `FLASH_KEY_ADDR`), 125 = **cluster membership** (K_ota `FLASH_OTA_KEY_ADDR 0x0803E800` + **KEYB `FLASH_BCAST_KEY_ADDR` @+40, dw-align** — FW.2 (в) двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); окрема сторінка, бо обидва per-cluster — польова заміна/переїзд між кластерами стирає лише її; K_ota сюди переїхав 2026-06-11: первісний `0x0803D000` мовчки колідував із цим KV-регіоном — mount стер би ключ), 126(-127) = OTA contract (`MRUBY_CONTRACT_FLASH_ADDR`), 127 = Queen UID. Mount + HAL-глю ✅ написано у `main.c` під One-Home гейтом `FLASH_KV_BASE_ENABLED` — через SEC.20 він живий у бойовому білді, тож журнал монтується вже сьогодні (`firmware`-гоча #18; `!mounted` → anti-rollback degraded-allow); верифікація erase/program — bench.
 >
 > **Wear-бюджет (зчеплений з E.63-шкалою delta_t):** 2 КБ сторінка = 254 елементи; запис «снапшот циклу» = K елементів/пробудження → erase раз на ⌊254/K⌋ циклів; 10k endurance × 2 сторінки. При K=4 це ⌊254/4⌋ = 63 пробудження на erase × 20 000 erase = 1.26 млн пробуджень: при delta_t = 19.9 с (оптимістичний кут L4 — лаб-стеля pH 7.4, переякорено 2026-09-18, [`01_03 §3.4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell); η_BQ 0.68 post-[`00_07` HW.47](00_07_Action_Plan_Tracker)) → **~0.8 року**, тобто нижче року (до переякорення: 44.7 с → ~1.8); з pH-дужкою соку (29.3–34.5 с, той самий дім) → ~1.2–1.4 року; при realistic ≈ 2 год ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) → століття. ⚠️ Підсумок свідомо КОНСЕРВАТИВНИЙ — він не бере «compact пропускає erase уже-чистої цілі» з блоку вище, який у steady-state подвоює ресурс (~1.6 року). ⛔ Підсумок писати РАЗОМ із множниками: голе число в цьому рядку неперевірне. Якщо польова delta_t впаде під ~5 хв стабільно — розширити page-set (4-8 сторінок, адреси вниз від 122) або лишити SRAM2-retain (−800 нА) свідомим trade-off (FW.54).
 >
@@ -797,7 +800,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 |------|------|-------|--------|--------------|
 | **A. STM32 Flash sector emulated EEPROM** ✅ host-impl | Дві 2 КБ-сторінки ping-pong під key-value store (журнальний append + compact) — реалізацію див. блок вище (`flash_kv.c`, key u8 → value u32; багатословний стан = кілька ключів). | Безкоштовно (Flash вже є), ємність сотні елементів/сторінку. | Erase блокує шину → `FlashKv_NeedsCompact()` назовні: викликач ущільнює поза LoRa RX-вікном. Wear ~10k cycles/сторінку — бюджет у блоці вище. | Стан, що мусить пережити VBAT-loss/SRAM2-off: FW.54 wall-маркери, FW.20-S2 bitmap, config/calibration. |
 | **B. SE050 secure objects** | Якщо `[SEC.6]`/SE050 на платі — SE secure objects + HW monotonic counters (SE = SE050, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)). | Tamper-protected, не впливає на main Flash. Counters апаратно monotonic — ідеально для anti-replay. | +$2.40–3.25/unit BOM. I²C latency. | Security-sensitive state: rotation counters, signing certificates, key versions. Synergy з `[FW.17]` Hash Ratchet. |
-| **C. Bit-перепакування** | Перейти на 16-бітні розрядні поля для тих uint32, що використовують реально <2¹⁶ діапазон (наприклад, `last_wakeup_timestamp` секунди від boot, рідко >18 год = 65 К секунд). | Нульова BOM-вартість, нульова latency. | Ризикує overflow'ом при патологічних сценаріях (вузол прокинувся у режимі OTA на >18 год, потрапив у IWDG storm, тощо). Складніше debug'ити. | Останній крок перед Flash-KV: коли packing може дати +1-2 регістри на дешеві поля. |
+| **C. Bit-перепакування** | Перейти на 16-бітні розрядні поля для тих uint32, що використовують реально <2¹⁶ діапазон (DR1 `last_wakeup_timestamp` сюди НЕ належить — unix-секунди, 30+ біт). | Нульова BOM-вартість, нульова latency. | Ризикує overflow'ом при патологічних сценаріях (вузол прокинувся у режимі OTA на >18 год, потрапив у IWDG storm, тощо). Складніше debug'ити. | Останній крок перед Flash-KV: коли packing може дати +1-2 регістри на дешеві поля. |
 
 **Рекомендований порядок при наступній витрати DR15:** (1) спершу аудит packing'у (§2.2 крок 2) → (2) шлях C якщо є кандидати → (3) шлях A для рідко-оновлюваних → (4) шлях B якщо SE050 вже на платі. Ніколи не дублювати дані між RTC і Flash «про всяк випадок» — це джерело розсинхронізації.
 
@@ -805,7 +808,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **Передумова.** У цільовому RTC-only режимі (§1.10, 300 нА) **RTC Backup Domain (DR0..DR19) виживає** — це його суть. Втрачається лише runtime-стан у SRAM. Тому інвентар ділить увесь file-scope стан `firmware/soldier/main.c` на три групи; у Flash-KV їде **лише** група C (RTC повний — §2).
 
-**Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, TinyML-пороги, `tree_did`, FW.2 Frame Counter. Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
+**Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, TinyML-пороги, FW.2 Frame Counter (`tree_did` RTC більше не несе — `f(UID)` на boot, §7). Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
 
 **Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `raw_audio_buffer`/`audio_buffer` (DMA), `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорці (`vibration_detected`, `audio_ready`, `lora_rx_flag`), `ml_event_id`/`ml_confidence`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11). Персистити нічого.
 
@@ -813,9 +816,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Ключ | Поле(я) | Пакування (u32) | Споживач | Статус |
 |------|---------|-----------------|----------|--------|
-| `0x01` WARN_ESC | `warning_counter` · `tinyml_threshold_invalid_count` · `fauna_skipped_low_vcap` | `[warn:8 \| inval:8 \| fauna:8 \| rsv:8]` | TinyML escalation (3× WARNING поспіль — [`03_03 §5`](03_03_TinyML_Acoustic_Inference)) + діагностика | **live** |
-| `0x02` SYNC_WALL | `last_sync_request` (wall-сек) | u32 | FW.20-S2 sync-cooldown | live (degradable) |
-| `0x03` OTA_SILENCE_WALL | `ota_last_chunk_rx` (wall-сек) | u32 | FW.27-B OTA re-request silence | live (лише під OTA) |
+| `0x01` WARN_ESC | `warning_counter` · `tinyml_threshold_invalid_count` · `fauna_skipped_low_vcap` | `[warn:8 \| inval:8 \| fauna:8 \| rsv:8]` | TinyML escalation (3× WARNING поспіль — [`03_03 §5`](03_03_TinyML_Acoustic_Inference)) + діагностика | план FW.54 — ключа в коді немає; лічильники сьогодні RAM-only |
+| `0x02` SYNC_WALL | `last_sync_request` (wall-сек) | u32 | FW.20-S2 sync-cooldown | план FW.54 (degradable) — ключа в коді немає |
+| `0x03` OTA_SILENCE_WALL | `ota_last_chunk_rx` (wall-сек) | u32 | FW.27-B OTA re-request silence | план FW.54 (лише під OTA) — ключа в коді немає |
 | `0x10`–`0x11` FW8_ZCFG | `lorenz_z_{min,max,opt}_x100` · `species_id` · `config_version` | 2 dw: `0x10`=[z_max:16\|z_min:16], `0x11`=[ver:8\|species:8\|z_opt:16] | FW.8 per-tree Z-пороги | gated (`FW8_PARSER_ENABLED=0`); persist ✅ host (`common/lorenz_thresholds.h` + power-cut тести); споживач ✅ у `main.c` — boot-restore після mount'а + КЕНОЗИС-write по dirty 0x9A |
 | `0x12` — **вільний** (drift-fix 2026-07-03) | заявлявся під FW8_AUDIO, але код так і не видав `#define`: жива гілка `0x9D` персистить audio-пороги у **RTC DR13/DR14** (§2), не у Flash-KV | — | зарезервований-невиданий; наступному споживачу — через процедуру §2.3 | не існує в коді |
 | `0x13` FW17_KEYVER | ratchet `key_version` (САМ ключ у Flash-KV НЕ їде — append-журнал не стирає; boot re-derive з K0) | `[version:16 \| rsv:16]` | FW.17 ротація ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) | gated (`FW17_RATCHET_ENABLED=0`); споживач ✅ у `main.c` — RX 0x9E → КЕНОЗИС-write, boot `Key_Ratchet_Apply`; активація після FW.2 CCM |
@@ -839,7 +842,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 |----|--------------|------------|------|
 | `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:11]` ⇒ **DR2 вільний** | нуль, mode-independent |
 | `DR14` `tinyml_critical` | ~7 (float ∈ [0.01,0.99]) | обидва пороги як 2× `uint8`-відсоток у `DR13[15:0]` ⇒ **DR14 вільний** | 1% гранулярність (нехтовна); freeze-contract правка |
-| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 5-біт sentinel у `DR0[15:11]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
+| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 5-біт sentinel у `DR0[15:11]` (як EMA `0x45` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
 
 > `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільні біти `DR0[15:11]` **без жодного нового регістру**.
 
@@ -903,7 +906,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 ### 4.1 Апаратна Платформа — дім [`03_02 §10`](03_02_Queen_Gateway_Firmware)
 
-Повна HAL-периферія Королеви (включно з `hspi1` → W25Q32JV NOR Flash, ARCH.35 Overflow Tier) — [`03_02 §10`](03_02_Queen_Gateway_Firmware). Тут лишається лише те, що Queen ділить із Soldier ту саму MCU-платформу STM32WLE5JC, а отже й той самий ISR-каркас (§6 нижче).
+Повна HAL-периферія Королеви (включно з `hspi1` → W25Q32JV NOR Flash, ARCH.35 Overflow Tier) — [`03_02 §10`](03_02_Queen_Gateway_Firmware). Тут лишається лише те, що Queen ділить із Soldier ту саму MCU-платформу — родину STM32WLE5 (Queen — `JC`, [`02_05`](02_05_Queen_Hardware_and_Starlink); вузол — `CC`, §1.1), а отже й той самий ISR-каркас (§6 нижче).
 
 ### 4.2 Загальний Lifecycle
 
@@ -935,7 +938,7 @@ Init → Radio.Init → Radio.SetChannel → Lora_Phy_Apply_Tx/Rx [FW.61] → Ra
 
 ### 4.5а Downlink Opcode Map — Canonical SSOT [DOC.4]
 
-Карта маркерів downlink-пакетів (CoAP Rails→Queen та LoRa Queen→Soldier). Будь-який новий downlink-CMD **повинен** додаватися сюди до імплементації, щоб уникнути колізій. Опкоди розташовані у безпечному діапазоні `0x99..0x9F` (значення байтів, що не зустрічаються як прийнятні DID-prefixes у telemetry uplink — DID generated as `crc32` із низькою імовірністю старшого байта `0x99..0x9F`).
+Карта маркерів downlink-пакетів (CoAP Rails→Queen та LoRa Queen→Soldier). Будь-який новий downlink-CMD **повинен** додаватися сюди до імплементації, щоб уникнути колізій. Опкоди розташовані у безпечному діапазоні `0x99..0x9F` (значення байтів, що не зустрічаються як прийнятні DID-prefixes у telemetry uplink — DID = murmur3-fmix32 від UID (§7) — старший байт `0x99..0x9F` так само малоймовірний).
 
 | Опкод | Назва | Напрямок | Лінк | Документ | Статус |
 |-------|-------|----------|------|----------|--------|
@@ -975,7 +978,7 @@ Init → Radio.Init → Radio.SetChannel → Lora_Phy_Apply_Tx/Rx [FW.61] → Ra
 |----------|--------|-----|-----------|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX complete (SX1262) | `memcpy` → volatile buffer, RSSI clamp [-128,127], `lora_rx_flag = 1` | Апаратний |
 | `HAL_GPIO_EXTI_Callback(GPIO_PIN_0)` | Piezo EXTI (п'єзодиск) | `vibration_detected = 1` | EXTI Line 0 |
-| `HAL_PWR_PVDCallback()` | Vcap < 2.2V | **[ARCH.21]** BKUPWrite packed DR0 (`panic_counter` + `acoustic`) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Sleep, Enter STOP2 | NMI-рівень |
+| `HAL_PWR_PVDCallback()` | Vcap < 2.2V | **[ARCH.21]** BKUPWrite packed DR0 (усі 4 поля: panic · canary · vm_err_streak · acoustic) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Sleep, Enter STOP2 | NMI-рівень |
 | `HAL_ADC_ConvCpltCallback()` | DMA buffer повний (512 семплів) | `audio_ready = AUDIO_DMA_DONE` (≡ 1) | DMA IRQ |
 | `HAL_ADC_ErrorCallback()` | ADC overrun / DMA transfer-error | **[ARCH.102]** `audio_ready = AUDIO_DMA_ERROR` — вихід із вікна негайний, інференс по напівзаписаному буферу НЕ біжить | DMA IRQ |
 
@@ -984,9 +987,12 @@ Init → Radio.Init → Radio.SetChannel → Lora_Phy_Apply_Tx/Rx [FW.61] → Ra
 **PVD — аварійний рефлекс смерті [ARCH.21]:**
 ```c
 void HAL_PWR_PVDCallback(void) {
-    // [SEC.10] Spakovana DR0: panic_counter в high 16 + acoustic в low 8 біт
+    // [SEC.10 · SEC.20 · SEC.21] Спакована DR0 — усі 4 write-sites пишуть ЧОТИРИ поля (§2)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-        ((uint32_t)panic_frame_counter << 16) | (uint32_t)acoustic_events);
+        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
+        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
+        (uint32_t)acoustic_events);  // усі 4 поля — часткове слово обнулить сусідів
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp); // delta_t continuity
     // [ARCH.21] Сторожовий пес траєкторії — рятуємо Lorenz state симетрично до Phase 5.
     // Без цього rescue брауноут = втрата траєкторії = cold-start через HKDF на наступному
@@ -1014,9 +1020,12 @@ panic_payload[11] = Ttl_Byte_Pack(5, tinyml_threshold_invalid_count); // [FW.18b
 // [SEC.10] Counter BE у байтах 14..15 (вільні PAD bytes після firmware_id у 12..13)
 panic_payload[14] = (uint8_t)(panic_frame_counter >> 8);
 panic_payload[15] = (uint8_t)(panic_frame_counter & 0xFF);
-// Persist negайно у DR0 — до Phase 5 могло не дойти при PVD/reset
+// Persist негайно у DR0 — до Phase 5 могло не дійти при PVD/reset (усі 4 поля, §2)
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-    ((uint32_t)panic_frame_counter << 16) | (uint32_t)acoustic_events);
+    ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+    ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
+    ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
+    (uint32_t)acoustic_events);
 // AES-128-ECB Encrypt → Radio.Send [post-ARCH.42] → 100ms → Radio.Sleep
 ```
 
@@ -1026,9 +1035,11 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
 
 | Callback | Тригер | Дія |
 |----------|--------|-----|
-| `OnRxDone(payload, size, rssi, snr)` | LoRa RX (рівно 16 байт) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
+| `OnRxDone(payload, size, rssi, snr)` | LoRa RX (16 Б; у CCM-ері — ще air-кадр) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
+| `HAL_UART_RxCpltCallback` (через `DMA1_Channel1_IRQHandler`) | USART1-RX circular DMA, повний оберт кільця (TC) | `uart_rx_wraps++` — позицію пера дає NDTR (`uart_rx_ring.h`) |
+| `HardFault_Handler` | апаратний fault | `g_fault_marker` у RAM → `NVIC_SystemReset` (reset-cause у QATT) |
 
-Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — закрито архітектурно host-рівнем: ring buffer + circular-DMA RX; silicon-bench residual → [`00_07 §03a`](00_07_Action_Plan_Tracker)).
+Queen не має PVD, EXTI чи IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — закрито архітектурно host-рівнем: ring buffer + circular-DMA RX; silicon-bench residual → [`00_07 §03a`](00_07_Action_Plan_Tracker)).
 
 ---
 
@@ -1051,9 +1062,9 @@ tree_did = Did_Derive_From_Uid(*(uint32_t*)(0x1FFF7590),   // STM32 factory
 ```
 
 Мікс — murmur3-fmix32 ланцюгом (повний avalanche: один біт UID перемішує
-весь DID). `DID == 0` неможливий (нуль ефіру = Королева-Сентінель,
-[`03_02 §7`](03_02_Queen_Gateway_Firmware)) — нуль-хеш відображається у
-`"SNET"`-константу. Ruby-дзеркало для фабрики — `SilkenNet::DidDerivation`;
+весь DID). `DID == 0` неможливий: нуль зарезервовано, бекенд відкидає нульовий DID в
+обох ерах (ARCH.54, [`03_02 §7`](03_02_Queen_Gateway_Firmware)) — нуль-хеш
+відображається у `"SNET"`-константу. Ruby-дзеркало для фабрики — `SilkenNet::DidDerivation`;
 golden-вектори заморожені обабіч (`test_soldier_logic.c` ↔
 `spec/services/silken_net/did_derivation_spec.rb`).
 
@@ -1105,11 +1116,13 @@ Soldier↔Queen LoRa = **AES-128** (ECB transitional → CCM FW.2), Queen↔Rail
 
 ```c
 hcryp.Init.Algorithm = CRYP_AES_ECB;
+hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;  // CoAP-сесія лишила 256-бітний coap_key
+hcryp.Init.pKey      = aes_key;            // LoRa-ключ Королеви
 hcryp.Init.pInitVect = NULL;
-HAL_CRYP_Init(&hcryp);
+HAL_CRYP_Init(&hcryp);                     // відмова → RCC-reset AES → retry → NVIC_SystemReset
 ```
 
-Без цього відновлення всі наступні LoRa-пакети від Soldiers будуть розшифровані неправильно до наступного ребуту Queen.
+Без цього відновлення всі наступні LoRa-пакети від Soldiers будуть розшифровані неправильно до наступного ребуту Queen — і відновити треба ВСІ три поля: сам режим без `KeySize`/`pKey` лишив би 256-бітний CoAP-ключ. Дім — `Restore_ECB_Mode()` у `firmware/queen/main.c`.
 
 **CoAP batch-IV — дім [`03_05 §4`](03_05_Hardware_Symmetric_Crypto_and_Security) (механіка) + [`03_05 §HRNG Fallback`](03_05_Hardware_Symmetric_Crypto_and_Security) (присуд), тут НЕ дублюється.**
 
@@ -1304,7 +1317,7 @@ firmware/
   CMakeLists.txt              — owned-код (logmel.c) + CMSIS-DSP + size + guarded HAL
   cmake/arm-none-eabi.cmake   — toolchain-file (Cortex-M4 soft-float; pin Arm GNU 13.2.Rel1)
   mruby/build_config.rb       — mruby builds (host mrbc / host-min / arm minimal)
-  extern/                     — pinned submodules: CMSIS-DSP · CMSIS_6 (Core) · mruby · monocypher
+  extern/                     — pinned submodules (перелік — `.gitmodules`; ролі й піни — §12.5)
 tools/firmware/
   gen_bytecode.sh             — mrbc: bio_contract.rb → lorenz_bytecode.h (+ --check drift)
   check_bytecode.py           — light stdlib stamp-gate (CI firmware_test)
@@ -1360,15 +1373,15 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 | Залежність | Роль | Статус | Pin-план |
 |---|---|---|---|
 | CMSIS-DSP · CMSIS_6 · mruby | logmel FFT · Core · bio-contract VM | ✅ завендорено (§12.4) | submodule@tag |
-| Monocypher | [L1 QATT] software-Ed25519 — підпис CoAP-батчів Queen ([`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) | ✅ завендорено (2026-06-07) | `extern/monocypher`@4.0.2 (+ optional `monocypher-ed25519` — стандартний SHA-512 EdDSA, parity з ruby `ed25519` gem host-tested) |
+| Monocypher | [L1 QATT] software-Ed25519 — підпис CoAP-батчів Queen ([`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) | ✅ завендорено (2026-06-07) | `extern/monocypher`@4.0.3 (+ optional `monocypher-ed25519` — стандартний SHA-512 EdDSA, parity з ruby `ed25519` gem host-tested) |
 | OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
 | ~~mbedTLS~~ | target HMAC-SHA256 | ✅ **не потрібен** — FW.30 cold-start seed-HMAC закрито pure-C `silken_sha256.h` (byte-parity vs OpenSSL, KAT FIPS/RFC 4231); FW.23 OTA HMAC compute теж може цей шлях (pure-C, без bench-лінку) | own-code `firmware/common/silken_sha256.h` |
-| STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-периферія · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
-| **SubGHz_Phy (Radio_s middleware)** | `Radio.Init/Rx/Send` + `RadioEvents_t` (radio.c/radio_driver.c/radio_fw.c) — те, що кличуть обидва `main.c` | ✅ завендорено (2026-07-04, Шлях A: `RadioEvents_t` зареєстровано в обох `main.c`, owned-stub видалено; `radio.c` не компілюється до `radio_conf.h` з .ioc) | `extern/subghz-phy`@v1.5.0 (`stm32-mw-subghz-phy`, BSD-3-Clause; SHA `7dc059f3` = трійка з HAL v1.6.0+CMSIS v1.4.0) |
+| STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-периферія · CRYP | ✅ завендорено (2026-06-11, §12.4 — CI компілює обидва `main.c` під `-DSILKEN_WITH_HAL=ON`); host = `hal_mock.h` | `extern/stm32wlxx-hal-driver`@v1.6.0 + `extern/cmsis-device-wl`@v1.4.0 — пара ОДНОГО релізу STM32CubeWL, бампається лише разом (перевірка — скіл `dependency-update`, рядок firmware C) |
+| **SubGHz_Phy (Radio_s middleware)** | `Radio.Init/Rx/Send` + `RadioEvents_t` (radio.c/radio_driver.c/radio_fw.c) — те, що кличуть обидва `main.c` | ✅ завендорено (2026-07-04, Шлях A: `RadioEvents_t` зареєстровано в обох `main.c`, owned-stub видалено; `radio.c` не компілюється до `radio_conf.h` з .ioc). Шлях B — переписати `main.c` на прямий `HAL_SUBGHZ_*` — відкинуто: він викинув би errata-обходи STM32WL, які живуть у `radio.c` і `radio_driver.c` (Inverted IQ, 500 кГц, implicit-header timeout, RFO-HP mismatch), а не в `radio_fw.c` | `extern/subghz-phy`@v1.5.0 (`stm32-mw-subghz-phy`, BSD-3-Clause ST + Clear BSD Semtech; SHA `7dc059f3` = трійка з HAL v1.6.0+CMSIS v1.4.0). Click-through **SLA0044** пакета STM32CubeWL покриває KMS · Secure Engine · Sigfox і `Projects/` (BSD-3 там лише basic Examples), а НЕ SubGHz_Phy/LoRaWAN — джерело: `LICENSE.md` STM32CubeWL; ⚠️ тож `radio_conf.h` для board-freeze роби з `Conf/radio_conf_template.h` цього submodule, а не копією з `Projects/` |
 | **LoRaMac-node (LoRaWAN MAC)** | ARCH.34 Helium SOS: OTAA + DevNonce + EU868 — те, що кличе adapter `Helium_Mac_SendSos` (owned-обв'язка ✅ у `queen/main.c`+`helium_sos.h`) |  ✅ завендорено 2026-07-05, форк-пін (⚠️ `subghz-phy/lorawan/` то LBM radio-шар SWL2001, НЕ MAC — окремий submodule). ⚠️ Upstream-статус: Semtech перевів LoRaMac-node у **maintenance mode** (critical-fixes-only; нові фічі → LBM) — для SOS-профілю Class-A/1.0.4 прийнятно: замерзлий стабільний стек, наш UB-фікс = critical-клас (PR [#1648](https://github.com/Lora-net/LoRaMac-node/pull/1648)); LBM-міграція = лише якщо ARCH.34 виросте за SOS (міст уже vendored — subghz-phy/lorawan/) | `extern/stm32-mw-lorawan` @ **наш форк `Alexey-Lukin/...` tag `v2.6.2-silken.1`** (= upstream v2.6.2 + SF11/12 UB-фікс; тег = SSOT-пін, SHA не цитуємо — дрейфить; BSD-3; той самий Radio_s API; `Conf/*_template.h` → owned-glue) |
 | CMSIS-NN | TinyML `Run_Inference` (опц. ARM-прискорення) | ✅ baseline = pure-C forward pass (FW.4, нуль нового vendoring) | `extern/CMSIS-NN`@tag — ЛИШЕ якщо більша модель захоче ARM-kernels ([`00_07` — FW.4](00_07_Action_Plan_Tracker)) |
 
-> **SX1262 — два шари, не плутати:** низькорівнева HAL SUBGHZ-периферія (`HAL_SUBGHZ_*`, `SUBGHZ_HandleTypeDef`) живе у HAL-submodule ✅; але `Radio_s` API (`Radio.Init/Rx/Send`), який реально кличуть `main.c`, — це окремий **SubGHz_Phy middleware** (`radio.c` кличе `HAL_SUBGHZ_*` під собою), НЕ в HAL і НЕ завендорений (виправлено 2026-07-03: рання версія цього note хибно вважала його «не окремою залежністю»). Chip-драйвера `sx126x.c` для радіо-на-кристалі НЕ існує (це для зовнішніх SX126x по SPI). Вендоринг = Шлях A (↑ таблиця).
+> **SX1262 — два шари, не плутати:** низькорівнева HAL SUBGHZ-периферія (`HAL_SUBGHZ_*`, `SUBGHZ_HandleTypeDef`) живе у HAL-submodule ✅; але `Radio_s` API (`Radio.Init/Rx/Send`), який реально кличуть `main.c`, — це окремий **SubGHz_Phy middleware** (`radio.c` кличе `HAL_SUBGHZ_*` під собою): НЕ частина HAL-піна, а окрема залежність — власний submodule `extern/subghz-phy` (↑ таблиця). Chip-драйвера `sx126x.c` для радіо-на-кристалі НЕ існує (це для зовнішніх SX126x по SPI). Вендоринг = Шлях A (↑ таблиця).
 
 **Toolchain (окрема вісь):** ARM GCC + newlib у CI = apt (unpinned); bytecode-детермінізм рідить на pinned mruby submodule, не на toolchain. Pin через ARM-tarball (як локально) — far-future build-attestation ([`00_07` — FW.46](00_07_Action_Plan_Tracker)).
 
@@ -1394,7 +1407,7 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 
 ### 12.7 QEMU-M4 bit-parity lane — ISA-емуляція замість bench (FW.55)
 
-**Що це:** committed-байткод `lorenz_bytecode.h` виконується реальним **Cortex-M4 код-шляхом** (minimal-gembox `libmruby.a` із `SILKEN_ARM_BUILD`, software-double `__aeabi_d*` — той самий машинний код, що піде на STM32WLE5JC) на `qemu-system-arm -M mps2-an386`, і дамп порівнюється **byte-exact** із host-голденом. Закриває FW.7/FW.19 residual «ARM↔x86 Float drift» до тонкого silicon-confirm (один прогін selftest на платі).
+**Що це:** committed-байткод `lorenz_bytecode.h` виконується реальним **Cortex-M4 код-шляхом** (minimal-gembox `libmruby.a` із `SILKEN_ARM_BUILD`, software-double `__aeabi_d*` — той самий машинний код, що піде на STM32WLE5 — вузловий `CC` і стендовий `JC` мають одне ядро) на `qemu-system-arm -M mps2-an386`, і дамп порівнюється **byte-exact** із host-голденом. Закриває FW.7/FW.19 residual «ARM↔x86 Float drift» до тонкого silicon-confirm (один прогін selftest на платі).
 
 **Чому бітова рівність — правильний гейт:** Lorenz = лише `+−×÷` (correctly-rounded за IEEE 754), VM виконує той самий байткод у тому ж порядку, double на M4 (WLE5 без FPU — ABI-інваріант §12.4) — детермінований software-шлях `__aeabi_d*`. Розбіжність = справжня знахідка, не шум. Кейси **зчеплені** (вихід N → вхід N+1, RTC-continuation патерн) — одиничний ULP-дрейф ампліфікується хаосом і не сховається.
 
@@ -1458,7 +1471,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 
 ### 13.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
 
-> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5JC має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
+> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5 має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
 >
 > | DR | Власник |
 > |----|---------|
@@ -1466,7 +1479,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 > | DR10 | `ema_delta_t_x100` (full uint32) |
 > | **DR12** | `[valid:8 \| count:8 \| ema_vcap_x10:16]` (packed) |
 >
-> (DR13..DR19 пізніше зайнято TinyML-порогами / Lorenz-станом / FW.2 Frame Counter — канонічна розкладка §2; вільних регістрів немає.)
+> (DR13..DR19 пізніше зайнято TinyML-порогами / Lorenz-станом / FW.2 Frame Counter — канонічна розкладка §2; вільний лише DR7 — FW.54.)
 
 **Trade-off ping-pong (8 → 3 слоти, FW.21 fallback):**
 - 2 слотів достатньо для immediate echo A→B→A; **3 слоти додатково покривають короткі кільця A→B→C→A** (B та C ще в кеші коли пакет повертається).
@@ -1559,11 +1572,10 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
 HAL_ADC_Stop(&hadc);
 
 // [FW.21] Оновлюємо фільтр пульсу. Стан живе в RTC DR10-12, зчитано в Phase 0 (BOOT).
-// Передавання згладжених значень у mruby — задача FW.5.
 EMA_Update(delta_t_seconds, vcap_voltage);
 ```
 
-> ⚠️ Поточна реалізація **тільки** оновлює EMA-стан. Передавання `EMA_Get_*()` у mruby `calculate_state()` — задача FW.5 (Варіант B+).
+> Згладжені значення їдуть у mruby: прогрітий фільтр (`EMA_Is_Warmed_Up()`) віддає `EMA_Get_DeltaT_Sec()` у `calculate_state` замість сирого `delta_t` (§13.3; E.63 — вхід GP).
 
 ### 13.5 RAM Footprint
 

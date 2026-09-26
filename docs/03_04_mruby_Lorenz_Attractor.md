@@ -113,7 +113,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 > **First-Boot vs Continuation — канонічна логіка [SEC.11 hard cutover]**
 >
-> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
+> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає top-level `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)` на `mrb_top_self` — тонку обгортку над `SilkenNet::BioContract.evaluate_and_pack`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
 >
 > | Умова | Джерело `(x_prev, y_prev, z_prev)` | Призначення |
 > |-------|------------------------------------|-------------|
@@ -174,7 +174,7 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигн�
 └── args = [mrb_float(x_prev), mrb_float(y_prev), mrb_float(z_prev),
             mrb_fixnum(temp), mrb_fixnum(acoustic),
             mrb_fixnum(delta_t_s), mrb_fixnum(vcap_mv)]
-    → BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+    → calculate_state(…) → SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
     → [payload_byte, x_final, y_final, z_final]
 ```
 
@@ -250,17 +250,17 @@ z₀ = bytes_to_signed_unit_float(digest[16..23])
 # bytes_to_signed_unit_float: 8 байт → uint64 big-endian → / (UINT64_MAX/2.0) - 1.0
 ```
 
-**Числовий приклад.** Нехай `K_seed = 0x00…01` (32 байти, останній 0x01) і провізіювання відбулося 2026-05-02 → `epoch_day = 1746144000 / 86400 = 20210`:
+**Числовий приклад** (відтворює `SilkenNet::SeedDerivation.initial_state`). Нехай `K_seed = 0x00…01` (32 байти, останній 0x01) і cold-start стався 2025-05-02 → `epoch_day = 1746144000 / 86400 = 20210`:
 
 ```
 salt_info = "init|" + 0x00 00 00 00 00 00 4E F2  =  13 байт
 digest    = HMAC-SHA256(K_seed, salt_info)
-          = D9 F4 6B 11 7A 2B 8C 03 | 41 88 EE 90 5C A0 17 22
-          | C5 6D 81 EB 4F 09 BB 7C | 2A 3F …                 (32 байти, гекс)
+          = 90 A3 AD 33 86 81 DE 7D | 53 3B 5B 5E D0 C9 69 37
+          | 4A 7E 37 BB 02 BA CE 5B | 73 F5 …                 (32 байти, гекс)
 
-digest[ 0..7]  = 0xD9F46B117A2B8C03 → x₀ ≈ 0.7022
-digest[ 8..15] = 0x4188EE905CA01722 → y₀ ≈ -0.4892
-digest[16..23] = 0xC56D81EB4F09BB7C → z₀ ≈ 0.5418
+digest[ 0..7]  = 0x90A3AD338681DE7D → x₀ ≈ 0.1300
+digest[ 8..15] = 0x533B5B5ED0C96937 → y₀ ≈ -0.3498
+digest[16..23] = 0x4A7E37BB02BACE5B → z₀ ≈ -0.4180
 ```
 
 > Усі координати строго у (-1, +1). Перші кілька десятків ітерацій ("warm-up") атрактор "падає" з цієї точки на дивний атрактор Лоренца — як насінина, кинута у вітер, врешті-решт лягає на свою орбіту в кроні.
@@ -333,12 +333,18 @@ return z  # Z-координата — індикатор гомеостазу
 - Порядок похибки методу Ейлера: `O(DT²) = O(0.0001)` на крок
 - Накопичена похибка за 250 кроків: `O(250 × DT²) = O(0.025)` (теоретично; хаотична система посилює)
 
-### Крок 4: Функція `calculate_z_axis` (Повний Код, post-SEC.11)
+### Крок 4: Функція `calculate_z_axis` → ядро `iterate` (post-SEC.11)
 
 ```ruby
 # firmware/bio_contracts/bio_contract.rb — SilkenNet::Attractor
 # [SEC.11] Сигнатура приймає (x, y, z) напряму — більше немає DID/seed-derived path.
-def self.calculate_z_axis(x, y, z, temp, acoustic)
+def self.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)
+  x, y, z = iterate(x_prev, y_prev, z_prev, temp, acoustic)
+  [ z, x, y, z ]  # z — інтенсивність конвекції (статус-гейт); x, y, z — хвіст траєкторії в RTC
+end
+
+# Спільне ядро ітерацій (бекенд тримає побітове дзеркало — attractor.rb `iterate_lorenz`)
+def self.iterate(x, y, z, temp, acoustic)
   local_sigma = BASE_SIGMA + (acoustic * 0.1)
   local_rho   = BASE_RHO   + (temp * 0.2)
 
@@ -360,7 +366,7 @@ def self.calculate_z_axis(x, y, z, temp, acoustic)
     z += dz * DT
   end
 
-  z  # Повертаємо чисту інтенсивність конвекції (руху соку)
+  [ x, y, z ]
 end
 ```
 

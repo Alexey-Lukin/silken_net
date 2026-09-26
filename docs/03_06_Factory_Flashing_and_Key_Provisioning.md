@@ -84,14 +84,20 @@
      → TreeResolver → Rails-host деривує локально:
            aes_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")
            ota_hmac = per-cluster HKDF (FW.23, "silken-ota-hmac-v1")
+           # LSED · KEYB для Гілки B — відкритий ⚖️ 00_07 SE050-MIGRATION;
+           # K_ota — власний ⚖️ там само (Slot 3 ⊥ MCU Flash)
        - Зберігає (DID → HardwareKey, silicon_uid_hex → Tree; tamper-detect:
          підміна чіпа → wrong-board guard / паспорт-mismatch)
        - ECC keypair + X.509 device cert (peaq DID signing, ARCH.27 evolution)
-     Жоден ключ не летить мережею — усе входить у ATCA-транскрипт (SecureElementProvisioner)
+     Жоден ключ не летить мережею — усе, крім KEYL (SWD, крок 4), входить у
+     ATCA-транскрипт (SecureElementProvisioner)
 
   4. STM32 → SE: write keys per slot mapping (legacy ATECC-скетч; cross-ref 03_05 §3.7):
-     # SLOT 0 (AES LoRa) — ✂️ НЕ пишеться post-SEC.14 (provisioning-only):
-     #   KEYL → Protected Flash як у Гілці A; slot reserved (urban-варіант)
+     # SLOT 0 (AES LoRa) — ✂️ НЕ мусить писатись post-SEC.14 (provisioning-only):
+     #   KEYL мусить іти в Protected Flash як у Гілці A (тим самим SWD -w32 —
+     #   окремий крок транскрипту, не ATCA); slot reserved (urban-варіант).
+     #   ⚠️ Код-лаг: сьогодні Гілка B SWD-ключів не пише зовсім (цегла на першому
+     #   boot), а SecureElementProvisioner ще емітить Slot-0 — 00_07 SE050-MIGRATION
      atcab_write_zone(SLOT 1, ecc_priv, 32B)    # Ed25519 private (голос дерева; SE05x → on-chip keygen)
      atcab_write_zone(SLOT 2, cert_der, 64B)    # X.509 device cert
      atcab_write_zone(SLOT 3, ota_hmac, 32B)    # FW.23 OTA image HMAC verification
@@ -121,11 +127,11 @@
 |-------------|-----------|--------------------------|
 | **ATECC608B data zone lock** | Read/write ключів | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
 | **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
-| **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, atecc_serial) пари |
+| **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, серійник SE) пари — ⚠️ ціль, не код: сьогодні серійник лише пишеться в `provisioning_sessions.se_serial_hex` + аудит, пін у `HardwareKey` не реалізовано ([`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) |
 
 **Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/30-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
-**Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **з'їдає весь запас Сценарію C** → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**; сама вісь «SE AES щопакета vs лише provisioning» — **ВИРІШЕНО (SEC.14, 2026-07-03): provisioning-only**, streaming AES = вбудований radio-AES STM32; розбір осей і наслідки — 03_05 §3.7 (Статус).
+**Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **перекидає баланс Сценарію C у мінус** (запасу в його точці немає — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**; сама вісь «SE AES щопакета vs лише provisioning» — **ВИРІШЕНО (SEC.14, 2026-07-03): provisioning-only**, streaming AES = вбудований radio-AES STM32; розбір осей і наслідки — 03_05 §3.7 (Статус).
 
 **Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref [`00_04`](00_04_Nature_as_a_Service_Contracts) unit economics.
 
@@ -183,11 +189,11 @@ CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-ряд
 
 > **Domain separation:** Два різні info-strings гарантують, що LoRa та CoAP ключі НЕ корелюють криптографічно — компрометація 16-байтного LoRa-ключа конкретного дерева **не дає жодної інформації** про 32-байтний CoAP-ключ Queen, який обслуговує це дерево. Те саме для `OtaHmacKeyService` (info `"silken-ota-hmac-v1"`) та `SilkenNet::SeedDerivation` (info `"silken-lorenz-seed|<DID>"`).
 >
-> 🔴 **[SEC.34] Ця обіцянка ТЕПЕР МАЄ НОСІЯ — `spec/security/hkdf_domain_separation_spec.rb`, і доти не мала жодного.** Причина, чому саме тут потрібен гейт, а не домовленість: HKDF-колізія **не кидає** — `OpenSSL::KDF.hkdf` віддає бездоганні байти, provisioning проходить, і **прошивка погоджується**, бо деривує те саме хибне значення. Тобто зелено на КОЖНОМУ ярусі, і єдине, що відділяє два ключі, — унікальність пари `(salt, info)`. Salt при цьому гейтувати не можна (він рантаймовий, і `"cluster:<id>"` законно спільний для KEYB ⊥ K_ota), тож уся вага лежить на info — звідси пін на попарну відмінність усіх шести info-рядків + ліхтар популяції. ⊕ Друга вісь того ж піна: голе імʼя `HKDF_INFO` жило у ДВОХ класах із різними значеннями (`HardwareKeyService` як мертвий compat-аліас ⊥ `OtaHmacKeyService` живим), тож `info: HKDF_INFO` у новій деривації означало б різне залежно від файлу; аліас знято, гейт тримає єдиність власника. ⛔ **Конвенцію «де живе ідентичність» НЕ вирівнювати** (`HardwareKeyService` кладе її в `salt`, `SeedDerivation` — в `info`): `firmware/soldier/main.c` дзеркалить обидві форми побайтово, тож вирівнювання = пере-ключення всього флоту.
+> 🔴 **[SEC.34] Ця обіцянка ТЕПЕР МАЄ НОСІЯ — `spec/security/hkdf_domain_separation_spec.rb`, і доти не мала жодного.** Причина, чому саме тут потрібен гейт, а не домовленість: HKDF-колізія **не кидає** — `OpenSSL::KDF.hkdf` віддає бездоганні байти, provisioning проходить, і **прошивка погоджується**, бо деривує те саме хибне значення. Тобто зелено на КОЖНОМУ ярусі, і єдине, що відділяє два ключі, — унікальність пари `(salt, info)`. Salt при цьому гейтувати не можна (він рантаймовий, і `"cluster:<id>"` законно спільний для KEYB ⊥ K_ota), тож уся вага лежить на info — звідси пін на попарну відмінність усіх шести info-рядків + ліхтар популяції. ⊕ Друга вісь того ж піна: голе імʼя `HKDF_INFO` жило у ДВОХ класах із різними значеннями (`HardwareKeyService` як мертвий compat-аліас ⊥ `OtaHmacKeyService` живим), тож `info: HKDF_INFO` у новій деривації означало б різне залежно від файлу; аліас знято, гейт тримає єдиність власника. ⛔ **Конвенцію «де живе ідентичність» НЕ вирівнювати** (`HardwareKeyService` кладе її в `salt`, `SeedDerivation` — в `info`): прошивка HKDF від master не рахує — вона вантажить прошиті значення, тож бекенд, що змінив конвенцію, деривуватиме ІНШІ ключі, ніж лежать у Flash, і вирівнювання = пере-ключення всього вже прошитого флоту.
 
 **Властивості HKDF:**
 - Якщо зловмисник знає `unique_device_key[i]`, він не може відновити `master_key` або `unique_device_key[j]` — однонаправлена функція
-- Два пристрої з однаковим `device_uid` отримають однаковий ключ (детерміновано) — важливо для Queen, яка повинна знати ключ кожного Soldier у своєму кластері
+- Два пристрої з однаковим `device_uid` отримають однаковий ключ (детерміновано) — важливо для Rails, який звіряє MIC кожного DID його власним ключем (Королева per-device ключів не тримає — сліпий кур'єр)
 - SHA-256 рахується програмно (backend — OpenSSL; Soldier cold-start — pure-C `silken_sha256.h`, FW.30): STM32WLE5JC має апаратний AES, але **не** HASH/SHA-блок
 
 ### Схема Provisioning (повна послідовність)
@@ -235,8 +241,12 @@ STEP 2: Factory Flashing (конвеєр на заводі)
   d) factory:execute (після 2-Person approve; live) — транскрипт:
      connect → -r32 UID-read → wrong-board guard (Session звіряє паспорт
      плати з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного
-     -w32) → -w32 KEYL/LSED/KOTA per-word → RDP → disconnect
-     # 0x0803E000 = FLASH_KEY_ADDR; Гілка B: ключі через ATCA (§1)
+     -w32) → -w32 KEYL/LSED/KOTA/KEYB per-word (Tree; Gateway — KEYL=KEYB-
+     значення/KEYC/EDSK) → RDP → disconnect
+     # 0x0803E000 = FLASH_KEY_ADDR. Гілка B (ціль SEC.14: KEYL у Protected Flash
+     # обабіч гілок, §1 крок 4): KEYL мусить іти тим самим SWD -w32. ⚠️ Код-лаг:
+     # сьогодні Гілка B SWD-ключів не пише зовсім — цегла на першому boot; LSED ·
+     # KEYB — відкритий ⚖️, K_ota — власний ⚖️ (00_07 SE050-MIGRATION)
 
   e) Lock:
      STM32_Programmer_CLI -ob RDP=1    # Pilot batch
@@ -280,41 +290,25 @@ STEP 4: Queen і ключі Soldiers — ✅ ВИРІШЕНО (FW.2 (в), 2026-0
 ### Rails Backend — API та зберігання (post-ARCH.42)
 
 ```ruby
-# app/services/hardware_key_service.rb — два derivation methods.
-# Master key: явний `master_key:` параметр — фабрична Session несе його від
-# MasterKeySource (SEC.3 DI, vault-ключ реально живить HKDF); nil → ENV
-# PROVISIONING_MASTER_KEY (runtime-fallback: register API, IoTeX seed).
+# app/services/hardware_key_service.rb — обидва derivation-методи йдуть через один
+# приватний hkdf_derive (RFC 5869, OpenSSL::KDF). Master key: явний `master_key:`
+# — фабрична Session несе його від MasterKeySource (SEC.3 DI); nil → ENV
+# PROVISIONING_MASTER_KEY (runtime-fallback: register API, IoTeX seed); blank →
+# SecurityError (SEC.11). Повертає hex UPPER.
 
-LORA_KEY_INFO = "silken-aes-128-lora-key".freeze   # ARCH.42 — Tree LoRa channel (16 bytes)
-COAP_KEY_INFO = "silken-aes-256-device-key".freeze # Gateway CoAP-to-Rails channel (32 bytes)
+LORA_HKDF_INFO = "silken-aes-128-lora-key"   # ARCH.42 — Tree LoRa channel (16 bytes)
+COAP_HKDF_INFO = "silken-aes-256-device-key" # Gateway CoAP-to-Rails channel (32 bytes)
 
-# LoRa AES-128 ключ (Tree або Gateway LoRa-сесія)
-def self.derive_lora_key(device_uid, master_key: nil)
-  master_key ||= ENV["PROVISIONING_MASTER_KEY"]  # SecurityError якщо blank (SEC.11)
-  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
-  okm  = OpenSSL::HMAC.digest("SHA256", prk, LORA_KEY_INFO + "\x01")
-  okm[0, 16]  # 128 bits — AES-128
-end
-
-# CoAP AES-256 ключ (тільки Gateway — для batch flush до Rails)
-def self.derive_device_key(device_uid, master_key: nil)
-  master_key ||= ENV["PROVISIONING_MASTER_KEY"]
-  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
-  okm  = OpenSSL::HMAC.digest("SHA256", prk, COAP_KEY_INFO + "\x01")
-  okm[0, 32]  # 256 bits — AES-256
-end
-
-# app/controllers/api/v1/provisioning_controller.rb (Zero-Trust — НЕ повертає keys)
-def register
-  device_uid = params.require(:device_uid)
-  device_type = params[:type] == "gateway" ? "gateway" : "tree"
-  hkdf_key   = device_type == "gateway" \
-                 ? HardwareKeyService.derive_device_key(device_uid)  # 32 bytes для Gateway
-                 : HardwareKeyService.derive_lora_key(device_uid)    # 16 bytes для Tree
-  HardwareKey.create!(device_uid:, aes_key_hex: hkdf_key.unpack1("H*"))
-  render json: { did: tree.did }  # NO key у response
-end
+# IKM = master_key, salt = device_uid, info = domain separation
+OpenSSL::KDF.hkdf(master_key, salt: device_uid.to_s, info: LORA_HKDF_INFO,
+                  length: 16, hash: "SHA256").unpack1("H*").upcase  # derive_lora_key
+OpenSSL::KDF.hkdf(master_key, salt: device_uid.to_s, info: COAP_HKDF_INFO,
+                  length: 32, hash: "SHA256").unpack1("H*").upcase  # derive_device_key
 ```
+
+> ⛔ **HKDF тут не переписують руками через `OpenSSL::HMAC`.** HKDF-Extract бере **salt ключем**, а IKM — повідомленням; переставлені аргументи дають бездоганні, але ІНШІ байти, тобто ключ флоту розходиться з прошитим, і видно це лише на першому uplink'у. Рукописна форма в цьому розділі вже раз саме так і розійшлась із кодом (salt і IKM місцями). Носій проти колізії info-рядків — `spec/security/hkdf_domain_separation_spec.rb` (SEC.34, вище).
+
+Реєстрація з браузерного контуру — `Api::V1::ProvisioningController#register` → `HardwareKeyService.provision(device)` (Zero-Trust: ключ у відповідь НЕ повертається; DID дерева — `SilkenNet::DidDerivation.wire_did_from_uid_hex`, [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA)).
 
 ### Firmware — зчитування ключа з Protected Flash Sector (AES-128 LoRa)
 
@@ -411,7 +405,7 @@ void Load_Node_Role(void)
 }
 ```
 
-> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, явно прошивається factory pipeline'ом. Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
+> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, яку factory pipeline мусить прошивати явно; ⚠️ сьогодні `CommandBuilder` `FLASH_ROLE_ADDR` не пише зовсім, тож кожен фабричний юніт вантажиться Солдатом через цей fallback (роль Провідника — ARCH.26). Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
 
 > **Споживачі прапорця:** ARCH.26 L3 (CAD relay), повний FW.20-S2 (mesh time-sync relay) — без додаткової логіки в `HardwareKeyService`/backend; це чистий firmware-flag. Backend не повинен довіряти claimed role з пакету (TX-сторона може брехати) — `g_node_role` локально визначає поведінку, серверна сторона вирішує доверу через ECC підпис при provisioning.
 
@@ -442,7 +436,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
 | Master key storage | **Deploy-ENV `PROVISIONING_MASTER_KEY`** (boot-guard SEC.9; §5.A ранжує Direct-ENV найнижче — чесний поточний тір) → KMS-MAC pre-mainnet (SEC.22, [`06_04 §5.7`](06_04_Secrets_Checklist)); **деривовані** ключі — `HardwareKey` AR-encrypted | Same | Never in-repo; on-compromise runbook → [`06_04 §5.8`](06_04_Secrets_Checklist) |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) — **обидві гілки** (SEC.14 provisioning-only; SE Slot 0 reserved для urban-варіанту — 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
-| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Same (grace) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
+| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK; ⚠️ для дерева CCM-шлях цього ще не робить — [`00_07`](00_07_Action_Plan_Tracker) FW.17). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Same (grace) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
 > **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 Secure Element (SE050, 03_05 §3.7), SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **03_05 §10 PQC Migration Roadmap**.
@@ -509,7 +503,7 @@ STEADY-STATE (FW.6 continuation; кожне пробудження)
 ═══════════════════════════════════════════════════════════════════════
 
 (x_prev, y_prev, z_prev) = read RTC DR16-DR18 (warm) АБО cold-start (rare)
-[payload_byte, x_f, y_f, z_f] = mruby BioContract.calculate_state(
+[payload_byte, x_f, y_f, z_f] = mruby calculate_state(
                                   x_prev, y_prev, z_prev,
                                   temp, acoustic, delta_t_s, vcap_mv)
 write RTC DR16-DR18 = (x_f, y_f, z_f); DR19 = "LZST"
@@ -650,7 +644,7 @@ Chunk N+3 (version envelope #4):              Marker
 HMAC input (canonical):
   ┌─────────────────────────────────────────────────────────────┐
   │  full_bytecode_payload (raw, до chunking, до AES-encrypt)  │
-  │  ‖ version_id (4 bytes BE — firmware.version_id)            │
+  │  ‖ version_id (4 bytes BE — firmware.id)                    │
   │  ‖ total_chunks (2 bytes BE)                                 │
   └─────────────────────────────────────────────────────────────┘
 
@@ -752,7 +746,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Magic marker | `0x45544952` ("RITE" LE) | Існуючий u-boot-style format-integrity marker (Gate 1) |
 | HMAC input | `bytecode \|\| version_id \|\| total_chunks` | Anti-replay + anti-truncation |
 | Comparison | `Hmac_Constant_Time_Compare` (constant-time) | Захист від timing attack |
-| Wire overhead | +3 LoRa chunks (+~180 мс broadcast) | < 0.5% від загальної OTA-сесії 745 чанків |
+| Wire overhead | +4 LoRa chunks (3 печатки + версія, +~240 мс broadcast) | < 0.5% від загальної OTA-сесії 745 чанків |
 | Implementation | Mandatory з дня 1 | Pre-production, no fallback path needed |
 
 ### Implementation Plan
@@ -805,7 +799,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC`/`EDSK` slots (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only RDP lock + disconnect |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes, only RDP lock + disconnect (⚠️ код-лаг post-SEC.14: KEYL мусить іти `-w32` і в Гілці B, інакше юніт — цегла на першому boot; [`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
 | ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
@@ -827,6 +821,10 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 [dry-run] STM32_Programmer_CLI -w32 0x0803E010 0x66778899       # AES key word 3
 [dry-run] STM32_Programmer_CLI -w32 0x0803E014 0x4C534544       # LSED magic
 … (8 K_seed words at 0x0803E018..0x0803E034)
+[dry-run] STM32_Programmer_CLI -w32 0x0803E800 0x4B4F5441       # KOTA magic (K_ota, FW.23)
+… (8 K_ota words at 0x0803E804..0x0803E820)
+[dry-run] STM32_Programmer_CLI -w32 0x0803E828 0x4B455942       # KEYB magic (cluster control-plane, FW.2 (в))
+… (4 KEYB words at 0x0803E82C..0x0803E838)
 [dry-run] STM32_Programmer_CLI -ob RDP=1
 [dry-run] STM32_Programmer_CLI -c port=SWD --quietMode
 ```
@@ -913,38 +911,12 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 
 **Кожна provisioning сесія генерує append-only записи в двох місцях:**
 
-**1. `AuditLog` (chain-hashed, `pg_advisory_xact_lock(827549841, org_id)`):**
-```ruby
-AuditLog.create!(
-  action:        "factory_flash",
-  actor_id:      operator_user.id,          # supervisor_id у metadata
-  target_type:   "HardwareKey",
-  target_id:     hardware_key.id,
-  metadata: {
-    device_uid:    device_uid,               # "SNET-XXXXXXXX"
-    operator_id:   operator_user.id,
-    supervisor_id: supervisor_user.id,       # 2-person rule
-    atecc_serial:  se_serial_hex,         # Гілка B: 9-байт serial (nil для Гілки A)
-    rdp_level:     1,                        # рівень RDP після flash
-    batch_id:      batch_identifier,         # для групового аудиту
-    flash_addr:    "0x0803E000",
-    firmware_ver:  firmware_version_string
-  }
-)
-```
+**1. `AuditLog` (chain-hashed, `pg_advisory_xact_lock(827549841, org_id)`):** `action: "factory_flash"`, `auditable` = `HardwareKey`, актор = оператор; `metadata` несе оператора й **supervisor'а** (2-person rule), batch, адресу й RDP-рівень прошивки, серійник SE (Гілка B), версію прошивки й розмір транскрипту — сирі байти ключа **ніколи**. Дім точного переліку ключів — `FactoryFlashing::AuditTrail#audit_metadata` (`app/services/factory_flashing/audit_trail.rb`), не цей документ; ⛔ перейменовувати ключі можна лише до першого прод-запису — далі вони живуть у хеші ланцюга ([`04_01 §7`](04_01_Data_Models_and_Entities), ARCH.57).
 
-**2. `MaintenanceRecord(action_type: :installation)`** — закриває loop «фізично прошито ↔ DB-зареєстровано»:
-```ruby
-MaintenanceRecord.create!(
-  tree_or_gateway: device,
-  action_type:     :installation,
-  performed_by:    operator_user,
-  notes:           "Factory Flash. Batch: #{batch_id}. RDP Level: #{rdp_level}. #{atecc_note}"
-)
-```
+**2. `MaintenanceRecord(action_type: :installation)`** — закриває loop «фізично прошито ↔ DB-зареєстровано»; `system_generated: true`, бо на стенді немає камери (Evidence Protocol — [`04_01 §7`](04_01_Data_Models_and_Entities)). Обидва записи пишуться в одній транзакції з `HardwareKey`: невдалий ключ відкочує й аудит, тож у ланцюг не потрапляє рядок без пристрою.
 
 **Tamper-evident retention policy:**
-- `AuditLog` — заборонено видаляти (Rails guard: `before_destroy { raise "AuditLog is immutable" }`).
+- `AuditLog` — заборонено видаляти (Rails guard: `before_destroy` кидає `ActiveRecord::ReadOnlyRecord`, [`04_01 §7`](04_01_Data_Models_and_Entities)).
 - Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity`).
 - Мінімальний retention: ⚖️ **строк НЕ ухвалено** — дім рішення [`00_07`](00_07_Action_Plan_Tracker) SEC.18, і RoPA свідомо тримає `[TBD]`. 🔴 Тут стояло «7 років (GDPR Article 17(3)(b) — legal obligation exception)», і обидві половини не тримаються: число не було ухвалене ніде (а сусідня нога SEC.18 прямо забороняє ВИГАДУВАТИ строки), а літера **(b)** до нас текстуально не тягнеться — [`dpia_art35`](protocols/legal/dpia_art35.md) R3 (2026-09-06) прочитав первинку: (b) вимагає обовʼязку «*by Union or Member State law*», якій ПКУ/ЗУ про бухоблік не відповідають, тож кандидати — **(e)** або Art.6(1)(f), і вибір належить юристу.
 
@@ -957,7 +929,7 @@ MaintenanceRecord.create!(
 | Вектор атаки | Гілка A (Protected Flash STM32) | Гілка B (ATECC608B / STSAFE-A110) |
 |-------------|----------------------------------|-----------------------------------|
 | **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | ATECC data zone lock + DPA-hardened silicon: key never leaves chip в plaintext; fault injection → self-erase |
-| **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) pin'ується у `(device_uid, atecc_serial)` парі в `HardwareKey`. Чужий ATECC → provisioning API reject з 409 |
+| **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) мусить пінитись у пару `(device_uid, серійник SE)` — ⚠️ ціль: сьогодні він лише в `provisioning_sessions.se_serial_hex`, `HardwareKey` колонки не має. Чужий ATECC → provisioning API reject з 409 |
 | **Replay provisioning request** | `POST /provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
 | **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Ризик нижчий: ATECC write через I²C, ключ загружається через `atcab_write_zone()` — не проходить через user-space буфер у стандартній реалізації |
 | **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Ризик нижчий: HSM injection → `device_key` ніколи не в laptop RAM |
