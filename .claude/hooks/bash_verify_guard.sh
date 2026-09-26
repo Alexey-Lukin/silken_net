@@ -96,7 +96,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
     $'ruby scripts/docs_check.rb >/dev/null 2>&1\ngit push origin main'
   # E-negatives — the exempt idiom and every half alone
   t "E: clean && chain stays silent" silent \
-    $'source ~/.rvm/scripts/rvm && rvm use ruby-4.0.6@silken_net >/dev/null && ruby scripts/docs_band.rb >/dev/null && git add docs/ && git commit -s -F - <<\'MSG\'\nx\nMSG'
+    $'source ~/.rvm/scripts/rvm && rvm use "$(cat .ruby-version)@silken_net" >/dev/null && ruby scripts/docs_band.rb >/dev/null && git add docs/ && git commit -s -F - <<\'MSG\'\nx\nMSG'
   # Both anti-false-positive cases are MUTATION-CALIBRATED: with the strips
   # disabled these exact texts flip to a false deny (a heredoc line STARTING
   # with a gate call + a git push after the heredoc; a `-m` string whose `;`
