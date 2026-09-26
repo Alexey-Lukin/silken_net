@@ -16,6 +16,10 @@ require "timeout"
 # курованому переліку, і його повідомлення читатиметься як поломка екстрактора,
 # а не як наслідок свідомого зняття. Носій стоїть тут, а не в трекері, бо саме
 # цей файл відкриє той, хто буде його зносити.
+# 🔴 І ще один клас залежних падає НЕ тут: негативні піни `OtaTransmissionWorker.jobs` у спеках
+# сусідів (контролер прошивок, диспетчер OTA, провіжнінг) — без класу вони дадуть NameError, а
+# предмет піна («push-ера мовчить») зникає разом із ним, тож їх ЗНІМАЮТЬ, а не переводять.
+# Перелік — `git grep -n OtaTransmissionWorker -- spec`, не звідси.
 # ⚠️ І не читай «superseded» як «адреса мертва»: `TurboStreams::Name.gateway_ota`
 # нижче має ДВОХ живих підписників (`Gateways::Show` · `Firmwares::Index`) і
 # другого, живого продюсера (`Downlink::PendingQueueService`). Мертвий тут
@@ -26,15 +30,13 @@ class OtaTransmissionWorker
   # Використовуємо окрему чергу для низхідного зв'язку, щоб не блокувати телеметрію
   sidekiq_options queue: "downlink", retry: false
 
-  # 🔴 [ARCH.59] Тут стояв `sidekiq_retries_exhausted`-блок, який мав рятувати
-  # шлюз, залиплий у `:updating`. Він НЕ ВИКОНУВАВСЯ ЖОДНОГО РАЗУ: під
-  # `retry: false` Sidekiq прокидає виняток одразу в `death_handlers`, минаючи
-  # exhausted-хук — тобто «конфіг повний, шлях мертвий», лише з коментарем
-  # «[P1 FIX]», який читався як доказ, що клас закрито. Знято, а не полагоджено:
-  # сам воркер — залишок push-ери (нуль enqueuer'ів після FW.60), тож
-  # відроджувати тут порятунок означало б лікувати мертвий шлях. Живий сторож
-  # цього стану — `GatewayStalenessSweepWorker#release_stuck_ota_gateways`, і він
-  # не залежить від того, який саме процес залишив шлюз у `:updating`.
+  # ⛔ [ARCH.59] Не відроджуй тут `sidekiq_retries_exhausted` як порятунок шлюзу,
+  # залиплого в `:updating`: під `retry: false` Sidekiq прокидає виняток одразу в
+  # `death_handlers`, минаючи exhausted-хук, тож такий блок не виконається ніколи
+  # («конфіг повний, шлях мертвий»). Та й сам воркер — залишок push-ери (нуль
+  # enqueuer'ів після FW.60). Стан `:updating` звільняє
+  # `GatewayStalenessSweepWorker#release_stuck_ota_gateways` — незалежно від того,
+  # який процес лишив шлюз у ньому.
   CHUNK_SIZE = OtaChunkable::CHUNK_SIZE
   MAX_CHUNK_RETRIES = 5
 

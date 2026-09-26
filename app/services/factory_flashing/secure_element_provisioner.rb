@@ -48,7 +48,7 @@ module FactoryFlashing
       validate_lengths!
     end
 
-    # Returns Result with statements + (mocked) atecc_serial. Real provisioner
+    # Returns Result with statements + (mocked) se_serial_hex. Real provisioner
     # would call atcab_read_serial_number() here.
     def provision
       Result.new(

@@ -10,7 +10,7 @@
 #   1. AuditLog(action: "factory_flash", auditable: hardware_key, ...)
 #      — chain-hashed by AuditLog before_create callback. Metadata carries
 #        operator_id, supervisor_id, batch_id, flash_addr, rdp_level,
-#        atecc_serial (Гілка B), firmware_version, command transcript count.
+#        se_serial_hex (Гілка B), firmware_version, command transcript count.
 #        Raw key bytes are NEVER persisted.
 #   2. MaintenanceRecord(action_type: :installation, maintainable: device, ...)
 #      — keeps the device-history view consistent with the new monitor;

@@ -201,8 +201,10 @@ class HardwareKeyService
   #     re-provision (SEC.3 Factory Flashing) — CoAP-downlink ключа не існує
   #     (legacy "sys/key_update" видалено: він не мав firmware-споживача і
   #     суперечив принципу §3.8 «ключ не летить ефіром»).
-  # ACK обох шляхів — неявний Dual-Key Grace: перший uplink, що декриптнувся
-  # новим ключем, → clear_grace_period!.
+  # ACK — неявний Dual-Key Grace: перший uplink, що декриптнувся новим ключем,
+  # → clear_grace_period!. ⚠️ Зашито лише для Королеви (UnpackTelemetryWorker,
+  # CoAP): CCM-шлях дерева grace не закриває й на старий ключ не відкочується —
+  # передумова фліпу FW.17 (00_07).
   def rotate!
     key_record = HardwareKey.find_by!(device_uid: @device_uid)
 
