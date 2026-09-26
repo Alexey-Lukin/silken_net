@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.9.0) (2026-09-26)
+
+
+### Features
+
+* **firmware · FW.61:** лімітер робочого циклу TX Королеви — ≤ 36 с у будь-яку годину; поле 1.5(в) заяви до НКЕК заповнено ([d55d1b0](https://github.com/Alexey-Lukin/silken_net/commit/d55d1b0503f05c22bca9e29667261128b19dc5f1))
+
+
+### Bug Fixes
+
+* **ci:** відкотити forge v1.8.3 → v1.7.1 — бамп поклав gas-snapshot гейт ([9295488](https://github.com/Alexey-Lukin/silken_net/commit/9295488fbcfac353c6509be9455ed7a55908707b))
+* **docs · skills · ci:** адверсар над проходом 2026-09-26 — підстава allow-rule, resolv-dismissal навиворіт, дати й числа ([86f3456](https://github.com/Alexey-Lukin/silken_net/commit/86f3456cc690b8f094d9535ffc9064a80431f621))
+* **firmware · FW.3 · SEC.20:** кеш Королеви знову рахує вставки — ядро CIFO винесено в спільний заголовок; база Flash-KV — один вираз із #error-піном ([42dde82](https://github.com/Alexey-Lukin/silken_net/commit/42dde822c3ed3125c337bf623103293ef1bf4b61))
+* **firmware · FW.61:** кожен кадр дочікує свого ефіру — жодна прошивка не чекала, і на кремнії обривався б кожен TX обох вузлів ([a00cf91](https://github.com/Alexey-Lukin/silken_net/commit/a00cf9186c1b6b1d3bc83b7b93e346afc7021f34))
+* **in-silico CI:** моя адверсарна правка зрушила якорі двох пінів «док ⟷ кеш» ([e25a464](https://github.com/Alexey-Lukin/silken_net/commit/e25a46441823ea8e991b1eb76b6d32de4ec79ee2))
+
 ## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
