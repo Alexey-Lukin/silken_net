@@ -4,7 +4,7 @@
 
 ## 1. Що це
 
-Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-6Al-4V гіроїдний анкер + **EBFC** (≈500 мВ з ксилеми, «zero-grid») → STM32 **«Soldier»** (sense→TinyML→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.6 / Postgres / Sidekiq → 11-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг при деградації).
+Планетарна Bio-IoT **D-MRV** платформа моніторингу лісів: Ti-6Al-4V гіроїдний анкер + **EBFC** (≈500 мВ з ксилеми, «zero-grid») → STM32 **«Soldier»** (sense→TinyML→Lorenz→encrypt→LoRa 868) → **«Queen»** gateway (CoAP) → Rails 8.1 / Ruby 4.0.7 / Postgres / Sidekiq → 11-chain Web3 **Proof-of-Growth** → mint SCC (**10 000 growth_points = 1 SCC**, Polygon ERC-20; слешинг при деградації).
 
 **Чесний стан: System TRL = 3**, gated by anchor/EBFC — 🔴 **in-silico ≠ TRL 4 за NASA/ISO**, хоч би яким зеленим був Zero-Lab; фізичний TRL 4 замикає in-vitro Ti-coin. Per-module TRL — `docs/00_03 §1` (друкує `doc_structure_map.rb`). **Polyglot:** Rails (Ruby) · firmware-C (STM32) · mruby (`bio_contract`) · Solidity (Foundry) · in-silico Python (DFT/MD) · .NET C# (PicoGK CAD).
 
@@ -40,7 +40,7 @@
 ## 3. Середовище
 
 ```bash
-ruby --version            # 4.0.6
+ruby --version            # 4.0.7
 bin/rubocop -a            # lint (binstub; -a = автофікс)
 bin/rspec                 # backend suite (binstub; full ~1.5 хв)
 bin/brakeman              # security

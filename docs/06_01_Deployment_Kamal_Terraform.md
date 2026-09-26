@@ -571,7 +571,7 @@ IAP-operator ролі ЛЮДЕЙ (iam.tf, for_each `iap_admin_members`):
 ## 🐳 Docker — Multi-stage Build
 
 ```
-Stage 1: base          — ruby:4.0.6-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
+Stage 1: base          — ruby:4.0.7-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app, USER rails:1000, CMD: thrust ./bin/rails server
 ```
@@ -903,7 +903,7 @@ kamal version
 docker --version      # + buildx з linux/amd64 (builder.arch = amd64, машина arm64 → емуляція)
 gh --version          # авторизований, scope repo
 forge --version       # Фази 2t/2
-openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
+openssl version; dig -v; jq --version; ruby --version   # = .ruby-version (Gemfile пінить ТОЧНУ версію)
 # Ланки, що мають ВЛАСНИЙ тулчейн і НЕ покриваються нічим вище:
 #   Devnet (Фаза 2t) — solana + spl-token CLI (Solana-програми в репо немає, це руками)
 #   ⚠️ Devnet-кран не є 🤖-ногою з цієї машини (виміряно 2026-09-02/03): `solana airdrop` віддає
