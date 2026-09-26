@@ -163,8 +163,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 - [ ] **Barb-tip stress-concentration FEA** — item (В) of the same request. Channel: ЧНУ, replaced by a
   commercial executor on the event named in the brief's §8 (ratified 2026-09-24). ⛔ No parallel self-own FEA:
   two executors on one number is the class `00_03 §3.6` removed; the Lamé bound here stays the calibration case.
-- [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK via MSD (classical MD, like script 13) — NOT DFT.
-  🤖 self-own, ~2-3 weeks GPU (00_07 HW.3.IS); separate milestone, not part of this geometry sync.
+- ⚫ **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK — **won't do** (founder-ratified 2026-09-26): a function with no carrier, since the Ti↔PEEK path is wet by design; verdict, cost and weakest link in [`01_01`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (FEA-валідація, ⚫ note).
 - [x] **Unified thick-wall Lamé** combining interference + thermal stress in one model ✅ 2026-06-22
   (script 56 + `lib/mechanics.py`): combined −30 °C + s6-max **SF 5.6× / von Mises 4.7×**; surfaced + **fixed at
   source** the ≈4.3× over-stated thermal denominator in `50` (**Correction C**) — 50/51/56 now share `lib/mechanics`; canon corrected.
