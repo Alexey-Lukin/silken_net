@@ -1747,6 +1747,127 @@ CHECKS += [
 ]
 
 
+# ── HW.37 capsule thermal envelope (script 71) — canon 02_03 §12.1 and SUMMARY §HW.37 ──
+# Every number of both tables and of the canon paragraph is pinned: the canon quotes the hot bound, the
+# margin a dark finish keeps, the aging temperature and the life at it, and the cold count — and the
+# rating ITSELF is a canon premise the cache mirrors (via lib/constants.py), so a canon edit re-runs 71.
+POWER = "docs/02_03_BQ25570_MPPT_Nano_Power.md"
+THERMAL = "thermal/capsule_envelope.json"
+
+
+def _hot(case, alpha, field="t_cap_max_c"):
+    return lambda d: d["hot_bound"][case][alpha]["0.0"][field]
+
+
+def _sens(alpha, field="t_cap_max_c"):
+    return lambda d: d["hot_bound_h_c_sensitivity"]["sunlit_still_air"][alpha][field]
+
+
+def _aging_span(prefix, field, pick):
+    """min/max over one series of `aging` — T_eff, or a life end (conservative / optimistic)."""
+    def resolve(d):
+        rows = [r for k, r in d["aging"].items() if k.startswith(prefix)]
+        vals = [r["t_eff_c"] if field == "t_eff_c" else r["life_at_ratified_vbat_ov"][field] for r in rows]
+        return pick(vals)
+    return resolve
+
+
+CHECKS += [
+    ("HW.37 premise · EDLC operating rating (canon 02_03 §12.1 → lib/constants.py → 71's cache)",
+     POWER, rf"рейтинг \*\*{N} °C\*\*, нижня межа", THERMAL, lambda d: d["rating_c"]["edlc_operating_max"], 0.05),
+    ("HW.37 premise · EDLC operating floor (canon 02_03 §12.1 → lib/constants.py → 71's cache)",
+     POWER, rf"нижня межа \*\*{N} °C\*\* — вужчий", THERMAL, lambda d: d["rating_c"]["edlc_operating_min"], 0.05),
+    ("HW.37 · 02_03 hottest capsule hour, sunlit α 0.95 still air → capsule_envelope.json",
+     POWER, rf"Найгарячіша година за 30 років — \*\*{N} °C\*\*", THERMAL, _hot("sunlit", "0.95"), 0.05),
+    ("HW.37 · 02_03 its margin to the rating → capsule_envelope.json",
+     POWER, rf"штиль\), запас \*\*{N} K\*\*", THERMAL, _hot("sunlit", "0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_03 hottest hour at α 0.5 → capsule_envelope.json",
+     POWER, rf"при світлому α 0\.5 — \*\*{N} °C\*\*", THERMAL, _hot("sunlit", "0.50"), 0.05),
+    ("HW.37 · 02_03 hottest hour without the beam → capsule_envelope.json",
+     POWER, rf"без прямого сонця — \*\*{N} °C\*\*", THERMAL, _hot("shaded", "0.95"), 0.05),
+    ("HW.37 · 02_03 dark finish with h_c × 0.7 → capsule_envelope.json",
+     POWER, rf"на повному сонці дає \*\*{N} °C\*\*", THERMAL, _sens("0.95"), 0.05),
+    ("HW.37 · 02_03 its margin → capsule_envelope.json",
+     POWER, rf"— запас \*\*{N} K\*\*, тобто порядку похибки", THERMAL, _sens("0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_03 light finish margin with h_c × 0.7 → capsule_envelope.json",
+     POWER, rf"світлий тримає \*\*≥ {N} K\*\*", THERMAL, _sens("0.50", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_03 air hours under the EDLC floor → capsule_envelope.json",
+     POWER, rf"повітря було нижче −25 °C \*\*{N} години\*\*", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["hours"], 0.5),
+    ("HW.37 · 02_03 coldest air hour → capsule_envelope.json",
+     POWER, rf"9 днів, мінімум {N} °C\)", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["coldest_air_c"], 0.05),
+    ("HW.37 · 02_03 aging T_eff in open air → capsule_envelope.json",
+     POWER, rf"— \*\*{N} °C\*\* у повітрі", THERMAL, lambda d: d["aging"]["air"]["t_eff_c"], 0.05),
+    ("HW.37 · 02_03 aging T_eff shaded, low end → capsule_envelope.json",
+     POWER, rf"під радомом \*\*{N}–[\d.]+ °C\*\* у тіні", THERMAL, _aging_span("shaded", "t_eff_c", min), 0.05),
+    ("HW.37 · 02_03 aging T_eff shaded, high end → capsule_envelope.json",
+     POWER, rf"під радомом \*\*[\d.]+–{N} °C\*\* у тіні", THERMAL, _aging_span("shaded", "t_eff_c", max), 0.05),
+    ("HW.37 · 02_03 aging T_eff sunlit, low end → capsule_envelope.json",
+     POWER, rf"у тіні й \*\*{N}–[\d.]+ °C\*\* на сонці", THERMAL, _aging_span("sunlit", "t_eff_c", min), 0.05),
+    ("HW.37 · 02_03 aging T_eff sunlit, high end → capsule_envelope.json",
+     POWER, rf"у тіні й \*\*[\d.]+–{N} °C\*\* на сонці", THERMAL, _aging_span("sunlit", "t_eff_c", max), 0.05),
+    ("HW.37 · 02_03 life in open air, conservative → capsule_envelope.json",
+     POWER, rf"строк у повітрі — \*\*{N}–[\d.]+ року\*\*", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["conservative_yr"], 0.05),
+    ("HW.37 · 02_03 life in open air, optimistic → capsule_envelope.json",
+     POWER, rf"строк у повітрі — \*\*[\d.]+–{N} року\*\*", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["optimistic_yr"], 0.05),
+    # SUMMARY §HW.37 — both tables, every cell.
+    ("HW.37 · SUMMARY sunlit α 0.50 → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit \(the beam reaches the capsule\) \| {N} °C \|", THERMAL, _hot("sunlit", "0.50"), 0.05),
+    ("HW.37 · SUMMARY sunlit α 0.95 → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit \(the beam reaches the capsule\) \| [\d.]+ °C \| {N} °C \|", THERMAL, _hot("sunlit", "0.95"), 0.05),
+    ("HW.37 · SUMMARY sunlit margin → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit \(the beam reaches the capsule\) \| [\d.]+ °C \| [\d.]+ °C \| {N} K \|", THERMAL,
+     _hot("sunlit", "0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · SUMMARY h_c × 0.7 α 0.50 → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit, h_c × 0\.7 \(the correlation off its home geometry\) \| {N} °C \|", THERMAL, _sens("0.50"), 0.05),
+    ("HW.37 · SUMMARY h_c × 0.7 α 0.95 → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit, h_c × 0\.7 \(the correlation off its home geometry\) \| [\d.]+ °C \| {N} °C \|", THERMAL,
+     _sens("0.95"), 0.05),
+    ("HW.37 · SUMMARY h_c × 0.7 margin → capsule_envelope.json",
+     SUMMARY, rf"\| Sunlit, h_c × 0\.7 \(the correlation off its home geometry\) \| [\d.]+ °C \| [\d.]+ °C \| {N} K \|",
+     THERMAL, _sens("0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · SUMMARY shaded α 0.50 → capsule_envelope.json",
+     SUMMARY, rf"\| Shaded \(open-sky diffuse only — an upper bound under a crown\) \| {N} °C \|", THERMAL,
+     _hot("shaded", "0.50"), 0.05),
+    ("HW.37 · SUMMARY shaded α 0.95 → capsule_envelope.json",
+     SUMMARY, rf"\| Shaded \(open-sky diffuse only — an upper bound under a crown\) \| [\d.]+ °C \| {N} °C \|", THERMAL,
+     _hot("shaded", "0.95"), 0.05),
+    ("HW.37 · SUMMARY shaded margin → capsule_envelope.json",
+     SUMMARY, rf"\| Shaded \(open-sky diffuse only — an upper bound under a crown\) \| [\d.]+ °C \| [\d.]+ °C \| {N} K \|",
+     THERMAL, _hot("shaded", "0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · SUMMARY open-air T_eff → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| {N} °C \|", THERMAL, lambda d: d["aging"]["air"]["t_eff_c"], 0.05),
+    ("HW.37 · SUMMARY open-air life, conservative → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| {N}–[\d.]+ yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["conservative_yr"], 0.05),
+    ("HW.37 · SUMMARY open-air life, optimistic → capsule_envelope.json",
+     SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+–{N} yr \|", THERMAL,
+     lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["optimistic_yr"], 0.05),
+]
+_SERIES = {"shaded": r"Under the radome, shaded \(α 0\.50/0\.95 × k 0/0\.1\)",
+           "sunlit": r"Under the radome, sunlit \(α 0\.50/0\.95 × k 0/0\.1\)"}
+for _case, _label in _SERIES.items():
+    CHECKS += [
+        (f"HW.37 · SUMMARY {_case} T_eff low end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| {N}–[\d.]+ °C \|", THERMAL, _aging_span(_case, "t_eff_c", min), 0.05),
+        (f"HW.37 · SUMMARY {_case} T_eff high end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–{N} °C \|", THERMAL, _aging_span(_case, "t_eff_c", max), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, conservative low end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| {N}–[\d.]+ yr \|", THERMAL,
+         _aging_span(_case, "conservative_yr", min), 0.05),
+        (f"HW.37 · SUMMARY {_case} life, optimistic high end → capsule_envelope.json",
+         SUMMARY, rf"\| {_label} \| [\d.]+–[\d.]+ °C \| [\d.]+–{N} yr \|", THERMAL,
+         _aging_span(_case, "optimistic_yr", max), 0.05),
+    ]
+CHECKS += [
+    ("HW.37 · SUMMARY air hours under the floor → capsule_envelope.json",
+     SUMMARY, rf"below the −25 °C floor for {N} hours in 30 years", THERMAL,
+     lambda d: d["cold_hours_below_edlc_floor"]["hours"], 0.5),
+    ("HW.37 · SUMMARY coldest air hour → capsule_envelope.json",
+     SUMMARY, rf"9 days, coldest {N} °C\)", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["coldest_air_c"], 0.05),
+]
+
 # ── doc↔code: the ratified gene is MIRRORED into lib/constants.py, and a mirror needs a pin ──
 
 RFQ = "docs/protocols/procurement/ebfc_chem_rfq.md"

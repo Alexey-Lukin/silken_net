@@ -354,6 +354,12 @@ VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles 
 # than a false-precise single number.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7
 # The ratified operating voltage these ratings are derated to is VBAT_OV_RATIFIED_V (EDLC energy block above).
+# ⛔ The OPERATING range is a different datasheet parameter from the endurance TEST point above, even
+# where the two print the same 70: the test point prices LIFE, the range bounds USE (in-silico
+# §Critical Rules #10 — right number, wrong role). Eaton Technical Data 4327 (06/2026), mirrored in
+# 02_03 §12.1 — edit there first. Consumer: script 71 (capsule thermal envelope, HW.37).
+EDLC_OPERATING_MIN_C = -25.0       # °C — Eaton KR operating floor (02_03 §12.1)
+EDLC_OPERATING_MAX_C = 70.0        # °C — Eaton KR operating rating (02_03 §12.1)
 
 # ── Capsule immersion class (02_02 §3.3, edit there first) — IP68 ratified by founder 2026-07-03 for
 # «дощі, повінь у лісі». REFERENT: the depth of water over the NODE's capsule, a ratified DESIGN POINT —

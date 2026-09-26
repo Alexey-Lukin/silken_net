@@ -700,6 +700,52 @@ stand side by side there. (`kinetics/gusak_degradation.json` → `edlc_endurance
 
 ---
 
+## HW.37 — Capsule Thermal Envelope vs the EDLC Rating (script 71)
+
+Canon home → [`02_03 §12.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.37.
+
+The surviving EDLC (`KR-5R5H474-R`) is rated −25…70 °C, while `02_02 §2.1` gives the capsule
+−40…+85 °C. Script 71 asks the BOUND question — does any hour of thirty Cherkasy years put the
+capsule above the rating? — on ERA5 hourly 1991–2020 (`tools/in_silico/data/era5_cherkasy/`,
+provenance in its README) with one isothermal lump per hour: the beam on the LARGEST projection of
+the exposed radome over all directions plus diffuse on half a sky, lost by the larger of natural and
+forced convection and by linearised long-wave exchange with surroundings at air temperature, on an
+adiabatic base (the Zone-2 PEEK break). Absorptance α is swept 0.50–0.95 because canon does not
+specify the radome finish; trunk-level wind is k·u10 with k = 0 (the bound), 0.1 and 0.3.
+
+| Hottest hour, still air | α 0.50 | α 0.95 | Margin to 70 °C at α 0.95 |
+|---|---|---|---|
+| Sunlit (the beam reaches the capsule) | 52.0 °C | 62.9 °C | 7.1 K |
+| Sunlit, h_c × 0.7 (the correlation off its home geometry) | 54.0 °C | 66.4 °C | 3.6 K |
+| Shaded (open-sky diffuse only — an upper bound under a crown) | 42.6 °C | 48.9 °C | 21.1 K |
+
+The second output is the temperature the EDLC AGES at: the vendor's doubling rule averaged over the
+hours, T_eff = 10·log2⟨2^(T/10)⟩, with the life taken from `51`'s own `capacitor_life_hours` at the
+ratified `VBAT_OV` (imported, not re-implemented — the 10/25 °C reference points reproduce `51`).
+
+| Series | T_eff | Life, conservative–optimistic |
+|---|---|---|
+| Open air | 13.0 °C | 19.1–62.0 yr |
+| Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.3–17.3 °C | 14.3–56.9 yr |
+| Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.3–26.5 °C | 7.5–46.2 yr |
+
+Cold side: the air was below the −25 °C floor for 64 hours in 30 years (9 days, coldest −27.4 °C);
+the lump tracks the air at night in this model, and real sky cooling would make the capsule colder,
+so the count is a LOWER bound for the capsule.
+
+**Verdict** — the hot side is not exceeded for any finish in the sweep, but for a DARK finish in full
+sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 16 K. The
+aging side moves the 20-year claim: the site does not age the EDLC at the 10 °C reference point, and
+at its real T_eff the conservative voltage coefficient stays below 20 years in every case while the
+optimistic one stays above it in every case — so the claim now rests on the vendor voltage
+coefficient alone, which the FAE letter asks. NOT modelled: sunlit bark heating the flange rim and
+ERA5 smoothing of station maxima (both move the hot answer UP), canopy transmittance (the shaded case
+is an upper bound under a crown), sky cooling at night (the cold count is a lower bound).
+(`thermal/capsule_envelope.json` → `hot_bound`, `hot_bound_h_c_sensitivity`, `aging`,
+`cold_hours_below_edlc_floor`)
+
+---
+
 ## HW.42 — Does a Second Power Source Contaminate `delta_t`? (script 63)
 
 Canon home → [`02_03 §9`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.42.

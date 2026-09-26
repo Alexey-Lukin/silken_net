@@ -18,6 +18,7 @@ DFT = CACHE / "dft"
 KINETICS = CACHE / "kinetics"
 MECHANICAL = CACHE / "mechanical"
 CHEMISTRY = CACHE / "chemistry"
+THERMAL = CACHE / "thermal"
 
 
 # ── Ligand SDF/XYZ files ──
@@ -207,6 +208,75 @@ def test_edlc_endurance_hours_hw37():
             assert row["optimistic_yr"] > row["conservative_yr"], (
                 f"{sku}@{v_target}V: optimistic coefficient should out-live conservative"
             )
+
+
+def test_capsule_thermal_envelope_hw37():
+    """Script 71 (HW.37): the capsule thermal envelope against the surviving EDLC's operating rating.
+
+    Every flag and every judging clause is DERIVED from the rows, and these checks fail when one stops
+    matching them (in-silico §When Modifying #5/#8): the exceedance flag and the margins, the physical
+    signs the lump model must keep, Jensen on the aging average, the reference points against `51`'s
+    own cache, and the verdict's «every case» sentence against every case. What they CANNOT catch is a
+    wrong input bracket — absorptance, convection correlation, sky view, climate — which the cache
+    declares as its own and a field reading has to settle.
+    """
+    path = THERMAL / "capsule_envelope.json"
+    if not path.exists():
+        pytest.skip("capsule_envelope.json not computed")
+    d = json.loads(path.read_text())
+    r_max = d["rating_c"]["edlc_operating_max"]
+    r_min = d["rating_c"]["edlc_operating_min"]
+    hot = d["hot_bound"]
+    sens = d["hot_bound_h_c_sensitivity"]["sunlit_still_air"]
+    rows = [r for by_a in hot.values() for by_k in by_a.values() for r in by_k.values()] + list(sens.values())
+    # 1. The flag and every margin are the rows' own arithmetic; absorbed sun can only heat the lump.
+    assert d["rating_exceeded"] == any(r["t_cap_max_c"] > r_max for r in rows)
+    for r in rows:
+        assert abs(r["margin_to_rating_k"] - (r_max - r["t_cap_max_c"])) <= 0.051
+    for by_a in hot.values():
+        for by_k in by_a.values():
+            for r in by_k.values():
+                assert r["t_cap_max_c"] >= r["t_air_c"] - 0.05, "the lump came out colder than air in the sun"
+    # 2. Signs the model must keep: hotter with α at fixed wind, cooler with wind at fixed α, the beam
+    #    never cooling the capsule, and a smaller h_c never cooling it either.
+    alphas = sorted(hot["sunlit"], key=float)
+    ks = sorted(hot["sunlit"][alphas[0]], key=float)
+    assert ks[0] == "0.0", "the still-air BOUND is missing from the wind bracket"
+    for case in ("sunlit", "shaded"):
+        for k in ks:
+            by_alpha = [hot[case][a][k]["t_cap_max_c"] for a in alphas]
+            assert by_alpha == sorted(by_alpha), f"{case} k={k}: hotter at lower α"
+        for a in alphas:
+            by_wind = [hot[case][a][k]["t_cap_max_c"] for k in ks]
+            assert by_wind == sorted(by_wind, reverse=True), f"{case} α={a}: hotter in wind"
+    for a in alphas:
+        for k in ks:
+            assert hot["sunlit"][a][k]["t_cap_max_c"] >= hot["shaded"][a][k]["t_cap_max_c"]
+    for a, r in sens.items():
+        assert r["t_cap_max_c"] >= hot["sunlit"][a]["0.0"]["t_cap_max_c"], f"h_c × scale cooled α={a}"
+    # 3. Aging: an exponential rate's effective temperature is never below the plain mean (Jensen), the
+    #    radome never ages the EDLC slower than open air, and the reference points reproduce `51`.
+    aging = d["aging"]
+    for name, r in aging.items():
+        assert r["t_eff_c"] >= r["mean_c"], f"{name}: T_eff below the mean — not a doubling-rule average"
+        life = r["life_at_ratified_vbat_ov"]
+        assert life["optimistic_yr"] > life["conservative_yr"]
+        if name != "air":
+            assert r["t_eff_c"] >= aging["air"]["t_eff_c"], f"{name}: the radome aged the EDLC slower than air"
+    own = json.loads((KINETICS / "gusak_degradation.json").read_text())[
+        "edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]
+    for t, ref in d["aging_reference_points_02_03"].items():
+        for end in ("conservative_yr", "optimistic_yr"):
+            assert abs(ref[end] - own[f"{float(t):.1f}"][end]) <= 0.051, f"{t} °C {end}: 71 and 51 disagree"
+    # 4. The verdict's «every case» sentence, held to every case it summarises.
+    cons = [r["life_at_ratified_vbat_ov"]["conservative_yr"] for r in aging.values()]
+    opt = [r["life_at_ratified_vbat_ov"]["optimistic_yr"] for r in aging.values()]
+    rests_on_coefficient = "rests on the vendor voltage coefficient alone" in d["verdict_aging"]
+    assert rests_on_coefficient == (max(cons) < 20.0 <= min(opt))
+    # 5. Cold side: hours under the floor exist only if the coldest hour is under it.
+    cold = d["cold_hours_below_edlc_floor"]
+    assert (cold["hours"] > 0) == (cold["coldest_air_c"] < r_min)
+    assert cold["days"] <= cold["hours"]
 
 
 def test_lame_alloy_comparative():
@@ -1460,6 +1530,7 @@ EXPECTED_SCRIPTS = [
     "67_sap_recipe_saturation.py",
     "68_bus_contact_equilibrium.py",
     "69_chem11_aggregation_compensation.py",
+    "71_capsule_thermal_envelope.py",
 ]
 
 
