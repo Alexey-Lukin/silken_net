@@ -622,16 +622,16 @@ plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25
 | Head the spec window holds (0.2–1.0 µm, θ 110–120°) | **10.2 – 74.4 m H₂O** |
 | Hand-set field loads (dew film · droplet · 20 m/s air stagnation · 50 mm submersion) | 10 – 489 Pa |
 | Pore the prescribed 30 cm column can fail | **33.9 µm** |
-| Pore the "≥ 1 m" criterion demands at θ 110° / 115° / 120° | **10.2 / 12.6 / 14.9 µm** |
+| Pore the acceptance criterion demands at θ 110° / 115° / 120° — "≥ 1.5 m" since 2026-09-26 (derived from the IP68 depth, founder-ratified; the old "≥ 1 m" gave 10.2 / 12.6 / 14.9) | **6.78 / 8.38 / 9.92 µm** |
 | Water-entry pressure at θ 110° — pore AND angle together, NOT a bubble point (that one runs in a wetting liquid and does not see θ) | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
 | θ at which the worst field load breaks through | **90.02 – 90.10°** |
-| Ratified flood — capsule IP68 immersion 1.5 m / 30 min ([`02_02 §3.3`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md)); NOT one of the four hand-set loads, so it has its own cache block and the row above does not move | **14.7 kPa**, breaking through at θ **90.58 / 91.44 / 92.89°** for 0.2 / 0.5 / 1.0 µm; the widest spec pore at 110° holds it **6.8×** — but the acceptance criterion "≥ 1 m H₂O" (`01_04 §5.6`) lies BELOW it, so a membrane whose water-entry head is between 1 and 1.5 m passes acceptance and floods |
+| Ratified flood — capsule IP68 immersion 1.5 m / 30 min ([`02_02 §3.3`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md)); NOT one of the four hand-set loads, so it has its own cache block and the row above does not move | **14.7 kPa**, breaking through at θ **90.58 / 91.44 / 92.89°** for 0.2 / 0.5 / 1.0 µm; the widest spec pore at 110° holds it **6.8×** — and since 2026-09-26 the acceptance criterion is DERIVED from this head ("≥ 1.5 m H₂O", `01_04 §5.6`, founder-ratified) — until then "≥ 1 m" lay below it, so a membrane entering between 1 and 1.5 m passed acceptance and flooded; the flood is now a load of the membrane, and its 92.89° is the stand threshold |
 | O₂ transport margin at the canon's own lower bound (0.02 µm) | **4838×** |
 
 **Verdict** — 🟢 Spec sound and over-specified at both ends; ⚠️ the BENCH was aimed at the wrong
 target, and so was my first reading of the canon. The prose bound "no pores > 15 µm" is **not an
 arithmetic error** — it is this same inversion at 120°, the top of the document's own θ range, while
-the §5.3 table guarantees only 110° (→ 10.2 µm). The defect is an unstated θ slice, not a wrong
+the §5.3 table guarantees only 110° (→ 10.2 µm under the 1 m criterion of the day; 6.78 µm under the 1.5 m one ratified 2026-09-26). The defect is an unstated θ slice, not a wrong
 number. Against the four hand-set loads the nominal pore is not the limit by 2–3 orders, but that is
 an ELIMINATION: neither a web/seam defect nor loss of hydrophobicity is computed by this formula.
 🔑 The design's real exposure is θ — and this document is about RESIN, whose acids are surfactants —

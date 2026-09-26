@@ -541,7 +541,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 - **Water contact angle:** greater than 110°.
 - **Fixing:** held only by mechanical clamping along its edges onto a titanium part — **no adhesive of any kind** (contamination risk).
 - **Position:** the outermost layer over the cathode's catalytic layer on a titanium flange 25 mm in diameter. **It sits on the side face (perimeter) of the flange, as a strip that stands above the bark**; the height of that face and the clamp design are not final yet.
-- **Acceptance criterion we already hold:** the membrane must withstand a water column of **at least 1 m H₂O (about 9.8 kPa)** without water entry. We use it as a screen for defects such as pinholes, not as a measure of pore size: on our own calculation for ideal pores in the rating above the margin is large, so a failure at 1 m would mean a defect.
+- **Acceptance criterion we already hold:** the membrane must withstand a water column of **at least 1.5 m H₂O (about 14.7 kPa)** without water entry — the same immersion depth the sealed electronics housing on the node is rated for, since the membrane shares that node. We use it as a screen for defects such as pinholes, not as a measure of pore size: on our own calculation for ideal pores in the rating above the margin is large, so a failure at 1.5 m would mean a defect.
 
 **What we ask you to provide**
 

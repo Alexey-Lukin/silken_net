@@ -96,7 +96,10 @@ CONTACT_ANGLE_DEG = (110.0, 115.0, 120.0)   # §5.3 table ">110"; §5.2 prose "~
 CANON_UPPER_PORE_UM = 15.0              # §5.3 prose "why not pores > 15 um"
 CANON_LOWER_PORE_UM = 0.02              # §5.3 prose "why not pores < 0.02 um"
 BENCH_COLUMN_M = 0.30                   # §5.6 apparatus as written
-BENCH_ACCEPT_M = 1.0                    # §5.6 acceptance criterion in the same line
+# §5.6 acceptance criterion — DERIVED from the capsule's IP68 immersion depth, not typed: ratified by
+# the founder 2026-09-26 (00_07 HW.25). It was 1.0 m with no stated ground, i.e. below the flood the
+# same node is rated for, so a membrane entering between 1.0 and 1.5 m passed acceptance and flooded.
+BENCH_ACCEPT_M = IP68_IMMERSION_DEPTH_M
 
 # ── Gas properties for the O2 half ──
 D_O2_AIR = 2.0e-5            # m2/s — O2 in air at ~293 K, 1 atm (CRC)
@@ -177,7 +180,7 @@ def main() -> int:
     best = liquid_entry_pressure(PORE_SPEC_UM[0], CONTACT_ANGLE_DEG[-1])
     print(f"  Best case (smallest pore at {CONTACT_ANGLE_DEG[-1]:.0f} deg): "
           f"{best / 1000:.1f} kPa = {pa_to_m_h2o(best):.1f} m H2O")
-    print(f"  => the specified window clears the §5.6 acceptance bar of {BENCH_ACCEPT_M:.0f} m by "
+    print(f"  => the specified window clears the §5.6 acceptance bar of {BENCH_ACCEPT_M:.1f} m by "
           f"{margin:.0f}x (worst) to {pa_to_m_h2o(best) / BENCH_ACCEPT_M:.0f}x (best).")
 
     # ── (2) what the prescribed bench can and cannot see ────────────────────
@@ -187,7 +190,7 @@ def main() -> int:
     d_at_spec = pa_to_m_h2o(liquid_entry_pressure(PORE_SPEC_UM[-1], CONTACT_ANGLE_DEG[0]))
     print(f"  §5.6 apparatus  — {BENCH_COLUMN_M * 100:.0f} cm column  -> fails only pores wider than "
           f"{d_at_bench:.1f} um")
-    print(f"  §5.6 acceptance — {BENCH_ACCEPT_M:.0f} m column     -> fails only pores wider than "
+    print(f"  §5.6 acceptance — {BENCH_ACCEPT_M:.1f} m column     -> fails only pores wider than "
           f"{d_at_accept:.1f} um")
     print("\n  The same inversion across the canon's OWN theta range — this is the whole story of")
     print(f"  the '{CANON_UPPER_PORE_UM:.0f} um' threshold, and it is not an arithmetic error:")
@@ -197,7 +200,7 @@ def main() -> int:
         theta_inv[f"CA_{int(th)}"] = {"pore_demanded_um": d_acc,
                                       "vs_canon_prose_x": CANON_UPPER_PORE_UM / d_acc}
         flag = " <- the canon's 15 um" if abs(d_acc - CANON_UPPER_PORE_UM) < 0.5 else ""
-        print(f"    theta {th:.0f} deg -> the {BENCH_ACCEPT_M:.0f} m criterion demands "
+        print(f"    theta {th:.0f} deg -> the {BENCH_ACCEPT_M:.1f} m criterion demands "
               f"<= {d_acc:5.2f} um{flag}")
     print(f"  => '{CANON_UPPER_PORE_UM:.0f} um' is this calculation at the TOP of the prose range, "
           f"while the §5.3 table")
@@ -278,8 +281,9 @@ def main() -> int:
                          f"ratified scenario.")
     else:
         accept_clause = (f"The §5.6 acceptance criterion (>= {BENCH_ACCEPT_M:.1f} m H2O) is not below "
-                         f"this head.")
-    print(f"  ⚠️ {accept_clause}")
+                         f"this head: it is DERIVED from it (founder 2026-09-26), so a membrane that "
+                         f"passes acceptance holds the ratified flood.")
+    print(f"  {'⚠️ ' if accept_below_flood else ''}{accept_clause}")
     print("  Whether a real flood reaches the band depends on the mounting height, which canon does not")
     print("  carry; the ratified scenario is an immersion of the NODE, so under it the band is submerged")
     print("  by construction. The 30 min enters no term of a static Young-Laplace.")
@@ -355,8 +359,10 @@ def main() -> int:
         f"anything.",
         f"4. The design's real exposure is theta, not pore size: the worst hand-set field load "
         f"breaks through only once the contact angle falls to "
-        f"{min(theta_fail.values()):.2f}-{max(theta_fail.values()):.2f} deg. That is the "
-        f"acceptance number the 12-week rain/dew test has been missing.",
+        f"{min(theta_fail.values()):.2f}-{max(theta_fail.values()):.2f} deg, and the ratified "
+        f"flood — a load of this membrane since 2026-09-26 — at "
+        f"{min(theta_flood.values()):.2f}-{max(theta_flood.values()):.2f} deg. The flood figure "
+        f"is the acceptance number of the 12-week rain/dew test.",
         f"5. O2 transport exceeds the cathode's peak demand by "
         f"{min(x['margin_x'] for x in o2.values()):,.0f}x at the worst pore in the whole "
         f"0.02-15 um range, so if the cathode is O2-limited the bottleneck is the catalytic "

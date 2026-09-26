@@ -75,15 +75,15 @@
     "contact_angle_deg": 110.0,
     "pressure_Pa": 99596.26573643474,
     "head_m_H2O": 10.17430644394917,
-    "margin_vs_acceptance_x": 10.17430644394917
+    "margin_vs_acceptance_x": 6.7828709626327806
   },
   "bench_inversion": {
     "apparatus_column_m": 0.3,
-    "acceptance_column_m": 1.0,
+    "acceptance_column_m": 1.5,
     "pore_failed_by_apparatus_um": 33.914354813163904,
-    "pore_demanded_by_acceptance_um": 10.17430644394917,
+    "pore_demanded_by_acceptance_um": 6.7828709626327806,
     "canon_prose_upper_pore_um": 15.0,
-    "canon_prose_optimism_x": 1.4743019666879358,
+    "canon_prose_optimism_x": 2.2114529500319033,
     "column_height_to_challenge_widest_spec_pore_m": 10.17430644394917,
     "water_entry_pressure_kPa": {
       "0.2um": {
@@ -106,16 +106,16 @@
   "field_pressure_note": "hand-set scenarios, not site data; the upper bound is submersion_50mm, not the wind-driven rain; droplet impact (water hammer) is not modelled",
   "theta_inversion": {
     "CA_110": {
-      "pore_demanded_um": 10.17430644394917,
-      "vs_canon_prose_x": 1.4743019666879358
+      "pore_demanded_um": 6.7828709626327806,
+      "vs_canon_prose_x": 2.2114529500319033
     },
     "CA_115": {
-      "pore_demanded_um": 12.571913636281694,
-      "vs_canon_prose_x": 1.193135781390592
+      "pore_demanded_um": 8.38127575752113,
+      "vs_canon_prose_x": 1.7897036720858879
     },
     "CA_120": {
-      "pore_demanded_um": 14.873840974713112,
-      "vs_canon_prose_x": 1.0084819399038467
+      "pore_demanded_um": 9.915893983142075,
+      "vs_canon_prose_x": 1.51272290985577
     }
   },
   "theta_at_which_worst_field_load_breaks_through_deg": {
@@ -136,8 +136,8 @@
     },
     "pore_failed_at_spec_floor_theta_um": 6.7828709626327806,
     "spec_worst_case_head_over_flood_x": 6.7828709626327806,
-    "acceptance_criterion_below_flood": true,
-    "finding": "The ratified capsule immersion (1.5 m / 30 min, 14683 Pa, 30x the worst hand-set load) breaks through the 0.2-1.0 um spec pores once theta falls to 90.58-92.89 deg, against 90.02-90.10 deg for the hand-set set: the threshold rises and stays far below the 110 deg spec floor, and the widest spec pore at that floor holds the flood 6.8x. The \u00a75.6 acceptance criterion (>= 1.0 m H2O) is BELOW this head, so a membrane whose water-entry head lies between 1.0 and 1.5 m passes acceptance and floods in the ratified scenario.",
+    "acceptance_criterion_below_flood": false,
+    "finding": "The ratified capsule immersion (1.5 m / 30 min, 14683 Pa, 30x the worst hand-set load) breaks through the 0.2-1.0 um spec pores once theta falls to 90.58-92.89 deg, against 90.02-90.10 deg for the hand-set set: the threshold rises and stays far below the 110 deg spec floor, and the widest spec pore at that floor holds the flood 6.8x. The \u00a75.6 acceptance criterion (>= 1.5 m H2O) is not below this head: it is DERIVED from it (founder 2026-09-26), so a membrane that passes acceptance holds the ratified flood.",
     "reaches_the_band": "Not computed: canon carries no mounting height (00_07 ARCH.102). The ratified scenario is an immersion of the NODE, and the band sits on the same node, so under it the band is submerged by construction; mounting height decides how often a real flood produces this immersion, not whether the membrane shares it.",
     "ceilings": "Static head only \u2014 the 30 min enters no term (duration acts through theta loss under contact, which is the stand's axis) and a moving flood's velocity head is not modelled. Canon does not name the point of the capsule the depth is taken at; the band lies within the node's centimetre-scale above-bark envelope (01_04 \u00a75.5 A). Pure water at 20 C: a surfactant in flood water lowers gamma and RAISES every threshold here, colder water raises gamma and lowers them. Whether water that entered leaves once the head drops is not computed."
   },
@@ -184,6 +184,6 @@
     "margin_thickest_membrane_smallest_SPEC_pore_x": 11194.795594165578,
     "j_max_provenance": "lib.constants J_MAX_25C is the ANODE pair's literature current density; used here as the cathode demand only because the cell is in series"
   },
-  "verdict": "1. The specified pore window holds 10-74 m of water head against hand-set field loads of 10-489 Pa. Against THOSE loads the nominal pore is not the limit; what remains \u2014 a web/seam defect, and loss of hydrophobicity \u2014 this formula does not compute. 2. The prescribed 30 cm column only fails pores wider than 34 um, so it is a gross-defect detector. Keep it as such, and verify the pore spec with a wetting-liquid bubble point, which does not depend on theta (the test the sterilisation QC already needs). The water-entry pressure that challenges the widest spec pore at 110 deg is 100 kPa, and it tests pore and angle together, not the pore. 3. The \u00a75.3 prose bound 'no pores > 15 um' is NOT an arithmetic error: it is this same inversion at 120 deg (14.87 um). What is missing is the slice \u2014 the \u00a75.3 TABLE guarantees only 110 deg, which demands <= 10.2 um. State theta with the number or neither means anything. 4. The design's real exposure is theta, not pore size: the worst hand-set field load breaks through only once the contact angle falls to 90.02-90.10 deg. That is the acceptance number the 12-week rain/dew test has been missing. 5. O2 transport exceeds the cathode's peak demand by 4,838x at the worst pore in the whole 0.02-15 um range, so if the cathode is O2-limited the bottleneck is the catalytic layer, not the GDL. (The demand uses the anode pair's literature current density \u2014 legitimate only because the cell is in series.)",
+  "verdict": "1. The specified pore window holds 10-74 m of water head against hand-set field loads of 10-489 Pa. Against THOSE loads the nominal pore is not the limit; what remains \u2014 a web/seam defect, and loss of hydrophobicity \u2014 this formula does not compute. 2. The prescribed 30 cm column only fails pores wider than 34 um, so it is a gross-defect detector. Keep it as such, and verify the pore spec with a wetting-liquid bubble point, which does not depend on theta (the test the sterilisation QC already needs). The water-entry pressure that challenges the widest spec pore at 110 deg is 100 kPa, and it tests pore and angle together, not the pore. 3. The \u00a75.3 prose bound 'no pores > 15 um' is NOT an arithmetic error: it is this same inversion at 120 deg (9.92 um). What is missing is the slice \u2014 the \u00a75.3 TABLE guarantees only 110 deg, which demands <= 6.8 um. State theta with the number or neither means anything. 4. The design's real exposure is theta, not pore size: the worst hand-set field load breaks through only once the contact angle falls to 90.02-90.10 deg, and the ratified flood \u2014 a load of this membrane since 2026-09-26 \u2014 at 90.58-92.89 deg. The flood figure is the acceptance number of the 12-week rain/dew test. 5. O2 transport exceeds the cathode's peak demand by 4,838x at the worst pore in the whole 0.02-15 um range, so if the cathode is O2-limited the bottleneck is the catalytic layer, not the GDL. (The demand uses the anode pair's literature current density \u2014 legitimate only because the cell is in series.)",
   "ceilings": "Nominal cylindrical pores \u2014 a real web is a distribution with a tail, and the largest as-made pore governs; no Cassie/Wenzel roughness correction; contact angle is the spec claim, not our measurement; the O2 half assumes a dry, open membrane (wetting, condensation and dust blinding are the real failure mode and are not modelled)."
 }
