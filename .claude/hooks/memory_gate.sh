@@ -233,7 +233,9 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   проходу зняла два рядки-лінки — тобто ратчет фіксує РІЗНИЦЮ, а не дозвіл рости.
 # ⊕ 26721 → 26767 (+46) — новий дім `project_02_node_board_fit`, влитий ІНЛАЙНОМ у рядок-хаб Soldier breadboard
 #   (важіль hub-inline), а не окремим рядком: окремий коштував +111. Залишок — ціна однієї адреси.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26767}
+# ⊕ 26767 → 26715 (−52) — прохід памʼяті §02/§03 (2026-09-26): стаб `reference_ml_skill` знято з рядка-хаба
+#   стабів, гачки роутерів FW.60 · Sim/IaC · Baseline · SE · SEC-кластер переписано без надгробків. До факту.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26715}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 # 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
@@ -403,7 +405,11 @@ rb_dark() {
 # дослівно з `feedback_crown_bounded_by_roots` 33.7 → ~10 kB). Підняття робить новий дім захищеним підлогою.
 # 2026-09-25: 166 → 167 — `project_02_node_board_fit` (жива вісь §02: плата Солдата в стелі, присуд founder-а
 # про чіп замість модуля й дозвіл рухати корінь геометрії). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
+# 2026-09-26: 167 → 166 — прохід памʼяті §02/§03: стаб `reference_ml_skill` знято за критерієм хаба
+# («stubs keep only what the skill lacks»): тіло повторювало той самий маршрут, що `ml-engineering` SKILL.md
+# (стан → `00_07` §03a FW.4, уроки → памʼять), а опис брехав («backend Rumale» — шар знято 2026-09-05).
+# Обидві вхідні струни знято (одна переточена на скіл, друга — зі списку сиблінгів), рядок індексу злито.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -531,7 +537,9 @@ index_reach_expected() {
 # пішли, три нові короткі прийшли); зекономлене не стає запасом.
 # 2026-09-25: 43277 → 43410 (+133) — вартість опису нового дому `project_02_node_board_fit`. Прецедент дотримано:
 # власний опис стиснуто (273 → 208 B) ПЕРЕД бампом, чужих не підрізано.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43410}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
+# 2026-09-26: 43410 → 41500 (−1910) — прохід памʼяті §02/§03: описи роутерів §02/§03 переписано як тригери
+# (без хроніки й надгробків), опис стаба `reference_ml_skill` пішов разом із файлом; зекономлене не стає запасом.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41500}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
@@ -1202,11 +1210,10 @@ exempt = {
   "project_ssot_campaign_history.md" => ["05_03 §749", "08_03 §11", "08_01 §2"],
   "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15"],
   "project_ip_posture_defensive_publication.md" => ["08_01 §2"],
-  # Розкол 00_04 (DOC-T.83, 2026-08-22) забрав §11–§20 у 02_06. Три записи нижче —
+  # Розкол 00_04 (DOC-T.83, 2026-08-22) забрав §11–§20 у 02_06. Записи нижче —
   # ІСТОРІЯ vilize-кампанії: субʼєкт речення факт («оновив §3, але забув §17.1
   # дзеркало»), і правку тоді робили САМЕ за тією адресою. Перенаведення на 02_06
   # зробило б запис хибним — guard-craft #29, «субʼєкт — адреса чи факт».
-  "project_vilize_02b_gateway.md" => ["07_01 §14а"],
   "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5", "07_01 §17",
                                 "07_01 §3", "07_03 §3"],
   # Фаза 2 DOC-T.83 (2026-08-22) забрала модуль 07 цілком: 07_03→00_02, 07_01→00_04.
