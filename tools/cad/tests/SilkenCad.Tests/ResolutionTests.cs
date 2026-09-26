@@ -16,7 +16,8 @@ public class ResolutionTests
     // and the quantities they exist to produce (bayonet-Z mismatch, MATE-Ø, RF clearance, press-fit
     // interference, insertion budget) do not read any of the features below. What is NOT built here is
     // the narrower check that would earn those rows honestly — "is every feature the audit MEASURES
-    // adequately resolved" — so these rows rest on a reading of the code, not on a gate (00_07 HW.51).
+    // adequately resolved" — so these rows rest on a reading of the code, not on a gate (founder verdict
+    // 2026-09-17: not built, because nothing consumes it — basis and price in 01_02 §6).
     private static readonly Dictionary<string, string> Exempt = new()
     {
         // The one PART manifest on the list, and it is a finding rather than an accommodation:

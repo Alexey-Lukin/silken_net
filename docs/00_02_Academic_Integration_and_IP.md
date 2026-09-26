@@ -88,6 +88,8 @@
 | доц. **Ярмілко А.В.** (ФОТІУС) | IIoT / embedded | **Провідник у ЧНУ** (зустрічі 2026, вхід у ректорат) + лід на локальний друк Ti: чи мають черкаські контакти SLM/DMLS ([`00_07`](00_07_Action_Plan_Tracker) HW.24, не committed) | — |
 | доц. **Косенюк Г.В.** (ФОТІУС) | військова радіотехніка, теорія кодування | FEKO/CST-модель імпедансу й 3D-діаграми прихованої антени під PEEK із Ti-анкером як ground plane ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)) — опц., не load-bearing: RF-рішення судять макет і VNA Гончарова (§1.2) | Ст. 23 |
 
+> **Канал біо-хабу — пасивний і однолистовий.** ⚖️ founder 2026-09-23: про ZIF-синтез — ОДИН лист, без нагадувань, умов лист не обіцяє ([`00_07`](00_07_Action_Plan_Tracker) HW.5). ⚖️ founder 2026-09-25 за рекомендацією: питання покриттів (Zn-HAp-синтез · SA-reservoir) їдуть наступним ОДНИМ листом і лише після відповіді на перший ([`00_07`](00_07_Action_Plan_Tracker) HW.40); якщо відповіді не буде зовсім, питання повертається founder-у, а не ллється другим листом за мовчанням. Ціна — календар, не TRL 4: покриття не на критичному шляху coin.
+
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK) / [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) / [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / [`01_04 §6`](01_04_CODIT_and_Xylemointegration) / [`03_04`](03_04_mruby_Lorenz_Attractor) + [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
 
 **Суміжні канали ЧНУ (не наукова валідація):**
