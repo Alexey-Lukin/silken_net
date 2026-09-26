@@ -5,11 +5,13 @@
  * [FW.2 / ARCH.42 Variant B, freeze-contract 2026-05-24;
  *  wire-rev2 28B — founder decision 2026-06-12, docs/03_05 wire-budget ledger]
  *
- * Single source of truth for the 28-byte CCM LoRa packet format,
+ * Single source of truth for the CCM LoRa packet format (air =
+ * FW2_CCM_AIR_PACKET_LEN — 30 B since rev2.1),
  * Frame Counter packing into RTC_BKP_DR15, and CCM HAL invocation
  * shape. Used by:
  *   - firmware/soldier/main.c  (encrypt path, gated #if FW2_CCM_ENABLED)
- *   - firmware/queen/main.c    (decrypt path, gated #if FW2_CCM_ENABLED)
+ *   - firmware/queen/main.c    (off the hot path: the Queen is a blind courier;
+ *                               Queen_Parse_CCM_LoRa_Packet serves bench RX attestation)
  *   - firmware/test/test_ccm.c (host tests, libcrypto-backed HAL mock)
  *
  * Wire format (30 bytes on the air — rev2.1, founder decision 2026-07-03
@@ -77,7 +79,7 @@
  *        DataWidthUnit/HeaderWidthUnit = BYTE + DataType = 8B
  *        (байтопотік без word-swap двозначностей; silicon-звірку
  *        DataType-комбінації робить ccm_selftest KAT на bench).
- *     2. Payload-фаза: HAL_CRYP_Encrypt/Decrypt (Size у БАЙТАХ — 12).
+ *     2. Payload-фаза: HAL_CRYP_Encrypt/Decrypt (Size у БАЙТАХ — FW2_CCM_PLAINTEXT_LEN).
  *     3. Тег-фаза: HAL_CRYPEx_AESCCM_GenerateAuthTAG → перші 8 байт = MIC.
  *   На decrypt HAL тег НЕ звіряє — порівняння робить ВИКЛИКАЧ
  *   константним часом (Fw2_Ccm_Tag_Equal). Host-мок (hal_mock.h)
@@ -192,7 +194,7 @@ static inline void Build_CCM_Nonce(uint32_t did, uint32_t frame_counter,
 }
 
 /* B0-блок із ГОТОВОГО нонса (KAT-вектори носять nonce напряму):
- * [flags:1][nonce:12][Q:3 BE] — Q = довжина plaintext'а (12).
+ * [flags:1][nonce:12][Q:3 BE] — Q = довжина plaintext'а (FW2_CCM_PLAINTEXT_LEN).
  * Це єдине місце, де форматується B0; кремній і мок їдять той самий байт-ряд. */
 static inline void Build_CCM_B0_From_Nonce(const uint8_t nonce[FW2_CCM_NONCE_LEN],
                                            uint16_t payload_len,

@@ -16,7 +16,6 @@
 #include "hal_mock.h"
 
 /* ── Constants (from queen/main.c) ──────────────────────────────────── */
-#define CACHE_MAX_ENTRIES     50
 #define CMD_DEDUP_SIZE        16
 #define UUID_STR_LEN          36
 #define CMD_DECRYPT_BUF_SIZE  544
@@ -32,20 +31,11 @@ static void Error_Handler(void) { _mock_error_handler_called++; }
 /* [FW.1] AES key array (same as in queen/main.c) */
 static uint32_t aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42 Variant B) */
 
-/* ── Data structures (from queen/main.c) ────────────────────────────── */
-/* [FW.2] Дзеркало тримає СУПЕРСЕТ фліп-світу: payload 24B (CCM-хвіст) +
- * fmt-тег; ECB-ера живе у перших 16 байтах з fmt=ECB16 (у main.c ширина
- * гейтована FW2_CCM_ENABLED — тут завжди 24, щоб тестувати обидві ери). */
-#define EDGE_FMT_ECB16  0u
-#define EDGE_FMT_CCM24  1u
-typedef struct {
-    uint32_t uid;
-    uint8_t  payload[24];
-    int8_t   rssi;
-    int8_t   snr;          /* [E.8] SNR — CIFO eviction tiebreaker */
-    uint8_t  is_active;
-    uint8_t  fmt;          /* [FW.2] EDGE_FMT_* — розкладка payload */
-} EdgeCache;
+/* ── Edge-кеш: СПРАВЖНІЙ код прошивки (queen/cifo_cache.h), не дзеркало ──
+ * [FW.2] Ширина слота тут — суперсет обох ер (air-хвіст CCM), щоб одна
+ * збірка тестувала і ECB16, і CCM_AIR; у main.c ширина гейтована. */
+#define EDGE_SLOT_PAYLOAD_MAX (FW2_CCM_AIR_PACKET_LEN - 4u)
+#include "../queen/cifo_cache.h"
 
 /* ── Globals for testable functions ─────────────────────────────────── */
 static EdgeCache forest_cache[CACHE_MAX_ENTRIES];
@@ -168,88 +158,13 @@ static void Cmd_Remember_Token(const char *p)
     Cmd_Copy_Token(g_last_acked_cmd_token, p, Cmd_Token_Len(p, UUID_STR_LEN));
 }
 
-/* CIFO cache — with priority-aware eviction FIX (Risk 3) and
- * [E.8] SNR-aware tiebreaker for non-critical entries with equal RSSI.
- * [FW.2] fmt-aware дзеркало: ECB16 = 16B розшифрованих (bio_status видно),
- * CCM24 = 24B опакового хвоста (статус у шифртексті → сліпий кур'єр чесно
- * ставить 0 і CCM-запис живе у пулі preferred-evict — свідома стеля). */
+/* CIFO: тонка обгортка над справжнім Cifo_Upsert (queen/cifo_cache.h) без
+ * ARCH.35-хука — ring у host-сюїті не змонтовано, як і в бойовому білді з
+ * вимкненим гейтом. Облік лічильника тестується тим самим кодом, що в main.c. */
 static void Process_And_Cache_Data_Fmt(uint32_t uid, const uint8_t* payload,
                                        int8_t rssi, int8_t snr, uint8_t fmt)
 {
-    uint8_t plen = (fmt == EDGE_FMT_CCM24) ? 24u : 16u;
-
-    /* 1. DEDUP */
-    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-        if (forest_cache[i].is_active && forest_cache[i].uid == uid) {
-            memcpy(forest_cache[i].payload, payload, plen);
-            forest_cache[i].rssi = rssi;
-            forest_cache[i].snr  = snr;
-            forest_cache[i].fmt  = fmt;
-            return;
-        }
-    }
-
-    /* 2. INSERT into free slot */
-    if (cache_count < CACHE_MAX_ENTRIES) {
-        for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-            if (!forest_cache[i].is_active) {
-                forest_cache[i].uid = uid;
-                memcpy(forest_cache[i].payload, payload, plen);
-                forest_cache[i].rssi = rssi;
-                forest_cache[i].snr  = snr;
-                forest_cache[i].is_active = 1;
-                forest_cache[i].fmt  = fmt;
-                cache_count++;
-                return;
-            }
-        }
-    }
-
-    /* 3. CIFO eviction — priority-aware:
-     * Prefer evicting non-critical (bio_status == 0) with worst RSSI.
-     * Fall back to absolute worst RSSI if ALL are critical.
-     * [E.8] When two candidates have EQUAL RSSI, lower SNR wins eviction
-     *       (noisier link → packet more likely stale/unreliable).
-     * [FIX: AUDIT] Only consider is_active entries for eviction.
-     * [FW.2] bio_status читається ЛИШЕ з ECB16-розкладки (byte 10 у CCM =
-     * зашифрований diag, не статус — офсет-колізія!). */
-    int best_evict_idx = -1;
-    int8_t best_evict_rssi = 127;
-    int8_t best_evict_snr  = 127;
-    int fallback_idx = 0;
-    int8_t fallback_rssi = 127;
-    int8_t fallback_snr  = 127;
-
-    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-        if (!forest_cache[i].is_active) continue; /* [FIX] skip inactive */
-
-        uint8_t bio_status = (forest_cache[i].fmt == EDGE_FMT_ECB16)
-                                 ? (uint8_t)((forest_cache[i].payload[10] >> 5) & 0x03)
-                                 : 0u;  /* [FW.29-PACK] bits 6..5, ECB16-only */
-
-        if (forest_cache[i].rssi < fallback_rssi ||
-            (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
-            fallback_rssi = forest_cache[i].rssi;
-            fallback_snr  = forest_cache[i].snr;
-            fallback_idx  = i;
-        }
-
-        if (bio_status == 0 &&
-            (forest_cache[i].rssi < best_evict_rssi ||
-             (forest_cache[i].rssi == best_evict_rssi && forest_cache[i].snr < best_evict_snr))) {
-            best_evict_rssi = forest_cache[i].rssi;
-            best_evict_snr  = forest_cache[i].snr;
-            best_evict_idx  = i;
-        }
-    }
-
-    int evict = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx;
-
-    forest_cache[evict].uid = uid;
-    memcpy(forest_cache[evict].payload, payload, plen);
-    forest_cache[evict].rssi = rssi;
-    forest_cache[evict].snr  = snr;
-    forest_cache[evict].fmt  = fmt;
+    (void)Cifo_Upsert(forest_cache, &cache_count, uid, payload, rssi, snr, fmt, NULL);
 }
 
 /* Legacy 4-арг обгортка — існуючі ECB-тести живуть без churn'у. */
@@ -976,16 +891,80 @@ TEST(test_cache_uid_zero) {
     ASSERT_EQ(cache_count, 1);
 }
 
-/* ── [FW.2] fmt-aware CIFO: CCM24-слоти (опаковий шифртекст) ─────────── */
-
-TEST(test_fw2_ccm_slot_stores_24_bytes_and_fmt) {
+/* [FW.3] Лічильник кешу — тригер флашу (≥ CACHE_MAX_ENTRIES − FLUSH_HEADROOM)
+ * і fill_pct health-блоку QATT: вставка мусить його інкрементувати, флаш —
+ * повернути рівно в нуль. Без інкременту `cache_count -= cleared` загортає
+ * uint8_t у ~250: далі флаш іде на кожному проході циклу, а кеш тримає один
+ * живий слот. Облік живе в cifo_cache.h — тест ганяє той самий код, що main.c. */
+TEST(test_cifo_count_tracks_inserts_through_flush) {
     reset_cache();
-    uint8_t tail[24];
-    for (unsigned i = 0; i < sizeof tail; i++) tail[i] = (uint8_t)(0xB0u + i);
-    Process_And_Cache_Data_Fmt(0xC0FFEE01, tail, -66, 3, EDGE_FMT_CCM24);
+    uint8_t p[16] = {0};
+    for (uint32_t i = 0; i < 3; i++) Process_And_Cache_Data(0x1000u + i, p, -60, 0);
+    ASSERT_EQ(cache_count, 3);
+    ASSERT_EQ(cache_count, Cifo_Count_Active(forest_cache));
+    ASSERT_EQ(Flush_Cache_Sim(1), 1);
+    ASSERT_EQ(cache_count, 0);
+    Process_And_Cache_Data(0x2000u, p, -60, 0);
     ASSERT_EQ(cache_count, 1);
-    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM24);
-    ASSERT_EQ(memcmp(forest_cache[0].payload, tail, 24), 0);
+    ASSERT_EQ(cache_count, Cifo_Count_Active(forest_cache));
+}
+
+/* [FW.2] Витіснення пише ту саму довжину й fmt, що й вставка: CCM-голос, що
+ * витісняє ECB-сусіда, лягає всім air-хвостом і з CCM-тегом — інакше flush
+ * пакував би обрізаний хвіст під ECB-розкладкою. */
+TEST(test_fw2_ccm_evict_writes_full_tail_and_fmt) {
+    reset_cache();
+    uint8_t healthy[16] = {0};
+    for (uint32_t i = 0; i < CACHE_MAX_ENTRIES; i++)
+        Process_And_Cache_Data(0x3000u + i, healthy, -50, 0);
+    uint8_t tail[EDGE_SLOT_PAYLOAD_MAX];
+    for (unsigned k = 0; k < sizeof tail; k++) tail[k] = (uint8_t)(0xC0u + k);
+    ASSERT_EQ(Cifo_Upsert(forest_cache, &cache_count, 0xCC9u, tail, -40, 0,
+                          EDGE_FMT_CCM_AIR, NULL), CIFO_EVICT);
+    int j = Cifo_Find(forest_cache, 0xCC9u);
+    ASSERT_TRUE(j >= 0);
+    ASSERT_EQ(forest_cache[j].fmt, EDGE_FMT_CCM_AIR);
+    ASSERT_EQ(memcmp(forest_cache[j].payload, tail, sizeof tail), 0);
+    ASSERT_EQ(cache_count, CACHE_MAX_ENTRIES);
+}
+
+/* [ARCH.35] Хук спілу бачить жертву ДО перезапису (інакше ring зберіг би вже
+ * новий голос замість витісненого); вставка й дедуп його не кличуть. */
+static uint32_t g_spilled_uid;
+static uint8_t  g_spilled_calls;
+static void Test_Spill_Capture(EdgeCache *victim)
+{
+    g_spilled_uid = victim->uid;
+    g_spilled_calls++;
+}
+
+TEST(test_cifo_spill_hook_sees_victim_before_overwrite) {
+    reset_cache();
+    g_spilled_uid = 0;
+    g_spilled_calls = 0;
+    uint8_t p[16] = {0};
+    for (uint32_t i = 0; i < CACHE_MAX_ENTRIES; i++)
+        Process_And_Cache_Data(0x4000u + i, p, (int8_t)((i == 7) ? -110 : -50), 0);
+    ASSERT_EQ(g_spilled_calls, 0);
+    ASSERT_EQ(Cifo_Upsert(forest_cache, &cache_count, 0x4999u, p, -40, 0,
+                          EDGE_FMT_ECB16, Test_Spill_Capture), CIFO_EVICT);
+    ASSERT_EQ(g_spilled_calls, 1);
+    ASSERT_EQ(g_spilled_uid, 0x4007u);
+    ASSERT_EQ(Cifo_Upsert(forest_cache, &cache_count, 0x4999u, p, -40, 0,
+                          EDGE_FMT_ECB16, Test_Spill_Capture), CIFO_DEDUP);
+    ASSERT_EQ(g_spilled_calls, 1);
+}
+
+/* ── [FW.2] fmt-aware CIFO: CCM-слоти (опаковий air-хвіст, air−4) ────── */
+
+TEST(test_fw2_ccm_slot_stores_air_tail_and_fmt) {
+    reset_cache();
+    uint8_t tail[EDGE_SLOT_PAYLOAD_MAX];
+    for (unsigned i = 0; i < sizeof tail; i++) tail[i] = (uint8_t)(0xB0u + i);
+    Process_And_Cache_Data_Fmt(0xC0FFEE01, tail, -66, 3, EDGE_FMT_CCM_AIR);
+    ASSERT_EQ(cache_count, 1);
+    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM_AIR);
+    ASSERT_EQ(memcmp(forest_cache[0].payload, tail, sizeof tail), 0);
 }
 
 TEST(test_fw2_ccm_dedup_can_flip_format) {
@@ -993,23 +972,23 @@ TEST(test_fw2_ccm_dedup_can_flip_format) {
      * оновлює і байти, і fmt (інакше flush пакував би CCM-хвіст як ECB). */
     reset_cache();
     uint8_t ecb[16] = {0};
-    uint8_t tail[24] = {0xAA};
+    uint8_t tail[EDGE_SLOT_PAYLOAD_MAX] = {0xAA};
     Process_And_Cache_Data_Fmt(0x77, ecb, -50, 0, EDGE_FMT_ECB16);
     ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_ECB16);
-    Process_And_Cache_Data_Fmt(0x77, tail, -48, 0, EDGE_FMT_CCM24);
+    Process_And_Cache_Data_Fmt(0x77, tail, -48, 0, EDGE_FMT_CCM_AIR);
     ASSERT_EQ(cache_count, 1);
-    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM24);
+    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM_AIR);
     ASSERT_EQ(forest_cache[0].payload[0], 0xAA);
 }
 
 TEST(test_fw2_ccm_offset10_not_read_as_status) {
-    /* Офсет-колізія (пастка FW.2): у CCM24 byte 10 = зашифрований diag.
+    /* Офсет-колізія (пастка FW.2): у CCM-слоті byte 10 = зашифрований diag.
      * Слот зі "статусом-виглядом" 0xFF у byte 10 НЕ сміє отримати
      * критичний імунітет — CCM-запис лишається preferred-evict. */
     reset_cache();
-    uint8_t tail[24] = {0};
+    uint8_t tail[EDGE_SLOT_PAYLOAD_MAX] = {0};
     tail[10] = 0xFF; /* у ECB-світі це був би status=3 tamper */
-    Process_And_Cache_Data_Fmt(0xCC1, tail, -90, 0, EDGE_FMT_CCM24);
+    Process_And_Cache_Data_Fmt(0xCC1, tail, -90, 0, EDGE_FMT_CCM_AIR);
 
     uint8_t healthy[16] = {0};
     for (uint32_t i = 1; i < 50; i++)
@@ -1033,8 +1012,8 @@ TEST(test_fw2_ecb_critical_still_protected_beside_ccm) {
     tamper[10] = (3 << 5);
     Process_And_Cache_Data(0xE1, tamper, -100, 0);
 
-    uint8_t tail[24] = {0};
-    Process_And_Cache_Data_Fmt(0xCC2, tail, -95, 0, EDGE_FMT_CCM24);
+    uint8_t tail[EDGE_SLOT_PAYLOAD_MAX] = {0};
+    Process_And_Cache_Data_Fmt(0xCC2, tail, -95, 0, EDGE_FMT_CCM_AIR);
 
     uint8_t healthy[16] = {0};
     for (uint32_t i = 2; i < 50; i++)
@@ -1768,96 +1747,6 @@ TEST(test_rssi_old_truncation_was_wrong) {
     ASSERT_EQ(wrong, 126); /* This proves the old code was buggy */
     /* Our clamp fixes it */
     ASSERT_EQ(Clamp_RSSI(-130), -128);
-}
-
-/* ════════════════════════════════════════════════════════════════════
- * 7. QUEEN HEALTH SENTINEL TESTS
- * ════════════════════════════════════════════════════════════════════ */
-
-/* Build queen health packet — extracted from queen main loop fix */
-static void Build_Queen_Health(uint8_t* payload, uint8_t tree_count, uint16_t uptime_sec)
-{
-    memset(payload, 0, 16);
-    /* DID = 0x00000000 (sentinel — "this is the Queen, not a tree") */
-    /* Bytes 4-5: uptime proxy */
-    payload[4] = (uint8_t)(uptime_sec >> 8);
-    payload[5] = (uint8_t)(uptime_sec & 0xFF);
-    /* Byte 7: number of trees in cache */
-    payload[7] = tree_count;
-    /* [FW.29-PACK] Byte 10: status=homeostasis(0), growth_points = tree_count
-     * (capped at 31 — 5-bit wire, QUEEN_HEALTH_GP_MAX). */
-    payload[10] = (tree_count < 31) ? tree_count : 31;
-}
-
-TEST(test_queen_health_did_zero) {
-    uint8_t p[16];
-    Build_Queen_Health(p, 30, 1000);
-    /* DID bytes must be 0 */
-    ASSERT_EQ(p[0], 0);
-    ASSERT_EQ(p[1], 0);
-    ASSERT_EQ(p[2], 0);
-    ASSERT_EQ(p[3], 0);
-}
-
-TEST(test_queen_health_uptime_packed) {
-    uint8_t p[16];
-    Build_Queen_Health(p, 10, 0x1234);
-    ASSERT_EQ(p[4], 0x12);
-    ASSERT_EQ(p[5], 0x34);
-}
-
-TEST(test_queen_health_tree_count) {
-    uint8_t p[16];
-    Build_Queen_Health(p, 42, 100);
-    ASSERT_EQ(p[7], 42);
-}
-
-TEST(test_queen_health_growth_points_clamped) {
-    uint8_t p[16];
-    Build_Queen_Health(p, 100, 100);
-    /* [FW.29-PACK] growth_points max is 31 (5-bit wire) */
-    ASSERT_EQ(p[10], 31);
-}
-
-TEST(test_queen_health_in_cache) {
-    /* Verify DID=0 sentinel goes into cache */
-    reset_cache();
-    uint8_t p[16];
-    Build_Queen_Health(p, 5, 60);
-    Process_And_Cache_Data(0, p, 0, 0);
-    ASSERT_EQ(cache_count, 1);
-    ASSERT_EQ(forest_cache[0].uid, 0);
-    ASSERT_EQ(forest_cache[0].rssi, 0);
-}
-
-TEST(test_queen_health_in_batch) {
-    /* Verify DID=0 packs correctly in batch */
-    reset_cache();
-    uint8_t p[16];
-    Build_Queen_Health(p, 10, 300);
-    Process_And_Cache_Data(0, p, 0, 0);
-    uint16_t offset = Pack_Cache_To_Batch();
-    ASSERT_EQ(offset, 21);
-    /* DID = 0 in big-endian */
-    ASSERT_EQ(binary_batch_buffer[0], 0);
-    ASSERT_EQ(binary_batch_buffer[1], 0);
-    ASSERT_EQ(binary_batch_buffer[2], 0);
-    ASSERT_EQ(binary_batch_buffer[3], 0);
-    /* RSSI = 0 (local) → inverted = 0 */
-    ASSERT_EQ(binary_batch_buffer[4], 0);
-}
-
-TEST(test_queen_health_dedup) {
-    /* Second queen health packet should update, not duplicate */
-    reset_cache();
-    uint8_t p1[16], p2[16];
-    Build_Queen_Health(p1, 10, 100);
-    Build_Queen_Health(p2, 20, 200);
-    Process_And_Cache_Data(0, p1, 0, 0);
-    Process_And_Cache_Data(0, p2, 0, 0);
-    ASSERT_EQ(cache_count, 1);
-    /* Should have the latest data */
-    ASSERT_EQ(forest_cache[0].payload[7], 20);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3076,9 +2965,12 @@ int main(void)
     RUN(test_cache_cifo_protects_tamper);
     RUN(test_cache_cifo_fallback_all_critical);
     RUN(test_cache_uid_zero);
+    RUN(test_cifo_count_tracks_inserts_through_flush);
+    RUN(test_fw2_ccm_evict_writes_full_tail_and_fmt);
+    RUN(test_cifo_spill_hook_sees_victim_before_overwrite);
 
-    printf("\n  CIFO fmt-aware (FW.2 CCM24):\n");
-    RUN(test_fw2_ccm_slot_stores_24_bytes_and_fmt);
+    printf("\n  CIFO fmt-aware (FW.2 CCM air-хвіст):\n");
+    RUN(test_fw2_ccm_slot_stores_air_tail_and_fmt);
     RUN(test_fw2_ccm_dedup_can_flip_format);
     RUN(test_fw2_ccm_offset10_not_read_as_status);
     RUN(test_fw2_ecb_critical_still_protected_beside_ccm);
@@ -3145,15 +3037,6 @@ int main(void)
     RUN(test_rssi_clamp_positive);
     RUN(test_rssi_clamp_max_int16);
     RUN(test_rssi_old_truncation_was_wrong);
-
-    printf("\n  Queen Health Sentinel:\n");
-    RUN(test_queen_health_did_zero);
-    RUN(test_queen_health_uptime_packed);
-    RUN(test_queen_health_tree_count);
-    RUN(test_queen_health_growth_points_clamped);
-    RUN(test_queen_health_in_cache);
-    RUN(test_queen_health_in_batch);
-    RUN(test_queen_health_dedup);
 
     printf("\n  ECB Restoration:\n");
     RUN(test_ecb_restored_after_flush);

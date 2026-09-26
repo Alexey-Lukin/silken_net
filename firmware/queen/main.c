@@ -131,7 +131,6 @@
 #define FLUSH_JITTER_MAX_MS   60000    // Максимальний джиттер для десинхронізації (0-60 секунд)
 #define RNG_FALLBACK_XOR_MASK 0xA5A5A5A5UL // XOR-маска для fallback-ентропії при відмові HRNG
 #define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
-#define QUEEN_HEALTH_GP_MAX   31        // [FW.29-PACK] Макс. growth_points (5-біт wire)
 #define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
 
 // [PLAN 2.4] Queen UID — read from dedicated Flash region instead of hardcoding.
@@ -378,7 +377,7 @@ static volatile uint16_t   lora_rx_drops = 0;     // Лічильник пере
 // [FW.2] Сліди дропів CCM-ери (патерн lora_rx_drops). Wire-видимість =
 // QATT_HFLAG_LEGACY_DROPS / QATT_HFLAG_CCM_SPOOF у health-flags (гейт (а):
 // оператор бачить cutover-вікно без SWD); точні числа лишаються SWD-only.
-static uint16_t ccm_spoof_drops            = 0; // air-кадр з DID=0 — спуф Sentinel
+static uint16_t ccm_spoof_drops            = 0; // air-кадр з DID=0 — спуф (DID 0 зарезервовано, ARCH.54)
 static uint16_t ccm_legacy_telemetry_drops = 0; // 16B-телеметрія старих Солдатів
                                                 // (atomic-cutover: у 29B-батч не сміє)
 #endif
@@ -472,30 +471,9 @@ static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, uint8_t *out_len,
 // =========================================================================
 // === 1.5. EDGE КЕШУВАННЯ (CIFO & Дедуплікація) ===
 // =========================================================================
-#define CACHE_MAX_ENTRIES 50 // Максимальна місткість нашого кешу
-
-// [FW.2] Формат слота: ECB-ера тримає РОЗШИФРОВАНІ 16B (Королева = ключ
-// кластера); CCM-ера тримає ОПАКОВИЙ air-хвіст ефіру (gossip‖FC‖ct‖MIC;
-// довжина ПОХІДНА = air−4, rev2.1 = 26B) — інверсія довіри wire-rev2:
-// розшифрує лише Rails per-DID (rx_route.h). Ширина payload гейтована —
-// бойовий .bss інертного гейта не платить (гейтована ціна — budget-ledger
-// 03_05 §2.1); fmt-байт живе завжди (+50B) заради одного код-шляху CIFO/flush.
-#define EDGE_FMT_ECB16    0u  // payload[0..15] = розшифрований legacy-блок
-#define EDGE_FMT_CCM_AIR  1u  // payload[0..air-5] = air[4..кінець] як є (опак)
-#if FW2_CCM_ENABLED
-#define EDGE_SLOT_PAYLOAD_MAX  (FW2_CCM_AIR_PACKET_LEN - 4u)
-#else
-#define EDGE_SLOT_PAYLOAD_MAX  16u
-#endif
-
-typedef struct {
-    uint32_t uid;               // DID дерева
-    uint8_t payload[EDGE_SLOT_PAYLOAD_MAX]; // Розкладку диктує fmt (EDGE_FMT_*)
-    int8_t rssi;                // Сила сигналу
-    int8_t snr;                 // [E.8] SNR — tiebreaker у CIFO eviction
-    uint8_t is_active;          // 1 - якщо слот зайнятий
-    uint8_t fmt;                // [FW.2] EDGE_FMT_ECB16 | EDGE_FMT_CCM_AIR
-} EdgeCache;
+// Слот, формати, ширина й уся логіка дедуп/вставки/витіснення — pure-заголовок
+// cifo_cache.h, який компілюють і цей файл, і host-тести (без дзеркала).
+#include "cifo_cache.h"
 
 EdgeCache forest_cache[CACHE_MAX_ENTRIES];
 uint8_t cache_count = 0;
@@ -503,7 +481,7 @@ uint8_t cache_count = 0;
 // =========================================================================
 // [ARCH.35] Flash Ring Buffer — overflow tier CIFO (W25Q32JV SPI NOR)
 // =========================================================================
-// CIFO переповнюється за ~30 хв @100 Soldiers без uplink'а — евікшн мовчки
+// CIFO переповнюється за ~1 год @100 Soldiers без uplink'а (каденція 1.95 год, 02_03 §9.6) — евікшн мовчки
 // губить телеметрію лісу. Ring (../common/flash_ring.{h,c}, host-тестований
 // NOR-мок + power-cut) дає ~197k слотів буфера: спіл евікшнів і провалених
 // flush'ів, drain FIFO при відновленні uplink'а (06_08 §1.2 L1 two-tier).
@@ -1123,7 +1101,7 @@ int main(void)
   // [ARCH.35] Mount overflow-ring'а: mount-scan відновлює head/tail/count
   // з in-band заголовків секторів (жодних RTC-покажчиків — переживає і
   // VBAT-loss). Відмова → tier вимкнений, CIFO живе як раніше (деградація,
-  // не смерть); телеметрію про це повезе Queen Sentinel health-байт.
+  // не смерть); стан несе біт QATT_HFLAG_RING у health-блоці QATT-v2.
   queen_ring_mounted = FlashRing_Mount(&queen_ring, &queen_ring_ops, NULL,
                                        FLASH_RING_W25Q32_SECTORS);
 #endif
@@ -1268,7 +1246,7 @@ int main(void)
             // [FW.2] air-CCM-телеметрія — СЛІПИЙ КУР'ЄР: жодного декрипту
             // (per-DID ключі живуть лише на Rails — 03_05 §3.1), демукс за
             // cleartext DID з AAD, у CIFO лягає опаковий air-хвіст як є.
-            // MIC верифікує process_ccm_chunk; DID=0 = спуф Sentinel — дроп
+            // MIC верифікує process_ccm_chunk; DID=0 = спуф (зарезервований, ARCH.54) — дроп
             // ще тут (rx_route.h; бекенд теж дропнув би, але батч-місце шкода).
             if (Queen_Rx_Classify(rx_len) == QUEEN_RX_CCM_AIR) {
                 uint32_t ccm_did = Queen_Ccm_Frame_Did(rx_payload);
@@ -1664,125 +1642,34 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 }
 
 // =========================================================================
-// ЛОГІКА КЕШУ (Дедуплікація та CIFO)
+// ЛОГІКА КЕШУ (Дедуплікація та CIFO) — ядро й облік у cifo_cache.h
 // =========================================================================
-// [E.8] CIFO eviction тепер враховує і RSSI, і SNR. RSSI — primary key (сила
-// сигналу = відстань / preposition). SNR — tiebreaker для випадків, коли
-// два кандидати мають ОДНАКОВИЙ RSSI: нижчий SNR = шумніший канал = пакет
-// прийшов через інтерференцію → preferred for eviction. Це покращує якість
-// кешу під час grueling LoRa-collision storms (емерджентний rain-attenuation,
-// сусідні шлюзи на тому ж SF).
-// [FW.2] fmt диктує і розкладку, і ДОВЖИНУ payload: ECB16 = 16B
-// розшифрованих, CCM_AIR = air−4 опакового air-хвоста (похідне від
-// wire-контракту — rx_route.h; rev2.1 = 26B). Дедуп оновлює й fmt —
-// перепрошите дерево міняє формат між пробудженнями.
+#if ARCH35_RING_ENABLED
+// [ARCH.35] Витіснений запис більше не гине мовчки — спіл у ring. Хук
+// Cifo_Upsert: отримує жертву ДО її перезапису. Перелитий слот
+// (is_active==2) не дублюємо: його flash-копія ще unconsumed і повернеться
+// наступним drain'ом — лише знімаємо з inflight-обліку, щоб consume після
+// send_success її не списав. Відмова Append = старий лосс-шлях.
+static void Cifo_Spill_To_Ring(EdgeCache *victim)
+{
+    if (!queen_ring_mounted) return;
+    if (victim->is_active == 2u) {
+        if (ring_inflight > 0u) ring_inflight--;
+    } else {
+        uint8_t rec[FLASH_RING_RECORD_SIZE];
+        Ring_Serialize_Slot(victim, rec);
+        (void)FlashRing_Append(&queen_ring, rec);
+    }
+}
+#define CIFO_SPILL_HOOK Cifo_Spill_To_Ring
+#else
+#define CIFO_SPILL_HOOK NULL
+#endif
+
 void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
                             uint8_t fmt)
 {
-    uint8_t plen = (fmt == EDGE_FMT_CCM_AIR) ? (uint8_t)(FW2_CCM_AIR_PACKET_LEN - 4u) : 16u;
-
-    // 1. ДЕДУПЛІКАЦІЯ: Шукаємо, чи є вже це дерево в кеші
-    for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-        if(forest_cache[i].is_active && forest_cache[i].uid == uid) {
-            // Оновлюємо дані на найсвіжіші (бо дерево могло надіслати новий статус)
-            memcpy(forest_cache[i].payload, payload, plen);
-            forest_cache[i].rssi = rssi;
-            forest_cache[i].snr  = snr;
-            forest_cache[i].fmt  = fmt;
-            return;
-        }
-    }
-
-    // 2. ВСТАВКА: Якщо є вільне місце в кеші
-    if(cache_count < CACHE_MAX_ENTRIES) {
-        for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-            if(!forest_cache[i].is_active) {
-                forest_cache[i].uid = uid;
-                memcpy(forest_cache[i].payload, payload, plen);
-                forest_cache[i].rssi = rssi;
-                forest_cache[i].snr  = snr;
-                forest_cache[i].is_active = 1;
-                forest_cache[i].fmt  = fmt;
-                return;
-            }
-        }
-    }
-    // 3. CIFO (Priority-Aware Eviction): Кеш повний, витісняємо з розумом.
-    // [FIX: CIFO Blind Spot] Стара логіка завжди викидала дерево з найгіршим RSSI,
-    // але саме це дерево може бути на межі зони пожежі (критичний статус).
-    // Нова логіка: спочатку шукаємо некритичне (status=0) дерево з найгіршим RSSI.
-    // Якщо ВСІ записи критичні — використовуємо fallback на абсолютно найгірший RSSI.
-    // [E.8] При рівному RSSI tiebreaker — нижчий SNR (шумніший канал → evict).
-    else {
-        int best_evict_idx = -1;
-        int8_t best_evict_rssi = 127;
-        int8_t best_evict_snr  = 127;
-
-        int fallback_idx = 0;
-        int8_t fallback_rssi = 127;
-        int8_t fallback_snr  = 127;
-
-        for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-            // [FIX: AUDIT] Перевіряємо is_active щоб не порівнювати неініціалізовані RSSI
-            if (!forest_cache[i].is_active) continue;
-
-            // [FW.29-PACK] bio_status з байта 10: біти [6:5] (status:2),
-            // після того як FW.29 PANIC_FLAG_BIT займає бит 7. Старий `>> 6`
-            // видавав bits [7:6], що тихо демотувало status=2/3 у
-            // нормальних пакетах через `lora_payload[10] &= ~PANIC_FLAG_BIT`.
-            // [FW.2] РОЗКЛАДКА ДІЙСНА ЛИШЕ ДЛЯ ECB16: у CCM_AIR-слоті ці байти
-            // — опаковий шифртекст (статус видно лише Rails'у; byte 10 там
-            // взагалі diag). Сліпий кур'єр чесно ставить 0 → CCM-записи в
-            // пулі preferred-evict за RSSI/SNR; свідома стеля, довгий лік —
-            // ARCH.35 overflow-ринг (00_07 FW.2 фліп-гейти).
-            uint8_t bio_status = (forest_cache[i].fmt == EDGE_FMT_ECB16)
-                                     ? (uint8_t)((forest_cache[i].payload[10] >> 5) & 0x03)
-                                     : 0u;
-
-            // Абсолютний fallback — найгірший RSSI (з SNR tiebreaker) серед усіх
-            if (forest_cache[i].rssi < fallback_rssi ||
-                (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
-                fallback_rssi = forest_cache[i].rssi;
-                fallback_snr  = forest_cache[i].snr;
-                fallback_idx  = i;
-            }
-
-            // Перевага: витісняємо некритичне (homeostasis, status=0) з найгіршим RSSI
-            // [E.8] При рівному RSSI — нижчий SNR (шумніший канал) виграє конкурс на eviction.
-            if (bio_status == 0 &&
-                (forest_cache[i].rssi < best_evict_rssi ||
-                 (forest_cache[i].rssi == best_evict_rssi && forest_cache[i].snr < best_evict_snr))) {
-                best_evict_rssi = forest_cache[i].rssi;
-                best_evict_snr  = forest_cache[i].snr;
-                best_evict_idx  = i;
-            }
-        }
-
-        int evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx;
-
-#if ARCH35_RING_ENABLED
-        // [ARCH.35] Витіснений запис більше не гине мовчки — спіл у ring.
-        // Перелитий слот (is_active==2) не дублюємо: його flash-копія ще
-        // unconsumed і повернеться наступним drain'ом — лише знімаємо з
-        // inflight-обліку, щоб consume після send_success її не списав.
-        if (queen_ring_mounted) {
-            if (forest_cache[evict_idx].is_active == 2u) {
-                if (ring_inflight > 0u) ring_inflight--;
-            } else {
-                uint8_t rec[FLASH_RING_RECORD_SIZE];
-                Ring_Serialize_Slot(&forest_cache[evict_idx], rec);
-                (void)FlashRing_Append(&queen_ring, rec); // відмова = старий лосс-шлях
-            }
-        }
-#endif
-        forest_cache[evict_idx].uid = uid;
-        memcpy(forest_cache[evict_idx].payload, payload, 16);
-        forest_cache[evict_idx].rssi = rssi;
-        forest_cache[evict_idx].snr  = snr;
-        // Свіжий LoRa-запис — НЕ перелитий з ring'а (1, не успадковане 2):
-        // інакше fail-спіл «почистив би» його як уже-збережений у флеші.
-        forest_cache[evict_idx].is_active = 1;
-    }
+    (void)Cifo_Upsert(forest_cache, &cache_count, uid, payload, rssi, snr, fmt, CIFO_SPILL_HOOK);
 }
 
 // =========================================================================
@@ -2946,7 +2833,7 @@ static void MX_CRYP_Init(void)
 //
 // РОЛЬ ЦІЄЇ ФУНКЦІЇ (post-2026-07-03, інверсія довіри wire-rev2):
 // hot path Королеви CCM-кадри НЕ розшифровує — DID/FC читаються з
-// cleartext-AAD, сирий пакет їде бекенду 29B-записом, MIC верифікує Rails
+// cleartext-AAD, сирий пакет їде бекенду записом air+1, MIC верифікує Rails
 // per-DID ключем (`process_ccm_chunk`; per-device ключі несумісні з
 // decrypt-на-Королеві — 03_05 §3.1). Queen_Parse_CCM_LoRa_Packet лишається
 // для (а) bench-атестації RX-тракту на кремнії, (б) епохи спільного

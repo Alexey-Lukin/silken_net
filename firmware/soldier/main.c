@@ -146,9 +146,9 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define SEC20_VM_ERROR_FALLBACK_N   3u
 // [SEC.21] DR0[10] = canary_tripped: __stack_chk_fail лишає слід перед
 // перевтіленням — переписаний кадр стека то потенційний слід атаки, він
-// мусить пережити reset (RAM-слід згорів би разом зі стеком). Гаситиме
-// майбутній wire-винос (event-кадр 0x57, 00_07 SEC.21); до того — sticky,
-// читається SWD'ом на bench.
+// мусить пережити reset (RAM-слід згорів би разом зі стеком). Гасить його
+// wire-винос: три best-effort постріли event-кадру 0x57 (device_event.h),
+// після третього Фаза 5 пише DR0[10]=0; доти — sticky, видимий і SWD'ом.
 #define CANARY_TRIP_DR0_SHIFT       10
 #define CANARY_TRIP_MASK            0x01u
 // [FW.54 guard] DR0 bit-map compile-time non-overlap: panic[31:16] | rsv[15:11] |
@@ -372,10 +372,10 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
 // Buck'а посеред інференсу → reset. Тому fauna sampling запускається
 // лише коли V_cap ≥ FAUNA_VCAP_MIN_MV (margin ~1.1 V над VBAT_OK ON).
 //
-// Цей блок — **freeze-contract helper**: викликається з fauna-pathway,
-// яку FW.4 (Run_Inference) вже споживає — виклик живий нижче, у гарячій петлі.
-// До того моменту функція компілюється і покрита host-тестами, тож
-// активація — це 2 рядки виклику у TinyML гілці без додаткової роботи.
+// Цей блок — **freeze-contract helper**, і виклику в нього поки НЕМАЄ: fauna-pathway
+// (ARCH.39) не активовано (00_07 FW.42, 🔗 FW.4-EXT), а в гарячій петлі живий лише
+// базовий FW.4 `Run_Inference`, не fauna-сесія. Функція компілюється й покрита
+// host-тестами, тож активація — це 2 рядки виклику у TinyML гілці.
 //
 // Backend-симетрія (опційно, post-FW.4): метрика
 // `fauna_skipped_low_vcap_total` у Prometheus → Grafana панель
@@ -742,15 +742,23 @@ static uint16_t wire_ema_delta_t_s = 0;
 // Soldier_Try_Relay_Time_Beacon). Королева вже транслює TTL=2 (03_02 §5а).
 #define FW20_MESH_RELAY_ENABLED 0
 // [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
-// (ops+mount) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
+// (ops+mount+compact) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
 #define SEC20_OTA_ANTIROLLBACK_ENABLED 1
+// [SEC.20 · ARCH.28] Один вираз бази журналу на ТРИ сайти — оголошення,
+// mount, compact. Новий споживач Flash-KV дописується СЮДИ, а не в окремий
+// сайт: сайт, що відстав, мовчки лишить журнал без ущільнення, і після
+// ~254 APPLY high-water замерзне — анти-rollback обернеться на replay-downgrade.
+#define FLASH_KV_BASE_ENABLED (FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED)
+#if SEC20_OTA_ANTIROLLBACK_ENABLED && !FLASH_KV_BASE_ENABLED
+#error "[SEC.20] anti-rollback живе на журналі Flash-KV — FLASH_KV_BASE_ENABLED мусить містити SEC20_OTA_ANTIROLLBACK_ENABLED"
+#endif
 #include "../common/beacon_dedup.h"
 
 #if FW20_MESH_RELAY_ENABLED
 static BeaconDedup beacon_dedup; // RAM-кеш журналу; істина — Flash-KV 0x20
 #endif
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
+#if FLASH_KV_BASE_ENABLED
 // Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv). Тут — реальні
 // залізні примітиви; host-тести ганяють ту саму журнальну логіку на RAM-моці
 // з fault-injection (power-cut посеред compact), HAL-глю верифікує bench.
@@ -789,7 +797,7 @@ static const FlashKvOps soldier_kv_ops = {
 };
 static FlashKv soldier_kv;
 static uint8_t soldier_kv_mounted = 0;
-#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
+#endif // FLASH_KV_BASE_ENABLED
 
 #if FW17_RATCHET_ENABLED
 static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
@@ -1976,14 +1984,14 @@ int main(void)
   // recompute на кожному boot — зберігати нічого (DR7 звільнено, 03_01 §2).
   // VBAT-loss більше не сиротить identity/гаманець; фабрика (SEC.3) деривує
   // той самий DID з UID по SWD ще до прошивки — однопрохідний провіженінг.
-  // Стара схема UID⊕random (з FW.24-fallback'ом) жила в DR7 і гинула разом
-  // з ним; колізії тепер ловить фабрика DB-unique-перевіркою, не HRNG.
-  // DID==0 неможливий (did_derive.h) — нуль ефіру належить Королеві-Сентінель.
+  // DID виводиться з кремнію детерміновано, тож колізії ловить фабрика
+  // DB-unique-перевіркою ще до поля, а не HRNG на борту.
+  // DID==0 неможливий (did_derive.h): бекенд відкидає нульовий DID в обох ерах (ARCH.54).
   tree_did = Did_Derive_From_Uid(*(uint32_t*)(0x1FFF7590),
                                  *(uint32_t*)(0x1FFF7594),
                                  *(uint32_t*)(0x1FFF7598));
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
+#if FLASH_KV_BASE_ENABLED
   // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки
   // биті) → mounted=0: споживачі живуть на дефолтах/K0 — деградація, не смерть.
   soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
@@ -3171,7 +3179,7 @@ int main(void)
         Beacon_Dedup_Persist(&soldier_kv, &beacon_dedup);
     }
 #endif
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED
+#if FLASH_KV_BASE_ENABLED
     // [ARCH.28] Ущільнення журналу — спільне для всіх KV-споживачів, лише
     // у цій безпечній фазі (після TX, перед сном; erase ~десятки мс не
     // сміє лягти під LoRa RX-вікно). [SEC.20] version-hiwater пише 0x15 щоразу

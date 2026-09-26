@@ -42,8 +42,9 @@ set(SILKEN_CPU_FLAGS "-mcpu=cortex-m4 -mfloat-abi=soft -mthumb")
 
 # [SEC.21] -fstack-protector-strong: канарка на attacker-reachable парсери
 # (LoRa-RX / SIM7070 AT-токенайзер жують untrusted байти в сирому C ДО MIC-чеку).
-# newlib несе __stack_chk_fail/__stack_chk_guard → лінк не падає; власний
-# reset-handler + HRNG-seed guard'а = fielded-residual (00_07 SEC.21).
+# Власні strong __stack_chk_fail/__stack_chk_guard в обох main.c перекривають
+# newlib-дефолти (guard із .bss = 0), а guard сіє HRNG на кожен boot
+# (common/stack_canary.h; канон 03_05 §9).
 set(CMAKE_C_FLAGS_INIT          "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -fstack-protector-strong -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_INIT        "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -fstack-protector-strong -Wall -Wextra")
 set(CMAKE_ASM_FLAGS_INIT        "${SILKEN_CPU_FLAGS}")

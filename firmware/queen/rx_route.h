@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * rx_route.h — [FW.2] Маршрутизація вхідних LoRa-кадрів Королеви +
- *              29-байтний CoAP-запис CCM-телеметрії (wire-rev2).
+ *              CoAP-запис CCM-телеметрії (довжина похідна: air+1).
  *
  * Інверсія довіри wire-rev2 (2026-07-03): per-device CCM-ключі несумісні
  * з decrypt-на-Королеві (03_05 §3.1 — вона не тримає чужих ключів), тож
- * hot path НЕ розшифровує 28B-кадри. Демукс = cleartext DID з AAD;
+ * hot path НЕ розшифровує CCM-кадри. Демукс = cleartext DID з AAD;
  * сирий хвіст кадру їде бекенду як є, MIC верифікує Rails per-DID
  * (`TelemetryUnpackerService#process_ccm_chunk`). Королева тут — сліпий
  * кур'єр: цілісність її не стосується, вона лише додає RSSI-мітку прийому.
@@ -48,16 +48,16 @@ static inline QueenRxClass Queen_Rx_Classify(uint16_t size) {
     return QUEEN_RX_DROP;
 }
 
-/* Cleartext DID з AAD (байти 0..3 BE) — демукс без ключа. DID==0 =
- * зарезервований Sentinel Королеви: 28B-кадр з нулем — спуф, викликач
- * зобов'язаний дропнути (бекенд process_ccm_chunk дропає його теж —
- * defense-in-depth, але батч-місце шкода). */
+/* Cleartext DID з AAD (байти 0..3 BE) — демукс без ключа. DID==0
+ * зарезервовано: бекенд відкидає нульовий DID в обох ерах (ARCH.54), тож
+ * air-кадр із нулем — спуф, і викликач зобов'язаний дропнути його ще тут
+ * (process_ccm_chunk дропає теж — defense-in-depth, але батч-місце шкода). */
 static inline uint32_t Queen_Ccm_Frame_Did(const uint8_t air[FW2_CCM_AIR_PACKET_LEN]) {
     return ((uint32_t)air[0] << 24) | ((uint32_t)air[1] << 16) |
            ((uint32_t)air[2] << 8)  | (uint32_t)air[3];
 }
 
-/* 29B-запис для CoAP-батча: DID ‖ |RSSI| ‖ air-хвіст незайманим.
+/* Запис для CoAP-батча (QUEEN_CCM_RECORD_LEN = air+1): DID ‖ |RSSI| ‖ air-хвіст незайманим.
  * |RSSI| — та сама конвенція, що 21B-legacy запис ((uint8_t)(-(int16_t)rssi):
  * -85 дБм → 85; int16-каст знімає UB на -128). MIC лишається над
  * оригінальними байтами — Королева їх не торкається. */
