@@ -98,7 +98,7 @@ The loop above bumps ONE dependency; this one drains the queue someone else open
 | Domain | Manifest(s) | "What's behind" | Validate (+ linter) |
 |---|---|---|---|
 | **Ruby gems** | `Gemfile` / `Gemfile.lock` | `bundle outdated` | full `bin/rspec` under the project Ruby; `bin/rubocop` |
-| **Ruby itself** | `.ruby-version` (SSOT) + every file in `MIRRORS` (`scripts/ruby_version_sync.rb`) + `Gemfile.lock` `RUBY VERSION` (bundler rewrites it; not a `MIRRORS` entry) — ⛔ never an `ARG`-indirected `FROM` (why → `06_07 §1a`) | `rvm install`; web changelog | `rvm use ruby-<v>@silken_net` then full `bin/rspec` |
+| **Ruby itself** | `.ruby-version` (SSOT) + every file in `MIRRORS` (`scripts/ruby_version_sync.rb`) + `Gemfile.lock` `RUBY VERSION` (bundler rewrites it; not a `MIRRORS` entry) — ⛔ never an `ARG`-indirected `FROM` (why → `06_07 §1a`) | `rvm install`; web changelog | `rvm use ruby-<v>@silken_net` then full `bin/rspec`; then read the parity gate's HEADER, not only its `MIRRORS` — it is the checklist of what the gate does NOT judge: the digest behind the tag (verify via the registry) and `docker_smoke` as the build half (confirm on `main` that the job RAN, not skipped) |
 | **bundler** | `Gemfile.lock` BUNDLED WITH | `gem list bundler --remote --exact` | `bundle update --bundler=<v>` |
 | **CI actions** | `.github/workflows/*.yml` + `.github/actions/*/action.yml` (every `uses:` is SHA-pinned) | per action: `gh api repos/<org>/<repo>/releases/latest` vs the `# vN` label beside the SHA; resolve the new tag's SHA per `#30` | actionlint (`workflow_lint` in `ci.yml`) + the action's changelog (breaking inputs); payload pins → `#43`/`#44` |
 | **JS / importmap** | `config/importmap.rb` **+ `vendor/javascript/` + `vendor/assets/stylesheets/`** + 🔴 **нотіс-шар [UNI.3]: `vendor/javascript/LICENSE-leaflet.txt` (ОДИН дім тексту; у CSS-теці покажчик, не копія) + рядки в `THIRD_PARTY_NOTICES` і `/NOTICE`** | `bin/importmap outdated` + `bin/importmap audit` — ⚠️ бачить лише JS-піни; ⛔ **вендорені байти не бачить ЖОДЕН маніфест-інструмент**: кореневого `package.json` нема, Leaflet приходить голим `pin`, а `spdx_headers.rb` свідомо DENY-листить `vendor/` | boot + asset-compile + `bin/rspec spec/features` (Leaflet будується в браузері) + `COVERAGE=0 bin/rspec spec/quality/vendored_component_inventory_spec.rb` — червонить БУДЬ-який новий компонент у `vendor/**` без рядка в інвентарі. ⚠️ Бампаючи версію, звір copyright-рядок нотіса проти `@preserve`-банера НОВОГО бандла: він єдине джерело, що їде разом із кодом |
@@ -180,6 +180,8 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 50. A ZERO from an inventory command is a claim about the INSTRUMENT until a positive control says otherwise
 51. `pip-compile` resolves markers for the platform that COMPILES, and a flag that names a target may bound nothing
 52. "How many vulnerabilities do we have" is a choice of INSTRUMENT, not a fact — and severity is the wrong third axis
+53. A dismissal whose alert KEY carries a version is a treadmill — the next bump reopens it under a new number, so fix the SOURCE, not the instance
+54. A scanner's declared filter can be INERT on one output path — read the wrapper action's entrypoint at the pinned SHA, not its input list
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
