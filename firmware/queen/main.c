@@ -412,6 +412,7 @@ static DMA_HandleTypeDef hdma_usart1_rx;
 static char     coap_server_ip[16];     // [FW.56] CDNSGIP-кеш (CCOAPNEW хоче IP, не домен)
 static uint8_t  coap_consec_fail;       // [FW.58] flush-провали ПІДРЯД → re-resolve (reset на success)
 static uint16_t coap_mid;               // [FW.56] CoAP Message-ID наших PUT'ів
+static uint8_t  lte_only_ok;            // [HW.31] AT+CNMP=38 підтверджено (OK) — умова передачі
 
 // === LoRa RX Ring Helpers ================================================
 // Single-producer (ISR) / single-consumer (main loop): кожен інлайн —
@@ -1138,15 +1139,17 @@ int main(void)
 
   // 3. Ініціалізація модему SIM7070G
   // [FW.3] Response-driven: кожна команда чекає фінал (OK/ERROR), а не сліпий
-  // delay. Провал не фатальний — модем міг ще прокидатись; flush-розмова
-  // повторить усе зі свіжим бюджетом. ATE0 глушить ехо (токенайзер його
-  // переживає, але ефір чистіший).
+  // delay. Провал не фатальний — модем міг ще прокидатись. ⚠️ Але flush повторює
+  // лише CoAP-розмову (DNS/PUT), не ці команди: несучу з них (CNMP=38, HW.31)
+  // flush перевіряє сам, решта лишається з тим, що модем зберіг. ATE0 глушить
+  // ехо (токенайзер його переживає, але ефір чистіший).
   (void)SIM7070_Transact("ATE0\r\n", AT_INIT_BUDGET_MS);
   (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
   // [HW.31] «Лише LTE» несе й відповідність антени поз. 11: GSM-стелі підсилення модуля
   // нижчі за пік рекомендованої антени (queen_antenna_shortlist §2.1), тож 2G тут вимагав
-  // би іншої антени. ⚠️ Провал цієї команди не перевіряється, і flush її не повторює.
-  (void)SIM7070_Transact("AT+CNMP=38\r\n", AT_INIT_BUDGET_MS);
+  // би іншої антени. Результат тримаємо: не підтверджено — ворота flush'у повторять
+  // команду й до OK нічого не передадуть (Sim7070_Ensure_Lte_Only).
+  lte_only_ok = (uint8_t)(SIM7070_Transact(SIM7070_CMD_LTE_ONLY, AT_INIT_BUDGET_MS) == AT_TX_OK);
 
   // [HW.41] Cat-M ⊥ NB-IoT — ЯВНО, не збережений у модемі стан (⚖️ founder 2026-09-26).
   // CNMP=38 — лише «LTE only»; вибір RAT задає AT+CMNB (1 CAT-M · 2 NB-IoT · 3 обидва),
@@ -2199,6 +2202,18 @@ void Flush_Cache_To_Rails(void)
     // геть, але запізнілий +CCOAPNMI цієї ж розмови (MID той самий між
     // retry) лишається законним підтвердженням доставки.
     Uart_Rx_Drain_Stale();
+
+    // [HW.31] Ворота «лише LTE» — перед першою RF-командою (DNS), а отже й перед
+    // PUT, device-event хвостом і poll'ом, що живуть нижче. Підтверджено → ні
+    // байта в UART; ні → CNMP=38 знову, і до OK — жодної передачі.
+    {
+        UartAtIo lte_io = { HAL_GetTick() + 2u * AT_INIT_BUDGET_MS };
+        Sim7070Io lte_m = { Uart_At_Source, Uart_At_Sink, &lte_io };
+        if (!Sim7070_Ensure_Lte_Only(&lte_m, &at_engine_state, &lte_only_ok)) {
+            if (g_coap_fail_count < 255u) g_coap_fail_count++;
+            return; // [FW.51] слоти живі — наступний флеш повторить і ворота
+        }
+    }
 
     if (coap_server_ip[0] == '\0') {
         // CCOAPNEW приймає IP → одна CDNSGIP-резолюція, кеш на життя boot'а.

@@ -80,6 +80,34 @@ static inline int Sim7070_Read_Csq(Sim7070Io *m, AtEngine *e, uint8_t *csq_out)
     return 1;
 }
 
+/* [HW.31] «Лише LTE» — УМОВА передачі, не налаштування. AT+CNMP=38 вимикає GSM
+ * (SIMCom AT Manual V1.03 §5.2.16), а GSM-стелі підсилення модуля нижчі за пік
+ * антени поз. 11 (queen_antenna_shortlist §2.1): у 2G Королева вийшла б за межі,
+ * під які модуль сертифіковано. Рядок команди — один дім для init і воріт. */
+#define SIM7070_CMD_LTE_ONLY "AT+CNMP=38\r\n"
+
+/* Ворота перед першою RF-командою flush'у. Підтверджено раніше → 1 і НІЧОГО
+ * не шле. Інакше AT+CNMP=38: OK → *confirmed = 1, PDP переактивується вже в
+ * LTE (init-контекст міг піднятись в іншому RAT або не піднятись; його провал
+ * проявить сама CoAP-розмова), → 1. ERROR · +CME · тиша → 0: викликач НЕ
+ * передає, слоти живі (FW.51), наступний flush повторить.
+ * ⚠️ Стеля: реєстрацію в мережі модем робить сам, тож ворота тримають ДАНІ, не
+ * сигналізацію реєстрації — на свіжому модемі до першого OK вона може піти GSM-ом. */
+static inline int Sim7070_Ensure_Lte_Only(Sim7070Io *m, AtEngine *e, uint8_t *confirmed)
+{
+    if (*confirmed) return 1;
+
+    AtTransact t;
+    At_Transact_Init(&t, NULL);
+    if (!Sim7070_Send_Str(m, SIM7070_CMD_LTE_ONLY)) return 0;
+    if (At_Transact_Run(e, &t, m->src, m->io) != AT_TX_OK) return 0;
+    *confirmed = 1u;
+
+    At_Transact_Init(&t, NULL);
+    if (Sim7070_Send_Str(m, "AT+CNACT=1,1\r\n")) (void)At_Transact_Run(e, &t, m->src, m->io);
+    return 1;
+}
+
 /* Повна PUT-розмова. Повертає 1 лише при підтвердженій доставці (2.xx,
  * наш MID). CCOAPDEL — best-effort: сесію прибираємо, але вердикт уже є. */
 static inline int Sim7070_Coap_Put(Sim7070Io *m, AtEngine *e,

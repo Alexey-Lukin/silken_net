@@ -522,6 +522,63 @@ TEST(test_fw58_reresolve_predicate) {
     ASSERT_TRUE(Coap_Reresolve_Due(255u));
 }
 
+/* [HW.31] «Лише LTE» — умова передачі: GSM-стелі підсилення модуля нижчі за пік
+ * антени поз. 11 (queen_antenna_shortlist §2.1). Ворота flush'у мовчать, коли
+ * режим уже підтверджено, і відчиняють передачу лише на OK від AT+CNMP=38. */
+TEST(test_hw31_lte_only_gate) {
+    AtEngine e;
+    uint8_t confirmed;
+
+    /* 38 = «лише LTE» (SIMCom AT Manual V1.03 §5.2.16); 2 (auto) чи 51 (GSM+LTE)
+     * тихо повернули б 2G — і вихід за стелю антени. */
+    ASSERT_STREQ(SIM7070_CMD_LTE_ONLY, "AT+CNMP=38\r\n");
+
+    /* Уже підтверджено → 1 і жодного байта в модем */
+    ModemSim m0; modem_init(&m0, NULL, 0);
+    Sim7070Io io0 = { modem_src, modem_sink, &m0 };
+    At_Engine_Reset(&e); confirmed = 1u;
+    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io0, &e, &confirmed));
+    ASSERT_EQ(m0.tx_len, 0);
+
+    /* Init-провал → ворота шлють CNMP=38; OK → підтверджено, PDP переактивовано вже в LTE */
+    static const Stage good[] = {
+        { "AT+CNMP=38\r\n", "\r\nOK\r\n" },
+        { "AT+CNACT=1,1\r\n", "\r\nOK\r\n" },
+    };
+    ModemSim m1; modem_init(&m1, good, 2);
+    Sim7070Io io1 = { modem_src, modem_sink, &m1 };
+    At_Engine_Reset(&e); confirmed = 0u;
+    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io1, &e, &confirmed));
+    ASSERT_EQ(confirmed, 1);
+    ASSERT_STREQ(m1.tx, "AT+CNMP=38\r\nAT+CNACT=1,1\r\n");
+
+    /* PDP не піднявся — режим однаково підтверджено: ворота судять RAT, а провал
+     * PDP проявить сама CoAP-розмова */
+    static const Stage pdp_fail[] = {
+        { "AT+CNMP=38\r\n", "\r\nOK\r\n" },
+        { "AT+CNACT=1,1\r\n", "\r\nERROR\r\n" },
+    };
+    ModemSim m2; modem_init(&m2, pdp_fail, 2);
+    Sim7070Io io2 = { modem_src, modem_sink, &m2 };
+    At_Engine_Reset(&e); confirmed = 0u;
+    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io2, &e, &confirmed));
+    ASSERT_EQ(confirmed, 1);
+
+    /* ERROR · +CME · тиша → 0, не підтверджено, і після CNMP не йде НІЧОГО */
+    static const Stage err[]    = { { "AT+CNMP=38\r\n", "\r\nERROR\r\n" } };
+    static const Stage cme[]    = { { "AT+CNMP=38\r\n", "\r\n+CME ERROR: 3\r\n" } };
+    static const Stage silent[] = { { "AT+CNMP=38\r\n", "" } };
+    const Stage *refusals[] = { err, cme, silent };
+    for (int i = 0; i < 3; i++) {
+        ModemSim m; modem_init(&m, refusals[i], 1);
+        Sim7070Io io = { modem_src, modem_sink, &m };
+        At_Engine_Reset(&e); confirmed = 0u;
+        ASSERT_FALSE(Sim7070_Ensure_Lte_Only(&io, &e, &confirmed));
+        ASSERT_EQ(confirmed, 0);
+        ASSERT_STREQ(m.tx, "AT+CNMP=38\r\n");
+    }
+}
+
 
 /* ════════════════════════════════════════════════════════════════════
  * 6. [FW.60] POLL-ПРИМІТИВИ — GET-білдер, payload-екстрактор, binary-read,
@@ -730,6 +787,7 @@ int main(void)
     RUN(test_conversation_lowercase_nmi_hex);
     RUN(test_resolve_host_urc_before_and_after_ok);
     RUN(test_fw58_reresolve_predicate);
+    RUN(test_hw31_lte_only_gate);
 
     printf("\n— [FW.60] Poll-примітиви + сира UDP-розмова —\n");
     RUN(test_fw60_coap_build_get_golden);
