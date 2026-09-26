@@ -152,7 +152,11 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # no traceable source (born with the rest of 02_03 §9 in the initial commit; equals
 # P_IN(CS) TYP). V_OP above (0.5 V) is the OTHER model's guess (≈0.65 × 0.77 V OCV).
 # Both wait for the HW.13 bench P-V curve — do not reconcile them by editing either.
-E_CYCLE = 5e-3               # J — energy per MCU wake cycle
+# ⚠️ NOT the canon cycle cost: the firmware energy chain (02_03 §9.4/§9.6,
+# tools/firmware/tx_cadence_budget.rb) charges 42.33 mJ per cycle from VSTOR plus
+# ~15 mJ/h of sleep, and delta_t() here has no sleep term. Reconciling this is an
+# open item (00_07 E.63) — do not edit the value without re-running the L4 cache.
+E_CYCLE = 5e-3               # J — energy per MCU wake cycle (legacy placeholder)
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
 # ── Glucose diffusion ──

@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Стан:** Вартісна модель зафіксована в SSOT; ціни підтверджені локальними постачальниками, RFQ-шар відкритий. Шкала готовності тут **незастосовна** — предмет вартісна економіка заліза, а не готовність технології ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Технологічну зрілість самого заліза несуть [`02_01`](02_01_Hardware_Architecture_and_BOM) і [`02_05`](02_05_Queen_Hardware_and_Starlink).
+- **Стан:** Вартісна модель зафіксована в SSOT; ціни — desk-оцінки: котирувань немає (RFQ-листи не надіслано), RFQ-шар відкритий. Шкала готовності тут **незастосовна** — предмет вартісна економіка заліза, а не готовність технології ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Технологічну зрілість самого заліза несуть [`02_01`](02_01_Hardware_Architecture_and_BOM) і [`02_05`](02_05_Queen_Hardware_and_Starlink).
 - **Відкрите:** RFQ-диспетч і vendor-контакти, replacement-OPEX bench-калібрування, Phase 3 енергобаланс Queen → [`00_07`](00_07_Action_Plan_Tracker) (BIZ.7/BIZ.17, HW.39).
 
 ---
@@ -66,7 +66,7 @@
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅25 мм (frozen), термолиття. O-ring EPDM (⚠️ те саме ОДНЕ кільце стоїть і в рядку «Герметизація / IP68» ↓ — одна деталь у двох рядках; ціну не розведено). IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
 | **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)) + пасивна обв'язка 0402. | $6.35 |
-| **RF Deck (PCBA)** | STM32WLE5CC (LoRa SoC, чіп на платі — ⚖️ founder 2026-09-25, [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) поз. 1) + SMD-антена 868 МГц (носія немає — [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM)) + TCXO (±1 ppm; ⚠️ ціновий припуск — розвилка кварц ⊥ TCXO відкрита, поз. 16) + **SE05x DNP footprint** (baseline SE051C2; ідентичність-роль SEC.14 provisioning-only; SEC.6 / SE050-MIGRATION, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$2.40–3.25 коли populated). | $5.80 |
+| **RF Deck (PCBA)** | STM32WLE5CC (LoRa SoC, чіп на платі — ⚖️ founder 2026-09-25, [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) поз. 1) + SMD-антена 868 МГц (носія немає — [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM)) + TCXO (NDK `NT2016SF`, ±2.5 ppm — ⚖️ 2026-09-26, поз. 16; ціна не звірена, у підсумок не входить) + **SE05x DNP footprint** (baseline SE051C2; ідентичність-роль SEC.14 provisioning-only; SEC.6 / SE050-MIGRATION, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$2.40–3.25 коли populated). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
 | **Стерилізація (split-cycle)** | ⛔ Terminal gamma на готовому виробі неможлива, тож компоненти стерилізуються ОКРЕМО: ГІЛКА A (ферменти) — UV-C + 70% EtOH + low-dose Co-60 **15 кГр** (не 25: chain scission PTFE-GDL); ГІЛКА B — автоклав або EtO. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). ⚠️ Ціна нижче — якір на ОДИН цикл; split-cycle їх два, перерахунок їде з першим реальним котируванням. Не входять і вимоги ⚖️ 2026-09-18 ([`00_07` HW.22](00_07_Action_Plan_Tracker)): карта дози й інокульований анти-гниль тест у `Dmin` ([`01_04 §6.3`](01_04_CODIT_and_Xylemointegration)/[`§6.5`](01_04_CODIT_and_Xylemointegration)) та пробний цикл із макетами. | $0.50–$1.00 |
 | **Герметизація / IP68** | O-ring EPDM (ущільнення ОДНЕ — [`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)), Parylene C conformal coating PCBA (Sylgard 184 full-potting відхилено — глушить TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)), машинна збірка тризонного анкера. | $1.50 |
@@ -305,7 +305,7 @@ Month 57:    −$79  (майже окупився)
 Month 58:    +$39  (чиста ліквідність для DAO та власників лісу)
 ```
 
-> Life-cycle з realistic OPEX ($21 з replacements+battery, BIZ.7), але optimistic виручкою (433 SCC/міс — стеля-сценарій) → ~61 міс — §8a.4; на realistic Variant C (§7.1) кластер не окупається взагалі (§7.3). Повна крива по ціні SCC — §7.3.
+> Life-cycle з realistic OPEX ($21 з replacements+battery, BIZ.7), але optimistic виручкою (433 SCC/міс — стеля-сценарій) → ~62 міс — §8a.4; на realistic Variant C (§7.1) кластер не окупається взагалі (§7.3). Повна крива по ціні SCC — §7.3.
 
 ### 7.3. Sensitivity Analysis — ROI Waterfall (канонічний дім payback)
 
@@ -423,7 +423,7 @@ PCBA + Збірка (Черкаси — виконавця не підтверд
 
 Технічна довідка LiFePO4 12V **20Ah** cell (BOM §4 рядок 4; 6Ah відхилено — HW.39, dark-автономність):
 - **Cycle life:** ~2000 повних циклів до 80% capacity
-- **Daily depth-of-discharge** Queen у нормі: **~7–9%** (20Ah дає ~3.3× запас проти добового розряду; 6Ah-варіант мав би ~25–30%)
+- **Daily depth-of-discharge** Queen у нормі: **≤ ~3 %** (7.39 Вт·год/добу споживання проти ~240–256 Вт·год батареї — `tools/firmware/queen_energy_budget.rb`; 6Ah-варіант мав би ~10 %)
 - **Циклів на рік:** ~365 (1 cycle/day equivalent)
 - **Час до 80% capacity:** при DoD <10% LiFePO4 значно перевищує 2000 циклів → lifetime стає **calendar-limited**, не cycle-limited
 - **Calendar aging:** ~3% capacity/рік → ефективний lifetime до 80% при низькому DoD: **~8–10 років**
@@ -468,8 +468,8 @@ PCBA + Збірка (Черкаси — виконавця не підтверд
 | **Time для cold-start** | складно | ~0.1 с (robot) | ~0.1 с (robot) | **~0.1 с (robot)** |
 | **IP68 герметизація** | Складна | Монолітна | Монолітна | **Монолітна + Hard Gold pogo** |
 | **Annual failure rate (Years 4+)** | ~15% | ~12% | ~10–15% (enzyme deg) | **~2%** (механіка домінує) |
-| **Payback @ $0.30/SCC** _(realistic OPEX, optimistic виручка, v4 ←§8a.4)_ | >15 міс | ~34 міс | ~52 міс | **~61 міс (1K) / ~46 міс (50K+)** |
-| **Payback @ $1.00/SCC** _(realistic OPEX, optimistic виручка, v4 ←§8a.4)_ | — | ~10 міс | ~13 міс | **~16 міс (1K) / ~13 міс (50K+)** |
+| **Payback @ $0.30/SCC** _(realistic OPEX, optimistic виручка, v4 ←§8a.4)_ | >15 міс | ~34 міс | ~52 міс | **~62 міс (1K) / ~47 міс (50K+)** |
+| **Payback @ $1.00/SCC** _(realistic OPEX, optimistic виручка, v4 ←§8a.4)_ | — | ~10 міс | ~13 міс | **~17 міс (1K) / ~13 міс (50K+)** |
 | **Маса вузла (electronics)** | ~45 г | ~28 г | ~32 г | **~32 г** |
 | **Zero Instrumental Noise (для Lorenz)** | ❌ | ❌ | ❌ (enzyme drift maskує signal) | **✅ Всі апаратні змінні — константи** |
 

@@ -375,7 +375,7 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 | V_op | 0.5 V | EBFC under load |
 | A_electrode | 2 cm² | ONE face of the Ø16 Ti-coin COUPON — never the anchor (`lib/constants.py A_ELECTRODE`; the gyroid anode differs by 30–60×) |
 | η_BQ | 0.68 | BQ25570 datasheet (SLUSBH2G Fig.6-7, low-I_IN; [HW.47]) |
-| E_cycle | 5 mJ | STM32 sense+LoRa TX |
+| E_cycle | 5 mJ | STM32 sense+LoRa TX — ⚠️ legacy placeholder: канон-ланцюг рахує 42.33 мДж з VSTOR на цикл + сон ([`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63) |
 
 ### delta_t Predictions
 

@@ -16,7 +16,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — Схеми/прототипи існують, прошивка готова; Phase 2.5 Starlink DTC підтверджено через Київстар
+- **Поточний TRL:** TRL 5 — архітектура + host/CI-прошивка; схем, прототипу й HAL-лінкованого `.elf` ще немає ([`00_07`](00_07_Action_Plan_Tracker) HW.9 · FW.46); Phase 2.5 Starlink DTC підтверджено через Київстар
 - **Відкрите:** зимовий енергодефіцит, SIM7070G BMS/decoupling, теплове управління IP67 → [`00_07`](00_07_Action_Plan_Tracker) (HW.14/15/16/18).
 
 ---
@@ -183,7 +183,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ### Пікові струми SIM7070G — BMS не специфікований + VBAT decoupling
 
-Module-level VBAT decoupling вирішено (5-cap tank bank — §2.2.1, BOM 17–20); MPPT зафіксовано (Victron 75/15, поз.6), BMS SKU залишається відкритим (⚖️ HW.15).
+Module-level VBAT decoupling вирішено (5-cap tank bank — §2.2.1, BOM 17–20); MPPT зафіксовано (Victron 75/15, поз.6), BMS SKU залишається відкритим — не ⚖️, а очікування відповіді JBD (рекомендація на датащитах і лист — [`00_07` HW.15](00_07_Action_Plan_Tracker)).
 
 SIM7070G у режимі LTE-M TX може споживати імпульсно до **2A** пікового значення. Це створює дві окремі проблеми:
 
@@ -192,10 +192,10 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 - **BMS:** захист від перетоку має бути ≥ 5А (з 2.5× запасом)
 - **Провідники:** AWG16 або AWG18 для L < 30 см
-- **MPPT:** Victron SmartSolar 75/15 (вихідний струм 15А > 2А ✅), але модель не зафіксована в BOM
+- **MPPT:** Victron SmartSolar 75/15 (вихідний струм 15А > 2А ✅) — зафіксовано в BOM поз. 6 (HW.15)
 - **VBAT decoupling:** ✅ Специфіковано — 5-cap tier у §2.2.1 та BOM позиції 17–20
 
-> Відкриті дії (фіксація моделей BMS ≥12V/20A cont./50A peak + MPPT Victron 75/15 + PCB layout) блокують фінальний BOM → [`00_07` — HW.15](00_07_Action_Plan_Tracker).
+> Відкриті дії (BMS SKU ≥12V/20A cont./50A peak — чекає відповіді JBD; PCB layout) блокують фінальний BOM → [`00_07` — HW.15](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -226,21 +226,11 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 | Обробка пакету | `Process_And_Cache_Data()` → CIFO cache (50 слотів) |
 
 **CIFO Cache (Forest Cache) — Hot Tier:**
-```c
-// firmware/queen/main.c (struct EdgeCache)
-typedef struct {
-    uint32_t uid;         // DID дерева (4 байти)
-    uint8_t  payload[16]; // Розшифровані дані сенсора
-    int8_t   rssi;        // RSSI [dBm]
-    uint8_t  is_active;
-} EdgeCache;
-
-EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
-```
+50 слотів `EdgeCache` у RAM; слот, формати й логіка дедуп/вставки/витіснення — `firmware/queen/cifo_cache.h` (канон — [`03_02 §2`](03_02_Queen_Gateway_Firmware)), RAM-розміри — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security).
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
 
-⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap ([`00_07` ARCH.1](00_07_Action_Plan_Tracker), 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+⚠️ **Capacity math:** 50 слотів при каденції Сценарію C (1 пакет / Soldier / 1.95 год — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) × 100 Soldiers/Queen ⇒ переповнення за **≈ 58 хв** при втраті uplink'а. На верхньому краю scaling roadmap ([`00_07` ARCH.1](00_07_Action_Plan_Tracker), 200 Soldiers/Queen) — за **≈ 29 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
 **Flash Ring Buffer — Overflow Tier (ARCH.35):** ✅ **драйвер host-готовий (2026-06-11), інтеграція gated.** Дім коду: `firmware/common/flash_ring.{h,c}` (host-тести `test_flash_ring.c` — NOR-мок із чесною 1→0 семантикою + power-cut fault-injection) ↔ gated-глю у `firmware/queen/main.c` (`ARCH35_RING_ENABLED 0`; SPI W25Q32 cmd-set, спіл евікшнів + провалених flush'ів, drain-refill у CIFO після send-success).
 
@@ -309,7 +299,7 @@ SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 | Поз. | Компонент | Призначення | Розташування |
 |------|-----------|-------------|--------------|
 | C_BULK | **470 µF, 6.3V, low-ESR aluminum polymer** (Panasonic SP-Cap EEFCX0J471R або Kemet T520B477M006ATE015), ESR ≤ 15 мΩ | Основний бункер для 1–10 мс TX-burst | 5–10 мм від VBAT pin |
-| C_MID | **100 µF, 25V, X7R, 1210** (Murata GRM32ER71E107K), C_eff @ 3.7V ≈ 85 µF після derating | Мід-частотний buffer (kHz range RF chopping) | ≤ 5 мм від VBAT pin |
+| C_MID | **100 µF, 25V, X7R, 1210** (Murata GRM32ER71E107K — ⚠️ не звірено: 25 В X7R 1210 понад 22 µF у первинці не знайдено, [`00_07`](00_07_Action_Plan_Tracker) HW.20), C_eff @ 3.7V ≈ 85 µF після derating | Мід-частотний buffer (kHz range RF chopping) | ≤ 5 мм від VBAT pin |
 | C_HF1 | **10 µF, 25V, X7R, 0805** | HF фільтр живлення | ≤ 3 мм від VBAT pin |
 | C_HF2 | **100 nF, 50V, X7R, 0402** | HF decoupling MCU bus | впритул до VBAT pin |
 | C_RF | **33 pF, 50V, NP0, 0402** | Фільтр антенного RF-сплеску у живлення | впритул до VBAT pin |
@@ -366,7 +356,7 @@ Starlink Mini — компактний термінал LEO-супутника �
          │
          ▼
 ┌────────────────────┐
-│  MPPT Controller   │  Victron SmartSolar MPPT 75/15 (рекомендовано)
+│  MPPT Controller   │  Victron SmartSolar MPPT 75/15 (BOM поз. 6)
 └────────────────────┘
          │ 12V (зарядний)
          ▼
@@ -440,7 +430,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | LiFePO4 (LiFeYPO₄) | −20 … +60°C (розряд) | **Заряд лише 0 … +45°C** ⚠️ |
 | BMS (типовий 12V 20A) | −20 … +60°C | — |
 | BQ25570 MPPT | −40 … +85°C | — |
-| EDLC 0.47F/5.5V | −40 … +70°C | C-deg при > +70°C |
+| EDLC 0.47F/5.5V | −25 … +70°C (нижче −25 °C — FAE-питання, [`00_07`](00_07_Action_Plan_Tracker) HW.37) | C-deg при > +70°C |
 
 **Найжорсткіше обмеження:** заряд LiFePO4 при T < 0°C → деградація плакування графіту → necessary charge-disable нижче 0°C.
 
@@ -578,7 +568,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 |------|-----------|-------------------|---------|--------------|-------------|
 | **Phase 1** | LTE-M (наземні вишки) | ❌ | Там де є 4G | ~370 мВт | ~$10–30 (SIM) |
 | **Phase 2.5** | Starlink DTC (Київстар) | ❌ | Розширене (DTC footprint) | ~370 мВт | ~$10–30 (SIM) |
-| **Phase 3** | Starlink Mini | ✅ ($599 одноразово) | Глобальне | 20–40 Вт | ~$50/міс |
+| **Phase 3** | Starlink Mini | ✅ ($599 одноразово) | Глобальне | 20–40 Вт | $150/міс термінал (≈ $50 на кластер при шерингу 1:3 — [`02_06`](02_06_Unit_Economics_and_BOM)) |
 | **Phase 4 (Backup)** | Helium Network (HNT) — **Queen-side LoRaWAN** | ❌ | Там де є hotspot-и Helium (~15 км) | **не виміряно** — ⛔ не підставляти число з моделі «агрегат-frame»: її відкинуто 2026-07-03, канал є SOS-only 12 B про саму Королеву ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)); і `SF9` тут неможливий — 15 км у колонці зліва потребує **SF12** (§6.1) | частки цента/frame |
 
 > **Kyivstar — конкретна реалізація Phase 1/2.5 ДЛЯ УКРАЇНИ**, обрана тому, що Kyivstar є партнерським оператором Starlink DTC тут (↑ «Що підтверджено»). В інших ринках, де немає локального DTC-партнера, той самий SIM7070G-хардвер працює з глобальним IoT-оператором — вартісний рядок [`02_06 §4`](02_06_Unit_Economics_and_BOM) («eSIM, глобальний тариф» / §6 «1NCE / Twilio») саме цей узагальнений випадок і моделює. **Не конфлікт джерел, а різні ринки однієї фазової таблиці:** Kyivstar — UA-специфіка Phase 1/2.5, глобальна eSIM — вартісна модель для решти.
@@ -622,7 +612,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ### Чому LoRaWAN живе тільки на Queen
 
-| Чинник | Soldier (STM32WLE5JC, EBFC) | Queen (STM32WLE5JC + LiFePO4 12V/20Ah) |
+| Чинник | Soldier (STM32WLE5CC, EBFC) | Queen (STM32WLE5JC + LiFePO4 12V/20Ah) |
 |--------|-----------------------------|------------------------------------------|
 | Flash budget для LoRaWAN-стека (LoRaMac-node ≈ 30 KB) | ❌ Конкурує з mruby VM + TinyML | ✅ Достатньо ресурсу |
 | TX power для +15 dBm (Helium SF12 reach 15 км) | ❌ EBFC vcap ~500 мВ — без запасу потужності | ✅ живлення дозволяє +22 dBm, але ВИПРОМІНЮВАННЯ обмежене регулятором: у P2P провідна +10 дБм (⚖️ 2026-09-24, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)), а LoRaWAN-детур з дефолтами MAC перевищує ЕВП ([`certification_roadmap`](protocols/legal/certification_roadmap.md) §2.3) |
@@ -723,6 +713,6 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
 | 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано (розводка SPI+CS — board-freeze); **драйвер ✅ host-tested** (`flash_ring.{h,c}`, gated `ARCH35_RING_ENABLED 0` — §2.1); ~$0.50/од; ~197k telemetry slots; ~10 мА × 0.7 мс/page write |
 | 17 | **C_BULK (SIM7070G VBAT tank)** | 470 µF / 6.3V / aluminum polymer, ESR ≤ 15 мΩ (Panasonic EEFCX0J471R або Kemet T520B477M006ATE015) | 1/2.5 | 🔴 **Обов'язково** — без нього brownout reboot SIM7070G при 2А LTE-M burst (§2.2.1) |
-| 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
+| 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K — ⚠️ P/N не звірено, HW.20) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
 | 19 | **C_HF1 (SIM7070G VBAT)** | 10 µF / 25V / X7R / 0805 | 1/2.5 | 🔴 Обов'язково |
 | 20 | **C_HF2 + C_RF (SIM7070G VBAT)** | 100 nF / 50V / X7R / 0402 + 33 pF / 50V / NP0 / 0402 | 1/2.5 | 🔴 Обов'язково — HF фільтр + RF-burst guard |
