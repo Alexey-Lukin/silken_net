@@ -592,6 +592,8 @@ if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало
 
 Солдат пише в Flash лише після обох брам — HMAC під K_ota і версія > high-water (SEC.20) — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
 
+> 🔴 **Рефлекс ПЕЙСИТЬСЯ робочим циклом ([`00_07`](00_07_Action_Plan_Tracker) FW.61):** умови НКЕК для SRD 868 дають < 1 % — ≤ 36 с передавання на годину ([`certification_roadmap`](protocols/legal/certification_roadmap.md) §2), а серія 8 КБ — це ≈ 123 с ефіру. Тож кожен P2P-кадр Королеви (маяк · CMD · OTA-чанк · печатка · re-request) питає лімітер `firmware/queen/tx_duty.h` ДО `Send` і списує свій ефір після: журнал з 13 п'ятихвилинних кошиків тримає стелю для будь-якого ковзного годинного вікна, маяк часу має резерв 3,6 с, решту ділять OTA й CMD. Коли ефір вичерпано, чанк просто не стріляє — курсор не рухається, і той самий чанк піде на наступному uplink'у; re-request обривається, і решту пропусків Солдат перепросить наступним зойком. Ціна: серія 8 КБ при безперервному попиті закінчується не раніше ніж за ~3 год (чотири порції по 32,4 с); реальний темп задають uplink'и Солдатів. Стелі (ребут обнуляє журнал · LoRaWAN-детур поза ним · годинне вікно EN 300 220-1 не звірено) — шапка `tx_duty.h`.
+
 **Математика LoRa чанків:**
 - Корисне навантаження: 11 байт (16 − 5 байт заголовка)
 - Для 8192 байт bytecode: `(8192 + 10) / 11 = 745` LoRa-чанків
@@ -1213,6 +1215,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `coap_pdu_buf` | `uint8_t static` | sizeof(batch_attest_buffer)+64 | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
 | `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (boot; [FW.58] інвалідація після N=3 flush-провалів підряд → re-resolve) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
+| `g_tx_duty` | `TxDutyLedger` | 60 B | **[FW.61]** журнал ефіру P2P-кадрів: 13 п'ятихвилинних кошиків — стеля робочого циклу ≤ 36 с у будь-яку годину (`queen/tx_duty.h`, §5) |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
 | `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (288 B) |
 | `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 288 B | **[FW.3 + E.8]** FIFO ring для ISR-пакетів (16 × 18 байтів = payload + rssi + snr) |

@@ -45,6 +45,10 @@
 // [FW.52] Персистований SHA-256 останньої прийнятої OTA — cross-check на
 // Magic Re-Request, коли ota_is_active=0 і буфер МІГ бути перезаписаний.
 #include "ota_sha_guard.h"
+// [FW.61] Лімітер робочого циклу TX: ≤ 1 % ефіру в будь-яку годину (умови
+// НКЕК для SRD 868 — certification_roadmap §2). Кожен P2P-кадр питає його
+// ДО Send і списує СВІЙ ефір після; OTA чекає, маяк має резерв.
+#include "tx_duty.h"
 // [FW.2] Маршрутизація RX (16B ECB / 30B CCM rev2.1 / шум) + 31B CoAP-запис —
 // pure-контракт blind-forward'а (Королева CCM не розшифровує; rx_route.h).
 #include "rx_route.h"
@@ -718,6 +722,8 @@ static char g_last_acked_cmd_token[UUID_STR_LEN + 1] = { 0 };
 static uint32_t g_ota_fetch_fw_id     = 0; // кампанія, яку зараз тягнемо
 static uint16_t g_ota_fetch_total     = 0; // пакетів у кампанії (bytecode + 0x9B-трейлер)
 static uint16_t g_ota_fetch_next_ch   = 0; // курсор послідовного фетчу
+// [FW.61] Журнал ефіру P2P-кадрів за останню годину (tx_duty.h).
+static TxDutyLedger g_tx_duty;
 static uint8_t  g_ota_fetch_pending   = 0;
 // [FIX: AUDIT] Бітова карта для захисту від дублікатів OTA-чанків.
 // Без неї повторна доставка чанка (ACK loss) збільшує ota_chunks_received
@@ -927,7 +933,7 @@ static void Load_Ed25519_Seed(void);
 // [FW.20] Помічники синхронізації часу (зрізання конверта CoAP + LoRa-маяк).
 static void Apply_Server_Time(uint32_t server_unix_ts);
 static uint32_t Get_Current_Unix_Ts(void);
-static void Broadcast_Time_Beacon(void);
+static uint8_t Broadcast_Time_Beacon(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -1180,6 +1186,9 @@ int main(void)
   // активація пішла б 2G. Не підтверджено — PDP підніме ворота flush'у на пізньому OK.
   if (lte_only_ok) (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
 
+  // [FW.61] Журнал робочого циклу — порожній від boot (стеля ребута — tx_duty.h).
+  Tx_Duty_Init(&g_tx_duty);
+
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
   Radio.Rx(LORA_RX_INFINITE);
 
@@ -1281,9 +1290,15 @@ int main(void)
         {
             uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
             uint8_t cmd_cipher[SOLDIER_CMD_BLOCK_SIZE];
-            if (Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
+            // [FW.61] Спершу лімітер, потім черга: Next витрачає постріл із
+            // бюджету кадру, тож питати його треба лише тоді, коли ефір є.
+            const uint32_t cmd_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS,
+                                                             SOLDIER_CMD_BLOCK_SIZE);
+            if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), cmd_air, TX_DUTY_BULK) &&
+                Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
                                  (uint32_t*)cmd_cipher, 1000);
+                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
                 // PHY доказує пакет перед наступним TX/RX
                 HAL_Delay(Lora_Phy_Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE,
                                         LORA_PHY_PREAMBLE_SYMBOLS));
@@ -1296,7 +1311,12 @@ int main(void)
         // Солдат прямо зараз (після відправки) слухає ефір рівно 500 мс.
         // Ми маємо блискавично вистрілити шматком нової прошивки йому у відповідь.
         // =========================================================================
-        if (ota_is_active) {
+        // [FW.61] Рефлекс OTA — ПЕЙСИНГ, а не відмова: коли годинний ефір
+        // вичерпано, чанк просто не стріляє, курсор не рухається, і той самий
+        // чанк піде на наступному uplink'у, щойно ефір звільниться.
+        const uint32_t ota_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
+        if (ota_is_active &&
+            Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), ota_air, TX_DUTY_BULK)) {
             uint8_t ota_chunk[16] = {0};
             uint8_t encrypted_ota[16] = {0};
 
@@ -1329,6 +1349,7 @@ int main(void)
                 // СТРІЛЯЄМО В ЕФІР і чекаємо, доки кадр справді відлетить
                 // (16 Б @ SF9 ≈ 165 мс + запас, lora_phy_apply.h): Rx-re-arm
                 // наприкінці обробки інакше обірвав би його посеред ефіру.
+                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
                 HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 
                 // Перемикаємося на наступний шматок для наступного дерева
@@ -1359,6 +1380,7 @@ int main(void)
                 memcpy(ota_chunk, pending_ota_hmac_chunks[current_hmac_seg_idx], 16);
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
                                   (uint32_t*)encrypted_ota, 1000);
+                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
                 HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 
                 current_hmac_seg_idx++;
@@ -1421,9 +1443,13 @@ int main(void)
                                           : total_chunks;
                         // Прицільна проповідь — повторюємо лише ті чанки,
                         // яких бракує у пам'яті Солдата.
+                        const uint32_t req_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
                         for (uint16_t i = 0; i < cap; i++) {
                             uint8_t bit_set = bitmap[i / 8u] & (uint8_t)(1u << (i % 8u));
                             if (!bit_set) continue;  // Цей чанк Солдат уже носить у плоті
+                            // [FW.61] Годинний ефір вичерпано — решту пропусків
+                            // Солдат перепросить наступним зойком (FW.27-B).
+                            if (!Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), req_air, TX_DUTY_BULK)) break;
 
                             uint8_t ota_chunk[16] = {0};
                             uint8_t encrypted_ota[16] = {0};
@@ -1443,6 +1469,7 @@ int main(void)
                                               (uint32_t*)encrypted_ota, 1000);
                             // Кадр відлітає цілком, лише тоді наступний; до 72 кадрів
                             // ≈ 12.6 с ефіру — пса годуємо на кожному (цикл обмежений cap).
+                            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), req_air);
                             HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
                             HAL_IWDG_Refresh(&hiwdg);
                         }
@@ -1595,8 +1622,12 @@ int main(void)
     // Маяк придушено перед першим CoAP-роздтрипом (queen_unix_ts == 0), щоб
     // не навчати рій хибній епосі. Витрати: ≈ 165 мс ефірного часу раз на 15 хв.
     if ((HAL_GetTick() - last_beacon_time) > TIME_BEACON_INTERVAL_MS) {
-        Broadcast_Time_Beacon();
-        last_beacon_time = HAL_GetTick();
+        // [FW.61] Такт позначаємо, лише коли маяк сказано (чи казати нічого):
+        // відкладений лімітером маяк стрельне на першому обороті з вільним ефіром,
+        // а не через 15 хв.
+        if (Broadcast_Time_Beacon()) {
+            last_beacon_time = HAL_GetTick();
+        }
 
         // Re-arm RX після TX маяка, щоб не оглушити себе для Солдатів
         Radio.Rx(LORA_RX_INFINITE);
@@ -2991,10 +3022,14 @@ static uint32_t Get_Current_Unix_Ts(void)
 // Придушено якщо queen_unix_ts == 0 (щоб не навчати Солдатів хибній епосі
 // до нашого першого CoAP-роздтрипа). Кожен маяк коштує ≈ 165 мс ефірного часу
 // (16 Б @ SF9, `Lora_Phy_Time_On_Air_Ms`).
-static void Broadcast_Time_Beacon(void)
+// [FW.61] Повертає 1, коли маяк сказано АБО казати нічого (ще не синхронізовано);
+// 0 — коли його відклав лімітер робочого циклу (резерв маяка вичерпано).
+static uint8_t Broadcast_Time_Beacon(void)
 {
     uint32_t now = Get_Current_Unix_Ts();
-    if (now == 0) return;  // Ще не синхронізовано — нічого авторитетного транслювати
+    if (now == 0) return 1u;  // Ще не синхронізовано — нічого авторитетного транслювати
+    const uint32_t air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
+    if (!Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), air, TX_DUTY_BEACON)) return 0u;
 
     uint8_t plaintext[16] = {0};
     uint8_t ciphertext[16] = {0};
@@ -3018,8 +3053,10 @@ static void Broadcast_Time_Beacon(void)
     // байти 11..15 = 0x00 (padding до 16-байтного AES-блоку)
 
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)plaintext, 4, (uint32_t*)ciphertext, 1000);
+    Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), air);
     // Даємо PHY фізично випромінити пакет перед re-arm RX (ефір + запас).
     HAL_Delay(Lora_Phy_Send(ciphertext, 16, LORA_PHY_PREAMBLE_SYMBOLS));
+    return 1u;
 }
 
 /* USER CODE END 4 */
