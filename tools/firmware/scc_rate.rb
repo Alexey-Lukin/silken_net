@@ -76,7 +76,7 @@ ARGV.each do |arg|
 end
 variant_c_h = (variant_c_s / 3600.0).round(2)
 
-realistic = scc_per_tree_year(variant_c_s)     # робоча точка (дефолт: Variant C 1.77h)
+realistic = scc_per_tree_year(variant_c_s)     # робоча точка (дефолт: Variant C, 7027 с ≈ 1.95 год)
 ceiling   = scc_per_tree_year(DELTA_T_FAST_S)  # фізична стеля recharge (Δt=600s)
 co2_kg_year = realistic * 1000.0 / SCC_PER_TONNE_CO2  # kg CO₂ / tree / year (realistic)
 

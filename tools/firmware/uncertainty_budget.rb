@@ -133,7 +133,7 @@ def report(prm)
   puts
 
   dominant = b[:contributions].max_by { |_, u| u }
-  puts "домінує: #{dominant[0]} — #{(dominant[1] / b[:combined] * 100).round(0)}% дисперсії"
+  puts "домінує: #{dominant[0]} — #{((dominant[1]**2) / (b[:combined]**2) * 100).round(0)}% дисперсії"
   puts "коефіцієнт чутливості wire до delta_t: ×#{b[:c_m].round(2)} " \
        "(EMA дав #{b[:u_dt].round(2)}% на вході; зсув GP_MIN=#{prm[:gp_wire_min].to_i} демпфує)"
   puts
