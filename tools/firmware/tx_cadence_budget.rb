@@ -72,6 +72,18 @@ EC = SilkenEnergyChain
 
 CANON_DOC = File.expand_path("../../docs/02_03_BQ25570_MPPT_Nano_Power.md", __dir__)
 
+# ГРОШОВА робоча точка живе в двох сусідах, і вони НЕ кличуть цей файл (прилади свідомо не злиті).
+# Тому її читають звідси, щоб розбіжність ставала видимою: 2026-09-26 вона тихо відстала на +10 %
+# (ланцюг без RX-вікна й на струмі чужого підсилювача), і помітило її лише статичне «0.4 %»,
+# яке брехало. Дефолт тепер = ця модель (⚖️ founder 2026-09-26), а `--assert` тримає обох сусідів
+# у межах ±8 % `u_delta_t` від неї — рух будь-якого входу, що зсуне ECB-точку далі, червоніє тут.
+MONEY_TOLERANCE_PCT = 8.0 # = `u_delta_t_raw_pct` (STK.5)
+def money_default_s
+  scc = File.read(File.expand_path("scc_rate.rb", __dir__))[/^VARIANT_C_S\s*=\s*([\d.]+)/, 1]
+  unc = File.read(File.expand_path("uncertainty_budget.rb", __dir__))[/^\s*delta_t_s:\s*([\d.]+)/, 1]
+  { scc: scc && Float(scc), unc: unc && Float(unc) }
+end
+
 PARAMS = {
   # ── активний цикл на VOUT (02_03 §9.4 / §9.6 Сценарій C) ──────────────────
   tinyml_mj: 7.92,
@@ -202,11 +214,11 @@ def report(p)
               p[:delta_t_slow_s] - ecb[:delta_t_s], (p[:delta_t_slow_s] - ecb[:delta_t_s]) / 60.0,
               ccm[:delta_t_s] - ecb[:delta_t_s], (ccm[:delta_t_s] - ecb[:delta_t_s]) / 60.0)
   puts
-  money_default_s = 6372.0 # дефолт `scc_rate.rb` / `uncertainty_budget.rb` — ГРОШОВА робоча точка
-  gap_pct = 100.0 * (ecb[:delta_t_s] / money_default_s - 1.0)
-  puts format("  ⚠️ Грошові моделі (scc_rate.rb, uncertainty_budget.rb) беруть дефолтом %.0f с; ця модель дає"\
-              " %.0f с — різниця %+.1f %%.", money_default_s, ecb[:delta_t_s], gap_pct)
-  if gap_pct.abs <= 8.0
+  money = money_default_s[:scc]
+  gap_pct = 100.0 * (ecb[:delta_t_s] / money - 1.0)
+  puts format("  Грошові моделі (scc_rate.rb, uncertainty_budget.rb) беруть дефолтом %.0f с; ця модель дає"\
+              " %.0f с — різниця %+.1f %%.", money, ecb[:delta_t_s], gap_pct)
+  if gap_pct.abs <= MONEY_TOLERANCE_PCT
     puts "     Це всередині ±8 % `u_delta_t_raw_pct` (STK.5): округлення, не розбіжність."
   else
     puts "     🔴 Це ПОЗА ±8 % `u_delta_t_raw_pct` (STK.5): уже не округлення, а розбіжність — дефолт"
@@ -365,6 +377,19 @@ def assert_mode(p)
   # 3. Присуд, заради якого модель існує: CCM-точка лежить ЗА метаболічною підлогою,
   #    а ECB-точка — перед нею. Порушення будь-якої половини робить розвилку іншою.
   problems << "ECB-точка вже за підлогою m — предмет розвилки змінився" unless ecb[:m] > 0.0
+  # 4. Грошова робоча точка сусідів не сміє відстати від ланцюга, який виконує прошивка, далі за
+  #    невизначеність Δt — і обидва сусіди мусять стояти на ОДНІЙ точці (⚖️ founder 2026-09-26).
+  money = money_default_s
+  if money.values.any?(&:nil?)
+    problems << "не знайдено грошового дефолту (VARIANT_C_S у scc_rate.rb або delta_t_s в uncertainty_budget.rb)"
+  else
+    problems << format("грошові дефолти розійшлись між собою: scc_rate %.0f с ⊥ uncertainty_budget %.0f с",
+                       money[:scc], money[:unc]) unless money[:scc] == money[:unc]
+    gap = 100.0 * (ecb[:delta_t_s] / money[:scc] - 1.0)
+    problems << format("грошова робоча точка %.0f с відійшла від енергомоделі (%.0f с) на %+.1f %% — поза ±%.0f %% "\
+                       "u_delta_t; рухати її — присудом (00_07 ARCH.8)", money[:scc], ecb[:delta_t_s], gap,
+                       MONEY_TOLERANCE_PCT) if gap.abs > MONEY_TOLERANCE_PCT
+  end
   problems << "CCM-точка більше НЕ за підлогою m — розвилка ARCH.8 може бути закрита" unless ccm[:m].zero?
   problems.each { |x| warn "FAIL  #{x}" }
   if problems.empty?

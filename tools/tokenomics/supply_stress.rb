@@ -45,8 +45,8 @@
 #   • Ціни й попиту тут немає ЗА ПОБУДОВОЮ: канон їх не має (00_04 «не зафіксовано»,
 #     00_01 «фіатні суми НЕ фіксуються»), тож будь-яка цінова крива була б нашою
 #     вигадкою з виглядом специфікації. Модель міряє КІЛЬКІСТЬ, не вартість.
-#   • scc_per_tree_year — calibration-pending [E.63]: realistic 7.92 ⊥ фізична стеля
-#     326 ⊥ канон-арбітр 50. Розкид 40× у центральному вході; сценарії нижче беруть
+#   • scc_per_tree_year — calibration-pending [E.63]: realistic 5.39 ⊥ фізична стеля
+#     326 ⊥ канон-арбітр 50. Розкид 60× у центральному вході; сценарії нижче беруть
 #     усі три, і саме тому вихід подається діапазоном, а не числом.
 #   • Крива флоту — НАШЕ припущення (канон моделі учасників не має): лінійний ramp
 #     до trees за ramp_years, далі плато.
@@ -54,13 +54,17 @@
 #     _burn нашого контракту), тож у моделі його немає взагалі. Єдиний механізм
 #     звільнення cap — slash.
 
+# Realistic SCC/дерево/рік — ДЗЕРКАЛО `tools/firmware/scc_rate.rb` на його дефолтній робочій точці
+# (Variant C, 7027 с — ⚖️ 2026-09-26: = енергомодель). Константа, а не виклик: модель pure-script і
+# сусіда не кличе. ⛔ Правити лише разом із scc_rate.rb — його `--assert` звіряє це число.
+REALISTIC_SCC_PER_TREE_YEAR = 5.39
 PARAMS = {
   # ── горизонт і флот (НАШЕ припущення — канон моделі учасників не має) ────────
   trees: 2_000_000,       # канонічний pilot-флот деривації 05_03
   ramp_years: 0,          # 0 = флот одразу повний (форма канон-деривації)
   horizon_years: 100,     # стеля симуляції; horizon > цього = "не впирається"
   # ── емісія ──────────────────────────────────────────────────────────────────
-  scc_per_tree_year: 50.0, # канон-арбітр 05_03; realistic 7.92, стеля 326 [E.63]
+  scc_per_tree_year: 50.0, # канон-арбітр 05_03; realistic — REALISTIC_SCC_PER_TREE_YEAR, стеля 326 [E.63]
   max_supply: 1_000_000_000.0, # SilkenCarbonCoin.sol MAX_SUPPLY — constant
   # ── dynamic tax (05_03 · 05_06 §7) ──────────────────────────────────────────
   dynamic_tax_rate: 0.02,          # bounds 0 .. 0.10
@@ -204,10 +208,10 @@ def report(prm)
 
   rows = [
     [ "канон-арбітр (50 SCC/дерево/рік)", { scc_per_tree_year: 50.0 } ],
-    [ "realistic Δt=1.77h (7.92)",        { scc_per_tree_year: 7.92 } ], # ECB-ера; CCM → ≈2.19h (ARCH.8)
+    [ "realistic Δt=1.95h (#{REALISTIC_SCC_PER_TREE_YEAR})", { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR } ], # ECB-ера; CCM → ≈2.22h (ARCH.8)
     [ "фізична стеля Δt=600s (326)",      { scc_per_tree_year: 326.0 } ],
-    [ "realistic + активований slash",    { scc_per_tree_year: 7.92, degradation_rate: 0.05 } ],
-    [ "realistic + страхові виплати",     { scc_per_tree_year: 7.92, payout_rate: 0.5 } ]
+    [ "realistic + активований slash",    { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.05 } ],
+    [ "realistic + страхові виплати",     { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, payout_rate: 0.5 } ]
   ]
 
   printf("%-34s %14s %8s %12s %12s\n", "сценарій", "cap за", "частка", "спалено", "страх.емісія")
@@ -220,7 +224,7 @@ def report(prm)
   end
 
   puts
-  base = scenario(prm, { scc_per_tree_year: 7.92 })
+  base = scenario(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR })
   puts "Treasury (dynamic tax) на кінець realistic-прогону: " \
        "#{(base[:treasury] / 1e3).round(1)}k SCC — поріг вимкнення " \
        "#{(prm[:insurance_pool_threshold] / 1e3).round(0)}k"
@@ -230,7 +234,7 @@ def report(prm)
   puts
   puts "Governance-розрив [E.67] — ланцюг прийняв, `ParameterSyncWorker` відкинув " \
        "(ефективна γ лишається #{prm[:slash_gamma]}):"
-  base_over = { scc_per_tree_year: 7.92, degradation_rate: 0.05 }
+  base_over = { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.05 }
   [ [ 3.5, "вище межі 3.0 — голос ПОМʼЯКШИТИ" ],
     [ 0.5, "нижче межі 1.0 — голос ПОСИЛИТИ"  ] ].each do |voted, label|
     d = governance_divergence(prm, base_over.merge(slash_gamma_voted: voted))
@@ -269,7 +273,7 @@ def assert_run(prm)
   #    ⚖️ РАТИФІКОВАНО 2026-08-30 (E.67, делеговано) як ACCEPTANCE-поріг:
   #    «burn без positive-A неможливий» — червоне тут означає «протокол зламано»,
   #    не «модель розійшлась». Безпековий род, чисел економіки не називає.
-  base = scenario(prm, { scc_per_tree_year: 7.92, degradation_rate: 0.0 })
+  base = scenario(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.0 })
   errors << "baseline спалив #{base[:burned].round(2)} SCC при degradation_rate=0" \
     unless base[:burned].zero?
 
@@ -288,7 +292,7 @@ def assert_run(prm)
 
   # 5. TAX-ГІСТЕРЕЗИС: податок мусить ВИМКНУТИСЬ, щойно treasury дійде порога —
   #    це негативний зворотний зв'язок, а не постійний збір.
-  taxed = scenario(prm, { scc_per_tree_year: 7.92, horizon_years: 5 })
+  taxed = scenario(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, horizon_years: 5 })
   ceiling = prm[:insurance_pool_threshold] * 1.5
   errors << "treasury=#{taxed[:treasury].round} перевищив #{ceiling.round} — " \
             "гістерезис податку не спрацював" if taxed[:treasury] > ceiling
@@ -306,9 +310,9 @@ def assert_run(prm)
   #    ⚠️ Знак виведено ВИМІРОМ: `damage^γ` при damage<1 УБУВАЄ по γ, тож вища γ
   #    ПОМʼЯКШУЄ. Перша редакція цього інваріанта стверджувала протилежне — і саме
   #    він її й зловив, що й є найкращим сортом доказу живості гейта.
-  softer = governance_divergence(prm, { scc_per_tree_year: 7.92, degradation_rate: 0.05,
+  softer = governance_divergence(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.05,
                                         slash_gamma_voted: 3.5 })
-  harder = governance_divergence(prm, { scc_per_tree_year: 7.92, degradation_rate: 0.05,
+  harder = governance_divergence(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.05,
                                         slash_gamma_voted: 0.5 })
   if softer[:burn_gap].zero? || harder[:burn_gap].zero?
     errors << "governance-розрив не виражається (γ=3.5 → #{softer[:burn_gap].round(2)}, " \
@@ -323,7 +327,7 @@ def assert_run(prm)
 
   if errors.empty?
     puts "✅ supply_stress: канон-арбітр=#{fmt_years(arb[:years_p50])} · " \
-         "realistic=#{fmt_years(scenario(prm, { scc_per_tree_year: 7.92 })[:years_p50])} · " \
+         "realistic=#{fmt_years(scenario(prm, { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR })[:years_p50])} · " \
          "baseline burn=0 · одиниця=монети (magnitude calibration-pending, E.63)"
     exit 0
   end
@@ -338,7 +342,7 @@ end
 # виводу): інертні рівно ДВА, і це не збіг — обидва називають ту саму вісь, задля
 # показу якої модель і існує, тож КОЖЕН її споживач задає їх ЯВНО:
 #   · scc_per_tree_year — матриця сценаріїв бере всі три канонічні магнітуди
-#     (7.92 ⊥ 50 ⊥ 326) поіменно; глобальний override схлопнув би саме те
+#     (realistic ⊥ 50 ⊥ 326) поіменно; глобальний override схлопнув би саме те
 #     порівняння, заради якого вихід подається діапазоном, а не числом;
 #   · slash_gamma_voted — governance-зонд свідомо ганяє ОБИДВА боки межі
 #     (пом'якшити ⊥ посилити), бо інваріант 6 пінить і існування розриву, і знак.
@@ -348,7 +352,7 @@ end
 # (сиблінг інертних kwargs у SEC.17): знак того, що поверхня рекламує важіль,
 # якого за нею немає.
 MATRIX_OWNED = {
-  scc_per_tree_year: "вісь матриці сценаріїв (7.92 ⊥ 50 ⊥ 326) — правити самі сценарії",
+  scc_per_tree_year: "вісь матриці сценаріїв (#{REALISTIC_SCC_PER_TREE_YEAR} ⊥ 50 ⊥ 326) — правити самі сценарії",
   slash_gamma_voted: "вісь governance-зонда (обидва боки межі) — правити сам зонд"
 }.freeze
 

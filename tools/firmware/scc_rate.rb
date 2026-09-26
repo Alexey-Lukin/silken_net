@@ -7,8 +7,8 @@
 #
 # Pure Ruby (no Rails). Виклик:
 #   ruby tools/firmware/scc_rate.rb                        # звіт (realistic + ceiling + арбітр)
-#   ruby tools/firmware/scc_rate.rb --assert               # гейт на дефолтній Variant C (6372с)
-#   ruby tools/firmware/scc_rate.rb variant_c_s=7884 --assert  # гейт на іншій робочій точці
+#   ruby tools/firmware/scc_rate.rb --assert               # гейт на дефолтній Variant C (7027 с)
+#   ruby tools/firmware/scc_rate.rb variant_c_s=8006 --assert  # гейт на іншій робочій точці (тут — CCM-точка)
 #     (override, НЕ зміна дефолту — дзеркало uncertainty_budget.rb delta_t_s=; ARCH.8)
 #
 # ЧОМУ guard (adversarial-урок 2026-07-14): попередня канон-проза брала
@@ -32,14 +32,17 @@ GP_HOMEO_MAX   = 31       # 5-бітний wire-максимум
 BACKEND_UPSCALE = 2       # backend ×2 (03_04 growth_points = (status_byte & 0x1F) * 2)
 EMISSION_THRESHOLD = 10_000 # 05_03: 10k GP = 1 SCC
 
-# Робоча точка delta_t: Variant C = 1.77 год, рекомендований energy-positive (02_03 §9.6).
-# ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → 1.77 зсувається до ≈2.19 год,
-#    тобто SCC/дерево/рік падає ~НАПОЛОВИНУ (7.92→4.00, не ~чверть — переміряно 00_07 ARCH.8,
-#    2026-09-09). ⛔ Не правити ДЕФОЛТ тут поодинці — перерахунок канону їде РАЗОМ із
-#    uncertainty_budget.rb і supply_stress.rb; `variant_c_s=` override нижче — лише
-#    для гейта на гіпотетичній точці, дефолту не чіпає.
+# Робоча точка delta_t: Variant C — ⚖️ founder 2026-09-26: дефолт = енергомодель
+# `tx_cadence_budget.rb` (ECB-ера, обраний радіо-фронтенд: TX `RFO_LP` у SMPS + RX-вікно, яке
+# прошивка відкриває щоциклу, + TCXO), тобто 7027 с ≈ 1.95 год. Доти стояло 6372 с, порахованих
+# без RX-вікна й на струмі чужого підсилювача — на +10 % оптимістичніше, поза ±8 % u_delta_t.
+# ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → ≈ 2.22 год, m = 0, і wire-GP
+#    сідає на підлогу GP_HOMEO_MIN: SCC/дерево/рік 5.39 → 3.94 (−27 %).
+# ⛔ Не правити ДЕФОЛТ тут поодинці: `tx_cadence_budget.rb --assert` звіряє його з енергомоделлю
+#    (±8 % u_delta_t) і з дзеркалом у uncertainty_budget.rb, а асерт нижче — з дзеркалом realistic
+#    у tokenomics/supply_stress.rb. `variant_c_s=` override — лише для гейта на іншій точці.
 # (1 TX/год = Δt=3600s = energy-NEGATIVE без мітигацій, 02_03 §9.5 — НЕ baseline.)
-VARIANT_C_S = 6372
+VARIANT_C_S = 7027
 
 # Незалежний арбітр: 05_03 MAX_SUPPLY=1B ≈ 20M дерево-років ⇒ 50 SCC/tree/year.
 ARBITER_SCC_YEAR = 50.0
@@ -89,6 +92,19 @@ if ARGV.include?("--assert")
   # 3. Арбітр 05_03 MAX_SUPPLY-деривації має лежати у [realistic, ceiling].
   errors << "арбітр 50 поза [#{realistic.round},#{ceiling.round}] — economics↔MAX_SUPPLY divergence" \
     unless (realistic..ceiling).cover?(ARBITER_SCC_YEAR)
+  # 5. Дзеркало realistic у стрес-моделі емісії: вона бере це число константою, і доти
+  #    воно розходилось із цим файлом мовчки (7.92 там жило після руху робочої точки тут).
+  #    Звіряється лише на ДЕФОЛТІ: override моделює іншу точку, а дзеркало — дефолтну.
+  if variant_c_s == VARIANT_C_S
+    stress = File.read(File.expand_path("../tokenomics/supply_stress.rb", __dir__))
+    mirror = stress[/^REALISTIC_SCC_PER_TREE_YEAR\s*=\s*([\d.]+)/, 1]
+    if mirror.nil?
+      errors << "tokenomics/supply_stress.rb: константу REALISTIC_SCC_PER_TREE_YEAR не знайдено — дзеркало зникло"
+    elsif (Float(mirror) - realistic).abs > 0.01
+      errors << "tokenomics/supply_stress.rb REALISTIC_SCC_PER_TREE_YEAR=#{mirror} ≠ realistic #{realistic.round(2)} — " \
+                "стрес-модель рахує емісію з протухлої робочої точки"
+    end
+  end
   # 4. CO₂-const parity (BIZ.1 on-chain): canonical-lock 2000 SCC/tCO₂.
   errors << "SCC_PER_TONNE_CO2=#{SCC_PER_TONNE_CO2} ≠ 2000 (BIZ.1 on-chain divergence)" \
     unless SCC_PER_TONNE_CO2 == 2000
