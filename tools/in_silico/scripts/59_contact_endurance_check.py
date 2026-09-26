@@ -74,6 +74,16 @@ def load_budget() -> dict:
             "basis": w["budget_basis"], "bounds_that_travel": w["bounds_that_travel"]}
 
 
+# ONE wording for what the pogo spring still lacks: framing B's verdict and the part's `missing_datum`
+# both quote it (in-silico §When Modifying #5). ⛔ Do not narrow it to «wire diameter / rate»: a helical
+# spring's shear stress tau = 8*F*D*K_w/(pi*d^3) needs the mean coil diameter too, so (d, k) cannot close it.
+SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
+                          "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
+                          "give the shear stress)")
+SWAY_DEFLECTION_MISSING = ("actual sway-induced micro-deflection amplitude at the pogo contact (bench/field, not "
+                           "the 1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43)")
+
+
 def pogo_spring_verdict(budget: dict) -> dict:
     mfr_life_lo, mfr_life_hi = 1.0e5, 1.0e6  # Mill-Max 0906 series datasheet, "mechanical life at mid-stroke"
     becu_anchor_MPa_cycles = [(400.0, 3.05e6), (240.0, 1.0e10)]  # ultrasonic VHCF test points (C17200)
@@ -108,19 +118,14 @@ def pogo_spring_verdict(budget: dict) -> dict:
                         f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
                         f"{budget['ceiling']:.2e}-cycle budget ceiling IF the true working stress stays near or "
                         "below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip "
-                        "is not computed anywhere in canon — missing datum: spring wire diameter / rate + measured "
-                        "(or bench-derived) micro-deflection amplitude during sway, not the 1.40 mm nominal "
-                        "travel (1.40 +/- 0.13, 00_07 HW.43)."),
+                        f"is not computed anywhere in canon — missing datum: {SPRING_DRAWING_MISSING} + "
+                        f"{SWAY_DEFLECTION_MISSING}."),
         },
         "closed": False,
         "verdict": "TWO mismatched framings, neither closed — see framing_A (fails, likely wrong model) "
                    "and framing_B (physically right, needs one missing datum) above.",
-        "missing_datum": "spring wire diameter, mean coil diameter, active coils and rate (the chosen series' full "
-                          "mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not give the shear stress) + "
-                          "a torsional S-N reference for C17200 + actual sway-"
-                          "induced micro-deflection amplitude at the pogo contact (bench/field, not the "
-                          "1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43) — without it, framing B cannot be "
-                          "closed to a number.",
+        "missing_datum": f"{SPRING_DRAWING_MISSING} + a torsional S-N reference for C17200 + "
+                         f"{SWAY_DEFLECTION_MISSING} — without it, framing B cannot be closed to a number.",
     }
 
 

@@ -237,7 +237,7 @@
 | 0.22 / 0.45 µm | пори мембран IDEALAB — матеріал першого заходу | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.25 · [`ua_vendor_map`](../procurement/ua_vendor_map.md) §5 |
 | Ø25 мм · 3.0 мм (PLACEHOLDER) | діаметр фланця · товщина фланця = висота бічної грані | [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); `tools/cad/cem/cathode_flange.json` (`flange_diameter_mm` · `flange_thickness_mm`) |
 | 25.0 × 25.0 мм | габарит радома в плані | [`01_04 §5.5`](../../01_04_CODIT_and_Xylemointegration.md) A |
-| 30° | кут осі анкера до горизонталі | [`01_04 §3.2`](../../01_04_CODIT_and_Xylemointegration.md) |
+| 30° | кут осі анкера до горизонталі — ⚠️ чинний, але його конфлікт із Flush Mount відкритий ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.6): вихід «вісь ⊥ кори» змінив би орієнтацію стенда | [`01_04 §3.2`](../../01_04_CODIT_and_Xylemointegration.md) |
 | бічна грань, смуга над корою | місце мембрани (⚖️ 2026-09-18) | [`01_04 §3.1`](../../01_04_CODIT_and_Xylemointegration.md) · [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.33 |
 | 121 °C / 15 psi / 30 хв · 50 °C / 40 % RH | цикли B1 (автоклав · EtO) | [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) |
 | 4–8 °C, темнота | зберігання після B | [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) |
