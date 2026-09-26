@@ -416,6 +416,7 @@ static char     coap_server_ip[16];     // [FW.56] CDNSGIP-кеш (CCOAPNEW хо
 static uint8_t  coap_consec_fail;       // [FW.58] flush-провали ПІДРЯД → re-resolve (reset на success)
 static uint16_t coap_mid;               // [FW.56] CoAP Message-ID наших PUT'ів
 static uint8_t  lte_only_ok;            // [HW.31] AT+CNMP=38 підтверджено (OK) — умова передачі
+static uint8_t  g_pdp_suspect;          // [HW.41] PDP міг не піднятись/впасти → переактивувати в наступній розмові
 
 // === LoRa RX Ring Helpers ================================================
 // Single-producer (ISR) / single-consumer (main loop): кожен інлайн —
@@ -1184,7 +1185,11 @@ int main(void)
   // окрема AT+CNCFG, якої тут немає → bench/RUNBOOK.md 5.1 (V1.03 + транскрипт).
   // [HW.31] Лише за підтвердженого «лише LTE»: на модемі, що лишився в режимі з GSM,
   // активація пішла б 2G. Не підтверджено — PDP підніме ворота flush'у на пізньому OK.
-  if (lte_only_ok) (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
+  // Контекст NO_SAVE: провал тут до ребута сам не лікується — тож лишаємо підозру,
+  // і перший flush переактивує PDP до першої RF-команди.
+  if (lte_only_ok) {
+      g_pdp_suspect = (uint8_t)(SIM7070_Transact(SIM7070_CMD_PDP_ACTIVATE, AT_INIT_BUDGET_MS) != AT_TX_OK);
+  }
 
   // [FW.61] Журнал робочого циклу — порожній від boot (стеля ребута — tx_duty.h).
   Tx_Duty_Init(&g_tx_duty);
@@ -2131,15 +2136,23 @@ void Flush_Cache_To_Rails(void)
     Uart_Rx_Drain_Stale();
 
     // [HW.31] Ворота «лише LTE» — перед першою RF-командою (DNS), а отже й перед
-    // PUT, device-event хвостом і poll'ом, що живуть нижче. Підтверджено → ні
-    // байта в UART; ні → CNMP=38 знову, і до OK — жодної передачі.
+    // PUT, device-event хвостом і poll'ом, що живуть нижче. Режим перечитується
+    // (`AT+CNMP?`): 38 → далі; інакше CNMP=38 знову, і до OK — жодної передачі.
     {
         UartAtIo lte_io = { HAL_GetTick() + 2u * AT_INIT_BUDGET_MS };
         Sim7070Io lte_m = { Uart_At_Source, Uart_At_Sink, &lte_io };
-        if (!Sim7070_Ensure_Lte_Only(&lte_m, &at_engine_state, &lte_only_ok)) {
+        int gate = Sim7070_Ensure_Lte_Only(&lte_m, &at_engine_state, &lte_only_ok);
+        if (gate == SIM7070_GATE_REFUSED) {
             if (g_coap_fail_count < 255u) g_coap_fail_count++;
             return; // [FW.51] слоти живі — наступний флеш повторить і ворота
         }
+        // [HW.41] Попередня розмова впала (DNS чи PUT) або PDP не піднявся на init →
+        // переактивуємо до першої RF-команди; ворота, що щойно самі ствердили режим,
+        // PDP уже переактивували.
+        if (g_pdp_suspect && gate != SIM7070_GATE_REASSERTED) {
+            (void)Sim7070_Reactivate_Pdp(&lte_m, &at_engine_state);
+        }
+        g_pdp_suspect = 0u;
     }
 
     if (coap_server_ip[0] == '\0') {
@@ -2151,6 +2164,7 @@ void Flush_Cache_To_Rails(void)
             coap_server_ip[0] = '\0';
             // [ARCH.54] DNS-провал = flush не відбувся — слід у health.
             if (g_coap_fail_count < 255u) g_coap_fail_count++;
+            g_pdp_suspect = 1u;  // [HW.41] DNS без APP-мережі — перша підозра на PDP
             return; // [FW.51] слоти живі — наступний флеш повторить і DNS
         }
     }
@@ -2177,6 +2191,7 @@ void Flush_Cache_To_Rails(void)
     // уже підписаний): сатурований lifetime-лічильник розмов, де всі retry впали.
     if (!send_success) {
         if (g_coap_fail_count < 255u) g_coap_fail_count++;
+        g_pdp_suspect = 1u;  // [HW.41] наступна розмова спершу переактивує PDP
         // [FW.58] N провалів ПІДРЯД на резольвленому IP → мертвий → інвалідуємо
         // CDNSGIP-кеш → наступний flush ре-резолвить (A-запис flip = zero-infra
         // failover, інакше довбли б мертвий IP до IWDG-ребута). Строго fail-гілка.

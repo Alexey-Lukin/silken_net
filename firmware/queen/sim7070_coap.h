@@ -85,30 +85,68 @@ static inline int Sim7070_Read_Csq(Sim7070Io *m, AtEngine *e, uint8_t *csq_out)
  * антени поз. 11 (queen_antenna_shortlist §2.1): у 2G Королева вийшла б за межі,
  * під які модуль сертифіковано. Рядок команди — один дім для init і воріт. */
 #define SIM7070_CMD_LTE_ONLY "AT+CNMP=38\r\n"
+#define SIM7070_CMD_READ_MODE "AT+CNMP?\r\n"
+#define SIM7070_MODE_LTE_ONLY 38  /* той самий 38, що в рядку команди вище */
 
-/* Ворота перед першою RF-командою flush'у. Підтверджено раніше → 1 і НІЧОГО
- * не шле. Інакше AT+CNMP=38: OK → *confirmed = 1, PDP переактивується вже в
+/* PDP-контекст APP-мережі: pdpidx 1, action 1 = Active (V1.03 §7.2.1). ⚠️ Режим
+ * NO_SAVE: після самочинного ребута модема контекст не встає сам. action 2 (Auto
+ * Active — модем сам повторює невдалу активацію) свідомо НЕ взято: фоновий
+ * повтор при недоступній мережі може тримати модем поза PSM, а цю ціну ніхто
+ * не міряв (03_02 §4, кандидат стенда). */
+#define SIM7070_CMD_PDP_ACTIVATE "AT+CNACT=1,1\r\n"
+
+/* Вердикт воріт. REFUSED — не передавати; HELD — режим перечитано й він 38;
+ * REASSERTED — режим стверджено заново, і PDP уже переактивовано в LTE. */
+#define SIM7070_GATE_REFUSED    0
+#define SIM7070_GATE_HELD       1
+#define SIM7070_GATE_REASSERTED 2
+
+/* Ворота перед першою RF-командою flush'у. Режим — стан ЗАЛІЗА, тож ознаку,
+ * поставлену раз за boot, щофлешу ПЕРЕЧИТУЄМО (`AT+CNMP?`, одна AT-розмова):
+ * «+CNMP: 38» → HELD, і більше нічого не шлемо. Режим інший, нечитаний або
+ * ознаки ще немає → AT+CNMP=38: OK → *confirmed = 1, PDP переактивується вже в
  * LTE (init-контекст міг піднятись в іншому RAT або не піднятись; його провал
- * проявить сама CoAP-розмова), → 1. ERROR · +CME · тиша → 0: викликач НЕ
- * передає, слоти живі (FW.51), наступний flush повторить.
+ * проявить сама CoAP-розмова) → REASSERTED. ERROR · +CME · тиша → REFUSED:
+ * викликач НЕ передає, слоти живі (FW.51), наступний flush повторить.
  * ⚠️ Дві стелі. (1) Реєстрацію в мережі модем робить сам, тож ворота тримають ДАНІ
  * (і PDP init'у — main.c), не сигналізацію реєстрації: на свіжому модемі до першого OK
- * вона може піти GSM-ом. (2) Ознака не перечитується: самочинний ребут модема за
- * незбереженого CNMP повернув би 2G за «підтвердженої» ознаки — readback `AT+CNMP?`
- * і звірка збереження CNMP — нога 00_07 HW.31. */
+ * вона може піти GSM-ом. (2) Режим AUTO_SAVE (V1.03 §5.2.16) — самочинний ребут
+ * модема його НЕ скидає; readback ловить те, чого AUTO_SAVE не обіцяє: втрату NVRAM
+ * чи заводський скид модема без ребута Королеви (00_07 HW.31). */
 static inline int Sim7070_Ensure_Lte_Only(Sim7070Io *m, AtEngine *e, uint8_t *confirmed)
 {
-    if (*confirmed) return 1;
-
     AtTransact t;
+    if (*confirmed) {
+        At_Transact_Init(&t, "+CNMP:");
+        if (Sim7070_Send_Str(m, SIM7070_CMD_READ_MODE) &&
+            At_Transact_Run(e, &t, m->src, m->io) == AT_TX_OK &&
+            t.urc_seen && At_Int_After_Colon(t.urc, -1) == SIM7070_MODE_LTE_ONLY) {
+            return SIM7070_GATE_HELD;
+        }
+        *confirmed = 0u;  /* не 38 або нечитано — ознака більше не правда */
+    }
+
     At_Transact_Init(&t, NULL);
-    if (!Sim7070_Send_Str(m, SIM7070_CMD_LTE_ONLY)) return 0;
-    if (At_Transact_Run(e, &t, m->src, m->io) != AT_TX_OK) return 0;
+    if (!Sim7070_Send_Str(m, SIM7070_CMD_LTE_ONLY)) return SIM7070_GATE_REFUSED;
+    if (At_Transact_Run(e, &t, m->src, m->io) != AT_TX_OK) return SIM7070_GATE_REFUSED;
     *confirmed = 1u;
 
     At_Transact_Init(&t, NULL);
-    if (Sim7070_Send_Str(m, "AT+CNACT=1,1\r\n")) (void)At_Transact_Run(e, &t, m->src, m->io);
-    return 1;
+    if (Sim7070_Send_Str(m, SIM7070_CMD_PDP_ACTIVATE)) (void)At_Transact_Run(e, &t, m->src, m->io);
+    return SIM7070_GATE_REASSERTED;
+}
+
+/* [HW.41] Повторна активація PDP — коли ПОПЕРЕДНЯ розмова впала (DNS чи PUT).
+ * Контекст, що не піднявся на init чи впав пізніше, до ребута сам не встає
+ * (NO_SAVE), і кожен flush падав би на DNS без жодної спроби. Best-effort:
+ * ERROR тут може означати й «уже активний», тож вердикт дає сама розмова, не
+ * цей OK. Повертає 1 на OK. */
+static inline int Sim7070_Reactivate_Pdp(Sim7070Io *m, AtEngine *e)
+{
+    AtTransact t;
+    At_Transact_Init(&t, NULL);
+    if (!Sim7070_Send_Str(m, SIM7070_CMD_PDP_ACTIVATE)) return 0;
+    return At_Transact_Run(e, &t, m->src, m->io) == AT_TX_OK;
 }
 
 /* Повна PUT-розмова. Повертає 1 лише при підтвердженій доставці (2.xx,

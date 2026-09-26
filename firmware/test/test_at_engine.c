@@ -523,8 +523,9 @@ TEST(test_fw58_reresolve_predicate) {
 }
 
 /* [HW.31] «Лише LTE» — умова передачі: GSM-стелі підсилення модуля нижчі за пік
- * антени поз. 11 (queen_antenna_shortlist §2.1). Ворота flush'у мовчать, коли
- * режим уже підтверджено, і відчиняють передачу лише на OK від AT+CNMP=38. */
+ * антени поз. 11 (queen_antenna_shortlist §2.1). Режим — стан ЗАЛІЗА: ворота
+ * перечитують його щофлешу (`AT+CNMP?`) і відчиняють передачу лише на «38» або
+ * на OK від AT+CNMP=38. */
 TEST(test_hw31_lte_only_gate) {
     AtEngine e;
     uint8_t confirmed;
@@ -532,13 +533,53 @@ TEST(test_hw31_lte_only_gate) {
     /* 38 = «лише LTE» (SIMCom AT Manual V1.03 §5.2.16); 2 (auto) чи 51 (GSM+LTE)
      * тихо повернули б 2G — і вихід за стелю антени. */
     ASSERT_STREQ(SIM7070_CMD_LTE_ONLY, "AT+CNMP=38\r\n");
+    ASSERT_STREQ(SIM7070_CMD_READ_MODE, "AT+CNMP?\r\n");
+    ASSERT_EQ(SIM7070_MODE_LTE_ONLY, 38);
 
-    /* Уже підтверджено → 1 і жодного байта в модем */
-    ModemSim m0; modem_init(&m0, NULL, 0);
+    /* Підтверджено й перечитано «38» → HELD: одна розмова readback'у, і більше нічого */
+    static const Stage held[] = { { "AT+CNMP?\r\n", "\r\n+CNMP: 38\r\n\r\nOK\r\n" } };
+    ModemSim m0; modem_init(&m0, held, 1);
     Sim7070Io io0 = { modem_src, modem_sink, &m0 };
     At_Engine_Reset(&e); confirmed = 1u;
-    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io0, &e, &confirmed));
-    ASSERT_EQ(m0.tx_len, 0);
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io0, &e, &confirmed), SIM7070_GATE_HELD);
+    ASSERT_EQ(confirmed, 1);
+    ASSERT_STREQ(m0.tx, "AT+CNMP?\r\n");
+
+    /* Модем забув режим (NVRAM / заводський скид без ребута Королеви) — readback
+     * каже 2 (auto): ознака знімається, режим стверджується знову, PDP — у LTE */
+    static const Stage forgot[] = {
+        { "AT+CNMP?\r\n",     "\r\n+CNMP: 2\r\n\r\nOK\r\n" },
+        { "AT+CNMP=38\r\n",   "\r\nOK\r\n" },
+        { "AT+CNACT=1,1\r\n", "\r\nOK\r\n" },
+    };
+    ModemSim m3; modem_init(&m3, forgot, 3);
+    Sim7070Io io3 = { modem_src, modem_sink, &m3 };
+    At_Engine_Reset(&e); confirmed = 1u;
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io3, &e, &confirmed), SIM7070_GATE_REASSERTED);
+    ASSERT_EQ(confirmed, 1);
+    ASSERT_STREQ(m3.tx, "AT+CNMP?\r\nAT+CNMP=38\r\nAT+CNACT=1,1\r\n");
+
+    /* Readback не прочитався (ERROR) — нечитаний режим не є «38»: стверджуємо */
+    static const Stage unread[] = {
+        { "AT+CNMP?\r\n",     "\r\nERROR\r\n" },
+        { "AT+CNMP=38\r\n",   "\r\nOK\r\n" },
+        { "AT+CNACT=1,1\r\n", "\r\nOK\r\n" },
+    };
+    ModemSim m4; modem_init(&m4, unread, 3);
+    Sim7070Io io4 = { modem_src, modem_sink, &m4 };
+    At_Engine_Reset(&e); confirmed = 1u;
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io4, &e, &confirmed), SIM7070_GATE_REASSERTED);
+
+    /* Модем мовчить і на readback, і на CNMP=38 → REFUSED, ознаку знято */
+    static const Stage mute[] = {
+        { "AT+CNMP?\r\n",   "" },
+        { "AT+CNMP=38\r\n", "" },
+    };
+    ModemSim m5; modem_init(&m5, mute, 2);
+    Sim7070Io io5 = { modem_src, modem_sink, &m5 };
+    At_Engine_Reset(&e); confirmed = 1u;
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io5, &e, &confirmed), SIM7070_GATE_REFUSED);
+    ASSERT_EQ(confirmed, 0);
 
     /* Init-провал → ворота шлють CNMP=38; OK → підтверджено, PDP переактивовано вже в LTE */
     static const Stage good[] = {
@@ -548,7 +589,7 @@ TEST(test_hw31_lte_only_gate) {
     ModemSim m1; modem_init(&m1, good, 2);
     Sim7070Io io1 = { modem_src, modem_sink, &m1 };
     At_Engine_Reset(&e); confirmed = 0u;
-    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io1, &e, &confirmed));
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io1, &e, &confirmed), SIM7070_GATE_REASSERTED);
     ASSERT_EQ(confirmed, 1);
     ASSERT_STREQ(m1.tx, "AT+CNMP=38\r\nAT+CNACT=1,1\r\n");
 
@@ -561,10 +602,10 @@ TEST(test_hw31_lte_only_gate) {
     ModemSim m2; modem_init(&m2, pdp_fail, 2);
     Sim7070Io io2 = { modem_src, modem_sink, &m2 };
     At_Engine_Reset(&e); confirmed = 0u;
-    ASSERT_TRUE(Sim7070_Ensure_Lte_Only(&io2, &e, &confirmed));
+    ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io2, &e, &confirmed), SIM7070_GATE_REASSERTED);
     ASSERT_EQ(confirmed, 1);
 
-    /* ERROR · +CME · тиша → 0, не підтверджено, і після CNMP не йде НІЧОГО */
+    /* ERROR · +CME · тиша → REFUSED, не підтверджено, і після CNMP не йде НІЧОГО */
     static const Stage err[]    = { { "AT+CNMP=38\r\n", "\r\nERROR\r\n" } };
     static const Stage cme[]    = { { "AT+CNMP=38\r\n", "\r\n+CME ERROR: 3\r\n" } };
     static const Stage silent[] = { { "AT+CNMP=38\r\n", "" } };
@@ -573,10 +614,30 @@ TEST(test_hw31_lte_only_gate) {
         ModemSim m; modem_init(&m, refusals[i], 1);
         Sim7070Io io = { modem_src, modem_sink, &m };
         At_Engine_Reset(&e); confirmed = 0u;
-        ASSERT_FALSE(Sim7070_Ensure_Lte_Only(&io, &e, &confirmed));
+        ASSERT_EQ(Sim7070_Ensure_Lte_Only(&io, &e, &confirmed), SIM7070_GATE_REFUSED);
         ASSERT_EQ(confirmed, 0);
         ASSERT_STREQ(m.tx, "AT+CNMP=38\r\n");
     }
+}
+
+/* [HW.41] Повторна активація PDP — одна AT-розмова, вердикт = OK; ERROR (у т.ч.
+ * «уже активний») → 0, і викликач однаково покладається на саму CoAP-розмову. */
+TEST(test_hw41_reactivate_pdp) {
+    AtEngine e;
+    ASSERT_STREQ(SIM7070_CMD_PDP_ACTIVATE, "AT+CNACT=1,1\r\n");
+
+    static const Stage ok[] = { { "AT+CNACT=1,1\r\n", "\r\nOK\r\n" } };
+    ModemSim m0; modem_init(&m0, ok, 1);
+    Sim7070Io io0 = { modem_src, modem_sink, &m0 };
+    At_Engine_Reset(&e);
+    ASSERT_TRUE(Sim7070_Reactivate_Pdp(&io0, &e));
+    ASSERT_STREQ(m0.tx, "AT+CNACT=1,1\r\n");
+
+    static const Stage err[] = { { "AT+CNACT=1,1\r\n", "\r\n+CME ERROR: 4\r\n" } };
+    ModemSim m1; modem_init(&m1, err, 1);
+    Sim7070Io io1 = { modem_src, modem_sink, &m1 };
+    At_Engine_Reset(&e);
+    ASSERT_FALSE(Sim7070_Reactivate_Pdp(&io1, &e));
 }
 
 
@@ -788,6 +849,7 @@ int main(void)
     RUN(test_resolve_host_urc_before_and_after_ok);
     RUN(test_fw58_reresolve_predicate);
     RUN(test_hw31_lte_only_gate);
+    RUN(test_hw41_reactivate_pdp);
 
     printf("\n— [FW.60] Poll-примітиви + сира UDP-розмова —\n");
     RUN(test_fw60_coap_build_get_golden);
