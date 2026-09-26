@@ -90,7 +90,11 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Стеля ловить ЗАВИСАННЯ, а не звичайний прогін (⚖️ founder 2026-09-26: 5 → 8).
+    # Виміряно того дня на main: джоба йшла 3:47–4:58 при стелі 5 і двічі обірвалась
+    # на 5:04 → `cancelled`, тобто required `Docs passed` червонів від швидкості
+    # раннера. ⛔ Перш ніж міняти знову — зміряй тривалість джоби в останніх прогонах.
+    timeout-minutes: 8
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
