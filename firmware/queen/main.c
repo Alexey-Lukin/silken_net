@@ -38,6 +38,8 @@
 #include "coap_pdu.h"
 // [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
 #include "sim7070_coap.h"
+// [HW.41] Init-послідовність модема — таблиця, яку кличе й host-тест (гоча #19).
+#include "sim7070_init.h"
 #include "sim7070_udp.h"
 
 #include "uart_rx_ring.h"
@@ -156,18 +158,8 @@
 #define COAP_SERVER_HOST  "api.silkennet.com"  // [FW.56] CCOAPNEW хоче IP → CDNSGIP цього хоста
 #define COAP_SERVER_PORT  5683
 
-// [HW.41] APN/PDP-контекст. Раніше Queen-init мовчки покладався на авто-APN
-// сімки (жодного AT+CGDCONT/AT+CNACT) — для надійності треба явний,
-// config-керований APN, а не здогадка одного оператора: `#ifndef`-гейт (не
-// голий #define — інакше bare #define клобберить `-D`, той самий клас, що й
-// FW2_CCM_ENABLED/ARCH34_HELIUM_ENABLED вище) override'иться при білді:
-// `-DQUEEN_APN='"<carrier-apn>"'`. Дефолт `""` — НЕ здогадка «internet» чи
-// будь-якого конкретного carrier'а, а 3GPP-порожній APN (TS 27.007 §10.1.1:
-// мережа сама добирає профіль SIM'и) — неконфігурований білд лишається
-// behavior-identical з «до HW.41» (auto-APN), не шле у ефір вигадану строку.
-#ifndef QUEEN_APN
-#define QUEEN_APN  ""
-#endif
+// [HW.41] APN (`QUEEN_APN`, build-time `-D`) — дім у sim7070_init.h разом із
+// init-послідовністю, що його споживає.
 
 // [FW.20] Конверт CMD_TIME_SYNC (UTC-секунди від сервера як єдиного джерела істини).
 // Бекенд CoapEncryption.coap_encrypt обгортає КОЖЕН downlink у цей конверт,
@@ -910,6 +902,12 @@ static void MX_USART1_RX_DMA_Init(void); // [FW.3] circular-DMA вухо мод�
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
 static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms);
+// [HW.41] Адаптер для Sim7070_Init_Run (sim7070_init.h): одна init-розмова з її бюджетом.
+static AtTxResult Queen_Init_Transact(void *ctx, const char *cmd)
+{
+    (void)ctx;
+    return SIM7070_Transact(cmd, AT_INIT_BUDGET_MS);
+}
 void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
                             uint8_t fmt);
 void Flush_Cache_To_Rails(void);
@@ -1126,70 +1124,14 @@ int main(void)
   // [FW.3] Response-driven: кожна команда чекає фінал (OK/ERROR), а не сліпий
   // delay. Провал не фатальний — модем міг ще прокидатись. ⚠️ Але flush повторює
   // лише CoAP-розмову (DNS/PUT), не ці команди: несучу з них (CNMP=38, HW.31)
-  // flush перевіряє сам, решта лишається з тим, що модем зберіг. ATE0 глушить
-  // ехо (токенайзер його переживає, але ефір чистіший).
-  (void)SIM7070_Transact("ATE0\r\n", AT_INIT_BUDGET_MS);
-  (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
-  // [HW.31] «Лише LTE» несе й відповідність антени поз. 11: GSM-стелі підсилення модуля
-  // нижчі за пік рекомендованої антени (queen_antenna_shortlist §2.1), тож 2G тут вимагав
-  // би іншої антени. Результат тримаємо: не підтверджено — ворота flush'у повторять
-  // команду й до OK нічого не передадуть (Sim7070_Ensure_Lte_Only).
-  lte_only_ok = (uint8_t)(SIM7070_Transact(SIM7070_CMD_LTE_ONLY, AT_INIT_BUDGET_MS) == AT_TX_OK);
-
-  // [HW.41] Cat-M ⊥ NB-IoT — ЯВНО, не збережений у модемі стан (⚖️ founder 2026-09-26).
-  // CNMP=38 — лише «LTE only»; вибір RAT задає AT+CMNB (1 CAT-M · 2 NB-IoT · 3 обидва),
-  // AUTO_SAVE, дефолт мануал не називає (SIMCom AT Manual V1.03 §5.2.16–5.2.17). =3,
-  // бо Kyivstar публічно заявляє NB-IoT, а не LTE-M: зі збереженим =1 Королева не
-  // підʼєднається. Ціна — NB-IoT може взяти гору й там, де є Cat-M (дім — 03_02 §4).
-  (void)SIM7070_Transact("AT+CMNB=3\r\n", AT_INIT_BUDGET_MS);
-
-  // [HW.41] Явний PDP-контекст — БЕЗ цього Королева мовчки покладалась на
-  // авто-APN сімки (працює на деяких мережах, ненадійно на інших). cid=1
-  // (той самий, що бенч-чеклист 02_04 §10.2 п.4 типує вручну); APN-рядок —
-  // QUEEN_APN (вище) — build-time config, НЕ хардкод одного оператора.
-  // ⚠️ AT+CGDCONT-граматика взята з 3GPP TS 27.007 §10.1.1 (спільна для
-  // всього кола модемів, у т.ч. SIM7070G) — verbatim-звірка з SIM7070 AT
-  // Command Manual ще НЕ зроблена (той самий "pre-bench" застереження клас,
-  // що й FW.56 для CoAP-граматики: канон цього репо не містить AT-мануала
-  // модема — bench-residual, RUNBOOK).
-  (void)SIM7070_Transact("AT+CGDCONT=1,\"IP\",\"" QUEEN_APN "\"\r\n", AT_INIT_BUDGET_MS);
-
-  // [HW.10] Power Saving Mode (PSM) + Extended DRX (eDRX) для NB-IoT/LTE-M.
-  // Знижує idle-споживання з ~10 мкА (SIM7000G baseline) до ~3 мкА (SIM7070G PSM)
-  // між hourly CoAP flush-циклами. Налаштування узгоджене з 02_05.
-  //
-  // AT+CPSMS=<mode>,,,<TAU>,<Active-Time>:
-  //   mode=1 → enable PSM
-  //   TAU="00100001" → 1 hour
-  //     Per 3GPP TS 24.008 §10.5.7.4a (T3412 extended timer):
-  //     bits 8-6 (MSB) = unit  → 001 = "1 hour"
-  //     bits 5-1       = value → 00001 = 1
-  //     => 1 × 1 hour = 1 hour TAU (узгоджено з hourly CoAP flush cycle)
-  //   Active="00000000" → 0 sec (no active window after RX → одразу в PSM)
-  //     Per 3GPP §10.5.7.3 (T3324):
-  //     bits 8-6 unit=000 (2s), bits 5-1 value=00000 → 0 × 2s = 0 sec
-  (void)SIM7070_Transact("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", AT_INIT_BUDGET_MS);
-
-  // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>: mode=1 → enable eDRX; AcT 4 = CAT-M,
-  //   5 = NB-IoT (SIMCom AT Manual V1.03 §5.2.42). Запит на ОБИДВА, бо CMNB=3 ↑ лишає
-  //   RAT мережі (⚖️ founder 2026-09-26): до цього дня стояв лише AcT=5, тож у Cat-M
-  //   eDRX не запитувався взагалі. eDRX="0010" → 20.48 sec (paging window — короткий
-  //   для downlink-сприйнятливості).
-  (void)SIM7070_Transact("AT+CEDRXS=1,4,\"0010\"\r\n", AT_INIT_BUDGET_MS);
-  (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
-
-  // [HW.41] Активуємо PDP-контекст, щойно решта init-параметрів на місці —
-  // AT+CNACT=<pdpidx>,<action>: pdpidx=1, action=1 (Active). Синтаксис
-  // підтверджує SIM7080 AT Manual V1.02; «pdpidx = cid з CGDCONT» — НАШЕ
-  // припущення, мануал його не стверджує, а APN APP-контексту там задає
-  // окрема AT+CNCFG, якої тут немає → bench/RUNBOOK.md 5.1 (V1.03 + транскрипт).
-  // [HW.31] Лише за підтвердженого «лише LTE»: на модемі, що лишився в режимі з GSM,
-  // активація пішла б 2G. Не підтверджено — PDP підніме ворота flush'у на пізньому OK.
-  // Контекст NO_SAVE: провал тут до ребута сам не лікується — тож лишаємо підозру,
-  // і перший flush переактивує PDP до першої RF-команди.
-  if (lte_only_ok) {
-      g_pdp_suspect = (uint8_t)(SIM7070_Transact(SIM7070_CMD_PDP_ACTIVATE, AT_INIT_BUDGET_MS) != AT_TX_OK);
-  }
+  // flush перевіряє сам, решта лишається з тим, що модем зберіг.
+  // Послідовність, підстава кожної команди й звірка з мануалом V1.03 — sim7070_init.h
+  // (таблиця одна для прошивки й host-тесту). Вердикт тримаємо рівно з одного кроку —
+  // «лише LTE» (HW.31): не підтверджено → ворота flush'у повторять і до OK не передадуть.
+  // [HW.41] Далі — активація PDP (AT+CNACT=1,1, V1.03 §7.2.1) лише за підтвердженого
+  // «лише LTE»; її провал лишає підозру, і перший flush переактивує PDP до першої
+  // RF-команди (контекст NO_SAVE). Живий транскрипт — bench/RUNBOOK.md 5.1.
+  Sim7070_Init_Run(Queen_Init_Transact, NULL, &lte_only_ok, &g_pdp_suspect);
 
   // [FW.61] Журнал робочого циклу — порожній від boot (стеля ребута — tx_duty.h).
   Tx_Duty_Init(&g_tx_duty);

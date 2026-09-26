@@ -141,7 +141,8 @@ tx_duty: $(BINDIR)/test_tx_duty
 	@./$(BINDIR)/test_tx_duty
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h \
-                     ../queen/cifo_cache.h ../common/lora_ccm.h
+                     ../queen/cifo_cache.h ../common/lora_ccm.h \
+                     ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
 $(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h

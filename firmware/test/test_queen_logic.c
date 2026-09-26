@@ -2789,126 +2789,134 @@ TEST(test_lora_rx_ring_count_zero_after_full_drain) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 13. [HW.41] SIM7070G Init — APN/PDP Sequence (CGDCONT + CNACT)
+ * 13. [HW.41] SIM7070G Init — APN/PDP Sequence (CGDCONT + CNCFG + CNACT)
  * ════════════════════════════════════════════════════════════════════
- * main.c sends the modem-init AT sequence as literal SIM7070_Transact(...)
- * calls inside main() — not a data table main.c/tests can share, since
- * main.c is ARM-HAL-bound and never compiled by this x86 suite (same
- * reason §4b/§8/§9/§11 mirror main.c logic by hand instead of #include-ing
- * it). kQueenInitSequence below is that mirror: keep it byte-identical to
- * firmware/queen/main.c's SIM7070_Transact(...) call order — a manual
- * sync point, same discipline as the other main.c mirrors in this file.
- * Regression bank against a future reorder/typo (silent bench-only PDP
- * bring-up failure, no host-visible symptom otherwise), not an algorithm
- * proof — there is no algorithm here beyond string-literal concatenation.
+ * The sequence lives in firmware/queen/sim7070_init.h — the SAME table and
+ * the SAME Sim7070_Init_Run that main.c calls (firmware skill gotcha #19:
+ * a hand-copied mirror proves the copy, not the firmware). The recorder
+ * below plays the modem: it logs every command the real runner sends and
+ * answers from a per-test script.
  * ════════════════════════════════════════════════════════════════════ */
+#include "../queen/sim7070_init.h"
 
-/* [HW.41] Same technique main.c uses for QUEEN_APN: adjacent string-literal
- * concatenation via macro. Proves the quoting is correct for both the
- * unconfigured (empty — 3GPP "network picks APN", TS 27.007 §10.1.1) and a
- * configured build, independent of main.c's own copy. */
-#define TEST_BUILD_CGDCONT(apn) ("AT+CGDCONT=1,\"IP\",\"" apn "\"\r\n")
+#define INIT_LOG_MAX 32
+typedef struct {
+    const char *sent[INIT_LOG_MAX];
+    size_t      n;
+    const char *fail_prefix;   /* команда, на яку «модем» відповідає ERROR (NULL — усе OK) */
+} InitRecorder;
+
+static AtTxResult init_rec_tx(void *ctx, const char *cmd)
+{
+    InitRecorder *r = (InitRecorder *)ctx;
+    if (r->n < INIT_LOG_MAX) r->sent[r->n++] = cmd;
+    if (r->fail_prefix && strncmp(cmd, r->fail_prefix, strlen(r->fail_prefix)) == 0)
+        return AT_TX_ERROR;
+    return AT_TX_OK;
+}
+
+static int init_idx(const InitRecorder *r, const char *prefix)
+{
+    for (size_t i = 0; i < r->n; i++)
+        if (strncmp(r->sent[i], prefix, strlen(prefix)) == 0) return (int)i;
+    return -1;
+}
 
 TEST(test_hw41_cgdcont_empty_apn_wire_form) {
     /* Default build (QUEEN_APN unset → ""): behavior-identical intent to
      * pre-HW.41 auto-APN — not a guess at any one carrier. */
-    ASSERT_EQ(strcmp(TEST_BUILD_CGDCONT(""), "AT+CGDCONT=1,\"IP\",\"\"\r\n"), 0);
+    ASSERT_EQ(strcmp(SIM7070_CMD_CGDCONT(""), "AT+CGDCONT=1,\"IP\",\"\"\r\n"), 0);
 }
 
 TEST(test_hw41_cgdcont_configured_apn_wire_form) {
     /* -DQUEEN_APN='"kyivstar.internet"' build. */
-    ASSERT_EQ(strcmp(TEST_BUILD_CGDCONT("kyivstar.internet"),
+    ASSERT_EQ(strcmp(SIM7070_CMD_CGDCONT("kyivstar.internet"),
                       "AT+CGDCONT=1,\"IP\",\"kyivstar.internet\"\r\n"), 0);
 }
 
-/* Mirror of firmware/queen/main.c's init-time SIM7070_Transact(...) calls,
- * in order (default/unconfigured QUEEN_APN build), on the path where AT+CNMP=38
- * returned OK — otherwise init skips AT+CNACT and the flush gate raises PDP later
- * (00_07 HW.31). */
-static const char* const kQueenInitSequence[] = {
-    "ATE0\r\n",
-    "AT\r\n",
-    "AT+CNMP=38\r\n",
-    "AT+CMNB=3\r\n",                                        /* [HW.41] ⚖️ 2026-09-26 */
-    "AT+CGDCONT=1,\"IP\",\"\"\r\n",                       /* [HW.41] */
-    "AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n",
-    "AT+CEDRXS=1,4,\"0010\"\r\n",                        /* CAT-M  [HW.41] */
-    "AT+CEDRXS=1,5,\"0010\"\r\n",                        /* NB-IoT */
-    "AT+CNACT=1,1\r\n",                                    /* [HW.41] */
-};
-#define QUEEN_INIT_SEQUENCE_LEN (sizeof(kQueenInitSequence) / sizeof(kQueenInitSequence[0]))
+/* [HW.41] CNCFG — APN of the SIMCom APP network (pdpidx), a different number
+ * space from the 3GPP cid of CGDCONT (V1.03 §7.2.2 · §6.2.2). ip_type 1 = IPv4,
+ * the same "IP" CGDCONT asks for. */
+TEST(test_hw41_cncfg_wire_form_and_gate) {
+    ASSERT_EQ(strcmp(SIM7070_CMD_CNCFG("kyivstar.internet"),
+                      "AT+CNCFG=1,1,\"kyivstar.internet\"\r\n"), 0);
+    const Sim7070InitStep *cncfg = NULL;
+    for (size_t i = 0; i < SIM7070_INIT_STEPS; i++)
+        if (kSim7070Init[i].role == SIM7070_INIT_APP_APN) cncfg = &kSim7070Init[i];
+    ASSERT_TRUE(cncfg != NULL);
+    /* Unconfigured build keeps the subscription default untouched ("" may not
+     * read as null to the modem); a configured one tells the APP network. */
+    ASSERT_EQ(Sim7070_Init_Step_Enabled(cncfg, ""), 0);
+    ASSERT_EQ(Sim7070_Init_Step_Enabled(cncfg, "kyivstar.internet"), 1);
+}
+
+/* The real runner, default build, every command answered OK: the exact wire
+ * transcript — CNCFG skipped (empty APN), CNACT last. */
+TEST(test_hw41_init_run_transcript_default_build) {
+    InitRecorder r = { .n = 0, .fail_prefix = NULL };
+    uint8_t lte = 7u, suspect = 7u;
+    Sim7070_Init_Run(init_rec_tx, &r, &lte, &suspect);
+    static const char *const expected[] = {
+        "ATE0\r\n",
+        "AT\r\n",
+        "AT+CNMP=38\r\n",
+        "AT+CMNB=3\r\n",
+        "AT+CGDCONT=1,\"IP\",\"\"\r\n",
+        "AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n",
+        "AT+CEDRXS=1,4,\"0010\"\r\n",
+        "AT+CEDRXS=1,5,\"0010\"\r\n",
+        "AT+CNACT=1,1\r\n",
+    };
+    ASSERT_EQ(r.n, sizeof(expected) / sizeof(expected[0]));
+    for (size_t i = 0; i < r.n && i < sizeof(expected) / sizeof(expected[0]); i++)
+        ASSERT_EQ(strcmp(r.sent[i], expected[i]), 0);
+    ASSERT_EQ(lte, 1);
+    ASSERT_EQ(suspect, 0);
+}
 
 TEST(test_hw41_rat_selection_then_apn) {
     /* Radio first — network mode (CNMP) then the Cat-M ⊥ NB-IoT choice (CMNB)
-     * — and only then which APN. CMNB sits between them since the ratified
-     * verdict of 2026-09-26 (00_07 HW.41). */
-    int cnmp_idx = -1, cmnb_idx = -1, cgdcont_idx = -1;
-    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
-        if (strncmp(kQueenInitSequence[i], "AT+CNMP=", 8) == 0)    cnmp_idx    = (int)i;
-        if (strncmp(kQueenInitSequence[i], "AT+CMNB=", 8) == 0)    cmnb_idx    = (int)i;
-        if (strncmp(kQueenInitSequence[i], "AT+CGDCONT=", 11) == 0) cgdcont_idx = (int)i;
-    }
-    ASSERT_TRUE(cnmp_idx >= 0);
-    ASSERT_TRUE(cmnb_idx >= 0);
-    ASSERT_TRUE(cgdcont_idx >= 0);
-    ASSERT_EQ(cmnb_idx, cnmp_idx + 1);
-    ASSERT_EQ(cgdcont_idx, cmnb_idx + 1);
-}
-
-TEST(test_hw41_rat_is_explicit_both) {
-    /* CNMP=38 is only "LTE only"; the Cat-M ⊥ NB-IoT choice is CMNB and is
-     * AUTO_SAVE in the modem (SIMCom AT Manual V1.03 §5.2.17). An absent
-     * CMNB = whatever the modem last saved — with a saved 1 (CAT-M only) the
-     * Queen cannot attach on a carrier that offers NB-IoT alone. */
-    int found = 0;
-    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++)
-        if (strcmp(kQueenInitSequence[i], "AT+CMNB=3\r\n") == 0) found++;
-    ASSERT_EQ(found, 1);
+     * — and only then which APN (ratified 2026-09-26, 00_07 HW.41). */
+    InitRecorder r = { .n = 0, .fail_prefix = NULL };
+    uint8_t lte, suspect;
+    Sim7070_Init_Run(init_rec_tx, &r, &lte, &suspect);
+    int cnmp = init_idx(&r, "AT+CNMP="), cmnb = init_idx(&r, "AT+CMNB="),
+        cgdcont = init_idx(&r, "AT+CGDCONT=");
+    ASSERT_TRUE(cnmp >= 0);
+    ASSERT_EQ(cmnb, cnmp + 1);
+    ASSERT_EQ(cgdcont, cmnb + 1);
 }
 
 TEST(test_hw41_edrx_requested_for_both_act) {
-    /* AcT 4 = CAT-M, 5 = NB-IoT (V1.03 §5.2.42). Until 2026-09-26 only AcT=5
-     * was sent — the comment called it "LTE Cat M1" — so under Cat-M eDRX was
-     * never requested. With CMNB=3 the network picks the RAT, so both. */
-    int act4 = 0, act5 = 0;
-    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
-        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=1,4,", 14) == 0) act4++;
-        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=1,5,", 14) == 0) act5++;
-    }
-    ASSERT_EQ(act4, 1);
-    ASSERT_EQ(act5, 1);
+    /* AcT 4 = CAT-M, 5 = NB-IoT (V1.03 §5.2.42) — with CMNB=3 the network
+     * picks the RAT, so both. */
+    InitRecorder r = { .n = 0, .fail_prefix = NULL };
+    uint8_t lte, suspect;
+    Sim7070_Init_Run(init_rec_tx, &r, &lte, &suspect);
+    ASSERT_TRUE(init_idx(&r, "AT+CEDRXS=1,4,") >= 0);
+    ASSERT_TRUE(init_idx(&r, "AT+CEDRXS=1,5,") >= 0);
 }
 
-TEST(test_hw41_cnact_is_last_init_command) {
-    /* Activate only once every other init param (incl. PSM/eDRX) is on
-     * the wire. */
-    ASSERT_EQ(strncmp(kQueenInitSequence[QUEEN_INIT_SEQUENCE_LEN - 1],
-                       "AT+CNACT=", 9), 0);
+/* 🔴 [HW.31] No confirmed LTE-only → NO activation at init: on a modem left in a
+ * GSM-capable mode it would go out on 2G. The flush gate raises PDP later. */
+TEST(test_hw41_no_cnact_without_lte_only) {
+    InitRecorder r = { .n = 0, .fail_prefix = "AT+CNMP=38" };
+    uint8_t lte = 7u, suspect = 7u;
+    Sim7070_Init_Run(init_rec_tx, &r, &lte, &suspect);
+    ASSERT_EQ(lte, 0);
+    ASSERT_EQ(init_idx(&r, "AT+CNACT="), -1);
+    ASSERT_EQ(suspect, 0);   /* gate REASSERTED will activate PDP itself */
 }
 
-TEST(test_hw41_cnact_follows_cedrxs) {
-    int cedrxs_idx = -1, cnact_idx = -1;
-    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
-        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=", 10) == 0) cedrxs_idx = (int)i;
-        if (strncmp(kQueenInitSequence[i], "AT+CNACT=", 9) == 0)   cnact_idx  = (int)i;
-    }
-    ASSERT_TRUE(cedrxs_idx >= 0);
-    ASSERT_TRUE(cnact_idx >= 0);
-    ASSERT_TRUE(cnact_idx > cedrxs_idx);
-}
-
-TEST(test_hw41_pdp_context_defined_before_activated) {
-    /* CGDCONT (define) must precede CNACT (activate) — activating an
-     * undefined PDP context index is a modem-reported error, not a silent
-     * no-op. */
-    int cgdcont_idx = -1, cnact_idx = -1;
-    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
-        if (strncmp(kQueenInitSequence[i], "AT+CGDCONT=", 11) == 0) cgdcont_idx = (int)i;
-        if (strncmp(kQueenInitSequence[i], "AT+CNACT=", 9) == 0)    cnact_idx   = (int)i;
-    }
-    ASSERT_TRUE(cgdcont_idx >= 0);
-    ASSERT_TRUE(cnact_idx >= 0);
-    ASSERT_TRUE(cgdcont_idx < cnact_idx);
+/* [HW.41] A failed init activation leaves the suspicion — the first flush
+ * re-activates PDP before its first RF command (context is NO_SAVE). */
+TEST(test_hw41_failed_cnact_leaves_suspect) {
+    InitRecorder r = { .n = 0, .fail_prefix = "AT+CNACT=" };
+    uint8_t lte, suspect;
+    Sim7070_Init_Run(init_rec_tx, &r, &lte, &suspect);
+    ASSERT_EQ(lte, 1);
+    ASSERT_EQ(suspect, 1);
+    ASSERT_EQ((size_t)init_idx(&r, "AT+CNACT="), r.n - 1);  /* activation still last */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3128,12 +3136,12 @@ int main(void)
     printf("\n  SIM7070G Init — APN/PDP Sequence (HW.41):\n");
     RUN(test_hw41_cgdcont_empty_apn_wire_form);
     RUN(test_hw41_cgdcont_configured_apn_wire_form);
+    RUN(test_hw41_cncfg_wire_form_and_gate);
+    RUN(test_hw41_init_run_transcript_default_build);
     RUN(test_hw41_rat_selection_then_apn);
-    RUN(test_hw41_rat_is_explicit_both);
     RUN(test_hw41_edrx_requested_for_both_act);
-    RUN(test_hw41_cnact_is_last_init_command);
-    RUN(test_hw41_cnact_follows_cedrxs);
-    RUN(test_hw41_pdp_context_defined_before_activated);
+    RUN(test_hw41_no_cnact_without_lte_only);
+    RUN(test_hw41_failed_cnact_leaves_suspect);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
