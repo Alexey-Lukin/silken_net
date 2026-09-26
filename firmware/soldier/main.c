@@ -2509,8 +2509,10 @@ int main(void)
 
     // 1. Якщо у нас є чужий зашифрований пакет (Mesh), спочатку відправляємо його
     if (has_mesh_relay) {
-        Radio.Send(mesh_relay_payload, 16);
-        HAL_Delay(100); // Коротка пауза між передачами
+        // [FW.61] Чужий кадр відлітає цілком (16 Б @ SF9 ≈ 165 мс + запас) —
+        // лише тоді власний Send: інакше він переписав би буфер, з якого модем
+        // ще читає.
+        HAL_Delay(Lora_Phy_Send(mesh_relay_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
         has_mesh_relay = 0; // Пакет відправлено, очищаємо пам'ять
     }
 
@@ -2524,7 +2526,7 @@ int main(void)
         Build_Time_Sync_Request_Payload(hello_plain, tree_did,
                                         0u /* ніколи не чули */, vcap_voltage);
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)hello_plain, 4, (uint32_t*)encrypted_payload, 1000);
-        Radio.Send(encrypted_payload, 16);
+        HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
         // Cooldown НЕ чіпаємо: grace-hello летить КОЖНЕ пробудження навмисно
         // (замість телеметрії — Королеві потрібен uplink для OTA-рефлексу);
         // cooldown належить сплячому drift-watchdog'у (0x56 ПОВЕРХ телеметрії).
@@ -2566,12 +2568,14 @@ int main(void)
                                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
                                           wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                                           ccm_air) == HAL_OK) {
-            Radio.Send(ccm_air, FW2_CCM_AIR_PACKET_LEN);
+            HAL_Delay(Lora_Phy_Send(ccm_air, FW2_CCM_AIR_PACKET_LEN, LORA_PHY_PREAMBLE_SYMBOLS));
             telemetry_sent = 1u;
         }
 #else
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
-        Radio.Send(encrypted_payload, 16);
+        // [FW.61] Чекаємо, доки кадр відлетить: наступна команда радіо тут —
+        // `Radio.Rx` Фази 4.5, і посеред ефіру вона обриває телеметрію.
+        HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
         telemetry_sent = 1u;
 #endif
 
@@ -2607,9 +2611,9 @@ int main(void)
             Build_Time_Sync_Request_Payload(sync_plain, tree_did,
                                             Soldier_Seconds_Since_Last_Sync(),
                                             vcap_voltage);
-            HAL_Delay(100); // радіо ще випромінює телеметрію (як mesh-relay)
+            // Телеметрія вже відлетіла цілком (Send вище дочекався свого ефіру).
             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)sync_plain, 4, (uint32_t*)encrypted_payload, 1000);
-            Radio.Send(encrypted_payload, 16);
+            HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
             wakeups_since_sync_request = 0; // мітка зойка — cooldown пішов
             sync_request_ever = 1;
         }
@@ -2624,9 +2628,9 @@ int main(void)
         Device_Event_Build(evt_plain, tree_did, DEVICE_EVT_CANARY_TRIP,
                            0u /* arg — резерв (PC/LR-фрагмент) */,
                            ++canary_evt_seq, vcap_voltage);
-        HAL_Delay(100); // пауза після попереднього TX (як mesh-relay)
+        // Попередній кадр уже відлетів цілком (кожен Send дочікує свого ефіру).
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)evt_plain, 4, (uint32_t*)encrypted_payload, 1000);
-        Radio.Send(encrypted_payload, 16);
+        HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
         if (--canary_evt_shots == 0u) canary_tripped = 0;
     }
 
@@ -2728,7 +2732,9 @@ int main(void)
                         if (rr == BEACON_RELAY_OK) {
                             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)relay_plain, 4,
                                              (uint32_t*)encrypted_payload, 1000);
-                            Radio.Send(encrypted_payload, BEACON_PLAINTEXT_SIZE);
+                            // Після `break` нижче йде Radio.Sleep — кадр мусить відлетіти ДО.
+                            HAL_Delay(Lora_Phy_Send(encrypted_payload, BEACON_PLAINTEXT_SIZE,
+                                                    LORA_PHY_PREAMBLE_SYMBOLS));
                             Beacon_Dedup_Mark(&beacon_dedup,
                                               Beacon_Dedup_Gen(beacon_ts));
                         }
@@ -3056,7 +3062,9 @@ int main(void)
                     // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
                     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
                                       (uint32_t*)encrypted_req, 1000);
-                    Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
+                    // Далі Фаза 5 гасить радіо (Radio.Sleep) — зойк мусить відлетіти ДО.
+                    HAL_Delay(Lora_Phy_Send(encrypted_req, OTA_REQ_PACKET_SIZE,
+                                            LORA_PHY_PREAMBLE_SYMBOLS));
                     // Лічильник у нуль — даємо Королеві стільки ж тихих
                     // пробуджень на ретрансляцію перед наступним зойком.
                     ota_silent_wakeups = 0;
@@ -3304,6 +3312,9 @@ void HAL_PWR_PVDCallback(void)
 // =========================================================================
 void Trigger_Emergency_LoRa_TX(void)
 {
+    // [FW.61] Преамбула, з якою кадр ПІДЕ, — одна змінна і для SetTxConfig
+    // («останній зойк» ARCH.26 її подовжує), і для очікування кінця ефіру.
+    uint16_t panic_preamble = LORA_PHY_PREAMBLE_SYMBOLS;
 #if FW2_CCM_ENABLED
     // [FW.2] Panic їде тим САМИМ CCM-потоком, що телеметрія: FC у нонсі =
     // anti-replay для ВСІХ кадрів (03_05 §2.1 — SEC.10 DR0[31:16]-лічильник
@@ -3384,23 +3395,25 @@ void Trigger_Emergency_LoRa_TX(void)
     // зловить. Контекст: main-loop Path-B (EXTI лише ставить
     // vibration_detected) — блокуючий SetTxConfig/HAL_Delay безпечні;
     // НЕ кликати цю функцію з ISR.
-    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, Cad_Panic_Preamble_Symbols(
+    panic_preamble = Cad_Panic_Preamble_Symbols(
         EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
         Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
-                                    CAD_T_SYM_SF9_BW125_US)));
+                                    CAD_T_SYM_SF9_BW125_US));
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, panic_preamble);
 #endif
+    // 5. [FW.61] Шлемо й чекаємо ЦІЛИЙ кадр — з тією преамбулою, що пішла в
+    // SetTxConfig. ⛔ Сталої паузи замість цього часу не ставити: кадр летить
+    // ≥ 165 мс (а з «останнім зойком» — секунди преамбули), і відновлення
+    // SetTxConfig та Radio.Sleep нижче посеред ефіру обривають зойк пилки.
 #if FW2_CCM_ENABLED
     // Збій збірки (HAL захрип) → мовчимо: підроблений/битий зойк гірший за
     // тишу, а L1-Королева все одно слухає наступне пробудження.
     if (panic_built == HAL_OK) {
-        Radio.Send(panic_air, FW2_CCM_AIR_PACKET_LEN);
+        HAL_Delay(Lora_Phy_Send(panic_air, FW2_CCM_AIR_PACKET_LEN, panic_preamble));
     }
 #else
-    Radio.Send(encrypted_panic, 16);
+    HAL_Delay(Lora_Phy_Send(encrypted_panic, 16, panic_preamble));
 #endif
-
-    // 5. Мікро-пауза, щоб радіомодуль встиг фізично випромінити пакет
-    HAL_Delay(100);
 
 #if ARCH26_CAD_ENABLED
     // Обов'язкове відновлення дефолтної преамбули (дисципліна

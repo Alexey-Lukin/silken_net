@@ -73,4 +73,39 @@ static inline void Lora_Phy_Apply_Rx(bool rx_continuous)
                       rx_continuous);
 }
 
+/*
+ * Ефірний час кадру за ЦИМ профілем, мс. Рахує сам драйвер (`RadioTimeOnAir`,
+ * формула Semtech з цілочисельним ceil) — тож власної копії числа в прошивці
+ * немає; наша модель тієї самої формули для канону — tools/firmware/lora_airtime.rb
+ * (16 Б → 165 мс, 30 Б → 227 мс). Преамбула — аргумент, бо PANIC-кадр Солдата
+ * летить із власною (`cad_sniff.h`), і чекати він мусить саме її.
+ */
+static inline uint32_t Lora_Phy_Time_On_Air_Ms(uint16_t preamble_symbols, uint8_t payload_len)
+{
+    return Radio.TimeOnAir(MODEM_LORA, LORA_PHY_BW, LORA_PHY_SF, LORA_PHY_CR,
+                           preamble_symbols, LORA_PHY_FIX_LEN, payload_len, LORA_PHY_CRC_ON);
+}
+
+/*
+ * [FW.61] ЄДИНИЙ спосіб послати кадр: шле й повертає, скільки мс радіо ним ще
+ * зайняте (ефір + `LORA_PHY_TX_GUARD_MS`). Викликач МУСИТЬ відчекати цей час
+ * перш ніж дати радіо БУДЬ-ЯКУ наступну команду — Send, Rx, SetTxConfig, Sleep.
+ * `Radio.Send` асинхронний: він лише пише буфер і `SetTx`, а кадр летить ще
+ * 165 мс (16 Б @ SF9). Наступна команда посеред ефіру обриває кадр — `SetRx`
+ * перемикає чіп на прийом, `Sleep` гасить його, а новий `Send` переписує буфер,
+ * з якого модем ще читає. ⛔ Сталої паузи замість цього часу не ставити
+ * (FW.61, 2026-09-27: паузи 60/100 мс проти 165-мс кадру обривали кадри на
+ * всіх TX-сайтах обох вузлів, а телеметрія Солдата йшла прямо в `Radio.Rx`
+ * Фази 4.5) — латентно до board-freeze, бо хост-стаб `Radio` і compile-only
+ * ARM-лейн ефіру не мають (`firmware`-скіл гоча #20).
+ * `warn_unused_result` — носій у мить дії: викликати шов і не чекати не можна
+ * мовчки; голий `Radio.Send(` у main.c червонить `make -C firmware/test lora_phy`.
+ */
+__attribute__((warn_unused_result))
+static inline uint32_t Lora_Phy_Send(uint8_t *buf, uint8_t len, uint16_t preamble_symbols)
+{
+    Radio.Send(buf, len);
+    return Lora_Phy_Time_On_Air_Ms(preamble_symbols, len) + LORA_PHY_TX_GUARD_MS;
+}
+
 #endif /* SILKEN_LORA_PHY_APPLY_H */

@@ -1239,6 +1239,11 @@ int main(void)
 
         while (LoRa_Rx_Ring_Pop(rx_payload, &rx_len, &rx_rssi, &rx_snr))
         {
+            // [FW.61] Пакет рингу коштує до двох повних кадрів ефіру (CMD +
+            // OTA ≈ 2 × 175 мс), а ринг — до 16 пакетів: без годування пса на
+            // кожному знятому пакеті дренаж один міг би з'їсти вікно IWDG
+            // (~26 с). Завислий Send/CRYP пса не погодує — зависання видно й далі.
+            HAL_IWDG_Refresh(&hiwdg);
             current_rssi = rx_rssi;  // зберігаємо для downstream-кешу та логів
             current_snr  = rx_snr;   // [E.8] SNR-tiebreaker у CIFO
 
@@ -1270,7 +1275,8 @@ int main(void)
         // [FW.20-Q2] РЕФЛЕКТОРНИЙ ПОСТРІЛ КОМАНДИ (0x9A / 0x9E)
         // =========================================================================
         // Солдат, чий голос щойно прозвучав, слухає ефір ~500 мс — один
-        // командний постріл (60 мс) перед OTA-чанком вміщається з запасом.
+        // командний постріл (16 Б ≈ 165 мс ефіру + запас) перед OTA-чанком
+        // вміщається: два кадри поспіль ≈ 350 мс < 500.
         // Команда першою: ротація ключа (FW.17) важливіша за чанк прошивки.
         {
             uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
@@ -1278,8 +1284,9 @@ int main(void)
             if (Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
                                  (uint32_t*)cmd_cipher, 1000);
-                Radio.Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE);
-                HAL_Delay(60);  // PHY доказує пакет перед наступним TX/RX
+                // PHY доказує пакет перед наступним TX/RX
+                HAL_Delay(Lora_Phy_Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE,
+                                        LORA_PHY_PREAMBLE_SYMBOLS));
             }
         }
 #endif
@@ -1319,11 +1326,10 @@ int main(void)
                 // Шифруємо цей шматок коду
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
 
-                // СТРІЛЯЄМО В ЕФІР
-                Radio.Send(encrypted_ota, 16);
-
-                // Даємо радіомодулю час фізично передати пакет (бл. 50-60 мс)
-                HAL_Delay(60);
+                // СТРІЛЯЄМО В ЕФІР і чекаємо, доки кадр справді відлетить
+                // (16 Б @ SF9 ≈ 165 мс + запас, lora_phy_apply.h): Rx-re-arm
+                // наприкінці обробки інакше обірвав би його посеред ефіру.
+                HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 
                 // Перемикаємося на наступний шматок для наступного дерева
                 current_ota_chunk_idx++;
@@ -1353,8 +1359,7 @@ int main(void)
                 memcpy(ota_chunk, pending_ota_hmac_chunks[current_hmac_seg_idx], 16);
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
                                   (uint32_t*)encrypted_ota, 1000);
-                Radio.Send(encrypted_ota, 16);
-                HAL_Delay(60);
+                HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 
                 current_hmac_seg_idx++;
                 if (current_hmac_seg_idx >= OTA_TRAILER_TOTAL_CHUNKS) {
@@ -1436,8 +1441,10 @@ int main(void)
                             }
                             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
                                               (uint32_t*)encrypted_ota, 1000);
-                            Radio.Send(encrypted_ota, 16);
-                            HAL_Delay(60);  // Дихаємо між пострілами — як при повному broadcast
+                            // Кадр відлітає цілком, лише тоді наступний; до 72 кадрів
+                            // ≈ 12.6 с ефіру — пса годуємо на кожному (цикл обмежений cap).
+                            HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
+                            HAL_IWDG_Refresh(&hiwdg);
                         }
                     }
                 }
@@ -1451,7 +1458,7 @@ int main(void)
         // [ARCH.41-C] Зойк «Королево, час!» — hello cold-boot Солдата
         // (grace-вікно) чи сторожовий пес дрейфу. Не телеметрія — у літопис
         // не лягає. Відповідь: перемотка last_beacon_time → маяк стрельне на
-        // цьому ж обороті циклу (~60 мс ефіру). Дедуп не потрібен: перемотка
+        // цьому ж обороті циклу (≈ 165 мс ефіру). Дедуп не потрібен: перемотка
         // ідемпотентна, маяк і так максимум один на оборот; без власного часу
         // (queen_unix_ts==0) Broadcast_Time_Beacon сам змовчить.
         if (decrypted_payload[0] == SYNC_REQ_MARKER &&
@@ -1586,7 +1593,7 @@ int main(void)
     // Кожні TIME_BEACON_INTERVAL_MS (≈15 хв) Королева транслює UTC-секунди
     // через LoRa, щоб Солдати могли коригувати дрейф RTC між cold-boot'ами.
     // Маяк придушено перед першим CoAP-роздтрипом (queen_unix_ts == 0), щоб
-    // не навчати рій хибній епосі. Витрати: ~60 мс ефірного часу раз на 15 хв.
+    // не навчати рій хибній епосі. Витрати: ≈ 165 мс ефірного часу раз на 15 хв.
     if ((HAL_GetTick() - last_beacon_time) > TIME_BEACON_INTERVAL_MS) {
         Broadcast_Time_Beacon();
         last_beacon_time = HAL_GetTick();
@@ -2982,7 +2989,8 @@ static uint32_t Get_Current_Unix_Ts(void)
 // макет відкритого тексту:
 //   [0x9C][unix_ts_be:u32][резерв:0×4][AUTH|TTL][магія 'B'][pad:0×5]
 // Придушено якщо queen_unix_ts == 0 (щоб не навчати Солдатів хибній епосі
-// до нашого першого CoAP-роздтрипа). Кожен маяк коштує ~50–60 мс ефірного часу.
+// до нашого першого CoAP-роздтрипа). Кожен маяк коштує ≈ 165 мс ефірного часу
+// (16 Б @ SF9, `Lora_Phy_Time_On_Air_Ms`).
 static void Broadcast_Time_Beacon(void)
 {
     uint32_t now = Get_Current_Unix_Ts();
@@ -3010,8 +3018,8 @@ static void Broadcast_Time_Beacon(void)
     // байти 11..15 = 0x00 (padding до 16-байтного AES-блоку)
 
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)plaintext, 4, (uint32_t*)ciphertext, 1000);
-    Radio.Send(ciphertext, 16);
-    HAL_Delay(60);  // Даємо PHY час фізично випромінити пакет перед re-arm RX
+    // Даємо PHY фізично випромінити пакет перед re-arm RX (ефір + запас).
+    HAL_Delay(Lora_Phy_Send(ciphertext, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 }
 
 /* USER CODE END 4 */

@@ -4,7 +4,7 @@
  *
  * ЩО САМЕ тут пінується, і чому це не тавтологія «константа дорівнює собі»:
  * тест лінкується проти СПРАВЖНЬОГО вендорського `radio.h` і кличе ті самі
- * `Lora_Phy_Apply_Tx/Rx`, які кличуть обидві прошивки. Тобто червоніє він на
+ * `Lora_Phy_Apply_Tx/Rx` і `Lora_Phy_Send`, які кличуть обидві прошивки. Тобто червоніє він на
  * помилці арності чи порядку аргументів — класі, який інакше видно лише
  * ARM-джобі `hal_check` у CI, тобто окремим червоним пушем без локального
  * відтворення (`firmware`-скіл гоча #13).
@@ -152,16 +152,74 @@ static void capture_set_rx_config(RadioModems_t modem, uint32_t bandwidth,
     note_order('R');
 }
 
+/* [FW.61] Ефірний час і сам кадр — друга пара полів, яку тепер чіпає шов.
+ * Заглушка TimeOnAir віддає НЕ формулу, а впізнавану константу: тест судить,
+ * ЧИМ шов питає драйвер і що робить із відповіддю; саму формулу несе драйвер
+ * (і наша модель канону — tools/firmware/lora_airtime.rb). */
+#define STUB_TOA_MS 777u
+
+typedef struct {
+    int calls;
+    RadioModems_t modem;
+    uint32_t bandwidth;
+    uint32_t datarate;
+    uint8_t coderate;
+    uint16_t preamble_len;
+    bool fix_len;
+    uint8_t payload_len;
+    bool crc_on;
+} ToaCapture;
+
+typedef struct {
+    int calls;
+    const uint8_t *buf;
+    uint8_t size;
+} SendCapture;
+
+static ToaCapture g_toa;
+static SendCapture g_send;
+
+static uint32_t capture_time_on_air(RadioModems_t modem, uint32_t bandwidth,
+                                    uint32_t datarate, uint8_t coderate,
+                                    uint16_t preamble_len, bool fix_len,
+                                    uint8_t payload_len, bool crc_on)
+{
+    g_toa.calls++;
+    g_toa.modem = modem;
+    g_toa.bandwidth = bandwidth;
+    g_toa.datarate = datarate;
+    g_toa.coderate = coderate;
+    g_toa.preamble_len = preamble_len;
+    g_toa.fix_len = fix_len;
+    g_toa.payload_len = payload_len;
+    g_toa.crc_on = crc_on;
+    note_order('A');
+    return STUB_TOA_MS;
+}
+
+static radio_status_t capture_send(uint8_t *buffer, uint8_t size)
+{
+    g_send.calls++;
+    g_send.buf = buffer;
+    g_send.size = size;
+    note_order('X');
+    return RADIO_STATUS_OK;
+}
+
 const struct Radio_s Radio = {
     .SetPublicNetwork = capture_set_public_network,
     .SetTxConfig = capture_set_tx_config,
-    .SetRxConfig = capture_set_rx_config
+    .SetRxConfig = capture_set_rx_config,
+    .TimeOnAir = capture_time_on_air,
+    .Send = capture_send
 };
 
 static void reset_capture(void)
 {
     memset(&g_tx, 0, sizeof(g_tx));
     memset(&g_rx, 0, sizeof(g_rx));
+    memset(&g_toa, 0, sizeof(g_toa));
+    memset(&g_send, 0, sizeof(g_send));
     g_sync_calls = 0;
     g_sync_public = true;   /* навмисно ХИБНЕ сім'я: зелений мусить купити виклик */
     g_order[0] = '\0';
@@ -364,6 +422,60 @@ static void test_channel_is_p2p_not_lorawan(void)
     ASSERT_EQ(LORA_PHY_FREQ_HZ, 868000000u);
 }
 
+/* [FW.61] Ефірний час шов питає в ДРАЙВЕРА, і питає ЦИМ профілем — інакше
+ * очікування після Send рахувало б чужу модуляцію. Зсунь `crcOn` чи SF у
+ * виклику — пауза вкоротиться на символьний блок, і кадр знову обірветься. */
+static void test_time_on_air_asks_driver_with_profile(void)
+{
+    reset_capture();
+    uint32_t t = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
+
+    ASSERT_EQ(t, STUB_TOA_MS);
+    ASSERT_EQ(g_toa.calls, 1);
+    ASSERT_EQ(g_toa.modem, MODEM_LORA);
+    ASSERT_EQ(g_toa.bandwidth, 0u);      /* 0 = 125 кГц */
+    ASSERT_EQ(g_toa.datarate, 9u);       /* SF9 */
+    ASSERT_EQ(g_toa.coderate, 1u);       /* 4/5 */
+    ASSERT_EQ(g_toa.preamble_len, 8u);
+    ASSERT_EQ(g_toa.fix_len, false);     /* explicit header — довжина в ефірі */
+    ASSERT_EQ(g_toa.payload_len, 16u);
+    ASSERT_EQ(g_toa.crc_on, true);
+}
+
+/* 🔴 Серце дисципліни кінця ефіру: шов ШЛЕ той самий буфер і ту саму довжину
+ * й повертає рівно ефір + запас — не менше. Повернення менше за ефір і є тим
+ * дефектом, що обривав кадри (60/100 мс проти 165). */
+static void test_send_returns_air_plus_guard(void)
+{
+    uint8_t frame[16] = { 0x99 };
+    reset_capture();
+    uint32_t busy = Lora_Phy_Send(frame, 16u, LORA_PHY_PREAMBLE_SYMBOLS);
+
+    ASSERT_EQ(g_send.calls, 1);
+    ASSERT_EQ(g_send.buf == frame, 1);
+    ASSERT_EQ(g_send.size, 16u);
+    ASSERT_EQ(g_toa.payload_len, 16u);   /* очікування — про ЦЕЙ кадр, не про інший */
+    ASSERT_EQ(busy, STUB_TOA_MS + LORA_PHY_TX_GUARD_MS);
+    ASSERT_EQ(busy > STUB_TOA_MS, 1);
+    ASSERT_EQ(strcmp(g_order, "XA"), 0); /* кадр пішов ДО того, як рахуємо його хвіст */
+}
+
+/* PANIC-кадр Солдата летить із ВЛАСНОЮ преамбулою («останній зойк», ARCH.26):
+ * чекати треба її, а не базлайнову, інакше відновлення SetTxConfig і Sleep
+ * лягають посеред довгої преамбули. */
+static void test_panic_wait_uses_panic_preamble(void)
+{
+    uint8_t frame[16] = { 0 };
+    reset_capture();
+    (void)Lora_Phy_Send(frame, 16u, 973u);
+    ASSERT_EQ(g_toa.preamble_len, 973u);
+
+    reset_capture();
+    (void)Lora_Phy_Send(frame, 30u, LORA_PHY_PREAMBLE_SYMBOLS); /* CCM air-кадр rev2.1 */
+    ASSERT_EQ(g_toa.preamble_len, 8u);
+    ASSERT_EQ(g_toa.payload_len, 30u);
+}
+
 int main(void)
 {
     printf("── test_lora_phy: FW.61 базлайн модуляції raw-LoRa P2P ──\n");
@@ -378,6 +490,9 @@ int main(void)
     printf("test_full_baseline_order\n");            test_full_baseline_order();
     printf("test_symbol_time_derives_from_profile\n"); test_symbol_time_derives_from_profile();
     printf("test_channel_is_p2p_not_lorawan\n");      test_channel_is_p2p_not_lorawan();
+    printf("test_time_on_air_asks_driver_with_profile\n"); test_time_on_air_asks_driver_with_profile();
+    printf("test_send_returns_air_plus_guard\n");     test_send_returns_air_plus_guard();
+    printf("test_panic_wait_uses_panic_preamble\n");  test_panic_wait_uses_panic_preamble();
 
     printf("──────────────────────────────────────────────────────────\n");
     printf("PASS: %d  FAIL: %d\n", g_tests_run - g_tests_failed, g_tests_failed);

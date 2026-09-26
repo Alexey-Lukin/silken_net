@@ -64,6 +64,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 17. A mutation probe on the host lane can run the PREVIOUS binary: the system GNU Make 3.81 compares mtimes to the second, so an edit made in the same second as the last build does not rebuild — force the target with `make -C firmware/test -B <target>`
 18. The Flash-KV base is ONE gate expression over THREE sites — declaration, mount, compact — so a new journal consumer joins the expression, never a site
 19. A host test that exercises a HAND-COPIED `main.c` function proves the copy, not the firmware — so when you touch a `main.c` function that `firmware/test/` mirrors, move its logic into a pure header both include, instead of editing both copies
+20. `Radio.Send` is asynchronous — the frame is still in the air for its whole time-on-air, and ANY next radio command (Send · Rx · SetTxConfig · Sleep) aborts it; so every frame goes through `Lora_Phy_Send`, and its return value is a WAIT, not a status
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 

@@ -124,8 +124,17 @@ tdma: $(BINDIR)/test_tdma_schedule
 cad: $(BINDIR)/test_cad_sniff
 	@./$(BINDIR)/test_cad_sniff
 
+# [FW.61] Друга половина — носій ДИСЦИПЛІНИ, а не тест шва: кожен кадр обох
+# вузлів іде через `Lora_Phy_Send`, що повертає, скільки радіо ним ще зайняте.
+# Голий `Radio.Send(` у main.c = кадр без очікування кінця ефіру (гоча #20).
+# ⚠️ Стеля: рядок, де `Radio.Send(` стоїть ПІСЛЯ `/` чи `*` (коментар — або
+# код із множенням/кастом раніше в тому ж рядку), шаблон пропускає.
 lora_phy: $(BINDIR)/test_lora_phy
 	@./$(BINDIR)/test_lora_phy
+	@if grep -nE '^[^/*]*Radio\.Send\(' ../soldier/main.c ../queen/main.c; then \
+	  echo "FAIL [FW.61]: голий Radio.Send( — кадр мусить іти через Lora_Phy_Send і чекати свого ефіру"; \
+	  exit 1; \
+	fi
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h \
                      ../queen/cifo_cache.h ../common/lora_ccm.h

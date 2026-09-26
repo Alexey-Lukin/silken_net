@@ -574,8 +574,9 @@ if (current_ota_chunk_idx < total_chunks):
     [5-15]  = 11 байт mruby bytecode
                offset = current_ota_chunk_idx * 11
                bytes_to_copy = min(11, pending_ota_size - offset)
-  HAL_CRYP_Encrypt(ECB) → Radio.Send(encrypted_ota, 16)
-  HAL_Delay(60)   ← час для фізичної передачі пакета (~50-60 мс)
+  HAL_CRYP_Encrypt(ECB) → HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, …))
+                  ← кадр відлітає цілком: 16 Б @ SF9 = 165 мс ефіру + запас
+                    (03_05 §2.1, врізка під airtime-таблицею; FW.61)
 
 current_ota_chunk_idx++
 if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало

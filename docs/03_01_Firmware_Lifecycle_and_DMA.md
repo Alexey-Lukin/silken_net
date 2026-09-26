@@ -482,15 +482,16 @@ HAL_Delay(random_jitter % TX_JITTER_MAX_MS);
 
 // Mesh Relay (відправляємо чужий пакет першим)
 if (has_mesh_relay) {
-    Radio.Send(mesh_relay_payload, 16);
-    HAL_Delay(100);
+    HAL_Delay(Lora_Phy_Send(mesh_relay_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
     has_mesh_relay = 0;
 }
 
 // Шифруємо власні дані
 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
-Radio.Send(encrypted_payload, 16);
+HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
 ```
+
+> 🔴 **Кожен `Send` дочікує свого ефіру, перш ніж радіо дістане наступну команду** ([`00_07`](00_07_Action_Plan_Tracker) FW.61): `Lora_Phy_Send` повертає ефір кадру + запас, і саме стільки чекає Фаза 4 — інакше `Radio.Rx` Фази 4.5 обірвав би телеметрію за мікросекунди після старту. Механізм, носії й стеля — дім профілю [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) (врізка під airtime-таблицею).
 
 **Mesh Relay:** Якщо `has_mesh_relay == 1`, Soldier відправляє чужий зашифрований пакет (зі зменшеним TTL) перед власним. Це забезпечує ретрансляцію для дерев поза прямою видимістю Queen.
 
@@ -518,7 +519,7 @@ Radio.Send(encrypted_payload, 16);
 
 ### 1.9 Phase 4.5: RX Window (OTA + Mesh)
 
-Відкривається **тільки** якщо `vcap_voltage > 2800 mV` (достатньо енергії).
+Відкривається **тільки** якщо `vcap_voltage > 2800 mV` (достатньо енергії) — і лише ПІСЛЯ того, як власний кадр Фази 4 відлетів цілком (§1.8).
 
 ```
 Radio.Rx(500ms) → Максимум 600ms очікування
