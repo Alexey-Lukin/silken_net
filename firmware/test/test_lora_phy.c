@@ -414,12 +414,17 @@ static void test_symbol_time_derives_from_profile(void)
     ASSERT_EQ(LORA_PHY_T_SYM_US, 4096u);
 }
 
-/* Частота — raw-LoRa P2P, НЕ канал LoRaWAN-детуру (ARCH.34: 868.1/.3/.5). */
+/* Частота — raw-LoRa P2P, НЕ канал LoRaWAN-детуру (ARCH.34: 868.1/.3/.5), і
+ * вся займана смуга — у 868.0–868.6 МГц (⚖️ ARCH.24, делеговано 2026-09-27). */
 static void test_channel_is_p2p_not_lorawan(void)
 {
     /* 868.1/.3/.5 — канали LoRaWAN-детуру (ARCH.34); рівність нижче їх
      * виключає, тож окрема нерівність була б підмножиною цього ж піна. */
-    ASSERT_EQ(LORA_PHY_FREQ_HZ, 868000000u);
+    ASSERT_EQ(LORA_PHY_FREQ_HZ, 868200000u);
+    /* Край смуги — рантайм-дзеркало _Static_assert у lora_phy.h: тут видно
+     * ЧИСЛА, на яких він стоїть (868.1375 · 868.2625 МГц). */
+    ASSERT_EQ(LORA_PHY_FREQ_HZ - LORA_PHY_BW_HZ / 2u, 868137500u);
+    ASSERT_EQ(LORA_PHY_FREQ_HZ + LORA_PHY_BW_HZ / 2u, 868262500u);
 }
 
 /* [FW.61] Ефірний час шов питає в ДРАЙВЕРА, і питає ЦИМ профілем — інакше

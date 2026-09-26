@@ -2054,7 +2054,7 @@ int main(void)
   radio_events.CadDone = OnCadDone;
 #endif
   Radio.Init(&radio_events);
-  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.0 МГц — raw-LoRa P2P (lora_phy.h)
+  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.2 МГц — raw-LoRa P2P (lora_phy.h)
 
   // [FW.61] Базлайн модуляції. ⛔ Не прибирати як «драйвер і так дефолтить»:
   // `RadioInit` ставить лише таймери/IRQ і `SUBGRF_SetTxParams(RFO_LP, 0, …)`

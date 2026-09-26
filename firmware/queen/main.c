@@ -1088,7 +1088,7 @@ int main(void)
   // кадру, і весь RX-конвеєр (CIFO → CoAP) лишився б глухим. Решта полів NULL.
   radio_events.RxDone = OnRxDone;
   Radio.Init(&radio_events);
-  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.0 МГц (EU ISM, raw-LoRa P2P — lora_phy.h)
+  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.2 МГц (EU ISM, raw-LoRa P2P — lora_phy.h)
 
   // [FW.61] Базлайн модуляції — і тут він дорожчий, ніж у Солдата.
   // `SubgRf.RxContinuous` виставляє ВИКЛЮЧНО `RadioSetRxConfig`, а `RadioInit`
@@ -1688,9 +1688,9 @@ static void Restore_ECB_Mode(void)
 }
 
 // =========================================================================
-// [ARCH.34] Повернення вух: PHY назад у raw-LoRa P2P 868.0 МГц після
+// [ARCH.34] Повернення вух: PHY назад у raw-LoRa P2P 868.2 МГц після
 // LoRaWAN-детуру (hard-rule post-condition — 02_05 §6.1 п.3). Поки Королева
-// говорила LoRaWAN на 868.1/.3/.5, панічний preamble Солдата на 868.0 був
+// говорила LoRaWAN на 868.1/.3/.5, панічний preamble Солдата на 868.2 був
 // нечутний апаратно — тому повернення вух БЕЗУМОВНЕ і негайне.
 // НЕСУЧЕ: Radio.Init(&radio_events) ПЕРШИМ — LoRaMac-епізод перебіндив
 // єдиний events-вказівник драйвера на свою таблицю; без re-bind RxDone
