@@ -104,7 +104,7 @@ class ActuatorCommandWorker
     encryption_key = if explicit_key.present?
       [ explicit_key ].pack("H*") # Конвертуємо HEX-рядок у сирі байти
     else
-      key_record.binary_previous_key || key_record.binary_key
+      key_record.coap_binary_key
     end
 
     # 🛡️ Idempotency: включаємо idempotency_token у payload для дедуплікації на STM32

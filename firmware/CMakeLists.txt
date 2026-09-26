@@ -144,6 +144,12 @@ if(CMAKE_CROSSCOMPILING)
     # StartCad-нюх, SetTxConfig extended-preamble, OnCadDone-реєстрація)
     # компілюється проти справжнього Semtech radio.h. Стеля: link-бомбу НЕ
     # ловить (OBJECT-lib compile-only) — справжній link-guard = FW.46 full-.elf.
+    # + ARCH26_TDMA · FW8_PARSER · FW17_RATCHET · FW20_MESH_RELAY ·
+    # FW20_Q2_CMD_RELAY =1: ці гейти доти були ГОЛИМИ `#define` (-D їх не
+    # перемикав — `firmware`-скіл гоча #13(а)), тож їхні ON-гілки не бачили
+    # компілятора жодного разу, зокрема ротація FW.17 обабіч. Зонд `#error` у
+    # гілці FW.17 (Солдат) і FW.20-Q2 (Королева), 2026-09-27: стріляє тут, мовчить
+    # у hal_check.
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -164,7 +170,12 @@ if(CMAKE_CROSSCOMPILING)
       ARCH34_HELIUM_ENABLED=1
       ARCH35_RING_ENABLED=1
       SEC21_MPU_ENABLED=1
-      ARCH26_CAD_ENABLED=1)
+      ARCH26_CAD_ENABLED=1
+      ARCH26_TDMA_ENABLED=1
+      FW8_PARSER_ENABLED=1
+      FW17_RATCHET_ENABLED=1
+      FW20_MESH_RELAY_ENABLED=1
+      FW20_Q2_CMD_RELAY_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль

@@ -60,6 +60,30 @@ RSpec.describe TimeSyncDownlinkWorker, type: :worker do
         anything
       )
     end
+
+    # Ротований KEYC доїжджає до Королеви лише re-provision'ом, тож у її
+    # grace-вікні конверт мусить бути під ПОПЕРЕДНІМ (HardwareKey#coap_binary_key).
+    it "encrypts under the key the Queen still holds while her grace is open" do
+      held_key = key_record.binary_key.dup
+      key_record.update!(previous_aes_key_hex: key_record.aes_key_hex,
+                         aes_key_hex: SecureRandom.hex(32).upcase)
+      sent_payload = nil
+      allow(CoapClient).to receive(:put) do |_url, payload|
+        sent_payload = payload
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
+      end
+
+      described_class.new.perform(cluster.id)
+
+      cipher = OpenSSL::Cipher.new("aes-256-cbc").decrypt
+      cipher.key = held_key
+      cipher.iv = sent_payload.byteslice(0, 16)
+      cipher.padding = 0
+      plain = cipher.update(sent_payload.byteslice(16..)) + cipher.final
+      # [0x9C][ts:4] + 11 нульових байтів доповнення: чужий ключ дав би сміття
+      expect(plain.getbyte(0)).to eq(0x9C)
+      expect(plain.byteslice(5..)).to eq("\x00".b * 11)
+    end
   end
 
   describe "#perform — gateway selection short-circuits" do

@@ -118,12 +118,23 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
     end
 
     it "uses previous key when in grace period" do
-      key_record.update!(previous_aes_key_hex: SecureRandom.hex(32).upcase)
+      held_hex = SecureRandom.hex(32).upcase
+      key_record.update!(previous_aes_key_hex: held_hex)
+      sent_payload = nil
+      allow(CoapClient).to receive(:put) do |_url, payload|
+        sent_payload = payload
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
+      end
 
       described_class.new.perform(command.id)
 
-      command.reload
-      expect(command.status).to eq("acknowledged")
+      cipher = OpenSSL::Cipher.new("aes-256-cbc").decrypt
+      cipher.key = [ held_hex ].pack("H*")
+      cipher.iv = sent_payload.byteslice(0, 16)
+      cipher.padding = 0
+      plain = cipher.update(sent_payload.byteslice(16..)) + cipher.final
+      expect(plain).to include("CMD:#{command.command_payload}:")
+      expect(command.reload.status).to eq("acknowledged")
     end
 
     it "raises on CoAP timeout for Sidekiq retry" do

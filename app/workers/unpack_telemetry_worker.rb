@@ -96,8 +96,8 @@ class UnpackTelemetryWorker
     # Оновлюємо поточну IP-адресу (важливо для динамічних Starlink/LTE модемів)
     gateway.mark_seen!(new_ip: sender_ip)
 
-    # 3. ДЕШИФРУВАННЯ БАТЧА (Dual-Key Logic)
-    # Шукаємо ключі ідентичності для цієї Королеви
+    # 3. ДЕШИФРУВАННЯ БАТЧА — ключем, який Королева тримає ЗАРАЗ
+    # (`HardwareKey#coap_binary_key`: у Dual-Key Grace це попередній)
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
 
     unless key_record
@@ -133,10 +133,12 @@ class UnpackTelemetryWorker
       end
     end
 
-    decrypted_data = attempt_decryption(binary_payload, key_record)
+    decrypted_data = decrypt_aes(binary_payload, key_record.coap_binary_key)
 
+    # nil означає ФОРМУ батча (закороткий / не вирівняний), не ключ: CBC без MAC
+    # чужим ключем не падає, а дає сміття, яке відсіє розпакувальник.
     unless decrypted_data
-      Rails.logger.error "🛑 [Security] Критична помилка дешифрування від #{gateway.uid}. Пакет корумпований або ключ невірний."
+      Rails.logger.error "🛑 [Security] Батч від #{gateway.uid} не розшифровний: закороткий або не вирівняний до AES-блоку."
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "decrypt_error" })
       return
     end
@@ -353,29 +355,6 @@ class UnpackTelemetryWorker
       "cellular_signal_csq" => (csq == QATT_CSQ_NOT_READ ? nil : csq),
       "flags"           => flags
     })
-  end
-
-  # Логіка "М'якої Ротації": пробуємо новий ключ, потім старий
-  def attempt_decryption(payload, key_record)
-    # Спроба 1: Основний (новий) ключ
-    result = decrypt_aes(payload, key_record.cached_binary_key)
-
-    if result
-      # Якщо новий ключ спрацював — підтверджуємо успішну ротацію (закриваємо Grace Period)
-      key_record.clear_grace_period!
-      return result
-    end
-
-    # Спроба 2: Попередній ключ (якщо він є у банку пам'яті)
-    if key_record.binary_previous_key
-      result = decrypt_aes(payload, key_record.binary_previous_key)
-      if result
-        Rails.logger.info "🔄 [KeyRotation] Пристрій #{key_record.device_uid} все ще використовує старий ключ."
-        return result
-      end
-    end
-
-    nil
   end
 
   def decrypt_aes(payload, key)

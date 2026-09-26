@@ -196,7 +196,9 @@
 // period=0 ⇔ off на дроті, тож вимкнений гейт лишає байти нульовими —
 // старий ефір байт-у-байт. Слоти при ±1с фазовій точності розкидають
 // популяцію статистично (стеля позначена у tdma_schedule.h).
+#ifndef ARCH26_TDMA_ENABLED
 #define ARCH26_TDMA_ENABLED        0
+#endif
 #define TDMA_PERIOD_MIN            15u   // період вікон = такт маяка
 #define TDMA_WINDOW_100MS          20u   // 2.0 с — RX Провідника / TX-мітка
 #define TDMA_SLOT_COUNT            4u    // фазові групи uplink'ів (FW.27-A)
@@ -763,7 +765,9 @@ volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() в момен�
 // test_soldier_cmd_queue.c); канон — 03_02 §5б.
 #include "soldier_cmd_queue.h"
 
+#ifndef FW20_Q2_CMD_RELAY_ENABLED
 #define FW20_Q2_CMD_RELAY_ENABLED  0   // 🟡 фліп разом із FW.2 CCM (bench)
+#endif
 
 #if FW20_Q2_CMD_RELAY_ENABLED
 static SoldierCmdQueue soldier_cmd_queue;

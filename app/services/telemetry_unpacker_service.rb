@@ -397,24 +397,19 @@ class TelemetryUnpackerService < ApplicationService
       return
     end
 
-    aes_key = tree.hardware_key&.binary_key
+    key_record = tree.hardware_key
+    aes_key = key_record&.binary_key
     if aes_key.nil? || aes_key.bytesize != 16
       Rails.logger.warn "🛑 [CCM] DID #{hex_did}: missing/invalid LoRa AES-128 key (expected 16 bytes, got #{aes_key&.bytesize.inspect})."
       SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
       return
     end
 
-    begin
-      plaintext = Cryptography::LoraCcm.decrypt(
-        key: aes_key,
-        did_bytes: did_bytes,
-        frame_counter: frame_counter,
-        gossip_ts_lsb: gossip_ts_lsb,
-        ciphertext: ciphertext,
-        mic: mic
-      )
-    rescue Cryptography::LoraCcm::AuthError => e
-      Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed: #{e.message}"
+    plaintext = decrypt_ccm_with_grace(key_record, aes_key,
+                                       did_bytes: did_bytes, frame_counter: frame_counter,
+                                       gossip_ts_lsb: gossip_ts_lsb, ciphertext: ciphertext, mic: mic)
+    unless plaintext
+      Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed"
       SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
       return
     end
@@ -532,6 +527,29 @@ class TelemetryUnpackerService < ApplicationService
   rescue StandardError => e
     trace = e.backtrace.first(5).join("\n")
     Rails.logger.error "🛑 [CCM Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
+  end
+
+  # [FW.17] Dual-Key Grace дерева. MIC — автентифікований доказ ключа, тож саме
+  # він і є неявним ACK ратчета: кадр пройшов поточним → Солдат пересів → grace
+  # закрито. Закривати на ПЕРШОМУ кадрі безпечно лише тому, що Солдат перемикає
+  # ключ ПІСЛЯ запису версії у Flash-KV (`Key_Ratchet_Commit`, key_ratchet.h):
+  # кадр новим ключем означає, що й boot уже відтворить новий. Не пройшов →
+  # попередній, доки grace живий (0x9E ще не дійшов або запис не вдався).
+  # ⚠️ Королеви це не стосується: її AES-CBC без MAC розшифровується будь-яким
+  # ключем, тож там grace закриває re-provision (`HardwareKey#coap_binary_key`).
+  def decrypt_ccm_with_grace(key_record, aes_key, **frame)
+    plaintext = Cryptography::LoraCcm.decrypt(key: aes_key, **frame)
+    key_record.clear_grace_period!
+    plaintext
+  rescue Cryptography::LoraCcm::AuthError
+    previous = key_record.binary_previous_key
+    return nil unless previous
+
+    begin
+      Cryptography::LoraCcm.decrypt(key: previous, **frame)
+    rescue Cryptography::LoraCcm::AuthError
+      nil
+    end
   end
 
   def valid_sensor_data?(data)

@@ -36,7 +36,7 @@ class TimeSyncDownlinkWorker
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
     return unless key_record&.binary_key.present?
 
-    encrypted = coap_encrypt("".b, key_record.binary_key)
+    encrypted = coap_encrypt("".b, key_record.coap_binary_key)
 
     begin
       Timeout.timeout(10) do

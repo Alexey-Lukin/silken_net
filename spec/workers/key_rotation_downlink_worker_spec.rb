@@ -62,6 +62,28 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
         OtaPackagerService.build_rotate_key_block(3)
       )
     end
+
+    # Ротований KEYC доїжджає до Королеви лише re-provision'ом, тож у її
+    # grace-вікні кадр мусить бути під ПОПЕРЕДНІМ (HardwareKey#coap_binary_key).
+    it "encrypts under the key the Queen still holds while her own grace is open" do
+      held_key = gateway_key.binary_key.dup
+      gateway_key.update!(previous_aes_key_hex: gateway_key.aes_key_hex,
+                          aes_key_hex: SecureRandom.hex(32).upcase)
+      sent_payload = nil
+      allow(CoapClient).to receive(:put) do |_url, payload|
+        sent_payload = payload
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
+      end
+
+      described_class.new.perform(tree.did, 3)
+
+      cipher = OpenSSL::Cipher.new("aes-256-cbc").decrypt
+      cipher.key = held_key
+      cipher.iv = sent_payload.byteslice(0, 16)
+      cipher.padding = 0
+      plain = cipher.update(sent_payload.byteslice(16..)) + cipher.final
+      expect(plain.byteslice(5, 7)).to eq(OtaPackagerService.build_rotate_key_block(3))
+    end
   end
 
   describe "#perform guards" do

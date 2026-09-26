@@ -114,6 +114,10 @@ bme280: $(BINDIR)/test_bme280
 
 key_ratchet: $(BINDIR)/test_key_ratchet
 	@./$(BINDIR)/test_key_ratchet
+	@if grep -nE '^[^/*]*Key_Ratchet_Advance\(' ../soldier/main.c; then \
+	  echo "FAIL [FW.17]: голий Key_Ratchet_Advance( у Солдаті — ротація лише через Key_Ratchet_Commit (версія ПЕРШ за ключ)"; \
+	  exit 1; \
+	fi
 
 cmd_queue: $(BINDIR)/test_soldier_cmd_queue
 	@./$(BINDIR)/test_soldier_cmd_queue

@@ -76,7 +76,7 @@ class OtaTransmissionWorker
     broadcast_progress(queen_uid, chunk_index, total_chunks)
 
     # 🔐 КРИПТОГРАФІЧНИЙ ЗАХИСТ (AES-256-CBC з випадковим IV)
-    encrypted_package = coap_encrypt(packages[chunk_index], key_record.binary_key)
+    encrypted_package = coap_encrypt(packages[chunk_index], key_record.coap_binary_key)
 
     begin
       # Збільшений таймаут для супутникових стрибків Starlink

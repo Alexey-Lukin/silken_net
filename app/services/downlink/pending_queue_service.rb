@@ -365,8 +365,8 @@ module Downlink
       coap_encrypt("".b, encryption_key)
     end
 
-    # Dual-Key Grace: доки Королева не підтвердила ротацію — старий ключ
-    # (дзеркало ActuatorCommandWorker).
+    # Ключ, який Королева тримає зараз (у Dual-Key Grace — попередній):
+    # один дім обох напрямків — HardwareKey#coap_binary_key.
     def encryption_key
       return @encryption_key if defined?(@encryption_key)
 
@@ -376,7 +376,7 @@ module Downlink
           Rails.logger.error "🛑 [FW.60] KEYC для #{@gateway.uid} відсутній — poll без відповіді"
           nil
         else
-          record.binary_previous_key || record.binary_key
+          record.coap_binary_key
         end
     end
 

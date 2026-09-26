@@ -201,10 +201,11 @@ class HardwareKeyService
   #     re-provision (SEC.3 Factory Flashing) — CoAP-downlink ключа не існує
   #     (legacy "sys/key_update" видалено: він не мав firmware-споживача і
   #     суперечив принципу §3.8 «ключ не летить ефіром»).
-  # ACK — неявний Dual-Key Grace: перший uplink, що декриптнувся новим ключем,
-  # → clear_grace_period!. ⚠️ Зашито лише для Королеви (UnpackTelemetryWorker,
-  # CoAP): CCM-шлях дерева grace не закриває й на старий ключ не відкочується —
-  # передумова фліпу FW.17 (00_07).
+  # ACK — Dual-Key Grace закриває той, хто може ДОВЕСТИ, що пристрій тримає
+  # новий ключ: для Tree — перший кадр, чий CCM-MIC пройшов новим
+  # (TelemetryUnpackerService#decrypt_ccm_with_grace); для Gateway — лише
+  # re-provision (FactoryFlashing::Session), бо її AES-CBC без MAC
+  # розшифровується будь-яким ключем (HardwareKey#coap_binary_key).
   def rotate!
     key_record = HardwareKey.find_by!(device_uid: @device_uid)
 
@@ -295,8 +296,9 @@ class HardwareKeyService
   end
 
   # Gateway: випадковий ключ тієї самої довжини. Без downlink'а — новий ключ
-  # доїжджає лише фізичним re-provision (SEC.3); до того часу Queen шле на
-  # старому, і Grace-декрипт на бекенді тримає канал живим.
+  # доїжджає лише фізичним re-provision (SEC.3); до того часу обидва напрямки
+  # CoAP ідуть старим (HardwareKey#coap_binary_key), а grace закриває сесія,
+  # що залила новий.
   def rotate_gateway_random!(key_record)
     old_key = key_record.aes_key_hex
     new_hex_key = SecureRandom.hex(old_key.length / 2).upcase

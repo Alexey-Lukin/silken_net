@@ -555,13 +555,14 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Метод | Опис |
 |-------|------|
-| `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано (**16 байт AES-128 для Tree, 32 байти AES-256 для Gateway** після ARCH.42) |
-| `binary_lorenz_seed` | **[SEC.11]** `[lorenz_seed_hex].pack("H*")` — мемоізовано (32 байти `K_seed`); входить у `SilkenNet::SeedDerivation.initial_state(seed_bin, epoch_day)` |
+| `binary_key` | `[aes_key_hex].pack("H*")` — **без** мемоізації, свідомо: ivar віддавав би stale байти після `update!` (hot path — `cached_binary_key`); **16 байт AES-128 для Tree, 32 байти AES-256 для Gateway** після ARCH.42 |
+| `binary_lorenz_seed` | **[SEC.11]** `[lorenz_seed_hex].pack("H*")` — без мемоізації, та сама підстава (32 байти `K_seed`); входить у `SilkenNet::SeedDerivation.initial_state(seed_bin, epoch_day)` |
 | `cached_binary_key` | In-process LRU (SinLruRedux::ThreadSafeCache, max 10 000 entries). Ключ: `versioned_cache_key` — включає `updated_at` для самоінвалідації. Ключі не залишають Ruby-процес (немає Redis-serialize) |
 | `versioned_cache_key` | `"#{device_uid}:v:#{updated_at.to_f}"` — при будь-якому `update!` `updated_at` змінюється → новий ключ → стара запис ніколи не збігається (Cache Key Versioning). Усуває race condition між `COMMIT` і `after_commit` |
 | `binary_previous_key` | Попередній AES ключ у байтах (Grace Period) |
+| `coap_binary_key` | KEYC, який Королева тримає ЗАРАЗ: `binary_previous_key \|\| cached_binary_key` — один дім для uplink-декрипту й усіх CoAP-downlink'ів. Новий ключ доїжджає лише re-provision'ом (SEC.3), тож відкритий grace = «ще на попередньому»; uplink його не закриває (CBC без MAC розшифровується будь-яким ключем) |
 | `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується. Deprecated — використовуйте `HardwareKeyService.rotate` |
-| `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації |
+| `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації. Підтвердників рівно два, за типом власника: Tree — перший кадр, чий CCM-MIC пройшов новим ключем (FW.17); Gateway — `FactoryFlashing::Session`, що живо залила поточний KEYC |
 | `owner` | `tree || gateway` |
 
 **Callbacks:** немає cache-інвалідаційних callbacks (`after_commit :clear_key_cache` видалено). Інвалідація відбувається автоматично через `versioned_cache_key`.

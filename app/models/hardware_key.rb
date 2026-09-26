@@ -116,6 +116,18 @@ class HardwareKey < ApplicationRecord
     [ previous_aes_key_hex ].pack("H*")
   end
 
+  # KEYC, який Королева тримає ЗАРАЗ, — один дім для обох напрямків CoAP-тракту.
+  # Новий ключ доїжджає до неї лише фізичним re-provision (SEC.3: CoAP-downlink
+  # ключа не існує), тож відкритий grace означає «ще на попередньому», а закриває
+  # його сесія, що залила поточний (FactoryFlashing::Session). ⛔ Uplink grace НЕ
+  # закриває і «новий, потім старий» не пробує: AES-CBC без MAC розшифровується
+  # БУДЬ-ЯКИМ ключем у сміття без помилки, тож «розшифрувалось» ключа не
+  # підтверджує — так уже було: ACK вигадувався першим же конвертом після ротації,
+  # а батч старим ключем ішов у розпакувальник сміттям.
+  def coap_binary_key
+    binary_previous_key || cached_binary_key
+  end
+
   # [SEC.11] Raw 32 bytes of K_seed for SilkenNet::SeedDerivation.
   # Always present in steady state — `lorenz_seed_hex` is required. Nil
   # only on unsaved records that have not yet been provisioned.

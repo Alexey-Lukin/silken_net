@@ -65,6 +65,7 @@ module FactoryFlashing
         hw_key = ensure_hardware_key
         se_transcript = run_secure_element_if_needed(hw_key)
         @executor.run(build_commands(hw_key))
+        confirm_gateway_key_delivery!(hw_key)
         audit = AuditTrail.new(
           session:      @session,
           device:       @device,
@@ -112,6 +113,16 @@ module FactoryFlashing
         HardwareKeyService.provision(@device, master_key: @master_key)
         HardwareKey.find_by!(device_uid: @session.device_uid)
       end
+    end
+
+    # Залитий поточний KEYC і є доставкою ротованого ключа Королеві (SEC.3 —
+    # іншого каналу нема), тож Dual-Key Grace шлюзу закривається ТУТ, а не
+    # uplink'ом: CBC без MAC ключа не підтверджує (HardwareKey#coap_binary_key).
+    # Dry-run нічого не залив. Дерево не чіпаємо: його grace закриває MIC.
+    def confirm_gateway_key_delivery!(hw_key)
+      return if @executor.dry_run? || !@device.is_a?(Gateway)
+
+      hw_key.clear_grace_period!
     end
 
     def build_commands(hw_key)

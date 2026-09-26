@@ -56,7 +56,7 @@ class KeyRotationDownlinkWorker
     return unless key_record&.binary_key.present?
 
     block = OtaPackagerService.build_rotate_key_block(target_version)
-    encrypted = coap_encrypt(block, key_record.binary_key)
+    encrypted = coap_encrypt(block, key_record.coap_binary_key)
 
     begin
       Timeout.timeout(10) do

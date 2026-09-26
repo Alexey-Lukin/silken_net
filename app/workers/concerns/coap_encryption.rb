@@ -22,7 +22,7 @@ require "openssl"
 #     include CoapEncryption
 #
 #     def perform(...)
-#       encrypted = coap_encrypt(raw_payload, binary_key)
+#       encrypted = coap_encrypt(raw_payload, hardware_key.coap_binary_key) # ключ Королеви — лише звідси
 #       CoapClient.put(url, encrypted)
 #     end
 #   end

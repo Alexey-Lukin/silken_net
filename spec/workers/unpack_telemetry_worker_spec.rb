@@ -171,32 +171,33 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     end
 
 
-    context "when dual-key rotation (grace period)" do
-      it "decrypts with previous key when current key fails" do
-        old_key = key_record.binary_key.dup
-        # Ротуємо ключ — тепер old_key стає previous
-        key_record.rotate_key!
+    # Новий KEYC доїжджає до Королеви лише фізичним re-provision (SEC.3), тож у
+    # grace-вікні вона шле на ПОПЕРЕДНЬОМУ — і саме ним батч мусить розшифруватись.
+    context "when the Queen is inside a Dual-Key Grace window" do
+      let(:old_key) { key_record.binary_key.dup }
 
-        raw_data = "OLD_KEY_DATA"
-        encrypted = encrypt_payload(raw_data, old_key)
-        encoded = Base64.strict_encode64(encrypted)
+      before do
+        old_key
+        key_record.update!(previous_aes_key_hex: key_record.aes_key_hex,
+                           aes_key_hex: SecureRandom.hex(32).upcase)
+      end
+
+      it "decrypts the batch with the key the Queen still holds and hands the unpacker THAT plaintext" do
+        plaintext = "OLD_KEY_BATCH_16" * 2 # кратно блоку — без нульового хвоста
+        encoded = Base64.strict_encode64(encrypt_payload(plaintext, old_key))
 
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
         expect(TelemetryUnpackerService).to have_received(:call)
+          .with(plaintext, gateway.id, gateway_attested: false, received_at: nil)
       end
 
-      it "clears grace period when current key succeeds" do
-        key_record.update!(previous_aes_key_hex: SecureRandom.hex(32).upcase)
-
-        raw_data = "NEW_KEY_DATA"
-        encrypted = encrypt_payload(raw_data, key_record.binary_key)
-        encoded = Base64.strict_encode64(encrypted)
+      it "never closes the grace from an uplink — the re-provision session does" do
+        encoded = Base64.strict_encode64(encrypt_payload("X" * 32, old_key))
 
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
-        key_record.reload
-        expect(key_record.previous_aes_key_hex).to be_nil
+        expect(key_record.reload.previous_aes_key_hex).to be_present
       end
     end
 
@@ -274,61 +275,23 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     end
   end
 
-  describe "decryption with current key" do
-    it "decrypts successfully with current key and clears grace period" do
-      payload_data = "\x00" * 32
-      encrypted = encrypt_payload(payload_data, key_record.binary_key)
-      encoded = Base64.strict_encode64(encrypted)
+  # Підстава, чому uplink не сміє підтверджувати ключ Королеви: AES-256-CBC із
+  # `padding = 0` (форма прошивки) чужим ключем НЕ падає, а віддає сміття тієї ж
+  # довжини. Червоніє першим, якщо канал стане AEAD, — тоді підставу переміряти.
+  describe "why an uplink cannot confirm a key" do
+    it "decrypts a batch under a foreign key into garbage without any error" do
+      plaintext = "A" * 32
+      envelope  = encrypt_payload(plaintext, SecureRandom.bytes(32))
 
-      allow(key_record).to receive(:clear_grace_period!)
-      allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
-      allow(key_record).to receive_messages(binary_key: key_record.binary_key, binary_previous_key: nil)
+      garbage = described_class.new.send(:decrypt_aes, envelope, SecureRandom.bytes(32))
 
-      worker = described_class.new
-
-      allow(worker).to receive(:attempt_decryption).and_call_original
-      allow(worker).to receive(:decrypt_aes).and_return(payload_data)
-
-      worker.perform(encoded, "192.168.1.1", gateway.uid)
-
-      expect(key_record).to have_received(:clear_grace_period!)
-    end
-  end
-
-  describe "decryption with previous key" do
-    it "falls back to previous key when current key fails" do
-      prev_key_hex = SecureRandom.hex(32)
-      key_record.update!(previous_aes_key_hex: prev_key_hex)
-      allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
-
-      worker = described_class.new
-
-      call_count = 0
-      allow(worker).to receive(:decrypt_aes) do |_payload, _key|
-        call_count += 1
-        if call_count == 1
-          nil
-        else
-          "\x00" * 32
-        end
-      end
-
-      payload_data = "\x00" * 64
-      encoded = Base64.strict_encode64(payload_data)
-
-      worker.perform(encoded, "192.168.1.1", gateway.uid)
-
-      expect(TelemetryUnpackerService).to have_received(:call)
+      expect(garbage).to be_a(String)
+      expect(garbage.bytesize).to eq(plaintext.bytesize)
+      expect(garbage).not_to eq(plaintext)
     end
   end
 
   describe "decrypt_aes error handling" do
-    it "returns nil for CipherError" do
-      worker = described_class.new
-      result = worker.send(:decrypt_aes, "\x00" * 32, "\x00" * 32)
-      expect(result).to be_a(String).or be_nil
-    end
-
     it "returns nil when payload is too short" do
       worker = described_class.new
       result = worker.send(:decrypt_aes, "\x00" * 16, "\x00" * 32)
@@ -360,20 +323,6 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       allow(cipher_mock).to receive(:update).and_raise(OpenSSL::Cipher::CipherError, "bad decrypt")
 
       result = worker.send(:decrypt_aes, "\x00" * 64, "\x00" * 32)
-      expect(result).to be_nil
-    end
-  end
-
-  describe "attempt_decryption when both keys fail" do
-    it "returns nil when both current and previous keys fail to decrypt" do
-      prev_key_hex = SecureRandom.hex(32)
-      key_record.update!(previous_aes_key_hex: prev_key_hex)
-
-      worker = described_class.new
-      # Both keys fail
-      allow(worker).to receive(:decrypt_aes).and_return(nil)
-
-      result = worker.send(:attempt_decryption, "\x00" * 64, key_record)
       expect(result).to be_nil
     end
   end

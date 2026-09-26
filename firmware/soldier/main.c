@@ -513,7 +513,9 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 // відновлюється наступним маяком (≤15 хв) — RTC DR і Flash-KV не потрібні
 // (бюджет DR повний, 03_01 §2). Гейт INERT: фліп = bench WUT-армінг
 // (SEC.15/FW.49); математика вікон/слотів — common/tdma_schedule.h.
+#ifndef ARCH26_TDMA_ENABLED
 #define ARCH26_TDMA_ENABLED       0
+#endif
 #if ARCH26_TDMA_ENABLED
 static TdmaSchedule g_tdma_schedule = {0u, 0u, 0u, 0u};
 #endif
@@ -583,7 +585,9 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // Save/Load ✅ написано за цим же гейтом: boot-restore після mount'а,
 // КЕНОЗИС-write по dirty-флагу прийнятого 0x9A. Лишається bench: фліп
 // `FW8_PARSER_ENABLED 1` + верифікація HAL-глю на кремнії.
+#ifndef FW8_PARSER_ENABLED
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
+#endif
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
 #define CMD_THRESHOLDS_BODY_SIZE          8   // 6 + 1 + 1
@@ -671,12 +675,16 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // FW.2 CCM: ECB-downlink без MAC не сміє командувати ротацією (підроблений
 // 0x9E двигає версію вперед → desync → вузол глухне для бекенда; Dual-Key
 // Grace страхує лише авторизовану ротацію). Другий передзамок — Flash-KV
-// mount (нижче): без persist'у версії VBAT-loss повертає вузол на K0, поки
-// бекенд на K_v. Канон: 03_05 §3.8; реєстр KV-ключів — 03_01 §2.3.1.
+// mount (нижче): ключ перемикається лише ПІСЛЯ запису версії
+// (Key_Ratchet_Commit), тож без KV вузол не ротується взагалі — лишається на
+// старому ключі, бекенд тримає grace і перевидає 0x9E на кожному poll'і.
+// Канон: 03_05 §3.8; реєстр KV-ключів — 03_01 §2.3.1.
 #include "../common/key_ratchet.h"
 #include "../common/flash_kv.h"
 
+#ifndef FW17_RATCHET_ENABLED
 #define FW17_RATCHET_ENABLED   0      // 🟡 фліп після FW.2 CCM + KV mount (bench)
+#endif
 #define FW17_KV_KEY_VERSION    0x13u  // Flash-KV: [version:16 | rsv:16] (03_01 §2.3.1)
 
 // [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
@@ -740,7 +748,9 @@ static uint16_t wire_ema_delta_t_s = 0;
 // після bench-верифікації Flash-KV HAL-глю (та сама умова, що FW.17/FW.8):
 // без журналу дедуп тримається тільки на auth-біті (2-hop стеля, NULL-гілка
 // Soldier_Try_Relay_Time_Beacon). Королева вже транслює TTL=2 (03_02 §5а).
+#ifndef FW20_MESH_RELAY_ENABLED
 #define FW20_MESH_RELAY_ENABLED 0
+#endif
 // [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
 // (ops+mount+compact) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
 #define SEC20_OTA_ANTIROLLBACK_ENABLED 1
@@ -802,8 +812,16 @@ static uint8_t soldier_kv_mounted = 0;
 #if FW17_RATCHET_ENABLED
 static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
 
-static uint16_t lora_key_version       = 0; // RAM-копія; істина — Flash-KV 0x13
-static uint8_t  lora_key_version_dirty = 0; // запис у КЕНОЗИСІ, не під RX-вікном
+static uint16_t lora_key_version        = 0; // RAM-копія; істина — Flash-KV 0x13
+static uint16_t lora_key_target_version = 0; // ціль 0x9E, що чекає на коміт
+static uint8_t  lora_key_version_dirty  = 0; // коміт у КЕНОЗИСІ, не під RX-вікном
+
+// Персист для Key_Ratchet_Commit: версія — у Flash-KV 0x13 (03_01 §2.3.1).
+static int Soldier_Persist_Key_Version(void *ctx, uint16_t version)
+{
+    (void)ctx;
+    return FlashKv_Put32(&soldier_kv, FW17_KV_KEY_VERSION, (uint32_t)version);
+}
 
 // Boot-restore: версія з Flash-KV → K_current = ratchet^v(K0). Викликати
 // ПІСЛЯ Load_AES_Key (K0 вже у aes_key) і ПІСЛЯ генерації tree_did (DID =
@@ -2770,29 +2788,19 @@ int main(void)
 
                 // Сценарій 1б: [FW.17] CMD_ROTATE_KEY (0x9E) — Hash-Ratchet
                 // ротація LoRa-ключа. 🟡 Вимкнено до FW.2 CCM (деталі — у
-                // преамбулі FW17_RATCHET_ENABLED). Невалідний кадр / replay /
-                // rollback / runaway-стрибок Advance мовчки відкидає — стан
-                // (ключ + версія) незмінний, як ефірний шум.
+                // преамбулі FW17_RATCHET_ENABLED). Тут лише ЗАПАМ'ЯТОВУЄМО ціль:
+                // ключ перемкне КЕНОЗИС після запису версії (Key_Ratchet_Commit).
+                // Невалідний кадр / replay / rollback / runaway-стрибок мовчки
+                // відкидається — стан (ключ + версія) незмінний, як ефірний шум.
 #if FW17_RATCHET_ENABLED
                 if (decrypted_rx_payload[0] == CMD_ROTATE_KEY_MARKER &&
                     incoming_lora_size >= CMD_ROTATE_KEY_FRAME_SIZE) {
                     uint16_t rotate_target = 0;
                     if (Key_Ratchet_Parse_Cmd((const uint8_t*)decrypted_rx_payload,
-                                              incoming_lora_size, &rotate_target)) {
-                        uint8_t key_bytes[KEY_RATCHET_KEY_LEN];
-                        Key_Ratchet_Words_To_Bytes(aes_key, key_bytes);
-                        if (Key_Ratchet_Advance(key_bytes, &lora_key_version,
-                                                rotate_target, tree_did)) {
-                            Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
-                            // [FW.2 (в)] Ратчет ротує ЛИШЕ session (KEYL):
-                            // MX_CRYP_Init повертає амбієнт = bcast_key, тож
-                            // downlink НЕ глухне від ротації (двоключова
-                            // розв'язка); новий K_v застосує наступний
-                            // MX_CRYP_Init_CCM. KEYB ратчет НЕ торкається —
-                            // його ротація = re-provision (як K_ota).
-                            MX_CRYP_Init();             // re-key контексту
-                            lora_key_version_dirty = 1; // Flash-KV — у КЕНОЗИСІ
-                        }
+                                              incoming_lora_size, &rotate_target) &&
+                        Key_Ratchet_Steps(lora_key_version, rotate_target) != 0u) {
+                        lora_key_target_version = rotate_target;
+                        lora_key_version_dirty  = 1;
                     }
                     // Не ретранслюємо (TTL=1) — слово адресоване цьому Солдату
                     break;
@@ -3134,14 +3142,25 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
 
 #if FW17_RATCHET_ENABLED
-    // [FW.17] Версія ratchet'а — у Flash-KV саме тут, у КЕНОЗИСІ: erase/
-    // program не сміє лягти під LoRa RX-вікно (03_01 §2.3). Power-cut між
-    // re-key (RAM) і цим записом безпечний: boot повернеться на стару
-    // версію, а бекендовий Dual-Key Grace ще тримає старий ключ — наступний
-    // 0x9E (абсолютний target) дожене.
+    // [FW.17] Ротація комітиться саме тут, у КЕНОЗИСІ: erase/program не сміє
+    // лягти під LoRa RX-вікно (03_01 §2.3). Key_Ratchet_Commit пише версію
+    // ПЕРШ ніж перемкнути ключ, тож перший кадр новим ключем означає, що boot
+    // уже відтворить новий, — і бекенд закриває Dual-Key Grace саме на ньому.
+    // Запис не вдався → вузол лишається на старому ключі, який бекенд у grace
+    // ще тримає, і наступний КЕНОЗИС повторить. Power-cut після запису, до
+    // перемикання, безпечний: boot відтворить ratchet^target(K0).
     if (lora_key_version_dirty && soldier_kv_mounted) {
-        if (FlashKv_Put32(&soldier_kv, FW17_KV_KEY_VERSION,
-                          (uint32_t)lora_key_version)) {
+        uint8_t key_bytes[KEY_RATCHET_KEY_LEN];
+        Key_Ratchet_Words_To_Bytes(aes_key, key_bytes);
+        if (Key_Ratchet_Commit(key_bytes, &lora_key_version, lora_key_target_version,
+                               tree_did, Soldier_Persist_Key_Version, NULL)) {
+            Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
+            // [FW.2 (в)] Ратчет ротує ЛИШЕ session (KEYL): MX_CRYP_Init
+            // повертає амбієнт = bcast_key, тож downlink НЕ глухне від ротації
+            // (двоключова розв'язка); новий K_v застосує наступний
+            // MX_CRYP_Init_CCM. KEYB ратчет НЕ торкається — його ротація =
+            // re-provision (як K_ota).
+            MX_CRYP_Init();
             lora_key_version_dirty = 0;
         }
     }

@@ -108,6 +108,53 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
     end
   end
 
+  # [SEC.3] Залитий поточний KEYC — єдина доставка ротованого ключа Королеві,
+  # тож Dual-Key Grace шлюзу закриває сесія, а не uplink (CBC без MAC ключа не
+  # підтверджує — HardwareKey#coap_binary_key).
+  describe "re-provision after a key rotation (Dual-Key Grace)" do
+    def rotated_key_for(device)
+      HardwareKeyService.provision(device, master_key: "master")
+      HardwareKey.find_by!(device_uid: device.respond_to?(:did) ? device.did : device.uid).tap do |k|
+        k.update!(previous_aes_key_hex: k.aes_key_hex,
+                  aes_key_hex: SecureRandom.hex(k.aes_key_hex.length / 2).upcase)
+      end
+    end
+
+    let(:gateway) { create(:gateway) }
+
+    it "flashes the CURRENT KEYC into a Queen and closes her grace" do
+      hw_key  = rotated_key_for(gateway)
+      session = make_session(device_uid: gateway.uid)
+
+      described_class.run(session: session,
+                          executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+                          master_key_source: master_key_source)
+
+      expect(shim_invocations).to include(a_string_matching(/-w32 0x0803E044 0x#{hw_key.aes_key_hex[0, 8]}\z/))
+      expect(hw_key.reload.previous_aes_key_hex).to be_nil
+    end
+
+    it "keeps the Queen's grace open on a dry run — nothing was flashed" do
+      hw_key = rotated_key_for(gateway)
+
+      described_class.run(session: make_session(device_uid: gateway.uid),
+                          executor: FactoryFlashing::Executor.new(io: StringIO.new),
+                          master_key_source: master_key_source)
+
+      expect(hw_key.reload.previous_aes_key_hex).to be_present
+    end
+
+    it "leaves a tree's grace to the MIC" do
+      hw_key = rotated_key_for(tree)
+
+      described_class.run(session: make_session,
+                          executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+                          master_key_source: master_key_source)
+
+      expect(hw_key.reload.previous_aes_key_hex).to be_present
+    end
+  end
+
   # [FW.54] Wrong-board guard: шим завжди віддає g1-UID (0039002F…3634) на
   # -r32 — долю сесії вирішує кремнієвий паспорт дерева.
   describe "UID-verify (live wrong-board guard, FW.54)" do

@@ -23,7 +23,8 @@
  *
  * Persist: у Flash-KV їде ЛИШЕ версія (ключ 0x13, 03_01 §2.3.1) — журнал
  * append-only, і старі записи не сміють розкривати ключі. Boot:
- * K_current = ratchet^version(K0 з Protected Flash).
+ * K_current = ratchet^version(K0 з Protected Flash). Порядок — версія ПЕРШ
+ * за ключ (Key_Ratchet_Commit).
  *
  * Дзеркало бекенда: Cryptography::KeyRatchet (golden-KAT parity —
  * test_key_ratchet.c ↔ spec/lib/cryptography/key_ratchet_spec.rb).
@@ -95,6 +96,27 @@ static inline int Key_Ratchet_Advance(uint8_t key[KEY_RATCHET_KEY_LEN],
     for (uint16_t i = 0; i < steps; i++) Key_Ratchet_Next(key, did);
     *version = target_version;
     return 1;
+}
+
+/* Запис версії у постійне сховище (Солдат: Flash-KV 0x13). 1 = записано. */
+typedef int (*KeyRatchetPersistFn)(void *ctx, uint16_t version);
+
+/* Ротація ПРИСТРОЮ — лише через цей коміт: версія лягає у сховище ПЕРШ ніж
+ * зміниться ключ. Тоді перший кадр новим ключем доводить, що й boot відтворить
+ * новий, і бекенд має право закрити Dual-Key Grace на першому ж MIC-успіху
+ * (TelemetryUnpackerService#decrypt_ccm_with_grace). ⛔ Не повертати порядок
+ * «ключ у RAM, запис потім»: провалений запис лишав вузол на новому ключі до
+ * першого power-cut'а, після якого boot повертав старий, уже забутий бекендом, —
+ * глухий вузол, і лікує його лише SWD-візит. 1 = закомічено; 0 = кадр
+ * відкинуто або запис не вдався, ключ і версія незмінні. */
+static inline int Key_Ratchet_Commit(uint8_t key[KEY_RATCHET_KEY_LEN],
+                                     uint16_t *version, uint16_t target_version,
+                                     uint32_t did, KeyRatchetPersistFn persist,
+                                     void *ctx)
+{
+    if (Key_Ratchet_Steps(*version, target_version) == 0u) return 0;
+    if (!persist(ctx, target_version)) return 0;
+    return Key_Ratchet_Advance(key, version, target_version, did);
 }
 
 /* Boot-модель: K_current = ratchet^version(K0). БЕЗ стелі MAX_JUMP — це не

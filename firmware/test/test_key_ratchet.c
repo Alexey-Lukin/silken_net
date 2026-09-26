@@ -111,6 +111,61 @@ TEST(test_advance_reject_leaves_state_untouched) {
     ASSERT_EQ(memcmp(key, k0, KEY_RATCHET_KEY_LEN), 0);
 }
 
+/* Фейкове сховище для Key_Ratchet_Commit: знімає ключ У МИТЬ запису, щоб
+ * довести порядок «версія ПЕРШ за ключ», і вміє відмовити. */
+typedef struct {
+    const uint8_t *key;                  /* ключ, який коміт зараз тримає */
+    uint8_t  key_at_persist[KEY_RATCHET_KEY_LEN];
+    uint16_t persisted;
+    int      calls;
+    int      ok;
+} FakeStore;
+
+static int fake_persist(void *ctx, uint16_t version)
+{
+    FakeStore *s = (FakeStore *)ctx;
+    s->calls++;
+    memcpy(s->key_at_persist, s->key, KEY_RATCHET_KEY_LEN);
+    if (s->ok) s->persisted = version;
+    return s->ok;
+}
+
+TEST(test_commit_persists_before_the_key_moves) {
+    uint8_t key[KEY_RATCHET_KEY_LEN], k0[KEY_RATCHET_KEY_LEN];
+    uint16_t version = 0;
+    FakeStore store = { .key = key, .ok = 1 };
+    kat_k0(key); kat_k0(k0);
+    ASSERT_TRUE(Key_Ratchet_Commit(key, &version, 3, KAT_DID, fake_persist, &store));
+    ASSERT_EQ(store.calls, 1);
+    ASSERT_EQ(store.persisted, 3);
+    ASSERT_EQ(memcmp(store.key_at_persist, k0, KEY_RATCHET_KEY_LEN), 0); /* ще K0 */
+    ASSERT_EQ(version, 3);
+    ASSERT_KEY_EQ(key, "C7593AA70E31334ABB2BA45DC79B153B"); /* = K3 */
+}
+
+TEST(test_commit_failed_persist_keeps_old_key) {
+    uint8_t key[KEY_RATCHET_KEY_LEN], k0[KEY_RATCHET_KEY_LEN];
+    uint16_t version = 0;
+    FakeStore store = { .key = key, .ok = 0 };
+    kat_k0(key); kat_k0(k0);
+    ASSERT_FALSE(Key_Ratchet_Commit(key, &version, 3, KAT_DID, fake_persist, &store));
+    ASSERT_EQ(store.calls, 1);
+    ASSERT_EQ(version, 0);
+    ASSERT_EQ(memcmp(key, k0, KEY_RATCHET_KEY_LEN), 0);
+}
+
+TEST(test_commit_rejected_frame_never_touches_storage) {
+    uint8_t key[KEY_RATCHET_KEY_LEN];
+    uint16_t version = 5;
+    FakeStore store = { .key = key, .ok = 1 };
+    kat_k0(key);
+    ASSERT_FALSE(Key_Ratchet_Commit(key, &version, 5, KAT_DID, fake_persist, &store));   /* replay */
+    ASSERT_FALSE(Key_Ratchet_Commit(key, &version, 2, KAT_DID, fake_persist, &store));   /* rollback */
+    ASSERT_FALSE(Key_Ratchet_Commit(key, &version, 100, KAT_DID, fake_persist, &store)); /* runaway */
+    ASSERT_EQ(store.calls, 0);
+    ASSERT_EQ(version, 5);
+}
+
 TEST(test_boot_rederive_equals_incremental) {
     /* Boot-модель: K_current = ratchet^v(K0) мусить збігатися з
      * інкрементальним шляхом через довільні Advance-кроки. */
@@ -205,6 +260,9 @@ int main(void)
     RUN(test_steps_forward_only);
     RUN(test_advance_applies_steps_and_version);
     RUN(test_advance_reject_leaves_state_untouched);
+    RUN(test_commit_persists_before_the_key_moves);
+    RUN(test_commit_failed_persist_keeps_old_key);
+    RUN(test_commit_rejected_frame_never_touches_storage);
     RUN(test_boot_rederive_equals_incremental);
     RUN(test_apply_zero_is_identity_and_matches_kat);
     RUN(test_apply_exceeds_max_jump_ceiling);

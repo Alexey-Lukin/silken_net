@@ -1640,6 +1640,47 @@ end
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
     end
 
+    # [FW.17] Стан одразу після rotate_tree_via_ratchet!: поточний = K_{v+1},
+    # попередній = K_v, яким Солдат шле, доки не закомітить 0x9E.
+    context "when the tree is inside a ratchet grace window [FW.17]" do
+      let(:next_key_bin) { SecureRandom.random_bytes(16) }
+
+      before do
+        hardware_key.update!(previous_aes_key_hex: lora_key_hex,
+                             aes_key_hex: next_key_bin.unpack1("H*").upcase)
+      end
+
+      it "accepts a frame under the previous key and keeps the grace open" do
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 100, status: 0, ttl: 3, fc: 300)
+
+        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+        expect(hardware_key.reload.previous_aes_key_hex).to eq(lora_key_hex)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
+      end
+
+      it "closes the grace on the first MIC pass under the new key, after which the old key is dead" do
+        fresh = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 100, status: 0, ttl: 3, fc: 301, key: next_key_bin)
+        stale = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 100, status: 0, ttl: 3, fc: 302)
+
+        expect { described_class.call(fresh) }.to change(TelemetryLog, :count).by(1)
+        expect(hardware_key.reload.previous_aes_key_hex).to be_nil
+        expect { described_class.call(stale) }.not_to change(TelemetryLog, :count)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+      end
+
+      it "rejects a frame under neither key and keeps the grace open" do
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 100, status: 0, ttl: 3, fc: 303, key: SecureRandom.random_bytes(16))
+
+        expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+        expect(hardware_key.reload.previous_aes_key_hex).to eq(lora_key_hex)
+      end
+    end
+
     it "rejects a replayed frame counter for the same DID" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 100)
