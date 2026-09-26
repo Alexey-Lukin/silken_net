@@ -1143,6 +1143,9 @@ int main(void)
   // переживає, але ефір чистіший).
   (void)SIM7070_Transact("ATE0\r\n", AT_INIT_BUDGET_MS);
   (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
+  // [HW.31] «Лише LTE» несе й відповідність антени поз. 11: GSM-стелі підсилення модуля
+  // нижчі за пік рекомендованої антени (queen_antenna_shortlist §2.1), тож 2G тут вимагав
+  // би іншої антени. ⚠️ Провал цієї команди не перевіряється, і flush її не повторює.
   (void)SIM7070_Transact("AT+CNMP=38\r\n", AT_INIT_BUDGET_MS);
 
   // [HW.41] Cat-M ⊥ NB-IoT — ЯВНО, не збережений у модемі стан (⚖️ founder 2026-09-26).
