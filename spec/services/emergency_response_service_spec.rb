@@ -43,10 +43,9 @@ RSpec.describe EmergencyResponseService do
       end
 
       it "creates a single 3600s siren command" do
-        # [ARCH.75] Сирену на РЕАЛЬНОМУ каденсі прошивки (1 год) відмовляють наперед —
-        # ратифікована поведінка, запінена окремим прикладом (її підставу «недоставна
-        # ЗАВЖДИ» переміряно 2026-09-27, `00_07` FW.64). Тут предметом є ФОРМА протоколу,
-        # тож каденс стабимо.
+        # [FW.64] На РЕАЛЬНОМУ каденсі прошивки (1 год) сирену пишуть best-effort і одразу
+        # попереджають людину (⚖️ founder 2026-09-27) — запінено окремим прикладом. Тут
+        # предметом є ФОРМА протоколу, тож каденс стабимо, щоб попередження не шуміло.
         stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
         siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
 
@@ -287,10 +286,9 @@ RSpec.describe EmergencyResponseService do
     let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
     it "creates valve AND siren commands for fire alert" do
-      # [ARCH.75] Сирену на РЕАЛЬНОМУ каденсі прошивки (1 год) відмовляють наперед —
-      # ратифікована поведінка, запінена окремим прикладом (її підставу «недоставна
-      # ЗАВЖДИ» переміряно 2026-09-27, `00_07` FW.64). Тут предметом є ФОРМА протоколу,
-      # тож каденс стабимо.
+      # [FW.64] На РЕАЛЬНОМУ каденсі прошивки (1 год) сирену пишуть best-effort і одразу
+      # попереджають людину (⚖️ founder 2026-09-27) — запінено окремим прикладом. Тут
+      # предметом є ФОРМА протоколу, тож каденс стабимо, щоб попередження не шуміло.
       stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
       siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
@@ -354,8 +352,8 @@ RSpec.describe EmergencyResponseService do
     end
 
     it "gives the siren a SHORTER window than the valve in the same fire protocol" do
-      # Каденс стабимо: на РЕАЛЬНОМУ (годинному) сирену відмовляють наперед —
-      # це ратифікована поведінка, запінена окремо нижче. Тут перевіряємо, що
+      # Каденс стабимо: на РЕАЛЬНОМУ (годинному) сирену пишуть best-effort із
+      # попередженням — запінено окремо нижче. Тут перевіряємо, що
       # вікна РІЗНІ, а не що сирена доїжджає.
       stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
@@ -409,21 +407,21 @@ RSpec.describe EmergencyResponseService do
       end
     end
 
-    # 🔴 Ратифікована поведінка (⚖️ 2026-08-15), а не побічний ефект: каденс флашу
-    # Королеви — компайл-тайм константа прошивки (1 год), і присуд стоїть на підставі
-    # «15-хвилинна сирена недоставна ЗАВЖДИ». Підставу переміряно 2026-09-27 — не
-    # гарантовано, а не неможливо (перший poll буває й до 900 с), — і присуд чекає
-    # перегляду з нею (⚖️ `00_07` FW.64); доти пін тримає ратифіковану поведінку.
-    # Каденс тут СВІДОМО не стабиться — предметом піна є саме дефолт.
+    # 🔴 Ратифікована поведінка (⚖️ founder 2026-09-27, FW.64), а не побічний ефект: каденс
+    # флашу Королеви — компайл-тайм константа прошивки (1 год), тож доставку 15-хвилинної
+    # сирени не гарантовано, але вона можлива (перший poll буває й до 900 с). Наказ пишеться
+    # best-effort, а людина дістає попередження ОДРАЗУ; доти (⚖️ 2026-08-15) сирену
+    # відмовляли наперед. Каденс тут СВІДОМО не стабиться — предметом піна є саме дефолт.
     context "when the response stays relevant for less than the fleet's real poll cadence" do
-      it "issues NO siren command at all, and names the cadence rather than the ceiling" do
+      it "writes the siren best-effort AND warns at once, naming the cadence rather than the ceiling" do
         create(:actuator, :fire_siren, gateway: gateway, state: :idle)
         fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
 
-        expect { described_class.call(fire) }.not_to change(ActuatorCommand, :count)
+        expect { described_class.call(fire) }
+          .to change(ActuatorCommand.where(command_payload: "ACTIVATE_SIREN"), :count).by(1)
 
         # 🔴 Адресація за КЛЮЧЕМ, не `.last`: у цьому кластері немає клапана, тож
-        # пожежний протокол законно лишає ДВА сліди — відмовлену сирену й невстановлений
+        # пожежний протокол законно лишає ДВА сліди — попередження про сирену й невстановлений
         # полив. Доти приклад брав останній рядок і був би зелений на чужому факті.
         raised = EwsAlert.alert_type_emergency_response_undeliverable
                          .find_by(message_key: "emergency_response_too_slow")

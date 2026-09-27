@@ -33,10 +33,9 @@ RSpec.describe "Emergency response and actuator command flow" do
     end
 
     it "dispatches water valve and fire siren for fire alert" do
-      # [ARCH.75] Сирену на РЕАЛЬНОМУ каденсі прошивки (1 год) відмовляють наперед —
-      # ратифікована поведінка, запінена окремим прикладом (її підставу «недоставна
-      # ЗАВЖДИ» переміряно 2026-09-27, `00_07` FW.64). Тут предметом є ФОРМА протоколу,
-      # тож каденс стабимо.
+      # [FW.64] На РЕАЛЬНОМУ каденсі прошивки (1 год) сирену пишуть best-effort і одразу
+      # попереджають людину (⚖️ founder 2026-09-27) — запінено окремим прикладом. Тут
+      # предметом є ФОРМА протоколу, тож каденс стабимо, щоб попередження не шуміло.
       stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       fire_siren = create(:actuator, :fire_siren, gateway: gateway)
       alert = create(:ews_alert, :fire, cluster: cluster, tree: tree)
