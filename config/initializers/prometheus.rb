@@ -788,10 +788,12 @@ module SilkenNet
     # [FW.22 / S2.3]: Acoustic events overflow counter.
     # Firmware saturates acoustic_events at uint8 max (255).
     # Value 255 indicates real count may be higher — sensor data loss.
+    # [FW.65] Except on a PANIC frame: there 0xFF is the panic code
+    # (Trigger_Emergency_LoRa_TX), not a count — both unpacker paths guard `!panic`.
     # Enables Grafana alerting on acoustic overflow events.
     TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_acoustic_overflow_total,
-      docstring: "Total telemetry packets with acoustic_events=255 (uint8 saturation)"
+      docstring: "Total non-panic telemetry packets with acoustic_events=255 (uint8 saturation; on a panic frame 0xFF is the panic code)"
     )
 
     # [S2.2]: Web3 RPC circuit breaker state gauge.

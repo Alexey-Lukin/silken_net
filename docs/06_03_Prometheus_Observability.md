@@ -298,7 +298,7 @@ end
 
 | Metric Name | Тип | Файл | Labels | Бізнес-значення |
 |-------------|-----|------|--------|-----------------|
-| `silkennet_telemetry_acoustic_overflow_total` | Counter | `TelemetryUnpackerService` | — | Лічильник пакетів з `acoustic_events=255` (uint8 saturation). Для Grafana alerting: `rate() > 0` = firmware data loss |
+| `silkennet_telemetry_acoustic_overflow_total` | Counter | `TelemetryUnpackerService` | — | Лічильник НЕ-панічних пакетів з `acoustic_events=255` (uint8 saturation). На panic-кадрі `0xFF` — код паніки, не лічба, тож обидва шляхи розпакувальника (ECB і CCM) його не рахують (FW.65, 2026-09-27; доти кожна паніка роздувала лічильник і писала хибне «Acoustic Overflow»). Для Grafana alerting: `rate() > 0` = firmware data loss |
 | `silkennet_rpc_circuit_breaker_open` | Gauge | `Web3::ResilientClient` | `provider` | Стан circuit breaker: 1.0 = open (провайдер виключений), 0.0 = closed (здоровий). Для дашборду S2.2 |
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown). ⚠️ Лічить збої ПРОВАЙДЕРА, не відмови нашим запитам: відповідь вузла про наш запит (`Web3::NodeAnswer.answered?` — реверт, «nonce too low», «insufficient funds») з 2026-09-23 сюди не доходить [ARCH.62], тож `io_error` тут означає JSON-RPC-помилку поза allowlist-ом; справжнього обриву на EVM-шляху ряд сьогодні не бачить (транспорт eth 0.5.17 долітає як `NoMethodError`, [`00_07`](00_07_Action_Plan_Tracker) INF.22). Другий писач того самого ряду — `ApplicationWeb3Worker#with_web3_error_handling` (`error_type: "connection"`), і він на відповіді вузла теж мовчить.
@@ -384,7 +384,7 @@ end
 | `silkennet_slashing_events_total` | алертна | `reason` | Total slashing (burn) events by reason |
 | `silkennet_solana_payout_attempts_total` | алертна | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
 | `silkennet_solana_payout_success_total` | алертна | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
-| `silkennet_telemetry_acoustic_overflow_total` | алертна | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
+| `silkennet_telemetry_acoustic_overflow_total` | алертна | — | Total non-panic telemetry packets with acoustic_events=255 (uint8 saturation; on a panic frame 0xFF is the panic code) |
 | `silkennet_telemetry_archive_batch_failures_total` | алертна | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | діагностична | — | FW.2 CCM packets successfully decrypted with valid MIC |
 | `silkennet_telemetry_ccm_fc_replay_rejected_total` | алертна | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
