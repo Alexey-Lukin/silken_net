@@ -1242,10 +1242,11 @@
 - [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
 
 #### SEC.2 — RDP Level 2 activation timeline
-- **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **P1** · 🤖+👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** RDP-L2 процедура канонізована (pre-flight + CubeProgrammer CLI + R&D→Pilot→Mass rollout) + скриптовано `01_option_bytes.sh --rdp 2` (bench RUNBOOK). Незворотний SWD-lock, а OTA латає **лише mruby-байткод, не C** → C-прошивка замерзає назавжди → OTA мусить бути верифікований у полі ДО активації. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock (дім = SEC.20, стенд-сеанс ota-day)
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
+- [ ] 🤖 **кодування RDP у CLI не звірене (знайдено 2026-09-27 адверсарним ревʼю, побічно):** канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security) пише `-ob RDP=0xBB` / `0xCC`, а `CommandBuilder#rdp_command` і `01_option_bytes.sh --rdp` — `RDP=1` / `RDP=2`. За RM0461 будь-яке значення, крім `0xAA` і `0xCC`, — це Level 1, тож якщо CLI пише байт як є, `RDP=2` лишить L1 під виглядом L2, а `RDP=0` замкне L1 замість L0. Звірити з UM2237 (ST віддає SPA — `curl` отримав лише JS-редирект, читати браузером) і лише тоді правити один із двох боків; фолбек — жертовний чип, `-ob displ` після `RDP=1`. ⛔ До звірки — жодного live-запуску з рівнем ≠ 1
 
 #### SEC.15 — IWDG freeze у STOP2 (option byte `IWDG_STOP=0`)
 - **P1** · 🤖+👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)

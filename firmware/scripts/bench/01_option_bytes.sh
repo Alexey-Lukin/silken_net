@@ -7,6 +7,10 @@
 #                сну → втрата SRAM/mruby/ota_buffer щоциклу)
 #   IWDG_STDBY=0 (узгоджено зі STOP2-політикою)
 #   RDP         (SEC.2: R&D = 1; Level 2 — НЕЗВОРОТНІЙ, лише свідомо --rdp 2)
+#   ⚠️ Кодування НЕ звірене: канон 03_05 §3.6 пише сирий байт (RDP=0xBB / 0xCC),
+#      а цей скрипт передає номер рівня. RM0461: усе, крім 0xAA/0xCC, = Level 1 —
+#      тож якщо CLI пише байт як є, «--rdp 2» лишить L1. До звірки з UM2237 —
+#      лише --rdp 1 (00_07 SEC.2).
 #
 #   firmware/scripts/bench/01_option_bytes.sh [--rdp 1] [--execute]
 set -euo pipefail
