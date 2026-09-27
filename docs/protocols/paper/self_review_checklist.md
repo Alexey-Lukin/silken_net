@@ -64,7 +64,7 @@
 | IP-постава / publish-to-protect / AI-disclosure | `00_01 §8` + `protocols/anchor/defensive_disclosure.md` |
 | Реальні числа/claims (Стаття 1 ①②③④) — One-Home | `protocols/ebfc/in_silico/SUMMARY.md` + `PIPELINE_STATUS.md` |
 | Staffing / AI-clones / хто що пише | `00_03 §3.6` |
-| Інституції / співавтори (Мінаєв, Гусак) | `00_02` |
+| Інституції / співавтори (напр. Гусак) | `00_02` |
 | Paper-трекер (UNI.3, HW.3.IS, CHEM.*, E.59) | `00_07` |
 
 ## Чим це НЕ є

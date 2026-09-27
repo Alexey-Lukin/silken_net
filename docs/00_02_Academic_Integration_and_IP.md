@@ -25,7 +25,7 @@
 | [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS/RWA-право (Аблязов); фінансові константи |
 | [`00_04` — Unit Economics and BOM](00_04_Nature_as_a_Service_Contracts) | Юніт-економіка |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (governance/treasury — утримуємо) |
-| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — Мінаєв (spin-кінетика O₂); DFT-редокс self-owned; in vitro — профільний біохімік/електрохімік TBD |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — DFT-редокс self-owned; in vitro — профільний біохімік/електрохімік TBD |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — Гусак (коефіцієнт дифузії крізь оксид) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ПМКТ (датасет) + наш NDVI-адаптер (Sentinel-2) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; ground-truth-протокол → [`05_05 §8`](05_05_Slashing_and_Risk_Policy) |
@@ -81,8 +81,7 @@
 
 | Партнер | Кафедра / профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| проф. **Мінаєв Б. П.** (Борис Пилипович; до 2026-09-17 канон писав «Б.Ф.» — desk-звірка з офіційними сторінками) (+ проф. Мінаєва В.О.) | квантова хімія: spin-orbit, фотофізика, активація O₂ | **Spin-forbidden кінетика активації O₂** на біоелектродах (triplet→singlet: FAD-оксидазний анод + laccase ORR-катод) — світовий фах школи (SOC), механізм поза власним L3 → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 28 (у Ст. 1 зовнішнього колаборанта немає — ⚖️ 2026-09-23, §2.1) |
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані — разовий запит, [`00_07`](00_07_Action_Plan_Tracker) HW.26) + **коефіцієнт дифузії V/Al крізь пасивний оксид**: у Kirkendall-моделі (наш script 51) він стоїть порядком величини без названого джерела, а відповідь лінійна в ньому — дифузія й ефект Кіркендалла є фахом школи → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); ⛔ FEA-E гомогенізацію гіроїда партнерові НЕ пропонувати — її закрито власним voxel-FE 2026-09-12 (виміряне `E_app` по обох осях і канонна пара `C`/`n`, ⚖️ 2026-09-18 — [`01_01 §5.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)); те, чого бракує, — фізичний ISO 13314 на друкованому зразку, а не ще одна модель | Ст. 2/29 |
+| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані — разовий запит, [`00_07`](00_07_Action_Plan_Tracker) HW.26) + **коефіцієнт дифузії V/Al крізь пасивний оксид**: у Kirkendall-моделі (наш script 51) він стоїть порядком величини без названого джерела, а відповідь лінійна в ньому — дифузія й ефект Кіркендалла є фахом школи → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); ⛔ FEA-E гомогенізацію гіроїда партнерові НЕ пропонувати — її закрито власним voxel-FE 2026-09-12 (виміряне `E_app` по обох осях і канонна пара `C`/`n`, ⚖️ 2026-09-18 — [`01_01 §5.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)); те, чого бракує, — фізичний ISO 13314 на друкованому зразку, а не ще одна модель | Ст. 2 |
 | доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`00_04`](00_04_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29 |
 | доц. **Ярмілко А.В.** (ФОТІУС) | IIoT / embedded | **Провідник у ЧНУ** (зустрічі 2026, вхід у ректорат) + лід на локальний друк Ti: чи мають черкаські контакти SLM/DMLS ([`00_07`](00_07_Action_Plan_Tracker) HW.24, не committed) | — |
 
@@ -126,8 +125,8 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Партнер | Роль | Що валідує → канон-дім |
 |---|---|---|
-| **Аблязов Д.Е.** (віцепрезидент СЄУ) | комерційне право / legal-risk | к.ю.н.; господарське/комерційне право, протидія корпоративному рейдерству (2021), інвестиції → MSA/MoU/co-founder IP-carve-out ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)) → [`00_04`](00_04_Nature_as_a_Service_Contracts) — консультація (§4.2), не публікаційний співавтор |
-| **Гедз М.Й.** (проректор з якості) | фінанси / облік криптоактивів | Д.е.н., проф. (ex-ЧДТУ); регіональна економіка, фінансовий облік криптоактивів в Україні (2025), якість/акредитація (ISO 9001) |
+| **Аблязов Д.Е.** (віцепрезидент СЄУ) | комерційне право / legal-risk | к.ю.н. (дисертація 2008 — конституційне право; публікаційний профіль — державна влада, права людини); господарське/комерційне право, протидія корпоративному рейдерству (2021), інвестиції — з web-DD 2026-07-21, публікаціями не підтверджено (⚖️ [`00_07`](00_07_Action_Plan_Tracker) UNI.14) → MSA/MoU/co-founder IP-carve-out ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)) → [`00_04`](00_04_Nature_as_a_Service_Contracts) — консультація (§4.2), не публікаційний співавтор |
+| **Гедз М.Й.** (проректор з якості) | фінанси / облік криптоактивів | Д.е.н., проф. (ex-ЧДТУ); регіональна економіка, фінансовий облік криптоактивів в Україні (2025; публікацію звірено 2026-09-27), якість/акредитація (ISO 9001) → облікова класифікація SCC, момент визнання й сертифікат-флоу SPV ([`00_07`](00_07_Action_Plan_Tracker) UNI.14 · BIZ.15) → [`00_04`](00_04_Nature_as_a_Service_Contracts) |
 
 > **Суміжна роль — титулований юрист для Legal Wrapper SCC (особа TBD, не контактовано).** Потрібна **не для консультації** (її дає Аблязов), а для **підпису, що має вагу перед державним органом**: перекласифікація анкера з «втручання» у «науково-вимірювальний прилад» у зверненні до прокуратури — питання, де важить титул, а не лише фах. Канали пошуку: ННІ економіки і права ЧНУ (доступ через Спрягайла, §1.1) + рекомендація Аблязова. Роль канонізована тут 2026-07-26 — доти вона існувала **лише** в трекері, тобто item не мав канон-дому. Дім-стан → [`00_07`](00_07_Action_Plan_Tracker) (STK.3).
 
@@ -149,11 +148,11 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 **Тип:** суто обчислювальна (quantum-chemistry) — ставка на **механістичну + методологічну** новизну, не «валідацію» (фізичний Ti-coin CV/EIS попереду, Stage 2). Сирий обчислювальний вердикт каскаду FADH₂→Os — uphill у кожному методі; downhill (+574 мВ) — це **верифіковані E°** (Os +309 − FAD −265 мВ SHE, Zafar 2012 + Schachinger 2023). Обчислення експонує **межу методу**, а не «валідує» — саме це й новизна.
 
-**Журнали-цілі:** *J. Phys. Chem. B* (ACS, **primary** — enzyme catalysis + computational scope) · *Phys. Chem. Chem. Phys.* (RSC, **fallback** — дім школи Мінаєва, OA-waiver для ЧНУ) · *Bioelectrochemistry* (Elsevier, applied-backup). НЕ *J. Power Sources* / *Electrochimica Acta* (comp-only поза їх scope без експерименту).
+**Журнали-цілі:** *J. Phys. Chem. B* (ACS, **primary** — enzyme catalysis + computational scope) · *Phys. Chem. Chem. Phys.* (RSC, **fallback**) · *Bioelectrochemistry* (Elsevier, applied-backup). НЕ *J. Power Sources* / *Electrochimica Acta* (comp-only поза їх scope без експерименту).
 
 **Авторський колектив:**
 - Архітектор (Silken Net) — in-silico baseline (PySCF DFT/ΔSCF, AF3, tunneling), дизайн каскаду, draft. **Пишеться зараз** на готових результатах.
-- **Мінаєв-роль:** explicit-water QM/MM редоксу — не фах школи Мінаєва (їхній = spin-orbit / активація O₂). PCM-межу закриває власний follow-up або профільна computational-electrochemistry колаборація (TBD); школа Мінаєва — потенційний co-author за **окремим** кутом (spin-forbidden кінетика активації O₂, майбутня EBFC-стаття). Ст.1 — own in-silico (без gated-партнера).
+- **PCM-межу** (explicit-water QM/MM редоксу) закриває власний follow-up або профільна computational-electrochemistry колаборація (TBD). Ст.1 — own in-silico (без gated-партнера).
 - ⚖️ **Зовнішнього колаборанта в авторах Ст.1 НЕМАЄ** (founder 2026-09-23, ратифіковано по рекомендації — [`00_07`](00_07_Action_Plan_Tracker) HW.5.IS): explicit-water QM/MM лишається НАЗВАНОЮ межею методу, а не секцією, дописаною перед сабмітом; її закриття — follow-up (рядок вище). **Підстава:** cover letter і декларації описували внесок, якого не існує. **Ціна:** рецензент може попросити QM/MM, і відповідь буде «future work». Склад авторів понад це й corresponding author — окреме рішення founder-а.
 
 **Foreground (сильні, чисті результати):**
@@ -163,7 +162,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 - **Геометрія + through-bond tunneling** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
 - **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).
 
-**Методологічний внесок (це новизна, не діра):** implicit-solvation (PCM) межа декомпозована ② (script 34) у chloro-anchored bracket (реальний медіатор = chloro `[Os(dmbpy)₂(PVI)Cl]`, Zafar): differential PCM solvation [chloro +1/+2 +0.21 eV ↔ bis-Im +2/+3 +0.55 eV] + 4,4'-dimethyl ① +0.142 eV (Koopmans); [Os(H₂O)₆] benchmark +0.98 eV; chloro↔+2/+3 bracket functional-robust (ωB97X cross-check 34b/B4). Анодний λ — first-principles (29b: FADH⁻/FADH• → λ_i 0.39 eV); PCET-каскад (script 33) не flip downhill → теж PCM-межа. explicit-water QM/MM закриває залишок — ⛔ **виконавець тут НЕ Мінаєв** (§2.1 нижче: це не фах школи, їхній кут — spin-orbit / активація O₂): або власний follow-up, або профільна computational-electrochemistry колаборація (TBD). Визнаний жанр (пор. JCTC implicit-solvent redox-benchmarks). Повний аудит методу — [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md).
+**Методологічний внесок (це новизна, не діра):** implicit-solvation (PCM) межа декомпозована ② (script 34) у chloro-anchored bracket (реальний медіатор = chloro `[Os(dmbpy)₂(PVI)Cl]`, Zafar): differential PCM solvation [chloro +1/+2 +0.21 eV ↔ bis-Im +2/+3 +0.55 eV] + 4,4'-dimethyl ① +0.142 eV (Koopmans); [Os(H₂O)₆] benchmark +0.98 eV; chloro↔+2/+3 bracket functional-robust (ωB97X cross-check 34b/B4). Анодний λ — first-principles (29b: FADH⁻/FADH• → λ_i 0.39 eV); PCET-каскад (script 33) не flip downhill → теж PCM-межа. explicit-water QM/MM закриває залишок — або власний follow-up, або профільна computational-electrochemistry колаборація (TBD). Визнаний жанр (пор. JCTC implicit-solvent redox-benchmarks). Повний аудит методу — [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md).
 
 **Scope:** L1 (відстань/шлях) + L3 (анод) + L3b (катод DET) + сольватаційна методологія. L2 (MD-стабільність) + L4 (delta_t/EIS) → окремі майбутні EBFC-статті + predictions для Ti-coin.
 
@@ -273,10 +272,9 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | Автор | Внесок |
 |-------|--------|
 | Профільний біохімік/електрохімік (TBD) | In vitro валідація (лакказа/Nafion, 30-day) — виконавець coin Stage 2 ([`00_07`](00_07_Action_Plan_Tracker) HW.24) |
-| **Мінаєв Б.П.** (ЧНУ) | Spin-forbidden кінетика активації O₂ на laccase ORR-катоді (SOC — світовий фах школи), механізм поза власним L3 |
 | Архітектор (Silken Net) | EBFC архітектура ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)), interfacial oxide-DET DFT (script-53), BQ25570 Cold Start, firmware delta_t |
 
-**Тип зв'язку:** Комплементарний — ЧНУ (Мінаєв) spin-кінетика O₂, in vitro — виконавець coin Stage 2, Silken Net — системні вимоги й DFT (self-owned).
+**Тип зв'язку:** Послідовний — in vitro веде виконавець coin Stage 2 (профільний біохімік/електрохімік, TBD); Silken Net — системні вимоги й DFT (self-owned).
 
 > **In-silico baseline:** Zero-Lab L1–L3 PASSED (2026-05-25); L4 — recharge-model стоїть, але вердикт «60 с фізично обґрунтовано» знято 2026-09-27, щойно L4 отримала справжню ціну циклу вузла ([`00_07`](00_07_Action_Plan_Tracker) E.63). Headline: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade **verified +574 мВ / −0.574 eV downhill** (E°s; raw DFT uphill = method limit, декомпозовано ②); L3b cathode DET **borderline** at realistic λ; L4 recharge-model (delta_t → GP, E.63 calibration-pending). Повні числа — [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
@@ -288,11 +286,10 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | Автор | Внесок |
 |-------|--------|
 | Профільний фітотоксиколог / екотоксиколог (TBD, не контактовано) | Біологічний вплив V/Al на *Pinus sylvestris*, хронічна біоакумуляція; фітотоксичність 8-HQ-покриття — умовно, з програмою 8-HQ (HW.4) |
-| **Гусак А.М.** (ЧНУ) | коефіцієнт дифузії V/Al крізь пасивний оксид для 20-річної екстраполяції (у Kirkendall-моделі, нашому script 51, він досі без джерела, а відповідь лінійна в ньому); ICP-MS міряє зовнішня лабораторія — у Черкасах приладу немає («Режим контрактації», §1) |
 | **Спрягайло О.В.** (ЧНУ) | Склад ксилемного соку *Pinus sylvestris*, фітоценологічний контекст Черкаського бору |
 | Архітектор (Silken Net) | Ti-6Al-4V специфікація ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)), self-healing концепт, 20-річна цільова довговічність |
 
-**Тип зв'язку:** Послідовний — зовнішня лабораторія вимірює концентрації (ICP-MS; у Черкасах приладу немає) → наша модель (script 51) з коефіцієнтом дифузії від школи Гусака екстраполює на 20 років → біологічний вплив оцінює профільний фітотоксиколог (TBD); приймальні пороги release — наші ([`01_03 §3.5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)).
+**Тип зв'язку:** Послідовний — release-дані (ICP-MS зовнішньої лабораторії; у Черкасах приладу немає) і 20-річну екстраполяцію (script 51 з коефіцієнтом дифузії школи Гусака) стаття ЦИТУЄ зі Статті 2, а не повторює: без біологічної половини вона була б Статтею 2 вдруге. Власний предмет — біологічний вплив, який оцінює профільний фітотоксиколог (TBD); приймальні пороги release — наші ([`01_03 §3.5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)).
 
 > ⚠️ **V-free напрям:** founder обрав **напрям V-free, а не сплав** ([`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)): конкретний сплав обирає 6-сплавний coin bake-off, і Ti-6Al-7Nb у ньому — кандидат, не вибір → наратив зсувається з «чи безпечний V-release» на **design-rationale V-free + comparative release 4V ↔ V-free кандидати** (дані дає Stage-2 coin ICP-MS, HW.24/HW.3). Назву/scope не переписуємо до coin-валідації (baseline ще 4V — no-premature-canon).
 

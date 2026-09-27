@@ -24,7 +24,7 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC біопаливний елемент |
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
-| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Ti-coin протокол + синтетичний ксилемний сік (Гусак · біо-хаб ЧНУ, §2) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
 
 ## 📑 Зміст
