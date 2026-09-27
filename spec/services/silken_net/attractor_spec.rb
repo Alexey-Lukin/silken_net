@@ -231,10 +231,12 @@ RSpec.describe SilkenNet::Attractor do
     # якщо відкрита ⚖️-розвилка ARCH.8 її підніме.
     # 🔴 Але САТУРОВАНИЙ режим (`m = 0`, тобто `delta_t > DELTA_T_SLOW_S`) цей
     # фазз не пінує НІКОЛИ — і підняття константи цього не змінить: верхня межа
-    # кидка ДОРІВНЮЄ самому порогу (`rand(0..DELTA_T_SLOW_S)`).
-    # ⊕ Що пінується: ЗНАЧЕННЯ підлоги. На сіді 20_260_502 чотири з 200 кейсів
-    # дають delta_t >= 7074, де `round(5 + m*26)` сідає на `GP_HOMEO_MIN = 5`,
-    # і йдуть у повну байт-звірку. Непокритим лишається клемп `m < 0`.
+    # кидка ДОРІВНЮЄ самому порогу (`rand(0..DELTA_T_SLOW_S)`). Тому саторований режим
+    # пінує ОКРЕМИЙ детермінований приклад нижче (межа · крок за нею · CCM-точка
+    # 7884 · 2× поріг), а не розширений кидок: випадковий діапазон «десь там» дав би
+    # ту саму сліпоту до кейса, що не випав.
+    # ⊕ Що пінує сам фазз: ЗНАЧЕННЯ підлоги до порогу. На сіді 20_260_502 чотири з 200
+    # кейсів дають delta_t >= 7074, де `round(5 + m*26)` сідає на `GP_HOMEO_MIN = 5`.
     # ⚠️ max delta_t = 7161; 7200 при цьому ДОСЯЖНЕ (границя включна, ~2.8 %),
     # просто не випало, а CCM-точка 7884 недосяжна ЗА ПОБУДОВОЮ — не плутати
     # «не випало» з «неможливе».
@@ -246,7 +248,31 @@ RSpec.describe SilkenNet::Attractor do
           rng.rand(-40.0..60.0), rng.rand(0..255), rng.rand(0..described_class::DELTA_T_SLOW_S) ]
       end
 
+      expect_contract_parity(cases, run_firmware_contract(cases), fw_family)
+    end
+
+    # 🔴 [ARCH.8] Саторований режим (`m = 0`, `delta_t > DELTA_T_SLOW_S`) — стеля фазза
+    # вище: кидок його не дістає ЗА ПОБУДОВОЮ, а саме там стоїть CCM-точка грошової
+    # моделі (7884 с). Кейси детерміновані — межа, крок за нею, CCM-точка, глибока
+    # сатурація — і судяться тією самою повною байт-звіркою з реальним контрактом;
+    # ⊕ гомеостаз мусить сісти рівно на підлогу `GP_HOMEO_MIN`: пін судить ПІДЛОГУ
+    # значенням, а не лише збіг двох сторін. Окремий нижній клемп `m` він не чує — це
+    # еквівалентний мутант (підлогу однаково ставить `gp.clamp`), виміряно 2026-09-27.
+    it "matches the real contract byte-for-byte in the saturated regime and lands on the GP floor" do
+      fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
+      slow = described_class::DELTA_T_SLOW_S
+      states = [ [ 0.1, -0.2, 0.3, 18.0, 3 ], [ -0.5, 0.4, -0.1, -5.0, 0 ], [ 0.9, 0.9, -0.9, 35.0, 200 ] ]
+      cases = [ slow, slow + 1, 7884, 2 * slow ].product(states).map { |dt, (x, y, z, temp, ac)| [ x, y, z, temp, ac, dt ] }
+
       fw = run_firmware_contract(cases)
+      expect_contract_parity(cases, fw, fw_family)
+
+      homeostasis_gp = fw.filter_map { |payload, _| payload & 0x1F if (payload >> 5).nobits?(0x03) }
+      expect(homeostasis_gp).not_to be_empty
+      expect(homeostasis_gp).to all(eq(described_class::GP_HOMEO_MIN))
+    end
+
+    def expect_contract_parity(cases, fw, fw_family)
       z_div = []
       status_div = []
       byte_div = []
