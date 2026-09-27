@@ -63,7 +63,7 @@ module FactoryFlashing
         @executor.run(CommandBuilder.preflight_commands)
         verify_silicon_uid!
         hw_key = ensure_hardware_key
-        se_transcript = run_secure_element_if_needed(hw_key)
+        se_transcript = run_secure_element_if_needed
         @executor.run(build_commands(hw_key))
         confirm_gateway_key_delivery!(hw_key)
         audit = AuditTrail.new(
@@ -163,9 +163,9 @@ module FactoryFlashing
             "чужа плата, жоден -w32 не виконано"
     end
 
-    # [FW.23] Per-cluster K_ota для OTA dual-gate — Гілка A пише його у
-    # Protected Flash 0x0803E800 (до 2026-06-11 емітувала лише superseded
-    # ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
+    # [FW.23] Per-cluster K_ota для OTA dual-gate — обидві гілки пишуть його у
+    # Protected Flash 0x0803E800, бо HMAC рахує MCU (до 2026-06-11 емітувала лише
+    # superseded ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
     def tree_ota_hmac
       return nil unless @device.is_a?(Tree)
       OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
@@ -185,26 +185,22 @@ module FactoryFlashing
     # у БД персиститься ЛИШЕ pubkey (AuditTrail сирих байтів не пише — 03_06 §5),
     # сама сім'я живе тільки у транскрипті процесу → Protected Flash.
     # Re-flash → нова сім'я → pubkey ротується разом із нею (коректно).
-    # Гілка B (SE050) — on-chip keygen, інший механізм (SE050-MIGRATION).
+    # SE у Королеви немає за жодної гілки (SecureElementProvisioner — лише Tree),
+    # тож Гілка B для неї = Гілка A повністю: без цього Gilka-B Королева мовчки
+    # лишалась на L0 (⚖️ делеговано 2026-09-27, 00_07 SE050-MIGRATION).
     def gateway_voice_seed(hw_key)
       return nil unless @device.is_a?(Gateway)
-      return nil unless @session.gilka == "A"
 
       seed_hex = SecureRandom.hex(32)
       hw_key.update!(ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
       seed_hex
     end
 
-    def run_secure_element_if_needed(hw_key)
+    def run_secure_element_if_needed
       return nil unless @session.gilka == "B"
       return nil unless @device.is_a?(Tree)
 
-      ota_hmac_hex = OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
-      SecureElementProvisioner.new(
-        session:      @session,
-        aes_key_hex:  hw_key.aes_key_hex,
-        ota_hmac_hex: ota_hmac_hex
-      ).provision
+      SecureElementProvisioner.new(session: @session, ota_hmac_hex: tree_ota_hmac).provision
     end
 
     def capture_failure(error)

@@ -54,8 +54,8 @@ module FactoryFlashing
     # @param ed25519_seed_hex [String, nil] 64 hex; Gateway-only (L1 QATT) —
     #   генерується Session'ом на фабричному хості (SecureRandom, НЕ HKDF),
     #   у БД персиститься лише деривований pubkey. nil → Queen лишається L0.
-    # @param bcast_key_hex [String, nil] 32 hex; required Гілка A (обидва
-    #   типи) — FW.2 (в) cluster control-plane ключ (derive_broadcast_key):
+    # @param bcast_key_hex [String, nil] 32 hex; required (обидва типи й обидві
+    #   гілки) — FW.2 (в) cluster control-plane ключ (derive_broadcast_key):
     #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
     #   на boot, а Солдат CCM-ери глухне до downlink'а).
     def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil)
@@ -85,13 +85,16 @@ module FactoryFlashing
     end
 
     # Тіло гілки: key-writes + RDP + disconnect (без preflight).
+    # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] Набір Protected-Flash-ключів
+    # ОДИН для обох гілок: кожен із них має MCU-споживача (KEYL/KEYB — CRYP
+    # радіо-AES, LSED — Lorenz-VM, K_ota — OTA-HMAC зі стор. 125), а SE за
+    # SEC.14 лише ідентичність — його кроки емітить SecureElementProvisioner.
+    # ⛔ Доти Гілка B SWD-ключів не писала зовсім: KEYL-less Солдат іде в
+    # Error_Handler на першому boot, а Gilka-B Королева не мала навіть KEYC.
     def flash_commands
-      case @session.gilka
-      when "A" then gilka_a_commands
-      when "B" then gilka_b_commands
-      else
-        raise ArgumentError, "Unknown gilka: #{@session.gilka.inspect}"
-      end
+      raise ArgumentError, "Unknown gilka: #{@session.gilka.inspect}" unless %w[A B].include?(@session.gilka)
+
+      protected_flash_commands
     end
 
     private
@@ -100,12 +103,10 @@ module FactoryFlashing
       raise ArgumentError, "aes_key_hex must be 32 or 64 hex chars" unless [ 32, 64 ].include?(@aes_key_hex.length)
       raise ArgumentError, "aes_key_hex must be hexadecimal" unless @aes_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
 
-      if @session.gilka == "A"
-        # [FW.2 (в)] Обидва типи: без KEYB-значення транскрипт дає або цеглу
-        # (Queen без KEYL), або downlink-глухого Солдата в CCM-еру.
-        raise ArgumentError, "bcast_key_hex is required for Gilka A (32 hex, FW.2 broadcast key)" unless @bcast_key_hex.length == 32
-        raise ArgumentError, "bcast_key_hex must be hexadecimal" unless @bcast_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
-      end
+      # [FW.2 (в)] Обидва типи й обидві гілки: без KEYB-значення транскрипт дає
+      # або цеглу (Queen без KEYL), або downlink-глухого Солдата в CCM-еру.
+      raise ArgumentError, "bcast_key_hex is required (32 hex, FW.2 broadcast key)" unless @bcast_key_hex.length == 32
+      raise ArgumentError, "bcast_key_hex must be hexadecimal" unless @bcast_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
 
       if @ed25519_seed_hex.present?
         raise ArgumentError, "ed25519_seed_hex is Gateway-only (L1 QATT)" if @device.is_a?(Tree)
@@ -116,12 +117,11 @@ module FactoryFlashing
       return unless @device.is_a?(Tree)
       raise ArgumentError, "Tree provisioning requires lorenz_seed_hex (64 hex)" unless @lorenz_seed_hex.length == 64
       raise ArgumentError, "lorenz_seed_hex must be hexadecimal" unless @lorenz_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
-      return unless @session.gilka == "A" # Гілка B: ключі пише SE-provisioner, не SWD
       raise ArgumentError, "Tree provisioning requires ota_hmac_hex (64 hex, FW.23 K_ota)" unless @ota_hmac_hex.length == 64
       raise ArgumentError, "ota_hmac_hex must be hexadecimal" unless @ota_hmac_hex.match?(/\A[0-9A-Fa-f]+\z/)
     end
 
-    def gilka_a_commands
+    def protected_flash_commands
       out = []
 
       if @device.is_a?(Tree)
@@ -152,17 +152,6 @@ module FactoryFlashing
       out << rdp_command(@session.rdp_level)
       out << disconnect_command
       out
-    end
-
-    def gilka_b_commands
-      # Гілка B routes the key through I²C ATCA write-zone instead of SWD writes.
-      # SecureElementProvisioner emits those statements; CommandBuilder only handles
-      # the surrounding RDP-lock pair (connect живе у preflight_commands).
-      [
-        # No SWD key writes — keys live in ATECC608B data zone.
-        rdp_command(@session.rdp_level),
-        disconnect_command
-      ]
     end
 
     def disconnect_command

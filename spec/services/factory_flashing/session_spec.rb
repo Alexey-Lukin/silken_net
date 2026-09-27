@@ -79,12 +79,15 @@ RSpec.describe FactoryFlashing::Session do
   describe "happy path — Гілка B Tree" do
     let!(:session) { make_session(gilka: "B", se_serial_hex: "0123456789ABCDEF01") }
 
-    it "also emits ATCA write-zone transcript" do
+    # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] KEYL іде SWD-записом у Protected
+    # Flash, як у Гілці A; SE-транскрипт несе лише ідентичність, Slot 0 — reserved.
+    it "writes KEYL through SWD and leaves SE Slot 0 unwritten" do
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
+      expect(outcome.transcript.map(&:command)).to include(a_string_matching(/-w32 0x0803E000 0x4B45594C/))
       expect(outcome.se_transcript).to be_a(FactoryFlashing::SecureElementProvisioner::Result)
-      expect(outcome.se_transcript.statements).to include(a_string_matching(/Slot 0 AES-128 LoRa/))
+      expect(outcome.se_transcript.statements).not_to include(a_string_matching(/atcab_write_zone\(ATCA_ZONE_DATA, 0,/))
     end
   end
 
@@ -217,6 +220,18 @@ RSpec.describe FactoryFlashing::Session do
       expect(FactoryFlashing::SecureElementProvisioner).not_to have_received(:new)
       expect(session.reload).to be_completed
       expect(outcome.se_transcript).to be_nil
+    end
+
+    # Без SE Гілка B для Королеви = Гілка A: доти Gilka-B Королева не мала навіть KEYC
+    # (цегла) і EDSK (мовчазний L0).
+    it "still writes her KEYC and her QATT voice (EDSK)" do
+      outcome = described_class.run(
+        session: session, executor: executor, master_key_source: master_key_source
+      )
+      commands = outcome.transcript.map(&:command)
+      expect(commands).to include(a_string_matching(/-w32 0x0803E040 0x4B455943/)) # KEYC
+      expect(commands).to include(a_string_matching(/0x4544534B/))                 # EDSK
+      expect(outcome.hardware_key.reload.ed25519_public_key_hex).to be_present
     end
   end
 

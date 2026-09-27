@@ -10,12 +10,15 @@
 # instead of slots, on-chip Ed25519 keygen for the tree-voice, `atcab_*`→`Se05x`/`sss`
 # emit — is bundled with the eval-kit work (00_07 SE050-MIGRATION B).
 #
-# Гілка B writes per-device keys into the Secure Element via I²C instead of STM32
-# Protected Flash. Slot map (canonical SSOT — docs/03_05 §3.7):
+# Гілка B = Гілка A + identity-chip (SEC.14 provisioning-only): every runtime key
+# (KEYL · LSED · KEYB · K_ota) goes to STM32 Protected Flash through the SAME SWD
+# writes as Гілка A (CommandBuilder), because each has an MCU consumer — this class
+# adds only the identity objects. Slot map (canonical SSOT — docs/03_05 §3.7):
 #
-#   Slot 0 → AES-128 LoRa session key   (16B) ⚠️ SEC.14 provisioning-only (2026-07-03):
-#            KEYL stays in Protected Flash on BOTH branches (Slot 0 = reserved, urban
-#            variant only) — drop this write in the bundled SE05x rewrite
+#   Slot 0 → reserved (urban per-packet variant) — ⛔ NOT written: the LoRa session
+#            key is KEYL in Protected Flash (⚖️ delegated 2026-09-27, 00_07
+#            SE050-MIGRATION); this was the only emitted row with no SE05x
+#            counterpart — it disappears, it does not migrate
 #   Slot 1 → Ed25519 private key        (32B, tree-voice L2 + peaq/Solana; SE05x on-chip keygen)
 #   Slot 2 → X.509 device certificate   (≤64B, DER)
 #   Slot 3 → HMAC-SHA256 OTA verify key (32B, K_ota — FW.23)
@@ -33,15 +36,14 @@ module FactoryFlashing
     class InputError < StandardError; end
 
     # @param session   [ProvisioningSession] must have gilka == "B"
-    # @param aes_key_hex     [String] 32 hex (16B for Slot 0, AES-128 LoRa)
-    # @param ota_hmac_hex    [String] 64 hex (32B for Slot 3, K_ota)
+    # @param ota_hmac_hex    [String] 64 hex (32B for Slot 3, K_ota — a copy for the
+    #   open post-TRL-7 migration; the MCU verifies OTA with its Protected-Flash copy)
     # @param ecc_priv_hex    [String, nil] 64 hex (32B for Slot 1) — optional in MVP
     # @param cert_der_hex    [String, nil] ≤128 hex (≤64B for Slot 2) — optional in MVP
-    def initialize(session:, aes_key_hex:, ota_hmac_hex:, ecc_priv_hex: nil, cert_der_hex: nil)
+    def initialize(session:, ota_hmac_hex:, ecc_priv_hex: nil, cert_der_hex: nil)
       raise InputError, "SecureElementProvisioner is Гілка B only (got #{session.gilka.inspect})" unless session.gilka == "B"
 
       @session       = session
-      @aes_key_hex   = aes_key_hex.to_s.upcase
       @ota_hmac_hex  = ota_hmac_hex.to_s.upcase
       @ecc_priv_hex  = ecc_priv_hex&.upcase
       @cert_der_hex  = cert_der_hex&.upcase
@@ -60,11 +62,9 @@ module FactoryFlashing
     private
 
     def validate_lengths!
-      raise InputError, "Slot 0 AES-128 must be 32 hex (16 bytes), got #{@aes_key_hex.length}" if @aes_key_hex.length != 32
       raise InputError, "Slot 3 K_ota must be 64 hex (32 bytes), got #{@ota_hmac_hex.length}" if @ota_hmac_hex.length != 64
       raise InputError, "Slot 1 ECC priv must be 64 hex (32 bytes)" if @ecc_priv_hex && @ecc_priv_hex.length != 64
       raise InputError, "Slot 2 cert DER must be ≤128 hex (64 bytes)" if @cert_der_hex && @cert_der_hex.length > 128
-      raise InputError, "AES key must be hexadecimal" unless @aes_key_hex.match?(/\A[0-9A-F]+\z/)
       raise InputError, "K_ota must be hexadecimal" unless @ota_hmac_hex.match?(/\A[0-9A-F]+\z/)
     end
 
@@ -72,7 +72,7 @@ module FactoryFlashing
       out = []
       out << "atcab_init(&cfg_ateccx08a_i2c)"
       out << "atcab_read_serial_number(&serial[0])  # expect == #{@session.se_serial_hex}"
-      out << "atcab_write_zone(ATCA_ZONE_DATA, 0, 0, 0, #{wrap(@aes_key_hex)}, #{@aes_key_hex.length / 2}) # Slot 0 AES-128 LoRa"
+      out << "# Slot 0 — reserved (urban per-packet variant); the LoRa session key is KEYL in Protected Flash"
 
       if @ecc_priv_hex
         out << "atcab_write_zone(ATCA_ZONE_DATA, 1, 0, 0, #{wrap(@ecc_priv_hex)}, 32) # Slot 1 Ed25519 priv (LEGACY write; SE050 → on-chip keygen)"

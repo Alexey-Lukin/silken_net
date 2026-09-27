@@ -84,20 +84,22 @@
      → TreeResolver → Rails-host деривує локально:
            aes_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")
            ota_hmac = per-cluster HKDF (FW.23, "silken-ota-hmac-v1")
-           # LSED · KEYB для Гілки B — відкритий ⚖️ 00_07 SE050-MIGRATION;
-           # K_ota — власний ⚖️ там само (Slot 3 ⊥ MCU Flash)
+           # ⚖️ делеговано 2026-09-27 (00_07 SE050-MIGRATION): Гілка B пише
+           # ТОЙ САМИЙ набір Protected Flash, що Гілка A — KEYL · LSED · KEYB ·
+           # K_ota, бо в кожного MCU-споживач (CRYP · Lorenz-VM · OTA-HMAC)
        - Зберігає (DID → HardwareKey, silicon_uid_hex → Tree; tamper-detect:
          підміна чіпа → wrong-board guard / паспорт-mismatch)
        - ECC keypair + X.509 device cert (peaq DID signing, ARCH.27 evolution)
-     Жоден ключ не летить мережею — усе, крім KEYL (SWD, крок 4), входить у
-     ATCA-транскрипт (SecureElementProvisioner)
+     Жоден ключ не летить мережею — runtime-ключі йдуть SWD -w32 (крок 4,
+     як Гілка A), а ATCA-транскрипт (SecureElementProvisioner) несе лише
+     ідентичність і копію K_ota у Slot 3 під відкриту post-TRL-7 міграцію
 
   4. STM32 → SE: write keys per slot mapping (legacy ATECC-скетч; cross-ref 03_05 §3.7):
-     # SLOT 0 (AES LoRa) — ✂️ НЕ мусить писатись post-SEC.14 (provisioning-only):
-     #   KEYL мусить іти в Protected Flash як у Гілці A (тим самим SWD -w32 —
-     #   окремий крок транскрипту, не ATCA); slot reserved (urban-варіант).
-     #   ⚠️ Код-лаг: сьогодні Гілка B SWD-ключів не пише зовсім (цегла на першому
-     #   boot), а SecureElementProvisioner ще емітить Slot-0 — 00_07 SE050-MIGRATION
+     # SLOT 0 (AES LoRa) — ✂️ НЕ пишеться post-SEC.14 (provisioning-only):
+     #   KEYL іде в Protected Flash як у Гілці A (тим самим SWD -w32 — окремий
+     #   крок транскрипту, не ATCA); slot reserved (urban-варіант). Код
+     #   зведено 2026-09-27: доти Гілка B SWD-ключів не писала зовсім (цегла на
+     #   першому boot), а SecureElementProvisioner емітив Slot-0
      atcab_write_zone(SLOT 1, ecc_priv, 32B)    # Ed25519 private (голос дерева; SE05x → on-chip keygen)
      atcab_write_zone(SLOT 2, cert_der, 64B)    # X.509 device cert
      atcab_write_zone(SLOT 3, ota_hmac, 32B)    # FW.23 OTA image HMAC verification
@@ -243,10 +245,8 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      плати з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного
      -w32) → -w32 KEYL/LSED/KOTA/KEYB per-word (Tree; Gateway — KEYL=KEYB-
      значення/KEYC/EDSK) → RDP → disconnect
-     # 0x0803E000 = FLASH_KEY_ADDR. Гілка B (ціль SEC.14: KEYL у Protected Flash
-     # обабіч гілок, §1 крок 4): KEYL мусить іти тим самим SWD -w32. ⚠️ Код-лаг:
-     # сьогодні Гілка B SWD-ключів не пише зовсім — цегла на першому boot; LSED ·
-     # KEYB — відкритий ⚖️, K_ota — власний ⚖️ (00_07 SE050-MIGRATION)
+     # 0x0803E000 = FLASH_KEY_ADDR. Гілка B пише ТОЙ САМИЙ набір тим самим
+     # SWD -w32 (⚖️ делеговано 2026-09-27, §1 крок 3); SE-кроки — окремо
 
   e) Lock:
      STM32_Programmer_CLI -ob RDP=1    # Pilot batch
@@ -799,9 +799,9 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes, only RDP lock + disconnect (⚠️ код-лаг post-SEC.14: KEYL мусить іти `-w32` і в Гілці B, інакше юніт — цегла на першому boot; [`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — [`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
-| ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
+| ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (1/2/3; Slot 0 reserved — не пишеться з 2026-09-27) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
 | Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
 | Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |

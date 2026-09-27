@@ -203,25 +203,29 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     end
   end
 
+  # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] Гілка B = Гілка A + identity-chip:
+  # кожен Protected-Flash-ключ має MCU-споживача, тож SWD-транскрипт однаковий, а
+  # SE-кроки (ідентичність) емітить SecureElementProvisioner окремо. Доти Гілка B
+  # не писала жодного ключа — KEYL-less Солдат цеглився на першому boot.
   describe "Гілка B" do
-    subject(:commands) do
-      described_class.new(
-        session: session,
-        device: tree,
-        aes_key_hex: aes_lora_hex,
-        lorenz_seed_hex: k_seed_hex
-      ).commands
+    def commands_for(gilka, device:, aes_key_hex:, **keys)
+      described_class.new(session: build(:provisioning_session, gilka: gilka, rdp_level: 1),
+                          device: device, aes_key_hex: aes_key_hex, bcast_key_hex: bcast_hex, **keys).commands
     end
 
-    let(:session) { build(:provisioning_session, :gilka_b, rdp_level: 1) }
+    it "writes the Tree the same Protected-Flash key set as Гілка A (KEYL · LSED · KOTA · KEYB)" do
+      keys = { lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex }
+      b = commands_for("B", device: tree, aes_key_hex: aes_lora_hex, **keys)
 
-    it "skips SWD key writes — only connect + UID-read + RDP lock + disconnect" do
-      expect(commands).to eq([
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst",
-        "STM32_Programmer_CLI -r32 0x1FFF7590 12",
-        "STM32_Programmer_CLI -ob RDP=1",
-        "STM32_Programmer_CLI -c port=SWD --quietMode"
-      ])
+      expect(b).to eq(commands_for("A", device: tree, aes_key_hex: aes_lora_hex, **keys))
+      expect(b).to include("STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C") # KEYL magic
+    end
+
+    it "writes a Queen her KEYC too — SE-less, Гілка B is Гілка A for her" do
+      b = commands_for("B", device: gateway, aes_key_hex: aes_coap_hex)
+
+      expect(b).to eq(commands_for("A", device: gateway, aes_key_hex: aes_coap_hex))
+      expect(b).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943") # KEYC magic
     end
   end
 
@@ -276,16 +280,18 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       }.to raise_error(ArgumentError, /bcast_key_hex must be hexadecimal/)
     end
 
-    it "does not require bcast_key_hex on Gilka B (ключі живуть у SE, не SWD)" do
+    it "requires bcast_key_hex on Gilka B too — KEYB lives in MCU Flash on both branches" do
       gilka_b = build(:provisioning_session, :gilka_b)
       expect {
-        described_class.new(session: gilka_b, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex)
-      }.not_to raise_error
+        described_class.new(session: gilka_b, device: tree, aes_key_hex: aes_lora_hex,
+                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+      }.to raise_error(ArgumentError, /bcast_key_hex is required/)
     end
 
     it "raises on unknown gilka value at #commands" do
       session.gilka = "C"
-      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
+                                    ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /Unknown gilka/)
     end
   end

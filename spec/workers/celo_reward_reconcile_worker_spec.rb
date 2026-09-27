@@ -130,13 +130,19 @@ RSpec.describe CeloRewardReconcileWorker, type: :worker do
     # ARCH.64 MONEY-SAFETY LINCHPIN: after escalation, dedup MUST still block a re-pay.
     # If a refactor drops :manual_review from reward_already_sent?, this fails BEFORE a
     # silent double-pay of cUSD ships (Opus review M2).
+    # ⏱️ Полудень — несучий: dedup-вікно рахується від ПОЧАТКУ `reward_date`, а фікстура
+    # ставить `reward_date: Date.current` поруч із `created_at: 1.hour.ago`. У першу годину
+    # доби UTC така пара падала на вчора — поза вікно, — і приклад червонів щоночі
+    # (виміряно 2026-09-27 о 00:35 UTC). У проді інтент для дати D раніше за D не народжується.
     it "escalated :manual_review still blocks a same-day re-pay (no double-pay)" do
-      celo_reward_intent(status: :pending, created_at: 1.hour.ago)
+      travel_to(Time.current.noon) do
+        celo_reward_intent(status: :pending, created_at: 1.hour.ago)
 
-      described_class.new.perform
+        described_class.new.perform
 
-      service = Celo::CommunityRewardService.new(cluster, Date.current)
-      expect(service.send(:reward_already_sent?)).to be true
+        service = Celo::CommunityRewardService.new(cluster, Date.current)
+        expect(service.send(:reward_already_sent?)).to be true
+      end
     end
   end
 end
