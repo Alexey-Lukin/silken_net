@@ -12,7 +12,9 @@ class AlertDispatchService
   MAX_ALERTS_PER_DID_PER_WINDOW = 5
   DID_RATE_LIMIT_WINDOW = 1.minute
 
-  def self.analyze_and_trigger!(telemetry_log)
+  # `fw_report_id_mask` — ширина contract-id на дроті ери запису (TelemetryUnpackerService): на CCM
+  # це лише залишок за модулем 128, і алерт мусить так його й назвати (FW.65).
+  def self.analyze_and_trigger!(telemetry_log, fw_report_id_mask: TelemetryLog::FW_REPORT_ID_MASK)
     tree = telemetry_log.tree
     cluster = tree.cluster
     family = tree.tree_family
@@ -52,7 +54,11 @@ class AlertDispatchService
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :firmware_reverted,
         message_key: "firmware_reverted",
-        message_params: { did: tree.did, burned_version: telemetry_log.firmware_report_contract_id }
+        # «re-issue лише вищою» — а вищою за ПОВНИЙ id, який дріт CCM не несе: голий залишок
+        # («2» замість 130) штовхав би оператора випустити версію, яку anti-rollback 0x15 відкине.
+        message_params: { did: tree.did,
+                          burned_version: TelemetryLog.contract_id_label(telemetry_log.firmware_report_contract_id,
+                                                                         fw_report_id_mask) }
       )
     end
 

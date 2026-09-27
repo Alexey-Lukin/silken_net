@@ -67,6 +67,15 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(EwsAlert.alert_type_vandalism_breach).to be_empty
     end
 
+    # [FW.65] На CCM дріт несе лише id7: голий залишок («2» замість 130) штовхав би оператора
+    # на re-issue, який anti-rollback вузла відкине — тож алерт мусить назвати його залишком.
+    it "names a CCM burned version as a residue mod 128, not as the version itself" do
+      described_class.analyze_and_trigger!(reverted_log(firmware_report_contract_id: 2),
+                                           fw_report_id_mask: TelemetryLog::FW_REPORT_CCM_ID_MASK)
+
+      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("OTA-версія 2 (mod 128) спалена") }
+    end
+
     it "does not raise firmware_reverted for a healthy frame (bit clear)" do
       expect {
         described_class.analyze_and_trigger!(reverted_log(firmware_report_reverted?: false))

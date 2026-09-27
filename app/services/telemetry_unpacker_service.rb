@@ -318,7 +318,9 @@ class TelemetryUnpackerService < ApplicationService
     # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
     # Value 255 likely indicates overflow — real count may be higher.
     # Log warning for operational awareness and future payload redesign.
-    if log_attributes[:acoustic_events] == 255
+    # [FW.65] ⛔ Крім panic-кадру: там 0xFF — КОД паніки (Trigger_Emergency_LoRa_TX), а не
+    # сатурація лічильника, і кожна паніка доти роздувала метрику переповнення.
+    if log_attributes[:acoustic_events] == 255 && !log_attributes[:panic]
       Rails.logger.warn(
         "⚠️ [Acoustic Overflow] DID #{hex_did}: acoustic_events=255 (saturated). " \
         "Real count may exceed 255 — firmware uint8 payload limit reached."
@@ -446,7 +448,7 @@ class TelemetryUnpackerService < ApplicationService
     # щоб TelemetryLog-хелпери працювали однаково для обох ер.
     fw_report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
                 (vpd_index.anybits?(0x80) ? TelemetryLog::FW_REPORT_REVERTED_BIT : 0) |
-                (vpd_index & 0x7F)
+                (vpd_index & TelemetryLog::FW_REPORT_CCM_ID_MASK)
 
     log_attributes = {
       queen_uid: @gateway&.uid,
@@ -459,6 +461,8 @@ class TelemetryUnpackerService < ApplicationService
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: mesh_ttl,
       firmware_version_id: fw_report,
+      # [FW.65] транзієнт: ширина contract-id цієї ери — судить mismatch і підпис алерту
+      fw_report_id_mask: TelemetryLog::FW_REPORT_CCM_ID_MASK,
       bio_status: bio_status,
       # [FW.29] PanicFlag — той самий StatusByte їде і в CCM-плейні
       # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
@@ -507,7 +511,8 @@ class TelemetryUnpackerService < ApplicationService
     # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
-    if acoustic == 255
+    # [FW.65] 0xFF у panic-кадрі — код паніки, не сатурація (див. ECB-шлях).
+    if acoustic == 255 && !log_attributes[:panic]
       SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
     end
 
@@ -1003,6 +1008,8 @@ class TelemetryUnpackerService < ApplicationService
     attributes[:gateway_attested] = @gateway_attested
 
     growth_points = attributes[:growth_points]
+    # [FW.65] Ширина contract-id на дроті: 14 біт на ECB, 7 на CCM (транзієнт CCM-шляху).
+    id_mask = attributes.fetch(:fw_report_id_mask, TelemetryLog::FW_REPORT_ID_MASK)
 
     # Транзакція фіксує телеметрію та стан дерева як єдине ціле.
     # Wallet credit, Sidekiq jobs та alert dispatch винесено ЗА межі транзакції (див. нижче).
@@ -1011,7 +1018,8 @@ class TelemetryUnpackerService < ApplicationService
       # not a column — strip it before persisting (calibrated temperature_c stays).
       # [FW.31] :device_z (wire-rev2) — той самий транзієнт-клас: вхід numeric
       # DCI, серверна істина z_value вже зберігається окремо.
-      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s))
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s,
+                                                              :fw_report_id_mask))
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(record.voltage_mv)
@@ -1024,7 +1032,7 @@ class TelemetryUnpackerService < ApplicationService
 
       # [OTA MISMATCH]: Якщо дерево повідомляє firmware_version_id, що відрізняється від
       # актуальної прошивки — позначаємо дерево як fw_pending для повторної роздачі OTA.
-      check_firmware_mismatch!(tree, record.firmware_version_id)
+      check_firmware_mismatch!(tree, record.firmware_version_id, id_mask: id_mask)
 
       record
     end
@@ -1048,7 +1056,7 @@ class TelemetryUnpackerService < ApplicationService
     # При rollback TelemetryLog актуаторні команди вже в черзі, але записів немає.
     # EwsAlert не має FK до TelemetryLog, тому його створення поза транзакцією безпечне:
     # найгірший випадок — пропущений алерт (acceptable), а не phantom job (небезпечно).
-    AlertDispatchService.analyze_and_trigger!(log)
+    AlertDispatchService.analyze_and_trigger!(log, fw_report_id_mask: id_mask)
 
     # [P1-7 FIX: Phantom Sidekiq Jobs — Wiki 04_02 Audit §14]
     # perform_async виклики перенесено ПОЗА транзакцію. Якщо транзакція відкотиться
@@ -1089,14 +1097,16 @@ class TelemetryUnpackerService < ApplicationService
   # bytecode-OTA не міняє — старе пряме порівняння з BioContractFirmware.id
   # було яблуками-з-грушами (вічний fw_pending після першої ж кампанії).
   # Кешуємо latest_firmware_id на рівні батчу (1 SQL-запит на весь пакет).
-  def check_firmware_mismatch!(tree, reported_firmware_id)
+  # [FW.65] Модуль порівняння — модуль ДРОТУ ери (`id_mask`): CCM везе id7, і порівняння за
+  # 14 бітами давало хибний mismatch на КОЖНОМУ CCM-аплінку, щойно `BioContractFirmware.id ≥ 128`.
+  def check_firmware_mismatch!(tree, reported_firmware_id, id_mask: TelemetryLog::FW_REPORT_ID_MASK)
     return if reported_firmware_id.blank?
     return unless reported_firmware_id.anybits?(TelemetryLog::FW_REPORT_SEMANTIC_BIT)
 
     latest_id = latest_tree_firmware_id
     return if latest_id.nil?
-    reported_contract = reported_firmware_id & TelemetryLog::FW_REPORT_ID_MASK
-    return if reported_contract == (latest_id & TelemetryLog::FW_REPORT_ID_MASK)
+    reported_contract = reported_firmware_id & id_mask
+    return if reported_contract == (latest_id & id_mask)
 
     return unless tree.firmware_fw_idle? || tree.firmware_fw_completed? || tree.firmware_fw_failed?
 
@@ -1123,7 +1133,7 @@ class TelemetryUnpackerService < ApplicationService
     # (residual `fw_pending`-споживача), і саме там його треба питати.
     Rails.logger.info(
       "🔄 [ARCH.85 OTA Mismatch · спостереження] Дерево #{tree.did}: " \
-      "contract #{reported_contract} != latest #{latest_id}. Стан НЕ змінено."
+      "contract #{TelemetryLog.contract_id_label(reported_contract, id_mask)} != latest #{latest_id}. Стан НЕ змінено."
     )
   end
 

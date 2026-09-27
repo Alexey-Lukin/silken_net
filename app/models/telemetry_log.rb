@@ -26,6 +26,14 @@ class TelemetryLog < ApplicationRecord
   FW_REPORT_SEMANTIC_BIT = 0x8000
   FW_REPORT_REVERTED_BIT = 0x4000
   FW_REPORT_ID_MASK      = 0x3FFF
+  # [FW.65] CCM-ера везе той самий звіт у vpd-байті `[reverted:1 | id7]` (Fw_Report_To_Vpd):
+  # contract-id там — лише залишок за модулем 128, і порівнювати його з повним id не можна.
+  FW_REPORT_CCM_ID_MASK  = 0x7F
+
+  # Contract-id так, як його дозволяє прочитати дріт ери: повний на ECB, залишок на CCM.
+  def self.contract_id_label(id, id_mask)
+    id_mask == FW_REPORT_ID_MASK ? id : "#{id} (mod #{id_mask + 1})"
+  end
 
   # Звіт нової семантики? (legacy-прошивки шлють C-image константу без біта)
   def firmware_report_semantic?

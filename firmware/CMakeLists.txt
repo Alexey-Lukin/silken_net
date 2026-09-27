@@ -213,7 +213,7 @@ if(CMAKE_CROSSCOMPILING)
       queen/lorawan_glue/helium_mac.c
       common/flash_kv.c)
     target_include_directories(lorawan_mac_check PRIVATE
-      queen/lorawan_glue queen common
+      queen/lorawan_glue queen common hal_glue
       ${LORAWAN_MW}/Mac ${LORAWAN_MW}/Mac/Region ${LORAWAN_MW}/Crypto
       ${LORAWAN_MW}/LmHandler ${LORAWAN_MW}/LmHandler/Packages
       ${LORAWAN_MW}/Utilities

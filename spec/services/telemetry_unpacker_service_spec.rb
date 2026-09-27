@@ -174,7 +174,9 @@ end
 
     described_class.call(chunk)
 
-    expect(AlertDispatchService).to have_received(:analyze_and_trigger!).with(an_instance_of(TelemetryLog))
+    # [FW.65] ECB-шлях подає ширину свого дроту — 14 біт contract-id.
+    expect(AlertDispatchService).to have_received(:analyze_and_trigger!)
+      .with(an_instance_of(TelemetryLog), fw_report_id_mask: TelemetryLog::FW_REPORT_ID_MASK)
   end
 
   it "triggers IotexVerificationWorker after telemetry commit" do
@@ -459,6 +461,36 @@ end
 
         expect(Rails.logger).to have_received(:info).with(/ARCH\.85 OTA Mismatch/)
         expect(tree.reload.firmware_update_status).to eq("fw_idle")
+      end
+
+      # [FW.65] CCM везе contract-id7 — лише залишок за модулем 128. Порівняння за 14 бітами
+      # давало хибний mismatch на КОЖНОМУ CCM-аплінку, щойно `BioContractFirmware.id ≥ 128`.
+      context "when the report came over the CCM wire (id7)" do
+        let(:ccm_mask) { TelemetryLog::FW_REPORT_CCM_ID_MASK }
+        # «Останній» і ≥ 128 за побудовою: послідовність тестової БД давно за сотнями.
+        let!(:latest) do
+          create(:bio_contract_firmware, :active, target_hardware_type: "Tree",
+                                                   id: BioContractFirmware.maximum(:id).to_i + 200)
+        end
+
+        before { allow(Rails.logger).to receive(:info) }
+
+        it "is not a mismatch when id7 ≡ latest (mod 128), even with latest id ≥ 128" do
+          report = TelemetryLog::FW_REPORT_SEMANTIC_BIT | (latest.id & ccm_mask)
+
+          described_class.new("", nil).send(:check_firmware_mismatch!, tree, report, id_mask: ccm_mask)
+
+          expect(Rails.logger).not_to have_received(:info).with(/ARCH\.85 OTA Mismatch/)
+        end
+
+        it "still sees a real mismatch and names the residue as a residue" do
+          residue = (latest.id + 1) & ccm_mask
+          report = TelemetryLog::FW_REPORT_SEMANTIC_BIT | residue
+
+          described_class.new("", nil).send(:check_firmware_mismatch!, tree, report, id_mask: ccm_mask)
+
+          expect(Rails.logger).to have_received(:info).with(/contract #{residue} \(mod 128\) != latest #{latest.id}/)
+        end
       end
 
       it "does not mark tree as fw_pending when already fw_pending" do
@@ -1143,6 +1175,18 @@ end
         expect(Rails.logger).to have_received(:warn).with(/Acoustic Overflow/).once
       end
 
+      # [FW.65] У panic-кадрі 0xFF — КОД паніки (Trigger_Emergency_LoRa_TX), не сатурація лічильника.
+      # Рядок мусить лягти в БД — інакше «метрика не зросла» була б правдою й на відкинутому кадрі.
+      it "does not read the panic code 0xFF as acoustic saturation" do
+        allow(Rails.logger).to receive(:warn).and_call_original
+        allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
+        chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, TelemetryUnpackerService::PANIC_FLAG_BIT, 3)
+
+        expect { described_class.call(chunk) }.to change(TelemetryLog.where(panic: true), :count).by(1)
+        expect(Rails.logger).not_to have_received(:warn).with(/Acoustic Overflow/)
+        expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).not_to have_received(:increment)
+      end
+
       it "does not log warning for acoustic_events below 255" do
         chunk = build_chunk(did_hex, -70, 3500, 25, 254, 100, 0, 3)
 
@@ -1681,6 +1725,25 @@ end
       end
     end
 
+    # [FW.65] Ширина contract-id CCM-ери мусить ДОЇХАТИ від чанка до перевірки mismatch і до
+    # алерту відкату — одиничні піни подають її явно й видалення транзієнта не помітили б.
+    it "carries the CCM contract-id width to the mismatch check and to the revert alert" do
+      latest = create(:bio_contract_firmware, :active, target_hardware_type: "Tree",
+                                                        id: BioContractFirmware.maximum(:id).to_i + 200)
+      residue = latest.id & TelemetryLog::FW_REPORT_CCM_ID_MASK
+      allow(Rails.logger).to receive(:info)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5, dt: 100, status: 0, ttl: 3,
+                              fc: 400, vpd_index: 0x80 | residue)
+
+      described_class.call(chunk)
+
+      expect(Rails.logger).not_to have_received(:info).with(/ARCH\.85 OTA Mismatch/)
+      # Сервіс алертів у цьому файлі застаблено (рядок 28), тож тут пінимо ДОСТАВКУ ширини;
+      # рендер «N (mod 128)» тримає alert_dispatch_service_spec.
+      expect(AlertDispatchService).to have_received(:analyze_and_trigger!)
+        .with(an_instance_of(TelemetryLog), fw_report_id_mask: TelemetryLog::FW_REPORT_CCM_ID_MASK)
+    end
+
     it "rejects a replayed frame counter for the same DID" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 100)
@@ -1980,6 +2043,16 @@ end
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to have_received(:increment).once
+    end
+
+    # [FW.65] Те саме на CCM: 0xFF panic-кадру — код паніки, не сатурація.
+    it "does not count the panic code 0xFF as acoustic overflow on the CCM path" do
+      allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
+                              dt: 100, status: 0x80, ttl: 3, fc: 18)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog.where(panic: true), :count).by(1)
+      expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).not_to have_received(:increment)
     end
 
     it "logs and swallows a StandardError raised inside commit_telemetry on the CCM path" do

@@ -316,12 +316,15 @@ jobs:
         # mruby cross-compile. docs/03_01 §12.4.
         # hal_check_ccm = ті самі TU з FW2_CCM_ENABLED=1: гейтований CCM-тракт
         # компілюється проти WL-HAL (клас «API не існує у WL» — FW.2).
+        # lorawan_mac_check = LoRaMac-node + glue Королеви (ARCH.34): доти його не
+        # будував жоден крок, і він не збирався (без hal_glue у include-шляхах —
+        # stm32wlxx_hal_conf.h not found) при зелених двох сусідах (FW.65, 2026-09-27).
         run: |
           cmake -B firmware/build -S firmware -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake" \
             -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core" \
             -DSILKEN_WITH_HAL=ON
-          cmake --build firmware/build --target hal_check hal_check_ccm
+          cmake --build firmware/build --target hal_check hal_check_ccm lorawan_mac_check
 
       - name: '[SEC.21] Stack-canary flag gate — -fstack-protector-strong у ARM build-config'
         # Прапор мусить бути реально переданий крос-компілятору (attacker-reachable
