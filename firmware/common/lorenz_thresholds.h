@@ -70,6 +70,19 @@ static inline void Lorenz_Thresholds_Defaults(LorenzThresholds *t)
     t->config_version = FW8_DEFAULT_CONFIG_VER;
 }
 
+/* [FW.8] Смуга для mruby-контракту: x100-цілі → Float у ТОМУ Ж порядку, в якому
+ * calculate_state їх приймає (8-й аргумент z_min, 9-й z_max). One-Home: міст
+ * Солдата (main.c) і QEMU-паритет (firmware/sim/parity_core.h) будують аргументи
+ * ЦИМ викликом, тож квантизація `/100.0` і порядок живуть в одному місці, а
+ * паритет і PARITY-MEM міряють той самий 9-аргументний виклик, що й пристрій.
+ * ⚠️ Стеля: переставлені аргументи НА ВИКЛИКУ в main.c жоден гейт не бачить —
+ * main.c збирається лише compile-only (hal_check), і так лишається до bench-дня. */
+static inline void Lorenz_Band_Args(int16_t z_min_x100, int16_t z_max_x100, double out[2])
+{
+    out[0] = (double)z_min_x100 / 100.0;
+    out[1] = (double)z_max_x100 / 100.0;
+}
+
 /* Ті самі інваріанти, що в парсері 0x9A: зона не колапсує, оптимум
  * усередині, значення у правдоподібному діапазоні Z (±100.00). */
 static inline int Lorenz_Thresholds_Valid(const LorenzThresholds *t)

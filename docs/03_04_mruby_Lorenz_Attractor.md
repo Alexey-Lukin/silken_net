@@ -592,7 +592,7 @@ if (mrb) {
       z_prev = bytes_to_signed_unit_float(digest + 16);
   }
 
-  mrb_value args[7];
+  mrb_value args[9];
   args[0] = mrb_float_value(mrb, (double)x_prev);
   args[1] = mrb_float_value(mrb, (double)y_prev);
   args[2] = mrb_float_value(mrb, (double)z_prev);
@@ -600,9 +600,13 @@ if (mrb) {
   args[4] = mrb_fixnum_value(lora_payload[7]);          // Acoustic
   args[5] = mrb_fixnum_value(delta_t_s);                // [E.63] EMA DR10 → growth_points §4.3
   args[6] = mrb_fixnum_value(vcap_mv);                  // [E.63] EMA DR12 (reserved; не на Z)
+  double band[2];                                       // [FW.8] смуга, ЧИННА на пристрої
+  Lorenz_Band_Args(lorenz_z_min_x100, lorenz_z_max_x100, band); // One-Home: lorenz_thresholds.h
+  args[7] = mrb_float_value(mrb, band[0]);              // z_min
+  args[8] = mrb_float_value(mrb, band[1]);              // z_max
 
   mrb_value result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-      mrb_intern_lit(mrb, "calculate_state"), 7, args);
+      mrb_intern_lit(mrb, "calculate_state"), 9, args);
   // result = [payload_byte, x_final, y_final, z_final]
 
   if (!mrb->exc && mrb_array_p(result) && RARRAY_LEN(result) == 4) {
@@ -630,11 +634,15 @@ if (mrb) {
 # Повертає [payload_byte, x_final, y_final, z_final].
 def calculate_state(x_prev, y_prev, z_prev, temp, acoustic,
                     delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S,
-                    vcap_mv   = SilkenNet::Attractor::NOMINAL_VCAP_MV)
+                    vcap_mv   = SilkenNet::Attractor::NOMINAL_VCAP_MV,
+                    z_min     = SilkenNet::BioContract::CRITICAL_Z_MIN,
+                    z_max     = SilkenNet::BioContract::CRITICAL_Z_MAX)
   SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev,
-                                           temp, acoustic, delta_t_s, vcap_mv)
+                                           temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
 end
 ```
+
+> ⛔ **ABI-підлога контракту (FW.8, 2026-09-27): арність `calculate_state` ≥ 9.** C-міст передає 9 аргументів, а C-прошивку OTA не оновлює (§6.2), тож OTA-контракт із меншою арністю впаде `ArgumentError` → VM_ERROR ×3 → SEC.20 erase і відкат до вбудованого байткоду. Пін — `firmware/test/test_bytecode_vm.c` (CI `tools/firmware/run_bytecode_vm.sh`): контракт на 7 параметрів там падає «given 9, expected 5» (мутаційно перевірено). Смуга в бойовій збірці — дефолти 2.0/45.0: її міняють лише парсер `0x9A` і boot-restore, обидва під `FW8_PARSER_ENABLED` ([`00_07`](00_07_Action_Plan_Tracker) FW.8).
 
 ### 6.2 OTA-Оновлення Bio-Contract
 

@@ -509,7 +509,7 @@ STEADY-STATE (FW.6 continuation; кожне пробудження)
 (x_prev, y_prev, z_prev) = read RTC DR16-DR18 (warm) АБО cold-start (rare)
 [payload_byte, x_f, y_f, z_f] = mruby calculate_state(
                                   x_prev, y_prev, z_prev,
-                                  temp, acoustic, delta_t_s, vcap_mv)
+                                  temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
 write RTC DR16-DR18 = (x_f, y_f, z_f); DR19 = "LZST"
 
 ═══════════════════════════════════════════════════════════════════════

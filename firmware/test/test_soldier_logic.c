@@ -1869,16 +1869,19 @@ TEST(test_ema_rtc_first_boot_no_magic) {
  * [FW.5 B+] EMA → mruby calculate_state(args[5..6]) — selection logic
  *
  * Mirrors the firmware decision in `firmware/soldier/main.c` around the
- * `mrb_funcall_argv("calculate_state", 7, ...)` call: while the EMA
- * filter is still warming up (count < EMA_WARMUP_CYCLES) we feed neutral
- * baseline values (60 s / 3300 mV); once warmed up, the smoothed EMA
+ * `mrb_funcall_argv("calculate_state", 9, ...)` call: while the EMA
+ * filter is still warming up (count < EMA_WARMUP_CYCLES) we feed the
+ * "not measured" sentinel (DELTA_T_UNKNOWN_S = 0, ARCH.102) and nominal
+ * 3300 mV; once warmed up, the smoothed EMA
  * values are forwarded. [E.63] delta_t now drives growth_points DIRECTLY
  * (metabolic_health, 03_04 §4.3), NOT β — β is fixed at BASE_BETA and
  * vcap is reserved. This test pins WHICH inputs the C side selects —
  * unchanged by E.63 (the selection logic is independent of the coupling).
  * ──────────────────────────────────────────────────────────────────── */
 
-#define FW5_DEFAULT_DELTA_T_S 60u    /* BASELINE_DELTA_T_S in bio_contract.rb */
+/* [ARCH.102] Sentinel, not the old "neutral" 60 s: metabolic_health(60) clamps to 1.0
+ * → GP_HOMEO_MAX, i.e. refusing to measure used to mint the MAXIMUM. */
+#define FW5_UNKNOWN_DELTA_T_S 0u     /* DELTA_T_UNKNOWN_S in bio_contract.rb / main.c */
 #define FW5_DEFAULT_VCAP_MV   3300u  /* NOMINAL_VCAP_MV     in bio_contract.rb */
 
 /* Pure-function mirror of the firmware selection — no globals, no HAL. */
@@ -1889,37 +1892,37 @@ static void Fw5_Select_Lorenz_Inputs(const Fw21EmaState *ema,
         *out_dt_s    = Fw21_EMA_Get_DeltaT_Sec(ema);
         *out_vcap_mv = Fw21_EMA_Get_Vcap_Mv(ema);
     } else {
-        *out_dt_s    = FW5_DEFAULT_DELTA_T_S;
+        *out_dt_s    = FW5_UNKNOWN_DELTA_T_S;
         *out_vcap_mv = FW5_DEFAULT_VCAP_MV;
     }
 }
 
-TEST(test_fw5_cold_boot_uses_baseline_defaults) {
-    /* Fresh EMA (count=0) → defaults must be selected so growth_points use
-       the neutral baseline on the very first wakeup after VBAT loss
-       ([E.63] delta_t → growth_points; β is fixed). */
+TEST(test_fw5_cold_boot_uses_unknown_sentinel) {
+    /* Fresh EMA (count=0) → the sentinel must be selected so the contract reports
+       «homeostasis measured, metabolism not» (status 0, GP 0) on the very first
+       wakeup after VBAT loss — never the old neutral 60 s (ARCH.102). */
     Fw21EmaState ema = {0};
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
-    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
     ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
 }
 
-TEST(test_fw5_warmup_phase_uses_baseline_defaults) {
+TEST(test_fw5_warmup_phase_uses_unknown_sentinel) {
     /* count = 1 and count = 2 are still below EMA_WARMUP_CYCLES (3) —
-       EMA is initialised but not trusted yet, so defaults are used. */
+       EMA is initialised but not trusted yet, so the sentinel is used. */
     Fw21EmaState ema = {0};
     Fw21_EMA_Update(&ema, 1000u, 4500);
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
     ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
-    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
     ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
 
     Fw21_EMA_Update(&ema, 1000u, 4500);
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
     ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
-    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(dt_s, FW5_UNKNOWN_DELTA_T_S);
     ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
 }
 
@@ -1937,7 +1940,7 @@ TEST(test_fw5_after_warmup_forwards_ema_values) {
     ASSERT_EQ(vcap_mv, 4500);
     /* And specifically NOT the firmware defaults — guards the warmup
        transition: once warmed up we never silently fall back. */
-    ASSERT_TRUE(dt_s != FW5_DEFAULT_DELTA_T_S);
+    ASSERT_TRUE(dt_s != FW5_UNKNOWN_DELTA_T_S);
     ASSERT_TRUE(vcap_mv != FW5_DEFAULT_VCAP_MV);
 }
 
@@ -2374,11 +2377,12 @@ TEST(test_cold_start_prefers_beacon_unix_ts_over_rtc) {
     soldier_unix_ts = 0;  /* Не отруюємо наступні тести */
 }
 
-TEST(test_cbridge_unified_7arg_signature) {
-    /* Verify that bio_contract.rb calculate_state expects 7 args and returns
-     * [payload_byte, x, y, z]. This test validates the C-side calling convention
-     * by checking that the extracted pure-C Lorenz math (from test_bio_contract.c)
-     * produces a valid StatusByte for known warm-start coordinates. */
+TEST(test_lorenz_c_mirror_stays_finite) {
+    /* Only the C MIRROR's numeric finiteness after 250 iterations. The real
+     * bridge's arity (9 args, FW.8) is pinned where the real contract runs:
+     * firmware/test/test_bytecode_vm.c (CI: tools/firmware/run_bytecode_vm.sh)
+     * and the QEMU parity lane. This name used to claim a 7-arg signature check
+     * that the body never made. */
     /* Warm-start coords near the optimal z target */
     float x = 0.5f, y = 0.3f, z = 0.1f;
     int8_t temp = 20;
@@ -5628,8 +5632,8 @@ int main(void)
     RUN(test_ema_rtc_first_boot_no_magic);
 
     printf("\n  EMA → mruby calculate_state args[5..6] (FW.5 B+):\n");
-    RUN(test_fw5_cold_boot_uses_baseline_defaults);
-    RUN(test_fw5_warmup_phase_uses_baseline_defaults);
+    RUN(test_fw5_cold_boot_uses_unknown_sentinel);
+    RUN(test_fw5_warmup_phase_uses_unknown_sentinel);
     RUN(test_fw5_after_warmup_forwards_ema_values);
     RUN(test_fw5_extreme_high_vcap_clamped_by_backend_beta);
     RUN(test_fw5_extreme_fast_charge_forwarded);
@@ -5670,7 +5674,7 @@ int main(void)
     RUN(test_cold_start_prefers_beacon_unix_ts_over_rtc);
 
     printf("\n  C-Bridge 7-Arg Signature (FW.30):\n");
-    RUN(test_cbridge_unified_7arg_signature);
+    RUN(test_lorenz_c_mirror_stays_finite);
 
     printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
     RUN(test_beacon_rx_sets_unix_ts);

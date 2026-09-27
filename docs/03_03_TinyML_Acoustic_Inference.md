@@ -747,7 +747,7 @@ EwsAlert.after_create_commit → dispatch_notifications! → WebSocket / SMS / P
 args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика → аттрактор
 
 // У bio_contract.rb (сигнатура — дім `03_04 §6.1`, тут НЕ дублюємо):
-// calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+// calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
 // ⛔ 3-арг форма з `chaos_seed` знята hard-cutover-ом SEC.11 — `chaos_seed`
 //    більше НЕ є входом Лоренца (FW.30).
 // → Lorenz перераховується з акустичним збуренням

@@ -1192,8 +1192,8 @@ module SilkenNet
   class BioContract   # Бізнес-логіка (токеноміка + статуси)
 end
 
-# C bridge — єдина публічна точка входу (7-арг сигнатура після SEC.11 cutover; owner [`03_04 §6`](03_04_mruby_Lorenz_Attractor)):
-def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+# C bridge — єдина публічна точка входу (9-арг сигнатура: SEC.11 cutover + FW.8 смуга; owner [`03_04 §6`](03_04_mruby_Lorenz_Attractor)):
+def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
   SilkenNet::BioContract.evaluate_and_pack(...)   # логіка status/GP — 03_04 §4/§4.3
 end
 ```

@@ -30,6 +30,7 @@
 #include <mruby/array.h>
 
 #include "lorenz_bytecode.h" /* -I firmware/common */
+#include "lorenz_thresholds.h" /* [FW.8] Lorenz_Band_Args — той самий хелпер, що в main.c */
 
 /* Зонд пам'яті для bare-metal ніг (хто скільки з'їв: open/irep/cases) —
  * no-op на host-голдені. Нога визначає PARITY_MEM_MARK ДО include
@@ -80,6 +81,14 @@ static int Parity_Run(void)
     double x = 1.0, y = 1.0, z = 1.0;
     uint32_t seed = 0x53494C4Bu; /* "SILK" */
 
+    /* [FW.8] Смуга бойової збірки (FW8_PARSER_ENABLED = 0 → дефолти), побудована тим
+     * самим хелпером, що й міст Солдата: паритет і PARITY-MEM міряють 9-аргументний
+     * виклик пристрою, а не 7-аргументний дефолтний шлях. */
+    LorenzThresholds shipped;
+    Lorenz_Thresholds_Defaults(&shipped);
+    double band[2];
+    Lorenz_Band_Args(shipped.z_min_x100, shipped.z_max_x100, band);
+
     /* Краєві піни попереду — клампи/гілки status'а мають побувати в обох
      * світах до того, як хаос піде гуляти. */
     static const double pin_temp[]  = { 25.0, -40.0, 85.0, 0.0 };
@@ -98,7 +107,7 @@ static int Parity_Run(void)
             vcap = 1800.0 + (double)(parity_lcg(&seed) % 3700u);
         }
 
-        mrb_value argv[7];
+        mrb_value argv[9];
         argv[0] = mrb_float_value(mrb, x);
         argv[1] = mrb_float_value(mrb, y);
         argv[2] = mrb_float_value(mrb, z);
@@ -106,6 +115,8 @@ static int Parity_Run(void)
         argv[4] = mrb_float_value(mrb, ac);
         argv[5] = mrb_float_value(mrb, dt);
         argv[6] = mrb_float_value(mrb, vcap);
+        argv[7] = mrb_float_value(mrb, band[0]);
+        argv[8] = mrb_float_value(mrb, band[1]);
 
         /* Арена — як у Солдата (main.c, навколо того ж mrb_funcall_argv):
          * без save/restore кожен результат пінився б в GC-арені, сміття 64
@@ -114,7 +125,7 @@ static int Parity_Run(void)
         int arena_idx = mrb_gc_arena_save(mrb);
         mrb_value r = mrb_funcall_argv(mrb, mrb_top_self(mrb),
                                        mrb_intern_lit(mrb, "calculate_state"),
-                                       7, argv);
+                                       9, argv);
         if (mrb->exc) { printf("PARITY-ABORT case %d raised\n", i); return 1; }
         if (!mrb_array_p(r) || RARRAY_LEN(r) < 4) {
             printf("PARITY-ABORT case %d malformed\n", i);

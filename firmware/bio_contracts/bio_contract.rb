@@ -42,7 +42,9 @@ module SilkenNet
     # (BioContract.metabolic_health); Лоренц лишається чистим хаос-детектором
     # стану. Емпіричний присуд + докази — 00_07 E.63 / 03_04.
     # BASELINE_DELTA_T_S / NOMINAL_VCAP_MV лишаються лише як default-аргументи
-    # сигнатур (C-bridge передає 7 аргументів); на Z вони більше не впливають.
+    # сигнатур; на Z вони більше не впливають. C-міст передає 9 аргументів (FW.8):
+    # ⛔ OTA-контракт із меншою арністю впав би ArgumentError → VM_ERROR ×3 → SEC.20
+    # erase, бо C-прошивку OTA не оновлює — арність ≥ 9 є ABI-підлогою (03_04 §6).
     BASELINE_DELTA_T_S = 60
     NOMINAL_VCAP_MV    = 3300
 

@@ -21,6 +21,7 @@
 #include <mruby/string.h>
 
 #include "lorenz_bytecode.h"   /* -I firmware/common */
+#include "lorenz_thresholds.h" /* [FW.8] Lorenz_Band_Args — той самий хелпер, що в main.c */
 
 int main(void)
 {
@@ -31,13 +32,19 @@ int main(void)
     mrb_load_irep(mrb, lorenz_bytecode);
     if (mrb->exc) { fprintf(stderr, "❌ mrb_load_irep raised\n"); return 3; }
 
-    /* calculate_state(1.0, 1.0, 1.0, 25, 10, 60, 3300) → [payload, x, y, z]. */
-    mrb_value argv[7];
-    const double in[7] = { 1.0, 1.0, 1.0, 25.0, 10.0, 60.0, 3300.0 };
-    for (int i = 0; i < 7; i++) argv[i] = mrb_float_value(mrb, in[i]);
+    /* calculate_state(1.0, 1.0, 1.0, 25, 10, 60, 3300, z_min, z_max) → [payload, x, y, z].
+     * [FW.8] 9 аргументів, як на пристрої: контракт, що приймає менше, тут падає
+     * ArgumentError-ом (exit 4) — це й пін ABI-підлоги (03_04 §6). */
+    LorenzThresholds shipped;
+    Lorenz_Thresholds_Defaults(&shipped);
+    double band[2];
+    Lorenz_Band_Args(shipped.z_min_x100, shipped.z_max_x100, band);
+    mrb_value argv[9];
+    const double in[9] = { 1.0, 1.0, 1.0, 25.0, 10.0, 60.0, 3300.0, band[0], band[1] };
+    for (int i = 0; i < 9; i++) argv[i] = mrb_float_value(mrb, in[i]);
 
     mrb_value r = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-                                   mrb_intern_lit(mrb, "calculate_state"), 7, argv);
+                                   mrb_intern_lit(mrb, "calculate_state"), 9, argv);
 
     if (mrb->exc) {
         struct RObject *exc = mrb->exc;

@@ -2435,8 +2435,10 @@ int main(void)
           // boot-restore з Flash-KV — обидва під FW8_PARSER_ENABLED, тож доставка
           // і споживання вмикаються ОДНИМ фліпом, а бойова збірка шле дефолти
           // (= BioContract::CRITICAL_Z_MIN/MAX) навіть із залишком порогів у KV.
-          args[7] = mrb_float_value(mrb, (double)lorenz_z_min_x100 / 100.0);
-          args[8] = mrb_float_value(mrb, (double)lorenz_z_max_x100 / 100.0);
+          double band[2];
+          Lorenz_Band_Args(lorenz_z_min_x100, lorenz_z_max_x100, band);
+          args[7] = mrb_float_value(mrb, band[0]);
+          args[8] = mrb_float_value(mrb, band[1]);
 
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
               mrb_intern_lit(mrb, "calculate_state"), 9, args);
