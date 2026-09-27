@@ -36,7 +36,9 @@
 #     рекомендовані суми (18–22 проти 11–15 МΩ). Вузол `ROC` розсуджено на
 #     користь `VIN_DC` (`02_03 §4.А`), попри те що §7.3.1 datasheet каже `VRDIV`.
 #   • Смуга «worst-case» нижче — це `VBAT_ACCURACY` ±2 % із паспорта, і вона
-#     оголошена ДЛЯ 0.1 %-резисторів. На наших 1 % вона є НИЖНЬОЮ оцінкою.
+#     оголошена ДЛЯ 0.1 %-резисторів. На наших 1 % вона є НИЖНЬОЮ оцінкою — смугу
+#     1 % E96 друкує окремий блок (`e96_band`: worst-case ⊕ RSS). Це смуга ПАРТІЇ;
+#     мультиметр на стенді дає поріг однієї плати, і смуги не замінює.
 
 # ── Константи кремнію (SLUSBH2G, Electrical Characteristics) ──────────────────
 VBIAS_MIN = 1.205
@@ -49,6 +51,8 @@ VBAT_UV_TYP_V = 1.95            # ⛔ ВНУТРІШНІЙ, не програм�
 VBAT_UV_MIN_V = 1.91
 VBAT_UV_MAX_V = 2.00
 VBAT_ACCURACY = 0.02            # ±2 % для VBAT_OV/VBAT_OK ПРИ 0.1 % резисторах
+# Допуск НАШИХ резисторів — 1 % E96 (BOM `02_01 §3` поз. 10; дзеркало, правити в домі).
+RESISTOR_TOL = 0.01
 
 # ── Дзеркала канону, потрібні лише щоб НАЗВАТИ ціну опції ─────────────────────
 # ⚠️ Обидва — дзеркала, правити в домі: ємність EDLC → `02_03 §12.1`,
@@ -168,12 +172,53 @@ def assert_mode
           .select { |r1, r2, want| (refuted_ov(r1, r2) - want).abs <= 0.01 }
   leaks.each { |r1, r2, want| warn "FAIL  негативний контроль: спростована формула відтворила #{want} В на #{r1}/#{r2}" }
 
-  ok = failures.empty? && leaks.empty?
-  puts ok ? "OK  #{TI_EXAMPLES.size} worked-прикладів SLUSBH2G відтворено; спростована формула не відтворює жодного" : "RED"
+  drift = e96_band_drift
+  drift.each { |d| warn "FAIL  смуга 1 % E96 — #{d}" }
+
+  ok = failures.empty? && leaks.empty? && drift.empty?
+  puts ok ? "OK  #{TI_EXAMPLES.size} worked-прикладів SLUSBH2G відтворено; спростована формула не відтворює жодного; " \
+            "смуга 1 % E96 ≡ перебір кутів і похідні" : "RED"
   exit(ok ? 0 : 1)
 end
 
+# Закрита форма `e96_band` ⟷ ті самі рівняння іншим шляхом: worst-case — перебір усіх
+# кутів допуску, RSS — центральні похідні. До 2026-09-27 RSS брав найгірше відношення
+# плечей одним членом (2.36 % замість 2.19 %) — цей звір тоді почервонів би.
+def e96_band_drift
+  t = RESISTOR_TOL
+  [ [ "VBAT_OV", ->(rs) { Bq25570.vbat_ov(*rs) }, [ 4.75, 7.87 ] ],
+    [ "VBAT_OK ON", ->(rs) { Bq25570.vbat_ok_hyst(*rs) }, solve_ok(3.3, 3.4) ] ].filter_map do |name, f, rs|
+    v0 = f.call(rs)
+    b = e96_band(v0, *rs)
+    corners = [ -1, 1 ].repeated_permutation(rs.size).map { |s| f.call(rs.zip(s).map { |r, d| r * (1 + (d * t)) }) / v0 - 1 }
+    sens = rs.each_index.map do |i|
+      up, dn = [ 1, -1 ].map { |d| rs.each_with_index.map { |r, j| j == i ? r * (1 + (d * 1e-6)) : r } }
+      (f.call(up) - f.call(dn)) / (2e-6 * v0)
+    end
+    rss = Math.sqrt((VBAT_ACCURACY**2) + ((t**2) * sens.sum { |s| s**2 }))
+    next if (corners.max - b[:arms]).abs < 1e-9 && corners.min >= -b[:arms] && (rss - b[:rss]).abs < 1e-6
+    format("%s: закрита форма плечі ±%.4f %% · RSS ±%.4f %%, а перебір кутів +%.4f %% · похідні RSS ±%.4f %%",
+           name, b[:arms] * 100, b[:rss] * 100, corners.max * 100, rss * 100)
+  end
+end
+
 def band(nominal) = [ nominal * (1 - VBAT_ACCURACY), nominal * (1 + VBAT_ACCURACY) ]
+
+# Внесок допуску резисторів у поріг дільника `V ∝ ΣR / R_low`. Worst-case: верхні плечі
+# на +t, нижнє на −t — множник зсувається на k·((1+t)/(1−t) − 1), k = ΣR_up/ΣR. RSS:
+# кожен РЕЗИСТОР — окреме незалежне джерело з чутливістю R_i/ΣR (верхні) і k (нижнє),
+# а не найгірше відношення плечей одним членом. Worst-case — строга межа; RSS — оцінка
+# (незалежні джерела, допуски як межі одного рівня довіри), і Monte-Carlo лише уточнив
+# би її формою розподілів, за worst-case не вийшовши. ⚠️ Паспортні ±2 % уже несуть внесок
+# 0.1 %-резисторів, тож обидві суми трохи ПЕРЕраховують — консервативно.
+def e96_band(nominal, low, *ups, tol: RESISTOR_TOL)
+  sum = low + ups.sum
+  k = ups.sum / sum
+  arms = k * (((1 + tol) / (1 - tol)) - 1)
+  wc = VBAT_ACCURACY + arms
+  rss = Math.sqrt((VBAT_ACCURACY**2) + ((tol**2) * ((k**2) + ups.sum { |u| (u / sum)**2 })))
+  { arms:, wc:, rss:, wc_band: [ nominal * (1 - wc), nominal * (1 + wc) ], rss_band: [ nominal * (1 - rss), nominal * (1 + rss) ] }
+end
 
 def report
   puts "BQ25570 — резистивні дільники (SLUSBH2G, MARCH 2019). Індекс 1 = НИЖНЄ плече (→GND)."
@@ -222,6 +267,21 @@ def report
   puts "   ⇒ найбільша ЦІЛЬ, чий верхній хвіст ще нижчий за стелю: #{'%.2f' % max_nominal} В"
   puts
 
+  ok_on = Bq25570.vbat_ok_hyst(ok1, ok2, ok3)
+  ok_off = Bq25570.vbat_ok_prog(ok1, ok2)
+  ov_e96 = e96_band(ov, ov1, ov2)
+  puts "── Смуга на НАШИХ #{(RESISTOR_TOL * 100).round} % E96 (паспортні ±2 % — лише для 0.1 %, SLUSBH2G VBAT_ACCURACY):"
+  [ [ "VBAT_OV", ov, ov_e96 ], [ "VBAT_OK ON", ok_on, e96_band(ok_on, ok1, ok2, ok3) ],
+    [ "VBAT_OK OFF", ok_off, e96_band(ok_off, ok1, ok2) ] ].each do |name, nom, b|
+    printf("   %-11s %.3f В: плечі ±%.2f %% → worst-case ±%.2f %% (%.3f .. %.3f) · RSS ±%.2f %% (%.3f .. %.3f)\n",
+           name, nom, b[:arms] * 100, b[:wc] * 100, *b[:wc_band], b[:rss] * 100, *b[:rss_band])
+  end
+  printf("   вікно клампа HW.12 до стелі %.1f В: ±2 %% → %.0f мВ · RSS → %.0f мВ · worst-case → %.0f мВ\n",
+         VSTOR_ABS_MAX_V, (VSTOR_ABS_MAX_V - band(ov)[1]) * 1000,
+         (VSTOR_ABS_MAX_V - ov_e96[:rss_band][1]) * 1000, (VSTOR_ABS_MAX_V - ov_e96[:wc_band][1]) * 1000)
+  puts "   ⚠️ Мультиметр міряє поріг ОДНІЄЇ плати, не смугу партії — смугу дає цей розрахунок."
+  puts
+
   # Межа вікна — поріг ON (OK_HYST), не OFF: так рахує `02_03 §8` («3.4В→VBAT_OV»), і так порахована база
   # CANON_WINDOW_J. Від OFF тут стояло до 2026-09-25 — друк казав «ТА САМА величина», а давав на 139 мДж більше
   # і Δ проти бази, порахованої від ON (00_07 HW.37).
@@ -249,11 +309,12 @@ def report
   puts "   ВИЩЕ за верхній хвіст OV і НЕ ВИЩЕ за стелю #{VSTOR_ABS_MAX_V} В. Порівняй її з реальним"
   puts "   розкидом деталі: стабілітрон 1 % має V_z ±1 %, тобто ≈±48 мВ на ратифікованих 4.82 В, а"
   puts "   типовий 5 %-ряд — ±240 мВ; TVS standoff нормується ще грубіше. ⚖️ **РАТИФІКОВАНО"
-  puts "   founder 2026-09-09 (Derate, HW.37): ціль 4.822 В дає вікно 581 мВ (worst-case-high)."
+  puts "   founder 2026-09-09 (Derate, HW.37): ціль 4.822 В дає вікно 581 мВ на паспортних ±2 %,"
+  puts "   а на наших 1 % E96 — 572 мВ (RSS) / 521 мВ (worst-case), блок «Смуга на НАШИХ» вище."
   puts "   TVS-гілку ширше вікно НЕ врятувало (вимір 2026-09-24, tvs_shortlist): кламп мусить"
-  puts "   мовчати в робочому діапазоні й спрацьовувати в (4.919; 5.5] В, тобто V_BR max / V_RWM"
-  puts "   ≤ 1.118, а датащити дають 1.40-2.67. Головна гілка — supervisor + MOSFET-шунт"
-  puts "   (ovp_clamp_shortlist)."
+  puts "   мовчати в робочому діапазоні й спрацьовувати в (4.919; 5.5] В — на 1 % (4.979; 5.5] —"
+  puts "   тобто V_BR max / V_RWM ≤ 1.118 (1.105), а датащити дають 1.40-2.67. Головна гілка —"
+  puts "   supervisor + MOSFET-шунт (ovp_clamp_shortlist)."
 end
 
 # ── Режим ВИМІРЯНИХ номіналів (крок чек-листа `02_03 §11`) ────────────────────
