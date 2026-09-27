@@ -339,7 +339,7 @@ RSpec.describe EmergencyResponseService do
     end
 
     it "gives the siren a SHORTER window than the valve in the same fire protocol" do
-      # Каденс стабимо: на РЕАЛЬНОМУ (годинному) сирена недоставна за побудовою —
+      # Каденс стабимо: на РЕАЛЬНОМУ (годинному) сирену відмовляють наперед —
       # це ратифікована поведінка, запінена окремо нижче. Тут перевіряємо, що
       # вікна РІЗНІ, а не що сирена доїжджає.
       stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
@@ -395,9 +395,10 @@ RSpec.describe EmergencyResponseService do
     end
 
     # 🔴 Ратифікована поведінка (⚖️ 2026-08-15), а не побічний ефект: каденс флашу
-    # Королеви — компайл-тайм константа прошивки (1 год), тож 15-хвилинна сирена
-    # недоставна на БУДЬ-ЯКОМУ шлюзі, який платформа провіжинить. Каденс тут
-    # СВІДОМО не стабиться — предметом піна є саме дефолт.
+    # Королеви — компайл-тайм константа прошивки (1 год), тож доставку 15-хвилинної
+    # сирени не ГАРАНТОВАНО на жодному шлюзі (не «неможливо»: перший poll буває й до
+    # 900 с — підставу переміряно 2026-09-27, `00_07` FW.64). Каденс тут СВІДОМО не
+    # стабиться — предметом піна є саме дефолт.
     context "when the response stays relevant for less than the fleet's real poll cadence" do
       it "issues NO siren command at all, and names the cadence rather than the ceiling" do
         create(:actuator, :fire_siren, gateway: gateway, state: :idle)
