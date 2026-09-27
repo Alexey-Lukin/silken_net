@@ -81,8 +81,8 @@
 
 | Партнер | Кафедра / профіль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані — разовий запит, [`00_07`](00_07_Action_Plan_Tracker) HW.26) + **коефіцієнт дифузії V/Al крізь пасивний оксид**: у Kirkendall-моделі (наш script 51) він стоїть порядком величини без названого джерела, а відповідь лінійна в ньому — дифузія й ефект Кіркендалла є фахом школи → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); ⛔ FEA-E гомогенізацію гіроїда партнерові НЕ пропонувати — її закрито власним voxel-FE 2026-09-12 (виміряне `E_app` по обох осях і канонна пара `C`/`n`, ⚖️ 2026-09-18 — [`01_01 §5.2`](01_01_Coaxial_Gyroid_Topology_and_PEEK)); те, чого бракує, — фізичний ISO 13314 на друкованому зразку, а не ще одна модель | Ст. 2 |
-| доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`00_04`](00_04_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29 |
+| проф. **Гусак А.М.** | фізика: дифузія й твердофазні реакції (Wiley-монографія, UCLA-колаб.) | **коефіцієнт дифузії V/Al крізь пасивний оксид**: у Kirkendall-моделі (наш script 51) він стоїть порядком величини без названого джерела, а відповідь лінійна в ньому — дифузія й ефект Кіркендалла є фахом школи → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ст. 2 |
+| доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`00_04`](00_04_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/29 |
 | доц. **Ярмілко А.В.** (ФОТІУС) | IIoT / embedded | **Провідник у ЧНУ** (зустрічі 2026, вхід у ректорат) + лід на локальний друк Ti: чи мають черкаські контакти SLM/DMLS ([`00_07`](00_07_Action_Plan_Tracker) HW.24, не committed) | — |
 
 > **Канал біо-хабу — пасивний і однолистовий.** ⚖️ founder 2026-09-23: про ZIF-синтез — ОДИН лист, без нагадувань, умов лист не обіцяє ([`00_07`](00_07_Action_Plan_Tracker) HW.5). ⚖️ founder 2026-09-25 за рекомендацією: питання покриттів (Zn-HAp-синтез · SA-reservoir) їдуть наступним ОДНИМ листом і лише після відповіді на перший ([`00_07`](00_07_Action_Plan_Tracker) HW.40); якщо відповіді не буде зовсім, питання повертається founder-у, а не ллється другим листом за мовчанням. Ціна — календар, не TRL 4: покриття не на критичному шляху coin.
@@ -101,9 +101,9 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | **Провідниця в ЧДТУ** (зустрічі ще не було, станом на 2026-09-26) — канал відкрила сама ([`00_07`](00_07_Action_Plan_Tracker) UNI.9). Предмет — «на виріст», бо польової телеметрії нуль: anomaly/fraud-статистика поверх нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) · biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) · калібрація `stress_index`-ваг на ПРЯМИХ вимірах (sap/VPD/акустика) проти польових міток — не Z, бо Z присуджено печаткою DCI ([`05_05 §8.2/§8.3`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13/24a |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | **Провідниця в ЧДТУ** (зустрічі ще не було, станом на 2026-09-26) — канал відкрила сама ([`00_07`](00_07_Action_Plan_Tracker) UNI.9). Предмет — «на виріст», бо польової телеметрії нуль: anomaly/fraud-статистика поверх нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) · biodiversity fusion-статистика (ANOVA/permutation, [`00_07`](00_07_Action_Plan_Tracker) E.14) · калібрація `stress_index`-ваг на ПРЯМИХ вимірах (sap/VPD/акустика) проти польових міток — не Z, бо Z присуджено печаткою DCI ([`05_05 §8.2/§8.3`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13 |
 | **перший проректор Гончаров А.В.** | каф. РТРС (радіотехніка / signal-processing) | **Інституційний якір ЧДТУ** (MoU-підписант) + експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) нашого розрахунку → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
-| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
+| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц | Ст. 24 |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `ParametricInsurance`). Деталі методів — §2.2.
 
@@ -175,7 +175,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 **Журнали-цілі:** *Corrosion Science* (Q1), *npj Materials Degradation* (Q1), *Acta Biomaterialia* (Q1)
 
 **Авторський колектив:**
-- Школа Гусака (ЧНУ) — Prony/Maxwell-Wiechert creep-fit PEEK по виміряних даних + коефіцієнт дифузії V/Al крізь пасивний оксид для Kirkendall-моделі (наш script 51, де він досі без джерела); ICP-MS міряє зовнішня лабораторія (coin Stage 2)
+- Школа Гусака (ЧНУ) — коефіцієнт дифузії V/Al крізь пасивний оксид для Kirkendall-моделі (наш script 51, де він досі без джерела); ICP-MS міряє зовнішня лабораторія (coin Stage 2)
 - Біо-хаб ЧНУ (Спрягайло) — склад ксилемного соку *Pinus sylvestris*
 - Архітектор (Silken Net) — практичний контекст та вимоги 20-річної довговічності
 
@@ -195,7 +195,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 ### 2.3 RF та акустика (лабораторні виміри ЧДТУ)
 
-> **Принцип:** дизайн і розрахунок — наші (self-own); ЧДТУ (РТРС, ПМКТ) міряє їх у лабораторії й у полі; у 24a до виміру додаються польова ground truth біо-хабу ЧНУ і статистика ЧДТУ (Карапетян).
+> **Принцип:** дизайн і розрахунок — наші (self-own); ЧДТУ (РТРС, ПМКТ) міряє їх у лабораторії й у полі.
 
 #### Стаття 23: Прихована SMD-Антена LoRa у Лісовому Середовищі
 
@@ -230,37 +230,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 **Тип зв'язку:** Послідовний — ЧДТУ (ПМКТ) валідує фізику фононної лінзи (firmware ADC-DMA для п'єзо-тракту — self-owned, [`03_01`](03_01_Firmware_Lifecycle_and_DMA)).
 
-**Магістерська:** «Дослідження акустичних властивостей пористих TPMS-структур Ti-6Al-4V для пасивної фільтрації ультразвукових емісій» (керівник Базіло/Бондаренко, ЧДТУ ПМКТ).
-
-#### 🌿 Стаття 24a: Acoustic Biodiversity Verification of Satellite Land-Cover (Mongabay)
-
-**Назва (EN):** _"Multi-Scale Acoustic Verification of Satellite Land-Cover Through TinyML Edge AI: Distinguishing Functional Forest Ecosystems from Plantation Monocultures via Continuous Bio-IoT Soundscape Classification"_
-**Назва (UA):** _«Мультимасштабна акустична верифікація супутникового лісового покриву через TinyML Edge AI…»_
-**Журнали:** *Ecological Indicators* (Q1, IF ~6.3) · *Remote Sensing of Environment* (Q1, IF ~13.5) · *Methods in Ecology and Evolution* (Q1, IF ~8.0) · *Bioacoustics* (Q2)
-
-> ⚠️ **Рамка (both/and — не заміна карбону):** «Mongabay» = історичний ярлик кампанії, НЕ зміна позиціювання. Biodiversity — **другий D-MRV вимір ПОВЕРХ карбонового ядра**: `growth_points → SCC` лишається ядром економіки; fauna = 5-й акустичний клас (поверх silence/wind/cavitation/chainsaw) + `biodiversity_score` (proposed) як метадані `ForestNFT` (proposed).
-
-**Контекст:** Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 год аудіо; огляд *Mongabay News*, травень 2026) інструментально довів обмеження суто супутникового MRV: NDVI не розрізняє функціональну екосистему (dawn-dusk піки фауни) від монокультурної плантації (нерухомий звуковий фон). Стаття 24a переносить методологію у безперервну on-tree IoT-площину — тисячі STM32WLE5CC з `fauna_activity_index` 24/7, цифрово підписаним та anchored на Polygon SCC.
-
-**Унікальність (відсутня в світовій літературі станом на 2026-05):**
-1. Інтеграція **soundscape ecology** (Pijanowski et al. 2011; ACI Index Pieretti et al. 2011) з **embedded TinyML на суб-кілобайтному бюджеті**: INT8 forward-pass (40 log-mel → 16 → 5 класів), **972 B ваг у Flash / ~76 B стеку / ~0 .bss**, без TFLM/CMSIS-NN-рантайму ([`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) — де типова ESC-CNN потребує ~16 КБ tensor arena, що при цьому бюджеті **фізично не деплоїться** ([`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)).
-2. **D-MRV pipeline** `TinyML soundscape → CoAP → Rails → Polygon SCC` — both/and (biodiversity поверх карбону). ⚠️ **Не «продакшн» і не «cryptographically доводить»:** живий шлях мінтить **оптимістично** — IoTeX/Chainlink НЕ enforced; ланка `W3bstream ZK-proof → Chainlink Oracle → mint guard` = PATH 1 ⚪ demoted/unwired, trust-origin = **L0**, anti-fraud = ex-post clawback (ще не збудований) → [`05_02`](05_02_Proof_of_Growth_Pipeline). Це архітектура-намір (North-Star), не доведений факт.
-3. **Macro-Micro residual analysis:** NDVI=high & fauna=low → кандидат «green-washing»; NDVI=low & fauna=high → ранньо-стадія регенерації.
-
-| Автор | Афіліація | Внесок |
-|-------|-----------|--------|
-| **Базіло К.В.** (ЧДТУ ПМКТ) | П'єзоелектрика, EIS | Резонансні характеристики п'єзосенсора 0.5–12 кГц; калібрування АЧХ під soundscape |
-| **Бондаренко М.О.** (ЧДТУ ПМКТ) | Acoustic Emission | AE-методологія для розрізнення layered soundscape від шуму; «Cherkasy Soundscape Library» |
-| **Карапетян А.Р.** (ЧДТУ) | Math statistics, R | ANOVA dawn/dusk peak amplitude між ландшафтами; permutation tests для `biodiversity_trend` |
-| **Спрягайло О.В.** (ЧНУ біо-хаб) | Ботаніка, фітоценологія | Польові експедиції Черкаського бору, ground-truth labeling, 10-річні дані стресу як external validation |
-| **Гаврилюк М.В.** (ЧНУ біо-хаб) | Зоологія, GIS | Cross-validation soundscape ↔ обліки птахів/амфібій; GIS-інтеграція ділянок |
-| Архітектор (Silken Net) | TinyML, firmware, Web3 | Path B (log-mel) обрано + DSP front-end self-owned (`Compute_LogMel`, librosa≡stdlib≡C parity; MFCC/DCT не рекомендовано для CNN-ESC — [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference)); 5-class INT8 baseline self-owned (ESC-50; per-frame FC 40→16→5 — не CNN, [`00_07` FW.4](00_07_Action_Plan_Tracker)); `AiInsight#biodiversity_trend`; `ForestNFT` metadata (proposed) |
-
-**Тип зв'язку:** Багатошарова паралель — ЧНУ біо-хаб (ground truth) + ЧДТУ ПМКТ (hardware acoustic) ∥ ЧДТУ Карапетян (статистика + fusion); архітектор інтегрує firmware+backend; усі шари на одному датасеті («Cherkasy Soundscape Library») + одній публікації.
-
-**Cross-references:** [`03_03 §10`](03_03_TinyML_Acoustic_Inference) (архітектура 5-class) · [`00_07` UNI.11](00_07_Action_Plan_Tracker).
-
-**Магістерська / бакалаврська:** Гаврилюк (ЧНУ біо-хаб, зоологія — «Динаміка денних/сутіночних піків фауни…») · Базіло/Бондаренко (ЧДТУ ПМКТ бакалавр — «Калібрувальний soundscape-датасет…»). Форму й теми з Карапетян вирішує зустріч ([`00_07`](00_07_Action_Plan_Tracker) UNI.9), а не цей рядок.
+**Магістерська / бакалаврська:** «Дослідження акустичних властивостей пористих TPMS-структур Ti-6Al-4V для пасивної фільтрації ультразвукових емісій» (керівник Базіло/Бондаренко, ЧДТУ ПМКТ) · бакалаврська «Калібрувальний soundscape-датасет…» (Базіло/Бондаренко, ЧДТУ ПМКТ) — той TinyML-датасет, який обіцяє назва статті.
 
 ### 2.4 Біохімія EBFC і токсикологія
 

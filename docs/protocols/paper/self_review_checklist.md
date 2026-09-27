@@ -1,6 +1,6 @@
 # Pre-Submission Self-Review Checklist (hard-science)
 
-**Призначення.** Тонкий self-review gate для рукописів плану `00_02 §2.1` (Статті 1–24a) — від
+**Призначення.** Тонкий self-review gate для рукописів плану `00_02 §2` — від
 квантової хімії (Стаття 1) до formal-verification / RF / стохастики, а також зовнішньої
 фізики (DM-EFT → JCAP/PRD). Прогнати **до сабміту** або **до передачі співавтору**. Це
 **copilot-not-pilot**: інструмент не пише й не рецензує за тебе — він робить сліпі плями
@@ -60,7 +60,7 @@
 
 | Що | Дім |
 |---|---|
-| План 24 статей + per-paper рамка | `00_02 §2.1` (ЧНУ 1–10 · ЧДТУ §1B 11–14 · спільні §1C 15–24a) |
+| План статей + per-paper рамка | `00_02 §2` |
 | IP-постава / publish-to-protect / AI-disclosure | `00_01 §8` + `protocols/anchor/defensive_disclosure.md` |
 | Реальні числа/claims (Стаття 1 ①②③④) — One-Home | `protocols/ebfc/in_silico/SUMMARY.md` + `PIPELINE_STATUS.md` |
 | Staffing / AI-clones / хто що пише | `00_03 §3.6` |
