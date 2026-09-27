@@ -801,8 +801,8 @@ end
       expect(described_class.deprecated_terms("00_07", "migrate-from ZP-3 baseline")).to be_empty
     end
 
-    it "does NOT flag a token that is still alive (LTC3108 survives as a DNP fallback)" do
-      expect(described_class.deprecated_terms("02_03", "LTC3108 DNP cold-start fallback")).to be_empty
+    it "does NOT flag LTC3108 — retired 2026-09-27, but its token lives on in refutation prose (00_07 HW.46)" do
+      expect(described_class.deprecated_terms("02_03", "мітигацію LTC3108 спростовує його паспорт")).to be_empty
     end
 
     it "flags the FPU myth tokens (WLE5 has no FPU — ARM builds are soft-float)" do
