@@ -92,27 +92,6 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
-  describe "gateway proximity prioritization" do
-    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
-
-    it "orders actuators by gateway proximity to the alert tree" do
-      near_gw = create(:gateway, :online, cluster: cluster, latitude: 49.4286, longitude: 32.0621)
-      far_gw  = create(:gateway, :online, cluster: cluster, latitude: 50.0000, longitude: 33.0000)
-
-      far_actuator  = create(:actuator, :water_valve, gateway: far_gw, state: :idle)
-      near_actuator = create(:actuator, :water_valve, gateway: near_gw, state: :idle)
-
-      described_class.call(alert)
-
-      commands = ActuatorCommand.where(ews_alert: alert).order(:id)
-      actuator_ids = commands.pluck(:actuator_id)
-
-      # Посуха ріже 7200 на два чанки на актуатор: обидва накази ближнього мусять
-      # ЦІЛКОМ передувати наказам дальнього (flat_map іде по відсортованих).
-      expect(actuator_ids).to eq([ near_actuator.id, near_actuator.id, far_actuator.id, far_actuator.id ])
-    end
-  end
-
   # Гард тотальності приватного API: живий викликач порожній набір уже відсіює
   # (`report_step_unserved` → next), тож ця гілка досяжна лише прямим викликом —
   # пін тримає її свідомим no-op'ом, а не випадковим залишком.
@@ -255,18 +234,6 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
-  describe "tree without coordinates" do
-    it "skips proximity ordering when tree has no latitude/longitude" do
-      tree_no_gps = create(:tree, cluster: cluster, latitude: nil, longitude: nil)
-      alert = create(:ews_alert, :drought, cluster: cluster, tree: tree_no_gps)
-      valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
-
-      expect {
-        described_class.call(alert)
-      }.to change(ActuatorCommand, :count)
-    end
-  end
-
   describe "unknown alert_type" do
     let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach, severity: :critical) }
 
@@ -280,27 +247,6 @@ RSpec.describe EmergencyResponseService do
       }.not_to change(ActuatorCommand, :count)
 
       expect(Rails.logger).to have_received(:info).with(/Тип тривоги.*обробляється лише сповіщенням/)
-    end
-  end
-
-  describe "tree without coordinates (proximity skip)" do
-    let(:tree_no_coords) { create(:tree, cluster: cluster, latitude: nil, longitude: nil) }
-    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree_no_coords) }
-
-    it "does not sort by proximity and still creates commands" do
-      create(:actuator, :water_valve, gateway: gateway, state: :idle)
-
-      expect {
-        described_class.call(alert)
-      }.to change(ActuatorCommand, :count).by(2) # посуха = 7200 → два чанки
-    end
-  end
-
-  describe "alert tree is nil" do
-    it "does not sort by proximity" do
-      alert_no_tree = create(:ews_alert, cluster: cluster, tree: nil, severity: :critical, alert_type: :severe_drought)
-      create(:actuator, :water_valve, gateway: gateway, state: :idle)
-      expect { described_class.call(alert_no_tree) }.not_to raise_error
     end
   end
 
@@ -562,22 +508,6 @@ RSpec.describe EmergencyResponseService do
       actuator_ids = ActuatorCommand.where(ews_alert: alert).pluck(:actuator_id).uniq
       expect(actuator_ids).to include(online_actuator.id)
       expect(actuator_ids).not_to include(_offline_actuator.id)
-    end
-  end
-
-  describe "cluster with nil organization" do
-    it "handles alert with cluster having nil organization_id" do
-      cluster_no_org = create(:cluster, organization: organization)
-      tree_no_org = create(:tree, cluster: cluster_no_org, latitude: nil, longitude: nil)
-      gateway_online = create(:gateway, :online, cluster: cluster_no_org, latitude: 49.0, longitude: 32.0)
-      create(:actuator, :water_valve, gateway: gateway_online, state: :idle)
-
-      alert = create(:ews_alert, :drought, cluster: cluster_no_org, tree: tree_no_org)
-
-      # This tests the proximity branch where tree has no coordinates
-      expect {
-        described_class.call(alert)
-      }.not_to raise_error
     end
   end
 end

@@ -116,9 +116,6 @@ class EmergencyResponseService
   private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:)
     return if actuators.empty?
 
-    # [FIX-3]: Пріоритезація — спершу активуємо актуатори ближчих шлюзів
-    ordered_actuators = prioritize_by_proximity(actuators, alert)
-
     # Розбиваємо тривалість на серії по `ActuatorCommand::MAX_DURATION_S` —
     # протокольна стеля ОДНОГО наказу (дім — модель).
     chunks = duration_chunks(duration)
@@ -127,7 +124,7 @@ class EmergencyResponseService
     # тож «команду не видано» і «в БД лежить невалідний рядок» — різні речі, і лише
     # перша з них чесна. Відсіяний актуатор дістає власний гучний алерт; сусіди по
     # кластеру, які доставку витримують, свої накази отримують.
-    deliverable = ordered_actuators.select { |actuator| deliverable?(actuator, chunks.max, relevance, alert) }
+    deliverable = actuators.select { |actuator| deliverable?(actuator, chunks.max, relevance, alert) }
     return if deliverable.empty?
 
     now = Time.current
@@ -301,30 +298,5 @@ class EmergencyResponseService
     chunks = Array.new(full_chunks, max)
     chunks << remainder if remainder > 0
     chunks
-  end
-
-  # Сортуємо актуатори за відстанню їхнього шлюзу до дерева-джерела тривоги.
-  # Сорт у памʼяті, а не в SQL: набір уже завантажений (`preload(:gateway)` вище),
-  # тож ORDER BY означав би ДРУГИЙ запит на кожен крок протоколу — саме той повтор
-  # у циклі, який тут і ловився. Семантика збережена дослівно, включно з NULLS LAST:
-  # шлюз без координат їде в хвіст, а не вважається найближчим.
-  private_class_method def self.prioritize_by_proximity(actuators, alert)
-    tree = alert.tree
-    # latitude-перевірка вже гарантує tree non-nil (short-circuit) → longitude без &.
-    return actuators unless tree&.latitude.present? && tree.longitude.present?
-
-    actuators.sort_by do |actuator|
-      # [ARCH.103] `&.` тут був недосяжною гілкою, і саме тому непокривною: асоціація
-      # гарантована ДВІЧІ — `belongs_to :gateway` без `optional:` і `gateway_id NOT NULL`
-      # у схемі. Чесний лік — зняти оператор, а не вигадувати фікстуру під вхід, якого
-      # база не приймає. ⚠️ Координати шлюзу лишаються nullable, тож перевірка НА НИХ
-      # несуча: без неї `Float::INFINITY`-гілка не спрацювала б і сортування впало б.
-      gateway = actuator.gateway
-      if gateway.latitude.nil? || gateway.longitude.nil?
-        Float::INFINITY
-      else
-        (gateway.latitude - tree.latitude)**2 + (gateway.longitude - tree.longitude)**2
-      end
-    end
   end
 end
