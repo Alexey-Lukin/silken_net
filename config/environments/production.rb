@@ -112,6 +112,9 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Replace the default in-process memory cache store with a durable alternative.
+  # ⚠️ [FW.60] The store must be SHARED across processes, not just durable: the coap daemon
+  # only READS the OTA packages that web/job write (Ota::PackageStore) — a process-local
+  # store would miss on every read and silently darken every OTA campaign (04_02 card).
   config.cache_store = :solid_cache_store
 
   # All 32 domain workers already use Sidekiq directly (include Sidekiq::Job).
