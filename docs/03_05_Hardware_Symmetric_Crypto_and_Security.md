@@ -948,7 +948,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 >
 > **True-DePIN ladder («голос дерева»):** L0 custodial → L1 Queen-attest → L2 per-tree (SE050 Ed25519 + Merkle, energy-gated). Повний ladder (рунги/гейти/статус/енергобюджет) — канон [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline). §3.7 володіє лише SE/крипто-частиною (Slot-0 AES, Slot-1 Ed25519 keygen).
 >
-> **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.5) і slashing (економічний ризик — [`05_05 §3`](05_05_Slashing_and_Risk_Policy); ⚫ `operator-bond`/BIZ.13 відкликано ⚖️ 2026-08-24, розбір — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Голос + точні «вуха» + skin-in-game = довірений RWA.
+> **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ — лише в urban-варіанті: у baseline Slot 0 reserved, KEYL у Protected Flash обох гілок, SEC.14) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.5) і slashing (економічний ризик — [`05_05 §3`](05_05_Slashing_and_Risk_Policy); ⚫ `operator-bond`/BIZ.13 відкликано ⚖️ 2026-08-24, розбір — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Голос + точні «вуха» + skin-in-game = довірений RWA.
 >
 > **Усі залишкові кроки (docs/firmware/code/honesty/eval-kit/L1-L2) занесено в** [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker). Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.43](00_07_Action_Plan_Tracker), [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
@@ -998,7 +998,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 | Slot | Тип | Призначення | Read | Write |
 |------|-----|-------------|------|-------|
-| 0 | AES-128 key | ⚫ **RESERVED, НЕ пишеться** — post-SEC.14 (provisioning-only, 2026-07-03) KEYL лишається у Protected Flash в **обох** фабричних гілках; slot тримається під urban-варіант. ⚠️ Код-лаг: `SecureElementProvisioner` ще емітить Slot-0 запис ([`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) | ❌ never | ⛔ не мусить писатись (дзеркало з ✂️ — [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) крок 4) |
+| 0 | AES-128 key | ⚫ **RESERVED, НЕ пишеться** — post-SEC.14 (provisioning-only, 2026-07-03) KEYL лишається у Protected Flash в **обох** фабричних гілках; slot тримається під urban-варіант. Емісію Slot-0 з `SecureElementProvisioner` знято 2026-09-27 (присуд «Набір ключів Гілки B», [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning)) | ❌ never | ⛔ не мусить писатись (дзеркало з ✂️ — [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) крок 4) |
 | 1 | **Ed25519 private (SE050)** | **Голос дерева** — device-held non-extractable ключ, що підписує власну телеметрію (L2, Merkle-корінь — E.60); та сама крива покриває peaq/Solana DID-підпис. SE050 генерує keypair **на чипі**, експортує лише pubkey (backend не знає private → непідробно). Раніше P-256 (ATECC) — не міг (інша крива) | ❌ never | On-chip keygen (factory) |
 | 2 | Public key cert | X.509 device cert | ✅ open | Factory |
 | 3 | HMAC-SHA256 key | OTA image HMAC verification (FW.23) | ❌ never | One-time |
