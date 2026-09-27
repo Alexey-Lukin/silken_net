@@ -17,10 +17,12 @@ require "openssl"
 # L = 128 біт). Дзеркало firmware: `firmware/common/key_ratchet.h`
 # (pure-C, той самий golden-KAT — byte-parity пінується спеками обабіч).
 #
-# Властивості (чесна модель — канон docs/03_05 §3.6): BACKWARD secrecy —
+# Властивості (чесна модель — канон docs/03_05 §3.8): BACKWARD secrecy —
 # витік K_v не відкриває попередні ключі й записаний раніше трафік
 # (вимога GDPR/ISO 27001/NIST SP 800-57); майбутні ключі з K_v похідні —
-# відновлення після компрометації = re-provisioning або ECDH-alt.
+# відновлення після компрометації задумане як re-provisioning або ECDH-alt,
+# але першого сьогодні НЕМА: провіжн пише той самий ключ, а HKDF від master
+# детермінований (00_07 FW.17).
 # Інтеграція з Dual-Key Grace Period (HardwareKey): backend ротує при
 # dispatch'і команди, старий ключ живе у previous_aes_key_hex до першого
 # успішного decrypt новим (= неявний per-device ACK).

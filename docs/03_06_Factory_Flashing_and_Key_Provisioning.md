@@ -860,7 +860,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 **Ротація master key:**
 
 - Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)).
-- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії.
+- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії. ⚠️ **Механізму під цим рядком сьогодні немає:** ротація master наявних рядків `HardwareKey` не передеривовує (сесія їх перевикористовує — `ensure_hardware_key`), нові ключі дістануть лише нові пристрої, а кластерні похідні, які бекенд деривує з master на льоту (K_ota — `OtaHmacKeyService`), на бекенді зміняться для всього флоту одразу, тоді як пристрої триматимуть старі — OTA-підпис розійдеться з кожним вузлом. Форма ротації й відновлення — [`00_07` — FW.17](00_07_Action_Plan_Tracker).
 - Fail-closed boot guard: `config/initializers/master_key_strength_check.rb` відмовляє у запуску Rails якщо `PROVISIONING_MASTER_KEY` = тест-вектор (SEC.9).
 
 ---
