@@ -11,7 +11,7 @@
 
 > ## ⚠️ СТАТУС ДОКУМЕНТА: КАРКАС ПІД ЮР-REVIEW — НЕ ГОТОВИЙ КОНТРАКТ, НЕ ДЛЯ ПІДПИСАННЯ
 >
-> Це **структурний каркас** (BIZ.2), не законопроєкт і не юридична порада. Мета — дати юристу (Аблязов Д.Е. + профільний crypto/securities-юрист TBD) готову архітектуру + всі рішення, що вже прийняті свідомо, замість починати з чистого аркуша. Кожен `[⚖️ TBD: …]` — рішення, яке приймає юрист/founder, не я. Числа НЕ вигадані — всюди плейсхолдери.
+> Це **структурний каркас** (BIZ.2), не законопроєкт і не юридична порада. Мета — дати юристу (UA-господарник TBD, вхід — Аблязов Д.Е. + профільний crypto/securities-юрист TBD) готову архітектуру + всі рішення, що вже прийняті свідомо, замість починати з чистого аркуша. Кожен `[⚖️ TBD: …]` — рішення, яке приймає юрист/founder, не я. Числа НЕ вигадані — всюди плейсхолдери.
 >
 > **Дата підготовки:** 2026-07-24 · **Counterparty (founder-рішення):** **Active Bridge, LLC** — SilkenNet оперує під цією юр-особою (колізію з demo-даними в коді розсуджено 2026-09-24 — `§E.1`).
 >
@@ -21,7 +21,7 @@
 > 3. [`sla_exhibit`](../business/sla_exhibit.md) — Availability-SLA, хукається сюди як **Exhibit A**.
 > 4. [`00_04`](../../00_04_Nature_as_a_Service_Contracts.md) — NaaS lifecycle (код-реальність) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) «Таблиця SLA» (legal-event→tx mapping — **інше значення**, ніж Exhibit A) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (юр-передумови, BIZ.2/9/18/20/21).
 >
-> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`00_02 §1.4/§4.2`](../../00_02_Academic_Integration_and_IP.md) (Аблязов) → [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md).
+> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`00_02 §1.4/§4.2`](../../00_02_Academic_Integration_and_IP.md) (UA-юр-канал) → [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md).
 
 ---
 
@@ -430,7 +430,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 | Крок | Дія | Виконавець |
 |---|---|---|
 | 1 | Прочитати [`securities_review`](securities_review.md) (securities) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) (metrology) | Founder → юрист |
-| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **Аблязов Д.Е.** (СЄУ, к.ю.н., віцепрезидент — господарське/комерційне право, [`00_02 §1.4`](../../00_02_Academic_Integration_and_IP.md)/[`§4.2`](../../00_02_Academic_Integration_and_IP.md)) |
+| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **UA-господарник (TBD)**; вхід — Аблязов Д.Е. (СЄУ, к.ю.н. — конституційне право, [`00_02 §1.4`](../../00_02_Academic_Integration_and_IP.md)/[`§4.2`](../../00_02_Academic_Integration_and_IP.md)) |
 | 3 | Юр-консультація securities/Howey/MiFID/AIFMD (найвищі ставки, [`securities_review`](securities_review.md) Блок 1) | **Профільний crypto/securities-юрист (TBD)** — окремий фахівець, НЕ Аблязов (поза його фахом, memo явно це розділяє) |
 | 4 | Фіналізація цього MSA-каркаса з відповідями на `[⚖️ TBD]` | Founder + обидва юристи |
 | 5 | Review практикуючим юристом фінальної версії | Обидва вище |
@@ -445,7 +445,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 | # | § | Рішення | Хто закриває |
 |---|---|---|---|
 | 1 | `§A` п.1 | Повна юр-назва + юрисдикція Клієнта | per-deal |
-| 2 | `§A` п.9 | BIZ.20 entity-вибір ✅ вирішено (Active Bridge, LLC) — підтвердження реєстраційних реквізитів ПЕРЕД Term Sheet | 👤 founder + Аблязов |
+| 2 | `§A` п.9 | BIZ.20 entity-вибір ✅ вирішено (Active Bridge, LLC) — підтвердження реєстраційних реквізитів ПЕРЕД Term Sheet | 👤 founder + UA-господарник (TBD) |
 | 3 | `§B.0` | Повна назва/номер/адреса Active Bridge, LLC | 👤 founder (BIZ.20 entity-вибір ✅; реквізити відкриті) |
 | 4 | `§B.4.3`/`§B.4.4` | Включати токен-Deliverable / risk-protection за замовчуванням? | ⚖️ юрист, gated на UNI.16 Блок 1 |
 | 5 | `§B.5` | Модель Service Fee (fixed/usage-based) + tax-posture | 👤 founder (модель fee) + **податковий фахівець — TBD, не контактовано** (tax-posture; вакансія [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md), не облік — [`tax_posture_ua`](tax_posture_ua.md)) |
@@ -463,7 +463,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 
 ## Що далі (не gold-plate)
 
-1. **👤 Founder:** передати цей каркас + [`securities_review`](securities_review.md) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) Аблязову для UA-складової (крок `§E.3.2`).
+1. **👤 Founder:** передати цей каркас + [`securities_review`](securities_review.md) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) UA-господарнику (TBD; вхід — Аблязов) для UA-складової (крок `§E.3.2`).
 2. **👤 Founder:** знайти профільного crypto/securities-юриста (TBD) для Блоку 1 UNI.16 — це гейтить `§B.6.3`/`§B.6.4`/`§B.16.3`, найважливіші відкриті питання цього каркаса.
 3. **⚖️ Founder:** entity-присуд («SilkenNet під Active Bridge, LLC») **УХВАЛЕНО** (2026-07-24) — канонізовано [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) + [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20. Залишається відкритим: co-founder IP-carve-out (окремий папір, `§E.1`) + 90%-тест Дія.City-звірка — обидва поза скоупом цього документа.
 4. **🤖 (майбутній slice):** після юр-відповідей на `§B.6.3`/`§B.6.4` — вирівняти `naas_contract.rb`/`contract_termination_service.rb` під обрану Опцію, щоб контракт і продукт не розходились.

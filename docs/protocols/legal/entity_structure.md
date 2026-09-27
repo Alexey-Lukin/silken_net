@@ -10,7 +10,7 @@
 
 > ## ⚠️ СТАТУС ДОКУМЕНТА: МАТЕРІАЛ ДЛЯ РІШЕННЯ + ЮР-REVIEW — НЕ юридична порада
 >
-> Це **entity-option matrix** (🤖-половина BIZ.20, [`00_07`](../../00_07_Action_Plan_Tracker.md) — «чернетка entity-option matrix → живить рішення»), призначена (а) підтримати структурне рішення founder'а й (б) стати вхідним матеріалом для платного юр-review (Аблязов Д.Е. / крипто-юрист TBD — UNI.14/UNI.16). Це **НЕ** юридична/податкова порада й не заміна консультації.
+> Це **entity-option matrix** (🤖-половина BIZ.20, [`00_07`](../../00_07_Action_Plan_Tracker.md) — «чернетка entity-option matrix → живить рішення»), призначена (а) підтримати структурне рішення founder'а й (б) стати вхідним матеріалом для платного юр-review (UA-господарник TBD, вхід — Аблязов Д.Е. / крипто-юрист TBD — UNI.14/UNI.16). Це **НЕ** юридична/податкова порада й не заміна консультації.
 >
 > **Джерела фактів:** [`R1_ua_legal.md`](../research/R1_ua_legal.md) (UA entity/tax) · [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) (offshore/token/securities) · [`securities_review`](securities_review.md) (securities fact-pattern, code-verified) · [`tax_posture_ua`](tax_posture_ua.md) (tax + open-q token-емісія). Усі «як воно є» — з посиланням на R#/memo/код + рівнем впевненості; усі «як це кваліфікує право» — **відкриті питання для юриста**.
 >
@@ -194,7 +194,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 | **Залежності** | BIZ.20 (entity) → BIZ.2 (MSA) → перший B2B-клієнт; методолог BIZ.9 (Verra/GS legitimacy) паралельно → [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) |
 | **Позиція в ланцюгу** | `Корпорація → фіат → [SPV: buy+retire SCC] → esg_retired_balance (незворотно) → сертифікат`. Поточний `KlimaRetirementWorker` припускає клієнта-власника SCC on-chain → SPV закриває цей розрив для fiat-only корпорацій |
 
-**Висновок:** SPV — **Phase-2, не зараз.** Вісь у матриці = «окремий carbon-custody vehicle, gated на перший B2B-клієнт», юрисдикція вирішується разом з token-co (крипто-юрист + Аблязов на UA carbon-license-питання).
+**Висновок:** SPV — **Phase-2, не зараз.** Вісь у матриці = «окремий carbon-custody vehicle, gated на перший B2B-клієнт», юрисдикція вирішується разом з token-co (крипто-юрист + UA-господарник TBD на UA carbon-license-питання).
 
 ---
 
@@ -207,7 +207,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 3. **⚖️ IP-структурний папір:** зафіксувати **явну двосторонню домовленість** — SilkenNet = окрема власність founder'а (carve-out / not-a-company-asset) + чистий license-back компанії. **Дешево зараз, дорого ретроактивно.** → у юр-review — 🏠 [`ip_carve_out_draft.md`](ip_carve_out_draft.md) §8 (дім питань; `securities_review` Блок 4 п.5 з 2026-09-07 лише вказує туди). Це **гейт** перед тим, як SilkenNet-IP торкнеться репозиторіїв/балансу компанії.
 4. **Trademark-заявка → на фізособу (Oleksii Lukin)** (UNI.15; три причини — §1.3) → [`trademark_brief`](trademark_brief.md).
 5. **Founder-ФОП = персональний-дохід + IP-holder-фізособа** — **НЕ токен** (п. **291.6** — вимога грошової форми; деривація, §6).
-6. **ОДИН платний юр-workshop** (UA-частина — Аблязов, UNI.14; крипто-securities — TBD, UNI.16) на **as-built NaaS-продукт** (securities fact-pattern F1–F13) **+ IP-carve-out (п.3)** — це **справжні гейти**, кратно дешевші за ретроактивне виправлення. Пакети питань готові, і їх **ТРИ**: [`securities_review`](securities_review.md) (порядок денний Блоку 4 + securities) · [`tax_posture_ua`](tax_posture_ua.md) (податкова половина) · [`ip_carve_out_draft`](ip_carve_out_draft.md) (**дім питань про carve-out** — саме той, що читав первинку ЦК/2811-IX; ⚠️ доти цей рядок називав два з трьох і лишав найглибший удома, `DOC-T.101` 2026-09-07).
+6. **ОДИН платний юр-workshop** (UA-частина — господарник TBD, вхід — Аблязов, UNI.14; крипто-securities — TBD, UNI.16) на **as-built NaaS-продукт** (securities fact-pattern F1–F13) **+ IP-carve-out (п.3)** — це **справжні гейти**, кратно дешевші за ретроактивне виправлення. Пакети питань готові, і їх **ТРИ**: [`securities_review`](securities_review.md) (порядок денний Блоку 4 + securities) · [`tax_posture_ua`](tax_posture_ua.md) (податкова половина) · [`ip_carve_out_draft`](ip_carve_out_draft.md) (**дім питань про carve-out** — саме той, що читав первинку ЦК/2811-IX; ⚠️ доти цей рядок називав два з трьох і лишав найглибший удома, `DOC-T.101` 2026-09-07).
 
 **Вартість Phase-1: ≈ трохи юр-часу + ™-збір (~5–10k UAH, UNI.15) + IP-структурний папір.** Жодної офшорної структури.
 

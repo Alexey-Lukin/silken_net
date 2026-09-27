@@ -21,7 +21,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка, BOM, CAPEX/OPEX — друга половина питання клієнта |
-| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | MSA / KYC legal (Аблязов) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | MSA / KYC legal (UA-юр-канал: §1.4 · §4.2) |
 | [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source для [`02_06 §1`](02_06_Unit_Economics_and_BOM)) |
 | [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM → [`02_06 §4`](02_06_Unit_Economics_and_BOM)) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | `§00b` юр/бізнес-дім — родина `BIZ.*` (⚠️ до 2026-08-22 секція звалася `§07`; тут виправлено, бо це ЖИВИЙ вказівник — історичну прозу про «§07-кампанію» в корпусі не чіпати) (винятки, чий дім деінде: BIZ.17 → [`00_04`](00_04_Nature_as_a_Service_Contracts); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |

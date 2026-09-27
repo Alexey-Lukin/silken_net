@@ -195,7 +195,7 @@
 
 ## C. Mutual CDA / NDA — ВНЗ-MoU (DRAFT)
 
-> ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **Аблязов Д.Е.** (СЄУ, к.ю.н., господарське/комерційне право) + профільний IP-юрист — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
+> ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **UA-господарник (TBD, пʼята вакансія; вхід — Аблязов Д.Е., СЄУ)** + профільний IP-юрист — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
 > **Мета:** розблокувати лаб-доступ ЧНУ/ЧДТУ (ЧНУ — **UNI.18** ⚫ passive, ЧДТУ — **UNI.10**) через **mutual** confidentiality у рамках MoU.
 > **Governing law:** Україна (ЦК України · ЗУ «Про захист від недобросовісної конкуренції» — комерційна таємниця).
 > 🔑 **Ядро-принцип (defensive-publication, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** цей NDA покриває **ЛИШЕ нерозкрите**. **Технологія (код під open-source-ліцензіями · доки CC-BY-SA · defensive-published ядро) — вже public → carve-out §C.2, НЕ конфіденційне.** MoU **не embargo-їть** технологію (сам [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md): «MoU з ВНЗ містять open-license + co-authorship, **не** embargo/NDA на технологію»).
@@ -273,7 +273,7 @@
 
 ### §C.7 Юр-review checklist (ДО підпису, 👤)
 
-- [ ] 👤 **UA-юр-review** — Аблязов Д.Е. (СЄУ) + IP-юрист: звірити з ЦК України + ЗУ про комерц-таємницю (**UNI.14**).
+- [ ] 👤 **UA-юр-review** — UA-господарник (TBD; вхід — Аблязов Д.Е., СЄУ) + IP-юрист: звірити з ЦК України + ЗУ про комерц-таємницю (**UNI.14**).
 - [ ] 👤 Підтвердити §C.2(1) carve-out проти актуальних кореневих ліцензій (`/LICENSE` AGPL + per-file SPDX по source-дереву · SPDX-MIT у `contracts/*.sol` · `/LICENSE-HARDWARE.txt` · `/LICENSE-DOCS.txt` · `/NOTICE`) — щоб NDA не суперечив open-license.
 - [ ] 👤 Заповнити всі `PLACEHOLDER`: сторони, тема MoU, строки (N/M), forum спорів, поріг need-to-know.
 - [ ] 👤 Узгодити з **co-authorship**-частиною MoU (§C.5(d)) — щоб конфіденційність не блокувала спільну публікацію.
@@ -782,7 +782,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + жорсткість/пористість як CEM-параметр (C2 геометрія-дім) |
 | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | шина: канал Ø1.35 як первинний датум · вхід із радіусом · лайнер (зазор 50 мкм, вікно натягу) · тягнутий дріт — §Processing пп. 11/12 і лист постачальникові трубки |
 | [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Gr5 baseline **І** V-free імплант-сплави · ≥60% пористості · ISO 13485) — дім порогів C2/C6, і він ⛔ забороняє звужувати вимогу до ELI |
-| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · UA-юр-review (господарник TBD) |
 | [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md) | лист опромінювачеві: доза 15 кГр · «низька потужність, охолодження» без чисел · опромінення в упаковці · 4–8 °C у темряві після кроку A4 · серії з ZIF ⊥ без ZIF · ГІЛКА B поза замовленням; для мембранника — цикли ГІЛКИ B і Δ bubble point |
 | [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) | лист мембранникові: спека (тип · пори · товщина · кут · фіксація без клеїв) · приймання ≥ 1.5 м H₂O як детектор дефекту · EPDM-сумісність |
 | [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | фланець Ø25 (`cathode_flange.json` §`flange_diameter_mm`) · EPDM 70 Shore A · робочий склад синтетичного соку |
