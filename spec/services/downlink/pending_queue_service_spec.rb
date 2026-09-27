@@ -618,6 +618,19 @@ RSpec.describe Downlink::PendingQueueService do
       expect(expired_alerts.sole.message_params).to include("actuator_id" => actuator.id, "relevance_min" => 119)
     end
 
+    # Наказ, що вже пішов у poll-відповідь (`:sent`), але echo не приніс, протухає з ІНШИМ
+    # фактом: видачу було, доставку не підтверджено — «не дочекався видачі» брехало б.
+    it "про виданий, але не підтверджений наказ пише «не підтверджено», а не «не видано»" do
+      command = create(:actuator_command, :high_priority, :with_ttl, actuator: actuator, ews_alert: fire)
+      command.dispatch!
+      expire!(command)
+      unconfirmed = EwsAlert.alert_type_emergency_response_undeliverable
+                            .where(message_key: "emergency_response_unconfirmed")
+
+      expect { poll }.to change(unconfirmed, :count).by(1)
+      expect(expired_alerts).to be_empty
+    end
+
     # Без гарда `ews_alert` алерта теж не було б — писач ковтає NoMethodError своїм rescue, —
     # тож пін стоїть на тиші ЛОГУ: інакше кожне протухання наказу оператора писало б «помилку».
     it "мовчить для наказу оператора — там протухання показує бейдж, і цього досить" do

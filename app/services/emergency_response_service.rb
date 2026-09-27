@@ -105,7 +105,11 @@ class EmergencyResponseService
   def self.report_expired(command)
     return unless command.ews_alert
 
-    report_undeliverable(command.ews_alert, command.actuator, "emergency_response_expired",
+    # Наказ, що вже пішов у poll-відповідь (`sent_at` є), протух без echo: видачу було, а
+    # доставку не підтверджено — «не дочекався видачі» про нього брехало б (адверсарне
+    # рев'ю 2026-09-27; сюди ж потрапляє залипле echo FW.63).
+    key = command.sent_at ? "emergency_response_unconfirmed" : "emergency_response_expired"
+    report_undeliverable(command.ews_alert, command.actuator, key,
                          relevance_min: ((command.expires_at - command.created_at) / 60.0).round)
   end
 
@@ -180,7 +184,8 @@ class EmergencyResponseService
   #     стелю лишали НЕ оголошеною, тобто колонка безпеки й вимикала безпеку.
   #
   # (2) **Каденс поллу.** Наказ, чиє вікно релевантності коротше за інтервал
-  #     опитування, протермінується раніше, ніж його взагалі спитають. Джерело —
+  #     опитування, може протермінуватися раніше, ніж його спитають, — вчасну
+  #     доставку не гарантовано. Джерело —
   #     `Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S` (дзеркало
   #     прошивки), а НЕ `gateways.config_sleep_interval_s`: ту колонку прошивка не
   #     читає ВЗАГАЛІ, downlink'а для неї не існує, тож порівняння з нею було б
