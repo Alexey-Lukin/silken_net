@@ -248,7 +248,8 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      # 0x0803E000 = FLASH_KEY_ADDR. Гілка B пише ТОЙ САМИЙ набір тим самим
      # SWD -w32 (⚖️ делеговано 2026-09-27, §1 крок 3); SE-кроки — окремо
 
-  e) Lock:
+  e) Lock (порядок і межа партій — ⚖️ делеговано 2026-09-27, 03_05 §3.3:
+     продакшн = WRP → [BOOT_LOCK] → RDP L2 ОСТАННІМ; Parylene — ПІСЛЯ RDP):
      STM32_Programmer_CLI -ob RDP=1    # Pilot batch
      # (Level 2 після верифікації OTA — SEC.2)
 
