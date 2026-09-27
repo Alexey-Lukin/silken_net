@@ -109,19 +109,18 @@ class EmergencyResponseService
     # доставку не підтверджено — «не дочекався видачі» про нього брехало б (адверсарне
     # рев'ю 2026-09-27; сюди ж потрапляє залипле echo FW.63).
     key = command.sent_at ? "emergency_response_unconfirmed" : "emergency_response_expired"
-    report_undeliverable(command.ews_alert, command.actuator, key,
+    report_undeliverable(command.ews_alert, command.actuator, key, per_event: true,
                          relevance_min: ((command.expires_at - command.created_at) / 60.0).round)
   end
 
-  # Придатність = робочий стан пристрою І живий шлюз І шлюз не на обслуговуванні. Три
-  # НЕЗАЛЕЖНІ причини недоступності, і саме тому звіт нижче рахує їх окремо.
+  # Придатність = робочий стан пристрою І живий шлюз. Дві НЕЗАЛЕЖНІ причини
+  # недоступності, і саме тому звіт нижче рахує їх окремо. Шлюз на обслуговуванні
+  # сюди свідомо НЕ входить: його відмова поактуаторна (`deliverable?`), інакше
+  # частково обслужений крок лишав би такий клапан без наказу мовчки.
   # ⚠️ `Actuator#offline?` (стан самого пристрою) ⊥ `Gateway#online?` (тиша шлюза) —
   # одне слово, два доми; плутати їх тут коштувало б мовчазного пропуску.
   private_class_method def self.fit?(actuator) = actuator.idle? || actuator.active?
-  private_class_method def self.available?(actuator) = fit?(actuator) && serving_gateway?(actuator.gateway)
-  # ⚖️ founder 2026-09-27 (ARCH.75): шлюз на обслуговуванні непридатний — свіп тиші його свідомо
-  # не судить, тож наказ за ним, якщо шлюз змовкне ПІСЛЯ запису, помер би без жодного сліду.
-  private_class_method def self.serving_gateway?(gateway) = gateway.online? && !gateway.maintenance?
+  private_class_method def self.available?(actuator) = fit?(actuator) && actuator.gateway.online?
 
   private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:)
     return if actuators.empty?
@@ -134,7 +133,7 @@ class EmergencyResponseService
     # тож «команду не видано» і «в БД лежить невалідний рядок» — різні речі, і лише
     # перша з них чесна. Відсіяний актуатор дістає власний гучний алерт; сусіди по
     # кластеру, які доставку витримують, свої накази отримують.
-    deliverable = actuators.select { |actuator| deliverable?(actuator, chunks.max, relevance, alert) }
+    deliverable = actuators.select { |actuator| deliverable?(actuator, chunks.max, alert) }
     return if deliverable.empty?
 
     now = Time.current
@@ -175,10 +174,13 @@ class EmergencyResponseService
       ActuatorCommand.insert_all(attrs)
     rescue StandardError => e
       Rails.logger.error "🛑 [Emergency Error] Масове створення наказів провалене: #{e.message}"
+      return
     end
+
+    warn_if_not_guaranteed(deliverable, relevance, alert)
   end
 
-  # [ARCH.75] Дві НЕЗАЛЕЖНІ причини не доїхати, і запис зупиняє лише перша:
+  # [ARCH.75] Дві причини ВІДМОВИ конкретному пристрою, і кожна зупиняє запис:
   #
   # (1) **Фізична стеля пристрою.** Наказ понад `max_active_duration_s` лягав у БД
   #     невалідним і далі не міг ні виконатись, ні померти — кожен AASM-перехід
@@ -186,43 +188,59 @@ class EmergencyResponseService
   #     Наслідок був перевернутий: аварійна відповідь працювала рівно доти, доки
   #     стелю лишали НЕ оголошеною, тобто колонка безпеки й вимикала безпеку.
   #
-  # (2) **Каденс поллу.** Наказ, чиє вікно релевантності коротше за інтервал
-  #     опитування, може протермінуватися раніше, ніж його спитають, — вчасну
-  #     доставку не гарантовано. Джерело —
-  #     `Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S` (дзеркало
-  #     прошивки), а НЕ `gateways.config_sleep_interval_s`: ту колонку прошивка не
-  #     читає ВЗАГАЛІ, downlink'а для неї не існує, тож порівняння з нею було б
-  #     виміром вигаданої величини — шлюзи з 300 і з 3600 флашать однаково.
-  #     ⚠️ Стеля ЗВЕРХУ: нижньої межі каденсу не існує (мовчазна legacy-Королева
-  #     не флашить ніколи), тож «вкладаємось» = «не можемо довести, що ні».
-  #     ⚖️ **founder 2026-09-27 (FW.64): такий наказ ПИШЕТЬСЯ best-effort, а людина дістає
-  #     попередження ОДРАЗУ** (`emergency_response_too_slow` — один раз на актуатор, доки
-  #     алерт не закрито). Доти (⚖️ 2026-08-15) сирену (15 хв) відмовляли наперед на підставі
-  #     «недоставна ЗАВЖДИ», а переміряно: не гарантовано, а не неможливо — за ІНШОЮ
-  #     Королевою перший poll приходить до 900 с приблизно в чверті фаз. Фактичне протухання
-  #     звітує `report_expired`; механізм, якого бракує, — `00_07` FW.64 (подієвий флаш).
-  #     Решту серії цей гейт не судить, і це присуд (⚖️ founder 2026-09-27, FW.64): k-й
-  #     наказ черги шлюзу доїжджає НЕ РАНІШЕ за ⌈k/3⌉-й флаш (≤ 3 poll-и на флаш; пізніше —
-  #     за чужих наказів у черзі чи збою poll'а), а для одного клапана на шлюзі відмова
-  #     наперед забирала б єдиний чанк, що продовжує полив (1–3 видаються разом і, доки не
-  #     серіалізовані, накладаються — `04_02 §7` ⛔ (3)) — тож хвіст пишеться best-effort, а
-  #     фактичне протухання звітує `report_expired`. ⚠️ Стеля: за таймерного режиму наказ із
-  #     k ≥ 7 протухає при вікні 2 год ПЕВНО (третій флаш > 7 200 с), а не в гіршому разі —
-  #     Rails режиму шлюзу не знає (кеш-флаш великого кластера приходить раніше).
-  private_class_method def self.deliverable?(actuator, chunk_duration, relevance, alert)
+  # (2) **Шлюз на обслуговуванні** (⚖️ founder 2026-09-27): свіп тиші його свідомо не судить,
+  #     тож наказ за ним, якщо шлюз змовкне ПІСЛЯ запису, помер би без жодного сліду.
+  #     Відмова ПОАКТУАТОРНА, як і стеля: доти фільтр стояв на рівні кроку, і частково
+  #     обслужений крок лишав такий клапан без наказу мовчки (адверсарне рев'ю 2026-09-27).
+  #
+  # Каденс поллу запису НЕ зупиняє — це попередження, `warn_if_not_guaranteed` нижче.
+  private_class_method def self.deliverable?(actuator, chunk_duration, alert)
     unless actuator.can_sustain?(chunk_duration)
       report_undeliverable(alert, actuator, "emergency_response_over_ceiling",
                            chunk_s: chunk_duration, limit_s: actuator.max_active_duration_s)
       return false
     end
 
-    unless Downlink::PendingQueueService.reachable_within?(relevance)
-      report_undeliverable(alert, actuator, "emergency_response_too_slow",
-                           relevance_min: (relevance.to_i / 60.0).round,
-                           cadence_min: (Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S / 60.0).round)
+    if actuator.gateway.maintenance?
+      report_undeliverable(alert, actuator, "emergency_response_gateway_maintenance")
+      return false
     end
 
     true
+  end
+
+  # (3) **Каденс поллу — ПОПЕРЕДЖЕННЯ, не відмова** (⚖️ founder 2026-09-27, FW.64). Наказ, чиє
+  #     вікно релевантності коротше за інтервал опитування, може протермінуватися раніше, ніж
+  #     його спитають, — вчасну доставку не гарантовано. Джерело —
+  #     `Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S` (дзеркало
+  #     прошивки), а НЕ `gateways.config_sleep_interval_s`: ту колонку прошивка не
+  #     читає ВЗАГАЛІ, downlink'а для неї не існує, тож порівняння з нею було б
+  #     виміром вигаданої величини — шлюзи з 300 і з 3600 флашать однаково.
+  #     ⚠️ Стеля ЗВЕРХУ: нижньої межі каденсу не існує (мовчазна legacy-Королева
+  #     не флашить ніколи), тож «вкладаємось» = «не можемо довести, що ні».
+  #     Доти (⚖️ 2026-08-15) сирену (15 хв) відмовляли наперед на підставі «недоставна
+  #     ЗАВЖДИ», а переміряно: не гарантовано, а не неможливо — за ІНШОЮ Королевою перший poll
+  #     приходить до 900 с приблизно в чверті фаз. Тож наказ пишеться best-effort, а людина
+  #     дістає попередження ОДРАЗУ — але ПІСЛЯ успішного `insert_all` (інакше «поставлено в
+  #     чергу» брехало б при збої запису) і з дедупом по ПОДІЇ (актуатор + тривога): стоячий
+  #     алерт першої пожежі не сміє глушити попередження другої (адверсарне рев'ю 2026-09-27).
+  #     Фактичне протухання звітує `report_expired`; механізм, якого бракує, — `00_07` FW.64.
+  #     Решту серії цей гейт не судить, і це присуд (⚖️ founder 2026-09-27, FW.64): k-й
+  #     наказ черги шлюзу доїжджає НЕ РАНІШЕ за ⌈k/3⌉-й флаш (≤ 3 poll-и на флаш; пізніше —
+  #     за чужих наказів у черзі чи збою poll'а), а для одного клапана на шлюзі без живої сирени відмова
+  #     наперед забирала б єдиний чанк, що продовжує полив (1–3 видаються разом і, доки не
+  #     серіалізовані, накладаються — `04_02 §7` ⛔ (3)) — тож хвіст пишеться best-effort, а
+  #     фактичне протухання звітує `report_expired`. ⚠️ Стеля: за таймерного режиму наказ із
+  #     k ≥ 7 протухає при вікні 2 год ПЕВНО (третій флаш > 7 200 с), а не в гіршому разі —
+  #     Rails режиму шлюзу не знає (кеш-флаш великого кластера приходить раніше).
+  private_class_method def self.warn_if_not_guaranteed(actuators, relevance, alert)
+    return if Downlink::PendingQueueService.reachable_within?(relevance)
+
+    cadence_min = (Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S / 60.0).round
+    actuators.each do |actuator|
+      report_undeliverable(alert, actuator, "emergency_response_too_slow", per_event: true,
+                           relevance_min: (relevance.to_i / 60.0).round, cadence_min: cadence_min)
+    end
   end
 
   # Гучна відмова замість тихого невалідного рядка. Дедуп по ПАРІ
@@ -230,11 +248,14 @@ class EmergencyResponseService
   # кілька актуаторів, тож cluster-scoped guard глушив би сусідів, а дві РІЗНІ причини
   # на одному пристрої є двома різними фактами й обидва мусять бути видні.
   # `actuator_id` у тексті не інтерполюється — він тут ключ ідентичності, не вимір.
-  private_class_method def self.report_undeliverable(alert, actuator, key, **measurements)
-    record_undeliverable(
-      alert, key, dedup_field: :actuator_id, dedup_value: actuator.id,
-      params: { name: actuator.name, endpoint: actuator.endpoint, **measurements }
-    )
+  # `per_event:` — для ФАКТІВ і ПОПЕРЕДЖЕНЬ однієї тривоги (протухання, «не гарантовано»):
+  # дедуп ще й по `ews_alert_id`, бо відмова за стелею — стан пристрою, а ці сліди — про
+  # подію, і стоячий алерт першої пожежі глушив би другу (адверсарне рев'ю 2026-09-27).
+  private_class_method def self.report_undeliverable(alert, actuator, key, per_event: false, **measurements)
+    dedup = { actuator_id: actuator.id }
+    dedup[:ews_alert_id] = alert.id if per_event
+    record_undeliverable(alert, key, dedup: dedup,
+                                     params: { name: actuator.name, endpoint: actuator.endpoint, **measurements })
   end
 
   # [ARCH.75] Не-дія цілого КРОКУ протоколу. Дедуп ключується на `device_type`, бо
@@ -254,8 +275,7 @@ class EmergencyResponseService
     installed = cluster_actuators.select { _1.device_type == device_type }
 
     if installed.empty?
-      record_undeliverable(alert, "emergency_response_no_actuator",
-                           dedup_field: :device_type, dedup_value: device_type, params: {})
+      record_undeliverable(alert, "emergency_response_no_actuator", dedup: { device_type: device_type }, params: {})
       return
     end
 
@@ -264,10 +284,9 @@ class EmergencyResponseService
     # лічильників має право перевищити `installed`. Формулювання ключа це поважає.
     record_undeliverable(
       alert, "emergency_response_all_unavailable",
-      dedup_field: :device_type, dedup_value: device_type,
+      dedup: { device_type: device_type },
       params: { installed: installed.size,
                 silent_gateway: installed.count { !_1.gateway.online? },
-                gateway_maintenance: installed.count { _1.gateway.maintenance? },
                 out_of_service: installed.count { !fit?(_1) } }
     )
   end
@@ -275,15 +294,15 @@ class EmergencyResponseService
   # Один писач на обидві осі дедупу (актуатор ⊥ тип пристрою) — щоб rescue-межа,
   # куплена виміром нижче, існувала в ОДНОМУ екземплярі, а не копіювалась разом
   # із кожним новим родом не-дії.
-  private_class_method def self.record_undeliverable(alert, key, dedup_field:, dedup_value:, params:)
-    return if undeliverable_alert_exists?(alert.cluster_id, key, dedup_field, dedup_value)
+  private_class_method def self.record_undeliverable(alert, key, dedup:, params:)
+    return if undeliverable_alert_exists?(alert.cluster_id, key, dedup)
 
     EwsAlert.create!(
       cluster_id: alert.cluster_id,
       severity: :critical,
       alert_type: :emergency_response_undeliverable,
       message_key: key,
-      message_params: { dedup_field => dedup_value, **params }
+      message_params: { **dedup, **params }
     )
   rescue StandardError => e
     # 🔴 `StandardError`, а НЕ `ActiveRecordError`, і межа тут виміряна: ERS біжить
@@ -296,14 +315,15 @@ class EmergencyResponseService
     Rails.logger.error "🛑 [ARCH.75] Алерт про недоставну відповідь не створено: #{e.message}"
   end
 
-  # Поле дедупу — параметр, бо осей дві: `actuator_id` (відмова конкретному пристрою)
-  # ⊥ `device_type` (крок, який нема кому виконати). Імʼя поля йде bind-параметром у
-  # сам оператор `->>`, тож нова вісь не приносить ані другого запиту, ані склеєного SQL.
-  private_class_method def self.undeliverable_alert_exists?(cluster_id, key, dedup_field, dedup_value)
-    EwsAlert.unresolved.alert_type_emergency_response_undeliverable
-            .where(cluster_id: cluster_id, message_key: key)
-            .where("message_params ->> ? = ?", dedup_field.to_s, dedup_value.to_s)
-            .exists?
+  # Дедуп — набір полів, бо осей три: `actuator_id` (відмова конкретному пристрою) ⊥
+  # `device_type` (крок, який нема кому виконати) ⊥ `actuator_id` + `ews_alert_id` (факт чи
+  # попередження ОДНІЄЇ тривоги). Імʼя кожного поля йде bind-параметром у сам оператор
+  # `->>`, тож нова вісь не приносить ані другого запиту, ані склеєного SQL.
+  private_class_method def self.undeliverable_alert_exists?(cluster_id, key, dedup)
+    dedup.reduce(EwsAlert.unresolved.alert_type_emergency_response_undeliverable
+                         .where(cluster_id: cluster_id, message_key: key)) do |scope, (field, value)|
+      scope.where("message_params ->> ? = ?", field.to_s, value.to_s)
+    end.exists?
   end
 
   # Розбиваємо загальну тривалість на частини по протокольній стелі одного наказу

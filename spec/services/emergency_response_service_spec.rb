@@ -194,15 +194,41 @@ RSpec.describe EmergencyResponseService do
 
     # ⚖️ founder 2026-09-27 (ARCH.75): шлюз на обслуговуванні непридатний — свіп тиші його
     # свідомо не судить, тож наказ за ним, якщо шлюз змовкне після запису, помер би без сліду.
+    # Відмова ПОАКТУАТОРНА, як і стеля пристрою.
     it "does not route an emergency command through a gateway under maintenance" do
       serviced = create(:gateway, :online, cluster: cluster, state: :maintenance)
-      create(:actuator, :water_valve, gateway: serviced, state: :idle)
+      valve = create(:actuator, :water_valve, gateway: serviced, state: :idle)
 
       expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
 
       raised = EwsAlert.alert_type_emergency_response_undeliverable
-                       .find_by(message_key: "emergency_response_all_unavailable")
-      expect(raised.message_params).to include("installed" => 1, "gateway_maintenance" => 1)
+                       .find_by(message_key: "emergency_response_gateway_maintenance")
+      expect(raised.message_params).to include("actuator_id" => valve.id)
+    end
+
+    # 🔴 Регресія, яку спіймало адверсарне рев'ю 2026-09-27: фільтр на рівні КРОКУ мовчав,
+    # щойно крок обслуговував інший шлюз, — клапан за шлюзом на обслуговуванні лишався без
+    # наказу й без сліду.
+    it "refuses loudly per actuator even when the step is served elsewhere" do
+      serviced = create(:gateway, :online, cluster: cluster, state: :maintenance)
+      behind_maintenance = create(:actuator, :water_valve, gateway: serviced, state: :idle)
+      served = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      expect(ActuatorCommand.where(ews_alert: alert).distinct.pluck(:actuator_id)).to eq([ served.id ])
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_gateway_maintenance")
+      expect(raised.message_params).to include("actuator_id" => behind_maintenance.id)
+    end
+
+    # Межа присуду — лише `maintenance`: шлюз, що оновлює прошивку, свіп тиші судить, тож
+    # аварійні накази він отримує, як і раніше.
+    it "still routes through a gateway that is updating firmware" do
+      updating = create(:gateway, :online, cluster: cluster, state: :updating)
+      valve = create(:actuator, :water_valve, gateway: updating, state: :idle)
+
+      expect { described_class.call(alert) }.to change(ActuatorCommand.where(actuator: valve), :count).by(2)
     end
 
     # 🔴 GREEN-половина (§Guard-craft #52), і без неї клас закритий лише наполовину:
@@ -428,6 +454,32 @@ RSpec.describe EmergencyResponseService do
         expect(raised).to be_present
         expect(raised.message_params).to include("relevance_min" => 15, "cadence_min" => 61)
       end
+
+      # Попередження — про ПОДІЮ: стоячий алерт першої пожежі не сміє глушити другу
+      # (адверсарне рев'ю 2026-09-27: доти дедуп по актуатору мовчав на кожній наступній).
+      it "warns again on the next fire instead of hiding behind the first warning" do
+        create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+        first = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+        second = create(:ews_alert, :fire, cluster: cluster, tree: create(:tree, cluster: cluster))
+
+        described_class.call(first)
+        described_class.call(second)
+
+        warnings = EwsAlert.alert_type_emergency_response_undeliverable.where(message_key: "emergency_response_too_slow")
+        expect(warnings.map { _1.message_params["ews_alert_id"] }).to contain_exactly(first.id, second.id)
+      end
+
+      # «Поставлено в чергу» пишеться ПІСЛЯ запису: збій `insert_all` не сміє лишити
+      # попередження про наказ, якого немає.
+      it "does not warn about a command that failed to be written" do
+        create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+        fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+        allow(ActuatorCommand).to receive(:insert_all).and_raise(ActiveRecord::StatementInvalid)
+
+        described_class.call(fire)
+
+        expect(EwsAlert.where(message_key: "emergency_response_too_slow")).to be_empty
+      end
     end
 
     # Дзеркало «лишається ⊥ відпадає»: без нього «нуль порушень» не відрізнити
@@ -464,8 +516,9 @@ RSpec.describe EmergencyResponseService do
   # [ARCH.75] Ієрархія Виживання — сирена мусить ВИЙТИ З ЧЕРГИ першою
   # =========================================================================
   describe "fire dispatch order" do
+    # Без стабу каденсу: з ⚖️ FW.64 2026-09-27 сирену пишуть і на реальному каденсі, тож
+    # це розкладка продакшну.
     it "puts the siren ahead of the watering chunks in the poll queue" do
-      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       fire = create(:ews_alert, :fire, cluster: cluster, tree: tree)
       create(:actuator, :water_valve, gateway: gateway, state: :idle)
       create(:actuator, :fire_siren, gateway: gateway, state: :idle)

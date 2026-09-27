@@ -23,11 +23,12 @@ en:
       chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): possible gateway failure / Starlink blackout (force-majeure). Slashing NOT applied — Field Audit required (Category C, 05_05 §5).'
       cluster_small_sample_degradation: 'Small-sample degradation (%{target_date}): %{critical_count} of %{total_trees} trees critical. The percentage threshold degenerates below 5 trees — a single tree crosses it — so NO auto-slash; Field Audit decides (Category C, 05_05 §5).'
-      emergency_response_all_unavailable: 'Emergency response NOT dispatched: no %{device_type} actuator in this cluster is reachable right now. Installed: %{installed}; behind a silent gateway: %{silent_gateway}; behind a gateway under maintenance: %{gateway_maintenance}; not in a working state: %{out_of_service}. This protocol step was not executed; the other steps are unaffected.'
+      emergency_response_all_unavailable: 'Emergency response NOT dispatched: no %{device_type} actuator in this cluster is reachable right now. Installed: %{installed}; behind a silent gateway: %{silent_gateway}; not in a working state: %{out_of_service}. This protocol step was not executed; the other steps are unaffected.'
       emergency_response_expired: 'Emergency command for actuator ‘%{name}’ (%{endpoint}) EXPIRED in the gateway queue before it was issued: its relevance window (%{relevance_min} min) ran out before the gateway asked for it. The command was NOT executed; later commands for this actuator are unaffected.'
+      emergency_response_gateway_maintenance: 'Emergency response NOT dispatched to actuator ‘%{name}’ (%{endpoint}): its gateway is under maintenance. A gateway under maintenance deliberately receives no emergency commands — if it went silent, the command would die without a trace. The emergency response will not repeat on its own once maintenance ends; the rest of the cluster is unaffected.'
       emergency_response_no_actuator: 'Emergency response NOT dispatched: this cluster has no %{device_type} actuator at all — the hardware this protocol step needs was never installed. The step was not executed; the other steps are unaffected.'
       emergency_response_over_ceiling: 'Emergency response NOT dispatched to actuator ‘%{name}’ (%{endpoint}): it is rated for %{limit_s} s of continuous action, but a single command in this protocol runs %{chunk_s} s. No command was issued to THIS actuator; the rest of the cluster is unaffected.'
-      emergency_response_too_slow: 'Emergency response to actuator ‘%{name}’ (%{endpoint}) was sent, but timely delivery is NOT guaranteed: the gateway fleet is polled at worst every %{cadence_min} min, while this response stays meaningful for only %{relevance_min} min. The command may expire before the gateway asks for it — a separate alert will follow if it does; do not rely on this signal alone.'
+      emergency_response_too_slow: 'Emergency response to actuator ‘%{name}’ (%{endpoint}) is queued, but timely delivery is NOT guaranteed: the gateway fleet is polled at worst every %{cadence_min} min, while this response stays meaningful for only %{relevance_min} min. Do not rely on this signal alone.'
       emergency_response_unconfirmed: 'Emergency command for actuator ‘%{name}’ (%{endpoint}) was issued to the gateway, but its delivery was NOT confirmed within its relevance window (%{relevance_min} min): the command was removed from the queue, and whether it was executed is UNKNOWN. Later commands for this actuator are unaffected.'
       entropy_pre_stress: "🎲 PRE-STRESS SIGNAL: Z-distribution entropy of cluster %{cluster_name} dropped to %{entropy_score} (threshold: %{threshold}). Analysis of %{sample_count} measurements over the last 24 hours points to homogenisation of tree responses — forest stress may be starting."
       field_audit_escalated_c_to_a: 'Field Audit %{date}: node %{uid} enclosure breached — act №%{act}, photo %{photo}. Escalation C→A: direct Category-A evidence recorded on site.'
@@ -129,7 +130,7 @@ en:
       actuator_stuck: Actuator Stuck
       chainsaw_detected: Chainsaw Detected
       comms_fault: Comms Fault
-      emergency_response_undeliverable: Emergency Response Undeliverable
+      emergency_response_undeliverable: Emergency Response at Risk
       entropy_anomaly: Entropy Anomaly
       field_audit: Field Audit
       fire_detected: Fire Detected

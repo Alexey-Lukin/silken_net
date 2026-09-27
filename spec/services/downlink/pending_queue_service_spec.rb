@@ -631,6 +631,16 @@ RSpec.describe Downlink::PendingQueueService do
       expect(expired_alerts.sole.message_params).to include("actuator_id" => actuator.id, "relevance_min" => 119)
     end
 
+    # Факт протухання — про ПОДІЮ: стоячий алерт першої пожежі не сміє глушити другу.
+    it "reports each fire's expiry on the same actuator separately" do
+      second_fire = create(:ews_alert, :fire, cluster: cluster, tree: create(:tree, cluster: cluster))
+      expire!(create(:actuator_command, :high_priority, :with_ttl, actuator: actuator, ews_alert: fire))
+      expire!(create(:actuator_command, :high_priority, :with_ttl, actuator: actuator, ews_alert: second_fire))
+
+      expect { poll }.to change(expired_alerts, :count).by(2)
+      expect(expired_alerts.map { _1.message_params["ews_alert_id"] }).to contain_exactly(fire.id, second_fire.id)
+    end
+
     # Наказ, що вже пішов у poll-відповідь (`:sent`), але echo не приніс, протухає з ІНШИМ
     # фактом: видачу було, доставку не підтверджено — «не дочекався видачі» брехало б.
     it "про виданий, але не підтверджений наказ пише «не підтверджено», а не «не видано»" do
