@@ -28,7 +28,7 @@
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
 | [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §13b |
-| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Партнерський ростер ЧНУ · ЧДТУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate. ⚫ BIZ.13 operator-bond ВІДКЛИКАНО (§3.1) |
 
 ## 📑 Зміст
