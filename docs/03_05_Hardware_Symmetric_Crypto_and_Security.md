@@ -946,7 +946,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 > ✅ **SEC.6 ADR (2026-06-07) — SE050 soft-freeze + true-DePIN ladder.**
 >
-> **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate, як LTC3108 — [`02_01`](02_01_Hardware_Architecture_and_BOM) BOM п.13); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L2, канон-мінімум 03_06 §5). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
+> **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L2, канон-мінімум 03_06 §5). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
 >
 > **True-DePIN ladder («голос дерева»):** L0 custodial → L1 Queen-attest → L2 per-tree (SE050 Ed25519 + Merkle, energy-gated). Повний ladder (рунги/гейти/статус/енергобюджет) — канон [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline). §3.7 володіє лише SE/крипто-частиною (Slot-0 AES, Slot-1 Ed25519 keygen).
 >

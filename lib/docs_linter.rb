@@ -609,8 +609,9 @@ module DocsLinter
   # return (the general "scripts catch drift" net). Keyed retired-token → replacement
   # hint. Use ONLY for UNAMBIGUOUS retired strings with no legit current use: a retired
   # part number (ZP-3/ZP-5 ∅27mm through-hole piezo → SMD, 02_01 §3 names the live SKUs)
-  # qualifies; a token still alive somewhere does NOT — LTC3108 survives as a DNP
-  # cold-start fallback, so it is deliberately absent. Substring match → keep tokens
+  # qualifies; a token still alive somewhere does NOT — and neither does LTC3108: retired
+  # from the product and the bench (2026-09-27), its token still lives in refutation prose,
+  # so a ban would fire mostly on honest history (00_07 HW.46). Substring match → keep tokens
   # specific. Meta/legacy docs are EXEMPT (they legitimately NAME retired things):
   # 00_06 (this standard cites them as examples), 00_07 (tracker may reference an
   # old baseline in a "migrate-from" note).
