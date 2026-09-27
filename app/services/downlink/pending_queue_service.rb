@@ -123,6 +123,9 @@ module Downlink
           # «виконується» до перезавантаження — живість, що бреше, гірша за
           # чесну статику.
           ActuatorCommandWorker.broadcast_command_state_static(command)
+          # [FW.64] Аварійний наказ, що протух у черзі, — не-дія, і вона мусить свідчити
+          # про себе алертом, а не лише бейджем (для наказу оператора — лише бейдж).
+          EmergencyResponseService.report_expired(command)
           next
         end
 

@@ -95,6 +95,17 @@ class EmergencyResponseService
     end
   end
 
+  # [FW.64] Фактичне протухання EWS-наказу в черзі шлюзу — той самий гучний слід, що й решта
+  # не-дій, і через той самий писач (дедуп по парі ключ + актуатор, rescue-межа). Кличе
+  # poll-тракт у мить, коли наказ протермінувався, не дочекавшись видачі: свідчення про ФАКТ,
+  # а не прогноз найгіршого випадку, тож доречне за будь-якої гілки ⚖️ FW.64.
+  def self.report_expired(command)
+    return unless command.ews_alert
+
+    report_undeliverable(command.ews_alert, command.actuator, "emergency_response_expired",
+                         relevance_min: ((command.expires_at - command.created_at) / 60.0).round)
+  end
+
   # Придатність = робочий стан пристрою І живий шлюз. Дві НЕЗАЛЕЖНІ причини
   # недоступності, і саме тому звіт нижче рахує їх окремо.
   # ⚠️ `Actuator#offline?` (стан самого пристрою) ⊥ `Gateway#online?` (тиша шлюза) —

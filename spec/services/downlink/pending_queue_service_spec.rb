@@ -588,6 +588,45 @@ RSpec.describe Downlink::PendingQueueService do
     end
   end
 
+  # [FW.64] Фактичне протухання аварійного наказу — не-дія, що свідчить про себе алертом.
+  describe "протермінований аварійний наказ [FW.64]" do
+    let(:actuator) { create(:actuator, gateway: gateway) }
+    let(:fire) { create(:ews_alert, :fire, cluster: cluster, tree: create(:tree, cluster: cluster)) }
+
+    before { allow(ActuatorCommandWorker).to receive(:broadcast_command_state_static) }
+
+    def expired_alerts = EwsAlert.alert_type_emergency_response_undeliverable
+                                 .where(message_key: "emergency_response_expired")
+
+    def expire!(cmd) = cmd.update_columns(created_at: 2.hours.ago, expires_at: 1.minute.ago)
+
+    it "лишає критичний алерт із вікном релевантності, а не лише бейдж" do
+      expire!(create(:actuator_command, :high_priority, :with_ttl, actuator: actuator, ews_alert: fire))
+
+      expect { poll }.to change(expired_alerts, :count).by(1)
+      expect(expired_alerts.sole.message_params).to include("actuator_id" => actuator.id, "relevance_min" => 119)
+    end
+
+    # Без гарда `ews_alert` алерта теж не було б — писач ковтає NoMethodError своїм rescue, —
+    # тож пін стоїть на тиші ЛОГУ: інакше кожне протухання наказу оператора писало б «помилку».
+    it "мовчить для наказу оператора — там протухання показує бейдж, і цього досить" do
+      expire!(create(:actuator_command, :high_priority, :with_ttl, actuator: actuator))
+      allow(Rails.logger).to receive(:error).and_call_original
+
+      expect { poll }.not_to change(EwsAlert, :count)
+      expect(Rails.logger).not_to have_received(:error)
+    end
+
+    # Тракт coap-демона синхронний: збій алерта (Redis у after_create_commit) не сміє
+    # забрати відповідь poll'у — Королева мусить отримати наступний наказ або time-only.
+    it "віддає відповідь poll'у, навіть коли алерт створити не вдалось" do
+      expire!(create(:actuator_command, :high_priority, :with_ttl, actuator: actuator, ews_alert: fire))
+      allow(EwsAlert).to receive(:create!).and_raise(Redis::CannotConnectError)
+
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
+  end
+
   # [FW.64] `WORST_CASE_POLL_INTERVAL_S` — дзеркало прошивки, і з ARCH.75 воно жило без
   # носія: зміна таймера Королеви лишила б платформу судити доставність за старим каденсом.
   # ⚠️ Пін тримає ТАЙМЕРНУ половину інтервалу; тривалість самого флашу (poll живе всередині
