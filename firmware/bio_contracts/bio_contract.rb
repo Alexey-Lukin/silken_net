@@ -125,7 +125,10 @@ module SilkenNet
 
     # Sole evaluation entry-point. Returns [payload_byte, x, y, z] —
     # C-side persists the trajectory tail back to RTC DR16-DR18.
-    def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
+    # [FW.8] z_min/z_max — смуга, ЧИННА на пристрої: C-міст передає глобалки,
+    # які міняє лише парсер 0x9A і boot-restore з Flash-KV — обидва під
+    # FW8_PARSER_ENABLED, тож у бойовій збірці тут завжди дефолти нижче.
+    def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV, z_min = CRITICAL_Z_MIN, z_max = CRITICAL_Z_MAX)
       _ = vcap_mv  # [E.63] vcap прибрано з винагороди (FW.50 raw-ADC); reserved
       z_val, x_final, y_final, z_final = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)
       # [E.64] ρ для ρ-відносної anomaly — той самий вираз і clamp, що в Attractor.iterate
@@ -133,7 +136,7 @@ module SilkenNet
       local_rho = Attractor::BASE_RHO + (temp * 0.2)
       local_rho = Attractor::RHO_MIN if local_rho < Attractor::RHO_MIN
       local_rho = Attractor::RHO_MAX if local_rho > Attractor::RHO_MAX
-      payload_byte = pack_status_byte(z_val, delta_t_s, local_rho)
+      payload_byte = pack_status_byte(z_val, delta_t_s, local_rho, z_min, z_max)
       [ payload_byte, x_final, y_final, z_final ]
     end
 
@@ -142,14 +145,14 @@ module SilkenNet
     # PanicFlag заповнюється C-side; нормальні пакети завжди роблять
     # `lora_payload[10] &= ~PANIC_FLAG_BIT`. Тому pack_status_byte НІКОЛИ не
     # ставить bit 7 — status (2 біти) у bits 6..5, growth_points (5 біт) у 4..0.
-    def self.pack_status_byte(z_val, delta_t_s = Attractor::BASELINE_DELTA_T_S, local_rho = Attractor::BASE_RHO)
+    def self.pack_status_byte(z_val, delta_t_s = Attractor::BASELINE_DELTA_T_S, local_rho = Attractor::BASE_RHO, z_min = CRITICAL_Z_MIN, z_max = CRITICAL_Z_MAX)
       # [E.64] Аномалія — ρ-ВІДНОСНА: z поза temp-очікуваною обвідною. Поріг
       # anomaly_ceiling = ρ + (CRITICAL_Z_MAX − BASE_RHO) (offset 17 → зберігає 45 при
       # ρ=28). Раніше absolute z>45 → теплий день (високий z_eq=ρ−1) хибно тригерив
       # anomaly й обнуляв growth_points. Присуд + докази — 00_07 E.64. Stress (колапс
       # конвекції до ~origin) лишається absolute (z<2) — справжній зрив, рідкісний.
-      anomaly_ceiling = local_rho + (CRITICAL_Z_MAX - Attractor::BASE_RHO)
-      if z_val < CRITICAL_Z_MIN
+      anomaly_ceiling = local_rho + (z_max - Attractor::BASE_RHO)
+      if z_val < z_min
         status = 1            # Раннє попередження (посуха / втрата тургору / колапс)
         growth_points = 1     # Мінімальна генерація — дерево виживає
       elsif z_val > anomaly_ceiling
@@ -190,7 +193,8 @@ end
 # from RTC DR16-DR18 (FW.6 warm continuation) or freshly derived from
 # K_seed via pure-C silken_sha256.h HKDF/HMAC (SEC.11 cold start). Returns
 # [payload_byte, x_final, y_final, z_final] for RTC persistence.
-# delta_t_s → growth_points (метаболізм, E.63); vcap_mv reserved.
-def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
-  SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+# delta_t_s → growth_points (метаболізм, E.63); vcap_mv reserved; z_min/z_max —
+# смуга, чинна на пристрої (FW.8, дефолти = BioContract::CRITICAL_Z_MIN/MAX).
+def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV, z_min = SilkenNet::BioContract::CRITICAL_Z_MIN, z_max = SilkenNet::BioContract::CRITICAL_Z_MAX)
+  SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
 end

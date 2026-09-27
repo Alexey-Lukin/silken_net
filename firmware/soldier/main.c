@@ -550,9 +550,9 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // config_block` — теж лише class method, у production-pipeline нікуди
 // не передається.
 //
-// ПРИЧИНА defer: усі 20 RTC Backup Register'и (DR0..DR19) зайняті — після
-// FW.2 freeze-contract навіть DR15 пішов під CCM Frame Counter; вільного слоту
-// немає, а 8-байтний body порогів нікуди покласти без Flash-KV. Повна розкладка
+// ПРИЧИНА defer: із 20 RTC Backup Register'ів (DR0..DR19) після FW.2
+// freeze-contract (DR15 → CCM Frame Counter) вільний лише DR7 (FW.54) — одне
+// 32-бітне слово, а 8-байтний body порогів туди не вміщається без Flash-KV. Повна розкладка
 // — SSOT 03_01 §2 (Canonical Backup Map), тут НЕ дублюємо.
 //
 // Альтернативи відкинуто:
@@ -566,7 +566,7 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 //   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
 //     заради no-op feature. Чесніше відкласти.
 //
-// ВІДНОВЛЕННЯ: вільних RTC-регістрів не лишилось (DR15 → FW.2), тож FW.8
+// ВІДНОВЛЕННЯ: єдиний вільний регістр (DR7) тіла не вміщає, тож FW.8
 // повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр.
 // Persist-логіка ✅ host-готова: ../common/lorenz_thresholds.h — Save/Load на
 // ключах 0x10/0x11 (порвана/невалідна пара → дефолти; power-cut тести у
@@ -2361,7 +2361,7 @@ int main(void)
 
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
-    // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
+    // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
     // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
     // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
     // delta_t_s/vcap_mv у mruby: EMA-згладжені після прогріву (FW.49-S1 wired);
@@ -2413,14 +2413,14 @@ int main(void)
       }
 
       if (lorenz_state_valid) {
-          // [SEC.11 / FW.30] Єдиний виклик calculate_state з 7 аргументами.
+          // [SEC.11 / FW.30] Єдиний виклик calculate_state (9 аргументів з FW.8).
           // Повертає [payload_byte, x_final, y_final, z_final].
           // [E.63] delta_t_for_lorenz/vcap_for_lorenz обчислені над гілкуванням
           // Фази 3 (контракт «wire = вхід GP» — те саме сатуроване число йде
           // у wire-байти 20..21). delta_t живить growth_points напряму
           // (metabolic_health, 03_04 §4.3); β лишається фіксованим (BASE_BETA) —
           // стара FW.5 β-перетурбація реверсована.
-          mrb_value args[7];
+          mrb_value args[9];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
@@ -2431,9 +2431,15 @@ int main(void)
           args[4] = mrb_fixnum_value(time_uncertain ? 0 : lora_payload[7]); // Акустика
           args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [E.63] delta_t → growth_points
           args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [E.63] vcap (reserved)
+          // [FW.8] Смуга, ЧИННА на пристрої. Глобалки міняють лише парсер 0x9A і
+          // boot-restore з Flash-KV — обидва під FW8_PARSER_ENABLED, тож доставка
+          // і споживання вмикаються ОДНИМ фліпом, а бойова збірка шле дефолти
+          // (= BioContract::CRITICAL_Z_MIN/MAX) навіть із залишком порогів у KV.
+          args[7] = mrb_float_value(mrb, (double)lorenz_z_min_x100 / 100.0);
+          args[8] = mrb_float_value(mrb, (double)lorenz_z_max_x100 / 100.0);
 
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state"), 7, args);
+              mrb_intern_lit(mrb, "calculate_state"), 9, args);
 
           if (!mrb->exc && mrb_array_p(ruby_result) && RARRAY_LEN(ruby_result) == 4) {
               // Витягуємо payload_byte та оновлений стан траєкторії

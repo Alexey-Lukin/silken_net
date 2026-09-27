@@ -272,6 +272,32 @@ RSpec.describe SilkenNet::Attractor do
       expect(homeostasis_gp).to all(eq(described_class::GP_HOMEO_MIN))
     end
 
+    # [FW.8] Смуга, ЧИННА на пристрої, доходить до вердикту: справжній контракт отримує
+    # z_min/z_max і мусить судити ТІЄЮ Ж per-species смугою, що й дзеркало. Кейси — лише
+    # ті, де родина (5.0/40.0) і дефолти (2.0/45.0) дають РІЗНИЙ статус: на решті обидві
+    # сторони збіглися б і без споживання, тобто приклад був би вакуумним. Той самий
+    # набір без смуги мусить зійтися з дефолтами — так пін судить СПОЖИВАННЯ, а не лише
+    # паритет. ⚠️ C-дзеркало `test_bio_contract.c` цього не бачить за побудовою (гоча #19).
+    it "classifies with the per-species band it is handed (FW.8 consumer), not the baked defaults" do
+      family = Struct.new(:critical_z_min, :critical_z_max).new(5.0, 40.0)
+      defaults = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
+      rng = Random.new(20_260_927)
+      pool = Array.new(3000) do
+        [ rng.rand(-1.0..1.0), rng.rand(-1.0..1.0), rng.rand(-1.0..1.0),
+          rng.rand(-40.0..60.0), rng.rand(0..255), 1800 ]
+      end
+      status = lambda do |c, fam|
+        z = described_class.calculate_z_from_state(*c)[3]
+        mirrored_status_byte(z, c[3], c[5], fam) >> 5
+      end
+      picked = pool.select { |c| status.(c, family) != status.(c, defaults) }
+      expect(picked.map { |c| status.(c, family) }.uniq).to contain_exactly(1, 2)
+
+      banded = picked.map { |c| c + [ family.critical_z_min, family.critical_z_max ] }
+      expect_contract_parity(banded, run_firmware_contract(banded), family)
+      expect_contract_parity(picked, run_firmware_contract(picked), defaults)
+    end
+
     def expect_contract_parity(cases, fw, fw_family)
       z_div = []
       status_div = []

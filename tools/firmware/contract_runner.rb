@@ -12,16 +12,18 @@
 # `firmware_z` re-implementation (a 3rd kernel copy that can silently drift while
 # both "parity" sides still agree). See 00_07 — FW.57.
 #
-# Protocol: reads {"cases":[[x,y,z,temp,acoustic,delta_t], ...]} from stdin,
-# writes [[payload_byte, z_final], ...] (same order) as JSON to stdout.
+# Protocol: reads {"cases":[[x,y,z,temp,acoustic,delta_t(,z_min,z_max)], ...]} from stdin,
+# writes [[payload_byte, z_final], ...] (same order) as JSON to stdout. [FW.8] z_min/z_max
+# optional — absent ⇒ the contract defaults (CRITICAL_Z_MIN/MAX), as on the shipped build.
 
 require "json"
 require_relative "../../firmware/bio_contracts/bio_contract"
 
 cases = JSON.parse($stdin.read).fetch("cases")
-results = cases.map do |x, y, z, temp, acoustic, delta_t|
+results = cases.map do |x, y, z, temp, acoustic, delta_t, *band|
   payload_byte, _x_final, _y_final, z_final =
-    SilkenNet::BioContract.evaluate_and_pack(x, y, z, temp, acoustic, delta_t)
+    SilkenNet::BioContract.evaluate_and_pack(x, y, z, temp, acoustic, delta_t,
+                                             SilkenNet::Attractor::NOMINAL_VCAP_MV, *band)
   [ payload_byte, z_final ]
 end
 $stdout.write(JSON.generate(results))
