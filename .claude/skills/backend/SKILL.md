@@ -136,6 +136,7 @@ REST API/auth/RBAC (`04_03`) + MaintenanceRecord. Money-path, телеметрі
 84. `admin` — роль ОРГАНІЗАЦІЙНА, і формула `admin_or_above?` (`role_admin? || role_super_admin?`) не переноситься на ресурс, що не проходить через `acting_organization!`
 85. `lib/daemons/coap_listener` — однопроцесний, однопотоковий демон, і саме ЦЕ, не бізнес-логіка, робить `ActuatorCommand`-AASM безпечним без `FOR UPDATE`
 86. `MaintenanceRecord`: засвідчення НЕ замикає запис — і протокол лісника сьогодні обходить це інструкцією людині, не кодом
+87. Рядки одного `insert_all` ділять `created_at`, тож скоуп `order(created_at:)` порядку всередині батча НЕ задає — а пін на tie-break вакуумний, доки фізичний порядок збігається з порядком `id`
 
 <!-- /BACKEND-GOTCHAS-INDEX -->
 
