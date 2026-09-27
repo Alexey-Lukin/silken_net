@@ -56,6 +56,17 @@ RSpec.describe Downlink::PendingQueueService do
 
     def echo(token) = poll({ "cmd" => token })
 
+    # Рядки одного кроку ERS ділять `created_at`, тож порядок видачі в межах кроку тримає
+    # лише id-tie-break `ActuatorCommand.by_priority` — і черга мусить ним користуватись.
+    # Id задано НАВСПАК порядку вставки: інакше seq scan віддав би порядок id задарма.
+    it "видає нічию за created_at у порядку id" do
+      now = Time.current
+      create(:actuator_command, actuator: actuator, priority: :high, created_at: now, id: 900_002)
+      first = create(:actuator_command, actuator: actuator, priority: :high, created_at: now, id: 900_001)
+
+      expect(decrypt_inner(poll)).to include(first.idempotency_token)
+    end
+
     it "видає CMD-рядок у форматі воркера — dispatch! сам по собі НЕ просуває lifecycle далі" do
       inner = decrypt_inner(poll)
 

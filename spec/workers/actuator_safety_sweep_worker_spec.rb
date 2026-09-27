@@ -84,6 +84,36 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
       fresh.acknowledge!
       expect { sweep }.not_to change { actuator.reload.state }
     end
+
+    # Echo наказу з ТРЕТЬОГО poll'а флашу приходить наступним флашем, і Reset
+    # планується від echo. Вікно від `sent_at` закінчувалось на годину раніше —
+    # прохід STOP'ав і fail!'ив доставлений наказ.
+    it "міряє вікно від echo (executed_at), як і Reset, а не від видачі" do
+      actuator = create(:actuator, gateway: gateway)
+      command = create(:actuator_command, actuator: actuator, duration_seconds: 3600)
+      actuator.mark_active!
+      command.dispatch!
+      command.acknowledge!
+      command.update_columns(sent_at: 70.minutes.ago, executed_at: 10.minutes.ago)
+
+      expect { sweep }.not_to change { actuator.reload.state }
+      expect(command.reload.status).to eq("acknowledged")
+      expect(EwsAlert.alert_type_actuator_stuck.count).to eq(0)
+    end
+
+    # Повторно виданий після втраченої 2.05 наказ зберігає ранній `sent_at`,
+    # але його вікно (від echo) закінчується пізніше за сусіда.
+    it "найновішим вважає наказ, чиє вікно закінчується найпізніше" do
+      late_echo = nil
+      actuator, = stuck(duration: 3600, elapsed: 69.minutes) do |a|
+        late_echo = create(:actuator_command, actuator: a, duration_seconds: 3600)
+      end
+      late_echo.dispatch!
+      late_echo.acknowledge!
+      late_echo.update_columns(sent_at: 80.minutes.ago, executed_at: 10.minutes.ago)
+
+      expect { sweep }.not_to change { actuator.reload.state }
+    end
   end
 
   describe "нога STOP" do

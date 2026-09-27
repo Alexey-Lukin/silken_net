@@ -85,12 +85,24 @@ class ActuatorSafetySweepWorker
 
   private
 
+  # «Найновіший» = той, чиє вікно закінчується НАЙПІЗНІШЕ, а не останній за `sent_at`:
+  # наказ, повторно виданий після втраченої 2.05 (FW.63), зберігає ранній `sent_at`,
+  # але його echo — і Reset — приходять пізніше за сусіда.
   def newest_acknowledged(actuator)
-    actuator.commands.status_acknowledged.where.not(sent_at: nil).order(:sent_at).last
+    actuator.commands.status_acknowledged.where.not(sent_at: nil).max_by { deadline_for(_1) }
   end
 
+  # Вікно рахується від тієї самої мітки, від якої Reset справді запланований —
+  # `executed_at` = мить echo (`observe_delivered_command!`, FW.63), — а не від
+  # `sent_at`. Echo наказу, виданого ТРЕТІМ poll'ом флашу (`QUEEN_POLL_MAX_PER_FLUSH`),
+  # приходить лише першим poll'ом наступного флашу, тож вікно від `sent_at` закінчувалось
+  # на годину раніше за Reset, і прохід оголошував загубленим слід ДОСТАВЛЕНОГО наказу:
+  # STOP у чергу, `fail!` і критичний алерт (адверсарне рев'ю 2026-09-27). ⚠️ Стеля:
+  # фізично дія стартувала при видачі, тож вікно від echo переоцінює її до флашу — у
+  # безпечний бік (активним довше, ніж насправді), а справді загублений Reset такого
+  # наказу прохід ловить пізніше на той самий флаш.
   def deadline_for(command)
-    command.sent_at + command.duration_seconds.seconds + STUCK_MARGIN
+    (command.executed_at || command.sent_at) + command.duration_seconds.seconds + STUCK_MARGIN
   end
 
   # 🔴 Атомарність тут не стиль, а лік від реального дефекту: `close_lost_commands!`

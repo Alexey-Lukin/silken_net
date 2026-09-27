@@ -48,7 +48,7 @@ module Api
         # виміряно 2026-08-19: чотири команди давали пʼять `SELECT users`.
         # `.to_a` — бо компонент читає колекцію ДВІЧІ (`.first` для картки, потім
         # `.each` для історії), і на relation це два однакових SELECT'и.
-        @commands = @actuator.commands.includes(:user).order(created_at: :desc).limit(20).to_a
+        @commands = @actuator.commands.includes(:user).order(created_at: :desc, id: :desc).limit(20).to_a
 
         respond_to do |format|
           # [SEC.36 2026-09-06] `history` доти віддавав СИРІ моделі — усі 17 колонок
