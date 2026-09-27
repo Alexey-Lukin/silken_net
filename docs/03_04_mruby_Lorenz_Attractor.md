@@ -113,7 +113,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 > **First-Boot vs Continuation — канонічна логіка [SEC.11 hard cutover]**
 >
-> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає top-level `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)` на `mrb_top_self` — тонку обгортку над `SilkenNet::BioContract.evaluate_and_pack`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
+> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає top-level `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)` на `mrb_top_self` (дев'ять аргументів з FW.8 — останні два несуть смугу, чинну на пристрої; §6.1) — тонку обгортку над `SilkenNet::BioContract.evaluate_and_pack`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
 >
 > | Умова | Джерело `(x_prev, y_prev, z_prev)` | Призначення |
 > |-------|------------------------------------|-------------|
@@ -173,8 +173,9 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигн�
 │
 └── args = [mrb_float(x_prev), mrb_float(y_prev), mrb_float(z_prev),
             mrb_fixnum(temp), mrb_fixnum(acoustic),
-            mrb_fixnum(delta_t_s), mrb_fixnum(vcap_mv)]
-    → calculate_state(…) → SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+            mrb_fixnum(delta_t_s), mrb_fixnum(vcap_mv),
+            mrb_float(z_min), mrb_float(z_max)]       // [FW.8] смуга — Lorenz_Band_Args
+    → calculate_state(…) → SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
     → [payload_byte, x_final, y_final, z_final]
 ```
 
@@ -494,7 +495,7 @@ SilkenNet використовує **dual computation integrity verification**: 
 | **Clamp ρ** | `if local_rho < RHO_MIN` / `> RHO_MAX` | `.clamp(RHO_LIMITS.min, RHO_LIMITS.max)` |
 | **Seed-походження `(x₀,y₀,z₀)`** | [SEC.11] Cold start: `K_seed` з Flash → HMAC; warm: RTC DR16-DR18 | [SEC.11] Cold start: `hardware_keys.lorenz_seed_hex` → HMAC; warm: попередній `telemetry_logs.lorenz_state_x/y/z` |
 | **Результат** | `z` (Float, необроблений) → пакується у `status_byte` | `z.round(4)` → зберігається у `TelemetryLog.z_value` |
-| **Пакування статусу** | `BioContract.pack_status_byte(z_val, delta_t, local_rho)` — ДІМ формули | `Attractor.pack_status_byte(z, temp, delta_t, critical_z_min:, critical_z_max:)` — дзеркало з 2026-09-06 [E.64]; зібране з уже наявних половин (`anomaly_ceiling` · `expected_homeostasis_gp` · `GP_STRESS` · `GP_UNMEASURED`), тож НОВИХ порогів не заведено. ⚠️ Годується СИРИМ `z` (`[3]`), не округленим `[0]` — прошивка класифікує саме ним. Споживач — `Hil::SoldierNode` (емуляція вузла); сам розпакувальник статус лише ДЕКОДУЄ |
+| **Пакування статусу** | `BioContract.pack_status_byte(z_val, delta_t, local_rho, z_min, z_max)` — ДІМ формули (смугу дає C-міст з FW.8; дефолти — `CRITICAL_Z_MIN/MAX`) | `Attractor.pack_status_byte(z, temp, delta_t, critical_z_min:, critical_z_max:)` — дзеркало з 2026-09-06 [E.64]; зібране з уже наявних половин (`anomaly_ceiling` · `expected_homeostasis_gp` · `GP_STRESS` · `GP_UNMEASURED`), тож НОВИХ порогів не заведено. ⚠️ Годується СИРИМ `z` (`[3]`), не округленим `[0]` — прошивка класифікує саме ним. Споживач — `Hil::SoldierNode` (емуляція вузла); сам розпакувальник статус лише ДЕКОДУЄ |
 | **Де використовується** | Пакується у `payload_byte` (byte 10 LoRa) | `TelemetryLog.z_value`, ZK-proof верифікація |
 
 > **[SEC.11] Byte-Identical Initial State:** firmware та backend **деривують той самий `(x₀, y₀, z₀)`** через спільний HKDF/HMAC-SHA256 алгоритм з per-device `K_seed` (`SilkenNet::SeedDerivation` ↔ pure-C `silken_sha256.h` у firmware). DID більше не використовується як seed. Тому raw Z-значення тепер може порівнюватися чисельно (виміряний drift = **0 бітово**: ARM↔x86 — FW.55 QEMU byte-parity; mruby-VM↔CRuby — sweep N=10k, §7.1 Gate L). `check_z_divergence!` залишається категоричним за замовчанням; числовий tolerance band готовий до flip під feature-flag — Gate L закрито. ✅ **Парність доведено по ПОВНОМУ StatusByte з 2026-09-06** (`spec/services/silken_net/attractor_spec.rb`, 200-кейсовий fuzz проти СПРАВЖНЬОГО контракту через підпроцес `tools/firmware/contract_runner.rb`): доти звірялись лише біти 6..5, а GP-половина стояла «deferred to FW.2 — потрібне бекендне дзеркало `metabolic_health`», тоді як те дзеркало (`expected_homeostasis_gp`) приїхало ще з E.63 (г). Тобто відкладення пережило власний мотив, і саме ця дірка тримала `bin/forest_simulator` на `rand` замість обчислення ([`00_07`](00_07_Action_Plan_Tracker) E.64), лишаються гейти D/C/P/G (§7.1) + кремнієвий хвіст у FW.55 silicon-confirm дампі.
@@ -513,7 +514,8 @@ firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
        │                                           │
        │  calculate_state(x_prev, y_prev, z_prev,  │  calculate_z_from_state(x_prev, y_prev, z_prev,
        │                  temp, acust,             │                          temp, acust,
-       │                  delta_t_s, vcap_mv)      │                          delta_t_s, vcap_mv)
+       │                  delta_t_s, vcap_mv,      │                          delta_t_s, vcap_mv)
+       │                  z_min, z_max)            │
        │  → [payload_byte, x_final, y_final,       │  → [z.round(4), x_final, y_final, z_final]
        │     z_final]                              │
        │                                           │

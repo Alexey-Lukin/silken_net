@@ -93,7 +93,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║     delta_t_seconds = tick - last_wakeup_timestamp (метаболізм EBFC) ║
 ║                                                                      ║
 ║   ФАЗА 2: mruby BioContract (on-device Lorenz) [SEC.11 + FW.6]      ║
-║     ЄДИНА сигнатура (hard cutover): calculate_state(x,y,z,t,a,m,v)  ║
+║     ЄДИНА сигнатура: calculate_state(x,y,z,t,a,m,v,zmin,zmax)       ║
 ║       A) Warm continuation (RTC DR19 == "LZST"): (x,y,z) ← DR16-18   ║
 ║       B) Cold start (DR19 ≠ MAGIC, після VBAT loss):                 ║
 ║          K_seed (Flash) + epoch_day = unix_ts/86400                  ║
@@ -261,13 +261,14 @@ end
 **Модуль `SilkenNet::BioContract` (firmware) — токеноміка:**
 ```ruby
 # CRITICAL_Z_MIN/MAX, OPTIMAL_Z_TARGET — SSOT: 03_04 §4.1 + §Z→bio_status mapping.
-# (firmware hardcoded у Flash; per-species OTA override — FW.8 нижче). НЕ дублювати тут.
+# Смугу z_min/z_max дає C-міст аргументами (FW.8); у бойовій збірці це дефолти. НЕ дублювати тут.
 
-def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv,
+                           z_min = CRITICAL_Z_MIN, z_max = CRITICAL_Z_MAX)
   # (x_prev, y_prev, z_prev): warm — з RTC DR16-18; cold — з SEC.11 K_seed/epoch_day
   z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)  # [E.63] β фікс
-  if    z_val < CRITICAL_Z_MIN  → status=1, growth_points=1  # stress
-  elsif z_val > anomaly_ceiling → status=2, growth_points=0  # anomaly [E.64] ρ-відносна стеля (≈45 при ρ=28), НЕ absolute — SSOT 03_04 §4
+  if    z_val < z_min           → status=1, growth_points=1  # stress
+  elsif z_val > anomaly_ceiling → status=2, growth_points=0  # anomaly [E.64] ρ-відносна стеля local_rho + (z_max − BASE_RHO) (≈45 при ρ=28 і дефолтах), НЕ absolute — SSOT 03_04 §4
   else                          → status=0                    # homeostasis
     # [E.63] growth_points = метаболічна жвавість m(delta_t), НЕ |29−z| — SSOT 03_04 §4.3
     growth_points = metabolic_health(delta_t_s)               # 5-bit wire (5..31)
@@ -276,7 +277,7 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
 end
 ```
 
-**Точка входу з C:** `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)` → `payload_byte` (uint8_t). Сигнатура `calculate_state(seed, …)` ВИДАЛЕНА (SEC.11 hard cutover, pre-prod, no shim).
+**Точка входу з C:** `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)` → `payload_byte` (uint8_t) — дев'ять аргументів з FW.8 (ABI-підлога — [`03_04 §6.1`](03_04_mruby_Lorenz_Attractor)). Сигнатура `calculate_state(seed, …)` ВИДАЛЕНА (SEC.11 hard cutover, pre-prod, no shim).
 
 ---
 
