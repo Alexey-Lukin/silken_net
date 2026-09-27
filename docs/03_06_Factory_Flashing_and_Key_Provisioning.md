@@ -152,7 +152,7 @@
 - Компрометація одного Soldier не розкриває ключі сусідів (per-device HKDF)
 - Фізичне вилучення ключа з чіпа неможливе після RDP Lock — для runtime-ключів в ОБОХ гілках (у Гілці B вони теж у Protected Flash); data-zone lock Гілки B додає це саме лише ідентичності (врізка «Набір ключів Гілки B»)
 - Деривовані device-ключі ніколи не в репозиторії — лише `HardwareKey` (AR-encrypted у Vault); сам `master_key` custody = deploy-ENV Тір-0 (§5.A), **НЕ** Vault
-- Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
+- Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше). 🔴 **Межа, яку ставить присуд про паління (⚖️ делеговано 2026-09-27, [`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security)): re-flash досяжний лише в пілотній L1-партії** (регресія = mass erase, SWD-пади там не масковано); серійна плата — RDP L2 під Parylene, SWD мертвий назавжди, тож сьогодні її ключі не перевипускаються нічим, крім заміни плати. Runtime-ключі Гілки B лежать там само, у Protected Flash (врізка «Набір ключів Гілки B», §1), тож «B болючіше» стосується лише ідентичності SE
 
 **Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`02_06 §8.1`](02_06_Unit_Economics_and_BOM)).
 
