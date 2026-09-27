@@ -1109,24 +1109,25 @@ end
       end
 
       it "falls back to individual mint() calls" do
-        # Expect individual mint calls (one per tx), not batchMint
-        tx_hashes = [ "0x" + "a" * 64, "0x" + "b" * 64 ]
-        call_count = 0
+        # Expect individual mint calls (one per tx), not batchMint. The hash is keyed by
+        # recipient, NOT by call order: the service loads the batch via `where_ids_pruned`
+        # with no ORDER BY on a partitioned table, so row order is not guaranteed — an
+        # order-keyed stub flaked here once in a full run (seed 43127, 2026-09-27).
+        tx_hashes = { wallet1.crypto_public_address => "0x" + "a" * 64,
+                      wallet2.crypto_public_address => "0x" + "b" * 64 }
 
-        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+        allow(mock_client).to receive(:transact) do |_c, method, to_address, *_args, **_opts|
           expect(method).to eq("mint")
-          hash = tx_hashes[call_count]
-          call_count += 1
-          hash
+          tx_hashes.fetch(to_address)
         end
 
         described_class.call_batch([ tx1.id, tx2.id ])
 
         expect(tx1.reload.status).to eq("sent")
         expect(tx2.reload.status).to eq("sent")
-        # Individual mints produce different tx_hashes
-        expect(tx1.reload.tx_hash).to eq(tx_hashes[0])
-        expect(tx2.reload.tx_hash).to eq(tx_hashes[1])
+        # Individual mints produce different tx_hashes, each landing on its own row
+        expect(tx1.reload.tx_hash).to eq(tx_hashes[wallet1.crypto_public_address])
+        expect(tx2.reload.tx_hash).to eq(tx_hashes[wallet2.crypto_public_address])
       end
 
       it "marks only the poisoned entry as failed when individual mint reverts" do
