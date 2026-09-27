@@ -104,7 +104,7 @@ Model: `P_c(t) = P_c(0)·[E∞/E0 + (1−E∞/E0)·exp(−t/τ)]`, E∞/E0 ≈ 0
 literature-Prony** estimate (the 2-term structure is validated by published PEEK 450G ISV models — MDPI
 Polymers 2021 PMC8199459, two relaxing components — and kept **conservative**: at forest temps (≪ Tg 143°C)
 PEEK relaxation is slow → real retention likely > 0.65, so this **under-states** residual P_c). The
-authoritative multi-term Maxwell-Wiechert fit stays with an external FEA executor (TBD — channel under ⚖️ in `00_07` HW.26).
+authoritative multi-term Maxwell-Wiechert fit stays with an external commercial FEA executor (⚖️ ratified 2026-09-27; shortlist — `00_07` HW.26).
 
 **The H7/s6 band is bounded at its MAX end only** (⚠️ 2026-09-18, `00_07` HW.3): at MAX fit the press-fit hoop
 stress (script 51, thick-wall: σ_hoop ≈ **17.9 MPa** @ -30°C + max interference = the combined worst case, §4)
@@ -153,7 +153,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 4. **Barbs = axial pull-out + anti-rotation only** — they do not seal; the retaining ring as a backup was
    removed 2026-09-18 (`00_07` HW.26 — see Summary).
 5. **Winter:** inner interface tightens; the "outer interface" is the tree, not a Ti shell (artifact dropped).
-6. **No mesh-FEA** for the axisymmetric stress (analytic Lamé); barb-tip stress-concentration → external FEA executor (TBD, `00_07` HW.26).
+6. **No mesh-FEA** for the axisymmetric stress (analytic Lamé); barb-tip stress-concentration → external commercial FEA executor (`00_07` HW.26).
 
 ## Remaining Tasks
 
@@ -173,5 +173,5 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
 - Frozen dims + ΔCTE window (combined SF 5.6×) → `docs/01_01 §1` + `§4.2`
 - O-ring (the radome face seal) → `docs/02_02 §3.2`/`§3.5`; Flush Mount drilling + the flange seated on the bark, its catalytic strip above it → `docs/01_04 §3.1`
-- Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6` (ground re-opened 2026-09-27) · `docs/00_07` HW.26
+- Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6` (re-grounded 2026-09-27 on an external commercial FEA executor) · `docs/00_07` HW.26
 - Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` + `56_unified_press_fit_lame.py` (core `lib/mechanics.py`) · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation,unified_press_fit_lame}.json`
