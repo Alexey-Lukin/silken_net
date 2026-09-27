@@ -36,42 +36,16 @@ module Downlink
     # ноги; нижньої межі каденсу не існує взагалі — таймерний флаш сам гейтований
     # `cache_count > 0 || ed25519_ready`, тож мовчазна legacy-Королева не флашить
     # ніколи. Тобто «вкладаємось» тут = «не можемо довести, що НЕ вкладемось».
+    # ⚠️ І це таймер, а не весь інтервал між poll'ами: `last_flush_time` ставиться
+    # ПІСЛЯ `Flush_Cache_To_Rails()`, усередині якого й живе poll, тож до 3660 с
+    # додається тривалість флашу (номінально десятки секунд, за бюджетами таймаутів
+    # до ≈ 190 с). Сьогоднішні вікна мають запас; на межі «скоротити таймер для
+    # сирени» (`00_07` FW.64, гілка A) цей член з'їдає його весь.
     WORST_CASE_POLL_INTERVAL_S = 3660
-
-    # [FW.64] Дзеркало прошивки `QUEEN_POLL_MAX_PER_FLUSH` (`firmware/queen/main.c`):
-    # стільки poll'ів Королева робить за флаш, і кожен віддає ОДИН наказ. Разом із
-    # каденсом вище це пропускна здатність черги шлюзу.
-    POLL_MAX_PER_FLUSH = 3
 
     # Чи встигне downlink доїхати за `seconds` — питання ПЛАТФОРМИ, не пристрою.
     def self.reachable_within?(seconds)
       WORST_CASE_POLL_INTERVAL_S <= seconds.to_i
-    end
-
-    # [FW.64] Скільки наказів черга шлюзу гарантовано видасть за `seconds`: k-й
-    # доїжджає не пізніше ⌈k / POLL_MAX_PER_FLUSH⌉ флашів, кожен флаш — не пізніше
-    # WORST_CASE_POLL_INTERVAL_S від попереднього. Модель та сама, що в
-    # `reachable_within?`: робочий таймер, мовчазної Королеви вона не бачить.
-    def self.poll_slots_within(seconds)
-      (seconds.to_i / WORST_CASE_POLL_INTERVAL_S) * POLL_MAX_PER_FLUSH
-    end
-
-    # [FW.64] Скільки вже виданих наказів стоїть у черзі КОЖНОГО шлюзу ПОПЕРЕДУ
-    # нового наказу пріоритету `priority` → `{ gateway_id => n }`, шлюзи з порожньою
-    # чергою відсутні. `pending_commands` сортує за пріоритетом, потім за
-    # `created_at`, тож попереду все живе не нижчого пріоритету. Один запит на набір
-    # шлюзів, а не на шлюз: інакше лік ріс би з флотом.
-    # `:sent` не рахується свідомо: у робочому тракті такий наказ Королева вже
-    # обробила, і луна `cmd=` першого poll'у наступного флашу підтверджує його ДО
-    # видачі, тож слота він не займає. Втрачена відповідь (повторна видача) лежить
-    # поза моделлю, як і мовчазна Королева.
-    # ⚠️ Консервативно в один бік: наказ попереду, що сам протухне до свого poll'у,
-    # слота не займе, а лік його рахує.
-    def self.queued_ahead(gateway_ids, priority)
-      ActuatorCommand.live_pending.status_issued
-                     .joins(:actuator).where(actuators: { gateway_id: gateway_ids })
-                     .where(priority: ActuatorCommand.priorities.fetch(priority.to_s)..)
-                     .group("actuators.gateway_id").count
     end
 
     def self.poll_reply(gateway:, query:)

@@ -37,10 +37,6 @@ class EmergencyResponseService
     ]
   }.freeze
 
-  # 🚦 EWS-команди завжди high (критичне реагування). Один дім, бо пріоритет читають
-  # ДВА місця: запис наказу і лік черги попереду (`fitting_chunks`).
-  PRIORITY = :high
-
   def self.call(ews_alert)
     cluster = ews_alert.cluster
     return unless cluster
@@ -78,13 +74,6 @@ class EmergencyResponseService
 
     by_device_type = cluster_actuators.select { available?(_1) }.group_by(&:device_type)
 
-    # [FW.64] Черга попереду — ОДНИМ запитом на весь виклик, далі в памʼяті: кожен
-    # крок додає свої накази до лічби, тож наступний бачить їх попереду себе (сирена
-    # стоїть перед поливом). Запит на крок чи на шлюз ріс би разом із флотом.
-    queued_ahead = Hash.new(0).merge(
-      Downlink::PendingQueueService.queued_ahead(cluster_actuators.map(&:gateway_id).uniq, PRIORITY)
-    )
-
     protocol.each do |step|
       serving = by_device_type.fetch(step[:device_type], [])
 
@@ -101,7 +90,7 @@ class EmergencyResponseService
 
       dispatch_commands(
         serving, step[:payload],
-        duration: step[:duration], relevance: step[:relevance], alert: ews_alert, queued_ahead: queued_ahead
+        duration: step[:duration], relevance: step[:relevance], alert: ews_alert
       )
     end
   end
@@ -113,7 +102,7 @@ class EmergencyResponseService
   private_class_method def self.fit?(actuator) = actuator.idle? || actuator.active?
   private_class_method def self.available?(actuator) = fit?(actuator) && actuator.gateway.online?
 
-  private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:, queued_ahead:)
+  private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:)
     return if actuators.empty?
 
     # [FIX-3]: Пріоритезація — спершу активуємо актуатори ближчих шлюзів
@@ -130,13 +119,11 @@ class EmergencyResponseService
     deliverable = ordered_actuators.select { |actuator| deliverable?(actuator, chunks.max, relevance, alert) }
     return if deliverable.empty?
 
-    fitting = fitting_chunks(deliverable, chunks.size, relevance, queued_ahead, alert)
-
     now = Time.current
     # 📈 Денормалізація: organization_id для broadcast без N+1
     org_id = alert.cluster.organization_id
     attrs = deliverable.flat_map do |actuator|
-      chunks.first(fitting[actuator]).map do |chunk_duration|
+      chunks.map do |chunk_duration|
         {
           actuator_id: actuator.id,
           ews_alert_id: alert.id,
@@ -145,7 +132,8 @@ class EmergencyResponseService
           status: ActuatorCommand.statuses[:issued],
           # 🛡️ Idempotency: UUID для кожної команди (дедуплікація на STM32)
           idempotency_token: SecureRandom.uuid,
-          priority: ActuatorCommand.priorities[PRIORITY],
+          # 🚦 Priority: EWS-команди завжди high (критичне реагування)
+          priority: ActuatorCommand.priorities[:high],
           # ⏱️ TTL = вікно релевантності кроку (див. PROTOCOLS)
           expires_at: now + relevance,
           # 📈 Денормалізація organization_id
@@ -155,7 +143,6 @@ class EmergencyResponseService
         }
       end
     end
-    return if attrs.empty?
 
     begin
       # [FW.60] Без push-enqueue: insert_all обходить dispatch_to_edge!, але
@@ -165,11 +152,7 @@ class EmergencyResponseService
       ActuatorCommand.insert_all(attrs)
     rescue StandardError => e
       Rails.logger.error "🛑 [Emergency Error] Масове створення наказів провалене: #{e.message}"
-      return
     end
-
-    # [FW.64] Наступний крок протоколу бачить ці накази попереду себе.
-    deliverable.each { |actuator| queued_ahead[actuator.gateway_id] += fitting[actuator] }
   end
 
   # [ARCH.75] Дві НЕЗАЛЕЖНІ причини не доїхати, і кожна мусить зупинити запис:
@@ -192,7 +175,13 @@ class EmergencyResponseService
   #     сирена (15 хв) недоставна ЗАВЖДИ (маяка в PROTOCOLS немає з ARCH.102). Платформа каже це вголос —
   #     один раз на актуатор, доки алерт не закрито, — замість імітувати відповідь;
   #     механізм, якого бракує, заведено окремо → `00_07` FW.64 (подієвий флаш).
-  #     Тут судиться лише ПЕРШИЙ poll; решту серії судить `fitting_chunks` нижче.
+  #     ⚠️ Стеля: судиться лише ПЕРШИЙ poll — k-й наказ черги шлюзу доїжджає на
+  #     ⌈k/3⌉-му флаші (QUEEN_POLL_MAX_PER_FLUSH), тож 4-й чанк пожежного поливу
+  #     протухає мовчки, але лише в НАЙГІРШОМУ випадку (перший poll майже через
+  #     повний інтервал після запису); в інших доїжджає — і саме він єдиний
+  #     продовжує полив за першу годину, бо чанки 1–3 накладаються. Відмовляти його
+  #     за найгіршим випадком ⊥ писати й звітувати ФАКТИЧНЕ протухання — ⚖️ `00_07`
+  #     FW.64 (лік «завжди відмовляти» 2026-09-27 відкочено саме через це).
   private_class_method def self.deliverable?(actuator, chunk_duration, relevance, alert)
     unless actuator.can_sustain?(chunk_duration)
       report_undeliverable(alert, actuator, "emergency_response_over_ceiling",
@@ -208,37 +197,6 @@ class EmergencyResponseService
     end
 
     true
-  end
-
-  # [FW.64] Скільки чанків серії кожен актуатор устигає отримати в межах `relevance`.
-  # Черга в Королеви ОДНА на всі актуатори шлюзу, і за флаш вона видає не більше
-  # `POLL_MAX_PER_FLUSH` наказів, тож k-й наказ доїжджає не раніше ⌈k/3⌉ флашів.
-  # Доти судився лише перший poll, і 4-й чанк пожежного поливу (2 × 3 660 с >
-  # 7 200 с) протухав у черзі без жодного звіту: платформа мовчки обіцяла те, чого
-  # доставити не могла. Тепер записується лише те, що встигає, а хвіст відмовляється
-  # вголос, тією ж формою, що в `deliverable?`. Черга рахується з уже виданими
-  # наказами попереду, включно з попереднім кроком того ж протоколу.
-  # Слоти роздаються ПО КОЛУ: спершу перший чанк кожного актуатора шлюзу, потім
-  # другий. Доки чанки не серіалізовано (⚖️ ARCH.75, залізний пакет), вони eligible
-  # одночасно, і саме перший чанк вирішує, чи пристрій спрацює взагалі. Це
-  # інженерний дефолт, не присуд; переглядається разом із серіалізацією.
-  # ⚠️ Межа — на мить диспетчеризації: пізніший STOP на сусідньому актуаторі того ж
-  # шлюзу (`override`) стане попереду.
-  private_class_method def self.fitting_chunks(actuators, chunk_count, relevance, queued_ahead, alert)
-    actuators.group_by(&:gateway_id).each_with_object({}) do |(gateway_id, siblings), fitting|
-      ahead = queued_ahead[gateway_id]
-      slots = [ Downlink::PendingQueueService.poll_slots_within(relevance) - ahead, 0 ].max
-      siblings.each_with_index do |actuator, i|
-        fitting[actuator] = [ chunk_count, (slots / siblings.size) + (i < slots % siblings.size ? 1 : 0) ].min
-        next if fitting[actuator] == chunk_count
-
-        report_undeliverable(alert, actuator, "emergency_response_series_cut",
-                             cut: chunk_count - fitting[actuator], total: chunk_count,
-                             per_flush: Downlink::PendingQueueService::POLL_MAX_PER_FLUSH,
-                             cadence_min: (Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S / 60.0).round,
-                             relevance_min: (relevance.to_i / 60.0).round, queued_ahead: ahead)
-      end
-    end
   end
 
   # Гучна відмова замість тихого невалідного рядка. Дедуп по ПАРІ

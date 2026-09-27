@@ -588,52 +588,17 @@ RSpec.describe Downlink::PendingQueueService do
     end
   end
 
-  # [FW.64] Пропускна здатність черги шлюзу — те, чим `EmergencyResponseService`
-  # судить серію наказів, а не лише перший poll.
-  describe "пропускна здатність черги [FW.64]" do
-    it "poll_slots_within: ⌊вікно / найгірший каденс⌋ флашів по POLL_MAX_PER_FLUSH наказів" do
-      expect(described_class.poll_slots_within(3659)).to eq(0)
-      expect(described_class.poll_slots_within(3660)).to eq(3)
-      expect(described_class.poll_slots_within(2.hours)).to eq(3)
-      expect(described_class.poll_slots_within(6.hours)).to eq(15)
+  # [FW.64] `WORST_CASE_POLL_INTERVAL_S` — дзеркало прошивки, і з ARCH.75 воно жило без
+  # носія: зміна таймера Королеви лишила б платформу судити доставність за старим каденсом.
+  # ⚠️ Пін тримає ТАЙМЕРНУ половину інтервалу; тривалість самого флашу (poll живе всередині
+  # нього) до константи не входить — стеля оголошена в її коментарі.
+  it "WORST_CASE_POLL_INTERVAL_S = FLUSH_INTERVAL_MS + FLUSH_JITTER_MAX_MS прошивки Королеви" do
+    queen_src = File.read(Rails.root.join("firmware/queen/main.c"))
+    define = lambda do |name|
+      queen_src[/^#define\s+#{name}\s+(\d+)u?\b/, 1]&.to_i || raise("#{name} не знайдено у firmware/queen/main.c")
     end
 
-    # Пара «рахується ⊥ ні» в одному наборі: без відсіяних рядків лік, що рахує
-    # УСЕ підряд, пройшов би так само зелено.
-    it "queued_ahead: лише живі ВИДАНІ накази не нижчого пріоритету на ЦЬОМУ шлюзі" do
-      actuator = create(:actuator, gateway: gateway)
-      create(:actuator_command, :high_priority, :with_ttl, actuator: actuator)
-      create(:actuator_command, :override_stop, actuator: create(:actuator, gateway: gateway))
-
-      create(:actuator_command, :with_ttl, actuator: actuator) # low — стоїть ПОЗАДУ
-      create(:actuator_command, :high_priority, :expired, actuator: actuator)
-      create(:actuator_command, :high_priority, :with_ttl, actuator: actuator)
-        .update_columns(status: ActuatorCommand.statuses[:sent]) # луна підтвердить до видачі
-      create(:actuator_command, :high_priority, :with_ttl,
-             actuator: create(:actuator, gateway: create(:gateway, cluster: cluster)))
-
-      other = create(:gateway, cluster: cluster)
-      expect(described_class.queued_ahead([ gateway.id, other.id ], :high)).to eq(gateway.id => 2)
-    end
-
-    # Обидві константи — ДЗЕРКАЛА прошивки, і `WORST_CASE_POLL_INTERVAL_S` жила без
-    # носія з ARCH.75: зміна таймера Королеви лишила б платформу при старому каденсі.
-    describe "дзеркала прошивки Королеви" do
-      let(:queen_src) { File.read(Rails.root.join("firmware/queen/main.c")) }
-
-      def firmware_define(name)
-        queen_src[/^#define\s+#{name}\s+(\d+)u?\b/, 1]&.to_i ||
-          raise("#{name} не знайдено у firmware/queen/main.c")
-      end
-
-      it "WORST_CASE_POLL_INTERVAL_S = FLUSH_INTERVAL_MS + FLUSH_JITTER_MAX_MS" do
-        expect(described_class::WORST_CASE_POLL_INTERVAL_S * 1000)
-          .to eq(firmware_define("FLUSH_INTERVAL_MS") + firmware_define("FLUSH_JITTER_MAX_MS"))
-      end
-
-      it "POLL_MAX_PER_FLUSH = QUEEN_POLL_MAX_PER_FLUSH" do
-        expect(described_class::POLL_MAX_PER_FLUSH).to eq(firmware_define("QUEEN_POLL_MAX_PER_FLUSH"))
-      end
-    end
+    expect(described_class::WORST_CASE_POLL_INTERVAL_S * 1000)
+      .to eq(define.call("FLUSH_INTERVAL_MS") + define.call("FLUSH_JITTER_MAX_MS"))
   end
 end
