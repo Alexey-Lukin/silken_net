@@ -38,6 +38,26 @@ case "$file_path" in
   *) exit 0 ;;
 esac
 
+# Content branch — fires EVERY time, bypassing the once-per-session marker below: a
+# closed verdict BODY is being written into the tracker. Measured 2026-09-27: the
+# once-per-session hint fired at the first tracker edit, and eight delegated-verdict
+# bodies were written hours later (the event recurs, the reminder did not); and
+# item 4 said «ратифікований» while the act was «записую делегований», so the act did
+# not recognise itself in the carrier. Not noisy by construction: it matches only
+# the violation shape. `grep -F` on purpose — byte-exact on emoji/Cyrillic, locale-free.
+if [[ "$class" == "tracker" ]]; then
+  new_text=$(printf '%s' "$input" | jq -r '.tool_input.new_string // .tool_input.content // empty' 2>/dev/null)
+  if printf '%s' "$new_text" | grep -qF -e '- ✅ **⚖️' \
+     || { printf '%s' "$new_text" | grep -qF 'делеговано 20' && printf '%s' "$new_text" | grep -qF '**Підстава'; }; then
+    read -r -d '' hint <<'EOF' || true
+[SSOT] Ти пишеш у трекер ТІЛО присуду (підстава · ціна · найслабша ланка). Це стосується й ДЕЛЕГОВАНОГО присуду, який ти сам щойно ухвалюєш: запис присуду і є його застосуванням. Повна форма живе в КАНОН-ДОМІ (сторінка, картка, шапка рушія); у пункт — одне речення «⚖️ делеговано <дата>: суть — адреса» і відкриті ноги, які присуд породив (`00_05 §5`, третя половина кола). Тіло в ✅-рядку трекера = борг, який наступна цементація платить перевідкриттям.
+EOF
+    jq -nc --arg ctx "$hint" \
+      '{hookSpecificOutput: {hookEventName: "PreToolUse", additionalContext: $ctx}}'
+    exit 0
+  fi
+fi
+
 marker="${TMPDIR:-/tmp}/claude-ssot-hint-${session}-${class}"
 [[ -f "$marker" ]] && exit 0
 : > "$marker"
@@ -59,7 +79,7 @@ else
 1. **Чекбокс несе ЛИШЕ відкрите.** Закрита робота живе в `- **Стан:**` + git, не як `[x]`-звіт. Повністю закритий пункт → §🗄️ Архів рядком `| ID | суть | канон |`, а НЕ «товстий ✅».
 2. **Перед архівацією — verify-canon.** Інбаунд-рефи по ID (канон/код/скіли) мусять лишитись живими: архівний рядок і є їхній дім. Спершу перевір, що присуд і design-justification вже в каноні — інакше зріжеш незбережене.
 3. **WHO meta-line = обʼєднання ВІДКРИТИХ виконавців** (закрита половина не рахується); `⚖️` — завжди trailing у комбо; перший канон-реф мусить бути модуля своєї §-секції.
-4. **Застосовуєш ратифікований присуд — ПОВЕРНИ його тим самим комітом:** підстава · ціна · найслабша ланка → канон-дім, тіло з пункту геть, відкриті ноги лишаються (`00_05 §5`, третя половина кола). Без цього пункт росте до гіганта (HW.34 — 139 kB).
+4. **Застосовуєш присуд — ратифікований чи ДЕЛЕГОВАНИЙ, який ти сам записуєш, — ПОВЕРНИ його тим самим комітом:** підстава · ціна · найслабша ланка → канон-дім, тіло з пункту геть, відкриті ноги лишаються (`00_05 §5`, третя половина кола). Без цього пункт росте до гіганта (HW.34 — 139 kB).
 
 Метод цілком — `.claude/prompts/item_cementation.md`.
 EOF
