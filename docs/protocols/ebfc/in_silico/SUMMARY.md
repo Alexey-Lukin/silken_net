@@ -712,8 +712,9 @@ capsule above the rating? — on ERA5 hourly 1991–2020 (`tools/in_silico/data/
 provenance in its README) with one isothermal lump per hour: the beam on the LARGEST projection of
 the exposed radome over all directions plus diffuse on half a sky, lost by the larger of natural and
 forced convection and by linearised long-wave exchange with surroundings at air temperature, on an
-adiabatic base (the Zone-2 PEEK break). Absorptance α is swept 0.50–0.95 because canon does not
-specify the radome finish; trunk-level wind is k·u10 with k = 0 (the bound), 0.1 and 0.3.
+adiabatic base (the Zone-2 PEEK break). Absorptance α is swept 0.50–0.95 as a bracket (written as
+«canon does not specify the radome finish», which was false — the spec named «brown or RAL 8007»;
+the sweep became the basis of the delegated verdict 2026-09-27 that specifies α ≤ 0.5, `02_01 §5.2`); trunk-level wind is k·u10 with k = 0 (the bound), 0.1 and 0.3.
 
 | Hottest hour, still air | α 0.50 | α 0.95 | Margin to 70 °C at α 0.95 |
 |---|---|---|---|

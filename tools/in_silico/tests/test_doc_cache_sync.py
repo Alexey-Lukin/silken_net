@@ -1868,6 +1868,40 @@ CHECKS += [
      SUMMARY, rf"9 days, coldest {N} °C\)", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["coldest_air_c"], 0.05),
 ]
 
+# 02_01 §5.2 — the radome-finish verdict (⚖️ delegated 2026-09-27: α ≤ 0.5, not a colour) quotes this same
+# cache as its basis. Once the tracker body was cemented into it, that paragraph became the ONLY doc home
+# of these numbers, and nothing pinned it — a re-run of 71 would have left the verdict's basis stale silently.
+HW_BOM = "docs/02_01_Hardware_Architecture_and_BOM.md"
+
+
+def _sunlit_breeze(alpha, field):
+    def resolve(d):
+        r = d["aging"][f"sunlit_alpha{alpha}_k0.1"]
+        return r["t_eff_c"] if field == "t_eff_c" else r["life_at_ratified_vbat_ov"][field]
+    return resolve
+
+
+CHECKS += [
+    ("HW.37 · 02_01 §5.2 dark finish margin, h_c × 0.7 → capsule_envelope.json",
+     HW_BOM, rf"лише {N}–[\d.]+ K, тобто порядок похибки", THERMAL, _sens("0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_01 §5.2 dark finish margin, still air → capsule_envelope.json",
+     HW_BOM, rf"лише [\d.]+–{N} K, тобто порядок похибки", THERMAL, _hot("sunlit", "0.95", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_01 §5.2 light finish margin → capsule_envelope.json",
+     HW_BOM, rf"а світлий \(α 0\.5\) — ≥ {N} K", THERMAL, _sens("0.50", "margin_to_rating_k"), 0.05),
+    ("HW.37 · 02_01 §5.2 T_eff light, sunlit with breeze → capsule_envelope.json",
+     HW_BOM, rf"зсуває T_eff старіння з {N} до", THERMAL, _sunlit_breeze("0.50", "t_eff_c"), 0.05),
+    ("HW.37 · 02_01 §5.2 T_eff dark, sunlit with breeze → capsule_envelope.json",
+     HW_BOM, rf"зсуває T_eff старіння з [\d.]+ до {N} °C", THERMAL, _sunlit_breeze("0.95", "t_eff_c"), 0.05),
+    ("HW.37 · 02_01 §5.2 life light, optimistic → capsule_envelope.json",
+     HW_BOM, rf"а строк — з {N} до [\d.]+ року", THERMAL, _sunlit_breeze("0.50", "optimistic_yr"), 0.05),
+    ("HW.37 · 02_01 §5.2 life dark, optimistic → capsule_envelope.json",
+     HW_BOM, rf"а строк — з [\d.]+ до {N} року", THERMAL, _sunlit_breeze("0.95", "optimistic_yr"), 0.05),
+    ("HW.37 · 02_01 §5.2 life light, conservative → capsule_envelope.json",
+     HW_BOM, rf"консервативний — з {N} до [\d.]+\)", THERMAL, _sunlit_breeze("0.50", "conservative_yr"), 0.05),
+    ("HW.37 · 02_01 §5.2 life dark, conservative → capsule_envelope.json",
+     HW_BOM, rf"консервативний — з [\d.]+ до {N}\)", THERMAL, _sunlit_breeze("0.95", "conservative_yr"), 0.05),
+]
+
 # ── doc↔code: the ratified gene is MIRRORED into lib/constants.py, and a mirror needs a pin ──
 
 RFQ = "docs/protocols/procurement/ebfc_chem_rfq.md"

@@ -34,9 +34,10 @@ few grams against a loss coefficient of a few hundredths W/K settles in minutes,
     named ceiling, not a term — and it is the first thing a field reading should settle.
 
 INPUTS THAT ARE BRACKETS, NOT NUMBERS:
-  • α, solar absorptance of the radome — canon does NOT specify the finish (`radome.json` surface_finish:
-    NOT SPECIFIED IN CANON) and names a bark-coloured PC/ASA as a declared alternative (02_01 §5.2). So α is
-    swept over [0.50, 0.95] and every verdict is given PER α. No PEEK absorptance was read from a primary:
+  • α, solar absorptance of the radome — swept over [0.50, 0.95] and every verdict is given PER α. This
+    line first said «canon does NOT specify the finish»; that was false — the radome spec named «brown or
+    RAL 8007», i.e. the dark end — and the sweep became the basis of the delegated verdict 2026-09-27
+    that now specifies α ≤ 0.5 rather than a colour (02_01 §5.2, `radome.json` surface_finish). No PEEK absorptance was read from a primary:
     the low end stands for a light unfilled polymer, the high end for a dark one.
   • ε = 0.90 — ours, typical of polymers in the thermal infrared, not read from a primary.
   • Climate — ERA5 hourly at the Cherkasy grid point (`data/era5_cherkasy/`, provenance in its README).
@@ -358,7 +359,7 @@ def main() -> int:
                      "capsule_requirement": list(CAPSULE_ENVELOPE_C)},
         "geometry": geo,
         "inputs": {
-            "alpha_sweep": list(ALPHA_SWEEP), "alpha_owner": "ours — finish NOT SPECIFIED IN CANON (radome.json)",
+            "alpha_sweep": list(ALPHA_SWEEP), "alpha_owner": "ours — a bracket; canon now specifies α ≤ 0.5 (02_01 §5.2, delegated 2026-09-27)",
             "epsilon": EPSILON, "epsilon_owner": "ours",
             "sky_view": SKY_VIEW, "sky_view_owner": "ours",
             "wind_k": list(WIND_K), "wind_k_typical_for_aging": WIND_K_TYPICAL,
