@@ -77,13 +77,62 @@ CANON_DOC = File.expand_path("../../docs/02_03_BQ25570_MPPT_Nano_Power.md", __di
 # ГРОШОВА робоча точка живе в двох сусідах, і вони НЕ кличуть цей файл (прилади свідомо не злиті).
 # Тому її читають звідси, щоб розбіжність ставала видимою: 2026-09-26 вона тихо відстала на +10 %
 # (ланцюг без RX-вікна й на струмі чужого підсилювача), і помітило її лише статичне «0.4 %»,
-# яке брехало. Дефолт тепер = ця модель (⚖️ founder 2026-09-26), а `--assert` тримає обох сусідів
-# у межах ±8 % `u_delta_t` від неї — рух будь-якого входу, що зсуне ECB-точку далі, червоніє тут.
-MONEY_TOLERANCE_PCT = 8.0 # = `u_delta_t_raw_pct` (STK.5)
-def money_default_s
-  scc = File.read(File.expand_path("scc_rate.rb", __dir__))[/^VARIANT_C_S\s*=\s*([\d.]+)/, 1]
-  unc = File.read(File.expand_path("uncertainty_budget.rb", __dir__))[/^\s*delta_t_s:\s*([\d.]+)/, 1]
-  { scc: scc && Float(scc), unc: unc && Float(unc) }
+# яке брехало. Дефолт тепер = ця модель (⚖️ founder 2026-09-26).
+# 🔴 Судимо її ГРОШИМА, не відсотком Δt (адверсарне ревʼю 2026-09-26 · ⚖️ делеговано 2026-09-27,
+# 00_07 ARCH.8): wire-GP квантований, і біля 7027 с сходинка 12 → 10 лежить за 46 с, тож доти
+# чинні «±8 % Δt» пропускали −23…+45 % SCC. Тепер: та сама сходинка wire-GP, що в ECB-точки, і SCC
+# у межах невизначеності Δt ПІСЛЯ EMA — прошивка подає в `m` саме EMA, а ±8 % є сирим джитером
+# ДО фільтра (та сама підміна сиділа й у «боці підлоги» нижче; лікована тим самим допуском).
+# Числа смуги — у домі грошей (scc_rate.rb), допуск — у домі точності (uncertainty_budget.rb):
+# цей файл їх ЧИТАЄ, як доти читав VARIANT_C_S, а арифметика — спільна (lib/growth_steps.rb).
+require_relative "lib/growth_steps"
+GS = SilkenGrowthSteps
+
+def neighbour_number(file, name)
+  v = File.read(File.expand_path(file, __dir__))[/^\s*#{name}\s*[=:]\s*([\d._]+)/, 1]
+  v && Float(v.delete("_"))
+end
+
+def money_model
+  scc = ->(n) { neighbour_number("scc_rate.rb", n) }
+  unc = ->(n) { neighbour_number("uncertainty_budget.rb", n) }
+  { point_s: scc.call("VARIANT_C_S"), unc_point_s: unc.call("delta_t_s"),
+    band: { fast_s: scc.call("DELTA_T_FAST_S"), slow_s: scc.call("DELTA_T_SLOW_S"),
+            gp_min: scc.call("GP_HOMEO_MIN"), gp_max: scc.call("GP_HOMEO_MAX") },
+    upscale: scc.call("BACKEND_UPSCALE"), threshold: scc.call("EMISSION_THRESHOLD"),
+    u_raw_pct: unc.call("u_delta_t_raw_pct"), ema_alpha: unc.call("ema_alpha") }
+end
+
+def money_model_complete?(mm) = (mm.values - [ mm[:band] ] + mm[:band].values).none?(&:nil?)
+
+# Невизначеність Δt ПІСЛЯ EMA: σ_out/σ_in = sqrt(α / (2−α)) — та сама формула, що в uncertainty_budget.rb.
+def dt_tolerance_pct(mm) = mm[:u_raw_pct] * Math.sqrt(mm[:ema_alpha] / (2.0 - mm[:ema_alpha]))
+
+def money_scc(mm, delta_t_s)
+  GS.scc_per_tree_year(delta_t_s: delta_t_s, threshold: mm[:threshold],
+                       stored_gp: mm[:upscale] * GS.wire_gp(delta_t_s: delta_t_s, **mm[:band]))
+end
+
+def money_verdict(mm, energy_s)
+  w_money = GS.wire_gp(delta_t_s: mm[:point_s], **mm[:band])
+  w_energy = GS.wire_gp(delta_t_s: energy_s, **mm[:band])
+  gap = 100.0 * (money_scc(mm, energy_s) / money_scc(mm, mm[:point_s]) - 1.0)
+  { same_step: w_money == w_energy, w_money: w_money, w_energy: w_energy, gap_pct: gap,
+    scc_money: money_scc(mm, mm[:point_s]), scc_energy: money_scc(mm, energy_s), tol_pct: dt_tolerance_pct(mm) }
+end
+
+# Де грошова точка стоїть на сходинці і що коштує крок униз.
+def money_step_note(mm)
+  e = GS.step_edges(delta_t_s: mm[:point_s], **mm[:band])
+  parts = []
+  parts << format("−%.0f с до %d→%d", mm[:point_s] - e[:up_s], e[:wire], e[:wire] + 1) if e[:up_s]
+  if e[:down_s]
+    drop = 100.0 * (1.0 - money_scc(mm, e[:down_s] + 1.0) / money_scc(mm, mm[:point_s]))
+    parts << format("+%.0f с до %d→%d (−%.0f %% SCC)", e[:down_s] - mm[:point_s], e[:wire], e[:wire] - 1, drop)
+  else
+    parts << "підлога — нижче сходинок немає"
+  end
+  "сходинка wire-GP #{e[:wire]}: #{parts.join(' · ')}"
 end
 
 PARAMS = {
@@ -216,32 +265,42 @@ def report(p)
               p[:delta_t_slow_s] - ecb[:delta_t_s], (p[:delta_t_slow_s] - ecb[:delta_t_s]) / 60.0,
               ccm[:delta_t_s] - ecb[:delta_t_s], (ccm[:delta_t_s] - ecb[:delta_t_s]) / 60.0)
   puts
-  money = money_default_s[:scc]
-  gap_pct = 100.0 * (ecb[:delta_t_s] / money - 1.0)
+  mm = money_model
+  unless money_model_complete?(mm)
+    puts "  ⚠️ числа грошової моделі (scc_rate.rb / uncertainty_budget.rb) не знайдено — грошового вироку нема."
+    return 0
+  end
+  v = money_verdict(mm, ecb[:delta_t_s])
   puts format("  Грошові моделі (scc_rate.rb, uncertainty_budget.rb) беруть дефолтом %.0f с; ця модель дає"\
-              " %.0f с — різниця %+.1f %%.", money, ecb[:delta_t_s], gap_pct)
-  if gap_pct.abs <= MONEY_TOLERANCE_PCT
-    puts "     Це всередині ±8 % `u_delta_t_raw_pct` (STK.5): округлення, не розбіжність."
+              " %.0f с — SCC %.2f ⊥ %.2f/дерево/рік (%+.1f %%).", mm[:point_s], ecb[:delta_t_s],
+              v[:scc_money], v[:scc_energy], v[:gap_pct])
+  if v[:same_step] && v[:gap_pct].abs <= v[:tol_pct]
+    puts format("     Та сама сходинка wire-GP (%d) і в межах ±%.2f %% u_Δt після EMA: округлення, не розбіжність.",
+                v[:w_money], v[:tol_pct])
   else
-    puts "     🔴 Це ПОЗА ±8 % `u_delta_t_raw_pct` (STK.5): уже не округлення, а розбіжність — дефолт"
-    puts "     відстає від ланцюга, який виконує прошивка. ⛔ Рухати його можна лише присудом"
+    puts format("     🔴 Розбіжність у ГРОШАХ: сходинка wire-GP %d ⊥ %d, SCC %+.1f %% (допуск ±%.2f %% u_Δt після EMA) —",
+                v[:w_money], v[:w_energy], v[:gap_pct], v[:tol_pct])
+    puts "     дефолт відстає від ланцюга, який виконує прошивка. ⛔ Рухати його можна лише присудом"
     puts "     (00_07 ARCH.8, ⚖️-нога): від нього залежать гроші, а не лише цей звіт."
   end
-  puts format("  → ECB-точка стоїть %s (%.1f %% від Δt) — %s.", *floor_side(p, ecb))
+  puts "  → Грошова точка: #{money_step_note(mm)}."
+  puts format("  → ECB-точка стоїть %s (%.1f %% від Δt) — %s.", *floor_side(p, ecb, v[:tol_pct]))
   0
 end
 
-# Бік метаболічної підлоги і чи він доведений. Вердикт стежить за ЗНАКОМ і за смугою ±8 % Δt:
+# Бік метаболічної підлоги і чи він доведений. Вердикт стежить за ЗНАКОМ і за смугою невизначеності
+# Δt ПІСЛЯ EMA (доти — сирі ±8 %, тобто підміна тієї самої величини, що й у грошовому гейті):
 # під override точка лягає і далеко перед підлогою, і за нею, а статичний текст брехав би в
 # обидва боки (однобічне `<= 0.08` друкувало «−31.8 % — ВСЕРЕДИНІ ±8 %»).
-def floor_side(p, ecb)
+def floor_side(p, ecb, tol_pct)
   gap_s = p[:delta_t_slow_s] - ecb[:delta_t_s]
   gap_pct = 100.0 * gap_s / ecb[:delta_t_s]
   where = gap_s >= 0 ? format("за %.0f с ДО підлоги", gap_s) : format("на %.0f с ЗА підлогою", -gap_s)
+  band = format("±%.2f %% Δt після EMA", tol_pct)
   verdict =
-    if gap_pct.abs <= MONEY_TOLERANCE_PCT then "у межах ±8 % Δt, тобто бік підлоги не доведено"
-    elsif gap_pct.positive? then "поза ±8 % Δt — точка перед підлогою"
-    else "поза ±8 % Δt — m = 0 тут не шум"
+    if gap_pct.abs <= tol_pct then "у межах #{band}, тобто бік підлоги не доведено"
+    elsif gap_pct.positive? then "поза #{band} — точка перед підлогою"
+    else "поза #{band} — m = 0 тут не шум"
     end
   [ where, gap_pct.abs, verdict ]
 end
@@ -344,7 +403,8 @@ def levers(p)
               floor_s / 3600.0)
   puts "      🔴 Валюта — ДОСЯЖНІСТЬ вузла: це вікно несе маяк часу, OTA й команди Королеви, тож"
   puts "         пропуск його — вибір, що саме перестає чути вузол у дефіциті. Справжні ворота"
-  puts "         потребують справжнього каналу запасу енергії — відкрита ⚖️ топології Vcap (FW.50)."
+  puts "         потребують справжнього каналу запасу енергії — топологію присуджено (FW.50: TPS22860-гейт,"
+  puts "         ⚖️ делеговано 2026-09-27), а каналу ще нема: розводка й прошивка на новому піні."
   puts
   puts "  ⛔ ВИБОРУ ТУТ НЕМАЄ І НЕ БУДЕ: розвилка є присудом (00_07 ARCH.8), і поки"
   puts "     вона відкрита, CCM не відвантажується. Значення й точність робочої точки"
@@ -389,26 +449,41 @@ def assert_mode(p)
   # 3. Присуд, заради якого модель існує: CCM-точка лежить ЗА метаболічною підлогою,
   #    а ECB-точка — перед нею. Порушення будь-якої половини робить розвилку іншою.
   problems << "ECB-точка вже за підлогою m — предмет розвилки змінився" unless ecb[:m] > 0.0
-  # 4. Грошова робоча точка сусідів не сміє відстати від ланцюга, який виконує прошивка, далі за
-  #    невизначеність Δt — і обидва сусіди мусять стояти на ОДНІЙ точці (⚖️ founder 2026-09-26).
-  money = money_default_s
-  if money.values.any?(&:nil?)
-    problems << "не знайдено грошового дефолту (VARIANT_C_S у scc_rate.rb або delta_t_s в uncertainty_budget.rb)"
-  else
+  # 4. Грошова робоча точка сусідів не сміє відстати від ланцюга, який виконує прошивка, — судимо
+  #    ГРОШИМА: та сама сходинка wire-GP і SCC у межах u_Δt після EMA (⚖️ делеговано 2026-09-27,
+  #    00_07 ARCH.8); і обидва сусіди мусять стояти на ОДНІЙ точці (⚖️ founder 2026-09-26).
+  mm = money_model
+  if money_model_complete?(mm)
     problems << format("грошові дефолти розійшлись між собою: scc_rate %.0f с ⊥ uncertainty_budget %.0f с",
-                       money[:scc], money[:unc]) unless money[:scc] == money[:unc]
-    gap = 100.0 * (ecb[:delta_t_s] / money[:scc] - 1.0)
-    problems << format("грошова робоча точка %.0f с відійшла від енергомоделі (%.0f с) на %+.1f %% — поза ±%.0f %% "\
-                       "u_delta_t; рухати її — присудом (00_07 ARCH.8)", money[:scc], ecb[:delta_t_s], gap,
-                       MONEY_TOLERANCE_PCT) if gap.abs > MONEY_TOLERANCE_PCT
+                       mm[:point_s], mm[:unc_point_s]) unless mm[:point_s] == mm[:unc_point_s]
+    # Смуга підлоги тут (PARAMS) і смуга сходинок у домі грошей — одна: інакше «бік підлоги» й
+    # «сходинка» рахувались би з різних чисел і суперечили б одне одному без жодного сигналу.
+    unless PARAMS[:delta_t_fast_s] == mm[:band][:fast_s] && PARAMS[:delta_t_slow_s] == mm[:band][:slow_s]
+      problems << format("смуга m розійшлась: PARAMS %.0f/%.0f с ⊥ scc_rate.rb DELTA_T_FAST_S/SLOW_S %.0f/%.0f с",
+                         PARAMS[:delta_t_fast_s], PARAMS[:delta_t_slow_s], mm[:band][:fast_s], mm[:band][:slow_s])
+    end
+    v = money_verdict(mm, ecb[:delta_t_s])
+    if !v[:same_step]
+      problems << format("грошова точка %.0f с і енергомодель %.0f с стоять на РІЗНИХ сходинках wire-GP (%d ⊥ %d): "\
+                         "SCC %.2f ⊥ %.2f/дерево/рік — рухати точку присудом (00_07 ARCH.8)", mm[:point_s],
+                         ecb[:delta_t_s], v[:w_money], v[:w_energy], v[:scc_money], v[:scc_energy])
+    elsif v[:gap_pct].abs > v[:tol_pct]
+      problems << format("грошова точка %.0f с ⊥ енергомодель %.0f с: SCC розійшлись на %+.1f %% — поза ±%.2f %% "\
+                         "u_Δt після EMA; рухати точку присудом (00_07 ARCH.8)", mm[:point_s], ecb[:delta_t_s],
+                         v[:gap_pct], v[:tol_pct])
+    end
+  else
+    problems << "не знайдено числа грошової моделі (scc_rate.rb: VARIANT_C_S · DELTA_T_* · GP_HOMEO_* · "\
+                "BACKEND_UPSCALE · EMISSION_THRESHOLD; uncertainty_budget.rb: delta_t_s · u_delta_t_raw_pct · ema_alpha)"
   end
   problems << "CCM-точка більше НЕ за підлогою m — розвилка ARCH.8 може бути закрита" unless ccm[:m].zero?
   problems.each { |x| warn "FAIL  #{x}" }
   if problems.empty?
-    where, gap_pct, verdict = floor_side(p, ecb)
+    where, gap_pct, verdict = floor_side(p, ecb, dt_tolerance_pct(mm))
     puts format("✅ tx_cadence_budget: H %.2f год (ECB 16 Б) → %.2f год (CCM 30 Б); підлога m на %.0f с — "\
-                "CCM-точка за нею, ECB-точка стоїть %s (%.1f %% від Δt — %s), розвилка ARCH.8 відкрита",
-                ecb[:h_hours], ccm[:h_hours], p[:delta_t_slow_s], where, gap_pct, verdict)
+                "CCM-точка за нею, ECB-точка стоїть %s (%.1f %% від Δt — %s), розвилка ARCH.8 відкрита; "\
+                "гроші: %s", ecb[:h_hours], ccm[:h_hours], p[:delta_t_slow_s], where, gap_pct, verdict,
+                money_step_note(mm))
   end
   problems.empty? ? 0 : 1
 end

@@ -47,19 +47,26 @@ VARIANT_C_S = 7027
 # Незалежний арбітр: 05_03 MAX_SUPPLY=1B ≈ 20M дерево-років ⇒ 50 SCC/tree/year.
 ARBITER_SCC_YEAR = 50.0
 
-def metabolic_m(delta_t_s)
-  ((DELTA_T_SLOW_S - delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)).clamp(0.0, 1.0)
-end
+# Арифметика `Δt → m → wire → SCC` — один дім із tx_cadence_budget.rb і uncertainty_budget.rb
+# (lib/growth_steps.rb); числа смуги лишаються ТУТ, це дім грошей.
+require_relative "lib/growth_steps"
+GS = SilkenGrowthSteps
+BAND = { fast_s: DELTA_T_FAST_S, slow_s: DELTA_T_SLOW_S, gp_min: GP_HOMEO_MIN, gp_max: GP_HOMEO_MAX }.freeze
 
-def stored_gp_per_packet(delta_t_s)
-  wire = (GP_HOMEO_MIN + metabolic_m(delta_t_s) * (GP_HOMEO_MAX - GP_HOMEO_MIN)).round
-  BACKEND_UPSCALE * wire
-end
+def stored_gp_per_packet(delta_t_s) = BACKEND_UPSCALE * GS.wire_gp(delta_t_s: delta_t_s, **BAND)
 
 def scc_per_tree_year(delta_t_s)
-  packets_day = 86_400.0 / delta_t_s
-  gp_day = packets_day * stored_gp_per_packet(delta_t_s)
-  365.0 / (EMISSION_THRESHOLD / gp_day)
+  GS.scc_per_tree_year(delta_t_s: delta_t_s, stored_gp: stored_gp_per_packet(delta_t_s), threshold: EMISSION_THRESHOLD)
+end
+
+# Де робоча точка стоїть на сходинці wire-GP і що коштує крок униз — гроші квантовані, і
+# відстань до сходинки важить більше, ніж відсоток Δt (00_07 ARCH.8).
+def step_note(delta_t_s)
+  e = GS.step_edges(delta_t_s: delta_t_s, **BAND)
+  drop = 100.0 * (1.0 - scc_per_tree_year(e[:down_s] + 1.0) / scc_per_tree_year(delta_t_s)) if e[:down_s]
+  down = e[:down_s] && format("+%.0f с до %d→%d (−%.0f %% SCC)", e[:down_s] - delta_t_s, e[:wire], e[:wire] - 1, drop)
+  up = e[:up_s] && format("−%.0f с до %d→%d", delta_t_s - e[:up_s], e[:wire], e[:wire] + 1)
+  "сходинка wire-GP #{e[:wire]}: " + [ up, down || "підлога — нижче сходинок немає" ].compact.join(" · ")
 end
 
 # CO₂-еквівалент (BIZ.1, on-chain): 2000 SCC = 1 tCO₂ = 0.5 kg/SCC — canonical
@@ -82,10 +89,17 @@ co2_kg_year = realistic * 1000.0 / SCC_PER_TONNE_CO2  # kg CO₂ / tree / year (
 
 if ARGV.include?("--assert")
   errors = []
-  # 1. Self-consistency: realistic виводиться з ОДНОГО delta_t → фізичний [5,15]
-  #    (ловить хардкод-drift на кшталт 44-52 з несумісних packets×GP).
-  errors << "realistic=#{realistic.round(1)} поза [5,15] — delta_t/m self-consistency зламано" \
-    unless (5.0..15.0).cover?(realistic)
+  # 1. Self-consistency — пін ФОРМУЛИ, не величини робочої точки: на Δt = 3600 с пакетів 24 і
+  #    stored-GP 38 (рівно приклад шапки, що спростовує «24 × 50»), тобто 33.288 SCC. Літерали —
+  #    свідомо: очікування, пораховане тією самою формулою, не впало б ніколи.
+  #    ⛔ Доти тут стояло вікно [5, 15] на РОБОЧІЙ точці: воно стояло за 0.39 SCC від легітимного
+  #    значення й падало на 7074 с (сходинка wire-GP 12 → 10) з діагнозом «self-consistency
+  #    зламано», хоча ламалась не формула, а точка (адверсарне ревʼю 2026-09-26 · ⚖️ делеговано
+  #    2026-09-27, 00_07 ARCH.8). Рух робочої точки судить tx_cadence_budget.rb --assert.
+  errors << "stored GP на Δt=3600 с = #{stored_gp_per_packet(3600)} ≠ 38 — формула Δt → m → wire зламана" \
+    unless stored_gp_per_packet(3600) == 38
+  errors << format("SCC на Δt=3600 с = %.3f ≠ 33.288 — packets×GP більше не з одного Δt", scc_per_tree_year(3600)) \
+    unless (scc_per_tree_year(3600) - 33.288).abs < 0.001
   # 2. Anti-over-mint стеля: рекордний recharge (Δt=600s) ≤ фізичний максимум.
   errors << "ceiling=#{ceiling.round} > 400 SCC/tree/year — over-mint (перевір ×upscale / GP_MAX)" \
     if ceiling > 400
@@ -109,8 +123,9 @@ if ARGV.include?("--assert")
   errors << "SCC_PER_TONNE_CO2=#{SCC_PER_TONNE_CO2} ≠ 2000 (BIZ.1 on-chain divergence)" \
     unless SCC_PER_TONNE_CO2 == 2000
   if errors.empty?
-    puts "✅ scc_rate: realistic(Δt=#{variant_c_h}h)=#{realistic.round(1)} · ceiling(Δt=600s)=#{ceiling.round} · " \
-         "арбітр(05_03)=#{ARBITER_SCC_YEAR.to_i} SCC/tree/year (magnitude calibration-pending, E.63)"
+    puts "✅ scc_rate: realistic(Δt=#{variant_c_h}h)=#{realistic.round(1)} (#{step_note(variant_c_s)}) · " \
+         "ceiling(Δt=600s)=#{ceiling.round} · арбітр(05_03)=#{ARBITER_SCC_YEAR.to_i} SCC/tree/year " \
+         "(magnitude calibration-pending, E.63)"
     exit 0
   end
   warn "❌ scc_rate FAIL:"
@@ -119,6 +134,7 @@ if ARGV.include?("--assert")
 else
   puts "SCC/tree/year — realistic(Δt=#{variant_c_h}h)=#{realistic.round(2)}, ceiling(Δt=600s)=#{ceiling.round}"
   puts "stored GP/packet — Variant-C=#{stored_gp_per_packet(variant_c_s)}, FAST=#{stored_gp_per_packet(DELTA_T_FAST_S)}"
+  puts "робоча точка — #{step_note(variant_c_s)}"
   puts "арбітр 05_03 MAX_SUPPLY → #{ARBITER_SCC_YEAR.to_i} SCC/tree/year (у діапазоні)"
   puts "CO₂ kg/tree/year (realistic) — #{co2_kg_year.round(1)} (2000 SCC = 1 tCO₂, BIZ.1)"
 end
