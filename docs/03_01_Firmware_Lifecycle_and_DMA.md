@@ -1208,7 +1208,7 @@ C-код знає **тільки** про `calculate_state` (через `mrb_int
 
 ### 11.3 BioContract — Статуси та Wire-Пакування
 
-> **Пороги (`CRITICAL_Z_MIN`=2.0 stress; anomaly-стеля **ρ-relative** [E.64]: `ρ + (CRITICAL_Z_MAX−BASE_RHO)` ≈45 @ ρ=28) та логіка Z→status→growth_points — owner [`03_04 §4`](03_04_mruby_Lorenz_Attractor); growth_points-формула `m(delta_t)` — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor) (One-Home). [E.63]: у гомеостазі GP = метаболічна жвавість `m(delta_t)`, НЕ `|29−z|`; Лоренц лишився лише status-гейтом.**
+> **Пороги (смуга `z_min`/`z_max` — аргументи C-моста [FW.8], у бойовій збірці дефолти `CRITICAL_Z_MIN`=2.0 / `CRITICAL_Z_MAX`: stress `z < z_min`; anomaly-стеля **ρ-relative** [E.64]: `ρ + (z_max−BASE_RHO)` ≈45 @ ρ=28 і дефолтах) та логіка Z→status→growth_points — owner [`03_04 §4`](03_04_mruby_Lorenz_Attractor); growth_points-формула `m(delta_t)` — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor) (One-Home). [E.63]: у гомеостазі GP = метаболічна жвавість `m(delta_t)`, НЕ `|29−z|`; Лоренц лишився лише status-гейтом.**
 
 **Firmware-специфіка — StatusByte wire-пакування** (байт 10 payload, FW.29-PACK):
 

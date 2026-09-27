@@ -269,6 +269,7 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
   z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)  # [E.63] β фікс
   if    z_val < z_min           → status=1, growth_points=1  # stress
   elsif z_val > anomaly_ceiling → status=2, growth_points=0  # anomaly [E.64] ρ-відносна стеля local_rho + (z_max − BASE_RHO) (≈45 при ρ=28 і дефолтах), НЕ absolute — SSOT 03_04 §4
+  elsif delta_t_s == DELTA_T_UNKNOWN_S → status=0, growth_points=0  # [ARCH.102] гомеостаз виміряно, метаболізм — ні: «не міряли» ≠ «зрив»
   else                          → status=0                    # homeostasis
     # [E.63] growth_points = метаболічна жвавість m(delta_t), НЕ |29−z| — SSOT 03_04 §4.3
     growth_points = metabolic_health(delta_t_s)               # 5-bit wire (5..31)
@@ -277,7 +278,7 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
 end
 ```
 
-**Точка входу з C:** `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)` → `payload_byte` (uint8_t) — дев'ять аргументів з FW.8 (ABI-підлога — [`03_04 §6.1`](03_04_mruby_Lorenz_Attractor)). Сигнатура `calculate_state(seed, …)` ВИДАЛЕНА (SEC.11 hard cutover, pre-prod, no shim).
+**Точка входу з C:** `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)` → `[payload_byte, x, y, z]` (C-міст перевіряє `RARRAY_LEN == 4`; чотири хвостові аргументи мають дефолти) — дев'ять аргументів з FW.8 (ABI-підлога — [`03_04 §6.1`](03_04_mruby_Lorenz_Attractor)). Сигнатура `calculate_state(seed, …)` ВИДАЛЕНА (SEC.11 hard cutover, pre-prod, no shim).
 
 ---
 
@@ -360,7 +361,7 @@ end
 
 ##### 4а.5 Backend Mirror (TelemetryUnpackerService)
 
-Backend має `TreeFamily#critical_z_min|max|optimal_z_target` через `calculate_z` pipeline, і це відповідь на «**що слати**». 🔴 **Верифікація DCI натомість НЕ звіряється з ними** — вона судить за смугою, ЧИННОЮ НА ПРИСТРОЇ; порівнювати треба два обчислення, а не дві конфігурації, і доки mruby порогів не читає, «ті самі пороги, що використовуються firmware» = зашиті константи. Дім механізму й ціни — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor).
+Backend має `TreeFamily#critical_z_min|max|optimal_z_target` через `calculate_z` pipeline, і це відповідь на «**що слати**». 🔴 **Верифікація DCI натомість НЕ звіряється з ними** — вона судить за смугою, ЧИННОЮ НА ПРИСТРОЇ; порівнювати треба два обчислення, а не дві конфігурації, і доки доставку порогів вимкнено (`FW8_PARSER_ENABLED 0` — mruby смугу вже приймає аргументами, але бойова збірка шле дефолти), «ті самі пороги, що використовуються firmware» = зашиті константи. Дім механізму й ціни — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor).
 
 ---
 
