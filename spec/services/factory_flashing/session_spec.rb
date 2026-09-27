@@ -116,6 +116,44 @@ RSpec.describe FactoryFlashing::Session do
       }.to raise_error(FactoryFlashing::MasterKeySource::UnavailableError)
       expect(HardwareKey.where(device_uid: session.device_uid)).to be_empty
     end
+
+    # [SEC.2] Живий L2 палить SWD назавжди, тож намір мусить бути оголошений
+    # для САМЕ цієї плати — ані RDP_LEVEL, ані заявка на сусідню не годяться.
+    context "with RDP Level 2 on a live run" do
+      let(:live_executor) { FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new) }
+      let(:session) { make_session(gilka: "A", rdp_level: 2) }
+
+      it "refuses without RDP_L2_ACK — before any SWD command or key row" do
+        expect {
+          described_class.run(session: session, executor: live_executor,
+                              master_key_source: master_key_source, rdp_l2_ack: nil)
+        }.to raise_error(described_class::PreflightError, /RDP_L2_ACK=#{Regexp.escape(session.device_uid)}/)
+        expect(live_executor.results).to be_empty
+        expect(HardwareKey.where(device_uid: session.device_uid)).to be_empty
+      end
+
+      it "refuses an acknowledgement naming another board" do
+        expect {
+          described_class.run(session: session, executor: live_executor,
+                              master_key_source: master_key_source, rdp_l2_ack: "SNET-00000000")
+        }.to raise_error(described_class::PreflightError, /RDP_L2_ACK/)
+      end
+
+      it "passes preflight when the acknowledgement names this board" do
+        allow(FactoryFlashing::Executor).to receive(:programmer_available?).and_return(false)
+        expect {
+          described_class.run(session: session, executor: live_executor,
+                              master_key_source: master_key_source, rdp_l2_ack: session.device_uid)
+        }.to raise_error(FactoryFlashing::Executor::ProgrammerMissingError)
+      end
+    end
+
+    it "needs no acknowledgement for a dry-run L2 plan — a plan burns nothing" do
+      session = make_session(gilka: "A", rdp_level: 2)
+      outcome = described_class.run(session: session, executor: executor,
+                                    master_key_source: master_key_source, rdp_l2_ack: nil)
+      expect(outcome.transcript.map(&:command)).to include("STM32_Programmer_CLI -ob RDP=0xCC")
+    end
   end
 
   # [FW.54] verify_silicon_uid! parse-fail: маємо що звіряти (паспорт є,

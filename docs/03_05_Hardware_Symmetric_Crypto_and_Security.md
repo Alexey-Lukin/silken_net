@@ -890,7 +890,7 @@ STM32_Programmer_CLI -c port=SWD freq=4000 \
     -v
 
 # 2. Provisioning: записати unique_aes_key через protected sector
-#    (тимчасово RDP=0, ключ деривується HKDF(master_key, device_uid))
+#    (тимчасово RDP Level 0, ключ деривується HKDF(master_key, device_uid))
 STM32_Programmer_CLI -c port=SWD \
     -d provisioning/<device_uid>.key 0x0803E000 \
     -v
@@ -913,6 +913,8 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xBB
 STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 # ⚠️ ВСЕ. SWD назавжди вимкнений. Перепрошивка лише через OTA.
 ```
+
+> 🔑 **`-ob RDP=` приймає СИРИЙ байт поля, а не номер рівня** (UM2237: `-ob [OptByte=<value>]` — «program the given option byte»): L0 = `0xAA` · L1 = `0xBB` · L2 = `0xCC`, тобто `OB_RDP_LEVEL_0/1/2` вендореного `stm32wlxx_hal_flash.h`, а `FLASH_OB_GetRDP` того ж HAL декодує будь-яке інше значення як Level 1. Отже `RDP=2` лишає чип на L1 (а журнал фабрики запише L2), і `RDP=0` замикає L1 замість регресії. Мапа рівень → байт у коді одна — `FactoryFlashing::CommandBuilder::RDP_OPTION_BYTE`, її парність із `ProvisioningSession::RDP_LEVELS` тримає спека; дзеркало для стенда — `firmware/scripts/bench/01_option_bytes.sh` (бере номер рівня, шле байт). ⛔ Живий L2 із фабричного конвеєра вимагає **оголошеного наміру для саме цієї плати** — `RDP_L2_ACK=<device_uid>`, інакше `FactoryFlashing::Session#preflight!` відмовляє до першої SWD-команди (стенд-скрипт тим самим робить набране «RDP2»): чекліст вище — процедура, не код, а доти між `RDP_LEVEL=2` і цеглою стояв лише хибний байт.
 
 **Recovery options після RDP-2:** **жодних.** SWD інтерфейс фізично відключений у кремнії. Якщо OTA зламається → пристрій — електронне сміття. Тому checklist вище — обов'язковий.
 

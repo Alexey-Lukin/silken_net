@@ -72,7 +72,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -w32 0x0803E830 0xC0C1C2C3",
         "STM32_Programmer_CLI -w32 0x0803E834 0xD0D1D2D3",
         "STM32_Programmer_CLI -w32 0x0803E838 0xE0E1E2E3",
-        "STM32_Programmer_CLI -ob RDP=1",
+        "STM32_Programmer_CLI -ob RDP=0xBB",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])
     end
@@ -101,9 +101,21 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       }.to raise_error(ArgumentError, /ota_hmac_hex/)
     end
 
-    it "honours rdp_level=2 (irreversible) in emitted RDP command" do
+    # [SEC.2] CLI пише СИРИЙ байт: номер рівня 2 = байт 0x02, який кремній
+    # декодує як Level 1 (FLASH_OB_GetRDP) — L2 у журналі, L1 на чипі.
+    it "honours rdp_level=2 (irreversible) as the raw L2 byte, never the level number" do
       session.rdp_level = 2
-      expect(commands).to include("STM32_Programmer_CLI -ob RDP=2")
+      expect(commands).to include("STM32_Programmer_CLI -ob RDP=0xCC")
+      expect(commands).not_to include("STM32_Programmer_CLI -ob RDP=2")
+    end
+
+    it "emits rdp_level=0 as the L0 byte — the number 0 would lock L1" do
+      session.rdp_level = 0
+      expect(commands).to include("STM32_Programmer_CLI -ob RDP=0xAA")
+    end
+
+    it "maps every RDP level the session accepts (a level without a byte fails here, not at the factory)" do
+      expect(described_class::RDP_OPTION_BYTE.keys).to match_array(ProvisioningSession::RDP_LEVELS)
     end
   end
 
@@ -124,7 +136,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943")
       # KEYL(broadcast, 5) + KEYC(9) — FW.2 (в)
       expect(commands.count { |c| c.include?("-w32") }).to eq(14)
-      expect(commands.last(2).first).to eq("STM32_Programmer_CLI -ob RDP=1")
+      expect(commands.last(2).first).to eq("STM32_Programmer_CLI -ob RDP=0xBB")
     end
 
     it "writes KEYL slot with the BROADCAST value — фікс фабричної цегли (FW.2 (в))" do

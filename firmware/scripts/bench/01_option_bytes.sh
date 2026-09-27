@@ -7,12 +7,12 @@
 #                сну → втрата SRAM/mruby/ota_buffer щоциклу)
 #   IWDG_STDBY=0 (узгоджено зі STOP2-політикою)
 #   RDP         (SEC.2: R&D = 1; Level 2 — НЕЗВОРОТНІЙ, лише свідомо --rdp 2)
-#   ⚠️ Кодування НЕ звірене: канон 03_05 §3.6 пише сирий байт (RDP=0xBB / 0xCC),
-#      а цей скрипт передає номер рівня. RM0461: усе, крім 0xAA/0xCC, = Level 1 —
-#      тож якщо CLI пише байт як є, «--rdp 2» лишить L1. До звірки з UM2237 —
-#      лише --rdp 1 (00_07 SEC.2).
+#               --rdp бере НОМЕР рівня, а CLI — СИРИЙ байт поля (UM2237: «-ob
+#               OptByte=<value>»), тож 0/1/2 → 0xAA/0xBB/0xCC (OB_RDP_LEVEL_* у
+#               stm32wlxx_hal_flash.h; будь-який інший байт кремній читає як L1).
+#               Дзеркало мапи — FactoryFlashing::CommandBuilder::RDP_OPTION_BYTE.
 #
-#   firmware/scripts/bench/01_option_bytes.sh [--rdp 1] [--execute]
+#   firmware/scripts/bench/01_option_bytes.sh [--rdp 0|1|2] [--execute]
 set -euo pipefail
 
 CLI="${STM32_PROGRAMMER_CLI:-STM32_Programmer_CLI}"
@@ -26,6 +26,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+case "$RDP" in
+  "") RDP_BYTE="";;
+  0)  RDP_BYTE="0xAA"; echo "⚠️  L1 → L0 = регресія з масовим стиранням Flash (ключі теж).";;
+  1)  RDP_BYTE="0xBB";;
+  2)  RDP_BYTE="0xCC";;
+  *)  echo "--rdp: 0 | 1 | 2 (номер рівня), отримано: $RDP"; exit 2;;
+esac
+
 if [ "$RDP" = "2" ]; then
   echo "⚠️  RDP Level 2 НЕЗВОРОТНІЙ (SEC.2 rollout: R&D→Pilot→Mass; спершу жертовний чип)."
   echo "    Підтвердження: набери RDP2 і Enter."
@@ -36,7 +44,7 @@ fi
 cmds=()
 cmds+=("$CLI -c port=SWD reset=HWrst")
 cmds+=("$CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0")
-[ -n "$RDP" ] && cmds+=("$CLI -ob RDP=$RDP")
+[ -n "$RDP_BYTE" ] && cmds+=("$CLI -ob RDP=$RDP_BYTE")
 cmds+=("$CLI -ob displ")
 cmds+=("$CLI -c port=SWD --quietMode")
 

@@ -168,12 +168,15 @@ module FactoryFlashing
       end
     end
 
-    # ⚠️ [SEC.2] Encoding NOT verified: canon 03_05 §3.6 writes the raw option byte
-    # (RDP=0xBB / 0xCC), this emits the level number. RM0461: any value except 0xAA/0xCC
-    # is Level 1 — if the CLI writes the byte as given, RDP=2 leaves L1 while claiming L2
-    # and RDP=0 locks L1. No live run with a level ≠ 1 until UM2237 is checked (00_07 SEC.2).
+    # [SEC.2] `-ob RDP=` programs the RAW option byte, not a level number (UM2237:
+    # «-ob [OptByte=<value>]: program the given option byte»). Bytes = ST's own
+    # OB_RDP_LEVEL_0/1/2 (stm32wlxx_hal_flash.h); FLASH_OB_GetRDP decodes every
+    # other value as Level 1, so emitting the number 2 left L1 while the audit trail
+    # recorded L2. Mirror: firmware/scripts/bench/01_option_bytes.sh.
+    RDP_OPTION_BYTE = { 0 => "0xAA", 1 => "0xBB", 2 => "0xCC" }.freeze
+
     def rdp_command(level)
-      "#{PROGRAMMER} -ob RDP=#{level}"
+      "#{PROGRAMMER} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"
     end
   end
 end

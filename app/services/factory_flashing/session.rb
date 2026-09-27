@@ -36,20 +36,23 @@ module FactoryFlashing
     # не збігається з деревом сесії — жоден -w32 не виконується.
     class WrongBoardError < StandardError; end
 
-    def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default)
+    def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default,
+                 rdp_l2_ack: ENV["RDP_L2_ACK"])
       new(
         session: session,
         device: device,
         executor: executor || Executor.new,
-        master_key_source: master_key_source
+        master_key_source: master_key_source,
+        rdp_l2_ack: rdp_l2_ack
       ).run
     end
 
-    def initialize(session:, device:, executor:, master_key_source:)
+    def initialize(session:, device:, executor:, master_key_source:, rdp_l2_ack: nil)
       @session = session
       @device = device || locate_device!
       @executor = executor
       @master_key_source = master_key_source
+      @rdp_l2_ack = rdp_l2_ack
     end
 
     def run
@@ -93,6 +96,12 @@ module FactoryFlashing
     def preflight!
       raise PreflightError, "session must be supervisor_approved (got #{@session.state})" unless @session.may_start?
       raise PreflightError, "device #{@session.device_uid} not found" if @device.nil?
+      # [SEC.2] L2 вимикає SWD назавжди, а pre-L2 гейт (03_05 §3.6 × SEC.15) —
+      # процедура, не код: живий L2 мусить бути ОГОЛОШЕНИЙ для саме цієї плати,
+      # а не виведений із RDP_LEVEL. Дзеркало набраного «RDP2» у 01_option_bytes.sh.
+      if @session.rdp_level == 2 && !@executor.dry_run? && @rdp_l2_ack != @session.device_uid
+        raise PreflightError, "RDP Level 2 is irreversible — after the 03_05 §3.6 checklist set RDP_L2_ACK=#{@session.device_uid}"
+      end
       # Surface UnavailableError / NotImplementedError early so we never enter
       # the transaction with a missing or rejected master key. The result is
       # retained and threaded into every derivation below — the point of the

@@ -252,8 +252,9 @@ STEP 2: Factory Flashing (конвеєр на заводі)
 
   e) Lock (порядок і межа партій — ⚖️ делеговано 2026-09-27, 03_05 §3.3:
      продакшн = WRP → [BOOT_LOCK] → RDP L2 ОСТАННІМ; Parylene — ПІСЛЯ RDP):
-     STM32_Programmer_CLI -ob RDP=1    # Pilot batch
-     # (Level 2 після верифікації OTA — SEC.2)
+     STM32_Programmer_CLI -ob RDP=0xBB    # Pilot batch — L1; CLI пише СИРИЙ байт (03_05 §3.6)
+     # (Level 2 = 0xCC — після верифікації OTA, SEC.2; живий L2 з конвеєра
+     #  вимагає RDP_L2_ACK=<device_uid> — інакше preflight відмовляє)
 
   # [ARCH.77] Польова альтернатива — БРАУЗЕРНИЙ контур (forester, НЕ фабрика;
   # межа = хто відвантажує клієнта, не формат відповіді):
@@ -813,7 +814,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 **Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*` (вкл. `tree_resolver_spec` — чотири долі кремнію; execute-path шим з UID-verify pass/wrong-board), `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio: one-pass UID→Tree→ключі, firmware-equivalent HKDF, legacy-DID abort). Counts → suite.
 
-**Зразок dry-run вивода** (Tree, Гілка A, RDP=1):
+**Зразок dry-run вивода** (Tree, Гілка A, `rdp_level` 1):
 ```
 [dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst
 [dry-run] STM32_Programmer_CLI -r32 0x1FFF7590 12               # [FW.54] UID-read (wrong-board guard)
@@ -828,7 +829,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 … (8 K_ota words at 0x0803E804..0x0803E820)
 [dry-run] STM32_Programmer_CLI -w32 0x0803E828 0x4B455942       # KEYB magic (cluster control-plane, FW.2 (в))
 … (4 KEYB words at 0x0803E82C..0x0803E838)
-[dry-run] STM32_Programmer_CLI -ob RDP=1
+[dry-run] STM32_Programmer_CLI -ob RDP=0xBB                     # L1 — сирий байт, не номер рівня
 [dry-run] STM32_Programmer_CLI -c port=SWD --quietMode
 ```
 

@@ -28,7 +28,7 @@ that already has `trees.silicon_uid_hex`; Gateway path unchanged.
 
 Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `ActiveRecord::Base.transaction`:
 
-1. **Preflight** — session `may_start?` + device exists + master key fetched into `@master_key` (fail fast before the tx; the result is NOT discarded — SEC.3 DI).
+1. **Preflight** — session `may_start?` + device exists + a live `rdp_level` 2 needs `RDP_L2_ACK=<device_uid>` (SEC.2: L2 is permanent; the raw-byte map is `CommandBuilder::RDP_OPTION_BYTE`, `03_05 §3.6`) + master key fetched into `@master_key` (fail fast before the tx; the result is NOT discarded — SEC.3 DI).
 2. **Wrong-board guard [FW.54]** — `CommandBuilder.preflight_commands` (connect + `-r32 0x1FFF7590 12`) runs FIRST; live mode parses stdout via `UidReadout` and compares the board's UID to `trees.silicon_uid_hex` **before any derivation or `-w32`** — mismatch/unparseable → `WrongBoardError` (not even a HardwareKey row materializes). dry-run or passport-less device → skip.
 3. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
 4. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
