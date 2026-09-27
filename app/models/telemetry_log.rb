@@ -113,19 +113,19 @@ class TelemetryLog < ApplicationRecord
   # guard тримає AR-шлях (update/save), sweeper-нога FilecoinVerificationSweepWorker
   # ловить raw-SQL-шлях семпл-перерахунком CID. Сам стемп пише pin-воркер raw-SQL'ем
   # (колбек не стріляє) і nil→value проходить guard (merkle_leaf_was порожній).
-  # KENOSIS недоторканий: intake = insert_all, before_update на INSERT не стріляє.
+  # KENOSIS недоторканий: intake — `create!` (TelemetryUnpackerService), а before_update на INSERT не стріляє.
   # Прецедент: AuditLog#forbid_business_field_mutation! (ARCH.57).
   LEAF_PAYLOAD_COLUMNS = %w[z_value bio_status created_at tree_id].freeze
   before_update :forbid_sealed_leaf_mutation!
 
-  # --- ПОРОГИ АНАЛІТИКИ (канон значень — тут, 04_01 дзеркалить) ---
-  # Акустика: > STORM_MIN — шторм (кавітація/пилка над порогом confidence).
+  # --- ПОРОГИ АНАЛІТИКИ ---
   # ⛔ [ARCH.84] `ACOUSTIC_CALM_MAX` (20) і `HEALTHY_TEMP_MAX_C` (50) знято разом
   # із `healthy?` — обидва були bootstrap-числами того самого коміту 2026-03-02,
   # без калібрувального сліду. Новіший код тієї ж платформи вже так не робить:
   # acoustic-term у `InsightGeneratorService` ІНЕРТНИЙ, доки поріг не заданий
-  # ground-truth'ом («no guessed count in live slashing»).
-  ACOUSTIC_STORM_MIN = 50
+  # ground-truth'ом («no guessed count in live slashing»). Третім пішов
+  # `ACOUSTIC_STORM_MIN` (50) — разом зі скоупом `anomalies`, у якого не було
+  # жодного викликача (FW.65, 2026-09-27).
 
   # --- СКОУПИ (The Analytical Eyes) ---
   # Індекс: index_telemetry_logs_on_tree_id_and_created_at
@@ -181,12 +181,6 @@ class TelemetryLog < ApplicationRecord
       .increment(labels: { caller: "#{metric_caller}:invalid_iso8601" })
     all
   end
-
-  # Індекс: idx_telemetry_logs_bio_status_created
-  scope :anomalies, -> {
-    where(bio_status: [ :stress, :anomaly, :vm_error ])
-    .or(where("acoustic_events > ?", ACOUSTIC_STORM_MIN))
-  }
 
   scope :in_timeframe, ->(start_time, end_time) { where(created_at: start_time..end_time) }
 

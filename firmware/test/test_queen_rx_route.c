@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
- * test_queen_rx_route.c — [FW.2] Маршрутизація RX Королеви + 29B-запис.
+ * test_queen_rx_route.c — [FW.2] Маршрутизація RX Королеви + 31B-запис.
  *
  * Build & run: make -C firmware/test rx_route
  *
  * Pure-байтовий контракт (без OpenSSL): класифікація за розміром,
- * cleartext-DID демукс, 29B-запис проти ЖИВОГО golden-вектора
+ * cleartext-DID демукс, 31B-запис проти ЖИВОГО golden-вектора
  * (ccm_kat_vectors.h — ті самі байти, що ганяє Rails-спека
  * Cryptography::LoraCcm) — тобто звірка саме тих октетів, які
  * process_ccm_chunk розпакує на бекенді.
@@ -90,7 +90,7 @@ static int test_rssi_convention(void) {
 }
 
 static int test_record_builders_equivalent(void) {
-    /* Обидва шляхи (з ефіру та з CIFO-слота) мусять дати ІДЕНТИЧНІ 29B —
+    /* Обидва шляхи (з ефіру та з CIFO-слота) мусять дати ІДЕНТИЧНІ 31B —
      * flush пакує з кешу, а golden-контракт доведений для air-білдера. */
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
     uint8_t rec_air[QUEEN_CCM_RECORD_LEN];
@@ -139,7 +139,7 @@ static int test_record_golden_vs_backend_contract(void) {
 int main(void) {
     int passed = 0, failed = 0;
     printf("════════════════════════════════════════════════════════════════════\n");
-    printf("  [FW.2] Queen RX-маршрутизація + 29B CoAP-запис (wire-rev2)\n");
+    printf("  [FW.2] Queen RX-маршрутизація + 31B CoAP-запис (wire-rev2.1)\n");
     printf("════════════════════════════════════════════════════════════════════\n");
 
     RUN(test_classify_sizes);

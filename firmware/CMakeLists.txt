@@ -126,7 +126,7 @@ if(CMAKE_CROSSCOMPILING)
 
     # [FW.2] CCM compile-варіант: ті самі два TU з -DFW2_CCM_ENABLED=1 —
     # гейтований CCM-тракт (двофазний CRYP-флоу, B0, GenerateAuthTAG,
-    # 29B-flush, CCM RX-гілки) компілюється проти справжнього WL-HAL.
+    # 31B-flush, CCM RX-гілки) компілюється проти справжнього WL-HAL.
     # Раніше цей код НЕ бачив залізного HAL ніколи (гейт вирізав його і з
     # compile-lane) — саме так пережив рев'ю неіснуючий у WL
     # HAL_CRYPEx_AESCCM_Encrypt (знахідка 2026-07-03). Окремий таргет, щоб

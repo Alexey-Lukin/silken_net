@@ -28,7 +28,7 @@ wire_payload_format:
   - CCM_SENSOR_PAYLOAD_FORMAT
   sha256: 2c3c392e3e9773f5a4d8ff295783b6498d1adbc953536b5c16cb5e40b2f09b7b
   mirrors:
-  - CLAUDE.md §5 «Критичні інваріанти» — 21-byte packet format + Ruby unpack string
+  - CLAUDE.md §5 «Критичні інваріанти» — Ruby unpack string of the 16-byte ECB payload
   - docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §2.1 — wire-budget ledger
     / CCM wire-rev2
   note: 'Wire decode formats — a silent change here breaks the whole uplink decode.

@@ -51,8 +51,8 @@ module Cryptography
 
     module_function
 
-    # Decrypt a single 28-byte LoRa packet payload and verify its MIC.
-    # Returns the 12-byte sensor payload as a binary string, or raises
+    # Decrypt a single 30-byte LoRa packet payload and verify its MIC.
+    # Returns the 14-byte sensor payload as a binary string, or raises
     # `AuthError` on MIC failure (tampered ciphertext/gossip byte, wrong key,
     # replayed FC with mutated bytes — anything breaking CCM authentication).
     #

@@ -32,7 +32,7 @@ class AlertDispatchService
     # mruby-crash/OOM/unprovisioned; фізичний tamper їде PANIC_FLAG-каналом (гейт 2б).
     # Сенсорна половина кадру (temp/acoustic/vcap) виміряна ДО mruby і жива —
     # термо/акустичний аналіз продовжуємо, зламаний лише Лоренц-статус.
-    # ⛔ Сейсмічної гілки тут НЕМАЄ і не було: вердикт `seismic_anomaly`
+    # ⛔ Сейсмічної гілки тут НЕМАЄ: вердикт `seismic_anomaly`
     # демонтовано [ARCH.102] разом із вимірювачем — сейсмічного каналу
     # на дроті не існує (див. actuator.rb / cluster.rb).
     if telemetry_log.bio_status_vm_error?

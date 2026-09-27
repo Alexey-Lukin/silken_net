@@ -12,7 +12,8 @@ CompileFlags:
 ---
 
 # soldier/main.c + queen/main.c (+ hal_glue wrapper-TUs) live outside the CMake
-# targets — they are compiled only by the CI hal_check lane (FW.46). The
+# targets — they are compiled only by the ARM hal_check lane (FW.46: in CI, or
+# locally with firmware/.toolchain/ — firmware skill gotcha 7.4). The
 # build-host DB would make clangd infer their flags from logmel.c (bogus
 # pp_file_not_found / unknown_typename noise; the old "Expected" note here
 # predated hal_glue/ + the vendored WL HAL — everything resolves now), so for

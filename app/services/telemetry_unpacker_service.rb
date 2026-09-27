@@ -6,8 +6,8 @@ class TelemetryUnpackerService < ApplicationService
   CHUNK_SIZE     = 21
   ECB_CHUNK_SIZE = 21
 
-  # [FW.2 wire-rev2] CCM 29-byte chunk = Queen-prepended RSSI(1) + 28B LoRa
-  # air format ([DID:4][gossip:1][FC:3 BE] AAD + [ciphertext:12] + [MIC:8]).
+  # [FW.2 wire-rev2.1] CCM 31-byte chunk = Queen-prepended RSSI(1) + 30B LoRa
+  # air format ([DID:4][gossip:1][FC:3 BE] AAD + [ciphertext:14] + [MIC:8]).
   # Enabled via ENV `TELEMETRY_CCM_ENABLED=true`; defaults to ECB so the
   # production wire format is unchanged until firmware ships CCM emission.
   # Rev2 rationale + повна розкладка: docs/03_05 wire-budget ledger.
@@ -49,7 +49,8 @@ class TelemetryUnpackerService < ApplicationService
   # (`04_01 §0`), тож 30 діб торкаються щонайбільше двох місячних листів.
   # Виміряно EXPLAIN'ом на порожній test-БД: без межі Merge Append по 9 листах
   # (cost 1.39..73.74), з межею — по 3 (cost 0.43..24.53); `telemetry_logs_default`
-  # не прунить НІКОЛИ, тож одна проба — постійна підлога, а решта росте
+  # під відкритим верхнім краєм вікна (`30.days.ago..`) не прунить НІКОЛИ — туди
+  # падає все за останньою партицією, — тож одна проба — постійна підлога, а решта росте
   # +1 щомісяця (retention/detach-політики не існує).
   # ⚠️ Свідомо НЕ дорівнює порогу тиші дерева (`Tree.silent`, 24h [transitional]):
   # той відповідає «чи дерево живе», цей — «де дешевше шукати першим». Промах
@@ -222,7 +223,7 @@ class TelemetryUnpackerService < ApplicationService
     # пульс Королеви живе у підписаному header'і QATT-v2 конверта
     # (UnpackTelemetryWorker#enqueue_envelope_health), не псевдодеревом у
     # телеметрії. Стара милиця персистила uptime як voltage і cache_count
-    # як CSQ (Солдатські окуляри) — 28B-запис з нулем тут = спуф/легасі.
+    # як CSQ (Солдатські окуляри) — 21B-запис з нулем тут = спуф/легасі.
     if raw_did.zero?
       Rails.logger.info "👑 [ARCH.54] Drop DID=0 запису на ECB-шляху — health їде QATT-v2 конвертом."
       return
@@ -763,15 +764,17 @@ class TelemetryUnpackerService < ApplicationService
     (status_byte & 0x1F) * 2
   end
 
-  # [E.63/E.64 DCI] Structural conformance for the growth_points wire field —
-  # defense-in-depth twin of check_z_divergence! for the metabolic channel
-  # (E.63 made delta_t drive growth_points directly on-device, out of the
-  # Z-divergence net). Structural ONLY: the wire dT carries the RAW delta_t but
-  # firmware packs GP from the EMA-smoothed delta_t (device-only RTC state), so
-  # the exact GP↔delta_t recompute is deferred to FW.2 (wire to carry EMA dT) —
-  # 00_07 E.63. Here we enforce what is stateless-knowable: firmware
-  # guarantees homeostasis → GP ∈ [GP_HOMEO_MIN..GP_HOMEO_MAX], stress → GP_STRESS
-  # (anomaly/vm_error already zeroed upstream). A violation ⇒ a corrupt ECB block
+  # [E.63/E.64 DCI] Conformance for the growth_points wire field — defense-in-depth
+  # twin of check_z_divergence! for the metabolic channel (E.63 made delta_t drive
+  # growth_points directly on-device, out of the Z-divergence net). Two layers.
+  # STRUCTURAL, every frame: the wire dT carries the RAW delta_t but firmware packs
+  # GP from the EMA-smoothed delta_t, so without the EMA only the band is
+  # stateless-knowable: homeostasis → GP ∈ [GP_HOMEO_MIN..GP_HOMEO_MAX] (or the
+  # GP_UNMEASURED sentinel), stress → GP_STRESS (anomaly/vm_error already zeroed
+  # upstream). EXACT, CCM frames only: wire-rev2.1 carries `ema_delta_t_s`
+  # («wire = вхід GP», 00_07 E.63), so the recompute must match byte-for-byte —
+  # branch below; the 21B ECB frame carries no EMA and skips it. A structural
+  # violation ⇒ a corrupt ECB block
   # (no MIC in the transitional frame), a forged StatusByte, or stale firmware.
   # Observational (fraud metric, never drops the packet) — same posture as
   # check_z_divergence!.
@@ -843,10 +846,11 @@ class TelemetryUnpackerService < ApplicationService
   #   2. Numeric divergence — |server_z − device_z| larger than the
   #      tolerance band. Detects a corrupted attractor input on either
   #      side (e.g. wrong K_seed flashed, drift in the silken_sha256 port, etc.).
-  # Device Z is reconstructed from the bio_status nibble + growth_points
-  # only categorically (the 21-byte packet does not carry raw Z), so the
-  # numeric check is a forward-looking hook — kept here behind a metric
-  # that surfaces the magnitude even when it is within tolerance.
+  # On the ECB path device Z is reconstructed from the bio_status nibble +
+  # growth_points only categorically (the 21-byte frame does not carry raw Z);
+  # the CCM frame (wire-rev2) carries device_z, so the numeric check has a real
+  # input there — kept behind a metric that surfaces the magnitude even when it
+  # is within tolerance.
   # [FW.8] Судимо за `Tree#device_lorenz_thresholds` — порогами, ЧИННИМИ НА
   # ПРИСТРОЇ, а не за бажаними per-species.
   # ⛔ Не повертати сюди `effective_lorenz_thresholds` під підставою «щоб
@@ -860,11 +864,11 @@ class TelemetryUnpackerService < ApplicationService
   #   - `GAIA_DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
   #     allowed absolute drift between server_z and the reported
   #     device_z BEFORE flagging fraud.
-  # The numeric branch fires only when `attributes[:device_z]` is
-  # present (currently never — the LoRa packet does not carry raw Z).
-  # Will become active once a future packet revision (post-FW.2 CCM
-  # transition) embeds device_z explicitly. Lab measurement on real
-  # STM32WLE5JC vs GCP x86-64 must inform the final ε value.
+  # The numeric branch fires only when `attributes[:device_z]` is present —
+  # i.e. on the CCM path (wire-rev2 device_z; the 0xFFFF sentinel «Lorenz not
+  # computed this cycle» leaves it absent), which stays flag-off
+  # (TELEMETRY_CCM_ENABLED) until the FW.2 flip — so in production today, never.
+  # Lab measurement on real STM32WLE5JC vs GCP x86-64 must inform the final ε value.
   DEFAULT_DCI_EPSILON = 0.001
 
   def check_z_divergence!(tree, attributes)
@@ -912,7 +916,7 @@ class TelemetryUnpackerService < ApplicationService
     if device_in_band != server_in_band
       # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
       # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
-      # cold-boot uses firmware's RTC default (≈day 10951) as epoch_day instead
+      # cold-boot uses firmware's RTC default (day 10_957, FIRMWARE_RTC_DEFAULT_EPOCH_DAY) as epoch_day instead
       # of today's, producing a different (x₀,y₀,z₀) that diverges from the
       # server's warm-start chain. If any candidate matches categorically,
       # the packet is legitimate — mark time_unsynced_fallback and request RTC

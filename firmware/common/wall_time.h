@@ -20,22 +20,24 @@
 
 /*
  * delta_t між двома відліками wall-секунд із захистами:
- *   - cold-start (last == 0): попереднього циклу не було → baseline;
- *   - назад (now < last): годинник зсунули назад / RTC-аномалія → baseline;
+ *   - cold-start (last == 0): попереднього циклу не було → unknown;
+ *   - назад (now < last): годинник зсунули назад / RTC-аномалія → unknown;
  *   - неправдоподібно вперед (> max_plausible): календар щойно виставлено з
- *     beacon-UTC (стрибок епохи) або wrap → baseline (наступний цикл зміряє
+ *     beacon-UTC (стрибок епохи) або wrap → unknown (наступний цикл зміряє
  *     справжню різницю);
  *   - інакше: now − last.
- * baseline та max_plausible передаються параметром, щоб хедер лишався
- * config-free (значення живуть у викликачеві: BASELINE_DELTA_T_S тощо).
+ * unknown та max_plausible передаються параметром, щоб хедер лишався
+ * config-free. Солдат передає сентинел «не виміряно» DELTA_T_UNKNOWN_S
+ * (ARCH.102): «нейтральні» 60 с, що стояли тут доти, mruby мапить у
+ * growth_points = МАКСИМУМ, тож відмова виміряти мінтила б найбільше.
  */
 static inline uint32_t Silken_Wall_Delta_Seconds(uint32_t wall_now, uint32_t last_wall,
-                                                 uint32_t baseline, uint32_t max_plausible)
+                                                 uint32_t unknown, uint32_t max_plausible)
 {
-    if (last_wall == 0u)       return baseline;   /* cold-start: немає попереднього */
-    if (wall_now < last_wall)  return baseline;   /* зсув назад */
+    if (last_wall == 0u)       return unknown;    /* cold-start: немає попереднього */
+    if (wall_now < last_wall)  return unknown;    /* зсув назад */
     uint32_t d = wall_now - last_wall;
-    if (d > max_plausible)     return baseline;   /* стрибок епохи / wrap */
+    if (d > max_plausible)     return unknown;    /* стрибок епохи / wrap */
     return d;
 }
 

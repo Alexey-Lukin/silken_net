@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_ccm.c — Host-based unit tests for [FW.2 / ARCH.42 Variant B]
- *              AES-128-CCM LoRa packet emission and reception (wire-rev2 28B).
+ *              AES-128-CCM LoRa packet emission and reception (wire-rev2.1 30B).
  *
  * Build & run: make -C firmware/test ccm
  *
@@ -350,7 +350,7 @@ static int test_soldier_to_queen_roundtrip(void) {
 
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key_words, nonce, aad, pt, ct, mic), HAL_OK);
 
-    /* Assemble 28B on-air packet. */
+    /* Assemble the 30B on-air packet. */
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
     memcpy(&air[0],  aad, FW2_CCM_AAD_LEN);
     memcpy(&air[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
@@ -380,7 +380,7 @@ static int test_soldier_to_queen_roundtrip(void) {
     return 0;
 }
 
-/* Helper: build a fully-encrypted 28B packet for tamper tests. */
+/* Helper: build a fully-encrypted 30B packet for tamper tests. */
 static void Build_Reference_Packet(uint32_t key_words[4], uint32_t did, uint32_t fc,
                                    uint8_t out[FW2_CCM_AIR_PACKET_LEN]) {
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
@@ -473,7 +473,7 @@ static int test_wrong_key_rejected(void) {
 
 static int test_panic_flag_inside_encrypted_payload(void) {
     /* FW.29 panic flag (bit 7 of status_byte) now lives at offset 14 within
-     * the 28B packet (= offset 6 of the encrypted payload). Flipping it
+     * the 30B packet (= offset 6 of the encrypted payload). Flipping it
      * on the wire breaks MIC, so an attacker cannot forge a panic alert
      * from a benign packet. This was an explicit FW.29 design goal. */
     uint32_t key[4] = {0xCAFE0000, 0xCAFE0001, 0xCAFE0002, 0xCAFE0003};
@@ -559,7 +559,7 @@ static int test_diag_byte_pack(void) {
 }
 
 static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
-    /* e2e дзеркало Фази 4 → ефір → 29B-запис Королеви: аргументи складені
+    /* e2e дзеркало Фази 4 → ефір → 31B-запис Королеви: аргументи складені
      * РІВНО як call-site у soldier/main.c (mesh_ctrl = TTL|fw-nibble, diag =
      * Pack_FW2_Diag(thr,0,0,fc_degraded), dt-сатурація, сирий vcap), а
      * розкладка на виході — та, яку читає process_ccm_chunk. */
@@ -728,7 +728,7 @@ static int test_two_key_scoping_contract(void) {
 int main(void) {
     int passed = 0, failed = 0;
     printf("════════════════════════════════════════════════════════════════════\n");
-    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 28-byte (wire-rev2) LoRa packet tests\n");
+    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 30-byte (wire-rev2.1) LoRa packet tests\n");
     printf("════════════════════════════════════════════════════════════════════\n");
 
     Reset_Mock_State();

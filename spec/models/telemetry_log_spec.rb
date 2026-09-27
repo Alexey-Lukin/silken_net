@@ -196,26 +196,6 @@ RSpec.describe TelemetryLog, type: :model do
         expect(described_class.recent.last).to eq(old_log)
       end
     end
-
-    describe ".anomalies" do
-      it "includes stress, anomaly, and tamper statuses" do
-        tree = create(:tree)
-        healthy_log = create(:telemetry_log, :healthy, tree: tree)
-        stress_log = create(:telemetry_log, :stressed, tree: tree)
-        anomaly_log = create(:telemetry_log, :anomaly, tree: tree)
-
-        result = described_class.anomalies
-        expect(result).to include(stress_log, anomaly_log)
-        expect(result).not_to include(healthy_log)
-      end
-
-      it "includes high acoustic events regardless of status" do
-        tree = create(:tree)
-        noisy_log = create(:telemetry_log, :healthy, tree: tree, acoustic_events: 60)
-
-        expect(described_class.anomalies).to include(noisy_log)
-      end
-    end
   end
 
   # =========================================================================

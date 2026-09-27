@@ -1592,11 +1592,11 @@ end
     end
   end
 
-  # [FW.2 wire-rev2] AES-128-CCM 29-byte chunk path, gated on
+  # [FW.2 wire-rev2.1] AES-128-CCM 31-byte chunk path, gated on
   # TELEMETRY_CCM_ENABLED=true. Wire format produced by Queen after
-  # receiving a 28B CCM packet on LoRa:
+  # receiving a 30B CCM packet on LoRa:
   #
-  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:14][MIC:8]
   #
   # Defaults stay on the 21B ECB path until firmware ships CCM emission.
   describe "FW.2 CCM path [TELEMETRY_CCM_ENABLED=true]" do

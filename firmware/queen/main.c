@@ -377,7 +377,7 @@ static volatile uint16_t   lora_rx_drops = 0;     // Лічильник пере
 // оператор бачить cutover-вікно без SWD); точні числа лишаються SWD-only.
 static uint16_t ccm_spoof_drops            = 0; // air-кадр з DID=0 — спуф (DID 0 зарезервовано, ARCH.54)
 static uint16_t ccm_legacy_telemetry_drops = 0; // 16B-телеметрія старих Солдатів
-                                                // (atomic-cutover: у 29B-батч не сміє)
+                                                // (atomic-cutover: у 31B-батч не сміє)
 #endif
 
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
@@ -1481,7 +1481,7 @@ int main(void)
 
 #if FW2_CCM_ENABLED
         // [FW.2] Змішана ера (atomic-cutover): 16B-телеметрія ще-не-прошитого
-        // Солдата НЕ сміє лягти у 29B-батч — Rails тримає ОДИН stride на весь
+        // Солдата НЕ сміє лягти у 31B-батч — Rails тримає ОДИН stride на весь
         // батч (process_ccm_chunk), один чужий запис = каскадна корупція
         // вирівнювання решти. Control-frames (0x55/0x56) перехоплені вище;
         // сюди долітає лише legacy-телеметрія → дроп зі слідом.
@@ -1881,7 +1881,7 @@ void Flush_Cache_To_Rails(void)
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if(forest_cache[i].is_active) {
 #if FW2_CCM_ENABLED
-            // [FW.2] CCM-ера: батч ОДНОРІДНИЙ 29B (Rails тримає один stride
+            // [FW.2] CCM-ера: батч ОДНОРІДНИЙ 31B (Rails тримає один stride
             // на весь буфер — process_ccm_chunk). Не-CCM слот тут неможливий
             // за конструкцією (health skip, legacy-телеметрія дропнута до
             // кешу); defensive-гілка звільняє слот замість вічного клину:
@@ -2823,7 +2823,7 @@ static void MX_CRYP_Init(void)
 }
 
 // ============================================================================
-// [FW.2 / ARCH.42 Variant B] AES-128-CCM 28-byte LoRa packet — freeze-contract
+// [FW.2 / ARCH.42 Variant B] AES-128-CCM 30-byte LoRa packet (wire-rev2.1) — freeze-contract
 // ============================================================================
 // Замкнено (`#define FW2_CCM_ENABLED 0`) до bench-атестації CCM-двигуна на
 // кремнії. Host-тести у `firmware/test/test_ccm.c` верифікують через mock
@@ -2871,10 +2871,10 @@ static void MX_CRYP_Restore_From_CCM(void)
     MX_CRYP_Init();
 }
 
-// Розшифрувати 28-байтний CCM LoRa-пакет (wire-rev2) від Солдата.
+// Розшифрувати 30-байтний CCM LoRa-пакет (wire-rev2.1) від Солдата.
 // Повертає HAL_OK і заповнює:
 //   *out_did, *out_fc           — з відкритого AAD (DID + FC24)
-//   out_sensor[12]              — розшифрований сенсорний payload
+//   out_sensor[14]              — розшифрований сенсорний payload
 // (gossip-байт AAD[4] Королеві не потрібен — вона має власний LTE-час;
 //  він адресований Солдатам-сусідам і їде у CoAP-chunk як є.)
 // WL-флоу: HAL тег НЕ звіряє — payload-фаза + тег-фаза, а вирок виносить

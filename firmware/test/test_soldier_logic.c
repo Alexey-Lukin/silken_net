@@ -2852,7 +2852,7 @@ TEST(test_rereq_did_endian_consistent) {
  * [FW.2] RX size-guard — freeze-contract воріт ДО декрипту
  * ════════════════════════════════════════════════════════════════════
  * Дзеркало ungated-гейта Фази 4.5 (main.c): усі легальні кадри Солдата =
- * рівно 16B ECB; 28B CCM-кадр сусіда, прогнаний ECB'ом, мав ~1/256 шанс
+ * рівно 16B ECB; 30B CCM-кадр сусіда, прогнаний ECB'ом, мав ~1/256 шанс
  * хибно зійтися на 0x99/0x9B і отруїти ota_buffer/печатку. Guard стоїть
  * ПЕРЕД HAL_CRYP_Decrypt — сюди й дзеркалимо принцип: не-16 → нуль дії. */
 static uint8_t Test_Soldier_Rx_Size_Accepted(uint16_t size)
@@ -2862,23 +2862,11 @@ static uint8_t Test_Soldier_Rx_Size_Accepted(uint16_t size)
 
 TEST(test_fw2_rx_guard_accepts_only_16) {
     ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(16), 1);
-    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(28), 0);  /* CCM-кадр сусіда */
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(30), 0);  /* CCM-кадр сусіда (rev2.1) */
     ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(0), 0);
     ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(6), 0);   /* MIN_OTA-край */
     ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(32), 0);
     ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(255), 0);
-}
-
-TEST(test_fw2_rx_guard_28b_never_reaches_ota_assembly) {
-    /* Контамінаційна пастка закрита: відкинутий 28B-кадр не сміє лишити
-     * сліду у станi OTA-збірки (раніше сміттєвий декрипт міг). */
-    OTA_Init();
-    if (!Test_Soldier_Rx_Size_Accepted(28)) {
-        /* main.c: break ДО декрипту — жодного виклику OTA-гілок. */
-    }
-    ASSERT_EQ(ota_total_chunks, 0);
-    ASSERT_EQ(ota_chunks_received, 0);
-    ASSERT_EQ(ota_bytes_received, 0);
 }
 
 TEST(test_rereq_bitmap_capped_at_72_chunks) {
@@ -5328,41 +5316,43 @@ TEST(test_fw50_raw_count_is_not_mv) {
  * pinned delta_t near ~seconds → growth_points near max → every tree looked
  * maximally healthy (over-mint). The fix reads a free-running RTC calendar as
  * wall-seconds; these pure guards turn two wall reads into a safe delta_t
- * (cold-start / backward / epoch-jump → baseline) and a safe elapsed duration.
+ * (cold-start / backward / epoch-jump → unknown) and a safe elapsed duration.
  * ════════════════════════════════════════════════════════════════════ */
 #include "../common/wall_time.h"
 
-#define TEST_WALL_BASELINE   60u
+/* 60, not the production sentinel 0 (DELTA_T_UNKNOWN_S): a real zero-delta also
+ * returns 0, so only a non-zero marker shows WHICH branch answered. */
+#define TEST_WALL_UNKNOWN    60u
 #define TEST_WALL_MAX_PLAUS  86400u   /* 24h — beyond = clock-set/wrap */
 
-TEST(test_fw49_delta_cold_start_returns_baseline) {
-    /* last_wall==0 → no prior cycle → baseline, NOT a giant now-0 delta. */
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 0u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+TEST(test_fw49_delta_cold_start_returns_unknown) {
+    /* last_wall==0 → no prior cycle → unknown, NOT a giant now-0 delta. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
 TEST(test_fw49_delta_normal_interval) {
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(5000u, 4900u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 100u);
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(5000u, 4900u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
 }
 
 TEST(test_fw49_delta_small_real_interval_passes) {
     /* A genuine short wall-delta survives (e.g. vigorous recharge). The bug
      * was reading active-time, NOT clamping small values — 2s wall is valid. */
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(1002u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 2u);
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1002u, 1000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 2u);
 }
 
-TEST(test_fw49_delta_backward_clock_returns_baseline) {
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(4900u, 5000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+TEST(test_fw49_delta_backward_clock_returns_unknown) {
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(4900u, 5000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
-TEST(test_fw49_delta_epoch_jump_returns_baseline) {
-    /* Calendar just set from beacon UTC (2000→2023): huge forward jump → baseline. */
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 946684800u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+TEST(test_fw49_delta_epoch_jump_returns_unknown) {
+    /* Calendar just set from beacon UTC (2000→2023): huge forward jump → unknown. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 946684800u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
 TEST(test_fw49_delta_boundary_exact_max_passes) {
     /* Exactly max_plausible is allowed; one more is a jump. */
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86400u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 86400u);
-    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86401u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86400u, 1000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 86400u);
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86401u, 1000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
 TEST(test_fw49_elapsed_never_set_returns_zero) {
@@ -5713,7 +5703,6 @@ int main(void)
 
     printf("\n  FW.2 RX size-guard (до декрипту):\n");
     RUN(test_fw2_rx_guard_accepts_only_16);
-    RUN(test_fw2_rx_guard_28b_never_reaches_ota_assembly);
     RUN(test_rereq_bitmap_capped_at_72_chunks);
     RUN(test_rereq_chunk_71_set_72_unset);
     RUN(test_rereq_fires_on_10th_silent_wakeup_and_resets);
@@ -5905,11 +5894,11 @@ int main(void)
     RUN(test_fw50_raw_count_is_not_mv);
 
     printf("\n  FW.49 wall-clock delta/elapsed guards:\n");
-    RUN(test_fw49_delta_cold_start_returns_baseline);
+    RUN(test_fw49_delta_cold_start_returns_unknown);
     RUN(test_fw49_delta_normal_interval);
     RUN(test_fw49_delta_small_real_interval_passes);
-    RUN(test_fw49_delta_backward_clock_returns_baseline);
-    RUN(test_fw49_delta_epoch_jump_returns_baseline);
+    RUN(test_fw49_delta_backward_clock_returns_unknown);
+    RUN(test_fw49_delta_epoch_jump_returns_unknown);
     RUN(test_fw49_delta_boundary_exact_max_passes);
     RUN(test_fw49_elapsed_never_set_returns_zero);
     RUN(test_fw49_elapsed_normal);
