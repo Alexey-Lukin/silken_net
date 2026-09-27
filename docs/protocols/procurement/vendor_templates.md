@@ -188,7 +188,7 @@
 
 - **Пропорційність:** для дрібного spot-CRO (напр. genipin-реагент) — легкий скрін (E1/E3/E4); для Frame-Agreement-вендора 100-партії — повний + періодичний re-screen.
 - **Greenwashing-lens (E5):** «green»-заяви без LCA/даних = **Flag**, не Pass. Verify-by-data — той самий етос honesty-engine, що наскрізь у проєкті.
-- **Академ-канал (ЧНУ/ЧМА/ЧДТУ):** ВНЗ-лаба зазвичай поза комерц-ESG-режимом → скрінити на safety/ethics-compliance (біо/хім-waste), не на SA8000. Скрін тут = commercial-vendor-tool.
+- **Академ-канал (ЧНУ/ЧДТУ):** ВНЗ-лаба зазвичай поза комерц-ESG-режимом → скрінити на safety/ethics-compliance (біо/хім-waste), не на SA8000. Скрін тут = commercial-vendor-tool.
 
 ---
 ---

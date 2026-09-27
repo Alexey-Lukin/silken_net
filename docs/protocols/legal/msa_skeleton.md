@@ -21,7 +21,7 @@
 > 3. [`sla_exhibit`](../business/sla_exhibit.md) — Availability-SLA, хукається сюди як **Exhibit A**.
 > 4. [`00_04`](../../00_04_Nature_as_a_Service_Contracts.md) — NaaS lifecycle (код-реальність) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) «Таблиця SLA» (legal-event→tx mapping — **інше значення**, ніж Exhibit A) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (юр-передумови, BIZ.2/9/18/20/21).
 >
-> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`00_02 §1.5/§4.2`](../../00_02_Academic_Integration_and_IP.md) (Аблязов) → [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md).
+> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`00_02 §1.4/§4.2`](../../00_02_Academic_Integration_and_IP.md) (Аблязов) → [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md).
 
 ---
 
@@ -430,7 +430,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 | Крок | Дія | Виконавець |
 |---|---|---|
 | 1 | Прочитати [`securities_review`](securities_review.md) (securities) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) (metrology) | Founder → юрист |
-| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **Аблязов Д.Е.** (СЄУ, к.ю.н., віцепрезидент — господарське/комерційне право, [`00_02 §1.5`](../../00_02_Academic_Integration_and_IP.md)/[`§4.2`](../../00_02_Academic_Integration_and_IP.md)) |
+| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **Аблязов Д.Е.** (СЄУ, к.ю.н., віцепрезидент — господарське/комерційне право, [`00_02 §1.4`](../../00_02_Academic_Integration_and_IP.md)/[`§4.2`](../../00_02_Academic_Integration_and_IP.md)) |
 | 3 | Юр-консультація securities/Howey/MiFID/AIFMD (найвищі ставки, [`securities_review`](securities_review.md) Блок 1) | **Профільний crypto/securities-юрист (TBD)** — окремий фахівець, НЕ Аблязов (поза його фахом, memo явно це розділяє) |
 | 4 | Фіналізація цього MSA-каркаса з відповідями на `[⚖️ TBD]` | Founder + обидва юристи |
 | 5 | Review практикуючим юристом фінальної версії | Обидва вище |

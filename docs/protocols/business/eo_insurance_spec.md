@@ -14,7 +14,7 @@
 >
 > **Хто купує:** 👤 страхувальник = **operational-vehicle** — наявна UA-компанія (Дія.City-резидент, співзасновником якої є founder), що виступає named counterparty за B2B-контрактами. Отже юрисдикція страхувальника = **Україна**, і це вже не відкрите питання; відкритим лишається **доступ до carrier'ів** за такої домициляції (§5.3). Цей документ = 🤖-половина BIZ.21 ([`00_07`](../../00_07_Action_Plan_Tracker.md) — coverage-spec); 👤-половина = брокер + фактичний поліс, гейт підписання BIZ.2 MSA.
 >
-> **Канон:** [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (INS.1 — інша вісь, див. §4 нижче) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (open-item BIZ.21) · [`00_02 §1.5`](../../00_02_Academic_Integration_and_IP.md) (СЄУ/Аблязов — UA legal-risk консультація, дотично, не insurance-продукт) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.21/BIZ.20/BIZ.2/BIZ.9.
+> **Канон:** [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (INS.1 — інша вісь, див. §4 нижче) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (open-item BIZ.21) · [`00_02 §1.4`](../../00_02_Academic_Integration_and_IP.md) (СЄУ/Аблязов — UA legal-risk консультація, дотично, не insurance-продукт) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.21/BIZ.20/BIZ.2/BIZ.9.
 
 ---
 
@@ -162,4 +162,4 @@ SilkenNet — solo-founder pre-revenue forest-D-MRV платформа, що г�
 
 > ⚠️ **Kita-число — корекція проти R6.** R6 переказує показник як «$22.5M/£22.5M → $29.1M (450% зростання)», що читається як зростання з $22.5M до $29.1M (+29%) і суперечить «450%». Первинне формулювання: capacity зросла **на 450% до $29.1M (£22.5M)** — тобто £22.5M і $29.1M є **тією самою сумою у двох валютах**, а базовий рівень до зростання в джерелі не наведений. У §2 наведено виправлену форму; переказ із R6 не використовувати.
 
-Канон: [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (INS.1) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (BIZ.21 open-item) · [`05_05 §4`](../../05_05_Slashing_and_Risk_Policy.md) (dual-trigger) · [`00_02 §1.5`](../../00_02_Academic_Integration_and_IP.md) (СЄУ/Аблязов) · [`00_07`](../../00_07_Action_Plan_Tracker.md) (BIZ.21, BIZ.20, BIZ.2, BIZ.9, BIZ.18).
+Канон: [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (INS.1) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (BIZ.21 open-item) · [`05_05 §4`](../../05_05_Slashing_and_Risk_Policy.md) (dual-trigger) · [`00_02 §1.4`](../../00_02_Academic_Integration_and_IP.md) (СЄУ/Аблязов) · [`00_07`](../../00_07_Action_Plan_Tracker.md) (BIZ.21, BIZ.20, BIZ.2, BIZ.9, BIZ.18).
