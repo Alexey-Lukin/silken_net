@@ -67,7 +67,7 @@ selftest: $(BINDIR)/test_ccm_selftest
 sym_selftest: $(BINDIR)/test_sym_selftest
 	@./$(BINDIR)/test_sym_selftest
 
-# [FW.2] Queen RX-маршрутизація + 29B CoAP-запис — pure байти, без OpenSSL.
+# [FW.2] Queen RX-маршрутизація + 31B CoAP-запис — pure байти, без OpenSSL.
 rx_route: $(BINDIR)/test_queen_rx_route
 	@./$(BINDIR)/test_queen_rx_route
 
@@ -254,7 +254,7 @@ $(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat
 $(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm_selftest.c $(OPENSSL_LIBS)
 
-# [FW.2] Queen RX route + 29B-запис — pure (golden-звірка проти KAT-констант).
+# [FW.2] Queen RX route + 31B-запис — pure (golden-звірка проти KAT-констант).
 $(BINDIR)/test_queen_rx_route: test_queen_rx_route.c ../queen/rx_route.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) -o $@ test_queen_rx_route.c
 
