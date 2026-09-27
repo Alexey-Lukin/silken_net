@@ -59,6 +59,10 @@ RSpec.describe "Emergency response and actuator command flow" do
     end
 
     it "chunks long durations into ActuatorCommand::MAX_DURATION_S pieces" do
+      # [FW.64] Предмет — ФОРМА нарізки, тож каденс стабимо: на реальному черга
+      # шлюзу вчасно несе лише три чанки, а четвертий відмовляється вголос
+      # (`emergency_response_service_spec`, «series outgrows…»).
+      stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       alert = create(:ews_alert, :fire, cluster: cluster, tree: tree)
 
       EmergencyResponseService.call(alert)

@@ -33,6 +33,10 @@ RSpec.describe EmergencyResponseService do
       let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
       it "splits 14400s duration into four 3600s valve commands" do
+        # [FW.64] Предмет — ФОРМА протоколу, тож каденс стабимо: на РЕАЛЬНОМУ черга
+        # шлюзу вчасно несе лише три чанки, і це запінено окремо нижче. Доти цей
+        # приклад без стабу вимагав записати й четвертий — той, що протухне.
+        stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
         valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
 
         described_class.call(alert)
@@ -121,7 +125,7 @@ RSpec.describe EmergencyResponseService do
       alert = create(:ews_alert, :drought, cluster: cluster, tree: tree)
       expect {
         described_class.send(:dispatch_commands, [], "OPEN_VALVE",
-                             duration: 3600, relevance: 1.hour, alert: alert)
+                             duration: 3600, relevance: 1.hour, alert: alert, queued_ahead: Hash.new(0))
       }.not_to change(ActuatorCommand, :count)
     end
   end
@@ -466,6 +470,80 @@ RSpec.describe EmergencyResponseService do
                          .find_by(message_key: "emergency_response_too_slow")
         expect(raised).to be_present
         expect(raised.message_params).to include("relevance_min" => 15, "cadence_min" => 61)
+      end
+    end
+
+    # [FW.64] Серію судить черга ШЛЮЗУ, а не перший poll: за флаш Королева видає ≤ 3
+    # накази, тож 4-й чанк пожежного поливу чекав би другого флашу (2 × 3 660 с >
+    # 7 200 с) і протух би мовчки. Каденс тут СВІДОМО реальний.
+    context "when the series outgrows what the gateway queue delivers in time" do
+      let(:fire) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+
+      def series_cut = EwsAlert.alert_type_emergency_response_undeliverable
+                               .where(message_key: "emergency_response_series_cut")
+
+      def queue_ahead(count)
+        siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+        create_list(:actuator_command, count, :high_priority, actuator: siren, expires_at: 3.hours.from_now)
+      end
+
+      it "writes only the chunks that make it and names the cut tail" do
+        valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+        described_class.call(fire)
+
+        expect(ActuatorCommand.where(actuator: valve, ews_alert: fire).count).to eq(3)
+        expect(series_cut.sole.message_params).to include(
+          "actuator_id" => valve.id, "cut" => 1, "total" => 4, "per_flush" => 3,
+          "cadence_min" => 61, "relevance_min" => 120, "queued_ahead" => 0
+        )
+      end
+
+      # Попереду стоїть наказ іншого актуатора того ж шлюзу — слот він забирає.
+      it "counts commands already waiting ahead in the same gateway's queue" do
+        queue_ahead(1)
+        valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+        described_class.call(fire)
+
+        expect(ActuatorCommand.where(actuator: valve, ews_alert: fire).count).to eq(2)
+        expect(series_cut.sole.message_params).to include("cut" => 2, "queued_ahead" => 1)
+      end
+
+      it "writes nothing for the valve when the queue ahead already fills every timely slot" do
+        queue_ahead(3)
+        valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+        expect { described_class.call(fire) }
+          .not_to change { ActuatorCommand.where(actuator: valve).count }
+        expect(series_cut.sole.message_params).to include("cut" => 4, "total" => 4, "queued_ahead" => 3)
+      end
+
+      # Попередній крок того ж протоколу теж стоїть попереду: сирена забирає слот у
+      # поливу. На реальних числах PROTOCOLS це не звʼязує (вікно сирени у 8 разів
+      # коротше), тож каденс і пропускну здатність стабимо так, щоб звʼязало.
+      it "counts the previous protocol step's commands ahead of the next step" do
+        stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 900)
+        stub_const("Downlink::PendingQueueService::POLL_MAX_PER_FLUSH", 1)
+        create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+        create_list(:actuator, 2, :water_valve, gateway: gateway, state: :idle)
+
+        described_class.call(fire)
+
+        expect(ActuatorCommand.where(ews_alert: fire).group(:command_payload).count)
+          .to eq("ACTIVATE_SIREN" => 1, "OPEN_VALVE" => 7)
+      end
+
+      # Доки чанки не серіалізовано (ARCH.75), перший чанк вирішує, чи пристрій
+      # спрацює взагалі, тож слоти йдуть по колу, а не цілою серією першому.
+      it "gives every valve on the gateway its first chunk before any gets a second" do
+        valves = create_list(:actuator, 2, :water_valve, gateway: gateway, state: :idle)
+
+        described_class.call(fire)
+
+        per_valve = valves.map { ActuatorCommand.where(actuator: _1, ews_alert: fire).count }
+        expect(per_valve.sort).to eq([ 1, 2 ])
+        expect(series_cut.count).to eq(2)
       end
     end
 
