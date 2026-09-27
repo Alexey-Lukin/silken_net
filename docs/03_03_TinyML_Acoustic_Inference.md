@@ -644,7 +644,7 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Byte 7: Acoustic Events
 | Байт 7 | `acoustic_events & 0xFF` | `0xFF` (маркер паніки) |
 | Timing | Після засипання + jitter | Негайно |
 | Відправляється | Через Phase 4 (з jitter) | Через `Trigger_Emergency_LoRa_TX()` позачергово |
-| Backend | `TelemetryLog` | `EwsAlert` (критичний) |
+| Backend | `TelemetryLog` | `EwsAlert` (критичний) + рядок `TelemetryLog` із `panic = true`, що НЕ є виміром: сенсори NULL, Лоренц не крокує, DCI не судиться ([`03_04 §5.2`](03_04_mruby_Lorenz_Attractor), ARCH.102) |
 
 ### 5.4 [FW.18b] OTA Threshold Validation + Invalid-Counter
 
@@ -731,6 +731,7 @@ Trigger_Emergency_LoRa_TX() [StatusByte = PANIC_FLAG (status=homeostasis!), acou
 Queen (CIFO cache: byte[7] = 0xFF → critical priority eviction)
         ↓
 TelemetryUnpackerService: panic = status_byte & PANIC_FLAG_BIT (SEC.10 anti-replay counter)
+        │   рядок без виміру: vcap/temp/dt/acoustic → NULL, Лоренц не крокує, DCI не судиться (ARCH.102)
         ↓
 AlertDispatchService: panic? || bio_status_anomaly? (без термального порога)
         ↓ [SLASH-1 P0: гейт саме panic?-first — реальна пилка НЕ ставить anomaly-status]

@@ -65,7 +65,9 @@ class AlertDispatchService
     # [SLASH-1] Panic-кадри свідомо несуть vcap=0 (legacy-parity обох збирачів —
     # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на них — фантом,
     # що забруднював comms_no_ack? (system_fault ∈ whitelist) і з'їдав SEC.10-ліміт.
-    if telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
+    # [ARCH.102] Розпакувальник пише такий рядок із NULL («не виміряно»), тож гард
+    # стоїть і на ВІДСУТНОСТІ виміру: напруги, якої не міряли, вердикт не судить.
+    if telemetry_log.voltage_mv && telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :hardware_fault,
@@ -77,7 +79,9 @@ class AlertDispatchService
 
     # 2а. ПОЖЕЖА (Thermal) — температура вище біом-порога.
     # [АДАПТИВНО]: Поріг тепер залежить від біома
-    if telemetry_log.temperature_c >= fire_limit
+    # [ARCH.102] Температури, якої не міряли (NULL panic-рядка), вогонь не судить —
+    # і саме тому panic-кадр доходить до гілки пилки нижче.
+    if telemetry_log.temperature_c && telemetry_log.temperature_c >= fire_limit
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :fire_detected,

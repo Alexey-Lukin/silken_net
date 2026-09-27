@@ -35,6 +35,9 @@ class TelemetryUnpackerService < ApplicationService
   PANIC_FLAG_BIT             = 0x80
   PANIC_NONCE_TTL            = 25.hours       # Трохи довше за 24h replay-вікно
   PANIC_NONCE_KEY_PREFIX     = "silken:panic:nonce"
+  # [ARCH.102] Поля, яких panic-кадр НЕ міряє: vcap/temp/dt — legacy-нулі обох
+  # збирачів `Trigger_Emergency_LoRa_TX`, акустичний байт — код паніки 0xFF, не лічба.
+  PANIC_UNMEASURED_ATTRIBUTES = %i[voltage_mv temperature_c lorenz_temperature_c metabolism_s acoustic_events].freeze
 
   # --- МЕЖІ РЕАЛЬНОСТІ (Sanity Bounds) ---
   # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
@@ -298,6 +301,7 @@ class TelemetryUnpackerService < ApplicationService
       bio_status: bio_status,
       panic: panic
     }
+    neutralize_panic_row!(log_attributes)
 
     # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
@@ -336,19 +340,11 @@ class TelemetryUnpackerService < ApplicationService
     # continuation). Persists the trajectory tail so the next packet
     # can chain. No DID-as-seed fallback — every tree is provisioned
     # with K_seed at registration time.
-    server_z, lorenz_xyz, cold_start = compute_server_z(tree, log_attributes)
-    log_attributes[:z_value]         = server_z
-    log_attributes[:lorenz_state_x]  = lorenz_xyz[0]
-    log_attributes[:lorenz_state_y]  = lorenz_xyz[1]
-    log_attributes[:lorenz_state_z]  = lorenz_xyz[2]
-    log_attributes[:cold_start_flag] = cold_start
-
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
     # Device повідомляє bio_status з власного Lorenz (Float, mruby).
     # Server розраховує Z (Float, ідентично). Порівнюємо статуси:
     # якщо device каже "homeostasis" а server Z поза межами породи — fraud flag.
-    check_z_divergence!(tree, log_attributes)
-    check_metabolic_divergence!(tree, log_attributes, status_byte)
+    step_lorenz_and_judge!(tree, log_attributes, status_byte)
 
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
     commit_telemetry(tree, log_attributes)
@@ -468,6 +464,7 @@ class TelemetryUnpackerService < ApplicationService
       # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
       panic: status_byte.anybits?(PANIC_FLAG_BIT)
     }
+    neutralize_panic_row!(log_attributes)
 
     # [FW.31 Gate D] device_z з шифртексту (wire-rev2 bytes 16..17,
     # фіксована точка ×512): живить numeric DCI-гілку check_z_divergence!.
@@ -516,15 +513,7 @@ class TelemetryUnpackerService < ApplicationService
       SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
     end
 
-    server_z, lorenz_xyz, cold_start = compute_server_z(tree, log_attributes)
-    log_attributes[:z_value]         = server_z
-    log_attributes[:lorenz_state_x]  = lorenz_xyz[0]
-    log_attributes[:lorenz_state_y]  = lorenz_xyz[1]
-    log_attributes[:lorenz_state_z]  = lorenz_xyz[2]
-    log_attributes[:cold_start_flag] = cold_start
-
-    check_z_divergence!(tree, log_attributes)
-    check_metabolic_divergence!(tree, log_attributes, status_byte)
+    step_lorenz_and_judge!(tree, log_attributes, status_byte)
     commit_telemetry(tree, log_attributes)
 
   rescue MissingLorenzSeedError
@@ -532,6 +521,36 @@ class TelemetryUnpackerService < ApplicationService
   rescue StandardError => e
     trace = e.backtrace.first(5).join("\n")
     Rails.logger.error "🛑 [CCM Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
+  end
+
+  # [ARCH.102] Panic-кадр не є рядком виміру: пристрій шле його з Фази 2, ДО кроку
+  # Лоренца Фази 3, а сенсорні поля кадру — legacy-нулі й код паніки. Тож рядок
+  # пишеться з NULL («не виміряно»): підставлений нуль є фабрикацією (`00_05 §7`),
+  # і NULL роблять чесними всіх читачів одразу — AVG/MAX його пропускають,
+  # `mark_seen!` оновлює присутність, не напругу, екрани кажуть «не виміряно».
+  def neutralize_panic_row!(attributes)
+    return unless attributes[:panic]
+
+    PANIC_UNMEASURED_ATTRIBUTES.each { |key| attributes[key] = nil }
+  end
+
+  # Паритет DCI — це й КІЛЬКІСТЬ кроків, не лише їхня арифметика (telemetry-pipeline #3):
+  # на panic-кадрі пристрій Лоренц не крокує, тож і сервер не крокує, не персистить
+  # хвіст і не судить DCI — інакше наступний кадр стартував би зі стану, якого
+  # пристрій не мав, і ланцюги розходились би до cold-start. ⛔ «255 → 0», як для
+  # сентинела 0xFE, паритету не відновлює: крок лишився б зайвим.
+  def step_lorenz_and_judge!(tree, attributes, status_byte)
+    return if attributes[:panic]
+
+    server_z, lorenz_xyz, cold_start = compute_server_z(tree, attributes)
+    attributes[:z_value]         = server_z
+    attributes[:lorenz_state_x]  = lorenz_xyz[0]
+    attributes[:lorenz_state_y]  = lorenz_xyz[1]
+    attributes[:lorenz_state_z]  = lorenz_xyz[2]
+    attributes[:cold_start_flag] = cold_start
+
+    check_z_divergence!(tree, attributes)
+    check_metabolic_divergence!(tree, attributes, status_byte)
   end
 
   # [FW.17] Dual-Key Grace дерева. MIC — автентифікований доказ ключа, тож саме

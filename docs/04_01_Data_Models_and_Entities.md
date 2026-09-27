@@ -619,9 +619,9 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `temperature_c` | decimal | Температура кристала STM32 у капсулі анкера (°C), після `DeviceCalibration#normalize_temperature`. ⚠️ **[ARCH.99]** НЕ температура ксилеми — окремого сенсора в деревині немає; сирий wire-градус (той, з якого прошивка рахувала Z) живе окремо, [FW.57 F2] |
 | `voltage_mv` | integer | **[ARCH.99]** Напруга шини живлення MCU (мВ VDDA, VREFINT-калібрування — [`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50). ⚠️ НЕ напруга EBFC і не заряд іоністора: обидві ті величини вузол не міряє (ADC має рівно два канали — внутрішня температура + VREFINT) |
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
-| `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
+| `acoustic_events` | integer | Детекції TinyML від останнього УСПІШНОГО uplink'а (кавітація й пилка злиті в один лічильник; `0xFE` — сентинел часу, нейтралізується до DCI). На panic-рядку NULL: байт `0xFF` там — код паніки, не лічба [ARCH.102] |
 | `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі (на прибутті; стартовий — 3 normal / 5 panic, дзеркало firmware `DEFAULT_TTL`/`PANIC_TTL`) |
-| `panic` | boolean | **[FW.29]** Панічний пакет (PanicFlag, біт 7 StatusByte; default `false`). Єдина надійна wire-ознака паніки — `acoustic_events=255` колізує з FW.22-сатурацією |
+| `panic` | boolean | **[FW.29]** Панічний пакет (PanicFlag, біт 7 StatusByte; default `false`). Єдина надійна wire-ознака паніки — `acoustic_events=255` колізує з FW.22-сатурацією. **Panic-рядок не є рядком виміру [ARCH.102]:** кадр пристрій шле ДО кроку Лоренца, а його vcap/temp/dt — legacy-нулі, тож `voltage_mv` · `temperature_c` · `metabolism_s` · `acoustic_events` · `z_value` · `lorenz_state_*` тут NULL («не виміряно»), і агрегати пропускають рядок самі |
 | `queen_uid` | string | UID Королеви-ретранслятора |
 | `oracle_status` | enum | **[BLOCKER-12 FIX]** `pending / dispatched / fulfilled / failed` (string-backed Rails enum з prefix `oracle_status_`). Забезпечує type safety, валідацію та автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо). Default: `pending`. |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |

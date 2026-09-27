@@ -47,6 +47,29 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(tree.reload.latest_stress_index).not_to be_nil
     end
 
+    # 🔴 [ARCH.102] Доба, де в дерева лежать лише panic-рядки, ВИМІРУ не має: сенсори
+    # там NULL, тож рядок групи є, а AVG = NULL. Без цього дерево під пилкою тримало б
+    # учорашній стрес — ту саму «понеділкову 0.42», лише через іншу дірку.
+    it "занулює дерево, чия доба несе лише panic-рядки без виміру" do
+      under_saw = create(:tree, cluster: cluster, status: :active)
+      under_saw.update_column(:latest_stress_index, 0.42)
+
+      create(:telemetry_log, tree: under_saw, panic: true,
+        temperature_c: nil, voltage_mv: nil, z_value: nil, acoustic_events: nil,
+        growth_points: 0, bio_status: :homeostasis, metabolism_s: nil,
+        created_at: date.beginning_of_day + 11.hours)
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(under_saw.reload.latest_stress_index).to be_nil
+      expect(tree.reload.latest_stress_index).not_to be_nil
+    end
+
     it "занулює в nil дерево, чий кластер за добу мовчав цілком" do
       tree.update_column(:latest_stress_index, 0.42)
 

@@ -534,6 +534,8 @@ firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
                                                    tree.device_lorenz_thresholds (FW.8 — смуга ПРИСТРОЮ)
 ```
 
+> 🔑 **Паритет — це й КІЛЬКІСТЬ кроків, не лише їхня арифметика [ARCH.102].** Panic-кадр пристрій шле з Фази 2, ДО кроку Фази 3, і `calculate_state` на ньому не кличе, тож сервер на panic-рядку теж не крокує, хвоста не персистить і DCI не судить (`TelemetryUnpackerService#step_lorenz_and_judge!`); наступний кадр продовжує ланцюг із хвоста ДО паніки. Сервер, що крокував би, стартував би наступний кадр зі стану, якого пристрій не мав, і ланцюги розходились би до cold-start. ⛔ «255 → 0», як для сентинела `0xFE`, паритету не відновлює — крок лишився б зайвим.
+
 ### 5.3 Метод `homeostatic?` (Backend-Only)
 
 ```ruby

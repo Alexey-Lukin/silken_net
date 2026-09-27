@@ -46,9 +46,11 @@ module Iotex
         telemetry_log_id: @telemetry_log.id_value,
         timestamp: @telemetry_log.created_at.to_i,
         hardware_signature: hardware_signature,
+        # [ARCH.102] NULL лишається null: panic-рядок нічого з цього не міряв, а
+        # `.to_f` зробив би з відсутності нуль — ту саму фабрикацію, лише назовні.
         chaotic_data: {
-          z_value: @telemetry_log.z_value.to_f,
-          temperature_c: @telemetry_log.temperature_c.to_f,
+          z_value: @telemetry_log.z_value&.to_f,
+          temperature_c: @telemetry_log.temperature_c&.to_f,
           acoustic_events: @telemetry_log.acoustic_events,
           voltage_mv: @telemetry_log.voltage_mv,
           bio_status: @telemetry_log.bio_status

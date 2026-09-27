@@ -239,16 +239,19 @@ RSpec.describe AlertDispatchService, type: :service do
     # PANIC_FLAG + acoustic=0xFF (255) + vcap=0 — до фікса гейт лише на
     # bio_status_anomaly? губив її (кадр падав у тодішню лічильникову гілку —
     # знята [ARCH.102]), а vcap=0 плодив фантомний system_fault.
+    # [ARCH.102] Розпакувальник пише такий рядок із NULL-сенсорами («не виміряно»), і
+    # саме з NULL пилка мусить доїхати до своєї гілки: гарди напруги й вогню стоять
+    # ПЕРЕД нею, тож голе порівняння з nil убило б алерт разом із винятком.
     it "routes a REAL chainsaw panic frame (status=homeostasis) to chainsaw_detected and nothing else" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
         firmware_report_reverted?: false,
-        voltage_mv: 0,          # panic-кадр свідомо несе vcap=0 (legacy-parity)
-        temperature_c: 0,
+        voltage_mv: nil,        # panic-кадр нічого не міряв — NULL, не legacy-нуль
+        temperature_c: nil,
         bio_status_anomaly?: false, # пилка НЕ ставить anomaly — status лишається homeostasis
         panic?: true,
-        acoustic_events: 255 # форма реального wire-кадру; диспетчер лічильник не читає
+        acoustic_events: nil # 0xFF кадру — код паніки, не лічба; диспетчер лічильник не читає
       )
 
       expect {

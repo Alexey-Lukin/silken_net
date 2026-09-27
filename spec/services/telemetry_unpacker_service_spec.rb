@@ -1525,6 +1525,48 @@ end
     end
   end
 
+  # [ARCH.102] Panic-кадр не є рядком виміру: пристрій шле його з Фази 2, ДО кроку
+  # Лоренца Фази 3. Тож сервер (а) пише сенсори NULL, а не legacy-нулі кадру,
+  # (б) не крокує Лоренц і не персистить хвіст, (в) не судить DCI. Обидва приклади
+  # розрізняють стару поведінку: на дефолтному стабі (z = 0.5, поза смугою) старий
+  # шлях інкрементував fraud на cold-start, а різні хвости виказують, з якого стану
+  # стартує кадр ПІСЛЯ паніки.
+  describe "[ARCH.102] panic-рядок не є рядком виміру" do
+    before { Rails.cache.clear }
+
+    # форма реального кадру Trigger_Emergency_LoRa_TX: vcap/temp/dt = 0, acoustic = 0xFF
+    let(:real_panic_chunk) { build_panic_chunk(did_hex, 42, voltage: 0, temp: 0, metabolism: 0) }
+
+    it "пише сенсори NULL, не крокує Лоренц і не судить DCI" do
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+
+      described_class.call(real_panic_chunk)
+
+      row = TelemetryLog.where(panic: true).sole
+      expect(row.attributes.values_at("voltage_mv", "temperature_c", "metabolism_s", "acoustic_events",
+                                      "z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
+      expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "кадр ПІСЛЯ паніки стартує з хвоста ДО неї — ланцюги не розходяться" do
+      tails = [ [ 0.1, 0.2, 0.3 ], [ 7.0, 8.0, 9.0 ], [ 1.0, 2.0, 3.0 ] ]
+      starts = []
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do |x0, y0, z0, *|
+        starts << [ x0, y0, z0 ]
+        [ 20.0, *tails[starts.size - 1] ]
+      end
+      normal = build_chunk(did_hex, -70, 3500, 22, 5, 100, 10, 3)
+
+      described_class.call(normal)
+      described_class.call(real_panic_chunk)
+      described_class.call(normal)
+
+      expect(starts.size).to eq(2)
+      expect(starts.last).to eq([ 0.1, 0.2, 0.3 ])
+    end
+  end
+
   describe "#previous_lorenz_state_for [SEC.11]" do
     it "returns nil when the last Lorenz state row has a non-finite coordinate" do
       # Build a telemetry log with NaN in z to simulate corruption on disk.
@@ -1611,6 +1653,21 @@ end
 
       described_class.call(panic)
       expect(TelemetryLog.last.panic).to be(true)
+    end
+
+    # [ARCH.102] CCM-паніка несе ті самі legacy-нулі (Soldier_Build_CCM_LoRa_Packet із
+    # vcap/temp/dt = 0, acoustic = 0xFF), тож і тут — NULL, без кроку Лоренца, без DCI.
+    it "writes a CCM panic row as NULL sensors with no Lorenz step and no DCI verdict [ARCH.102]" do
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 0, acoustic: 255,
+                                           dt: 0, status: 0x80, ttl: 5, fc: 46))
+
+      row = TelemetryLog.where(panic: true).sole
+      expect(row.attributes.values_at("voltage_mv", "temperature_c", "metabolism_s", "acoustic_events",
+                                      "z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
+      expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
 
     # 🔴 [SILENCE-1] Бекенд-половина pulse'у. Кадр «я тут, але нічого не міряв» —

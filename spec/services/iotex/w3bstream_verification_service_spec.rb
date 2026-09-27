@@ -80,6 +80,20 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         described_class.new(telemetry_log).verify!
       end
 
+      # [ARCH.102] Panic-рядок нічого не міряв: NULL мусить доїхати як null, а не
+      # як 0.0 — інакше `.to_f` відтворює назовні ту саму фабрикацію нуля.
+      it "keeps an unmeasured panic row's z and temperature as null in the payload" do
+        panic_log = create(:telemetry_log, tree: tree, panic: true,
+                           z_value: nil, temperature_c: nil, voltage_mv: nil, acoustic_events: nil)
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expect(kwargs[:body][:chaotic_data].values_at(:z_value, :temperature_c, :voltage_mv, :acoustic_events))
+            .to all(be_nil)
+          Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-panic" }.to_json)
+        end
+
+        expect(described_class.new(panic_log).verify!).to eq("zk-proof-panic")
+      end
+
       it "raises VerificationError when W3bstream returns error" do
         allow(Web3::HttpClient).to receive(:post)
           .and_raise(Web3::HttpClient::RequestError.new("W3bstream API returned 500: Internal Server Error"))
