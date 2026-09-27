@@ -43,9 +43,10 @@ RSpec.describe EmergencyResponseService do
       end
 
       it "creates a single 3600s siren command" do
-        # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
-        # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
-        # предметом є ФОРМА протоколу, тож каденс стабимо.
+        # [ARCH.75] Сирену на РЕАЛЬНОМУ каденсі прошивки (1 год) відмовляють наперед —
+        # ратифікована поведінка, запінена окремим прикладом (її підставу «недоставна
+        # ЗАВЖДИ» переміряно 2026-09-27, `00_07` FW.64). Тут предметом є ФОРМА протоколу,
+        # тож каденс стабимо.
         stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
         siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
 
@@ -273,9 +274,10 @@ RSpec.describe EmergencyResponseService do
     let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
     it "creates valve AND siren commands for fire alert" do
-      # [ARCH.75] Сирена/маяк на РЕАЛЬНОМУ каденсі прошивки (1 год) недоставні
-      # ЗАВЖДИ — це ратифікована поведінка, запінена окремим прикладом. Тут
-      # предметом є ФОРМА протоколу, тож каденс стабимо.
+      # [ARCH.75] Сирену на РЕАЛЬНОМУ каденсі прошивки (1 год) відмовляють наперед —
+      # ратифікована поведінка, запінена окремим прикладом (її підставу «недоставна
+      # ЗАВЖДИ» переміряно 2026-09-27, `00_07` FW.64). Тут предметом є ФОРМА протоколу,
+      # тож каденс стабимо.
       stub_const("Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S", 60)
       valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
       siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
@@ -395,10 +397,11 @@ RSpec.describe EmergencyResponseService do
     end
 
     # 🔴 Ратифікована поведінка (⚖️ 2026-08-15), а не побічний ефект: каденс флашу
-    # Королеви — компайл-тайм константа прошивки (1 год), тож доставку 15-хвилинної
-    # сирени не ГАРАНТОВАНО на жодному шлюзі (не «неможливо»: перший poll буває й до
-    # 900 с — підставу переміряно 2026-09-27, `00_07` FW.64). Каденс тут СВІДОМО не
-    # стабиться — предметом піна є саме дефолт.
+    # Королеви — компайл-тайм константа прошивки (1 год), і присуд стоїть на підставі
+    # «15-хвилинна сирена недоставна ЗАВЖДИ». Підставу переміряно 2026-09-27 — не
+    # гарантовано, а не неможливо (перший poll буває й до 900 с), — і присуд чекає
+    # перегляду з нею (⚖️ `00_07` FW.64); доти пін тримає ратифіковану поведінку.
+    # Каденс тут СВІДОМО не стабиться — предметом піна є саме дефолт.
     context "when the response stays relevant for less than the fleet's real poll cadence" do
       it "issues NO siren command at all, and names the cadence rather than the ceiling" do
         create(:actuator, :fire_siren, gateway: gateway, state: :idle)
@@ -407,7 +410,7 @@ RSpec.describe EmergencyResponseService do
         expect { described_class.call(fire) }.not_to change(ActuatorCommand, :count)
 
         # 🔴 Адресація за КЛЮЧЕМ, не `.last`: у цьому кластері немає клапана, тож
-        # пожежний протокол законно лишає ДВА сліди — недоставну сирену й невстановлений
+        # пожежний протокол законно лишає ДВА сліди — відмовлену сирену й невстановлений
         # полив. Доти приклад брав останній рядок і був би зелений на чужому факті.
         raised = EwsAlert.alert_type_emergency_response_undeliverable
                          .find_by(message_key: "emergency_response_too_slow")
