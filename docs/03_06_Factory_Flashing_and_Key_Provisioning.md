@@ -84,7 +84,7 @@
      → TreeResolver → Rails-host деривує локально:
            aes_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")
            ota_hmac = per-cluster HKDF (FW.23, "silken-ota-hmac-v1")
-           # ⚖️ делеговано 2026-09-27 (00_07 SE050-MIGRATION): Гілка B пише
+           # ⚖️ делеговано 2026-09-27 (врізка під блоком): Гілка B пише
            # ТОЙ САМИЙ набір Protected Flash, що Гілка A — KEYL · LSED · KEYB ·
            # K_ota, бо в кожного MCU-споживач (CRYP · Lorenz-VM · OTA-HMAC)
        - Зберігає (DID → HardwareKey, silicon_uid_hex → Tree; tamper-detect:
@@ -123,11 +123,13 @@
      Лак → Box → Field (shipping-mode ✂️ не потрібен — 03_05 §3.5)
 ```
 
+> ⚖️ **Набір ключів Гілки B — делеговано 2026-09-27 ([`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker)): той самий, що в Гілці A — KEYL · LSED · KEYB · K_ota у Protected Flash тим самим SWD `-w32` (кроки 3–4 конвеєра Гілки B); SE додає лише ідентичність.** **Підстава:** кожен із чотирьох має MCU-споживача, а не SE-споживача — KEYL і KEYB живлять CRYP радіо-AES, LSED — Lorenz-VM (cold-start), K_ota — OTA-HMAC, який рахує MCU (поки так, ключ мусить жити у MCU Flash незалежно від SE — відкрите питання OTA-auth, §4 цього документа); а за ратифікованою роллю SE (SEC.14, provisioning-only, «мертвий SE ≠ мертва телеметрія», [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) жоден runtime-шлях через SE не йде. Отже присуд вимушений роллю, не смаком. Для Королеви SE немає за жодної гілки, тож її Гілка B = Гілка A повністю, включно з EDSK. **Ціна:** runtime-ключі Гілки B не отримують SE-нездобутності — їх захищає RDP ([`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security)), як у Гілці A; «data zone lock» у таблиці «Подвійний lock» і колонка «Гілка B» у §D стережуть лише ІДЕНТИЧНІСТЬ. **Найслабша ланка** — саме це очікування: хто читає «Гілка B = SE» як «ключі в SE», той переоцінює захист KEYL. Застосовано в коді того ж дня (`CommandBuilder#protected_flash_commands` — однаковий транскрипт обох гілок; `SecureElementProvisioner` Slot 0 не емітить); доти Гілка B не писала жодного ключа — KEYL-less Солдат цеглився на першому boot, Королева не мала навіть KEYC. Носії — `spec/services/factory_flashing/command_builder_spec.rb` (транскрипт B ≡ A для обох типів пристроїв) · `session_spec.rb` (KEYL через SWD; Королева з KEYC і EDSK) · `secure_element_provisioner_spec.rb` (Slot 0 порожній).
+
 **Подвійний lock (defense in depth, тільки Гілка B):**
 
 | Шар захисту | Що блокує | Атака, від якої захищає |
 |-------------|-----------|--------------------------|
-| **ATECC608B data zone lock** | Read/write ключів | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
+| **ATECC608B data zone lock** (легасі-скетч; SE05x — per-object policy) | Read/write ІДЕНТИЧНОСТІ (Ed25519-голос · cert · serial) — runtime-ключів у SE немає (врізка «Набір ключів Гілки B»), їх стереже рядок «STM32 RDP Level 1/2» | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
 | **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
 | **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, серійник SE) пари — ⚠️ ціль, не код: сьогодні серійник лише пишеться в `provisioning_sessions.se_serial_hex` + аудит, пін у `HardwareKey` не реалізовано ([`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) |
 
@@ -148,7 +150,7 @@
 
 **Переваги обох гілок:**
 - Компрометація одного Soldier не розкриває ключі сусідів (per-device HKDF)
-- Фізичне вилучення ключа з чіпа неможливе після RDP Lock (Гілка A) або data-zone lock (Гілка B)
+- Фізичне вилучення ключа з чіпа неможливе після RDP Lock — для runtime-ключів в ОБОХ гілках (у Гілці B вони теж у Protected Flash); data-zone lock Гілки B додає це саме лише ідентичності (врізка «Набір ключів Гілки B»)
 - Деривовані device-ключі ніколи не в репозиторії — лише `HardwareKey` (AR-encrypted у Vault); сам `master_key` custody = deploy-ENV Тір-0 (§5.A), **НЕ** Vault
 - Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
 
@@ -800,7 +802,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — [`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
 | ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (1/2/3; Slot 0 reserved — не пишеться з 2026-09-27) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
@@ -927,13 +929,15 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 
 ### D. Гілка A vs Гілка B Threat Model Diff
 
+> ⚠️ **Колонку «Гілка B» писано в легасі-моделі ATECC, де ключі жили в SE.** За присудом 2026-09-27 (врізка «Набір ключів Гілки B», §1) runtime-ключі Гілки B — KEYL · LSED · KEYB · K_ota, а в Королеви всі — лежать у Protected Flash і їдуть тим самим SWD `-w32` із фабричного хоста, тож у рядках «Фізичне вилучення», «Factory insider» і «Cold-boot» Гілка B для НИХ рівна Гілці A; перевага колонки стосується лише ідентичності (Ed25519-голос · cert · serial).
+
 | Вектор атаки | Гілка A (Protected Flash STM32) | Гілка B (ATECC608B / STSAFE-A110) |
 |-------------|----------------------------------|-----------------------------------|
-| **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | ATECC data zone lock + DPA-hardened silicon: key never leaves chip в plaintext; fault injection → self-erase |
+| **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | Лише ідентичність: ATECC data zone lock + DPA-hardened silicon — key never leaves chip в plaintext; fault injection → self-erase. Runtime-ключі — як Гілка A (RDP) |
 | **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) мусить пінитись у пару `(device_uid, серійник SE)` — ⚠️ ціль: сьогодні він лише в `provisioning_sessions.se_serial_hex`, `HardwareKey` колонки не має. Чужий ATECC → provisioning API reject з 409 |
 | **Replay provisioning request** | `POST /provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
-| **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Ризик нижчий: ATECC write через I²C, ключ загружається через `atcab_write_zone()` — не проходить через user-space буфер у стандартній реалізації |
-| **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Ризик нижчий: HSM injection → `device_key` ніколи не в laptop RAM |
+| **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Для runtime-ключів — той самий, що в Гілці A (SWD `-w32` з хоста); нижчий лише для ідентичності: ATECC write через I²C, `atcab_write_zone()` — не проходить через user-space буфер у стандартній реалізації |
+| **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Для runtime-ключів — той самий, що в Гілці A: їх деривує Rails-хост і пише SWD; поза RAM хоста лишається лише ідентичність (SE05x — on-chip keygen, крок 4 §1) |
 | **Перехід Гілка A → Гілка B** | Можливо (re-flash MCU + добавити ATECC до PCBA = новий PCB revision) | — |
 | **Перехід Гілка B → Гілка A** | ❌ Неможливо (ATECC config zone locked permanently) | — |
 
