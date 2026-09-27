@@ -299,7 +299,7 @@ SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 | Поз. | Компонент | Призначення | Розташування |
 |------|-----------|-------------|--------------|
 | C_BULK | **470 µF, 6.3V, low-ESR aluminum polymer** (Panasonic SP-Cap EEFCX0J471R або Kemet T520B477M006ATE015), ESR ≤ 15 мΩ | Основний бункер для 1–10 мс TX-burst | 5–10 мм від VBAT pin |
-| C_MID | **100 µF, 25V, X7R, 1210** (Murata GRM32ER71E107K — ⚠️ не звірено: 25 В X7R 1210 понад 22 µF у первинці не знайдено, [`00_07`](00_07_Action_Plan_Tracker) HW.20), C_eff @ 3.7V ≈ 85 µF після derating | Мід-частотний buffer (kHz range RF chopping) | ≤ 5 мм від VBAT pin |
+| C_MID | **100 µF, 25V, X7R, 1210** (Murata GRM32ER71E107K — ⛔ у каталозі Murata не існує: X7R · 25 В · 100 µF там немає в жодному корпусі, вимір 2026-09-27; деталь обирається заново — [`00_07`](00_07_Action_Plan_Tracker) HW.20), потреба C_eff @ 3.7V ≈ 85 µF після derating | Мід-частотний buffer (kHz range RF chopping) | ≤ 5 мм від VBAT pin |
 | C_HF1 | **10 µF, 25V, X7R, 0805** | HF фільтр живлення | ≤ 3 мм від VBAT pin |
 | C_HF2 | **100 nF, 50V, X7R, 0402** | HF decoupling MCU bus | впритул до VBAT pin |
 | C_RF | **33 pF, 50V, NP0, 0402** | Фільтр антенного RF-сплеску у живлення | впритул до VBAT pin |
@@ -713,7 +713,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
 | 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано (розводка SPI+CS — board-freeze); **драйвер ✅ host-tested** (`flash_ring.{h,c}`, gated `ARCH35_RING_ENABLED 0` — §2.1); ~$0.50/од; ~197k telemetry slots; ~10 мА × 0.7 мс/page write |
 | 17 | **C_BULK (SIM7070G VBAT tank)** | 470 µF / 6.3V / aluminum polymer, ESR ≤ 15 мΩ (Panasonic EEFCX0J471R або Kemet T520B477M006ATE015) | 1/2.5 | 🔴 **Обов'язково** — без нього brownout reboot SIM7070G при 2А LTE-M burst (§2.2.1) |
-| 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K — ⚠️ P/N не звірено, HW.20) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
+| 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K — ⛔ у каталозі Murata не існує, HW.20) | 1/2.5 | 🔴 Обов'язково — потреба С_eff ≈ 85 µF після DC bias derating; деталь — HW.20 |
 | 19 | **C_HF1 (SIM7070G VBAT)** | 10 µF / 25V / X7R / 0805 | 1/2.5 | 🔴 Обов'язково |
 | 20 | **C_HF2 + C_RF (SIM7070G VBAT)** | 100 nF / 50V / X7R / 0402 + 33 pF / 50V / NP0 / 0402 | 1/2.5 | 🔴 Обов'язково — HF фільтр + RF-burst guard |
 
