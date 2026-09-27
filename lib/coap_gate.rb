@@ -132,6 +132,14 @@ module CoapGate
       return CoapServerPdu.build_ack(request, code: CoapServerPdu::CODE_NOT_FOUND)
     end
 
+    # [SEC.38] Автентичність запиту — ДО будь-якої зміни стану (dispatch!, fw=-підтвердження,
+    # OTA-hint): без чинного MAC 4.01, і чужий відправник не зрушить ні черги, ні кампанії.
+    # Відмову НЕ кешуємо — справжній запит із тим самим MID мусить пройти.
+    unless Downlink::PullMac.authentic?(gateway: gateway, result: result)
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "pull_bad_mac" })
+      return CoapServerPdu.build_ack(request, code: CoapServerPdu::CODE_UNAUTHORIZED)
+    end
+
     envelope =
       if result.status == :downlink_poll
         Downlink::PendingQueueService.poll_reply(gateway: gateway, query: result.query)

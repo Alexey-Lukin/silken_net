@@ -654,7 +654,7 @@ TEST(test_hw41_reactivate_pdp) {
 TEST(test_fw60_coap_build_get_golden) {
     uint8_t pdu[96];
     uint16_t n = Coap_Build_Get(pdu, sizeof pdu, 0x1234,
-                                "poll", "SNET-Q-00000001", "fw=42", NULL);
+                                "poll", "SNET-Q-00000001", "fw=42", NULL, NULL);
     static const uint8_t expected[] = {
         0x40, 0x01, 0x12, 0x34,
         0xB4, 'p', 'o', 'l', 'l',
@@ -669,14 +669,20 @@ TEST(test_fw60_coap_build_get_two_queries_and_guards) {
     uint8_t pdu[96];
     /* Друга query-пара — окрема опція 15 з delta 0 (RFC 7252). */
     uint16_t n = Coap_Build_Get(pdu, sizeof pdu, 0x0001,
-                                "ota", "X", "v=7", "ch=3");
+                                "ota", "X", "v=7", "ch=3", NULL);
     ASSERT_TRUE(n > 0u);
     /* ... B3"ota" 01"X" 43"v=7" 03"ch=3" — друга query delta=0, len=4 */
     ASSERT_EQ(pdu[4], 0xB3);              /* Uri-Path delta 11 len 3 */
     ASSERT_EQ(pdu[10], 0x43);             /* Uri-Query delta 4 len 3 */
     ASSERT_EQ(pdu[14], 0x04);             /* друга query: delta 0 len 4 */
-    ASSERT_EQ(Coap_Build_Get(pdu, sizeof pdu, 1, "", "X", "q", NULL), 0);   /* порожній сегмент */
-    ASSERT_EQ(Coap_Build_Get(pdu, 8, 1, "poll", "LONG-UID-123456", "q=1", NULL), 0); /* не влізло */
+    ASSERT_EQ(Coap_Build_Get(pdu, sizeof pdu, 1, "", "X", "q", NULL, NULL), 0);   /* порожній сегмент */
+    ASSERT_EQ(Coap_Build_Get(pdu, 8, 1, "poll", "LONG-UID-123456", "q=1", NULL, NULL), 0); /* не влізло */
+    /* [SEC.38] Третя query (MAC) — теж окрема опція з delta 0, останньою. */
+    n = Coap_Build_Get(pdu, sizeof pdu, 0x0001, "ota", "X", "v=7", "ch=3", "m=ab");
+    ASSERT_TRUE(n > 0u);
+    ASSERT_EQ(pdu[19], 0x04);             /* третя query: delta 0 len 4 */
+    ASSERT_TRUE(memcmp(pdu + 20, "m=ab", 4) == 0);
+    ASSERT_EQ(n, (uint16_t)24);
 }
 
 /* Golden SIMCom App Note: 2.05 Content із payload "024" — досі цей payload

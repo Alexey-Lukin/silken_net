@@ -83,13 +83,15 @@ static inline uint16_t Coap_Build_Put(uint8_t *out, uint16_t out_max,
     return pos;
 }
 
-/* [FW.60] CON GET /<seg1>/<seg2>?<q1>&<q2> — запит Королеви за власним
- * downlink'ом (poll/<uid>?fw= та ota/<uid>?v=&ch=). Кожна query-пара — ОКРЕМА
- * опція 15 (RFC 7252); q2 опційна (NULL). Повертає довжину PDU, 0 = не влізло. */
+/* [FW.60] CON GET /<seg1>/<seg2>?<q1>&<q2>&<q3> — запит Королеви за власним
+ * downlink'ом (poll/<uid>?fw=&cmd=&m= та ota/<uid>?v=&ch=&m=). Кожна query-пара —
+ * ОКРЕМА опція 15 (RFC 7252); q2 і q3 опційні (NULL). [SEC.38] q3 несе MAC
+ * запиту (`pull_mac.h`) і мусить іти ОСТАННЬОЮ: Rails MAC'ить опції в порядку
+ * надсилання без самої m=. Повертає довжину PDU, 0 = не влізло. */
 static inline uint16_t Coap_Build_Get(uint8_t *out, uint16_t out_max,
                                       uint16_t message_id,
                                       const char *seg1, const char *seg2,
-                                      const char *q1, const char *q2)
+                                      const char *q1, const char *q2, const char *q3)
 {
     if (out_max < 4u) return 0;
     out[0] = COAP_VER1_CON_TKL0;
@@ -109,8 +111,8 @@ static inline uint16_t Coap_Build_Get(uint8_t *out, uint16_t out_max,
     }
 
     delta = (uint16_t)(COAP_OPT_URI_QUERY - COAP_OPT_URI_PATH);
-    const char *qs[2] = { q1, q2 };
-    for (int i = 0; i < 2; i++) {
+    const char *qs[3] = { q1, q2, q3 };
+    for (int i = 0; i < 3; i++) {
         if (!qs[i]) continue;
         size_t l = strlen(qs[i]);
         if (l == 0u) return 0;

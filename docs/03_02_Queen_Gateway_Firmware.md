@@ -512,7 +512,7 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
 
 ```
 1. Дренаж черги (≤ QUEEN_POLL_MAX_PER_FLUSH = 3 повідомлень):
-   GET poll/<uid>?fw=<delivered_id>&cmd=<last_acked_cmd_token>
+   GET poll/<uid>?fw=<delivered_id>&cmd=<last_acked_cmd_token>&m=<mac>
      → Sim7070_Udp_Fetch (сирий CA*-тракт)
      → Coap_Reply_Extract_Payload (2.05 + наш MID) → конверт
      → Handle_CoAP_Command: 0 = time-only «черга порожня» → стоп;
@@ -526,6 +526,16 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
    `mark_active!`→`acknowledge!`→Reset-план ЛИШЕ на цьому echo
    (`observe_delivered_command!`); build-час (видача CMD у кроці 1 вище)
    робить лише `dispatch!`.
+   ?m= [SEC.38, ⚖️ founder 2026-09-27] — MAC запиту, ОСТАННЬОЮ опцією, і на
+   poll, і на ota/<uid>: перші 16 байт HMAC-SHA256(K_mac, canonical) у hex,
+   K_mac = HMAC-SHA256(KEYC, "silken-poll-mac-v1"), canonical =
+   "silken-pull-v1\n" route "\n" uid "\n" MID ("\n" q)* — опції query в
+   порядку надсилання без m= (queen/pull_mac.h ⟷ Downlink::PullMac, спільний
+   golden-вектор). KEYC у RAM лежить словами `-w32`, тож ключ для HMAC —
+   big-endian байти кожного слова. Без чинного MAC Rails відповідає 4.01 ДО
+   будь-якої зміни стану; Queen, що не може його порахувати, запиту не шле.
+   ⚠️ Свіжості MAC не дає: перехоплений справжній запит можна повторити —
+   повтор нічого не підробляє, лише перевидає голову черги.
 
 2. OTA-фетч за hint'ом [0x9F][fw_id:4 BE][total:2 BE]
    (≤ QUEEN_OTA_FETCH_PER_FLUSH = 4 чанків/флаш — IWDG-бюджет):

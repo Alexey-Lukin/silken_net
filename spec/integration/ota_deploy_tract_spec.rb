@@ -29,7 +29,8 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
 
   # Незалежний GET-білдер (не реюзить CoapServerPdu/CoapClient — спека мусить
   # ловити регресію нашого ж парсера чужими байтами, дзеркало coap_smoke).
-  def coap_get(segments, query: nil, mid: 0x2211)
+  # [SEC.38] Як і Королева, підписує запит останньою опцією `m=` (sign: false — чужий відправник).
+  def coap_get(segments, query: nil, mid: 0x2211, sign: true)
     pdu = [ 0x40, 0x01, mid ].pack("CCn") # ver=1 CON, code 0.01 GET, TKL=0
     option_number = 0
     emit = lambda do |number, value|
@@ -40,7 +41,13 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
       pdu << [ (d_nib << 4) | l_nib ].pack("C") << d_ext << l_ext << value
     end
     segments.each { |seg| emit.call(11, seg) }                    # Uri-Path
-    Array(query).each { |pair| emit.call(15, pair) } if query     # Uri-Query: RFC — опція на пару
+    pairs = Array(query)
+    if sign
+      mac = Downlink::PullMac.hex(keyc: key_record.coap_binary_key, route: segments[0], uid: segments[1],
+                                  mid: mid, raw_query: pairs)
+      pairs += [ "m=#{mac}" ]
+    end
+    pairs.each { |pair| emit.call(15, pair) }                     # Uri-Query: RFC — опція на пару
     pdu
   end
 
@@ -127,6 +134,22 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
     expect(gateway.pending_firmware_id).to be_nil
     expect(gateway.state).to eq("idle")
     expect(gateway.firmware_version).to eq(firmware.version)
+  end
+
+  # [SEC.38] Той самий `fw=`, що вище закриває кампанію, — від відправника без MAC.
+  # Доти він закривав її так само: Rails вірив query будь-кого, хто знав uid.
+  it "a poll without a valid MAC cannot retire the campaign" do
+    deploy!
+    poll(fw: 0, mid: 0x1001)
+
+    forged = CoapGate.handle_datagram(
+      data: coap_get([ "poll", gateway.uid ], query: "fw=#{firmware.id}", mid: 0x1002, sign: false),
+      gateway_ip: "10.6.6.6"
+    )
+
+    expect(forged.getbyte(1)).to eq(0x81) # 4.01 Unauthorized
+    expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
+    expect(gateway.firmware_version).not_to eq(firmware.version)
   end
 
   it "answers a CON retransmit (same MID) with byte-identical reply without re-derivation" do

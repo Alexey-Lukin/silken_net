@@ -1297,6 +1297,7 @@ Handle_CoAP_Command():
 | **Soldier → Queen** (`0x55`/`0x56` control-запити, 16B) | AES-128 | ECB | **KEYB cluster** (Королева читає сама) | ❌ Відсутній | ❌ Відсутній | control-plane; лишається ECB і в CCM-еру |
 | **Queen → Rails** (CoAP Batch) | AES-256 | CBC | KEYC (per-gateway) | ✅ HRNG (128-bit) | 🟡 **Ed25519 batch-sig (L1 QATT, §2.2)** — detached, encrypt-then-sign; legacy L0 без підпису приймається | IV prepend; sig хвостом |
 | **Rails → Queen** (CoAP Command) | AES-256 | CBC | KEYC (per-gateway) | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах; транспорт = poll-після-флашу [FW.60] ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)) |
+| **Queen → Rails** (pull-запит `poll/<uid>` · `ota/<uid>`) | — (запит відкритий) | — | підключ `K_mac = HMAC-SHA256(KEYC, "silken-poll-mac-v1")` | — | ✅ **HMAC-SHA256, 128 біт** над маршрутом · uid · MID · query (`m=`, SEC.38 ⚖️ founder 2026-09-27) | без MAC — 4.01 до будь-якої зміни стану; ⚠️ свіжості не дає (повтор перехопленого запиту лише перевидає голову черги) |
 | **Queen → Soldier** (downlink LoRa: OTA/beacon/CMD) | AES-128 | ECB | **KEYB cluster** | ❌ Відсутній | ❌ MAC відсутній (стеля — §2.4); OTA-image гейтований K_ota-HMAC (FW.23) | broadcast-структурний; без MAC — FW.17 лишається замкненим (§3.8) |
 
 ---

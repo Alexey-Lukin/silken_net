@@ -84,7 +84,12 @@ RSpec.describe CoapGate do
       end
     end
 
-    before { CoapGate::REPLY_CACHE.clear }
+    before do
+      CoapGate::REPLY_CACHE.clear
+      # [SEC.38] Автентичність тут стабимо: MAC судять pull_mac_spec (golden-вектори) і
+      # ota_deploy_tract_spec (справжні датаграми); ця спека — про маршрутизацію гейту.
+      allow(Downlink::PullMac).to receive(:authentic?).and_return(true)
+    end
 
     it "derive'ить чергу і відповідає 2.05 з конвертом" do
       gateway = create(:gateway)
@@ -149,6 +154,20 @@ RSpec.describe CoapGate do
       expect(second).not_to eq(first)
       expect(second).to eq("REPLY:CHUNK".b)
       expect(Downlink::PendingQueueService).to have_received(:ota_chunk_reply).once
+    end
+
+    # [SEC.38] Без чинного MAC — 4.01 ДО будь-якої derivation, і відмова не кешується:
+    # справжній запит із тим самим MID мусить пройти.
+    it "без чинного MAC → 4.01, derivation не торкається і відмова не кешується" do
+      gateway = create(:gateway)
+      allow(Downlink::PullMac).to receive(:authentic?).and_return(false)
+      allow(Downlink::PendingQueueService).to receive(:poll_reply)
+      allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_ack: "ACK401".b)
+
+      expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("ACK401".b)
+      expect(CoapServerPdu).to have_received(:build_ack).with(request, code: CoapServerPdu::CODE_UNAUTHORIZED)
+      expect(Downlink::PendingQueueService).not_to have_received(:poll_reply)
+      expect(CoapGate::REPLY_CACHE[gateway.uid]).to be_nil
     end
 
     it "порожня derivation (нема KEYC) → 4.04" do

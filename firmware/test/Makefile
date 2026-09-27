@@ -26,9 +26,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -102,6 +102,9 @@ flash_ota: $(BINDIR)/test_flash_ota
 # [FW.52] Queen-side OTA SHA-256 mirror — RAM-мок + magic-LAST power-cut safety.
 ota_sha_guard: $(BINDIR)/test_ota_sha_guard
 	@./$(BINDIR)/test_ota_sha_guard
+
+pull_mac: $(BINDIR)/test_pull_mac
+	@./$(BINDIR)/test_pull_mac
 
 attest: $(BINDIR)/test_queen_attest
 	@./$(BINDIR)/test_queen_attest
@@ -219,6 +222,9 @@ $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash
 $(BINDIR)/test_ota_sha_guard: test_ota_sha_guard.c ../queen/ota_sha_guard.h ../common/flash_kv.h ../common/silken_sha256.h
 	$(CC) $(CFLAGS) -o $@ test_ota_sha_guard.c
 
+$(BINDIR)/test_pull_mac: test_pull_mac.c ../queen/pull_mac.h ../common/silken_sha256.h
+	$(CC) $(CFLAGS) -o $@ test_pull_mac.c
+
 # [L1 QATT] Queen-attestation конверт — Monocypher (pinned submodule) ↔ OpenSSL
 # parity + end-to-end збірка/розбір; golden-KAT дзеркалиться у RSpec.
 MONOCYPHER_SRC = ../extern/monocypher/src
@@ -309,7 +315,7 @@ clean:
 	      $(BINDIR)/test_soft_timer $(BINDIR)/test_helium_mac_smoke \
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
-	      $(BINDIR)/test_ota_sha_guard \
+	      $(BINDIR)/test_ota_sha_guard $(BINDIR)/test_pull_mac \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
 	      $(BINDIR)/test_fauna_session \
 	      $(BINDIR)/test_bme280 $(BINDIR)/test_audio_model \

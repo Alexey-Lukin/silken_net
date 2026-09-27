@@ -31,6 +31,7 @@ class CoapServerPdu
   CODE_PUT         = 0x03 # 0.03
   CODE_CHANGED     = 0x44 # 2.04 — єдиний код, що Coap_Reply_Confirms зарахує
   CODE_CONTENT     = 0x45 # 2.05 — [FW.60] piggyback-відповідь poll із payload
+  CODE_UNAUTHORIZED = 0x81 # 4.01 — [SEC.38] Queen-pull без чинного MAC
   CODE_NOT_FOUND   = 0x84 # 4.04 — клас 4 → Королева тримає кеш і повторює
 
   OPT_URI_PATH    = 11

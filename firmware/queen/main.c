@@ -36,6 +36,7 @@
 #include "at_engine.h"
 // [FW.56] CoAP PDU будує хост: SIM7070G — UDP-труба, не CoAP-стек
 #include "coap_pdu.h"
+#include "pull_mac.h"   // [SEC.38] MAC над poll/ota-запитом
 // [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
 #include "sim7070_coap.h"
 // [HW.41] Init-послідовність модема — таблиця, яку кличе й host-тест (гоча #19).
@@ -2624,13 +2625,17 @@ static void Queen_Poll_Downlink(void)
     // [FW.63] 96→128: worst-case тепер header(4) + Uri-Path"poll"(5) +
     // Uri-Path queen_uid(2+31=33, QUEEN_UID_MAX_LEN-1) + Uri-Query fw=(2+13=15,
     // "fw=4294967295") + Uri-Query cmd=(2+40=42, "cmd=" + UUID_STR_LEN) = 99 Б —
-    // 96 не вміщав. 128 лишає запас, не претендуючи на точність до байта.
-    static uint8_t poll_pdu[128];
+    // 96 не вміщав. [SEC.38] 128→160: + Uri-Query m=(2+34=36, PULL_MAC_QUERY_LEN)
+    // = 135 Б. Запас лишається, не претендуючи на точність до байта.
+    static uint8_t poll_pdu[160];
     static uint8_t poll_reply[QUEEN_POLL_REPLY_MAX];
     // q2: OTA-фетч нижче кладе туди лише "ch=<u16>" (≤8 Б), але POLL-цикл тепер
     // може нести "cmd=" + UUID_STR_LEN — спільний буфер тому розмірений під
     // більшого споживача.
     char q1[24], q2[UUID_STR_LEN + 5];
+    // [SEC.38] MAC запиту — Rails без нього відповідає 4.01, тож Queen, що не
+    // може його порахувати, запиту не шле зовсім (`pull_mac.h`).
+    char qm[PULL_MAC_QUERY_LEN + 1u];
 
     for (uint8_t i = 0; i < QUEEN_POLL_MAX_PER_FLUSH; i++) {
         HAL_IWDG_Refresh(&hiwdg);
@@ -2646,8 +2651,9 @@ static void Queen_Poll_Downlink(void)
             q2_ptr = q2;
         }
         coap_mid++;
+        if (!Pull_Mac_Query(coap_key, "poll", queen_uid, coap_mid, q1, q2_ptr, qm)) return;
         uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
-                                          "poll", queen_uid, q1, q2_ptr);
+                                          "poll", queen_uid, q1, q2_ptr, qm);
         if (pdu_len == 0u) return;
 
         UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
@@ -2676,8 +2682,9 @@ static void Queen_Poll_Downlink(void)
         snprintf(q1, sizeof q1, "v=%lu", (unsigned long)g_ota_fetch_fw_id);
         snprintf(q2, sizeof q2, "ch=%u", (unsigned)g_ota_fetch_next_ch);
         coap_mid++;
+        if (!Pull_Mac_Query(coap_key, "ota", queen_uid, coap_mid, q1, q2, qm)) return;
         uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
-                                          "ota", queen_uid, q1, q2);
+                                          "ota", queen_uid, q1, q2, qm);
         if (pdu_len == 0u) return;
 
         UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
