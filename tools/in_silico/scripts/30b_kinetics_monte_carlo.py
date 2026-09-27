@@ -11,11 +11,11 @@ Samples from parameter distributions instead of fixed values:
   j_max ~ Normal(J_MAX_25C, J_MAX_25C_SD) µA/cm² — the asymptote and its 1σ are IMPORTED, never
            typed here: both are derived in lib/constants.py from Zafar 2012's own error bars
   A_electrode ~ Uniform(1, 5) cm²
-  E_cycle ~ Uniform(E_CYCLE_LOW, E_CYCLE_HIGH) ≈ U(28.8, 49.9) mJ — the node chain's OWN bracket
-           (02_03 §9.4 via lib/constants.py): the compute ceilings pull the cycle cost down by at
-           most their full cost, the missing core-idle term pulls it up; the canon leaves the sign
-           of the sum open, so the central 42.33 mJ is not the midpoint. EDLC self-discharge has no
-           number and is not in it. Until 2026-09-27 this was U(3, 10) around a 5 mJ placeholder (E.63)
+  E_cycle ~ Uniform(E_CYCLE_LOW, E_CYCLE_HIGH) ≈ U(30.8, 52.2) mJ — the node chain's OWN bracket
+           (02_03 §9.4, every input named in lib/constants.py): the compute ceilings pull the cycle
+           cost down, the two core-idle terms §9.4 names but does not add pull it up; the canon
+           leaves the sign of the sum open. EDLC self-discharge is a continuous drain, not in it.
+           Until 2026-09-27 this was U(3, 10) around a 5 mJ placeholder (E.63)
   P_sleep = P_SLEEP_VSTOR (fixed) — the chain's sleep drain, subtracted from the boosted power
 
 Produces confidence intervals for delta_t at reference conditions.
@@ -76,6 +76,12 @@ def _finite(x: float) -> float | None:
     return round(float(x), 1) if np.isfinite(x) else None
 
 
+def _never_max_area(dt, a_el) -> float | None:
+    """Largest sampled electrode area among the «never» samples (None if there are none)."""
+    never = ~np.isfinite(dt)
+    return round(float(a_el[never].max()), 2) if never.any() else None
+
+
 def _fmt(x: float | None) -> str:
     return "never" if x is None else f"{x:.1f}"
 
@@ -112,6 +118,11 @@ def main() -> int:
     # does not reach its sister by itself).
     results = {
         "n_samples": N_SAMPLES,
+        # [E.63] What the band was sampled FROM, so a gate can hold the cache to lib/constants.py.
+        "parameters": {
+            "E_cycle_low_mJ": E_CYCLE_LOW * 1e3, "E_cycle_high_mJ": E_CYCLE_HIGH * 1e3,
+            "P_sleep_VSTOR_uW": P_SLEEP_VSTOR * 1e6, "A_electrode_cm2": [1.0, 5.0],
+        },
         "conditional_on": {
             "medium": "the sampled j_max is centred on the pH-7.4 laboratory ceiling "
                       "(J_MAX_25C, constants.py) — the percentiles below are a CI AT THAT CEILING",
@@ -150,6 +161,8 @@ def main() -> int:
         # `inverted_cdf` returns an actual sample, so a percentile on such a sample stays inf.
         p5, p50, p95 = np.percentile(dt, [5, 50, 95], method="inverted_cdf")
         never_pct = round(100.0 * float(np.mean(~np.isfinite(dt))), 2)
+        # WHICH samples never gather a cycle: the area axis reaches below the coupon's 2 cm² face.
+        never_area = _never_max_area(dt, a_el)
         status = "< baseline" if p50 < BASELINE else "> baseline"
 
         # The pH bracket: scale every sample's current by the [S]-dependent ratio (j ∝ jmax) and
@@ -158,10 +171,12 @@ def main() -> int:
         ratios = {f: ph_current_ratio(glu, f) for f in ("wt", "rec")}
         ph_band = {}
         for f, r in ratios.items():
-            q = np.percentile(delta_t(glu, tc, km, ea, jmax * r, a_el, e_cyc), [5, 50, 95],
-                              method="inverted_cdf")
+            dt_ph = delta_t(glu, tc, km, ea, jmax * r, a_el, e_cyc)
+            q = np.percentile(dt_ph, [5, 50, 95], method="inverted_cdf")
             ph_band[f] = {"ratio": round(r, 3), "p5_s": _finite(q[0]), "median_s": _finite(q[1]),
-                          "p95_s": _finite(q[2])}
+                          "p95_s": _finite(q[2]),
+                          "never_gathers_cycle_pct": round(100.0 * float(np.mean(~np.isfinite(dt_ph))), 2),
+                          "never_max_area_cm2": _never_max_area(dt_ph, a_el)}
         med_lo, med_hi = sorted((ph_band[f]["median_s"] for f in ratios), key=_order)
         ph_status = "< baseline" if _order(med_hi) < BASELINE else (
             "> baseline" if _order(med_lo) > BASELINE else "straddles baseline")
@@ -172,7 +187,7 @@ def main() -> int:
         results["scenarios"].append({
             "label": label, "glucose_mM": glu, "temp_C": tc,
             "p5_s": _finite(p5), "median_s": _finite(p50), "p95_s": _finite(p95),
-            "never_gathers_cycle_pct": never_pct,
+            "never_gathers_cycle_pct": never_pct, "never_max_area_cm2": never_area,
             "vs_baseline": status,
             "ph55_bracket": ph_band,
             "ph55_median_low_s": med_lo, "ph55_median_high_s": med_hi,

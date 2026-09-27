@@ -10,8 +10,8 @@
     "Rct_ohm": 72.9,
     "Rs_ohm": 100.0,
     "Cdl_uF_cm2": 50.0,
-    "delta_t_healthy_p5": 74.2,
-    "delta_t_healthy_p95": 509.2
+    "delta_t_healthy_p5": 78.5,
+    "delta_t_healthy_p95": 536.3
   },
   "experimental": {}
 }

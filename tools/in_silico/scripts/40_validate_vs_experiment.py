@@ -110,7 +110,9 @@ def main() -> int:
     for key, val in sorted(preds.items()):
         unit = "eV" if "eV" in key else "s" if "_s" in key else "Ω" if "ohm" in key else \
                "µA/cm²" if "uA" in key else "µF/cm²" if "uF" in key else "mM" if "mM" in key else ""
-        print(f"  {key:<30s} {val:>12.3f} {unit:>10s}")
+        # [E.63] A percentile can be None («never gathers a cycle») since 30b stopped capping it.
+        shown = "never" if val is None else f"{val:.3f}"
+        print(f"  {key:<30s} {shown:>12s} {unit:>10s}")
 
     if not EXPERIMENTAL:
         print("\n  ⚠️  No experimental data yet — fill EXPERIMENTAL dict when Ti-coin data arrives")

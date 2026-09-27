@@ -1,5 +1,14 @@
 {
   "n_samples": 10000,
+  "parameters": {
+    "E_cycle_low_mJ": 30.81,
+    "E_cycle_high_mJ": 52.1642803030303,
+    "P_sleep_VSTOR_uW": 4.18,
+    "A_electrode_cm2": [
+      1.0,
+      5.0
+    ]
+  },
   "conditional_on": {
     "medium": "the sampled j_max is centred on the pH-7.4 laboratory ceiling (J_MAX_25C, constants.py) \u2014 the percentiles below are a CI AT THAT CEILING",
     "not_sampled": [
@@ -15,108 +24,128 @@
       "label": "Healthy summer",
       "glucose_mM": 10,
       "temp_C": 25,
-      "p5_s": 74.2,
-      "median_s": 178.5,
-      "p95_s": 509.2,
+      "p5_s": 78.5,
+      "median_s": 188.3,
+      "p95_s": 536.3,
       "never_gathers_cycle_pct": 0.0,
+      "never_max_area_cm2": null,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.68,
-          "p5_s": 109.5,
-          "median_s": 265.0,
-          "p95_s": 768.4
+          "p5_s": 115.9,
+          "median_s": 279.3,
+          "p95_s": 807.5,
+          "never_gathers_cycle_pct": 0.0,
+          "never_max_area_cm2": null
         },
         "rec": {
           "ratio": 0.577,
-          "p5_s": 129.3,
-          "median_s": 313.6,
-          "p95_s": 918.1
+          "p5_s": 136.8,
+          "median_s": 330.5,
+          "p95_s": 963.6,
+          "never_gathers_cycle_pct": 0.0,
+          "never_max_area_cm2": null
         }
       },
-      "ph55_median_low_s": 265.0,
-      "ph55_median_high_s": 313.6,
+      "ph55_median_low_s": 279.3,
+      "ph55_median_high_s": 330.5,
       "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Active growth",
       "glucose_mM": 20,
       "temp_C": 30,
-      "p5_s": 38.8,
-      "median_s": 84.8,
-      "p95_s": 231.8,
+      "p5_s": 41.1,
+      "median_s": 89.2,
+      "p95_s": 244.1,
       "never_gathers_cycle_pct": 0.0,
+      "never_max_area_cm2": null,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.612,
-          "p5_s": 63.7,
-          "median_s": 139.5,
-          "p95_s": 385.2
+          "p5_s": 67.4,
+          "median_s": 146.7,
+          "p95_s": 405.6,
+          "never_gathers_cycle_pct": 0.0,
+          "never_max_area_cm2": null
         },
         "rec": {
           "ratio": 0.528,
-          "p5_s": 73.9,
-          "median_s": 162.0,
-          "p95_s": 448.9
+          "p5_s": 78.2,
+          "median_s": 170.4,
+          "p95_s": 473.3,
+          "never_gathers_cycle_pct": 0.0,
+          "never_max_area_cm2": null
         }
       },
-      "ph55_median_low_s": 139.5,
-      "ph55_median_high_s": 162.0,
+      "ph55_median_low_s": 146.7,
+      "ph55_median_high_s": 170.4,
       "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Cold winter",
       "glucose_mM": 5,
       "temp_C": 5,
-      "p5_s": 377.7,
-      "median_s": 1089.6,
-      "p95_s": 3982.6,
+      "p5_s": 399.1,
+      "median_s": 1147.9,
+      "p95_s": 4197.4,
       "never_gathers_cycle_pct": 0.0,
+      "never_max_area_cm2": null,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.748,
-          "p5_s": 512.0,
-          "median_s": 1516.3,
-          "p95_s": 6231.9
+          "p5_s": 542.2,
+          "median_s": 1601.1,
+          "p95_s": 6572.8,
+          "never_gathers_cycle_pct": 0.0,
+          "never_max_area_cm2": null
         },
         "rec": {
           "ratio": 0.627,
-          "p5_s": 618.3,
-          "median_s": 1870.7,
-          "p95_s": 8569.7
+          "p5_s": 654.5,
+          "median_s": 1971.2,
+          "p95_s": 8991.7,
+          "never_gathers_cycle_pct": 0.01,
+          "never_max_area_cm2": 1.16
         }
       },
-      "ph55_median_low_s": 1516.3,
-      "ph55_median_high_s": 1870.7,
+      "ph55_median_low_s": 1601.1,
+      "ph55_median_high_s": 1971.2,
       "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Severe stress",
       "glucose_mM": 3,
       "temp_C": 0,
-      "p5_s": 798.2,
-      "median_s": 2709.3,
-      "p95_s": 18333.2,
+      "p5_s": 843.2,
+      "median_s": 2854.7,
+      "p95_s": 19301.0,
       "never_gathers_cycle_pct": 0.8,
+      "never_max_area_cm2": 1.49,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.789,
-          "p5_s": 1037.7,
-          "median_s": 3718.6,
-          "p95_s": 49001.5
+          "p5_s": 1097.0,
+          "median_s": 3923.1,
+          "p95_s": 51398.1,
+          "never_gathers_cycle_pct": 2.48,
+          "never_max_area_cm2": 2.4
         },
         "rec": {
           "ratio": 0.657,
-          "p5_s": 1275.0,
-          "median_s": 4873.1,
-          "p95_s": null
+          "p5_s": 1350.3,
+          "median_s": 5130.5,
+          "p95_s": null,
+          "never_gathers_cycle_pct": 5.11,
+          "never_max_area_cm2": 2.42
         }
       },
-      "ph55_median_low_s": 3718.6,
-      "ph55_median_high_s": 4873.1,
+      "ph55_median_low_s": 3923.1,
+      "ph55_median_high_s": 5130.5,
       "ph55_vs_baseline": "> baseline"
     }
   ]

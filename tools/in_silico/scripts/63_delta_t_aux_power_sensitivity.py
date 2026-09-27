@@ -203,8 +203,9 @@ def main() -> int:
     print("  spend). This codebase already carries several non-interchangeable delta_t definitions")
     print("  (script 30's chemistry model: 172-931 s; 06_08 notes an 8-41x spread among them) —")
     print("  but ALL THREE pct_shift models below are algebraically INDEPENDENT of E_window's size")
-    print("  (it cancels in every ratio), so which delta_t definition you pick does not change the")
-    print("  contamination percentage — only the seconds/hours column would differ.")
+    print("  (it cancels in every ratio), so any delta_t definition of the form E / (P·eta) gives the")
+    print("  same contamination percentage. A definition WITH a sleep term (script 30's, E.63) gives a")
+    print("  HIGHER one — sleep only raises the contamination, so the verdict below is conservative.")
 
     banner("1. Summer baseline (P_gen=15 uW)")
     summer = sweep_season("summer", P_GEN_SUMMER_UW, ETA_BQ)

@@ -160,9 +160,9 @@
     ],
     "E_cycle": [
       {
-        "value": 28.83,
+        "value": 30.81,
         "unit": "mJ",
-        "delta_t_s": 117.0
+        "delta_t_s": 125.0
       },
       {
         "value": 42.33,
@@ -170,9 +170,9 @@
         "delta_t_s": 171.7
       },
       {
-        "value": 49.94,
+        "value": 52.16,
         "unit": "mJ",
-        "delta_t_s": 202.6
+        "delta_t_s": 211.6
       }
     ],
     "j_max": [

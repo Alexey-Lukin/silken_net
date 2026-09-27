@@ -1574,9 +1574,26 @@ CHECKS += [
 ] + [
     (
         "L4b MC · the upper-decile claim in prose → monte_carlo (the sentence that names the cost)",
-        SUMMARY, rf"moves from 509 s to about {N} s",
+        SUMMARY, rf"moves from 536 s to about {N} s",
         MC, lambda d: _mc_ph(d, "Healthy summer", "p95_s", max), 0.6,
     ),
+    # [E.63] The «never» paragraph: every share and area it quotes, so the ∞ cell cannot keep its
+    # explanation while the tail underneath it moves.
+    ("L4b MC · never-share, severe stress, pH 5.5 recombinant → monte_carlo",
+     SUMMARY, rf"recombinant form leaves {N} % of severe-stress", MC,
+     lambda d: _mc(d, "Severe stress")["ph55_bracket"]["rec"]["never_gathers_cycle_pct"], 0.005),
+    ("L4b MC · never-share, severe stress, pH 5.5 wild type → monte_carlo",
+     SUMMARY, rf"and the wild type {N} %; at the ceiling", MC,
+     lambda d: _mc(d, "Severe stress")["ph55_bracket"]["wt"]["never_gathers_cycle_pct"], 0.005),
+    ("L4b MC · never-share, severe stress, ceiling → monte_carlo",
+     SUMMARY, rf"at the ceiling it is\n{N} % \(`never_gathers_cycle_pct`\)", MC,
+     lambda d: _mc(d, "Severe stress")["never_gathers_cycle_pct"], 0.005),
+    ("L4b MC · largest «never» area at the ceiling → monte_carlo",
+     SUMMARY, rf"every «never» sample has A ≤ {N} cm²", MC,
+     lambda d: _mc(d, "Severe stress")["never_max_area_cm2"], 0.005),
+    ("L4b MC · largest «never» area at pH 5.5 → monte_carlo",
+     SUMMARY, rf"at pH 5\.5 up to {N} cm²", MC,
+     lambda d: _mc(d, "Severe stress")["ph55_bracket"]["rec"]["never_max_area_cm2"], 0.005),
 ]
 
 

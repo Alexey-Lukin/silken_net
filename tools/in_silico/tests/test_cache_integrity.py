@@ -1354,6 +1354,13 @@ def test_constants_match_kinetics_output():
     # E_cycle_mJ sat in that same block unpinned after DOC-T.117 (00_07 E.63, found 2026-09-27).
     assert data["parameters"]["E_cycle_mJ"] == E_CYCLE * 1e3
     assert data["parameters"]["P_sleep_VSTOR_uW"] == P_SLEEP_VSTOR * 1e6
+    # 30b samples its own band from the SAME constants; until its cache carried them, a re-run of 30
+    # without 30b — or an edit of the bracket — stayed green (adversarial review, 2026-09-27).
+    from lib.constants import E_CYCLE_HIGH, E_CYCLE_LOW
+    mc = json.loads((KINETICS / "monte_carlo.json").read_text())["parameters"]
+    assert mc["E_cycle_low_mJ"] == E_CYCLE_LOW * 1e3
+    assert mc["E_cycle_high_mJ"] == E_CYCLE_HIGH * 1e3
+    assert mc["P_sleep_VSTOR_uW"] == P_SLEEP_VSTOR * 1e6
 
 
 def test_constants_match_mechanical_output():

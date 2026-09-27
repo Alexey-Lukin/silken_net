@@ -158,17 +158,13 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # [E.63, 2026-09-27] E_CYCLE was a 5 mJ «legacy placeholder» and delta_t() had no sleep
 # term: 8.5× below the chain, and every L4 delta_t — the old «60 s baseline makes physical
 # sense» verdict included — inherited that factor. Now L4 uses the SAME cycle cost and
-# the SAME sleep drain as the canon's H = E_active / (E_gen − E_sleep), so what is left of
-# the L4 ⊥ §9.6 gap is the input power alone (P_ebfc, V_OP, electrode area).
+# the SAME sleep drain as the canon's H = E_active / (E_gen − E_sleep). ⚠️ The gap to §9.6
+# is NOT the input power alone: L4 applies ETA_BQ (the 15 µW point) at ≈369 µW, while
+# ETA_BOOST_TABLE_UW below says η rises with P_IN — a named model axis (02_03 §9.1).
+# And EDLC self-discharge is absent from BOTH (no number yet, §9.3), though +1 µA would
+# outweigh the whole sleep drain.
 E_CYCLE = 42.33e-3           # J — E_active_from_VSTOR per wake cycle
 P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
-# The chain's OWN bracket on E_active (§9.4), mapped to VSTOR through η_buck 0.88: the
-# duration ceilings overstate compute by at most its full cost (7.92 + 3.96 mJ at VOUT),
-# the missing core-idle term understates it by ≈6.7 mJ at VOUT, and «the sign of the sum
-# is not determined without a bench». EDLC self-discharge has no number (§9.3) and is NOT
-# in the bracket.
-E_CYCLE_LOW = E_CYCLE - (7.92e-3 + 3.96e-3) / 0.88   # J — compute terms free
-E_CYCLE_HIGH = E_CYCLE + 6.7e-3 / 0.88               # J — plus core idle at 48 MHz
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
 # ── Glucose diffusion ──
@@ -351,6 +347,18 @@ ETA_BOOST_WINTER = 0.65          # — boost eta at P_gen≈5µW winter (02_03 �
 # 3-point MEASURED eta_boost(P_IN) curve (02_03 §9.1 table, TI SLUSBH2G Fig.4-7 read).
 # First pair mirrors ETA_BQ (HW.47 One-Home) — do not re-hardcode 0.68.
 ETA_BOOST_TABLE_UW = ((15.0, ETA_BQ), (30.0, 0.75), (100.0, 0.82))
+
+# ── E.63: the node chain's OWN bracket on E_active (02_03 §9.4), mapped to VSTOR through
+# ETA_BUCK_ACTIVE — the MC in 30b samples E_cycle over it. Every input is a §9.4 number:
+# low end — the duration CEILINGS overstate compute: TinyML by at most its 0.2 s ceiling
+# minus the MEASURED 44 ms inference window (12 mA · 3.3 V), mruby by at most its full
+# 3.96 mJ (never measured); high end — the two core-idle terms §9.4 names but does not
+# add: 600 ms of RX cycle at 48 MHz (≈ 6.7 mJ at VOUT) and ≈ 175 ms waiting for the own
+# frame (FW.61, same core current). «The sign of the sum is not determined without a
+# bench.» EDLC self-discharge is a CONTINUOUS drain, not a cycle cost — not in here. ──
+_CORE_IDLE_J_PER_S = 6.7e-3 / 0.6
+E_CYCLE_LOW = E_CYCLE - (12e-3 * 3.3 * (0.2 - 0.044) + 3.96e-3) / ETA_BUCK_ACTIVE   # J ≈ 30.8 mJ
+E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE     # J ≈ 52.2 mJ
 
 # ── EDLC endurance-hours (HW.37, script 51; 02_03 §12.1/§6) — vendor SKUs
 # (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model
