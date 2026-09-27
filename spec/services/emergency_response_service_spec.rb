@@ -10,8 +10,8 @@ RSpec.describe EmergencyResponseService do
 
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
-  let(:tree) { create(:tree, cluster: cluster, latitude: 49.4285, longitude: 32.0620) }
-  let(:gateway) { create(:gateway, :online, :geolocated, cluster: cluster) }
+  let(:tree) { create(:tree, cluster: cluster) }
+  let(:gateway) { create(:gateway, :online, cluster: cluster) }
 
   describe ".call" do
     context "with severe_drought alert" do
@@ -463,6 +463,19 @@ RSpec.describe EmergencyResponseService do
       first = ActuatorCommand.where(ews_alert: fire).by_priority.first
       expect(first.command_payload).to eq("ACTIVATE_SIREN")
     end
+
+    # Усередині кроку рядки ділять `created_at`, а Королева бере ≤ 3 накази за флаш:
+    # actuator-major вставка віддавала перший флаш чанкам ОДНОГО клапана, і сусід на
+    # тому ж шлюзі чекав наступного флашу. Порядок черги = round-robin по актуаторах.
+    it "queues the first chunk of every actuator before anyone's second" do
+      drought = create(:ews_alert, :drought, cluster: cluster, tree: tree)
+      valves = create_list(:actuator, 2, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(drought)
+
+      head = ActuatorCommand.where(ews_alert: drought).by_priority.first(2).map(&:actuator_id)
+      expect(head).to match_array(valves.map(&:id))
+    end
   end
 
   # =========================================================================
@@ -509,6 +522,19 @@ RSpec.describe EmergencyResponseService do
       actuator_ids = ActuatorCommand.where(ews_alert: alert).pluck(:actuator_id).uniq
       expect(actuator_ids).to include(online_actuator.id)
       expect(actuator_ids).not_to include(_offline_actuator.id)
+    end
+
+    # Черга в кожної Королеви своя, тож накази мусять піти за ОБИДВА живі шлюзи —
+    # «обслужити один шлюз кластера» інакше лишався б зеленим.
+    it "serves actuators behind every live gateway of the cluster" do
+      second_gateway = create(:gateway, :online, cluster: cluster)
+      first_valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      second_valve = create(:actuator, :water_valve, gateway: second_gateway, state: :idle)
+
+      described_class.call(alert)
+
+      served = ActuatorCommand.where(ews_alert: alert).distinct.pluck(:actuator_id)
+      expect(served).to contain_exactly(first_valve.id, second_valve.id)
     end
   end
 end

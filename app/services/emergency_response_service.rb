@@ -15,7 +15,7 @@ class EmergencyResponseService
   # відповідь гинула протермінованою, не виконавшись жодного разу.
   #
   # 🚨 ПОРЯДОК КРОКІВ = ПОРЯДОК ВИДАЧІ. Обидві пожежні команди `high`, тож
-  # `ActuatorCommand.by_priority` (`priority DESC, created_at ASC`) розводить їх за
+  # `ActuatorCommand.by_priority` (`priority DESC, created_at ASC, id ASC`) розводить їх за
   # `created_at`, а кожен крок робить власний `insert_all` зі своїм `Time.current`.
   # Королева ж дренажує лише `QUEEN_POLL_MAX_PER_FLUSH` = 3 накази за флаш. Доти
   # клапан диспетчеризувався першим, і сирена ставала п'ятою — за чотирма чанками
@@ -130,8 +130,13 @@ class EmergencyResponseService
     now = Time.current
     # 📈 Денормалізація: organization_id для broadcast без N+1
     org_id = alert.cluster.organization_id
-    attrs = deliverable.flat_map do |actuator|
-      chunks.map do |chunk_duration|
+    # 🔁 Round-robin: спершу перший чанк КОЖНОГО актуатора, потім другий. Рядки кроку
+    # ділять один `created_at`, тож черга шлюзу розводить їх за `id` (tie-break
+    # `ActuatorCommand.by_priority`), тобто за порядком вставки. Actuator-major вставка
+    # віддавала перший флаш (≤ 3 накази) чанкам одного клапана, що накладаються, а сусід
+    # на тому ж шлюзі чекав наступного флашу — до години.
+    attrs = chunks.flat_map do |chunk_duration|
+      deliverable.map do |actuator|
         {
           actuator_id: actuator.id,
           ews_alert_id: alert.id,

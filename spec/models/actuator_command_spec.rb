@@ -406,6 +406,16 @@ RSpec.describe ActuatorCommand, type: :model do
         expect(ordered.first).to eq(high_cmd)
         expect(ordered.last).to eq(low_cmd)
       end
+
+      # Рядки одного кроку ERS ділять `created_at`. Id задано НАВСПАК порядку вставки,
+      # тож фізичний порядок ≠ порядку id — і пін червоніє, якщо tie-break зняти.
+      it "breaks a created_at tie by id" do
+        now = Time.current
+        create(:actuator_command, actuator: actuator, priority: :high, created_at: now, id: 900_002)
+        create(:actuator_command, actuator: actuator, priority: :high, created_at: now, id: 900_001)
+
+        expect(described_class.by_priority.pluck(:id) & [ 900_001, 900_002 ]).to eq([ 900_001, 900_002 ])
+      end
     end
   end
 

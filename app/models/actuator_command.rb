@@ -154,7 +154,9 @@ class ActuatorCommand < ApplicationRecord
   # ніколи), тож «живий» там суворіший — і це свідомо, не дрейф.
   scope :live_pending, -> { pending.where("expires_at IS NULL OR expires_at > ?", Time.current) }
   scope :expired, -> { pending.where("expires_at IS NOT NULL AND expires_at < ?", Time.current) }
-  scope :by_priority, -> { order(priority: :desc, created_at: :asc) }
+  # `id` — tie-break, а не оздоба: рядки одного кроку ERS ділять `created_at`, і без
+  # нього порядок видачі в межах кроку вирішувала б БД, а не round-robin вставки.
+  scope :by_priority, -> { order(priority: :desc, created_at: :asc, id: :asc) }
 
   def estimated_completion_at
     return nil unless sent_at
