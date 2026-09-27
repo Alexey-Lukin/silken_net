@@ -113,12 +113,15 @@ class EmergencyResponseService
                          relevance_min: ((command.expires_at - command.created_at) / 60.0).round)
   end
 
-  # Придатність = робочий стан пристрою І живий шлюз. Дві НЕЗАЛЕЖНІ причини
-  # недоступності, і саме тому звіт нижче рахує їх окремо.
+  # Придатність = робочий стан пристрою І живий шлюз І шлюз не на обслуговуванні. Три
+  # НЕЗАЛЕЖНІ причини недоступності, і саме тому звіт нижче рахує їх окремо.
   # ⚠️ `Actuator#offline?` (стан самого пристрою) ⊥ `Gateway#online?` (тиша шлюза) —
   # одне слово, два доми; плутати їх тут коштувало б мовчазного пропуску.
   private_class_method def self.fit?(actuator) = actuator.idle? || actuator.active?
-  private_class_method def self.available?(actuator) = fit?(actuator) && actuator.gateway.online?
+  private_class_method def self.available?(actuator) = fit?(actuator) && serving_gateway?(actuator.gateway)
+  # ⚖️ founder 2026-09-27 (ARCH.75): шлюз на обслуговуванні непридатний — свіп тиші його свідомо
+  # не судить, тож наказ за ним, якщо шлюз змовкне ПІСЛЯ запису, помер би без жодного сліду.
+  private_class_method def self.serving_gateway?(gateway) = gateway.online? && !gateway.maintenance?
 
   private_class_method def self.dispatch_commands(actuators, command_code, duration:, relevance:, alert:)
     return if actuators.empty?
@@ -268,6 +271,7 @@ class EmergencyResponseService
       dedup_field: :device_type, dedup_value: device_type,
       params: { installed: installed.size,
                 silent_gateway: installed.count { !_1.gateway.online? },
+                gateway_maintenance: installed.count { _1.gateway.maintenance? },
                 out_of_service: installed.count { !fit?(_1) } }
     )
   end

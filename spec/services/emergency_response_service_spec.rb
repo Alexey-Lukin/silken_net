@@ -193,6 +193,19 @@ RSpec.describe EmergencyResponseService do
       )
     end
 
+    # ⚖️ founder 2026-09-27 (ARCH.75): шлюз на обслуговуванні непридатний — свіп тиші його
+    # свідомо не судить, тож наказ за ним, якщо шлюз змовкне після запису, помер би без сліду.
+    it "does not route an emergency command through a gateway under maintenance" do
+      serviced = create(:gateway, :online, cluster: cluster, state: :maintenance)
+      create(:actuator, :water_valve, gateway: serviced, state: :idle)
+
+      expect { described_class.call(alert) }.not_to change(ActuatorCommand, :count)
+
+      raised = EwsAlert.alert_type_emergency_response_undeliverable
+                       .find_by(message_key: "emergency_response_all_unavailable")
+      expect(raised.message_params).to include("installed" => 1, "gateway_maintenance" => 1)
+    end
+
     # 🔴 GREEN-половина (§Guard-craft #52), і без неї клас закритий лише наполовину:
     # усі піни вище стверджують, що алерт Є, тобто over-broad писач — той, що кричить і
     # на ОБСЛУЖЕНОМУ кроці, — лишався б непоміченим. Виміряно мутацією: безумовний
