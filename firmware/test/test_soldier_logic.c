@@ -5122,11 +5122,11 @@ TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
  * ════════════════════════════════════════════════════════════════════
  * Source SSOT: docs/03_03 §10.3 + docs/00_07 FW.42.
  *
- * Pure-logic mirror of `Fauna_Should_Sample` from firmware/soldier/main.c.
- * Decoupled from FW.4 (Run_Inference still commented) — when the fauna
- * sampling pathway lights up, the guard is already validated.
+ * One-Home: той самий предикат і поріг, що прошивка (firmware/common/fauna_guard.h) —
+ * тест б'є по справжньому коду, не по копії з власною константою (firmware-гоча #19).
+ * Лічильник живе тут, як у main.c, і передається покажчиком.
  */
-#define TEST_FAUNA_VCAP_MIN_MV 4500u
+#include "../common/fauna_guard.h"
 
 static uint8_t test_fauna_skipped_low_vcap = 0;
 
@@ -5135,20 +5135,18 @@ static void Reset_Fauna_Skip_Counter(void) {
 }
 
 static uint8_t Test_Fauna_Should_Sample(uint16_t vcap_mv) {
-    if (vcap_mv >= TEST_FAUNA_VCAP_MIN_MV) return 1;
-    if (test_fauna_skipped_low_vcap < 255) test_fauna_skipped_low_vcap++;
-    return 0;
+    return Fauna_Should_Sample(vcap_mv, &test_fauna_skipped_low_vcap);
 }
 
 TEST(test_fw42_fauna_threshold_constant_matches_doc) {
     /* docs/03_03 §10.3 audit-fix: ΔV @ V_cap=4.5V ≈ -29 мВ — comfortable
      * margin above VBAT_OK ON (3.4V). Constant must be 4500 mV. */
-    ASSERT_EQ((unsigned)TEST_FAUNA_VCAP_MIN_MV, 4500u);
+    ASSERT_EQ((unsigned)FAUNA_VCAP_MIN_MV, 4500u);
 }
 
 TEST(test_fw42_fauna_sample_allowed_at_exact_threshold) {
     Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(TEST_FAUNA_VCAP_MIN_MV), 1);
+    ASSERT_EQ(Test_Fauna_Should_Sample(FAUNA_VCAP_MIN_MV), 1);
     ASSERT_EQ(test_fauna_skipped_low_vcap, 0);
 }
 

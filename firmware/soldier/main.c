@@ -46,6 +46,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/lora_phy.h"      // [FW.61] базлайн модуляції raw-LoRa P2P (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
+#include "../common/fauna_guard.h"   // [FW.42] Vcap-гейт fauna-сесії: Fauna_Should_Sample (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
 #include "../common/audio_dma.h"     // [ARCH.102] гейт периферій аудіо-вікна + дедлайн (One-Home)
 
@@ -381,22 +382,12 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
 // `fauna_skipped_low_vcap_total` у Prometheus → Grafana панель
 // "Fauna skip rate per cluster" → дерева з skip rate > 50% мають
 // деградований EBFC або зимовий період.
-#define FAUNA_VCAP_MIN_MV  4500u   // мВ — мін. V_cap для безпечного сеансу
-
+//
+// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (adc_convert.h), зараз VDDA-проксі ⇒
+// guard fail-CLOSED до живого Vcap-каналу (FW.50). Предикат і поріг — One-Home
+// `common/fauna_guard.h`: `Fauna_Should_Sample(vcap_mv, &fauna_skipped_low_vcap)`;
+// тест б'є по ньому самому (tripwire test_fw42_raw_adc_range_always_skips_fail_closed).
 uint8_t fauna_skipped_low_vcap = 0; // saturating uint8 counter (SRAM)
-
-// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (adc_convert.h). Зараз це
-// VDDA-проксі (≈3300, стеля VREFINT-тракту < 4500) ⇒ guard fail-CLOSED:
-// brownout неможливий, fauna свідомо спить до живого Vcap-каналу з
-// дільником (FW.50 hardware; повний EDLC 5500 > поріг) — розгейт залізом,
-// не зниженням порогу. Tripwire-тест:
-// test_fw42_raw_adc_range_always_skips_fail_closed.
-static uint8_t Fauna_Should_Sample(uint16_t vcap_mv)
-{
-    if (vcap_mv >= FAUNA_VCAP_MIN_MV) return 1;
-    if (fauna_skipped_low_vcap < 255) fauna_skipped_low_vcap++;
-    return 0;
-}
 
 // === 1.8. ПАМ'ЯТЬ ЕСТАФЕТИ (Directed Mesh) ТА OTA ===
 uint8_t mesh_relay_payload[16] = {0}; // Буфер для чужого 16-байтного пакета
