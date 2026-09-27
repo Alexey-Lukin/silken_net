@@ -168,6 +168,19 @@ RSpec.describe Downlink::PendingQueueService do
       expect(actuator.reload.state).to eq("active")
     end
 
+    # Обидва записи echo-кроку — одна транзакція: RecordInvalid на acknowledge! не сміє
+    # лишити актуатор `active` без підтвердженого наказу — у свіпа безпеки для такого
+    # немає вікна. Тривалість понад протокольну стелю робить перехід невалідним чесно.
+    it "RecordInvalid на acknowledge! відкочує й активацію актуатора" do
+      decrypt_inner(poll)
+      command.update_columns(duration_seconds: ActuatorCommand::MAX_DURATION_S + 1)
+
+      decrypt_inner(echo(command.idempotency_token))
+
+      expect(actuator.reload.state).to eq("idle")
+      expect(command.reload.status).not_to eq("acknowledged")
+    end
+
     # [FW.63] Стара версія цього тесту доводила регрес acknowledged→sent, бо
     # dispatch!+mark_active!+acknowledge! колись писались ТРЬОМА викликами в
     # одній транзакції build-часу. dispatch! тепер єдиний одиночний запис —

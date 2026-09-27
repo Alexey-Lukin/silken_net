@@ -65,7 +65,8 @@ class ActuatorSafetySweepWorker
       newest = newest_acknowledged(actuator)
       # Активний актуатор БЕЗ жодного підтвердженого наказу — вікна для присуду
       # не існує, тож мовчимо. Продовим шляхом це недосяжно (`mark_active!`
-      # живе рівно в одній транзакції з `acknowledge!`); стеля названа свідомо.
+      # живе рівно в одній транзакції з `acknowledge!` — `observe_delivered_command!`,
+      # до 2026-09-27 цей коментар стверджував це без транзакції); стеля названа свідомо.
       next if newest.nil?
       next if Time.current < deadline_for(newest)
 

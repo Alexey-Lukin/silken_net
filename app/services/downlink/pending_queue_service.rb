@@ -280,8 +280,13 @@ module Downlink
       # may_activate?-guard: друга команда на ВЖЕ активний актуатор
       # (подовження/override) — легальний потік; голий mark_active! тут
       # кидав би AASM::InvalidTransition (латентна бомба ще push-воркера).
-      command.actuator.mark_active! if command.actuator.may_activate?
-      command.acknowledge! if command.may_acknowledge?
+      # Обидва записи — ОДНА транзакція: RecordInvalid на `acknowledge!` інакше лишав би
+      # актуатор `active` без жодного підтвердженого наказу, а свіп безпеки такого не
+      # бачить за побудовою — у нього немає вікна (адверсарне рев'ю 2026-09-27).
+      ActiveRecord::Base.transaction do
+        command.actuator.mark_active! if command.actuator.may_activate?
+        command.acknowledge! if command.may_acknowledge?
+      end
       return unless command.status_acknowledged?
 
       ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
