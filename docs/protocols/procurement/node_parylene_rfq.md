@@ -33,7 +33,7 @@
 | **Маскування: мезонін** | [`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) п. 1 («селективне маскування коннекторів/пінів») · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 12 | вимогою | — |
 | **Маскування: пʼєзо** | [`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) п. 2 (власне акустичне вікно — без покриття або тонка PDMS ≤ 10 µm) · [`02_01 §3.1`](../../02_01_Hardware_Architecture_and_BOM.md) поз. 5 (SMD, ≈ 4 кГц; Power Deck) · смуга 2–8 кГц ([`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md), дім присуду — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.30) | вимогою: звуковий порт і мембрана без Parylene | ⛔ будь-яке число демпфування · гілка PDMS-плівки (інший матеріал, не послуга коатера; маскування потрібне за будь-якої з двох гілок) · P/N кандидатів · Sil-Pad |
 | **Маскування: BME280** | [`02_01 §3.4`](../../02_01_Hardware_Architecture_and_BOM.md) (LGA 2.5 × 2.5 мм; «на платі рівно напроти» PTFE-вента; ADR 🟡) | вимогою, «if fitted» | статус ADR · VPD і навіщо він |
-| **Маскування: програмувальні пади** | [`03_06`](../../03_06_Factory_Flashing_and_Key_Provisioning.md) (SWD, потім блокування) — порядку щодо покриття канон не несе | **опцією** | RDP, ключі, заводський тракт |
+| **Маскування: програмувальні пади** | [`03_05 §3.3`](../../03_05_Hardware_Symmetric_Crypto_and_Security.md) (⚖️ делеговано 2026-09-27: прошивка й RDP — ДО покриття; SWD-пади маскує лише пілотна L1-партія, серія — ні) · [`03_06`](../../03_06_Factory_Flashing_and_Key_Provisioning.md) (SWD, потім блокування) | **лише для пілотних плат**, з питанням про найменший маскований елемент — це й найслабша ланка присуду | RDP, ключі, заводський тракт |
 | **Середовище** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (−40…+85 °C) · [`02_02 §3.4`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) п. 3 (усередині повітря, опційно осушувач) · [`02_02 §3.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (ціль IP) | фактом; «багаторічна служба» — без числа | «20 років» (дім має анкер, не капсула) |
 | **1 замовник з України** | нога 👤 [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.11 («чи беруть одиничне замовлення з України: мито, експорт, мінімальна сума») | **першим питанням** | наш експорт-контроль (§0 п. 5) — наша справа, не вендора |
 | **2 маскування** | рядки вище | питанням: спосіб, мінімальний елемент, формат креслення | ⛔ масочне креслення до листа не додається (розкладки немає) |
@@ -86,7 +86,7 @@ This is a request for information and an indicative quotation, not yet an order.
 - **b. The mezzanine connector** — the mating contacts of both halves.
 - **c. A piezoelectric acoustic transducer** (SMD, resonance about 4 kHz) on the power board. It works as a sound sensor in the 2–8 kHz band, so we keep its sound port and diaphragm uncoated.
 - **d. An environmental sensor** (temperature, humidity and pressure; LGA package, 2.5 × 2.5 mm), if fitted in the final design. It measures the surrounding air through its vent hole, which must stay open.
-- **e. Optionally, a small group of programming pads**, if we decide to program the boards after coating rather than before. We have not fixed that order yet.
+- **e. On pilot boards only, a small group of programming pads.** Every board is programmed before coating. On the pilot run these pads must stay uncoated so that a board can still be recovered after coating; production boards do not need this. The pads are small, so please tell us whether you can mask them and what the smallest masked feature is.
 
 **Please tell us**
 
