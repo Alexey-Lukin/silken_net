@@ -201,7 +201,7 @@ def main() -> int:
     print(f"  NOTE — this script's delta_t_baseline (below) is a FULL-WINDOW-FILL time ({EDLC_WINDOW_VSTOR_J:.2f} J),")
     print("  a different quantity from §9.6 Scenario C's ~1.95 h (time to replenish ONE TX cycle's")
     print("  spend). This codebase already carries several non-interchangeable delta_t definitions")
-    print("  (script 30's chemistry model: 20-101 s; 06_08 notes a 63-320x spread among them) —")
+    print("  (script 30's chemistry model: 172-931 s; 06_08 notes an 8-41x spread among them) —")
     print("  but ALL THREE pct_shift models below are algebraically INDEPENDENT of E_window's size")
     print("  (it cancels in every ratio), so which delta_t definition you pick does not change the")
     print("  contamination percentage — only the seconds/hours column would differ.")

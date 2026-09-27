@@ -11,7 +11,12 @@ Samples from parameter distributions instead of fixed values:
   j_max ~ Normal(J_MAX_25C, J_MAX_25C_SD) µA/cm² — the asymptote and its 1σ are IMPORTED, never
            typed here: both are derived in lib/constants.py from Zafar 2012's own error bars
   A_electrode ~ Uniform(1, 5) cm²
-  E_cycle ~ Uniform(3, 10) mJ
+  E_cycle ~ Uniform(E_CYCLE_LOW, E_CYCLE_HIGH) ≈ U(28.8, 49.9) mJ — the node chain's OWN bracket
+           (02_03 §9.4 via lib/constants.py): the compute ceilings pull the cycle cost down by at
+           most their full cost, the missing core-idle term pulls it up; the canon leaves the sign
+           of the sum open, so the central 42.33 mJ is not the midpoint. EDLC self-discharge has no
+           number and is not in it. Until 2026-09-27 this was U(3, 10) around a 5 mJ placeholder (E.63)
+  P_sleep = P_SLEEP_VSTOR (fixed) — the chain's sleep drain, subtracted from the boosted power
 
 Produces confidence intervals for delta_t at reference conditions.
 
@@ -35,10 +40,13 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
     BASELINE_DELTA_T_S,
+    E_CYCLE_HIGH,
+    E_CYCLE_LOW,
     ETA_BQ,
     J_MAX_25C,
     J_MAX_25C_SD,
     KINETICS_DIR,
+    P_SLEEP_VSTOR,
     R_GAS,
     REPO_ROOT,
     TEMPERATURE_K,
@@ -59,8 +67,21 @@ def delta_t(glucose_mm, temp_c, km, ea, jmax, a_el, e_cyc):
     temp_k = temp_c + 273.15
     j = jmax * np.exp(-ea / R_GAS * (1.0 / temp_k - 1.0 / T_REF))
     j *= glucose_mm / (km + glucose_mm)
-    p = V_OP * j * a_el * ETA_BQ
+    p = V_OP * j * a_el * ETA_BQ - P_SLEEP_VSTOR   # [E.63] same form as 30 and the canon's H
     return np.where(p > 0, e_cyc / p, np.inf)
+
+
+def _finite(x: float) -> float | None:
+    """A percentile as the cache writes it: rounded, or None where it is «never» (inf)."""
+    return round(float(x), 1) if np.isfinite(x) else None
+
+
+def _fmt(x: float | None) -> str:
+    return "never" if x is None else f"{x:.1f}"
+
+
+def _order(x: float | None) -> float:
+    return float("inf") if x is None else x
 
 
 def main() -> int:
@@ -73,7 +94,7 @@ def main() -> int:
     jmax = rng.normal(J_MAX_25C, J_MAX_25C_SD, N_SAMPLES)   # A/cm², lib.constants (00_07 HW.5.IS)
     jmax = np.clip(jmax, max(100e-6, J_MAX_25C - 4 * J_MAX_25C_SD), J_MAX_25C + 4 * J_MAX_25C_SD)
     a_el = rng.uniform(1, 5, N_SAMPLES)            # cm²
-    e_cyc = rng.uniform(3e-3, 10e-3, N_SAMPLES)    # J
+    e_cyc = rng.uniform(E_CYCLE_LOW, E_CYCLE_HIGH, N_SAMPLES)    # J — the chain's bracket
 
     scenarios = [
         ("Healthy summer", 10, 25),
@@ -100,14 +121,21 @@ def main() -> int:
             "bracket_source": "Sygmund 2011 Table 3 via lib.kinetics.ph_current_ratio — FREE enzyme, "
                               "ferrocenium acceptor, 30 °C; both enzyme forms are kept because they "
                               "disagree, and the disagreement IS the bracket",
-            "bracket_is_a_transport_not_an_added_variance": "each percentile is divided by the "
-                                                            "[S]-dependent current ratio, i.e. the "
-                                                            "whole distribution is moved to pH 5.5; "
+            "bracket_is_a_transport_not_an_added_variance": "every sample's current is scaled by "
+                                                            "the [S]-dependent ratio and the "
+                                                            "percentiles are recomputed, i.e. the "
+                                                            "whole distribution is moved to pH 5.5 "
+                                                            "(dividing the percentiles stopped being "
+                                                            "exact once the sleep drain entered, E.63); "
                                                             "the ratio carries the SOURCE's K_M "
                                                             "shift while the sampled `km` spread is "
                                                             "about OUR apparent constant — related "
                                                             "axes, deliberately not summed",
         },
+        "never_gathers_cycle": "a sample whose boosted power does not exceed P_SLEEP_VSTOR never "
+                               "gathers a cycle (delta_t = inf, the canon's H = inf); its share is "
+                               "never_gathers_cycle_pct, and a percentile that lands on it is null — "
+                               "never a capped number",
         "scenarios": [],
     }
 
@@ -117,28 +145,34 @@ def main() -> int:
 
     for label, glu, tc in scenarios:
         dt = delta_t(glu, tc, km, ea, jmax, a_el, e_cyc)
-        dt = np.clip(dt, 0, 3600)
-
-        p5, p50, p95 = np.percentile(dt, [5, 50, 95])
+        # [E.63] No cap before the percentiles: with the chain's cycle cost the stressed tails pass
+        # any round ceiling, and a sample at or below the sleep drain is «never», not a big number.
+        # `inverted_cdf` returns an actual sample, so a percentile on such a sample stays inf.
+        p5, p50, p95 = np.percentile(dt, [5, 50, 95], method="inverted_cdf")
+        never_pct = round(100.0 * float(np.mean(~np.isfinite(dt))), 2)
         status = "< baseline" if p50 < BASELINE else "> baseline"
 
-        # The pH bracket: transport each percentile by the [S]-dependent current ratio.
-        # delta_t ∝ 1/current, so a ratio < 1 (slower enzyme at pH 5.5) LENGTHENS delta_t.
+        # The pH bracket: scale every sample's current by the [S]-dependent ratio (j ∝ jmax) and
+        # recompute. A ratio < 1 (slower enzyme at pH 5.5) LENGTHENS delta_t — by MORE than 1/r,
+        # because the sleep drain does not shrink with the current.
         ratios = {f: ph_current_ratio(glu, f) for f in ("wt", "rec")}
-        ph_band = {f: {"ratio": round(r, 3),
-                       "p5_s": round(p5 / r, 1), "median_s": round(p50 / r, 1),
-                       "p95_s": round(p95 / r, 1)}
-                   for f, r in ratios.items()}
-        med_lo, med_hi = sorted(ph_band[f]["median_s"] for f in ratios)
-        ph_status = "< baseline" if med_hi < BASELINE else (
-            "> baseline" if med_lo > BASELINE else "straddles baseline")
+        ph_band = {}
+        for f, r in ratios.items():
+            q = np.percentile(delta_t(glu, tc, km, ea, jmax * r, a_el, e_cyc), [5, 50, 95],
+                              method="inverted_cdf")
+            ph_band[f] = {"ratio": round(r, 3), "p5_s": _finite(q[0]), "median_s": _finite(q[1]),
+                          "p95_s": _finite(q[2])}
+        med_lo, med_hi = sorted((ph_band[f]["median_s"] for f in ratios), key=_order)
+        ph_status = "< baseline" if _order(med_hi) < BASELINE else (
+            "> baseline" if _order(med_lo) > BASELINE else "straddles baseline")
 
         print(f"  {label:<20s}  {p50:>7.1f}s  {p5:>7.1f}s  {p95:>7.1f}s  {status:>10s}"
-              f"  {med_lo:>8.1f}–{med_hi:.1f}s")
+              f"  {_fmt(med_lo):>8s}–{_fmt(med_hi)}s")
 
         results["scenarios"].append({
             "label": label, "glucose_mM": glu, "temp_C": tc,
-            "p5_s": round(p5, 1), "median_s": round(p50, 1), "p95_s": round(p95, 1),
+            "p5_s": _finite(p5), "median_s": _finite(p50), "p95_s": _finite(p95),
+            "never_gathers_cycle_pct": never_pct,
             "vs_baseline": status,
             "ph55_bracket": ph_band,
             "ph55_median_low_s": med_lo, "ph55_median_high_s": med_hi,
@@ -164,9 +198,11 @@ def main() -> int:
     ax = axes[0]
     im = ax.contourf(glu_range, temp_range, prob_grid,
                       levels=np.arange(0, 1.05, 0.05), cmap="RdYlGn")
-    cs = ax.contour(glu_range, temp_range, prob_grid,
-                     levels=[0.5], colors="white", linewidths=2)
-    ax.clabel(cs, fmt={0.5: "50%"}, fontsize=9)
+    # [E.63] With the chain's cycle cost the 50 % line may not exist at all — draw it only if it does.
+    if prob_grid.min() < 0.5 < prob_grid.max():
+        cs = ax.contour(glu_range, temp_range, prob_grid,
+                         levels=[0.5], colors="white", linewidths=2)
+        ax.clabel(cs, fmt={0.5: "50%"}, fontsize=9)
     ax.set_xlabel("[glucose] (mM)")
     ax.set_ylabel("Temperature (°C)")
     ax.set_title("P(delta_t < 60s) at the pH-7.4 ceiling — old-baseline fraction\n(lab-scale; E.63: GP now field-scale; sap-pH bracket in the table, not here)", fontsize=10)
@@ -175,17 +211,19 @@ def main() -> int:
     # Distribution at reference condition (10 mM, 25°C)
     ax2 = axes[1]
     dt_ref = delta_t(10, 25, km, ea, jmax, a_el, e_cyc)
-    dt_ref = np.clip(dt_ref, 0, 300)
-    ax2.hist(dt_ref, bins=50, density=True, alpha=0.7, color="steelblue", edgecolor="white")
-    ax2.axvline(BASELINE, color="red", linestyle="--", linewidth=2, label="baseline 60s")
+    # Percentiles on the UNCLIPPED sample — clipping is for display only, and a clip below p95
+    # would print a CI the distribution does not have.
     p5, p50, p95 = np.percentile(dt_ref, [5, 50, 95])
+    ax2.hist(np.clip(dt_ref, 0, 2 * p95), bins=50, density=True, alpha=0.7, color="steelblue",
+             edgecolor="white")
+    ax2.axvline(BASELINE, color="red", linestyle="--", linewidth=2, label="baseline 60s")
     ax2.axvline(p50, color="green", linewidth=2, label=f"median {p50:.0f}s")
     ax2.axvspan(p5, p95, alpha=0.2, color="green", label=f"90% CI [{p5:.0f}-{p95:.0f}s]")
     ax2.set_xlabel("delta_t (seconds)")
     ax2.set_ylabel("Density")
     ax2.set_title("delta_t distribution at 10 mM glucose, 25°C")
     ax2.legend()
-    ax2.set_xlim(0, 200)
+    ax2.set_xlim(0, 2 * p95)
 
     fig.tight_layout()
     fig_path = OUT_DIR / "delta_t_monte_carlo.png"

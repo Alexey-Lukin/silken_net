@@ -17,9 +17,9 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline at ΔG = 0 (×1–30), 🔴 **below turnover on the adverse reading** (lit-λ bracket ×0.0045…×40 over the gap sign × the λ(Cu) reading) — NOT the old ×10⁵ (see §Cathode) |
-| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 19.9s / Stressed 100.7s (η_BQ 0.68 post-HW.47; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) |
+| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | 🟡 **No — and the old ✅ was a model artifact:** healthy 171.7 s / stressed 930.5 s even at the pH-7.4 lab ceiling on the 2 cm² coupon. The former 19.9 / 100.7 s rested on a 5 mJ cycle-cost placeholder with no sleep term, 8.5× below the node chain (E.63, 2026-09-27); the recharge-kinetics model itself stands (§L4) |
 
-**Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
+**Bottom line:** the design is ready for physical prototyping (Ti-coin Stage 2) — but not because every check passes: L3b and L4 carry the named caveats in the table above, and the coin is where both get measured.
 
 ---
 
@@ -365,7 +365,7 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 
 ## L4 — Chemical Kinetics
 
-**Model:** Michaelis-Menten + Arrhenius + BQ25570 boost → delta_t
+**Model:** Michaelis-Menten + Arrhenius + BQ25570 boost − sleep drain → delta_t = E_cycle / (P_ebfc · η_BQ − P_sleep) — the same form as the canon's H = E_active / (E_gen − E_sleep) ([`02_03 §9.6`](../../../02_03_BQ25570_MPPT_Nano_Power.md)), with the same cycle cost and sleep drain since 2026-09-27
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
@@ -375,33 +375,35 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 | V_op | 0.5 V | EBFC under load |
 | A_electrode | 2 cm² | ONE face of the Ø16 Ti-coin COUPON — never the anchor (`lib/constants.py A_ELECTRODE`; the gyroid anode differs by 30–60×) |
 | η_BQ | 0.68 | BQ25570 datasheet (SLUSBH2G Fig.6-7, low-I_IN; [HW.47]) |
-| E_cycle | 5 mJ | STM32 sense+LoRa TX — ⚠️ legacy placeholder: канон-ланцюг рахує 42.33 мДж з VSTOR на цикл + сон ([`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63) |
+| E_cycle | 42.33 mJ | `E_active_from_VSTOR` of the node chain — a MIRROR of [`02_03 §9.6`](../../../02_03_BQ25570_MPPT_Nano_Power.md) Scenario C (ECB 16 B frame, SF9, +14 dBm; home `tools/firmware/tx_cadence_budget.rb`), pinned to that canon line. Until 2026-09-27 a 5 mJ placeholder ([`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63) |
+| P_sleep | 4.18 µW | Sleep drain from VSTOR between cycles, same chain (RTC-only STOP2 + BQ I_Q) — subtracted from the boosted power; it was absent before 2026-09-27 |
 
 ### delta_t Predictions
 
-| Scenario | [glucose] | T(°C) | delta_t (s) | vs 60s baseline |
+| Scenario | [glucose] | T(°C) | delta_t (s) | vs 60 s (legacy baseline) |
 |----------|-----------|-------|-------------|-----------------|
-| Healthy summer | 10 mM | 25°C | **19.9** | < 60s → GP↑ [E.63] |
-| Active growth | 20 mM | 30°C | **10.8** | < 60s → GP↑ [E.63] |
-| Moderate spring | 15 mM | 20°C | **21.2** | < 60s → GP↑ [E.63] |
-| Cold winter | 5 mM | 5°C | **100.7** | > 60s → GP↓ [E.63] |
-| Severe stress | 3 mM | 0°C | **205.9** | > 60s → GP↓ [E.63] |
+| Healthy summer | 10 mM | 25°C | **171.7** | > 60 s |
+| Active growth | 20 mM | 30°C | **92.6** | > 60 s |
+| Moderate spring | 15 mM | 20°C | **182.5** | > 60 s |
+| Cold winter | 5 mM | 5°C | **930.5** | > 60 s |
+| Severe stress | 3 mM | 0°C | **2105.4** | > 60 s |
 
-**Conclusion:** BASELINE_DELTA_T_S = 60s is physically justified. EBFC discriminates healthy vs stressed trees. Diffusion NOT rate-limiting (j_kinetic ≪ j_diffusion).
+**Conclusion (revised 2026-09-27, [`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63):** 🔴 the former «BASELINE_DELTA_T_S = 60s is physically justified» does not survive the node chain's own cycle cost — with 42.33 mJ and the sleep drain, even this lab ceiling gives 92.6–2105.4 s, and the iso-60 s contour is not reached at 5, 15 or 25 °C anywhere in 1–30 mM. The 60 s figure survives only as a default argument of the chaos half, not as a physics claim; growth points read `delta_t` through the field-scale band `DELTA_T_FAST_S`/`SLOW_S`, which these coupon numbers must not calibrate. What does survive: the EBFC still separates healthy from stressed (×5.4 between healthy summer and cold winter), and diffusion is still NOT rate-limiting (j_kinetic ≪ j_diffusion). The multiplier from here to the canon's 1.95 h is named in [`02_03 §9.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md).
 
 **pH bracket — printed BESIDE the table, never folded into it (⚖️ founder 2026-09-18).** Every delta_t above is a **pH-7.4 laboratory ceiling**; our sap setpoint is pH 5.75. Sygmund 2011 (*Microb. Cell Fact.* 10:106, Table 3 — free enzyme, ferrocenium 20 µM, 30 °C) gives the same enzyme at both pH values, and the correction is **[S]-dependent**, because k_cat falls (×0.43–0.47) while K_M also falls (×0.54–0.59) and the two partly cancel:
 
 | Scenario | ceiling (s) | ×wt | ×rec | delta_t at pH 5.5 (s) |
 |---|---|---|---|---|
-| Healthy summer | 19.9 | 0.68 | 0.58 | **29.3–34.5** |
-| Cold winter | 100.7 | 0.75 | 0.63 | **134.6–160.6** |
-| Active growth | 10.8 | 0.61 | 0.53 | 17.7–20.5 |
-| Severe stress | 205.9 | 0.79 | 0.66 | 260.8–313.3 |
+| Healthy summer | 171.7 | 0.68 | 0.58 | **254.6–301.2** |
+| Cold winter | 930.5 | 0.75 | 0.63 | **1283.9–1570.6** |
+| Active growth | 92.6 | 0.61 | 0.53 | 152.3–176.9 |
+| Severe stress | 2105.4 | 0.79 | 0.66 | 2823.4–3594.4 |
 
-⚠️ The two ends are the **wild-type and recombinant forms of the same paper disagreeing** — that disagreement IS the bracket; electing one would manufacture precision the source does not carry. ⛔ And the pair was measured on the FREE enzyme with a small-molecule acceptor at 30 °C, so it is applied here as an indication for our immobilised Os-polymer electrode, not as its measurement; the 5 °C row additionally assumes a temperature-independent pH effect, which nobody measured.
+⚠️ The two ends are the **wild-type and recombinant forms of the same paper disagreeing** — that disagreement IS the bracket; electing one would manufacture precision the source does not carry. ⛔ And the pair was measured on the FREE enzyme with a small-molecule acceptor at 30 °C, so it is applied here as an indication for our immobilised Os-polymer electrode, not as its measurement; the 5 °C row additionally assumes a temperature-independent pH effect, which nobody measured. 🔑 Since 2026-09-27 the pH column is computed with the CURRENT scaled by the ratio, not as the ceiling divided by it: the sleep drain does not shrink with the current, so the penalty lengthens delta_t by MORE than 1/ratio — most at the stressed end, where sleep is the larger share (E.63).
 
 **The Monte-Carlo band carries the same condition — applied 2026-09-21, and it had been missing.**
-`30b` samples Km, Ea, j_max, area and E_cycle and reports a 90 % CI. 🔴 **That CI is also a
+`30b` samples Km, Ea, j_max, area and E_cycle and reports a 90 % CI (E_cycle over the node chain's own
+bracket, ≈ 28.8–49.9 mJ from `02_03 §9.4`, since 2026-09-27 — it was 3–10 mJ around the placeholder). 🔴 **That CI is also a
 pH-7.4 figure**, because the sampled j_max is centred on the same laboratory ceiling — and until
 2026-09-21 nothing in `30b` said so, while its sibling `30` had carried the ratified «print the
 bracket beside» shape since ⚖️ 2026-09-18. A verdict ratified for one leg does not reach its sister
@@ -409,20 +411,25 @@ by itself ([`00_05 §4`](../../../00_05_AI_Native_Operating_Model)); this is tha
 
 | Scenario | 90 % CI at the ceiling (s) | median | **90 % CI at pH 5.5 (s)** | median at pH 5.5 | vs 60 s baseline |
 |---|---|---|---|---|---|
-| Healthy summer | 10.0–84.3 | 28.4 | **14.7–146.0** | 41.8–49.3 | < baseline |
-| Active growth | 5.1–39.8 | 13.7 | **8.4–75.4** | 22.5–26.0 | < baseline |
-| Cold winter | 51.0–489.4 | 157.0 | **68.2–780.9** | 209.9–250.5 | > baseline |
-| Severe stress | 103.5–1086.8 | 337.5 | **131.2–1654.1** | 427.6–513.7 | > baseline |
+| Healthy summer | 74.2–509.2 | 178.5 | **109.5–918.1** | 265.0–313.6 | > baseline |
+| Active growth | 38.8–231.8 | 84.8 | **63.7–448.9** | 139.5–162.0 | > baseline |
+| Cold winter | 377.7–3982.6 | 1089.6 | **512.0–8569.7** | 1516.3–1870.7 | > baseline |
+| Severe stress | 798.2–18333.2 | 2709.3 | **1037.7–∞** | 3718.6–4873.1 | > baseline |
 
-⚠️ The right-hand columns are the **same distribution transported**, not a wider CI: each percentile
-is divided by the [S]-dependent current ratio, so the band moves rather than spreads. The ratio
+`∞` = the percentile lands on samples whose boosted power does not exceed the sleep drain: the node never
+gathers a cycle there (the canon's H = ∞) — ≥ 5 % of the severe-stress band at pH 5.5, and 0.8 % already at
+the ceiling (`never_gathers_cycle_pct`). Until 2026-09-27 `30b` capped every sample at 3600 s BEFORE the
+percentiles; harmless on the placeholder scale, it would now have printed that tail as «3600 s».
+
+⚠️ The right-hand columns are the **same distribution transported**, not a wider CI: every sample's
+current is scaled by the [S]-dependent ratio and the percentiles are recomputed, so the band moves rather than spreads. The ratio
 carries the *source's* K_M shift while the sampled `km` spread is about *our* apparent constant —
 related axes, deliberately not summed (`conditional_on` in the cache says so).
-🔑 **What the transport does and does not change:** no scenario crosses the 60 s baseline — healthy
-and active stay under it, cold and stressed stay over it — so the *discrimination* the baseline
-exists for survives the sap-pH penalty. What does not survive unqualified is the **upper decile** of
-the healthy band, which moves from 84 s to about 146 s; a claim that quotes 10–84 s without naming
-pH 7.4 is quoting a medium we do not deploy in.
+🔑 **What the transport does and does not change:** every median sits above 60 s in both media, so
+since 2026-09-27 there is no baseline crossing left for the sap-pH penalty to threaten. What it still
+moves is the **upper decile** of the healthy band, which moves from 509 s to about 918 s; a claim that
+quotes 74–509 s without naming pH 7.4 is quoting a medium we do not deploy in — and at the stressed
+end the transport no longer just shifts the band, it opens the «never» tail above.
 
 ### EIS Predictions (for Ti-coin Stage 2)
 

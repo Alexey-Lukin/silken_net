@@ -44,8 +44,8 @@
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
 | 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
-| 30 | `kinetics_delta_t` | delta_t = 20s healthy / 101s stressed (η_BQ 0.68 post-[HW.47]; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) | `kinetics/delta_t_lookup.json` |
-| 30b | `kinetics_monte_carlo` | 90% CI: 10–84s healthy **at the pH-7.4 ceiling** (j_max sampled at its PROPAGATED 1σ, not a typed one); transported to sap pH 5.5 the same band sits at **15–146s** — printed beside, never folded in (⚖️ 2026-09-18) | `kinetics/monte_carlo.json` |
+| 30 | `kinetics_delta_t` | delta_t = 172 s healthy / 931 s stressed at the pH-7.4 ceiling — cycle cost and sleep drain mirrored from the node chain since 2026-09-27 (`02_03 §9.6`; was 20 / 101 s on a 5 mJ placeholder, [E.63]); η_BQ 0.68 post-[HW.47]; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS | `kinetics/delta_t_lookup.json` |
+| 30b | `kinetics_monte_carlo` | 90% CI: 74–509 s healthy **at the pH-7.4 ceiling** (j_max sampled at its PROPAGATED 1σ, not a typed one; E_cycle over the chain's own bracket since 2026-09-27, [E.63]); transported to sap pH 5.5 the same band sits at **110–918 s**, and the severe-stress upper end is ∞ (≥ 5 % of samples never gather a cycle) — printed beside, never folded in (⚖️ 2026-09-18) | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=72.9Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002 Ω–3×10⁴ Ω (the k_DET bracket's corners × unknown Γ; slow end up to ~×400 the anode arc) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50–62 mV vs free-flavin exp bracket −220…−208) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
@@ -104,7 +104,7 @@
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (verified) | +574 mV / −0.574 eV downhill (verified E°s, Os +309 / FAD −265); raw DFT uphill = method limit (②) |
 | Is cathode DET fast enough? | 🟡 BORDERLINE→🔴 ON THE ADVERSE READING | L3b geom-fixed t_ij + realistic λ put Cu-Co at ~turnover (×1–30) **at ΔG = 0**; carrying the measured site-gap and the λ(Cu) reading makes lit-λ a bracket ×0.0045…×40, i.e. BELOW turnover at the adverse corner; SUMMARY §Cathode |
-| Is delta_t physically meaningful? | 🟡 recharge-model OK; coupling REVISED | L4 recharge-kinetics sound але lab-ceiling (E_CYCLE=5mJ); [E.63] β-coupling reversed → delta_t now drives growth_points directly, FAST/SLOW calib-pending (00_07 E.63) |
+| Is delta_t physically meaningful? | 🟡 recharge-model OK; coupling REVISED | L4 recharge-kinetics sound але lab-ceiling (E_CYCLE = 42.33 mJ + sleep, mirrors of the node chain since 2026-09-27 — was a 5 mJ placeholder, and the «60 s makes physical sense» ✅ rested on it); [E.63] β-coupling reversed → delta_t now drives growth_points directly, FAST/SLOW calib-pending (00_07 E.63) |
 | Can we predict EIS results? | ✅ YES | L4c: `Rct` і `Cdl` — рядок `31` таблиці вгорі (лаб-стеля, pH 7.4) |
 
 **Verdict: ✅ YES — sufficient to order Ti-coins.** Anode thermodynamic + kinetic proofs pass. Remaining in-silico items now done (L3b geom-fixed, genipin/deprotonation rerun, species sweep). The cathode-DET **borderline** finding (§Cathode) refines confidence — it does NOT block Ti-coins; rather it makes the Ti-coin **EIS the decisive empirical test** of the real cathode margin.
@@ -127,7 +127,7 @@
 
 **Verdict: ✅ YES.** SUMMARY.md has all numbers. Key claims:
 - "EBFC Gen 2.0 validated in silico across 4 levels"
-- "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 10-84s **at the pH-7.4 laboratory ceiling**, re-anchored 2026-09-18). ⚠️ Transported to the sap set-point the same band is **15-146s**, so the healthy MEDIAN stays under 60 s but the upper decile does not — quote the medium with the number"
+- "The EBFC recharge interval separates healthy from stressed trees (×5.4 between healthy summer and cold winter at the pH-7.4 laboratory ceiling, coupon scale)" — ⛔ **withdrawn 2026-09-27: «BASELINE_DELTA_T_S = 60s physically justified».** It stood on a 5 mJ cycle-cost placeholder with no sleep term; with the node chain's own cost the ceiling gives 74–509 s (MC 90 % CI, healthy) and no scenario reaches 60 s ([`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63). Quote no absolute delta_t in a pitch without its medium AND its body (coupon, not the anchor)
 - "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2023); raw DFT uphill = method limit decomposed by ②"
 - "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a low-λ-metal (Ru) improvement path; which lever is taken is READ from the ratified rule (0)–(3) after the coin EIS, and the conductive-MOF branch is chosen by none of them (01_03 §3.2)"
 

@@ -1340,7 +1340,7 @@ def test_constants_match_kinetics_output():
     """
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
-    from lib.constants import BASELINE_DELTA_T_S, ETA_BQ, J_MAX_25C, KM_GLUCOSE
+    from lib.constants import BASELINE_DELTA_T_S, E_CYCLE, ETA_BQ, J_MAX_25C, KM_GLUCOSE, P_SLEEP_VSTOR
 
     data = json.loads((KINETICS / "delta_t_lookup.json").read_text())
     assert data["parameters"]["j_max_25C_uA_cm2"] == J_MAX_25C * 1e6
@@ -1350,6 +1350,10 @@ def test_constants_match_kinetics_output():
     # The field sat in the same `parameters` block as the three above and was the only one unpinned
     # (00_07 DOC-T.117, measured by mutation 2026-09-21: the edit was green across the whole suite).
     assert data["parameters"]["eta_BQ"] == ETA_BQ
+    # The cycle cost divides every delta_t and the sleep drain is subtracted from every p_net — and
+    # E_cycle_mJ sat in that same block unpinned after DOC-T.117 (00_07 E.63, found 2026-09-27).
+    assert data["parameters"]["E_cycle_mJ"] == E_CYCLE * 1e3
+    assert data["parameters"]["P_sleep_VSTOR_uW"] == P_SLEEP_VSTOR * 1e6
 
 
 def test_constants_match_mechanical_output():

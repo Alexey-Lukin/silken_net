@@ -1,5 +1,5 @@
 {
-  "model": "Michaelis-Menten + Arrhenius + BQ25570 boost + EDLC charge",
+  "model": "Michaelis-Menten + Arrhenius + BQ25570 boost - sleep drain + EDLC charge",
   "ph_bracket": {
     "source": "Sygmund 2011, Microb. Cell Fact. 10:106, Table 3 (doi:10.1186/1475-2859-10-106)",
     "measured": "free enzyme, ferrocenium 20 uM, 30 C, pH 5.5 vs 7.5 \u2014 NOT the immobilised Os electrode",
@@ -10,51 +10,51 @@
         "scenario": "healthy summer",
         "glucose_mM": 10,
         "temp_C": 25,
-        "delta_t_ceiling_s": 19.9,
+        "delta_t_ceiling_s": 171.7,
         "ratio_wt": 0.68,
         "ratio_rec": 0.577,
-        "delta_t_ph55_low_s": 29.3,
-        "delta_t_ph55_high_s": 34.5
+        "delta_t_ph55_low_s": 254.6,
+        "delta_t_ph55_high_s": 301.2
       },
       {
         "scenario": "cold winter / stress",
         "glucose_mM": 5,
         "temp_C": 5,
-        "delta_t_ceiling_s": 100.7,
+        "delta_t_ceiling_s": 930.5,
         "ratio_wt": 0.748,
         "ratio_rec": 0.627,
-        "delta_t_ph55_low_s": 134.6,
-        "delta_t_ph55_high_s": 160.6
+        "delta_t_ph55_low_s": 1283.9,
+        "delta_t_ph55_high_s": 1570.6
       },
       {
         "scenario": "active growth",
         "glucose_mM": 20,
         "temp_C": 30,
-        "delta_t_ceiling_s": 10.8,
+        "delta_t_ceiling_s": 92.6,
         "ratio_wt": 0.612,
         "ratio_rec": 0.528,
-        "delta_t_ph55_low_s": 17.7,
-        "delta_t_ph55_high_s": 20.5
+        "delta_t_ph55_low_s": 152.3,
+        "delta_t_ph55_high_s": 176.9
       },
       {
         "scenario": "severe stress",
         "glucose_mM": 3,
         "temp_C": 0,
-        "delta_t_ceiling_s": 205.9,
+        "delta_t_ceiling_s": 2105.4,
         "ratio_wt": 0.789,
         "ratio_rec": 0.657,
-        "delta_t_ph55_low_s": 260.8,
-        "delta_t_ph55_high_s": 313.3
+        "delta_t_ph55_low_s": 2823.4,
+        "delta_t_ph55_high_s": 3594.4
       },
       {
         "scenario": "moderate spring",
         "glucose_mM": 15,
         "temp_C": 20,
-        "delta_t_ceiling_s": 21.2,
+        "delta_t_ceiling_s": 182.5,
         "ratio_wt": 0.639,
         "ratio_rec": 0.548,
-        "delta_t_ph55_low_s": 33.1,
-        "delta_t_ph55_high_s": 38.7
+        "delta_t_ph55_low_s": 288.5,
+        "delta_t_ph55_high_s": 338.3
       }
     ]
   },
@@ -64,7 +64,8 @@
     "V_op_V": 0.5,
     "A_electrode_cm2": 2.0,
     "eta_BQ": 0.68,
-    "E_cycle_mJ": 5.0,
+    "E_cycle_mJ": 42.33,
+    "P_sleep_VSTOR_uW": 4.18,
     "Ea_kJ_mol": 40.0,
     "D_eff_cm2_s": 2e-06,
     "delta_membrane_um": 20.0,
@@ -74,36 +75,36 @@
     {
       "glucose_mM": 10,
       "temp_C": 25,
-      "delta_t_s": 19.9,
-      "vs_baseline": "< baseline",
+      "delta_t_s": 171.7,
+      "vs_baseline": "> baseline",
       "scenario": "healthy summer"
     },
     {
       "glucose_mM": 5,
       "temp_C": 5,
-      "delta_t_s": 100.7,
+      "delta_t_s": 930.5,
       "vs_baseline": "> baseline",
       "scenario": "cold winter / stress"
     },
     {
       "glucose_mM": 20,
       "temp_C": 30,
-      "delta_t_s": 10.8,
-      "vs_baseline": "< baseline",
+      "delta_t_s": 92.6,
+      "vs_baseline": "> baseline",
       "scenario": "active growth"
     },
     {
       "glucose_mM": 3,
       "temp_C": 0,
-      "delta_t_s": 205.9,
+      "delta_t_s": 2105.4,
       "vs_baseline": "> baseline",
       "scenario": "severe stress"
     },
     {
       "glucose_mM": 15,
       "temp_C": 20,
-      "delta_t_s": 21.2,
-      "vs_baseline": "< baseline",
+      "delta_t_s": 182.5,
+      "vs_baseline": "> baseline",
       "scenario": "moderate spring"
     }
   ],
@@ -112,93 +113,88 @@
       {
         "value": 10,
         "unit": "mM",
-        "delta_t_s": 16.7
+        "delta_t_s": 143.3
       },
       {
         "value": 13.9,
         "unit": "mM",
-        "delta_t_s": 19.9
+        "delta_t_s": 171.7
       },
       {
         "value": 20,
         "unit": "mM",
-        "delta_t_s": 25.0
+        "delta_t_s": 216.5
       },
       {
         "value": 30,
         "unit": "mM",
-        "delta_t_s": 33.4
+        "delta_t_s": 290.7
       },
       {
         "value": 50,
         "unit": "mM",
-        "delta_t_s": 50.1
+        "delta_t_s": 442.5
       }
     ],
     "A_electrode": [
       {
         "value": 1,
         "unit": "cm\u00b2",
-        "delta_t_s": 39.9
+        "delta_t_s": 349.4
       },
       {
         "value": 2,
         "unit": "cm\u00b2",
-        "delta_t_s": 19.9
+        "delta_t_s": 171.7
       },
       {
         "value": 3,
         "unit": "cm\u00b2",
-        "delta_t_s": 13.3
+        "delta_t_s": 113.8
       },
       {
         "value": 5,
         "unit": "cm\u00b2",
-        "delta_t_s": 8.0
+        "delta_t_s": 68.0
       }
     ],
     "E_cycle": [
       {
-        "value": 2,
+        "value": 28.83,
         "unit": "mJ",
-        "delta_t_s": 8.0
+        "delta_t_s": 117.0
       },
       {
-        "value": 5,
+        "value": 42.33,
         "unit": "mJ",
-        "delta_t_s": 19.9
+        "delta_t_s": 171.7
       },
       {
-        "value": 10,
+        "value": 49.94,
         "unit": "mJ",
-        "delta_t_s": 39.9
-      },
-      {
-        "value": 20,
-        "unit": "mJ",
-        "delta_t_s": 79.8
+        "delta_t_s": 202.6
       }
     ],
     "j_max": [
       {
         "value": 200,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 87.9
+        "delta_t_s": 802.9
       },
       {
         "value": 494,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 35.6
+        "delta_t_s": 310.4
       },
       {
         "value": 881,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 19.9
+        "delta_t_s": 171.7
       },
       {
         "value": 1200,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 14.6
+        "delta_t_s": 125.5
       }
     ]
   }

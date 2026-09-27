@@ -7,111 +7,116 @@
     ],
     "why_not_folded_in": "\u2696\ufe0f founder 2026-09-18: the correction is not a point, so the model stays on the ceiling and the bracket is printed beside it",
     "bracket_source": "Sygmund 2011 Table 3 via lib.kinetics.ph_current_ratio \u2014 FREE enzyme, ferrocenium acceptor, 30 \u00b0C; both enzyme forms are kept because they disagree, and the disagreement IS the bracket",
-    "bracket_is_a_transport_not_an_added_variance": "each percentile is divided by the [S]-dependent current ratio, i.e. the whole distribution is moved to pH 5.5; the ratio carries the SOURCE's K_M shift while the sampled `km` spread is about OUR apparent constant \u2014 related axes, deliberately not summed"
+    "bracket_is_a_transport_not_an_added_variance": "every sample's current is scaled by the [S]-dependent ratio and the percentiles are recomputed, i.e. the whole distribution is moved to pH 5.5 (dividing the percentiles stopped being exact once the sleep drain entered, E.63); the ratio carries the SOURCE's K_M shift while the sampled `km` spread is about OUR apparent constant \u2014 related axes, deliberately not summed"
   },
+  "never_gathers_cycle": "a sample whose boosted power does not exceed P_SLEEP_VSTOR never gathers a cycle (delta_t = inf, the canon's H = inf); its share is never_gathers_cycle_pct, and a percentile that lands on it is null \u2014 never a capped number",
   "scenarios": [
     {
       "label": "Healthy summer",
       "glucose_mM": 10,
       "temp_C": 25,
-      "p5_s": 10.0,
-      "median_s": 28.4,
-      "p95_s": 84.3,
-      "vs_baseline": "< baseline",
+      "p5_s": 74.2,
+      "median_s": 178.5,
+      "p95_s": 509.2,
+      "never_gathers_cycle_pct": 0.0,
+      "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.68,
-          "p5_s": 14.7,
-          "median_s": 41.8,
-          "p95_s": 124.0
+          "p5_s": 109.5,
+          "median_s": 265.0,
+          "p95_s": 768.4
         },
         "rec": {
           "ratio": 0.577,
-          "p5_s": 17.3,
-          "median_s": 49.3,
-          "p95_s": 146.0
+          "p5_s": 129.3,
+          "median_s": 313.6,
+          "p95_s": 918.1
         }
       },
-      "ph55_median_low_s": 41.8,
-      "ph55_median_high_s": 49.3,
-      "ph55_vs_baseline": "< baseline"
+      "ph55_median_low_s": 265.0,
+      "ph55_median_high_s": 313.6,
+      "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Active growth",
       "glucose_mM": 20,
       "temp_C": 30,
-      "p5_s": 5.1,
-      "median_s": 13.7,
-      "p95_s": 39.8,
-      "vs_baseline": "< baseline",
+      "p5_s": 38.8,
+      "median_s": 84.8,
+      "p95_s": 231.8,
+      "never_gathers_cycle_pct": 0.0,
+      "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.612,
-          "p5_s": 8.4,
-          "median_s": 22.5,
-          "p95_s": 65.0
+          "p5_s": 63.7,
+          "median_s": 139.5,
+          "p95_s": 385.2
         },
         "rec": {
           "ratio": 0.528,
-          "p5_s": 9.7,
-          "median_s": 26.0,
-          "p95_s": 75.4
+          "p5_s": 73.9,
+          "median_s": 162.0,
+          "p95_s": 448.9
         }
       },
-      "ph55_median_low_s": 22.5,
-      "ph55_median_high_s": 26.0,
-      "ph55_vs_baseline": "< baseline"
+      "ph55_median_low_s": 139.5,
+      "ph55_median_high_s": 162.0,
+      "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Cold winter",
       "glucose_mM": 5,
       "temp_C": 5,
-      "p5_s": 51.0,
-      "median_s": 157.0,
-      "p95_s": 489.4,
+      "p5_s": 377.7,
+      "median_s": 1089.6,
+      "p95_s": 3982.6,
+      "never_gathers_cycle_pct": 0.0,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.748,
-          "p5_s": 68.2,
-          "median_s": 209.9,
-          "p95_s": 654.4
+          "p5_s": 512.0,
+          "median_s": 1516.3,
+          "p95_s": 6231.9
         },
         "rec": {
           "ratio": 0.627,
-          "p5_s": 81.4,
-          "median_s": 250.5,
-          "p95_s": 780.9
+          "p5_s": 618.3,
+          "median_s": 1870.7,
+          "p95_s": 8569.7
         }
       },
-      "ph55_median_low_s": 209.9,
-      "ph55_median_high_s": 250.5,
+      "ph55_median_low_s": 1516.3,
+      "ph55_median_high_s": 1870.7,
       "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Severe stress",
       "glucose_mM": 3,
       "temp_C": 0,
-      "p5_s": 103.5,
-      "median_s": 337.5,
-      "p95_s": 1086.8,
+      "p5_s": 798.2,
+      "median_s": 2709.3,
+      "p95_s": 18333.2,
+      "never_gathers_cycle_pct": 0.8,
       "vs_baseline": "> baseline",
       "ph55_bracket": {
         "wt": {
           "ratio": 0.789,
-          "p5_s": 131.2,
-          "median_s": 427.6,
-          "p95_s": 1376.7
+          "p5_s": 1037.7,
+          "median_s": 3718.6,
+          "p95_s": 49001.5
         },
         "rec": {
           "ratio": 0.657,
-          "p5_s": 157.6,
-          "median_s": 513.7,
-          "p95_s": 1654.1
+          "p5_s": 1275.0,
+          "median_s": 4873.1,
+          "p95_s": null
         }
       },
-      "ph55_median_low_s": 427.6,
-      "ph55_median_high_s": 513.7,
+      "ph55_median_low_s": 3718.6,
+      "ph55_median_high_s": 4873.1,
       "ph55_vs_baseline": "> baseline"
     }
   ]

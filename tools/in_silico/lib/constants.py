@@ -152,11 +152,23 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # no traceable source (born with the rest of 02_03 §9 in the initial commit; equals
 # P_IN(CS) TYP). V_OP above (0.5 V) is the OTHER model's guess (≈0.65 × 0.77 V OCV).
 # Both wait for the HW.13 bench P-V curve — do not reconcile them by editing either.
-# ⚠️ NOT the canon cycle cost: the firmware energy chain (02_03 §9.4/§9.6,
-# tools/firmware/tx_cadence_budget.rb) charges 42.33 mJ per cycle from VSTOR plus
-# ~15 mJ/h of sleep, and delta_t() here has no sleep term. Reconciling this is an
-# open item (00_07 E.63) — do not edit the value without re-running the L4 cache.
-E_CYCLE = 5e-3               # J — energy per MCU wake cycle (legacy placeholder)
+# ── Node energy chain — MIRRORS of 02_03 §9.4/§9.6 Scenario C (ECB 16 B frame, SF9,
+# +14 dBm, RTC-only STOP2); the chain's home is tools/firmware/tx_cadence_budget.rb,
+# whose --assert holds these numbers ──
+# [E.63, 2026-09-27] E_CYCLE was a 5 mJ «legacy placeholder» and delta_t() had no sleep
+# term: 8.5× below the chain, and every L4 delta_t — the old «60 s baseline makes physical
+# sense» verdict included — inherited that factor. Now L4 uses the SAME cycle cost and
+# the SAME sleep drain as the canon's H = E_active / (E_gen − E_sleep), so what is left of
+# the L4 ⊥ §9.6 gap is the input power alone (P_ebfc, V_OP, electrode area).
+E_CYCLE = 42.33e-3           # J — E_active_from_VSTOR per wake cycle
+P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
+# The chain's OWN bracket on E_active (§9.4), mapped to VSTOR through η_buck 0.88: the
+# duration ceilings overstate compute by at most its full cost (7.92 + 3.96 mJ at VOUT),
+# the missing core-idle term understates it by ≈6.7 mJ at VOUT, and «the sign of the sum
+# is not determined without a bench». EDLC self-discharge has no number (§9.3) and is NOT
+# in the bracket.
+E_CYCLE_LOW = E_CYCLE - (7.92e-3 + 3.96e-3) / 0.88   # J — compute terms free
+E_CYCLE_HIGH = E_CYCLE + 6.7e-3 / 0.88               # J — plus core idle at 48 MHz
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
 # ── Glucose diffusion ──

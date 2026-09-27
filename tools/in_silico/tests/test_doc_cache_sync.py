@@ -78,6 +78,8 @@ _SUP_MAP = ({c: str(i) for i, c in enumerate(_SUP)}
 
 
 def _to_float(s: str) -> float:
+    if s == "∞":
+        return math.inf
     for d in _DASHES:
         s = s.replace(d, "-")
     s = s.replace(" ", "")
@@ -263,13 +265,13 @@ CHECKS = [
     # numbers standing. Both ends are pinned — a bracket with one end pinned is not a bracket.
     (
         "pH-bracket healthy-summer LOW end → delta_t_lookup.json §ph_bracket",
-        SUMMARY, r"\| Healthy summer \| 19\.9 \| [\d.]+ \| [\d.]+ \| \*\*([\d.]+)–[\d.]+\*\* \|",
+        SUMMARY, r"\| Healthy summer \| 171\.7 \| [\d.]+ \| [\d.]+ \| \*\*([\d.]+)–[\d.]+\*\* \|",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_low_s"], 0.1,
     ),
     (
         "pH-bracket healthy-summer HIGH end → delta_t_lookup.json §ph_bracket",
-        SUMMARY, r"\| Healthy summer \| 19\.9 \| [\d.]+ \| [\d.]+ \| \*\*[\d.]+–([\d.]+)\*\* \|",
+        SUMMARY, r"\| Healthy summer \| 171\.7 \| [\d.]+ \| [\d.]+ \| \*\*[\d.]+–([\d.]+)\*\* \|",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_high_s"], 0.1,
     ),
@@ -285,13 +287,13 @@ CHECKS = [
     # a green guard whose own label claimed the Executive Summary was covered. Pin the prose.
     (
         "delta_t healthy-summer → delta_t_lookup.json (Executive Summary prose, NOT the table)",
-        SUMMARY, r"✅ Healthy ([\d.]+)s / Stressed",
+        SUMMARY, r"healthy ([\d.]+) s / stressed",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["reference_points"], "scenario", "healthy summer")["delta_t_s"], 0.1,
     ),
     (
         "delta_t cold-winter → delta_t_lookup.json (Executive Summary prose, NOT the table)",
-        SUMMARY, r"/ Stressed ([\d.]+)s",
+        SUMMARY, r"/ stressed ([\d.]+) s even",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["reference_points"], "scenario", "cold winter / stress")["delta_t_s"], 0.1,
     ),
@@ -1527,9 +1529,20 @@ def _mc(d, label: str):
     return next(s for s in d["scenarios"] if s["label"] == label)
 
 
+# [E.63] A percentile that lands on a sample whose power never beats the sleep drain is `null` in the
+# cache and `∞` in the doc — «never gathers a cycle», the canon's own H = ∞. Only the MC cells take it;
+# the global `N` stays digits-only, so no other row can quietly start matching an infinity.
+NI = rf"([{_DASHES}\-]?[\d.]+|∞)"
+_NUM = r"(?:[\d.]+|∞)"
+
+
+def _inf(v):
+    return math.inf if v is None else v
+
+
 def _mc_ph(d, label: str, key: str, fn):
     row = _mc(d, label)["ph55_bracket"]
-    return fn(row[f][key] for f in row)
+    return fn(_inf(row[f][key]) for f in row)
 
 
 # ⛔ Scenario labels are NOT unique in this file — the deterministic pH table of script `30` carries
@@ -1541,7 +1554,7 @@ _MC_TABLE = r"90 % CI at pH 5\.5 \(s\)[\s\S]{0,900}?"
 def _mc_cell(label: str, skip: int, end: str, bold: bool = False) -> str:
     """One end of a `lo–hi` cell (or a plain cell when `end` is 'only'), inside the MC table."""
     b = r"\*\*" if bold else ""
-    body = {"lo": rf"{b}{N}–[\d.]+{b}", "hi": rf"{b}[\d.]+–{N}{b}", "only": rf"{b}{N}{b}"}[end]
+    body = {"lo": rf"{b}{NI}–{_NUM}{b}", "hi": rf"{b}{_NUM}–{NI}{b}", "only": rf"{b}{NI}{b}"}[end]
     return _MC_TABLE + rf"\| {re.escape(label)} \|" + r"[^|]*\|" * skip + rf" {body} \|"
 
 
@@ -1550,18 +1563,18 @@ CHECKS += [
      SUMMARY, _mc_cell(lab, skip, end, bold), MC, resolver, 0.06)
     for lab in _MC_ROWS
     for name, skip, end, bold, resolver in (
-        ("ceiling CI low", 0, "lo", False, lambda d, sc=lab: _mc(d, sc)["p5_s"]),
-        ("ceiling CI high", 0, "hi", False, lambda d, sc=lab: _mc(d, sc)["p95_s"]),
-        ("ceiling median", 1, "only", False, lambda d, sc=lab: _mc(d, sc)["median_s"]),
+        ("ceiling CI low", 0, "lo", False, lambda d, sc=lab: _inf(_mc(d, sc)["p5_s"])),
+        ("ceiling CI high", 0, "hi", False, lambda d, sc=lab: _inf(_mc(d, sc)["p95_s"])),
+        ("ceiling median", 1, "only", False, lambda d, sc=lab: _inf(_mc(d, sc)["median_s"])),
         ("pH5.5 CI low", 2, "lo", True, lambda d, sc=lab: _mc_ph(d, sc, "p5_s", min)),
         ("pH5.5 CI high", 2, "hi", True, lambda d, sc=lab: _mc_ph(d, sc, "p95_s", max)),
-        ("pH5.5 median low", 3, "lo", False, lambda d, sc=lab: _mc(d, sc)["ph55_median_low_s"]),
-        ("pH5.5 median high", 3, "hi", False, lambda d, sc=lab: _mc(d, sc)["ph55_median_high_s"]),
+        ("pH5.5 median low", 3, "lo", False, lambda d, sc=lab: _inf(_mc(d, sc)["ph55_median_low_s"])),
+        ("pH5.5 median high", 3, "hi", False, lambda d, sc=lab: _inf(_mc(d, sc)["ph55_median_high_s"])),
     )
 ] + [
     (
         "L4b MC · the upper-decile claim in prose → monte_carlo (the sentence that names the cost)",
-        SUMMARY, rf"moves from 84 s to about {N} s",
+        SUMMARY, rf"moves from 509 s to about {N} s",
         MC, lambda d: _mc_ph(d, "Healthy summer", "p95_s", max), 0.6,
     ),
 ]
@@ -1844,6 +1857,15 @@ CHECKS += [
     ("HW.37 · SUMMARY open-air life, optimistic → capsule_envelope.json",
      SUMMARY, rf"\| Open air \| [\d.]+ °C \| [\d.]+–{N} yr \|", THERMAL,
      lambda d: d["aging"]["air"]["life_at_ratified_vbat_ov"]["optimistic_yr"], 0.05),
+    # [E.63] L4's cycle cost and sleep drain are canon PREMISES the cache mirrors (via lib/constants.py):
+    # a chain that moves (a CCM-era frame, a new term in §9.4) must re-run 30/30b, not leave L4 on the
+    # old price. Anchored on Scenario C's own lines, so §9.4's +22 dBm point cannot match by accident.
+    ("E.63 premise · node cycle cost (canon 02_03 §9.6 Scenario C → lib/constants.py → 30's cache)",
+     POWER, rf"H = E_active / \(E_gen − E_sleep\) = {N} / \([\d.]+ − 15\.04\)",
+     "kinetics/delta_t_lookup.json", lambda d: d["parameters"]["E_cycle_mJ"], 0.005),
+    ("E.63 premise · node sleep drain from VSTOR (canon 02_03 §9.6 Scenario C → lib/constants.py → 30's cache)",
+     POWER, rf"E_sleep_supercap\s+= {N} × 3600 = 15\.04", "kinetics/delta_t_lookup.json",
+     lambda d: d["parameters"]["P_sleep_VSTOR_uW"], 0.005),
 ]
 _SERIES = {"shaded": r"Under the radome, shaded \(α 0\.50/0\.95 × k 0/0\.1\)",
            "sunlit": r"Under the radome, sunlit \(α 0\.50/0\.95 × k 0/0\.1\)"}
@@ -2002,6 +2024,11 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         remedy = "CANON is the source for this row — re-run the owning script so its cache mirrors canon again."
     else:
         remedy = "Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script."
+    if math.isinf(doc_val) or math.isinf(cache_val):
+        assert doc_val == cache_val, (
+            f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but {cache_rel} says {cache_val} — "
+            f"«never» (∞) on one side only. {remedy}")
+        return
     assert abs(doc_val - cache_val) <= tol, (
         f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but "
         f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). {remedy}"

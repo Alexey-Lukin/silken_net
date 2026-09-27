@@ -7,7 +7,10 @@ glucose concentration and temperature.
 Physical model
 --------------
     glucose diffusion (Fick) → Michaelis-Menten (dgrFAD-GDH)
-    → electron current (Os-mediated) → BQ25570 boost → EDLC charge → delta_t
+    → electron current (Os-mediated) → BQ25570 boost − sleep drain → EDLC charge → delta_t
+
+    delta_t = E_cycle / (P_ebfc · η_bq − P_sleep) — the SAME form as the canon's
+    H = E_active / (E_gen − E_sleep) (02_03 §9.6), with the SAME cycle cost and sleep drain.
 
 This closes the final level of the 4-level Zero-Lab pipeline (01_03 §3.4).
 The output delta_t is the EBFC recharge time that, per [E.63], now drives
@@ -29,7 +32,10 @@ Key literature parameters
                                  η(P_IN) — see constants.py ETA_BQ comment, [HW.47] 2026-09-09)
   A = 2.0 cm²                 — ONE face of the Ø16×1 mm Ti-coin COUPON (01_01 §6), see
                                  the WHICH BODY note below; constants.py A_ELECTRODE
-  E_cycle = 5 mJ              — STM32WLE5JC per wake cycle (sense + LoRa TX)
+  E_cycle = 42.33 mJ          — E_active_from_VSTOR per wake cycle, and P_sleep = 4.18 µW from
+                                VSTOR: MIRRORS of the node chain (02_03 §9.4/§9.6 Scenario C;
+                                tools/firmware/tx_cadence_budget.rb). Until 2026-09-27 this was a
+                                5 mJ placeholder with no sleep term — 8.5× below the chain (E.63)
   Ea = 40 kJ/mol              — Arrhenius activation energy (FAD enzyme typical)
   D_eff = 2e-6 cm²/s          — glucose through chitosan hydrogel matrix
   δ = 20 µm                   — membrane + hydrogel thickness (01_03 §2.1)
@@ -42,7 +48,9 @@ against (01_01 §6). It is NOT the anchor. The Zone-1 gyroid anode is a differen
 30-60× — CAD `SpecificSurface` puts it at 65-123 cm² against the coupon's 2.0 — and the
 scaling is not a rounding error: this model is KINETICS-limited across its whole range
 (j_kinetic 233-520 vs j_diffusion 965-3859 µA/cm² at 5-20 mM), so area passes into current
-without saturating and delta_t ∝ 1/A EXACTLY (A=1→39.9 s, 2→19.9, 3→13.3, 5→8.0 at 10 mM, 25°C).
+without saturating. delta_t is NOT ∝ 1/A exactly, though: the sleep drain is subtracted
+from a power that scales with A, so a smaller body loses a larger share to sleep
+(A=1→349.4 s, 2→171.7, 3→113.8, 5→68.0 at 10 mM, 25°C — 1/A would give 343.4 for A=1).
 ⚠️ Both rows move with J_MAX_25C — re-read them from the run, never from this docstring.
 
 So do not read a number from here as the anchor's recharge interval, and do not feed one
@@ -71,6 +79,8 @@ from lib.constants import (
     D_EFF_GLUCOSE,
     DELTA_MEMBRANE,
     E_CYCLE,
+    E_CYCLE_HIGH,
+    E_CYCLE_LOW,
     EA_ENZYME,
     ETA_BQ,
     F_CONST,
@@ -78,6 +88,7 @@ from lib.constants import (
     KINETICS_DIR,
     KM_GLUCOSE,
     N_ELECTRONS,
+    P_SLEEP_VSTOR,
     R_GAS,
     REPO_ROOT,
     TEMPERATURE_K,
@@ -115,13 +126,21 @@ def current_density(glucose_mm: float, temp_c: float) -> float:
     return min(j_kin, j_diff)
 
 
-def delta_t(glucose_mm: float, temp_c: float) -> float:
-    """Predict EBFC charge time (seconds) for given conditions."""
-    j = current_density(glucose_mm, temp_c)
+def delta_t(glucose_mm: float, temp_c: float, current_ratio: float = 1.0) -> float:
+    """Predict EBFC charge time (seconds) for given conditions.
+
+    `current_ratio` scales the CURRENT (the pH bracket, §4b). It must enter here, not divide
+    the result: the sleep drain does not scale with it, so delta_t is not ∝ 1/current.
+    """
+    j = current_density(glucose_mm, temp_c) * current_ratio
     if j <= 0:
         return float("inf")
     p_ebfc = V_OP * j * A_ELECTRODE
-    p_net = p_ebfc * ETA_BQ
+    # [E.63] Sleep drains VSTOR while the cycle's energy accrues; at or below it the node
+    # never gathers a cycle (the canon's H = ∞).
+    p_net = p_ebfc * ETA_BQ - P_SLEEP_VSTOR
+    if p_net <= 0:
+        return float("inf")
     return E_CYCLE / p_net
 
 
@@ -130,7 +149,7 @@ def main() -> int:
     print(f"  j_max(25°C) = {J_MAX_25C*1e6:.0f} µA/cm²")
     print(f"  Km = {KM_GLUCOSE:.1f} mM")
     print(f"  V_op = {V_OP} V, A = {A_ELECTRODE} cm²")
-    print(f"  E_cycle = {E_CYCLE*1e3:.1f} mJ, η_BQ = {ETA_BQ}")
+    print(f"  E_cycle = {E_CYCLE*1e3:.2f} mJ, P_sleep = {P_SLEEP_VSTOR*1e6:.2f} µW, η_BQ = {ETA_BQ}")
     print(f"  Ea = {EA_ENZYME/1000:.0f} kJ/mol")
     print(f"  D_eff = {D_EFF:.1e} cm²/s, δ = {DELTA_MEMBRANE*1e4:.0f} µm")
 
@@ -141,7 +160,7 @@ def main() -> int:
         for k, glu in enumerate(GLUCOSE_RANGE_MM):
             grid[i, k] = delta_t(glu, tc)
 
-    grid_clipped = np.clip(grid, 0, 600)  # cap at 10 min for visualization
+    grid_clipped = np.clip(grid, 0, 7200)  # cap at 2 h for visualization
 
     # ── 2. Validation: reference points ──
     banner("Validation against BASELINE_DELTA_T_S = 60 s")
@@ -189,7 +208,8 @@ def main() -> int:
     for param, values, label in [
         ("Km", [10, 13.9, 20, 30, 50], "mM"),
         ("A_electrode", [1, 2, 3, 5], "cm²"),
-        ("E_cycle", [2, 5, 10, 20], "mJ"),
+        # The chain's own bracket (lib/constants.py E_CYCLE_LOW/HIGH), not free round numbers.
+        ("E_cycle", [round(e * 1e3, 2) for e in (E_CYCLE_LOW, E_CYCLE, E_CYCLE_HIGH)], "mJ"),
         # 494 stays in the sweep on purpose: it is the density this model used to be anchored on
         # (native GcGDH at 20 mM), so the row prices what the re-anchoring moved (00_07 HW.5.IS).
         ("j_max", [200, 494, 881, 1200], "µA/cm²"),
@@ -231,7 +251,7 @@ def main() -> int:
     for glu, tc, label in ref_points:
         dt_ceiling = delta_t(glu, tc)
         r_wt, r_rec = ph_current_ratio(glu, "wt"), ph_current_ratio(glu, "rec")
-        dt_wt, dt_rec = dt_ceiling / r_wt, dt_ceiling / r_rec
+        dt_wt, dt_rec = delta_t(glu, tc, r_wt), delta_t(glu, tc, r_rec)
         lo, hi = sorted((dt_wt, dt_rec))
         print(f"  {label:<22s}  {dt_ceiling:>8.1f}s  {r_wt:>6.2f}  {r_rec:>6.2f}  {lo:>9.1f}–{hi:.1f}s")
         ph_rows.append({
@@ -252,7 +272,7 @@ def main() -> int:
     ax = axes[0]
     im = ax.contourf(
         GLUCOSE_RANGE_MM, TEMP_RANGE_C, grid_clipped,
-        levels=np.arange(0, 310, 10), cmap="RdYlGn_r",
+        levels=np.arange(0, 7500, 300), cmap="RdYlGn_r",
     )
     cs = ax.contour(
         GLUCOSE_RANGE_MM, TEMP_RANGE_C, grid,
@@ -273,7 +293,7 @@ def main() -> int:
     ax2.set_xlabel("[glucose] (mM)")
     ax2.set_ylabel("delta_t (seconds)")
     ax2.set_title("delta_t vs glucose at different temperatures")
-    ax2.set_ylim(0, 300)
+    ax2.set_ylim(0, 3600)
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
@@ -285,7 +305,7 @@ def main() -> int:
     # ── 6. Save results ──
     banner("Saving results")
     lookup = {
-        "model": "Michaelis-Menten + Arrhenius + BQ25570 boost + EDLC charge",
+        "model": "Michaelis-Menten + Arrhenius + BQ25570 boost - sleep drain + EDLC charge",
         "ph_bracket": {
             "source": "Sygmund 2011, Microb. Cell Fact. 10:106, Table 3 (doi:10.1186/1475-2859-10-106)",
             "measured": "free enzyme, ferrocenium 20 uM, 30 C, pH 5.5 vs 7.5 — NOT the immobilised Os electrode",
@@ -300,6 +320,7 @@ def main() -> int:
             "A_electrode_cm2": A_ELECTRODE,
             "eta_BQ": ETA_BQ,
             "E_cycle_mJ": E_CYCLE * 1e3,
+            "P_sleep_VSTOR_uW": P_SLEEP_VSTOR * 1e6,
             "Ea_kJ_mol": EA_ENZYME / 1000,
             "D_eff_cm2_s": D_EFF,
             "delta_membrane_um": DELTA_MEMBRANE * 1e4,
@@ -319,7 +340,8 @@ def main() -> int:
     dt_healthy = delta_t(10, 25)
     dt_stress = delta_t(5, 5)
     print(f"     Healthy (10 mM, 25°C): delta_t = {dt_healthy:.1f}s | Stressed (5 mM, 5°C): {dt_stress:.1f}s")
-    print(f"  ⚠️  LAB-CEILING values (E_CYCLE={E_CYCLE*1e3:.0f}mJ, j_max={J_MAX_25C*1e6:.0f} µA/cm²"
+    print(f"  ⚠️  LAB-CEILING values (E_CYCLE={E_CYCLE*1e3:.2f}mJ, P_sleep={P_SLEEP_VSTOR*1e6:.2f}µW,"
+          f" j_max={J_MAX_25C*1e6:.0f} µA/cm²"
           f" at pH 7.4 on graphite). The old 60s baseline +")
     print("      β-perturbation coupling was REVERSED in E.63 (delta_t→β was economically")
     print("      null/inverted). delta_t now drives growth_points DIRECTLY via")
