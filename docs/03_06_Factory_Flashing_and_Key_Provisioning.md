@@ -56,8 +56,9 @@
   2. Provisioning: rake-тріо §5 (2-Person Rule) — ключі від ПРАВИЛЬНОГО DID
      factory:flash[UID,…] → approve → execute:
      Backend деривує unique_key (HKDF від master_key + DID; жоден ключ не
-     летить мережею) → транскрипт: connect → -r32 UID-read (wrong-board
-     guard: чужа плата = жодного -w32) → -w32 у Flash (0x0803E000)
+     летить мережею) → транскрипт, де кожен виклик CLI несе власний -c:
+     -r32 UID-read (wrong-board guard: чужа плата = жодного -w32) → -e
+     сторінок ключів → -w32 у Flash (0x0803E000) цілими doubleword'ами
 
   3. Lock: апаратне блокування. Пілот — той самий прогін конвеєра, що й
      крок 2: IWDG-заморозка у STOP2/STANDBY (SEC.15) → RDP Level 1 (блокує
@@ -247,13 +248,17 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      coap_key  = HKDF_SHA256(master_key, uid, "silken-aes-256-device-key") # Gateway, 32B
      HardwareKey.create!(device_uid: DID, aes_key_hex: …)
 
-  d) factory:execute (після 2-Person approve; live) — транскрипт:
-     connect → -r32 UID-read → wrong-board guard (Session звіряє паспорт
-     плати з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного
-     -w32) → -w32 KEYL/LSED/KOTA/KEYB per-word (Tree; Gateway — KEYL=KEYB-
-     значення/KEYC/EDSK) → -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0 (SEC.15:
-     пес заморожений у STOP2 — ДО RDP, бо L2 робить option bytes
-     read-only) → RDP → disconnect
+  d) factory:execute (після 2-Person approve; live) — транскрипт, де КОЖЕН
+     рядок — окремий процес CLI з власним -c (з'єднання між процесами не
+     живе): -r32 UID-read → wrong-board guard (Session звіряє паспорт плати
+     з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного -w32) →
+     -e сторінок ключів (Солдат 124 125, Королева 124: -w32 не стирає, і
+     re-flash без цього впав би) → -w32 KEYL/LSED/KOTA/KEYB (Tree; Gateway —
+     KEYL=KEYB-значення/KEYC/EDSK) цілими doubleword'ами: WL програмує
+     64 біти + ECC лише по стертому, тож суміжні слова йдуть одним -w32,
+     а діру в зачепленому doubleword'і добиває 0xFFFFFFFF → -ob IWDG_SW=1
+     IWDG_STOP=0 IWDG_STDBY=0 (SEC.15: пес заморожений у STOP2 — ДО RDP,
+     бо L2 робить option bytes read-only) → RDP
      # 0x0803E000 = FLASH_KEY_ADDR. Гілка B пише ТОЙ САМИЙ набір тим самим
      # SWD -w32 (⚖️ делеговано 2026-09-27, §1 крок 3); SE-кроки — окремо
 
@@ -817,8 +822,8 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word: Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
-| Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (`-c` + `-r32 0x1FFF7590 12` UID-read одним викликом, обидві гілки) + Гілка A — `-e` сторінок ключів і `STM32_Programmer_CLI -w32` цілими doubleword'ами (суміжні слова одним рядком, діру добиває `0xFFFFFFFF`; кожен рядок несе власний `-c`): Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
+| Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit; його повідомлення `Session` персистить у `provisioning_sessions.error_message`, тож дані `-w32` (ключі) там заступає лічильник слів (`Executor.redact`) |
 | ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (1/2/3; Slot 0 reserved — не пишеться з 2026-09-27) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
 | Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
@@ -828,24 +833,16 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 **Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*` (вкл. `tree_resolver_spec` — чотири долі кремнію; execute-path шим з UID-verify pass/wrong-board), `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio: one-pass UID→Tree→ключі, firmware-equivalent HKDF, legacy-DID abort). Counts → suite.
 
-**Зразок dry-run вивода** (Tree, Гілка A, `rdp_level` 1):
+**Зразок dry-run вивода** (Tree, Гілка A, `rdp_level` 1; кожен рядок — окремий процес CLI, тож `-c` несе кожен):
 ```
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst
-[dry-run] STM32_Programmer_CLI -r32 0x1FFF7590 12               # [FW.54] UID-read (wrong-board guard)
-[dry-run] STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C       # KEYL magic
-[dry-run] STM32_Programmer_CLI -w32 0x0803E004 0xAABBCCDD       # AES key word 0
-[dry-run] STM32_Programmer_CLI -w32 0x0803E008 0xEEFF0011       # AES key word 1
-[dry-run] STM32_Programmer_CLI -w32 0x0803E00C 0x22334455       # AES key word 2
-[dry-run] STM32_Programmer_CLI -w32 0x0803E010 0x66778899       # AES key word 3
-[dry-run] STM32_Programmer_CLI -w32 0x0803E014 0x4C534544       # LSED magic
-… (8 K_seed words at 0x0803E018..0x0803E034)
-[dry-run] STM32_Programmer_CLI -w32 0x0803E800 0x4B4F5441       # KOTA magic (K_ota, FW.23)
-… (8 K_ota words at 0x0803E804..0x0803E820)
-[dry-run] STM32_Programmer_CLI -w32 0x0803E828 0x4B455942       # KEYB magic (cluster control-plane, FW.2 (в))
-… (4 KEYB words at 0x0803E82C..0x0803E838)
-[dry-run] STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — пес заморожений у STOP2, ДО RDP
-[dry-run] STM32_Programmer_CLI -ob RDP=0xBB                     # L1 — сирий байт, не номер рівня
-[dry-run] STM32_Programmer_CLI -c port=SWD --quietMode
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12    # [FW.54] UID-read (wrong-board guard)
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125            # сторінки ключів: -w32 сам не стирає
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 0x4B45594C 0xAABBCCDD … 0x4C534544 …
+          # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words — 14 слів = 7 doubleword'ів
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E800 0x4B4F5441 … 0xFFFFFFFF 0x4B455942 … 0xFFFFFFFF
+          # стор. 125: KOTA magic + 8 K_ota words (FW.23), стерте слово, KEYB magic + 4 words (+40, FW.2 (в)), стерте слово
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — ДО RDP
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB          # L1 — сирий байт, не номер рівня
 ```
 
 **Hardware-gated TODO:**

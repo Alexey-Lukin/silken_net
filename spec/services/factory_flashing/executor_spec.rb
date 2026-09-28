@@ -68,6 +68,20 @@ RSpec.describe FactoryFlashing::Executor do
       expect(Open3).to have_received(:capture3).twice
       expect(executor.results.size).to eq(2)
     end
+
+    # Session персистить повідомлення в provisioning_sessions.error_message, а
+    # дані `-w32` — це ключі: туди йде лише адреса й кількість слів.
+    it "keeps -w32 data (key words) out of the error message" do
+      allow(described_class).to receive(:programmer_available?).and_return(true)
+      bad = instance_double(Process::Status, success?: false, exitstatus: 7)
+      allow(Open3).to receive(:capture3).and_return([ "", "Error: Data mismatch", bad ])
+      cmd = "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 0x4B45594C 0x01234567 0x89ABCDEF 0xFFFFFFFF"
+
+      expect { executor.run([ cmd ]) }.to raise_error(described_class::CommandFailedError) { |error|
+        expect(error.message).to include("-w32 0x0803E000 <4 words>")
+        expect(error.message).not_to include("0x01234567")
+      }
+    end
   end
 
   # The run/execute specs above stub .programmer_available?; these exercise the

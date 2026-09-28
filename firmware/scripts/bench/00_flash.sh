@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # 00_flash.sh — [bench] прошивка .elf/.bin через STM32_Programmer_CLI.
-# Той самий бінарник, що у SEC.3 pipeline (шим-інтеграція довела софт-шлях;
-# тут — фізичний SWD). Без --execute лише друкує план (узгоджено з
-# dry-run-філософією factory:flash).
+# Той самий бінарник, що у SEC.3 pipeline (шим-інтеграція довела оркестрацію,
+# не семантику CLI; тут — фізичний SWD). Без --execute лише друкує план
+# (узгоджено з dry-run-філософією factory:flash).
 #
 #   firmware/scripts/bench/00_flash.sh --elf build/soldier.elf [--execute]
 #   firmware/scripts/bench/00_flash.sh --bin fw.bin --addr 0x08000000 --execute
@@ -24,14 +24,16 @@ done
 
 [ -n "$ELF$BIN" ] || { echo "потрібен --elf або --bin"; exit 2; }
 
+# Кожен виклик CLI — окремий процес, тож `-c` несе КОЖЕН рядок: з'єднання
+# між процесами не живе, а «disconnect» окремим рядком не існує.
+CONNECT="-c port=SWD reset=HWrst"
+
 cmds=()
-cmds+=("$CLI -c port=SWD reset=HWrst")
 if [ -n "$ELF" ]; then
-  cmds+=("$CLI -w \"$ELF\" -v")
+  cmds+=("$CLI $CONNECT -w \"$ELF\" -v")
 else
-  cmds+=("$CLI -w \"$BIN\" $ADDR -v")
+  cmds+=("$CLI $CONNECT -w \"$BIN\" $ADDR -v")
 fi
-cmds+=("$CLI -c port=SWD --quietMode")
 
 if [ "$EXECUTE" != "1" ]; then
   echo "— план (без --execute нічого не виконується) —"

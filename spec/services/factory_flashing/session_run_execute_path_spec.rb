@@ -42,7 +42,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       case "$FAKE_STM32_MODE" in
         verify_fail)
           case "$@" in
-            *"-w32 0x0803E014"*) echo "Error: Data mismatch found at 0x0803E014" >&2; exit 7;;
+            *"-w32 0x0803E000"*) echo "Error: Data mismatch found at 0x0803E014" >&2; exit 7;;
           esac;;
         rdp_fail)
           case "$@" in
@@ -96,13 +96,13 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       expect(outcome.transcript).to all(have_attributes(status: 0))
       expect(outcome.transcript.map(&:stdout)).to all(include("FAKE-CLI OK"))
 
-      # Порядок на «дроті»: connect → KEYL/LSED writes → IWDG-заморозка → RDP → disconnect
+      # Кожен виклик під'єднується сам: UID-read → стирання → запис → IWDG-заморозка → RDP
       log = shim_invocations
       expect(log.size).to eq(outcome.transcript.size)
-      expect(log.first).to include("-c port=SWD reset=HWrst")
-      expect(log).to include(a_string_matching(/-w32 0x0803E000 0x4B45594C/)) # KEYL magic
-      expect(log).to include(a_string_matching(/-ob RDP=/))
-      expect(log.last).to include("--quietMode")
+      expect(log).to all(start_with("-c port=SWD reset=HWrst "))
+      expect(log.first).to include("-r32 0x1FFF7590")
+      expect(log).to include(a_string_matching(/-w32 0x0803E000 0x4B45594C /)) # KEYL magic
+      expect(log.last).to include("-ob RDP=")
 
       expect(outcome.audit_log).to be_persisted
     end
@@ -130,7 +130,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
                           executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
                           master_key_source: master_key_source)
 
-      expect(shim_invocations).to include(a_string_matching(/-w32 0x0803E044 0x#{hw_key.aes_key_hex[0, 8]}\z/))
+      expect(flash_image(shim_invocations)[0x0803E044]).to eq("0x#{hw_key.aes_key_hex[0, 8]}")
       expect(hw_key.reload.previous_aes_key_hex).to be_nil
     end
 
@@ -207,12 +207,13 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
 
       expect(session.reload).to be_failed
       expect(session.error_message).to include("CommandFailedError")
+      # error_message персиститься — даних `-w32` (ключів) у ньому немає
+      expect(session.error_message).not_to match(/-w32 0x\h+ 0x\h+/)
 
-      # Stop-on-fail: після впалого LSED-запису RDP/disconnect НЕ виконувались
+      # Stop-on-fail: після впалого запису стор. 124 ні IWDG, ні RDP не виконувались
       log = shim_invocations
-      expect(log.last).to include("-w32 0x0803E014")
-      expect(log.grep(/-ob RDP=/)).to be_empty
-      expect(log.grep(/--quietMode/)).to be_empty
+      expect(log.last).to include("-w32 0x0803E000")
+      expect(log.grep(/-ob /)).to be_empty
     end
   end
 

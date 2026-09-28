@@ -53,7 +53,13 @@ module FactoryFlashing
       @results << result
       return if status.success?
 
-      raise CommandFailedError, "exit=#{status.exitstatus} cmd=#{command} stderr=#{stderr.strip}"
+      raise CommandFailedError, "exit=#{status.exitstatus} cmd=#{self.class.redact(command)} stderr=#{stderr.strip}"
+    end
+
+    # Дані `-w32` — це ключі, а повідомлення помилки Session персистить у
+    # `provisioning_sessions.error_message`: туди йде адреса й кількість слів.
+    def self.redact(command)
+      command.gsub(/(-w32 0x\h+)((?: 0x\h+)+)/) { "#{$1} <#{$2.split.size} words>" }
     end
 
     def ensure_programmer_available!

@@ -41,12 +41,14 @@ if [ "$RDP" = "2" ]; then
   [ "$confirm" = "RDP2" ] || { echo "скасовано"; exit 1; }
 fi
 
+# Кожен виклик CLI — окремий процес, тож `-c` несе КОЖЕН рядок (дзеркало —
+# FactoryFlashing::CommandBuilder::CONNECT).
+CONNECT="-c port=SWD reset=HWrst"
+
 cmds=()
-cmds+=("$CLI -c port=SWD reset=HWrst")
-cmds+=("$CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0")
-[ -n "$RDP_BYTE" ] && cmds+=("$CLI -ob RDP=$RDP_BYTE")
-cmds+=("$CLI -ob displ")
-cmds+=("$CLI -c port=SWD --quietMode")
+cmds+=("$CLI $CONNECT -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0")
+[ -n "$RDP_BYTE" ] && cmds+=("$CLI $CONNECT -ob RDP=$RDP_BYTE")
+cmds+=("$CLI $CONNECT -ob displ")
 
 if [ "$EXECUTE" != "1" ]; then
   echo "— план (без --execute нічого не виконується) —"

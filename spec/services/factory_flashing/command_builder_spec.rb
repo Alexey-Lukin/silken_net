@@ -31,51 +31,26 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     # Golden-транскрипт атомарний (один eq-масив = повний фабричний контракт) —
     # різати на шматки шкідливо для читабельності діфа при зміні layout'у.
-    it "opens SWD, writes KEYL+AES16, LSED+seed32, KOTA+k_ota32 (FW.23), KEYB+bcast16 (FW.2 (в)), then sets RDP" do # rubocop:disable RSpec/ExampleLength
+    it "reads the UID, erases the key pages, writes KEYL·LSED and KOTA·KEYB as whole doublewords, then IWDG and RDP" do
       expect(commands).to eq([
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst",
         # [FW.54] SWD-read кремнієвого паспорта — wrong-board guard (Session)
-        "STM32_Programmer_CLI -r32 0x1FFF7590 12",
-        # KEYL magic + 4 AES words at 0x0803E000..0x0803E010
-        "STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C",
-        "STM32_Programmer_CLI -w32 0x0803E004 0x01234567",
-        "STM32_Programmer_CLI -w32 0x0803E008 0x89ABCDEF",
-        "STM32_Programmer_CLI -w32 0x0803E00C 0x01234567",
-        "STM32_Programmer_CLI -w32 0x0803E010 0x89ABCDEF",
-        # LSED magic + 8 K_seed words at 0x0803E014..0x0803E030
-        "STM32_Programmer_CLI -w32 0x0803E014 0x4C534544",
-        "STM32_Programmer_CLI -w32 0x0803E018 0x00112233",
-        "STM32_Programmer_CLI -w32 0x0803E01C 0x44556677",
-        "STM32_Programmer_CLI -w32 0x0803E020 0x8899AABB",
-        "STM32_Programmer_CLI -w32 0x0803E024 0xCCDDEEFF",
-        "STM32_Programmer_CLI -w32 0x0803E028 0xFFEEDDCC",
-        "STM32_Programmer_CLI -w32 0x0803E02C 0xBBAA9988",
-        "STM32_Programmer_CLI -w32 0x0803E030 0x77665544",
-        "STM32_Programmer_CLI -w32 0x0803E034 0x33221100",
-        # [FW.23] KOTA magic + 8 K_ota words — окрема сторінка 0x0803E800
-        # (стор. 125; 0x0803D000 належить Flash-KV — 03_01 §2.3);
-        # розкладка дзеркалить Load_Ota_Hmac_Key (firmware/soldier/main.c)
-        "STM32_Programmer_CLI -w32 0x0803E800 0x4B4F5441",
-        "STM32_Programmer_CLI -w32 0x0803E804 0xA1B2C3D4",
-        "STM32_Programmer_CLI -w32 0x0803E808 0xE5F60718",
-        "STM32_Programmer_CLI -w32 0x0803E80C 0x293A4B5C",
-        "STM32_Programmer_CLI -w32 0x0803E810 0x6D7E8F90",
-        "STM32_Programmer_CLI -w32 0x0803E814 0x0F1E2D3C",
-        "STM32_Programmer_CLI -w32 0x0803E818 0x4B5A6978",
-        "STM32_Programmer_CLI -w32 0x0803E81C 0x8796A5B4",
-        "STM32_Programmer_CLI -w32 0x0803E820 0xC3D2E1F0",
-        # [FW.2 (в)] KEYB magic + 4 broadcast words — та сама стор. 125,
-        # старт 0x0803E828 (+40, НЕ +36: dw-вирівнювання WL Flash — друга
-        # половина K_ota-хвостового doubleword'а недоторкана)
-        "STM32_Programmer_CLI -w32 0x0803E828 0x4B455942",
-        "STM32_Programmer_CLI -w32 0x0803E82C 0xB0B1B2B3",
-        "STM32_Programmer_CLI -w32 0x0803E830 0xC0C1C2C3",
-        "STM32_Programmer_CLI -w32 0x0803E834 0xD0D1D2D3",
-        "STM32_Programmer_CLI -w32 0x0803E838 0xE0E1E2E3",
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12",
+        # `-w32` не стирає — re-flash без цього рядка впав би на першому ж записі
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125",
+        # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words —
+        # 14 слів = рівно 7 doubleword'ів
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 " \
+        "0x4B45594C 0x01234567 0x89ABCDEF 0x01234567 0x89ABCDEF " \
+        "0x4C534544 0x00112233 0x44556677 0x8899AABB 0xCCDDEEFF 0xFFEEDDCC 0xBBAA9988 0x77665544 0x33221100",
+        # стор. 125: [FW.23] KOTA magic + 8 K_ota words (розкладка дзеркалить
+        # Load_Ota_Hmac_Key) + стерте слово до кінця doubleword'а; [FW.2 (в)]
+        # KEYB magic + 4 broadcast words зі старту +40 + ще одне стерте слово
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E800 " \
+        "0x4B4F5441 0xA1B2C3D4 0xE5F60718 0x293A4B5C 0x6D7E8F90 0x0F1E2D3C 0x4B5A6978 0x8796A5B4 0xC3D2E1F0 0xFFFFFFFF " \
+        "0x4B455942 0xB0B1B2B3 0xC0C1C2C3 0xD0D1D2D3 0xE0E1E2E3 0xFFFFFFFF",
         # [SEC.15] пес заморожений у STOP2/STANDBY — ДО RDP (03_01 §1.10)
-        "STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
-        "STM32_Programmer_CLI -ob RDP=0xBB",
-        "STM32_Programmer_CLI -c port=SWD --quietMode"
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
+        "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB"
       ])
     end
 
@@ -107,13 +82,12 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     # декодує як Level 1 (FLASH_OB_GetRDP) — L2 у журналі, L1 на чипі.
     it "honours rdp_level=2 (irreversible) as the raw L2 byte, never the level number" do
       session.rdp_level = 2
-      expect(commands).to include("STM32_Programmer_CLI -ob RDP=0xCC")
-      expect(commands).not_to include("STM32_Programmer_CLI -ob RDP=2")
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xCC")
     end
 
     it "emits rdp_level=0 as the L0 byte — the number 0 would lock L1" do
       session.rdp_level = 0
-      expect(commands).to include("STM32_Programmer_CLI -ob RDP=0xAA")
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xAA")
     end
 
     it "maps every RDP level the session accepts (a level without a byte fails here, not at the factory)" do
@@ -134,18 +108,18 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     let(:session) { build(:provisioning_session, gilka: "A", rdp_level: 1) }
 
     it "writes KEYC magic + 8 AES-256 words at FLASH_COAP_KEY_ADDR" do
-      expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst")
-      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943")
-      # KEYL(broadcast, 5) + KEYC(9) — FW.2 (в)
-      expect(commands.count { |c| c.include?("-w32") }).to eq(14)
-      expect(commands.last(2).first).to eq("STM32_Programmer_CLI -ob RDP=0xBB")
+      expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12")
+      expect(flash_image(commands)[0x0803E040]).to eq("0x4B455943")
+      # KEYL(broadcast, 5) + стерте слово · KEYC(9) + стерте слово — FW.2 (в)
+      expect(flash_image(commands).keys).to eq((0x0803E000...0x0803E018).step(4).to_a +
+                                               (0x0803E040...0x0803E068).step(4).to_a)
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB")
     end
 
     it "writes KEYL slot with the BROADCAST value — фікс фабричної цегли (FW.2 (в))" do
       # До 2026-07-03 Gateway KEYL не писався взагалі → Queen Load_AES_Key()
       # без magic = Error_Handler → reset-петля на першому boot.
-      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C")
-      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E004 0xB0B1B2B3")
+      expect(flash_image(commands).values_at(0x0803E000, 0x0803E004)).to eq(%w[0x4B45594C 0xB0B1B2B3])
     end
 
     it "refuses Gilka A Gateway without bcast_key_hex — інакше Королева цеглиться на boot" do
@@ -179,11 +153,13 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     let(:ed25519_seed_hex) { "53494C4B454E2D4E45542D4C312D514154542D474F4C44454E2D534545442121" }
 
     it "writes EDSK magic + 8 seed words right after the KEYC block" do
-      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E064 0x4544534B")
-      # KEYL-broadcast (5) + KEYC (9) + EDSK (9) word-команд — FW.2 (в)
-      expect(commands.count { |c| c.include?("-w32") }).to eq(23)
+      image = flash_image(commands)
+      expect(image[0x0803E064]).to eq("0x4544534B")
+      # KEYL-broadcast (5) + стерте слово + KEYC (9) + EDSK (9): KEYC·EDSK
+      # закінчуються рівно на межі doubleword'а — FW.2 (в)
+      expect(image.size).to eq(24)
       # перше seed-слово BE — firmware розгортає word→BE-байти (FW.30-конвенція)
-      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E068 0x53494C4B")
+      expect(image[0x0803E068]).to eq("0x53494C4B")
     end
 
     it "rejects ed25519_seed_hex on a Tree (Gateway-only slot)" do
@@ -232,14 +208,14 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       b = commands_for("B", device: tree, aes_key_hex: aes_lora_hex, **keys)
 
       expect(b).to eq(commands_for("A", device: tree, aes_key_hex: aes_lora_hex, **keys))
-      expect(b).to include("STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C") # KEYL magic
+      expect(flash_image(b)[0x0803E000]).to eq("0x4B45594C") # KEYL magic
     end
 
     it "writes a Queen her KEYC too — SE-less, Гілка B is Гілка A for her" do
       b = commands_for("B", device: gateway, aes_key_hex: aes_coap_hex)
 
       expect(b).to eq(commands_for("A", device: gateway, aes_key_hex: aes_coap_hex))
-      expect(b).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943") # KEYC magic
+      expect(flash_image(b)[0x0803E040]).to eq("0x4B455943") # KEYC magic
     end
   end
 
@@ -247,7 +223,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   # ресетиться посеред кожного багатогодинного сну. Порядок несучий: на L2 option bytes
   # стають read-only, і незаморожений пес лишився б таким назавжди (03_05 §3.3).
   describe "IWDG-заморозка перед RDP" do
-    let(:iwdg) { "STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0" }
+    let(:iwdg) { "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0" }
 
     def transcript(device:, rdp_level:, **keys)
       described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: rdp_level),
@@ -270,6 +246,50 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       cmds = transcript(device: gateway, rdp_level: 1, aes_key_hex: aes_coap_hex)
 
       expect(cmds.index(iwdg)).to be < cmds.index { |c| c.include?("-ob RDP=") }
+    end
+  end
+
+  # [SEC.3] Форма транскрипту — під CLI і кремній WL, а не під уявну сесію: кожен
+  # рядок є окремим процесом (з'єднання між процесами не живе), а Flash приймає
+  # лише цілий doubleword по стертому (`-w32` сам не стирає). Доти вирівняли лише
+  # межу KOTA|KEYB — магія зі словом ключа й межа KEYL|LSED ділили doubleword.
+  describe "форма запису Flash WL" do
+    let(:voice_seed) { "53494C4B454E2D4E45542D4C312D514154542D474F4C44454E2D534545442121" }
+    let(:transcripts) do
+      transcript_for = lambda do |device, **keys|
+        described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: 1),
+                            device: device, bcast_key_hex: bcast_hex, **keys).commands
+      end
+      {
+        tree:        transcript_for.call(tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex),
+        queen:       transcript_for.call(gateway, aes_key_hex: aes_coap_hex),
+        queen_voice: transcript_for.call(gateway, aes_key_hex: aes_coap_hex, ed25519_seed_hex: voice_seed)
+      }
+    end
+
+    it "кожен рядок під'єднується сам — з'єднання між процесами CLI не живе" do
+      transcripts.each_value do |cmds|
+        expect(cmds).to all(start_with("STM32_Programmer_CLI -c port=SWD reset=HWrst "))
+      end
+    end
+
+    it "кожен зачеплений doubleword пишеться рівно раз і цілим" do
+      transcripts.each_value do |cmds|
+        writes = cmds.grep(/ -w32 /).map { |c| c.split(" -w32 ", 2).last.split }
+        addrs  = writes.flat_map { |addr, *words| words.each_index.map { |i| Integer(addr, 16) + (4 * i) } }
+
+        expect(addrs).to eq(addrs.uniq)
+        expect(writes).to all(satisfy { |addr, *words| (Integer(addr, 16) % 8).zero? && words.size.even? })
+      end
+    end
+
+    it "стирає ДО запису рівно сторінки ключів — Королевину 125 (рантайм-OTA-SHA, FW.52) ніколи" do
+      expect(transcripts[:tree].grep(/ -e /)).to eq([ "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125" ])
+      expect(transcripts.values_at(:queen, :queen_voice).map { |c| c.grep(/ -e /) })
+        .to all(eq([ "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124" ]))
+      transcripts.each_value do |cmds|
+        expect(cmds.index { |c| c.include?(" -e ") }).to be < cmds.index { |c| c.include?(" -w32 ") }
+      end
     end
   end
 

@@ -42,6 +42,14 @@ module FactoryFlashing
     EDSK_MAGIC = "0x4544534B" # "EDSK" Ed25519 seed magic (firmware: FLASH_ED25519_SEED_MAGIC)
 
     PROGRAMMER = "STM32_Programmer_CLI"
+    # Кожен рядок транскрипту — окремий процес CLI, а з'єднання живе лише в межах
+    # одного виклику: `-c` несе КОЖЕН рядок (так пише й вендорський
+    # STM32WLScripts/SetRDPLevelCM4.bat), «disconnect» окремим рядком не існує.
+    CONNECT = "-c port=SWD reset=HWrst"
+
+    FLASH_BASE      = 0x08000000
+    FLASH_PAGE_SIZE = 0x800        # WL: сторінка 2 КБ = сектор для `-e`
+    ERASED_WORD     = "0xFFFFFFFF"
 
     # @param session   [ProvisioningSession]
     # @param device    [Tree|Gateway]
@@ -78,13 +86,10 @@ module FactoryFlashing
     # паспорта. Клас-метод свідомо — не потребує ключів, тож Session ганяє
     # його (і wrong-board guard) ДО деривації та будь-якого -w32.
     def self.preflight_commands
-      [
-        "#{PROGRAMMER} -c port=SWD reset=HWrst",
-        "#{PROGRAMMER} -r32 #{UID_BASE_ADDR} 12"
-      ]
+      [ "#{PROGRAMMER} #{CONNECT} -r32 #{UID_BASE_ADDR} 12" ]
     end
 
-    # Тіло гілки: key-writes + IWDG-заморозка + RDP + disconnect (без preflight).
+    # Тіло гілки: стирання сторінок ключів + key-writes + IWDG-заморозка + RDP (без preflight).
     # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] Набір Protected-Flash-ключів
     # ОДИН для обох гілок: кожен із них має MCU-споживача (KEYL/KEYB — CRYP
     # радіо-AES, LSED — Lorenz-VM, K_ota — OTA-HMAC зі стор. 125), а SE за
@@ -122,37 +127,51 @@ module FactoryFlashing
     end
 
     def protected_flash_commands
-      out = []
+      words = {}
 
       if @device.is_a?(Tree)
         # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed + 32-byte K_ota.
         raise ArgumentError, "Tree requires 32-hex AES-128 key" unless @aes_key_hex.length == 32
-        out.concat(write_block(FLASH_KEY_ADDR, KEYL_MAGIC, @aes_key_hex))
-        out.concat(write_block(FLASH_SEED_ADDR, LSED_MAGIC, @lorenz_seed_hex))
+        words.merge!(block_words(FLASH_KEY_ADDR, KEYL_MAGIC, @aes_key_hex))
+        words.merge!(block_words(FLASH_SEED_ADDR, LSED_MAGIC, @lorenz_seed_hex))
         # [FW.23] K_ota — окрема сторінка 0x0803E800; без нього Load_Ota_Hmac_Key
         # лишає dual-gate fail-closed і жоден OTA не застосовується.
-        out.concat(write_block(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
+        words.merge!(block_words(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
         # [FW.2 (в)] KEYB — cluster control-plane (та сама стор. 125, +40):
         # без нього Солдат CCM-ери деградує у fallback (амбієнт = KEYL) і
         # downlink Королеви для нього нечитний.
-        out.concat(write_block(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
+        words.merge!(block_words(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
       else
         # Gateway: 32-byte CoAP AES-256 key + LoRa KEYL = broadcast-значення
         # (FW.2 (в)): Королева шифрує ним downlink і читає 0x55/0x56; без
         # KEYL її Load_AES_Key() = Error_Handler → цегла на першому boot
         # (діра «LoRa slot intentionally unused» — закрито 2026-07-03).
         raise ArgumentError, "Gateway requires 64-hex AES-256 key" unless @aes_key_hex.length == 64
-        out.concat(write_block(FLASH_KEY_ADDR, KEYL_MAGIC, @bcast_key_hex))
-        out.concat(write_block(FLASH_COAP_KEY_ADDR, KEYC_MAGIC, @aes_key_hex))
+        words.merge!(block_words(FLASH_KEY_ADDR, KEYL_MAGIC, @bcast_key_hex))
+        words.merge!(block_words(FLASH_COAP_KEY_ADDR, KEYC_MAGIC, @aes_key_hex))
         # [L1 QATT] Голос Королеви: сім'я підпису батчів. Відсутня → Queen
         # свідомо лишається на L0 (legacy-батчі без підпису).
-        out.concat(write_block(FLASH_EDSK_ADDR, EDSK_MAGIC, @ed25519_seed_hex)) if @ed25519_seed_hex.present?
+        words.merge!(block_words(FLASH_EDSK_ADDR, EDSK_MAGIC, @ed25519_seed_hex)) if @ed25519_seed_hex.present?
       end
 
-      out << iwdg_freeze_command
-      out << rdp_command(@session.rdp_level)
-      out << disconnect_command
-      out
+      flash_write_commands(words) + [ iwdg_freeze_command, rdp_command(@session.rdp_level) ]
+    end
+
+    # Flash WL програмується лише цілим doubleword'ом (64 біти + ECC) і лише по
+    # стертому, а `-w32` сам не стирає (STM32CubeProgrammer, примітка до `-w32`).
+    # Тож: стерти сторінки, яких торкаємось (re-flash інакше впаде на першому ж
+    # записі; чистому чипу це no-op), і писати кожен doubleword рівно раз —
+    # суміжні одним `-w32`, діру всередині зачепленого добито стертим словом.
+    # Сторінки виводяться з адрес запису: Королевина 125 (рантайм-OTA-SHA, FW.52)
+    # і Солдатові 126 (mruby-контракт) сюди не потрапляють за побудовою.
+    def flash_write_commands(words)
+      dws = words.keys.map { |addr| addr & ~7 }.uniq.sort
+      pages = dws.map { |dw| (dw - FLASH_BASE) / FLASH_PAGE_SIZE }.uniq
+      writes = dws.slice_when { |a, b| b != a + 8 }.map do |run|
+        data = run.flat_map { |dw| [ words.fetch(dw, ERASED_WORD), words.fetch(dw + 4, ERASED_WORD) ] }
+        "#{PROGRAMMER} #{CONNECT} -w32 #{format('0x%08X', run.first)} #{data.join(' ')}"
+      end
+      [ "#{PROGRAMMER} #{CONNECT} -e #{pages.join(' ')}" ] + writes
     end
 
     # [SEC.15] LSI-пес лічить і в STOP2 (max ~32.7 с), тож без `IWDG_STOP=0` Солдат
@@ -163,21 +182,14 @@ module FactoryFlashing
     IWDG_FREEZE_OPTION_BYTES = "IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0"
 
     def iwdg_freeze_command
-      "#{PROGRAMMER} -ob #{IWDG_FREEZE_OPTION_BYTES}"
+      "#{PROGRAMMER} #{CONNECT} -ob #{IWDG_FREEZE_OPTION_BYTES}"
     end
 
-    def disconnect_command
-      "#{PROGRAMMER} -c port=SWD --quietMode"
-    end
-
-    # Returns Array<String> — `-w32 <addr> <hex_word>` per word, magic first.
-    def write_block(base_addr, magic_word, payload_hex)
+    # { addr => "0x…" } — magic першим словом, далі payload по 4 байти.
+    def block_words(base_addr, magic_word, payload_hex)
       base = Integer(base_addr, 16)
       words = [ magic_word ] + payload_hex.scan(/.{8}/).map { |w| "0x#{w.upcase}" }
-      words.each_with_index.map do |word, i|
-        addr = format("0x%08X", base + i * 4)
-        "#{PROGRAMMER} -w32 #{addr} #{word}"
-      end
+      words.each_with_index.to_h { |word, i| [ base + i * 4, word ] }
     end
 
     # [SEC.2] `-ob RDP=` programs the RAW option byte, not a level number (UM2237:
@@ -188,7 +200,7 @@ module FactoryFlashing
     RDP_OPTION_BYTE = { 0 => "0xAA", 1 => "0xBB", 2 => "0xCC" }.freeze
 
     def rdp_command(level)
-      "#{PROGRAMMER} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"
+      "#{PROGRAMMER} #{CONNECT} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"
     end
   end
 end
