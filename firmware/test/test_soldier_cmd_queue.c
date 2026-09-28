@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
- * test_soldier_cmd_queue.c — [FW.20-Q2] черга Soldier-bound команд (host).
+ * test_soldier_cmd_queue.c — [FW.20-Q2 · FW.17] черга адресних команд (host).
  *
- * Валідатор спільного каркаса [маркер][len_le:2][body][crc16_le:2],
- * дедуп-refresh, shot-бюджет, round-robin, евікція. Golden-кадр 0x9E
- * (9E 0400 0300 5C48) — той самий freeze-contract, що в test_key_ratchet.c
- * ↔ OtaPackagerService.build_rotate_key_block; інтеграційний кейс жене
- * блок з черги крізь справжній Key_Ratchet_Parse_Cmd — шлях Солдата.
+ * Структурна перевірка без ключа, адресний пошук за DID, порядок за DLFC,
+ * бюджет спроб у ціль, дедуп-освіження, жертва переповнення. Кадри — golden
+ * CCM_KAT_DOWNLINK (ccm_kat_vectors.h): ті самі, що відкриває Dl_Ccm_Open у
+ * test_downlink_ccm.c і будує Rails, тож «Королева віддає кадр байт-у-байт»
+ * тут замикає ланцюг Rails → Королева → Солдат.
  *
  * Build: make -C firmware/test cmd_queue
  */
@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 #include "../queen/soldier_cmd_queue.h"
-#include "../common/key_ratchet.h"
+#include "../common/ccm_kat_vectors.h"
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -38,216 +38,194 @@ static int tests_failed = 0;
 } while(0)
 
 #define ASSERT_TRUE(expr) ASSERT_EQ(!!(expr), 1)
-#define ASSERT_FALSE(expr) ASSERT_EQ(!!(expr), 0)
 
-/* Freeze-contract hex з бекенда: [0x9E][len=4][target=3][crc16_le]. */
-static const uint8_t GOLDEN_9E[] = { 0x9E, 0x04, 0x00, 0x03, 0x00, 0x5C, 0x48 };
+static const uint8_t *golden(unsigned i) { return CCM_KAT_DOWNLINK[i].frame; }
+static uint16_t golden_len(unsigned i) { return Dl_Ccm_Frame_Len(golden(i)[0]); }
 
-/* Конструктор кадру спільного каркаса (дзеркало OtaPackagerService). */
-static uint16_t build_frame(uint8_t *out, uint8_t marker,
-                            const uint8_t *body, uint8_t body_len)
+/* Синтетичний кадр 0x9E для DID/DLFC_lsb: тіло й MIC Королеві байдужі. */
+static void make_frame(uint8_t out[17], uint32_t did, uint16_t dlfc_lsb, uint8_t tag)
 {
-    uint16_t payload_len = (uint16_t)(body_len + SOLDIER_CMD_CRC_SIZE);
-    out[0] = marker;
-    out[1] = (uint8_t)(payload_len & 0xFFu);
-    out[2] = (uint8_t)(payload_len >> 8);
-    memcpy(out + 3, body, body_len);
-    uint16_t crc = Silken_Crc16_Ccitt(body, body_len);
-    out[3 + body_len]     = (uint8_t)(crc & 0xFFu);
-    out[3 + body_len + 1] = (uint8_t)(crc >> 8);
-    return (uint16_t)(SOLDIER_CMD_HEADER_SIZE + payload_len);
+    memset(out, tag, 17);
+    Build_DL_CCM_AAD(DL_CCM_OP_ROTATE_KEY, did, dlfc_lsb, out);
 }
 
-/* 0x9E з довільним target — для роздільних кадрів у тестах черги. */
-static uint16_t build_rotate(uint8_t *out, uint16_t target)
+/* Скільки пострілів дасть черга для DID, доки не спорожніє. */
+static unsigned drain_for(SoldierCmdQueue *q, uint32_t did)
 {
-    uint8_t body[2] = { (uint8_t)(target & 0xFFu), (uint8_t)(target >> 8) };
-    return build_frame(out, SOLDIER_CMD_MARKER_ROTATE_KEY, body, 2);
-}
-
-/* ════════════════════════════════════════════════════════════════════
- * 1. Валідатор каркаса
- * ════════════════════════════════════════════════════════════════════ */
-TEST(test_valid_golden_9e) {
-    ASSERT_TRUE(Soldier_Cmd_Frame_Valid(GOLDEN_9E, sizeof GOLDEN_9E));
-    /* CBC-padded хвіст (Handle_CoAP_Command віддає aligned-розмір) — теж ок. */
-    uint8_t padded[16] = {0};
-    memcpy(padded, GOLDEN_9E, sizeof GOLDEN_9E);
-    ASSERT_TRUE(Soldier_Cmd_Frame_Valid(padded, 16));
-}
-
-TEST(test_valid_9a_thresholds_frame) {
-    /* [FW.8] 8-байтний body: z_min/z_max/z_opt ×100 LE + species + version. */
-    const uint8_t body[8] = { 0xC8, 0x00, 0x94, 0x11, 0x54, 0x0B, 0x02, 0x01 };
-    uint8_t frame[16];
-    uint16_t n = build_frame(frame, SOLDIER_CMD_MARKER_THRESHOLDS, body, 8);
-    ASSERT_EQ(n, 13);
-    ASSERT_TRUE(Soldier_Cmd_Frame_Valid(frame, n));
-}
-
-TEST(test_reject_foreign_marker) {
-    /* 0x99 (OTA) і 0x9B (HMAC-печатка) мають власні гілки — у чергу зась. */
-    uint8_t frame[16];
-    uint16_t n = build_frame(frame, 0x99, (const uint8_t[]){ 0x01 }, 1);
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, n));
-    n = build_frame(frame, 0x9B, (const uint8_t[]){ 0x01 }, 1);
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, n));
-}
-
-TEST(test_reject_short_and_lying_len) {
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(GOLDEN_9E, 5));  /* куций буфер */
-    uint8_t frame[16];
-    memcpy(frame, GOLDEN_9E, sizeof GOLDEN_9E);
-    frame[1] = 0x0F;  /* len бреше: 3+15 > 16 — не лізе в LoRa-блок */
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, 16));
-    frame[1] = 0x08;  /* len бреше: 3+8 > наданих 7 байтів */
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, sizeof GOLDEN_9E));
-    frame[1] = 0x02;  /* len = лише CRC, body порожній */
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, sizeof GOLDEN_9E));
-}
-
-TEST(test_reject_flipped_crc) {
-    uint8_t frame[sizeof GOLDEN_9E];
-    memcpy(frame, GOLDEN_9E, sizeof GOLDEN_9E);
-    frame[3] ^= 0x01;  /* біт збрехав у LTE-транзиті */
-    ASSERT_FALSE(Soldier_Cmd_Frame_Valid(frame, sizeof frame));
-}
-
-/* ════════════════════════════════════════════════════════════════════
- * 2. Черга: push / дедуп / бюджет / round-robin / евікція
- * ════════════════════════════════════════════════════════════════════ */
-TEST(test_push_pads_block_and_next_pops_it) {
-    SoldierCmdQueue q;
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    Soldier_Cmd_Queue_Init(&q);
-    ASSERT_FALSE(Soldier_Cmd_Queue_Next(&q, out));  /* порожня — тиша */
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, GOLDEN_9E, sizeof GOLDEN_9E));
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_EQ(memcmp(out, GOLDEN_9E, sizeof GOLDEN_9E), 0);
-    for (unsigned i = sizeof GOLDEN_9E; i < SOLDIER_CMD_BLOCK_SIZE; i++)
-        ASSERT_EQ(out[i], 0);  /* zero-pad до AES-блоку */
-}
-
-TEST(test_push_rejects_invalid_leaves_queue_empty) {
-    SoldierCmdQueue q;
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    uint8_t bad[sizeof GOLDEN_9E];
-    Soldier_Cmd_Queue_Init(&q);
-    memcpy(bad, GOLDEN_9E, sizeof bad);
-    bad[4] ^= 0x80;
-    ASSERT_FALSE(Soldier_Cmd_Queue_Push(&q, bad, sizeof bad));
-    ASSERT_FALSE(Soldier_Cmd_Queue_Next(&q, out));
-}
-
-TEST(test_shot_budget_exhausts_exactly) {
-    SoldierCmdQueue q;
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    Soldier_Cmd_Queue_Init(&q);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, GOLDEN_9E, sizeof GOLDEN_9E));
-    for (unsigned i = 0; i < SOLDIER_CMD_SHOT_BUDGET; i++)
-        ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_FALSE(Soldier_Cmd_Queue_Next(&q, out));  /* бюджет згас — слот вільний */
-}
-
-TEST(test_dedup_refreshes_budget_not_slots) {
-    SoldierCmdQueue q;
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    Soldier_Cmd_Queue_Init(&q);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, GOLDEN_9E, sizeof GOLDEN_9E));
-    for (unsigned i = 0; i < 10; i++)
-        ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    /* Sidekiq retry приніс той самий кадр — бюджет повний, слот один. */
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, GOLDEN_9E, sizeof GOLDEN_9E));
-    for (unsigned i = 0; i < SOLDIER_CMD_SHOT_BUDGET; i++)
-        ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_FALSE(Soldier_Cmd_Queue_Next(&q, out));
-}
-
-TEST(test_round_robin_no_starvation) {
-    SoldierCmdQueue q;
-    uint8_t a[16], b[16], out[SOLDIER_CMD_BLOCK_SIZE];
-    Soldier_Cmd_Queue_Init(&q);
-    uint16_t na = build_rotate(a, 3);
-    uint16_t nb = build_rotate(b, 4);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, a, na));
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, b, nb));
-    /* Два кадри чергуються — жоден не голодує. */
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_EQ(memcmp(out, a, na), 0);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_EQ(memcmp(out, b, nb), 0);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    ASSERT_EQ(memcmp(out, a, na), 0);
-}
-
-TEST(test_overflow_evicts_lowest_budget) {
-    SoldierCmdQueue q;
-    uint8_t frames[SOLDIER_CMD_QUEUE_SLOTS + 1][16];
-    uint16_t sizes[SOLDIER_CMD_QUEUE_SLOTS + 1];
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    Soldier_Cmd_Queue_Init(&q);
-    for (uint16_t i = 0; i <= SOLDIER_CMD_QUEUE_SLOTS; i++)
-        sizes[i] = build_rotate(frames[i], (uint16_t)(i + 1));
-    /* Заповнюємо всі слоти й відстрілюємо по разу round-robin'ом… */
-    for (uint16_t i = 0; i < SOLDIER_CMD_QUEUE_SLOTS; i++)
-        ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, frames[i], sizes[i]));
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    /* …слот #0 тепер найбідніший — саме він і стає жертвою п'ятого кадру. */
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, frames[SOLDIER_CMD_QUEUE_SLOTS],
-                                       sizes[SOLDIER_CMD_QUEUE_SLOTS]));
-    uint8_t seen_evicted = 0;
-    uint8_t seen_newcomer = 0;
-    for (unsigned i = 0; i < SOLDIER_CMD_QUEUE_SLOTS; i++) {
-        ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-        if (memcmp(out, frames[0], sizes[0]) == 0) seen_evicted = 1;
-        if (memcmp(out, frames[SOLDIER_CMD_QUEUE_SLOTS],
-                   sizes[SOLDIER_CMD_QUEUE_SLOTS]) == 0) seen_newcomer = 1;
+    unsigned shots = 0;
+    uint8_t out[DL_CCM_FRAME_MAX];
+    for (int s; (s = Soldier_Cmd_Queue_Find_For(q, did)) >= 0; shots++) {
+        (void)Soldier_Cmd_Queue_Take(q, s, out);
     }
-    ASSERT_TRUE(seen_newcomer);
-    ASSERT_FALSE(seen_evicted);
+    return shots;
 }
 
-/* ════════════════════════════════════════════════════════════════════
- * 3. Інтеграція: блок із черги → справжній парсер Солдата
- * ════════════════════════════════════════════════════════════════════ */
-TEST(test_popped_block_parses_as_soldier_would) {
+TEST(test_accepts_every_golden_frame) {
     SoldierCmdQueue q;
-    uint8_t out[SOLDIER_CMD_BLOCK_SIZE];
-    uint16_t target = 0;
-    Soldier_Cmd_Queue_Init(&q);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, GOLDEN_9E, sizeof GOLDEN_9E));
-    ASSERT_TRUE(Soldier_Cmd_Queue_Next(&q, out));
-    /* Солдат бачить рівно 16-байтний дешифрований блок — парсер його їсть. */
-    ASSERT_TRUE(Key_Ratchet_Parse_Cmd(out, SOLDIER_CMD_BLOCK_SIZE, &target));
-    ASSERT_EQ(target, 3);
+    for (unsigned i = 0; i < CCM_KAT_DOWNLINK_COUNT; i++) {
+        Soldier_Cmd_Queue_Init(&q);
+        ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(i), golden_len(i)));
+    }
 }
 
-/* ════════════════════════════════════════════════════════════════════ */
+TEST(test_rejects_non_command_opcode_and_wrong_length) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t f[DL_CCM_FRAME_MAX];
+    memcpy(f, golden(0), golden_len(0));
+    ASSERT_EQ(Soldier_Cmd_Queue_Push(&q, f, 16), 0);  /* 16 Б — ECB-шлях, не команда */
+    ASSERT_EQ(Soldier_Cmd_Queue_Push(&q, f, 18), 0);
+    f[0] = 0x9C;                                        /* маяк — кластерний кадр */
+    ASSERT_EQ(Soldier_Cmd_Queue_Push(&q, f, 17), 0);
+    f[0] = 0x99;
+    ASSERT_EQ(Soldier_Cmd_Queue_Push(&q, f, 17), 0);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[0].did), -1);
+}
+
+TEST(test_shoots_only_for_its_did) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(1), golden_len(1)));
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[0].did), -1);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[1].did ^ 1u), -1);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[1].did) >= 0);
+}
+
+/* Королева віддає рівно той кадр, що приніс Rails: без шифрування й паддингу. */
+TEST(test_take_passes_frame_byte_for_byte) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    for (unsigned i = 0; i < CCM_KAT_DOWNLINK_COUNT; i++) {
+        ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(i), golden_len(i)));
+    }
+    for (unsigned i = 0; i < CCM_KAT_DOWNLINK_COUNT; i++) {
+        uint8_t out[DL_CCM_FRAME_MAX] = {0};
+        int s = Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[i].did);
+        ASSERT_TRUE(s >= 0);
+        ASSERT_EQ(Soldier_Cmd_Queue_Take(&q, s, out), golden_len(i));
+        ASSERT_EQ(memcmp(out, golden(i), golden_len(i)), 0);
+    }
+}
+
+TEST(test_budget_is_attempts_at_the_target) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(2), golden_len(2)));
+    ASSERT_EQ(drain_for(&q, CCM_KAT_DOWNLINK[2].did), SOLDIER_CMD_SHOT_BUDGET);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[2].did), -1);
+}
+
+/* Rails перевидає відкриту команду тим самим кадром — слот не множиться. */
+TEST(test_reissue_refreshes_budget_not_slots) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t out[DL_CCM_FRAME_MAX];
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(0), golden_len(0)));
+    int s = Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[0].did);
+    (void)Soldier_Cmd_Queue_Take(&q, s, out);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(0), golden_len(0)));
+    ASSERT_EQ(drain_for(&q, CCM_KAT_DOWNLINK[0].did), SOLDIER_CMD_SHOT_BUDGET);
+    unsigned live = 0;
+    for (unsigned i = 0; i < SOLDIER_CMD_QUEUE_SLOTS; i++) live += q.shots[i] > 0u;
+    ASSERT_EQ(live, 0);
+}
+
+/* Солдат приймає лише DLFC, строго більший за останній: молодша команда,
+ * вистріляна раніше за старшу, зробила б старшу вічно мертвою. */
+TEST(test_lowest_dlfc_first_for_one_did) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t f7[17], f5[17], out[DL_CCM_FRAME_MAX];
+    make_frame(f7, 0xA1B2C3D4u, 7, 0x77);
+    make_frame(f5, 0xA1B2C3D4u, 5, 0x55);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f7, 17));
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f5, 17));
+    for (unsigned n = 0; n < SOLDIER_CMD_SHOT_BUDGET; n++) {
+        int s = Soldier_Cmd_Queue_Find_For(&q, 0xA1B2C3D4u);
+        (void)Soldier_Cmd_Queue_Take(&q, s, out);
+        ASSERT_EQ(Dl_Ccm_Frame_Dlfc_Lsb(out), 5);
+    }
+    int s = Soldier_Cmd_Queue_Find_For(&q, 0xA1B2C3D4u);
+    (void)Soldier_Cmd_Queue_Take(&q, s, out);
+    ASSERT_EQ(Dl_Ccm_Frame_Dlfc_Lsb(out), 7);
+}
+
+/* 16 біт ефіру обгортаються: 0xFFFF старший за 0x0001. */
+TEST(test_dlfc_order_crosses_the_16_bit_wrap) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t lo[17], hi[17], out[DL_CCM_FRAME_MAX];
+    make_frame(lo, 0x0BADF00Du, 0x0001u, 0x11);
+    make_frame(hi, 0x0BADF00Du, 0xFFFFu, 0xFF);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, lo, 17));
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, hi, 17));
+    int s = Soldier_Cmd_Queue_Find_For(&q, 0x0BADF00Du);
+    (void)Soldier_Cmd_Queue_Take(&q, s, out);
+    ASSERT_EQ(Dl_Ccm_Frame_Dlfc_Lsb(out), 0xFFFF);
+}
+
+/* Переповнення витісняє найдавніше поставлене; освіжений дублікат молодшає.
+ * Мовчазна ціль (команду ніхто не стріляв) не тримає слот вічно. */
+TEST(test_overflow_evicts_the_oldest_push) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t f[SOLDIER_CMD_QUEUE_SLOTS + 1][17];
+    for (unsigned i = 0; i <= SOLDIER_CMD_QUEUE_SLOTS; i++) {
+        make_frame(f[i], 0x100u + i, (uint16_t)(i + 1u), (uint8_t)i);
+    }
+    for (unsigned i = 0; i < SOLDIER_CMD_QUEUE_SLOTS; i++) {
+        ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f[i], 17));
+    }
+    /* 0x100 постріляно (лишок менший) і освіжено повторною видачею —
+     * найдавнішою стає 0x101, її й витісняє пʼята команда. */
+    uint8_t out[DL_CCM_FRAME_MAX];
+    (void)Soldier_Cmd_Queue_Take(&q, Soldier_Cmd_Queue_Find_For(&q, 0x100u), out);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f[0], 17));
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f[SOLDIER_CMD_QUEUE_SLOTS], 17));
+    ASSERT_TRUE(Soldier_Cmd_Queue_Find_For(&q, 0x100u) >= 0);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, 0x101u), -1);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Find_For(&q, 0x100u + SOLDIER_CMD_QUEUE_SLOTS) >= 0);
+}
+
+/* Під старим правилом «найменший лишок» постріляна жива ціль програвала б
+ * мовчазним: тут вона стріляна, але поставлена ПІЗНІШЕ за мовчазні — лишається. */
+TEST(test_live_target_is_not_evicted_for_silent_ones) {
+    SoldierCmdQueue q;
+    Soldier_Cmd_Queue_Init(&q);
+    uint8_t f[SOLDIER_CMD_QUEUE_SLOTS + 1][17], out[DL_CCM_FRAME_MAX];
+    for (unsigned i = 0; i <= SOLDIER_CMD_QUEUE_SLOTS; i++) {
+        make_frame(f[i], 0x200u + i, (uint16_t)(i + 1u), (uint8_t)i);
+    }
+    for (unsigned i = 0; i < SOLDIER_CMD_QUEUE_SLOTS; i++) {
+        ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f[i], 17));
+    }
+    const uint32_t live = 0x200u + SOLDIER_CMD_QUEUE_SLOTS - 1u; /* поставлена останньою */
+    for (unsigned n = 0; n + 1u < SOLDIER_CMD_SHOT_BUDGET; n++) {
+        (void)Soldier_Cmd_Queue_Take(&q, Soldier_Cmd_Queue_Find_For(&q, live), out);
+    }
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, f[SOLDIER_CMD_QUEUE_SLOTS], 17));
+    ASSERT_TRUE(Soldier_Cmd_Queue_Find_For(&q, live) >= 0);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, 0x200u), -1);
+}
+
 int main(void)
 {
     printf("════════════════════════════════════════════════════════════════════\n");
-    printf("  [FW.20-Q2] Черга Soldier-bound команд — валідатор + рефлекс-бюджет\n");
+    printf("  [FW.20-Q2 · FW.17] Черга адресних команд Королеви\n");
     printf("════════════════════════════════════════════════════════════════════\n");
 
-    printf("\n— Валідатор каркаса —\n");
-    RUN(test_valid_golden_9e);
-    RUN(test_valid_9a_thresholds_frame);
-    RUN(test_reject_foreign_marker);
-    RUN(test_reject_short_and_lying_len);
-    RUN(test_reject_flipped_crc);
+    RUN(test_accepts_every_golden_frame);
+    RUN(test_rejects_non_command_opcode_and_wrong_length);
+    RUN(test_shoots_only_for_its_did);
+    RUN(test_take_passes_frame_byte_for_byte);
+    RUN(test_budget_is_attempts_at_the_target);
+    RUN(test_reissue_refreshes_budget_not_slots);
+    RUN(test_lowest_dlfc_first_for_one_did);
+    RUN(test_dlfc_order_crosses_the_16_bit_wrap);
+    RUN(test_overflow_evicts_the_oldest_push);
+    RUN(test_live_target_is_not_evicted_for_silent_ones);
 
-    printf("\n— Черга —\n");
-    RUN(test_push_pads_block_and_next_pops_it);
-    RUN(test_push_rejects_invalid_leaves_queue_empty);
-    RUN(test_shot_budget_exhausts_exactly);
-    RUN(test_dedup_refreshes_budget_not_slots);
-    RUN(test_round_robin_no_starvation);
-    RUN(test_overflow_evicts_lowest_budget);
-
-    printf("\n— Інтеграція з парсером Солдата —\n");
-    RUN(test_popped_block_parses_as_soldier_would);
-
-    printf("\n════════════════════════════════════════════════════════════════════\n");
-    printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);
+    printf("════════════════════════════════════════════════════════════════════\n");
+    printf("PASS: %d  FAIL: %d\n", tests_passed, tests_failed);
     return tests_failed == 0 ? 0 : 1;
 }

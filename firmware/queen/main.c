@@ -753,25 +753,24 @@ volatile uint32_t queen_unix_ts          = 0;
 volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() в момент синхронізації
 
 // =========================================================================
-// [FW.20-Q2] SOLDIER CMD RELAY — черга Soldier-bound команд (0x9A, 0x9E)
+// [FW.20-Q2 · FW.17] SOLDIER CMD RELAY — адресні команди 0x9A · 0x9D · 0x9E
 // =========================================================================
-// Королева-гонець для командних кадрів спільного каркаса: CoAP downlink від
-// Rails → soldier_cmd_queue → рефлекторний постріл услід за uplink'ом Солдата
-// (його єдине вікно слуху ~500 мс після власного TX; періодичний маяк летить
-// у глухий ліс — ADR у soldier_cmd_queue.h). Повтори нешкідливі: 0x9E —
-// forward-only ratchet, 0x9A — ідемпотентний; ACK 0x9E = Dual-Key Grace на
+// Королева — сліпий курʼєр: Rails приносить кадр, підписаний сесійним ключем
+// цільового вузла (downlink-wire-ревізія, 03_05 §2.5), Королева перевіряє лише
+// структуру і стріляє його як є — адресно, услід за голосом САМЕ цього
+// Солдата (його єдине вікно слуху ~500 мс після власного TX; маяк летить у
+// глухий ліс — ADR у soldier_cmd_queue.h). ACK 0x9E = Dual-Key Grace на
 // бекенді (03_05 §3.8).
 //
-// 🟡 СТАТУС: ВИМКНЕНО (FW20_Q2_CMD_RELAY_ENABLED 0) — дзеркало Soldier-гейтів
-// FW17_RATCHET_ENABLED / FW8_PARSER_ENABLED: ECB-downlink без MAC не сміє
-// командувати ротацією, а на спільному транзит-ключі командний broadcast
-// чули б усі Солдати (per-device адресація = CCM-крипто). Фліп — разом із
-// FW.2 CCM + Soldier-гілками. Логіка черги pure (host-тести
-// test_soldier_cmd_queue.c); канон — 03_02 §5б.
+// 🟡 СТАТУС: ВИМКНЕНО (FW20_Q2_CMD_RELAY_ENABLED 0) — фліп разом із
+// приймачами Солдата (FW8_PARSER_ENABLED · FW18_AUDIO_CMD_ENABLED ·
+// FW17_RATCHET_ENABLED): без них кадр долітає до вузла, який його не
+// відкриває. Логіка черги pure (host-тести test_soldier_cmd_queue.c); канон —
+// 03_02 §5б.
 #include "soldier_cmd_queue.h"
 
 #ifndef FW20_Q2_CMD_RELAY_ENABLED
-#define FW20_Q2_CMD_RELAY_ENABLED  0   // 🟡 фліп разом із FW.2 CCM (bench)
+#define FW20_Q2_CMD_RELAY_ENABLED  0   // 🟡 фліп разом із приймачами Солдата (bench)
 #endif
 
 #if FW20_Q2_CMD_RELAY_ENABLED
@@ -932,7 +931,7 @@ static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 static void Queen_Poll_Downlink(void);
-static void Queen_Reflex_Shots(void);
+static void Queen_Reflex_Shots(uint32_t heard_did);
 // [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
 // [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
@@ -1227,7 +1226,7 @@ int main(void)
                     // Рефлекс і тут: до 2026-09-29 `continue` нижче обходив його,
                     // і в CCM-ері Солдат після своєї телеметрії не чув ні
                     // команди, ні OTA-чанка (Queen_Reflex_Shots).
-                    Queen_Reflex_Shots();
+                    Queen_Reflex_Shots(ccm_did);
                     Process_And_Cache_Data(ccm_did, &rx_payload[4],
                                            rx_rssi, rx_snr, EDGE_FMT_CCM_AIR);
                 }
@@ -1240,7 +1239,13 @@ int main(void)
             // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
             HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
-        Queen_Reflex_Shots(); // команда, потім OTA-чанк — один дім для обох ер
+        // Почутий DID — перші 4 байти, як і в телеметрії нижче. Службові кадри
+        // (0x55/0x56/0x57) несуть там маркер, тож адресний постріл за ними не
+        // влучає (хіба випадком ~2⁻²⁴ — і тоді кадр згорить на Солдаті як чужий).
+        Queen_Reflex_Shots(((uint32_t)decrypted_payload[0] << 24) |
+                           ((uint32_t)decrypted_payload[1] << 16) |
+                           ((uint32_t)decrypted_payload[2] << 8)  |
+                           (uint32_t)decrypted_payload[3]);
 
         // =========================================================================
         // ОБРОБКА ДАНИХ (КЕШУВАННЯ)
@@ -2479,16 +2484,15 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             g_ota_fetch_pending = 1;
         }
     }
-    // [FW.20-Q2] Soldier-bound команди спільного каркаса (0x9A
-    // CMD_SET_THRESHOLDS [FW.8], 0x9E CMD_ROTATE_KEY [FW.17]) → черга
-    // рефлекторних пострілів (валідатор + дедуп + бюджет —
-    // soldier_cmd_queue.h). Невалідний кадр черга мовчки відкидає — як
-    // Солдат відкинув би, тільки без витрачених пострілів в ефір.
+    // [FW.20-Q2 · FW.17] Адресні команди (0x9A · 0x9D · 0x9E, 03_05 §2.5) →
+    // черга адресних пострілів (soldier_cmd_queue.h). Довжину конверт не
+    // несе (CBC-вирівнювання нулями) — її задає опкод; коротший за неї вміст
+    // черга не бачить. MIC Королева звірити не може: це робить Солдат.
 #if FW20_Q2_CMD_RELAY_ENABLED
-    else if (inner_aligned > 0 &&
-             (inner_payload[0] == SOLDIER_CMD_MARKER_THRESHOLDS ||
-              inner_payload[0] == SOLDIER_CMD_MARKER_ROTATE_KEY)) {
-        Soldier_Cmd_Queue_Push(&soldier_cmd_queue, inner_payload, inner_aligned);
+    else if (inner_aligned > 0 && Dl_Ccm_Frame_Len(inner_payload[0]) != 0u &&
+             inner_aligned >= Dl_Ccm_Frame_Len(inner_payload[0])) {
+        Soldier_Cmd_Queue_Push(&soldier_cmd_queue, inner_payload,
+                               Dl_Ccm_Frame_Len(inner_payload[0]));
     }
 #endif
     return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
@@ -2503,33 +2507,33 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 // демуксу за відкритим DID. До 2026-09-29 цей код жив інлайном лише в
 // ECB-шляху, а CCM-гілка робила `continue` раніше за нього: у CCM-ері OTA-чанк
 // летів би лише за рідкісними 16-Б зойками 0x55/0x56, а команда — ніколи.
-static void Queen_Reflex_Shots(void)
+static void Queen_Reflex_Shots(uint32_t heard_did)
 {
 #if FW20_Q2_CMD_RELAY_ENABLED
     // =========================================================================
-    // [FW.20-Q2] РЕФЛЕКТОРНИЙ ПОСТРІЛ КОМАНДИ (0x9A / 0x9E)
+    // [FW.20-Q2 · FW.17] АДРЕСНИЙ ПОСТРІЛ КОМАНДИ (0x9A · 0x9D · 0x9E)
     // =========================================================================
-    // Солдат, чий голос щойно прозвучав, слухає ефір ~500 мс — один
-    // командний постріл (16 Б ≈ 165 мс ефіру + запас) перед OTA-чанком
-    // вміщається: два кадри поспіль ≈ 350 мс < 500.
-    // Команда першою: ротація ключа (FW.17) важливіша за чанк прошивки.
+    // Лише для почутого DID і з найменшим DLFC (soldier_cmd_queue.h). Кадр
+    // летить як є — його вже підписав Rails, Королева нічого не шифрує.
+    // Найдовший кадр (23 Б ≈ 206 мс) + OTA-чанк (≈ 165 мс) ≈ 371 мс < 500 мс
+    // вікна. Команда першою: ротація ключа важливіша за чанк прошивки.
     {
-        uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
-        uint8_t cmd_cipher[SOLDIER_CMD_BLOCK_SIZE];
-        // [FW.61] Спершу лімітер, потім черга: Next витрачає постріл із
-        // бюджету кадру, тож питати його треба лише тоді, коли ефір є.
-        const uint32_t cmd_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS,
-                                                         SOLDIER_CMD_BLOCK_SIZE);
-        if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), cmd_air, TX_DUTY_BULK) &&
-            Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
-            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
-                             (uint32_t*)cmd_cipher, 1000);
-            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
-            // PHY доказує пакет перед наступним TX/RX
-            HAL_Delay(Lora_Phy_Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE,
-                                    LORA_PHY_PREAMBLE_SYMBOLS));
+        const int slot = Soldier_Cmd_Queue_Find_For(&soldier_cmd_queue, heard_did);
+        if (slot >= 0) {
+            const uint8_t  cmd_len = soldier_cmd_queue.len[slot];
+            // [FW.61] Спершу лімітер, потім Take: Take витрачає постріл.
+            const uint32_t cmd_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, cmd_len);
+            if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), cmd_air, TX_DUTY_BULK)) {
+                uint8_t cmd_frame[DL_CCM_FRAME_MAX];
+                (void)Soldier_Cmd_Queue_Take(&soldier_cmd_queue, slot, cmd_frame);
+                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
+                // PHY доказує пакет перед наступним TX/RX
+                HAL_Delay(Lora_Phy_Send(cmd_frame, cmd_len, LORA_PHY_PREAMBLE_SYMBOLS));
+            }
         }
     }
+#else
+    (void)heard_did;
 #endif
 
     // =========================================================================

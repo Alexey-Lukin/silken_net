@@ -245,7 +245,7 @@ $(BINDIR)/test_key_ratchet: test_key_ratchet.c ../common/key_ratchet.h ../common
 	$(CC) $(CFLAGS) -o $@ test_key_ratchet.c
 
 # [FW.20-Q2] Черга Soldier-bound команд (0x9A/0x9E) — рефлекс-реле Королеви.
-$(BINDIR)/test_soldier_cmd_queue: test_soldier_cmd_queue.c ../queen/soldier_cmd_queue.h ../common/key_ratchet.h ../common/silken_crc.h ../common/silken_sha256.h
+$(BINDIR)/test_soldier_cmd_queue: test_soldier_cmd_queue.c ../queen/soldier_cmd_queue.h ../common/downlink_ccm.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_cmd_queue.c
 
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
