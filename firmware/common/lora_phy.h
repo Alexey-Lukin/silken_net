@@ -125,13 +125,22 @@ _Static_assert(LORA_PHY_FREQ_HZ - LORA_PHY_BW_HZ / 2u >= 868000000u &&
  * НКЕК № 361 (25 мВт = 13.98 дБм ЕВП, certification_roadmap §2). ⚠️ Втрати
  * кабелю не віднімаються (у дереві не специфіковані), тож оцінка консервативна.
  * ⛔ Assert судить лише ПОТУЖНІСТЬ: умову «антена до 2 дБі» рядка 104 тієї ж
- * постанови він не бачить — який із рядків наш, розсуджує НКЕК (00_07 ARCH.24).
- * Солдата тут немає: його антени ще не обрано (00_07 HW.17). */
+ * постанови він не бачить — який із рядків наш, розсуджує НКЕК (00_07 ARCH.24). */
 #define LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI 500
 #define LORA_PHY_SRD_ERP_MAX_CDBM        1398
 _Static_assert(LORA_PHY_TX_POWER_DBM_QUEEN * 100 + LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI - 215
                    <= LORA_PHY_SRD_ERP_MAX_CDBM,
                "Queen ERP above the NKEK SRD ceiling 13.98 dBm (00_07 FW.61)");
+
+/* Солдат: антени ще не обрано (00_07 HW.17), тож assert судить пару «потужність ×
+ * СТЕЛЯ вимоги до антени» — 2 дБі (НКЕК № 361 п. 104, 02_01 §5.2): 14 + 2 − 2.15 =
+ * 13.85 дБм. Запас лише 0.13 дБ, і незвірений допуск PA його з'їсть — число дає
+ * вимір ЕВП на стенді (00_07 FW.61). Обрана антена мусить лягти під стелю, а
+ * підняти потужність Солдата чи саму стелю без перерахунку тепер не вийде. */
+#define LORA_PHY_SOLDIER_ANTENNA_GAIN_MAX_CDBI 200
+_Static_assert(LORA_PHY_TX_POWER_DBM_SOLDIER * 100 + LORA_PHY_SOLDIER_ANTENNA_GAIN_MAX_CDBI - 215
+                   <= LORA_PHY_SRD_ERP_MAX_CDBM,
+               "Soldier ERP above the NKEK SRD ceiling 13.98 dBm at the antenna gain ceiling (00_07 HW.17)");
 /* timeout драйвера, мс. [transitional] 0 успадковано з panic-шляху й
  * означає «без програмного TX-таймауту» — TX закриває TxDone-IRQ. Числа
  * тут не вигадуємо: скільки має бути, каже вимір TxDone-латентності на
