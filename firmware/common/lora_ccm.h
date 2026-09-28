@@ -51,8 +51,10 @@
  *   │             похибка ≤ 0.00098 < ε 0.001, діапазон 0..127.99) │
  *   │ Byte 18   : diag [thr_invalid:5 | fauna_mode:1 |             │
  *   │             fauna_skip:1 | fc_degraded:1] (FW.18b/FW.42/FW.2)│
- *   │ Byte 19   : vpd_index (uint8; 0x00 = немає BME280 — резерв   │
- *   │             під HW.32, шкала визначається при калібруванні)  │
+ *   │ Byte 19   : vpd_index (uint8) — НЕ резерв: до BME280 несе    │
+ *   │             SEC.20-звіт відкату [reverted:1|id7]             │
+ *   │             (fw_report.h), єдиний сигнал відкату CCM-ери;    │
+ *   │             VPD (HW.32) забере його лише рішенням rev3       │
  *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
  *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
  *   │             mruby metabolic_health цього циклу (сатуроване   │
