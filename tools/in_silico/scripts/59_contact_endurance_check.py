@@ -159,8 +159,9 @@ def peek_barb_cyclic_verdict(budget: dict) -> dict:
 
 def silpad_verdict() -> dict:
     return {
-        "part": "Sil-Pad (Bergquist Sil-Pad 1500ST, HW.30) — 3rd spring in the Z-stack, 30-40% "
-                "sustained compression per HW.30",
+        "part": "acoustic pad (HW.30) — 3rd spring in the Z-stack, 30-40% sustained compression per "
+                "HW.30. No part is chosen: the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm TIM "
+                "that never spans the 0.65 mm gap (02_01 §6)",
         "closed": False,
         "verdict": "NOT closeable by S-N literature review — this is a genuinely different failure "
                     "mechanism from spring/metal fatigue. Silicone elastomer degradation under sustained "
@@ -168,8 +169,9 @@ def silpad_verdict() -> dict:
                     "specific (filler loading, cure system) and has no generic closed-form S-N curve in "
                     "the open literature the way BeCu or PEEK do. HW.30 already schedules the only "
                     "correct instrument for this axis: a bench Arrhenius-accelerated creep test "
-                    "('Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років'). This item does "
-                    "not duplicate that leg — it confirms literature review cannot substitute for it.",
+                    "('Lifecycle test: creep pad-а під 30-40% compression × 20 років') — conditional since "
+                    "2026-09-28 on HW.30's pad-configuration verdict picking a compliant layer. This item "
+                    "does not duplicate that leg — it confirms literature review cannot substitute for it.",
     }
 
 

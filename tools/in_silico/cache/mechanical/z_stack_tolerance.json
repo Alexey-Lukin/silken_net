@@ -487,7 +487,7 @@
     "stress_at_pogo_alone_MPa": 0.0126,
     "stress_at_100N_assumed_total_MPa": 0.654,
     "margin_x_at_100N": 3.8,
-    "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
+    "missing_datum": "the acoustic pad's deflection-vs-pressure (no part is chosen \u2014 the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm TIM that publishes no such curve, HW.30) and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
     "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 382 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.8x margin. No creep member is warranted in the Z-chain for the rim.",
     "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },

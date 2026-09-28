@@ -7,7 +7,9 @@ The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses THREE compliant element
   1. Pogo pins  (Mill-Max 0906/0908, 1.40 mm nominal travel) — 50-70 % mid-stroke window (02_02 §2.2/§3.5)
   2. O-ring     (EPDM, CS 1.78 mm)                      — 15-30 % static squeeze (industry practice, NOT
                                                           Parker — Parker's face-seal window is 19-32 %; see ORING_WIN)
-  3. Sil-Pad    (Bergquist 1500ST, ~1 mm, HW.30)        — acoustic-coupling contact, 20 yr creep
+  3. Acoustic pad (MODELLED ~1 mm compliant layer, HW.30) — acoustic-coupling contact, 20 yr creep.
+     ⚠️ No part realises it: the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm glass-reinforced TIM
+     (Bergquist PDS_10057) that never touches the board across GAP_PZ — 02_01 §6.
 
 🔑 Pogo + Sil-Pad are PARALLEL springs on the SAME gap (Power Deck ↔ Zone 3) → one gap sets both
 compressions. The O-ring is on its OWN chain: ⚖️ 2026-09-10 (00_07 HW.33, branch (а), applied in CAD
@@ -52,7 +54,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Spring specs (canon) ──
 POGO_TRAVEL = 1.40   # mm — Mill-Max 0906/0908 datasheet NOMINAL travel, .055" ± .005" (02_02 §2.2, ⚖️ 2026-09-18 HW.43);
                      # 1.52 (.060") is the UPPER end of that tolerance, not the nominal
-PAD_FREE = 1.0       # mm — Bergquist Sil-Pad 1500ST free thickness (02_01 §6, HW.30; range 0.5-1.0)
+PAD_FREE = 1.0       # mm — MODELLED compliant pad free thickness, not a part (02_01 §6, HW.30: 1500ST is 0.203/0.305)
 ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
 # ── Working windows (fraction) ──
@@ -62,7 +64,7 @@ ORING_WIN = (0.15, 0.30)  # industry practice for static seals, centre 20 % (02_
 # ⚖️ founder 2026-09-10 put the single O-ring on the flange TOP face against the radome rim, i.e. a FACE
 # seal, so Parker ORD 5700 Chart 4-3 for W .070" applies and its window is TIGHTER at the bottom.
 ORING_WIN_PARKER_FACE = (0.19, 0.32)  # Parker ORD 5700 Chart 4-3, face seal, W .070" (00_07 HW.33)
-PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max (Sil-Pad tolerates wide squeeze)
+PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max (assumed; no deflection curve in hand)
 PAD_CREEP_RETAIN = 0.85   # compression fraction retained after 20 yr (HW.30 lifecycle estimate)
 PAD_ACOUSTIC_MIN = 0.20   # post-creep floor for acoustic contact (pad_pct·creep must stay ≥ this)
 
@@ -539,9 +541,11 @@ def rim_datum_creep(applied: dict) -> dict:
         "stress_at_pogo_alone_MPa": round(pogo / area, 4),
         "stress_at_100N_assumed_total_MPa": round(100.0 / area, 3),
         "margin_x_at_100N": round(f_star / 100.0, 1),
-        "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit "
-                         "of seal length — neither has a home in canon, so the total stack force is not "
-                         "computable today. The bound above is why that does not block the verdict.",
+        "missing_datum": "the acoustic pad's deflection-vs-pressure (no part is chosen — the Sil-Pad 1500ST "
+                         "named until 2026-09-28 is a 0.203 mm TIM that publishes no such curve, HW.30) and the "
+                         "O-ring compression load per unit of seal length — neither has a home in canon, so the "
+                         "total stack force is not computable today. The bound above is why that does not block "
+                         "the verdict.",
         "verdict": f"NEGLIGIBLE — reaching the relaxation regime needs {f_star:.0f} N on the rim, while "
                    f"the only spring canon specifies contributes {pogo:.2f} N; even a deliberately "
                    f"generous 100 N for the two unmeasured springs leaves a {f_star / 100.0:.1f}x "
