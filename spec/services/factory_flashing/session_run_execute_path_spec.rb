@@ -96,7 +96,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       expect(outcome.transcript).to all(have_attributes(status: 0))
       expect(outcome.transcript.map(&:stdout)).to all(include("FAKE-CLI OK"))
 
-      # Порядок на «дроті»: connect → KEYL/LSED writes → RDP → disconnect
+      # Порядок на «дроті»: connect → KEYL/LSED writes → IWDG-заморозка → RDP → disconnect
       log = shim_invocations
       expect(log.size).to eq(outcome.transcript.size)
       expect(log.first).to include("-c port=SWD reset=HWrst")

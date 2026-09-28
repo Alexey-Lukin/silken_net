@@ -59,11 +59,15 @@
      летить мережею) → транскрипт: connect → -r32 UID-read (wrong-board
      guard: чужа плата = жодного -w32) → -w32 у Flash (0x0803E000)
 
-  3. Lock: апаратне блокування — той самий прогін конвеєра, що й крок 2:
-     IWDG-заморозка у STOP2/STANDBY (SEC.15) → RDP Level 1 (пілот; блокує
-     SWD-зчитування). Продакшн-L2 — НЕ цим прогоном, а за 03_05 §3.6:
-     self-test → WRPROT стор. 124–125 (key · seed · role) → [BOOT_LOCK] →
-     RDP L2 останнім (порядок — ⚖️ делеговано 2026-09-27, 03_05 §3.3)
+  3. Lock: апаратне блокування. Пілот — той самий прогін конвеєра, що й
+     крок 2: IWDG-заморозка у STOP2/STANDBY (SEC.15) → RDP Level 1 (блокує
+     SWD-зчитування і SWD-перезапис); WRPROT ключових сторінок — окремим
+     кроком оператора (конвеєр WRP не пише; на L1 option bytes ще змінювані).
+     Продакшн-L2 — конвеєр на RDP_LEVEL=0 (ключі + IWDG), далі за 03_05 §3.6:
+     self-test → WRPROT → [BOOT_LOCK] → RDP L2 останнім (порядок — ⚖️
+     делеговано 2026-09-27, 03_05 §3.3). WRPROT — ПО ЧІПУ: Солдат стор.
+     124–125 (key · seed · role · KOTA/KEYB), Королева — лише 124 (її 125 —
+     OTA-SHA-дзеркало FW.52, прошивка пише його в рантаймі)
 
   4. Пакування
      Нанести лак → Пакет → Ліс (shipping-mode ✂️ не потрібен — 03_05 §3.5)
@@ -116,9 +120,9 @@
      # ⚠️ Після цього кроку ключі НЕ можуть бути ні прочитані, ні переписані —
      # навіть з фізичним доступом до ASIC шару.
 
-  6. Lock STM32:
-     STM32CubeProgrammer → Set RDP Level 1 (або Level 2 після SEC.2 верифікації OTA)
-     → SWD заблоковано → firmware не змінити
+  6. Lock STM32 — як у Гілці A, крок 3 (Гілка B = Гілка A + SE): пілот —
+     IWDG → RDP Level 1 + WRPROT; продакшн-L2 — за 03_05 §3.6 (self-test →
+     WRPROT → [BOOT_LOCK] → RDP L2 останнім) → SWD заблоковано
 
   7. Пакування (як у Гілці A):
      Лак → Box → Field (shipping-mode ✂️ не потрібен — 03_05 §3.5)
@@ -260,7 +264,8 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      # (Level 2 = 0xCC — після верифікації OTA, SEC.2; живий L2 з конвеєра
      #  вимагає RDP_L2_ACK=<device_uid> — інакше preflight відмовляє.
      #  ⛔ L2 одним прогоном конвеєра порушує ухвалений порядок: self-test і
-     #  WRP мусять стати між ключами й L2 — процедура 03_05 §3.6)
+     #  WRP мусять стати між ключами й L2 — продакшн гонить конвеєр на
+     #  RDP_LEVEL=0, далі процедура 03_05 §3.6)
 
   # [ARCH.77] Польова альтернатива — БРАУЗЕРНИЙ контур (forester, НЕ фабрика;
   # межа = хто відвантажує клієнта, не формат відповіді):
@@ -425,8 +430,11 @@ void Load_Node_Role(void)
 
 ```
 STM32CubeProgrammer → Option Bytes → Write Protection:
-  Сторінки 124-125 (0x0803E000 + 0x0803E800; WLE5 = 2KB-сторінки,
+  СОЛДАТ — сторінки 124-125 (0x0803E000 + 0x0803E800; WLE5 = 2KB-сторінки,
   дзеркало firmware-арифметики FLASH_KEY_ADDR/FLASH_OTA_KEY_ADDR)
+  КОРОЛЕВА — лише сторінка 124: її 125 — OTA-SHA-дзеркало (FW.52,
+  firmware/queen/ota_sha_guard.h), яке прошивка стирає й пише в рантаймі;
+  WRP там мовчки зламав би перезапит OTA, а L2 — назавжди
   → Write-Protected ON
 
 Результат: навіть якщо SWD відкритий (RDP Level 0 у R&D) —
@@ -835,6 +843,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 … (8 K_ota words at 0x0803E804..0x0803E820)
 [dry-run] STM32_Programmer_CLI -w32 0x0803E828 0x4B455942       # KEYB magic (cluster control-plane, FW.2 (в))
 … (4 KEYB words at 0x0803E82C..0x0803E838)
+[dry-run] STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — пес заморожений у STOP2, ДО RDP
 [dry-run] STM32_Programmer_CLI -ob RDP=0xBB                     # L1 — сирий байт, не номер рівня
 [dry-run] STM32_Programmer_CLI -c port=SWD --quietMode
 ```

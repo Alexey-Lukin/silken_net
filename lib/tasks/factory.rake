@@ -81,7 +81,7 @@ namespace :factory do
     puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id} (password-authenticated). Next: rake factory:execute[#{session.id}]"
   end
 
-  desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id. A live RDP_LEVEL=2 session also needs RDP_L2_ACK=<device_uid> — L2 is irreversible (SEC.2)."
+  desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id. A live RDP_LEVEL=2 session also needs RDP_L2_ACK=<device_uid> — L2 is irreversible (SEC.2), and production burns it outside this pipeline (03_05 §3.6: RDP_LEVEL=0 here → self-test → WRP → L2)."
   task :execute, %i[session_id] => :environment do |_t, args|
     session = ProvisioningSession.find(Integer(args[:session_id]))
     dry_run = ENV["EXECUTE"] != "1"

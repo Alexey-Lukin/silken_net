@@ -99,8 +99,13 @@ module FactoryFlashing
       # [SEC.2] L2 вимикає SWD назавжди, а pre-L2 гейт (03_05 §3.6 × SEC.15) —
       # процедура, не код: живий L2 мусить бути ОГОЛОШЕНИЙ для саме цієї плати,
       # а не виведений із RDP_LEVEL. Дзеркало набраного «RDP2» у 01_option_bytes.sh.
+      # ⛔ Навіть оголошений, L2 одним прогоном обходить ухвалений порядок паління
+      # (self-test → WRP → [BOOT_LOCK] → L2): продакшн палить його ПОЗА конвеєром,
+      # 03_05 §3.6; чи прибрати цю гілку — ⚖️ 00_07 SEC.2.
       if @session.rdp_level == 2 && !@executor.dry_run? && @rdp_l2_ack != @session.device_uid
-        raise PreflightError, "RDP Level 2 is irreversible — after the 03_05 §3.6 checklist set RDP_L2_ACK=#{@session.device_uid}"
+        raise PreflightError, "RDP Level 2 is irreversible and production burns it OUTSIDE this pipeline " \
+                              "(03_05 §3.6: self-test, WRP, then L2) — set RDP_L2_ACK=#{@session.device_uid} " \
+                              "only for a deliberate exception"
       end
       # Surface UnavailableError / NotImplementedError early so we never enter
       # the transaction with a missing or rejected master key. The result is
