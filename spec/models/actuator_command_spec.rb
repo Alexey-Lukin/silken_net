@@ -507,6 +507,16 @@ RSpec.describe ActuatorCommand, type: :model do
 
       expect(command.estimated_completion_at).to be_within(1.second).of(now + 120.seconds)
     end
+
+    # [ARCH.58 · FW.63] Кінець вікна — від луни (`executed_at`), тієї самої мітки, від
+    # якої `observe_delivered_command!` планує Reset; `sent_at` — лише запасна.
+    it "міряє від луни, коли вона є, а не від видачі" do
+      command = create(:actuator_command, actuator: actuator, duration_seconds: 120)
+      echo_at = Time.current
+      command.update_columns(sent_at: echo_at - 1.hour, executed_at: echo_at)
+
+      expect(command.reload.estimated_completion_at).to be_within(1.second).of(echo_at + 120.seconds)
+    end
   end
 
   describe "denormalize_organization when actuator chain is nil" do

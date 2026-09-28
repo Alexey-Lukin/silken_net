@@ -142,14 +142,28 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
         expect(actuator.reload.state).to eq("idle")
       end
 
-      # Рівні мітки — не «пізніший». При включному порівнянні кожен вважав би
+      # Рівні кінці вікна — не «пізніший». При включному порівнянні кожен вважав би
       # одне одного витісненим, і актуатор не закрив би ЖОДЕН.
-      it "однакові sent_at не роблять накази взаємно витісненими" do
+      it "однакові кінці вікна не роблять накази взаємно витісненими" do
         newer.update_columns(sent_at: superseded.sent_at)
 
         described_class.new.perform(superseded.id)
 
         expect(actuator.reload.state).to eq("idle")
+      end
+
+      # [ARCH.58 · FW.63] «Пізніший» міряється кінцем вікна від луни — тією міткою, від
+      # якої Reset справді запланований, — а не `sent_at`. Наказ, перевиданий після
+      # втраченої 2.05, зберігає ранній `sent_at`, а його луна (і Reset) приходить пізніше
+      # за сусіда: за `sent_at` Reset сусіда гасив би актуатор посеред відкритого вікна.
+      it "перевиданий наказ із раннім sent_at, але пізнішою луною, володіє вікном" do
+        superseded.update_columns(executed_at: 30.seconds.ago) # луна прийшла пізніше за сусіда
+        newer.update_columns(executed_at: 1.minute.ago)
+
+        described_class.new.perform(newer.id)
+
+        expect(actuator.reload.state).to eq("active")
+        expect(newer.reload.status).to eq("confirmed")
       end
     end
 

@@ -158,9 +158,14 @@ class ActuatorCommand < ApplicationRecord
   # нього порядок видачі в межах кроку вирішувала б БД, а не round-robin вставки.
   scope :by_priority, -> { order(priority: :desc, created_at: :asc, id: :asc) }
 
+  # [ARCH.58 · FW.63] Кінець вікна дії — ОДИН дім: і сторож безпеки, і supersession Reset'а
+  # читають його тут. Мітка — луна (`executed_at`), від якої `observe_delivered_command!`
+  # планує Reset; `sent_at` — лише запасна. Наказ, перевиданий після втраченої 2.05,
+  # зберігає ранній `sent_at`, а його вікно закінчується пізніше за сусіда — тож «пізніший
+  # наказ», поміряний від видачі, гасив би актуатор посеред відкритого вікна (backend #88).
   def estimated_completion_at
     return nil unless sent_at
-    sent_at + duration_seconds.seconds
+    (executed_at || sent_at) + duration_seconds.seconds
   end
 
   # ⏱️ TTL: перевіряємо, чи команда ще актуальна

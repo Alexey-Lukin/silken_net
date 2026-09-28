@@ -95,7 +95,8 @@ class ActuatorSafetySweepWorker
 
   # Вікно рахується від тієї самої мітки, від якої Reset справді запланований —
   # `executed_at` = мить echo (`observe_delivered_command!`, FW.63), — а не від
-  # `sent_at`. Echo наказу, виданого ТРЕТІМ poll'ом флашу (`QUEEN_POLL_MAX_PER_FLUSH`),
+  # `sent_at`; дім формули — `ActuatorCommand#estimated_completion_at`, його ж читає
+  # supersession Reset'а (ARCH.58), тож «хто володіє вікном» обидва міряють однаково. Echo наказу, виданого ТРЕТІМ poll'ом флашу (`QUEEN_POLL_MAX_PER_FLUSH`),
   # приходить лише першим poll'ом наступного флашу, тож вікно від `sent_at` закінчувалось
   # на годину раніше за Reset, і прохід оголошував загубленим слід ДОСТАВЛЕНОГО наказу:
   # STOP у чергу, `fail!` і критичний алерт (адверсарне рев'ю 2026-09-27). ⚠️ Стеля:
@@ -103,7 +104,7 @@ class ActuatorSafetySweepWorker
   # безпечний бік (активним довше, ніж насправді), а справді загублений Reset такого
   # наказу прохід ловить пізніше на той самий флаш.
   def deadline_for(command)
-    (command.executed_at || command.sent_at) + command.duration_seconds.seconds + STUCK_MARGIN
+    command.estimated_completion_at + STUCK_MARGIN
   end
 
   # 🔴 Атомарність тут не стиль, а лік від реального дефекту: `close_lost_commands!`
