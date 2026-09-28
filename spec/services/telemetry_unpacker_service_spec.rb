@@ -1844,6 +1844,7 @@ end
         "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
       ))
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL).to receive(:increment)
       allow(Rails.logger).to receive(:warn).and_call_original
 
       # device_z = 99.0 — за E.64 стелею (≤ ~67) жоден server_z так не зайде:
@@ -1857,6 +1858,8 @@ end
       expect(Rails.logger).to have_received(:warn).with(/Z Divergence Numeric/)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL)
         .to have_received(:increment).at_least(:once)
+      # [FW.31 Gate C] канарка читає саме цей лічильник — спільний fraud_detected не розрізнити
+      expect(SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL).to have_received(:increment).once
     end
 
     it "skips the numeric branch on the device_z sentinel (Lorenz slept — ARCH.41-C)" do
@@ -1866,11 +1869,13 @@ end
       ))
       allow(Rails.logger).to receive(:warn).and_call_original
 
+      allow(SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL).to receive(:increment)
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 48, device_z: nil)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(Rails.logger).not_to have_received(:warn).with(/Z Divergence Numeric/)
+      expect(SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL).not_to have_received(:increment)
     end
 
     # [FW.31 Gate D] Прилад гейта «device_z у ≥ 95 %» рахує саму розвилку: обидві

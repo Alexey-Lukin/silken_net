@@ -910,6 +910,7 @@ class TelemetryUnpackerService < ApplicationService
           "drift=#{drift}, ε=#{numeric_dci_epsilon}. Numeric DCI mismatch."
         )
         SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+        SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL.increment
       end
     end
 

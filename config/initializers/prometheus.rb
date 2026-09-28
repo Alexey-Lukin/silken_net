@@ -205,6 +205,15 @@ module SilkenNet
       labels: [ :carried ]
     )
 
+    # [FW.31 Gate C] Числова DCI-гілка (drift > ε). Доти вона била лише в спільний
+    # TELEMETRY_FRAUD_DETECTED_TOTAL, куди пишуть вісім місць, тож канарку Gate C
+    # (03_04 §7.1: «очікувано 0») не було чим прочитати окремо.
+    DCI_NUMERIC_REJECTIONS_TOTAL = REGISTRY.counter(
+      :silkennet_dci_numeric_rejections_total,
+      docstring: "FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon " \
+                 "[FW.31; diagnostic tier: no alert until GAIA_DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
+    )
+
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
     # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
     # in production is a security signal worth paging on.
