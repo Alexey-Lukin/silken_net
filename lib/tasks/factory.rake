@@ -21,7 +21,7 @@ namespace :factory do
     abort "Usage: rake factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]" if args.values_at(:device_uid, :batch_id, :gilka, :operator_id, :supervisor_id, :firmware_version).any?(&:blank?)
 
     # [FW.54] Tree-провіженінг однопрохідний: у позиції device_uid — 24-hex
-    # кремнієвий UID (SWD-read: `STM32_Programmer_CLI -r32 0x1FFF7590 12`);
+    # кремнієвий UID (SWD-read: `FactoryFlashing::CommandBuilder.preflight_commands`);
     # DID деривується тут (murmur3-fmix32, 03_01 §7), Tree resolve'иться
     # (create → CLUSTER_ID + TREE_FAMILY_ID env). Голий "SNET-" DID
     # приймається лише для дерева, що ВЖЕ має кремнієвий паспорт (re-flash),

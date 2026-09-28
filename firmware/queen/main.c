@@ -2725,8 +2725,8 @@ static void Queen_Poll_Downlink(void)
 // Error_Handler() викликає software reset. Пристрій не може працювати
 // без валідного ключа (BLOCKER-1 mitigation).
 //
-// Записується при Factory Flashing через SWD:
-//   STM32CubeProgrammer --write key_payload.bin 0x0803E000
+// Записується при Factory Flashing через SWD — factory:execute: `-e` сторінки
+//   ключів + `-w32` цілими doubleword-ами (docs/03_06 §2, STEP 2 d).
 // Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key") [post-ARCH.42]
 // Див. docs/03_06 §2 для повного протоколу.
 static void Load_AES_Key(void)

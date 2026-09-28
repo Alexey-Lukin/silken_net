@@ -3545,8 +3545,8 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef* hadc)
 // Error_Handler() викликає software reset. Пристрій не може працювати
 // без валідного ключа (BLOCKER-1 mitigation).
 //
-// Записується при Factory Flashing через SWD:
-//   STM32CubeProgrammer --write key_payload.bin 0x0803E000
+// Записується при Factory Flashing через SWD — factory:execute: `-e` сторінки
+//   ключів + `-w32` цілими doubleword-ами (docs/03_06 §2, STEP 2 d).
 // Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key")
 // — info-string відрізняється від CoAP-каналу (Gateway) "silken-aes-256-device-key"
 // для domain separation. Див. docs/03_05 §3.1 + docs/03_06 §2 для повного протоколу.

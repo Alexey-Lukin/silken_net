@@ -45,7 +45,7 @@
 ```
 [Завод]
   0. Ідентичність (one-pass, FW.54): SWD-read 96-біт UID ДО прошивки
-     STM32_Programmer_CLI -r32 0x1FFF7590 12  → три %08X-слова
+     STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12  → три %08X-слова
      host деривує DID = murmur3-fmix32(UID) (03_01 §7; SilkenNet::DidDerivation)
      TreeResolver: Tree create / re-flash (паспорт silicon_uid_hex збігся) /
      bind (legacy без паспорта) / DID-колізія → QUARANTINE юніта
@@ -227,7 +227,7 @@ STEP 2: Factory Flashing (конвеєр на заводі)
 
 [Заводський стенд — rake-тріо §5, one-pass FW.54]
   a) SWD-read кремнієвого паспорта ДО прошивки (host-first, НЕ device-first):
-     STM32_Programmer_CLI -r32 0x1FFF7590 12      # 96-біт UID, три %08X-слова
+     STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12   # 96-біт UID, три %08X-слова
      DID = SilkenNet::DidDerivation.wire_did_from_uid_hex(UID)
      # murmur3-fmix32 (03_01 §7) — байт-у-байт той самий DID плата порахує
      # собі на boot (firmware/soldier/did_derive.h, golden-вектори обабіч)
@@ -267,7 +267,7 @@ STEP 2: Factory Flashing (конвеєр на заводі)
   e) Lock (порядок і межа партій — ⚖️ делеговано 2026-09-27, 03_05 §3.3:
      продакшн = WRP → [BOOT_LOCK] → RDP L2 ОСТАННІМ; Parylene серії — ПІСЛЯ
      RDP L2, пілот — покриття прототипів, HW.11):
-     STM32_Programmer_CLI -ob RDP=0xBB    # Pilot batch — L1; CLI пише СИРИЙ байт (03_05 §3.6)
+     STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xBB    # Pilot batch — L1; CLI пише СИРИЙ байт (03_05 §3.6)
      # (Level 2 = 0xCC — після верифікації OTA, SEC.2; живий L2 з конвеєра
      #  вимагає RDP_L2_ACK=<device_uid> — інакше preflight відмовляє.
      #  ⛔ L2 одним прогоном конвеєра порушує ухвалений порядок: self-test і
@@ -427,7 +427,7 @@ void Load_Node_Role(void)
 }
 ```
 
-> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, яку factory pipeline мусить прошивати явно; ⚠️ сьогодні `CommandBuilder` `FLASH_ROLE_ADDR` не пише зовсім, тож кожен фабричний юніт вантажиться Солдатом через цей fallback (роль Провідника — ARCH.26). Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
+> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, яку factory pipeline мусить прошивати явно; ⚠️ сьогодні `CommandBuilder` `FLASH_ROLE_ADDR` не пише зовсім, тож кожен фабричний юніт вантажиться Солдатом через цей fallback (роль Провідника — ARCH.26); а re-flash конвеєром стирає й раніше записану роль — стор. 124 стирається перед записом ключів, тож роль пишеться після кожного прогону. Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
 
 > **Споживачі прапорця:** ARCH.26 L3 (CAD relay), повний FW.20-S2 (mesh time-sync relay) — без додаткової логіки в `HardwareKeyService`/backend; це чистий firmware-flag. Backend не повинен довіряти claimed role з пакету (TX-сторона може брехати) — `g_node_role` локально визначає поведінку, серверна сторона вирішує доверу через ECC підпис при provisioning.
 
@@ -449,7 +449,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
   (зняття стирає відповідну сторінку Flash!)
 ```
 
-> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KOTA · KEYB @+40, dw-align) — переїзд дерева між кластерами стирає/пише лише 125-ту, per-device ключі недоторкані.
+> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KOTA · KEYB @+40, dw-align) — переїзд дерева між кластерами міняє вміст лише 125-ї. ⚠️ Інструмента, що стирав би лише її, немає: конвеєр стирає й переписує 124 і 125 разом (per-device ключі повертаються тими самими — HKDF детермінований), тож роль на стор. 124 після кожного прогону пишеться наново.
 
 ### Безпекові параметри (post-ARCH.42)
 
@@ -461,7 +461,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
 | Master key storage | **Deploy-ENV `PROVISIONING_MASTER_KEY`** (boot-guard SEC.9; §5.A ранжує Direct-ENV найнижче — чесний поточний тір) → KMS-MAC pre-mainnet (SEC.22, [`06_04 §5.7`](06_04_Secrets_Checklist)); **деривовані** ключі — `HardwareKey` AR-encrypted | Same | Never in-repo; on-compromise runbook → [`06_04 §5.8`](06_04_Secrets_Checklist) |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) — **обидві гілки** (SEC.14 provisioning-only; SE Slot 0 reserved для urban-варіанту — 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
-| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK: перший кадр, чий CCM-MIC пройшов новим ключем, FW.17). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Grace, але **закриває його re-provision, не uplink**: AES-CBC без MAC розшифровується будь-яким ключем у сміття без помилки, тож «розшифрувалось» ключа не підтверджує. У вікні обидва напрямки CoAP-тракту ідуть попереднім (`HardwareKey#coap_binary_key`); `FactoryFlashing::Session`, що залила поточний, закриває grace (dry-run — ні) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
+| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK: перший кадр, чий CCM-MIC пройшов новим ключем, FW.17). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Grace, але **закриває його re-provision, не uplink**: AES-CBC без MAC розшифровується будь-яким ключем у сміття без помилки, тож «розшифрувалось» ключа не підтверджує. У вікні обидва напрямки CoAP-тракту ідуть попереднім (`HardwareKey#coap_binary_key`); `FactoryFlashing::Session`, що залила поточний, закриває grace (dry-run — ні) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash (конвеєр стирає й переписує стор. 124 і 125 разом) |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
 > **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 Secure Element (SE050, 03_05 §3.7), SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **03_05 §10 PQC Migration Roadmap**.
