@@ -202,8 +202,9 @@ class HardwareKeyService
   # Два шляхи за типом пристрою:
   #   • Tree   → [FW.17] Hash-Ratchet: ключ НІКОЛИ не летить ефіром — backend
   #     деривує K_{v+1} (Cryptography::KeyRatchet, дзеркало key_ratchet.h),
-  #     а в ефір іде лише `CMD_ROTATE_KEY 0x9E [target_version]`. Гейт:
-  #     FW17_RATCHET_DOWNLINK_ENABLED (фліп після FW.2 CCM).
+  #     а в ефір іде лише `CMD_ROTATE_KEY 0x9E [target_version]` — адресний
+  #     CCM-кадр під ПОПЕРЕДНІМ ключем вузла (Downlink::CommandFrame, 03_05 §2.5).
+  #     Гейт: FW17_RATCHET_DOWNLINK_ENABLED (фліп після FW.2 CCM).
   #   • Gateway → випадковий новий CoAP AES-256 ключ; доставка = фізичний
   #     re-provision (SEC.3 Factory Flashing) — CoAP-downlink ключа не існує
   #     (legacy "sys/key_update" видалено: він не мав firmware-споживача і
@@ -268,7 +269,7 @@ class HardwareKeyService
     unless self.class.ratchet_dispatch_enabled?
       raise RatchetGateClosedError,
             "[FW.17] Ratchet-ротація #{@device_uid} відхилена: #{FW17_GATE_ENV} вимкнено. " \
-            "ECB-downlink без MAC не сміє командувати ротацією — фліп після FW.2 CCM (03_05 §3.8)."
+            "Grace ротації закриває MIC CCM-аплінку — фліп після FW.2 CCM (03_05 §3.8)."
     end
 
     old_key = key_record.aes_key_hex
@@ -289,10 +290,14 @@ class HardwareKeyService
     # #key_rotation_payload`, тож 0x9E добере наступний poll Королеви.
     # Виняток НЕ ковтаємо — кадр не поїхав, і повтор упреться в
     # RotationPendingError, а не в подвійний advance.
+    # [FW.17 · 03_05 §2.5] DLFC кадру 0x9E видається тут, тією ж транзакцією, що
+    # відкриває grace, і живе з ротацією: перевидача на кожному poll — той самий
+    # кадр. Під grace інших команд не видають (HardwareKey#issue_downlink_frame_counter!).
     key_record.update!(
       previous_aes_key_hex: old_key, # "Подушка безпеки" до першого uplink'а на K_{v+1}
       aes_key_hex: new_hex_key,
       key_version: target_version,
+      downlink_frame_counter: key_record.downlink_frame_counter + 1,
       rotated_at: Time.current
     )
     KeyRotationDownlinkWorker.perform_async(@device_uid, target_version)

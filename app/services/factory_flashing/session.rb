@@ -142,8 +142,11 @@ module FactoryFlashing
       @kv_journal_words = FlashKvImage.words(ota_hiwater: @device.cluster&.ota_version_hiwater.to_i)
       return key if @executor.dry_run?
 
+      # DLFC → 0 тією ж транзакцією: свіжий журнал запису 0x12 не несе, а нова
+      # епоха ключа робить повтор нонса неможливим (03_05 §2.5).
       key.update!(epoch: epoch, key_version: 0, aes_key_hex: @flash_aes_key_hex,
-                  previous_aes_key_hex: key.aes_key_hex, rotated_at: Time.current)
+                  previous_aes_key_hex: key.aes_key_hex, downlink_frame_counter: 0,
+                  rotated_at: Time.current)
       key
     end
 

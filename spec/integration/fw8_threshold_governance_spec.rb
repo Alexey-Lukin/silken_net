@@ -5,7 +5,7 @@ require "rails_helper"
 
 # [FW.8] End-to-end coverage of cluster-configurable Lorenz thresholds via governance.
 # Chain: Cluster overrides → TreeFamily defaults → Tree#effective_lorenz_thresholds
-# → OtaPackagerService.build_threshold_config_block («ЩО СЛАТИ на пристрій»).
+# → OtaPackagerService.threshold_config_body («ЩО СЛАТИ на пристрій»; кадр — Downlink::CommandFrame).
 # 🔴 [2026-09-05] Заголовок доти називав ланкою ще й `TelemetryUnpackerService
 # divergence check` — знято: DCI цей ланцюг БІЛЬШЕ НЕ читає, він судить за
 # `Tree#device_lorenz_thresholds` (смуга, чинна на пристрої). Обидві половини
@@ -188,8 +188,10 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
     end
   end
 
-  describe "OtaPackagerService.build_threshold_config_block" do
-    subject(:block) { OtaPackagerService.build_threshold_config_block(tree, config_version: 7) }
+  # [FW.17 · 03_05 §2.5] Тіло 0x9A — 8 Б; кадр навколо нього (CCM сесійним
+  # ключем, DID, DLFC) пінує spec/services/downlink/command_frame_spec.rb.
+  describe "OtaPackagerService.threshold_config_body" do
+    subject(:body) { OtaPackagerService.threshold_config_body(tree, config_version: 7) }
 
     let(:org) { create(:organization) }
     let(:family) do
@@ -203,43 +205,24 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       create(:tree, cluster: cluster, tree_family: family)
     end
 
-    it "produces a 13-byte binary string" do
-      expect(block).to be_a(String)
-      expect(block.bytesize).to eq(13)
-      expect(block.encoding).to eq(Encoding::ASCII_8BIT)
-    end
-
-    it "starts with CMD_SET_THRESHOLDS marker (0x9A)" do
-      expect(block.bytes.first).to eq(OtaPackagerService::CMD_SET_THRESHOLDS)
-      expect(OtaPackagerService::CMD_SET_THRESHOLDS).to eq(0x9A)
-    end
-
-    it "encodes payload length 10 as little-endian uint16" do
-      payload_len = block.byteslice(1, 2).unpack1("v")
-      expect(payload_len).to eq(10)
+    it "produces an 8-byte binary body — no len, no CRC: the MIC carries integrity" do
+      expect(body).to be_a(String)
+      expect(body.bytesize).to eq(8)
+      expect(body.encoding).to eq(Encoding::ASCII_8BIT)
     end
 
     it "encodes thresholds as int16 little-endian × 100" do
-      payload = block.byteslice(3, 10)
-      z_min, z_max, z_opt = payload.unpack("s<s<s<")
+      z_min, z_max, z_opt = body.unpack("s<s<s<")
       expect(z_min).to eq(200)   # 2.0 × 100
       expect(z_max).to eq(4500)  # 45.0 × 100
       expect(z_opt).to eq(2900)  # 29.0 × 100
     end
 
     it "encodes species_id from SPECIES_ID_MAP and config_version" do
-      payload = block.byteslice(3, 10)
-      species_id = payload.byteslice(6, 1).unpack1("C")
-      version    = payload.byteslice(7, 1).unpack1("C")
+      species_id = body.byteslice(6, 1).unpack1("C")
+      version    = body.byteslice(7, 1).unpack1("C")
       expect(species_id).to eq(0) # Pinus sylvestris → 0
       expect(version).to eq(7)
-    end
-
-    it "appends a valid CRC16-CCITT (XMODEM) over payload bytes 0..7" do
-      payload = block.byteslice(3, 10)
-      body = payload.byteslice(0, 8)
-      stored_crc = payload.byteslice(8, 2).unpack1("v")
-      expect(stored_crc).to eq(OtaPackagerService.crc16_ccitt(body))
     end
 
     it "applies cluster per-species overrides over family values" do
@@ -248,8 +231,7 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
           "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0, "optimal" => 30.5 }
         }
       })
-      payload = OtaPackagerService.build_threshold_config_block(tree).byteslice(3, 10)
-      z_min, z_max, z_opt = payload.unpack("s<s<s<")
+      z_min, z_max, z_opt = OtaPackagerService.threshold_config_body(tree).unpack("s<s<s<")
       expect(z_min).to eq(150)
       expect(z_max).to eq(4600)
       expect(z_opt).to eq(3050)
@@ -257,8 +239,7 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
 
     it "uses 0xFF species_id for unmapped scientific_name" do
       family.update!(scientific_name: "Sequoiadendron giganteum")
-      payload = OtaPackagerService.build_threshold_config_block(tree).byteslice(3, 10)
-      species_id = payload.byteslice(6, 1).unpack1("C")
+      species_id = OtaPackagerService.threshold_config_body(tree).byteslice(6, 1).unpack1("C")
       expect(species_id).to eq(OtaPackagerService::DEFAULT_SPECIES_ID)
       expect(species_id).to eq(0xFF)
     end

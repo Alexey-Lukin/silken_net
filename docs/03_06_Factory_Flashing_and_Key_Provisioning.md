@@ -239,7 +239,8 @@ STEP 2: Factory Flashing (конвеєр на заводі)
 
   c) Backend деривує ключі від ПРАВИЛЬНОГО DID (Zero-Trust — нічого мережею):
      lora_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")  # Tree, 16B — session KEYL
-                 # [FW.17] re-provision (рядок уже є) — епоха e+1, info "…:e<N>" (03_05 §3.8)
+                 # [FW.17] re-provision (рядок уже є) — епоха e+1, info "…:e<N>" (03_05 §3.8);
+                 # тією ж транзакцією downlink_frame_counter = 0 (03_05 §2.5)
      k_seed    = SeedDerivation (§3, info "silken-lorenz-seed|<DID>")     # Tree, 32B
      k_ota     = per-cluster HKDF (§4, FW.23)                             # Tree, 32B
      bcast_key = HardwareKeyService.derive_broadcast_key(cluster_id)      # ОБИДВА, 16B — KEYB

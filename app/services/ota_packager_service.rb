@@ -9,12 +9,11 @@ class OtaPackagerService
   LORA_MTU = 11  # Для 16-байтних LoRa-пакетів (5 байтів заголовок: 1 маркер + 2 index + 2 total)
   COAP_MTU = 512 # Оптимально для Starlink/LTE
 
-  # [FW.8] OTA Config Payload command markers (per docs/05_02 §4а.1)
+  # OTA / time-sync markers (docs/03_01 §4.5а). Адресні команди 0x9A · 0x9D ·
+  # 0x9E живуть у Downlink::CommandFrame (FW.17, 03_05 §2.5).
   CMD_OTA_BYTECODE   = 0x99 # mruby bytecode chunks (existing)
-  CMD_SET_THRESHOLDS = 0x9A # per-tree Lorenz Z thresholds
   CMD_HMAC_TRAILER   = 0x9B # [FW.23] OTA HMAC-SHA256 trailer (3 LoRa chunks)
   CMD_TIME_SYNC      = 0x9C # backend UTC timestamp envelope (FW.20)
-  CMD_ROTATE_KEY     = 0x9E # [FW.17] hash-ratchet advance-to-version (без ключа на дроті)
 
   # [FW.23] HMAC trailer constants — wire format must mirror Soldier parser.
   HMAC_TAG_BYTES        = 32   # HMAC-SHA256 output size
@@ -42,13 +41,13 @@ class OtaPackagerService
     new(firmware, chunk_size, cluster_id: cluster_id).prepare
   end
 
-  # [FW.8] Build a CMD_SET_THRESHOLDS (0x9A) OTA config block for the given Tree.
-  # Wire format (per docs/05_02 §4а.1):
-  #   [CMD_TYPE:1=0x9A] [PAYLOAD_LEN:2 little-endian] [PAYLOAD:10]
-  #   PAYLOAD = [z_min_x100:int16le][z_max_x100:int16le][z_opt_x100:int16le]
-  #             [species_id:u8][config_version:u8][crc16:u16le over bytes 0..7]
-  # Returns binary String (13 bytes total).
-  def self.build_threshold_config_block(tree, config_version: 1)
+  # [FW.8] Тіло команди 0x9A для дерева — 8 Б:
+  #   [z_min_x100:s16le][z_max_x100:s16le][z_opt_x100:s16le][species_id:u8][config_version:u8]
+  # Пороги — з governance-ланцюга (cluster override > family > global,
+  # Tree#effective_lorenz_thresholds). Кадр навколо тіла — CCM сесійним ключем
+  # дерева (Downlink::CommandFrame.thresholds, 03_05 §2.5); len і CRC старого
+  # каркаса зняла downlink-ревізія — цілісність несе MIC.
+  def self.threshold_config_body(tree, config_version: 1)
     thresholds = tree.effective_lorenz_thresholds
     z_min   = (thresholds[:min]     * 100).round.to_i
     z_max   = (thresholds[:max]     * 100).round.to_i
@@ -56,30 +55,13 @@ class OtaPackagerService
 
     # tree_family — required belongs_to; unmapped scientific_name → DEFAULT
     species_id = SPECIES_ID_MAP[tree.tree_family.scientific_name] || DEFAULT_SPECIES_ID
-    version    = (config_version & 0xFF)
 
-    body = [ z_min, z_max, z_opt, species_id, version ].pack("s<s<s<CC")
-    crc  = crc16_ccitt(body)
-    payload = body + [ crc ].pack("v") # uint16 little-endian
-
-    [ CMD_SET_THRESHOLDS ].pack("C") + [ payload.bytesize ].pack("v") + payload
-  end
-
-  # [FW.17] Build a CMD_ROTATE_KEY (0x9E) frame — каркас 0x9A, але body = лише
-  # target_version: ключ НІКОЛИ не їде дротом, пристрій деривує його сам
-  # (Cryptography::KeyRatchet ↔ firmware/common/key_ratchet.h).
-  # Wire: [0x9E][PAYLOAD_LEN:2le = 4][target_version:u16le][crc16:u16le] = 7 байт.
-  def self.build_rotate_key_block(target_version)
-    raise ArgumentError, "target_version must be 1..65535" unless (1..0xFFFF).cover?(target_version)
-
-    body = [ target_version ].pack("v")
-    payload = body + [ crc16_ccitt(body) ].pack("v")
-    [ CMD_ROTATE_KEY ].pack("C") + [ payload.bytesize ].pack("v") + payload
+    [ z_min, z_max, z_opt, species_id, config_version & 0xFF ].pack("s<s<s<CC")
   end
 
   # [FW.8] Class-level CRC16-CCITT (XMODEM polynomial 0x1021, init 0xFFFF)
   # Mirrored on firmware/queen/main.c:verify_crc16(). Exposed as class method so
-  # build_threshold_config_block can be called without instantiating the service.
+  # FactoryFlashing::FlashKvImage (журнал Flash-KV) може кликати без інстансу сервісу.
   def self.crc16_ccitt(data)
     crc = 0xFFFF
     data.each_byte do |byte|

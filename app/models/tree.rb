@@ -311,7 +311,8 @@ class Tree < ApplicationRecord
   # дерево поза своєю нормою».
   #
   # SSOT consumed by:
-  #   - OtaPackagerService#build_threshold_config_block (CMD_SET_THRESHOLDS 0x9A)
+  #   - OtaPackagerService.threshold_config_body → Downlink::CommandFrame.thresholds
+  #     (CMD_SET_THRESHOLDS 0x9A, адресний CCM-кадр — 03_05 §2.5)
   #     ⚠️ Споживач СПЛЯЧИЙ: у `app/`/`lib/` викликача в нього нема, тракт
   #     доставки не дротований (`03_01`: «у downlink pipeline не передається»).
   #     Тобто сьогодні цей ланцюг (cluster override → family → global) не має

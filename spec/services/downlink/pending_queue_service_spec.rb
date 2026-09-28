@@ -375,7 +375,7 @@ RSpec.describe Downlink::PendingQueueService do
     let!(:tree) { create(:tree, cluster: cluster) }
     let!(:tree_key) do
       create(:hardware_key, :for_tree, tree: tree, key_version: 3,
-             previous_aes_key_hex: "cd" * 16)
+             previous_aes_key_hex: "cd" * 16, downlink_frame_counter: 7)
     end
 
     it "мовчить, поки FW17-гейт зачинений (той самий guard, що воркер)" do
@@ -384,13 +384,27 @@ RSpec.describe Downlink::PendingQueueService do
       expect(decrypt_inner(poll).bytes).to all(eq(0))
     end
 
-    it "derivable з Dual-Key Grace: незавершена ротація → 0x9E(key_version)" do
+    # [FW.17 · 03_05 §2.5] Кадр — адресний CCM під ПОПЕРЕДНІМ ключем: вузол у grace
+    # ще тримає саме його. Очікуваний кадр збирається незалежно, прямо примітивом —
+    # виклик того самого CommandFrame тут був би тавтологією.
+    it "derivable з Dual-Key Grace: незавершена ротація → 0x9E(key_version) під попереднім ключем" do
       allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
 
       inner = decrypt_inner(poll)
 
-      expected = OtaPackagerService.build_rotate_key_block(3)
+      expected = Cryptography::LoraCcm.encrypt_downlink(
+        key: [ "cd" * 16 ].pack("H*"), opcode: 0x9E,
+        did_bytes: [ Cryptography::KeyRatchet.did_to_u32(tree.did) ].pack("N"),
+        dlfc: 7, body: [ 3 ].pack("v")
+      )
       expect(inner.byteslice(0, expected.bytesize)).to eq(expected)
+    end
+
+    it "мовчить про grace без виданого DLFC — Солдат DLFC 0 не прийме, а виняток глушив би кластер" do
+      allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
+      tree_key.update!(downlink_frame_counter: 0)
+
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
     end
 
     # 🔴 Третій стан, і він НЕ дорівнює жодному з двох вище: гейт ВІДЧИНЕНО, а
@@ -402,7 +416,7 @@ RSpec.describe Downlink::PendingQueueService do
     # проходила б зеленою: Солдат дістав би наказ ратчетитись у версію, якої
     # ніхто не роздавав.
     # [FW.17] Grace після re-provision (версія 0, нова епоха — 03_05 §3.8) закриває MIC, а
-    # не 0x9E; `build_rotate_key_block(0)` кидав би, і без фільтра версії цей grace валив би
+    # не 0x9E; `CommandFrame.rotate_key` з версії 0 кадру не будує, і без фільтра версії цей grace валив би
     # poll-деривацію всього кластера, щойно гейт ратчета відчинять.
     it "мовчить про grace після re-provision — версія 0 не є ротацією" do
       allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)

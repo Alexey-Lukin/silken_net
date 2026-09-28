@@ -64,16 +64,6 @@ RSpec.describe Cryptography::KeyRatchet do
     end
   end
 
-  describe "OtaPackagerService.build_rotate_key_block (wire 0x9E)" do
-    it "емітить заморожений golden-кадр (target_version = 3)" do
-      # Той самий hex парсить firmware test_parse_golden_frame.
-      block = OtaPackagerService.build_rotate_key_block(3)
-      expect(block.unpack1("H*").upcase).to eq("9E040003005C48")
-    end
-
-    it "відкидає версію поза u16 (0 — не команда, ratchet тільки вперед)" do
-      expect { OtaPackagerService.build_rotate_key_block(0) }.to raise_error(ArgumentError)
-      expect { OtaPackagerService.build_rotate_key_block(0x1_0000) }.to raise_error(ArgumentError)
-    end
-  end
+  # Кадр 0x9E, що несе ціль ратчета, — адресний CCM (03_05 §2.5):
+  # spec/services/downlink/command_frame_spec.rb.
 end

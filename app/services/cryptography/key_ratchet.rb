@@ -6,7 +6,7 @@ require "openssl"
 # [FW.17] Hash-Ratchet ротація per-device LoRa AES-128 ключа.
 #
 # Ключ ніколи не передається мережею: команда `CMD_ROTATE_KEY` (0x9E,
-# OtaPackagerService.build_rotate_key_block) несе лише target_version —
+# Downlink::CommandFrame.rotate_key) несе лише target_version —
 # обидва кінці синхронно деривують наступний ключ. Один крок:
 #
 #   K_{v+1} = HMAC-SHA256(key = K_v,

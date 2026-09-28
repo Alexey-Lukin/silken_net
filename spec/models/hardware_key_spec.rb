@@ -371,6 +371,34 @@ RSpec.describe HardwareKey, type: :model do
     end
   end
 
+  # [FW.17 · 03_05 §2.5] DLFC — u32: у нонсі CCM цілком, в ефірі молодші 16 біт.
+  describe "downlink_frame_counter" do
+    it "accepts the u32 ceiling and rejects anything past it or below zero" do
+      expect(build(:hardware_key, downlink_frame_counter: 0xFFFF_FFFF)).to be_valid
+      expect(build(:hardware_key, downlink_frame_counter: 0x1_0000_0000)).not_to be_valid
+      expect(build(:hardware_key, downlink_frame_counter: -1)).not_to be_valid
+    end
+  end
+
+  describe "#issue_downlink_frame_counter!" do
+    let(:hardware_key) { create(:hardware_key, :for_tree, downlink_frame_counter: 5) }
+
+    it "issues the next counter and persists it" do
+      expect(hardware_key.issue_downlink_frame_counter!).to eq(6)
+      expect(hardware_key.reload.downlink_frame_counter).to eq(6)
+    end
+
+    # Під grace їде лише 0x9E, чий DLFC видав rotate!; будь-яка інша видача
+    # зсунула б лічильник з-під кадру ротації, і його перевидача вже не була б тим самим кадром.
+    it "refuses while a rotation grace is open and leaves the counter alone" do
+      hardware_key.update!(previous_aes_key_hex: "CD" * 16)
+
+      expect { hardware_key.issue_downlink_frame_counter! }
+        .to raise_error(Downlink::CommandFrame::GraceOpenError)
+      expect(hardware_key.reload.downlink_frame_counter).to eq(5)
+    end
+  end
+
   describe "#owner" do
     it "returns the tree when the device_uid matches a tree's DID" do
       tree   = create(:tree)

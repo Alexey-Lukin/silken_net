@@ -4,7 +4,8 @@
 require "rails_helper"
 
 # [FW.17] Доставка CMD_ROTATE_KEY (0x9E) через Queen кластера. Сам ключ в
-# ефір не їде — кадр несе лише target_version (канон 03_05 §3.8).
+# ефір не їде — кадр несе лише target_version (канон 03_05 §3.8), а з
+# downlink-ревізії це адресний CCM-кадр під ПОПЕРЕДНІМ ключем дерева (§2.5).
 RSpec.describe KeyRotationDownlinkWorker, type: :worker do
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
@@ -17,6 +18,18 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
            last_seen_at: 30.seconds.ago)
   end
   let!(:gateway_key) { create(:hardware_key, device_uid: gateway.uid) }
+  let!(:tree_key) do
+    create(:hardware_key, :for_tree, tree: tree, key_version: 3,
+                                     previous_aes_key_hex: "cd" * 16, downlink_frame_counter: 7)
+  end
+  # Незалежна збірка очікуваного кадру — прямо примітивом, не тим самим CommandFrame.
+  let(:expected_frame) do
+    Cryptography::LoraCcm.encrypt_downlink(
+      key: [ "cd" * 16 ].pack("H*"), opcode: 0x9E,
+      did_bytes: [ Cryptography::KeyRatchet.did_to_u32(tree.did) ].pack("N"),
+      dlfc: 7, body: [ 3 ].pack("v")
+    )
+  end
 
   before do
     allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: true, code: "2.04"))
@@ -39,7 +52,7 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       )
     end
 
-    it "carries the freeze-contract 0x9E frame inside the encrypted envelope" do
+    it "carries the tree's 0x9E CCM frame, signed with its PREVIOUS key, inside the envelope" do
       sent_payload = nil
       allow(CoapClient).to receive(:put) do |_url, payload|
         sent_payload = payload
@@ -56,11 +69,9 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       cipher.padding = 0
       plain = cipher.update(sent_payload.byteslice(16..)) + cipher.final
 
-      # Після 5-байтного 0x9C time-sync envelope — golden-кадр 9E 0400 0300 5C48
+      # Після 5-байтного 0x9C time-sync envelope — 17-байтний CCM-кадр 0x9E
       expect(plain.bytes[0]).to eq(0x9C)
-      expect(plain.byteslice(5, 7)).to eq(
-        OtaPackagerService.build_rotate_key_block(3)
-      )
+      expect(plain.byteslice(5, 17)).to eq(expected_frame)
     end
 
     # Ротований KEYC доїжджає до Королеви лише re-provision'ом, тож у її
@@ -82,7 +93,7 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       cipher.iv = sent_payload.byteslice(0, 16)
       cipher.padding = 0
       plain = cipher.update(sent_payload.byteslice(16..)) + cipher.final
-      expect(plain.byteslice(5, 7)).to eq(OtaPackagerService.build_rotate_key_block(3))
+      expect(plain.byteslice(5, 17)).to eq(expected_frame)
     end
   end
 
@@ -91,6 +102,36 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(false)
 
       described_class.new.perform(tree.did, 3)
+
+      expect(CoapClient).not_to have_received(:put)
+    end
+
+    it "no-ops once the tree's grace is closed — the node already runs K_{v+1}" do
+      tree_key.update!(previous_aes_key_hex: nil)
+
+      described_class.new.perform(tree.did, 3)
+
+      expect(CoapClient).not_to have_received(:put)
+    end
+
+    it "no-ops when the tree has no HardwareKey row — there is no key to sign with" do
+      tree_key.destroy!
+
+      described_class.new.perform(tree.did, 3)
+
+      expect(CoapClient).not_to have_received(:put)
+    end
+
+    it "no-ops for a grace without an issued DLFC — the Soldier never accepts DLFC 0" do
+      tree_key.update!(downlink_frame_counter: 0)
+
+      described_class.new.perform(tree.did, 3)
+
+      expect(CoapClient).not_to have_received(:put)
+    end
+
+    it "no-ops for a stale job whose version the rotation has moved past" do
+      described_class.new.perform(tree.did, 2)
 
       expect(CoapClient).not_to have_received(:put)
     end

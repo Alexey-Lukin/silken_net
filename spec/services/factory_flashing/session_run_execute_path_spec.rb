@@ -155,6 +155,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
     # стирається й пишеться свіжим (лише 0x15 = приплив OTA кластера).
     it "re-provisions a tree into a new key epoch and leaves the old key's grace to the MIC" do
       hw_key = rotated_key_for(tree)
+      hw_key.update!(downlink_frame_counter: 9)
       old_current = hw_key.aes_key_hex
       tree.cluster.update!(ota_version_hiwater: 42)
       k0_e1 = HardwareKeyService.derive_lora_key(tree.did, epoch: 1, master_key: "master")
@@ -163,8 +164,10 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
                           executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
                           master_key_source: master_key_source)
 
+      # DLFC → 0 разом з епохою: свіжий журнал запису 0x12 не несе (03_05 §2.5).
       expect(hw_key.reload).to have_attributes(epoch: 1, key_version: 0, aes_key_hex: k0_e1,
-                                               previous_aes_key_hex: old_current)
+                                               previous_aes_key_hex: old_current,
+                                               downlink_frame_counter: 0)
       image = flash_image(shim_invocations)
       expect(image[0x0803E004]).to eq("0x#{k0_e1[0, 8]}")
       expect(image.values_at(0x0803D010, 0x0803D014)).to eq(%w[0x15A556DE 0x0000002A]) # golden 0x15 = 42

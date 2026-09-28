@@ -3,12 +3,12 @@
 
 require "timeout"
 
-# [FW.17] Доставка `CMD_ROTATE_KEY 0x9E [target_version:u16le]+crc16` до
-# Soldier'а через найкращу Queen його кластера. Сам ключ НІКОЛИ не летить
-# ефіром — Soldier деривує K_{v+1} ратчетом (firmware/common/key_ratchet.h).
-# Queen-реле: кадр їде CoAP'ом (AES-256-CBC + 0x9C time-sync envelope від
-# CoapEncryption), Королева маршрутизує за маркером 0x9E у soldier_cmd_queue
-# (FW.20-Q2) і проповідує Солдату LoRa-broadcast'ом.
+# [FW.17] Доставка `CMD_ROTATE_KEY 0x9E` до Soldier'а через найкращу Queen його
+# кластера. Сам ключ НІКОЛИ не летить ефіром — Soldier деривує K_{v+1} ратчетом
+# (firmware/common/key_ratchet.h). Кадр — адресний CCM під ПОПЕРЕДНІМ ключем
+# вузла (Downlink::CommandFrame, 03_05 §2.5); Queen-реле: CoAP (AES-256-CBC +
+# 0x9C time-sync envelope від CoapEncryption) → soldier_cmd_queue (FW.20-Q2) →
+# адресний постріл услід за голосом саме цього Солдата.
 #
 # Enqueue — ЛИШЕ зсередини HardwareKeyService#rotate_tree_via_ratchet!, і
 # ПІСЛЯ коміту БД-ротації [ARCH.59]. Гейт продубльовано тут
@@ -46,6 +46,15 @@ class KeyRotationDownlinkWorker
       return
     end
 
+    # Кадр існує лише для живого grace САМЕ цієї ротації: grace закрито
+    # (вузол уже на K_{v+1}) чи версія пішла далі — job застарів, і будувати нема з чого.
+    tree_key = HardwareKey.find_by(device_uid: device_uid)
+    unless tree_key&.previous_aes_key_hex.present? && tree_key.key_version == target_version &&
+           tree_key.downlink_frame_counter.positive?
+      Rails.logger.info("[KeyRotationDownlink] #{device_uid}: v#{target_version} уже не в grace — пропуск")
+      return
+    end
+
     gateway = best_gateway_for(tree.cluster_id)
     unless gateway
       Rails.logger.warn("[KeyRotationDownlink] #{device_uid}: кластер #{tree.cluster_id} без живої Queen — retry")
@@ -55,8 +64,7 @@ class KeyRotationDownlinkWorker
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
     return unless key_record&.binary_key.present?
 
-    block = OtaPackagerService.build_rotate_key_block(target_version)
-    encrypted = coap_encrypt(block, key_record.coap_binary_key)
+    encrypted = coap_encrypt(Downlink::CommandFrame.rotate_key(tree_key), key_record.coap_binary_key)
 
     begin
       Timeout.timeout(10) do

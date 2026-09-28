@@ -79,6 +79,18 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(KeyRotationDownlinkWorker).to have_received(:perform_async).with(tree.did, 1)
     end
 
+    # [FW.17 · 03_05 §2.5] DLFC кадру 0x9E видається тією ж транзакцією, що
+    # відкриває grace, — інакше кадру не було б з чим підписати.
+    it "issues the rotation's DLFC together with opening the grace" do
+      open_ratchet_gate!
+      hardware_key.update!(downlink_frame_counter: 41)
+
+      described_class.new(tree).rotate!
+
+      expect(hardware_key.reload.downlink_frame_counter).to eq(42)
+      expect(Downlink::CommandFrame.rotate_key(hardware_key).bytesize).to eq(17)
+    end
+
     # Golden-KAT (K0=000102..0F, DID=0xDEADBEEF → K1) — той самий вектор, що
     # firmware/test/test_key_ratchet.c: пінує крос-шаровий wiring did_to_u32+advance.
     it "matches the firmware golden KAT through the full service path" do

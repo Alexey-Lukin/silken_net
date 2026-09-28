@@ -212,17 +212,21 @@ module Downlink
       return nil unless HardwareKeyService.ratchet_dispatch_enabled?
 
       # [FW.17] Ротацією є лише grace ратчета (версія ≥ 1). Grace після re-provision
-      # (версія 0, нова епоха — 03_05 §3.8) закриває MIC, а не 0x9E, і версії 0
-      # `build_rotate_key_block` не приймає — без цього фільтра такий grace валив
-      # би poll-деривацію всього кластера.
+      # (версія 0, нова епоха — 03_05 §3.8) закриває MIC, а не 0x9E, і з версії 0
+      # `CommandFrame.rotate_key` кадру не будує — без цього фільтра такий grace
+      # валив би poll-деривацію всього кластера. Той самий клас — grace без
+      # виданого DLFC (0 — рядок до міграції 2026-09-29): Солдат DLFC 0 не прийме,
+      # тож кадру в такого grace немає, а виняток тут глушив би весь кластер.
       key = HardwareKey.joins(:tree)
                        .where(trees: { cluster_id: @gateway.cluster_id })
                        .where.not(previous_aes_key_hex: nil)
-                       .where(key_version: 1..)
+                       .where(key_version: 1.., downlink_frame_counter: 1..)
                        .order(:updated_at).first
       return nil unless key
 
-      OtaPackagerService.build_rotate_key_block(key.key_version)
+      # Адресний CCM-кадр під ПОПЕРЕДНІМ ключем вузла (03_05 §2.5); на кожному
+      # poll — той самий кадр, тож Королева його лише освіжає, а не множить.
+      Downlink::CommandFrame.rotate_key(key)
     end
 
     # ── OTA-hint (нога-2 відкривається Королевою після цього анонсу) ─────

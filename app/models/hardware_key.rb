@@ -77,6 +77,13 @@ class HardwareKey < ApplicationRecord
   # [FW.17] Епоха кореня дерева — піднімає лише re-provision (03_05 §3.8).
   validates :epoch, presence: true,
                     numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  # [FW.17] DLFC адресних команд (03_05 §2.5): останній ВИДАНИЙ, u32 — у нонсі
+  # CCM цілком, в ефірі молодші 16 біт. Firmware-дзеркало — останній ПРИЙНЯТИЙ,
+  # Flash-KV 0x12. Re-provision обнуляє разом з новою епохою.
+  validates :downlink_frame_counter, presence: true,
+                                     numericality: { only_integer: true,
+                                                     greater_than_or_equal_to: 0,
+                                                     less_than_or_equal_to: 0xFFFF_FFFF }
 
   # Ed25519 public key для M2M автентифікації (64 hex chars = 32 bytes)
   validates :ed25519_public_key_hex, length: { is: 64 },
@@ -168,6 +175,21 @@ class HardwareKey < ApplicationRecord
   # (03_05 §3.8). Колонки під «чий grace» не заводимо: версія це вже каже.
   def previous_key_epoch
     key_version.zero? && epoch.positive? ? epoch - 1 : epoch
+  end
+
+  # [FW.17 · 03_05 §2.5] Видати DLFC новій адресній команді — один раз, при
+  # ВИДАЧІ: команда живе з ним, і повторна видача шле той самий кадр. Під живим
+  # grace не видається нічого — там їде лише 0x9E, чий DLFC видав rotate!
+  # (Downlink::CommandFrame). Замок рядка: два видачі одного значення під тим
+  # самим ключем = повтор нонса CCM.
+  def issue_downlink_frame_counter!
+    with_lock do
+      raise Downlink::CommandFrame::GraceOpenError, "#{device_uid}: grace відкритий — команда чекає" \
+        if previous_aes_key_hex.present?
+
+      update!(downlink_frame_counter: downlink_frame_counter + 1)
+    end
+    downlink_frame_counter
   end
 
   # Метод для зачистки "хвостів" після успішної синхронізації.
