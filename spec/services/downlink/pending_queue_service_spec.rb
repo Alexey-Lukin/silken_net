@@ -297,6 +297,31 @@ RSpec.describe Downlink::PendingQueueService do
         expect(decrypt_inner(poll)).to include(waiting.idempotency_token)
       end
 
+      # [FW.63 · ⚖️ делеговано 2026-09-28] Людський слід винесеного EWS-наказу: без нього
+      # людина бачила б лише бейдж, а хворий запис мовчки з'їдав би кожен наступний наказ.
+      # Ключ під наявним типом (не новий тип), дедуп — per-event, як у протухання.
+      it "EWS-наказ, отриманий шлюзом, але не записаний, лишає алерт «отримано, не записано»" do
+        fire = create(:ews_alert, :fire, cluster: cluster, tree: create(:tree, cluster: cluster))
+        ews = create(:actuator_command, :high_priority, actuator: neighbour, ews_alert: fire)
+        expect(decrypt_inner(poll)).to include(ews.idempotency_token) # :high видається першим → :sent
+        neighbour.update_columns(max_active_duration_s: ews.duration_seconds - 1)
+
+        expect { decrypt_inner(echo(ews.idempotency_token)) }
+          .to change { EwsAlert.alert_type_emergency_response_undeliverable.where(message_key: "emergency_response_unrecorded").count }.by(1)
+
+        trail = EwsAlert.where(message_key: "emergency_response_unrecorded").sole
+        expect(trail.message_params).to include("actuator_id" => neighbour.id, "ews_alert_id" => fire.id)
+        expect(ews.reload.status).to eq("failed")
+      end
+
+      it "наказ оператора (без EWS-тривоги) такого алерту не лишає — його свідок бачить бейдж" do
+        decrypt_inner(poll)
+        actuator.update_columns(max_active_duration_s: command.duration_seconds - 1)
+
+        expect { decrypt_inner(echo(command.idempotency_token)) }
+          .not_to change { EwsAlert.where(message_key: "emergency_response_unrecorded").count }
+      end
+
       it "невалідний АКТУАТОР: наказ виноситься, а причина називає актуатор, не наказ" do
         sick = create(:actuator, gateway: gateway)
         good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)

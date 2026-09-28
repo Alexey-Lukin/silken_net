@@ -115,6 +115,20 @@ class EmergencyResponseService
                          relevance_min: ((command.expires_at - command.created_at) / 60.0).round)
   end
 
+  # [FW.63 · ⚖️ делеговано 2026-09-28] Луна ДОВЕЛА, що шлюз наказ отримав, а платформа не
+  # змогла це записати (RecordInvalid на echo-кроці — актуатор чи сам наказ не проходять
+  # валідацію), тож `Downlink::PendingQueueService` виносить наказ force-fail'ом. Без цього
+  # сліду людина бачила б лише бейдж, а хворий запис мовчки з'їдав би кожен наступний наказ
+  # актуатора. КЛЮЧ, а не новий тип: класифікація цього типу (не наша вина оператора, поза
+  # `comms_no_ack?` і `critical_unmaintained?`) тут та сама, тож грошовий шлях не рухається.
+  # ФАКТ однієї тривоги → дедуп per-event, як у `report_expired`. Наказ оператора сюди не
+  # йде: його видав живий свідок, що бачить бейдж на тій самій сторінці.
+  def self.report_unrecorded(command)
+    return unless command.ews_alert
+
+    report_undeliverable(command.ews_alert, command.actuator, "emergency_response_unrecorded", per_event: true)
+  end
+
   # Придатність = робочий стан пристрою І живий шлюз. Дві НЕЗАЛЕЖНІ причини
   # недоступності, і саме тому звіт нижче рахує їх окремо. Шлюз на обслуговуванні
   # сюди свідомо НЕ входить: його відмова поактуаторна (`deliverable?`), інакше

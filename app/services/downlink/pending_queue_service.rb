@@ -313,9 +313,10 @@ module Downlink
       # ⚠️ Стеля: `failed` тут не бреше про фізику лише доти, доки актуаторної прошивки немає
       # (Королева ACTION не виконує — 03_02 §6). З її появою доставлений наказ працюватиме
       # без Reset і без STOP у БД, і цей вихід мусить ще й ставити override-STOP (00_07
-      # ARCH.58, нога першого actuator-hardware). Людського сліду для EWS-наказу тут теж
-      # немає — чесного типу алерту «доставлено, але не записано» не існує (⚖️ 00_07 FW.63).
+      # ARCH.58, нога першого actuator-hardware). Людський слід для EWS-наказу — ключ
+      # «отримано, але не записано» (⚖️ делеговано 2026-09-28, 00_07 FW.63).
       force_fail_unpersistable!(command, e, echoed: true)
+      EmergencyResponseService.report_unrecorded(command)
     end
 
     def firmware_version_label(firmware_id)
