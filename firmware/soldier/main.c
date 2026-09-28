@@ -694,6 +694,12 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 #ifndef FW2_CCM_ENABLED
 #define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification (RUNBOOK §2)
 #endif
+// [FW.17] Ратчет живий лише з CCM: в ECB-ері LoRa-шар знімає Королева, Rails
+// ключа вузла не бачить, тож grace ротації не закрилось би ніколи, а 0x9E
+// перевидавався б на кожному poll'і (03_05 §3.8).
+#if FW17_RATCHET_ENABLED && !FW2_CCM_ENABLED
+#error "[FW.17] FW17_RATCHET_ENABLED потребує FW2_CCM_ENABLED"
+#endif
 #include "../common/fc_hiwater.h"
 
 #if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
@@ -714,17 +720,20 @@ static uint8_t  fc_hiwater_degraded = 0; // TX перетнув межу, Flash 
                                          // нема (PAD повний — патерн FW.42)
 #endif
 
-#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB,
-// стор. 125) — амбієнтний ECB-ключ CCM-ери: RX-decrypt всього downlink'а +
+// стор. 125) — амбієнтний ECB-ключ ОБОХ ер: RX-decrypt усього downlink'а +
 // TX 0x55/0x56 (Королева читає їх сама — session-ключів вона не тримає).
-// Телеметрія й panic беруть session (aes_key) всередині
-// Soldier_Build_CCM_LoRa_Packet. За гейтом: бойовий .bss ECB-ери незмінний
-// (+17 Б лише з фліпом). Канон: 03_05 §2.1 flip-checklist (в).
+// CCM-ера: телеметрія й panic беруть session (aes_key) всередині
+// Soldier_Build_CCM_LoRa_Packet. ECB-ера: на KEYB їде й вона — ECB-шар знімає
+// Королева своїм єдиним ключем, а конвеєр кладе їй у KEYL-слот саме значення
+// KEYB. До 2026-09-28 бойовий білд брав амбієнтом KEYL, тож пара, провіжнута
+// конвеєром, не мала звʼязку взагалі. Ціна — +17 Б .bss бойового білда.
+// Канон: 03_05 §3.1.
 uint32_t bcast_key[4] = {0};
 uint8_t  bcast_key_is_fallback = 0; // 1 = KEYB-слот порожній → живемо на KEYL
                                     // (bench-плата, прошита до KEYB-ери)
 
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // [E.63 (г)] Wire-байти 20..21: EMA-delta_t, ЯК він пішов у metabolic_health
 // цього циклу (контракт «wire = вхід GP» — Фаза 3 виставляє ДО гілкування,
 // VM_ERROR-кадр несе чесне поточне значення). Panic-шлях шле 0 (не-homeostasis,
@@ -1676,11 +1685,9 @@ void Write_OTA_Contract_To_Flash(const uint8_t* data, uint16_t size);
 // Викликається в main() ПЕРЕД MX_CRYP_Init().
 static void Load_AES_Key(void);
 
-#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // [FW.2 (в)] Cluster control-plane KEYB — викликається в main() ПІСЛЯ
 // Load_AES_Key (fallback читає K0) і ПЕРЕД MX_CRYP_Init (амбієнт = bcast).
 static void Load_Broadcast_Key(void);
-#endif
 
 // [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
 // Викликається в main() при ініціалізації. K_seed використовується для
@@ -1840,13 +1847,11 @@ int main(void)
 #endif
 
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
-#if FW2_CCM_ENABLED
   Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
-#endif
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
   Load_Ota_Hmac_Key(); // [FW.23] Завантажити K_ota для OTA dual-gate (per-cluster HMAC)
   Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
-  MX_CRYP_Init(); // Вмикаємо апаратний AES (CCM-ера: амбієнт = bcast_key; ECB-ера: aes_key)
+  MX_CRYP_Init(); // Вмикаємо апаратний AES (амбієнт = bcast_key в обох ерах)
 
 #if defined(CCM_SELFTEST)
   // [FW.2] POST: бенч-атестація CCM-двигуна на реальному кремнії. Результат у
@@ -3579,14 +3584,12 @@ static void Load_AES_Key(void)
     }
 }
 
-#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // [FW.2 гейт (в)] Завантаження cluster control-plane ключа (KEYB, стор. 125).
 // НЕ Error_Handler(): відсутній KEYB — законна bench-плата, прошита до
-// KEYB-ери, вона деградує до односхемної поведінки (амбієнт = KEYL, як
-// ECB-ера) і чесно позначає це прапорцем. Fail-open тут безпечний, бо
-// fallback-ключ — той самий, на якому такий кластер і живе; фабрика
-// CCM-ери пише обидва слоти (command_builder), тож у полі прапорець
-// мусить бути 0. Патерн — Load_Ota_Hmac_Key (fail-open + valid-флаг),
+// KEYB-ери, вона деградує до односхемної поведінки на KEYL і чесно
+// позначає це прапорцем. Fail-open тут безпечний, бо fallback-ключ — той
+// самий, на якому такий кластер і живе; конвеєр пише обидва слоти в
+// будь-якій ері (command_builder), тож у полі прапорець мусить бути 0. Патерн — Load_Ota_Hmac_Key (fail-open + valid-флаг),
 // НЕ Load_AES_Key (fatal). Порядок у main() несучий: виклик ПЕРЕДУЄ
 // FW17_Restore_Key_Version — fallback бере K0, ратчений session не сміє
 // текти в амбієнт. Канон: 03_05 §2.1 (в) + §3.1.
@@ -3615,7 +3618,6 @@ static void Load_Broadcast_Key(void)
     }
     bcast_key_is_fallback = 1;
 }
-#endif
 
 // [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
 // Flash layout: [FLASH_SEED_MAGIC:4][seed_word[0]:4]...[seed_word[7]:4] = 36 bytes.
@@ -3821,14 +3823,11 @@ static void MX_CRYP_Init(void)
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
   hcryp.Init.KeySize = CRYP_KEYSIZE_128B; // ARCH.42 Variant B — AES-128 LoRa (вибір; SE = SE050 — 03_05 §3.7)
-#if FW2_CCM_ENABLED
-  // [FW.2 гейт (в)] Амбієнтний ECB CCM-ери = cluster-plane (KEYB): RX-decrypt
-  // downlink'а Королеви + TX 0x55/0x56. Session (aes_key) живе ЛИШЕ всередині
-  // CCM-скоупа (MX_CRYP_Init_CCM → Restore повертає сюди). 03_05 §2.1 (в).
+  // [FW.2 гейт (в)] Амбієнтний ECB обох ер = cluster-plane (KEYB): RX-decrypt
+  // downlink'а Королеви + TX 0x55/0x56, а в ECB-ері — і телеметрія. Session
+  // (aes_key) живе ЛИШЕ всередині CCM-скоупа (MX_CRYP_Init_CCM → Restore
+  // повертає сюди). 03_05 §3.1.
   hcryp.Init.pKey = bcast_key;
-#else
-  hcryp.Init.pKey = aes_key;              // односхемна ECB-ера: один ключ на все
-#endif
   hcryp.Init.Algorithm = CRYP_AES_ECB;    // ECB transitional → TARGET: CRYP_AES_CCM (FW.2)
   HAL_CRYP_Init(&hcryp);
 }
