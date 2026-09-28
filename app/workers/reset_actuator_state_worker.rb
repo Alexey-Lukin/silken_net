@@ -38,7 +38,7 @@ class ResetActuatorStateWorker
         actuator.mark_idle!
 
         # 2. Закриваємо наказ у базі даних (AASM: acknowledged → confirmed)
-        command.confirm! if command.may_confirm?
+        confirm_command!(command)
       end
 
       Rails.logger.info "♻️ [Actuator Lifecycle] Механізм #{actuator.name} виконав наказ ##{command.id} і повернувся в спокій."
@@ -47,7 +47,7 @@ class ResetActuatorStateWorker
       Rails.logger.info "ℹ️ [Actuator Lifecycle] Скидання скасовано. Механізм #{actuator.name} у стані '#{actuator.state}'."
 
       # Ми все одно маркуємо команду як завершену, навіть якщо стан змінився ззовні
-      command.confirm! if command.may_confirm?
+      confirm_command!(command)
     end
 
     # ⚡ [СИНХРОНІЗАЦІЯ З UI]: Відправляємо фінальний імпульс Архітектору
@@ -55,6 +55,20 @@ class ResetActuatorStateWorker
   end
 
   private
+
+  # [ARCH.58] Наказ, що вже не проходить власну валідацію (стелю актуатора знизили після
+  # луни), кидав би на `confirm!` RecordInvalid і відкочував би `mark_idle!` разом із собою —
+  # актуатор висів би `active`, а ретраї бились би об той самий виняток. Вікно такого
+  # наказу відпрацювало так само, тож він закривається тим самим `confirmed`, лише повз
+  # валідацію. `confirm!` пише лише сам наказ, тож RecordInvalid тут — завжди його.
+  def confirm_command!(command)
+    return unless command.may_confirm?
+
+    command.confirm!
+  rescue ActiveRecord::RecordInvalid => e
+    command.force_close_unpersistable!(:confirmed, error: e)
+    Rails.logger.error "🛑 [ARCH.58] Наказ ##{command.id} не проходить власну валідацію (#{e.message}) — закрито повз неї"
+  end
 
   # [ARCH.58] Чи отримав пристрій ПІЗНІШЕ за цей наказ інший підтверджений — тоді вікно
   # належить тому, і цей Reset актуатора не закриває. «Пізніше» = початок вікна

@@ -177,6 +177,33 @@ class ActuatorCommand < ApplicationRecord
     expires_at.present? && expires_at < Time.current
   end
 
+  # [ARCH.58] Термінальний стан для рядка, що вже не проходить ВЛАСНУ валідацію: стелю
+  # актуатора знизили після луни, і `:acknowledged`-наказ тепер довший за неї. AASM-перехід
+  # іде через `save!` (`whiny_persistence`), тож кидав би `RecordInvalid` і відкочував би все,
+  # що стоїть з ним в одній транзакції — `mark_idle!` у Reset'і, STOP, `deactivate!` і алерт
+  # у сторожа: актуатор висів би `active` без алерту (backend #17). `update_columns` —
+  # дзеркало `force_fail_unpersistable!` (`Downlink::PendingQueueService`); колбеків немає,
+  # тож ланцюг ARCH.57 закривається вручну, а `from` береться з БД, не з AASM у памʼяті.
+  def force_close_unpersistable!(to, error:, message: nil)
+    from = status_in_database
+    reason = error.record.errors.full_messages.first
+    now = Time.current
+    attrs =
+      if to.to_s == "confirmed"
+        { status: self.class.statuses[:confirmed], executed_at: executed_at || now, completed_at: now }
+      else
+        { status: self.class.statuses[:failed], error_message: [ message, reason ].compact.join(" — ").truncate(200) }
+      end
+    update_columns(attrs)
+    record_audit_trail!(
+      action: "actuator_to_#{to}",
+      organization_id: organization_id,
+      user_id: user_id,
+      metadata: { actuator_id: actuator_id, ews_alert_id: ews_alert_id, priority: priority.to_s,
+                  from: from, to: to.to_s, reason: "unpersistable" }
+    )
+  end
+
   private
 
   # [ARCH.57] Примусовий `failed` через update_columns свідомо обходить валідації (і

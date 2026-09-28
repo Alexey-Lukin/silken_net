@@ -296,6 +296,23 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
       RSpec::Mocks.space.proxy_for(EwsAlert).reset
       expect { described_class.new.perform }.to change { actuator.reload.state }.to("idle")
     end
+
+    # [ARCH.58] Стелю актуатора знизили ПІСЛЯ луни: загублений наказ тепер довший за неї
+    # і не проходить власну валідацію. `fail!` (через `save!`) кидав би RecordInvalid, а
+    # транзакція `recover!` відкочувала б STOP, `deactivate!` і алерт — щопроходу, і
+    # актуатор висів би `active` без алерту. Рядок стає невалідним справжньою стелею, не
+    # моком валідації.
+    it "розчакловує актуатор і тоді, коли загублений наказ уже не проходить власну валідацію" do
+      actuator, command = stuck
+      actuator.update_columns(max_active_duration_s: command.duration_seconds - 1)
+      expect(command.reload).not_to be_valid
+
+      expect { sweep }.to change { actuator.reload.state }.from("active").to("idle")
+      expect(command.reload.status_failed?).to be(true)
+      expect(command.error_message).to include("Слід наказу загублено")
+      expect(actuator.commands.where(command_payload: "STOP")).to exist
+      expect(EwsAlert.alert_type_actuator_stuck.count).to eq(1)
+    end
   end
 
   describe "метрика" do

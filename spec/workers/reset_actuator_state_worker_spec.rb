@@ -50,6 +50,38 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
         expect(command.reload.status).to eq("failed")
       end
 
+      # [ARCH.58] Стелю актуатора знизили ПІСЛЯ луни: наказ тепер довший за неї й не
+      # проходить власну валідацію. `confirm!` (через `save!`) кидав би RecordInvalid і
+      # відкочував би `mark_idle!` — актуатор висів би `active`, а ретраї бились би об той
+      # самий виняток. Вікно відпрацювало так само, тож закриття — той самий `confirmed`.
+      context "when the command no longer passes its own validation" do
+        before { actuator.update_columns(max_active_duration_s: command.duration_seconds - 1) }
+
+        it "returns the actuator to idle and confirms the command past the validation" do
+          expect(command.reload).not_to be_valid
+
+          expect { described_class.new.perform(command.id) }.not_to raise_error
+
+          expect(actuator.reload.state).to eq("idle")
+          expect(command.reload.status).to eq("confirmed")
+          expect(command.completed_at).to be_present
+        end
+
+        # Колбеків `update_columns` не має, тож слід ARCH.57 — ручний: без цього піна
+        # примусове закриття лишилось би невидимим у ланцюгу. Актор — `oracle_executioner`.
+        it "leaves the ARCH.57 trail of the forced confirmation" do
+          create(:user, :super_admin, email_address: User::ORACLE_EXECUTIONER_EMAIL)
+          AuditLogWorker.jobs.clear
+
+          described_class.new.perform(command.id)
+
+          trail = AuditLogWorker.jobs.map { |job| job["args"].first }
+                                .find { |attrs| attrs["action"] == "actuator_to_confirmed" }
+          expect(trail["metadata"]).to include("from" => "acknowledged", "to" => "confirmed",
+                                               "reason" => "unpersistable")
+        end
+      end
+
       # Пін на ЦІЛЬ, не лише на факт виклику: усі специ цієї поверхні асертили
       # `have_received(:broadcast_replace_to)` без таргета — саме тому промах
       # `actuator_card_{id}` замість `actuator_{id}` прожив місяці (UI.4).

@@ -878,7 +878,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `expires_at` | datetime | Термін придатності (TTL); команда від контролера його НЕ отримує |
 | `priority` | enum | Рівень пріоритету |
 
-**Методи:** `estimated_completion_at`, `expired?`, `dispatch_to_edge!`, `cancel_pending_for_actuator!`.
+**Методи:** `window_start_at`, `estimated_completion_at`, `expired?`, `force_close_unpersistable!` (термінальний стан повз валідацію для рядка, що її вже не проходить — стелю актуатора знизили після луни; `update_columns` + ручний слід ARCH.57), `dispatch_to_edge!`, `cancel_pending_for_actuator!`.
 
 ---
 

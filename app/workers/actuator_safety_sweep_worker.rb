@@ -57,6 +57,8 @@ class ActuatorSafetySweepWorker
   STOP_TTL = 6.hours
   STOP_DURATION_S = 1
 
+  LOST_TRACE_MESSAGE = "Слід наказу загублено: актуатор числився активним понад вікно (ARCH.58)"
+
   def perform
     recovered = 0
 
@@ -168,12 +170,24 @@ class ActuatorSafetySweepWorker
   # `fail!`, а не `confirm!`: ми НЕ знаємо, чи наказ виконався. `confirm!` тут
   # був би тією самою брехнею, що й таймерне підтвердження — лише записаною
   # сторожем, який прийшов її виправити.
+  #
+  # Наказ, що вже не проходить власну валідацію (стелю актуатора знизили після луни),
+  # кидав би на `fail!` RecordInvalid, і транзакція `recover!` відкочувала б STOP,
+  # `deactivate!` і алерт — щопроходу, лишаючи актуатор `active` без алерту. Такий рядок
+  # виноситься тим самим `failed`, лише повз валідацію (`fail!` пише лише сам наказ, тож
+  # RecordInvalid тут — завжди його).
   def close_lost_commands!(actuator)
     actuator.commands.status_acknowledged.where.not(sent_at: nil).find_each do |command|
       next if Time.current < deadline_for(command)
 
-      command.fail!("Слід наказу загублено: актуатор числився активним понад вікно (ARCH.58)")
+      fail_lost_command!(command)
     end
+  end
+
+  def fail_lost_command!(command)
+    command.fail!(LOST_TRACE_MESSAGE)
+  rescue ActiveRecord::RecordInvalid => e
+    command.force_close_unpersistable!(:failed, error: e, message: LOST_TRACE_MESSAGE)
   end
 
   # Дедуп по `message_params ->> 'actuator_id'`, а не по кластеру: на одному
