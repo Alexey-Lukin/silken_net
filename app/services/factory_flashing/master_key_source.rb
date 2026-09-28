@@ -49,7 +49,8 @@ module FactoryFlashing
     class BitwardenAdapter < Base
       # TODO(SEC.3): Implement Bitwarden Secrets Manager integration.
       #   - exchange short-lived PROVISIONING_SESSION_TOKEN (TTL 15 min) for
-      #     PROVISIONING_MASTER_KEY via `bw` CLI or Bitwarden REST API,
+      #     PROVISIONING_MASTER_KEY via the Secrets Manager CLI `bws` (machine-account
+      #     token BWS_ACCESS_TOKEN — not `bw`, the Password Manager CLI) or its API,
       #   - cache result only in memory for the duration of one session,
       #   - call Security::WeakKeyDetector before returning,
       #   - on failure raise UnavailableError with the upstream reason.

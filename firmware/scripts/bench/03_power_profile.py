@@ -83,8 +83,19 @@ def sample_ppk2(args: argparse.Namespace):
         ppk2.toggle_DUT_power("OFF")
 
 
+RECHARGE_REFUSAL = """\
+❌ --mode recharge на залізі не міряє криву перезаряду: у source-режимі PPK2 сам живить
+   плату фіксованою напругою (--voltage-mv), тож EDLC не перезаряджається зовсім, а CSV
+   несе лише струм. Потрібне джерело, що емулює EBFC (V_OC + послідовний R_int,
+   02_03 §1.5), і лог напруги VSTOR — або delta_t з кадрів, коли оживе RTC (00_07 FW.49).
+   Синтетика для перевірки CSV-пайплайна: --simulate."""
+
+
 def main() -> int:
     args = parse_args()
+    if args.mode == "recharge" and not args.simulate:
+        print(RECHARGE_REFUSAL)
+        return 2
     out = args.out or f"bench_{args.mode}_{int(time.time())}.csv"
     source = sample_simulated(args.mode, args.seconds) if args.simulate else sample_ppk2(args)
 
