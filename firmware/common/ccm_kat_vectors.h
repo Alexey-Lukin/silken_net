@@ -82,4 +82,50 @@ static const CcmKatVector CCM_KAT_EXTRA[] = {
 };
 #define CCM_KAT_EXTRA_COUNT (sizeof(CCM_KAT_EXTRA) / sizeof(CCM_KAT_EXTRA[0]))
 
+/* ── Downlink-вектори: адресна команда Rails → Солдат (03_05 §2.5) ─────────
+ * Інша форма, ніж аплінк: AAD 7 Б [opcode][DID BE][DLFC_lsb BE], нонс із
+ * байтом напрямку 0x01, тіло 2/5/8 Б — по одному вектору на опкод.
+ * Oracle — OpenSSL EVP aes-128-ccm (той самий, що Cryptography::LoraCcm;
+ * Rails-дзеркало тих самих кадрів — spec/services/cryptography/lora_ccm_spec.rb).
+ * DL1 несе DLFC зі старшою половиною ≠ 0 (реконструкція має що відновлювати),
+ * DL3 — DLFC 0xFFFF, межу перед переносом. Згенеровано 2026-09-29. */
+#include "downlink_ccm.h"
+
+typedef struct {
+    const char *name;
+    uint8_t  key[16];
+    uint32_t did;
+    uint32_t dlfc;
+    uint8_t  body[DL_CCM_BODY_MAX];   /* перші Dl_Ccm_Body_Len(frame[0]) байт */
+    uint8_t  frame[DL_CCM_FRAME_MAX]; /* AAD ‖ CT ‖ MIC, Dl_Ccm_Frame_Len(frame[0]) байт */
+} CcmDownlinkKatVector;
+
+static const CcmDownlinkKatVector CCM_KAT_DOWNLINK[] = {
+    {
+        .name  = "DL1 0x9E key=00..0f DID=SNET DLFC=0x00010002 target=3",
+        .key   = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f },
+        .did   = 0x534E4554u,
+        .dlfc  = 0x00010002u,
+        .body  = { 0x03, 0x00 },
+        .frame = { 0x9e, 0x53, 0x4e, 0x45, 0x54, 0x00, 0x02, 0x65, 0x1c, 0xdc, 0x65, 0x30, 0x6d, 0xc0, 0xc1, 0x2c, 0x0a },
+    },
+    {
+        .name  = "DL2 0x9D key=0xAA*16 DID=DEADBEEF DLFC=1 warn=50 crit=80 ver=2",
+        .key   = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa },
+        .did   = 0xDEADBEEFu,
+        .dlfc  = 1u,
+        .body  = { 0x32, 0x00, 0x50, 0x00, 0x02 },
+        .frame = { 0x9d, 0xde, 0xad, 0xbe, 0xef, 0x00, 0x01, 0x87, 0x94, 0x79, 0xb5, 0xac, 0x8a, 0x6c, 0xe3, 0x2f, 0xfa, 0x05, 0x98, 0xa4 },
+    },
+    {
+        .name  = "DL3 0x9A zero-key DID=01020304 DLFC=0xFFFF z=200/4500/2900 sp=0xFF ver=1",
+        .key   = { 0 },
+        .did   = 0x01020304u,
+        .dlfc  = 0x0000FFFFu,
+        .body  = { 0xc8, 0x00, 0x94, 0x11, 0x54, 0x0b, 0xff, 0x01 },
+        .frame = { 0x9a, 0x01, 0x02, 0x03, 0x04, 0xff, 0xff, 0xee, 0xeb, 0x30, 0xe4, 0xfb, 0x70, 0x65, 0x8c, 0x58, 0x42, 0x7d, 0x5c, 0x5f, 0x0c, 0x3c, 0x06 },
+    },
+};
+#define CCM_KAT_DOWNLINK_COUNT (sizeof(CCM_KAT_DOWNLINK) / sizeof(CCM_KAT_DOWNLINK[0]))
+
 #endif /* CCM_KAT_VECTORS_H */

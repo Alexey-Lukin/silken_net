@@ -39,12 +39,26 @@ require "openssl"
 #
 # Backend never holds firmware's CCM B0 block directly — OpenSSL builds it
 # internally from `iv` (nonce), `auth_tag_len`, and `ccm_data_len`.
+#
+# [FW.17 · docs/03_05 §2.5] The same primitive signs Rails-issued commands for
+# ONE Soldier under that Soldier's session key (`encrypt_downlink`). Two things
+# differ from the uplink: the AAD is the 7-byte cleartext frame header
+# [opcode][DID BE][DLFC_lsb BE], and nonce byte 8 is the direction byte 0x01 —
+# the uplink keeps it 0x00, so the two nonce spaces never meet under one key.
+# Mirror: firmware/common/downlink_ccm.h + CCM_KAT_DOWNLINK in ccm_kat_vectors.h.
 module Cryptography
   module LoraCcm
     NONCE_LEN     = 12 # bytes
     TAG_LEN       = 8  # MIC length (CCM allows {4,6,8,10,12,14,16}; we pick 8)
     AAD_LEN       = 8  # DID(4) + gossip(1) + FrameCounter(3 BE)
     PLAINTEXT_LEN = 14 # sensor payload size — FW.2 wire-rev2.1 (+2B EMA, E.63 (г))
+
+    DIRECTION_UPLINK   = 0x00
+    DIRECTION_DOWNLINK = 0x01
+    # Command body length by opcode — the frame length follows from it, so the
+    # Queen can check structure without the key (0x9E 17 B · 0x9D 20 B · 0x9A 23 B).
+    DOWNLINK_BODY_LEN = { 0x9A => 8, 0x9D => 5, 0x9E => 2 }.freeze
+    DLFC_RANGE        = (1..0xFFFF_FFFF)
 
     class AuthError < StandardError; end
     class InputError < ArgumentError; end
@@ -87,18 +101,53 @@ module Cryptography
 
     # Encrypt the 14-byte sensor payload and produce ciphertext + 8-byte MIC.
     # Used by host-side tests. The in-field side is the two-phase WL flow on
-    # the Soldier (B0 + HAL_CRYP_Encrypt + GenerateAuthTAG, lora_ccm.h); a
-    # Rails-issued downlink would need another body length and a direction
-    # byte in the nonce (00_07 FW.17).
+    # the Soldier (B0 + HAL_CRYP_Encrypt + GenerateAuthTAG, lora_ccm.h).
     #
     # Returns `[ciphertext_bytes, mic_bytes]` (both binary strings).
     def encrypt(key:, did_bytes:, frame_counter:, plaintext:, gossip_ts_lsb: 0)
       validate_inputs!(key: key, did_bytes: did_bytes, frame_counter: frame_counter,
                        gossip_ts_lsb: gossip_ts_lsb, payload: plaintext, mic: nil)
 
-      aad   = build_aad(did_bytes, gossip_ts_lsb, frame_counter)
-      nonce = build_nonce(did_bytes, frame_counter)
+      seal(key, build_nonce(did_bytes, frame_counter),
+           build_aad(did_bytes, gossip_ts_lsb, frame_counter), plaintext)
+    end
 
+    # [FW.17 · 03_05 §2.5] The whole on-air command frame for one Soldier:
+    #   [opcode][DID BE][DLFC_lsb BE] (AAD) || CCM(body) || MIC(8)
+    # `body` is the legacy command body without its len/CRC (little-endian
+    # fields — OtaPackagerService); the MIC now carries integrity. `dlfc` is the
+    # device's full u32 counter: only its low 16 bits fly, the nonce takes all
+    # 32 (the Soldier reconstructs the rest).
+    def encrypt_downlink(key:, opcode:, did_bytes:, dlfc:, body:)
+      raise InputError, "key must be 16 bytes (AES-128)" unless key.is_a?(String) && key.bytesize == 16
+      raise InputError, "did_bytes must be 4 bytes"      unless did_bytes.is_a?(String) && did_bytes.bytesize == 4
+      raise InputError, "unknown command opcode"         unless DOWNLINK_BODY_LEN.key?(opcode)
+      raise InputError, "body must be #{DOWNLINK_BODY_LEN[opcode]} bytes for opcode #{format('0x%02X', opcode)}" \
+        unless body.is_a?(String) && body.bytesize == DOWNLINK_BODY_LEN[opcode]
+      raise InputError, "dlfc must be a u32 >= 1" unless dlfc.is_a?(Integer) && DLFC_RANGE.cover?(dlfc)
+
+      aad = [ opcode ].pack("C") + did_bytes.b + [ dlfc & 0xFFFF ].pack("n")
+      ciphertext, mic = seal(key, build_nonce(did_bytes, dlfc, direction: DIRECTION_DOWNLINK), aad, body.b)
+      aad + ciphertext + mic
+    end
+
+    # AAD = DID || gossip || FC24 — the byte string CCM authenticates as
+    # Additional Authenticated Data; anyone who flips a bit here (including
+    # the cleartext gossip byte) will fail the MIC check.
+    def build_aad(did_bytes, gossip_ts_lsb, frame_counter)
+      did_bytes.b + [ gossip_ts_lsb ].pack("C") + [ frame_counter ].pack("N")[1..3]
+    end
+
+    # 12-byte nonce = DID || counter BE || direction || 3 zero bytes. Uplink
+    # (direction 0x00) is byte-identical to wire-rev1 — the gossip byte is
+    # deliberately NOT part of the nonce, uniqueness is carried by the FC
+    # alone; matches firmware Build_CCM_Nonce. Downlink sets 0x01
+    # (Build_DL_CCM_Nonce).
+    def build_nonce(did_bytes, counter, direction: DIRECTION_UPLINK)
+      did_bytes.b + [ counter ].pack("N") + [ direction ].pack("C") + ("\x00".b * 3)
+    end
+
+    def seal(key, nonce, aad, plaintext)
       cipher = OpenSSL::Cipher.new("aes-128-ccm")
       cipher.encrypt
       cipher.iv_len        = NONCE_LEN
@@ -111,20 +160,7 @@ module Cryptography
       ciphertext = cipher.update(plaintext) + cipher.final
       [ ciphertext, cipher.auth_tag(TAG_LEN) ]
     end
-
-    # AAD = DID || gossip || FC24 — the byte string CCM authenticates as
-    # Additional Authenticated Data; anyone who flips a bit here (including
-    # the cleartext gossip byte) will fail the MIC check.
-    def build_aad(did_bytes, gossip_ts_lsb, frame_counter)
-      did_bytes.b + [ gossip_ts_lsb ].pack("C") + [ frame_counter ].pack("N")[1..3]
-    end
-
-    # 12-byte nonce = DID || FC32 BE || 4 zero bytes — byte-identical to
-    # wire-rev1 (gossip byte deliberately NOT part of the nonce: uniqueness
-    # is carried by the FC alone). Matches firmware Build_CCM_Nonce.
-    def build_nonce(did_bytes, frame_counter)
-      did_bytes.b + [ frame_counter ].pack("N") + ("\x00".b * 4)
-    end
+    private_class_method :seal
 
     def validate_inputs!(key:, did_bytes:, frame_counter:, gossip_ts_lsb:, payload:, mic:)
       raise InputError, "key must be 16 bytes (AES-128)"          unless key.is_a?(String) && key.bytesize == 16

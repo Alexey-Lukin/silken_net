@@ -26,9 +26,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -60,6 +60,9 @@ seed_derivation: $(BINDIR)/test_seed_derivation
 
 ccm: $(BINDIR)/test_ccm
 	@./$(BINDIR)/test_ccm
+
+downlink_ccm: $(BINDIR)/test_downlink_ccm
+	@./$(BINDIR)/test_downlink_ccm
 
 selftest: $(BINDIR)/test_ccm_selftest
 	@./$(BINDIR)/test_ccm_selftest
@@ -253,15 +256,19 @@ $(BINDIR)/test_seed_derivation: test_seed_derivation.c ../common/lorenz_seed.h .
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_seed_derivation.c $(OPENSSL_LIBS) -lm
 
 # [FW.2] AES-128-CCM packet roundtrip — links libcrypto for the mock HAL.
-$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
+$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm.c $(OPENSSL_LIBS)
 
 # [FW.2] On-target CCM self-test (POST) — host verification via OpenSSL mock.
-$(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h
+$(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h ../common/downlink_ccm_open.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm_selftest.c $(OPENSSL_LIBS)
 
+# [FW.17 · 03_05 §2.5] Downlink-CCM: адресні команди Rails → Солдат (libcrypto-мок).
+$(BINDIR)/test_downlink_ccm: test_downlink_ccm.c hal_mock.h ../common/lora_ccm.h ../common/downlink_ccm.h ../common/downlink_ccm_open.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h
+	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_downlink_ccm.c $(OPENSSL_LIBS)
+
 # [FW.2] Queen RX route + 31B-запис — pure (golden-звірка проти KAT-констант).
-$(BINDIR)/test_queen_rx_route: test_queen_rx_route.c ../queen/rx_route.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
+$(BINDIR)/test_queen_rx_route: test_queen_rx_route.c ../queen/rx_route.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h
 	$(CC) $(CFLAGS) -o $@ test_queen_rx_route.c
 
 $(BINDIR)/test_helium_sos: test_helium_sos.c ../queen/helium_sos.h
@@ -309,7 +316,7 @@ $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selfte
 clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
-	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
+	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_downlink_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
 	      $(BINDIR)/test_queen_rx_route $(BINDIR)/test_helium_sos \
 	      $(BINDIR)/test_soft_timer $(BINDIR)/test_helium_mac_smoke \

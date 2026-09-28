@@ -211,4 +211,62 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
       }.to raise_error(Cryptography::LoraCcm::AuthError)
     end
   end
+
+  # [FW.17 · docs/03_05 §2.5] The same three frames are pinned by the firmware
+  # (CCM_KAT_DOWNLINK in firmware/common/ccm_kat_vectors.h, opened by the
+  # field Dl_Ccm_Open in firmware/test/test_downlink_ccm.c) — green on both
+  # sides means Rails-issued commands open on the Soldier byte-for-byte.
+  describe ".encrypt_downlink" do
+    {
+      "0x9E rotate-key" => { key: (0..15).to_a.pack("C*"), opcode: 0x9E, did: 0x534E4554, dlfc: 0x0001_0002,
+                             body: [ 3 ].pack("v"), frame: "9e534e45540002651cdc65306dc0c12c0a" },
+      "0x9D audio thresholds" => { key: "\xAA".b * 16, opcode: 0x9D, did: 0xDEADBEEF, dlfc: 1,
+                                   body: [ 50, 80, 2 ].pack("s<s<C"), frame: "9ddeadbeef0001879479b5ac8a6ce32ffa0598a4" },
+      "0x9A Lorenz thresholds" => { key: "\x00".b * 16, opcode: 0x9A, did: 0x01020304, dlfc: 0xFFFF,
+                                    body: [ 200, 4500, 2900, 0xFF, 1 ].pack("s<s<s<CC"),
+                                    frame: "9a01020304ffffeeeb30e4fb70658c58427d5c5f0c3c06" }
+    }.each do |name, v|
+      it "builds the firmware-pinned #{name} frame" do
+        frame = described_class.encrypt_downlink(key: v[:key], opcode: v[:opcode],
+                                                 did_bytes: [ v[:did] ].pack("N"), dlfc: v[:dlfc], body: v[:body])
+        expect(frame.unpack1("H*")).to eq(v[:frame])
+      end
+    end
+
+    it "separates the downlink nonce from the uplink one by byte 8 alone" do
+      uplink   = described_class.build_nonce(did_bytes, 7)
+      downlink = described_class.build_nonce(did_bytes, 7, direction: described_class::DIRECTION_DOWNLINK)
+      expect(downlink.byteslice(0, 8)).to eq(uplink.byteslice(0, 8))
+      expect([ uplink.getbyte(8), downlink.getbyte(8) ]).to eq([ 0x00, 0x01 ])
+      expect(downlink.byteslice(9, 3)).to eq(uplink.byteslice(9, 3))
+    end
+
+    it "carries only the low 16 bits of the counter on the air" do
+      frame = described_class.encrypt_downlink(key: zero_key, opcode: 0x9E, did_bytes: did_bytes,
+                                               dlfc: 0x0003_0004, body: [ 1 ].pack("v"))
+      expect(frame.byteslice(5, 2)).to eq("\x00\x04".b)
+      expect(frame.bytesize).to eq(17)
+    end
+
+    it "rejects a body whose length is not the opcode's" do
+      expect {
+        described_class.encrypt_downlink(key: zero_key, opcode: 0x9D, did_bytes: did_bytes, dlfc: 1,
+                                         body: [ 1 ].pack("v"))
+      }.to raise_error(Cryptography::LoraCcm::InputError, /body must be 5 bytes/)
+    end
+
+    it "rejects an opcode that is not a per-node command" do
+      expect {
+        described_class.encrypt_downlink(key: zero_key, opcode: 0x9C, did_bytes: did_bytes, dlfc: 1,
+                                         body: "\x00\x00".b)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /unknown command opcode/)
+    end
+
+    it "rejects a zero counter — the device accepts only a counter above its last one" do
+      expect {
+        described_class.encrypt_downlink(key: zero_key, opcode: 0x9E, did_bytes: did_bytes, dlfc: 0,
+                                         body: [ 1 ].pack("v"))
+      }.to raise_error(Cryptography::LoraCcm::InputError, /dlfc must be a u32/)
+    end
+  end
 end

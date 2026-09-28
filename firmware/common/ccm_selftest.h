@@ -21,6 +21,11 @@
  * Header-only (static inline) so it compiles into both the firmware build
  * and the host harness with no extra Makefile object. Requires a HAL
  * (real or hal_mock.h) + lora_ccm.h to be included by the caller first.
+ *
+ * [FW.17 · 03_05 §2.5] Downlink-вектори (адресна команда Rails → Солдат) —
+ * окремий прохід: AAD 7 Б і тіла 2/5/8 Б — інший кадр, ніж 14-байтне тіло
+ * аплінку, тож атестація аплінку про нього нічого не каже. Крім KAT-раннера,
+ * кожен вектор відкриває сама польова Dl_Ccm_Open.
  */
 #ifndef CCM_SELFTEST_H
 #define CCM_SELFTEST_H
@@ -28,6 +33,7 @@
 #include <string.h>
 #include "lora_ccm.h"
 #include "ccm_kat_vectors.h"
+#include "downlink_ccm_open.h"
 
 /* Caller-provided reporter: vector name + pass flag (1 = pass, 0 = fail).
  * On target wire it to UART/SWO; on host to printf. May be NULL. */
@@ -43,21 +49,23 @@ typedef void (*ccm_selftest_report_fn)(const char *name, int pass);
  * Returns 1 on full pass, else 0.
  * key/nonce/aad копіюються у word-aligned буфери (STM32 CRYP HAL споживає
  * uint32_t*, а const-таблиці векторів вирівнювання не обіцяють).
+ * Довжини AAD і тіла — параметри: аплінк 8/14, downlink 7/2..8 (стелі —
+ * аплінкові, бо довший кадр у цій прошивці не літає).
  * `hcryp` is an INJECTED handle (host harness passes a mock, target passes the
  * global &hcryp) — it deliberately mirrors the HAL global name for readability. */
 // cppcheck-suppress shadowVariable
 static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
                                   const uint8_t key[16], const uint8_t nonce[12],
-                                  const uint8_t aad[FW2_CCM_AAD_LEN],
-                                  const uint8_t pt[FW2_CCM_PLAINTEXT_LEN],
-                                  const uint8_t ct[FW2_CCM_PLAINTEXT_LEN],
+                                  const uint8_t *aad, uint8_t aad_len,
+                                  const uint8_t *pt, const uint8_t *ct, uint8_t pt_len,
                                   const uint8_t tag[FW2_CCM_MIC_LEN]) {
+    if (aad_len > FW2_CCM_AAD_LEN || pt_len == 0u || pt_len > FW2_CCM_PLAINTEXT_LEN) return 0;
     uint32_t key_w[4];
     uint32_t b0_w[FW2_CCM_B0_LEN / 4];
-    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4] = {0};
     memcpy(key_w, key, 16);
-    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
-    memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
+    Build_CCM_B0_From_Nonce(nonce, pt_len, (uint8_t *)b0_w);
+    memcpy(aad_w, aad, aad_len);
 
 /* HAL_CRYP_Init у макро: мок — no-op, кремній защіпає конфіг у периферію. */
 #define CCM_KAT_SETUP() do {                                        \
@@ -67,38 +75,38 @@ static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
         hcryp->Init.pKey            = key_w;                        \
         hcryp->Init.B0              = b0_w;                         \
         hcryp->Init.Header          = aad_w;                        \
-        hcryp->Init.HeaderSize      = FW2_CCM_AAD_LEN;              \
+        hcryp->Init.HeaderSize      = aad_len;                      \
         hcryp->Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;      \
         hcryp->Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;    \
         if (HAL_CRYP_Init(hcryp) != HAL_OK) return 0;               \
     } while (0)
 
     /* (1) Encrypt KAT: payload-фаза + тег-фаза проти oracle. */
-    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
-    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4] = {0};
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4] = {0};
     uint32_t tag_w[4]; /* 16B: WL HAL пише повний блок, MIC = перші 8 байт */
-    memcpy(pt_w, pt, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(pt_w, pt, pt_len);
     CCM_KAT_SETUP();
-    if (HAL_CRYP_Encrypt(hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000) != HAL_OK) return 0;
+    if (HAL_CRYP_Encrypt(hcryp, pt_w, pt_len, ct_w, 1000) != HAL_OK) return 0;
     if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(hcryp, tag_w, 1000) != HAL_OK) return 0;
-    if (memcmp(ct_w, ct, FW2_CCM_PLAINTEXT_LEN) != 0) return 0;
+    if (memcmp(ct_w, ct, pt_len) != 0) return 0;
     if (memcmp(tag_w, tag, FW2_CCM_MIC_LEN) != 0) return 0;
 
     /* (2) Decrypt roundtrip: plaintext назад + computed MIC == oracle. */
-    uint32_t ct_in_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
-    uint32_t rec_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
-    memcpy(ct_in_w, ct, FW2_CCM_PLAINTEXT_LEN);
+    uint32_t ct_in_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4] = {0};
+    uint32_t rec_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4] = {0};
+    memcpy(ct_in_w, ct, pt_len);
     CCM_KAT_SETUP();
-    if (HAL_CRYP_Decrypt(hcryp, ct_in_w, FW2_CCM_PLAINTEXT_LEN, rec_w, 1000) != HAL_OK) return 0;
+    if (HAL_CRYP_Decrypt(hcryp, ct_in_w, pt_len, rec_w, 1000) != HAL_OK) return 0;
     if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(hcryp, tag_w, 1000) != HAL_OK) return 0;
-    if (memcmp(rec_w, pt, FW2_CCM_PLAINTEXT_LEN) != 0) return 0;
+    if (memcmp(rec_w, pt, pt_len) != 0) return 0;
     if (!Fw2_Ccm_Tag_Equal((const uint8_t *)tag_w, tag)) return 0;
 
     /* (3) Tamper-reject: біт у ciphertext → computed MIC розходиться з
      * oracle. Провал звірки = єдиний привратник на WL (HAL сам не звіряє). */
     ct_in_w[0] ^= 0x01u;
     CCM_KAT_SETUP();
-    if (HAL_CRYP_Decrypt(hcryp, ct_in_w, FW2_CCM_PLAINTEXT_LEN, rec_w, 1000) != HAL_OK) return 0;
+    if (HAL_CRYP_Decrypt(hcryp, ct_in_w, pt_len, rec_w, 1000) != HAL_OK) return 0;
     if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(hcryp, tag_w, 1000) != HAL_OK) return 0;
     if (Fw2_Ccm_Tag_Equal((const uint8_t *)tag_w, tag)) return 0; /* збіг = провал KAT */
 
@@ -119,13 +127,41 @@ static inline int Ccm_Run_Self_Test(CRYP_HandleTypeDef *hcryp,
     uint8_t g_aad[FW2_CCM_AAD_LEN];
     Build_CCM_Nonce(G_DID, G_FC, g_nonce);
     Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, g_aad);
-    int g_pass = Ccm_Kat_Run_One(hcryp, G_ZERO_KEY, g_nonce, g_aad, G_PT, G_CT, G_TAG);
+    int g_pass = Ccm_Kat_Run_One(hcryp, G_ZERO_KEY, g_nonce, g_aad, FW2_CCM_AAD_LEN,
+                                 G_PT, G_CT, FW2_CCM_PLAINTEXT_LEN, G_TAG);
     if (!g_pass) failed++;
     if (report) report("golden: zero-key DID=01020304 FC=5", g_pass);
 
     for (unsigned i = 0; i < CCM_KAT_EXTRA_COUNT; i++) {
         const CcmKatVector *v = &CCM_KAT_EXTRA[i];
-        int pass = Ccm_Kat_Run_One(hcryp, v->key, v->nonce, v->aad, v->pt, v->ct, v->tag);
+        int pass = Ccm_Kat_Run_One(hcryp, v->key, v->nonce, v->aad, FW2_CCM_AAD_LEN,
+                                   v->pt, v->ct, FW2_CCM_PLAINTEXT_LEN, v->tag);
+        if (!pass) failed++;
+        if (report) report(v->name, pass);
+    }
+
+    /* [FW.17 · 03_05 §2.5] Downlink: KAT-раннер на кадрі команди, далі сама
+     * польова Dl_Ccm_Open — з last_dlfc = dlfc−1 кадр мусить відкритись і
+     * віддати тіло oracle. Нонс будується польовим білдером, не береться з
+     * таблиці: атестація має говорити про той самий кадр, що летить у полі. */
+    for (unsigned i = 0; i < CCM_KAT_DOWNLINK_COUNT; i++) {
+        const CcmDownlinkKatVector *v = &CCM_KAT_DOWNLINK[i];
+        const uint8_t body_len = Dl_Ccm_Body_Len(v->frame[0]);
+        uint8_t nonce[FW2_CCM_NONCE_LEN];
+        Build_DL_CCM_Nonce(v->did, v->dlfc, nonce);
+        int pass = body_len != 0u &&
+                   Ccm_Kat_Run_One(hcryp, v->key, nonce, v->frame, DL_CCM_AAD_LEN,
+                                   v->body, &v->frame[DL_CCM_AAD_LEN], body_len,
+                                   &v->frame[DL_CCM_AAD_LEN + body_len]);
+        if (pass) {
+            uint32_t key_w[4];
+            uint8_t  body[DL_CCM_BODY_MAX];
+            uint32_t dlfc = 0;
+            memcpy(key_w, v->key, 16);
+            pass = Dl_Ccm_Open(hcryp, key_w, v->frame, Dl_Ccm_Frame_Len(v->frame[0]),
+                               v->did, v->dlfc - 1u, body, &dlfc) == DL_CCM_OK &&
+                   dlfc == v->dlfc && memcmp(body, v->body, body_len) == 0;
+        }
         if (!pass) failed++;
         if (report) report(v->name, pass);
     }
