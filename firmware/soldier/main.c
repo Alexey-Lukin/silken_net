@@ -2150,11 +2150,8 @@ int main(void)
     // [ARCH.102] Guard'и віддають СЕНТИНЕЛ «не виміряно», а не «нейтральні» 60 с:
     // ті 60 мапились у `metabolic_health` = 1.0, тобто відмова виміряти мінтила
     // МАКСИМУМ балів. Дім значення й підстави — `bio_contracts/bio_contract.rb`.
+    // Сама дельта рахується в кінці фази ↓ — там уже відомо джерело пробудження.
     uint32_t current_time = Wall_Seconds_Now();
-    delta_t_seconds = Silken_Wall_Delta_Seconds(current_time, last_wakeup_timestamp,
-                                                DELTA_T_UNKNOWN_S,
-                                                DELTA_T_MAX_PLAUSIBLE_S);
-    last_wakeup_timestamp = current_time;
 
     // 2. Внутрішні метрики (Температура та Заряд)
     uint16_t internal_temp = 0;
@@ -2181,6 +2178,24 @@ int main(void)
     }
     HAL_ADC_Stop(&hadc);
 
+    // [FW.49 S2, EXTI-половина — ⚖️ делеговано 2026-09-28] Джерело пробудження
+    // треба знати ДО виміру: п'єзо-кадр delta_t не міряє й базу не рухає
+    // (wall_time.h — чому й у який бік це безпечно). Прапорець читаємо тут, а не
+    // на початку фази: подія, що прийшла б між раннім читанням і Фазою 1.5, у
+    // STOP2 чекала б наступного пробудження. [FIX FW.11]: NVIC-рівнева ізоляція
+    // замість "if (vibration_detected) { vibration_detected = 0; }" — інакше друге
+    // переривання EXTI0 між читанням прапорця та HAL_ADC_Start_DMA стартувало б
+    // DMA двічі → HAL_BUSY → buffer corruption. HAL_NVIC_DisableIRQ(EXTI0_IRQn)
+    // блокує лише п'єзо-переривання, не зупиняючи SysTick, Radio, DMA чи інші ISR.
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+    uint8_t vib = vibration_detected;
+    vibration_detected = 0;
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+    delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp, vib,
+                                                DELTA_T_UNKNOWN_S,
+                                                DELTA_T_MAX_PLAUSIBLE_S);
+
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
     // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);
     // vcap — VDDA-проксі мВ до живого Vcap-каналу (FW.50 bench).
@@ -2201,17 +2216,8 @@ int main(void)
     // ФАЗА 1.5: TINYML (Шаховий розтин / Фільтрація Свідомості через DMA)
     // =========================================================================
 
-    // Якщо ядро прокинулось через вібрацію на піні
-    // [FIX FW.11]: NVIC-рівнева ізоляція замість "if (vibration_detected) { vibration_detected = 0; }"
-    // Без цього: якщо друге переривання EXTI0 спрацює між читанням прапорця та
-    // HAL_ADC_Start_DMA, DMA може стартувати двічі → HAL_BUSY → buffer corruption.
-    // HAL_NVIC_DisableIRQ(EXTI0_IRQn) блокує лише п'єзо-переривання, не зупиняючи
-    // SysTick, Radio, DMA або інші критичні ISR.
-    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-    uint8_t vib = vibration_detected;
-    vibration_detected = 0;
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
+    // Якщо ядро прокинулось через вібрацію на піні (прапорець прочитано у Фазі 1 —
+    // NVIC-ізоляцію [FIX FW.11] й підставу див. там).
     if (vib) {
         audio_ready = AUDIO_DMA_IDLE;
 
@@ -2394,13 +2400,12 @@ int main(void)
     // [ARCH.102] До прогріву EMA метаболізм НЕ виміряно — і це сентинел, а не
     // baseline: `BASELINE_DELTA_T_S` тут давав GP = максимум на кожному вузлі,
     // що ще не набрав `EMA_WARMUP_CYCLES` зразків.
-    uint32_t delta_t_for_lorenz = DELTA_T_UNKNOWN_S;
-    uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
-    if (EMA_Is_Warmed_Up()) {
-        uint32_t ema_s = EMA_Get_DeltaT_Sec();
-        delta_t_for_lorenz = (ema_s > 0xFFFFu) ? 0xFFFFu : ema_s;
-        vcap_for_lorenz    = EMA_Get_Vcap_Mv();
-    }
+    // [FW.49 S2] П'єзо-кадр теж несе сентинел — прогріта EMA описує перезаряд між
+    // не-EXTI циклами, а не цей кадр (wall_time.h, `Silken_Wake_Lorenz_Delta_T`).
+    uint32_t delta_t_for_lorenz = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(), EMA_Get_DeltaT_Sec(),
+                                                             vib, DELTA_T_UNKNOWN_S);
+    uint16_t vcap_for_lorenz    = EMA_Is_Warmed_Up() ? EMA_Get_Vcap_Mv()
+                                                     : 3300u;  // nominal (NOMINAL_VCAP_MV; reserved)
 #if FW2_CCM_ENABLED
     wire_ema_delta_t_s = (uint16_t)delta_t_for_lorenz;
 #endif

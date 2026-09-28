@@ -5359,6 +5359,36 @@ TEST(test_fw49_delta_boundary_exact_max_passes) {
     ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86401u, 1000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
+/* [FW.49 S2, EXTI-половина — ⚖️ 2026-09-28, 03_01 §1.10] п'єзо-кадр delta_t не
+ * міряє й базу не рухає: вітер укоротив би «перезаряд» → over-mint. */
+TEST(test_fw49_s2_exti_cycle_unknown_and_base_kept) {
+    uint32_t base = 1000u;
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 1u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
+    ASSERT_EQ(base, 1000u);
+}
+
+TEST(test_fw49_s2_timer_cycle_measures_and_moves_base) {
+    uint32_t base = 1000u;
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
+    ASSERT_EQ(base, 1100u);
+}
+
+TEST(test_fw49_s2_exti_between_timers_does_not_shorten_recharge) {
+    /* Таймер @1000 → п'єзо @1030 (вітер) → таймер @1100: другий вимір іде від
+     * 1000 (100 с), а не від 1030 (70 с) — коротший «перезаряд» мінтив би більше. */
+    uint32_t base = 900u;
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1000u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1030u, &base, 1u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
+}
+
+TEST(test_fw49_s2_lorenz_input_sentinel_on_exti_and_cold_ema) {
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 3600u, 1u, TEST_WALL_UNKNOWN), 60u);   /* EXTI — сентинел */
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(0u, 3600u, 0u, TEST_WALL_UNKNOWN), 60u);   /* EMA не прогріта */
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 3600u, 0u, TEST_WALL_UNKNOWN), 3600u); /* таймер + EMA */
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 70000u, 0u, TEST_WALL_UNKNOWN), 0xFFFFu); /* u16 дроту */
+}
+
 TEST(test_fw49_elapsed_never_set_returns_zero) {
     ASSERT_EQ(Silken_Wall_Elapsed_Seconds(5000u, 0u), 0u);
 }
@@ -5904,6 +5934,10 @@ int main(void)
     RUN(test_fw49_delta_backward_clock_returns_unknown);
     RUN(test_fw49_delta_epoch_jump_returns_unknown);
     RUN(test_fw49_delta_boundary_exact_max_passes);
+    RUN(test_fw49_s2_exti_cycle_unknown_and_base_kept);
+    RUN(test_fw49_s2_timer_cycle_measures_and_moves_base);
+    RUN(test_fw49_s2_exti_between_timers_does_not_shorten_recharge);
+    RUN(test_fw49_s2_lorenz_input_sentinel_on_exti_and_cold_ema);
     RUN(test_fw49_elapsed_never_set_returns_zero);
     RUN(test_fw49_elapsed_normal);
     RUN(test_fw49_elapsed_backward_clock_returns_zero);
