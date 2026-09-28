@@ -12,7 +12,7 @@
 
 1. **Окремий аркуш, бо адресат інший:** не друк-бюро (DMLS-лист про золото мовчить і лише питає, чи можна замаскувати дріт від травлення — [`vendor_templates`](vendor_templates.md) §Processing п.9(c)) і не постачальник піна (його фініш — купована властивість, [`02_02 §2.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md)). Предмет — послуга покриття двох плям на НАШИХ деталях.
 2. **Базовий кейс + дельти, не прайс на все:** базовий — Ti-6Al-4V, окремі деталі до складання, одна партія на обидві плями; сплави-кандидати, стан поверхні (протравлена ⊥ замаскована) і складений виріб — дельтами. Так лист лишається чинним за будь-якого з відкритих §2.
-3. **Форма й мова вирішені ДО тексту** (скіл `legal-business` §Доменні правила #6): адресат — комерційний цех, тож **лист українською, не ТЗ**. ⚠️ Якщо адресатом стане установа НАН (найближче названий носій — ІЕЗ ім. Патона, і це PVD, тобто інша фізика, ніж гальваніка), оболонку переробити на ТЗ під договір НДР за зразком [`anchor_hip_rfq`](anchor_hip_rfq.md) — зміст той самий. **EN-версії поки немає** — за цим же правилом вона пишеться, коли з'являється адресат у ЄС, а два ЄС-кандидати з'явились 2026-09-28 (SIFCO · Mersi), тож тепер це нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.8.
+3. **Форма й мова вирішені ДО тексту** (скіл `legal-business` §Доменні правила #6): адресат — комерційний цех, тож **лист українською, не ТЗ**. ⚠️ Якщо адресатом стане установа НАН (найближче названий носій — ІЕЗ ім. Патона, і це PVD, тобто інша фізика, ніж гальваніка), оболонку переробити на ТЗ під договір НДР за зразком [`anchor_hip_rfq`](anchor_hip_rfq.md) — зміст той самий. **EN-версія — §📤 (EN) нижче (2026-09-29)**: за цим же правилом вона пишеться, коли з'являється адресат у ЄС, а два ЄС-кандидати з'явились 2026-09-28 (SIFCO · Mersi); мапа §1 спільна для обох мов.
 4. **Перше змістовне питання листа (п. 12) перевіряє найслабшу ланку самого присуду:** розбір «ENIG ⊥ hard gold» стоїть на **скоупі** двох стандартів (IPC-4552 · ASTM B488), а не на куплених текстах — [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md). Лист просить підтвердити або виправити, а не повідомляє висновок.
 5. **Відповідь у репо не комітиться** — ціни, внутрішні режими й номери документів є чужими операційними фактами. Сюди й у [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.8 іде лише наш висновок.
 
@@ -60,7 +60,7 @@
 
 ## 3. Dispatch checklist (👤)
 
-- [ ] 👤 **Адресат — нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.8 «знайти гальваніка».** Кандидати є з 2026-09-28 ([`ua_vendor_map §5`](ua_vendor_map.md)) — обрати. Перед відправкою — форма за адресатом (§0 п.3): НАН → ТЗ; ЄС → EN-версія (тексту ще немає — 🤖-нога HW.8).
+- [ ] 👤 **Адресат — нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.8 «знайти гальваніка».** Кандидати є з 2026-09-28 ([`ua_vendor_map §5`](ua_vendor_map.md)) — обрати. Перед відправкою — форма за адресатом (§0 п.3): НАН → ТЗ; ЄС → §📤 (EN).
 - [ ] 👤 **⛔ До «так» founder-а на цей текст не надсилати.**
 - [ ] 👤 **Specмапу маскування й креслення до першого листа НЕ додавати** — лише разом із маршрутом гальваніка (HW.8.2); лист так і каже («креслення — із замовленням»).
 - [ ] 👤 **Після відповіді:** висновок (не чужі ціни й режими) → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.8; маршрут → вимога [`02_02 §1.3`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) і рядок карти [`01_02 §3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); відповідь про водень і нагрів → [`01_02 §1.3a`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) R1; відповідь про стан поверхні → DMLS-лист п.9(c) (чи маскувати дріт від травлення) має отримати ту саму відповідь.
@@ -130,6 +130,72 @@
 `[підпис і контакти відправника — заповнити перед відправкою]`
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+
+## 📤 Dispatch block (EN) — letter to a plating service (hard gold on titanium)
+
+> **Репо-нота (у лист НЕ йде).** Той самий лист для ЄС-адресатів (кандидати — [`ua_vendor_map §5`](ua_vendor_map.md)). **Мапа провенансу — §1, спільна:** пункти нумеровано тими самими 1–23, і дім кожного числа той самий. **Немає свідомо — той самий перелік, що в UA-блоці:** трекер-ID і канон-рефів · чисел фінішу ПІНА (0.76 / 1.27 мкм) · терміна «Hard Gold ENIG» · нашого висновку «8–15 × тонше» · specмапи маскування · числа дрейфу Rc · імен інших адресатів (застереження про CP-Ti у п. 4 подано без джерела). **Відмінності від UA — лише адресатні:** п. 4 — адгезію питаємо по КОЖНОМУ сплаву окремо й з позначкою «кваліфіковано тестом ⊥ очікування» (один із кандидатів сам пише, що його процедура на Grade 2 достатньої адгезії не дає, а серед наших кандидатів — CP-Ti Grade 4); п. 23 — чи беруть замовлення з України й як їде доставка деталей туди й назад; одиниці — з десятковою крапкою.
+
+**⬇️ COPY FROM THIS LINE.** Everything above is the repo layer and does NOT go into the letter.
+
+**Subject:** Request for information and quotation — selective hard gold plating of two contact pads on titanium parts (process route, pilot batch)
+
+Dear Sir or Madam,
+
+**About us and the purpose of this request.** We are developing a sensor node for forest monitoring: a titanium anchor is installed in the trunk of a living tree and is powered by a built-in biofuel cell, and a removable electronics capsule connects to the anchor through two spring-loaded contacts (pogo pins). The anchor's contact pads have to be finished with hard gold, and we are looking for a service provider who will propose and carry out a route for such a coating on titanium.
+
+This is a request for a proposal and for information about your capabilities, not yet an order: a reply commits neither side, and you are welcome to answer directly in the text of this e-mail.
+
+**We do not prescribe the process.** Below are the requirements for the result and the conditions in which the coating will work. We ask you to propose the preparation and activation of the titanium, the underlayer, the type of hard gold and the layer thicknesses from your own experience: this is your process route, and a number we invented must not become a requirement for you. The base case is Ti-6Al-4V, separate parts before assembly; please evaluate everything else as a deviation from it.
+
+**What is to be plated**
+
+1. **Central pad — the end face of a Ø1.0 mm titanium wire.** The wire is drawn and welded at one end to a porous (lattice) titanium part; only the free end face is plated. After assembly this end face sits flush with the top face of the flange (item 2), inside a polymer ring of at least 4.0 mm diameter, and the first pin lands on it.
+2. **Annular pad — a zone on the flat top face of a titanium flange of 25 mm diameter**, where the second pin lands. We will specify the radius and width of this zone by drawing — they depend on the pin model we are still selecting; please state the minimum zone width and the accuracy of its boundary that you can hold.
+3. **Both pads — by one route and with the same coating.**
+4. **Material.** The base for pricing is Ti-6Al-4V for both parts (for the porous part this is a trial reference, not a candidate: its alloy will be vanadium-free). The alloy of the porous part and the wire is not final yet; the candidates are Ti-6Al-7Nb, commercially pure titanium Grade 4, Ti-13Nb-13Zr, Ti-15Zr and tantalum. The flange is Ti-6Al-4V or one of these vanadium-free alloys. Please tell us for which alloys your route changes and, separately, whether you work with tantalum. Adhesion on titanium depends on the alloy — for some processes commercially pure grades behave differently from Ti-6Al-4V — so please answer the adhesion question for each alloy you would accept, and state whether your adhesion on it is qualified by testing or is an expectation.
+5. **The remaining surfaces are not plated:** neither the porous part nor the other faces of the flange — some of them later receive biologically active layers.
+
+**Why gold, and in what conditions it works**
+
+6. **Function.** The pin has a hard gold finish. Pressed against bare titanium in a humid acidic environment, it forms a galvanic couple with it (a potential difference of about 0.2 V), and the contact resistance grows several-fold over time. Gold on the pad moves this couple away from the contact surface — but does not remove it: under the coating the titanium–coating interface remains, and condensate can reach it through pores. This is why the adhesion and porosity of the coating matter to us, not only its thickness.
+7. **The contact is sliding and cyclic.** The spring pin presses with a force of up to about 1 N (the exact value depends on the pin model). Matings and unmatings during maintenance — by our estimate, on the order of a hundred over the service life, and in between them, micro-motion from the swaying of the trunk, whose amplitude has not yet been measured. This is why the gold has to be hard, not soft.
+8. **Electrically — a low-current "dry" contact:** current up to 500 µA at a voltage of about 0.5 V; the contact resistance of the pin–pad pair must stay below 50 mΩ.
+9. **Environment and service life:** acidic condensate of xylem sap (pH about 5.75, and 4.5 in our tests), permanent humidity, temperature from −40 to +85 °C, service life of 20 years.
+10. **Decontamination after plating:** the part goes through ultraviolet light (254 nm), rinsing with 70 % ethanol and Co-60 gamma irradiation at a dose of at least 15 kGy (the upper limit is not set yet), and is then stored at 4–8 °C. The coating and its adhesion must survive this.
+
+**Please let us know**
+
+*Process route*
+
+11. **The complete route:** how you prepare and activate the titanium (how you remove the oxide and keep it from re-forming before deposition); whether an underlayer is needed — which one, why, and what happens to it if condensate reaches it through pores; the type of hard gold (alloying element, hardness); the thickness of each layer with its tolerance and measurement method.
+12. **Our reading of the standards — please confirm or correct it.** We understand that immersion gold over electroless nickel (a printed-circuit-board finish, ENIG) gives a thin soft layer and is not suitable for a sliding contact, while hard gold for engineering applications is deposited electrolytically (for example, per ASTM B488). Is this so in your practice? To which standard would you work and certify the result?
+13. **The surface condition in which you accept the parts** — please evaluate both options: (a) the pads etched together with the rest of the part (acid etching with ultrasound, rough surface); (b) the pads masked from etching (the wire end face as cut, the flange face as machined). Which option would you prefer and why, and does it change the route?
+14. **Masking:** how you limit the coating to the two pads (mask and bath, selective brush plating or other); how you keep solutions out of the pores of the lattice part; how you rinse chemical residues off the adjacent surfaces.
+15. **Position in the manufacturing sequence.** We plan to plate separate parts before assembly: the wire end face on the porous part, the ring on the flange, both in one batch. Does this suit your route? If your route rather needs the assembled product — both pads in one plane, a polymer ring between them and a polymer sleeve press-fitted inside — please tell us why and what it requires from the polymer parts.
+16. **Hydrogen and heat.** Can your route (activation, deposition) introduce hydrogen into the titanium? Is heat treatment needed after plating — to what temperature and for how long? This matters to us: a separate part can be heated, but the assembled product only to a limited extent, because heating weakens the polymer interference fit.
+17. **Inspection:** which methods you use to check thickness, adhesion and porosity; whether you can measure contact resistance; whether you provide witness samples — coupons of the same alloy plated in the same batch — for destructive testing (cross-section, adhesion).
+
+*Experience and documents*
+
+18. **Capability and experience:** whether you have plated titanium (and tantalum) with gold before; comparable jobs (anonymised examples are fine); equipment for selective plating.
+19. **Quality system** — ISO 9001 or whatever you hold: certificate number, issuing body, scope and validity.
+
+*Quantity, price, lead times*
+
+20. **Trial plating:** before the real parts — on our samples (lengths of Ø1.0 mm wire and flat plates of the same alloy); price and lead time.
+21. **Pilot batch:** three to five sets (porous part with wire, plus flange) — price per set; as separate lines — process set-up, masking tooling, witness samples. As an indication — price per set for a batch of 100.
+22. **Lead times:** queue before start, execution time, minimum order.
+23. **Terms of cooperation:** contract, documents required from us, payment terms, validity of the offer, technical contact person. We are based in Ukraine: please tell us whether you accept orders from Ukraine and how the shipment of parts to you and back would be arranged.
+
+**Confidentiality.** The technical specification of our product is openly published, so no non-disclosure agreement is needed to discuss it; we are ready to sign your standard agreement covering commercial terms (prices, lead times, quality-control data).
+
+**Attachments.** Nothing is needed from us for an initial proposal; drawings of the parts will be provided with the order.
+
+`[sender's signature and contact details — fill in before sending]`
+
+**⬆️ END OF LETTER TEXT.** Below is the repo layer again.
 
 ---
 
