@@ -439,8 +439,8 @@ groups:
         execErrState: Error
         for: 2m
         annotations:
-          summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
-          description: "SEC.10 Frame Counter SETNX nonce відхиляє дублікати. Різкий стрибок означає або attacker (replay forged panic = false fire alert) або LoRa mesh duplicate storm. Перевір DID pattern."
+          summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection — або збій бази кешу, що глушить справжні панічні кадри (SEC.39)."
+          description: "SEC.10 Frame Counter nonce (Rails.cache на Solid Cache) відхиляє дублікати. Різкий стрибок означає одне з ТРЬОХ: attacker (replay forged panic = false fire alert), LoRa mesh duplicate storm — або транзієнтний збій бази кешу: Solid Cache на помилці повертає «не записано», і справжні панічні кадри читаються як повтор і ВІДКИДАЮТЬСЯ (00_07 SEC.39). Спершу звір логи `SolidCacheStore: … failed`, тоді DID pattern."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md#21-soldier--queen-lora-uplink-aes-128-ecb-transitional--aes-128-ccm-target"
         labels:
           severity: critical

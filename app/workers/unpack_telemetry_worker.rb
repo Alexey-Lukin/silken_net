@@ -305,11 +305,12 @@ class UnpackTelemetryWorker
     status
   end
 
-  # Дзеркало claim у degraded mode (read→compare→write не атомарні — як і було).
-  # [ARCH.105] Атомарний так само, як Redis-шлях: `unless_exist: true` — це SET NX
-  # самого сховища. Доти тут стояла пара read-then-write, тобто ВІКНО між
-  # перевіркою й записом рівно там, де фолбек і потрібен — під час аварії, коли
-  # ретраї щільніші за звичайні.
+  # Дзеркало claim у degraded mode. [ARCH.105] `unless_exist: true` замінив пару
+  # read-then-write, що мала ВІКНО між перевіркою й записом рівно там, де фолбек і
+  # потрібен — під час аварії, коли ретраї щільніші за звичайні. ⚠️ Але на Solid
+  # Cache це НЕ SET NX Redis-шляху (виміряно 2026-09-28, 00_07 SEC.39): два
+  # конкурентні перші записи обидва дістають `true`, а транзієнтна помилка бази
+  # кешу дає `write` = false і `read` = nil → `:replay`, тобто справжній батч губиться.
   def claim_qatt_nonce_fallback(digest)
     fallback_key = "qatt_nonce_fallback:#{digest}"
     return :acquired if Rails.cache.write(fallback_key, qatt_owner_token,

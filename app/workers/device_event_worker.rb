@@ -27,7 +27,10 @@
 # реплею owner-токен: Sidekiq зберігає той самий `jid` на ретраях, тож власна
 # спроба резюмується, а стороння отримує `:replay`. Дім патерну —
 # `UnpackTelemetryWorker#claim_qatt_nonce`; тут його Solid-Cache-половина
-# (Redis цьому тракту не потрібен), і `unless_exist: true` атомарний.
+# (Redis цьому тракту не потрібен). ⚠️ `unless_exist: true` на Solid Cache НЕ
+# атомарний (виміряно 2026-09-28, 00_07 SEC.39): два конкурентні перші записи
+# обидва дістають `true`, а транзієнтна помилка бази кешу дає `write` = false і
+# `read` = nil, тобто `:replay` — і справжній батч губиться без Sidekiq-retry.
 class DeviceEventWorker
   include Sidekiq::Worker
   sidekiq_options queue: "uplink", retry: 2

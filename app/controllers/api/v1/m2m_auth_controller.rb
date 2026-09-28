@@ -101,12 +101,12 @@ module Api
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
           # [S6.1]: Graceful degradation — fallback to Solid Cache (DB-backed)
           # when Redis is unavailable. Gateways remain operational instead of 503.
-          # [ARCH.105] Фолбек АТОМАРНИЙ так само, як первинний шлях: `write` із
-          # `unless_exist: true` — це SET NX самого сховища, а не пара
-          # exist?/write. Доти тут стояло read-then-write із нотою «прийнятний
-          # компроміс», і саме її спростували двоє сусідів по дереву, які вже
-          # вживали атомарну форму на ТОМУ САМОМУ Solid Cache: компроміс був не
-          # платою за деградацію, а невикористаним примітивом.
+          # [ARCH.105] `write` із `unless_exist: true` замінив пару exist?/write,
+          # що стояла тут із нотою «прийнятний компроміс». ⚠️ Але на Solid Cache
+          # це НЕ SET NX первинного шляху (виміряно 2026-09-28, 00_07 SEC.39): два
+          # конкурентні перші записи обидва дістають `true`, тож одночасний
+          # повтор підпису в degraded mode проходить; а транзієнтна помилка бази
+          # кешу дає `false` — запит відхиляється як повтор (401, шлюз повторить).
           # [S6.19]: Counter живить Grafana-алерт sn-alert-m2m-nonce-fallback
           # (escalation-семантика multi-zone Upstash — дім: 04_03 §5.15).
           SilkenNet::Metrics::M2M_NONCE_FALLBACK_TOTAL.increment

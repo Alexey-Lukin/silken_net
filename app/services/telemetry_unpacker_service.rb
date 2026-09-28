@@ -587,8 +587,9 @@ class TelemetryUnpackerService < ApplicationService
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
   end
 
-  # [FW.2] Per-DID Frame Counter replay guard. Same SETNX pattern as the
-  # SEC.10 panic counter — reject exact FC repeats inside a 25h window.
+  # [FW.2] Per-DID Frame Counter replay guard. Same `unless_exist` pattern as
+  # the SEC.10 panic counter, with the same two Solid Cache holes (see
+  # `panic_replayed?`, 00_07 SEC.39) — reject exact FC repeats inside a 25h window.
   # Firmware emits monotonic FC (`RTC_BKP_DR2`), so within the TTL a
   # duplicate means either LoRa mesh retransmission (benign, but we drop
   # to keep tokenomics idempotent) or an active replay attack.
@@ -606,19 +607,24 @@ class TelemetryUnpackerService < ApplicationService
     ccm_enabled? ? CCM_CHUNK_SIZE : ECB_CHUNK_SIZE
   end
 
-  # [SEC.10] Panic Frame Counter anti-replay. Atomic SETNX через Rails.cache
-  # (Solid Cache / PostgreSQL у production — НЕ Redis; `unless_exist: true` там
-  # атомарний, [ARCH.105]). Повертає `true` коли nonce-ключ вже існує (це replay
-  # від уже-баченого counter'а), `false` коли ключ свіжий і ми його щойно
-  # встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
+  # [SEC.10] Panic Frame Counter anti-replay через Rails.cache (Solid Cache /
+  # PostgreSQL у production — НЕ Redis). ⚠️ `unless_exist: true` там НЕ справжній
+  # SET NX (виміряно 2026-09-28 на Postgres, 00_07 SEC.39): послідовний повтор
+  # ловить, але два КОНКУРЕНТНІ перші записи обидва дістають `true`
+  # (`SELECT … FOR UPDATE` не лочить відсутній рядок), а транзієнтна помилка
+  # бази кешу (failsafe гема) повертає `false`. Тож `true` тут = nonce-ключ уже
+  # існує (replay від уже-баченого counter'а) АБО запис упав на збої бази кешу;
+  # `false` = ключ свіжий і ми його щойно встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
   # і ще трохи. Cold-boot вузла не зламає цей захист — firmware пересіє
   # panic_frame_counter з HRNG (range 0x0001..0xFFFF), тож імовірність
   # зіткнення з живим nonce попереднього втілення ≈ 1/65535.
   def panic_replayed?(hex_did, counter)
     nonce_key = "#{PANIC_NONCE_KEY_PREFIX}:#{hex_did}:#{counter}"
-    # write returns false if `unless_exist: true` and the key already exists.
-    # Rails.cache is Solid Cache (PostgreSQL) in production, and its `unless_exist:`
-    # is a genuine SET NX [ARCH.105] — do not read "Redis" into this path.
+    # write returns false if `unless_exist: true` and the key already exists — and
+    # ALSO when Solid Cache swallows a transient DB error (failsafe → false), which
+    # this method reads as a replay. Rails.cache is Solid Cache (PostgreSQL) in
+    # production, not Redis, and its `unless_exist:` is NOT atomic for two concurrent
+    # first writers (measured 2026-09-28, 00_07 SEC.39).
     inserted = Rails.cache.write(nonce_key, "1", expires_in: PANIC_NONCE_TTL, unless_exist: true)
     !inserted
   end
