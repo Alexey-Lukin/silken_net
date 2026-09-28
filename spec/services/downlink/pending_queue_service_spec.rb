@@ -275,31 +275,57 @@ RSpec.describe Downlink::PendingQueueService do
       end
     end
 
-    # [FW.63] Дзеркало сусіднього "наказ, який неможливо зберегти" — тут невалідний
-    # НЕ наказ, а АКТУАТОР (`mark_active!` — AASM `whiny_persistence` → save! з
-    # валідаціями). Маркувати тоді команду «невалідною» = брехати про винуватця й
-    # вигасити цілком доставну чергу хворого актуатора по одній; `.status_sent`
-    # scope теж не сміє мовчки зникнути з echo-кроку.
-    describe "echo, коли невалідний АКТУАТОР (mark_active! кидає RecordInvalid)" do
-      it "не звинувачує наказ — лишається :sent, не 'failed'" do
+    # [FW.63] Невдале підтвердження луною. Луна вже ДОВЕЛА доставку, тож лишити наказ
+    # `:sent` означає видавати його наново на КОЖНОМУ poll'і (`may_dispatch?` = false —
+    # ревалідації немає), а Королева дедупить і знову несе той самий токен: голова черги
+    # з'їдає кожен слот кожного флашу, і решта наказів шлюзу голодує до його TTL.
+    # Наказ виноситься з черги, а причина називає СПРАВЖНЬОГО винуватця — інакше хворий
+    # актуатор записувався б провиною наказу.
+    describe "echo, чиє підтвердження не проходить валідацію" do
+      let(:neighbour) { create(:actuator, gateway: gateway) }
+
+      it "оператор знизив стелю актуатора між видачею й луною: наказ виноситься, черга йде далі" do
+        waiting = create(:actuator_command, actuator: neighbour, priority: :low)
+        decrypt_inner(poll)
+        actuator.update_columns(max_active_duration_s: command.duration_seconds - 1)
+
+        expect { decrypt_inner(echo(command.idempotency_token)) }.not_to raise_error
+
+        expect(command.reload.status).to eq("failed")
+        expect(command.error_message).to include("Луна підтвердила доставку", "наказ не проходить")
+        expect(ResetActuatorStateWorker.jobs).to be_empty
+        expect(decrypt_inner(poll)).to include(waiting.idempotency_token)
+      end
+
+      it "невалідний АКТУАТОР: наказ виноситься, а причина називає актуатор, не наказ" do
         sick = create(:actuator, gateway: gateway)
         good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
-        decrypt_inner(poll) # `command` пріоритетніша (default priority) → good лишається issued
-        decrypt_inner(echo(command.idempotency_token)) # прибираємо command із черги
+        expect(decrypt_inner(poll)).to include(good.idempotency_token) # :high видається першим → :sent
         sick.update_columns(name: nil)
 
         expect { decrypt_inner(echo(good.idempotency_token)) }.not_to raise_error
-        expect(good.reload.status).to eq("sent")
+
+        expect(good.reload.status).to eq("failed")
+        expect(good.error_message).to include("Луна підтвердила доставку", "актуатор")
+        expect(good.error_message).not_to include("наказ не проходить")
+        expect(sick.reload.state).to eq("idle")
+        expect(decrypt_inner(poll)).to include(command.idempotency_token) # черга не голодує
       end
 
-      it "хворий актуатор на echo-кроці не валить тракт — конверт лишається живим" do
-        sick = create(:actuator, gateway: gateway)
-        good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
+      # Слід пишеться асинхронно й лише з актором: без `oracle_executioner` гілка мовчки
+      # скіпнула б запис, і нуль джоб означав би «не дійшли», а не «не пишемо».
+      it "лишає слід переходу sent → failed із причиною луни" do
+        create(:user, :super_admin, email_address: User::ORACLE_EXECUTIONER_EMAIL)
         decrypt_inner(poll)
-        decrypt_inner(echo(command.idempotency_token))
-        sick.update_columns(name: nil)
+        actuator.update_columns(max_active_duration_s: command.duration_seconds - 1)
+        AuditLogWorker.jobs.clear
 
-        expect(decrypt_inner(echo(good.idempotency_token)).byteslice(0, 4)).to eq("CMD:")
+        decrypt_inner(echo(command.idempotency_token))
+
+        trail = AuditLogWorker.jobs.map { |job| job["args"].first }
+                              .find { |attrs| attrs["action"] == "actuator_to_failed" }
+        expect(trail["metadata"]).to include("from" => "sent", "to" => "failed",
+                                             "reason" => "echo_unpersistable")
       end
     end
   end

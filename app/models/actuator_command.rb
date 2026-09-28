@@ -170,15 +170,16 @@ class ActuatorCommand < ApplicationRecord
 
   private
 
-  # [ARCH.57] update_columns у dispatch_to_edge! свідомо обходить валідації (і колбеки) —
+  # [ARCH.57] Примусовий `failed` через update_columns свідомо обходить валідації (і
+  # колбеки) — у dispatch_to_edge! і у force-fail `Downlink::PendingQueueService`, — тож
   # ланцюг закривається ручним викликом; ім'я те саме state-based, що дав би хук.
-  def record_pre_dispatch_failure_audit!(reason)
+  def record_forced_failure_audit!(reason, from: "issued")
     record_audit_trail!(
       action: "actuator_to_failed",
       organization_id: organization_id,
       user_id: user_id,
       metadata: { actuator_id: actuator_id, ews_alert_id: ews_alert_id,
-                  priority: priority.to_s, from: "issued", to: "failed", reason: reason }
+                  priority: priority.to_s, from: from, to: "failed", reason: reason }
     )
   end
 
@@ -261,7 +262,7 @@ class ActuatorCommand < ApplicationRecord
     # ⏱️ TTL: перевіряємо актуальність перед диспетчеризацією
     if expired?
       update_columns(status: self.class.statuses[:failed], error_message: "Команда протермінована (TTL)")
-      record_pre_dispatch_failure_audit!("ttl_expired")
+      record_forced_failure_audit!("ttl_expired")
       Rails.logger.warn "⏱️ [COMMAND] Команда ##{id} протермінована до відправки."
       return
     end
@@ -279,7 +280,7 @@ class ActuatorCommand < ApplicationRecord
 
     unless actuator.ready_for_deployment?
       update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
-      record_pre_dispatch_failure_audit!("actuator_not_ready")
+      record_forced_failure_audit!("actuator_not_ready")
       Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
     end
     # [FW.60] Push-enqueue (ActuatorCommandWorker) superseded: команда чекає

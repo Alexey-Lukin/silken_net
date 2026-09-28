@@ -174,17 +174,19 @@ module Downlink
 
     # `update_columns` свідомо: рядок невалідний, тож будь-який шлях через
     # валідації (`fail!`, `update!`) кинув би той самий виняток удруге. Ланцюг
-    # ARCH.57 закриваємо ручним викликом — дзеркало
-    # `record_pre_dispatch_failure_audit!`, який робить те саме з тієї ж причини.
-    def force_fail_unpersistable!(command, error)
+    # ARCH.57 закриваємо ручним викликом `record_forced_failure_audit!`.
+    # `echoed:` [FW.63] — наказ, чию доставку луна вже довела: причина каже це прямо
+    # й називає той запис, що не пройшов валідацію (актуатор на `mark_active!`, наказ
+    # на `acknowledge!`), — хворий актуатор не записується провиною наказу.
+    def force_fail_unpersistable!(command, error, echoed: false)
       reason = error.record&.errors&.full_messages&.first || error.message
-      command.update_columns(
-        status: ActuatorCommand.statuses[:failed],
-        error_message: "Наказ не проходить власну валідацію: #{reason}".truncate(200)
-      )
-      command.send(:record_pre_dispatch_failure_audit!, "unpersistable")
+      culprit = error.record.is_a?(Actuator) ? "запис актуатора невалідний" : "наказ не проходить власну валідацію"
+      message = echoed ? "Луна підтвердила доставку, але #{culprit}: #{reason}" : "Наказ не проходить власну валідацію: #{reason}"
+      command.update_columns(status: ActuatorCommand.statuses[:failed], error_message: message.truncate(200))
+      command.send(:record_forced_failure_audit!, echoed ? "echo_unpersistable" : "unpersistable",
+                   from: echoed ? "sent" : "issued")
       ActuatorCommandWorker.broadcast_command_state_static(command)
-      Rails.logger.error "🛑 [ARCH.75] Наказ ##{command.id} невалідний (#{reason}) — " \
+      Rails.logger.error "🛑 [ARCH.75] Наказ ##{command.id} невалідний (#{error.record.class}: #{reason}) — " \
                          "винесено з черги, poll-тракт живий"
     end
 
@@ -292,13 +294,14 @@ module Downlink
       ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
       ActuatorCommandWorker.broadcast_command_state_static(command)
     rescue ActiveRecord::RecordInvalid => e
-      # На відміну від dispatch! (лише command), тут пишеться ще й `actuator`
-      # (mark_active!, AASM whiny_persistence) — винуватцем буває він. Ані echo,
-      # ані команда не сміють зникнути мовчки: `:sent` лишається `.pending`,
-      # тож або наступний echo повторить спробу, або TTL чесно fail!'ить —
-      # обидва кращі за силуваний force-fail на команді, чий конверт УЖЕ доїхав.
-      Rails.logger.error "🛑 [FW.63] echo-підтвердження ##{command.id} не пройшло " \
-                         "валідацію (#{e.record.class}: #{e.record.errors.full_messages.first})"
+      # [FW.63] Луна вже ДОВЕЛА доставку, тож повторна видача нічого не додає. Лишений
+      # `:sent`, наказ стояв би головою `.pending` на КОЖНОМУ poll'і (`may_dispatch?` —
+      # false, ревалідації немає), Королева дедупила б і знову несла той самий токен, і
+      # решта наказів шлюзу голодувала б до його TTL (пожежний полив — 2 год; адверсарне
+      # рев'ю FW.64, 2026-09-27). Тож виносимо — тим самим force-fail, що й невалідний
+      # наказ при видачі; активацію транзакція вище вже відкотила. На відміну від dispatch!
+      # тут пишеться ще й `actuator`, тож причину веде той запис, що впав.
+      force_fail_unpersistable!(command, e, echoed: true)
     end
 
     def firmware_version_label(firmware_id)
