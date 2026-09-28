@@ -1782,6 +1782,44 @@ end
       end
     end
 
+    # [FW.17] Re-provision (⚖️ 2026-09-28, 03_05 §3.8): нова епоха → новий ключ → свіжий
+    # простір нонсів, тож FC нової епохи не є повтором FC старої; а кадр, що пройшов
+    # ПОПЕРЕДНІМ ключем під grace, рахується в СТАРІЙ епосі.
+    context "when the tree was re-provisioned into a new key epoch [FW.17]" do
+      let(:epoch1_key_bin) { SecureRandom.random_bytes(16) }
+
+      def reprovision!
+        hardware_key.update!(epoch: 1, key_version: 0, previous_aes_key_hex: lora_key_hex,
+                             aes_key_hex: epoch1_key_bin.unpack1("H*").upcase)
+      end
+
+      it "accepts the same frame counter again under the new epoch — not a replay" do
+        old_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                    dt: 100, status: 0, ttl: 3, fc: 500)
+        expect { described_class.call(old_frame) }.to change(TelemetryLog, :count).by(1)
+
+        reprovision!
+        new_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                    dt: 100, status: 0, ttl: 3, fc: 500, key: epoch1_key_bin)
+
+        expect { described_class.call(new_frame) }.to change(TelemetryLog, :count).by(1)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+      end
+
+      it "keys a straggler under the previous key in the OLD epoch, so the new epoch's same FC still lands" do
+        reprovision!
+        straggler = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                    dt: 100, status: 0, ttl: 3, fc: 600)
+        fresh     = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                    dt: 100, status: 0, ttl: 3, fc: 600, key: epoch1_key_bin)
+
+        expect { described_class.call(straggler) }.to change(TelemetryLog, :count).by(1)
+        expect(hardware_key.reload.previous_aes_key_hex).to eq(lora_key_hex) # grace ще живий
+        expect { described_class.call(fresh) }.to change(TelemetryLog, :count).by(1)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+      end
+    end
+
     # [FW.65] Ширина contract-id CCM-ери мусить ДОЇХАТИ від чанка до перевірки mismatch і до
     # алерту відкату — одиничні піни подають її явно й видалення транзієнта не помітили б.
     it "carries the CCM contract-id width to the mismatch check and to the revert alert" do

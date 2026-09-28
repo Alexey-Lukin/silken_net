@@ -349,6 +349,28 @@ RSpec.describe HardwareKey, type: :model do
     end
   end
 
+  # [FW.17] Grace дерева відкривається двома шляхами: ратчет (версія ≥ 1, та сама епоха)
+  # і re-provision (версія 0, епоха попередня — 03_05 §3.8).
+  describe "#previous_key_epoch" do
+    it "is the same epoch under a ratchet grace" do
+      expect(build(:hardware_key, epoch: 2, key_version: 3).previous_key_epoch).to eq(2)
+    end
+
+    it "is the previous epoch under a re-provision grace" do
+      expect(build(:hardware_key, epoch: 2, key_version: 0).previous_key_epoch).to eq(1)
+    end
+
+    it "never goes below zero for a never-re-provisioned key" do
+      expect(build(:hardware_key, epoch: 0, key_version: 0).previous_key_epoch).to eq(0)
+    end
+  end
+
+  describe "epoch" do
+    it "rejects a negative epoch" do
+      expect(build(:hardware_key, epoch: -1)).not_to be_valid
+    end
+  end
+
   describe "#owner" do
     it "returns the tree when the device_uid matches a tree's DID" do
       tree   = create(:tree)

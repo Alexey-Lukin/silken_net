@@ -952,7 +952,8 @@ CREATE TABLE public.hardware_keys (
     rotated_at timestamp(6) without time zone,
     ed25519_public_key_hex character varying,
     lorenz_seed_hex character varying,
-    key_version integer DEFAULT 0 NOT NULL
+    key_version integer DEFAULT 0 NOT NULL,
+    epoch integer DEFAULT 0 NOT NULL
 );
 
 
@@ -4735,6 +4736,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260928120000'),
 ('20260925090000'),
 ('20260905133000');
 

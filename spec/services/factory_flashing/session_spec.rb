@@ -107,16 +107,34 @@ RSpec.describe FactoryFlashing::Session do
       }.to raise_error(described_class::PreflightError, /not found/)
     end
 
-    # [FW.17] Форми re-provision ротованого дерева нема — сесія, що залила б K_v
-    # як корінь, мусить впасти до майстер-ключа, а не оглушити вузол.
-    it "refuses a ratchet-rotated tree before fetching the master key" do
-      create(:hardware_key, device_uid: tree.did, aes_key_hex: SecureRandom.hex(16).upcase, key_version: 2)
-      session = make_session(gilka: "A")
-      expect {
-        described_class.run(session: session, executor: executor, master_key_source: master_key_source)
-      }.to raise_error(described_class::PreflightError, /до v2.*FW\.17/)
-      expect(master_key_source).not_to have_received(:fetch_master_key)
-      expect(session.reload).to be_failed
+    # [FW.17] Re-provision дерева = нова епоха ключа (⚖️ 2026-09-28, 03_05 §3.8). Dry-run
+    # лише ПЛАНУЄ: епоха, піднята в БД без прошитого чипа, оглушила б вузол.
+    it "plans a re-provision of a ratcheted tree into epoch 1 without touching the key row" do
+      HardwareKeyService.provision(tree, master_key: "master")
+      key = HardwareKey.find_by!(device_uid: tree.did)
+      k_v = SecureRandom.hex(16).upcase
+      key.update!(aes_key_hex: k_v, key_version: 2)
+      k0_e1 = HardwareKeyService.derive_lora_key(tree.did, epoch: 1, master_key: "master")
+
+      outcome = described_class.run(session: make_session(gilka: "A"), executor: executor,
+                                    master_key_source: master_key_source)
+      commands = outcome.transcript.map(&:command)
+
+      expect(key.reload).to have_attributes(epoch: 0, key_version: 2, aes_key_hex: k_v, previous_aes_key_hex: nil)
+      expect(flash_image(commands)[0x0803E004]).to eq("0x#{k0_e1[0, 8]}") # KEYL = корінь нової епохи
+      expect(commands).to include(a_string_matching(/ -e 122 123 124 125\z/))
+      expect(flash_image(commands)[0x0803D004]).to eq("0x534B5631") # журнал: SKV1 на стор. 122
+      expect(outcome.audit_log.metadata).to include("key_epoch" => 1, "dry_run" => true)
+    end
+
+    it "keeps a first provision on epoch 0 with no journal image" do
+      outcome = described_class.run(session: make_session(gilka: "A"), executor: executor,
+                                    master_key_source: master_key_source)
+      commands = outcome.transcript.map(&:command)
+
+      expect(outcome.hardware_key.epoch).to eq(0)
+      expect(commands).to include(a_string_matching(/ -e 124 125\z/))
+      expect(flash_image(commands).keys).to all(be >= 0x0803E000)
     end
 
     it "surfaces MasterKeySource::UnavailableError before opening the transaction" do

@@ -76,7 +76,8 @@ module FactoryFlashing
           session:      @session,
           device:       @device,
           hardware_key: hw_key,
-          transcript:   @executor.results
+          transcript:   @executor.results,
+          key_epoch:    @flash_key_epoch
         ).record!
         @session.complete!
 
@@ -99,7 +100,6 @@ module FactoryFlashing
     def preflight!
       raise PreflightError, "session must be supervisor_approved (got #{@session.state})" unless @session.may_start?
       raise PreflightError, "device #{@session.device_uid} not found" if @device.nil?
-      guard_ratcheted_reprovision!
       # Surface UnavailableError / NotImplementedError early so we never enter
       # the transaction with a missing or rejected master key. The result is
       # retained and threaded into every derivation below — the point of the
@@ -111,31 +111,40 @@ module FactoryFlashing
       Tree.find_by(did: @session.device_uid) || Gateway.find_by(uid: @session.device_uid)
     end
 
-    # [FW.17] Стан ратчета живе у ДВОХ домах — корінь у KEYL і версія у Flash-KV
-    # `0x13`, — а сесія пише лише перший, і пише туди K_v, не корінь. Вцілілий KV
-    # дає глухий вузол (boot деривує ratchet^v(K_v) ≠ K_v), стертий — розсинхрон
-    # версій із бекендом. Поки форми re-provision ротованого дерева нема
-    # (→ 00_07 FW.17), відмова гучна; версію піднімає лише ратчет дерева, і лише
-    # за відкритого FW17_RATCHET_DOWNLINK_ENABLED.
-    def guard_ratcheted_reprovision!
-      ratcheted = HardwareKey.find_by(device_uid: @session.device_uid, key_version: 1..)
-      return unless ratcheted
+    def ensure_hardware_key
+      existing = HardwareKey.find_by(device_uid: @session.device_uid)
+      return provision_first_key unless existing
+      # Королева: re-flash і є доставкою ротованого KEYC (SEC.3) — ключ як є.
+      return existing unless @device.is_a?(Tree)
 
-      raise PreflightError,
-            "#{@session.device_uid} ротовано ратчетом до v#{ratcheted.key_version}, а форми " \
-            "re-provision ротованого дерева не визначено (00_07 FW.17): залитий K_v оглушив би " \
-            "вузол або розсинхронізував версію — не прошиваємо"
+      reprovision_tree_key!(existing)
     end
 
-    def ensure_hardware_key
-      # HardwareKeyService.provision raises if the master key is blank
-      # (тут @master_key — уже провалідований адаптером; SEC.11 hard
-      # cutover). Re-fetching the row is safe because provision creates
-      # a new HardwareKey atomically.
-      HardwareKey.find_by(device_uid: @session.device_uid) || begin
-        HardwareKeyService.provision(@device, master_key: @master_key)
-        HardwareKey.find_by!(device_uid: @session.device_uid)
-      end
+    # HardwareKeyService.provision raises if the master key is blank (тут
+    # @master_key — уже провалідований адаптером; SEC.11 hard cutover).
+    def provision_first_key
+      HardwareKeyService.provision(@device, master_key: @master_key)
+      HardwareKey.find_by!(device_uid: @session.device_uid)
+    end
+
+    # [FW.17] Re-provision дерева = нова ЕПОХА ключа (⚖️ founder 2026-09-28,
+    # 03_05 §3.8): стан ратчета живе у двох домах (корінь у KEYL, версія у журналі
+    # `0x13`), і лише новий корінь K0_e + свіжий журнал (без версії) узгоджує їх
+    # обидва за будь-якої долі старого журналу. Новий ключ дає й новий простір
+    # нонсів CCM (межу FC `0x14` стерто разом із журналом), і корінь, не
+    # виводжуваний зі злитого K_v, — тобто це ж і відновлення після компрометації.
+    # Старий ключ іде в grace до першого MIC новим (TelemetryUnpackerService).
+    # Dry-run лише ПЛАНУЄ: піднята в БД епоха без прошитого чипа оглушила б вузол.
+    def reprovision_tree_key!(key)
+      epoch = key.epoch + 1
+      @flash_aes_key_hex = HardwareKeyService.derive_lora_key(@session.device_uid, epoch: epoch, master_key: @master_key)
+      @flash_key_epoch = epoch
+      @kv_journal_words = FlashKvImage.words(ota_hiwater: @device.cluster&.ota_version_hiwater.to_i)
+      return key if @executor.dry_run?
+
+      key.update!(epoch: epoch, key_version: 0, aes_key_hex: @flash_aes_key_hex,
+                  previous_aes_key_hex: key.aes_key_hex, rotated_at: Time.current)
+      key
     end
 
     # Залитий поточний KEYC і є доставкою ротованого ключа Королеві (SEC.3 —
@@ -152,12 +161,13 @@ module FactoryFlashing
       CommandBuilder.new(
         session:          @session,
         device:           @device,
-        aes_key_hex:      hw_key.aes_key_hex,
+        aes_key_hex:      @flash_aes_key_hex || hw_key.aes_key_hex,
         lorenz_seed_hex:  hw_key.lorenz_seed_hex,
         ota_hmac_hex:     tree_ota_hmac,
         ed25519_seed_hex: gateway_voice_seed(hw_key),
         bcast_key_hex:    cluster_broadcast_key,
-        probe_sn:         @probe_sn
+        probe_sn:         @probe_sn,
+        kv_journal_words: @kv_journal_words
       ).flash_commands
     end
 

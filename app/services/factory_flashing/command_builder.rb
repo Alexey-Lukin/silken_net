@@ -14,6 +14,7 @@
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
 #   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
 #   0x0803E828  [magic "KEYB" :4 ][ bcast_key    :16 ]                 # Tree only — FW.2 (в) cluster control-plane; +40 (не +36): dw-вирівнювання WL
+#   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 ]                 # Tree re-provision only — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
 #
 # [FW.2 гейт (в), двоключова модель] Gateway KEYL-слот прошивається
 # BROADCAST-значенням (HKDF cluster-домену, derive_broadcast_key) — Королева
@@ -76,8 +77,11 @@ module FactoryFlashing
     #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
     #   на boot, а Солдат без KEYB в обох ерах мовчить Королеві: з 2026-09-28 KEYB —
     #   амбієнт і ECB-білда, тож глухне не лише downlink, а й аплінк).
+    # @param kv_journal_words [Hash, nil] Tree-only, re-provision — образ журналу
+    #   Flash-KV (FlashKvImage.words): обидві його сторінки стираються, навіть та,
+    #   у яку образ нічого не пише (FW.17, 03_05 §3.8).
     def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,
-                   probe_sn: nil)
+                   probe_sn: nil, kv_journal_words: nil)
       @session = session
       @probe_sn = probe_sn
       @connect = self.class.connect(probe_sn)
@@ -87,6 +91,7 @@ module FactoryFlashing
       @ota_hmac_hex = ota_hmac_hex.to_s
       @ed25519_seed_hex = ed25519_seed_hex.to_s
       @bcast_key_hex = bcast_key_hex.to_s
+      @kv_journal_words = kv_journal_words
       validate!
     end
 
@@ -141,6 +146,8 @@ module FactoryFlashing
         raise ArgumentError, "ed25519_seed_hex must be hexadecimal" unless @ed25519_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
       end
 
+      raise ArgumentError, "kv_journal_words is Tree-only (FW.17 re-provision)" if @kv_journal_words && !@device.is_a?(Tree)
+
       return unless @device.is_a?(Tree)
       raise ArgumentError, "Tree provisioning requires lorenz_seed_hex (64 hex)" unless @lorenz_seed_hex.length == 64
       raise ArgumentError, "lorenz_seed_hex must be hexadecimal" unless @lorenz_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
@@ -164,6 +171,9 @@ module FactoryFlashing
         # деградує у fallback (амбієнт = KEYL): Королева не прочитає його аплінк,
         # а він — її downlink.
         words.merge!(block_words(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
+        # [FW.17] Re-provision: свіжий журнал (лише 0x15), версії ратчета немає →
+        # вузол на K0_e з v = 0 (03_05 §3.8).
+        words.merge!(@kv_journal_words) if @kv_journal_words
       else
         # Gateway: 32-byte CoAP AES-256 key + LoRa KEYL = broadcast-значення
         # (FW.2 (в)): Королева шифрує ним downlink і читає 0x55/0x56; без
@@ -177,7 +187,8 @@ module FactoryFlashing
         words.merge!(block_words(FLASH_EDSK_ADDR, EDSK_MAGIC, @ed25519_seed_hex)) if @ed25519_seed_hex.present?
       end
 
-      flash_write_commands(words) + [ iwdg_freeze_command, rdp_command(@session.rdp_level) ]
+      erase_also = @kv_journal_words ? FlashKvImage::PAGES : []
+      flash_write_commands(words, erase_also: erase_also) + [ iwdg_freeze_command, rdp_command(@session.rdp_level) ]
     end
 
     # Flash WL програмується лише цілим doubleword'ом (64 біти + 8 біт ECC —
@@ -189,9 +200,12 @@ module FactoryFlashing
     # Session пускає сюди лише чистою або за REFLASH_ACK.
     # Сторінки виводяться з адрес запису: Королевина 125 (рантайм-OTA-SHA, FW.52)
     # і Солдатові 126 (mruby-контракт) сюди не потрапляють за побудовою.
-    def flash_write_commands(words)
+    # `erase_also` — сторінки, які треба стерти, нічого в них не пишучи (сусідка
+    # журналу при re-provision): «стерті» слова туди писати не можна — WL другого
+    # програмування doubleword'а не приймає.
+    def flash_write_commands(words, erase_also: [])
       dws = words.keys.map { |addr| addr & ~7 }.uniq.sort
-      pages = dws.map { |dw| (dw - FLASH_BASE) / FLASH_PAGE_SIZE }.uniq
+      pages = (dws.map { |dw| (dw - FLASH_BASE) / FLASH_PAGE_SIZE } + erase_also).uniq.sort
       writes = dws.slice_when { |a, b| b != a + 8 }.map do |run|
         data = run.flat_map { |dw| [ words.fetch(dw, ERASED_WORD), words.fetch(dw + 4, ERASED_WORD) ] }
         "#{PROGRAMMER} #{@connect} -w32 #{format('0x%08X', run.first)} #{data.join(' ')}"

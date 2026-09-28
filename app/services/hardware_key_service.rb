@@ -110,8 +110,15 @@ class HardwareKeyService
 
   # Tree LoRa AES-128 key — post-ARCH.42 Variant B (16 bytes).
   # HKDF info: "silken-aes-128-lora-key". AES-128 = вибір (SE = SE050 — 03_05 §3.7).
-  def self.derive_lora_key(device_uid, master_key: nil)
-    hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES, master_key: master_key)
+  # [FW.17] `epoch:` — корінь ЕПОХИ (⚖️ founder 2026-09-28, 03_05 §3.8): e = 0 —
+  # info без суфікса, бітово ключ до присуду; e ≥ 1 — `…:e<N>`, корінь, не
+  # виводжуваний із жодного старого K_v. Епоху піднімає лише re-provision
+  # (FactoryFlashing::Session), і він же пише її в `hardware_keys.epoch`.
+  def self.derive_lora_key(device_uid, epoch: 0, master_key: nil)
+    raise ArgumentError, "epoch must be a non-negative Integer" unless epoch.is_a?(Integer) && epoch >= 0
+
+    info = epoch.zero? ? LORA_HKDF_INFO : "#{LORA_HKDF_INFO}:e#{epoch}"
+    hkdf_derive(device_uid, info: info, length: LORA_KEY_SIZE_BYTES, master_key: master_key)
   end
 
   # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — salt-домен той самий,

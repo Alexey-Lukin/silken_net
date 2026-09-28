@@ -29,11 +29,14 @@ module FactoryFlashing
     # @param device        [Tree|Gateway]
     # @param hardware_key  [HardwareKey]
     # @param transcript    [Array<FactoryFlashing::Executor::Result>]
-    def initialize(session:, device:, hardware_key:, transcript:)
+    # @param key_epoch     [Integer, nil] [FW.17] епоха кореня, яку ПРОШИВАЛИ (у
+    #   dry-run — заплановану, БД її не бачить); nil → епоха рядка.
+    def initialize(session:, device:, hardware_key:, transcript:, key_epoch: nil)
       @session = session
       @device = device
       @hardware_key = hardware_key
       @transcript = transcript
+      @key_epoch = key_epoch || hardware_key&.epoch
     end
 
     def record!
@@ -61,6 +64,7 @@ module FactoryFlashing
         device_uid:        @session.device_uid,
         device_type:       @device.class.name,
         silicon_uid_hex:   (@device.silicon_uid_hex if @device.is_a?(Tree)),
+        key_epoch:         (@key_epoch if @device.is_a?(Tree)),
         gilka:             @session.gilka,
         operator_id:       @session.operator_id,
         supervisor_id:     @session.supervisor_id,

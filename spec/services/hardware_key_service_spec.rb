@@ -278,6 +278,37 @@ RSpec.describe HardwareKeyService, type: :service do
     end
   end
 
+  # [FW.17] Епоха кореня (⚖️ 2026-09-28, 03_05 §3.8): e = 0 бітово дорівнює ключу до
+  # присуду (наявні дерева нічого не переписують), e ≥ 1 — info з суфіксом `:e<N>`.
+  describe ".derive_lora_key epoch" do
+    let(:master) { "test-master-key-for-hkdf-derive!" }
+
+    def hkdf(info)
+      OpenSSL::KDF.hkdf(master, salt: "SNET-80B12004", info: info, length: 16, hash: "SHA256").unpack1("H*").upcase
+    end
+
+    it "keeps epoch 0 bit-identical to the pre-epoch key (plain info)" do
+      expect(described_class.derive_lora_key("SNET-80B12004", master_key: master))
+        .to eq(hkdf("silken-aes-128-lora-key"))
+      expect(described_class.derive_lora_key("SNET-80B12004", epoch: 0, master_key: master))
+        .to eq(hkdf("silken-aes-128-lora-key"))
+    end
+
+    it "derives epoch N from the `:e<N>` info — a root no earlier key leads to" do
+      e1 = described_class.derive_lora_key("SNET-80B12004", epoch: 1, master_key: master)
+      e2 = described_class.derive_lora_key("SNET-80B12004", epoch: 2, master_key: master)
+
+      expect(e1).to eq(hkdf("silken-aes-128-lora-key:e1"))
+      expect(e2).to eq(hkdf("silken-aes-128-lora-key:e2"))
+      expect([ e1, e2 ]).not_to include(hkdf("silken-aes-128-lora-key"))
+    end
+
+    it "rejects a negative or non-integer epoch" do
+      expect { described_class.derive_lora_key("SNET-80B12004", epoch: -1, master_key: master) }.to raise_error(ArgumentError)
+      expect { described_class.derive_lora_key("SNET-80B12004", epoch: "1", master_key: master) }.to raise_error(ArgumentError)
+    end
+  end
+
   # Iotex Ed25519 attestation seed — the per-uplink hot path (W3bstream signs
   # every telemetry log). Cached in-process to spare the crown-jewel (SEC.22).
   describe ".derive_iotex_seed" do

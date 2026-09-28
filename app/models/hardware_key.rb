@@ -74,6 +74,9 @@ class HardwareKey < ApplicationRecord
                           numericality: { only_integer: true,
                                           greater_than_or_equal_to: 0,
                                           less_than_or_equal_to: 0xFFFF }
+  # [FW.17] Епоха кореня дерева — піднімає лише re-provision (03_05 §3.8).
+  validates :epoch, presence: true,
+                    numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   # Ed25519 public key для M2M автентифікації (64 hex chars = 32 bytes)
   validates :ed25519_public_key_hex, length: { is: 64 },
@@ -157,6 +160,14 @@ class HardwareKey < ApplicationRecord
     )
 
     binary_key
+  end
+
+  # [FW.17] Епоха ПОПЕРЕДНЬОГО ключа дерева під живим grace — для ключа анти-повтору
+  # CCM (TelemetryUnpackerService). Grace дерева відкривається рівно двома шляхами:
+  # ратчет — версія ≥ 1, та сама епоха; re-provision — версія 0, епоха попередня
+  # (03_05 §3.8). Колонки під «чий grace» не заводимо: версія це вже каже.
+  def previous_key_epoch
+    key_version.zero? && epoch.positive? ? epoch - 1 : epoch
   end
 
   # Метод для зачистки "хвостів" після успішної синхронізації.

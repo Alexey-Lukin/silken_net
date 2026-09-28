@@ -211,9 +211,14 @@ module Downlink
     def key_rotation_payload
       return nil unless HardwareKeyService.ratchet_dispatch_enabled?
 
+      # [FW.17] Ротацією є лише grace ратчета (версія ≥ 1). Grace після re-provision
+      # (версія 0, нова епоха — 03_05 §3.8) закриває MIC, а не 0x9E, і версії 0
+      # `build_rotate_key_block` не приймає — без цього фільтра такий grace валив
+      # би poll-деривацію всього кластера.
       key = HardwareKey.joins(:tree)
                        .where(trees: { cluster_id: @gateway.cluster_id })
                        .where.not(previous_aes_key_hex: nil)
+                       .where(key_version: 1..)
                        .order(:updated_at).first
       return nil unless key
 

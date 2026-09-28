@@ -54,6 +54,30 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       ])
     end
 
+    # [FW.17] Re-provision: свіжий журнал Flash-KV (лише 0x15) і стирання ОБОХ його
+    # сторінок — сусідка з вищою seq інакше перемогла б при Mount (03_05 §3.8).
+    it "erases both journal pages and writes the fresh journal page on a re-provision" do
+      commands = described_class.new(
+        session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
+        ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex,
+        kv_journal_words: FactoryFlashing::FlashKvImage.words(ota_hiwater: 0x2A)
+      ).flash_commands
+
+      expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -e 122 123 124 125")
+      expect(commands).to include(
+        "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803D000 " \
+        "0x0001FDE5 0x534B5631 0x00010F2E 0x46494E49 0x15A556DE 0x0000002A"
+      )
+      expect(commands.grep(/-w32 0x0803D8/)).to be_empty # стор. 123 лише стирається
+    end
+
+    it "refuses a journal image for a Queen — the re-provision form is Tree-only" do
+      expect {
+        described_class.new(session: session, device: gateway, aes_key_hex: aes_coap_hex, bcast_key_hex: bcast_hex,
+                            kv_journal_words: FactoryFlashing::FlashKvImage.words(ota_hiwater: 1))
+      }.to raise_error(ArgumentError, /Tree-only/)
+    end
+
     it "refuses Gilka A without bcast_key_hex — Солдат CCM-ери глухне до downlink'а (FW.2 (в))" do
       expect {
         described_class.new(

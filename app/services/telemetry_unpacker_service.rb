@@ -405,16 +405,16 @@ class TelemetryUnpackerService < ApplicationService
       return
     end
 
-    plaintext = decrypt_ccm_with_grace(key_record, aes_key,
-                                       did_bytes: did_bytes, frame_counter: frame_counter,
-                                       gossip_ts_lsb: gossip_ts_lsb, ciphertext: ciphertext, mic: mic)
+    plaintext, key_epoch = decrypt_ccm_with_grace(key_record, aes_key,
+                                                  did_bytes: did_bytes, frame_counter: frame_counter,
+                                                  gossip_ts_lsb: gossip_ts_lsb, ciphertext: ciphertext, mic: mic)
     unless plaintext
       Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed"
       SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
       return
     end
 
-    if frame_counter_replayed?(hex_did, frame_counter)
+    if frame_counter_replayed?(hex_did, frame_counter, key_epoch)
       Rails.logger.warn "🛡️ [FW.2] DID #{hex_did}: frame_counter=#{frame_counter} already seen within #{CCM_FC_NONCE_TTL.inspect} window."
       SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL.increment
       return
@@ -566,16 +566,19 @@ class TelemetryUnpackerService < ApplicationService
   # попередній, доки grace живий (0x9E ще не дійшов або запис не вдався).
   # ⚠️ Королеви це не стосується: її AES-CBC без MAC розшифровується будь-яким
   # ключем, тож там grace закриває re-provision (`HardwareKey#coap_binary_key`).
+  # Повертає [plaintext, епоха ключа, що пройшов MIC] або nil — епоха потрібна
+  # ключу анти-повтору: кадр, що пройшов ПОПЕРЕДНІМ ключем під grace після
+  # re-provision, належить старій епосі.
   def decrypt_ccm_with_grace(key_record, aes_key, **frame)
     plaintext = Cryptography::LoraCcm.decrypt(key: aes_key, **frame)
     key_record.clear_grace_period!
-    plaintext
+    [ plaintext, key_record.epoch ]
   rescue Cryptography::LoraCcm::AuthError
     previous = key_record.binary_previous_key
     return nil unless previous
 
     begin
-      Cryptography::LoraCcm.decrypt(key: previous, **frame)
+      [ Cryptography::LoraCcm.decrypt(key: previous, **frame), key_record.previous_key_epoch ]
     rescue Cryptography::LoraCcm::AuthError
       nil
     end
@@ -593,8 +596,12 @@ class TelemetryUnpackerService < ApplicationService
   # Firmware emits monotonic FC (`RTC_BKP_DR2`), so within the TTL a
   # duplicate means either LoRa mesh retransmission (benign, but we drop
   # to keep tokenomics idempotent) or an active replay attack.
-  def frame_counter_replayed?(hex_did, frame_counter)
-    nonce_key = "#{CCM_FC_NONCE_KEY_PREFIX}:#{hex_did}:#{frame_counter}"
+  # [FW.17] Епоха ключа в ключі кешу (⚖️ 2026-09-28, 03_05 §3.8): re-provision дає
+  # новий ключ і свіжий простір нонсів, а FC нової епохи, що збіглися б із FC старої
+  # за останні 25 год, інакше відкидались би як повтори — до доби тиші після
+  # кожного re-provision.
+  def frame_counter_replayed?(hex_did, frame_counter, key_epoch)
+    nonce_key = "#{CCM_FC_NONCE_KEY_PREFIX}:#{hex_did}:e#{key_epoch}:#{frame_counter}"
     inserted = Rails.cache.write(nonce_key, "1", expires_in: CCM_FC_NONCE_TTL, unless_exist: true)
     !inserted
   end

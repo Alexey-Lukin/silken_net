@@ -401,6 +401,16 @@ RSpec.describe Downlink::PendingQueueService do
     # НЕротованого ключа (напр. знятий `where.not(previous_aes_key_hex: nil)`),
     # проходила б зеленою: Солдат дістав би наказ ратчетитись у версію, якої
     # ніхто не роздавав.
+    # [FW.17] Grace після re-provision (версія 0, нова епоха — 03_05 §3.8) закриває MIC, а
+    # не 0x9E; `build_rotate_key_block(0)` кидав би, і без фільтра версії цей grace валив би
+    # poll-деривацію всього кластера, щойно гейт ратчета відчинять.
+    it "мовчить про grace після re-provision — версія 0 не є ротацією" do
+      allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
+      tree_key.update!(key_version: 0, epoch: 1)
+
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
+
     it "мовчить, коли гейт ВІДЧИНЕНО, але незавершеної ротації в кластері немає" do
       allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
       tree_key.update!(previous_aes_key_hex: nil)
