@@ -675,7 +675,7 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 #ifndef FW17_RATCHET_ENABLED
 #define FW17_RATCHET_ENABLED   0      // 🟡 фліп після FW.2 CCM + KV mount (bench)
 #endif
-#define FW17_KV_KEY_VERSION    0x13u  // Flash-KV: [version:16 | rsv:16] (03_01 §2.3.1)
+#define FW17_KV_KEY_VERSION    0x13u  // Flash-KV: [rsv:16 | version:16] — версія в молодших бітах (03_01 §2.3.1)
 
 // [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
 // 03_01 §2.3; K_ota тому переїхав на сторінку 125 — первісний 0x0803D000
@@ -839,7 +839,7 @@ static void FW17_Restore_Key_Version(uint32_t did)
     Key_Ratchet_Words_To_Bytes(aes_key, key_bytes);
     Key_Ratchet_Apply(key_bytes, lora_key_version, did);
     Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
-    MX_CRYP_Init(); // CRYP тепер на K_v — інакше Королеву не почуємо
+    MX_CRYP_Init(); // амбієнт лишається KEYB; K_v бере лише CCM-скоуп (MX_CRYP_Init_CCM ставить pKey явно)
 }
 #endif // FW17_RATCHET_ENABLED
 
