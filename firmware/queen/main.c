@@ -134,6 +134,8 @@
 
 // [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
 #define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
+// ⚖️ FW.64 (founder 2026-09-28): 600000 (10 хв) — ПАРОЮ з Rails WORST_CASE_POLL_INTERVAL_S
+// = 660 і разом з актуаторною прошивкою ARCH.75, не раніше (docs/03_02 §4а).
 #define FLUSH_INTERVAL_MS     3600000   // Інтервал скидання кешу (1 година)
 #define FLUSH_JITTER_MAX_MS   60000    // Максимальний джиттер для десинхронізації (0-60 секунд)
 #define RNG_FALLBACK_XOR_MASK 0xA5A5A5A5UL // XOR-маска для fallback-ентропії при відмові HRNG
