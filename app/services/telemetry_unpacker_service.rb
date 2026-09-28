@@ -472,9 +472,9 @@ class TelemetryUnpackerService < ApplicationService
     # Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (ARCH.41-C
     # grace) → атрибут відсутній, numeric branch чесно пропускається.
     # Транзієнт як lorenz_temperature_c — стрипається перед persist.
-    if device_z_raw != CCM_DEVICE_Z_NONE
-      log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE
-    end
+    carried = device_z_raw != CCM_DEVICE_Z_NONE
+    log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE if carried
+    SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL.increment(labels: { carried: carried.to_s })
 
     # [E.63 (г)] EMA-delta_t з шифртексту (wire-rev2.1 bytes 20..21) —
     # контракт «wire = вхід GP»: живить точний stateless recompute у

@@ -194,6 +194,17 @@ module SilkenNet
                  "[FW.2; diagnostic tier: no alert until TELEMETRY_CCM_ENABLED ships fleet-wide — the consumer is its ~1:1 ratio against telemetry_processed_total]"
     )
 
+    # [FW.31 Gate D] Прилад, який 03_04 §7.1 називає для гейта «device_z у ≥ 95 %
+    # пакетів». Рахується в самій розвилці, а не відношенням до decrypt_ok: той
+    # інкрементується ДО перевірки шуму сенсора, тож завищив би покриття на частку
+    # відкинутих кадрів.
+    TELEMETRY_CCM_DEVICE_Z_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_ccm_device_z_total,
+      docstring: "FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z " \
+                 "[FW.31; diagnostic tier: no alert until the CCM flip — the consumer is the Gate D ratio carried=true / all >= 95%]",
+      labels: [ :carried ]
+    )
+
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
     # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
     # in production is a security signal worth paging on.

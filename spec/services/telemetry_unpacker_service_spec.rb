@@ -1873,6 +1873,22 @@ end
       expect(Rails.logger).not_to have_received(:warn).with(/Z Divergence Numeric/)
     end
 
+    # [FW.31 Gate D] Прилад гейта «device_z у ≥ 95 %» рахує саму розвилку: обидві
+    # гілки, одна мітка на кадр — інакше частка не має знаменника.
+    it "counts every frame that reaches the device_z branch, by whether it carried device_z" do
+      allow(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL).to receive(:increment)
+
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                           dt: 100, status: 0, ttl: 3, fc: 49, device_z: 25.0))
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                           dt: 100, status: 0, ttl: 3, fc: 50, device_z: nil))
+
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL)
+        .to have_received(:increment).with(labels: { carried: "true" }).once
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL)
+        .to have_received(:increment).with(labels: { carried: "false" }).once
+    end
+
     it "surfaces diag-byte bits as Prometheus signals (FW.18b/FW.42/FW.2)" do
       allow(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to receive(:increment)
       allow(SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL).to receive(:increment)

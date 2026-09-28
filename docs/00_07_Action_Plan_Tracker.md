@@ -1090,7 +1090,7 @@
 - **P2** · 👤 · 🟢 · → [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
 - **Стан:** Числовий DCI-band (`check_z_divergence!` + `DEFAULT_DCI_EPSILON=0.001`, два ENV-флаги default-off) ДОПОВНЮЄ категоричний check → ловить replay з валідним StatusByte, але хибною Z-magnitude. **Gate L machine-closed без заліза**: N=10 000 зчеплених кейсів mruby-VM↔CRuby = **бітова рівність 10000/10000, max|Δz|=0** (ARM-плече нульове за FW.55 QEMU byte-parity; історичні «~1e-14» superseded за pinned `MRB_NO_BOXING`) → ε=0.001 = чиста страховка. device_z wire-дім готовий (FW.2 wire-rev2 bytes 16..17, q=2⁻⁹). Канон [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor).
 - [ ] 🔗 silicon-хвіст Gate L = **дім FW.55** (той самий one-command SWD-дамп закриває FW.7/FW.19/FW.31 разом — консолідовано в один чекбокс, не окремий; vilize 07-11)
-- [ ] 👤 flip-гейти D/C/P/G (staging canary → production): виміряти ≥95% device_z-покриття після CCM-фліпу, тоді canary
+- [ ] 👤 flip-гейти D/C/P/G (staging canary → production): виміряти ≥95% device_z-покриття після CCM-фліпу, тоді canary. Прилад Gate D — `silkennet_telemetry_ccm_device_z_total{carried}` (2026-09-28; доти канон називав метрику, якої не існувало, тож у день фліпу цю ногу не було б чим виконати) — [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - **P2** · 🤖 · 🟢 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
