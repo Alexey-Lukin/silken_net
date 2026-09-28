@@ -1561,7 +1561,7 @@ supervisor_approved/active ──fail_with(reason)──► failed
 
 `approve` має guard `supervisor_present?` (`supervisor_id` присутній і ≠ `operator_id`).
 
-**Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `[0,1,2]`; `se_serial_hex` format (18 HEX).
+**Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `RDP_LEVELS` (`[0, 1]` — L2 конвеєр не палить, ⚖️ SEC.2 2026-09-28); `se_serial_hex` format (18 HEX).
 
 > Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`SecureElementProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
 

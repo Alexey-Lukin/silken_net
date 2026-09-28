@@ -811,8 +811,8 @@ Factory Flashing (поточна Гілка A, TRL 6/7 — pilot ≤ 10k):
 | Рівень | Назва | Захист | Використання |
 |--------|-------|--------|-------------|
 | **RDP Level 0** | Відкритий (за замовчуванням) | Відсутній — Flash читається через SWD без обмежень | Розробка та налагодження |
-| **RDP Level 1** | Захист виробництва | SWD заблоковано для зчитування. При спробі зняти — **чіп апаратно і миттєво стирає всю Flash та SRAM** | Масова партія (рекомендовано) |
-| **RDP Level 2** | Абсолютний моноліт ("Drifting Ice") | Інтерфейс SWD фізично вимикається всередині кристала **назавжди** (необоротно). Перепрошивка можлива лише через OTA по радіо | Фінальне виробниче розгортання |
+| **RDP Level 1** | Захист виробництва | SWD заблоковано для зчитування. При спробі зняти — **чіп апаратно і миттєво стирає всю Flash та SRAM** | Пілотна партія і spare-резерв серії — зворотний (⚖️ врізка «Порядок паління…» нижче, §3.6) |
+| **RDP Level 2** | Абсолютний моноліт ("Drifting Ice") | Інтерфейс SWD фізично вимикається всередині кристала **назавжди** (необоротно). Перепрошивка можлива лише через OTA по радіо | Серійна (продакшн) партія — останнім кроком §3.6, поза конвеєром |
 
 > **Про назву "Drifting Ice":** авторська метафора проєкту — чіп стає "крижиною, що дрейфує у вічній мерзлоті": повністю ізольований, але живий. Офіційна назва STM32: **RDP Level 2 (Permanent Protection)**.
 
@@ -893,9 +893,10 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 **Послідовність активації (per device, factory line):**
 
 ```bash
-# 1. Final firmware flash (тестова прошивка вже видалена)
-STM32_Programmer_CLI -c port=SWD freq=4000 \
-    -d firmware/soldier/build/soldier.bin 0x08000000 \
+# 1. Final firmware flash (тестова прошивка вже видалена) — та сама -c-форма,
+#    що в кожному виклику конвеєра й стендового 00_flash.sh
+STM32_Programmer_CLI -c port=SWD mode=UR \
+    -w firmware/soldier/build/soldier.bin 0x08000000 \
     -v
 
 # 2. Провіжн + IWDG-заморозка — ОДИН прогін конвеєра на RDP_LEVEL=0 (SEC.3, 03_06 §2
@@ -955,7 +956,7 @@ STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xCC
 
 > ✅ **SEC.6 ADR (2026-06-07) — SE050 soft-freeze + true-DePIN ladder.**
 >
-> **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L2, канон-мінімум 03_06 §5). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
+> **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L1, канон-мінімум 03_06 §5; L2 — лише серія, ⚖️ §3.3). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
 >
 > **True-DePIN ladder («голос дерева»):** L0 custodial → L1 Queen-attest → L2 per-tree (SE050 Ed25519 + Merkle, energy-gated). Повний ladder (рунги/гейти/статус/енергобюджет) — канон [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline). §3.7 володіє лише SE/крипто-частиною (Slot-0 AES, Slot-1 Ed25519 keygen).
 >
