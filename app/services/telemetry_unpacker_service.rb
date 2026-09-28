@@ -261,7 +261,8 @@ class TelemetryUnpackerService < ApplicationService
     # [SEC.10] Frame Counter anti-replay для panic packets.
     # Соломонова сторожа панічного каналу: panic_frame_counter (BE у байтах
     # 14..15 = pad_data[2..3]) інкрементується soldier'ом перед кожним
-    # emergency TX. Тут ми ловимо повторюваний nonce через Redis SETNX —
+    # emergency TX. Тут ми ловимо повторюваний nonce через Rails.cache SET NX
+    # (`panic_replayed?`; у проді Solid Cache, НЕ Redis) —
     # replay одного «chainsaw detected» = false fire alert + евакуація +
     # втрата довіри до системи. Поза-panic пакети нічого не платять
     # (counter-перевірка пропускається).
