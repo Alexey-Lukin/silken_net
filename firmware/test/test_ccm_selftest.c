@@ -32,6 +32,13 @@ int main(void) {
 
     int failed = Ccm_Run_Self_Test(&hcryp, report);
 
+    /* Гігієна: сусідній sym-KAT мусить міряти бойову конфігурацію, а не лишки
+     * CCM (width-unit'и BYTE, висячі B0/Header). */
+    int hygiene = hcryp.Init.DataWidthUnit == CRYP_DATAWIDTHUNIT_WORD &&
+                  hcryp.Init.HeaderWidthUnit == CRYP_HEADERWIDTHUNIT_WORD &&
+                  hcryp.Init.B0 == NULL && hcryp.Init.Header == NULL;
+    report("hygiene: WORD width-units, no dangling B0/Header", hygiene);
+
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("KAT vectors failed: %d\n", failed);
     /* On host the mock IS OpenSSL, so this MUST be 0. A non-zero here means a

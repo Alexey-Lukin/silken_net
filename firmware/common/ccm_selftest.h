@@ -129,6 +129,16 @@ static inline int Ccm_Run_Self_Test(CRYP_HandleTypeDef *hcryp,
         if (!pass) failed++;
         if (report) report(v->name, pass);
     }
+    /* Гігієна — дзеркало MX_CRYP_Restore_From_CCM, якої в ECB-збірці немає:
+     * KAT лишав би в Init вказівники на мертвий стек-фрейм Ccm_Kat_Run_One і
+     * width-unit'и BYTE, а MX_CRYP_Init викликача їх не чіпає. Без цього
+     * наступний sym-KAT міряв би НЕ бойову конфігурацію (32B, WORD), чий
+     * word-swap він і ловить, а решта прогону жила б із липким BYTE. */
+    hcryp->Init.B0              = NULL;
+    hcryp->Init.Header          = NULL;
+    hcryp->Init.HeaderSize      = 0;
+    hcryp->Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_WORD;
+    hcryp->Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
     return failed;
 }
 

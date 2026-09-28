@@ -261,12 +261,14 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 // [FLASH_KEY_MAGIC:4][key[0]:4]...[key[3]:4] = 20 байт (post-ARCH.42; було 36 для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
-// [FW.2 гейт (в), двоключова модель] Семантика цього слота в CCM-еру:
+// [FW.2 гейт (в), двоключова модель] Семантика цього слота в ОБОХ ерах (з
+// 2026-09-28 ECB-білд Солдата теж живе на KEYB, 03_05 §3.1):
 // значення = cluster control-plane ключ (KEYB-деривація,
 // HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key")) — Королева
-// шифрує ним увесь downlink-broadcast і читає uplink 0x55/0x56; session-
-// ключів Солдатів вона НЕ тримає (сліпий кур'єр, rx_route.h). Фабрика
-// CCM-ери пише сюди broadcast-значення (command_builder Gateway-гілка);
+// шифрує ним увесь downlink-broadcast і читає uplink 0x55/0x56 (в ECB-ері —
+// і всю телеметрію, бо ECB-шар знімає вона); session-
+// ключів Солдатів вона НЕ тримає (сліпий кур'єр, rx_route.h). Конвеєр
+// пише сюди broadcast-значення в будь-якій ері (command_builder Gateway-гілка);
 // сам код нижче незмінний — міняється лише ЩО прошивається.
 uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (SE = SE050 — 03_05 §3.7)
 

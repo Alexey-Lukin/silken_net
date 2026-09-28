@@ -27,6 +27,13 @@ done
 # Кожен виклик CLI — окремий процес, тож `-c` несе КОЖЕН рядок: з'єднання
 # між процесами не живе, а «disconnect» окремим рядком не існує.
 CONNECT="-c port=SWD mode=UR"
+# Станція з кількома ST-LINK: без `sn=` кожен рядок бере зонд index 0 заново (UM2237) —
+# той самий STLINK_SN, що й конвеєр (FactoryFlashing::CommandBuilder.connect); лише
+# алфанумерика, бо рядок іде в eval.
+if [ -n "${STLINK_SN:-}" ]; then
+  [[ "$STLINK_SN" =~ ^[0-9A-Za-z]{1,64}$ ]] || { echo "STLINK_SN: лише алфанумерика"; exit 2; }
+  CONNECT="$CONNECT sn=$STLINK_SN"
+fi
 
 cmds=()
 if [ -n "$ELF" ]; then

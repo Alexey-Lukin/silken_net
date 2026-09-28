@@ -15,8 +15,14 @@ FAIL однозначно вказує на HAL/кремній.
     02_selftest_attest.py --elf soldier.elf [--sn SN]  # прочитати глобали через SWD
     02_selftest_attest.py --self-check                 # перевірити парсер на еталонному виводі
 
-Значення глобала: -1 = POST не виконувався (збірка без -DCCM_SELFTEST), 0 = PASS,
-N > 0 = N KAT-векторів упало.
+Значення глобала: -1 = startup відпрацював, а POST ні (плата не дійшла до нього),
+0 = PASS, N > 0 = N KAT-векторів упало. Збірку без -DCCM_SELFTEST видає відсутність
+символу в .elf, не значення.
+
+Чому mode=UR, а не HOTPLUG: Солдат майже весь час у STOP2, а DBG_STOP прошивка не
+вмикає — у сні SWD до нього не достукається. SRAM переживає скид, а UR зупиняє ядро
+на векторі скиду ДО startup, тож читаємо значення, яке POST лишив у попередньому
+прогоні. Тому: живлення → дати завантажитись (POST іде першим у main) → скрипт.
 """
 
 from __future__ import annotations
@@ -32,7 +38,8 @@ PLAN = """\
 2. firmware/scripts/bench/00_flash.sh --elf soldier.elf --execute
 3. Дати платі завантажитись: POST іде в main() до головного циклу.
 4. 02_selftest_attest.py --elf soldier.elf  → читання обох глобалів через SWD
-   (mode=HOTPLUG — без скиду, тож результат POST не зачеплено) → вердикт.
+   (mode=UR — ядро стає на векторі скиду до startup, SRAM зберігає результат POST;
+   HOTPLUG до сплячого в STOP2 Солдата не достукається) → вердикт.
 5. PASS → фліп FW2_CCM_ENABLED (firmware) + TELEMETRY_CCM_ENABLED (backend) за
    чеклистом 03_05 «FW.2 flip-checklist» — і не раніше за його грошовий гейт (ARCH.8).
 """
@@ -61,7 +68,7 @@ def r32_word(stdout: str, addr: int) -> int | None:
 
 def verdict(values: dict[str, int]) -> tuple[int, str]:
     if any(v == -1 for v in values.values()):
-        return 3, "POST не виконувався — збірка без -DCCM_SELFTEST або плата не дійшла до main()"
+        return 3, "POST не виконувався — startup відпрацював, а до POST у main() плата не дійшла"
     failed = {k: v for k, v in values.items() if v != 0}
     if failed:
         return 1, f"FAIL: {failed} — HAL/endianness/errata, CCM не вмикати"
@@ -98,15 +105,19 @@ def main() -> int:
         return 0
 
     nm_out = subprocess.run([args.nm, args.elf], capture_output=True, text=True, check=True).stdout
-    connect = ["-c", "port=SWD", "mode=HOTPLUG"] + ([f"sn={args.sn}"] if args.sn else [])
+    connect = ["-c", "port=SWD", "mode=UR"] + ([f"sn={args.sn}"] if args.sn else [])
     values: dict[str, int] = {}
     for name in SYMBOLS:
         addr = symbol_address(nm_out, name)
         if addr is None:
             print(f"❌ {name} немає в {args.elf} — збірка без -DCCM_SELFTEST")
             return 3
-        out = subprocess.run([PROGRAMMER, *connect, "-r32", f"0x{addr:08X}", "4"],
-                             capture_output=True, text=True).stdout
+        run = subprocess.run([PROGRAMMER, *connect, "-r32", f"0x{addr:08X}", "4"],
+                             capture_output=True, text=True)
+        if run.returncode != 0:
+            print(f"❌ CLI не підключився (exit {run.returncode}) — зонд, NRST джиґа, живлення:\n{run.stdout[-300:]}")
+            return 2
+        out = run.stdout
         value = r32_word(out, addr)
         if value is None:
             print(f"❌ вивід -r32 для {name} не розпарсився — звір формат CLI (RUNBOOK 1.3):\n{out[-300:]}")

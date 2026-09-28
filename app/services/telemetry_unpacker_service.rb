@@ -474,7 +474,10 @@ class TelemetryUnpackerService < ApplicationService
     # Транзієнт як lorenz_temperature_c — стрипається перед persist.
     carried = device_z_raw != CCM_DEVICE_Z_NONE
     log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE if carried
-    SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL.increment(labels: { carried: carried.to_s })
+    # Panic-кадр — не рядок виміру (DCI його не судить), тож у знаменник Gate D не входить.
+    unless log_attributes[:panic]
+      SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL.increment(labels: { carried: carried.to_s })
+    end
 
     # [E.63 (г)] EMA-delta_t з шифртексту (wire-rev2.1 bytes 20..21) —
     # контракт «wire = вхід GP»: живить точний stateless recompute у
@@ -910,7 +913,7 @@ class TelemetryUnpackerService < ApplicationService
           "drift=#{drift}, ε=#{numeric_dci_epsilon}. Numeric DCI mismatch."
         )
         SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
-        SilkenNet::Metrics::DCI_NUMERIC_REJECTIONS_TOTAL.increment
+        SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL.increment
       end
     end
 

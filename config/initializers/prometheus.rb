@@ -195,9 +195,10 @@ module SilkenNet
     )
 
     # [FW.31 Gate D] Прилад, який 03_04 §7.1 називає для гейта «device_z у ≥ 95 %
-    # пакетів». Рахується в самій розвилці, а не відношенням до decrypt_ok: той
-    # інкрементується ДО перевірки шуму сенсора, тож завищив би покриття на частку
-    # відкинутих кадрів.
+    # пакетів». Рахується в самій розвилці, без panic-кадрів (DCI їх не судить). Стара
+    # форма «1 − сентинели / decrypt_ok» завищила б покриття: decrypt_ok інкрементується
+    # ДО перевірки шуму сенсора, тож відкинуті кадри сиділи б у знаменнику, але ніколи
+    # не в сентинелях.
     TELEMETRY_CCM_DEVICE_Z_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_ccm_device_z_total,
       docstring: "FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z " \
@@ -207,9 +208,11 @@ module SilkenNet
 
     # [FW.31 Gate C] Числова DCI-гілка (drift > ε). Доти вона била лише в спільний
     # TELEMETRY_FRAUD_DETECTED_TOTAL, куди пишуть вісім місць, тож канарку Gate C
-    # (03_04 §7.1: «очікувано 0») не було чим прочитати окремо.
-    DCI_NUMERIC_REJECTIONS_TOTAL = REGISTRY.counter(
-      :silkennet_dci_numeric_rejections_total,
+    # (03_04 §7.1: «очікувано 0») не було чим прочитати окремо. MISMATCH, не rejection:
+    # гілка лише сигналить, рядок персиститься. ⚠️ Стеля: гілка стоїть ДО відновлення
+    # ARCH.41, тож рахує й кадри, які далі врятує time_unsynced_fallback.
+    DCI_NUMERIC_MISMATCH_TOTAL = REGISTRY.counter(
+      :silkennet_dci_numeric_mismatch_total,
       docstring: "FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon " \
                  "[FW.31; diagnostic tier: no alert until GAIA_DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
     )

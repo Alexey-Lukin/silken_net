@@ -74,7 +74,8 @@ module FactoryFlashing
     # @param bcast_key_hex [String, nil] 32 hex; required (обидва типи й обидві
     #   гілки) — FW.2 (в) cluster control-plane ключ (derive_broadcast_key):
     #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
-    #   на boot, а Солдат CCM-ери глухне до downlink'а).
+    #   на boot, а Солдат без KEYB в обох ерах мовчить Королеві: з 2026-09-28 KEYB —
+    #   амбієнт і ECB-білда, тож глухне не лише downlink, а й аплінк).
     def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,
                    probe_sn: nil)
       @session = session
@@ -130,7 +131,7 @@ module FactoryFlashing
       raise ArgumentError, "aes_key_hex must be hexadecimal" unless @aes_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
 
       # [FW.2 (в)] Обидва типи й обидві гілки: без KEYB-значення транскрипт дає
-      # або цеглу (Queen без KEYL), або downlink-глухого Солдата в CCM-еру.
+      # або цеглу (Queen без KEYL), або Солдата, що в обох ерах не говорить із Королевою.
       raise ArgumentError, "bcast_key_hex is required (32 hex, FW.2 broadcast key)" unless @bcast_key_hex.length == 32
       raise ArgumentError, "bcast_key_hex must be hexadecimal" unless @bcast_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
 
@@ -159,8 +160,9 @@ module FactoryFlashing
         # лишає dual-gate fail-closed і жоден OTA не застосовується.
         words.merge!(block_words(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
         # [FW.2 (в)] KEYB — cluster control-plane (та сама стор. 125, +40):
-        # без нього Солдат CCM-ери деградує у fallback (амбієнт = KEYL) і
-        # downlink Королеви для нього нечитний.
+        # без нього Солдат (в обох ерах — з 2026-09-28 KEYB амбієнт і ECB-білда)
+        # деградує у fallback (амбієнт = KEYL): Королева не прочитає його аплінк,
+        # а він — її downlink.
         words.merge!(block_words(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
       else
         # Gateway: 32-byte CoAP AES-256 key + LoRa KEYL = broadcast-значення

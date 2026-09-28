@@ -1859,6 +1859,7 @@ int main(void)
   // → дозволено flip FW2_CCM_ENABLED; >0 → HAL/endianness/errata → CCM не вмикати.
   // KAT-вектори: firmware/common/ccm_kat_vectors.h (єдине джерело, спільне з host).
   g_ccm_selftest_failed = Ccm_Run_Self_Test(&hcryp, NULL);
+  MX_CRYP_Init(); // бойова конфігурація (ECB, 32B) ПЕРЕД sym-KAT — саме її він і міряє
   // [ARCH.42] POST транзитних шляхів: ECB-128 (LoRa) + CBC-256 (CoAP)
   // проти NIST SP 800-38A. FAIL тут = DataType/endianness-конфіг CRYP видає
   // НЕ-OpenSSL байти (DATATYPE_32B word-swap) → бекенд бачив би сміття;
