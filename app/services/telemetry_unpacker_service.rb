@@ -409,7 +409,9 @@ class TelemetryUnpackerService < ApplicationService
                                                   did_bytes: did_bytes, frame_counter: frame_counter,
                                                   gossip_ts_lsb: gossip_ts_lsb, ciphertext: ciphertext, mic: mic)
     unless plaintext
-      Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed"
+      # [FW.17 DR] Сирий запис — вхід `rake keys:probe_epoch` (06_06 §5.8): після відкату БД
+      # саме ці кадри кажуть, яку епоху й версію тримає вузол. Шифротекст і MIC і так летіли ефіром.
+      Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed chunk=#{chunk.unpack1('H*')}"
       SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
       return
     end

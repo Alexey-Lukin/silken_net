@@ -1729,6 +1729,20 @@ end
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
     end
 
+    # [FW.17 DR] Після відкату БД записи з MIC-фейлом — єдиний вхід `rake keys:probe_epoch`
+    # (06_06 §5.8): без байтів у рядку логу інструменту нема з чим працювати.
+    it "logs the raw record on a MIC failure — the DR epoch probe reads exactly this" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 44)
+      tampered = chunk.dup
+      tampered.setbyte(25, tampered.getbyte(25) ^ 0x80)
+      allow(Rails.logger).to receive(:warn)
+
+      described_class.call(tampered)
+
+      expect(Rails.logger).to have_received(:warn).with(a_string_including("chunk=#{tampered.unpack1('H*')}"))
+    end
+
     it "rejects a chunk whose cleartext gossip byte was tampered (AAD under MIC)" do
       # [wire-rev2] gossip_ts_lsb (chunk byte 5) їде відкритим для
       # сусідів-Солдатів, але бекенд автентифікує його MIC'ом.

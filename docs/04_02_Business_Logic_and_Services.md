@@ -593,6 +593,16 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Тест coverage** | `spec/services/downlink/command_frame_spec.rb` — golden-кадри DL1–DL3, ті самі, що відкриває прошивка (`CCM_KAT_DOWNLINK`, `test_downlink_ccm.c`) |
 | **Cross-ref** | [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_02 §5б`](03_02_Queen_Gateway_Firmware) (черга Королеви), [`00_07` — FW.17](00_07_Action_Plan_Tracker) |
 
+### `Security::KeyEpochProbe` 🔐 [FW.17]
+
+| | |
+|---|---|
+| **Файл** | `app/services/security/key_epoch_probe.rb` + `lib/tasks/keys.rake` (`keys:probe_epoch` · `keys:bump_dlfc`) |
+| **Вхід** | `.probe(frame_hex, ahead:, max_version:)` · `.repair!(finding)` · `.bump_downlink_frame_counters!(margin:, device_uid:)` |
+| **Що робить** | DR ключів дерев після відкату БД ([`06_06 §5.8`](06_06_Disaster_Recovery_and_Backup)). Пробне розшифрування захопленого запису (30 Б ефіру або 31 Б запису батча — з рядка логу MIC-фейлу `TelemetryUnpackerService`) ключами «епоха `e…e+ahead` × версія ратчета `0…max_version`»; MIC під знайденим ключем — доказ, тож `repair!` переводить рядок на нього, закриває grace і пише `hardware_key_recovered` в аудит-ланцюг (без ключового матеріалу). Ключ процес не покидає — назовні лише `(epoch, key_version)`. Підйом DLFC: `+ margin` (1…65 535, стеля u32), лише рядки дерев. |
+| **Тест coverage** | `spec/services/security/key_epoch_probe_spec.rb` |
+| **Cross-ref** | [`06_06 §5.8`](06_06_Disaster_Recovery_and_Backup), [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security) (епоха), [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security) (DLFC) |
+
 ### `Security::WeakKeyDetector` 🔐 [SEC.9]
 
 | | |
