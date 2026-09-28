@@ -878,8 +878,16 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - [ ] Provisioning HKDF flow завершено (§Hardcoded AES Key mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
 - [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
 - [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (SEC.8 §ECB Restoration Race у цьому доку ✅).
+- [ ] **[SEC.15] IWDG заморожено у STOP2/STANDBY** (`IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0`), і дамп `-ob displ` це показує: без заморозки LSI-пес ресетить Солдата посеред кожного багатогодинного сну, а L2 зафіксував би це назавжди. Конвеєр `factory:execute` пише цей крок сам, перед RDP ([`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning), крок d).
+- [ ] **[SEC.15] Армінг RTC-WUT — закоммічена ревʼюйована функція (не регенерований `.ioc`) і bench-verified багатогодинне пробудження** (RUNBOOK §4.6): після L2 заморожений пес робить WUT ЄДИНИМ backstop живучості, тож вузол, що не прокидається, — цегла без recovery ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)).
+- [ ] **WRP сторінок 124–125 виставлено** ([`03_06`](03_06_Factory_Flashing_and_Key_Provisioning), «Захист Flash Key Sector (WRPROT)») — після self-test, ДО L2 (порядок — врізка «Порядок паління…» у §3.3).
+- [ ] **`BOOT_LOCK`: рішення ухвалено** ([`00_07` — SEC.24](00_07_Action_Plan_Tracker), чи палити взагалі) і, якщо «палити», спалено між WRP і L2: він відрубує системний бутлоадер, тож SEC.3-флоу мусить завершитись до нього.
 - [ ] Final firmware version task-snapshot задокументовано git tag `vX.Y.Z` (backend-release у Sentry Kamal несе сам — `KAMAL_VERSION`, [`06_03 §1.2`](06_03_Prometheus_Observability); `RELEASE_VERSION` — лише оверрайд для не-Kamal процесів, не носій прошивки).
 - [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний). ⚖️ **founder 2026-09-27: spare-резерв покривається серійним Parylene, а маска лишає відкритими SWD-пади на ВСІХ платах — якщо coater підтвердить маскування дрібних падів (П. 2 листа [`node_parylene_rfq`](protocols/procurement/node_parylene_rfq.md)); інакше spare іде маршрутом пілоту (1A33 вручну, §3.3 п. 3).** **Підстава:** spare існує для налагодження ПОЛЬОВОГО флоту під Parylene, тож інше покриття робило б її нерепрезентативною саме там, де покриття важить (акустичний фронт TinyML, волога); під шаром, що закриває SWD-пади, її L1 не купує нічого; L2-платам відкриті пади не шкодять. **Ціна:** на кожній серійній платі SWD-пади без шару (усередині IP68-капсули), а в лист повернувся пункт «e» про ці пади. **Найслабша ланка:** відповіді coater'а ще немає — лист не надіслано; а якщо spare виявиться залишком пілотних плат (чеклист не каже), питання зникає. Доти того ж дня тут стояв делегований присуд «маршрутом пілоту» — знятий, бо не зважив цієї альтернативи. ⚖️ **Делеговано 2026-09-27 (SEC.24): за гілки (A) spare-плати їдуть до coater'а БЕЗ ключів і провіжаться (ключі → RDP L1) після повернення через ті самі відкриті SWD-пади.** **Підстава:** ціна, якої гілка (A) не назвала при поданні (адверсарне рев'ю того ж дня): L1-плата з ключами опинилась би в третьої сторони, а ST не визнає RDP L1 root of trust (UM2767 §4.1); провіжн після покриття цю ціну прибирає, не змінюючи присуду founder'а. **Ціна:** друга SWD-сесія на кожну spare-плату після повернення й окремий облік партії «покрита, не провіжена». **Найслабша ланка:** SWD-контакт через пади, що пройшли CVD-камеру під маскою, не перевірено — залишок маски чи забруднення падів дасть збій на першій же spare-платі.
+
+> ⛔ **Не запускай `factory:execute` із `RDP_LEVEL=2` напряму.** Транскрипт конвеєра — ключі → IWDG → RDP ОДНИМ прогоном, тож на L2 між ключами й RDP не лишається місця ні для self-test, ні для WRP, ні для `BOOT_LOCK`, яких вимагає ухвалений порядок (§3.3, делеговано 2026-09-27). Продакшн-L2 = конвеєр на L1 (крок 2), далі кроки 3–7 нижче. Чи прибрати L2-шлях із конвеєра взагалі — ⚖️ [`00_07` — SEC.2](00_07_Action_Plan_Tracker).
+>
+> ⛔ **PCROP на сектор ключів не ставити** — це не «опційний бар'єр»: PCROP-зона дозволяє лише виконання коду, а читання даних процесором із неї дає PCROP read error (`FLASH_SR_RDERR`; HAL `FLASH_FLAG_RDERR` — «FLASH PCROP read error flag»), тоді як `Load_AES_Key()` читає ключі саме як ДАНІ, тож вузол лишився б без власних ключів. Від зчитування ключ захищає RDP, від перезапису — WRP. **Найслабша ланка:** у дереві стоїть коментар прапорця HAL, а не дослівний текст RM0461 про PCROP.
 
 **Послідовність активації (per device, factory line):**
 
@@ -889,27 +897,26 @@ STM32_Programmer_CLI -c port=SWD freq=4000 \
     -d firmware/soldier/build/soldier.bin 0x08000000 \
     -v
 
-# 2. Provisioning: записати unique_aes_key через protected sector
-#    (тимчасово RDP Level 0, ключ деривується HKDF(master_key, device_uid))
-STM32_Programmer_CLI -c port=SWD \
-    -d provisioning/<device_uid>.key 0x0803E000 \
-    -v
-
-# 3. Burn Option Bytes: PCROP лок на сектор з ключем (опційно — додатковий бар'єр)
-STM32_Programmer_CLI -c port=SWD \
-    -ob PCROP1A_STRT=0x0803E000 PCROP1A_END=0x0803EFFF PCROP_RDP=DISABLE
-
-# 4. Активація RDP Level 1 (дозволяє sanity check у полі)
-STM32_Programmer_CLI -c port=SWD -ob RDP=0xBB
+# 2. Провіжн + IWDG-заморозка + RDP Level 1 — ОДИН прогін конвеєра (SEC.3, 03_06 §1
+#    крок d): UID-read (wrong-board guard) → ключі per-word -w32 (стор. 124–125) →
+#    -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0 → -ob RDP=0xBB → disconnect.
+#    Сесію створює factory:flash (RDP_LEVEL=1 — дефолт), схвалює factory:approve.
+EXECUTE=1 bin/rails "factory:execute[<session_id>]"
 # Очікуваний результат: наступний Read-Out → масове стирання Flash + SRAM
 
-# 5. Smoke test: чи MCU bootує? чи telemetry виходить через LoRa? чи приймається OTA?
-#    (24-годинне burn-in у camera оточення з симульованим ENV)
+# 3. Smoke test (self-test): чи MCU bootує? чи telemetry виходить через LoRa?
+#    чи приймається OTA? (24-годинне burn-in у camera оточення з симульованим ENV)
 
-# 6. ✋ STOP — рішення про RDP-2 ухвалюється офіційно (Engineering signoff)
-#    На цьому етапі ще можна перепрошити через SWD (RDP-1 = write-allowed)
+# 4. ✋ STOP — рішення про RDP-2 ухвалюється офіційно (Engineering signoff; pre-flight
+#    checklist вище). На цьому етапі ще можна перепрошити через SWD (RDP-1 = write-allowed)
 
-# 7. Активація RDP Level 2 — НЕЗВОРОТНО
+# 5. WRP сторінок ключів 124–125 — ПІСЛЯ self-test, ДО L2 (після L2 option bytes
+#    read-only). ⚠️ Живого синтаксису в дереві немає — імена полів звір із `-ob displ`
+#    жертовного чипа, перш ніж писати їх на серію.
+
+# 6. [BOOT_LOCK] — лише якщо ⚖️ SEC.24 скаже «палити»
+
+# 7. Активація RDP Level 2 — НЕЗВОРОТНО, ОСТАННІМ
 STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 # ⚠️ ВСЕ. SWD назавжди вимкнений. Перепрошивка лише через OTA.
 ```

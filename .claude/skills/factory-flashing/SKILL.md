@@ -33,7 +33,7 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 3. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
 4. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
 5. **ATECC (Гілка B + Tree only)** — `SecureElementProvisioner` emits the I²C ATCA write-zone transcript.
-6. **Commands** — `CommandBuilder#flash_commands` (key writes + RDP + disconnect; connect/UID-read already ran as preflight).
+6. **Commands** — `CommandBuilder#flash_commands` (key writes + IWDG freeze [SEC.15] + RDP + disconnect; connect/UID-read already ran as preflight). ⛔ One run = keys → IWDG → RDP, so a live `RDP_LEVEL=2` run skips the self-test and WRP that the ratified burn order puts between keys and L2 — production L2 goes pipeline-at-L1 → `03_05 §3.6` steps.
 7. **Execute** — `Executor` (dry-run prints; `--execute` spawns subprocesses).
 8. **Audit** — `AuditTrail.record!` → chain-hashed `AuditLog` (metadata incl. `silicon_uid_hex`) + `MaintenanceRecord`; `complete!` (or `fail_with!` + rollback).
 

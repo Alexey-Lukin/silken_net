@@ -84,7 +84,7 @@ module FactoryFlashing
       ]
     end
 
-    # Тіло гілки: key-writes + RDP + disconnect (без preflight).
+    # Тіло гілки: key-writes + IWDG-заморозка + RDP + disconnect (без preflight).
     # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] Набір Protected-Flash-ключів
     # ОДИН для обох гілок: кожен із них має MCU-споживача (KEYL/KEYB — CRYP
     # радіо-AES, LSED — Lorenz-VM, K_ota — OTA-HMAC зі стор. 125), а SE за
@@ -149,9 +149,21 @@ module FactoryFlashing
         out.concat(write_block(FLASH_EDSK_ADDR, EDSK_MAGIC, @ed25519_seed_hex)) if @ed25519_seed_hex.present?
       end
 
+      out << iwdg_freeze_command
       out << rdp_command(@session.rdp_level)
       out << disconnect_command
       out
+    end
+
+    # [SEC.15] LSI-пес лічить і в STOP2 (max ~32.7 с), тож без `IWDG_STOP=0` Солдат
+    # ресетиться посеред кожного багатогодинного сну — канон 03_01 §1.10. Пишеться ДО
+    # RDP: на L2 option bytes стають read-only (03_05 §3.3), і незаморожений пес лишився б
+    # таким назавжди. Королева в STOP2 не входить — для неї STOP/STDBY-біти інертні, а
+    # `IWDG_SW=1` = її `MX_IWDG_Init`. Дзеркало: firmware/scripts/bench/01_option_bytes.sh.
+    IWDG_FREEZE_OPTION_BYTES = "IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0"
+
+    def iwdg_freeze_command
+      "#{PROGRAMMER} -ob #{IWDG_FREEZE_OPTION_BYTES}"
     end
 
     def disconnect_command

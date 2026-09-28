@@ -72,6 +72,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -w32 0x0803E830 0xC0C1C2C3",
         "STM32_Programmer_CLI -w32 0x0803E834 0xD0D1D2D3",
         "STM32_Programmer_CLI -w32 0x0803E838 0xE0E1E2E3",
+        # [SEC.15] пес заморожений у STOP2/STANDBY — ДО RDP (03_01 §1.10)
+        "STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
         "STM32_Programmer_CLI -ob RDP=0xBB",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])
@@ -238,6 +240,36 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
       expect(b).to eq(commands_for("A", device: gateway, aes_key_hex: aes_coap_hex))
       expect(b).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943") # KEYC magic
+    end
+  end
+
+  # [SEC.15] LSI-пес лічить і в STOP2 (max ~32.7 с), тож без `IWDG_STOP=0` Солдат
+  # ресетиться посеред кожного багатогодинного сну. Порядок несучий: на L2 option bytes
+  # стають read-only, і незаморожений пес лишився б таким назавжди (03_05 §3.3).
+  describe "IWDG-заморозка перед RDP" do
+    let(:iwdg) { "STM32_Programmer_CLI -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0" }
+
+    def transcript(device:, rdp_level:, **keys)
+      described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: rdp_level),
+                          device: device, bcast_key_hex: bcast_hex, **keys).commands
+    end
+
+    [ 1, 2 ].each do |level|
+      it "Солдат на L#{level}: IWDG пишеться рівно раз і ДО RDP" do
+        cmds = transcript(device: tree, rdp_level: level, aes_key_hex: aes_lora_hex,
+                          lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+
+        expect(cmds.count(iwdg)).to eq(1)
+        expect(cmds.index(iwdg)).to be < cmds.index { |c| c.include?("-ob RDP=") }
+      end
+    end
+
+    # Королева в STOP2 не входить, тож STOP/STDBY-біти для неї інертні, а `IWDG_SW=1`
+    # збігається з її `MX_IWDG_Init` — той самий крок коректний для обох типів.
+    it "Королева теж: IWDG ДО RDP" do
+      cmds = transcript(device: gateway, rdp_level: 1, aes_key_hex: aes_coap_hex)
+
+      expect(cmds.index(iwdg)).to be < cmds.index { |c| c.include?("-ob RDP=") }
     end
   end
 

@@ -59,10 +59,11 @@
      летить мережею) → транскрипт: connect → -r32 UID-read (wrong-board
      guard: чужа плата = жодного -w32) → -w32 у Flash (0x0803E000)
 
-  3. Lock: апаратне блокування
-     STM32CubeProgrammer (CLI) → Set RDP Level 1 (або Level 2)
-     → необоротне блокування SWD зчитування
-     → активація WRPROT на key sector + seed sector + role sector
+  3. Lock: апаратне блокування — той самий прогін конвеєра, що й крок 2:
+     IWDG-заморозка у STOP2/STANDBY (SEC.15) → RDP Level 1 (пілот; блокує
+     SWD-зчитування). Продакшн-L2 — НЕ цим прогоном, а за 03_05 §3.6:
+     self-test → WRPROT стор. 124–125 (key · seed · role) → [BOOT_LOCK] →
+     RDP L2 останнім (порядок — ⚖️ делеговано 2026-09-27, 03_05 §3.3)
 
   4. Пакування
      Нанести лак → Пакет → Ліс (shipping-mode ✂️ не потрібен — 03_05 §3.5)
@@ -246,7 +247,9 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      connect → -r32 UID-read → wrong-board guard (Session звіряє паспорт
      плати з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного
      -w32) → -w32 KEYL/LSED/KOTA/KEYB per-word (Tree; Gateway — KEYL=KEYB-
-     значення/KEYC/EDSK) → RDP → disconnect
+     значення/KEYC/EDSK) → -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0 (SEC.15:
+     пес заморожений у STOP2 — ДО RDP, бо L2 робить option bytes
+     read-only) → RDP → disconnect
      # 0x0803E000 = FLASH_KEY_ADDR. Гілка B пише ТОЙ САМИЙ набір тим самим
      # SWD -w32 (⚖️ делеговано 2026-09-27, §1 крок 3); SE-кроки — окремо
 
@@ -255,7 +258,9 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      RDP L2, пілот — покриття прототипів, HW.11):
      STM32_Programmer_CLI -ob RDP=0xBB    # Pilot batch — L1; CLI пише СИРИЙ байт (03_05 §3.6)
      # (Level 2 = 0xCC — після верифікації OTA, SEC.2; живий L2 з конвеєра
-     #  вимагає RDP_L2_ACK=<device_uid> — інакше preflight відмовляє)
+     #  вимагає RDP_L2_ACK=<device_uid> — інакше preflight відмовляє.
+     #  ⛔ L2 одним прогоном конвеєра порушує ухвалений порядок: self-test і
+     #  WRP мусять стати між ключами й L2 — процедура 03_05 §3.6)
 
   # [ARCH.77] Польова альтернатива — БРАУЗЕРНИЙ контур (forester, НЕ фабрика;
   # межа = хто відвантажує клієнта, не формат відповіді):

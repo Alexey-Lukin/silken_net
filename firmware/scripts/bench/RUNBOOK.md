@@ -29,7 +29,7 @@
 | Крок | Скрипт | Очікуване | Артефакт |
 |---|---|---|---|
 | 1.1 Перший flash `.elf` | `00_flash.sh --elf <path> --execute` | verify OK | лог CLI |
-| 1.2 Option bytes: **IWDG_STOP=0** (SEC.15 — інакше IWDG-reset посеред STOP2 ≈26-32 с), IWDG_STDBY узгодити | `01_option_bytes.sh --execute` | `-ob displ` показує застосоване | дамп `-ob displ` |
+| 1.2 Option bytes: **IWDG_STOP=0** (SEC.15 — інакше IWDG-reset посеред STOP2 ≈26-32 с), IWDG_STDBY узгодити. ⊕ Конвеєр 1.3 з 2026-09-28 пише ті самі байти сам перед RDP — цей крок лишається для плати, прошитої поза конвеєром, і як перша звірка синтаксису на кремнії | `01_option_bytes.sh --execute` | `-ob displ` показує застосоване | дамп `-ob displ` |
 | 1.3 Factory-провіжининг ключів (**SEC.9 pre-req:** `PROVISIONING_MASTER_KEY` = свіжий crypto-random, WeakKeyDetector-verified, НЕ FIPS-197 тест-вектор) | `EXECUTE=1 bin/rails factory:execute[...]` (SEC.3; шим-інтеграція вже довела софт — лишилась фізика SWD). **[FW.54] Перший live-крок = `-r32 0x1FFF7590` UID-read (wrong-board guard): звірити реальний формат виводу CLI проти `FactoryFlashing::UidReadout`** — розбіжність = чесна відмова записом; поправити regex за фактичним виводом | session → completed; UID-verify pass | AuditLog id (+ silicon_uid_hex у metadata) |
 | 1.4 RDP: R&D = Level 1; **Level 2 — НЕЗВОРОТНІЙ** (SEC.2 rollout R&D→Pilot→Mass; на жертовному чипі спершу) | `01_option_bytes.sh --rdp 1 --execute` | re-power → захист активний; дамп `-ob displ` несе RDP = `0xBB` — CLI пише сирий байт, номер рівня тут був би `0x01` ([`03_05 §3.6`](../../../docs/03_05_Hardware_Symmetric_Crypto_and_Security.md)) | фото/лог |
 
