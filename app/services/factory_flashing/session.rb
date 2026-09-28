@@ -97,6 +97,7 @@ module FactoryFlashing
     def preflight!
       raise PreflightError, "session must be supervisor_approved (got #{@session.state})" unless @session.may_start?
       raise PreflightError, "device #{@session.device_uid} not found" if @device.nil?
+      guard_ratcheted_reprovision!
       # Surface UnavailableError / NotImplementedError early so we never enter
       # the transaction with a missing or rejected master key. The result is
       # retained and threaded into every derivation below — the point of the
@@ -106,6 +107,22 @@ module FactoryFlashing
 
     def locate_device!
       Tree.find_by(did: @session.device_uid) || Gateway.find_by(uid: @session.device_uid)
+    end
+
+    # [FW.17] Стан ратчета живе у ДВОХ домах — корінь у KEYL і версія у Flash-KV
+    # `0x13`, — а сесія пише лише перший, і пише туди K_v, не корінь. Вцілілий KV
+    # дає глухий вузол (boot деривує ratchet^v(K_v) ≠ K_v), стертий — розсинхрон
+    # версій із бекендом. Поки форми re-provision ротованого дерева нема
+    # (→ 00_07 FW.17), відмова гучна; версію піднімає лише ратчет дерева, і лише
+    # за відкритого FW17_RATCHET_DOWNLINK_ENABLED.
+    def guard_ratcheted_reprovision!
+      ratcheted = HardwareKey.find_by(device_uid: @session.device_uid, key_version: 1..)
+      return unless ratcheted
+
+      raise PreflightError,
+            "#{@session.device_uid} ротовано ратчетом до v#{ratcheted.key_version}, а форми " \
+            "re-provision ротованого дерева не визначено (00_07 FW.17): залитий K_v оглушив би " \
+            "вузол або розсинхронізував версію — не прошиваємо"
     end
 
     def ensure_hardware_key

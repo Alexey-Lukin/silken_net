@@ -100,6 +100,18 @@ RSpec.describe FactoryFlashing::Session do
       }.to raise_error(described_class::PreflightError, /not found/)
     end
 
+    # [FW.17] Форми re-provision ротованого дерева нема — сесія, що залила б K_v
+    # як корінь, мусить впасти до майстер-ключа, а не оглушити вузол.
+    it "refuses a ratchet-rotated tree before fetching the master key" do
+      create(:hardware_key, device_uid: tree.did, aes_key_hex: SecureRandom.hex(16).upcase, key_version: 2)
+      session = make_session(gilka: "A")
+      expect {
+        described_class.run(session: session, executor: executor, master_key_source: master_key_source)
+      }.to raise_error(described_class::PreflightError, /до v2.*FW\.17/)
+      expect(master_key_source).not_to have_received(:fetch_master_key)
+      expect(session.reload).to be_failed
+    end
+
     it "surfaces MasterKeySource::UnavailableError before opening the transaction" do
       bad_source = instance_double(FactoryFlashing::MasterKeySource::EnvAdapter)
       allow(bad_source).to receive(:fetch_master_key)
