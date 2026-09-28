@@ -327,6 +327,22 @@ RSpec.describe Downlink::PendingQueueService do
         expect(trail["metadata"]).to include("from" => "sent", "to" => "failed",
                                              "reason" => "echo_unpersistable")
       end
+
+      # `from` — стан у БД до виносу, а не вивід із шляху: невалідний `:sent`, що протух
+      # без луни, фейлиться на TTL-гілці, і слід мусить казати `sent`, не `issued`.
+      it "слід невалідного :sent, протухлого без луни, починається з sent" do
+        create(:user, :super_admin, email_address: User::ORACLE_EXECUTIONER_EMAIL)
+        decrypt_inner(poll)
+        actuator.update_columns(max_active_duration_s: command.duration_seconds - 1)
+        command.update_columns(expires_at: 1.minute.ago)
+        AuditLogWorker.jobs.clear
+
+        decrypt_inner(poll)
+
+        trail = AuditLogWorker.jobs.map { |job| job["args"].first }
+                              .find { |attrs| attrs["action"] == "actuator_to_failed" }
+        expect(trail["metadata"]).to include("from" => "sent", "reason" => "unpersistable")
+      end
     end
   end
 

@@ -179,15 +179,16 @@ module Downlink
     # й називає той запис, що не пройшов валідацію (актуатор на `mark_active!`, наказ
     # на `acknowledge!`), — хворий актуатор не записується провиною наказу.
     def force_fail_unpersistable!(command, error, echoed: false)
+      # Стан ДО виносу — з БД, а не з `echoed`: невалідний `:sent` фейлиться й на TTL/oversize.
+      from = command.status_in_database
       reason = error.record&.errors&.full_messages&.first || error.message
       culprit = error.record.is_a?(Actuator) ? "запис актуатора невалідний" : "наказ не проходить власну валідацію"
       message = echoed ? "Луна підтвердила доставку, але #{culprit}: #{reason}" : "Наказ не проходить власну валідацію: #{reason}"
       command.update_columns(status: ActuatorCommand.statuses[:failed], error_message: message.truncate(200))
-      command.send(:record_forced_failure_audit!, echoed ? "echo_unpersistable" : "unpersistable",
-                   from: echoed ? "sent" : "issued")
+      command.send(:record_forced_failure_audit!, echoed ? "echo_unpersistable" : "unpersistable", from: from)
       ActuatorCommandWorker.broadcast_command_state_static(command)
-      Rails.logger.error "🛑 [ARCH.75] Наказ ##{command.id} невалідний (#{error.record.class}: #{reason}) — " \
-                         "винесено з черги, poll-тракт живий"
+      tag = echoed ? "[FW.63] Луна наказу" : "[ARCH.75] Наказ"
+      Rails.logger.error "🛑 #{tag} ##{command.id}: #{message} (#{error.record.class}) — винесено з черги, poll-тракт живий"
     end
 
     def pending_commands
@@ -301,6 +302,11 @@ module Downlink
       # рев'ю FW.64, 2026-09-27). Тож виносимо — тим самим force-fail, що й невалідний
       # наказ при видачі; активацію транзакція вище вже відкотила. На відміну від dispatch!
       # тут пишеться ще й `actuator`, тож причину веде той запис, що впав.
+      # ⚠️ Стеля: `failed` тут не бреше про фізику лише доти, доки актуаторної прошивки немає
+      # (Королева ACTION не виконує — 03_02 §6). З її появою доставлений наказ працюватиме
+      # без Reset і без STOP у БД, і цей вихід мусить ще й ставити override-STOP (00_07
+      # ARCH.58, нога першого actuator-hardware). Людського сліду для EWS-наказу тут теж
+      # немає — чесного типу алерту «доставлено, але не записано» не існує (⚖️ 00_07 FW.63).
       force_fail_unpersistable!(command, e, echoed: true)
     end
 

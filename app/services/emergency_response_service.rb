@@ -107,7 +107,9 @@ class EmergencyResponseService
 
     # Наказ, що вже пішов у poll-відповідь (`sent_at` є), протух без echo: видачу було, а
     # доставку не підтверджено — «не дочекався видачі» про нього брехало б (адверсарне
-    # рев'ю 2026-09-27; сюди ж потрапляє залипле echo FW.63).
+    # рев'ю 2026-09-27). Echo, чиє підтвердження не збереглось, сюди НЕ потрапляє: такий
+    # наказ `Downlink::PendingQueueService` виносить force-fail'ом одразу (FW.63), і цей
+    # ключ («доставку НЕ підтверджено») про нього був би неправдою.
     key = command.sent_at ? "emergency_response_unconfirmed" : "emergency_response_expired"
     report_undeliverable(command.ews_alert, command.actuator, key, per_event: true,
                          relevance_min: ((command.expires_at - command.created_at) / 60.0).round)

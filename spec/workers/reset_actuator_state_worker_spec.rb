@@ -142,9 +142,9 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
         expect(actuator.reload.state).to eq("idle")
       end
 
-      # Рівні кінці вікна — не «пізніший». При включному порівнянні кожен вважав би
+      # Рівні мітки отримання — не «пізніший». При включному порівнянні кожен вважав би
       # одне одного витісненим, і актуатор не закрив би ЖОДЕН.
-      it "однакові кінці вікна не роблять накази взаємно витісненими" do
+      it "однакові мітки отримання не роблять накази взаємно витісненими" do
         newer.update_columns(sent_at: superseded.sent_at)
 
         described_class.new.perform(superseded.id)
@@ -164,6 +164,19 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
 
         expect(actuator.reload.state).to eq("active")
         expect(newer.reload.status).to eq("confirmed")
+      end
+
+      # [ARCH.58] «Пізніший» — за ПОЧАТКОМ вікна, не за кінцем: override-STOP (1 с), отриманий
+      # останнім, мусить закрити актуатор, хоч його вікно кінчається раніше за довгий OPEN,
+      # що працював до нього (адверсарне ревʼю 2026-09-28 — порівняння кінців вікна тримало
+      # актуатор `active` до кінця OPEN'а).
+      it "override-STOP, отриманий після довгого OPEN, закриває актуатор" do
+        superseded.update_columns(duration_seconds: 3600, executed_at: 10.minutes.ago)
+        newer.update_columns(command_payload: "STOP", duration_seconds: 1, executed_at: 1.minute.ago)
+
+        described_class.new.perform(newer.id)
+
+        expect(actuator.reload.state).to eq("idle")
       end
     end
 
