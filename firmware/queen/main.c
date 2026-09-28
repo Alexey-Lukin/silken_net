@@ -932,6 +932,7 @@ static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 static void Queen_Poll_Downlink(void);
+static void Queen_Reflex_Shots(void);
 // [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
 // [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
@@ -1223,6 +1224,10 @@ int main(void)
                 if (ccm_did == 0u) {
                     if (ccm_spoof_drops < 0xFFFFu) ccm_spoof_drops++;
                 } else {
+                    // Рефлекс і тут: до 2026-09-29 `continue` нижче обходив його,
+                    // і в CCM-ері Солдат після своєї телеметрії не чув ні
+                    // команди, ні OTA-чанка (Queen_Reflex_Shots).
+                    Queen_Reflex_Shots();
                     Process_And_Cache_Data(ccm_did, &rx_payload[4],
                                            rx_rssi, rx_snr, EDGE_FMT_CCM_AIR);
                 }
@@ -1235,128 +1240,7 @@ int main(void)
             // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
             HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
-#if FW20_Q2_CMD_RELAY_ENABLED
-        // =========================================================================
-        // [FW.20-Q2] РЕФЛЕКТОРНИЙ ПОСТРІЛ КОМАНДИ (0x9A / 0x9E)
-        // =========================================================================
-        // Солдат, чий голос щойно прозвучав, слухає ефір ~500 мс — один
-        // командний постріл (16 Б ≈ 165 мс ефіру + запас) перед OTA-чанком
-        // вміщається: два кадри поспіль ≈ 350 мс < 500.
-        // Команда першою: ротація ключа (FW.17) важливіша за чанк прошивки.
-        {
-            uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
-            uint8_t cmd_cipher[SOLDIER_CMD_BLOCK_SIZE];
-            // [FW.61] Спершу лімітер, потім черга: Next витрачає постріл із
-            // бюджету кадру, тож питати його треба лише тоді, коли ефір є.
-            const uint32_t cmd_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS,
-                                                             SOLDIER_CMD_BLOCK_SIZE);
-            if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), cmd_air, TX_DUTY_BULK) &&
-                Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
-                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
-                                 (uint32_t*)cmd_cipher, 1000);
-                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
-                // PHY доказує пакет перед наступним TX/RX
-                HAL_Delay(Lora_Phy_Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE,
-                                        LORA_PHY_PREAMBLE_SYMBOLS));
-            }
-        }
-#endif
-
-        // =========================================================================
-        // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
-        // Солдат прямо зараз (після відправки) слухає ефір рівно 500 мс.
-        // Ми маємо блискавично вистрілити шматком нової прошивки йому у відповідь.
-        // =========================================================================
-        // [FW.61] Рефлекс OTA — ПЕЙСИНГ, а не відмова: коли годинний ефір
-        // вичерпано, чанк просто не стріляє, курсор не рухається, і той самий
-        // чанк піде на наступному uplink'у, щойно ефір звільниться.
-        const uint32_t ota_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
-        if (ota_is_active &&
-            Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), ota_air, TX_DUTY_BULK)) {
-            uint8_t ota_chunk[16] = {0};
-            uint8_t encrypted_ota[16] = {0};
-
-            // В один 16-байтний пакет влазить 11 байт чистого коду (5 байтів - заголовок: 1 маркер + 2 index + 2 total)
-            uint16_t total_chunks = (pending_ota_size + 10) / 11;
-
-            // [FW.23] Фаза 0: bytecode-чанки (0x99). Фаза 1: HMAC-печатка (0x9B).
-            // Перехід з 0 → 1 коли тіло прошивки відлунало в ефір, а печатка
-            // вже зібрана у пам'яті Королеви.
-            if (hmac_broadcast_phase == 0 && current_ota_chunk_idx < total_chunks) {
-                // [FIX: AUDIT] Перевірка індексу перед використанням
-                // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
-                ota_chunk[0] = 0x99;
-                ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
-                ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
-                ota_chunk[3] = (uint8_t)(total_chunks >> 8);
-                ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
-
-                // Копіюємо до 11 байт коду в пакет
-                uint16_t offset = current_ota_chunk_idx * 11;
-                // [FIX: AUDIT CRITICAL] Перевірка на підтікання (offset >= pending_ota_size)
-                if (offset < pending_ota_size) {
-                    uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (uint8_t)(pending_ota_size - offset);
-                    memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
-                }
-
-                // Шифруємо цей шматок коду
-                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
-
-                // СТРІЛЯЄМО В ЕФІР і чекаємо, доки кадр справді відлетить
-                // (16 Б @ SF9 ≈ 165 мс + запас, lora_phy_apply.h): Rx-re-arm
-                // наприкінці обробки інакше обірвав би його посеред ефіру.
-                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
-                HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
-
-                // Перемикаємося на наступний шматок для наступного дерева
-                current_ota_chunk_idx++;
-                if (current_ota_chunk_idx >= total_chunks) {
-                    // [FW.23] Тіло прошивки відлунало; якщо всі 4 трейлер-чанки
-                    // (печатка + версія) зібрані — ставимо їх замість крапки.
-                    if (hmac_segments_received == OTA_TRAILER_ALL_RECEIVED) {
-                        hmac_broadcast_phase = 1;
-                        current_hmac_seg_idx = 0;
-                    } else {
-                        // Без печатки/версії Солдат не зможе відрізнити істинне
-                        // слово від спокусника ⇒ замикаємо вікно. Солдат сам подасть
-                        // голос (re-request) або очне CoAP-розпорядження зверху
-                        // воскресить новий цикл.
-                        current_ota_chunk_idx = 0;
-                        // [PLAN 2.5]: Гасимо OTA-прапор, інакше Королева
-                        // безкінечно проповідуватиме той самий заповіт у пустоту.
-                        ota_is_active = 0;
-                    }
-                }
-            } else if (hmac_broadcast_phase == 1 &&
-                       current_hmac_seg_idx < OTA_TRAILER_TOTAL_CHUNKS) {
-                // [FW.23] Кладемо в ефір вже готовий 16-байтний трейлер-блок
-                // (печатка seg 1..3 або version_id seg 4). Backend сформував його;
-                // Королева повторює буква в букву — AES-encrypt + Radio.Send,
-                // не торкаючись жодного байту (печатку не можна підправляти).
-                memcpy(ota_chunk, pending_ota_hmac_chunks[current_hmac_seg_idx], 16);
-                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
-                                  (uint32_t*)encrypted_ota, 1000);
-                Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
-                HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
-
-                current_hmac_seg_idx++;
-                if (current_hmac_seg_idx >= OTA_TRAILER_TOTAL_CHUNKS) {
-                    // OTA-цикл (тіло + печатка) промовлено повністю — амінь.
-                    current_ota_chunk_idx   = 0;
-                    current_hmac_seg_idx    = 0;
-                    hmac_broadcast_phase    = 0;
-                    hmac_segments_received  = 0;
-                    ota_is_active           = 0;
-                }
-            } else {
-                // Захисна гілка: щось наплутали зі станом — гасимо все, рій
-                // має право не отримати слово, але не має права отримати лжеслово.
-                current_ota_chunk_idx   = 0;
-                current_hmac_seg_idx    = 0;
-                hmac_broadcast_phase    = 0;
-                ota_is_active           = 0;
-            }
-        }
+        Queen_Reflex_Shots(); // команда, потім OTA-чанк — один дім для обох ер
 
         // =========================================================================
         // ОБРОБКА ДАНИХ (КЕШУВАННЯ)
@@ -2608,6 +2492,141 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     }
 #endif
     return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
+}
+
+// =========================================================================
+// [FW.20-Q2 · FW.2] РЕФЛЕКС ПІСЛЯ ПОЧУТОГО СОЛДАТА — команда, потім OTA-чанк
+// =========================================================================
+// Солдат слухає ефір ~500 мс після власного TX, тож постріл услід за його
+// голосом — єдине гарантовано чуте вікно (ADR у soldier_cmd_queue.h). Кличуть
+// обидві ери дренажу рингу: ECB-шлях — після декрипту, CCM-шлях — після
+// демуксу за відкритим DID. До 2026-09-29 цей код жив інлайном лише в
+// ECB-шляху, а CCM-гілка робила `continue` раніше за нього: у CCM-ері OTA-чанк
+// летів би лише за рідкісними 16-Б зойками 0x55/0x56, а команда — ніколи.
+static void Queen_Reflex_Shots(void)
+{
+#if FW20_Q2_CMD_RELAY_ENABLED
+    // =========================================================================
+    // [FW.20-Q2] РЕФЛЕКТОРНИЙ ПОСТРІЛ КОМАНДИ (0x9A / 0x9E)
+    // =========================================================================
+    // Солдат, чий голос щойно прозвучав, слухає ефір ~500 мс — один
+    // командний постріл (16 Б ≈ 165 мс ефіру + запас) перед OTA-чанком
+    // вміщається: два кадри поспіль ≈ 350 мс < 500.
+    // Команда першою: ротація ключа (FW.17) важливіша за чанк прошивки.
+    {
+        uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
+        uint8_t cmd_cipher[SOLDIER_CMD_BLOCK_SIZE];
+        // [FW.61] Спершу лімітер, потім черга: Next витрачає постріл із
+        // бюджету кадру, тож питати його треба лише тоді, коли ефір є.
+        const uint32_t cmd_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS,
+                                                         SOLDIER_CMD_BLOCK_SIZE);
+        if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), cmd_air, TX_DUTY_BULK) &&
+            Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
+            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
+                             (uint32_t*)cmd_cipher, 1000);
+            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
+            // PHY доказує пакет перед наступним TX/RX
+            HAL_Delay(Lora_Phy_Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE,
+                                    LORA_PHY_PREAMBLE_SYMBOLS));
+        }
+    }
+#endif
+
+    // =========================================================================
+    // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
+    // Солдат прямо зараз (після відправки) слухає ефір рівно 500 мс.
+    // Ми маємо блискавично вистрілити шматком нової прошивки йому у відповідь.
+    // =========================================================================
+    // [FW.61] Рефлекс OTA — ПЕЙСИНГ, а не відмова: коли годинний ефір
+    // вичерпано, чанк просто не стріляє, курсор не рухається, і той самий
+    // чанк піде на наступному uplink'у, щойно ефір звільниться.
+    const uint32_t ota_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
+    if (ota_is_active &&
+        Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), ota_air, TX_DUTY_BULK)) {
+        uint8_t ota_chunk[16] = {0};
+        uint8_t encrypted_ota[16] = {0};
+
+        // В один 16-байтний пакет влазить 11 байт чистого коду (5 байтів - заголовок: 1 маркер + 2 index + 2 total)
+        uint16_t total_chunks = (pending_ota_size + 10) / 11;
+
+        // [FW.23] Фаза 0: bytecode-чанки (0x99). Фаза 1: HMAC-печатка (0x9B).
+        // Перехід з 0 → 1 коли тіло прошивки відлунало в ефір, а печатка
+        // вже зібрана у пам'яті Королеви.
+        if (hmac_broadcast_phase == 0 && current_ota_chunk_idx < total_chunks) {
+            // [FIX: AUDIT] Перевірка індексу перед використанням
+            // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
+            ota_chunk[0] = 0x99;
+            ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
+            ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
+            ota_chunk[3] = (uint8_t)(total_chunks >> 8);
+            ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
+
+            // Копіюємо до 11 байт коду в пакет
+            uint16_t offset = current_ota_chunk_idx * 11;
+            // [FIX: AUDIT CRITICAL] Перевірка на підтікання (offset >= pending_ota_size)
+            if (offset < pending_ota_size) {
+                uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (uint8_t)(pending_ota_size - offset);
+                memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
+            }
+
+            // Шифруємо цей шматок коду
+            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
+
+            // СТРІЛЯЄМО В ЕФІР і чекаємо, доки кадр справді відлетить
+            // (16 Б @ SF9 ≈ 165 мс + запас, lora_phy_apply.h): Rx-re-arm
+            // наприкінці обробки інакше обірвав би його посеред ефіру.
+            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
+            HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
+
+            // Перемикаємося на наступний шматок для наступного дерева
+            current_ota_chunk_idx++;
+            if (current_ota_chunk_idx >= total_chunks) {
+                // [FW.23] Тіло прошивки відлунало; якщо всі 4 трейлер-чанки
+                // (печатка + версія) зібрані — ставимо їх замість крапки.
+                if (hmac_segments_received == OTA_TRAILER_ALL_RECEIVED) {
+                    hmac_broadcast_phase = 1;
+                    current_hmac_seg_idx = 0;
+                } else {
+                    // Без печатки/версії Солдат не зможе відрізнити істинне
+                    // слово від спокусника ⇒ замикаємо вікно. Солдат сам подасть
+                    // голос (re-request) або очне CoAP-розпорядження зверху
+                    // воскресить новий цикл.
+                    current_ota_chunk_idx = 0;
+                    // [PLAN 2.5]: Гасимо OTA-прапор, інакше Королева
+                    // безкінечно проповідуватиме той самий заповіт у пустоту.
+                    ota_is_active = 0;
+                }
+            }
+        } else if (hmac_broadcast_phase == 1 &&
+                   current_hmac_seg_idx < OTA_TRAILER_TOTAL_CHUNKS) {
+            // [FW.23] Кладемо в ефір вже готовий 16-байтний трейлер-блок
+            // (печатка seg 1..3 або version_id seg 4). Backend сформував його;
+            // Королева повторює буква в букву — AES-encrypt + Radio.Send,
+            // не торкаючись жодного байту (печатку не можна підправляти).
+            memcpy(ota_chunk, pending_ota_hmac_chunks[current_hmac_seg_idx], 16);
+            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
+                              (uint32_t*)encrypted_ota, 1000);
+            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), ota_air);
+            HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
+
+            current_hmac_seg_idx++;
+            if (current_hmac_seg_idx >= OTA_TRAILER_TOTAL_CHUNKS) {
+                // OTA-цикл (тіло + печатка) промовлено повністю — амінь.
+                current_ota_chunk_idx   = 0;
+                current_hmac_seg_idx    = 0;
+                hmac_broadcast_phase    = 0;
+                hmac_segments_received  = 0;
+                ota_is_active           = 0;
+            }
+        } else {
+            // Захисна гілка: щось наплутали зі станом — гасимо все, рій
+            // має право не отримати слово, але не має права отримати лжеслово.
+            current_ota_chunk_idx   = 0;
+            current_hmac_seg_idx    = 0;
+            hmac_broadcast_phase    = 0;
+            ota_is_active           = 0;
+        }
+    }
 }
 
 // =========================================================================
