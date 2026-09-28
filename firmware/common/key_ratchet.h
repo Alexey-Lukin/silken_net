@@ -39,7 +39,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "silken_crc.h"
 #include "silken_sha256.h"
 
 #define KEY_RATCHET_KEY_LEN   16u
@@ -48,12 +47,9 @@
  * робить runaway-таргет із зіпсутого кадру нешкідливим. */
 #define KEY_RATCHET_MAX_JUMP  8u
 
-/* CMD_ROTATE_KEY (0x9E, опкод-карта 03_01 §4.5а), той самий каркас, що
- * 0x9A: [маркер:1][len_le:2 = 4][target_version_le:2][crc16_le:2] = 7 Б. */
-#define CMD_ROTATE_KEY_MARKER       0x9Eu
-#define CMD_ROTATE_KEY_BODY_SIZE    2u
-#define CMD_ROTATE_KEY_PAYLOAD_LEN  4u /* body + crc16 */
-#define CMD_ROTATE_KEY_FRAME_SIZE   7u
+/* Команда CMD_ROTATE_KEY (0x9E) — адресний CCM-кадр сесійним ключем вузла
+ * (03_05 §2.5): тіло [target_version:u16le] розпаковує
+ * Dl_Cmd_Rotate_Target (downlink_ccm.h), ціль судить Key_Ratchet_Steps. */
 
 /* Один крок ratchet'а in-place. */
 static inline void Key_Ratchet_Next(uint8_t key[KEY_RATCHET_KEY_LEN], uint32_t did)
@@ -154,27 +150,6 @@ static inline void Key_Ratchet_Bytes_To_Words(const uint8_t key[KEY_RATCHET_KEY_
                    ((uint32_t)key[i * 4 + 2] << 8)  |
                    (uint32_t)key[i * 4 + 3];
     }
-}
-
-/* Парсер кадру 0x9E — той самий патерн guard'ів, що 0x9A (FW.8).
- * 1 = валідний, *target_version заповнено. */
-static inline int Key_Ratchet_Parse_Cmd(const uint8_t *frame, uint16_t frame_size,
-                                        uint16_t *target_version)
-{
-    if (frame_size < CMD_ROTATE_KEY_FRAME_SIZE)        return 0;
-    if (frame[0] != CMD_ROTATE_KEY_MARKER)             return 0;
-
-    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
-    if (payload_len != CMD_ROTATE_KEY_PAYLOAD_LEN)     return 0;
-
-    const uint8_t *body = frame + 3;
-    uint16_t expected_crc = Silken_Crc16_Ccitt(body, CMD_ROTATE_KEY_BODY_SIZE);
-    uint16_t received_crc = (uint16_t)body[CMD_ROTATE_KEY_BODY_SIZE]
-                          | ((uint16_t)body[CMD_ROTATE_KEY_BODY_SIZE + 1] << 8);
-    if (expected_crc != received_crc)                  return 0;
-
-    *target_version = (uint16_t)body[0] | ((uint16_t)body[1] << 8);
-    return 1;
 }
 
 #endif /* SILKEN_KEY_RATCHET_H */

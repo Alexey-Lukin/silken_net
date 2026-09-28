@@ -303,6 +303,7 @@ TEST(test_wear_one_erase_per_compact_per_page) {
  * проти дзеркала test_soldier_logic.c (ті самі межі).
  * ════════════════════════════════════════════════════════════════════ */
 #include "../common/lorenz_thresholds.h"
+#include "../common/ccm_kat_vectors.h"
 
 TEST(test_fw8_save_load_roundtrip) {
     fresh_mount();
@@ -372,8 +373,8 @@ TEST(test_fw8_mixed_generation_invalid_combo_falls_to_defaults) {
 }
 
 TEST(test_fw8_valid_agrees_with_parser) {
-    /* Ті самі межі, що Test_Handle_CMD_SET_THRESHOLDS (test_soldier_logic.c)
-     * та парсер 0x9A: інверсія, z_opt поза зоною, |Z| > 100.00. */
+    /* Межі, якими судять і журнал, і парсер тіла 0x9A (Lorenz_Thresholds_From_Wire
+     * кличе той самий Valid): інверсія, z_opt поза зоною, |Z| > 100.00. */
     LorenzThresholds t = { 200, 4500, 2900, 0xFF, 0 };
     ASSERT_TRUE(Lorenz_Thresholds_Valid(&t));
     t.z_min_x100 = t.z_max_x100;                  /* колапс зони */
@@ -384,6 +385,29 @@ TEST(test_fw8_valid_agrees_with_parser) {
     ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
     t = (LorenzThresholds){ 200, 10001, 2900, 0, 0 };   /* за межею +100.00 */
     ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
+}
+
+/* [FW.17 · 03_05 §2.5] Тіло команди 0x9A — байти golden-вектора DL3, тобто
+ * рівно відкритий текст, який шифрує Rails (lora_ccm_spec.rb). */
+TEST(test_fw8_from_wire_golden_body) {
+    LorenzThresholds t;
+    ASSERT_TRUE(Lorenz_Thresholds_From_Wire(CCM_KAT_DOWNLINK[2].body, &t));
+    ASSERT_EQ(t.z_min_x100, 200);
+    ASSERT_EQ(t.z_max_x100, 4500);
+    ASSERT_EQ(t.z_opt_x100, 2900);
+    ASSERT_EQ(t.species_id, 0xFF);
+    ASSERT_EQ(t.config_version, 1);
+}
+
+TEST(test_fw8_from_wire_judges_by_valid) {
+    LorenzThresholds t;
+    const uint8_t neg_min[8]   = { 0x0C, 0xFE, 0xAC, 0x0D, 0xDC, 0x05, 4, 7 }; /* -500 / 3500 / 1500 */
+    const uint8_t collapsed[8] = { 0x54, 0x0B, 0x54, 0x0B, 0x54, 0x0B, 0, 1 }; /* 2900 ×3 */
+    const uint8_t opt_out[8]   = { 0xC8, 0x00, 0x94, 0x11, 0x88, 0x13, 0, 1 }; /* opt 5000 > max */
+    ASSERT_TRUE(Lorenz_Thresholds_From_Wire(neg_min, &t));
+    ASSERT_EQ(t.z_min_x100, -500);
+    ASSERT_FALSE(Lorenz_Thresholds_From_Wire(collapsed, &t));
+    ASSERT_FALSE(Lorenz_Thresholds_From_Wire(opt_out, &t));
 }
 
 TEST(test_fw8_survives_remount_and_compact) {
@@ -807,6 +831,8 @@ int main(void)
     RUN(test_fw8_torn_pair_powercut_falls_to_defaults);
     RUN(test_fw8_mixed_generation_invalid_combo_falls_to_defaults);
     RUN(test_fw8_valid_agrees_with_parser);
+    RUN(test_fw8_from_wire_golden_body);
+    RUN(test_fw8_from_wire_judges_by_valid);
     RUN(test_fw8_survives_remount_and_compact);
 
     printf("\n— [FW.2 TRL-7] FC high-water поверх KV (0x14) —\n");

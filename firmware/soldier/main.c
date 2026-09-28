@@ -534,21 +534,18 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
                                              // WUT-цикл «нюх-замість-RX» (RUNBOOK)
 #endif
 
-// [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца, що приходять
-// через OTA. Формат на дроті виробляється бекендом
-// app/services/ota_packager_service.rb#build_threshold_config_block:
-//   [маркер 0x9A][len_le:2 = 10][z_min_x100:s16le][z_max_x100:s16le]
-//   [z_opt_x100:s16le][species_id:u8][config_version:u8][crc16_le:u16] = 13 байт
-// Алгоритм CRC16: CRC-16/CCITT-FALSE (поліном 0x1021, init 0xFFFF, без рефлексії)
-// над 8-байтним body ПЕРЕД хвостовим CRC. Дзеркало на Ruby-боці —
-// OtaPackagerService.crc16_ccitt (байт-у-байт ідентично).
+// [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца. З
+// downlink-ревізії (03_05 §2.5, 2026-09-29) — адресна команда під CCM
+// сесійним ключем цього вузла (../common/downlink_ccm.h), тіло 8 Б:
+//   [z_min_x100:s16le][z_max_x100:s16le][z_opt_x100:s16le]
+//   [species_id:u8][config_version:u8]
+// Цілісність несе MIC (CRC старого каркаса знято); розпаковка й інваріанти —
+// Lorenz_Thresholds_From_Wire (../common/lorenz_thresholds.h).
 //
-// 🟡 СТАТУС: Deferred TRL-7 (FW.8). Парсер залишено як freeze-контракт
-// wire-формату + повний host-test bank (12 кейсів у test_soldier_logic.c),
-// АЛЕ виклик у LoRa RX-гілці захищений `#if FW8_PARSER_ENABLED` і за
-// замовчуванням ВИМКНЕНИЙ. Бекенд `OtaPackagerService.build_threshold_
-// config_block` — теж лише class method, у production-pipeline нікуди
-// не передається.
+// 🟡 СТАТУС: Deferred TRL-7 (FW.8). Приймач — спільний CCM-шлях адресних
+// команд (секція 1.14: вікно відкриває, КЕНОЗИС застосовує) за гейтом
+// `FW8_PARSER_ENABLED`, за замовчуванням ВИМКНЕНИЙ; відправника в
+// production-pipeline Rails немає.
 //
 // ПРИЧИНА defer: із 20 RTC Backup Register'ів (DR0..DR19) після FW.2
 // freeze-contract (DR15 → CCM Frame Counter) вільний лише DR7 (FW.54) — одне
@@ -578,11 +575,6 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 #ifndef FW8_PARSER_ENABLED
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #endif
-#define CMD_SET_THRESHOLDS_MARKER         0x9A
-#define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
-#define CMD_THRESHOLDS_BODY_SIZE          8   // 6 + 1 + 1
-#define CMD_THRESHOLDS_FRAME_SIZE         13  // header + body + crc16
-#define CMD_THRESHOLDS_PAYLOAD_LEN        10  // body + crc16 (повторює бекенд)
 #define LORENZ_DEFAULT_Z_MIN_X100         200    // 2.00
 #define LORENZ_DEFAULT_Z_MAX_X100         4500   // 45.00
 #define LORENZ_DEFAULT_Z_OPT_X100         2900   // 29.00
@@ -605,52 +597,6 @@ static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save 
 // (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
 #include "../common/silken_crc.h"
 
-// Опрацювати фрейм CMD_SET_THRESHOLDS, що прийшов через LoRa-broadcast.
-// Повертає: 1 = прийнято й застосовано, 0 = відкинуто (поганий len/CRC/межі).
-// При успіху мутує глобалки lorenz_z_*_x100 + lorenz_species_id +
-// lorenz_config_version. Жодного RTC-write — значення живуть у RAM до VBAT-loss
-// (див. коментар-преамбулу до CMD_SET_THRESHOLDS_MARKER щодо обмеження апаратури).
-static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
-                                                  uint16_t       frame_size)
-{
-    if (frame_size < CMD_THRESHOLDS_FRAME_SIZE)            return 0;
-    if (frame[0] != CMD_SET_THRESHOLDS_MARKER)             return 0;
-
-    // Бекенд пише payload_len як little-endian uint16
-    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
-    if (payload_len != CMD_THRESHOLDS_PAYLOAD_LEN)         return 0;
-
-    const uint8_t* body = frame + CMD_THRESHOLDS_HEADER_SIZE;
-
-    // Перевіряємо CRC16 по 8-байтному body ПЕРЕД хвостовим CRC
-    uint16_t expected_crc = Silken_Crc16_Ccitt(body, CMD_THRESHOLDS_BODY_SIZE);
-    uint16_t received_crc = (uint16_t)body[CMD_THRESHOLDS_BODY_SIZE]
-                          | ((uint16_t)body[CMD_THRESHOLDS_BODY_SIZE + 1] << 8);
-    if (expected_crc != received_crc)                      return 0;
-
-    // Розпаковуємо знакові 16-бітні little-endian z_min, z_max, z_opt
-    int16_t z_min = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-    int16_t z_max = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    int16_t z_opt = (int16_t)((uint16_t)body[4] | ((uint16_t)body[5] << 8));
-    uint8_t species_id     = body[6];
-    uint8_t config_version = body[7];
-
-    // Перевірка інваріантів (не довіряємо ефіру навіть після CRC):
-    //   - z_min строго менший за z_max (інакше зона колапсує);
-    //   - z_opt має бути в [z_min, z_max];
-    //   - усі значення в правдоподібному діапазоні Z (-100.00..+100.00 → ±10000).
-    if (!(z_min < z_max))                                  return 0;
-    if (z_opt < z_min || z_opt > z_max)                    return 0;
-    if (z_min < -10000 || z_max > 10000)                   return 0;
-
-    lorenz_z_min_x100      = z_min;
-    lorenz_z_max_x100      = z_max;
-    lorenz_z_opt_x100      = z_opt;
-    lorenz_species_id      = species_id;
-    lorenz_config_version  = config_version;
-    return 1;
-}
-
 // =========================================================================
 // [FW.17] Hash-Ratchet ротація LoRa-ключа (CMD_ROTATE_KEY 0x9E)
 // =========================================================================
@@ -661,13 +607,13 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // append-only не сміє тримати ключового матеріалу; boot re-derive
 // K_current = ratchet^v(K0 з Protected Flash).
 //
-// 🟡 СТАТУС: гілка ВИМКНЕНА (FW17_RATCHET_ENABLED 0) — фліп ЛИШЕ після
-// FW.2 CCM: ECB-downlink без MAC не сміє командувати ротацією (підроблений
-// 0x9E двигає версію вперед → desync → вузол глухне для бекенда; Dual-Key
-// Grace страхує лише авторизовану ротацію). Другий передзамок — Flash-KV
-// mount (нижче): ключ перемикається лише ПІСЛЯ запису версії
-// (Key_Ratchet_Commit), тож без KV вузол не ротується взагалі — лишається на
-// старому ключі, бекенд тримає grace і перевидає 0x9E на кожному poll'і.
+// 🟡 СТАТУС: гілка ВИМКНЕНА (FW17_RATCHET_ENABLED 0) — фліп після FW.2 CCM
+// (grace закриває MIC аплінку — #error нижче). 0x9E приходить лише спільним
+// CCM-шляхом адресних команд (03_05 §2.5, секція 1.14): MIC сесійним ключем
+// цього вузла + DID + DLFC, тож, маючи кластерний KEYB, ротацію більше не
+// підробити. Другий передзамок — Flash-KV mount: ключ перемикається лише
+// ПІСЛЯ запису версії (Key_Ratchet_Commit), тож без KV вузол не ротується
+// взагалі — лишається на старому ключі, а бекенд тримає grace.
 // Канон: 03_05 §3.8; реєстр KV-ключів — 03_01 §2.3.1.
 #include "../common/key_ratchet.h"
 #include "../common/flash_kv.h"
@@ -750,6 +696,16 @@ static uint16_t wire_ema_delta_t_s = 0;
 #ifndef FW20_MESH_RELAY_ENABLED
 #define FW20_MESH_RELAY_ENABLED 0
 #endif
+// [FW.18 · ⚖️ FW.17 2026-09-28] Приймач 0x9D за гейтом (ADR — 03_03 §5.4).
+// Define живе тут, бо гейт входить у композит приймача нижче.
+#ifndef FW18_AUDIO_CMD_ENABLED
+#define FW18_AUDIO_CMD_ENABLED 0
+#endif
+// [FW.17 · 03_05 §2.5] Приймач адресних команд Rails → Солдат (0x9A · 0x9D ·
+// 0x9E) — лише CCM сесійним ключем цього вузла; ECB-шлях їх не приймає
+// взагалі (живий приймач під кластерним KEYB = підробка на весь кластер).
+// Живий, коли живий бодай один опкод; DLFC — Flash-KV 0x12 (секція 1.14).
+#define DL_CCM_RX_ENABLED (FW8_PARSER_ENABLED || FW18_AUDIO_CMD_ENABLED || FW17_RATCHET_ENABLED)
 // [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
 // (ops+mount+compact) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
 #define SEC20_OTA_ANTIROLLBACK_ENABLED 1
@@ -757,9 +713,12 @@ static uint16_t wire_ema_delta_t_s = 0;
 // mount, compact. Новий споживач Flash-KV дописується СЮДИ, а не в окремий
 // сайт: сайт, що відстав, мовчки лишить журнал без ущільнення, і після
 // ~254 APPLY high-water замерзне — анти-rollback обернеться на replay-downgrade.
-#define FLASH_KV_BASE_ENABLED (FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED)
+#define FLASH_KV_BASE_ENABLED (FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || DL_CCM_RX_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED)
 #if SEC20_OTA_ANTIROLLBACK_ENABLED && !FLASH_KV_BASE_ENABLED
 #error "[SEC.20] anti-rollback живе на журналі Flash-KV — FLASH_KV_BASE_ENABLED мусить містити SEC20_OTA_ANTIROLLBACK_ENABLED"
+#endif
+#if DL_CCM_RX_ENABLED && !FLASH_KV_BASE_ENABLED
+#error "[FW.17] DLFC адресних команд живе на журналі Flash-KV — FLASH_KV_BASE_ENABLED мусить містити DL_CCM_RX_ENABLED"
 #endif
 #include "../common/beacon_dedup.h"
 
@@ -1585,80 +1544,115 @@ static void Reset_Ota_Assembly(void) {
 }
 
 // =====================================================================
-// === 1.14. FW.18 Дисетчер downlink-CMD на Солдаті (CMD_SET_AUDIO_THRESHOLDS) ===
+// === 1.14. [FW.17 · 03_05 §2.5] Адресні команди Rails → Солдат (CCM) ===
 // =====================================================================
-// Wire-формат (плоский, не вкладений у CMD_TIME_SYNC envelope):
-//   [0]    0x9D marker
-//   [1..2] payload_len (little-endian, = 5)
-//   [3..4] warn_x100 (little-endian int16) — TinyML warning threshold × 100
-//   [5..6] crit_x100 (little-endian int16) — TinyML critical threshold × 100
-//   [7]    config_version (uint8)
-//   [8..9] crc16-ccitt (little-endian) над body[3..7] (5 байт)
-//
-// Загальний розмір: 10 байт (вкладається в один LoRa AES-блок 16 байт).
-// Солдат накладає ці пороги через TinyML_Apply_Thresholds — захисти від
-// інверсії та виходу за діапазон лишаються (defense-in-depth: рій більший
-// за один CMD).
-//
-// RTC-запам'ятовування DR13/DR14 уже відбувається у Phase 5 (КЕНОЗИС) —
-// нічого додавати тут не потрібно: оновлені tinyml_warning/critical_threshold
-// глобалки переходять у вічну пам'ять при наступному STOP2 entry (рядки 1180-1181).
-#define CMD_SET_AUDIO_THRESHOLDS_MARKER  0x9D
-#define CMD_AUDIO_THRESHOLDS_HEADER_SIZE 3
-#define CMD_AUDIO_THRESHOLDS_BODY_SIZE   5   // [warn:2][crit:2][version:1]
-#define CMD_AUDIO_THRESHOLDS_FRAME_SIZE  10  // header + body + crc16
-#define CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN 7   // body + crc16
+// 0x9A пороги Лоренца (FW.8) · 0x9D аудіо-пороги (FW.18) · 0x9E ротація
+// ключа (FW.17) підписує Rails сесійним ключем САМЕ цього вузла; кадр і його
+// відкриття — ../common/downlink_ccm{,_open}.h. Два такти, як у ратчета:
+//   RX-вікно — лише відкриття (MIC, DID, DLFC); стан не змінюється;
+//   КЕНОЗИС  — зміст, потім DLFC у Flash-KV, потім дія: невалідне тіло
+//              лічильника не палить, а дії без записаного лічильника немає.
+// 0x9D: config_version — RAM (0 = firmware-дефолти), пороги — DR13/DR14.
+uint8_t lorenz_audio_config_version = 0;
 
-uint8_t lorenz_audio_config_version = 0;     // 0 = firmware-baked defaults
+#if DL_CCM_RX_ENABLED
+#include "../common/downlink_ccm_open.h"
 
-// [FW.18 · ⚖️ FW.17 2026-09-28] Приймач 0x9D за гейтом: відправника немає (Rails
-// кадру не будує, черга Королеви його не пропускає), а ECB + CRC без MAC дав би
-// будь-кому з кластерним KEYB заглушити клас пилки на весь кластер. Фліп — разом
-// із реалізацією downlink-wire-ревізії (03_05 §2.5): MAC сесійним ключем + DID + DLFC.
-#ifndef FW18_AUDIO_CMD_ENABLED
-#define FW18_AUDIO_CMD_ENABLED 0
-#endif
+static uint32_t dl_last_dlfc   = 0; // RAM-кеш; істина — Flash-KV 0x12 (0 = жодної)
+static uint8_t  dl_cmd_pending = 0; // відкрито у вікні, чекає КЕНОЗИСУ
+static uint8_t  dl_cmd_op      = 0;
+static uint32_t dl_cmd_dlfc    = 0;
+static uint8_t  dl_cmd_body[DL_CCM_BODY_MAX];
 
-#if FW18_AUDIO_CMD_ENABLED
-// Парсимо frame, валідуємо CRC16 + межі, мутуємо tinyml_warning/critical_threshold.
-// Повертає 1 при успіху, 0 при відмові (поганий len/marker/CRC/межі).
-// При відмові глобалки НЕ змінюються (atomic — defense-in-depth).
-static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
-                                                         uint16_t       frame_size,
-                                                         float*         warn_out,
-                                                         float*         crit_out,
-                                                         uint8_t*       version_out) {
-    if (frame == NULL || warn_out == NULL || crit_out == NULL)             return 0;
-    if (frame_size < CMD_AUDIO_THRESHOLDS_FRAME_SIZE)                      return 0;
-    if (frame[0] != CMD_SET_AUDIO_THRESHOLDS_MARKER)                       return 0;
+static void MX_CRYP_Restore_From_CCM(void);
 
-    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
-    if (payload_len != CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN)                   return 0;
+// Опкод, чий приймач у цій збірці живий; решту кадрів навіть не відкриваємо.
+static uint8_t Soldier_Dl_Opcode_Live(uint8_t op)
+{
+    return (uint8_t)((FW8_PARSER_ENABLED     && op == DL_CCM_OP_THRESHOLDS) ||
+                     (FW18_AUDIO_CMD_ENABLED && op == DL_CCM_OP_AUDIO_THRESHOLDS) ||
+                     (FW17_RATCHET_ENABLED   && op == DL_CCM_OP_ROTATE_KEY));
+}
 
-    const uint8_t* body = frame + CMD_AUDIO_THRESHOLDS_HEADER_SIZE;
+// RX-вікно: відкрити кадр сесійним ключем (KEYL / K_v). Відмова будь-якого
+// роду — чужий DID, підробка, повтор — мовчить, як ефірний шум.
+static void Soldier_Dl_Cmd_Receive(const uint8_t *frame, uint16_t len)
+{
+    if (len == 0u || !Soldier_Dl_Opcode_Live(frame[0])) return;
+    uint32_t dlfc = 0;
+    DlCcmResult r = Dl_Ccm_Open(&hcryp, aes_key, frame, len, tree_did,
+                                dl_last_dlfc, dl_cmd_body, &dlfc);
+    MX_CRYP_Restore_From_CCM(); // ECB + KEYB назад (гоча 1), і на відмові теж
+    if (r != DL_CCM_OK) return;
+    dl_cmd_op      = frame[0];
+    dl_cmd_dlfc    = dlfc;
+    dl_cmd_pending = 1;
+}
 
-    // CRC16 over 5-byte body
-    uint16_t expected_crc = Silken_Crc16_Ccitt(body, CMD_AUDIO_THRESHOLDS_BODY_SIZE);
-    uint16_t received_crc = (uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE]
-                          | ((uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE + 1] << 8);
-    if (expected_crc != received_crc)                                      return 0;
-
-    int16_t warn_x100    = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-    int16_t crit_x100    = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    // Range invariants (decoded values × 100, тож range [1..99] = [0.01..0.99])
-    if (warn_x100 < 1   || warn_x100 > 99)                                 return 0;
-    if (crit_x100 < 1   || crit_x100 > 99)                                 return 0;
-
-    float warn_raw = (float)warn_x100 / 100.0f;
-    float crit_raw = (float)crit_x100 / 100.0f;
-
-    // TinyML_Apply_Thresholds робить додатковий sanitize (NaN/inversion → defaults)
-    TinyML_Apply_Thresholds(warn_raw, crit_raw, warn_out, crit_out);
-
-    if (version_out) *version_out = body[4];  // config_version (байт 4 body)
+// DLFC у журнал — ПЕРШ ніж дія (03_05 §2.5, дисципліна Key_Ratchet_Commit).
+static uint8_t Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
+{
+    if (!FlashKv_Put32(&soldier_kv, DL_CCM_KV_KEY_DLFC, dlfc)) return 0;
+    dl_last_dlfc = dlfc;
     return 1;
 }
-#endif // FW18_AUDIO_CMD_ENABLED
+
+// КЕНОЗИС, першою дією. 0x9E і 0x9A лише виставляють dirty — блоки FW.17 і
+// FW.8 нижче в цьому ж КЕНОЗИСІ комітять їх звичним шляхом; 0x9D пише
+// DR13/DR14 тут же, щоб вікно між DLFC і записом було мікросекундами, а не
+// всім КЕНОЗИСОМ (варіант (б) з шапки ARCH.21-тестів у test_soldier_logic.c).
+static void Soldier_Dl_Cmd_Commit(void)
+{
+    if (!dl_cmd_pending) return;
+    dl_cmd_pending = 0;
+    if (!soldier_kv_mounted) return; // без журналу DLFC немає й дії
+
+    switch (dl_cmd_op) {
+#if FW17_RATCHET_ENABLED
+    case DL_CCM_OP_ROTATE_KEY: {
+        uint16_t target = Dl_Cmd_Rotate_Target(dl_cmd_body);
+        // replay / rollback / runaway-стрибок — як ефірний шум
+        if (Key_Ratchet_Steps(lora_key_version, target) == 0u) return;
+        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
+        lora_key_target_version = target;
+        lora_key_version_dirty  = 1;
+        return;
+    }
+#endif
+#if FW8_PARSER_ENABLED
+    case DL_CCM_OP_THRESHOLDS: {
+        LorenzThresholds t;
+        if (!Lorenz_Thresholds_From_Wire(dl_cmd_body, &t)) return;
+        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
+        lorenz_z_min_x100       = t.z_min_x100;
+        lorenz_z_max_x100       = t.z_max_x100;
+        lorenz_z_opt_x100       = t.z_opt_x100;
+        lorenz_species_id       = t.species_id;
+        lorenz_config_version   = t.config_version;
+        lorenz_thresholds_dirty = 1;
+        return;
+    }
+#endif
+#if FW18_AUDIO_CMD_ENABLED
+    case DL_CCM_OP_AUDIO_THRESHOLDS: {
+        int16_t warn_x100, crit_x100;
+        uint8_t version;
+        if (!Dl_Cmd_Audio_Unpack(dl_cmd_body, &warn_x100, &crit_x100, &version)) return;
+        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
+        // Інверсію й NaN лікує TinyML_Apply_Thresholds — там дефолти.
+        TinyML_Apply_Thresholds((float)warn_x100 / 100.0f, (float)crit_x100 / 100.0f,
+                                &tinyml_warning_threshold, &tinyml_critical_threshold);
+        lorenz_audio_config_version = version;
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
+        return;
+    }
+#endif
+    default:
+        return;
+    }
+}
+#endif // DL_CCM_RX_ENABLED
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
 // Скомпільований скрипт Атрактора Лоренца (`bio_contracts/bio_contract.rb`).
@@ -2053,6 +2047,15 @@ int main(void)
   // [FW.17] ПІСЛЯ Load_AES_Key (K0) і DID-блоку (Context KDF): якщо KV має
   // версію — доганяємо K_current і ре-ініціалізуємо CRYP.
   FW17_Restore_Key_Version(tree_did);
+#endif
+#if DL_CCM_RX_ENABLED
+  // [FW.17 · 03_05 §2.5] Останній прийнятий DLFC: запису немає (свіжий журнал
+  // re-provision, новий чип) → 0, і перша команда відкривається з DLFC 1;
+  // mount-fail → приймач живий, але КЕНОЗИС без журналу нічого не застосує.
+  if (soldier_kv_mounted) {
+      uint32_t v = 0;
+      if (FlashKv_Get32(&soldier_kv, DL_CCM_KV_KEY_DLFC, &v)) dl_last_dlfc = v;
+  }
 #endif
 
   // [FW.49 S1] Найперший старт (DR1 == 0) НЕ засіюється тут: guard
@@ -2697,15 +2700,22 @@ int main(void)
         uint32_t rx_start_time = HAL_GetTick();
         while((HAL_GetTick() - rx_start_time) < LORA_RX_LOOP_MS) {
             if(lora_rx_flag == 1) {
-                // [FW.2] Чужий формат ефіру гине ДО декрипту (ungated — вірно
-                // в обох ерах): усі легальні кадри Солдата = рівно 16B ECB
-                // (beacon/OTA/печатка/CMD/mesh). 30B CCM-кадр сусіда, прогнаний
-                // ECB'ом, давав ~1/256 шанс хибно зійтися на 0x99/0x9B і
-                // отруїти ota_buffer/печатку. CCM-телеметрію Солдат свідомо НЕ
+                // [FW.2 · FW.17] Розрізнення за довжиною ДО будь-якого декрипту
+                // (ungated — вірно в обох ерах): 16 Б — ECB-кадри Королеви на
+                // KEYB (маяк / OTA / печатка / mesh); будь-яка інша — лише
+                // адресна команда під сесійним ключем цього вузла (03_05 §2.5,
+                // секція 1.14), а решта (30-Б CCM-кадр сусіда тощо) гине там же:
+                // не та довжина для опкоду або чужий DID. 30-Б кадр, прогнаний
+                // ECB'ом, давав ~1/256 шанс хибно зійтися на 0x99/0x9B і отруїти
+                // ota_buffer/печатку. CCM-телеметрію Солдат свідомо НЕ
                 // ретранслює: mesh-TTL живе у шифртексті — рішення відкладено
                 // до ARCH.26 (03_05 §2.1 «Відкриті спостереження»).
                 if (incoming_lora_size != 16) {
-                    break; // не наш формат — спати (re-request Фази 4.5 живий)
+#if DL_CCM_RX_ENABLED
+                    Soldier_Dl_Cmd_Receive((const uint8_t*)incoming_lora_payload,
+                                           incoming_lora_size);
+#endif
+                    break; // один пакет за пробудження (re-request Фази 4.5 живий)
                 }
 
                 // МИ ЗЛОВИЛИ ПАКЕТ! Розшифровуємо його.
@@ -2782,76 +2792,10 @@ int main(void)
                     break;
                 }
 
-                // Сценарій 1: [FW.8] CMD_SET_THRESHOLDS (0x9A) — Z-пороги Лоренца.
-                // 🟡 Deferred TRL-7. Парсер `Soldier_Handle_CMD_SET_THRESHOLDS`
-                // залишено + 12 host-тестів як freeze-контракт wire-формату,
-                // але в production-цикл ВИМКНЕНО (`FW8_PARSER_ENABLED 0`).
-                // Деталі — у блоці-преамбулі біля визначення макроса.
-                // Бекенд `OtaPackagerService.build_threshold_config_block` —
-                // лише class method, у downlink pipeline не передається
-                // (свідомий defer: ціна каналу — re-send щодня ≈5% downlink-
-                // бюджету. ⛔ «Бо всі види на дефолтах» більше НЕ підстава —
-                // спростовано сідами, див. блок-преамбулу біля макроса).
-                // Boot-restore і КЕНОЗИС-write написані за цим же гейтом —
-                // активація = лише фліп `FW8_PARSER_ENABLED 1` (bench).
-#if FW8_PARSER_ENABLED
-                if (decrypted_rx_payload[0] == CMD_SET_THRESHOLDS_MARKER &&
-                    incoming_lora_size >= CMD_THRESHOLDS_FRAME_SIZE) {
-                    if (Soldier_Handle_CMD_SET_THRESHOLDS(decrypted_rx_payload,
-                                                          incoming_lora_size)) {
-                        lorenz_thresholds_dirty = 1; // Flash-KV — у КЕНОЗИСІ
-                    }
-                    // Незалежно від результату парсингу — не ретранслюємо (TTL=1)
-                    break;
-                }
-#endif
-
-                // Сценарій 1б: [FW.17] CMD_ROTATE_KEY (0x9E) — Hash-Ratchet
-                // ротація LoRa-ключа. 🟡 Вимкнено до FW.2 CCM (деталі — у
-                // преамбулі FW17_RATCHET_ENABLED). Тут лише ЗАПАМ'ЯТОВУЄМО ціль:
-                // ключ перемкне КЕНОЗИС після запису версії (Key_Ratchet_Commit).
-                // Невалідний кадр / replay / rollback / runaway-стрибок мовчки
-                // відкидається — стан (ключ + версія) незмінний, як ефірний шум.
-#if FW17_RATCHET_ENABLED
-                if (decrypted_rx_payload[0] == CMD_ROTATE_KEY_MARKER &&
-                    incoming_lora_size >= CMD_ROTATE_KEY_FRAME_SIZE) {
-                    uint16_t rotate_target = 0;
-                    if (Key_Ratchet_Parse_Cmd((const uint8_t*)decrypted_rx_payload,
-                                              incoming_lora_size, &rotate_target) &&
-                        Key_Ratchet_Steps(lora_key_version, rotate_target) != 0u) {
-                        lora_key_target_version = rotate_target;
-                        lora_key_version_dirty  = 1;
-                    }
-                    // Не ретранслюємо (TTL=1) — слово адресоване цьому Солдату
-                    break;
-                }
-#endif
-
-#if FW18_AUDIO_CMD_ENABLED
-                // Сценарій 2: [FW.18] CMD_SET_AUDIO_THRESHOLDS (0x9D) — TinyML
-                // переналаштовує слух Солдата. Коли ліс глухне взимку чи
-                // дзвенить весною від тала, ми не перепрошиваємо вузли — ми
-                // надсилаємо нову смугу слуху одним CMD. RTC-запис DR13/DR14
-                // лягає у вічну пам'ять у Phase 5 (КЕНОЗИС) після успіху.
-                if (decrypted_rx_payload[0] == CMD_SET_AUDIO_THRESHOLDS_MARKER &&
-                    incoming_lora_size >= CMD_AUDIO_THRESHOLDS_FRAME_SIZE) {
-                    float new_warn = tinyml_warning_threshold;
-                    float new_crit = tinyml_critical_threshold;
-                    uint8_t new_version = lorenz_audio_config_version;
-                    uint8_t ok = Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(
-                        (const uint8_t*)decrypted_rx_payload,
-                        incoming_lora_size,
-                        &new_warn, &new_crit, &new_version);
-                    if (ok) {
-                        tinyml_warning_threshold    = new_warn;
-                        tinyml_critical_threshold   = new_crit;
-                        lorenz_audio_config_version = new_version;
-                    }
-                    // Не ретранслюємо CMD далі — TTL=1 для downlink, слово
-                    // адресоване лише цьому Солдату.
-                    break;
-                }
-#endif // FW18_AUDIO_CMD_ENABLED
+                // [FW.17 · 03_05 §2.5] Адресних команд (0x9A · 0x9D · 0x9E) на
+                // 16-байтному ECB-шляху НЕМАЄ і не повертати: живий приймач під
+                // кластерним KEYB дав би будь-кому з вкраденою платою командувати
+                // кожним вузлом. Їх несе лише CCM-кадр (гілка довжини ≠ 16 вище).
 
                 // Сценарій А1: [FW.23] HMAC-печатка OTA (0x9B) — 4 LoRa-чанки
                 // після тіла прошивки: 3 несуть 32-байтну печатку, 4-й — version_id
@@ -3107,6 +3051,11 @@ int main(void)
     // =========================================================================
     // ФАЗА 5: КЕНОЗИС (Абсолютний сон та збереження)
     // =========================================================================
+#if DL_CCM_RX_ENABLED
+    // [FW.17] Прийнята у вікні команда — першою: її ефект мусить устигнути в
+    // блоки FW.17 / FW.8 нижче в цьому ж КЕНОЗИСІ (секція 1.14).
+    Soldier_Dl_Cmd_Commit();
+#endif
     // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8]
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
@@ -3893,7 +3842,9 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
     hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
     HAL_CRYP_Init(&hcryp);
 }
+#endif
 
+#if FW2_CCM_ENABLED || DL_CCM_RX_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // Гігієна після CCM: ECB-контекст назад (дисципліна Restore_ECB_Mode) і
 // жодного висячого вказівника у Init — B0/Header жили на стеку викликача.
 // Width-unit'и ОБОВ'ЯЗКОВО назад у WORD: MX_CRYP_Init їх не чіпає, а
@@ -3901,6 +3852,8 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 // [FW.2 (в)] Вкладений MX_CRYP_Init повертає й КЛЮЧ: session (aes_key)
 // скоупований CCM-фазою, амбієнт знову cluster-plane (bcast_key) — RX-вікно
 // Фази 4.5 декриптує downlink Королеви правильним ключем автоматично.
+// [FW.17] Кличе й відкриття адресної команди (секція 1.14) — у тому числі
+// в ECB-ері, звідси ширший гейт, ніж у MX_CRYP_Init_CCM.
 static void MX_CRYP_Restore_From_CCM(void)
 {
     hcryp.Init.B0              = NULL;
@@ -3910,7 +3863,9 @@ static void MX_CRYP_Restore_From_CCM(void)
     hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
     MX_CRYP_Init();
 }
+#endif
 
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // Load / Save Frame Counter to RTC_BKP_DR15.
 // Returns the current FC (post-load, post-reseed if cold-boot).
 static uint32_t Load_Frame_Counter(void)

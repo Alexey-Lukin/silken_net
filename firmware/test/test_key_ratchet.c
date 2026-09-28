@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "../common/key_ratchet.h"
+#include "../common/ccm_kat_vectors.h"
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -212,35 +213,16 @@ TEST(test_words_bytes_roundtrip_be_convention) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 3. Wire-кадр 0x9E (дзеркало OtaPackagerService.build_rotate_key_block)
+ * 3. Ціль із команди 0x9E (адресний CCM-кадр, 03_05 §2.5)
  * ════════════════════════════════════════════════════════════════════ */
-TEST(test_parse_golden_frame) {
-    /* Freeze-contract hex: 9E 0400 0300 5C48 (target_version = 3). */
-    const uint8_t frame[] = { 0x9E, 0x04, 0x00, 0x03, 0x00, 0x5C, 0x48 };
-    uint16_t target = 0;
-    ASSERT_TRUE(Key_Ratchet_Parse_Cmd(frame, sizeof frame, &target));
-    ASSERT_EQ(target, 3);
-}
-
-TEST(test_parse_rejects_garbage) {
-    uint8_t frame[] = { 0x9E, 0x04, 0x00, 0x03, 0x00, 0x5C, 0x48 };
-    uint16_t target;
-    ASSERT_FALSE(Key_Ratchet_Parse_Cmd(frame, 6, &target));   /* куций */
-    frame[0] = 0x9A;
-    ASSERT_FALSE(Key_Ratchet_Parse_Cmd(frame, 7, &target));   /* чужий маркер */
-    frame[0] = 0x9E; frame[1] = 0x05;
-    ASSERT_FALSE(Key_Ratchet_Parse_Cmd(frame, 7, &target));   /* битий len */
-    frame[1] = 0x04; frame[3] = 0x04;
-    ASSERT_FALSE(Key_Ratchet_Parse_Cmd(frame, 7, &target));   /* битий CRC */
-}
-
-TEST(test_parse_then_advance_roundtrip) {
-    /* Повний шлях кадр → парсер → ratchet: версія 0 → 3, ключ = K3. */
-    const uint8_t frame[] = { 0x9E, 0x04, 0x00, 0x03, 0x00, 0x5C, 0x48 };
+TEST(test_rails_signed_target_drives_the_ratchet) {
+    /* Тіло golden-кадру DL1 (ccm_kat_vectors.h ↔ lora_ccm_spec.rb) несе
+     * ціль 3: body → Dl_Cmd_Rotate_Target → ratchet: версія 0 → 3, ключ = K3. */
     uint8_t key[KEY_RATCHET_KEY_LEN];
-    uint16_t version = 0, target = 0;
+    uint16_t version = 0;
+    uint16_t target = Dl_Cmd_Rotate_Target(CCM_KAT_DOWNLINK[0].body);
     kat_k0(key);
-    ASSERT_TRUE(Key_Ratchet_Parse_Cmd(frame, sizeof frame, &target));
+    ASSERT_EQ(target, 3);
     ASSERT_TRUE(Key_Ratchet_Advance(key, &version, target, KAT_DID));
     ASSERT_KEY_EQ(key, "C7593AA70E31334ABB2BA45DC79B153B");
 }
@@ -269,9 +251,7 @@ int main(void)
     RUN(test_words_bytes_roundtrip_be_convention);
 
     printf("\n— Wire-кадр 0x9E —\n");
-    RUN(test_parse_golden_frame);
-    RUN(test_parse_rejects_garbage);
-    RUN(test_parse_then_advance_roundtrip);
+    RUN(test_rails_signed_target_drives_the_ratchet);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

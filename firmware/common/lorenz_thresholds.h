@@ -17,9 +17,10 @@
  * дефолти), а валідний «мікс» — короткоживучий: наступний daily re-send
  * перезапише обидва ключі. Свідомий trade-off замість 2-фазного журналу.
  *
- * Інваріанти Valid() дзеркалять Soldier_Handle_CMD_SET_THRESHOLDS
- * (main.c) і Test_Handle_CMD_SET_THRESHOLDS (test_soldier_logic.c) —
- * парність пінується host-тестом test_fw8_valid_agrees_with_parser.
+ * Парсер тіла 0x9A (Lorenz_Thresholds_From_Wire) і журнал судять ОДНИМ
+ * Valid() — до downlink-ревізії (2026-09-29) парсер був рукописною копією в
+ * main.c і ще однією в тесті, і паритет тримав лише тест. Інваріанти пінує
+ * test_fw8_valid_agrees_with_parser (test_flash_kv.c).
  *
  * Залишок FW.8 після цього: фліп FW8_PARSER_ENABLED 1 + mount KV у main.c
  * (KENOSIS-фаза) + HAL_FLASH глю — bench.
@@ -95,6 +96,20 @@ static inline int Lorenz_Thresholds_Valid(const LorenzThresholds *t)
 
 /* Зберегти прийняту конфігурацію. 1 = обидва ключі записано. Невалідну
  * не пишемо взагалі — Flash-KV не сміє тримати те, що Load відкине. */
+/* [FW.17 · 03_05 §2.5] Тіло команди 0x9A —
+ * [z_min_x100][z_max_x100][z_opt_x100]:s16le · [species_id:u8][config_version:u8] —
+ * у пороги з тими самими інваріантами, що Save/Load: парсер і журнал судять
+ * одним Valid, тож розійтись не можуть. 1 = валідне. */
+static inline int Lorenz_Thresholds_From_Wire(const uint8_t body[8], LorenzThresholds *t)
+{
+    t->z_min_x100     = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    t->z_max_x100     = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    t->z_opt_x100     = (int16_t)((uint16_t)body[4] | ((uint16_t)body[5] << 8));
+    t->species_id     = body[6];
+    t->config_version = body[7];
+    return Lorenz_Thresholds_Valid(t);
+}
+
 static inline int Lorenz_Thresholds_Save(FlashKv *kv, const LorenzThresholds *t)
 {
     if (!Lorenz_Thresholds_Valid(t)) return 0;

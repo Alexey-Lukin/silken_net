@@ -131,6 +131,36 @@ static inline void Build_DL_CCM_Nonce(uint32_t did, uint32_t dlfc,
     nonce[11] = 0x00;
 }
 
+/* Flash-KV ключ DLFC на Солдаті — останній прийнятий, u32 (реєстр 03_01 §2.3.1;
+ * раніше вільний 0x12). Свіжий журнал re-provision його не несе → DLFC 0. */
+#define DL_CCM_KV_KEY_DLFC          0x12u
+
+/* ── Тіла команд — little-endian поля старого каркаса (OtaPackagerService) ──
+ * Розпаковка й межі самого поля; зміст судить домен: ратчет —
+ * Key_Ratchet_Steps, пороги Лоренца — Lorenz_Thresholds_From_Wire. */
+
+/* 0x9E: [target_version:u16le]. */
+static inline uint16_t Dl_Cmd_Rotate_Target(const uint8_t body[DL_CCM_BODY_ROTATE_KEY])
+{
+    return (uint16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+}
+
+/* 0x9D: [warn_x100:s16le][crit_x100:s16le][config_version:u8], кожен поріг
+ * 1..99 (0.01..0.99). Інверсію warn ≥ crit і NaN лікує TinyML_Apply_Thresholds
+ * Солдата — там дефолти, тут відмова. 1 = прийнято. */
+static inline int Dl_Cmd_Audio_Unpack(const uint8_t body[DL_CCM_BODY_AUDIO],
+                                      int16_t *warn_x100, int16_t *crit_x100,
+                                      uint8_t *version)
+{
+    int16_t w = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t c = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    if (w < 1 || w > 99 || c < 1 || c > 99) return 0;
+    *warn_x100 = w;
+    *crit_x100 = c;
+    *version   = body[4];
+    return 1;
+}
+
 /* Найменше u32 > last з молодшими бітами lsb. 0 = переповнення (last уже в
  * останньому 16-бітному вікні) — кадр не приймається. Легального 0 немає:
  * Rails видає DLFC від 1, а результат завжди > last ≥ 0. */

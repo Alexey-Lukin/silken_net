@@ -2510,213 +2510,10 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
     ASSERT_EQ(test_soldier_unix_ts, 0u);
 }
 
-/* ════════════════════════════════════════════════════════════════════
- * [FW.8] CMD_SET_THRESHOLDS frame parsing (Soldier side).
- * Mirrors backend OtaPackagerService.build_threshold_config_block — any
- * change to the wire format MUST update both this test bank and the Ruby
- * service simultaneously (cross-stack contract).
- * ════════════════════════════════════════════════════════════════════ */
-#define S_CMD_SET_THRESHOLDS_MARKER  0x9A
-#define S_CMD_THRESHOLDS_FRAME_SIZE  13
-#define S_CMD_THRESHOLDS_PAYLOAD_LEN 10
-#define S_CMD_THRESHOLDS_BODY_SIZE   8
-
-/* CRC-16/CCITT-FALSE — One-Home: common/silken_crc.h (той самий код, що
- * компілюється у soldier/main.c і queen/main.c). [FW.53] */
-#include "../common/silken_crc.h"
-static uint16_t soldier_crc16_ccitt(const uint8_t* data, uint16_t len)
-{
-    return Silken_Crc16_Ccitt(data, len);
-}
-
-/* Compose a backend-style frame: [0x9A][len_le=10][body:8][crc_le:2]. */
-static void compose_threshold_frame(int16_t z_min_x100, int16_t z_max_x100,
-                                     int16_t z_opt_x100, uint8_t species,
-                                     uint8_t version, uint8_t out[13])
-{
-    out[0] = S_CMD_SET_THRESHOLDS_MARKER;
-    out[1] = (uint8_t)(S_CMD_THRESHOLDS_PAYLOAD_LEN & 0xFFu);
-    out[2] = (uint8_t)((S_CMD_THRESHOLDS_PAYLOAD_LEN >> 8) & 0xFFu);
-
-    uint16_t u_min = (uint16_t)z_min_x100;
-    uint16_t u_max = (uint16_t)z_max_x100;
-    uint16_t u_opt = (uint16_t)z_opt_x100;
-    out[3] = (uint8_t)(u_min & 0xFFu);
-    out[4] = (uint8_t)((u_min >> 8) & 0xFFu);
-    out[5] = (uint8_t)(u_max & 0xFFu);
-    out[6] = (uint8_t)((u_max >> 8) & 0xFFu);
-    out[7] = (uint8_t)(u_opt & 0xFFu);
-    out[8] = (uint8_t)((u_opt >> 8) & 0xFFu);
-    out[9]  = species;
-    out[10] = version;
-
-    uint16_t crc = soldier_crc16_ccitt(&out[3], S_CMD_THRESHOLDS_BODY_SIZE);
-    out[11] = (uint8_t)(crc & 0xFFu);
-    out[12] = (uint8_t)((crc >> 8) & 0xFFu);
-}
-
-/* Pure-logic mirror of Soldier_Handle_CMD_SET_THRESHOLDS (in soldier/main.c).
- * Returns 1 on accept (mutates *out_z_min/max/opt/species/version), 0 on reject.
- * Kept in sync with the firmware impl by review — invariants tested below. */
-static uint8_t Test_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame, uint16_t size,
-                                               int16_t* out_z_min, int16_t* out_z_max,
-                                               int16_t* out_z_opt,
-                                               uint8_t* out_species, uint8_t* out_version)
-{
-    if (size < S_CMD_THRESHOLDS_FRAME_SIZE)              return 0;
-    if (frame[0] != S_CMD_SET_THRESHOLDS_MARKER)         return 0;
-
-    uint16_t plen = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
-    if (plen != S_CMD_THRESHOLDS_PAYLOAD_LEN)            return 0;
-
-    const uint8_t* body = frame + 3;
-    uint16_t expected = soldier_crc16_ccitt(body, S_CMD_THRESHOLDS_BODY_SIZE);
-    uint16_t received = (uint16_t)body[8] | ((uint16_t)body[9] << 8);
-    if (expected != received)                            return 0;
-
-    int16_t z_min = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-    int16_t z_max = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    int16_t z_opt = (int16_t)((uint16_t)body[4] | ((uint16_t)body[5] << 8));
-
-    if (!(z_min < z_max))                                return 0;
-    if (z_opt < z_min || z_opt > z_max)                  return 0;
-    if (z_min < -10000 || z_max > 10000)                 return 0;
-
-    *out_z_min   = z_min;
-    *out_z_max   = z_max;
-    *out_z_opt   = z_opt;
-    *out_species = body[6];
-    *out_version = body[7];
-    return 1;
-}
-
-TEST(test_thresholds_accepts_default_pinus_sylvestris) {
-    /* species_id=0 (Pinus sylvestris), version=1, defaults from bio_contract.rb */
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 1);
-    ASSERT_EQ(mn, 200);
-    ASSERT_EQ(mx, 4500);
-    ASSERT_EQ(op, 2900);
-    ASSERT_EQ(sp, 0);
-    ASSERT_EQ(ver, 1);
-}
-
-TEST(test_thresholds_accepts_negative_z_min) {
-    /* Some species can have z_min in the negative band. */
-    uint8_t frame[13];
-    compose_threshold_frame(-500, 3500, 1500, 4, 7, frame);  /* Betula pendula */
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 1);
-    ASSERT_EQ(mn, -500);
-    ASSERT_EQ(mx, 3500);
-    ASSERT_EQ(op, 1500);
-}
-
-TEST(test_thresholds_rejects_wrong_marker) {
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
-    frame[0] = 0x99;  /* OTA marker — not us */
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_wrong_payload_len) {
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
-    frame[1] = 9;  /* expected 10 */
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_bad_crc) {
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
-    frame[11] ^= 0xFF;  /* flip low CRC byte */
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_bit_flip_in_body) {
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
-    frame[3] ^= 0x01;  /* corrupt body — CRC will mismatch */
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_z_min_geq_z_max) {
-    /* Collapsed zone (z_min == z_max) — invariant violation. */
-    uint8_t frame[13];
-    compose_threshold_frame(2900, 2900, 2900, 0, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_z_opt_outside_band) {
-    /* z_opt = 5000 but z_max = 4500 → reject. */
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 5000, 0, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_z_below_minus_100) {
-    /* |z_min| ≤ 100.00 → ≤ 10000 absolute. -15000 == -150.00 → reject. */
-    uint8_t frame[13];
-    compose_threshold_frame(-15000, 4500, 0, 0, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_z_above_plus_100) {
-    uint8_t frame[13];
-    compose_threshold_frame(200, 15000, 5000, 0, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_rejects_short_frame) {
-    uint8_t frame[12] = {0};  /* one byte short */
-    frame[0] = S_CMD_SET_THRESHOLDS_MARKER;
-    frame[1] = S_CMD_THRESHOLDS_PAYLOAD_LEN;
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 12, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 0);
-}
-
-TEST(test_thresholds_unmapped_species_id_0xFF_accepted) {
-    /* Backend uses 0xFF for unmapped species — must still parse. */
-    uint8_t frame[13];
-    compose_threshold_frame(200, 4500, 2900, 0xFF, 1, frame);
-
-    int16_t mn=0, mx=0, op=0; uint8_t sp=0, ver=0;
-    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
-    ASSERT_EQ(ok, 1);
-    ASSERT_EQ(sp, 0xFF);
-}
+/* [FW.8] Тіло 0x9A і його інваріанти — Lorenz_Thresholds_From_Wire
+ * (common/lorenz_thresholds.h, тести — test_flash_kv.c); кадр і MIC —
+ * common/downlink_ccm.h (test_downlink_ccm.c). До downlink-ревізії
+ * (2026-09-29) тут жила рукописна копія обробника main.c. */
 
 /* ════════════════════════════════════════════════════════════════════
  * 14. FW.27-B Magic Re-Request — Soldier-initiated vector OTA recovery
@@ -3480,43 +3277,10 @@ TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 16. FW.18 OTA CMD Dispatcher — CMD_SET_AUDIO_THRESHOLDS (0x9D)
- * ════════════════════════════════════════════════════════════════════
- * Wire (10 bytes total):
- *   [0]    0x9D marker
- *   [1..2] payload_len LE = 7
- *   [3..4] warn_x100 (s16 LE)
- *   [5..6] crit_x100 (s16 LE)
- *   [7]    config_version
- *   [8..9] crc16-ccitt LE over body[3..7]
+ * 16. FW.18 — пороги TinyML (0x9D тіло — Dl_Cmd_Audio_Unpack у
+ * common/downlink_ccm.h, тести — test_downlink_ccm.c; до downlink-ревізії
+ * 2026-09-29 тут жила рукописна копія обробника main.c)
  * ════════════════════════════════════════════════════════════════════ */
-#define S_CMD_AUDIO_MARKER         0x9D
-#define S_CMD_AUDIO_HEADER_SIZE    3
-#define S_CMD_AUDIO_BODY_SIZE      5
-#define S_CMD_AUDIO_FRAME_SIZE     10
-#define S_CMD_AUDIO_PAYLOAD_LEN    7
-
-static void compose_audio_thresholds_frame(int16_t warn_x100, int16_t crit_x100,
-                                            uint8_t version, uint8_t out[10])
-{
-    memset(out, 0, 10);
-    out[0] = S_CMD_AUDIO_MARKER;
-    out[1] = (uint8_t)(S_CMD_AUDIO_PAYLOAD_LEN & 0xFFu);
-    out[2] = (uint8_t)((S_CMD_AUDIO_PAYLOAD_LEN >> 8) & 0xFFu);
-
-    uint16_t uw = (uint16_t)warn_x100;
-    uint16_t uc = (uint16_t)crit_x100;
-    out[3] = (uint8_t)(uw & 0xFFu);
-    out[4] = (uint8_t)((uw >> 8) & 0xFFu);
-    out[5] = (uint8_t)(uc & 0xFFu);
-    out[6] = (uint8_t)((uc >> 8) & 0xFFu);
-    out[7] = version;
-
-    uint16_t crc = soldier_crc16_ccitt(&out[3], S_CMD_AUDIO_BODY_SIZE);
-    out[8] = (uint8_t)(crc & 0xFFu);
-    out[9] = (uint8_t)((crc >> 8) & 0xFFu);
-}
-
 /* TinyML threshold validate/apply — mirrors firmware sanitize logic. */
 #define S_TINYML_MIN_VALID  0.01f
 #define S_TINYML_MAX_VALID  0.99f
@@ -3533,101 +3297,6 @@ static void Test_TinyML_Apply(float wr, float cr, float* w_out, float* c_out) {
     float c = Test_TinyML_Validate(cr, S_TINYML_DEFAULT_C);
     if (!(w < c)) { w = S_TINYML_DEFAULT_W; c = S_TINYML_DEFAULT_C; }
     *w_out = w; *c_out = c;
-}
-
-/* Mirror of Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS. */
-static uint8_t Test_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
-                                                     uint16_t frame_size,
-                                                     float* warn_out, float* crit_out,
-                                                     uint8_t* version_out)
-{
-    if (frame == NULL || warn_out == NULL || crit_out == NULL)         return 0;
-    if (frame_size < S_CMD_AUDIO_FRAME_SIZE)                           return 0;
-    if (frame[0] != S_CMD_AUDIO_MARKER)                                return 0;
-
-    uint16_t plen = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
-    if (plen != S_CMD_AUDIO_PAYLOAD_LEN)                               return 0;
-
-    const uint8_t* body = frame + S_CMD_AUDIO_HEADER_SIZE;
-    uint16_t expected = soldier_crc16_ccitt(body, S_CMD_AUDIO_BODY_SIZE);
-    uint16_t received = (uint16_t)body[5] | ((uint16_t)body[6] << 8);
-    if (expected != received)                                          return 0;
-
-    int16_t warn_x100 = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-    int16_t crit_x100 = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    uint8_t version   = body[4];
-
-    if (warn_x100 < 1 || warn_x100 > 99)                               return 0;
-    if (crit_x100 < 1 || crit_x100 > 99)                               return 0;
-
-    Test_TinyML_Apply((float)warn_x100 / 100.0f, (float)crit_x100 / 100.0f,
-                      warn_out, crit_out);
-    if (version_out) *version_out = version;
-    return 1;
-}
-
-TEST(test_audio_dispatcher_accepts_default_60_85) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(60, 85, 1, frame);
-
-    float w = 0.0f, c = 0.0f; uint8_t v = 0;
-    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v);
-    ASSERT_EQ(ok, 1);
-    /* float compare with tolerance */
-    ASSERT_EQ((int)(w * 100.0f + 0.5f), 60);
-    ASSERT_EQ((int)(c * 100.0f + 0.5f), 85);
-    ASSERT_EQ(v, 1);
-}
-
-TEST(test_audio_dispatcher_rejects_wrong_marker) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(60, 85, 1, frame);
-    frame[0] = 0x9C;  /* corrupt marker */
-    float w=0, c=0; uint8_t v=0;
-    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
-}
-
-TEST(test_audio_dispatcher_rejects_bad_crc) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(60, 85, 1, frame);
-    frame[8] ^= 0xFF;  /* corrupt CRC */
-    float w=0, c=0; uint8_t v=0;
-    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
-}
-
-TEST(test_audio_dispatcher_rejects_warn_geq_crit_via_apply_default) {
-    /* warn=85, crit=60 — both pass body range check (1..99) but APPLY rolls
-     * them back to defaults via TinyML_Apply (inversion safety). Parser
-     * returns 1 (frame is well-formed); apply returns defaults. */
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(85, 60, 1, frame);
-    float w=0, c=0; uint8_t v=0;
-    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v);
-    ASSERT_EQ(ok, 1);
-    /* Applied thresholds = defaults (0.60 / 0.85) */
-    ASSERT_EQ((int)(w * 100.0f + 0.5f), 60);
-    ASSERT_EQ((int)(c * 100.0f + 0.5f), 85);
-}
-
-TEST(test_audio_dispatcher_rejects_short_frame) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(60, 85, 1, frame);
-    float w=0, c=0; uint8_t v=0;
-    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 9, &w, &c, &v), 0);
-}
-
-TEST(test_audio_dispatcher_rejects_warn_zero) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(0, 85, 1, frame);
-    float w=0, c=0; uint8_t v=0;
-    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
-}
-
-TEST(test_audio_dispatcher_rejects_crit_above_99) {
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(60, 100, 1, frame);
-    float w=0, c=0; uint8_t v=0;
-    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4160,22 +3829,14 @@ TEST(test_arch21_pvd_save_then_restore_roundtrip) {
 /* ════════════════════════════════════════════════════════════════════
  * [FW.18 × ARCH.21 cross-feature regression] DR13/DR14 brownout race
  * ════════════════════════════════════════════════════════════════════
- * Сценарій-кандидат для regression freeze-contract bank (pattern FW.27 follow-up):
- * між отриманням CMD_SET_AUDIO_THRESHOLDS (мутація RAM `tinyml_warning_threshold`
- * у Сценарії 2 OTA-диспетчера) і Phase 5 KENOSIS writeback'ом у DR13/DR14
- * може спрацювати PVD IRQ (брауноут). Поточний `HAL_PWR_PVDCallback` (ARCH.21)
- * рятує DR0/DR1/DR16-DR19, але **НЕ** торкається DR13/DR14 — отже свіжо
- * прийняті пороги губляться, а наступний boot (`Load_TinyML_Thresholds_From_RTC`)
- * відновлює СТАРІ значення з DR13/DR14.
- *
- * Ці тести фіксують поточну поведінку як freeze-contract: вони мають впасти
- * якщо хтось випадково додасть DR13/DR14 у PVD save sequence без оновлення
- * `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS` сценарію 2 (де writeback мав би
- * стати inline, а не deferred до Phase 5).
- *
- * Якщо BLOCKER усвідомлено закривати — потрібно: (a) додати DR13/DR14 у
- * `HAL_PWR_PVDCallback`, (b) inline writeback у CMD-handler'і, (c) видалити
- * ці тести або інвертувати їхню очікувану семантику.
+ * До downlink-ревізії (2026-09-29) тут пінувалась втрата: 0x9D мутував RAM
+ * у RX-вікні, а DR13/DR14 писались аж наприкінці КЕНОЗИСУ, і брауноут між
+ * ними повертав старі пороги. Тепер 0x9D у вікні лише відкривається, а в
+ * КЕНОЗИСІ застосовується разом з inline-записом DR13/DR14
+ * (Soldier_Dl_Cmd_Commit, soldier/main.c секція 1.14): брауноут до КЕНОЗИСУ
+ * не змінює нічого, навіть DLFC, тож перевиданий Rails кадр відкриється
+ * знову. Лишились тести самого RTC-шляху: записані пари переживають
+ * брауноут, биті — падають на дефолти.
  */
 
 /* Mirror of Load_TinyML_Thresholds_From_RTC validate-and-apply, без RTC dep. */
@@ -4184,40 +3845,6 @@ static void Test_Load_TinyML_From_RTC_Slot(uint32_t dr13_word, uint32_t dr14_wor
     float rtc_warn = test_uint32_to_float(dr13_word);
     float rtc_crit = test_uint32_to_float(dr14_word);
     Test_TinyML_Apply(rtc_warn, rtc_crit, warn_out, crit_out);
-}
-
-TEST(test_fw18_arch21_brownout_loses_freshly_received_thresholds) {
-    /* Стартові DR13/DR14 = типові 0.60 / 0.85 (попередній deploy). */
-    _rtc_bkp_reset_all();
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, test_float_to_uint32(0.60f));
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, test_float_to_uint32(0.85f));
-
-    /* OTA dispatcher отримує нові пороги — мутує RAM (Сценарій 2). */
-    uint8_t frame[10];
-    compose_audio_thresholds_frame(50, 75, 2, frame);  /* warn=0.50, crit=0.75 */
-    float ram_warn = 0.60f, ram_crit = 0.85f;
-    uint8_t version = 1;
-    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &ram_warn, &ram_crit, &version);
-    ASSERT_EQ(ok, 1);
-    ASSERT_EQ((int)(ram_warn * 100.0f + 0.5f), 50);
-    ASSERT_EQ((int)(ram_crit * 100.0f + 0.5f), 75);
-
-    /* PVD IRQ зриває MCU ДО Phase 5 KENOSIS writeback. ARCH.21 callback
-     * рятує тільки DR0/DR1/DR16-DR19 — DR13/DR14 НЕ зачіпаються. */
-    Simulate_PVD_Brownout_Save(0, 0, 1234, 1.0f, 2.0f, 25.0f, 1);
-
-    /* Boot після відновлення живлення: DR13/DR14 досі несуть СТАРІ 0.60/0.85. */
-    float boot_warn = 0.0f, boot_crit = 0.0f;
-    Test_Load_TinyML_From_RTC_Slot(
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
-        &boot_warn, &boot_crit);
-
-    /* Freeze-contract: новий 0.50/0.75 ВТРАЧЕНИЙ, повертаємось до 0.60/0.85.
-     * Якщо хтось закриє BLOCKER — цей assert впаде, що сигналізує про необхідність
-     * перепланування семантики (inline writeback vs PVD-rescue DR13/DR14). */
-    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 60);
-    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 85);
 }
 
 TEST(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted) {
@@ -5715,18 +5342,6 @@ int main(void)
     RUN(test_beacon_rx_does_not_collide_with_ota);
 
     printf("\n  CMD_SET_THRESHOLDS Frame Parsing (FW.8):\n");
-    RUN(test_thresholds_accepts_default_pinus_sylvestris);
-    RUN(test_thresholds_accepts_negative_z_min);
-    RUN(test_thresholds_rejects_wrong_marker);
-    RUN(test_thresholds_rejects_wrong_payload_len);
-    RUN(test_thresholds_rejects_bad_crc);
-    RUN(test_thresholds_rejects_bit_flip_in_body);
-    RUN(test_thresholds_rejects_z_min_geq_z_max);
-    RUN(test_thresholds_rejects_z_opt_outside_band);
-    RUN(test_thresholds_rejects_z_below_minus_100);
-    RUN(test_thresholds_rejects_z_above_plus_100);
-    RUN(test_thresholds_rejects_short_frame);
-    RUN(test_thresholds_unmapped_species_id_0xFF_accepted);
 
     printf("\n  Magic Re-Request (FW.27-B):\n");
     RUN(test_rereq_full_bitmap_when_no_chunks);
@@ -5772,13 +5387,6 @@ int main(void)
     RUN(test_ota_finalize_reject_no_key);
 
     printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
-    RUN(test_audio_dispatcher_accepts_default_60_85);
-    RUN(test_audio_dispatcher_rejects_wrong_marker);
-    RUN(test_audio_dispatcher_rejects_bad_crc);
-    RUN(test_audio_dispatcher_rejects_warn_geq_crit_via_apply_default);
-    RUN(test_audio_dispatcher_rejects_short_frame);
-    RUN(test_audio_dispatcher_rejects_warn_zero);
-    RUN(test_audio_dispatcher_rejects_crit_above_99);
 
     printf("\n  Panic Frame Counter Anti-Replay (SEC.10):\n");
     RUN(test_sec10_dr0_pack_roundtrip);
@@ -5830,7 +5438,6 @@ int main(void)
     RUN(test_arch21_pvd_save_then_restore_roundtrip);
 
     printf("\n  [FW.18 × ARCH.21] Brownout race for DR13/DR14 audio thresholds:\n");
-    RUN(test_fw18_arch21_brownout_loses_freshly_received_thresholds);
     RUN(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted);
     RUN(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults);
 
