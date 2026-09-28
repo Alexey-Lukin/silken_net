@@ -54,7 +54,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Spring specs (canon) ──
 POGO_TRAVEL = 1.40   # mm — Mill-Max 0906/0908 datasheet NOMINAL travel, .055" ± .005" (02_02 §2.2, ⚖️ 2026-09-18 HW.43);
                      # 1.52 (.060") is the UPPER end of that tolerance, not the nominal
-PAD_FREE = 1.0       # mm — MODELLED compliant pad free thickness, not a part (02_01 §6, HW.30: 1500ST is 0.203/0.305)
+PAD_FREE = 1.0       # mm — MODELLED compliant pad (config (2) of the ratified bench sweep, 02_01 §6 ⚖️ 2026-09-28); not a part
 ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
 # ── Working windows (fraction) ──

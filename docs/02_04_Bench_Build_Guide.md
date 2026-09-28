@@ -143,7 +143,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | П'єзо (bench) | ЗП-3 диск ×5 (THT) | ✅ | bench-legit; production = SMD Mallory/Murata (HW.30) |
 | Clamp (acoustic) | **BAT54S** (dual Schottky, Cj ~5-10 пФ) | 🛒 | потрібен для acoustic-тракту |
 | Clamp (energy-only) | 1N5819 ×2 | ✅ | **Cj ~150 пФ = low-pass**, зрізає верх робочої смуги (не «ультразвук» — його тут і немає, Nyquist-8) → лише energy-стенд; свап на BAT54S перед acoustic |
-| _(production)_ | acoustic pad — деталі немає (Sil-Pad 1500ST має 0.203 мм і проміжку 0.65 не дістає; конфігурація ⚖️ HW.30, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | — | acoustic coupling Ti↔п'єзо |
+| _(production)_ | acoustic pad — змінна стенда, не деталь (⚖️ 2026-09-28, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)): без pad-а · піддатливий ~1 мм шар із кривою прогину · тонкий жорсткий шар на виступі | — | acoustic coupling Ti↔п'єзо |
 
 ### Блок 7 — Radio
 | Компонент | Модель | Статус | ⚠️ Кусає |
