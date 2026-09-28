@@ -49,6 +49,12 @@ module FactoryFlashing
     # іде в Error_Handler → NVIC_SystemReset кожні ~100 мс, а між флашами спить у
     # STOP2. UR означає апаратний скид, тож NRST на джизі обовʼязковий.
     CONNECT = "-c port=SWD mode=UR"
+    # Станція з кількома ST-LINK: без `sn=` кожен рядок бере зонд `index` 0 заново
+    # (UM2237: `sn` і `index` взаємовиключні, дефолт — index 0), а паспорт плати
+    # звіряє лише перший рядок — наступний `-w32` міг би лягти на іншу плату.
+    # Серійник — властивість станції (`STLINK_SN`) і йде в argv підпроцесу через
+    # шелл, тож лише алфанумерика.
+    PROBE_SN = /\A[0-9A-Za-z]{1,64}\z/
 
     FLASH_BASE      = 0x08000000
     FLASH_PAGE_SIZE = 0x800        # WL: сторінка 2 КБ; код сектора для `-e` = номер сторінки — bench-confirm, 00_07 SEC.3
@@ -69,8 +75,11 @@ module FactoryFlashing
     #   гілки) — FW.2 (в) cluster control-plane ключ (derive_broadcast_key):
     #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
     #   на boot, а Солдат CCM-ери глухне до downlink'а).
-    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil)
+    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,
+                   probe_sn: nil)
       @session = session
+      @probe_sn = probe_sn
+      @connect = self.class.connect(probe_sn)
       @device = device
       @aes_key_hex = aes_key_hex.to_s
       @lorenz_seed_hex = lorenz_seed_hex.to_s
@@ -82,7 +91,7 @@ module FactoryFlashing
 
     # Returns Array<String> — повний транскрипт: preflight + flash-тіло гілки.
     def commands
-      self.class.preflight_commands + flash_commands
+      self.class.preflight_commands(probe_sn: @probe_sn) + flash_commands
     end
 
     # [FW.54] Відкриття транскрипта обох гілок: connect + SWD-read кремнієвого
@@ -90,8 +99,15 @@ module FactoryFlashing
     # для плати без паспорта від цього залежить, чи можна її стирати). Клас-метод
     # свідомо — не потребує ключів, тож Session ганяє його (і guard-и) ДО деривації
     # та будь-якого `-e`/`-w32`.
-    def self.preflight_commands
-      [ "#{PROGRAMMER} #{CONNECT} -r32 #{UID_BASE_ADDR} 12 -r32 #{FLASH_KEY_ADDR} 4" ]
+    def self.preflight_commands(probe_sn: nil)
+      [ "#{PROGRAMMER} #{connect(probe_sn)} -r32 #{UID_BASE_ADDR} 12 -r32 #{FLASH_KEY_ADDR} 4" ]
+    end
+
+    def self.connect(probe_sn)
+      return CONNECT if probe_sn.blank?
+      raise ArgumentError, "probe_sn must be alphanumeric (ST-LINK serial)" unless probe_sn.match?(PROBE_SN)
+
+      "#{CONNECT} sn=#{probe_sn}"
     end
 
     # Тіло гілки: стирання сторінок ключів + key-writes + IWDG-заморозка + RDP (без preflight).
@@ -176,9 +192,9 @@ module FactoryFlashing
       pages = dws.map { |dw| (dw - FLASH_BASE) / FLASH_PAGE_SIZE }.uniq
       writes = dws.slice_when { |a, b| b != a + 8 }.map do |run|
         data = run.flat_map { |dw| [ words.fetch(dw, ERASED_WORD), words.fetch(dw + 4, ERASED_WORD) ] }
-        "#{PROGRAMMER} #{CONNECT} -w32 #{format('0x%08X', run.first)} #{data.join(' ')}"
+        "#{PROGRAMMER} #{@connect} -w32 #{format('0x%08X', run.first)} #{data.join(' ')}"
       end
-      [ "#{PROGRAMMER} #{CONNECT} -e #{pages.join(' ')}" ] + writes
+      [ "#{PROGRAMMER} #{@connect} -e #{pages.join(' ')}" ] + writes
     end
 
     # [SEC.15] LSI-пес лічить і в STOP2 (max ~32.7 с), тож без `IWDG_STOP=0` Солдат
@@ -189,7 +205,7 @@ module FactoryFlashing
     IWDG_FREEZE_OPTION_BYTES = "IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0"
 
     def iwdg_freeze_command
-      "#{PROGRAMMER} #{CONNECT} -ob #{IWDG_FREEZE_OPTION_BYTES}"
+      "#{PROGRAMMER} #{@connect} -ob #{IWDG_FREEZE_OPTION_BYTES}"
     end
 
     # { addr => "0x…" } — magic першим словом, далі payload по 4 байти.
@@ -208,7 +224,7 @@ module FactoryFlashing
     RDP_OPTION_BYTE = { 0 => "0xAA", 1 => "0xBB" }.freeze
 
     def rdp_command(level)
-      "#{PROGRAMMER} #{CONNECT} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"
+      "#{PROGRAMMER} #{@connect} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"
     end
   end
 end

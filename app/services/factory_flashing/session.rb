@@ -37,22 +37,24 @@ module FactoryFlashing
     class WrongBoardError < StandardError; end
 
     def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default,
-                 reflash_ack: ENV["REFLASH_ACK"])
+                 reflash_ack: ENV["REFLASH_ACK"], probe_sn: ENV["STLINK_SN"])
       new(
         session: session,
         device: device,
         executor: executor || Executor.new,
         master_key_source: master_key_source,
-        reflash_ack: reflash_ack
+        reflash_ack: reflash_ack,
+        probe_sn: probe_sn
       ).run
     end
 
-    def initialize(session:, device:, executor:, master_key_source:, reflash_ack: nil)
+    def initialize(session:, device:, executor:, master_key_source:, reflash_ack: nil, probe_sn: nil)
       @session = session
       @device = device || locate_device!
       @executor = executor
       @master_key_source = master_key_source
       @reflash_ack = reflash_ack
+      @probe_sn = probe_sn
     end
 
     def run
@@ -63,7 +65,7 @@ module FactoryFlashing
         # [FW.54] Wrong-board guard ПЕРЕД будь-якою деривацією/записом:
         # connect + SWD-read UID → live-звірка паспорта плати (dry-run: skip).
         # Чужа плата → навіть HardwareKey-рядок не матеріалізується.
-        @executor.run(CommandBuilder.preflight_commands)
+        @executor.run(CommandBuilder.preflight_commands(probe_sn: @probe_sn))
         verify_silicon_uid!
         guard_unverified_reflash!
         hw_key = ensure_hardware_key
@@ -154,7 +156,8 @@ module FactoryFlashing
         lorenz_seed_hex:  hw_key.lorenz_seed_hex,
         ota_hmac_hex:     tree_ota_hmac,
         ed25519_seed_hex: gateway_voice_seed(hw_key),
-        bcast_key_hex:    cluster_broadcast_key
+        bcast_key_hex:    cluster_broadcast_key,
+        probe_sn:         @probe_sn
       ).flash_commands
     end
 

@@ -266,6 +266,25 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       end
     end
 
+    # [SEC.3] Станція з кількома ST-LINK: кожен рядок підключається наново, а паспорт
+    # звіряє лише перший — тож серійник мусить стояти в КОЖНОМУ, включно з паспортом.
+    it "з серійником станції кожен рядок, від паспорта до RDP, тримає той самий зонд" do
+      station_sn = "066DFF485550755187121832"
+      bound = described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: 1),
+                                  device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
+                                  ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex, probe_sn: station_sn).commands
+      expect(bound).to all(start_with("STM32_Programmer_CLI -c port=SWD mode=UR sn=#{station_sn} "))
+    end
+
+    it "без серійника жоден рядок sn= не несе — однозондова станція як була" do
+      transcripts.each_value { |cmds| expect(cmds.grep(/sn=/)).to be_empty }
+    end
+
+    it "серійник іде в argv через шелл, тож не-алфанумерика — відмова до першого рядка" do
+      expect { described_class.preflight_commands(probe_sn: "X;rm -rf ~") }
+        .to raise_error(ArgumentError, /alphanumeric/)
+    end
+
     it "кожен зачеплений doubleword пишеться рівно раз і цілим" do
       transcripts.each_value do |cmds|
         writes = cmds.grep(/ -w32 /).map { |c| c.split(" -w32 ", 2).last.split }

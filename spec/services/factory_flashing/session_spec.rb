@@ -93,6 +93,13 @@ RSpec.describe FactoryFlashing::Session do
       }.to raise_error(described_class::PreflightError, /supervisor_approved/)
     end
 
+    it "threads the station's ST-LINK serial into every line it runs, the passport read included [SEC.3]" do
+      session = make_session(gilka: "A")
+      outcome = described_class.run(session: session, executor: executor, master_key_source: master_key_source,
+                                    probe_sn: "066DFF485550755187121832")
+      expect(outcome.transcript.map(&:command)).to all(include(" sn=066DFF485550755187121832 "))
+    end
+
     it "refuses to run when device cannot be located" do
       session = make_session(device_uid: "SNET-DEADBEEF") # tree not created
       expect {
