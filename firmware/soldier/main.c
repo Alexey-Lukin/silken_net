@@ -1611,6 +1611,15 @@ static void Reset_Ota_Assembly(void) {
 
 uint8_t lorenz_audio_config_version = 0;     // 0 = firmware-baked defaults
 
+// [FW.18 · ⚖️ FW.17 2026-09-28] Приймач 0x9D за гейтом: відправника немає (Rails
+// кадру не будує, черга Королеви його не пропускає), а ECB + CRC без MAC дав би
+// будь-кому з кластерним KEYB заглушити клас пилки на весь кластер. Фліп — разом
+// із реалізацією downlink-wire-ревізії (03_05 §2.5): MAC сесійним ключем + DID + DLFC.
+#ifndef FW18_AUDIO_CMD_ENABLED
+#define FW18_AUDIO_CMD_ENABLED 0
+#endif
+
+#if FW18_AUDIO_CMD_ENABLED
 // Парсимо frame, валідуємо CRC16 + межі, мутуємо tinyml_warning/critical_threshold.
 // Повертає 1 при успіху, 0 при відмові (поганий len/marker/CRC/межі).
 // При відмові глобалки НЕ змінюються (atomic — defense-in-depth).
@@ -1649,6 +1658,7 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
     if (version_out) *version_out = body[4];  // config_version (байт 4 body)
     return 1;
 }
+#endif // FW18_AUDIO_CMD_ENABLED
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
 // Скомпільований скрипт Атрактора Лоренца (`bio_contracts/bio_contract.rb`).
@@ -2812,6 +2822,7 @@ int main(void)
                 }
 #endif
 
+#if FW18_AUDIO_CMD_ENABLED
                 // Сценарій 2: [FW.18] CMD_SET_AUDIO_THRESHOLDS (0x9D) — TinyML
                 // переналаштовує слух Солдата. Коли ліс глухне взимку чи
                 // дзвенить весною від тала, ми не перепрошиваємо вузли — ми
@@ -2835,6 +2846,7 @@ int main(void)
                     // адресоване лише цьому Солдату.
                     break;
                 }
+#endif // FW18_AUDIO_CMD_ENABLED
 
                 // Сценарій А1: [FW.23] HMAC-печатка OTA (0x9B) — 4 LoRa-чанки
                 // після тіла прошивки: 3 несуть 32-байтну печатку, 4-й — version_id

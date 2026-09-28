@@ -144,7 +144,7 @@ if(CMAKE_CROSSCOMPILING)
     # StartCad-нюх, SetTxConfig extended-preamble, OnCadDone-реєстрація)
     # компілюється проти справжнього Semtech radio.h. Стеля: link-бомбу НЕ
     # ловить (OBJECT-lib compile-only) — справжній link-guard = FW.46 full-.elf.
-    # + ARCH26_TDMA · FW8_PARSER · FW17_RATCHET · FW20_MESH_RELAY ·
+    # + ARCH26_TDMA · FW8_PARSER · FW17_RATCHET · FW18_AUDIO_CMD · FW20_MESH_RELAY ·
     # FW20_Q2_CMD_RELAY =1: ці гейти доти були ГОЛИМИ `#define` (-D їх не
     # перемикав — `firmware`-скіл гоча #13(а)), тож їхні ON-гілки не бачили
     # компілятора жодного разу, зокрема ротація FW.17 обабіч. Зонд `#error` у
@@ -174,6 +174,7 @@ if(CMAKE_CROSSCOMPILING)
       ARCH26_TDMA_ENABLED=1
       FW8_PARSER_ENABLED=1
       FW17_RATCHET_ENABLED=1
+      FW18_AUDIO_CMD_ENABLED=1
       FW20_MESH_RELAY_ENABLED=1
       FW20_Q2_CMD_RELAY_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
