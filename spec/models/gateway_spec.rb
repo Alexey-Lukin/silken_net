@@ -136,6 +136,26 @@ RSpec.describe Gateway, type: :model do
     end
   end
 
+  # 🔴 [FW.64, ⚖️ делеговано 2026-09-28] Між двома штампами живості лежить таймер Королеви
+  # ПЛЮС тривалість флашу: вона ставить `last_flush_time` після флашу, а штамп ставить обробка
+  # флашу. На годинному таймері цей член ховався в люфті 20 %, тож стара формула (таймер × 1.2)
+  # зеленіла; на ратифікованих 660 с вона дає 792 < 660 + 190 — здорова Королева числилась
+  # би `offline`. Тому пін судить ОБИДВА режими, а не лише сьогоднішню константу.
+  describe ".liveness_window_for" do
+    it "covers the timer plus the flush session on both the hourly and the ratified 10-minute cadence" do
+      budget = Downlink::PendingQueueService::FLUSH_SESSION_BUDGET_S
+
+      [ Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S, 660 ].each do |poll_interval_s|
+        expect(described_class.liveness_window_for(poll_interval_s)).to be >= poll_interval_s + budget
+      end
+    end
+
+    it "is the base of LIVENESS_WINDOW_S, so the scopes and #online? move with it" do
+      expect(described_class::LIVENESS_WINDOW_S)
+        .to eq(described_class.liveness_window_for(Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S))
+    end
+  end
+
   describe "scopes" do
     it ".online returns gateways seen within threshold" do
       online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
