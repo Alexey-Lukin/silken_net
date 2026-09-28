@@ -20,7 +20,10 @@ class ProvisioningSession < ApplicationRecord
   class SupervisorAuthError < StandardError; end
 
   GILKAS = %w[A B].freeze
-  RDP_LEVELS = [ 0, 1, 2 ].freeze
+  # [SEC.2] Конвеєр палить лише L0/L1: L2 одним прогоном обійшов би ухвалений порядок
+  # паління (self-test → WRP → [BOOT_LOCK] → L2), тож продакшн-L2 палять поза ним —
+  # 03_05 §3.6 (⚖️ founder 2026-09-28).
+  RDP_LEVELS = [ 0, 1 ].freeze
 
   belongs_to :operator,   class_name: "User"
   belongs_to :supervisor, class_name: "User", optional: true

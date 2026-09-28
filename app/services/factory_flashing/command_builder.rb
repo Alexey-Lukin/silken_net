@@ -201,10 +201,11 @@ module FactoryFlashing
 
     # [SEC.2] `-ob RDP=` programs the RAW option byte, not a level number (UM2237:
     # «-ob [OptByte=<value>]: program the given option byte»). Bytes = ST's own
-    # OB_RDP_LEVEL_0/1/2 (stm32wlxx_hal_flash.h); FLASH_OB_GetRDP decodes every
-    # other value as Level 1, so emitting the number 2 left L1 while the audit trail
-    # recorded L2. Mirror: firmware/scripts/bench/01_option_bytes.sh.
-    RDP_OPTION_BYTE = { 0 => "0xAA", 1 => "0xBB", 2 => "0xCC" }.freeze
+    # OB_RDP_LEVEL_0/1 (stm32wlxx_hal_flash.h); FLASH_OB_GetRDP decodes every value
+    # but 0xAA/0xCC as Level 1, so a level NUMBER would lock L1. L2 (0xCC) the pipeline
+    # never burns (⚖️ founder 2026-09-28): step 7 of 03_05 §3.6, after self-test and WRP.
+    # Mirror of 0/1: firmware/scripts/bench/01_option_bytes.sh.
+    RDP_OPTION_BYTE = { 0 => "0xAA", 1 => "0xBB" }.freeze
 
     def rdp_command(level)
       "#{PROGRAMMER} #{CONNECT} -ob RDP=#{RDP_OPTION_BYTE.fetch(level)}"

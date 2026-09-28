@@ -1542,7 +1542,7 @@ active/draft ──cancel──► cancelled
 | `device_uid` | string | Wire-ідентифікатор пристрою, що провіжиниться (presence): Tree → деривований DID (rake приймає 24-hex UID і сам деривує, [FW.54]); Gateway → uid |
 | `batch_id` | string | Ідентифікатор партії (presence) |
 | `gilka` | string | Гілка провіжинингу: `"A"` (Protected Flash + RDP) / `"B"` (Secure Element; `se_serial_hex` обов'язковий) — `GILKAS = %w[A B]` |
-| `rdp_level` | integer | Рівень RDP після flash — `RDP_LEVELS = [0, 1, 2]` |
+| `rdp_level` | integer | Рівень RDP після flash — `RDP_LEVELS = [0, 1]`: L2 конвеєр не палить, його палять поза ним ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security), ⚖️ SEC.2 founder 2026-09-28) |
 | `se_serial_hex` | string | 18 HEX (9-байт SE serial); presence лише для гілки B, format `/\A[0-9A-F]{18}\z/` |
 | `flash_addr` | string | Адреса запису ключа (presence) |
 | `firmware_version` | string | Версія прошивки (presence) |

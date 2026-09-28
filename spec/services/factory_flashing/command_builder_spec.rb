@@ -78,13 +78,6 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       }.to raise_error(ArgumentError, /ota_hmac_hex/)
     end
 
-    # [SEC.2] CLI пише СИРИЙ байт: номер рівня 2 = байт 0x02, який кремній
-    # декодує як Level 1 (FLASH_OB_GetRDP) — L2 у журналі, L1 на чипі.
-    it "honours rdp_level=2 (irreversible) as the raw L2 byte, never the level number" do
-      session.rdp_level = 2
-      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xCC")
-    end
-
     it "emits rdp_level=0 as the L0 byte — the number 0 would lock L1" do
       session.rdp_level = 0
       expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xAA")
@@ -230,7 +223,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
                           device: device, bcast_key_hex: bcast_hex, **keys).commands
     end
 
-    [ 1, 2 ].each do |level|
+    [ 0, 1 ].each do |level|
       it "Солдат на L#{level}: IWDG пишеться рівно раз і ДО RDP" do
         cmds = transcript(device: tree, rdp_level: level, aes_key_hex: aes_lora_hex,
                           lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)

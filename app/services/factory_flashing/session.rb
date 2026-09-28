@@ -37,23 +37,21 @@ module FactoryFlashing
     class WrongBoardError < StandardError; end
 
     def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default,
-                 rdp_l2_ack: ENV["RDP_L2_ACK"], reflash_ack: ENV["REFLASH_ACK"])
+                 reflash_ack: ENV["REFLASH_ACK"])
       new(
         session: session,
         device: device,
         executor: executor || Executor.new,
         master_key_source: master_key_source,
-        rdp_l2_ack: rdp_l2_ack,
         reflash_ack: reflash_ack
       ).run
     end
 
-    def initialize(session:, device:, executor:, master_key_source:, rdp_l2_ack: nil, reflash_ack: nil)
+    def initialize(session:, device:, executor:, master_key_source:, reflash_ack: nil)
       @session = session
       @device = device || locate_device!
       @executor = executor
       @master_key_source = master_key_source
-      @rdp_l2_ack = rdp_l2_ack
       @reflash_ack = reflash_ack
     end
 
@@ -99,17 +97,6 @@ module FactoryFlashing
     def preflight!
       raise PreflightError, "session must be supervisor_approved (got #{@session.state})" unless @session.may_start?
       raise PreflightError, "device #{@session.device_uid} not found" if @device.nil?
-      # [SEC.2] L2 вимикає SWD назавжди, а pre-L2 гейт (03_05 §3.6 × SEC.15) —
-      # процедура, не код: живий L2 мусить бути ОГОЛОШЕНИЙ для саме цієї плати,
-      # а не виведений із RDP_LEVEL. Дзеркало набраного «RDP2» у 01_option_bytes.sh.
-      # ⛔ Навіть оголошений, L2 одним прогоном обходить ухвалений порядок паління
-      # (self-test → WRP → [BOOT_LOCK] → L2): продакшн палить його ПОЗА конвеєром,
-      # 03_05 §3.6; чи прибрати цю гілку — ⚖️ 00_07 SEC.2.
-      if @session.rdp_level == 2 && !@executor.dry_run? && @rdp_l2_ack != @session.device_uid
-        raise PreflightError, "RDP Level 2 is irreversible and production burns it OUTSIDE this pipeline " \
-                              "(03_05 §3.6: self-test, WRP, then L2) — set RDP_L2_ACK=#{@session.device_uid} " \
-                              "only for a deliberate exception"
-      end
       # Surface UnavailableError / NotImplementedError early so we never enter
       # the transaction with a missing or rejected master key. The result is
       # retained and threaded into every derivation below — the point of the
@@ -188,8 +175,9 @@ module FactoryFlashing
 
     # `-e` сторінок ключів незворотний, а плату без паспорта не впізнати: уже
     # прошиту (або нечитану — fail-closed) таку плату стираємо лише за оголошенням
-    # саме цього пристрою — дзеркало RDP_L2_ACK. Інакше чужа Королева на джизі
-    # втратила б свої ключі й отримала б наші. Чиста сторінка ack не потребує.
+    # саме цього пристрою — та сама форма, що набране «RDP2» у 01_option_bytes.sh.
+    # Інакше чужа Королева на джизі втратила б свої ключі й отримала б наші. Чиста
+    # сторінка ack не потребує.
     def guard_unverified_reflash!
       return if @executor.dry_run? || identity_verifiable?
 

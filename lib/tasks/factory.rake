@@ -16,7 +16,7 @@
 #     → runs FactoryFlashing::Session.run (dry-run by default,
 #       EXECUTE=1 spawns real subprocesses).
 namespace :factory do
-  desc "Create a Factory-Flashing session (status=pending). Args: device_uid (Tree = 24-hex silicon UID; Gateway = uid), batch_id, gilka, operator_id, supervisor_id, firmware_version. Tree-create: CLUSTER_ID + TREE_FAMILY_ID env. Set ATECC_SERIAL=… for gilka=B."
+  desc "Create a Factory-Flashing session (status=pending). Args: device_uid (Tree = 24-hex silicon UID; Gateway = uid), batch_id, gilka, operator_id, supervisor_id, firmware_version. Tree-create: CLUSTER_ID + TREE_FAMILY_ID env. Set ATECC_SERIAL=… for gilka=B. RDP_LEVEL=0|1 (default 1 = pilot; production 0) — the session rejects 2: L2 is burned outside this pipeline (SEC.2, 03_05 §3.6)."
   task :flash, %i[device_uid batch_id gilka operator_id supervisor_id firmware_version] => :environment do |_t, args|
     abort "Usage: rake factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]" if args.values_at(:device_uid, :batch_id, :gilka, :operator_id, :supervisor_id, :firmware_version).any?(&:blank?)
 
@@ -81,7 +81,7 @@ namespace :factory do
     puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id} (password-authenticated). Next: rake factory:execute[#{session.id}]"
   end
 
-  desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id. A live RDP_LEVEL=2 session also needs RDP_L2_ACK=<device_uid> — L2 is irreversible (SEC.2), and production burns it outside this pipeline (03_05 §3.6: RDP_LEVEL=0 here → self-test → WRP → L2). Re-flashing an already-provisioned board without a silicon passport (a Queen) needs REFLASH_ACK=<device_uid> — the key-page erase is irreversible."
+  desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id. Production burns RDP L2 outside this pipeline (SEC.2, 03_05 §3.6: RDP_LEVEL=0 here → self-test → WRP → L2). Re-flashing an already-provisioned board without a silicon passport (a Queen) needs REFLASH_ACK=<device_uid> — the key-page erase is irreversible."
   task :execute, %i[session_id] => :environment do |_t, args|
     session = ProvisioningSession.find(Integer(args[:session_id]))
     dry_run = ENV["EXECUTE"] != "1"

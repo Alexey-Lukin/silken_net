@@ -39,7 +39,9 @@ RSpec.describe ProvisioningSession do
       expect(session.errors[:supervisor_id].first).to include("2-Person Rule")
     end
 
-    it "rejects rdp_level outside {0, 1, 2}" do
+    # [SEC.2] L2 палять поза конвеєром (03_05 §3.6, ⚖️ founder 2026-09-28) — сесія його не приймає.
+    it "rejects rdp_level outside {0, 1} — L2 included" do
+      expect(build(:provisioning_session, rdp_level: 2)).not_to be_valid
       expect(build(:provisioning_session, rdp_level: 3)).not_to be_valid
     end
   end

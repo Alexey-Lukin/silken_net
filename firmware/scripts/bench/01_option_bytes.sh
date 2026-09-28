@@ -10,7 +10,9 @@
 #               --rdp бере НОМЕР рівня, а CLI — СИРИЙ байт поля (UM2237: «-ob
 #               OptByte=<value>»), тож 0/1/2 → 0xAA/0xBB/0xCC (OB_RDP_LEVEL_* у
 #               stm32wlxx_hal_flash.h; будь-який інший байт кремній читає як L1).
-#               Дзеркало мапи — FactoryFlashing::CommandBuilder::RDP_OPTION_BYTE.
+#               0/1 — дзеркало FactoryFlashing::CommandBuilder::RDP_OPTION_BYTE; байт L2
+#               живе лише тут: конвеєр L2 не палить (SEC.2, ⚖️ founder 2026-09-28) —
+#               це крок 7 процедури 03_05 §3.6, після self-test і WRP.
 #
 #   firmware/scripts/bench/01_option_bytes.sh [--rdp 0|1|2] [--execute]
 set -euo pipefail
