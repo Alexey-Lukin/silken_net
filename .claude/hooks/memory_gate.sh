@@ -409,7 +409,9 @@ rb_dark() {
 # («stubs keep only what the skill lacks»): тіло повторювало той самий маршрут, що `ml-engineering` SKILL.md
 # (стан → `00_07` §03a FW.4, уроки → памʼять), а опис брехав («backend Rumale» — шар знято 2026-09-05).
 # Обидві вхідні струни знято (одна переточена на скіл, друга — зі списку сиблінгів), рядок індексу злито.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
+# 2026-09-28: 166 → 167 — `log_verdict_lifecycle` (тіла інстансів HW.17 · UNI.14 · FW.64, витіснені з
+# `feedback_verdict_lifecycle`, що вперся в робочу стелю 36 120 Б). Підняття робить новий дім захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
