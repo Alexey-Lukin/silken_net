@@ -85,9 +85,11 @@ module Cryptography
       raise AuthError, "CCM authentication failed: #{e.message}"
     end
 
-    # Encrypt 12 bytes of sensor payload and produce ciphertext + 8-byte MIC.
-    # Used by host-side tests and any future Rails-issued CCM downlinks. The
-    # in-field encryption side is `HAL_CRYPEx_AESCCM_Encrypt` on Soldier.
+    # Encrypt the 14-byte sensor payload and produce ciphertext + 8-byte MIC.
+    # Used by host-side tests. The in-field side is the two-phase WL flow on
+    # the Soldier (B0 + HAL_CRYP_Encrypt + GenerateAuthTAG, lora_ccm.h); a
+    # Rails-issued downlink would need another body length and a direction
+    # byte in the nonce (00_07 FW.17).
     #
     # Returns `[ciphertext_bytes, mic_bytes]` (both binary strings).
     def encrypt(key:, did_bytes:, frame_counter:, plaintext:, gossip_ts_lsb: 0)
