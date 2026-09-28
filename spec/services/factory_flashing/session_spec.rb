@@ -46,23 +46,20 @@ RSpec.describe FactoryFlashing::Session do
     let(:gateway)   { create(:gateway) }
     let!(:session)  { make_session(gilka: "A", device_uid: gateway.uid) }
 
-    it "генерує сім'ю, шиє EDSK-блок і реєструє ЛИШЕ pubkey у HardwareKey" do
+    # Dry-run нічого не прошиває: план несе EDSK-блок, але pubkey уже прошитої
+    # Королеви не чіпає — інакше її L1-підписи перестали б верифікуватися, а сім'я
+    # жила б лише в плані. Звірка «прошита сім'я ⟷ pubkey» — live-шлях
+    # (session_run_execute_path_spec).
+    it "план шиє EDSK-блок, але pubkey прошитої Королеви лишає як є" do
+      HardwareKeyService.provision(gateway, master_key: "master")
+      HardwareKey.find_by!(device_uid: gateway.uid).update!(ed25519_public_key_hex: "ab" * 32)
+
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
 
-      image = flash_image(outcome.transcript.map(&:command))
-      expect(image[0x0803E064]).to eq("0x4544534B") # EDSK magic
-
-      hw_key = outcome.hardware_key.reload
-      expect(hw_key.ed25519_public_key_hex).to match(/\A[0-9a-f]{64}\z/)
-
-      # Сім'я (32 байти, 8 слів) присутня у транскрипті процесу,
-      # але деривований pubkey їй відповідає — звіримо незалежно:
-      seed_hex = (1..8).map { |i| image.fetch(0x0803E064 + (4 * i)).delete_prefix("0x") }.join
-      expect(seed_hex.length).to eq(64)
-      expect(Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
-        .to eq(hw_key.ed25519_public_key_hex)
+      expect(flash_image(outcome.transcript.map(&:command))[0x0803E064]).to eq("0x4544534B") # EDSK magic
+      expect(outcome.hardware_key.reload.ed25519_public_key_hex).to eq("ab" * 32)
     end
 
     it "НЕ персистить сиру сім'ю в AuditLog (metadata без байтів ключів)" do
@@ -149,7 +146,7 @@ RSpec.describe FactoryFlashing::Session do
       session = make_session(gilka: "A", rdp_level: 2)
       outcome = described_class.run(session: session, executor: executor,
                                     master_key_source: master_key_source, rdp_l2_ack: nil)
-      expect(outcome.transcript.map(&:command)).to include("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xCC")
+      expect(outcome.transcript.map(&:command)).to include("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xCC")
     end
   end
 
@@ -263,10 +260,10 @@ RSpec.describe FactoryFlashing::Session do
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
-      commands = outcome.transcript.map(&:command)
-      expect(commands).to include(a_string_matching(/-w32 0x0803E040 0x4B455943/)) # KEYC
-      expect(commands).to include(a_string_matching(/0x4544534B/))                 # EDSK
-      expect(outcome.hardware_key.reload.ed25519_public_key_hex).to be_present
+      image = flash_image(outcome.transcript.map(&:command))
+      expect(image.values_at(0x0803E040, 0x0803E064)).to eq(%w[0x4B455943 0x4544534B]) # KEYC · EDSK
+      # план, не прошивка: pubkey голосу пишеться лише живим прогоном
+      expect(outcome.hardware_key.reload.ed25519_public_key_hex).to be_nil
     end
   end
 

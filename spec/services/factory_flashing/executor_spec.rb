@@ -19,13 +19,15 @@ RSpec.describe FactoryFlashing::Executor do
       expect(executor.dry_run?).to be true
     end
 
-    it "prints each command with a [dry-run] prefix and does not spawn" do
+    # Дані `-w32` — ключі зі справжнього master key, а dry-run — дефолт factory:execute:
+    # план показує адресу й кількість слів, не самі слова.
+    it "prints each command with a [dry-run] prefix, -w32 data redacted, and does not spawn" do
       allow(Open3).to receive(:capture3)
       executor.run(commands)
       expect(Open3).not_to have_received(:capture3)
       expect(io.string.lines.map(&:chomp)).to eq([
         "[dry-run] STM32_Programmer_CLI -c port=SWD",
-        "[dry-run] STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C"
+        "[dry-run] STM32_Programmer_CLI -w32 0x0803E000 <1 words>"
       ])
     end
 
@@ -75,12 +77,24 @@ RSpec.describe FactoryFlashing::Executor do
       allow(described_class).to receive(:programmer_available?).and_return(true)
       bad = instance_double(Process::Status, success?: false, exitstatus: 7)
       allow(Open3).to receive(:capture3).and_return([ "", "Error: Data mismatch", bad ])
-      cmd = "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 0x4B45594C 0x01234567 0x89ABCDEF 0xFFFFFFFF"
+      cmd = "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 0x4B45594C 0x01234567 0x89ABCDEF 0xFFFFFFFF"
 
       expect { executor.run([ cmd ]) }.to raise_error(described_class::CommandFailedError) { |error|
         expect(error.message).to include("-w32 0x0803E000 <4 words>")
         expect(error.message).not_to include("0x01234567")
       }
+    end
+
+    # CLI може відлунити дані у stderr (verify, помилка аргументу) — маскується кожне 8-hex-слово.
+    it "masks hex words the CLI echoes into stderr" do
+      allow(described_class).to receive(:programmer_available?).and_return(true)
+      bad = instance_double(Process::Status, success?: false, exitstatus: 7)
+      allow(Open3).to receive(:capture3).and_return([ "", "Error: expected 0x01234567, found 89ABCDEF", bad ])
+
+      expect { executor.run([ "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 0x4B45594C" ]) }
+        .to raise_error(described_class::CommandFailedError) { |error|
+          expect(error.message).to include("stderr=Error: expected <hex>, found <hex>")
+        }
     end
   end
 

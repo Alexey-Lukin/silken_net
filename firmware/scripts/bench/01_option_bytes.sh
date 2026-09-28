@@ -43,12 +43,13 @@ fi
 
 # Кожен виклик CLI — окремий процес, тож `-c` несе КОЖЕН рядок (дзеркало —
 # FactoryFlashing::CommandBuilder::CONNECT).
-CONNECT="-c port=SWD reset=HWrst"
+CONNECT="-c port=SWD mode=UR"
 
 cmds=()
 cmds+=("$CLI $CONNECT -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0")
 [ -n "$RDP_BYTE" ] && cmds+=("$CLI $CONNECT -ob RDP=$RDP_BYTE")
-cmds+=("$CLI $CONNECT -ob displ")
+# Після L2 SWD мертвий назавжди — дамп option bytes уже нічим прочитати.
+[ "$RDP" != "2" ] && cmds+=("$CLI $CONNECT -ob displ")
 
 if [ "$EXECUTE" != "1" ]; then
   echo "— план (без --execute нічого не виконується) —"

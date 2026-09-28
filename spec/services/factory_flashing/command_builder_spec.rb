@@ -34,23 +34,23 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     it "reads the UID, erases the key pages, writes KEYL·LSED and KOTA·KEYB as whole doublewords, then IWDG and RDP" do
       expect(commands).to eq([
         # [FW.54] SWD-read кремнієвого паспорта — wrong-board guard (Session)
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12",
+        "STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12 -r32 0x0803E000 4",
         # `-w32` не стирає — re-flash без цього рядка впав би на першому ж записі
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125",
+        "STM32_Programmer_CLI -c port=SWD mode=UR -e 124 125",
         # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words —
         # 14 слів = рівно 7 doubleword'ів
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 " \
+        "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 " \
         "0x4B45594C 0x01234567 0x89ABCDEF 0x01234567 0x89ABCDEF " \
         "0x4C534544 0x00112233 0x44556677 0x8899AABB 0xCCDDEEFF 0xFFEEDDCC 0xBBAA9988 0x77665544 0x33221100",
         # стор. 125: [FW.23] KOTA magic + 8 K_ota words (розкладка дзеркалить
         # Load_Ota_Hmac_Key) + стерте слово до кінця doubleword'а; [FW.2 (в)]
         # KEYB magic + 4 broadcast words зі старту +40 + ще одне стерте слово
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E800 " \
+        "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E800 " \
         "0x4B4F5441 0xA1B2C3D4 0xE5F60718 0x293A4B5C 0x6D7E8F90 0x0F1E2D3C 0x4B5A6978 0x8796A5B4 0xC3D2E1F0 0xFFFFFFFF " \
         "0x4B455942 0xB0B1B2B3 0xC0C1C2C3 0xD0D1D2D3 0xE0E1E2E3 0xFFFFFFFF",
         # [SEC.15] пес заморожений у STOP2/STANDBY — ДО RDP (03_01 §1.10)
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
-        "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB"
+        "STM32_Programmer_CLI -c port=SWD mode=UR -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
+        "STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xBB"
       ])
     end
 
@@ -82,12 +82,12 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     # декодує як Level 1 (FLASH_OB_GetRDP) — L2 у журналі, L1 на чипі.
     it "honours rdp_level=2 (irreversible) as the raw L2 byte, never the level number" do
       session.rdp_level = 2
-      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xCC")
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xCC")
     end
 
     it "emits rdp_level=0 as the L0 byte — the number 0 would lock L1" do
       session.rdp_level = 0
-      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xAA")
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xAA")
     end
 
     it "maps every RDP level the session accepts (a level without a byte fails here, not at the factory)" do
@@ -108,12 +108,12 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     let(:session) { build(:provisioning_session, gilka: "A", rdp_level: 1) }
 
     it "writes KEYC magic + 8 AES-256 words at FLASH_COAP_KEY_ADDR" do
-      expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12")
+      expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12 -r32 0x0803E000 4")
       expect(flash_image(commands)[0x0803E040]).to eq("0x4B455943")
       # KEYL(broadcast, 5) + стерте слово · KEYC(9) + стерте слово — FW.2 (в)
       expect(flash_image(commands).keys).to eq((0x0803E000...0x0803E018).step(4).to_a +
                                                (0x0803E040...0x0803E068).step(4).to_a)
-      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB")
+      expect(commands.last).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xBB")
     end
 
     it "writes KEYL slot with the BROADCAST value — фікс фабричної цегли (FW.2 (в))" do
@@ -223,7 +223,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   # ресетиться посеред кожного багатогодинного сну. Порядок несучий: на L2 option bytes
   # стають read-only, і незаморожений пес лишився б таким назавжди (03_05 §3.3).
   describe "IWDG-заморозка перед RDP" do
-    let(:iwdg) { "STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0" }
+    let(:iwdg) { "STM32_Programmer_CLI -c port=SWD mode=UR -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0" }
 
     def transcript(device:, rdp_level:, **keys)
       described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: rdp_level),
@@ -269,7 +269,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     it "кожен рядок під'єднується сам — з'єднання між процесами CLI не живе" do
       transcripts.each_value do |cmds|
-        expect(cmds).to all(start_with("STM32_Programmer_CLI -c port=SWD reset=HWrst "))
+        expect(cmds).to all(start_with("STM32_Programmer_CLI -c port=SWD mode=UR "))
       end
     end
 
@@ -283,10 +283,20 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       end
     end
 
+    # Формат живе тут, редакція — в Executor (друк dry-run і персистоване повідомлення
+    # помилки): пін звʼязує обидва, тож зміна форми `-w32` не вимикає редакцію мовчки.
+    it "Executor.redact ховає кожне слово кожного ключа з кожного рядка" do
+      key_words = [ aes_lora_hex, k_seed_hex, k_ota_hex, bcast_hex, voice_seed ].flat_map { |hex| hex.scan(/.{8}/) }
+      transcripts.each_value do |cmds|
+        redacted = cmds.map { |c| FactoryFlashing::Executor.redact(c) }.join("\n").upcase
+        expect(key_words.select { |w| redacted.include?(w) }).to be_empty
+      end
+    end
+
     it "стирає ДО запису рівно сторінки ключів — Королевину 125 (рантайм-OTA-SHA, FW.52) ніколи" do
-      expect(transcripts[:tree].grep(/ -e /)).to eq([ "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125" ])
+      expect(transcripts[:tree].grep(/ -e /)).to eq([ "STM32_Programmer_CLI -c port=SWD mode=UR -e 124 125" ])
       expect(transcripts.values_at(:queen, :queen_voice).map { |c| c.grep(/ -e /) })
-        .to all(eq([ "STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124" ]))
+        .to all(eq([ "STM32_Programmer_CLI -c port=SWD mode=UR -e 124" ]))
       transcripts.each_value do |cmds|
         expect(cmds.index { |c| c.include?(" -e ") }).to be < cmds.index { |c| c.include?(" -w32 ") }
       end

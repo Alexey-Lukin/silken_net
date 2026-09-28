@@ -43,7 +43,7 @@ module FactoryFlashing
 
     def execute_single(command)
       if dry_run?
-        @io.puts("[dry-run] #{command}")
+        @io.puts("[dry-run] #{self.class.redact(command)}")
         @results << Result.new(command: command, stdout: "", stderr: "", status: nil)
         return
       end
@@ -53,13 +53,20 @@ module FactoryFlashing
       @results << result
       return if status.success?
 
-      raise CommandFailedError, "exit=#{status.exitstatus} cmd=#{self.class.redact(command)} stderr=#{stderr.strip}"
+      raise CommandFailedError,
+            "exit=#{status.exitstatus} cmd=#{self.class.redact(command)} stderr=#{stderr.strip.gsub(HEX_WORD, '<hex>')}"
     end
 
-    # Дані `-w32` — це ключі, а повідомлення помилки Session персистить у
-    # `provisioning_sessions.error_message`: туди йде адреса й кількість слів.
+    # Дані `-w32` — це ключі, виведені зі справжнього master key. Друк dry-run і
+    # повідомлення помилки (Session персистить його в `provisioning_sessions.
+    # error_message`) несуть лише адресу й кількість слів — позиційно, до наступної
+    # опції, тож формат слова (`0x`/`0X`/без префікса) редакції не обходить. У
+    # stderr CLI дані можуть відлунювати (verify, помилка аргументу) — там маскується
+    # кожне 8-hex-слово, адреси теж: адресу несе редагована команда.
+    HEX_WORD = /(?:0[xX])?\h{8}/
+
     def self.redact(command)
-      command.gsub(/(-w32 0x\h+)((?: 0x\h+)+)/) { "#{$1} <#{$2.split.size} words>" }
+      command.gsub(/(-w32\s+\S+)((?:\s+(?!-)\S+)+)/) { "#{$1} <#{$2.split.size} words>" }
     end
 
     def ensure_programmer_available!

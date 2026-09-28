@@ -27,5 +27,15 @@ module FactoryFlashing
     def uid_hex(words)
       words.map { |w| format("%08X", w) }.join
     end
+
+    # Перше слово сторінки ключів із того самого preflight-виводу (`-r32 0x0803E000 4`):
+    # 0xFFFFFFFF = чиста, магія KEYL = прошита; nil = не розпарсили.
+    KEY_LINE = /0803E000\s*:\s*(.+)$/i
+
+    def key_page_word(stdout)
+      m = KEY_LINE.match(stdout.to_s)
+      word = m && m[1][/\b(?:0x)?(\h{8})\b/i, 1]
+      word && Integer(word, 16)
+    end
   end
 end

@@ -43,12 +43,15 @@ module FactoryFlashing
 
     PROGRAMMER = "STM32_Programmer_CLI"
     # Кожен рядок транскрипту — окремий процес CLI, а з'єднання живе лише в межах
-    # одного виклику: `-c` несе КОЖЕН рядок (так пише й вендорський
-    # STM32WLScripts/SetRDPLevelCM4.bat), «disconnect» окремим рядком не існує.
-    CONNECT = "-c port=SWD reset=HWrst"
+    # одного виклику: `-c` несе КОЖЕН рядок, у формі вендорського
+    # STM32WLScripts/SetRDPLevelCM4.bat — під скидом (`mode=UR` ловить вектор скиду
+    # до першої інструкції). Ціль інакше не стоїть: після `-e` прошивка без KEYL
+    # іде в Error_Handler → NVIC_SystemReset кожні ~100 мс, а між флашами спить у
+    # STOP2. UR означає апаратний скид, тож NRST на джизі обовʼязковий.
+    CONNECT = "-c port=SWD mode=UR"
 
     FLASH_BASE      = 0x08000000
-    FLASH_PAGE_SIZE = 0x800        # WL: сторінка 2 КБ = сектор для `-e`
+    FLASH_PAGE_SIZE = 0x800        # WL: сторінка 2 КБ; код сектора для `-e` = номер сторінки — bench-confirm, 00_07 SEC.3
     ERASED_WORD     = "0xFFFFFFFF"
 
     # @param session   [ProvisioningSession]
@@ -83,10 +86,12 @@ module FactoryFlashing
     end
 
     # [FW.54] Відкриття транскрипта обох гілок: connect + SWD-read кремнієвого
-    # паспорта. Клас-метод свідомо — не потребує ключів, тож Session ганяє
-    # його (і wrong-board guard) ДО деривації та будь-якого -w32.
+    # паспорта і першого слова сторінки ключів (магія KEYL — чи плата вже прошита:
+    # для плати без паспорта від цього залежить, чи можна її стирати). Клас-метод
+    # свідомо — не потребує ключів, тож Session ганяє його (і guard-и) ДО деривації
+    # та будь-якого `-e`/`-w32`.
     def self.preflight_commands
-      [ "#{PROGRAMMER} #{CONNECT} -r32 #{UID_BASE_ADDR} 12" ]
+      [ "#{PROGRAMMER} #{CONNECT} -r32 #{UID_BASE_ADDR} 12 -r32 #{FLASH_KEY_ADDR} 4" ]
     end
 
     # Тіло гілки: стирання сторінок ключів + key-writes + IWDG-заморозка + RDP (без preflight).
@@ -157,11 +162,13 @@ module FactoryFlashing
       flash_write_commands(words) + [ iwdg_freeze_command, rdp_command(@session.rdp_level) ]
     end
 
-    # Flash WL програмується лише цілим doubleword'ом (64 біти + ECC) і лише по
-    # стертому, а `-w32` сам не стирає (STM32CubeProgrammer, примітка до `-w32`).
-    # Тож: стерти сторінки, яких торкаємось (re-flash інакше впаде на першому ж
-    # записі; чистому чипу це no-op), і писати кожен doubleword рівно раз —
-    # суміжні одним `-w32`, діру всередині зачепленого добито стертим словом.
+    # Flash WL програмується лише цілим doubleword'ом (64 біти + 8 біт ECC —
+    # stm32wlxx_hal_flash.c) і лише по стертому, а `-w32` сам не стирає
+    # (STM32CubeProgrammer, примітка до `-w32`). Тож: стерти сторінки, яких
+    # торкаємось (re-flash інакше впаде на першому ж записі; чистому чипу це no-op),
+    # і писати кожен doubleword рівно раз — суміжні одним `-w32`, діру всередині
+    # зачепленого добито стертим словом. Стирання незворотне: плату без паспорта
+    # Session пускає сюди лише чистою або за REFLASH_ACK.
     # Сторінки виводяться з адрес запису: Королевина 125 (рантайм-OTA-SHA, FW.52)
     # і Солдатові 126 (mruby-контракт) сюди не потрапляють за побудовою.
     def flash_write_commands(words)

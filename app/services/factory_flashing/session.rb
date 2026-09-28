@@ -37,22 +37,24 @@ module FactoryFlashing
     class WrongBoardError < StandardError; end
 
     def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default,
-                 rdp_l2_ack: ENV["RDP_L2_ACK"])
+                 rdp_l2_ack: ENV["RDP_L2_ACK"], reflash_ack: ENV["REFLASH_ACK"])
       new(
         session: session,
         device: device,
         executor: executor || Executor.new,
         master_key_source: master_key_source,
-        rdp_l2_ack: rdp_l2_ack
+        rdp_l2_ack: rdp_l2_ack,
+        reflash_ack: reflash_ack
       ).run
     end
 
-    def initialize(session:, device:, executor:, master_key_source:, rdp_l2_ack: nil)
+    def initialize(session:, device:, executor:, master_key_source:, rdp_l2_ack: nil, reflash_ack: nil)
       @session = session
       @device = device || locate_device!
       @executor = executor
       @master_key_source = master_key_source
       @rdp_l2_ack = rdp_l2_ack
+      @reflash_ack = reflash_ack
     end
 
     def run
@@ -65,6 +67,7 @@ module FactoryFlashing
         # Чужа плата → навіть HardwareKey-рядок не матеріалізується.
         @executor.run(CommandBuilder.preflight_commands)
         verify_silicon_uid!
+        guard_unverified_reflash!
         hw_key = ensure_hardware_key
         se_transcript = run_secure_element_if_needed
         @executor.run(build_commands(hw_key))
@@ -158,14 +161,14 @@ module FactoryFlashing
     # записом: якщо мали що звіряти і не змогли — не пишемо наосліп.
     def verify_silicon_uid!
       return if @executor.dry_run?
-      return unless @device.is_a?(Tree) && @device.silicon_uid_hex.present?
+      return unless identity_verifiable?
 
       stdout = @executor.results.last&.stdout
       words  = UidReadout.words(stdout)
       if words.nil?
         raise WrongBoardError,
               "UID-read не розпарсився — запис заборонено (bench: звір формат " \
-              "`-r32`-виводу, RUNBOOK 1.3): #{stdout.to_s.strip.truncate(120)}"
+              "`-r32`-виводу, RUNBOOK 1.3): …#{stdout.to_s.strip.last(120)}"
       end
 
       board_uid = UidReadout.uid_hex(words)
@@ -175,6 +178,29 @@ module FactoryFlashing
             "На джизі чип #{board_uid} (DID #{SilkenNet::DidDerivation.wire_did(*words)}), " \
             "сесія для #{@session.device_uid} (#{@device.silicon_uid_hex}) — " \
             "чужа плата, жоден -w32 не виконано"
+    end
+
+    # Паспорт є лише в дерева з прив'язаним кремнієм; Королеву (і legacy-дерево)
+    # за чипом конвеєр не впізнає.
+    def identity_verifiable?
+      @device.is_a?(Tree) && @device.silicon_uid_hex.present?
+    end
+
+    # `-e` сторінок ключів незворотний, а плату без паспорта не впізнати: уже
+    # прошиту (або нечитану — fail-closed) таку плату стираємо лише за оголошенням
+    # саме цього пристрою — дзеркало RDP_L2_ACK. Інакше чужа Королева на джизі
+    # втратила б свої ключі й отримала б наші. Чиста сторінка ack не потребує.
+    def guard_unverified_reflash!
+      return if @executor.dry_run? || identity_verifiable?
+
+      word = UidReadout.key_page_word(@executor.results.last&.stdout)
+      return if word == 0xFFFFFFFF || @reflash_ack == @session.device_uid
+
+      seen = word ? format("0x%08X", word) : "не прочитано"
+      raise WrongBoardError,
+            "Плата на джизі вже несе ключі (перше слово стор. 124: #{seen}), а паспорта, " \
+            "щоб її впізнати, немає — стирання незворотне; перепрошити саме " \
+            "#{@session.device_uid}: REFLASH_ACK=#{@session.device_uid}"
     end
 
     # [FW.23] Per-cluster K_ota для OTA dual-gate — обидві гілки пишуть його у
@@ -202,11 +228,15 @@ module FactoryFlashing
     # SE у Королеви немає за жодної гілки (SecureElementProvisioner — лише Tree),
     # тож Гілка B для неї = Гілка A повністю: без цього Gilka-B Королева мовчки
     # лишалась на L0 (⚖️ делеговано 2026-09-27, 00_07 SE050-MIGRATION).
+    # Dry-run нічого не прошиває, тож і pubkey не чіпає: інакше план підміняв би
+    # L1-ідентичність справжньої Королеви сім'єю, якої немає на жодному чипі.
     def gateway_voice_seed(hw_key)
       return nil unless @device.is_a?(Gateway)
 
       seed_hex = SecureRandom.hex(32)
-      hw_key.update!(ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
+      unless @executor.dry_run?
+        hw_key.update!(ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
+      end
       seed_hex
     end
 

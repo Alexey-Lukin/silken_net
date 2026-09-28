@@ -6,12 +6,14 @@ require "rails_helper"
 # [SEC.3] EXECUTE-шлях із fake STM32_Programmer_CLI — інтеграція без заліза.
 #
 # Unit-спеки Executor мокають Open3; тут навпаки — РЕАЛЬНИЙ fork/exec у
-# шим-бінарник на PATH. Доводимо software-половину "real CLI execution":
-# повну Session-оркестрацію (HKDF row → CommandBuilder → subprocess →
-# AuditTrail transcript → AASM), capture stdout/stderr/exit, stop-on-fail
-# порядок. Bench-residual SEC.3 звужується до фізичного SWD-флешу.
+# шим-бінарник на PATH. Доводимо ОРКЕСТРАЦІЮ: повну Session (HKDF row →
+# CommandBuilder → subprocess → AuditTrail transcript → AASM), capture
+# stdout/stderr/exit, stop-on-fail порядок. Семантики CLI шим не судить — він
+# приймає будь-які аргументи (так прожив транскрипт без `-c` у кожному рядку);
+# форму виклику звірено з мануалом ST, решта — bench (00_07 SEC.3).
 #
-# Сценарії шима керуються ENV: FAKE_STM32_MODE = ok | verify_fail | rdp_fail.
+# Сценарії шима керуються ENV: FAKE_STM32_MODE = ok | verify_fail | rdp_fail;
+# FAKE_STM32_KEY_PAGE — перше слово стор. 124 у preflight (дефолт FFFFFFFF = чиста).
 RSpec.describe FactoryFlashing::Session, ".run", type: :service do
   let(:operator)   { create(:user, :super_admin) }
   let(:supervisor) { create(:user, :admin, organization: operator.organization) }
@@ -37,7 +39,8 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       #!/bin/sh
       echo "$@" >> "$FAKE_STM32_LOG"
       case "$@" in
-        *"-r32 0x1FFF7590"*) echo "0x1FFF7590 : 0039002F 31385115 38323634";;
+        *"-r32 0x1FFF7590"*) echo "0x1FFF7590 : 0039002F 31385115 38323634"
+                             echo "0x0803E000 : ${FAKE_STM32_KEY_PAGE:-FFFFFFFF}";;
       esac
       case "$FAKE_STM32_MODE" in
         verify_fail)
@@ -63,15 +66,18 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       orig_path = ENV["PATH"]
       orig_mode = ENV["FAKE_STM32_MODE"]
       orig_log  = ENV["FAKE_STM32_LOG"]
+      orig_page = ENV["FAKE_STM32_KEY_PAGE"]
       begin
         ENV["PATH"] = "#{dir}#{File::PATH_SEPARATOR}#{orig_path}"
         ENV["FAKE_STM32_LOG"] = File.join(dir, "invocations.log")
         ENV["FAKE_STM32_MODE"] = "ok"
+        ENV.delete("FAKE_STM32_KEY_PAGE")
         example.run
       ensure
         ENV["PATH"] = orig_path
         ENV["FAKE_STM32_MODE"] = orig_mode
         ENV["FAKE_STM32_LOG"] = orig_log
+        ENV["FAKE_STM32_KEY_PAGE"] = orig_page
       end
     end
   end
@@ -99,7 +105,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       # Кожен виклик під'єднується сам: UID-read → стирання → запис → IWDG-заморозка → RDP
       log = shim_invocations
       expect(log.size).to eq(outcome.transcript.size)
-      expect(log).to all(start_with("-c port=SWD reset=HWrst "))
+      expect(log).to all(start_with("-c port=SWD mode=UR "))
       expect(log.first).to include("-r32 0x1FFF7590")
       expect(log).to include(a_string_matching(/-w32 0x0803E000 0x4B45594C /)) # KEYL magic
       expect(log.last).to include("-ob RDP=")
@@ -152,6 +158,45 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
                           master_key_source: master_key_source)
 
       expect(hw_key.reload.previous_aes_key_hex).to be_present
+    end
+  end
+
+  # [SEC.3] Королеву за чипом конвеєр не впізнає (паспорта немає), а `-e` стор. 124
+  # незворотний: уже прошиту плату стирає лише оголошення саме цього пристрою.
+  describe "Королева без паспорта — стирання лише чистої плати або за REFLASH_ACK" do
+    let(:gateway) { create(:gateway) }
+
+    def run_live(**opts)
+      described_class.run(session: make_session(device_uid: gateway.uid),
+                          executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+                          master_key_source: master_key_source, **opts)
+    end
+
+    it "прошита плата без ack → відмова ДО стирання, ключ не матеріалізовано" do
+      ENV["FAKE_STM32_KEY_PAGE"] = "4B45594C"
+
+      expect { run_live(reflash_ack: nil) }
+        .to raise_error(FactoryFlashing::Session::WrongBoardError, /REFLASH_ACK=#{Regexp.escape(gateway.uid)}/)
+      expect(shim_invocations.grep(/ -e | -w32 /)).to be_empty
+      expect(HardwareKey.where(device_uid: gateway.uid)).to be_empty
+    end
+
+    it "нечитане слово сторінки → та сама відмова (fail-closed)" do
+      ENV["FAKE_STM32_KEY_PAGE"] = "??"
+
+      expect { run_live(reflash_ack: nil) }.to raise_error(FactoryFlashing::Session::WrongBoardError, /не прочитано/)
+    end
+
+    it "прошита плата з ack саме цього uid → стирає, шиє, а pubkey відповідає прошитій сім'ї" do
+      ENV["FAKE_STM32_KEY_PAGE"] = "4B45594C"
+
+      outcome = run_live(reflash_ack: gateway.uid)
+
+      image = flash_image(shim_invocations)
+      seed_hex = (1..8).map { |i| image.fetch(0x0803E064 + (4 * i)).delete_prefix("0x") }.join
+      expect(shim_invocations.grep(/ -e 124\z/)).not_to be_empty
+      expect(Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
+        .to eq(outcome.hardware_key.reload.ed25519_public_key_hex)
     end
   end
 

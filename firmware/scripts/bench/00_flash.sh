@@ -26,7 +26,7 @@ done
 
 # Кожен виклик CLI — окремий процес, тож `-c` несе КОЖЕН рядок: з'єднання
 # між процесами не живе, а «disconnect» окремим рядком не існує.
-CONNECT="-c port=SWD reset=HWrst"
+CONNECT="-c port=SWD mode=UR"
 
 cmds=()
 if [ -n "$ELF" ]; then

@@ -249,9 +249,11 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      HardwareKey.create!(device_uid: DID, aes_key_hex: …)
 
   d) factory:execute (після 2-Person approve; live) — транскрипт, де КОЖЕН
-     рядок — окремий процес CLI з власним -c (з'єднання між процесами не
-     живе): -r32 UID-read → wrong-board guard (Session звіряє паспорт плати
-     з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного -w32) →
+     рядок — окремий процес CLI з власним -c під скидом (mode=UR; з'єднання
+     між процесами не живе): -r32 UID + перше слово стор. 124 → wrong-board
+     guard (Session звіряє паспорт плати з trees.silicon_uid_hex; чужа плата
+     → WrongBoardError, жодного -w32; безпаспортну вже прошиту плату —
+     Королеву — стирає лише REFLASH_ACK=<device_uid>) →
      -e сторінок ключів (Солдат 124 125, Королева 124: -w32 не стирає, і
      re-flash без цього впав би) → -w32 KEYL/LSED/KOTA/KEYB (Tree; Gateway —
      KEYL=KEYB-значення/KEYC/EDSK) цілими doubleword'ами: WL програмує
@@ -823,26 +825,26 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
 | Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (`-c` + `-r32 0x1FFF7590 12` UID-read одним викликом, обидві гілки) + Гілка A — `-e` сторінок ключів і `STM32_Programmer_CLI -w32` цілими doubleword'ами (суміжні слова одним рядком, діру добиває `0xFFFFFFFF`; кожен рядок несе власний `-c`): Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
-| Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit; його повідомлення `Session` персистить у `provisioning_sessions.error_message`, тож дані `-w32` (ключі) там заступає лічильник слів (`Executor.redact`) |
+| Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit. Дані `-w32` — ключі зі справжнього master key, тож і друк dry-run, і повідомлення помилки (його `Session` персистить у `provisioning_sessions.error_message`) несуть лише адресу й лічильник слів (`Executor.redact`, позиційно), а 8-hex-слова stderr маскуються. ⚠️ У argv процесу CLI ключі все одно є — вимога до фабричного хоста, §5 |
 | ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (1/2/3; Slot 0 reserved — не пишеться з 2026-09-27) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
-| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
-| Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
+| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Безпаспортну плату (Королеву) впізнати нема чим, а `-e` сторінки ключів незворотний, тож preflight читає й перше слово стор. 124: уже прошиту (чи нечитану) таку плату конвеєр стирає лише за `REFLASH_ACK=<device_uid>` — дзеркало `RDP_L2_ACK`; інакше чужа Королева на джизі втратила б свої ключі. Dry-run pubkey голосу Королеви не чіпає — план не підміняє L1-ідентичність. Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
+| Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess; `REFLASH_ACK=<device_uid>` — перепрошивка вже прошитої безпаспортної плати, зокрема доставка ротованого KEYC Королеві) |
 
 > **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` — `ProvisioningSession#approve_with_credentials!` верифікує його через `supervisor.authenticate` (Argon2id). Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної Argon2id-автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5 access-control (master-key лише `super_admin` + MFA), не код.
 
 **Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*` (вкл. `tree_resolver_spec` — чотири долі кремнію; execute-path шим з UID-verify pass/wrong-board), `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio: one-pass UID→Tree→ключі, firmware-equivalent HKDF, legacy-DID abort). Counts → suite.
 
-**Зразок dry-run вивода** (Tree, Гілка A, `rdp_level` 1; кожен рядок — окремий процес CLI, тож `-c` несе кожен):
+**Зразок dry-run вивода** (Tree, Гілка A, `rdp_level` 1; кожен рядок — окремий процес CLI, тож `-c` під скидом несе кожен; дані `-w32` друк заступає лічильником слів):
 ```
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -r32 0x1FFF7590 12    # [FW.54] UID-read (wrong-board guard)
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -e 124 125            # сторінки ключів: -w32 сам не стирає
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E000 0x4B45594C 0xAABBCCDD … 0x4C534544 …
-          # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words — 14 слів = 7 doubleword'ів
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -w32 0x0803E800 0x4B4F5441 … 0xFFFFFFFF 0x4B455942 … 0xFFFFFFFF
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12 -r32 0x0803E000 4   # [FW.54] UID + перше слово стор. 124
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -e 124 125            # сторінки ключів: -w32 сам не стирає
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 <14 words>
+          # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words — 7 doubleword'ів
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E800 <16 words>
           # стор. 125: KOTA magic + 8 K_ota words (FW.23), стерте слово, KEYB magic + 4 words (+40, FW.2 (в)), стерте слово
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — ДО RDP
-[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst -ob RDP=0xBB          # L1 — сирий байт, не номер рівня
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — ДО RDP
+[dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xBB          # L1 — сирий байт, не номер рівня
 ```
 
 **Hardware-gated TODO:**
@@ -907,9 +909,9 @@ PROVISIONING_MASTER_KEY
 | Скріншот/відеозапис ключа | UI не рендерить ключ; Backend повертає лише `{ status }` |
 | Clipboard intercept | Кнопки Copy відсутні на сторінці provisioning UI |
 | Logfile з ключем | `filter_parameters += [:aes_key, :lorenz_seed, :device_key, :binary_key]` у Rails; `Sentry` scrub_patterns покривають `aes_key` |
-| Persistent key cache на factory machine | `device_key` у RAM інструменту — zero-copy підхід: передається прямо в SWD write call, після якого `SecureRandom.random_bytes(32)` → overwrite буфера |
+| Persistent key cache на factory machine | Ключі живуть у памʼяті Ruby-процесу (`HardwareKey` → рядки команд `Executor`) і в argv процесу CLI; zero-copy чи перезапису буфера в коді немає. Друк dry-run і персистоване повідомлення помилки ключів не несуть (`Executor.redact`). ⚠️ **Вимога до фабричного хоста:** однокористувацький kiosk, `/proc` з `hidepid=2`, без auditd-логування argv (execve) — інакше ключі читаються з таблиці процесів, і в кожному рядку `-w32` лежить цілий блок |
 | Shoulder surfing / screen recording | Factory laptop з privacy screen filter; Provisioning Tool запускається у fullscreen kiosk mode без title bar |
-| Key exposure через SWD/JTAG replay | Після Flash write → `HAL_FLASH_Lock()` → RDP Level 1 програмується одразу тим самим сеансом (`--rdp 1` прапорець у STM32CubeProgrammer CLI) |
+| Key exposure через SWD/JTAG replay | RDP піднімає останній рядок того самого прогону конвеєра (`-ob RDP=0xBB` — пілот, L1); продакшн гонить конвеєр на `RDP_LEVEL=0`, а L2 палить поза ним після self-test і WRP ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)). Прапорця `--rdp` у CLI немає — це опція стендового `01_option_bytes.sh` |
 
 **Secure RAM wipe після Flash write (Гілка A):**
 ```c
