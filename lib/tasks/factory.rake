@@ -64,21 +64,22 @@ namespace :factory do
     puts "✅ Session ##{session.id} created (state=pending). Next: rake factory:approve[#{session.id}]"
   end
 
-  desc "Supervisor authenticates + approves a pending session. Args: session_id. Requires SUPERVISOR_PASSWORD env (the supervisor's OWN password — 2-Person Rule, SEC.3)."
+  desc "Supervisor authenticates + approves a pending session. Args: session_id. Requires SUPERVISOR_PASSWORD + SUPERVISOR_OTP env (the supervisor's OWN password and current TOTP code — 2-Person Rule, SEC.3); a supervisor without MFA cannot approve."
   task :approve, %i[session_id] => :environment do |_t, args|
     session = ProvisioningSession.find(Integer(args[:session_id]))
     password = ENV["SUPERVISOR_PASSWORD"]
-    if password.blank?
-      abort "SUPERVISOR_PASSWORD env required — supervisor ##{session.supervisor_id} must authenticate the approval (2-Person Rule, SEC.3)"
+    otp      = ENV["SUPERVISOR_OTP"]
+    if password.blank? || otp.blank?
+      abort "SUPERVISOR_PASSWORD and SUPERVISOR_OTP env required — supervisor ##{session.supervisor_id} must authenticate the approval with password + TOTP (2-Person Rule, SEC.3)"
     end
 
     begin
-      session.approve_with_credentials!(password)
+      session.approve_with_credentials!(password, otp: otp)
     rescue ProvisioningSession::SupervisorAuthError => e
       abort "Approval rejected: #{e.message}"
     end
 
-    puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id} (password-authenticated). Next: rake factory:execute[#{session.id}]"
+    puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id} (password + TOTP). Next: rake factory:execute[#{session.id}]"
   end
 
   desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id. Production burns RDP L2 outside this pipeline (SEC.2, 03_05 §3.6: RDP_LEVEL=0 here → self-test → WRP → L2). Re-flashing an already-provisioned board without a silicon passport (a Queen) needs REFLASH_ACK=<device_uid> — the key-page erase is irreversible. A station with several ST-LINK probes needs STLINK_SN=<probe serial>: every line reconnects, and only the first checks the board's passport."

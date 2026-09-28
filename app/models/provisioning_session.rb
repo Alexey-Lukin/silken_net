@@ -44,8 +44,8 @@ class ProvisioningSession < ApplicationRecord
 
     event :approve do
       # [SEC.3] Two guards: the 2-Person Rule (supervisor present & differs from the
-      # operator) AND proof that the supervisor's password was verified *this call*
-      # via #approve_with_credentials!. A bare `approve!` (e.g. from a Rails console)
+      # operator) AND proof that the supervisor's password + TOTP were verified *this
+      # call* via #approve_with_credentials!. A bare `approve!` (e.g. from a Rails console)
       # leaves @credentials_verified false → the transition is refused. This closes
       # the console self-approve path in code; raw-SQL / object manipulation remains
       # an operational boundary (docs/03_06 §5.A access control).
@@ -71,18 +71,25 @@ class ProvisioningSession < ApplicationRecord
   end
 
   # [SEC.3] Authenticated 2-Person approval: the supervisor must prove possession
-  # of their own account (Argon2id password) — an operator who merely *names* a
-  # supervisor on the session cannot approve it alone. This is the entry point the
-  # factory CLI (`rake factory:approve`) uses, and the ONLY path that sets
-  # @credentials_verified, so the AASM `approve` guard accepts the transition.
-  # Console/DB access bypasses it (operational boundary — docs/03_06 §5.A access
-  # control); the CLI and a bare `approve!` cannot.
-  def approve_with_credentials!(supervisor_password)
+  # of their own account — Argon2id password AND the current TOTP code — so an
+  # operator who merely *names* a supervisor on the session cannot approve it
+  # alone. This is the entry point the factory CLI (`rake factory:approve`) uses,
+  # and the ONLY path that sets @credentials_verified, so the AASM `approve` guard
+  # accepts the transition. Console/DB access bypasses it (operational boundary —
+  # docs/03_06 §5.A access control); the CLI and a bare `approve!` cannot.
+  #
+  # [SEC.3] Другий фактор (⚖️ делеговано 2026-09-28, 03_06 §5): супервайзер без
+  # MFA не схвалює НІЧОГО, хоч би яка в нього роль — `supervisor_id` тут будь-який
+  # User. Код ділить `otp_last_used_at` із входом, тож код, уже використаний на
+  # вході, тут не пройде (анти-replay `verify_totp!`).
+  def approve_with_credentials!(supervisor_password, otp:)
     raise SupervisorAuthError, "session has no supervisor assigned" if supervisor.blank?
 
     unless supervisor.authenticate(supervisor_password)
       raise SupervisorAuthError, "supervisor password authentication failed"
     end
+    raise SupervisorAuthError, "supervisor has no MFA — enable TOTP before approving" unless supervisor.mfa_enabled?
+    raise SupervisorAuthError, "supervisor TOTP verification failed" unless supervisor.verify_totp!(otp)
 
     # [SEC.3] Flag the verification so the AASM `approve` guard accepts this call,
     # then reset in `ensure` so it can never linger past this single transition.
@@ -99,7 +106,7 @@ class ProvisioningSession < ApplicationRecord
   end
 
   # [SEC.3] True only inside #approve_with_credentials!, after the supervisor's
-  # password authenticates — the AASM `approve` guard requires it, so a raw
+  # password and TOTP authenticate — the AASM `approve` guard requires it, so a raw
   # `approve!` (no credential check) cannot reach :supervisor_approved.
   def credentials_verified?
     @credentials_verified == true

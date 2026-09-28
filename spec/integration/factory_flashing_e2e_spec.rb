@@ -36,7 +36,12 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
   end
 
   let(:operator)   { create(:user, :super_admin) }
-  let(:supervisor) { create(:user, :admin, organization: operator.organization) }
+  # [SEC.3] Схвалення — пароль + TOTP, тож супервайзер мусить мати активний MFA
+  let(:supervisor) do
+    create(:user, :admin, organization: operator.organization,
+                          otp_secret: ROTP::Base32.random, otp_required_for_login: true)
+  end
+  let(:supervisor_otp) { ROTP::TOTP.new(supervisor.otp_secret).now }
   # golden g1: UID → SNET-80B12004 (did_derivation_spec ↔ test_did_derive.c)
   let(:g1_uid) { "0039002F3138511538323634" }
   # [FW.54] Дерево з кремнієвим паспортом — re-flash по DID легальний
@@ -47,8 +52,15 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     Rake::Task[task_name].invoke(*args)
   end
 
+  # [SEC.3] Супервайзер схвалює ВЛАСНИМ паролем + поточним TOTP (2-Person Rule, ⚖️ 2026-09-28)
+  def supervisor_credentials!(password: "password12345", otp: supervisor_otp)
+    ENV["SUPERVISOR_PASSWORD"] = password
+    ENV["SUPERVISOR_OTP"]      = otp
+  end
+
   after do
     ENV.delete("SUPERVISOR_PASSWORD")
+    ENV.delete("SUPERVISOR_OTP")
     ENV.delete("CLUSTER_ID")
     ENV.delete("TREE_FAMILY_ID")
   end
@@ -78,7 +90,7 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     session = ProvisioningSession.order(:id).last
     expect(session).to have_attributes(state: "pending", device_uid: "SNET-80B12004")
 
-    ENV["SUPERVISOR_PASSWORD"] = "password12345" # supervisor's own password (2-Person Rule, SEC.3)
+    supervisor_credentials!
     invoke("factory:approve", session.id.to_s)
     expect(session.reload.state).to eq("supervisor_approved")
 
@@ -141,12 +153,18 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     session = ProvisioningSession.order(:id).last
 
     # wrong supervisor password → abort (SystemExit); session stays pending
-    ENV["SUPERVISOR_PASSWORD"] = "definitely-wrong"
+    supervisor_credentials!(password: "definitely-wrong")
     expect { invoke("factory:approve", session.id.to_s) }.to raise_error(SystemExit)
     expect(session.reload.state).to eq("pending")
 
     # missing password → abort too
     ENV.delete("SUPERVISOR_PASSWORD")
+    expect { invoke("factory:approve", session.id.to_s) }.to raise_error(SystemExit)
+    expect(session.reload.state).to eq("pending")
+
+    # right password, missing TOTP → abort: the second factor is not optional
+    ENV["SUPERVISOR_PASSWORD"] = "password12345"
+    ENV.delete("SUPERVISOR_OTP")
     expect { invoke("factory:approve", session.id.to_s) }.to raise_error(SystemExit)
     expect(session.reload.state).to eq("pending")
   end

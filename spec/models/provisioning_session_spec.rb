@@ -69,28 +69,67 @@ RSpec.describe ProvisioningSession do
     end
 
     describe "#approve_with_credentials! [SEC.3]" do
-      let(:sup) { create(:user) } # user factory password = "password12345"
+      # user factory password = "password12345"; MFA — як після активації S6.21
+      let(:sup) { create(:user, otp_secret: ROTP::Base32.random, otp_required_for_login: true) }
       let(:cred_session) { create(:provisioning_session, operator: create(:user), supervisor: sup) }
+      let(:code) { ROTP::TOTP.new(sup.otp_secret).now }
 
-      it "approves when the supervisor password is correct" do
-        expect { cred_session.approve_with_credentials!("password12345") }
+      it "approves when the supervisor password and TOTP are correct" do
+        expect { cred_session.approve_with_credentials!("password12345", otp: code) }
           .to change(cred_session, :state).from("pending").to("supervisor_approved")
       end
 
       it "raises and stays pending on a wrong supervisor password" do
-        expect { cred_session.approve_with_credentials!("wrong-password") }
+        expect { cred_session.approve_with_credentials!("wrong-password", otp: code) }
           .to raise_error(ProvisioningSession::SupervisorAuthError, /authentication failed/)
         expect(cred_session.reload).to be_pending
       end
 
       it "raises when no supervisor is assigned" do
         cred_session.update_columns(supervisor_id: nil)
-        expect { cred_session.approve_with_credentials!("password12345") }
+        expect { cred_session.approve_with_credentials!("password12345", otp: code) }
           .to raise_error(ProvisioningSession::SupervisorAuthError, /no supervisor/)
       end
 
+      # ⚖️ делеговано 2026-09-28: пароль — один фактор, тож без MFA не схвалює
+      # ЖОДНА роль (рекомендація називала лише super_admin; supervisor_id — будь-який User).
+      %i[admin super_admin].each do |role|
+        it "refuses a #{role} supervisor without MFA — password alone is one factor" do
+          plain = create(:user, role)
+          session = create(:provisioning_session, operator: create(:user), supervisor: plain)
+          expect { session.approve_with_credentials!("password12345", otp: "123456") }
+            .to raise_error(ProvisioningSession::SupervisorAuthError, /no MFA/)
+          expect(session.reload).to be_pending
+        end
+      end
+
+      # Предмет гарда `mfa_enabled?`: секрет видано setup-флоу (S6.21), активацію кинуто —
+      # валідний код від такого секрета `verify_totp!` прийняв би, а MFA в людини немає.
+      it "refuses a half-activated MFA — secret provisioned, login MFA never switched on" do
+        sup.update!(otp_required_for_login: false)
+        expect { cred_session.approve_with_credentials!("password12345", otp: code) }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /no MFA/)
+        expect(cred_session.reload).to be_pending
+      end
+
+      it "refuses a blank or wrong TOTP code" do
+        expect { cred_session.approve_with_credentials!("password12345", otp: "") }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /TOTP/)
+        wrong = code == "000000" ? "111111" : "000000"
+        expect { cred_session.approve_with_credentials!("password12345", otp: wrong) }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /TOTP/)
+        expect(cred_session.reload).to be_pending
+      end
+
+      it "refuses the code already spent on the supervisor's login (shared otp_last_used_at)" do
+        expect(sup.verify_totp!(code)).to be(true) # вхід супервайзера тим самим кодом
+        expect { cred_session.approve_with_credentials!("password12345", otp: code) }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /TOTP/)
+        expect(cred_session.reload).to be_pending
+      end
+
       it "does not leak credential verification — a later bare approve! still fails [SEC.3]" do
-        expect { cred_session.approve_with_credentials!("wrong-password") }
+        expect { cred_session.approve_with_credentials!("wrong-password", otp: code) }
           .to raise_error(ProvisioningSession::SupervisorAuthError)
         expect { cred_session.approve! }.to raise_error(AASM::InvalidTransition)
         expect(cred_session.reload).to be_pending
