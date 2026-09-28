@@ -9,7 +9,9 @@ class GatewayTelemetryLog < ApplicationRecord
 
   # --- КОНСТАНТИ ПОРОГІВ (Single Source of Truth) ---
   LOW_BATTERY_THRESHOLD     = 3300  # mV: нижче цього — виснаження батареї/сонячної панелі
-  OVERHEAT_THRESHOLD        = 65    # °C: SIM7070G починає деградувати при перевищенні
+  # ⚠️ Підставу не звірено: модем тримає −40…+85 °C, а межа батареї, BMS і Victron — +60 °C
+  # (docs/02_05 §4а.1); поріг судить той датчик, що поїде дротом, а його ще немає (00_07 HW.16).
+  OVERHEAT_THRESHOLD        = 65    # °C
   LOW_SIGNAL_THRESHOLD      = 5     # CSQ: нижче 5 — ризик втрати батчів телеметрії
   # SSOT — docs/02_05 §4а.5: LiFePO4 розряд безпечний до −20°C; нижче
   # графітове плакування деградує і Queen уходить offline у найгірший
