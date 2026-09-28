@@ -516,7 +516,7 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
      → Sim7070_Udp_Fetch (сирий CA*-тракт)
      → Coap_Reply_Extract_Payload (2.05 + наш MID) → конверт
      → Handle_CoAP_Command: 0 = time-only «черга порожня» → стоп;
-       1 = контент (CMD / 0x9E-каркас / 0x9F OTA-hint) → наступний poll.
+       1 = контент (CMD / адресна команда 0x9A·0x9D·0x9E / 0x9F OTA-hint) → наступний poll.
    ?fw= несе повністю зібраний contract-id (0 після ребуту) — Rails
    звіряє з gateways.pending_firmware_id = спостережене підтвердження
    доставки (Downlink::PendingQueueService, 04_02).

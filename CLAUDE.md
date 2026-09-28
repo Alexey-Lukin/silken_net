@@ -79,12 +79,13 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 ```
 ⚠️ **Правило — про ВОРКЕРІВ; ActiveJob-джоби з гемів приходять БЕЗ `queue_as`, і `default`(5) їм призначає фреймворк** (ARCH.60). Довговічний канал несе пріоритет своєї події, ефемерний — ні (`AlertMailer`→`alerts`; `PasswordMailer` і Turbo-редрави свідомо `default`). Носій — `spec/quality/activejob_queue_declaration_spec.rb`; ⛔ черга поза `sidekiq.yml` не слухається жодним процесом → джоби тонуть мовчки. Механізм — `backend`-скіл #72.
 
-**AES-режими + двоключова модель** (post-FW.2 (в), 2026-07-03; дім `03_05 §3.1`+`§6`):
+**AES-режими + двоключова модель** (post-FW.2 (в), 2026-07-03; дім `03_05 §3.1`+`§2.5`+`§6`):
 
 | Напрямок | Режим · ключ (CCM-ера) |
 |----------|------------------------|
 | Soldier → Queen: телеметрія/panic | AES-**128**-ECB [transitional] → AES-128-CCM [FW.2, bench- і ⛔ ARCH.8-gated] · **session KEYL per-device** |
-| Soldier ↔ Queen: control-plane (downlink OTA/beacon/CMD + uplink 0x55/0x56) | AES-128-ECB · **cluster KEYB** (Queen'ин єдиний LoRa-ключ = KEYB-значення) |
+| Soldier ↔ Queen: control-plane (downlink OTA/beacon + uplink 0x55/0x56) | AES-128-ECB · **cluster KEYB** (Queen'ин єдиний LoRa-ключ = KEYB-значення) |
+| Rails → Soldier: адресні команди `0x9A`·`0x9D`·`0x9E` (з 2026-09-29) | AES-128-CCM · **session KEYL цілі** наскрізь, Королева сліпа; анти-повтор — DLFC (`03_05 §2.5`) |
 | Queen → Rails (CoAP) / downlink | AES-256-CBC (HRNG IV) · KEYC per-gateway |
 
 **Lorenz / StatusByte** (дім `03_04` + `firmware`-скіл — точну bit-розкладку бери ТАМ, не звідси):

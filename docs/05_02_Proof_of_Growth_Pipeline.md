@@ -295,55 +295,35 @@ end
 Поточний OTA downlink передає лише mruby bytecode (bio_contract). Додаємо окремий **Config Block** як перший фрагмент batch:
 
 ```
-OTA Batch Downlink Format (розширений):
-  [CMD_TYPE:1] [PAYLOAD_LEN:2] [PAYLOAD:N]
-
-Тип команди цього розділу (повна карта — дім нижче):
-  CMD_OTA_BYTECODE    = 0x99   (mruby chunks — існуючий)
-  CMD_SET_THRESHOLDS  = 0x9A   (per-species Lorenz Z пороги, FW.8)
+Адресна команда 0x9A (з 2026-09-29 — downlink-wire-ревізія, 03_05 §2.5):
+  [0x9A][DID:4 BE][DLFC_lsb:2 BE] ‖ CCM(тіло:8) ‖ MIC:8   = 23 Б
+  (CMD_OTA_BYTECODE 0x99 — кластерний, лишився 16B ECB на KEYB)
 ```
 
 > **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_HMAC_TRAILER` (FW.23 OTA-печатка); TinyML-пороги — `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18), **не** `0x9B`.
 
-**CMD_SET_THRESHOLDS payload (10 байт):**
+**Тіло `0x9A` (8 байт, little-endian — байт-у-байт тіло старого каркаса без `len` і CRC; цілісність несе MIC):**
 
 ```
 Байти  Поле                   Тип    Опис
 0–1    z_min_fixed            int16  CRITICAL_Z_MIN × 100 (наприклад, 200 = 2.0)
 2–3    z_max_fixed            int16  CRITICAL_Z_MAX × 100 (наприклад, 4500 = 45.0)
 4–5    z_optimal_fixed        int16  OPTIMAL_Z_TARGET × 100 (наприклад, 2900 = 29.0)
-6      species_id             uint8  0=Pinus, 1=Quercus, 2=Fagus, 3=Picea, 0xFF=custom
-7      config_version         uint8  Version counter (anti-replay для конфігурації)
-8–9    checksum               uint16 CRC16 байтів 0..7
+6      species_id             uint8  0=Pinus, 1=Quercus, 2=Fagus, 3=Picea, 4=Betula, 0xFF=unmapped
+7      config_version         uint8  семантична версія (загортається через 256); анти-повтор несе DLFC кадру
 ```
 
-**LoRa-канал (Queen→Soldier, downlink `0x9A` — напрямок-фікс 2026-07-03):** 16B AES-128-**ECB** в обидві ери; ключ CCM-ери = cluster control-plane **KEYB** (двоключова модель — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); CCM належить лише uplink-телеметрії на session-KEYL). **CoAP-магістраль (Queen→Rails):** AES-256-CBC (без змін).
+**LoRa-канал (Queen→Soldier):** з 2026-09-29 — адресний CCM-кадр сесійним ключем ЦІЛІ, Королева — сліпий курʼєр ([`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); 16B ECB на KEYB лишився кластерним кадрам. До ревізії `0x9A` їхав ECB на KEYB, і підробити його міг будь-хто з кластерним ключем. **CoAP-магістраль (Rails→Queen):** AES-256-CBC (без змін).
 
 ##### 4а.2 Firmware-persist (Flash-KV)
 
-> Прийняті пороги firmware зберігає у **Flash-KV** — bit-layout (ключі `0x10`/`0x11`: z_min/z_max/z_opt ×100 · `species_id` · `config_version`), інваріанти «порвана/невалідна пара → firmware-дефолти» + power-cut семантика = канон-дім [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA). Код — `common/lorenz_thresholds.h` (`Save/Load`, host-готовий) + handler `0x9A` у `firmware/soldier/main.c`, виклик gated `FW8_PARSER_ENABLED 0` (deferred TRL-7 — лишається bench-фліп + HAL-глю на кремнії). RTC-підхід **відкинуто**: STM32WLE5JC має лише `DR0..DR19` (карта [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), суміжних байтів під пороги немає. Повний статус персисту/wiring → [`00_07` — FW.8](00_07_Action_Plan_Tracker).
+> Прийняті пороги firmware зберігає у **Flash-KV** — bit-layout (ключі `0x10`/`0x11`: z_min/z_max/z_opt ×100 · `species_id` · `config_version`), інваріанти «порвана/невалідна пара → firmware-дефолти» + power-cut семантика = канон-дім [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA). Код — `common/lorenz_thresholds.h` (`Save/Load` + `Lorenz_Thresholds_From_Wire`, host-готові) + приймач адресних команд у `firmware/soldier/main.c` (секція 1.14, CCM-шлях), гейт `FW8_PARSER_ENABLED 0` (deferred TRL-7 — лишається bench-фліп + HAL-глю на кремнії). RTC-підхід **відкинуто**: STM32WLE5JC має лише `DR0..DR19` (карта [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), суміжних байтів під пороги немає. Повний статус персисту/wiring → [`00_07` — FW.8](00_07_Action_Plan_Tracker).
 
 ##### 4а.3 Backend — OtaPackagerService та TreeFamily
 
-```ruby
-# app/services/ota_packager_service.rb — [FW.8] РЕАЛІЗОВАНО (Rails-сторона)
-def build_threshold_config_block(tree)
-  thresholds = tree.effective_lorenz_thresholds  # 3-tier: cluster > family > global
-  z_min      = (thresholds[:min]     * 100).round.to_i
-  z_max      = (thresholds[:max]     * 100).round.to_i
-  z_opt      = (thresholds[:optimal] * 100).round.to_i
-  species_id = SPECIES_ID_MAP[tree.tree_family.scientific_name] || 0xFF
-  version    = (tree.ota_config_version.to_i + 1) & 0xFF
+Тіло — `OtaPackagerService.threshold_config_body(tree, config_version:)`: пороги з трирівневого ланцюга `tree.effective_lorenz_thresholds` (cluster > family > global) ×100 плюс `species_id` із `SPECIES_ID_MAP`. Кадр — `Downlink::CommandFrame.thresholds(hardware_key, tree:, config_version:, dlfc:)`: CCM поточним ключем дерева, під живим grace ротації відмовляє; DLFC команді видає один раз `HardwareKey#issue_downlink_frame_counter!` ([`04_02`](04_02_Business_Logic_and_Services)). Кодом тут свідомо не дзеркалимо — дім коду сам код.
 
-  payload = [z_min, z_max, z_opt, species_id, version].pack("s<s<s<CC")
-  crc = Digest::CRC16.checksum(payload)
-  payload + [crc].pack("S<")
-
-  [CMD_SET_THRESHOLDS].pack("C") + [payload.bytesize].pack("S<") + payload
-end
-```
-
-> **Статус [FW.8]:** ✅ Rails-сторона (`build_threshold_config_block`) реалізована; firmware C-side (parser `0x9A` host-tested) + персист + gate (`FW8_PARSER_ENABLED 0`, deferred TRL-7) — §4а.2 вище. До активації Soldier використовує хардкодовані пороги (дім [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)).
+> **Статус [FW.8]:** ✅ Rails-будівник кадру й приймач Солдата (CCM-шлях, тіло судить той самий `Valid`, що й журнал) + персист + gate (`FW8_PARSER_ENABLED 0`, deferred TRL-7) — §4а.2 вище; відправника в production-pipeline немає. До активації Soldier використовує хардкодовані пороги (дім [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)).
 
 ##### 4а.4 Per-Species Default Thresholds
 
