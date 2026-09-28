@@ -324,7 +324,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | MPPT | **Victron SmartSolar 75/15** | 🔴 **LiFePO4-пресет** (не lead-acid); quiescent 20 мА = найбільший сток |
 | Акумулятор | LiFePO4 **12 В / 20 Ah** | заряд лише 0…+45 °C → charge-protect (нижче) |
 | BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET **може** субсумувати charge-protect — перевіряється при виборі SKU ([`00_07`](00_07_Action_Plan_Tracker) HW.16) |
-| Buck 12→3.7 В | ≥3 А cont / ≥5 А peak (MP1584/LM2596-клас, part# 👤) | живить модем; сам не рятує від burst — треба tank ↓ |
+| Buck 12→3.7 В | **TI `LMR33640ADDAR`** — поз. 9 [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) (⚖️ 2026-09-28; вимоги й перехідна — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)) | живить модем; сам не рятує від burst — треба tank ↓. 🔴 Для VBAT-droop-стенда не підміняти хобі-модулем (MP1584/LM2596-клас): стенд судить перехідну САМЕ поз. 9 на справжньому банку, тож з іншим регулятором вирок буде про іншу деталь ([`00_07`](00_07_Action_Plan_Tracker) HW.15) |
 | Buck 12→3.3 В | ≥500 мА | живить STM32 |
 
 ### 🔴 VBAT tank конденсатори — номінали й part-номери [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)
