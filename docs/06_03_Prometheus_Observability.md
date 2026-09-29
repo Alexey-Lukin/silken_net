@@ -292,7 +292,7 @@ end
 
 > **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати histogram `silkennet_governance_sync_duration_seconds` (rejected-counter уже live ↑).
 
-### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/FW.22)
+### 2.8 Circuit Breaker метрики (S2.2)
 
 Метрика observability circuit breaker'а (сусіда по таблиці — acoustic overflow — знято з HW.30, абзац «Grafana Alert Rules» нижче):
 

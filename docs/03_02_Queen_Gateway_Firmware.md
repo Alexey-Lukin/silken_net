@@ -516,7 +516,7 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
      → Sim7070_Udp_Fetch (сирий CA*-тракт)
      → Coap_Reply_Extract_Payload (2.05 + наш MID) → конверт
      → Handle_CoAP_Command: 0 = time-only «черга порожня» → стоп;
-       1 = контент (CMD / адресна команда 0x9A·0x9D·0x9E / 0x9F OTA-hint) → наступний poll.
+       1 = контент (CMD / адресна команда 0x9A·0x9E / 0x9F OTA-hint) → наступний poll.
    ?fw= несе повністю зібраний contract-id (0 після ребуту) — Rails
    звіряє з gateways.pending_firmware_id = спостережене підтвердження
    доставки (Downlink::PendingQueueService, 04_02).
@@ -985,7 +985,7 @@ Soldier — gossip-uplift (3-hop reach)
 | `0x55` | **магії НЕМА** | OTA re-request: у коді немає ані `#define`, ані перевірки — розрізнення тримається на тому, що магія є в СУСІДІВ |
 | `0x9B` | seg_idx 1..3 печатка + 4 version | OTA dual-gate trailer |
 | `0x9C` | byte 10 = `'B'` (0x42) на LoRa-беконі | CoAP-лег конверта магії не несе |
-| `0x9A` · `0x9D` · `0x9E` | довжина за опкодом (17 · 20 · 23 Б) | адресна команда під CCM сесійним ключем цілі (§5б, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)) — Королева ключа не має й перевіряє лише структуру |
+| `0x9A` · `0x9E` | довжина за опкодом (23 · 17 Б; `0x9D` — RETIRED з HW.30, байт не перевикористовується) | адресна команда під CCM сесійним ключем цілі (§5б, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)) — Королева ключа не має й перевіряє лише структуру |
 
 > ⚠️ **Дезамбігвація uplink-трійки `0x55`/`0x56`/`0x57` асиметрична, і це не оздоба.** Магію мають лише двоє; `0x55` розпізнається як «маркер збігся, магії сусідів немає». Той самий клас колізії названо в коді: старший байт DID може випадково дорівнювати маркеру (`StatusByte 0x45 × DID-старший 0x57 = 1/256`), і знімає його не магія, а майбутня wire-rev3-адресація разом з рештою control-опкодів.
 
@@ -1051,9 +1051,9 @@ Soldier — gossip-uplift (3-hop reach)
 
 ## 📨 5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів
 
-**Статус:** ✅ написано (2026-06-12), переписано під downlink-wire-ревізію 2026-09-29 (адресні CCM-кадри, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); інертне за гейтом `FW20_Q2_CMD_RELAY_ENABLED 0` — фліп разом із приймачами Солдата (`FW8_PARSER_ENABLED` · `FW18_AUDIO_CMD_ENABLED` · `FW17_RATCHET_ENABLED`).
+**Статус:** ✅ написано (2026-06-12), переписано під downlink-wire-ревізію 2026-09-29 (адресні CCM-кадри, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); інертне за гейтом `FW20_Q2_CMD_RELAY_ENABLED 0` — фліп разом із приймачами Солдата (`FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED`).
 
-Королева — **сліпий курʼєр** для команд, адресованих одному Солдату: `0x9A` пороги Лоренца · `0x9D` аудіо-пороги · `0x9E` ротація ключа (опкод-карта [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4)). Кадр `[opcode][DID][DLFC_lsb][CCM(body)][MIC]` підписує Rails сесійним ключем цілі; ключа Королева не має. Дім коду: `firmware/queen/soldier_cmd_queue.h` (pure) + глю в `queen/main.c`; формат — `firmware/common/downlink_ccm.h`; host-тести `firmware/test/test_soldier_cmd_queue.c` (`make -C firmware/test cmd_queue`).
+Королева — **сліпий курʼєр** для команд, адресованих одному Солдату: `0x9A` пороги Лоренца · `0x9E` ротація ключа (`0x9D` аудіо-пороги виведено з пʼєзо, HW.30; опкод-карта [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4)). Кадр `[opcode][DID][DLFC_lsb][CCM(body)][MIC]` підписує Rails сесійним ключем цілі; ключа Королева не має. Дім коду: `firmware/queen/soldier_cmd_queue.h` (pure) + глю в `queen/main.c`; формат — `firmware/common/downlink_ccm.h`; host-тести `firmware/test/test_soldier_cmd_queue.c` (`make -C firmware/test cmd_queue`).
 
 **Шлях слова:** `Handle_CoAP_Command` (після зрізання 0x9C-конверта) бере довжину з опкоду (конверт її не несе: CBC-вирівнювання нулями) → **лише структура**: командний опкод і рівно його довжина (MIC звіряє Солдат) → черга: слот 24 Б (кадр до 23 Б + довжина) → **адресний рефлекторний постріл** `Queen_Reflex_Shots(heard_did)` — лише коли почутий DID збігся з DID команди; кадр летить як є, без жодного шифрування Королеви, перед OTA-чанком (команда першою; найдовший кадр 23 Б + чанк ≈ 371 мс < 500 мс вікна). Почутий DID — з відкритого AAD у CCM-ері і з байтів 0..3 ECB-телеметрії; службові кадри 0x55/0x56/0x57 несуть там маркер, тож за ними постріл не влучає.
 

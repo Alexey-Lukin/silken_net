@@ -129,7 +129,7 @@ lv:
       timestamp: Laika zīmogs
     types:
       actuator_stuck: Izpildmehānisms iestrēdzis
-      chainsaw_detected: Konstatēts motorzāģis
+      chainsaw_detected: Aizdomas par mežizstrādi
       comms_fault: Sakaru kļūme
       emergency_response_undeliverable: Ārkārtas reakcija apdraudēta
       entropy_anomaly: Entropijas anomālija

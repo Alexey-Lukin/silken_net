@@ -129,7 +129,7 @@ uk:
       timestamp: Час
     types:
       actuator_stuck: Актуатор залип
-      chainsaw_detected: Виявлено бензопилу
+      chainsaw_detected: Підозра вирубки
       comms_fault: Збій каналу зв'язку
       emergency_response_undeliverable: Аварійна відповідь під загрозою
       entropy_anomaly: Аномалія ентропії

@@ -192,7 +192,7 @@ RSpec.describe TreeChronicle::TextFormatter do
   describe ".alert_title" do
     {
       "fire_detected"     => "Fire Detected",
-      "chainsaw_detected" => "Chainsaw Detected",
+      "chainsaw_detected" => "Suspected Logging",
       "severe_drought"    => "Severe Drought",
       "vandalism_breach"  => "Vandalism Breach",
       "system_fault"      => "System Fault",

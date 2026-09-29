@@ -129,7 +129,7 @@ en:
       timestamp: Timestamp
     types:
       actuator_stuck: Actuator Stuck
-      chainsaw_detected: Chainsaw Detected
+      chainsaw_detected: Suspected Logging
       comms_fault: Comms Fault
       emergency_response_undeliverable: Emergency Response at Risk
       entropy_anomaly: Entropy Anomaly

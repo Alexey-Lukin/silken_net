@@ -359,7 +359,8 @@ jobs:
 
       - name: '[FW.26] ARM static-RAM gate — реальні .data+.bss обох main.c проти леджера'
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj
-        # (compile-lane вище). Леджер + стеля tensor arena — 03_03 §6.
+        # (compile-lane вище). Леджер — шапка check_ram_budget.sh; tensor arena з
+        # HW.30 на Солдат не лягає (інференсу немає; 03_03 §6 — історія дизайну).
         run: firmware/scripts/check_ram_budget.sh --hal-objects firmware/build
 
       - name: '[FW.55] QEMU-M4 bit-parity — host golden ↔ Cortex-M4 mruby (mps2-an386)'
@@ -370,8 +371,9 @@ jobs:
         run: REQUIRE_QEMU=1 firmware/scripts/qemu_parity.sh
 
       - name: '[FW.4] QEMU-M4 log-mel — CMSIS RFFT golden-parity + stack high-water (mps2-an386)'
-        # Той самий Compute_LogMel (LOGMEL_USE_CMSIS), що поїде в Солдата, на
-        # реальному M4 код-шляху (soft-float = ABI WLE5 без FPU): спільне ядро
+        # Той самий Compute_LogMel (LOGMEL_USE_CMSIS), що в контракті моделі
+        # (з HW.30 — актив без call-site на Солдаті), на реальному M4 код-шляху
+        # (soft-float = ABI WLE5 без FPU): спільне ядро
         # перевірок із host-ctest + stack-painting навколо чистих викликів.
         # Reuse firmware/build з кроку FW.46 вище. docs/03_01 §12.7.
         run: REQUIRE_QEMU=1 firmware/scripts/qemu_logmel.sh

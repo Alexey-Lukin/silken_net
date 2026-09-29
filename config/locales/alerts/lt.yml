@@ -129,7 +129,7 @@ lt:
       timestamp: Laiko žyma
     types:
       actuator_stuck: Vykdiklis įstrigo
-      chainsaw_detected: Aptiktas grandininis pjūklas
+      chainsaw_detected: Įtariamas kirtimas
       comms_fault: Ryšio gedimas
       emergency_response_undeliverable: Avarinis atsakas pavojuje
       entropy_anomaly: Entropijos anomalija

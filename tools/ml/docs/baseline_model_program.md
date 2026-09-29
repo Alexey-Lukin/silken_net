@@ -1,5 +1,14 @@
 # Baseline TinyML Acoustic Model — Execution Program (ESC-50, self-owned)
 
+> ⚠️ **2026-09-29 — HW.30: пʼєзо з Солдата зрізано (⚖️ founder, [`docs/02_01 §6`](../../../docs/02_01_Hardware_Architecture_and_BOM.md)).**
+> Модель, INT8-рантайм і log-mel-контракт лишаються **активом без носія на вузлі**:
+> call-site `Run_Inference` і `#include logmel.h` вирізано з `firmware/soldier/main.c`,
+> decision-логіку й її тести знято, [`docs/03_03`](../../../docs/03_03_TinyML_Acoustic_Inference.md)
+> паркований. Паритет активу тримає `firmware/test/test_audio_model.c`
+> (`make -C firmware/test audio_model`). Можливий майбутній носій — прилад Королеви
+> ([`docs/00_07`](../../../docs/00_07_Action_Plan_Tracker.md) HW.52, далека опція, не план).
+> Нижче — програма, як вона виконувалась; живі твердження виправлено позначкою HW.30.
+>
 > **Що це.** Робочий програм-документ для нашої власної baseline-моделі акустичного
 > інференсу, натренованої на відкритих даних (ESC-50), щоб розблокувати ланцюг
 > **FW.4 → FW.26 (arena) → FW.42 → ARCH.40** без очікування ML-партнера.
@@ -19,13 +28,15 @@
 
 - **ML-партнера НЕМА.** Нас ніщо не обмежує — ця модель **наша end-to-end**, не викидний
   stub «до партнера»; baseline можна доростити до продакшну. Партнерський ростер
-  [`00_02` Стаття 24a](../../../docs/00_02_Academic_Integration_and_IP.md) дає ДАНІ й
-  СТАТИСТИКУ, не тренування: калібрувальний soundscape-датасет (ЧДТУ ПМКТ + ЧНУ біо-хаб) і
-  статистику розподілів `fauna_activity_index` (Карапетян — ANOVA / permutation). DSP,
+  [`00_02`](../../../docs/00_02_Academic_Integration_and_IP.md) давав ДАНІ й
+  СТАТИСТИКУ, не тренування (⊕ Статтю 24a знято 2026-09-27, Статтю 24 — 2026-09-29;
+  акустичні ланки ПМКТ з HW.30 предмета не мають — роль рядка вирішує `00_07` UNI.11):
+  калібрувальний soundscape-датасет (ЧДТУ ПМКТ + ЧНУ біо-хаб) і статистику розподілів `fauna_activity_index` (Карапетян — ANOVA / permutation). DSP,
   модель і GA-оптимізацію порогів (опційну, [`03_03 §10.5`](../../../docs/03_03_TinyML_Acoustic_Inference.md))
   тримає архітектор.
-- **Чесність placeholder'а.** Baseline вирішує **інтеграційно-вимірювальну** половину FW.4
-  (компіляція, реальна arena, розкоментований call-site, реальні smoke-тести). **Польову
+- **Чесність placeholder'а.** Baseline вирішував **інтеграційно-вимірювальну** половину FW.4
+  (компіляція, реальна arena, розкоментований call-site, реальні smoke-тести — ⊕ з HW.30
+  call-site і smoke-тести вирізано, лишився паритет активу). **Польову
   валідність** дає лише калібрувальний датасет (Cherkasy Soundscape Library, ЧДТУ ПМКТ,
   post-TRL 7). Ці дві половини НЕ плутати в каноні.
 
@@ -80,8 +91,8 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 - **Вхід:** `float[40]` per-frame log-mel — наявний контракт `Run_Inference`
   (`MODEL_INPUT_SIZE=40`); **НЕ** 2D-патч спектрограми. Деплой-інференс — покадровий.
-- **Вихід:** 5 класів (silence/wind/cavitation/chainsaw/fauna) — під `NUM_CLASSES=5`, stub,
-  decision-logic `main.c`.
+- **Вихід:** 5 класів (silence/wind/cavitation/chainsaw/fauna) — під `NUM_CLASSES=5` і stub
+  (decision-logic `main.c` з HW.30 немає).
 - **Топологія:** крихітна MLP/1D-conv `40 → … → 5` під arena-стелю (для per-frame моделі
   arena реально — сотні байт). Точна топологія — з малого пошуку під стелю.
 - **Квантизація:** INT8 PTQ через `TFLiteConverter`, representative dataset = реальні
@@ -124,6 +135,12 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 ## 4. Інтеграція у firmware
 
+> ⚠️ **HW.30 (2026-09-29): інтеграцію відкочено.** Живим лишився лише крок 1 (заголовок і
+> stub як актив) і паритет `test_audio_model.c`. Кроки 2 і 4 зняті разом із пʼєзо: call-site
+> `Run_Inference` і `#include logmel.h` вирізано з `main.c`, decision-тести #6/#7 і
+> `test_tinyml_pipeline.c` пішли з decision-логікою; для кроку 3 arena на Солдата не лягає
+> (шапка `firmware/scripts/check_ram_budget.sh`). Список нижче — як інтеграцію виконували.
+
 1. `silken_net_audio_model.h` drop-in через `__has_include` (замінює `_stub.h`).
 2. Розкоментувати call-site `Run_Inference` + `#include "../common/logmel.h"`
    (`main.c` ≈ Phase 1.5, рядки ~1927–1929).
@@ -140,12 +157,12 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 |---|-----|------|------|
 | 1 | 03_03 §4.1 / §6 / §3.2 / §10.7 | **runtime-дрейф** «TFLM як наш вибір» + категорійна помилка «TFLM vs CMSIS-NN» | ✅ **закрито** — §4.1 примирення · §3.2 «Лочить на TFLM (НЕ завендорено)» · §6 «landed baseline = forward-pass 76 B» · §10.7 «Path C — лише документований fallback» |
 | 2 | 03_03 §5.3 + §7.1 | Soldier→Queen LoRa = **AES-256-ECB** (стале) | ✅ **закрито** — `grep -c "AES-256" docs/03_03` = 0; усюди AES-128 |
-| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | 🔴 **ЄДИНИЙ ЖИВИЙ** → трекер-дім **`00_07` FW.62** (звірка 2026-07-17: `Ttl_Byte_Pack` — 03_03 = 0 входжень, `main.c` = 2) → звірити код-блок із `Trigger_Emergency_LoRa_TX` |
+| 3 | 03_03 §5.3 code | стале тіло `Trigger_Emergency_LoRa_TX` (нема `Ttl_Byte_Pack`/`PANIC_FLAG_BIT`/counter[14..15]) | ✅ **закрито** — `00_07` FW.62 (архів): C-копію замінено прозовим decision-flow + реф у дім; ⊕ з HW.30 `03_03 §5` — історія дизайну, а `Trigger_Emergency_LoRa_TX` без викликача (HW.52) |
 | 4 | 03_03 §4.2 + §4.4 | return-doc лише 4 класи (0–3), пропущено **fauna=4** | ✅ **закрито** — §4.2 і §4.4 несуть «4=Fauna» |
 | 5 | 03_03 §3.1 | стале «модель отримує сирий time-domain; DSP невідомий (BLOCKER-2)» | ✅ **закрито** — §3.1 «Path B зафіксовано … НЕ сирий time-domain»; `grep -c BLOCKER docs/03_03` = 0 |
 | 6 | 03_03 §4.5 | latency-таблиця «Conv1D шар 1/2» (Path A мова) | ✅ **закрито 2026-07-17** — таблицю перемарковано як оцінку партнерського CNN-класу + landed FC 40→16→5 названо явно (число не вигадуємо — bench) |
 | 7 | 02_01 §line | «TinyML Inference (CMSIS-NN, **~200 мс**)» суперечить §4.5 (~8–24 мс) | ✅ **закрито** — `grep -c "CMSIS-NN" docs/02_01` = 0; `02_01 §2` несе ноту «консервативний envelope, не landed-вимір» + зустрічна нота у `03_03 §4.5` (петля замкнена 07-17) |
-| 8 | 00_02 Стаття 24a / 03_01 vendor-table | «<16KB arena» / «CMSIS-NN must vendor» — уточнити проти виміряної стелі + «pure-C baseline, CMSIS-NN опційно» | ✅ **закрито 2026-07-17** (UNI.19-свіп): `03_01` vendor-table + `02_01`-нота були закриті раніше; лишались `00_02` Ст.24a (унікальність #1 + «ML-партнер тренує CNN»), `05_02`, `00_08`, `04_02`, `03_01` Flash-рядок, `03_03` ×2 — усі вирівняні на landed 972 B / 76 B |
+| 8 | 00_02 Стаття 24a (⊕ знято 2026-09-27) / 03_01 vendor-table | «<16KB arena» / «CMSIS-NN must vendor» — уточнити проти виміряної стелі + «pure-C baseline, CMSIS-NN опційно» | ✅ **закрито 2026-07-17** (UNI.19-свіп): `03_01` vendor-table + `02_01`-нота були закриті раніше; лишались `00_02` Ст.24a (унікальність #1 + «ML-партнер тренує CNN»), `05_02`, `00_08`, `04_02`, `03_01` Flash-рядок, `03_03` ×2 — усі вирівняні на landed 972 B / 76 B |
 
 ---
 
@@ -153,15 +170,15 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 - **03_03** — аномалії §5 вище + статуси §8-чеклиста (1–4: stub→реальна модель, arena
   виміряна, Run_Inference розкоментовано).
 - **00_07** — FW.4 / FW.25 / FW.26 машинна половина закрита (модель + arena + uncomment).
-- **Ripple** — 02_01 latency, 00_02 Стаття 24a footprint, 03_01 vendor-table (current vs
-  planned), 00_00 індекс (за потреби).
+- **Ripple** — 02_01 latency, 00_02 Стаття 24a footprint (⊕ статтю знято 2026-09-27),
+  03_01 vendor-table (current vs planned), 00_00 індекс (за потреби).
 - **Пам'ять** — стан програми + рішення runtime.
 
 ---
 
 ## 7. Гейти (зелені перед commit)
 `ruff check` · `pytest tools/ml/tests` (parity + нові train/export) · `make -C firmware/test`
-(logmel/tinyml/fauna) · `silken-ml-gen-logmel --check` / `emit_c --check` ·
+(logmel/audio_model — цілі tinyml/fauna пішли з HW.30) · `silken-ml-gen-logmel --check` / `emit_c --check` ·
 `check_ram_budget.sh` (ARM static-RAM) · звірка scope діфу (перед commit).
 
 ---
@@ -182,3 +199,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
   `<16KB` (UNI.19-свіп + DOC-T.41 07-16) · 03_03 Path-A-4-class (§4.2/§4.4 = 5 класів). ⚠️ Цей
   список був **третім дзеркалом** боргу №8 — усередині файлу, що його ж і реєструє: борг стояв
   у §5-таблиці, у §8-Deferred і в самому каноні одночасно.
+- **2026-09-29 — HW.30:** пʼєзо з Солдата зрізано (⚖️ founder). Call-site `Run_Inference` +
+  `logmel.h` вирізано з `main.c`, decision-логіку, пороги DR13/DR14, fauna-сесію й цілі
+  `tinyml`/`fauna` знято; `silken_net_audio_model.h` і `test_audio_model` лишились — модель
+  стала активом без носія на вузлі (FW.4 паркується, `00_07` §🗄️).
