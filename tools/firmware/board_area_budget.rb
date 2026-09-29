@@ -44,8 +44,10 @@ C0603 = rect(2.96, 1.46)  # KiCad C_0603_1608Metric
 SOT23_6 = rect(4.10, 3.40) # KiCad SOT-23-6 — TPS22860 лише DBV: єдиний orderable (TI SLVSD04, addendum 10-11-2025)
 
 # ⚖️ founder 2026-09-29 (`02_01 §6`): пʼєзо з Солдата зрізано — поз. 5 (пʼєзо) і поз. 6 (кламп BAT54S
-# + DNP-поріг перед EXTI) на платі немає. Бустер — ВІДКРИТА розвилка (поз. 4 без носія), тож ціль
-# друкується для обох кандидатів, а не для одного за замовчуванням (in-silico §Critical Rules #9).
+# + DNP-поріг перед EXTI) на платі немає. Бустер носія не має (поз. 4), а контур креслять під ОБВІДНУ
+# обох кандидатів — більший NN02-224 (⚖️ делеговано 2026-09-29, `00_07` HW.33; врізка `02_01 §3.5`):
+# тож дефолт нижче — рішення присуду, а не CLI (in-silico §Critical Rules #9), а сусідній кандидат
+# друкується поруч рядком `бустер — теж вхід цілі`.
 BOOSTER = { # поз. 4 — корпус + 0.25 на бік; дві родини, що габаритно влазять (`02_01 §5.2`)
   "nn02_201" => [ "Ignion NN02-201 7.0 × 3.0", rect(7.50, 3.50) ],
   "nn02_224" => [ "Ignion NN02-224 12.0 × 3.0", rect(12.50, 3.50) ]
@@ -142,7 +144,7 @@ def geometric_floor(edlc, socket:)
 end
 
 # Ціль контуру = більше з двох осей: площа за 70 % заповнення (рівномірно по трьох сторонах) ·
-# геометрична підлога. ⚠️ Бустер — теж її вхід, і його вибір відкритий (поз. 4).
+# геометрична підлога. ⚠️ Бустер — теж її вхід: носія немає (поз. 4), тож ціль береться під обвідну.
 def target_for(booster:, edlc:, rigid_flex:)
   area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:)).values.sum / 3 / 0.7)
   [ area, geometric_floor(edlc, socket: !rigid_flex) ]
@@ -157,16 +159,16 @@ if ARGV == [ "--assert" ]
   checks = {
     "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід)" => near.(usable(CEILING_MM), 166.7),
     "стеля Ø15.17 ⟷ радом Ø25 (`52` §rim_boss_radial_budget)" => (radome_for(CEILING_MM) - 25.0).abs < 1e-9,
-    "ціль kr · nn02_201: пара B2B Ø19.3, rigid-flex Ø17.8 (`02_01 §3.5`)" =>
-      near.(target.("nn02_201", false), 19.3) && near.(target.("nn02_201", true), 17.8),
-    "бустер — вхід цілі, kr · nn02_224: пара B2B Ø19.5, rigid-flex Ø18.1 (`02_01 §3.5`, розвилка бустера)" =>
-      near.(target.("nn02_224", false), 19.5) && near.(target.("nn02_224", true), 18.1)
+    "ціль kr · nn02_224 (обвідна бустерів, ⚖️ HW.33): пара B2B Ø19.5, rigid-flex Ø18.1 (`02_01 §3.5`)" =>
+      near.(target.("nn02_224", false), 19.5) && near.(target.("nn02_224", true), 18.1),
+    "сусідній кандидат, kr · nn02_201: пара B2B Ø19.3, rigid-flex Ø17.8 (`02_01 §3.5`, ціна обвідної)" =>
+      near.(target.("nn02_201", false), 19.3) && near.(target.("nn02_201", true), 17.8)
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
 end
 
-opts = { booster: "nn02_201", edlc: "kr", diameter: CEILING_MM }
+opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM }
 ARGV.each_slice(2) do |flag, value|
   case flag
   when "--booster" then opts[:booster] = value
@@ -222,4 +224,4 @@ sweep = BOOSTER.keys.map do |key|
   pair = [ false, true ].map { |rigid| target_for(booster: key, edlc: opts[:edlc], rigid_flex: rigid).max }
   format("%s пара B2B Ø%.1f (радом ≈ Ø%.1f) / rigid-flex Ø%.1f", key, pair[0], radome_for(pair[0]), pair[1])
 end
-puts "  бустер — теж вхід цілі (поз. 4 без носія; розвилка — ⚖️ HW.33), #{opts[:edlc]}: #{sweep.join(' · ')}"
+puts "  бустер — теж вхід цілі (поз. 4 без носія; контур — під обвідну, ⚖️ HW.33), #{opts[:edlc]}: #{sweep.join(' · ')}"
