@@ -10,8 +10,9 @@ Pipeline (when a trained model exists, ``silken_ml.train``):
       → QUANTIZATION-PARITY gate: a numpy integer reference (bit-mirror of the emitted C)
         must match the TFLite interpreter on a held-out set
       → emit ``silken_net_audio_model.h`` — self-contained INT8 forward pass (pure C,
-        gemmlowp-style integer requantize; NO TFLM/CMSIS-NN dependency), replacing the
-        stub via ``__has_include`` (``firmware/soldier/main.c``).
+        gemmlowp-style integer requantize; NO TFLM/CMSIS-NN dependency). Since HW.30
+        (piezo cut from the Soldier) the header is an asset with no on-device call-site;
+        ``firmware/test/test_audio_model.c`` pins its parity.
 
 The deployed runtime is a fixed-topology integer forward pass (docs/03_03 §4.1 of the
 program doc / runtime reconciliation), NOT a TFLM interpreter — see
