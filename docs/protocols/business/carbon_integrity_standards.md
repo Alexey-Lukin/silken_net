@@ -30,7 +30,7 @@
 
 4. **Metrology-gap незмінний наскрізь:** жодна планка §2–§5 не конвертує SCC у кредит. Наш enterprise-credible-трек — **vetted dMRV-data-provider / permanence-monitor** (§5), чиї дані живлять host-кредит, що проходить CCP (§2) + ISO 14064-3-верифікацію (§3). Тут з'явилися **справжні акредитаційні двері для нашої ролі**: GCC «Procedure for Approval of DMRV Solution Providers», Verra vetted-DSP, Isometric 300+ Science Network (§5).
 
-5. **Biodiversity-стрім (founder-scope: новий revenue ПОВЕРХ carbon):** integrity-каркас тут — **IAPB Framework (21 принцип, COP16 жовт-2024) + BCA High-Level Principles (WEF, трав-2025)**. 🔴 **Несуче обмеження для монетизації:** **IAPB explicitly НЕ підтримує міжнародний biodiversity-offsetting — «compensation must be local-to-local and like-for-like»** ([IAPB](https://www.iapbiocredits.org/framework)). → Biodiversity-кредит **структурно не може продаватись як міжнародний offset** так, як carbon. Монетизація = **stewardship/contribution-модель**, не offset. Плюс наш 5-клас TinyML < species-level, якого вимагає єдиний живий acoustic-реєстр (Cercarbono/Savimbo ISBM) — див. §4 + §8.
+5. **Biodiversity-стрім (founder-scope: новий revenue ПОВЕРХ carbon):** integrity-каркас тут — **IAPB Framework (21 принцип, COP16 жовт-2024) + BCA High-Level Principles (WEF, трав-2025)**. 🔴 **Несуче обмеження для монетизації:** **IAPB explicitly НЕ підтримує міжнародний biodiversity-offsetting — «compensation must be local-to-local and like-for-like»** ([IAPB](https://www.iapbiocredits.org/framework)). → Biodiversity-кредит **структурно не може продаватись як міжнародний offset** так, як carbon. Монетизація = **stewardship/contribution-модель**, не offset. Плюс акустичного каналу на вузлі в нас немає (пʼєзо зрізано ⚖️ 2026-09-29, [`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)), тож до єдиного живого acoustic-реєстру (Cercarbono/Savimbo ISBM) нести нам нічого — див. §4 + §8.
 
 6. **UA-Article-6-authorization (founder-scope) прямо зчеплений з CCP-принципом 8 «No double-counting».** UA-NDC покриває 100% LULUCF → forest-removal = prima-facie double-count проти власного NDC. **CCP-label вимагає розв'язаного double-counting** → UA-Article-6-pilot (18.06.2026), що визначає, чи потрібна authorization для voluntary-кредитів, — **на критичному шляху до будь-якого CCP/VCMI-grade кредиту з UA-лісу** (§3.3 + §8). Це найдешевша дія з найбільшим de-risk: прямий запит нац-focal-point (не web).
 
@@ -65,15 +65,15 @@ VERIFICATION-backbone→  ISO 14064-3 / -2 (§3) — незалежна валі
 | 3 | Transparency | Governance | continuous telemetry = сильний transparency-актив |
 | 4 | Robust independent 3rd-party validation & verification | Governance | ⚑ наш data-фід має пройти VVB (ISO 14064-3) |
 | 5 | **Additionality** | **Emissions Impact** | host-проєкт, не ми; наш permanence ≠ additionality (REDD+-пастка → registry-matrix) |
-| 6 | **Permanence** | Emissions Impact | ⭐ **наш найсильніший чесний внесок** — real-time `chainsaw_detected` (відвантажений тракт, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус: сигнал до перевірки, не доказ події) |
+| 6 | **Permanence** | Emissions Impact | per-tree телеметрія: втрату дерева видно як ТИШУ вузла із затримкою свіпу (тиша → повідомлення → польовий аудит), подію встановлює польовий аудит; реального часу немає — пʼєзо зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)) |
 | 7 | **Robust quantification** of reductions/removals | Emissions Impact | 🔴 **metrology-gap живе ТУТ** — SCC не квантифікує tCO₂e |
 | 8 | **No double-counting** | Emissions Impact | ⚑ **прямий зчеп з UA-Article-6** (§3.3, §8) |
-| 9 | Sustainable development benefits & safeguards | **Sustainable Dev** | ⭐ **міст до biodiversity** — acoustic co-benefit підсилює P9 (§8) |
+| 9 | Sustainable development benefits & safeguards | **Sustainable Dev** | — (acoustic co-benefit знято разом із пʼєзо, §8.1) |
 | 10 | Contribution toward net-zero transition | Sustainable Dev | наратив-рівень |
 
 **Що робить кредит CCP-eligible/approved:** програма подає доказ відповідності всім 10 через Assessment Framework; ICVCM схвалює **Category of credits** (не окремий кредит), тоді програма ставить CCP-label. **Стан ринку:** програми, що покривають **~98% обсягу**, — CCP-Eligible; **30+ методологій** схвалено (nature/methane/removals); але лише **~10% реально виданих 2025 кредитів** несуть label ([CORSIA/Sylvera 2025](https://www.sylvera.com/blog/sylvera-state-of-carbon-credits-2025-market-shifts-from-volume-to-value)). **Чому критичний 2025-26:** rating-агенції + VCMI + procurement-політики де-факто зробили CCP мінімальним порогом; no-CCP-реєстри (Cercarbono/BioCarbon у registry-matrix) → institutional-дисконт/відмова.
 
-> **Наш стан по P7 (несуче):** CCP-принцип 7 «Robust quantification» — саме той, який SCC **не може задовольнити прямо**. Це не діра в нас, а точна локалізація: ми живимо P6 (Permanence) + P3 (Transparency) + P9 (co-benefit) host-кредиту, а P7 лишається за remote-sensing-методологією реєстру. Продавати SCC як P7-quantification без methodology-ID = unbacked-baseline-claim класу Verra-2023.
+> **Наш стан по P7 (несуче):** CCP-принцип 7 «Robust quantification» — саме той, який SCC **не може задовольнити прямо**. Це не діра в нас, а точна локалізація: ми живимо P6 (Permanence — через тишу вузла, без реального часу) + P3 (Transparency) host-кредиту, а P7 лишається за remote-sensing-методологією реєстру. Продавати SCC як P7-quantification без methodology-ID = unbacked-baseline-claim класу Verra-2023.
 
 ### 2.2 VCMI Claims Code of Practice — планка claim'у покупця (🟢)
 
@@ -111,7 +111,7 @@ VCMI (Voluntary Carbon Markets Integrity Initiative) регулює **що по�
 
 BeZero · Sylvera · Calyx Global конвергували на **8-точковій AAA-D шкалі** (Calyx приєднався січ-2025); з нішевого due-diligence-інструменту стали **near-standard кроком institutional-procurement** ([Sentinel Earth](https://www.sentinelearth.com/post/carbon-credit-rating-agencies); [Climate-Decode](https://climate-decode.com/insights/vcm-series/vcm-2026-era-of-integrity/who-rates-carbon-rating-agencies)). High-integrity-кредит коштує ~+300% до low-quality (registry-matrix/R3). Немає єдиного «high-quality»-визначення — кожна агенція має власну модель.
 
-> **Наш стан:** continuous per-tree telemetry + real-time permanence — саме той **новий доказовий сигнал**, який rating-агенції поки не мають від інших проєктів → потенційний rating-uplift host-кредиту (permanence-risk-компонент). Це **чесний диференціал**, який можна кількісно продати реєстру/девелоперу, не претендуючи на quantification.
+> **Наш стан:** continuous per-tree telemetry (втрата дерева — як тиша вузла, без реального часу) — саме той **новий доказовий сигнал**, який rating-агенції поки не мають від інших проєктів → потенційний rating-uplift host-кредиту (permanence-risk-компонент). Це **чесний диференціал**, який можна кількісно продати реєстру/девелоперу, не претендуючи на quantification.
 
 ---
 
@@ -176,15 +176,15 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 
 | Вимога стандарту | Наш стан | Розрив |
 |---|---|---|
-| Measured/evidence-based **outcome** (BCA) | continuous acoustic-evidence — сильний data-актив | 🔴 acoustic-only structurally incomplete (PAM = лише вокалізуючі таксони, Bell & Malerba 2025) |
-| **Species-level** (Cercarbono/Savimbo ISBM — єдиний живий acoustic-реєстр) | TinyML = **5-клас** presence (silence/wind/cavitation/chainsaw/fauna) | 🔴 ISBM вимагає **56 indicator species**, не родову «є фауна» → gate на labeled dataset (UNI.13a-клас) |
+| Measured/evidence-based **outcome** (BCA) | — акустичного каналу на вузлі немає (пʼєзо зрізано ⚖️ 2026-09-29) | 🔴 приладу під biodiversity-outcome немає зовсім; ринкове застереження лишається: acoustic-only structurally incomplete (PAM = лише вокалізуючі таксони, Bell & Malerba 2025) |
+| **Species-level** (Cercarbono/Savimbo ISBM — єдиний живий acoustic-реєстр) | — (акустики на вузлі немає) | 🔴 ISBM вимагає **56 indicator species**, не родову «є фауна»; нести сюди нам нічого |
 | **Незалежна 3rd-party верифікація** (IAPB/BCA core) | on-chain anchor + telemetry | ⚑ найслабше місце ВСЬОГО ринку (Royal Society серп-2025: топ-11 постачальників 2/3, найгірше — саме verification-незалежність) |
 | **IPLC equity + local governance** | — | 🔴 UA-ліс 73% державний → governance через держлісгосп, не IPLC-схема (структурно інший) |
 | **Local-to-local, like-for-like** (IAPB) | — | ⚑ визначає монетизацію-модель = stewardship, не міжнародний offset |
 
-> **⚠️ Field-валідність fauna-класу — той самий honesty-клас, що «in-silico ≠ TRL 4» (несуче, не пом'якшувати):** 5-класова baseline-модель існує й приземлена (`FW.4`, per-frame INT8), АЛЕ **fauna-клас натреновано на interim ESC-50-проксі, не на польових даних** — реальний корпус = Cherkasy Soundscape Library (post-TRL 7; UNI.11/UNI.13a); silence + cavitation — синтетичні placeholder'и. Тобто «5 класів існує» ✅, «fauna-клас польово валідований» ❌. Дім факту — [`03_03 §4.2`](../../03_03_TinyML_Acoustic_Inference.md). **Будь-яка integrity-заява, що спирається на fauna як доказ біорізноманіття (§7-C, §8.1), мусить нести це застереження** — інакше повторюємо рівно ту помилку, за яку ринок карає інших.
+> **⚠️ Fauna-класу як виміру в нас більше немає — несуче, не пом'якшувати:** пʼєзо з Солдата зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)), TinyML на Солдаті паркується, тож integrity-заяви, що спирались на fauna як доказ біорізноманіття (§7-C, §8.1), знято. Звук — властивість ділянки, а не дерева; якщо колись знадобиться, його чесний носій — прилад Королеви ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52 — далека опція, не план), і тоді застереження про польову валідність моделі (навчена на ESC-50-проксі, не на польових даних) повертається разом із ним.
 
-> **Biodiversity bottom-line:** вхід ЗАРАЗ = **co-benefit evidence поверх carbon** (§8 міст до CCP-P9), НЕ окремий продаваний SKU 2026. Cercarbono/Savimbo ISBM — на радар, живий, **тільки коли TinyML розшириться до species-level**. COP17 (Єреван, 19–30 жовт-2026) = точка переоцінки (ISSB ED + biodiversity credits «from concept to central pillar»).
+> **Biodiversity bottom-line:** **входу ЗАРАЗ немає** — co-benefit evidence трималось на акустиці вузла, а її знято; окремого SKU теж немає. Cercarbono/Savimbo ISBM — на радар лише як ринковий факт. COP17 (Єреван, 19–30 жовт-2026) = точка переоцінки ринку (ISSB ED + biodiversity credits «from concept to central pillar»).
 
 ---
 
@@ -201,7 +201,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 | **GHG Protocol Land Sector & Removals Standard** (фінал v1.0 30.01.2026, чинний 01.01.2027) | Перший GHGP-стандарт для land/removals-обліку на **корпоративному рівні** ([GHGP LSR PDF](https://ghgprotocol.org/sites/default/files/2026-06/Land-Sector-and-Removals-Guidance-v1.0.pdf)) | ⚑ визначить, як **enterprise-покупець** обліковує land-removals у власному inventory (ISO 14064-1-суміжно) → формує попит на verifiable land-MRV-дані |
 | **ISO 14064-5:2025** (remote V&V) | Кодифікує дистанційну верифікацію | §3.1 — попутний вітер |
 
-> **Наш стан (несуче, позитивне):** на відміну від carbon-quantification (де metrology-gap закритий), **dMRV-provider-акредитація — це двері, які реально відчиняються** (GCC-procedure, Verra-vetting, Isometric-Certify). Тут наш continuous ground-truth + real-time permanence — **диференційований актив**, не претензія. Технічний surface доведений (`PuroEarth::PassportService`/`RegistryApiService` `[MAINNET READY]`, ARCH.5) = format-адаптери × N поверх доведеного патерну. **Гейт — не код, а BIZ.9-методолог + institutional buyer + проходження vetting-процедури конкретного реєстру.**
+> **Наш стан (несуче, позитивне):** на відміну від carbon-quantification (де metrology-gap закритий), **dMRV-provider-акредитація — це двері, які реально відчиняються** (GCC-procedure, Verra-vetting, Isometric-Certify). Тут наш continuous ground-truth — **диференційований актив**, не претензія (permanence — лише через тишу вузла, без реального часу). Технічний surface доведений (`PuroEarth::PassportService`/`RegistryApiService` `[MAINNET READY]`, ARCH.5) = format-адаптери × N поверх доведеного патерну. **Гейт — не код, а BIZ.9-методолог + institutional buyer + проходження vetting-процедури конкретного реєстру.**
 
 ---
 
@@ -209,7 +209,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 
 | Стандарт | Ключова вимога | Наш metrology-gap-стан | Що робити для enterprise-credibility |
 |---|---|---|---|
-| **ICVCM CCP** (§2.1) | P7 Robust quantification tCO₂e | 🔴 SCC НЕ квантифікує — gap живе тут | Не претендувати на P7; вести пілот під CCP-eligible реєстр (host робить P7), живити P3/P6/P9 |
+| **ICVCM CCP** (§2.1) | P7 Robust quantification tCO₂e | 🔴 SCC НЕ квантифікує — gap живе тут | Не претендувати на P7; вести пілот під CCP-eligible реєстр (host робить P7), живити P3/P6 |
 | **ICVCM CCP P8** | No double-counting | ⚑ UA-NDC-overlap невирішений | ⚖️ запит UA-focal-point (U1) — блокує весь стек |
 | **VCMI Claims Code** (§2.2) | з 01.01.2026 CCP-approved/Art-6.4 кредити | SCC не є ні тим, ні тим | CCP-eligibility реєстру = вхідний квиток; уникати no-CCP-реєстрів |
 | **Oxford Principles** (§2.3) | durable removals для residual | живий ліс = нижча durability | вести ARR/IFM+permanence; durable-half = Puro biochar death-path |
@@ -218,8 +218,8 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 | **ISO 14064-2/-3** (§3.1) | verifiable baselines + VVB | data мусить бути verifiable, не на віру | будувати data-фід під ISO 14064-3-audit; 14064-5:2025 = вітер |
 | **Corresponding Adj / CORSIA** (§3.2) | CA+LoA для compliance/top-tier | залежить від UA-режиму | не хардкодити; U1-запит |
 | **IAPB Framework** (§4.1) | local-to-local, no intl offset; 3rd-party verif | biodiversity = stewardship-модель | монетизація як local contribution, не intl offset |
-| **BCA High-Level Principles** (§4.2) | measured/durable/additional outcome | 5-клас < species-level; fauna-клас ще не field-валідований (§4.4) | розширити TinyML до species (UNI.13a) + польовий корпус; поки — co-benefit |
-| **Cercarbono/Savimbo ISBM** (§4.4) | 56 indicator species | 🔴 TinyML = 5-клас presence | gated на labeled dataset; на радар |
+| **BCA High-Level Principles** (§4.2) | measured/durable/additional outcome | акустичного виміру немає — пʼєзо зрізано (§4.4) | — (прилад ділянки — далека опція, не план) |
+| **Cercarbono/Savimbo ISBM** (§4.4) | 56 indicator species | 🔴 акустики на вузлі немає | на радар лише як ринковий факт |
 | **TNFD/ISSB** (§4.3) | nature-disclosure (demand-side) | — | демонструвати як data-provider TNFD-звітності |
 | **GCC dMRV-provider approval** (§5) | pre-vetting sensor-провайдера | ⭐ наша роль сюди лягає | пройти vetting-процедуру конкретного реєстру |
 
@@ -231,10 +231,10 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 
 1. **SCC = Condition/Proof-of-Growth-токен** (homeostasis), НЕ сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже латентне в каноні [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md)). «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція** (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там), не CCP/VCMI-визнаний кредит. — не пом'якшую (guardrail).
 
-2. **Enterprise-pitch-каркас (3 чесні value-props, жоден не претендує на quantification):**
-   - **(A) Permanence-monitor** — real-time `chainsaw_detected` (відвантажений тракт, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус: сигнал до перевірки, не доказ події) закриває CCP-P6 + rating-permanence-risk там, де remote-sensing сліпий між прольотами. **Найсильніший.**
+2. **Enterprise-pitch-каркас (чесні value-props, жоден не претендує на quantification):**
+   - **(A) Permanence-monitor** — per-tree телеметрія живить CCP-P6: втрату дерева видно як ТИШУ вузла із затримкою свіпу (тиша → повідомлення → польовий аудит), подію встановлює польовий аудит, не сенсор. Реального часу немає — пʼєзо з вузла зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)).
    - **(B) Transparency/ground-truth data-layer** — continuous per-tree telemetry живить CCP-P3 + ISO 14064-2-моніторинг + TNFD-disclosure host-проєкту.
-   - **(C) Biodiversity co-benefit evidence** — acoustic soundscape підсилює CCP-P9 (sustainable-dev safeguards) + готує IAPB-stewardship-стрім (§8). **Нести разом із field-валідністю fauna-класу (§4.4) — інакше value-prop стає саме тим unbacked-claim, за який ринок карає.**
+   - **(C) Biodiversity co-benefit evidence** — ⛔ знято 2026-09-29: acoustic soundscape трималась на пʼєзо вузла, якого більше немає (§4.4). Прилад ділянки на Королеві ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52) — лише далека опція, не план і не value-prop.
 
 3. **Honesty-корекція класу «in-silico ≠ TRL 4»:** диференціює, не применшує. Наша цінність там, де integrity-стандарти найголодніші до нових доказів (permanence, transparency) і де remote-sensing-реєстри сліпі.
 
@@ -248,14 +248,14 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 
 ### 8.1 CCP/VCMI (carbon-integrity) × biodiversity-стрім
 
-- **CCP-принцип 9 «Sustainable development benefits & safeguards» — прямий міст.** Наш acoustic-biodiversity-шар підсилює P9-відповідність **host-carbon-кредиту** → biodiversity входить у carbon-integrity-frame **як co-benefit evidence, ще ДО того, як стане окремим biodiversity-кредитом**. Це найчесніший найближчий вхід biodiversity-монетизації: не окремий SKU, а P9-підсилювач, що піднімає якість (і ціну) carbon-кредиту. **Межа доказу — §4.4:** fauna-клас поки на ESC-50-проксі, тож P9-підсилення заявляється як continuous soundscape-evidence, а не як польово-валідована species-детекція.
+- **CCP-принцип 9 «Sustainable development benefits & safeguards» — міст був, приладу під ним більше немає.** Він тримався на acoustic-biodiversity-шарі вузла, а пʼєзо зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)), тож P9-підсилення host-кредиту ми не заявляємо (§4.4). Сама структура мосту — biodiversity входить у carbon-integrity-frame як co-benefit ДО окремого biodiversity-кредиту — лишається ринковим фактом, а не нашою пропозицією.
 - **CCP не сертифікує biodiversity** (carbon-only-стандарт) — тому biodiversity-стрім потребує ОКРЕМОГО каркасу (IAPB/BCA §4), не CCP. Не плутати планки.
 - **VCMI/SBTi-стеля дзеркалиться в biodiversity:** як SBTi робить carbon-credit «contribution, не залік», так IAPB робить biodiversity-credit «local stewardship, не intl offset» (§4.1). Один honesty-клас — обидва стріми продають **внесок**, не обнулення.
 
 ### 8.2 BCA/IAPB (biodiversity-integrity) × biodiversity-монетизація
 
 - **IAPB «local-to-local, like-for-like, no intl offsetting» = визначальне обмеження монетизації-моделі** (§4.1). Заведений item biodiversity-монетизації ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.23) мусить нести це в архітектурі з першого дня: revenue-модель = stewardship/contribution-фінансування, не offset-продаж за кордон.
-- **BCA «durable + additional outcome» + незалежна верифікація** — наш 5-клас/verification-розрив (§4.4) визначає, що ЗАРАЗ це co-benefit (§8.1), а не BCA-grade кредит. Апгрейд-шлях = species-level TinyML (UNI.13a-dataset) + польовий корпус (UNI.11) + незалежний verifier.
+- **BCA «durable + additional outcome» + незалежна верифікація** — виміру під це в нас немає (§4.4): акустику вузла знято, тож ЗАРАЗ ні co-benefit (§8.1), ні BCA-grade кредиту. Шлях, якщо колись, починається з приладу ділянки ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52 — далека опція, не план), а не з розширення моделі.
 
 ### 8.3 CCP/VCMI (carbon-integrity) × UA-Article-6-authorization
 
@@ -272,7 +272,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 | E1 | Чи прийме конкретний реєстр наш ground-sensor як **vetted dMRV-DSP-канал** (не quantification) | 🔴 (не питали реєстр) | 👤 запит Verra Forest Carbon Tech WG / Isometric / GCC dMRV-procedure |
 | E2 | UA-Article-6: authorization для voluntary? (= registry-matrix U1, тепер зчеплено з CCP-P8) | 🔴 | ⚖️ нац-focal-point (не web) |
 | E3 | Точний SBTi-V2-режим для land-based contributions post-01.02.2027 | 🟡 | моніторити SBTi-guidance-хвилю |
-| E4 | Species-level TinyML для ISBM/BCA-grade biodiversity | 🟡 | labeled dataset (UNI.13a-клас) + польовий корпус (UNI.11) |
+| E4 | Species-level biodiversity-вимір для ISBM/BCA-grade — предмета ЗАРАЗ немає: акустику вузла знято (§4.4) | — | прилад ділянки ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52) — далека опція, не план |
 | E5 | Як GHGP-LSR-Standard (чинний 01.01.2027) змінить enterprise-попит на land-MRV-дані | 🟡 | моніторити implementation-guidance |
 
 > **Дисклеймер:** integrity-стандарти рухаються поквартально (CCP-статуси, VCMI-версії, SBTi-фази 2027-28, IAPB-recommendations, ISSB-consolidation до COP17). Числа/дати тут — orientation, не committed-дані для контракту. Перед рішенням — первинне джерело + carbon/ESG-юрист.

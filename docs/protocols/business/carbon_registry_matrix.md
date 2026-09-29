@@ -14,7 +14,7 @@
 >
 > **Це 🤖-половина першого чекбокса BIZ.9** ([`00_07`](../../00_07_Action_Plan_Tracker.md) — «🤖+⚖️ порівняльна registry-matrix … → 🤖 складе, ⚖️ вибір»). 👤-половина = engagement методолога (~$50–100k) → PDD, gated на реальний ліс роки downstream.
 >
-> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (chainsaw_detected/SLASH-1), [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) (TinyML 5-клас).
+> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (SLASH-1), [`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md) (акустики на вузлі немає — пʼєзо зрізано).
 >
 > **Легенда впевненості:** 🟢 висока (офіц. реєстр-док / ≥2 незалежні джерела) · 🟡 середня (одне якісне джерело / trade-press) · 🔴 низька (paywall / суперечливо / unknown).
 
@@ -23,11 +23,11 @@
 ## 0. Bottom-line наперед (перед деталями)
 
 1. **🔴 НЕСУЧЕ: жоден реєстр — ні класичний, ні digital-native — НЕ приймає сирий фізіологічний/біоелектричний сигнал дерева як прямий carbon-quantification-вхід.** Усі forest-методології рахують tCO₂e через remote-sensing canopy-proxy (LiDAR/NDVI/Stocking Index) або алометрію DBH. Навіть найбільш «digital-native» реєстр (Isometric) рахує дерево через Pachama-супутник/LiDAR, **не** через дендрометр чи EBFC-сигнал у стовбурі. Це **той самий клас чесності, що «in-silico ≠ TRL 4»** — не поразка, а точна локалізація того, де наша цінність реальна (§1).
-2. **SCC ≠ прямий carbon-credit.** Реальний трек ЗАРАЗ — не власний реєстр-мінт, а **«vetted MRV Data Service Provider»** (структурний аналог Sylvera/Kanop/Chloris у Verra VM0047) АБО **permanence/disturbance-monitoring шар** (`chainsaw_detected`/panic — диференційована цінність, якої remote-sensing не дає в real-time; тракт відвантажено, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md)) поверх ЧУЖОГО вже-credited проєкту (§1.3, §6).
+2. **SCC ≠ прямий carbon-credit.** Реальний трек ЗАРАЗ — не власний реєстр-мінт, а **«vetted MRV Data Service Provider»** (структурний аналог Sylvera/Kanop/Chloris у Verra VM0047) АБО **permanence-monitoring шар** (per-tree телеметрія: втрату дерева видно як тишу вузла із затримкою свіпу, подію встановлює польовий аудит; реального часу немає — пʼєзо зрізано ⚖️ 2026-09-29, [`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)) поверх ЧУЖОГО вже-credited проєкту (§1.3, §6).
 3. **Для лісового пілоту як проєкту:** **Isometric** — найкращий cost/timeline fit (buyer-pays, ~1 міс, CCP-eligible), АЛЕ потребує anchor-buyer наперед; **Gold Standard Microscale** (<10k tCO₂e/рік) — найкращий fallback без buyer; **Verra** — buyer-recognition топ, але $100–300k+ / 2–3 роки (погано для solo pre-revenue) (§2).
 4. **Double-count / Article 6 UA — найбільший відкритий невідомий, НЕ registry-специфіка.** UA прийняла Article-6 pilot 18.06.2026 + нацреєстр (forestry-пріоритет); NDC покриває 100% LULUCF → структурний double-count-ризик. **Прямий запит нац-focal-point (Міндовкілля), не web** (§3).
-5. **Biodiversity (both/and) — co-benefit evidence ЗАРАЗ, не окремий SKU 2026.** Cercarbono/Savimbo ISBM = єдиний живий реєстр, що приймає звукозапис як доказ — але **species-level** (56 indicator species), а наш TinyML = 5-клас presence → gap. COP17 (Єреван, жовт-2026) = контрольна точка (§4).
-6. **Репутаційно:** вести ARR/IFM + sensor-permanence-verification, **НЕ** REDD+ «повірте базовій лінії» (спалив Verra 2023). Carpathian illegal-logging = двосічний меч. UA-ліс 73% державний → пілот через держлісгосп (§5).
+5. **Biodiversity (both/and) — ЗАРАЗ ні co-benefit evidence, ні SKU: приладу немає.** Cercarbono/Savimbo ISBM = єдиний живий реєстр, що приймає звукозапис як доказ — але **species-level** (56 indicator species), а акустики на вузлі в нас немає зовсім (пʼєзо зрізано ⚖️ 2026-09-29) → нести нічого. COP17 (Єреван, жовт-2026) = контрольна точка ринку (§4).
+6. **Репутаційно:** вести ARR/IFM + sensor-permanence-verification, **НЕ** REDD+ «повірте базовій лінії» (спалив Verra 2023). Carpathian illegal-logging — тепер лише ризик наративу: активу (`chainsaw_detected`) більше немає (§5). UA-ліс 73% державний → пілот через держлісгосп (§5).
 
 **Чи міняє metrology-gap SCC-наратив?** — **Так, суттєво.** Коротко: SCC — це **Condition/homeostasis-токен (Proof-of-Growth)**, а не сертифікований tCO₂e; on-chain «2000 SCC = 1 tCO₂» = внутрішня облікова конвенція, НЕ registry-визнаний кредит (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там). Розгорнуто → §1.4 + §6.3.
 
@@ -60,9 +60,9 @@
 **(A) MRV-Data Service Provider** — структурний аналог Sylvera/Kanop/Chloris Geospatial для VM0047.
 - ⚠️ Нюанс чесності: наявні vetted DSP постачають *remote-sensing* (Stocking Index). Наш диференціал — *ground-truth continuous* дані, **комплементарні** до супутника, не drop-in-заміна DSP. Це **новий шар даних**, а не готова DSP-вакансія. Позиціювання: «continuous ground-truth поверх вашого remote-sensing baseline».
 
-**(B) Permanence / disturbance-monitoring шар** — `chainsaw_detected` / panic-flag.
-- **Це найсильніший чесний value-prop.** Continuous permanence-monitoring — рівно те, чого remote-sensing НЕ дає: супутникові прольоти періодичні; подія бензопили між прольотами невидима до наступного знімка. Наш real-time acoustic-тригер закриває саме цю сліпу пляму.
-- Відвантажена спроможність: тракт `chainsaw_detected` живе у firmware/telemetry (SLASH-1, [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) — справжня пилка = panic→`chainsaw_detected`). ⚠️ Відвантаження ≠ доведеність: польової точності детекції немає ([`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус), тож Клієнтові це сигнал до перевірки, не доказ події.
+**(B) Permanence-monitoring шар** — тиша вузла як сигнал утрати дерева.
+- Вузол кожного дерева періодично виходить на звʼязок, тож утрату дерева платформа бачить як його ТИШУ — із затримкою свіпу (тиша → повідомлення → польовий аудит), а подію встановлює польовий аудит, не сенсор. Тиша — сигнал до перевірки, не доказ події.
+- **Реального часу немає:** пʼєзо з вузла зрізано ⚖️ 2026-09-29 ([`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)) — звук є властивістю ділянки, а не дерева. Датчик нахилу на вузлі (буревій теж валить, тож сам по собі він не доказ рубки) і мікрофон на Королеві — лише далека опція на випадок, якщо реальний час знадобиться покупцеві ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52), не план і не value-prop.
 
 **Технічний registry-integration-surface написаний і покритий** (⚠️ «доведений» тут = про КОД; наскрізного прогону в живий реєстр не було): `PuroEarth::PassportService`/`PuroEarth::RegistryApiService` (`[MAINNET READY]` — мітка про наш код, не про досяжність каналу; ARCH.5) — transform → canonical JSON → SHA-256 → on-chain anchor → IPFS → REST submit. Тобто плагін у ЧУЖИЙ реєстр = **format-адаптери × N поверх доведеного патерну**, не greenfield. Твердий гейт — не код, а BIZ.9-методолог (methodology-ID) + institutional buyer.
 
@@ -80,7 +80,7 @@
 1. SCC — насамперед **Condition/homeostasis-токен**. Це прочитання **вже латентне в каноні** ([`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md): «SCC (Silken Carbon/**Condition** Coin)») — треба на нього спертися, а не на «Carbon» половину.
 2. On-chain «2000 SCC = 1 tCO₂» (BIZ.1, `ProtocolParameters.sol#sccPerTonneCo2()`; дім → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md)) — **внутрішня облікова конвенція**, НЕ заява, що 1 SCC = визнаний реєстром 0.5 kg tCO₂e-кредит. Продати його institutional-buyer'у як останнє **без** registry-approved методології = рівно той unbacked-baseline-claim, що спалив Verra REDD+ 2023.
 3. Шлях SCC → продаваний carbon-credit — **не «сертифікувати наше число»**, а **репозиціювання** у (A) MRV-data-provider або (B) permanence-monitor поверх чужого credited-проєкту. Прямий SCC-мінт-як-carbon-credit — **поза столом** за поточного registry-ландшафту.
-4. Це **НЕ применшує платформу** — коректно локалізує цінність SCC (continuous ground-truth condition + real-time permanence) там, де remote-sensing-реєстри сліпі = диференційована цінність.
+4. Це **НЕ применшує платформу** — коректно локалізує цінність SCC: continuous ground-truth condition там, де remote-sensing-реєстри сліпі = диференційована цінність; permanence — лише через тишу вузла, без реального часу.
 
 > ✅ **Канонізовано — різницю зроблено explicit (2026-07-24).** На момент написання чернетки канон подавав «2000 SCC = 1 tCO₂» просто як `✅ done`, і зробити явною різницю «внутрішня конвенція ≠ продаваний кредит» було лише **кандидатом** на ssot-задачу. Її **закрито в обох домах**: [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) тепер прямо каже «**внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor», а [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) несе те саме застереження у деривації `MAX_SUPPLY`. Metrology-gap ніколи не суперечив BIZ.1 («методологічна сертифікація post-TRL 7 тримає BIZ.9») — він **розширював природу розриву**: це репозиціювання, не аудит числа, і саме це тепер сказано в каноні. Ця секція — дзеркало канону, не другий дім.
 
@@ -140,7 +140,7 @@ Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/dur
 
 ## 4. Biodiversity-вісь (both/and — 2-й D-MRV-вимір ПОВЕРХ carbon)
 
-> **Both/and, не або/або (E.59):** biodiversity = другий вимір **поверх** carbon, не заміна. Зараз — **co-benefit evidence**, не окремий продаваний SKU 2026. (R4)
+> **Both/and, не або/або (E.59):** biodiversity = другий вимір **поверх** carbon, не заміна. Зараз — ні co-benefit evidence, ні SKU: вимір стоїть без приладу, бо акустики на вузлі немає (пʼєзо зрізано ⚖️ 2026-09-29, [`02_01 §6`](../../02_01_Hardware_Architecture_and_BOM.md)). Ринкова частина нижче — з R4.
 
 ### 4.1 Стан ринку — carbon-ринок ~2008 (🟡)
 
@@ -150,16 +150,16 @@ Biodiversity-credit-ринок структурно ідентичний ран�
 
 **Єдиний живий реєстр, що explicitly приймає звукозапис** як доказовий канал (перші кредити вер-2024). АЛЕ:
 - Звук = один з трьох рівноправних non-invasive каналів (відео/фото/аудіо) для **присутності indicator species** — **НЕ** континуальний acoustic-index.
-- **Species-level (56 indicator species).** Наш TinyML = **5-клас presence** (fauna/silence/wind/chainsaw, [`03_03`](../../03_03_TinyML_Acoustic_Inference.md)) → **gap: ISBM вимагає видо-специфічну присутність, не родову «є фауна чи ні».**
+- **Species-level (56 indicator species).** Нести сюди нам нічого: акустики на вузлі немає (пʼєзо зрізано ⚖️ 2026-09-29), а ISBM і так вимагає видо-специфічну присутність, не родову «є фауна чи ні».
 - Явно voluntary-only: «can never be used to provide offsets of any kind».
 
 ### 4.3 Ключове наукове застереження (🟢, Bell & Malerba 2025)
 
 PAM (passive acoustic monitoring) дав ~70× детекцій за найнижчу вартість/вид — **АЛЕ покриває ЛИШЕ вокалізуючі таксони** (птахи/амфібії): не рослини, більшість безхребетних, немі ссавці, бентос. → **Acoustic-only `biodiversity_score` структурно неповний.** Не over-claim'ити повне біорізноманіття — це proxy для конкретної (переважно птахо-амфібійної) під-навіски.
 
-### 4.4 Чому acoustic ПІДСИЛЮЄ carbon-наратив (Delgado 2026, 🟢)
+### 4.4 Acoustic і carbon-наратив (Delgado 2026, 🟢)
 
-Супутник показує canopy cover, але **не показує, чи ліс ФУНКЦІОНУЄ**. Soundscape ловить *функцію*: регенеровані ліси звучали ближче до mature forest, ніж до деградованих пасовищ. → Acoustic-шар **прямо підсилює довіру до Proof-of-Growth carbon-клейму** як co-benefit evidence (за зразком «sound proves forest function, satellite тільки покриття»). Це ж — аргумент permanence-monitor'а §1.3(B).
+Супутник показує canopy cover, але **не показує, чи ліс ФУНКЦІОНУЄ**. Soundscape ловить *функцію*: регенеровані ліси звучали ближче до mature forest, ніж до деградованих пасовищ. → Для нас це аргумент про прилад ДІЛЯНКИ, якого немає: пʼєзо з вузла зрізано ⚖️ 2026-09-29, тож підсилення Proof-of-Growth-клейму soundscape-доказом ми не заявляємо. Звук — властивість ділянки, а не дерева; його чесний носій — прилад Королеви ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52 — далека опція, не план).
 
 ### 4.5 Stacking (carbon + biodiversity на одній ділянці)
 
@@ -178,7 +178,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 
 **COP17 (Єреван, 19–30 жовт-2026)** = midpoint GBF; biodiversity credits прогнозовано «from specialized concept to central pillar». Природна точка переоцінки цього дослідження за ~3 міс. ISSB Exposure Draft (nature-disclosure) теж до COP17.
 
-> **Biodiversity bottom-line:** far-horizon 2-й revenue-стрім зі значним «але» (кредити вже видаються, венчур тече, TNFD тисне попит-side). **Вхід ЗАРАЗ = co-benefit evidence поверх carbon** (не окремий SKU). Cercarbono/Savimbo — на радар, але **тільки якщо/коли TinyML розшириться за 5-клас до species-level** (gated на labeled dataset — UNI.13a-клас master-key).
+> **Biodiversity bottom-line:** far-horizon 2-й revenue-стрім зі значним «але» (кредити вже видаються, венчур тече, TNFD тисне попит-side). **Входу ЗАРАЗ немає:** co-benefit evidence трималось на акустиці вузла, а її знято (пʼєзо зрізано ⚖️ 2026-09-29). Cercarbono/Savimbo — на радар лише як ринковий факт; будь-який вхід починався б із приладу ділянки ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52 — далека опція, не план), а не з розширення моделі.
 
 ---
 
@@ -188,11 +188,8 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 
 - **Вести ARR (новий приріст) / IFM (покращене управління) + sensor-permanence-verification.** НЕ REDD+ (avoided deforestation).
 - **Чому не REDD+:** саме ця категорія спалила Verra 2023 (>90% rainforest-офсетів «безцінні»; VCM впав −61%). Слабкість REDD+ = counterfactual/baseline-проблема («що було б вирубано без проєкту», майже нефальсифіковна). ARR/IFM з hard sensor telemetry = **структурно протилежний ризик-профіль**.
-- **Carpathian illegal-logging (~1.4M м³/рік) = двосічний меч:**
-  - Актив: виправдовує `chainsaw_detected` permanence value-add.
-  - Ризик: структурно нагадує «наша базова лінія припускає масову нелегальну вирубку, яку проєкт запобігає» — рівно той наратив, що рейтингові агенції/репортери тепер натреновані підозрювати.
-  - **Тримати два меседжі ОКРЕМО** в кожному pitch-документі.
-- **Рекомендація:** вести disturbance-detection/permanence як **verification-enhancement поверх чужої вже-credited baseline**, НЕ як власний additionality-аргумент — доки немає довшого моніторингового track-record. (Це = §1.3(B), і воно ж природно уникає REDD+-пастки.)
+- **Carpathian illegal-logging (~1.4M м³/рік) — тепер лише ризик наративу.** Активу, що його виправдовував (`chainsaw_detected`), більше немає: пʼєзо з вузла зрізано ⚖️ 2026-09-29, реального часу в нас немає, тож меседжу «ловимо рубку» в pitch-документах бути не може. Ризик лишається: структурно нагадує «наша базова лінія припускає масову нелегальну вирубку, яку проєкт запобігає» — рівно той наратив, що рейтингові агенції/репортери тепер натреновані підозрювати.
+- **Рекомендація:** вести permanence (тиша вузла → польовий аудит) як **verification-enhancement поверх чужої вже-credited baseline**, НЕ як власний additionality-аргумент — доки немає довшого моніторингового track-record. (Це = §1.3(B), і воно ж природно уникає REDD+-пастки.)
 - **Держлісгосп-шлях:** UA-ліс **73% державний** (<0.1% приватний) → реальний пілот потребує carbon/use-rights-угоди з держлісгоспом (SFE «Ліси України») чи регіональною владою, **не з приватним землевласником**. Governance/procurement-залежність, що **передує** вибору реєстру.
 - **Війна-специфічний permanence-ризик** (UXO / conflict-access) — окремий фізичний ризик, який глобальні non-permanence tools **явно не моделюють**. Варта примітка в розмові з реєстром/страховиком про buffer-pool.
 
@@ -202,7 +199,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 
 ### 6.1 Трек ЗАРАЗ (pre-revenue, solo, TRL 3 anchor/EBFC)
 
-**Позиціювання = MRV-Data-Provider / Permanence-Monitor, НЕ власний реєстр-мінт.** Це обходить metrology-gap повністю: продаємо continuous ground-truth моніторинг + real-time disturbance-detection (§1.3), а не carbon-quantification. Технічний surface доведений (Puro-патерн ARCH.5); гейт = методолог + buyer, не код.
+**Позиціювання = MRV-Data-Provider / Permanence-Monitor, НЕ власний реєстр-мінт.** Це обходить metrology-gap повністю: продаємо continuous ground-truth моніторинг із permanence через тишу вузла (§1.3; реального часу немає), а не carbon-quantification. Технічний surface доведений (Puro-патерн ARCH.5); гейт = методолог + buyer, не код.
 
 ### 6.2 Коли з'явиться buyer / реальний ліс (⚖️ founder-вибір реєстру)
 
@@ -219,7 +216,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 - SCC = **Condition/Proof-of-Growth-токен** (homeostasis), не сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже в каноні [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md)).
 - «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція**, не продаваний реєстром кредит (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там). Не продавати як останнє без methodology-ID.
 - Carbon-credit-конверсія = **окремий, downstream, methodology-gated науковий проєкт** (калібрація growth_points ↔ біомаса), не критичний шлях пілоту.
-- Це honesty-корекція класу «in-silico ≠ TRL 4» — **диференціює**, а не применшує: наша цінність (continuous ground-truth + real-time permanence) там, де remote-sensing-реєстри сліпі.
+- Це honesty-корекція класу «in-silico ≠ TRL 4» — **диференціює**, а не применшує: наша цінність — continuous ground-truth там, де remote-sensing-реєстри сліпі (permanence — лише через тишу вузла, без реального часу).
 - ✅ Різницю «внутрішня конвенція ≠ продаваний кредит» **уже зроблено explicit у каноні** — [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) + [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) (деривація `MAX_SUPPLY`). Тут — дзеркало, не другий дім (§1.4).
 
 ### 6.4 Наступні дії (не gold-plate)
@@ -238,7 +235,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 | U1 | UA Article-6: чи потрібна authorization для voluntary-кредитів | 🔴 | ⚖️ прямий запит focal-point (не web) |
 | U2 | Реальні cost/timeline реєстрів для UA-inc forest-профілю | 🟡 | 👤 quote від реєстру/консультанта |
 | U3 | Чи прийме registry ground-sensor як **DSP-канал** (не quantification) | 🔴 (не досліджено з реєстром) | 👤 запит до Verra Forest Carbon Tech WG / Isometric |
-| U4 | Species-level розширення TinyML для ISBM | 🟡 | gated на labeled dataset (UNI.13a-клас) |
+| U4 | Species-level biodiversity-вимір для ISBM — предмета ЗАРАЗ немає: акустику вузла знято (§4.2) | — | прилад ділянки ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.52) — далека опція, не план |
 | U5 | Cercarbono/BioCarbon реальна cost + CCP-траєкторія | 🔴 | deep-dive якщо стануть primary |
 
 > **Загальний дисклеймер:** ринок carbon+biodiversity-реєстрів рухається поквартально (методології, fee-schedules, CCP-статуси, COP17). Числа тут = «порядок величини» для orientation, не committed-дані для контракту. Перед реальним рішенням — верифікація на первинному джерелі + carbon-law-юрист.
