@@ -30,10 +30,12 @@
 | **Геометрія ≈ 25–30 мм, стінка 1.5–2.0** | [`02_01 §3.5`](../../02_01_Hardware_Architecture_and_BOM.md) (радом ≈ Ø29) · [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) | орієнтовно | вушка байонета · прилив · корона |
 | **Процес і форма постачання** | [`02_06 §1.2`](../../02_06_Unit_Economics_and_BOM.md) (радом — лиття) · [`ua_vendor_map`](ua_vendor_map.md) (ЧПК-цех як кандидат на радом) | питанням: гранули під лиття ⊥ заготовки під ЧПК | назви цехів |
 | **Середовище** | [`02_02 §2.1`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (−40…+85 °C) · [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (зовні, сонце, дощ) | фактом; «багаторічна служба» — без числа | «20 років» |
-| **Не біоконтактна деталь** | `tools/cad/cem/radome.json` (`notes.material`: «Not a bio-contact part») | фактом — щоб не купувати медичну марку без потреби | суперечність із рядком «Medical Grade» у [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (⚠️ відкрита — нижче) |
+| **Не біоконтактна деталь; медична марка не вимагається** | [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (клас марки — за властивостями, ⚖️ делеговано 2026-09-29) · `tools/cad/cem/radome.json` (`notes.material`) | фактом; клас питаємо лише заради наявності й ціни | підстава присуду |
+| **Хімія пігменту й добавок** | [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (найслабша ланка того ж присуду: фітотоксичність у контакті з калюсом і дощовим змивом) | питанням, у п. 5: чи містить NIR-пігмент хром чи інші важкі метали · дані екстрагованих речовин | «калюс», «фітотоксичність» |
 | **Альтернатива PC/ASA** | [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (задекларована, той самий α ≤ 0.5) | питанням, одним пунктом | — |
+| **Ударна вʼязкість PC/ASA при −40 °C** | [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) (таблиця альтернатив відкидає PC як «крихкий при −20 °C» без джерела, а PC/ASA не оцінює) | питанням, у п. 6 | вердикт таблиці |
 
-⚠️ **Розбіжність, яку лист виявив і не розсуджує:** специфікація радома в [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md) пише «PEEK, Medical Grade», а `radome.json` — «Not a bio-contact part». Лист питає обидва класи марок (п. 5) і нічого не стверджує; вибір класу — за [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.37.
+✅ **Розбіжність «Medical Grade» ⊥ «Not a bio-contact part», яку лист виявив, розсуджено ⚖️ делеговано 2026-09-29 у [`02_01 §5.2`](../../02_01_Hardware_Architecture_and_BOM.md):** задаються властивості, клас марки вільний. Найслабшу ланку того присуду — хімію пігменту — лист питає прямо (п. 5); текст цього пункту переписано того ж дня, до першого показу founder-у.
 
 ---
 
@@ -47,7 +49,7 @@
 
 ## 📤 Dispatch block (EN) — radome material enquiry
 
-> **Репо-нота (у лист НЕ йде).** Несе дзеркала домів (§1): PEEK (або PC/ASA) · α ≤ 0.5 виміряне · UV-старіння · εr / tan δ пігментованої марки на 868 МГц · купол ≈ 25–30 мм, стінка 1.5–2.0 мм · −40…+85 °C, зовні · не біоконтактна деталь. Питає те, чого канон не несе: марку й пігмент · α і метод · дані після старіння · діелектричні числа марки · форму постачання · кількості й ціну. **Немає свідомо:** підстави присуду · RAL-вимоги · наших RF-бюджетів · трекер-ID, канон-рефів, дат і гліфів.
+> **Репо-нота (у лист НЕ йде).** Несе дзеркала домів (§1): PEEK (або PC/ASA) · α ≤ 0.5 виміряне · UV-старіння · εr / tan δ пігментованої марки на 868 МГц · купол ≈ 25–30 мм, стінка 1.5–2.0 мм · −40…+85 °C, зовні · не біоконтактна деталь, медична марка не вимагається. Питає те, чого канон не несе: марку й пігмент · хімію пігменту й добавок · α і метод · дані після старіння · діелектричні числа марки · ударну вʼязкість PC/ASA на морозі · форму постачання · кількості й ціну. **Немає свідомо:** підстави присуду · RAL-вимоги · наших RF-бюджетів · трекер-ID, канон-рефів, дат і гліфів.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
@@ -63,8 +65,8 @@ Dear colleagues,
 2. **Measured α.** For each grade, the **measured** solar absorptance or solar reflectance, the method (for example ASTM E903 or equivalent) and the sample thickness.
 3. **Ageing.** Do you have data on how α (or colour) changes after UV / weathering exposure — for example xenon-arc per ISO 4892-2 — and after how many hours? Unpigmented PEEK darkens in sunlight; we need to know whether α stays ≤ 0.5 after ageing, not only as delivered.
 4. **Dielectric properties.** For the **pigmented** grade: the relative permittivity εr and loss tangent tan δ near 868 MHz (or the nearest frequency you have measured), with the method and temperature. We know the values for unfilled PEEK; pigments shift them, and the antenna sits behind this wall.
-5. **Grade class.** The radome does not contact tissue or food. Please tell us whether your low-α grades exist as industrial grades, as medical grades, or both, and the price difference.
-6. **Alternative.** If you also supply UV-stable PC/ASA, the same questions (1–4) for a PC/ASA grade.
+5. **Grade class and composition.** The radome does not contact human tissue or food, so we do not require a medical grade; over the years, however, its outer surface may be in contact with living bark and with rainwater running down the trunk. Please tell us whether your low-α grades exist as industrial grades, as medical grades, or both, and the price difference — and the chemistry of the pigment and additives: in particular, whether the NIR-reflective pigment contains chromium or other heavy metals, with any extractables or leachables data you have.
+6. **Alternative.** If you also supply UV-stable PC/ASA, the same questions (1–4) for a PC/ASA grade, plus its notched impact strength at −40 °C.
 7. **Supply form and processing.** Pellets for injection moulding and/or stock shapes (rod) for machining; minimum order quantities for prototypes and for series (orientation: prototypes, then 1 000 and 10 000 radomes); processing notes that affect the colour or α (drying, moulding temperature, machining).
 8. **Documents.** Technical and safety data sheets for the proposed grades, and your quality certificates.
 9. **Commercial.** Indicative price per kg for each form and quantity, lead time, shipping to Ukraine, and a technical point of contact.
