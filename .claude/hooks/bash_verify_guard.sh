@@ -234,6 +234,12 @@ body with `01_02:177` inside"'
       "git checkout $dfix  # discard-dirty"
     t "D: backup taken in the SAME call stays silent" silent \
       "cp $dfix /tmp/f.bak && git checkout $dfix"
+    # 2026-09-29: the form that fooled the co-occurrence check — `cp` of OTHER
+    # files plus the dirty path named twice — and a `cp` that restores INTO it.
+    t "D: cp of other files + the path named twice still denies" deny \
+      "cp /tmp/a.bak other.rb; probe x $dfix; git checkout -q -- $dfix"
+    t "D: a cp INTO the dirty path is a restore, not a backup" deny \
+      "cp /tmp/f.bak $dfix && git checkout $dfix"
     git rm --cached -q "$dfix" 2>/dev/null
     rm -f "$dfix"
     trap 'rm -rf "$TMPDIR"' EXIT  # back to the battery's own trap, not to none
@@ -517,10 +523,15 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
       [[ -n "$p" ]] || continue
       n=$(git diff --numstat -- "$p" 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
       (( n > 0 )) || continue
-      # Declared exit 2: the same path is also handed to `cp` in this very call,
-      # i.e. a backup is being taken alongside — the loss is reversible.
-      if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])cp[[:space:]]' &&
-         (( $(printf '%s' "$cmd" | grep -oF "$p" | wc -l) >= 2 )); then
+      # Declared exit 2: that same path is the SOURCE of a `cp` in this very call —
+      # a backup of the dirty state, so the loss is reversible. 🔴 Co-occurrence is
+      # NOT that (2026-09-29): a mutation-probe call restored OTHER files with
+      # `cp <backup> <file>` and named the dirty path twice as a probe argument;
+      # «a cp somewhere + the path twice» went silent, and the checkout ate 51
+      # uncommitted lines. A `cp` INTO the path is a restore, never a backup.
+      p_re=$(printf '%s' "$p" | sed -E 's/[][\.^$*+?(){}|\\/]/\\&/g')
+      if printf '%s' "$cmd" | tr ';&|' '\n\n\n' |
+           grep -qE "^[[:space:]]*cp([[:space:]]+-[[:alnum:]]+)*[[:space:]]+[\"']?${p_re}[\"']?([[:space:]]|$)"; then
         continue
       fi
       dirty="${dirty}${p} (${n} uncommitted line(s)); "
