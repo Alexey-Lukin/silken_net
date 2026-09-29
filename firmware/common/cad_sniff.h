@@ -14,7 +14,7 @@
  * — на чистому EBFC несумісно. Тому нюх = привілей surplus-Провідника
  * (роль-гейт тут), а EBFC-відправник мінімізує СВІЙ бік: baseline-пара
  * T_sniff 3 с ↔ T_pre 4 с (≈0.6 Дж ≈ 23% EDLC — «останній зойк»)
- * за дворівневим Vcap-гейтом (FW.42-патерн). Обидві константи
+ * за дворівневим Vcap-гейтом. Обидві константи
  * bench-tunable (PPK2, 00_07 ARCH.26); host-тест №10 тримає нерівність
  * гарантії — розсинхрон пари не пройде повз сюїту.
  */
@@ -49,9 +49,8 @@ _Static_assert(CAD_T_SYM_SF9_BW125_US == LORA_PHY_T_SYM_US,
                "cad_sniff: T_sym розійшовся з базлайном lora_phy.h (SF/BW)");
 _Static_assert(CAD_PREAMBLE_DEFAULT_SYMBOLS == LORA_PHY_PREAMBLE_SYMBOLS,
                "cad_sniff: ціль restore-8 розійшлась із преамбулою базлайну");
-/* Vcap-поріг повної преамбули — дзеркало FAUNA_VCAP_MIN_MV: вище стелі
- * VREFINT-тракту (~3300 мВ), тож до живого Vcap-каналу (FW.50)
- * extended-half чесно fail-closed. */
+/* Vcap-поріг повної преамбули — вище стелі VREFINT-тракту (~3300 мВ), тож
+ * до живого Vcap-каналу (FW.50) extended-half чесно fail-closed. */
 #define CAD_PANIC_PREAMBLE_VCAP_MIN_MV 4500u
 
 /*
@@ -88,7 +87,7 @@ static inline uint16_t Cad_Preamble_Symbols_For_Ms(uint32_t t_ms, uint32_t t_sym
 }
 
 /*
- * Дворівневий Vcap-гейт PANIC-преамбули (FW.42-патерн): вистачає заряду →
+ * Дворівневий Vcap-гейт PANIC-преамбули: вистачає заряду →
  * повний «останній зойк» extended_symbols; нижче порога → дефолтні 8
  * (brownout ПОСЕРЕД преамбули = не вилетіло НІЧОГО — коротший зойк, який
  * зловить хоча б always-on Королева, чесніший за німу смерть).

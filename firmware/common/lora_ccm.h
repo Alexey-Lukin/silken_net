@@ -151,7 +151,8 @@
  * fc_degraded:1] — лічильник зверху, прапорці знизу (патерн ttl_byte.h).
  * thr_invalid — FW.18b saturating-лічильник відкинутих OTA-порогів
  * (у 21B жив у байті 11 [thr:5|TTL:3]; CCM TTL живе у mesh_ctrl).
- * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа. */
+ * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа.
+ * thr_invalid і fauna-біти з HW.30 завжди 0; долю слоту вирішує FW.59. */
 #define FW2_DIAG_THR_INVALID_SHIFT 3u
 #define FW2_DIAG_THR_INVALID_MAX   31u
 #define FW2_DIAG_FAUNA_MODE_BIT    0x04u

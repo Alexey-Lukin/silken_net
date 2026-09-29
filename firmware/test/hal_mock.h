@@ -19,12 +19,7 @@ typedef int HAL_StatusTypeDef;
 #define HAL_ERROR 1
 #define HAL_TIMEOUT 3
 
-/* [ARCH.102] `Instance` тут не декор: гейт Фази 1.5 питає саме його, бо
- * незаповнений хендл (порожні MX_ADC_Init/MX_TIM2_Init до board-freeze) —
- * це стан, який мусить бути ВИРАЗНИЙ і в мірору host-сюїти. */
 typedef struct { void* Instance; int dummy; } ADC_HandleTypeDef;
-typedef struct { void* Instance; int dummy; } TIM_HandleTypeDef;
-typedef struct { void* Instance; int dummy; } DMA_HandleTypeDef;
 typedef struct { int dummy; } IWDG_HandleTypeDef;
 typedef struct {
     void* Instance;
@@ -74,11 +69,8 @@ typedef struct {
 
 #define PWR_PVDLEVEL_7              7
 #define PWR_PVD_MODE_IT_RISING_FALLING 0
-#define PWR_MAINREGULATOR_ON        0
-#define PWR_SLEEPENTRY_WFI          0
 #define PWR_STOPENTRY_WFI           0
 
-#define GPIO_PIN_0      0x0001
 #define LL_ADC_RESOLUTION_12B 12
 
 /* RTC Backup Registers (STM32WLE5 supports DR0-DR19, 20 registers total) */
@@ -109,7 +101,6 @@ static inline int  HAL_Init(void) { return HAL_OK; }
 static inline void SystemClock_Config(void) {}
 static inline void MX_GPIO_Init(void) {}
 static inline void MX_ADC_Init(void) {}
-static inline void MX_TIM2_Init(void) {}
 static inline void MX_IWDG_Init(void) {}
 static inline void MX_RNG_Init(void) {}
 static inline void MX_RTC_Init(void) {}
@@ -135,7 +126,6 @@ static inline void HAL_PWR_EnableBkUpAccess(void) {}
 static inline void HAL_SuspendTick(void) {}
 static inline void HAL_ResumeTick(void) {}
 static inline void HAL_PWREx_EnterSTOP2Mode(int m) { (void)m; }
-static inline void HAL_PWR_EnterSLEEPMode(int a, int b) { (void)a; (void)b; }
 
 /* [FW.6] Functional RTC Backup Register mock — stores/retrieves values for testing state persistence */
 #define RTC_BKP_REGISTER_COUNT 20
@@ -163,16 +153,6 @@ static inline int HAL_ADC_Stop(ADC_HandleTypeDef *h) { (void)h; return HAL_OK; }
 static inline int HAL_ADC_PollForConversion(ADC_HandleTypeDef *h, uint32_t t) { (void)h; (void)t; return HAL_OK; }
 static inline uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef *h) { (void)h; return 3000; }
 static inline void HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef *h) { (void)h; }
-/* [ARCH.102] Старт DMA мусить уміти ВІДМОВИТИ: доти мок повертав HAL_OK
- * беззастережно, тож гілка «конвеєр не поїхав» була недосяжна з host'а —
- * рівно та, що на кремнії лишала вузол чекати до сторожового пса. */
-static int _mock_adc_dma_start_status = HAL_OK;
-static inline void _mock_adc_dma_start_reset(void) { _mock_adc_dma_start_status = HAL_OK; }
-static inline int HAL_ADC_Start_DMA(ADC_HandleTypeDef *h, uint32_t *b, uint32_t l) { (void)h; (void)b; (void)l; return _mock_adc_dma_start_status; }
-static inline int HAL_ADC_Stop_DMA(ADC_HandleTypeDef *h) { (void)h; return HAL_OK; }
-
-static inline int HAL_TIM_Base_Start(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
-static inline int HAL_TIM_Base_Stop(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
 /* ── [FW.2] AES-128-CCM мок: WL-true ДВОФАЗНИЙ флоу через OpenSSL EVP ──
  *
@@ -351,16 +331,10 @@ static RadioDriver_t Radio = {
     .Sleep = radio_sleep_stub
 };
 
-/* NVIC interrupt control stubs (for FW.11 race condition fix) */
-typedef enum { EXTI0_IRQn = 6, DMA1_Channel1_IRQn = 11 } IRQn_Type;
-static inline void HAL_NVIC_DisableIRQ(IRQn_Type n) { (void)n; }
-static inline void HAL_NVIC_EnableIRQ(IRQn_Type n) { (void)n; }
-
 /* System reset stub */
 static inline void NVIC_SystemReset(void) {}
 
-/* Memory barrier stubs */
-#define __DMB()         ((void)0)
+/* Interrupt-mask stubs */
 #define __disable_irq() ((void)0)
 #define __enable_irq()  ((void)0)
 

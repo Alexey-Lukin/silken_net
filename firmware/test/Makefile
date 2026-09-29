@@ -26,9 +26,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+.PHONY: all queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
+all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -38,9 +38,6 @@ soldier: $(BINDIR)/test_soldier
 
 bio_contract: $(BINDIR)/test_bio_contract
 	@./$(BINDIR)/test_bio_contract
-
-tinyml: $(BINDIR)/test_tinyml
-	@./$(BINDIR)/test_tinyml
 
 logmel: $(BINDIR)/test_logmel
 	@./$(BINDIR)/test_logmel
@@ -112,9 +109,6 @@ pull_mac: $(BINDIR)/test_pull_mac
 attest: $(BINDIR)/test_queen_attest
 	@./$(BINDIR)/test_queen_attest
 
-fauna: $(BINDIR)/test_fauna_session
-	@./$(BINDIR)/test_fauna_session
-
 bme280: $(BINDIR)/test_bme280
 	@./$(BINDIR)/test_bme280
 
@@ -155,7 +149,7 @@ $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../qu
                      ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
-$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h ../common/fauna_guard.h
+$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_logic.c
 
 $(BINDIR)/test_tdma_schedule: test_tdma_schedule.c ../common/tdma_schedule.h
@@ -177,9 +171,6 @@ $(BINDIR)/test_tx_duty: test_tx_duty.c ../queen/tx_duty.h
 
 $(BINDIR)/test_bio_contract: test_bio_contract.c
 	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm
-
-$(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h ../common/audio_dma.h
-	$(CC) $(CFLAGS) -o $@ test_tinyml_pipeline.c -lm
 
 # [FW.25] Compute_LogMel parity vs silken_ml golden vectors (docs/03_03 §3.4).
 # Generated tables come from `python -m silken_ml.codegen.emit_c` (committed).
@@ -207,10 +198,6 @@ $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv
 # [ARCH.35] W25Q32 sector-ring — NOR-мок (program 1→0) + power-cut fault-injection.
 $(BINDIR)/test_flash_ring: test_flash_ring.c ../common/flash_ring.c ../common/flash_ring.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_ring.c ../common/flash_ring.c
-
-# [ARCH.40] Монолітна fauna-сесія — Welford + named-тест «жодного STOP2 посеред сесії».
-$(BINDIR)/test_fauna_session: test_fauna_session.c ../common/fauna_session.h ../common/logmel_contract.h
-	$(CC) $(CFLAGS) -I../common -o $@ test_fauna_session.c -lm
 
 # [HW.32] BME280 компенсація (int datasheet §8.2 ↔ float-референс §8.1) + VPD-confounder.
 $(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h
@@ -315,7 +302,7 @@ $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selfte
 
 clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
-	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
+	      $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_downlink_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
 	      $(BINDIR)/test_queen_rx_route $(BINDIR)/test_helium_sos \
@@ -324,7 +311,6 @@ clean:
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_ota_sha_guard $(BINDIR)/test_pull_mac \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
-	      $(BINDIR)/test_fauna_session \
 	      $(BINDIR)/test_bme280 $(BINDIR)/test_audio_model \
 	      $(BINDIR)/test_tdma_schedule $(BINDIR)/test_cad_sniff \
 	      $(BINDIR)/test_lora_phy $(BINDIR)/test_tx_duty \
@@ -335,16 +321,16 @@ clean:
 #
 # STM32WLE5JC має 64 KB SRAM. Виміряний леджер (2026-06-11) — One-Home у
 # 03_03 §6 + firmware/scripts/check_ram_budget.sh (хедер): mruby-куча 38 392 Б
-# (FW.55, не «~4 KB»-міф) + stack 12 288 + статика ~8 000 ⇒ стеля tensor
-# arena 7-15 КБ. АВТОРИТЕТНИЙ гейт статики — CI `[FW.26] ARM static-RAM`
+# (FW.55, не «~4 KB»-міф) + stack 12 288 + статика; tensor arena з HW.30 на
+# Солдат не лягає. АВТОРИТЕТНИЙ гейт статики — CI `[FW.26] ARM static-RAM`
 # (--hal-objects, реальні .obj обох main.c); цей host-гейт лишається швидким
 # локальним проксі проти тихої регресії СТАТИКИ (нові buffers, EMA-вікна,
 # OTA масиви) — його поріг свідомо грубий.
 #
 # Використовуємо host `size` проти host-тест build як ПЛАЦХОЛЬДЕР, доки
 # lab build з arm-none-eabi-size не активний. Host build містить ті ж
-# глобальні буфери (raw_audio_buffer, audio_buffer, OTA chunk map etc.),
-# що і firmware build, тому регресія тут = регресія на target.
+# глобальні буфери (OTA chunk map etc.), що і firmware build, тому
+# регресія тут = регресія на target.
 #
 # Threshold 51200 bytes = 50 KB (ділимо 64 KB SRAM на буфери і кошти
 # виконання, залишаючи runtime ~14 KB запасу). Перевищення → exit 1.

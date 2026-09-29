@@ -42,21 +42,11 @@ static inline uint32_t Silken_Wall_Delta_Seconds(uint32_t wall_now, uint32_t las
 }
 
 /*
- * [FW.49 S2, EXTI-половина — ⚖️ делеговано 2026-09-28, канон 03_01 §1.10]
- * Пробудження від п'єзо (EXTI) delta_t НЕ міряє і базу НЕ рухає: вітер чи дощ
- * між двома циклами вкорочували б «перезаряд», а коротший перезаряд m(delta_t)
- * читає як здоровіший метаболізм — тобто over-mint. Вимір, отруєний вітром,
- * того ж роду, що й відсутній, тож EXTI-цикл віддає `unknown`, а база лишається
- * на попередньому не-EXTI циклі. Наступний не-EXTI цикл міряє від неї й несе в
- * собі енергію EXTI-циклів — читає перезаряд ПОВІЛЬНІШИМ за справжній, тобто
- * помиляється в безпечний бік. Цикл, де збіглись таймер і п'єзо, вирішує
- * прапорець: він EXTI, і вимір розтягується на два періоди — той самий бік.
+ * delta_t пробудження: кожне пробудження рухає базу на свій wall-відлік.
  */
 static inline uint32_t Silken_Wake_Delta_Seconds(uint32_t wall_now, uint32_t *base_wall,
-                                                 uint8_t exti_born,
                                                  uint32_t unknown, uint32_t max_plausible)
 {
-    if (exti_born) return unknown;
     uint32_t d = Silken_Wall_Delta_Seconds(wall_now, *base_wall, unknown, max_plausible);
     *base_wall = wall_now;
     return d;
@@ -64,13 +54,13 @@ static inline uint32_t Silken_Wake_Delta_Seconds(uint32_t wall_now, uint32_t *ba
 
 /*
  * Що йде в mruby і на дріт як вхід балів (контракт «wire = вхід GP», E.63 (г)):
- * EMA — лише прогріта й лише на не-EXTI кадрі, інакше сентинел (пара
- * status 0 / GP 0 — 03_04 §4.3). Сатурація u16 — ширина поля на дроті.
+ * EMA — лише прогріта, інакше сентинел (пара status 0 / GP 0 — 03_04 §4.3).
+ * Сатурація u16 — ширина поля на дроті.
  */
 static inline uint32_t Silken_Wake_Lorenz_Delta_T(uint8_t ema_warm, uint32_t ema_s,
-                                                  uint8_t exti_born, uint32_t unknown)
+                                                  uint32_t unknown)
 {
-    if (exti_born || !ema_warm) return unknown;
+    if (!ema_warm) return unknown;
     return (ema_s > 0xFFFFu) ? 0xFFFFu : ema_s;
 }
 

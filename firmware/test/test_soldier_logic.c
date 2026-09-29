@@ -224,9 +224,9 @@ static void Pack_Soldier_Payload(
     /* Byte 10: Bio-contract packed byte — [FW.29] clear PANIC_FLAG_BIT */
     lora_payload[10] = bio_contract_byte & 0x7F;
 
-    /* Byte 11 [FW.18b]: бітфілд [thr_invalid:5|TTL:3] — main.c пакує через
-     * Ttl_Byte_Pack(ttl, tinyml_threshold_invalid_count); дзеркало тестів
-     * тримає counter=0 (бітово ≡ legacy), бітфілд критий своїми тестами. */
+    /* Byte 11 [FW.18b]: бітфілд [thr_invalid:5|TTL:3] — main.c пакує
+     * Ttl_Byte_Pack(ttl, 0) (з HW.30 лічильника немає; бітово ≡ legacy),
+     * бітфілд критий своїми тестами. */
     lora_payload[11] = Ttl_Byte_Pack(ttl, 0);
 
     /* Bytes 12-13: Firmware version (big-endian) [FIX: use padding] */
@@ -3277,29 +3277,6 @@ TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 16. FW.18 — пороги TinyML (0x9D тіло — Dl_Cmd_Audio_Unpack у
- * common/downlink_ccm.h, тести — test_downlink_ccm.c; до downlink-ревізії
- * 2026-09-29 тут жила рукописна копія обробника main.c)
- * ════════════════════════════════════════════════════════════════════ */
-/* TinyML threshold validate/apply — mirrors firmware sanitize logic. */
-#define S_TINYML_MIN_VALID  0.01f
-#define S_TINYML_MAX_VALID  0.99f
-#define S_TINYML_DEFAULT_W  0.60f
-#define S_TINYML_DEFAULT_C  0.85f
-
-static float Test_TinyML_Validate(float raw, float fallback) {
-    if (raw < S_TINYML_MIN_VALID || raw > S_TINYML_MAX_VALID) return fallback;
-    return raw;
-}
-
-static void Test_TinyML_Apply(float wr, float cr, float* w_out, float* c_out) {
-    float w = Test_TinyML_Validate(wr, S_TINYML_DEFAULT_W);
-    float c = Test_TinyML_Validate(cr, S_TINYML_DEFAULT_C);
-    if (!(w < c)) { w = S_TINYML_DEFAULT_W; c = S_TINYML_DEFAULT_C; }
-    *w_out = w; *c_out = c;
-}
-
-/* ════════════════════════════════════════════════════════════════════
  * [SEC.10] Frame Counter anti-replay для panic packets
  * ════════════════════════════════════════════════════════════════════
  * Логіка пакування DR0[31:16] = panic_frame_counter, DR0[7:0] = acoustic.
@@ -3824,72 +3801,6 @@ TEST(test_arch21_pvd_save_then_restore_roundtrip) {
 
     float restored_z = test_uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR18));
     ASSERT_FLOAT_EQ(restored_z, 25.0f, 0.0f);
-}
-
-/* ════════════════════════════════════════════════════════════════════
- * [FW.18 × ARCH.21 cross-feature regression] DR13/DR14 brownout race
- * ════════════════════════════════════════════════════════════════════
- * До downlink-ревізії (2026-09-29) тут пінувалась втрата: 0x9D мутував RAM
- * у RX-вікні, а DR13/DR14 писались аж наприкінці КЕНОЗИСУ, і брауноут між
- * ними повертав старі пороги. Тепер 0x9D у вікні лише відкривається, а в
- * КЕНОЗИСІ застосовується разом з inline-записом DR13/DR14
- * (Soldier_Dl_Cmd_Commit, soldier/main.c секція 1.14): брауноут до КЕНОЗИСУ
- * не змінює нічого, навіть DLFC, тож перевиданий Rails кадр відкриється
- * знову. Лишились тести самого RTC-шляху: записані пари переживають
- * брауноут, биті — падають на дефолти.
- */
-
-/* Mirror of Load_TinyML_Thresholds_From_RTC validate-and-apply, без RTC dep. */
-static void Test_Load_TinyML_From_RTC_Slot(uint32_t dr13_word, uint32_t dr14_word,
-                                            float* warn_out, float* crit_out) {
-    float rtc_warn = test_uint32_to_float(dr13_word);
-    float rtc_crit = test_uint32_to_float(dr14_word);
-    Test_TinyML_Apply(rtc_warn, rtc_crit, warn_out, crit_out);
-}
-
-TEST(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted) {
-    /* Inverse-сценарій: пороги вже пройшли Phase 5 writeback ДО PVD IRQ.
-     * Brownout НЕ повинен їх зіпсувати, і підстава саме в ARCH.21 callback:
-     * він не торкається DR13/DR14, тож записані раніше значення лежать
-     * недоторканими, доки МК не перезавантажився.
-     * ⛔ НЕ "бо RTC Backup живиться окремою VBAT шиною" — окремого джерела
-     * в нас НЕМАЄ (coin cell у BOM Солдата відсутній, докладно 02_03 §7):
-     * PVD-brownout є ПОПЕРЕДЖЕННЯМ при живому МК, а справжня втрата живлення
-     * чистить backup-домен → ema_valid != 0x45 → cold-start (03_01 §13.3).
-     * Мок _rtc_bkp_reset_all() симулює лише перший сценарій. */
-    _rtc_bkp_reset_all();
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, test_float_to_uint32(0.42f));
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, test_float_to_uint32(0.91f));
-
-    Simulate_PVD_Brownout_Save(0, 0, 5000, -1.0f, 2.0f, 27.0f, 1);
-
-    float boot_warn = 0.0f, boot_crit = 0.0f;
-    Test_Load_TinyML_From_RTC_Slot(
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
-        &boot_warn, &boot_crit);
-
-    /* Persisted-thresholds invariant: DR13/DR14 точно повертаються після brownout. */
-    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 42);
-    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 91);
-}
-
-TEST(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults) {
-    /* Edge case: VBAT-loss ⇒ DR13/DR14 = 0xFFFFFFFF (uninit). Float bit-copy
-     * 0xFFFFFFFF → NaN. Test_TinyML_Apply має повернути дефолти 0.60/0.85
-     * (через Validate range check 0.01..0.99) щоб TinyML не злетів у NaN-ад. */
-    _rtc_bkp_reset_all();
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, 0xFFFFFFFFu);
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, 0xFFFFFFFFu);
-
-    float boot_warn = 0.0f, boot_crit = 0.0f;
-    Test_Load_TinyML_From_RTC_Slot(
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
-        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
-        &boot_warn, &boot_crit);
-
-    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 60);  /* TINYML_DEFAULT_W */
-    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 85);  /* TINYML_DEFAULT_C */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4737,99 +4648,6 @@ TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * [FW.42] Fauna acoustic-sampling Vcap guard (freeze-contract)
- * ════════════════════════════════════════════════════════════════════
- * Source SSOT: docs/03_03 §10.3 + docs/00_07 FW.42.
- *
- * One-Home: той самий предикат і поріг, що прошивка (firmware/common/fauna_guard.h) —
- * тест б'є по справжньому коду, не по копії з власною константою (firmware-гоча #19).
- * Лічильник живе тут, як у main.c, і передається покажчиком.
- */
-#include "../common/fauna_guard.h"
-
-static uint8_t test_fauna_skipped_low_vcap = 0;
-
-static void Reset_Fauna_Skip_Counter(void) {
-    test_fauna_skipped_low_vcap = 0;
-}
-
-static uint8_t Test_Fauna_Should_Sample(uint16_t vcap_mv) {
-    return Fauna_Should_Sample(vcap_mv, &test_fauna_skipped_low_vcap);
-}
-
-TEST(test_fw42_fauna_threshold_constant_matches_doc) {
-    /* docs/03_03 §10.3 audit-fix: ΔV @ V_cap=4.5V ≈ -29 мВ — comfortable
-     * margin above VBAT_OK ON (3.4V). Constant must be 4500 mV. */
-    ASSERT_EQ((unsigned)FAUNA_VCAP_MIN_MV, 4500u);
-}
-
-TEST(test_fw42_fauna_sample_allowed_at_exact_threshold) {
-    Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(FAUNA_VCAP_MIN_MV), 1);
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 0);
-}
-
-TEST(test_fw42_fauna_sample_allowed_above_threshold) {
-    Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(5000), 1);
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 0);
-}
-
-TEST(test_fw42_fauna_sample_blocked_below_threshold) {
-    Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(4499), 0);
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 1);
-}
-
-TEST(test_fw42_fauna_sample_blocked_deep_brownout) {
-    /* V_cap == VBAT_OK ON (3.4V) — the very margin we are protecting. */
-    Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(3400), 0);
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 1);
-}
-
-TEST(test_fw42_fauna_skip_counter_increments_per_block) {
-    Reset_Fauna_Skip_Counter();
-    Test_Fauna_Should_Sample(4000);
-    Test_Fauna_Should_Sample(3800);
-    Test_Fauna_Should_Sample(3600);
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 3);
-}
-
-TEST(test_fw42_fauna_skip_counter_saturates_at_uint8_max) {
-    Reset_Fauna_Skip_Counter();
-    for (int i = 0; i < 300; i++) {
-        Test_Fauna_Should_Sample(3000);
-    }
-    /* Saturating uint8 — 300 calls but counter stops at 255. */
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 255);
-}
-
-TEST(test_fw42_fauna_mixed_calls_do_not_decrement_counter) {
-    /* Allowed calls must NOT decrement the counter; the metric tracks
-     * cumulative skips, not "consecutive". */
-    Reset_Fauna_Skip_Counter();
-    Test_Fauna_Should_Sample(3000); /* skip → 1 */
-    Test_Fauna_Should_Sample(5000); /* allowed */
-    Test_Fauna_Should_Sample(3000); /* skip → 2 */
-    Test_Fauna_Should_Sample(4500); /* allowed (exact threshold) */
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
-}
-
-TEST(test_fw42_raw_adc_range_always_skips_fail_closed) {
-    /* [FW.50-footgun, виконуване знання] Контракт guard'а — МІЛІВОЛЬТИ.
-     * Call-site (main.c) з 2026-06-12 дає чесні мВ VDDA-проксі (≈3300,
-     * стеля VREFINT-тракту < 4500) — fauna ЛИШАЄТЬСЯ fail-CLOSED аж до
-     * живого Vcap-каналу з дільником (повний EDLC 5500 мВ > поріг).
-     * «Fauna мертва» діагностується лічильником пропусків. Розгейт: FW.50
-     * hardware-частина (дільник), НЕ зниження порогу. */
-    Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(4095), 0); /* стеля 12-bit тракту */
-    ASSERT_EQ(Test_Fauna_Should_Sample(3300), 0); /* VDDA-проксі (типово) */
-    ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
-}
-
-/* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
  * Закриваємо edge-case прогалини пак-розкладки (03_04 §4.4, дріт 03_05 §2.1):
@@ -4986,34 +4804,19 @@ TEST(test_fw49_delta_boundary_exact_max_passes) {
     ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86401u, 1000u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
 }
 
-/* [FW.49 S2, EXTI-половина — ⚖️ 2026-09-28, 03_01 §1.10] п'єзо-кадр delta_t не
- * міряє й базу не рухає: вітер укоротив би «перезаряд» → over-mint. */
-TEST(test_fw49_s2_exti_cycle_unknown_and_base_kept) {
+TEST(test_fw49_s2_every_wake_moves_base) {
     uint32_t base = 1000u;
-    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 1u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
-    ASSERT_EQ(base, 1000u);
-}
-
-TEST(test_fw49_s2_timer_cycle_measures_and_moves_base) {
-    uint32_t base = 1000u;
-    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
     ASSERT_EQ(base, 1100u);
+    base = 0u; /* cold-start: сентинел, але база однаково рухається */
+    ASSERT_EQ(Silken_Wake_Delta_Seconds(1200u, &base, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
+    ASSERT_EQ(base, 1200u);
 }
 
-TEST(test_fw49_s2_exti_between_timers_does_not_shorten_recharge) {
-    /* Таймер @1000 → п'єзо @1030 (вітер) → таймер @1100: другий вимір іде від
-     * 1000 (100 с), а не від 1030 (70 с) — коротший «перезаряд» мінтив би більше. */
-    uint32_t base = 900u;
-    ASSERT_EQ(Silken_Wake_Delta_Seconds(1000u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
-    ASSERT_EQ(Silken_Wake_Delta_Seconds(1030u, &base, 1u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 60u);
-    ASSERT_EQ(Silken_Wake_Delta_Seconds(1100u, &base, 0u, TEST_WALL_UNKNOWN, TEST_WALL_MAX_PLAUS), 100u);
-}
-
-TEST(test_fw49_s2_lorenz_input_sentinel_on_exti_and_cold_ema) {
-    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 3600u, 1u, TEST_WALL_UNKNOWN), 60u);   /* EXTI — сентинел */
-    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(0u, 3600u, 0u, TEST_WALL_UNKNOWN), 60u);   /* EMA не прогріта */
-    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 3600u, 0u, TEST_WALL_UNKNOWN), 3600u); /* таймер + EMA */
-    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 70000u, 0u, TEST_WALL_UNKNOWN), 0xFFFFu); /* u16 дроту */
+TEST(test_fw49_s2_lorenz_input_sentinel_on_cold_ema) {
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(0u, 3600u, TEST_WALL_UNKNOWN), 60u);      /* EMA не прогріта */
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 3600u, TEST_WALL_UNKNOWN), 3600u);    /* прогріта EMA */
+    ASSERT_EQ(Silken_Wake_Lorenz_Delta_T(1u, 70000u, TEST_WALL_UNKNOWN), 0xFFFFu); /* u16 дроту */
 }
 
 TEST(test_fw49_elapsed_never_set_returns_zero) {
@@ -5386,8 +5189,6 @@ int main(void)
     RUN(test_ota_finalize_reject_version_mismatch);
     RUN(test_ota_finalize_reject_no_key);
 
-    printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
-
     printf("\n  Panic Frame Counter Anti-Replay (SEC.10):\n");
     RUN(test_sec10_dr0_pack_roundtrip);
     RUN(test_sec10_dr0_pack_independence);
@@ -5436,10 +5237,6 @@ int main(void)
     RUN(test_arch21_pvd_preserves_last_wakeup_for_delta_t);
     RUN(test_arch21_pvd_skips_lorenz_when_invalid);
     RUN(test_arch21_pvd_save_then_restore_roundtrip);
-
-    printf("\n  [FW.18 × ARCH.21] Brownout race for DR13/DR14 audio thresholds:\n");
-    RUN(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted);
-    RUN(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults);
 
     printf("\n  [FW.29-PACK × ARCH.21] StatusByte semantics survive brownout:\n");
     RUN(test_fw29pack_arch21_post_brownout_anomaly_pack_survives_panic_mask);
@@ -5507,17 +5304,6 @@ int main(void)
     RUN(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped);
     RUN(test_fw20s2_gossip_apply_drift_within_cap_corrects);
 
-    printf("\n  Fauna Vcap Guard (FW.42, freeze-contract):\n");
-    RUN(test_fw42_fauna_threshold_constant_matches_doc);
-    RUN(test_fw42_fauna_sample_allowed_at_exact_threshold);
-    RUN(test_fw42_fauna_sample_allowed_above_threshold);
-    RUN(test_fw42_fauna_sample_blocked_below_threshold);
-    RUN(test_fw42_fauna_sample_blocked_deep_brownout);
-    RUN(test_fw42_fauna_skip_counter_increments_per_block);
-    RUN(test_fw42_fauna_skip_counter_saturates_at_uint8_max);
-    RUN(test_fw42_fauna_mixed_calls_do_not_decrement_counter);
-    RUN(test_fw42_raw_adc_range_always_skips_fail_closed);
-
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);
     RUN(test_fw29_panic_does_not_corrupt_acoustic_saturation);
@@ -5541,10 +5327,8 @@ int main(void)
     RUN(test_fw49_delta_backward_clock_returns_unknown);
     RUN(test_fw49_delta_epoch_jump_returns_unknown);
     RUN(test_fw49_delta_boundary_exact_max_passes);
-    RUN(test_fw49_s2_exti_cycle_unknown_and_base_kept);
-    RUN(test_fw49_s2_timer_cycle_measures_and_moves_base);
-    RUN(test_fw49_s2_exti_between_timers_does_not_shorten_recharge);
-    RUN(test_fw49_s2_lorenz_input_sentinel_on_exti_and_cold_ema);
+    RUN(test_fw49_s2_every_wake_moves_base);
+    RUN(test_fw49_s2_lorenz_input_sentinel_on_cold_ema);
     RUN(test_fw49_elapsed_never_set_returns_zero);
     RUN(test_fw49_elapsed_normal);
     RUN(test_fw49_elapsed_backward_clock_returns_zero);

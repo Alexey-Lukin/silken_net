@@ -3,7 +3,7 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Прошивка вузла Silken Net (Стан Нульового Лагу + TinyML + DID + Directed Mesh + DMA Sleep)
+  * @brief          : Прошивка вузла Silken Net (Стан Нульового Лагу + DID + Directed Mesh)
   * @processor      : STM32WLE5CC (node board, UFQFPN48; the bench runs the same image on the
   *                  STM32WLE5JC inside LoRa-E5 — same core and radio, pins differ, 03_01 Pinout)
   ******************************************************************************
@@ -46,24 +46,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/lora_phy.h"      // [FW.61] базлайн модуляції raw-LoRa P2P (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
-#include "../common/fauna_guard.h"   // [FW.42] Vcap-гейт fauna-сесії: Fauna_Should_Sample (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
-#include "../common/audio_dma.h"     // [ARCH.102] гейт периферій аудіо-вікна + дедлайн (One-Home)
-
-// Підключаємо скомпільовану нейромережу TinyML.
-// Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
-// IP-friendly stub з контрактом (Run_Inference signature, TENSOR_ARENA_SIZE,
-// NUM_CLASSES) — це дозволяє make size-check / arm-none-eabi-size verify
-// RAM-budget без розкриття IP моделі.
-#if defined(__has_include) && __has_include("silken_net_audio_model.h")
-#  include "silken_net_audio_model.h"
-#else
-#  include "silken_net_audio_model_stub.h"
-#  warning "TinyML: silken_net_audio_model.h absent — using stub fallback (Run_Inference undefined; baseline normally committed, FW.4)"
-#endif
-
-// [FW.25] Акустичний DSP-фронтенд: 512-семпловий кадр → 40 log-mel ознак (Path B).
-#include "../common/logmel.h"
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
@@ -102,8 +85,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // [FW.27-B] «5 хв тиші» → подати голос про пропуски. Лічимо ТИХІ ПРОБУДЖЕННЯ
 // з відкритим вухом (Фаза 4.5), а не мілісекунди: HAL_GetTick заморожений у
 // STOP2, тож tick-різниця міряла активний час і запізнювала зойк у ~6-15×.
-// 10 пробуджень × цикл 26-32 с ≈ інтент «5 хв» (03_02 §5.1.3); EXTI-шторм
-// (часті пробудження) лише пришвидшує — вухо й так відкривалось частіше.
+// 10 пробуджень × цикл 26-32 с ≈ інтент «5 хв» (03_02 §5.1.3).
 #define OTA_REREQUEST_SILENT_WAKEUPS  10u    // [FW.27-B] тихих пробуджень до re-request
 #define OTA_MISMATCH_RESET_THRESHOLD 3       // [FW.53] N поспіль чужих total → відпустити мертву кампанію
 // Мітка помилки mruby VM на дроті: [panic:0|status:11=vm_error|growth:00000].
@@ -111,7 +93,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // status=3 + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
 // 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
 // [SLASH-1] status=3 — це НАШ софт-збій, не tamper: бекенд декодує його як
-// vm_error → firmware_fault (ops-тріаж), справжня пилка кричить PANIC_FLAG'ом.
+// vm_error → firmware_fault (ops-тріаж); фізичний tamper — PANIC_FLAG, не статус-біти.
 #define BIO_STATUS_VM_ERROR       0x60
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 // [FW.49 S1] delta_t — wall-секунди з RTC-календаря (LSE йде у STOP2);
@@ -253,8 +235,6 @@ _Static_assert(
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc;
-TIM_HandleTypeDef htim2;  // Додано: Таймер-метроном для керування швидкістю DMA (напр. 16 кГц)
-DMA_HandleTypeDef hdma_adc; // [ARCH.102] ADC → raw_audio_buffer; лінк у MX_DMA_Init
 IWDG_HandleTypeDef hiwdg; // Апаратний сторожовий пес
 RNG_HandleTypeDef hrng;
 RTC_HandleTypeDef hrtc;
@@ -281,8 +261,7 @@ uint8_t lorenz_seed[32] = {0};
 uint8_t lorenz_seed_valid = 0;  // 1 = loaded from Flash, 0 = not provisioned
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
-volatile uint8_t vibration_detected = 0; // Прапорець переривання від п'єзодиска
-uint8_t acoustic_events = 0;           // Відфільтровані мікророзриви (Кавітація)
+uint8_t acoustic_events = 0;           // З HW.30 (пʼєзо зрізано) не інкрементується — 0; долю слоту вирішує FW.59
 uint32_t last_wakeup_timestamp = 0;    // Час попереднього пробудження
 uint32_t delta_t_seconds = 0;          // Швидкість заряду іоністора (Метаболізм)
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
@@ -314,40 +293,6 @@ volatile uint8_t time_source_authoritative = 0;
 uint8_t lora_payload[16] = {0};
 uint8_t encrypted_payload[16] = {0}; // Буфер для зашифрованих даних перед відправкою
 
-// === 1.5. ПАМ'ЯТЬ TINYML (Свідомість звуку + DMA) ===
-uint16_t raw_audio_buffer[512];   // Буфер для DMA (сирі 12-бітні дані від АЦП)
-float audio_buffer[512];          // Буфер для запису звукової хвилі (нормалізований для TinyML)
-volatile uint8_t audio_ready = 0; // Прапорець завершення роботи DMA-павутиння
-uint8_t ml_event_id = 0;          // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка, 4-Фауна
-float ml_confidence = 0.0;        // Рівень впевненості моделі (0.0 - 1.0)
-
-// === 1.5а. ДВОРІВНЕВА СИСТЕМА ПОРОГІВ TINYML (FW.18) ===
-// Замість hardcoded 0.80 — дві зони впевненості, що зберігаються в RTC
-// Backup Domain і можуть оновлюватись через OTA CMD без перепрошивки.
-//
-//   confidence < WARNING   → SILENCE (нічого, reset warning_counter)
-//   WARNING ≤ c < CRITICAL → WARNING (acoustic_events++, лічимо ескалацію)
-//   confidence ≥ CRITICAL  → CRITICAL (acoustic_events++ або Emergency TX)
-//
-// Persistence: DR13 (warning), DR14 (critical) як IEEE 754 float у uint32
-// (bit-copy, без magic — валідуємо діапазоном [TINYML_THRESHOLD_MIN_VALID,
-// TINYML_THRESHOLD_MAX_VALID]). Cold boot RTC = 0x00000000 → bit-cast у
-// float = 0.0f → НЕ потрапляє у валідний діапазон [0.01, 0.99] →
-// TinyML_Validate_Threshold() віддає TINYML_DEFAULT_*. Аналогічно при NaN/Inf
-// (наприклад, після VBAT-loss + bit-flip). При cold-start або корупції —
-// fallback на дефолти TINYML_DEFAULT_WARNING / TINYML_DEFAULT_CRITICAL з
-// 03_03 §5 (CRITICAL зони).
-//
-// SSOT для розташування RTC регістрів: 03_01 §2 (Soldier RTC Backup Map).
-// DR13/DR14 тримають ці два пороги TinyML; повна розкладка — там, не дублюємо.
-#define TINYML_DEFAULT_WARNING       0.60f
-#define TINYML_DEFAULT_CRITICAL      0.85f
-#define TINYML_THRESHOLD_MIN_VALID   0.01f
-#define TINYML_THRESHOLD_MAX_VALID   0.99f
-#define TINYML_WARNING_ESCALATION    3   // 3× WARNING поспіль → ескалація CRITICAL
-
-float   tinyml_warning_threshold  = TINYML_DEFAULT_WARNING;
-float   tinyml_critical_threshold = TINYML_DEFAULT_CRITICAL;
 uint8_t ota_vm_error_streak       = 0;   // [SEC.20] DR0[9:8]-persist: N поспіль bytecode-збоїв → fallback
 uint8_t canary_tripped            = 0;   // [SEC.21] DR0[10]-persist: слід __stack_chk_fail з минулого втілення
 uint8_t canary_evt_shots          = 0;   // [SEC.21] залишок 0x57-пострілів (RAM — живе крізь STOP2)
@@ -356,37 +301,6 @@ uint16_t canary_evt_seq           = 0;   // [SEC.21] per-boot seq 0x57 (деду
 // contract-select. Дефолт = legacy C-image константа (semantic=0) — чесна
 // деградація, доки KV/contract не оглянуті.
 uint16_t fw_contract_report       = FIRMWARE_VERSION_ID;
-uint8_t warning_counter           = 0;   // Послідовні WARNING-події між cold-boot;
-                                          // SRAM зберігається в STOP2, скидається
-                                          // лише при VBAT-loss / IWDG / NVIC reset.
-
-// [FW.42] Vcap guard для fauna acoustic sampling.
-//
-// SSOT — docs/03_03 §10.3 + docs/00_07 FW.42.
-//
-// Один fauna-сеанс (5 с моноліт @ 16 кГц = 156 послідовних MFCC+INT8
-// inference вікон) коштує ~78 мДж: ~16 мДж wait + ~62 мДж активного CPU
-// при ~12 мА протягом ~1.56 с. Це **імпульсне** навантаження ~40 мВт,
-// яке просаджує EDLC. Якщо сесія стартує при V_cap, близькому до
-// VBAT_OK ON (~3.4 V), просадка може кинути напругу нижче порогу
-// Buck'а посеред інференсу → reset. Тому fauna sampling запускається
-// лише коли V_cap ≥ FAUNA_VCAP_MIN_MV (margin ~1.1 V над VBAT_OK ON).
-//
-// Цей блок — **freeze-contract helper**, і виклику в нього поки НЕМАЄ: fauna-pathway
-// (ARCH.39) не активовано (00_07 FW.42, 🔗 FW.4-EXT), а в гарячій петлі живий лише
-// базовий FW.4 `Run_Inference`, не fauna-сесія. Функція компілюється й покрита
-// host-тестами, тож активація — це 2 рядки виклику у TinyML гілці.
-//
-// Backend-симетрія (опційно, post-FW.4): метрика
-// `fauna_skipped_low_vcap_total` у Prometheus → Grafana панель
-// "Fauna skip rate per cluster" → дерева з skip rate > 50% мають
-// деградований EBFC або зимовий період.
-//
-// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (adc_convert.h), зараз VDDA-проксі ⇒
-// guard fail-CLOSED до живого Vcap-каналу (FW.50). Предикат і поріг — One-Home
-// `common/fauna_guard.h`: `Fauna_Should_Sample(vcap_mv, &fauna_skipped_low_vcap)`;
-// тест б'є по ньому самому (tripwire test_fw42_raw_adc_range_always_skips_fail_closed).
-uint8_t fauna_skipped_low_vcap = 0; // saturating uint8 counter (SRAM)
 
 // === 1.8. ПАМ'ЯТЬ ЕСТАФЕТИ (Directed Mesh) ТА OTA ===
 uint8_t mesh_relay_payload[16] = {0}; // Буфер для чужого 16-байтного пакета
@@ -1227,64 +1141,6 @@ static inline uint8_t EMA_Is_Warmed_Up(void) {
     return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
 }
 
-// === 1.11. ВАЛІДАЦІЯ ПОРОГІВ TINYML (FW.18) ===
-// Перевірка одного порогу: повертає raw, якщо він у дозволеному робочому
-// діапазоні [MIN_VALID, MAX_VALID] і не NaN/Inf, інакше — fallback_default.
-// Вимагається <math.h> для isfinite() (вже включений у secція Includes).
-//
-// Окрема функція дозволяє покрити логіку на хості без HAL_RTCEx_BKUPRead.
-static inline float TinyML_Validate_Threshold(float raw, float fallback_default) {
-    if (!isfinite(raw)) return fallback_default;
-    if (raw < TINYML_THRESHOLD_MIN_VALID) return fallback_default;
-    if (raw > TINYML_THRESHOLD_MAX_VALID) return fallback_default;
-    return raw;
-}
-
-// Production-visibility counter (saturating uint8) для випадків, коли
-// TinyML_Apply_Thresholds() відкинув OTA payload — або через NaN/out-of-range
-// окремого порогу, або через інверсію warn ≥ crit. Embedded LOG_ERR на
-// headless STM32 марний, тому замість printf — лічильник, який backend може
-// piggybacked'ити на телеметрію і будувати Grafana panel
-// "OTA threshold inversion rate per Soldier". Скидається на 0 тільки при
-// VBAT loss / cold-boot (SRAM ініціалізується нулями).
-//
-// Wiring до телеметрії ✅ [FW.18b]: верхні 5 біт байта 11 (TTL-байт) —
-// бітфілд [thr_invalid:5 | TTL:3], One-Home ../common/ttl_byte.h; wire-кап
-// 31 (RAM-сатурація лишається @255 для GDB/SEGGER-діагностики).
-uint8_t tinyml_threshold_invalid_count = 0;
-
-// Перевірка пари: гарантує warning < critical, інакше дефолти на обидва.
-// Зберігає інваріант зон (SILENCE < WARNING < CRITICAL) навіть при частково
-// корумпованому RTC або злочинно сформованому OTA payload.
-//
-// Side-effect: інкрементує tinyml_threshold_invalid_count, якщо raw input
-// не пройшов валідацію (NaN/out-of-range) АБО пара інвертована.
-static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
-                                            float* warn_out, float* crit_out) {
-    float w = TinyML_Validate_Threshold(warn_raw, TINYML_DEFAULT_WARNING);
-    float c = TinyML_Validate_Threshold(crit_raw, TINYML_DEFAULT_CRITICAL);
-
-    // Детектуємо fallback: NaN != NaN (true), out-of-range raw → w != warn_raw.
-    // Інверсія детектується окремо через !(w < c).
-    uint8_t warn_rejected = (w != warn_raw);
-    uint8_t crit_rejected = (c != crit_raw);
-    uint8_t inverted      = !(w < c);
-
-    if (warn_rejected || crit_rejected || inverted) {
-        if (tinyml_threshold_invalid_count < 255) {
-            tinyml_threshold_invalid_count++;
-        }
-    }
-
-    if (inverted) {
-        // Інверсія/рівність → відкочуємо обидва на дефолти
-        w = TINYML_DEFAULT_WARNING;
-        c = TINYML_DEFAULT_CRITICAL;
-    }
-    *warn_out = w;
-    *crit_out = c;
-}
-
 // =====================================================================
 // === 1.12. FW.27-B Magic Re-Request — голос Солдата у бік Королеви ===
 // =====================================================================
@@ -1655,11 +1511,6 @@ static void Soldier_Dl_Cmd_Commit(void)
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
-static void MX_TIM2_Init(void); // Ініціалізація таймера для DMA
-// [ARCH.102] Єдиний MX_* поруч із MX_CRYP_Init, чиє тіло живе ТУТ, а не
-// чекає .ioc: розкладка DMA-каналу й DMAMUX-запит визначені самим
-// перенесенням ADC→RAM, а не пін-мапою чи клок-деревом (межа FW.46).
-static void MX_DMA_Init(void);
 static void MX_IWDG_Init(void); // Ініціалізація IWDG
 static void MX_RNG_Init(void);
 static void MX_RTC_Init(void);
@@ -1667,8 +1518,6 @@ static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
 
 /* USER CODE BEGIN PFP */
-// Псевдо-функції для роботи зі звуком та тривогами
-void Record_Audio_Wave(float* buffer, uint16_t length);
 void Trigger_Emergency_LoRa_TX(void);
 void Write_OTA_Contract_To_Flash(const uint8_t* data, uint16_t size);
 
@@ -1812,11 +1661,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC_Init();
-  MX_TIM2_Init(); // Ініціалізуємо метроном для DMA
-  // [ARCH.102] ПІСЛЯ ADC/TIM свідомо: __HAL_LINKDMA лише зшиває хендли, і
-  // майбутній .ioc-івський MX_ADC_Init, що перезаписав би hadc цілком, не
-  // має шансу знести лінк, якщо той ставиться останнім.
-  MX_DMA_Init();
   MX_IWDG_Init(); // Ініціалізуємо Сторожового Пса
   MX_RNG_Init();
   MX_RTC_Init();
@@ -1940,23 +1784,6 @@ int main(void)
           ema_valid        = v;
           ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
       }
-  }
-
-  // =========================================================================
-  // [FW.18] ВІДНОВЛЕННЯ ПОРОГІВ TINYML (RTC DR13/DR14)
-  // =========================================================================
-  // DR13 = warning_threshold (IEEE 754 float як uint32, bit-copy).
-  // DR14 = critical_threshold. Без виділеного magic-маркера: cold-boot RTC
-  // читається як 0x00000000 → float 0.0f → не проходить діапазон [0.01, 0.99]
-  // → TinyML_Validate_Threshold() віддає дефолт. Якщо обидва RTC-значення
-  // валідні, але інверсія (warn ≥ crit) — TinyML_Apply_Thresholds() відкочує
-  // обидва на дефолти, гарантуючи інваріант зон. SSOT: 03_03 §5 (CRITICAL зони).
-  {
-      float rtc_warn = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13));
-      float rtc_crit = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14));
-      TinyML_Apply_Thresholds(rtc_warn, rtc_crit,
-                              &tinyml_warning_threshold,
-                              &tinyml_critical_threshold);
   }
 
   // =========================================================================
@@ -2140,8 +1967,10 @@ int main(void)
     // [ARCH.102] Guard'и віддають СЕНТИНЕЛ «не виміряно», а не «нейтральні» 60 с:
     // ті 60 мапились у `metabolic_health` = 1.0, тобто відмова виміряти мінтила
     // МАКСИМУМ балів. Дім значення й підстави — `bio_contracts/bio_contract.rb`.
-    // Сама дельта рахується в кінці фази ↓ — там уже відомо джерело пробудження.
     uint32_t current_time = Wall_Seconds_Now();
+    delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp,
+                                                DELTA_T_UNKNOWN_S,
+                                                DELTA_T_MAX_PLAUSIBLE_S);
 
     // 2. Внутрішні метрики (Температура та Заряд)
     uint16_t internal_temp = 0;
@@ -2168,24 +1997,6 @@ int main(void)
     }
     HAL_ADC_Stop(&hadc);
 
-    // [FW.49 S2, EXTI-половина — ⚖️ делеговано 2026-09-28] Джерело пробудження
-    // треба знати ДО виміру: п'єзо-кадр delta_t не міряє й базу не рухає
-    // (wall_time.h — чому й у який бік це безпечно). Прапорець читаємо тут, а не
-    // на початку фази: подія, що прийшла б між раннім читанням і Фазою 1.5, у
-    // STOP2 чекала б наступного пробудження. [FIX FW.11]: NVIC-рівнева ізоляція
-    // замість "if (vibration_detected) { vibration_detected = 0; }" — інакше друге
-    // переривання EXTI0 між читанням прапорця та HAL_ADC_Start_DMA стартувало б
-    // DMA двічі → HAL_BUSY → buffer corruption. HAL_NVIC_DisableIRQ(EXTI0_IRQn)
-    // блокує лише п'єзо-переривання, не зупиняючи SysTick, Radio, DMA чи інші ISR.
-    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-    uint8_t vib = vibration_detected;
-    vibration_detected = 0;
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
-    delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp, vib,
-                                                DELTA_T_UNKNOWN_S,
-                                                DELTA_T_MAX_PLAUSIBLE_S);
-
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
     // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);
     // vcap — VDDA-проксі мВ до живого Vcap-каналу (FW.50 bench).
@@ -2201,108 +2012,6 @@ int main(void)
     // Початковий стан (x₀,y₀,z₀) деривується з K_seed через HKDF/HMAC.
     uint32_t chaos_seed = 0;
     HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
-
-    // =========================================================================
-    // ФАЗА 1.5: TINYML (Шаховий розтин / Фільтрація Свідомості через DMA)
-    // =========================================================================
-
-    // Якщо ядро прокинулось через вібрацію на піні (прапорець прочитано у Фазі 1 —
-    // NVIC-ізоляцію [FIX FW.11] й підставу див. там).
-    if (vib) {
-        audio_ready = AUDIO_DMA_IDLE;
-
-        // [ARCH.102] Гейт ПЕРЕД HAL'ом: HAL_ADC_Start_DMA розіменовує
-        // hadc.DMA_Handle без перевірки, тож незалінкований DMA дав би
-        // HardFault, а не помилку. Доки MX_ADC_Init/MX_TIM2_Init порожні
-        // (board-freeze, FW.46), гілка чесно не міряє — і саме це вона
-        // мусить робити, замість класти вузол на кожній п'єзо-події.
-        if (Audio_Dma_Peripherals_Ready(hadc.Instance, htim2.Instance, hdma_adc.Instance)) {
-            // 1. Запускаємо Таймер-метроном і АЦП у режимі DMA
-            HAL_TIM_Base_Start(&htim2);
-            if (HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512) == HAL_OK) {
-                // 2. ВІДМИКАЄМО ЯДРО ПРОЦЕСОРА (Падаємо в Легкий Сон)
-                // Поки CPU спить, DMA перекидає байти з АЦП у raw_audio_buffer без участі ядра.
-                // [ARCH.102] SysTick тут НЕ зупиняємо (був HAL_SuspendTick):
-                // із замороженим HAL_GetTick дедлайн не було б із чого
-                // зробити, а бюджет 32 мс проти ~26 с IWDG-вікна робить
-                // ~32 зайвих пробудження на порядки дешевшими за ребут,
-                // який ця межа й відвертає.
-                uint32_t audio_wait_start = HAL_GetTick();
-                while (audio_ready == AUDIO_DMA_IDLE &&
-                       !Audio_Dma_Wait_Expired(audio_wait_start, HAL_GetTick())) {
-                    __disable_irq(); // Вимикаємо глобальні переривання, щоб уникнути Race Condition
-                    if (audio_ready == AUDIO_DMA_IDLE) {
-                        HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-                    }
-                    __enable_irq(); // Вмикаємо переривання назад
-                }
-
-                __DMB(); // Бар'єр пам'яті. Гарантуємо, що процесор бачить свіжі дані від DMA, а не старий кеш
-            }
-
-            // --- ТУТ ПРОЦЕСОР ПРОКИНУВСЯ: DMA заповнив буфер, віддав
-            //     помилку, або збіг дедлайн ---
-
-            // [ARCH.102] Конвеєр зупиняємо НЕЗАЛЕЖНО від результату: озброєний
-            // DMA дописував би у raw_audio_buffer посеред наступних фаз.
-            HAL_ADC_Stop_DMA(&hadc);
-            HAL_TIM_Base_Stop(&htim2);
-        }
-
-        // 3. Якщо буфер зібрано успішно
-        if (audio_ready == AUDIO_DMA_DONE) {
-            // 4. Швидко переводимо 12-бітні RAW-дані у Float для TinyML
-            for(int i = 0; i < 512; i++) {
-                audio_buffer[i] = (float)raw_audio_buffer[i] / 4095.0f; // Нормалізація 0.0 - 1.0
-            }
-
-            // 5. Запускаємо "Свідомість" (Шаховий розтин звуку) — Path B (FW.25, 03_03 §3.4).
-            //    Сирий кадр → 40 log-mel ознак (Compute_LogMel) → INT8-інференс.
-            //    [FW.4 closed] silken_net_audio_model.h приземлено (self-owned baseline
-            //    ESC-50; stub лишається fallback'ом через __has_include у шапці файлу).
-            float logmel_features[LOGMEL_N_MELS];
-            Compute_LogMel(audio_buffer, logmel_features);
-            ml_event_id = Run_Inference(logmel_features, &ml_confidence);
-
-            // [FW.18] Dual-Threshold Decision Logic (заміна hardcoded 0.80).
-            // Пороги завантажуються з RTC DR13/DR14 на boot з валідацією
-            // [TINYML_THRESHOLD_MIN_VALID..MAX_VALID]; OTA може оновити їх
-            // через CMD-фреймворк (deferred, спільно з FW.8). SILENCE/WARNING/
-            // CRITICAL зони — див. 03_03 §5 (CRITICAL зони design).
-            if (ml_confidence >= tinyml_critical_threshold) {
-                // === CRITICAL ZONE === — повна впевненість моделі
-                if (ml_event_id == 2) {
-                    // Підтверджена кавітація ксилеми
-                    if (acoustic_events < 255) acoustic_events++;
-                } else if (ml_event_id == 3) {
-                    // Бензопила/вандалізм — НЕГАЙНИЙ panic TX (PANIC_TTL=5)
-                    if (acoustic_events < 255) acoustic_events++;
-                    Trigger_Emergency_LoRa_TX();
-                }
-                // Будь-яке CRITICAL-рішення скидає лічильник ескалації
-                warning_counter = 0;
-            } else if (ml_confidence >= tinyml_warning_threshold) {
-                // === WARNING ZONE === — модель сумнівається, але подія є
-                if (ml_event_id == 2 || ml_event_id == 3) {
-                    if (acoustic_events < 255) acoustic_events++;
-                    if (warning_counter < 255) warning_counter++;
-                    if (warning_counter >= TINYML_WARNING_ESCALATION) {
-                        // 3+ послідовних WARNING → ескалюємо реальну загрозу.
-                        // Тільки для бензопили — кавітація рідко погіршується
-                        // через шум, тому не виправдовує fallback Emergency TX.
-                        if (ml_event_id == 3) {
-                            Trigger_Emergency_LoRa_TX();
-                        }
-                        warning_counter = 0;
-                    }
-                }
-                // Тиша/вітер у WARNING-зоні: не паніка, лічильник не рухаємо
-            } else {
-                // === SILENCE ZONE === — впевненість нижча за WARNING
-                warning_counter = 0;
-            }
-        }
-    }
 
     // =========================================================================
     // ФАЗА 2: БІТОВЕ ПАКУВАННЯ (DID та Mesh-маршрутизація)
@@ -2345,7 +2054,7 @@ int main(void)
     uint8_t grace_hello = (time_uncertain &&
                            wakeups_since_boot < TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1u : 0u;
 
-    // Байт 7: Відлуння ксилеми (Відфільтровані TinyML).
+    // Байт 7: акустичний слот (з HW.30 лічильник завжди 0; долю слоту вирішує FW.59).
     // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
     // [ARCH.41-B] sentinel-підміна при невідомому часі (реальний лічильник
     // цього пробудження жертвується — час важливіший за один відлік).
@@ -2359,10 +2068,9 @@ int main(void)
     lora_payload[9] = (uint8_t)(dt_wire & 0xFF);
 
     // Байт 11 [FW.18b]: бітфілд [thr_invalid:5 | TTL:3] (../common/ttl_byte.h).
-    // TTL = 3 стрибки; верхні 5 біт — saturating лічильник відкинутих
-    // OTA-порогів (03_03 §5.4), wire-кап 31. За нульового лічильника байт
-    // бітово ідентичний старому чистому TTL.
-    lora_payload[11] = Ttl_Byte_Pack(DEFAULT_TTL, tinyml_threshold_invalid_count);
+    // TTL = 3 стрибки; thr_invalid з HW.30 завжди 0 (долю слоту вирішує FW.59),
+    // тож байт бітово ідентичний старому чистому TTL.
+    lora_payload[11] = Ttl_Byte_Pack(DEFAULT_TTL, 0u);
 
     // [FIX: Firmware Version] Байти 12-13: версія прошивки (big-endian).
     // Дозволяє серверу знати яка прошивка на кожному дереві, для OTA targeting.
@@ -2390,10 +2098,8 @@ int main(void)
     // [ARCH.102] До прогріву EMA метаболізм НЕ виміряно — і це сентинел, а не
     // baseline: `BASELINE_DELTA_T_S` тут давав GP = максимум на кожному вузлі,
     // що ще не набрав `EMA_WARMUP_CYCLES` зразків.
-    // [FW.49 S2] П'єзо-кадр теж несе сентинел — прогріта EMA описує перезаряд між
-    // не-EXTI циклами, а не цей кадр (wall_time.h, `Silken_Wake_Lorenz_Delta_T`).
     uint32_t delta_t_for_lorenz = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(), EMA_Get_DeltaT_Sec(),
-                                                             vib, DELTA_T_UNKNOWN_S);
+                                                             DELTA_T_UNKNOWN_S);
     uint16_t vcap_for_lorenz    = EMA_Is_Warmed_Up() ? EMA_Get_Vcap_Mv()
                                                      : 3300u;  // nominal (NOMINAL_VCAP_MV; reserved)
 #if FW2_CCM_ENABLED
@@ -2570,16 +2276,15 @@ int main(void)
         // їжа Лоренца), dt_wire із сатурацією 0xFFFF, StatusByte після
         // FW.29-маски, acoustic з ARCH.41-B sentinel-логікою. mesh_ctrl =
         // [TTL:4|fw_low:4] (розкладка 03_05 §2.1; low-nibble версії — 16-епох
-        // ротація через OTA-config). fauna-біти (0,0) до FW.4 fauna-pivot
-        // (FW.42 ставить їх при вживленні call-site'а). Збій збірки (HAL
+        // ротація через OTA-config). thr_invalid і fauna-біти з HW.30 завжди 0
+        // (долю слотів вирішує FW.59). Збій збірки (HAL
         // захрип) → мовчимо цей цикл: 16B-фолбек у CCM-ері Королева однаково
         // дропне (atomic-cutover), то був би спалений airtime, не телеметрія.
         uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
         uint8_t ccm_mesh_ctrl = (uint8_t)(((DEFAULT_TTL & FW2_MESH_TTL_MASK)
                                            << FW2_MESH_TTL_SHIFT) |
                                           (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
-        uint8_t ccm_diag = Pack_FW2_Diag(tinyml_threshold_invalid_count,
-                                         0u, 0u, fc_hiwater_degraded);
+        uint8_t ccm_diag = Pack_FW2_Diag(0u, 0u, 0u, fc_hiwater_degraded);
         if (Soldier_Build_CCM_LoRa_Packet(tree_did, vcap_voltage,
                                           (int8_t)lora_payload[6],
                                           lora_payload[7],
@@ -2608,8 +2313,8 @@ int main(void)
 #endif
 
         // [ARCH.102] Спожити рівно СТІЛЬКИ, скільки поїхало на дріт. Віднімання,
-        // не обнулення: між знімком і передачею лічильник не росте (інкремент
-        // живе у Фазі 1.5 того ж проходу), але віднімання лишається правдивим і
+        // не обнулення: між знімком і передачею лічильник не росте (з HW.30
+        // інкременту немає взагалі), але віднімання лишається правдивим і
         // тоді, коли це зміниться. Незʼїдений залишок доживає до наступного TX.
         //
         // Гард несе ВАРІАНТ ЗБІРКИ, а не поточну гілку: під `FW2_CCM_ENABLED`
@@ -3090,15 +2795,6 @@ int main(void)
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
     }
 
-    // [FW.18] Зберігаємо TinyML-пороги перед STOP2 (DR13/DR14).
-    // На стандартному циклі значення не змінюються (writeback того, що
-    // прочитали). Це робиться, щоб OTA-set значення (CMD_SET_AUDIO_THRESHOLDS
-    // 0x9D — жива гілка) пережили STOP2 та повне знеструмлення RTC ⇒ при
-    // VBAT-loss RTC обнуляється, на boot Apply_Thresholds() повертає
-    // дефолти, і ці дефолти знову персистяться для наступного циклу.
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
-
 #if FW17_RATCHET_ENABLED
     // [FW.17] Ротація комітиться саме тут, у КЕНОЗИСІ: erase/program не сміє
     // лягти під LoRa RX-вікно (03_01 §2.3). Key_Ratchet_Commit пише версію
@@ -3233,17 +2929,6 @@ void OnCadDone(bool channelActivityDetected)
 #endif
 
 // =========================================================================
-// АПАРАТНИЙ РЕФЛЕКС (Голос Дерева)
-// =========================================================================
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if(GPIO_Pin == GPIO_PIN_0)
-  {
-    vibration_detected = 1;
-  }
-}
-
-// =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС СМЕРТІ (PVD Interrupt) — ARCH.21
 // =========================================================================
 // Ця функція миттєво викликається апаратно, якщо напруга падає нижче 2.2V
@@ -3289,6 +2974,9 @@ void HAL_PWR_PVDCallback(void)
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС ПАНІКИ (Tamper Detection)
 // =========================================================================
+// З HW.30 (2026-09-29, пʼєзо зрізано) викликача немає: транспорт лишено як
+// можливого носія сигналу реального часу (HW.52, далекий горизонт).
+// ⛔ Прибирається лише разом із присудом HW.52.
 void Trigger_Emergency_LoRa_TX(void)
 {
     // [FW.61] Преамбула, з якою кадр ПІДЕ, — одна змінна і для SetTxConfig
@@ -3304,8 +2992,7 @@ void Trigger_Emergency_LoRa_TX(void)
     uint8_t panic_mesh_ctrl = (uint8_t)(((PANIC_TTL & FW2_MESH_TTL_MASK)
                                          << FW2_MESH_TTL_SHIFT) |
                                         (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
-    uint8_t panic_diag = Pack_FW2_Diag(tinyml_threshold_invalid_count,
-                                       0u, 0u, fc_hiwater_degraded);
+    uint8_t panic_diag = Pack_FW2_Diag(0u, 0u, 0u, fc_hiwater_degraded);
     int panic_built = Soldier_Build_CCM_LoRa_Packet(tree_did,
                           0u /* vcap: legacy-parity */, 0 /* temp */,
                           0xFFu /* акустика: код паніки */, 0u /* dt */,
@@ -3342,9 +3029,9 @@ void Trigger_Emergency_LoRa_TX(void)
     // [FW.29] Set PANIC_FLAG in StatusByte for unambiguous panic detection
     panic_payload[10] = PANIC_FLAG_BIT;
 
-    // 3. TTL = 5, щоб пакет вижив довше і точно дійшов; верхні 5 біт —
-    //    лічильник FW.18b (бітфілд ttl_byte.h, як у звичайному пакеті)
-    panic_payload[11] = Ttl_Byte_Pack(PANIC_TTL, tinyml_threshold_invalid_count);
+    // 3. TTL = 5, щоб пакет вижив довше і точно дійшов; верхні 5 біт
+    //    (бітфілд ttl_byte.h) з HW.30 — нуль, як у звичайному пакеті
+    panic_payload[11] = Ttl_Byte_Pack(PANIC_TTL, 0u);
 
     // [SEC.10] Лічильник panic-кадрів у байтах PAD 14..15 (BE).
     // Бекенд читає `pad_data[2..3].unpack1("n")` як nonce для SETNX.
@@ -3371,9 +3058,8 @@ void Trigger_Emergency_LoRa_TX(void)
     // ловили й поза зоною Королеви. Дворівневий Vcap-гейт (EMA-оцінка
     // заряду, DR12): нижче порога — дефолтні 8 симв, бо brownout ПОСЕРЕД
     // преамбули = не вилетіло НІЧОГО, а короткий зойк Королева (L1) ще
-    // зловить. Контекст: main-loop Path-B (EXTI лише ставить
-    // vibration_detected) — блокуючий SetTxConfig/HAL_Delay безпечні;
-    // НЕ кликати цю функцію з ISR.
+    // зловить. Контекст: main-loop — блокуючий SetTxConfig/HAL_Delay
+    // безпечні; НЕ кликати цю функцію з ISR.
     panic_preamble = Cad_Panic_Preamble_Symbols(
         EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
         Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
@@ -3383,7 +3069,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // 5. [FW.61] Шлемо й чекаємо ЦІЛИЙ кадр — з тією преамбулою, що пішла в
     // SetTxConfig. ⛔ Сталої паузи замість цього часу не ставити: кадр летить
     // ≥ 165 мс (а з «останнім зойком» — секунди преамбули), і відновлення
-    // SetTxConfig та Radio.Sleep нижче посеред ефіру обривають зойк пилки.
+    // SetTxConfig та Radio.Sleep нижче посеред ефіру обривають зойк.
 #if FW2_CCM_ENABLED
     // Збій збірки (HAL захрип) → мовчимо: підроблений/битий зойк гірший за
     // тишу, а L1-Королева все одно слухає наступне пробудження.
@@ -3406,90 +3092,6 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // 6. Примусово присипляємо радіо, щоб не садити батарею
     Radio.Sleep();
-}
-
-// =========================================================================
-// [ARCH.102] DMA-ШАР АУДІО-ТРАКТУ (ADC → raw_audio_buffer)
-// =========================================================================
-// Конфіг цілком визначений самим перенесенням, а не платою: джерело —
-// DMAMUX-запит ADC, приймач — півслівний масив із інкрементом, режим —
-// одноразовий (вікно 512 семплів, не кільце). Тому тіло живе тут, поруч
-// з MX_CRYP_Init, а не серед .ioc-заглушок (межа FW.46 називає пін-мапу,
-// клок-дерево, ADC-канали та LSE — DMA-канал у тому переліку не стоїть).
-// Вибір саме DMA1_Channel1 — єдине ревізоване .ioc'ом місце: під DMAMUX
-// будь-який канал ніс би цей запит, конфлікту з чинними споживачами немає.
-static void MX_DMA_Init(void)
-{
-    __HAL_RCC_DMA1_CLK_ENABLE();
-    __HAL_RCC_DMAMUX1_CLK_ENABLE();
-
-    hdma_adc.Instance                 = DMA1_Channel1;
-    hdma_adc.Init.Request             = DMA_REQUEST_ADC;
-    hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-    hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
-    hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
-    hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-    hdma_adc.Init.Mode                = DMA_NORMAL;
-    hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH;
-
-    if (HAL_DMA_Init(&hdma_adc) != HAL_OK) {
-        // Свідома асиметрія з Королевою (queen/main.c той самий блок кличе
-        // Error_Handler): її UART-DMA — єдина ланка до Rails, тож без нього
-        // шлюзу немає; акустика ж не несуча, і ребут-петля через неї коштувала
-        // б телеметрії дерева. Знімаємо Instance — гейт Фази 1.5 закривається
-        // сам, решта циклу живе.
-        hdma_adc.Instance = NULL;
-        return;
-    }
-
-    __HAL_LINKDMA(&hadc, DMA_Handle, hdma_adc);
-
-    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-}
-
-// [ARCH.102] Вектори, яких у дереві не було взагалі: без них обидва
-// колбеки нижче — мертвий код (п'єзо не будить, DMA не рапортує), тобто
-// вікно гарантовано впиралось би в дедлайн. Живуть тут, бо власного
-// stm32wlxx_it.c репо не має; board-freeze зведе їх із .ioc-івським —
-// зіткнення буде гучним на лінку, а не тихим.
-void DMA1_Channel1_IRQHandler(void)
-{
-    HAL_DMA_IRQHandler(&hdma_adc);
-}
-
-void EXTI0_IRQHandler(void)
-{
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-}
-
-// =========================================================================
-// АПАРАТНИЙ РЕФЛЕКС DMA (Буфер звуку заповнено)
-// =========================================================================
-// Перекриття слабкого символа HAL: тип сигнатури фіксований прототипом
-// HAL_ADC_ConvCpltCallback (const зламав би це перекриття); параметр `hadc`
-// тінює глобальний CubeMX-handle і тут не використовується.
-// cppcheck-suppress constParameterPointer
-// cppcheck-suppress shadowVariable
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-    // Ця функція викликається апаратно, коли DMA запише 512-й байт.
-    // Вона миттєво виводить процесор зі стану SLEEP для аналізу.
-    (void)hadc;
-    audio_ready = AUDIO_DMA_DONE;
-}
-
-// [ARCH.102] Дзеркало для збійного боку: ADC overrun або transfer-error
-// інакше лишали б прапорець в IDLE до кінця дедлайну, тобто вузол спав би
-// чверть секунди, знаючи, що вікно вже мертве. Окремий стан, а не DONE:
-// буфер напівзаписаний, і інференс по ньому був би виміром шуму.
-// cppcheck-suppress constParameterPointer
-// cppcheck-suppress shadowVariable
-void HAL_ADC_ErrorCallback(ADC_HandleTypeDef* hadc)
-{
-    (void)hadc;
-    audio_ready = AUDIO_DMA_ERROR;
 }
 
 // =========================================================================
@@ -3912,8 +3514,8 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
 // Нові поля rev2/rev2.1 (джерела на боці викликача при фліп-вшиванні):
 //   device_z   — Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid): сирий Z
 //                для FW.31 numeric DCI (сентинель NONE коли Лоренц спав)
-//   diag       — Pack_FW2_Diag(tinyml_threshold_invalid_count, fauna_mode,
-//                fauna_skip, fc_hiwater_degraded)
+//   diag       — Pack_FW2_Diag(0, 0, 0, fc_hiwater_degraded): thr_invalid і
+//                fauna-біти з HW.30 завжди 0 (долю слотів вирішує FW.59)
 //   vpd_index  — 0x00 до приходу BME280 (HW.32)
 //   gossip_ts_lsb — Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts): їде у
 //                cleartext-AAD, сусіди читають без ключа (FW.20-S2 #5)
@@ -3938,7 +3540,7 @@ int Soldier_Build_CCM_LoRa_Packet(
     // Energy-gate: один dw-program дозволяємо лише при заряді, якого
     // вистачає й на RX-вікно (vcap_mv — мВ, конверсія на боці викликача).
     // ⚠️ [ARCH.99] Задум, не поле: vcap_mv — мВ VDDA (≈3300 > 2800), тож до
-    // живого Vcap-каналу (00_07 FW.50) гейт пропускає ЗАВЖДИ — пʼятий
+    // живого Vcap-каналу (00_07 FW.50) гейт пропускає ЗАВЖДИ — ще один
     // вироджений сайт на цій шині (03_01 §1.4).
     // Відмова → TX усе одно (телеметрія дорожча за теоретичний replay),
     // але інваріант чесно позначається втраченим до наступного advance.

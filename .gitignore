@@ -105,7 +105,6 @@ coverage/
 /firmware/test/test_queen_rx_route
 /firmware/test/test_soldier
 /firmware/test/test_bio_contract
-/firmware/test/test_tinyml
 /firmware/test/test_logmel
 /firmware/test/test_audio_model
 /firmware/test/test_encryption
@@ -124,7 +123,6 @@ coverage/
 /firmware/test/test_pull_mac
 /firmware/test/test_key_ratchet
 /firmware/test/test_soldier_cmd_queue
-/firmware/test/test_fauna_session
 /firmware/test/test_bme280
 /firmware/test/test_tdma_schedule
 /firmware/test/test_cad_sniff
