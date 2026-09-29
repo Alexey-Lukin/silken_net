@@ -1,23 +1,19 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-HW.8.7 — Axial Z-stack tolerance analysis (3-spring) for the Soldier capsule ↔ anchor blind-mate.
+HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate.
 
-The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses THREE compliant elements simultaneously:
+The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses TWO compliant elements simultaneously:
   1. Pogo pins  (Mill-Max 0906/0908, 1.40 mm nominal travel) — 50-70 % mid-stroke window (02_02 §2.2/§3.5)
   2. O-ring     (EPDM, CS 1.78 mm)                      — 15-30 % static squeeze (industry practice, NOT
                                                           Parker — Parker's face-seal window is 19-32 %; see ORING_WIN)
-  3. Acoustic pad (MODELLED ~1 mm compliant layer, HW.30) — acoustic-coupling contact, 20 yr creep.
-     ⚠️ No part realises it: the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm glass-reinforced TIM
-     (Bergquist PDS_10057) that never touches the board across GAP_PZ — 02_01 §6.
+(A third, MODELLED spring — the acoustic pad in parallel with pogo — left with the piezo, ⚖️ 2026-09-29, 02_01 §6.)
 
-🔑 Pogo + Sil-Pad are PARALLEL springs on the SAME gap (Power Deck ↔ Zone 3) → one gap sets both
-compressions. The O-ring is on its OWN chain: ⚖️ 2026-09-10 (00_07 HW.33, branch (а), applied in CAD
-2026-09-14) put the single groove in the flange top face against a FLAT radome rim, so the rim is a hard
-datum on that face and the squeeze is set by ONE machined dimension — the groove depth — not by where the
-bayonet seats the rim. `TOL_OR` therefore has one contributor and neither the spacer nor the bayonet
-hard-stop touches it. 02_02 §3.5 models only pogo+O-ring; the acoustic pad is the missing 3rd spring
-(this script closes that gap).
+🔑 The pogo pins alone ride the shared gap (Power Deck ↔ Zone 3). The O-ring is on its OWN chain: ⚖️ 2026-09-10
+(00_07 HW.33, branch (а), applied in CAD 2026-09-14) put the single groove in the flange top face against a FLAT
+radome rim, so the rim is a hard datum on that face and the squeeze is set by ONE machined dimension — the groove
+depth — not by where the bayonet seats the rim. `TOL_OR` therefore has one contributor and neither the spacer nor
+the bayonet hard-stop touches it.
 
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
 spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
@@ -54,7 +50,6 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Spring specs (canon) ──
 POGO_TRAVEL = 1.40   # mm — Mill-Max 0906/0908 datasheet NOMINAL travel, .055" ± .005" (02_02 §2.2, ⚖️ 2026-09-18 HW.43);
                      # 1.52 (.060") is the UPPER end of that tolerance, not the nominal
-PAD_FREE = 1.0       # mm — MODELLED compliant pad (config (2) of the ratified bench sweep, 02_01 §6 ⚖️ 2026-09-28); not a part
 ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
 # ── Working windows (fraction) ──
@@ -64,9 +59,6 @@ ORING_WIN = (0.15, 0.30)  # industry practice for static seals, centre 20 % (02_
 # ⚖️ founder 2026-09-10 put the single O-ring on the flange TOP face against the radome rim, i.e. a FACE
 # seal, so Parker ORD 5700 Chart 4-3 for W .070" applies and its window is TIGHTER at the bottom.
 ORING_WIN_PARKER_FACE = (0.19, 0.32)  # Parker ORD 5700 Chart 4-3, face seal, W .070" (00_07 HW.33)
-PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max (assumed; no deflection curve in hand)
-PAD_CREEP_RETAIN = 0.85   # compression fraction retained after 20 yr (HW.30 lifecycle estimate)
-PAD_ACOUSTIC_MIN = 0.20   # post-creep floor for acoustic contact (pad_pct·creep must stay ≥ this)
 
 # ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-10; APPLIED in CAD 2026-09-14) ──
 # The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
@@ -83,8 +75,12 @@ ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of
 GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
 GLAND_FILL_DESIGN_TO = 0.80
 
-# ── Nominal gaps — design targets, centered (pogo 60 %, pad 35 %, O-ring at the RATIFIED 24.5 %) ──
-GAP_PZ = 0.65                              # mm — Power Deck ↔ Zone 3 (sets pogo + pad)
+# ── Nominal gaps — design targets, centered (pogo 60 %, O-ring at the RATIFIED 24.5 %) ──
+# GAP_PZ's 0.65 was CHOSEN so the modelled acoustic pad (1.0 mm free) sat at 35 % — (1.0 − 0.65)/1.0 — while pogo
+# is centred at 60 % by construction (POGO_FREE below), whatever the gap is. Since the pad left with the piezo
+# (⚖️ 2026-09-29, 02_01 §6) no part defines 0.65: it STAYS as the design target because the vertical budget and
+# the antenna-over-Ti band are computed at it, and moving it is a layout lever (00_07 HW.9), not a recomputation.
+GAP_PZ = 0.65                              # mm — Power Deck ↔ Zone 3 (sets the pogo compression) — design target
 POGO_FREE = GAP_PZ + 0.60 * POGO_TRAVEL    # protrusion so pogo sits at 60 % at nominal gap
 # The O-ring "gap" IS the flange groove depth: under branch (а) the flat radome rim lands on the flange
 # top face (hard datum), so the ring is squeezed from CS 1.78 to exactly the machined depth. This READ
@@ -145,10 +141,6 @@ FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари,
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
-# The three live piezo candidates with the heights 02_01 §6 quotes for them (vendor figures, not re-verified
-# here). Canon puts the piezo BESIDE the pad, not inside the gap `GAP_PZ` models (⚖️ 2026-09-22, delegated —
-# 02_01 §6, HW.30); the heights stay because the rejected `pad_under_piezo` rows are that verdict's evidence.
-PIEZO_HEIGHT_MM = {"Mallory AST1240MLTRQ": 3.3, "Mallory AST1109MLTRQ": 2.0, "Murata PKMCS0909E4000-R1": 1.9}
 # The tallest part named in the BOM for the RF deck: Seeed LoRa-E5 module (02_01 §3.1 pos. 1), 12×12×2.5 mm per
 # https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
@@ -156,9 +148,9 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
 # its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9;
 # only the height was ever judged here. The 2.5 stays as an UPPER BOUND among the parts read so far (no RF-deck
-# candidate is taller), so the RF-deck-TOP verdicts it drives are conservative, not wrong. ⚠ NOT so for the B2B GAP:
-# the EDLC (5.2) rides the RF deck's underside over the piezo on the Power Deck (1.9-3.3), the two must overlap in
-# plan (02_01 §3.5), and with AST1240 the 8.0 gap is the TIGHTER end, not the safe one. Re-run with front-end P/Ns.
+# candidate is taller), so the RF-deck-TOP verdicts it drives are conservative, not wrong. Re-run with front-end P/Ns.
+# (The B2B-GAP caveat that stood here — the EDLC over a 1.9-3.3 mm piezo on the Power Deck, which made 8.0 the
+# TIGHTER end — left with the piezo, ⚖️ 2026-09-29, 02_01 §6.)
 # 🔴 That constant is the LoRa-E5 module and WAS the tallest only because the BOM's antenna row named a
 # 1.6 × 0.8 mm part that does not exist at 868 MHz (00_07 HW.17, verified 2026-09-22). The verified ceramic
 # SMD candidate is 4 mm — TALLER than the module — while the Virtual-Antenna candidate is 1 mm, so «what
@@ -168,7 +160,9 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # three grounds — W3013 closes in exactly ONE of the twelve BOM-FR4 rows, and that row needs both the B2B
 # alternative 6.0 (reopening HW.29) and `pad_beside_piezo` (then open; HW.30 ratified it later that day). W3013 STAYS in this
 # dict deliberately: it is the EVIDENCE the verdict stands on, and the re-measure trigger is a different
-# VERIFIED 868 MHz ceramic part, not this one changing.
+# VERIFIED 868 MHz ceramic part, not this one changing. ⊕ Recounted 2026-09-29 on the grid the piezo cut left
+# (FR4 1.6 × B2B, THREE rows — the placement axis lost its subject): W3013 closes in ONE — B2B 6.0 — and NN03-310
+# in all three; the `pad_beside_piezo` condition is gone with the piezo, the B2B-alternative one stays.
 # 🔴 2026-09-22, same day: the CARRIER half of that verdict fell to a primary-source read — NN03-310 is
 # 30.0 ± 0.20 mm LONG (UM §2.1), i.e. longer than the Ø25 flange, so it cannot sit on this board at all
 # (00_07 HW.17; 02_01 §5.2). Its 1.0 mm row STAYS as the evidence that half stood on. The VERTICAL verdict
@@ -225,10 +219,9 @@ def pct(gap: float, free: float, ref: float) -> float:
 
 
 def windows_at(d_pz: float, d_or: float) -> dict:
-    """Three compression %s when the shared gap shifts by d_pz and the O-ring gap by d_or."""
+    """Two compression %s when the shared gap shifts by d_pz and the O-ring gap by d_or."""
     return {
         "pogo": pct(GAP_PZ + d_pz, POGO_FREE, POGO_TRAVEL),
-        "pad": pct(GAP_PZ + d_pz, PAD_FREE, PAD_FREE),
         "oring": pct(GAP_OR + d_or, ORING_CS, ORING_CS),
     }
 
@@ -239,12 +232,9 @@ def in_win(val: float, win: tuple[float, float]) -> bool:
 
 def assess(label: str, d_pz: float, d_or: float) -> dict:
     w = windows_at(d_pz, d_or)
-    pad_creep = w["pad"] * PAD_CREEP_RETAIN
-    ok = (in_win(w["pogo"], POGO_WIN) and in_win(w["oring"], ORING_WIN)
-          and in_win(w["pad"], PAD_WIN) and pad_creep >= PAD_ACOUSTIC_MIN)
+    ok = in_win(w["pogo"], POGO_WIN) and in_win(w["oring"], ORING_WIN)
     return {"label": label, "d_pz": d_pz, "d_or": d_or,
-            "pogo_pct": w["pogo"], "pad_pct": w["pad"], "pad_pct_20yr": pad_creep,
-            "oring_pct": w["oring"], "pass": ok}
+            "pogo_pct": w["pogo"], "oring_pct": w["oring"], "pass": ok}
 
 
 def ring_area_mm2(cs: float) -> float:
@@ -521,11 +511,11 @@ def depth_tolerance_budget() -> dict:
 def rim_datum_creep(applied: dict) -> dict:
     """⊂ correction (1) of the ⚖️: the rim is PEEK, so may it be treated as a rigid datum for 20 yr?
 
-    Asked by INVERSION, because two of the three springs in the stack have no force datum anywhere in
-    canon: instead of summing forces we do not have, compute the force that WOULD push the rim into the
-    stress regime where relaxation is worth modelling, and compare it with the one spring canon does
-    specify. A bound that holds by two orders of magnitude against that spring — and still by a few
-    times against a generous guess for the two unmeasured ones — does not need the missing numbers.
+    Asked by INVERSION, because one of the two springs in the stack — the O-ring — has no force datum
+    anywhere in canon: instead of summing forces we do not have, compute the force that WOULD push the rim
+    into the stress regime where relaxation is worth modelling, and compare it with the one spring canon
+    does specify. A bound that holds by two orders of magnitude against that spring — and still by a few
+    times against a generous guess for the unmeasured one — does not need the missing number.
     The contact area is the APPLIED rim's (boss annulus − groove footprint − entry-slot openings,
     `applied_gland`), not the bare 2.0 mm wall the verdict was first checked against (144 mm²).
     """
@@ -541,14 +531,12 @@ def rim_datum_creep(applied: dict) -> dict:
         "stress_at_pogo_alone_MPa": round(pogo / area, 4),
         "stress_at_100N_assumed_total_MPa": round(100.0 / area, 3),
         "margin_x_at_100N": round(f_star / 100.0, 1),
-        "missing_datum": "the acoustic pad's deflection-vs-pressure (no part is chosen — the Sil-Pad 1500ST "
-                         "named until 2026-09-28 is a 0.203 mm TIM that publishes no such curve, HW.30) and the "
-                         "O-ring compression load per unit of seal length — neither has a home in canon, so the "
+        "missing_datum": "the O-ring compression load per unit of seal length — it has no home in canon, so the "
                          "total stack force is not computable today. The bound above is why that does not block "
                          "the verdict.",
         "verdict": f"NEGLIGIBLE — reaching the relaxation regime needs {f_star:.0f} N on the rim, while "
                    f"the only spring canon specifies contributes {pogo:.2f} N; even a deliberately "
-                   f"generous 100 N for the two unmeasured springs leaves a {f_star / 100.0:.1f}x "
+                   f"generous 100 N for the unmeasured O-ring leaves a {f_star / 100.0:.1f}x "
                    f"margin. No creep member is warranted in the Z-chain for the rim.",
         "skirt_note": faces["skirt"]["note"],
     }
@@ -611,22 +599,15 @@ def crown_inner_height_mm(r_mm: float, radome: dict, crown: bool) -> float:
 def vertical_stack_budget(boss: dict) -> dict:
     """(2) Does the board stack fit UNDER the ratified crown, with the stack as the BOM specifies it?
 
-    The block over the flange face is (what stands under the Power Deck) + FR4 + B2B + FR4 + whatever
-    stands on top of the RF deck.
-    🔴 «As the BOM specifies it» carried a term the Z-chain above never had: 02_01 §6 mounted the SMD piezo
-    on the UNDERSIDE of the Power Deck with the Sil-Pad sandwiched under it, while `GAP_PZ` models the pad
-    spanning the whole board↔flange gap. A 1.9–3.3 mm part cannot live in a 0.65 mm gap, so exactly one of
-    two placements is physical, and they price differently. ⚖️ 2026-09-22 (delegated, 02_01 §6, HW.30):
-    `pad_beside_piezo` is RATIFIED on this very budget — it closes under the crown at canonical B2B 8, while
-    `pad_under_piezo` closes in no canonical B2B row. Both are still REPORTED: the rejected rows are the
-    evidence the verdict stands on, and its re-measure trigger is the crown or `cavity_height_mm` moving —
-    ⊕ and since 2026-09-25 the RF front-end P/Ns too: two of this verdict's three grounds rested on the
-    2.5 mm module, which is off the board (02_01 §6):
-      • pad_beside_piezo — RATIFIED: the pad spans board↔flange as `GAP_PZ` models it; the piezo stands on
-        the board beside it — top side (sub-branch (а-2), the starting one); the flange-face pocket ((а-1)) is
-        NOT physical on the current face (02_01 §3.5: ≈ 5.3 mm square between the PEEK ring and the seal);
-      • pad_under_piezo — REJECTED: the board stands h_piezo higher, the pogo protrusion grows by h_piezo,
-        and pad and pogo stop sharing one gap (the 3-spring model above splits).
+    The block over the flange face is GAP_PZ + FR4 + B2B + FR4 + whatever stands on top of the RF deck, and
+    the rows are FR4 × B2B: nothing stands under the Power Deck but the pogo gap.
+    Provenance: until 2026-09-29 the rows also carried a piezo PLACEMENT axis (pad beside ⊥ under the piezo ×
+    three candidates), and ⚖️ 2026-09-22 (HW.30) ratified `pad_beside_piezo` on this very budget; the piezo was
+    then cut (⚖️ 2026-09-29, 02_01 §6) and the axis lost its subject. The no-piezo stack IS the former
+    `pad_beside_piezo` row — the pad filled GAP_PZ and the piezo stood outside the stack — so every number here
+    is that row's, unchanged; the rejected rows are a dated record in canon (02_02 §3.5), not an input.
+    Re-measure when the crown or `cavity_height_mm` moves, or when the RF front-end gets P/Ns (the 2.5 mm
+    module the RF-deck-top verdicts rest on is off the board, 02_01 §3.1 pos. 1).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
     spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
     term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
@@ -643,24 +624,16 @@ def vertical_stack_budget(boss: dict) -> dict:
                                                   + [SPACER_STEP / 2.0]),
            "tol_pz_worst_case": sum(TOL_PZ.values())}
 
-    def row(placement: str, piezo: str | None, fr4: float, b2b: float) -> dict:
-        h_piezo = PIEZO_HEIGHT_MM[piezo] if piezo else 0.0
-        underside = GAP_PZ + (h_piezo if placement == "pad_under_piezo" else 0.0)
-        # ⛔ pad_beside_piezo leaves the piezo OUT of the stack, so «does a piezo stand under the board» is a
-        # question about the candidates, never about the 0 mm this row stacks — reading it off h_piezo = 0
-        # printed «fits» for a gap no candidate fits.
-        piezo_fits = (True if placement == "pad_under_piezo"
-                      else any(h_p <= GAP_PZ for h_p in PIEZO_HEIGHT_MM.values()))
+    def row(fr4: float, b2b: float) -> dict:
+        underside = GAP_PZ
         rf_top = underside + 2.0 * fr4 + b2b
         room_c = h["crown_centre"] - rf_top
         after = {k: round(room_c - v, 3) for k, v in tol.items()}
         return {
-            "placement": placement, "piezo": piezo, "piezo_mm": h_piezo if piezo else None,
             "fr4_mm": fr4, "b2b_mm": b2b,
             "b2b_is_named_alternative": bool(abs(b2b - B2B_STACK_ALT_MM) < 1e-9),
             "fr4_is_bom": bool(abs(fr4 - FR4_THICKNESS_MM) < 1e-9),
             "board_underside_over_flange_mm": round(underside, 3),
-            "piezo_fits_under_board": bool(piezo_fits),
             "pogo_protrusion_required_mm": round(underside + 0.60 * POGO_TRAVEL, 3),
             "rf_deck_top_over_flange_mm": round(rf_top, 3),
             "antenna_z_over_ti_mm": round(rf_top, 3),
@@ -681,47 +654,33 @@ def vertical_stack_budget(boss: dict) -> dict:
             "edlc_fits_in_b2b_gap": {part: bool(h <= b2b) for part, h in EDLC_HEIGHT_MM.items()},
         }
 
-    rows = []
-    for fr4 in (FR4_THICKNESS_MM, FR4_THICKNESS_UNSOURCED_MM):
-        for b2b in (*B2B_STACK_MM, B2B_STACK_ALT_MM):
-            rows.append(row("pad_beside_piezo", None, fr4, b2b))
-            for name in PIEZO_HEIGHT_MM:
-                rows.append(row("pad_under_piezo", name, fr4, b2b))
+    rows = [row(fr4, b2b) for fr4 in (FR4_THICKNESS_MM, FR4_THICKNESS_UNSOURCED_MM)
+            for b2b in (*B2B_STACK_MM, B2B_STACK_ALT_MM)]
     bom = [r for r in rows if r["fr4_is_bom"] and not r["b2b_is_named_alternative"]]
-    alt = [r for r in rows if r["fr4_is_bom"] and r["b2b_is_named_alternative"]]
+    alt = next(r for r in rows if r["fr4_is_bom"] and r["b2b_is_named_alternative"])
 
     def span(sel: list[dict], key: str) -> list[float]:
         return [min(r[key] for r in sel), max(r[key] for r in sel)]
 
-    under = [r for r in bom if r["placement"] == "pad_under_piezo"]
-    beside = [r for r in bom if r["placement"] == "pad_beside_piezo"]
-    alt_beside = next(r for r in alt if r["placement"] == "pad_beside_piezo")
     rss_key = "tol_pz_rss_as_quoted_02_02"
     return {
         "inputs_mm": {"gap_pz": GAP_PZ, "fr4_bom": FR4_THICKNESS_MM, "fr4_unsourced_contrast": FR4_THICKNESS_UNSOURCED_MM,
                       "b2b_bom": list(B2B_STACK_MM), "b2b_named_alternative": B2B_STACK_ALT_MM,
-                      "piezo_heights": dict(PIEZO_HEIGHT_MM), "tallest_rf_deck_bom_part": RF_DECK_TALLEST_BOM_PART_MM,
+                      "tallest_rf_deck_bom_part": RF_DECK_TALLEST_BOM_PART_MM,
                       "crown_edge_r_shipped": crown_edge_r_mm(radome), "board_ceiling_radius": round(r_edge, 3)},
         "internal_height_mm": {k: round(v, 3) for k, v in h.items()},
         "tolerance_readings_mm": {k: round(v, 3) for k, v in tol.items()},
         "rows": rows,
         "summary": {
-            "bom_rf_deck_top_mm": {"pad_beside_piezo": span(beside, "rf_deck_top_over_flange_mm"),
-                                   "pad_under_piezo": span(under, "rf_deck_top_over_flange_mm")},
-            "bom_room_centre_mm": {"pad_beside_piezo": span(beside, "room_over_rf_deck_centre_mm"),
-                                   "pad_under_piezo": span(under, "room_over_rf_deck_centre_mm")},
-            "piezo_fits_in_gap_pz_any_candidate": any(h_p <= GAP_PZ for h_p in PIEZO_HEIGHT_MM.values()),
-            "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": {
-                "pad_beside_piezo": any(r["tallest_bom_part_fits_on_top"][rss_key] for r in beside),
-                "pad_under_piezo": any(r["tallest_bom_part_fits_on_top"][rss_key] for r in under)},
-            "pad_under_piezo_rows_that_do_not_close_at_all": [
-                f"{r['piezo']} · B2B {r['b2b_mm']:g}" for r in under if r["room_over_rf_deck_centre_mm"] < 0.0],
+            "bom_rf_deck_top_mm": span(bom, "rf_deck_top_over_flange_mm"),
+            "bom_room_centre_mm": span(bom, "room_over_rf_deck_centre_mm"),
+            "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": any(
+                r["tallest_bom_part_fits_on_top"][rss_key] for r in bom),
             "alt_b2b_lever": {"buys_height_mm": round(B2B_STACK_MM[0] - B2B_STACK_ALT_MM, 2),
-                              "antenna_z_mm_pad_beside_piezo": alt_beside["antenna_z_over_ti_mm"],
-                              "below_hfss_trigger_pad_beside_piezo": alt_beside["rf_below_hfss_trigger_10"]},
+                              "antenna_z_mm": alt["antenna_z_over_ti_mm"],
+                              "below_hfss_trigger_10": alt["rf_below_hfss_trigger_10"]},
         },
-        "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); "
-                         "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
+        "missing_datum": "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
                          "bottom-side contents inside the B2B gap — judged ONLY for the EDLC candidates the tree "
                          "names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
         "edlc_in_b2b_gap": {"heights_mm": dict(EDLC_HEIGHT_MM),
@@ -739,7 +698,7 @@ def vertical_stack_budget(boss: dict) -> dict:
                                          "own premise. Both antenna rows are kept as EVIDENCE, neither is a live option"},
         "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — of the B2B gap's own "
                    "contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
-                   "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3); the piezo placement is an open question, not a choice made here.",
+                   "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3).",
     }
 
 
@@ -747,20 +706,19 @@ def report_row(a: dict) -> str:
     def mark(v, win):
         return "OK " if win[0] <= v <= win[1] else "!! "
     return (f"  {a['label']:<22s} pogo {a['pogo_pct']*100:5.1f}% {mark(a['pogo_pct'], POGO_WIN)} "
-            f"pad {a['pad_pct']*100:5.1f}% (20yr {a['pad_pct_20yr']*100:4.1f}%) {mark(a['pad_pct'], PAD_WIN)} "
             f"O-ring {a['oring_pct']*100:5.1f}% {mark(a['oring_pct'], ORING_WIN)} "
             f"{'PASS' if a['pass'] else 'FAIL'}")
 
 
 def main() -> int:
-    banner("HW.8.7 — Z-stack tolerance (3-spring: pogo ∥ pad, O-ring)")
+    banner("HW.8.7 — Z-stack tolerance (2-spring: pogo, O-ring)")
 
     pz_rss, pz_wc = rss(list(TOL_PZ.values())), sum(TOL_PZ.values())
     or_rss, or_wc = rss(list(TOL_OR.values())), sum(TOL_OR.values())
     print(f"  Shared Power↔Zone3 gap tol:  RSS ±{pz_rss:.2f}  worst-case ±{pz_wc:.2f} mm  (DMLS Ti ±0.30 dominates)")
     print(f"  O-ring gap tol:              RSS ±{or_rss:.2f}  worst-case ±{or_wc:.2f} mm")
     print(f"  Windows — pogo {POGO_WIN[0]*100:.0f}-{POGO_WIN[1]*100:.0f}% (Δ{(POGO_WIN[1]-POGO_WIN[0])*POGO_TRAVEL:.2f}mm) · "
-          f"pad {PAD_WIN[0]*100:.0f}-{PAD_WIN[1]*100:.0f}% · O-ring {ORING_WIN[0]*100:.0f}-{ORING_WIN[1]*100:.0f}% (Δ{(ORING_WIN[1]-ORING_WIN[0])*ORING_CS:.2f}mm)")
+          f"O-ring {ORING_WIN[0]*100:.0f}-{ORING_WIN[1]*100:.0f}% (Δ{(ORING_WIN[1]-ORING_WIN[0])*ORING_CS:.2f}mm)")
 
     banner("Un-mitigated (raw DMLS-dominated stack)")
     unmit = [
@@ -773,7 +731,7 @@ def main() -> int:
     raw_ok = all(c["pass"] for c in unmit)
     print(f"  → un-mitigated {'PASS' if raw_ok else 'FAIL — mitigation required'}")
 
-    # ── Mitigation escalation: each lever shrinks the residual until all 3 windows hold ──
+    # ── Mitigation escalation: each lever shrinks the residual until both windows hold ──
     banner("Mitigation escalation (spacer removes measured DMLS+PCB+B2B; bayonet hard-stop halves CNC)")
 
     def residual(bayonet: bool, spacer: bool) -> tuple[float, float]:
@@ -796,7 +754,7 @@ def main() -> int:
         print(f"  {label}:  Power↔Zone3 ±{rp:.2f}  O-ring ±{ro:.2f} mm")
         for c in ecases[1:]:
             print(report_row(c))
-        print(f"    → {'PASS — all 3 windows hold incl. 20yr pad creep' if ok else 'FAIL'}")
+        print(f"    → {'PASS — both windows hold' if ok else 'FAIL'}")
         escalation.append({"label": label, "residual_pz": round(rp, 3), "residual_or": round(ro, 3),
                            "cases": ecases, "pass": ok})
         if ok and final_label is None:
@@ -809,7 +767,7 @@ def main() -> int:
     # deviation from Parker — so instead of judging that nominal, derive the nominal that satisfies BOTH
     # windows and report what it costs. That nominal (24.5 %) is RATIFIED and, since 2026-09-14, APPLIED:
     # GAP_OR is the flange groove depth at it. The 20 % figures are re-derived below as the record of the
-    # move, never as a live input. The O-ring has its own chain (TOL_OR), so nothing here touches pogo or pad.
+    # move, never as a live input. The O-ring has its own chain (TOL_OR), so nothing here touches pogo.
     banner("Parker face-seal reconciliation — the ratified nominal, and the chain it now rides")
     _, res_or_final = residual(True, True)
     half_pct = res_or_final / ORING_CS
@@ -832,11 +790,11 @@ def main() -> int:
           f"{'BOTH windows hold' if fits_both else 'still outside — a deviation IS required'}")
     print(f"  Applied in CAD: {'YES' if applied_nominal else 'NO'} — GAP_OR (flange groove depth) = {GAP_OR:.3f} mm; the pre-(а) 20 % chain "
           f"seated the rim at {GAP_OR_PRE_BRANCH_A:.3f}, i.e. the move was {abs(GAP_OR_PRE_BRANCH_A - gap_or_new)*1000:.0f} µm. "
-          "Pogo and pad ride a DIFFERENT chain (TOL_PZ) and did not move.")
+          "Pogo rides a DIFFERENT chain (TOL_PZ) and did not move.")
 
     # ── Gland geometry: does the ratified seal FIT the face that closes on it? (00_07 HW.33) ──
-    # ⚠️ Declared ceiling: this section judges the gland and the faces, not the 3-spring stack, so it
-    # deliberately does NOT move the exit code — that stays the 3-spring assessment above. Reading a
+    # ⚠️ Declared ceiling: this section judges the gland and the faces, not the 2-spring stack, so it
+    # deliberately does NOT move the exit code — that stays the 2-spring assessment above. Reading a
     # green run as "the gland is fine" is exactly the mis-read this note exists to stop.
     banner("Gland geometry — the ratified depth needs a WIDTH, and the width needs a FACE")
     gland = gland_verdict()
@@ -906,18 +864,12 @@ def main() -> int:
     for r in vert["rows"]:
         if not r["fr4_is_bom"]:
             continue
-        tag = (f"{r['placement']:<17s} {(r['piezo'] or '—'):<25s} "
-               f"B2B {r['b2b_mm']:>4.1f}{'*' if r['b2b_is_named_alternative'] else ' '}")
+        tag = f"B2B {r['b2b_mm']:>4.1f}{'*' if r['b2b_is_named_alternative'] else ' '}"
         print(f"      {tag} top {r['rf_deck_top_over_flange_mm']:5.2f}  room {r['room_over_rf_deck_centre_mm']:+5.2f}  "
               f"→ {r['room_after_tolerance_mm'][rss_key]:+5.2f}  "
-              f"{'fits' if r['tallest_bom_part_fits_on_top'][rss_key] else 'NO  '}"
-              f"{'' if r['piezo_fits_under_board'] else '  ⚠ no candidate piezo stands in this gap'}")
+              f"{'fits' if r['tallest_bom_part_fits_on_top'][rss_key] else 'NO'}")
     s = vert["summary"]
-    print(f"  → no candidate piezo fits under the board at GAP_PZ {GAP_PZ:.2f}: "
-          f"{not s['piezo_fits_in_gap_pz_any_candidate']} — the two placements are the open question, not a choice here")
-    print(f"  → LoRa module on the RF-deck TOP, any BOM row: pad_beside_piezo "
-          f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_beside_piezo']} · pad_under_piezo "
-          f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_under_piezo']}")
+    print(f"  → LoRa module on the RF-deck TOP, any BOM row: {s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']}")
     # ⛔ Print every candidate, not just the module. The ceramic branch is rejected (⚖️ 2026-09-22), but the
     # rejected row is what makes the verdict re-measurable, and printing only the module would repeat, on the
     # operator's screen, exactly the substitution this axis was added to end (00_07 HW.17).
@@ -926,34 +878,31 @@ def main() -> int:
         ok = [r for r in bom_rows if r["rf_deck_top_part_fits"][part][rss_key]]
         where = "no BOM row" if not ok else (
             "every BOM row" if len(ok) == len(bom_rows) else
-            " / ".join(sorted({f"{r['placement']} B2B {r['b2b_mm']:g}" for r in ok})))
+            " / ".join(sorted({f"B2B {r['b2b_mm']:g}" for r in ok})))
         print(f"      on-top candidate {part:<38s} {h:>4.1f} mm → fits in: {where}")
     print("      B2B gap occupants (EDLC, 00_07 HW.37): " + " · ".join(
         f"{k} {'fits' if all(r['edlc_fits_in_b2b_gap'][k] for r in bom_rows) else 'NO (some rows)'}"
         for k in EDLC_HEIGHT_MM))
-    if s["pad_under_piezo_rows_that_do_not_close_at_all"]:
-        print(f"  → pad_under_piezo rows with NEGATIVE room before any tolerance: "
-              f"{', '.join(s['pad_under_piezo_rows_that_do_not_close_at_all'])}")
 
     banner("Verdict")
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
-    print("  🔑 Pad = 3rd spring (∥ pogo on the shared gap) — absent from 02_02 §3.5; close that canon gap.")
     print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
     print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone.")
     print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
           "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; acceptance = a mock-up at Z 5/8/12, ⚖️ 2026-09-17).")
 
     out = {
-        "method": "1D linear tolerance chain (RSS + worst-case), 3-spring blind-mate Z-stack",
+        "method": "1D linear tolerance chain (RSS + worst-case), 2-spring blind-mate Z-stack",
         "springs": {
             "pogo": {"travel_mm": POGO_TRAVEL, "free_mm": round(POGO_FREE, 3), "window_pct": POGO_WIN},
-            "pad": {"free_mm": PAD_FREE, "window_pct": PAD_WIN,
-                    "creep_retain_20yr": PAD_CREEP_RETAIN, "acoustic_min_pct": PAD_ACOUSTIC_MIN},
             "oring": {"cs_mm": ORING_CS, "window_pct": ORING_WIN,
                       "window_pct_parker_face": ORING_WIN_PARKER_FACE},
         },
-        "shared_gap_note": "pogo + pad are parallel springs on the Power↔Zone3 gap; O-ring on Radome-rim↔Zone3",
+        "shared_gap_note": "pogo alone rides the Power↔Zone3 gap; O-ring on Radome-rim↔Zone3. The gap's 0.65 mm is a "
+                           "DESIGN TARGET, not a part dimension: it was chosen to seat the modelled acoustic pad at 35 %, "
+                           "the pad left with the piezo (⚖️ 2026-09-29, 02_01 §6), and it stays because the vertical "
+                           "budget is computed at it — moving it is a layout lever (00_07 HW.9)",
         "nominal_gaps_mm": {"power_zone3": GAP_PZ, "oring": round(GAP_OR, 3)},
         "tolerance_mm": {
             "power_zone3": {"contributors": TOL_PZ, "rss": round(pz_rss, 3), "worst_case": round(pz_wc, 3)},
@@ -983,8 +932,8 @@ def main() -> int:
                     "there puts the whole residual band inside BOTH with symmetric margin. RATIFIED 2026-09-10 "
                     "and APPLIED in CAD 2026-09-14 (branch (а)): the residual band is now the one-term machined "
                     "depth chain (+/-2.81 pp at the +/-0.05 the shop is asked to hold), where the pre-(а) pair "
-                    "after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo and pad "
-                    "are untouched."},
+                    "after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo is "
+                    "untouched."},
         "gland_geometry": gland,
         "rim_boss_radial_budget": boss,
         "applied_gland": applied,
@@ -995,7 +944,7 @@ def main() -> int:
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
                           "note": "geometric (self-owned); a design point, not the acceptance floor — that is "
                                   "settled by a mock-up measurement (⚖️ 2026-09-17, 02_01 §5.3)"},
-        "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"
+        "verdict": (f"2-spring Z-stack holds at '{final_label}'"
                     if mit_ok else "no ladder level holds — widen O-ring CS / bigger pogo travel"),
     }
     json_path = OUT_DIR / "z_stack_tolerance.json"

@@ -598,19 +598,14 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["vertical_stack_budget"]["internal_height_mm"]["hemisphere_centre_today"], 0.05,
     ),
+    # ⛔ The pad-under-piezo pin (AST1240 · B2B 10, −1.15 mm) went with the placement axis on 2026-09-29: the
+    # piezo was cut (02_01 §6), 52 no longer computes those rows, and 02_02 §3.5 now carries the number as a
+    # dated record of the 2026-09-22 grid — history, not a cache mirror, so there is nothing left to pin it to.
     (
-        "the pad-under-piezo row that does not close at all → z_stack_tolerance.json §vertical_stack_budget",
-        BLIND_MATE, rf"не закривається взагалі \(\*\*{N} мм\*\*",
+        "antenna Z the named B2B alternative leaves → z_stack_tolerance.json §vertical_stack_budget",
+        BLIND_MATE, rf"антена опускається на ті самі 2 мм — до \*\*{N} мм\*\*",
         "mechanical/z_stack_tolerance.json",
-        lambda d: min(r["room_over_rf_deck_centre_mm"] for r in d["vertical_stack_budget"]["rows"]
-                      if r["placement"] == "pad_under_piezo" and r["fr4_is_bom"]
-                      and not r["b2b_is_named_alternative"]), 0.005,
-    ),
-    (
-        "antenna Z the named B2B alternative leaves (pad beside piezo) → z_stack_tolerance.json",
-        BLIND_MATE, rf"у гілці «поруч» — до \*\*{N} мм\*\*",
-        "mechanical/z_stack_tolerance.json",
-        lambda d: d["vertical_stack_budget"]["summary"]["alt_b2b_lever"]["antenna_z_mm_pad_beside_piezo"], 0.005,
+        lambda d: d["vertical_stack_budget"]["summary"]["alt_b2b_lever"]["antenna_z_mm"], 0.005,
     ),
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.

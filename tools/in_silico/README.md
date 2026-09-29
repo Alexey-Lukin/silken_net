@@ -69,7 +69,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
 | 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
-| 52 | `52_z_stack_tolerance.py` | HW.8.7 anchor: 3-spring blind-mate Z-stack tolerance (pogo ∥ pad, O-ring) | ~1 s |
+| 52 | `52_z_stack_tolerance.py` | HW.8.7 anchor: 2-spring blind-mate Z-stack tolerance (pogo, O-ring) | ~1 s |
 | 53 | `53_oxide_det_per_alloy.py` | HW.24 coin: per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin) | ~1 s |
 | 54 | `54_anchor_thermal_bridge.py` | HW.34 anchor: central bus thermal bridge through the PEEK break (Cu vs Ti-monolithic) | ~1 s |
 | 55 | `55_bus_mechanical.py` | HW.34 anchor: bus rod buckling + sway fatigue (supported-by-liner vs bare, per alloy) | ~1 s |

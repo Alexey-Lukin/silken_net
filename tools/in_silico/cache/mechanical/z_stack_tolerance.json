@@ -1,5 +1,5 @@
 {
-  "method": "1D linear tolerance chain (RSS + worst-case), 3-spring blind-mate Z-stack",
+  "method": "1D linear tolerance chain (RSS + worst-case), 2-spring blind-mate Z-stack",
   "springs": {
     "pogo": {
       "travel_mm": 1.4,
@@ -8,15 +8,6 @@
         0.5,
         0.7
       ]
-    },
-    "pad": {
-      "free_mm": 1.0,
-      "window_pct": [
-        0.2,
-        0.5
-      ],
-      "creep_retain_20yr": 0.85,
-      "acoustic_min_pct": 0.2
     },
     "oring": {
       "cs_mm": 1.78,
@@ -30,7 +21,7 @@
       ]
     }
   },
-  "shared_gap_note": "pogo + pad are parallel springs on the Power\u2194Zone3 gap; O-ring on Radome-rim\u2194Zone3",
+  "shared_gap_note": "pogo alone rides the Power\u2194Zone3 gap; O-ring on Radome-rim\u2194Zone3. The gap's 0.65 mm is a DESIGN TARGET, not a part dimension: it was chosen to seat the modelled acoustic pad at 35 %, the pad left with the piezo (\u2696\ufe0f 2026-09-29, 02_01 \u00a76), and it stays because the vertical budget is computed at it \u2014 moving it is a layout lever (00_07 HW.9)",
   "nominal_gaps_mm": {
     "power_zone3": 0.65,
     "oring": 1.344
@@ -62,8 +53,6 @@
         "d_pz": 0.0,
         "d_or": 0.0,
         "pogo_pct": 0.6,
-        "pad_pct": 0.35,
-        "pad_pct_20yr": 0.2975,
         "oring_pct": 0.24499999999999997,
         "pass": true
       },
@@ -72,8 +61,6 @@
         "d_pz": 0.45,
         "d_or": 0.05,
         "pogo_pct": 0.2785714285714285,
-        "pad_pct": -0.10000000000000009,
-        "pad_pct_20yr": -0.08500000000000008,
         "oring_pct": 0.2169101123595505,
         "pass": false
       },
@@ -82,8 +69,6 @@
         "d_pz": -0.45,
         "d_or": -0.05,
         "pogo_pct": 0.9214285714285715,
-        "pad_pct": 0.8,
-        "pad_pct_20yr": 0.68,
         "oring_pct": 0.27308988764044945,
         "pass": false
       },
@@ -92,8 +77,6 @@
         "d_pz": 0.95,
         "d_or": 0.05,
         "pogo_pct": -0.07857142857142865,
-        "pad_pct": -0.6000000000000001,
-        "pad_pct_20yr": -0.51,
         "oring_pct": 0.2169101123595505,
         "pass": false
       },
@@ -102,8 +85,6 @@
         "d_pz": -0.95,
         "d_or": -0.05,
         "pogo_pct": 1.2785714285714287,
-        "pad_pct": 1.2999999999999998,
-        "pad_pct_20yr": 1.1049999999999998,
         "oring_pct": 0.27308988764044945,
         "pass": false
       }
@@ -121,8 +102,6 @@
           "d_pz": 0.0,
           "d_or": 0.0,
           "pogo_pct": 0.6,
-          "pad_pct": 0.35,
-          "pad_pct_20yr": 0.2975,
           "oring_pct": 0.24499999999999997,
           "pass": true
         },
@@ -131,8 +110,6 @@
           "d_pz": 0.1118033988749895,
           "d_or": 0.05,
           "pogo_pct": 0.5201404293750075,
-          "pad_pct": 0.2381966011250105,
-          "pad_pct_20yr": 0.20246711095625894,
           "oring_pct": 0.2169101123595505,
           "pass": true
         },
@@ -141,8 +118,6 @@
           "d_pz": -0.1118033988749895,
           "d_or": -0.05,
           "pogo_pct": 0.6798595706249925,
-          "pad_pct": 0.46180339887498945,
-          "pad_pct_20yr": 0.392532889043741,
           "oring_pct": 0.27308988764044945,
           "pass": true
         }
@@ -159,8 +134,6 @@
           "d_pz": 0.0,
           "d_or": 0.0,
           "pogo_pct": 0.6,
-          "pad_pct": 0.35,
-          "pad_pct_20yr": 0.2975,
           "oring_pct": 0.24499999999999997,
           "pass": true
         },
@@ -169,8 +142,6 @@
           "d_pz": 0.07071067811865477,
           "d_or": 0.05,
           "pogo_pct": 0.5494923727723895,
-          "pad_pct": 0.27928932188134525,
-          "pad_pct_20yr": 0.23739592359914347,
           "oring_pct": 0.2169101123595505,
           "pass": true
         },
@@ -179,8 +150,6 @@
           "d_pz": -0.07071067811865477,
           "d_or": -0.05,
           "pogo_pct": 0.6505076272276106,
-          "pad_pct": 0.4207106781186547,
-          "pad_pct_20yr": 0.3576040764008565,
           "oring_pct": 0.27308988764044945,
           "pass": true
         }
@@ -213,7 +182,7 @@
     "oring_gap_mm_pre_branch_a": 1.424,
     "oring_gap_mm_recommended": 1.344,
     "radome_rim_shift_um": 80.0,
-    "note": "The HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. The re-run said the fork is removable: the two windows intersect at 19-30 %, so centring the nominal there puts the whole residual band inside BOTH with symmetric margin. RATIFIED 2026-09-10 and APPLIED in CAD 2026-09-14 (branch (\u0430)): the residual band is now the one-term machined depth chain (+/-2.81 pp at the +/-0.05 the shop is asked to hold), where the pre-(\u0430) pair after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo and pad are untouched."
+    "note": "The HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. The re-run said the fork is removable: the two windows intersect at 19-30 %, so centring the nominal there puts the whole residual band inside BOTH with symmetric margin. RATIFIED 2026-09-10 and APPLIED in CAD 2026-09-14 (branch (\u0430)): the residual band is now the one-term machined depth chain (+/-2.81 pp at the +/-0.05 the shop is asked to hold), where the pre-(\u0430) pair after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo is untouched."
   },
   "gland_geometry": {
     "depth_mm": 1.3439,
@@ -487,8 +456,8 @@
     "stress_at_pogo_alone_MPa": 0.0126,
     "stress_at_100N_assumed_total_MPa": 0.654,
     "margin_x_at_100N": 3.8,
-    "missing_datum": "the acoustic pad's deflection-vs-pressure (no part is chosen \u2014 the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm TIM that publishes no such curve, HW.30) and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
-    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 382 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.8x margin. No creep member is warranted in the Z-chain for the rim.",
+    "missing_datum": "the O-ring compression load per unit of seal length \u2014 it has no home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
+    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 382 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the unmeasured O-ring leaves a 3.8x margin. No creep member is warranted in the Z-chain for the rim.",
     "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
   "collar_radial_budget": {
@@ -536,11 +505,6 @@
         10.0
       ],
       "b2b_named_alternative": 6.0,
-      "piezo_heights": {
-        "Mallory AST1240MLTRQ": 3.3,
-        "Mallory AST1109MLTRQ": 2.0,
-        "Murata PKMCS0909E4000-R1": 1.9
-      },
       "tallest_rf_deck_bom_part": 2.5,
       "crown_edge_r_shipped": 5.0,
       "board_ceiling_radius": 7.785
@@ -558,15 +522,11 @@
     },
     "rows": [
       {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.6,
         "b2b_mm": 8.0,
         "b2b_is_named_alternative": false,
         "fr4_is_bom": true,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 11.85,
         "antenna_z_over_ti_mm": 11.85,
@@ -608,165 +568,11 @@
         }
       },
       {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.6,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 15.15,
-        "antenna_z_over_ti_mm": 15.15,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 0.85,
-        "room_over_rf_deck_at_board_edge_mm": 0.836,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 0.4,
-          "top_chain_rss_flange_face_datum": 0.511,
-          "tol_pz_worst_case": -0.1
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.6,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 13.85,
-        "antenna_z_over_ti_mm": 13.85,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 2.15,
-        "room_over_rf_deck_at_board_edge_mm": 2.136,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 1.7,
-          "top_chain_rss_flange_face_datum": 1.811,
-          "tol_pz_worst_case": 1.2
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.6,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 13.75,
-        "antenna_z_over_ti_mm": 13.75,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 2.25,
-        "room_over_rf_deck_at_board_edge_mm": 2.236,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 1.8,
-          "top_chain_rss_flange_face_datum": 1.911,
-          "tol_pz_worst_case": 1.3
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.6,
         "b2b_mm": 10.0,
         "b2b_is_named_alternative": false,
         "fr4_is_bom": true,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 13.85,
         "antenna_z_over_ti_mm": 13.85,
@@ -808,165 +614,11 @@
         }
       },
       {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.6,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 17.15,
-        "antenna_z_over_ti_mm": 17.15,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": -1.15,
-        "room_over_rf_deck_at_board_edge_mm": -1.164,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": -1.6,
-          "top_chain_rss_flange_face_datum": -1.489,
-          "tol_pz_worst_case": -2.1
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.6,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 15.85,
-        "antenna_z_over_ti_mm": 15.85,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 0.15,
-        "room_over_rf_deck_at_board_edge_mm": 0.136,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": -0.3,
-          "top_chain_rss_flange_face_datum": -0.189,
-          "tol_pz_worst_case": -0.8
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.6,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 15.75,
-        "antenna_z_over_ti_mm": 15.75,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 0.25,
-        "room_over_rf_deck_at_board_edge_mm": 0.236,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": -0.2,
-          "top_chain_rss_flange_face_datum": -0.089,
-          "tol_pz_worst_case": -0.7
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.6,
         "b2b_mm": 6.0,
         "b2b_is_named_alternative": true,
         "fr4_is_bom": true,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 9.85,
         "antenna_z_over_ti_mm": 9.85,
@@ -1008,165 +660,11 @@
         }
       },
       {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.6,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 13.15,
-        "antenna_z_over_ti_mm": 13.15,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 2.85,
-        "room_over_rf_deck_at_board_edge_mm": 2.836,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 2.4,
-          "top_chain_rss_flange_face_datum": 2.511,
-          "tol_pz_worst_case": 1.9
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.6,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 11.85,
-        "antenna_z_over_ti_mm": 11.85,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": false,
-        "room_over_rf_deck_centre_mm": 4.15,
-        "room_over_rf_deck_at_board_edge_mm": 4.136,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 3.7,
-          "top_chain_rss_flange_face_datum": 3.811,
-          "tol_pz_worst_case": 3.2
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.6,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": true,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 11.75,
-        "antenna_z_over_ti_mm": 11.75,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": false,
-        "room_over_rf_deck_centre_mm": 4.25,
-        "room_over_rf_deck_at_board_edge_mm": 4.236,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 3.8,
-          "top_chain_rss_flange_face_datum": 3.911,
-          "tol_pz_worst_case": 3.3
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.0,
         "b2b_mm": 8.0,
         "b2b_is_named_alternative": false,
         "fr4_is_bom": false,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 10.65,
         "antenna_z_over_ti_mm": 10.65,
@@ -1208,165 +706,11 @@
         }
       },
       {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.0,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 13.95,
-        "antenna_z_over_ti_mm": 13.95,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 2.05,
-        "room_over_rf_deck_at_board_edge_mm": 2.036,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 1.6,
-          "top_chain_rss_flange_face_datum": 1.711,
-          "tol_pz_worst_case": 1.1
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.0,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 12.65,
-        "antenna_z_over_ti_mm": 12.65,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 3.35,
-        "room_over_rf_deck_at_board_edge_mm": 3.336,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 2.9,
-          "top_chain_rss_flange_face_datum": 3.011,
-          "tol_pz_worst_case": 2.4
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.0,
-        "b2b_mm": 8.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 12.55,
-        "antenna_z_over_ti_mm": 12.55,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 3.45,
-        "room_over_rf_deck_at_board_edge_mm": 3.436,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 3.0,
-          "top_chain_rss_flange_face_datum": 3.111,
-          "tol_pz_worst_case": 2.5
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.0,
         "b2b_mm": 10.0,
         "b2b_is_named_alternative": false,
         "fr4_is_bom": false,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 12.65,
         "antenna_z_over_ti_mm": 12.65,
@@ -1408,165 +752,11 @@
         }
       },
       {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.0,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 15.95,
-        "antenna_z_over_ti_mm": 15.95,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 0.05,
-        "room_over_rf_deck_at_board_edge_mm": 0.036,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": -0.4,
-          "top_chain_rss_flange_face_datum": -0.289,
-          "tol_pz_worst_case": -0.9
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.0,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 14.65,
-        "antenna_z_over_ti_mm": 14.65,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 1.35,
-        "room_over_rf_deck_at_board_edge_mm": 1.336,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 0.9,
-          "top_chain_rss_flange_face_datum": 1.011,
-          "tol_pz_worst_case": 0.4
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.0,
-        "b2b_mm": 10.0,
-        "b2b_is_named_alternative": false,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 14.55,
-        "antenna_z_over_ti_mm": 14.55,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": true,
-        "room_over_rf_deck_centre_mm": 1.45,
-        "room_over_rf_deck_at_board_edge_mm": 1.436,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 1.0,
-          "top_chain_rss_flange_face_datum": 1.111,
-          "tol_pz_worst_case": 0.5
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": false,
-          "top_chain_rss_flange_face_datum": false,
-          "tol_pz_worst_case": false
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": false
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_beside_piezo",
-        "piezo": null,
-        "piezo_mm": null,
         "fr4_mm": 1.0,
         "b2b_mm": 6.0,
         "b2b_is_named_alternative": true,
         "fr4_is_bom": false,
         "board_underside_over_flange_mm": 0.65,
-        "piezo_fits_under_board": false,
         "pogo_protrusion_required_mm": 1.49,
         "rf_deck_top_over_flange_mm": 8.65,
         "antenna_z_over_ti_mm": 8.65,
@@ -1606,194 +796,25 @@
           "KR-5R5H474-R (horizontal)": true,
           "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1240MLTRQ",
-        "piezo_mm": 3.3,
-        "fr4_mm": 1.0,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 3.95,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 4.79,
-        "rf_deck_top_over_flange_mm": 11.95,
-        "antenna_z_over_ti_mm": 11.95,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": false,
-        "room_over_rf_deck_centre_mm": 4.05,
-        "room_over_rf_deck_at_board_edge_mm": 4.036,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 3.6,
-          "top_chain_rss_flange_face_datum": 3.711,
-          "tol_pz_worst_case": 3.1
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": false,
-            "top_chain_rss_flange_face_datum": false,
-            "tol_pz_worst_case": false
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Mallory AST1109MLTRQ",
-        "piezo_mm": 2.0,
-        "fr4_mm": 1.0,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.65,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.49,
-        "rf_deck_top_over_flange_mm": 10.65,
-        "antenna_z_over_ti_mm": 10.65,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": false,
-        "room_over_rf_deck_centre_mm": 5.35,
-        "room_over_rf_deck_at_board_edge_mm": 5.336,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 4.9,
-          "top_chain_rss_flange_face_datum": 5.011,
-          "tol_pz_worst_case": 4.4
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
-      },
-      {
-        "placement": "pad_under_piezo",
-        "piezo": "Murata PKMCS0909E4000-R1",
-        "piezo_mm": 1.9,
-        "fr4_mm": 1.0,
-        "b2b_mm": 6.0,
-        "b2b_is_named_alternative": true,
-        "fr4_is_bom": false,
-        "board_underside_over_flange_mm": 2.55,
-        "piezo_fits_under_board": true,
-        "pogo_protrusion_required_mm": 3.39,
-        "rf_deck_top_over_flange_mm": 10.55,
-        "antenna_z_over_ti_mm": 10.55,
-        "rf_meets_canon_floor_8": true,
-        "rf_below_hfss_trigger_10": false,
-        "rf_meets_cem_design_point_12": false,
-        "room_over_rf_deck_centre_mm": 5.45,
-        "room_over_rf_deck_at_board_edge_mm": 5.436,
-        "room_after_tolerance_mm": {
-          "tol_pz_rss_as_quoted_02_02": 5.0,
-          "top_chain_rss_flange_face_datum": 5.111,
-          "tol_pz_worst_case": 4.5
-        },
-        "tallest_bom_part_fits_on_top": {
-          "tol_pz_rss_as_quoted_02_02": true,
-          "top_chain_rss_flange_face_datum": true,
-          "tol_pz_worst_case": true
-        },
-        "rf_deck_top_part_fits": {
-          "LoRa-E5 module": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna W3013 (ceramic SMD)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          },
-          "antenna NN03-310 (Virtual Antenna)": {
-            "tol_pz_rss_as_quoted_02_02": true,
-            "top_chain_rss_flange_face_datum": true,
-            "tol_pz_worst_case": true
-          }
-        },
-        "edlc_fits_in_b2b_gap": {
-          "KR-5R5H474-R (horizontal)": true,
-          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
-        }
       }
     ],
     "summary": {
-      "bom_rf_deck_top_mm": {
-        "pad_beside_piezo": [
-          11.85,
-          13.85
-        ],
-        "pad_under_piezo": [
-          13.75,
-          17.15
-        ]
-      },
-      "bom_room_centre_mm": {
-        "pad_beside_piezo": [
-          2.15,
-          4.15
-        ],
-        "pad_under_piezo": [
-          -1.15,
-          2.25
-        ]
-      },
-      "piezo_fits_in_gap_pz_any_candidate": false,
-      "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": {
-        "pad_beside_piezo": true,
-        "pad_under_piezo": false
-      },
-      "pad_under_piezo_rows_that_do_not_close_at_all": [
-        "Mallory AST1240MLTRQ \u00b7 B2B 10"
+      "bom_rf_deck_top_mm": [
+        11.85,
+        13.85
       ],
+      "bom_room_centre_mm": [
+        2.15,
+        4.15
+      ],
+      "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": true,
       "alt_b2b_lever": {
         "buys_height_mm": 2.0,
-        "antenna_z_mm_pad_beside_piezo": 9.85,
-        "below_hfss_trigger_pad_beside_piezo": true
+        "antenna_z_mm": 9.85,
+        "below_hfss_trigger_10": true
       }
     },
-    "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap \u2014 judged ONLY for the EDLC candidates the tree names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
+    "missing_datum": "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap \u2014 judged ONLY for the EDLC candidates the tree names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
     "edlc_in_b2b_gap": {
       "heights_mm": {
         "KR-5R5H474-R (horizontal)": 5.2,
@@ -1809,11 +830,11 @@
       },
       "ceiling": "the ceramic-SMD branch is REJECTED (\u2696\ufe0f 2026-09-22, 02_01 \u00a75.2), so the part that actually stands there is the LoRa module (2.5). \u26d4 The CARRIER half of that same verdict fell the same day: NN03-310 is 30.0 mm LONG, longer than the \u00d825 flange, so there is no named carrier today (00_07 HW.17, 02_01 \u00a75.2). This row is unaffected because the two candidates that fit a \u2264\u00d815.57 outline \u2014 among the SEVEN families the vendor's product page lists, the perimeter this pass read \u2014 (1.0 and 2.4 mm) is shorter than the module \u2014 the vertical answer survives its own premise. Both antenna rows are kept as EVIDENCE, neither is a live option"
     },
-    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 of the B2B gap's own contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a mock-up measurement, \u2696\ufe0f 2026-09-17, 02_01 \u00a75.3); the piezo placement is an open question, not a choice made here."
+    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 of the B2B gap's own contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a mock-up measurement, \u2696\ufe0f 2026-09-17, 02_01 \u00a75.3)."
   },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); a design point, not the acceptance floor \u2014 that is settled by a mock-up measurement (\u2696\ufe0f 2026-09-17, 02_01 \u00a75.3)"
   },
-  "verdict": "3-spring Z-stack holds at 'L1 spacer only' incl. 20yr pad creep"
+  "verdict": "2-spring Z-stack holds at 'L1 spacer only'"
 }
