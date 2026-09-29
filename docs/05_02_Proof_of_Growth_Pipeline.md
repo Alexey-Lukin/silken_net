@@ -155,9 +155,10 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    persist tail → telemetry_log.lorenz_state_x/y/z (mirror RTC)     ║
 ║    growth_points = (status_byte & 0x1F) * 2 (×2 upscale, FW.29-PACK)║
 ║    bio_status = (status_byte >> 5) & 0x03 (bits 6..5, FW.29-PACK)   ║
-║    AlertDispatchService.analyze_and_trigger!(log)                    ║
-║    tree.wallet.credit!(log.growth_points)                           ║
-║    └──► IotexVerificationWorker.perform_async(id, created_at_iso)   ║
+║    AlertDispatchService.analyze_and_trigger!(log)  [ізольовано,     ║
+║      ARCH.121: виняток → лог + Sentry, гроші йдуть далі]            ║
+║    ──► IotexVerificationWorker.perform_async(id, created_at_iso)    ║
+║    tree.wallet.credit!(weighted_growth_points)  (коеф. породи)      ║
 ║                                                                      ║
 ║  ─────────── КРОК A: peaq DID (одноразово при Provisioning) ─────── ║
 ║  [ProvisioningController#register] POST /provisioning                ║

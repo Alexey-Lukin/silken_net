@@ -320,7 +320,7 @@ clean:
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
 # STM32WLE5JC має 64 KB SRAM. Виміряний леджер (2026-06-11) — One-Home у
-# 03_03 §6 + firmware/scripts/check_ram_budget.sh (хедер): mruby-куча 38 392 Б
+# 03_01 §3 + firmware/scripts/check_ram_budget.sh (хедер): mruby-куча 38 392 Б
 # (FW.55, не «~4 KB»-міф) + stack 12 288 + статика; tensor arena з HW.30 на
 # Солдат не лягає. АВТОРИТЕТНИЙ гейт статики — CI `[FW.26] ARM static-RAM`
 # (--hal-objects, реальні .obj обох main.c); цей host-гейт лишається швидким

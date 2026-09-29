@@ -11,9 +11,9 @@
 #include "logmel_contract.h"
 
 /* Перетворює один кадр сирого аудіо на 40 log-mel ознак.
- *   audio:   512 нормалізованих [0,1) семплів (як audio_buffer[] у main.c) —
+ *   audio:   512 нормалізованих [0,1) семплів —
  *            DC прибирається всередині (per-frame mean).
- *   out_mel: 40 float; далі → Run_Inference(out_mel, &confidence).
+ *   out_mel: 40 float — вхід моделі-активу (з HW.30 виклику на Солдаті немає).
  * Пайплайн: DC-remove → periodic Hann → RFFT 512→257 → power → HTK mel-bank → ln(+1e-6). */
 void Compute_LogMel(const float audio[LOGMEL_N_FFT], float out_mel[LOGMEL_N_MELS]);
 

@@ -9,8 +9,9 @@
  *          compiles. The PRIMARY header now EXISTS — a self-owned INT8 baseline
  *          (ESC-50, FW.4, `silken_ml.export`, gemmlowp pure-C forward pass); a
  *          future field model trained on the Cherkasy soundscape dataset
- *          (`docs/00_02` Стаття 24a) may replace it. FW.4 closed the model gap
- *          2026-06-12 (model landed, call-site uncommented).
+ *          (for a possible site carrier, `00_07` HW.52) may replace it. FW.4
+ *          landed the model 2026-06-12; since HW.30 (2026-09-29) the Soldier has
+ *          no call-site — the model is an asset without an on-device carrier.
  *
  *          With this stub present the ARM toolchain can compile main.c and
  *          run `arm-none-eabi-size firmware.elf` / `make size-check` to

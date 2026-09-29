@@ -71,8 +71,9 @@ module TelemetryChunkHelper
 
   # 21-byte chunk with SEC.10 panic flag (bit 7 of status_byte) set
   # and `panic_counter` packed into PAD bytes 2..3 (uint16 BE).
-  # Acoustic=255 mirrors the chainsaw-detection signature firmware
-  # asserts before emergency TX.
+  # Acoustic=255 mirrors the legacy panic signature (Trigger_Emergency_LoRa_TX);
+  # since HW.30 the Soldier has no panic writer, so such a frame is an anomaly
+  # the backend only logs.
   def build_panic_chunk(did_hex, panic_counter, firmware_id: 0,
                         rssi: -70, voltage: 3500, temp: 25, metabolism: 100, ttl: 5)
     pad = [ firmware_id, panic_counter ].pack("n n")  # 4 bytes: fw_id BE + counter BE

@@ -38,7 +38,7 @@ FactoryBot.define do
     end
 
     # [SLASH-1] status=3 = софт-збій прошивки (vm_error), НЕ tamper —
-    # справжня пилка їде panic-каналом (PANIC_FLAG, status=homeostasis).
+    # з HW.30 пилки на дроті немає зовсім (PANIC_FLAG писача-Солдата не має).
     trait :vm_errored do
       bio_status { :vm_error }
     end
