@@ -817,6 +817,70 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][1], 0.05,
     ),
+    # ── HW.43 part references: the table SUMMARY quotes from script 59 ──
+    # ⛔ Every bracket is pinned at BOTH ends (same rule as the cycle-budget block below): the numbers here are
+    # literature anchors script 59 carries with their sources, and a doc that kept one end while the other drifted
+    # would still read as a bracket. Pinned 2026-09-29, when the pad block left 59 (HW.30) and the table was reread.
+    (
+        "pogo spring, mfr full-stroke life low → contact_endurance_check.json §framing_A",
+        SUMMARY, r"mfr full-stroke life ([\d.]+e\d+)[–—-][\d.]+e\d+ cyc",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_A_full_stroke_actuation"]["mfr_rated_life_cycles"][0], 0.5,
+    ),
+    (
+        "pogo spring, mfr full-stroke life high → contact_endurance_check.json §framing_A",
+        SUMMARY, r"mfr full-stroke life [\d.]+e\d+[–—-]([\d.]+e\d+) cyc",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_A_full_stroke_actuation"]["mfr_rated_life_cycles"][1], 0.5,
+    ),
+    (
+        "pogo spring, S-N anchor stress (VHCF end) → contact_endurance_check.json §framing_B",
+        SUMMARY, rf"S-N anchors {N} MPa→[\d.]+e\d+ cyc",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_B_low_amplitude_stress_fatigue"]["anchor_points_MPa_cycles"][1][0], 0.05,
+    ),
+    (
+        "pogo spring, S-N anchor cycles (VHCF end) → contact_endurance_check.json §framing_B",
+        SUMMARY, r"S-N anchors [\d.]+ MPa→([\d.]+e\d+) cyc",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_B_low_amplitude_stress_fatigue"]["anchor_points_MPa_cycles"][1][1], 0.5,
+    ),
+    (
+        "pogo spring, S-N anchor stress (high-stress end) → contact_endurance_check.json §framing_B",
+        SUMMARY, rf"/ {N} MPa→[\d.]+e\d+ cyc, no strict VHCF",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_B_low_amplitude_stress_fatigue"]["anchor_points_MPa_cycles"][0][0], 0.05,
+    ),
+    (
+        "pogo spring, S-N anchor cycles (high-stress end) → contact_endurance_check.json §framing_B",
+        SUMMARY, r"/ [\d.]+ MPa→([\d.]+e\d+) cyc, no strict VHCF",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["pogo_spring"]["framing_B_low_amplitude_stress_fatigue"]["anchor_points_MPa_cycles"][0][1], 0.5,
+    ),
+    (
+        "PEEK barb, endurance limit low → contact_endurance_check.json §peek_barb_cyclic",
+        SUMMARY, rf"endurance limit {N}[–—-][\d.]+ MPa @",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["peek_barb_cyclic"]["endurance_limit_MPa"][0], 0.05,
+    ),
+    (
+        "PEEK barb, endurance limit high → contact_endurance_check.json §peek_barb_cyclic",
+        SUMMARY, rf"endurance limit [\d.]+[–—-]{N} MPa @",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["peek_barb_cyclic"]["endurance_limit_MPa"][1], 0.05,
+    ),
+    (
+        "PEEK barb, tested range low → contact_endurance_check.json §peek_barb_cyclic",
+        SUMMARY, r"MPa @ ([\d.]+e\d+)[–—-][\d.]+e\d+ cyc \(2 converging",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["peek_barb_cyclic"]["tested_range_cycles"][0], 0.5,
+    ),
+    (
+        "PEEK barb, tested range high → contact_endurance_check.json §peek_barb_cyclic",
+        SUMMARY, r"MPa @ [\d.]+e\d+[–—-]([\d.]+e\d+) cyc \(2 converging",
+        "mechanical/contact_endurance_check.json",
+        lambda d: d["parts"]["peek_barb_cyclic"]["tested_range_cycles"][1], 0.5,
+    ),
     # ── HW.43 cycle budget: the bracket SUMMARY and canon quote from script 62 ──
     # ⛔ Both ends of the low reading AND the ceiling are pinned, in both homes. The ceiling is the number the
     # consumers take (55 §wear_budget, 59), and a doc that kept one reading current while the other rotted would
