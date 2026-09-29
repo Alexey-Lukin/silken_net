@@ -7,8 +7,8 @@
 #
 # Pure Ruby (no Rails). Виклик:
 #   ruby tools/firmware/scc_rate.rb                        # звіт (realistic + ceiling + арбітр)
-#   ruby tools/firmware/scc_rate.rb --assert               # гейт на дефолтній Variant C (7027 с)
-#   ruby tools/firmware/scc_rate.rb variant_c_s=8006 --assert  # гейт на іншій робочій точці (тут — CCM-точка)
+#   ruby tools/firmware/scc_rate.rb --assert               # гейт на дефолтній Variant C (5533 с)
+#   ruby tools/firmware/scc_rate.rb variant_c_s=6512 --assert  # гейт на іншій робочій точці (тут — CCM-точка)
 #     (override, НЕ зміна дефолту — дзеркало uncertainty_budget.rb delta_t_s=; ARCH.8)
 #
 # ЧОМУ guard (adversarial-урок 2026-07-14): попередня канон-проза брала
@@ -34,15 +34,17 @@ EMISSION_THRESHOLD = 10_000 # 05_03: 10k GP = 1 SCC
 
 # Робоча точка delta_t: Variant C — ⚖️ founder 2026-09-26: дефолт = енергомодель
 # `tx_cadence_budget.rb` (ECB-ера, обраний радіо-фронтенд: TX `RFO_LP` у SMPS + RX-вікно, яке
-# прошивка відкриває щоциклу, + TCXO), тобто 7027 с ≈ 1.95 год. Доти стояло 6372 с, порахованих
-# без RX-вікна й на струмі чужого підсилювача — на +10 % оптимістичніше, поза ±8 % u_delta_t.
-# ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → ≈ 2.22 год, m = 0, і wire-GP
-#    сідає на підлогу GP_HOMEO_MIN: SCC/дерево/рік 5.39 → 3.94 (−27 %).
+# прошивка відкриває щоциклу, + TCXO), тобто 5533 с ≈ 1.54 год — з 2026-09-29 без інференсу в
+# циклі: пʼєзо з Солдата зрізано, і точка пішла за ланцюгом, як велить той самий присуд
+# (⚖️ делеговано 2026-09-29; підстава, ціна й найслабша ланка — 02_06 §7.1).
+# ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → ≈ 1.81 год, m ≈ 0.10, wire-GP 8:
+#    SCC/дерево/рік 13.68 → 7.75 (−43 %).
 # ⛔ Не правити ДЕФОЛТ тут поодинці: `tx_cadence_budget.rb --assert` звіряє його з енергомоделлю
-#    (±8 % u_delta_t) і з дзеркалом у uncertainty_budget.rb, а асерт нижче — з дзеркалом realistic
-#    у tokenomics/supply_stress.rb. `variant_c_s=` override — лише для гейта на іншій точці.
+#    ГРОШИМА (та сама сходинка wire-GP і SCC у межах u_Δt після EMA) і з дзеркалом у
+#    uncertainty_budget.rb, а асерт нижче — з дзеркалом realistic у tokenomics/supply_stress.rb.
+#    `variant_c_s=` override — лише для гейта на іншій точці.
 # (1 TX/год = Δt=3600s = energy-NEGATIVE без мітигацій, 02_03 §9.5 — НЕ baseline.)
-VARIANT_C_S = 7027
+VARIANT_C_S = 5533
 
 # Незалежний арбітр: 05_03 MAX_SUPPLY=1B ≈ 20M дерево-років ⇒ 50 SCC/tree/year.
 ARBITER_SCC_YEAR = 50.0
@@ -83,7 +85,7 @@ ARGV.each do |arg|
 end
 variant_c_h = (variant_c_s / 3600.0).round(2)
 
-realistic = scc_per_tree_year(variant_c_s)     # робоча точка (дефолт: Variant C, 7027 с ≈ 1.95 год)
+realistic = scc_per_tree_year(variant_c_s)     # робоча точка (дефолт: Variant C, 5533 с ≈ 1.54 год)
 ceiling   = scc_per_tree_year(DELTA_T_FAST_S)  # фізична стеля recharge (Δt=600s)
 co2_kg_year = realistic * 1000.0 / SCC_PER_TONNE_CO2  # kg CO₂ / tree / year (realistic)
 

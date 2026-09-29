@@ -230,7 +230,7 @@ SIM7070G на CAT-M1/NB-IoT споживає імпульсно до **~0.6 А**
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
 
-⚠️ **Capacity math:** 50 слотів при каденції Сценарію C (1 пакет / Soldier / 1.95 год — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) × 100 Soldiers/Queen ⇒ переповнення за **≈ 58 хв** при втраті uplink'а. На верхньому краю scaling roadmap ([`00_07` ARCH.1](00_07_Action_Plan_Tracker), 200 Soldiers/Queen) — за **≈ 29 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+⚠️ **Capacity math:** 50 слотів при каденції Сценарію C (1 пакет / Soldier / 1.54 год — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) × 100 Soldiers/Queen ⇒ переповнення за **≈ 46 хв** при втраті uplink'а. На верхньому краю scaling roadmap ([`00_07` ARCH.1](00_07_Action_Plan_Tracker), 200 Soldiers/Queen) — за **≈ 23 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
 **Flash Ring Buffer — Overflow Tier (ARCH.35):** ✅ **драйвер host-готовий (2026-06-11), інтеграція gated.** Дім коду: `firmware/common/flash_ring.{h,c}` (host-тести `test_flash_ring.c` — NOR-мок із чесною 1→0 семантикою + power-cut fault-injection) ↔ gated-глю у `firmware/queen/main.c` (`ARCH35_RING_ENABLED 0`; SPI W25Q32 cmd-set, спіл евікшнів + провалених flush'ів, drain-refill у CIFO після send-success).
 

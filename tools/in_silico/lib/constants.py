@@ -163,7 +163,7 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # ETA_BOOST_TABLE_UW below says η rises with P_IN — a named model axis (02_03 §9.1).
 # And EDLC self-discharge is absent from BOTH (no number yet, §9.3), though +1 µA would
 # outweigh the whole sleep drain.
-E_CYCLE = 42.33e-3           # J — E_active_from_VSTOR per wake cycle
+E_CYCLE = 33.33e-3           # J — E_active_from_VSTOR per wake cycle (no inference since the piezo cut, ⚖️ 2026-09-29, 02_01 §6)
 P_SLEEP_VSTOR = 4.18e-6      # W — sleep drain from VSTOR between cycles
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
@@ -350,15 +350,16 @@ ETA_BOOST_TABLE_UW = ((15.0, ETA_BQ), (30.0, 0.75), (100.0, 0.82))
 
 # ── E.63: the node chain's OWN bracket on E_active (02_03 §9.4), mapped to VSTOR through
 # ETA_BUCK_ACTIVE — the MC in 30b samples E_cycle over it. Every input is a §9.4 number:
-# low end — the duration CEILINGS overstate compute: TinyML by at most its 0.2 s ceiling
-# minus the MEASURED 44 ms inference window (12 mA · 3.3 V), mruby by at most its full
-# 3.96 mJ (never measured); high end — the two core-idle terms §9.4 names but does not
+# low end — the duration CEILING overstates compute: mruby by at most its full 3.96 mJ (never
+# measured); the inference term that stood beside it left WITH the term itself — the Soldier
+# carries no acoustic sensor since 2026-09-29 (⚖️ founder, 02_01 §6), so there is nothing for
+# that ceiling to overstate; high end — the two core-idle terms §9.4 names but does not
 # add: 600 ms of RX cycle at 48 MHz (≈ 6.7 mJ at VOUT) and ≈ 175 ms waiting for the own
 # frame (FW.61, same core current). «The sign of the sum is not determined without a
 # bench.» EDLC self-discharge is a CONTINUOUS drain, not a cycle cost — not in here. ──
 _CORE_IDLE_J_PER_S = 6.7e-3 / 0.6
-E_CYCLE_LOW = E_CYCLE - (12e-3 * 3.3 * (0.2 - 0.044) + 3.96e-3) / ETA_BUCK_ACTIVE   # J ≈ 30.8 mJ
-E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE     # J ≈ 52.2 mJ
+E_CYCLE_LOW = E_CYCLE - 3.96e-3 / ETA_BUCK_ACTIVE                                  # J ≈ 28.8 mJ
+E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE     # J ≈ 43.2 mJ
 
 # ── EDLC endurance-hours (HW.37, script 51; 02_03 §12.1/§6) — vendor SKUs
 # (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model

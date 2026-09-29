@@ -45,8 +45,8 @@
 #   • Ціни й попиту тут немає ЗА ПОБУДОВОЮ: канон їх не має (00_04 «не зафіксовано»,
 #     00_01 «фіатні суми НЕ фіксуються»), тож будь-яка цінова крива була б нашою
 #     вигадкою з виглядом специфікації. Модель міряє КІЛЬКІСТЬ, не вартість.
-#   • scc_per_tree_year — calibration-pending [E.63]: realistic 5.39 ⊥ фізична стеля
-#     326 ⊥ канон-арбітр 50. Розкид 60× у центральному вході; сценарії нижче беруть
+#   • scc_per_tree_year — calibration-pending [E.63]: realistic 13.68 ⊥ фізична стеля
+#     326 ⊥ канон-арбітр 50. Розкид 24× у центральному вході; сценарії нижче беруть
 #     усі три, і саме тому вихід подається діапазоном, а не числом.
 #   • Крива флоту — НАШЕ припущення (канон моделі учасників не має): лінійний ramp
 #     до trees за ramp_years, далі плато.
@@ -55,9 +55,9 @@
 #     звільнення cap — slash.
 
 # Realistic SCC/дерево/рік — ДЗЕРКАЛО `tools/firmware/scc_rate.rb` на його дефолтній робочій точці
-# (Variant C, 7027 с — ⚖️ 2026-09-26: = енергомодель). Константа, а не виклик: модель pure-script і
+# (Variant C, 5533 с — ⚖️ 2026-09-26: = енергомодель). Константа, а не виклик: модель pure-script і
 # сусіда не кличе. ⛔ Правити лише разом із scc_rate.rb — його `--assert` звіряє це число.
-REALISTIC_SCC_PER_TREE_YEAR = 5.39
+REALISTIC_SCC_PER_TREE_YEAR = 13.68
 PARAMS = {
   # ── горизонт і флот (НАШЕ припущення — канон моделі учасників не має) ────────
   trees: 2_000_000,       # канонічний pilot-флот деривації 05_03
@@ -208,7 +208,7 @@ def report(prm)
 
   rows = [
     [ "канон-арбітр (50 SCC/дерево/рік)", { scc_per_tree_year: 50.0 } ],
-    [ "realistic Δt=1.95h (#{REALISTIC_SCC_PER_TREE_YEAR})", { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR } ], # ECB-ера; CCM → ≈2.22h (ARCH.8)
+    [ "realistic Δt=1.54h (#{REALISTIC_SCC_PER_TREE_YEAR})", { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR } ], # ECB-ера; CCM → ≈1.81h (ARCH.8)
     [ "фізична стеля Δt=600s (326)",      { scc_per_tree_year: 326.0 } ],
     [ "realistic + активований slash",    { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, degradation_rate: 0.05 } ],
     [ "realistic + страхові виплати",     { scc_per_tree_year: REALISTIC_SCC_PER_TREE_YEAR, payout_rate: 0.5 } ]

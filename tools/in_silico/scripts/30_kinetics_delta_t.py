@@ -32,10 +32,12 @@ Key literature parameters
                                  η(P_IN) — see constants.py ETA_BQ comment, [HW.47] 2026-09-09)
   A = 2.0 cm²                 — ONE face of the Ø16×1 mm Ti-coin COUPON (01_01 §6), see
                                  the WHICH BODY note below; constants.py A_ELECTRODE
-  E_cycle = 42.33 mJ          — E_active_from_VSTOR per wake cycle, and P_sleep = 4.18 µW from
+  E_cycle = 33.33 mJ          — E_active_from_VSTOR per wake cycle, and P_sleep = 4.18 µW from
                                 VSTOR: MIRRORS of the node chain (02_03 §9.4/§9.6 Scenario C;
-                                tools/firmware/tx_cadence_budget.rb). Until 2026-09-27 this was a
-                                5 mJ placeholder with no sleep term — 8.5× below the chain (E.63)
+                                tools/firmware/tx_cadence_budget.rb), with no inference term since
+                                the piezo cut (02_01 §6, 2026-09-29). Until 2026-09-27 this was a
+                                5 mJ placeholder with no sleep term — 8.5× below the chain as it
+                                then stood (E.63)
   Ea = 40 kJ/mol              — Arrhenius activation energy (FAD enzyme typical)
   D_eff = 2e-6 cm²/s          — glucose through chitosan hydrogel matrix
   δ = 20 µm                   — membrane + hydrogel thickness (01_03 §2.1)
@@ -50,7 +52,7 @@ scaling is not a rounding error: this model is KINETICS-limited across its whole
 (j_kinetic 233-520 vs j_diffusion 965-3859 µA/cm² at 5-20 mM), so area passes into current
 without saturating. delta_t is NOT ∝ 1/A exactly, though: the sleep drain is subtracted
 from a power that scales with A, so a smaller body loses a larger share to sleep
-(A=1→349.4 s, 2→171.7, 3→113.8, 5→68.0 at 10 mM, 25°C — 1/A would give 343.4 for A=1).
+(A=1→275.1 s, 2→135.2, 3→89.6, 5→53.5 at 10 mM, 25°C — 1/A would give 270.4 for A=1).
 ⚠️ Both rows move with J_MAX_25C — re-read them from the run, never from this docstring.
 
 So do not read a number from here as the anchor's recharge interval, and do not feed one

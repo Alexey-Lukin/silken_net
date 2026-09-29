@@ -265,13 +265,13 @@ CHECKS = [
     # numbers standing. Both ends are pinned — a bracket with one end pinned is not a bracket.
     (
         "pH-bracket healthy-summer LOW end → delta_t_lookup.json §ph_bracket",
-        SUMMARY, r"\| Healthy summer \| 171\.7 \| [\d.]+ \| [\d.]+ \| \*\*([\d.]+)–[\d.]+\*\* \|",
+        SUMMARY, r"\| Healthy summer \| 135\.2 \| [\d.]+ \| [\d.]+ \| \*\*([\d.]+)–[\d.]+\*\* \|",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_low_s"], 0.1,
     ),
     (
         "pH-bracket healthy-summer HIGH end → delta_t_lookup.json §ph_bracket",
-        SUMMARY, r"\| Healthy summer \| 171\.7 \| [\d.]+ \| [\d.]+ \| \*\*[\d.]+–([\d.]+)\*\* \|",
+        SUMMARY, r"\| Healthy summer \| 135\.2 \| [\d.]+ \| [\d.]+ \| \*\*[\d.]+–([\d.]+)\*\* \|",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_high_s"], 0.1,
     ),
@@ -1574,7 +1574,7 @@ CHECKS += [
 ] + [
     (
         "L4b MC · the upper-decile claim in prose → monte_carlo (the sentence that names the cost)",
-        SUMMARY, rf"moves from 536 s to about {N} s",
+        SUMMARY, rf"moves from 463 s to about {N} s",
         MC, lambda d: _mc_ph(d, "Healthy summer", "p95_s", max), 0.6,
     ),
     # [E.63] The «never» paragraph: every share and area it quotes, so the ∞ cell cannot keep its

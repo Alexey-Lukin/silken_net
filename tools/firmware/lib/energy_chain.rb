@@ -52,7 +52,10 @@ module SilkenEnergyChain
   # прошивка відкриває ЩОЦИКЛУ (ворота `VCAP_LISTEN_THRESHOLD` вироджені), а TCXO живий,
   # поки живе радіо, — і саме ці два члени бюджет доти мовчки не ніс (ARCH.8, 2026-09-26).
   # Дефолт 0 повернув би ту саму тиху відсутність, тож викличник мусить назвати число.
-  def active_cycle_from_vstor_mj(tinyml_mj:, lorenz_mj:, tx_mj:, rx_mj:, tcxo_mj:, eta_buck_active:)
-    (tinyml_mj + lorenz_mj + tx_mj + rx_mj + tcxo_mj) / eta_buck_active
+  # ⛔ Члена інференсу тут НЕМАЄ не з недогляду: акустичного датчика на Солдаті немає
+  # (⚖️ founder 2026-09-29, `02_01 §6`). Новий датчик повертається НОВИМ іменованим
+  # членом зі своїм числом, а не відродженням старого аргументу.
+  def active_cycle_from_vstor_mj(lorenz_mj:, tx_mj:, rx_mj:, tcxo_mj:, eta_buck_active:)
+    (lorenz_mj + tx_mj + rx_mj + tcxo_mj) / eta_buck_active
   end
 end

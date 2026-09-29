@@ -11,14 +11,17 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/boot_brownout_cycle.rb                    # повний звіт (ECB + CCM, 3-5 µW)
 #   ruby tools/firmware/boot_brownout_cycle.rb p_gen_uw=4.0        # override будь-якого параметра
-#   ruby tools/firmware/boot_brownout_cycle.rb --assert            # regression-гейт: ECB headline-margin > 0
-#                                                                   # і точка, нижче якої ECB циклить у
-#                                                                   # sensitivity-блоці, збігається з 02_03 §9.8а
+#   ruby tools/firmware/boot_brownout_cycle.rb --assert            # regression-гейт: ECB headline-margin > 0,
+#                                                                   # ECB не циклить у sensitivity-блоці за
+#                                                                   # жодного додатного P_gen, а точка, нижче
+#                                                                   # якої циклить CCM, збігається з 02_03 §9.8а
 #                                                                   # (CCM = warn-only, FW.2 ще bench-gated)
 #
 # Модель (стелі позначені):
 #   вікно      = E(V_ON) − E(V_OFF), E(V) = ½CV²                    ← чиста ємність, без ADC/резисторної похибки
-#   цикл-ціна  = (TinyML + Lorenz + TX + RX-вікно + TCXO) / η_buck   ← §9.4/§9.6, season-independent
+#   цикл-ціна  = (Lorenz + TX + RX-вікно + TCXO) / η_buck            ← §9.4/§9.6, season-independent;
+#                                                                      інференсу немає — акустичного датчика
+#                                                                      на Солдаті немає (⚖️ 2026-09-29, 02_01 §6)
 #   3-cycle    = 3 × цикл-ціна − 2 × interval_h × (E_gen − E_sleep) ← ГОЛОВНИЙ доданок = 3×ціна;
 #                                                                      inter-cycle net — ЧУТЛИВІСТЬ, не факт
 #                                                                      (interval_h — ПРИПУЩЕННЯ, не канон-число:
@@ -44,7 +47,7 @@
 #   • Радіо-члени циклу — з обраного фронтенду (⚖️ 2026-09-26: SMPS + TCXO): TX RFO_LP 23.5 мА,
 #     пост-TX RX-вікно 500 мс (відкрите щоциклу — ворота vcap вироджені) і TCXO на обох. Холостий
 #     цикл ядра в RX-циклі 600 мс НЕ входить (такт не обрано) — тож за цим членом ціна циклу НИЖНЯ
-#     межа, а стелі тривалостей TinyML/Lorenz тягнуть навпаки: сценарна точка (`02_03 §9.4`).
+#     межа, а стеля тривалості Lorenz тягне навпаки: сценарна точка (`02_03 §9.4`).
 
 require_relative "lib/energy_chain"
 EC = SilkenEnergyChain
@@ -57,7 +60,6 @@ PARAMS = {
   # ── EMA warmup (03_01 §13.3) ──────────────────────────────────────────────
   ema_warmup_cycles: 3,     # EMA_WARMUP_CYCLES — цикли до EMA_Is_Warmed_Up()
   # ── активний цикл, VOUT-навантаження (02_03 §9.4/§9.6 Сценарій C, +14dBm SF9) ─
-  tinyml_mj: 7.92,
   lorenz_mj: 3.96,
   tx_ecb_mj: 12.79,         # 16Б ECB-кадр @ SF9, RFO_LP SMPS 23.5 мА (транзитний wire-формат, ЖИВИЙ сьогодні)
   tx_ccm_mj: 17.55,         # 30Б CCM-кадр @ SF9 (wire-rev2.1, ARCH.8-корекція; FW.2 bench-gated)
@@ -99,7 +101,7 @@ def window_mj(p) = cap_energy_mj(p[:c_vstor_f], p[:v_ok_on]) - cap_energy_mj(p[:
 def active_cycle_from_vstor_mj(p, wire:)
   tx = wire == :ccm ? p[:tx_ccm_mj] : p[:tx_ecb_mj]
   tcxo = wire == :ccm ? p[:tcxo_ccm_mj] : p[:tcxo_ecb_mj]
-  EC.active_cycle_from_vstor_mj(tinyml_mj: p[:tinyml_mj], lorenz_mj: p[:lorenz_mj],
+  EC.active_cycle_from_vstor_mj(lorenz_mj: p[:lorenz_mj],
                                 tx_mj: tx, rx_mj: p[:rx_mj], tcxo_mj: tcxo,
                                 eta_buck_active: p[:eta_buck_active])
 end
@@ -118,12 +120,27 @@ def gen_mj_per_hour(p, p_gen_uw) = EC.gen_mj_per_hour(p_gen_uw: p_gen_uw, eta_bo
 def headline_3cycle_mj(p, wire:) = p[:ema_warmup_cycles] * active_cycle_from_vstor_mj(p, wire: wire)
 
 # Sensitivity: + inter-cycle net (sleep − gen) за (N-1) інтервалів між N циклами.
-# Точка, нижче якої ECB циклить у sensitivity-блоці (margin = 0), — закрита форма: вікно мінус
+# Точка, нижче якої ера циклить у sensitivity-блоці (margin = 0), — закрита форма: вікно мінус
 # 3×ціна дорівнює (N−1)·interval·(сон − P·3.6·η_w). Друкується в §9.8а і пінеться self-check'ом.
-def ecb_crossover_uw(p)
-  headroom = window_mj(p) - headline_3cycle_mj(p, wire: :ecb)
+# ≤ 0 означає, що вікно переживає warmup навіть за нульової генерації між циклами — тобто за
+# жодного фізичного P_gen ця ера в sensitivity-блоці не циклить.
+def crossover_uw(p, wire:)
+  headroom = window_mj(p) - headline_3cycle_mj(p, wire: wire)
   bleed_per_h = headroom / ((p[:ema_warmup_cycles] - 1) * p[:interval_h])
   (sleep_mj_per_hour(p) - bleed_per_h) / (3.6 * p[:eta_boost_winter])
+end
+
+def headline_word(margin, win)
+  if margin.positive? then format("margin +%.1f мДж — НЕ циклить від самого warmup-сплеску", margin)
+  else format("ДЕФІЦИТ %.1f мДж (%.0f%%) — ЦИКЛИТЬ уже на чистій 3-цикловій ціні, без жодного sensitivity-припущення",
+              -margin, -margin / win * 100)
+  end
+end
+
+def crossover_word(p, wire)
+  x = crossover_uw(p, wire: wire)
+  label = wire.to_s.upcase
+  x.positive? ? format("%s циклить нижче ≈%.1f µW", label, x) : "#{label} не циклить за жодного P_gen > 0"
 end
 
 def sensitivity_3cycle_mj(p, wire:, p_gen_uw:)
@@ -174,26 +191,29 @@ def report(p)
   puts
 
   puts "── Вирок ──"
-  puts "  1. ECB (транзитний, ЖИВИЙ сьогодні): headline margin +%.1f мДж — НЕ циклить від самого warmup-сплеску." %
-       (win - headline_3cycle_mj(p, wire: :ecb))
-  puts "  2. CCM (wire-rev2.1, FW.2 bench-gated, ЩЕ не в полі): headline margin %+.1f мДж — ЦИКЛИТЬ уже на" \
-       " чистій 3-циклoвій ціні, без жодного sensitivity-припущення." %
-       (win - headline_3cycle_mj(p, wire: :ccm))
+  puts "  1. ECB (транзитний, ЖИВИЙ сьогодні): headline #{headline_word(win - headline_3cycle_mj(p, wire: :ecb), win)}."
+  puts "  2. CCM (wire-rev2.1, FW.2 bench-gated, ЩЕ не в полі): headline " \
+       "#{headline_word(win - headline_3cycle_mj(p, wire: :ccm), win)}."
   puts "  3. Vcap cold-TX-defer (COLD_TX_DEFER_VCAP_MV=4000) НЕ рятує жодного з двох випадків: `vcap` читає" \
        " VDDA (≈3300 мВ, поки buck живий), ніколи не сягає 4000, тож кон'юнкція вироджена в temp<-15°C" \
        " (ARCH.99/FW.50, вже канонізовано) — вище цієї температури TX не відкладається взагалі."
-  puts "  4. Sensitivity-блок (інтервал #{p[:interval_h]} год — припущення): нижче ≈%.1f µW циклить і ECB, тобто" \
-       " нижній край зимової смуги вже за межею; а сам сонний баланс негативний — вікно спливає за ~%.0f год" \
-       " і без жодного циклу." % [ ecb_crossover_uw(p), win / -net_5 ]
+  in_band = %i[ecb ccm].select { |w| crossover_uw(p, wire: w) >= P_GEN_SWEEP_UW.min }
+  band_note = in_band.empty? ? "уся зимова смуга 3–5 µW над обома точками" \
+                             : "нижній край зимової смуги вже за межею для #{in_band.map(&:upcase).join(' і ')}"
+  puts "  4. Sensitivity-блок (інтервал #{p[:interval_h]} год — припущення): #{crossover_word(p, :ecb)} · " \
+       "#{crossover_word(p, :ccm)} — #{band_note}; а сам сонний баланс негативний — вікно спливає за " \
+       "~%.0f год і без жодного циклу." % (win / -net_5)
 end
 
 if assert_mode
   win = window_mj(params)
   failures = []
-  # ⚠️ Властивість «ECB margin ≥ 0 у ВСІЙ смузі 3-5 µW» з RX-вікном і TCXO (обраний фронтенд) НЕПРАВДИВА:
-  # у sensitivity-блоці ECB циклить нижче ≈3.9 µW. Тож гейт тримає ВУЖЧУ властивість — headline ECB > 0 —
-  # плюс регресійний пін точки перетину, яку друкує канон (self-check нижче): зсув будь-якого входу рухає
-  # цю точку, і червоніє саме той рядок. ⛔ Смугу не повертати — вона впала від правди, не від дрейфу.
+  # Гейт тримає headline ECB > 0 плюс регресійні піни точок перетину, які друкує канон (self-check
+  # нижче): зсув будь-якого входу рухає ці точки, і червоніє саме той рядок. Після зрізу інференсу
+  # (⚖️ 2026-09-29) ECB у sensitivity-блоці не циклить за жодного P_gen > 0, а CCM — нижче ≈1.9 µW,
+  # тобто під зимовою смугою. ⛔ Смугу «ECB ≥ 0 у 3–5 µW» як гейт не повертати: з RX-вікном і TCXO
+  # вона вже раз падала від правди, а стоки VSTOR, яких модель не несе (самопрозряд EDLC · кламп),
+  # тягнуть точки вгору.
   headline = win - headline_3cycle_mj(params, wire: :ecb)
   failures << "ECB headline margin=%.2f мДж (≤ 0) — ECB циклить уже на чистій 3-цикловій ціні" % headline unless headline.positive?
   # self-check: відтворюємо надруковані в 02_03 §9.3/§9.6/§9.8 проміжні числа. Це
@@ -204,15 +224,16 @@ if assert_mode
     "sleep-drain @ Сценарій C (§9.6, 4.18 µW)" => (sleep_drain_uw(PARAMS) - 4.176).abs < 0.01,
     "E_sleep_supercap (§9.6, 15.04 мДж/год)" => (sleep_mj_per_hour(PARAMS) - 15.0336).abs < 0.01,
     "E_gen_winter @5µW (§9.8, 11.7 мДж/год)" => (gen_mj_per_hour(PARAMS, 5.0) - 11.7).abs < 0.01,
-    "E_active_from_VSTOR ECB (§9.6, 42.33 мДж)" =>
-      (active_cycle_from_vstor_mj(PARAMS, wire: :ecb) - 42.33).abs < 0.01,
-    "точка ECB-циклення в sensitivity-блоці (§9.8а, 3.9 µW)" => (ecb_crossover_uw(PARAMS) - 3.9).abs < 0.05
+    "E_active_from_VSTOR ECB (§9.6, 33.33 мДж)" =>
+      (active_cycle_from_vstor_mj(PARAMS, wire: :ecb) - 33.33).abs < 0.01,
+    "ECB не циклить у sensitivity-блоці за жодного P_gen > 0 (§9.8а)" => crossover_uw(PARAMS, wire: :ecb) <= 0.0,
+    "точка CCM-циклення в sensitivity-блоці (§9.8а, 1.9 µW)" => (crossover_uw(PARAMS, wire: :ccm) - 1.9).abs < 0.05
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
 
   if failures.empty?
-    puts "boot_brownout_cycle ✓ — ECB headline margin > 0; ECB циклить у sensitivity-блоці нижче %.1f µW " \
-         "(= 02_03 §9.8а); self-check проти 02_03 §9.3/§9.6/§9.8 OK" % ecb_crossover_uw(params)
+    puts "boot_brownout_cycle ✓ — ECB headline margin > 0; у sensitivity-блоці #{crossover_word(params, :ecb)}, " \
+         "#{crossover_word(params, :ccm)} (= 02_03 §9.8а); self-check проти 02_03 §9.3/§9.6/§9.8 OK"
     puts "  (CCM — warn-only, FW.2 ще bench-gated): " \
          "headline margin %+.1f мДж" % (win - headline_3cycle_mj(params, wire: :ccm))
     exit 0
