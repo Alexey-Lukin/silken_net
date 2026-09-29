@@ -4,7 +4,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати апаратну архітектуру (PCBA), логіку живлення та Bill of Materials (BOM) для герметичної капсули "Солдата". Капсула збирає енергію з **тризонного коаксіального анкера** ([`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): анод у заболоні + PEEK-терморозрив + катод на межі кори/повітря; EBFC Gen 2.0: dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA на аноді, Laccase/ZIF-nanozyme DET на катоді), зберігає її в іоністорі 0.47 F, аналізує звук TinyML, обчислює атрактор Лоренца (mruby) та передає зашифровані пакети через LoRa 868 МГц (16 Б ECB сьогодні → 30 Б CCM rev2.1) (**star-only** до Королеви — FW.2 (а)).
+Зафіксувати апаратну архітектуру (PCBA), логіку живлення та Bill of Materials (BOM) для герметичної капсули "Солдата". Капсула збирає енергію з **тризонного коаксіального анкера** ([`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): анод у заболоні + PEEK-терморозрив + катод на межі кори/повітря; EBFC Gen 2.0: dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA на аноді, Laccase/ZIF-nanozyme DET на катоді), зберігає її в іоністорі 0.47 F, обчислює атрактор Лоренца (mruby) та передає зашифровані пакети через LoRa 868 МГц (16 Б ECB сьогодні → 30 Б CCM rev2.1) (**star-only** до Королеви — FW.2 (а)).
 
 ---
 
@@ -27,7 +27,7 @@
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдний анкер + PEEK (65% пористість, площа EBFC) |
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Сліпе з'єднання анкер↔капсула; §3.4 Parylene C conformal |
 | [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT, резисторна мережа порогів (VBAT_OV) + EDLC буфер (ємність/ESR/деградація, §12) |
-| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX) + енергоспоживання |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 стенд дільника `VBAT_OV`, HW.11 Parylene, HW.12 стенд клампа |
@@ -65,12 +65,11 @@
 ║  ┌──────────────────────────────────────────────────────────┐   ║
 ║  │  SMD Antenna 868 MHz  [CLEARANCE: див. §5.2/§5.3]        │   ║
 ║  │  STM32WLE5CC (чіп на платі)                             │   ║
-║  │   ├─ ARM Cortex-M4  (mruby Lorenz + TinyML)             │   ║
+║  │   ├─ ARM Cortex-M4  (mruby Lorenz)                      │   ║
 ║  │   ├─ SX1262 LoRa Radio (+14 dBm TX SF9 / −148 dBm RX)   │   ║
 ║  │   │   (зменшено з +22 dBm — `02_03 §9.6` Сценарій C)    │   ║
 ║  │   └─ STOP2 Deep Sleep RTC-only (300 nA)                  │   ║
 ║  │      (зменшено з 1.07 µA — `02_03 §9.3`)                 │   ║
-║  │  П'єзодиск (акустичний тригер, пасивний EXTI wake-up)   │   ║
 ║  │  Внутрішній термометр STM32 (ADC канал)                  │   ║
 ║  └──────────────────────────────────────────────────────────┘   ║
 ╠══════════════════════════════════════════════════════════════════╣
@@ -102,7 +101,7 @@
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-> ⚠️ **Схема — ескіз складу, не розміщення по Z, і дві її позначки розходяться з каноном нижче.** Пʼєзодиск вона малює в RF Deck, а розміщення розсуджено інакше: pad займає весь проміжок плата↔фланець, як його моделює Z-ланцюг [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface), а пʼєзо стоїть на Power Deck ПОРУЧ, не під pad-ом (⚖️ 2026-09-22, делегований — §6; сторону плати судить стенд [`00_07` HW.30](00_07_Action_Plan_Tracker)). Суперконденсатор вона ставить на Power Deck, а ескіз keep-out §5.2 — на RF Deck; висотою його судить вертикальний бюджет `52` ([`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)): горизонтальний `KR-5R5H474-R` (5.2 мм) коротший за просвіт B2B у кожній конфігурації — «коротший за просвіт», не «влазить у layout» (стеля кешу `edlc_in_b2b_gap.ceiling`).
+> ⚠️ **Схема — ескіз складу, не розміщення по Z, і одна її позначка розходиться з каноном нижче.** Суперконденсатор вона ставить на Power Deck, а ескіз keep-out §5.2 — на RF Deck; висотою його судить вертикальний бюджет `52` ([`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)): горизонтальний `KR-5R5H474-R` (5.2 мм) коротший за просвіт B2B у кожній конфігурації — «коротший за просвіт», не «влазить у layout» (стеля кешу `edlc_in_b2b_gap.ceiling`).
 
 ### Сигнальний потік
 
@@ -117,7 +116,6 @@ Supercapacitor 0.47 F  ──── (робоче вікно: 2.75 Дж)
   │
   ▼  VDD = 3.3 В (стабілізовано)
 STM32WLE5CC
-  ├──► TinyML Inference (~200 мс, 8 мДж — консерв. envelope; landed forward-pass ≪)
   ├──► mruby Lorenz (250 ітерацій, float32/64)
   ├──► AES-128 Encrypt (16-байтовий блок ECB, post-ARCH.42 Variant B)
   └──► LoRa TX `RFO_LP` (+14 dBm SF9, ~165 мс, ~12.8 мДж VOUT / ~14.5 з VSTOR — ECB-ера, див. §2)
@@ -180,7 +178,7 @@ STM32WLE5CC
 | 9 | **Buffer Cap (VOUT)** | Murata `GRM32ER71A476KE15` — 47 µF / **10 В** / **X7R 1210**, C_eff 28.5 µF при 3.3 В (⚖️ делеговано 2026-09-28, [`00_07`](00_07_Action_Plan_Tracker) HW.20; присуд, свідомий виняток із правила «≥ 4× робочої», найслабша ланка й альтернативи — врізка [`02_03 §6.3`](02_03_BQ25570_MPPT_Nano_Power)). ⚠️ На **25 В** цієї трійки не знайдено ніде (DigiKey · каталог Murata · LCSC · TME з позитивними контролями, 2026-09-27; названий доти Murata GRM32ER71E476ME20 у Murata PIM не знаходиться) | Buffer для LoRa TX peak; **НЕ 6.3V** ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) — DC bias derating) | ~$0.18 |
 | 10 | **Пасивні компоненти** | 0402/0603 резистори (1% E96), C0G/X7R cap; **дільники BQ25570 — `VBAT_OV` · `OK_PROG`+`OK_HYST` (три плеча!) · `VOUT_SET` · `VOC_SAMP`** перепрограмовано під supercap ([`02_03 §5`](02_03_BQ25570_MPPT_Nano_Power) — номінали й ⛔ `UV` не програмується) | Фільтрація, розв'язка, MPPT резисторна мережа | ~$0.20 |
 | 11 | ~~LTC3108 DNP footprint~~ — **знято ⚖️ founder 2026-09-27** | паспорт LTC3108 (Rev D) спростовує його для кілоомного EBFC ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power) C); `V_OC` < 700 мВ = fail ([`01_03 §3.5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); номер позиції лишено, щоб не зсувати посилань | — | $0.00 |
-| 12 | **Board-to-Board Connector Pair** | Samtec **FW-SM** header (lead style –03, SMD) + **CLP** socket (SMD), 1.27 мм pitch, 10-pin (2 × 5), vertical, mated height 8–10 мм задається кодом висоти — **header на Power Deck + socket на RF Deck**. ⚖️ 2026-09-24 (делеговано): пара FTSH/CLT, що стояла тут, не мейтиться — врізка під таблицею. Альтернативи: Hirose **DF40TC** (0.4 мм; 6.0 мм є лише у варіанті TC), Molex SlimStack 0.50/0.635 мм (висоти не звірено) | Mezzanine з'єднання Power Deck ↔ RF Deck (§5.3: standoff 8–10 мм). Передає 3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 enable lines (6–8 сигналів) | ~$0.85 (пара) — ⚠️ стояло на парі, якої не існує; ціна FW — лише з котирування |
+| 12 | **Board-to-Board Connector Pair** | Samtec **FW-SM** header (lead style –03, SMD) + **CLP** socket (SMD), 1.27 мм pitch, 10-pin (2 × 5), vertical, mated height 8–10 мм задається кодом висоти — **header на Power Deck + socket на RF Deck**. ⚖️ 2026-09-24 (делеговано): пара FTSH/CLT, що стояла тут, не мейтиться — врізка під таблицею. Альтернативи: Hirose **DF40TC** (0.4 мм; 6.0 мм є лише у варіанті TC), Molex SlimStack 0.50/0.635 мм (висоти не звірено) | Mezzanine з'єднання Power Deck ↔ RF Deck (§5.3: standoff 8–10 мм). Передає 3V3, GND, VSTOR_sense, EBFC_sense, BQ25570 enable lines (5–7 сигналів; `piezo_EXTI` пішла з пʼєзо, §6) | ~$0.85 (пара) — ⚠️ стояло на парі, якої не існує; ціна FW — лише з котирування |
 | 13 | **NXP SE05x Secure Element (baseline SE051C2) — DNP footprint** (опційно) | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) SEC.6 / SE050-MIGRATION: pads + I²C (PB6/PB7, спільна шина з BME280) + pull-ups + **load-switch гейт** (always-on SE sleep перекидає баланс Сценарію C у мінус — розрахунок [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; окремий TPS22860 чи спільний з BME280 — KiCad-рішення HW.9), **Do Not Populate** на пілоті. Монтується на mass (>10k) ПІСЛЯ FW.2 ([`00_07` — ARCH.43](00_07_Action_Plan_Tracker)) | Роль = ідентичність/provisioning (SEC.14 provisioning-only, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Статус): non-extractable Ed25519 (голос дерева, L2) + anti-clone serial + монотонні лічильники (checkpoint-only — SE за гейтом); LoRa KEYL лишається у Protected Flash, SE Slot 0 reserved (urban-варіант) | $0.00 (pads) / +$2.40–3.25 якщо populated |
 | 14 | **OVP-кламп VSTOR** (supervisor + NMOS-шунт) | Топологія ⚖️ делеговано 2026-09-24 ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power), розділ Б). ⚠️ P/N — рекомендація, не присуд: `TLV840NAPL50` + `DMN2990UFA`, `R_dump` 22 кΩ, pull-down затвора 10 МΩ ([`ovp_clamp_shortlist`](protocols/hardware/ovp_clamp_shortlist.md)); деталь судить стенд [`00_07` HW.12](00_07_Action_Plan_Tracker) | Страховка від відмови дільника `VBAT_OV`: шунтує VSTOR у вікні (4.919; 5.5] В | ⚠️ не звірено — у TOTAL не входить |
 | 15 | **Індуктивності BQ25570** (2 шт) | L1 **22 µH ± 20 %**, пік > 300 мА (boost) + L2 **10 µH ± 20 %**, пік > 200 мА (buck); значення й рекомендовані P/N — первинка TI, [`02_03 §3`](02_03_BQ25570_MPPT_Nano_Power) (§3.2 · §3.3). ⚠️ P/N не обрано: габарит 2.0 × 2.5 … 4.0 × 4.0 мм іде в бюджет площі плати [`00_07` HW.9](00_07_Action_Plan_Tracker) | Без них boost і buck не працюють; на макетці їх несе breakout CJMCU-2557 | ⚠️ не звірено — у TOTAL не входить |
@@ -228,7 +226,7 @@ STM32WLE5CC
 
 - **Вбивця False Slashing.** VPD (Vapor Pressure Deficit) = f(t°, RH) — фізична тяга, що піднімає сік ксилемою. Розтягнутий `delta_t` (інтервал перезаряду EBFC — метаболічний проксі «глюкоза на аноді × температура», [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell); flow-члена модель не має, тож сигнал свідчить про метаболічну жвавість і НЕ ліцензує суджень про сокорух) при RH ≈ 100% (дощ/туман) = **погода, не хвороба**. Без BME280 система сліпа й може спалити токени інвесторів за здорове дерево. З BME280 confounder-гейт пояснює падіння погодою → **не штрафує**. Це апаратний enabler інваріанта [`05_05 §7`](05_05_Slashing_and_Risk_Policy) (slashing вимагає ≥1 прямого сигналу, не лише Z). Сестринський концепт — [`02_03 §12.4.2`](02_03_BQ25570_MPPT_Nano_Power) (VOC-корекція деградації).
 - **Гіперлокальний клімат-оракул (NaaS-дохід).** 1000 датчиків мікроклімату *всередині* екосистеми проти усереднених метеостанцій на 50 км². Агрохолдинги та страховики платять за такі дані; дозволяє довести біопреципітацію (охолодження/зволоження лісом) цифрами. Див. [`05_03`](05_03_Tokenomics_SCC_and_SFC) (data-revenue NaaS).
-- **Раннє попередження.** Барометр: різке падіння тиску → шторм за години → TinyML превентивно піднімає поріг акустики (тріск гілок шторму ≠ бензопила). Комбінація «висока t° + низька RH + 0 мм опадів» = критична пожежна небезпека → мережа вузлів як сенсор для ДСНС.
+- **Раннє попередження.** Барометр: різке падіння тиску → шторм за години. Комбінація «висока t° + низька RH + 0 мм опадів» = критична пожежна небезпека → мережа вузлів як сенсор для ДСНС.
 
 **Mini-BOM (додаток до §3.1):** нумерація продовжує §3.1 (поз. 20–22) — доти тут стояли 13–15 і збігались із поз. 13 основної таблиці (SE05x), а з 2026-09-25 і з поз. 14–15 (кламп, індуктивності).
 
@@ -248,7 +246,7 @@ STM32WLE5CC
 
 **VPD-формула (канон — One-Home):** SVP за **FAO-56** (Allen et al. 1998, eq. 11 — Tetens): `e_s(T) = 0.6108·exp(17.27·T/(T+237.3))` kPa, далі `VPD = e_s(T)·(1−RH/100)` kPa. Квантизація на вузлі: `index = round(VPD / 0.02 kPa)`, насичення до `[1..255]`; **`0x00` зарезервований = «немає BME280»** (реальний замір ≥1, навіть VPD≈0 при насиченому повітрі). Стеля `255·0.02 = 5.1 kPa`. Pure-реалізація + golden-тест: `firmware/common/bme280.h` (`Bme280_Vpd_Index`, `Bme280_Compensate_T/P/H` — фіксована-точка datasheet Bosch §8.2, host-звірена проти незалежної float-копії §8.1) + `firmware/test/test_bme280.c`. ⚠️ Самий мапінг `index→kPa` фіналізується **bench-калібруванням** проти референсного гігрометра — формула й шкала-стеля канонізовані, точка калібрування ні.
 
-**🚨 DCI-guard (критично):** VPD **НЕ подається** у Lorenz Z-математику (входи лише temp/acoustic) — це зламало б firmware↔backend біт-ідентичність (Dual Computation Integrity, [`03_04`](03_04_mruby_Lorenz_Attractor)). VPD живе виключно на **confounder / slashing-шарі** (`ContractHealthCheckService`, `InsightGeneratorService#calculate_stress_index`). Той самий урок, що HW.19 (VOC-корекція на slashing-шарі, не в Z-обчисленні).
+**🚨 DCI-guard (критично):** VPD **НЕ подається** у Lorenz Z-математику (входи лише temp і acoustic, а acoustic з HW.30 — нуль) — це зламало б firmware↔backend біт-ідентичність (Dual Computation Integrity, [`03_04`](03_04_mruby_Lorenz_Attractor)). VPD живе виключно на **confounder / slashing-шарі** (`ContractHealthCheckService`, `InsightGeneratorService#calculate_stress_index`). Той самий урок, що HW.19 (VOC-корекція на slashing-шарі, не в Z-обчисленні).
 
 **Пакетний бюджет (LoRa byte-critical, 16B ECB → 30B CCM wire-rev2.1; черга на байти — wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)):** сирі t°/RH/тиск (~4–5 B) не влазять у hot-path. **Рекомендований гібрид:**
 
