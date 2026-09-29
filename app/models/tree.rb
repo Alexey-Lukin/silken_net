@@ -55,6 +55,11 @@ class Tree < ApplicationRecord
   GLOBAL_LORENZ_Z_MAX     = 45.0
   GLOBAL_LORENZ_Z_OPTIMAL = 29.0
 
+  # [FW.8] Смуга, з якою пристрій виходить із заводу (firmware-дефолти 200/4500,
+  # `FW8_DEFAULT_Z_*_X100`), — кандидат DCI за будь-якого обліку: re-provision
+  # зі свіжим журналом чи порвана пара ключів повертають на неї без нашого кадру.
+  DEVICE_DEFAULT_LORENZ_BAND = { min: GLOBAL_LORENZ_Z_MIN, max: GLOBAL_LORENZ_Z_MAX }.freeze
+
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
 
@@ -299,7 +304,7 @@ class Tree < ApplicationRecord
   # Returns Hash{ min:, max:, optimal: } of Float values.
   #
   # 🔴 РОЛЬ ЦЬОГО МЕТОДУ — «ЩО СЛАТИ на пристрій», і саме тому DCI його НЕ вживає
-  # (див. `#device_lorenz_thresholds`). Доти докстрінг називав другим споживачем
+  # (див. `#device_lorenz_bands`). Доти докстрінг називав другим споживачем
   # `TelemetryUnpackerService`, тобто судження про ЦІЛІСНІСТЬ обчислення бралось
   # за БАЖАНИМИ порогами, яких пристрій не має.
   #
@@ -311,12 +316,11 @@ class Tree < ApplicationRecord
   # дерево поза своєю нормою».
   #
   # SSOT consumed by:
-  #   - OtaPackagerService.threshold_config_body → Downlink::CommandFrame.thresholds
-  #     (CMD_SET_THRESHOLDS 0x9A, адресний CCM-кадр — 03_05 §2.5)
-  #     ⚠️ Споживач СПЛЯЧИЙ: у `app/`/`lib/` викликача в нього нема, тракт
-  #     доставки не дротований (`03_01`: «у downlink pipeline не передається»).
-  #     Тобто сьогодні цей ланцюг (cluster override → family → global) не має
-  #     жодного ЖИВОГО продового читача — його вмикає bench-нога FW.8, не код.
+  #   - Downlink::ThresholdBand (видача 0x9A з poll-деривації Королеви —
+  #     `Downlink::PendingQueueService`, адресний CCM-кадр, 03_05 §2.5): тіло —
+  #     `OtaPackagerService.threshold_config_body`, гард «лише звуження» — тут же.
+  #     ⚠️ Шлях ENV-гейтований (`FW8_THRESHOLDS_DOWNLINK_ENABLED`, default off), і
+  #     вмикається ПІСЛЯ фліпу прошивки: до того ланцюг конфігурує видачу, якої немає.
   def effective_lorenz_thresholds
     family    = tree_family
     overrides = cluster && family&.scientific_name ? cluster.lorenz_overrides_for(family.scientific_name) : {}
@@ -328,25 +332,24 @@ class Tree < ApplicationRecord
     }
   end
 
-  # [FW.8] Пороги, за якими судить САМ ПРИСТРІЙ — друга роль, свідомо розведена з
-  # `#effective_lorenz_thresholds` («що слати»). Єдиний споживач — категоричний
-  # DCI (`TelemetryUnpackerService#check_z_divergence!`).
+  # [FW.8] Смуги, будь-якою з яких може судити САМ ПРИСТРІЙ, — друга роль,
+  # свідомо розведена з `#effective_lorenz_thresholds` («що слати»). Єдиний
+  # споживач — категоричний DCI (`TelemetryUnpackerService#check_z_divergence!`).
   #
-  # 🔴 Чому це не те саме: пристрій судить смугою, ЧИННОЮ на ньому, — контракт
-  # приймає `z_min`/`z_max` (FW.8, 2026-09-27), але глобалки, що його годують,
-  # міняють лише парсер 0x9A і boot-restore, обидва під `FW8_PARSER_ENABLED = 0`.
-  # Тож у бойовій збірці це дефолти, і сервер, який судив per-species, порівнював
-  # не два обчислення, а дві КОНФІГУРАЦІЇ. Механізм, обидві половини розриву з
-  # виміряними частотами, два рукави наслідку і ⚖️ ціна звуження — ОДИН дім,
-  # `03_04 §5.3`; тут їх свідомо не дублюємо.
+  # 🔴 Чому набір, а не одна смуга (⚖️ founder 2026-09-29): ефір підтвердження
+  # смуги не несе, тож до доказу бекенд не знає, котра з виданих чинна, — а
+  # дефолт лишається кандидатом завжди. Звідки кожна смуга й коли вона випадає,
+  # веде облік `Downlink::ThresholdBand`. Судити однією смугою означало б
+  # порівнювати не два обчислення, а дві КОНФІГУРАЦІЇ — механізм, виміряні
+  # частоти й ціна набору — ОДИН дім, `03_04 §5.3`.
   #
-  # Значення — дзеркало firmware-констант (`GLOBAL_LORENZ_Z_*`, той самий блок
-  # угорі файлу). ⛔ Не «покращувати» його до per-species, доки пристрій ними
-  # не судить: сьогодні це зробить DCI знову неправдивим. Подія перегляду —
-  # bench-фліп FW.8 (`FW8_PARSER_ENABLED 1` + HAL-глю вмикають доставку й
-  # споживання разом) І знання, яку смугу має КОЖЕН пристрій; доти тут чесна константа.
-  def device_lorenz_thresholds
-    { min: GLOBAL_LORENZ_Z_MIN, max: GLOBAL_LORENZ_Z_MAX, optimal: GLOBAL_LORENZ_Z_OPTIMAL }
+  # Межі — x100-цілі тіла 0x9A, поділені як на пристрої
+  # (`OtaPackagerService.threshold_band`), а не бажані Float-и: інакше DCI
+  # розійшовся б із кремнієм на межі на останньому знаку.
+  def device_lorenz_bands
+    pairs = lorenz_band_held.dup
+    pairs << lorenz_band_pending.unpack("s<s<") if lorenz_band_pending
+    [ DEVICE_DEFAULT_LORENZ_BAND, *pairs.map { |z_min, z_max| OtaPackagerService.threshold_band(z_min, z_max) } ].uniq
   end
 
   private

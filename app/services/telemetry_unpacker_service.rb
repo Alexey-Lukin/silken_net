@@ -850,13 +850,19 @@ class TelemetryUnpackerService < ApplicationService
   # the CCM frame (wire-rev2) carries device_z, so the numeric check has a real
   # input there — kept behind a metric that surfaces the magnitude even when it
   # is within tolerance.
-  # [FW.8] Судимо за `Tree#device_lorenz_thresholds` — порогами, ЧИННИМИ НА
-  # ПРИСТРОЇ, а не за бажаними per-species.
+  # [FW.8 · ⚖️ founder 2026-09-29] Судимо за НАБОРОМ смуг, які може тримати
+  # пристрій (`Tree#device_lorenz_bands`: заводська + видані), а не за бажаними
+  # per-species: пакет чесний, якщо його статус дає бодай один кандидат. Поза
+  # зоною, де кандидати розходяться, вони збігаються, тож перевірка там точна;
+  # у зоні пакет, що відкинув частину кандидатів, — ДОКАЗ смуги
+  # (`Downlink::ThresholdBand.record_evidence!`).
   # ⛔ Не повертати сюди `effective_lorenz_thresholds` під підставою «щоб
   # розходження лишалось консистентним із порогами, якими провіженили прошивку»:
-  # прошивку ними НЕ провіженять, тож для родини з `critical_z_min > 2.0` чесний
-  # пакет дає категоричний mismatch і P0-алерт на НЕВИННОМУ дереві.
-  # Механізм, виміри й подія повернення per-species — `03_04 §5.3`.
+  # до доказу пристрій ними НЕ судить, тож для родини з `critical_z_min > 2.0`
+  # чесний пакет дає категоричний mismatch і P0-алерт на НЕВИННОМУ дереві.
+  # Членство судить СИРИЙ z (`lorenz_state_z`) — ним класифікує прошивка;
+  # `z_value` округлено до 4 знаків для зберігання, і на межі смуги воно
+  # розводило б два обчислення. Механізм, виміри й ціна набору — `03_04 §5.3`.
   # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
   # disabled by default to preserve current categorical behaviour:
   #   - `GAIA_DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
@@ -872,13 +878,12 @@ class TelemetryUnpackerService < ApplicationService
 
   def check_z_divergence!(tree, attributes)
     server_z = attributes[:z_value]
+    raw_z = attributes[:lorenz_state_z]
     device_bio_status = attributes[:bio_status]
-    return if server_z.nil? || device_bio_status.nil?
+    return if raw_z.nil? || device_bio_status.nil?
 
-    thresholds = tree.device_lorenz_thresholds
-    # [E.64] ρ-відносна стеля аномалії (дзеркало firmware bio_contract.rb): ambient-temp
-    # не дає хибний DCI-mismatch. homeostasis = z ≥ min (absolute) і ≤ ρ-relative ceiling.
-    ceiling = SilkenNet::Attractor.anomaly_ceiling(lorenz_temperature(attributes), thresholds[:max])
+    temp  = lorenz_temperature(attributes)
+    bands = tree.device_lorenz_bands
     # ⛔ [E.64 2026-09-05] Імена БУЛИ `server_healthy`/`device_healthy` — і саме
     # цей епітет є насінням класу, що коштував трьох механізмів за один день
     # (per-tree алерт · per-cluster ентропія · ML-фіча). Тут не «здоровʼя», а
@@ -889,11 +894,12 @@ class TelemetryUnpackerService < ApplicationService
     # і проминула: варн нижче друкував `healthy_range=` аж до 2026-09-20, тобто
     # епітет доїхав до операторського екрана тим каналом, якого припис не називав.
     # ⚠️ Друга половина того ж інциденту була гіршою за словникову: рядок друкував
-    # СИРИЙ `thresholds[:max]`, тоді як вирок ухвалює `ceiling` ↑ — тож черговий по
+    # СИРИЙ `thresholds[:max]`, тоді як вирок ухвалює ρ-стеля — тож черговий по
     # `🔴 Telemetry fraud detected` читав межу, яка вироку не виносила (у теплу
     # погоду ρ-стеля вища за 45). **Друкуй ту величину, яка СУДИЛА.**
-    server_in_band = server_z >= thresholds[:min] && server_z <= ceiling
     device_in_band = device_bio_status == :homeostasis
+    matches = ->(band) { in_lorenz_band?(raw_z, band, temp) == device_in_band }
+    matching = bands.select(&matches)
 
     # [FW.31] Optional numeric drift check (feature-flagged, default off).
     # Runs IN ADDITION to the categorical check below — never replaces it.
@@ -913,7 +919,7 @@ class TelemetryUnpackerService < ApplicationService
       end
     end
 
-    if device_in_band != server_in_band
+    if matching.empty?
       # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
       # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
       # cold-boot uses firmware's RTC default (day 10_957, FIRMWARE_RTC_DEFAULT_EPOCH_DAY) as epoch_day instead
@@ -922,17 +928,38 @@ class TelemetryUnpackerService < ApplicationService
       # the packet is legitimate — mark time_unsynced_fallback and request RTC
       # correction via TimeSyncDownlinkWorker instead of counting fraud.
       if !attributes[:cold_start_flag] &&
-          try_time_sync_recovery(tree, attributes, thresholds, device_in_band)
+          try_time_sync_recovery(tree, attributes, bands, device_in_band)
         return
       end
 
+      judged = bands.map { |band| "#{band[:min]}..#{SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])}" }
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
-        "server_z=#{server_z}, band=#{thresholds[:min]}..#{ceiling}. " \
+        "server_z=#{server_z}, bands=#{judged.join(' | ')}. " \
         "Dual Computation Integrity mismatch."
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+    elsif matching.size < bands.size
+      record_band_evidence!(tree, attributes, matches)
     end
+  end
+
+  # [FW.8] Членство Z у смузі так, як його судить прошивка: stress-підлога
+  # абсолютна, а стеля аномалії ρ-ВІДНОСНА [E.64] — дзеркало `pack_status_byte`.
+  def in_lorenz_band?(z, band, temp)
+    z >= band[:min] && z <= SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])
+  end
+
+  # [FW.8] Пакет, що відкинув частину кандидатів, — доказ смуги на пристрої.
+  # `vm_error` статусу не рахував, а пакет із невідомим часом міг прийти з
+  # ІНШОГО ланцюга Лоренца (cold-boot зі старою добою): жоден не свідчить.
+  BAND_EVIDENCE_STATUSES = %i[homeostasis stress anomaly].freeze
+
+  def record_band_evidence!(tree, attributes, matches)
+    return unless BAND_EVIDENCE_STATUSES.include?(attributes[:bio_status])
+    return if attributes[:time_unsynced_fallback]
+
+    Downlink::ThresholdBand.record_evidence!(tree, received_at: @received_at || Time.current, &matches)
   end
 
   # [ARCH.41] Attempt cold-start re-derivation with three epoch_day candidates
@@ -944,7 +971,10 @@ class TelemetryUnpackerService < ApplicationService
   # Side effects on match:
   #   * sets attributes[:time_unsynced_fallback] = true
   #   * enqueues TimeSyncDownlinkWorker for the tree's cluster
-  def try_time_sync_recovery(tree, attributes, thresholds, device_in_band)
+  # [FW.8] Збіг — з БУДЬ-ЯКОЮ смугою-кандидатом, тим самим сирим z, що й
+  # основний шлях: інакше recovery «знаходив» би чужу добу там, де основний шлях
+  # відкинув пакет лише через смугу.
+  def try_time_sync_recovery(tree, attributes, bands, device_in_band)
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     return false if seed_bytes.nil?
 
@@ -961,12 +991,8 @@ class TelemetryUnpackerService < ApplicationService
 
     candidates.each do |epoch_day|
       x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)
-      z_candidate, = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
-      # [E.64] ρ-відносна стеля (як у check_z_divergence!) — temp вже визначено вище.
-      candidate_in_band = z_candidate >= thresholds[:min] &&
-        z_candidate <= SilkenNet::Attractor.anomaly_ceiling(temp, thresholds[:max])
-
-      next unless candidate_in_band == device_in_band
+      *, z_candidate = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
+      next unless bands.any? { |band| in_lorenz_band?(z_candidate, band, temp) == device_in_band }
 
       attributes[:time_unsynced_fallback] = true
       Rails.logger.info(

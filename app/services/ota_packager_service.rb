@@ -59,6 +59,15 @@ class OtaPackagerService
     [ z_min, z_max, z_opt, species_id, config_version & 0xFF ].pack("s<s<s<CC")
   end
 
+  # [FW.8] Смуга з x100-пари тіла 0x9A такою, якою її бачить пристрій: ціле
+  # ділиться на 100.0 (`Lorenz_Band_Args`, common/lorenz_thresholds.h) — той самий
+  # Float, що судить на кремнії. DCI читає смугу звідси, а не з
+  # `effective_lorenz_thresholds`: родинне 5.004 їде на дріт як 500, тож пристрій
+  # судить 5.0, і Z із [5.0, 5.004) розвело б два обчислення на чесному пакеті.
+  def self.threshold_band(z_min_x100, z_max_x100)
+    { min: z_min_x100 / 100.0, max: z_max_x100 / 100.0 }
+  end
+
   # [FW.8] Class-level CRC16-CCITT (XMODEM polynomial 0x1021, init 0xFFFF)
   # Mirrored on firmware/queen/main.c:verify_crc16(). Exposed as class method so
   # FactoryFlashing::FlashKvImage (журнал Flash-KV) може кликати без інстансу сервісу.

@@ -215,8 +215,8 @@ normalize_identifier :device_uid  # HardwareKey
 |------|-----|------|
 | `name` | string | Унікальна назва (напр. "Сосна Звичайна") |
 | `scientific_name` | string | Латинська назва (nullable, для міжнародних контрактів) |
-| `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу) |
-| `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`) |
+| `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу); ⚖️ [FW.8, 2026-09-29] `≥ 2.0` — лише ЗВУЖЕННЯ заводської смуги |
+| `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`, `≤ 45.0` — той самий гард). ⚠️ Межі гарда — лямбдами, не константами в тілі класу: `Tree` вантажить `TreeFamily` зсередини власного тіла (`belongs_to … counter_cache`) ще до своїх `GLOBAL_LORENZ_Z_*`, і пряме посилання давало `NameError` на eager-load |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
 | `biological_properties` | jsonb | `bark_thickness`, `foliage_density`, `fire_resistance_rating`, `optimal_z_target` (`sap_flow_index` знято [ARCH.102] ⚖️ 08-20 — споживача не існувало; історичні ключі в jsonb нешкідливі) |
 
@@ -276,6 +276,11 @@ normalize_identifier :device_uid  # HardwareKey
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
 | `altitude` | numeric | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, `GeoLocatable` знає лише lat/lng. Намір колись стояв у [`00_02 §1`](00_02_Academic_Integration_and_IP) (висоти Queen-шлюзів за оглядовими точками), але 2026-09-26 його знято й обернено — висоту судить link budget, не історія місця (`cultural_layer.md`); жоден інженерний розділ його й не розвивав — link-budget [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) моделює відстань і матеріали, не висоту |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
+| `lorenz_band_held` | jsonb, `[]` | ⚖️ [FW.8, 2026-09-29] x100-пари `[min, max]` смуг, які пристрій може тримати, крім заводської: доведена + заміщені видачі, чий кадр міг долетіти першим. Пише лише `Downlink::ThresholdBand` (під замком рядка). ⚠️ jsonb, а не `bytea[]`: Rails 8.1 пише `bytea[]` сміттям (виміряно) |
+| `lorenz_band_pending` | bytea | Тіло `0x9A` відкритої видачі (8 Б, байт-у-байт) — перевидача запечатує рівно його; `NULL` = видачі немає |
+| `lorenz_band_dlfc` · `lorenz_band_key_epoch` | bigint · integer | Нонс відкритої видачі: перевидача тим самим кадром законна, лише поки обидва збігаються з `HardwareKey` (re-provision обнуляє DLFC у новій епосі) |
+| `lorenz_band_issued_at` · `lorenz_band_served_at` | datetime | Початок вікна доставки · остання видача (`NULL` = пора видавати) |
+| `lorenz_band_stale_count` | smallint, 0 | Пакети зі СТАРОЮ смугою після вікна доставки; на третьому — per-tree `field_audit` `lorenz_band_not_applied` |
 
 **AASM State Machine (column: `status`):**
 
@@ -293,6 +298,7 @@ dormant ──reactivate──► active
 - `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
 - `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback
 - `GLOBAL_LORENZ_Z_OPTIMAL = 29.0` — [FW.8] global fallback
+- `DEVICE_DEFAULT_LORENZ_BAND` — [FW.8] заводська смуга пристрою `{ min: 2.0, max: 45.0 }`, кандидат DCI за будь-якого обліку
 
 **Ключові методи:**
 
@@ -305,8 +311,8 @@ dormant ──reactivate──► active
 | `fresh_signal?(threshold = SILENCE_THRESHOLD)` | **[ARCH.99]** Рядковий бік сигналу тиші — ОДИН дім порога для скоупа й в'ю. ⊥ Свідомо НЕ дзеркало `scope :silent`: той відкидає `last_seen_at IS NULL` (sweeper не гонить Field Audit на вузол, що ще не виходив в ефір), глядачеві ж «жодного пакета» = така сама відсутність свіжого сигналу. 🔴 **[ARCH.84, 2026-08-14] Периметр домкнуто — сайтів було ТРИ, і третій прожив довше за фікс:** `trees/index` перейшов на цей предикат ще при [ARCH.99], а `trees/show` лишався на рукописних «15 хв від `@latest_log.created_at`». Обидві величини штампуються в одній транзакції, тож розходились не дані, а ПОРОГИ — і одне дерево було зеленим у списку й мертвим на власній сторінці ~23 год 45 хв із кожних 24. ⊕ Заразом зникла тихіша розбіжність: `@latest_log` це останній РЯДОК телеметрії, тобто `nil` після retention-зрізу — сторінка називала мертвим дерево з живим `last_seen_at`. **Грепати такий залишок треба за СПІЛЬНИМ ВХОДОМ (`last_seen_at`), а не за іменем предиката: обхід його не згадує за побудовою** (той самий урок, що `Gateway#online?` — скіл `backend` #10) |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
 | `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed; ⚠️ це вже НЕ «звичайний стан» — каскад став `restrict_with_error`, ⚖️ 2026-07-30, і гард лишається як defense-in-depth) |
-| `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default — відповідає на «**ЩО СЛАТИ** на пристрій». Споживач один і СПЛЯЧИЙ: `OtaPackagerService.threshold_config_body` → `Downlink::CommandFrame.thresholds` (викликача в `app/`/`lib/` нема, тракт доставки не дротований). 🔴 **[2026-09-05] `TelemetryUnpackerService#check_z_divergence!` тут БІЛЬШЕ НЕ значиться** — DCI судить за `device_lorenz_thresholds` ↓, бо порівнювати треба два обчислення, а не дві конфігурації.
-| `device_lorenz_thresholds` | [FW.8] Смуга, ЧИННА НА ПРИСТРОЇ — глобальні константи як дзеркало firmware `BioContract::CRITICAL_Z_MIN/MAX` (per-species до `bio_status` не доходять жодним шляхом). Єдиний споживач — категоричний DCI. ⛔ Не «покращувати» до per-species, доки доставку порогів на пристрій вимкнено (`FW8_PARSER_ENABLED 0` — mruby смугу приймає аргументами, але бойова збірка шле дефолти): подія — bench-нога [`00_07`](00_07_Action_Plan_Tracker) FW.8. |
+| `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default — відповідає на «**ЩО СЛАТИ** на пристрій». Споживач — видача `0x9A` (`Downlink::ThresholdBand`, з poll-деривації Королеви), ENV-гейтована `FW8_THRESHOLDS_DOWNLINK_ENABLED` і вмикана ПІСЛЯ прошивкового фліпу; тіло — `OtaPackagerService.threshold_config_body`. 🔴 **[2026-09-05] `TelemetryUnpackerService#check_z_divergence!` тут БІЛЬШЕ НЕ значиться** — DCI судить за `device_lorenz_bands` ↓, бо порівнювати треба два обчислення, а не дві конфігурації.
+| `device_lorenz_bands` | [FW.8 · ⚖️ founder 2026-09-29] НАБІР смуг `[{ min:, max: }]`, будь-якою з яких може судити пристрій: заводська `DEVICE_DEFAULT_LORENZ_BAND` (завжди) + `lorenz_band_held` + відкрита видача. Межі — x100 тіла `0x9A`, поділені як на пристрої (`OtaPackagerService.threshold_band`). Єдиний споживач — категоричний DCI; облік веде `Downlink::ThresholdBand`. Механізм, ціна й поправки застосування — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor). |
 
 **Callbacks:**
 - `after_create :build_default_wallet` — автоматично створює Wallet
@@ -392,11 +398,11 @@ dormant ──reactivate──► active
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone`, `lorenz_overrides_by_species` |
 | `ota_version_hiwater` | bigint | [SEC.20] Anti-rollback high-water: максимальний `BioContractFirmware#id`, ВЖЕ dispatch-нутий у кластер. Guard `firmware.id > hiwater` + бамп — `Ota::DeploymentDispatcherService` ([`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)); default 0 = кампаній не було |
 
-> **`lorenz_overrides_by_species`** [FW.8] — JSONB hash з per-species Lorenz thresholds для цього кластера. Ключ: `scientific_name` (string); значення: `{ "z_min": Float, "z_max": Float, "z_optimal": Float }`. Дозволяє override для конкретного виду тільки в цьому кластері. Підлягає валідації через `validate_lorenz_overrides_by_species`. Приклад:
+> **`lorenz_overrides_by_species`** [FW.8] — JSONB hash з per-species Lorenz thresholds для цього кластера. Ключ: `scientific_name` (string); значення: `{ "min": Float, "max": Float, "optimal": Float }`, кожне опційне. Дозволяє override для конкретного виду тільки в цьому кластері. Підлягає валідації через `validate_lorenz_overrides_by_species`: інші ключі відкидаються як невідомі (доти приклад нижче ніс `z_min`/`z_max`/`z_optimal`, тобто форму, якої валідатор не пропускає), `min < max`, `optimal` між ними, і ⚖️ **[FW.8, 2026-09-29] лише ЗВУЖЕННЯ заводської смуги**: `min ≥ 2.0`, `max ≤ 45.0` — кожна межа окремо, бо оверрайд частковий (підстава й ціна — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)). Складений ланцюг (оверрайд + родина) ще раз судить `Downlink::ThresholdBand` перед видачею. Писача в застосунку немає. Приклад:
 > ```json
 > {
->   "Pinus sylvestris": { "z_min": 1.5, "z_max": 46.0, "z_optimal": 30.0 },
->   "Quercus robur":    { "z_min": 3.0, "z_max": 42.0, "z_optimal": 27.0 }
+>   "Pinus sylvestris": { "min": 6.0, "max": 40.0, "optimal": 30.0 },
+>   "Quercus robur":    { "min": 8.0, "max": 38.0, "optimal": 27.0 }
 > }
 > ```
 
@@ -413,7 +419,7 @@ dormant ──reactivate──► active
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
 | `mapped?` | Чи є GeoJSON координати |
-| `lorenz_overrides_for(scientific_name)` | [FW.8] Повертає `{ min:, max:, optimal: }` або `nil` для даного виду. Читає `lorenz_overrides_by_species[scientific_name]`. |
+| `lorenz_overrides_for(scientific_name)` | [FW.8] Повертає `{ min:, max:, optimal: }` для даного виду; не налаштоване значення — `nil` (хеш є завжди). Читає `lorenz_overrides_by_species[scientific_name]`. |
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
 

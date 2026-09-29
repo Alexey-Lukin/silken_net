@@ -51,6 +51,7 @@ lt:
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: 24 val. vidinė draudimo emisija %{window_sum} %{token_type} viršija lubas %{cap}. Išmoka sustabdyta — patikrink ekspoziciją prieš rankinį išsprendimą.'
       insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: rezervo nepavyko įvertinti, todėl vartai suveikė fail-closed. Error: %{error}'
       insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] dėl #%{id}: 30 dienų vidinė draudimo emisija %{outstanding} viršija rezervą %{reserve} × %{ratio}. Išmoka sustabdyta — papildyk DAO_TREASURY prieš rankinį išsprendimą.'
+      lorenz_band_not_applied: "📡 Mazgas %{did} netaiko išduotos Lorenzo juostos (išduota %{issued_at}): paketų su senąja juosta po pristatymo lango — %{stale_packets}. DCI priima bet kurios išduotos juostos būseną, tad tai ne sukčiavimas; priežastis mazge — programinė įranga be juostos analizatoriaus, nesumontuotas Flash-KV žurnalas arba mazgo komandų skaitiklis lenkia mūsiškį. Reikia išvykti patikrinti mazgą."
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} nukalta per %{window}, o tai viršija nustatytas lubas (%{ceiling}). Galimas programinės įrangos/konvejerio gedimas arba piktnaudžiavimas MINTER raktu. Patikrink naujausias mint tx prieš keliant lubas.'
       non_fire_peril: 'Įspėjimo #%{alert_id} rizikos negali įvertinti gaisro palydovas (FIRMS mato tik gaisrą) — nei patvirtinti, nei paneigti. Išmoka ir sprendimas lieka įšaldyti iki fizinės apžiūros: būtinas išvykimas į vietą.'
       obscured_critical_fire: "🔥 Kritinį gaisro įspėjimą #%{alert_id} užstoja debesys/lajos — palydovas negali nei patvirtinti, nei paneigti. Būtina NEDELSIANT atlikti fizinę apžiūrą: laukti 48 val. orbitos praskridimo čia nepriimtina (gyvybės sauga)."
@@ -72,6 +73,7 @@ lt:
       tree_silent: "🌳 Mazgas %{did} tyli ~%{silent_for_h} h (paskutinis siuntimas %{last_seen_at}, slenkstis %{threshold_h} h). Tyli sveikata ir mirtis/vagystė neatskiriamos iki heartbeat — reikia išvykti klausytis."
     resolutions:
       gateway_returned: Šliuzas %{uid} vėl eteryje (%{seen_at}).
+      lorenz_band_applied: Mazgas %{did} pritaikė išduotą juostą — tai įrodė paketo būsena zonoje, kur juostos išsiskiria.
       maintenance_restored: 'Atkurta atlikus priežiūrą (įrašas #%{record_id}).'
       mint_volume_detector_disabled: Mint-volume detektorius išjungtas (`mint_volume_hourly_max_scc` = 0) — įspėjimas uždarytas kaip netekęs pagrindo, o ne kaip pašalintas.
       mint_volume_recovered: "%{token_type} kalimo apimtis vėl žemiau lubų (%{volume} <= %{max} SCC)."

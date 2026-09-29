@@ -8,7 +8,15 @@ class TreeFamily < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
-  validates :critical_z_min, presence: true, numericality: true
+  # [FW.8 · ⚖️ 2026-09-29] Смуга родини — лише ЗВУЖЕННЯ заводської (2.0/45.0):
+  # ширша рідше давала б «аномалію», тобто більше балів, і DCI цього не бачить,
+  # бо пристрій справді рахує нею. Виду, якому потрібна ширша, міняють дефолт
+  # прошивки — присудом, не правкою довідника.
+  # ⚠️ Межі — лямбдами, не константами в тілі класу: `Tree` вантажить цей клас
+  # зсередини ВЛАСНОГО тіла (`belongs_to … counter_cache`) ще до своїх
+  # `GLOBAL_LORENZ_Z_*`, тож пряме посилання давало NameError на eager-load.
+  validates :critical_z_min, presence: true,
+            numericality: { greater_than_or_equal_to: ->(_) { Tree::GLOBAL_LORENZ_Z_MIN } }
 
   # [Series D: Глобальний Аудит]: Латинська назва для міжнародних контрактів та страхування
   validates :scientific_name, uniqueness: true, allow_nil: true
@@ -25,7 +33,7 @@ class TreeFamily < ApplicationRecord
   # Гарантуємо, що межі Атрактора не перехрещуються
   validates :critical_z_max,
             presence: true,
-            numericality: true,
+            numericality: { less_than_or_equal_to: ->(_) { Tree::GLOBAL_LORENZ_Z_MAX } },
             comparison: { greater_than: :critical_z_min }
 
   # --- JSONB PROPERTIES (The TinyML Support) ---
@@ -115,7 +123,7 @@ class TreeFamily < ApplicationRecord
   # породу (спеки насіння й родинних меж), де кластера в питанні немає.
   #
   # 🔴 [FW.8] ⛔ Не приписувати цей ланцюг категоричному DCI: той судить за
-  # `Tree#device_lorenz_thresholds` (смуга, ЧИННА НА ПРИСТРОЇ), бо порівнювати
+  # `Tree#device_lorenz_bands` (смуги, які може тримати ПРИСТРІЙ), бо порівнювати
   # треба два обчислення, а не дві конфігурації (`03_04 §5.3`).
   # ⛔ [E.64 ⚖️ 2026-09-05] Родинна смуга більше НЕ судить продових вердиктів:
   # біо-гілку `AlertDispatchService` → `Attractor.homeostatic?` → `severe_drought`

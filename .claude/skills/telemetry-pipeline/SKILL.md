@@ -41,6 +41,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 16. Z у проді має РІВНО ОДНОГО споживача-вердикт — `check_z_divergence!` (DCI); решта читачів `z_value` лише показують чи пінять його, і жодного вердикту про ЗДОРОВʼЯ з `z_value`/`Attractor`-предикатів не заводити
 17. `TelemetryUnpackerService#perform` ПОВЕРТАЄ `Summary`, а трансляція в UI стоїть ПІСЛЯ нього — і обидві половини несучі
 18. `bin/forest_simulator` рахує `bio_status` ВЛАСНИМ Lorenz-ланцюгом і читає серверний хвіст рівно раз на дерево за процес — інакше DCI або вічно червона, або зелена за побудовою
+19. DCI судить членство СИРИМ z (`lorenz_state_z`, останній елемент `calculate_z_from_state`) проти НАБОРУ смуг пристрою — не `z_value` і не одну смугу
 
 <!-- /TELEMETRY-GOTCHAS-INDEX -->
 

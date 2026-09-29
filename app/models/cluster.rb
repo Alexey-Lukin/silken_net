@@ -316,6 +316,16 @@ class Cluster < ApplicationRecord
       if min && max && min >= max
         errors.add(:lorenz_overrides_by_species, "'min' must be < 'max' for species '#{species}'")
       end
+      # [FW.8 · ⚖️ 2026-09-29] Лише ЗВУЖЕННЯ заводської смуги — той самий гард, що на
+      # родині (`TreeFamily`); складений ланцюг ще раз судить Downlink::ThresholdBand.
+      if min && min < Tree::GLOBAL_LORENZ_Z_MIN
+        errors.add(:lorenz_overrides_by_species,
+                   "'min' must be >= #{Tree::GLOBAL_LORENZ_Z_MIN} (device default) for species '#{species}'")
+      end
+      if max && max > Tree::GLOBAL_LORENZ_Z_MAX
+        errors.add(:lorenz_overrides_by_species,
+                   "'max' must be <= #{Tree::GLOBAL_LORENZ_Z_MAX} (device default) for species '#{species}'")
+      end
       if optimal && min && optimal <= min
         errors.add(:lorenz_overrides_by_species, "'optimal' must be > 'min' for species '#{species}'")
       end

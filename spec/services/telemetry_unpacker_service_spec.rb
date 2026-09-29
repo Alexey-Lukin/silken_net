@@ -29,7 +29,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     # [SEC.11] Pin the post-cutover entry-point so attribute-level
     # assertions are stable. Returns [z, x, y, z_final] tuple.
     allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
-      .and_return([ 0.5, 0.1, 0.2, 0.3 ])
+      .and_return([ 0.5, 0.1, 0.2, 0.5 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
     # [OPS.37 / ARCH.118] The W3bstream leg is activation-gated; the enqueue pins below assume a
     # LIVE leg. The gate has its own negative example further down.
@@ -80,7 +80,7 @@ end
       captured = nil
       allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do |*args|
         captured = args
-        [ 0.5, 0.1, 0.2, 0.3 ]
+        [ 0.5, 0.1, 0.2, 0.5 ]
       end
 
       described_class.call(build_chunk(did_hex, -70, 3500, 22, 5, 100, 10, 3))
@@ -725,7 +725,7 @@ end
         service = described_class.new("", nil)
         # z=50 is ABOVE global default Tree::GLOBAL_LORENZ_Z_MAX (45.0)
         # device says "homeostasis" → divergence MUST be detected (server_in_band=false)
-        attributes = { z_value: 50.0, bio_status: :homeostasis }
+        attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
@@ -736,16 +736,16 @@ end
         tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC03".to_i(16)), cluster: cluster, tree_family: tree_family)
         allow(tree_no_family).to receive(:tree_family).and_return(nil)
         service = described_class.new("", nil)
-        attributes = { z_value: 25.0, bio_status: :homeostasis } # well within 2..45
+        attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis } # well within 2..45
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
-      it "skips when server_z is nil" do
+      it "skips when the Lorenz state is absent" do
         service = described_class.new("", nil)
-        attributes = { z_value: nil, bio_status: :homeostasis }
+        attributes = { z_value: nil, lorenz_state_z: nil, bio_status: :homeostasis }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -754,7 +754,7 @@ end
 
       it "skips when device_bio_status is nil" do
         service = described_class.new("", nil)
-        attributes = { z_value: 25.0, bio_status: nil }
+        attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: nil }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -763,7 +763,7 @@ end
 
       it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
         service = described_class.new("", nil)
-        attributes = { z_value: 50.0, bio_status: :homeostasis }
+        attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -772,7 +772,7 @@ end
 
       it "does not flag when both device and server agree on healthy" do
         service = described_class.new("", nil)
-        attributes = { z_value: 25.0, bio_status: :homeostasis }
+        attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -781,7 +781,7 @@ end
 
       it "does not flag when both device and server agree on unhealthy" do
         service = described_class.new("", nil)
-        attributes = { z_value: 50.0, bio_status: :stress }
+        attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :stress }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -799,9 +799,9 @@ end
         # Ліхтарі: якщо фікстура з'їде так, що 3.0 перестане розрізняти смуги,
         # приклад мусить сказати це прямо, а не тихо стати вакуумним.
         expect(tree_with_family.effective_lorenz_thresholds[:min]).to eq(5.0)
-        expect(tree_with_family.device_lorenz_thresholds[:min]).to eq(Tree::GLOBAL_LORENZ_Z_MIN)
+        expect(tree_with_family.device_lorenz_bands).to eq([ Tree::DEVICE_DEFAULT_LORENZ_BAND ])
         expect(Tree::GLOBAL_LORENZ_Z_MIN).to be < 3.0
-        attributes = { z_value: 3.0, bio_status: :homeostasis }
+        attributes = { z_value: 3.0, lorenz_state_z: 3.0, bio_status: :homeostasis }
 
         # Spy-форма свідомо: `RSpec/MessageSpies` вмикається, і новий приклад
         # не має права дописувати в чергу міграції те, що сам же й зрізає.
@@ -824,10 +824,79 @@ end
         # temp = 0 → ρ = 28: стеля родини 40, стеля пристрою 45. Z=42 лежить МІЖ.
         expect(SilkenNet::Attractor.anomaly_ceiling(0.0, 40.0)).to eq(40.0)
         expect(SilkenNet::Attractor.anomaly_ceiling(0.0, Tree::GLOBAL_LORENZ_Z_MAX)).to eq(45.0)
-        attributes = { z_value: 42.0, bio_status: :homeostasis, temperature_c: 0.0 }
+        attributes = { z_value: 42.0, lorenz_state_z: 42.0, bio_status: :homeostasis, temperature_c: 0.0 }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      end
+
+      # [FW.8 · ⚖️ founder 2026-09-29] Набір кандидатів: смуга, яку вузлу ВИДАНО,
+      # чесна поряд із заводською. Z = 3.0 заводська судить гомеостазом, видана
+      # 5.0/40.0 — стресом; пакет «stress» пасує лише виданій, тож він і не фрод, і
+      # ДОКАЗ, що вузол її тримає.
+      describe "з виданою смугою [FW.8]" do
+        let(:issued) { [ 500, 4000, 2900, 0xFF, 1 ].pack("s<s<s<CC") }
+
+        before do
+          tree_with_family.update_columns(lorenz_band_pending: issued, lorenz_band_dlfc: 1, lorenz_band_key_epoch: 0,
+                                          lorenz_band_issued_at: 1.hour.ago, lorenz_band_served_at: 1.hour.ago)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        end
+
+        def judge(**packet)
+          described_class.new("", nil).send(:check_z_divergence!, tree_with_family,
+                                            { temperature_c: 0.0, **packet })
+        end
+
+        it "приймає статус виданої смуги й записує його як доказ" do
+          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :stress)
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+          expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
+          expect(tree_with_family.lorenz_band_pending).to be_nil
+        end
+
+        it "і далі ловить статус, якого не дає жоден кандидат" do
+          judge(z_value: 1.0, lorenz_state_z: 1.0, bio_status: :homeostasis, cold_start_flag: true)
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+        end
+
+        # `vm_error` статусу не рахував, а пакет із невідомим часом міг прийти з
+        # іншого ланцюга Лоренца — доказом смуги не є жоден.
+        it "не бере доказу з vm_error і з пакета з невідомим часом" do
+          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :vm_error)
+          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :stress, time_unsynced_fallback: true)
+
+          expect(tree_with_family.reload.lorenz_band_pending).to eq(issued)
+        end
+
+        # 🔴 Квантизація: родинне 40.004 їде на дріт як 4000, і пристрій судить 40.0.
+        # Z = 40.002 при temp 0 — аномалія для нього й гомеостаз для бажаних 40.004;
+        # кандидат із недоквантованою межею не пасував би ніде, і чесний пакет став
+        # би фродом.
+        it "судить видану смугу так, як її поділив пристрій (x100 / 100.0)" do
+          tree_with_family.tree_family.update!(critical_z_max: 40.004)
+          tree_with_family.update_columns(lorenz_band_pending: OtaPackagerService.threshold_config_body(tree_with_family))
+
+          judge(z_value: 40.002, lorenz_state_z: 40.002, bio_status: :anomaly)
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+          expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
+        end
+      end
+
+      # 🔴 [FW.8] Членство судить СИРИЙ z: ним класифікує прошивка
+      # (`BioContract.pack_status_byte`), а `z_value` округлено до 4 знаків. Сире
+      # 1.99996 — стрес для пристрою, округлене 2.0 — гомеостаз для сервера; судячи
+      # округленим, DCI виписав би фрод чесному пакету на межі.
+      it "[FW.8] судить членство СИРИМ z, не округленим" do
+        service = described_class.new("", nil)
+        attributes = { z_value: 2.0, lorenz_state_z: 1.99996, bio_status: :stress, temperature_c: 0.0 }
+
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
@@ -836,7 +905,7 @@ end
       # Без цього приклада фікс не відрізнити від «DCI просто вимкнули».
       it "[FW.8] і далі ловить розбіжність нижче ПРИСТРОЄВОГО порога" do
         service = described_class.new("", nil)
-        attributes = { z_value: 1.0, bio_status: :homeostasis, cold_start_flag: true }
+        attributes = { z_value: 1.0, lorenz_state_z: 1.0, bio_status: :homeostasis, cold_start_flag: true }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -855,7 +924,7 @@ end
         it "does NOT run the numeric branch when feature-flag is off (default)" do
           stub_const("ENV", ENV.to_h.except("GAIA_DCI_NUMERIC_TOLERANCE", "GAIA_DCI_NUMERIC_EPSILON"))
           # Categorical agreement (both healthy) → no fraud
-          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 999.0 }
+          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 999.0 }
 
           # Even with absurd device_z drift, when toggle is off the
           # categorical pathway is the only one that runs and stays silent.
@@ -869,7 +938,7 @@ end
             "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
             "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
           ))
-          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
+          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
 
           allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -883,7 +952,7 @@ end
           ))
           # |25.0 - 25.5| = 0.5 ≫ 0.001 — numeric branch fires.
           # Categorical also passes (both healthy) → only ONE increment from numeric.
-          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.5 }
+          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.5 }
 
           allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -893,7 +962,7 @@ end
         it "uses DEFAULT_DCI_EPSILON (0.001) when GAIA_DCI_NUMERIC_EPSILON is unset" do
           stub_const("ENV", ENV.to_h.merge("GAIA_DCI_NUMERIC_TOLERANCE" => "true").except("GAIA_DCI_NUMERIC_EPSILON"))
           # |25.0 - 25.0005| = 0.0005 < 0.001 (default) → silent.
-          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
+          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
 
           allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -916,7 +985,7 @@ end
             "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
           ))
           # No device_z key — feature-flagged hook cannot fire.
-          attributes = { z_value: 25.0, bio_status: :homeostasis }
+          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis }
 
           allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
@@ -944,12 +1013,12 @@ end
         let(:service) { described_class.new("", nil) }
 
         it "sets time_unsynced_fallback and enqueues TimeSyncDownlinkWorker on candidate match" do
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 25.0 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
-            z_value: 0.5, bio_status: :homeostasis,
+            z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
             cold_start_flag: false,
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
@@ -963,12 +1032,12 @@ end
         end
 
         it "increments fraud when no candidate matches (genuine mismatch)" do
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.1, 0.2, 0.5 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
-            z_value: 0.5, bio_status: :homeostasis,
+            z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
             cold_start_flag: false,
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
@@ -982,12 +1051,12 @@ end
         end
 
         it "skips recovery and increments fraud when cold_start_flag is true" do
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 25.0 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
-            z_value: 0.5, bio_status: :homeostasis,
+            z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
             cold_start_flag: true,
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
@@ -1009,7 +1078,7 @@ end
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
-            z_value: 0.5, bio_status: :homeostasis,
+            z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
             cold_start_flag: false,
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
@@ -1035,24 +1104,24 @@ end
           t
         end
         let(:service) { described_class.new("", nil) }
-        let(:thresholds) { { min: 2.0, max: 45.0 } }
+        let(:bands) { [ Tree::DEVICE_DEFAULT_LORENZ_BAND ] }
 
         it "returns false when tree has no hardware_key" do
           bare_tree = create(:tree, did: format("SNET-%08X", "0000AC21".to_i(16)), cluster: cluster)
           bare_tree.create_device_calibration! if bare_tree.device_calibration.nil?
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          expect(service.send(:try_time_sync_recovery, bare_tree, attributes, thresholds, true)).to be(false)
+          expect(service.send(:try_time_sync_recovery, bare_tree, attributes, bands, true)).to be(false)
           expect(attributes[:time_unsynced_fallback]).to be_nil
         end
 
         it "tries exactly three epoch_day candidates" do
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.0 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.5 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
           expect(SilkenNet::SeedDerivation).to have_received(:initial_state).exactly(3).times
         end
 
@@ -1062,10 +1131,10 @@ end
             captured << epoch_day
             [ 0.1, 0.2, 0.3 ]
           end
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.0 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.5 ])
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
 
           expect(captured).to include(described_class::FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
         end
@@ -1084,12 +1153,12 @@ end
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do
             call_count += 1
-            [ 25.0, 0.0, 0.0, 0.0 ]
+            [ 25.0, 0.0, 0.0, 25.0 ]
           end
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
 
           expect(call_count).to eq(1)
         end
@@ -1097,11 +1166,11 @@ end
         it "does not enqueue TimeSyncDownlinkWorker when cluster_id is nil" do
           allow(recovery_tree).to receive(:cluster_id).and_return(nil)
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.0, 0.0, 0.0 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.0, 0.0, 25.0 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
 
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
@@ -1660,7 +1729,7 @@ end
       # а не систему. Тож саме тут z повертається в смугу: предмет прикладу —
       # МЕТАБОЛІЧНИЙ канал, і решта звірок мусить мовчати чесно.
       allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
-        .and_return([ 32.0, 0.1, 0.2, 0.3 ])
+        .and_return([ 32.0, 0.1, 0.2, 32.0 ])
 
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)

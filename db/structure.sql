@@ -1642,7 +1642,14 @@ CREATE TABLE public.trees (
     peaq_did_compromised boolean DEFAULT false NOT NULL,
     latest_stress_index numeric(4,3),
     silicon_uid_hex character varying,
-    status_changed_at timestamp(6) without time zone
+    status_changed_at timestamp(6) without time zone,
+    lorenz_band_held jsonb DEFAULT '[]'::jsonb NOT NULL,
+    lorenz_band_pending bytea,
+    lorenz_band_dlfc bigint,
+    lorenz_band_key_epoch integer,
+    lorenz_band_issued_at timestamp(6) without time zone,
+    lorenz_band_served_at timestamp(6) without time zone,
+    lorenz_band_stale_count smallint DEFAULT 0 NOT NULL
 );
 
 
@@ -4737,6 +4744,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260929140000'),
 ('20260929120000'),
 ('20260928120000'),
 ('20260925090000'),

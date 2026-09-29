@@ -36,7 +36,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
       # [SEC.11] Sole entry-point is calculate_z_from_state — pin to a
       # deterministic Z so the integration assertions are stable.
       allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
-        .and_return([ 25.0, 0.1, 0.2, 0.3 ])
+        .and_return([ 25.0, 0.1, 0.2, 25.0 ])
     end
 
     # build_chunk lives in spec/support/telemetry_chunk_helper.rb —

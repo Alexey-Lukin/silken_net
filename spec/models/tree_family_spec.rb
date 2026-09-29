@@ -115,6 +115,27 @@ RSpec.describe TreeFamily, type: :model do
       end
     end
 
+    # [FW.8 · ⚖️ 2026-09-29] Родина лише ЗВУЖУЄ заводську смугу: ширша рідше
+    # давала б «аномалію», тобто більше балів, і DCI цього не бачить, бо пристрій
+    # справді рахує нею. Межі самої заводської смуги — законні.
+    describe "narrowing guard (factory band 2.0/45.0)" do
+      it "rejects a floor below the device default" do
+        family = build(:tree_family, critical_z_min: 1.99)
+        expect(family).not_to be_valid
+        expect(family.errors.of_kind?(:critical_z_min, :greater_than_or_equal_to)).to be(true)
+      end
+
+      it "rejects a ceiling above the device default" do
+        family = build(:tree_family, critical_z_max: 45.01)
+        expect(family).not_to be_valid
+        expect(family.errors.of_kind?(:critical_z_max, :less_than_or_equal_to)).to be(true)
+      end
+
+      it "accepts the factory band itself" do
+        expect(build(:tree_family, critical_z_min: 2.0, critical_z_max: 45.0)).to be_valid
+      end
+    end
+
     describe "carbon_sequestration_coefficient" do
       it "requires a positive value" do
         family = build(:tree_family, carbon_sequestration_coefficient: 0)

@@ -41,10 +41,12 @@ module Downlink
            key_hex: hardware_key.previous_aes_key_hex, dlfc: hardware_key.downlink_frame_counter)
     end
 
-    # 0x9A пороги Лоренца дерева (FW.8) — тіло з governance-ланцюга порогів.
-    def thresholds(hardware_key, tree:, config_version:, dlfc:)
-      seal_current(hardware_key, THRESHOLDS,
-                   OtaPackagerService.threshold_config_body(tree, config_version: config_version), dlfc)
+    # 0x9A пороги Лоренца дерева (FW.8). Тіло — ЗАПИСАНЕ при видачі
+    # (Downlink::ThresholdBand), а не живий governance-ланцюг: під одним DLFC
+    # мусить їхати одне тіло, інакше правка родини між двома видачами дала б
+    # повтор нонса CCM з іншим відкритим текстом.
+    def thresholds(hardware_key, body:, dlfc:)
+      seal_current(hardware_key, THRESHOLDS, body, dlfc)
     end
 
     def seal_current(hardware_key, opcode, body, dlfc)

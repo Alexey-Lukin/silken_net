@@ -271,9 +271,9 @@ module Hil
     #
     # ⚠️ NAME THE FRAME, because the two sides of this method answer to
     # different bands. Everything here is the FAMILY band (`DEFAULT_Z_MIN` 5.0
-    # / a `TreeFamily`'s own pair). The band that judges in PRODUCTION is the
-    # DEVICE one — `Tree#device_lorenz_thresholds` = 2.0/45.0, mirroring
-    # `BioContract::CRITICAL_Z_MIN` — and DCI compares against that [FW.8].
+    # / a `TreeFamily`'s own pair). What judges in PRODUCTION is the DEVICE side —
+    # `Tree#device_lorenz_bands`: the factory 2.0/45.0 (`BioContract::CRITICAL_Z_MIN`)
+    # plus whatever 0x9A band the node may hold — and DCI compares against that [FW.8].
     # So a `:stress` fixture at `5.0 − 1.5 = 3.5` is stress by the family band
     # and HOMEOSTASIS by the device band. That is correct for a family-band
     # fixture and wrong the moment someone feeds it to a device-band consumer.

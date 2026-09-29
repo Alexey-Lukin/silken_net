@@ -458,8 +458,9 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 //
 // 🟡 СТАТУС: Deferred TRL-7 (FW.8). Приймач — спільний CCM-шлях адресних
 // команд (секція 1.14: вікно відкриває, КЕНОЗИС застосовує) за гейтом
-// `FW8_PARSER_ENABLED`, за замовчуванням ВИМКНЕНИЙ; відправника в
-// production-pipeline Rails немає.
+// `FW8_PARSER_ENABLED`, за замовчуванням ВИМКНЕНИЙ. Відправник у Rails —
+// Downlink::ThresholdBand за ENV-гейтом FW8_THRESHOLDS_DOWNLINK_ENABLED
+// (default off; вмикається ПІСЛЯ цього фліпу, ⚖️ 2026-09-29).
 //
 // ПРИЧИНА defer: із 20 RTC Backup Register'ів (DR0..DR19) після FW.2
 // freeze-contract (DR15 → CCM Frame Counter) вільний лише DR7 (FW.54) — одне
@@ -2823,7 +2824,8 @@ int main(void)
 #if FW8_PARSER_ENABLED
     // [FW.8] Прийняті 0x9A-пороги — у Flash-KV у тій самій безпечній фазі.
     // Невалідну конфігурацію Save не пише взагалі; power-cut між парою
-    // ключів лікується наступним daily re-send (ADR у lorenz_thresholds.h).
+    // ключів лікує перевидача з бекенду за доказом зі статусу (ADR у
+    // lorenz_thresholds.h).
     if (lorenz_thresholds_dirty && soldier_kv_mounted) {
         LorenzThresholds t;
         t.z_min_x100     = lorenz_z_min_x100;

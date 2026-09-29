@@ -8,7 +8,7 @@ require "rails_helper"
 # → OtaPackagerService.threshold_config_body («ЩО СЛАТИ на пристрій»; кадр — Downlink::CommandFrame).
 # 🔴 [2026-09-05] Заголовок доти називав ланкою ще й `TelemetryUnpackerService
 # divergence check` — знято: DCI цей ланцюг БІЛЬШЕ НЕ читає, він судить за
-# `Tree#device_lorenz_thresholds` (смуга, чинна на пристрої). Обидві половини
+# `Tree#device_lorenz_bands` (смуги, які може тримати пристрій). Обидві половини
 # розведення запінені: governance — нижче, DCI — у
 # `spec/services/telemetry_unpacker_service_spec.rb` («[FW.8]»).
 RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integration do
@@ -42,15 +42,15 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
 
     it "returns Float values for the requested species" do
       cluster.lorenz_overrides_by_species = {
-        "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0, "optimal" => 30.0 }
+        "Pinus sylvestris" => { "min" => 6.0, "max" => 40.0, "optimal" => 30.0 }
       }
       expect(cluster.lorenz_overrides_for("Pinus sylvestris"))
-        .to eq(min: 1.5, max: 46.0, optimal: 30.0)
+        .to eq(min: 6.0, max: 40.0, optimal: 30.0)
     end
 
     it "returns all-nil hash for an unconfigured species" do
       cluster.lorenz_overrides_by_species = {
-        "Pinus sylvestris" => { "min" => 1.5 }
+        "Pinus sylvestris" => { "min" => 6.0 }
       }
       expect(cluster.lorenz_overrides_for("Quercus robur"))
         .to eq(min: nil, max: nil, optimal: nil)
@@ -58,11 +58,11 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
 
     it "supports mixed-species clusters with different overrides per species" do
       cluster.lorenz_overrides_by_species = {
-        "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0 },
+        "Pinus sylvestris" => { "min" => 6.0, "max" => 40.0 },
         "Quercus robur"    => { "min" => 4.0, "max" => 40.0, "optimal" => 25.0 }
       }
       expect(cluster.lorenz_overrides_for("Pinus sylvestris"))
-        .to eq(min: 1.5, max: 46.0, optimal: nil)
+        .to eq(min: 6.0, max: 40.0, optimal: nil)
       expect(cluster.lorenz_overrides_for("Quercus robur"))
         .to eq(min: 4.0, max: 40.0, optimal: 25.0)
     end
@@ -103,8 +103,24 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
 
     it "allows partial overrides (e.g. only min)" do
       cluster.lorenz_overrides_by_species = {
-        "Pinus sylvestris" => { "min" => 1.5 }
+        "Pinus sylvestris" => { "min" => 6.0 }
       }
+      expect(cluster).to be_valid
+    end
+
+    # [FW.8 · ⚖️ 2026-09-29] Лише ЗВУЖЕННЯ: ширша за заводську смуга — тихий
+    # грошовий важіль, якого DCI не бачить. Кожна межа — окремо, бо оверрайд
+    # частковий і відсутня межа не сміє прикривати присутню.
+    it "rejects an override wider than the factory band, bound by bound" do
+      cluster.lorenz_overrides_by_species = { "Pinus sylvestris" => { "min" => 1.5 } }
+      expect(cluster).not_to be_valid
+      expect(cluster.errors[:lorenz_overrides_by_species].join).to include("'min' must be >= 2.0")
+
+      cluster.lorenz_overrides_by_species = { "Pinus sylvestris" => { "max" => 46.0 } }
+      expect(cluster).not_to be_valid
+      expect(cluster.errors[:lorenz_overrides_by_species].join).to include("'max' must be <= 45.0")
+
+      cluster.lorenz_overrides_by_species = { "Pinus sylvestris" => { "min" => 2.0, "max" => 45.0 } }
       expect(cluster).to be_valid
     end
   end
@@ -141,25 +157,25 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0, "optimal" => 30.0 }
+                                     "Pinus sylvestris" => { "min" => 6.0, "max" => 38.0, "optimal" => 30.0 }
                                    }
                                  })
       tree = create(:tree, cluster: cluster, tree_family: pine)
-      expect(tree.effective_lorenz_thresholds).to eq(min: 1.5, max: 46.0, optimal: 30.0)
+      expect(tree.effective_lorenz_thresholds).to eq(min: 6.0, max: 38.0, optimal: 30.0)
     end
 
     it "[mixed-species cluster] each species resolves to its own overrides; others fall through" do
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0, "optimal" => 30.0 }
+                                     "Pinus sylvestris" => { "min" => 6.0, "max" => 38.0, "optimal" => 30.0 }
                                      # No override for Quercus robur — uses family defaults
                                    }
                                  })
       pine_tree = create(:tree, cluster: cluster, tree_family: pine)
       oak_tree  = create(:tree, cluster: cluster, tree_family: oak)
 
-      expect(pine_tree.effective_lorenz_thresholds).to eq(min: 1.5, max: 46.0, optimal: 30.0)
+      expect(pine_tree.effective_lorenz_thresholds).to eq(min: 6.0, max: 38.0, optimal: 30.0)
       expect(oak_tree.effective_lorenz_thresholds).to eq(min: 8.0, max: 38.0, optimal: 24.0)
     end
 
@@ -167,18 +183,18 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.5 } # only min
+                                     "Pinus sylvestris" => { "min" => 6.0 } # only min
                                    }
                                  })
       tree = create(:tree, cluster: cluster, tree_family: pine)
-      expect(tree.effective_lorenz_thresholds).to eq(min: 1.5, max: 40.0, optimal: 27.0)
+      expect(tree.effective_lorenz_thresholds).to eq(min: 6.0, max: 40.0, optimal: 27.0)
     end
 
     it "returns family defaults when family has no scientific_name (override lookup impossible)" do
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.5 }
+                                     "Pinus sylvestris" => { "min" => 6.0 }
                                    }
                                  })
       family_no_name = create(:tree_family, scientific_name: nil,
@@ -228,12 +244,12 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
     it "applies cluster per-species overrides over family values" do
       tree.cluster.update!(environmental_settings: {
         "lorenz_overrides_by_species" => {
-          "Pinus sylvestris" => { "min" => 1.5, "max" => 46.0, "optimal" => 30.5 }
+          "Pinus sylvestris" => { "min" => 2.5, "max" => 44.0, "optimal" => 30.5 }
         }
       })
       z_min, z_max, z_opt = OtaPackagerService.threshold_config_body(tree).unpack("s<s<s<")
-      expect(z_min).to eq(150)
-      expect(z_max).to eq(4600)
+      expect(z_min).to eq(250)
+      expect(z_max).to eq(4400)
       expect(z_opt).to eq(3050)
     end
 
@@ -263,7 +279,7 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.0, "max" => 50.0 }
+                                     "Pinus sylvestris" => { "min" => 6.0, "max" => 38.0 }
                                    }
                                  })
       tree = create(:tree, cluster: cluster, tree_family: family)
@@ -271,23 +287,22 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       # Ліхтар проти повторної вакуумності: смуги мусять РОЗРІЗНЯТИСЬ, інакше
       # приклад нічого не судить.
       expect(family.critical_z_max).to eq(40.0)
-      expect(tree.effective_lorenz_thresholds).to include(min: 1.0, max: 50.0)
+      expect(tree.effective_lorenz_thresholds).to include(min: 6.0, max: 38.0)
     end
 
-    it "DCI цей ланцюг НЕ читає — судить за смугою пристрою [FW.8]" do
+    # [FW.8 · ⚖️ 2026-09-29] DCI читає не ланцюг, а ОБЛІК видачі: поки смугу
+    # не видано, пристрій судить заводською, і бажана смуга кандидатом не є.
+    it "DCI цей ланцюг НЕ читає — до видачі кандидат лише заводська смуга [FW.8]" do
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
-                                     "Pinus sylvestris" => { "min" => 1.0, "max" => 50.0 }
+                                     "Pinus sylvestris" => { "min" => 6.0, "max" => 38.0 }
                                    }
                                  })
       tree = create(:tree, cluster: cluster, tree_family: family)
 
-      expect(tree.device_lorenz_thresholds).to eq(
-        min: Tree::GLOBAL_LORENZ_Z_MIN, max: Tree::GLOBAL_LORENZ_Z_MAX,
-        optimal: Tree::GLOBAL_LORENZ_Z_OPTIMAL
-      )
-      expect(tree.device_lorenz_thresholds).not_to eq(tree.effective_lorenz_thresholds)
+      expect(tree.device_lorenz_bands).to eq([ Tree::DEVICE_DEFAULT_LORENZ_BAND ])
+      expect(tree.device_lorenz_bands).not_to include(tree.effective_lorenz_thresholds.slice(:min, :max))
     end
   end
 end
