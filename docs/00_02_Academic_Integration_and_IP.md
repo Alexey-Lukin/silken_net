@@ -27,7 +27,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (governance/treasury — утримуємо) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — DFT-редокс self-owned; in vitro — профільний біохімік/електрохімік TBD |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — Гусак (коефіцієнт дифузії крізь оксид) |
-| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape (датасет ПМКТ + наш NDVI-адаптер Sentinel-2) — ⏸ паркується разом із TinyML на Солдаті: пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape (наш NDVI-адаптер Sentinel-2) — ⏸ паркується разом із TinyML на Солдаті: пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; ground-truth-протокол → [`05_05 §8`](05_05_Slashing_and_Risk_Policy) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth протокол (партнерський ростер) — ⚠️ **більше НЕ «Z↔health»**: 2026-09-05 (E.64) Z присуджено печаткою DCI, тож калібрується `stress_index` на ПРЯМИХ сигналах, не Z-пороги; предмет Карапетян переїхав відповідно (§1.2) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS = наш (`InsightGeneratorService`) |
@@ -97,13 +97,12 @@
 
 ### 1.2 ЧДТУ — Черкаський державний технологічний університет
 
-Комплементарний до ЧНУ (3 академ-кафедри): **дані/моделі** та **радіоканал** (натурна верифікація нашого Link Budget); акустичні ланки ПМКТ предмет втратили (рядок у таблиці нижче). Інституційний якір — перший проректор **Гончаров** (він же RF-верифікація, Ст.23; MoU-підписант).
+Комплементарний до ЧНУ: **дані/моделі** та **радіоканал** (натурна верифікація нашого Link Budget). Інституційний якір — перший проректор **Гончаров** (він же RF-верифікація, Ст.23; MoU-підписант).
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
 | доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | **Провідниця в ЧДТУ** (зустрічі ще не було, станом на 2026-09-26) — канал відкрила сама ([`00_07`](00_07_Action_Plan_Tracker) UNI.9). Предмет — «на виріст», бо польової телеметрії нуль: anomaly/fraud-статистика поверх нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) · biodiversity fusion-статистика (ANOVA/permutation, [`00_07`](00_07_Action_Plan_Tracker) E.14) — ⏸ її мікро-сигналом була акустика вузла, а її знято разом із пʼєзо · калібрація `stress_index`-ваг на ПРЯМИХ вимірах (sap/VPD) проти польових міток — не Z, бо Z присуджено печаткою DCI ([`05_05 §8.2/§8.3`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13 |
 | **перший проректор Гончаров А.В.** | каф. РТРС (радіотехніка / signal-processing) | **Інституційний якір ЧДТУ** (MoU-підписант) + експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) нашого розрахунку → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
-| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | ⛔ **Акустичні ланки рядка втратили предмет (2026-09-29).** «Фононну лінзу» гіроїда спростовує фізика (Ст. 24 нижче); калібрувальний TinyML-датасет і резонанс пʼєзо в діапазоні фауни лишились без приладу — пʼєзо з Солдата зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)). Поза акустикою — Бондаренко як науковий керівник ЦКК ЧДТУ, канал до обладнання ([`ua_vendor_map`](protocols/procurement/ua_vendor_map.md) §7). Чи лишається рядок і в якій ролі — рішення founder-а ([`00_07`](00_07_Action_Plan_Tracker) UNI.11) | — |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `ParametricInsurance`). Деталі методів — §2.2.
 

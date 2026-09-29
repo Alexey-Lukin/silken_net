@@ -590,7 +590,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 ### 6.3. Cellulose Piezo-Response — Adjacent Research Thread
 
-> **Не план дій.** Дослідницька примітка; co-publication з ЧДТУ ПМКТ, під яку її писали, з HW.30 предмета не має (нижче).
+> **Не план дій.** Дослідницька примітка; co-publication, під яку її писали, предмета не має: пʼєзо з Солдата зрізано, а партнерський рядок ЧДТУ ПМКТ — теж (⚖️ founder 2026-09-29).
 
 **Фактологічна основа (peer-reviewed):**
 - Кристалічна целюлоза є нативним п'єзоелектриком (Fukada, J. Phys. Soc. Jpn., 1955). Сучасні оцінки d₁₄-коефіцієнта целюлозних плівок: ~0.2 pC/N, що на 1–2 порядки нижче за PZT/PVDF.
@@ -604,10 +604,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 | «Целюлозний п'єзо — додаткове джерело живлення» | Power density ~pW/cm² на 6 порядків нижча за EBFC (~µW/cm²) | ❌ Не плануємо як harvesting source |
 | «Анкер в зоні постійних п'єзоелектричних бур» | Анкер фізично присутній у заболоні, але **не задіяний електрично** | ⚠️ Не для енергетики; калібрувати акустичний TinyML на вузлі нема чого — пʼєзо з Солдата зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) |
 
-**Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) — носій п'єзо-експертизи; ⊕ з 2026-09-29 акустичні ланки її рядка предмета не мають (пʼєзо з Солдата зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)), тож co-publication тут не заплановано, а роль рядка вирішує [`00_07`](00_07_Action_Plan_Tracker) UNI.11 ([`00_02 §1.2`](00_02_Academic_Integration_and_IP)).
-
 **Cross-references:**
-- ЧДТУ ПМКТ співпраця → [`00_02 §1.2`](00_02_Academic_Integration_and_IP)
 - Joint publication tracker → [`00_02` — Joint Publications and IP Strategy](00_02_Academic_Integration_and_IP) — Стаття 24 ⛔ знята 2026-09-29 (фізика + прилад, HW.30)
 - Lorenz-attractor input vector → [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor)
 

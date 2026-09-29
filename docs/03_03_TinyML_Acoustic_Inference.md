@@ -721,7 +721,7 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Byte 7: Acoustic Events
 > - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
 > - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
 >
-> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального датасету ЧДТУ ПМКТ (див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
+> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального soundscape-датасету (UNI.13a; див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
 
 ---
 
@@ -900,7 +900,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 |------------|---------|----------|-------------|
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
 | ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | — (SPI/DMA-оптимізація — [`00_07` E.9](00_07_Action_Plan_Tracker), дім DMA — [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) |
-| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) (ПМКТ калібрувальний датасет), [`00_02 §1.2`](00_02_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
+| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk — опційний апгрейд | — (self-owned: пошук параметрів — машинна робота; партнера знято ⚖️ 2026-09-26) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) (Біо-хаб — ground truth) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo) на локальній машині — ⛔ compute не `UNI.9`: той канал — провідництво й статистика, не провіжений кластер; питання compute виникне лише зі зростанням датасету |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
@@ -915,7 +915,7 @@ TRL 6 → 7  (поточний, FW.4 + FW.25):
     (Path A — без DSP; Path B — після інтеграції FFT+Mel; Path C — TFLM frontend op)
   - Верифікувати TENSOR_ARENA + RAM бюджет per chosen path
 
-TRL 7 → 8  (Mongabay pivot, blocked by ChDTU PMKT dataset):
+TRL 7 → 8  (Mongabay pivot, blocked by the soundscape dataset — UNI.13a):
   - Калібрувальний датасет dawn/dusk (Черкаський бір)
   - Re-train модель → 5-class (silence/wind/cavitation/chainsaw/fauna)
     — для fauna class B/C критично кращі за A
