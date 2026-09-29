@@ -9,7 +9,7 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
 #   ruby tools/firmware/board_area_budget.rb --piezo ast1109 --booster nn02_224 --edlc fc --diameter 21
-#   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ два числа канону
+#   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
 # сума кортьярдів, більша за корисну площу сторони, означає «не розводиться ЗА
@@ -146,12 +146,25 @@ def geometric_floor(edlc, socket:)
   (2 * radius) + (2 * USABLE_EDGE_MM)
 end
 
-# Самоперевірка: модель мусить відтворювати ДВА числа, яких не вигадувала, —
-# корисну площу першого проходу й ратифікований Ø25 радома на тій самій стелі.
+# Ціль контуру = більше з двох осей: площа за 70 % заповнення (рівномірно по трьох сторонах) ·
+# геометрична підлога. ⚠️ Пʼєзо — теж її вхід, а його вибір відкритий (`00_07` HW.30).
+def target_for(piezo:, booster:, edlc:, rigid_flex:)
+  area = diameter_for(sums(parts(piezo:, booster:, edlc:, rigid_flex:)).values.sum / 3 / 0.7)
+  [ area, geometric_floor(edlc, socket: !rigid_flex) ]
+end
+
+# Самоперевірка. Якорі — ДВА числа, яких модель не вигадувала: корисна площа першого проходу й
+# ратифікований Ø25 радома на тій самій стелі. Ціль контуру — не якір, а ДЗЕРКАЛО: канон цитує
+# вихід моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
 if ARGV == [ "--assert" ]
+  target = ->(piezo, rigid) { target_for(piezo:, booster: "nn02_201", edlc: "kr", rigid_flex: rigid).max }
   checks = {
     "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід)" => (usable(CEILING_MM) - 166.7).abs < 0.05,
-    "стеля Ø15.17 ⟷ радом Ø25 (`52` §rim_boss_radial_budget)" => (radome_for(CEILING_MM) - 25.0).abs < 1e-9
+    "стеля Ø15.17 ⟷ радом Ø25 (`52` §rim_boss_radial_budget)" => (radome_for(CEILING_MM) - 25.0).abs < 1e-9,
+    "ціль kr · murata: пара B2B Ø21.1, rigid-flex Ø19.8 (`02_01 §3.5`)" =>
+      (target.("murata", false) - 21.1).abs < 0.05 && (target.("murata", true) - 19.8).abs < 0.05,
+    "ціль kr · пара B2B з Mallory: ast1109 Ø21.9, ast1240 Ø22.5 (`02_01 §3.5`)" =>
+      (target.("ast1109", false) - 21.9).abs < 0.05 && (target.("ast1240", false) - 22.5).abs < 0.05
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
@@ -209,13 +222,18 @@ puts "  rigid-flex:"
 required(flex).each { |line| puts "    #{line}" }
 
 puts
-puts "Ціль контуру = більше з двох: площа (70 % заповнення, рівномірно) · геометрія низу RF Deck:"
+puts "Ціль контуру = більше з двох: площа (70 % заповнення, рівномірно) · геометрія низу RF Deck; пʼєзо #{opts[:piezo]}:"
 EDLC.each_key do |key|
   [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
-    area = diameter_for(sums(parts(**variant, edlc: key, rigid_flex: rigid)).values.sum / 3 / 0.7)
-    geo = geometric_floor(key, socket: !rigid)
+    area, geo = target_for(**variant, edlc: key, rigid_flex: rigid)
     target = [ area, geo ].max
     puts format("  %-3s %-10s площа Ø%.1f · геометрія Ø%.1f → Ø%.1f (радом ≈ Ø%.1f)",
                 key, label, area, geo, target, radome_for(target))
   end
 end
+sweep = (PIEZO.keys - [ "none" ]).map do |key|
+  [ "пара B2B", "rigid-flex" ].zip([ false, true ]).map do |label, rigid|
+    format("%s Ø%.1f", label, target_for(**variant, piezo: key, rigid_flex: rigid).max)
+  end.then { |pair| "#{key} #{pair.join(' / ')}" }
+end
+puts "  пʼєзо — теж вхід цілі (вибір відкритий, HW.30), #{opts[:edlc]}: #{sweep.join(' · ')}"
