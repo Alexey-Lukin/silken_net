@@ -56,8 +56,8 @@ module Cryptography
     DIRECTION_UPLINK   = 0x00
     DIRECTION_DOWNLINK = 0x01
     # Command body length by opcode — the frame length follows from it, so the
-    # Queen can check structure without the key (0x9E 17 B · 0x9D 20 B · 0x9A 23 B).
-    DOWNLINK_BODY_LEN = { 0x9A => 8, 0x9D => 5, 0x9E => 2 }.freeze
+    # Queen can check structure without the key (0x9E 17 B · 0x9A 23 B).
+    DOWNLINK_BODY_LEN = { 0x9A => 8, 0x9E => 2 }.freeze
     DLFC_RANGE        = (1..0xFFFF_FFFF)
 
     class AuthError < StandardError; end

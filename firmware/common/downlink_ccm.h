@@ -10,9 +10,9 @@
  *   [body:N]                              ← CCM-шифротекст
  *   [MIC:8]
  *
- *   0x9E ротація ключа  N=2 → 17 Б · 0x9D аудіо-пороги N=5 → 20 Б ·
- *   0x9A пороги Лоренца N=8 → 23 Б. 16 Б лишається ECB-шляхом (маяк, OTA),
- *   тож довжина розводить два шляхи без жодного прапорця.
+ *   0x9E ротація ключа  N=2 → 17 Б · 0x9A пороги Лоренца N=8 → 23 Б.
+ *   16 Б лишається ECB-шляхом (маяк, OTA), тож довжина розводить два шляхи
+ *   без жодного прапорця.
  *
  * Тіло — байт-у-байт тіло старого каркаса [маркер][len][body][crc16] без len і
  * CRC (little-endian поля, OtaPackagerService): цілісність тепер несе MIC.
@@ -44,7 +44,7 @@
 #include "lora_ccm.h"
 
 #define DL_CCM_OP_THRESHOLDS        0x9Au  /* FW.8  — пороги Лоренца   */
-#define DL_CCM_OP_AUDIO_THRESHOLDS  0x9Du  /* FW.18 — аудіо-пороги      */
+/* 0x9D — RETIRED з HW.30 (аудіо-пороги зрізаного пʼєзо); ⛔ не перевикористовувати. */
 #define DL_CCM_OP_ROTATE_KEY        0x9Eu  /* FW.17 — ротація ключа     */
 
 #define DL_CCM_DIRECTION_BYTE       0x01u  /* нонс[8]; аплінк — 0x00 */
@@ -54,7 +54,6 @@
 #define DL_CCM_MIC_LEN              FW2_CCM_MIC_LEN
 
 #define DL_CCM_BODY_ROTATE_KEY      2u     /* [target_version:u16le] */
-#define DL_CCM_BODY_AUDIO           5u     /* [warn:s16le][crit:s16le][ver:u8] */
 #define DL_CCM_BODY_THRESHOLDS      8u     /* [z_min][z_max][z_opt:s16le][species][ver] */
 #define DL_CCM_BODY_MAX             DL_CCM_BODY_THRESHOLDS
 #define DL_CCM_FRAME_MAX            (DL_CCM_AAD_LEN + DL_CCM_BODY_MAX + DL_CCM_MIC_LEN) /* 23 */
@@ -63,10 +62,9 @@
 static inline uint8_t Dl_Ccm_Body_Len(uint8_t opcode)
 {
     switch (opcode) {
-    case DL_CCM_OP_ROTATE_KEY:       return (uint8_t)DL_CCM_BODY_ROTATE_KEY;
-    case DL_CCM_OP_AUDIO_THRESHOLDS: return (uint8_t)DL_CCM_BODY_AUDIO;
-    case DL_CCM_OP_THRESHOLDS:       return (uint8_t)DL_CCM_BODY_THRESHOLDS;
-    default:                         return 0u;
+    case DL_CCM_OP_ROTATE_KEY: return (uint8_t)DL_CCM_BODY_ROTATE_KEY;
+    case DL_CCM_OP_THRESHOLDS: return (uint8_t)DL_CCM_BODY_THRESHOLDS;
+    default:                   return 0u;
     }
 }
 
@@ -143,22 +141,6 @@ static inline void Build_DL_CCM_Nonce(uint32_t did, uint32_t dlfc,
 static inline uint16_t Dl_Cmd_Rotate_Target(const uint8_t body[DL_CCM_BODY_ROTATE_KEY])
 {
     return (uint16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-}
-
-/* 0x9D: [warn_x100:s16le][crit_x100:s16le][config_version:u8], кожен поріг
- * 1..99 (0.01..0.99). Інверсію warn ≥ crit і NaN лікує TinyML_Apply_Thresholds
- * Солдата — там дефолти, тут відмова. 1 = прийнято. */
-static inline int Dl_Cmd_Audio_Unpack(const uint8_t body[DL_CCM_BODY_AUDIO],
-                                      int16_t *warn_x100, int16_t *crit_x100,
-                                      uint8_t *version)
-{
-    int16_t w = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
-    int16_t c = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    if (w < 1 || w > 99 || c < 1 || c > 99) return 0;
-    *warn_x100 = w;
-    *crit_x100 = c;
-    *version   = body[4];
-    return 1;
 }
 
 /* Найменше u32 > last з молодшими бітами lsb. 0 = переповнення (last уже в

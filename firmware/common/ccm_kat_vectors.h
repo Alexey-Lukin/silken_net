@@ -84,11 +84,11 @@ static const CcmKatVector CCM_KAT_EXTRA[] = {
 
 /* ── Downlink-вектори: адресна команда Rails → Солдат (03_05 §2.5) ─────────
  * Інша форма, ніж аплінк: AAD 7 Б [opcode][DID BE][DLFC_lsb BE], нонс із
- * байтом напрямку 0x01, тіло 2/5/8 Б — по одному вектору на опкод.
+ * байтом напрямку 0x01, тіло 2/8 Б — по одному вектору на опкод.
  * Oracle — OpenSSL EVP aes-128-ccm (той самий, що Cryptography::LoraCcm;
  * Rails-дзеркало тих самих кадрів — spec/services/cryptography/lora_ccm_spec.rb).
  * DL1 несе DLFC зі старшою половиною ≠ 0 (реконструкція має що відновлювати),
- * DL3 — DLFC 0xFFFF, межу перед переносом. Згенеровано 2026-09-29. */
+ * DL2 — DLFC 0xFFFF, межу перед переносом. Згенеровано 2026-09-29. */
 #include "downlink_ccm.h"
 
 typedef struct {
@@ -110,15 +110,7 @@ static const CcmDownlinkKatVector CCM_KAT_DOWNLINK[] = {
         .frame = { 0x9e, 0x53, 0x4e, 0x45, 0x54, 0x00, 0x02, 0x65, 0x1c, 0xdc, 0x65, 0x30, 0x6d, 0xc0, 0xc1, 0x2c, 0x0a },
     },
     {
-        .name  = "DL2 0x9D key=0xAA*16 DID=DEADBEEF DLFC=1 warn=50 crit=80 ver=2",
-        .key   = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa },
-        .did   = 0xDEADBEEFu,
-        .dlfc  = 1u,
-        .body  = { 0x32, 0x00, 0x50, 0x00, 0x02 },
-        .frame = { 0x9d, 0xde, 0xad, 0xbe, 0xef, 0x00, 0x01, 0x87, 0x94, 0x79, 0xb5, 0xac, 0x8a, 0x6c, 0xe3, 0x2f, 0xfa, 0x05, 0x98, 0xa4 },
-    },
-    {
-        .name  = "DL3 0x9A zero-key DID=01020304 DLFC=0xFFFF z=200/4500/2900 sp=0xFF ver=1",
+        .name  = "DL2 0x9A zero-key DID=01020304 DLFC=0xFFFF z=200/4500/2900 sp=0xFF ver=1",
         .key   = { 0 },
         .did   = 0x01020304u,
         .dlfc  = 0x0000FFFFu,

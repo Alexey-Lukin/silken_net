@@ -5,7 +5,7 @@ module Downlink
   # [FW.17 · docs/03_05 §2.5] Адресна команда ОДНОМУ Солдату, підписана його
   # сесійним ключем (downlink-wire-ревізія, ⚖️ founder 2026-09-28):
   #
-  #   [opcode][DID BE][DLFC_lsb BE] || CCM(body) || MIC(8)  — 0x9E 17 · 0x9D 20 · 0x9A 23 Б
+  #   [opcode][DID BE][DLFC_lsb BE] || CCM(body) || MIC(8)  — 0x9E 17 · 0x9A 23 Б
   #
   # Королева кадр лише несе (firmware/queen/soldier_cmd_queue.h), Солдат
   # відкриває (firmware/common/downlink_ccm_open.h); примітив —
@@ -20,9 +20,9 @@ module Downlink
   # лише 0x9E, підписаний ПОПЕРЕДНІМ ключем — тим, що вузол ще тримає; решта
   # команд чекає (GraceOpenError).
   module CommandFrame
-    ROTATE_KEY       = 0x9E
-    AUDIO_THRESHOLDS = 0x9D
-    THRESHOLDS       = 0x9A
+    ROTATE_KEY = 0x9E
+    # 0x9D — RETIRED з HW.30 (аудіо-пороги зрізаного пʼєзо); ⛔ не перевикористовувати.
+    THRESHOLDS = 0x9A
 
     class GraceOpenError < StandardError; end
 
@@ -45,16 +45,6 @@ module Downlink
     def thresholds(hardware_key, tree:, config_version:, dlfc:)
       seal_current(hardware_key, THRESHOLDS,
                    OtaPackagerService.threshold_config_body(tree, config_version: config_version), dlfc)
-    end
-
-    # 0x9D аудіо-пороги TinyML (FW.18), ×100; межі 1..99 ті самі, що судить Солдат.
-    def audio_thresholds(hardware_key, warn_x100:, crit_x100:, config_version:, dlfc:)
-      unless [ warn_x100, crit_x100 ].all? { |v| v.is_a?(Integer) && (1..99).cover?(v) }
-        raise ArgumentError, "пороги ×100 мусять бути в 1..99 — Солдат інакше кадр відкине"
-      end
-
-      seal_current(hardware_key, AUDIO_THRESHOLDS,
-                   [ warn_x100, crit_x100, config_version & 0xFF ].pack("s<s<C"), dlfc)
     end
 
     def seal_current(hardware_key, opcode, body, dlfc)

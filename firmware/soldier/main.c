@@ -211,7 +211,7 @@ _Static_assert(
 
 // [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB) —
 // спільний AES-128 всього кластера для ВСЬОГО, що не є телеметрією/panic:
-// downlink-broadcast Королеви (0x99/0x9A/0x9B/0x9C/0x9D/0x9E — один TX на
+// downlink-broadcast Королеви (0x99/0x9B/0x9C — один TX на
 // всіх → один ключ by construction) + uplink-запити 0x55/0x56 (Королева
 // читає їх сама, session-ключів вона не тримає — 03_05 §3.1). Телеметрія й
 // panic натомість їдуть CCM'ом на per-device session-ключі (KEYL вище).
@@ -696,16 +696,11 @@ static uint16_t wire_ema_delta_t_s = 0;
 #ifndef FW20_MESH_RELAY_ENABLED
 #define FW20_MESH_RELAY_ENABLED 0
 #endif
-// [FW.18 · ⚖️ FW.17 2026-09-28] Приймач 0x9D за гейтом (ADR — 03_03 §5.4).
-// Define живе тут, бо гейт входить у композит приймача нижче.
-#ifndef FW18_AUDIO_CMD_ENABLED
-#define FW18_AUDIO_CMD_ENABLED 0
-#endif
-// [FW.17 · 03_05 §2.5] Приймач адресних команд Rails → Солдат (0x9A · 0x9D ·
-// 0x9E) — лише CCM сесійним ключем цього вузла; ECB-шлях їх не приймає
+// [FW.17 · 03_05 §2.5] Приймач адресних команд Rails → Солдат (0x9A · 0x9E)
+// — лише CCM сесійним ключем цього вузла; ECB-шлях їх не приймає
 // взагалі (живий приймач під кластерним KEYB = підробка на весь кластер).
 // Живий, коли живий бодай один опкод; DLFC — Flash-KV 0x12 (секція 1.14).
-#define DL_CCM_RX_ENABLED (FW8_PARSER_ENABLED || FW18_AUDIO_CMD_ENABLED || FW17_RATCHET_ENABLED)
+#define DL_CCM_RX_ENABLED (FW8_PARSER_ENABLED || FW17_RATCHET_ENABLED)
 // [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
 // (ops+mount+compact) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
 #define SEC20_OTA_ANTIROLLBACK_ENABLED 1
@@ -1546,15 +1541,12 @@ static void Reset_Ota_Assembly(void) {
 // =====================================================================
 // === 1.14. [FW.17 · 03_05 §2.5] Адресні команди Rails → Солдат (CCM) ===
 // =====================================================================
-// 0x9A пороги Лоренца (FW.8) · 0x9D аудіо-пороги (FW.18) · 0x9E ротація
-// ключа (FW.17) підписує Rails сесійним ключем САМЕ цього вузла; кадр і його
-// відкриття — ../common/downlink_ccm{,_open}.h. Два такти, як у ратчета:
+// 0x9A пороги Лоренца (FW.8) · 0x9E ротація ключа (FW.17) підписує Rails
+// сесійним ключем САМЕ цього вузла; кадр і його відкриття —
+// ../common/downlink_ccm{,_open}.h. Два такти, як у ратчета:
 //   RX-вікно — лише відкриття (MIC, DID, DLFC); стан не змінюється;
 //   КЕНОЗИС  — зміст, потім DLFC у Flash-KV, потім дія: невалідне тіло
 //              лічильника не палить, а дії без записаного лічильника немає.
-// 0x9D: config_version — RAM (0 = firmware-дефолти), пороги — DR13/DR14.
-uint8_t lorenz_audio_config_version = 0;
-
 #if DL_CCM_RX_ENABLED
 #include "../common/downlink_ccm_open.h"
 
@@ -1562,9 +1554,7 @@ static uint32_t dl_last_dlfc   = 0; // RAM-кеш; істина — Flash-KV 0x1
 static uint8_t  dl_cmd_pending = 0; // відкрито у вікні, чекає КЕНОЗИСУ
 static uint8_t  dl_cmd_op      = 0;
 static uint32_t dl_cmd_dlfc    = 0;
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
 static uint32_t dl_dlfc_settle = 0; // DLFC команди, чий ефект ще не в журналі; 0 = немає
-#endif
 static uint8_t  dl_cmd_body[DL_CCM_BODY_MAX];
 
 static void MX_CRYP_Restore_From_CCM(void);
@@ -1572,9 +1562,8 @@ static void MX_CRYP_Restore_From_CCM(void);
 // Опкод, чий приймач у цій збірці живий; решту кадрів навіть не відкриваємо.
 static uint8_t Soldier_Dl_Opcode_Live(uint8_t op)
 {
-    return (uint8_t)((FW8_PARSER_ENABLED     && op == DL_CCM_OP_THRESHOLDS) ||
-                     (FW18_AUDIO_CMD_ENABLED && op == DL_CCM_OP_AUDIO_THRESHOLDS) ||
-                     (FW17_RATCHET_ENABLED   && op == DL_CCM_OP_ROTATE_KEY));
+    return (uint8_t)((FW8_PARSER_ENABLED   && op == DL_CCM_OP_THRESHOLDS) ||
+                     (FW17_RATCHET_ENABLED && op == DL_CCM_OP_ROTATE_KEY));
 }
 
 // RX-вікно: відкрити кадр сесійним ключем (KEYL / K_v). Відмова будь-якого
@@ -1594,7 +1583,7 @@ static void Soldier_Dl_Cmd_Receive(const uint8_t *frame, uint16_t len)
 
 // DLFC у журнал — ПІСЛЯ того, як ефект команди вже записано (at-least-once,
 // ⚖️ founder 2026-09-29, 03_05 §2.5). Струм, що зник між ними, лишає команду
-// неспожитою, і перевиданий Rails той самий кадр застосується ще раз: усі три
+// неспожитою, і перевиданий Rails той самий кадр застосується ще раз: обидві
 // команди ідемпотентні, тож повтор нешкідливий, а втрата — ні. Невдалий запис
 // DLFC — те саме: RAM-кеш не рухається, повтор прийметься.
 static void Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
@@ -1604,19 +1593,16 @@ static void Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
 
 // Для 0x9E і 0x9A ефект комітять блоки FW.17 / FW.8 нижче в КЕНОЗИСІ, тож DLFC
 // чекає їхнього успіху тут і пишеться лише з їхньої гілки успіху.
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
 static void Soldier_Dl_Settle_Dlfc(void)
 {
     if (dl_dlfc_settle == 0u) return;
     Soldier_Dl_Persist_Dlfc(dl_dlfc_settle);
     dl_dlfc_settle = 0u;
 }
-#endif
 
 // КЕНОЗИС, першою дією. 0x9E і 0x9A лише виставляють dirty — блоки FW.17 і
 // FW.8 нижче в цьому ж КЕНОЗИСІ комітять їх звичним шляхом і лише тоді
-// записують DLFC (Soldier_Dl_Settle_Dlfc); 0x9D пише DR13/DR14 тут же і
-// DLFC одразу за ними.
+// записують DLFC (Soldier_Dl_Settle_Dlfc).
 static void Soldier_Dl_Cmd_Commit(void)
 {
     if (!dl_cmd_pending) return;
@@ -1646,21 +1632,6 @@ static void Soldier_Dl_Cmd_Commit(void)
         lorenz_config_version   = t.config_version;
         lorenz_thresholds_dirty = 1;
         dl_dlfc_settle          = dl_cmd_dlfc;
-        return;
-    }
-#endif
-#if FW18_AUDIO_CMD_ENABLED
-    case DL_CCM_OP_AUDIO_THRESHOLDS: {
-        int16_t warn_x100, crit_x100;
-        uint8_t version;
-        if (!Dl_Cmd_Audio_Unpack(dl_cmd_body, &warn_x100, &crit_x100, &version)) return;
-        // Інверсію й NaN лікує TinyML_Apply_Thresholds — там дефолти.
-        TinyML_Apply_Thresholds((float)warn_x100 / 100.0f, (float)crit_x100 / 100.0f,
-                                &tinyml_warning_threshold, &tinyml_critical_threshold);
-        lorenz_audio_config_version = version;
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
-        Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc);
         return;
     }
 #endif
@@ -2808,7 +2779,7 @@ int main(void)
                     break;
                 }
 
-                // [FW.17 · 03_05 §2.5] Адресних команд (0x9A · 0x9D · 0x9E) на
+                // [FW.17 · 03_05 §2.5] Адресних команд (0x9A · 0x9E) на
                 // 16-байтному ECB-шляху НЕМАЄ і не повертати: живий приймач під
                 // кластерним KEYB дав би будь-кому з вкраденою платою командувати
                 // кожним вузлом. Їх несе лише CCM-кадр (гілка довжини ≠ 16 вище).

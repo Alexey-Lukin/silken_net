@@ -212,7 +212,7 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
     end
   end
 
-  # [FW.17 · docs/03_05 §2.5] The same three frames are pinned by the firmware
+  # [FW.17 · docs/03_05 §2.5] The same two frames are pinned by the firmware
   # (CCM_KAT_DOWNLINK in firmware/common/ccm_kat_vectors.h, opened by the
   # field Dl_Ccm_Open in firmware/test/test_downlink_ccm.c) — green on both
   # sides means Rails-issued commands open on the Soldier byte-for-byte.
@@ -220,8 +220,6 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
     {
       "0x9E rotate-key" => { key: (0..15).to_a.pack("C*"), opcode: 0x9E, did: 0x534E4554, dlfc: 0x0001_0002,
                              body: [ 3 ].pack("v"), frame: "9e534e45540002651cdc65306dc0c12c0a" },
-      "0x9D audio thresholds" => { key: "\xAA".b * 16, opcode: 0x9D, did: 0xDEADBEEF, dlfc: 1,
-                                   body: [ 50, 80, 2 ].pack("s<s<C"), frame: "9ddeadbeef0001879479b5ac8a6ce32ffa0598a4" },
       "0x9A Lorenz thresholds" => { key: "\x00".b * 16, opcode: 0x9A, did: 0x01020304, dlfc: 0xFFFF,
                                     body: [ 200, 4500, 2900, 0xFF, 1 ].pack("s<s<s<CC"),
                                     frame: "9a01020304ffffeeeb30e4fb70658c58427d5c5f0c3c06" }
@@ -250,16 +248,19 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
 
     it "rejects a body whose length is not the opcode's" do
       expect {
-        described_class.encrypt_downlink(key: zero_key, opcode: 0x9D, did_bytes: did_bytes, dlfc: 1,
+        described_class.encrypt_downlink(key: zero_key, opcode: 0x9A, did_bytes: did_bytes, dlfc: 1,
                                          body: [ 1 ].pack("v"))
-      }.to raise_error(Cryptography::LoraCcm::InputError, /body must be 5 bytes/)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /body must be 8 bytes/)
     end
 
+    # 0x9D — retired with HW.30 (piezo cut): the firmware opens no such frame any more.
     it "rejects an opcode that is not a per-node command" do
-      expect {
-        described_class.encrypt_downlink(key: zero_key, opcode: 0x9C, did_bytes: did_bytes, dlfc: 1,
-                                         body: "\x00\x00".b)
-      }.to raise_error(Cryptography::LoraCcm::InputError, /unknown command opcode/)
+      [ 0x9C, 0x9D ].each do |opcode|
+        expect {
+          described_class.encrypt_downlink(key: zero_key, opcode: opcode, did_bytes: did_bytes, dlfc: 1,
+                                           body: "\x00\x00".b)
+        }.to raise_error(Cryptography::LoraCcm::InputError, /unknown command opcode/)
+      end
     end
 
     it "rejects a zero counter — the device accepts only a counter above its last one" do

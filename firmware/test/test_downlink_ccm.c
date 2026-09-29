@@ -48,12 +48,12 @@ static DlCcmResult Open_Vector_Frame(const CcmDownlinkKatVector *v, const uint8_
 static int test_frame_lengths_by_opcode(void)
 {
     ASSERT_EQ(Dl_Ccm_Frame_Len(DL_CCM_OP_ROTATE_KEY), 17);
-    ASSERT_EQ(Dl_Ccm_Frame_Len(DL_CCM_OP_AUDIO_THRESHOLDS), 20);
     ASSERT_EQ(Dl_Ccm_Frame_Len(DL_CCM_OP_THRESHOLDS), 23);
     /* Кластерні кадри (маяк, OTA, печатка) командами не є — лишаються ECB. */
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x99), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x9B), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x9C), 0);
+    ASSERT_EQ(Dl_Ccm_Frame_Len(0x9D), 0); /* RETIRED з HW.30 */
     /* 16 Б не збігається з жодною командною довжиною: розрізнення з ECB
      * за довжиною не має перетину. */
     uint8_t f[DL_CCM_FRAME_MAX] = { DL_CCM_OP_ROTATE_KEY };
@@ -156,7 +156,7 @@ static int test_foreign_did_rejected_before_crypto(void)
 
 static int test_every_region_is_authenticated(void)
 {
-    const CcmDownlinkKatVector *v = &CCM_KAT_DOWNLINK[2];
+    const CcmDownlinkKatVector *v = &CCM_KAT_DOWNLINK[1];
     const uint8_t len = Dl_Ccm_Frame_Len(v->frame[0]);
     uint8_t  body[DL_CCM_BODY_MAX];
     uint32_t dlfc = 0;
@@ -270,29 +270,6 @@ static int test_rotate_key_body(void)
     return 0;
 }
 
-static int test_audio_body_bounds(void)
-{
-    int16_t w = 0, c = 0;
-    uint8_t v = 0;
-    ASSERT_EQ(Dl_Cmd_Audio_Unpack(CCM_KAT_DOWNLINK[1].body, &w, &c, &v), 1);
-    ASSERT_EQ(w, 50);
-    ASSERT_EQ(c, 80);
-    ASSERT_EQ(v, 2);
-    const uint8_t edge_ok[5]  = { 1, 0, 99, 0, 7 };
-    const uint8_t warn_zero[5] = { 0, 0, 80, 0, 1 };
-    const uint8_t crit_100[5]  = { 50, 0, 100, 0, 1 };
-    const uint8_t warn_neg[5]  = { 0xFF, 0xFF, 80, 0, 1 };
-    ASSERT_EQ(Dl_Cmd_Audio_Unpack(edge_ok, &w, &c, &v), 1);
-    ASSERT_EQ(Dl_Cmd_Audio_Unpack(warn_zero, &w, &c, &v), 0);
-    ASSERT_EQ(Dl_Cmd_Audio_Unpack(crit_100, &w, &c, &v), 0);
-    ASSERT_EQ(Dl_Cmd_Audio_Unpack(warn_neg, &w, &c, &v), 0);
-    /* відмова виходів не чіпає */
-    ASSERT_EQ(w, 1);
-    ASSERT_EQ(c, 99);
-    printf("  test_audio_body_bounds                                     ✅\n");
-    return 0;
-}
-
 #define RUN(test) do { \
     if (test()) { failed++; } else { passed++; } \
 } while (0)
@@ -317,7 +294,6 @@ int main(void)
     RUN(test_dlfc_reconstruction);
     RUN(test_gap_ceiling_is_named_not_silent);
     RUN(test_rotate_key_body);
-    RUN(test_audio_body_bounds);
 
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d   Failed: %d\n", passed, failed);

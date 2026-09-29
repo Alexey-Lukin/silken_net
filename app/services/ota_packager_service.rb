@@ -9,8 +9,8 @@ class OtaPackagerService
   LORA_MTU = 11  # Для 16-байтних LoRa-пакетів (5 байтів заголовок: 1 маркер + 2 index + 2 total)
   COAP_MTU = 512 # Оптимально для Starlink/LTE
 
-  # OTA / time-sync markers (docs/03_01 §4.5а). Адресні команди 0x9A · 0x9D ·
-  # 0x9E живуть у Downlink::CommandFrame (FW.17, 03_05 §2.5).
+  # OTA / time-sync markers (docs/03_01 §4.5а). Адресні команди 0x9A · 0x9E
+  # живуть у Downlink::CommandFrame (FW.17, 03_05 §2.5).
   CMD_OTA_BYTECODE   = 0x99 # mruby bytecode chunks (existing)
   CMD_HMAC_TRAILER   = 0x9B # [FW.23] OTA HMAC-SHA256 trailer (3 LoRa chunks)
   CMD_TIME_SYNC      = 0x9C # backend UTC timestamp envelope (FW.20)

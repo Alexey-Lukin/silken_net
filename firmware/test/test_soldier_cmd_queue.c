@@ -110,9 +110,9 @@ TEST(test_take_passes_frame_byte_for_byte) {
 TEST(test_budget_is_attempts_at_the_target) {
     SoldierCmdQueue q;
     Soldier_Cmd_Queue_Init(&q);
-    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(2), golden_len(2)));
-    ASSERT_EQ(drain_for(&q, CCM_KAT_DOWNLINK[2].did), SOLDIER_CMD_SHOT_BUDGET);
-    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[2].did), -1);
+    ASSERT_TRUE(Soldier_Cmd_Queue_Push(&q, golden(1), golden_len(1)));
+    ASSERT_EQ(drain_for(&q, CCM_KAT_DOWNLINK[1].did), SOLDIER_CMD_SHOT_BUDGET);
+    ASSERT_EQ(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[1].did), -1);
 }
 
 /* Rails перевидає відкриту команду тим самим кадром — слот не множиться. */

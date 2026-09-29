@@ -387,11 +387,11 @@ TEST(test_fw8_valid_agrees_with_parser) {
     ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
 }
 
-/* [FW.17 · 03_05 §2.5] Тіло команди 0x9A — байти golden-вектора DL3, тобто
+/* [FW.17 · 03_05 §2.5] Тіло команди 0x9A — байти golden-вектора DL2, тобто
  * рівно відкритий текст, який шифрує Rails (lora_ccm_spec.rb). */
 TEST(test_fw8_from_wire_golden_body) {
     LorenzThresholds t;
-    ASSERT_TRUE(Lorenz_Thresholds_From_Wire(CCM_KAT_DOWNLINK[2].body, &t));
+    ASSERT_TRUE(Lorenz_Thresholds_From_Wire(CCM_KAT_DOWNLINK[1].body, &t));
     ASSERT_EQ(t.z_min_x100, 200);
     ASSERT_EQ(t.z_max_x100, 4500);
     ASSERT_EQ(t.z_opt_x100, 2900);
