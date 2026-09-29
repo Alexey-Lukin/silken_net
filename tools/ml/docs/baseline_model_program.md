@@ -18,7 +18,7 @@
 > - Log-mel контракт ознак — [`docs/03_03 §3.4`](../../../docs/03_03_TinyML_Acoustic_Inference.md)
 > - RAM-леджер / arena-стеля — [`docs/03_03 §6`](../../../docs/03_03_TinyML_Acoustic_Inference.md)
 > - Архітектура моделі / класи / пороги — `docs/03_03 §4` / §5 / §10
-> - Трекер блокерів — [`docs/00_07`](../../../docs/00_07_Action_Plan_Tracker.md) FW.4 / FW.25 / FW.26 / FW.42 / ARCH.40
+> - Трекер — [`docs/00_07`](../../../docs/00_07_Action_Plan_Tracker.md): FW.4 / FW.25 / FW.42 / ARCH.40 закрито (§🗄️; з HW.30 модель без носія на вузлі), FW.26 — загальний RAM-бюджет вузла
 > - ML-метод (parity-інваріант, скаффолди) — [`tools/ml/README.md`](../README.md) + скіл `ml-engineering`
 > - Validation Gate (специфікація ДО коду) — [`00_06 §0`](../../../docs/00_06_SSOT_Documentation_Standard.md) ⚠️ доти цей рядок казав `docs/00_02` — номер розчинено 2026-08-10, і форма без імені доку й без `§` невидима обом реф-гейтам
 

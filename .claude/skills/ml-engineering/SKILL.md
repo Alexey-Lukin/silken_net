@@ -23,7 +23,7 @@ on-device features, proven, not hoped.**
 | `docs/00_06_SSOT_Documentation_Standard.md §0` | 🚦 Validation Gate — LLM proposes a *hypothesis*, it does NOT compute physics; no code until the spec is approved. (Moved from the dissolved method page 2026-08-10.) |
 | `docs/03_01_Firmware_Lifecycle_and_DMA.md §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
-**State** lives in the tracker, not here and not in memory: open ML work = `docs/00_07` §03a (`FW.4`-family). Memory carries the LESSONS, not the queue — `[[project_03_baseline_tinyml_model]]` (router; its own lesson is the float-softmax ⊥ int8-dequant calibration gap — what shipped + why lives in `tools/ml/docs/baseline_model_program.md`), `[[project_e61_done_next_machine_doable]]` (⚠️ **not a queue** — a registry of where the tracker was wrong about its OWN items; do not read it for «what's next». Described, not quoted: a quotation of another file's wording rots on that file's next edit — this one did, 20 minutes after it was written), plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
+**State** lives in the tracker, not here and not in memory: open ML work = `docs/00_07` — since HW.30 (2026-09-29) the Soldier carries no model (`FW.4` family archived); the possible carrier is `HW.52` (Queen mic, 🌿), fauna `E.59`, dataset `UNI.13a`. Memory carries the LESSONS, not the queue — `[[project_03_baseline_tinyml_model]]` (router; its own lesson is the float-softmax ⊥ int8-dequant calibration gap — what shipped + why lives in `tools/ml/docs/baseline_model_program.md`), `[[project_e61_done_next_machine_doable]]` (⚠️ **not a queue** — a registry of where the tracker was wrong about its OWN items; do not read it for «what's next». Described, not quoted: a quotation of another file's wording rots on that file's next edit — this one did, 20 minutes after it was written), plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
 
 ## Core invariant — three implementations, one definition, proven equal
 
@@ -152,5 +152,5 @@ drop-in header swap (the `_stub.h` `__has_include` fallback stays).
 ## Keep this skill bounded
 
 This file is the **method**. The contract values → `03_03 §3.4`; the package details →
-`tools/ml/README.md`; state/backlog → `00_07` §03a (FW.4). If you're tempted to paste a parameter or a
+`tools/ml/README.md`; state/backlog → `00_07` (FW.4 archived with HW.30; carrier → HW.52). If you're tempted to paste a parameter or a
 file-line here, it belongs in one of those homes — that discipline is what the skill enforces.

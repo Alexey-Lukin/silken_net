@@ -38,7 +38,7 @@ def gen_cavitation(idx: int, cfg: DataConfig) -> np.ndarray:
     acoustic-emission frequency of xylem cavitation (ultrasonic 25–150 kHz; Tyree &
     Dixon 1983). This trains a low-frequency structural-slough proxy, not true AE
     detection — the current chain cannot observe the real signal. See docs 03_03 §4.2;
-    true ultrasonic detection needs a dedicated high-rate channel (UNI.11 / v3).
+    true ultrasonic detection needs a dedicated high-rate channel (v3; the UNI.11 track was cut 2026-09-29).
     """
     n = int(cfg.sr * cfg.clip_seconds)
     r = _rng(cfg.seed + 202, idx)

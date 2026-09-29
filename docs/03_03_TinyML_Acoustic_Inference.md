@@ -33,7 +33,7 @@
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `AlertDispatchService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | `main.c` — з HW.30 без виклику інференсу (Phase 1.5 + ISR — історія дизайну); INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.30 зріз пʼєзо (застосування) · FW.4 ✅ baseline landed (machine half; ARM-size + bench residual) · FW.18b threshold · FW.25 DSP Path B |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.30 зріз пʼєзо (застосування) · HW.52 можливий носій (🌿) · закриті (§🗄️): FW.4 baseline (2026-09-29 — актив без носія) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
 
@@ -499,9 +499,9 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 > broadband-імпульс, тож спектр не «розтягується» вниз до 8 кГц). Тому навіть із польовою
 > валідацією тракт ловить лише **низькочастотний structural-слід** події, а не діагностичну
 > ультразвукову частоту — `synthetic.py:gen_cavitation` генерує 5–8 кГц **під Nyquist-стелю**, не
-> з фізики. Справжня ultrasonic-детекція = окремий високочастотний канал / v3 AI-chip — трек ЧДТУ
-> ПМКТ ([`UNI.11`](00_07_Action_Plan_Tracker) 25–150 кГц EIS п'єзодиска). Клас лишено (Mongabay/security-контекст),
-> перейменовано наміром; частота-One-Home = UNI.11. Акустика ґратки анкера (ефективне середовище, не фононний фільтр) — 01_01 §5.4.
+> з фізики. Справжня ultrasonic-детекція = окремий високочастотний канал / v3 AI-chip; трек ЧДТУ
+> ПМКТ ([`UNI.11`](00_07_Action_Plan_Tracker) 25–150 кГц EIS п'єзодиска) втратив предмет разом із пʼєзо, а рядок партнера зрізано ⚖️ founder 2026-09-29 — сьогодні в цього каналу немає ні носія, ні партнера. Клас лишено (Mongabay/security-контекст),
+> перейменовано наміром; частота-One-Home = UNI.11 (архівний рядок, §🗄️). Акустика ґратки анкера (ефективне середовище, не фононний фільтр) — 01_01 §5.4.
 
 > ⚖️ **Чого вузол НЕ обіцяє про шкідників — присуд про розміщення, ратифіковано founder 2026-09-10 (виходи (а)+(б), [`00_07` — ARCH.102](00_07_Action_Plan_Tracker)).** Класу «комаха» в таблиці вище немає, але межу заяви ставить не модель, а місце, де стоїть анкер, — і ставить її сильніше за будь-який поріг.
 >
