@@ -65,6 +65,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 18. The Flash-KV base is ONE gate expression over THREE sites — declaration, mount, compact — so a new journal consumer joins the expression, never a site
 19. A host test that exercises a HAND-COPIED `main.c` function proves the copy, not the firmware — so when you touch a `main.c` function that `firmware/test/` mirrors, move its logic into a pure header both include, instead of editing both copies
 20. `Radio.Send` is asynchronous — the frame is still in the air for its whole time-on-air, and ANY next radio command (Send · Rx · SetTxConfig · Sleep) aborts it; so every frame goes through `Lora_Phy_Send`, and its return value is a WAIT, not a status
+21. `radio_conf.h` does not exist yet, and the ST template it will be born from sets `RF_WAKEUP_TIME` to 1 ms — shorter than our TCXO's start, so a copied template leaves the radio without a clock on every wake
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 
