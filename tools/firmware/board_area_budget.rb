@@ -124,6 +124,26 @@ def required(sides)
   end
 end
 
+# Геометрична підлога низу RF Deck (in-silico §Critical Rules #11: деталь судиться на КОЖНІЙ осі
+# оболонки). EDLC і сокет B2B стоять на ОДНІЙ стороні, і сума площ цього не бачить: квадрат основи FC
+# потребує кола з його діагоналлю, а сокет — сегмента біля краю EDLC. Центр EDLC зсувається від центру
+# плати на s, сокет прикладено з протилежного боку; s підбирається. Фаски основи FC вендор не нормує
+# (креслення S6011_FC: фаски на двох кутах без розміру), тож квадрат — повний, тобто верхня межа.
+EDLC_SHAPE = { "kr" => [ :disc, 6.0, 6.45 ],     # Ø12.0 з кортьярдом, виводи до W1 12.4 + 0.5
+               "fc" => [ :square, 8.4, 8.4 ] }.freeze # основа 16.3 × 16.3 + 0.25 на бік
+SOCKET_EXTENT = [ 5.20, 3.64 ].freeze            # CLP з кортьярдом: радіально · половина вздовж краю
+
+def geometric_floor(edlc, socket:)
+  kind, half, reach = EDLC_SHAPE.fetch(edlc)
+  radius = (0..6000).map do |i|
+    s = i / 1000.0
+    pts = kind == :disc ? [ [ -s - half, 0.0 ], [ -s, reach ] ] : [ [ -s - half, half ], [ -s + half, half ] ]
+    pts << [ -s + half + SOCKET_EXTENT[0], SOCKET_EXTENT[1] ] if socket
+    pts.map { |x, y| Math.hypot(x, y) }.max
+  end.min
+  (2 * radius) + (2 * USABLE_EDGE_MM)
+end
+
 # Самоперевірка: модель мусить відтворювати ДВА числа, яких не вигадувала, —
 # корисну площу першого проходу й ратифікований Ø25 радома на тій самій стелі.
 if ARGV == [ "--assert" ]
@@ -185,3 +205,15 @@ puts "  пара B2B:"
 required(base).each { |line| puts "    #{line}" }
 puts "  rigid-flex:"
 required(flex).each { |line| puts "    #{line}" }
+
+puts
+puts "Ціль контуру = більше з двох: площа (70 % заповнення, рівномірно) · геометрія низу RF Deck:"
+EDLC.each_key do |key|
+  [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
+    area = diameter_for(sums(parts(**variant, edlc: key, rigid_flex: rigid)).values.sum / 3 / 0.7)
+    geo = geometric_floor(key, socket: !rigid)
+    target = [ area, geo ].max
+    puts format("  %-3s %-10s площа Ø%.1f · геометрія Ø%.1f → Ø%.1f (радом ≈ Ø%.1f)",
+                key, label, area, geo, target, radome_for(target))
+  end
+end
