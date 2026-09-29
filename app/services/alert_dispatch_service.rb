@@ -29,9 +29,10 @@ class AlertDispatchService
     # 1. СОФТ-ЗБІЙ ПРОШИВКИ (wire status=3 = BIO_STATUS_VM_ERROR)
     # [SLASH-1] Раніше status=3 хибно читався «вандалізмом» (vandalism_breach →
     # positive_a? → необоротний slash жертви OTA-бага). Насправді 0b11 пише лише
-    # mruby-crash/OOM/unprovisioned; фізичний tamper їде PANIC_FLAG-каналом (гейт 2б).
-    # Сенсорна половина кадру (temp/acoustic/vcap) виміряна ДО mruby і жива —
-    # термо/акустичний аналіз продовжуємо, зламаний лише Лоренц-статус.
+    # mruby-crash/OOM/unprovisioned. Фізичного tamper-каналу на дроті сьогодні немає:
+    # PANIC_FLAG з HW.30 писача не має (гілка 2б нижче лише логує).
+    # Сенсорна половина кадру (temp/vcap) виміряна ДО mruby і жива —
+    # термоаналіз продовжуємо, зламаний лише Лоренц-статус.
     # ⛔ Сейсмічної гілки тут НЕМАЄ: вердикт `seismic_anomaly`
     # демонтовано [ARCH.102] разом із вимірювачем — сейсмічного каналу
     # на дроті не існує (див. actuator.rb / cluster.rb).
@@ -62,9 +63,11 @@ class AlertDispatchService
       )
     end
 
-    # [SLASH-1] Panic-кадри свідомо несуть vcap=0 (legacy-parity обох збирачів —
-    # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на них — фантом,
+    # [SLASH-1] Panic-кадр несе vcap=0 (legacy-parity обох збирачів —
+    # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на ньому — фантом,
     # що забруднював comms_no_ack? (system_fault ∈ whitelist) і з'їдав SEC.10-ліміт.
+    # [HW.30] Писача паніки в Солдата більше немає, але гард лишається: кадр із
+    # PANIC_FLAG, що все ж прийшов (стара прошивка, збій, підробка), фантома не породить.
     # [ARCH.102] Розпакувальник пише такий рядок із NULL («не виміряно»), тож гард
     # стоїть і на ВІДСУТНОСТІ виміру: напруги, якої не міряли, вердикт не судить.
     if telemetry_log.voltage_mv && telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
@@ -73,14 +76,14 @@ class AlertDispatchService
         alert_type: :hardware_fault,
         message_key: "power_loss", message_params: { did: tree.did, voltage_mv: telemetry_log.voltage_mv }
       )
-      # НЕ робимо return — продовжуємо термо/акустичний аналіз,
+      # НЕ робимо return — продовжуємо термоаналіз,
       # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
     end
 
     # 2а. ПОЖЕЖА (Thermal) — температура вище біом-порога.
     # [АДАПТИВНО]: Поріг тепер залежить від біома
     # [ARCH.102] Температури, якої не міряли (NULL panic-рядка), вогонь не судить —
-    # і саме тому panic-кадр доходить до гілки пилки нижче.
+    # і саме тому panic-кадр доходить до свого лог-рядка нижче.
     if telemetry_log.temperature_c && telemetry_log.temperature_c >= fire_limit
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
@@ -91,26 +94,19 @@ class AlertDispatchService
       return
     end
 
-    # 2б. ПИЛКА (Acoustic — [SLASH-1] chainsaw-спліт). Anomaly без жару = акустичний
-    # хаос при нормальній температурі (TinyML chainsaw/cavitation → StatusByte anomaly),
-    # не вогонь. Окремий тип веде non-fire маршрутом dClimate у Field-Audit замість
-    # FIRMS-«ясне небо»-тавра rejected_fraud на жертві вирубки.
-    # [SLASH-1] panic? — РЕАЛЬНА пилка: TinyML ml_event_id==3 стріляє panic-TX зі
-    # status=homeostasis + PANIC_FLAG (bit 7, ОКРЕМО від status-бітів), тож гейт лише
-    # на bio_status_anomaly? пропускав її повз chainsaw-маршрут у сусідню акустичну
-    # гілку. anomaly? і panic? взаємовиключні на реальному дроті — обидва ведуть сюди.
-    # ⚠️ Урок пережив свій інстанс: додаючи БУДЬ-ЯКУ гілку на `acoustic_events`,
-    # став її ПІСЛЯ цієї — panic-кадр несе 0xFF у тому ж байті.
-    if telemetry_log.panic? || telemetry_log.bio_status_anomaly?
-      create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :chainsaw_detected,
-        # Два ключі, а не булевий параметр: умовний фрагмент — це ПРОЗА, і в
-        # іншій мові він може стояти в іншому місці речення.
-        message_key: telemetry_log.panic? ? "chainsaw_detected_panic" : "chainsaw_detected",
-        message_params: { did: tree.did }
-      )
-      return
+    # 2б. PANIC-КАДР — лише лог, алерту НЕМАЄ [HW.30, ⚖️ founder 2026-09-29].
+    # Єдиним писачем PANIC_FLAG був TinyML-клас пилки на пʼєзо, а пʼєзо з Солдата
+    # зрізано (`02_01 §6`): кадр із прапором тепер — аномалія прошивки або підробка,
+    # не свідчення про ліс. `chainsaw_detected` лишився типом без писача (`HW.52`).
+    # ⛔ Гілки на `bio_status_anomaly?` теж НЕМАЄ, і це не пропуск: status 2 — вердикт,
+    # виведений із Z, а E.64 такі вердикти забороняє («Z = DCI-only», блок посухи
+    # нижче). Акустика лише штовхала σ, тож без звуку anomaly — чистий хаос атрактора
+    # (частку задають зерно й ρ(temp), не дерево); GP на ньому й так 0 за контрактом.
+    # ⛔ Гілок на `acoustic_events` не заводити: з HW.30 байт завжди 0, а сентинел
+    # часу 0xFE розпакувальник нейтралізує до 0 ще до цього сервісу.
+    if telemetry_log.panic?
+      Rails.logger.warn "⚠️ [HW.30] #{tree.did}: panic-кадр, хоча з HW.30 у Солдата немає писача паніки — " \
+                        "аномалія прошивки (або підробка); алерт не піднято."
     end
 
     # 4. ПОСУХА — лише ПРИСТРІЙНИЙ status-гейт [E.64 ⚖️ 2026-09-05, варіант A]

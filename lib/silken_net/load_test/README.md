@@ -52,7 +52,9 @@ money-fanout starvation (strict-priority) + DB-pool (3 Postgres-DB).
 
 - **S1 baseline** — sustained per-phase rate; свіп report-interval + Soldiers/Queen.
 - **S2 reconnect-burst** — K Queens flush у 60-с вікні (Ring OFF = тонкі батчі).
-- **S3 panic-storm** — пожежа: M кластерів panic → AlertDispatch inline + EwsAlert.
+- **S3 alert-storm** — пожежа: M кластерів гарячих кадрів → AlertDispatch inline + EwsAlert.
+  ⚠️ Panic-кадром цей шторм більше не моделюється: з HW.30 (⚖️ 2026-09-29, пʼєзо
+  зрізано) у Солдата немає писача паніки, і panic-кадр алерту не піднімає — лише лог.
 - **S4 fat-batch + poisoned** — 50-record батч + 1 malformed (binary-search isolation).
 - **S5 OTA-wave** — downlink-fanout + uplink-echo конкуренція.
 - **S6 money-starvation** — firehose ‖ mint/slash, single-process → starvation

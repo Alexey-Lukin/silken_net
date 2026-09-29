@@ -179,22 +179,17 @@ RSpec.describe SilkenNet::Metrics do
   end
 
   # -----------------------------------------------------------------------
-  # FW.22 / S2.3: Acoustic overflow and RPC circuit breaker metrics
+  # S2.2: RPC circuit breaker metrics
   # -----------------------------------------------------------------------
 
-  describe "FW.22 / S2.3 — acoustic overflow and circuit breaker metrics" do
-    it "registers telemetry_acoustic_overflow_total counter" do
-      metric = described_class::REGISTRY.get(:silkennet_telemetry_acoustic_overflow_total)
-      expect(metric).to be_a(Prometheus::Client::Counter)
-    end
-
-    it "increments telemetry_acoustic_overflow_total counter" do
-      metric = described_class::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL
-      before_val = metric.get
-
-      metric.increment
-
-      expect(metric.get).to eq(before_val + 1.0)
+  # [HW.30] Сусід по цьому describe — `telemetry_acoustic_overflow_total` (FW.22) —
+  # знятий разом із пʼєзо Солдата; нульова реєстрація пінить, що він не повернеться тихо.
+  describe "S2.2 — circuit breaker metrics (acoustic overflow retired, HW.30)" do
+    it "no longer registers the retired acoustic / TinyML / fauna counters" do
+      %i[silkennet_telemetry_acoustic_overflow_total silkennet_tinyml_threshold_invalid_reports_total
+         silkennet_fauna_skip_reports_total].each do |name|
+        expect(described_class::REGISTRY.get(name)).to be_nil
+      end
     end
 
     it "registers rpc_circuit_breaker_open gauge with provider label" do

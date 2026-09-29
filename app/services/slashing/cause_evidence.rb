@@ -13,14 +13,15 @@ module Slashing
   # Фаза 1 свідомо КОНСЕРВАТИВНА — лише `vandalism_breach` (tamper) як єдиний однозначний
   # сигнал A у поточному коді. [SLASH-1 P0] Автоматичного ДЖЕРЕЛА vandalism_breach наразі
   # НЕМАЄ: wire status=3 виявився BIO_STATUS_VM_ERROR (софт-збій → :firmware_fault,
-  # AlertDispatchService), а справжня пилка їде panic→`chainsaw_detected`. Ворота лишаються
-  # wired і чесно-порожні: до наповнення A-сету КОЖЕН slash-тригер іде freeze/Field-Audit.
+  # AlertDispatchService), а акустичний шлях пилки зрізано разом із пʼєзо Солдата (HW.30,
+  # ⚖️ 2026-09-29, `02_01 §6`). Ворота лишаються wired і чесно-порожні: до наповнення A-сету
+  # КОЖЕН slash-тригер іде freeze/Field-Audit.
   # Джерела vandalism_breach: ручна C→A ескалація Field-Audit (console-рецепт, `06_08 §4.6`) зараз;
-  # chainsaw після field-validation TinyML (клас = synthetic placeholder, `03_03 §4.2`;
-  # slash() необоротний) та майбутній HW tamper-канал (tamper-switch/SE05x) — потім.
+  # майбутній HW tamper-канал (tamper-switch · SE05x tamper-pins · датчик нахилу HW.52, а
+  # останній сам по собі НЕ Кат-A — буревій теж валить) — потім; slash() необоротний.
   # `critical_unmaintained?` досі рахує й force-majeure-типи (aged `fire_detected` без
   # maintenance → пропустив би burn на природній пожежі). Розширення A-сету (scoped
-  # unmaintained, chainsaw після field-validation) — 👤 DAO-ратифікація (`05_05 §3.2`,
+  # unmaintained, HW tamper-канал) — 👤 DAO-ратифікація (`05_05 §3.2`,
   # рейка `ProtocolParameters` → `SystemParameter`, `05_06`).
   #
   # DCI-divergence / fraud-алерт (`system_fault`) НЕ є самостійним сигналом A — `05_05 §6`

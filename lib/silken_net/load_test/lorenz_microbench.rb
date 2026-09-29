@@ -19,8 +19,8 @@ module SilkenNet
       module_function
 
       # Фіксовані фізично-валідні входи (homeostasis-band) — детерміновано,
-      # той самий шлях, що гарячий per-packet compute_server_z.
-      INPUTS = { x0: 1.0, y0: 1.0, z0: 1.0, temp: 20, acoustic: 3, delta_t: 30, vcap: 4000 }.freeze
+      # той самий шлях, що гарячий per-packet compute_server_z. `acoustic: 0` — HW.30.
+      INPUTS = { x0: 1.0, y0: 1.0, z0: 1.0, temp: 20, acoustic: 0, delta_t: 30, vcap: 4000 }.freeze
 
       def run(iterations_per_thread: 2_000, thread_counts: [ 1, 5, 15 ])
         thread_counts.to_h { |n| [ n, measure(n, iterations_per_thread) ] }

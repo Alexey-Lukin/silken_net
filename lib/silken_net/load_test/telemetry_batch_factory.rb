@@ -41,8 +41,9 @@ module SilkenNet
       #   [Status:1][TTL:1][Pad:4] (Pad[0..1] = firmware_id BE).
       # Дефолти свідомо у Sanity Bounds (voltage 0..5000, temp -45..90) +
       # homeostasis, щоб пакет проходив valid_sensor_data? і повний каскад.
+      # `acoustic: 0` — з HW.30 (пʼєзо зрізано) Солдат інших значень не шле.
       def chunk(did_int:, firmware_id: 0, rssi: 60, voltage_mv: 4000,
-                temperature_c: 20, acoustic: 3, metabolism_s: 30,
+                temperature_c: 20, acoustic: 0, metabolism_s: 30,
                 growth_points: DEFAULT_GROWTH_POINTS, ttl: 3, bio_status: 0)
         status_byte  = ((bio_status & 0x03) << 5) | (growth_points & 0x1F)
         firmware_pad = [ firmware_id, 0 ].pack("n n")

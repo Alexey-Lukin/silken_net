@@ -55,9 +55,10 @@ class TelemetryLog < ApplicationRecord
   # --- СТАТУСИ (The Pulse of Life) ---
   # [SLASH-1] Wire-код 3 пише ВИКЛЮЧНО BIO_STATUS_VM_ERROR (0x60, firmware/soldier/main.c):
   # mruby-crash / VM-OOM / unprovisioned. mruby pack_status_byte повертає лише 0..2;
-  # фізичний tamper (п'єзо → TinyML chainsaw) їде PANIC_FLAG-каналом (FW.29), НЕ статусом.
+  # PANIC_FLAG (FW.29) — окремий біт, НЕ статус, і з HW.30 (пʼєзо з Солдата зрізано,
+  # ⚖️ 2026-09-29) писача не має: panic-кадр тепер — аномалія прошивки, не пилка.
   # Стара назва tamper_detected інвертувала semantics: софт-збій читався «вандалізмом»
-  # (positive-A slash жертви OTA-бага), а справжня пилка в A-сет не потрапляла.
+  # (positive-A slash жертви OTA-бага).
   enum :bio_status, {
     homeostasis: 0,      # Здоровий Хаос (Атрактор у нормі)
     stress: 1,           # Раннє попередження (Посуха)

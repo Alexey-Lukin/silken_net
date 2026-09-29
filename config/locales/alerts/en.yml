@@ -19,8 +19,8 @@ en:
       burn_failure: 'Critical burn failure for %{amount} SCC. Possible loss of control over the contracted balance. Error: %{error}'
       burn_failure_ambiguous: 'Critical burn failure for %{amount} SCC — the transaction may have landed; DO NOT retry automatically, reconcile on the explorer first. Possible loss of control over the contracted balance. Error: %{error}'
       canary_trip: "🐦 CANARY: __stack_chk_fail on the node (stack frame overwritten — possible attack on the LoRa/AT parser; the node reincarnated itself). DID: %{did}, seq: %{seq}"
-      chainsaw_detected: "🪚 LOGGING: Acoustic anomaly without a thermal signal. DID: %{did}"
-      chainsaw_detected_panic: "🪚 LOGGING: Acoustic anomaly without a thermal signal (PANIC-TX). DID: %{did}"
+      chainsaw_detected: "🪚 SUSPECTED LOGGING: field check needed. DID: %{did}"
+      chainsaw_detected_panic: "🪚 SUSPECTED LOGGING (PANIC-TX): field check needed. DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): possible gateway failure / Starlink blackout (force-majeure). Slashing NOT applied — Field Audit required (Category C, 05_05 §5).'
       cluster_small_sample_degradation: 'Small-sample degradation (%{target_date}): %{critical_count} of %{total_trees} trees critical. The percentage threshold degenerates below 5 trees — a single tree crosses it — so NO auto-slash; Field Audit decides (Category C, 05_05 §5).'
       emergency_response_all_unavailable: 'Emergency response NOT dispatched: no %{device_type} actuator in this cluster is reachable right now. Installed: %{installed}; behind a silent gateway: %{silent_gateway}; not in a working state: %{out_of_service}. This protocol step was not executed; the other steps are unaffected.'

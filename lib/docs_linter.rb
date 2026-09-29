@@ -608,8 +608,8 @@ module DocsLinter
   # ACTIVE canon; as each drift is fixed, the old form is added here so CI blocks its
   # return (the general "scripts catch drift" net). Keyed retired-token → replacement
   # hint. Use ONLY for UNAMBIGUOUS retired strings with no legit current use: a retired
-  # part number (ZP-3/ZP-5 ∅27mm through-hole piezo → SMD, 02_01 §3 names the live SKUs)
-  # qualifies; a token still alive somewhere does NOT — and neither does LTC3108: retired
+  # part number (ZP-3/ZP-5 ∅27mm through-hole piezo — and since HW.30 no piezo at all on
+  # the Soldier, 02_01 §6) qualifies; a token still alive somewhere does NOT — and neither does LTC3108: retired
   # from the product and the bench (2026-09-27), its token still lives in refutation prose,
   # so a ban would fire mostly on honest history (00_07 HW.46). Substring match → keep tokens
   # specific. Meta/legacy docs are EXEMPT (they legitimately NAME retired things):
@@ -691,8 +691,8 @@ module DocsLinter
 
   DEPRECATED_TERMS = {
     "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
-    "ZP-3" => "retired ∅27mm through-hole piezo SKU → SMD piezo, live candidates in canon 02_01 §3 (Mallory AST-series; ⛔ NOT 7BB-15-6L0 / TDK B-Series — both excluded there)",
-    "ZP-5" => "retired ∅27mm through-hole piezo SKU → SMD piezo, live candidates in canon 02_01 §3 (Mallory AST-series; ⛔ NOT 7BB-15-6L0 / TDK B-Series — both excluded there)",
+    "ZP-3" => "retired ∅27mm through-hole piezo SKU — the piezo itself is CUT from the Soldier (HW.30, ⚖️ 2026-09-29, 02_01 §6); no live piezo candidate exists",
+    "ZP-5" => "retired ∅27mm through-hole piezo SKU — the piezo itself is CUT from the Soldier (HW.30, ⚖️ 2026-09-29, 02_01 §6); no live piezo candidate exists",
     # FPU-міф (знято 2026-06-10): STM32WL M4 — БЕЗ FPU; усі ARM-збірки -mfloat-abi=soft.
     "fpv4-sp-d16" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
     "FPv4-SP-D16" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",

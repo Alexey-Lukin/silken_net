@@ -44,6 +44,6 @@ lv:
         fire_rating_value: "%{value} °C"
         foliage_density: Lapotnes blīvums
         foliage_density_value: "%{value} %"
-      props_title: TinyML bioloģiskās pazīmes
+      props_title: Bioloģiskās pazīmes
     show_title: Genoma arhitektūra // %{name}
     update_error_title: Rekalibrēšanas kļūda

@@ -111,7 +111,7 @@ loop do
     did_int     = tree.did.delete_prefix("SNET-").to_i(16)
     voltage     = rand(3200..4800)          # мВ (VDDA — на Z не впливає, E.63/FW.50)
     temperature = rand(-10..45)             # °C (сире wire-значення = DCI-якір, FW.57 F2)
-    acoustic    = rand(0..200)              # кваліфіковані події від останнього TX
+    acoustic    = 0                         # [HW.30] пʼєзо зрізано — байт на дроті завжди 0
     metabolism  = rand(RECHARGE_RANGE)      # delta_t перезаряду EBFC, сек
     rssi        = rand(50..90)              # інвертований RSSI (wire-значення)
     ttl         = rand(1..7)                # mesh hops
@@ -132,7 +132,7 @@ loop do
       ttl: ttl, bio_status: reading.bio_status, firmware_id: latest_firmware_id
     )
 
-    puts "   🌳 #{tree.did} | #{voltage}mV #{temperature}°C 🎙️#{acoustic} | " \
+    puts "   🌳 #{tree.did} | #{voltage}mV #{temperature}°C | " \
          "Z=#{reading.z.round(2)}#{reading.cold_start ? ' ❄️cold' : ''} " \
          "bio:#{reading.bio_status} grow:#{reading.growth_points} TTL:#{ttl} RSSI:-#{rssi}"
   end

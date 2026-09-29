@@ -57,7 +57,8 @@ class BlockchainBurningService < ApplicationService
 
   # [SLASH-1 §3/§6] Ваги cause-driven penalty_factor uplift (дзеркало канону 05_05 §3 —
   # правити ТАМ). Comms-correlated сигнали мають ОДИН root-cause «вузол/шлюз offline» →
-  # комбінуються через max(), НЕ суму (SLASH-SAFETY §6, як sap+acoustic max() у §7); фізична
+  # комбінуються через max(), НЕ суму (SLASH-SAFETY §6; колишній приклад §7 — sap+acoustic
+  # max() — втратив обидва члени: sap писача не мав, акустику зрізано HW.30); фізична
   # халатність — незалежна → additive. Promotable до SystemParameter коли DAO калібрує (як
   # GAMMA/PF_MAX). Комбінатор — #calculate_penalty_factor.
   # ⚫ Другий comms-член (`PF_STREAMR_GAP` 0.25, guarded hook, що завжди віддавав 0) знято разом із

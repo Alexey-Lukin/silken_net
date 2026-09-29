@@ -359,11 +359,9 @@ class InsightGeneratorService < ApplicationService
   # Заводячи тренера знову — віднови й обов'язок міняти обидва боки одним ходом.
   # ⚖️ [E.64 · У-ВЕЙ, ⚖️ founder 2026-09-05] ML-гілку ЗНЯТО, а не обгороджено.
   # Гігієна фіч лишила вектор із двох, і вимір показав, що легітимних входів
-  # сьогодні НУЛЬ: `max_acoustic` не має апаратного джерела. ⚠️ [ARCH.102,
-  # 2026-09-09] DMA-шар відтоді збудовано (`MX_DMA_Init` більше не нуль
-  # хітів) — але це закрило лише зависання, не дефіцит: аудіо-каналу немає
-  # навіть на папері (`MX_ADC_Init`/`MX_TIM2_Init` порожні до board-freeze,
-  # FW.46), тож джерела як не було, так і немає. `avg_temp`
+  # сьогодні НУЛЬ: `max_acoustic` не має апаратного джерела — і з HW.30
+  # (⚖️ 2026-09-29) не матиме за КОНСТРУКЦІЄЮ: пʼєзо з Солдата зрізано, байт
+  # на дроті завжди 0 (`02_01 §6`). `avg_temp`
   # евристика вже відкинула як погодний конфаунд. Модель, натренована зараз,
   # вивчала б шум під іменем здоровʼя — і, на відміну від евристики, БЕЗ стелі
   # 0.6 < 0.83, тобто здатна перетнути поріг слешингу.
@@ -398,8 +396,9 @@ class InsightGeneratorService < ApplicationService
     # HEALTHY tree — the VPD gate DISCOUNTS for that; weather must never ADD stress).
     # Stress now = status-category (Z-categorical, ρ-relative E.64) + DIRECT signals.
     # A Z-derived ANOMALY (status 2) does NOT slash alone: bounded 0.6 < 0.83 tree
-    # slash threshold (05_05 §3) — only DIRECT signals (sap / cavitation) can carry
-    # it past the threshold.
+    # slash threshold (05_05 §3) — only a DIRECT signal could carry it past the
+    # threshold, and since HW.30 the one left is `delta_t` (05_05 §7: cavitation went
+    # with the piezo, sap never had a writer); none is wired into this heuristic.
     # Єдине місце поза enum'ом, що трактує bio_status-інти (SQL MAX-агрегат) —
     # тримаємо прив'язку до TelemetryLog.bio_statuses, не голі літерали.
     stress_code  = TelemetryLog.bio_statuses.fetch("stress")
@@ -407,13 +406,13 @@ class InsightGeneratorService < ApplicationService
     # 🔴 [ARCH.102] Прямих сигналів у евристиці НЕМАЄ, і це СТЕЛЯ, не пропуск.
     # Обидва кандидати відпали з однієї причини — величини, про яку вони мали
     # свідчити, ніхто не міряє: `sap_flow` не мав писача взагалі, а `acoustic_events`
-    # писача має, але канал ЗМІШАНИЙ — прошивка інкрементує той самий uint8 і на
-    # кавітації (`ml_event_id == 2`), і на бензопилі (`== 3`, обидві зони
-    # впевненості), тож «посуха» з нього не деривується ЖОДНИМ порогом.
+    # з HW.30 (⚖️ 2026-09-29) не має й писача — пʼєзо з Солдата зрізано, байт завжди 0
+    # (доти канал був ЗМІШАНИЙ: кавітація й пилка в одному uint8).
     # ⛔ Наслідок мусить бути видно саме звідси: евристичний шлях має стелю
     # 0.6 < 0.83 (поріг слешингу дерева, 05_05 §3) — слешинг ним НЕДОСЯЖНИЙ.
-    # Повертати прямий терм — лише з роздільним лічильником на дроті
-    # (кавітація ⊥ пилка), не з новою калібровкою → 00_07 ARCH.102.
+    # Колишня умова повернення — роздільний лічильник кавітація ⊥ пилка (ARCH.102) —
+    # ВІДПАЛА разом із датчиком: ділити нічого. Прямий сигнал, що лишився, — `delta_t`
+    # (05_05 §7); терм повертається лише на ПРЯМОМУ вимірі, не з новою калібровкою.
     max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0
   end
 

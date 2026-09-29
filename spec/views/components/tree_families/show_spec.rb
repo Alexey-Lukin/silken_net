@@ -50,8 +50,11 @@ RSpec.describe TreeFamilies::Show do
   end
 
   describe "biological properties table" do
-    it "renders TinyML Biological Features heading" do
-      expect(html).to include("TinyML Biological Features")
+    # [HW.30] Мітка «TinyML» тут брехала й до зрізу пʼєзо: жодна з властивостей
+    # таблиці не походить із моделі, а з 2026-09-29 TinyML на Солдаті немає взагалі.
+    it "renders the Biological Features heading without the TinyML mislabel" do
+      expect(html).to include("Biological Features")
+      expect(html).not_to include("TinyML")
     end
 
     it "renders CO2 Sequestration row" do
@@ -82,7 +85,7 @@ RSpec.describe TreeFamilies::Show do
     end
   end
 
-  # [ARCH.84] Панель зветься «TinyML Biological Features», а `db/seeds.rb` жодної
+  # [ARCH.84] Панель зветься «Biological Features» (до HW.30 — з хибною міткою «TinyML»), а `db/seeds.rb` жодної
   # з властивостей не пише — тобто фабриковані числа бачила КОЖНА порода.
   # (`sap_flow_index`, що колись множив pest-поріг, знято цілком — [ARCH.102] ⚖️
   # 08-20; урок про фабрикований нуль лишається на вцілілих полях.)

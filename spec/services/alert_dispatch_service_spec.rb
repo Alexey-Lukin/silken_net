@@ -177,9 +177,11 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
-  # [SLASH-1] acoustic-vs-thermal: anomaly без жару = вирубка, не вогонь.
-  describe "chainsaw vs fire discriminator" do
-    it "routes acoustic anomaly WITHOUT heat to chainsaw_detected" do
+  # [HW.30 ⚖️ 2026-09-29] Пʼєзо з Солдата зрізано: у PANIC_FLAG немає писача, а anomaly —
+  # вердикт, виведений із Z, і E.64 його забороняє. Обидві половини колишньої гілки
+  # пилки мовчать; `chainsaw_detected` лишився типом без писача.
+  describe "anomaly / panic frames after the piezo cut [HW.30]" do
+    it "raises NO alert for a Z-anomaly frame without heat (E.64: no Z-derived verdict)" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
@@ -187,18 +189,13 @@ RSpec.describe AlertDispatchService, type: :service do
         voltage_mv: 3300,
         temperature_c: 25,
         bio_status_anomaly?: true,
-        panic?: false
+        panic?: false,
+        bio_status_stress?: false
       )
 
       expect {
         described_class.analyze_and_trigger!(log)
-      }.to change(EwsAlert, :count).by(1)
-
-      alert = EwsAlert.last
-      expect(alert.alert_type).to eq("chainsaw_detected")
-      expect(alert.severity).to eq("critical")
-      expect(alert.message_key).to eq("chainsaw_detected")
-      I18n.with_locale(:uk) { expect(alert.message).to include("Акустична аномалія") }
+      }.not_to change(EwsAlert, :count)
     end
 
     it "keeps thermal breach as fire_detected even when anomaly flag is set" do
@@ -218,57 +215,28 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(EwsAlert.last.alert_type).to eq("fire_detected")
     end
 
-    it "marks panic-TX provenance in the chainsaw message" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3300,
-        temperature_c: 25,
-        bio_status_anomaly?: true,
-        panic?: true
-      )
-
-      described_class.analyze_and_trigger!(log)
-
-      expect(EwsAlert.last.message_key).to eq("chainsaw_detected_panic")
-      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("PANIC-TX") }
-    end
-
-    # [SLASH-1] РЕАЛЬНА пилка: Trigger_Emergency_LoRa_TX шле status=homeostasis +
-    # PANIC_FLAG + acoustic=0xFF (255) + vcap=0 — до фікса гейт лише на
-    # bio_status_anomaly? губив її (кадр падав у тодішню лічильникову гілку —
-    # знята [ARCH.102]), а vcap=0 плодив фантомний system_fault.
-    # [ARCH.102] Розпакувальник пише такий рядок із NULL-сенсорами («не виміряно»), і
-    # саме з NULL пилка мусить доїхати до своєї гілки: гарди напруги й вогню стоять
-    # ПЕРЕД нею, тож голе порівняння з nil убило б алерт разом із винятком.
-    it "routes a REAL chainsaw panic frame (status=homeostasis) to chainsaw_detected and nothing else" do
+    # Форма РЕАЛЬНОГО panic-кадру (`Trigger_Emergency_LoRa_TX`: status=homeostasis +
+    # PANIC_FLAG + vcap=0): розпакувальник пише його з NULL-сенсорами [ARCH.102], і саме
+    # з NULL кадр мусить пройти гарди напруги й вогню без винятку та без фантомного
+    # `power_loss`. Пін — «жодного алерту», тобто накриває й `hardware_fault`, і будь-який
+    # тип, який хтось колись повісить на цей кадр (backend #56: пін на ОДИН тип вакуумний).
+    it "raises NO alert for a panic frame — it has no Soldier writer since HW.30 — and says so in the log" do
+      allow(Rails.logger).to receive(:warn).and_call_original
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
         firmware_report_reverted?: false,
         voltage_mv: nil,        # panic-кадр нічого не міряв — NULL, не legacy-нуль
         temperature_c: nil,
-        bio_status_anomaly?: false, # пилка НЕ ставить anomaly — status лишається homeostasis
+        bio_status_anomaly?: false,
         panic?: true,
-        acoustic_events: nil # 0xFF кадру — код паніки, не лічба; диспетчер лічильник не читає
+        bio_status_stress?: false
       )
 
       expect {
         described_class.analyze_and_trigger!(log)
-      }.to change(EwsAlert, :count).by(1)
-
-      alert = EwsAlert.last
-      expect(alert.alert_type).to eq("chainsaw_detected")
-      expect(alert.message_key).to eq("chainsaw_detected_panic")
-      I18n.with_locale(:uk) { expect(alert.message).to include("PANIC-TX") }
-      # 🔴 [SLASH-1 2026-09-04] Пін цілиться в ОБИДВА типи: після розколу кошика
-      # `power_loss` їде як `hardware_fault`, тож перевірка лише на `system_fault`
-      # стала б ВАКУУМНОЮ — зеленою навіть якби алерт створився (backend #56).
-      expect(EwsAlert.where(alert_type: [ :system_fault, :hardware_fault ])).to be_empty # vcap=0 panic ≠ «втрата живлення»
-      # [ARCH.102] Колишній ліхтар «not seismic» узагальнено: panic-кадр не сміє
-      # лишити ЖОДНОГО другого алерту — пилка їде рівно одним типом.
-      expect(EwsAlert.where.not(alert_type: :chainsaw_detected)).to be_empty
+      }.not_to change(EwsAlert, :count)
+      expect(Rails.logger).to have_received(:warn).with(/\[HW\.30\] #{tree.did}: panic-кадр/)
     end
   end
 
@@ -546,27 +514,6 @@ end
       described_class.analyze_and_trigger!(log)
 
       expect(EmergencyResponseService).to have_received(:call).with(kind_of(EwsAlert))
-    end
-  end
-
-  # [SLASH-1] Раніше anomaly без жару падав у fire_detected (конфляція пилка↔пожежа);
-  # спліт маршрутизує його в chainsaw_detected.
-  describe "bio_status_anomaly without thermal breach" do
-    it "triggers chainsaw_detected (NOT fire) when anomaly comes with normal temperature" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,  # normal temperature
-        bio_status_anomaly?: true,
-        panic?: false,
-        bio_status_stress?: false,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.alert_type).to eq("chainsaw_detected")
     end
   end
 

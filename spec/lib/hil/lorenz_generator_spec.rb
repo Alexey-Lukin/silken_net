@@ -28,13 +28,15 @@ RSpec.describe Hil::LorenzGenerator do
       expect(a[:z_value]).to eq(b[:z_value])
     end
 
+    # Ненульовий acoustic-override несучий: дефолт тепер 0 [HW.30], тож override 0
+    # не відрізнив би «override пройшов» від «його проігнорували».
     it "honours overrides over state defaults" do
       sample = generator.sample(
         state: :homeostasis,
-        temperature_c: 5, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300
+        temperature_c: 5, acoustic_events: 7, metabolism_s: 60, voltage_mv: 3300
       )
       expect(sample[:temperature_c]).to eq(5)
-      expect(sample[:acoustic_events]).to eq(0)
+      expect(sample[:acoustic_events]).to eq(7)
       expect(sample[:metabolism_s]).to eq(60)
       expect(sample[:voltage_mv]).to eq(3300)
     end
@@ -44,24 +46,18 @@ RSpec.describe Hil::LorenzGenerator do
         .to raise_error(ArgumentError, /unknown state/)
     end
 
-    # 🔴 [ARCH.102] Носій СЕМАНТИКИ дроту, а не форми константи. Прошивка
-    # інкрементує `acoustic_events` лише на кавітації й пилці, тож здорове
-    # дерево фізично не може віддати ненульовий лічильник — і саме це
-    # порушував попередній `class → range` мапінг (`wind` давав 15..60 для
-    # гомеостазу, тобто симулятор робив тихий ліс гучним). Пін на пару, бо
-    # позитивна половина сама по собі не відрізнила б «регістр правильний»
-    # від «генератор завжди мовчить».
-    it "не видає детекцій для станів, які прошивка лишає тихими" do
-      quiet = 40.times.map { |i| described_class.new(seed_hex: seed_hex, rng: Random.new(i)) }
-                      .flat_map { |g| [ g.sample(state: :homeostasis), g.synthesize(state: :stress) ] }
+    # 🔴 [HW.30 ⚖️ 2026-09-29] Носій СЕМАНТИКИ дроту, а не форми константи: пʼєзо з
+    # Солдата зрізано, тож байт `acoustic_events` завжди 0 — у КОЖНОМУ стані, включно
+    # з аномалією (колишній регістр `detections` писача не має). «Генератор завжди
+    # мовчить» тепер і є правильною відповіддю; що override усе ж доїжджає, пінить
+    # приклад «honours overrides» вище ненульовим значенням.
+    it "не видає детекцій у жодному стані — з HW.30 акустики на дроті немає" do
+      generators = 40.times.map { |i| described_class.new(seed_hex: seed_hex, rng: Random.new(i)) }
+      samples = generators.flat_map do |g|
+        [ g.sample(state: :homeostasis), g.synthesize(state: :stress), g.synthesize(state: :anomaly) ]
+      end
 
-      expect(quiet.map { |s| s[:acoustic_events] }.uniq).to eq([ 0 ])
-    end
-
-    it "видає детекції для аномалії — інакше попередній пін був би вакуумним" do
-      loud = 40.times.map { |i| described_class.new(seed_hex: seed_hex, rng: Random.new(i)).synthesize(state: :anomaly) }
-
-      expect(loud.map { |s| s[:acoustic_events] }).to all(be_positive)
+      expect(samples.map { |s| s[:acoustic_events] }.uniq).to eq([ 0 ])
     end
 
     it "agrees with SilkenNet::Attractor for the supplied inputs" do

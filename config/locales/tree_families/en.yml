@@ -44,6 +44,6 @@ en:
         fire_rating_value: "%{value} °C"
         foliage_density: Foliage Density
         foliage_density_value: "%{value} %"
-      props_title: TinyML Biological Features
+      props_title: Biological Features
     show_title: Genome Architecture // %{name}
     update_error_title: Recalibration Error

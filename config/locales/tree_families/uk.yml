@@ -46,6 +46,6 @@ uk:
         fire_rating_value: "%{value} °C"
         foliage_density: Густина листя
         foliage_density_value: "%{value} %"
-      props_title: Біологічні характеристики TinyML
+      props_title: Біологічні характеристики
     show_title: Архітектура генома // %{name}
     update_error_title: Помилка рекалібрування

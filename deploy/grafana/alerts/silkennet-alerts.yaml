@@ -440,7 +440,7 @@ groups:
         for: 2m
         annotations:
           summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection — або збій бази кешу, що глушить справжні панічні кадри (SEC.39)."
-          description: "SEC.10 Frame Counter nonce (Rails.cache на Solid Cache) відхиляє дублікати. Різкий стрибок означає одне з ТРЬОХ: attacker (replay forged panic = false fire alert), LoRa mesh duplicate storm — або транзієнтний збій бази кешу: Solid Cache на помилці повертає «не записано», і справжні панічні кадри читаються як повтор і ВІДКИДАЮТЬСЯ (00_07 SEC.39). Спершу звір логи `SolidCacheStore: … failed`, тоді DID pattern."
+          description: "SEC.10 Frame Counter nonce (Rails.cache на Solid Cache) відхиляє дублікати. Різкий стрибок означає одне з ТРЬОХ: attacker (replay forged panic-кадрів; з HW.30 у Солдата немає писача паніки, тож будь-який panic-кадр — аномалія прошивки або підробка, алерту він не піднімає), LoRa mesh duplicate storm — або транзієнтний збій бази кешу: Solid Cache на помилці повертає «не записано», і справжні панічні кадри читаються як повтор і ВІДКИДАЮТЬСЯ (00_07 SEC.39). Спершу звір логи `SolidCacheStore: … failed`, тоді DID pattern."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md#21-soldier--queen-lora-uplink-aes-128-ecb-transitional--aes-128-ccm-target"
         labels:
           severity: critical
@@ -1280,91 +1280,6 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
-      # P1: Acoustic overflow (firmware data loss)
-      # -----------------------------------------------------------------------
-      - uid: sn-alert-acoustic-overflow
-        title: "⚠️ Acoustic sensor overflow (firmware data loss)"
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 300, to: 0 }
-            datasourceUid: ${DATASOURCE_UID}
-            model:
-              expr: "rate(silkennet_telemetry_acoustic_overflow_total[5m])"
-              refId: A
-          - refId: B
-            datasourceUid: "__expr__"
-            model:
-              type: reduce
-              refId: B
-              expression: A
-              reducer: last
-          - refId: C
-            datasourceUid: "__expr__"
-            model:
-              type: threshold
-              refId: C
-              expression: B
-              conditions:
-                - evaluator: { params: [0], type: gt }
-                  operator: { type: and }
-                  query: { params: [B] }
-                  reducer: { params: [], type: last }
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        annotations:
-          summary: "Acoustic overflow rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Firmware uint8 saturated at 255."
-          description: "Дерева фіксують > 255 акустичних подій між TX-циклами (uint8 cap). Реальна кількість chainsaw/cavitation подій вища — дані втрачені. Можлива chainsaw activity. FW.22 saturating counter активний."
-        labels:
-          severity: warning
-          component: firmware
-          team: backend
-
-      # -----------------------------------------------------------------------
-      # P1: TinyML OTA-threshold rejections (FW.18b — corrupted RTC / malicious OTA)
-      # -----------------------------------------------------------------------
-      - uid: sn-alert-tinyml-threshold-invalid
-        title: "⚠️ TinyML OTA thresholds rejected (corrupted RTC / malicious OTA)"
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 900, to: 0 }
-            datasourceUid: ${DATASOURCE_UID}
-            model:
-              expr: "rate(silkennet_tinyml_threshold_invalid_reports_total[15m])"
-              refId: A
-          - refId: B
-            datasourceUid: "__expr__"
-            model:
-              type: reduce
-              refId: B
-              expression: A
-              reducer: last
-          - refId: C
-            datasourceUid: "__expr__"
-            model:
-              type: threshold
-              refId: C
-              expression: B
-              conditions:
-                - evaluator: { params: [0], type: gt }
-                  operator: { type: and }
-                  query: { params: [B] }
-                  reducer: { params: [], type: last }
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        annotations:
-          summary: "Soldier(и) звітують відкинуті OTA-пороги TinyML (rate = {{ $values.B.Value | printf \"%.4f\" }}/s)."
-          description: "TinyML_Validate_Threshold відкинув OTA-пороги (NaN / out-of-range / інверсія WARNING≥CRITICAL) → застосовано default, інваріант SILENCE<WARNING<CRITICAL збережено. Ненульовий лічильник = десь у лісі корумпований RTC або зловмисний OTA-payload. Конкретний DID і значення лічильника — у warn-лозі бекенда (TelemetryUnpackerService, патерн FW.22)."
-          runbook_url: "docs/03_03_TinyML_Acoustic_Inference.md"
-        labels:
-          severity: warning
-          component: firmware
-          team: security
-
-      # -----------------------------------------------------------------------
       # P1: Mint SLO breach — «≥80% mint success during a single chain outage»
       # (канонічна ціль 06_08 §2.4; вимірювання = success/attempts за 1h вікно).
       # PromQL-guard `and (attempts > 0)`: без спроб вираз порожній → NoData →
@@ -1962,54 +1877,6 @@ groups:
           team: security
 
       # -----------------------------------------------------------------------
-      # P1: Fauna-сесії пропускаються через низький Vcap [FW.42]. Дзеркало
-      # `sn-alert-tinyml-threshold-invalid`: та сама cardinality-постава (без
-      # per-DID мітки, дерево атрибутується warn-логом), той самий докстрінг-
-      # патерн — і в сусіда споживач є, а тут не було. Стійкий rate > 0 =
-      # енергодефіцит кластера (зима або деградація EDLC), тобто питання до
-      # ЗАЛІЗА, не до софту.
-      # -----------------------------------------------------------------------
-      - uid: sn-alert-fauna-skip
-        title: "⚠️ Fauna-сесії пропускаються (енергодефіцит кластера)"
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 900, to: 0 }
-            datasourceUid: ${DATASOURCE_UID}
-            model:
-              expr: "rate(silkennet_fauna_skip_reports_total[15m])"
-              refId: A
-          - refId: B
-            datasourceUid: "__expr__"
-            model:
-              type: reduce
-              refId: B
-              expression: A
-              reducer: last
-          - refId: C
-            datasourceUid: "__expr__"
-            model:
-              type: threshold
-              refId: C
-              expression: B
-              conditions:
-                - evaluator: { params: [0], type: gt }
-                  operator: { type: and }
-                  query: { params: [B] }
-                  reducer: { params: [], type: last }
-        noDataState: OK
-        execErrState: Error
-        for: 30m
-        annotations:
-          summary: "Soldier(и) пропускають fauna-сесії через низький Vcap (rate = {{ $values.B.Value | printf \"%.4f\" }}/s)."
-          description: "Брауноут-захист прошивки пропустив fauna-сесію: EBFC не дотягнув Vcap до порога сесії (03_03 §10.4). Поодинокі пропуски взимку штатні — СТІЙКИЙ ненульовий rate означає енергодефіцит кластера: деградація EDLC, затінення, обрив pogo-контакту. Конкретний DID — у warn-лозі бекенда (патерн FW.22). Лік польовий, не софтовий. FW.42 / 02_03 §12."
-          runbook_url: "docs/03_03_TinyML_Acoustic_Inference.md"
-        labels:
-          severity: warning
-          component: firmware
-          team: ops
-
-      # -----------------------------------------------------------------------
       # P1: MRV-lineage корінь не обчислився [MRV.1/ARCH.12]. `attach_lineage_root`
       # ловить ВСЕ в `rescue StandardError` і лишає `telemetry_merkle_root` NULL —
       # мінт при цьому проходить (fail-open СВІДОМИЙ: witness-фіча ніколи не
@@ -2066,10 +1933,10 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
-      # P1: FC high-water інваріант втрачено [FW.2 I-HW]. ТРЕТІЙ прапорець того
-      # самого diag-байта, що `tinyml_threshold_invalid` і `fauna_skip` — три
-      # `if diag_byte.anybits?` підряд у `TelemetryUnpackerService` — і єдиний, що
-      # лишався без споживача, при тому що він найгостріший із трьох: Flash
+      # P1: FC high-water інваріант втрачено [FW.2 I-HW]. Прапорець того самого
+      # diag-байта, що `thr_invalid` і `fauna_skip`, — і з HW.30 ЄДИНИЙ із трьох, що
+      # має писача (два інші паркуються разом із TinyML і фауною на Солдаті; їхні
+      # правила знято), при тому що він найгостріший: Flash
       # відмовляє записувати high-water, отже гарантія монотонності Frame Counter
       # деградована, а на ній стоїть увесь anti-replay пристрою.
       # ⊥ Не дублює `sn-alert-ccm-fc-replay`: той бачить НАСЛІДОК (кадр уже

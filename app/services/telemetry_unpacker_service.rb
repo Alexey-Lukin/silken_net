@@ -78,10 +78,10 @@ class TelemetryUnpackerService < ApplicationService
   FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_957
 
   # [ARCH.41-B] Wire-sentinel «час невідомий»: Soldier без жодного beacon'а
-  # (cold-boot після VBAT-loss / Королева мовчить) шле 0xFE замість
-  # acoustic-лічильника, а Лоренц НА ПРИСТРОЇ рахується з acoustic=0 —
-  # дзеркальна нейтралізація тут (до DCI) тримає паритет. Реальні 254
-  # неможливі (firmware клампить у 0xFD); 255 лишається FW.22-сатурацією.
+  # (cold-boot після VBAT-loss / Королева мовчить) шле 0xFE в acoustic-байті,
+  # а Лоренц НА ПРИСТРОЇ рахується з acoustic=0 — дзеркальна нейтралізація
+  # тут (до DCI) тримає паритет. З HW.30 (пʼєзо зрізано) інших значень цей
+  # байт не несе — завжди 0, тож сентинел лишається ЄДИНИМ його змістом.
   # Дім: 03_04 §2.1; firmware-дзеркало — Soldier_Acoustic_Wire_Value.
   ACOUSTIC_TIME_UNCERTAIN_SENTINEL = 0xFE
 
@@ -254,7 +254,7 @@ class TelemetryUnpackerService < ApplicationService
     firmware_id = pad_data[0..1].unpack1("n")
 
     # [FW.29] PanicFlag (біт 7 StatusByte) — єдина надійна ознака панічного
-    # пакета на дроті (acoustic=255 колізує з FW.22-сатурацією). Персистимо
+    # пакета на дроті (acoustic=255 колізувала з FW.22-сатурацією до HW.30). Персистимо
     # на записі: панічність queryable + relayed_via_mesh? знає стартовий TTL.
     panic = status_byte.anybits?(PANIC_FLAG_BIT)
 
@@ -262,9 +262,10 @@ class TelemetryUnpackerService < ApplicationService
     # Соломонова сторожа панічного каналу: panic_frame_counter (BE у байтах
     # 14..15 = pad_data[2..3]) інкрементується soldier'ом перед кожним
     # emergency TX. Тут ми ловимо повторюваний nonce через Rails.cache SET NX
-    # (`panic_replayed?`; у проді Solid Cache, НЕ Redis) —
-    # replay одного «chainsaw detected» = false fire alert + евакуація +
-    # втрата довіри до системи. Поза-panic пакети нічого не платять
+    # (`panic_replayed?`; у проді Solid Cache, НЕ Redis). [HW.30] Писача паніки в
+    # Солдата більше немає, тож БУДЬ-ЯКИЙ panic-кадр — аномалія прошивки або
+    # підробка; сторожа лишається tripwire'ом, а сплеск відмов видає шторм
+    # повторів (`sn-alert-panic-replay`). Поза-panic пакети нічого не платять
     # (counter-перевірка пропускається).
     if panic
       panic_counter = pad_data[2..3].to_s.unpack1("n").to_i
@@ -309,30 +310,15 @@ class TelemetryUnpackerService < ApplicationService
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
     # [FW.18b] Верхні 5 біт TTL-байта — saturating лічильник відкинутих
-    # OTA-порогів (03_03 §5.4). Метрика без per-DID мітки (cardinality
-    # budget 06_03 §2.9, патерн FW.22) — конкретне дерево і значення
-    # лічильника атрибутуються warn-логом.
+    # OTA-порогів TinyML (03_03 §5.4). [HW.30] TinyML на Солдаті паркується, тож
+    # писача в лічильника немає: Prometheus-метрику знято, а декодування й warn-лог
+    # лишаються — ненульове значення тепер означає стару прошивку або збій.
     threshold_invalid = (parsed_data[6] >> 3) & 0x1F
     if threshold_invalid.positive?
-      SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL.increment
       Rails.logger.warn(
         "🎚️ [FW.18b] #{hex_did}: відкинуті OTA-пороги TinyML — лічильник #{threshold_invalid}" \
         "#{threshold_invalid == 31 ? ' (wire-сатурація, реальне значення може бути більшим)' : ''}"
       )
-    end
-
-    # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
-    # Value 255 likely indicates overflow — real count may be higher.
-    # Log warning for operational awareness and future payload redesign.
-    # [FW.65] ⛔ Крім panic-кадру: там 0xFF — КОД паніки (Trigger_Emergency_LoRa_TX), а не
-    # сатурація лічильника, і кожна паніка доти роздувала метрику переповнення.
-    if log_attributes[:acoustic_events] == 255 && !log_attributes[:panic]
-      Rails.logger.warn(
-        "⚠️ [Acoustic Overflow] DID #{hex_did}: acoustic_events=255 (saturated). " \
-        "Real count may exceed 255 — firmware uint8 payload limit reached."
-      )
-      # [S2.3]: Prometheus counter for Grafana alerting on acoustic overflow
-      SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
     end
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
@@ -490,18 +476,17 @@ class TelemetryUnpackerService < ApplicationService
 
     # [FW.18b] diag-байт (wire-rev2 byte 18): [thr_invalid:5 | fauna_mode:1 |
     # fauna_skip:1 | fc_degraded:1] — дзеркало Pack_FW2_Diag (lora_ccm.h).
-    # Той самий cardinality-патерн, що ECB-шлях: метрика без per-DID мітки,
-    # конкретне дерево — у warn-лозі.
+    # [HW.30] thr_invalid і fauna_skip писача не мають (TinyML і фауна на Солдаті
+    # паркуються): їхні метрики знято, декодування й warn-логи лишаються сторожею
+    # старої прошивки. fc_degraded — живий: метрика без per-DID мітки, дерево — у лозі.
     threshold_invalid = (diag_byte >> 3) & 0x1F
     if threshold_invalid.positive?
-      SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL.increment
       Rails.logger.warn(
         "🎚️ [FW.18b] #{hex_did}: відкинуті OTA-пороги TinyML — лічильник #{threshold_invalid}" \
         "#{threshold_invalid == 31 ? ' (wire-сатурація, реальне значення може бути більшим)' : ''}"
       )
     end
     if diag_byte.anybits?(0x02) # fauna_skip [FW.42]
-      SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL.increment
       Rails.logger.warn "🦉 [FW.42] #{hex_did}: fauna-сесію пропущено через низький Vcap (брауноут-захист)."
     end
     if diag_byte.anybits?(0x01) # fc_degraded [FW.2 I-HW]
@@ -514,11 +499,6 @@ class TelemetryUnpackerService < ApplicationService
 
     # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
-
-    # [FW.65] 0xFF у panic-кадрі — код паніки, не сатурація (див. ECB-шлях).
-    if acoustic == 255 && !log_attributes[:panic]
-      SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
-    end
 
     step_lorenz_and_judge!(tree, log_attributes, status_byte)
     commit_telemetry(tree, log_attributes)
@@ -1004,12 +984,9 @@ class TelemetryUnpackerService < ApplicationService
   # На відміну від recovery (ARCH.41-A, детектив постфактум) — це голос самого
   # Солдата: «мій epoch_day застарілий». Нейтралізуємо acoustic до 0 ДО DCI
   # (пристрій рахував Лоренц з 0 — дзеркало Soldier_Acoustic_Wire_Value),
-  # ставимо time_unsynced_fallback і одразу просимо CMD_TIME_SYNC. Побічний
-  # виграш нейтралізації: ML-фіча `max_acoustic` бачить 0, а не фальшиві 254
-  # «події» — і це не про один інсайт, а про ВИБІРКУ: те саме число осідає в
-  # `AiInsight#reasoning` — а він лишається домом ВИБІРКИ й тоді, коли тренера
-  # нема в дереві (знято 2026-09-05): отруєні дані переживають свого споживача, тож
-  # ненейтралізований сентинел ставав би піком акустики в тренувальних даних.
+  # ставимо time_unsynced_fallback і одразу просимо CMD_TIME_SYNC. З HW.30 байт
+  # іншого змісту, крім сентинела, не несе, тож після нейтралізації в рядку лежить
+  # рівно правда дроту — 0, а не 254 вигаданих «подій».
   # DCI при цьому НЕ обходиться —
   # sentinel не може служити маскою для підробленого Z (fraud-логіка жива).
   def apply_time_uncertain_sentinel!(tree, attributes, hex_did)

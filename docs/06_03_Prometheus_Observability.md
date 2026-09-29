@@ -294,16 +294,15 @@ end
 
 ### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/FW.22)
 
-2 нові метрики для покращення observability circuit breaker'а та acoustic overflow:
+Метрика observability circuit breaker'а (сусіда по таблиці — acoustic overflow — знято з HW.30, абзац «Grafana Alert Rules» нижче):
 
 | Metric Name | Тип | Файл | Labels | Бізнес-значення |
 |-------------|-----|------|--------|-----------------|
-| `silkennet_telemetry_acoustic_overflow_total` | Counter | `TelemetryUnpackerService` | — | Лічильник НЕ-панічних пакетів з `acoustic_events=255` (uint8 saturation). На panic-кадрі `0xFF` — код паніки, не лічба, тож обидва шляхи розпакувальника (ECB і CCM) його не рахують (FW.65, 2026-09-27; доти кожна паніка роздувала лічильник і писала хибне «Acoustic Overflow»). Для Grafana alerting: `rate() > 0` = firmware data loss |
 | `silkennet_rpc_circuit_breaker_open` | Gauge | `Web3::ResilientClient` | `provider` | Стан circuit breaker: 1.0 = open (провайдер виключений), 0.0 = closed (здоровий). Для дашборду S2.2 |
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown). ⚠️ Лічить збої ПРОВАЙДЕРА, не відмови нашим запитам: відповідь вузла про наш запит (`Web3::NodeAnswer.answered?` — реверт, «nonce too low», «insufficient funds») з 2026-09-23 сюди не доходить [ARCH.62], тож `io_error` тут означає JSON-RPC-помилку поза allowlist-ом; справжнього обриву на EVM-шляху ряд сьогодні не бачить (транспорт eth 0.5.17 долітає як `NoMethodError`, [`00_07`](00_07_Action_Plan_Tracker) INF.22). Другий писач того самого ряду — `ApplicationWeb3Worker#with_web3_error_handling` (`error_type: "connection"`), і він на відповіді вузла теж мовчить.
 
-**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, ✅ імпортовано 2026-08-29. ⊕ Сусід по тому ж проходу — `sn-alert-ccm-mic-fail` (FW.2 CCM MIC-fail, дротований 2026-08-26): його єдина канон-згадка жила в цьому абзаці й ледь не зникла при переписі §2.8. Споріднений firmware-**діагностичний за ПРЕДМЕТОМ** counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — ⚠️ слово тут про ПРИРОДУ сигналу, а не про **ярус** реєстру нижче: за ярусом ця метрика **алертна** (споживач у неї є). Той самий токен у двох доменах, тож не читай його як декларацію — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
+**Grafana Alert Rules:** `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, ✅ імпортовано 2026-08-29. ⊕ Сусід по тому ж проходу — `sn-alert-ccm-mic-fail` (FW.2 CCM MIC-fail, дротований 2026-08-26): його єдина канон-згадка жила в цьому абзаці й ледь не зникла при переписі §2.8. ⛔ **Знято з HW.30** (⚖️ 2026-09-29, пʼєзо з Солдата зрізано — [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) разом зі споживачами: `silkennet_telemetry_acoustic_overflow_total` + `sn-alert-acoustic-overflow` (байт `acoustic_events` завжди 0, тож 255 не буває), `silkennet_tinyml_threshold_invalid_reports_total` + `sn-alert-tinyml-threshold-invalid` і `silkennet_fauna_skip_reports_total` + `sn-alert-fauna-skip` (TinyML і фауна на Солдаті паркуються — у бітів нема писача; декодування й warn-лог лишились у `TelemetryUnpackerService`). `silkennet_panic_replay_rejected_total` лишається: panic-кадр без писача — тепер сам по собі аномалія, і replay-сторожа — його tripwire.
 
 ### 📊 Канонічний реєстр метрик (SSOT)
 
@@ -354,7 +353,6 @@ end
 | `silkennet_dynamic_tax_collected_total` | діагностична | `token_type` | Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate |
 | `silkennet_ethereum_anchor_reverted_total` | алертна | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
 | `silkennet_ews_alerts_total` | діагностична | `alert_type` | Total EWS alerts created — [INF.26] «created», бо інкремент живе в `after_create_commit`; доставка ([`ARCH.60`](00_07_Action_Plan_Tracker)) — окрема подія й власного лічильника не має |
-| `silkennet_fauna_skip_reports_total` | алертна | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_filecoin_archive_exhausted_total` | діагностична | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
 | `silkennet_filecoin_repin_total` | діагностична | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
 | `silkennet_filecoin_verification_failures_total` | алертна | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
@@ -385,7 +383,6 @@ end
 | `silkennet_slashing_events_total` | алертна | `reason` | Total slashing (burn) events by reason |
 | `silkennet_solana_payout_attempts_total` | алертна | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
 | `silkennet_solana_payout_success_total` | алертна | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
-| `silkennet_telemetry_acoustic_overflow_total` | алертна | — | Total non-panic telemetry packets with acoustic_events=255 (uint8 saturation; on a panic frame 0xFF is the panic code) |
 | `silkennet_telemetry_archive_batch_failures_total` | алертна | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | діагностична | — | FW.2 CCM packets successfully decrypted with valid MIC |
 | `silkennet_telemetry_ccm_device_z_total` | діагностична | `carried` | FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z [FW.31; diagnostic tier: no alert until the CCM flip — the consumer is the Gate D ratio carried=true / all >= 95%] |
@@ -394,7 +391,6 @@ end
 | `silkennet_telemetry_fraud_detected_total` | алертна | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
 | `silkennet_telemetry_log_unpruned_lookups_total` | алертна | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
 | `silkennet_telemetry_processed_total` | алертна | — | Total telemetry chunks processed by TelemetryUnpackerService |
-| `silkennet_tinyml_threshold_invalid_reports_total` | алертна | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
 | `silkennet_treasury_check_errors_total` | алертна | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_tree_silence_total` | діагностична | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | алертна | `reason` | Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production. ⚠️ [INF.26] Лічильник міряє ПЕРЕДУМОВУ, не наслідок: інкремент стоїть ДО розвилки prod/dev, тож ім'я (`_fallback_`) вужче за подію — у проді той самий рядок означає ВІДМОВУ. Перенести інкремент у dev-гілку не можна: осліпли б саме там, де сигнал найпотрібніший |

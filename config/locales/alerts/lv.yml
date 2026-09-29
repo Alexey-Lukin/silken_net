@@ -19,8 +19,8 @@ lv:
       burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
       burn_failure_ambiguous: 'Kritiska %{amount} SCC sadedzināšanas kļūme — transakcija varēja tikt izpildīta; NEATKĀRTOT automātiski, vispirms pārbaudi pārlūkā. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
       canary_trip: "🐦 KANĀRIJPUTNS: __stack_chk_fail mezglā (pārrakstīts steka kadrs — iespējams uzbrukums LoRa/AT parserim; mezgls pārstartējās pats). DID: %{did}, seq: %{seq}"
-      chainsaw_detected: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla. DID: %{did}"
-      chainsaw_detected_panic: "🪚 MEŽIZSTRĀDE: Akustiska anomālija bez termiskā signāla (PANIC-TX). DID: %{did}"
+      chainsaw_detected: "🪚 AIZDOMAS PAR MEŽIZSTRĀDI: nepieciešama pārbaude uz vietas. DID: %{did}"
+      chainsaw_detected_panic: "🪚 AIZDOMAS PAR MEŽIZSTRĀDI (PANIC-TX): nepieciešama pārbaude uz vietas. DID: %{did}"
       cluster_data_blackout: 'Klastera mēroga datu pārtraukums (%{target_date}): iespējama vārtejas kļūme / Starlink pārtraukums (force-majeure). Slashing NAV piemērots — nepieciešams Field Audit (C kategorija, 05_05 §5).'
       cluster_small_sample_degradation: 'Maza parauga degradācija (%{target_date}): %{critical_count} no %{total_trees} kokiem kritiski. Procentuālais slieksnis deģenerējas zem 5 kokiem — to šķērso viens vienīgs koks — tāpēc auto-slash NAV piemērots; lemj Field Audit (C kategorija, 05_05 §5).'
       emergency_response_all_unavailable: 'Ārkārtas reakcija NAV nosūtīta: šobrīd šajā klasterī nav sasniedzams neviens %{device_type} aktuators. Uzstādīti: %{installed}; aiz klusējošas vārtejas: %{silent_gateway}; nav darba stāvoklī: %{out_of_service}. Šis protokola solis netika izpildīts; pārējos soļus tas neietekmē.'

@@ -45,6 +45,6 @@ lt:
         fire_rating_value: "%{value} °C"
         foliage_density: Lapijos tankis
         foliage_density_value: "%{value} %"
-      props_title: TinyML biologiniai požymiai
+      props_title: Biologiniai požymiai
     show_title: Genomo architektūra // %{name}
     update_error_title: Perkalibravimo klaida

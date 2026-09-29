@@ -19,8 +19,8 @@ lt:
       burn_failure: 'Kritinis %{amount} SCC sudeginimo gedimas. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
       burn_failure_ambiguous: 'Kritinis %{amount} SCC sudeginimo gedimas — operacija galėjo įvykti; NEKARTOTI automatiškai, pirma patikrink naršyklėje. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
       canary_trip: "🐦 KANARĖLĖ: __stack_chk_fail mazge (perrašytas steko kadras — galima ataka prieš LoRa/AT analizatorių; mazgas persikrovė pats). DID: %{did}, seq: %{seq}"
-      chainsaw_detected: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo. DID: %{did}"
-      chainsaw_detected_panic: "🪚 KIRTIMAS: Akustinė anomalija be šiluminio signalo (PANIC-TX). DID: %{did}"
+      chainsaw_detected: "🪚 ĮTARIAMAS KIRTIMAS: reikia patikrinti vietoje. DID: %{did}"
+      chainsaw_detected_panic: "🪚 ĮTARIAMAS KIRTIMAS (PANIC-TX): reikia patikrinti vietoje. DID: %{did}"
       cluster_data_blackout: 'Viso klasterio duomenų pertrūkis (%{target_date}): galimas šliuzo gedimas / Starlink pertrūkis (force-majeure). Slashing NETAIKYTAS — reikalingas Field Audit (C kategorija, 05_05 §5).'
       cluster_small_sample_degradation: 'Mažos imties degradacija (%{target_date}): %{critical_count} iš %{total_trees} medžių kritiniai. Procentinis slenkstis išsigimsta esant mažiau nei 5 medžiams — jį kerta vienas medis — todėl auto-slash NETAIKYTAS; sprendžia Field Audit (C kategorija, 05_05 §5).'
       emergency_response_all_unavailable: 'Avarinis atsakas NEIŠSIŲSTAS: šiuo metu šiame klasteryje nepasiekiama nė viena %{device_type} pavara. Įrengta: %{installed}; už tylinčių vartų: %{silent_gateway}; ne darbinės būsenos: %{out_of_service}. Šis protokolo žingsnis neįvykdytas; kitiems žingsniams tai įtakos neturi.'

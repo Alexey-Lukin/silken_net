@@ -27,9 +27,10 @@ class EwsAlert < ApplicationRecord
     # [SLASH-1] Відкриття корпусу / доведений tamper — ЄДИНИЙ позитивний Кат-A сигнал
     # (Slashing::CauseEvidence#positive_a? → необоротний slash). ⚠️ Автоматичного джерела
     # НАРАЗІ НЕМАЄ: wire status=3 = vm_error (софт-збій, НЕ tamper → firmware_fault нижче),
-    # а справжня пилка їде panic→chainsaw_detected (поза A-сетом до field-validation).
-    # Створюється лише вручну — Field-Audit C→A ескалація (console, 06_08 §4) — або
-    # майбутнім validated-джерелом (chainsaw після DAO-ратифікації / HW tamper-канал).
+    # а акустичний шлях пилки зрізано разом із пʼєзо Солдата (HW.30).
+    # Створюється вручну — Field-Audit C→A ескалація (console, 06_08 §4); майбутнє джерело —
+    # HW tamper-канал (tamper-switch · SE05x tamper-pins · датчик нахилу HW.52, а останній
+    # сам по собі НЕ Кат-A: буревій теж валить, `02_01 §6`).
     # Тип живий свідомо: ворота positive-A лишаються wired, чесно-порожні.
     vandalism_breach: 2,
     fire_detected: 3,     # Пожежа
@@ -88,17 +89,10 @@ class EwsAlert < ApplicationRecord
     # Flash-ринг, потрібна ескалація (виїзд). Дзеркальний до queen_offline:
     # там мовчання, тут — крик через чужі hotspot'и (06_08 §1.2 L3).
     queen_uplink_lost: 9,
-    # [SLASH-1] Акустична аномалія БЕЗ термального сигналу (TinyML chainsaw/cavitation
-    # → StatusByte anomaly при нормальній температурі) — вирубка, не вогонь. До спліту
-    # жила у fire_detected → FIRMS бачив «ясне небо» → жертву вирубки таврував
-    # rejected_fraud; тепер non-fire маршрут → Field-Audit (перевірити пеньки).
-    # ⚠️ НЕ в A-сет slash'а до field-validation TinyML — DAO-ратифікація,
-    # Slashing::CauseEvidence лишається tamper-only. 🔴 Вердикт той самий, ПІДСТАВА
-    # виправлена 2026-09-07: доти тут стояло «клас = synthetic placeholder, 03_03 §4.2»,
-    # а канон у тій самій секції каже протилежне — wind/chainsaw РЕАЛЬНІ (ESC-50),
-    # synthetic placeholder'и це silence + cavitation. Справжня підстава вужча й
-    # сильніша: жоден клас не field-валідовано, а baseline-точність є метрикою
-    # ЦІЛІСНОСТІ ПАЙПЛАЙНУ, не польової детекції (03_03, TinyML на TRL 6).
+    # Підозра вирубки. ⛔ Писача-Солдата НЕМАЄ з HW.30 (⚖️ founder 2026-09-29, `02_01 §6`):
+    # пʼєзо зрізано, а Z-похідну anomaly-гілку знято тим самим проходом (її забороняє E.64). Можливий
+    # майбутній писач — прилад HW.52. Значення 10 не звільняти: історичні рядки
+    # рендеряться через `alerts.messages.chainsaw_detected*` (див. `#message`). Не в A-сеті.
     chainsaw_detected: 10,
     # [SLASH-1] Софт-збій прошивки пристрою. Vendor-attributable, ops-тріаж (re-flash /
     # OTA), НЕ біо-сигнал і НЕ вина оператора: не в A-сеті (vandalism_breach ↑), не в
@@ -340,6 +334,9 @@ class EwsAlert < ApplicationRecord
   # знято 2026-09-05 разом з усім трактом `entropy_anomaly`, тож обидва ключі тепер
   # в ОДНАКОВОМУ стані — живі в чотирьох локалях, мертві в очах `i18n-tasks`,
   # незамінні для архівних рядків. Заборона на видалення накриває обидва.
+  # ⛔ [HW.30 ⚖️ 2026-09-29] Той самий стан — у `alerts.messages.chainsaw_detected` і
+  # `alerts.messages.chainsaw_detected_panic`: писача знято разом із гілкою пилки
+  # (`AlertDispatchService`), а історичні рядки рендеряться саме через них. Не видаляти.
   # **Ключ рендера переживає свій механізм — це не борг, а память.**
   def message
     return nil if message_key.blank?
@@ -739,7 +736,10 @@ class EwsAlert < ApplicationRecord
   end
 
   # [COSMIC EYE / INS.1]: Планує незалежну Trigger-2-перевірку з затримкою 1 годину (орбітальний проліт)
-  # для всіх 3 страхових перилів. Сервіс маршрутизує: fire → FIRMS-вердикт; не-пожежа → Field Audit.
+  # для типів `requires_satellite_consensus?`: двох страхових перилів (`fire_detected`,
+  # `severe_drought` — `ParametricInsurance::PERIL_CONFIRMING_ALERT`) і `chainsaw_detected`,
+  # який перилом НЕ є (перевірка без виплати). Сервіс маршрутизує: fire → FIRMS-вердикт;
+  # не-пожежа → Field Audit.
   def schedule_satellite_verification!
     return unless requires_satellite_consensus?
     # 🛰️ [ARCH.118-клас, 2026-09-05] БЕЗ КОНФІГУРАЦІЇ — ЖОДНОГО enqueue, і гейт стоїть

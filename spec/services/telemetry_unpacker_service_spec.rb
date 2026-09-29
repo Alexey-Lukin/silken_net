@@ -266,12 +266,11 @@ end
     # Freeze-contract: ці ж golden-байти заморожені у firmware
     # (test_soldier_logic.c, test_fw18b_pack_golden_wire) — One-Home
     # firmware/common/ttl_byte.h. 0x3B = Pack(ttl=3, invalid=7);
-    # 0xFD = Pack(ttl=5, invalid=31, wire-сатурація). Метрика без per-DID
-    # мітки (cardinality budget 06_03 §2.9) — DID атрибутується логом.
-    let(:counter) { SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL }
+    # 0xFD = Pack(ttl=5, invalid=31, wire-сатурація). [HW.30] Prometheus-метрику
+    # знято (TinyML на Солдаті паркується, писача немає) — декодування й
+    # warn-лог лишаються сторожею старої прошивки, їх і пінимо.
 
-    it "маскує mesh_ttl до нижніх 3 біт і рахує ненульовий звіт лічильника" do
-      before_val = counter.get
+    it "маскує mesh_ttl до нижніх 3 біт і логує ненульовий звіт лічильника" do
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 0x3B)
 
       allow(Rails.logger).to receive(:warn).and_call_original
@@ -279,7 +278,6 @@ end
 
       expect(Rails.logger).to have_received(:warn).with(/FW\.18b.*#{extracted_did}.*лічильник 7/)
       expect(TelemetryLog.last.mesh_ttl).to eq(3)
-      expect(counter.get).to eq(before_val + 1.0)
     end
 
     it "читає wire-сатурований лічильник 31 при panic-TTL 5 і каже про сатурацію" do
@@ -292,13 +290,14 @@ end
       expect(TelemetryLog.last.mesh_ttl).to eq(5)
     end
 
-    it "legacy-байт (чистий TTL, лічильник 0) не торкається метрики" do
-      before_val = counter.get
+    it "legacy-байт (чистий TTL, лічильник 0) не пише FW.18b-логу" do
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      allow(Rails.logger).to receive(:warn).and_call_original
       described_class.call(chunk)
 
       expect(TelemetryLog.last.mesh_ttl).to eq(3)
-      expect(counter.get).to eq(before_val)
+      expect(Rails.logger).not_to have_received(:warn).with(/FW\.18b/)
     end
   end
 
@@ -1164,40 +1163,6 @@ end
     end
 
 
-    describe "acoustic_events overflow warning" do
-      it "logs warning when acoustic_events is 255 (saturated)" do
-        chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, 0, 3)
-
-        allow(Rails.logger).to receive(:warn).and_call_original
-
-        described_class.call(chunk)
-
-        expect(Rails.logger).to have_received(:warn).with(/Acoustic Overflow/).once
-      end
-
-      # [FW.65] У panic-кадрі 0xFF — КОД паніки (Trigger_Emergency_LoRa_TX), не сатурація лічильника.
-      # Рядок мусить лягти в БД — інакше «метрика не зросла» була б правдою й на відкинутому кадрі.
-      it "does not read the panic code 0xFF as acoustic saturation" do
-        allow(Rails.logger).to receive(:warn).and_call_original
-        allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
-        chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, TelemetryUnpackerService::PANIC_FLAG_BIT, 3)
-
-        expect { described_class.call(chunk) }.to change(TelemetryLog.where(panic: true), :count).by(1)
-        expect(Rails.logger).not_to have_received(:warn).with(/Acoustic Overflow/)
-        expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).not_to have_received(:increment)
-      end
-
-      it "does not log warning for acoustic_events below 255" do
-        chunk = build_chunk(did_hex, -70, 3500, 25, 254, 100, 0, 3)
-
-        allow(Rails.logger).to receive(:warn).and_call_original
-
-        described_class.call(chunk)
-
-        expect(Rails.logger).not_to have_received(:warn).with(/Acoustic Overflow/)
-      end
-    end
-
     describe "multiple chunks in batch" do
       let(:did_hex2) { "0000ABCE" }
       let(:extracted_did2) { format("SNET-%08X", did_hex2.to_i(16)) }
@@ -1955,23 +1920,23 @@ end
       expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL).not_to have_received(:increment)
     end
 
-    it "surfaces diag-byte bits as Prometheus signals (FW.18b/FW.42/FW.2)" do
-      allow(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to receive(:increment)
-      allow(SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL).to receive(:increment)
+    # [HW.30] Метрику має лише fc_degraded — thr_invalid і fauna_skip писача не мають
+    # (TinyML і фауна на Солдаті паркуються), тож їхні біти лишились тільки в лозі.
+    it "surfaces diag-byte bits: fc_degraded as a metric, the parked TinyML/fauna bits as warn logs" do
       allow(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to receive(:increment)
+      allow(Rails.logger).to receive(:warn).and_call_original
 
       diag  = (3 << 3) | 0x02 | 0x01 # thr_invalid=3 | fauna_skip | fc_degraded
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
                               dt: 100, status: 0, ttl: 3, fc: 49, diag: diag)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to have_received(:increment)
-      expect(SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL).to have_received(:increment)
       expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment)
+      expect(Rails.logger).to have_received(:warn).with(/FW\.18b.*лічильник 3/)
+      expect(Rails.logger).to have_received(:warn).with(/FW\.42.*fauna-сесію пропущено/)
     end
 
     it "annotates wire-saturation when the CCM diag threshold_invalid counter is 31" do
-      allow(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to receive(:increment)
       allow(Rails.logger).to receive(:warn).and_call_original
 
       diag  = (31 << 3) # thr_invalid=31 (wire-сатурація), без fauna/fc бітів
@@ -2173,25 +2138,6 @@ end
       log = TelemetryLog.last
       expect(log.firmware_version_id).to eq(TelemetryLog::FW_REPORT_SEMANTIC_BIT)
       expect(log.firmware_report_contract_id).to eq(0)
-    end
-
-    it "increments the acoustic overflow metric when acoustic == 255 on the CCM path" do
-      allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
-                              dt: 100, status: 0, ttl: 3, fc: 17)
-
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to have_received(:increment).once
-    end
-
-    # [FW.65] Те саме на CCM: 0xFF panic-кадру — код паніки, не сатурація.
-    it "does not count the panic code 0xFF as acoustic overflow on the CCM path" do
-      allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
-                              dt: 100, status: 0x80, ttl: 3, fc: 18)
-
-      expect { described_class.call(chunk) }.to change(TelemetryLog.where(panic: true), :count).by(1)
-      expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).not_to have_received(:increment)
     end
 
     it "logs and swallows a StandardError raised inside commit_telemetry on the CCM path" do

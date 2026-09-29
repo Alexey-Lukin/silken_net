@@ -19,8 +19,8 @@ uk:
       burn_failure: 'Критичний збій спалювання %{amount} SCC. Можлива втрата контролю над законтрактованим балансом. Error: %{error}'
       burn_failure_ambiguous: 'Критичний збій спалювання %{amount} SCC — транзакція могла приземлитись; НЕ повторювати автоматично, спершу звірити в експлорері. Можлива втрата контролю над законтрактованим балансом. Error: %{error}'
       canary_trip: "🐦 КАНАРКА: __stack_chk_fail на вузлі (переписаний кадр стека — потенційна атака на LoRa/AT-парсер; вузол перевтілився сам). DID: %{did}, seq: %{seq}"
-      chainsaw_detected: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу. DID: %{did}"
-      chainsaw_detected_panic: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу (PANIC-TX). DID: %{did}"
+      chainsaw_detected: "🪚 ПІДОЗРА ВИРУБКИ: потрібна перевірка на місці. DID: %{did}"
+      chainsaw_detected_panic: "🪚 ПІДОЗРА ВИРУБКИ (PANIC-TX): потрібна перевірка на місці. DID: %{did}"
       cluster_data_blackout: 'Cluster-wide data blackout (%{target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5).'
       cluster_small_sample_degradation: 'Деградація на малому семплі (%{target_date}): %{critical_count} з %{total_trees} дерев критичні. Відсотковий поріг вироджується на кластері, меншому за 5 дерев — його перетинає одне-єдине дерево, — тож авто-slash НЕ застосовано; вирішує Field Audit (Category C, 05_05 §5).'
       emergency_response_all_unavailable: 'Аварійну відповідь НЕ відправлено: жоден актуатор %{device_type} у цьому кластері зараз не досяжний. Встановлено: %{installed}; за мовчазним шлюзом: %{silent_gateway}; не в робочому стані: %{out_of_service}. Крок протоколу не виконано; решти кроків це не зачіпає.'
