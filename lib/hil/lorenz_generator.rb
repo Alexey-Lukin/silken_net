@@ -124,15 +124,16 @@ module Hil
     end
 
     # Rejection-sampled fixture guaranteed to land in the homeostasis Z
-    # band. Stress / anomaly bands are mathematically unreachable from
-    # physically realistic inputs (see `synthesize` for hand-tuned
-    # fixtures of those rarer states).
+    # band. Stress / anomaly are RARE, not unreachable (anomaly on hot
+    # days, stress on warm chains in the cold — 03_04 §4 · §5.3), so a
+    # bounded rejection loop cannot promise to land there — see
+    # `synthesize` for hand-tuned fixtures of those rarer states.
     def sample_in_state(state:, max_attempts: DEFAULT_MAX_ATTEMPTS, **overrides)
       unless state == :homeostasis
         raise ArgumentError,
-              "sample_in_state only supports :homeostasis. Lorenz dynamics with " \
-              "ρ ∈ [10..50] and β ∈ [2..4] cannot reach Z < critical_z_min or " \
-              "Z > critical_z_max from physical input perturbation alone — use " \
+              "sample_in_state only supports :homeostasis. Z < critical_z_min and " \
+              "Z > critical_z_max are rare (not unreachable), so a bounded " \
+              "rejection loop cannot promise to land there — use " \
               "`synthesize(state: #{state.inspect})` for hand-tuned stress / " \
               "anomaly fixtures."
       end

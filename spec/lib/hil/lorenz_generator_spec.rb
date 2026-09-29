@@ -83,12 +83,12 @@ RSpec.describe Hil::LorenzGenerator do
       ).inclusive
     end
 
-    it "refuses :stress with a helpful message (Lorenz dynamics unreachable)" do
+    it "refuses :stress with a helpful message (too rare for rejection sampling)" do
       expect { generator.sample_in_state(state: :stress) }
         .to raise_error(ArgumentError, /only supports :homeostasis/)
     end
 
-    it "refuses :anomaly with a helpful message (Lorenz dynamics unreachable)" do
+    it "refuses :anomaly with a helpful message (too rare for rejection sampling)" do
       expect { generator.sample_in_state(state: :anomaly) }
         .to raise_error(ArgumentError, /only supports :homeostasis/)
     end
