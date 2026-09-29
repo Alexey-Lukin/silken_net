@@ -8,7 +8,7 @@
 #
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
-#   ruby tools/firmware/board_area_budget.rb --piezo ast1109 --booster nn02_224 --diameter 21
+#   ruby tools/firmware/board_area_budget.rb --piezo ast1109 --booster nn02_224 --edlc fc --diameter 21
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ два числа канону
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -53,12 +53,18 @@ BOOSTER = { # поз. 4 — корпус + 0.25 на бік; дві родини
   "nn02_201" => [ "Ignion NN02-201 7.0 × 3.0", rect(7.50, 3.50) ],
   "nn02_224" => [ "Ignion NN02-224 12.0 × 3.0", rect(12.50, 3.50) ]
 }.freeze
+EDLC = { # поз. 3 — [назва, низ RF Deck, пади на верху RF Deck]
+  # Диск Ø11.5 + 0.25 на бік, виводи до W1 12.4, отвори Ø1.10 + кільце 0.35 (Eaton TD 4327).
+  "kr" => [ "EDLC Eaton KR-5R5H474-R, горизонтальний THT, reflow заборонено", disc(12.0) + (2 * rect(1.30, 0.45)), 2 * disc(2.30) ],
+  # Основа 16.3 × 16.3 + 0.25 на бік; H 9.5 — лише за B2B 10 (KEMET S6011_FC, 2026-02-13).
+  "fc" => [ "EDLC KEMET FC0H474ZFTBR32-SS, SMD лише reflow, −40…+85 °C, H 9.5 — лише за B2B 10", rect(16.80, 16.80), 0.0 ]
+}.freeze
 B2B = { # поз. 12 — Samtec FW-D-SM Rev D: розмах падів 6.86, контур 6.35 · CLP-1XX-D Rev W: корпус 6.78 × 3.05, пади 4.70
   header: rect(6.85, 7.36),
   socket: rect(7.28, 5.20)
 }.freeze
 
-def parts(piezo:, booster:, rigid_flex:)
+def parts(piezo:, booster:, rigid_flex:, edlc: "kr")
   power = [
     [ "BQ25570 VQFN-20 3.5 × 3.5 (поз. 2; KiCad QFN-20-1EP_3.5x3.5mm)", rect(4.76, 4.76) ],
     [ "L1 22 µH Coilcraft LPS4018 (поз. 15; рекомендація TI)", rect(4.90, 4.40) ],
@@ -70,10 +76,7 @@ def parts(piezo:, booster:, rigid_flex:)
     [ "OVP: TLV840 SOT-23-5 + DMN2990UFA (проксі SOT-1123) + 0402 × 2 (поз. 14)", rect(4.10, 3.40) + rect(1.70, 1.10) + 2 * R0402 ],
     [ PIEZO.fetch(piezo)[0] + " (поз. 5)", PIEZO.fetch(piezo)[1] ]
   ]
-  rf_bottom = [
-    # Диск Ø11.5 + 0.25 на бік і два виводи до W1 12.4 (Eaton TD 4327).
-    [ "EDLC KR-5R5H474-R, горизонтальний THT (поз. 3)", disc(12.0) + 2 * rect(1.30, 0.45) ]
-  ]
+  rf_bottom = [ [ EDLC.fetch(edlc)[0] + " (поз. 3)", EDLC.fetch(edlc)[1] ] ]
   unless rigid_flex
     power << [ "B2B header Samtec FW-SM 2 × 5 (поз. 12)", B2B[:header] ]
     rf_bottom << [ "B2B socket Samtec CLP 2 × 5 (поз. 12)", B2B[:socket] ]
@@ -91,9 +94,9 @@ def parts(piezo:, booster:, rigid_flex:)
     [ "SE05x DNP (проксі QFN-20 3 × 3) + 0402 × 3 (поз. 13)", rect(4.26, 4.26) + 3 * C0402 ],
     [ "ключ Vcap-sense TPS22860 SOT-23-6 + 0402 × 2 (поз. 23)", SOT23_6 + 2 * R0402 ],
     [ "BAT54S SOT-23 + DNP-поріг 0402 × 4 (поз. 6)", rect(3.86, 3.40) + 4 * R0402 ],
-    [ "SWD-пади × 5, Ø1.0 (⚖️ 2026-09-27: на всіх платах серії)", 5 * rect(1.50, 1.50) ],
-    [ "пади THT-виводів EDLC × 2 (отвір Ø1.10 + кільце 0.35)", 2 * disc(2.30) ]
+    [ "SWD-пади × 5, Ø1.0 (⚖️ 2026-09-27: на всіх платах серії)", 5 * rect(1.50, 1.50) ]
   ]
+  rf_top << [ "пади THT-виводів EDLC × 2 (поз. 3)", EDLC.fetch(edlc)[2] ] if EDLC.fetch(edlc)[2].positive?
   { "Power Deck, верх" => power, "RF Deck, низ" => rf_bottom, "RF Deck, верх" => rf_top }
 end
 
@@ -132,19 +135,22 @@ if ARGV == [ "--assert" ]
   exit(checks.values.all? ? 0 : 1)
 end
 
-opts = { piezo: "murata", booster: "nn02_201", diameter: CEILING_MM }
+opts = { piezo: "murata", booster: "nn02_201", edlc: "kr", diameter: CEILING_MM }
 ARGV.each_slice(2) do |flag, value|
   case flag
   when "--piezo" then opts[:piezo] = value
   when "--booster" then opts[:booster] = value
+  when "--edlc" then opts[:edlc] = value
   when "--diameter" then opts[:diameter] = Float(value)
-  else abort "Usage: #{$PROGRAM_NAME} [--piezo #{PIEZO.keys.join('|')}] [--booster #{BOOSTER.keys.join('|')}] [--diameter мм]"
+  else abort "Usage: #{$PROGRAM_NAME} [--piezo #{PIEZO.keys.join('|')}] [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм]"
   end
 end
 abort "невідомий --piezo" unless PIEZO.key?(opts[:piezo])
 abort "невідомий --booster" unless BOOSTER.key?(opts[:booster])
+abort "невідомий --edlc" unless EDLC.key?(opts[:edlc])
+variant = opts.slice(:piezo, :booster, :edlc)
 
-base = parts(piezo: opts[:piezo], booster: opts[:booster], rigid_flex: false)
+base = parts(**variant, rigid_flex: false)
 puts "Бюджет площі плати Солдата — кортьярди (HW.9, другий прохід)"
 puts format("Контур Ø%.2f → корисна площа сторони %.1f мм² (відступ міді %.1f мм)",
             opts[:diameter], usable(opts[:diameter]), USABLE_EDGE_MM)
@@ -162,11 +168,11 @@ puts format("  Power Deck, верх БЕЗ пʼєзо: %.1f мм² → %.0f %%",
 puts
 puts "Важелі (кожен — окремо, на контурі Ø#{opts[:diameter]}):"
 PIEZO.each_key do |key|
-  alt = sums(parts(piezo: key, booster: opts[:booster], rigid_flex: false))
+  alt = sums(parts(**variant, piezo: key, rigid_flex: false))
   puts format("  пʼєзо %-8s Power верх %4.0f %% · усе %4.0f %%", key,
               100 * alt["Power Deck, верх"] / usable(opts[:diameter]), 100 * alt.values.sum / (3 * usable(opts[:diameter])))
 end
-flex = parts(piezo: opts[:piezo], booster: opts[:booster], rigid_flex: true)
+flex = parts(**variant, rigid_flex: true)
 puts format("  rigid-flex замість пари B2B: усе %.0f %% (−%.1f мм²)",
             100 * sums(flex).values.sum / (3 * usable(opts[:diameter])), B2B.values.sum)
 third = sums(base).values.sum + B2B.values.sum
