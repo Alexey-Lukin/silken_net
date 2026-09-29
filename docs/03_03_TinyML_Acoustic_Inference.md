@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка), тож відкриті ноги про інтеграцію — ARM `arm-none-eabi-size` на повному `.elf` (`FW.26`) і threshold-visibility у Grafana (`FW.18b`) — переглядаються разом із [`00_07` HW.30](00_07_Action_Plan_Tracker) (реєстр → [`00_07 §03a`](00_07_Action_Plan_Tracker)); сам confidence threshold закрито (`FW.18` → §🗄️).
+- **Поточний TRL:** TRL 6 — це TRL **активу**, не можливості вузла: DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). ⚠️ З 2026-09-29 носія на Солдаті немає (шапка), і ноги про інтеграцію переглянуто разом із [`00_07` HW.30](00_07_Action_Plan_Tracker) (§🗄️): ARM `arm-none-eabi-size` на повному `.elf` (`FW.26`) лишився загальним RAM-бюджетом вузла, а threshold-visibility у Grafana (`FW.18b`) знято разом із метрикою, правилом і панеллю (warn-лог декодування лишився); сам confidence threshold закрито (`FW.18` → §🗄️).
 
 ---
 
@@ -33,7 +33,7 @@
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `AlertDispatchService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | `main.c` — з HW.30 без виклику інференсу (Phase 1.5 + ISR — історія дизайну); INT8 forward-pass — актив без носія на вузлі; партнерська модель — опційний апгрейд |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.30 зріз пʼєзо (застосування) · HW.52 можливий носій (🌿) · закриті (§🗄️): FW.4 baseline (2026-09-29 — актив без носія) · FW.18b threshold · FW.25 DSP Path B |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): HW.52 можливий носій (🌿) · закриті (§🗄️): HW.30 зріз пʼєзо (застосовано 2026-09-29) · FW.4 baseline (актив без носія) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
 
