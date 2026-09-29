@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-HW.43 (checkbox 2) — endurance-limit literature review for the four contact/elastic parts named
-in the item: pogo spring (Mill-Max 0906), Sil-Pad (HW.30), genipin-chitosan-CNC matrix, PEEK
-mechanical-lock barbs (HW.26). Closed form only (no FEA) — the question is the ACCEPTANCE UNIT
+HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of
+the item: pogo spring (Mill-Max 0906), genipin-chitosan-CNC matrix, PEEK mechanical-lock barbs
+(HW.26). Closed form only (no FEA) — the question is the ACCEPTANCE UNIT
 itself: for each part, is it below its endurance/fatigue limit (N does not matter) or does the
 cycle budget decide? The budget is LOADED from script 62's cache (`wind_duty_cycle.json`), never
 retyped: continuous sway at a bracket of two field f0 readings over the service life — an UPPER
 bound on first-mode cycles, carried with the bounds that travel with it (`bounds_that_travel`).
 Every ratio against it below is computed from that bracket at run time.
+(A fourth, the acoustic pad (HW.30) — a MODELLED compliant layer, never a chosen part — left with
+the piezo, ⚖️ 2026-09-29, 02_01 §6; the bench creep test its verdict routed to went with it.)
 
 ⚠️ 00_06 §0 Validation Gate: every number below is a CITED literature value, not a computed
 physical fact — mark of the ones that remain genuinely open, do not round them into a verdict.
 
-Verdicts by part (see the four functions + `main` for the full reasoning and caveats):
+Verdicts by part (see the three functions + `main` for the full reasoning and caveats):
   1. Pogo spring (BeCu C17200) — TWO MISMATCHED FRAMINGS, not one number. By the manufacturer's
      own full-stroke actuation-life rating: FAILS (the budget exceeds the rated life; the computed
      ratio is `framing_A_full_stroke_actuation.overrun_x`) — but that framing almost certainly
@@ -25,10 +27,7 @@ Verdicts by part (see the four functions + `main` for the full reasoning and cav
      creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
      independent sources) but the actual barb contact-stress amplitude is not computed (HW.26 FEA
      still open) — PARTIAL, hands HW.26 an acceptance threshold to FEA against.
-  3. Sil-Pad — genuinely NOT closeable by this method: compression-set/creep in silicone elastomers
-     is formulation-specific and has no generic closed-form S-N curve; HW.30 already schedules the
-     only correct instrument (bench Arrhenius-accelerated creep test) — OPEN, correctly so.
-  4. Genipin-chitosan-CNC matrix — CATEGORY MISMATCH, a correction to HW.43's own list, not a
+  3. Genipin-chitosan-CNC matrix — CATEGORY MISMATCH, a correction to HW.43's own list, not a
      finding about the matrix: it is a ~10-20 µm enzyme-immobilization hydrogel COATING (01_03
      §2.1 Layer 4), not a load-bearing spring/structural element under the 0.5-5 N axial stress
      table (01_02 §2.2). Its own cyclic-strain assessment exists (script 16, N=10 MD cycles,
@@ -157,24 +156,6 @@ def peek_barb_cyclic_verdict(budget: dict) -> dict:
     }
 
 
-def silpad_verdict() -> dict:
-    return {
-        "part": "acoustic pad (HW.30) — 3rd spring in the Z-stack, 30-40% sustained compression per "
-                "HW.30. No part is chosen: the Sil-Pad 1500ST named until 2026-09-28 is a 0.203 mm TIM "
-                "that never spans the 0.65 mm gap (02_01 §6)",
-        "closed": False,
-        "verdict": "NOT closeable by S-N literature review — this is a genuinely different failure "
-                    "mechanism from spring/metal fatigue. Silicone elastomer degradation under sustained "
-                    "compression is COMPRESSION-SET / STRESS-RELAXATION (creep), which is formulation-"
-                    "specific (filler loading, cure system) and has no generic closed-form S-N curve in "
-                    "the open literature the way BeCu or PEEK do. HW.30 already schedules the only "
-                    "correct instrument for this axis: a bench Arrhenius-accelerated creep test "
-                    "('Lifecycle test: creep pad-а під 30-40% compression × 20 років') — conditional since "
-                    "2026-09-28 on HW.30's pad-configuration verdict picking a compliant layer. This item "
-                    "does not duplicate that leg — it confirms literature review cannot substitute for it.",
-    }
-
-
 def genipin_matrix_verdict(budget: dict) -> dict:
     md_cycles = 10
     orders = (math.log10(budget["floor"] / md_cycles), math.log10(budget["ceiling"] / md_cycles))
@@ -214,7 +195,6 @@ def main() -> int:
     parts = {
         "pogo_spring": pogo_spring_verdict(budget),
         "peek_barb_cyclic": peek_barb_cyclic_verdict(budget),
-        "sil_pad": silpad_verdict(),
         "genipin_matrix": genipin_matrix_verdict(budget),
     }
     for v in parts.values():
@@ -223,15 +203,14 @@ def main() -> int:
         print(f"  verdict: {v['verdict']}\n" if "verdict" in v else "")
 
     banner("Verdict")
-    print("  None of the four parts is fully CLOSED by literature review alone — and that is itself")
+    print(f"  None of the {len(parts)} parts is fully CLOSED by literature review alone — and that is itself")
     print("  the honest result HW.43 asked for: an ACCEPTANCE UNIT per part, not a rubber-stamped pass.")
     print("  - Pogo spring: physically-right framing needs one missing datum (real sway micro-deflection).")
     print("  - PEEK barb: real 30-48 MPa threshold now exists for HW.26's pending FEA to check against.")
-    print("  - Sil-Pad: correctly routes to the bench creep test HW.30 already schedules — no substitute.")
     print("  - Genipin matrix: REMOVE from the S-N framing (category mismatch); its axis is chemical, HW.5.")
     print("  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~240 MPa) and PEEK barb")
-    print("  (if HW.26 FEA finds barb stress above ~30 MPa) — NOT for Sil-Pad (bench needed regardless,")
-    print("  already tracked) or genipin (different axis, HW.5, not this item).")
+    print("  (if HW.26 FEA finds barb stress above ~30 MPa) — NOT for genipin (different axis, HW.5, not")
+    print("  this item).")
 
     out = {
         "method": "literature-cited endurance/fatigue-limit review, no FEA — matches HW.43's own request "
