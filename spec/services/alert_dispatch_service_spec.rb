@@ -432,6 +432,98 @@ end
     end
   end
 
+  # 🔴 ДЕДУП ⊥ ПОМИЛКА. Тиша — лише швидкий шлях: «один активний алерт типу на вузол»
+  # тримає uniqueness (`[tree_id, status]` + частковий unique-index). Кадр СТАНУ, що
+  # прийшов після тиші при ще активному алерті (reverted щоциклу, дерево, що горить), —
+  # дубль, а не збій. Доти `create!` кидав `RecordInvalid` на КОЖНОМУ такому кадрі, тиша
+  # не поновлювалась, а виняток виносив із розпакувальника кредит закоміченого рядка.
+  describe "active duplicate past the silence window (dedup ⊥ error)" do
+    let(:silence_key) { "ews_silence:#{tree.id}:firmware_reverted" }
+    let(:active_reverted) { tree.ews_alerts.status_active.alert_type_firmware_reverted }
+
+    def reverted_frame(**overrides)
+      instance_double(TelemetryLog, {
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true,
+        firmware_report_contract_id: 42, voltage_mv: 3500, temperature_c: 25,
+        panic?: false, bio_status_stress?: false
+      }.merge(overrides))
+    end
+
+    # Приклад приходить ПІСЛЯ тиші, поки алерт досі активний (`resolve!` зняв би тишу
+    # сам). Лампа всередині: без неї пін був би зеленим і в межах вікна.
+    def past_the_silence
+      travel(6.minutes) do
+        expect(Rails.cache.exist?(silence_key)).to be(false)
+        yield
+      end
+    end
+
+    before { described_class.analyze_and_trigger!(reverted_frame) }
+
+    it "is a no-op: no raise, still one active alert, silence re-armed" do
+      past_the_silence do
+        expect { described_class.analyze_and_trigger!(reverted_frame) }.not_to raise_error
+
+        expect(active_reverted.count).to eq(1)
+        expect(Rails.cache.exist?(silence_key)).to be(true)
+      end
+      expect(EmergencyResponseService).to have_received(:call).once # дубль відповіді не перезапускає
+    end
+
+    # TOCTOU через індекс: переможець закомітився між валідаційним SELECT'ом і INSERT'ом —
+    # емулює зняття `perform_validations`, прийом прецеденту `escalate_field_audit!`.
+    it "treats a lost race at the unique index (RecordNotUnique) as the same no-op" do
+      allow_any_instance_of(EwsAlert).to receive(:perform_validations).and_return(true)
+
+      past_the_silence do
+        expect { described_class.analyze_and_trigger!(reverted_frame) }.not_to raise_error
+
+        expect(active_reverted.count).to eq(1)
+        expect(Rails.cache.exist?(silence_key)).to be(true)
+      end
+    end
+
+    # SAVEPOINT несучий саме тому, що `RecordNotUnique` тут КОВТАЄТЬСЯ: без нього програна
+    # гонка всередині чужої відкритої транзакції отруїла б її (дзеркало прецедента).
+    it "does not poison an enclosing transaction when it swallows the index race" do
+      allow_any_instance_of(EwsAlert).to receive(:perform_validations).and_return(true)
+
+      past_the_silence do
+        sibling = nil
+        ActiveRecord::Base.transaction do
+          sibling = create(:ews_alert, cluster: cluster, alert_type: :fire_detected, severity: :critical)
+          described_class.analyze_and_trigger!(reverted_frame)
+        end
+
+        expect(sibling.reload).to be_persisted
+      end
+    end
+
+    # ДРУГИЙ КІНЕЦЬ ДИСКРИМІНАТОРА (форма прецеденту): невалідність, що НЕ є `:taken`, —
+    # справжній баг; летить гучно й тип НЕ глушить.
+    it "re-raises a validation failure that is not the dedup and leaves the type unsilenced" do
+      invalid = EwsAlert.new
+      invalid.errors.add(:message_key, :blank)
+      allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(invalid))
+
+      past_the_silence do
+        expect { described_class.analyze_and_trigger!(reverted_frame) }.to raise_error(ActiveRecord::RecordInvalid)
+        expect(Rails.cache.exist?(silence_key)).to be(false)
+      end
+    end
+
+    # Гілка reverted раннього `return` не має за дизайном (стан прошивки ⊥ вогонь): до
+    # пожежі кадр не доходив лише через виняток дубля — стан прошивки глушив вогонь.
+    it "still reaches the fire branch while a stale firmware_reverted is active" do
+      past_the_silence do
+        expect { described_class.analyze_and_trigger!(reverted_frame(temperature_c: 80)) }
+          .to change { tree.ews_alerts.status_active.alert_type_fire_detected.count }.from(0).to(1)
+
+        expect(active_reverted.count).to eq(1)
+      end
+    end
+  end
+
   describe "rate limiting (SEC.10)" do
     it "suppresses critical alerts after MAX_ALERTS_PER_DID_PER_WINDOW" do
       target_tree = create(:tree, cluster: cluster, tree_family: family)

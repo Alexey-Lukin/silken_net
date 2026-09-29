@@ -1076,7 +1076,20 @@ class TelemetryUnpackerService < ApplicationService
     # При rollback TelemetryLog актуаторні команди вже в черзі, але записів немає.
     # EwsAlert не має FK до TelemetryLog, тому його створення поза транзакцією безпечне:
     # найгірший випадок — пропущений алерт (acceptable), а не phantom job (небезпечно).
-    AlertDispatchService.analyze_and_trigger!(log, fw_report_id_mask: id_mask)
+    #
+    # 🔴 СПОВІЩЕННЯ ⊥ ГРОШІ. «Найгірший випадок — пропущений алерт» доти був неправдою:
+    # виняток dispatch летів у `rescue` чанка й виносив IoTeX-ногу та кредит нижче, тож
+    # бали вже закоміченого рядка не доїжджали до гаманця НІКОЛИ (ретраю й звірки немає).
+    # Ловимо ЛИШЕ довкола dispatch — гроші свого винятку не ковтають. ⚠️ `RecordInvalid`/
+    # `RecordNotUnique` Sentry відсіює конфігом (`excluded_exceptions`): їхній слід — лише цей лог.
+    begin
+      AlertDispatchService.analyze_and_trigger!(log, fw_report_id_mask: id_mask)
+    rescue StandardError => e
+      Rails.logger.error "🛑 [Alert Dispatch] DID #{tree.did}: #{e.class}: #{e.message} — " \
+                         "рядок закомічено, IoTeX і кредит ідуть далі; сповіщення кадру втрачено.\n" \
+                         "#{Array(e.backtrace).first(5).join("\n")}"
+      Sentry.capture_exception(e, extra: { did: tree.did })
+    end
 
     # [P1-7 FIX: Phantom Sidekiq Jobs — Wiki 04_02 Audit §14]
     # perform_async виклики перенесено ПОЗА транзакцію. Якщо транзакція відкотиться

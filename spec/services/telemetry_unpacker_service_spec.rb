@@ -2204,4 +2204,56 @@ end
       expect(tree.wallet.reload.balance).to eq(before_balance)
     end
   end
+
+  # 🔴 СПОВІЩЕННЯ ⊥ ГРОШІ. Коли кличеться dispatch, рядок уже закомічено й пораховано,
+  # тож його збій не сміє виносити IoTeX-ногу й кредит, що стоять ПІСЛЯ нього: доти
+  # виняток ковтав `rescue` чанка, і бали рядка не доїжджали до гаманця ніколи (ретраю
+  # й звірки немає). `commit_telemetry` спільний для ECB і CCM — ECB-приклад пінить обидві ери.
+  describe "notification ⊥ money around the alert dispatch" do
+    let(:gp_frame) { build_chunk(did_hex, -70, 3500, 25, 0, 100, 10, 3) } # wire gp=10 → 20
+
+    it "still credits the wallet and enqueues IoTeX when the dispatch raises; the failure is logged and reported" do
+      allow(AlertDispatchService).to receive(:analyze_and_trigger!).and_raise(StandardError, "dispatch down")
+      allow(Rails.logger).to receive(:error).and_call_original
+      allow(Sentry).to receive(:capture_exception)
+
+      expect { described_class.call(gp_frame) }.to change { tree.wallet.reload.balance }.by(20)
+
+      expect(IotexVerificationWorker).to have_received(:perform_async)
+      expect(Rails.logger).to have_received(:error).with(/#{extracted_did}.*StandardError: dispatch down/)
+      expect(Sentry).to have_received(:capture_exception)
+        .with(an_instance_of(StandardError), extra: { did: extracted_did })
+    end
+
+    # Наскрізне відтворення виміряного дефекту: кадр СТАНУ з балами після тиші (5 хв), поки
+    # його алерт активний. Доти баланс ішов [20, 20, 20] — кожен такий кадр губив бали.
+    context "with the real dispatch" do
+      let(:reverted_frame) do
+        build_chunk_with_params(did_hex: did_hex, voltage: 3500, temp: 25, acoustic: 0, metabolism: 100,
+                                status_byte: 10, ttl: 3,
+                                firmware_id: TelemetryLog::FW_REPORT_SEMANTIC_BIT |
+                                             TelemetryLog::FW_REPORT_REVERTED_BIT | 42)
+      end
+      let(:fire_frame) { build_chunk(did_hex, -70, 3500, 80, 0, 100, 10, 3) } # 80 °C ≥ дефолтних 60
+
+      before do
+        allow(AlertDispatchService).to receive(:analyze_and_trigger!).and_call_original
+        allow(EmergencyResponseService).to receive(:call)
+        silence_broadcasts!(:alert_notify, :alert_new)
+      end
+
+      { firmware_reverted: :reverted_frame, fire_detected: :fire_frame }.each do |alert_type, frame|
+        it "credits every GP frame while its #{alert_type} alert stays active" do
+          t0 = Time.current
+          balances = [ 0, 6, 12 ].map do |minute|
+            travel_to(t0 + minute.minutes) { described_class.call(public_send(frame)) }
+            tree.wallet.reload.balance
+          end
+
+          expect(balances).to eq([ 20, 40, 60 ])
+          expect(tree.ews_alerts.status_active.where(alert_type: alert_type).count).to eq(1)
+        end
+      end
+    end
+  end
 end

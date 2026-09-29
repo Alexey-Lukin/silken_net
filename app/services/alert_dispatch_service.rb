@@ -49,7 +49,9 @@ class AlertDispatchService
     # anti-rollback приплив (0x15) спалив слот. Термінальний стан до re-issue
     # версії СТРОГО вищої за спалену (contract_id у звіті) — 03_06 §4.
     # Uniqueness-scope [tree_id, status] тримає один активний алерт на вузол,
-    # доки телеметрія несе reverted (стан, не подія — кадр щоциклу).
+    # доки телеметрія несе reverted (стан, не подія — кадр щоциклу) — як ДЕДУП
+    # у `create_and_dispatch_alert!`, не як виняток. Раннього `return` тут свідомо
+    # немає: стан прошивки не сміє глушити пожежну гілку нижче.
     if telemetry_log.firmware_report_reverted?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
@@ -210,13 +212,35 @@ class AlertDispatchService
       Rails.cache.write(rate_key, current_count + 1, expires_in: DID_RATE_LIMIT_WINDOW * 2)
     end
 
-    alert = EwsAlert.create!(
-      cluster: cluster, tree: tree, severity: severity,
-      alert_type: alert_type, message_key: message_key, message_params: message_params
-    )
+    # 🔴 ДЕДУП ⊥ ПОМИЛКА. Тиша — лише швидкий шлях; «один активний алерт типу на вузол»
+    # тримає uniqueness (`[tree_id, status]` + частковий unique-index). Кадр стану, що
+    # прийшов після тиші при ще активному алерті, — дубль, не збій: доти `create!` кидав
+    # тут `RecordInvalid` на КОЖНОМУ такому кадрі, а виняток виносив із розпакувальника
+    # кредит уже закоміченого рядка. Форма — прецедент `EwsAlert.escalate_field_audit!`:
+    # SAVEPOINT (ковтання `RecordNotUnique` не отруїть транзакцію викликача) + вузьке
+    # `:taken`. Rescue обіймає лише `create!`: `RecordNotUnique` з побічних дій нижче — не дедуп.
+    alert = begin
+      EwsAlert.transaction(requires_new: true) do
+        EwsAlert.create!(
+          cluster: cluster, tree: tree, severity: severity,
+          alert_type: alert_type, message_key: message_key, message_params: message_params
+        )
+      end
+    rescue ActiveRecord::RecordNotUnique
+      nil
+    rescue ActiveRecord::RecordInvalid => e
+      raise unless e.record.errors.of_kind?(:alert_type, :taken)
 
-    # Встановлюємо "режим тиші" на 5 хвилин для цього типу тривоги
+      nil
+    end
+
+    # Встановлюємо "режим тиші" на 5 хвилин для цього типу тривоги — і на дублі теж:
+    # без цього кожен наступний кадр стану знову бився б об uniqueness.
     Rails.cache.write(silence_key, true, expires_in: 5.minutes)
+    if alert.nil?
+      Rails.logger.info "🔕 [EWS DEDUP] #{alert_type} | #{tree.did}: активний алерт цього типу вже є — дубль не створюємо, тишу поновлено."
+      return
+    end
 
     # [ІНВАЛІДАЦІЯ КЕШУ]: Критичні аномалії мають негайно оновити прогноз Оракула,
     # щоб Dashboard не показував застарілий "оптимістичний" прогноз під час катастрофи.
