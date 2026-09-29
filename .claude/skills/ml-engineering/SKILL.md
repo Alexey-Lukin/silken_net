@@ -5,6 +5,8 @@ description: "Use when working on the silken_net ML surface — the TinyML acous
 
 # ML Engineering (`silken_ml` + edge TinyML)
 
+> ⚠️ **The Soldier has no acoustic sensor since 2026-09-29** — the piezo is cut (⚖️ founder, `docs/02_01 §6`, `00_07` HW.30). The model, the INT8 runtime and the log-mel contract stay an asset with NO on-device carrier; the candidate carrier is a Queen microphone (`00_07` HW.52 — conditional, gated on the real-time decision). Don’t build for a Soldier audio path: there is none.
+
 The *executable playbook* for the project's machine-learning surface. This skill is
 the **HOW**; it does **not** restate the feature contract or track state — those live
 elsewhere (below). The whole point is the parity invariant: **train-side features ==
