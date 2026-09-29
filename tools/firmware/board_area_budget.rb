@@ -8,7 +8,7 @@
 #
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
-#   ruby tools/firmware/board_area_budget.rb --piezo ast1109 --booster nn02_224 --edlc fc --diameter 21
+#   ruby tools/firmware/board_area_budget.rb --booster nn02_224 --edlc fc --diameter 21
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -43,12 +43,9 @@ R0402 = rect(1.86, 0.94)  # KiCad R_0402_1005Metric
 C0603 = rect(2.96, 1.46)  # KiCad C_0603_1608Metric
 SOT23_6 = rect(4.10, 3.40) # KiCad SOT-23-6 — TPS22860 лише DBV: єдиний orderable (TI SLVSD04, addendum 10-11-2025)
 
-PIEZO = { # поз. 5 — KiCad Buzzer_*; розкид виводів звірено з кресленнями вендорів
-  "murata"  => [ "Murata PKMCS0909E4000-R1 (KiCad Buzzer_Murata_PKMCS0909E)", rect(10.50, 9.50) ],
-  "ast1109" => [ "Mallory AST1109MLTRQ (виводи 2.0 за корпус 11.0, Rev D)", rect(15.90, 9.50) ],
-  "ast1240" => [ "Mallory AST1240MLTRQ (foot pattern 15 ± 0.5, Rev D)", rect(15.50, 12.50) ],
-  "none"    => [ "межа важеля: пʼєзо нульової площі", 0.0 ]
-}.freeze
+# ⚖️ founder 2026-09-29 (`02_01 §6`): пʼєзо з Солдата зрізано — поз. 5 (пʼєзо) і поз. 6 (кламп BAT54S
+# + DNP-поріг перед EXTI) на платі немає. Бустер — ВІДКРИТА розвилка (поз. 4 без носія), тож ціль
+# друкується для обох кандидатів, а не для одного за замовчуванням (in-silico §Critical Rules #9).
 BOOSTER = { # поз. 4 — корпус + 0.25 на бік; дві родини, що габаритно влазять (`02_01 §5.2`)
   "nn02_201" => [ "Ignion NN02-201 7.0 × 3.0", rect(7.50, 3.50) ],
   "nn02_224" => [ "Ignion NN02-224 12.0 × 3.0", rect(12.50, 3.50) ]
@@ -66,7 +63,7 @@ B2B = { # поз. 12 — Samtec FW-D-SM Rev D: розмах падів 6.86, к�
   socket: rect(7.28, 5.20)
 }.freeze
 
-def parts(piezo:, booster:, rigid_flex:, edlc: "kr")
+def parts(booster:, rigid_flex:, edlc: "kr")
   power = [
     [ "BQ25570 VQFN-20 3.5 × 3.5 (поз. 2; KiCad QFN-20-1EP_3.5x3.5mm)", rect(4.76, 4.76) ],
     [ "L1 22 µH Coilcraft LPS4018 (поз. 15; рекомендація TI)", rect(4.90, 4.40) ],
@@ -75,8 +72,7 @@ def parts(piezo:, booster:, rigid_flex:, edlc: "kr")
     [ "CIN · CSTOR 4.7 µF 0603 × 2 (SLUSBH2G §8.2: мінімум)", 2 * C0603 ],
     [ "CREF 10 nF · CBYP 0.01 µF 0402 × 2 (SLUSBH2G §8.2)", 2 * C0402 ],
     [ "дільники 0402 × 9 (поз. 10; `02_03 §5`)", 9 * R0402 ],
-    [ "OVP: TLV840 SOT-23-5 + DMN2990UFA (проксі SOT-1123) + 0402 × 2 (поз. 14)", rect(4.10, 3.40) + rect(1.70, 1.10) + 2 * R0402 ],
-    [ PIEZO.fetch(piezo)[0] + " (поз. 5)", PIEZO.fetch(piezo)[1] ]
+    [ "OVP: TLV840 SOT-23-5 + DMN2990UFA (проксі SOT-1123) + 0402 × 2 (поз. 14)", rect(4.10, 3.40) + rect(1.70, 1.10) + 2 * R0402 ]
   ]
   rf_bottom = [ [ EDLC.fetch(edlc)[0] + " (поз. 3)", EDLC.fetch(edlc)[1] ] ]
   unless rigid_flex
@@ -95,7 +91,6 @@ def parts(piezo:, booster:, rigid_flex:, edlc: "kr")
     [ "ключ BME280 TPS22860 SOT-23-6 (поз. 21)", SOT23_6 ],
     [ "SE05x DNP (проксі QFN-20 3 × 3) + 0402 × 3 (поз. 13)", rect(4.26, 4.26) + 3 * C0402 ],
     [ "ключ Vcap-sense TPS22860 SOT-23-6 + 0402 × 2 (поз. 23)", SOT23_6 + 2 * R0402 ],
-    [ "BAT54S SOT-23 + DNP-поріг 0402 × 4 (поз. 6)", rect(3.86, 3.40) + 4 * R0402 ],
     [ "SWD-пади × 5, Ø1.0 (⚖️ 2026-09-27: на всіх платах серії)", 5 * rect(1.50, 1.50) ]
   ]
   rf_top << [ "пади THT-виводів EDLC × 2 (поз. 3)", EDLC.fetch(edlc)[2] ] if EDLC.fetch(edlc)[2].positive?
@@ -147,43 +142,42 @@ def geometric_floor(edlc, socket:)
 end
 
 # Ціль контуру = більше з двох осей: площа за 70 % заповнення (рівномірно по трьох сторонах) ·
-# геометрична підлога. ⚠️ Пʼєзо — теж її вхід, а його вибір відкритий (`00_07` HW.30).
-def target_for(piezo:, booster:, edlc:, rigid_flex:)
-  area = diameter_for(sums(parts(piezo:, booster:, edlc:, rigid_flex:)).values.sum / 3 / 0.7)
+# геометрична підлога. ⚠️ Бустер — теж її вхід, і його вибір відкритий (поз. 4).
+def target_for(booster:, edlc:, rigid_flex:)
+  area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:)).values.sum / 3 / 0.7)
   [ area, geometric_floor(edlc, socket: !rigid_flex) ]
 end
 
 # Самоперевірка. Якорі — ДВА числа, яких модель не вигадувала: корисна площа першого проходу й
-# ратифікований Ø25 радома на тій самій стелі. Ціль контуру — не якір, а ДЗЕРКАЛО: канон цитує
-# вихід моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
+# ратифікований Ø25 радома на тій самій стелі. Решта — не якорі, а ДЗЕРКАЛА: канон цитує вихід
+# моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
 if ARGV == [ "--assert" ]
-  target = ->(piezo, rigid) { target_for(piezo:, booster: "nn02_201", edlc: "kr", rigid_flex: rigid).max }
+  near = ->(value, canon) { (value - canon).abs < 0.05 }
+  target = ->(booster, rigid) { target_for(booster:, edlc: "kr", rigid_flex: rigid).max }
   checks = {
-    "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід)" => (usable(CEILING_MM) - 166.7).abs < 0.05,
+    "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід)" => near.(usable(CEILING_MM), 166.7),
     "стеля Ø15.17 ⟷ радом Ø25 (`52` §rim_boss_radial_budget)" => (radome_for(CEILING_MM) - 25.0).abs < 1e-9,
-    "ціль kr · murata: пара B2B Ø21.1, rigid-flex Ø19.8 (`02_01 §3.5`)" =>
-      (target.("murata", false) - 21.1).abs < 0.05 && (target.("murata", true) - 19.8).abs < 0.05,
-    "ціль kr · пара B2B з Mallory: ast1109 Ø21.9, ast1240 Ø22.5 (`02_01 §3.5`)" =>
-      (target.("ast1109", false) - 21.9).abs < 0.05 && (target.("ast1240", false) - 22.5).abs < 0.05
+    "ціль kr · nn02_201: пара B2B Ø19.3, rigid-flex Ø17.8 (`02_01 §3.5`)" =>
+      near.(target.("nn02_201", false), 19.3) && near.(target.("nn02_201", true), 17.8),
+    "бустер — вхід цілі, kr · nn02_224: пара B2B Ø19.5, rigid-flex Ø18.1 (`02_01 §3.5`, розвилка бустера)" =>
+      near.(target.("nn02_224", false), 19.5) && near.(target.("nn02_224", true), 18.1)
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
 end
 
-opts = { piezo: "murata", booster: "nn02_201", edlc: "kr", diameter: CEILING_MM }
+opts = { booster: "nn02_201", edlc: "kr", diameter: CEILING_MM }
 ARGV.each_slice(2) do |flag, value|
   case flag
-  when "--piezo" then opts[:piezo] = value
   when "--booster" then opts[:booster] = value
   when "--edlc" then opts[:edlc] = value
   when "--diameter" then opts[:diameter] = Float(value)
-  else abort "Usage: #{$PROGRAM_NAME} [--piezo #{PIEZO.keys.join('|')}] [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм]"
+  else abort "Usage: #{$PROGRAM_NAME} [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм]"
   end
 end
-abort "невідомий --piezo" unless PIEZO.key?(opts[:piezo])
 abort "невідомий --booster" unless BOOSTER.key?(opts[:booster])
 abort "невідомий --edlc" unless EDLC.key?(opts[:edlc])
-variant = opts.slice(:piezo, :booster, :edlc)
+variant = opts.slice(:booster, :edlc)
 
 base = parts(**variant, rigid_flex: false)
 puts "Бюджет площі плати Солдата — кортьярди (HW.9, другий прохід)"
@@ -197,16 +191,9 @@ end
 puts
 puts "Сума кортьярдів проти корисної площі:"
 report_sides(base, opts[:diameter])
-power_wo_piezo = base["Power Deck, верх"].reject { |name, _| name.include?("(поз. 5)") }.sum { |_, a| a }
-puts format("  Power Deck, верх БЕЗ пʼєзо: %.1f мм² → %.0f %%", power_wo_piezo, 100 * power_wo_piezo / usable(opts[:diameter]))
 
 puts
 puts "Важелі (кожен — окремо, на контурі Ø#{opts[:diameter]}):"
-PIEZO.each_key do |key|
-  alt = sums(parts(**variant, piezo: key, rigid_flex: false))
-  puts format("  пʼєзо %-8s Power верх %4.0f %% · усе %4.0f %%", key,
-              100 * alt["Power Deck, верх"] / usable(opts[:diameter]), 100 * alt.values.sum / (3 * usable(opts[:diameter])))
-end
 flex = parts(**variant, rigid_flex: true)
 puts format("  rigid-flex замість пари B2B: усе %.0f %% (−%.1f мм²)",
             100 * sums(flex).values.sum / (3 * usable(opts[:diameter])), B2B.values.sum)
@@ -222,7 +209,7 @@ puts "  rigid-flex:"
 required(flex).each { |line| puts "    #{line}" }
 
 puts
-puts "Ціль контуру = більше з двох: площа (70 % заповнення, рівномірно) · геометрія низу RF Deck; пʼєзо #{opts[:piezo]}:"
+puts "Ціль контуру = більше з двох: площа (70 % заповнення, рівномірно) · геометрія низу RF Deck; бустер #{opts[:booster]}:"
 EDLC.each_key do |key|
   [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
     area, geo = target_for(**variant, edlc: key, rigid_flex: rigid)
@@ -231,9 +218,8 @@ EDLC.each_key do |key|
                 key, label, area, geo, target, radome_for(target))
   end
 end
-sweep = (PIEZO.keys - [ "none" ]).map do |key|
-  [ "пара B2B", "rigid-flex" ].zip([ false, true ]).map do |label, rigid|
-    format("%s Ø%.1f", label, target_for(**variant, piezo: key, rigid_flex: rigid).max)
-  end.then { |pair| "#{key} #{pair.join(' / ')}" }
+sweep = BOOSTER.keys.map do |key|
+  pair = [ false, true ].map { |rigid| target_for(booster: key, edlc: opts[:edlc], rigid_flex: rigid).max }
+  format("%s пара B2B Ø%.1f (радом ≈ Ø%.1f) / rigid-flex Ø%.1f", key, pair[0], radome_for(pair[0]), pair[1])
 end
-puts "  пʼєзо — теж вхід цілі (вибір відкритий, HW.30), #{opts[:edlc]}: #{sweep.join(' · ')}"
+puts "  бустер — теж вхід цілі (поз. 4 без носія; розвилка — ⚖️ HW.33), #{opts[:edlc]}: #{sweep.join(' · ')}"
