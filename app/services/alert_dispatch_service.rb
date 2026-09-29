@@ -155,6 +155,11 @@ class AlertDispatchService
   # датою) — і саме та ширина впускала прозу: сирий український рядок сідав
   # усередину локалізованої рамки, даючи «FRAUD: Виявлено фрод-телеметрію»
   # англійському глядачеві. Вузька сигнатура робить це неможливим за побудовою.
+  # ⛔ [ARCH.121] Латентний інстанс того самого класу «дубль ⊥ помилка»: голий `create!`, тиша —
+  # лише після створення, ключ `…:fraud` не знімає `clear_silence_filter!` (той чистить
+  # `…:telemetry_divergence`), а кличуть метод усередині транзакції `InsightGeneratorService`.
+  # Сьогодні інертний, бо `detect_fraud?` повертає false; повертаючи детекцію — перейди на
+  # форму `create_and_dispatch_alert!` (SAVEPOINT + вузьке `:taken` + тиша й на дублі).
   def self.create_fraud_alert!(tree, target_date)
     cluster = tree.cluster
     silence_key = "ews_silence:#{tree.id}:fraud"
