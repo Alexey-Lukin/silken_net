@@ -4,7 +4,7 @@
 
 Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z як DCI/anti-fraud сигнал; гомеостаз-інтерпретація — недоведена гіпотеза, ⚠️ нижче) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
 
-> **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — **не просто недоведена, а емпірично degenerate + temp-confounded** (E.64 paired-ensemble; вирок + докази = дім [`03_04 §4`](03_04_mruby_Lorenz_Attractor), НЕ дублюю): `stress` (z<2) був недосяжний, `anomaly` (z>45) тригерився теплим днем. **[E.63] growth_points БІЛЬШЕ не Z-похідні** (магнітуда = метаболізм `m(delta_t)`); Лоренц лишився **status-гейтом** (anomaly-поріг ρ-відносний після E.64-фіксу) + **DCI (anti-fraud) валідний незалежно**. Ground-truth-протокол Z↔health → [`05_05 §8`](05_05_Slashing_and_Risk_Policy); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Пайплайн нижче коректний як механіка — роль Z уже демоутнута до status+DCI.
+> **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — **не просто недоведена, а емпірично degenerate + temp-confounded** (E.64 paired-ensemble; вирок + докази = дім [`03_04 §4`](03_04_mruby_Lorenz_Attractor), НЕ дублюю): `stress` (z<2) був недосяжний, `anomaly` (z>45) тригерився теплим днем. **[E.63] growth_points БІЛЬШЕ не Z-похідні** (магнітуда = метаболізм `m(delta_t)`); Лоренц лишився **status-гейтом** (anomaly-поріг ρ-відносний після E.64-фіксу) + **DCI (anti-fraud) валідний незалежно**. Ground-truth-протокол Z↔health → [`05_05 §8`](05_05_Slashing_and_Risk_Policy); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic — акустика з HW.30 без писача), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Пайплайн нижче коректний як механіка — роль Z уже демоутнута до status+DCI.
 
 ---
 
@@ -89,7 +89,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  [STM32WLE5CC SOLDIER]                                               ║
 ║   ФАЗА 1: SENSE                                                      ║
 ║     ADC → Vcap (мВ), Temp (°C), IWDG heartbeat                      ║
-║     DMA 16kHz → raw_audio[512] → log-mel[40] → inference             ║
+║     Звуку немає: пʼєзо зрізано [HW.30] → acoustic_events = 0         ║
 ║     delta_t_seconds = RTC wall − база не-EXTI циклу [FW.49]          ║
 ║                                                                      ║
 ║   ФАЗА 2: mruby BioContract (on-device Lorenz) [SEC.11 + FW.6]      ║
@@ -115,7 +115,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║   ФАЗА 4: LoRa TX / MESH RELAY                                       ║
 ║     Radio.Send(21 bytes) @ 868 MHz                                   ║
 ║     TTL-based multi-hop → anti-pingpong (seen-set cache 8 DIDs)     ║
-║     Emergency TX якщо TinyML: chainsaw/fire detected (PANIC_TTL=5)  ║
+║     Emergency TX (PANIC_TTL=5): з HW.30 без пускача, транспорт є    ║
 ║                                                                      ║
 ║  [STM32WLE5JC QUEEN + SIM7070G]                                      ║
 ║   LoRa RX (LORA_RX_INFINITE) → OnRxDone ISR → lora_rx_flag=1       ║
@@ -227,12 +227,12 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 |--------|---------|--------|
 | `vcap_voltage` | ADC → VREFINT канал | uint16 (мВ, 0–5000; ⚠️ сирий до FW.50 — [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)) |
 | `internal_temp` | ADC → внутрішній датчик | int8 (°C, −45..90) |
-| `acoustic_events` | DMA 16 кГц → TinyML INT8 forward-pass | uint8 (0–255) |
-| `delta_t_seconds` | wall-секунди RTC-календаря мінус база останнього не-EXTI циклу (`Silken_Wake_Delta_Seconds`, [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)); п'єзо-кадр — сентинел «не виміряно» | uint32 (EBFC метаболізм) |
+| `acoustic_events` | з HW.30 джерела немає — завжди 0: пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)); байт лишається, доля слота — [`00_07` FW.59](00_07_Action_Plan_Tracker) | uint8 (0–255) |
+| `delta_t_seconds` | wall-секунди RTC-календаря мінус база останнього не-EXTI циклу (`Silken_Wake_Delta_Seconds`, [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)); п'єзо-кадр — сентинел «не виміряно» (з HW.30 таких кадрів немає — пʼєзо зрізано) | uint32 (EBFC метаболізм) |
 
 > **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning).
 
-**TinyML класи** (`silken_net_audio_model.h`): 0=Тиша, 1=Вітер, 2=Кавітація, 3=Пилка, 4=Фауна.
+**TinyML класи** (`silken_net_audio_model.h`): 0=Тиша, 1=Вітер, 2=Кавітація, 3=Пилка, 4=Фауна — модель є активом без носія на вузлі, на Солдаті з HW.30 не працює ([`03_03`](03_03_TinyML_Acoustic_Inference)).
 
 #### Фаза 2 — mruby BioContract (on-device Lorenz Attractor)
 
@@ -300,7 +300,7 @@ end
   (CMD_OTA_BYTECODE 0x99 — кластерний, лишився 16B ECB на KEYB)
 ```
 
-> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_HMAC_TRAILER` (FW.23 OTA-печатка); TinyML-пороги — `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18), **не** `0x9B`.
+> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_HMAC_TRAILER` (FW.23 OTA-печатка); `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18, аудіо-пороги TinyML) виведено з HW.30 — пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) — і повторно не займається.
 
 **Тіло `0x9A` (8 байт, little-endian — байт-у-байт тіло старого каркаса без `len` і CRC; цілісність несе MIC):**
 
@@ -353,7 +353,7 @@ Backend має `TreeFamily#critical_z_min|max|optimal_z_target` через `calc
 ────── L3 Payload (16 bytes, AES-128-ECB encrypted post-ARCH.42) ─────
 5–6    Vcap               uint16 Напруга суперконденсатора (мВ)
 7      Temperature         int8  Температура (зі знаком)
-8      Acoustic_events    uint8  Кількість акустичних подій
+8      Acoustic_events    uint8  Кількість акустичних подій (з HW.30 — завжди 0)
 9–10   Metabolism_s       uint16 Час зарядки EBFC δt (секунди)
 11     StatusByte         uint8  [7]PanicFlag | [6:5]bio_status | [4:0]growth_points (FW.29-PACK)
 12     Mesh TTL           uint8  Initial=5 → decrements on each hop
@@ -369,7 +369,7 @@ Backend має `TreeFamily#critical_z_min|max|optimal_z_target` через `calc
 - `Radio.Send(21 bytes)` @ 868 МГц (Europe/Ukraine)
 - **Mesh relay:** TTL-based (DEFAULT_TTL=3, PANIC_TTL=5)
 - **Anti-pingpong:** seen-set `recent_mesh_dids[3]` у RTC Backup Registers DR8/DR9/DR11 (FW.21: shrunk 8→3; DR10 + DR12 під EMA, vcap_x10 запаковано в low 16 біт DR12)
-- **Emergency TX:** якщо `ml_event_id == 3` (Пилка) → `Trigger_Emergency_LoRa_TX` з PANIC_TTL
+- **Emergency TX:** `Trigger_Emergency_LoRa_TX` з PANIC_TTL — з HW.30 без викликача: єдиним пускачем був клас пилки (`ml_event_id == 3`), а пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)); транспорт лишається як можливий носій [`00_07` HW.52](00_07_Action_Plan_Tracker) (🌿, не план)
 
 ---
 
@@ -486,7 +486,7 @@ Body:
   "chaotic_data": {
     "z_value":        23.4521,
     "temperature_c":  22.5,
-    "acoustic_events": 3,
+    "acoustic_events": 0,
     "voltage_mv":     4200,
     "bio_status":     "homeostasis"
   }
