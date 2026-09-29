@@ -175,6 +175,40 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
     end
   end
 
+# [FW.17] K_seed на re-provision — поточним master (⚖️ founder 2026-09-29, 03_06 §5):
+# під незмінним master крок ідемпотентний, під новим — лік компрометації з ранбука
+# 06_04 §5.8 A.3. Рядок і LSED міняються разом лише в живому прогоні.
+describe "K_seed на re-provision дерева" do
+  def run_with_master(master)
+    source = instance_double(FactoryFlashing::MasterKeySource::EnvAdapter, fetch_master_key: master)
+    described_class.run(session: make_session,
+                        executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+                        master_key_source: source)
+  end
+
+  before { HardwareKeyService.provision(tree, master_key: "master") }
+
+  it "під тим самим master лишає той самий сід — у рядку й у LSED" do
+    seed = HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex
+
+    run_with_master("master")
+
+    expect(HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex).to eq(seed)
+    expect(flash_image(shim_invocations)[0x0803E018]).to eq("0x#{seed[0, 8]}")
+  end
+
+  it "під новим master передеривовує сід — рядок і LSED разом" do
+    old_seed = HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex
+    new_seed = SilkenNet::SeedDerivation.derive_seed(tree.did, master_key: "master-2")
+
+    run_with_master("master-2")
+
+    expect(new_seed).not_to eq(old_seed)
+    expect(HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex).to eq(new_seed)
+    expect(flash_image(shim_invocations)[0x0803E018]).to eq("0x#{new_seed[0, 8]}")
+  end
+end
+
   # [SEC.3] Королеву за чипом конвеєр не впізнає (паспорта немає), а `-e` стор. 124
   # незворотний: уже прошиту плату стирає лише оголошення саме цього пристрою.
   describe "Королева без паспорта — стирання лише чистої плати або за REFLASH_ACK" do

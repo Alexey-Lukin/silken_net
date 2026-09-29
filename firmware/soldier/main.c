@@ -1562,6 +1562,9 @@ static uint32_t dl_last_dlfc   = 0; // RAM-кеш; істина — Flash-KV 0x1
 static uint8_t  dl_cmd_pending = 0; // відкрито у вікні, чекає КЕНОЗИСУ
 static uint8_t  dl_cmd_op      = 0;
 static uint32_t dl_cmd_dlfc    = 0;
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+static uint32_t dl_dlfc_settle = 0; // DLFC команди, чий ефект ще не в журналі; 0 = немає
+#endif
 static uint8_t  dl_cmd_body[DL_CCM_BODY_MAX];
 
 static void MX_CRYP_Restore_From_CCM(void);
@@ -1589,18 +1592,31 @@ static void Soldier_Dl_Cmd_Receive(const uint8_t *frame, uint16_t len)
     dl_cmd_pending = 1;
 }
 
-// DLFC у журнал — ПЕРШ ніж дія (03_05 §2.5, дисципліна Key_Ratchet_Commit).
-static uint8_t Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
+// DLFC у журнал — ПІСЛЯ того, як ефект команди вже записано (at-least-once,
+// ⚖️ founder 2026-09-29, 03_05 §2.5). Струм, що зник між ними, лишає команду
+// неспожитою, і перевиданий Rails той самий кадр застосується ще раз: усі три
+// команди ідемпотентні, тож повтор нешкідливий, а втрата — ні. Невдалий запис
+// DLFC — те саме: RAM-кеш не рухається, повтор прийметься.
+static void Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
 {
-    if (!FlashKv_Put32(&soldier_kv, DL_CCM_KV_KEY_DLFC, dlfc)) return 0;
-    dl_last_dlfc = dlfc;
-    return 1;
+    if (FlashKv_Put32(&soldier_kv, DL_CCM_KV_KEY_DLFC, dlfc)) dl_last_dlfc = dlfc;
 }
 
+// Для 0x9E і 0x9A ефект комітять блоки FW.17 / FW.8 нижче в КЕНОЗИСІ, тож DLFC
+// чекає їхнього успіху тут і пишеться лише з їхньої гілки успіху.
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+static void Soldier_Dl_Settle_Dlfc(void)
+{
+    if (dl_dlfc_settle == 0u) return;
+    Soldier_Dl_Persist_Dlfc(dl_dlfc_settle);
+    dl_dlfc_settle = 0u;
+}
+#endif
+
 // КЕНОЗИС, першою дією. 0x9E і 0x9A лише виставляють dirty — блоки FW.17 і
-// FW.8 нижче в цьому ж КЕНОЗИСІ комітять їх звичним шляхом; 0x9D пише
-// DR13/DR14 тут же, щоб вікно між DLFC і записом було мікросекундами, а не
-// всім КЕНОЗИСОМ (варіант (б) з шапки ARCH.21-тестів у test_soldier_logic.c).
+// FW.8 нижче в цьому ж КЕНОЗИСІ комітять їх звичним шляхом і лише тоді
+// записують DLFC (Soldier_Dl_Settle_Dlfc); 0x9D пише DR13/DR14 тут же і
+// DLFC одразу за ними.
 static void Soldier_Dl_Cmd_Commit(void)
 {
     if (!dl_cmd_pending) return;
@@ -1613,9 +1629,9 @@ static void Soldier_Dl_Cmd_Commit(void)
         uint16_t target = Dl_Cmd_Rotate_Target(dl_cmd_body);
         // replay / rollback / runaway-стрибок — як ефірний шум
         if (Key_Ratchet_Steps(lora_key_version, target) == 0u) return;
-        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
         lora_key_target_version = target;
         lora_key_version_dirty  = 1;
+        dl_dlfc_settle          = dl_cmd_dlfc;
         return;
     }
 #endif
@@ -1623,13 +1639,13 @@ static void Soldier_Dl_Cmd_Commit(void)
     case DL_CCM_OP_THRESHOLDS: {
         LorenzThresholds t;
         if (!Lorenz_Thresholds_From_Wire(dl_cmd_body, &t)) return;
-        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
         lorenz_z_min_x100       = t.z_min_x100;
         lorenz_z_max_x100       = t.z_max_x100;
         lorenz_z_opt_x100       = t.z_opt_x100;
         lorenz_species_id       = t.species_id;
         lorenz_config_version   = t.config_version;
         lorenz_thresholds_dirty = 1;
+        dl_dlfc_settle          = dl_cmd_dlfc;
         return;
     }
 #endif
@@ -1638,13 +1654,13 @@ static void Soldier_Dl_Cmd_Commit(void)
         int16_t warn_x100, crit_x100;
         uint8_t version;
         if (!Dl_Cmd_Audio_Unpack(dl_cmd_body, &warn_x100, &crit_x100, &version)) return;
-        if (!Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc)) return;
         // Інверсію й NaN лікує TinyML_Apply_Thresholds — там дефолти.
         TinyML_Apply_Thresholds((float)warn_x100 / 100.0f, (float)crit_x100 / 100.0f,
                                 &tinyml_warning_threshold, &tinyml_critical_threshold);
         lorenz_audio_config_version = version;
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
+        Soldier_Dl_Persist_Dlfc(dl_cmd_dlfc);
         return;
     }
 #endif
@@ -3133,6 +3149,7 @@ int main(void)
             // re-provision (як K_ota).
             MX_CRYP_Init();
             lora_key_version_dirty = 0;
+            Soldier_Dl_Settle_Dlfc(); // ефект уже в журналі — тепер і DLFC
         }
     }
 #endif
@@ -3149,6 +3166,7 @@ int main(void)
         t.config_version = lorenz_config_version;
         if (Lorenz_Thresholds_Save(&soldier_kv, &t)) {
             lorenz_thresholds_dirty = 0;
+            Soldier_Dl_Settle_Dlfc(); // ефект уже в журналі — тепер і DLFC
         }
     }
 #endif

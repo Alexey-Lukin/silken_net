@@ -62,6 +62,15 @@ RSpec.describe FactoryFlashing::Session do
       expect(outcome.hardware_key.reload.ed25519_public_key_hex).to eq("ab" * 32)
     end
 
+    # Журнал Flash-KV — річ дерева (ратчет, DLFC, приплив OTA): Королеві його не пишуть.
+    it "перший провіжн Королеви не несе журналу дерева" do
+      commands = described_class.run(session: session, executor: executor,
+                                     master_key_source: master_key_source).transcript.map(&:command)
+
+      expect(commands).not_to include(a_string_matching(/ -e 122 /))
+      expect(flash_image(commands).keys).to all(be >= 0x0803E000)
+    end
+
     it "НЕ персистить сиру сім'ю в AuditLog (metadata без байтів ключів)" do
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
@@ -127,14 +136,31 @@ RSpec.describe FactoryFlashing::Session do
       expect(outcome.audit_log.metadata).to include("key_epoch" => 1, "dry_run" => true)
     end
 
-    it "keeps a first provision on epoch 0 with no journal image" do
+# [FW.17] K_seed поточним master (⚖️ founder 2026-09-29): dry-run ПЛАНУЄ новий сід у
+# LSED, а рядок лишає — інакше план і пристрій розійшлися б на першому ж живому прогоні.
+it "plans a new-master K_seed into LSED on a dry run and leaves the row's seed" do
+  HardwareKeyService.provision(tree, master_key: "master")
+  old_seed = HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex
+  new_seed = SilkenNet::SeedDerivation.derive_seed(tree.did, master_key: "master-2")
+  source = instance_double(FactoryFlashing::MasterKeySource::EnvAdapter, fetch_master_key: "master-2")
+
+  commands = described_class.run(session: make_session(gilka: "A"), executor: executor,
+                                 master_key_source: source).transcript.map(&:command)
+
+  expect(flash_image(commands)[0x0803E018]).to eq("0x#{new_seed[0, 8]}")
+  expect(HardwareKey.find_by!(device_uid: tree.did).lorenz_seed_hex).to eq(old_seed)
+end
+
+    # [FW.17] Свіжий журнал і на ПЕРШОМУ провіжні дерева (⚖️ founder 2026-09-29, 03_06 §5):
+    # плата зі стенда несе чужий журнал, і вціліла версія 0x13 чи DLFC 0x12 оглушили б вузол.
+    it "keeps a first provision on epoch 0 and still writes a fresh journal" do
       outcome = described_class.run(session: make_session(gilka: "A"), executor: executor,
                                     master_key_source: master_key_source)
       commands = outcome.transcript.map(&:command)
 
       expect(outcome.hardware_key.epoch).to eq(0)
-      expect(commands).to include(a_string_matching(/ -e 124 125\z/))
-      expect(flash_image(commands).keys).to all(be >= 0x0803E000)
+      expect(commands).to include(a_string_matching(/ -e 122 123 124 125\z/))
+      expect(flash_image(commands)[0x0803D004]).to eq("0x534B5631") # журнал: SKV1 на стор. 122
     end
 
     it "surfaces MasterKeySource::UnavailableError before opening the transaction" do

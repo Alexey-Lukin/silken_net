@@ -14,7 +14,7 @@
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
 #   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
 #   0x0803E828  [magic "KEYB" :4 ][ bcast_key    :16 ]                 # Tree only — FW.2 (в) cluster control-plane; +40 (не +36): dw-вирівнювання WL
-#   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 ]                 # Tree re-provision only — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
+#   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 ]                 # Tree, кожен провіжн — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
 #
 # [FW.2 гейт (в), двоключова модель] Gateway KEYL-слот прошивається
 # BROADCAST-значенням (HKDF cluster-домену, derive_broadcast_key) — Королева
@@ -77,7 +77,7 @@ module FactoryFlashing
     #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
     #   на boot, а Солдат без KEYB в обох ерах мовчить Королеві: з 2026-09-28 KEYB —
     #   амбієнт і ECB-білда, тож глухне не лише downlink, а й аплінк).
-    # @param kv_journal_words [Hash, nil] Tree-only, re-provision — образ журналу
+    # @param kv_journal_words [Hash, nil] Tree-only, кожен провіжн — образ журналу
     #   Flash-KV (FlashKvImage.words): обидві його сторінки стираються, навіть та,
     #   у яку образ нічого не пише (FW.17, 03_05 §3.8).
     def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,

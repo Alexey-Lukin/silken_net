@@ -113,6 +113,11 @@ module FactoryFlashing
 
     def ensure_hardware_key
       existing = HardwareKey.find_by(device_uid: @session.device_uid)
+      # [FW.17] Свіжий журнал Flash-KV — на КОЖНОМУ провіжні дерева, першому теж
+      # (⚖️ founder 2026-09-29, 03_06 §5): плата, що вже бувала на стенді, несе
+      # чужий журнал — вціліла версія ратчета 0x13 оглушила б вузол на K0, а DLFC
+      # 0x12 = N глушив би команди нового рядка, доки лічильник Rails не переросте N.
+      @kv_journal_words = FlashKvImage.words(ota_hiwater: @device.cluster&.ota_version_hiwater.to_i) if @device.is_a?(Tree)
       return provision_first_key unless existing
       # Королева: re-flash і є доставкою ротованого KEYC (SEC.3) — ключ як є.
       return existing unless @device.is_a?(Tree)
@@ -134,19 +139,22 @@ module FactoryFlashing
     # нонсів CCM (межу FC `0x14` стерто разом із журналом), і корінь, не
     # виводжуваний зі злитого K_v, — тобто це ж і відновлення після компрометації.
     # Старий ключ іде в grace до першого MIC новим (TelemetryUnpackerService).
+    # K_seed передеривовується ПОТОЧНИМ master (⚖️ founder 2026-09-29, 03_06 §5):
+    # під незмінним master це той самий сід, під новим — рівно лік компрометації,
+    # який обіцяє ранбук 06_04 §5.8 A.3; без цього LSED лишався б старим сідом.
     # Dry-run лише ПЛАНУЄ: піднята в БД епоха без прошитого чипа оглушила б вузол.
     def reprovision_tree_key!(key)
       epoch = key.epoch + 1
       @flash_aes_key_hex = HardwareKeyService.derive_lora_key(@session.device_uid, epoch: epoch, master_key: @master_key)
+      @flash_lorenz_seed_hex = SilkenNet::SeedDerivation.derive_seed(@session.device_uid, master_key: @master_key)
       @flash_key_epoch = epoch
-      @kv_journal_words = FlashKvImage.words(ota_hiwater: @device.cluster&.ota_version_hiwater.to_i)
       return key if @executor.dry_run?
 
       # DLFC → 0 тією ж транзакцією: свіжий журнал запису 0x12 не несе, а нова
       # епоха ключа робить повтор нонса неможливим (03_05 §2.5).
       key.update!(epoch: epoch, key_version: 0, aes_key_hex: @flash_aes_key_hex,
                   previous_aes_key_hex: key.aes_key_hex, downlink_frame_counter: 0,
-                  rotated_at: Time.current)
+                  lorenz_seed_hex: @flash_lorenz_seed_hex, rotated_at: Time.current)
       key
     end
 
@@ -165,7 +173,7 @@ module FactoryFlashing
         session:          @session,
         device:           @device,
         aes_key_hex:      @flash_aes_key_hex || hw_key.aes_key_hex,
-        lorenz_seed_hex:  hw_key.lorenz_seed_hex,
+        lorenz_seed_hex:  @flash_lorenz_seed_hex || hw_key.lorenz_seed_hex,
         ota_hmac_hex:     tree_ota_hmac,
         ed25519_seed_hex: gateway_voice_seed(hw_key),
         bcast_key_hex:    cluster_broadcast_key,
