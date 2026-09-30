@@ -235,7 +235,7 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
 // The wire lives in the ASSEMBLY (AxialStack), never in the part. Bicontinuous, orientation-
 // agnostic (founder decision (б), HW.33). v2 = radially graded (period + porosity + topology),
 // CEM-driven; a constant CEM (no Rim fields, sheet) renders the v1 uniform gyroid. Barbs
-// (01_01 §4.3 A) are NOT integrated here yet — open leg 00_07 HW.26 (gated G1–G4).
+// (01_01 §4.3 A) are NOT integrated here yet — open leg 00_07 HW.26 (gated G1 · G3 · G4; G2 was retired).
 internal static class Zone1Anode
 {
     // The radius `build` cuts from: **0 — the lattice reaches the axis**. It was the bus-rod surface until

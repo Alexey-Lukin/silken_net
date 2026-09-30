@@ -253,7 +253,7 @@ internal sealed record AnchorCem
 // shank (`CathodeFlange.ShankCem` → `MechanicalLock.Build`). Canon over-specifies the tooth (h, base,
 // α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
 // MEASURES it against §4.3 [0.40,0.60]. Barbs emit GEOMETRY only: the 3–5× pull-out, the PEEK 150 °C
-// click and friction retention are FEA (Гусак, HW.3.IS) + bench, never asserted here.
+// click and friction retention are FEA (external commercial FEA house — ⚖️ 2026-09-27, 00_07 HW.26; the ЧНУ/Гусак channel was retired) + bench, never asserted here.
 internal sealed record MechanicalLockCem
 {
     public string Kind { get; init; } = "mechanical_lock";

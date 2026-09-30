@@ -157,7 +157,8 @@
   is committed and opens straight from GitHub (a blob-rendered SVG) — i.e. the drawing outsiders see, so a
   lagging gallery publishes exactly the lines a code fix removed. ⚠️ **`wiki:sync` does NOT carry it:** `lib/tasks/wiki.rake` syncs only the canon `NN_NN_*.md` and copies an
   image only where a doc EMBEDS it as `![…](…)`; no canon doc embeds these. Want them on the wiki — embed them
-  in a canon doc first. Change `Drawing.cs` or a CEM ⇒ re-run `tools/cad/scripts/render_gallery.sh` (or at
+  in a canon doc first. Change `Drawing.cs` or a CEM ⇒ re-run `tools/cad/scripts/render_gallery.sh` (the PNG renders need a
+  display — a desktop session has one, CI does not, gotcha #10 ⊕; or at
   least its DRAWING loops — ⛔ **read the loops, never a count**: a roster beside a growing script is the
   volatile counter in prose form, and an example gets no exemption from the rule it illustrates) and commit
   the SVGs. A pin reds on the CONTENT drifting apart

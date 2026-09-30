@@ -6,7 +6,7 @@
 # HARD gate, wired into docs.yml (promoted from advisory once green). Pure Ruby stdlib (json) — no .NET,
 # no conda → CI-safe.
 #
-# The shipped `tools/cad/cem/*.json` geometry numbers are a MIRROR of their canon owner (01_01/01_02/01_04);
+# The shipped `tools/cad/cem/*.json` geometry numbers are a MIRROR of their canon owner (01_01/01_02/01_04/02_02 — plus, since 2026-09-30, three outbound protocol carriers of the sleeve geometry, see P_UA/P_EN/P_RFQ below);
 # this guard pins each against its canon anchor, CONTEXT-ANCHORED (regex on the surrounding label, never a
 # bare number) — the Ruby sibling of the §01b `test_doc_cache_sync.py`.
 #

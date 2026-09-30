@@ -291,7 +291,7 @@ jobs:
         # вироджений край, де виключення тиші дає 1/1 = 100% на здоровому кластері.
         run: ruby tools/tokenomics/verdict_sensitivity.rb --assert
 
-      - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04)
+      - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04/02_02 + 3 protocol carriers, HW.26)
         # Pure Ruby stdlib (json) — pins shipped cem geometry to its canon owner;
         # catches what the C# xUnit (validates record-defaults, even locks off-spec
         # 0.8×0.6) + prose-only anchor_dimension_drift both miss (bell_radius=5.0 had
