@@ -68,7 +68,7 @@
 #               RATIFIED verdicts sitting inside the scope, not unfinished work.
 #               `contracts/show.rb` renders `early_exit_fee_percent` FROM THE RECORD
 #               (historical contracts must show the term they were signed under, ⛔ in
-#               00_07 BIZ.22), and its seed sibling is held pending a founder's word.
+#               msa_skeleton §B.6.3), and its seed sibling is held pending a founder's word.
 #               A criterion that can only be met by violating a verdict is not a
 #               criterion. The honest form is ZERO UNTRIAGED hits, with each surviving
 #               one belonging to a NAMED class — and after the 2026-09-10 sweep the
@@ -110,7 +110,7 @@
 #       that prose with it — canon prose is downstream of the rename, not separate work",
 #       which PRESUMED a rename that was in fact REFUSED. ⚖️ won't-do, ratified 2026-07-25:
 #       `address investor` in `.sol`/subgraph/ABI stays — renaming it is a subgraph migration
-#       across ~250 sites for zero gain (home: 00_07 BIZ.22). ⚠️ That figure is the
+#       across ~250 sites for zero gain (home: this header). ⚠️ That figure is the
 #       2026-07-25 verdict's ORDER-OF-MAGNITUDE estimate, not a re-measured count —
 #       the inventory command is `grep -rn "address investor" contracts/ docs/`. The ceiling is therefore
 #       permanent, not transitional: canon prose naming the ABI symbol is CORRECT, and a
@@ -253,7 +253,7 @@ module OfferingLexicon
   # these two places, not about the word.
   #   · app/views/components/contracts/show.rb — renders `early_exit_fee_percent` FROM
   #     THE RECORD, because a historical contract must show the term it was signed under
-  #     (⛔ 00_07 BIZ.22; the fee itself was removed from the product by ⚖️ Option 1,
+  #     (⛔ msa_skeleton §B.6.3; the fee itself was removed from the product by ⚖️ Option 1,
   #     founder 2026-08-29, msa_skeleton §B.6.3).
   #   · app/models/naas_contract.rb — the `store_accessor` that DECLARES that column. It is
   #     the data source the view above renders, so exempting one without the other would
