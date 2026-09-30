@@ -1,7 +1,8 @@
 # Cover Letter — Стаття 1 (draft)
 
-> 🟡 **DRAFT** · ✅ **submission-ready** — defensive publication (`00_01 §8`; tracker `UNI.3`): the
-> publication itself is the protection (prior art); no patent gate.
+> 🟡 **DRAFT** · ✅ **no IP gate on submission** — defensive publication (`00_01 §8`; tracker `UNI.3`): the
+> publication itself is the protection (prior art); no patent gate. What still stands between the draft and
+> SUBMIT is the manuscript's own legs (`00_07` HW.5.IS), not this letter.
 > Target: *J. Phys. Chem. B* (primary) · *PCCP* fallback · *Bioelectrochemistry* applied-backup.
 > Voice/claims per [`00_OUTLINE.md §0`](00_OUTLINE.md) + [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md);
 > numbers → [`SUMMARY.md`](../SUMMARY.md). Bracketed `[…]` = fill at submission.
