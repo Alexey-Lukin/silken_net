@@ -141,7 +141,7 @@ FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари,
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
-# The tallest part on the RF deck: the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
+# The tallest READ part on the RF-deck TOP (pos. 17 LSE has no P/N yet, so its height is unbounded): the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
 # 2026-09-29). Until 2026-09-30 this was the Seeed LoRa-E5 module (12×12×2.5, off the board since 2026-09-25). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.4
@@ -149,11 +149,14 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.4
 # 2026-09-29). The last unchosen RF-deck member, pos. 19 (SPDT + RFO_LP matching), is now BOUNDED ≤ 1.10 mm across every
 # candidate read (PE4259 in SC-70 is the tallest; the IPD route tops at 0.680) — docs/protocols/hardware/rf_switch_shortlist.md,
 # 00_07 HW.9 — so the antenna is the tallest READ member and the 2.5 module bound (a part that is off the board) is retired.
-# No row verdict moves: room after tolerance is 3.2–3.8 at B2B 8 and 1.2–1.8 at B2B 10, on both sides of 2.4 as of 2.5.
+# No BOM-FR4 row verdict moves: room after tolerance is 3.2–3.8 at B2B 8 and 1.2–1.8 at B2B 10, on both sides of 2.4 as of 2.5.
+# ⚠ One NON-canonical row did flip: the unsourced FR4 1.0 / B2B 10 contrast row (room 2.4) has its worst-case flag
+# false → true exactly at 2.4 — the boundary case, kept here as the record of what moved.
 # 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
 # its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9 (the Ø25 dome's; ≤Ø20.37 − 2·t since the root, 2026-09-30 — 16.97 still leaves no room for a booster on a 19.97 board, and the chip decision stands);
 # only the height was ever judged here. The 2.5 stood as an UPPER BOUND among the parts read until pos. 19 was bounded
-# (2026-09-30, rf_switch_shortlist); the RF-deck-TOP verdicts it drove were conservative, not wrong, and did not move at 2.4.
+# (2026-09-30, rf_switch_shortlist); the RF-deck-TOP verdicts it drove were conservative, not wrong, and no BOM-FR4 row moved at 2.4 (the unsourced
+# FR4 1.0 contrast row flipped — see above).
 # (The B2B-GAP caveat that stood here — the EDLC over a 1.9-3.3 mm piezo on the Power Deck, which made 8.0 the
 # TIGHTER end — left with the piezo, ⚖️ 2026-09-29, 02_01 §6.)
 # 🔴 That constant WAS the LoRa-E5 module (until 2026-09-30) and was the tallest only because the BOM's antenna row named a
