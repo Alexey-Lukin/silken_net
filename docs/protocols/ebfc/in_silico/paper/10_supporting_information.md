@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 239 · 12,425,621 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 239 · 12,425,778 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -104,7 +104,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `fc6271da5d73a63d43ed020a904c7efa27e9d0cd9b2326d51313199ea1b4ee52` | HW.34 / HW.23 — WHERE the bus rod really meets the cathode channel, solved as a CONTACT problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `6ede9daae069a89c9c9d2a4016bbe4bfd7c202971953fe7435eddf0cd499591b` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
-| `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `580b25ba14f66f6b1c80bde6f4d9e488910622076693045e2eeb0ef640860b61` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
+| `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `93fe570f6bcf44c0c8f1a6c4c3a9b531ed7a1183b1feb0c3e1f56582256e3325` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |

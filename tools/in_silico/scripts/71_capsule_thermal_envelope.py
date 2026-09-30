@@ -13,8 +13,9 @@ MODEL — one isothermal lump (radome + cavity air + boards + EDLC), quasi-stead
 few grams against a loss coefficient of a few hundredths W/K settles in minutes, so an hour is steady):
     α·(DNI·A_proj + F·DIF·A_exp) = (h_c + h_r)·A_exp·(T_cap − T_air)
   • A_proj — the LARGEST projection of the exposed radome over ALL beam directions, √(A_crown² + (D·H)²).
-    The axis sits at the 30° install angle (01_04 §3.2) and a trunk faces any azimuth, so the worst
-    orientation is taken instead of a sun-position model — an UPPER bound on the direct gain by construction.
+    The axis sits at the install angle (10° since 2026-09-30, ⚖️ founder, 01_04 §3.2; 30° before) and a trunk
+    faces any azimuth, so the worst orientation over ALL beam directions is taken instead of a sun-position
+    model — an UPPER bound on the direct gain by construction, which is why the angle itself is not an input here.
   • A_exp — crown disc + side wall of the part standing over the bark. H over the bark is read from the CEM
     as cavity + crown, which is how 01_04 §5.5 writes it («18.0 (порожнина 13.0 + корона 5.0)»), and the
     crown rise equals the edge radius by construction (picogk skill, radome row), so `bell_radius_mm` is
@@ -101,7 +102,7 @@ SKY_VIEW = 0.5                       # ours — see docstring
 WIND_K = (0.0, 0.1, 0.3)             # u_trunk = k·u10; k = 0 is the still-air BOUND
 WIND_K_TYPICAL = 0.1                 # the aging series take a light breeze, not dead calm, as the typical hour
 # The still-air h_c comes from a correlation for a LONG HORIZONTAL cylinder; ours is a short one (≈ Ø30 × 18)
-# tilted 30°. ±30 % is the ordinary scatter of such correlations off their home geometry — ours, not a
+# tilted (10° install angle, 01_04 §3.2). ±30 % is the ordinary scatter of such correlations off their home geometry — ours, not a
 # measured band — so the hot bound is also printed with h_c scaled down by it, and the verdict quotes both.
 H_C_SENSITIVITY = 0.7
 SIGMA = 5.670374419e-8

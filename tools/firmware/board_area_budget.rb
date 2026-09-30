@@ -9,6 +9,7 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
 #   ruby tools/firmware/board_area_budget.rb --booster nn02_224 --edlc fc --diameter 21
+#   ruby tools/firmware/board_area_budget.rb --pos19 verdict   # поз. 19 за присудом ⚖️ 2026-09-30 (⏸ до кореня не застосовано)
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -24,7 +25,11 @@
 #     20–60 × 11 для інших деталей) — рахується лише кортьярд самої деталі;
 #   • отвори стійок між поверхами (`02_01 §5.3`), UART-пади BFU-лоадера (умовні,
 #     `00_07` SEC.24) і тест-точки поза SWD не рахуються;
-#   • поз. 19 (RF-тракт) — клас без P/N: оцінка кількості пасивів, не перелік;
+#   • поз. 19 (RF-тракт) — до присуду 2026-09-30 клас без P/N (≈ 11 пасивів); за присудом (⚖️ founder,
+#     `02_01 §3.1`: дискретне узгодження AN5457 A.1.7 + SPDT BGS12WN6) рядок рахується поіменно —
+#     `POS19_VERDICT` нижче, — але ДЕФОЛТ лишається класовим: рядок присуду зсуває ціль контуру вище
+#     застосованого кореня Ø29.8, а новий рух кореня стоїть під ⏸ паузою крони (`00_07` HW.9);
+#     `--assert` пінить ОБИДВІ цілі як дзеркала канону, `--pos19 verdict` друкує другу;
 #   • заповнення 70 / 60 % — наше прочитання щільності ручного розведення, НЕ
 #     вимір; друкується, щоб показати чутливість, і вердикту не несе.
 
@@ -51,6 +56,15 @@ R0402 = rect(1.86, 0.94)  # KiCad R_0402_1005Metric
 C0603 = rect(2.96, 1.46)  # KiCad C_0603_1608Metric
 SOT23_6 = rect(4.10, 3.40) # KiCad SOT-23-6 — TPS22860 лише DBV: єдиний orderable (TI SLVSD04, addendum 10-11-2025)
 
+# Поз. 19 — два прочитання (див. стелі в шапці). За присудом: TX-ланка AN5457 A.1.7 L1·C1·L2·C2·C3·L3·C′·C″·C4 (9),
+# VR_PA C9·C10·L6 (3), після ключа C6·C7·L4·C8 (4), RX L5·C11·C12·C13 (4) = 20 × 0402 (опційні C3/C13 — угору) +
+# керування ключем R·C на CTRL і C на VDD-гейті ≈ 3 × 0201, тут як 0402 (угору) + SPDT BGS12WN6 PG-TSNP-6 0.7 × 1.1
+# з 0.25 на бік (кортьярд корпусу — конвенція бустера вище; KiCad-кортьярда TSNP-6 не зчитано).
+POS19 = {
+  "class"   => [ "RF-тракт — КЛАС до присуду: ≈ 11 × 0402 + SPDT WSON-6 1.5 × 1.5 (поз. 19)", 11 * C0402 + rect(2.40, 2.04) ],
+  "verdict" => [ "RF-тракт за присудом ⚖️ 2026-09-30: 23 × 0402 + BGS12WN6 TSNP-6 0.7 × 1.1 + 0.25/бік (поз. 19)", 23 * C0402 + rect(1.20, 1.60) ]
+}.freeze
+
 # ⚖️ founder 2026-09-29 (`02_01 §6`): пʼєзо з Солдата зрізано — поз. 5 (пʼєзо) і поз. 6 (кламп BAT54S
 # + DNP-поріг перед EXTI) на платі немає. Бустер носія не має (поз. 4), а контур креслять під ОБВІДНУ
 # обох кандидатів — більший NN02-224 (⚖️ делеговано 2026-09-29, `00_07` HW.33; врізка `02_01 §3.5`):
@@ -73,7 +87,7 @@ B2B = { # поз. 12 — Samtec FW-D-SM Rev D: розмах падів 6.86, к�
   socket: rect(7.28, 5.20)
 }.freeze
 
-def parts(booster:, rigid_flex:, edlc: "kr")
+def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class")
   power = [
     [ "BQ25570 VQFN-20 3.5 × 3.5 (поз. 2; KiCad QFN-20-1EP_3.5x3.5mm)", rect(4.76, 4.76) ],
     [ "L1 22 µH Coilcraft LPS4018 (поз. 15; рекомендація TI)", rect(4.90, 4.40) ],
@@ -95,7 +109,7 @@ def parts(booster:, rigid_flex:, edlc: "kr")
     [ "TCXO NT2016SF (поз. 16; проксі Crystal_SMD_2016-4Pin) + 0402 × 3", rect(3.00, 2.60) + 3 * C0402 ],
     [ "LSE-кварц клас 2012 (поз. 17, P/N не обрано) + 0402 × 2", rect(3.00, 2.20) + 2 * C0402 ],
     [ "SMPS MLZ2012M150W 0805 + 470 nF 0603 (поз. 18)", rect(3.50, 1.70) + C0603 ],
-    [ "RF-тракт — КЛАС: ≈ 11 × 0402 + SPDT WSON-6 1.5 × 1.5 (поз. 19)", 11 * C0402 + rect(2.40, 2.04) ],
+    POS19.fetch(pos19),
     [ BOOSTER.fetch(booster)[0] + " + П-ланка 0402 × 3 (поз. 4)", BOOSTER.fetch(booster)[1] + 3 * C0402 ],
     [ "BME280 LGA-8 2.5 × 2.5 + 0402 × 2 (поз. 20)", rect(2.82, 3.08) + 2 * C0402 ],
     [ "ключ BME280 TPS22860 SOT-23-6 (поз. 21)", SOT23_6 ],
@@ -159,8 +173,8 @@ end
 
 # Ціль контуру = більше з двох осей: площа за 70 % заповнення (рівномірно по трьох сторонах) ·
 # геометрична підлога. ⚠️ Бустер — теж її вхід: носія немає (поз. 4), тож ціль береться під обвідну.
-def target_for(booster:, edlc:, rigid_flex:)
-  area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:)).values.sum / 3 / 0.7)
+def target_for(booster:, edlc:, rigid_flex:, pos19: "class")
+  area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:, pos19:)).values.sum / 3 / 0.7)
   [ area, geometric_floor(edlc, socket: !rigid_flex) ]
 end
 
@@ -183,24 +197,31 @@ if ARGV == [ "--assert" ]
     "купол radome.json Ø#{DOME_MM} ≥ радом під ціль (пара B2B) у межах 0.05 — ціль → купол замкнено (`02_01 §3.5`, 2026-09-30)" =>
       radome_for(target.("nn02_224", false)) - DOME_MM <= 0.05,
     format("заповнення трьох сторін на стелі цього купола (Ø%.2f) ≤ 70 %% + округлення купола до 0.1", CEILING_MM) =>
-      fill_on_ceiling <= 0.705
+      fill_on_ceiling <= 0.705,
+    # Друге прочитання поз. 19 — дзеркало канону, НЕ якір: ціль за присудом стоїть над куполом навмисно (⏸ пауза крони).
+    "поз. 19 за присудом ⚖️ 2026-09-30 (⏸ HW.9): +17.1 мм², ціль пари B2B Ø20.24, rigid-flex Ø18.82 (`02_01 §3.5`)" =>
+      near.(POS19["verdict"][1] - POS19["class"][1], 17.1) &&
+      near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict").max, 20.24) &&
+      near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: true, pos19: "verdict").max, 18.82)
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
 end
 
-opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM }
+opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM, pos19: "class" }
 ARGV.each_slice(2) do |flag, value|
   case flag
   when "--booster" then opts[:booster] = value
   when "--edlc" then opts[:edlc] = value
   when "--diameter" then opts[:diameter] = Float(value)
-  else abort "Usage: #{$PROGRAM_NAME} [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм]"
+  when "--pos19" then opts[:pos19] = value
+  else abort "Usage: #{$PROGRAM_NAME} [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм] [--pos19 #{POS19.keys.join('|')}]"
   end
 end
 abort "невідомий --booster" unless BOOSTER.key?(opts[:booster])
 abort "невідомий --edlc" unless EDLC.key?(opts[:edlc])
-variant = opts.slice(:booster, :edlc)
+abort "невідомий --pos19" unless POS19.key?(opts[:pos19])
+variant = opts.slice(:booster, :edlc, :pos19)
 
 base = parts(**variant, rigid_flex: false)
 puts "Бюджет площі плати Солдата — кортьярди (HW.9, другий прохід)"
@@ -244,7 +265,13 @@ EDLC.each_key do |key|
   end
 end
 sweep = BOOSTER.keys.map do |key|
-  pair = [ false, true ].map { |rigid| target_for(booster: key, edlc: opts[:edlc], rigid_flex: rigid).max }
+  pair = [ false, true ].map { |rigid| target_for(booster: key, edlc: opts[:edlc], rigid_flex: rigid, pos19: opts[:pos19]).max }
   format("%s пара B2B Ø%.1f (радом ≈ Ø%.1f) / rigid-flex Ø%.1f", key, pair[0], radome_for(pair[0]), pair[1])
 end
 puts "  бустер — теж вхід цілі (поз. 4 без носія; контур — під обвідну, ⚖️ HW.33), #{opts[:edlc]}: #{sweep.join(' · ')}"
+
+other = opts[:pos19] == "class" ? "verdict" : "class"
+alt = [ false, true ].map { |rigid| target_for(**variant, rigid_flex: rigid, pos19: other).max }
+puts format("поз. 19 — друге прочитання (--pos19 %s): %+.1f мм² → пара B2B Ø%.2f (радом ≈ Ø%.2f) / rigid-flex Ø%.2f; " \
+            "за присудом ⚖️ 2026-09-30 ціль стоїть над куполом навмисно — ⏸ пауза крони, `00_07` HW.9",
+            other, POS19.fetch(other)[1] - POS19.fetch(opts[:pos19])[1], alt[0], radome_for(alt[0]), alt[1])
