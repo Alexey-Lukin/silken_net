@@ -1,7 +1,7 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-09-12
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-09-30
 > **Status:** disclosure-ready for submission to Technical Disclosure Commons.
 >
 > **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
@@ -81,7 +81,9 @@ comprising:
 wherein the **time `delta_t`** required by the EBFC to charge the energy store across a defined voltage
 window is treated as the **primary physiological indicator**, from which physiological state is derived by a
 **direct monotonic mapping** of that interval; and wherein a series of such intervals, together with
-temperature and acoustic emission, parameterises a **deterministic Lorenz attractor** whose role in the
+temperature and — in variants that carry an acoustic sensor — acoustic emission (the reference node carries
+none since 2026-09-29 and feeds zero for that input; the input is disclosed, not practised), parameterises a
+**deterministic Lorenz attractor** whose role in the
 reference implementation is the **integrity seal of SYNERGY C** (dual independent recomputation), and
 not the health classifier. ⚠️ **Truthfulness note, added 2026-09-05:** an earlier revision stated that
 health state is *classified from* those chaotic dynamics. The implementation was measured and that
