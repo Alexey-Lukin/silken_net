@@ -844,7 +844,7 @@
         "below_hfss_trigger_10": true
       }
     },
-    "missing_datum": "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap \u2014 judged ONLY for the EDLC candidates the tree names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
+    "missing_datum": "which side of the RF deck carries its tallest part (the antenna since 2026-09-30); the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap \u2014 judged ONLY for the EDLC candidates the tree names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
     "edlc_in_b2b_gap": {
       "heights_mm": {
         "KR-5R5H474-R (horizontal)": 5.2,

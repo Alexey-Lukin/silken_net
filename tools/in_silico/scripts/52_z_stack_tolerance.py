@@ -141,8 +141,8 @@ FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари,
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
-# The tallest part named in the BOM for the RF deck: Seeed LoRa-E5 module (02_01 §3.1 pos. 1), 12×12×2.5 mm per
-# https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
+# The tallest part on the RF deck: the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
+# 2026-09-29). Until 2026-09-30 this was the Seeed LoRa-E5 module (12×12×2.5, off the board since 2026-09-25). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.4
 # ⊕ 2026-09-30: retargeted 2.5 → 2.4 = the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4; 02_01 §5.2, ⚖️ delegated
@@ -152,11 +152,11 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.4
 # No row verdict moves: room after tolerance is 3.2–3.8 at B2B 8 and 1.2–1.8 at B2B 10, on both sides of 2.4 as of 2.5.
 # 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
 # its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9 (the Ø25 dome's; ≤Ø20.37 − 2·t since the root, 2026-09-30 — 16.97 still leaves no room for a booster on a 19.97 board, and the chip decision stands);
-# only the height was ever judged here. The 2.5 stays as an UPPER BOUND among the parts read so far (no RF-deck
-# candidate is taller), so the RF-deck-TOP verdicts it drives are conservative, not wrong. Re-run with front-end P/Ns.
+# only the height was ever judged here. The 2.5 stood as an UPPER BOUND among the parts read until pos. 19 was bounded
+# (2026-09-30, rf_switch_shortlist); the RF-deck-TOP verdicts it drove were conservative, not wrong, and did not move at 2.4.
 # (The B2B-GAP caveat that stood here — the EDLC over a 1.9-3.3 mm piezo on the Power Deck, which made 8.0 the
 # TIGHTER end — left with the piezo, ⚖️ 2026-09-29, 02_01 §6.)
-# 🔴 That constant is the LoRa-E5 module and WAS the tallest only because the BOM's antenna row named a
+# 🔴 That constant WAS the LoRa-E5 module (until 2026-09-30) and was the tallest only because the BOM's antenna row named a
 # 1.6 × 0.8 mm part that does not exist at 868 MHz (00_07 HW.17, verified 2026-09-22). The verified ceramic
 # SMD candidate is 4 mm — TALLER than the module — while the Virtual-Antenna candidate is 1 mm, so «what
 # stands on top of the RF deck» was a CONSEQUENCE of the antenna branch, not a fixed number. Heights per
@@ -174,8 +174,8 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.4
 # does not move: of the SEVEN mXTEND families the vendor's product page lists, the two that fit a ≤Ø15.57 (≤Ø20.37 since the root)
 # outline (NN02-201 at 1.0, NN02-224 at 2.4) are shorter than the module. ⚠ Perimeter named on purpose —
 # «every family member» would be a claim about a catalogue this pass never opened. So «the module is the
-# tallest» holds for every candidate we have READ — but it now holds
-# WITHOUT a named carrier, and the open question moved to the GROUND PLANE size (02_01 §5.3).
+# tallest» held for every candidate READ until 2026-09-30, when pos. 19 was bounded ≤ 1.10 mm and the constant was
+# retargeted to the antenna (2.4); the open question moved to the GROUND PLANE size (02_01 §5.3).
 RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
                        "antenna NN02-224 (RUN mXTEND booster)": 2.4,
                        "antenna W3013 (ceramic SMD)": 4.0,
@@ -686,7 +686,7 @@ def vertical_stack_budget(boss: dict) -> dict:
                               "antenna_z_mm": alt["antenna_z_over_ti_mm"],
                               "below_hfss_trigger_10": alt["rf_below_hfss_trigger_10"]},
         },
-        "missing_datum": "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
+        "missing_datum": "which side of the RF deck carries its tallest part (the antenna since 2026-09-30); the Power-Deck top-side and RF-deck "
                          "bottom-side contents inside the B2B gap — judged ONLY for the EDLC candidates the tree "
                          "names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
         "edlc_in_b2b_gap": {"heights_mm": dict(EDLC_HEIGHT_MM),
@@ -877,7 +877,7 @@ def main() -> int:
               f"→ {r['room_after_tolerance_mm'][rss_key]:+5.2f}  "
               f"{'fits' if r['tallest_bom_part_fits_on_top'][rss_key] else 'NO'}")
     s = vert["summary"]
-    print(f"  → LoRa module on the RF-deck TOP, any BOM row: {s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']}")
+    print(f"  → tallest RF-deck part (antenna NN02-224, {RF_DECK_TALLEST_BOM_PART_MM:.1f}) on the RF-deck TOP, any BOM row: {s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']}")
     # ⛔ Print every candidate, not just the module. The ceramic branch is rejected (⚖️ 2026-09-22), but the
     # rejected row is what makes the verdict re-measurable, and printing only the module would repeat, on the
     # operator's screen, exactly the substitution this axis was added to end (00_07 HW.17).
