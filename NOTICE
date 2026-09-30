@@ -73,7 +73,7 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
     docs/protocols/ebfc/in_silico/paper) is submission-ready but NOT yet
     published — do not read it as an accrued fact here (00_01 §8; its own cover
     letter states "has not been published previously"; status in docs/00_07,
-    UNI.3). It will strengthen this position when it lands; it does not carry
+    HW.5.IS — UNI.3 tracks a different, method-paper leg). It will strengthen this position when it lands; it does not carry
     it today; (b) our MD is
     stability simulation (RMSD / Rg / D_eff), NOT a protein-ligand binding-or-
     interaction predictor of the Glide/AutoDock class named in restriction #2.
