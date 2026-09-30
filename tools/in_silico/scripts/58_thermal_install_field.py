@@ -136,9 +136,13 @@ L_C_INSERT = 14.0        # Zone-3 shank insertion (HW.8 placeholder, script 54)
 L_GYROID = 40.0          # Zone-1 gyroid in sapwood — cem/anchor_zone1.pine.json (canon 30-50)
 POROSITY_GYROID = 0.65   # 01_01 §5.2 nominal (⚖️ 2026-09-17; the shop band is 60-70 %, judged on the whole part)
 
-# Tree structure (NO SSOT home in the corpus — swept; see DECLARED CEILINGS)
-T_BARK_DEAD = 8.0        # periderm / dead outer bark thickness, Pinus sylvestris at DBH >= 38 cm
-T_PHLOEM = 3.0           # living inner bark between periderm and cambium
+# Tree structure — swept; literature bracket exists since 2026-09-30 (01_04 §3.2: five Scots-pine bark
+# models, all RIDGE-referenced): dead outer bark ≈ 13.5–21 mm at DBH 38, ≈ 17.5–28 at DBH 50; living inner
+# bark ≤ ~3 mm (Holiaka 2017). Furrow depth has no primary. ⚠️ T_BARK_DEAD = 8 sits BELOW every ridge
+# estimate for DBH ≥ 38 — kept unchanged on purpose: this cache is the committed record and the
+# thermal-install verdict does not turn on bark; of the sweep, 15 and 20 are the literature-consistent points.
+T_BARK_DEAD = 8.0        # periderm / dead outer bark thickness, Pinus sylvestris at DBH >= 38 cm (placeholder, see above)
+T_PHLOEM = 3.0           # living inner bark between periderm and cambium (Holiaka 2017: «зрідка досягає 3 мм»)
 BARK_SWEEP = (4.0, 8.0, 15.0, 20.0)
 
 # Legacy 1D model (the orphan cache) — do not edit: these ARE the committed record.

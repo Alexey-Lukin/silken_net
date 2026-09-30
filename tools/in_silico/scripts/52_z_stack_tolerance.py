@@ -144,7 +144,12 @@ B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40
 # The tallest part named in the BOM for the RF deck: Seeed LoRa-E5 module (02_01 §3.1 pos. 1), 12×12×2.5 mm per
 # https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
-RF_DECK_TALLEST_BOM_PART_MM = 2.5
+RF_DECK_TALLEST_BOM_PART_MM = 2.4
+# ⊕ 2026-09-30: retargeted 2.5 → 2.4 = the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4; 02_01 §5.2, ⚖️ delegated
+# 2026-09-29). The last unchosen RF-deck member, pos. 19 (SPDT + RFO_LP matching), is now BOUNDED ≤ 1.10 mm across every
+# candidate read (PE4259 in SC-70 is the tallest; the IPD route tops at 0.680) — docs/protocols/hardware/rf_switch_shortlist.md,
+# 00_07 HW.9 — so the antenna is the tallest READ member and the 2.5 module bound (a part that is off the board) is retired.
+# No row verdict moves: room after tolerance is 3.2–3.8 at B2B 8 and 1.2–1.8 at B2B 10, on both sides of 2.4 as of 2.5.
 # 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
 # its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9 (the Ø25 dome's; ≤Ø20.37 − 2·t since the root, 2026-09-30 — 16.97 still leaves no room for a booster on a 19.97 board, and the chip decision stands);
 # only the height was ever judged here. The 2.5 stays as an UPPER BOUND among the parts read so far (no RF-deck
@@ -172,6 +177,7 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # tallest» holds for every candidate we have READ — but it now holds
 # WITHOUT a named carrier, and the open question moved to the GROUND PLANE size (02_01 §5.3).
 RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
+                       "antenna NN02-224 (RUN mXTEND booster)": 2.4,
                        "antenna W3013 (ceramic SMD)": 4.0,
                        "antenna NN03-310 (Virtual Antenna)": 1.0}
 # EDLC candidate heights (00_07 HW.37, datasheets compared 2026-09-14). The part rides INSIDE the B2B gap,
@@ -606,8 +612,8 @@ def vertical_stack_budget(boss: dict) -> dict:
     then cut (⚖️ 2026-09-29, 02_01 §6) and the axis lost its subject. The no-piezo stack IS the former
     `pad_beside_piezo` row — the pad filled GAP_PZ and the piezo stood outside the stack — so every number here
     is that row's, unchanged; the rejected rows are a dated record in canon (02_02 §3.5), not an input.
-    Re-measure when the crown or `cavity_height_mm` moves, or when the RF front-end gets P/Ns (the 2.5 mm
-    module the RF-deck-top verdicts rest on is off the board, 02_01 §3.1 pos. 1).
+    Re-measure when the crown or `cavity_height_mm` moves, or when the RF front-end gets P/Ns (2026-09-30: the tallest member is
+    the antenna NN02-224 at 2.4 — pos. 19 bounded ≤ 1.10 by rf_switch_shortlist; the 2.5 module bound is retired).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
     spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
     term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
@@ -689,7 +695,9 @@ def vertical_stack_budget(boss: dict) -> dict:
                                        "shorter than the gap», never «it fits the layout» (00_07 HW.37)"},
         "rf_deck_top_parts": {"heights_mm": dict(RF_DECK_TOP_PART_MM),
                               "ceiling": "the ceramic-SMD branch is REJECTED (⚖️ 2026-09-22, 02_01 §5.2), so the "
-                                         "part that actually stands there is the LoRa module (2.5). ⛔ The CARRIER half "
+                                         "part that actually stands there is the antenna NN02-224 (2.4) since 2026-09-30 — pos. 19 is "
+                                         "bounded ≤ 1.10 mm across every candidate (rf_switch_shortlist), so the 2.5 module bound "
+                                         "(a part that is off the board) is retired. ⛔ The CARRIER half "
                                          "of that same verdict fell the same day: NN03-310 is 30.0 mm LONG, longer than "
                                          "the Ø25 flange (Ø29.8 since 2026-09-30 — still shorter than 30.0), so there is no named carrier today (00_07 HW.17, 02_01 §5.2). "
                                          "This row is unaffected because the two candidates that fit a ≤Ø15.57 outline (≤Ø20.37 since the root) — among the SEVEN families "
@@ -860,7 +868,7 @@ def main() -> int:
           f"{ih['hemisphere_centre_today']:.2f} under today's hemisphere)")
     print("      tolerance readings: " + " · ".join(f"{k} ±{v:.2f}" for k, v in tr.items()))
     print(f"      FR4 {FR4_THICKNESS_MM:.1f} (BOM) rows — RF-deck top over the flange · room over it · after ±{tr[rss_key]:.2f} · "
-          f"LoRa module ({RF_DECK_TALLEST_BOM_PART_MM:.1f}) on top  [* = the BOM's named B2B alternative]")
+          f"tallest RF-deck part ({RF_DECK_TALLEST_BOM_PART_MM:.1f}, antenna NN02-224) on top  [* = the BOM's named B2B alternative]")
     for r in vert["rows"]:
         if not r["fr4_is_bom"]:
             continue

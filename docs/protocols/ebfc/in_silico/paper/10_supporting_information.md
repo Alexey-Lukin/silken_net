@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 239 · 12,421,879 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 239 · 12,425,621 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -85,13 +85,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `99d261e2ca056ca8652c454adc3cbffb2601bf572de060a2ee80c6c130b1b4c6` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `674f8a829b00e6019bf3f966137c6817b1caba3dd62f3dd009577a01e0fa638a` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `5a66842adb741aad9104d022c633adeb20f30cc84a9f8fbc537fb3f71e023c49` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4e3292376e7fb6d58a20dc0e2165c289a7238f9c9b95da3bf47b224e6f9b0bb2` | HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin). |
-| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `0a780474bfb8897655740c04f7fdc467c0980f7c6f7f97376cb5214973cba67e` | HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break. |
+| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `44bafd6fdf1044d456e8b457ff82b4ec75a85e3fbcc712b7c9a500b6dd8d96fc` | HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `5bbf1483efd5b3b78119dd2b9f1a1d32dd1f17037d521695ce229664477c6389` | HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `66b91da2009db75771db70e6d86925192559dbeb03ffdd1d506cf4d75880eaa9` | HW.3.IS — Unified thick-wall Lamé: press-fit interference + thermal mismatch in ONE model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `8c01ed6fea1c32db05a52d842ba94a29d75febeab239325af0d061bf6ca9db5a` | HW.25 — PTFE-GDL cathode membrane: liquid-entry (breakthrough) pressure and the O2 budget. |
-| `tools/in_silico/scripts/58_thermal_install_field.py` | `ade2e01105fe21697fa331483c25523ebc8fc443f3ebb685092a8a82bbfa4aa8` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
+| `tools/in_silico/scripts/58_thermal_install_field.py` | `78e58007ef5c02ba51f5c40f4fc4a181206e2ef3c3c5ceb43e0a4f487f467381` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `4118bde2aef3567d14c0d9a5094c711922e123c2c3e932d842e0b9cc962777ea` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
@@ -208,7 +208,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `68a79cc0b2506519bb9be59a72ccf1033e6fe4ced61dc19e47def417e6fe016b` | 5,685 |
-| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `b2c14d0301cd13875e1dd9545271920380fd4e190a28756760885b0ffe1e4bca` | 29,863 |
+| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `8ad78838569bebb4e27e2aa7d5cc0c9a38e84803c8306330dc674666b701ce4b` | 31,420 |
 
 ### `tools/in_silico/cache/reproduction/`
 

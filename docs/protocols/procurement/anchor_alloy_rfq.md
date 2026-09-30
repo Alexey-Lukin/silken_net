@@ -166,6 +166,7 @@ Alloy strength and elastic modulus are background context for our own material c
 6. **Certifications, with certificate number, issuing body, scope and validity:** ISO 13485, AS9100, ISO 9001 — whichever you hold.
 7. **Evidence of comparable work:** a dimensional or metrology report from a previous titanium job with a controlled surface finish (redacted is fine).
 8. **Quote format:** currency, validity period, payment terms, and the technical point of contact.
+9. **Electrical resistivity at 20 °C of each alloy as you supply it (µΩ·cm), with the datasheet it comes from or the measurement method.** We hold producer values for Ti-6Al-4V, CP-Ti Grade 4 and tantalum, a powder-metallurgy value only for Ti-6Al-7Nb, and none for Ti-13Nb-13Zr and Ti-15Zr; if you do not have a number, please say so — we will then measure it four-wire on a coupon rather than assume one.
 
 ### Confidentiality
 

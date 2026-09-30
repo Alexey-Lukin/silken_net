@@ -69,7 +69,12 @@ CELL_FREEZE_C = -2.0      # °C — below this the anode-pocket living tissue is
 
 # ── Electrical resistivity ρ (Ω·m) — to prove the bus material is electrically free at µA ──
 RHO_CU = 1.68e-8       # annealed Cu
-RHO_TI = 1.78e-6       # Ti-6Al-4V (~170 µΩ·cm — 100× worse than Cu, still irrelevant at µA)
+RHO_TI = 1.78e-6       # Ti-6Al-4V — UNSOURCED literal, kept as-is because the cached IR drop (11.3 µV at
+                       # 100 µA) and SUMMARY §HW.34 quote it. The producer bracket is 171–175 µΩ·cm (RMI Titanium
+                       # Alloy Guide p.28 · Carpenter 1053 ohm-cir-mil/ft — 01_02 §2.5 ρ table, 2026-09-30), i.e.
+                       # 2–4 % BELOW this value; the verdict «electrically free at µA» is insensitive to that.
+                       # Re-align to 1.71e-6 on the next re-run of this script only (cache is SSOT: a value
+                       # change re-runs 54 → 64, SUMMARY and the doc↔cache pins together — §When Modifying #2/#15).
 RHO_316SS = 7.4e-7
 
 # ── Density ρ (kg/m³) + specific heat c (J/kg·K) — for the transient time-constant only ──
