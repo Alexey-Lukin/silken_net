@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement.
 >
-> Files in this manifest: 238 · 12,412,148 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 238 · 12,412,678 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -85,13 +85,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `99d261e2ca056ca8652c454adc3cbffb2601bf572de060a2ee80c6c130b1b4c6` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `e13aba0b3dd0bacc020b52357cbacb7d0d62b744f6d7d3d54eeef9f6d090f9a1` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `30ea270a92bb6d69efc57f6ae22e1322dc2685192b83c9d0238050e58e4a5884` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4e3292376e7fb6d58a20dc0e2165c289a7238f9c9b95da3bf47b224e6f9b0bb2` | HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin). |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `0a780474bfb8897655740c04f7fdc467c0980f7c6f7f97376cb5214973cba67e` | HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `5bbf1483efd5b3b78119dd2b9f1a1d32dd1f17037d521695ce229664477c6389` | HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `66b91da2009db75771db70e6d86925192559dbeb03ffdd1d506cf4d75880eaa9` | HW.3.IS — Unified thick-wall Lamé: press-fit interference + thermal mismatch in ONE model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `8c01ed6fea1c32db05a52d842ba94a29d75febeab239325af0d061bf6ca9db5a` | HW.25 — PTFE-GDL cathode membrane: liquid-entry (breakthrough) pressure and the O2 budget. |
-| `tools/in_silico/scripts/58_thermal_install_field.py` | `287eb2c8eb2be821412b07d94c9ac3555bff1a0e0450cd3cdeb29d5029d78498` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
+| `tools/in_silico/scripts/58_thermal_install_field.py` | `ade2e01105fe21697fa331483c25523ebc8fc443f3ebb685092a8a82bbfa4aa8` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `4118bde2aef3567d14c0d9a5094c711922e123c2c3e932d842e0b9cc962777ea` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
@@ -104,8 +104,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `fc6271da5d73a63d43ed020a904c7efa27e9d0cd9b2326d51313199ea1b4ee52` | HW.34 / HW.23 — WHERE the bus rod really meets the cathode channel, solved as a CONTACT problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `6ede9daae069a89c9c9d2a4016bbe4bfd7c202971953fe7435eddf0cd499591b` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
-| `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `f6d2a3faacf5e0fcd1675ebf690f16c422c5646c40b9da50e1db11683aff3bf8` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
-| `tools/in_silico/scripts/72_paper_supporting_information.py` | `bb15a8b15f7c9b548133a2419df2c20318ed1769d6b867fab0ba7e6f64dc5c30` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
+| `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `580b25ba14f66f6b1c80bde6f4d9e488910622076693045e2eeb0ef640860b61` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
+| `tools/in_silico/scripts/72_paper_supporting_information.py` | `20244d4e74027c699f89319ba07c07efb850b0c7b78f4f046bcf6167c89ccca6` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
@@ -208,13 +208,13 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `68a79cc0b2506519bb9be59a72ccf1033e6fe4ced61dc19e47def417e6fe016b` | 5,685 |
-| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `229991f920e6285be0d63000c2bc59b80eb63dc770bfa4dc0de58b174b4d9fd5` | 29,846 |
+| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `b2c14d0301cd13875e1dd9545271920380fd4e190a28756760885b0ffe1e4bca` | 29,863 |
 
 ### `tools/in_silico/cache/thermal/`
 
 | File | SHA-256 | Bytes |
 |---|---|---|
-| `tools/in_silico/cache/thermal/capsule_envelope.json` | `2ede514b9993c77e0ea7d694960e36d74bf0db2a3733da3fcfcdab0320c191a9` | 11,610 |
+| `tools/in_silico/cache/thermal/capsule_envelope.json` | `9beaedb7150d558d44075f0bf835f49d442bc430220fb1b4a9a8b05a1a86e4ef` | 11,609 |
 
 ## S4. Committed input data
 

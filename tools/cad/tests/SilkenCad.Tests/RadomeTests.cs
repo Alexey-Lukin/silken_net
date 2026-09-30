@@ -16,7 +16,7 @@ public class RadomeTests
         Assert.Equal("radome", Cem.Kind(strJson));
 
         RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
-        Assert.Equal(25f, cem.DomeDiameterMm);     // frozen (= Zone-3 flange Ø)
+        Assert.Equal(29.8f, cem.DomeDiameterMm);   // = Zone-3 flange Ø — derived from the board target (root verdict 2026-09-29, applied 2026-09-30)
         Assert.Equal(3, cem.BayonetLugs);
         Assert.True(cem.CavityHeightMm >= 12f);    // OUR working floor on the CEM dim — NOT antenna↔Ti (that is cavityH − lockGrooveZ − t/2) and NOT the canon ≥8 (02_01 §5.3)
         Assert.True(cem.BellRiseMm >= 3f);         // anti-overgrowth shield (01_04 §5.5)
@@ -76,7 +76,7 @@ public class RadomeTests
         Assert.True(Radome.SocketSkinMm(cem) > 0f);
         Assert.Equal(Radome.SealBandMm(cem), Radome.SealLandOuterRMm(cem) - Radome.SealLandInnerRMm(cem), 4);
         Assert.Equal(Radome.BossRadialMm(cem), (cem.DomeDiameterMm / 2f) - Radome.SealLandInnerRMm(cem), 4);
-        Assert.Equal(15.57f, Radome.RimCavityDiameterMm(cem), 2);   // the ceiling handed to HW.9 (every term a minimum)
+        Assert.Equal(20.37f, Radome.RimCavityDiameterMm(cem), 2);   // the ceiling handed to HW.9 (every term a minimum; 15.57 on the Ø25 dome until 2026-09-30)
     }
 
     // The rim is FLAT: the shipped manifests carry no groove key (one has no slot since 2026-09-14 and would
@@ -142,6 +142,63 @@ public class RadomeTests
         Near(applied.GetProperty("socket_pocket_r_mm")[0].GetDouble(), Radome.SocketPocketInnerRMm(cem), 1e-3);
         Near(applied.GetProperty("socket_pocket_r_mm")[1].GetDouble(), Radome.SocketPocketOuterRMm(cem), 1e-3);
         Near(applied.GetProperty("rim_cavity_mm").GetDouble(), Radome.RimCavityDiameterMm(cem), 5e-3);
+    }
+
+    // ── Vent facet + BME280 pocket (⚖️ 2026-09-29, applied 2026-09-30 with the root, 00_07 HW.32) ──
+    // The verdict was CONDITIONAL — VE70308 if the facet holds a 9.1 ring, else VE70205 — and this pins the geometry's
+    // answer: on the shipped dome (Ø29.8, wall 2.0, boss 5.3 high, crown R5) a full-width seat exists over ≈ 8.56 mm of
+    // wall, so the 6.5 ring (OD 7.7) fits and the 9.1 ring (OD 10.3) fits on NEITHER axis. MUTATION: `VentFacetWidthMm = 11f`
+    // together with `CavityHeightMm = 16f` would admit the 9.1 ring — the pin is about THIS dome, not about rings in general.
+    [Fact]
+    public void The_Facet_Admits_The_6_5_Ring_And_Refuses_The_9_1_Ring__So_The_Verdict_Resolves_To_VE70205()
+    {
+        RadomeCem cem = new();
+        float fOd = Radome.VentRingOdMm(cem);
+        Assert.True(Radome.VentRingFits(cem));
+        Assert.False(Radome.VentRingFits(cem, Radome.VentRingIdVe70308Mm));
+        Assert.InRange(Radome.VentBandMm(cem, fOd), 8.5f, 8.6f);
+        Assert.True(Radome.VentZMm(cem) - (fOd / 2f) > Radome.BossHeightMm(cem), "the ring must clear the boss top");
+        Assert.True(Radome.VentZMm(cem) + (fOd / 2f) < Radome.VentBandTopZMm(cem, fOd / 2f), "the ring must stay on the full-width flat");
+        Assert.True(cem.VentHoleDiameterMm <= Radome.VentActiveDiameterMm(cem), "the hole must stay under the membrane's active area");
+        Assert.InRange(Radome.VentPadThicknessMm(cem), 0.70f, 0.75f);   // sagitta of an 8.5 chord on the Ø25.8 inner wall
+        Assert.True(Radome.VentPadThicknessMm(cem) < cem.WallThicknessMm, "the pad ADDS material — it never thins the wall");
+    }
+
+    // The pocket stays off the board envelope on BOTH sides (duct outside the rim cavity, chamber inside it) and under
+    // the crown, and is small enough for the verdict's response-time ground (0.3 cm³ → seconds). Its floor is a placeholder
+    // (HW.29 / HW.9) and is pinned only for self-consistency, never for a value.
+    [Fact]
+    public void The_Pocket_Stays_Outside_The_Rim_Cavity_Where_The_Board_Passes_And_Inside_It_Where_It_Lands()
+    {
+        RadomeCem cem = new();
+        float fRim = Radome.RimCavityDiameterMm(cem) / 2f;
+        Assert.True(Radome.DuctInnerRMm(cem) >= fRim + cem.SlotClearanceMm - 1e-4f, "the duct must clear whatever the rim cavity admits");
+        Assert.True(cem.PocketOuterRadiusMm <= fRim - cem.SlotClearanceMm, "the chamber must land on the board, inside the rim cavity");
+        Assert.True(cem.PocketFloorOverRimMm > Radome.BossHeightMm(cem));
+        Assert.True(Radome.PocketHousingTopZMm(cem) <= Radome.InnerTopZMm(cem));
+        Assert.True(Radome.BridgePassageHeightMm(cem) > 0f);
+        Assert.True(Radome.DuctCavityDepthMm(cem) > cem.VentRingHeightMm, "the target ring must stand inside the duct, not bottom on its wall");
+        Assert.InRange(Radome.PocketVolumeMm3(cem), 50f, Radome.PocketVolumeCeilingMm3);
+        Assert.InRange(Radome.VentTauEstimateS(cem), 1f, 60f);   // seconds — the pocket is what makes the small vent sufficient (02_01 §3.4)
+    }
+
+    // Gotcha 0b, made a test: every `vent_*` / `pocket_*` key the shipped manifest carries must have a SLOT on the record —
+    // `Cem.Parse` drops unmapped members without a word, so a key that evaporates would read as applied. The name map is the
+    // serializer's OWN policy applied to the property names, so the test cannot disagree with the parser about spelling.
+    [Fact]
+    public void Every_Vent_And_Pocket_Key_In_The_Shipped_Manifest_Has_A_Record_Slot()
+    {
+        string strJson = File.ReadAllText(Path.Combine(CemFixtures.Dir(), "radome.json"));
+        using var doc = JsonDocument.Parse(strJson);
+        var slots = typeof(RadomeCem).GetProperties().Select(p => JsonNamingPolicy.SnakeCaseLower.ConvertName(p.Name)).ToHashSet();
+        string[] keys = doc.RootElement.EnumerateObject().Select(o => o.Name)
+            .Where(k => k.StartsWith("vent_", StringComparison.Ordinal) || k.StartsWith("pocket_", StringComparison.Ordinal)).ToArray();
+        Assert.True(keys.Length >= 14, "the shipped manifest must declare the vent and pocket fields");
+        foreach (string k in keys) Assert.Contains(k, slots);
+        RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
+        Assert.Equal(doc.RootElement.GetProperty("vent_ring_id_mm").GetSingle(), cem.VentRingIdMm);
+        Assert.Equal(doc.RootElement.GetProperty("pocket_floor_over_rim_mm").GetSingle(), cem.PocketFloorOverRimMm);
+        Assert.Equal(doc.RootElement.GetProperty("pocket_outer_radius_mm").GetSingle(), cem.PocketOuterRadiusMm);
     }
 
     private static void Near(double dExpected, double dActual, double dTol)

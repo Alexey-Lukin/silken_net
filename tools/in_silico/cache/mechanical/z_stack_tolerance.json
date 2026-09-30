@@ -193,19 +193,19 @@
       "90%": 2.057
     },
     "faces": {
-      "flange_top_face_outer_r_mm": 12.5,
+      "flange_top_face_outer_r_mm": 14.9,
       "asis": {
         "rim_r_mm": [
-          10.5,
-          12.5
+          12.9,
+          14.9
         ],
         "land_mm": 2.0,
         "note": "dome wall bottom butts the flange top face; land = wall thickness"
       },
       "inboard": {
         "rim_r_mm": [
-          10.5,
-          12.5
+          12.9,
+          14.9
         ],
         "land_mm": 2.0,
         "note": "only the lug protrusion is clamped \u2014 the rim is the asis rim, unchanged"
@@ -215,10 +215,10 @@
         "land_mm": 0.0,
         "radial_clearance_mm": 0.3000000000000007,
         "skirt_ring_r_mm": [
-          12.8,
-          15.0
+          15.200000000000001,
+          17.4
         ],
-        "note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
+        "note": "the lower cavity is CUT AWAY to r=15.2 to admit the \u00d830 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
       }
     },
     "candidates": {
@@ -258,12 +258,12 @@
   },
   "rim_boss_radial_budget": {
     "inputs_mm": {
-      "dome_dia": 25.0,
+      "dome_dia": 29.8,
       "slot_clearance": 0.3,
       "socket_band": 1.8,
       "misalignment_allowance": 0.6
     },
-    "cavity_today_mm": 21.0,
+    "cavity_today_mm": 25.8,
     "rows": [
       {
         "cord_cs_mm": 1.78,
@@ -271,7 +271,7 @@
         "gland_width_mm": 2.315,
         "seal_band_mm": 2.915,
         "boss_radial_mm": 4.715,
-        "cavity_ceiling_mm": 15.57,
+        "cavity_ceiling_mm": 20.37,
         "shipped_cord": true
       },
       {
@@ -280,7 +280,7 @@
         "gland_width_mm": 2.178,
         "seal_band_mm": 2.778,
         "boss_radial_mm": 4.578,
-        "cavity_ceiling_mm": 15.84,
+        "cavity_ceiling_mm": 20.64,
         "shipped_cord": true
       },
       {
@@ -289,7 +289,7 @@
         "gland_width_mm": 2.057,
         "seal_band_mm": 2.657,
         "boss_radial_mm": 4.457,
-        "cavity_ceiling_mm": 16.09,
+        "cavity_ceiling_mm": 20.89,
         "shipped_cord": true
       },
       {
@@ -298,7 +298,7 @@
         "gland_width_mm": 1.846,
         "seal_band_mm": 2.446,
         "boss_radial_mm": 4.246,
-        "cavity_ceiling_mm": 16.51,
+        "cavity_ceiling_mm": 21.31,
         "shipped_cord": false
       },
       {
@@ -307,7 +307,7 @@
         "gland_width_mm": 1.738,
         "seal_band_mm": 2.338,
         "boss_radial_mm": 4.138,
-        "cavity_ceiling_mm": 16.72,
+        "cavity_ceiling_mm": 21.52,
         "shipped_cord": false
       },
       {
@@ -316,7 +316,7 @@
         "gland_width_mm": 1.641,
         "seal_band_mm": 2.241,
         "boss_radial_mm": 4.041,
-        "cavity_ceiling_mm": 16.92,
+        "cavity_ceiling_mm": 21.72,
         "shipped_cord": false
       },
       {
@@ -325,7 +325,7 @@
         "gland_width_mm": 1.651,
         "seal_band_mm": 2.251,
         "boss_radial_mm": 4.051,
-        "cavity_ceiling_mm": 16.9,
+        "cavity_ceiling_mm": 21.7,
         "shipped_cord": false
       },
       {
@@ -334,7 +334,7 @@
         "gland_width_mm": 1.554,
         "seal_band_mm": 2.154,
         "boss_radial_mm": 3.954,
-        "cavity_ceiling_mm": 17.09,
+        "cavity_ceiling_mm": 21.89,
         "shipped_cord": false
       },
       {
@@ -343,15 +343,15 @@
         "gland_width_mm": 1.468,
         "seal_band_mm": 2.068,
         "boss_radial_mm": 3.868,
-        "cavity_ceiling_mm": 17.26,
+        "cavity_ceiling_mm": 22.06,
         "shipped_cord": false
       }
     ],
     "shipped_cord_range_mm": [
-      15.57,
-      16.09
+      20.37,
+      20.89
     ],
-    "design_to_mm": 15.57,
+    "design_to_mm": 20.37,
     "levers_that_keep_the_od_freeze": {
       "raise_gland_fill": {
         "from_pct": 80,
@@ -375,12 +375,12 @@
     "flange_groove_depth_mm": 1.3439,
     "flange_groove_width_mm": 2.3146,
     "flange_groove_r_mm": [
-      8.0854,
-      10.4
+      10.4854,
+      12.8
     ],
     "radome_seal_land_r_mm": [
-      7.7854,
-      10.7
+      10.1854,
+      13.1
     ],
     "seal_land_margin_mm": [
       0.3,
@@ -388,12 +388,12 @@
     ],
     "socket_band_mm": 1.8,
     "socket_pocket_r_mm": [
-      10.7,
-      12.3
+      13.1,
+      14.7
     ],
     "socket_skin_mm": 0.2,
-    "rim_cavity_mm": 15.5708,
-    "rim_contact_area_mm2": 152.92,
+    "rim_cavity_mm": 20.3708,
+    "rim_contact_area_mm2": 189.12,
     "entry_slot_opening_mm2_each": 4.371,
     "note": "the seal land backs the groove by one socket clearance on each side, so the ring stays backed with the radome one clearance off-centre; the socket pocket is `socket_band \u2212 skin` deep, not the full band \u2014 the budget above counts no skin, and a pocket cut to the dome OD would breach the shell. \u26a0\ufe0f The lugs still sit at mid-disc: the ratified collar (02_02 \u00a74.4) is not modelled on either part."
   },
@@ -449,47 +449,47 @@
     "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. \u26d4 The number itself is NOT ours to invent (00_07 HW.33: it comes from whoever machines the part) \u2014 what this derives is the REQUIREMENT the shop's tolerance has to fit inside, i.e. it turns \u00abwhat is your tolerance?\u00bb into \u00abcan you hold \u00b1X?\u00bb. \u26a0\ufe0f And a general-tolerance GRADE is not a substitute: a grade is a table keyed to the nominal size, so citing one without opening it at 1.344 mm is a claim, not a specification \u2014 see the allocation rows."
   },
   "rim_datum_creep": {
-    "rim_contact_area_mm2": 152.9,
-    "force_to_reach_relax_regime_N": 382.0,
+    "rim_contact_area_mm2": 189.1,
+    "force_to_reach_relax_regime_N": 473.0,
     "relax_regime_floor_MPa": 2.5,
     "pogo_pair_force_N_upper_bound": 1.92,
-    "stress_at_pogo_alone_MPa": 0.0126,
-    "stress_at_100N_assumed_total_MPa": 0.654,
-    "margin_x_at_100N": 3.8,
+    "stress_at_pogo_alone_MPa": 0.0102,
+    "stress_at_100N_assumed_total_MPa": 0.529,
+    "margin_x_at_100N": 4.7,
     "missing_datum": "the O-ring compression load per unit of seal length \u2014 it has no home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
-    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 382 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the unmeasured O-ring leaves a 3.8x margin. No creep member is warranted in the Z-chain for the rim.",
-    "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
+    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 473 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the unmeasured O-ring leaves a 4.7x margin. No creep member is warranted in the Z-chain for the rim.",
+    "skirt_note": "the lower cavity is CUT AWAY to r=15.2 to admit the \u00d830 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
   "collar_radial_budget": {
     "closed_form": "board_dia <= design_to - 2*collar_wall",
-    "design_to_mm": 15.57,
+    "design_to_mm": 20.37,
     "printability_floor_mm": 0.2,
-    "loosest_ceiling_any_collar_mm": 15.17,
+    "loosest_ceiling_any_collar_mm": 19.97,
     "rows": [
       {
         "collar_wall_mm": 0.2,
-        "ceiling_mm": 15.17,
-        "ceiling_mm_if_collar_needs_running_clearance": 14.57
+        "ceiling_mm": 19.97,
+        "ceiling_mm_if_collar_needs_running_clearance": 19.37
       },
       {
         "collar_wall_mm": 0.5,
-        "ceiling_mm": 14.57,
-        "ceiling_mm_if_collar_needs_running_clearance": 13.97
+        "ceiling_mm": 19.37,
+        "ceiling_mm_if_collar_needs_running_clearance": 18.77
       },
       {
         "collar_wall_mm": 1.0,
-        "ceiling_mm": 13.57,
-        "ceiling_mm_if_collar_needs_running_clearance": 12.97
+        "ceiling_mm": 18.37,
+        "ceiling_mm_if_collar_needs_running_clearance": 17.77
       },
       {
         "collar_wall_mm": 1.5,
-        "ceiling_mm": 12.57,
-        "ceiling_mm_if_collar_needs_running_clearance": 11.97
+        "ceiling_mm": 17.37,
+        "ceiling_mm_if_collar_needs_running_clearance": 16.77
       },
       {
         "collar_wall_mm": 2.0,
-        "ceiling_mm": 11.57,
-        "ceiling_mm_if_collar_needs_running_clearance": 10.97
+        "ceiling_mm": 16.37,
+        "ceiling_mm_if_collar_needs_running_clearance": 15.77
       }
     ],
     "missing_datum": "collar wall thickness \u2014 no CEM field, no canon row, no bayonet retention FORCE in canon to size it against; owner = the collar implementation leg (00_07 HW.33) and the lug/Z redesign (HW.8)",
@@ -507,13 +507,13 @@
       "b2b_named_alternative": 6.0,
       "tallest_rf_deck_bom_part": 2.5,
       "crown_edge_r_shipped": 5.0,
-      "board_ceiling_radius": 7.785
+      "board_ceiling_radius": 10.185
     },
     "internal_height_mm": {
       "crown_centre": 16.0,
       "crown_at_board_ceiling_edge": 15.986,
-      "hemisphere_centre_today": 23.5,
-      "hemisphere_at_board_ceiling_edge_today": 20.046
+      "hemisphere_centre_today": 25.9,
+      "hemisphere_at_board_ceiling_edge_today": 20.917
     },
     "tolerance_readings_mm": {
       "tol_pz_rss_as_quoted_02_02": 0.45,

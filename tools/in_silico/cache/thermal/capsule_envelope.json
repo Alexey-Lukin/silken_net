@@ -9,11 +9,11 @@
     ]
   },
   "geometry": {
-    "dome_diameter_mm": 25.0,
+    "dome_diameter_mm": 29.8,
     "h_over_bark_mm": 18.0,
     "h_over_bark_from": "radome.json cavity_height_mm + bell_radius_mm (01_04 §5.5: порожнина + корона)",
-    "a_proj_max_mm2": 665.93,
-    "a_exp_mm2": 1904.59
+    "a_proj_max_mm2": 879.88,
+    "a_exp_mm2": 2382.62
   },
   "inputs": {
     "alpha_sweep": [
@@ -42,116 +42,96 @@
     "sunlit": {
       "0.50": {
         "0.0": {
-          "t_cap_max_c": 52.0,
+          "t_cap_max_c": 52.9,
           "at": "2010-08-08T13:00",
           "t_air_c": 37.4,
-          "margin_to_rating_k": 18.0
+          "margin_to_rating_k": 17.1
         },
         "0.1": {
-          "t_cap_max_c": 50.2,
+          "t_cap_max_c": 51.4,
           "at": "2007-08-24T15:00",
           "t_air_c": 36.8,
-          "margin_to_rating_k": 19.8
+          "margin_to_rating_k": 18.6
         },
         "0.3": {
-          "t_cap_max_c": 47.4,
+          "t_cap_max_c": 48.1,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 22.6
+          "margin_to_rating_k": 21.9
         }
       },
       "0.60": {
         "0.0": {
-          "t_cap_max_c": 54.6,
+          "t_cap_max_c": 55.6,
           "at": "2010-08-08T13:00",
           "t_air_c": 37.4,
-          "margin_to_rating_k": 15.4
+          "margin_to_rating_k": 14.4
         },
         "0.1": {
-          "t_cap_max_c": 52.8,
+          "t_cap_max_c": 54.2,
           "at": "2007-08-24T15:00",
           "t_air_c": 36.8,
-          "margin_to_rating_k": 17.2
+          "margin_to_rating_k": 15.8
         },
         "0.3": {
-          "t_cap_max_c": 49.7,
+          "t_cap_max_c": 50.5,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 20.3
+          "margin_to_rating_k": 19.5
         }
       },
       "0.70": {
         "0.0": {
-          "t_cap_max_c": 57.0,
+          "t_cap_max_c": 58.1,
           "at": "2010-08-08T13:00",
           "t_air_c": 37.4,
-          "margin_to_rating_k": 13.0
+          "margin_to_rating_k": 11.9
         },
         "0.1": {
-          "t_cap_max_c": 55.4,
-          "at": "2007-08-24T15:00",
-          "t_air_c": 36.8,
-          "margin_to_rating_k": 14.6
+          "t_cap_max_c": 56.8,
+          "at": "2007-08-24T14:00",
+          "t_air_c": 36.7,
+          "margin_to_rating_k": 13.2
         },
         "0.3": {
-          "t_cap_max_c": 52.0,
+          "t_cap_max_c": 52.8,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 18.0
+          "margin_to_rating_k": 17.2
         }
       },
       "0.80": {
         "0.0": {
-          "t_cap_max_c": 59.4,
+          "t_cap_max_c": 60.7,
           "at": "2010-08-08T13:00",
           "t_air_c": 37.4,
-          "margin_to_rating_k": 10.6
+          "margin_to_rating_k": 9.3
         },
         "0.1": {
-          "t_cap_max_c": 57.9,
-          "at": "2007-08-24T15:00",
-          "t_air_c": 36.8,
-          "margin_to_rating_k": 12.1
+          "t_cap_max_c": 59.4,
+          "at": "2007-08-24T14:00",
+          "t_air_c": 36.7,
+          "margin_to_rating_k": 10.6
         },
         "0.3": {
-          "t_cap_max_c": 54.1,
+          "t_cap_max_c": 55.1,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 15.9
+          "margin_to_rating_k": 14.9
         }
       },
       "0.90": {
         "0.0": {
-          "t_cap_max_c": 61.7,
+          "t_cap_max_c": 63.1,
           "at": "2010-08-08T13:00",
           "t_air_c": 37.4,
-          "margin_to_rating_k": 8.3
+          "margin_to_rating_k": 6.9
         },
         "0.1": {
-          "t_cap_max_c": 60.1,
+          "t_cap_max_c": 61.8,
           "at": "2007-08-24T14:00",
           "t_air_c": 36.7,
-          "margin_to_rating_k": 9.9
-        },
-        "0.3": {
-          "t_cap_max_c": 56.3,
-          "at": "2007-08-25T14:00",
-          "t_air_c": 34.1,
-          "margin_to_rating_k": 13.7
-        }
-      },
-      "0.95": {
-        "0.0": {
-          "t_cap_max_c": 62.9,
-          "at": "2010-08-08T13:00",
-          "t_air_c": 37.4,
-          "margin_to_rating_k": 7.1
-        },
-        "0.1": {
-          "t_cap_max_c": 61.4,
-          "at": "2007-08-24T14:00",
-          "t_air_c": 36.7,
-          "margin_to_rating_k": 8.6
+          "margin_to_rating_k": 8.2
         },
         "0.3": {
           "t_cap_max_c": 57.3,
@@ -159,127 +139,147 @@
           "t_air_c": 34.1,
           "margin_to_rating_k": 12.7
         }
+      },
+      "0.95": {
+        "0.0": {
+          "t_cap_max_c": 64.3,
+          "at": "2010-08-08T13:00",
+          "t_air_c": 37.4,
+          "margin_to_rating_k": 5.7
+        },
+        "0.1": {
+          "t_cap_max_c": 63.0,
+          "at": "2007-08-24T14:00",
+          "t_air_c": 36.7,
+          "margin_to_rating_k": 7.0
+        },
+        "0.3": {
+          "t_cap_max_c": 58.4,
+          "at": "2007-08-25T14:00",
+          "t_air_c": 34.1,
+          "margin_to_rating_k": 11.6
+        }
       }
     },
     "shaded": {
       "0.50": {
         "0.0": {
-          "t_cap_max_c": 42.6,
+          "t_cap_max_c": 42.8,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 27.4
+          "margin_to_rating_k": 27.2
         },
         "0.1": {
-          "t_cap_max_c": 40.2,
+          "t_cap_max_c": 40.4,
           "at": "2010-08-08T15:00",
           "t_air_c": 38.3,
-          "margin_to_rating_k": 29.8
+          "margin_to_rating_k": 29.6
         },
         "0.3": {
-          "t_cap_max_c": 39.8,
+          "t_cap_max_c": 39.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 30.2
+          "margin_to_rating_k": 30.1
         }
       },
       "0.60": {
         "0.0": {
-          "t_cap_max_c": 44.1,
+          "t_cap_max_c": 44.2,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 25.9
+          "margin_to_rating_k": 25.8
         },
         "0.1": {
-          "t_cap_max_c": 40.8,
+          "t_cap_max_c": 40.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 29.2
+          "margin_to_rating_k": 29.1
         },
         "0.3": {
-          "t_cap_max_c": 40.8,
+          "t_cap_max_c": 40.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 29.2
+          "margin_to_rating_k": 29.1
         }
       },
       "0.70": {
         "0.0": {
-          "t_cap_max_c": 45.5,
+          "t_cap_max_c": 45.7,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 24.5
+          "margin_to_rating_k": 24.3
         },
         "0.1": {
-          "t_cap_max_c": 41.8,
+          "t_cap_max_c": 41.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 28.2
+          "margin_to_rating_k": 28.1
         },
         "0.3": {
-          "t_cap_max_c": 41.8,
+          "t_cap_max_c": 41.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 28.2
+          "margin_to_rating_k": 28.1
         }
       },
       "0.80": {
         "0.0": {
-          "t_cap_max_c": 46.8,
+          "t_cap_max_c": 47.1,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 23.2
+          "margin_to_rating_k": 22.9
         },
         "0.1": {
-          "t_cap_max_c": 42.8,
+          "t_cap_max_c": 42.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 27.2
+          "margin_to_rating_k": 27.1
         },
         "0.3": {
-          "t_cap_max_c": 42.8,
+          "t_cap_max_c": 42.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 27.2
+          "margin_to_rating_k": 27.1
         }
       },
       "0.90": {
         "0.0": {
-          "t_cap_max_c": 48.2,
+          "t_cap_max_c": 48.4,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 21.8
+          "margin_to_rating_k": 21.6
         },
         "0.1": {
-          "t_cap_max_c": 43.7,
+          "t_cap_max_c": 43.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 26.3
+          "margin_to_rating_k": 26.1
         },
         "0.3": {
-          "t_cap_max_c": 43.7,
+          "t_cap_max_c": 43.9,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 26.3
+          "margin_to_rating_k": 26.1
         }
       },
       "0.95": {
         "0.0": {
-          "t_cap_max_c": 48.9,
+          "t_cap_max_c": 49.1,
           "at": "2010-08-06T13:00",
           "t_air_c": 34.4,
-          "margin_to_rating_k": 21.1
+          "margin_to_rating_k": 20.9
         },
         "0.1": {
-          "t_cap_max_c": 44.2,
+          "t_cap_max_c": 44.4,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 25.8
+          "margin_to_rating_k": 25.6
         },
         "0.3": {
-          "t_cap_max_c": 44.2,
+          "t_cap_max_c": 44.4,
           "at": "2007-08-25T14:00",
           "t_air_c": 34.1,
-          "margin_to_rating_k": 25.8
+          "margin_to_rating_k": 25.6
         }
       }
     }
@@ -288,14 +288,14 @@
     "h_c_scale": 0.7,
     "sunlit_still_air": {
       "0.50": {
-        "t_cap_max_c": 54.0,
+        "t_cap_max_c": 55.0,
         "at": "2010-08-08T13:00",
-        "margin_to_rating_k": 16.0
+        "margin_to_rating_k": 15.0
       },
       "0.95": {
-        "t_cap_max_c": 66.4,
+        "t_cap_max_c": 68.0,
         "at": "2010-08-08T13:00",
-        "margin_to_rating_k": 3.6
+        "margin_to_rating_k": 2.0
       }
     },
     "why": "long-horizontal-cylinder correlation applied to a short tilted one — ours"
@@ -311,75 +311,75 @@
       }
     },
     "shaded_alpha0.50_k0.0": {
-      "t_eff_c": 15.29,
-      "mean_c": 10.95,
+      "t_eff_c": 15.34,
+      "mean_c": 10.98,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 53.0,
-        "conservative_yr": 16.4
+        "optimistic_yr": 52.9,
+        "conservative_yr": 16.3
       }
     },
     "shaded_alpha0.50_k0.1": {
-      "t_eff_c": 14.27,
-      "mean_c": 10.23,
+      "t_eff_c": 14.35,
+      "mean_c": 10.28,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 56.9,
-        "conservative_yr": 17.6
+        "optimistic_yr": 56.6,
+        "conservative_yr": 17.5
       }
     },
     "shaded_alpha0.95_k0.0": {
-      "t_eff_c": 17.26,
-      "mean_c": 12.16,
+      "t_eff_c": 17.35,
+      "mean_c": 12.21,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 46.3,
-        "conservative_yr": 14.3
+        "optimistic_yr": 46.0,
+        "conservative_yr": 14.2
       }
     },
     "shaded_alpha0.95_k0.1": {
-      "t_eff_c": 15.46,
-      "mean_c": 10.99,
+      "t_eff_c": 15.62,
+      "mean_c": 11.08,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 52.4,
-        "conservative_yr": 16.2
+        "optimistic_yr": 51.8,
+        "conservative_yr": 16.0
       }
     },
     "sunlit_alpha0.50_k0.0": {
-      "t_eff_c": 19.96,
-      "mean_c": 13.3,
+      "t_eff_c": 20.4,
+      "mean_c": 13.5,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 38.4,
-        "conservative_yr": 11.9
+        "optimistic_yr": 37.2,
+        "conservative_yr": 11.5
       }
     },
     "sunlit_alpha0.50_k0.1": {
-      "t_eff_c": 17.27,
-      "mean_c": 11.79,
+      "t_eff_c": 17.74,
+      "mean_c": 12.03,
       "hours_above_60c": 0,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 46.2,
-        "conservative_yr": 14.3
+        "optimistic_yr": 44.8,
+        "conservative_yr": 13.8
       }
     },
     "sunlit_alpha0.95_k0.0": {
-      "t_eff_c": 26.52,
-      "mean_c": 16.21,
-      "hours_above_60c": 60,
+      "t_eff_c": 27.41,
+      "mean_c": 16.55,
+      "hours_above_60c": 197,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 24.4,
-        "conservative_yr": 7.5
+        "optimistic_yr": 22.9,
+        "conservative_yr": 7.1
       }
     },
     "sunlit_alpha0.95_k0.1": {
-      "t_eff_c": 21.87,
-      "mean_c": 13.91,
-      "hours_above_60c": 4,
+      "t_eff_c": 22.91,
+      "mean_c": 14.34,
+      "hours_above_60c": 10,
       "life_at_ratified_vbat_ov": {
-        "optimistic_yr": 33.6,
-        "conservative_yr": 10.4
+        "optimistic_yr": 31.3,
+        "conservative_yr": 9.7
       }
     }
   },
@@ -406,6 +406,6 @@
     "canopy transmittance for beam and diffuse — the shaded case is open-sky diffuse, an UPPER bound on under-crown",
     "sky long-wave cooling at night — makes the capsule colder than air, so cold hours are a LOWER bound"
   ],
-  "verdict_hot": "Not exceeded: the hottest capsule hour of 30 ERA5 years is 62.9 °C (sunlit, α 0.95, still air, adiabatic base; 2010-08-08T13:00, air 37.4 °C) against the 70 °C EDLC rating — margin 7.1 K; 52.0 °C at α 0.5; shaded (open-sky diffuse only) 48.9 °C. With still-air h_c × 0.7 (the correlation off its home geometry) the sunlit worst is 66.4 °C — margin 3.6 K (the h_c shift alone is 3.5 K), so for a DARK finish in full sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 16.0 K. The capsule requirement's upper 85 °C is not approached in this climate. NOT modelled and moving the hot answer UP: sunlit bark conducting through the flange rim; ERA5 smoothing of station maxima.",
-  "verdict_aging": "The EDLC ages at T_eff 13.0 °C in open air (vendor 2×/10 K over 262992 hours), not at the 10 °C reference point; under the radome 14.3–17.3 °C shaded and 17.3–26.5 °C sunlit. At the ratified VBAT_OV the life is 19.1–62.0 yr in air and 7.5–62.0 yr across every case: the conservative voltage coefficient stays BELOW 20 yr in every case, the optimistic one stays ABOVE 20 yr in every case — so the 20-year claim now rests on the vendor voltage coefficient alone."
+  "verdict_hot": "Not exceeded: the hottest capsule hour of 30 ERA5 years is 64.3 °C (sunlit, α 0.95, still air, adiabatic base; 2010-08-08T13:00, air 37.4 °C) against the 70 °C EDLC rating — margin 5.7 K; 52.9 °C at α 0.5; shaded (open-sky diffuse only) 49.1 °C. With still-air h_c × 0.7 (the correlation off its home geometry) the sunlit worst is 68.0 °C — margin 2.0 K (the h_c shift alone is 3.7 K), so for a DARK finish in full sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 15.0 K. The capsule requirement's upper 85 °C is not approached in this climate. NOT modelled and moving the hot answer UP: sunlit bark conducting through the flange rim; ERA5 smoothing of station maxima.",
+  "verdict_aging": "The EDLC ages at T_eff 13.0 °C in open air (vendor 2×/10 K over 262992 hours), not at the 10 °C reference point; under the radome 14.3–17.4 °C shaded and 17.7–27.4 °C sunlit. At the ratified VBAT_OV the life is 19.1–62.0 yr in air and 7.1–62.0 yr across every case: the conservative voltage coefficient stays BELOW 20 yr in every case, the optimistic one stays ABOVE 20 yr in every case — so the 20-year claim now rests on the vendor voltage coefficient alone."
 }

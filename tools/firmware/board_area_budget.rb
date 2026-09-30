@@ -28,12 +28,20 @@
 #   • заповнення 70 / 60 % — наше прочитання щільності ручного розведення, НЕ
 #     вимір; друкується, щоб показати чутливість, і вердикту не несе.
 
+require "json"
+
 USABLE_EDGE_MM = 0.3      # відступ міді від краю — `02_01 §3.5`
-CEILING_MM     = 15.17    # найслабша можлива стеля (комір 0.2, лише SLM) — `52` §collar_radial_budget
 # Радіальний ланцюг купола, дзеркало `52` §rim_boss_radial_budget (правити в домі):
 # стеля плати = Ø радома − 2 × 4.715 (стінка + прилив) − 2 × стінка коміра.
 BOSS_BAND_MM   = 4.715
-COLLAR_WALL_MM = 0.2
+COLLAR_WALL_MM = 0.2      # читання друкованої підлоги — стінки коміра не задає ніщо (`00_07` HW.33)
+# Купол читається з маніфесту CAD, не переписується сюди: ⚖️ founder 2026-09-29 (корінь) відкрив фриз Ø25,
+# і з 2026-09-30 Ø купола ВИВЕДЕНО з цілі цього калькулятора (radome.json `dome_diameter_mm`, провенанс —
+# `_provenance.json`). Пін нижче тримає коло замкненим: ціль → купол → стеля → заповнення ≤ 70 %.
+RADOME_CEM     = JSON.parse(File.read(File.expand_path("../cad/cem/radome.json", __dir__)))
+DOME_MM        = RADOME_CEM.fetch("dome_diameter_mm")
+CEILING_MM     = DOME_MM - (2 * BOSS_BAND_MM) - (2 * COLLAR_WALL_MM)   # стеля контуру на цьому куполі
+FIRST_PASS_CEILING_MM = 15.17   # стеля до кореня (купол Ø25) — якір першого проходу, ІСТОРІЯ
 FILL_LEVELS    = [ 1.0, 0.7, 0.6 ].freeze
 
 def rect(w, h) = w * h
@@ -93,7 +101,13 @@ def parts(booster:, rigid_flex:, edlc: "kr")
     [ "ключ BME280 TPS22860 SOT-23-6 (поз. 21)", SOT23_6 ],
     [ "SE05x DNP (проксі QFN-20 3 × 3) + 0402 × 3 (поз. 13)", rect(4.26, 4.26) + 3 * C0402 ],
     [ "ключ Vcap-sense TPS22860 SOT-23-6 + 0402 × 2 (поз. 23)", SOT23_6 + 2 * R0402 ],
-    [ "SWD-пади × 5, Ø1.0 (⚖️ 2026-09-27: на всіх платах серії)", 5 * rect(1.50, 1.50) ]
+    [ "SWD-пади × 5, Ø1.0 (⚖️ 2026-09-27: на всіх платах серії)", 5 * rect(1.50, 1.50) ],
+    # Кишеня вента (⚖️ founder 2026-09-29, `02_01 §3.4`; геометрія в radome.json з 2026-09-30, `00_07` HW.32): камера
+    # сідає на плату довкола BME280 — її стінка є землею прокладки, тож відбиток корпусу (отвір + 2 × стінка)
+    # мінус кортьярд сенсора, який уже стоїть рядком вище. Саму прокладку жоден BOM ще не несе.
+    [ "кишеня BME280 — земля прокладки за кортьярдом сенсора (HW.32; radome.json pocket_*)",
+      rect(RADOME_CEM.fetch("pocket_opening_width_mm") + (2 * RADOME_CEM.fetch("pocket_wall_mm")),
+           RADOME_CEM.fetch("pocket_opening_depth_mm") + (2 * RADOME_CEM.fetch("pocket_wall_mm"))) - rect(2.82, 3.08) ]
   ]
   rf_top << [ "пади THT-виводів EDLC × 2 (поз. 3)", EDLC.fetch(edlc)[2] ] if EDLC.fetch(edlc)[2].positive?
   { "Power Deck, верх" => power, "RF Deck, низ" => rf_bottom, "RF Deck, верх" => rf_top }
@@ -150,19 +164,26 @@ def target_for(booster:, edlc:, rigid_flex:)
   [ area, geometric_floor(edlc, socket: !rigid_flex) ]
 end
 
-# Самоперевірка. Якорі — ДВА числа, яких модель не вигадувала: корисна площа першого проходу й
-# ратифікований Ø25 радома на тій самій стелі. Решта — не якорі, а ДЗЕРКАЛА: канон цитує вихід
-# моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
+# Самоперевірка. Якорі — числа, яких модель не вигадувала: корисна площа першого проходу (історія) і
+# купол CAD, ВИВЕДЕНИЙ з цілі цього калькулятора (radome.json). Решта — не якорі, а ДЗЕРКАЛА: канон
+# цитує вихід моделі, тож пін ловить дрейф канону від моделі, але не помилку самої моделі.
+# 🔑 Пін «купол ≥ радом під ціль» замикає коло: новий рядок BOM тягне ціль угору → купол у CAD
+# відстає → пін червоніє, доки корінь не рухнуть знову або не приймуть заповнення понад 70 %.
 if ARGV == [ "--assert" ]
   near = ->(value, canon) { (value - canon).abs < 0.05 }
   target = ->(booster, rigid) { target_for(booster:, edlc: "kr", rigid_flex: rigid).max }
+  fill_on_ceiling = sums(parts(booster: "nn02_224", edlc: "kr", rigid_flex: false)).values.sum / (3 * usable(CEILING_MM))
   checks = {
-    "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід)" => near.(usable(CEILING_MM), 166.7),
-    "стеля Ø15.17 ⟷ радом Ø25 (`52` §rim_boss_radial_budget)" => (radome_for(CEILING_MM) - 25.0).abs < 1e-9,
-    "ціль kr · nn02_224 (обвідна бустерів, ⚖️ HW.33): пара B2B Ø19.5, rigid-flex Ø18.1 (`02_01 §3.5`)" =>
-      near.(target.("nn02_224", false), 19.5) && near.(target.("nn02_224", true), 18.1),
-    "сусідній кандидат, kr · nn02_201: пара B2B Ø19.3, rigid-flex Ø17.8 (`02_01 §3.5`, ціна обвідної)" =>
-      near.(target.("nn02_201", false), 19.3) && near.(target.("nn02_201", true), 17.8)
+    "корисна площа на Ø15.17 = 166.7 мм² (`02_01 §3.5`, перший прохід — стеля до кореня, історія)" => near.(usable(FIRST_PASS_CEILING_MM), 166.7),
+    "стеля Ø15.17 ⟷ радом Ø25 до кореня (`52` §rim_boss_radial_budget, історія)" => (radome_for(FIRST_PASS_CEILING_MM) - 25.0).abs < 1e-9,
+    "ціль kr · nn02_224 (обвідна бустерів ⚖️ HW.33, з кільцем кишені HW.32): пара B2B Ø20.0, rigid-flex Ø18.5 (`02_01 §3.5`)" =>
+      near.(target.("nn02_224", false), 19.97) && near.(target.("nn02_224", true), 18.54),
+    "сусідній кандидат, kr · nn02_201: пара B2B Ø19.7, rigid-flex Ø18.2 (`02_01 §3.5`, ціна обвідної)" =>
+      near.(target.("nn02_201", false), 19.70) && near.(target.("nn02_201", true), 18.24),
+    "купол radome.json Ø#{DOME_MM} ≥ радом під ціль (пара B2B) у межах 0.05 — ціль → купол замкнено (`02_01 §3.5`, 2026-09-30)" =>
+      radome_for(target.("nn02_224", false)) - DOME_MM <= 0.05,
+    format("заповнення трьох сторін на стелі цього купола (Ø%.2f) ≤ 70 %% + округлення купола до 0.1", CEILING_MM) =>
+      fill_on_ceiling <= 0.705
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
@@ -183,6 +204,8 @@ variant = opts.slice(:booster, :edlc)
 
 base = parts(**variant, rigid_flex: false)
 puts "Бюджет площі плати Солдата — кортьярди (HW.9, другий прохід)"
+puts format("Купол radome.json Ø%.1f → стеля контуру Ø%.2f (− 2 × %.3f прилив − 2 × %.1f комір); до кореня — Ø%.2f на куполі Ø25",
+            DOME_MM, CEILING_MM, BOSS_BAND_MM, COLLAR_WALL_MM, FIRST_PASS_CEILING_MM)
 puts format("Контур Ø%.2f → корисна площа сторони %.1f мм² (відступ міді %.1f мм)",
             opts[:diameter], usable(opts[:diameter]), USABLE_EDGE_MM)
 puts

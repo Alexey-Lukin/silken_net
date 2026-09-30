@@ -15,8 +15,8 @@ public class AssemblyTests
 
         AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
         Assert.Equal("skirt", cem.MateStrategy);
-        Assert.Equal(25f, cem.Flange.FlangeDiameterMm);   // nested Деталь-3 frozen dim inherited
-        Assert.Equal(25f, cem.Radome.DomeDiameterMm);     // nested Деталь-4 frozen dim inherited
+        Assert.Equal(29.8f, cem.Flange.FlangeDiameterMm); // nested Деталь-3 dim inherited (derived Ø, root 2026-09-29)
+        Assert.Equal(29.8f, cem.Radome.DomeDiameterMm);   // nested Деталь-4 dim inherited
         Assert.Equal(3.5f, cem.Radome.LockGrooveZMm);
     }
 
@@ -37,10 +37,11 @@ public class AssemblyTests
     [Fact]
     public void Lug_Tips_Protrude_Past_The_Dome_Ø__MATE_Ø_Conflict()
     {
-        // Lug tip reaches R = flangeR + protrusion = 14.5 (Ø29), past the Ø25 dome; and the Ø25 disc fouls
-        // the Ø(25−2·wall)=Ø21 cavity ⇒ radial gap −2.0. The core MATE-Ø finding (HW.17).
+        // Lug tip reaches R = flangeR + protrusion = 16.9 (Ø33.8), past the Ø29.8 dome; and the Ø29.8 disc fouls
+        // the Ø(29.8−2·wall)=Ø25.8 cavity ⇒ radial gap −2.0. The core MATE-Ø finding (HW.17) — the gap is −wall·2
+        // whatever the Ø, since flange Ø = dome Ø (it read 14.5 / Ø29 / Ø21 until the root, 2026-09-30).
         AnchorAssemblyCem cem = new();
-        Assert.Equal(14.5f, Assembly.LugTipRadiusMm(cem));    // Ø29
+        Assert.Equal(16.9f, Assembly.LugTipRadiusMm(cem));    // Ø33.8
         Assert.True(Assembly.LugTipRadiusMm(cem) > cem.Radome.DomeDiameterMm / 2f, "lugs must exceed the dome OD");
         Assert.Equal(-2.0f, Assembly.MateRadialGapMm(cem), 3);
     }
@@ -105,14 +106,15 @@ public class AssemblyTests
         Assert.Equal(cem.Radome.SlotClearanceMm, Assembly.SealLandMarginInnerMm(cem), 3);
         Assert.Equal(cem.Radome.SlotClearanceMm, Assembly.SealLandMarginOuterMm(cem), 3);
 
-        // Frozen dims, spelled out so a reader can check them against 02_02 §3.5: land r 7.785–10.7, groove r 8.085–10.4.
-        Assert.Equal(7.785f, Radome.SealLandInnerRMm(cem.Radome), 3);
-        Assert.Equal(10.7f, Radome.SealLandOuterRMm(cem.Radome), 3);
-        Assert.Equal(8.085f, CathodeFlange.ORingGrooveInnerRMm(cem.Flange), 3);
-        Assert.Equal(10.4f, CathodeFlange.ORingGrooveOuterRMm(cem.Flange), 3);
+        // Shipped dims, spelled out so a reader can check them against 02_02 §3.5: land r 10.185–13.1, groove r 10.485–12.8
+        // (they read 7.785–10.7 / 8.085–10.4 on the Ø25 dome until the root, 2026-09-30 — every term but R unchanged).
+        Assert.Equal(10.185f, Radome.SealLandInnerRMm(cem.Radome), 3);
+        Assert.Equal(13.1f, Radome.SealLandOuterRMm(cem.Radome), 3);
+        Assert.Equal(10.485f, CathodeFlange.ORingGrooveInnerRMm(cem.Flange), 3);
+        Assert.Equal(12.8f, CathodeFlange.ORingGrooveOuterRMm(cem.Flange), 3);
 
         // The zero-margin state, built on purpose: a radome socket clearance twice the flange's puts the land's
-        // outer edge EXACTLY on the groove's outer edge (12.5 − 1.5 − 2c = 12.5 − 1.5 − c − c). The inner margin
+        // outer edge EXACTLY on the groove's outer edge (14.9 − 1.5 − 2c = 14.9 − 1.5 − c − c). The inner margin
         // is still positive there, so only the strict `> 0` on the outer side refuses it — `>=` would pass it.
         AnchorAssemblyCem flush = cem with { Radome = cem.Radome with { SlotClearanceMm = 2f * cem.Flange.SlotClearanceMm } };
         Assert.Equal(0f, Assembly.SealLandMarginOuterMm(flush), 3);
@@ -121,10 +123,10 @@ public class AssemblyTests
     }
 
     [Fact]
-    public void Inboard_Candidate_Pulls_The_Lug_Tips_Within_Ø25()
+    public void Inboard_Candidate_Pulls_The_Lug_Tips_Within_The_Flange_Ø()
     {
-        // The inboard MATE-Ø candidate clamps protrusion to 0 ⇒ lug tip = flangeR = Ø25 (no protrusion).
+        // The inboard MATE-Ø candidate clamps protrusion to 0 ⇒ lug tip = flangeR = Ø29.8 (no protrusion).
         AnchorAssemblyCem cem = new() { Flange = new CathodeFlangeCem { LugProtrusionMm = 0f } };
-        Assert.Equal(12.5f, Assembly.LugTipRadiusMm(cem));    // Ø25 — within the dome OD
+        Assert.Equal(14.9f, Assembly.LugTipRadiusMm(cem));    // Ø29.8 — within the dome OD
     }
 }

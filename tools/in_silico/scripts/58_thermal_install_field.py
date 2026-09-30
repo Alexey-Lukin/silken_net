@@ -124,7 +124,7 @@ T_CAMBIUM_UPPER_C = 60.0
 
 # ─────────────────────────── Geometry (mm) ───────────────────────────
 # Frozen dims — canonical home 01_01 §1 table. Mirrors, do not edit here.
-D_FLANGE = 25.0          # Zone-3 flange OD = radome Ø (frozen)
+D_FLANGE = 25.0          # Zone-3 flange OD at the time of THIS run (= radome Ø; 29.8 since the root, 2026-09-30). ⚠️ NOT re-run: the bark-seated-flange premise of this model predates 01_04 §3.1 as well — owner 00_07 HW.6
 T_FLANGE = 3.0           # flange thickness — cem/cathode_flange.json (PLACEHOLDER, HW.8)
 D_SLEEVE_OUT = 15.0      # PEEK sleeve OD = wound Ø (frozen)
 D_SLEEVE_BORE = 11.0     # sleeve bore = Zone-1 shank Ø (frozen)

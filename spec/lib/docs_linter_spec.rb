@@ -643,7 +643,7 @@ end
     it "flags a superseded flange/radome Ø range next to the part keyword" do
       hits = described_class.anchor_dimension_drift("07_02", "радом-купол ∅20–30 мм, термолиття\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("Ø = 25 mm")
+      expect(hits.first).to include("Ø = 29.8 mm")   # the root verdict (2026-09-30) moved the frozen 25; the RANGE rule is unchanged
     end
 
     it "flags a superseded Zone 2 length range" do

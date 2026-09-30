@@ -732,9 +732,9 @@ the sweep became the basis of the delegated verdict 2026-09-27 that specifies α
 
 | Hottest hour, still air | α 0.50 | α 0.95 | Margin to 70 °C at α 0.95 |
 |---|---|---|---|
-| Sunlit (the beam reaches the capsule) | 52.0 °C | 62.9 °C | 7.1 K |
-| Sunlit, h_c × 0.7 (the correlation off its home geometry) | 54.0 °C | 66.4 °C | 3.6 K |
-| Shaded (open-sky diffuse only — an upper bound under a crown) | 42.6 °C | 48.9 °C | 21.1 K |
+| Sunlit (the beam reaches the capsule) | 52.9 °C | 64.3 °C | 5.7 K |
+| Sunlit, h_c × 0.7 (the correlation off its home geometry) | 55.0 °C | 68.0 °C | 2.0 K |
+| Shaded (open-sky diffuse only — an upper bound under a crown) | 42.8 °C | 49.1 °C | 20.9 K |
 
 The second output is the temperature the EDLC AGES at: the vendor's doubling rule averaged over the
 hours, T_eff = 10·log2⟨2^(T/10)⟩, with the life taken from `51`'s own `capacitor_life_hours` at the
@@ -743,8 +743,10 @@ ratified `VBAT_OV` (imported, not re-implemented — the 10/25 °C reference poi
 | Series | T_eff | Life, conservative–optimistic |
 |---|---|---|
 | Open air | 13.0 °C | 19.1–62.0 yr |
-| Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.3–17.3 °C | 14.3–56.9 yr |
-| Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.3–26.5 °C | 7.5–46.2 yr |
+| Under the radome, shaded (α 0.50/0.95 × k 0/0.1) | 14.35–17.35 °C | 14.2–56.6 yr |
+| Under the radome, sunlit (α 0.50/0.95 × k 0/0.1) | 17.74–27.41 °C | 7.1–44.8 yr |
+
+Re-run 2026-09-30 on the Ø29.8 dome (the root verdict opened the Ø25 freeze for the board, `02_01 §3.5`): the larger solar area costs ≈ 1.4 K of hot margin (7.1 → 5.7 K at α 0.95, still air) and ≈ 0.4–0.9 °C of sunlit T_eff; every verdict stands.
 
 Cold side: the air was below the −25 °C floor for 64 hours in 30 years (9 days, coldest −27.4 °C);
 the lump tracks the air at night in this model, and real sky cooling would make the capsule colder,

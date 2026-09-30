@@ -626,7 +626,7 @@ module DocsLinter
   # At the NEXT freeze, add the newly-superseded range here — exactly like DEPRECATED_TERMS.
   ANCHOR_DIM_DRIFT = [
     [ /(?<!\d)20\s*[–-]\s*30(?!\d)/, /фланець|radome|радом|таблетк|купол|crown/i,
-     "flange/radome Ø = 25 mm frozen (01_01 §1)" ],
+     "flange/radome Ø = 29.8 mm since the root 2026-09-30, 25 frozen before (01_01 §1)" ],
     [ /(?<!\d)40\s*[–-]\s*60(?!\d)/, /zone ?2|зона ?2|втулк|терморозрив/i,
      "Zone 2 length = 50 mm frozen (01_01 §1)" ]
   ].freeze

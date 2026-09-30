@@ -100,7 +100,7 @@
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models
   the skirt/inboard MATE-Ø candidates. An AUDIT table — `verify` exits on a broken render only; the
   mismatch numbers are asserted by pure xUnit. Canon `02_02 §4.4`. ⚖️ **The reconcile is NOT one bench job:
-  the RADIAL half was ratified 2026-09-10** (Ø25 stays, a local internal rim boss carries socket + seal land,
+  the RADIAL half was ratified 2026-09-10** (Ø25 stays — until the root verdict opened it for the board, 2026-09-29/30 → Ø29.8; a local internal rim boss carries socket + seal land,
   `skirt` withdrawn because it deletes the sealing face), **and the bayonet-Z half was RATIFIED 2026-09-11**
   (`02_02 §4.4`: lugs on a RAISED COLLAR above the sealing face) — because the mismatch is `t/2 + lockGrooveZ`,
   two positive terms, so no assignment of the frozen dims reaches zero and the lug needs a Z of its own

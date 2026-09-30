@@ -6,7 +6,7 @@ using Leap71.ShapeKernel;
 namespace SilkenCad;
 
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. A SOLID Ti
-// flange (Ø25 frozen) on the barbed Zone-3 shank that press-fits into the PEEK Zone-2 sleeve, with
+// flange (Ø = radome Ø, derived from the board target since the root verdict 2026-09-29 — CathodeFlangeCem) on the barbed Zone-3 shank that press-fits into the PEEK Zone-2 sleeve, with
 // radial bayonet lugs that mate the PEEK Radome (Деталь 4, фаза 2). Reuses the §4.3 mechanical lock
 // for the shank + barbs (no duplication); the lock cuts a DIN-471 groove only where `MechanicalLock.HasGroove`
 // says one exists, and this end has none since ⚖️ 2026-09-18 (00_07 HW.26). Solid bodies come from ShapeKernel voxConstruct
@@ -60,7 +60,7 @@ internal static class CathodeFlange
         //    HasGroove — none on this end since ⚖️ 2026-09-18 (00_07 HW.26: zero groove fields, manifest AND defaults).
         Voxels voxPart = MechanicalLock.Build(ShankCem(cem));
 
-        // 2. Solid Ø25 flange disc on top — a true filled cylinder (gotcha #9: voxConstruct, NOT the SDF ctor).
+        // 2. Solid flange disc on top (Ø from the CEM — = radome Ø) — a true filled cylinder (gotcha #9: voxConstruct, NOT the SDF ctor).
         LocalFrame oFlange = new(new Vector3(0f, 0f, fShankLen));
         voxPart.BoolAdd(new BaseCylinder(oFlange, fThick, fFlangeR).voxConstruct());
 

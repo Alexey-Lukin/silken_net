@@ -242,6 +242,6 @@ internal static class AxialStack
 // The assembled stack + the three transformed parts (kept apart for the render overlap measures). At
 // the frozen nominal dims these read counter-intuitively, and the audit is HONEST about why: Zone1∩Zone2
 // = 0 (anode Ø11 and bore Ø11 are line-to-line → surfaces TOUCH but volumes don't overlap; real press-fit
-// is +interference on the bench); sleeve∩capsule ≈ a thin shell = the flange SHOULDER (Ø25 disc) resting
+// is +interference on the bench); sleeve∩capsule ≈ a thin shell = the flange SHOULDER (the flange disc) resting
 // on the sleeve TOP face (Ø15), NOT the shank — the shank Ø9 floats free in the bore Ø11 (the F1 clearance).
 internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, Voxels? Bus = null, Voxels? Liner = null, double LinerAddsMm3 = 0.0);

@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import PAPER_DIR, REPO_ROOT  # noqa: E402  (stdlib-only module: Path + numbers)
+from lib.constants import PAPER_DIR, REPO_ROOT
 
 OUT_MD = PAPER_DIR / "10_supporting_information.md"
 IN_SILICO = "docs/protocols/ebfc/in_silico"

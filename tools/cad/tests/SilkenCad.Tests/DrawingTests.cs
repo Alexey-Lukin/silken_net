@@ -296,7 +296,7 @@ public class DrawingTests
         string svg = Drawing.CathodeFlange(new CathodeFlangeCem(), "test");
         Assert.StartsWith("<svg", svg);
         Assert.Contains("</svg>", svg);
-        Assert.Contains("Ø25", svg);                 // frozen flange Ø (01_01 §1, HW.8 axial freeze)
+        Assert.Contains("Ø29.8", svg);               // flange Ø = radome Ø (01_01 §1) — the root verdict opened the Ø25 freeze, 2026-09-29/30
         Assert.Contains("Ø4.5 GND pad (concept)", svg);   // drawn, but as absent — the pin below
         Assert.Contains("3× bayonet lug", svg);      // lug count straight from the CEM
         Assert.Contains("rev test", svg);
@@ -326,7 +326,7 @@ public class DrawingTests
             string dxf = File.ReadAllText(path);
             Assert.Contains("netDxf", dxf);
             Assert.Contains("AcDbText", dxf);
-            Assert.Contains("%%c25", dxf);                             // Ø25 in the DXF diameter code
+            Assert.Contains("%%c29.8", dxf);                           // Ø29.8 in the DXF diameter code
             Assert.Contains("EAAE on the catalytic face only", dxf);   // CEM note consumed
             Assert.DoesNotContain("NaN", dxf);
         }

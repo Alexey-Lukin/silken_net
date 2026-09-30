@@ -41,7 +41,7 @@ The obvious path (STL → STEP → FreeCAD/CAD → 2D drawing) is **lossy and ma
   remodeling is required for tight tolerances" (holocreators, GrabCAD, mesh2solid). For a
   **voxel gyroid** at 0.1 mm this is millions of facets and no clean analytic faces to dimension.
 - It **throws away what we already have**: the CEM **knows every dimension exactly** (Ø11, Ø15,
-  50 mm, Ø25, shank, bore…) as source-of-truth numbers. Round-tripping them through a mesh and
+  50 mm, Ø29.8, shank, bore…) as source-of-truth numbers. Round-tripping them through a mesh and
   back loses precision and provenance — the opposite of the SSOT discipline.
 - It needs a **GUI + manual labour** per revision → not Git-diffable, not deterministic, drifts.
 
@@ -71,7 +71,7 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 | **Ti-coin** (Деталь, Stage 2) | Front (Ø16 circle) + side (16×1 rect) + eyelet detail | Trivial analytic; **do FIRST** (most urgent physical part). Active-area Ø + "1 face ≈ 2 cm²" callout (`01_03 §3.5`). |
 | **Mechanical lock shank** (§4.3, HW.26 — Zone-1 anchor end + Zone-3 flange end) | Front (shank Ø, + bus/cathode-channel bore when hollow) + side (silhouette + barb-zone envelope + the DIN-471 groove notch on the Zone-1 end only; the Zone-3 sheet prints «NO DIN-471 groove on this end» — the ring as a backup was removed on both ends and the Zone-3 groove from the geometry, ⚖️ 2026-09-18) | Analytic; the Zone-1 groove width/depth dimension is the acceptance-drift catch (`cem_canon_sync` pins the same numbers by regex). Ratchet drawn as a spec-callout envelope, not tooth-by-tooth (same "spec, not point-by-point" logic §3/§6 use for the gyroid). |
 | **Zone-2 sleeve** (Деталь 2) | Side section (bore Ø11 / OD Ø15 / 50 mm) + end view | Plain tube — fully analytic from CEM. Flange-shoulder is deferred (`01_01 §Zone 2`); hex is not deferred but an open decision — it cannot share the interference-fit bore (`01_01 §4.3` C, `00_07` HW.26). |
-| **Деталь 3 flange** | Front (Ø25 + 3 lugs) + side section (shank, bore, O-ring groove) | Analytic; lugs at 120° (asymmetric bbox, as in `verify`). |
+| **Деталь 3 flange** | Front (Ø29.8 + 3 lugs) + side section (shank, bore, O-ring groove) | Analytic; lugs at 120° (asymmetric bbox, as in `verify`). |
 | **Деталь 4 radome** | Side section (dome + bell + cavity + socket) + bottom (socket) | Analytic revolved + bell radius callout (≥3/R≥5, `01_04 §5.5`). |
 | **Zone-1 anode (gyroid)** | **Envelope** (section A–A: Ø11, no core — the lattice runs to the axis and the bus wire is welded to the top face since 2026-09-18; side Ø11 × L40) + **spec callout** | ✅ **Shipped 2026-09-11** as `draw anchor_zone1` (`00_07` HW.1) — the carrier of the `01_02 §3.6` coating map. ⛔ **The cross-section this row used to prescribe was NOT taken, and the reason is canon, not effort:** an honest SDF-sampled contour is available pure-managed (`Zone1Anode.Gyroid` is plain math), but [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) rules the gyroid is a spec callout on an envelope and never drawn cell-by-cell — over-drawing a PBF lattice promises a precision nobody measures (acceptance = Archimedes + µCT, ISO/ASTM 52900), and this file's own header says canon wins. Pinned by `AnchorTests`-side `DrawingTests.Anchor_Sheet_Carries_The_Lattice_As_A_Callout_…`, so a later "let's sample the SDF" pass has to argue with canon rather than drift into it. |
 | **Axial stack / capsule-end** | **Assembly drawing** — section through the stacked zones | Reuse `AxialStack.Build` Z-layout; show press-fit interfaces + the F1 gap + datum chain. The audit, drawn. |
@@ -109,7 +109,7 @@ restate. If the two ever disagree, canon wins and this section is the one to fix
 A useful drawing here is **not** a full geometric dump — it's the **acceptance contract**:
 
 - **Envelope + critical mating dims** with **tolerances**: the press-fit Ø11 bore / Ø15 OD, flange
-  Ø25, bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
+  Ø29.8 (root 2026-09-30; Ø25 before), bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
   in a _PEEK_ bore (E≈4 vs Ti≈110-120 GPa — canon baseline; the Zone-1 alloy is bake-off-gated)** → the same geometric interference gives a different contact
   pressure. The CEM carries the band in **µm** (`tools/in_silico/lib/constants.py`), with
   🔴 **a provenance correction, 2026-09-11 (`00_07` HW.3): this line said «Lamé-computed µm» and that is wrong about the SOURCE.** 5–34 µm is a plain ISO 286 table read (H7 0/+18 + r6 +23/+34 on Ø11 — read under the s6 label; s6 there gives 10–39, and no table class is ratified, `00_07` HW.3); Lamé CONSUMES that band to compute a contact pressure and does not produce it. The sharpness is that `01_01 §4.2` REQUIRES the drawing's micrometres to come from the Lamé interference window and explicitly rejects a blind ISO 286 lookup — so the old wording dressed the rejected source in the required source's name, in the one file that tells a future author what the CEM is for. ⚖️ Re-deriving the band was RATIFIED 2026-09-18 (`00_07` HW.3): it is solved from the window — floor: the fit still holds at +40 °C; ceiling: PEEK von Mises at −30 °C — and waits on its inputs only; at its MIN the 5–34 band lies below that floor, so the number will move.

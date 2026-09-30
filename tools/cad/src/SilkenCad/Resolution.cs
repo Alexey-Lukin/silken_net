@@ -91,6 +91,15 @@ internal static class Resolution
         Add(a, strPrefix + "rim_boss_seal_band", Radome.SealBandMm(cem), dVoxelMm, bDerived: true);
         Add(a, strPrefix + "rim_boss_socket_skin", Radome.SocketSkinMm(cem), dVoxelMm, bDerived: true);
         Add(a, strPrefix + "lug_radius_mm", cem.LugRadiusMm, dVoxelMm);
+        // Vent facet + pocket (2026-09-30): the hole, the target-ring lip and the housing wall are declared; the pad's sagitta,
+        // the air in front of the vent seat and the bridge passage are DERIVED and thinner than anything declared.
+        Add(a, strPrefix + "vent_hole_diameter_mm", cem.VentHoleDiameterMm, dVoxelMm);
+        Add(a, strPrefix + "vent_ring_wall_mm", cem.VentRingWallMm, dVoxelMm);
+        Add(a, strPrefix + "vent_ring_height_mm", cem.VentRingHeightMm, dVoxelMm);
+        Add(a, strPrefix + "pocket_wall_mm", cem.PocketWallMm, dVoxelMm);
+        Add(a, strPrefix + "vent_pad_thickness", Radome.VentPadThicknessMm(cem), dVoxelMm, bDerived: true);
+        Add(a, strPrefix + "duct_cavity_depth", Radome.DuctCavityDepthMm(cem), dVoxelMm, bDerived: true);
+        Add(a, strPrefix + "bridge_passage_height", Radome.BridgePassageHeightMm(cem), dVoxelMm, bDerived: true);
         return a;
     }
 

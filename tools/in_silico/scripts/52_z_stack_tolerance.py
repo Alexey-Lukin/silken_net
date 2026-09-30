@@ -146,7 +146,7 @@ B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
-# its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9;
+# its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9 (the Ø25 dome's; ≤Ø20.37 − 2·t since the root, 2026-09-30 — 16.97 still leaves no room for a booster on a 19.97 board, and the chip decision stands);
 # only the height was ever judged here. The 2.5 stays as an UPPER BOUND among the parts read so far (no RF-deck
 # candidate is taller), so the RF-deck-TOP verdicts it drives are conservative, not wrong. Re-run with front-end P/Ns.
 # (The B2B-GAP caveat that stood here — the EDLC over a 1.9-3.3 mm piezo on the Power Deck, which made 8.0 the
@@ -164,9 +164,9 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # (FR4 1.6 × B2B, THREE rows — the placement axis lost its subject): W3013 closes in ONE — B2B 6.0 — and NN03-310
 # in all three; the `pad_beside_piezo` condition is gone with the piezo, the B2B-alternative one stays.
 # 🔴 2026-09-22, same day: the CARRIER half of that verdict fell to a primary-source read — NN03-310 is
-# 30.0 ± 0.20 mm LONG (UM §2.1), i.e. longer than the Ø25 flange, so it cannot sit on this board at all
+# 30.0 ± 0.20 mm LONG (UM §2.1), i.e. longer than the Ø25 flange (and the Ø29.8 one since 2026-09-30), so it cannot sit on this board at all
 # (00_07 HW.17; 02_01 §5.2). Its 1.0 mm row STAYS as the evidence that half stood on. The VERTICAL verdict
-# does not move: of the SEVEN mXTEND families the vendor's product page lists, the two that fit a ≤Ø15.57
+# does not move: of the SEVEN mXTEND families the vendor's product page lists, the two that fit a ≤Ø15.57 (≤Ø20.37 since the root)
 # outline (NN02-201 at 1.0, NN02-224 at 2.4) are shorter than the module. ⚠ Perimeter named on purpose —
 # «every family member» would be a claim about a catalogue this pass never opened. So «the module is the
 # tallest» holds for every candidate we have READ — but it now holds
@@ -325,8 +325,8 @@ def rim_boss_radial_budget() -> dict:
     2026-09-14 at exactly these minima (`applied_gland`), so nothing has grown — yet. HW.9 designs
     against the WORST row, not the friendliest (⚖️ 2026-09-14: the ceiling is its INPUT, not a gate).
     ⊕ It also prices the levers, which is the half a single number hides: raising the gland fill
-    ceiling and thinning the cord both widen the cavity WITHOUT touching the Ø25 freeze — and the
-    freeze is the most expensive move available, not the first one.
+    ceiling and thinning the cord both widen the cavity WITHOUT touching the dome Ø (the Ø25 freeze until the
+    root verdict took it, 2026-09-29/30) — and the freeze was the most expensive move available, not the first one.
     """
     radome = cem("radome")
     dome_d = radome["dome_diameter_mm"]
@@ -348,7 +348,7 @@ def rim_boss_radial_budget() -> dict:
     shipped = [r for r in rows if r["shipped_cord"]]
     worst = min(shipped, key=lambda r: r["cavity_ceiling_mm"])
     best = max(shipped, key=lambda r: r["cavity_ceiling_mm"])
-    # Cheapest lever that does NOT touch the Ø25 freeze: keep the fill, thin the cord.
+    # Cheapest lever that does NOT touch the dome Ø: keep the fill, thin the cord.
     same_fill = [r for r in rows if abs(r["gland_fill"] - worst["gland_fill"]) < 1e-9]
     cord_lever = max(same_fill, key=lambda r: r["cavity_ceiling_mm"])
     return {
@@ -691,8 +691,8 @@ def vertical_stack_budget(boss: dict) -> dict:
                               "ceiling": "the ceramic-SMD branch is REJECTED (⚖️ 2026-09-22, 02_01 §5.2), so the "
                                          "part that actually stands there is the LoRa module (2.5). ⛔ The CARRIER half "
                                          "of that same verdict fell the same day: NN03-310 is 30.0 mm LONG, longer than "
-                                         "the Ø25 flange, so there is no named carrier today (00_07 HW.17, 02_01 §5.2). "
-                                         "This row is unaffected because the two candidates that fit a ≤Ø15.57 outline — among the SEVEN families "
+                                         "the Ø25 flange (Ø29.8 since 2026-09-30 — still shorter than 30.0), so there is no named carrier today (00_07 HW.17, 02_01 §5.2). "
+                                         "This row is unaffected because the two candidates that fit a ≤Ø15.57 outline (≤Ø20.37 since the root) — among the SEVEN families "
                                          "the vendor's product page lists, the perimeter this pass read — "
                                          "(1.0 and 2.4 mm) is shorter than the module — the vertical answer survives its "
                                          "own premise. Both antenna rows are kept as EVIDENCE, neither is a live option"},

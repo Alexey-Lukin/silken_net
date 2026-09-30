@@ -760,7 +760,7 @@ internal static class Program
     }
 
     // Cathode-flange verify (Деталь 3, 01_01 §1): golden metrics + assembly gates — solidity (a SOLID
-    // flange, not an SDF hollow-shell, gotcha #9), Ø25 frozen, bayonet lugs fused (bbox extends past the
+    // flange, not an SDF hollow-shell, gotcha #9), the derived Ø (= radome Ø, root 2026-09-29), bayonet lugs fused (bbox extends past the
     // flange rim), barbs present (BoolAdd from the §4.3 lock), bus channel. Cathode side-area is informational.
     private static int ReportFlange(CathodeFlangeCem cem, Voxels voxFlange)
     {
@@ -841,6 +841,14 @@ internal static class Program
             $"  rim boss: socket band {Radome.SocketBandMm(cem):F2} (pocket r {Radome.SocketPocketInnerRMm(cem):F2}–{Radome.SocketPocketOuterRMm(cem):F2}, skin {Radome.SocketSkinMm(cem):F2}) · " +
             $"seal land r {Radome.SealLandInnerRMm(cem):F3}–{Radome.SealLandOuterRMm(cem):F2} ({Radome.SealBandMm(cem):F3} wide; gland {cem.ORing.WidthMm:F3}×{cem.ORing.DepthMm:F3} at {cem.ORing.GlandFill:P0} fill, ⚖️ ratified 2026-09-17) · " +
             $"rim cavity Ø{oM.RimCavityDiameterMm:F2} (ceiling → HW.9) · land solid over the rim face={oM.SealLandSolidFraction:P0} (outer edge strip {oM.SealLandEdgeSolidFraction:P0})");
+        // Vent facet + pocket (⚖️ 2026-09-29, applied 2026-09-30, 00_07 HW.32): which Gore ring the facet admits is the verdict's own
+        // conditional, answered here from the geometry; the pocket volume and τ are the ground it was argued on (02_01 §3.4).
+        Console.WriteLine(
+            $"  vent: facet {cem.VentFacetWidthMm:F1} wide (pad {Radome.VentPadThicknessMm(cem):F2} at the centre) at {cem.VentAzimuthDeg:F0}°, seat band {oM.VentBandMm:F2} mm over the boss · " +
+            $"ring ID {cem.VentRingIdMm:F1} (OD {Radome.VentRingOdMm(cem):F1}) at z {Radome.VentZMm(cem):F2} → {(oM.VentRingFits == true ? "fits" : "DOES NOT FIT")}; " +
+            $"ring ID {Radome.VentRingIdVe70308Mm:F1} (VE70308) → {(Radome.VentRingFits(cem, Radome.VentRingIdVe70308Mm) ? "fits" : "does not fit")} · " +
+            $"{cem.VentHoles}×Ø{cem.VentHoleDiameterMm:F1} hole under an active Ø{Radome.VentActiveDiameterMm(cem):F1} · " +
+            $"pocket {oM.PocketVolumeMm3:F0} mm³ (duct depth {Radome.DuctCavityDepthMm(cem):F2}, passage {Radome.BridgePassageHeightMm(cem):F2}; ceiling {Radome.PocketVolumeCeilingMm3:F0}) · τ≈{oM.VentTauEstimateS:F0} s");
 
         float fSocketSlot = cem.LugRadiusMm + cem.SlotClearanceMm;
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
@@ -852,14 +860,25 @@ internal static class Program
         // in the land). Two slabs on purpose: the whole land sees a missing boss or a counter-groove; only the outer
         // EDGE strip sees an entry slot biting 0.2 mm into the land (< 1 % of the whole, ~8 % of the strip).
         bool bLand = oM.SealLandSolidFraction is > 0.95 && oM.SealLandEdgeSolidFraction is > 0.95;
+        // Vent + pocket, CEM-analytic: the shipped ring must fit its facet band and width, the hole must stay under the membrane's
+        // active area, the pocket must stay under the volume the response-time ground was argued at, and the housing must stay
+        // off the board envelope (duct outside the rim cavity, chamber inside it) and under the crown.
+        bool bVent = oM.VentRingFits == true && cem.VentHoleDiameterMm <= Radome.VentActiveDiameterMm(cem);
+        bool bPocket = oM.PocketVolumeMm3 is > 0 and <= Radome.PocketVolumeCeilingMm3
+                       && cem.PocketOuterRadiusMm <= (Radome.RimCavityDiameterMm(cem) / 2f) - cem.SlotClearanceMm
+                       && cem.PocketFloorOverRimMm > Radome.BossHeightMm(cem)
+                       && Radome.PocketHousingTopZMm(cem) <= Radome.InnerTopZMm(cem)
+                       && Radome.BridgePassageHeightMm(cem) > 0f && Radome.DuctCavityDepthMm(cem) > cem.VentRingHeightMm;
 
         if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
         if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
         if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — OUR working floor, NOT the canon RF minimum (02_01 §5.3 asks ≥8); antenna↔Ti is cavityH − lockGrooveZ − t/2, see Assembly.RfClearanceMm");
         if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
         if (!bLand) Console.WriteLine($"  ⚠ seal land only {oM.SealLandSolidFraction:P0} solid over the rim face (outer edge strip {oM.SealLandEdgeSolidFraction:P0}) — the flat rim is cut where the O-ring must be backed (a counter-groove, a missing boss, or an entry slot reaching the land; 02_02 §3.5)");
+        if (!bVent) Console.WriteLine($"  ⚠ vent: ring OD {Radome.VentRingOdMm(cem):F1} vs seat band {oM.VentBandMm:F2} / facet {cem.VentFacetWidthMm:F1}, hole Ø{cem.VentHoleDiameterMm:F1} vs active Ø{Radome.VentActiveDiameterMm(cem):F1} — the seat does not hold the vent (02_01 §3.4)");
+        if (!bPocket) Console.WriteLine($"  ⚠ pocket: {oM.PocketVolumeMm3:F0} mm³ (ceiling {Radome.PocketVolumeCeilingMm3:F0}) · chamber outer r {cem.PocketOuterRadiusMm:F2} vs rim cavity r {Radome.RimCavityDiameterMm(cem) / 2f:F2} · floor z {cem.PocketFloorOverRimMm:F2} vs boss {Radome.BossHeightMm(cem):F2} · housing top {Radome.PocketHousingTopZMm(cem):F2} vs inner top {Radome.InnerTopZMm(cem):F2} · passage {Radome.BridgePassageHeightMm(cem):F2} · duct depth {Radome.DuctCavityDepthMm(cem):F2} vs ring height {cem.VentRingHeightMm:F2}");
 
-        bool bOk = bSane && bHollow && bBell && bCavity && bMate && bLand;
+        bool bOk = bSane && bHollow && bBell && bCavity && bMate && bLand && bVent && bPocket;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }
@@ -891,12 +910,12 @@ internal static class Program
         // Mate findings (INFORMATIONAL — drive HW.17/HW.8, do NOT fail the audit). MATE-Ø is gated on the
         // RENDERED interference (the candidate's actual state), not the analytic gap (the baseline reason):
         // asis/inboard still foul — the un-reconciled bayonet Z seats the rim 5.0 mm below the flange face, so
-        // the Ø25 disc sits inside the dome, and since the rim boss (applied 2026-09-14) the disc meets the boss
-        // annulus too (rim cavity Ø15.57 at the frozen dims). That foul belongs to the collar leg (Z), not to the
+        // the flange disc sits inside the dome, and since the rim boss (applied 2026-09-14) the disc meets the boss
+        // annulus too (rim cavity Ø20.37 since the root, 2026-09-30). That foul belongs to the collar leg (Z), not to the
         // boss: with the rim ON the face the disc is under the rim, never inside it. skirt (withdrawn) opens
         // cavity + L-slots the lugs → ~0.
         if (oM.MateInterferenceMm3 is > 5.0)
-            Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø25 disc inside the dome (rim cavity Ø{Radome.RimCavityDiameterMm(cem.Radome):F2} under the boss, Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} above it) because the bayonet Z seats the rim {oM.BayonetZMismatchMm:F1} mm below the flange face, and/or Ø29 lugs (inboard clamps only the lugs; the collar leg owns Z — 00_07 HW.33)");
+            Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø{cem.Flange.FlangeDiameterMm:F1} disc inside the dome (rim cavity Ø{Radome.RimCavityDiameterMm(cem.Radome):F2} under the boss, Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F1} above it) because the bayonet Z seats the rim {oM.BayonetZMismatchMm:F1} mm below the flange face, and/or Ø{oM.LugTipDiameterMm:F1} lugs (inboard clamps only the lugs; the collar leg owns Z — 00_07 HW.33)");
         if (oM.RfClearanceMm is { } dRf && dRf < cem.RfClearanceMinMm)
             Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm (OUR floor, not canon's — 02_01 §5.3 asks ≥8, HFSS below 10, acceptance is a mock-up's call) at the bayonet datum — Z-stack pulls the cavity onto the flange");
         if (oM.BayonetZMismatchMm is { } dBz && dBz > 2f * cem.VoxelSizeMm)

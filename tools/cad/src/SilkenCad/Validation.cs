@@ -89,17 +89,23 @@ internal sealed record GeometryMetrics
     public double? RimCavityDiameterMm { get; init; }
     public double? SealLandSolidFraction { get; init; }       // the whole land (boss present, rim flat)
     public double? SealLandEdgeSolidFraction { get; init; }   // a two-voxel strip just inside the land's outer edge — where an entry slot would bite first
+    // Vent facet + BME280 pocket (⚖️ 2026-09-29, applied 2026-09-30, 00_07 HW.32): CEM-DERIVED — the render carries them, it does
+    // not measure them. Which Gore ring fits is the verdict's own conditional; the volume and τ are the ground it was argued on.
+    public bool? VentRingFits { get; init; }
+    public double? VentBandMm { get; init; }                  // vertical band a full-width seat exists over, for the shipped ring
+    public double? PocketVolumeMm3 { get; init; }             // analytic air volume of duct + chamber + bridge
+    public double? VentTauEstimateS { get; init; }            // V·L/(D·A) — an order, not a prediction
 
     // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4, null for non-assembly). See MeasureAssembly.
     public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (closed by the ratified raised collar, 02_02 §4.4)
-    public double? MateRadialGapMm { get; init; }           // radome inner-cavity R − flange R; <0 = the Ø25 disc fouls the cavity (MATE-Ø)
+    public double? MateRadialGapMm { get; init; }           // radome inner-cavity R − flange R; <0 = the flange disc fouls the cavity (MATE-Ø)
     // antenna(cavity top)↔Ti(flange face) at the datum. ⛔ Judged against Cem.RfClearanceMinMm, which is
     // OUR 12, not canon's: 02_01 §5.3 asks for ≥ 8 (10-15 desirable, HFSS below 10) — read the ⛔ at that
     // field. ⊕ And the antenna plane here is ASSUMED to be the cavity top, so this measures ROOM, not the
     // antenna: raising cavity height moves this number without moving a board. [00_07 HW.33, 2026-09-11]
     public double? RfClearanceMm { get; init; }
     public double? MateInterferenceMm3 { get; init; }       // flange ∩ radome solid overlap (render) — large = parts foul, ~0 = clean mate
-    public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (Ø29 default vs Ø25 dome)
+    public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (flange Ø + 2·protrusion, past the dome)
 
     // Full axial-stack press-fit mate-audit (Zone 1↔2↔3, 01_01 §1+§3, null for non-stack). See MeasureAxialStack.
     public double? Zone1SleeveInterferenceMm { get; init; } // (shaft−bore)/2 at Zone-1↔Zone-2; >0 press-fit, ~0 line-to-line, <0 clearance
@@ -383,6 +389,10 @@ internal static class Validation
             RimCavityDiameterMm = Radome.RimCavityDiameterMm(cem),
             SealLandSolidFraction = dLand,
             SealLandEdgeSolidFraction = dEdge,
+            VentRingFits = Radome.VentRingFits(cem),
+            VentBandMm = Radome.VentBandMm(cem, Radome.VentRingOdMm(cem)),
+            PocketVolumeMm3 = Radome.PocketVolumeMm3(cem),
+            VentTauEstimateS = Radome.VentTauEstimateS(cem),
         };
     }
 

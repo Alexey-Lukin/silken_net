@@ -316,7 +316,8 @@ internal sealed record ORingGlandCem
 }
 
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end: a SOLID Ti
-// flange (Ø25 frozen) on a barbed shank that press-fits into the PEEK Zone-2 sleeve. Top face = pogo-pad
+// flange (Ø29.8 — the Ø25 freeze was opened by the ROOT verdict, ⚖️ founder 2026-09-29, 00_07 HW.9/HW.33; the Ø
+// is DERIVED from the board-contour target, 02_01 §3.5, and equals the radome's) on a barbed shank that press-fits into the PEEK Zone-2 sleeve. Top face = pogo-pad
 // plane (centre GND bus + outer V+, Hard Gold — coating, NOT geometry); the side/perimeter is the cathode
 // catalytic zone (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2, фаза-2).
 // Bayonet lugs mate the PEEK Radome (Деталь 4). Barbs reuse the §4.3 lock (Zone-3 set, same local profile).
@@ -326,7 +327,7 @@ internal sealed record CathodeFlangeCem
     public string Kind { get; init; } = "cathode_flange";
     public string Name { get; init; } = "cathode_flange";
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (as mechanical_lock)
-    public float FlangeDiameterMm { get; init; } = 25f;    // frozen (01_01 §1 = Radome Ø, 02_02 §1.3)
+    public float FlangeDiameterMm { get; init; } = 29.8f;  // = Radome Ø (01_01 §1, 02_02 §1.3); derived from the board target — see RadomeCem.DomeDiameterMm
     public float FlangeThicknessMm { get; init; } = 3f;    // placeholder (HW.8 dim-freeze)
     public float ShankDiameterMm { get; init; } = 9f;      // placeholder (HW.8); Zone-3 into PEEK
     public float ShankLengthMm { get; init; } = 14f;
@@ -390,7 +391,7 @@ internal sealed record CathodeFlangeCem
 }
 
 // PEEK Radome (Деталь 4, 02_01 §5.2 + 01_04 §5.5) — the radio-transparent dome that bayonets onto the
-// Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
+// Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø29.8 since 2026-09-30 — root verdict): a rounded shield bell
 // (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge; ⛔ neither field DRIVES the geometry —
 // the cap rise and edge radius are both the dome radius, and these two are floor-checks only) + an
 // internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — Assembly.RfClearanceMm) + a LOCAL INTERNAL RIM BOSS whose
@@ -401,8 +402,12 @@ internal sealed record RadomeCem
 {
     public string Kind { get; init; } = "radome";
     public string Name { get; init; } = "radome";
-    public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø25, no sub-mm features → 0.1 ok
-    public float DomeDiameterMm { get; init; } = 25f;      // frozen (= Zone-3 flange Ø, 02_02 §1.3)
+    public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø30; the finest features are the 0.2 socket skin and the vent hole Ø1.0 → 0.1 ok
+    // ⚖️ ROOT (founder 2026-09-29, 00_07 HW.9 → HW.33; applied 2026-09-30): the Ø25 freeze is OPENED for the board contour.
+    // DERIVED, not chosen: board target Ø19.97 (02_01 §3.5 — 70 % courtyard fill with the vent-pocket gasket counted, envelope
+    // booster NN02-224, EDLC KR, B2B pair) + 2 × 0.2 collar (the print-floor READING the calculator uses — nothing sets the collar
+    // wall, HW.33) + 2 × 4.715 rim boss (gland fill KEPT at 80 %, ⚖️ delegated 2026-09-30) = 29.80. A thicker collar re-opens it.
+    public float DomeDiameterMm { get; init; } = 29.8f;    // = Zone-3 flange Ø (02_02 §1.3), pinned equal by xUnit
     public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)
     public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF). ⛔ NOT antenna↔Ti: that is cavityH − lockGrooveZ − t/2 = 8.0 here, and the ≥12 floor is OURS (canon asks ≥8; acceptance is a mock-up's call, 02_01 §5.3)
     public float BellRiseMm { get; init; } = 3f;           // rounded top over the body (≥3, 01_04 §5.5)
@@ -418,8 +423,26 @@ internal sealed record RadomeCem
     // groove and this rim is FLAT — the counter-groove that used to be cut here is gone, not shallower. The spec
     // is carried on both parts (pinned equal by xUnit, like the lug radius) because the radome's SEAL LAND width is
     // derived from it: seal band = gland width + 2·slot clearance, and the local internal rim boss that carries it
-    // (Radome.Boss*) is what narrows the rim cavity to the ≤ Ø15.57 ceiling handed to the board layout (HW.9).
+    // (Radome.Boss*) is what narrows the rim cavity to the ≤ Ø20.37 ceiling handed to the board layout (HW.9).
     public ORingGlandCem ORing { get; init; } = new();
+
+    // ── Vent facet + BME280 pocket (⚖️ founder 2026-09-29, 02_01 §3.4; applied 2026-09-30 with the new dome — 00_07 HW.32 ⊂ HW.33).
+    //    Gore VE7 protective vent glued INSIDE on a FLAT facet of the vertical wall; the sensor in a separate POCKET sealed to it,
+    //    so the capsule stays IP68-sealed and the desiccant (02_02 §3.4) never breathes the forest. Numbers: radome_vent_shortlist. ──
+    public float VentRingIdMm { get; init; } = 6.5f;         // Gore target ring ID = vent OD + 1.5 → VE70205 (5.0 + 1.5); VE70308 would need 9.1 — Radome.VentRingFits says which fits
+    public float VentRingWallMm { get; init; } = 0.6f;       // raised target-ring wall (Gore names height ≥ 0.5 and ID, not the wall — a design reading)
+    public float VentRingHeightMm { get; init; } = 0.5f;     // Gore ≥ 0.5, floor taken as nominal
+    public float VentHoleDiameterMm { get; init; } = 1f;     // Gore «від 1 мм», floor taken as nominal; several 1-mm holes only for the bigger vents
+    public int VentHoles { get; init; } = 1;                 // VE70205's active Ø2.0 admits ONE Ø1.0 hole with 0.5 to the adhesive
+    public float VentActiveAreaMm2 { get; init; } = 3.14f;   // VE70205 active area (Gore PTV-028-R21 p.2) — the hole must stay under it
+    public float VentFacetWidthMm { get; init; } = 8.5f;     // flat seat chord: ring OD 7.7 + 2 × 0.4 placement margin; the pad's sagitta follows (Radome.VentPadThicknessMm)
+    public float VentAzimuthDeg { get; init; } = 60f;        // midway between two bayonet entry slots (0°/120°/240°) — facet, socket and the collar leg never share a meridian
+    public float PocketWallMm { get; init; } = 1f;           // moulded PEEK housing wall (no canon floor for it — the 1.5–2.0 band is the dome wall's)
+    public float PocketFloorOverRimMm { get; init; } = 11.85f;     // PLACEHOLDER: RF-deck top over the flange face at FR4 1.6 + B2B 8 (52 §vertical_stack_budget); B2B 10 / rigid-flex move it (HW.29, HW.9)
+    public float PocketHeightMm { get; init; } = 2f;         // cavity over the board: BME280 0.93 (Bosch) + headroom; ≤ crown headroom
+    public float PocketOpeningWidthMm { get; init; } = 3.82f;    // BME280 LGA-8 KiCad courtyard 2.82 × 3.08 (board_area_budget) + 0.5 clearance per side
+    public float PocketOpeningDepthMm { get; init; } = 4.08f;
+    public float PocketOuterRadiusMm { get; init; } = 9.7f;       // chamber's outer gasket edge = board target Ø19.97/2 − 0.3 copper edge (02_01 §3.5); the layout may pull it inward (HW.9)
 
     // Added 2026-09-11 with AnchorCem's (00_07 HW.1) — same silent absence: unmapped members are dropped,
     // so a `notes` block here would have parsed and disappeared. `draw radome` does not exist yet.
@@ -466,7 +489,7 @@ internal sealed record AnchorAssemblyCem
     public float VoxelSizeMm { get; init; } = 0.15f;   // assembly-scale (Ø~30 × ~38 mm) — disc/wall/lug interference, not barbs
 
     // MATE-Ø candidate (HW.17): asis = baseline (surfaces the conflict) · skirt = radome enclosing skirt to
-    // Ø(lug-tip + clearance) · inboard = flange lugs kept within Ø25 (protrusion clamped). asis is the audit.
+    // Ø(lug-tip + clearance) · inboard = flange lugs kept within the flange Ø (protrusion clamped). asis is the audit.
     public string MateStrategy { get; init; } = "asis";
 
     // Z-stack input (script 52): the RF antenna↔Ti floor (02_01 §5.3). ⛔ The O-ring rim↔Zone-3 gap that used

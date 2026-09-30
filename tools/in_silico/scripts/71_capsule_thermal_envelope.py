@@ -9,7 +9,7 @@ The question is a BOUND, not a forecast: does any hour of thirty Cherkasy years 
 rating? A lumped energy balance per hour answers it. A forecast for a real trunk would need what no file in
 the tree has — bark surface temperature, canopy transmittance at the install point, the radome's finish.
 
-MODEL — one isothermal lump (radome + cavity air + boards + EDLC), quasi-steady per hour (a Ø25 lump of a
+MODEL — one isothermal lump (radome + cavity air + boards + EDLC), quasi-steady per hour (a Ø29.8 lump — read from radome.json — of a
 few grams against a loss coefficient of a few hundredths W/K settles in minutes, so an hour is steady):
     α·(DNI·A_proj + F·DIF·A_exp) = (h_c + h_r)·A_exp·(T_cap − T_air)
   • A_proj — the LARGEST projection of the exposed radome over ALL beam directions, √(A_crown² + (D·H)²).
@@ -30,7 +30,7 @@ few grams against a loss coefficient of a few hundredths W/K settles in minutes,
     stem neither cools nor heats the lump much through the anchor.
     ⛔ What is NOT modelled and moves the hot answer UP: sunlit bark around the flange rim. A dark bark
     surface in full sun can run hotter than the small capsule (a large flat surface has a lower h than a
-    Ø25 body), and the rim would then conduct heat IN. No bark temperature exists in the tree, so this is a
+    Ø29.8 body), and the rim would then conduct heat IN. No bark temperature exists in the tree, so this is a
     named ceiling, not a term — and it is the first thing a field reading should settle.
 
 INPUTS THAT ARE BRACKETS, NOT NUMBERS:
@@ -100,7 +100,7 @@ EPSILON = 0.90                       # ours — see docstring
 SKY_VIEW = 0.5                       # ours — see docstring
 WIND_K = (0.0, 0.1, 0.3)             # u_trunk = k·u10; k = 0 is the still-air BOUND
 WIND_K_TYPICAL = 0.1                 # the aging series take a light breeze, not dead calm, as the typical hour
-# The still-air h_c comes from a correlation for a LONG HORIZONTAL cylinder; ours is a short one (Ø25 × 18)
+# The still-air h_c comes from a correlation for a LONG HORIZONTAL cylinder; ours is a short one (≈ Ø30 × 18)
 # tilted 30°. ±30 % is the ordinary scatter of such correlations off their home geometry — ours, not a
 # measured band — so the hot bound is also printed with h_c scaled down by it, and the verdict quotes both.
 H_C_SENSITIVITY = 0.7

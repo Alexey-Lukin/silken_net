@@ -79,8 +79,8 @@ internal static class Assembly
     public static bool SealLandBacksTheGroove(AnchorAssemblyCem cem)
         => SealLandMarginInnerMm(cem) > 0f && SealLandMarginOuterMm(cem) > 0f;
 
-    // MATE-Ø radial gap: radome inner-cavity radius − flange rim radius. <0 ⇒ the Ø25 disc cannot enter
-    // the Ø(25−2·wall) cavity (radial interference). CEM-analytic, independent of lift / strategy.
+    // MATE-Ø radial gap: radome inner-cavity radius − flange rim radius. <0 ⇒ the flange disc cannot enter
+    // the Ø(dome − 2·wall) cavity (radial interference) — −wall·2 whenever flange Ø = dome Ø, whatever the Ø. CEM-analytic, independent of lift / strategy.
     public static float MateRadialGapMm(AnchorAssemblyCem cem)
         => ((cem.Radome.DomeDiameterMm / 2f) - cem.Radome.WallThicknessMm) - (cem.Flange.FlangeDiameterMm / 2f);
 
@@ -105,7 +105,7 @@ internal static class Assembly
     // ── Render: bring both parts into the flange frame for STL + interference measurement ──
     public static AssemblyVoxels Build(AnchorAssemblyCem cem)
     {
-        // inboard candidate (MATE-Ø): clamp the lug protrusion so the tips stay within Ø25 (flush lugs).
+        // inboard candidate (MATE-Ø): clamp the lug protrusion so the tips stay within the flange Ø (flush lugs).
         // Loses radial bayonet grip — the trade-off the metrics expose; ratified 2026-09-10 (00_07 HW.33).
         CathodeFlangeCem flangeCem = cem.MateStrategy == "inboard"
             ? cem.Flange with { LugProtrusionMm = 0f }
@@ -128,18 +128,18 @@ internal static class Assembly
         return new AssemblyVoxels(voxMerged, voxFlange, voxRadome);
     }
 
-    // skirt candidate (MATE-Ø): open the radome's lower cavity to admit the Ø25 disc, wrap it with a
+    // skirt candidate (MATE-Ø): open the radome's lower cavity to admit the flange disc, wrap it with a
     // structural ring out to Ø(lug-tip + clearance), and cut a proper L-slot bayonet socket in that ring —
     // a circumferential lock groove at the lug Z (where the lugs sit after the quarter-turn) + axial entry
     // slots (where the lugs pass down from the rim). Only the INNER band [bore, lug-tip+clearance] is cut,
     // so the outer rim stays a structural wall (→ lug∩ring interference ≈ 0, the lug rides the groove). The
-    // dome body stays Ø25 above (RF). Resolves MATE-Ø RADIALLY only. ⛔ WITHDRAWN 2026-09-10 (00_07 HW.33): it
+    // dome body stays at its Ø above (RF). Resolves MATE-Ø RADIALLY only. ⛔ WITHDRAWN 2026-09-10 (00_07 HW.33): it
     // deletes the flange face the ratified O-ring seals against — kept as the audit of the rejected branch.
     private static void ApplyEnclosingSkirt(Voxels voxRadome, AnchorAssemblyCem cem, float fLift)
     {
         float fSkirtTopZ = FlangeTopZMm(cem) + 1f;                       // cover the lugs (15.5) + disc top (17)
-        float fBoreR = (cem.Flange.FlangeDiameterMm / 2f) + 0.3f;        // admit the Ø25 disc
-        float fOuterR = LugTipRadiusMm(cem) + cem.SkirtClearanceMm;      // enclose the Ø29 lug tips
+        float fBoreR = (cem.Flange.FlangeDiameterMm / 2f) + 0.3f;        // admit the flange disc
+        float fOuterR = LugTipRadiusMm(cem) + cem.SkirtClearanceMm;      // enclose the lug tips
         float fH = fSkirtTopZ - fLift;
         LocalFrame oF = new(new Vector3(0f, 0f, fLift));
 

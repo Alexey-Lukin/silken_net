@@ -13,7 +13,7 @@ public class CathodeFlangeTests
         Assert.Equal("cathode_flange", Cem.Kind(strJson));
 
         CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
-        Assert.Equal(25f, cem.FlangeDiameterMm);   // frozen (01_01 §1 = Radome Ø)
+        Assert.Equal(29.8f, cem.FlangeDiameterMm); // = Radome Ø (01_01 §1) — derived from the board target since the root verdict 2026-09-29
         Assert.Equal(9f, cem.ShankDiameterMm);     // placeholder (HW.8)
         Assert.Equal(3, cem.BayonetLugs);
         Assert.Equal(3, cem.BarbRows);
