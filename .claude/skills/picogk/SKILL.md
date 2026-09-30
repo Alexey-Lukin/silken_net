@@ -89,6 +89,7 @@ append-only (`0a` · `0b` · `4a` · `9b` are items of their own).
 18. A mutation probe that restores a `.cs` with an OLDER mtime is not restored for MSBuild — and the next probe's red is the previous probe's leftover
 19. Editing a `cem/*.json` through a JSON PARSER rewrites the whole file, and the reformat hides the one line you meant to change
 20. The gallery has TWO artefact kinds with DIFFERENT triggers, and only one of them is pinned — so the reflex that says «re-run the drawing loops» (#18 ⊕) leaves the renders stale by its own wording
+21. Moving a ROOT dimension is not a manifest edit — it is an inventory of every CARRIER OF THE NUMBER, by class, and the gates cover a third of them
 
 <!-- /PICOGK-GOTCHAS-INDEX -->
 
