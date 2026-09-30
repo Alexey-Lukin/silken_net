@@ -126,6 +126,13 @@
     view-cube presets (instance, not static) but NOT `SetViewAngles`/`RequestClose` (drop explicit
     camera → auto-frame; `bEndAppWithTask` exits). `ColorFloat` alpha does NOT show anything inside a
     dense lattice → use `section` (cutaway) + a gold material.
+    ⊕ 🔴 **«Needs a display» is a property of the SESSION, not of the machine — measured 2026-09-30:** a
+    coding-agent Bash session on the founder's logged-in Mac ran `render`, `section` and the whole
+    `render_gallery.sh` to completion (exit 0, TGA → PNG, viewer window opened and closed by itself), so a
+    tracker leg that says «the machine cannot close this — it needs a display» is wrong whenever the agent
+    runs on the desktop; only CI and headless boxes lack the viewer (`00_07` HW.33, the gallery leg that
+    stood 👤 for nine days). ⚠️ The renders are not byte-deterministic, yet three of six PNGs came back
+    byte-identical to the committed ones — treat identity as luck, never as a pin (#20).
 
 11. **A drawing must never invent or silently drop a field — an absent value prints `NOT SPECIFIED IN CEM`, and the next `??`-default will read as innocent as the four fixed on 2026-08-28** (HW.1; the symptoms below are CLOSED in `Drawing.cs`, the CLASS and its reflex stay).
     What landed: a single `Drawing.NotSpecified` marker replaces every `??`-default (title block,

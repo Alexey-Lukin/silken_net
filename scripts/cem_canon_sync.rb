@@ -55,6 +55,17 @@ def dig_num(hash, path) = path.split(".").reduce(hash) { |acc, k| acc.fetch(k) }
 C1 = "01_01_Coaxial_Gyroid_Topology_and_PEEK.md"
 C4 = "01_04_CODIT_and_Xylemointegration.md"
 C22 = "02_02_Blind_Mate_Pogo_Pin_Interface.md"
+# ── docs/protocols/** carriers that QUOTE a manifest and LEAVE THE REPO (00_07 HW.26, 2026-09-30) ──
+# The FEA/Prony calibration case (UA + EN twins — Додаток 3 of the request to the FEA contractor) and the
+# PEEK-CNC RFQ restate the Zone-2 sleeve geometry in prose a contractor EXECUTES. Their only guard was a
+# «⚠️ звірити перед відправкою» line in the document head — a human-executed check that fires once, on
+# dispatch day (00_05 §4: executed artefacts first). Same pin as the canon rows: context-anchored regex on
+# the sentence, the manifest is the value's home. The OD Ø15 is DERIVED (bore + 2·wall) — pinned through a
+# Proc, so the row still reads ONE manifest and cannot drift from the two fields it is made of.
+P_UA = "protocols/anchor/fea_aging/calibration_case_ua.md"
+P_EN = "protocols/anchor/fea_aging/calibration_case_en.md"
+P_RFQ = "protocols/procurement/anchor_sleeve_peek_cnc_rfq.md"
+SLEEVE_OD = ->(cem) { cem.fetch("bore_diameter_mm").to_f + 2.0 * cem.fetch("wall_thickness_mm").to_f }
 
 # [label, cem-file, json-path, canon-doc, /regex ONE capture/, mode, tol, (scale = 1)]
 # `scale` multiplies the CEM value before the comparison — the gland squeeze is a FRACTION in the manifest and a
@@ -101,7 +112,32 @@ CHECKS = [
   [ "O-ring ratified squeeze nominal (§3.2 mirror of §3.5)", "cathode_flange.json", "o_ring.squeeze",
    C22, /Ступінь стиснення \| [^|]*номінал \*\*([\d.]+) %\*\*/, :eq, 0.01, 100.0 ],
   [ "O-ring ratified gland fill (§3.2)", "cathode_flange.json", "o_ring.gland_fill",
-   C22, /заповнення \*\*([\d.]+) %\*\* — ⚖️ РАТИФІКОВАНО/, :eq, 0.01, 100.0 ]
+   C22, /заповнення \*\*([\d.]+) %\*\* — ⚖️ РАТИФІКОВАНО/, :eq, 0.01, 100.0 ],
+  # ── Zone-2 sleeve in the outbound protocol carriers (see P_UA / P_EN / P_RFQ above) ──
+  [ "calib-case UA: shaft Ø", "zone2_sleeve.json", "bore_diameter_mm",
+   P_UA, /титановий вал діаметром (\d+) мм/, :eq, 0.001 ],
+  [ "calib-case UA: sleeve wall", "zone2_sleeve.json", "wall_thickness_mm",
+   P_UA, /зі стінкою (\d+) мм/, :eq, 0.001 ],
+  [ "calib-case UA: sleeve length", "zone2_sleeve.json", "length_mm",
+   P_UA, /Довжина втулки — (\d+) мм/, :eq, 0.001 ],
+  [ "calib-case UA: sleeve OD (derived bore + 2·wall)", "zone2_sleeve.json", SLEEVE_OD,
+   P_UA, /зовнішній діаметр — (\d+) мм/, :eq, 0.001 ],
+  [ "calib-case EN: shaft Ø", "zone2_sleeve.json", "bore_diameter_mm",
+   P_EN, /shaft (\d+) mm in diameter/, :eq, 0.001 ],
+  [ "calib-case EN: sleeve wall", "zone2_sleeve.json", "wall_thickness_mm",
+   P_EN, /sleeve with a (\d+) mm wall/, :eq, 0.001 ],
+  [ "calib-case EN: sleeve length", "zone2_sleeve.json", "length_mm",
+   P_EN, /The sleeve is (\d+) mm long/, :eq, 0.001 ],
+  [ "calib-case EN: sleeve OD (derived bore + 2·wall)", "zone2_sleeve.json", SLEEVE_OD,
+   P_EN, /the outer diameter is (\d+) mm/, :eq, 0.001 ],
+  [ "PEEK-CNC RFQ: bore Ø", "zone2_sleeve.json", "bore_diameter_mm",
+   P_RFQ, /отвір \*\*Ø(\d+) мм\*\*/, :eq, 0.001 ],
+  [ "PEEK-CNC RFQ: wall", "zone2_sleeve.json", "wall_thickness_mm",
+   P_RFQ, /стінка \*\*(\d+) мм\*\*/, :eq, 0.001 ],
+  [ "PEEK-CNC RFQ: length", "zone2_sleeve.json", "length_mm",
+   P_RFQ, /довжина \*\*(\d+) мм\*\*/, :eq, 0.001 ],
+  [ "PEEK-CNC RFQ: OD (derived bore + 2·wall)", "zone2_sleeve.json", SLEEVE_OD,
+   P_RFQ, /зовнішній діаметр \*\*Ø(\d+) мм\*\*/, :eq, 0.001 ]
 ]
 
 failures = []
@@ -112,11 +148,12 @@ CHECKS.each do |label, cem_file, path, doc_file, regex, mode, tol, scale|
     next
   end
   canon_val = hits[0].to_f
-  cem_val = dig_num(load_cem(cem_file), path) * (scale || 1.0)
+  cem = load_cem(cem_file)
+  cem_val = (path.is_a?(Proc) ? path.call(cem) : dig_num(cem, path)) * (scale || 1.0)
   ok = mode == :ge ? cem_val >= canon_val - tol : (cem_val - canon_val).abs <= tol
   next if ok
 
-  failures << "[#{label}] CEM↔CANON DRIFT: #{cem_file}##{path} = #{cem_val} vs canon " \
+  failures << "[#{label}] CEM↔CANON DRIFT: #{cem_file}##{path.is_a?(Proc) ? 'derived' : path} = #{cem_val} vs canon " \
               "#{mode == :ge ? '≥ ' : ''}#{canon_val} (#{doc_file}) — cem mirrors canon; fix at the home."
 end
 
