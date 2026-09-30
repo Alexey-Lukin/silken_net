@@ -326,7 +326,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | MPPT | **Victron SmartSolar 75/15** | 🔴 **LiFePO4-пресет** (не lead-acid); quiescent 20 мА = найбільший сток |
 | Акумулятор | LiFePO4 **12 В / 20 Ah** | заряд лише 0…+45 °C → charge-protect (нижче) |
 | BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET **може** субсумувати charge-protect — перевіряється при виборі SKU ([`00_07`](00_07_Action_Plan_Tracker) HW.16) |
-| Buck 12→3.7 В | **TI LMR33640** — поз. 9 [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) (⚖️ 2026-09-28; P/N, вимоги й перехідна — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)); на стенді — у каскаді, специфікованому під неї (дросель і C_out специфіковано 2026-09-28 — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink); окремої ноги в [`00_07`](00_07_Action_Plan_Tracker) HW.15 більше немає) | живить модем; сам не рятує від burst — треба tank ↓. 🔴 Для VBAT-droop-стенда не підміняти хобі-модулем (MP1584/LM2596-клас): стенд судить перехідну каскаду поз. 9 на справжньому банку й при −20 °C, тож з іншим регулятором вирок буде про іншу деталь |
+| Buck 12→3.7 В | **TI LMR33640** — поз. 9 [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) (⚖️ 2026-09-28; P/N, вимоги й перехідна — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)); на стенді — у каскаді, специфікованому під неї (дросель і C_out специфіковано 2026-09-28 — рядок [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 9 і [`queen_vbat_power_shortlist`](protocols/hardware/queen_vbat_power_shortlist.md) §5; окремої ноги в [`00_07`](00_07_Action_Plan_Tracker) HW.15 більше немає) | живить модем; сам не рятує від burst — треба tank ↓. 🔴 Для VBAT-droop-стенда не підміняти хобі-модулем (MP1584/LM2596-клас): стенд судить перехідну каскаду поз. 9 на справжньому банку й при −20 °C, тож з іншим регулятором вирок буде про іншу деталь |
 | Buck 12→3.3 В | ≥500 мА | живить STM32 |
 
 ### 🔴 VBAT tank конденсатори — номінали й part-номери [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)
@@ -343,7 +343,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | Корпус | IP67 ABS/PC ≥2.5 л (світлий RAL 7035 проти sun-load) | bench-некритично; freeze-pending |
 | _(Phase 3)_ Starlink | Starlink Mini + ESP32-S3 WiFi-міст | 🔴 прошивки ESP32 НЕ існує → не збирати зараз (§12) |
 
-**Bench-carrier комплект (🛒):** LoRa-E5 mini · SIM7070G breakout · Victron 75/15 · LiFePO4 20Ah + BMS · панель 50W · антени 868+wideband · 5 VBAT-caps.
+**Bench-carrier комплект (🛒):** LoRa-E5 mini · SIM7070G breakout · Victron 75/15 · LiFePO4 20Ah + BMS · панель 50W · антени 868+wideband · 5 VBAT-caps · каскад поз. 9 на `LMR33640EVM` (RFBB замінити) + TVS поз. 21 · ферит поз. 22 · Шотткі поз. 25 ([`00_07`](00_07_Action_Plan_Tracker) HW.15, нога закупівлі).
 
 ---
 
