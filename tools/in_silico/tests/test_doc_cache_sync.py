@@ -2208,6 +2208,32 @@ def test_paper_tables_match_their_generator():
         f"{TABLES} differs from what 61 renders — re-run 61, never hand-edit the table")
 
 
+SI = "docs/protocols/ebfc/in_silico/paper/10_supporting_information.md"
+
+
+def test_paper_si_matches_its_generator():
+    """`10_supporting_information.md` must be exactly what `72` renders from the committed tree.
+
+    Same discipline as the tables pin above (`runpy.run_path`, compiled from source). The manifest
+    is a sha256 row per committed environment file, script, cache, data set, coordinate file and
+    figure, so any of them changing without a re-run of 72 reds here with the stale row visible.
+    CAN catch: a hand edit of the manifest · a cache / script / figure / coordinate file changed
+    after which nobody regenerated it · a generator that no longer runs (git or a moved path).
+    CANNOT catch: whether the SI is what the journal wants in form — that is the founder's call at
+    submission; and it judges the WORKING TREE's bytes, so a dirty checkout reds until regenerated.
+    """
+    import subprocess
+    import sys
+    code = "import runpy, sys; sys.stdout.write(runpy.run_path(sys.argv[1])['build']())"
+    run = subprocess.run(
+        [sys.executable, "-c", code,
+         str(REPO / "tools/in_silico/scripts/72_paper_supporting_information.py")],
+        capture_output=True, text=True, check=False)
+    assert run.returncode == 0, f"72 no longer renders on the committed tree:\n{run.stderr[-2000:]}"
+    assert run.stdout == (REPO / SI).read_text(encoding="utf-8"), (
+        f"{SI} differs from what 72 renders — re-run 72, never hand-edit the manifest")
+
+
 def test_cathode_rct_reads_the_current_bracket():
     """`31b`'s k_DET scenarios must be the CURRENT corners of `25`'s bracket × turnover.
 

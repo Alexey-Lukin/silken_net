@@ -37,7 +37,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 | *(3.x brief)* thermal robustness | MD→DFT ensemble: FAD HOMO σ≪0.3 eV | script 27 | — | **[READY]** |
 | *(3.x brief)* anode reorganization energy | FADH⁻/FADH• Nelsen 4-point → inner-sphere λ_i 0.39 eV (the physically-correct deprotonated couple rescues the script-29 radical-cation pathology); ≈ lit 0.7–0.8 w/ outer-sphere — *computed*, not assumed, parallels the cathode metal-λ | script 29b (CHEM.21) | — | **[CHEM.21 DONE]** |
 | **4 Conclusion & Outlook** | cascade ET validated mechanistically; predictive mediator design rule; honest solvation lesson; EIS predictions for Ti-coin experimental closure; QM/MM capstone | SUMMARY L4c | — | **[READY]** |
-| Back matter | CRediT · **Data availability** (repo + recorded explicit env — strong; conda-lock = re-run, not replay) · Funding · Conflicts · SI = scripts/goldens | — | — | **[READY]** |
+| Back matter | CRediT · **Data availability** (repo + recorded explicit env — strong; conda-lock = re-run, not replay) · Funding · Conflicts · SI = generated manifest [`10_supporting_information.md`](10_supporting_information.md) (script 72: env + scripts + caches + coordinates + figures, sha256 each) | script 72 | — | **[READY]** |
 
 ## 4. Figure & table plan
 

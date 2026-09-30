@@ -22,7 +22,9 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 ## Other required declarations [finalise at submission]
 
 - **Data Availability.** Scripts, golden reference outputs, and result caches provided as Supporting
-  Information / repository (publish-to-protect, `00_01 §8`). [finalise — repository DOI]
+  Information / repository (publish-to-protect, `00_01 §8`); the SI itself is the generated manifest
+  [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
+  file it lists). [finalise — repository DOI]
 - **Competing Interests.** [finalise]
 - **Funding.** [finalise — see funding-statement guidance]
 - **Author Contributions (CRediT).** [finalise — Architect (Silken Net): in-silico baseline, drafting.
