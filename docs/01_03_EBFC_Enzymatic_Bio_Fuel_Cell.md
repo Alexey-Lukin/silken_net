@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 (2026-05-24) — **in-silico Zero-Lab pipeline L1-L4 ✅ завершено** (2026-05-25; аналітичний PoC). За NASA/ISO in-silico = TRL 3; фізичний **TRL 4 gated на in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5/HW.6), in vitro Ti-coin (HW.24) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 (2026-05-24) — **in-silico Zero-Lab pipeline L1-L4 ✅ завершено** (2026-05-25; аналітичний PoC). За NASA/ISO in-silico = TRL 3; фізичний **TRL 4 gated на in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5; HW.6 — лише нанесення покриття й верифікація проти смоли, не синтез), in vitro Ti-coin (HW.24) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
