@@ -540,7 +540,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 - **Thickness:** 20–100 µm.
 - **Water contact angle:** greater than 110°.
 - **Fixing:** held only by mechanical clamping along its edges onto a titanium part — **no adhesive of any kind** (contamination risk).
-- **Position:** the outermost layer over the cathode's catalytic layer on a titanium flange 25 mm in diameter. **It sits on the side face (perimeter) of the flange, as a strip that stands above the bark**; the height of that face and the clamp design are not final yet.
+- **Position:** the outermost layer over the cathode's catalytic layer on a titanium flange 29.8 mm in diameter. **It sits on the side face (perimeter) of the flange, as a strip that stands above the bark**; the height of that face and the clamp design are not final yet.
 - **Acceptance criterion we already hold:** the membrane must withstand a water column of **at least 1.5 m H₂O (about 14.7 kPa)** without water entry — the same immersion depth the sealed electronics housing on the node is rated for, since the membrane shares that node. We use it as a screen for defects such as pinholes, not as a measure of pore size: on our own calculation for ideal pores in the rating above the margin is large, so a failure at 1.5 m would mean a defect.
 
 **What we ask you to provide**
@@ -563,7 +563,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
    - an **EPDM elastomer, 70 Shore A**, in the same assembly.
 
    Tell us of any known incompatibility, including for a backing or surface treatment if present.
-10. **Mechanical fixing without adhesive.** Is your membrane suitable for being held only by clamping along its edges? In particular: whether sustained clamping damages it or opens a leak path at the clamped edge over time; what edge design you recommend or advise against; whether it can be wrapped around a cylinder 25 mm in diameter without damage; and, since the membrane is fitted as a band around that cylinder on its side face, how the joint where the two ends meet can be closed without adhesive.
+10. **Mechanical fixing without adhesive.** Is your membrane suitable for being held only by clamping along its edges? In particular: whether sustained clamping damages it or opens a leak path at the clamped edge over time; what edge design you recommend or advise against; whether it can be wrapped around a cylinder 29.8 mm in diameter without damage; and, since the membrane is fitted as a band around that cylinder on its side face, how the joint where the two ends meet can be closed without adhesive.
 11. **Sample formats:** the sizes in which you can supply samples (sheet, roll width, die-cut pieces), the smallest die-cut piece you can make, and whether you can cut to a drawing we supply. The membrane geometry on our part is not final, so sheet or roll stock we can cut ourselves is the most useful first sample.
 12. **Documentation per lot:** certificate of conformance or test report, and lot traceability.
 13. **Commercial:** price of R&D samples, minimum order quantity for samples and for later volumes, lead time, currency and validity of the quote, and a technical point of contact.
@@ -596,7 +596,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 
 **Що саме вимірюється**
 
-1. **Об'єкт:** плівка з політетрафторетилену, мікропориста, гідрофобна. Наша специфікація: розмір пор **0.2–1.0 мкм**, товщина **20–100 мкм**, крайовий кут змочування водою **понад 110°**. Зразок має форму **вузької стрічки** (вона охоплює бічну грань деталі діаметром близько 25 мм), тож робоча площа виміру мала — просимо сказати, чи це можливо на вашому обладнанні й яка мінімальна площа потрібна.
+1. **Об'єкт:** плівка з політетрафторетилену, мікропориста, гідрофобна. Наша специфікація: розмір пор **0.2–1.0 мкм**, товщина **20–100 мкм**, крайовий кут змочування водою **понад 110°**. Зразок має форму **вузької стрічки** (вона охоплює бічну грань деталі діаметром близько 30 мм), тож робоча площа виміру мала — просимо сказати, чи це можливо на вашому обладнанні й яка мінімальна площа потрібна.
 2. **Схема парна:** той самий фізичний зразок вимірюється **до** стерилізації й **після** неї, а вироком є **різниця** двох вимірів. Наш критерій прийнятності — **зміна не більша за 5 %**.
 3. **Три величини, і перші дві ми просимо НЕ змішувати:**
    - **точка бульбашки у змочувальній рідині** — тиск, за якого газ витісняє рідину з найширшої пори. Саме він перевіряє розмір пор, і він залежить від рідини, тож результат приймається **лише разом із назвою рідини** та її поверхневим натягом;
@@ -785,7 +785,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · UA-юр-review (господарник TBD) |
 | [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md) | лист опромінювачеві: доза 15 кГр · «низька потужність, охолодження» без чисел · опромінення в упаковці · 4–8 °C у темряві після кроку A4 · серії з ZIF ⊥ без ZIF · ГІЛКА B поза замовленням; для мембранника — цикли ГІЛКИ B і Δ bubble point |
 | [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) | лист мембранникові: спека (тип · пори · товщина · кут · фіксація без клеїв) · приймання ≥ 1.5 м H₂O як детектор дефекту · EPDM-сумісність |
-| [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | фланець Ø25 (`cathode_flange.json` §`flange_diameter_mm`) · EPDM 70 Shore A · робочий склад синтетичного соку |
+| [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | фланець Ø29.8 (`cathode_flange.json` §`flange_diameter_mm`) · EPDM 70 Shore A · робочий склад синтетичного соку |
 | [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.22 · §HW.25 | межа desk-присуду ZIF (Co-60; сліпий до потужності дози) · інверсія Young–Laplace під числами §5.6 — підстави питань, у листи НЕ йдуть |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.18 ⚫ / UNI.10 (лаб-доступ ЧНУ / ЧДТУ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 · HW.22 (стерилізація) · HW.25 (PTFE-мембрана) · HW.3 (присуд pH соку) |

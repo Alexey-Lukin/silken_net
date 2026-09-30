@@ -298,7 +298,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | Компонент | Модель | ⚠️ Кусає |
 |---|---|---|
 | Модем | **SIM7070G** (LTE-M/NB-IoT, UART AT, 3.7 В) + **breakout** (Waveshare/DFRobot — канон дає голий LCC68) | **НЕ SIM7000G** (firmware = 7070G); маркування звірити (RUNBOOK §5.6) |
-| SIM-карта | **Kyivstar фізична** (UA: наземні вишки + Starlink DTC) · eSIM 1NCE/Twilio для інших країн | 🔴 D2C-transport = ⚖️ відкрита розвилка [`00_07`](00_07_Action_Plan_Tracker) HW.41 (D2C Carrier-NAT → CoAP/UDP ненадійний → CoAP-over-TCP vs MQTT-SN, не вирішено). ✅ APN закрито — `AT+CGDCONT`/`AT+CNACT` у Queen-init ([`03_02 §4`](03_02_Queen_Gateway_Firmware)), `QUEEN_APN` build-time-конфігурований |
+| SIM-карта | **Kyivstar фізична** (UA: наземні вишки + Starlink DTC) · eSIM 1NCE/Twilio для інших країн | D2C-transport — ВИМІР, не розвилка: засновок «Carrier-NAT → CoAP/UDP ненадійний → потрібен TCP» знято разом із FW.60 (Королева сама опитує сервер після флашу, вхідний напрямок їй не потрібен — [`02_05 §5`](02_05_Queen_Hardware_and_Starlink)); відкрите — чи витримує CoAP/UDP втрати й jitter супутникового LTE, і це судить перший вимір на D2C ([`00_07`](00_07_Action_Plan_Tracker) HW.41), а CoAP-over-TCP / MQTT-SN — фолбек лише якщо вимір покаже втрати. ✅ APN закрито — `AT+CGDCONT`/`AT+CNACT` у Queen-init ([`03_02 §4`](03_02_Queen_Gateway_Firmware)), `QUEEN_APN` build-time-конфігурований |
 | Cellular антена | Wideband **700–2700 МГц** SMA (Kyivstar ∩ SIM7070G: B1/B3/B8, згодом B28 — [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §2.1) | окрема від LoRa (не dual-band) |
 
 ### LoRa-антена
@@ -313,7 +313,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | MPPT | **Victron SmartSolar 75/15** | 🔴 **LiFePO4-пресет** (не lead-acid); quiescent 20 мА = найбільший сток |
 | Акумулятор | LiFePO4 **12 В / 20 Ah** | заряд лише 0…+45 °C → charge-protect (нижче) |
 | BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET **може** субсумувати charge-protect — перевіряється при виборі SKU ([`00_07`](00_07_Action_Plan_Tracker) HW.16) |
-| Buck 12→3.7 В | **TI LMR33640** — поз. 9 [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) (⚖️ 2026-09-28; P/N, вимоги й перехідна — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)); на стенді — у каскаді, специфікованому під неї (дросель і C_out — нога [`00_07`](00_07_Action_Plan_Tracker) HW.15) | живить модем; сам не рятує від burst — треба tank ↓. 🔴 Для VBAT-droop-стенда не підміняти хобі-модулем (MP1584/LM2596-клас): стенд судить перехідну каскаду поз. 9 на справжньому банку й при −20 °C, тож з іншим регулятором вирок буде про іншу деталь |
+| Buck 12→3.7 В | **TI LMR33640** — поз. 9 [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) (⚖️ 2026-09-28; P/N, вимоги й перехідна — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)); на стенді — у каскаді, специфікованому під неї (дросель і C_out специфіковано 2026-09-28 — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink); окремої ноги в [`00_07`](00_07_Action_Plan_Tracker) HW.15 більше немає) | живить модем; сам не рятує від burst — треба tank ↓. 🔴 Для VBAT-droop-стенда не підміняти хобі-модулем (MP1584/LM2596-клас): стенд судить перехідну каскаду поз. 9 на справжньому банку й при −20 °C, тож з іншим регулятором вирок буде про іншу деталь |
 | Buck 12→3.3 В | ≥500 мА | живить STM32 |
 
 ### 🔴 VBAT tank конденсатори — номінали й part-номери [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)

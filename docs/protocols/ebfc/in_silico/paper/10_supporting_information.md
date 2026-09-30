@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement.
 >
-> Files in this manifest: 238 · 12,412,678 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 238 · 12,412,702 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -85,7 +85,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `99d261e2ca056ca8652c454adc3cbffb2601bf572de060a2ee80c6c130b1b4c6` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `30ea270a92bb6d69efc57f6ae22e1322dc2685192b83c9d0238050e58e4a5884` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `674f8a829b00e6019bf3f966137c6817b1caba3dd62f3dd009577a01e0fa638a` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4e3292376e7fb6d58a20dc0e2165c289a7238f9c9b95da3bf47b224e6f9b0bb2` | HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin). |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `0a780474bfb8897655740c04f7fdc467c0980f7c6f7f97376cb5214973cba67e` | HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `5bbf1483efd5b3b78119dd2b9f1a1d32dd1f17037d521695ce229664477c6389` | HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of |

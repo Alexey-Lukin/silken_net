@@ -115,7 +115,7 @@ RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR
 #   (b) the FORM does not follow from the other model either. 01_01 §4.2 relaxation is MULTIPLICATIVE and
 #       stress-independent (P_c(t) = P_c(0)·[0.65 + 0.35·exp(−t/τ)]) — under it there is no stress below
 #       which relaxation is negligible, because everything relaxes by the same 35 %. Re-anchoring on §4.2
-#       (≈0.05-0.33 MPa) would flip `rim_datum_creep` from a 3.8x margin to a shortfall, i.e. invert a
+#       (≈0.05-0.33 MPa) would flip `rim_datum_creep` from a 4.7x margin (3.8x on the Ø25 dome) to a shortfall, i.e. invert a
 #       verdict on a premise that is itself the wrong shape.
 # ⛔ What the rim actually asks is DIMENSIONAL, not a stress threshold: the bayonet is a hard-stop, so the
 # rim sits at constant STRAIN, and constant strain is exactly the case where stress decays and geometry

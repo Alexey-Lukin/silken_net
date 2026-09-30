@@ -24,7 +24,8 @@ namespace SilkenCad;
 //    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
 //    it — socket and collar are the female and male halves of one band;
 //  • the FLAT CROWN (R5, ratified 2026-09-11) is APPLIED since 2026-09-22 — its gate was ⚖️ HW.30, and that
-//    verdict put the pad BESIDE the piezo (02_01 §6), which leaves the board stack under the 16.0 mm the
+//    verdict put the pad BESIDE the piezo (02_01 §6; the piezo and its pad were then cut on 2026-09-29,
+//    HW.30 — the flat crown stays as ratified), which leaves the board stack under the 16.0 mm the
 //    crown fixes. `BellRadiusMm` now DRIVES the edge round; `BellRiseMm` stays the canon floor verify
 //    checks against. ⛔ `draw radome` is STILL refused, and for the OTHER reason: the socket is reshaped
 //    by the collar leg, so the sheet waits on the LAST of the two changes, never on this one alone.
@@ -165,7 +166,7 @@ internal static class Radome
         float fInnerR = fR - fWall;
 
         // 1. Outer dome — cylinder body + FLAT CROWN with an R-round edge (⚖️ 2026-09-11, 01_04 §5.5;
-        //    applied 2026-09-22 once ⚖️ HW.30 placed the pad BESIDE the piezo, 02_01 §6). The crown is a
+        //    applied 2026-09-22 once ⚖️ HW.30 placed the pad BESIDE the piezo, 02_01 §6; piezo and pad cut 2026-09-29, crown stays). The crown is a
         //    quarter-round from the body OD up to a flat top: a torus of minor radius `BellRadiusMm` whose
         //    major circle sits at r = fR − Rb in the plane z = fCavH, plus the flat core cylinder inside it.
         //    🔑 The rise is NOT a second number — by construction it EQUALS the edge round, so `BellRadiusMm`

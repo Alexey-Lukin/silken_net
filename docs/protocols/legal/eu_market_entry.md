@@ -67,6 +67,7 @@
 - **RoHS 2011/65 — окремо**, не поглинається.
 - **Reg. (EU) 2019/1020 Art. 4** вимагає **EU responsible person** для RED/RoHS-продуктів (⚠️ це вимога НЕ з CRA) — закривається EU-importer'ом; при D2C-продажі потрібен authorised representative.
 - **WEEE** — операційно найдорожче: реєстрація **per-member-state**.
+- **Одна EU DoC на всі акти — CRA Art. 28(3)** (звірено первинкою EUR-Lex 2026-09-30, CELEX 32024R2847): «Where a product with digital elements is subject to more than one Union legal act requiring an EU declaration of conformity, a single EU declaration of conformity shall be drawn up in respect of all such Union legal acts. That declaration shall contain the identification of the Union legal acts concerned, including their publication references.» Тобто CRA + RED + RoHS — один документ із переліком актів, а не три. **Реєстрація виробника батарей — теж per-member-state: Reg. (EU) 2023/1542 Art. 55 «Register of producers»** (звірено первинкою EUR-Lex 2026-09-30, CELEX 32023R1542): «Producers shall register in the register referred to in paragraph 1. They shall to that end submit an application for registration in each Member State where they make a battery available on the market for the first time» (Art. 55(2)); стосується й батарей, вбудованих у прилади («including those incorporated in appliances»). Тобто рядок «WEEE/battery-реєстрації per-country» у [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.24 стоїть на літері обох актів.
 
 ## 8. Battery Regulation (EU) 2023/1542 — дві приємні новини й одна неочікувана
 

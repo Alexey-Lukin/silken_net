@@ -234,7 +234,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `status` | integer (enum) | `draft(0)`, `active(1)`, `fulfilled(2)`, `breached(3)`, `cancelled(4)` |
 | `cancellation_terms` | jsonb | `early_exit_fee_percent`, `burn_accrued_points`, `min_days_before_exit` |
 | `cancelled_at` | timestamp | Час дострокового розірвання |
-| `hadron_asset_id` | varchar | ID лісової ділянки як RWA в Polygon Hadron |
+| `hadron_asset_id` | varchar | ID лісової ділянки як RWA у зовнішньому реєстрі токенізованих активів (стандарт ERC-3643; провайдера не обрано — «Hadron» в імені колонки й класів історичне, вендора з таким продуктом не існує: вимір 2026-09-04, [`00_07`](00_07_Action_Plan_Tracker) BIZ.11) |
 
 ### Wallet (таблиця `wallets`)
 
