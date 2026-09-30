@@ -7,6 +7,8 @@
 # A RECORD, not the maintained environment. `conda-lock.yml` beside it was generated 2026-06-04,
 # after the calculations, and resolves PySCF 2.13.1 and geomeTRIC 1.1.1 — so a re-run under the
 # lock is a reproduction, not a replay. Stated in the paper, §2.2 and §2.7 (00_07 HW.5.IS).
+# The gap was MEASURED 2026-09-30 (scripts 20 + 32 under the lock, osx-arm64): total energies within 4e-10 Ha,
+# every reported number identical — record: cache/reproduction/lock_rerun_2026-09-30.json (committed caches untouched).
 # Exported with: conda list -n silken_md --explicit --md5  (header lines above @EXPLICIT added by hand)
 # Not listed by --explicit — pip-installed into the env: amberutils 21.0 · edgembar 3.0 · iniconfig 2.3.0 · mmpbsa-py 16.0 · ndfes 3.0 · pdb4amber 22.0 · pluggy 1.6.0 · pymsmt 22.0 · pytest 9.0.3 · pytraj 2.0.6 · ruff 0.15.20 · sander 22.0
 #   (AmberTools' bundled helpers and the test runner; none is an input to a DFT or MD result).

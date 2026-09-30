@@ -121,7 +121,10 @@ def build() -> str:
         "> **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 "
         "(PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves "
         "PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches "
-        "(S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement.\n>\n"
+        "(S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. "
+        "The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: "
+        "`cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and "
+        "every reported number is identical — the committed caches were not touched by that run.\n>\n"
         f"> Files in this manifest: {len(everything)} · {total:,} bytes. Bundle for upload: "
         "`python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.\n"
     )

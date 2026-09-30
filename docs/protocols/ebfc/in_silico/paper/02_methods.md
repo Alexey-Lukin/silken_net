@@ -113,6 +113,11 @@ The pipeline is fully scripted and deterministic (fixed RDKit embedding seeds, a
 / DFT-runner library, committed cache JSONs) and was run in one **recorded** environment (PySCF 2.11.0,
 geomeTRIC 1.1, Python 3.12; the exact package list with checksums is in the Supporting Information). The
 repository's conda-lock file was generated after the calculations and resolves PySCF 2.13.1, so a re-run
-under it is a reproduction attempt, not a replay of the environment the numbers came from;
-every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
+under it is a reproduction attempt, not a replay of the environment the numbers came from. The size of
+that gap was measured rather than assumed: re-running the flavin single points (script 20) and the derived
+E°(FAD/FADH₂) (script 32) under the lock (PySCF 2.13.1, geomeTRIC 1.1.1, Python 3.12, osx-arm64) reproduced
+the committed caches to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orbital energies,
+with every reported (rounded) quantity identical; the field-by-field record is committed beside the caches
+(`cache/reproduction/lock_rerun_2026-09-30.json`). Every figure/number traces to a numbered script under
+`tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

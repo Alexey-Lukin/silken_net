@@ -1,0 +1,218 @@
+{
+  "what": "Reproduction attempt of two committed DFT caches under the conda-lock environment (not a replay): same scripts, same inputs, different PySCF/geomeTRIC/Python pins. Committed caches are UNCHANGED by this run; this file records the field-by-field difference so a reviewer re-running under the lock knows what to expect (paper §2.7).",
+  "date": "2026-09-30",
+  "platform": {
+    "os": "macOS-15.7.7-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13"
+  },
+  "lock_env": {
+    "name": "silken_lock",
+    "created_from": "tools/in_silico/conda-lock.yml (osx-arm64)",
+    "versions": {
+      "pyscf": "2.13.1",
+      "geometric": "1.1.1",
+      "rdkit": "2025.09.5",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1"
+    }
+  },
+  "recorded_env": "tools/in_silico/environment.computed.explicit.txt (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12.13)",
+  "procedure": "rsync tools/in_silico (without cache/runs) into a scratch repo root; run scripts 20 then 32 with the lock python; compare every leaf field of the rerun JSON against the committed JSON.",
+  "files": {
+    "dft/lumiflavin.json": {
+      "owner_script": "20_dft_lumiflavin.py",
+      "fields_compared": 27,
+      "max_abs_delta_total_energy_Ha": 3.48791218129918e-10,
+      "max_abs_delta_reported_outputs": 7.94404542148186e-11,
+      "non_numeric_changes": {},
+      "wall_seconds_delta": {
+        "ox.wall_seconds": 0.6937932968139648,
+        "red.wall_seconds": 1.5309154987335205
+      },
+      "per_field": {
+        "ox.E_total_Ha": {
+          "committed": -872.1150515126999,
+          "lock_rerun": -872.1150515130487,
+          "delta": -3.48791218129918e-10
+        },
+        "ox.HOMO_Ha": {
+          "committed": -0.22741250075573619,
+          "lock_rerun": -0.22741250075840114,
+          "delta": -2.66495159273461e-12
+        },
+        "ox.HOMO_eV": {
+          "committed": -6.188209395230375,
+          "lock_rerun": -6.188209395302892,
+          "delta": -7.251710343325612e-11
+        },
+        "ox.LUMO_Ha": {
+          "committed": -0.1021419392936398,
+          "lock_rerun": -0.10214193929652104,
+          "delta": -2.8812507935072063e-12
+        },
+        "ox.LUMO_eV": {
+          "committed": -2.779423762033491,
+          "lock_rerun": -2.779423762111894,
+          "delta": -7.840306182060885e-11
+        },
+        "ox.charge": {
+          "committed": 0,
+          "lock_rerun": 0,
+          "delta": 0
+        },
+        "ox.gap_eV": {
+          "committed": 3.408785633196884,
+          "lock_rerun": 3.4087856331909983,
+          "delta": -5.88595838735273e-12
+        },
+        "ox.n_atoms": {
+          "committed": 31,
+          "lock_rerun": 31,
+          "delta": 0
+        },
+        "ox.n_electrons": {
+          "committed": 134,
+          "lock_rerun": 134,
+          "delta": 0
+        },
+        "ox.spin": {
+          "committed": 0,
+          "lock_rerun": 0,
+          "delta": 0
+        },
+        "ox.wall_seconds": {
+          "committed": 62.95181584358215,
+          "lock_rerun": 63.64560914039612,
+          "delta": 0.6937932968139648
+        },
+        "red.E_total_Ha": {
+          "committed": -873.309964536006,
+          "lock_rerun": -873.3099645363534,
+          "delta": -3.474269760772586e-10
+        },
+        "red.HOMO_Ha": {
+          "committed": -0.18878172204233318,
+          "lock_rerun": -0.18878172204525256,
+          "delta": -2.9193869544030804e-12
+        },
+        "red.HOMO_eV": {
+          "committed": -5.137012354676674,
+          "lock_rerun": -5.137012354756115,
+          "delta": -7.94404542148186e-11
+        },
+        "red.LUMO_Ha": {
+          "committed": -0.05852218798989745,
+          "lock_rerun": -0.058522187992525065,
+          "delta": -2.6276134046376853e-12
+        },
+        "red.LUMO_eV": {
+          "committed": -1.5924698613534196,
+          "lock_rerun": -1.5924698614249206,
+          "delta": -7.150102732111918e-11
+        },
+        "red.charge": {
+          "committed": 0,
+          "lock_rerun": 0,
+          "delta": 0
+        },
+        "red.gap_eV": {
+          "committed": 3.544542493323255,
+          "lock_rerun": 3.5445424933311944,
+          "delta": 7.93942689369942e-12
+        },
+        "red.n_atoms": {
+          "committed": 33,
+          "lock_rerun": 33,
+          "delta": 0
+        },
+        "red.n_electrons": {
+          "committed": 136,
+          "lock_rerun": 136,
+          "delta": 0
+        },
+        "red.spin": {
+          "committed": 0,
+          "lock_rerun": 0,
+          "delta": 0
+        },
+        "red.wall_seconds": {
+          "committed": 61.28112483024597,
+          "lock_rerun": 62.81204032897949,
+          "delta": 1.5309154987335205
+        }
+      }
+    },
+    "dft/pcet_redox_potential.json": {
+      "owner_script": "32_pcet_redox_potential.py",
+      "fields_compared": 18,
+      "max_abs_delta_total_energy_Ha": 3.48791218129918e-10,
+      "max_abs_delta_reported_outputs": 0.0,
+      "non_numeric_changes": {},
+      "wall_seconds_delta": {},
+      "per_field": {
+        "E_abs_V": {
+          "committed": 4.5367,
+          "lock_rerun": 4.5367,
+          "delta": 0.0
+        },
+        "E_ox_Ha": {
+          "committed": -872.1150515126999,
+          "lock_rerun": -872.1150515130487,
+          "delta": -3.48791218129918e-10
+        },
+        "E_red_Ha": {
+          "committed": -873.309964536006,
+          "lock_rerun": -873.3099645363534,
+          "delta": -3.474269760772586e-10
+        },
+        "E_vs_SHE_mV.pH_0.0": {
+          "committed": 255.7,
+          "lock_rerun": 255.7,
+          "delta": 0.0
+        },
+        "E_vs_SHE_mV.pH_4.5": {
+          "committed": -10.5,
+          "lock_rerun": -10.5,
+          "delta": 0.0
+        },
+        "E_vs_SHE_mV.pH_7.0": {
+          "committed": -158.4,
+          "lock_rerun": -158.4,
+          "delta": 0.0
+        },
+        "G_star_H_aq_eV": {
+          "committed": -11.7209,
+          "lock_rerun": -11.7209,
+          "delta": 0.0
+        },
+        "SHE_abs_V": {
+          "committed": 4.281,
+          "lock_rerun": 4.281,
+          "delta": 0.0
+        },
+        "delta_vs_exp_pH7_mV[0]": {
+          "committed": 61.6,
+          "lock_rerun": 61.6,
+          "delta": 0.0
+        },
+        "delta_vs_exp_pH7_mV[1]": {
+          "committed": 49.6,
+          "lock_rerun": 49.6,
+          "delta": 0.0
+        },
+        "exp_free_flavin_pH7_mV[0]": {
+          "committed": -220,
+          "lock_rerun": -220,
+          "delta": 0
+        },
+        "exp_free_flavin_pH7_mV[1]": {
+          "committed": -208,
+          "lock_rerun": -208,
+          "delta": 0
+        }
+      }
+    }
+  },
+  "verdict": "Every reported (rounded) quantity is identical under the lock; total electronic energies differ by ≤ 4e-10 Ha (below 1e-9 Ha SCF convergence), orbital energies by ≤ 1e-10 eV. The only fields that moved are wall_seconds."
+}
