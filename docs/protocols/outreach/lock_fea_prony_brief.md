@@ -233,3 +233,113 @@ SilkenNet
 - [ ] Креслення — перегенерувати `draw mechanical_lock` у день відправки: закомічена галерея відстає від генератора (скіл `picogk`).
 - [ ] ⏸ Листи на паузі з 2026-09-26 — не надсилати до «так» founder-а. Адресатів обрано ⚖️ 2026-09-28: цей текст — CADFEM Ukraine, EN-версія — Veryst (§8.1); «[Назва компанії]» заповнює founder.
 - [ ] Квадратні дужки заповнює founder. Правка тексту після його схвалення — нова версія: змінені пункти позначити й показати діф (скіл `legal-business`, доменне правило 4 ⊕).
+
+
+---
+
+## 10. Request text (EN) — commercial version for Veryst Engineering (copy-region)
+
+> **Репо-нота (у лист НЕ йде).** Англомовна версія тексту §9 для Veryst Engineering (адресат — ⚖️ 2026-09-28, §8.1). **Мапу провенансу ПЕРЕНЕСЕНО з §9, не замінено** (скіл `legal-business`, доменне правило 6 (ґ) ⊕): кожна частина листа має той самий дім, що й у §9 — (А)/(Б)/(В) ← §0 і §3 · вихідні дані ← §2 + `T_ASSEMBLY_C` · що повернути ← §4 · як читатимемо ← §5 · невизначеності ← §7 · не входить ← §6 · запитання — під комерційну пропозицію (базовий кейс і дельти — правило 5 а; відкритість — [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)), — і ті самі свідомі відсутності (нижче). Тут лише те, що відрізняється мовою чи адресатом.
+> - **Адресат** — Veryst Engineering (§8.1); назву й імʼя в лист вставляє founder. 🔴 Профіль адресата лист НЕ стверджує — питає (запитання 1–2), як і §9. ⊕ Єдина змістова відмінність від §9, куплена профілем Veryst (§8.1 — фірма публічно заявляє власні виміри й калібрування моделей полімерів): запитання 1 питає, чи (А) міряється в них самих, і лише потім — про партнерську лабораторію.
+> - **Ревʼю — у рамці ОДЕРЖУВАЧА над EN-текстом** (правило 5 (б)): американський інженерний консалтинг читає «shrink fit», «hoop stress», «Prony series», «time–temperature shift»; слова «solution» в листі немає (металург читає його як solution treatment — саме цей інстанс і купив правило), «yield» — лише як «yield strength», «interference» — завжди з осями («on the diameter»).
+> - **Числа й одиниці** — ті самі, що в §9, у SI, десятковий роздільник крапка. **Додаток 3 — EN-двійник** [`calibration_case_en.md`](../anchor/fea_aging/calibration_case_en.md) (§9 несе UA-витяг [`calibration_case_ua.md`](../anchor/fea_aging/calibration_case_ua.md); числа обох — зі звіту, правити лише слідом за ним).
+> - **Свідомо НЕМАЄ** (ті самі відсутності, що в §9): трекер-ID, §-рефів, дат і гліфів (`copy_region_check`) · межі витривалості 30–48 МПа (порівнюємо ми) · автора таблиці крипу · «3–5× проти тертя» · бюджету й дати · шортлиста й присуду про канал.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
+
+[Company name]
+
+**Subject:** Request for a commercial proposal — retention of a titanium–PEEK mechanical lock with a Prony-series model of PEEK relaxation
+
+Dear colleagues,
+
+I am building SilkenNet, an instrument for the long-term monitoring of living trees that is installed in the trunk. The instrument is held by a three-part anchor: a titanium part in the wood, a PEEK sleeve, and an outer titanium flange. The sleeve acts as a thermal break, and the titanium shanks are retained in it by an interference fit and a mechanical lock — annular, asymmetric ratchet teeth. I am asking for a commercial proposal for one specific polymer-mechanics problem: how much pull-out force is left in this lock after ten years, once the PEEK has relaxed.
+
+Let me say first what we have and what we do not. We have no measurements of our own of PEEK creep or relaxation, none. We have an elastic analytical estimate of the stresses in the sleeve (thick-walled Lamé) and a two-term relaxation estimate taken from the literature, which we regard as a stand-in. We have no finite-element analysis of the lock with viscoelastic PEEK. We are not asking you to confirm our estimates — we are asking you to replace them.
+
+The statement of work follows; the geometry parameters and drawings are in the attachments.
+
+**Statement of work**
+
+*1. Subject.* A titanium shank, 11 mm in diameter, carries annular asymmetric ratchet teeth printed integrally with the part. The shank is shrink-fitted, with the sleeve heated, into a round 11 mm bore in a PEEK sleeve with a 2 mm wall. The bore is round, so the model is axisymmetric. An anti-rotation hexagonal profile was in the concept, but it would have required a clearance fit, and a clearance and an interference cannot share one bore; how rotation is resisted is our open question and is not the subject of this request. Two shanks enter the same bore from opposite ends: the anode's and the flange's. This request concerns the anode shank only, because the flange shank's final diameter is not yet fixed.
+
+The lock's function within this request is axial retention, **not sealing**. We deliberately do not seal the titanium–PEEK joint; the gap between them is wet by design.
+
+The main point: **retention is carried by the teeth, not by the interference.** We defined the lower bound of the admissible interference as the one at which the fit still holds at +40 °C. So at that bound the interference at +40 °C is zero by construction, and with it the contact pressure and the frictional retention. A model that shows non-zero friction at that bound at +40 °C is not computing our fit.
+
+*2. Three parts of the task (sequential).*
+
+**(A) A Prony-series fit of the relaxation of PEEK 450G** — a multi-term Maxwell–Wiechert series plus a time–temperature shift over −30 to +40 °C.
+- The one literature creep table we relied on describes a fit with a contact pressure of 25–30 MPa at 90 % relative humidity. On our geometry that pressure would need an interference 7.5–51 times ours and would take the PEEK to its yield strength or past it. So we do not use it as an input.
+- Our contact pressure is in the single megapascals. In the worst combination (−30 °C and maximum interference) the analytical estimate gives about 5.4 MPa of contact pressure and 17.9 MPa of hoop stress.
+- We have no data on the effect of moisture, and the sleeve operates in the wet environment of a trunk.
+- Either your own measurements (DMA, stress relaxation) or published data with a named source are acceptable for the fit. Please state in the report which of the two was used.
+
+**(B) Finite-element analysis of retention.** An axisymmetric model of the toothed titanium shank in the PEEK sleeve. Steps: shrink fit at 150 °C (above the PEEK glass transition, 143 °C) → cooling → viscoelastic relaxation per the series from (A) under a ±35 °C thermal cycle → quasi-static pull-out. Horizon: 10 years mandatory; 20 years by extrapolation, marked as such, because the assembly's design life is 20 years. Cases:
+- shank insertion depth into the sleeve — 14 and 18 mm;
+- interference — the minimum and maximum of the working band (5 and 34 µm on the diameter) and the lower admissible bound. By our elastic estimate that bound is about 8.5 µm on the diameter; please recompute it in your model;
+- Young's modulus of the titanium — 110 GPa as the baseline and as a parameter, since the alloy is not yet chosen;
+- a DIN 471 retaining-ring groove 15 mm from the free end — with it and without it.
+
+If the full matrix is too large, please propose one baseline case and price the rest as deltas from it.
+
+**(C) The cyclic part.** We need the stress amplitude in the PEEK near a tooth (tooth root, contact zone) per unit cyclic axial load and per unit bending moment at the joint — that is, a transfer function. We do not yet have the load amplitude itself: trunk sway has not been measured. We will make the comparison with the PEEK endurance limit ourselves once the load is measured.
+
+*3. Input data.*
+- **Shank:** Ø11 mm, length 18 mm. Tooth zone 12 mm long, starting 2 mm from the free end (the end that enters the sleeve first). Four rows of teeth, tooth height 0.28 mm. Flank angles to the axis: 30° for the shallow flank and 70° for the steep one. The tooth base is derived from height and angles, about 0.59 mm.
+- **Profile direction:** the shallow flank faces the free end.
+- **Insertion range 14–18 mm:** from the end of the tooth zone to the full shank length. The final depth is not fixed, and the results differ at the two ends of the range, so both are needed.
+- **Sleeve:** PEEK Victrex 450G, bore Ø11 mm, wall 2 mm. Young's modulus 4.0 GPa, Poisson's ratio 0.4, yield strength about 98–100 MPa.
+- **Titanium:** Young's modulus about 110 GPa — baseline; the alloy is not chosen, so the modulus is a parameter.
+- **Coefficients of thermal expansion:** titanium 8.6·10⁻⁶ K⁻¹, PEEK 47·10⁻⁶ K⁻¹.
+- **Interference:** 5–34 µm on the diameter, referred to 20 °C. This is a working band from a tolerance table, not a computed result, and it will be revised — hence the parametric matrix.
+- **Temperatures:** operating window −30 to +40 °C, thermal cycle ±35 °C.
+- **Fit:** shrink fit, PEEK heated to 150 °C.
+- **Our interim relaxation estimate** (for comparison with your result only, not as an input): P_c(t) = P_c(0)·[E∞/E0 + (1 − E∞/E0)·exp(−t/τ)], with E∞/E0 ≈ 0.65 and τ ≈ 1 year. A two-term literature estimate, not measured.
+- **Target:** residual pull-out force above 200 N, i.e. a fivefold margin over the 40 N storm load.
+
+*4. What we ask you to return.*
+1. The Prony-series table (g_i, τ_i, E0, time–temperature shift parameters, validity range) as CSV or JSON, with the data source and the fit error stated.
+2. Pull-out force F(t) at 0, 1, 5 and 10 years for each case — as a CSV table; stress fields at the key points.
+3. The transfer function from (C) in MPa/N and MPa/(N·m), with the location where it was taken.
+4. The model: input files (an ANSYS project or an open format), contact parameters with their source (the friction coefficient named, not assumed silently), boundary conditions, and a mesh-convergence demonstration.
+
+*5. How we will read the result.*
+- **Calibration case:** a smooth shaft without teeth at −30 °C and maximum interference must reproduce our Lamé analytical estimate, i.e. a hoop stress of 17.9 MPa (the calculation is in Appendix 3). If there is a discrepancy, please put it on the first page of the report, before the results.
+- **Lower interference bound:** at that bound, friction at +40 °C is approximately zero, and the model must reproduce this.
+- **The Prony series** reproduces the source data at both ends of the temperature range, with the error stated.
+- **Mesh convergence** is shown, not merely asserted.
+- **Margin:** if the worst case at year 10 gives more than 200 N, the margin is confirmed. If not, it is not confirmed — and for us that is an equally valuable result.
+
+*6. Known uncertainties — please name them in the report; they do not need to be resolved.*
+- The physical shank length is not final: we have several incompatible variants. The analysis is done on the 14–18 mm insertion range, and we do not transfer it to other lengths without recomputing.
+- The transition from the gyroid part of the anode to the shank is undefined. There is no stop within the insertion range; the part is pressed in by force.
+- The build orientation is not chosen. In the orientation we are considering for the anode the steep flank of the tooth faces down at 20° to the horizontal and is not self-supporting, so the as-built shape and roughness of the flanks are unknown for now. Analyse the nominal profile.
+- The shank surface is etched before the fit. Whether the etched surface survives the fit and how much the etch takes off the interference is unknown, so friction and interference are given as parameters.
+- The titanium alloy is not chosen — hence the modulus as a parameter.
+- The cyclic load amplitude is not measured — hence the transfer function.
+- The DIN 471 groove lies inside the insertion range. There is no ring in it, and whether the groove itself stays is undecided, so both variants are needed.
+
+*7. Out of scope.* Sealing of the titanium–PEEK joint (deliberately unsealed) · stiffness of the gyroid part of the anode · fatigue of the printed titanium itself · the choice of shank length, of the transition to it and of the build orientation — these are our decisions.
+
+*8. Questions to you.*
+1. Would you take the work in full or in part (for example only (B) and (C))? Is (A) measured in-house, or by a partner laboratory — and if the latter, which one?
+2. What data would you use for (A) — your own relaxation measurements of PEEK or published data? Which software package and which material model would you use for (B) and (C)?
+3. Please quote scope, price and lead time — separately for one baseline case you propose and for each deviation from it.
+4. Our project is open: drawings, calculations and engineering data are published under open licences, and we would like to publish the report and the model the same way. Is that acceptable to you — with or without attribution to your firm, at your choice? Only the commercial terms stay confidential.
+
+**Attachments**
+1. Lock geometry parameters for both ends of the assembly — two JSON files; the flange end is included for reference only, it is outside the scope of this request.
+2. Lock drawings — SVG and DXF.
+3. Our analytical stress calculation for the sleeve (Lamé) — the calibration case.
+
+Thank you for your time. I will gladly answer any questions.
+
+Kind regards,
+[first name, surname]
+SilkenNet
+[phone, e-mail]
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+**Перед відправкою (👤 founder):** чекліст §9 чинний і тут, з однією заміною — Додаток 3 англійський ([`calibration_case_en.md`](../anchor/fea_aging/calibration_case_en.md), звірка геометрії — за нотою UA-двійника); креслення перегенерувати в день відправки; ⏸ листи на паузі з 2026-09-26 — до «так» founder-а не надсилати; квадратні дужки заповнює founder; правка після схвалення — нова версія з діфом.
