@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 238 · 12,413,246 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 239 · 12,421,879 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -110,7 +110,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `20ec9f1706664d45436482e3fcc82a0c5f4978d634985a7aeb1de4ae7bcbb076` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `0fb1404a06c1f3913ab02674ea998dd3313b2369c554b90db08be7ceabacbd4d` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `5a61995adac50f53ca859c65bcdb84774fc2e2d92e3cf91b05c23e400481e289` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `ba02d337bfdc4950d8a6ffc0aeabb7fc5d830652d262773fa9eb9a1b7b2a9aec` | Unit gates for the unified thick-wall Lamé core (lib.mechanics) — HW.3.IS. |
 
 ## S3. Reference outputs — the committed caches
@@ -209,6 +209,12 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `68a79cc0b2506519bb9be59a72ccf1033e6fe4ced61dc19e47def417e6fe016b` | 5,685 |
 | `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `b2c14d0301cd13875e1dd9545271920380fd4e190a28756760885b0ffe1e4bca` | 29,863 |
+
+### `tools/in_silico/cache/reproduction/`
+
+| File | SHA-256 | Bytes |
+|---|---|---|
+| `tools/in_silico/cache/reproduction/lock_rerun_2026-09-30.json` | `7781ff2b7afd9ea503699ba17b504c93901a50d2d7360d55a9f33ab96ae0aee2` | 6,877 |
 
 ### `tools/in_silico/cache/thermal/`
 

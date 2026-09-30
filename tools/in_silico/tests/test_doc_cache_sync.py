@@ -2251,3 +2251,32 @@ def test_cathode_rct_reads_the_current_bracket():
     assert len(got) == len(expected) and all(
         math.isclose(a, b, rel_tol=1e-9) for a, b in zip(got, expected, strict=True)), (
         f"31b k_DET/turnover {got} ≠ the 25 bracket {expected} — re-run 31b")
+
+
+# ── reproduction record ⟷ the paper's reproducibility claim (§2.7, measured 2026-09-30) ──
+METHODS = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
+REPRO = "reproduction/lock_rerun_2026-09-30.json"
+
+
+def test_paper_reproduction_bound_is_backed_by_the_record():
+    """§2.7 states a bound («to within N × 10⁻¹⁰ Ha in total electronic energy») for the re-run
+    under the conda-lock; the field-by-field record it cites must actually sit under that bound.
+
+    CAN catch: a re-measured record whose deltas grew past the sentence (the sentence is stale) ·
+    the record renamed or dropped while §2.7 still cites it · a bound quoted a decade above the
+    measurement (true, but useless to a reviewer).
+    CANNOT catch: whether scripts 20 and 32 are representative of the heavier caches — the record
+    itself names which were NOT re-run.
+    """
+    text = doc(METHODS)
+    found = re.findall(r"to within ([\d.]+) × 10⁻¹⁰ Ha in total electronic energy", text)
+    assert len(found) == 1, f"§2.7 bound sentence found {len(found)}× in {METHODS} — expected once"
+    bound = float(found[0]) * 1e-10
+    assert f"`cache/{REPRO}`" in text, f"§2.7 no longer names the record cache/{REPRO}"
+    measured = max(f["max_abs_delta_total_energy_Ha"] for f in C(REPRO)["files"].values())
+    assert measured <= bound, (
+        f"§2.7 says ≤ {bound:.2g} Ha but {REPRO} measured {measured:.3g} Ha — re-state §2.7 "
+        f"(and PIPELINE_STATUS / the env header) from the record, never the record from the prose")
+    assert bound < 10 * measured, (
+        f"§2.7's bound {bound:.2g} Ha sits a decade above the measured {measured:.3g} Ha — "
+        f"tighten the sentence to one significant figure of the record")

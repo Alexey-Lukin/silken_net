@@ -167,5 +167,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 26. In a stochastic pipeline the noise floor measured from REFERENCE replicates under-estimates the pipeline's own scatter — and the cheapest independent estimate sits where the perturbation does NOT act
 27. A cluster BUILDER can orient a ligand by a quantity that is not the bond it must form — the accident holds only for the ligand it was tuned on, and CORRECTING it is where the real damage happens
 28. A number you derive to CHECK a claim inherits an idealization, and the idealization — not the arithmetic — is what must be justified. Both instances below were MINE, both were arithmetically right, and one of them shipped into canon before I caught it
+29. The SI manifest (`72`) hashes the WHOLE committed in-silico tree, so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
 
 <!-- /INSILICO-MODIFYING-INDEX -->

@@ -123,6 +123,11 @@ via the GAFF (General Amber Force Field) pipeline shipped in
 The cache file is committed (small, deterministic). MD trajectories under
 `cache/runs/` are not.
 
+Re-run records live under `cache/reproduction/` (e.g. `lock_rerun_2026-09-30.json`):
+field-by-field deltas of a committed cache re-computed under another environment (the
+conda-lock). They back the paper's §2.7 reproducibility statement and are listed in the SI
+manifest; no pipeline script reads them, and the committed caches stay untouched.
+
 ---
 
 ## CI gate
