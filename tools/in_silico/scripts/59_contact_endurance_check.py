@@ -37,9 +37,11 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      hydrogel coating the way it does for metals/PEEK. Durability axis for this part is chemical/
      enzymatic (HW.5 stability tests), not mechanical fatigue.
 
-Sources (fetched 2026-09-09, see verdict `sources` list in the JSON output for exact citations):
-  - BeCu C17200 VHCF: "Specific very high cycle fatigue fracture mechanism in C17200 beryllium
-    copper alloy…" (ScienceDirect) + "Rotating Bending Fatigue Behaviors of C17200…" (PMC/NCBI).
+Sources (fetched 2026-09-09 + 2026-10-01, see verdict `sources` list in the JSON output for exact citations):
+  - BeCu C17200 VHCF: the anchor points are printed by the Li et al. 2025 Adv. Eng. Mater. abstract
+    (R not stated); the sibling Ma et al. 2025 EFM "Specific very high cycle fatigue fracture mechanism
+    in C17200 beryllium copper alloy…" (ScienceDirect; SSRN 5074646 preprint sect. 2.2 — 20 kHz,
+    R = -1) + "Rotating Bending Fatigue Behaviors of C17200…" (PMC/NCBI).
   - Mill-Max 0906 series product page (mill-max.com) — mechanical life spec.
   - PEEK endurance limit: peekchina.com "Fatigue Strength of PEEK: A Guide for Gear Engineers" +
     Pastukhov et al. 2020, "Physical background of the endurance limit in poly(ether ether ketone)",
@@ -224,9 +226,13 @@ def main() -> int:
         "parts": parts,
         "sources": [
             "Mill-Max 0906 series product page (mill-max.com) — mechanical life 1e5-1e6 cycles at mid-stroke",
-            "ScienceDirect — 'Specific very high cycle fatigue fracture mechanism in C17200 beryllium "
-            "copper alloy caused by grain boundary precipitates and persistent slip bands' — VHCF anchor "
-            "points (400 MPa/3.05e6 cyc, 240 MPa/1e10 cyc), no strict VHCF flat limit",
+            "Li et al. 2025, Adv. Eng. Mater. 27, 2500935 (doi 10.1002/adem.202500935; abstract via Crossref, "
+            "read 2026-10-01) — VHCF anchor points verbatim (400 MPa/3.05e6 cyc, 240 MPa/1e10 cyc), 20 kHz, "
+            "R not stated",
+            "Ma et al. 2025, Eng. Fract. Mech. 321, 111113 (ScienceDirect — 'Specific very high cycle fatigue "
+            "fracture mechanism in C17200 beryllium copper alloy caused by grain boundary precipitates and "
+            "persistent slip bands') — sibling study of the same group, no strict VHCF flat limit; its SSRN "
+            "5074646 preprint sect. 2.2 gives the rig: 20 kHz, R = -1",
             "PMC/NCBI — 'Rotating Bending Fatigue Behaviors of C17200 Beryllium Copper Alloy at High "
             "Temperatures' — corroborating BeCu fatigue behaviour",
             "peekchina.com — 'Fatigue Strength of PEEK: A Guide for Gear Engineers' — unfilled PEEK "

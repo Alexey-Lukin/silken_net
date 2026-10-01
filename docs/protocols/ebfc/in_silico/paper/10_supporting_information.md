@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 247 · 14,768,502 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 247 · 14,769,394 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -92,7 +92,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `66b91da2009db75771db70e6d86925192559dbeb03ffdd1d506cf4d75880eaa9` | HW.3.IS — Unified thick-wall Lamé: press-fit interference + thermal mismatch in ONE model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `8c01ed6fea1c32db05a52d842ba94a29d75febeab239325af0d061bf6ca9db5a` | HW.25 — PTFE-GDL cathode membrane: liquid-entry (breakthrough) pressure and the O2 budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `78e58007ef5c02ba51f5c40f4fc4a181206e2ef3c3c5ceb43e0a4f487f467381` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
-| `tools/in_silico/scripts/59_contact_endurance_check.py` | `94ce054043b6fda5492fb11dc752ee88528dd3600c092d7a7617b8fb945f4ffe` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
+| `tools/in_silico/scripts/59_contact_endurance_check.py` | `a659839b577e297d82818424c27cef020d10be13934170c75fcaf89001c6839a` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `7612f9d65a1dc44f32d79ab64162345ff3dcffa7fafd6cdfe68bf9dcfa7ee6f7` | HW.43 (checkbox 1) — wind duty-cycle for the Cherkasy pine forest, from open meteorological data. |
@@ -106,7 +106,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `93fe570f6bcf44c0c8f1a6c4c3a9b531ed7a1183b1feb0c3e1f56582256e3325` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
-| `tools/in_silico/scripts/73_collar_wall_inversion.py` | `78f18824ba0163ae6f45cac314c3b1a1c4806785c9b29618bd5b6bacbe5b5c18` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «підстава стінки»). |
+| `tools/in_silico/scripts/73_collar_wall_inversion.py` | `df57e810c36359490b455caa702d6122d4679c3e9870396575e8fc4381df9415` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «реалізувати комір»; вирок — 02_02 §4.4). |
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
@@ -205,7 +205,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `9b1731a77f4f8d0366792d33a7f19d87d35a88d4ad8c2d8e68dab5eccdb69f3f` | 106,711 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `e7593ef3fe02afec49769604bc93e827e829c5ac57d9737962cf4d31bc57b748` | 314,276 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `19753811072b0d85efaa79d1ebc430d5d6ab822c019dcba2b7167c41f7a282c7` | 5,468 |
-| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `8aa3bb9771ec13d7fad63695c1476f0af06c1c450a8474f18ca4292a7ba9ac3a` | 8,834 |
+| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `52be00adaf3f4b77caac7ef22079f0b11cbb42af4854c578a3b10a663b070b0e` | 9,140 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `c4d038312f9dd6b6dd080a1e1de2d3d4c8203d781a11431637edda9967f0efa7` | 67,160 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `6d0af0d6d808c6edd245087470b2486591df93a9b682be2eb7ea0c6e17810ae7` | 152,028 |

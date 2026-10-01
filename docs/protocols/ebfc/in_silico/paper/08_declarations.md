@@ -17,7 +17,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   result caches.
 - **Manuscript preparation.** An LLM assisted with drafting and editing. **All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
-  authors.** AI tools were not used to generate or fabricate data, results, or references.
+  authors.** [finalise: number of authors — 00_07 HW.5.IS] AI tools were not used to generate or fabricate data, results, or references.
 
 ## Other required declarations [finalise at submission]
 
@@ -37,7 +37,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   same position — [finalise: founder confirms the standard wording; it goes into the ACS submission-form
   field, which is where *J. Phys. Chem. B* takes the statement and from which it is printed with the
   article — the ACS default sentence is printed only when nothing is declared and would not carry this
-  position, so enter it explicitly; ACS Author Guidelines, Appendix 1, HTML ✓я 2026-10-01]): *The author is the founder of the
+  position, so enter it explicitly; ACS Author Guidelines, Appendix 1, read 2026-10-01; the text is written for a
+  single author — if co-authors are added, rewrite it for all authors and declare each co-author's interests]): *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here
   is a component and which is intended for commercial deployment. No patent has been or will be filed on
   the work disclosed here (defensive-publication posture); the code, hardware design and documentation are

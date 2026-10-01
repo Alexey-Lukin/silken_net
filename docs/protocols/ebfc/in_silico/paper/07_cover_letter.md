@@ -59,20 +59,25 @@ design and documentation are released under open licenses (AGPL-3.0-or-later, CE
 CC-BY-SA-4.0). The author declares no other competing financial or non-financial interests.
 [finalise: founder confirms the standard wording — ONE text, identical to the Competing Interests draft in
 `08_declarations.md`. ACS Author Guidelines for J. Phys. Chem. A/B/C, Appendix 1 «Conflict of Interest
-Disclosure» (page last updated 2026-08-27) [HTML ✓я 2026-10-01]: the corresponding author enters the
+Disclosure» (page last updated 2026-08-27; read 2026-10-01): the corresponding author enters the
 statement in the SUBMISSION FORM on behalf of all authors, and it is published with the article; it is
 not on the cover letter's must-include list. So the form is the binding place and must carry THIS text
 explicitly — the ACS default printed when nothing is declared («The authors declare no competing financial
-interest.») does not carry the founder position above; in the letter the paragraph is optional]
+interest.») does not carry the founder position above; in the letter the paragraph is optional. The text is written for a
+single author; if co-authors are added, rewrite it for all authors and declare each co-author's interests
+before entering it in the form]
 
 [finalise: the letter must say whether the manuscript has been posted in a preprint / electronic archive,
-with the details (ACS Author Guidelines, Cover Letter) — name the ChemRxiv or repository DOI if one exists,
-omit this sentence if none. That a Zenodo DOI of the code repository counts as such an archive is our
-reading, not ACS text]
+with the details (ACS Author Guidelines, Cover Letter). The manuscript text is already publicly accessible
+in the project repository (github.com/Alexey-Lukin/silken_net, docs/protocols/ebfc/in_silico/paper) — state
+that here with the URL and the tag or commit, and add the ChemRxiv / Zenodo DOI if one exists; whether ACS
+counts a public repository as an electronic archive is our reading — disclose rather than omit]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 
 Sincerely,
 [Corresponding author, on behalf of all authors]
-[finalise: name · postal address · telephone · e-mail of EVERY author — the guidelines require them in the
-letter; filled in at submission, never kept in this repository]
+[finalise: for EVERY author — full name · postal address · telephone · CURRENT INSTITUTION e-mail; the
+letter on official letterhead of the author's affiliation; every author needs an ACS account (ACS Author
+Guidelines, Cover Letter). The affiliation is not defined anywhere in paper/ and the number of authors is
+open — both are decided in 00_07 HW.5.IS; contacts filled in at submission, never kept in this repository]

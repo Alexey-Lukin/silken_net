@@ -38,9 +38,9 @@ The inner-sphere reorganisation energy of the first anode oxidation was likewise
 The naïve FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in continuum solvent (it
 fragments on relaxation); the physically correct, pH-7 first electron transfer is the deprotonated
 **FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.39 eV**.
-Adding a Marcus two-sphere outer-sphere term<sup>13</sup> brings the total to ~0.7–0.8 eV (computed λ_total
-0.76–0.86 eV for a charge-delocalised, buried cofactor); this continuum estimate is, however,
-radius- and dielectric-dominated, so we treat it as indicative only. It lies in the range measured for
+Adding a Marcus two-sphere outer-sphere term<sup>13</sup> gives a total of 0.76–0.86 eV for a
+charge-delocalised, buried cofactor; this continuum estimate is, however,
+radius- and dielectric-dominated, so we treat it as indicative only. It overlaps the 0.7–0.8 eV range measured for
 electron transfer at other protein redox centres (0.7 eV for azurin Cu(II/I), 0.8 eV for the cytochrome
 c/b₅ heme pair<sup>48</sup>), which shows that it is physically reasonable; no rate reported in this work
 depends on it.
