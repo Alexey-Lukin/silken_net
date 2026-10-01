@@ -152,6 +152,13 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # no traceable source (born with the rest of 02_03 §9 in the initial commit; equals
 # P_IN(CS) TYP). V_OP above (0.5 V) is the OTHER model's guess (≈0.65 × 0.77 V OCV).
 # Both wait for the HW.13 bench P-V curve — do not reconcile them by editing either.
+# ── BQ25570 cold-start thresholds — MIRRORS of 02_03 §1.1 (SLUSBH2G §6.5); edit there, not here.
+# They are the Stage-2 coin ACCEPTANCE gates (01_03 §3.5), consumed by script 40; the R_int ceiling
+# R_int ≤ (V_OC − VIN(CS)) × VIN(CS) / PIN(CS) is derived in 02_03 §1.5. VIN(CS) has no MIN column,
+# so MAX is the guaranteed threshold — the V_OC gate is ratified on it (⚖️ founder 2026-09-27). ──
+BQ25570_VIN_CS_TYP_MV = 600.0    # mV
+BQ25570_VIN_CS_MAX_MV = 700.0    # mV
+BQ25570_PIN_CS_UW = 15.0         # µW — a POWER, not 15 µA (02_03 §1.1)
 # ── Node energy chain — MIRRORS of 02_03 §9.4/§9.6 Scenario C (ECB 16 B frame, SF9,
 # +14 dBm, RTC-only STOP2); the chain's home is tools/firmware/tx_cadence_budget.rb,
 # whose --assert holds these numbers ──

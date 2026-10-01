@@ -3,15 +3,19 @@
     "E_cascade_eV": -1.0514490468713946,
     "HOMO_FADH2_eV": -5.137012354676674,
     "LUMO_Os3_eV": -4.0855633078052795,
-    "delta_t_healthy_s": 171.7,
-    "delta_t_stressed_s": 930.5,
-    "j_max_uA_cm2": 881.0,
+    "delta_t_healthy_s": 135.2,
+    "delta_t_stressed_s": 732.7,
+    "j_max_MM_uA_cm2": 881.0,
     "Km_mM": 13.9,
     "Rct_ohm": 72.9,
+    "A_model_cm2": 2.0,
+    "Rct_ohm_cm2": 145.8,
     "Rs_ohm": 100.0,
     "Cdl_uF_cm2": 50.0,
-    "delta_t_healthy_p5": 78.5,
-    "delta_t_healthy_p95": 536.3
+    "delta_t_healthy_p5": 69.3,
+    "delta_t_healthy_p95": 462.9
   },
-  "experimental": {}
+  "experimental": {},
+  "comparison": [],
+  "acceptance_gates": []
 }

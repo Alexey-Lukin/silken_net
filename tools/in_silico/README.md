@@ -66,7 +66,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t **at the pH-7.4 ceiling**, with the sap-pH 5.5 band printed beside it (⚖️ 2026-09-18 shape, applied here 2026-09-21) | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (the k_DET bracket's corners × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |
-| 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
+| 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS (MM `j_max`, area-normalised `R_ct`) + the `V_OC`/`R_int` acceptance gates | ~1 s |
 | 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
 | 52 | `52_z_stack_tolerance.py` | HW.8.7 anchor: 2-spring blind-mate Z-stack tolerance (pogo, O-ring) | ~1 s |
