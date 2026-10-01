@@ -39,8 +39,11 @@ WHAT IS **NOT** COMPUTED — and each of these is absent, not merely undiscussed
     https://pypi.org/pypi/aggrescan3d/json: version 1.0.2 of 2019-01-31, py2-only wheels plus
     an sdist, licence «free for non-commercial users» — so «external web server» is a property
     of the channel tried, not of the tool. Installing it would CONSUME a non-commercial licence
-    in a commercial project: that posture is the founder's call (00_07 HW.5.IS), not the
-    machine's, and nothing was installed. The L1 §2 recipe's first half remains OPEN.
+    in a commercial project; the founder RATIFIED that posture 2026-10-01 in the AF3 form (a
+    non-commercial line in /NOTICE, its output excluded from the CC-BY-SA-4.0 grant; verdict with
+    its price and weakest link in L1 §2), so the route is open — but nothing is installed here, the
+    full licence text is read by a person first (the PyPI metadata line is not the licence), and
+    the L1 §2 recipe's first half therefore remains OPEN.
   · This is not an aggregation PREDICTION. An exposed apolar patch is a static surface
     descriptor; aggregation is a multi-molecule, concentration-, pH- and shear-dependent
     kinetic process. Nothing here computes a rate, a solubility or a critical concentration.

@@ -83,6 +83,22 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
     re-prediction can replace the AF3 structure in the R&D path, leaving AF3 outputs
     for publication-benchmark only (tracked in docs/00_07, HW.5.IS).
 
+Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
+    NOTHING IS INSTALLED OR RUN YET - no Aggrescan3D output is in this repository
+  The hosted servers need an account, so the standalone release (PyPI package
+  `aggrescan3d` 1.0.2 of 2019-01-31, sources bitbucket.org/lcbio/aggrescan3d) is the
+  route this project would take for the open half of the aggregation recipe in
+  docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2. Its PyPI metadata
+  states "free for non-commercial users". Posture ratified 2026-10-01, in the same
+  form as the AF3 outputs above: any Aggrescan3D output committed here is provided
+  under that upstream licence and is EXCLUDED from the CC-BY-SA-4.0 grant, and the
+  tool serves an R&D step whose pipeline, inputs and results are AGPL-open and
+  released in this repository (00_01 §8; state in docs/00_07, HW.5.IS).
+    Two conditions belong to the posture, not to its footnotes: the FULL licence text
+    - which the PyPI metadata line is not - is read by a person before anything is
+    installed, and that 2019 py2-only release may not build under Python 3, in which
+    case the account-gated hosted channel remains the only one.
+
 Bundled / referenced third-party under their own (permissive) licenses - curated
 inventory in THIRD_PARTY_NOTICES (regen via license_finder):
     ARM CMSIS-DSP, CMSIS_6 ......... Apache-2.0   (firmware/extern/)

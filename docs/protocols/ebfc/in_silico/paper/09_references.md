@@ -40,7 +40,8 @@ supplied from memory. Each was tried against open-access full texts (PMC / Europ
 2026-09-24; later passes (2026-09-25, 2026-10-01) are dated on the line they closed. **👤** = still open:
 the likely primary is paywalled, or the question is the author's.
 
-**Disposition rule — ⚖️ делеговано 2026-10-01 (машина, за рекомендацією; founder може перевернути).**
+**Disposition rule — ⚖️ РАТИФІКОВАНО founder 2026-10-01 (закритим списком «одне так», за рекомендацією);
+delegated to the machine the same day and ratified as recommended.**
 Every surviving `[CITATION NEEDED]` clause leaves the body before the founder's ACS pass by exactly one of
 three routes, and the route is recorded on its line below:
 (a) **source** — a primary whose FULL TEXT was read and states the value, owner fixed by the canon carrier
@@ -62,11 +63,22 @@ or a formulation choice, both inside the machine channel; the alternatives are r
 named assumption ⊥ withdrawal). **Cost:** the paper gives up its strongest wording wherever no primary
 exists — numbers move into Methods as named assumptions, and a referee may still ask for the primary,
 which then becomes a revision-round edit. **Weakest link:** route (b) legalises printing a number without
-a primary — for *J. Phys. Chem. B* that is review surface (λ(Cu) 2.0 eV, λ(Co/Ce/Ru)); if the founder
-judges an unsourced number in Methods unacceptable in principle, the right route for λ(Cu) 2.0 is (c),
-and that is a MODEL change (skill `in-silico` §When Modifying #13): §3.4 prints "×25 at zero driving
-force on the 2.0 eV reading". The authorship / corresponding-author verdict is a separate leg and is not
-touched by this rule.
+a primary — for *J. Phys. Chem. B* that is review surface (λ(Cu) 2.0 eV, λ(Co/Ce/Ru)). That is the axis
+the founder ruled on: route (b) was ratified **for exactly those numbers**, and the (c) alternative —
+dropping the 2.0 eV reading — was not taken, because it is a MODEL change (skill `in-silico` §When
+Modifying #13: §3.4 prints "×25 at zero driving force on the 2.0 eV reading"). So an unsourced number
+stays printed, under its label and judged at the adverse end, and a referee who asks for the primary is a
+revision-round edit rather than a submit blocker. The authorship / corresponding-author verdict is a
+separate leg and is not touched by this rule.
+
+**Applied 2026-10-01 — route (b) for the λ set, and nothing beyond it.** Two clause markers left the body:
+§2.5 (λ(Cu) 2.0 eV) and §3.4 (the first-row literature λ). §2.5 now calls 2.0 eV an assumed textbook value
+for which no primary is cited, and names the assumed set the literature-λ scenario of §3.4 and Table 3
+pairs with it (Co 1.4 / Ce 1.0 / Ru 0.8 eV); §3.4 reads those values as assumed. The code already carried
+the label (`LAMBDA_CU_READING_SOURCES["unsourced"]` in `25`), and no value moved — this is wording and
+provenance, not a model change. **The zero-marker criterion is NOT yet met:** the clauses still marked 👤
+below remain — the σ_para series, the FO-DFT / Mulliken–Hush attribution and the −208 mV free-flavin
+reading — and each needs its own route before the ACS pass.
 
 - §2.3 — the Os–ligand bond lengths (2.06 / 2.10 / 2.38 Å, `lib/os_geometry.py`), once labelled
   "crystallographic". ⚠️ 2026-10-01, route (b) PARTIAL — the label and the text are done, the adverse-end
@@ -91,8 +103,10 @@ touched by this rule.
   ✅ 2026-09-24 for Cu: λ(Cu) is now a bracket of two named readings, judged at its adverse corner — 2.4 eV
   is the **Cu(phen)₂²⁺/⁺** self-exchange of ref 48 (PMC553296, §"Ru-Proteins", citing its ref 24). ⚠️ The
   species is an inline formula IMAGE that the page's text layer drops; read from the image, it is a
-  bis-phenanthroline N₄ chelate, not the aqueous ion this note once said. 2.0 eV keeps
-  `[CITATION NEEDED]`. Co/Ce/Ru: no primary found. 👤 primary for Cu 2.0 (or drop it) and for Co/Ce/Ru
+  bis-phenanthroline N₄ chelate, not the aqueous ion this note once said. Co/Ce/Ru: no primary found.
+  ✅ 2026-10-01, route (b) — ⚖️ ratified above: 2.0 eV and the Co/Ce/Ru set are **named assumptions** in
+  §2.5, read at the adverse end, and the "or drop it" branch was explicitly not taken (dropping 2.0 eV is a
+  model change). A primary for any of them is a revision-round improvement, not a submit blocker.
 - §3.1, Fig 2 — the tunnelling window. ✅ 2026-09-24: replaced by what ref 48 states («the maximum
   center-to-center distance for single-step tunneling through proteins can be no more than ≈20 Å», for the
   micro-to-millisecond times a redox machine needs — §"Hopping", with its Fig. 4); the unsourced 18 Å edge is

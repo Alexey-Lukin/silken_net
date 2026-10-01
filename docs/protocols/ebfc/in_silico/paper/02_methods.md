@@ -85,9 +85,13 @@ rate is the series combination of the three hops.
 (two relaxed geometries + two cross single-points seeded from the diagonal density). For the
 cathode this was applied to the well-behaved mixed-valence metal couples — **Co, Ce and Ru; Cu(II/I)
 was not computed**, a d¹⁰ Cu(I) hexa-aqua optimisation being unphysical in implicit solvent, so λ(Cu)
-enters as a bracket of two literature readings of Cu(II/I) self-exchange — 2.0 eV [CITATION NEEDED] and
-2.4 eV, the value for Cu(phen)₂²⁺/⁺<sup>48</sup> — judged at its adverse end (§3.4), and λ_hop(Cu–Co) is half
-computed and half cited; for the anode the
+enters as a bracket of two literature readings of Cu(II/I) self-exchange — an **assumed** textbook value of
+2.0 eV, for which no primary source is cited here, and 2.4 eV, the value for Cu(phen)₂²⁺/⁺<sup>48</sup> —
+judged at its adverse end (§3.4), and λ_hop(Cu–Co) is half
+computed and half cited. The literature-λ scenario of §3.4 and Table 3 pairs that bracket with **assumed**
+textbook values at the remaining nodes (Co 1.4, Ce 1.0 and Ru 0.8 eV), likewise without a cited primary;
+both assumptions are labelled as such in the scripts that consume them, and the scenario is read at its
+adverse corner rather than as a measurement. For the anode the
 physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used — the naïve
 FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in implicit solvent and does not yield
 a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.

@@ -17,8 +17,10 @@ We wish to submit the enclosed manuscript, **"Computational Electron-Transfer En
 FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity,
 ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT,"** for
 consideration as an Article in *The Journal of Physical Chemistry B*, Section [finalise: the letter must
-name the Journal Part and Section (ACS Author Guidelines, Cover Letter) — the founder picks one; the
-candidates as read on the guidelines page 2026-10-01 (copy the exact titles at submission): B1 Biophysical
+name the Journal Part and Section (ACS Author Guidelines, Cover Letter) — the founder picks one **at the
+moment of submission** (⚖️ founder 2026-10-01: the section is deliberately not fixed in this draft, because
+the Part/Section list is the journal's and is copied from the live guidelines page when the letter goes);
+the candidates as read on the guidelines page 2026-10-01 (copy the exact titles at submission): B1 Biophysical
 and Biochemical Systems and Processes · B2 Biomaterials and Membranes · B3 Liquids; Chemical and Dynamical
 Processes in Solution · B4 Soft Matter …].
 

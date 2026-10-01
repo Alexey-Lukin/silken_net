@@ -86,7 +86,7 @@ straddles turnover in the same way (×0.08 at the adverse corner to ×730 at the
 driving force on the 2.0 eV reading), firmly excluding the earlier orders-of-magnitude margin.
 
 This is a finding, not a failure, and we present it with its sensitivity. The rate depends
-exponentially on λ: at the literature first-row values [CITATION NEEDED] and zero driving force the Cu–Co hop sits at
+exponentially on λ: at the assumed first-row literature values (§2.5) and zero driving force the Cu–Co hop sits at
 ≈ ×1.4 over turnover (Fig 4b); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
 which would push it lower; and a low-λ metal removes the limitation entirely — replacing Co by **Ru**
 (computed λ 0.78 eV vs Co ≈ 3 eV) restores a ×4–31 margin (across the λ(Cu) readings) from the reorganisation energy alone — a
