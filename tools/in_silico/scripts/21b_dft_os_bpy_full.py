@@ -15,8 +15,9 @@ Octahedral cis-[Os(bpy)₂(1-MeIm)Cl]⁺ assembled programmatically:
   - Two s-cis bpy chelates in orthogonal planes (xz and yz)
   - 1-methylimidazole along +y (trans to bpy2 N)
   - Cl along +x (trans to bpy1 N)
-  - Os-N(bpy) = 2.06 Å, N-Os-N bite ≈ 78°
+  - placement targets (assumed): Os-N(bpy) = 2.06 Å, N-Os-N bite ≈ 78°
   - Os-N(Im) = 2.10 Å, Os-Cl = 2.38 Å
+  - realised by the rigid MMFF chelate: Os-N(bpy) 2.099 Å, bite 80.6° (ligands/os_bpy_im_cl.xyz)
 
 Known remaining bias after this fix: B3LYP underestimates FADH₂ HOMO by
 ~0.6 eV (Bhattacharyya & Truhlar 2007). Definitive publication-grade
@@ -59,7 +60,8 @@ from lib.constants import (
 )
 from lib.utils import banner
 
-# ── Bond lengths (Å) from crystallographic data of Os-bpy complexes ──
+# ── Os-ligand bond lengths (Å) — ASSUMED typical values, no primary source in the tree (paper §2.3;
+#    an own copy of lib/os_geometry.py's targets — 21b was never migrated to the shared builder) ──
 OS_N_BPY = 2.06
 OS_N_IM = 2.10
 OS_CL = 2.38

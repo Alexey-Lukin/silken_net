@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Parameterized octahedral Os-complex geometry builder (shared SSOT).
 
-Generalizes the programmatic cis-[Os(bpy)₂(L)(X)]ⁿ⁺ assembly originally inlined
-in scripts/21b_dft_os_bpy_full.py so that BOTH the single-complex reference
-(21b) and the mediator structure-property series (21e, task ①) build from one
-source — no duplicated geometry code (in-silico skill: "shared lib is SSOT").
+Generalizes the programmatic cis-[Os(bpy)₂(L)(X)]ⁿ⁺ assembly first written inline
+in scripts/21b_dft_os_bpy_full.py, so that the mediator structure-property series
+(21e, task ①), the device couple (21f) and the speciation series (34, 34b) build
+from one source (in-silico skill: "shared lib is SSOT"). ⚠️ 21b itself was never
+migrated: it keeps its own builder and its own copy of the constants below (same
+values — today its ligands/os_bpy_im_cl.xyz is coordinate-identical to this
+builder's plain-bpy chloro complex), and 21d reads that file. A change here does
+NOT reach 21b → 21d; nor does it reach the Os–OH₂ distance of 34's hexa-aqua
+benchmark, a third copy (`OS_O_AQUA`).
 
 What varies:
   * `bpy_smiles`  — the chelate (plain 2,2'-bipyridine or 4,4'-substituted), to
@@ -13,10 +18,20 @@ What varies:
 
 RDKit cannot embed an octahedral metal centre, which is exactly why the cage is
 assembled by rigid-body placement of MMFF-optimised ligands (as in 21b). Bond
-lengths are ASSUMED typical Os-ligand distances: no crystallographic source exists
-in this tree (no DOI, no structure file), so they are an input assumption, not a
-citation (paper §2.3; index paper/09_references.md §Claims still without a source).
-A different set is a MODEL change — it rebuilds the geometry of 21e/21f/34/34b.
+lengths are ASSUMED typical Os-ligand distances, not taken from a source: no
+structure of this complex class was found, so they are an input assumption, not a
+citation. A desk comparison with crystal structures of RELATED Os centres (COD,
+2026-10-01) puts every target inside or at the edge of their ranges — a comparison,
+never our source (paper §2.3; index paper/09_references.md §Claims still without a
+source).
+They are placement TARGETS, not the realised geometry: the rigid MMFF chelate keeps
+its own N···N (2.69–2.72 Å) and does not close onto the 78° bite, so the realised
+Os–N(bpy) is 2.091–2.099 Å at a bite of 80.1–80.6° across the series (measured
+from the committed ligands/os_*.xyz); the monodentate distances are realised
+exactly. No Os geometry the pipeline uses is optimised (21c tried and was
+terminated unconverged). A different set — or a builder that closes the bite — is
+a MODEL change: it rebuilds the geometry of 21e/21f/34/34b, and of 21b → 21d only
+through 21b's own copy.
 
 Geometry is returned with an `info` dict (atom count, min contact, Os-ligand
 distances) so the *caller* prints/validates — the lib stays I/O-free.

@@ -122,9 +122,12 @@ def build() -> str:
         "(PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves "
         "PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches "
         "(S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. "
-        "The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: "
-        "`cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and "
-        "every reported number is identical — the committed caches were not touched by that run.\n>\n"
+        "The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 "
+        "and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT "
+        "coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its "
+        "ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 "
+        "fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number "
+        "inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.\n>\n"
         f"> Files in this manifest: {len(everything)} · {total:,} bytes. Bundle for upload: "
         "`python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.\n"
     )
@@ -133,7 +136,9 @@ def build() -> str:
     parts.append(
         "`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every "
         "committed cache was computed in — one URL + md5 per package; its header names the pip-installed helpers "
-        "that are not inputs to any result. `conda-lock.yml` is the maintained lock (reproduction). "
+        "that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, "
+        "when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) "
+        "appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). "
         "`environment.yml` / `requirements-*` are the human-facing specs the lock was solved from.\n")
     parts.append(table(file_rows(env), ("File", "SHA-256", "Bytes")) + "\n")
 
@@ -189,7 +194,8 @@ def build() -> str:
         "```bash\n"
         "# 1. the recorded environment (osx-arm64) — a REPLAY of the exact package set\n"
         "conda create -n silken_md_replay --file tools/in_silico/environment.computed.explicit.txt\n"
-        "# 2. the maintained lock — a REPRODUCTION attempt (PySCF 2.13.1 ≠ the 2.11.0 the caches came from)\n"
+        "# 2. the maintained lock — a REPRODUCTION attempt (PySCF 2.13.1 ≠ the 2.11.0 the caches came from;\n"
+        "#    metal-in-continuum numbers move with its PCM fix — Methods §2.7)\n"
         "conda-lock install -n silken_md_lock tools/in_silico/conda-lock.yml\n"
         "# 3. the pins: every headline number in SUMMARY / L3 / the paper equals its owner cache\n"
         "cd tools/in_silico && python -m pytest tests -q\n"

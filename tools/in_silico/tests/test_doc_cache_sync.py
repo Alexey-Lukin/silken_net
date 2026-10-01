@@ -2434,6 +2434,7 @@ def test_paper_reproduction_bound_is_backed_by_the_record():
 
 # ── the HEAVIER pair's record (2026-10-01): the two caches SPLIT, and §2.7 must say so ──
 REPRO_HEAVY = "reproduction/lock_rerun_2026-10-01.json"
+REPRO_CAUSE = "reproduction/pcm_ecp_radius_attribution.json"   # script 75 — the cause of the split, below
 
 
 def test_paper_heavy_lock_rerun_is_stated_as_the_record_measured_it():
@@ -2459,3 +2460,52 @@ def test_paper_heavy_lock_rerun_is_stated_as_the_record_measured_it():
     assert fodft["max_abs_delta_reported_outputs"] == 0.0, (
         f"{REPRO_HEAVY} now shows 24b's reported fields moving by "
         f"{fodft['max_abs_delta_reported_outputs']:.3g} — §2.7 says they reproduce exactly")
+    # The split has a MEASURED cause (2026-10-01, script 75) — the sentence it replaced called it numerics.
+    for token in ("PySCF 2.13.0", "pull request 3159", f"`cache/{REPRO_CAUSE}`"):
+        assert token in text, (
+            f"§2.7 no longer names {token!r} — the measured cause of the 21f split; without it the gap reads "
+            f"as unexplained SCF numerics, the claim the attribution record refuted")
+
+
+# ── the CAUSE of that split (2026-10-01, script 75): PySCF 2.13.0 fixed the PCM radius of ECP atoms ──
+def test_paper_lock_gap_attribution_is_stated_as_the_record_measured_it():
+    """§2.7 attributes 21f's lock gap to the PySCF 2.13.0 fix of the PCM switching radius of ECP atoms and
+    prints how closely the EMULATED fix lands on the lock values. Those bounds must be the record's.
+
+    CAN catch: a re-measured record whose device, closed-shell or open-shell agreement grew past the bound
+    §2.7 prints, or a bound a decade looser than the record · a bound sentence duplicated or dropped · the
+    emulated ΔE_red no longer equal to the lock value §2.7 quotes · the open shell's «20 meV away» drifting
+    from the record · the open-shell shift falling back within the ceiling the script reads as a cavity
+    change (then «not attributed» is stale — the record's own verdict flips with it).
+    CANNOT catch: whether the members of the class that were never run behave like the device couple —
+    §2.7 and the record both say they are not measured; nor what the open-shell solutions ARE (the record
+    carries energies, no ⟨S²⟩ or stability analysis) — and a re-run of 75 is a NEW sample of that open shell.
+    """
+    text = doc(METHODS)
+    rec = C(REPRO_CAUSE)
+    dev, aqua = rec["device_21f"], rec["aqua_os_h2o6"]["differences_Ha"]
+    for anchor, measured, unit, scale in (
+            (r"device\s+couple\s+to", max(abs(s["with_fix_minus_lock_Ha"]) for s in dev["states"].values()),
+             "10⁻¹⁰", 1e-10),
+            (r"\[Os\(H₂O\)₆\]²⁺\s+to", abs(aqua["os2"]["B_minus_C"]), "10⁻¹²", 1e-12),
+            (r"\[Os\(H₂O\)₆\]³⁺\s+the\s+emulated\s+and\s+lock\s+runs\s+meet\s+as\s+well\s+\(",
+             abs(aqua["os3"]["B_minus_C"]), "10⁻¹⁰", 1e-10)):
+        found = re.findall(rf"{anchor}\s*([\d.]+)\s+×\s+{unit}\s+Ha", text)
+        assert len(found) == 1, f"§2.7 attribution bound «{anchor}» found {len(found)}× — expected once"
+        bound = float(found[0]) * scale
+        assert measured <= bound < 10 * measured, (
+            f"§2.7 prints {bound:.2g} Ha after «{anchor}», {REPRO_CAUSE} measured {measured:.3g} Ha — "
+            f"re-state §2.7 from the record, never the record from the prose")
+    dE = dev["dE_red_III_to_II_eV"]
+    assert abs(dE["recorded_with_fix"] - dE["lock_rerun"]) < 5e-5, (
+        f"the emulated fix gives ΔE_red {dE['recorded_with_fix']} against the lock's {dE['lock_rerun']} — "
+        f"§2.7's attribution of the 21f gap no longer holds")
+    osr = rec["open_shell_reading"]
+    away = re.findall(r"recorded\s+run\s+lies\s+(\d+)\s+meV\s+away", text)
+    assert len(away) == 1 and int(away[0]) == round(osr["A_minus_C_meV"]), (
+        f"§2.7 puts the recorded open-shell run {away} meV from the lock, the record "
+        f"{osr['A_minus_C_meV']:.1f} meV")
+    assert osr["B_meets_C"] and not osr["attributed_to_the_fix"], (
+        f"{REPRO_CAUSE} now reads the open shell as B_meets_C={osr['B_meets_C']}, attributed="
+        f"{osr['attributed_to_the_fix']} — §2.7 says the emulated and lock runs meet and the state is NOT "
+        f"attributed; rewrite that clause from the record")

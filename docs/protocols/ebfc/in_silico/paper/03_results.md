@@ -133,8 +133,8 @@ experiment is the decisive empirical test.
 ## 3.5 The cascade and the limits of implicit solvation
 
 The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
-is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator, the donor level
-*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.15 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
+is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator — −1.04 eV under the
+conda-lock, §2.7 — the donor level *below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.15 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
 is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
 potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH, measured as +21 mV vs
 Ag/AgCl(0.1 M KCl) with the paper's +288 mV conversion<sup>8</sup>). (The orbital offset and the free
@@ -172,8 +172,10 @@ to His/Glu protonation, is reserved for the explicit-solvent QM/MM capstone.
 ## 3.7 Thermal robustness (brief)
 
 Across a molecular-dynamics ensemble the FAD frontier orbital is thermally stable (HOMO −5.59 ± 0.06 eV,
-σ ≪ 0.3 eV), so the single-geometry redox energetics above are representative of the room-temperature
-ensemble rather than of one fortuitous snapshot.
+σ ≪ 0.3 eV), so the single-geometry flavin energetics above are representative of the room-temperature
+ensemble rather than of one fortuitous snapshot. The ensemble covers the flavin only: the osmium mediator
+has no molecular-dynamics treatment here (the force field does not parameterise the metal centre), so its
+single fixed geometry (§2.3) is not tested this way.
 
 ---
 

@@ -1,0 +1,131 @@
+{
+  "what": "Attribution of the conda-lock gap on metal-in-PCM couples (paper §2.7) to the PySCF 2.13.0 fix of the PCM switching radius of ECP atoms. Committed caches are UNCHANGED by this run.",
+  "date": "2026-10-01",
+  "platform": {
+    "os": "macOS-15.7.7-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13"
+  },
+  "cause_under_test": {
+    "changelog": "PySCF 2.13.0 (2026-04-20), Fixes: 'A bug where PCM assigned incorrect radii to ECP atoms'",
+    "pull_request": "https://github.com/pyscf/pyscf/pull/3159",
+    "merge_commit": "79e82d965f6162429c459f1166b07febbfa734b7",
+    "mechanism": "up to 2.12 gen_surface took the switching-function radius R_J at mol.atom_charges() (nuclear charge minus the ECP core) and the surface points at the element radius; from 2.13.0 both use the element"
+  },
+  "procedure": "this script, one SCF at a time: the device couple in the recorded env with the fix emulated (21f's builder and b3lyp tier via lib.dft_utils.dft_singlepoint), then the hexa-aqua pair A/B in the recorded env and C in the lock env as a child process; the device's lock values are READ from lock_rerun_2026-10-01.json, not re-run",
+  "device_21f": {
+    "settings": "21f tier 'b3lyp': b3lyp/6-31g(d)+LANL2DZ(Os), C-PCM, conv_tol 1e-06, Os(III) level shift 0",
+    "emulated": {
+      "Os": {
+        "Z": 76,
+        "Z_eff": 16,
+        "note": "modified-Bondi table radius at the Z_eff slot; PCM scales it by 1.2",
+        "slot_radius_A_before": 1.8,
+        "slot_radius_A_after": 1.999999
+      }
+    },
+    "pyscf_recorded": "2.11.0",
+    "pyscf_lock": "2.13.1",
+    "states": {
+      "os2": {
+        "committed_Ha": -1964.8520605282465,
+        "lock_rerun_Ha": -1964.8520089566964,
+        "recorded_with_fix_Ha": -1964.8520089561625,
+        "converged": true,
+        "with_fix_minus_lock_Ha": 5.338733899407089e-10,
+        "with_fix_minus_committed_Ha": 5.157208397577051e-05,
+        "wall_seconds": 496.6
+      },
+      "os3": {
+        "committed_Ha": -1964.691069120926,
+        "lock_rerun_Ha": -1964.6908980868193,
+        "recorded_with_fix_Ha": -1964.6908980863027,
+        "converged": true,
+        "with_fix_minus_lock_Ha": 5.165929906070232e-10,
+        "with_fix_minus_committed_Ha": 0.00017103462323575513,
+        "wall_seconds": 827.0
+      }
+    },
+    "dE_red_III_to_II_eV": {
+      "committed": -4.3808,
+      "lock_rerun": -4.3841,
+      "recorded_with_fix": -4.38405
+    }
+  },
+  "aqua_os_h2o6": {
+    "geometry": "docs/protocols/ebfc/in_silico/ligands/os_hexaaqua.xyz",
+    "settings": "b3lyp/6-31g(d)+LANL2DZ(Os), C-PCM, conv_tol 1e-09, Os(III) level shift 0.3",
+    "A_recorded_as_is": {
+      "pyscf": "2.11.0",
+      "os2": {
+        "E_total_Ha": -549.2837696584165,
+        "converged": true,
+        "wall_seconds": 11.4
+      },
+      "os3": {
+        "E_total_Ha": -549.1019692213715,
+        "converged": true,
+        "wall_seconds": 105.6
+      },
+      "dE_red_III_to_II_eV": -4.9470419121212625
+    },
+    "B_recorded_with_fix": {
+      "pyscf": "2.11.0",
+      "os2": {
+        "E_total_Ha": -549.2837464696752,
+        "converged": true,
+        "wall_seconds": 12.6
+      },
+      "os3": {
+        "E_total_Ha": -549.1012314394511,
+        "converged": true,
+        "wall_seconds": 175.4
+      },
+      "dE_red_III_to_II_eV": -4.966486983125267,
+      "emulated": {
+        "Os": {
+          "Z": 76,
+          "Z_eff": 16,
+          "note": "modified-Bondi table radius at the Z_eff slot; PCM scales it by 1.2",
+          "slot_radius_A_before": 1.8,
+          "slot_radius_A_after": 1.999999
+        }
+      }
+    },
+    "C_lock_as_is": {
+      "pyscf": "2.13.1",
+      "os2": {
+        "E_total_Ha": -549.2837464696731,
+        "converged": true,
+        "wall_seconds": 11.8
+      },
+      "os3": {
+        "E_total_Ha": -549.1012314400891,
+        "converged": true,
+        "wall_seconds": 162.0
+      },
+      "dE_red_III_to_II_eV": -4.966486965708431
+    },
+    "differences_Ha": {
+      "os2": {
+        "B_minus_C": -2.0463630789890885e-12,
+        "A_minus_C": -2.3188743398350198e-05,
+        "A_minus_B": -2.318874135198712e-05
+      },
+      "os3": {
+        "B_minus_C": 6.380105332937092e-10,
+        "A_minus_C": -0.0007377812823960994,
+        "A_minus_B": -0.0007377819204066327
+      }
+    }
+  },
+  "open_shell_reading": {
+    "B_meets_C": true,
+    "open_over_closed_shift_ratio": 31.816384908851887,
+    "ratio_ceiling_read_as_cavity": 10.0,
+    "attributed_to_the_fix": false,
+    "A_minus_C_meV": 20.07605144034061
+  },
+  "corrects": "the cause clause of lock_rerun_2026-10-01.json's verdict («SCF/PCM numerics on a heavy-metal ECP couple, not a different input») — the input DOES differ: the PCM cavity of an ECP atom. That record stays as written (a record of its day); this one carries the measured cause.",
+  "verdict": "Device couple (21f): with the PCM ECP-radius fix emulated, PySCF 2.11.0 lands on the lock re-run (PySCF 2.13.1) to 5.3e-10 Ha in both states, against a recorded-vs-lock gap of up to 1.7e-04 Ha; dE_red(III->II) = -4.3841 eV (lock -4.3841, committed -4.3808). Closed-shell [Os(H2O)6]2+: B - C = -2.0e-12 Ha against A - C = -2.3e-05 Ha. Open-shell [Os(H2O)6]3+: B - C = 6.4e-10 Ha and A - C = -7.4e-04 Ha — B and C meet, but A lies 20 meV from them — 32x the closed-shell effect of the fix, far beyond a cavity change — so A sits in a different SCF solution and the open shell is NOT attributed; with no stability analysis here, which solution a run reaches is not controlled. Members of the class not run here are not measured by it."
+}

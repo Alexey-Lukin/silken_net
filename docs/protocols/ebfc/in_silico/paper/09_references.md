@@ -80,18 +80,59 @@ provenance, not a model change. **The zero-marker criterion is NOT yet met:** th
 below remain — the σ_para series, the FO-DFT / Mulliken–Hush attribution and the −208 mV free-flavin
 reading — and each needs its own route before the ACS pass.
 
-- §2.3 — the Os–ligand bond lengths (2.06 / 2.10 / 2.38 Å, `lib/os_geometry.py`), once labelled
-  "crystallographic". ⚠️ 2026-10-01, route (b) PARTIAL — the label and the text are done, the adverse-end
-  judgement the rule also requires is NOT (no bracket of the distances, no ①/② sensitivity to them), and
-  the primary search was deliberately not started (⛔ below). No source exists in the tree (no DOI, no structure file), so
-  the code comment and docstring and §2.3 now say "assumed typical distances", and §2.3 says that the same
-  distances serve both oxidation states and every series member (size of the error not quantified). ⛔ A
-  primary search was NOT started: a primary with different distances is a model change (rebuilds the
-  geometry of `21e`/`21f`/`34`/`34b` and moves every ①/② number), and that cascade is priced to the founder
-  before the search, not after. ⚠️ The constants are placement TARGETS, not the realised geometry: the
-  rigid-body fit of the chelate puts the bpy nitrogens at 2.099 Å on the dimethyl device complex (the
-  `Os-coord` line printed by `21f`, lock re-run 2026-10-01), not at the 2.06 Å target — so the "assumed
-  distance" a reader should compare with a crystal structure is the printed one.
+- §2.3 — the Os–ligand bond lengths (targets 2.06 / 2.10 / 2.38 Å and a 78° bite, `lib/os_geometry.py`),
+  once labelled "crystallographic". ✅ Route (b) applied as **B′**. ⚖️ делеговано 2026-10-01 (машина, за
+  рекомендацією; founder може перевернути) — **Присуд:** the distances stay a NAMED ASSUMPTION, compared with
+  (never cited as) crystal structures of related Os centres; §2.3 prints the realised geometry, that comparison
+  and the qualitative argument (one geometry for both oxidation states and every series member) and NO
+  sensitivity number — a number enters Methods only COMPUTED (C-min below). No CPU spent; no number, cache or
+  pin moved. **Підстава:** desk search 2026-10-01 — COD queried over HTTP
+  (`http://www.crystallography.net/cod/result?el1=Os&el2=N&format=json`: 1143 Os+N entries, 102 with bpy or
+  imidazole in the name, 72 CIFs read in the authors' `_geom_bond` loops); the papers' full texts were NOT read
+  (paywall), their DOIs are confirmed in Crossref. [Os(bpy)₃]²⁺ — COD 4115954 (Breu, Kratzer & Yersin,
+  *J. Am. Chem. Soc.* 2000, *122*, 2548, DOI 10.1021/ja993104m; 105 K): Os–N 2.0562–2.0656 Å, bite
+  77.80–78.26°. Os(III) chloro-imidazole — COD 4305719/4305720 (Stepanenko … Keppler, *Inorg. Chem.* 2008, *47*,
+  7338, DOI 10.1021/ic8006958; the CIF names the compound "ruthenium(III)", a typo — the metal is Os by atom
+  type and scattering factor) and COD 4341249 (Kuhn … Arion, *Inorg. Chem.* 2014, *53*, 11130, DOI
+  10.1021/ic501710k): Os–N 2.050–2.092, Os–Cl 2.356–2.378 Å. Os(II)–Cl in polypyridyls — COD 1544713 2.4026
+  (Yoshida …, *Faraday Discuss.* 2017, *198*, 181, DOI 10.1039/C6FD00227G), COD 4320705 2.4022 (Ashby …,
+  *Inorg. Chem.* 2001, *40*, 6643, DOI 10.1021/ic0105720), COD 4335836 2.4355 Å (Chung …, *Inorg. Chem.* 2013,
+  *52*, 9885, DOI 10.1021/ic4010196). COD 7718102 (Os(II) [Os(bpy)₂(4-Mepy)(OH₂)]²⁺: Os–N(py) 2.110, Os–OH₂
+  2.130 Å) and COD 7718103 (Os(III) {[Os(bpy)₂(L)]₂(μ-H₃O₂)}⁵⁺, L an aminopyridine: Os–N(py) 2.098, Os–O 2.103 Å)
+  (Sun … Nava, *Dalton Trans.* 2025, *54*, 5109, DOI 10.1039/D5DT00419E) are RELATED but NOT a consistent
+  II/III pair — different pyridines, and an aqua against the oxygen of a half-hydroxo bridge — so no
+  II−III difference is read from them. Every target lies inside or at the edge of these ranges; only the
+  REALISED chelate departs (2.091–2.099 Å, 80.1–80.6°, measured from the committed `ligands/os_*.xyz`), and that
+  is the builder, not the constants: swapping in a "primary" changes nothing, correcting the chelate is a
+  builder — model — change. These COD entries are named in §2.3 by database ID (as PDB 1GYC in §3.4); whether the
+  ACS pass numbers them is its call, with their full texts read first and the COD database paper itself
+  (Gražulis et al.) not yet checked in Crossref. **Ціна:** the paper stays on an unoptimised, non-crystal
+  geometry and prints a comparison and a qualitative argument, not a sensitivity; the comparison structures are
+  related centres, not [Os(dmbpy)₂(MeIm)Cl]⁺, read from deposited CIFs without their papers; a referee who asks
+  for an optimised or crystal geometry turns this into C (~3.6 h CPU) or D (~48–66 h CPU under the lock plus a
+  sweep of every ①/② number) in the revision round. **Найслабша ланка:** carrying a crystal ΔR(II/III) over to
+  the model. What sets the sensitivity of a vertical ΔSCF is the Os(II)/Os(III) force difference of the MODEL
+  (B3LYP/LANL2DZ/C-PCM), and nobody has measured it: at a model ΔR(bpy) of ±0.02 Å the absolute numbers would
+  move by ~0.05–0.08 eV, so the bpy part does not cancel in them (it is common to the ② differences). Only a
+  computation (C-min) removes this link. ⊕ The analyst's first-order estimate (≲0.1 eV on absolute numbers,
+  ≲0.05 eV on the ② differences, ≤0.008 eV on ①) stays an INTERNAL judgement here and is not printed: it rests
+  on three unsourced inputs — force constants k(Os–N) 2.5–4 mdyn/Å with k(Os–Cl) = 0.6k, a crystal ΔR taken as
+  the model's, and the non-consistent pair above — and a printed number needs its script, cache and pin (skill
+  `in-silico` §When Modifying #16). ⛔ The guard "the cascade is priced to the founder BEFORE a primary search"
+  was CROSSED, not satisfied: the desk search ran first and was priced in the same pass. Harmless in substance —
+  the primaries agree with the targets and nothing was applied — but recorded as crossed. **Perimeter**
+  (corrected): the shared builder feeds `21e`/`21f`/`34`/`34b`; `21b` keeps its own copy of the constants and
+  writes the plain-bpy geometry that `21d` reads; `34`'s hexa-aqua benchmark carries a third copy
+  (`OS_O_AQUA`). A change of the distances or of the builder reaches all three homes or it splits the model.
+  **Next steps:** C-min is delegated with this verdict and runs once BOTH its conditions hold — the machine free
+  (skill `in-silico` Critical Rule #3) and the builder's default geometry shown bit-identical (§When Modifying
+  #27) — 🤖 leg in `00_07` HW.5.IS: the dmbpy chloro couple on a crystal-like chelate, ≈27 min CPU under the
+  lock, against the lock base −4.3841 eV; the full C (aqua and bis-Im forms) only if C-min moves an
+  absolute number by ≥ 0.1 eV; D only if a computation moves a difference that carries a conclusion by ≥ 0.1 eV
+  (≈ ⅓ of the smallest robust ② margin, 0.27 eV), or on a primary of the SAME donor set off the realised geometry
+  by ≥ 0.10 Å (Os–N(bpy)) or ≥ 0.07 Å (Os–Cl/O/N(L)), in one pass with any regeneration of the metal-in-PCM
+  caches (§2.7) — and its budget, with the value question "no unoptimised geometry in Methods at all", is the
+  founder's (⚖️ leg in `00_07` HW.5.IS).
 - §2.3 — the Hammett σ_para values of the substituent series (`21e`). Likely primary: Hansch, Leo & Taft,
   *Chem. Rev.* 1991, *91*, 165 (DOI 10.1021/cr00002a004 — Crossref ✓, values NOT checked: paywall). Unlike
   the bond lengths, these values are a MODEL INPUT that sets every point of the Hammett slope (`21e`

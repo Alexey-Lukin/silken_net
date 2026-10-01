@@ -36,7 +36,8 @@ L3 DFT anode (CPU):
   20 (FAD, lumiflavin.json) → 21b · 21c · 21e · 21f · 22 · 32 · 34
   21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
   21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade)
-  lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check)
+  lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75
+  21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
   28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)
   11 (DCD) → 27 · 28b
@@ -44,7 +45,8 @@ L3 DFT anode (CPU):
      tie-built twin, so the ordered gene and the published build sit in ONE sample)
   70 (CHEM.11 site conservation) standalone — reads committed alignments in `data/chem11_conservation/`,
      never the network; it is the SECOND axis of CHEM.11 and is never merged into 69's patch score
-  21 · 21b · 21c write their own caches; nothing downstream reads them
+  21 · 21b · 21c write their own caches; nothing downstream reads them — but 21b's LIGAND does travel:
+     21b (its own copy of the Os constants, not lib/os_geometry) → ligands/os_bpy_im_cl.xyz → 21c · 21d
 
 L3b DFT cathode (CPU):
   23 (ZIF clusters) → 24 · 24b      24 → 24b (FO-DFT, CHEM.14)      24 · 24b · 35 (metal λ) → 25 (k_ET vs λ ③)
@@ -98,7 +100,8 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 - **wb97x-d not supported** — use `wb97x` (range separation is the main fix, dispersion ~0.05 eV)
 - **ωB97X Koopmans orbital energies ≠ redox potentials** — RSH gives accurate IPs but LUMO systematically too high for inter-molecular comparisons. Use ΔSCF (total energies) instead. B3LYP Koopmans works better due to error cancellation.
 - **Adiabatic ΔSCF** — composite approach: geom opt at B3LYP/def2-SVP, SP at ωB97X/def2-TZVP. Saves orders of magnitude vs full ωB97X opt.
-- **Cl on flat PES** — geometry optimization never converges GAU displacement criterion for Cl in Os complex. Programmatic octahedral geometry sufficient (LUMO diff < 0.002 eV after 30 cycles).
+- **Cl on flat PES** — geometry optimization never converges GAU displacement criterion for Cl in Os complex. ⚠️ The «LUMO diff < 0.002 eV after 30 cycles» of that run (21c) is between ITS OWN steps 11 and 30, not programmatic geometry vs an optimum, and no artefact is committed — it proves no sufficiency. The programmatic geometry is a named assumption, and its realised chelate is not its targets (`tools/in_silico/lib/os_geometry.py` docstring); its comparison with related crystal structures, the delegated verdict and the C-min trigger live in `docs/protocols/ebfc/in_silico/paper/09_references.md` (§2.3 line).
+- **PySCF ≤ 2.12 PCM switches an ECP atom's sphere with the radius at Z_eff** (nuclear charge minus the core: Os/LANL2DZ → 16, i.e. sulfur's radius), while its surface points sit on the element's own — fixed in 2.13.0 (pyscf PR #3159). Every committed metal-in-PCM cache carries the recorded 2.11.0 convention, so a re-run under the conda-lock (2.13.1) moves those numbers while the flavin chain and the gas-phase caches reproduce. ⛔ A version gap far above the SCF tolerance is a different Hamiltonian, not «numerics» — read the changelog of every release in between before naming a cause. Attribution — script `75`; verdict and price — `PIPELINE_STATUS`; paper §2.7.
 - **Spin parity** — odd electrons → odd spin (2S). Auto-detect: `spin = mol.nelectron % 2` as fallback.
 - **PCET: never put H⁺ / H₃O⁺ in PCM** — PCM oversolvates small ions (H₃O⁺ by ~7 eV). A proton-coupled couple takes the **thermodynamic proton reference** (Isse & Gennaro 2010 — the constant `32` and `33` share), NOT explicit water.
 - **FAD in MD topology** — GAFF renames FAD to "UNK", all atoms have "x" suffix. 86 atoms total, 53 heavy, neutral with an EVEN electron count (`ligands/FAD.sdf`). A TRUNCATED fragment can come out odd: `27` cuts the isoalloxazine ring out of the MD frames and sets `mol.charge = n_electrons % 2`.

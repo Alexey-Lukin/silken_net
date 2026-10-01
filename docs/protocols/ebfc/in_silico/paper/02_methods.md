@@ -31,11 +31,19 @@ basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL
 and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> The
 adiabatic ωB97X cross-check (§2.3) replaced 6-31G(d) by **def2-TZVP**<sup>42</sup> on the non-metal atoms, keeping LANL2DZ
 on osmium; the ωB97X speciation cross-check kept the 6-31G(d)/LANL2DZ basis of the B3LYP tier. Aqueous
-solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.36) for the redox, speciation and
-reorganisation-energy calculations; the ZIF-cluster couplings and the molecular-dynamics snapshot orbitals
-(§2.5) were computed in the gas phase, without a continuum. For open-shell transition-metal states (Os(III), the Cu/Co/Ce hops) a level shift of
-0.3 was applied to stabilise the UKS SCF, and total energies — not the (shift-biased) virtual
-orbital energies — were used for any energy difference. Heavy-metal `density_fit` was *not* used
+solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.3553) for the redox, speciation and
+reorganisation-energy calculations, on PySCF's default cavity — modified-Bondi radii scaled by 1.2, 302 Lebedev
+points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce, which the radius table lacks (how
+the recorded version switches the surface of an atom that carries an ECP is stated in §2.7); the ZIF-cluster
+couplings and the molecular-dynamics snapshot orbitals (§2.5) were computed in the gas phase, without a continuum.
+SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair, 10⁻⁵ E_h for the
+charge-localised ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
+oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
+reorganisation and ZIF-cluster calculations (0.5 E_h to reach the second charge-localised state of a cluster
+pair), 0.2 E_h on the open-shell flavin species — and wherever it was applied, total energies, not the
+(shift-biased) virtual orbital energies, were used for any energy difference. The B3LYP osmium couples whose
+Os(III) LUMO is reported (the device mediator and the Hammett series) were converged without a shift, a
+second-order (Newton) solver taking over where DIIS stalled. Heavy-metal `density_fit` was *not* used
 (the auto-generated auxiliary basis is slower for Os/Ce than the exact integrals).
 
 ## 2.3 Redox energetics: ΔSCF and the FAD→Os cascade
@@ -43,14 +51,25 @@ orbital energies — were used for any energy difference. Heavy-metal `density_f
 The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF**, i.e. as the
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
-single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check. The
+single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
+geometries relaxed and the osmium couple kept vertical, since no osmium geometry is optimised in this work. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
-of MMFF94s-optimised<sup>45,46</sup> ligands onto typical Os–ligand distances (assumed; no primary source is
-used for them in this work) (RDKit<sup>47</sup> cannot embed an octahedral metal centre); a shared parameterised builder generated the single-complex reference,
+of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
+target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
+source is used in this work; a shared parameterised builder generated the single-complex reference,
 the 4,4′-substituent **Hammett series**<sup>22</sup> [CITATION NEEDED: σ_para values], and the chloro / aqua / bis-imidazole **speciation**
-forms from one source. The same distances are used for both oxidation states and for every member of the
-substituent and speciation series, so an error in them is common to all points; we expect it to bear more
-on absolute redox energies than on within-series trends, but its size was not quantified here.
+forms from one source. The monodentate distances are realised as targeted, the rigid chelate is not: the realised
+geometry has Os–N(bpy) 2.091–2.099 Å and a bite angle of 80.1–80.6° across the series. For comparison only — no
+crystal structure of this complex class was found — related osmium centres in the Crystallography Open Database
+(COD) give Os(II)–N(bpy) 2.056–2.066 Å with a 77.8–78.3° bite in [Os(bpy)₃]²⁺ (COD 4115954); Os–Cl 2.36–2.38 Å
+in Os(III) chloro-imidazole complexes (COD 4305719, 4305720, 4341249) and 2.40–2.44 Å in Os(II) polypyridyl
+complexes (COD 1544713, 4320705, 4335836); and Os–N 2.05–2.11 Å and Os–O 2.10–2.13 Å to imidazole, pyridine and
+aqua or hydroxo ligands across the two oxidation states (COD 4305719, 4305720, 4341249, 7718102, 7718103). The bpy
+targets thus sit inside the [Os(bpy)₃]²⁺ ranges, the Cl target at the top of the Os(III) range and below the
+Os(II) one, and the monodentate N and O targets inside the related ranges, while the realised chelate is up to 0.04 Å longer and
+3° wider than in [Os(bpy)₃]²⁺. The same geometry is used for both oxidation states and for every member of the
+substituent and speciation series, so an error in it is largely common to the points of a series; we expect it
+to bear more on absolute redox energies than on within-series trends, but its size was not computed here.
 
 ## 2.4 Proton-coupled electron transfer (PCET)
 
@@ -115,27 +134,49 @@ chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl subs
 
 ## 2.7 Reproducibility
 
-The pipeline is fully scripted and deterministic (fixed RDKit embedding seeds, a shared geometry
-/ DFT-runner library, committed cache JSONs) and was run in one **recorded** environment (PySCF 2.11.0,
-geomeTRIC 1.1, Python 3.12; the exact package list with checksums is in the Supporting Information). The
-repository's conda-lock file was generated after the calculations and resolves PySCF 2.13.1, so a re-run
-under it is a reproduction attempt, not a replay of the environment the numbers came from. The size of
-that gap was measured rather than assumed: re-running the flavin single points (script 20) and the derived
-E°(FAD/FADH₂) (script 32) under the lock (PySCF 2.13.1, geomeTRIC 1.1.1, Python 3.12, osx-arm64) reproduced
-the committed caches to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orbital energies,
-with every reported (rounded) quantity identical; the field-by-field record is committed beside the caches
-(`cache/reproduction/lock_rerun_2026-09-30.json`). That bound is a property of the flavin/PCET chain and does
-not extend to the whole pipeline, so the two heavier caches were re-run under the lock as well
-(`cache/reproduction/lock_rerun_2026-10-01.json`) and they behave differently from each other: the FO-DFT
-Cu–Co coupling (script 24b) reproduces every reported field exactly at printed precision, whereas the
-B3LYP osmium couple (script 21f) differs by 5 × 10⁻⁵ to 2 × 10⁻⁴ Ha, shifting its reported ΔE_red(III→II)
-from −4.3808 to −4.3841 eV (3 meV) and the Os(III) LUMO by 10 meV. Both single points converged in both
-environments on the same geometry (identical RDKit version), so this is solvated-SCF numerics on a
-heavy-metal ECP couple, not a different input. The shift is far below the ~1 eV continuum-solvation limit that
-the osmium results are themselves reported against, so it changes no conclusion drawn here; it is, however,
-five orders of magnitude above the flavin bound, so a reviewer re-running the osmium single points under the
-lock should expect the fourth decimal to move. The committed caches — the recorded-environment numbers — are
-what the paper quotes. The ωB97X tier of script 21f and the Hammett series (21e) were not
-re-run under the lock. Every figure/number traces to a numbered script under
-`tools/in_silico/`. The scripts and golden
+The pipeline is fully scripted (fixed RDKit embedding seeds, a shared geometry / DFT-runner library, committed
+cache JSONs) and was run in one **recorded** environment (PySCF 2.11.0, geomeTRIC 1.1, Python 3.12; the exact
+package list with checksums is in the Supporting Information). Repeated calculations return their energies within
+the SCF tolerance, with one exception: the open-shell Os(III) of the [Os(H₂O)₆]³⁺/²⁺ benchmark can converge to
+different SCF solutions — two committed runs of that couple in the recorded environment differ by 2.4 meV in
+ΔE_red, and the second-shell shift (§3.5) is quoted from one of them. That environment was installed from
+conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there. The repository's
+conda-lock file was generated after the calculations and resolves PySCF 2.13.1, so a re-run under it is a
+reproduction attempt, not a replay of the environment the numbers came from. The size of that gap was measured
+rather than assumed: re-running the flavin single points (script 20) and the derived E°(FAD/FADH₂) (script 32)
+under the lock (PySCF 2.13.1, geomeTRIC 1.1.1, Python 3.12, osx-arm64) reproduced the committed caches
+to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orbital energies, with every reported (rounded) quantity
+identical; the field-by-field record is committed beside the caches
+(`cache/reproduction/lock_rerun_2026-09-30.json`). The two heavier caches re-run under the lock
+(`cache/reproduction/lock_rerun_2026-10-01.json`) behave differently from each other: the gas-phase FO-DFT Cu–Co
+coupling (script 24b) reproduces every reported field exactly at printed precision, whereas the B3LYP osmium
+couple (script 21f), converged on the same geometry in both environments (identical RDKit version), differs by
+5 × 10⁻⁵ to 2 × 10⁻⁴ Ha — far above its 10⁻⁶ Ha SCF tolerance — and under the lock (PySCF 2.13.1) gives
+ΔE_red(III→II) = −4.3841 eV against the committed −4.3808 eV, with the Os(III) LUMO 10 meV lower.
+
+The cause is a change of the cavity, not of the numerics. PySCF 2.13.0 fixed a bug in which its PCM module
+assigned incorrect radii to ECP atoms (PySCF 2.13.0 release notes; pull request 3159 of the PySCF repository): up
+to 2.12 the switching function of each atomic sphere took its radius at the core-reduced nuclear charge, so
+osmium under the LANL2DZ ECP (effective charge 16) was switched with the radius of sulfur while its surface
+points sat on its own. The fixed build reached conda-forge for osx-arm64 on 2026-05-27. Emulating the fix in the
+recorded environment (script 75; record `cache/reproduction/pcm_ecp_radius_attribution.json`) reproduces the lock
+values of the device couple to 5.4 × 10⁻¹⁰ Ha in both oxidation states, and those of the closed-shell
+[Os(H₂O)₆]²⁺ to 2.1 × 10⁻¹² Ha; for the open-shell [Os(H₂O)₆]³⁺ the emulated and lock runs meet as well
+(6.4 × 10⁻¹⁰ Ha), but the recorded run lies 20 meV away — some thirty times the closed-shell effect of the fix,
+far beyond a change of cavity — which points to a different SCF solution rather than to the cavity, so that state
+is not attributed (2.13.0 also changed SCF defaults). The bug acts on every calculation with an ECP metal in the
+continuum — both tiers of the osmium couples, the Hammett, speciation and micro-solvation series and the Co/Ce/Ru
+reorganisation energies — and on the quantities derived from them (the Koopmans offset and the adiabatic ΔSCF of
+Table 2, the PCET cascade, the cathode λ); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
+by construction, which is why scripts 20, 32 and 24b reproduced exactly. Of the committed caches in that class only
+the B3LYP device couple was re-run under the lock; for the others the size of the gap is bounded by this argument
+and by the device and closed-shell measurements above, not measured.
+
+What moves is the third decimal of ΔE_red and the second decimal of the Os(III) LUMO and of the orbital offset
+built on it: on the device couple (identical to the Me row of Table 4), ΔE_red −4.381 eV, LUMO −4.086 eV and
+offset −1.0514 eV in the recorded environment read −4.384, −4.096 and −1.0411 eV under the lock, so the Koopmans
+offset of §3.5 and Fig 3 becomes −1.04 eV. The shift is far below the ~1 eV continuum-solvation limit that the
+osmium results are themselves reported against, so it changes no conclusion drawn here, and the points of each
+series share one cavity convention. The committed caches — the recorded-environment numbers — are what the paper
+quotes. Every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

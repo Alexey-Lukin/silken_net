@@ -226,6 +226,10 @@ protocol against the known ~1 V error for Fe/Ru/Os octahedra, JPCC 10.1021/jp406
 | n=6 (inner only) | −4.946 |
 | n=18 (+2nd shell, 55 atoms) | −3.964 |
 
+(The rows and the shift are `dft/microsolvation.json`. A second committed run of n=6, in `microsolvation_dmbpy.json`,
+reads −4.943 eV — the same environment, Os(II) equal within 2e-8 Ha, the open-shell Os(III) in a different SCF
+solution 2.4 meV away; paper §2.7.)
+
 2nd-shell shift = **+0.982 eV ≈ the literature ~1 V group-8 PCM error** for this **+2/+3**
 couple (2nd-shell H-bond directionality a continuum cannot model). The **shift** is the
 robust result (absolute E° is electronic-E proxy, ±0.15 V).
