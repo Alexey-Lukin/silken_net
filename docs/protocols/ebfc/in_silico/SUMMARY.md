@@ -1250,7 +1250,7 @@ never recorded — all three are named in the cache's own `caveats`.
 
 **Ceiling.** An exposed apolar patch is a static, single-molecule surface descriptor — **not** an aggregation
 prediction: no rate, no solubility, no critical concentration is computed anywhere here. **Aggrescan3D was
-NOT run** (external web server), so the first half of the `L1 §2` recipe stays OPEN. Sequence conservation is
+NOT run** (the standalone route is open; its licence posture is ratified as a /NOTICE line in the AF3 form — 00_07 HW.5.IS), so the first half of the `L1 §2` recipe stays OPEN. Sequence conservation is
 NOT consulted by THIS script — it is measured separately (script 70, below) and read beside this score, never
 merged into it — no mutant was run in MD, and no ΔΔG of folding was computed — burial and DSSP are geometric
 *proxies* for that risk. One AF3 model, one conformation. No catalytic-residue list exists in our canon for

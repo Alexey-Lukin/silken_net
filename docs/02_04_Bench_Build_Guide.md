@@ -407,6 +407,6 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 
 ## 12. Starlink (Phase 3 — майбутнє)
 
-> **⚠️ Starlink DTC ≠ Starlink Mini.** Для України пакети йдуть через **Starlink Direct-to-Cell** (Phase 2.5) — Kyivstar SIM конектиться через LEO-супутники, **той самий SIM7070G, без термінала** (§8; транспорт → [`00_07`](00_07_Action_Plan_Tracker) HW.41). Ця секція — про **Starlink Mini** (Phase 3): окремий high-bandwidth термінал + ESP32-S3 WiFi-міст.
+> **⚠️ Starlink DTC ≠ Starlink Mini.** Для України першим деплоєм ЗАПЛАНОВАНО **Starlink Direct-to-Cell** (Phase 2.5, ⚖️ 2026-10-01 — [`02_05 §6`](02_05_Queen_Hardware_and_Starlink)): Kyivstar SIM через LEO-супутники, **той самий SIM7070G, без термінала**, — але чи несе DTC Cat-M/NB-IoT, лишається робочою гіпотезою до відповіді оператора (§8; транспорт → [`00_07`](00_07_Action_Plan_Tracker) HW.41). Ця секція — про **Starlink Mini** (Phase 3): окремий high-bandwidth термінал + ESP32-S3 WiFi-міст.
 
-ESP32-S3 WiFi-міст STM32→Starlink Mini — **прошивки ще нема** (`firmware/esp32_coproc/` відсутня). Phase 1/2.5 працює через SIM7070G без Mini-термінала (DTC через Kyivstar). Збирати при Starlink-Mini bring-up. Дім рішення (ESP32-S3, не SIM8200G-M2) — [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`00_07`](00_07_Action_Plan_Tracker) HW.18.
+ESP32-S3 WiFi-міст STM32→Starlink Mini — **прошивки ще нема** (`firmware/esp32_coproc/` відсутня). Phase 1/2.5 планується через SIM7070G без Mini-термінала (DTC через Kyivstar — гіпотеза до відповіді оператора). Збирати при Starlink-Mini bring-up. Дім рішення (ESP32-S3, не SIM8200G-M2) — [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`00_07`](00_07_Action_Plan_Tracker) HW.18.

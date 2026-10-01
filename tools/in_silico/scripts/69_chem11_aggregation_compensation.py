@@ -1022,8 +1022,9 @@ def main() -> int:
             "single-molecule surface descriptor; aggregation is a multi-molecule kinetic process "
             "that depends on concentration, pH, ionic strength, temperature and shear. No rate, "
             "solubility or critical concentration is computed here.",
-            "Aggrescan3D was NOT run. It is an external web server and the first half of the L1 §2 "
-            "recipe stays OPEN; nothing in this cache substitutes for it.",
+            "Aggrescan3D was NOT run (the standalone route is open; its licence posture is ratified as "
+            "a /NOTICE line in the AF3 form), so the first half of the L1 §2 recipe stays OPEN; nothing "
+            "in this cache substitutes for it.",
             "Sequence conservation is NOT an input to this score. It is measured separately "
             "(script 70) and read beside it, never merged — for Ile401 that reading is what lifted "
             "the hold (⚖️ founder 2026-09-18).",

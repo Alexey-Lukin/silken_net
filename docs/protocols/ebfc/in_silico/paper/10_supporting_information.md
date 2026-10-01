@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 247 · 14,769,394 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 247 · 14,769,660 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -66,7 +66,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `74d6ab1318fd4ee9683de6400e76cc5ca5c4e73e40970152b90510c1915ac63b` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `fe7a1d154d22e01be29e0b894ceda99dbc1c3eb82c6f7bb47ada01754870521f` | 24c — Cu–Ru DET coupling (CHEM.32, the Ru "double-whammy" test). |
 | `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `1637bd7bcb3ce15119e763a985208f506ce3c25973a70bed1d828549f0bf30e0` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (CHEM.32 rigour upgrade). |
-| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `7a714b17c5c67e7c070a56d866c05a9c1c8d00d51ae5450a5ffa1da12711e04e` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
+| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `ebeb85b355ebfde6e4ff6fd64cfa7dfac0c518f350d55b8946ebe2da97cebc55` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `5270de21c04d8d394fc9662d54443f5bd963c2c6f8e2c7d6e1945601f89e772a` | L3/L2 bridge — MD→DFT ensemble averaging. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `c4635322ed7d3cc92acb953b20cc407d42bee849a90358fbe8a44a49992b2edf` | L3 — Beratan-Onuchic electron tunneling pathway analysis. |
 | `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `f7d5556818aea852a9bdfe948aad87fdcb83effddda0553a378592a3af278c2a` | L3 / CHEM.16 — dynamic electron-tunnelling over the MD ensemble. |
@@ -82,7 +82,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/34_dft_microsolvation.py` | `40720154a19e9f38b2e54e8adbd4219dcb65ee35f4414e9153f28ec642a17684` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |
 | `tools/in_silico/scripts/35_dft_metal_reorganization.py` | `9a9b564cd6705cd5f7ad1155ac31a9f921bf2ffa605d99fd267cacf5abb2d59c` | L3b task ③ — computed inner-sphere reorganization energy λ for the ZIF metal hops. |
-| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `cd8e0a8edad981b64983ff225f2b1928a6fa6b5669fbd4e0a81ba2666aaf7b38` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
+| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `c179830f17ed2f3fa3100d93c8c617297a099242a755d80c985294aab46ad4b8` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `ce3a41a240e6b4e9ca81bd8551afc638e30002ec25ce61b83d1f3c53f7ecfe7c` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
@@ -102,7 +102,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ce346a576ccbf9dccb2651a425964e83efe45c52480d20e52b6b01151461aa09` | HW.33 — the thinnest printed feature of a gyroid, per TOPOLOGY, at a fixed porosity. |
 | `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `12703ceb8264c479be11d47316e78a845c45bc631d79060cb48627016acd09c5` | HW.3 — does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible window. |
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `fc6271da5d73a63d43ed020a904c7efa27e9d0cd9b2326d51313199ea1b4ee52` | HW.34 / HW.23 — WHERE the bus rod really meets the cathode channel, solved as a CONTACT problem. |
-| `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `0471bb8711b812b60b2771de4a6d37c073e78848f4a41c5c108cca9843e4a158` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
+| `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `f3350808ef4a3fd7631f9b26db52a7332b7d06b092ffc3b3f2948324789c8a20` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `93fe570f6bcf44c0c8f1a6c4c3a9b531ed7a1183b1feb0c3e1f56582256e3325` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
@@ -114,7 +114,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/tests/test_cache_integrity.py` | `8520a9dd39385427ba3a998617f6bb90e0a252b1a5b05558d8ee361dc9f8d64e` | Verify integrity of committed in-silico cache and ligand files. |
 | `tools/in_silico/tests/test_doc_cache_sync.py` | `c93f836af4d034277750f1222f43a0cead2431353c5feecd3ddd86863423d562` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `ba02d337bfdc4950d8a6ffc0aeabb7fc5d830652d262773fa9eb9a1b7b2a9aec` | Unit gates for the unified thick-wall Lamé core (lib.mechanics) — HW.3.IS. |
-| `tools/in_silico/tests/test_validate_vs_experiment.py` | `eaf711d8ac8f2fe7ace566f6e448df666f602a46a9de421a80f4a523e3187011` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
+| `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
 ## S3. Reference outputs — the committed caches
 

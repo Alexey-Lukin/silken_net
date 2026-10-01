@@ -31,7 +31,7 @@ TURNOVER_S = 1.0e3  # enzymatic turnover ~10³ s⁻¹ (the rate the cathode must
 
 # Literature self-exchange reorganization energies (eV) for the aqua/ammine couples
 # — textbook Marcus values; the first-row/Cu couples are intrinsically large. Co/Ce/Ru have
-# no primary in the tree either (the paper carries [CITATION NEEDED]).
+# no primary in the tree either (the paper names them as assumptions in Methods — ratified 2026-10-01).
 #
 # λ(Cu) is a BRACKET of two NAMED solution readings, never a pick (§When Modifying #11), and the
 # verdict is judged at its adverse corner:
