@@ -21,7 +21,7 @@ namespace SilkenCad;
 //  • the raised COLLAR that carries the lugs at Assembly.RequiredLugZMm (ratified 2026-09-11, 02_02 §4.4) is NOT
 //    modelled — strength does not size its wall (model 73, 02_02 §4.4: there is still no bayonet load model, but
 //    the force no longer sizes the wall — the process floor does), a placeholder would print on the flange sheet as a
-//    decision, and its running clearance moves the root (00_07 HW.9, under the crown pause), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
+//    decision, and any non-zero running clearance it may need moves the root (00_07 HW.9, under the crown pause; whether it needs one, nothing states), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
 //    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
 //    it — socket and collar are the female and male halves of one band;
 //  • the FLAT CROWN (R5, ratified 2026-09-11) is APPLIED since 2026-09-22 — its gate was ⚖️ HW.30, and that

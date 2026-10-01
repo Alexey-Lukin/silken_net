@@ -57,7 +57,7 @@
 
 Dear colleagues,
 
-**About us and the purpose of this enquiry.** We are an R&D project in Ukraine developing a sensor node for forest monitoring. The electronics sit in a small sealed capsule mounted on a tree trunk, under a **radome** — a small dome about 25–30 mm in diameter with a wall of 1.5–2.0 mm, through which a 868 MHz antenna radiates. The radome is outdoors in direct sun for many years, and the electronics inside are temperature-sensitive, so we specify its outer shell by **solar absorptance α ≤ 0.5**, not by colour. We are looking for a material grade that meets this, and we need its optical, ageing and dielectric data. This is a request for information, not yet an order; answering commits neither side to anything, and inline answers are fine.
+**About us and the purpose of this enquiry.** We are an R&D project in Ukraine developing a sensor node for forest monitoring. The electronics sit in a small sealed capsule mounted on a tree trunk, under a **radome** — a small dome about 25–30 mm in diameter with a wall of 1.5–2.0 mm, through which an 868 MHz antenna radiates. The radome is outdoors in direct sun for many years, and the electronics inside are temperature-sensitive, so we specify its outer shell by **solar absorptance α ≤ 0.5**, not by colour. We are looking for a material grade that meets this, and we need its optical, ageing and dielectric data. This is a request for information, not yet an order; answering commits neither side to anything, and inline answers are fine.
 
 **Please tell us**
 
