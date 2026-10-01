@@ -244,7 +244,7 @@ puts "Сума кортьярдів проти корисної площі:"
 report_sides(base, opts[:diameter])
 
 puts
-puts "Важелі (кожен — окремо, на контурі Ø#{opts[:diameter]}):"
+puts format("Важелі (кожен — окремо, на контурі Ø%.2f):", opts[:diameter])
 flex = parts(**variant, rigid_flex: true)
 puts format("  rigid-flex замість пари B2B: усе %.0f %% (−%.1f мм²)",
             100 * sums(flex).values.sum / (3 * usable(opts[:diameter])), B2B.values.sum)
