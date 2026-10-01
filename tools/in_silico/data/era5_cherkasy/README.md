@@ -48,3 +48,33 @@ hour (Open-Meteo convention) — pairing them is a half-hour offset the script d
   by a margin this file does not know. A bound built on it is a bound on the reanalysis climate.
 - **Open-field wind and open-sky radiation.** Nothing here is measured under a crown or at trunk height;
   the script brackets both rather than assuming a canopy factor.
+
+---
+
+# ERA5 daily precipitation · hourly dew point, RH and soil temperature — same grid point, 1991–2020
+
+**What it is for:** `scripts/74_site_rain_dew.py` — the site climate two open legs asked for and had only a
+route to: rain and dew for the HW.25 rain/dew stand (`docs/protocols/anchor/gdl_rain_dew_stand.md` §7 pp. 3–4)
+and the dates at which published xylogenesis thresholds are crossed, for the HW.6 install season
+(`docs/01_04_CODIT_and_Xylemointegration.md` §3.5). Air temperature is NOT re-fetched: `74` joins these
+hours with the committed `hourly_1991_2020.csv.gz` and refuses to run if the two clocks differ.
+
+**Provenance — the queries** (fetched 2026-10-01 with `curl`; each file is that CSV response, unchanged —
+the hourly one gzipped):
+
+```
+https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&start_date=1991-01-01&end_date=2020-12-31&daily=precipitation_sum,precipitation_hours&timezone=Europe%2FKyiv&models=era5&format=csv
+https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&start_date=1991-01-01&end_date=2020-12-31&hourly=dew_point_2m,relative_humidity_2m,soil_temperature_0_to_7cm,soil_temperature_7_to_28cm&timezone=Europe%2FKyiv&models=era5&format=csv
+```
+
+→ `daily_precip_1991_2020.csv` (10 958 days) and `hourly_dew_rh_soil_1991_2020.csv.gz` (262 992 hours).
+Same API, model pin and grid point as the files above (returned: 49.5 N, 32.0 E, 111 m). The soil fields are
+ERA5's first two layers (0–7 and 7–28 cm): layer means, not depths.
+
+**Declared ceiling — what these series are NOT, beyond the bullets above:**
+- **Rain is a cell average.** Convective downpours are smoothed and drizzle is over-produced, so intensity
+  percentiles are LOW and a ≥ 0.1 mm wet-day fraction is HIGH; `precipitation_hours` makes «intensity» a
+  daily mean per wet hour, never a peak.
+- **Dew from the air, not from a surface.** T2m − Td and RH at 2 m say when the AIR is near saturation;
+  a radiating coupon face or bark gets dew on more nights than that.
+- **Open-field soil.** Forest soil under canopy and litter warms later in spring than a reanalysis cell.

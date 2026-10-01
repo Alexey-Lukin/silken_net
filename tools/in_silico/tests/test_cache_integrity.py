@@ -1542,6 +1542,7 @@ EXPECTED_SCRIPTS = [
     "68_bus_contact_equilibrium.py",
     "69_chem11_aggregation_compensation.py",
     "71_capsule_thermal_envelope.py",
+    "74_site_rain_dew.py",
 ]
 
 

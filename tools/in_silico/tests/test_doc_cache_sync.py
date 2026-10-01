@@ -2000,6 +2000,66 @@ CHECKS += [
      HW_BOM, rf"консервативний — з [\d.]+ до {N}\)", THERMAL, _sunlit_breeze("0.95", "conservative_yr"), 0.05),
 ]
 
+# ── HW.25 / HW.6 site climate (script 74) — rain/dew stand §7 pp. 3–4 and 01_04 §3.5 ──
+# The stand sheet quotes rain and dew as an ORIENTATION and 01_04 quotes threshold DATES as an input;
+# both are mirrors of one cache, so every number is pinned here and every date in `_DATE_PINS` below.
+STAND = "docs/protocols/anchor/gdl_rain_dew_stand.md"
+CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"
+SITE = "thermal/site_rain_dew.json"
+
+CHECKS += [
+    ("HW.25 · stand §7 p.3 wet-day share (≥ 1 mm) → site_rain_dew.json",
+     STAND, rf"Діб із ≥ 1 мм — \*\*{N} %\*\*", SITE, lambda d: 100 * d["rain"]["wet_day_ge_1mm"]["fraction_of_days"], 0.5),
+    ("HW.25 · stand §7 p.3 wet days a year → site_rain_dew.json",
+     STAND, rf"\(≈ \*\*{N}\*\* на рік\)", SITE, lambda d: d["rain"]["wet_day_ge_1mm"]["days_per_year"], 0.05),
+    ("HW.25 · stand §7 p.3 intensity median → site_rain_dew.json",
+     STAND, rf"медіану \*\*{N}\*\* і P90 \*\*[\d.]+\*\* мм/год", SITE,
+     lambda d: d["rain"]["intensity_on_wet_days_mm_per_h"]["median"], 0.005),
+    ("HW.25 · stand §7 p.3 intensity P90 → site_rain_dew.json",
+     STAND, rf"і P90 \*\*{N}\*\* мм/год", SITE, lambda d: d["rain"]["intensity_on_wet_days_mm_per_h"]["p90"], 0.005),
+    ("HW.25 · stand §7 p.4 dew nights a year → site_rain_dew.json",
+     STAND, rf"Таких ночей ≈ \*\*{N}\*\* на рік", SITE, lambda d: d["dew"]["liquid_t2m_above_0"]["nights_per_year"], 0.05),
+    ("HW.25 · stand §7 p.4 dew-night share → site_rain_dew.json",
+     STAND, rf"\(\*\*{N} %\*\* ночей\)", SITE, lambda d: 100 * d["dew"]["liquid_t2m_above_0"]["fraction_of_nights"], 0.5),
+    ("HW.25 · stand §7 p.4 dew hours per night, median → site_rain_dew.json",
+     STAND, rf"медіана \*\*{N}\*\*, P90", SITE, lambda d: d["dew"]["liquid_t2m_above_0"]["hours_per_dew_night_median"], 0.05),
+    ("HW.25 · stand §7 p.4 dew hours per night, P90 → site_rain_dew.json",
+     STAND, rf"P90 \*\*{N}\*\*\. Ночі з T2m", SITE, lambda d: d["dew"]["liquid_t2m_above_0"]["hours_per_dew_night_p90"], 0.05),
+]
+
+# Calendar dates are not numbers `N` can read, so they get their own pin: (label, doc, regex with ONE
+# capture group holding MM-DD, cache resolver returning the same MM-DD string).
+_DATE_PINS = (
+    ("HW.6 · 01_04 §3.5 soil 7–28 cm ≥ 3.5 °C, median", CODIT, r"у медіані \*\*(\d\d-\d\d)\*\* \(P10–P90",
+     lambda d: d["season"]["soil_7_28cm_ge_3.5C_spring"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 soil crossing P10", CODIT, r"\(P10–P90 \*\*(\d\d-\d\d)\*\*–",
+     lambda d: d["season"]["soil_7_28cm_ge_3.5C_spring"]["date_p10"]),
+    ("HW.6 · 01_04 §3.5 soil crossing P90", CODIT, r"\(P10–P90 \*\*\d\d-\d\d\*\*–\*\*(\d\d-\d\d)\*\*\)",
+     lambda d: d["season"]["soil_7_28cm_ge_3.5C_spring"]["date_p90"]),
+    ("HW.6 · 01_04 §3.5 implied cambial onset", CODIT, r"старт камбію припадає близько \*\*(\d\d-\d\d)\*\*",
+     lambda d: d["season"]["soil_7_28cm_implied_cambial_onset"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 air ≥ 8 °C spring", CODIT, r"починається в медіані \*\*(\d\d-\d\d)\*\*–",
+     lambda d: d["season"]["air_mean_ge_8C"]["spring"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 air ≥ 9 °C spring", CODIT, r"починається в медіані \*\*\d\d-\d\d\*\*–\*\*(\d\d-\d\d)\*\*",
+     lambda d: d["season"]["air_mean_ge_9C"]["spring"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 air ≥ 9 °C autumn", CODIT, r"закінчується \*\*(\d\d-\d\d)\*\*–",
+     lambda d: d["season"]["air_mean_ge_9C"]["autumn"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 air ≥ 8 °C autumn", CODIT, r"закінчується \*\*\d\d-\d\d\*\*–\*\*(\d\d-\d\d)\*\*",
+     lambda d: d["season"]["air_mean_ge_8C"]["autumn"]["date_median"]),
+    ("HW.6 · 01_04 §3.5 air ≥ 8 °C autumn P90", CODIT, r"\(P90 для 8 °C — \*\*(\d\d-\d\d)\*\*\)",
+     lambda d: d["season"]["air_mean_ge_8C"]["autumn"]["date_p90"]),
+)
+
+
+@pytest.mark.parametrize("label,doc_rel,pattern,resolver", _DATE_PINS, ids=[p[0] for p in _DATE_PINS])
+def test_doc_date_matches_cache(label, doc_rel, pattern, resolver):
+    matches = re.findall(pattern, doc(doc_rel))
+    assert len(matches) == 1, f"[{label}] anchor matched {len(matches)} times in {doc_rel} — expected exactly one"
+    cache_val = resolver(C(SITE))
+    assert matches[0] == cache_val, (
+        f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {matches[0]} but {SITE} says {cache_val}. "
+        f"Cache is SSOT — fix the doc, or re-run 74 if the cache is wrong.")
+
 # ── doc↔code: the ratified gene is MIRRORED into lib/constants.py, and a mirror needs a pin ──
 
 RFQ = "docs/protocols/procurement/ebfc_chem_rfq.md"
@@ -2232,7 +2292,7 @@ def _doc_targets() -> set[str]:
     taken from every source of doc-reads in the file, and a new source belongs here the same day.
     """
     return ({row[1] for row in CHECKS} | {d[0] for d in _RATIFIED_GENE_DECLARATIONS}
-            | {p[1] for p in _PRESS_FIT_PINS})
+            | {p[1] for p in _PRESS_FIT_PINS} | {p[1] for p in _DATE_PINS})
 
 
 def test_every_doc_target_triggers_this_guard():
