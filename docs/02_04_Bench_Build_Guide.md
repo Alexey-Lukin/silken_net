@@ -343,8 +343,8 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 ### Thermal (зима, P0) + Starlink (Phase 3 — майбутнє, НЕ для цього bench)
 | Компонент | Модель | ⚠️ Кусає |
 |---|---|---|
-| T-датчик | **DS18B20+** — голий TO-92 (1-Wire, ±0.5 °C), епоксидно на LiFePO4 head; P/N і форма — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 23 (⚖️ 2026-09-30) | гейт charge-MOSFET при T<+1 °C · ⛔ лише авторизований канал ADI: «водостійкі пробники» з маркетплейсів несуть клони, які ламають parasitic power і зсувають шкалу поза ±0.5 °C ([`02_05 §4а.6`](02_05_Queen_Hardware_and_Starlink)) |
-| Charge-protect | P-MOSFET у charge path (part# 👤, або BMS-integrated) | 🔴 заряд <0 °C вбиває LiFePO4 (зимовий деплой; літній — ні) |
+| T-датчик | **DS18B20+** — голий TO-92 (1-Wire, ±0.5 °C), епоксидно на LiFePO4 head; P/N і форма — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 23 (⚖️ 2026-09-30) | вхід гілки відсічки заряду поз. 24 — гейт MOSFET (дискретна) або детектор тихого дефолту (BMS-інтегрована); гілку судить відповідь JBD ([`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 24) · ⛔ лише авторизований канал ADI: «водостійкі пробники» з маркетплейсів несуть клони, які ламають parasitic power і зсувають шкалу поза ±0.5 °C ([`02_05 §4а.6`](02_05_Queen_Hardware_and_Starlink)) |
+| Charge-protect | гілку поз. 24 не обрано — charge-FET самої BMS ⊥ дискретний P-MOSFET у charge path ([`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 24) | 🔴 заряд <0 °C вбиває LiFePO4 (зимовий деплой), а понад +45 °C комірки — поза паспортом (літня точка ≈ +55 °C у корпусі, [`02_05 §4а.4`](02_05_Queen_Hardware_and_Starlink)) |
 | Корпус | IP67 ABS/PC ≥2.5 л (світлий RAL 7035 проти sun-load) | bench-некритично; freeze-pending |
 | _(Phase 3)_ Starlink | Starlink Mini + ESP32-S3 WiFi-міст | 🔴 прошивки ESP32 НЕ існує → не збирати зараз (§12) |
 
@@ -389,8 +389,8 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 2. **Checkpoint:** Soldier-стенд (Частина I) TX → Queen `OnRxDone` ISR ловить пакет (SWD/RTT-лог).
 
 ### 10.4 Thermal (зимовий charge-protect)
-1. DS18B20 (1-Wire GPIO, **pull-up 4.7 кΩ data→VDD** — інакше не відповість) на корпус LiFePO4 head → charge-MOSFET гейт.
-2. **Checkpoint:** DS18B20 читає T; при T<+1 °C заряд блокується.
+1. DS18B20 (1-Wire GPIO, **pull-up 4.7 кΩ data→VDD** — інакше не відповість) на корпус LiFePO4 head → вхід гілки поз. 24: гейт MOSFET (дискретна) або детектор тихого дефолту (BMS-інтегрована); гілку судить відповідь JBD.
+2. **Checkpoint:** DS18B20 читає T; при T<+1 °C заряд блокується — MOSFET-гейтом або charge-FET самої BMS, залежно від обраної гілки.
 
 ---
 

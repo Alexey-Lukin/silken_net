@@ -32,13 +32,20 @@ PARAMS = {
   quiescent_ma: 20.0,      # Victron 75/15 self-consumption @12V ONLY (manual Rev 10 p.66) — the BMS row is NOT in this model yet (00_07 HW.15)
   # (HW.15, 2026-07-03); стара таблиця брала 5 мА — 4× оптимізм
   quiescent_v: 12.0,
-  dcdc_eff: 0.95,          # buck 12V→3.7/3.3V
+  dcdc_eff: 0.88,          # buck 12V→3.7/3.3V на ЛЕГКОМУ навантаженні (~10–20 мА гілки):
+  # TI SNVSB99C (LMR33640, поз. 9, PFM-auto) Figure 9-6 — VOUT 3.3 V, 400 кГц, VIN 12 V:
+  # ≈ 88 % при 10 мА (зчитано з кривої оком, ±1 п.п.; для 3.74 В крива ще трохи вища —
+  # Figure 9-5, 5 V ≈ 90 %), тож 0.88 — консервативна межа, а не пік «> 95 %».
+  # Стеля: поз. 10 (12→3.3 V) — лише клас «≥ 500 мА», даташиту немає → та сама 0.88
+  # ПРИПУЩЕНА й для неї; канон 02_05 §4а.2 бере ті самі 88 %.
   # ── Phase 3 додатки ───────────────────────────────────────────────────────
   starlink_w: 25.0,        # Starlink Mini active
   starlink_min_per_h: 5.0, # duty-cycle 5 хв/год
   starlink_psu_eff: 0.90,
-  esp32_w: 0.5,            # ESP32-S3 co-processor, continuous (02_05 §4а.3;
-  # «~1 мА WiFi idle» з §Зимовий — спростовано, 150× drift)
+  esp32_w: 0.5,            # ESP32-S3 ACTIVE (WiFi-STA до Mini) — лише у вікні Starlink:
+  # memo HW.18 у 02_05 §Starlink DTC — active 80–240 мА (~0.3–0.9 Вт)
+  esp32_sleep_ua: 10.0,    # deep-sleep поза вікном — memo HW.18 («~10 µA між погодинними TX»)
+  esp32_v: 3.3,
   # ── генерація ─────────────────────────────────────────────────────────────
   panel_w: 50.0,           # ⚖️ panel-decision Phase 1/2.5: 10 vs 50 (02_06 §4 ↔ 02_05)
   sun_h: 3.0,              # зимовий день, низьке сонце
@@ -64,19 +71,25 @@ def wh(ma, volts, hours) = ma / 1000.0 * volts * hours
 
 # Рядки-споживачі: [назва, Wh/добу, через_DC-DC?]; quiescent сидить на 12V-шині —
 # повз buck, тому втрати DC-DC застосовуються лише до 3.3/3.7V-гілок.
+# Phase 3 НЕ несе SIM7070G: BOM 02_05 §7 поз. 2 (і її buck поз. 9) — фаза «1/2.5», а
+# 02_06 §4а рядок 2 міняє uplink на «ESP32-S3 + WiFi». ESP32 активний лише у вікні Starlink
+# (присуд HW.18 обрав його саме за deep-sleep), решту доби спить.
+# Стеля: бут Mini (30–60 с на сесію, 02_05 §2.3) — частина хвилин starlink_min_per_h, окремо
+# не рахується; ESP32, що прокидається трохи раніше за Mini, теж сидить у тому ж вікні.
 def consumption_rows(p, phase3:)
   tx_h = p[:tx_sessions_per_day] * p[:tx_session_s] / 3600.0
-  rows = [
-    [ "STM32WLE5JC continuous RX", wh(p[:mcu_ma], p[:mcu_v], 24.0), true ],
-    [ "SIM7070G idle", wh(p[:modem_idle_ma], p[:modem_v], 24.0 - tx_h), true ],
-    [ "SIM7070G LTE-M flush-сесії", wh(p[:tx_session_ma], p[:modem_v], tx_h), true ],
-    [ "MPPT quiescent (12V; BMS not modelled)", wh(p[:quiescent_ma], p[:quiescent_v], 24.0), false ]
-  ]
+  rows = [ [ "STM32WLE5JC continuous RX", wh(p[:mcu_ma], p[:mcu_v], 24.0), true ] ]
+  unless phase3
+    rows << [ "SIM7070G idle", wh(p[:modem_idle_ma], p[:modem_v], 24.0 - tx_h), true ]
+    rows << [ "SIM7070G LTE-M flush-сесії", wh(p[:tx_session_ma], p[:modem_v], tx_h), true ]
+  end
+  rows << [ "MPPT quiescent (12V; BMS not modelled)", wh(p[:quiescent_ma], p[:quiescent_v], 24.0), false ]
   if phase3
     starlink_h = p[:starlink_min_per_h] / 60.0 * 24.0
-    rows << [ "Starlink Mini (#{p[:starlink_min_per_h].round}хв/год)",
+    rows << [ "Starlink Mini (%.1fхв/год)" % p[:starlink_min_per_h],
              p[:starlink_w] * starlink_h / p[:starlink_psu_eff], false ]
-    rows << [ "ESP32-S3 co-processor", p[:esp32_w] * 24.0, true ]
+    rows << [ "ESP32-S3 (active у вікні Starlink)", p[:esp32_w] * starlink_h, true ]
+    rows << [ "ESP32-S3 deep-sleep", wh(p[:esp32_sleep_ua] / 1000.0, p[:esp32_v], 24.0 - starlink_h), true ]
   end
   rows
 end
@@ -141,7 +154,7 @@ end
 puts "═══ Queen energy budget — зима, хвойний ліс (canopy #{params[:canopy_pct]}%) ═══"
 puts "\n── Phase 1/2.5 (SIM7070G LTE-M / DTC) ──"
 report(params, phase3: false)
-puts "\n── Phase 3 (+ Starlink Mini + ESP32-S3) ──"
+puts "\n── Phase 3 (Starlink Mini + ESP32-S3 замість SIM7070G) ──"
 report(params, phase3: true)
 
 puts "\n── ⚖️ Panel-матриця Phase 1/2.5 (balance Wh/добу; canopy 10 / 12.5 / 15%) ──"
