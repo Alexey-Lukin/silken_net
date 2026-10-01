@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 239 · 12,426,399 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 241 · 12,451,180 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -106,6 +106,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `93fe570f6bcf44c0c8f1a6c4c3a9b531ed7a1183b1feb0c3e1f56582256e3325` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
+| `tools/in_silico/scripts/73_collar_wall_inversion.py` | `f4989ec1897752f2572945c63df73e9302a7a9b89d8025f021b037c4a30a3a71` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «підстава стінки»). |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
@@ -201,6 +202,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `55a71dad9f55279cf45a3cc97abc802b80b5cc4daacde13a4890340e9015c16f` | 114,408 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `9b1731a77f4f8d0366792d33a7f19d87d35a88d4ad8c2d8e68dab5eccdb69f3f` | 106,711 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `e7593ef3fe02afec49769604bc93e827e829c5ac57d9737962cf4d31bc57b748` | 314,276 |
+| `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `96963c294ac551959ec0a2f32d08a6aac0598c6e92cbb64c3efa86370bdfa3e0` | 5,469 |
 | `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `a7083fcaf21e6df3c7c035fb6616f3e4c4bbd5dee239a4a20f63e44aac73f262` | 8,587 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `c4d038312f9dd6b6dd080a1e1de2d3d4c8203d781a11431637edda9967f0efa7` | 67,160 |
