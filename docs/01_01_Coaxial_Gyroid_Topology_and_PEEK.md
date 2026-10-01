@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — тризонна архітектура затверджена; **PicoGK-генерація** ✅ — повна анкер-родина + 2 інтеграційні assembly (v2 градієнтний анкер; стан/деталі — дім [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) + `tools/cad`; nTop = опційний reference). Відкриті: press-fit FEA/aging (HW.3), staged validation (HW.24), PEEK mechanical-lock (HW.26) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 — тризонна архітектура затверджена; **PicoGK-генерація** ✅ — повна анкер-родина + 2 інтеграційні assembly (v2 градієнтний анкер; стан/деталі — дім [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) + `tools/cad`; nTop = опційний reference). Відкрите — пункти [`00_07 §01a`](00_07_Action_Plan_Tracker) з маршрутом `→ 01_01` (ростера тут не ведемо: три ID, що тут стояли, пропускали шину HW.34, фабричний пакет HW.1 і геометрію HW.33, а press-fit FEA з 2026-09-27 веде комерційний виконавець HW.26, не HW.3).
 
 ---
 
@@ -25,7 +25,7 @@
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Ti-coin протокол + синтетичний ксилемний сік (Гусак · біо-хаб ЧНУ, §2) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT) — ростера тут не ведемо (підстава — ✅ Статус ↑): бери пункти [`00_07 §01a`](00_07_Action_Plan_Tracker), чий meta-рядок несе маршрут `→ 01_01`. ⚠️ Стеля правила: пункт, що домує деінде й сюди лише посилається, ним не знаходиться — сьогодні це HW.3 (смуга натягу §4.2) |
 
 ## 📑 Зміст
 
