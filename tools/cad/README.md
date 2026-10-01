@@ -247,8 +247,8 @@ true value, removed — and the engineering verdict is RATIFIED (2026-09-18, `00
 from the Lamé window, and only its inputs are open. **This tract prints QUANTITIES; where a
 number came from is engineering text and belongs in the CEM.**
 ⛔ **The shipped-kind roster is `Program.Draw`'s `switch`, not this paragraph** — it carried one and went stale the day
-a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds (today: the radome, because its socket
-is reshaped by the collar leg — the crown half of that deferral was spent 2026-09-22, ⚖️ HW.33), live in `docs/drawings_program.md §7`.
+a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds, live in `docs/drawings_program.md §7` —
+named there and not here, for the same reason.
 The NORM — why the drawing comes from the CEM and not the mesh, the two readers, the loud-absence rule, what the
 acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.md` stays the research + phase roster.
 `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery `docs/images/cad/`, rebuilt by
