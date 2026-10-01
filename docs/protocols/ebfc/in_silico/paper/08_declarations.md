@@ -34,7 +34,10 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   proves the archived tree is the one the SI describes. A tag cut before the last SI render archives a tree
   the SI does not describe.
 - **Competing Interests.** Draft (2026-09-30, from `00_01 §8` + `/NOTICE`; the cover letter carries the
-  same position — [finalise: founder confirms the standard wording]): *The author is the founder of the
+  same position — [finalise: founder confirms the standard wording; it goes into the ACS submission-form
+  field, which is where *J. Phys. Chem. B* takes the statement and from which it is printed with the
+  article — the ACS default sentence is printed only when nothing is declared and would not carry this
+  position, so enter it explicitly; ACS Author Guidelines, Appendix 1, HTML ✓я 2026-10-01]): *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here
   is a component and which is intended for commercial deployment. No patent has been or will be filed on
   the work disclosed here (defensive-publication posture); the code, hardware design and documentation are

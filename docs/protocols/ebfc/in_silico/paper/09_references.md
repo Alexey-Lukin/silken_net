@@ -69,7 +69,9 @@ force on the 2.0 eV reading". The authorship / corresponding-author verdict is a
 touched by this rule.
 
 - §2.3 — the Os–ligand bond lengths (2.06 / 2.10 / 2.38 Å, `lib/os_geometry.py`), once labelled
-  "crystallographic". ✅ 2026-10-01, route (b): no source exists in the tree (no DOI, no structure file), so
+  "crystallographic". ⚠️ 2026-10-01, route (b) PARTIAL — the label and the text are done, the adverse-end
+  judgement the rule also requires is NOT (no bracket of the distances, no ①/② sensitivity to them), and
+  the primary search was deliberately not started (⛔ below). No source exists in the tree (no DOI, no structure file), so
   the code comment and docstring and §2.3 now say "assumed typical distances", and §2.3 says that the same
   distances serve both oxidation states and every series member (size of the error not quantified). ⛔ A
   primary search was NOT started: a primary with different distances is a model change (rebuilds the

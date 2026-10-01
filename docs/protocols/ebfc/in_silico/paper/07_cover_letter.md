@@ -16,7 +16,11 @@ Dear Editor,
 We wish to submit the enclosed manuscript, **"Computational Electron-Transfer Energetics of a
 FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity,
 ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT,"** for
-consideration as an Article in *The Journal of Physical Chemistry B*.
+consideration as an Article in *The Journal of Physical Chemistry B*, Section [finalise: the letter must
+name the Journal Part and Section (ACS Author Guidelines, Cover Letter) — the founder picks one; the
+candidates as read on the guidelines page 2026-10-01 (copy the exact titles at submission): B1 Biophysical
+and Biochemical Systems and Processes · B2 Biomaterials and Membranes · B3 Liquids; Chemical and Dynamical
+Processes in Solution · B4 Soft Matter …].
 
 Enzymatic biofuel cells (EBFCs) are a promising route to self-powered, long-lived biosensors, yet
 their performance is governed by electron-transfer (ET) steps that the field has characterised almost
@@ -54,10 +58,21 @@ has been or will be filed on the work disclosed here (defensive-publication post
 design and documentation are released under open licenses (AGPL-3.0-or-later, CERN-OHL-S-2.0,
 CC-BY-SA-4.0). The author declares no other competing financial or non-financial interests.
 [finalise: founder confirms the standard wording — ONE text, identical to the Competing Interests draft in
-`08_declarations.md`; whether *J. Phys. Chem. B* wants it in the letter at all was not reached on
-2026-10-01 (the ACS guidelines page renders by script), so drop it here if the submission form carries it]
+`08_declarations.md`. ACS Author Guidelines for J. Phys. Chem. A/B/C, Appendix 1 «Conflict of Interest
+Disclosure» (page last updated 2026-08-27) [HTML ✓я 2026-10-01]: the corresponding author enters the
+statement in the SUBMISSION FORM on behalf of all authors, and it is published with the article; it is
+not on the cover letter's must-include list. So the form is the binding place and must carry THIS text
+explicitly — the ACS default printed when nothing is declared («The authors declare no competing financial
+interest.») does not carry the founder position above; in the letter the paragraph is optional]
+
+[finalise: the letter must say whether the manuscript has been posted in a preprint / electronic archive,
+with the details (ACS Author Guidelines, Cover Letter) — name the ChemRxiv or repository DOI if one exists,
+omit this sentence if none. That a Zenodo DOI of the code repository counts as such an archive is our
+reading, not ACS text]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 
 Sincerely,
 [Corresponding author, on behalf of all authors]
+[finalise: name · postal address · telephone · e-mail of EVERY author — the guidelines require them in the
+letter; filled in at submission, never kept in this repository]
