@@ -1,8 +1,9 @@
 {
   "method": "Marcus two-sphere outer-sphere \u03bb_o (dielectric continuum); analytical, INDICATIVE",
-  "caveat": "radius/distance/local-\u03b5 dominated \u2192 grid not one number (00_07); rates keep the LIT \u03bb",
-  "lambda_inner_eV": 0.38850941803490396,
+  "caveat": "radius/distance/local-\u03b5 dominated \u2192 grid not one number (00_07); no anode rate consumes \u03bb",
+  "lambda_inner_eV": 0.3885094181710213,
   "literature_total_eV": 0.7,
+  "comparison_basis": "TOTAL \u03bb of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate",
   "params": {
     "eps_op": 1.776889,
     "e2_4pieps0_eV_A": 14.399645,
@@ -31,7 +32,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.9916736333600894,
-      "lambda_total_eV": 1.3801830513949933
+      "lambda_total_eV": 1.3801830515311106
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -42,7 +43,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.5639387662179879,
-      "lambda_total_eV": 0.9524481842528918
+      "lambda_total_eV": 0.9524481843890091
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -53,7 +54,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 1.4284426413416724,
-      "lambda_total_eV": 1.8169520593765764
+      "lambda_total_eV": 1.8169520595126938
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -64,7 +65,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.8123178369096352,
-      "lambda_total_eV": 1.2008272549445391
+      "lambda_total_eV": 1.2008272550806565
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -75,7 +76,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.6600065009499475,
-      "lambda_total_eV": 1.0485159189848514
+      "lambda_total_eV": 1.0485159191209688
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -86,7 +87,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.37532837348960035,
-      "lambda_total_eV": 0.7638377915245043
+      "lambda_total_eV": 0.7638377916606216
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -97,7 +98,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.8250081261874345,
-      "lambda_total_eV": 1.2135175442223385
+      "lambda_total_eV": 1.2135175443584558
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -108,7 +109,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.46916046686200047,
-      "lambda_total_eV": 0.8576698848969044
+      "lambda_total_eV": 0.8576698850330218
     }
   ],
   "lambda_o_range_eV": [
@@ -116,12 +117,12 @@
     1.4284426413416724
   ],
   "lambda_total_range_eV": [
-    0.7638377915245043,
-    1.8169520593765764
+    0.7638377916606216,
+    1.8169520595126938
   ],
   "lambda_total_physical_end_eV": [
-    0.7638377915245043,
-    0.8576698848969044
+    0.7638377916606216,
+    0.8576698850330218
   ],
-  "verdict": "the two-sphere \u03bb_o is radius/\u03b5-DOMINATED (\u03bb_total 0.76\u20131.82 eV across plausible assumptions): naive hard-spheres in bulk water over-estimate (\u226b0.7), while charge delocalized over the flavin \u03c0-system in the buried low-\u03b5 pocket reproduces the literature ~0.7\u20130.8 eV (0.76\u20130.86). \u2192 we keep the LITERATURE \u03bb in the Marcus rates (not a two-sphere number); this estimate only CONFIRMS that value is physically reasonable and shows WHY it is indicative (the point-sphere continuum model cannot pin \u03bb_o to better than its radius assumption)."
+  "verdict": "the two-sphere \u03bb_o is radius/\u03b5-DOMINATED (\u03bb_total 0.76\u20131.82 eV across plausible assumptions): naive hard-spheres in bulk water over-estimate (\u226b0.7), while charge delocalized over the flavin \u03c0-system in the buried low-\u03b5 pocket overlaps the 0.7\u20130.8 eV range of other protein ET centres, ref 48 (0.76\u20130.86). \u2192 no anode Marcus rate consumes \u03bb; this estimate only shows the computed total is physically reasonable and WHY it is indicative (the point-sphere continuum model cannot pin \u03bb_o to better than its radius assumption)."
 }

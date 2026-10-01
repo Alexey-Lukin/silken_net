@@ -82,11 +82,19 @@ def main() -> int:
     print(f"  λ_o spans {min(los):.2f}–{max(los):.2f} eV, λ_total {min(tots):.2f}–{max(tots):.2f} eV — radius/ε dominate.")
     print(f"  naive hard-sphere-in-water OVER-estimates (λ_total up to {max(tots):.2f} eV ≫ comparison {lit_total}).")
     print(f"  physically-motivated end (delocalized π-charge + buried ε≈4): λ_total {min(phys):.2f}–{max(phys):.2f} eV.")
+    # The comparison relation is computed, not typed (in-silico modifying #5): 0.76–0.86 OVERLAPS 0.7–0.8.
+    cmp_lo, cmp_hi = 0.7, 0.8  # TOTAL λ range of OTHER protein ET centres (ref 48)
+    if cmp_lo <= min(phys) and max(phys) <= cmp_hi:
+        relation = "lies within"
+    elif min(phys) <= cmp_hi and max(phys) >= cmp_lo:
+        relation = "overlaps"
+    else:
+        relation = "lies outside"
     verdict = (
         f"the two-sphere λ_o is radius/ε-DOMINATED (λ_total {min(tots):.2f}–{max(tots):.2f} eV across plausible "
         f"assumptions): naive hard-spheres in bulk water over-estimate (≫{lit_total}), while charge delocalized "
-        f"over the flavin π-system in the buried low-ε pocket lies in the 0.7–0.8 eV range of other protein "
-        f"ET centres, ref 48 ({min(phys):.2f}–{max(phys):.2f}). → no anode Marcus rate consumes λ; this "
+        f"over the flavin π-system in the buried low-ε pocket {relation} the {cmp_lo}–{cmp_hi} eV range of other "
+        f"protein ET centres, ref 48 ({min(phys):.2f}–{max(phys):.2f}). → no anode Marcus rate consumes λ; this "
         "estimate only shows the computed total is physically reasonable and WHY it is "
         "indicative (the point-sphere continuum model cannot pin λ_o to better than its radius assumption)."
     )
