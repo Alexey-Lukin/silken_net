@@ -9,6 +9,7 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/bq25570_dividers.rb            # таблиця порогів + допуски
 #   ruby tools/firmware/bq25570_dividers.rb --assert    # гейт: рівняння ⟷ TI-приклади
+#   ruby tools/firmware/bq25570_dividers.rb --in-circuit [rov1=…]  # що покаже мультиметр на плечі В СХЕМІ
 #
 # 🔑 ЧОМУ ЦЕЙ ФАЙЛ САМОВАЛІДНИЙ, і це не оздоба. Рівняння взяті не з памʼяті, а з
 # SLUSBH2G (MARCH 2013 – REVISED MARCH 2019). Доказ, що взяті правильно, — не
@@ -175,9 +176,12 @@ def assert_mode
   drift = e96_band_drift
   drift.each { |d| warn "FAIL  смуга 1 % E96 — #{d}" }
 
-  ok = failures.empty? && leaks.empty? && drift.empty?
+  circuit = in_circuit_drift
+  circuit.each { |d| warn "FAIL  режим «у схемі» — #{d}" }
+
+  ok = failures.empty? && leaks.empty? && drift.empty? && circuit.empty?
   puts ok ? "OK  #{TI_EXAMPLES.size} worked-прикладів SLUSBH2G відтворено; спростована формула не відтворює жодного; " \
-            "смуга 1 % E96 ≡ перебір кутів і похідні" : "RED"
+            "смуга 1 % E96 ≡ перебір кутів і похідні; плечі «у схемі» ≡ закрита форма" : "RED"
   exit(ok ? 0 : 1)
 end
 
@@ -321,17 +325,24 @@ end
 # ── Режим ВИМІРЯНИХ номіналів (крок чек-листа `02_03 §11`) ────────────────────
 # Приймає те, що людина щойно зняла мультиметром, і друкує пороги, які ці плечі
 # дають НАСПРАВДІ. Ключі — імена плечей у конвенції TI, значення в МΩ:
-#   ruby tools/firmware/bq25570_dividers.rb rov1=4.75 rov2=9.31 rok3=0.348
+#   ruby tools/firmware/bq25570_dividers.rb rov1=4.75 rov2=7.87 rok3=0.348
+# ⚠️ «Щойно зняла» — це плече з ПІДНЯТИМ виводом (чи до запайки): плече в схемі
+# шунтоване рештою мережі `VRDIV`, і його відлік сюди підставляти не можна — `--in-circuit`.
 # Незадані плечі беруться з цільового набору; `rok3=0` — легальний вхід і саме
 # він друкує «гістерезис = 0», бо непопульований ROK3 виглядає як здорова плата.
-def measured_mode(args)
-  given = args.to_h { |a| k, v = a.split("=", 2); [ k.downcase.to_sym, Float(v) ] }
-  ov1, ov2 = 4.75, 7.87  # ⚖️ ратифікований дефолт (4.822В) — див. report()
+def parse_arms(args) = args.to_h { |a| k, v = a.split("=", 2); [ k.downcase.to_sym, Float(v) ] }
+
+# Цільовий набір плечей, МΩ. OV-пара — ⚖️ ратифікований дефолт (4.822 В), див. report().
+def target_arms
   ok1, ok2, ok3 = solve_ok(3.3, 3.4)
   out1, out2 = solve_out(3.3)
   oc1, oc2 = solve_mppt(0.65)
-  d = { rov1: ov1, rov2: ov2, rok1: ok1, rok2: ok2, rok3: ok3,
-        rout1: out1, rout2: out2, roc1: oc1, roc2: oc2 }.merge(given)
+  { rov1: 4.75, rov2: 7.87, rok1: ok1, rok2: ok2, rok3: ok3, rout1: out1, rout2: out2, roc1: oc1, roc2: oc2 }
+end
+
+def measured_mode(args)
+  given = parse_arms(args)
+  d = target_arms.merge(given)
 
   puts "Виміряні плечі (МΩ): #{d.map { |k, v| "#{k}=#{v}" }.join(' ')}"
   puts "джерело значень: #{given.keys.map(&:to_s).sort.join(', ')} — з мультиметра; решта — цільові"
@@ -352,6 +363,103 @@ def measured_mode(args)
     lo, _typ, hi = RSUM_SPEC[key]
     printf("Σ %-4s = %6.2f МΩ  %s\n", key, sum, sum.between?(lo, hi) ? "✓" : "🔴 поза #{lo}..#{hi}")
   end
+end
+
+# ── Режим «у схемі» [HW.7]: що покаже омметр на плечі, НЕ випаяному з плати ────
+# Три порогові дільники мають СПІЛЬНИЙ верх (`VRDIV`, шапка `02_03 §4`) і спільний низ
+# (GND), тож омметр на одному плечі бачить його паралельно з рештою мережі. На нашому
+# наборі Eq.(2) на таких відліках дає майже стоковий Li-Po поріг, а стокова OV-пара
+# поруч із нашими OK/OUT — «мисматч»: позитивний контроль у схемі хибить в обидва боки.
+# Тому плече міряють з ПІДНЯТИМ виводом (чи до запайки); ця таблиця — лише очікування
+# для звірки ПОВНОГО набору, коли всі плечі відомі (після перепайки).
+# ⛔ СТЕЛЯ: модель — ідеальні резистори між вузлами. Знеструмлений BQ25570 між
+# `VRDIV`/тапами/`VSTOR` і GND має власний імпеданс (ESD-діоди, внутрішній ключ `VRDIV`),
+# якого паспорт не нормує, і він лише ЗНИЖУЄ відлік; накопичувач із `VSTOR` мусить бути
+# знятий (0.47 Ф не дасть відліку встановитись); стокові OK/OUT CJMCU-2557 невідомі, тож
+# для стокової плати таблиця ілюстративна; омметр вище ~20 МΩ на багатьох приладах грубий.
+# MPPT-пара висить на `VIN_DC`, а не на `VRDIV`: за відʼєднаного джерела вона читається
+# номіналом — ця мережа окрема (компонента звʼязності нижче).
+ARM_EDGES = {
+  rov1: %i[ov gnd], rov2: %i[vrdiv ov],
+  rok1: %i[okp gnd], rok2: %i[okh okp], rok3: %i[vrdiv okh],
+  rout1: %i[out gnd], rout2: %i[vrdiv out],
+  roc1: %i[voc gnd], roc2: %i[vin voc]
+}.freeze
+
+# Опір плеча `arm` у схемі: вузловий аналіз (1 А у один кінець, другий — земля) над
+# компонентою звʼязності цього плеча; Гаусс із вибором головного на кількох вузлах.
+def in_circuit(arms, arm)
+  a, b = ARM_EDGES.fetch(arm)
+  edges = ARM_EDGES.map { |k, (n1, n2)| [ n1, n2, arms.fetch(k).to_f ] }
+  comp = [ a ]
+  loop do
+    grown = comp | edges.flat_map { |n1, n2, _| comp.include?(n1) ? [ n2 ] : (comp.include?(n2) ? [ n1 ] : []) }
+    break if grown.size == comp.size
+    comp = grown
+  end
+  idx = (comp - [ b ]).each_with_index.to_h
+  n = idx.size
+  g = Array.new(n) { Array.new(n + 1, 0.0) }
+  edges.each do |n1, n2, r|
+    next unless comp.include?(n1)
+    i, j = idx[n1], idx[n2]
+    g[i][i] += 1.0 / r if i
+    g[j][j] += 1.0 / r if j
+    next unless i && j
+    g[i][j] -= 1.0 / r
+    g[j][i] -= 1.0 / r
+  end
+  g[idx[a]][n] = 1.0
+  n.times do |c|
+    piv = (c...n).max_by { |r| g[r][c].abs }
+    g[c], g[piv] = g[piv], g[c]
+    ((c + 1)...n).each do |r|
+      f = g[r][c] / g[c][c]
+      (c..n).each { |k| g[r][k] -= f * g[c][k] }
+    end
+  end
+  v = Array.new(n, 0.0)
+  (n - 1).downto(0) { |r| v[r] = (g[r][n] - ((r + 1)...n).sum { |k| g[r][k] * v[k] }) / g[r][r] }
+  v[idx[a]]
+end
+
+# Звір вузлового розвʼязку з закритою формою на двох топологічно різних плечах
+# (крайнє OV і середнє OK) і на окремій MPPT-мережі — гоняє `--assert`.
+def in_circuit_drift
+  a = target_arms
+  par = ->(x, y) { x * y / (x + y) }
+  s_ov = a[:rov1] + a[:rov2]
+  s_ok = a[:rok1] + a[:rok2] + a[:rok3]
+  s_out = a[:rout1] + a[:rout2]
+  { rov1: par.(a[:rov1], a[:rov2] + par.(s_ok, s_out)),
+    rok2: par.(a[:rok2], a[:rok3] + par.(s_ov, s_out) + a[:rok1]),
+    roc1: a[:roc1] }.filter_map do |k, want|
+    got = in_circuit(a, k)
+    format("%s у схемі: вузловий %.6f ≠ закрита форма %.6f МΩ", k, got, want) if (got - want).abs > 1e-9
+  end
+end
+
+def in_circuit_mode(args)
+  arms = target_arms.merge(parse_arms(args))
+  puts "Плечі В СХЕМІ (МΩ): плата знеструмлена, накопичувач із VSTOR знято, джерело з VIN_DC відʼєднано."
+  puts "Набір: #{arms.map { |k, v| "#{k}=#{v}" }.join(' ')}"
+  puts
+  printf("%-6s %9s %9s %8s\n", "плече", "номінал", "у схемі", "Δ")
+  ARM_EDGES.each_key do |k|
+    ic = in_circuit(arms, k)
+    printf("%-6s %9.3f %9.3f %+7.1f%%\n", k, arms[k], ic, (ic / arms[k] - 1) * 100)
+  end
+  puts
+  ov_nom = Bq25570.vbat_ov(arms[:rov1], arms[:rov2])
+  ov_ic = Bq25570.vbat_ov(in_circuit(arms, :rov1), in_circuit(arms, :rov2))
+  stock = arms.merge(rov1: 5.62, rov2: 7.32)
+  st_ic = Bq25570.vbat_ov(in_circuit(stock, :rov1), in_circuit(stock, :rov2))
+  printf("Eq.(2): на номіналах %.3f В · на відліках у схемі %.3f В\n", ov_nom, ov_ic)
+  printf("Стокова OV-пара 5.62/7.32 (SLUSBH2G §8.2.1) поруч із цими OK/OUT: номінал %.3f В · у схемі %.3f В\n",
+         Bq25570.vbat_ov(5.62, 7.32), st_ic)
+  puts "⇒ Відлік у схемі в Eq.(2) НЕ підставляти: плече міряють з піднятим виводом (чи до запайки)."
+  puts "  Поріг судить функціональний замір — плато VSTOR на OV (02_03 §10.4 крок 5); опір плечей судить їхній ПОРЯДОК."
+  puts "  ⛔ Стеля: імпеданс знеструмленого BQ25570 і стокові OK/OUT не моделюються — див. шапку режиму."
 end
 
 # ── Гейт канону [HW.13]: `02_03 §5` ⟷ рівняння ───────────────────────────────
@@ -438,9 +546,10 @@ end
 case ARGV.first
 when "--assert" then assert_mode
 when "--check-canon" then check_canon_mode
+when "--in-circuit" then in_circuit_mode(ARGV.drop(1))
 when nil then report
 when /\A[a-zA-Z_][a-zA-Z0-9_]*=/ then measured_mode(ARGV)
 else
-  warn "невідомий режим #{ARGV.first.inspect}; доступні: (порожньо) · --assert · --check-canon · KEY=VAL (rov1=… rok3=…)"
+  warn "невідомий режим #{ARGV.first.inspect}; доступні: (порожньо) · --assert · --check-canon · --in-circuit [KEY=VAL…] · KEY=VAL (rov1=… rok3=…)"
   exit 2
 end

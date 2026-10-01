@@ -15,7 +15,10 @@
 #                                                                   # ECB не циклить у sensitivity-блоці за
 #                                                                   # жодного додатного P_gen, а точка, нижче
 #                                                                   # якої циклить CCM, збігається з 02_03 §9.8а
-#                                                                   # (CCM = warn-only, FW.2 ще bench-gated)
+#                                                                   # (CCM = warn-only, FW.2 ще bench-gated);
+#                                                                   # ⊕ [HW.19] вердикт «активне вікно VOC >
+#                                                                   # буфера» і СТЕЛЯ одного LPTIM-пробудження
+#                                                                   # (02_03 §9.8б)
 #
 # Модель (стелі позначені):
 #   вікно      = E(V_ON) − E(V_OFF), E(V) = ½CV²                    ← чиста ємність, без ADC/резисторної похибки
@@ -78,6 +81,7 @@ PARAMS = {
   interval_h: 1.0,          # ПРИПУЩЕННЯ pre-warmup wake-каденції (див. шапку)
   # ── вікно VOC-діагностики (HW.19) проти ТОГО САМОГО буфера ────────────────
   voc_window_s: 16.3,       # щільний збір ≥ 16.3 с — контракт `voc_maxhold.h` (02_03 §12.4.2)
+  voc_step_s: 0.128,        # крок ≤ 128 мс — VOC_MAXHOLD_STEP_MAX_MS `voc_maxhold.h` (дзеркало, правити там)
   i_run_ma: 3.40            # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
 }.freeze
 
@@ -154,6 +158,17 @@ def voc_breakeven_ma(p, budget_mj) =
 # Підлога LPTIM-гілки: сам сон крізь вікно, без жодного пробудження.
 def voc_lptim_floor_mj(p) = sleep_drain_uw(p) * p[:voc_window_s] / 1000.0
 
+# Пробуджень на вікно: ⌈вікно / крок⌉.
+def voc_wakes(p) = (p[:voc_window_s] / p[:voc_step_s]).ceil
+
+# СТЕЛЯ одного LPTIM-пробудження (не ціна!): щоб усе вікно коштувало не більше за один
+# цикл ECB, на пробудження лишається (цикл − підлога) / N. ⛔ Ціну міряє стенд (RUNBOOK §3.5);
+# тут лише межа, вище якої вікно стає дорожчим за телеметричний цикл.
+def voc_wake_ceiling_mj(p) = (active_cycle_from_vstor_mj(p, wire: :ecb) - voc_lptim_floor_mj(p)) / voc_wakes(p)
+
+# Та сама стеля в мілісекундах run-струму з VSTOR (потужність run = активне вікно / його тривалість).
+def voc_wake_ceiling_ms(p) = voc_wake_ceiling_mj(p) / (voc_window_from_vstor_mj(p) / p[:voc_window_s]) * 1000.0
+
 def crossover_word(p, wire)
   x = crossover_uw(p, wire: wire)
   label = wire.to_s.upcase
@@ -225,6 +240,9 @@ def report(p)
        voc_lptim_floor_mj(p)
   puts "  → активне вікно виключене арифметикою (вимір не завершується ні за якої генерації);"
   puts "    стенд міряє ціну пробудження LPTIM, а не вибір архітектури"
+  puts "  СТЕЛЯ одного пробудження (вікно ≤ одного циклу ECB): %d пробуджень → %.3f мДж ≈ %.1f мс run-струму" %
+       [ voc_wakes(p), voc_wake_ceiling_mj(p), voc_wake_ceiling_ms(p) ]
+  puts "    — межа, не ціна: стабілізація ADC, калібрування й рестарт MSI можуть коштувати більше за run × час (RUNBOOK §3.5)"
   in_band = %i[ecb ccm].select { |w| crossover_uw(p, wire: w) >= P_GEN_SWEEP_UW.min }
   band_note = in_band.empty? ? "уся зимова смуга 3–5 µW над обома точками" \
                              : "нижній край зимової смуги вже за межею для #{in_band.map(&:upcase).join(' і ')}"
@@ -260,7 +278,11 @@ if assert_mode
     # воно перестає бути виключеним, і вибір архітектури повертається у відкриті.
     "активне вікно VOC > буфера (HW.19, 207.8 мДж проти 138.80)" =>
       voc_window_from_vstor_mj(PARAMS) > window_mj(PARAMS) &&
-      (voc_window_from_vstor_mj(PARAMS) - 207.8).abs < 0.1
+      (voc_window_from_vstor_mj(PARAMS) - 207.8).abs < 0.1,
+    # [HW.19] СТЕЛЯ одного LPTIM-пробудження (02_03 §9.8б) — межа, яку стенд порівнює з виміром.
+    "стеля LPTIM-пробудження (HW.19, 128 × ≤ 0.260 мДж ≈ 20.4 мс)" =>
+      voc_wakes(PARAMS) == 128 && (voc_wake_ceiling_mj(PARAMS) - 0.260).abs < 0.001 &&
+      (voc_wake_ceiling_ms(PARAMS) - 20.4).abs < 0.05
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
 
