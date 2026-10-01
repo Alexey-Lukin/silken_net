@@ -9,8 +9,8 @@ CAN catch: a wrong R_int ceiling formula or unit (pinned to the 02_03 §1.5 tabl
 on the wrong threshold, the typ ceiling dropping out of the printed R_int gate row, an unclassified
 EXPERIMENTAL key passing silently, R_ct compared without an area, and the cold-start constants
 drifting from the 02_03 §1.1 table.
-⚠️ `test_gates_judge_on_worst_case_threshold` pins a MACHINE choice — the R_int ceiling judged at
-VIN(CS) max — pending ⚖️ 00_07 HW.24 «worst ⊥ typ»; it flips with that verdict, not before.
+⚠️ `test_gates_judge_on_worst_case_threshold` pins a RATIFIED verdict — the R_int ceiling judged at
+VIN(CS) max (⚖️ 2026-10-01, 01_03 §3.5 · 00_07 HW.24) — until HW.46 measures VIN(CS) of our batch.
 CANNOT catch: whether the lab's equivalent circuit makes R_ct one number, or whether a measured
 value is plausible — the script has no real data yet.
 """
@@ -46,7 +46,7 @@ def test_r_int_impossible_at_or_below_threshold(v_oc):
 
 
 def test_gates_judge_on_worst_case_threshold():
-    # R_int at max is a machine choice pending ⚖️ 00_07 HW.24 (worst ⊥ typ); V_OC at max is ratified.
+    # Both gates at VIN(CS) max are ratified: V_OC (2026-09-27) and the R_int ceiling (2026-10-01).
     gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 690.0, "R_int_ohm": 1000.0})}
     assert not gates["V_OC >= VIN(CS) max"]["pass"]          # 690 clears typ 600, not max 700
     assert not gates["R_int <= ceiling at VIN(CS) max"]["pass"]

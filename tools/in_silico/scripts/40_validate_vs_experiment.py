@@ -28,12 +28,11 @@ What the checks here CAN and CANNOT catch (in-silico §When Modifying #8):
     so both are compared as Ω·cm². A second time constant in the lab's equivalent circuit
     would make R_ct not one number — this script cannot see that; read the lab's fit.
   - R_s depends on the cell geometry, so it is reported only.
-  - The R_int gate uses the WORST-CASE VIN(CS) (max) — a MACHINE choice pending ⚖️ 00_07 HW.24
-    «VIN(CS) of the coin-test R_int ceiling: worst ⊥ typ», not a ratified one: the founder's verdict of
-    2026-09-27 (01_03 §3.5) sets only the V_OC gate on max, and the canon is split on the R_int ceiling
-    (02_03 §11 checklist = max; 01_03 §6.1 / 02_03 §10.2 = typ). The choice flips a verdict — a coin at
-    V_OC exactly at VIN(CS) max passes the V_OC gate yet has no R_int ceiling at max, while typ gives it
-    one — so the typ ceiling is printed beside it (`gate_line`) and recorded in the report.
+  - The R_int gate uses the WORST-CASE VIN(CS) (max) — ⚖️ RATIFIED by the founder 2026-10-01
+    (01_03 §3.5, 00_07 HW.24), the same end of the datasheet range as the V_OC gate, until HW.46
+    measures VIN(CS) of our batch. The convention flips a verdict — a coin at V_OC exactly at
+    VIN(CS) max passes the V_OC gate yet has no R_int ceiling at max, while typ gives it one — so the
+    typ ceiling is printed beside it (`gate_line`) and recorded in the report, as a reference only.
   - Thresholds come from lib.constants (mirrors of 02_03 §1.1), never typed here.
 
 Usage
