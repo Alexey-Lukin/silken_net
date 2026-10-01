@@ -134,8 +134,8 @@ manifest; no pipeline script reads them, and the committed caches stay untouched
 
 ## CI gate
 
-`.github/workflows/in_silico_smoke.yml` has two jobs, both triggered only on PRs
-touching `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`:
+`.github/workflows/in_silico_smoke.yml` has three working jobs, all gated by its `changes`
+paths-filter (the path list lives in the workflow, not here):
 
 - **`lock_sync`** — fail-fast: `conda-lock.yml` must still match `environment.yml`
   (`conda-lock --check-input-hash` + `git diff`). Edit `environment.yml` without
@@ -144,6 +144,10 @@ touching `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`:
   (deterministic on hosted runners), in the env built from the **pinned**
   `conda-lock.yml`. Cached by `mamba-org/setup-micromamba@v3` keyed on the lock
   hash, so cold runs take ~10 min, cached runs ~3 min.
+- **`cache_doc_sync`** — no conda env: hash-pinned pytest on the runner's `python3`, running
+  `test_doc_cache_sync.py` plus the unit tests whose import chain is stdlib-only
+  (`test_validate_vs_experiment.py`, `test_unified_lame.py`). A test that imports numpy
+  belongs in `smoke`, not here — run it under a bare `python3` before adding it.
 
 > **Why the lock (resolved 2026-06-04):** `environment.yml` uses `>=` specifiers,
 > so a bare `conda env create` picks the latest compatible build each solve — a

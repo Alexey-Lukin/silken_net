@@ -3,10 +3,14 @@
 Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the
 mirror its thresholds read (00_07 HW.24).
 
-Pure stdlib + pytest, CI-safe like test_unified_lame.
+Pure stdlib + pytest (lib/ is stdlib at import; openmm loads lazily) — run by the bare `cache_doc_sync`
+job of in_silico_smoke.yml, as test_unified_lame is.
 CAN catch: a wrong R_int ceiling formula or unit (pinned to the 02_03 §1.5 table rows), a V_OC gate
-on the wrong threshold, an unclassified EXPERIMENTAL key passing silently, R_ct compared without an
-area, and the cold-start constants drifting from the 02_03 §1.1 table.
+on the wrong threshold, the typ ceiling dropping out of the printed R_int gate row, an unclassified
+EXPERIMENTAL key passing silently, R_ct compared without an area, and the cold-start constants
+drifting from the 02_03 §1.1 table.
+⚠️ `test_gates_judge_on_worst_case_threshold` pins a MACHINE choice — the R_int ceiling judged at
+VIN(CS) max — pending ⚖️ 00_07 HW.24 «worst ⊥ typ»; it flips with that verdict, not before.
 CANNOT catch: whether the lab's equivalent circuit makes R_ct one number, or whether a measured
 value is plausible — the script has no real data yet.
 """
@@ -42,6 +46,7 @@ def test_r_int_impossible_at_or_below_threshold(v_oc):
 
 
 def test_gates_judge_on_worst_case_threshold():
+    # R_int at max is a machine choice pending ⚖️ 00_07 HW.24 (worst ⊥ typ); V_OC at max is ratified.
     gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 690.0, "R_int_ohm": 1000.0})}
     assert not gates["V_OC >= VIN(CS) max"]["pass"]          # 690 clears typ 600, not max 700
     assert not gates["R_int <= ceiling at VIN(CS) max"]["pass"]
@@ -49,6 +54,15 @@ def test_gates_judge_on_worst_case_threshold():
     assert gates["V_OC >= VIN(CS) max"]["pass"] and gates["R_int <= ceiling at VIN(CS) max"]["pass"]
     gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 5000.0})}
     assert not gates["R_int <= ceiling at VIN(CS) max"]["pass"]   # passes typ (8 kΩ), fails max
+
+
+def test_gate_row_prints_typ_ceiling_beside_max():
+    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 700.0, "R_int_ohm": 3000.0})}
+    assert "typ ceiling" not in rows["V_OC >= VIN(CS) max"]
+    r_int = rows["R_int <= ceiling at VIN(CS) max"]
+    assert "impossible" in r_int and "FAIL" in r_int and r_int.endswith("(typ ceiling 4000)")
+    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 600.0, "R_int_ohm": 3000.0})}
+    assert rows["R_int <= ceiling at VIN(CS) max"].endswith("(typ ceiling impossible)")
 
 
 @pytest.mark.parametrize("exp", [

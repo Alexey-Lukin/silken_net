@@ -28,8 +28,12 @@ What the checks here CAN and CANNOT catch (in-silico §When Modifying #8):
     so both are compared as Ω·cm². A second time constant in the lab's equivalent circuit
     would make R_ct not one number — this script cannot see that; read the lab's fit.
   - R_s depends on the cell geometry, so it is reported only.
-  - The R_int gate uses the WORST-CASE VIN(CS) (max), the same threshold the V_OC gate is
-    ratified on; the typ ceiling is printed beside it for information.
+  - The R_int gate uses the WORST-CASE VIN(CS) (max) — a MACHINE choice pending ⚖️ 00_07 HW.24
+    «VIN(CS) of the coin-test R_int ceiling: worst ⊥ typ», not a ratified one: the founder's verdict of
+    2026-09-27 (01_03 §3.5) sets only the V_OC gate on max, and the canon is split on the R_int ceiling
+    (02_03 §11 checklist = max; 01_03 §6.1 / 02_03 §10.2 = typ). The choice flips a verdict — a coin at
+    V_OC exactly at VIN(CS) max passes the V_OC gate yet has no R_int ceiling at max, while typ gives it
+    one — so the typ ceiling is printed beside it (`gate_line`) and recorded in the report.
   - Thresholds come from lib.constants (mirrors of 02_03 §1.1), never typed here.
 
 Usage
@@ -187,6 +191,15 @@ def acceptance_gates(exp: dict) -> list[dict]:
     return rows
 
 
+def gate_line(g: dict) -> str:
+    """One printed gate row; the R_int row carries its typ ceiling beside the judged max one."""
+    def shown(limit):
+        return "impossible" if limit is None else f"{limit:.0f}"
+    typ = f"  (typ ceiling {shown(g['limit_at_typ'])})" if "limit_at_typ" in g else ""
+    return (f"  {g['gate']:<34s} measured {g['measured']:>8.0f}  limit {shown(g['limit']):>10s}  "
+            f"{'PASS' if g['pass'] else 'FAIL'}{typ}")
+
+
 def compare(preds: dict, exp: dict) -> list[dict]:
     rows = []
     for key, pred_key in COMPARED.items():
@@ -237,9 +250,7 @@ def main() -> int:
         if gates:
             banner("ACCEPTANCE GATES (01_03 §3.5 · 02_03 §1.5)")
             for g in gates:
-                limit = "impossible" if g["limit"] is None else f"{g['limit']:.0f}"
-                print(f"  {g['gate']:<34s} measured {g['measured']:>8.0f}  limit {limit:>10s}  "
-                      f"{'PASS' if g['pass'] else 'FAIL'}")
+                print(gate_line(g))
 
     # Save predictions for reference
     results = {"predictions": preds, "experimental": EXPERIMENTAL,

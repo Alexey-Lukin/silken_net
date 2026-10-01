@@ -175,8 +175,12 @@ jobs:
     # every headline number in SUMMARY/L3 to its OWNER cache JSON — the
     # self-consistent stale pocket `rg`/graphify cannot see (the 2026-06-19 model
     # swap, the −1.054↔−1.051 provenance mix, the xylem-pH column drift).
-    # (test_cache_integrity imports lib/ → needs numpy/openmm → it runs in the
-    # `smoke` conda job above, NOT here; this bare-pytest job stays import-free.)
+    # (test_cache_integrity imports numpy/openmm-bound lib/ modules → it runs in the
+    # `smoke` conda job above, NOT here. This bare-pytest job imports stdlib only:
+    # test_validate_vs_experiment reaches lib/constants + lib/utils, whose openmm
+    # import is lazy, and test_unified_lame reaches lib/mechanics — both were run
+    # bare before they were added. The 02_03 §1.1 ⟷ lib/constants mirror pin lives
+    # in the first, so an edit to only one side of that mirror cannot pass green.)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -188,8 +192,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install pytest (hash-pinned)
         run: python3 -m pip install --user --require-hashes -r tools/in_silico/requirements-pytest.txt
-      - name: Doc↔cache numeric-drift guard
-        run: python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py -q
+      - name: Doc↔cache numeric-drift guard + stdlib-only unit tests
+        run: >-
+          python3 -m pytest tools/in_silico/tests/test_doc_cache_sync.py
+          tools/in_silico/tests/test_validate_vs_experiment.py
+          tools/in_silico/tests/test_unified_lame.py -q
 
   in-silico-ok:
     # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.
