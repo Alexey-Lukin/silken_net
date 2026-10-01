@@ -26,6 +26,10 @@
  *   2. Ds18b20_Decode      — scratchpad → °C×100 або сентинел «не виміряно».
  *   3. Ds18b20_Resolution_Bits / Ds18b20_Conversion_Time_Ms — з config-байта,
  *      щоб викликач чекав рівно стільки, скільки датчик справді рахує.
+ *   4. Ds18b20_Read_Centi_C — транзакція через ops-шов Ds18b20_Ops (взірець
+ *      Bme280_Ops): reset/presence → Skip ROM → Convert T → опитування
+ *      read-slot'ів → reset → Skip ROM → Read Scratchpad → Decode. Host =
+ *      мок-шина на рівні бітів, MCU = GPIO open-drain + мкс-затримка.
  *
  * ⛔ Чому CRC-8 живе ТУТ, а не в silken_crc.h: той файл оголошує себе домом
  * CRC-примітивів НАШОГО дроту (CRC-16/CCITT, дзеркало в Ruby). CRC-8/MAXIM є
@@ -33,9 +37,16 @@
  * зробило б «один дім» із двох різних предметів.
  *
  * ⚠️ Стелі, названі вголос (гіпотеза за 00_06 §0 — фізику підтверджує стенд):
- *   - модуль не бачить шини: ні presence-pulse, ні ROM-команд, ні паразитного
- *     живлення тут немає; «датчик не відповів» мусить віддати HAL-половина, і
- *     у scratchpad'і це виглядає як усі 0xFF (CRC не зійдеться);
+ *   - модуль бачить ПОСЛІДОВНІСТЬ шини, а не її ЧАС: тривалості reset-імпульсу,
+ *     вікна presence й бітових слотів (мікросекунди) живуть в опсах, тож host
+ *     доводить порядок команд і розрізнення «немає presence» ⊥ «конверсії не
+ *     видно» ⊥ «CRC-брак», а тайминги — лише стенд. Джерела мкс-часу Королева
+ *     ще не має (03_02 §10: ні TIM, ні RTC); кандидат — лічильник циклів
+ *     DWT CYCCNT ядра Cortex-M4. Пін 1-Wire — board-freeze;
+ *   - паразитного живлення тут немає: поз. 23 — три проводи (02_05 §4а.6), а
+ *     опитування read-slot'ів datasheet обіцяє лише за зовнішнього VDD;
+ *   - Skip ROM адресує ВСІХ на лінії, тож шар правильний лише для одного
+ *     датчика на шині — поз. 23 рівно один;
  *   - теплове зчеплення TO-92 з корпусом комірки й затримка відповіді — це
  *     властивість МОНТАЖУ, не декодера: судить морозильний стенд (00_07 HW.16);
  *   - ±0.5 °C паспортні лише на −10…+85 °C (ширше ±2 °C) — межа датчика, не коду;
@@ -131,9 +142,8 @@ static inline int32_t Ds18b20_Raw_To_Centi_C(int16_t raw)
 /*
  * Scratchpad → °C×100, або DS18B20_TEMP_UNKNOWN.
  *
- * `conversion_completed` — твердження ВИКЛИКАЧА (HAL-половини) про те, що
- * після Convert-T минув Ds18b20_Conversion_Time_Ms і датчик відзвітував
- * про готовність. Воно тут несуче: без нього +85.00 °C неможливо відрізнити
+ * `conversion_completed` — твердження ВИКЛИКАЧА про те, що після Convert-T
+ * датчик відзвітував про готовність (його дає Ds18b20_Wait_Conversion нижче). Воно тут несуче: без нього +85.00 °C неможливо відрізнити
  * від power-on стану, і модуль радше віддасть сентинел, ніж градус, якого
  * ніхто не міряв.
  */
@@ -145,6 +155,107 @@ static inline int32_t Ds18b20_Decode(const uint8_t *sp, int conversion_completed
     int16_t raw = (int16_t)(((uint16_t)sp[DS18B20_SP_TEMP_MSB] << 8) |
                              (uint16_t)sp[DS18B20_SP_TEMP_LSB]);
     return Ds18b20_Raw_To_Centi_C(raw);
+}
+
+/* ─── Транзакційний рівень 1-Wire (pure; таймінги — в опсах) ─────────────── */
+
+/* Команди (datasheet ADI DS18B20, §ROM Commands / §Function Commands). */
+#define DS18B20_CMD_SKIP_ROM         0xCCu
+#define DS18B20_CMD_CONVERT_T        0x44u
+#define DS18B20_CMD_READ_SCRATCHPAD  0xBEu
+
+#define DS18B20_OK                0
+#define DS18B20_ERR_NO_PRESENCE (-1) /* reset без presence-імпульсу: датчика на лінії немає */
+#define DS18B20_ERR_TIMEOUT     (-2) /* лінія тримає «0» довше за t_CONV,max */
+#define DS18B20_ERR_UNCONFIRMED (-3) /* перший read-slot після Convert T — «1»: конверсії не видно */
+#define DS18B20_ERR_CRC         (-4) /* scratchpad не зійшовся, у т.ч. німа лінія 0xFF×9 */
+
+/* HAL-половина: кожен оп — один примітив шини з його мікросекундами всередині.
+ * reset повертає 1, якщо presence почуто; read_bit — рівень лінії в read-slot. */
+typedef struct {
+    int     (*reset)(void *io);
+    void    (*write_bit)(void *io, uint8_t bit);
+    uint8_t (*read_bit)(void *io);
+    void    (*delay_ms)(void *io, uint32_t ms);
+} Ds18b20_Ops;
+
+/* Байти по дроту йдуть молодшим бітом першим (datasheet §Transaction Sequence). */
+static inline void Ds18b20_Write_Byte(const Ds18b20_Ops *ops, void *io, uint8_t byte)
+{
+    for (uint8_t i = 0u; i < 8u; i++) {
+        ops->write_bit(io, (uint8_t)((byte >> i) & 0x01u));
+    }
+}
+
+static inline uint8_t Ds18b20_Read_Byte(const Ds18b20_Ops *ops, void *io)
+{
+    uint8_t byte = 0u;
+    for (uint8_t i = 0u; i < 8u; i++) {
+        if (ops->read_bit(io)) { byte |= (uint8_t)(1u << i); }
+    }
+    return byte;
+}
+
+/* reset → presence → Skip ROM → функціональна команда. Без presence в лінію
+ * НІЧОГО не пишемо: команда в тишу виглядала б як успішна транзакція. */
+static inline int Ds18b20_Command(const Ds18b20_Ops *ops, void *io, uint8_t cmd)
+{
+    if (!ops->reset(io)) { return DS18B20_ERR_NO_PRESENCE; }
+    Ds18b20_Write_Byte(ops, io, DS18B20_CMD_SKIP_ROM);
+    Ds18b20_Write_Byte(ops, io, cmd);
+    return DS18B20_OK;
+}
+
+/*
+ * Очікування кінця конверсії опитуванням read-slot'ів: датчик із зовнішнім
+ * живленням тримає «0», доки рахує, і віддає «1», коли закінчив (datasheet
+ * §Convert T). DS18B20_OK звідси і є тим твердженням «конверсія завершилась»,
+ * якого Ds18b20_Decode вимагає від викликача — і воно чесне лише тому, що ми
+ * БАЧИЛИ обидва стани: спершу «0», потім «1».
+ *
+ * 🚨 «1» на ПЕРШОМУ слоті не є «уже готово» — це лінія, яку ніхто не тримає
+ * (клон, конверсія не стартувала, паразитний режим). Тоді scratchpad містить
+ * що завгодно: power-on +85.00 °C або градус минулого циклу — і обидва
+ * виглядали б свіжим виміром. Тож відмова, а не читання.
+ *
+ * Бюджет — t_CONV,max на 12 бітах: config-байт видно лише в scratchpad'і, який
+ * ще не прочитано, а коротше чекати означало б обрізати справжню конверсію.
+ */
+static inline int Ds18b20_Wait_Conversion(const Ds18b20_Ops *ops, void *io)
+{
+    const uint16_t budget_ms = Ds18b20_Conversion_Time_Ms(12u);
+    if (ops->read_bit(io)) { return DS18B20_ERR_UNCONFIRMED; }
+    for (uint16_t waited = 0u; waited < budget_ms; waited++) {
+        ops->delay_ms(io, 1u);
+        if (ops->read_bit(io)) { return DS18B20_OK; }
+    }
+    return DS18B20_ERR_TIMEOUT;
+}
+
+/*
+ * Одна повна транзакція: °C×100 у *centi_c, або DS18B20_TEMP_UNKNOWN разом із
+ * кодом причини. Сентинел пишеться ПЕРШИМ, тож жодна гілка відмови не лишає
+ * викликачеві число з минулого виклику.
+ */
+static inline int Ds18b20_Read_Centi_C(const Ds18b20_Ops *ops, void *io, int32_t *centi_c)
+{
+    uint8_t sp[DS18B20_SCRATCHPAD_LEN];
+    *centi_c = DS18B20_TEMP_UNKNOWN;
+
+    int rc = Ds18b20_Command(ops, io, DS18B20_CMD_CONVERT_T);
+    if (rc != DS18B20_OK) { return rc; }
+    rc = Ds18b20_Wait_Conversion(ops, io);
+    if (rc != DS18B20_OK) { return rc; }
+    rc = Ds18b20_Command(ops, io, DS18B20_CMD_READ_SCRATCHPAD);
+    if (rc != DS18B20_OK) { return rc; }
+
+    for (uint8_t i = 0u; i < DS18B20_SCRATCHPAD_LEN; i++) {
+        sp[i] = Ds18b20_Read_Byte(ops, io);
+    }
+    if (!Ds18b20_Scratchpad_Valid(sp)) { return DS18B20_ERR_CRC; }
+
+    *centi_c = Ds18b20_Decode(sp, 1);
+    return DS18B20_OK;
 }
 
 #endif /* SILKEN_DS18B20_H */

@@ -13,6 +13,10 @@
  * декодер мусить віддати сентинел, доки викликач не ствердив, що конверсія
  * завершилась (00_07 HW.16; клас ФОЛБЕКУ — 00_01 §1.1).
  *
+ * Друга половина — транзакція 1-Wire над мок-шиною: доводить ПОСЛІДОВНІСТЬ
+ * команд і розрізнення «немає presence» ⊥ «конверсії не видно» ⊥ «таймаут» ⊥
+ * «CRC-брак»; мікросекундні тайминги шини мок не моделює — їх судить стенд.
+ *
  * Build: make -C firmware/test ds18b20
  */
 #include <stdio.h>
@@ -165,6 +169,241 @@ static void test_sentinel_outside_sensor_range(void)
     CHECK(DS18B20_TEMP_UNKNOWN != 0, "нуль сентинелем бути не може — це робоча точка заряду");
 }
 
+/* ─── Транзакційний рівень: мок-шина на рівні бітів ──────────────────────────
+ * Мок — модель ДАТЧИКА, а не дзеркало коду: він сам збирає біти в байти
+ * молодшим першим і розпізнає лише справжні коди datasheet'а (0xCC · 0x44 ·
+ * 0xBE). Шар, що слав би старшим бітом першим, писав би 0x33 (Read ROM!) і
+ * 0x22 — мок їх не впізнає, і тест почервоніє на журналі команд. */
+
+#define EV_RESET 0x100u   /* у журналі — reset-імпульс; решта — байти команд */
+#define CONV_NEVER UINT32_MAX
+
+typedef struct {
+    /* поведінка */
+    int      presence_resets;   /* на скільки перших reset'ів датчик відповідає */
+    int      drives_conversion; /* тримає «0», доки рахує (зовнішнє VDD) */
+    uint32_t conv_ms;           /* тривалість конверсії; CONV_NEVER = ніколи */
+    uint8_t  sp[DS18B20_SCRATCHPAD_LEN];       /* scratchpad ДО конверсії */
+    uint8_t  sp_after[DS18B20_SCRATCHPAD_LEN]; /* scratchpad ПІСЛЯ конверсії */
+    /* стан */
+    int      resets;
+    uint8_t  in_byte, in_bits, cmd_pos;
+    int      converting, reading;
+    uint32_t conv_elapsed;
+    unsigned out_bit;
+    uint32_t delay_total_ms;
+    int      unknown_cmd;
+    /* журнал */
+    uint16_t log[16];
+    unsigned log_len;
+} MockDs;
+
+static void mock_log(MockDs *m, uint16_t ev)
+{
+    if (m->log_len < sizeof(m->log) / sizeof(m->log[0])) { m->log[m->log_len] = ev; }
+    m->log_len++;
+}
+
+static int mock_reset(void *io)
+{
+    MockDs *m = io;
+    m->resets++;
+    mock_log(m, EV_RESET);
+    m->in_byte = 0u; m->in_bits = 0u; m->cmd_pos = 0u; m->reading = 0;
+    return m->resets <= m->presence_resets;
+}
+
+static void mock_on_byte(MockDs *m, uint8_t b)
+{
+    mock_log(m, b);
+    if (m->cmd_pos == 0u) {
+        if (b != DS18B20_CMD_SKIP_ROM) { m->unknown_cmd = 1; }
+    } else if (m->cmd_pos == 1u) {
+        if (b == DS18B20_CMD_CONVERT_T) {
+            m->converting = 1; m->conv_elapsed = 0u;
+        } else if (b == DS18B20_CMD_READ_SCRATCHPAD) {
+            m->reading = 1; m->out_bit = 0u;
+        } else {
+            m->unknown_cmd = 1;
+        }
+    } else {
+        m->unknown_cmd = 1;
+    }
+    m->cmd_pos++;
+}
+
+static void mock_write_bit(void *io, uint8_t bit)
+{
+    MockDs *m = io;
+    if (bit) { m->in_byte |= (uint8_t)(1u << m->in_bits); }
+    if (++m->in_bits == 8u) {
+        mock_on_byte(m, m->in_byte);
+        m->in_byte = 0u; m->in_bits = 0u;
+    }
+}
+
+static uint8_t mock_read_bit(void *io)
+{
+    MockDs *m = io;
+    if (m->reading) {
+        unsigned i = m->out_bit++;
+        if (i >= DS18B20_SCRATCHPAD_LEN * 8u) { return 1u; }
+        return (uint8_t)((m->sp[i / 8u] >> (i % 8u)) & 0x01u);
+    }
+    if (m->converting && m->drives_conversion) {
+        if (m->conv_ms != CONV_NEVER && m->conv_elapsed >= m->conv_ms) {
+            m->converting = 0;
+            memcpy(m->sp, m->sp_after, sizeof(m->sp));
+            return 1u;
+        }
+        return 0u;
+    }
+    return 1u;   /* лінію ніхто не тримає — pull-up */
+}
+
+static void mock_delay_ms(void *io, uint32_t ms)
+{
+    MockDs *m = io;
+    m->conv_elapsed += ms;
+    m->delay_total_ms += ms;
+}
+
+static const Ds18b20_Ops mock_ops = {
+    mock_reset, mock_write_bit, mock_read_bit, mock_delay_ms
+};
+
+/* Здоровий датчик: відповідає завжди, конверсія 600 мс, scratchpad до неї — POR. */
+static void mock_init(MockDs *m, int16_t raw_after)
+{
+    memset(m, 0, sizeof(*m));
+    m->presence_resets = 1000;
+    m->drives_conversion = 1;
+    m->conv_ms = 600u;
+    build_sp(m->sp, (int16_t)DS18B20_POR_TEMP_RAW, 0x7F);
+    build_sp(m->sp_after, raw_after, 0x7F);
+}
+
+static int log_has(const MockDs *m, uint16_t ev)
+{
+    for (unsigned i = 0; i < m->log_len && i < sizeof(m->log) / sizeof(m->log[0]); i++) {
+        if (m->log[i] == ev) { return 1; }
+    }
+    return 0;
+}
+
+/* Повна транзакція: порядок команд за datasheet'ом і зимовий градус на виході. */
+static void test_txn_happy_path_sequence(void)
+{
+    MockDs m;
+    mock_init(&m, (int16_t)0xFF5E);                 /* −10.125 °C */
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+
+    const uint16_t want[] = { EV_RESET, 0xCC, 0x44, EV_RESET, 0xCC, 0xBE };
+    int seq_ok = m.log_len == sizeof(want) / sizeof(want[0]);
+    for (unsigned i = 0; seq_ok && i < m.log_len; i++) { seq_ok = m.log[i] == want[i]; }
+
+    CHECK(rc == DS18B20_OK, "здоровий датчик не дав DS18B20_OK");
+    CHECK(t == -1013, "−10.125 °C декодовано не в −1013");
+    CHECK(!m.unknown_cmd, "мок не впізнав команду — байти йдуть не молодшим бітом першим?");
+    CHECK(seq_ok, "журнал ≠ reset·CC·44·reset·CC·BE");
+    CHECK(m.delay_total_ms >= 600u && m.delay_total_ms <= 750u,
+          "чекання не дорівнює тривалості конверсії в межах t_CONV,max");
+}
+
+/* Немає presence → «датчик не відповів», і в тишу не пишеться жоден байт. */
+static void test_txn_no_presence(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.presence_resets = 0;
+    int32_t t = 12345;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_NO_PRESENCE, "відсутній датчик не дав ERR_NO_PRESENCE");
+    CHECK(t == DS18B20_TEMP_UNKNOWN, "відсутній датчик лишив викликачеві число");
+    CHECK(m.log_len == 1u && m.log[0] == EV_RESET, "після тиші на reset у лінію пішли байти");
+}
+
+/* Presence зник між конверсією й читанням → та сама відмова, не scratchpad. */
+static void test_txn_presence_lost_before_read(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.presence_resets = 1;
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_NO_PRESENCE, "зниклий на другому reset датчик не дав ERR_NO_PRESENCE");
+    CHECK(t == DS18B20_TEMP_UNKNOWN, "зниклий датчик віддав градус");
+    CHECK(!log_has(&m, 0xBE), "Read Scratchpad пішов у тишу");
+}
+
+/* 🚨 POR без конверсії: лінію ніхто не тримає, scratchpad = +85.00 → сентинел. */
+static void test_txn_por_without_conversion(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.drives_conversion = 0;                        /* sp лишається POR */
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_UNCONFIRMED, "«1» на першому слоті прийнято за готовність");
+    CHECK(t == DS18B20_TEMP_UNKNOWN, "power-on +85.00 віддано як ГРАДУС — це фабрикація");
+    CHECK(!log_has(&m, 0xBE), "непідтверджений scratchpad усе одно читали");
+}
+
+/* Те саме з НЕ-POR вмістом: декодер окремо його б пропустив, шар — ні,
+ * бо градус минулого циклу без видимої конверсії так само не є виміром. */
+static void test_txn_stale_value_without_conversion(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.drives_conversion = 0;
+    build_sp(m.sp, 0x0191, 0x7F);                   /* +25.06 від минулого разу */
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_UNCONFIRMED, "застарілий scratchpad без конверсії не відхилено");
+    CHECK(t == DS18B20_TEMP_UNKNOWN, "градус минулого циклу віддано як свіжий");
+}
+
+/* Справжні +85.00 після ПОБАЧЕНОЇ конверсії — вимір, сентинел їх не ковтає. */
+static void test_txn_real_85_after_conversion(void)
+{
+    MockDs m;
+    mock_init(&m, (int16_t)DS18B20_POR_TEMP_RAW);
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_OK && t == 8500, "справжні +85.00 після конверсії не пройшли");
+}
+
+/* Конверсія не закінчується → таймаут рівно на t_CONV,max, scratchpad не читається. */
+static void test_txn_conversion_timeout(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.conv_ms = CONV_NEVER;
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_TIMEOUT, "вічна конверсія не дала ERR_TIMEOUT");
+    CHECK(t == DS18B20_TEMP_UNKNOWN, "після таймауту віддано градус");
+    CHECK(m.delay_total_ms == 750u, "бюджет очікування ≠ t_CONV,max 12 біт (750 мс)");
+    CHECK(!log_has(&m, 0xBE), "після таймауту читали scratchpad");
+}
+
+/* CRC-брак і німа лінія під час читання scratchpad'а → сентинел. */
+static void test_txn_crc_reject(void)
+{
+    MockDs m;
+    mock_init(&m, 0x0191);
+    m.sp_after[DS18B20_SP_CRC] ^= 0xFFu;
+    int32_t t = 0;
+    int rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_CRC && t == DS18B20_TEMP_UNKNOWN, "зіпсований CRC пройшов як вимір");
+
+    mock_init(&m, 0x0191);
+    memset(m.sp_after, 0xFF, sizeof(m.sp_after));
+    rc = Ds18b20_Read_Centi_C(&mock_ops, &m, &t);
+    CHECK(rc == DS18B20_ERR_CRC && t == DS18B20_TEMP_UNKNOWN, "німа лінія (0xFF×9) віддала градус");
+}
+
 int main(void)
 {
     printf("\n=== [HW.16] DS18B20 scratchpad decode (host) ===\n");
@@ -176,6 +415,16 @@ int main(void)
     RUN(test_crc_catches_single_bit_flip_in_temperature);
     RUN(test_resolution_and_conversion_time);
     RUN(test_sentinel_outside_sensor_range);
+
+    printf("\n=== [HW.16] DS18B20 1-Wire transaction over a mock bus (host) ===\n");
+    RUN(test_txn_happy_path_sequence);
+    RUN(test_txn_no_presence);
+    RUN(test_txn_presence_lost_before_read);
+    RUN(test_txn_por_without_conversion);
+    RUN(test_txn_stale_value_without_conversion);
+    RUN(test_txn_real_85_after_conversion);
+    RUN(test_txn_conversion_timeout);
+    RUN(test_txn_crc_reject);
 
     printf("\n  passed: %d, failed: %d\n\n", tests_passed, tests_failed);
     return tests_failed == 0 ? 0 : 1;
