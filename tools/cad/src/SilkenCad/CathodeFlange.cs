@@ -67,7 +67,8 @@ internal static class CathodeFlange
         // 3. Bayonet lugs — radial pins evenly spaced around the flange rim (mate the Радом socket, фаза 2).
         //    Each pin's local-Z = the radial outward direction; it overlaps the rim by fOverlap to fuse.
         //    ⚖️ Their Z is the mid-disc `shank + t/2`; the ratified raised COLLAR (02_02 §4.4) that would carry
-        //    them at Assembly.RequiredLugZMm is not modelled — its wall is set by nothing (00_07 HW.33).
+        //    them at Assembly.RequiredLugZMm is not modelled — its wall is sized by the process floor, not strength
+        //    (model 73, 02_02 §4.4); what holds it is its running clearance, which moves the root (00_07 HW.33).
         float fLugZ = fShankLen + (fThick / 2f);
         const float fOverlap = 1.0f;
         for (int i = 0; i < cem.BayonetLugs; i++)

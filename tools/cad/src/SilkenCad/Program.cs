@@ -438,11 +438,12 @@ internal static class Program
                 break;
             }
             default:
-                // ⛔ `radome` is deliberately absent, and the reason is not effort. It USED to be two grounds;
-                // since 2026-09-22 it is ONE: the flat crown R5 (⚖️ 2026-09-11) is APPLIED — its gate ⚖️ HW.30
-                // settled the pad BESIDE the piezo — but the socket is still reshaped by the collar leg, so a
-                // sheet issued from today's generator would print a socket about to change. It ships with the
-                // LAST of the two changes (00_07 HW.33). (Flat rim + rim boss applied 2026-09-14, crown 09-22.)
+                // ⛔ `radome` is deliberately absent, and the reason is not effort. The crown ground is spent (flat
+                // crown R5, ⚖️ 2026-09-11, APPLIED 2026-09-22 once ⚖️ HW.30 settled the pad); TWO grounds remain:
+                // the socket is still reshaped by the collar leg (00_07 HW.33), and the BME280 pocket floor is a
+                // PLACEHOLDER moved by the B2B / rigid-flex height (HW.29) — a sheet issued from today's generator
+                // would print both as decisions. It ships with the LAST of those changes. (Flat rim + rim boss
+                // applied 2026-09-14, crown 09-22.)
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 

@@ -405,8 +405,9 @@ internal sealed record RadomeCem
     public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø30; the finest features are the 0.2 socket skin and the vent hole Ø1.0 → 0.1 ok
     // ⚖️ ROOT (founder 2026-09-29, 00_07 HW.9 → HW.33; applied 2026-09-30): the Ø25 freeze is OPENED for the board contour.
     // DERIVED, not chosen: board target Ø19.97 (02_01 §3.5 — 70 % courtyard fill with the vent-pocket gasket counted, envelope
-    // booster NN02-224, EDLC KR, B2B pair) + 2 × 0.2 collar (the print-floor READING the calculator uses — nothing sets the collar
-    // wall, HW.33) + 2 × 4.715 rim boss (gland fill KEPT at 80 %, ⚖️ delegated 2026-09-30) = 29.80. A thicker collar re-opens it.
+    // booster NN02-224, EDLC KR, B2B pair) + 2 × 0.2 collar (the SLM print-floor default — since 2026-10-01 the ground, not a reading:
+    // model 73, 02_02 §4.4, found strength does not size the wall; the CNC route states no floor) + 2 × 4.715 rim boss
+    // (gland fill KEPT at 80 %, ⚖️ delegated 2026-09-30) = 29.80. A thicker collar, or any running clearance for it, re-opens it (HW.33).
     public float DomeDiameterMm { get; init; } = 29.8f;    // = Zone-3 flange Ø (02_02 §1.3), pinned equal by xUnit
     public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)
     public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF). ⛔ NOT antenna↔Ti: that is cavityH − lockGrooveZ − t/2 = 8.0 here, and the ≥12 floor is OURS (canon asks ≥8; acceptance is a mock-up's call, 02_01 §5.3)

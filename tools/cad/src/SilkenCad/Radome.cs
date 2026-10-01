@@ -19,16 +19,18 @@ namespace SilkenCad;
 //  • rim boss + flat rim + socket-in-the-outer-band — APPLIED 2026-09-14 (ratified 2026-09-10; ⚖️ 2026-09-14
 //    «вхід»: designed to the rim-cavity ceiling now, and the board layout HW.9 takes that ceiling as an INPUT);
 //  • the raised COLLAR that carries the lugs at Assembly.RequiredLugZMm (ratified 2026-09-11, 02_02 §4.4) is NOT
-//    modelled — nothing sets its wall (no bayonet load model; a placeholder would print on the flange sheet as a
-//    decision), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
+//    modelled — strength does not size its wall (model 73, 02_02 §4.4: there is still no bayonet load model, but
+//    the force no longer sizes the wall — the process floor does), a placeholder would print on the flange sheet as a
+//    decision, and its running clearance moves the root (00_07 HW.9, under the crown pause), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
 //    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
 //    it — socket and collar are the female and male halves of one band;
 //  • the FLAT CROWN (R5, ratified 2026-09-11) is APPLIED since 2026-09-22 — its gate was ⚖️ HW.30, and that
 //    verdict put the pad BESIDE the piezo (02_01 §6; the piezo and its pad were then cut on 2026-09-29,
 //    HW.30 — the flat crown stays as ratified), which leaves the board stack under the 16.0 mm the
 //    crown fixes. `BellRadiusMm` now DRIVES the edge round; `BellRiseMm` stays the canon floor verify
-//    checks against. ⛔ `draw radome` is STILL refused, and for the OTHER reason: the socket is reshaped
-//    by the collar leg, so the sheet waits on the LAST of the two changes, never on this one alone.
+//    checks against. ⛔ `draw radome` is STILL refused, on TWO other grounds: the socket is reshaped
+//    by the collar leg, and the BME280 pocket floor is a PLACEHOLDER (HW.29) — the sheet waits on the LAST of those
+//    changes, never on this one alone.
 //  • the DOME Ø is no longer frozen: the ROOT verdict (⚖️ founder 2026-09-29, 00_07 HW.9 → HW.33) opened Ø25 for the board
 //    contour, and the Ø is DERIVED (RadomeCem.DomeDiameterMm) — applied 2026-09-30 with the vent facet + BME280 pocket
 //    (⚖️ 2026-09-29, 02_01 §3.4; steps 5–7 below). The gland fill stayed at 80 % (⚖️ delegated 2026-09-30, 02_02 §3.2).

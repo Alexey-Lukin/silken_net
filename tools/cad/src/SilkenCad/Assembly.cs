@@ -61,7 +61,9 @@ internal static class Assembly
     // The lug Z the mate REQUIRES: the rim lands on the sealing face and the socket sits lockGrooveZ above
     // that rim ⇒ the lug sits there too — 20.5 at the frozen dims, exactly lockGrooveZ over the face.
     // ⚖️ The raised collar that carries such a lug is RATIFIED (02_02 §4.4, 2026-09-11) and this is its Z.
-    // It is NOT modelled: nothing sets its wall (no bayonet load model, 00_07 HW.33), and it rides AFTER the
+    // It is NOT modelled. Strength does not size its wall (model 73, 02_02 §4.4 — there is still no bayonet load
+    // model, but the force no longer sizes it; the process floor does); what holds it is its running clearance,
+    // which moves the root (00_07 HW.33 → HW.9, under the crown pause). It rides AFTER the
     // rim boss — now applied (Radome.cs) — whose socket band it must share. The board layout HW.9 takes the
     // boss's rim-cavity ceiling as an input, not as a gate on this (⚖️ 2026-09-14).
     public static float RequiredLugZMm(AnchorAssemblyCem cem)
