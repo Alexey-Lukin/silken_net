@@ -1880,6 +1880,8 @@ CHECKS += [
      POWER, rf"— запас \*\*{N} K\*\*, тобто порядку похибки", THERMAL, _sens("0.95", "margin_to_rating_k"), 0.05),
     ("HW.37 · 02_03 light finish margin with h_c × 0.7 → capsule_envelope.json",
      POWER, rf"світлий тримає \*\*≥ {N} K\*\*", THERMAL, _sens("0.50", "margin_to_rating_k"), 0.05),
+    ("HW.37 · SUMMARY verdict light finish margin with h_c × 0.7 → capsule_envelope.json",
+     SUMMARY, rf"a light one keeps ≥ {N} K", THERMAL, _sens("0.50", "margin_to_rating_k"), 0.05),
     ("HW.37 · 02_03 air hours under the EDLC floor → capsule_envelope.json",
      POWER, rf"повітря було нижче −25 °C \*\*{N} години\*\*", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["hours"], 0.5),
     ("HW.37 · 02_03 coldest air hour → capsule_envelope.json",

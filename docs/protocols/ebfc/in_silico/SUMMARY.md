@@ -755,7 +755,7 @@ the lump tracks the air at night in this model, and real sky cooling would make 
 so the count is a LOWER bound for the capsule.
 
 **Verdict** — the hot side is not exceeded for any finish in the sweep, but for a DARK finish in full
-sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 16 K. The
+sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 15.0 K. The
 aging side moves the 20-year claim: the site does not age the EDLC at the 10 °C reference point, and
 at its real T_eff the conservative voltage coefficient stays below 20 years in every case while the
 optimistic one stays above it in every case — so the claim now rests on the vendor voltage
