@@ -76,6 +76,20 @@ ARGS=(
 
 echo "▶ $("$CPPCHECK" --version) — gating soldier + queen + common + sim (Cortex-M4 platform)"
 "$CPPCHECK" "${ARGS[@]}" "${SOURCES[@]}"
+
+# [HW.16] Каталог дає cppcheck лише .c, а .h він читає ТІЛЬКИ через #include — тож pure
+# header-only модуль, який включає лише host-тест (firmware/test/ поза периметром),
+# не аналізувався взагалі (позитивний контроль 2026-10-01: null-deref, вписаний у
+# ds18b20.h, лишав цей гейт зеленим). Такі заголовки ВИЧИСЛЮЄМО, а не перелічуємо —
+# список гнив би з кожним новим модулем — і ганяємо явними файлами як C.
+UNREACHED=()
+while IFS= read -r h; do
+  grep -rqE "#include +\"([^\"]*/)?$(basename "$h")\"" "${SOURCES[@]}" || UNREACHED+=("$h")
+done < <(find "${SOURCES[@]}" -name '*.h' | sort)
+if [[ ${#UNREACHED[@]} -gt 0 ]]; then
+  echo "▶ header-only modules no perimeter .c includes: ${UNREACHED[*]}"
+  "$CPPCHECK" "${ARGS[@]}" --language=c "${UNREACHED[@]}"
+fi
 echo "✅ cppcheck: firmware C clean (no findings at warning/performance/portability/style)"
 
 if [[ "$RUN_MISRA" -eq 1 ]]; then
