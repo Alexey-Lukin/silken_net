@@ -669,7 +669,7 @@ no FEA, no fabricated numbers where the open literature genuinely does not have 
 
 | Part | Reference found | Verdict |
 |---|---|---|
-| Pogo spring (BeCu C17200 #75; data from the Mill-Max 0906 sheet — the series itself is `00_07` HW.9's pick) | mfr full-stroke life 1e5–1e6 cyc · S-N anchors 240 MPa→1e10 cyc / 400 MPa→3.05e6 cyc, no strict VHCF flat limit | Two mismatched framings — full-stroke actuation FAILS (likely wrong model); low-amplitude stress framing is physically right but missing the real sway micro-deflection datum |
+| Pogo spring (BeCu C17200 #75; data from the Mill-Max 0906 sheet — the series itself is `00_07` HW.9's pick) | mfr full-stroke life 1e5–1e6 cyc · S-N anchors 240 MPa→1e10 cyc / 400 MPa→3.05e6 cyc, no strict VHCF flat limit | Two mismatched framings — full-stroke actuation FAILS (likely wrong model); low-amplitude stress framing is physically right but missing three data (cache `missing_datum`): the vendor spring drawing (wire Ø, mean coil Ø, active coils, rate — asked first, ⚖️ 2026-09-22), a torsional S-N reference for C17200 (both anchors are normal-stress data, and an open search on 2026-10-01 found no torsional curve — [`02_02 §2.2`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md)), and the real sway micro-deflection amplitude |
 | PEEK mechanical-lock barb (cyclic, ⊥ HW.26's tracked static creep) | endurance limit 30–48 MPa @ 1e6–1e7 cyc (2 converging sources) | Reference established for HW.26's pending FEA to check against; not itself closed |
 | Genipin-chitosan-CNC matrix (01_03 §2.1 Layer 4) | script 16 (N=10 MD cycles, qualitative pseudoplastic) | Category mismatch — a ~10-20 µm enzyme-immobilization coating, not a load-bearing spring; removed from the S-N framing, its durability axis is chemical (HW.5), not cyclic-mechanical |
 | Sway frequency (*P. sylvestris*, Hartheim research site, Univ. Freiburg) | Kolbe & Schindler 2021 (HardwareX 9, e00180): first mode 0.273–0.312 Hz, three trees H 17.2–18.0 m, Apr–Oct 2020 · Nickl et al. 2022 (HardwareX 12, e00379): f0 0.26 Hz, strain at 2.7 m, June 2021 · Schindler & Kolbe 2020 (Forests 11, 145): «damped fundamental sway frequency of the stem» 0.74 Hz, one tree H 16.8 m, 30 Jan 2019 — full texts read, one site in all three | A BRACKET of two named readings, not a point: one group, one site, trees of one size, and the readings differ 2.4–2.8× with no cause named in either text. 20 yr of continuous sway gives **1.64–1.97 × 10⁸** cycles at the low reading and a ceiling of **4.67 × 10⁸** at the high one. ⛔ The canon's 1–5 Hz is a bench frequency with no field reading, so no budget is counted at it |
@@ -681,8 +681,10 @@ no FEA, no fabricated numbers where the open literature genuinely does not have 
 
 **Verdict** — 🟡 Genuinely partial. No part is fully closed, and that is the honest result: each
 gets a named numeric threshold or a named reason the closed-form method does not apply, plus the
-exact missing datum that would close it (bench sway-deflection measurement, HW.26's FEA output, an
-in-canopy anemometer, or a strain-range histogram at anchor height). The one clean correction is the
+exact missing datum that would close it (for the pogo spring the vendor spring drawing first, ⚖️ 2026-09-22, then a
+torsional S-N reference and the sway micro-deflection; HW.26's FEA output for the barb; and for the cycle budget a
+strain-range histogram at anchor height from a strain gauge on the trunk — not an anemometer, whose wind would still
+pass two unmeasured multipliers, ⚖️ 2026-09-23, [`01_02 §2.2`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)). The one clean correction is the
 genipin-matrix removal from the checkbox's own S-N framing — the durability question that actually
 matters for it lives in HW.5.
 (`mechanical/contact_endurance_check.json`, `mechanical/wind_duty_cycle.json`)

@@ -204,9 +204,11 @@ def main() -> int:
                     f"{N_CONTINUOUS_CEILING:.2e} at the high one; the most generous Beaufort bracket keeps "
                     f"{generous['exceedance_fraction'] * 100:.0f}% of days, i.e. N_eff <= "
                     f"{generous['n_eff_cycles_upper_bound']:.2e} at the ceiling. Every count is an upper bound on "
-                    f"first-mode cycles, not a strain-range count (bounds_that_travel). Closure needs an in-stand "
-                    f"anemometer at trunk height, a species-specific sway-onset study and a strain-range histogram "
-                    f"at anchor height — none exists in open literature."),
+                    f"first-mode cycles, not a strain-range count (bounds_that_travel). Closure needs a strain-range "
+                    f"histogram at anchor height, measured directly by a strain gauge on the trunk at anchor height "
+                    f"(01_02 §2.2, delegated verdict) — none exists in open literature for P. sylvestris. An in-stand "
+                    f"anemometer is NOT the closing instrument: its wind still has to pass through two unmeasured "
+                    f"multipliers (the sway-onset threshold and the canopy attenuation) before it becomes cycles."),
         "source_file": "tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json",
         "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=WS10M&community="
                        "RE&longitude=32.06&latitude=49.44&start=20150101&end=20241231&format=JSON",
