@@ -126,7 +126,7 @@
 | 1 | **MCU & LoRa (Gateway Mode)** | STM32WLE5JC + зовнішня антена 5 dBi, **зʼєднувач N** (RAKARG18 — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 12; SMA-трійки «5 dBi + IP67» у первинці немає). ⚠️ Ціну рядка під N-антену не переоцінено. | $12.00 |
 | 2 | **Cellular Uplink** | SIM7070G (LTE-M / NB-IoT) + eSIM (глобальний тариф) + SMA антена (Taoglas G30.B.108111, ⚖️ 2026-09-26 — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) поз. 11). ⚠️ Ціну рядка під цю антену не переоцінено. | $18.50 |
 | 3 | **Живлення (Solar)** | Сонячна панель 50 Вт + MPPT Victron SmartSolar 75/15 (HW.39/HW.15, 2026-07: 10 Вт + CN3791 відхилено — зимовий баланс −4.4 Вт·год/добу під кронами, [`02_05 §4`](02_05_Queen_Hardware_and_Starlink)). | $85.00 |
-| 4 | **Акумулятор** | LiFePO4 12V 20 Ah + BMS (температурний захист −30 °C; 6 Ah відхилено — 7.8 днів dark-автономності проти 26). | $57.00 |
+| 4 | **Акумулятор** | LiFePO4 12V 20 Ah + BMS (температурний захист −30 °C; 6 Ah відхилено — 7.7 днів dark-автономності проти 25.5: `tools/firmware/queen_energy_budget.rb`, `battery_ah=6` ⊥ дефолт 20, `dcdc_eff` 0.88). | $57.00 |
 | 5 | **Корпус & Монтаж** | ABS/PC IP67 корпус + кріплення на стовбур. | $12.50 |
 | — | **Разом за 1 Queen (Phase 1/2.5):** | **LTE-M / Starlink DTC; місткість — дім [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink) (baseline ~100, стеля roadmap ~200)** | **~$185.00** |
 
@@ -423,7 +423,7 @@ PCBA + Збірка (Черкаси — виконавця не підтверд
 
 Технічна довідка LiFePO4 12V **20Ah** cell (BOM §4 рядок 4; 6Ah відхилено — HW.39, dark-автономність):
 - **Cycle life:** ~2000 повних циклів до 80% capacity
-- **Daily depth-of-discharge** Queen у нормі: **≤ ~3 %** (7.39 Вт·год/добу споживання проти ~240–256 Вт·год батареї — `tools/firmware/queen_energy_budget.rb`; 6Ah-варіант мав би ~10 %)
+- **Daily depth-of-discharge** Queen у нормі: **≈ 3 %** (7.52 Вт·год/добу споживання проти ~240–256 Вт·год батареї — `tools/firmware/queen_energy_budget.rb`; 6Ah-варіант мав би ~10 %)
 - **Циклів на рік:** ~365 (1 cycle/day equivalent)
 - **Час до 80% capacity:** при DoD <10% LiFePO4 значно перевищує 2000 циклів → lifetime стає **calendar-limited**, не cycle-limited
 - **Calendar aging:** ~3% capacity/рік → ефективний lifetime до 80% при низькому DoD: **~8–10 років**
