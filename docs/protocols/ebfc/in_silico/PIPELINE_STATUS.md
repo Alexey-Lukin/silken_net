@@ -43,7 +43,7 @@
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
-| 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (in the 0.7–0.8 eV range of OTHER protein ET centres — no flavin primary, no anode rate consumes it); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
+| 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (overlaps the 0.7–0.8 eV range of OTHER protein ET centres, ref 48 — no flavin primary, no anode rate consumes it); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
 | 30 | `kinetics_delta_t` | delta_t = 172 s healthy / 931 s stressed at the pH-7.4 ceiling — cycle cost and sleep drain mirrored from the node chain since 2026-09-27 (`02_03 §9.6`; was 20 / 101 s on a 5 mJ placeholder, [E.63]); η_BQ 0.68 post-[HW.47]; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS | `kinetics/delta_t_lookup.json` |
 | 30b | `kinetics_monte_carlo` | 90% CI: 79–536 s healthy **at the pH-7.4 ceiling** (j_max sampled at its PROPAGATED 1σ, not a typed one; E_cycle over the chain's own bracket since 2026-09-27, [E.63]); transported to sap pH 5.5 the same band sits at **116–964 s**, and the severe-stress upper end is ∞ at the recombinant end of the bracket (5.1 % of samples never gather a cycle; wild type 2.5 %; area axis and absent EDLC leak drive it — SUMMARY §L4) — printed beside, never folded in (⚖️ 2026-09-18) | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=72.9Ω, Rs=100Ω | `kinetics/eis_model.json` |
@@ -86,8 +86,8 @@
 |---|--------|-----|------------|
 | 21 | `dft_os_bipy_complex` | NH₃ surrogate (no π-backbonding) | Superseded; own cache `os_complex_nh3.json` (was co-writing os_complex.json) |
 | 21c | `dft_os_bpy_geomopt` | Cl displacement never converges (flat PES) | Programmatic geometry (21b) sufficient — LUMO Δ<0.002 eV |
-| 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** | **✅ RESCUED by 29b** (`semiquinone_lambda.json`): FADH⁻/FADH• couple → inner-sphere λ_i = **0.39 eV**, total ~0.7–0.8 w/ outer-sphere ≈ lit → L3 Nelsen-λ row |
-| 29b | `dft_semiquinone_lambda` | **anode inner-sphere λ from first principles** — FADH•/FADH⁻ Nelsen 4-point (rescues 29) → **λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22, site N18) | `dft/semiquinone_lambda.json` |
+| 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** | **✅ RESCUED by 29b** (`semiquinone_lambda.json`): FADH⁻/FADH• couple → inner-sphere λ_i = **0.39 eV**, total 0.76–0.86 eV w/ outer-sphere (29c), overlapping the range of other protein ET centres (ref 48) → L3 Nelsen-λ row |
+| 29b | `dft_semiquinone_lambda` | **anode inner-sphere λ from first principles** — FADH•/FADH⁻ Nelsen 4-point (rescues 29) → **λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22, site N18; the 2026-10-01 rerun reproduced it to 1e-10 eV) | `dft/semiquinone_lambda.json` |
 
 ---
 

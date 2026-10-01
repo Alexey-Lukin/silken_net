@@ -106,8 +106,11 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "anchor_points_MPa_cycles": becu_anchor_MPa_cycles,
             "vhcf_caveat": "C17200 shows NO strict flat endurance limit in VHCF (>1e7) — stress continues "
                            "to matter at very-high-cycle counts, unlike a classic steel fatigue limit.",
-            "loading_mode_caveat": "the two anchor points are ultrasonic VHCF data whose loading mode is not recorded "
-                                   "in the tree (ultrasonic fatigue is usually push-pull, i.e. NORMAL stress), while a "
+            "loading_mode_caveat": "the two anchor points are ultrasonic VHCF data (20 kHz). Their numbers are printed "
+                                   "verbatim by the Li et al. 2025 Adv. Eng. Mater. abstract, which states no R; the "
+                                   "sibling study of the same group (Ma et al. 2025, Eng. Fract. Mech., read in its SSRN "
+                                   "5074646 preprint, sect. 2.2) states R = -1 on an axial resonant rig, i.e. NORMAL "
+                                   "stress; that the anchors share that rig is an inference, not a quote. Meanwhile a "
                                    "helical spring wire works in TORSION (shear stress, tau = 8*F*D*K_w/(pi*d^3)) — the "
                                    "wire stress may be judged only against torsional S-N data or after an equivalent-"
                                    "stress conversion, never against these points directly (in-silico #10: right number, "
