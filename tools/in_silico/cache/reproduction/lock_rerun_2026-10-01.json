@@ -1,0 +1,199 @@
+{
+  "what": "Reproduction attempt of the heavier committed DFT caches under the conda-lock environment (not a replay): same scripts, same inputs, different PySCF/geomeTRIC/Python pins. Committed caches are UNCHANGED by this run; this file records the field-by-field difference (paper \u00a72.7). Companion of lock_rerun_2026-09-30.json, which covered the light flavin/PCET chain (20 + 32).",
+  "date": "2026-10-01",
+  "platform": {
+    "os": "macOS-15.7.7-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13"
+  },
+  "lock_env": {
+    "name": "silken_lock",
+    "created_from": "tools/in_silico/conda-lock.yml (osx-arm64)",
+    "versions": {
+      "pyscf": "2.13.1",
+      "geometric": "1.1.1",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1"
+    }
+  },
+  "recorded_env": "tools/in_silico/environment.computed.explicit.txt (PySCF 2.11.0 \u00b7 geomeTRIC 1.1 \u00b7 Python 3.12.13)",
+  "procedure": "rsync tools/in_silico (without cache/runs) into a scratch repo root, carrying cache/dft because 24b reads zif_hopping.json from it; run 21f (b3lyp tier) then 24b with the lock python, SEQUENTIALLY (in-silico Critical Rule #3); compare every leaf field of the rerun JSON against the committed JSON. The \u03c9B97X tier of 21f was NOT re-run (its committed cache cost ~7.8 h of SCF), and neither was 21e (18 runs, ~4 h).",
+  "files": {
+    "dft/os_complex.json": {
+      "owner_script": "21f_dft_os_dimethyl.py b3lyp",
+      "fields_compared": 31,
+      "max_abs_delta_total_energy_Ha": 0.00017103410664276453,
+      "max_abs_delta_reported_outputs": 0.0033000000000003027,
+      "non_numeric_changes": {},
+      "wall_seconds_delta": {
+        "os2_plus.wall_seconds": 200.99999999999994,
+        "os3_plus.wall_seconds": 195.29999999999995
+      },
+      "per_field": {
+        "EA_Os3_eV": {
+          "committed": 4.3808,
+          "lock_rerun": 4.3841,
+          "delta": 0.0033000000000003027
+        },
+        "dE_red_III_to_II_eV": {
+          "committed": -4.3808,
+          "lock_rerun": -4.3841,
+          "delta": -0.0033000000000003027
+        },
+        "os2_plus.E_total_Ha": {
+          "committed": -1964.8520605282465,
+          "lock_rerun": -1964.8520089566964,
+          "delta": 5.157155010238057e-05
+        },
+        "os2_plus.HOMO_Ha": {
+          "committed": -0.17361301696555498,
+          "lock_rerun": -0.17348729492552778,
+          "delta": 0.00012572204002719856
+        },
+        "os2_plus.HOMO_eV": {
+          "committed": -4.724250861980984,
+          "lock_rerun": -4.72082979099017,
+          "delta": 0.0034210709908135684
+        },
+        "os2_plus.LUMO_Ha": {
+          "committed": -0.07433319944675437,
+          "lock_rerun": -0.07429452503991411,
+          "delta": 3.867440684025836e-05
+        },
+        "os2_plus.LUMO_eV": {
+          "committed": -2.0227094010456947,
+          "lock_rerun": -2.02165701682333,
+          "delta": 0.001052384222364644
+        },
+        "os2_plus.charge": {
+          "committed": 1,
+          "lock_rerun": 1,
+          "delta": 0
+        },
+        "os2_plus.gap_eV": {
+          "committed": 2.7015414609352892,
+          "lock_rerun": 2.6991727741668403,
+          "delta": -0.0023686867684489243
+        },
+        "os2_plus.n_atoms": {
+          "committed": 66,
+          "lock_rerun": 66,
+          "delta": 0
+        },
+        "os2_plus.n_electrons": {
+          "committed": 272,
+          "lock_rerun": 272,
+          "delta": 0
+        },
+        "os2_plus.spin": {
+          "committed": 0,
+          "lock_rerun": 0,
+          "delta": 0
+        },
+        "os2_plus.wall_seconds": {
+          "committed": 470.8,
+          "lock_rerun": 671.8,
+          "delta": 200.99999999999994
+        },
+        "os3_plus.E_total_Ha": {
+          "committed": -1964.691069120926,
+          "lock_rerun": -1964.6908980868193,
+          "delta": 0.00017103410664276453
+        },
+        "os3_plus.HOMO_Ha": {
+          "committed": -0.22818352395891825,
+          "lock_rerun": -0.22842847684603293,
+          "delta": -0.00024495288711468
+        },
+        "os3_plus.HOMO_eV": {
+          "committed": -6.209190005416781,
+          "lock_rerun": -6.215855513040129,
+          "delta": -0.006665507623347722
+        },
+        "os3_plus.LUMO_Ha": {
+          "committed": -0.1501416822675709,
+          "lock_rerun": -0.15052283749700024,
+          "delta": -0.0003811552294293308
+        },
+        "os3_plus.LUMO_eV": {
+          "committed": -4.0855633078052795,
+          "lock_rerun": -4.095935069972959,
+          "delta": -0.010371762167679321
+        },
+        "os3_plus.charge": {
+          "committed": 2,
+          "lock_rerun": 2,
+          "delta": 0
+        },
+        "os3_plus.gap_eV": {
+          "committed": 2.1236266976115017,
+          "lock_rerun": 2.1199204430671696,
+          "delta": -0.003706254544332044
+        },
+        "os3_plus.n_atoms": {
+          "committed": 66,
+          "lock_rerun": 66,
+          "delta": 0
+        },
+        "os3_plus.n_electrons": {
+          "committed": 271,
+          "lock_rerun": 271,
+          "delta": 0
+        },
+        "os3_plus.spin": {
+          "committed": 1,
+          "lock_rerun": 1,
+          "delta": 0
+        },
+        "os3_plus.wall_seconds": {
+          "committed": 751.1,
+          "lock_rerun": 946.4,
+          "delta": 195.29999999999995
+        }
+      }
+    },
+    "dft/fodft_coupling.json": {
+      "owner_script": "24b_fodft_coupling.py",
+      "fields_compared": 14,
+      "max_abs_delta_total_energy_Ha": 0.0,
+      "max_abs_delta_reported_outputs": 0.0,
+      "non_numeric_changes": {},
+      "wall_seconds_delta": {
+        "wall_seconds": 25.09999999999991
+      },
+      "per_field": {
+        "frontier_MOs[0]": {
+          "committed": 122,
+          "lock_rerun": 122,
+          "delta": 0
+        },
+        "frontier_MOs[1]": {
+          "committed": 124,
+          "lock_rerun": 124,
+          "delta": 0
+        },
+        "site_energy_gap_eV": {
+          "committed": 0.183,
+          "lock_rerun": 0.183,
+          "delta": 0.0
+        },
+        "t_ij_crude_script24_eV": {
+          "committed": 0.001281,
+          "lock_rerun": 0.001281,
+          "delta": 0.0
+        },
+        "t_ij_eV": {
+          "committed": 0.005462,
+          "lock_rerun": 0.005462,
+          "delta": 0.0
+        },
+        "wall_seconds": {
+          "committed": 569.2,
+          "lock_rerun": 594.3,
+          "delta": 25.09999999999991
+        }
+      }
+    }
+  },
+  "verdict": "The two heavier caches behave DIFFERENTLY under the lock, so the \u00a72.7 sentence written for the flavin chain does not extend to them. 24b (FO-DFT Cu-Co coupling) reproduces every reported field exactly at printed precision (t_ij 0.005462 eV, site-energy gap 0.183 eV, the same two frontier MOs) \u2014 only wall_seconds moved. 21f's B3LYP Os(II)/Os(III) couple does NOT: total energies differ by 5.2e-5 and 1.7e-4 Ha, the Os(III) LUMO by 10 meV, and the REPORTED dE_red(III->II) moves from -4.3808 to -4.3841 eV (3.3 meV). Both SCFs converged plainly in both environments (no Newton rescue), and RDKit is the same version in both (2025.09.5), so the geometry is identical and the difference is SCF/PCM numerics on a heavy-metal ECP couple, not a different input. Committed caches untouched: the canon numbers remain the recorded-environment ones; what this record fixes is the SIZE of the lock gap per cache class."
+}

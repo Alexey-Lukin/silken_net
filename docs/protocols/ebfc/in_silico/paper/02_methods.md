@@ -120,6 +120,18 @@ that gap was measured rather than assumed: re-running the flavin single points (
 E°(FAD/FADH₂) (script 32) under the lock (PySCF 2.13.1, geomeTRIC 1.1.1, Python 3.12, osx-arm64) reproduced
 the committed caches to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orbital energies,
 with every reported (rounded) quantity identical; the field-by-field record is committed beside the caches
-(`cache/reproduction/lock_rerun_2026-09-30.json`). Every figure/number traces to a numbered script under
+(`cache/reproduction/lock_rerun_2026-09-30.json`). That bound is a property of the flavin/PCET chain and does
+not extend to the whole pipeline, so the two heavier caches were re-run under the lock as well
+(`cache/reproduction/lock_rerun_2026-10-01.json`) and they behave differently from each other: the FO-DFT
+Cu–Co coupling (script 24b) reproduces every reported field exactly at printed precision, whereas the
+B3LYP osmium couple (script 21f) differs by 5 × 10⁻⁵ to 2 × 10⁻⁴ Ha, shifting its reported ΔE_red(III→II)
+from −4.3808 to −4.3841 eV (3 meV) and the Os(III) LUMO by 10 meV. Both single points converged in both
+environments on the same geometry (identical RDKit version), so this is solvated-SCF numerics on a
+heavy-metal ECP couple, not a different input. The shift is far below the ~1 eV continuum-solvation limit that
+the osmium results are themselves reported against, so it changes no conclusion drawn here; it is, however,
+five orders of magnitude above the flavin bound, so a reviewer re-running the osmium single points under the
+lock should expect the fourth decimal to move. The committed caches — the recorded-environment numbers — are
+what the paper quotes. The ωB97X tier of script 21f and the Hammett series (21e) were not
+re-run under the lock. Every figure/number traces to a numbered script under
 `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

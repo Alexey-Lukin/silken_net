@@ -2414,7 +2414,7 @@ def test_paper_reproduction_bound_is_backed_by_the_record():
     the record renamed or dropped while §2.7 still cites it · a bound quoted a decade above the
     measurement (true, but useless to a reviewer).
     CANNOT catch: whether scripts 20 and 32 are representative of the heavier caches — the record
-    itself names which were NOT re-run.
+    itself names which were NOT re-run (the heavier pair has its own record and its own check below).
     """
     text = doc(METHODS)
     found = re.findall(r"to within ([\d.]+) × 10⁻¹⁰ Ha in total electronic energy", text)
@@ -2428,3 +2428,32 @@ def test_paper_reproduction_bound_is_backed_by_the_record():
     assert bound < 10 * measured, (
         f"§2.7's bound {bound:.2g} Ha sits a decade above the measured {measured:.3g} Ha — "
         f"tighten the sentence to one significant figure of the record")
+
+
+# ── the HEAVIER pair's record (2026-10-01): the two caches SPLIT, and §2.7 must say so ──
+REPRO_HEAVY = "reproduction/lock_rerun_2026-10-01.json"
+
+
+def test_paper_heavy_lock_rerun_is_stated_as_the_record_measured_it():
+    """§2.7 also carries the heavier re-run (21f b3lyp · 24b). The record there is NOT a single
+    bound: one cache reproduces at printed precision and the other moves a REPORTED number, so the
+    prose must name the moved number itself — a bound alone would read as «same as the flavin case».
+
+    CAN catch: the record renamed or dropped while §2.7 still cites it · §2.7 quoting a ΔE_red pair
+    that is not the one measured (either end) · a later re-measurement that changes either end while
+    the sentence stays · the dE_red field vanishing from the compared set.
+    CANNOT catch: whether the ωB97X tier and 21e (never re-run) would behave like either of these —
+    §2.7 and the record both say they were not run.
+    """
+    text = doc(METHODS)
+    assert f"`cache/{REPRO_HEAVY}`" in text, f"§2.7 no longer names the record cache/{REPRO_HEAVY}"
+    rec = C(REPRO_HEAVY)["files"]
+    os_fields = rec["dft/os_complex.json"]["per_field"]["dE_red_III_to_II_eV"]
+    for end in ("committed", "lock_rerun"):
+        assert f"{os_fields[end]:.4f}".replace("-", "−") in text, (
+            f"§2.7 does not carry the {end} ΔE_red {os_fields[end]} that {REPRO_HEAVY} measured — "
+            f"re-state the sentence from the record, never the record from the prose")
+    fodft = rec["dft/fodft_coupling.json"]
+    assert fodft["max_abs_delta_reported_outputs"] == 0.0, (
+        f"{REPRO_HEAVY} now shows 24b's reported fields moving by "
+        f"{fodft['max_abs_delta_reported_outputs']:.3g} — §2.7 says they reproduce exactly")
