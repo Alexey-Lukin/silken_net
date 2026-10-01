@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED on 2026-09-30 for scripts 20 and 32 (record: `cache/reproduction/lock_rerun_2026-09-30.json`, listed in S3): total energies agree to ≤ 4e-10 Ha and every reported number is identical — the committed caches were not touched by that run.
 >
-> Files in this manifest: 247 · 14,759,191 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 247 · 14,768,502 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -71,8 +71,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `c4635322ed7d3cc92acb953b20cc407d42bee849a90358fbe8a44a49992b2edf` | L3 — Beratan-Onuchic electron tunneling pathway analysis. |
 | `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `f7d5556818aea852a9bdfe948aad87fdcb83effddda0553a378592a3af278c2a` | L3 / CHEM.16 — dynamic electron-tunnelling over the MD ensemble. |
 | `tools/in_silico/scripts/29_dft_reorganization_energy.py` | `db0cfd88495e4daec75961c220cf29fd5a90a3aa26620b502a3848e2b16e9136` | L3 — Nelsen 4-point reorganization energy λ for FADH₂/FADH₂⁺. |
-| `tools/in_silico/scripts/29b_dft_semiquinone_lambda.py` | `030e133ffe085d8be4e095436b40884d3650a56316968031605237c51e0d4233` | L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple. |
-| `tools/in_silico/scripts/29c_outer_sphere_lambda.py` | `7fcb43c75617c7cec86e050b44986b100f7b89ca900722614f5da57e24ed1061` | 29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET. |
+| `tools/in_silico/scripts/29b_dft_semiquinone_lambda.py` | `3ec93960b4d15e14dca577f59367b81515dc7fc16fbbe5c6928aa5637a96cd99` | L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple. |
+| `tools/in_silico/scripts/29c_outer_sphere_lambda.py` | `d34c4871d919cab82e8b5ca9cb23d214574c11b683bbd9c2377df8469696b7a4` | 29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET. |
 | `tools/in_silico/scripts/30_kinetics_delta_t.py` | `ba3b2eb67a7b527be935b53a374c525908dadd891c7728bb64e851a0570b14c3` | L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from |
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | `32e86c4eebd08d6ae06c68a83f1b35a8287e765b62566aa55465a2d71b71d732` | L4b — Monte Carlo uncertainty analysis for delta_t predictions. |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
@@ -82,7 +82,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/34_dft_microsolvation.py` | `40720154a19e9f38b2e54e8adbd4219dcb65ee35f4414e9153f28ec642a17684` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |
 | `tools/in_silico/scripts/35_dft_metal_reorganization.py` | `9a9b564cd6705cd5f7ad1155ac31a9f921bf2ffa605d99fd267cacf5abb2d59c` | L3b task ③ — computed inner-sphere reorganization energy λ for the ZIF metal hops. |
-| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `c54ea99f5c8a5915073149b962db33252b0993bf8cfbd746e6a74b678c96fc27` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
+| `tools/in_silico/scripts/40_validate_vs_experiment.py` | `cd8e0a8edad981b64983ff225f2b1928a6fa6b5669fbd4e0a81ba2666aaf7b38` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `ce3a41a240e6b4e9ca81bd8551afc638e30002ec25ce61b83d1f3c53f7ecfe7c` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
@@ -92,7 +92,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `66b91da2009db75771db70e6d86925192559dbeb03ffdd1d506cf4d75880eaa9` | HW.3.IS — Unified thick-wall Lamé: press-fit interference + thermal mismatch in ONE model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `8c01ed6fea1c32db05a52d842ba94a29d75febeab239325af0d061bf6ca9db5a` | HW.25 — PTFE-GDL cathode membrane: liquid-entry (breakthrough) pressure and the O2 budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `78e58007ef5c02ba51f5c40f4fc4a181206e2ef3c3c5ceb43e0a4f487f467381` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
-| `tools/in_silico/scripts/59_contact_endurance_check.py` | `4118bde2aef3567d14c0d9a5094c711922e123c2c3e932d842e0b9cc962777ea` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
+| `tools/in_silico/scripts/59_contact_endurance_check.py` | `94ce054043b6fda5492fb11dc752ee88528dd3600c092d7a7617b8fb945f4ffe` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `7612f9d65a1dc44f32d79ab64162345ff3dcffa7fafd6cdfe68bf9dcfa7ee6f7` | HW.43 (checkbox 1) — wind duty-cycle for the Cherkasy pine forest, from open meteorological data. |
@@ -106,15 +106,15 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `35a22f34ba2de5cdc012ee339fd141ec13e6129cc69da341236484674fa9a8ec` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `93fe570f6bcf44c0c8f1a6c4c3a9b531ed7a1183b1feb0c3e1f56582256e3325` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
-| `tools/in_silico/scripts/73_collar_wall_inversion.py` | `ed89c37d75900d49988783e6bb47a3182666552cc794b7f268f1b2f89355585c` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «підстава стінки»). |
-| `tools/in_silico/scripts/74_site_rain_dew.py` | `84d81d5a42b2234ff0f39e1a3b37b52a0b6b9c251f9b8b659dd51e4580c4deee` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
+| `tools/in_silico/scripts/73_collar_wall_inversion.py` | `78f18824ba0163ae6f45cac314c3b1a1c4806785c9b29618bd5b6bacbe5b5c18` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «підстава стінки»). |
+| `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `8520a9dd39385427ba3a998617f6bb90e0a252b1a5b05558d8ee361dc9f8d64e` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `f1e45560969037ac420ad08925cfa50d5370539d39c3a42c75255ce01da34021` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `c93f836af4d034277750f1222f43a0cead2431353c5feecd3ddd86863423d562` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `ba02d337bfdc4950d8a6ffc0aeabb7fc5d830652d262773fa9eb9a1b7b2a9aec` | Unit gates for the unified thick-wall Lamé core (lib.mechanics) — HW.3.IS. |
-| `tools/in_silico/tests/test_validate_vs_experiment.py` | `2167ccbb4e5197b2c09726dcc9bba8c31effbddac4ab2ea84572813d82bb5214` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
+| `tools/in_silico/tests/test_validate_vs_experiment.py` | `eaf711d8ac8f2fe7ace566f6e448df666f602a46a9de421a80f4a523e3187011` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
 ## S3. Reference outputs — the committed caches
 
@@ -157,10 +157,10 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/dft/os_complex_wb97xd.json` | `cdb5326d4f6dd165ac75d659184d31698d3b91431ca8b0f83b52ad85ea05a694` | 2,380 |
 | `tools/in_silico/cache/dft/os_complex_wb97xd_dmbpy.json` | `28b77093cc9dfd44d7799fa9de65461b564e16da67f6503b4d8b96b8700a0437` | 1,195 |
 | `tools/in_silico/cache/dft/os_mediator_series.json` | `a071002a04ce153cb364d64e64b9f581258f24aca3ee7316198358859a1a24b3` | 12,977 |
-| `tools/in_silico/cache/dft/outer_sphere_lambda.json` | `aca037796bd29d3cc01d88f40c06c2b654888b4e00792f1f26b66cc1d6651f7c` | 3,808 |
+| `tools/in_silico/cache/dft/outer_sphere_lambda.json` | `a0a89c93682961cb92916f37f0251de9f9763688e036e28c2f7e80f62f89cf08` | 3,914 |
 | `tools/in_silico/cache/dft/pcet_cascade.json` | `33b2d8f8c43a513a820e0275c4e822ab2d6ca155d16738f01ff24b3341334b55` | 604 |
 | `tools/in_silico/cache/dft/pcet_redox_potential.json` | `1ab20e3b03a2266675512f6503b32ce0a12d784c97758c0c8f858780d3ba990a` | 766 |
-| `tools/in_silico/cache/dft/semiquinone_lambda.json` | `416b568ca8466ba1587be8ce432cbaab4b1e8c0371ca2f48bbb7cb8fbb533920` | 825 |
+| `tools/in_silico/cache/dft/semiquinone_lambda.json` | `6e448e3fb695aaf61ec0225adb68b713f28a8d6701f761bb76f9701bff47f4a2` | 999 |
 | `tools/in_silico/cache/dft/tunneling_ensemble.json` | `24d9e4e8f8ef7bc6912710ff5d815484c935e5d9a028bfde97cfcc01c514965b` | 576 |
 | `tools/in_silico/cache/dft/tunneling_pathway.json` | `07efaa150b37a82bae3ddc64c9555e93d9d67c4802eada470c65ab509487a8a9` | 364 |
 | `tools/in_silico/cache/dft/wb97x_speciation.json` | `cbd2adefca55ffaff4ff681ccfbb9ce33ed818935bd3316585be55e9a658360d` | 1,059 |
@@ -205,7 +205,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `9b1731a77f4f8d0366792d33a7f19d87d35a88d4ad8c2d8e68dab5eccdb69f3f` | 106,711 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `e7593ef3fe02afec49769604bc93e827e829c5ac57d9737962cf4d31bc57b748` | 314,276 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `19753811072b0d85efaa79d1ebc430d5d6ab822c019dcba2b7167c41f7a282c7` | 5,468 |
-| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `a7083fcaf21e6df3c7c035fb6616f3e4c4bbd5dee239a4a20f63e44aac73f262` | 8,587 |
+| `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `8aa3bb9771ec13d7fad63695c1476f0af06c1c450a8474f18ca4292a7ba9ac3a` | 8,834 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `c4d038312f9dd6b6dd080a1e1de2d3d4c8203d781a11431637edda9967f0efa7` | 67,160 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `6d0af0d6d808c6edd245087470b2486591df93a9b682be2eb7ea0c6e17810ae7` | 152,028 |
@@ -226,7 +226,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | File | SHA-256 | Bytes |
 |---|---|---|
 | `tools/in_silico/cache/thermal/capsule_envelope.json` | `9beaedb7150d558d44075f0bf835f49d442bc430220fb1b4a9a8b05a1a86e4ef` | 11,609 |
-| `tools/in_silico/cache/thermal/site_rain_dew.json` | `c0f55808f9ab03368546b1247aaebac1cca4f4bc3207571c4246f7f2dc53e8b7` | 5,673 |
+| `tools/in_silico/cache/thermal/site_rain_dew.json` | `d1afa4d846f7a64156c91ba3c859d4a895eb874b8dd82b2dd13744a1dd646db3` | 6,585 |
 
 ## S4. Committed input data
 
@@ -250,7 +250,7 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `tools/in_silico/data/chem11_conservation/homologs_gmc_reviewed.fasta` | `fcf35c221456eb24179218009d9cd2eaa22c4c4b6b9182a13119de539d8fb640` | 23,188 |
 | `tools/in_silico/data/chem11_conservation/homologs_uniref50.fasta` | `896acff438277cc87693737629c11cce82c93d3808768b5337523adfdb2e9710` | 25,788 |
 | `tools/in_silico/data/chem11_conservation/query_G8E4B5.fasta` | `b532026085a116a03aae6185b6a41a4b20c8775fe2a1d06964674a32d08a7405` | 717 |
-| `tools/in_silico/data/era5_cherkasy/README.md` | `a3aadb32481485a3b661f8d4b2b45c0cd966ce6fa6fd699c78df21e7368606d9` | 5,550 |
+| `tools/in_silico/data/era5_cherkasy/README.md` | `f07a4e0802a4263ccdcbf6139deaaa15875c45dc7e014856d8dcff542e4abf51` | 6,127 |
 | `tools/in_silico/data/era5_cherkasy/daily_precip_1991_2020.csv` | `b9497daf7cd8094127acb23f2db020009728d31d996907c99f98dac70b7339b5` | 220,894 |
 | `tools/in_silico/data/era5_cherkasy/daily_t2m_mean_1991_2020.csv` | `a49b03e3c432704c507fc7eab770263c615383c20b24a15c05976c1d243842b1` | 172,244 |
 | `tools/in_silico/data/era5_cherkasy/hourly_1991_2020.csv.gz` | `afe6421be59b8b89644ff81bb993553a73987f913a5ff161129c9df77197c282` | 2,178,023 |
