@@ -21,8 +21,9 @@ isoalloxazine), so the Nelsen 4-point applies cleanly:
     λ_inner = λ₁ + λ₂                                  (both > 0)
 
 This is the INNER-sphere λ. The Marcus OUTER-sphere λ_o (nonequilibrium solvent
-polarisation) adds on top; the literature TOTAL flavin λ ≈ 0.7–0.8 eV used as a
-fallback in 24.marcus_rate is inner + outer. A modest computed λ_i is therefore
+polarisation) adds on top. The 0.7–0.8 eV it is compared with is the TOTAL (inner +
+outer) λ of OTHER protein ET centres (azurin, cyt c/b₅ — ref 48, Gray & Winkler 2005):
+no flavin primary, and no rate consumes it. A modest computed λ_i is therefore
 expected and consistent (the rigid aromatic isoalloxazine distorts little on 1 e⁻).
 
 The deprotonation site is screened (most-stable N-H removal, the script-33
@@ -48,7 +49,7 @@ from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
 from lib.utils import banner
 
 LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
-LIT_LAMBDA_TOTAL_EV = 0.7        # literature TOTAL flavin λ (inner+outer); 24.marcus_rate fallback
+LIT_LAMBDA_TOTAL_EV = 0.7        # comparison constant — TOTAL λ of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate
 OUT_JSON = DFT_CACHE / "semiquinone_lambda.json"
 
 
@@ -180,7 +181,7 @@ def main() -> int:
     print(f"  λ₁ = E(FADH⁻@R_rad) − E(FADH⁻@R_anion) = {lambda_1*HARTREE_TO_EV:+.4f} eV")
     print(f"  λ₂ = E(FADH•@R_anion) − E(FADH•@R_rad) = {lambda_2*HARTREE_TO_EV:+.4f} eV")
     print(f"  λ_inner = λ₁ + λ₂                       = {lam_eV:.4f} eV")
-    print(f"  Literature TOTAL flavin λ (inner+outer):  {LIT_LAMBDA_TOTAL_EV:.2f} eV")
+    print(f"  Comparison λ_total, other protein ET centres (ref 48): {LIT_LAMBDA_TOTAL_EV:.2f} eV")
     physical = 0.05 < lam_eV < 1.5
     print(f"  Physically reasonable inner-sphere (0.05–1.5 eV): "
           f"{'✅ YES' if physical else '❌ NO — likely SCF artifact'}")
@@ -199,8 +200,10 @@ def main() -> int:
         "lambda_2_eV": float(lambda_2 * HARTREE_TO_EV),
         "lambda_inner_eV": float(lam_eV),
         "literature_lambda_total_eV": LIT_LAMBDA_TOTAL_EV,
-        "note": "inner-sphere only; Marcus outer-sphere λ_o adds on top → total comparable "
-                "to the lit 0.7–0.8 eV used as the 24.marcus_rate fallback",
+        "lambda_total_comparison_basis": "TOTAL λ of OTHER protein ET centres (azurin, cyt c/b5; ref 48); "
+                                         "no flavin primary; consumed by no rate",
+        "note": "inner-sphere only; Marcus outer-sphere λ_o adds on top → total comparable to the "
+                "0.7–0.8 eV range of other protein ET centres (ref 48); no anode rate consumes it",
         "wall_seconds": time.time() - t_total,
     }
     DFT_CACHE.mkdir(parents=True, exist_ok=True)

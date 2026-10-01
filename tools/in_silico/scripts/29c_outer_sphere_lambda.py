@@ -15,7 +15,8 @@ model — analytical, no DFT:
 donor/acceptor radii, the donor–acceptor distance d, and the *local* static dielectric
 ε_s (the FAD is buried → its environment is far from bulk water). We therefore report a
 GRID, not a single number, and read off the physical conclusions (the bracket around the
-literature 0.7–0.8 eV, and the burial effect), not a false-precision value.
+0.7–0.8 eV range of OTHER protein ET centres — ref 48, no flavin primary — and the burial
+effect), not a false-precision value. No anode rate consumes λ.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/29c_outer_sphere_lambda.py
 Cost: ~instant (analytical).
@@ -56,7 +57,7 @@ def main() -> int:
     lit_total = sq["literature_lambda_total_eV"]
 
     banner("Outer-sphere λ_o (Marcus two-sphere) — anode FAD→Os")
-    print(f"  inner-sphere λ_i (29b, cache) = {lam_i:.3f} eV | ε_op={EPS_OP_WATER:.3f} | lit total ≈ {lit_total} eV\n")
+    print(f"  inner-sphere λ_i (29b, cache) = {lam_i:.3f} eV | ε_op={EPS_OP_WATER:.3f} | comparison total (other protein ET centres, ref 48) ≈ {lit_total} eV\n")
     print(f"  {'radii (Å)':>22} {'d (Å)':>8} {'ε_s':>12} {'λ_o (eV)':>10} {'λ_tot':>8}")
     print("  " + "-" * 64)
 
@@ -79,22 +80,23 @@ def main() -> int:
 
     print()
     print(f"  λ_o spans {min(los):.2f}–{max(los):.2f} eV, λ_total {min(tots):.2f}–{max(tots):.2f} eV — radius/ε dominate.")
-    print(f"  naive hard-sphere-in-water OVER-estimates (λ_total up to {max(tots):.2f} eV ≫ lit {lit_total}).")
+    print(f"  naive hard-sphere-in-water OVER-estimates (λ_total up to {max(tots):.2f} eV ≫ comparison {lit_total}).")
     print(f"  physically-motivated end (delocalized π-charge + buried ε≈4): λ_total {min(phys):.2f}–{max(phys):.2f} eV.")
     verdict = (
         f"the two-sphere λ_o is radius/ε-DOMINATED (λ_total {min(tots):.2f}–{max(tots):.2f} eV across plausible "
         f"assumptions): naive hard-spheres in bulk water over-estimate (≫{lit_total}), while charge delocalized "
-        f"over the flavin π-system in the buried low-ε pocket reproduces the literature ~0.7–0.8 eV "
-        f"({min(phys):.2f}–{max(phys):.2f}). → we keep the LITERATURE λ in the Marcus rates (not a two-sphere "
-        "number); this estimate only CONFIRMS that value is physically reasonable and shows WHY it is "
+        f"over the flavin π-system in the buried low-ε pocket lies in the 0.7–0.8 eV range of other protein "
+        f"ET centres, ref 48 ({min(phys):.2f}–{max(phys):.2f}). → no anode Marcus rate consumes λ; this "
+        "estimate only shows the computed total is physically reasonable and WHY it is "
         "indicative (the point-sphere continuum model cannot pin λ_o to better than its radius assumption)."
     )
     print(f"\n  ⚠️ INDICATIVE — {verdict}")
 
     out = {
         "method": "Marcus two-sphere outer-sphere λ_o (dielectric continuum); analytical, INDICATIVE",
-        "caveat": "radius/distance/local-ε dominated → grid not one number (00_07); rates keep the LIT λ",
+        "caveat": "radius/distance/local-ε dominated → grid not one number (00_07); no anode rate consumes λ",
         "lambda_inner_eV": lam_i, "literature_total_eV": lit_total,
+        "comparison_basis": "TOTAL λ of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate",
         "params": {"eps_op": EPS_OP_WATER, "e2_4pieps0_eV_A": E2_4PIEPS0,
                    "radii_sets_A": RADII, "eps_s_grid": EPS_S_GRID},
         "grid": grid,
