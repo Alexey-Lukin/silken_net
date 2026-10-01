@@ -185,6 +185,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 55. A Dependabot SECURITY PR for an ecosystem absent from `dependabot.yml` arrives with the DEFAULT labels — and the SSOT Guard judges labels, not authors
 56. An `overrides` pin is OUR cap — an alert under it gets no Dependabot PR, and the silence reads as upstream's
 57. «No patch» is a claim about the PACKAGE, not about the FIX — an abandoned transitive can still be cured by an `overrides` ALIAS to a maintained fork, and the proof is a negative control that the OLD package fails
+58. `bin/brakeman` adds `--ensure-latest`, and WITHOUT a day count it contradicts the release-age quarantine (`#4`): `main` goes red on the DAY a new Brakeman ships, and the only way back to green is a version younger than a week
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
