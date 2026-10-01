@@ -10,7 +10,8 @@
 #   ruby tools/firmware/queen_energy_budget.rb panel_w=10     # override будь-якого параметра KEY=VAL
 #   ruby tools/firmware/queen_energy_budget.rb --assert       # deploy-гейт: Phase 1/2.5 winter-balance
 #                                                             # ≥ margin → exit 0, інакше exit 1;
-#                                                             # Phase 3 = warn-only до Starlink bring-up
+#                                                             # Phase 3 = warn-only до Starlink bring-up;
+#                                                             # на defaults — ще й дзеркала канону
 #
 # Фізика моделі (стелі позначені):
 #   спожив  = Σ компонент-рядків (I×U×t) + DC-DC втрати на 3.3/3.7V-гілках
@@ -128,6 +129,40 @@ def report(p, phase3:)
   balance
 end
 
+# ── дзеркала канону ──────────────────────────────────────────────────────────
+# 02_05 §4 · §Зимовий і 02_06 §4 цитують прогін на defaults («правити модель, не таблицю»), а пін на
+# це дзеркало не стояв: зміна dcdc_eff 0.95 → 0.88 лишила в каноні старі 7.39 і «26 днів» мовчки.
+# Пін ловить дрейф канону від моделі, але не помилку самої моделі (клас дзеркал board_area_budget);
+# судиться лише на defaults — override міняє модель, а не канон.
+CANON_DOCS = %w[02_05_Queen_Hardware_and_Starlink.md 02_06_Unit_Economics_and_BOM.md].freeze
+
+def canon_mirrors(p)
+  text = CANON_DOCS.to_h { |name| [ name[0, 5], File.read(File.expand_path("../../docs/#{name}", __dir__)) ] }
+  p1 = daily_consumption_wh(p, phase3: false)
+  p3 = daily_consumption_wh(p, phase3: true)
+  gen = daily_generation_wh(p)
+  usable = ->(ah) { ah * p[:battery_v] * p[:dod] }
+  bat = p[:battery_ah]
+  {
+    "02_05 §4 · разом Phase 1/2.5" => [ "02_05", "**~%.1f Вт·год/добу**" % p1 ],
+    "02_05 §4 · генерація" => [ "02_05", "**%.1f Вт·год/добу**" % gen ],
+    "02_05 §4 · баланс і dark-автономність" =>
+      [ "02_05", "**+%.1f Вт·год/добу ✅** (dark-автономність %.1f днів на %.0fAh)" % [ gen - p1, usable.(bat) / p1, bat ] ],
+    "02_05 §4 · разом Phase 3" => [ "02_05", "**~%.1f Вт·год/добу**" % p3 ],
+    "02_05 §4 · баланс Phase 3" =>
+      [ "02_05", "**−%.1f Вт·год ⚠️** (автономність %.1f дні на %.0fAh)" % [ p3 - gen, usable.(bat) / (p3 - gen), bat ] ],
+    "02_05 §Зимовий · Phase 1/2.5" => [ "02_05", "%.1f Вт·год генерації vs ~%.1f Вт·год споживання" % [ gen, p1 ] ],
+    "02_05 §Зимовий · профіцит" => [ "02_05", "**профіцит +%.1f Вт·год/добу ✅**" % (gen - p1) ],
+    "02_05 §Зимовий · Phase 3" =>
+      [ "02_05", "%.1f Вт·год vs ~%.1f Вт·год → дефіцит ~%.1f Вт·год → автономність **%.1f дні**" %
+                 [ gen, p3, p3 - gen, usable.(bat) / (p3 - gen) ] ],
+    # 6 Ah — відхилений варіант, з яким 02_06 §4 рядок 4 порівнює дефолт.
+    "02_06 §4 · 6 Ah проти дефолту" =>
+      [ "02_06", "%.1f днів dark-автономності проти %.1f" % [ usable.(6.0) / p1, usable.(bat) / p1 ] ],
+    "02_06 · добова глибина розряду" => [ "02_06", "(%.2f Вт·год/добу споживання" % p1 ]
+  }.map { |name, (doc, needle)| [ "#{name}: «#{needle}»", text.fetch(doc).include?(needle) ] }
+end
+
 # ── deploy-гейт ──────────────────────────────────────────────────────────────
 if assert_mode
   cons = daily_consumption_wh(params, phase3: false)
@@ -147,6 +182,13 @@ if assert_mode
   end
   puts "queen_energy_budget ✓ — Phase 1/2.5 winter-balance %+.2f Wh/добу ≥ margin %.2f" %
        [ balance, need ]
+  if params == PARAMS
+    mirrors = canon_mirrors(params)
+    mirrors.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} дзеркало #{name}" }
+    exit 1 unless mirrors.all? { |_, ok| ok }
+  else
+    puts "дзеркала канону не судяться: override міняє модель, а канон цитує defaults"
+  end
   exit 0
 end
 

@@ -427,7 +427,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ## 🔋 4. Енергетичний Бюджет
 
-> 🏠 **SSOT чисел — `tools/firmware/queen_energy_budget.rb` (HW.39):** параметрична модель (pure Ruby, `KEY=VAL`-override; `--assert` = deploy-гейт у CI `docs.yml` — Phase 1/2.5 winter-balance ≥ 20% споживання, Phase 3 warn-only до Starlink bring-up). Таблиці нижче — дзеркало прогону defaults (правити модель, не таблиці).
+> 🏠 **SSOT чисел — `tools/firmware/queen_energy_budget.rb` (HW.39):** параметрична модель (pure Ruby, `KEY=VAL`-override; `--assert` = deploy-гейт у CI `docs.yml` — Phase 1/2.5 winter-balance ≥ 20% споживання, Phase 3 warn-only до Starlink bring-up). Таблиці нижче — дзеркало прогону defaults (правити модель, не таблиці); їхні заголовні числа й числа §Зимовий та 02_06 §4 той самий `--assert` звіряє з прогоном, тож зсув входу моделі без правки канону червоніє.
 
 ### Phase 1/2.5: SIM7070G LTE-M / Starlink DTC (зима, хвойний ліс)
 
