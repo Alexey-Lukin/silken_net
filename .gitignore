@@ -125,6 +125,7 @@ coverage/
 /firmware/test/test_soldier_cmd_queue
 /firmware/test/test_bme280
 /firmware/test/test_voc_maxhold
+/firmware/test/test_ds18b20
 /firmware/test/test_tdma_schedule
 /firmware/test/test_cad_sniff
 /firmware/test/test_helium_sos

@@ -555,11 +555,15 @@ def collar_radial_budget(boss: dict) -> dict:
     """(1) The rim-boss ceiling MINUS the wall of the ratified collar — a wall no artefact specifies.
 
     ⚖️ 2026-09-11 put the lugs on a raised collar grown in the SOCKET band (02_02 §4.4), and the verdict
-    names its own price: the ≤Ø ceiling «shrinks by the collar wall». No CEM field, no canon row and no
-    bayonet load model gives that wall (02_02 §4.1 lists retention requirements without a force), so it is
-    NOT typed here. The ceiling comes back as a function of it, and the one floor that has a home — the
-    canon default SLM min wall — gives the loosest bound ANY collar can leave. A collar that carries lugs
-    is thicker than a print floor, so every real ceiling sits below that row.
+    names its own price: the ≤Ø ceiling «shrinks by the collar wall». No CEM field and no canon row gives
+    that wall, so it is NOT typed here; the ceiling comes back as a function of it.
+
+    ⚠️ The sentence that used to stand here — «no bayonet load model gives that wall» — is stale since
+    2026-10-01: `73_collar_wall_inversion` is that model. It does not hand us a number (the retention FORCE
+    still has no home, 02_02 §4.1), but it answers what SIZES the wall, and the answer changes how this row
+    reads: strength does not size it, printability does — so the loosest row below is no longer merely the
+    loosest bound, it is the governing one, subject to the DRAINAGE requirement that the same model made
+    mandatory (confined ice needs ~6.7 mm against 1.5 mm of band). Verdict home: 02_02 §4.4.
     """
     slot_clear = cem("radome")["slot_clearance_mm"]
     design_to = boss["design_to_mm"]
@@ -574,9 +578,14 @@ def collar_radial_budget(boss: dict) -> dict:
         "printability_floor_mm": SLM_MIN_WALL_DEFAULT_MM,
         "loosest_ceiling_any_collar_mm": rows[0]["ceiling_mm"],
         "rows": rows,
-        "missing_datum": "collar wall thickness — no CEM field, no canon row, no bayonet retention FORCE in "
-                         "canon to size it against; owner = the collar implementation leg (00_07 HW.33) and the "
-                         "lug/Z redesign (HW.8)",
+        "missing_datum": "collar wall thickness — still no CEM field and no canon row, and the bayonet retention "
+                         "FORCE still has no home. ⚠️ But since 2026-10-01 that no longer BLOCKS the wall: "
+                         "`73_collar_wall_inversion` asked the question by inversion and found strength does not "
+                         "size it (lug-root shear already carries 457 N at the 0.2 mm print floor, 4.6x the "
+                         "deliberately generous 100 N bound of `rim_datum_creep`) — printability does, plus the "
+                         "DRAINAGE requirement, because confined ice cannot be survived by any wall that fits "
+                         "the socket band. Owner of the number stays the collar implementation leg (00_07 HW.33) "
+                         "and the lug/Z redesign (HW.8); the VERDICT is 02_02 §4.4",
         "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also "
                     "needs a running clearance inside its socket — nothing states it — the ceiling drops by "
                     "2*slot_clearance more (second column). The flange route is CNC-from-bar or SLM + mandatory "
