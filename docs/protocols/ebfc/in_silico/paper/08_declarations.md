@@ -25,6 +25,14 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   Information / repository (publish-to-protect, `00_01 §8`); the SI itself is the generated manifest
   [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
   file it lists). [finalise — repository DOI]
+  *Snapshot recipe (prepared 2026-10-01; minting the DOI needs the founder's account, and the archive
+  channel — e.g. Zenodo's GitHub-release integration — is his choice):* neither §2.7 nor the SI names a
+  commit or a tag; the SI binds to the tree by the SHA-256 of every file it lists. So (1) re-render the SI
+  LAST (script 72) and commit it; (2) tag THAT commit and cut the release from the tag; (3) archive the
+  release and mint the DOI; (4) on a fresh checkout of the tag, `python -m pytest tools/in_silico/tests -q`
+  must pass — `test_paper_si_matches_its_generator` re-renders the SI and compares it byte for byte, which
+  proves the archived tree is the one the SI describes. A tag cut before the last SI render archives a tree
+  the SI does not describe.
 - **Competing Interests.** Draft (2026-09-30, from `00_01 §8` + `/NOTICE`; the cover letter carries the
   same position — [finalise: founder confirms the standard wording]): *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here

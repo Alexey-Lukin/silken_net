@@ -45,10 +45,12 @@ total-energy difference between the two charge/spin states at a fixed (vertical)
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
 single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
-of MMFF94s-optimised<sup>45,46</sup> ligands onto crystallographic Os–ligand bond lengths [CITATION NEEDED]
-(RDKit<sup>47</sup> cannot embed an octahedral metal centre); a shared parameterised builder generated the single-complex reference,
+of MMFF94s-optimised<sup>45,46</sup> ligands onto typical Os–ligand distances (assumed; no primary source is
+used for them in this work) (RDKit<sup>47</sup> cannot embed an octahedral metal centre); a shared parameterised builder generated the single-complex reference,
 the 4,4′-substituent **Hammett series**<sup>22</sup> [CITATION NEEDED: σ_para values], and the chloro / aqua / bis-imidazole **speciation**
-forms from one source.
+forms from one source. The same distances are used for both oxidation states and for every member of the
+substituent and speciation series, so an error in them is common to all points; we expect it to bear more
+on absolute redox energies than on within-series trends, but its size was not quantified here.
 
 ## 2.4 Proton-coupled electron transfer (PCET)
 

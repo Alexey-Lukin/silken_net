@@ -37,13 +37,51 @@
 
 None of these has a source anywhere in the repository (the scripts hard-code the values), and none was
 supplied from memory. Each was tried against open-access full texts (PMC / Europe PMC, publisher OA) on
-2026-09-24; the outcome is given per item. **👤** = the likely primary is paywalled, or the question is the
-author's.
+2026-09-24; later passes (2026-09-25, 2026-10-01) are dated on the line they closed. **👤** = still open:
+the likely primary is paywalled, or the question is the author's.
 
-- §2.3 — the "crystallographic" Os–N bond lengths (2.06 / 2.10 Å, `lib/os_geometry.py`). No OA source
-  checked. 👤
+**Disposition rule — ⚖️ делеговано 2026-10-01 (машина, за рекомендацією; founder може перевернути).**
+Every surviving `[CITATION NEEDED]` clause leaves the body before the founder's ACS pass by exactly one of
+three routes, and the route is recorded on its line below:
+(a) **source** — a primary whose FULL TEXT was read and states the value, owner fixed by the canon carrier
+(L3 / SUMMARY), DOI confirmed by Crossref; ⛔ Crossref confirms that a paper exists, not the number in it,
+and a value measured for another kind of centre is never cited as this one's;
+(b) **named assumption** — when no primary is found but the number feeds the model: the code carries the
+label (as `LAMBDA_CU_READING_SOURCES["unsourced"]` in `25` and the profile notes in `lib/xylem_sap.py` do),
+the text says "assumed", and the output is judged at the adverse end;
+(c) **withdrawal / narrowing** — when the claim carries no number, or no instrument in the tree performs
+what it says: the text is cut down to what the source or the measurement supports (precedents §3.1, §3.3,
+§2.1 below).
+**Criterion of done:** zero CLAUSE markers in `02_methods.md` + `03_results.md`; the identical legend line
+at the top of both files ("`[CITATION NEEDED]` marks a claim …") is an instruction to the reader, not a
+claim, and is excluded from the count. **Recommendation:** apply it per clause by the machine — the
+founder delegated citations («все на тобі», skill `in-silico` §Paper Citations) and ratified the
+named-reading form himself (−220/−208 bracket, 2026-09-24); the rule extends that form, it does not
+change it. **Ground:** what remains after the OA passes of 2026-09-24/25 is either reading of literature
+or a formulation choice, both inside the machine channel; the alternatives are real and named (source ⊥
+named assumption ⊥ withdrawal). **Cost:** the paper gives up its strongest wording wherever no primary
+exists — numbers move into Methods as named assumptions, and a referee may still ask for the primary,
+which then becomes a revision-round edit. **Weakest link:** route (b) legalises printing a number without
+a primary — for *J. Phys. Chem. B* that is review surface (λ(Cu) 2.0 eV, λ(Co/Ce/Ru)); if the founder
+judges an unsourced number in Methods unacceptable in principle, the right route for λ(Cu) 2.0 is (c),
+and that is a MODEL change (skill `in-silico` §When Modifying #13): §3.4 prints "×25 at zero driving
+force on the 2.0 eV reading". The authorship / corresponding-author verdict is a separate leg and is not
+touched by this rule.
+
+- §2.3 — the Os–ligand bond lengths (2.06 / 2.10 / 2.38 Å, `lib/os_geometry.py`), once labelled
+  "crystallographic". ✅ 2026-10-01, route (b): no source exists in the tree (no DOI, no structure file), so
+  the code comment and docstring and §2.3 now say "assumed typical distances", and §2.3 says that the same
+  distances serve both oxidation states and every series member (size of the error not quantified). ⛔ A
+  primary search was NOT started: a primary with different distances is a model change (rebuilds the
+  geometry of `21e`/`21f`/`34`/`34b` and moves every ①/② number), and that cascade is priced to the founder
+  before the search, not after. ⚠️ The constants are placement TARGETS, not the realised geometry: the
+  rigid-body fit of the chelate puts the bpy nitrogens at 2.099 Å on the dimethyl device complex (the
+  `Os-coord` line printed by `21f`, lock re-run 2026-10-01), not at the 2.06 Å target — so the "assumed
+  distance" a reader should compare with a crystal structure is the printed one.
 - §2.3 — the Hammett σ_para values of the substituent series (`21e`). Likely primary: Hansch, Leo & Taft,
-  *Chem. Rev.* 1991, *91*, 165 (DOI 10.1021/cr00002a004 — Crossref ✓, values NOT checked: paywall). 👤
+  *Chem. Rev.* 1991, *91*, 165 (DOI 10.1021/cr00002a004 — Crossref ✓, values NOT checked: paywall). Unlike
+  the bond lengths, these values are a MODEL INPUT that sets every point of the Hammett slope (`21e`
+  SERIES), so route (b) here labels a model input rather than a remark; still open. 👤
 - §2.5, §3.4 — the FO-DFT / Mulliken–Hush diabatisation. `24b` diagonalises a Cu-projected Mulliken
   population in the space of two MOs, which is neither the dipole-based generalised Mulliken–Hush nor a
   textbook FO-DFT fragment basis; which published method it IS is an attribution call. 👤
@@ -63,8 +101,15 @@ author's.
   Against −0.22 V the computed −158 mV is ~62 mV off, not "~50 mV". ✅ ⚖️ founder 2026-09-24: both readings
   as a bracket — §3.2/§3.6/Fig 3 now say 50–62 mV and cite −220 mV to ref 25; −208 mV keeps its
   [CITATION NEEDED] (no primary found by search 2026-09-24). 👤 primary for −208 or drop it
-- §3.2 — the literature anode λ (~0.7–0.8 eV) adopted in the rates. OA gives typical protein-ET λ of
-  0.7–0.8 eV (Gray & Winkler 2005: Cu azurin 0.7, cyt c/b₅ 0.8) but for other proteins, not this couple. 👤
+- §3.2 — the literature anode λ (~0.7–0.8 eV) "adopted in the rate calculations". ✅ 2026-10-01, route (c):
+  the claim had no instrument — `marcus_rate` is called only by the cathode script `25`, the L4 kinetics
+  (`30`/`30b`/`31`/`40`) carry no λ, and the 0.7 in `29b` (`LIT_LAMBDA_TOTAL_EV`) is a comparison constant
+  without a primary. Its owner was also mis-named: L3 attributed it to Bhattacharyya et al. (ref 25), whose
+  full text ([HTML ✓я 2026-10-01] https://pmc.ncbi.nlm.nih.gov/articles/PMC4480342/) prints no Marcus λ —
+  its "λ" is the thermodynamic-integration coupling parameter. §3.2 now says that no reported rate depends on
+  the anode λ and compares the computed total with what ref 48 does state, for OTHER centres ([HTML ✓я
+  2026-10-01] https://pmc.ncbi.nlm.nih.gov/articles/PMC553296/: azurin Cu(II/I) 0.7 eV; cyt c/cyt b₅
+  heme–heme 0.8 eV); L3, PIPELINE_STATUS and the outline say the same.
 - §3.3 — ✅ 2026-09-25: the claim is WITHDRAWN, not sourced. The text said the Hammett slope was
   "triangulated against the additive Lever E_L scheme and the measured series"; no script, cache or
   SUMMARY/L3 entry performs either comparison, so §3.3 now says the slope is a within-method trend that is
@@ -72,9 +117,21 @@ author's.
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.
-- §3.4 — the T1 copper's depth below the laccase surface. No OA statement found. 👤
+- §3.4 — the T1 copper's depth below the laccase surface. ✅ 2026-10-01, route (c): the sentence is a
+  caveat about randomly adsorbed laccase, not a measurement, so "several ångström" is cut and the text now
+  names an example structure — PDB 1GYC, *Trametes versicolor* laccase (identity checked at RCSB
+  [HTML ✓я 2026-10-01] https://data.rcsb.org/rest/v1/core/entry/1GYC) — and says it is an example, not a
+  bound for the class. The depth itself is NOT measured here, and the primary of 1GYC (*J. Biol. Chem.*
+  2002, DOI 10.1074/jbc.M204571200) was not reached by this channel (publisher 403, 2026-10-01) — so if the
+  ACS pass wants that structure in the numbered list, its full text is read first. A measuring
+  instrument (the structure committed with its licence line in `/NOTICE`, a script and cache, an SI rehash,
+  and a possible shift of the 15–20 Å figure beside it) would be its own leg with that price.
 - §3.4 — the ZIF as a wide-gap insulator. OA supports it only for Zn ZIF-8 (PMC8159372, Introduction:
-  "a typical wide-bandgap … MOF"); our framework is Co-noded (ZIF-67-type), so it does not transfer. 👤
+  "a typical wide-bandgap … MOF"); our framework is Co-noded (ZIF-67-type), so it does not transfer.
+  ✅ 2026-10-01, route (b): §3.4 now says the Co-noded framework is ASSUMED to be a wide-gap insulator and,
+  in the same clause, why the assumption is conservative (band conduction, if present, only adds to the
+  hops modelled). ⚠️ What this does not cover: if a ZIF-67 band structure showed a small gap with partial
+  delocalisation, the question would be the MODEL (discrete hops), not this sentence.
 
 ## References
 

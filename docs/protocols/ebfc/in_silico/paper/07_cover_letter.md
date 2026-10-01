@@ -48,7 +48,14 @@ recorded, version-exact environment (committed with them), and the full pipeline
 This work is original, has not been published previously, and is not under consideration elsewhere.
 Explicit-solvation QM/MM of the cascade, which the manuscript identifies as the route to closure, is
 outside its scope and is stated as a limit of the method.
-[⚠️ founder: competing-interests — none re: IP (no patent pending; defensive-publication posture, 00_01 §8). Confirm standard declaration.]
+The author is the founder of the SilkenNet project, an open-hardware forest-monitoring platform of which
+the biofuel cell studied here is a component and which is intended for commercial deployment. No patent
+has been or will be filed on the work disclosed here (defensive-publication posture); the code, hardware
+design and documentation are released under open licenses (AGPL-3.0-or-later, CERN-OHL-S-2.0,
+CC-BY-SA-4.0). The author declares no other competing financial or non-financial interests.
+[finalise: founder confirms the standard wording — ONE text, identical to the Competing Interests draft in
+`08_declarations.md`; whether *J. Phys. Chem. B* wants it in the letter at all was not reached on
+2026-10-01 (the ACS guidelines page renders by script), so drop it here if the submission form carries it]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 

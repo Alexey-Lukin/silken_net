@@ -40,8 +40,10 @@ fragments on relaxation); the physically correct, pH-7 first electron transfer i
 **FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.39 eV**.
 Adding a Marcus two-sphere outer-sphere term<sup>13</sup> brings the total to ~0.7–0.8 eV (computed λ_total
 0.76–0.86 eV for a charge-delocalised, buried cofactor); this continuum estimate is, however,
-radius- and dielectric-dominated, so we adopt the literature value [CITATION NEEDED] in the rate calculations and use the
-two-sphere result only to confirm that it is physically reasonable.
+radius- and dielectric-dominated, so we treat it as indicative only. It lies in the range measured for
+electron transfer at other protein redox centres (0.7 eV for azurin Cu(II/I), 0.8 eV for the cytochrome
+c/b₅ heme pair<sup>48</sup>), which shows that it is physically reasonable; no rate reported in this work
+depends on it.
 
 ## 3.3 A structure–activity rule for the osmium mediator
 
@@ -103,7 +105,8 @@ Three model caveats frame this. First, the calculation places the enzyme's elect
 adjacent to the framework node. That adjacency is what an *oriented* immobilisation would deliver — a
 His/Cys anchor tethering laccase to the ZIF vertex — and it is an assumption of the model, not an
 outcome of it. A randomly adsorbed, arbitrarily oriented laccase does not deliver it: the T1 copper
-lies several ångström below the protein surface [CITATION NEEDED], so with the orientational average the donor–acceptor
+is held inside the protein by its coordinating residues rather than exposed at the surface (e.g. PDB 1GYC,
+a *Trametes versicolor* laccase — an example structure, not a bound for the class), so with the orientational average the donor–acceptor
 separation is of order 15–20 Å, and because the coupling decays exponentially with distance, t_ij — and
 with it the whole margin reported above — goes to zero. **The margin is therefore conditional on
 oriented immobilisation; it is not a property of the nanozyme alone.** Second, the coupling is computed
@@ -116,8 +119,9 @@ to ×8.9×10³ on the 2.0 eV λ(Cu) reading — i.e. across enzymatic turnover. 
 a coordinating nitrogen binds through a lone pair lying **in** the ring plane and our cluster places the
 metals 0.000 Å from it; we report the number because it shows the cathode verdict rests on that single
 geometric criterion rather than on a tolerance band, and because the residual spread *within* the
-in-plane family (M–N–C angles, in-plane tilt) remains unquantified. Third, the single-hop bottleneck is a conservative estimate: the ZIF is
-a wide-gap insulator [CITATION NEEDED], so charge transport proceeds by the discrete Marcus hops we model rather than band
+in-plane family (M–N–C angles, in-plane tilt) remains unquantified. Third, the single-hop bottleneck is a conservative estimate: we assume that the Co-noded
+framework is a wide-gap insulator — an assumption that errs on the conservative side, since band
+conduction, if present, would only add to the hopping we model — so charge transport proceeds by the discrete Marcus hops we model rather than band
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
 transport would require a conductive MOF (one of the levers above). A predicted cathode
 charge-transfer resistance is correspondingly uncertain: with the DET-rate bracket and the unknown

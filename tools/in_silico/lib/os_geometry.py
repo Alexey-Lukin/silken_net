@@ -13,7 +13,10 @@ What varies:
 
 RDKit cannot embed an octahedral metal centre, which is exactly why the cage is
 assembled by rigid-body placement of MMFF-optimised ligands (as in 21b). Bond
-lengths from crystallographic Os-bpy data.
+lengths are ASSUMED typical Os-ligand distances: no crystallographic source exists
+in this tree (no DOI, no structure file), so they are an input assumption, not a
+citation (paper §2.3; index paper/09_references.md §Claims still without a source).
+A different set is a MODEL change — it rebuilds the geometry of 21e/21f/34/34b.
 
 Geometry is returned with an `info` dict (atom count, min contact, Os-ligand
 distances) so the *caller* prints/validates — the lib stays I/O-free.
@@ -26,7 +29,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-# ── Crystallographic Os-ligand bond lengths (Å) ──
+# ── Os-ligand bond lengths (Å) — ASSUMED typical values, no primary source in the tree ──
 OS_N_BPY = 2.06
 OS_N_DONOR = 2.10        # Os–N(imidazole/pyridine)
 OS_O_DONOR = 2.10        # Os–O(aqua)

@@ -34,8 +34,13 @@ WHAT IS COMPUTED
      single mutations; and the Å² each declared threshold REFUSES, so its value stays visible.
 
 WHAT IS **NOT** COMPUTED — and each of these is absent, not merely undiscussed
-  · Aggrescan3D was NOT run. It is an external web server (registration/upload), outside
-    this repo's zero-network compute. The L1 §2 recipe's first half remains OPEN.
+  · Aggrescan3D was NOT run. The hosted servers need registration/upload, outside this
+    repo's zero-network compute. A standalone release also exists — measured 2026-10-01 at
+    https://pypi.org/pypi/aggrescan3d/json: version 1.0.2 of 2019-01-31, py2-only wheels plus
+    an sdist, licence «free for non-commercial users» — so «external web server» is a property
+    of the channel tried, not of the tool. Installing it would CONSUME a non-commercial licence
+    in a commercial project: that posture is the founder's call (00_07 HW.5.IS), not the
+    machine's, and nothing was installed. The L1 §2 recipe's first half remains OPEN.
   · This is not an aggregation PREDICTION. An exposed apolar patch is a static surface
     descriptor; aggregation is a multi-molecule, concentration-, pH- and shear-dependent
     kinetic process. Nothing here computes a rate, a solubility or a critical concentration.
