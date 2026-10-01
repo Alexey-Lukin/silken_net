@@ -17,6 +17,9 @@
 #     половину межі й дала ШІСТЬ хибних позитивів на самому маркері кінця —
 #     «межу бере з файлу» означає ОБИДВА його маркери, не один;
 #   * МОВА     — найближчий попередній `## `-заголовок із `(EN)` чи `(UA)`.
+#   ⚠️ Маркери мають і EN-форму («⬇️ COPY FROM THIS LINE» / «⬆️ END OF LETTER TEXT»):
+#     до 2026-10-01 гейт знав лише українську, тож EN-лист гальванікові не
+#     існував для нього взагалі — ні в суді, ні в лічильнику, ні в «регіоні без мови».
 # Регіон без оголошеної мови — ПОМИЛКА, а не пропуск: судити кирилицю в ньому
 # нема на чому, і мовчазний пропуск був би зеленим кольором над невиміряним.
 #
@@ -24,7 +27,8 @@
 #   1. живий трекер-ID       — словник НЕ вигадано тут: токен + `Tracker::Dashboard`
 #   2. `§`-реф               — адреса нашого канону; вендор її не резолвить
 #   3. ISO-дата              — внутрішній провенанс
-#   4. статус/присуд-гліфи   — мова трекера
+#   4. статус/присуд-гліфи   — мова трекера; звіряються БЕЗ селектора варіанта VS16
+#      (U+FE0F): «⚖» і «⚖️» — той самий гліф, а словник із VS16 бачив лише другий
 #   5. репо-шлях             — `docs/`, `tools/`, `scripts/` …
 #   6. кирилиця в EN-регіоні — і дзеркально латиниця НЕ судиться в UA (Ti-6Al-4V,
 #      ISO, ASTM, назви вендорів там законні)
@@ -45,12 +49,12 @@ require "tracker/dashboard"
 
 ROOT      = File.expand_path("..", __dir__)
 PERIMETER = File.join(ROOT, "docs", "protocols", "**", "*.md")
-MARKER    = "КОПІЮВАТИ ВІД ЦЬОГО РЯДКА"
-END_MARK  = "КІНЕЦЬ ТЕКСТУ ЛИСТА"
+MARKER    = /КОПІЮВАТИ ВІД ЦЬОГО РЯДКА|COPY FROM THIS LINE/
+END_MARK  = /КІНЕЦЬ ТЕКСТУ ЛИСТА|END OF LETTER TEXT/
 
 # Той самий токенізатор, що в `code_tracker_id_check.rb` — ID-словник має ОДИН дім.
 TOKEN_RE = %r{(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*(?:/\d+(?![\d_]))*}
-GLYPHS   = "⚪🟡🟢🔗🌿⚫🤖👤⚖️✅⛔🔴⚠️🔑🗄️🎯📊⊕⊥"
+GLYPHS   = "⚪🟡🟢🔗🌿⚫🤖👤⚖️✅⛔🔴⚠️🔑🗄️🎯📊⊕⊥⏸⏳⛓✓📬❌".delete("\uFE0F").each_grapheme_cluster.to_a.uniq.freeze
 REPO_DIR = %w[docs tools scripts app lib spec firmware contracts config .claude .github].freeze
 
 def regions(text)
@@ -59,14 +63,14 @@ def regions(text)
   lang  = nil
   start = nil
   lines.each_with_index do |line, idx|
-    if line.include?(END_MARK)
+    if line.match?(END_MARK)
       out << [ start, idx - 1, lang ] if start
       start = nil
     elsif line.start_with?("## ")
       out << [ start, idx - 1, lang ] if start
       start = nil
       lang  = line[/\((EN|UA)\)/, 1]
-    elsif line.include?(MARKER)
+    elsif line.match?(MARKER)
       start = idx + 1
     end
   end
@@ -90,7 +94,8 @@ def violations(file, lines, from, to, lang, ids, facets)
     end
     add.call(i, "§-реф", line[/\S*§\S*/]) if line.include?("§")
     add.call(i, "ISO-дата", Regexp.last_match(0)) if line =~ /\b20\d{2}-\d{2}-\d{2}\b/
-    GLYPHS.each_grapheme_cluster { |g| add.call(i, "гліф", g) if line.include?(g) }
+    bare = line.delete("\uFE0F")
+    GLYPHS.each { |g| add.call(i, "гліф", g) if bare.include?(g) }
     REPO_DIR.each { |d| add.call(i, "репо-шлях", "#{d}/") if line.include?("#{d}/") }
     if lang == "EN" && line =~ /\p{Cyrillic}/
       add.call(i, "кирилиця в EN", line.scan(/\p{Cyrillic}+/).first)
@@ -111,7 +116,7 @@ found_regions = 0
 
 files.each do |path|
   text = File.read(path)
-  next unless text.include?(MARKER)
+  next unless text.match?(MARKER)
 
   rel   = path.sub("#{ROOT}/", "")
   lines = text.lines
@@ -142,7 +147,7 @@ if all_hits.any?
 end
 
 if all_hits.empty? && undeclared.empty?
-  puts "✅ copy-регіони чисті (#{found_regions} регіонів у #{files.count { |f| File.read(f).include?(MARKER) }} файлах)"
+  puts "✅ copy-регіони чисті (#{found_regions} регіонів у #{files.count { |f| File.read(f).match?(MARKER) }} файлах)"
   exit 0
 end
 
