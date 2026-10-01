@@ -255,7 +255,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 
 - Product: Nafion membrane surface-grafted with PSBMA by surface-initiated ATRP, for anti-biofouling performance.
 - **Required capability:** attaching the ATRP initiator requires converting the Nafion sulfonic groups to the **sulfonyl chloride** form — please describe your prior hands-on experience with fluoropolymer chemistry, as this step governs feasibility.
-- Quantity and format: coupon-scale pieces for R&D — state the minimum area and format you can supply.
+- Quantity and format: coupon-scale pieces for R&D — state the minimum area and format you can supply. The grafted layer is the outermost layer of an electrode and sits on top of a hydrogel: would you start from a Nafion film or cast the layer from a Nafion dispersion, and how would it be held on the hydrogel underneath? We have not fixed this ourselves.
 - QC / acceptance: proton conductivity by EIS · anti-fouling assessment against resin acids (abietic acid) · a rehydration cycle across the UCST transition (−10 °C → +25 °C).
 - We recognise this is a development-type job rather than a catalogue item; quote development effort and material separately.
 
@@ -693,7 +693,7 @@ Nothing is required from us for an initial quotation. On request we supply the i
 
 10. **Перше питання цієї позиції — чи беретесь ви за роботу такого роду.** Прищеплення полі(сульфобетаїнметакрилату) до Nafion робиться полімеризацією з переносом атома, ініційованою з поверхні, а щоб закріпити ініціатор, сульфогрупи Nafion треба перевести в **сульфонілхлоридну форму** — саме цей крок вирішує здійсненність. Просимо прямо сказати, чи виконуєте ви таку роботу для сторонніх замовників, і описати наявний досвід із **хімією фторполімерів** і з переведенням Nafion у сульфонілхлоридну форму. Якщо ні — відповідь «ні» щодо цієї позиції для нас теж корисна, позиції 1 і 2 лишаються чинними.
 11. **Продукт:** мембрана Nafion, поверхнево модифікована прищепленим полі(сульфобетаїнметакрилатом), — протиобростальний шар, що контактує з деревним соком.
-12. **Кількість і формат:** купони для дослідних випробувань — назвіть мінімальну площу й формат, які можете виготовити.
+12. **Кількість і формат:** купони для дослідних випробувань — назвіть мінімальну площу й формат, які можете виготовити. Прищеплений шар — зовнішній шар електрода й лежить поверх гідрогелю: ви виходили б із плівки Nafion чи відлили б шар із дисперсії Nafion, і як він триматиметься на гідрогелі під ним? Самі ми цього ще не вирішили.
 13. **Приймання:** протонна провідність методом імпедансної спектроскопії · стійкість до забруднення смоляними кислотами (абієтинова кислота) · цикл регідратації через верхню критичну температуру розчинення (від −10 °C до +25 °C).
 14. **Орієнтир, НЕ умова приймання:** протонна провідність порядку 45 мСм/см · близько 8 молекул води на ланцюг · перехід верхньої критичної температури розчинення поблизу 5 °C. Це цільові показники готового пристрою, наведені, щоб ви могли оцінити придатність; гарантувати їх ми не просимо. Ця позиція — розробка, а не каталожний товар: **розробку методики оцініть окремим рядком від матеріалу.**
 
