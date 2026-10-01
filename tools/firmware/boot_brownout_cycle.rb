@@ -75,7 +75,10 @@ PARAMS = {
   v_vstor_avg: 4.5,         # §9.1/§9.3 VSTOR avg для прямого IQ-споживання
   eta_boost_winter: 0.65,   # §9.8 "η_boost lower at lower I_IN" — єдина зимова точка канону
   p_gen_uw: 5.0,            # верхня межа зимового P_gen (HW.44 body: 3-5 µW)
-  interval_h: 1.0           # ПРИПУЩЕННЯ pre-warmup wake-каденції (див. шапку)
+  interval_h: 1.0,          # ПРИПУЩЕННЯ pre-warmup wake-каденції (див. шапку)
+  # ── вікно VOC-діагностики (HW.19) проти ТОГО САМОГО буфера ────────────────
+  voc_window_s: 16.3,       # щільний збір ≥ 16.3 с — контракт `voc_maxhold.h` (02_03 §12.4.2)
+  i_run_ma: 3.40            # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
 }.freeze
 
 P_GEN_SWEEP_UW = [ 3.0, 4.0, 5.0 ].freeze # HW.44-назва смуга: "P_gen 3-5 µW"
@@ -137,6 +140,20 @@ def headline_word(margin, win)
   end
 end
 
+# [HW.19] Вікно VOC-діагностики живиться з ТОГО САМОГО буфера VSTOR, що й цикл, тож
+# питання «активне вікно ⊥ LPTIM-пробудження» (нога HW.19) має арифметичну половину.
+# ⛔ Стеля: вартість LPTIM-гілки тут НЕ рахується — її задає ціна ОДНОГО пробудження,
+# якої дерево не несе; рахується лише ПІДЛОГА тієї гілки (сон крізь усе вікно).
+def voc_window_from_vstor_mj(p) =
+  (p[:i_run_ma] / 1000.0) * p[:v_out] * p[:voc_window_s] * 1000.0 / p[:eta_buck_active]
+
+# Run-струм, за якого активне вікно рівно зʼїдає задану енергію (мА).
+def voc_breakeven_ma(p, budget_mj) =
+  budget_mj * p[:eta_buck_active] / (p[:v_out] * p[:voc_window_s]) * 1000.0 / 1000.0
+
+# Підлога LPTIM-гілки: сам сон крізь вікно, без жодного пробудження.
+def voc_lptim_floor_mj(p) = sleep_drain_uw(p) * p[:voc_window_s] / 1000.0
+
 def crossover_word(p, wire)
   x = crossover_uw(p, wire: wire)
   label = wire.to_s.upcase
@@ -197,6 +214,17 @@ def report(p)
   puts "  3. Vcap cold-TX-defer (COLD_TX_DEFER_VCAP_MV=4000) НЕ рятує жодного з двох випадків: `vcap` читає" \
        " VDDA (≈3300 мВ, поки buck живий), ніколи не сягає 4000, тож кон'юнкція вироджена в temp<-15°C" \
        " (ARCH.99/FW.50, вже канонізовано) — вище цієї температури TX не відкладається взагалі."
+  voc = voc_window_from_vstor_mj(p)
+  puts
+  puts "── [HW.19] Вікно VOC-діагностики проти ТОГО САМОГО буфера ──"
+  puts "  активне вікно %.1f с @ %.2f мА (48 МГц CoreMark): %.1f мДж з VSTOR = %.2f× вікна, %.1f× циклу ECB" %
+       [ p[:voc_window_s], p[:i_run_ma], voc, voc / win, voc / active_cycle_from_vstor_mj(p, wire: :ecb) ]
+  puts "  break-even run-струму: %.2f мА зʼїдає ВСЕ вікно · %.2f мА зʼїдає один цикл ECB" %
+       [ voc_breakeven_ma(p, win), voc_breakeven_ma(p, active_cycle_from_vstor_mj(p, wire: :ecb)) ]
+  puts "  підлога LPTIM-гілки (сам сон крізь вікно): %.3f мДж — ціни ОДНОГО пробудження дерево не несе" %
+       voc_lptim_floor_mj(p)
+  puts "  → активне вікно виключене арифметикою (вимір не завершується ні за якої генерації);"
+  puts "    стенд міряє ціну пробудження LPTIM, а не вибір архітектури"
   in_band = %i[ecb ccm].select { |w| crossover_uw(p, wire: w) >= P_GEN_SWEEP_UW.min }
   band_note = in_band.empty? ? "уся зимова смуга 3–5 µW над обома точками" \
                              : "нижній край зимової смуги вже за межею для #{in_band.map(&:upcase).join(' і ')}"
@@ -227,7 +255,12 @@ if assert_mode
     "E_active_from_VSTOR ECB (§9.6, 33.33 мДж)" =>
       (active_cycle_from_vstor_mj(PARAMS, wire: :ecb) - 33.33).abs < 0.01,
     "ECB не циклить у sensitivity-блоці за жодного P_gen > 0 (§9.8а)" => crossover_uw(PARAMS, wire: :ecb) <= 0.0,
-    "точка CCM-циклення в sensitivity-блоці (§9.8а, 1.9 µW)" => (crossover_uw(PARAMS, wire: :ccm) - 1.9).abs < 0.05
+    "точка CCM-циклення в sensitivity-блоці (§9.8а, 1.9 µW)" => (crossover_uw(PARAMS, wire: :ccm) - 1.9).abs < 0.05,
+    # [HW.19] Вердикт, а не лише число: активне вікно мусить ПЕРЕВИЩУВАТИ буфер — інакше
+    # воно перестає бути виключеним, і вибір архітектури повертається у відкриті.
+    "активне вікно VOC > буфера (HW.19, 207.8 мДж проти 138.80)" =>
+      voc_window_from_vstor_mj(PARAMS) > window_mj(PARAMS) &&
+      (voc_window_from_vstor_mj(PARAMS) - 207.8).abs < 0.1
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
 
