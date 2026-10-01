@@ -92,7 +92,7 @@
   a SKU whose rungs all land there prints «NOT A LADDER». Pin `AnchorTests.Every_Committed_Convergence_Ladder_Was_Measured_On_Todays_Sampler`
   recomputes the sampler step from the CODE **and, since 2026-09-20, requires the committed rows to carry the canon
   rungs** (`Program.CanonConvergenceDivisors`, the same constant the verb defaults to) — so a run at other `--divisors`
-  now reds naming the SKU and the missing rung instead of silently replacing the ladder. A WIDER ladder passes. ⛔ The
+  now reds naming the SKU and the missing rung instead of silently replacing the ladder. A WIDER ladder passes. Why a PIN and not a divisor-bearing cache name (`00_07` HW.51, 2026-09-20): a name would only separate the files — the old cache would go on lying at the old address — and would cost renaming seven artifacts plus every ref, while the pin catches the class itself (a run with a foreign divisor set). ⛔ The
   remaining ceiling: the cache name still carries the SKU only, and the pin cannot tell whether the rows came from ONE
   run — a hand-merged cache with both rungs present passes, so still read `git diff tools/cad/cache/topology/` before
   committing (gotcha #14's class). Numbers → the cache / `01_02 §6`, never here.

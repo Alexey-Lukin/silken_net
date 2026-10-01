@@ -359,7 +359,8 @@ end
 # one prose cannot hold at all:
 #   (a) TRANSCRIPTION — porosity, axial and radial of every quoted row, at the precision canon quotes;
 #   (b) PROVENANCE — the file's own element, offset and step agree with its name and its row; it is clipped to the part
-#       body, rod-free, network, converged — and it calls itself a SENSITIVITY, never the printed body;
+#       body, rod-free, network, converged (the SOLVER's flag, NOT step convergence — see the ceiling below) — and it
+#       calls itself a SENSITIVITY, never the printed body;
 #   (c) THE IDENTITY CONTROL — the zero-offset row equals the pinned step sweep's row of the same divisor EXACTLY, field
 #       for field. That equality is the whole ground for reading every other row as "the intent plus an offset", so a
 #       drift there is not a stale digit — it means the wrapper, the sampler or the solver moved under the curve.
