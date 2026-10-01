@@ -18,7 +18,8 @@
 #                                                                   # (CCM = warn-only, FW.2 ще bench-gated);
 #                                                                   # ⊕ [HW.19] вердикт «активне вікно VOC >
 #                                                                   # буфера» і СТЕЛЯ одного LPTIM-пробудження
-#                                                                   # (02_03 §9.8б)
+#                                                                   # (02_03 §9.8б); дзеркала вікна й кроку —
+#                                                                   # проти самого `voc_maxhold.h`
 #
 # Модель (стелі позначені):
 #   вікно      = E(V_ON) − E(V_OFF), E(V) = ½CV²                    ← чиста ємність, без ADC/резисторної похибки
@@ -80,8 +81,9 @@ PARAMS = {
   p_gen_uw: 5.0,            # верхня межа зимового P_gen (HW.44 body: 3-5 µW)
   interval_h: 1.0,          # ПРИПУЩЕННЯ pre-warmup wake-каденції (див. шапку)
   # ── вікно VOC-діагностики (HW.19) проти ТОГО САМОГО буфера ────────────────
-  voc_window_s: 16.3,       # щільний збір ≥ 16.3 с — контракт `voc_maxhold.h` (02_03 §12.4.2)
-  voc_step_s: 0.128,        # крок ≤ 128 мс — VOC_MAXHOLD_STEP_MAX_MS `voc_maxhold.h` (дзеркало, правити там)
+  # Обидва — дзеркала `voc_maxhold.h` (правити там); `--assert` звіряє їх із самим заголовком.
+  voc_window_s: 16.3,       # щільний збір ≥ 16.3 с — VOC_MAXHOLD_WINDOW_MIN_MS (02_03 §12.4.2)
+  voc_step_s: 0.128,        # крок ≤ 128 мс — VOC_MAXHOLD_STEP_MAX_MS
   i_run_ma: 3.40            # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
 }.freeze
 
@@ -168,6 +170,34 @@ def voc_wake_ceiling_mj(p) = (active_cycle_from_vstor_mj(p, wire: :ecb) - voc_lp
 
 # Та сама стеля в мілісекундах run-струму з VSTOR (потужність run = активне вікно / його тривалість).
 def voc_wake_ceiling_ms(p) = voc_wake_ceiling_mj(p) / (voc_window_from_vstor_mj(p) / p[:voc_window_s]) * 1000.0
+
+# Дзеркала вікна й кроку пінуються проти САМОГО `voc_maxhold.h`: self-check нижче звіряє
+# PARAMS із надрукованою в каноні стелею, тож зміну контракту в заголовку він не побачив би.
+VOC_MAXHOLD_H = File.expand_path("../../firmware/common/voc_maxhold.h", __dir__)
+VOC_MIRRORS = { voc_window_s: "VOC_MAXHOLD_WINDOW_MIN_MS", voc_step_s: "VOC_MAXHOLD_STEP_MAX_MS" }.freeze
+
+# Значення `#define` у мс: літерал `NNNu` або `(ІНШИЙ_DEFINE / Nu)` — ділення цілочисельне,
+# як у C. Будь-яка інша форма дає nil, і гейт червоніє «не розпізнано», а не мовчить.
+def header_ms(text, name)
+  expr = text[%r{^\s*#define\s+#{name}\s+(.+?)\s*(?:/\*.*)?$}, 1].to_s
+  if (m = expr.match(/\A(\d+)u?\z/)) then Integer(m[1])
+  elsif (m = expr.match(%r{\A\(\s*([A-Z_][A-Z0-9_]*)\s*/\s*(\d+)u?\s*\)\z}))
+    base = header_ms(text, m[1])
+    base && (base / Integer(m[2]))
+  end
+end
+
+def voc_mirror_drift(p)
+  text = File.read(VOC_MAXHOLD_H)
+  VOC_MIRRORS.filter_map do |key, name|
+    ms = header_ms(text, name)
+    if ms.nil? then "дзеркало #{key}: #{name} у voc_maxhold.h не розпізнано — форма виразу змінилась, навчи header_ms"
+    elsif ((ms / 1000.0) - p[key]).abs > 1e-9
+      format("дзеркало %s = %.3f с ≠ %s = %d мс у voc_maxhold.h — правити дзеркало (і стелю 02_03 §9.8б)",
+             key, p[key], name, ms)
+    end
+  end
+end
 
 def crossover_word(p, wire)
   x = crossover_uw(p, wire: wire)
@@ -285,6 +315,7 @@ if assert_mode
       (voc_wake_ceiling_ms(PARAMS) - 20.4).abs < 0.05
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
+  failures.concat(voc_mirror_drift(PARAMS))
 
   if failures.empty?
     puts "boot_brownout_cycle ✓ — ECB headline margin > 0; у sensitivity-блоці #{crossover_word(params, :ecb)}, " \

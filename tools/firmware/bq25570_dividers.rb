@@ -377,8 +377,9 @@ end
 # якого паспорт не нормує, і він лише ЗНИЖУЄ відлік; накопичувач із `VSTOR` мусить бути
 # знятий (0.47 Ф не дасть відліку встановитись); стокові OK/OUT CJMCU-2557 невідомі, тож
 # для стокової плати таблиця ілюстративна; омметр вище ~20 МΩ на багатьох приладах грубий.
-# MPPT-пара висить на `VIN_DC`, а не на `VRDIV`: за відʼєднаного джерела вона читається
-# номіналом — ця мережа окрема (компонента звʼязності нижче).
+# MPPT-пара висить на `VIN_DC`, а не на `VRDIV`, і з рештою мережі ділить лише GND: за
+# відʼєднаного джерела вузол `VIN_DC` висить, паралельного шляху немає — тож плече читається
+# номіналом (вузловий розвʼязок бачить це сам).
 ARM_EDGES = {
   rov1: %i[ov gnd], rov2: %i[vrdiv ov],
   rok1: %i[okp gnd], rok2: %i[okh okp], rok3: %i[vrdiv okh],
@@ -388,9 +389,25 @@ ARM_EDGES = {
 
 # Опір плеча `arm` у схемі: вузловий аналіз (1 А у один кінець, другий — земля) над
 # компонентою звʼязності цього плеча; Гаусс із вибором головного на кількох вузлах.
+# Плече 0 МΩ (перемичка) — не провідність ∞, а ЗЛИТТЯ вузлів: ∞ у матриці дає NaN, і
+# вибір головного падає; закорочене плече (саме чи ланцюгом перемичок) омметр читає нулем.
 def in_circuit(arms, arm)
-  a, b = ARM_EDGES.fetch(arm)
-  edges = ARM_EDGES.map { |k, (n1, n2)| [ n1, n2, arms.fetch(k).to_f ] }
+  root = {}
+  find = lambda do |x|
+    x = root[x] while root.key?(x)
+    x
+  end
+  ARM_EDGES.each do |k, (n1, n2)|
+    next unless arms.fetch(k).to_f.zero?
+    r1, r2 = find.(n1), find.(n2)
+    root[r1] = r2 unless r1 == r2
+  end
+  a, b = ARM_EDGES.fetch(arm).map(&find)
+  return 0.0 if a == b
+  edges = ARM_EDGES.filter_map do |k, (n1, n2)|
+    r = arms.fetch(k).to_f
+    [ find.(n1), find.(n2), r ] unless r.zero?
+  end
   comp = [ a ]
   loop do
     grown = comp | edges.flat_map { |n1, n2, _| comp.include?(n1) ? [ n2 ] : (comp.include?(n2) ? [ n1 ] : []) }
@@ -424,18 +441,23 @@ def in_circuit(arms, arm)
 end
 
 # Звір вузлового розвʼязку з закритою формою на двох топологічно різних плечах
-# (крайнє OV і середнє OK) і на окремій MPPT-мережі — гоняє `--assert`.
+# (крайнє OV і середнє OK), на MPPT-плечі (його `VIN_DC` висить) і на перемичці
+# 0 Ом замість ROK3 (легальний вхід `measured_mode`: кінці перемички — один вузол,
+# сама вона читається нулем) — гоняє `--assert`.
 def in_circuit_drift
   a = target_arms
+  j = a.merge(rok3: 0.0)
   par = ->(x, y) { x * y / (x + y) }
   s_ov = a[:rov1] + a[:rov2]
   s_ok = a[:rok1] + a[:rok2] + a[:rok3]
   s_out = a[:rout1] + a[:rout2]
-  { rov1: par.(a[:rov1], a[:rov2] + par.(s_ok, s_out)),
-    rok2: par.(a[:rok2], a[:rok3] + par.(s_ov, s_out) + a[:rok1]),
-    roc1: a[:roc1] }.filter_map do |k, want|
-    got = in_circuit(a, k)
-    format("%s у схемі: вузловий %.6f ≠ закрита форма %.6f МΩ", k, got, want) if (got - want).abs > 1e-9
+  [ [ "rov1", a, :rov1, par.(a[:rov1], a[:rov2] + par.(s_ok, s_out)) ],
+    [ "rok2", a, :rok2, par.(a[:rok2], a[:rok3] + par.(s_ov, s_out) + a[:rok1]) ],
+    [ "roc1", a, :roc1, a[:roc1] ],
+    [ "rok2 при rok3=0", j, :rok2, par.(j[:rok2], par.(s_ov, s_out) + j[:rok1]) ],
+    [ "rok3=0", j, :rok3, 0.0 ] ].filter_map do |label, arms, k, want|
+    got = in_circuit(arms, k)
+    format("%s у схемі: вузловий %.6f ≠ закрита форма %.6f МΩ", label, got, want) if (got - want).abs > 1e-9
   end
 end
 
@@ -447,7 +469,8 @@ def in_circuit_mode(args)
   printf("%-6s %9s %9s %8s\n", "плече", "номінал", "у схемі", "Δ")
   ARM_EDGES.each_key do |k|
     ic = in_circuit(arms, k)
-    printf("%-6s %9.3f %9.3f %+7.1f%%\n", k, arms[k], ic, (ic / arms[k] - 1) * 100)
+    delta = arms[k].zero? ? "—" : format("%+.1f%%", (ic / arms[k] - 1) * 100)
+    printf("%-6s %9.3f %9.3f %8s\n", k, arms[k], ic, delta)
   end
   puts
   ov_nom = Bq25570.vbat_ov(arms[:rov1], arms[:rov2])
