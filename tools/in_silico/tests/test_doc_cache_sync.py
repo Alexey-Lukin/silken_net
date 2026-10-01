@@ -2029,15 +2029,20 @@ def _mirror_in_code() -> tuple[str, ...]:
     CANNOT catch: a mirror that stops being a literal (computed, imported, or built at runtime) —
     that raises here by name rather than passing quietly.
     """
+    return tuple(_literal_in_code(MIRROR_SYMBOL))
+
+
+def _literal_in_code(symbol: str):
+    """A module-level literal of `lib/constants.py`, read with `ast` (why not import — above)."""
     import ast
     tree = ast.parse((REPO / CONSTANTS).read_text(encoding="utf-8"), filename=CONSTANTS)
     for node in tree.body:
         targets = getattr(node, "targets", [])
         if isinstance(node, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id == MIRROR_SYMBOL for t in targets):
-            return tuple(ast.literal_eval(node.value))
+                isinstance(t, ast.Name) and t.id == symbol for t in targets):
+            return ast.literal_eval(node.value)
     raise AssertionError(
-        f"{CONSTANTS} has no module-level literal `{MIRROR_SYMBOL}` — either it was renamed or it "
+        f"{CONSTANTS} has no module-level literal `{symbol}` — either it was renamed or it "
         f"stopped being a literal; this pin reads the source, so it cannot follow a computed value.")
 
 
@@ -2070,6 +2075,86 @@ def test_ratified_gene_mirrors_canon(doc_rel, pattern, sep):
         f"Canon is the home (L1 §2) — fix the mirror, then re-run "
         f"`69_chem11_aggregation_compensation.py --ratified`, because its cache measures the "
         f"sequence the mirror names.")
+
+
+# ── doc↔code: the press-fit case a contractor EXECUTES carries constants.py numbers (00_07 HW.26) ──
+# The calibration case (Додаток 3, UA + EN twins) and the FEA/Prony request quote the assembly
+# temperature, the cold extreme and the fit band of `lib/constants.py` — the inputs of `56` and of
+# THERMAL_STRESS_REPORT §4 (`thermal_interference(T_FOREST_MIN_C, T_ASSEMBLY_C, …)`). Their only guard
+# was «звірити вручну перед відправкою» — a human check that fires once, on dispatch day. The geometry
+# half of the same documents is pinned by `scripts/cem_canon_sync.rb`; this is the temperature half.
+CAL_UA = "docs/protocols/anchor/fea_aging/calibration_case_ua.md"
+CAL_EN = "docs/protocols/anchor/fea_aging/calibration_case_en.md"
+FEA_BRIEF = "docs/protocols/outreach/lock_fea_prony_brief.md"
+
+
+def _k(symbol: str, scale: float = 1.0):
+    return lambda: scale * float(_literal_in_code(symbol))
+
+
+_ASM, _COLD, _WARM = _k("T_ASSEMBLY_C"), _k("T_FOREST_MIN_C"), _k("T_FOREST_MAX_C")
+_COLD_WORD = _k("T_FOREST_MIN_C", -1.0)           # «мінус 30» / «minus 30» spells the magnitude
+_I_MIN, _I_MAX = _k("H7S6_INTERF_DIA_MIN_UM"), _k("H7S6_INTERF_DIA_MAX_UM")
+_I_MAX_RADIAL = _k("H7S6_INTERF_DIA_MAX_UM", 0.5)  # the case tabulates RADIAL interference
+
+
+def _drop():
+    return _ASM() - _COLD()
+
+
+# (label, doc, regex — one group per expected value, expected values in group order)
+_PRESS_FIT_PINS = (
+    ("cal UA assembly·cold·drop", CAL_UA,
+     r"Натяг закладено при (\d+) градусах Цельсія; охолодження в кейсі — до мінус (\d+), тобто перепад (\d+) градусів",
+     (_ASM, _COLD_WORD, _drop)),
+    ("cal UA intro cold", CAL_UA, r"охолодження до мінус (\d+) градусів Цельсія і максимальний натяг посадки",
+     (_COLD_WORD,)),
+    ("cal UA table cold", CAL_UA, r"\| Складова \(при мінус (\d+) градусах\) \|", (_COLD_WORD,)),
+    ("cal UA max fit radial", CAL_UA, r"\| Лише посадка, максимальний натяг \| (\d+,\d) мкм \|", (_I_MAX_RADIAL,)),
+    ("cal EN assembly·cold·drop", CAL_EN,
+     r"The interference is specified at (\d+) degrees Celsius; cooling in the case goes to minus (\d+), a drop of (\d+) degrees",
+     (_ASM, _COLD_WORD, _drop)),
+    ("cal EN intro cold", CAL_EN, r"cooling to minus (\d+) degrees Celsius, and the maximum fit interference",
+     (_COLD_WORD,)),
+    ("cal EN table cold", CAL_EN, r"\| Component \(at minus (\d+) degrees\) \|", (_COLD_WORD,)),
+    ("cal EN max fit radial", CAL_EN, r"\| Fit only, maximum interference \| (\d+\.\d) µm \|", (_I_MAX_RADIAL,)),
+    ("brief §2 band", FEA_BRIEF, r"смуга (\d+)–(\d+) мкм діаметрально", (_I_MIN, _I_MAX)),
+    ("brief §2 window", FEA_BRIEF, r"\| Температури \| вікно (−\d+) °C … \+(\d+) °C", (_COLD, _WARM)),
+    ("brief §9 band@assembly", FEA_BRIEF, r"\*\*Натяг:\*\* (\d+)–(\d+) мкм на діаметр, віднесено до (\d+) °C",
+     (_I_MIN, _I_MAX, _ASM)),
+    ("brief §9 window", FEA_BRIEF, r"\*\*Температури:\*\* робоче вікно від (−\d+) до \+(\d+) °C", (_COLD, _WARM)),
+    ("brief §9 worst cold", FEA_BRIEF, r"У найгіршому поєднанні \((−\d+) °C і максимальний натяг\)", (_COLD,)),
+    ("brief §9 calibration cold", FEA_BRIEF, r"гладкий вал без зубців при (−\d+) °C і максимальному натягу", (_COLD,)),
+    ("brief §10 band@assembly", FEA_BRIEF,
+     r"\*\*Interference:\*\* (\d+)–(\d+) µm on the diameter, referred to (\d+) °C", (_I_MIN, _I_MAX, _ASM)),
+    ("brief §10 window", FEA_BRIEF, r"\*\*Temperatures:\*\* operating window (−\d+) to \+(\d+) °C", (_COLD, _WARM)),
+    ("brief §10 worst cold", FEA_BRIEF, r"In the worst combination \((−\d+) °C and maximum interference\)", (_COLD,)),
+    ("brief §10 calibration cold", FEA_BRIEF, r"a smooth shaft without teeth at (−\d+) °C and maximum interference",
+     (_COLD,)),
+)
+
+
+@pytest.mark.parametrize("label,doc_rel,pattern,expected", _PRESS_FIT_PINS, ids=[p[0] for p in _PRESS_FIT_PINS])
+def test_press_fit_case_mirrors_constants(label, doc_rel, pattern, expected):
+    """Each temperature / fit-band number a contractor receives equals its `lib/constants.py` home.
+
+    CAN catch: a constant moved in code with the outgoing text left behind, or the text edited alone
+    (the assembly 20 °C, the cold −30 °C, the warm +40 °C, the 5–34 µm diametral band, its radial max).
+    CANNOT catch: whether the constants are right (−30 °C is the Cherkasy winter extreme by declaration,
+    the band is H7/r6 mislabelled H7/s6 — `constants.py` says so), nor the computed 17.9 MPa / 27.6 µm
+    results, which follow from these inputs through `56` and have no pin here. A reworded sentence shows
+    up as «anchor not found» — re-anchor, never loosen the pattern to a bare number.
+    """
+    matches = re.findall(pattern, doc(doc_rel))
+    assert len(matches) == 1, (
+        f"[{label}] anchor matched {len(matches)}× in {doc_rel} — pattern {pattern!r}; re-anchor it "
+        f"(reworded) or tighten it (ambiguous).")
+    got = matches[0] if isinstance(matches[0], tuple) else (matches[0],)
+    for raw, want in zip(got, expected, strict=True):
+        assert abs(_to_float(raw.replace(",", ".")) - want()) < 1e-9, (
+            f"[{label}] PRESS-FIT DRIFT: {doc_rel} says {raw} but {CONSTANTS} gives {want():g}. "
+            f"The constant is the home (it feeds `56` and THERMAL_STRESS_REPORT §4) — fix the text, "
+            f"or, if the constant moved on purpose, re-run `56` and re-read the case's results first.")
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
@@ -2146,7 +2231,8 @@ def _doc_targets() -> set[str]:
     declared full coverage while that doc could drift from the code mirror unwatched. The set is
     taken from every source of doc-reads in the file, and a new source belongs here the same day.
     """
-    return {row[1] for row in CHECKS} | {d[0] for d in _RATIFIED_GENE_DECLARATIONS}
+    return ({row[1] for row in CHECKS} | {d[0] for d in _RATIFIED_GENE_DECLARATIONS}
+            | {p[1] for p in _PRESS_FIT_PINS})
 
 
 def test_every_doc_target_triggers_this_guard():

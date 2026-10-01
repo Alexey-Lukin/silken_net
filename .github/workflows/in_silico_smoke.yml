@@ -33,6 +33,8 @@ on:
       - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
       - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
       - 'docs/protocols/procurement/ebfc_chem_rfq.md'
+      - 'docs/protocols/anchor/fea_aging/calibration_case_*.md'
+      - 'docs/protocols/outreach/lock_fea_prony_brief.md'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -62,6 +64,8 @@ jobs:
               - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
               - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
               - 'docs/protocols/procurement/ebfc_chem_rfq.md'
+              - 'docs/protocols/anchor/fea_aging/calibration_case_*.md'
+              - 'docs/protocols/outreach/lock_fea_prony_brief.md'
               - '.github/workflows/in_silico_smoke.yml'
 
   lock_sync:
