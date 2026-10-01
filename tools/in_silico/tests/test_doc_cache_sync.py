@@ -2027,6 +2027,8 @@ CHECKS += [
      STAND, rf"медіана \*\*{N}\*\*, P90", SITE, lambda d: d["dew"]["liquid_t2m_above_0"]["hours_per_dew_night_median"], 0.05),
     ("HW.25 · stand §7 p.4 dew hours per night, P90 → site_rain_dew.json",
      STAND, rf"P90 \*\*{N}\*\*\. Ночі з T2m", SITE, lambda d: d["dew"]["liquid_t2m_above_0"]["hours_per_dew_night_p90"], 0.05),
+    ("HW.6 · 01_04 §3.5 sustained-crossing rule, return length → site_rain_dew.json run_days",
+     CODIT, rf"останнього повернення нижче нього на ≥ {N} діб", SITE, lambda d: d["inputs"]["ours"]["run_days"], 0.5),
 ]
 
 # Calendar dates are not numbers `N` can read, so they get their own pin: (label, doc, regex with ONE

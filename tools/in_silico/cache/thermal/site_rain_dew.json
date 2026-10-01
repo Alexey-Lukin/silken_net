@@ -8,8 +8,10 @@
       "wet_day_mm": 1.0,
       "dew_spread_c": 1.0,
       "dew_rh_pct": 95.0,
-      "night_hours_local": "20:00-06:59",
-      "run_days": 5
+      "night_hours": "20:00-06:59 UTC+3 (Open-Meteo's fixed offset, no DST; in winter civil 19:00-05:59)",
+      "run_days": 5,
+      "season_anchor_doy": 182,
+      "crossing": "sustained: spring = first day of the first run ≥ run_days after the last return below lasting ≥ run_days, searched to season_anchor_doy; autumn = the mirror"
     }
   },
   "rain": {
@@ -56,96 +58,96 @@
       "hours_per_dew_night_p90": 11.0,
       "hours_per_year": 148.0
     },
-    "criterion": "night hour 20:00–06:59 local with T2m − Td ≤ 1.0 °C or RH ≥ 95.0 %; a night belongs to the date of its evening"
+    "criterion": "night hour 20:00–06:59 UTC+3 (Open-Meteo's fixed offset, no DST; in winter civil 19:00–05:59) with T2m − Td ≤ 1.0 °C or RH ≥ 95.0 %; a night belongs to the date of its evening"
   },
   "season": {
     "soil_7_28cm_ge_3.5C_spring": {
-      "doy_p10": 58.8,
-      "doy_median": 86.0,
+      "doy_p10": 76.9,
+      "doy_median": 89.5,
       "doy_p90": 95.7,
-      "date_p10": "02-28",
-      "date_median": "03-27",
+      "date_p10": "03-18",
+      "date_median": "03-31",
       "date_p90": "04-06",
-      "earliest": "01-10",
+      "earliest": "03-04",
       "latest": "04-15",
       "n_years": 30
     },
     "soil_7_28cm_implied_cambial_onset": {
-      "doy_p10": 68.4,
-      "doy_median": 95.6,
+      "doy_p10": 86.5,
+      "doy_median": 99.1,
       "doy_p90": 105.3,
-      "date_p10": "03-09",
-      "date_median": "04-06",
+      "date_p10": "03-27",
+      "date_median": "04-09",
       "date_p90": "04-15",
-      "earliest": "01-20",
+      "earliest": "03-14",
       "latest": "04-25",
       "rule": "spring crossing + 9.6 d (Belokopytova et al. 2026; their SE ± 1.1 d not swept)"
     },
     "soil_0_7cm_ge_3.5C_spring": {
-      "doy_p10": 58.6,
-      "doy_median": 79.5,
-      "doy_p90": 91.3,
-      "date_p10": "02-28",
-      "date_median": "03-21",
-      "date_p90": "04-01",
-      "earliest": "01-11",
+      "doy_p10": 66.8,
+      "doy_median": 86.5,
+      "doy_p90": 94.7,
+      "date_p10": "03-08",
+      "date_median": "03-27",
+      "date_p90": "04-05",
+      "earliest": "03-03",
       "latest": "04-12",
       "n_years": 30
     },
     "soil_0_7cm_implied_cambial_onset": {
-      "doy_p10": 68.2,
-      "doy_median": 89.1,
-      "doy_p90": 100.9,
-      "date_p10": "03-09",
-      "date_median": "03-30",
-      "date_p90": "04-11",
-      "earliest": "01-21",
+      "doy_p10": 76.4,
+      "doy_median": 96.1,
+      "doy_p90": 104.3,
+      "date_p10": "03-17",
+      "date_median": "04-06",
+      "date_p90": "04-14",
+      "earliest": "03-13",
       "latest": "04-22",
       "rule": "spring crossing + 9.6 d (Belokopytova et al. 2026; their SE ± 1.1 d not swept)"
     },
     "air_mean_ge_8C": {
       "spring": {
-        "doy_p10": 80.8,
-        "doy_median": 94.0,
-        "doy_p90": 110.2,
-        "date_p10": "03-22",
-        "date_median": "04-04",
-        "date_p90": "04-20",
-        "earliest": "03-04",
-        "latest": "04-25"
+        "doy_p10": 90.9,
+        "doy_median": 97.0,
+        "doy_p90": 115.0,
+        "date_p10": "04-01",
+        "date_median": "04-07",
+        "date_p90": "04-25",
+        "earliest": "03-22",
+        "latest": "04-27"
       },
       "autumn": {
-        "doy_p10": 283.9,
-        "doy_median": 298.5,
-        "doy_p90": 317.0,
-        "date_p10": "10-11",
-        "date_median": "10-25",
-        "date_p90": "11-13",
-        "earliest": "10-09",
-        "latest": "11-21"
+        "doy_p10": 273.0,
+        "doy_median": 287.5,
+        "doy_p90": 300.1,
+        "date_p10": "09-30",
+        "date_median": "10-15",
+        "date_p90": "10-27",
+        "earliest": "09-26",
+        "latest": "11-02"
       },
       "n_years": 30
     },
     "air_mean_ge_9C": {
       "spring": {
-        "doy_p10": 93.9,
-        "doy_median": 103.5,
-        "doy_p90": 114.0,
+        "doy_p10": 94.0,
+        "doy_median": 107.0,
+        "doy_p90": 118.0,
         "date_p10": "04-04",
-        "date_median": "04-14",
-        "date_p90": "04-24",
-        "earliest": "03-22",
-        "latest": "04-30"
+        "date_median": "04-17",
+        "date_p90": "04-28",
+        "earliest": "04-03",
+        "latest": "05-05"
       },
       "autumn": {
-        "doy_p10": 281.0,
-        "doy_median": 291.0,
-        "doy_p90": 310.3,
-        "date_p10": "10-08",
-        "date_median": "10-18",
-        "date_p90": "11-06",
-        "earliest": "10-03",
-        "latest": "11-17"
+        "doy_p10": 268.9,
+        "doy_median": 283.5,
+        "doy_p90": 294.3,
+        "date_p10": "09-26",
+        "date_median": "10-11",
+        "date_p90": "10-21",
+        "earliest": "09-16",
+        "latest": "10-29"
       },
       "n_years": 30
     }
@@ -154,9 +156,11 @@
     "a ~0.25° reanalysis cell: downpours smoothed (intensity percentiles LOW), drizzle over-produced (≥ 0.1 mm fraction HIGH)",
     "air at 2 m, not the coupon face or the bark: a radiating surface collects dew on more nights",
     "open-field soil, not forest soil under canopy and litter, which warms later in spring",
-    "thresholds are of xylogenesis from other sites and climates, not of resin pressure (the subject of 01_04 §3.5)"
+    "thresholds are of xylogenesis from other sites and climates, not of resin pressure (the subject of 01_04 §3.5)",
+    "crossing dates are as sharp as our rule (run_days, the anchor, «sustained»): a shorter return below is absorbed, a longer one moves the date; the sources dated onset and end from observed cambium, not from a temperature series, so another defensible rule moves these dates — the P10 and the earliest years most",
+    "the clock is a fixed UTC+3 (no DST): the night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and daily rain sums and soil means are cut at UTC+3 midnight"
   ],
   "rain_prose": "Days with ≥ 1 mm: 27% (99.4 a year); on them the day's hourly-mean intensity has median 0.44 and P90 1.0 mm/h (max 4.6). ERA5 smooths downpours, so the percentiles are a LOWER bound on the intensity a coupon meets.",
   "dew_prose": "Dew nights (air criterion, T2m > 0 °C): 88.4 a year (24% of nights), median 5.0 h and P90 11.0 h of dew-point hours per such night; air at 2 m, not the coupon face.",
-  "season_prose": "Soil 7–28 cm reaches 3.5 °C (5-day run) at median 03-27 (P10–P90 02-28–04-06), implying cambial onset near 04-06 by the Siberian lead; daily mean air ≥ 8–9 °C begins at median 04-04–04-14 and ends at 10-18–10-25. These are xylogenesis thresholds from other sites, not resin pressure, and open-field soil warms earlier than forest soil."
+  "season_prose": "Soil 7–28 cm reaches 3.5 °C sustainedly (the first 5-day run after the last 5-day return below) at median 03-31 (P10–P90 03-18–04-06), implying cambial onset near 04-09 by the Siberian lead; daily mean air ≥ 8–9 °C sustainedly begins at median 04-07–04-17 and ends at 10-11–10-15. These are xylogenesis thresholds from other sites, not resin pressure, and open-field soil warms earlier than forest soil."
 }

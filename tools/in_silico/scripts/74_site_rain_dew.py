@@ -25,11 +25,16 @@ SOURCES — the data and the thresholds are separate claims with separate owners
 OPERATIONALISATIONS THAT ARE OURS (each one moves a number; none is the source's):
   • a wet day is ≥ 1.0 mm (the common climatological convention; ≥ 0.1 mm is reported beside it, because
     ERA5 drizzles), and intensity on a wet day is sum / precipitation_hours — an HOURLY MEAN of that day;
-  • a dew hour is a NIGHT hour (20:00–06:59 local) with T2m − Td ≤ 1 °C or RH ≥ 95 %, split by T2m > 0 °C
-    (liquid — what the stand reproduces) ⊥ ≤ 0 °C (hoar frost — outside the stand's base); a dew night is a
-    night with at least one dew hour, and the night belongs to the date of its evening;
-  • a threshold is «crossed» in spring on the first day of the first run of RUN_DAYS consecutive days at
-    or above it, and «left» in autumn on the last day of the last such run.
+  • a dew hour is a NIGHT hour (20:00–06:59 UTC+3 — Open-Meteo's fixed offset, no DST; in winter that is
+    civil 19:00–05:59) with T2m − Td ≤ 1 °C or RH ≥ 95 %, split by T2m > 0 °C (liquid — what the stand
+    reproduces) ⊥ ≤ 0 °C (hoar frost — outside the stand's base); a dew night is a night with at least one
+    dew hour, and the night belongs to the date of its evening;
+  • a threshold is «crossed» in spring SUSTAINEDLY: on the first day of the first run of ≥ RUN_DAYS
+    consecutive days at or above it that starts after the last return below it lasting ≥ RUN_DAYS, both
+    searched up to SEASON_ANCHOR_DOY (≈ 1 July); a shorter dip does not break the season. «Left» in autumn
+    is the mirror: the last day of the last such run that ends before the first return below lasting
+    ≥ RUN_DAYS after the anchor. Counting from 1 January / to 31 December instead takes a winter thaw for
+    spring and a warm wave after weeks of cold for the end of the season.
 
 CEILINGS — what these numbers are NOT (the same text rides into the cache):
   • a ~0.25° reanalysis cell, not the plot: convective downpours are smoothed, so the intensity
@@ -39,7 +44,17 @@ CEILINGS — what these numbers are NOT (the same text rides into the cache):
   • open-field soil, not forest soil under a canopy and litter, which warms later in spring;
   • the thresholds come from other sites and climates (Siberian southern limit; Alpine/boreal/Canadian
     sites), and they are thresholds of XYLOGENESIS (cambium), not of resin pressure — the subject of 01_04
-    §3.5 is resin, and no primary in the tree ties its seasonality to a temperature.
+    §3.5 is resin, and no primary in the tree ties its seasonality to a temperature;
+  • the crossing dates are as sharp as the rule that makes them, and the rule is ours (RUN_DAYS, the
+    anchor, «sustained»): a return below shorter than RUN_DAYS is absorbed into the season, a longer one
+    moves the date. The sources dated onset and end from observed cambium, not from a temperature series,
+    so another defensible rule moves these dates — the P10 and the earliest years most, being made of the
+    early thaws and false starts the rule has to judge;
+  • the clock is a fixed UTC+3 (Open-Meteo applies one offset to the whole series, no DST — the CSV
+    headers say 10800 s, and the hours run through the DST-change days with no gap and no repeat): the
+    night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and the daily rain sums and soil means
+    are cut at UTC+3 midnight (the committed daily air-mean file kept no header, so its day boundary is
+    not verified).
 
     ~/miniforge3/envs/silken_md/bin/python tools/in_silico/scripts/74_site_rain_dew.py
 """
@@ -65,8 +80,10 @@ WET_DAY_MM = 1.0
 WET_DAY_MM_LOOSE = 0.1
 DEW_SPREAD_C = 1.0
 DEW_RH_PCT = 95.0
+# 20:00–06:59 UTC+3 (Open-Meteo's fixed offset, no DST; in winter civil 19:00–05:59) — stamps NOT converted
 NIGHT_HOURS = set(range(20, 24)) | set(range(0, 7))
 RUN_DAYS = 5
+SEASON_ANCHOR_DOY = 182      # ≈ 1 July: spring is searched before it, autumn after it
 SOIL_ONSET_C = 3.5            # Belokopytova et al. 2026, soil at 20 cm
 SOIL_LEAD_DAYS = 9.6          # same source: soil date precedes cambial onset by 9.6 ± 1.1 d
 AIR_MEAN_THRESHOLDS_C = (8.0, 9.0)   # Rossi et al. 2008, daily mean, onset ≈ end
@@ -136,7 +153,8 @@ def dew(hd, ht):
                       "fraction_of_nights": round(len(per_night) / all_nights, 3),
                       "hours_per_dew_night_median": pct(hours, 50), "hours_per_dew_night_p90": pct(hours, 90),
                       "hours_per_year": round(float(c.sum()) / n_years, 0)}
-    out["criterion"] = (f"night hour 20:00–06:59 local with T2m − Td ≤ {DEW_SPREAD_C} °C or RH ≥ {DEW_RH_PCT} %; "
+    out["criterion"] = ("night hour 20:00–06:59 UTC+3 (Open-Meteo's fixed offset, no DST; in winter civil "
+                        f"19:00–05:59) with T2m − Td ≤ {DEW_SPREAD_C} °C or RH ≥ {DEW_RH_PCT} %; "
                         "a night belongs to the date of its evening")
     return out
 
@@ -158,14 +176,27 @@ def _runs(mask):
 
 
 def crossings(dates, values, thr):
-    """Per year: spring crossing (first day of first run ≥ thr) and autumn leaving (last day of last run)."""
+    """Per year: the SUSTAINED spring crossing and autumn leaving around SEASON_ANCHOR_DOY.
+
+    Spring = the first day of the first run ≥ thr that starts after the last ≥ RUN_DAYS return below thr
+    starting by the anchor; autumn = its mirror, the last day of the last run ≥ thr that ends before the
+    first ≥ RUN_DAYS return below ending after the anchor. A year with no such crossing on either side
+    is skipped, which `n_years` shows."""
     rows = {}
+    anchor = SEASON_ANCHOR_DOY - 1                       # index of the anchor day in a whole year
     for y in sorted({d.year for d in dates}):
         idx = [i for i, d in enumerate(dates) if d.year == y]
-        runs = _runs(values[idx] >= thr)
-        if not runs:
+        if len(idx) < 365 or dates[idx[0]].timetuple().tm_yday != 1:
+            raise RuntimeError(f"{y} is not a whole year — the anchor index would point at the wrong day")
+        above = values[idx] >= thr
+        warm, cold = _runs(above), _runs(~above)
+        last_cold = max((s for s, _e in cold if s <= anchor), default=-1)
+        first_cold = min((e for _s, e in cold if e >= anchor), default=len(idx))
+        spring = next((s for s, _e in warm if last_cold < s <= anchor), None)
+        autumn = max((e for _s, e in warm if anchor <= e < first_cold), default=None)
+        if spring is None or autumn is None:
             continue
-        rows[y] = (dates[idx[runs[0][0]]].timetuple().tm_yday, dates[idx[runs[-1][1]]].timetuple().tm_yday)
+        rows[y] = (dates[idx[spring]].timetuple().tm_yday, dates[idx[autumn]].timetuple().tm_yday)
     spring = np.array([v[0] for v in rows.values()])
     autumn = np.array([v[1] for v in rows.values()])
     return spring, autumn, len(rows)
@@ -218,10 +249,11 @@ def main() -> int:
     soil = s[f"soil_7_28cm_ge_{SOIL_ONSET_C}C_spring"]
     onset = s["soil_7_28cm_implied_cambial_onset"]
     a8, a9 = s["air_mean_ge_8C"], s["air_mean_ge_9C"]
-    season_prose = (f"Soil 7–28 cm reaches {SOIL_ONSET_C} °C (5-day run) at median {soil['date_median']} "
+    season_prose = (f"Soil 7–28 cm reaches {SOIL_ONSET_C} °C sustainedly (the first {RUN_DAYS}-day run after the "
+                    f"last {RUN_DAYS}-day return below) at median {soil['date_median']} "
                     f"(P10–P90 {soil['date_p10']}–{soil['date_p90']}), implying cambial onset near "
-                    f"{onset['date_median']} by the Siberian lead; daily mean air ≥ 8–9 °C begins at median "
-                    f"{a8['spring']['date_median']}–{a9['spring']['date_median']} and ends at "
+                    f"{onset['date_median']} by the Siberian lead; daily mean air ≥ 8–9 °C sustainedly begins "
+                    f"at median {a8['spring']['date_median']}–{a9['spring']['date_median']} and ends at "
                     f"{a9['autumn']['date_median']}–{a8['autumn']['date_median']}. These are xylogenesis "
                     f"thresholds from other sites, not resin pressure, and open-field soil warms earlier than "
                     f"forest soil.")
@@ -235,7 +267,10 @@ def main() -> int:
             "soil_threshold": "Belokopytova et al. 2026, Plants 15:1933, doi:10.3390/plants15131933 — soil 20 cm ≥ 3.5 °C, lead 9.6 ± 1.1 d (Pinus sylvestris, Siberia)",
             "air_thresholds": "Rossi et al. 2008, Global Ecol. Biogeogr. 17:696, doi:10.1111/j.1466-8238.2008.00417.x — daily mean ≈ 8–9 °C at onset and end (7 conifer species)",
             "ours": {"wet_day_mm": WET_DAY_MM, "dew_spread_c": DEW_SPREAD_C, "dew_rh_pct": DEW_RH_PCT,
-                     "night_hours_local": "20:00-06:59", "run_days": RUN_DAYS},
+                     "night_hours": "20:00-06:59 UTC+3 (Open-Meteo's fixed offset, no DST; in winter civil 19:00-05:59)",
+                     "run_days": RUN_DAYS, "season_anchor_doy": SEASON_ANCHOR_DOY,
+                     "crossing": "sustained: spring = first day of the first run ≥ run_days after the last return "
+                                 "below lasting ≥ run_days, searched to season_anchor_doy; autumn = the mirror"},
         },
         "rain": r,
         "dew": d,
@@ -245,6 +280,11 @@ def main() -> int:
             "air at 2 m, not the coupon face or the bark: a radiating surface collects dew on more nights",
             "open-field soil, not forest soil under canopy and litter, which warms later in spring",
             "thresholds are of xylogenesis from other sites and climates, not of resin pressure (the subject of 01_04 §3.5)",
+            "crossing dates are as sharp as our rule (run_days, the anchor, «sustained»): a shorter return below is absorbed, "
+            "a longer one moves the date; the sources dated onset and end from observed cambium, not from a temperature "
+            "series, so another defensible rule moves these dates — the P10 and the earliest years most",
+            "the clock is a fixed UTC+3 (no DST): the night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and "
+            "daily rain sums and soil means are cut at UTC+3 midnight",
         ],
         "rain_prose": rain_prose,
         "dew_prose": dew_prose,

@@ -78,3 +78,9 @@ ERA5's first two layers (0–7 and 7–28 cm): layer means, not depths.
 - **Dew from the air, not from a surface.** T2m − Td and RH at 2 m say when the AIR is near saturation;
   a radiating coupon face or bark gets dew on more nights than that.
 - **Open-field soil.** Forest soil under canopy and litter warms later in spring than a reanalysis cell.
+- **A fixed UTC+3 clock, not civil Kyiv time.** The queries ask for `timezone=Europe/Kyiv`, but the response
+  applies one offset to all 30 years: both CSV headers here (and the older hourly file's) say
+  `utc_offset_seconds` 10800 · `GMT+3`, and the hours run through the DST-change days with no gap and no
+  repeat (2010-03-28T03:00 is present, 2010-10-31 has no doubled hour). So `74`'s night window 20:00–06:59
+  is UTC+3 — civil 19:00–05:59 in winter — and every day of these two files is cut at UTC+3 midnight. The
+  stamps are used as delivered, not converted.
