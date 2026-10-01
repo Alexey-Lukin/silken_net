@@ -82,10 +82,14 @@ echo "▶ $("$CPPCHECK" --version) — gating soldier + queen + common + sim (Co
 # не аналізувався взагалі (позитивний контроль 2026-10-01: null-deref, вписаний у
 # ds18b20.h, лишав цей гейт зеленим). Такі заголовки ВИЧИСЛЮЄМО, а не перелічуємо —
 # список гнив би з кожним новим модулем — і ганяємо явними файлами як C.
+# ⚠️ Here-string, НЕ `< <(…)`: pre-push кличе цей файл як `sh …`, а /bin/sh на macOS —
+# bash 3.2 у POSIX-режимі, де підстановки процесу немає (2026-10-01: синтаксична помилка
+# в хуку при зеленому прогоні через shebang).
 UNREACHED=()
 while IFS= read -r h; do
+  [[ -n "$h" ]] || continue
   grep -rqE "#include +\"([^\"]*/)?$(basename "$h")\"" "${SOURCES[@]}" || UNREACHED+=("$h")
-done < <(find "${SOURCES[@]}" -name '*.h' | sort)
+done <<< "$(find "${SOURCES[@]}" -name '*.h' | sort)"
 if [[ ${#UNREACHED[@]} -gt 0 ]]; then
   echo "▶ header-only modules no perimeter .c includes: ${UNREACHED[*]}"
   "$CPPCHECK" "${ARGS[@]}" --language=c "${UNREACHED[@]}"
