@@ -6,8 +6,10 @@ L3 step 2c — DFT geometry optimization of [Os(bpy)₂(1-MeIm)Cl]ⁿ⁺.
 ⛔ TERMINATED — DO NOT RE-RUN ON THIS RATIONALE (6-12 h). The Cl displacement never converges the GAU
 criterion (flat PES), and the measured LUMO change was <0.002 eV after 30 cycles — two orders of
 magnitude below the 0.1-0.3 eV predicted just below. The verdict did NOT strengthen: raw DFT stays
-uphill in every method, and the gap is now decomposed by 34/34b instead. The programmatic geometry of
-21b is sufficient. See PIPELINE_STATUS 'Terminated / Closed'; the block below is the ORIGINAL
+uphill in every method, and the gap is now decomposed by 34/34b instead. That does NOT
+prove the programmatic geometry of 21b sufficient: the <0.002 eV was cycles 11→30 of a run that never
+converged, and 21b's targets are a named assumption compared with crystals of related Os centres
+(paper §2.3, 09_references). See PIPELINE_STATUS 'Terminated / Closed'; the block below is the ORIGINAL
 hypothesis, kept as the record of what was expected and did not happen.
 
 Refines the programmatic geometry from script 21b by running a full

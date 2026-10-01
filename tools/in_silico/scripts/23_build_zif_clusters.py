@@ -12,7 +12,7 @@ Each cluster: two metal centers bridged by a 2-methylimidazolate linker,
 with additional terminal imidazolate ligands for tetrahedral coordination.
 
 Geometry: programmatic octahedral/tetrahedral placement (same approach as
-script 21b for Os-bpy). Metal-N distances from crystallographic data.
+script 21b for Os-bpy). Metal-N distances: ASSUMED typical values (no crystallographic primary is cited in the tree).
 
 🔴 **This model is COPLANAR by construction, and that is a hard limit, not a detail**
 (measured 2026-09-21 while pricing the CHEM.35 benzimidazolate bridge, `01_03 §3.2`).

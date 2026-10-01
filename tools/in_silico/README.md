@@ -93,6 +93,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 72 | `72_paper_supporting_information.py` | Стаття 1 Supporting Information — a generated MANIFEST of the committed tree (recorded env + lock · every script/lib/test · every committed cache · input data · coordinates incl. the AF3 carve-out · figures with their renderer), sha256 per file; `--bundle out/si [--zip]` copies the set for upload; pinned to its output by `test_paper_si_matches_its_generator` | ~1 s |
 | 73 | `73_collar_wall_inversion.py` | HW.33: what wall the bayonet collar needs — by INVERSION, because the retention FORCE has no home in canon (02_02 §4.1 lists requirements without one, and `52`'s 100 N is a deliberately generous BOUND for a different question, not a measurement). Three load cases: collar ring in axial tension · lug-root shear · CONFINED ICE at its self-limiting ceiling (ice I/III/liquid triple point). Verdict: static does not size the wall (printability does), ice does — and not by thickness, so drainage is the only lever | ~1 s |
 | 74 | `74_site_rain_dew.py` | HW.25 + HW.6: site climate of the Cherkasy ERA5 grid point 1991–2020 — wet-day share and wet-day intensity, dew nights and hours (air criterion) for the rain/dew stand, and the dates at which published xylogenesis thresholds (soil 3.5 °C, air 8–9 °C) are crossed SUSTAINEDLY (a winter thaw is not spring, a warm wave after weeks of cold is not the end of the season), for the install season; an orientation and an input, never a stand regime or a window | ~1 s |
+| 75 | `75_pcm_ecp_radius_attribution.py` | HW.5.IS: attributes the conda-lock gap of the metal-in-PCM couples to the PCM ECP-radius fix of PySCF 2.13.0 (PR #3159) — the `21f` B3LYP couple in the recorded 2.11.0 with the fix EMULATED, and [Os(H2O)6]2+/3+ as 2.11.0 as-is ⊥ fix emulated ⊥ the lock interpreter; reads `cache/reproduction/lock_rerun_2026-10-01.json`, writes `cache/reproduction/pcm_ecp_radius_attribution.json`; needs `--lock-python` | ~36 min |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —
@@ -128,7 +129,7 @@ The cache file is committed (small, deterministic). MD trajectories under
 Re-run records live under `cache/reproduction/` (e.g. `lock_rerun_2026-09-30.json`):
 field-by-field deltas of a committed cache re-computed under another environment (the
 conda-lock). They back the paper's §2.7 reproducibility statement and are listed in the SI
-manifest; no pipeline script reads them, and the committed caches stay untouched.
+manifest; only `75` reads one of them (`lock_rerun_2026-10-01.json`, to attribute its gap) and writes its own record beside it, and the committed caches stay untouched.
 
 ---
 
