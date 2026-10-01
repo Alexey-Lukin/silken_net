@@ -93,7 +93,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-from lib.constants import CACHE_DIR, REPO_ROOT
+from lib.constants import BQ25570_VIN_CS_TYP_MV, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
 # Reuse script 54's exact ladder helpers, λ set, frozen geometry and −2.0 °C gate (digit-leading
@@ -115,7 +115,7 @@ ZT_MODULE = 0.7
 ZT_BRACKET = (0.5, 1.0)
 S_LEG_V_K = 200e-6                 # V/K per leg
 COUPLE_DENSITY_MM2 = 0.08          # couples per mm² (127-couple / 40×40 mm form factor) — ASSUMPTION
-VIN_CS_MV = 600.0                  # BQ25570 cold-start VIN(CS) typ., `02_03 §1.5` / HW.46
+VIN_CS_MV = BQ25570_VIN_CS_TYP_MV  # BQ25570 cold-start VIN(CS) typ. — shared lib (Critical Rule #1), `02_03 §1.5` / HW.46
 TARGET_UW = (50.0, 200.0)          # HW.21's own winter harvest target (µW) — the band the residual is judged against
 # Bus-Ø robustness bound. Script 54 now carries the canon rod (lib.constants D_BUS_ROD_MM, 01_01 §1.4);
 # the Ø1.35 cathode CHANNEL is the physical upper bound on how fat that rod could ever be, so sweeping to
