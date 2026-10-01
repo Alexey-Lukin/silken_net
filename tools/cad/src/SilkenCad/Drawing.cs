@@ -425,13 +425,12 @@ internal static class Drawing
     }
 
     // ── Cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. FRONT (pogo
-    // face: flange Ø + concept GND pad + PEEK isolation ring + bore + bayonet lugs) + SIDE (flange↦shank
+    // face: flange Ø + PEEK isolation ring counted from the anode wire end + bore + bayonet lugs) + SIDE (flange↦shank
     // T-profile, axis horizontal). Same CEM-native pipeline as the Ti-coin; reuses every primitive. ──
     public static string CathodeFlange(CathodeFlangeCem cem, string sha, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rFlange = cem.FlangeDiameterMm / 2.0 * Px;
-        double rPad = cem.CentralPadDiameterMm / 2.0 * Px;
-        double rIso = (cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm) * Px;
+        double rIso = IsolationRingRadiusMm(cem) * Px;
         double rBore = cem.BoreDiameterMm / 2.0 * Px;
         double rLug = cem.LugRadiusMm * Px;
         double lugOut = rFlange + cem.LugProtrusionMm * Px;          // lug centreline radius
@@ -443,30 +442,25 @@ internal static class Drawing
         b.AppendLine(Text(20, 30, "CATHODE FLANGE  (Деталь 3 · Zone 3)", 15, "start", Stroke, "bold"));
         b.AppendLine(Text(20, 46, "Capsule-side anchor end · pogo face + bayonet · 01_01 §1 · 02_02 §1.2", 10, "start", "#555"));
 
-        // FRONT — bayonet lugs (behind) → flange → PEEK iso ring (dashed) → concept GND pad (dashed) → bore → centre
+        // FRONT — bayonet lugs (behind) → flange → PEEK iso ring (dashed) → bore → centre
         for (int i = 0; i < cem.BayonetLugs; i++)
         {
             double ang = (Math.PI * 2 * i / cem.BayonetLugs) - Math.PI / 2;     // first lug at top
             b.AppendLine(Circle(frontCx + lugOut * Math.Cos(ang), cy + lugOut * Math.Sin(ang), rLug, Stroke, 1.0));
         }
         b.AppendLine(Circle(frontCx, cy, rFlange, Stroke, 1.2));
-        b.AppendLine(Circle(frontCx, cy, rIso, Dim, 0.8, "4 2"));
-        b.AppendLine(Circle(frontCx, cy, rPad, Dim, 0.8, "4 2"));
+        if (rIso > 0) b.AppendLine(Circle(frontCx, cy, rIso, Dim, 0.8, "4 2"));
         b.AppendLine(Circle(frontCx, cy, rBore, Stroke, 0.8));
         b.AppendLine(Centre(frontCx, cy, rFlange, b));
         b.AppendLine(Text(frontCx, cy + rFlange + 46, "FRONT (pogo face)", 10, "middle", "#555"));
         HDim(b, frontCx - rFlange, frontCx + rFlange, cy + rFlange + 24, $"Ø{N(cem.FlangeDiameterMm)}", cy + rFlange);
-        // The pad is the concept «≈4–5» of 02_02 §1.3, not a feature of this part: canon §1.2 makes the anode contact the
-        // END of the bus wire in the bore, and everything around the bore on this face is cathode metal — so a sheet that
-        // draws the pad as a contour hands the shop a gold spot at the wrong polarity. ⚖️ 2026-09-18 (00_07 HW.34, isolation
-        // in the pad plane): the pad is the Ø1.0 wire end with a PEEK ring Ø ≥ 4.0 around it; that geometry waits on the
-        // pogo pin P/N (HW.9), and until it lands both readers call the concept pad absent, like the ring below.
-        b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad (concept) · NOT IN GEOMETRY", 9, "start", Dim));
-        // The ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (the top face is solid Ti to the bore
-        // edge). How to meet it is ratified (⚖️ 2026-09-18, 00_07 HW.34: a countersink with a flush PEEK ring Ø ≥ 4.0
-        // around the channel exit) but its geometry waits on the pogo pin P/N (HW.9) — so the sheet labels it absent,
-        // never as a feature.
-        b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"iso ring ≥{N(cem.IsolationRingWidthMm)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
+        // This part has NO pad: the anode contact is the END of the bus wire in the bore, and everything around the bore on
+        // this face is cathode metal — the concept «Ø4–5 pad» of 02_02 §1.3 is no geometry, so it is not drawn (a contour
+        // there hands the shop a gold spot at the wrong polarity). The PEEK ring of 02_02 §1.2 is counted from the WIRE END
+        // (Ø ≥ wire + 2 × width, ⚖️ 2026-09-18, 00_07 HW.34) and is a REQUIREMENT CathodeFlange.cs does not model (solid Ti
+        // to the bore edge; its countersink waits on the pogo pin P/N, HW.9) — so the sheet labels it absent, never a feature.
+        b.AppendLine(Text(frontCx + rBore + 5, cy - 3, $"anode = bus wire end {WireLabel(cem)} (not this part)", 9, "start", Dim));
+        b.AppendLine(Text(frontCx + Math.Max(rIso, rBore) + 5, cy + 12, $"PEEK ring {RingLabel(cem)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
         b.AppendLine(Text(frontCx + lugOut - rLug, cy - lugOut - rLug - 3, $"{cem.BayonetLugs}× bayonet lug", 9, "middle", Dim));
 
         // O-ring groove — the capsule's ONE face seal (02_02 §3.2/§3.5, 00_07 HW.33 branch (а), applied
@@ -542,20 +536,18 @@ internal static class Drawing
         var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
         var nte = new Layer("NOTES") { Color = AciColor.Cyan };
 
-        double rF = cem.FlangeDiameterMm / 2.0, rP = cem.CentralPadDiameterMm / 2.0;
-        double rIso = cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm, rB = cem.BoreDiameterMm / 2.0;
+        double rF = cem.FlangeDiameterMm / 2.0;
+        double rIso = IsolationRingRadiusMm(cem), rB = cem.BoreDiameterMm / 2.0;
         double rL = cem.LugRadiusMm, lugOut = rF + cem.LugProtrusionMm;
         double t = cem.FlangeThicknessMm, shD = cem.ShankDiameterMm, shL = cem.ShankLengthMm, cx = 0, cy = 0;
 
-        // FRONT — flange + iso ring + pad + bore + centre + lugs
+        // FRONT — flange + iso ring + bore + centre + lugs (no pad: the anode contact is the wire end in the bore, 00_07 HW.34)
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rF) { Layer = geo });
         // NOTES layer, not GEOMETRY: the ring is a 02_02 §1.2 requirement the part does not have (00_07 HW.34), and a CAD
         // reader takes a GEOMETRY-layer circle as a contour to machine.
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = nte });
-        doc.Entities.Add(new Text($"iso ring >={N(cem.IsolationRingWidthMm)} REQUIRED - NOT IN GEOMETRY", new Vector2(cx + rIso + 1, cy + 1), 1.2) { Layer = nte });
-        // NOTES too: the concept pad is no contour of this part (the anode contact is the wire end in the bore, 00_07 HW.34).
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rP) { Layer = nte });
-        doc.Entities.Add(new Text($"GND pad %%c{N(cem.CentralPadDiameterMm)} (concept) - NOT IN GEOMETRY", new Vector2(cx + rP + 1, cy - 2), 1.2) { Layer = nte });
+        if (rIso > 0) doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = nte });
+        doc.Entities.Add(new Text(DxfSafe($"PEEK ring {RingLabel(cem)} REQUIRED · NOT IN GEOMETRY"), new Vector2(cx + Math.Max(rIso, rB) + 1, cy + 1), 1.2) { Layer = nte });
+        doc.Entities.Add(new Text(DxfSafe($"anode = bus wire end {WireLabel(cem)} (not this part)"), new Vector2(cx + rB + 1, cy - 2), 1.2) { Layer = nte });
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rB) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx - rF - 2, cy), new Vector2(cx + rF + 2, cy)) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx, cy - rF - 2), new Vector2(cx, cy + rF + 2)) { Layer = geo });
@@ -1056,6 +1048,22 @@ internal static class Drawing
     // ТЕХНІЧНІ гліфи з однозначним ASCII-еквівалентом (математика, стрілки, § як `sec.`), а кирилиця
     // («Деталь 3») лишається екранованою СВІДОМО: транслітерація власної назви деталі була б втратою
     // сенсу заради косметики, і жодного виміру, що цех бачить її гірше, у нас немає.
+    // The PEEK isolation ring of 02_02 §1.2 is counted from the ANODE contact — the bus wire end, Ø ≥ wire + 2 × width
+    // (⚖️ 2026-09-18, 00_07 HW.34) — never from the retired concept pad. 0 = the wire Ø is not declared: no circle is drawn
+    // and both labels print the absence (gotcha #11), because a ring radius guessed here would be the next invented field.
+    internal static double IsolationRingRadiusMm(CathodeFlangeCem cem)
+        => cem.BusRodDiameterMm > 0f ? (cem.BusRodDiameterMm / 2.0) + cem.IsolationRingWidthMm : 0;
+
+    private static string D1(double d) => d.ToString("0.0#", CultureInfo.InvariantCulture);   // «Ø1.0», as canon writes it
+
+    private static string WireLabel(CathodeFlangeCem cem)
+        => cem.BusRodDiameterMm > 0f ? $"Ø{D1(cem.BusRodDiameterMm)}" : $"Ø {NotSpecified}";
+
+    private static string RingLabel(CathodeFlangeCem cem)
+        => cem.BusRodDiameterMm > 0f
+            ? $"Ø≥{D1(2 * IsolationRingRadiusMm(cem))}"
+            : $"≥{N(cem.IsolationRingWidthMm)} around the wire end (wire Ø {NotSpecified})";
+
     internal static string DxfSafe(string s) => s
         .Replace("Ø", "%%c").Replace("⌀", "%%c").Replace("≈", "~").Replace("≤", "<=").Replace("≥", ">=")
         .Replace("²", "2").Replace("³", "3").Replace("µ", "u").Replace("·", "-").Replace("–", "-").Replace("°", "deg")

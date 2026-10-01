@@ -297,7 +297,7 @@ public class DrawingTests
         Assert.StartsWith("<svg", svg);
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø29.8", svg);               // flange Ø = radome Ø (01_01 §1) — the root verdict opened the Ø25 freeze, 2026-09-29/30
-        Assert.Contains("Ø4.5 GND pad (concept)", svg);   // drawn, but as absent — the pin below
+        Assert.Contains($"anode = bus wire end Ø {Drawing.NotSpecified}", svg);   // the ring's origin, absent from an empty CEM — the pins below
         Assert.Contains("3× bayonet lug", svg);      // lug count straight from the CEM
         Assert.Contains("rev test", svg);
         Assert.DoesNotContain("NaN", svg);
@@ -334,55 +334,73 @@ public class DrawingTests
     }
 
     // The isolation ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (solid Ti top face; the form is
-    // ratified 2026-09-18 — countersink + flush PEEK ring Ø ≥ 4.0, 00_07 HW.34 — and its geometry waits on the pogo pin
-    // P/N, HW.9). A sheet that draws it as a feature hands the shop a part that does not exist, so both readers must
-    // call it absent, and the DXF must keep its circle off the layer a CAD reader takes as a contour to machine.
+    // ratified 2026-09-18 — countersink + flush PEEK ring Ø ≥ 1.0 + 2×1.5 = 4.0 counted from the bus WIRE END, 02_02 §1.3,
+    // 00_07 HW.34 — and its geometry waits on the pogo pin P/N, HW.9). A sheet that draws it as a feature hands the shop a
+    // part that does not exist, so both readers must call it absent, and the DXF must keep its circle off the layer a CAD
+    // reader takes as a contour to machine. The radius is pinned to canon's 4.0, not re-derived here: the sheet once
+    // counted the ring from the retired concept pad (Ø4.5 → a Ø7.5 ring), and a derived assert would have agreed with it.
+    // MUTATION: count the ring from anything but the wire ⇒ the r 2.0 assert reds; put its DXF circle on GEOMETRY ⇒ the
+    // layer assert reds.
     [Fact]
-    public void Flange_Sheet_Labels_The_Unmodelled_Isolation_Ring_Absent_In_Both_Readers()
+    public void Flange_Sheet_Labels_The_Unmodelled_Isolation_Ring_Absent_In_Both_Readers_Counted_From_The_Wire_End()
     {
-        var cem = new CathodeFlangeCem();
-        // The ring's OWN label, not the bare phrase: the concept pad below prints «NOT IN GEOMETRY» too, and a bare
-        // match would stay green on the pad's label with the ring's gone.
-        Assert.Contains("REQUIRED · NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
+        var cem = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        Assert.Equal(2.0, Drawing.IsolationRingRadiusMm(cem), 6);
+        Assert.Contains("PEEK ring Ø≥4.0 REQUIRED · NOT IN GEOMETRY", FlattenSvgText(Drawing.CathodeFlange(cem, "test")));
         string path = Path.Combine(Path.GetTempPath(), $"flange_iso_{Guid.NewGuid():N}.dxf");
         try
         {
             Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
-            Assert.Contains("REQUIRED - NOT IN GEOMETRY", File.ReadAllText(path));
+            Assert.Contains("PEEK ring %%c>=4.0 REQUIRED - NOT IN GEOMETRY", File.ReadAllText(path));
             var doc = netDxf.DxfDocument.Load(path);
-            double rIso = cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm;
-            var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rIso) < 1e-3).ToArray();
+            var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - 2.0) < 1e-3).ToArray();
             Assert.NotEmpty(ring);
             Assert.All(ring, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
-    // The central pad is the concept «≈4–5» of 02_02 §1.3, not a feature of this part: canon §1.2 makes the anode contact
-    // the END of the bus wire in the bore, and everything around the bore on this face is cathode metal (00_07 HW.34).
-    // A contour there hands the shop a gold spot at the wrong polarity, so both readers call it absent — and the manifest
-    // must not ask for the plating either: 02_02 §1.3 withholds the plating map from the factory until its verdict.
-    // MUTATION: put the DXF circle back on GEOMETRY ⇒ the layer assert reds; put «ENIG» back into ANY printed note field
+    // The ring's origin is the bus wire, an ASSEMBLY dimension the flange manifest only declares (its home is 01_01 §1.4;
+    // the anchor SKUs and the stack carry it too). Two copies of one number share no source, so this keeps them one: a
+    // wire change that moves the anchors and not the flange would print a ring counted from a wire nobody welds.
+    // MUTATION: change bus_rod_diameter_mm in cathode_flange.json (or in any anchor SKU) ⇒ reds, naming the manifest.
+    [Fact]
+    public void Flange_Wire_Diameter_Is_The_Same_Wire_The_Anchors_And_The_Stack_Declare()
+    {
+        float fFlange = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json"))).BusRodDiameterMm;
+        Assert.True(fFlange > 0f, "cathode_flange.json must declare the wire Ø the PEEK ring is counted from");
+        var others = CemFixtures.AnchorFiles().Select(f => (f, CemFixtures.Anchor(f).BusRodDiameterMm))
+            .Append(("anchor_axial_stack.json",
+                     Cem.Parse<AnchorAxialStackCem>(File.ReadAllText(Path.Combine(CemDir(), "anchor_axial_stack.json"))).Zone1.BusRodDiameterMm))
+            .ToArray();
+        Assert.NotEmpty(others);
+        string[] aDiffer = [.. others.Where(o => o.Item2 != fFlange).Select(o => $"{o.Item1}: Ø{o.Item2}")];
+        Assert.True(aDiffer.Length == 0, $"the flange counts its ring from Ø{fFlange}, but:\n  {string.Join("\n  ", aDiffer)}");
+    }
+
+    // This part has NO pad: canon §1.2/§1.3 makes the anode contact the END of the bus wire in the bore, and everything
+    // around the bore on this face is cathode metal (⚖️ 2026-09-18, 00_07 HW.34). The concept «≈4–5» of 02_02 §1.3 is
+    // no geometry, so neither reader draws or names it — a spot there hands the shop gold at the wrong polarity — and the
+    // manifest must not ask for the plating either: 02_02 §1.3 withholds the plating map from the factory until its verdict.
+    // MUTATION: print a pad label in either reader ⇒ the «pad» asserts red; put «ENIG» back into ANY printed note field
     // of the manifest (measured on the extra line alone) ⇒ the all-fields assert reds.
     [Fact]
-    public void Flange_Sheet_Labels_The_Concept_Pad_Absent_And_The_Manifest_Does_Not_Ask_To_Plate_It()
+    public void Flange_Sheet_Draws_No_Concept_Pad_And_The_Manifest_Does_Not_Ask_To_Plate_It()
     {
-        var cem = new CathodeFlangeCem();
-        Assert.Contains("GND pad (concept) · NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
+        var shipped = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        string svg = FlattenSvgText(Drawing.CathodeFlange(shipped, "test"));
+        Assert.Contains("anode = bus wire end Ø1.0 (not this part)", svg);
+        Assert.DoesNotContain("GND pad", svg);
         string path = Path.Combine(Path.GetTempPath(), $"flange_pad_{Guid.NewGuid():N}.dxf");
         try
         {
-            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
-            Assert.Contains("(concept) - NOT IN GEOMETRY", File.ReadAllText(path));
-            var doc = netDxf.DxfDocument.Load(path);
-            double rPad = cem.CentralPadDiameterMm / 2.0;
-            var pad = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rPad) < 1e-3).ToArray();
-            Assert.NotEmpty(pad);
-            Assert.All(pad, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
+            Assert.True(Drawing.CathodeFlangeDxf(shipped, "test", path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("anode = bus wire end %%c1.0 (not this part)", dxf);
+            Assert.DoesNotContain("GND pad", dxf);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
 
-        var shipped = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
         var n = shipped.Notes;
         Assert.Contains($"CONTACT PLATING: {Drawing.NotSpecified}", n?.PostProcess);
         // EVERY printed field, not the one that says it: the plating map rode four of them at once (surface finish,

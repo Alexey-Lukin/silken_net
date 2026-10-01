@@ -376,10 +376,13 @@ internal sealed record CathodeFlangeCem
     //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now.
     public ORingGlandCem ORing { get; init; } = new();
 
-    // Pogo-pad features (02_02 §1.2) — the central GND bus pad (hard gold = the Ti↔Au galvanic-trap fix;
-    // the process is the plater's, not «ENIG» — 02_02 §1.3) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
-    // «точні Ø фланця/площадки потребують CAD → HW.8»; the flange drawing is that forcing function, §F).
-    public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, hard gold (4–5 concept, HW.8)
+    // Pogo-plane features (02_02 §1.2/§1.3). The ANODE contact is the end face of the bus WIRE in the channel — this part
+    // has no pad (⚖️ 2026-09-18, 00_07 HW.34): everything around the bore on this face is cathode metal, and the concept
+    // «Ø4–5 pad» is no geometry of it. The wire is an ASSEMBLY dimension (welded to the anode, 01_01 §3 step 1b), declared
+    // here only because the sheet counts the PEEK ring from it; its one value home is 01_01 §1.4 (tools/in_silico
+    // D_BUS_ROD_MM), and DrawingTests pins this manifest's value to every anchor_zone1 SKU and the stack. Default 0 =
+    // NOT DECLARED, so the sheet prints the ring's diameter as loud absence instead of inventing one.
+    public float BusRodDiameterMm { get; init; }
     public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard) — a
                                                                // DRAWING annotation of a requirement: CathodeFlange.cs does not
                                                                // model the ring (solid Ti top face). REQUIRED since ⚖️ 2026-09-18
