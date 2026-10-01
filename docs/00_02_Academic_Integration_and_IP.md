@@ -156,7 +156,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 **Foreground (сильні, чисті результати):**
 - **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах 50–62 mV від експ. free-flavin (дужка −220…−208 мВ, ⚖️ founder 2026-09-24; script 32).
-- **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.92 eV/σ) → предиктивне правило дизайну; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні). Триангульовано DFT↔Lever↔Hammett (script 21e).
+- **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.92 eV/σ) → предиктивне правило дизайну; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні; script 21e). ⚠️ **Це тренд УСЕРЕДИНІ одного методу, НЕ тріангульований** ні проти адитивної схеми Lever, ні проти виміряної серії замісників: претензію про тріангуляцію текст статті відкликав 2026-09-25, бо жоден скрипт і кеш такого порівняння не робить, і відновити її може лише прилад, а не цитата (§3.3 статті + облік у [`paper/09_references.md`](protocols/ebfc/in_silico/paper/09_references.md)).
 - **DET через ZIF-нанозим** — ΔSCF hopping (geom-fixed) + computed Nelsen λ: маржа **охоплює turnover** — ~turnover при ΔG = 0, нижче на несприятливому куті (не old ×10⁵) + low-λ-metal (Ru) design rule (scripts 23/24/25/35).
 - **Геометрія + through-bond tunneling** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
 - **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).
