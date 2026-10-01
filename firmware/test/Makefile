@@ -26,9 +26,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+.PHONY: all queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
+all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -111,6 +111,9 @@ attest: $(BINDIR)/test_queen_attest
 
 bme280: $(BINDIR)/test_bme280
 	@./$(BINDIR)/test_bme280
+
+ds18b20: $(BINDIR)/test_ds18b20
+	@./$(BINDIR)/test_ds18b20
 
 voc_maxhold: $(BINDIR)/test_voc_maxhold
 	@./$(BINDIR)/test_voc_maxhold
@@ -207,6 +210,10 @@ $(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_bme280.c -lm
 
 # [HW.19] max-hold V_OC у MPPT-вікні BQ25570 — арифметика вікна (фаза · крок · розрив), pure.
+# [HW.16] DS18B20 scratchpad → °C×100 — CRC-8/MAXIM, таблиця даташита, пастка power-on +85 °C.
+$(BINDIR)/test_ds18b20: test_ds18b20.c ../common/ds18b20.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_ds18b20.c
+
 $(BINDIR)/test_voc_maxhold: test_voc_maxhold.c ../common/voc_maxhold.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_voc_maxhold.c
 
@@ -318,7 +325,7 @@ clean:
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_ota_sha_guard $(BINDIR)/test_pull_mac \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
-	      $(BINDIR)/test_bme280 $(BINDIR)/test_voc_maxhold $(BINDIR)/test_audio_model \
+	      $(BINDIR)/test_bme280 $(BINDIR)/test_voc_maxhold $(BINDIR)/test_ds18b20 $(BINDIR)/test_audio_model \
 	      $(BINDIR)/test_tdma_schedule $(BINDIR)/test_cad_sniff \
 	      $(BINDIR)/test_lora_phy $(BINDIR)/test_tx_duty \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
