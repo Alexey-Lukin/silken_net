@@ -95,7 +95,7 @@
   now reds naming the SKU and the missing rung instead of silently replacing the ladder. A WIDER ladder passes. ⛔ The
   remaining ceiling: the cache name still carries the SKU only, and the pin cannot tell whether the rows came from ONE
   run — a hand-merged cache with both rungs present passes, so still read `git diff tools/cad/cache/topology/` before
-  committing (gotcha #14's class). Numbers → the cache / `00_07` HW.51, never here.
+  committing (gotcha #14's class). Numbers → the cache / `01_02 §6`, never here.
 - **Capsule-end assembly (`Assembly.cs`, SHIPPED)**: brings Деталь 3 ↔ Деталь 4 into one frame at the
   bayonet datum (radome lock-groove ↔ flange lugs) via `MeshUtility.voxApplyTransformation` (lift; the
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models
