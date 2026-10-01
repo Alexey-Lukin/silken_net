@@ -94,23 +94,54 @@ def cem(stem: str) -> dict:
     return json.loads((CEM / f"{stem}.json").read_text())
 
 
+def socket_pocket(dome_mm: float, wall_mm: float, lug_r_mm: float, slot_clr_mm: float) -> tuple:
+    """Кишеня сокета — замкнена форма `Radome.cs`, не власна: смуга = r_lug + зазор
+    (`SocketBandMm`), скін = стінка купола − смуга (`SocketSkinMm`), кишеня r від
+    dome/2 − смуга (`SocketPocketInnerRMm`) до dome/2 − скін (`SocketPocketOuterRMm`)."""
+    band = lug_r_mm + slot_clr_mm
+    skin = wall_mm - band
+    return band, skin, dome_mm / 2.0 - band, dome_mm / 2.0 - skin
+
+
+# Позитивний контроль ери Ø25 — ЗАМОРОЖЕНИЙ вихід, не формула: кеш 52 на коміті a9b92b00c
+# (`applied_gland.socket_pocket_r_mm` = [10.7, 12.3], скін 0.2), який xUnit
+# `Rim_Boss_And_Gland_Derivation_Matches_Script_52_Cache` тоді пінив до `Radome.SocketPocket*RMm`,
+# на вході radome.json тієї ери (купол 25.0 · стінка 2.0 · r_lug 1.5 · зазор 0.3).
+ERA_D25_INPUTS = (25.0, 2.0, 1.5, 0.3)
+ERA_D25_POCKET_R = (10.7, 12.3)
+
+
 def geometry() -> dict:
-    """Смуга сокета й висота коміра — з маніфестів і кешу 52, не з прози."""
+    """Смуга сокета й висота коміра — з маніфестів (формула Radome.cs), звірені з кешем 52.
+
+    ПОЗИТИВНИЙ КОНТРОЛЬ — два assert'и проти двох незалежних від цієї функції референтів:
+      1. заморожений вихід ери Ø25 (10.7–12.3) — не рухається разом із маніфестами;
+      2. живий `applied_gland.socket_pocket_r_mm` кешу 52 на Ø29.8 (13.1–14.7), який xUnit пінить
+         до `Radome.SocketPocket*RMm`, тобто до геометрії, що справді вокселізується.
+    ЛОВИТЬ: формулу кишені, що розійшлась із Radome.cs, і кеш 52, застарілий відносно radome.json
+    (падає №2). Саме так стояв вхід до 2026-10-01: скін = slot_clearance 0.3 замість стінка − смуга
+    0.2 давав кишеню 10.8 і 13.2 — смуга 1.5 замість 1.6, і контролю, що це спіймав би, не було
+    (мутацію «скін = зазор» №1 тепер ловить: 12.2 ≠ 12.3).
+    НЕ ЛОВИТЬ: хибне значення в radome.json (вхід спільний для всіх трьох), Radome.cs і 52, що
+    розійшлися з дійсністю РАЗОМ (xUnit тримає їх рівними, не правими), і геометрію самого коміра —
+    її не змодельовано на жодній деталі (02_02 §4.4).
+    """
     flange, radome = cem("cathode_flange"), cem("radome")
     z = json.loads((CACHE / "z_stack_tolerance.json").read_text())
-    boss = z["rim_boss_radial_budget"]
-    socket_band = boss["inputs_mm"]["socket_band"]
-    skin = radome["slot_clearance_mm"]
-    # ⚠️ Смуга сокета йде НАЗОВНІ від порожнини обідця, не всередину: кишеня починається
-    # за скіном і тягнеться на (смуга − скін). Звірено проти `verify radome` ери Ø25
-    # (порожнина Ø21 → кишеня r 10.70–12.30) і проти 02_02 §4.4 на Ø29.8 (13.1–14.7).
-    r_inner = boss["cavity_today_mm"] / 2.0 + skin
-    r_outer = r_inner + (socket_band - skin)
+    socket_band, skin, r_inner, r_outer = socket_pocket(
+        radome["dome_diameter_mm"], radome["wall_thickness_mm"],
+        radome["lug_radius_mm"], radome["slot_clearance_mm"])
+    era = socket_pocket(*ERA_D25_INPUTS)[2:]
+    assert all(abs(a - b) < 1e-6 for a, b in zip(era, ERA_D25_POCKET_R, strict=True)), \
+        f"кишеня ери Ø25 {era} ≠ {ERA_D25_POCKET_R} (Radome.cs на a9b92b00c)"
+    live = z["applied_gland"]["socket_pocket_r_mm"]
+    assert abs(r_inner - live[0]) < 1e-3 and abs(r_outer - live[1]) < 1e-3, \
+        f"кишеня r {r_inner:.3f}–{r_outer:.3f} ≠ кеш 52 {live} (Radome.SocketPocket*RMm)"
     return {
         "alloy": ALLOY,
         "flange_diameter_mm": flange["flange_diameter_mm"],
-        "socket_band_mm": socket_band,
-        "socket_skin_mm": skin,
+        "socket_band_mm": round(socket_band, 3),
+        "socket_skin_mm": round(skin, 3),
         "band_r_inner_mm": round(r_inner, 3),
         "band_r_outer_mm": round(r_outer, 3),
         "band_r_mean_mm": round((r_inner + r_outer) / 2.0, 3),

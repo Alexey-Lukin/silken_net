@@ -563,7 +563,7 @@ def collar_radial_budget(boss: dict) -> dict:
     still has no home, 02_02 §4.1), but it answers what SIZES the wall, and the answer changes how this row
     reads: strength does not size it, printability does — so the loosest row below is no longer merely the
     loosest bound, it is the governing one, subject to the DRAINAGE requirement that the same model made
-    mandatory (confined ice needs ~6.7 mm against 1.5 mm of band). Verdict home: 02_02 §4.4.
+    mandatory (confined ice needs ~6.6 mm against the 1.6 mm socket pocket). Verdict home: 02_02 §4.4.
     """
     slot_clear = cem("radome")["slot_clearance_mm"]
     design_to = boss["design_to_mm"]

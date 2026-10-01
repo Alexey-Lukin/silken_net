@@ -3,10 +3,10 @@
     "alloy": "Ti-6Al-4V",
     "flange_diameter_mm": 29.8,
     "socket_band_mm": 1.8,
-    "socket_skin_mm": 0.3,
-    "band_r_inner_mm": 13.2,
+    "socket_skin_mm": 0.2,
+    "band_r_inner_mm": 13.1,
     "band_r_outer_mm": 14.7,
-    "band_r_mean_mm": 13.95,
+    "band_r_mean_mm": 13.9,
     "collar_height_mm": 3.5,
     "bayonet_lugs": 3,
     "lug_radius_mm": 1.5,
@@ -21,33 +21,33 @@
     "rows": [
       {
         "wall_mm": 0.2,
-        "net_area_mm2": 15.73,
-        "breakeven_force_N": 6921.0
+        "net_area_mm2": 15.67,
+        "breakeven_force_N": 6894.0
       },
       {
         "wall_mm": 0.3,
-        "net_area_mm2": 23.6,
-        "breakeven_force_N": 10382.0
+        "net_area_mm2": 23.5,
+        "breakeven_force_N": 10340.0
       },
       {
         "wall_mm": 0.5,
-        "net_area_mm2": 39.33,
-        "breakeven_force_N": 17303.0
+        "net_area_mm2": 39.17,
+        "breakeven_force_N": 17234.0
       },
       {
         "wall_mm": 0.8,
-        "net_area_mm2": 62.92,
-        "breakeven_force_N": 27685.0
+        "net_area_mm2": 62.67,
+        "breakeven_force_N": 27574.0
       },
       {
         "wall_mm": 1.0,
-        "net_area_mm2": 78.65,
-        "breakeven_force_N": 34606.0
+        "net_area_mm2": 78.34,
+        "breakeven_force_N": 34468.0
       },
       {
         "wall_mm": 1.6,
-        "net_area_mm2": 125.84,
-        "breakeven_force_N": 55370.0
+        "net_area_mm2": 125.34,
+        "breakeven_force_N": 55149.0
       }
     ],
     "idealisation": "призматичне кільце на чистий розтяг; згину від ексцентриситету вушка немає"
@@ -92,38 +92,38 @@
     "pressure_ceiling_MPa": 209.9,
     "ceiling_at_C": -21.985,
     "ceiling_is_self_limiting": "вище цього тиску утворюється щільніший лід III, тож подальше охолодження тиск НЕ підіймає",
-    "required_wall_at_ceiling_mm": 6.7,
-    "radial_space_available_mm": 1.5,
+    "required_wall_at_ceiling_mm": 6.6,
+    "radial_space_available_mm": 1.6,
     "fits": false,
     "rows": [
       {
         "wall_mm": 0.2,
-        "hoop_stress_at_ceiling_MPa": 14641.0,
+        "hoop_stress_at_ceiling_MPa": 14588.0,
         "over_yield_x": 16.6
       },
       {
         "wall_mm": 0.3,
-        "hoop_stress_at_ceiling_MPa": 9760.0,
+        "hoop_stress_at_ceiling_MPa": 9725.0,
         "over_yield_x": 11.1
       },
       {
         "wall_mm": 0.5,
-        "hoop_stress_at_ceiling_MPa": 5856.0,
-        "over_yield_x": 6.7
+        "hoop_stress_at_ceiling_MPa": 5835.0,
+        "over_yield_x": 6.6
       },
       {
         "wall_mm": 0.8,
-        "hoop_stress_at_ceiling_MPa": 3660.0,
-        "over_yield_x": 4.2
+        "hoop_stress_at_ceiling_MPa": 3647.0,
+        "over_yield_x": 4.1
       },
       {
         "wall_mm": 1.0,
-        "hoop_stress_at_ceiling_MPa": 2928.0,
+        "hoop_stress_at_ceiling_MPa": 2918.0,
         "over_yield_x": 3.3
       },
       {
         "wall_mm": 1.6,
-        "hoop_stress_at_ceiling_MPa": 1830.0,
+        "hoop_stress_at_ceiling_MPa": 1824.0,
         "over_yield_x": 2.1
       }
     ],
@@ -135,7 +135,7 @@
     "margin_x_over_generous_oring_bound": 4.6,
     "margin_x_over_pogo_pair": 238.0,
     "static": "СТАТИКА СТІНКИ НЕ ЗАДАЄ: уже на друкованій підлозі звʼязувальний випадок тримає 457 Н — це 4.6× ЩЕДРОЇ межі 100 Н і 238× єдиної пружини, яку канон задає. ⚠️ Запас проти щедрої межі — кілька разів, НЕ «порядки»: порядки є лише проти pogo. Але він уже містить SF 2.0, тож до самої текучості вдвічі більше. Тож стінку задає ДРУКОВНІСТЬ (SLM-підлога) або механообробка на CNC-маршруті, не міцність — і відсутній датум O-ring перестає бути блокером САМЕ ТОМУ, що щедра межа вже перекрита.",
-    "ice": "ЛІД ЗАДАЄ, І НЕ СТІНКОЮ: при стелі тиску потрібна стінка 6.7 мм проти 1.5 мм радіального простору, що взагалі є. Жодна стінка, яка влазить у смугу сокета, замкненого льоду не тримає, тож єдиний важіль — ДРЕНАЖ кишень, а не товщина. Це той самий лік, який FMEA `#26` уже називає передусім дизайнерським.",
+    "ice": "ЛІД ЗАДАЄ, І НЕ СТІНКОЮ: при стелі тиску потрібна стінка 6.6 мм проти 1.6 мм радіального простору, що взагалі є. Жодна стінка, яка влазить у смугу сокета, замкненого льоду не тримає, тож єдиний важіль — ДРЕНАЖ кишень, а не товщина. Це той самий лік, який FMEA `#26` уже називає передусім дизайнерським.",
     "answer_to_the_leg": "підставою стінки коміра є ДРУКОВНІСТЬ плюс вимога дренажу; сили утримання для її вибору не потрібно, і відсутній датум O-ring перестає бути блокером."
   }
 }
