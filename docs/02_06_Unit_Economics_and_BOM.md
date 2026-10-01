@@ -136,7 +136,7 @@
 
 > **Cross-ref:** [`00_07` — HW.14](00_07_Action_Plan_Tracker) — оновлення Unit Economics ✅
 
-**Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (20–40 Вт) з ESP32-S3 co-processor (рішення HW.18; SIM8200G-M2 відхилено — [`02_05 §Starlink DTC`](02_05_Queen_Hardware_and_Starlink)).
+**Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (25–40 Вт, [`02_05 §2.3`](02_05_Queen_Hardware_and_Starlink)) з ESP32-S3 co-processor (рішення HW.18; SIM8200G-M2 відхилено — [`02_05 §Starlink DTC`](02_05_Queen_Hardware_and_Starlink)).
 
 | # | Підсистема | Phase 1/2.5 | Phase 3 (Starlink Mini) | Δ Вартість |
 |---|---|---|---|---|

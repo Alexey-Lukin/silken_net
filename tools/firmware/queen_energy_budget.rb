@@ -40,7 +40,7 @@ PARAMS = {
   # Стеля: поз. 10 (12→3.3 V) — лише клас «≥ 500 мА», даташиту немає → та сама 0.88
   # ПРИПУЩЕНА й для неї; канон 02_05 §4а.2 бере ті самі 88 %.
   # ── Phase 3 додатки ───────────────────────────────────────────────────────
-  starlink_w: 25.0,        # Starlink Mini active
+  starlink_w: 25.0,        # Starlink Mini active — нижній край average 25–40 Вт (⚖️ 2026-10-01; присуд і ціна — 02_05 §4)
   starlink_min_per_h: 5.0, # duty-cycle 5 хв/год
   starlink_psu_eff: 0.90,
   esp32_w: 0.5,            # ESP32-S3 ACTIVE (WiFi-STA до Mini) — лише у вікні Starlink:
