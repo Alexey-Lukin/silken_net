@@ -114,7 +114,7 @@
   (anode → Zone-2 sleeve → flange → radome) into one axis and MEASURES the **press-fit** interfaces the
   capsule-end never touched: Zone1↔2 line-to-line (real +interference = the press-fit band on bench — band:
   `00_07` HW.3) · **Zone2↔3 = −1.0 mm = the Ø9-in-Ø11 clearance = F1, shank Ø placeholder → HW.8.9** ·
-  insertion budget · span. AUDIT table; render uses the Zone-1 **envelope** (solid Ø11 — a press-fit cares
+  insertion budget · span (its flange term is the thickness placeholder → HW.8.10). AUDIT table; render uses the Zone-1 **envelope** (solid Ø11 — a press-fit cares
   about OD, not porosity; also keeps the 0.2 mm voxel safe). Reuses `Assembly.Build` +
   `voxApplyTransformation`. Canon `02_02 §4.5`.
   🔑 **`BasePipe`/`BaseCylinder` Z-origin = `[0, L]` from the frame** (grows along +localZ; verified in LEAP
