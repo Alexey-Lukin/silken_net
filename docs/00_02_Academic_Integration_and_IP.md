@@ -232,7 +232,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 **Тип зв'язку:** Послідовний — in vitro веде виконавець coin Stage 2 (профільний біохімік/електрохімік, TBD); Silken Net — системні вимоги й DFT (self-owned).
 
-> **In-silico baseline:** Zero-Lab L1–L3 PASSED (2026-05-25); L4 — recharge-model стоїть, але вердикт «60 с фізично обґрунтовано» знято 2026-09-27, щойно L4 отримала справжню ціну циклу вузла ([`00_07`](00_07_Action_Plan_Tracker) E.63). Headline: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade **verified +574 мВ / −0.574 eV downhill** (E°s; raw DFT uphill = method limit, декомпозовано ②); L3b cathode DET **borderline** at realistic λ; L4 recharge-model (delta_t → GP, E.63 calibration-pending). Повні числа — [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico baseline:** Zero-Lab L1–L3 PASSED (2026-05-25); L4 — recharge-model стоїть, але вердикт «60 с фізично обґрунтовано» знято 2026-09-27, щойно L4 отримала справжню ціну циклу вузла ([`00_07`](00_07_Action_Plan_Tracker) E.63). Headline: L1 **d_FAD=15.998 Å** — глибина залягання, нижня межа відстані: MET не виключає й не доводить ([`01_03 §3.4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); L3 cascade **verified +574 мВ / −0.574 eV downhill** (E°s; raw DFT uphill = method limit, декомпозовано ②); L3b cathode DET **borderline** at realistic λ; L4 recharge-model (delta_t → GP, E.63 calibration-pending). Повні числа — [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
 #### Стаття 29: Токсикологічна Оцінка Ti-6Al-4V Гіроїдних Анкерів
 

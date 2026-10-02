@@ -31,6 +31,12 @@ WHAT IS COMPUTED
 WHAT IS **NOT** COMPUTED — absent, not merely undiscussed
   · No phylogeny and no tree-aware weighting. The 90 % de-duplication is a crude correction
     for sampling bias, not a substitute for it: a frequency here is «how often in THIS set».
+    ⛔ And it is NOT to be added for the 401 question (measured 2026-09-24, 00_07 HW.5.IS):
+    weighting corrects BETWEEN-clade sampling bias, while 401 varies INSIDE every well-sampled
+    genus (cache `clade_locality.by_genus`: Aspergillus n=62, 13 states, top 0.19 · Penicillium
+    n=56, 12, 0.38 · Botrytis n=14, 10, 0.29) against the His537 control's 98.8 % on the same
+    instrument — no reweighting makes such a column invariant. Price: no formal phylogenetic
+    argument exists in the tree; if a reviewer of Paper 1 asks for one, that is new work.
   · No structural or functional consequence of any substitution. This says how often a residue
     occurs at a position, never what putting it there does — that is script 69 (patch SASA)
     and, for stability, nothing in this tree.

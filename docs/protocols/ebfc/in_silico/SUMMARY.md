@@ -36,7 +36,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **FAD N5 → surface (Tyr90 OH)** | **15.998 Å** |
 | Single-step tunnelling ceiling through protein, centre-to-centre (Gray & Winkler 2005, PMC553296) | ≈20 Å |
 
-**Conclusion:** d_FAD < r_tunneling → MET architecture mathematically proven viable.
+**Conclusion:** d_FAD is a burial depth — a lower bound on the donor–acceptor separation, below the ≈20 Å single-step ceiling — so the distance does not exclude MET and does not prove it; the MET evidence is the through-bond path β·d = 2.05 (script 28, §Electron Tunneling Pathway).
 
 ---
 

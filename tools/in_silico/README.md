@@ -186,9 +186,12 @@ L2 MD simulations.
    - **Ligand**: add FAD (CCD code `FAD`)
 4. Submit and wait (~5 min). Download the top-ranked PDB → `dgrGcGDH_AF3.pdb`.
 
-Current result: **`d_FAD = 15.998 Å`** (FAD N5 → Tyr90 OH, the tunneling
-distance to the Os mediator), confirmed in UCSF ChimeraX. < r_tunneling
-(Os-bpy ≈ 18-20 Å) → MET architecture viable. See
+Current result: **`d_FAD = 15.998 Å`** (FAD N5 → Tyr90 OH), confirmed in UCSF
+ChimeraX — a BURIAL DEPTH, i.e. a lower bound on the donor–acceptor separation,
+against the ≈20 Å centre-to-centre ceiling for single-step tunnelling through
+protein (Gray & Winkler, PNAS 2005; the former «18–20 Å» had no source). The
+distance does not exclude MET and does not prove it — the through-bond path
+β·d = 2.05 (script 28) carries that. See
 [`L1_protein_architecture.md`](../../docs/protocols/ebfc/in_silico/L1_protein_architecture.md)
 and `01_03 §3.4` for validation.
 

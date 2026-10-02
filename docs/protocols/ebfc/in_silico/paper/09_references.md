@@ -157,7 +157,10 @@ reading — and each needs its own route before the ACS pass.
   ⚠️ OA DISAGREES: ref 25 (PMC4480342, Introduction, citing its ref 105) gives E_m(FAD, water) = −0.22 V.
   Against −0.22 V the computed −158 mV is ~62 mV off, not "~50 mV". ✅ ⚖️ founder 2026-09-24: both readings
   as a bracket — §3.2/§3.6/Fig 3 now say 50–62 mV and cite −220 mV to ref 25; −208 mV keeps its
-  [CITATION NEEDED] (no primary found by search 2026-09-24). 👤 primary for −208 or drop it
+  [CITATION NEEDED] (no primary found by search 2026-09-24). Ground (⚖️ founder 2026-09-24): the paper's
+  thesis is a mechanism and a method limit, not a validation (`00_OUTLINE` «Type»), so the bracket is
+  reported as two named readings and judged by its worse edge (`32`: +62 · +50 mV, both < 100). Price: the
+  strongest «positive» sentence weakens (≈50 → 50–62 mV). 👤 primary for −208 or drop it
 - §3.2 — the literature anode λ (~0.7–0.8 eV) "adopted in the rate calculations". ✅ 2026-10-01, route (c):
   the claim had no instrument — `marcus_rate` is called only by the cathode script `25`, the L4 kinetics
   (`30`/`30b`/`31`/`40`) carry no λ, and the 0.7 in `29b` (`LIT_LAMBDA_TOTAL_EV`) is a comparison constant
