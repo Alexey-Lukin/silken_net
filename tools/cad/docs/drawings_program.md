@@ -166,8 +166,8 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 
 ## 8. Decided (founder, 2026-06-21)
 
-Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / Дніпро **ALT Ukraine** / EU backup
-hubs — `02_06 §8.1`) + web-grounding (sources below).
+Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / **ALT Ukraine**, production city
+unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
 
 0. **ASME Y14.46-2022 (product definition for AM) — NOT NOW** (⚖️ founder 2026-09-17; migrated from
    `00_07` HW.51 on 2026-09-20, since this file is the home of the drawing tract's decisions). The
