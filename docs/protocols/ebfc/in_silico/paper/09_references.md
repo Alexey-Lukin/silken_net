@@ -109,7 +109,7 @@ reading — and each needs its own route before the ACS pass.
   (Gražulis et al.) not yet checked in Crossref. **Ціна:** the paper stays on an unoptimised, non-crystal
   geometry and prints a comparison and a qualitative argument, not a sensitivity; the comparison structures are
   related centres, not [Os(dmbpy)₂(MeIm)Cl]⁺, read from deposited CIFs without their papers; a referee who asks
-  for an optimised or crystal geometry turns this into C (~3.6 h CPU) or D (~48–66 h CPU under the lock plus a
+  for an optimised or crystal geometry turns this into C (~3.6 h CPU) or D (≈60–68 h CPU under the lock — the number's home is PIPELINE_STATUS — plus a
   sweep of every ①/② number) in the revision round. **Найслабша ланка:** carrying a crystal ΔR(II/III) over to
   the model. What sets the sensitivity of a vertical ΔSCF is the Os(II)/Os(III) force difference of the MODEL
   (B3LYP/LANL2DZ/C-PCM), and nobody has measured it: at a model ΔR(bpy) of ±0.02 Å the absolute numbers would
