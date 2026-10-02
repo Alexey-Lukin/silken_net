@@ -98,8 +98,8 @@ clash-free cluster geometries (a bridging imidazole N–H that collided with the
 deprotonated to the imidazolate, restoring physical coordination). For the rate-limiting Cu–Co hop the
 coupling was recomputed by a two-state orbital diabatisation of our own construction, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no published implementation is claimed for it): from one UKS
 SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
-rotated into the basis that diagonalises their Cu-projected Mulliken population (a Mulliken–Hush-style
-population diabatisation), leaving one orbital on each metal; t_ij is the off-diagonal Fock element in that
+rotated into the basis that diagonalises their Cu-projected Mulliken population (a population-based
+localisation), leaving one orbital on each metal; t_ij is the off-diagonal Fock element in that
 basis, and the difference of the two diagonal elements is the site-energy gap carried as the hop's driving
 force. A physicality check — the two localised orbitals on distinct metals, t_ij inside a physical band —
 flags a non-physical pair instead of reporting it. Hopping rates followed the

@@ -309,8 +309,8 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 🔴 **Until 2026-09-21 this table was computed at ΔG = 0 — the Marcus helper's DEFAULT, not a
 measurement** — while the FO-DFT block below already carried a computed **0.183 eV** Cu–Co
-site-energy gap. The gap's *magnitude* is measured; its *sign* is not (a Mulliken–Hush
-diabatisation returns |ΔE| and does not say which site is the donor on the cathode's path), so
+site-energy gap. The gap's *magnitude* is measured; its *sign* is not (the two-state orbital
+diabatisation of `24b` returns |ΔE| and does not say which site is the donor on the cathode's path), so
 every row is now a **bracket**, and the consumer's ceiling is the **adverse** end, cited
 (`in-silico` §When Modifying #11).
 
