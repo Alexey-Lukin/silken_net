@@ -7,6 +7,7 @@ Runs without conda env — uses only stdlib + json. Safe for CI.
 import itertools
 import json
 import math
+import re
 from pathlib import Path
 
 import pytest
@@ -138,11 +139,19 @@ _SERIES_SMILES = {   # 21e's SERIES, by the file name each one writes (os_<name>
     "cf3": "FC(F)(F)c1ccnc(-c2cc(C(F)(F)F)ccn2)c1",
     "so2cf3": "O=S(=O)(C(F)(F)F)c1ccnc(-c2cc(S(=O)(=O)C(F)(F)F)ccn2)c1",
 }
-# ⛔ Not byte for byte: the files were written in the recorded osx-arm64 env, while CI runs the linux-64 lock env,
-# and the MMFF relaxation lands up to 0.98 mÅ per coordinate apart there (measured on CI run 37046079480,
-# 2026-10-02). The smallest real edit this test exists to catch, `close_chelate` leaking into the default path,
-# moves atoms 0.17–0.21 Å; 0.01 Å sits ten times above the noise and seventeen times below that edit.
+# ⛔ Not byte for byte, and not under just any RDKit. The files were written by the RDKit of the recorded env; the
+# lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and under CI's one the MMFF relaxation lands the first
+# four series complexes up to 0.98 mÅ apart (noise) but puts the CF3 rotor 1.53 Å off (another rotamer) — CI runs
+# 37046079480 and 37050045254, 2026-10-02. So the pin runs only under the RDKit that wrote the files, read from the
+# record (never typed here), and within it 0.01 Å absorbs platform noise: ten times above the noise, seventeen
+# times below the smallest real edit it exists to catch (`close_chelate` leaking into the default path, 0.17–0.21 Å).
 _GEOM_TOL_A = 0.01
+_RECORD_ENV = REPO / "tools/in_silico/environment.computed.explicit.txt"
+
+
+def _recorded_rdkit_version():
+    m = re.search(r"/rdkit-(\d+\.\d+\.\d+)-", _RECORD_ENV.read_text(encoding="utf-8"))
+    return m.group(1) if m else None
 
 
 def test_os_builder_default_path_reproduces_the_committed_geometry():
@@ -153,10 +162,17 @@ def test_os_builder_default_path_reproduces_the_committed_geometry():
     of element order or atom count — then every 21e/21f/34/34b cache stands on a geometry the builder no longer
     makes, and the lock base of C-min (`76`) with it.
     CANNOT catch: a shift below 0.01 Å — indistinguishable here from cross-platform MMFF noise (see _GEOM_TOL_A) ·
+    anything at all under an RDKit other than the recorded one: it SKIPS there (CI's linux-64 lock included), because
+    a different RDKit is a different builder and can land a rotor elsewhere — the record env carries this pin ·
     the 34 k-water files (34 places the waters) or 34b's dmbpy forms (not written to disk) — their base complexes
     are the bpy chloro, aqua and bis-Im cases below.
     """
-    pytest.importorskip("rdkit")
+    rdkit = pytest.importorskip("rdkit")
+    recorded = _recorded_rdkit_version()
+    assert recorded, f"no rdkit build in {_RECORD_ENV.name} — the gate below would have nothing to compare"
+    if rdkit.__version__ != recorded:
+        pytest.skip(f"the committed geometries were written by RDKit {recorded}; under RDKit {rdkit.__version__} "
+                    "this pin would measure RDKit, not the builder (see _GEOM_TOL_A)")
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib import os_geometry as g
