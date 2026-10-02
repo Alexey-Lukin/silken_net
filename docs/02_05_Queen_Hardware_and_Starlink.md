@@ -17,7 +17,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — архітектура + host/CI-прошивка; схем, прототипу й HAL-лінкованого `.elf` ще немає ([`00_07`](00_07_Action_Plan_Tracker) HW.9 · FW.46); Phase 2.5: Starlink DTC Київстару відкритий IoT-пристроям лише для ТЕСТУВАННЯ (80 кбіт/с), а чи реєструється в ньому Cat-M/NB-IoT-модем SIM7070G, первинка не каже (§Starlink DTC, звірено 2026-10-01); фазою першого деплою Phase 2.5 лишається до відповіді оператора (⚖️ 2026-10-01, §6)
-- **Відкрите:** зимовий енергодефіцит, SIM7070G BMS/decoupling, теплове управління IP67 → [`00_07`](00_07_Action_Plan_Tracker) (HW.14/15/16/18).
+- **Відкриті пункти сторінки** → [`00_07`](00_07_Action_Plan_Tracker), секція §02b; поза нею — ARCH.34 (Helium-детур) і ARCH.24 (регуляторика).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Вартість розгортання |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | HW.14/15/16/18 (energy, BMS, thermal) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті пункти** (SSOT) — секція §02b (ростера тут не ведемо: перелік ID уже раз згнив, пропустивши HW.41 і HW.31); поза нею — ARCH.34 (Helium-детур, §06) і ARCH.24 (регуляторика, §02c) |
 
 ## 📑 Зміст
 
@@ -50,7 +50,7 @@
 
 ## 🚧 Відкриті апаратні питання (open → 00_07)
 
-> Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker) (HW.14/15/16/18).
+> Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker), секція §02b (кожна підсекція нижче називає свій пункт).
 
 ### Starlink DTC (Phase 2.5) vs Starlink Mini
 
@@ -594,10 +594,11 @@ Starlink Mini — компактний термінал LEO-супутника �
            │ 8. AT+CCOAPNEW + AT+CCOAPSEND → SIM7070G UART
            │
            ▼
-[SIM7070G: LTE-M]
-    Phase 1: наземні вишки Київстар
-    Phase 2.5: Starlink DTC через Київстар (без термінала!) ← НОВА
-    Phase 3: Starlink Mini (термінал, ESP32-S3)
+[Uplink за фазою]
+    Phase 1:   SIM7070G (Cat-M / NB-IoT, CMNB=3) → наземні вишки Київстар
+    Phase 2.5: SIM7070G → Starlink DTC Київстару, без термінала — фаза першого
+               деплою (⚖️ 2026-10-01, §6); Cat-M/NB-IoT у DTC не підтверджено
+    Phase 3:   ESP32-S3 → Starlink Mini (термінал); SIM7070G у Phase 3 немає (§7 поз. 2)
            │
            ▼
 [coap://api.silkennet.com:5683]
