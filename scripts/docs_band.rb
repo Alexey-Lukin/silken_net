@@ -124,6 +124,9 @@ unless untracked.empty?
   warn "\n::error::docs_band: #{untracked.size} untracked-файл(ів) у in-scope теках — крок `spdx_headers` їх НЕ ПОБАЧИТЬ"
   untracked.first(10).each { |f| warn "  ? #{f}" }
   warn "  `git add` їх перед смугою, інакше вона зелена на дереві, яке покладе CI (стеля 2 в шапці)."
+  warn "  ⚠️ Крім ТЕПЛОГО виходу фонового обчислення (кеш, який ще пишеться): його не стейджать (in-silico §When Modifying #21) —"
+  warn "     тоді смуга йде в чистому worktree: `git worktree add --detach <tmp> HEAD && git diff --binary HEAD | git -C <tmp> apply`,"
+  warn "     там `ruby scripts/docs_band.rb`, потім `git worktree remove --force <tmp>` (untracked туди не потрапляє за побудовою)."
   exit 1 unless list_only
 end
 
