@@ -2509,3 +2509,50 @@ def test_paper_lock_gap_attribution_is_stated_as_the_record_measured_it():
         f"{REPRO_CAUSE} now reads the open shell as B_meets_C={osr['B_meets_C']}, attributed="
         f"{osr['attributed_to_the_fix']} — §2.7 says the emulated and lock runs meet and the state is NOT "
         f"attributed; rewrite that clause from the record")
+
+
+# ── C-min (2026-10-02, script 76): the computed sensitivity of §2.3 to the chelate the builder leaves open ──
+CMIN = "reproduction/os_chelate_sensitivity.json"
+
+
+def test_chelate_sensitivity_is_stated_as_the_record_measured_it():
+    """§2.3 may print a sensitivity number only COMPUTED (verdict B′, the §2.3 line of 09_references), and
+    SUMMARY is that number's results home — both must carry what `76` recorded, and the record must stand on
+    the base it names.
+
+    CAN catch: §2.3 or SUMMARY quoting a shift (or a per-state pair) the record does not hold · a record whose
+    base is not the lock re-run it cites, or that ran under another PySCF than that base · a closed geometry
+    off the builder's targets · the full-C trigger flag disagreeing with the shift.
+    CANNOT catch: the members of the class C-min did not run (aqua · bis-Im · the series · ωB97X) — §2.3 says
+    they were not recomputed; nor whether the closed chelate is a better model than the open one.
+    """
+    rec = C(CMIN)
+    sens = rec["sensitivity"]
+    fmt = lambda x: f"{x:.3f}".replace("-", "−")  # noqa: E731
+    methods, summary = doc(METHODS), doc(SUMMARY)
+    assert f"`cache/{CMIN}`" in methods and f"`cache/{CMIN}`" in summary, "§2.3 / SUMMARY no longer cite the C-min record"
+    for token in (f"vertical ΔE_red(III→II) by {fmt(sens['dE_red_shift_eV'])} eV",
+                  f"Os(II) state by {fmt(abs(sens['os2_shift_eV']))} eV",
+                  f"Os(III) state by {fmt(abs(sens['os3_shift_eV']))} eV"):
+        assert token in methods, f"§2.3 does not carry {token!r} from {CMIN} — re-state the sentence from the record"
+    assert (f"**{fmt(sens['dE_red_shift_eV'])} eV** (Os(II) {fmt(sens['os2_shift_eV'])} · "
+            f"Os(III) {fmt(sens['os3_shift_eV'])} eV)") in summary, f"SUMMARY §Anode does not carry {CMIN}'s numbers"
+    lock = C(REPRO_HEAVY)
+    pf = lock["files"]["dft/os_complex.json"]["per_field"]
+    e2, e3 = pf["os2_plus.E_total_Ha"]["lock_rerun"], pf["os3_plus.E_total_Ha"]["lock_rerun"]
+    assert rec["base"]["source"].endswith(REPRO_HEAVY), f"C-min base is {rec['base']['source']}, not the lock re-run"
+    assert (rec["base"]["os2_E_total_Ha"], rec["base"]["os3_E_total_Ha"]) == (e2, e3), "C-min base ≠ the lock re-run's energies"
+    assert rec["environment"]["pyscf"] == lock["lock_env"]["versions"]["pyscf"], (
+        f"C-min ran under PySCF {rec['environment']['pyscf']}, its base under {lock['lock_env']['versions']['pyscf']}")
+    h2ev = (rec["base"]["dE_red_III_to_II_eV"]) / (e2 - e3)
+    closed = rec["closed"]
+    assert math.isclose(sens["dE_red_shift_eV"], closed["dE_red_III_to_II_eV"] - rec["base"]["dE_red_III_to_II_eV"],
+                        abs_tol=1e-12), "C-min shift is not closed − base"
+    assert math.isclose(sens["os2_shift_eV"], (closed["os2_plus"]["E_total_Ha"] - e2) * h2ev, abs_tol=1e-9)
+    assert math.isclose(sens["os3_shift_eV"], (closed["os3_plus"]["E_total_Ha"] - e3) * h2ev, abs_tol=1e-9)
+    assert closed["os2_plus"]["converged"] and closed["os3_plus"]["converged"], "a C-min SCF did not converge"
+    tg, geo = rec["targets"], rec["geometry"]["closed"]
+    assert all(abs(d - tg["os_n_bpy_A"]) <= 0.002 for d in geo["os_n_bpy_A"]), geo["os_n_bpy_A"]
+    assert all(abs(b - tg["bite_deg"]) <= 0.1 for b in geo["bite_deg"]), geo["bite_deg"]
+    assert sens["full_C_triggered"] == (abs(sens["dE_red_shift_eV"]) >= sens["full_C_trigger_eV"]), (
+        "the full-C flag disagrees with the shift it was computed from")

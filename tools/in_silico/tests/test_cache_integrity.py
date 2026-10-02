@@ -131,6 +131,60 @@ def test_os_mediator_series_lfer():
     assert lf["r2"] > 0.999, f"LFER r² unexpectedly low: {lf['r2']}"
 
 
+# ── lib/os_geometry: the default path IS the committed geometry; the C-min closure realises or refuses ──
+_SERIES_SMILES = {   # 21e's SERIES, by the file name each one writes (os_<name>_meim_cl.xyz)
+    "nme2": "CN(C)c1ccnc(-c2cc(N(C)C)ccn2)c1", "nh2": "Nc1ccnc(-c2cc(N)ccn2)c1",
+    "ome": "COc1ccnc(-c2cc(OC)ccn2)c1", "no2": "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1",
+    "cf3": "FC(F)(F)c1ccnc(-c2cc(C(F)(F)F)ccn2)c1",
+    "so2cf3": "O=S(=O)(C(F)(F)F)c1ccnc(-c2cc(S(=O)(=O)C(F)(F)F)ccn2)c1",
+}
+
+
+def test_os_builder_default_path_reproduces_the_committed_geometry():
+    """The shared builder must still write, byte for byte, the geometries the osmium caches were computed on.
+
+    CAN catch: an edit that leaks into the default path (the `close_chelate` switch, a constant, the clash
+    diagnostics) · an RDKit/MMFF change that moves the embedded ligands — then every 21e/21f/34/34b cache
+    stands on a geometry the builder no longer makes, and the lock base of C-min (`76`) with it.
+    CANNOT catch: the 34 k-water files (34 places the waters) or 34b's dmbpy forms (not written to disk) —
+    their base complexes are the bpy chloro, aqua and bis-Im cases below.
+    """
+    pytest.importorskip("rdkit")
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib import os_geometry as g
+    meim, water = ("ligand", g.MEIM_SMILES, "N"), ("ligand", g.WATER_SMILES, "O")
+    smiles = {**_SERIES_SMILES, "dmbpy": g.DMBPY_SMILES, "bpy": g.BPY_SMILES, "dcbpy": g.DCBPY_SMILES}
+    cases = [(f"os_{n}_meim_cl.xyz", {"bpy_smiles": s}) for n, s in smiles.items()]
+    cases += [("os_dmbpy_meim_cl_full.xyz", {"bpy_smiles": g.DMBPY_SMILES}),
+              ("os_bpy_meim2.xyz", {"bpy_smiles": g.BPY_SMILES, "axial": (meim, meim), "axial_twists": (45.0, 30.0)}),
+              ("os_bpy_meim_h2o.xyz", {"bpy_smiles": g.BPY_SMILES, "axial": (meim, water)})]
+    for fn, kw in cases:
+        atoms, _ = g.build_os_complex(**kw)
+        body = [f"{s:2s}  {p[0]: 12.6f}  {p[1]: 12.6f}  {p[2]: 12.6f}" for s, p in atoms]
+        assert body == (LIGANDS / fn).read_text(encoding="utf-8").splitlines()[2:], (
+            f"the builder no longer writes {fn} — the osmium caches stand on the committed geometry")
+
+
+def test_os_builder_closed_chelate_realises_the_targets_or_refuses(monkeypatch):
+    """`close_chelate=True` (C-min) lands both chelates on OS_N_BPY at BITE_DEG — and its gate can fail.
+
+    CAN catch: a closure that stops reaching the targets (the RDKit minimiser reporting convergence with the
+    restraint unmet — seen 2026-10-02) · a gate that no longer refuses (asserted with an impossible band).
+    CANNOT catch: whether the closed geometry is a better model than the default one — only `76` prices it.
+    """
+    pytest.importorskip("rdkit")
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib import os_geometry as g
+    _, info = g.build_os_complex(bpy_smiles=g.DMBPY_SMILES, close_chelate=True)
+    assert all(abs(d - g.OS_N_BPY) <= g.CLOSE_TOL_A for d in info["os_n_bpy_A"]), info["os_n_bpy_A"]
+    assert all(abs(b - g.BITE_DEG) <= g.CLOSE_TOL_DEG for b in info["bite_deg"]), info["bite_deg"]
+    monkeypatch.setattr(g, "CLOSE_TOL_A", 1e-9)
+    with pytest.raises(ValueError, match="closed chelate not realised"):
+        g.build_os_complex(bpy_smiles=g.DMBPY_SMILES, close_chelate=True)
+
+
 def test_energy_ladder_png():
     path = DFT / "energy_ladder.png"
     assert path.exists()

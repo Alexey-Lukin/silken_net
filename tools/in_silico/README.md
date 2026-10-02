@@ -94,6 +94,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 73 | `73_collar_wall_inversion.py` | HW.33: what wall the bayonet collar needs — by INVERSION, because the retention FORCE has no home in canon (02_02 §4.1 lists requirements without one, and `52`'s 100 N is a deliberately generous BOUND for a different question, not a measurement). Three load cases: collar ring in axial tension · lug-root shear · CONFINED ICE at its self-limiting ceiling (ice I/III/liquid triple point). Verdict: static does not size the wall (printability does), ice does — and not by thickness, so drainage is the only lever | ~1 s |
 | 74 | `74_site_rain_dew.py` | HW.25 + HW.6: site climate of the Cherkasy ERA5 grid point 1991–2020 — wet-day share and wet-day intensity, dew nights and hours (air criterion) for the rain/dew stand, and the dates at which published xylogenesis thresholds (soil 3.5 °C, air 8–9 °C) are crossed SUSTAINEDLY (a winter thaw is not spring, a warm wave after weeks of cold is not the end of the season), for the install season; an orientation and an input, never a stand regime or a window | ~1 s |
 | 75 | `75_pcm_ecp_radius_attribution.py` | HW.5.IS: attributes the conda-lock gap of the metal-in-PCM couples to the PCM ECP-radius fix of PySCF 2.13.0 (PR #3159) — the `21f` B3LYP couple in the recorded 2.11.0 with the fix EMULATED, and [Os(H2O)6]2+/3+ as 2.11.0 as-is ⊥ fix emulated ⊥ the lock interpreter; reads `cache/reproduction/lock_rerun_2026-10-01.json`, writes `cache/reproduction/pcm_ecp_radius_attribution.json`; needs `--lock-python` | ~36 min |
+| 76 | `76_os_chelate_sensitivity.py` | HW.5.IS C-min: the `21f` B3LYP couple (its own tier, imported) with both bpy chelates CLOSED onto the builder's targets (`build_os_complex(close_chelate=True)` — refuses an unrealised chelate), against the lock re-run of the default pair; runs in `silken_lock` and refuses another PySCF or a default geometry other than the committed one; reads `cache/reproduction/lock_rerun_2026-10-01.json`, writes `cache/reproduction/os_chelate_sensitivity.json` + `ligands/os_dmbpy_meim_cl_closed.xyz` | ~27 min |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —
@@ -129,7 +130,7 @@ The cache file is committed (small, deterministic). MD trajectories under
 Re-run records live under `cache/reproduction/` (e.g. `lock_rerun_2026-09-30.json`):
 field-by-field deltas of a committed cache re-computed under another environment (the
 conda-lock). They back the paper's §2.7 reproducibility statement and are listed in the SI
-manifest; only `75` reads one of them (`lock_rerun_2026-10-01.json`, to attribute its gap) and writes its own record beside it, and the committed caches stay untouched.
+manifest; only `75` (to attribute the gap) and `76` (C-min, against its base) read one of them (`lock_rerun_2026-10-01.json`) and write their own record beside it — `76`'s record lives here although it is no re-run, because it ran under the lock and every cache outside this directory is computed in the recorded environment; the committed caches stay untouched.
 
 ---
 

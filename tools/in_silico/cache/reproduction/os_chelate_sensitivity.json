@@ -1,0 +1,93 @@
+{
+  "what": "C-min: the device Os couple (21f, b3lyp tier) on its default geometry and with both bpy chelates closed onto the builder's targets \u2014 the computed sensitivity of paper \u00a72.3.",
+  "date": "2026-10-02",
+  "environment": {
+    "pyscf": "2.13.1",
+    "rdkit": "2025.09.5",
+    "python": "3.12.13",
+    "machine": "arm64"
+  },
+  "settings": "21f tier 'b3lyp': b3lyp/6-31g(d)+LANL2DZ(Os), C-PCM, conv_tol 1e-06, Os(III) level shift 0",
+  "targets": {
+    "os_n_bpy_A": 2.06,
+    "bite_deg": 78.0
+  },
+  "geometry": {
+    "default": {
+      "os_n_bpy_A": [
+        2.0986,
+        2.0986,
+        2.0986,
+        2.0986
+      ],
+      "bite_deg": [
+        80.57,
+        80.57
+      ],
+      "min_interlig_A": 2.054,
+      "min_interlig_pair": "N#13-H#63"
+    },
+    "closed": {
+      "os_n_bpy_A": [
+        2.06,
+        2.06,
+        2.06,
+        2.06
+      ],
+      "bite_deg": [
+        78.0,
+        78.0
+      ],
+      "min_interlig_A": 2.06,
+      "min_interlig_pair": "N#13-H#63"
+    },
+    "default_xyz": "docs/protocols/ebfc/in_silico/ligands/os_dmbpy_meim_cl_full.xyz",
+    "closed_xyz": "docs/protocols/ebfc/in_silico/ligands/os_dmbpy_meim_cl_closed.xyz"
+  },
+  "base": {
+    "source": "tools/in_silico/cache/reproduction/lock_rerun_2026-10-01.json",
+    "os2_E_total_Ha": -1964.8520089566964,
+    "os3_E_total_Ha": -1964.6908980868193,
+    "dE_red_III_to_II_eV": -4.384050108653437
+  },
+  "closed": {
+    "os2_plus": {
+      "label": "Os(II) dmbpy closed chelate",
+      "charge": 1,
+      "spin": 0,
+      "n_atoms": 66,
+      "n_electrons": 272,
+      "converged": true,
+      "wall_seconds": 491.9,
+      "E_total_Ha": -1964.854550607367,
+      "HOMO_Ha": -0.17466430104390435,
+      "LUMO_Ha": -0.07290196205643369,
+      "HOMO_eV": -4.7528577590912064,
+      "LUMO_eV": -1.9837634476079786,
+      "gap_eV": 2.769094311483227
+    },
+    "os3_plus": {
+      "label": "Os(III) dmbpy closed chelate",
+      "charge": 2,
+      "spin": 1,
+      "n_atoms": 66,
+      "n_electrons": 271,
+      "converged": true,
+      "wall_seconds": 1048.5,
+      "E_total_Ha": -1964.6924972685874,
+      "HOMO_Ha": -0.22768485545379452,
+      "LUMO_Ha": -0.1510750101988716,
+      "HOMO_eV": -6.19562054411515,
+      "LUMO_eV": -4.110960454638072,
+      "gap_eV": 2.0846600894770786
+    },
+    "dE_red_III_to_II_eV": -4.409695993981325
+  },
+  "sensitivity": {
+    "dE_red_shift_eV": -0.02564588532788825,
+    "os2_shift_eV": -0.06916183809835426,
+    "os3_shift_eV": -0.04351595277046606,
+    "full_C_trigger_eV": 0.1,
+    "full_C_triggered": false
+  }
+}

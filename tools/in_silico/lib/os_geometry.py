@@ -32,6 +32,11 @@ exactly. No Os geometry the pipeline uses is optimised (21c tried and was
 terminated unconverged). A different set — or a builder that closes the bite — is
 a MODEL change: it rebuilds the geometry of 21e/21f/34/34b, and of 21b → 21d only
 through 21b's own copy.
+`close_chelate=True` is that builder behind a switch, OFF by default and read only by
+`76` (C-min, the computed sensitivity of paper §2.3): the chelate is re-optimised with
+its N···N held at the spacing the two targets imply and its N–C–C–N dihedral held, so
+the rigid placement realises Os–N(bpy) and the bite — and the build REFUSES when it
+does not (in-silico §When Modifying #27). The default path never enters that code.
 
 Geometry is returned with an `info` dict (atom count, min contact, Os-ligand
 distances) so the *caller* prints/validates — the lib stays I/O-free.
@@ -50,6 +55,13 @@ OS_N_DONOR = 2.10        # Os–N(imidazole/pyridine)
 OS_O_DONOR = 2.10        # Os–O(aqua)
 OS_CL = 2.38
 BITE_DEG = 78.0          # N–Os–N bpy bite angle
+
+# ── chelate closure — read only when close_chelate=True ──
+CLOSE_K = 1.0e5          # MMFF restraint stiffness on the held N···N and N–C–C–N dihedral
+CLOSE_RESTARTS = 50      # Minimize calls allowed before the closure gives up (`_hold_nn`)
+CLOSE_TOL_A = 0.002      # refusal band: each realised Os–N(bpy) against OS_N_BPY (≫ the closure's own N···N residual,
+                         # ≤ 0.2 mÅ on every series ligand, 2026-10-02) …
+CLOSE_TOL_DEG = 0.1      # … each bite against BITE_DEG, the dihedral against its pre-closure value
 
 # ── Ligand SMILES ──
 BPY_SMILES = "c1ccnc(-c2ccccn2)c1"                       # 2,2'-bipyridine (parent)
@@ -87,9 +99,11 @@ def _plane_normal(atoms):
     return n / np.linalg.norm(n)
 
 
-def build_chelate(bpy_smiles: str = BPY_SMILES):
+def build_chelate(bpy_smiles: str = BPY_SMILES, nn_A: float | None = None):
     """Build a planar s-cis 2,2'-bipyridine (or 4,4'-substituted); return
-    (atoms, n1, n2) where n1,n2 are the two coordinating *ring* N indices."""
+    (atoms, n1, n2) where n1,n2 are the two coordinating *ring* N indices.
+    `nn_A` (Å): None keeps the MMFF chelate with its own N···N; a value closes it
+    to that N···N (`_hold_nn`)."""
     mol = Chem.MolFromSmiles(bpy_smiles)
     if mol is None:
         raise ValueError(f"bad bpy SMILES: {bpy_smiles!r}")
@@ -108,8 +122,35 @@ def build_chelate(bpy_smiles: str = BPY_SMILES):
     conf = mol.GetConformer()
     if abs(AllChem.GetDihedralDeg(conf, path[0], path[1], path[2], path[3])) > 90:
         AllChem.SetDihedralDeg(conf, path[0], path[1], path[2], path[3], 0.0)
+    if nn_A is not None:
+        _hold_nn(mol, path, nn_A)
 
     return _atoms_of(mol), n_idx[0], n_idx[1]
+
+
+def _hold_nn(mol, path, nn_A):
+    """Re-optimise the s-cis chelate under MMFF94s with its ring-N···N held at `nn_A` and
+    the N–C–C–N dihedral held where the flattening left it: the closure is carried by the
+    ring angles, not by a twist. Refuses an unconverged or drifted result."""
+    conf = mol.GetConformer()
+    dih0 = AllChem.GetDihedralDeg(conf, *path)
+    ff = AllChem.MMFFGetMoleculeForceField(
+        mol, AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94s"))
+    ff.MMFFAddDistanceConstraint(path[0], path[3], False, nn_A, nn_A, CLOSE_K)
+    ff.MMFFAddTorsionConstraint(*path, False, dih0, dih0, CLOSE_K)
+    # RDKit's BFGS reports convergence (0) when its line search stalls against the stiff restraint, short of
+    # the minimum — one call left bpy 0.03 Å off the held N···N. Each call resets the Hessian, so restart
+    # until two converged calls agree; the realised-distance gate in `build_os_complex` stays the arbiter.
+    e_prev = None
+    for _ in range(CLOSE_RESTARTS):
+        rc, e = ff.Minimize(maxIts=2000), ff.CalcEnergy()
+        if rc == 0 and e_prev is not None and abs(e - e_prev) < 1e-9:
+            break
+        e_prev = e
+    else:
+        raise RuntimeError(f"chelate closure to N···N {nn_A:.4f} Å did not converge")
+    if abs(AllChem.GetDihedralDeg(conf, *path) - dih0) > CLOSE_TOL_DEG:
+        raise RuntimeError(f"chelate closure moved the N–C–C–N dihedral off {dih0:.2f}°")
 
 
 def build_monodentate(smiles: str, coord_elem: str = "N"):
@@ -205,7 +246,7 @@ DEFAULT_AXIAL = (("ligand", MEIM_SMILES, "N"), ("cl",))
 
 
 def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
-                     axial_twists=(0.0, 0.0)):
+                     axial_twists=(0.0, 0.0), close_chelate: bool = False):
     """Assemble cis-[Os(bpy)₂(A0)(A1)] octahedron.
 
     bpy1 in xz-plane, bpy2 in yz-plane; axial[0] along +y, axial[1] along +x.
@@ -213,11 +254,14 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
     `axial_twists` (deg) rotate each axial ligand about its Os–donor bond — leave
     (0, 0) for the canonical placement (21b/① series/mediator/aqua all unchanged);
     used only to propeller two cis rings apart (bis-Im, note 20/26).
-    Returns (atoms, info) where info has n_atoms / min_contact_A / os_distances.
+    `close_chelate` closes both chelates onto OS_N_BPY at BITE_DEG and refuses the
+    build if either is not realised (C-min only; module docstring).
+    Returns (atoms, info) where info has n_atoms / min_contact_A / os_distances and
+    the realised chelate (os_n_bpy_A, bite_deg).
     """
     os_pos = np.zeros(3)
     half = np.radians(BITE_DEG / 2)
-    bpy, n1, n2 = build_chelate(bpy_smiles)
+    bpy, n1, n2 = build_chelate(bpy_smiles, nn_A=2 * OS_N_BPY * np.sin(half) if close_chelate else None)
 
     # ── bpy1 chelate (xz plane) ──
     mid1 = np.array([-1.0, 0.0, 1.0])
@@ -273,6 +317,14 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
     os_dists = sorted(float(np.linalg.norm(pos[k] - pos[0]))
                       for k in range(1, n)
                       if all_atoms[k][0] in ("N", "Cl", "O"))[:6]
+    chelates = [(1 + n1, 1 + n2), (1 + len(bpy) + n1, 1 + len(bpy) + n2)]
+    os_n_bpy = [float(np.linalg.norm(pos[k] - pos[0])) for pair in chelates for k in pair]
+    bites = [float(np.degrees(np.arccos(np.dot(pos[a], pos[b]) / np.linalg.norm(pos[a]) / np.linalg.norm(pos[b]))))
+             for a, b in chelates]
+    if close_chelate and (max(abs(d - OS_N_BPY) for d in os_n_bpy) > CLOSE_TOL_A
+                          or max(abs(b - BITE_DEG) for b in bites) > CLOSE_TOL_DEG):
+        raise ValueError(f"closed chelate not realised: Os–N(bpy) {[round(d, 4) for d in os_n_bpy]} Å, "
+                         f"bite {[round(b, 2) for b in bites]}° against {OS_N_BPY} Å / {BITE_DEG}°")
     info = {
         "n_atoms": n,
         "min_contact_A": round(min_d, 3),
@@ -280,6 +332,8 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
         "min_interlig_A": round(min_il, 3),
         "min_interlig_pair": f"{all_atoms[min_il_pair[0]][0]}#{min_il_pair[0]}-{all_atoms[min_il_pair[1]][0]}#{min_il_pair[1]}",
         "os_coord_distances_A": [round(d, 3) for d in os_dists],
+        "os_n_bpy_A": [round(d, 4) for d in os_n_bpy],
+        "bite_deg": [round(b, 2) for b in bites],
     }
     return all_atoms, info
 

@@ -145,6 +145,17 @@ it waits for a primary or for the founder (`00_07` HW.5.IS).
   by ≥ 0.10 Å (Os–N(bpy)) or ≥ 0.07 Å (Os–Cl/O/N(L)), in one pass with any regeneration of the metal-in-PCM
   caches (§2.7) — and its budget, with the value question "no unoptimised geometry in Methods at all", is the
   founder's (⚖️ leg in `00_07` HW.5.IS).
+  ✅ **C-min applied 2026-10-02** (script `76`, record `cache/reproduction/os_chelate_sensitivity.json`; both
+  conditions held — no other heavy job on the CPU, and the builder's default path shown bit-identical to HEAD for
+  every caller's signature and byte-identical to the twelve committed builder-written `ligands/os_*.xyz` in BOTH
+  environments): closing both chelates onto 2.060 Å / 78.0° moves the device couple's vertical ΔE_red against
+  the lock base by less than the 0.1 eV trigger (the number — SUMMARY §Anode and §2.3, both pinned to the
+  record), so the full C is NOT run; D is untouched (C-min moves an absolute number, not a difference). §2.3
+  now prints the number — the one place the verdict allowed it in, computed. The closure itself is a builder
+  switch (`build_os_complex(close_chelate=True)`, default off) that refuses an unrealised chelate; making it
+  work exposed a silent failure worth knowing for any re-use: RDKit's MMFF minimiser reports convergence with a
+  stiff distance restraint unmet (bpy left 0.03 Å off the held N···N), so the switch restarts to a stationary
+  energy and the realised-distance gate stays the arbiter.
 - §2.3 — the Hammett σ_para values of the substituent series (`21e`). Likely primary: Hansch, Leo & Taft,
   *Chem. Rev.* 1991, *91*, 165 (DOI 10.1021/cr00002a004 — Crossref ✓, values NOT checked: paywall). Unlike
   the bond lengths, these values are a MODEL INPUT that sets every point of the Hammett slope (`21e`

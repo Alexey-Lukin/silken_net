@@ -151,6 +151,8 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **PCET validation (script 32 — thermodynamic proton reference):** the flavin couple itself is NOT the culprit — E°(FAD/FADH₂) = **−158 mV vs NHE** (pH 7; −10 mV pH 4.5, +256 mV pH 0) lands **50–62 mV** from the free-flavin experimental bracket (−220 · −208 mV; ⚖️ founder 2026-09-24 — only −220 has a source, the paper's ref 25) → the ~1 eV raw-DFT gap is isolated to the **differential PCM solvation of the charge-changing Os couple**, not the flavin. (Cache `dft/pcet_redox_potential.json`; the cascade-PCET reframe of script 33 does not flip it downhill — same PCM limit, not proton coupling.)
 
+**Geometry sensitivity — C-min (script 76, 2026-10-02):** the Os geometry is programmatic, not optimised, and its rigid chelate does not reach the assumed targets (paper §2.3). Closing both chelates of the device complex onto 2.060 Å / 78.0° moves its vertical ΔE_red(III→II) by **−0.026 eV** (Os(II) −0.069 · Os(III) −0.044 eV), computed under the conda-lock against the lock re-run of the same couple — below the 0.1 eV that would have re-run the aqua and bis-Im forms, and far inside the ~1 eV method-limit gap above. Record `cache/reproduction/os_chelate_sensitivity.json`; conditions and verdict — [`paper/09_references.md`](paper/09_references.md), the §2.3 line.
+
 ### Publication-grade: ωB97X/def2-TZVP (dimethyl mediator, B1 ✅ 2026-06-17)
 
 | Species (dimethyl bpy) | HOMO (eV) | LUMO (eV) | Gap (eV) |

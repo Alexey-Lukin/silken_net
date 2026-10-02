@@ -69,7 +69,13 @@ targets thus sit inside the [Os(bpy)₃]²⁺ ranges, the Cl target at the top o
 Os(II) one, and the monodentate N and O targets inside the related ranges, while the realised chelate is up to 0.04 Å longer and
 3° wider than in [Os(bpy)₃]²⁺. The same geometry is used for both oxidation states and for every member of the
 substituent and speciation series, so an error in it is largely common to the points of a series; we expect it
-to bear more on absolute redox energies than on within-series trends, but its size was not computed here.
+to bear more on absolute redox energies than on within-series trends. Its size on an absolute number was computed
+for the device couple: closing both chelates onto the targets — each bipyridine re-optimised (MMFF94s) with its
+N···N held at the spacing the two targets imply, which realises Os–N(bpy) 2.060 Å at a 78.0° bite — lowers the
+Os(II) state by 0.069 eV and the Os(III) state by 0.044 eV and so moves the vertical ΔE_red(III→II) by −0.026 eV
+(B3LYP/6-31G(d)/LANL2DZ in C-PCM, computed in the conda-lock environment against the lock re-run of the same
+couple, §2.7; record `cache/reproduction/os_chelate_sensitivity.json`). The other members of the class were not
+recomputed.
 
 ## 2.4 Proton-coupled electron transfer (PCET)
 

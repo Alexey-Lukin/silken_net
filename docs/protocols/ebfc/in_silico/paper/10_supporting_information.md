@@ -4,11 +4,11 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,811,849 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 252 · 14,836,577 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
-`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every committed cache outside `cache/reproduction/` was computed in (of the records there, the `lock_rerun_*` re-runs ran against the lock, and script 75's attribution ran in both environments — its 21f couple and hexa-aqua A/B here, hexa-aqua C under the lock; each record says so itself, S3) — one URL + md5 per package; its header names the pip-installed helpers that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). `environment.yml` / `requirements-*` are the human-facing specs the lock was solved from.
+`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every committed cache outside `cache/reproduction/` was computed in (of the records there, the `lock_rerun_*` re-runs ran against the lock, script 75's attribution ran in both environments — its 21f couple and hexa-aqua A/B here, hexa-aqua C under the lock — and script 76's chelate sensitivity ran under the lock, against the lock re-run of the same couple; each record says so itself, S3) — one URL + md5 per package; its header names the pip-installed helpers that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). `environment.yml` / `requirements-*` are the human-facing specs the lock was solved from.
 
 | File | SHA-256 | Bytes |
 |---|---|---|
@@ -34,7 +34,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/lib/kinetics.py` | `c930a27c3ed1b03eafa51206c92671e01c4c5724159edf552dc18da73c5e3901` | Shared Michaelis-Menten / pH forms for the L4 kinetics scripts (30, 30b). |
 | `tools/in_silico/lib/md_utils.py` | `8d8c7a3fa1d2cbedc88c81811bb54d7781e06e2ca0ec47d8a500ccec718b2251` | Shared MD utility functions for L2 molecular dynamics scripts. |
 | `tools/in_silico/lib/mechanics.py` | `3a5034ca5204666b5ae5f5858dbd58e258da449eeb293d61b8c06bec94651d70` | Shared thick-wall (Lamé) mechanics helpers for the anchor's titanium–PEEK press-fit. |
-| `tools/in_silico/lib/os_geometry.py` | `579a76b88746c0f873877aa3b4df8b8311cb4447232a35ee27492149d38d7dea` | Parameterized octahedral Os-complex geometry builder (shared SSOT). |
+| `tools/in_silico/lib/os_geometry.py` | `c6c89f016883729718e1572663cecab06122319cc313ec6c62bcd1ffc63dad6b` | Parameterized octahedral Os-complex geometry builder (shared SSOT). |
 | `tools/in_silico/lib/utils.py` | `85922b09a1138a2303ea79f3fe02a1c313d7f30dc535a7814d913a03111a05b3` | Shared utility functions for the in-silico pipeline. |
 | `tools/in_silico/lib/xylem_sap.py` | `ac48c6da625473ff15d60c0c5d7ea5615086c6015fd77b00b04ce68f5d728672` | Xylem sap composition profiles for different tree species. |
 | `tools/in_silico/scripts/01_smoke_test_water_box.py` | `13e0efaba871a4fbeb070b56789a9a6693ecacca270030abf3748b9a9dfda252` | L2 smoke test — physical engine sanity check. |
@@ -105,15 +105,16 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `3abf04dd5f9f5acfba14243620de779ca86a77c3895d63008d9d45f57cf07922` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `95788659543a9322202c77c2e066f2a21bd65181640da0dd7c4ca6b611ce76a1` | Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC. |
-| `tools/in_silico/scripts/72_paper_supporting_information.py` | `47bafb466d15835bfb09dd2ecc11a1a3bcacb45d7e1f98f1b40596a77fbfe57a` | Supporting Information manifest, generated from the committed tree (no compute). |
+| `tools/in_silico/scripts/72_paper_supporting_information.py` | `565a772822e6d622a02d93e42599a7741bbe0b19086bc77cfeac73beffaa72e2` | Supporting Information manifest, generated from the committed tree (no compute). |
 | `tools/in_silico/scripts/73_collar_wall_inversion.py` | `4602eb65a42727cd2f57acd5bbec3528d67cd3aea4a922b8b84fcc3d9a5d3ef6` | Bayonet-collar wall of the sensor capsule, judged by inversion: the force at which the wall would start to limit (axial retention, lug-root shear, trapped ice) against a generous bound. |
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
+| `tools/in_silico/scripts/76_os_chelate_sensitivity.py` | `2c6fd51d8bf318254c856dccd6edd8f6c79097dbabfbebd4cb75fea3e668aa3c` | Sensitivity of the device osmium couple to closing its bipyridine chelates onto the assumed bond length and bite angle. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `8520a9dd39385427ba3a998617f6bb90e0a252b1a5b05558d8ee361dc9f8d64e` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `c18ea5dbd0bb9f5593ebfa4de3ec3282dbe29f8c44ef945c97ec3191f3fd7f8a` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `f37eece98afba6b827f748bc4142c1f87779254cf50b40446d320e609ce215b3` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `27bea949c22f0d0b70e2a3344f8da84e1d7236755737b5638d5fcdf3cfc92eac` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -221,6 +222,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 |---|---|---|
 | `tools/in_silico/cache/reproduction/lock_rerun_2026-09-30.json` | `7781ff2b7afd9ea503699ba17b504c93901a50d2d7360d55a9f33ab96ae0aee2` | 6,877 |
 | `tools/in_silico/cache/reproduction/lock_rerun_2026-10-01.json` | `a878fc9e65d9f4912a89cc68b2fa9eb23f04443c47a3363e7378cad41997bf4c` | 7,402 |
+| `tools/in_silico/cache/reproduction/os_chelate_sensitivity.json` | `b4b0e1bbb76d58545b4ed710b98777dd9758aa000cedd63544edf6fffeae0383` | 2,568 |
 | `tools/in_silico/cache/reproduction/pcm_ecp_radius_attribution.json` | `18e7e55cde4ac3b523cd467b9f208f781bc46dda48761e16cc5c795b8c40a324` | 5,576 |
 
 ### `tools/in_silico/cache/thermal/`
@@ -303,6 +305,7 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `docs/protocols/ebfc/in_silico/ligands/os_cf3_meim_cl.xyz` | `124cc73fa90f1a997c5f9372e9158f272062d1847207de491000a1394ea934a7` | 3,022 |
 | `docs/protocols/ebfc/in_silico/ligands/os_dcbpy_meim_cl.xyz` | `44c3cdbe71ce417d14542fd70dc31db1cb2c34531a35526b2d4faa1e95d449bf` | 3,024 |
 | `docs/protocols/ebfc/in_silico/ligands/os_dmbpy_meim_cl.xyz` | `5c7a833405cf05298b04b1b4bf9b5344274fda92f39ae72c0365bf26f093aed7` | 3,024 |
+| `docs/protocols/ebfc/in_silico/ligands/os_dmbpy_meim_cl_closed.xyz` | `63b82edcbe009f8f3d5067d4ec206ba0cfde631a432dd0e8ee8080218744be86` | 3,061 |
 | `docs/protocols/ebfc/in_silico/ligands/os_dmbpy_meim_cl_full.xyz` | `a122b472269f146b3ed0a08a04203d7e758a49bc2760f086c8c08a0e30bdcad2` | 3,051 |
 | `docs/protocols/ebfc/in_silico/ligands/os_hexaaqua.xyz` | `9000d9eab1f2f0f9321292cfe6c5381ed831b1ff83595bee39b2ad9ef8dd4239` | 881 |
 | `docs/protocols/ebfc/in_silico/ligands/os_hexaaqua_2shell.xyz` | `02bc58575bcfee9055259abb9f4a7b30b3e01ad6bed867c28e55ffa0b6cf4379` | 2,500 |
