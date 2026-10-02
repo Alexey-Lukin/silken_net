@@ -17,7 +17,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — архітектура + host/CI-прошивка; схем, прототипу й HAL-лінкованого `.elf` ще немає ([`00_07`](00_07_Action_Plan_Tracker) HW.9 · FW.46); Phase 2.5: Starlink DTC Київстару відкритий IoT-пристроям лише для ТЕСТУВАННЯ (80 кбіт/с), а чи реєструється в ньому Cat-M/NB-IoT-модем SIM7070G, первинка не каже (§Starlink DTC, звірено 2026-10-01); фазою першого деплою Phase 2.5 лишається до відповіді оператора (⚖️ 2026-10-01, §6)
-- **Відкриті пункти сторінки** → [`00_07`](00_07_Action_Plan_Tracker), секція §02b; поза нею — ARCH.34 (Helium-детур) і ARCH.24 (регуляторика).
+- **Відкриті пункти сторінки** → [`00_07`](00_07_Action_Plan_Tracker), секція §02b; поза нею — ARCH.34 (Helium-детур) і ARCH.35 (Flash-ring W25Q32), що ведуть сюди meta-рядком, і ARCH.24 (регуляторика).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Вартість розгортання |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті пункти** (SSOT) — секція §02b (ростера тут не ведемо: перелік ID уже раз згнив, пропустивши HW.41 і HW.31); поза нею — ARCH.34 (Helium-детур, §06) і ARCH.24 (регуляторика, §02c) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті пункти** (SSOT) — секція §02b (ростера тут не ведемо: перелік ID уже раз згнив, пропустивши HW.41 і HW.31); поза нею — ARCH.34 (Helium-детур) і ARCH.35 (Flash-ring W25Q32), обидва §06, що ведуть сюди meta-рядком, і ARCH.24 (регуляторика, §02a) |
 
 ## 📑 Зміст
 

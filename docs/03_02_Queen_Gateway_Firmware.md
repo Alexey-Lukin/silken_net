@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите → пункти [`00_07 §03a`](00_07_Action_Plan_Tracker), чий meta-рядок веде `→ 03_02`; uplink першого деплою (init і PDP — §4) — HW.41 у §02b.
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите → пункти [`00_07`](00_07_Action_Plan_Tracker), чий meta-рядок веде `→ 03_02`, у будь-якій секції: здебільшого §03a, а також HW.41 (§02b; uplink першого деплою — init і PDP, §4), SEC.38 (§03b) і ARCH.54 (§06).
 
 ---
 
@@ -25,7 +25,7 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | AES режими, ключі (§3.1), HRNG IV |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` (батч [IV:16][CBC ciphertext]) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів Queen → ZK-proof/мінтинг |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT) — ростера тут не ведемо (перелік ID згнив, пропускаючи більшість живих пунктів): пункти [`00_07 §03a`](00_07_Action_Plan_Tracker), чий meta-рядок веде `→ 03_02`; uplink першого деплою — HW.41 (§02b) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT) — ростера тут не ведемо (перелік ID згнив, пропускаючи більшість живих пунктів): пункти, чий meta-рядок веде `→ 03_02`, у будь-якій секції — здебільшого [`00_07 §03a`](00_07_Action_Plan_Tracker), а також HW.41 (§02b, uplink першого деплою), SEC.38 (§03b) і ARCH.54 (§06) |
 
 ## 📑 Зміст
 
