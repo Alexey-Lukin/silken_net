@@ -135,8 +135,10 @@ def build() -> str:
     parts.append("## S1. Recorded computational environment\n")
     parts.append(
         "`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every "
-        "committed cache outside `cache/reproduction/` was computed in (the re-run records there ran against the "
-        "lock and say so themselves, S3) — one URL + md5 per package; its header names the pip-installed helpers "
+        "committed cache outside `cache/reproduction/` was computed in (of the records there, the `lock_rerun_*` "
+        "re-runs ran against the lock, and script 75's attribution ran in both environments — its 21f couple and "
+        "hexa-aqua A/B here, hexa-aqua C under the lock; each record says so itself, S3) — one URL + md5 per "
+        "package; its header names the pip-installed helpers "
         "that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, "
         "when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) "
         "appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). "

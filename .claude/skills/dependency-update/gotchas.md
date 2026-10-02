@@ -270,7 +270,7 @@
   🔴 **The 422 is loud but *late*: in a batch it kills the alerts after the long one, leaving the sweep
   half-applied and looking finished.** Write the reason as a tweet with an ID to follow (`SEC.30 / canon
   04_03 §2.2б`), never as an essay, and length-check **before** sending. 🔴 **І міряй БАЙТИ, не символи — одиницю ми так і не перевірили, а кирилиця важить удвічі** (2026-09-07): чернетковий коментар мав 266 символів при **368 байтах**. Двозначність знімається запасом, а не вірою: тримай ≤280 БАЙТІВ і питання не виникає. ⊕ Причина теж не одна на всіх (Dependabot-словник): `not_used` = адвізорі про API, якого наш споживач НЕ КЛИЧЕ (доказ grep-ом, постійний, `#46`) ⊥ `tolerable_risk` = код присутній і був би живий, просто ми не запускаємо той шлях (це ПОЛІТИКА, не факт про код). Злиття їх в одну причину робить слабшу підставу спільною для всіх. Instances → memory `project_dependabot_sweep`.
-36. **Conda `>=` env vs lock: the ML env is a loose `>=` floor spec, while in-silico runs on a real `conda-lock.yml`.** ML env is a `>=` spec (raise floors to tested-current — esp. the
+36. **Conda `>=` env vs lock: the ML env is a loose `>=` floor spec, while in-silico has a real `conda-lock.yml` — the reproduction pin, not the env the canon ran on.** ML env is a `>=` spec (raise floors to tested-current — esp. the
   DSP floor that protects the parity contract; read the current literal in
   `tools/ml/environment.yml`, never from here). 🔴 **And a `>=` floor plus a CACHED,
   path-gated CI job is not the guard it reads as:** the env only re-resolves when the cache

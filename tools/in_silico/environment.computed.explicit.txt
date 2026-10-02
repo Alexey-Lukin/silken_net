@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # The environment every committed DFT/MD cache under tools/in_silico/cache/ was computed in (the
-# re-run records under cache/reproduction/ excepted — they ran against the lock, below) —
+# records under cache/reproduction/ excepted: the lock_rerun_* re-runs ran against the lock, below, and
+# script 75's attribution ran in both — its 21f couple and hexa-aqua A/B here, hexa-aqua C under the lock) —
 # conda env `silken_md`, osx-arm64, whose conda history is unchanged since 2026-05-24 (the one
 # install; the DFT caches date from 2026-05-28 on). Key pins: PySCF 2.11.0 · geomeTRIC 1.1 ·
 # Python 3.12.13 · OpenMM 8.5.1 · RDKit 2025.09.5 · NumPy 2.4.6.

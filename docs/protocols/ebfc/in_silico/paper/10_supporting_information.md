@@ -4,16 +4,16 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,802,091 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,802,390 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
-`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every committed cache outside `cache/reproduction/` was computed in (the re-run records there ran against the lock and say so themselves, S3) — one URL + md5 per package; its header names the pip-installed helpers that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). `environment.yml` / `requirements-*` are the human-facing specs the lock was solved from.
+`environment.computed.explicit.txt` is the conda `--explicit --md5` export of the environment every committed cache outside `cache/reproduction/` was computed in (of the records there, the `lock_rerun_*` re-runs ran against the lock, and script 75's attribution ran in both environments — its 21f couple and hexa-aqua A/B here, hexa-aqua C under the lock; each record says so itself, S3) — one URL + md5 per package; its header names the pip-installed helpers that are not inputs to any result. It was installed from conda-forge on 2026-05-24 with PySCF unpinned, when 2.11.0 was the newest osx-arm64 build there; the build carrying the PCM fix of Methods §2.7 (2.13.0) appeared on 2026-05-27. `conda-lock.yml` is the maintained lock (reproduction). `environment.yml` / `requirements-*` are the human-facing specs the lock was solved from.
 
 | File | SHA-256 | Bytes |
 |---|---|---|
 | `tools/in_silico/conda-lock.yml` | `9310d48fb69beaa7d1806c196681c5b9bca474c11ae669bc6f4abfeb133dee53` | 302,050 |
-| `tools/in_silico/environment.computed.explicit.txt` | `4ef727787491b948d96251fb60a6b581dd8998e698127411a68873b8e46bcc23` | 39,469 |
+| `tools/in_silico/environment.computed.explicit.txt` | `81837ab8cdaf21c8b4572a996f668d2a4fa1579dfef7d3896bb1b96f3dedcb2f` | 39,592 |
 | `tools/in_silico/environment.yml` | `dae5774e98b8438e2694bc22639511d6dce44592f6384f2cfc9cbe1c6055d8ba` | 604 |
 | `tools/in_silico/requirements-conda-lock.in` | `0484afae650bf173b6016dc89ccd0b6497dded104f7d36733df4fef8e8743f83` | 9,715 |
 | `tools/in_silico/requirements-conda-lock.txt` | `080d5437fc0fb76f6807cb840d5be2939b38d7525f59e1e2c9d98e7fc555e61a` | 84,291 |
@@ -105,7 +105,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `f3350808ef4a3fd7631f9b26db52a7332b7d06b092ffc3b3f2948324789c8a20` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `b1e20b0a9cbf3765029d373ec3a3cc4a5999a98da5c2e81b2dc14212173fa27d` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
-| `tools/in_silico/scripts/72_paper_supporting_information.py` | `6047c3de4d23b9a69c5a049c640eff0dfc7a859297e40861a08476ef47c39b23` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
+| `tools/in_silico/scripts/72_paper_supporting_information.py` | `6760028b5793f164b6afaac2c529c876ab345eb5cc9b22709e3b53d7150292ee` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
 | `tools/in_silico/scripts/73_collar_wall_inversion.py` | `df57e810c36359490b455caa702d6122d4679c3e9870396575e8fc4381df9415` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «реалізувати комір»; вирок — 02_02 §4.4). |
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
