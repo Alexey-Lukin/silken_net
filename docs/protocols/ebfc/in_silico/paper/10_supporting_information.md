@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 252 · 14,839,301 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 252 · 14,840,288 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -113,7 +113,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `055e43c70383bd940e9d335ffb02d09f8eb948184a6745967eaf45a8ef2d0471` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `a59935e5b2563077e2b59b87ac90f4d868c60be23c568d20763544facf103e39` | Verify integrity of committed in-silico cache and ligand files. |
 | `tools/in_silico/tests/test_doc_cache_sync.py` | `d2071466e9f3ff8ef6d73e1f4736ea13b36fb8358abe31984e7fe5e2c0730018` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |

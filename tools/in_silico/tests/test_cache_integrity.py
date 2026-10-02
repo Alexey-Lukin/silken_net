@@ -138,16 +138,23 @@ _SERIES_SMILES = {   # 21e's SERIES, by the file name each one writes (os_<name>
     "cf3": "FC(F)(F)c1ccnc(-c2cc(C(F)(F)F)ccn2)c1",
     "so2cf3": "O=S(=O)(C(F)(F)F)c1ccnc(-c2cc(S(=O)(=O)C(F)(F)F)ccn2)c1",
 }
+# ⛔ Not byte for byte: the files were written in the recorded osx-arm64 env, while CI runs the linux-64 lock env,
+# and the MMFF relaxation lands up to 0.98 mÅ per coordinate apart there (measured on CI run 37046079480,
+# 2026-10-02). The smallest real edit this test exists to catch, `close_chelate` leaking into the default path,
+# moves atoms 0.17–0.21 Å; 0.01 Å sits ten times above the noise and seventeen times below that edit.
+_GEOM_TOL_A = 0.01
 
 
 def test_os_builder_default_path_reproduces_the_committed_geometry():
-    """The shared builder must still write, byte for byte, the geometries the osmium caches were computed on.
+    """The shared builder must still write the geometries the osmium caches were computed on (within _GEOM_TOL_A).
 
     CAN catch: an edit that leaks into the default path (the `close_chelate` switch, a constant, the clash
-    diagnostics) · an RDKit/MMFF change that moves the embedded ligands — then every 21e/21f/34/34b cache
-    stands on a geometry the builder no longer makes, and the lock base of C-min (`76`) with it.
-    CANNOT catch: the 34 k-water files (34 places the waters) or 34b's dmbpy forms (not written to disk) —
-    their base complexes are the bpy chloro, aqua and bis-Im cases below.
+    diagnostics) · an RDKit/MMFF change that moves the embedded ligands by more than the tolerance · any change
+    of element order or atom count — then every 21e/21f/34/34b cache stands on a geometry the builder no longer
+    makes, and the lock base of C-min (`76`) with it.
+    CANNOT catch: a shift below 0.01 Å — indistinguishable here from cross-platform MMFF noise (see _GEOM_TOL_A) ·
+    the 34 k-water files (34 places the waters) or 34b's dmbpy forms (not written to disk) — their base complexes
+    are the bpy chloro, aqua and bis-Im cases below.
     """
     pytest.importorskip("rdkit")
     import sys
@@ -161,9 +168,13 @@ def test_os_builder_default_path_reproduces_the_committed_geometry():
               ("os_bpy_meim_h2o.xyz", {"bpy_smiles": g.BPY_SMILES, "axial": (meim, water)})]
     for fn, kw in cases:
         atoms, _ = g.build_os_complex(**kw)
-        body = [f"{s:2s}  {p[0]: 12.6f}  {p[1]: 12.6f}  {p[2]: 12.6f}" for s, p in atoms]
-        assert body == (LIGANDS / fn).read_text(encoding="utf-8").splitlines()[2:], (
-            f"the builder no longer writes {fn} — the osmium caches stand on the committed geometry")
+        ref = [line.split() for line in (LIGANDS / fn).read_text(encoding="utf-8").splitlines()[2:]]
+        assert [s.strip() for s, _ in atoms] == [r[0] for r in ref], (
+            f"the builder no longer writes the atoms of {fn} — the osmium caches stand on the committed geometry")
+        worst = max(math.dist(p, tuple(float(x) for x in r[1:4])) for (_, p), r in zip(atoms, ref, strict=True))
+        assert worst <= _GEOM_TOL_A, (
+            f"the builder no longer writes {fn} — the osmium caches stand on the committed geometry "
+            f"(worst atom {worst:.4f} Å off, tolerance {_GEOM_TOL_A} Å)")
 
 
 def test_os_builder_closed_chelate_realises_the_targets_or_refuses(monkeypatch):
