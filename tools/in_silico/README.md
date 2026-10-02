@@ -218,9 +218,12 @@ python -m openmm.testInstallation
 ## Reproducible install (pinned lock)
 
 `conda env create -f environment.yml` (above) re-solves and grabs the latest
-compatible builds — fine for day-to-day dev. For the **exact** env CI uses and
-that produced the L1–L4 numbers, install from the committed `conda-lock.yml`
-instead. Needs `conda-lock` once (`pipx install conda-lock`, or
+compatible builds — fine for day-to-day dev. For the **exact** env CI uses, install
+from the committed `conda-lock.yml` instead — a REPRODUCTION env, not the one the
+numbers came from: that is the recorded env, `environment.computed.explicit.txt`
+(PySCF 2.11.0, while the lock resolves 2.13.1 — paper §2.7). ⛔ On the machine whose
+`silken_md` is that record, install the lock under its own name (`silken_lock`), never
+over it (`00_07` OPS.22). Needs `conda-lock` once (`pipx install conda-lock`, or
 `conda install -n base -c conda-forge conda-lock`):
 
 ```bash
@@ -286,7 +289,8 @@ trajectories at once) per `docs/01_03 §3.4`:
      --lockfile tools/in_silico/conda-lock.yml -p linux-64 -p osx-arm64
    ```
 3. Sync your local env to the new lock:
-   `conda-lock install -n silken_md tools/in_silico/conda-lock.yml`.
+   `conda-lock install -n silken_md tools/in_silico/conda-lock.yml` — ⛔ where `silken_md`
+   is the record, sync `silken_lock` instead (see *Reproducible install*).
 4. Commit **both** `environment.yml` and `conda-lock.yml` (the `lock_sync` CI job
    fails if they drift apart).
 

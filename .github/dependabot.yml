@@ -3,7 +3,8 @@ version: 2
 # manually by the `dependency-update` skill, on purpose:
 #   - conda (tools/ml, tools/in_silico): Dependabot has no conda ecosystem; a
 #     pip-on-conda shim would fight tools/in_silico/conda-lock.yml (the pin the
-#     EBFC paper's DFT ran on) — reproducibility beats auto-bumps there.
+#     EBFC paper's reproduction runs on; its DFT ran in the recorded env beside it,
+#     environment.computed.explicit.txt) — reproducibility beats auto-bumps there.
 #   - firmware submodules (firmware/extern/*): not Dependabot-native; bumped on the
 #     firmware bench cadence, gated by host CMSIS / QEMU bit-parity.
 # labels: type:deps = the SSOT Integrity Guard's (00_06 §3) sanctioned bypass —

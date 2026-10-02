@@ -277,8 +277,11 @@
   is cold, so the first run on a new major lands on an unrelated PR, unattended. Before
   moving that floor, verify the new major BY HAND against the contract it guards — the
   bit-level comparison, not just a green suite. in-silico has a real
-  `conda-lock.yml` — that's the reproducible pin the DFT ran on; the env.yml floors are loose
-  on purpose. A local conda env can drift behind the lock (re-sync with `conda-lock install`).
+  `conda-lock.yml` — the REPRODUCTION pin CI builds from, not the env the DFT ran on: the canon
+  caches were computed in the recorded `tools/in_silico/environment.computed.explicit.txt`
+  (PySCF 2.11.0, while the lock resolves 2.13.1 — paper §2.7). The env.yml floors are loose on
+  purpose. A lock env can drift behind the lock (re-sync it with `conda-lock install`) — ⛔ never
+  the recorded `silken_md`: re-synced, it stops being the record (`00_07` OPS.22).
   📌 **The GENERATOR is pinned too — the `uv==` line in the `requirements-conda-lock.in` header**
   (read the literal there). CI only *consumes* that lock (`pip install --require-hashes`), so the only thing
   touching `uv` is a human at regeneration time, and an unpinned one rewrites row order, comments
