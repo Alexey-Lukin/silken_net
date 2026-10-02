@@ -125,7 +125,7 @@ reading — and each needs its own route before the ACS pass.
   writes the plain-bpy geometry that `21d` reads; `34`'s hexa-aqua benchmark carries a third copy
   (`OS_O_AQUA`). A change of the distances or of the builder reaches all three homes or it splits the model.
   **Next steps:** C-min is delegated with this verdict and runs once BOTH its conditions hold — the machine free
-  (skill `in-silico` Critical Rule #3) and the builder's default geometry shown bit-identical (§When Modifying
+  (skill `in-silico` §Critical Rules #3) and the builder's default geometry shown bit-identical (§When Modifying
   #27) — 🤖 leg in `00_07` HW.5.IS: the dmbpy chloro couple on a crystal-like chelate, ≈27 min CPU under the
   lock, against the lock base −4.3841 eV; the full C (aqua and bis-Im forms) only if C-min moves an
   absolute number by ≥ 0.1 eV; D only if a computation moves a difference that carries a conclusion by ≥ 0.1 eV
