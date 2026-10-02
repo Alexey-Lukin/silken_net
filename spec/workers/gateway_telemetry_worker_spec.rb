@@ -186,7 +186,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         expect(key).to eq("gateway_hardware_fault")
       end
 
-      it "❄️-вердикт для замерзання (temperature_c < LOW_TEMPERATURE_THRESHOLD; charge-protect зона, HW.16)" do
+      it "❄️-вердикт для замерзання (temperature_c < LOW_TEMPERATURE_THRESHOLD; межа розряду комірки, 02_05 §4а.5)" do
         log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, temperature_c: -25)
         key, = described_class.new.send(:health_message_key, gateway, log)
         expect(key).to eq("gateway_freezing")

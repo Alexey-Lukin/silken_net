@@ -740,7 +740,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `uptime_min` · `cifo_fill` · `lora_rx_drops` · `coap_fail_count` | integer | **[ARCH.54]** Пульс із підписаного health-блоку QATT-v2 ([`03_02 §7`](03_02_Queen_Gateway_Firmware)) |
 | `health_flags` | integer | **[ARCH.54]** Бітфілд того ж пульсу. НЕ однорідний: `HFLAG_CCM_ERA`/`RING`/`LEGACY_DROPS`/`CCM_SPOOF` — молодші чотири; bit4 заброньовано [SEC.21]; старші три — **reset-cause** [FW.59]. Розкладка-дім — `firmware/common/queen_attest.h` |
 
-**Константи:** `LOW_BATTERY_THRESHOLD=3300` мВ, `OVERHEAT_THRESHOLD=65` °C, `LOW_TEMPERATURE_THRESHOLD=-20` °C (LiFePO4 cut-off), `LOW_SIGNAL_THRESHOLD=5` CSQ.
+**Константи:** `LOW_BATTERY_THRESHOLD=3300` мВ, `OVERHEAT_THRESHOLD=65` °C, `LOW_TEMPERATURE_THRESHOLD=-20` °C (межа розряду комірки; заводський поріг розряду BMS на теплому краю допуску гасить Королеву раніше — [`02_05 §4а.5`](02_05_Queen_Hardware_and_Starlink)), `LOW_SIGNAL_THRESHOLD=5` CSQ.
 
 **Ключові методи:**
 
