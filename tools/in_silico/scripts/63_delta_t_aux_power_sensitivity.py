@@ -241,12 +241,10 @@ def main() -> int:
     print("      at all, needs a physically separate charging path.")
 
     output = {
-        # ⚠️ Stale words, kept verbatim until the next run of 63 because the committed cache holds
-        # exactly this string: the shared rail was closed as an approach on 2026-09-09 (Scope above)
-        # and FW.50 is the Vcap-ADC item, never the multi-input fork — re-word it on that run.
         "model": (
             "delta_t = E_window_vstor / (P * eta_boost); P_aux bracket = shared-boost (A) vs "
-            "direct-injection (B) vs measured-eta-curve (C); multi-input topology (FW.50) still open"
+            "direct-injection (B) vs measured-eta-curve (C); set while the multi-input topology was "
+            "open — the shared rail was closed as an approach on 2026-09-09 (00_07 HW.42)"
         ),
         "constants": {
             "C_EDLC_F": C_EDLC_F,

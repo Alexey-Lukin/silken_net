@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,802,390 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,802,329 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -94,9 +94,9 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `78e58007ef5c02ba51f5c40f4fc4a181206e2ef3c3c5ceb43e0a4f487f467381` | HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `a659839b577e297d82818424c27cef020d10be13934170c75fcaf89001c6839a` | HW.43 (checkbox 2) — endurance-limit literature review for the three contact/elastic parts of |
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
-| `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
+| `tools/in_silico/scripts/61_paper_tables.py` | `8c19eaaea9f7bffbc6514bb10eb1a50fda6350a058d052170ac0e307dd2c44f4` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `7612f9d65a1dc44f32d79ab64162345ff3dcffa7fafd6cdfe68bf9dcfa7ee6f7` | HW.43 (checkbox 1) — wind duty-cycle for the Cherkasy pine forest, from open meteorological data. |
-| `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `709602baf5116b010ff7595bee6b374b11897ab9a8958eebbc6230f9abc65a34` | HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta_t`? |
+| `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `c38ac067242ab5a6d4a5fc75c7add7234155f7ee722c50e8dbd70cd879b83412` | HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta_t`? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `01a7de4cd38aa70ff08f1e8264718e2f9bf35ffb67862e08132d285c8a2eed4c` | HW.21 — Can a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `3b8d4836d94b07f51260fb5d1df19f9fa2035a0efacbbd2ad44cec53626b8907` | HW.22 — does the ZIF nanozyme RADIOSENSITISE the enzyme stack under Co-60 gamma? Desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ce346a576ccbf9dccb2651a425964e83efe45c52480d20e52b6b01151461aa09` | HW.33 — the thinnest printed feature of a gyroid, per TOPOLOGY, at a fixed porosity. |
@@ -174,7 +174,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | File | SHA-256 | Bytes |
 |---|---|---|
 | `tools/in_silico/cache/kinetics/cathode_det_rct.json` | `33e223198355268c268f0c87b21ad9a71aa136527f912ccc1e37e5c8def4b4f0` | 5,308 |
-| `tools/in_silico/cache/kinetics/delta_t_aux_power_sensitivity.json` | `ca235fce55221505be9dcf92f196eb5614a54fb748d586b85c04ad5767a4b40c` | 21,243 |
+| `tools/in_silico/cache/kinetics/delta_t_aux_power_sensitivity.json` | `928324654a47c77d30bf9e4a921dd8916d9421604c11dc1b420b12df4993146e` | 21,324 |
 | `tools/in_silico/cache/kinetics/delta_t_heatmap.png` | `87f2882c22bca8a9b4f69862a64d12634700cb5cb66a5842a3d0df660a2c2705` | 98,902 |
 | `tools/in_silico/cache/kinetics/delta_t_lookup.json` | `e35048010689622eca81d4d01490b1b9f4a5f1f205bd09ec31067c7c0974ef89` | 4,489 |
 | `tools/in_silico/cache/kinetics/delta_t_monte_carlo.png` | `175d0aed01352901a3982e49593564727babc56280a0c6d2c141a354d46f6320` | 82,744 |

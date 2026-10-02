@@ -786,9 +786,10 @@ energy the boost puts in; the post-buck figure is the discharge side and never a
 swept over auxiliary power P_aux = 10-200 µW (spanning HW.21's own 50-200 µW TEG estimate),
 reported as a 3-way bracket (shared-boost floor / direct-injection ceiling / BQ25570's own
 measured η(P) curve as a cross-check) — a bracket because the multi-input topology was still open
-when it was set, before the 2026-09-09 verdict below closed the shared rail as an approach. The
-cache's `model` string still calls that topology open under `FW.50` until the next run of 63, but
-`FW.50` is the Vcap-ADC item: its own topology fork was the Vcap-sense divider, never the multi-input.
+when it was set, before the 2026-09-09 verdict below closed the shared rail as an approach (the
+cache's `model` string said «still open (FW.50)» until 63 was re-run on 2026-10-02 with the numbers
+unchanged; `FW.50` is the Vcap-ADC item — its own topology fork was the Vcap-sense divider, never
+the multi-input).
 
 | P_aux | Summer (15 µW) shift | Winter (3-5 µW) shift |
 |---|---|---|

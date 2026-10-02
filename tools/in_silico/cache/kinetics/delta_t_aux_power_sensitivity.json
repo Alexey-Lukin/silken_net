@@ -1,5 +1,5 @@
 {
-  "model": "delta_t = E_window_vstor / (P * eta_boost); P_aux bracket = shared-boost (A) vs direct-injection (B) vs measured-eta-curve (C); multi-input topology (FW.50) still open",
+  "model": "delta_t = E_window_vstor / (P * eta_boost); P_aux bracket = shared-boost (A) vs direct-injection (B) vs measured-eta-curve (C); set while the multi-input topology was open \u2014 the shared rail was closed as an approach on 2026-09-09 (00_07 HW.42)",
   "constants": {
     "C_EDLC_F": 0.47,
     "VBAT_OV_V": 4.822,
