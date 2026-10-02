@@ -37,6 +37,10 @@ WHAT IS **NOT** COMPUTED — absent, not merely undiscussed
     n=56, 12, 0.38 · Botrytis n=14, 10, 0.29) against the His537 control's 98.8 % on the same
     instrument — no reweighting makes such a column invariant. Price: no formal phylogenetic
     argument exists in the tree; if a reviewer of Paper 1 asks for one, that is new work.
+    Provenance: this leg and a GMC-homolog census (rejected too — 00_07 HW.5.IS) came from the
+    2026-09-24 review of Anthropic's ART-enzyme piece, which moves only the instrument half: it
+    DISCOVERS jumbo-phage reverse transcriptases by homolog search (not redox-protein engineering)
+    and names its own limit «not shown RT is active» — it moves no physical EBFC leg.
   · No structural or functional consequence of any substitution. This says how often a residue
     occurs at a position, never what putting it there does — that is script 69 (patch SASA)
     and, for stability, nothing in this tree.

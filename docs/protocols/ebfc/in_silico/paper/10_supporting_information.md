@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,801,045 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,801,427 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -103,7 +103,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `12703ceb8264c479be11d47316e78a845c45bc631d79060cb48627016acd09c5` | HW.3 — does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible window. |
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `fc6271da5d73a63d43ed020a904c7efa27e9d0cd9b2326d51313199ea1b4ee52` | HW.34 / HW.23 — WHERE the bus rod really meets the cathode channel, solved as a CONTACT problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `f3350808ef4a3fd7631f9b26db52a7332b7d06b092ffc3b3f2948324789c8a20` | CHEM.11 — compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
-| `tools/in_silico/scripts/70_chem11_site_conservation.py` | `f698861ffec6c169929b8ff7accab107a7460b1eea3916c488c3ccf4290ef4b8` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
+| `tools/in_silico/scripts/70_chem11_site_conservation.py` | `b1e20b0a9cbf3765029d373ec3a3cc4a5999a98da5c2e81b2dc14212173fa27d` | CHEM.11 — residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `5002b65d5eab63e8055ce14802f0e26e4957e0a9730fa036b90ce6777939f317` | HW.37 (leg «теплова огинаюча капсули ⊥ рейтинг вцілілого EDLC») — how hot does the Soldier capsule get |
 | `tools/in_silico/scripts/72_paper_supporting_information.py` | `bc6be348eac2515bbe600ac155c6e7c3c64d51b3d601ea5a68afe3093819f023` | 72 — Стаття 1 Supporting Information index, generated from the tree (no compute). |
 | `tools/in_silico/scripts/73_collar_wall_inversion.py` | `df57e810c36359490b455caa702d6122d4679c3e9870396575e8fc4381df9415` | HW.33 — Підстава стінки коміра байонета, ІНВЕРСІЄЮ (00_07 HW.33, нога «реалізувати комір»; вирок — 02_02 §4.4). |
