@@ -210,6 +210,17 @@
     renders the same «(Step 7)» to a vendor for whom it is a dead address — there the caveat is unreachable BY
     CONSTRUCTION. **The sheet is EXECUTED, the canon is READ.** The same pass showed the class rides FOUR fields,
     not one (`surface_finish` · `inspection` · the tail of seven sibling manifests) — the #18 ⊕ lesson, paid again.
+    ⊕ **The earlier instance of the same shop-facing class (2026-09-09, `00_07` HW.2): a SCOPE declared only in
+    its own link's home is lost by every summary CHAIN.** The PEP scope («Zone 3, OUTER jacket only») lived in
+    exactly one line — the heading of `01_02 §1.3` Step 7 — while every derived mention, both summary tables
+    included, wrote «sand-blasting → EAAE → PEP smoothing → ZnO-Ta on the outer jacket», scoping only the LAST
+    link: read literally, it ordered the shop to polish the catalytic face to Ra < 0.4 µm and destroy the ECSA
+    Step 4 had just made. The home itself was unexecutable too — its working line said «smooths the flange»
+    unqualified, and the only masking instruction covered the Zone-1 anode, so a monolithic part in one bath
+    could not be treated «on the jacket only». 🔑 **Reflex: in a chain of arrows read each link's scope from
+    THAT link's home, never from its position; and a manifest where opposing requirements meet names the
+    SURFACE per requirement** — hence `surface_finish` is per-surface (catalytic face ⊥ outer jacket ⊥ pogo
+    face), never one instruction for the whole part.
 
 12. **`TopologyCrossChecks.cs` (ARCH.25 third phase, 2026-09-09) — Euler-χ / tortuosity / as-printed
     cross-checks, wired into `verify` as `[nice-to-have]` INFORMATIONAL lines, not the `VERIFY OK/FAILED`
