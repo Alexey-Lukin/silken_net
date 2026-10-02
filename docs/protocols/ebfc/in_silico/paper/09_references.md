@@ -145,7 +145,8 @@ legend line stays in each, as the criterion allows.
   (≈ ⅓ of the smallest robust ② margin, 0.27 eV), or on a primary of the SAME donor set off the realised geometry
   by ≥ 0.10 Å (Os–N(bpy)) or ≥ 0.07 Å (Os–Cl/O/N(L)), in one pass with any regeneration of the metal-in-PCM
   caches (§2.7) — and its budget, with the value question "no unoptimised geometry in Methods at all", is the
-  founder's (⚖️ leg in `00_07` HW.5.IS).
+  founder's — ✅ ⚖️ founder 2026-10-02: not before SUBMIT, only on these triggers, then in one pass under the lock
+  (full form — `PIPELINE_STATUS`, «D — rebuild the Os geometry…»).
   ✅ **C-min applied 2026-10-02** (script `76`, record `cache/reproduction/os_chelate_sensitivity.json`; both
   conditions held — no other heavy job on the CPU, and the builder's default path shown bit-identical to HEAD for
   every caller's signature and byte-identical to the twelve committed builder-written `ligands/os_*.xyz` in BOTH
