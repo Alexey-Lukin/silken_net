@@ -70,10 +70,19 @@ single author; if co-authors are added, rewrite it for all authors and declare e
 before entering it in the form]
 
 [finalise: the letter must say whether the manuscript has been posted in a preprint / electronic archive,
-with the details (ACS Author Guidelines, Cover Letter). The manuscript text is already publicly accessible
-in the project repository (github.com/Alexey-Lukin/silken_net, docs/protocols/ebfc/in_silico/paper) — state
-that here with the URL and the tag or commit, and add the ChemRxiv / Zenodo DOI if one exists; whether ACS
-counts a public repository as an electronic archive is our reading — disclose rather than omit]
+with the details (JPC Author Guidelines, Cover Letter: «Notification if the manuscript has been uploaded to an
+electronic archive, with details»). What ACS allows — read 2026-10-02 on the JPC Author Guidelines «Prior
+Publication Policy» (page last updated 2026-08-27) and the ACS «Prior Publication Policies» page: an initial draft
+may sit on a PREPRINT SERVICE (ChemRxiv, bioRxiv, arXiv or the applicable discipline repository) and may be revised
+until acceptance — note it here with a link and say how the manuscript changed since deposition; but «any content
+that has been made publicly available ... in electronic format other than a preprint ... may jeopardize the
+originality of the submission and may preclude consideration». The manuscript text and its results are already
+public in the project repository (github.com/Alexey-Lukin/silken_net, docs/protocols/ebfc/in_silico/paper and the
+in-silico summaries), and a project repository is not a preprint service — so this paragraph discloses it with the
+URL and the tag or commit in every case, plus the preprint DOI and the Zenodo DOI if they exist; whether a preprint
+is deposited before submission is decided in 00_07 HW.5.IS. After acceptance the published version is NOT mirrored
+into the repository: «the use of a repository for published versions of papers ... generally requires copyright
+permission» (same Guidelines)]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 
