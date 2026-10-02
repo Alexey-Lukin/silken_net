@@ -52,8 +52,8 @@
 <text x='20' y='484' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   insufficient and EAAE (01_02 1.3 Step 4) is repeated; 01_02 1.5 also names x500 for gyroid macro-pores, which a flat coupon does not</text>
 <text x='20' y='498' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   have, so that frame does not apply here. ATTENTION: the batch-level SEM ACCEPTANCE CRITERION - what morphology passes, as opposed to</text>
 <text x='20' y='512' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   which frames to shoot - does not exist in canon yet and is an open leg (00_07 HW.1); do not read its absence as a pass. CV / EIS biochem,</text>
-<text x='20' y='526' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS V+Al release (toxic baseline, 01_02 2.5); LECO RH404 H&lt;100 ppm per batch or</text>
-<text x='20' y='540' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   rejected (01_02 1.3a-C)</text>
+<text x='20' y='526' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS V+Al release (toxic baseline, 01_02 2.5); vacuum hot extraction (LECO RH404 or</text>
+<text x='20' y='540' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   equivalent) H&lt;100 ppm per batch or rejected (01_02 1.3a-C)</text>
 <text x='20' y='554' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)</text>
 <text x='20' y='568' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Alloy bake-off CONTROL: Ti-6Al-4V baseline; bare V-release ~1.12 ug/cm2/yr in-silico - an order-of-magnitude figure on an oxide</text>
 <text x='20' y='582' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diffusivity with no named source. The target it is compared with is the CUMULATIVE release of the 12-week accelerated test (01_02 2.4,</text>
@@ -83,7 +83,7 @@
 <line x1='540' y1='776' x2='790' y2='776' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='776' x2='630' y2='792' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>59192e3d</text>
+<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>d7e0fbe24-dirty</text>
 <line x1='540' y1='792' x2='790' y2='792' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='792' x2='630' y2='808' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='803' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -91,7 +91,7 @@
 <line x1='540' y1='808' x2='790' y2='808' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='808' x2='630' y2='824' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0ff9adc96608b9e134… → FOOTER</text>
-<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 59192e3d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
-<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 0ff9adc96608b9e1344dd11c985dfa92b3fd453a48181b85774cb4a51809ff33</text>
+<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>4646c097581807a009… → FOOTER</text>
+<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev d7e0fbe24-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
+<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 4646c097581807a0099bf3be9598780ded9a71a25ecec01017bab3a2e734967c</text>
 </svg>
