@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,800,738 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,800,807 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -85,7 +85,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `c179830f17ed2f3fa3100d93c8c617297a099242a755d80c985294aab46ad4b8` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `af9f49e69025026dca567ca275ae1a03bdd2210f0d428f1109338ef65f268919` | HW.3.IS — Lamé thermal stress analysis for Ti↔PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `a09b380c34a70204c3e9966ccc1cd444d42fb0950e36f4783c67ddbc8ec4fbb1` | HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `6b323a08f5ff4c99ace63be122d00f43dc2bf48627a049baa932b05b96b8acaa` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `10e14e22231b1f3355806dafa86b269ce96a322d89cc4fbbd404c3e3f09e26c5` | HW.8.7 — Axial Z-stack tolerance analysis (2-spring) for the Soldier capsule ↔ anchor blind-mate. |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4e3292376e7fb6d58a20dc0e2165c289a7238f9c9b95da3bf47b224e6f9b0bb2` | HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin). |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `44bafd6fdf1044d456e8b457ff82b4ec75a85e3fbcc712b7c9a500b6dd8d96fc` | HW.34 — Axial thermal-bridge analysis of the central bus conductor through the Zone-2 PEEK break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `5bbf1483efd5b3b78119dd2b9f1a1d32dd1f17037d521695ce229664477c6389` | HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of |

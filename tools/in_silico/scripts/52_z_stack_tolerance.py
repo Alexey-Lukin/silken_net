@@ -119,9 +119,10 @@ RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR
 #       verdict on a premise that is itself the wrong shape.
 # ⛔ What the rim actually asks is DIMENSIONAL, not a stress threshold: the bayonet is a hard-stop, so the
 # rim sits at constant STRAIN, and constant strain is exactly the case where stress decays and geometry
-# does NOT move (01_01 §4.2, Correction A). Re-deriving this constant in that frame is the open leg —
-# 00_07 HW.33 («поріг режиму релаксації PEEK для обода»). Until then the value stands UNCHANGED so that
-# nothing downstream moves on a dead anchor, and this comment is the only thing that changed.
+# does NOT move (01_01 §4.2, Correction A). The open leg is to rewrite the CHECK (`rim_datum_creep`) in that
+# frame, NOT to substitute another number for this constant — 00_07 HW.33 («поріг режиму релаксації PEEK
+# для обода»). Until then the value stands UNCHANGED so that nothing downstream moves on a dead anchor,
+# and this comment is the only thing that changed.
 PEEK_RELAX_REGIME_MPA = 2.5
 POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
 POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
