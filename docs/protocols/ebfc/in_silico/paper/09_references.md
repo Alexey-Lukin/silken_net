@@ -87,10 +87,11 @@ design rule uses is not moved by a revision of a few hundredths); the code carri
 over `SERIES` in `21e` naming the Hansch–Leo–Taft compilation, Crossref ✓, values unread). §2.5 now defines the
 FO-DFT label as a two-state orbital diabatisation of our own construction and says it is neither the textbook
 fragment-orbital basis nor the generalised Mulliken–Hush scheme, claiming no published implementation; §3.4,
-the Fig 4 caption and the Table 1 row (`61`) were brought to the same wording. No value moved. **Two markers
-remain, both on −208 mV (§3.2, Fig 3 caption):** route (c) would drop that reading, and that rewrites the
-founder's bracket verdict of 2026-09-24 («both readings as a bracket»), so it is not the machine's to take —
-it waits for a primary or for the founder (`00_07` HW.5.IS).
+the Fig 4 caption and the Table 1 row (`61`) were brought to the same wording. No value moved. The two
+markers left on −208 mV (§3.2, Fig 3 caption) were not the machine's to take — route (c) rewrote the founder's
+bracket verdict of 2026-09-24 — and the founder took it the same day (⚖️ 2026-10-02, the −208 line below).
+**✅ Criterion of done MET 2026-10-02:** zero clause markers in `02_methods.md` + `03_results.md`; only the
+legend line stays in each, as the criterion allows.
 
 - §2.3 — the Os–ligand bond lengths (targets 2.06 / 2.10 / 2.38 Å and a 78° bite, `lib/os_geometry.py`),
   once labelled "crystallographic". ✅ Route (b) applied as **B′**. ⚖️ делеговано 2026-10-01 (машина, за
@@ -186,7 +187,16 @@ it waits for a primary or for the founder (`00_07` HW.5.IS).
   [CITATION NEEDED] (no primary found by search 2026-09-24). Ground (⚖️ founder 2026-09-24): the paper's
   thesis is a mechanism and a method limit, not a validation (`00_OUTLINE` «Type»), so the bracket is
   reported as two named readings and judged by its worse edge (`32`: +62 · +50 mV, both < 100). Price: the
-  strongest «positive» sentence weakens (≈50 → 50–62 mV). 👤 primary for −208 or drop it
+  strongest «positive» sentence weakens (≈50 → 50–62 mV). ✅ **2026-10-02, route (c) — ⚖️ РАТИФІКОВАНО founder
+  (закритим списком «одне так», за рекомендацією):** −208 mV is DROPPED, −220 mV (ref 25) is the only reading.
+  Ground: the disposition rule above — a number with no primary that feeds no model leaves the body, and
+  −208 feeds none (it is a comparison value; `32` derives the potential without it). Price: the strongest
+  «positive» sentence weakens again, 50–62 → 62 mV, and the 2026-09-24 bracket verdict is rewritten. Weakest
+  link: a primary for −208 may exist behind a paywall (the 2026-09-24 search found none) — a referee who brings
+  one turns it back into a sourced second reading, a revision-round edit. Applied: `32` carries −220 alone
+  (the tuple stays, so a sourced reading can return as a bracket), Fig 3 (`60`), §3.2 · §3.6 · the Fig 3
+  caption · abstract · introduction · conclusion · cover letter, and every canon mirror (SUMMARY · L3 ·
+  PIPELINE_STATUS · `00_02` · the outline).
 - §3.2 — the literature anode λ (~0.7–0.8 eV) "adopted in the rate calculations". ✅ 2026-10-01, route (c):
   the claim had no instrument — `marcus_rate` is called only by the cathode script `25`, the L4 kinetics
   (`30`/`30b`/`31`/`40`) carry no λ, and the 0.7 in `29b` (`LIT_LAMBDA_TOTAL_EV`) is a comparison constant

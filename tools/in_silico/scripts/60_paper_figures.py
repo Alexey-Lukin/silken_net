@@ -98,9 +98,8 @@ def fig3() -> None:
     _close(raw_delta, -1.051, 0.01, "raw Δε (dimethyl)")
     e_pcet_ph7 = pcet["E_vs_SHE_mV"]["pH_7.0"]
     _close(e_pcet_ph7, -158.4, 1.0, "PCET E° pH7")
-    d_lo, d_hi = pcet["delta_vs_exp_pH7_mV"]  # vs −220 (sourced) · −208 (unsourced) — 00_07 HW.5.IS
-    _close(d_lo, 61.6, 1.0, "PCET Δ vs exp −220")
-    _close(d_hi, 49.6, 1.0, "PCET Δ vs exp −208")
+    (d_exp,) = pcet["delta_vs_exp_pH7_mV"]  # vs −220 mV (ref 25), the only reading carried — 00_07 HW.5.IS
+    _close(d_exp, 61.6, 1.0, "PCET Δ vs exp −220")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
 
@@ -127,7 +126,7 @@ def fig3() -> None:
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
     axa.text(0.98, 0.03,
              f"PCET E°(FAD/FADH₂) = {e_pcet_ph7:.0f} mV vs SHE @pH7\n"
-             f"(exp −220…−208; Δ{d_hi:.0f}–{d_lo:.0f} mV → flavin clean in implicit DFT)",
+             f"(exp −220; Δ{d_exp:.0f} mV → flavin clean in implicit DFT)",
              transform=axa.transAxes, fontsize=6.4, va="bottom", ha="right",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eefaf2", "ec": C["green"], "alpha": 0.92})
     axa.set_xlim(-0.55, 1.55)

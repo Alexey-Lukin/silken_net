@@ -51,13 +51,14 @@ N_H = 2
 NERNST_SLOPE = 0.05916   # V per pH unit at 298 K
 
 # Experimental references for context
-# Free FAD/FADH₂ vs NHE @ pH 7 — a BRACKET of two readings, not a point (⚖️ founder 2026-09-24,
-# 00_07 HW.5.IS). Order = (sourced, unsourced):
+# Free FAD/FADH₂ vs NHE @ pH 7 — the SOURCED reading only (⚖️ founder 2026-10-02, 00_07 HW.5.IS):
 #   −220 mV — paper ref 25 (Bhattacharyya et al., J. Phys. Chem. A 2007, PMC4480342, Introduction:
-#             E_m(FAD, water) = −0.22 V, itself quoted from that paper's ref 105);
-#   −208 mV — the value this script carried as "well-known"; no primary source in the tree, and a
-#             search on 2026-09-24 found none. Kept as the second end, never as the anchor.
-EXP_FREE_FLAVIN_PH7_MV = (-220, -208)
+#             E_m(FAD, water) = −0.22 V, itself quoted from that paper's ref 105).
+#   −208 mV — once carried here as "well-known", then as the unsourced end of a bracket (⚖️ 2026-09-24);
+#             no primary was found, and the citation disposition rule drops a value that has no source
+#             and feeds no model (route (c), paper/09_references.md). Still a tuple, so a SOURCED second
+#             reading can return as a bracket without a schema change.
+EXP_FREE_FLAVIN_PH7_MV = (-220,)
 EXP_PROTEIN_BOUND_MV = -265     # GcGDH bound FAD, VERIFIED −0.265 V vs SHE (Schachinger, Ma, Ludwig, Electrochem. Commun. 2023, 146, 107405); 01_03 "+60 mV" was wrong (conflated w/ Os mediator)
 
 OUT_JSON = DFT_CACHE / "pcet_redox_potential.json"
@@ -98,10 +99,10 @@ def main() -> int:
     print(f"  (protein-bound FAD-GDH is tuned to ~{EXP_PROTEIN_BOUND_MV} mV — "
           f"this is the free cofactor)")
 
-    # The verdict stands on the WORSE end of the bracket: a point quoted from the kinder end is how
-    # «within ~50 mV» outlived the sourced −220 mV reading (00_07 HW.5.IS, 2026-09-24).
+    # Judged on the WORST reading carried (one since 2026-10-02): a point quoted from a kinder, unsourced
+    # end is how «within ~50 mV» once outlived the sourced −220 mV (00_07 HW.5.IS).
     verdict = max(abs(d) for d in deltas) < 100
-    print(f"  Within 100 mV of BOTH free-flavin readings: {'✅ YES' if verdict else '⚠️ NO'} "
+    print(f"  Within 100 mV of every free-flavin reading carried: {'✅ YES' if verdict else '⚠️ NO'} "
           f"→ proton-reference PCET is VALID with implicit solvation alone")
 
     print()
@@ -120,7 +121,7 @@ def main() -> int:
         "E_abs_V": round(e_abs, 4),
         "E_vs_SHE_mV": dict(results.items()),
         "exp_free_flavin_pH7_mV": list(EXP_FREE_FLAVIN_PH7_MV),
-        "exp_free_flavin_pH7_sources": ["ref 25 (PMC4480342) quoting its ref 105", "none found"],
+        "exp_free_flavin_pH7_sources": ["ref 25 (PMC4480342) quoting its ref 105"],
         "delta_vs_exp_pH7_mV": deltas,
         "valid_proton_reference": bool(verdict),
         "caveats": "Electronic E proxy for G; SHE_abs convention ±0.15 V; "
