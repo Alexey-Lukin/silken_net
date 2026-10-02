@@ -11,13 +11,17 @@ coupling by **two-state diabatisation**:
   1. one UKS dimer SCF on the clash-free Cu-Co cluster (script 23 geometry);
   2. pick the two frontier MOs (near the SOMO/HOMO) carrying the most Cu-d + Co-d
      character — the donor/acceptor pair (or their bonding/antibonding combination);
-  3. **localise** that 2-orbital space (manual 2×2 Mulliken-Hush — diagonalise the Cu-projected
+  3. **localise** that 2-orbital space (manual 2×2 population localisation — diagonalise the Cu-projected
      population matrix; lo.PM/lo.Boys crash on a PySCF lib.einsum bug) → one orbital on Cu, one on Co;
   4. H_ab (= t_ij) is the off-diagonal of the Fock matrix in that localised basis;
      the diagonals are the site energies (their difference is the driving-force ΔG).
 
-This is the standard "fragment orbitals from the dimer" route — no fragment-basis
-counterpoise bookkeeping, no SCF-state biasing. It is an electron-coupling estimate,
+This is OUR two-orbital population localisation — labelled FO-DFT in the paper's tables and figures, but
+neither the textbook fragment-orbital basis nor the dipole-based generalised Mulliken–Hush scheme, and no
+published implementation is claimed (attribution withdrawn 2026-10-02 —
+docs/protocols/ebfc/in_silico/paper/09_references.md, the FO-DFT line). The caches written before that
+date still carry «Mulliken-Hush» in their `method` string; the next run replaces it. It needs no
+fragment-basis counterpoise bookkeeping and no SCF-state biasing. It is an electron-coupling estimate,
 not a CDFT diabatic state (that remains the capstone). Diagnostics (the chosen MOs,
 their metal populations, the localisation) are printed so the result is auditable; a
 physicality band flags a non-sensical coupling honestly (cf. the script-29 λ closure).
@@ -138,7 +142,7 @@ def main() -> int:
     # PySCF lib.einsum version bug, so do the 2×2 diabatisation by hand: diagonalise the Cu-projected
     # population matrix in the {i,j} MO basis → rotation R that localises one orbital on Cu, the other
     # off-Cu (= Co); H_ab = off-diagonal of the Fock in that basis (F is diagonal = ε in the MO basis,
-    # MOs orthonormal, so Floc = Rᵀ·diag(εᵢ,εⱼ)·R — Mulliken-Hush-style population diabatisation).
+    # MOs orthonormal, so Floc = Rᵀ·diag(εᵢ,εⱼ)·R — a population-based localisation).
     ao_atom = mol.ao_labels(fmt=None)
     rows_cu = [a for a, lab in enumerate(ao_atom) if lab[0] in cu_idx]
     SC = S @ C
@@ -168,8 +172,8 @@ def main() -> int:
         "geometry": args.geometry,
         "geometry_note": geom_label,
         "xyz": xyz_name,
-        "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2×2 Mulliken-Hush "
-                  "population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
+        "method": "FO-DFT-labelled two-state diabatisation (single UKS dimer SCF, manual 2×2 population localisation "
+                  "of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
                   "B3LYP/6-31G(d)+LANL2DZ",
         "pair": "Cu-Co (rate-limiting hop)",
         "t_ij_eV": round(t_ij, 6),

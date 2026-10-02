@@ -171,8 +171,8 @@ def fig3() -> None:
     ann = {
         "nme2": ("donor saturation", (2, 8)),
         "bpy": ("H (ref)", (5, -11)),
-        "cf3": ("CF₃ inert", (-12, -16)),
-        "so2cf3": ("SO₂CF₃ optimum (inert)", (-6, -16)),
+        "cf3": ("CF₃ inert", (6, -14)),
+        "so2cf3": ("SO₂CF₃ optimum (inert)", (-6, -44)),   # below the CF₃ label, clear of the squares
         "no2": ("NO₂ unstable", (-4, 9)),
     }
     for n, (txt, off) in ann.items():
@@ -180,8 +180,10 @@ def fig3() -> None:
         axb.annotate(txt, (sig[i], casc[i]), textcoords="offset points",
                      xytext=off, fontsize=6.6, color="k", ha="right" if off[0] < 0 else "left")
     # plain substituent labels on ΔE_red points
+    lbl_off = {"cf3": (4, -10)}   # CF₃ (σ 0.54) sits beside COOH (σ 0.45) — one label above, one below
     for i, n in enumerate(names):
-        axb.annotate(lbl[n], (sig[i], dered[i]), textcoords="offset points", xytext=(3, 4), fontsize=6.3, color=C["blue"])
+        axb.annotate(lbl[n], (sig[i], dered[i]), textcoords="offset points", xytext=lbl_off.get(n, (3, 4)),
+                     fontsize=6.3, color=C["blue"])
 
     axb.axvspan(-0.9, -0.55, color=C["yellow"], alpha=0.18, zorder=0)  # donor-saturation regime
     axb.set_ylim(-5.5, 0.5)

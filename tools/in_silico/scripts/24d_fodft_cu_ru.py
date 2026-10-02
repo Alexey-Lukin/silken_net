@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (CHEM.32 rigour upgrade).
 
-Same two-state Mulliken–Hush diabatisation as 24b (FO-DFT for Cu–Co), applied to the
+Same two-state orbital diabatisation as 24b (the FO-DFT label for Cu–Co; our own localisation), applied to the
 Co→Ru-swapped cluster (`cu_ru_zif.xyz`, identical geometry). 24c's crude ΔSCF
 energy-splitting gave a LARGE Cu–Ru splitting (ΔE ≈ 0.21 eV) whose magnitude the crude
 method cannot be trusted on — exactly the reason 24b was needed for Cu–Co (there the
@@ -14,7 +14,7 @@ This script attempts to firm t_ij(Cu–Ru) by the rigorous route and reads
 
   1. one UKS dimer SCF on cu_ru_zif (charge +1, spin 1 — Cu-Ru cluster, 253 e⁻);
   2. pick the two frontier MOs with the most Cu-d + Ru-d weight (donor/acceptor pair);
-  3. localise that 2-orbital space (manual 2×2 Mulliken-Hush — lo.PM/lo.Boys crash on a
+  3. localise that 2-orbital space (manual 2×2 population localisation — lo.PM/lo.Boys crash on a
      PySCF lib.einsum bug) → one orbital on Cu, one on Ru;
   4. H_ab (= t_ij) is the off-diagonal Fock in the localised basis; diagonals = site energies.
 
@@ -131,8 +131,8 @@ def main() -> int:
     print(f"  → {'✅ physical coupling' if physical else '⚠️ inspect — non-localised or out-of-band'}")
 
     OUT.write_text(json.dumps({
-        "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2×2 Mulliken-Hush "
-                  "population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
+        "method": "FO-DFT-labelled two-state diabatisation (single UKS dimer SCF, manual 2×2 population localisation "
+                  "of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
                   "B3LYP/6-31G(d)+LANL2DZ; Co→Ru @identical geom",
         "pair": "Cu-Ru (CHEM.32, Co→Ru swap)",
         "t_ij_eV": round(t_ij, 6),

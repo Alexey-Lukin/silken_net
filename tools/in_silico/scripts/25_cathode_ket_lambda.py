@@ -136,7 +136,7 @@ def main() -> int:
     # L3 and the paper were ΔG = 0 READINGS, not measurements. They are now brackets.
     fo = json.loads((CACHE / "fodft_coupling.json").read_text())
     ru_fo = json.loads((CACHE / "cu_ru_fodft.json").read_text())
-    # MAGNITUDE only. The Mulliken-Hush diabatisation returns |ΔE| between two diabatic states;
+    # MAGNITUDE only. The 24b two-state diabatisation returns |ΔE| between two diabatic states;
     # which of them is the donor on the cathode's electron path is NOT fixed by that calculation,
     # so the sign stays unmeasured and both ends are carried (§When Modifying #11).
     GAP_EV = {"Cu-Co": float(fo["site_energy_gap_eV"])}

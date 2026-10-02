@@ -623,7 +623,7 @@
 - CHEM.10 — Lys→Arg геніпіновий щит (Lys109/262) ✅ → [`L1 §2`](protocols/ebfc/in_silico/L1_protein_architecture.md)
 - CHEM.11 — анти-агрегація після деглікозилювання: проксі, компенсації, консервативність ✅ машинна половина → [`L1 §2`](protocols/ebfc/in_silico/L1_protein_architecture.md) + [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §CHEM.11 (відкрите — Aggrescan3D, нога вище)
 - CHEM.13 — жорсткий спейсер OPE > олігопролін → [`01_03 §3.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
-- CHEM.14 — строгість `t_ij` (FO-DFT Mulliken-Hush) ✅ → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode
+- CHEM.14 — строгість `t_ij` (двостанова орбітальна діабатизація `24b`, мітка FO-DFT) ✅ → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode
 - CHEM.16 — динамічне тунелювання на MD-ансамблі ✅ → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §Electron Tunneling Pathway
 - CHEM.20 — спеціація медіатора (bis-Im) ✅, superseded диметилом 34/34b → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §Cluster-Continuum
 - CHEM.21 — λ_i FADH•-rescue (Nelsen) ✅ → [`L3`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)

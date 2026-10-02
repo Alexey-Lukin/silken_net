@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 252 · 14,839,430 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 252 · 14,839,231 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -63,10 +63,10 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | `a702d36b58a99b4cd0fcf9217ee98bce1c3aabb06a719ccadf571d9c6ba50d0e` | L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations. |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `6d9c87ce9f6e56871a7c7d968e501923702bf68646aa2c3cf9fa5fb3918b5ad3` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
-| `tools/in_silico/scripts/24b_fodft_coupling.py` | `74d6ab1318fd4ee9683de6400e76cc5ca5c4e73e40970152b90510c1915ac63b` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
+| `tools/in_silico/scripts/24b_fodft_coupling.py` | `1d6451d050b5749ee987285faad165b3140267dd89d08c516ef3866ad3947edb` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `a7236fe12c7b054958de440f2b2bb2d0d007491b033a66d8170090625bcbf848` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
-| `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `c93db04128b8e9b1d807f10b6dbe5da06ff8496a92824be0a610be766ba10484` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
-| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `ebeb85b355ebfde6e4ff6fd64cfa7dfac0c518f350d55b8946ebe2da97cebc55` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
+| `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `59d50b2252562ac61af6ae2cab39c52e3352e94510779829dee29ba611637d4e` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
+| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `78ffaacd28e9ffbd6e0aa88a58c6e4bc8ec011f91f356dffa7da0ff5a1b5db60` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `5270de21c04d8d394fc9662d54443f5bd963c2c6f8e2c7d6e1945601f89e772a` | L3/L2 bridge — MD→DFT ensemble averaging. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `c4635322ed7d3cc92acb953b20cc407d42bee849a90358fbe8a44a49992b2edf` | L3 — Beratan-Onuchic electron tunneling pathway analysis. |
 | `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `e8e7f9168a4fa81956506958a6b09f28768f369eeba88387b66073307fd49729` | L3 — Dynamic electron tunnelling: Beratan–Onuchic pathway coupling averaged over the MD ensemble. |
@@ -93,7 +93,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `e8f81357fe4c72f6a93f93d8e356ae5d4bb8bb278e5bd8737f63cdd990a46532` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `80c4b19b528d400eec65ab9a566dea3f7303ba896779e339d9800ee6169acb36` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
-| `tools/in_silico/scripts/60_paper_figures.py` | `824ba83fcb8bac426f627b4385a058bc3828d30b8f3eeb6ab91ed61faf8f9845` | Publication figures, rendered entirely from the cached DFT results. |
+| `tools/in_silico/scripts/60_paper_figures.py` | `cd23d1d2217669d2289640fff2a72fb835775457590e2f85aea1be2c819023a5` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `662d43659d424870e23dd68e8830d9e7ecf77428d1674a3877e9810ffd687008` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
@@ -327,7 +327,7 @@ Rendered from the committed caches (and the PDB for Fig 2) by the scripts named;
 | `docs/protocols/ebfc/in_silico/paper/figures/fig1_graphical_abstract_draft.png` | `29f96b6cd0c6500309e69c5c2280a16c05ac04c2e8f1911005e50f012ae0ac5e` | `fig1_graphical_abstract_draft.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path.png` | `344b451f66c227a4bee798b688dc54251e892cd35c29a32fc1b8970bd8694369` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path_pymol.png` | `49070b484dcbf806e9e371778601ea1ad06687ddab7ef85ae6e73c5256e33f5f` | `fig2_pymol_cartoon.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cascade_lfer.png` | `45db33d3b91bcc58bc6d63216cd3153f03815aaf0eb551ed3f83b018560febf1` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cascade_lfer.png` | `e0e57122f4eadfe2e572b8ad5fb029586a024dd4e26fe7f34839f3eb182e9be8` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig4_cathode_det.png` | `c8773cdd0b107a8cb60bf793295c912303dc8abd36556c3bd2beb3ab77ea0fe3` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig5_solvation_pcm.png` | `268508f521780c446f5e2827518ef523133a65206ee574f4e4456d6b776e5efb` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/figS1_betad_ensemble.png` | `8f8213335c7a96436589d82caa6c3ee073b62be5a502a23966edbf103c373052` | `60_paper_figures.py` |
