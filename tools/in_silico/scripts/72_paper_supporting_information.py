@@ -8,7 +8,9 @@ checksums is in the Supporting Information» · «scripts and golden reference o
 Supporting Information») and 08_declarations «Data Availability»:
 
   S1  the RECORDED environment (explicit conda list, md5 per package) + the conda-lock (a reproduction, not a replay)
-  S2  every script, shared-library module and test of the pipeline — sha256 + the first docstring line
+  S2  every script, shared-library module and test of the pipeline — sha256 + the module's SI line
+      (its `SI_DESCRIPTION` if it declares one, else the first docstring line); a line carrying repo
+      jargon — Cyrillic, a live 00_07 tracker ID, an ISO date, a status glyph — is REFUSED, not rendered
   S3  every COMMITTED reference output under cache/ (the JSON/PNG the docs pin; trajectories are never committed)
   S4  committed input data (ERA5 · NASA POWER · CHEM.11 alignments)
   S5  coordinates — the AF3 model, its raw AF3 outputs, the ligand / cluster geometries, the deglycosylation script
@@ -29,6 +31,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import re
 import shutil
 import subprocess
 import sys
@@ -36,6 +39,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import PAPER_DIR, REPO_ROOT
+
+SI_DESCRIPTION = "Supporting Information manifest, generated from the committed tree (no compute)."  # its row in the paper SI (72): English, no repo jargon
 
 OUT_MD = PAPER_DIR / "10_supporting_information.md"
 IN_SILICO = "docs/protocols/ebfc/in_silico"
@@ -49,6 +54,21 @@ DATA_SPECS = ["tools/in_silico/data"]
 COORD_SPECS = [f"{IN_SILICO}/dgrGcGDH_AF3.pdb", f"{IN_SILICO}/deglycosylate.rb",
                f"{IN_SILICO}/alphafold3", f"{IN_SILICO}/ligands"]
 FIG_SPECS = [f"{IN_SILICO}/paper/figures"]
+
+# The article title has ONE home — the publication plan in 00_02 — so the SI reads it rather than retyping it.
+TITLE_DOC = REPO_ROOT / "docs/00_02_Academic_Integration_and_IP.md"
+TITLE_RE = re.compile(r'^\*\*Назва \(EN\):\*\* _"(?P<title>[^"]+)"_\s*$', re.MULTILINE)
+
+# What a journal reader must never meet in an S2 description: the repository's internal jargon. The ID test is the
+# copy-region gate's (`scripts/copy_region_check.rb`): a token counts only when it, or its PREFIX.N base, is a live
+# 00_07 ID — so a part number such as AS568-019 passes and HW.3.IS does not.
+TRACKER = REPO_ROOT / "docs/00_07_Action_Plan_Tracker.md"
+TOKEN_RE = re.compile(r"(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*")
+BASE_RE = re.compile(r"\A[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*\.\d+")
+CHEM_NOTE = re.compile(r"\bCHEM\.\d+")
+CYRILLIC = re.compile(r"[\u0400-\u04FF]")
+ISO_DATE = re.compile(r"\b20\d{2}-\d{2}-\d{2}\b")
+GLYPHS = "⚪🟡🟢🔗🌿⚫🤖👤⚖✅⛔🔴⚠🔑🗄🎯📊⊕⊥⏸⏳⛓✓📬❌"  # the copy-region gate's set, compared without VS16
 
 
 def git_files(specs: list[str]) -> list[str]:
@@ -70,14 +90,51 @@ def nbytes(rel: str) -> int:
     return (REPO_ROOT / rel).stat().st_size
 
 
-def first_doc_line(rel: str) -> str:
-    """First line of the module docstring — the roster's own words, never retyped here."""
+def si_line(rel: str) -> str:
+    """The module's own S2 words: its `SI_DESCRIPTION` string if it declares one, else the first docstring line.
+
+    Read from the AST, never imported — a script's heavy dependencies must not load to describe it.
+    """
     try:
-        doc = ast.get_docstring(ast.parse((REPO_ROOT / rel).read_text(encoding="utf-8"))) or ""
+        tree = ast.parse((REPO_ROOT / rel).read_text(encoding="utf-8"))
     except SyntaxError:
         return "—"
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "SI_DESCRIPTION" for t in node.targets)
+                and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)):
+            return node.value.value.strip().replace("|", "\\|")
+    doc = ast.get_docstring(tree) or ""
     line = doc.strip().splitlines()[0].strip() if doc.strip() else "—"
     return line.replace("|", "\\|")
+
+
+def tracker_ids() -> set[str]:
+    """Every 00_07 ID — live `####` items and archive-table rows — the vocabulary of the jargon test."""
+    text = TRACKER.read_text(encoding="utf-8")
+    heads = re.findall(r"^#### (\S+)", text, re.MULTILINE)
+    rows = re.findall(r"^\| ([A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.\-]*) \|", text, re.MULTILINE)
+    return set(heads) | set(rows)
+
+
+def jargon(text: str, ids: set[str]) -> list[str]:
+    """What in `text` a journal reader would meet as our internal language (empty = clean)."""
+    found = [f"tracker ID {tok}" for tok in TOKEN_RE.findall(text)
+             if tok in ids or ((base := BASE_RE.match(tok)) and base.group(0) in ids)]
+    # CHEM.N notes are ours alone, but their register is a bullet list, not item heads — the set above misses them
+    found += [f"tracker note {tok}" for tok in CHEM_NOTE.findall(text)]
+    if CYRILLIC.search(text):
+        found.append("Cyrillic")
+    if date := ISO_DATE.search(text):
+        found.append(f"ISO date {date.group(0)}")
+    found += [f"status glyph {g}" for g in GLYPHS if g in text.replace("\ufe0f", "")]
+    return found
+
+
+def article_title() -> str:
+    match = TITLE_RE.search(TITLE_DOC.read_text(encoding="utf-8"))
+    if not match:
+        raise SystemExit(f"72: no «**Назва (EN):** _\"…\"_» line in {TITLE_DOC.relative_to(REPO_ROOT)} — the title has no home")
+    return match.group("title")
 
 
 def figure_generators(fig_rel: str, scripts: list[str]) -> str:
@@ -110,7 +167,7 @@ def build() -> str:
     total = sum(nbytes(f) for f in everything)
 
     parts: list[str] = []
-    parts.append("# Supporting Information — Стаття 1 (generated manifest)\n")
+    parts.append(f"# Supporting Information — {article_title()} (generated manifest)\n")
     parts.append(
         "> **Generated by `tools/in_silico/scripts/72_paper_supporting_information.py` — do not hand-edit; "
         "re-run the script after any cache, script or figure change** (the pin `test_paper_si_matches_its_generator` "
@@ -150,9 +207,14 @@ def build() -> str:
         "Numbered scripts are listed in pipeline order (the numeric prefix encodes the DAG — "
         "[`README`](../../../../../tools/in_silico/README.md) is the inventory with costs, "
         "[`PIPELINE_STATUS`](../PIPELINE_STATUS.md) the per-script status). The description column is each "
-        "module's own first docstring line.\n")
-    parts.append(table([(f"`{f}`", f"`{sha256(f)}`", first_doc_line(f)) for f in code],
-                       ("Module", "SHA-256", "What it does (first docstring line)")) + "\n")
+        "module's own words — its declared SI line, else the first line of its docstring.\n")
+    ids = tracker_ids()
+    rows = [(f"`{f}`", f"`{sha256(f)}`", si_line(f)) for f in code]
+    refused = [f"{f}: {', '.join(hits)}" for f, (_, _, line) in zip(code, rows, strict=True) if (hits := jargon(line, ids))]
+    if refused:
+        raise SystemExit("72: S2 refuses repo jargon — give each module an English SI_DESCRIPTION:\n  "
+                         + "\n  ".join(refused))
+    parts.append(table(rows, ("Module", "SHA-256", "What it does")) + "\n")
 
     parts.append("## S3. Reference outputs — the committed caches\n")
     parts.append(

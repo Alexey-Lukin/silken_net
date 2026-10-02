@@ -61,6 +61,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DELTA_MEMBRANE, KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_JSON = KINETICS_DIR / "zif_radiosensitization.json"
 
 E_GAMMA_MEV = 1.25          # Co-60 average of the 1.173/1.332 MeV pair (`01_04 §6.2` dose row)

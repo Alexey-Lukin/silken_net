@@ -95,6 +95,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import AF3_PDB, CACHE_DIR, DFT_CACHE, PH, RATIFIED_GENE_COMPENSATIONS, REPO_ROOT, TEMPERATURE_K
 from lib.utils import banner
 
+SI_DESCRIPTION = "Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH."  # its row in the paper SI (72): English, no repo jargon
+
 AF3_CIF = REPO_ROOT / "docs/protocols/ebfc/in_silico/alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif"
 TUNNELING_JSON = DFT_CACHE / "tunneling_pathway.json"
 OUT_DIR = CACHE_DIR / "chemistry"

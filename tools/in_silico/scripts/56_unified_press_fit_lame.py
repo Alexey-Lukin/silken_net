@@ -55,6 +55,8 @@ from lib.constants import (
 from lib.mechanics import thermal_interference, thick_wall_hoop
 from lib.utils import banner
 
+SI_DESCRIPTION = "Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

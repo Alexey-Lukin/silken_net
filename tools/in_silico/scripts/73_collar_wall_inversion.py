@@ -57,6 +57,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import ALLOY_PROPERTIES
 from lib.utils import banner
 
+SI_DESCRIPTION = "Bayonet-collar wall of the sensor capsule, judged by inversion: the force at which the wall would start to limit (axial retention, lug-root shear, trapped ice) against a generous bound."  # its row in the paper SI (72): English, no repo jargon
+
 CEM = Path(__file__).resolve().parents[2] / "cad" / "cem"
 CACHE = Path(__file__).resolve().parents[1] / "cache" / "mechanical"
 OUT = CACHE / "collar_wall_inversion.json"

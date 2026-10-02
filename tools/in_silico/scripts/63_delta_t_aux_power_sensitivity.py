@@ -94,6 +94,8 @@ from lib.constants import (
 )
 from lib.utils import banner
 
+SI_DESCRIPTION = "Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t?"  # its row in the paper SI (72): English, no repo jargon
+
 OUT_JSON = KINETICS_DIR / "delta_t_aux_power_sensitivity.json"
 
 # 10..200 uW, 10 uW steps — spans HW.21's own 50-200 uW TEG estimate with margin below it.

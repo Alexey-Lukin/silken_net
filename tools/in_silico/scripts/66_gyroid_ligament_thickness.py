@@ -63,6 +63,8 @@ from pathlib import Path
 import numpy as np
 from scipy import ndimage
 
+SI_DESCRIPTION = "The thinnest printed feature of a gyroid lattice, per topology, at fixed porosity."  # its row in the paper SI (72): English, no repo jargon
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

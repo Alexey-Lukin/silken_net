@@ -54,6 +54,8 @@ plt.rcParams.update(
     }
 )
 
+SI_DESCRIPTION = "Publication figures, rendered entirely from the cached DFT results."  # its row in the paper SI (72): English, no repo jargon
+
 # Okabe-Ito colour-blind-safe palette
 C = {
     "blue": "#0072B2",

@@ -71,6 +71,8 @@ import json
 import sys
 from pathlib import Path
 
+SI_DESCRIPTION = "Where the bus rod meets the cathode channel, solved as a unilateral contact problem."  # its row in the paper SI (72): English, no repo jargon
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 

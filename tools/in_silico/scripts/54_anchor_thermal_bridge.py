@@ -51,6 +51,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -46,6 +46,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
 from lib.utils import banner
 
+SI_DESCRIPTION = "L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade."  # its row in the paper SI (72): English, no repo jargon
+
 LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"   # FADH₂ (1,5-dihydro), matches 33
 OUT = DFT_CACHE / "delta_scf_corrections.json"
 GEOMOPT_BASIS = "def2-svp"     # geometry optimization tier (composite ωB97X//B3LYP)

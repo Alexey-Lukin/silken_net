@@ -36,6 +36,8 @@ from pathlib import Path
 import numpy as np
 from pyscf import dft
 
+SI_DESCRIPTION = "24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate)"  # its row in the paper SI (72): English, no repo jargon
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT, TEMPERATURE_K

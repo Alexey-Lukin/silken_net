@@ -90,6 +90,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C?"  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 LEGACY_CACHE = KINETICS_DIR / "thermal_penetration.json"

@@ -46,6 +46,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, REPO_ROOT, RUNS_DIR
 from lib.utils import banner
 
+SI_DESCRIPTION = "L3 — Dynamic electron tunnelling: Beratan–Onuchic pathway coupling averaged over the MD ensemble."  # its row in the paper SI (72): English, no repo jargon
+
 OUT = DFT_CACHE / "tunneling_ensemble.json"
 
 # Beratan-Onuchic params — identical to script 28 (the single-snapshot owner)

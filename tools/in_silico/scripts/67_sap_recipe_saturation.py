@@ -74,6 +74,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "chemistry"
 OUT_JSON = OUT_DIR / "sap_recipe_saturation.json"
 OUT_PNG = OUT_DIR / "sap_recipe_saturation.png"

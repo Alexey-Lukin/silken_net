@@ -88,6 +88,8 @@ from lib.constants import (
 )
 from lib.utils import banner
 
+SI_DESCRIPTION = "Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "thermal"
 DATA_FILE = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/hourly_1991_2020.csv.gz"
 RADOME_CEM = REPO_ROOT / "tools/cad/cem/radome.json"

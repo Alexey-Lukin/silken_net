@@ -35,6 +35,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c)."  # its row in the paper SI (72): English, no repo jargon
+
 OUT = DFT_CACHE / "cu_ru_fodft.json"
 XYZ = LIGANDS_DIR / "cu_ru_zif.xyz"
 CHARGE, SPIN = 1, 1                       # Co→Ru swap: Ru(lanl2dz)=16 val e⁻ → 253 e⁻ (odd) → doublet

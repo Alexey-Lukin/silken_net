@@ -29,6 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_JSON = KINETICS_DIR / "oxide_det_per_alloy.json"
 
 # Native passive-oxide of each alloy's DOMINANT surface oxide (literature). Eg = band-gap (eV),

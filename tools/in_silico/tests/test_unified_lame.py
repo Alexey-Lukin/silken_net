@@ -27,6 +27,8 @@ from lib.constants import (
 )
 from lib.mechanics import thermal_interference, thick_wall_hoop
 
+SI_DESCRIPTION = "Unit gates for the unified thick-wall Lamé core (lib.mechanics)."  # its row in the paper SI (72): English, no repo jargon
+
 B, C = R_INTERFACE_M, R_OUTER_M
 ALPHA_TI = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
 

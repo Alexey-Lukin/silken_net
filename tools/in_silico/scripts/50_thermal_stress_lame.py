@@ -54,6 +54,8 @@ from lib.constants import (
 from lib.mechanics import thermal_interference, thick_wall_hoop
 from lib.utils import banner
 
+SI_DESCRIPTION = "Lamé thermal-mismatch stress for the titanium–PEEK press-fit."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

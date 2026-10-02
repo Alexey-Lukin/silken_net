@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import math
 
+SI_DESCRIPTION = "Shared thick-wall (Lamé) mechanics helpers for the anchor's titanium–PEEK press-fit."  # its row in the paper SI (72): English, no repo jargon
+
 
 def thick_wall_hoop(delta_radial: float, b: float, c: float, e_mod: float, nu: float) -> dict:
     """Rigid-inner / free-outer thick-wall Lamé for a sleeve (bore b, OD c) on a rigid shaft.

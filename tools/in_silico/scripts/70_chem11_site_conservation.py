@@ -71,6 +71,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH."  # its row in the paper SI (72): English, no repo jargon
+
 DATA = REPO_ROOT / "tools/in_silico/data/chem11_conservation"
 OUT_JSON = CACHE_DIR / "chemistry" / "chem11_site_conservation.json"
 

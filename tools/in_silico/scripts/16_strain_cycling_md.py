@@ -66,6 +66,8 @@ from lib.constants import (
 from lib.geometry import positions_to_nm_array
 from lib.utils import banner, pick_platform, ps_to_steps
 
+SI_DESCRIPTION = "L2 — Cyclic-strain MD of the genipin–chitosan–CNC hydrogel matrix (wind-driven strain cycling)."  # its row in the paper SI (72): English, no repo jargon
+
 TEMPERATURE_K = 298
 N_CYCLES = int(os.environ.get("SILKEN_STRAIN_CYCLES", "10"))
 STRAIN_PERCENT = 5.0

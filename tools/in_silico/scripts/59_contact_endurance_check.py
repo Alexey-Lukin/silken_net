@@ -58,6 +58,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
+SI_DESCRIPTION = "Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 WIND_CACHE = OUT_DIR / "wind_duty_cycle.json"

@@ -82,6 +82,8 @@ from lib.constants import (
 from lib.kinetics import ph_current_ratio_bounds
 from lib.utils import banner
 
+SI_DESCRIPTION = "PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_JSON = KINETICS_DIR / "gdl_breakthrough.json"
 
 # ── Liquid properties (water at 20 C — the install/rain temperature, not the 25 C MD reference) ──

@@ -37,6 +37,8 @@ from lib.dft_utils import dft_singlepoint
 from lib.os_geometry import DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
 
+SI_DESCRIPTION = "L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator."  # its row in the paper SI (72): English, no repo jargon
+
 TIERS = {
     # tier: (xc, basis_light, level_shift_open, output_json, conv_tol)
     "b3lyp": ("b3lyp", "6-31g(d)", 0.0, "os_complex.json", 1e-6),

@@ -92,6 +92,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+SI_DESCRIPTION = "Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark?"  # its row in the paper SI (72): English, no repo jargon
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 from lib.constants import BQ25570_VIN_CS_TYP_MV, CACHE_DIR, REPO_ROOT

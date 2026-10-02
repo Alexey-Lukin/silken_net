@@ -51,6 +51,8 @@ from lib.constants import (
 from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
 
+SI_DESCRIPTION = "Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_JSON = KINETICS_DIR / "gusak_degradation.json"
 
 

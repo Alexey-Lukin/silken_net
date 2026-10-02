@@ -63,6 +63,8 @@ from lib.constants import (
 )
 from lib.utils import banner
 
+SI_DESCRIPTION = "Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget."  # its row in the paper SI (72): English, no repo jargon
+
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 DATA_FILE = REPO_ROOT / "tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json"
