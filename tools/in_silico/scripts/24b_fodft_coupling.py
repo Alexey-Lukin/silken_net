@@ -16,9 +16,9 @@ coupling by **two-state diabatisation**:
   4. H_ab (= t_ij) is the off-diagonal of the Fock matrix in that localised basis;
      the diagonals are the site energies (their difference is the driving-force ΔG).
 
-This is OUR two-orbital population localisation — labelled FO-DFT in the paper's tables and figures, but
+This is a two-orbital population localisation — labelled FO-DFT in the paper's tables and figures, but
 neither the textbook fragment-orbital basis nor the dipole-based generalised Mulliken–Hush scheme, and no
-published implementation is claimed (attribution withdrawn 2026-10-02 —
+specific published implementation — nor novelty — is claimed (attribution withdrawn 2026-10-02 —
 docs/protocols/ebfc/in_silico/paper/09_references.md, the FO-DFT line). The caches written before that
 date still carry «Mulliken-Hush» in their `method` string; the next run replaces it. It needs no
 fragment-basis counterpoise bookkeeping and no SCF-state biasing. It is an electron-coupling estimate,

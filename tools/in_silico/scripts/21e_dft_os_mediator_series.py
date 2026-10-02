@@ -52,7 +52,7 @@ from lib.utils import banner
 # The σ_para values are a NAMED ASSUMPTION (paper §2.3, 09_references disposition route (b), 2026-10-02):
 # the conventional tabulated constants, as compiled by Hansch, Leo & Taft (Chem. Rev. 1991, 91, 165 —
 # Crossref-confirmed, the values NOT checked against its full text, which is paywalled). The fitted slope
-# inherits them; the design rule rests on the series ORDER, which a revision of a few hundredths does not move.
+# inherits them, and the slope is the predictive part of the design rule (00_02 §2.1) — so their error is its error.
 # Each X-bpy has exactly 2 aromatic ring N (substituent N of NMe₂/NH₂/NO₂ is
 # non-aromatic → excluded by build_chelate's ring-N filter). Constant charge +1/+2.
 SERIES = [

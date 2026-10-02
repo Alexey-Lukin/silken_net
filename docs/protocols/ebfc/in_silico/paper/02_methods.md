@@ -57,7 +57,7 @@ osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
 source is used in this work; a shared parameterised builder generated the single-complex reference,
-the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope inherits them, while the series ORDER, which the design rule uses, is not moved by a revision of a few hundredths), and the chloro / aqua / bis-imidazole **speciation**
+the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope, which is the predictive part of the design rule, inherits whatever error they carry), and the chloro / aqua / bis-imidazole **speciation**
 forms from one source. The monodentate distances are realised as targeted, the rigid chelate is not: the realised
 geometry has Os–N(bpy) 2.091–2.099 Å and a bite angle of 80.1–80.6° across the series. For comparison only — no
 crystal structure of this complex class was found — related osmium centres in the Crystallography Open Database
@@ -96,7 +96,7 @@ factors), reporting the dominant path and its β·d.
 Cu–Co–Ce ZIF nanozyme were obtained from **charge-localised ΔSCF-UKS** energy splittings on
 clash-free cluster geometries (a bridging imidazole N–H that collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). For the rate-limiting Cu–Co hop the
-coupling was recomputed by a two-state orbital diabatisation of our own construction, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no published implementation is claimed for it): from one UKS
+coupling was recomputed by a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
 SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
 rotated into the basis that diagonalises their Cu-projected Mulliken population (a population-based
 localisation), leaving one orbital on each metal; t_ij is the off-diagonal Fock element in that

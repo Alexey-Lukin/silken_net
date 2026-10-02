@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 252 · 14,839,231 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 252 · 14,839,301 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -57,15 +57,15 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | `b551d14109cc7972ccdc8cfcd7013bdc56abed57aa4d1cfef82f1d79f153ba5b` | L3 step 2b — frontier orbitals of the FULL Os redox mediator. |
 | `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | `cc7efccd26040a58739f1669c167afc55de9c4e474a18fae5981c964b83c26d1` | L3 step 2c — DFT geometry optimization of [Os(bpy)₂(1-MeIm)Cl]ⁿ⁺. |
 | `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | `a6da54390b8c1cc38839463ba72ff0c8f5c232475e64e1e6d753ddb68265d0b4` | L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex. |
-| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `0355962ec1b961e0eac7bfc2bb44cf216588476b82eda8bbd83230410161e052` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
+| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `2146e49a625d77771df15b6cf07ac68ef4000c8c5c49bbf3cdc8a0d1835ac82b` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `ba75dbd699c1c7c1b71a63c4fac4fdc4918b6151745becfcaf400b24ace4dd7a` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `2f2b5b6e42e663a575fc1e12efeac62cb579030b3951627c484472a2a23bc11a` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | `a702d36b58a99b4cd0fcf9217ee98bce1c3aabb06a719ccadf571d9c6ba50d0e` | L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations. |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `6d9c87ce9f6e56871a7c7d968e501923702bf68646aa2c3cf9fa5fb3918b5ad3` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
-| `tools/in_silico/scripts/24b_fodft_coupling.py` | `1d6451d050b5749ee987285faad165b3140267dd89d08c516ef3866ad3947edb` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
+| `tools/in_silico/scripts/24b_fodft_coupling.py` | `219e51b97145f8efdc29f95aa871d910a338da4f52ebc263dd9f5a50f9aa653e` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `a7236fe12c7b054958de440f2b2bb2d0d007491b033a66d8170090625bcbf848` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
-| `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `59d50b2252562ac61af6ae2cab39c52e3352e94510779829dee29ba611637d4e` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
+| `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `0fafade3ceca12a44a243a96a3f4e69c3542bdaa7ac8368d7675ce5844bd3c27` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
 | `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `78ffaacd28e9ffbd6e0aa88a58c6e4bc8ec011f91f356dffa7da0ff5a1b5db60` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `5270de21c04d8d394fc9662d54443f5bd963c2c6f8e2c7d6e1945601f89e772a` | L3/L2 bridge — MD→DFT ensemble averaging. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `c4635322ed7d3cc92acb953b20cc407d42bee849a90358fbe8a44a49992b2edf` | L3 — Beratan-Onuchic electron tunneling pathway analysis. |
@@ -77,7 +77,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | `32e86c4eebd08d6ae06c68a83f1b35a8287e765b62566aa55465a2d71b71d732` | L4b — Monte Carlo uncertainty analysis for delta_t predictions. |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
 | `tools/in_silico/scripts/31b_cathode_det_rct.py` | `1aaba6f16ef5c209c4accddbdf5b0e22614ab34b63fd771648d7b63a602093dc` | 31b — cathode DET charge-transfer resistance band (③, INDICATIVE). |
-| `tools/in_silico/scripts/32_pcet_redox_potential.py` | `c2d9a58872d96d8d0c2a5638ff807c870ef46a043d471a6a61fbae7ad6e39ae0` | L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference. |
+| `tools/in_silico/scripts/32_pcet_redox_potential.py` | `4e5830f8ccd490dcd13eb6d1abcb08b358d8d9503fb812c31655bae8633f158e` | L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference. |
 | `tools/in_silico/scripts/33_pcet_cascade_semiquinone.py` | `c601dc219820e532463e0230b25c60964e4ab1a8cafb1ab8975048004c1e7b43` | L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•). |
 | `tools/in_silico/scripts/34_dft_microsolvation.py` | `bf7487039cd45ef7037d8ea34e3f6311a6b5e5aee409c9fbfc82b73c0ac1cfdb` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |

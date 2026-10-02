@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (CHEM.32 rigour upgrade).
 
-Same two-state orbital diabatisation as 24b (the FO-DFT label for Cu–Co; our own localisation), applied to the
+Same two-state orbital diabatisation as 24b (the FO-DFT label for Cu–Co), applied to the
 Co→Ru-swapped cluster (`cu_ru_zif.xyz`, identical geometry). 24c's crude ΔSCF
 energy-splitting gave a LARGE Cu–Ru splitting (ΔE ≈ 0.21 eV) whose magnitude the crude
 method cannot be trusted on — exactly the reason 24b was needed for Cu–Co (there the

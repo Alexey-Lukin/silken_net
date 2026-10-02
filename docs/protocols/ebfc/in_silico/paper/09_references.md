@@ -82,11 +82,11 @@ reading — and each needs its own route before the ACS pass.
 
 **Applied 2026-10-02 — route (b) for σ_para, route (c) for the FO-DFT attribution; −208 mV stays the founder's.**
 §2.3 now calls the σ_para values the conventional tabulated constants taken as an ASSUMED input, not checked
-against a primary compilation, and says what that costs (the fitted slope inherits them; the series ORDER the
-design rule uses is not moved by a revision of a few hundredths); the code carries the label (a comment block
+against a primary compilation, and says what that costs (the fitted slope — the predictive part of the design rule,
+`00_02 §2.1` — inherits whatever error they carry); the code carries the label (a comment block
 over `SERIES` in `21e` naming the Hansch–Leo–Taft compilation, Crossref ✓, values unread). §2.5 now defines the
-FO-DFT label as a two-state orbital diabatisation of our own construction and says it is neither the textbook
-fragment-orbital basis nor the generalised Mulliken–Hush scheme, claiming no published implementation; §3.4,
+FO-DFT label as a two-state orbital diabatisation and says it is neither the textbook
+fragment-orbital basis nor the generalised Mulliken–Hush scheme, claiming no specific published implementation (population-based diabatisations exist in the literature, so no novelty is claimed either); §3.4,
 the Fig 4 caption and the Table 1 row (`61`) were brought to the same wording. No value moved. The two
 markers left on −208 mV (§3.2, Fig 3 caption) were not the machine's to take — route (c) rewrote the founder's
 bracket verdict of 2026-09-24 — and the founder took it the same day (⚖️ 2026-10-02, the −208 line below).
@@ -145,7 +145,8 @@ legend line stays in each, as the criterion allows.
   (≈ ⅓ of the smallest robust ② margin, 0.27 eV), or on a primary of the SAME donor set off the realised geometry
   by ≥ 0.10 Å (Os–N(bpy)) or ≥ 0.07 Å (Os–Cl/O/N(L)), in one pass with any regeneration of the metal-in-PCM
   caches (§2.7) — and its budget, with the value question "no unoptimised geometry in Methods at all", is the
-  founder's — ✅ ⚖️ founder 2026-10-02: not before SUBMIT, only on these triggers, then in one pass under the lock
+  founder's — ✅ ⚖️ founder 2026-10-02: not before SUBMIT, only on these triggers or on a referee's request for
+  numbers with the fixed PCM or for an optimised geometry, then in one pass under the lock
   (full form — `PIPELINE_STATUS`, «D — rebuild the Os geometry…»).
   ✅ **C-min applied 2026-10-02** (script `76`, record `cache/reproduction/os_chelate_sensitivity.json`; both
   conditions held — no other heavy job on the CPU, and the builder's default path shown bit-identical to HEAD for
@@ -190,8 +191,9 @@ legend line stays in each, as the criterion allows.
   reported as two named readings and judged by its worse edge (`32`: +62 · +50 mV, both < 100). Price: the
   strongest «positive» sentence weakens (≈50 → 50–62 mV). ✅ **2026-10-02, route (c) — ⚖️ РАТИФІКОВАНО founder
   (закритим списком «одне так», за рекомендацією):** −208 mV is DROPPED, −220 mV (ref 25) is the only reading.
-  Ground: the disposition rule above — a number with no primary that feeds no model leaves the body, and
-  −208 feeds none (it is a comparison value; `32` derives the potential without it). Price: the strongest
+  Ground: route (c) as written covers a claim with NO number; −208 is a number with no primary that feeds no
+  model (route (b) covers numbers that do), so the ratification EXTENDED route (c) to this case — −208 is a
+  comparison value, and `32` derives the potential without it. Price: the strongest
   «positive» sentence weakens again, 50–62 → 62 mV, and the 2026-09-24 bracket verdict is rewritten. Weakest
   link: a primary for −208 may exist behind a paywall (the 2026-09-24 search found none) — a referee who brings
   one turns it back into a sourced second reading, a revision-round edit. Applied: `32` carries −220 alone

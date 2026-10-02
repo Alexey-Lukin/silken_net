@@ -55,8 +55,9 @@ NERNST_SLOPE = 0.05916   # V per pH unit at 298 K
 #   −220 mV — paper ref 25 (Bhattacharyya et al., J. Phys. Chem. A 2007, PMC4480342, Introduction:
 #             E_m(FAD, water) = −0.22 V, itself quoted from that paper's ref 105).
 #   −208 mV — once carried here as "well-known", then as the unsourced end of a bracket (⚖️ 2026-09-24);
-#             no primary was found, and the citation disposition rule drops a value that has no source
-#             and feeds no model (route (c), paper/09_references.md). Still a tuple, so a SOURCED second
+#             no primary was found, and the founder 2026-10-02 dropped it by EXTENDING route (c) of the
+#             citation disposition rule (paper/09_references.md) to a value with no source that feeds no
+#             model. Still a tuple, so a SOURCED second
 #             reading can return as a bracket without a schema change.
 EXP_FREE_FLAVIN_PH7_MV = (-220,)
 EXP_PROTEIN_BOUND_MV = -265     # GcGDH bound FAD, VERIFIED −0.265 V vs SHE (Schachinger, Ma, Ludwig, Electrochem. Commun. 2023, 146, 107405); 01_03 "+60 mV" was wrong (conflated w/ Os mediator)

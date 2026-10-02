@@ -77,7 +77,7 @@ sign and the readings. At its adverse corner — the uphill gap at the higher λ
 adverse corner throughout. Both λ(Cu) readings are for unconstrained solution couples; a framework-held Cu–N₄
 site can lie below both (0.7 eV in azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
 
-A two-state orbital diabatisation of the metal-d frontier pair (the FO-DFT label of Methods §2.5 — our own population localisation, not a published scheme) confirms the
+A two-state orbital diabatisation of the metal-d frontier pair (the FO-DFT label of Methods §2.5; no specific published implementation is claimed) confirms the
 bottleneck is robust to the coupling method, not an artefact of the crude state-energy ΔSCF: it returns
 t_ij(Cu–Co) = 0.0055 eV — within a factor of four of the ΔSCF value, still in the meV regime — together
 with a 0.18 eV site-energy gap the crude treatment had assumed away. The resulting margin
