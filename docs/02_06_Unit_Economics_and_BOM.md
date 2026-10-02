@@ -134,7 +134,7 @@
 
 #### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
 
-> **Cross-ref:** [`00_07` — HW.14](00_07_Action_Plan_Tracker) — оновлення Unit Economics ✅
+> **Cross-ref:** [`00_07` — HW.14](00_07_Action_Plan_Tracker) — вимір споживання Mini й закупівля Phase 3 (ціни аксесуарів і тарифу Starlink — первинкою при bring-up)
 
 **Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (25–40 Вт, [`02_05 §2.3`](02_05_Queen_Hardware_and_Starlink)) з ESP32-S3 co-processor (рішення HW.18; SIM8200G-M2 відхилено — [`02_05 §Starlink DTC`](02_05_Queen_Hardware_and_Starlink)).
 
@@ -224,14 +224,13 @@
 **Рекомендації HW.14:**
 1. **Phase 3 viable лише при SCC ≥ $0.40** — вимагає ReFi premium або Blue Carbon market
 2. **Starlink sharing:** розгортати ≥3 кластери на 1 Starlink термінал → Starlink cost per cluster $50/міс → breakeven $0.17/SCC ✅
-3. **Duty cycling:** Starlink 1 хв/год замість 5 хв/год → OPEX ~$30/міс
-4. **Альтернатива Helium Network:** ARCH.34 (Queen Helium fallback) — якщо покриття є, кратно нижчий OPEX
+3. **Duty cycling — важіль ЕНЕРГІЇ, не OPEX:** зимовий баланс Phase 3 закривається лише разом із комбо 40 Ah + 100 W + Victron і при duty не більше межі deploy-запасу ≈ 1.6 хв/год Starlink (на 25 Вт Mini, [`02_05 §4`](02_05_Queen_Hardware_and_Starlink)), а абонплата Residential ($150/міс, таблиця OPEX ↑) від хвилин роботи не залежить; дешевшого за Residential тарифу дерево не джерелує — ціни Phase 3 бере закупка при bring-up ([`00_07` HW.14](00_07_Action_Plan_Tracker))
+4. **Helium Network — НЕ альтернатива uplink-у:** ARCH.34 — SOS-only, 12 Б про саму Королеву (рішення 2026-07-03), телеметрії кластера не несе, а цінність каналу — дискримінація причини тиші, не доставка (⚖️ 2026-08-30) — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) L3; OPEX Phase 3 він не знижує
 
 | Сценарій Phase 3 | OPEX/міс | Breakeven SCC | Payback @$1.00 (CAPEX ~$7,610, однаковий для всіх рядків) |
 |---|---|---|---|
 | 1 Starlink / 1 cluster (baseline) | $174 | $0.40 | ~29 міс |
 | 1 Starlink / 3 clusters shared | $74 | $0.17 | ~21 міс |
-| Duty cycle 1 хв/год | $30 | $0.07 | ~19 міс |
 
 ---
 

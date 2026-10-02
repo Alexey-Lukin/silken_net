@@ -821,7 +821,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 - `DR7` `tree_did` — **write-once identity** у дефіцитному wear-free RTC; а часто-оновлюваний FW.54-стан (§2.3) виштовхується у wear-prone Flash. Інверсія.
 - DID уже відомий провіженінгу: K_seed деривується **з DID** (`SilkenNet::SeedDerivation`, `info = "silken-lorenz-seed|<DID>"`; firmware-дзеркало — SEC.11 / §2) → щоб запекти K_seed у Protected Flash, host **мусить** знати DID на провіженінгу.
-- ⚠️ Firmware до 2026-06-12 **самогенерував** DID з UID **⊕ true_random** і тримав лише в DR7. Наслідки: (1) DID **не VBAT-durable** → повний розряд EDLC (HW.14 зимовий дефіцит — а cold-start machinery саме й існує, бо VBAT-loss очікуваний) **сиротив identity/гаманець** новим random-DID; (2) DID **не відтворюваний** → провіженінг не міг його передбачити, лише device-first (пристрій репортить → host деривує K_seed 2-м проходом).
+- ⚠️ Firmware до 2026-06-12 **самогенерував** DID з UID **⊕ true_random** і тримав лише в DR7. Наслідки: (1) DID **не VBAT-durable** → повний розряд EDLC (зимовий голод Солдата — [`02_03 §9.8а`](02_03_BQ25570_MPPT_Nano_Power), HW.44 — а cold-start machinery саме й існує, бо VBAT-loss очікуваний) **сиротив identity/гаманець** новим random-DID; (2) DID **не відтворюваний** → провіженінг не міг його передбачити, лише device-first (пристрій репортить → host деривує K_seed 2-м проходом).
 - ✅ **ВИРІШЕНО (founder 2026-06-12): детермінований DID = f(UID)** без random — recompute на boot з always-present UID `0x1FFF7590`, зберігати нічого (кеш теж не потрібен) ⇒ **DR7 вільний** + DID VBAT-durable + однопрохідна фабрика. Канон механізму — **§7** (`did_derive.h` + Ruby-дзеркало `SilkenNet::DidDerivation`, golden freeze-contract обабіч). Альтернативу backend-assigned→Protected Flash відхилено (без self-derivation пристрій не має identity поза фабричним транскриптом; Flash-write на провіженінгу зайвий). Колізії ловить фабрична DB-unique-перевірка — деталі §7.
 
 **Вісь 3 — durability-клас (transient operational).** RTC backup = VBAT-durable. Та частина стану потребує лише warm-STOP2-виживання, не VBAT-durability, і має прийнятну loss-on-power-cut семантику:
@@ -1015,7 +1015,7 @@ Queen не має PVD, EXTI чи IWDG ISR. Мінімальний ISR-footprint 
 > `f(96-біт UID)` без random, recompute на кожному boot — зберігати нічого
 > (DR7 звільнено, §2). Попередня схема (`UID⊕random` з FW.24-fallback'ом,
 > write-once у DR7) мала дві системні вади: DID **не VBAT-durable** (повний
-> розряд EDLC — очікувана подія HW.14 — сиротив identity/гаманець новим
+> розряд EDLC — очікувана подія зимового голоду Солдата (HW.44) — сиротив identity/гаманець новим
 > random-DID) і **не відтворюваний** (провіженінг був приречений на
 > device-first два проходи, хоча K_seed деривується саме з DID). Аналіз —
 > §2.3.2 Вісь 2.

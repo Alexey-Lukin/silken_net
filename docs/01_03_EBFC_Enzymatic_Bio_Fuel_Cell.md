@@ -596,7 +596,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 **Cross-references:**
 - Електрична інтеграція: [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) — окремий тракт, не спільний вхід (вище)
-- Тепловий бюджет: [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (HW.14)
+- Зимовий енергодефіцит Солдата, який TEG мав би закривати: [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) (сезонність `P_gen`) і §9.8а (HW.44)
 
 **Статус:** Future R&D. TEG не входить у поточний BOM Soldier-вузла (TRL 4–5). Розглядається як опція для Phase 2.5+ (TRL 7+) для усунення зимового енергодефіциту — за умови окремого зарядного тракту (вище).
 
