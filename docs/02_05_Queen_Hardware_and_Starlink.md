@@ -717,7 +717,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | Крок | Дія | Де |
 |------|-----|----|
 | Owned-обв'язка + wire + тригер | ✅ 2026-07-04: `helium_sos.h` (pure, host-tested) + `queen_helium_lorawan_uplink()` hard-rule скелет | `firmware/queen/` |
-| LoRaWAN MAC-stack | ✅ Завендорено (наш форк `v2.6.2-silken.1`, [`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)) — ST-форк LoRaMac-node submodule@v2.6.2 (⚠️ `subghz-phy/lorawan/` — то LBM radio-шар, НЕ MAC; команда — [`00_07` ARCH.34](00_07_Action_Plan_Tracker)) + adapter-TU `Helium_Mac_SendSos` | `firmware/extern/stm32-mw-lorawan` |
+| LoRaWAN MAC-stack | ✅ Завендорено (наш форк `v2.6.2-silken.1`, [`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)) — ST-форк LoRaMac-node submodule@v2.6.2 (⚠️ `subghz-phy/lorawan/` — то LBM radio-шар, НЕ MAC; пін і upstream-статус — [`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)) + adapter-TU `Helium_Mac_SendSos` | `firmware/extern/stm32-mw-lorawan` |
 | DevEUI / AppEUI / AppKey | Зареєструвати **кожну Queen** (не Soldier!) у [Helium Console](https://console.helium.com/) | Helium |
 | HTTP Integration | Налаштувати webhook → `https://api.silkennet.com/api/v1/telemetry/helium` | Helium Console |
 | Rails endpoint | `POST /api/v1/telemetry/helium` → `HeliumSosWorker` (HMAC `X-Helium-Signature`, патерн oracle_callbacks) | ✅ Rails API (ARCH.34 backend-half, 2026-07-03) |
@@ -730,7 +730,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 |-----------|------|
 | Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
 | Owned-обв'язка: wire-pack (парність з бекендом) + тригер + hard-rule скелет `queen_helium_lorawan_uplink()` | ✅ 2026-07-04 (host-тести `test_helium_sos.c`; гейт `ARCH34_HELIUM_ENABLED 0`) |
-| LoRaWAN MAC-stack у Queen firmware | 🟢 (готово-інертно за гейтом `ARCH34_HELIUM_ENABLED 0`; ефір = bench) vendored @v2.6.2 + adapter ✅ 2026-07-05 (`queen/lorawan_glue/`: owned-конфіги + soft_timer/systime + `helium_mac.c`; host-smoke: ПОВНИЙ OTAA join+uplink цикл проти мок-LNS — криптовалідний JoinAccept на нуль-ключах, MIC/FRM-звірка server-side сесійними ключами, дедлайн = бойовий 20-с бюджет при SF12-TOA; DevNonce-монотонність + KV-reboot; main.c KV-mount за гейтом; ARM compile-lane) — ефір/OTAA = bench; vendored-UB SF11/12 знято форком v2.6.2-silken.1 ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)) |
+| LoRaWAN MAC-stack у Queen firmware | 🟡 (інертно за гейтом `ARCH34_HELIUM_ENABLED 0`; ⛔ до фліпу — дві машинні умови: ЕВП детуру з реальною антеною ≤ стелі SRD (MAC бере дефолтні 2.15 dBi) і ефір детуру в лімітері `tx_duty.h`, [`00_07` ARCH.34](00_07_Action_Plan_Tracker); ефір/OTAA = bench) vendored @v2.6.2 + adapter ✅ 2026-07-05 (`queen/lorawan_glue/`: owned-конфіги + soft_timer/systime + `helium_mac.c`; host-smoke: ПОВНИЙ OTAA join+uplink цикл проти мок-LNS — криптовалідний JoinAccept на нуль-ключах, MIC/FRM-звірка server-side сесійними ключами, дедлайн = бойовий 20-с бюджет при SF12-TOA; DevNonce-монотонність + KV-reboot; main.c KV-mount за гейтом; ARM compile-lane) — ефір/OTAA = bench; vendored-UB SF11/12 знято форком v2.6.2-silken.1 ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)) |
 | Rails endpoint `/api/v1/telemetry/helium` | ✅ Реалізовано (2026-07-03: `HeliumSosController` + `HeliumSosWorker` + `EwsAlert(queen_uplink_lost)`) |
 | Реєстрація Queen у Helium Console + заповнення `gateways.helium_dev_eui` | 🔴 Не виконано (👤) |
 | GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |
