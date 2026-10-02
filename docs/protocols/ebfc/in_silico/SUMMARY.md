@@ -778,8 +778,8 @@ is an upper bound under a crown), sky cooling at night (the cold count is a lowe
 Canon home → [`02_03 §9`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.42.
 
 Since [E.63], the EDLC recharge interval `delta_t` drives `growth_points` directly — a
-money-minting signal. `HW.21` carries a checkbox to put a TEG on the SAME BQ25570 charging rail
-as the EBFC; `01_03 §4`'s instrumental-noise list is exhaustively chemical and has no axis for "a
+money-minting signal. `HW.21` carried (until the 2026-09-09 verdict below) a checkbox to put a TEG on the SAME
+BQ25570 charging rail as the EBFC; `01_03 §4`'s instrumental-noise list is exhaustively chemical and has no axis for "a
 second power source on the shared rail". Closed form: `delta_t = E_window / (P·η_boost)`, where
 `E_window` is the EDLC window ON VSTOR at the ratified `VBAT_OV` (`02_03 §8`, doc↔cache-pinned — the
 energy the boost puts in; the post-buck figure is the discharge side and never a charging time),
@@ -799,8 +799,9 @@ the auxiliary source rather than tree metabolism, in every season. The percentag
 algebraically independent of which `delta_t` definition of the form E / (P·η) is used (E_window cancels
 in every bracket model) — this is not an artifact of scale choice. ⚠️ A definition WITH a sleep term —
 script 30's since 2026-09-27 — gives a HIGHER percentage (sleep only raises the contamination), so the
-verdict stands and is, if anything, conservative. Whether this forces a physical rail split or blocks `HW.21`'s multi-input checkbox is an
-explicit ⚖️ reserved for the founder (`00_07` HW.42) — not decided here.
+verdict stands and is, if anything, conservative. ⚖️ The rail question this number fed is decided — **RATIFIED founder
+2026-09-09** (`00_07` HW.42, [`01_03 §6.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): a second source on the shared rail
+is rejected — closed as an approach, not deferred; a TEG, if integrated at all, needs a physically separate charging path.
 (`kinetics/delta_t_aux_power_sensitivity.json`)
 
 ---

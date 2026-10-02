@@ -3,9 +3,9 @@
 """
 HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta_t`?
 
-WHY THIS EXISTS. `00_07` HW.21 carries a checkbox for TEG multi-input integration onto
-the same BQ25570 charging rail the EBFC already feeds. Since [E.63], `delta_t` (the
-EDLC recharge interval, `02_03 §12.2-12.3`) drives `growth_points` DIRECTLY — a
+WHY THIS EXISTS. `00_07` HW.21 carried (until the 2026-09-09 verdict — Scope below) a checkbox
+for TEG multi-input integration onto the same BQ25570 charging rail the EBFC already feeds.
+Since [E.63], `delta_t` (the EDLC recharge interval, `02_03 §12.2-12.3`) drives `growth_points` DIRECTLY — a
 money-minting signal, not a debug counter. `01_03 §4`'s instrumental-noise-source list
 is exhaustively CHEMICAL (enzyme degradation, membrane fouling, chlorides); it has no
 axis at all for "a second, unrelated power source lands on the same charge rail". This
@@ -58,9 +58,9 @@ the constants and every absolute delta_t to E_window/(P·eta). Re-deriving the s
 here would be an identity, not a check (in-silico §When Modifying #8), so the script prints
 the derivation and asserts nothing about it.
 
-Scope: SENSITIVITY NUMBER ONLY. Whether this forces a physical rail split or blocks
-HW.21's multi-input checkbox is an explicit (v) reserved for the founder (00_07
-HW.42) — not decided here.
+Scope: SENSITIVITY NUMBER ONLY — the rail verdict is not this script's. ⚖️ RATIFIED founder
+2026-09-09 (00_07 HW.42, 01_03 §6.2): a second source on the shared rail is REJECTED — closed as
+an approach, not deferred; a TEG, if integrated at all, needs a physically separate charging path.
 
 Run
 ---
@@ -235,8 +235,9 @@ def main() -> int:
         )
 
     print()
-    print("  (v) SENSITIVITY NUMBER ONLY (00_07 HW.42) — whether this forces a physical rail")
-    print("      split or blocks HW.21's multi-input checkbox is reserved for the founder.")
+    print("  (v) SENSITIVITY NUMBER ONLY — the rail verdict is the founder's, RATIFIED 2026-09-09")
+    print("      (00_07 HW.42, 01_03 §6.2): no second source on the shared rail; a TEG, if integrated")
+    print("      at all, needs a physically separate charging path.")
 
     output = {
         "model": (
