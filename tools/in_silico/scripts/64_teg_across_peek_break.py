@@ -3,17 +3,18 @@
 """
 HW.21 — Can a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to the bark?
 
-WHY THIS EXISTS. `00_07` HW.21 carries a 🤖 leg (from the DOC-T.107 review): the bark-glued TEG of
+WHY THIS EXISTS. `00_07` HW.21 carried a 🤖 leg (from the DOC-T.107 review; closed 2026-09-10 on
+this script's result — now a ⛔ entry in HW.21): the bark-glued TEG of
 `01_03 §6.2` sees its ΔT through bark (λ 0.05–0.1) and through a joint nobody clamps, whereas Zone 2
 is the ONE place in the whole anchor where both junctions are already mechanically fixed on opposite
 sides of a λ 0.25 insulator. Geometrically that is the obvious mount. ⚠️ But it aims straight at the
 reason Zone 2 exists at all (`01_01 §4.1`: a continuous Ti thermal bridge super-cools the cambial ring
 → intracellular ice → membrane rupture), and a TEG is, before it is anything else, a THERMALLY
-CONDUCTIVE PLATE. The tracker names the first step and it is machine-side: put a `+G_TEG` branch in
+CONDUCTIVE PLATE. The tracker named the first step and it was machine-side: put a `+G_TEG` branch in
 parallel with the Zone-2 gap and compare the resulting flux against the residual bridge we already
 accept (the monolithic Ti bus, `01_01 §1.4` / HW.34).
 
-This script is that branch. It answers three questions the checkbox implies but does not separate:
+This script is that branch. It answers three questions the checkbox implied but did not separate:
   Q1 THERMAL   — how much of the break does a TEG defeat, against the −2.0 °C cambium-freeze gate
                  script 54 already uses?
   Q2 BUDGET    — inverted: what is the LARGEST conductance that may cross the break and still pass

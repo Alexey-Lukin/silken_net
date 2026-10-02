@@ -31,8 +31,9 @@ eta_boost=0.68 (ETA_BQ, §9.2), winter 3-5 uW @ eta_boost=0.65 (§9.8: "eta_boos
 lower I_IN").
 
 Injecting P_aux onto the SAME rail is reported as a BRACKET, not a single number,
-because the multi-input TOPOLOGY itself is still open (FW.50 — this script does not
-decide it, and does not decide HW.42's rail-split (v) either):
+because the multi-input TOPOLOGY was still open when the bracket was set — before the
+2026-09-09 verdict (Scope below) closed the shared rail as an approach; this script decided
+neither that topology nor HW.42's rail-split (v):
 
   * Model A (shared boost, LOWER bound) — P_aux is harvested through the SAME
     converter stage as the EBFC, i.e. it sees the same eta_boost as P_gen. eta_boost
@@ -240,6 +241,9 @@ def main() -> int:
     print("      at all, needs a physically separate charging path.")
 
     output = {
+        # ⚠️ Stale words, kept verbatim until the next run of 63 because the committed cache holds
+        # exactly this string: the shared rail was closed as an approach on 2026-09-09 (Scope above)
+        # and FW.50 is the Vcap-ADC item, never the multi-input fork — re-word it on that run.
         "model": (
             "delta_t = E_window_vstor / (P * eta_boost); P_aux bracket = shared-boost (A) vs "
             "direct-injection (B) vs measured-eta-curve (C); multi-input topology (FW.50) still open"

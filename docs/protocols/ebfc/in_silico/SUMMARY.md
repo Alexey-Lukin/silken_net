@@ -785,8 +785,10 @@ second power source on the shared rail". Closed form: `delta_t = E_window / (P·
 energy the boost puts in; the post-buck figure is the discharge side and never a charging time),
 swept over auxiliary power P_aux = 10-200 µW (spanning HW.21's own 50-200 µW TEG estimate),
 reported as a 3-way bracket (shared-boost floor / direct-injection ceiling / BQ25570's own
-measured η(P) curve as a cross-check) since the multi-input topology itself is still open
-(`FW.50`).
+measured η(P) curve as a cross-check) — a bracket because the multi-input topology was still open
+when it was set, before the 2026-09-09 verdict below closed the shared rail as an approach. The
+cache's `model` string still calls that topology open under `FW.50` until the next run of 63, but
+`FW.50` is the Vcap-ADC item: its own topology fork was the Vcap-sense divider, never the multi-input.
 
 | P_aux | Summer (15 µW) shift | Winter (3-5 µW) shift |
 |---|---|---|
@@ -812,7 +814,8 @@ Canon home → [`01_03 §6.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (
 [`01_01 §4.1`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (why the break exists at all);
 decision → `00_07` HW.21.
 
-`HW.21`'s 🤖 leg asks the geometrically obvious question: a bark-glued module sees its ΔT through bark
+`HW.21`'s 🤖 leg asked (closed 2026-09-10 on this script's result — now a ⛔ entry in HW.21) the
+geometrically obvious question: a bark-glued module sees its ΔT through bark
 (λ 0.05–0.1) and an unclamped joint, whereas **Zone 2 is the one place in the anchor where both junctions
 are already mechanically fixed on opposite sides of a λ 0.25 insulator**. ⚠️ But it aims straight at the
 reason Zone 2 exists — a continuous Ti bridge super-cools the cambial ring into intracellular ice — and a

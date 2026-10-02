@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,801,637 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,802,091 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -96,8 +96,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/60_paper_figures.py` | `5de945283d76b02b0808e13b7654a973b537328eabbdd94d918ecf870871a6fb` | Стаття 1 publication figures — built entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `c0a3374884d240d406eb14035ade3aa509ec1b0ff7135f0ac420a636818d1346` | 61 — Стаття 1 Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `7612f9d65a1dc44f32d79ab64162345ff3dcffa7fafd6cdfe68bf9dcfa7ee6f7` | HW.43 (checkbox 1) — wind duty-cycle for the Cherkasy pine forest, from open meteorological data. |
-| `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `04fe4ba8d1c2b3faca263ea6fa32b3275a9dbda84c1fc76f38a70de5ec109cc2` | HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta_t`? |
-| `tools/in_silico/scripts/64_teg_across_peek_break.py` | `645cd25d1bb4ac007cb1f996abd55d2113ba6ea3f4b43a67335e99192f3ce31a` | HW.21 — Can a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to the bark? |
+| `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `709602baf5116b010ff7595bee6b374b11897ab9a8958eebbc6230f9abc65a34` | HW.42 — Does a second power source on the SAME BQ25570 rail contaminate `delta_t`? |
+| `tools/in_silico/scripts/64_teg_across_peek_break.py` | `01a7de4cd38aa70ff08f1e8264718e2f9bf35ffb67862e08132d285c8a2eed4c` | HW.21 — Can a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `3b8d4836d94b07f51260fb5d1df19f9fa2035a0efacbbd2ad44cec53626b8907` | HW.22 — does the ZIF nanozyme RADIOSENSITISE the enzyme stack under Co-60 gamma? Desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ce346a576ccbf9dccb2651a425964e83efe45c52480d20e52b6b01151461aa09` | HW.33 — the thinnest printed feature of a gyroid, per TOPOLOGY, at a fixed porosity. |
 | `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `12703ceb8264c479be11d47316e78a845c45bc631d79060cb48627016acd09c5` | HW.3 — does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible window. |
