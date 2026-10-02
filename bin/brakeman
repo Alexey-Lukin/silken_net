@@ -5,7 +5,8 @@ require "bundler/setup"
 # Fail when Brakeman is outdated — but only once the newer release is a week old: a bare
 # --ensure-latest reddens main on the day of every release and leaves one way back to green,
 # taking a version younger than the release-age quarantine. Why and how measured:
-# .claude/skills/dependency-update/gotchas.md #58 (delegated verdict — 00_07 OPS.22).
+# .claude/skills/dependency-update/gotchas.md #58 (delegated 2026-10-01 — verdict, price and weakest
+# link there; provenance 00_07 OPS.22).
 ARGV.unshift("--ensure-latest=7")
 
 load Gem.bin_path("brakeman", "brakeman")

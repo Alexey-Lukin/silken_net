@@ -87,6 +87,10 @@ The loop above bumps ONE dependency; this one drains the queue someone else open
      «because it ripened» and does sincere work worth nothing. Write the REFUSAL
      beside the date (transitive · ceiling satisfied by the old version · no gain),
      and ⛔ never a COUNT of held packages — the queue grows (`no-volatile-counts`).
+4b. A PR whose version `main` ALREADY carries (taken by another path) is NOT closed
+     by the bot when we take it — measured on `tailwind_merge` and `simplecov`: still
+     open 4–5 days after the take. Close it by hand, naming the commit that carries
+     the version, so the open set stays a list of what is really open.
 5. CANON SWEEP — re-grep the OLD version literals for every gem/action the docs quote (`#42`).
    No gate compares a `@vN` written in prose against `.github/`; this step is the only carrier.
 ```

@@ -319,8 +319,9 @@ env:
 #     does not carry here. `redis://` without TLS is deliberate: the traffic never leaves the VPC.
 #   • `directories: data` = AOF on the host disk (CMEK `app-boot`): a staging SPOF accepted with its
 #     price named — a host loss loses queued canopy jobs and testnet nonces, nothing of value
-#     (06_06 §5.4). The image tag is pinned like Alloy's; no Dependabot lane covers Kamal
-#     accessories, so it is bumped by hand.
+#     (06_06 §5.4). The image tag is a FLOATING minor — `7.4-alpine` moves with every 7.4.x patch
+#     and Alpine rebuild, unlike Alloy's exact `v1.16.3` — and carries no digest; no Dependabot lane
+#     covers Kamal accessories, so pinning and bumping are by hand (open: 00_07 OPS.22, payload pins).
 #   • Booted by the `Kamal Deploy to Canopy` step BEFORE `kamal deploy -d canopy` (idempotent —
 #     kamal 2.12 skips an existing container), never by `kamal setup`. Service name is
 #     `silken_net-redis`: accessory names carry no destination (the fact that keeps Alloy single),
