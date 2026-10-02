@@ -173,5 +173,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 28. A number you derive to CHECK a claim inherits an idealization, and the idealization — not the arithmetic — is what must be justified. Both instances below were MINE, both were arithmetically right, and one of them shipped into canon before I caught it
 29. The SI manifest (`72`) hashes the WHOLE committed in-silico tree, so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
 30. A seasonal crossing counted as «the first run ≥ threshold from 1 January» calls a winter thaw spring — make the crossing SUSTAINED and declare that rule as ours, on BOTH edges
+31. A pin over a numeric GENERATOR holds only in the environment that wrote its reference — and this pipeline now runs in THREE: the recorded osx-arm64 env writes the files, the lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and CI runs the linux-64 one
 
 <!-- /INSILICO-MODIFYING-INDEX -->
