@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — макетна плата CJMCU-2557 тестована, архітектурний пів'от зафіксовано. Відкриті: MPPT 65% коефіцієнт (HW.13), cold-start R_int (§1.5); резисторна мережа (HW.7) — ціль `VBAT_OV`=4.822В ратифікована 2026-09-09, лишається лише фізичне паяння+вимір, не інженерне питання → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — макетна плата CJMCU-2557 тестована, архітектурний пів'от зафіксовано. Відкриті пункти сторінки → [`00_07`](00_07_Action_Plan_Tracker), секція §02a.
 
 ---
 
@@ -27,7 +27,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | BioContract: `delta_t` заряду EDLC → growth_points (§12.3) |
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32; wake = RTC-WUT, VBAT_OK = живлення-гейт) |
 | [`02_04` — Bench Build & Test Guide](02_04_Bench_Build_Guide) | Bench-збірка Soldier на макетці (фронт — еквівалент EBFC; легасі LTC3108 знято — §5) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті пункти сторінки** (SSOT) — секція §02a |
 
 ## 📑 Зміст
 
