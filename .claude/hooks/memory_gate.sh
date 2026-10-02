@@ -992,14 +992,16 @@ index_check() {
 # the battery would make EXIT 1 permanent and train the reader to skim the one
 # stance that must stay loud. This is a WORKLIST, not a verdict.
 #
-# 🔴 The old wording here said "same stance as GENRE", and that was FALSE in the
-# way this file is meant to police: `--genre` is a corpus-wide LENS, but the GENRE
-# FINDING rides check_file and therefore sits INSIDE --audit and gates. The two are
-# separated by YIELD, not by subject — GENRE's live yield is zero, so it belongs in
-# the battery; this one's is dozens, so it cannot. Both are triggers to go read a
-# file; only one of them can afford to be loud. (There is no mechanical form for
-# this class of lie: the claim is an analogy between a mode and a finding, and no
-# function name appears in it — so it is prose, and it is corrected as prose.)
+# 🔴 The old wording here said "same stance as GENRE", and it has been false TWICE,
+# in the way this file is meant to police. First, GENRE rode check_file and so sat
+# INSIDE --audit and gated, while this mode's yield (dozens) kept it out. Then GENRE's
+# own live yield stopped being zero, and it moved OUT of the counted battery too
+# (genre_report: printed, never counted) — and this note kept describing the first
+# state for weeks (found 2026-10-02 by a GENRE pass over 16 flagged files). So the
+# two DO share a stance now: both are triggers to go read a file, kept out of the
+# exit code by YIELD, not by subject. (There is no mechanical form for this class of
+# lie: the claim is an analogy between a mode and a finding, and no function name
+# appears in it — so it is prose, and it is corrected as prose.)
 #
 # Grouped by TARGET rather than by source, because the router is written into
 # the target: one edit there can answer several homes at once. And the unit is
@@ -1228,8 +1230,13 @@ exempt = {
   # зміст ТЕПЕР»), тож збереження старої адреси лишало читача на мертвому кроці ланцюга.
   # Розводить два прочитання одне питання: речення каже, ДЕ ЩОСЬ БУЛО, чи ДЕ ВОНО Є?
   # Перше — історія й лишається; друге — маршрут і мусить вести в живе.
-  "log_sec07_legal.md" => ["07_01 §8"],
-  "project_sec07_legal_campaign.md" => ["07_01 §1", "07_01 §4", "07_01 §5", "07_03 §3"]
+  # 2026-10-02: речення «інвест-лексику знято з §1/§4/§5/§10» переїхало ДОСЛІВНО з
+  # project_sec07_legal_campaign у log_sec07_legal (евакуація хроніки) — виняток іде за
+  # ПРЕДМЕТОМ, не лишається на старому шляху. ⚠️ Зіставлення нижче — підрядком
+  # (`ref.include?(e)`), тож «07_01 §1» мовчки покриває й «§10»: явний «§10» мусить стояти
+  # ПЕРЕД «§1», інакше його завжди перехоплює коротший і він гине як EXEMPT-DEAD.
+  "log_sec07_legal.md" => ["07_01 §8", "07_01 §10", "07_01 §1", "07_01 §4", "07_01 §5"],
+  "project_sec07_legal_campaign.md" => ["07_03 §3"]
 }
 # Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
 # table names a real corpus file, which no fixture repo has, so the self-test
