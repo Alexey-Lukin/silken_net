@@ -108,7 +108,7 @@
 | [bench:reset-cause] | §6 (bullet «Reset-cause на кремнії» ↓) | FW.59 |
 | [bench:radio-phy] | §6 (bullet «PHY-профіль на кремнії» ↓) | FW.61 · HW.9 |
 | [bench:rf-mockup] | §6 (bullet «RF-макет» ↓) | HW.33 · HW.17 |
-| [bench:bq-coldstart] | §6 (bullet «`VIN(CS)` власної партії» ↓) ⊕ `02_04 §4.1` (рядок HW.12 overcharge ⊕ регресія cold start) | HW.46 · HW.12 |
+| [bench:bq-coldstart] | §6 (bullet «`VIN(CS)` власної партії» ↓) ⊕ `02_04 §4.1` (рядок HW.12 overcharge ⊕ регресія cold start) | HW.46 · HW.12 · HW.19 |
 | [bench:ds18b20] | §6 (bullet «DS18B20 на кремнії» ↓) | HW.16 |
 
 - **HW-AES-KEY/SEC.6:** SE05x eval-пара (baseline **SE051C2**, companion OM-SE050ARD-E — 03_05 §3.7 / 00_07 SE050-MIGRATION; роль SE ✅ provisioning-only 2026-07-03) + live SE05x I²C: **cold-boot заряд + T1oI2C-латентності provisioning-операцій** (датащит не специфікує — головне питання) + **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
