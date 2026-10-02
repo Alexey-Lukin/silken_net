@@ -186,6 +186,9 @@ RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
 # EDLC candidate heights (00_07 HW.37, datasheets compared 2026-09-14). The part rides INSIDE the B2B gap,
 # which this budget used to declare «not judged here» — so the gap is now judged for the one class of
 # occupant the tree actually names. Vendor figures, not re-verified here.
+# ⛔ KR 5.2 mm = Eaton Technical Data 4327 (06/2026) «H maximum». DigiKey lists «Seated Max 5.00 mm» —
+#    do NOT retarget to the distributor: the maker is this number's home and the larger value is the
+#    conservative one (5.00 would silently overstate the B2B-gap margin by 0.2 mm). (00_07 HW.37, 2026-09-24)
 EDLC_HEIGHT_MM = {"KR-5R5H474-R (horizontal)": 5.2, "KEMET FG0H474ZF (vertical, Ø14.5)": 18.0}
 RF_Z_CANON_FLOOR_MM = 8.0        # 02_01 §5.3 normative row «≥ 8» (λ/40 = 8.6 in the same row)
 RF_Z_HFSS_TRIGGER_MM = 10.0      # 02_01 §5.3, same row: HFSS mandatory below 10

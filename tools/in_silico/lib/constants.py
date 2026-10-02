@@ -368,7 +368,7 @@ _CORE_IDLE_J_PER_S = 6.7e-3 / 0.6
 E_CYCLE_LOW = E_CYCLE - 3.96e-3 / ETA_BUCK_ACTIVE                                  # J ≈ 28.8 mJ
 E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE     # J ≈ 43.2 mJ
 
-# ── EDLC endurance-hours (HW.37, script 51; 02_03 §12.1/§6) — vendor SKUs
+# ── EDLC endurance-hours (HW.37, script 51; 02_03 §12.1) — vendor SKUs
 # (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model
 # (generalized capacitor_life_hours(), NOT the same functional form as the
 # continuous fixed-Ea arrhenius_aging() above — see that function's docstring). ──
@@ -384,7 +384,8 @@ VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles 
 # KEMET's OWN voltage-doubling coefficient was not confirmed from a public datasheet
 # (00_07 HW.37) — report the sensitivity across the Eaton-derived bracket above rather
 # than a false-precise single number.
-FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7
+FIELD_TEMPS_C = (25.0, 10.0)       # °C — reference points of the EDLC life bracket (02_03 §12.1; the derate was judged at 10 °C, §4.Б)
+# ⚠️ NOT the site: the aging T_eff there is 13.0 °C in open air and warmer under the radome (script 71, 02_03 §12.1).
 # The ratified operating voltage these ratings are derated to is VBAT_OV_RATIFIED_V (EDLC energy block above).
 # ⛔ The OPERATING range is a different datasheet parameter from the endurance TEST point above, even
 # where the two print the same 70: the test point prices LIFE, the range bounds USE (in-silico
