@@ -18,6 +18,10 @@ class TelemetryUnpackerService < ApplicationService
   CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
   CCM_DEVICE_Z_NONE          = 0xFFFF
   CCM_DEVICE_Z_SCALE         = 512.0
+  # ⛔ [ARCH.8] 25 h = добовий heartbeat + 1 h: каденс, розтягнутий за TTL, пропускає валідний старий
+  #    кадр повз FC-guard (born-vuln → 00_07 ARCH.8, нога TTL). Лік НЕ «config_sleep_interval × N» —
+  #    прошивка цієї колонки не читає (скіл backend #53); прецедент — Gateway::LIVENESS_WINDOW_S,
+  #    виміряна константа тракту. Вузьким вікно стає з активацією добового pulse, не раніше.
   CCM_FC_NONCE_TTL           = 25.hours
   CCM_FC_NONCE_KEY_PREFIX    = "silken:ccm:fc"
 
