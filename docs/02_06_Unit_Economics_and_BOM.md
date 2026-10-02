@@ -15,7 +15,7 @@
 ## ✅ Статус
 
 - **Стан:** Вартісна модель зафіксована в SSOT; ціни — desk-оцінки: котирувань немає (RFQ-листи не надіслано), RFQ-шар відкритий. Шкала готовності тут **незастосовна** — предмет вартісна економіка заліза, а не готовність технології ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Технологічну зрілість самого заліза несуть [`02_01`](02_01_Hardware_Architecture_and_BOM) і [`02_05`](02_05_Queen_Hardware_and_Starlink).
-- **Відкрите:** RFQ-диспетч і vendor-контакти (ноги відправки — у пунктах-власниках, яких називає [`rfq_registry`](protocols/procurement/rfq_registry.md): переважно `HW.*`, DMLS-лист — HW.1, лист радіолабораторії — ARCH.24), ціни й vendor-скоринг із відповідей (BIZ.17), replacement-OPEX bench-калібрування (BIZ.7), Phase 3 енергобаланс Queen (HW.39) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** RFQ-диспетч і vendor-контакти (ноги відправки — у пунктах-власниках, яких називає [`rfq_registry`](protocols/procurement/rfq_registry.md): переважно `HW.*`, DMLS-лист — HW.1, лист радіолабораторії — ARCH.24), ціни й vendor-скоринг із відповідей (BIZ.17), replacement-OPEX bench-калібрування (BIZ.7), Phase 3 енергобаланс Queen (HW.14) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`01_02` — Ti-6Al-4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Друк-cost анкера (дім вартості друку) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Курс SCC — SSOT токеноміки (тут лише дзеркало) |
 | [`00_04` — Nature-as-a-Service Contracts](00_04_Nature_as_a_Service_Contracts) | Юридична модель NaaS і фінансові константи — друга половина того самого питання клієнта |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Відкрите: BIZ.7 (replacement OPEX), BIZ.17 (ціни й скоринг із RFQ-відповідей · CDA/NDA), HW.1 (відправка DMLS-RFQ), HW.39 (Queen energy) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Відкрите: BIZ.7 (replacement OPEX), BIZ.17 (ціни й скоринг із RFQ-відповідей · CDA/NDA), HW.1 (відправка DMLS-RFQ), HW.14 (Queen Phase 3 energy) |
 
 ## 📑 Зміст
 
