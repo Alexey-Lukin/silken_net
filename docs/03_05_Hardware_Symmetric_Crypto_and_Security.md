@@ -448,6 +448,7 @@ static void MX_CRYP_Init(void)
 | Преамбула | 8 символів | `preambleLen = 8` |
 | CRC | увімкнено | `crcOn = true` |
 | Заголовок | explicit | `fixLen = false` |
+| Sync word | приватне (LoRa PRIVATE 0x1424); LoRaWAN-детур Королеви лишає в регістрі публічне 0x3444, тож `Lora_Phy_Apply_Sync_Word()` кличуть ПЕРШИМ — у boot-і й після кожного детуру ([`02_05 §6.1`](02_05_Queen_Hardware_and_Starlink)) | `Radio.SetPublicNetwork(false)` |
 | Потужність TX Солдата | +14 дБм (Сценарій C, [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power)) | `power = 14` |
 | Потужність TX Королеви | +10 дБм (стеля ЕВП, ⚖️ founder 2026-09-24 — нижче) | `power = 10` |
 
