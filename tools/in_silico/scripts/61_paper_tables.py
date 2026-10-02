@@ -85,7 +85,7 @@ def build() -> str:
     md.append("| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |")
     md.append("| PCET | B3LYP/6-31G(d) + thermodynamic proton reference (Isse–Gennaro) | — | PCM | FAD E°; semiquinone cascade |")
     md.append("| Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |")
-    md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); FO-DFT two-state Mulliken–Hush (24b) | none (gas phase) | ZIF inter-metal t_ij |")
+    md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b) | none (gas phase) | ZIF inter-metal t_ij |")
     md.append("\n*Reproducibility: deterministic scripts in `tools/in_silico`; every DFT cache behind these tables computed with PySCF 2.11.0 "
               "(the recorded environment — §2.7; the lock re-runs are separate records, SI S3).*\n")
 

@@ -37,6 +37,10 @@ from lib.os_geometry import BPY_SMILES, DCBPY_SMILES, DMBPY_SMILES, build_os_com
 from lib.utils import banner
 
 # 4,4'-X-2,2'-bipyridine series, ordered by Hammett σ_para (donor → acceptor).
+# The σ_para values are a NAMED ASSUMPTION (paper §2.3, 09_references disposition route (b), 2026-10-02):
+# the conventional tabulated constants, as compiled by Hansch, Leo & Taft (Chem. Rev. 1991, 91, 165 —
+# Crossref-confirmed, the values NOT checked against its full text, which is paywalled). The fitted slope
+# inherits them; the design rule rests on the series ORDER, which a revision of a few hundredths does not move.
 # Each X-bpy has exactly 2 aromatic ring N (substituent N of NMe₂/NH₂/NO₂ is
 # non-aromatic → excluded by build_chelate's ring-N filter). Constant charge +1/+2.
 SERIES = [

@@ -80,6 +80,18 @@ provenance, not a model change. **The zero-marker criterion is NOT yet met:** th
 below remain — the σ_para series, the FO-DFT / Mulliken–Hush attribution and the −208 mV free-flavin
 reading — and each needs its own route before the ACS pass.
 
+**Applied 2026-10-02 — route (b) for σ_para, route (c) for the FO-DFT attribution; −208 mV stays the founder's.**
+§2.3 now calls the σ_para values the conventional tabulated constants taken as an ASSUMED input, not checked
+against a primary compilation, and says what that costs (the fitted slope inherits them; the series ORDER the
+design rule uses is not moved by a revision of a few hundredths); the code carries the label (a comment block
+over `SERIES` in `21e` naming the Hansch–Leo–Taft compilation, Crossref ✓, values unread). §2.5 now defines the
+FO-DFT label as a two-state orbital diabatisation of our own construction and says it is neither the textbook
+fragment-orbital basis nor the generalised Mulliken–Hush scheme, claiming no published implementation; §3.4,
+the Fig 4 caption and the Table 1 row (`61`) were brought to the same wording. No value moved. **Two markers
+remain, both on −208 mV (§3.2, Fig 3 caption):** route (c) would drop that reading, and that rewrites the
+founder's bracket verdict of 2026-09-24 («both readings as a bracket»), so it is not the machine's to take —
+it waits for a primary or for the founder (`00_07` HW.5.IS).
+
 - §2.3 — the Os–ligand bond lengths (targets 2.06 / 2.10 / 2.38 Å and a 78° bite, `lib/os_geometry.py`),
   once labelled "crystallographic". ✅ Route (b) applied as **B′**. ⚖️ делеговано 2026-10-01 (машина, за
   рекомендацією; founder може перевернути) — **Присуд:** the distances stay a NAMED ASSUMPTION, compared with
@@ -136,10 +148,13 @@ reading — and each needs its own route before the ACS pass.
 - §2.3 — the Hammett σ_para values of the substituent series (`21e`). Likely primary: Hansch, Leo & Taft,
   *Chem. Rev.* 1991, *91*, 165 (DOI 10.1021/cr00002a004 — Crossref ✓, values NOT checked: paywall). Unlike
   the bond lengths, these values are a MODEL INPUT that sets every point of the Hammett slope (`21e`
-  SERIES), so route (b) here labels a model input rather than a remark; still open. 👤
+  SERIES), so route (b) here labels a model input rather than a remark. ✅ 2026-10-02, route (b): §2.3
+  names them an assumed input and states the cost; the label sits over `SERIES` in `21e`.
 - §2.5, §3.4 — the FO-DFT / Mulliken–Hush diabatisation. `24b` diagonalises a Cu-projected Mulliken
   population in the space of two MOs, which is neither the dipole-based generalised Mulliken–Hush nor a
-  textbook FO-DFT fragment basis; which published method it IS is an attribution call. 👤
+  textbook FO-DFT fragment basis; which published method it IS is an attribution call. ✅ 2026-10-02,
+  route (c): the attribution is withdrawn — §2.5 defines the label as our own two-orbital population
+  localisation and claims no published implementation; §3.4, Fig 4 and Table 1 (`61`) follow.
 - §2.5, §3.4 (twice) — the literature λ values (Cu 2.0 / Co 1.4 / Ce 1.0 / Ru 0.8 eV, `25` `LAMBDA_LIT`).
   ✅ 2026-09-24 for Cu: λ(Cu) is now a bracket of two named readings, judged at its adverse corner — 2.4 eV
   is the **Cu(phen)₂²⁺/⁺** self-exchange of ref 48 (PMC553296, §"Ru-Proteins", citing its ref 24). ⚠️ The

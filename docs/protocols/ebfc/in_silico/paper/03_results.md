@@ -78,7 +78,7 @@ sign and the readings. At its adverse corner — the uphill gap at the higher λ
 adverse corner throughout. Both λ(Cu) readings are for unconstrained solution couples; a framework-held Cu–N₄
 site can lie below both (0.7 eV in azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
 
-A two-state FO-DFT diabatisation (Mulliken–Hush localisation of the metal-d frontier pair) [CITATION NEEDED] confirms the
+A two-state orbital diabatisation of the metal-d frontier pair (the FO-DFT label of Methods §2.5 — our own population localisation, not a published scheme) confirms the
 bottleneck is robust to the coupling method, not an artefact of the crude state-energy ΔSCF: it returns
 t_ij(Cu–Co) = 0.0055 eV — within a factor of four of the ΔSCF value, still in the meV regime — together
 with a 0.18 eV site-energy gap the crude treatment had assumed away. The resulting margin
@@ -222,7 +222,7 @@ cycling).
 
 **Figure 4. Direct electron transfer through the bimetallic Cu–Co–Ce ZIF cathode.** *(a)* Inter-metal
 electronic couplings |t_ij| (log scale) from charge-localised ΔSCF on clash-free cluster geometries; the
-Cu–Co hop is the bottleneck, confirmed by a two-state FO-DFT Mulliken–Hush diabatisation (0.0055 eV,
+Cu–Co hop is the bottleneck, confirmed by the two-state orbital diabatisation (FO-DFT label, Methods §2.5; 0.0055 eV,
 ~4× the crude ΔSCF value). *(b)* Marcus k_DET margin of the Cu–Co bottleneck relative to enzymatic
 turnover (10³ s⁻¹, dashed) across reorganisation-energy scenarios: bars at ΔG = 0 on the 2.0 eV λ(Cu)
 reading (×1.4 at literature λ), whiskers spanning each scenario's adverse and favourable corners over the

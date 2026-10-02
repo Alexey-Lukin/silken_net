@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 249 · 14,811,406 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 249 · 14,811,849 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -57,7 +57,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | `b551d14109cc7972ccdc8cfcd7013bdc56abed57aa4d1cfef82f1d79f153ba5b` | L3 step 2b — frontier orbitals of the FULL Os redox mediator. |
 | `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | `cc7efccd26040a58739f1669c167afc55de9c4e474a18fae5981c964b83c26d1` | L3 step 2c — DFT geometry optimization of [Os(bpy)₂(1-MeIm)Cl]ⁿ⁺. |
 | `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | `a6da54390b8c1cc38839463ba72ff0c8f5c232475e64e1e6d753ddb68265d0b4` | L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex. |
-| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `fdd319cd86af161aebf25e7dcec386cea775c45db4eaf914c1dfbb45ebd55686` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
+| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `f0ef4c8f58aa8b86d3b13615a315f0f1ac9fe45632ad875cae310102b1e55b10` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `ba75dbd699c1c7c1b71a63c4fac4fdc4918b6151745becfcaf400b24ace4dd7a` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `2f2b5b6e42e663a575fc1e12efeac62cb579030b3951627c484472a2a23bc11a` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
@@ -94,7 +94,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `e8f81357fe4c72f6a93f93d8e356ae5d4bb8bb278e5bd8737f63cdd990a46532` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `80c4b19b528d400eec65ab9a566dea3f7303ba896779e339d9800ee6169acb36` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `32f5e51d102559cc1752cf1b0b742d217234a35ca1d7951c99400225b6abb016` | Publication figures, rendered entirely from the cached DFT results. |
-| `tools/in_silico/scripts/61_paper_tables.py` | `890d301a7db9cc8d9f7ab8d2606d81ca69ec79b88e2e93e843e63dd6ed44b508` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
+| `tools/in_silico/scripts/61_paper_tables.py` | `662d43659d424870e23dd68e8830d9e7ecf77428d1674a3877e9810ffd687008` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `3a8bd4b553b40b71f3f177d341140426e5ed282878b62d1d2936061b3814b11c` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
