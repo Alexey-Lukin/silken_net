@@ -230,7 +230,7 @@ over it (`00_07` OPS.22). Needs `conda-lock` once (`pipx install conda-lock`, or
 `conda install -n base -c conda-forge conda-lock`):
 
 ```bash
-conda-lock install -n silken_md tools/in_silico/conda-lock.yml
+conda-lock install -n silken_lock tools/in_silico/conda-lock.yml   # NOT -n silken_md: that name is the record
 ```
 
 `environment.yml` stays the human-editable source; `conda-lock.yml` is the
