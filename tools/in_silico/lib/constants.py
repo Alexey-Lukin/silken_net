@@ -398,17 +398,17 @@ E_CYCLE_HIGH = E_CYCLE + (6.7e-3 + _CORE_IDLE_J_PER_S * 0.175) / ETA_BUCK_ACTIVE
 # (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model
 # (generalized capacitor_life_hours(), NOT the same functional form as the
 # continuous fixed-Ea arrhenius_aging() above — see that function's docstring). ──
-EATON_KR_RATED_HOURS = 1000.0      # h — Eaton KR-5R5H474-R endurance rating (00_07 HW.37)
+EATON_KR_RATED_HOURS = 1000.0      # h — Eaton KR-5R5H474-R endurance rating (02_03 §12.1)
 EATON_KR_RATED_TEMP_C = 70.0       # °C — rated-life test temperature
 EATON_KR_RATED_VOLTAGE_V = 5.5     # V — rated-life test voltage
-KEMET_FG_RATED_HOURS = 1000.0      # h — KEMET FG0H474ZF endurance rating (00_07 HW.37)
+KEMET_FG_RATED_HOURS = 1000.0      # h — KEMET FG0H474ZF endurance rating (02_03 §12.1)
 KEMET_FG_RATED_TEMP_C = 70.0       # °C — rated-life test temperature (same as Eaton KR)
-KEMET_FG_RATED_VOLTAGE_V = 5.5     # V — rated voltage (0.47F/5.5V SKU, 00_07 HW.37)
-THERMAL_DOUBLING_INTERVAL_K = 10.0     # K — consensus "life doubles per 10°C" rule (lit., 00_07 HW.37/HW.7)
+KEMET_FG_RATED_VOLTAGE_V = 5.5     # V — rated voltage (0.47F/5.5V SKU, 02_03 §12.1)
+THERMAL_DOUBLING_INTERVAL_K = 10.0     # K — consensus "life doubles per 10°C" rule (lit., 02_03 §12.1)
 VOLTAGE_DOUBLING_OPTIMISTIC_V = 0.2    # V — Abracon/CDE-style: life doubles per 0.2V derating
 VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles per 0.4V derating
 # KEMET's OWN voltage-doubling coefficient was not confirmed from a public datasheet
-# (00_07 HW.37) — report the sensitivity across the Eaton-derived bracket above rather
+# (02_03 §12.1) — report the sensitivity across the Eaton-derived bracket above rather
 # than a false-precise single number.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — reference points of the EDLC life bracket (02_03 §12.1; the derate was judged at 10 °C, §4.Б)
 # ⚠️ NOT the site: the aging T_eff there is 13.0 °C in open air and warmer under the radome (script 71, 02_03 §12.1).
