@@ -101,7 +101,7 @@
 <line x1='540' y1='937' x2='790' y2='937' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='937' x2='630' y2='953' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3618e7b</text>
+<text x='635' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>fbee09509</text>
 <line x1='540' y1='953' x2='790' y2='953' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='953' x2='630' y2='969' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='964' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -109,7 +109,7 @@
 <line x1='540' y1='969' x2='790' y2='969' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='969' x2='630' y2='985' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f9833d8014460ff72a… → FOOTER</text>
-<text x='806' y='1001' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3618e7b · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
-<text x='806' y='1013' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f9833d8014460ff72a23363e14d905d4bf4121d5f6f44ebe6cf626c80bbfe2f1</text>
+<text x='635' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2581fe3ffdd05fd809… → FOOTER</text>
+<text x='806' y='1001' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev fbee09509 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
+<text x='806' y='1013' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 2581fe3ffdd05fd8095c3b59d74fed953259b7b6dd6df92b07e11cf33f1a8d17</text>
 </svg>
