@@ -1661,3 +1661,32 @@ def test_anchor_torque_path_invariants():
     for mu, l_s in itertools.product(mus, ins):
         assert tau(20.0, "band floor", mu, l_s) < tau(20.0, "band top", mu, l_s)
         assert tau(40.0, "band top", mu, l_s) < tau(20.0, "band top", mu, l_s)
+
+
+def test_flange_cambium_heat_invariants():
+    """78 (HW.6): orderings the physics fixes whatever the inputs move to.
+
+    CAN catch: a broken scheme (its own closed-form check, recorded in the cache); thinner bark not running hotter;
+    a darker finish not running hotter; sun not beating shade; the flange-driven column running colder than bark
+    without it under a crown (the capsule is never below air); the cambium exceeding the surface that drives it;
+    a dead-bark floor outside the bracket's thin end.
+    CANNOT catch: whether 50 °C is the right gate (58's isotherm), nor sunlit bark or frost — the declared ceilings.
+    """
+    d = json.loads((THERMAL / "flange_cambium_heat.json").read_text(encoding="utf-8"))
+    v, runs, ref = d["verdict"], d["runs"], d["reference_no_flange_surface_at_air"]
+    assert d["scheme_check_rel_error"] < 0.01
+    cell = {(r["case"], r["alpha"], r["wind_k"], r["bark_side"]): r["cambium_max_C"] for r in runs}
+    alphas, winds = d["inputs"]["alphas"], d["inputs"]["wind_k"]
+    for case, k in itertools.product(d["inputs"]["cases"], winds):
+        for a in alphas:
+            assert cell[(case, a, k, "thin")] > cell[(case, a, k, "thick")]
+            assert cell[("sunlit", a, k, "thin")] >= cell[("shaded", a, k, "thin")]
+        for side in ("thin", "thick"):
+            row = [cell[(case, a, k, side)] for a in alphas]
+            assert row == sorted(row)
+            assert cell[("shaded", alphas[0], k, side)] >= ref[side]["cambium_max_C"]
+    assert all(r["cambium_max_C"] <= r["flange_max_C"] for r in runs)
+    floor = v["dead_bark_floor_mm_at_specified_alpha"]
+    assert floor is None or 0.0 <= floor <= d["bark"]["thin_mm"]
+    a_star = v["alpha_crossing_sunlit_still_air"]
+    assert a_star["thin"] is None or a_star["thick"] is None or a_star["thin"] <= a_star["thick"]

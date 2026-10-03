@@ -70,6 +70,8 @@ Anchor mechanics (CPU):
   62 → wind_duty_cycle.json → 55 · 59 (cycle budget; 55 prints NOT COMPUTED without it)
   66 → tools/cad TopologyCrossChecks (a C# consumer: no Python re-run reaches it)
   51 → 71 (importlib: `capacitor_life_hours` — a kernel change re-runs 71 too) · tools/cad/cem → 71 (radome geometry at runtime)
+  71 → 78 (importlib: the hourly capsule balance, checked against capsule_envelope.json) · 58 → 78 (importlib: layer
+     properties + the cambium gate) · tools/cad/cem → 78 (flange Ø at runtime) — a change to 58's or 71's model re-runs 78
 ```
 
 ## Critical Rules

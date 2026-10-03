@@ -2241,6 +2241,51 @@ CHECKS += [
 ]
 
 
+# ── HW.6 (2026-10-03): the flange → cambium path in sun, owner = script 78 ──
+# The canon home (01_04 §3.1), the second ground of the radome finish (02_01 §5.2) and the log-day criterion
+# (bench §A.1) quote numbers that move with 71's capsule balance, 58's layer properties and the bark bracket.
+FLANGE_HEAT = "thermal/flange_cambium_heat.json"
+BENCH = "docs/protocols/anchor/install_and_log_bench.md"
+_V78 = lambda d: d["verdict"]  # noqa: E731
+CHECKS += [
+    ("HW.6 · hottest cambium hour under the flange, specified finish → flange_cambium_heat.json",
+     CODIT, rf"найгарячіша — \*\*{N} °C\*\* на найтоншому контакті", FLANGE_HEAT,
+     lambda d: _V78(d)["worst_cell"]["sunlit_0.50"]["cambium_max_C"], 0.05),
+    ("HW.6 · the thinnest contact: ridge minimum minus the facing spread → flange_cambium_heat.json",
+     CODIT, rf"розкид торцювання — \*\*{N} мм\*\* мертвої кори", FLANGE_HEAT, lambda d: d["bark"]["thin_mm"], 0.05),
+    ("HW.6 · α at which the cambium reaches the gate, thinnest contact → flange_cambium_heat.json",
+     CODIT, rf"лише понад α ≈ \*\*{N}\*\* на тому самому контакті", FLANGE_HEAT,
+     lambda d: _V78(d)["alpha_crossing_sunlit_still_air"]["thin"], 0.005),
+    ("HW.6 · dead-bark floor at the specified finish → flange_cambium_heat.json",
+     CODIT, rf"лишається менше ≈ \*\*{N} мм\*\* мертвої кори", FLANGE_HEAT,
+     lambda d: _V78(d)["dead_bark_floor_mm_at_specified_alpha"], 0.05),
+    ("HW.6 · shift of the hottest cambium hour under a crown, specified finish → flange_cambium_heat.json",
+     CODIT, rf"на \*\*\+{N} K\*\* проти кори без нього", FLANGE_HEAT,
+     lambda d: _V78(d)["shift_under_crown_K"]["0.50"], 0.05),
+    ("HW.6 → HW.37 · the radome finish's second ground: cambium crossing α → flange_cambium_heat.json",
+     HW_BOM, rf"досягає порога 50 °C понад α ≈ \*\*{N}\*\*", FLANGE_HEAT,
+     lambda d: _V78(d)["alpha_crossing_sunlit_still_air"]["thin"], 0.005),
+    ("HW.6 · log-day thermal criterion: dead bark left under the deep edge → flange_cambium_heat.json",
+     BENCH, rf"має лишатися ≥ ≈ \*\*{N} мм\*\* мертвої кори", FLANGE_HEAT,
+     lambda d: _V78(d)["dead_bark_floor_mm_at_specified_alpha"], 0.05),
+]
+
+
+# The canon numbers lib.constants mirrors for 77/78 (BARK_DEAD_RIDGE_DBH38_MM · INSTALL_ANGLE_DEG · DBH_MIN_CM), read back
+# through the caches that consumed them: an edit on either side alone turns red here.
+CHECKS += [
+    ("lib mirror · dead-bark ridge bracket, low end at DBH 38 (01_04 §3.2) → flange_cambium_heat.json",
+     CODIT, rf"мертва кора ≈ {N}–[\d.]+ мм при DBH 38", FLANGE_HEAT,
+     lambda d: d["bark"]["thin_mm"] + d["bark"]["facing_spread_mm"], 0.05),
+    ("lib mirror · dead-bark ridge bracket, high end at DBH 38 (01_04 §3.2) → flange_cambium_heat.json",
+     CODIT, rf"мертва кора ≈ [\d.]+–{N} мм при DBH 38", FLANGE_HEAT, lambda d: d["bark"]["thick_mm"], 0.05),
+    ("lib mirror · facing spread Ø_flange·sin(install angle) (01_04 §3.2) → flange_cambium_heat.json",
+     CODIT, rf"для {N} мм \(10°\)", FLANGE_HEAT, lambda d: d["bark"]["facing_spread_mm"], 0.05),
+    ("lib mirror · smallest host stem DBH (01_01 §1 Zone 2) → anchor_torque_path.json",
+     COAXIAL, rf"DBH ≥ {N} см\*\* \(4%-правило\)", TORQUE, lambda d: 200.0 * d["geometry"]["stem_radius_m"], 0.05),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

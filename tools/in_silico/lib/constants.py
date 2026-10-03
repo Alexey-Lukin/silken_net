@@ -299,6 +299,10 @@ GENEROUS_ORING_BOUND_N = 100.0  # N
 
 # The smallest host stem: the 4 % CODIT rule admits the Ø15 wound from DBH 38 cm (01_01 §1, Zone 2 — mirror, edit there).
 DBH_MIN_CM = 38.0               # cm
+# Dead outer bark at DBH 38, RIDGE-referenced (01_04 §3.2 desk input, five Scots-pine models — mirror, edit there);
+# furrow depth has no primary. And the install angle the flange's facing is cut at (01_04 §3.2, ⚖️ 2026-09-30).
+BARK_DEAD_RIDGE_DBH38_MM = (13.5, 21.0)
+INSTALL_ANGLE_DEG = 10.0
 
 # Frozen coaxial geometry (HW.33, 2026-06-20): Ti shaft Ø11 → interface r 5.5 mm;
 # PEEK wall 2 mm → outer r 7.5 mm (OD = wound Ø15). Outer surface sits in the tree (free).
