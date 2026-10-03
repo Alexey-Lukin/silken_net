@@ -32,10 +32,10 @@ z increases INTO the trunk; r = 0 is the anchor axis. ⚠️ PRE-VERDICT PREMISE
 of what was measured: the flange here sits 3 mm deep in the bark with 5 mm of dead bark under it.
 ⚖️ 2026-10-03 (01_04 §3.1) seats it on a SHALLOW facing of the DEAD bark — a few mm, never the
 living bark — so the real floor has MORE dead bark under it than here, and the bark sweep below
-already spans that range: the killed diameter is the same at every swept dead-bark thickness
-(4-20 mm, i.e. 1-17 under the flange), because the sapwood path from the hot shank sets it, not the
-flange. The rejection this model fed (01_04 §3.5) therefore holds for the ratified seat by
-measurement. ⛔ Do not argue the bound from a flange seated on the INNER bark ("the path is
+spans its thin end: the killed diameter is the same at every swept dead-bark thickness (4-20 mm,
+i.e. 1-17 under the flange; the seat leaves 8.3-21 at DBH 38, 17.5-28 at DBH 50), because the
+sapwood path from the hot shank sets it, not the flange. The rejection this model fed (01_04 §3.5)
+therefore holds for the ratified seat by measurement up to 17 mm and by that insensitivity beyond. ⛔ Do not argue the bound from a flange seated on the INNER bark ("the path is
 under-estimated, so the rejection only strengthens") — 2026-10-03 rejected that seat. Not re-run:
 the procedure is gone, and its first ground has no geometry in it.
 Regions: Ti flange (Ø25 x 3, seated in
