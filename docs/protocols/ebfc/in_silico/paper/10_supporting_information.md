@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 257 · 14,915,653 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 257 · 14,915,904 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -85,7 +85,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `c179830f17ed2f3fa3100d93c8c617297a099242a755d80c985294aab46ad4b8` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | `81677b3a57e4352ce098a41902604045f7d52563467e36ef68e715fc4f1da0e8` | Lamé thermal-mismatch stress for the titanium–PEEK press-fit. |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `5505b94046b1c7cc13c84e8064a8d17266cf6b1b7330fbe8f3652a018dd2ab50` | Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours. |
-| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `c6dc9780a707ca8125d2f456936127b88d45710b911e643d56f3b0c71a2671cf` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
+| `tools/in_silico/scripts/52_z_stack_tolerance.py` | `371ce4bd44d57def6ae83df78ca71d630f40c531e860196615a8bfa0d61d024b` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
 | `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `28f0847d6ed0eff5c317c3202e5eadfb751b62503dd8c3bff101f40a1e3ade96` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `7200056d83363a71954acb365a68a4a37ec79e5779c9b6a4580d6f6a8a586823` | Mechanical check of the central bus rod: buckling and sway fatigue. |
@@ -218,7 +218,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `678670894a04ba007117efa9fee4b62c7b2cafda7fa78c7b3a5a83fdc6bba901` | 5,923 |
-| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `48a2131249dc1b5839ce568f87847e44c3d0e2a0e16ec9cfb39ee74f1d0b960d` | 32,791 |
+| `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `4340e19337bcd67fa673191170b4946cff20398d9deea14bd046e3145ccfc8d4` | 32,802 |
 
 ### `tools/in_silico/cache/reproduction/`
 

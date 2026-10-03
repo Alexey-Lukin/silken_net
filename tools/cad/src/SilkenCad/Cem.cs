@@ -373,7 +373,8 @@ internal sealed record CathodeFlangeCem
     // at the 80 % fill ratified 2026-09-17 (00_07 HW.33) — and so is the radial position (inside the radome's seal land,
     // one slot clearance of land each side). Nothing about the groove is stored, so nothing can go stale.
     // 🔑 With the rim as a HARD DATUM on this face the squeeze is set by this depth ALONE — the bayonet no
-    //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now.
+    //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now. That holds
+    //    while the bayonet CLAMPS the rim onto the face: 02_02 §3.5 states the initial clamp (script 52 `rim_datum_creep`).
     public ORingGlandCem ORing { get; init; } = new();
 
     // Pogo-plane features (02_02 §1.2/§1.3). The ANODE contact is the end face of the bus WIRE in the channel — this part

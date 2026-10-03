@@ -435,7 +435,7 @@
       "rss_mm": 0.05,
       "over_budget_x": 0.51,
       "flatness_left_rss_mm": 0.0842,
-      "note": "branch (\u0430) APPLIED 2026-09-14: ONE machined dimension, the flange groove depth, at the \u00b10.05 the shop is ASKED to hold (00_07 HW.33 \ud83d\udc64 \u2014 a placeholder for the vendor's answer, not a spec). The flatness of the flange top face and of the radome rim is NOT in the chain (missing datum) and has the RSS leftover to spend, both faces together."
+      "note": "branch (\u0430) APPLIED 2026-09-14: ONE machined dimension, the flange groove depth, at the \u00b10.05 the shop is ASKED to hold (00_07 HW.33, leg \ud83d\udd17 HW.23 \u2014 a placeholder for the vendor's answer, not a spec). The flatness of the flange top face and of the radome rim is NOT in the chain (missing datum) and has the RSS leftover to spend, both faces together."
     },
     "chain_pre_branch_a": {
       "contributors_mm": {

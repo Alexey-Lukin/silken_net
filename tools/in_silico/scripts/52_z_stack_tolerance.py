@@ -208,7 +208,7 @@ TOL_PZ = {"DMLS_Ti": 0.30, "FR4_power": 0.20, "B2B_stack": 0.15, "FR4_rf": 0.20,
 # O-ring chain: ONE machined dimension — the flange groove depth (branch (а): the flat rim is a hard datum
 # on the flange face, so the DMLS seat and the CNC rim engagement that used to be the two contributors here
 # are no longer in the chain at all; that pair RSS'd to ±0.18 = 1.84× the budget and never fitted).
-# ⛔ The 0.05 is NOT a specification: it is the value the shop is being ASKED whether it holds (00_07 HW.33 👤,
+# ⛔ The 0.05 is NOT a specification: it is the value the shop is being ASKED whether it holds (00_07 HW.33, leg 🔗 HW.23,
 # 02_02 §3.5 «рутинні ±0.05») — a placeholder for a vendor answer, and the verdict below is conditional on it.
 # The FLATNESS of the two mating faces (flange top face · radome rim) belongs in this chain too and is in
 # no canon: it is a named missing datum (depth_tolerance_budget), and the RSS leftover is what it may spend.
@@ -500,7 +500,7 @@ def depth_tolerance_budget() -> dict:
                 "over_budget_x": round(now_rss / budget, 2),
                 "flatness_left_rss_mm": round(math.sqrt(max(budget ** 2 - now_rss ** 2, 0.0)), 4),
                 "note": "branch (а) APPLIED 2026-09-14: ONE machined dimension, the flange groove depth, at the "
-                        "±0.05 the shop is ASKED to hold (00_07 HW.33 👤 — a placeholder for the vendor's answer, "
+                        "±0.05 the shop is ASKED to hold (00_07 HW.33, leg 🔗 HW.23 — a placeholder for the vendor's answer, "
                         "not a spec). The flatness of the flange top face and of the radome rim is NOT in the "
                         "chain (missing datum) and has the RSS leftover to spend, both faces together.",
             },
@@ -784,8 +784,9 @@ def main() -> int:
     def residual(bayonet: bool, spacer: bool) -> tuple[float, float]:
         """Residual gap tolerance (±) after levers, for the SHARED gap: bayonet hard-stop → deterministic
         engagement (CNC 0.10→0.05); spacer → only CNC + spacer half-step survive (measured stack removed).
-        The O-ring chain is untouched by either lever since branch (а): the rim is a hard datum on the
-        flange face, so its residual is the machined groove depth alone, whatever seats the bayonet."""
+        The O-ring chain is untouched by either lever since branch (а): the rim is a datum on the flange
+        face while the bayonet CLAMPS it there (`rim_datum_creep` states the initial clamp), so its residual
+        is the machined groove depth alone, however the bayonet engages."""
         cnc_pz = 0.05 if bayonet else TOL_PZ["CNC_radome"]
         res_or = rss(list(TOL_OR.values()))
         if spacer:
@@ -939,7 +940,8 @@ def main() -> int:
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
     print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
-    print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone.")
+    print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone —")
+    print("     while the bayonet CLAMPS the rim there (rim_datum_creep: the initial clamp; without it the lugs set the squeeze).")
     print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
           "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; acceptance = a mock-up at Z 5/8/12, ⚖️ 2026-09-17).")
 

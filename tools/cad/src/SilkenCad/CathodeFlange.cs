@@ -15,7 +15,8 @@ namespace SilkenCad;
 // side). Pogo pads sit on the top face (Hard Gold = coating, not geometry); the cathode catalytic zone
 // is the side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2).
 // The top face also carries the ONE O-ring groove of the capsule seal (step 5) — the radome rim is flat and
-// lands on this face as the hard datum (00_07 HW.33 branch (а), applied 2026-09-14).
+// lands on this face as the hard datum (00_07 HW.33 branch (а), applied 2026-09-14) while the bayonet CLAMPS it
+// there: 02_02 §3.5 states the initial clamp (script 52 `rim_datum_creep`); without it the lugs set the squeeze.
 internal static class CathodeFlange
 {
     // Map the flange CEM's shank fields onto the §4.3 MechanicalLock CEM — reuse, не дублюй.
@@ -85,8 +86,8 @@ internal static class CathodeFlange
 
         // 5. O-ring groove — the ONE face-seal groove, an annular subtract on the capsule-side (top) face at the
         //    derived depth (CS·(1 − squeeze) = 1.344 at the ratified 24.5 %) and width (ring area / (fill·depth)),
-        //    on the radii of the radome's seal land. The radome rim lands on this face as a hard datum, so the
-        //    squeeze is this depth alone (02_02 §3.5 — script 52's one-term O-ring chain).
+        //    on the radii of the radome's seal land. The radome rim lands on this face as a hard datum — while the
+        //    bayonet clamps it there (02_02 §3.5) — so the squeeze is this depth alone (script 52's one-term O-ring chain).
         float fDepth = ORingGrooveDepthMm(cem);
         LocalFrame oTop = new(new Vector3(0f, 0f, fShankLen + fThick - fDepth));
         Voxels voxRing = new BaseCylinder(oTop, fDepth, ORingGrooveOuterRMm(cem)).voxConstruct();
