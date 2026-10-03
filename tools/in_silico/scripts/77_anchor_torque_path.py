@@ -34,9 +34,10 @@ CAN show: that a wind torque path exists; the stress τ_s* at which friction giv
 coefficient, insertion depth and temperature; that at the band floor at +40 °C it gives way at ANY torsion; the
 cap μ·P_c on the PEEK's torsional shear under wind.
 CANNOT show: how large τ_s is under real wind for our stems (no measured value is read here — Kolbe, Pfenning &
-Schindler 2024, Forest Ecology and Management 553:121638, measured torsional vibration of a living pine and is
-NOT read); the slip AMPLITUDE in microns (it needs G_LT of green pine, which is not in the tree); μ of the shank↔
-sleeve pair (UNMEASURED — bracketed below; the liner tribology test asks the same PEEK↔Ti pair class); the
+Schindler 2024, Forest Ecology and Management 553:121638, measured torsional vibration of a living PONDEROSA
+pine — not our P. sylvestris — and is NOT read); the slip AMPLITUDE in microns (it needs G_LT of green pine,
+which is not in the tree); μ of the shank↔sleeve pair (UNMEASURED — bracketed below; the liner tribology test
+asks the same PEEK↔Ti pair class); the
 weaker coupling of the sleeve's outer part in dead bark (it moves the sleeve's centroid deeper and SHORTENS Δx,
 i.e. LOWERS the demand — not modelled, so the demand here is an upper bound on that axis); the porous gyroid's
 coupling (taken as a solid cylinder of its OD — an upper bound); the bayonet's own torque at locking (the collar

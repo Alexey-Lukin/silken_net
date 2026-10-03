@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 257 · 14,915,614 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 257 · 14,915,653 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -110,7 +110,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
 | `tools/in_silico/scripts/76_os_chelate_sensitivity.py` | `2c6fd51d8bf318254c856dccd6edd8f6c79097dbabfbebd4cb75fea3e668aa3c` | Sensitivity of the device osmium couple to closing its bipyridine chelates onto the assumed bond length and bite angle. |
-| `tools/in_silico/scripts/77_anchor_torque_path.py` | `12a0c2a434192ec7e9832d334144211dcb90608cfc0385b9aacf8c0942ed3d62` | Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion). |
+| `tools/in_silico/scripts/77_anchor_torque_path.py` | `37e8eea7caedeaa2c3dd9de23ea22aaa19f1aeed92dd053f0fa344f51193b755` | Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion). |
 | `tools/in_silico/scripts/78_flange_cambium_heat.py` | `5ef155dcad4b94f4f17b6b3203007cb8c6dad599484215d7b3c53410cc87131c` | Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound). |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
