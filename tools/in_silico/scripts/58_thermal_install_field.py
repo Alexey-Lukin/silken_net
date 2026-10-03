@@ -29,10 +29,15 @@ to fix what the record describes. We reproduce it, name it, and let the 2D model
 MODEL. Axisymmetric (r, z) finite-volume, explicit (FTCS) time march, variable properties,
 harmonic-mean face conductivities. z = 0 is the outer bark surface (= flush flange top face),
 z increases INTO the trunk; r = 0 is the anchor axis. ⚠️ PRE-VERDICT PREMISE, kept as the record
-of what was measured: ⚖️ 2026-09-18 seats the flange ON the inner bark with its catalytic band
-above the outer surface (01_04 §3.1), i.e. its floor sits CLOSER to the cambium than the z = T_FLANGE
-floor here — the flange->cambium path is under-estimated, which only strengthens the rejection this
-model fed (01_04 §3.5). Not re-run: the procedure is gone, and its first ground has no geometry in it.
+of what was measured: the flange here sits 3 mm deep in the bark with 5 mm of dead bark under it.
+⚖️ 2026-10-03 (01_04 §3.1) seats it on a SHALLOW facing of the DEAD bark — a few mm, never the
+living bark — so the real floor has MORE dead bark under it than here, and the bark sweep below
+already spans that range: the killed diameter is the same at every swept dead-bark thickness
+(4-20 mm, i.e. 1-17 under the flange), because the sapwood path from the hot shank sets it, not the
+flange. The rejection this model fed (01_04 §3.5) therefore holds for the ratified seat by
+measurement. ⛔ Do not argue the bound from a flange seated on the INNER bark ("the path is
+under-estimated, so the rejection only strengthens") — 2026-10-03 rejected that seat. Not re-run:
+the procedure is gone, and its first ground has no geometry in it.
 Regions: Ti flange (Ø25 x 3, seated in
 the periderm counterbore) / Ti Zone-3 shank / air annulus / PEEK sleeve / bus rod / Ti Zone-1
 shank / gyroid (effective lambda) / dead bark / living inner bark / sapwood. The cambium is the
@@ -57,14 +62,16 @@ DECLARED CEILINGS (read before quoting anything below):
   * lambda_eff of the gyroid is a MODEL CHOICE, not a measurement. Four estimators are computed
     and the whole band is swept; the baseline is the connected-skeleton (foam) rule because the
     gyroid solid phase is fully connected by construction.
-  * Bark/phloem THICKNESS has no SSOT home in the corpus (only an RF-context "~5 mm dry bark",
-    02_01) and is swept. Their lambda/rho*cp are NOT swept even though they sit directly on the
-    flange->cambium path — a named gap, not a covered one.
-  * The flange is modelled as BARE Ti seated on the counterbore floor. The canon disagrees with
-    itself here: `01_04 §3.1` says the flange rests on the inner bark "through a PEEK shoulder",
-    while `01_01 §1` says the axial support is the flange on the SLEEVE END FACE. Bare Ti is the
-    worse of the two, so it is the baseline; scenario S4 models the PEEK-isolated variant, and the
-    difference between them is the design lever this script exists to price.
+  * Bark/phloem THICKNESS has no measured value for our trees: a literature bracket exists since
+    2026-09-30 (`01_04 §3.2`, ridge-referenced; furrow depth unmeasured) and the thickness is swept
+    here. Their lambda/rho*cp are NOT swept even though they sit directly on the flange->cambium
+    path — a named gap, not a covered one.
+  * The flange is modelled as BARE Ti seated on the counterbore floor, and that is the canon seat:
+    ⚖️ 2026-10-03 (`01_04 §3.1`) put the flange bare on a shallow facing of the dead bark, the axial
+    datum being the flange on the SLEEVE END FACE (`01_01 §1`). Scenario S4 models an isolated
+    variant — an AIR gap, because a PEEK washer would conduct better than the dead bark it
+    displaces (the comment at the flange placement below) — and stays a priced lever, not a canon
+    reading.
   * The hold duration is the canon's own procedure length (the legacy 22.7 min). Every steady
     scenario is still RISING at the end (peak == final), so the wound diameters are monotone in
     that inherited parameter. The duration-FREE result is the crossing time, not the peak.

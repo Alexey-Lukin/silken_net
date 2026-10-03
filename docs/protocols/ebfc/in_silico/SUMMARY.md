@@ -603,7 +603,7 @@ annulus vs the analytic log law `0.071 °C`** · **two-layer slab vs series resi
 | Canon + a 2 mm still-air isolator under the flange | 109.1 °C | 134 s | Ø47.5 mm | 101 cm | 5 s | 20 W |
 | Pre-heated outside the tree, then inserted | 44.1 °C | never | Ø17.5 mm | — | never | — |
 
-> ⚠️ Geometry of every row above: flange Ø25 seated IN the bark — the premise predates `01_04 §3.1` (flange over the bark) and the root of 2026-09-30 (Ø29.8); the cache is deliberately NOT re-run. The rejection direction only strengthens with a flange standing over the bark — header of `58_thermal_install_field.py`, `00_07` HW.6.
+> ⚠️ Geometry of every row above: flange Ø25 seated 3 mm deep IN the bark — the premise predates `01_04 §3.1` (flange over the bark) and the root of 2026-09-30 (Ø29.8); the cache is deliberately NOT re-run. The ratified seat (⚖️ 2026-10-03, `01_04 §3.1`: a shallow facing of the DEAD bark) leaves more dead bark under the flange than this model — and the cache's own bark sweep (dead bark 4–20 mm, i.e. 1–17 under the flange) already spans it: the killed diameter is the same at every point, because the sapwood path from the hot shank sets it, not the flange. So the rejection holds for the ratified seat by measurement, not by a direction argument; the larger Ø29.8 is not evaluated — header of `58_thermal_install_field.py`, `00_07` HW.6.
 
 > 🔴 The killed-LIVING column replaced a cambium-plane-only metric that had scored the selective
 > variant a clean "—". It kills the same Ø47.5 mm, just not in the plane the metric watched.

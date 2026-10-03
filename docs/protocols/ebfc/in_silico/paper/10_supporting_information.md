@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 252 · 14,841,418 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 252 · 14,841,980 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -91,7 +91,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/55_bus_mechanical.py` | `7200056d83363a71954acb365a68a4a37ec79e5779c9b6a4580d6f6a8a586823` | Mechanical check of the central bus rod: buckling and sway fatigue. |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `b72673313ad2f03a92e7aaeeb7185e7e66c6869f1023de20081ce607fda9f158` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
-| `tools/in_silico/scripts/58_thermal_install_field.py` | `e8f81357fe4c72f6a93f93d8e356ae5d4bb8bb278e5bd8737f63cdd990a46532` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
+| `tools/in_silico/scripts/58_thermal_install_field.py` | `1965a1c46918de008b33db64393afada5b67690d6194832e9c94978c4a394e2e` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `80c4b19b528d400eec65ab9a566dea3f7303ba896779e339d9800ee6169acb36` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `cd23d1d2217669d2289640fff2a72fb835775457590e2f85aea1be2c819023a5` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `662d43659d424870e23dd68e8830d9e7ecf77428d1674a3877e9810ffd687008` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
