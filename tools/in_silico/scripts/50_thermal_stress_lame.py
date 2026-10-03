@@ -239,8 +239,8 @@ def main() -> int:
     print("    the fit cannot seal at MIN — and it is not asked to: ⚖️ the path is NOT sealed by design (00_07 HW.34,")
     print("    2026-09-18) — wet PEEK gap, channel to be closed at its exit (required; geometry after the pogo pin")
     print("    P/N, HW.9; not in any drawing yet); the ONE O-ring seals the radome joint (HW.33).")
-    print("    Barbs/retaining ring = AXIAL pull-out + anti-rotation")
-    print("    ONLY (they do NOT seal). PEEK = structural/thermal isolator + (at max fit) a backup P_c.")
+    print("    Barbs = AXIAL pull-out ONLY — annular, so they do not resist rotation, and they do NOT seal")
+    print("    (the ring backup was removed, 01_01 §4.3 B). PEEK = structural/thermal isolator + (at max fit) a backup P_c.")
     print(f"  ✅ Ti↔PEEK press-fit survives 20+ years (thermal {worst['safety_factor']:.1f}× margin); the path is unsealed by design (HW.34).")
     print("  ⚠️ But at the band's MIN the fit separates at +40 °C (script 56 `press_fit_separates`) — 5–34's MIN")
     print("    lies below the window floor (00_07 HW.3).")
@@ -313,7 +313,7 @@ def main() -> int:
             "hypothetical_outer_shell_loss_um": loss * 1e6,
             "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. The Ti-PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18): the PEEK gap is wet, and the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet); the one O-ring seals the radome joint (00_07 HW.33).",
         },
-        "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet), and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
+        "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet), and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out only (annular - no anti-rotation; NOT sealing)",
         "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse); but at the band's MIN the fit separates at +40 °C (script 56 press_fit_separates) - 5-34's MIN lies below the window floor (00_07 HW.3)",
     }
     json_path = OUT_DIR / "thermal_stress_lame.json"

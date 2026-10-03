@@ -85,7 +85,7 @@ internal sealed record ToleranceSpec
     public string? Fit { get; init; }                  // nominal class label, e.g. "H7/s6"
     public float? InterferenceMinUm { get; init; }     // diametral µm; §4.2 wants the Lamé window, zone2_sleeve's is an ISO read (HW.3)
     public float? InterferenceMaxUm { get; init; }
-    public float? ClearanceMm { get; init; }           // hex/spline anti-rotation ≤0.05 (01_01 §4.3 C)
+    public float? ClearanceMm { get; init; }           // a generic radial clearance; no manifest sets it (the hex of 01_01 §4.3 C it was added for is dropped)
 
     // Linear ± on named features (e.g. "bore_dia", "flange_dia"). A LIST, because a part can carry more
     // than one toleranced size and the single slot this replaced silently capped it at one: the cathode
@@ -460,9 +460,10 @@ internal sealed record RadomeCem
 // (01_01 §1): bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (robust default, NOT CTE-limited —
 // unified Lamé §4.2: combined SF 5.6× / thermal-only 14.6× / press-fit-only 9×), OD Ø15 = the WOUND in
 // the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
-// thermal break, §4.1). The bore is a plain round hole: anti-rotation is a hex/spline profile in canon
-// (§1 + §4.3 C, ≤0.05 mm clearance) but that is bench-gated and not needed for the mate-audit → deferred
-// (00_07). The DIN-471 groove lives on the Ti part, NOT the PEEK sleeve — on the Zone-1 end only since ⚖️ 2026-09-18,
+// thermal break, §4.1). The bore is a plain round hole: the hex anti-rotation of §4.3 C was dropped on its
+// wind ground (⚖️ 2026-10-03, 00_07 HW.26) — stem torsion gives the shank micro-slip only; a form lock against
+// the EVENT torque is an open subject (HW.33), its place — flange or this bore — not chosen.
+// The DIN-471 groove lives on the Ti part, NOT the PEEK sleeve — on the Zone-1 end only since ⚖️ 2026-09-18,
 // with no ring fitted as a backup (00_07 HW.26); barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps
 // 4–5) → the PEEK bore is smooth here. The bus is a wire welded to the anode's TOP face (01_01 §1.4, §3 step 1b) that
 // crosses the PEEK gap inside this bore to the flange channel — no part of this record (the bore Ø11 holds the Ti shaft).

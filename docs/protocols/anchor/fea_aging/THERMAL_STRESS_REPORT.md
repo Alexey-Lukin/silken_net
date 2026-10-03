@@ -15,7 +15,7 @@ Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-3
 lower than previously reported (see the 2026-06-21 correction): at the **minimum** H7/s6 interference the
 relaxed P_c can fall **at or below** the sap pressure — so this fit **cannot seal the Ti↔PEEK path, and by
 design it is not asked to** (`00_07` HW.34, 2026-09-18 — ⚠️ above). PEEK is a structural/thermal isolator whose contact pressure holds the fit;
-barbs handle axial pull-out only (anti-rotation is requirement 01_01 §4.3 C, its carrier open: annular barbs do not resist rotation) — the retaining ring as a backup was removed on both ends
+barbs handle axial pull-out only (annular barbs do not resist rotation, and no form lock against wind is added: 01_01 §4.3 C was dropped on its wind ground, verdict 2026-10-03; a form lock against the event torque is an open subject, 00_07 HW.33) — the retaining ring as a backup was removed on both ends
 2026-09-18 (`00_07` HW.26): in the shipped stack the Zone-3 groove ended up inside the PEEK (near flank 2.0 mm deep), and the
 Zone-1 ring would only stop motion deeper into the sleeve, not pull-out.
 
@@ -150,7 +150,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 3. **The Ti↔PEEK path is not sealed, by design** (`00_07` HW.34, 2026-09-18) — the fit is marginal at min fit and is not
    asked to seal; the capsule's one seal is the face O-ring at the radome joint, and the bus channel gets its own closure
    at its exit (geometry after the pogo pin P/N, `00_07` HW.9).
-4. **Barbs = axial pull-out only** (annular barbs do not resist rotation — anti-rotation is 01_01 §4.3 C, carrier open) — they do not seal; the retaining ring as a backup was
+4. **Barbs = axial pull-out only** (annular barbs do not resist rotation — no form lock against wind is added: 01_01 §4.3 C was dropped on its wind ground, verdict 2026-10-03; the event torque is an open subject, 00_07 HW.33) — they do not seal; the retaining ring as a backup was
    removed 2026-09-18 (`00_07` HW.26 — see Summary).
 5. **Winter:** inner interface tightens; the "outer interface" is the tree, not a Ti shell (artifact dropped).
 6. **No mesh-FEA** for the axisymmetric stress (analytic Lamé); barb-tip stress-concentration → external commercial FEA executor (`00_07` HW.26).

@@ -30,14 +30,38 @@ MECHANISM (analytic — nothing fitted):
     μ·P_c — so the sleeve's torsional loading under wind is capped by the friction itself; above it the
     interface slips by ½·φ′·Δx instead.
 
+Q2 (2026-10-03, the same crown-pause exception): how LARGE the demand gets under wind — a bracket of named readings,
+not a measurement of our stems. Ordinary wind: Kolbe, Pfenning & Schindler 2024 (Forest Ecology and Management
+553:121638) measured a living PONDEROSA pine at mean wind 0.09–3.9 m/s and found torsion «hardly measurable in the
+lower stem parts» — read from the abstract and highlights only (the full text is closed), so a direction, no number.
+The CAP: the stem-surface torsional shear stress at the anchor cannot exceed the green wood's shear strength parallel
+to grain, or the stem fails there; Skatter & Kučera 2000 (Forest Ecology and Management 135:97–103, abstract) predict
+for four Scots pine stands that trees fail in torsion as often as in bending at critical wind, so the cap is a state
+the population reaches; that it is reached higher up, where the stem is thinner, is OUR derivation (under one torque
+τ = 2T/πR³), so the thicker base stays below it. At the cap, per pine that carries both Wood Handbook tables
+(WH2010_PINES): the surface shear strain γ = τ_cap/G_LT, the gyroid-vs-sleeve rotation if the interface carries
+nothing Δθ = ½·γ·Δx/R, the slip at the shank surface Δθ·a_s and its peak at the sleeve's bark end (the sleeve
+follows its local wood: × (l2 + l1/2)/Δx for a rigid gyroid), the rigid-part demand, demand·τ_cap, and the radial
+clearance below which a hex key (the largest the shank's own circle holds) would engage at all, c* = Δθ·s/(2√3) —
+beside the swing the PEEK↔Ti expansion mismatch alone gives that clearance over the forest temperature range.
+
 CAN show: that a wind torque path exists; the stress τ_s* at which friction gives way, per band edge, friction
 coefficient, insertion depth and temperature; that at the band floor at +40 °C it gives way at ANY torsion; the
-cap μ·P_c on the PEEK's torsional shear under wind.
-CANNOT show: how large τ_s is under real wind for our stems (no measured value is read here — Kolbe, Pfenning &
-Schindler 2024, Forest Ecology and Management 553:121638, measured torsional vibration of a living PONDEROSA
-pine — not our P. sylvestris — and is NOT read); the slip AMPLITUDE in microns (it needs G_LT of green pine,
-which is not in the tree); μ of the shank↔sleeve pair (UNMEASURED — bracketed below; the liner tribology test
-asks the same PEEK↔Ti pair class); the
+cap μ·P_c on the PEEK's torsional shear under wind; ESTIMATES at the cap (species means, rigid parts — directions
+below) of the slip amplitude, of the demand a form lock would face and of the clearance at which the hex of
+01_01 §4.3 C would engage.
+CANNOT show: how large τ_s is under ORDINARY wind for our stems (Kolbe 2024 gives a direction, no number); any
+value for P. sylvestris itself — the green values are US pines' (Wood Handbook 2010), and their G_LT/E_L is the
+≈ 12 %-moisture ratio applied to green E_L (shear moduli fall toward saturation, so green G_LT is probably HIGH
+here and the slip and c* LOW — the same direction as the species-MEAN strength, Wood Handbook Table 5–6 giving a
+shear COV of 14 %, and the linear γ = τ/G, which green wood leaves before failure); the parts' OWN compliance beyond
+the bark-end factor — the demand and τ_s* come from RIGID bodies coupled at their centroids, while the PEEK sleeve's
+torsional decay length on wood is a few millimetres (`sleeve_torsional_decay_length_mm`): compliant parts take the
+wood's twist by their own, so the real demand is LOWER and τ_s* a LOWER bound on GROSS slip, while the interface shear
+gathers near the ends, where local slip starts earlier — the slip itself they redistribute (its bark-end peak is
+bracketed), not lower; the gyroid's coupling at all — one narrow step drills the channel for anode and sleeve alike
+(01_04 §3.1), Ø15, so the Ø11 gyroid sits in it with ≈ 2 mm of radial gap until the wood grows in; μ of the
+shank↔sleeve pair (UNMEASURED — bracketed below; the liner tribology test asks the same PEEK↔Ti pair class); the
 weaker coupling of the sleeve's outer part in dead bark (it moves the sleeve's centroid deeper and SHORTENS Δx,
 i.e. LOWERS the demand — not modelled, so the demand here is an upper bound on that axis); the porous gyroid's
 coupling (taken as a solid cylinder of its OD — an upper bound); the bayonet's own torque at locking (the collar
@@ -72,6 +96,7 @@ from lib.constants import (
     REPO_ROOT,
     T_ASSEMBLY_C,
     T_FOREST_MAX_C,
+    T_FOREST_MIN_C,
 )
 from lib.mechanics import thermal_interference, thick_wall_hoop
 from lib.utils import banner
@@ -87,6 +112,24 @@ BUS_CACHE = OUT_DIR / "bus_mechanical.json"     # 55 — the lock insertion wind
 # at the band floor at +40 °C) does not depend on it; the τ_s* figures scale with it linearly.
 MU_BRACKET = (0.1, 0.4)
 SERVICE_YEARS = 20.0                            # years — the 20-yr column of the press-fit relaxation (01_01 §4.2)
+
+# Q2 — green clear-wood values, private to this model: USDA Wood Handbook 2010 (FPL-GTR-190), Table 5–3a (green: bending
+# MOE, shear strength parallel to grain) × Table 5–1 (G_LT/E_L at ≈ 12 % moisture) — ONLY the pines carrying both tables.
+# ⚠️ P. sylvestris is in neither (the bracket's weakest link), and the 12 % ratio is applied to green E_L.
+WH2010_PINES = {   # name: (G_LT/E_L at ≈ 12 %, bending MOE green MPa, shear ∥ grain green MPa)
+    "loblolly": (0.081, 9700, 5.9),
+    "lodgepole": (0.046, 7400, 4.7),
+    "longleaf": (0.060, 11000, 7.2),
+    "pond": (0.045, 8800, 6.5),
+    "ponderosa": (0.115, 6900, 4.8),
+    "red": (0.081, 8800, 4.8),
+    "slash": (0.053, 10500, 6.6),
+    "sugar": (0.113, 7100, 5.0),
+    "western white": (0.048, 8200, 4.7),
+}
+WH2010_EL_OVER_BENDING_MOE = 1.10               # Table 5–1 footnote a: «EL may be approximated by increasing modulus of
+                                                # elasticity values in Table 5–3 by 10%»
+C_HEX_MAX_RADIAL_CLEARANCE_M = 0.05e-3          # 01_01 §4.3 C as written: «hex driver fit з ≤ 0.05 mm radial clearance»
 
 
 def cem(name: str) -> dict:
@@ -173,10 +216,115 @@ def verdict(g: dict, rows: list[dict]) -> dict:
     }
 
 
+def wind_bracket(g: dict, rows: list[dict]) -> dict:
+    """Q2 — the demand at the CAP, per pine of WH2010_PINES: ESTIMATES, not bounds. High on the rigid-part and
+    gyroid-coupling axes and on «the interface carries nothing»; low on the species-mean strength, the 12 %-ratio G_LT
+    and the linear γ = τ/G (the module docstring names each). The base stays below the cap (τ = 2T/πR³)."""
+    demand = 2.0 * math.pi * g["coupling_factor_S_m3"] * g["centroid_separation_m"] / g["stem_radius_m"]   # N·m per Pa
+    a_s, r_stem, dx = g["shank_radius_m"], g["stem_radius_m"], g["centroid_separation_m"]
+    hex_af = 2.0 * a_s * math.cos(math.radians(30.0))   # the largest hex the shank's own circle holds — C names no size
+    alpha_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    thermal_swing = 0.5 * hex_af * (ALPHA_PEEK_1K - alpha_ti) * (T_FOREST_MAX_C - T_FOREST_MIN_C)
+    forest_span_k = T_FOREST_MAX_C - T_FOREST_MIN_C
+    species = []
+    g_peek = E_PEEK_PA / (2.0 * (1.0 + NU_PEEK))
+    j_sleeve = 0.5 * math.pi * (g["sleeve_outer_radius_m"] ** 4 - R_INTERFACE_M ** 4)
+    for name, (glt_over_el, moe_mpa, shear_mpa) in WH2010_PINES.items():
+        g_lt = glt_over_el * WH2010_EL_OVER_BENDING_MOE * moe_mpa * 1e6
+        gamma = shear_mpa * 1e6 / g_lt
+        dtheta = 0.5 * gamma * dx / r_stem
+        # how far along the PEEK sleeve a twist dies out against the wood it is coupled to: λ = √(G·J / 4πG_LT·a²) —
+        # a few mm against its 50 mm length, i.e. the sleeve follows its LOCAL wood and the rigid-body demand is high
+        decay = math.sqrt(g_peek * j_sleeve / (4.0 * math.pi * g_lt * g["sleeve_outer_radius_m"] ** 2))
+        species.append({"pine": name, "tau_cap_MPa": shear_mpa, "G_LT_green_est_MPa": round(g_lt / 1e6, 1),
+                        "surface_shear_strain_at_cap": round(gamma, 6),
+                        "rotation_gyroid_vs_sleeve_rad": round(dtheta, 7),
+                        "slip_at_shank_surface_um": round(dtheta * a_s * 1e6, 2),
+                        "rigid_part_demand_at_cap_N_m": round(demand * shear_mpa * 1e6, 3),
+                        "hex_engages_below_radial_clearance_um": round(dtheta * hex_af / (2.0 * math.sqrt(3.0)) * 1e6, 2),
+                        # the slice of temperature over which a key fitted to the engagement window stays engaged WITHOUT
+                        # radial preload: the threshold and the PEEK↔Ti swing both scale with the hex size, so this does not
+                        "engagement_band_without_preload_K": round(dtheta / (math.sqrt(3.0) * (ALPHA_PEEK_1K - alpha_ti)), 1),
+                        "sleeve_torsional_decay_length_mm": round(decay * 1e3, 2)})
+    tau_cap = [s["tau_cap_MPa"] for s in species]
+    slip = [s["slip_at_shank_surface_um"] for s in species]
+    demand_cap = [s["rigid_part_demand_at_cap_N_m"] for s in species]
+    c_star = [s["hex_engages_below_radial_clearance_um"] for s in species]
+    band = [s["engagement_band_without_preload_K"] for s in species]
+    decay_mm = [s["sleeve_torsional_decay_length_mm"] for s in species]
+    tau_star_max = max(r["tau_s_star_MPa"] for r in rows)
+    rigid_exceeds = tau_star_max < min(tau_cap)
+    # Without friction the compliant sleeve follows its local wood while the Ti part turns as its driver, the gyroid,
+    # does: the slip then peaks at the sleeve's BARK end, over the lever from there to the gyroid's centroid (a rigid
+    # gyroid) or to its top end (a fully compliant one), against the centroid lever Δx of the figures above.
+    l1, l2 = g["gyroid_length_m"], g["sleeve_length_m"]
+    peak_hi, peak_lo = (l2 + l1 / 2.0) / dx, l2 / dx
+    c_star_peak_max = max(c_star) * peak_hi
+    band_peak_max = max(band) * peak_hi
+    c_hex_um = C_HEX_MAX_RADIAL_CLEARANCE_M * 1e6
+    swing_um = thermal_swing * 1e6
+    above = ", above every τ_s*" if rigid_exceeds else ""
+    return {
+        "ordinary_wind": {"tau_s_MPa": None,
+                          "reading": "Kolbe, Pfenning & Schindler 2024 (doi:10.1016/j.foreco.2023.121638), living ponderosa "
+                                     "pine, mean wind 0.09–3.9 m/s: torsion «hardly measurable in the lower stem parts» — "
+                                     "abstract and highlights only (full text closed); no number"},
+        "cap_reading": "Skatter & Kučera 2000 (doi:10.1016/S0378-1127(00)00301-7), four Scots pine stands, model: torsional "
+                       "failure predicted as often as bending failure at critical wind — the population reaches the cap; that "
+                       "it does so higher up the stem, and the thicker base stays below it, is our derivation (τ = 2T/πR³)",
+        "values_source": "USDA Wood Handbook 2010 (FPL-GTR-190), Table 5–3a (green) × Table 5–1 (G_LT/E_L at ≈ 12 %), "
+                         "E_L ≈ 1.1 × bending MOE (Table 5–1 footnote a); species-mean values (Table 5–6: shear COV 14 %)",
+        "hex_across_flats_mm": round(hex_af * 1e3, 3),
+        "species": species,
+        "tau_cap_MPa_range": [min(tau_cap), max(tau_cap)],
+        "slip_at_shank_surface_um_range": [min(slip), max(slip)],
+        "rigid_part_demand_at_cap_N_m_range": [min(demand_cap), max(demand_cap)],
+        "hex_engages_below_radial_clearance_um_range": [min(c_star), max(c_star)],
+        "engagement_band_without_preload_K_range": [min(band), max(band)],
+        "sleeve_torsional_decay_length_mm_range": [min(decay_mm), max(decay_mm)],
+        "bark_end_peak_factor": {"rigid_gyroid": round(peak_hi, 3), "compliant_gyroid": round(peak_lo, 3),
+                                 "reading": "free-interface slip at the sleeve's bark end ÷ the centroid figure: the sleeve "
+                                            "follows its local wood (decay length ≪ its length), the Ti part turns as the "
+                                            "gyroid's centroid (rigid) or its top end (fully compliant); the factors above "
+                                            "are applied at the rigid-gyroid value"},
+        "slip_at_bark_end_um_range": [round(min(slip) * peak_hi, 2), round(max(slip) * peak_hi, 2)],
+        "hex_engages_below_radial_clearance_um_bark_end_range": [round(min(c_star) * peak_hi, 2), round(c_star_peak_max, 2)],
+        "engagement_band_without_preload_K_bark_end_range": [round(min(band) * peak_hi, 1), round(band_peak_max, 1)],
+        "strain_factor_to_engage_written_hex_at_bark_end": round(C_HEX_MAX_RADIAL_CLEARANCE_M * 1e6 / c_star_peak_max, 2),
+        "strain_factor_to_fill_forest_span_at_bark_end": round(forest_span_k / band_peak_max, 2),
+        "c_hex_max_radial_clearance_um": c_hex_um,
+        "hex_clearance_thermal_swing_um": round(swing_um, 2),
+        "thermal_range_C": [T_FOREST_MIN_C, T_FOREST_MAX_C],
+        "rigid_part_demand_at_cap_exceeds_every_tau_s_star": rigid_exceeds,
+        "text": (f"At the cap — the green pine's shear strength {min(tau_cap):.1f}–{max(tau_cap):.1f} MPa, species means, which "
+                 f"the thicker stem base stays below — rigid parts with an interface that carried nothing would slip "
+                 f"{min(slip):.1f}–{max(slip):.1f} µm apart at the shank surface (centroids {dx * 1e3:.0f} mm apart). The "
+                 f"parts' compliance redistributes that slip rather than removing it: the PEEK sleeve's torsional decay "
+                 f"length on wood is {min(decay_mm):.1f}–{max(decay_mm):.1f} mm against its {l2 * 1e3:.0f} mm, so it follows "
+                 f"its local wood, and without friction the slip peaks at its bark end, up to {peak_hi:.2f}× the centroid "
+                 f"figure for a rigid gyroid ({peak_lo:.2f}× for a fully compliant one) — "
+                 f"{min(slip) * peak_hi:.1f}–{max(slip) * peak_hi:.1f} µm; the DEMAND, the moment that would stop the slip "
+                 f"({min(demand_cap):.1f}–{max(demand_cap):.1f} N·m for rigid parts{above}), the compliant parts lower, "
+                 f"taking the wood's twist by their own. A micron scale, not a turn. A hex key engages under that slip only "
+                 f"below {min(c_star):.1f}–{max(c_star):.1f} µm of radial clearance at the centroid figure, "
+                 f"{min(c_star) * peak_hi:.1f}–{c_star_peak_max:.1f} µm at the bark end (at the written maximum of 01_01 "
+                 f"§4.3 C, {c_hex_um:.0f} µm, never — the strain would have to be "
+                 f"{c_hex_um / c_star_peak_max:.1f}× larger), and the PEEK↔Ti mismatch alone moves that clearance by "
+                 f"{swing_um:.1f} µm over {T_FOREST_MIN_C:.0f}…+{T_FOREST_MAX_C:.0f} °C: a key tight enough to engage stays "
+                 f"preload-free over only {min(band):.0f}–{max(band):.0f} K of those {forest_span_k:.0f} "
+                 f"({min(band) * peak_hi:.0f}–{band_peak_max:.0f} K at the bark end; a span independent of the hex size) and "
+                 f"sits in radial interference colder than that — a press-fit hex whose flats relax as the round band does. "
+                 f"Estimates: P. sylvestris is in neither table, and the species-mean strength, the 12 % G_LT/E_L ratio on "
+                 f"green wood and the linear γ = τ/G push the slip and c* UP; the gyroid's 2 mm gap in the Ø15 channel "
+                 f"pushes them DOWN (until the wood grows into it, nothing drives the gyroid at all)."),
+    }
+
+
 def main() -> int:
     g = geometry()
     rows = grid(g)
     v = verdict(g, rows)
+    w = wind_bracket(g, rows)
 
     banner("HW.26 — torque path onto the anchor's own axis, by INVERSION (no wind torsion is measured in the tree)")
     print(f"  gyroid Ø{g['gyroid_radius_m'] * 2e3:.1f} × {g['gyroid_length_m'] * 1e3:.0f} mm · sleeve Ø"
@@ -192,6 +340,21 @@ def main() -> int:
     print(f"\n  → {v['text']}")
     print(f"  ⊕ event path: {v['event_path']}")
 
+    banner("Q2 — how large under wind: the CAP (green shear strength), US pines of the Wood Handbook 2010")
+    print(f"  ordinary wind: {w['ordinary_wind']['reading']}")
+    print(f"  hex of 01_01 §4.3 C taken as the largest the shank holds: across flats {w['hex_across_flats_mm']:.2f} mm")
+    for s in w["species"]:
+        print(f"    {s['pine']:<14s} τ_cap {s['tau_cap_MPa']:.1f} MPa · G_LT≈{s['G_LT_green_est_MPa']:>5.0f} MPa → slip "
+              f"{s['slip_at_shank_surface_um']:>5.2f} µm · rigid demand {s['rigid_part_demand_at_cap_N_m']:.2f} N·m · hex engages "
+              f"below {s['hex_engages_below_radial_clearance_um']:.2f} µm · preload-free band {s['engagement_band_without_preload_K']:.1f} K · "
+              f"sleeve decay {s['sleeve_torsional_decay_length_mm']:.1f} mm")
+    pk = w["bark_end_peak_factor"]
+    print(f"  bark-end peak of the free-interface slip: ×{pk['rigid_gyroid']:.2f} (rigid gyroid) · ×{pk['compliant_gyroid']:.2f} "
+          f"(compliant) → hex engages below {w['hex_engages_below_radial_clearance_um_bark_end_range'][1]:.2f} µm at most")
+    print(f"  PEEK↔Ti swing of that clearance over {T_FOREST_MIN_C:.0f}…+{T_FOREST_MAX_C:.0f} °C: "
+          f"{w['hex_clearance_thermal_swing_um']:.2f} µm")
+    print(f"\n  → {w['text']}")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         "method": "analytic: Saint-Venant torsion of the stem (rotation gradient along a radial anchor) × rigid-inclusion "
@@ -202,8 +365,17 @@ def main() -> int:
         "geometry": {k: (round(v_, 6) if isinstance(v_, float) else v_) for k, v_ in g.items()},
         "grid": rows,
         "verdict": v,
+        "wind_bracket": w,
         "ceilings": ["no measured stem torsion is read — τ_s* is a threshold, not a forecast",
-                     "slip amplitude not computed — needs G_LT of green pine, not in the tree",
+                     "the wind bracket estimates the demand only at its CAP (green shear strength); under ordinary wind the "
+                     "only reading is a direction (Kolbe 2024: hardly measurable at the stem base), no number",
+                     "the cap's green values are US pines' species MEANS (Wood Handbook 2010; shear COV 14 %) — P. sylvestris "
+                     "is in neither table — and their G_LT/E_L is the ≈ 12 %-moisture ratio applied to green E_L (green G_LT "
+                     "probably HIGH, so slip and c* probably LOW); the strain is linear γ = τ/G",
+                     "the demand and τ_s* treat both parts as RIGID bodies coupled at their centroids — the PEEK sleeve's "
+                     "torsional decay length on wood is a few mm (`sleeve_torsional_decay_length_mm`), so the real demand is "
+                     "LOWER and τ_s* a LOWER bound on gross slip; the slip is redistributed, not lowered — its bark-end peak "
+                     "is carried at the rigid-gyroid factor; the Ø11 gyroid sits in the Ø15 channel with ≈ 2 mm of radial gap",
                      "μ unmeasured — bracketed",
                      "the sleeve's outer part in dead bark couples weaker — the demand here is an upper bound on that axis",
                      "the porous gyroid is coupled as a solid cylinder of its OD — an upper bound",

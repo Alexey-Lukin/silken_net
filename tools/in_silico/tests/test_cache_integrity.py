@@ -1663,6 +1663,66 @@ def test_anchor_torque_path_invariants():
         assert tau(40.0, "band top", mu, l_s) < tau(20.0, "band top", mu, l_s)
 
 
+def test_anchor_torque_path_wind_bracket_invariants():
+    """77 Q2 (HW.26): the wind bracket at its CAP, re-derived from its own fields and lib, never typed.
+
+    CAN catch: a broken link of the chain γ = τ_cap/G_LT → Δθ = ½·γ·Δx/R → slip = Δθ·a_s → hex threshold
+    c* = Δθ·s/(2√3) → preload-free band Δθ/(√3·Δα) (mutation: Δθ ×10 in wind_bracket() reds on the Δθ identity); the
+    sleeve decay length λ = √(G_PEEK·J/4πG_LT·a²) and the rigid-part ceiling it carries (λ ≪ the sleeve length); the
+    bark-end peak factor (l2 + l1/2)/Δx and every figure it scales; the rigid-demand flag disagreeing with the grid's
+    τ_s*; the hex at the WRITTEN MAXIMUM clearance of 01_01 §4.3 C engaging even at the bark-end peak (mutation:
+    C_HEX_MAX_RADIAL_CLEARANCE_M 0.05e-3 → 0.002e-3 reds on «c* < clearance»); the thermal swing no longer exceeding
+    the peak threshold; the strain factors the verdict quotes as its margins.
+    CANNOT catch: whether the Wood Handbook values are right for P. sylvestris (US pines, species means), whether the
+    12 % G_LT/E_L ratio holds for green wood, how much the compliant parts lower the demand (only that they do), how
+    compliant the gyroid really is (the factor is carried at its rigid limit), or how large τ_s is under ordinary
+    wind — the declared ceilings.
+    """
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, E_PEEK_PA, NU_PEEK, R_INTERFACE_M
+    d = json.loads((MECHANICAL / "anchor_torque_path.json").read_text(encoding="utf-8"))
+    g, w, rows = d["geometry"], d["wind_bracket"], d["grid"]
+    d_alpha = ALPHA_PEEK_1K - ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    s_hex = w["hex_across_flats_mm"] * 1e-3
+    assert abs(s_hex - 2.0 * g["shank_radius_m"] * math.cos(math.radians(30.0))) < 1e-6
+    for sp in w["species"]:
+        gamma = sp["tau_cap_MPa"] / sp["G_LT_green_est_MPa"]
+        assert abs(sp["surface_shear_strain_at_cap"] - gamma) < 1e-5
+        dtheta = 0.5 * gamma * g["centroid_separation_m"] / g["stem_radius_m"]
+        assert abs(sp["rotation_gyroid_vs_sleeve_rad"] - dtheta) < 1e-6
+        assert abs(sp["slip_at_shank_surface_um"] - dtheta * g["shank_radius_m"] * 1e6) < 0.02
+        assert abs(sp["hex_engages_below_radial_clearance_um"] - dtheta * s_hex / (2.0 * math.sqrt(3.0)) * 1e6) < 0.02
+        assert abs(sp["engagement_band_without_preload_K"] - dtheta / (math.sqrt(3.0) * d_alpha)) < 0.1
+        a2 = g["sleeve_outer_radius_m"]
+        j = 0.5 * math.pi * (a2 ** 4 - R_INTERFACE_M ** 4)
+        lam = math.sqrt(E_PEEK_PA / (2.0 * (1.0 + NU_PEEK)) * j / (4.0 * math.pi * sp["G_LT_green_est_MPa"] * 1e6 * a2 ** 2))
+        assert abs(sp["sleeve_torsional_decay_length_mm"] - lam * 1e3) < 0.02
+        assert lam < 0.2 * g["sleeve_length_m"]      # the rigid-part ceiling is real: the sleeve follows its local wood
+    tau_star_max = max(r["tau_s_star_MPa"] for r in rows)
+    assert w["rigid_part_demand_at_cap_exceeds_every_tau_s_star"] is (tau_star_max < w["tau_cap_MPa_range"][0])
+    l1, l2, dx = g["gyroid_length_m"], g["sleeve_length_m"], g["centroid_separation_m"]
+    pk = w["bark_end_peak_factor"]
+    assert abs(pk["rigid_gyroid"] - (l2 + l1 / 2.0) / dx) < 1e-3 and abs(pk["compliant_gyroid"] - l2 / dx) < 1e-3
+    assert pk["compliant_gyroid"] < pk["rigid_gyroid"]
+    for peak_key, centroid_key, tol in (("slip_at_bark_end_um_range", "slip_at_shank_surface_um_range", 0.05),
+                                        ("hex_engages_below_radial_clearance_um_bark_end_range",
+                                         "hex_engages_below_radial_clearance_um_range", 0.05),
+                                        ("engagement_band_without_preload_K_bark_end_range",
+                                         "engagement_band_without_preload_K_range", 0.5)):
+        for k in (0, 1):
+            assert abs(w[peak_key][k] - w[centroid_key][k] * pk["rigid_gyroid"]) < tol
+    c_peak = w["hex_engages_below_radial_clearance_um_bark_end_range"][1]
+    band_peak = w["engagement_band_without_preload_K_bark_end_range"][1]
+    span = w["thermal_range_C"][1] - w["thermal_range_C"][0]
+    assert c_peak < w["c_hex_max_radial_clearance_um"]      # the decisive half of ground (2): the written hex never engages
+    assert w["hex_clearance_thermal_swing_um"] > c_peak
+    assert band_peak < span
+    assert abs(w["strain_factor_to_engage_written_hex_at_bark_end"] - w["c_hex_max_radial_clearance_um"] / c_peak) < 0.02
+    assert abs(w["strain_factor_to_fill_forest_span_at_bark_end"] - span / band_peak) < 0.02
+    assert w["ordinary_wind"]["tau_s_MPa"] is None
+
+
 def test_flange_cambium_heat_invariants():
     """78 (HW.6): orderings the physics fixes whatever the inputs move to.
 

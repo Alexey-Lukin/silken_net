@@ -214,9 +214,181 @@
     "event_path": "the bayonet's locking and unlocking torque must be reacted by the flange: today only through its seats (the sleeve's end face and the faced bark), because the Zone-3 shank is a Ø9 placeholder in the Ø11 bore — clearance, so it passes none (01_01 §1, HW.8) — unless the flange is held by a tool while the radome turns; the collar is not modelled, so the torque's size is not computed — a lever exists (a tool hold), not a number",
     "text": "A wind torque path onto the anchor's own axis EXISTS: stem torsion turns wood at the bark more than at the tip (ω_r = −½·r·φ′), bending does not. The shank↔sleeve press-fit passes it until the stem-surface torsional shear stress reaches τ_s* = 0.07–2.34 MPa at 20 °C (≤ 1.76 MPa at 40 °C), and at the band floor at 40 °C it carries NOTHING — the shank turns in the sleeve at any torsion. While it holds, the PEEK's shear at the bore is capped by the friction itself at μ·P_c ≤ 0.86 MPa, so the torsional creep §4.3 C was written against cannot build beyond that cap; above it the interface slips by ½·φ′·Δx — a fretting question, not a creep one. «Drop C on the absence of a path» is therefore not available: the path exists."
   },
+  "wind_bracket": {
+    "ordinary_wind": {
+      "tau_s_MPa": null,
+      "reading": "Kolbe, Pfenning & Schindler 2024 (doi:10.1016/j.foreco.2023.121638), living ponderosa pine, mean wind 0.09–3.9 m/s: torsion «hardly measurable in the lower stem parts» — abstract and highlights only (full text closed); no number"
+    },
+    "cap_reading": "Skatter & Kučera 2000 (doi:10.1016/S0378-1127(00)00301-7), four Scots pine stands, model: torsional failure predicted as often as bending failure at critical wind — the population reaches the cap; that it does so higher up the stem, and the thicker base stays below it, is our derivation (τ = 2T/πR³)",
+    "values_source": "USDA Wood Handbook 2010 (FPL-GTR-190), Table 5–3a (green) × Table 5–1 (G_LT/E_L at ≈ 12 %), E_L ≈ 1.1 × bending MOE (Table 5–1 footnote a); species-mean values (Table 5–6: shear COV 14 %)",
+    "hex_across_flats_mm": 9.526,
+    "species": [
+      {
+        "pine": "loblolly",
+        "tau_cap_MPa": 5.9,
+        "G_LT_green_est_MPa": 864.3,
+        "surface_shear_strain_at_cap": 0.006827,
+        "rotation_gyroid_vs_sleeve_rad": 0.0008084,
+        "slip_at_shank_surface_um": 4.45,
+        "rigid_part_demand_at_cap_N_m": 7.428,
+        "hex_engages_below_radial_clearance_um": 2.22,
+        "engagement_band_without_preload_K": 12.2,
+        "sleeve_torsional_decay_length_mm": 2.87
+      },
+      {
+        "pine": "lodgepole",
+        "tau_cap_MPa": 4.7,
+        "G_LT_green_est_MPa": 374.4,
+        "surface_shear_strain_at_cap": 0.012552,
+        "rotation_gyroid_vs_sleeve_rad": 0.0014864,
+        "slip_at_shank_surface_um": 8.18,
+        "rigid_part_demand_at_cap_N_m": 5.917,
+        "hex_engages_below_radial_clearance_um": 4.09,
+        "engagement_band_without_preload_K": 22.3,
+        "sleeve_torsional_decay_length_mm": 4.37
+      },
+      {
+        "pine": "longleaf",
+        "tau_cap_MPa": 7.2,
+        "G_LT_green_est_MPa": 726.0,
+        "surface_shear_strain_at_cap": 0.009917,
+        "rotation_gyroid_vs_sleeve_rad": 0.0011744,
+        "slip_at_shank_surface_um": 6.46,
+        "rigid_part_demand_at_cap_N_m": 9.065,
+        "hex_engages_below_radial_clearance_um": 3.23,
+        "engagement_band_without_preload_K": 17.7,
+        "sleeve_torsional_decay_length_mm": 3.14
+      },
+      {
+        "pine": "pond",
+        "tau_cap_MPa": 6.5,
+        "G_LT_green_est_MPa": 435.6,
+        "surface_shear_strain_at_cap": 0.014922,
+        "rotation_gyroid_vs_sleeve_rad": 0.0017671,
+        "slip_at_shank_surface_um": 9.72,
+        "rigid_part_demand_at_cap_N_m": 8.183,
+        "hex_engages_below_radial_clearance_um": 4.86,
+        "engagement_band_without_preload_K": 26.6,
+        "sleeve_torsional_decay_length_mm": 4.05
+      },
+      {
+        "pine": "ponderosa",
+        "tau_cap_MPa": 4.8,
+        "G_LT_green_est_MPa": 872.9,
+        "surface_shear_strain_at_cap": 0.005499,
+        "rotation_gyroid_vs_sleeve_rad": 0.0006512,
+        "slip_at_shank_surface_um": 3.58,
+        "rigid_part_demand_at_cap_N_m": 6.043,
+        "hex_engages_below_radial_clearance_um": 1.79,
+        "engagement_band_without_preload_K": 9.8,
+        "sleeve_torsional_decay_length_mm": 2.86
+      },
+      {
+        "pine": "red",
+        "tau_cap_MPa": 4.8,
+        "G_LT_green_est_MPa": 784.1,
+        "surface_shear_strain_at_cap": 0.006122,
+        "rotation_gyroid_vs_sleeve_rad": 0.000725,
+        "slip_at_shank_surface_um": 3.99,
+        "rigid_part_demand_at_cap_N_m": 6.043,
+        "hex_engages_below_radial_clearance_um": 1.99,
+        "engagement_band_without_preload_K": 10.9,
+        "sleeve_torsional_decay_length_mm": 3.02
+      },
+      {
+        "pine": "slash",
+        "tau_cap_MPa": 6.6,
+        "G_LT_green_est_MPa": 612.2,
+        "surface_shear_strain_at_cap": 0.010782,
+        "rotation_gyroid_vs_sleeve_rad": 0.0012768,
+        "slip_at_shank_surface_um": 7.02,
+        "rigid_part_demand_at_cap_N_m": 8.309,
+        "hex_engages_below_radial_clearance_um": 3.51,
+        "engagement_band_without_preload_K": 19.2,
+        "sleeve_torsional_decay_length_mm": 3.42
+      },
+      {
+        "pine": "sugar",
+        "tau_cap_MPa": 5.0,
+        "G_LT_green_est_MPa": 882.5,
+        "surface_shear_strain_at_cap": 0.005666,
+        "rotation_gyroid_vs_sleeve_rad": 0.0006709,
+        "slip_at_shank_surface_um": 3.69,
+        "rigid_part_demand_at_cap_N_m": 6.295,
+        "hex_engages_below_radial_clearance_um": 1.85,
+        "engagement_band_without_preload_K": 10.1,
+        "sleeve_torsional_decay_length_mm": 2.84
+      },
+      {
+        "pine": "western white",
+        "tau_cap_MPa": 4.7,
+        "G_LT_green_est_MPa": 433.0,
+        "surface_shear_strain_at_cap": 0.010856,
+        "rotation_gyroid_vs_sleeve_rad": 0.0012855,
+        "slip_at_shank_surface_um": 7.07,
+        "rigid_part_demand_at_cap_N_m": 5.917,
+        "hex_engages_below_radial_clearance_um": 3.54,
+        "engagement_band_without_preload_K": 19.3,
+        "sleeve_torsional_decay_length_mm": 4.06
+      }
+    ],
+    "tau_cap_MPa_range": [
+      4.7,
+      7.2
+    ],
+    "slip_at_shank_surface_um_range": [
+      3.58,
+      9.72
+    ],
+    "rigid_part_demand_at_cap_N_m_range": [
+      5.917,
+      9.065
+    ],
+    "hex_engages_below_radial_clearance_um_range": [
+      1.79,
+      4.86
+    ],
+    "engagement_band_without_preload_K_range": [
+      9.8,
+      26.6
+    ],
+    "sleeve_torsional_decay_length_mm_range": [
+      2.84,
+      4.37
+    ],
+    "bark_end_peak_factor": {
+      "rigid_gyroid": 1.556,
+      "compliant_gyroid": 1.111,
+      "reading": "free-interface slip at the sleeve's bark end ÷ the centroid figure: the sleeve follows its local wood (decay length ≪ its length), the Ti part turns as the gyroid's centroid (rigid) or its top end (fully compliant); the factors above are applied at the rigid-gyroid value"
+    },
+    "slip_at_bark_end_um_range": [
+      5.57,
+      15.12
+    ],
+    "hex_engages_below_radial_clearance_um_bark_end_range": [
+      2.78,
+      7.56
+    ],
+    "engagement_band_without_preload_K_bark_end_range": [
+      15.2,
+      41.4
+    ],
+    "strain_factor_to_engage_written_hex_at_bark_end": 6.61,
+    "strain_factor_to_fill_forest_span_at_bark_end": 1.69,
+    "c_hex_max_radial_clearance_um": 50.0,
+    "hex_clearance_thermal_swing_um": 12.8,
+    "thermal_range_C": [
+      -30.0,
+      40.0
+    ],
+    "rigid_part_demand_at_cap_exceeds_every_tau_s_star": true,
+    "text": "At the cap — the green pine's shear strength 4.7–7.2 MPa, species means, which the thicker stem base stays below — rigid parts with an interface that carried nothing would slip 3.6–9.7 µm apart at the shank surface (centroids 45 mm apart). The parts' compliance redistributes that slip rather than removing it: the PEEK sleeve's torsional decay length on wood is 2.8–4.4 mm against its 50 mm, so it follows its local wood, and without friction the slip peaks at its bark end, up to 1.56× the centroid figure for a rigid gyroid (1.11× for a fully compliant one) — 5.6–15.1 µm; the DEMAND, the moment that would stop the slip (5.9–9.1 N·m for rigid parts, above every τ_s*), the compliant parts lower, taking the wood's twist by their own. A micron scale, not a turn. A hex key engages under that slip only below 1.8–4.9 µm of radial clearance at the centroid figure, 2.8–7.6 µm at the bark end (at the written maximum of 01_01 §4.3 C, 50 µm, never — the strain would have to be 6.6× larger), and the PEEK↔Ti mismatch alone moves that clearance by 12.8 µm over -30…+40 °C: a key tight enough to engage stays preload-free over only 10–27 K of those 70 (15–41 K at the bark end; a span independent of the hex size) and sits in radial interference colder than that — a press-fit hex whose flats relax as the round band does. Estimates: P. sylvestris is in neither table, and the species-mean strength, the 12 % G_LT/E_L ratio on green wood and the linear γ = τ/G push the slip and c* UP; the gyroid's 2 mm gap in the Ø15 channel pushes them DOWN (until the wood grows into it, nothing drives the gyroid at all)."
+  },
   "ceilings": [
     "no measured stem torsion is read — τ_s* is a threshold, not a forecast",
-    "slip amplitude not computed — needs G_LT of green pine, not in the tree",
+    "the wind bracket estimates the demand only at its CAP (green shear strength); under ordinary wind the only reading is a direction (Kolbe 2024: hardly measurable at the stem base), no number",
+    "the cap's green values are US pines' species MEANS (Wood Handbook 2010; shear COV 14 %) — P. sylvestris is in neither table — and their G_LT/E_L is the ≈ 12 %-moisture ratio applied to green E_L (green G_LT probably HIGH, so slip and c* probably LOW); the strain is linear γ = τ/G",
+    "the demand and τ_s* treat both parts as RIGID bodies coupled at their centroids — the PEEK sleeve's torsional decay length on wood is a few mm (`sleeve_torsional_decay_length_mm`), so the real demand is LOWER and τ_s* a LOWER bound on gross slip; the slip is redistributed, not lowered — its bark-end peak is carried at the rigid-gyroid factor; the Ø11 gyroid sits in the Ø15 channel with ≈ 2 mm of radial gap",
     "μ unmeasured — bracketed",
     "the sleeve's outer part in dead bark couples weaker — the demand here is an upper bound on that axis",
     "the porous gyroid is coupled as a solid cylinder of its OD — an upper bound",

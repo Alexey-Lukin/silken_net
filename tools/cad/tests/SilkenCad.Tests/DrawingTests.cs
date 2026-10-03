@@ -530,7 +530,7 @@ public class DrawingTests
         Assert.Contains($"RADIUS VALUE: {Drawing.NotSpecified}", pp);   // the refusal, never a number
     }
 
-    // ── Mechanical lock (§4.3 shank) — the CNC groove acceptance drawing (HW.26) ─────────────────
+    // ── Mechanical lock (§4.3 shank) — the lock acceptance drawing: barbs + the Zone-1 groove (HW.26) ──
     // 🔴 The whole point of this pair: `cem_canon_sync` pins the CEM's groove_width/depth against
     // canon §4.3 B by regex, but a machinist reads the DRAWING, not the guard's stdout — this is the
     // artefact where a human catches the same drift the guard catches by text-match. Zone-1 anchor end
@@ -545,7 +545,7 @@ public class DrawingTests
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø11", svg);           // shank Ø straight from the CEM default
         Assert.Contains("4× barb", svg);       // barb rows straight from the CEM
-        Assert.Contains("groove 1.1×0.25 DIN-471", svg);   // the DIN-471 groove — THE feature HW.26 is about
+        Assert.Contains("groove 1.1×0.25 DIN-471", svg);   // the record default = the Zone-1 groove, kept until HW.26 G1/G3 (§4.3 B)
         Assert.Contains("rev test", svg);
         Assert.DoesNotContain("NaN", svg);
         Assert.DoesNotContain("Infinity", svg);
