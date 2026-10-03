@@ -3,7 +3,10 @@
 > 🟡 **DRAFT** · ✅ **no IP gate on submission** — defensive publication (`00_01 §8`; tracker `UNI.3`): the
 > publication itself is the protection (prior art); no patent gate. What still stands between the draft and
 > SUBMIT is the manuscript's own legs (`00_07` HW.5.IS), not this letter.
-> Target: *J. Phys. Chem. B* (primary) · *PCCP* fallback · *Bioelectrochemistry* applied-backup.
+> ⏸ **DORMANT with the journal branch** (⚖️ founder 2026-10-03, [`00_02 §2.1`](../../../../00_02_Academic_Integration_and_IP.md)):
+> the publication is the ChemRxiv preprint (CC BY 4.0) with a Zenodo DOI; a journal submission — and this letter —
+> wakes only on its trigger (coin Stage 2 data, or a collaborator or funder that requires peer review).
+> Target if it wakes: *J. Phys. Chem. B* (primary) · *PCCP* fallback · *Bioelectrochemistry* applied-backup.
 > Voice/claims per [`00_OUTLINE.md §0`](00_OUTLINE.md) + [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md);
 > numbers → [`SUMMARY.md`](../SUMMARY.md). Bracketed `[…]` = fill at submission.
 
@@ -79,8 +82,9 @@ that has been made publicly available ... in electronic format other than a prep
 originality of the submission and may preclude consideration». The manuscript text and its results are already
 public in the project repository (github.com/Alexey-Lukin/silken_net, docs/protocols/ebfc/in_silico/paper and the
 in-silico summaries), and a project repository is not a preprint service — so this paragraph discloses it with the
-URL and the tag or commit in every case, plus the preprint DOI and the Zenodo DOI if they exist; whether a preprint
-is deposited before submission is decided in 00_07 HW.5.IS. After acceptance the published version is NOT mirrored
+URL and the tag or commit in every case, plus the preprint DOI and the Zenodo DOI. The preprint comes FIRST
+(⚖️ founder 2026-10-03, 00_02 §2.1: ChemRxiv under CC BY 4.0 is the publication itself), so by the time this letter
+is used it exists — name it and say how the manuscript changed since deposition. After acceptance the published version is NOT mirrored
 into the repository: «the use of a repository for published versions of papers ... generally requires copyright
 permission» (same Guidelines)]
 

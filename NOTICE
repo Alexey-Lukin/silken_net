@@ -98,6 +98,16 @@ Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
     - which the PyPI metadata line is not - is read by a person before anything is
     installed, and that 2019 py2-only release may not build under Python 3, in which
     case the account-gated hosted channel remains the only one.
+    The upstream texts disagree, and the posture was re-judged on that (read
+  2026-10-02, re-ratified by the founder 2026-10-03 with both texts before him, which
+  settles the "read by a person" condition above): the repository file LICENCE is the
+  MIT License ("Copyright (c) 2018 Mateusz Kurcinski", committed 2018-05-30, unchanged
+  since), while setup.py of 1.0.2 (2019-01-31) and of master 1.1.0 (2019-03-11) says
+  "free for non-commercial users", and the PyPI sdist ships no licence file of its
+  own (the MIT text inside it belongs to the bundled freesasa). The posture above
+  stands unchanged because it holds under BOTH readings: any output stays EXCLUDED
+  from the CC-BY-SA-4.0 grant, and an install acts within the stricter of the two.
+  The authors' own reading is not known, so neither reading is treated as final.
 
 Bundled / referenced third-party under their own (permissive) licenses - curated
 inventory in THIRD_PARTY_NOTICES (regen via license_finder):

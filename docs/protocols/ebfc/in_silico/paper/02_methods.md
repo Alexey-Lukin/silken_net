@@ -183,6 +183,11 @@ built on it: on the device couple (identical to the Me row of Table 4), ΔE_red 
 offset −1.0514 eV in the recorded environment read −4.384, −4.096 and −1.0411 eV under the lock, so the Koopmans
 offset of §3.5 and Fig 3 becomes −1.04 eV. The shift is far below the ~1 eV continuum-solvation limit that the
 osmium results are themselves reported against, so it changes no conclusion drawn here, and the points of each
-series share one cavity convention. The committed caches — the recorded-environment numbers — are what the paper
+series share one cavity convention. The lock is, moreover, not one environment across platforms: the reproductions
+above ran on osx-arm64, whereas on linux-64 the same lock resolves RDKit 2025.03.6 against the 2025.09.5 of the
+recorded environment and of the osx-arm64 lock, and under that version the geometry builder places the CF₃ member of
+the substituent series (Table 4) in a different rotamer, while the other members tested reproduce the committed
+geometry; the energetic effect of that rotamer was not computed. The reference geometry of every complex is
+therefore the committed coordinates in the Supporting Information, not a re-embedding. The committed caches — the recorded-environment numbers — are what the paper
 quotes. Every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

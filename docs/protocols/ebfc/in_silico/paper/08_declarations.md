@@ -4,6 +4,9 @@
 > disclosure. **Venue-specific:** final wording and placement follow the target journal's policy
 > (*J. Phys. Chem. B* / ACS); ethos = `00_01 §8` (publish-to-protect — transparency is the standard,
 > not concealment). Items marked **[finalise]** need author input before submission.
+> ⊕ **Route (⚖️ founder 2026-10-03, [`00_02 §2.1`](../../../../00_02_Academic_Integration_and_IP.md)):** the publication is the
+> ChemRxiv preprint (CC BY 4.0) with a Zenodo DOI, so these declarations travel with the preprint; the ACS-form
+> specifics below wake only with the journal branch (its trigger — the same §2.1).
 
 ## AI Use Disclosure
 
@@ -24,7 +27,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Data Availability.** Scripts, golden reference outputs, and result caches provided as Supporting
   Information / repository (publish-to-protect, `00_01 §8`); the SI itself is the generated manifest
   [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
-  file it lists). [finalise — repository DOI]
+  file it lists). [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
+  beside it — ⚖️ 2026-10-03]
   *Snapshot recipe (prepared 2026-10-01; minting the DOI needs the founder's account, and the archive
   channel — e.g. Zenodo's GitHub-release integration — is his choice):* neither §2.7 nor the SI names a
   commit or a tag; the SI binds to the tree by the SHA-256 of every file it lists. So (1) re-render the SI
