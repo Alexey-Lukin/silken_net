@@ -38,7 +38,7 @@ internal static class Assembly
 
     // Bayonet-Z mismatch: at the bayonet datum the radome rim lands at `lift`; the seal wants it ON the flange
     // top face. ⚖️ Under branch (а) (2026-09-10, applied 2026-09-14) the rim is a HARD DATUM on that face — while
-    // the bayonet CLAMPS it there (02_02 §3.5 states the initial clamp) — and the O-ring squeeze is the flange groove's own depth, so the face gap this used to add (`ORingGapMm`,
+    // the bayonet CLAMPS it there (02_02 §3.5 states the minimum initial clamp it needs; no part delivers it yet) — and the O-ring squeeze is the flange groove's own depth, so the face gap this used to add (`ORingGapMm`,
     // 1.424 = CS·(1 − 0.20), a script-52 mirror) is ZERO by construction and the field is gone — said out loud
     // here and in 02_02 §4.4, not recomputed silently: the mismatch fell 6.42 → 5.0 because a TERM left the
     // chain, not because a value moved.

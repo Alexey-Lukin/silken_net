@@ -52,7 +52,7 @@ public class AssemblyTests
         // At the bayonet datum the rim lands 5.0 mm BELOW the flange top face it must seal on, and the cavity
         // is pulled onto the flange ⇒ antenna↔Ti = 8 mm < 12. These are the Z-stack findings (HW.8), NOT a
         // code bug. ⚖️ This read 6.424 (= 5.0 + the 1.424 face gap) until branch (а) was applied 2026-09-14:
-        // the gap term LEFT the chain (rim = hard datum on the face), the two remaining terms did not move.
+        // the gap term LEFT the chain (rim = hard datum on the face while the bayonet clamps it — 02_02 §3.5), the two remaining terms did not move.
         AnchorAssemblyCem cem = new();
         Assert.Equal(5.0, Assembly.BayonetZMismatchMm(cem), 3);     // |12 − 17|
         Assert.Equal(8.0f, Assembly.RfClearanceMm(cem), 3);          // (12 + 13) − 17
@@ -69,7 +69,7 @@ public class AssemblyTests
         // both terms positive, so no assignment of the frozen dims reaches zero — and it equals the LUG's Z
         // deficit exactly, which is what names the lever (00_07 HW.33 MATE-Ø). ⚖️ It used to be THREE terms:
         // the O-ring face gap (1.424) was the third. Under branch (а), applied 2026-09-14, the radome rim is a
-        // HARD DATUM on the flange top face and the squeeze is the flange groove's depth, so that term is ZERO
+        // HARD DATUM on the flange top face (while the bayonet clamps it — 02_02 §3.5) and the squeeze is the flange groove's depth, so that term is ZERO
         // BY CONSTRUCTION — said here, not recomputed silently: the mismatch fell 6.42 → 5.0 because a term left
         // the chain (the field is gone from AnchorAssemblyCem), not because a value moved. 02_02 §4.4 says the same.
         AnchorAssemblyCem cem = new();

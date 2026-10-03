@@ -374,7 +374,7 @@ internal sealed record CathodeFlangeCem
     // one slot clearance of land each side). Nothing about the groove is stored, so nothing can go stale.
     // 🔑 With the rim as a HARD DATUM on this face the squeeze is set by this depth ALONE — the bayonet no
     //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now. That holds
-    //    while the bayonet CLAMPS the rim onto the face: 02_02 §3.5 states the initial clamp (script 52 `rim_datum_creep`).
+    //    while the bayonet CLAMPS the rim onto the face: 02_02 §3.5 states the minimum initial clamp it needs (script 52 `rim_datum_creep`; no part delivers it yet).
     public ORingGlandCem ORing { get; init; } = new();
 
     // Pogo-plane features (02_02 §1.2/§1.3). The ANODE contact is the end face of the bus WIRE in the channel — this part
@@ -499,7 +499,8 @@ internal sealed record AnchorAssemblyCem
 
     // Z-stack input (script 52): the RF antenna↔Ti floor (02_01 §5.3). ⛔ The O-ring rim↔Zone-3 gap that used
     // to sit beside it (`o_ring_gap_mm` 1.424 = CS·(1 − 0.20), a script-52 mirror) is GONE, not zeroed: under
-    // branch (а) (⚖️ 2026-09-10, applied 2026-09-14) the radome rim is a HARD DATUM on the flange top face and
+    // branch (а) (⚖️ 2026-09-10, applied 2026-09-14) the radome rim is a HARD DATUM on the flange top face (while
+    // the bayonet clamps it there — 02_02 §3.5 requires a minimum initial clamp no part delivers yet) and
     // the squeeze is the flange groove's own derived depth (CathodeFlangeCem.ORing), so a face gap is not a
     // parameter of the mate any more — Assembly.BayonetZMismatchMm / RequiredLugZMm carry no gap term.
     // ⛔ This 12 is OUR number, not canon's — do NOT "correct" a measured 8.0 upward to meet it.

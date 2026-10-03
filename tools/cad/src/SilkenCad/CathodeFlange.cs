@@ -16,7 +16,7 @@ namespace SilkenCad;
 // is the side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2).
 // The top face also carries the ONE O-ring groove of the capsule seal (step 5) — the radome rim is flat and
 // lands on this face as the hard datum (00_07 HW.33 branch (а), applied 2026-09-14) while the bayonet CLAMPS it
-// there: 02_02 §3.5 states the initial clamp (script 52 `rim_datum_creep`); without it the lugs set the squeeze.
+// there: 02_02 §3.5 states the minimum initial clamp it needs (script 52 `rim_datum_creep`; no part delivers it yet); without it the lugs set the squeeze.
 internal static class CathodeFlange
 {
     // Map the flange CEM's shank fields onto the §4.3 MechanicalLock CEM — reuse, не дублюй.

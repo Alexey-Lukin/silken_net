@@ -95,7 +95,7 @@ GLAND_FILL_DESIGN_TO = 0.80
 GAP_PZ = 0.65                              # mm — Power Deck ↔ Zone 3 (sets the pogo compression) — design target
 POGO_FREE = GAP_PZ + 0.60 * POGO_TRAVEL    # protrusion so pogo sits at 60 % at nominal gap
 # The O-ring "gap" IS the flange groove depth: under branch (а) the flat radome rim lands on the flange
-# top face (hard datum), so the ring is squeezed from CS 1.78 to exactly the machined depth. This READ
+# top face (hard datum while the bayonet clamps it — rim_datum_creep), so the ring is squeezed from CS 1.78 to exactly the machined depth. This READ
 # `ORING_CS * (1.0 - 0.20)` = 1.424 — the 20 % nominal the bayonet used to seat the rim at — until the
 # verdict was applied; the pre-verdict figure is kept below as `GAP_OR_PRE_BRANCH_A` for the record only.
 # 🔗 C#↔Python crossing, EXPLICIT: the CAD derives the same depth from the `o_ring` block of
@@ -206,7 +206,7 @@ def cem(stem: str) -> dict:
 # ⚠️ B2B_stack 0.15 has NO datasheet: Samtec says «processing conditions will affect mated height» (02_01 §3.1 pos. 12).
 TOL_PZ = {"DMLS_Ti": 0.30, "FR4_power": 0.20, "B2B_stack": 0.15, "FR4_rf": 0.20, "CNC_radome": 0.10}
 # O-ring chain: ONE machined dimension — the flange groove depth (branch (а): the flat rim is a hard datum
-# on the flange face, so the DMLS seat and the CNC rim engagement that used to be the two contributors here
+# on the flange face while the bayonet clamps it — rim_datum_creep — so the DMLS seat and the CNC rim engagement that used to be the two contributors here
 # are no longer in the chain at all; that pair RSS'd to ±0.18 = 1.84× the budget and never fitted).
 # ⛔ The 0.05 is NOT a specification: it is the value the shop is being ASKED whether it holds (00_07 HW.33, leg 🔗 HW.23,
 # 02_02 §3.5 «рутинні ±0.05») — a placeholder for a vendor answer, and the verdict below is conditional on it.
@@ -785,8 +785,8 @@ def main() -> int:
         """Residual gap tolerance (±) after levers, for the SHARED gap: bayonet hard-stop → deterministic
         engagement (CNC 0.10→0.05); spacer → only CNC + spacer half-step survive (measured stack removed).
         The O-ring chain is untouched by either lever since branch (а): the rim is a datum on the flange
-        face while the bayonet CLAMPS it there (`rim_datum_creep` states the initial clamp), so its residual
-        is the machined groove depth alone, however the bayonet engages."""
+        face while the bayonet CLAMPS it there (`rim_datum_creep` states the minimum initial clamp it needs — no
+        part delivers it yet), so its residual is the machined groove depth alone, whatever height the bayonet seats at."""
         cnc_pz = 0.05 if bayonet else TOL_PZ["CNC_radome"]
         res_or = rss(list(TOL_OR.values()))
         if spacer:
@@ -941,7 +941,7 @@ def main() -> int:
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
     print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
     print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone —")
-    print("     while the bayonet CLAMPS the rim there (rim_datum_creep: the initial clamp; without it the lugs set the squeeze).")
+    print("     while the bayonet CLAMPS the rim there (rim_datum_creep: the minimum initial clamp, delivered by no part yet; without it the lugs set the squeeze).")
     print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
           "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; acceptance = a mock-up at Z 5/8/12, ⚖️ 2026-09-17).")
 
