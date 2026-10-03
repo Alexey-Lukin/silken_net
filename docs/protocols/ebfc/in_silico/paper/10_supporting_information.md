@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 257 · 14,917,705 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 257 · 14,918,883 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -15,7 +15,7 @@
 | `tools/in_silico/conda-lock.yml` | `9310d48fb69beaa7d1806c196681c5b9bca474c11ae669bc6f4abfeb133dee53` | 302,050 |
 | `tools/in_silico/environment.computed.explicit.txt` | `81837ab8cdaf21c8b4572a996f668d2a4fa1579dfef7d3896bb1b96f3dedcb2f` | 39,592 |
 | `tools/in_silico/environment.yml` | `dae5774e98b8438e2694bc22639511d6dce44592f6384f2cfc9cbe1c6055d8ba` | 604 |
-| `tools/in_silico/requirements-conda-lock.in` | `8e7c8e28f0ac38d0444a24a8fa988dd38b786c7153ddc864e2dd302aa02bbfb6` | 10,640 |
+| `tools/in_silico/requirements-conda-lock.in` | `525b5aaf72971346c393fe4ba80a32f5b3cd5f41d2f9b0f13bce5c560d2ca9ed` | 11,818 |
 | `tools/in_silico/requirements-conda-lock.txt` | `080d5437fc0fb76f6807cb840d5be2939b38d7525f59e1e2c9d98e7fc555e61a` | 84,291 |
 | `tools/in_silico/requirements-pytest.in` | `93c4ab5f175d24229e46ec70a8ecaeb6db8b36e3f54d8005808044c060acbc92` | 14 |
 | `tools/in_silico/requirements-pytest.txt` | `f6b9cfcd8affbb44f478cf169e04ed22a94303f85b38b0006d8690ea93062e39` | 1,289 |
