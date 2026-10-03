@@ -9,7 +9,7 @@ Supporting Information») and 08_declarations «Data Availability»:
 
   S1  the RECORDED environment (explicit conda list, md5 per package) + the conda-lock (a reproduction, not a replay)
   S2  every script, shared-library module and test of the pipeline — sha256 + the module's SI line
-      (its `SI_DESCRIPTION` if it declares one, else the first docstring line); a line carrying repo
+      (in English since 2026-10-02: its `SI_DESCRIPTION` if it declares one, else the first docstring line); a line carrying repo
       jargon — Cyrillic, a live 00_07 tracker ID, an ISO date, a status glyph — is REFUSED, not rendered
   S3  every COMMITTED reference output under cache/ (the JSON/PNG the docs pin; trajectories are never committed)
   S4  committed input data (ERA5 · NASA POWER · CHEM.11 alignments)
