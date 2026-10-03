@@ -20,7 +20,7 @@
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §5 PTFE-GDL (катод anti-flooding) |
 | [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) + буфер EDLC 0.47F (§12) |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | In-vitro валідація ферментів — профільний біохімік (TBD, Ст.28) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 resin barrier (нанесення й верифікація; синтез мембрани — HW.5), HW.24 Ti-coin |
 
 ## 📑 Зміст
 

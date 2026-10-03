@@ -3,7 +3,7 @@
 """
 HW.6 — Radial thermal field of the thermal-install procedure: does the cambium stay < 50 °C?
 
-WHY THIS EXISTS. `01_04 §3.5` prescribes a fallback install where the anchor is heated to
+WHY THIS EXISTS. `01_04 §3.5` prescribed (until its rejection, ⚖️ 2026-09-09) a fallback install where the anchor is heated to
 150-200 °C to cauterise resin canals, and backs it with a 1D Fourier estimate ("tip reaches
 150 °C in 22.7 min", cache `kinetics/thermal_penetration.json`). That cache is committed
 DATA-ONLY — no generator — and the canon declares its own ceiling: the model has NO radial
