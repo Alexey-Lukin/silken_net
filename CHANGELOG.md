@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.9.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.9.0) (2026-10-03)
+
+
+### Features
+
+* **ARCH.75:** ⚖️ founder 2026-09-27 — шлюз на обслуговуванні непридатний для аварійного наказу: крок дістає гучну відмову, а не мовчазну смерть ([54e3fd7](https://github.com/Alexey-Lukin/silken_net/commit/54e3fd7573fbadc9a5e4a20b991eaf1b4a28f085))
+* **FW.64:** ⚖️ founder 2026-09-27 — сирену з вікном коротшим за каденс пишуть best-effort і водночас одразу попереджають людину, а не відмовляють наперед ([65109cf](https://github.com/Alexey-Lukin/silken_net/commit/65109cf8daf2313b60341a38a85a992d2d2ea6cf))
+* **FW.64:** протермінований аварійний наказ лишає критичний алерт, а не лише бейдж — свідчення про факт за будь-якої гілки ⚖️ ([149ca23](https://github.com/Alexey-Lukin/silken_net/commit/149ca23383cb30c012b4fb02d5595642baff30e4))
+* **FW.8:** mruby-контракт споживає пороги — доставка й споживання вмикаються одним фліпом, пін на справжньому контракті ([1619008](https://github.com/Alexey-Lukin/silken_net/commit/161900892d85fae81ed799a052ebd20016cd1e9b))
+* **SEC.38:** ⚖️ founder 2026-09-27 — MAC над pull-запитом Королеви: без нього Rails відповідає 4.01 до будь-якої зміни стану ([978839f](https://github.com/Alexey-Lukin/silken_net/commit/978839fa766505d3d560baa31b3af83313a391fe))
+
+
+### Bug Fixes
+
+* **ARCH.75+FW.64:** адверсарне рев'ю застосованих присудів — відмову судить актуатор, попередження судить подія ([5ac544b](https://github.com/Alexey-Lukin/silken_net/commit/5ac544bffc8ec4cb604e9ccbed48c2d77b89c1c4))
+* **ARCH.75:** адверсарне рев'ю — порядок усередині кроку round-robin з id-tie-break; канон більше не видає відкрите питання за присуд ([d42b5e6](https://github.com/Alexey-Lukin/silken_net/commit/d42b5e64b08724bdcefb00643aebde718f1fee94))
+* **ARCH.75:** друге адверсарне рев'ю — свіп безпеки міряє вікно від echo, як і Reset: round-robin більше не робить доставлений наказ «загубленим» ([41c6843](https://github.com/Alexey-Lukin/silken_net/commit/41c68432c978250aa1d730e81aa206c7d01127dc))
+* **deps:** replace unmaintained decompress with @xhmikosr/decompress 11.1.4 via override in /subgraph [OPS.22] ([1422334](https://github.com/Alexey-Lukin/silken_net/commit/142233437b3e3376dfdbb6152ace45e89595412f))
+* **E.63:** in-silico L4 рахує ту саму ціну циклу й сон, що канон-ланцюг — вердикт «60 с фізично обґрунтовано» не пережив зведення ([3e551c0](https://github.com/Alexey-Lukin/silken_net/commit/3e551c07eb74da4600abcd6b171000e07715ffbb))
+* **E.63:** друге адверсарне рев'ю — купонні delta_t більше не послаблюють ризиків вузла; η-вісь названо; вилку й «ніколи» пінують гейти ([2bea3a5](https://github.com/Alexey-Lukin/silken_net/commit/2bea3a5ae1dc34a654e8e118ba593be7017c1ef6))
+* **FW.63+SEC.38+ARCH.58:** фінальне поведінкове рев'ю — echo-крок пише актуатор і наказ однією транзакцією; неавтентифікований poll-запит заведено SEC.38 ([17effaf](https://github.com/Alexey-Lukin/silken_net/commit/17effafae4be29a4d00bbd14e64c0b943605e66b))
+* **FW.64:** аварійну серію судить черга шлюзу, а не перший poll — хвіст, що протух би, відмовляється вголос ([fba8e55](https://github.com/Alexey-Lukin/silken_net/commit/fba8e5510ede7f08829655ad40864990d3668f71))
+* **FW.64:** адверсарне рев'ю — ⌈k/3⌉ є найранішим флашем, а не найгіршим; повна форма присуду про хвіст переїхала в канон-дім; людський текст відмови більше не стверджує спростоване ([298dcee](https://github.com/Alexey-Lukin/silken_net/commit/298dcee24c5a00724a789b15852731f8bd44989b))
+* **FW.64:** друге адверсарне рев'ю — виданий, але не підтверджений наказ більше не звітує «не дочекався видачі»; стелі присуду про хвіст названо чесно ([61cfa3f](https://github.com/Alexey-Lukin/silken_net/commit/61cfa3f6de3eb9b3e7218acc4c7fac86ff243fa4))
+* **FW.8:** QEMU-паритет і VM-тест тепер виконують справжній 9-аргументний виклик; ABI-підлога контракту запінена; фліп чекає downlink-ревізії ([672e162](https://github.com/Alexey-Lukin/silken_net/commit/672e1622e6bfdcc716ce6395e1ee51172a67be29))
+
+
+### Reverts
+
+* **FW.64:** «відмовляти хвіст серії завжди» відкочено до пушу — найгірший випадок став вироком, а відмовлявся єдиний чанк, що продовжує полив ([84c2c7c](https://github.com/Alexey-Lukin/silken_net/commit/84c2c7ca2edd06a31beb7cfa129cb731f8844696))
+
 ## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
