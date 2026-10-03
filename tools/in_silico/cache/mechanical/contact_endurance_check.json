@@ -65,7 +65,7 @@
       "extrapolation_note": "the budget is 1.2-1.7 orders beyond the tested range, but PEEK's endurance limit is reported as a genuine flat fatigue limit (self-heating/crack-arrest mechanism, not VHCF-style continued degradation like metals) \u2014 Pastukhov et al. 2020 title is literally 'Physical background of the ENDURANCE LIMIT in PEEK'. Treat 30 MPa as a defensible lower-bound acceptance threshold, not a precisely-validated number at the budget.",
       "closed": false,
       "verdict": "Reference endurance limit established (30-48 MPa @ 1e6-1e7 cycles) \u2014 see missing_datum for what still closes it.",
-      "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced cyclic load \u2014 this is exactly what HW.26's own pending ANSYS LS-DYNA FEA leg computes; this script hands that FEA a numeric acceptance criterion (30-48 MPa) to compare against instead of running blind."
+      "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced cyclic load \u2014 HW.26's commercial FEA delivers the stress PER UNIT load (a transfer function, lock_fea_prony_brief), the amplitude needs HW.43's measured load, and the comparison against 30-48 MPa is ours, not the FEA's (the brief leaves it out on purpose)."
     },
     "genipin_matrix": {
       "part": "genipin-chitosan-CNC matrix (Zone-1 anode enzyme-immobilization layer, 01_03 \u00a72.1 Layer 4)",

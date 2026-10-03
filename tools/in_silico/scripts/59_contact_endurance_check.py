@@ -157,9 +157,9 @@ def peek_barb_cyclic_verdict(budget: dict) -> dict:
         "verdict": "Reference endurance limit established (30-48 MPa @ 1e6-1e7 cycles) — see "
                    "missing_datum for what still closes it.",
         "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced "
-                          "cyclic load — this is exactly what HW.26's own pending ANSYS LS-DYNA FEA leg "
-                          "computes; this script hands that FEA a numeric acceptance criterion (30-48 "
-                          "MPa) to compare against instead of running blind.",
+                          "cyclic load — HW.26's commercial FEA delivers the stress PER UNIT load (a transfer "
+                          "function, lock_fea_prony_brief), the amplitude needs HW.43's measured load, and the "
+                          "comparison against 30-48 MPa is ours, not the FEA's (the brief leaves it out on purpose).",
     }
 
 

@@ -20,8 +20,8 @@ the window floor is retention at +40 C - 00_07 HW.3). Also computes the winter c
 at the OUTER interface (PEEK shrinks away from the outer Ti shell).
 
 No FEA needed — axisymmetric Lamé equations have closed-form solution.
-Relaxation params are literature-grounded estimates pending a Prony-series
-fit from школа Гусака (00_02 Стаття 2).
+Relaxation params are literature-grounded estimates pending the authoritative
+Prony-series fit of the external commercial FEA executor (2026-09-27, 00_07 HW.26).
 """
 from __future__ import annotations
 

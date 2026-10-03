@@ -86,7 +86,7 @@
         "breakeven_force_N": 3658.0
       }
     ],
-    "idealisation": "чистий зріз по кореню; концентрації в галтелі НЕ модельовано (FEA — HW.26)"
+    "idealisation": "чистий зріз по кореню; концентрації в галтелі НЕ модельовано (жоден прилад; FEA HW.26 — про PEEK біля барба, не про Ti)"
   },
   "case_c_confined_ice": {
     "pressure_ceiling_MPa": 209.9,

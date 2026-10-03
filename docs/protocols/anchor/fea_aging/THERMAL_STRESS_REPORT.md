@@ -15,7 +15,7 @@ Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-3
 lower than previously reported (see the 2026-06-21 correction): at the **minimum** H7/s6 interference the
 relaxed P_c can fall **at or below** the sap pressure — so this fit **cannot seal the Ti↔PEEK path, and by
 design it is not asked to** (`00_07` HW.34, 2026-09-18 — ⚠️ above). PEEK is a structural/thermal isolator whose contact pressure holds the fit;
-barbs handle axial pull-out + anti-rotation only — the retaining ring as a backup was removed on both ends
+barbs handle axial pull-out only (anti-rotation is requirement 01_01 §4.3 C, its carrier open: annular barbs do not resist rotation) — the retaining ring as a backup was removed on both ends
 2026-09-18 (`00_07` HW.26): in the shipped stack the Zone-3 groove ended up inside the PEEK (near flank 2.0 mm deep), and the
 Zone-1 ring would only stop motion deeper into the sleeve, not pull-out.
 
@@ -150,7 +150,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 3. **The Ti↔PEEK path is not sealed, by design** (`00_07` HW.34, 2026-09-18) — the fit is marginal at min fit and is not
    asked to seal; the capsule's one seal is the face O-ring at the radome joint, and the bus channel gets its own closure
    at its exit (geometry after the pogo pin P/N, `00_07` HW.9).
-4. **Barbs = axial pull-out + anti-rotation only** — they do not seal; the retaining ring as a backup was
+4. **Barbs = axial pull-out only** (annular barbs do not resist rotation — anti-rotation is 01_01 §4.3 C, carrier open) — they do not seal; the retaining ring as a backup was
    removed 2026-09-18 (`00_07` HW.26 — see Summary).
 5. **Winter:** inner interface tightens; the "outer interface" is the tree, not a Ti shell (artifact dropped).
 6. **No mesh-FEA** for the axisymmetric stress (analytic Lamé); barb-tip stress-concentration → external commercial FEA executor (`00_07` HW.26).
@@ -160,8 +160,8 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 - [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert, measured creep data) — the
   authoritative multi-term fit replacing the interim conservative 2-term estimate: item (А) of the FEA/Prony
   request, [`lock_fea_prony_brief`](../../outreach/lock_fea_prony_brief.md) §3 (00_07 HW.26).
-- [ ] **Barb-tip stress-concentration FEA** — item (В) of the same request. Channel: ЧНУ, replaced by a
-  commercial executor on the event named in the brief's §8 (ratified 2026-09-24). ⛔ No parallel self-own FEA:
+- [ ] **Barb-tip stress-concentration FEA** — item (В) of the same request. Channel: the external
+  commercial FEA executor (⚖️ founder 2026-09-27; addressees CADFEM Ukraine ∥ Veryst — the brief's §8/§8.1). ⛔ No parallel self-own FEA:
   two executors on one number is the class `00_03 §3.6` removed; the Lamé bound here stays the calibration case.
 - ⚫ **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK — **won't do** (founder-ratified 2026-09-26): a function with no carrier, since the Ti↔PEEK path is wet by design; verdict, cost and weakest link in [`01_01`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (FEA-валідація, ⚫ note).
 - [x] **Unified thick-wall Lamé** combining interference + thermal stress in one model ✅ 2026-06-22
