@@ -4,8 +4,8 @@
 > first Q1 computational-chemistry paper. It explains *how* to write each part correctly, in
 > software-engineering terms where that helps. The *skeleton* (sections, figures, result-map) is in
 > [`00_OUTLINE.md`](00_OUTLINE.md); the *numbers* live in [`SUMMARY.md`](../SUMMARY.md); this doc is
-> the *method for writing*. Target = **J. Phys. Chem. B** (JPCB) — the journal branch, which sleeps: the
-> publication is the ChemRxiv preprint (⚖️ founder 2026-10-03, `00_02 §2.1`; route — OUTLINE §7).
+> the *method for writing*. Target = **J. Phys. Chem. B** (JPCB) — the journal branch, which sleeps with a trigger (coin Stage-2
+> data, or a collaborator/grant that needs peer review): the publication is the ChemRxiv preprint (⚖️ founder 2026-10-03, `00_02 §2.1`; route — OUTLINE §7).
 
 ---
 
@@ -121,7 +121,7 @@ Methods → Results → Introduction → Discussion/Conclusions → Abstract + T
 
 - **✅ IP posture — defensive publication:** no patent is filed (by design). The publication **IS** the
   protection — it fixes prior art (see [`00_01 §8`](../../../../00_01_Vision_Mission_and_Roadmap.md)
-  and `protocols/anchor/prior_art_landscape.md`). Deposit freely; no gate.
+  and `protocols/anchor/prior_art_landscape.md`). Deposit free of a patent gate — not of the publisher's policy (`00_02 §2.1`), and the self-review below still runs first.
 - **Authorship/CRediT:** agree this *before* drafting (OUTLINE §0): you (Conceptualization, Methodology,
   Software, Investigation, Writing-original). No external collaborator (⚖️ founder 2026-09-23) — the QM/MM
   upgrade is a named method limit and a follow-up, not a co-author's section.
