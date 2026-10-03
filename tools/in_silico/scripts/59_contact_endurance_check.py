@@ -159,7 +159,8 @@ def peek_barb_cyclic_verdict(budget: dict) -> dict:
         "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced "
                           "cyclic load — HW.26's commercial FEA delivers the stress PER UNIT load (a transfer "
                           "function, lock_fea_prony_brief), the amplitude needs HW.43's measured load, and the "
-                          "comparison against 30-48 MPa is ours, not the FEA's (the brief leaves it out on purpose).",
+                          "comparison against 30-48 MPa is ours, not the FEA's (the letters §9/§10 leave it out on purpose; the brief "
+                          "carries it as our input, §2).",
     }
 
 
