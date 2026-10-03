@@ -20,7 +20,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   result caches.
 - **Manuscript preparation.** An LLM assisted with drafting and editing. **All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
-  authors.** [finalise: number of authors — 00_07 HW.5.IS] AI tools were not used to generate or fabricate data, results, or references.
+  author.** AI tools were not used to generate or fabricate data, results, or references.
 
 ## Other required declarations [finalise at submission]
 
@@ -51,9 +51,10 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Funding.** Draft (2026-09-30 — [finalise: founder confirms; add a grant number only if one exists by
   submission]): *This research received no specific grant from any funding agency in the public,
   commercial, or not-for-profit sectors. Computations were performed on the author's own workstation.*
-- **Author Contributions (CRediT).** Draft (2026-09-30, from [`00_OUTLINE.md`](00_OUTLINE.md) §0 —
-  [finalise: author list and corresponding author are the founder's call, ⚖️ `00_07` HW.5.IS; roles below
-  are the outline's, not an addition]): *Conceptualization, Methodology, Software, Investigation, Data
+- **Author Contributions (CRediT).** Draft (2026-09-30, from [`00_OUTLINE.md`](00_OUTLINE.md) §0; the
+  author list is decided — one author, also the corresponding author, affiliation «Independent researcher»,
+  ⚖️ founder 2026-10-03, [`00_02 §2.1`](../../../../00_02_Academic_Integration_and_IP.md); roles below are
+  the outline's, not an addition): *Conceptualization, Methodology, Software, Investigation, Data
   curation, Validation, Visualization, Writing – original draft, Writing – review & editing: the author.*
   No external collaborator and no pre-submission QM/MM section (founder 2026-09-23, `00_02 §2.1` Стаття 1):
   explicit-water QM/MM is a stated method limit. The AI-use disclosure above is part of this statement.

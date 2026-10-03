@@ -91,8 +91,9 @@ permission» (same Guidelines)]
 We thank you for your consideration and look forward to the reviewers' comments.
 
 Sincerely,
-[Corresponding author, on behalf of all authors]
-[finalise: for EVERY author — full name · postal address · telephone · CURRENT INSTITUTION e-mail; the
-letter on official letterhead of the author's affiliation; every author needs an ACS account (ACS Author
-Guidelines, Cover Letter). The affiliation is not defined anywhere in paper/ and the number of authors is
-open — both are decided in 00_07 HW.5.IS; contacts filled in at submission, never kept in this repository]
+[The author — sole and corresponding author; affiliation «Independent researcher»]
+[finalise at submission: full name · postal address · telephone · e-mail · an ACS account (ACS Author
+Guidelines, Cover Letter). ACS also asks for a CURRENT INSTITUTION e-mail and a letter on the official
+letterhead of the author's affiliation, which an independent researcher does not have — the price the
+author verdict named (⚖️ founder 2026-10-03, 00_02 §2.1), resolved only if the journal branch wakes;
+contacts filled in at submission, never kept in this repository]
