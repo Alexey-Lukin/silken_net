@@ -1750,3 +1750,62 @@ def test_flange_cambium_heat_invariants():
     assert floor is None or 0.0 <= floor <= d["bark"]["thin_mm"]
     a_star = v["alpha_crossing_sunlit_still_air"]
     assert a_star["thin"] is None or a_star["thick"] is None or a_star["thin"] <= a_star["thick"]
+
+
+def test_flange_cambium_frost_invariants():
+    """79 (HW.6, the frost half): areas, sky, gates and the declared directions re-derived from the cache and the CEMs.
+
+    CAN catch: a fin ratio not equal to its areas over the ring (mutation: the band dropped from the tied fin reds on
+    the tied ratio); a ring or band not read from the flange and sleeve CEMs, or a capsule area that has drifted from
+    71's cache; the Brutsaert units turned; any of the three scheme gates past its threshold; a regime summary that is
+    not the min/max of its own runs; a verdict text whose sign words disagree with the medians it quotes; the
+    directions the docstring declares — overcast colder under the flange than clear, diffuse sun colder than none, the
+    median monotone along the coupling axis, the store and trunk sensitivities raising the tied tail, and equal h_c
+    turning the clear-sky tied median colder — failing in any cell.
+    CANNOT catch: whether ε, F, α_bark or the trunk correlation are right for this site, real cloud cover, beam sun,
+    the real radome↔flange coupling, snow, or any frost-injury threshold — the declared ceilings.
+    """
+    d = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))
+    ar, runs, reg, v = d["areas"], d["runs"], d["regimes"], d["verdict"]
+    fl = json.loads((REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))
+    sl = json.loads((REPO / "tools/cad/cem/zone2_sleeve.json").read_text(encoding="utf-8"))
+    d_fl, wound = fl["flange_diameter_mm"], sl["bore_diameter_mm"] + 2.0 * sl["wall_thickness_mm"]
+    ring = math.pi / 4.0 * (d_fl ** 2 - wound ** 2)
+    band = math.pi * d_fl * fl["flange_thickness_mm"]
+    a_exp = json.loads((THERMAL / "capsule_envelope.json").read_text(encoding="utf-8"))["geometry"]["a_exp_mm2"]
+    assert abs(ar["contact_ring_mm2"] - ring) < 0.01 and abs(ar["flange_band_mm2"] - band) < 0.01
+    assert abs(ar["capsule_exposed_mm2"] - a_exp) < 0.01
+    assert abs(ar["fin_ratio"]["decoupled"] - band / ring) < 1e-3
+    assert abs(ar["fin_ratio"]["tied"] - (band + a_exp) / ring) < 1e-3
+    unit = d["inputs"]["brutsaert"]["unit_check"]
+    assert 0.6 < unit["emissivity_at_10hPa_283K"] < 0.9 and unit["same_with_e_in_Pa"] > 1.0
+    assert d["scheme_check_rel_error"] < 0.02 and d["diurnal_check_cambium_min_error_K"] < 0.05
+    assert d["timestep_check"]["daily_min_err_K"] <= 0.15 and d["timestep_check"]["shift_err_K"] <= 0.05
+    cell = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r["shift_K"] for r in runs}
+    regimes = [x["name"] for x in d["inputs"]["regimes"]]
+    for name in regimes:
+        for cp in ("decoupled", "tied"):
+            med = [s["median"] for (rg, c, _, _), s in cell.items() if rg == name and c == cp]
+            assert reg[name][cp]["median_K_range"] == [min(med), max(med)]
+            assert reg[name][cp]["max_K"] == max(s["max"] for (rg, c, _, _), s in cell.items() if rg == name and c == cp)
+    for (rg, cp, k, side), s in cell.items():
+        assert s["min"] <= s["median"] <= s["p95"] <= s["max"]
+        if cp == "tied":
+            assert s["median"] >= cell[(rg, "decoupled", k, side)]["median"]          # monotone along the coupling axis
+            sky, sun = rg.split("_", 1)
+            if sky == "clear":
+                assert cell[(f"overcast_{sun}", cp, k, side)]["median"] > s["median"]   # cloud: colder under the flange
+            if sun == "no_sun":
+                assert cell[(f"{sky}_diffuse_sun", cp, k, side)]["median"] > s["median"]  # sun: colder under the flange
+    for name in regimes:
+        lo, hi = reg[name]["tied"]["median_K_range"]
+        assert v["tied_median_K_range_by_regime"][name] == [lo, hi]
+        assert f"{lo:+.1f}…{hi:+.1f} K" in v["text"]
+    base = cell[("clear_no_sun", "tied", 0.0, "thin")]
+    sens = d["sensitivity_thin_bark_still_air_clear_no_sun"]
+    for name in ("sapwood_190mm", "trunk_height_0.3m"):
+        assert sens[name]["tied"]["max"] > base["max"]                 # the docstring's declared direction
+    assert sens["capsule_h_c_as_bark"]["tied"]["median"] > base["median"]   # the mechanism: h_c, not area
+    mech = d["mechanism"]
+    assert mech["bark"]["equilibrium_minus_air_K"] < mech["capsule"]["equilibrium_minus_air_K"] < 0.0
+    assert mech["capsule"]["h_c_W_m2K"] > mech["bark"]["h_c_W_m2K"]

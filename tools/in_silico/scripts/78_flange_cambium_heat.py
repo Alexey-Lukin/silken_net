@@ -41,7 +41,7 @@ wind and bark side; the shift against bark without the flange under a crown; the
 CANNOT show: whether the flange is worse than SUNLIT bark (no bark temperature in the tree); a dose (the gate is an
 isotherm — `58`'s ceiling: no Arrhenius parameters for pine cambium); the furrow's air-gap path; frost: in `71` the
 capsule tracks air at night (no sky cooling), so the flange and shaded bark meet at night by construction — no frost
-verdict is drawn.
+verdict is drawn here; the frost half is `79`.
 
 Run:  python tools/in_silico/scripts/78_flange_cambium_heat.py      # ~3–4 min (30 years hourly, 50 columns + a root search)
 """

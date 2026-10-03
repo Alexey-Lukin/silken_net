@@ -2328,6 +2328,65 @@ CHECKS += [
 ]
 
 
+# ── HW.6 (2026-10-03): the frost half of the same path, owner = script 79 ──
+# The canon home (01_04 §3.1) quotes the sky × sun ends at the tied end, the mechanism fields and the decoupled range.
+FLANGE_FROST = "thermal/flange_cambium_frost.json"
+_R79 = lambda d, regime, cp="tied": d["regimes"][regime][cp]  # noqa: E731
+_NN = rf"[{_DASHES}\-+]?[\d.]+"   # the other end of a quoted range, not pinned by that row
+CHECKS += [
+    ("HW.6 · frost: winter clear-sky emissivity, median → flange_cambium_frost.json",
+     CODIT, rf"медіана ε \*\*{N}\*\*", FLANGE_FROST, lambda d: d["clear_sky_emissivity_winter"]["median"], 0.006),   # canon rounds to 0.01
+    ("HW.6 · frost: decoupled fin over the contact ring → flange_cambium_frost.json",
+     CODIT, rf"\*\*{N}\*\* площі кільця Ø15", FLANGE_FROST, lambda d: d["areas"]["fin_ratio"]["decoupled"], 0.005),
+    ("HW.6 · frost: tied fin over the contact ring → flange_cambium_frost.json",
+     CODIT, rf"\*\*{N}\*\* площі кільця\.", FLANGE_FROST, lambda d: d["areas"]["fin_ratio"]["tied"], 0.05),
+    ("HW.6 · frost: tied median, clear sky no sun, low end → flange_cambium_frost.json",
+     CODIT, rf"ясне небо без сонця — {N}…{_NN} K", FLANGE_FROST, lambda d: _R79(d, "clear_no_sun")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: tied median, clear sky no sun, high end → flange_cambium_frost.json",
+     CODIT, rf"ясне небо без сонця — {_NN}…{N} K", FLANGE_FROST, lambda d: _R79(d, "clear_no_sun")["median_K_range"][1], 0.005),
+    ("HW.6 · frost: mechanism — bark equilibrium below air at the reference hour → flange_cambium_frost.json",
+     CODIT, rf"кора \*\*{N} K\*\* від повітря", FLANGE_FROST, lambda d: d["mechanism"]["bark"]["equilibrium_minus_air_K"], 0.05),
+    ("HW.6 · frost: mechanism — capsule equilibrium below air at the reference hour → flange_cambium_frost.json",
+     CODIT, rf"капсула \*\*{N} K\*\*\)", FLANGE_FROST, lambda d: d["mechanism"]["capsule"]["equilibrium_minus_air_K"], 0.05),
+    ("HW.6 · frost: mechanism — tied median with the capsule's h_c set to bark's → flange_cambium_frost.json",
+     CODIT, rf"медіана стає \*\*\+{N} K\*\*", FLANGE_FROST,
+     lambda d: d["sensitivity_thin_bark_still_air_clear_no_sun"]["capsule_h_c_as_bark"]["tied"]["median"], 0.005),
+    ("HW.6 · frost: tied median, overcast no sun, low end → flange_cambium_frost.json",
+     CODIT, rf"Суцільна хмарність без сонця — \+{N}…{_NN} K", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_no_sun")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: tied median, overcast no sun, high end → flange_cambium_frost.json",
+     CODIT, rf"Суцільна хмарність без сонця — {_NN}…\+{N} K", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_no_sun")["median_K_range"][1], 0.005),
+    ("HW.6 · frost: mechanism — tied conductance to the air over bark's → flange_cambium_frost.json",
+     CODIT, rf"в \*\*{N}\*\* раза більша за корову", FLANGE_FROST, lambda d: d["mechanism"]["tied_over_bark_conductance"], 0.05),
+    ("HW.6 · frost: tied median, clear sky diffuse sun, low end → flange_cambium_frost.json",
+     CODIT, rf"ясне небо \*\*{N}…{_NN} K\*\*, хмарність", FLANGE_FROST,
+     lambda d: _R79(d, "clear_diffuse_sun")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: tied median, clear sky diffuse sun, high end → flange_cambium_frost.json",
+     CODIT, rf"ясне небо \*\*{_NN}…\+{N} K\*\*, хмарність", FLANGE_FROST,
+     lambda d: _R79(d, "clear_diffuse_sun")["median_K_range"][1], 0.005),
+    ("HW.6 · frost: tied median, overcast diffuse sun, low end → flange_cambium_frost.json",
+     CODIT, rf"хмарність \*\*\+{N}…{_NN} K\*\*; найгірша", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_diffuse_sun")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: tied median, overcast diffuse sun, high end → flange_cambium_frost.json",
+     CODIT, rf"хмарність \*\*{_NN}…\+{N} K\*\*; найгірша", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_diffuse_sun")["median_K_range"][1], 0.005),
+    ("HW.6 · frost: the worst day across all ends, tied → flange_cambium_frost.json",
+     CODIT, rf"найгірша доба серед усіх кінців — \*\*\+{N} K\*\*", FLANGE_FROST, lambda d: d["verdict"]["tied_max_K"], 0.05),
+    ("HW.6 · frost: decoupled median, clear sky no sun, low end → flange_cambium_frost.json",
+     CODIT, rf"від \*\*{N}…{_NN} K\*\* \(ясне небо без сонця\)", FLANGE_FROST,
+     lambda d: _R79(d, "clear_no_sun", "decoupled")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: decoupled median, clear sky no sun, high end → flange_cambium_frost.json",
+     CODIT, rf"від \*\*{_NN}…{N} K\*\* \(ясне небо без сонця\)", FLANGE_FROST,
+     lambda d: _R79(d, "clear_no_sun", "decoupled")["median_K_range"][1], 0.005),
+    ("HW.6 · frost: decoupled median, overcast diffuse sun, low end → flange_cambium_frost.json",
+     CODIT, rf"до \*\*\+{N}…{_NN} K\*\* \(хмарність", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_diffuse_sun", "decoupled")["median_K_range"][0], 0.005),
+    ("HW.6 · frost: decoupled median, overcast diffuse sun, high end → flange_cambium_frost.json",
+     CODIT, rf"до \*\*{_NN}…\+{N} K\*\* \(хмарність", FLANGE_FROST,
+     lambda d: _R79(d, "overcast_diffuse_sun", "decoupled")["median_K_range"][1], 0.005),
+]
+
 # The canon numbers lib.constants mirrors for 77/78 (BARK_DEAD_RIDGE_DBH38_MM · INSTALL_ANGLE_DEG · DBH_MIN_CM), read back
 # through the caches that consumed them: an edit on either side alone turns red here.
 CHECKS += [
@@ -2678,3 +2737,15 @@ def test_chelate_sensitivity_is_stated_as_the_record_measured_it():
     assert all(abs(b - tg["bite_deg"]) <= 0.1 for b in geo["bite_deg"]), geo["bite_deg"]
     assert sens["full_C_triggered"] == (abs(sens["dE_red_shift_eV"]) >= sens["full_C_trigger_eV"]), (
         "the full-C flag disagrees with the shift it was computed from")
+
+
+def test_frost_worst_regime_label_matches_cache():
+    """01_04 §3.1 names the sky × sun end of 79's worst tied day in words; the number is pinned above, the words here.
+    CAN catch: a rerun that moves the worst day to another end while the canon keeps the old label.
+    CANNOT catch: a label that is right but describes the cell's bark side or wind — the canon quotes only the regime.
+    """
+    d = json.loads((CACHE / FLANGE_FROST).read_text(encoding="utf-8"))
+    words = {"clear_no_sun": "ясне небо без сонця", "overcast_no_sun": "хмарність без сонця",
+             "clear_diffuse_sun": "ясне небо з розсіяним сонцем", "overcast_diffuse_sun": "хмарність із розсіяним сонцем"}
+    text = (REPO / CODIT).read_text(encoding="utf-8")
+    assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text

@@ -1,0 +1,1463 @@
+{
+  "question": "on winter days, does the Ti flange with its capsule make the cambium under the Ø15–Ø29.8 ring colder than under bark without it, and how does the answer move with the sky and the sun?",
+  "method": "1D implicit column on 78's grid (properties of 58) with a surface energy balance — convection, long-wave exchange with a clear (Brutsaert 1975) or overcast sky and air-temperature surroundings at sky view 0.5, and optionally ERA5 diffuse sun — over 30 ERA5 years; under the flange the balance acts through a fin of A_fin/A_contact",
+  "inputs": {
+    "wind_k": [
+      0.0,
+      0.1
+    ],
+    "couplings": [
+      "decoupled",
+      "tied"
+    ],
+    "regimes": [
+      {
+        "name": "clear_no_sun",
+        "overcast": false,
+        "diffuse_sun": false
+      },
+      {
+        "name": "overcast_no_sun",
+        "overcast": true,
+        "diffuse_sun": false
+      },
+      {
+        "name": "clear_diffuse_sun",
+        "overcast": false,
+        "diffuse_sun": true
+      },
+      {
+        "name": "overcast_diffuse_sun",
+        "overcast": true,
+        "diffuse_sun": true
+      }
+    ],
+    "epsilon": 0.9,
+    "sky_view": 0.5,
+    "alpha_bark": 0.8,
+    "alpha_fin": 0.5,
+    "brutsaert": {
+      "a": 1.24,
+      "exponent": "1/7",
+      "units": "e_a hPa, T_a K",
+      "coefficient_read_via": "Crawford & Duchon 1999, J. Appl. Meteor. 38:474 (open text)",
+      "unit_check": {
+        "emissivity_at_10hPa_283K": 0.769,
+        "same_with_e_in_Pa": 1.485
+      }
+    },
+    "trunk_height_for_natural_convection_m": 1.0,
+    "trunk_diameter_m": 0.38,
+    "sapwood_depth_mm": 100.0,
+    "dx_mm": 0.5,
+    "substeps_per_hour": 4,
+    "phloem_mm": 3.0,
+    "spin_up_days": 14,
+    "frost_day_below_C": 0.0,
+    "isotherms_C": [
+      -5.0,
+      -10.0,
+      -15.0,
+      -20.0
+    ]
+  },
+  "areas": {
+    "flange_diameter_mm": 29.8,
+    "flange_thickness_mm": 3.0,
+    "wound_diameter_mm": 15.0,
+    "contact_ring_mm2": 520.75,
+    "flange_band_mm2": 280.86,
+    "capsule_exposed_mm2": 2382.62,
+    "fin_ratio": {
+      "decoupled": 0.5393,
+      "tied": 5.1147
+    }
+  },
+  "bark": {
+    "flange_diameter_mm": 29.8,
+    "facing_spread_mm": 5.175,
+    "thin_mm": 8.325,
+    "thick_mm": 21.0
+  },
+  "clear_sky_emissivity_winter": {
+    "median": 0.705,
+    "p5": 0.616,
+    "p95": 0.759
+  },
+  "scheme_check_rel_error": 0.00397,
+  "diurnal_check_cambium_min_error_K": 0.0099,
+  "timestep_check": {
+    "window_start": "1997-11-27T00:00",
+    "daily_min_err_K": 0.0533,
+    "shift_err_K": 0.025
+  },
+  "mechanism": {
+    "bark": {
+      "equilibrium_minus_air_K": -6.87,
+      "h_c_W_m2K": 3.04,
+      "h_total_W_m2K": 6.47
+    },
+    "capsule": {
+      "equilibrium_minus_air_K": -5.74,
+      "h_c_W_m2K": 4.32,
+      "h_total_W_m2K": 7.8
+    },
+    "tied_over_bark_conductance": 6.2,
+    "reference_hour": {
+      "t_air_C": -10.0,
+      "t_dew_C": -13.0
+    }
+  },
+  "runs": [
+    {
+      "regime": "clear_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4778,
+        "median": -1.2,
+        "p95": -0.64,
+        "max": 0.13,
+        "min": -3.24
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -31.7,
+        "flange": -29.91
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 62633,
+          "flange": 53112
+        },
+        "-10": {
+          "no_flange": 25566,
+          "flange": 20713
+        },
+        "-15": {
+          "no_flange": 10167,
+          "flange": 7821
+        },
+        "-20": {
+          "no_flange": 2619,
+          "flange": 1432
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4778,
+        "median": -0.53,
+        "p95": 0.41,
+        "max": 1.95,
+        "min": -3.51
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -31.7,
+        "flange": -31.72
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 62633,
+          "flange": 53088
+        },
+        "-10": {
+          "no_flange": 25566,
+          "flange": 21643
+        },
+        "-15": {
+          "no_flange": 10167,
+          "flange": 8679
+        },
+        "-20": {
+          "no_flange": 2619,
+          "flange": 2028
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4641,
+        "median": -2.86,
+        "p95": -2.48,
+        "max": -1.47,
+        "min": -3.86
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -31.16,
+        "flange": -27.57
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 57850,
+          "flange": 33893
+        },
+        "-10": {
+          "no_flange": 23410,
+          "flange": 13409
+        },
+        "-15": {
+          "no_flange": 9265,
+          "flange": 4058
+        },
+        "-20": {
+          "no_flange": 2208,
+          "flange": 676
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4641,
+        "median": -2.34,
+        "p95": -1.31,
+        "max": 0.39,
+        "min": -5.8
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -31.16,
+        "flange": -29.24
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 57850,
+          "flange": 34289
+        },
+        "-10": {
+          "no_flange": 23410,
+          "flange": 13909
+        },
+        "-15": {
+          "no_flange": 9265,
+          "flange": 4493
+        },
+        "-20": {
+          "no_flange": 2208,
+          "flange": 853
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2480,
+        "median": -0.23,
+        "p95": 0.43,
+        "max": 1.1,
+        "min": -1.48
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -24.02,
+        "flange": -23.47
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 19214,
+          "flange": 18914
+        },
+        "-10": {
+          "no_flange": 6867,
+          "flange": 6620
+        },
+        "-15": {
+          "no_flange": 1141,
+          "flange": 1038
+        },
+        "-20": {
+          "no_flange": 192,
+          "flange": 161
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2480,
+        "median": 0.58,
+        "p95": 1.69,
+        "max": 3.23,
+        "min": -2.54
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -24.02,
+        "flange": -25.41
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 19214,
+          "flange": 19798
+        },
+        "-10": {
+          "no_flange": 6867,
+          "flange": 7328
+        },
+        "-15": {
+          "no_flange": 1141,
+          "flange": 1459
+        },
+        "-20": {
+          "no_flange": 192,
+          "flange": 277
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2504,
+        "median": 0.04,
+        "p95": 0.2,
+        "max": 0.5,
+        "min": -0.32
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -24.34,
+        "flange": -24.5
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 19375,
+          "flange": 19441
+        },
+        "-10": {
+          "no_flange": 6983,
+          "flange": 7026
+        },
+        "-15": {
+          "no_flange": 1173,
+          "flange": 1231
+        },
+        "-20": {
+          "no_flange": 207,
+          "flange": 219
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2504,
+        "median": 0.56,
+        "p95": 1.68,
+        "max": 3.5,
+        "min": -2.57
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -24.34,
+        "flange": -25.72
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 19375,
+          "flange": 19914
+        },
+        "-10": {
+          "no_flange": 6983,
+          "flange": 7440
+        },
+        "-15": {
+          "no_flange": 1173,
+          "flange": 1502
+        },
+        "-20": {
+          "no_flange": 207,
+          "flange": 289
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4367,
+        "median": -0.78,
+        "p95": -0.1,
+        "max": 0.83,
+        "min": -2.71
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.92,
+        "flange": -29.38
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 46969,
+          "flange": 44984
+        },
+        "-10": {
+          "no_flange": 18555,
+          "flange": 17262
+        },
+        "-15": {
+          "no_flange": 6979,
+          "flange": 6249
+        },
+        "-20": {
+          "no_flange": 1424,
+          "flange": 1056
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4367,
+        "median": 0.09,
+        "p95": 1.36,
+        "max": 3.2,
+        "min": -3.01
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.92,
+        "flange": -31.45
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 46969,
+          "flange": 45315
+        },
+        "-10": {
+          "no_flange": 18555,
+          "flange": 18362
+        },
+        "-15": {
+          "no_flange": 6979,
+          "flange": 7097
+        },
+        "-20": {
+          "no_flange": 1424,
+          "flange": 1570
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4242,
+        "median": -2.24,
+        "p95": -1.51,
+        "max": -0.64,
+        "min": -3.33
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.39,
+        "flange": -27.32
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 43447,
+          "flange": 30632
+        },
+        "-10": {
+          "no_flange": 17212,
+          "flange": 12010
+        },
+        "-15": {
+          "no_flange": 6339,
+          "flange": 3392
+        },
+        "-20": {
+          "no_flange": 1250,
+          "flange": 561
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 4242,
+        "median": -1.59,
+        "p95": -0.29,
+        "max": 1.49,
+        "min": -5.13
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.39,
+        "flange": -29.11
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 43447,
+          "flange": 31128
+        },
+        "-10": {
+          "no_flange": 17212,
+          "flange": 12580
+        },
+        "-15": {
+          "no_flange": 6339,
+          "flange": 3815
+        },
+        "-20": {
+          "no_flange": 1250,
+          "flange": 744
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2008,
+        "median": 0.19,
+        "p95": 1.01,
+        "max": 1.78,
+        "min": -0.96
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.08,
+        "flange": -22.89
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13096,
+          "flange": 15232
+        },
+        "-10": {
+          "no_flange": 3787,
+          "flange": 4792
+        },
+        "-15": {
+          "no_flange": 587,
+          "flange": 679
+        },
+        "-20": {
+          "no_flange": 105,
+          "flange": 111
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2008,
+        "median": 1.34,
+        "p95": 2.61,
+        "max": 4.1,
+        "min": -1.96
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.08,
+        "flange": -25.07
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13096,
+          "flange": 16291
+        },
+        "-10": {
+          "no_flange": 3787,
+          "flange": 5597
+        },
+        "-15": {
+          "no_flange": 587,
+          "flange": 1061
+        },
+        "-20": {
+          "no_flange": 105,
+          "flange": 206
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2110,
+        "median": 0.69,
+        "p95": 1.38,
+        "max": 2.0,
+        "min": 0.14
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.53,
+        "flange": -24.23
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13851,
+          "flange": 17358
+        },
+        "-10": {
+          "no_flange": 4218,
+          "flange": 6107
+        },
+        "-15": {
+          "no_flange": 652,
+          "flange": 1007
+        },
+        "-20": {
+          "no_flange": 122,
+          "flange": 187
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thin",
+      "bark_mm": 8.325,
+      "shift_K": {
+        "frost_days": 2110,
+        "median": 1.36,
+        "p95": 2.78,
+        "max": 4.62,
+        "min": -1.88
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.53,
+        "flange": -25.51
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13851,
+          "flange": 17972
+        },
+        "-10": {
+          "no_flange": 4218,
+          "flange": 6523
+        },
+        "-15": {
+          "no_flange": 652,
+          "flange": 1292
+        },
+        "-20": {
+          "no_flange": 122,
+          "flange": 261
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4675,
+        "median": -1.12,
+        "p95": -0.68,
+        "max": -0.11,
+        "min": -2.67
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.8,
+        "flange": -28.94
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 62859,
+          "flange": 53260
+        },
+        "-10": {
+          "no_flange": 25108,
+          "flange": 20351
+        },
+        "-15": {
+          "no_flange": 9674,
+          "flange": 7512
+        },
+        "-20": {
+          "no_flange": 2217,
+          "flange": 1238
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4675,
+        "median": -0.73,
+        "p95": -0.04,
+        "max": 1.44,
+        "min": -2.73
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.8,
+        "flange": -30.38
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 62859,
+          "flange": 53182
+        },
+        "-10": {
+          "no_flange": 25108,
+          "flange": 21065
+        },
+        "-15": {
+          "no_flange": 9674,
+          "flange": 8035
+        },
+        "-20": {
+          "no_flange": 2217,
+          "flange": 1599
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4526,
+        "median": -2.86,
+        "p95": -2.52,
+        "max": -1.65,
+        "min": -3.77
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.26,
+        "flange": -26.73
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 57668,
+          "flange": 33994
+        },
+        "-10": {
+          "no_flange": 23011,
+          "flange": 12801
+        },
+        "-15": {
+          "no_flange": 8871,
+          "flange": 3671
+        },
+        "-20": {
+          "no_flange": 1877,
+          "flange": 538
+        }
+      }
+    },
+    {
+      "regime": "clear_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4526,
+        "median": -2.56,
+        "p95": -1.8,
+        "max": -0.54,
+        "min": -4.77
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -30.26,
+        "flange": -27.63
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 57668,
+          "flange": 34080
+        },
+        "-10": {
+          "no_flange": 23011,
+          "flange": 13397
+        },
+        "-15": {
+          "no_flange": 8871,
+          "flange": 4035
+        },
+        "-20": {
+          "no_flange": 1877,
+          "flange": 659
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 2408,
+        "median": -0.17,
+        "p95": 0.37,
+        "max": 0.86,
+        "min": -1.15
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.11,
+        "flange": -22.5
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 18773,
+          "flange": 18495
+        },
+        "-10": {
+          "no_flange": 6481,
+          "flange": 6262
+        },
+        "-15": {
+          "no_flange": 973,
+          "flange": 873
+        },
+        "-20": {
+          "no_flange": 142,
+          "flange": 93
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 2408,
+        "median": 0.38,
+        "p95": 1.24,
+        "max": 2.7,
+        "min": -1.85
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.11,
+        "flange": -24.18
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 18773,
+          "flange": 19293
+        },
+        "-10": {
+          "no_flange": 6481,
+          "flange": 6917
+        },
+        "-15": {
+          "no_flange": 973,
+          "flange": 1162
+        },
+        "-20": {
+          "no_flange": 142,
+          "flange": 198
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 2426,
+        "median": 0.03,
+        "p95": 0.15,
+        "max": 0.41,
+        "min": -0.22
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.46,
+        "flange": -23.64
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 18867,
+          "flange": 18937
+        },
+        "-10": {
+          "no_flange": 6572,
+          "flange": 6634
+        },
+        "-15": {
+          "no_flange": 1013,
+          "flange": 1045
+        },
+        "-20": {
+          "no_flange": 158,
+          "flange": 165
+        }
+      }
+    },
+    {
+      "regime": "overcast_no_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 2426,
+        "median": 0.35,
+        "p95": 1.21,
+        "max": 2.89,
+        "min": -1.93
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -23.46,
+        "flange": -24.34
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 18867,
+          "flange": 19370
+        },
+        "-10": {
+          "no_flange": 6572,
+          "flange": 6993
+        },
+        "-15": {
+          "no_flange": 1013,
+          "flange": 1193
+        },
+        "-20": {
+          "no_flange": 158,
+          "flange": 206
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4174,
+        "median": -0.59,
+        "p95": 0.15,
+        "max": 0.92,
+        "min": -2.22
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -29.8,
+        "flange": -28.32
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 46696,
+          "flange": 44926
+        },
+        "-10": {
+          "no_flange": 17887,
+          "flange": 16838
+        },
+        "-15": {
+          "no_flange": 6506,
+          "flange": 5872
+        },
+        "-20": {
+          "no_flange": 1119,
+          "flange": 923
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4174,
+        "median": -0.08,
+        "p95": 0.97,
+        "max": 2.49,
+        "min": -2.34
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -29.8,
+        "flange": -29.93
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 46696,
+          "flange": 45073
+        },
+        "-10": {
+          "no_flange": 17887,
+          "flange": 17600
+        },
+        "-15": {
+          "no_flange": 6506,
+          "flange": 6477
+        },
+        "-20": {
+          "no_flange": 1119,
+          "flange": 1191
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4079,
+        "median": -2.13,
+        "p95": -1.28,
+        "max": -0.45,
+        "min": -3.18
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -29.29,
+        "flange": -26.4
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 42966,
+          "flange": 30499
+        },
+        "-10": {
+          "no_flange": 16640,
+          "flange": 11411
+        },
+        "-15": {
+          "no_flange": 5923,
+          "flange": 2947
+        },
+        "-20": {
+          "no_flange": 1003,
+          "flange": 435
+        }
+      }
+    },
+    {
+      "regime": "clear_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 4079,
+        "median": -1.74,
+        "p95": -0.62,
+        "max": 0.68,
+        "min": -4.24
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -29.29,
+        "flange": -27.23
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 42966,
+          "flange": 30769
+        },
+        "-10": {
+          "no_flange": 16640,
+          "flange": 11987
+        },
+        "-15": {
+          "no_flange": 5923,
+          "flange": 3374
+        },
+        "-20": {
+          "no_flange": 1003,
+          "flange": 550
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 1869,
+        "median": 0.38,
+        "p95": 1.11,
+        "max": 1.75,
+        "min": -0.69
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -22.01,
+        "flange": -21.85
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 12548,
+          "flange": 14736
+        },
+        "-10": {
+          "no_flange": 3351,
+          "flange": 4378
+        },
+        "-15": {
+          "no_flange": 448,
+          "flange": 535
+        },
+        "-20": {
+          "no_flange": 42,
+          "flange": 49
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.0,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 1869,
+        "median": 1.15,
+        "p95": 2.2,
+        "max": 3.53,
+        "min": -1.4
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -22.01,
+        "flange": -23.64
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 12548,
+          "flange": 15595
+        },
+        "-10": {
+          "no_flange": 3351,
+          "flange": 5134
+        },
+        "-15": {
+          "no_flange": 448,
+          "flange": 792
+        },
+        "-20": {
+          "no_flange": 42,
+          "flange": 147
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "decoupled",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 1965,
+        "median": 0.79,
+        "p95": 1.61,
+        "max": 2.27,
+        "min": 0.27
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -22.48,
+        "flange": -23.32
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13314,
+          "flange": 16861
+        },
+        "-10": {
+          "no_flange": 3750,
+          "flange": 5657
+        },
+        "-15": {
+          "no_flange": 514,
+          "flange": 848
+        },
+        "-20": {
+          "no_flange": 67,
+          "flange": 135
+        }
+      }
+    },
+    {
+      "regime": "overcast_diffuse_sun",
+      "coupling": "tied",
+      "wind_k": 0.1,
+      "bark_side": "thick",
+      "bark_mm": 21.0,
+      "shift_K": {
+        "frost_days": 1965,
+        "median": 1.24,
+        "p95": 2.47,
+        "max": 4.05,
+        "min": -1.26
+      },
+      "cambium_min_C_model_lower_bound": {
+        "no_flange": -22.48,
+        "flange": -24.05
+      },
+      "hours_below": {
+        "-5": {
+          "no_flange": 13314,
+          "flange": 17277
+        },
+        "-10": {
+          "no_flange": 3750,
+          "flange": 6050
+        },
+        "-15": {
+          "no_flange": 514,
+          "flange": 996
+        },
+        "-20": {
+          "no_flange": 67,
+          "flange": 178
+        }
+      }
+    }
+  ],
+  "regimes": {
+    "clear_no_sun": {
+      "decoupled": {
+        "median_K_range": [
+          -2.86,
+          -1.12
+        ],
+        "p95_K_max": -0.64,
+        "max_K": 0.13,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.0
+        }
+      },
+      "tied": {
+        "median_K_range": [
+          -2.56,
+          -0.53
+        ],
+        "p95_K_max": 0.41,
+        "max_K": 1.95,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.0
+        }
+      }
+    },
+    "overcast_no_sun": {
+      "decoupled": {
+        "median_K_range": [
+          -0.23,
+          0.04
+        ],
+        "p95_K_max": 0.43,
+        "max_K": 1.1,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.0
+        }
+      },
+      "tied": {
+        "median_K_range": [
+          0.35,
+          0.58
+        ],
+        "p95_K_max": 1.69,
+        "max_K": 3.5,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.1
+        }
+      }
+    },
+    "clear_diffuse_sun": {
+      "decoupled": {
+        "median_K_range": [
+          -2.24,
+          -0.59
+        ],
+        "p95_K_max": 0.15,
+        "max_K": 0.92,
+        "worst_cell": {
+          "bark_side": "thick",
+          "wind_k": 0.0
+        }
+      },
+      "tied": {
+        "median_K_range": [
+          -1.74,
+          0.09
+        ],
+        "p95_K_max": 1.36,
+        "max_K": 3.2,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.0
+        }
+      }
+    },
+    "overcast_diffuse_sun": {
+      "decoupled": {
+        "median_K_range": [
+          0.19,
+          0.79
+        ],
+        "p95_K_max": 1.61,
+        "max_K": 2.27,
+        "worst_cell": {
+          "bark_side": "thick",
+          "wind_k": 0.1
+        }
+      },
+      "tied": {
+        "median_K_range": [
+          1.15,
+          1.36
+        ],
+        "p95_K_max": 2.78,
+        "max_K": 4.62,
+        "worst_cell": {
+          "bark_side": "thin",
+          "wind_k": 0.1
+        }
+      }
+    }
+  },
+  "sensitivity_thin_bark_still_air_clear_no_sun": {
+    "sapwood_190mm": {
+      "override": {
+        "sapwood_mm": 190.0
+      },
+      "decoupled": {
+        "frost_days": 4777,
+        "median": -1.19,
+        "p95": -0.64,
+        "max": 0.1,
+        "min": -3.31
+      },
+      "tied": {
+        "frost_days": 4777,
+        "median": -0.51,
+        "p95": 0.56,
+        "max": 2.41,
+        "min": -3.37
+      }
+    },
+    "trunk_height_0.3m": {
+      "override": {
+        "trunk_l_m": 0.3
+      },
+      "decoupled": {
+        "frost_days": 4708,
+        "median": -0.94,
+        "p95": -0.33,
+        "max": 0.49,
+        "min": -3.07
+      },
+      "tied": {
+        "frost_days": 4708,
+        "median": -0.27,
+        "p95": 0.65,
+        "max": 2.14,
+        "min": -3.1
+      }
+    },
+    "capsule_h_c_as_bark": {
+      "override": {
+        "cap_hc_as_bark": true
+      },
+      "decoupled": {
+        "frost_days": 4778,
+        "median": -0.29,
+        "p95": 0.53,
+        "max": 1.7,
+        "min": -2.77
+      },
+      "tied": {
+        "frost_days": 4778,
+        "median": 0.44,
+        "p95": 1.41,
+        "max": 3.03,
+        "min": -2.38
+      }
+    }
+  },
+  "verdict": {
+    "tied_median_K_range_by_regime": {
+      "clear_no_sun": [
+        -2.56,
+        -0.53
+      ],
+      "overcast_no_sun": [
+        0.35,
+        0.58
+      ],
+      "clear_diffuse_sun": [
+        -1.74,
+        0.09
+      ],
+      "overcast_diffuse_sun": [
+        1.15,
+        1.36
+      ]
+    },
+    "tied_max_K": 4.62,
+    "tied_max_regime": "overcast_diffuse_sun",
+    "text": "The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the flange: the tied median is -2.6…-0.5 K (warmer under the flange), because a long-wave deficit depresses flat bark (-6.9 K at its equilibrium) more than the capsule (-5.7 K) — with the capsule's h_c set to bark's the tied median turns +0.4 K. Overcast, no sun: +0.3…+0.6 K (colder) — the fin's conductance to the air (6× bark's) makes the ring follow the air's daily fall. Diffuse sun on both raises it again (bark banks the gain, the fin sheds it): clear -1.7…+0.1 K, overcast +1.1…+1.4 K. The worst day of the four ends is +4.6 K colder (overcast_diffuse_sun, tied). Decoupled — the flange's band alone, 0.54× the ring — moves the same way with smaller medians. Beam sun on a trunk face, real cloud cover, the real coupling and any injury threshold are not in the tree; 1D inflates the shift in both signs."
+  },
+  "ceilings": [
+    "the sky and the sun are bracketed by their ends — real cloud cover (ERA5) and beam sun on a trunk face are not in the tree, so the sign at the site is a mixture this run does not weigh",
+    "1D and zero contact resistance inflate the shift in both signs; the tied end is the upper end of the coupling axis only, and the two coupling ends bracket the median, not the tail",
+    "the radome↔flange coupling is not measured — decoupled and tied are its two ends",
+    "F 0.5, ε 0.90, α_bark 0.80 and the trunk's convection correlation are ours; α_fin is the radome's specified ceiling and a lighter finish enlarges the shift",
+    "no injury verdict — no frost-hardiness threshold for pine cambium in the tree",
+    "absolute minima are the model's lower bound (weeks of sunless clear sky), not a forecast",
+    "snow or rime on the bark or the radome is not modelled",
+    "the lump here is fed by the bark — it is not the capsule temperature 71 gives the EDLC floor"
+  ]
+}
