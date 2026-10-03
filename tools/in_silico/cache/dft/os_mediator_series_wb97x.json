@@ -1,0 +1,42 @@
+{
+  "method": "WB97X/def2-tzvp+LANL2DZ(Os)+C-PCM(water) vertical \u0394SCF \u2014 21f's wb97x tier, imported; Os(III) level shift 0.3, conv_tol 1e-06",
+  "environment": {
+    "pyscf": "2.11.0"
+  },
+  "complexes": {
+    "nh2": {
+      "sigma_para": -0.66,
+      "os2": {
+        "label": "os2 nh2 (wb97x)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 62,
+        "n_electrons": 272,
+        "converged": true,
+        "wall_seconds": 4318.4,
+        "E_total_Ha": -2029.188968387617,
+        "HOMO_Ha": -0.23861189712827569,
+        "LUMO_Ha": -0.0008291512043741271,
+        "HOMO_eV": -6.492960495645464,
+        "LUMO_eV": -0.022562353678550508,
+        "gap_eV": 6.470398141966914
+      },
+      "os3": {
+        "label": "os3 nh2 (wb97x)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 62,
+        "n_electrons": 271,
+        "converged": true,
+        "wall_seconds": 41014.8,
+        "E_total_Ha": -2029.0474602026443,
+        "HOMO_Ha": -0.30258704242389817,
+        "LUMO_Ha": -0.04706224552823148,
+        "HOMO_eV": -8.23381288442785,
+        "LUMO_eV": -1.2806289406722284,
+        "gap_eV": 6.953183943755622
+      },
+      "dE_red_eV": -3.8506338782618275
+    }
+  }
+}
