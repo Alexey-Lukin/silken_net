@@ -279,10 +279,12 @@ NU_PEEK = 0.40                  # — PEEK Poisson's ratio
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
 
 # PEEK 450G stress relaxation under CONSTANT STRAIN (a press-fit, a clamped rim) — NOT creep. Semicrystalline
-# PEEK keeps a relaxed (equilibrium) modulus, so stress decays toward a floor E∞, never to zero — 2-term Prony:
+# PEEK keeps a relaxed (equilibrium) modulus — its crystalline phase forms a permanent elastic network — so stress
+# decays toward a floor E∞, never to zero — 2-term Prony:
 #   σ(t) = σ(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
 # INTERIM literature values (HW.3.IS 2026-06-21): the 2-term STRUCTURE follows published PEEK 450G viscoelastic
-# models (MDPI Polymers 2021, PMC8199459); the coefficients are kept conservative — at forest temperatures
+# models (MDPI Polymers 2021, PMC8199459 — an ISV model with TWO relaxing components — plus a fractional-Maxwell
+# PEEK-aging fit); the coefficients are kept conservative — at forest temperatures
 # (−30…+40 °C, ≪ Tg 143 °C) the retained fraction is likely HIGHER than 0.65, so a residual force is UNDER-stated
 # and a required initial force OVER-stated, the safe direction for both consumers. The authoritative
 # Maxwell-Wiechert fit on measured creep is the commercial FEA/Prony vendor's (00_07 HW.26, ⚖️ 2026-09-27);
