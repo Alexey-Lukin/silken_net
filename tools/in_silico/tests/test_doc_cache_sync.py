@@ -2224,6 +2224,23 @@ def test_press_fit_case_mirrors_constants(label, doc_rel, pattern, expected):
             f"or, if the constant moved on purpose, re-run `56` and re-read the case's results first.")
 
 
+# ── HW.26 (2026-10-03): the torque path onto the anchor's own axis, owner = script 77 ──
+# The two numbers 01_01 §4.3 C quotes move with inputs prose never re-reads — the band (lib.constants), the
+# relaxation, the Lamé of lib.mechanics, the CEM geometry and 55's lock window.
+TORQUE = "mechanical/anchor_torque_path.json"
+CHECKS += [
+    ("HW.26 · slip threshold τ_s*, low end at 20 °C → anchor_torque_path.json",
+     COAXIAL, rf"τ_s\* = \*\*{N}–[\d.]+ МПа\*\* при 20 °C", TORQUE,
+     lambda d: d["verdict"]["tau_s_star_MPa_at_assembly_temperature"][0], 0.005),
+    ("HW.26 · slip threshold τ_s*, high end at 20 °C → anchor_torque_path.json",
+     COAXIAL, rf"τ_s\* = \*\*[\d.]+–{N} МПа\*\* при 20 °C", TORQUE,
+     lambda d: d["verdict"]["tau_s_star_MPa_at_assembly_temperature"][1], 0.005),
+    ("HW.26 · PEEK bore shear capped by the friction μ·P_c → anchor_torque_path.json",
+     COAXIAL, rf"μ·P_c ≤ \*\*{N} МПа\*\*", TORQUE,
+     lambda d: d["verdict"]["peek_bore_shear_cap_MPa_max"], 0.005),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

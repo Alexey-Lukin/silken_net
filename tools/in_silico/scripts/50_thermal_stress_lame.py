@@ -304,7 +304,7 @@ def main() -> int:
             "sap_pressure_MPa": P_SAP_MPa,
             "seal_holds_20yr_min_fit": bool(pc_20_min > P_SAP_MPa),
             "relaxation_series": relax_results,
-            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the fit does not seal - and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18). relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 00_02 Стаття 2).",
+            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the fit does not seal - and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18). relax_floor/tau = interim literature-Prony (lib.constants; the authoritative fit is the commercial FEA/Prony vendor's, 00_07 HW.26).",
         },
         "winter": {
             "dT_K": dT_cold,

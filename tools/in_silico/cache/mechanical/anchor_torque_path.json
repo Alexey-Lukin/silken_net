@@ -1,0 +1,225 @@
+{
+  "method": "analytic: Saint-Venant torsion of the stem (rotation gradient along a radial anchor) × rigid-inclusion turning stiffness 4πGa² (G cancels), against Coulomb friction of the Lamé press-fit (lib.mechanics); inversion for the stem-surface torsional shear stress at which the press-fit slips",
+  "inputs": {
+    "mu_bracket_UNMEASURED": [
+      0.1,
+      0.4
+    ],
+    "service_years": 20.0,
+    "relax_floor": 0.65,
+    "relax_tau_years": 1.0
+  },
+  "geometry": {
+    "gyroid_radius_m": 0.0055,
+    "gyroid_length_m": 0.04,
+    "sleeve_outer_radius_m": 0.0075,
+    "sleeve_length_m": 0.05,
+    "shank_radius_m": 0.0055,
+    "insertion_window_m": [
+      0.014,
+      0.018000000000000002
+    ],
+    "centroid_separation_m": 0.045,
+    "coupling_factor_S_m3": 1e-06,
+    "stem_radius_m": 0.19
+  },
+  "grid": [
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.1,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 0.3171,
+      "capacity_N_m": 0.0844,
+      "tau_s_star_MPa": 0.067,
+      "peek_bore_shear_cap_MPa": 0.0317
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.1,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 0.3171,
+      "capacity_N_m": 0.1085,
+      "tau_s_star_MPa": 0.0862,
+      "peek_bore_shear_cap_MPa": 0.0317
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.4,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 0.3171,
+      "capacity_N_m": 0.3375,
+      "tau_s_star_MPa": 0.2681,
+      "peek_bore_shear_cap_MPa": 0.1268
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.4,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 0.3171,
+      "capacity_N_m": 0.4339,
+      "tau_s_star_MPa": 0.3447,
+      "peek_bore_shear_cap_MPa": 0.1268
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.1,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 2.1563,
+      "capacity_N_m": 0.5738,
+      "tau_s_star_MPa": 0.4557,
+      "peek_bore_shear_cap_MPa": 0.2156
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.1,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 2.1563,
+      "capacity_N_m": 0.7377,
+      "tau_s_star_MPa": 0.586,
+      "peek_bore_shear_cap_MPa": 0.2156
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.4,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 2.1563,
+      "capacity_N_m": 2.2951,
+      "tau_s_star_MPa": 1.823,
+      "peek_bore_shear_cap_MPa": 0.8625
+    },
+    {
+      "temperature_C": 20.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.4,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 2.1563,
+      "capacity_N_m": 2.9508,
+      "tau_s_star_MPa": 2.3438,
+      "peek_bore_shear_cap_MPa": 0.8625
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.1,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 0.0,
+      "capacity_N_m": 0.0,
+      "tau_s_star_MPa": 0.0,
+      "peek_bore_shear_cap_MPa": 0.0
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.1,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 0.0,
+      "capacity_N_m": 0.0,
+      "tau_s_star_MPa": 0.0,
+      "peek_bore_shear_cap_MPa": 0.0
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.4,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 0.0,
+      "capacity_N_m": 0.0,
+      "tau_s_star_MPa": 0.0,
+      "peek_bore_shear_cap_MPa": 0.0
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band floor",
+      "interference_diametral_um": 5.0,
+      "mu": 0.4,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 0.0,
+      "capacity_N_m": 0.0,
+      "tau_s_star_MPa": 0.0,
+      "peek_bore_shear_cap_MPa": 0.0
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.1,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 1.6205,
+      "capacity_N_m": 0.4312,
+      "tau_s_star_MPa": 0.3425,
+      "peek_bore_shear_cap_MPa": 0.1621
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.1,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 1.6205,
+      "capacity_N_m": 0.5544,
+      "tau_s_star_MPa": 0.4404,
+      "peek_bore_shear_cap_MPa": 0.1621
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.4,
+      "insertion_mm": 14.0,
+      "P_c_relaxed_MPa": 1.6205,
+      "capacity_N_m": 1.7248,
+      "tau_s_star_MPa": 1.37,
+      "peek_bore_shear_cap_MPa": 0.6482
+    },
+    {
+      "temperature_C": 40.0,
+      "band_edge": "band top",
+      "interference_diametral_um": 34.0,
+      "mu": 0.4,
+      "insertion_mm": 18.0,
+      "P_c_relaxed_MPa": 1.6205,
+      "capacity_N_m": 2.2176,
+      "tau_s_star_MPa": 1.7615,
+      "peek_bore_shear_cap_MPa": 0.6482
+    }
+  ],
+  "verdict": {
+    "wind_path_exists": true,
+    "demand_N_m_per_MPa_of_tau_s": 1.259,
+    "tau_s_star_MPa_at_assembly_temperature": [
+      0.067,
+      2.3438
+    ],
+    "tau_s_star_MPa_max_at_summer_extreme": 1.7615,
+    "capacity_zero_at_band_floor_at_summer_extreme": true,
+    "peek_bore_shear_cap_MPa_max": 0.8625,
+    "event_path": "the bayonet's locking and unlocking torque must be reacted by the flange: today only through its seats (the sleeve's end face and the faced bark), because the Zone-3 shank is a Ø9 placeholder in the Ø11 bore — clearance, so it passes none (01_01 §1, HW.8) — unless the flange is held by a tool while the radome turns; the collar is not modelled, so the torque's size is not computed — a lever exists (a tool hold), not a number",
+    "text": "A wind torque path onto the anchor's own axis EXISTS: stem torsion turns wood at the bark more than at the tip (ω_r = −½·r·φ′), bending does not. The shank↔sleeve press-fit passes it until the stem-surface torsional shear stress reaches τ_s* = 0.07–2.34 MPa at 20 °C (≤ 1.76 MPa at 40 °C), and at the band floor at 40 °C it carries NOTHING — the shank turns in the sleeve at any torsion. While it holds, the PEEK's shear at the bore is capped by the friction itself at μ·P_c ≤ 0.86 MPa, so the torsional creep §4.3 C was written against cannot build beyond that cap; above it the interface slips by ½·φ′·Δx — a fretting question, not a creep one. «Drop C on the absence of a path» is therefore not available: the path exists."
+  },
+  "ceilings": [
+    "no measured stem torsion is read — τ_s* is a threshold, not a forecast",
+    "slip amplitude not computed — needs G_LT of green pine, not in the tree",
+    "μ unmeasured — bracketed",
+    "the sleeve's outer part in dead bark couples weaker — the demand here is an upper bound on that axis",
+    "the porous gyroid is coupled as a solid cylinder of its OD — an upper bound",
+    "the bayonet locking torque (event path) is named, not computed — the collar is not modelled"
+  ]
+}

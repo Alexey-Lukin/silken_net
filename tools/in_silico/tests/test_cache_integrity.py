@@ -1632,3 +1632,32 @@ def test_script_exists(script):
     path = REPO / "tools/in_silico/scripts" / script
     assert path.exists(), f"Missing script: {script}"
     assert path.stat().st_size > 500, f"Script too small: {script}"
+
+
+def test_anchor_torque_path_invariants():
+    """77 (HW.26): invariants that hold whatever the inputs move to.
+
+    CAN catch: a sign flip in the thermal term (the floor would grip at +40 °C instead of opening a gap); a
+    capacity that stops being μ·P_c·2π·a²·ℓ (the PEEK cap and the friction would part); a threshold that stops
+    rising with μ and with the band; the summer extreme not costing capacity at the band top.
+    CANNOT catch: whether the wind torsion is large — no measured value is read by 77 — nor whether μ is right
+    (an unmeasured bracket); those are its declared ceilings.
+    """
+    d = json.loads((MECHANICAL / "anchor_torque_path.json").read_text(encoding="utf-8"))
+    v, rows = d["verdict"], d["grid"]
+    assert v["wind_path_exists"] is True
+    assert v["capacity_zero_at_band_floor_at_summer_extreme"] is True
+    hot_floor = [r for r in rows if r["temperature_C"] == 40.0 and r["band_edge"] == "band floor"]
+    assert hot_floor and all(r["P_c_relaxed_MPa"] == 0.0 and r["tau_s_star_MPa"] == 0.0 for r in hot_floor)
+    for r in rows:
+        assert abs(r["peek_bore_shear_cap_MPa"] - r["mu"] * r["P_c_relaxed_MPa"]) < 1e-3
+    def tau(t, edge, mu, ins):
+        return next(r["tau_s_star_MPa"] for r in rows if (r["temperature_C"], r["band_edge"], r["mu"],
+                                                          r["insertion_mm"]) == (t, edge, mu, ins))
+    mus = sorted({r["mu"] for r in rows})
+    ins = sorted({r["insertion_mm"] for r in rows})
+    for t, edge, l_s in itertools.product((20.0, 40.0), ("band top",), ins):
+        assert tau(t, edge, mus[0], l_s) < tau(t, edge, mus[-1], l_s)
+    for mu, l_s in itertools.product(mus, ins):
+        assert tau(20.0, "band floor", mu, l_s) < tau(20.0, "band top", mu, l_s)
+        assert tau(40.0, "band top", mu, l_s) < tau(20.0, "band top", mu, l_s)

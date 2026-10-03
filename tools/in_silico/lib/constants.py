@@ -297,6 +297,9 @@ POGO_PIN_COUNT = 2              # centre (GND) + outer ring (V+), 02_02 §1.2
 # generous bound stands in wherever a lift force is needed — never quote it as the seal's force.
 GENEROUS_ORING_BOUND_N = 100.0  # N
 
+# The smallest host stem: the 4 % CODIT rule admits the Ø15 wound from DBH 38 cm (01_01 §1, Zone 2 — mirror, edit there).
+DBH_MIN_CM = 38.0               # cm
+
 # Frozen coaxial geometry (HW.33, 2026-06-20): Ti shaft Ø11 → interface r 5.5 mm;
 # PEEK wall 2 mm → outer r 7.5 mm (OD = wound Ø15). Outer surface sits in the tree (free).
 R_INTERFACE_M = 5.5e-3          # m — Ti↔PEEK press-fit contact radius (Ø11 shaft / 2)
