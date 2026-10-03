@@ -449,15 +449,24 @@
     "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. \u26d4 The number itself is NOT ours to invent (00_07 HW.33: it comes from whoever machines the part) \u2014 what this derives is the REQUIREMENT the shop's tolerance has to fit inside, i.e. it turns \u00abwhat is your tolerance?\u00bb into \u00abcan you hold \u00b1X?\u00bb. \u26a0\ufe0f And a general-tolerance GRADE is not a substitute: a grade is a table keyed to the nominal size, so citing one without opening it at 1.344 mm is a claim, not a specification \u2014 see the allocation rows."
   },
   "rim_datum_creep": {
-    "rim_contact_area_mm2": 189.1,
-    "force_to_reach_relax_regime_N": 473.0,
-    "relax_regime_floor_MPa": 2.5,
+    "frame": "DIMENSIONAL \u2014 the rim is a datum while the bayonet clamp exceeds the lift force; then constant strain, the stress relaxes and the geometry stays (01_01 \u00a74.2, Correction A)",
+    "relax_floor": 0.65,
+    "relax_tau_years": 1.0,
+    "service_years": 20.0,
+    "relax_fraction_at_service": 0.65,
     "pogo_pair_force_N_upper_bound": 1.92,
-    "stress_at_pogo_alone_MPa": 0.0102,
-    "stress_at_100N_assumed_total_MPa": 0.529,
-    "margin_x_at_100N": 4.7,
-    "missing_datum": "the O-ring compression load per unit of seal length \u2014 it has no home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
-    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 473 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the unmeasured O-ring leaves a 4.7x margin. No creep member is warranted in the Z-chain for the rim.",
+    "o_ring_force_N": null,
+    "o_ring_generous_bound_N_assumed": 100.0,
+    "required_initial_clamp_N": {
+      "pogo_pair_only": 3.0,
+      "with_generous_o_ring": 156.8
+    },
+    "lug_root_capacity_N_from_73": 457.0,
+    "lug_root_margin_x_over_required": 2.9,
+    "rim_contact_area_mm2": 189.1,
+    "seat_bearing_MPa_at_required_clamp": 0.829,
+    "missing_datum": "the O-ring compression load (no home in canon), the clamp the bayonet delivers (collar and lug ramp not modelled) and the PEEK ledge under the lug (geometry not modelled) \u2014 the first is bounded generously, the other two are what this requirement is HANDED to.",
+    "verdict": "CONDITIONAL \u2014 no creep member is warranted in the Z-chain for the rim IF the bayonet clamps it onto the flange face with an initial force of at least 157 N (lift = pogo pair 1.92 N + a generous 100 N for the unmeasured O-ring, divided by the 20-year relaxation fraction 0.65); the titanium lug root carries 457 N at the print floor (2.9\u00d7, `73`), while the PEEK ledge under the lug is not modelled. No artefact specifies that clamp yet: a bayonet without it lets the O-ring lift the radome onto the lug ledge, where PEEK creeps under a constant load and the one-dimension O-ring chain stops being true.",
     "skirt_note": "the lower cavity is CUT AWAY to r=15.2 to admit the \u00d830 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
   "collar_radial_budget": {

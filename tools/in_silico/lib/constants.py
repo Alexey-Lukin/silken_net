@@ -278,6 +278,25 @@ E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
 
+# PEEK 450G stress relaxation under CONSTANT STRAIN (a press-fit, a clamped rim) — NOT creep. Semicrystalline
+# PEEK keeps a relaxed (equilibrium) modulus, so stress decays toward a floor E∞, never to zero — 2-term Prony:
+#   σ(t) = σ(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
+# INTERIM literature values (HW.3.IS 2026-06-21): the 2-term STRUCTURE follows published PEEK 450G viscoelastic
+# models (MDPI Polymers 2021, PMC8199459); the coefficients are kept conservative — at forest temperatures
+# (−30…+40 °C, ≪ Tg 143 °C) the retained fraction is likely HIGHER than 0.65, so a residual force is UNDER-stated
+# and a required initial force OVER-stated, the safe direction for both consumers. The authoritative
+# Maxwell-Wiechert fit on measured creep is the commercial FEA/Prony vendor's (00_07 HW.26, ⚖️ 2026-09-27);
+# no coefficient is invented here from paywalled data. Consumers: 50 (press-fit P_c) · 52 (bayonet clamp on the rim).
+PEEK_RELAX_FLOOR = 0.65         # — E∞/E0, the retained modulus fraction
+PEEK_RELAX_TAU_YEARS = 1.0      # years — relaxation time constant
+
+# ── Forces that push the radome OFF the flange face — one home for 52 (rim datum) and 73 (collar wall) ──
+POGO_SPRING_FORCE_N = 0.96      # N per pin at FULL travel (02_02 §2.2) — an upper bound at the 50-70 % working stroke
+POGO_PIN_COUNT = 2              # centre (GND) + outer ring (V+), 02_02 §1.2
+# ⛔ ASSUMED, not measured: canon has NO O-ring compression force (a named missing datum), so a deliberately
+# generous bound stands in wherever a lift force is needed — never quote it as the seal's force.
+GENEROUS_ORING_BOUND_N = 100.0  # N
+
 # Frozen coaxial geometry (HW.33, 2026-06-20): Ti shaft Ø11 → interface r 5.5 mm;
 # PEEK wall 2 mm → outer r 7.5 mm (OD = wound Ø15). Outer surface sits in the tree (free).
 R_INTERFACE_M = 5.5e-3          # m — Ti↔PEEK press-fit contact radius (Ø11 shaft / 2)

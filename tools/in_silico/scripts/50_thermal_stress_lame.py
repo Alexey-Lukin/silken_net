@@ -45,6 +45,8 @@ from lib.constants import (
     H7S6_INTERF_DIA_MIN_UM,
     KINETICS_DIR,
     NU_PEEK,
+    PEEK_RELAX_FLOOR,
+    PEEK_RELAX_TAU_YEARS,
     R_INTERFACE_M,
     R_OUTER_M,
     REPO_ROOT,
@@ -85,19 +87,9 @@ DELTA_RADIAL_MIN = I_DIA_MIN_UM * 1e-6 / 2.0   # m — radial = diametral / 2
 DELTA_RADIAL_MAX = I_DIA_MAX_UM * 1e-6 / 2.0   # m
 P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap pressure (the fit would have to exceed it to seal; it is not asked to, 00_07 HW.34)
 
-# PEEK stress relaxation under CONSTANT STRAIN (press-fit), NOT creep. Semicrystalline PEEK retains a
-# substantial relaxed (equilibrium) modulus — the crystalline phase forms a permanent elastic network, so
-# stress relaxes toward a floor E_∞, NOT to zero. Single-Maxwell + floor (= 2-term Prony):
-#   P_c(t) = P_c(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
-# INTERIM literature-Prony (HW.3.IS 2026-06-21, NOT Гусак-authoritative): the 2-term structure is validated
-# by published PEEK 450G viscoelastic models (MDPI Polymers 2021 PMC8199459 — ISV with TWO relaxing
-# components; + a fractional-Maxwell PEEK-aging fit). The coefficients below are kept CONSERVATIVE: at
-# forest temperatures (−30…+40 °C, all ≪ Tg 143 °C) PEEK is glassy-semicrystalline → relaxation is slow and
-# the retained fraction is likely HIGHER than 0.65, so this UNDER-states residual P_c (safe direction). The
-# authoritative multi-term Maxwell-Wiechert fit (with measured creep data) stays with школа Гусака
-# (00_02 Стаття 2) — door open; we do NOT fabricate coefficients from unavailable (paywalled) data.
-PEEK_RELAX_FLOOR = 0.65      # E_∞/E_0 — retained modulus fraction (conservative; lit ≥0.65 below Tg)
-PEEK_RELAX_TAU_YEARS = 1.0   # relaxation time constant (years) — interim conservative estimate
+# PEEK stress relaxation under CONSTANT STRAIN (press-fit), NOT creep: P_c(t) = P_c(0)·[E∞/E0 + (1 − E∞/E0)·exp(−t/τ)].
+# The constants and their ground live in lib.constants (PEEK_RELAX_FLOOR · PEEK_RELAX_TAU_YEARS): 52 reads the same
+# relaxation for the bayonet clamp on the radome rim.
 
 
 def lame_interface_stress(dT: float) -> dict:

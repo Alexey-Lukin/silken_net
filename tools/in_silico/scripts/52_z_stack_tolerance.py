@@ -13,7 +13,8 @@ The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses TWO compliant elements 
 (00_07 HW.33, branch (а), applied in CAD 2026-09-14) put the single groove in the flange top face against a FLAT
 radome rim, so the rim is a hard datum on that face and the squeeze is set by ONE machined dimension — the groove
 depth — not by where the bayonet seats the rim. `TOL_OR` therefore has one contributor and neither the spacer nor
-the bayonet hard-stop touches it.
+the bayonet hard-stop touches it. ⚠️ That holds only while the bayonet CLAMPS the rim onto the face; `rim_datum_creep`
+states the initial clamp it needs, and without it the lugs, not the groove, set the squeeze.
 
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
 spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
@@ -28,8 +29,8 @@ the O-ring squeeze and therefore the groove DEPTH, but an O-ring displaces a fix
 so the depth implies a WIDTH — and the width has to live inside the flat face that closes on it. That
 face is the bottom annulus of the PEEK dome wall, i.e. its width IS the wall thickness, and the three
 MATE-Ø candidates disagree on whether it exists at all. The section also derives the depth-tolerance
-BUDGET (the requirement the shop's answer must fit) and settles, by inversion, whether a PEEK rim may be treated as a
-rigid datum for twenty years. Geometry is read from `tools/cad/cem/*.json` at RUNTIME — the two machine
+BUDGET (the requirement the shop's answer must fit) and states the bayonet clamp under which a PEEK rim stays a
+datum for twenty years. Geometry is read from `tools/cad/cem/*.json` at RUNTIME — the two machine
 halves share no identifier vocabulary, so a mirrored dimension is findable only by grepping its value.
 """
 from __future__ import annotations
@@ -40,7 +41,16 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import CACHE_DIR, REPO_ROOT, SLM_MIN_WALL_DEFAULT_MM
+from lib.constants import (
+    CACHE_DIR,
+    GENEROUS_ORING_BOUND_N,
+    PEEK_RELAX_FLOOR,
+    PEEK_RELAX_TAU_YEARS,
+    POGO_PIN_COUNT,
+    POGO_SPRING_FORCE_N,
+    REPO_ROOT,
+    SLM_MIN_WALL_DEFAULT_MM,
+)
 from lib.utils import banner  # import-safe now (openmm is lazy in pick_platform)
 
 SI_DESCRIPTION = "Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs)."  # its row in the paper SI (72): English, no repo jargon
@@ -106,28 +116,14 @@ GAP_OR_PRE_BRANCH_A = ORING_CS * (1.0 - 0.20)   # the 20 % chain before ⚖️ 2
 # took; if the number is not an end, say what it IS and whose. [2026-09-11]
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
 
-# The stress level below which 20-yr PEEK stress-relaxation is not worth a model. It was anchored on
-# 01_01 §4.3, which tabulates PEEK relaxation on a press-fit joint at 25-30 MPa contact pressure: a
-# tenth of its LOWER end was taken as the floor for "negligible".
-# 🔴 THAT ANCHOR IS DEAD AS OF 2026-09-22 (01_01 §4.3, the reconciliation box), and the number below is
-# deliberately NOT re-derived here — re-anchoring it would be wrong TWICE OVER:
-#   (a) the 25-30 MPa row does not describe OUR fit at all. Reaching it on this geometry needs 256-308 µm
-#       of diametral interference against a ratified band of 5-34 µm, and at 30 MPa PEEK's von Mises
-#       reaches 117.7 MPa — PAST its 100 MPa yield. So a tenth of it anchors on a joint we cannot build.
-#   (b) the FORM does not follow from the other model either. 01_01 §4.2 relaxation is MULTIPLICATIVE and
-#       stress-independent (P_c(t) = P_c(0)·[0.65 + 0.35·exp(−t/τ)]) — under it there is no stress below
-#       which relaxation is negligible, because everything relaxes by the same 35 %. Re-anchoring on §4.2
-#       (≈0.05-0.33 MPa) would flip `rim_datum_creep` from a 4.7x margin (3.8x on the Ø25 dome) to a shortfall, i.e. invert a
-#       verdict on a premise that is itself the wrong shape.
-# ⛔ What the rim actually asks is DIMENSIONAL, not a stress threshold: the bayonet is a hard-stop, so the
-# rim sits at constant STRAIN, and constant strain is exactly the case where stress decays and geometry
-# does NOT move (01_01 §4.2, Correction A). The open leg is to rewrite the CHECK (`rim_datum_creep`) in that
-# frame, NOT to substitute another number for this constant — 00_07 HW.33 («поріг режиму релаксації PEEK
-# для обода»). Until then the value stands UNCHANGED so that nothing downstream moves on a dead anchor,
-# and this comment is the only thing that changed.
-PEEK_RELAX_REGIME_MPA = 2.5
-POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
-POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
+# ⛔ No STRESS THRESHOLD «below which PEEK relaxation is negligible» — do not rebuild one for the rim. Both anchors
+# it was tried on fail by measurement (2026-09-22, 01_01 §4.3 reconciliation box): (a) the 25-30 MPa row of 01_01
+# §4.3 does not describe our fit (it needs 256-308 µm of diametral interference against the ratified 5-34 µm, and
+# PEEK passes yield there), and (b) the relaxation the press-fit uses is MULTIPLICATIVE (01_01 §4.2), so under it
+# no stress is small enough to skip — everything relaxes by the same fraction. The rim's question is DIMENSIONAL
+# — does it keep its PLACE — and `rim_datum_creep` answers it as a requirement on the bayonet clamp. The lift forces
+# (pogo pair · the generous O-ring bound) and the relaxation live in lib.constants, shared with `50` and `73`.
+RIM_SERVICE_YEARS = 20.0         # years — the horizon of the press-fit relaxation the rim inherits (01_01 §4.2, its 20-yr column)
 
 # ── Board budget inputs handed to HW.9 (00_07 HW.33 leg, 2026-09-14) ──
 # Canon rows, each named beside its number; nothing about the board LAYOUT is typed, because the layout
@@ -524,35 +520,60 @@ def depth_tolerance_budget() -> dict:
 
 
 def rim_datum_creep(applied: dict) -> dict:
-    """⊂ correction (1) of the ⚖️: the rim is PEEK, so may it be treated as a rigid datum for 20 yr?
+    """⊂ correction (1) of the ⚖️: the rim is PEEK — does it keep its PLACE as a datum for 20 years?
 
-    Asked by INVERSION, because one of the two springs in the stack — the O-ring — has no force datum
-    anywhere in canon: instead of summing forces we do not have, compute the force that WOULD push the rim
-    into the stress regime where relaxation is worth modelling, and compare it with the one spring canon
-    does specify. A bound that holds by two orders of magnitude against that spring — and still by a few
-    times against a generous guess for the unmeasured one — does not need the missing number.
-    The contact area is the APPLIED rim's (boss annulus − groove footprint − entry-slot openings,
-    `applied_gland`), not the bare 2.0 mm wall the verdict was first checked against (144 mm²).
+    Asked in the DIMENSIONAL frame (00_07 HW.33, 2026-10-03), not as a stress threshold (the ⛔ above
+    says why no threshold exists). The one-dimension O-ring chain of this script assumes the bayonet CLAMPS the
+    flat rim onto the flange top face. While that clamp exceeds the forces that push the radome off the face — the
+    O-ring reaction and the pogo pair — the rim sits at constant STRAIN: its stress relaxes and its geometry does
+    not move (01_01 §4.2, Correction A). The clamp relaxes with the PEEK it compresses, so the requirement falls on
+    the INITIAL clamp: P0 ≥ F_lift / f(t), f(t) = floor + (1 − floor)·exp(−t/τ) from lib.constants. Below it the
+    rim lifts, the O-ring pushes the radome up onto the lug ledge, the squeeze is then set by where the lugs hold
+    it, and the PEEK ledge creeps under a CONSTANT LOAD — the one-dimension chain would no longer be true.
+
+    CAN show: the initial clamp the bayonet must deliver for the rim to stay a datum, for a given lift force, and
+    whether the titanium lug root (`73`) carries that clamp.
+    CANNOT show: the O-ring reaction (no home in canon — a generous bound stands in); the clamp a bayonet actually
+    delivers (the collar and its lug ramp are not modelled); the PEEK ledge under the lug (its geometry is not
+    modelled either); the temperature dependence of the relaxation floor (an interim literature value).
     """
     faces = seal_faces()
     area = applied["rim_contact_area_mm2"]
-    f_star = PEEK_RELAX_REGIME_MPA * area                     # N (MPa·mm² = N)
     pogo = POGO_SPRING_FORCE_N * POGO_PIN_COUNT
+    f_t = PEEK_RELAX_FLOOR + (1.0 - PEEK_RELAX_FLOOR) * math.exp(-RIM_SERVICE_YEARS / PEEK_RELAX_TAU_YEARS)
+    lift = {"pogo_pair_only": pogo, "with_generous_o_ring": pogo + GENEROUS_ORING_BOUND_N}
+    need = {k: v / f_t for k, v in lift.items()}
+    c73 = OUT_DIR / "collar_wall_inversion.json"
+    lug_cap = (json.loads(c73.read_text(encoding="utf-8"))["verdict"]["capacity_at_print_floor_N"]
+               if c73.exists() else None)
+    worst = need["with_generous_o_ring"]
+    lug_line = (f"the titanium lug root carries {lug_cap:.0f} N at the print floor ({lug_cap / worst:.1f}×, `73`), "
+                if lug_cap else "the lug-root capacity is not cached (`73` not run), ")
     return {
-        "rim_contact_area_mm2": round(area, 1),
-        "force_to_reach_relax_regime_N": round(f_star, 0),
-        "relax_regime_floor_MPa": PEEK_RELAX_REGIME_MPA,
+        "frame": "DIMENSIONAL — the rim is a datum while the bayonet clamp exceeds the lift force; then constant "
+                 "strain, the stress relaxes and the geometry stays (01_01 §4.2, Correction A)",
+        "relax_floor": PEEK_RELAX_FLOOR,
+        "relax_tau_years": PEEK_RELAX_TAU_YEARS,
+        "service_years": RIM_SERVICE_YEARS,
+        "relax_fraction_at_service": round(f_t, 4),
         "pogo_pair_force_N_upper_bound": round(pogo, 2),
-        "stress_at_pogo_alone_MPa": round(pogo / area, 4),
-        "stress_at_100N_assumed_total_MPa": round(100.0 / area, 3),
-        "margin_x_at_100N": round(f_star / 100.0, 1),
-        "missing_datum": "the O-ring compression load per unit of seal length — it has no home in canon, so the "
-                         "total stack force is not computable today. The bound above is why that does not block "
-                         "the verdict.",
-        "verdict": f"NEGLIGIBLE — reaching the relaxation regime needs {f_star:.0f} N on the rim, while "
-                   f"the only spring canon specifies contributes {pogo:.2f} N; even a deliberately "
-                   f"generous 100 N for the unmeasured O-ring leaves a {f_star / 100.0:.1f}x "
-                   f"margin. No creep member is warranted in the Z-chain for the rim.",
+        "o_ring_force_N": None,
+        "o_ring_generous_bound_N_assumed": GENEROUS_ORING_BOUND_N,
+        "required_initial_clamp_N": {k: round(v, 1) for k, v in need.items()},
+        "lug_root_capacity_N_from_73": lug_cap,
+        "lug_root_margin_x_over_required": round(lug_cap / worst, 1) if lug_cap else None,
+        "rim_contact_area_mm2": round(area, 1),
+        "seat_bearing_MPa_at_required_clamp": round(worst / area, 3),
+        "missing_datum": "the O-ring compression load (no home in canon), the clamp the bayonet delivers (collar and "
+                         "lug ramp not modelled) and the PEEK ledge under the lug (geometry not modelled) — the first "
+                         "is bounded generously, the other two are what this requirement is HANDED to.",
+        "verdict": f"CONDITIONAL — no creep member is warranted in the Z-chain for the rim IF the bayonet clamps it "
+                   f"onto the flange face with an initial force of at least {worst:.0f} N (lift = pogo pair "
+                   f"{pogo:.2f} N + a generous {GENEROUS_ORING_BOUND_N:.0f} N for the unmeasured O-ring, divided by "
+                   f"the {RIM_SERVICE_YEARS:.0f}-year relaxation fraction {f_t:.2f}); {lug_line}while the PEEK ledge "
+                   f"under the lug is not modelled. No artefact specifies that clamp yet: a bayonet without it lets "
+                   f"the O-ring lift the radome onto the lug ledge, where PEEK creeps under a constant load and the "
+                   f"one-dimension O-ring chain stops being true.",
         "skirt_note": faces["skirt"]["note"],
     }
 
@@ -860,12 +881,16 @@ def main() -> int:
     cp = budget["chain_pre_branch_a"]
     print(f"    (retired pre-(а) pair {cp['contributors_mm']} → RSS ±{cp['rss_mm']*1000:.0f} µm = {cp['over_budget_x']:.2f}× budget — never fitted)")
 
-    print(f"\n  PEEK rim as a rigid datum (⊂ correction (1)): contact area {rim['rim_contact_area_mm2']:.0f} mm²; "
-          f"reaching {rim['relax_regime_floor_MPa']:.1f} MPa needs {rim['force_to_reach_relax_regime_N']:.0f} N")
-    print(f"    pogo pair (the only spring canon specifies) = {rim['pogo_pair_force_N_upper_bound']:.2f} N "
-          f"→ {rim['stress_at_pogo_alone_MPa']:.4f} MPa; at a generous 100 N total the margin is still "
-          f"{rim['margin_x_at_100N']:.1f}×")
-    print("    → creep member NOT warranted for the rim; missing datum named in the JSON, not guessed")
+    req = rim["required_initial_clamp_N"]
+    print(f"\n  PEEK rim as a datum (⊂ correction (1)), DIMENSIONAL frame: relaxation fraction at "
+          f"{rim['service_years']:.0f} yr = {rim['relax_fraction_at_service']:.2f}")
+    print(f"    required INITIAL bayonet clamp: ≥ {req['pogo_pair_only']:.1f} N for the pogo pair alone, "
+          f"≥ {req['with_generous_o_ring']:.1f} N with a generous {rim['o_ring_generous_bound_N_assumed']:.0f} N O-ring")
+    if rim["lug_root_capacity_N_from_73"]:
+        print(f"    titanium lug root ({'`73`'}): {rim['lug_root_capacity_N_from_73']:.0f} N → "
+              f"{rim['lug_root_margin_x_over_required']:.1f}× the requirement; the PEEK ledge under the lug is NOT modelled")
+    print("    → no creep member for the rim IF the bayonet delivers that clamp — a requirement handed to the collar, "
+          "not a verdict about a built part")
 
     # ── Board budget handed to HW.9 (00_07 HW.33 leg 2026-09-14) ──
     # ⚠️ Same declared ceiling as the gland block: an envelope for a layout that does not exist yet, so it

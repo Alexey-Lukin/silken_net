@@ -54,7 +54,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from lib.constants import ALLOY_PROPERTIES
+from lib.constants import ALLOY_PROPERTIES, GENEROUS_ORING_BOUND_N, POGO_PIN_COUNT, POGO_SPRING_FORCE_N
 from lib.utils import banner
 
 SI_DESCRIPTION = "Bayonet-collar wall of the sensor capsule, judged by inversion: the force at which the wall would start to limit (axial retention, lug-root shear, trapped ice) against a generous bound."  # its row in the paper SI (72): English, no repo jargon
@@ -86,10 +86,7 @@ ICE_I_III_LIQUID_TRIPLE_MPA = 209.9
 ICE_I_III_LIQUID_TRIPLE_C = -21.985
 
 # ── Сили, які дерево ВСЕ Ж знає — для порівняння з break-even ──────────────────────
-POGO_SPRING_FORCE_N = 0.96   # на пін при повному ході (02_02 §2.2) — верхня межа
-POGO_PIN_COUNT = 2           # центр (GND) + зовнішнє кільце (V+), 02_02 §1.2
-# ⛔ Не вимір, а щедра МЕЖА з 52 §rim_datum_creep — вживається лише як орієнтир.
-GENEROUS_ORING_BOUND_N = 100.0
+# Пара pogo і щедра межа O-кільця (⛔ не вимір — лише орієнтир) мають один дім — lib.constants, спільний із 52.
 
 WALL_CANDIDATES_MM = (0.2, 0.3, 0.5, 0.8, 1.0, 1.6)
 
@@ -248,7 +245,7 @@ def verdict(a: dict, b: dict, c: dict, g: dict) -> dict:
         "margin_x_over_pogo_pair": round(governing_floor_N / (POGO_SPRING_FORCE_N * POGO_PIN_COUNT), 0),
         "static": (f"СТАТИКА СТІНКИ НЕ ЗАДАЄ: уже на друкованій підлозі звʼязувальний випадок тримає "
                    f"{governing_floor_N:.0f} Н — це "
-                   f"{round(governing_floor_N / GENEROUS_ORING_BOUND_N, 1)}× ЩЕДРОЇ межі 100 Н і "
+                   f"{round(governing_floor_N / GENEROUS_ORING_BOUND_N, 1)}× ЩЕДРОЇ межі {GENEROUS_ORING_BOUND_N:.0f} Н і "
                    f"{round(governing_floor_N / (POGO_SPRING_FORCE_N * POGO_PIN_COUNT)):.0f}× єдиної пружини, "
                    f"яку канон задає. ⚠️ Запас проти щедрої межі — кілька разів, НЕ «порядки»: порядки є лише "
                    f"проти pogo. Але він уже містить SF {SAFETY_FACTOR}, тож до самої текучості вдвічі більше. "
@@ -297,7 +294,7 @@ def main() -> int:
 
     print("\n── Вирок ──")
     print(f"  зв'язує зі статики: {v['binding_static_case']} — {v['capacity_at_print_floor_N']:.0f} Н "
-          f"уже на друкованій підлозі ({v['margin_x_over_generous_oring_bound']}× щедрої межі 100 Н, "
+          f"уже на друкованій підлозі ({v['margin_x_over_generous_oring_bound']}× щедрої межі {GENEROUS_ORING_BOUND_N:.0f} Н, "
           f"{v['margin_x_over_pogo_pair']:.0f}× пари pogo)")
     print(f"  1. {v['static']}")
     print(f"  2. {v['ice']}")

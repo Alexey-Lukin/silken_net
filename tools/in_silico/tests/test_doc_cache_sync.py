@@ -489,20 +489,33 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: min(d["gland_geometry"]["required_width_mm"].values()), 0.005,
     ),
-    # ⛔ The anchor used to spell the floor itself («до 10 МПа»), so the pin guarded the force while
-    # hard-coding the one input that was wrong — 10 MPa is a third of the 01_01 §4.3 table, not the
-    # tenth the prose names. The floor is its own pin now, and the force anchor carries no number.
+    # ── The rim as a datum, DIMENSIONAL frame (00_07 HW.33, 2026-10-03): a requirement on the bayonet clamp ──
+    # The stress-threshold check these anchors replaced carried no geometry of the bayonet at all; every number
+    # below moves with an input prose never re-reads — the relaxation floor (lib.constants), the pogo force, the
+    # generous O-ring bound and `73`'s lug-root capacity.
     (
-        "PEEK relaxation-regime floor → z_stack_tolerance.json §rim_datum_creep",
-        BLIND_MATE, rf"до {N} МПа \(десята частина",
+        "rim relaxation fraction at 20 yr → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"мультиплікативної релаксації `§4\.2`, \*\*{N}\*\*",
         "mechanical/z_stack_tolerance.json",
-        lambda d: d["rim_datum_creep"]["relax_regime_floor_MPa"], 0.05,
+        lambda d: d["rim_datum_creep"]["relax_fraction_at_service"], 0.005,
     ),
     (
-        "force that would put the PEEK rim into the relaxation regime → z_stack_tolerance.json",
-        BLIND_MATE, rf"табулює релаксацію PEEK\) треба \*\*{N} Н\*\*",
+        "pogo pair lift force → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"з парою pogo \(\*\*{N} Н\*\*\)",
         "mechanical/z_stack_tolerance.json",
-        lambda d: d["rim_datum_creep"]["force_to_reach_relax_regime_N"], 1.0,
+        lambda d: d["rim_datum_creep"]["pogo_pair_force_N_upper_bound"], 0.005,
+    ),
+    (
+        "required initial bayonet clamp → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"вимога — \*\*≥ {N} Н\*\* початкового притискання",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["rim_datum_creep"]["required_initial_clamp_N"]["with_generous_o_ring"], 0.5,
+    ),
+    (
+        "titanium lug-root capacity the requirement is checked against → z_stack_tolerance.json (← 73)",
+        BLIND_MATE, rf"корінь вушка Ti її несе \(\*\*{N} Н\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["rim_datum_creep"]["lug_root_capacity_N_from_73"], 0.5,
     ),
     (
         "depth-tolerance budget in µm → z_stack_tolerance.json §depth_tolerance_budget",
@@ -561,11 +574,6 @@ CHECKS = [
         "rim contact area of the applied boss → z_stack_tolerance.json §rim_datum_creep",
         BLIND_MATE, rf"контактній площі обода \*\*{N} мм²\*\*",
         "mechanical/z_stack_tolerance.json", lambda d: d["rim_datum_creep"]["rim_contact_area_mm2"], 0.5,
-    ),
-    (
-        "rim-datum margin at a generous 100 N → z_stack_tolerance.json §rim_datum_creep",
-        BLIND_MATE, rf"запас лишається \*\*{N}×\*\*",
-        "mechanical/z_stack_tolerance.json", lambda d: d["rim_datum_creep"]["margin_x_at_100N"], 0.05,
     ),
     # ── HW.33 → HW.9 board budget (2026-09-14): the envelope 02_02 §3.5 hands the board layout ──
     # Every one of these moves with an input nobody re-reads in prose: the gland fill ceiling behind the

@@ -65,6 +65,7 @@ Anchor mechanics (CPU):
      radome's `bell_radius_mm`, the SAME field that DRIVES the CAD crown, so the two machine halves share one
      number instead of each typing it) · 54 · 55 (spans read at runtime)
   55 → 68 (importlib + bus_mechanical.json)      54 → 64 (importlib + anchor_thermal_bridge.json)
+  73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   62 → wind_duty_cycle.json → 55 · 59 (cycle budget; 55 prints NOT COMPUTED without it)
   66 → tools/cad TopologyCrossChecks (a C# consumer: no Python re-run reaches it)
   51 → 71 (importlib: `capacitor_life_hours` — a kernel change re-runs 71 too) · tools/cad/cem → 71 (radome geometry at runtime)
