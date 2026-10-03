@@ -68,8 +68,8 @@ the founder ruled on: route (b) was ratified **for exactly those numbers**, and 
 dropping the 2.0 eV reading — was not taken, because it is a MODEL change (skill `in-silico` §When
 Modifying #13: §3.4 prints "×25 at zero driving force on the 2.0 eV reading"). So an unsourced number
 stays printed, under its label and judged at the adverse end, and a referee who asks for the primary is a
-revision-round edit rather than a submit blocker. The authorship / corresponding-author verdict is a
-separate leg and is not touched by this rule.
+revision-round edit rather than a submit blocker. The authorship / corresponding-author verdict (⚖️ founder 2026-10-03, `00_02 §2.1`: one
+author, also corresponding) is separate and is not touched by this rule.
 
 **Applied 2026-10-01 — route (b) for the λ set, and nothing beyond it.** Two clause markers left the body:
 §2.5 (λ(Cu) 2.0 eV) and §3.4 (the first-row literature λ). §2.5 now calls 2.0 eV an assumed textbook value
@@ -139,7 +139,7 @@ legend line stays in each, as the criterion allows.
   (`OS_O_AQUA`). A change of the distances or of the builder reaches all three homes or it splits the model.
   **Next steps:** C-min is delegated with this verdict and runs once BOTH its conditions hold — the machine free
   (skill `in-silico` §Critical Rules #3) and the builder's default geometry shown bit-identical (§When Modifying
-  #27) — 🤖 leg in `00_07` HW.5.IS: the dmbpy chloro couple on a crystal-like chelate, ≈27 min CPU under the
+  #27) — the 🤖 leg of `00_07` HW.5.IS, since run (✅ below): the dmbpy chloro couple on a crystal-like chelate, ≈27 min CPU under the
   lock, against the lock base −4.3841 eV; the full C (aqua and bis-Im forms) only if C-min moves an
   absolute number by ≥ 0.1 eV; D only if a computation moves a difference that carries a conclusion by ≥ 0.1 eV
   (≈ ⅓ of the smallest robust ② margin, 0.27 eV), or on a primary of the SAME donor set off the realised geometry

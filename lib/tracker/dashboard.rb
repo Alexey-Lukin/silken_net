@@ -275,7 +275,7 @@ module Tracker
 
     # --- CHEM.N in-silico chemistry-note refs ---
     # The HW.5.IS in-silico chemistry backlog is a bulleted, triaged list (not #### items),
-    # so its 31 notes carry their own CHEM.N IDs (`- [ ] **CHEM.6** — …`), standardized from
+    # so its notes carry their own CHEM.N IDs (`- [ ] **CHEM.6** — …`), standardized from
     # the old ad-hoc `note N` so the refs are guardable like every other 00_07 ID (founder
     # `note N` was unanchored + already restated across 01_03/SUMMARY/L1/scripts →
     # a drift surface). `chem_note_ids` collects the defined set (the checkbox is optional, so
