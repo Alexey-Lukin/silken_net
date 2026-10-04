@@ -16,7 +16,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
-| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (зональна карта покриттів) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.40 біоміметичні покриття (Zn-HAp · PEDOT:PSS · лігнін), HW.22 split-cycle стерилізація (EtO лише для гілки B), HW.25 PTFE-GDL мембрана, HW.28 anti-overgrowth польовий тест |
 

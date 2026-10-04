@@ -71,6 +71,8 @@
 **CPC:** G06Q 50/02 (agri-digital); H04W 84/18 (mesh); H02J 7/00, G16Y (harvesting/IoT).
 
 ## Query Set 4 — Self-healing coating + Query Set 5 — anti-biofouling zwitterionic membrane
+
+> ⚫ Набір 4 лишається історією пошуку: self-healing покриття знято з протоколу ([`01_02 §3`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), ⚖️ 2026-10-04).
 ```
 ("self-healing" OR "self-repair*") NEAR15 (coating* OR microcapsule*) AND (titanium OR "Ti-6Al-4V" OR tantalum OR niobium OR "biocompatible metal")
 ```
