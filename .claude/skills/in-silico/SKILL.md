@@ -72,6 +72,8 @@ Anchor mechanics (CPU):
   51 → 71 (importlib: `capacitor_life_hours` — a kernel change re-runs 71 too) · tools/cad/cem → 71 (radome geometry at runtime)
   71 → 78 (importlib: the hourly capsule balance, checked against capsule_envelope.json) · 58 → 78 (importlib: layer
      properties + the cambium gate) · tools/cad/cem → 78 (flange Ø at runtime) — a change to 58's or 71's model re-runs 78
+  71 · 74 · 78 → 79 (importlib: 71's convection kernels and hourly loader · 74's dew-point loader · 78's column grid and
+     bark bracket) · tools/cad/cem → 79 (flange Ø and thickness, sleeve OD at runtime) — a change to any of them re-runs 79
 ```
 
 ## Critical Rules
