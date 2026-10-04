@@ -838,8 +838,10 @@ fi
 # is the act, and a session-keyed carrier is exactly what failed here (guard-craft
 # #104). The row literal may follow a quote or an escaped `\n` inside a script.
 # ⚠️ Ceilings, named: a script that only CUTS a `#### ID` block, with no row literal,
-# is invisible — what a script removes is runtime, not text; and a row used as an
-# ANCHOR is listed beside the archived one (the hint says so).
+# is invisible — what a script removes is runtime, not text; a row used as an ANCHOR
+# is listed beside the archived one (the hint says so); and a script that EDITS an
+# existing archive row fires too — its text cannot tell an insert from an edit
+# (measured on this rule's first day, on its author's own fix-forward).
 if printf '%s' "$cmd" | grep -qF '00_07_Action_Plan_Tracker' &&
    printf '%s' "$cmd" | grep -qE "File\.write|\.write\(|write_text|open\([^)]*['\"]w['\"]|sed -i|perl -i|>[[:space:]]*docs/00_07"; then
   arch_ids=$(printf '%s\n' "$cmd" \
