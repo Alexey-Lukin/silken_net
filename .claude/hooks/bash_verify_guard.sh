@@ -125,6 +125,20 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'ruby scripts/docs_band.rb > /tmp/b.log 2>&1; echo "EXIT=$?"'
   t "E: git alone (no gate)" silent \
     'git add -A && git commit -s -m "chore: bump" && git push'
+  # OPS.40 — the memory pair, both arms. The positives are the corpus forms (the
+  # 2026-09-23 incident shape and its piped sibling); the two negatives are the
+  # CROSS-SUBJECT forms the prescribed widening denied, and they are the pins that
+  # keep the pairing by subject from collapsing back into one shared vocabulary.
+  t "E/mem: --audit ;-laundered before git -C commit" deny-e \
+    'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "EXIT=$?"; M=/x/memory; git -C "$M" add -A && git -C "$M" commit -q -m msg'
+  t "E/mem: --audit piped into tail before git -C commit" deny-e \
+    'bash .claude/hooks/memory_gate.sh --audit 2>&1 | tail -3 && git -C $M commit -q -m msg'
+  t "E/mem: clean && from --audit to git -C stays silent" silent \
+    'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1 && git -C $M add a.md && git -C $M commit -q -m msg'
+  t "E/mem: memory audit before a REPO commit stays silent" silent \
+    'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git add docs/x.md && git commit -s -m msg'
+  t "E/mem: repo gate piped before a MEMORY commit stays silent" silent \
+    'bin/rspec spec/x_spec.rb 2>&1 | grep -E "examples," && git -C $M commit -q -m msg'
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -636,34 +650,58 @@ fi
 # runs AFTER the git step in the same && chain is a post-hoc check, not this
 # class (2 measured); text following the first heredoc opener is dropped, so a
 # laundered combo living entirely BELOW a heredoc is invisible (0 measured).
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(commit|push)\b'; then
+#
+# 🔑 [OPS.40] TWO vocabularies, paired by SUBJECT — a verdict gates only the git
+# step of the tree it judged. The memory corpus is committed with
+# `git -C <memory> commit`, which the original `git commit` anchor never saw, and
+# its gate `memory_gate.sh --audit` was outside `egate`; a `--audit ; echo ;
+# git -C … commit` call committed the corpus over a red audit on 2026-09-23.
+# Measured 2026-10-04 over 40,171 recorded calls / 145 sessions (09-04 → 10-04):
+# 123 calls could change verdict, and the widening AS PRESCRIBED (both regexes
+# extended, one shared pairing) flipped 15 — only 8 real; the 7 others crossed
+# subjects (a memory audit before a REPO commit/push, a repo gate piped before a
+# MEMORY commit), and neither verdict there judges the other tree. Paired by
+# subject: 5 flips, 5 real, none crossing. ⚠️ Ceiling, named: a memory commit
+# made by `cd`-ing into the corpus and running plain `git commit` stays invisible
+# — telling the cwd needs parser state, not a regex (3 measured, the last on
+# 2026-09-10; the house form since is `git -C`).
+if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(commit|push)\b'; then
   hd=$(printf '%s\n' "$cmd" | grep -nE "<<-?~?[[:space:]]*['\"]?[A-Za-z_]" | head -1 | cut -d: -f1)
   if [[ -n "$hd" ]]; then ecmd=$(printf '%s\n' "$cmd" | head -n "$hd"); else ecmd=$cmd; fi
   ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
   egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
-  if printf '%s' "$ecmd" | grep -qE "$egate"; then
-    verdict=""
-    gate_seen=""
+  egit='git[[:space:]]+(commit|push)\b'
+  mgate='bash[[:space:]]+[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
+  mgit='git[[:space:]]+-C[[:space:]]+[^[:space:]]+[[:space:]]+(commit|push)\b'
+  # launder <gate-re> <git-re> → prints the laundered form, or nothing
+  launder() {
+    local g=$1 gs=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped
     while IFS= read -r st; do
       links=${st//&&/$'\n'}
       links=${links//||/$'\n'}
       st_gate=""; st_git=""; st_piped=""
       while IFS= read -r lk; do
-        if printf '%s' "$lk" | grep -qE "^[[:space:]]*${egate}"; then
+        if printf '%s' "$lk" | grep -qE "^[[:space:]]*${g}"; then
           st_gate=1
           printf '%s' "$lk" | grep -q '|' && st_piped=1
         fi
-        printf '%s' "$lk" | grep -qE '^[[:space:]]*git[[:space:]]+(commit|push)\b' && st_git=1
+        printf '%s' "$lk" | grep -qE "^[[:space:]]*${gs}" && st_git=1
       done <<< "$links"
       if [[ -n "$st_git" && -z "$st_gate" && -n "$gate_seen" && "$verdict" != "piped" ]]; then verdict="semicolon"; fi
       if [[ -n "$st_gate" && -n "$st_git" && -n "$st_piped" ]]; then verdict="piped"; fi
       [[ -n "$st_gate" ]] && gate_seen=1
     done < <(printf '%s\n' "$ecmd" | tr ';' '\n')
-    if [[ -n "$verdict" ]]; then
-      jq -nc --arg r "A verdict-emitting gate and git commit/push share this call, but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31]" \
-        '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
-      exit 0
-    fi
+    printf '%s' "$verdict"
+  }
+  verdict=""; pair="a repo gate before a repo git step"
+  printf '%s' "$ecmd" | grep -qE "$egate" && verdict=$(launder "$egate" "$egit")
+  if [[ -z "$verdict" ]] && printf '%s' "$ecmd" | grep -qE "$mgate"; then
+    verdict=$(launder "$mgate" "$mgit"); pair="memory_gate.sh --audit before git -C <memory> commit/push"
+  fi
+  if [[ -n "$verdict" ]]; then
+    jq -nc --arg r "A verdict-emitting gate and git commit/push share this call (${pair}), but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20) and committed the memory corpus over a red audit (2026-09-23). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31 · OPS.40]" \
+      '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+    exit 0
   fi
 fi
 
