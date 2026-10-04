@@ -43,7 +43,7 @@
 <text x='20' y='321' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>2. Material: PEEK 450G (Victrex or equiv.)</text>
 <text x='20' y='335' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: CNC from rod; anneal 200-250 C before final micromachining (else internal stress drifts the um tolerances)</text>
 <text x='20' y='349' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: smooth round bore - no anti-rotation profile in this geometry: none against wind (01_01 4.3 C, verdict 2026-10-03 - stem torsion</text>
-<text x='20' y='363' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   gives the shank micro-slip only); a form lock against the event torque is an open subject (00_07 HW.33)</text>
+<text x='20' y='363' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   gives the shank micro-slip only); a form lock against the event torque is an open subject (00_07 HW.26)</text>
 <text x='20' y='377' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: None after final micromachining. The one thermal step is the 200-250 C anneal, and it belongs BEFORE that cut, not after -</text>
 <text x='20' y='391' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   see process and inspection: reversing the order is the failure, not omitting a step</text>
 <text x='20' y='405' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: Nothing is applied to this part - 01_02 3.6 excludes ZnO-Ta, self-healing 8-HQ and biomimetic layers from PEEK surfaces</text>
@@ -94,7 +94,7 @@
 <line x1='540' y1='893' x2='790' y2='893' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='893' x2='630' y2='909' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='904' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='904' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>fbee09509</text>
+<text x='635' y='904' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8b162a48a</text>
 <line x1='540' y1='909' x2='790' y2='909' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='909' x2='630' y2='925' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='920' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -102,7 +102,7 @@
 <line x1='540' y1='925' x2='790' y2='925' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='925' x2='630' y2='941' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='936' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='936' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0ea4261a25c1482cd5… → FOOTER</text>
-<text x='806' y='957' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev fbee09509 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
-<text x='806' y='969' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 0ea4261a25c1482cd5392c09f8a533c3608a8fc6ae4643f8dd8f3276c9be1f42</text>
+<text x='635' y='936' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f466f96da78b83e5d5… → FOOTER</text>
+<text x='806' y='957' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8b162a48a · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<text x='806' y='969' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f466f96da78b83e5d525e24d354e8af623d7d029aaa4677f6f620d91066ec231</text>
 </svg>
