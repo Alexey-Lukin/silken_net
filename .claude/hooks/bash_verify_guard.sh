@@ -87,6 +87,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
       [[ "$out" == *"OPS.31"* ]] && got="deny-e"
     elif [[ "$out" == *"additionalContext"* ]]; then
       got="warn"
+      [[ "$out" == *"OPS.41"* ]] && got="warn-i"
     fi
     if [[ "$got" == "$expect" ]]; then
       printf '  ✓ %-36s %s\n' "$name" "$got"
@@ -294,6 +295,27 @@ body with `01_02:177` inside"'
     export BASHGUARD_CACHE_DIRTY="clean"
     t "H: a CLEAN cache tree makes the sweep harmless" silent "git add -A"
   )
+
+  # ── I · the archive act through a script [OPS.41] · both arms ──
+  # The positives are corpus forms: a row after an escaped `\n` inside a Python
+  # literal (how this very rule's item was archived) and a row at line start. The
+  # negatives are the shapes the discriminator must leave alone: a read-only grep of
+  # a row, a tracker write with no row, a row written into ANOTHER doc, and a table
+  # row whose first cell is not a tracker ID. Fixture IDs carry the `FIXT` prefix —
+  # not a tracker family, so the phantom-ID gate leaves them alone (ssot_guard_hint.sh
+  # says why in its own battery).
+  t "I: row after escaped \\n in a script writing 00_07" warn-i \
+    $'python3 - <<\'PY\'\np=\'docs/00_07_Action_Plan_Tracker.md\'; s=open(p,encoding=\'utf-8\').read()\nrow=(\'\\n| FIXT.9 | **закрито** | `00_06 §3` |\')\nopen(p,\'w\',encoding=\'utf-8\').write(s+row)\nPY'
+  t "I: row at line start in a heredoc script" warn-i \
+    $'ruby -e \'p="docs/00_07_Action_Plan_Tracker.md"; File.write(p, File.read(p) + ARGF.read)\' <<\'ROW\'\n| FIXT-9 | **закрито** | `05_05 §3` |\nROW'
+  t "I: read-only grep of a row stays silent" silent \
+    'grep -nF "| FIXT.3 | " docs/00_07_Action_Plan_Tracker.md'
+  t "I: tracker write with no row stays silent" silent \
+    $'python3 - <<\'PY\'\np=\'docs/00_07_Action_Plan_Tracker.md\'; s=open(p).read()\nopen(p,\'w\').write(s.replace(\'- [ ] a\',\'- [ ] b\'))\nPY'
+  t "I: a row written into ANOTHER doc stays silent" silent \
+    $'python3 - <<\'PY\'\nopen(\'docs/02_05_x.md\',\'w\').write(\'| FIXT.9 | x |\')\nPY'
+  t "I: a non-ID first cell stays silent" silent \
+    $'python3 - <<\'PY\'\np=\'docs/00_07_Action_Plan_Tracker.md\'\nopen(p,\'w\').write(\'| SWD | пади | так |\')\nPY'
 
   if (( fails > 0 )); then
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
@@ -762,6 +784,37 @@ if printf '%s' "$cmd" | grep -qE "$gitadd" &&
     [[ "$cache_dirty" == "clean" ]] && cache_dirty=""
     if [[ -n "$cache_dirty" ]]; then
       warn git-add-warm-cache '[bash-guard] `git add` with a DIRECTORY pathspec (or -A/-u) while `tools/in_silico/cache/` is dirty. A still-warm compute cache gets swept into the commit, and the narrower directory form is NOT the fix — measured three times in one day, including with `--`. Name the files explicitly: `git add -- path/one path/two`. Check first: `git status --porcelain -- tools/in_silico/cache`. (Fires once per session.)'
+    fi
+  fi
+fi
+
+# ── I · WARN per ACT · a script writes an ARCHIVE ROW into `00_07` [OPS.41] ─────
+# The script arm of the archive-act carrier; the Edit/Write arm and the hint text
+# live in ssot_guard_hint.sh (`--archive-hint`), so the wording has one home. This
+# arm is not the minor one: measured 2026-10-04 over 40,171 recorded calls, 2,392
+# wrote `00_07` by script — the hook on Edit/Write never sees them. 36 of those
+# carried a row literal whose first cell is a tracker ID — a shape that exists ONLY
+# under `## 🗄️` — and the spot-checked ones fell on the days those IDs were archived
+# or cemented. Keyed per (session, ID set), NOT once per session: the event to catch
+# is the act, and a session-keyed carrier is exactly what failed here (guard-craft
+# #104). The row literal may follow a quote or an escaped `\n` inside a script.
+# ⚠️ Ceilings, named: a script that only CUTS a `#### ID` block, with no row literal,
+# is invisible — what a script removes is runtime, not text; and a row used as an
+# ANCHOR is listed beside the archived one (the hint says so).
+if printf '%s' "$cmd" | grep -qF '00_07_Action_Plan_Tracker' &&
+   printf '%s' "$cmd" | grep -qE "File\.write|\.write\(|write_text|open\([^)]*['\"]w['\"]|sed -i|perl -i|>[[:space:]]*docs/00_07"; then
+  arch_ids=$(printf '%s\n' "$cmd" \
+    | grep -oE "(^|[\"'(]|\\\\n)[[:space:]]*\| [A-Z][A-Za-z0-9]*(-[A-Za-z0-9]+)*(\.[0-9][0-9A-Za-z.]*|-[0-9]+) \| " \
+    | grep -oE '\| [^ ]+ \| $' | sed -E 's/^\| ([^ ]+) \| $/\1/' | LC_ALL=C sort -u | tr '\n' ' ')
+  if [[ -n "${arch_ids// /}" ]]; then
+    amark="${TMPDIR:-/tmp}/claude-bashguard-${session}-archive-$(printf '%s' "$arch_ids" | tr -c 'A-Za-z0-9.-' '_')"
+    if [[ ! -f "$amark" ]]; then
+      : > "$amark"
+      actx=$(bash "$(dirname "$0")/ssot_guard_hint.sh" --archive-hint "$arch_ids" 2>/dev/null)
+      if [[ -n "$actx" ]]; then
+        jq -nc --arg ctx "$actx" '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
+        exit 0
+      fi
     fi
   fi
 fi

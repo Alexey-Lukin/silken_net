@@ -530,6 +530,16 @@ jobs:
         # mutants exposed that.
         run: bash .claude/hooks/bash_verify_guard.sh --selftest
 
+      - name: Docs · ssot-hint hook self-test
+        # The archive-act carrier (OPS.41) fails SILENT: a broken detector reads
+        # exactly like «no archive happened», so nobody notices the reminder stopped
+        # coming. The battery pins both arms of each content branch — a new archive
+        # row and a cut `#### ID` must fire, as must a delegated-verdict body; an
+        # edited row, a retitled heading, a non-ID table row and an archive-shaped
+        # row in a canon doc must not — and every arm was mutation-verified. The
+        # script arm of the same carrier is rule I of the bash-guard battery above.
+        run: bash .claude/hooks/ssot_guard_hint.sh --selftest
+
       - name: Docs · Generated skill indexes ⇄ their sources
         # One engine, a TABLE of targets (scripts/guard_craft_index.rb TARGETS) — a
         # copy per skill would be the second-home defect the engine exists to prevent.
