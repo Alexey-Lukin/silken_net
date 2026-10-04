@@ -260,7 +260,7 @@
 - **`02_05 §7` поз. 11:** «Kyivstar B1/B3/B7/B8/B20». B7 модем не підтримує, B20 в Україні не знайдено, а B28 — на
   конкурсі (§2.1).
 - **LTE-M у Kyivstar публічно не заявлено.** Сторінка IoT оператора називає 2G/3G/LTE і NB-IoT [6], ain.ua
-  (2026-08-12) — «2G, 4G/LTE, NB-IoT», де 5G і Starlink Direct to Cell працюють у тестовому режимі [7]. Прошивка
+  (2026-08-12) — «2G, 4G/LTE, NB-IoT», де 5G і Starlink Direct to Cell працюють у тестовому режимі [7]; GSMA (реєстр комерційних запусків Mobile IoT, «Last Update: Nov 2025») теж називає для Kyivstar лише NB-IoT [32], а LTE-M не знайдено ні там, ні в Київстару (2026-10-04). Прошивка
   задає `AT+CNMP=38` (LTE) і, з присуду HW.41 (⚖️ 2026-09-26), явне `AT+CMNB=3` — обидва RAT, з eDRX для кожного;
   дім присуду — [`03_02 §4`](../../03_02_Queen_Gateway_Firmware.md), код — `firmware/queen/main.c`. Котрий RAT
   оператор віддасть у бору, лишається питанням оператора, не прошивки. Смуги ті самі, тож антени це не зачіпає.
@@ -316,3 +316,4 @@
 | 29 | [FCC `2AJYU-8VC0001` — RF Exposure](https://fccid.io/2AJYU-8VC0001/RF-Exposure-Info/RF-Exposure-6032480) | модель SIM7070G і SIM7070G-PCIE (не -HP), с. 6; графа «Antenna gain» по GSM · Cat-M · NB-IoT і таблиця MPE на 20 см, с. 11 (§2.1). Документ 6032480 «Measurement Report», Report No. STS2206166H01, 11 с., C2PC 2022-08-02 — новіший за RF Exposure 2020-02-17 того ж досьє | регулятор; PDF зберіг founder (у нас 403), звірено текстовим шаром 2026-09-26. Файл перезаписав PDFium браузера, тож SHA-256 fccid.io (`05fda498…e539`) з ним не звіряється — ідентичність тримають номер звіту, 11 с. і модель |
 | 30 | [ST DS13105 Rev 12 (STM32WLE5/E4xx), 2022-12](https://www.st.com/resource/en/datasheet/stm32wle5jc.pdf) | Table 31: blocking immunity LoRa SF12/BW125 на ±1/±2/±10 МГц, чутливість; Table 27: вхід RX ≤ 0 дБм (§5, колокація) | [В]; ✓я 2026-09-27 (`curl` → PDF, текстовий шар) |
 | 31 | [Mouser EU, пошук за P/N](https://eu.mouser.com/en/c/?q=G30.B.108111) | G30.B.108111 (`960-G30.B.108111`): 626 шт; €27,90 за 1 · €24,94 за 10 · €24,49 за 50 · €22,89 за 100 · €22,22 за 200, без ПДВ; кабель 1 м RG-316 (§2.2) | [П]; ✓я 2026-10-04 браузером |
+| 32 | [GSMA — Mobile IoT commercial launches](https://www.gsma.com/solutions-and-impact/technologies/internet-of-things/mobile-iot-commercial-launches/) | рядок «Kyvistar · Ukraine · NB-IoT» (так, з одруком), «Last Update: Nov 2025»; рядка LTE-M для Kyivstar немає (§5) | галузевий реєстр; ✓я 2026-10-04 `curl` |
