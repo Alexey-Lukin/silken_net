@@ -272,6 +272,54 @@ if printf '%s\n' "$_changed" | grep -qE '(\.sh$|^bin/|^\.kamal/hooks/|^\.githook
   fi
 fi
 
+# [OPS.42] Свіжість галереї CAD — локальний носій піна `DrawingTests`.
+# ⚖️ Ратифіковано founder 2026-10-04 («тут ратифікуємо рекомендацію і робимо»).
+#
+#   🔑 ЧОМУ ЛОКАЛЬНО: кожен аркуш `docs/images/cad/*.drawing.svg` називає у футері
+#   маніфест і його SHA-256, і пін у `DrawingTests` звіряє цю пару — але лише в CI
+#   (`Smoke · CAD`), бо dotnet тут не біжить. Правка ноти CEM без перерендеру лишила
+#   `main` червоним 2026-10-03 і ще двічі 2026-10-04 спіймалась ручним `dotnet test`,
+#   ніколи не хуком. `scripts/cad_gallery_freshness.rb` ставить те саме питання без dotnet.
+#
+#   ЦІНА, ВИМІРЯНА на цьому дереві 2026-10-04 (батарея + перевірка, три прогони):
+#   0.22 / 0.29 / 0.26 с. Пускач — 130 із 1802 комітів за 30 днів торкались цих шляхів
+#   (7 %), тобто ≈ 33 с/місяць — рівень `shell_parse`.
+#
+#   🔒 СТЕЛЯ — та сама, що в піна, і свідомо не ширша: доводить ТОТОЖНІСТЬ МАНІФЕСТУ.
+#   Зміна розкладки в `Drawing.cs` за незмінних маніфестів не почервоніє, PNG-рендери
+#   не судить ніщо. Зате читає КОМІТ, а не диск: «перерендерив, забув `git add`» тут
+#   червоне, як і в CI. Аркуш без футера — червоний, не пропущений (найслабша ланка
+#   присуду закрита відмовою). `Drawing.cs` у пускачі тому, що перейменування мітки
+#   футера там робить кожен аркуш нечитним — і це має бути ГУЧНО тут, а не лише в CI.
+#
+#   NOT-RUN ⊥ FAILED: exit 2 (git не прочитав коміт) — нота, не вердикт; exit 1 — блок.
+if printf '%s\n' "$_changed" | grep -qE '^(tools/cad/cem/|docs/images/cad/|tools/cad/src/SilkenCad/Drawing\.cs$|scripts/cad_gallery_freshness\.rb$)'; then
+  if [ -f "$root/scripts/cad_gallery_freshness.rb" ]; then
+    if ! ( cd "$root" && "$_rb" scripts/cad_gallery_freshness.rb --selftest >/dev/null ); then
+      echo
+      echo "pre-push BLOCKED — cad_gallery_freshness's own selftest fails."
+      echo "The gate is broken, NOT the gallery: fix scripts/cad_gallery_freshness.rb first."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+    ( cd "$root" && "$_rb" scripts/cad_gallery_freshness.rb )
+    _cgf=$?
+    if [ "$_cgf" -eq 1 ]; then
+      echo
+      echo "pre-push BLOCKED — a CAD gallery sheet does not name the manifest bytes this commit ships (above)."
+      echo "Fix:  re-draw the sheet (the drawing loops of tools/cad/scripts/render_gallery.sh) and COMMIT it."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    elif [ "$_cgf" -ne 0 ]; then
+      echo "pre-push NOTE — cad_gallery_freshness could not read the commit (exit $_cgf)."
+      echo "  This is NOT a verdict: the check never ran. CI still runs the pin (\`Smoke · CAD\`)."
+    fi
+  else
+    echo "pre-push NOTE — CAD gallery paths changed but scripts/cad_gallery_freshness.rb is missing."
+    echo "  This is NOT a verdict: the check never ran. CI still runs the pin (\`Smoke · CAD\`)."
+  fi
+fi
+
 if printf '%s\n' "$_changed" | grep -qE '^firmware/.*\.(c|h)$'; then
   if [ -x "$root/firmware/scripts/cppcheck.sh" ] && command -v cppcheck >/dev/null 2>&1; then
     if ! ( cd "$root" && sh firmware/scripts/cppcheck.sh ); then

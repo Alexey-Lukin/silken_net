@@ -153,7 +153,9 @@
   lattice promises a precision nobody measures) — so a future «let's sample the SDF» has to argue with canon.
   NORM (why a drawing is derived from the CEM, what it must carry, the loud-absence rule) = canon [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md);
   research + phase roster = `tools/cad/docs/drawings_program.md`.
-  🔴 **`docs/images/cad/*.drawing.svg` is a SECOND artefact and nothing re-runs the gallery for you.** It
+  🔴 **`docs/images/cad/*.drawing.svg` is a SECOND artefact and nothing re-runs the gallery for you** — the
+  push only REFUSES a sheet that names other manifest bytes than the commit ships (`scripts/cad_gallery_freshness.rb`
+  in `.githooks/pre-push`, since 2026-10-04); redrawing stays yours. It
   is committed and opens straight from GitHub (a blob-rendered SVG) — i.e. the drawing outsiders see, so a
   lagging gallery publishes exactly the lines a code fix removed. ⚠️ **`wiki:sync` does NOT carry it:** `lib/tasks/wiki.rake` syncs only the canon `NN_NN_*.md` and copies an
   image only where a doc EMBEDS it as `![…](…)`; no canon doc embeds these. Want them on the wiki — embed them
