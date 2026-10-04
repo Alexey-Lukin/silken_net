@@ -3,16 +3,9 @@
 
 module SilkenNet
   # [Lorenz de-risk / 05_05 §8] Ground-truth validation harness.
-  # ⚠️ Цей реф двічі пережив перенумерацію з ХИБНОЮ ціллю. Народився він у
-  # розчиненому нині модулі 08, у доці про кібернетичну й математичну валідацію,
-  # де секція з тим самим номером справді була про Z↔health. Модуль розчинили,
-  # номер перезаселили реєстром ВНЗ — і та сама секція стала медакадемією.
-  # Адреса лишилась валідною при підміненому змісті: резолвер такого не бачить
-  # за побудовою, бо питає лише «чи існує», ніколи «чи про те саме».
-  # (Координати навмисно прозою — цитата мертвого номера сама стає мертвим рефом.)
   #
-  # Push-button correlation analysis for the "Lorenz Z ↔ tree health" hypothesis,
-  # to be run once ЧНУ collects paired (telemetry, ground-truth) observations.
+  # Push-button correlation analysis of the DIRECT signals against field ground
+  # truth, to be run once paired (telemetry, ground-truth) observations exist.
   #
   # PURE / READ-ONLY: every method is a pure function over the data passed in —
   # no DB reads/writes, no slashing side-effects, no global state. Safe to run

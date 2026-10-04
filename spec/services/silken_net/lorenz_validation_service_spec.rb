@@ -4,8 +4,8 @@
 require "rails_helper"
 
 # [Lorenz de-risk / 05_05 §8] Unit coverage for the ground-truth validation harness.
-# Pure functions — no DB. Verifies the stats are correct so the eventual ЧНУ
-# analysis (Z↔health) can be trusted.
+# Pure functions — no DB. Verifies the stats are correct so the eventual
+# ground-truth analysis can be trusted.
 RSpec.describe SilkenNet::LorenzValidationService do
   describe ".pearson" do
     it "is +1.0 for a perfect positive linear relationship" do
