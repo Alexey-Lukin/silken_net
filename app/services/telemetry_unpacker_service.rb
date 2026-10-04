@@ -869,8 +869,8 @@ class TelemetryUnpackerService < ApplicationService
   # розводило б два обчислення. Механізм, виміри й ціна набору — `03_04 §5.3`.
   # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
   # disabled by default to preserve current categorical behaviour:
-  #   - `GAIA_DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
-  #   - `GAIA_DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
+  #   - `DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
+  #   - `DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
   #     allowed absolute drift between server_z and the reported
   #     device_z BEFORE flagging fraud.
   # The numeric branch fires only when `attributes[:device_z]` is present —
@@ -1035,14 +1035,14 @@ class TelemetryUnpackerService < ApplicationService
   # is unchanged until the lab measurement of real ARM↔x86 Float drift
   # confirms a safe ε.
   def numeric_dci_tolerance_enabled?
-    ENV["GAIA_DCI_NUMERIC_TOLERANCE"].to_s.downcase == "true"
+    ENV["DCI_NUMERIC_TOLERANCE"].to_s.downcase == "true"
   end
 
   # [FW.31] Allowed absolute drift `|server_z - device_z|` before fraud
   # is flagged. ENV override falls back to `DEFAULT_DCI_EPSILON` when
   # the value is missing or fails Float coercion.
   def numeric_dci_epsilon
-    raw = ENV["GAIA_DCI_NUMERIC_EPSILON"]
+    raw = ENV["DCI_NUMERIC_EPSILON"]
     return DEFAULT_DCI_EPSILON if raw.blank?
 
     Float(raw)

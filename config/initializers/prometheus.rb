@@ -214,7 +214,7 @@ module SilkenNet
     DCI_NUMERIC_MISMATCH_TOTAL = REGISTRY.counter(
       :silkennet_dci_numeric_mismatch_total,
       docstring: "FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon " \
-                 "[FW.31; diagnostic tier: no alert until GAIA_DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
+                 "[FW.31; diagnostic tier: no alert until DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
     )
 
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,

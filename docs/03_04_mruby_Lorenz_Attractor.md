@@ -130,7 +130,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 >
 > - **Firmware:** `Derive_Cold_Start_State()` (`firmware/soldier/main.c`) рахує epoch_day **exact civil-days** (`lorenz_seed.h` `Silken_Days_From_Civil`, [FW.30] — стара `Month*30 approximation` закрита); RTC-default 2000-01-01 → 10 957, паритет із backend-кандидатом.
 > - **Backend:** `TelemetryUnpackerService#compute_server_z` сьогодні **уникає** проблеми у >99% випадків через `previous_lorenz_state_for(tree)` chaining (server бере хвіст останнього TelemetryLog, не cold-derive). Cold-derive виконується лише коли у дерева **немає історії** (вперше підключений вузол). У такому сценарії server бере добу з моменту ПРИЙОМУ пакета (`derivation_epoch_day` ← `received_at` із job-аргументів, [ARCH.41] — див. «ЧЕТВЕРТИЙ кут» нижче); `Time.now.utc.to_i / 86_400` лишився ЛИШЕ фолбеком для викликів без мітки (bench/HIL/спеки) — і Soldier з RTC=2000-01-01 не співпаде з server-day.
-> - **Сценарій тонкого розриву:** VBAT loss у дерева **з історією** → Soldier cold-restart'ить Lorenz з RTC-default epoch_day, server chain'ить з попереднього хвоста → траєкторії розходяться категорично на ергодичному горизонті ~50 циклів (≈ 2 доби), доки `CMD_TIME_SYNC` не дочекається наступного CoAP downlink'у. Сьогодні numeric DCI branch (`GAIA_DCI_NUMERIC_TOLERANCE`) інертний у production (транзитний 21B ECB не несе device_z; wire-дім у FW.2 wire-rev2 готовий, чекає CCM-фліпу), тож на DCI це поки **не валиться** — але стане живим обмеженням разом із numeric tolerance band після фліпу.
+> - **Сценарій тонкого розриву:** VBAT loss у дерева **з історією** → Soldier cold-restart'ить Lorenz з RTC-default epoch_day, server chain'ить з попереднього хвоста → траєкторії розходяться категорично на ергодичному горизонті ~50 циклів (≈ 2 доби), доки `CMD_TIME_SYNC` не дочекається наступного CoAP downlink'у. Сьогодні numeric DCI branch (`DCI_NUMERIC_TOLERANCE`) інертний у production (транзитний 21B ECB не несе device_z; wire-дім у FW.2 wire-rev2 готовий, чекає CCM-фліпу), тож на DCI це поки **не валиться** — але стане живим обмеженням разом із numeric tolerance band після фліпу.
 >
 > **Мітигація:**
 > 1. **Server-side detect-and-recover** ✅ **Реалізовано (2026-05-17, ARCH.41 Option A):** `TelemetryUnpackerService#try_time_sync_recovery` — коли `cold_start_flag == false` (є історія) АЛЕ категоричний DCI мисматч, пробує 3 кандидати `epoch_day` (today, today−1, `FIRMWARE_RTC_DEFAULT_EPOCH_DAY=10_957`). Для кожного: `SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)` → `Attractor.calculate_z_from_state(...)` → категорична перевірка. При збігу: `TelemetryLog#time_unsynced_fallback = true`, `TimeSyncDownlinkWorker.perform_async(cluster_id)` (envelope-only CoAP → Queen RTC → LoRa beacon → Soldier sync). fraud_metric НЕ інкрементується. 9 spec examples.
@@ -734,8 +734,8 @@ if (mrb) {
 
 | ENV | Default | Тип | Семантика |
 |-----|---------|-----|-----------|
-| `GAIA_DCI_NUMERIC_TOLERANCE` | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
-| `GAIA_DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
+| `DCI_NUMERIC_TOLERANCE` (до 2026-10-04 — з префіксом `GAIA_`, знятим разом із ретированим брендом, [`00_02 §5`](00_02_Academic_Integration_and_IP); у прод не пушився — Gate P ще попереду) | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
+| `DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
 
 **Гейт активації — `device_z` має бути в payload: ✅ wire-дім існує (FW.2 wire-rev2, 2026-06-12).**
 
@@ -760,14 +760,14 @@ Branch інертний до фліпу `FW2_CCM_ENABLED` + `TELEMETRY_CCM_ENABL
 1. **Gate L (Lab):** ✅ див. вище — drift виміряно (=0), ε=0.001 підтверджено conservative; кремнієвий хвіст їде з FW.55-дампом.
 2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets. ✅ Wire-дім готовий (FW.2 wire-rev2, bytes 16..17 + сентинель — блок вище); вимірювання 95% — після CCM-фліпу. Прилад — `silkennet_telemetry_ccm_device_z_total{carried}` (2026-09-28; доти канон називав «decrypt_ok vs сентинель-частку», а лічильника сентинелів не було): частка `carried="true"` серед усіх кадрів, що дійшли до розвилки, без panic-кадрів (DCI їх не судить). Стара форма «1 − сентинели / `decrypt_ok`» завищила б покриття: `decrypt_ok` інкрементується ДО перевірки шуму сенсора, тож відкинуті кадри сиділи б у знаменнику, але ніколи не в сентинелях.
 3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_mismatch_total` (є з 2026-09-28, реєстр [`06_03`](06_03_Prometheus_Observability); доти канон називав `…_rejections_total`, якого не було, а числова гілка била лише в спільний `fraud_detected`, куди пишуть вісім місць; «rejection» — неправда й за змістом: гілка лише сигналить, рядок персиститься). ⚠️ Гілка стоїть ДО відновлення ARCH.41, тож лічильник бачить і кадри, які далі врятує `time_unsynced_fallback` — канарку читати разом із ним. Очікувано: 0 mismatches (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
-4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
+4. **Gate P (Production canary):** Single Genesis cluster, `DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
 5. **Gate G (Global):** Flip всіх production кластерів.
 
 **Rollback procedure:**
 
 ```bash
 # Kamal env push без redeploy:
-kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
+kamal env push --secret DCI_NUMERIC_TOLERANCE=false
 # АБО видалити з .kamal/secrets-common, тоді next deploy картки залишиться без флагу
 ```
 
@@ -786,7 +786,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 2. within ε → silent pass (no fraud flag)
 3. drift > ε → fraud flag + structured log entry
 4. default ε constant — pin `DEFAULT_DCI_EPSILON = 0.001`
-5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
+5. malformed `DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
 6. `device_z` missing → numeric branch skipped (Gate D guard)
 
 **Cross-ref:** [`00_07` — FW.31](00_07_Action_Plan_Tracker), [`03_05 §2.1` FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [`04_02` — TelemetryUnpackerService](04_02_Business_Logic_and_Services), [`06_03` — Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
