@@ -171,6 +171,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 19. Re-gen a committed artifact after editing its generator, and `git status` it before the commit
 20. Script-list One-Home: README = inventory (what + cost), SUMMARY = results, PIPELINE_STATUS = per-script status and volatile counts
 21. Don't `git add -A` a still-warm background-compute output
+21a. An overnight SCF needs `caffeinate -i`, or macOS idle-sleep kills it — and the loss is silent
 22. A new DFT script imports `lib.constants` + `lib.utils` + `lib.dft_utils` and runs its SCF through `dft_singlepoint`, whose defaults already carry Critical Rules #4 and #5
 23. A new MD script imports `lib.constants` + `lib.geometry` + `lib.utils`, protonates through `lib.md_utils.prepare_protein` and follows Critical Rule #6 for minimisation, pre-relax and ramp
 24. New script — the number is a shared namespace (take the next free N from `ls scripts/`, never a remembered range), and the lattice's elastic knockdown is not this half's to compute

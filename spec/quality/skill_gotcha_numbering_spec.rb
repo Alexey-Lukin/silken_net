@@ -85,9 +85,22 @@ module SkillGotchaNumbering
 
   # Розбиває послідовність рядів на ГРУПИ: новий ряд починається там, де
   # номер не більший за попередній (лік пішов спочатку).
+  #
+  # ⚠️ Суфіксна вставка (`21a` після `21`) — ПРОДОВЖЕННЯ, не новий ряд. Без цієї
+  # гілки гейт був хибно-позитивним на будь-якій вставці поза секцією гоч
+  # (виміряно 2026-10-04 на `in-silico` #21a: ряд читався як [21a, 22…31] і
+  # падав, бо не починався з 1). Усередині секції клас не стріляв, бо `violations`
+  # дивиться лише рядки ПІСЛЯ неї — тому `backend` #4a/#15a/#16a/#16b і
+  # `deploy` #6a жили зелені, і діри ніхто не бачив.
+  def self.continuation?(row, prev)
+    return true if row.num > prev.num
+
+    row.num == prev.num && !row.suffix.empty? && row.suffix > prev.suffix
+  end
+
   def self.runs(rows)
     rows.each_with_object([]) do |row, acc|
-      if acc.empty? || row.num <= acc.last.last.num
+      if acc.empty? || !continuation?(row, acc.last.last)
         acc << [ row ]
       else
         acc.last << row
@@ -132,6 +145,22 @@ RSpec.describe "нумерований ряд гоч живе у своїй се
   # (`ssot-maintenance` §Guard-craft #61).
   it "має непорожню популяцію скілів із нумерованими гочами" do
     expect(SkillGotchaNumbering.skills_with_numbered_gotchas).to be >= 5
+  end
+
+  # Мутація в ОБИДВА боки (guard-craft #52): без GREEN-половини «гейт червоніє на
+  # вставці» не відрізнити від «гейт червоніє на всьому». 21a після 21 = законне
+  # продовження (GREEN), 21 після 21 без суфікса = перезапуск ліку (RED), і
+  # 21a після 21b = регрес суфікса, теж перезапуск (RED).
+  it "читає суфіксну вставку як продовження, а перезапуск ліку — як новий ряд" do
+    row = ->(n, s) { SkillGotchaNumbering::Row.new(num: n, suffix: s, lineno: 1, text: "x") }
+
+    expect(SkillGotchaNumbering.continuation?(row[21, "a"], row[21, ""])).to be true
+    expect(SkillGotchaNumbering.continuation?(row[21, "b"], row[21, "a"])).to be true
+    expect(SkillGotchaNumbering.continuation?(row[22, ""], row[21, "a"])).to be true
+
+    expect(SkillGotchaNumbering.continuation?(row[21, ""], row[21, ""])).to be false
+    expect(SkillGotchaNumbering.continuation?(row[21, "a"], row[21, "b"])).to be false
+    expect(SkillGotchaNumbering.continuation?(row[1, ""], row[31, ""])).to be false
   end
 
   it "не має ряду, що продовжує лік гоч ПОЗА своєю секцією" do

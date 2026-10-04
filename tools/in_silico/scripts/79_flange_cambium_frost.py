@@ -487,8 +487,10 @@ def main() -> int:
             f"{meds['overcast_diffuse_sun'][0]:+.1f}…{meds['overcast_diffuse_sun'][1]:+.1f} K. The worst day of the four ends "
             f"is {upper[0]:+.1f} K colder ({upper[1]}, tied). Decoupled — the flange's band alone, "
             f"{ar['fin_ratio']['decoupled']:.2f}× the ring — moves the same way with smaller medians. Beam sun on a trunk "
-            f"face, real cloud cover, the real coupling and any injury threshold are not in the tree; 1D inflates the "
-            f"shift in both signs.")
+            f"face, real cloud cover and the real coupling are not in the tree; 1D inflates the shift in both "
+            f"signs. An injury THRESHOLD now is: Shlapak et al. 2011 (Uman, Cherkasy obl.) measured a cambium "
+            f"damage index of 0.1 +/- 0.1 at -25 C and 0.2-0.65 at -35 C on dormant stone-fruit wood, i.e. the "
+            f"threshold sits NEAR this model's floor, not far below it -- canon docs/01_04 section 3.1.")
     print(f"\n  → {text}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

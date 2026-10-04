@@ -66,6 +66,10 @@ set -uo pipefail
 # battery gets its OWN TMPDIR, removed on exit — every child inherits it.
 if [[ "${1:-}" == "--selftest" ]]; then
   TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/bashguard-selftest.XXXXXX"); export TMPDIR
+  # Rule H reads the REAL working tree unless told otherwise, which would make every
+  # case that merely contains `git add` depend on what is mid-computation. Default the
+  # battery to CLEAN; the H block exports the dirty value for its own arm.
+  export BASHGUARD_CACHE_DIRTY=clean
   trap 'rm -rf "$TMPDIR"' EXIT
   self="$0"; fails=0; n=0
   # 4th arg = the `run_in_background` flag (default false). It exists because
@@ -257,6 +261,25 @@ body with `01_02:177` inside"'
     t "D: checkout of a CLEAN file stays silent" silent \
       "git checkout README.md"
   fi
+
+  # ── H · git add of a directory while a compute cache is dirty ──────────────
+  # Both arms, mutation-verified: remove the `(tools|docs|\.|:/)` alternation and
+  # the three positives go silent; remove the dirty-check and the clean-tree
+  # negative warns. The three positives are the three REAL relapse forms of
+  # 2026-10-04 — including the `--` one, which read as precision and is not.
+  (
+    export BASHGUARD_CACHE_DIRTY=" M tools/in_silico/cache/dft/x.json"
+    t "H: git add -A sweeps a warm cache" warn "git add -A && git commit -s -m x"
+    t "H: narrowed to directories is NOT a fix" warn "git add -A docs tools"
+    t "H: the \`--\` form is not a fix either" warn "git add -- docs tools NOTICE"
+    t "H: explicit FILE paths stay silent" silent \
+      "git add -- docs/00_07_Action_Plan_Tracker.md tools/in_silico/scripts/80_x.py"
+    t "H: add -p is interactive, not a sweep" silent "git add -p tools"
+  )
+  (
+    export BASHGUARD_CACHE_DIRTY="clean"
+    t "H: a CLEAN cache tree makes the sweep harmless" silent "git add -A"
+  )
 
   if (( fails > 0 )); then
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
@@ -666,6 +689,43 @@ fi
 if printf '%s' "$cmd" | grep -qE '(^|[;&|(]|[[:space:]])(until|while)[[:space:]]' &&
    printf '%s' "$cmd" | grep -qE '\bp(grep|kill)[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*[[:space:]]+["'"'"']?[^"'"'"'$[:space:]]'; then
   warn pgrep-wait-loop '[bash-guard] A wait-loop polls `pgrep -f <literal>`. The loop'"'"'s own command line contains that literal, so a SECOND process carrying it — most often another copy of this waiter, and the detached shells of earlier Bash calls linger — keeps them all alive forever, while each poll reads as "still running". Wait on the ARTIFACT instead (`until grep -q "<verdict>" out.log; do sleep N; done`), or match the executable name with `pgrep -x`. Measured: a lone loop DOES exit; the failure needs company. (Fires once per session.)'
+fi
+
+# ── H · WARN · `git add` of a DIRECTORY that contains a compute cache ─────────
+# Three relapses in ONE day (2026-10-04) on the same defect: a still-warm DFT
+# cache swept into a commit by `git add -A`, then by `git add -A docs tools`, then
+# by `git add -- docs tools NOTICE`. The narrowing LOOKED like the fix each time,
+# and the third form even carries the `--` separator that reads as precision.
+#
+# Why no rule in a skill can hold this: the carrier has to fire at the moment of
+# `git add`, and the skill that states the rule (`in-silico` #21) is not loaded
+# then. The relapse was never about knowing the rule — its home was patched one
+# hour before relapse #2. Class: memory `feedback_rule_needs_a_carrier`.
+#
+# Perimeter: fires only when a DIRECTORY argument (or -A/-u with no pathspec)
+# could reach a cache tree, and only while such a tree is actually dirty — a clean
+# tree makes the sweep harmless, and this is the half that keeps the rule quiet.
+# Explicit file paths are the sanctioned form and stay silent by construction.
+# ⚠️ ANCHORED to the start of a statement, which is rule A's measured lesson applied
+# here: the un-anchored first draft of this rule fired on a `python3` heredoc whose
+# BODY contained the string `git add -A` (it was writing this very battery), and on
+# two of rule E's own negative cases. A mention is not an invocation.
+gitadd='(^|[;&]|&&|\|\||\|)[[:space:]]*git[[:space:]]+add[[:space:]]'
+if printf '%s' "$cmd" | grep -qE "$gitadd" &&
+   printf '%s' "$cmd" | grep -qvE "${gitadd}+(-N|--intent-to-add|-p|--patch)\b"; then
+  # a pathspec that is a plain directory, or a blanket -A / -u with none
+  if printf '%s' "$cmd" | grep -qE '\bgit[[:space:]]+add[[:space:]]+(-[AuaE]+[[:space:]]*)*(--[[:space:]]+)?([^[:space:]-][^[:space:]]*[[:space:]]+)*(tools|docs|\.|:/)([[:space:]]|$)' ||
+     printf '%s' "$cmd" | grep -qE '\bgit[[:space:]]+add[[:space:]]+(-A|--all|-u|--update)([[:space:]]|$)'; then
+    # ⚠️ The dirty-check is a RUNTIME condition, so a battery case built on the real
+    # working tree would pass or fail depending on what is mid-computation — a flaky
+    # pin, i.e. no pin. `BASHGUARD_CACHE_DIRTY` lets --selftest state the condition
+    # explicitly and pin BOTH directions (dirty→warn, clean→silent) deterministically.
+    cache_dirty="${BASHGUARD_CACHE_DIRTY:-$(git status --porcelain -- tools/in_silico/cache 2>/dev/null)}"
+    [[ "$cache_dirty" == "clean" ]] && cache_dirty=""
+    if [[ -n "$cache_dirty" ]]; then
+      warn git-add-warm-cache '[bash-guard] `git add` with a DIRECTORY pathspec (or -A/-u) while `tools/in_silico/cache/` is dirty. A still-warm compute cache gets swept into the commit, and the narrower directory form is NOT the fix — measured three times in one day, including with `--`. Name the files explicitly: `git add -- path/one path/two`. Check first: `git status --porcelain -- tools/in_silico/cache`. (Fires once per session.)'
+    fi
+  fi
 fi
 
 exit 0

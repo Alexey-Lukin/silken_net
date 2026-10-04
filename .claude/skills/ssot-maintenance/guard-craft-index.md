@@ -136,6 +136,8 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 56. Deleting a REDUNDANT test is not the same act as deleting a dead branch, and it needs THREE independent measurements plus a fourth pass nobody's brief asks for
 58. A boot guard is usually blind to the very placeholder that exists to make it fail loudly — because `REQUIRED_SECRET_NOT_SET` is neither blank nor the sentinel, and a presence-shaped predicate reads it as a real value
 59. A shrink-list exemption has TWO ways to die, and the obvious check catches only one — the other leaves an expired exemption actively PROTECTING the regression it was meant to track
+60. A gate that only inspects the region OUTSIDE its subject can be false-positive for years without a single red, because the lawful form of the thing it misparses lives INSIDE the region it skips
+182. A mutation applied by «replace the first occurrence» lands in the COMMENT that documents the mutation — and the battery then passes, which reads as «this branch is not load-bearing»
 61. Чи є ПОРОЖНЯ МНОЖИНА для гейта провалом чи метою — вирішує ФОРМУ доказу його живості, і переплутати їх означає або вічнозелену декорацію, або гейт, що забороняє власний успіх
 62. Пиши гейт ПЕРШИМ і прожени його ЧЕРВОНИМ по всьому периметру — тоді перехід у зелене доводить РОБОТА, а не твоя правка гейта
 63. «Прибрано/гейтовано на користь X» вимагає доказу, що X ПРАЦЮЄ — виміряного живим трактом, а не запланованого; найдорожча форма — зняти РОБОЧИЙ механізм тим самим комітом, на слово про наступника
