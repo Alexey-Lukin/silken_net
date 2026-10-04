@@ -486,8 +486,8 @@ public class DrawingTests
 
     // 🔴 HW.2: the flange goes to acceptance with a Sa/Sv row, not an empty one. The shipped manifest
     // must state the finish PER SURFACE — the catalytic face keeps the EAAE roughness that makes the
-    // ECSA, the outer jacket alone is smoothed (01_02 §1.3 Крок 7). One blanket finish on
-    // this part polishes away the very surface the laccase needs.
+    // ECSA, the non-catalytic buffer alone is smoothed and the outer jacket is left as produced (01_02 §1.3
+    // Крок 7, ⚖️ 2026-10-04). One blanket finish on this part polishes away the very surface the laccase needs.
     [Fact]
     public void Shipped_Cathode_Flange_States_A_Per_Surface_Finish_Not_A_Blanket_One()
     {
@@ -496,7 +496,8 @@ public class DrawingTests
         Assert.False(string.IsNullOrWhiteSpace(sf));
         Assert.Contains("Sa 0.5-5 um", sf);        // EAAE micro scale (01_02 §1.2)
         Assert.Contains("Sv 50-500 nm", sf);       // EAAE nano scale
-        Assert.Contains("outer jacket", sf!);      // the PEP surface is NAMED, not implied
+        Assert.Contains("outer jacket", sf!);      // the jacket is NAMED with its own (as-produced) finish, not implied
+        Assert.Contains("non-catalytic buffer", sf!);   // and the one smoothed surface is named too (Step 7, ⚖️ 2026-10-04)
         // 🔴 2026-09-22 (00_07 HW.2): this line asserted the literal "NO PEP", i.e. it was keyed to the
         // same PROCESS NAME the instruction was — so it did not merely allow the narrow form, it PINNED
         // it, and a ban named after one process leaves electropolishing, tumbling and abrasive-flow
