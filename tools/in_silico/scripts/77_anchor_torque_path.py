@@ -8,6 +8,9 @@ QUESTION. §4.3 C (anti-rotation) may be dropped only on the ABSENCE of a torque
 not on friction, because at the floor of the interference window at +40 °C the friction is zero by the window's
 own definition. Does a wind path exist, and what does the friction of the Zone-1 shank in the PEEK sleeve carry?
 
+VERDICT (01_01 §4.3 C): the path exists, and C was dropped on its MAGNITUDE — Q2 below puts wind torsion at
+micro-slip — not on its absence; the premise above is the question as first posed, not the rule that decided it.
+
 MECHANISM (analytic — nothing fitted):
   * Trunk BENDING rotates a cross-section as a plane; for a radial anchor the material rotation about its own
     axis is the same at every depth (bending about the anchor axis: ω = −v′(z), independent of the radial

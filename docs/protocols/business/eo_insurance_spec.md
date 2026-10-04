@@ -127,7 +127,7 @@ SilkenNet — solo-founder pre-revenue forest-D-MRV платформа, що г�
 
 ### 5.2 Subcontractor-арборист GL + additional insured (не самострахувати install)
 
-- Арборист, що фізично вкручує Ti-анкер, — **subcontractor, не employee SilkenNet**. Первинне покриття травми третьої особи/майнової шкоди = **арбористова власна GL** (+ Workers' Comp за травму власного робітника, якщо релевантно).
+- Арборист, що фізично встановлює Ti-анкер, — **subcontractor, не employee SilkenNet**. Первинне покриття травми третьої особи/майнової шкоди = **арбористова власна GL** (+ Workers' Comp за травму власного робітника, якщо релевантно).
 - **SilkenNet НЕ повинен самострахувати цей акт** — натомість: (a) вимагати COI від арбориста ПЕРЕД початком робіт, (b) додати SilkenNet **named additional insured** на арбористовому полісі, (c) де релевантно — додати і власника ділянки/кінцевого клієнта як additional insured теж (суцільний ланцюг: арборист → SilkenNet → клієнт).
 - **Products-completed-operations gap-перевірка:** це розширення типово НЕ default (окрема галка в policy wording) — explicitly перевір, чи арбористів поліс його включає, бо саме воно покриває «анкер підвів через тиждень після інсталяції», а не базове «operations»-покриття.
 - Використай цю ж вимогу (арборист COI + additional-insured) як **contract clause в Subcontractor Agreement** з кожним арбористом-партнером, не лише як insurance-checklist — контрактна мова робить вимогу enforceable, не лише «просимо ввічливо».

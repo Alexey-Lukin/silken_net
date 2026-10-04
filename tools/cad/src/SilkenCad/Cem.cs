@@ -462,7 +462,7 @@ internal sealed record RadomeCem
 // the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
 // thermal break, §4.1). The bore is a plain round hole: the hex anti-rotation of §4.3 C was dropped on its
 // wind ground (⚖️ 2026-10-03, 00_07 HW.26) — stem torsion gives the shank micro-slip only; a form lock against
-// the EVENT torque is an open subject (HW.33), its place — flange or this bore — not chosen.
+// the EVENT torque is an open subject (HW.26), its place — flange or this bore — not chosen.
 // The DIN-471 groove lives on the Ti part, NOT the PEEK sleeve — on the Zone-1 end only since ⚖️ 2026-09-18,
 // with no ring fitted as a backup (00_07 HW.26); barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps
 // 4–5) → the PEEK bore is smooth here. The bus is a wire welded to the anode's TOP face (01_01 §1.4, §3 step 1b) that
@@ -476,7 +476,7 @@ internal sealed record Zone2SleeveCem
     public float WallThicknessMm { get; init; } = 2f;     // frozen §1 — robust default, NOT CTE-limited (§4.2)
     public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
     // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
-    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit µm band — an ISO 286 read today; the band is to come from the Lamé window, 00_07 HW.3, inputs open · hex clearance)
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit µm band — an ISO 286 read today; the band is to come from the Lamé window, 00_07 HW.3, inputs open)
     public NotesSpec? Notes { get; init; }                // drawing notes block
 }
 
