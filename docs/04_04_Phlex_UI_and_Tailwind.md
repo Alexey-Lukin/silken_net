@@ -302,6 +302,8 @@ end
 
 ### 3.1 Поверхневі, Текстові та Основні Токени (`gaia-*`)
 
+> 🏷️ **Префікс `gaia` — внутрішня назва дизайн-системи, не бренд** (скамʼянілість кодового імені 2026-06). ⚖️ founder 2026-10-04: токени `*-gaia-*` / `--gaia-*`, компоненти й лінтер `gaia:lint_tokens` лишаються без кампанії перейменування — бренд один, SilkenNet ([`00_02 §5`](00_02_Academic_Integration_and_IP)).
+
 > **Phase 1 of the frontend overhaul (Tailwind v4 SSOT).** Палітра розширена
 > до 4-tier surface depth scale (Material 3 elevation pattern) і 3-level text
 > hierarchy для адекватного контрасту в light/dark. Перемикання теми тепер

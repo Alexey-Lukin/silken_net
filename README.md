@@ -186,4 +186,4 @@ SilkenNet is **mission-first and defensive-publication-first**: we deliberately 
 
 - **Patent non-assertion pledge.** We neither file nor assert patents; the inventive core is published as a defensive disclosure — [`docs/protocols/anchor/defensive_disclosure.md`](docs/protocols/anchor/defensive_disclosure.md).
 - **Third-party exceptions.** AlphaFold 3 outputs (`docs/protocols/ebfc/in_silico/alphafold3/**` and `dgrGcGDH_AF3.pdb`) fall under AF3's own **non-commercial** Terms, **not** CC-BY-SA — see [`NOTICE`](NOTICE). The full dependency inventory is in `THIRD_PARTY_NOTICES`.
-- **Trademarks.** SilkenNet™ / GaiaNexus™ / SCC™ are reserved for brand protection and are **not** licensed by any of the above.
+- **Trademarks.** SilkenNet™ / SCC™ are reserved for brand protection and are **not** licensed by any of the above.

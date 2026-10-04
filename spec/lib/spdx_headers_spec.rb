@@ -310,8 +310,7 @@ RSpec.describe SpdxHeaders do
     it "does not treat OUR copyright as foreign" do
       [
         "# Copyright (c) 2026 Oleksii Lukin / SilkenNet\n",
-        "# Copyright 2026 Silken Net. All rights reserved.\n",
-        "// © 2026 GaiaNexus\n"
+        "# Copyright 2026 Silken Net. All rights reserved.\n"
       ].each { |line| expect(described_class.foreign_notice([ line ])).to be_nil, "ours, not foreign: #{line.strip}" }
     end
   end

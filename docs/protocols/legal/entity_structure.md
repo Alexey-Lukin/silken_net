@@ -66,7 +66,7 @@ Operational-vehicle — **multi-founder** компанія (founder = співз
 | Ось | Що містить | Носій Phase-1 | Чому |
 |---|---|---|---|
 | **Operational-vehicle** | dev-робота, MSA-підпис, білінг/інвойсинг, liability-щит, Дія.City-режим, KYC-org-anchor | **Наявна UA-компанія** | Shell-послуги — саме те, для чого операційна компанія існує; multi-founder тут нешкідливо |
-| **IP / value-owner** | copyright на код (`SilkenNet::Attractor`, `bio_contract.rb`…), trademark (SilkenNet™/GaiaNexus™/SCC™), governance/treasury-токеноміка, «цінність місії» | **Фізособа founder'а** | SilkenNet = solo-mission → титул має жити в особи, що несе місію; спільна особа зробила б власність на місію неоднозначною |
+| **IP / value-owner** | copyright на код (`SilkenNet::Attractor`, `bio_contract.rb`…), trademark (SilkenNet™/SCC™), governance/treasury-токеноміка, «цінність місії» | **Фізособа founder'а** | SilkenNet = solo-mission → титул має жити в особи, що несе місію; спільна особа зробила б власність на місію неоднозначною |
 
 **🔴 Ризик, який знімає структурування:** без явного оформлення діє **мовчазний default** — режим «службового твору» / work-product за загальним правилом. Тоді титул на SilkenNet-IP стає **двозначним для обох сторін**: ані founder не має чистої власності для Phase-2, ані operational-vehicle не має безспірної підстави використовувати IP у delivery. Це суперечить канонізованій поставі ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) — copyright на фізособу «Oleksii Lukin»; `/NOTICE`).
 

@@ -699,10 +699,13 @@ module DocsLinter
     "mfloat-abi=hard" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
     "Cortex-M4F" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)",
     "Cortex-M4 з FPU" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)",
-    # Retired project codename (BIZ.16, 2026-06-16): dissolved by altitude →
-    # SilkenNet (product) / GaiaNexus (planetary federation). Distinct literal from
-    # the LIVE "Gen 2.0" EBFC biochem axis (substring match → no false positive).
-    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 00_02 §5",
+    # Retired project codename (BIZ.16, 2026-06-16). Distinct literal from the LIVE
+    # "Gen 2.0" EBFC biochem axis (substring match → no false positive).
+    "Gaia 2.0" => "retired project codename → SilkenNet, 00_02 §5",
+    # Retired brand (⚖️ founder 2026-10-04): the federation apex name went with its ™,
+    # its domains and the federation canon — SilkenNet is the only brand. 00_06/00_07
+    # stay exempt, so the tracker's archive keeps the provenance (BIZ.16 · ARCH.44).
+    "GaiaNexus" => "retired brand (⚖️ founder 2026-10-04) → SilkenNet is the only brand, 00_02 §5; history → 00_07 §🗄️ BIZ.16",
     # Binstub'и (CLAUDE.md §3): `bin/X` вантажиться швидше й не залежить від
     # того, чи активний правильний gemset. Ключі ПОІМЕННІ, а не голий
     # "bundle exec": `i18n-tasks`, `sidekiq`, `ruby` binstub'ів НЕ мають, тож

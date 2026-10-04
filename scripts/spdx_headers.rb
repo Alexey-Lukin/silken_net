@@ -191,7 +191,7 @@ module SpdxHeaders
   # …but OUR OWN copyright notice is not foreign. Without this, the day a SilkenNet
   # copyright header lands in a file, that file drops out of the rollout AND out of the
   # gate at the same time — silently, and in the same motion.
-  OURS_RE = /SilkenNet|Silken\s+Net|GaiaNexus|Oleksii\s+Lukin/i
+  OURS_RE = /SilkenNet|Silken\s+Net|Oleksii\s+Lukin/i
 
   # An extensionless file counts as source only when a shebang names an interpreter
   # whose comment character is `#` (lib/daemons/coap_listener is the sole case today).

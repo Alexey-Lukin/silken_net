@@ -53,7 +53,7 @@ can fork the public repository and immediately create/close issues, accept propo
 changes, and cut releases (the release flow — release-please + standard GitHub
 Releases — needs no private key), well within a week of confirmed loss of support.
 The AGPL-3.0-or-later licence grants every legal right needed to do so; only the
-`SilkenNet`/`GaiaNexus`/`SCC` trademarks and the GitHub *account* are not transferable
+`SilkenNet`/`SCC` trademarks and the GitHub *account* are not transferable
 by fork, and neither is required to continue the software.
 
 As the project grows beyond a single maintainer, additional maintainers with

@@ -791,6 +791,12 @@ end
       expect(described_class.deprecated_terms("00_00", "# Gaia 2.0 SSOT")).not_to be_empty
     end
 
+    it "flags the retired GaiaNexus brand (⚖️ 2026-10-04) in canon and protocols, never in the tracker's archive" do
+      expect(described_class.deprecated_terms("00_02", "бренд SilkenNet / GaiaNexus")).not_to be_empty
+      expect(described_class.deprecated_terms("trademark_brief", "SilkenNet™/GaiaNexus™/SCC™")).not_to be_empty
+      expect(described_class.deprecated_terms("00_07", "| BIZ.16 | SilkenNet + GaiaNexus |")).to be_empty
+    end
+
     it "does NOT flag «Gen 2.0» (separate, live EBFC biochem generation axis)" do
       expect(described_class.deprecated_terms("07_02", "EBFC Gen 2.0 baseline dgrFAD-GDH")).to be_empty
       expect(described_class.deprecated_terms("01_03", "Gen 2.0 anode/cathode chemistry")).to be_empty
