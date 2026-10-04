@@ -23,7 +23,7 @@ FILE = File.expand_path("../docs/00_07_Action_Plan_Tracker.md", __dir__)
 OVERRIDES = {
   # ——— DOC-T.24 priority re-assess (rubric: TRL-horizon + STAGE + body's stated blocking-impact) ———
   # P1 -> P2 demotions (un-flatten the 73-item P1 bucket):
-  "HW.4"        => { p: "P2" }, # self-healing: 20yr longevity claim, TRL6 (not near-term gate)
+  "HW.4"        => { p: "P2" }, # self-healing: removed from the protocol (⚫ note), P2 kept
   "HW.11"       => { p: "P2" }, # conformal coating: decided (Parylene C), only choose+verify left
   "HW.14"       => { p: "P2" }, # winter energy: Queen Phase 3 (Starlink Mini) future, not 2.5
   "HW.16"       => { p: "P2" }, # thermal IP67: budget+backend done, minor hw charge-protect left
