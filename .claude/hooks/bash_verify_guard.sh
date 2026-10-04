@@ -133,13 +133,27 @@ if [[ "${1:-}" == "--selftest" ]]; then
   t "E/mem: --audit ;-laundered before git -C commit" deny-e \
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "EXIT=$?"; M=/x/memory; git -C "$M" add -A && git -C "$M" commit -q -m msg'
   t "E/mem: --audit piped into tail before git -C commit" deny-e \
-    'bash .claude/hooks/memory_gate.sh --audit 2>&1 | tail -3 && git -C $M commit -q -m msg'
+    'M=/x/memory; bash .claude/hooks/memory_gate.sh --audit 2>&1 | tail -3 && git -C $M commit -q -m msg'
   t "E/mem: clean && from --audit to git -C stays silent" silent \
-    'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1 && git -C $M add a.md && git -C $M commit -q -m msg'
+    'M=/x/memory; bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1 && git -C $M add a.md && git -C $M commit -q -m msg'
   t "E/mem: memory audit before a REPO commit stays silent" silent \
     'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git add docs/x.md && git commit -s -m msg'
   t "E/mem: repo gate piped before a MEMORY commit stays silent" silent \
-    'bin/rspec spec/x_spec.rb 2>&1 | grep -E "examples," && git -C $M commit -q -m msg'
+    'M=/x/memory; bin/rspec spec/x_spec.rb 2>&1 | grep -E "examples," && git -C $M commit -q -m msg'
+  # The fix-forward's own arms (2026-10-04, after the adversary): the incident shape
+  # BELOW a heredoc, the `cd` form that is the majority of memory commits, and a repo
+  # gate laundered below a heredoc must deny; a repo gate before a corpus commit made
+  # through `cd`, and a memory audit before a `git -C` on a NON-corpus dir, must not.
+  t "E/mem: --audit laundered BELOW a heredoc (09-23 shape)" deny-e \
+    $'M=/x/memory; python3 - "$M" <<\'PY\'\nprint(1)\nPY\nbash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "audit=$?"; git -C $M add a.md && git -C $M commit -q -m msg'
+  t "E/mem: cd into the corpus, then plain git commit" deny-e \
+    'M=/x/memory; bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; cd $M && git add -A && git commit -q -m msg'
+  t "E: repo gate laundered BELOW a heredoc denies" deny-e \
+    $'python3 - <<\'PY\'\nprint(1)\nPY\nruby scripts/docs_check.rb >/dev/null 2>&1\ngit add docs/x.md && git commit -s -q -m msg'
+  t "E/mem: repo gate before a cd-into-corpus commit stays silent" silent \
+    'M=/x/memory; ruby scripts/docs_band.rb >/dev/null 2>&1; echo "B=$?"; cd "$M" && git add a.md && git commit -q -m msg'
+  t "E/mem: memory audit before git -C <non-corpus> push stays silent" silent \
+    'bash .claude/hooks/memory_gate.sh --audit >/dev/null 2>&1; echo "A=$?"; git -C /Users/x/silken_net push origin main'
   # F — the SAME text in both contexts, which is the whole point of the rule.
   # The negative arm is not decoration: it is the pin that keeps rule F from
   # degenerating into "a gate followed by echo is suspicious", which would
@@ -282,19 +296,18 @@ body with `01_02:177` inside"'
   # the three positives go silent; remove the dirty-check and the clean-tree
   # negative warns. The three positives are the three REAL relapse forms of
   # 2026-10-04 — including the `--` one, which read as precision and is not.
-  (
-    export BASHGUARD_CACHE_DIRTY=" M tools/in_silico/cache/dft/x.json"
-    t "H: git add -A sweeps a warm cache" warn "git add -A && git commit -s -m x"
-    t "H: narrowed to directories is NOT a fix" warn "git add -A docs tools"
-    t "H: the \`--\` form is not a fix either" warn "git add -- docs tools NOTICE"
-    t "H: explicit FILE paths stay silent" silent \
-      "git add -- docs/00_07_Action_Plan_Tracker.md tools/in_silico/scripts/80_x.py"
-    t "H: add -p is interactive, not a sweep" silent "git add -p tools"
-  )
-  (
-    export BASHGUARD_CACHE_DIRTY="clean"
-    t "H: a CLEAN cache tree makes the sweep harmless" silent "git add -A"
-  )
+  # ⛔ NOT in a subshell: `( … t … )` drops the case's n/fails increments, so a failing
+  # H case printed ✗ while the battery still said OK — measured 2026-10-04 by the
+  # adversary of OPS.40 (six cases uncounted). The variable is exported at the top.
+  BASHGUARD_CACHE_DIRTY=" M tools/in_silico/cache/dft/x.json"
+  t "H: git add -A sweeps a warm cache" warn "git add -A && git commit -s -m x"
+  t "H: narrowed to directories is NOT a fix" warn "git add -A docs tools"
+  t "H: the \`--\` form is not a fix either" warn "git add -- docs tools NOTICE"
+  t "H: explicit FILE paths stay silent" silent \
+    "git add -- docs/00_07_Action_Plan_Tracker.md tools/in_silico/scripts/80_x.py"
+  t "H: add -p is interactive, not a sweep" silent "git add -p tools"
+  BASHGUARD_CACHE_DIRTY=clean
+  t "H: a CLEAN cache tree makes the sweep harmless" silent "git add -A"
 
   # ── I · the archive act through a script [OPS.41] · both arms ──
   # The positives are corpus forms: a row after an escaped `\n` inside a Python
@@ -321,7 +334,7 @@ body with `01_02:177` inside"'
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
     exit 1
   fi
-  echo "bash_verify_guard --selftest: OK (${n} cases — rules D, E and F all arms + smoke over A/B/C/backtick/rg)"
+  echo "bash_verify_guard --selftest: OK (${n} cases — rules D, E, F, H and I all arms + smoke over A/B/C/backtick/rg)"
   exit 0
 fi
 
@@ -670,34 +683,50 @@ fi
 # statement carrying its own clean gate exempts its git step even when an
 # EARLIER gate in the call was laundered (half-gated, 1 measured); a gate that
 # runs AFTER the git step in the same && chain is a post-hoc check, not this
-# class (2 measured); text following the first heredoc opener is dropped, so a
-# laundered combo living entirely BELOW a heredoc is invisible (0 measured).
+# class (2 measured); an unterminated heredoc swallows the rest of the call, and
+# only the first heredoc opener on a line is honoured.
 #
 # 🔑 [OPS.40] TWO vocabularies, paired by SUBJECT — a verdict gates only the git
-# step of the tree it judged. The memory corpus is committed with
-# `git -C <memory> commit`, which the original `git commit` anchor never saw, and
-# its gate `memory_gate.sh --audit` was outside `egate`; a `--audit ; echo ;
-# git -C … commit` call committed the corpus over a red audit on 2026-09-23.
-# Measured 2026-10-04 over 40,171 recorded calls / 145 sessions (09-04 → 10-04):
-# 123 calls could change verdict, and the widening AS PRESCRIBED (both regexes
-# extended, one shared pairing) flipped 15 — only 8 real; the 7 others crossed
-# subjects (a memory audit before a REPO commit/push, a repo gate piped before a
-# MEMORY commit), and neither verdict there judges the other tree. Paired by
-# subject: 5 flips, 5 real, none crossing. ⚠️ Ceiling, named: a memory commit
-# made by `cd`-ing into the corpus and running plain `git commit` stays invisible
-# — telling the cwd needs parser state, not a regex (3 measured, the last on
-# 2026-09-10; the house form since is `git -C`).
+# step of the tree it judged: repo gates ↔ a git step on the repo, and
+# `memory_gate.sh --audit` ↔ a git step on the memory corpus. The subject of a git
+# step is its `-C <dir>`, else the last `cd` of the call; a dir is the corpus when
+# it carries `/memory` or is a variable the same call assigns such a path (shell
+# state does not survive between calls, so an unassigned `$M` stays UNKNOWN and
+# pairs with neither). A memory audit before a REPO commit is not this class: the
+# audit reads repo paths, but what it judges is the corpus, and a repo commit does
+# not repair it. And heredoc BODIES are cut, not everything after the first
+# opener: the call goes on after the terminator, and that is where it laundered.
+# 🔴 Bought twice on 2026-10-04. The first fix was measured with this block's OWN
+# classifier, which dropped all text below a heredoc — so the measurement shared
+# the blindness it measured (guard-craft #12): it saw 5 flips, every one over a
+# GREEN audit, while the 2026-09-23 incident itself (`--audit; echo; git -C …
+# commit` on the line after a `python3 <<'PY'` body) stayed silent, as did each
+# `cd $M && git commit` — the MAJORITY form of memory commits, not a dying one.
+# The adversary caught it the same day. Re-measured over 2,474 recorded
+# commit/push calls (145 transcripts, 121 sessions, 09-04 → 10-04): the fix adds
+# 42 denies — 16 memory, 26 repo laundered below a heredoc — to the 64 the block
+# already gave, with no regression, and every one of the 42 discards a verdict
+# before a commit or push of the same tree.
 if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(commit|push)\b'; then
-  hd=$(printf '%s\n' "$cmd" | grep -nE "<<-?~?[[:space:]]*['\"]?[A-Za-z_]" | head -1 | cut -d: -f1)
-  if [[ -n "$hd" ]]; then ecmd=$(printf '%s\n' "$cmd" | head -n "$hd"); else ecmd=$cmd; fi
+  # Heredoc BODIES are cut, the lines after each terminator are KEPT [OPS.40 fix-forward]:
+  # the body is where a commit message names a gate, but the call goes on after it.
+  ecmd=$(printf '%s\n' "$cmd" | awk -v q="'" '
+    skip { t = $0; sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t); if (t == term) skip = 0; next }
+    { print
+      if (match($0, "<<-?~?[ \t]*[\"" q "]?[A-Za-z_][A-Za-z0-9_]*")) {
+        w = substr($0, RSTART, RLENGTH); sub("^<<-?~?[ \t]*[\"" q "]?", "", w); term = w; skip = 1 } }')
   ecmd=$(printf '%s' "$ecmd" | sed -E "s/-m[[:space:]]+\"[^\"]*\"/-m MSG/g; s/-m[[:space:]]+'[^']*'/-m MSG/g")
   egate="((env[[:space:]]+[^[:space:]]+[[:space:]]+)?([A-Z_]+=[^[:space:]]+[[:space:]]+)*)?(${gate}|ruby[[:space:]]+scripts/(docs_band|docs_check|model_doc_sync)\.rb)"
-  egit='git[[:space:]]+(commit|push)\b'
-  mgate='bash[[:space:]]+[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
-  mgit='git[[:space:]]+-C[[:space:]]+[^[:space:]]+[[:space:]]+(commit|push)\b'
-  # launder <gate-re> <git-re> → prints the laundered form, or nothing
+  mgate='(([A-Z_]+=[^[:space:]]+[[:space:]]+)*)(bash[[:space:]]+)?[^[:space:]]*memory_gate\.sh[[:space:]]+--audit'
+  # The SUBJECT of a git step is the tree it writes: `-C <dir>`, else the last `cd` of the
+  # call. A dir is the memory corpus when it carries `/memory` or is a variable this call
+  # assigns such a path (`M=…/memory`) — the corpus is never written any other way here.
+  mvars=$(printf '%s' "$ecmd" | grep -oE "(^|[;&|[:space:]])[A-Za-z_][A-Za-z0-9_]*=[\"']?[^[:space:];&|\"']*/memory([\"'/[:space:];&|]|$)" \
+            | sed -E 's/^[;&|[:space:]]*//; s/=.*//' | sort -u | paste -sd'|' -)
+  is_mem() { [[ "$1" == */memory* ]] || { [[ -n "$mvars" ]] && printf '%s' "$1" | grep -qE "^[\"']?\\\$\{?(${mvars})\}?[\"']?$"; }; }
+  # launder <gate-re> <subject: repo|mem> → prints the laundered form, or nothing
   launder() {
-    local g=$1 gs=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped
+    local g=$1 want=$2 verdict="" gate_seen="" st lk links st_gate st_git st_piped cwdm=0 tgt mem
     while IFS= read -r st; do
       links=${st//&&/$'\n'}
       links=${links//||/$'\n'}
@@ -707,7 +736,17 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
           st_gate=1
           printf '%s' "$lk" | grep -q '|' && st_piped=1
         fi
-        printf '%s' "$lk" | grep -qE "^[[:space:]]*${gs}" && st_git=1
+        if [[ "$lk" =~ ^[[:space:]]*cd[[:space:]]+([^[:space:]]+) ]]; then
+          is_mem "${BASH_REMATCH[1]}" && cwdm=1 || cwdm=0
+        fi
+        mem=""
+        if [[ "$lk" =~ ^[[:space:]]*git[[:space:]]+-C[[:space:]]+([^[:space:]]+)[[:space:]]+(commit|push)([[:space:]]|$) ]]; then
+          tgt=${BASH_REMATCH[1]}
+          if is_mem "$tgt"; then mem=mem; elif [[ "$tgt" == "." || "$tgt" == "./" ]]; then mem=repo; fi
+        elif [[ "$lk" =~ ^[[:space:]]*git[[:space:]]+(commit|push)([[:space:]]|$) ]]; then
+          (( cwdm )) && mem=mem || mem=repo
+        fi
+        [[ "$mem" == "$want" ]] && st_git=1
       done <<< "$links"
       if [[ -n "$st_git" && -z "$st_gate" && -n "$gate_seen" && "$verdict" != "piped" ]]; then verdict="semicolon"; fi
       if [[ -n "$st_gate" && -n "$st_git" && -n "$st_piped" ]]; then verdict="piped"; fi
@@ -716,9 +755,9 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:
     printf '%s' "$verdict"
   }
   verdict=""; pair="a repo gate before a repo git step"
-  printf '%s' "$ecmd" | grep -qE "$egate" && verdict=$(launder "$egate" "$egit")
+  printf '%s' "$ecmd" | grep -qE "$egate" && verdict=$(launder "$egate" repo)
   if [[ -z "$verdict" ]] && printf '%s' "$ecmd" | grep -qE "$mgate"; then
-    verdict=$(launder "$mgate" "$mgit"); pair="memory_gate.sh --audit before git -C <memory> commit/push"
+    verdict=$(launder "$mgate" mem); pair="memory_gate.sh --audit before a commit/push of the memory corpus"
   fi
   if [[ -n "$verdict" ]]; then
     jq -nc --arg r "A verdict-emitting gate and git commit/push share this call (${pair}), but the verdict does NOT gate the git step (${verdict} form): they are joined by \`;\`/newline, or the gate is piped so tail/grep's exit replaces its own. The verdict arrives only AFTER the whole call has run — reading it then is a report about a consequence, not verification, and this exact shape pushed a red docs band to main twice (2026-08-16, 2026-08-20) and committed the memory corpus over a red audit (2026-09-23). Run the gate in its OWN call and read the verdict first; or use the sanctioned single-call form — every step joined by a clean unpiped \`&&\`, so a red gate mechanically STOPS the chain. [OPS.31 · OPS.40]" \
