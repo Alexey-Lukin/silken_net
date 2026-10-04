@@ -1,0 +1,46 @@
+[INFO]       Logger:   Verbosity set to: 4 - [DEBUG]                                               (00:00:07)
+[DEBUG]      runJob:   Setting mutate to []                                                        (00:00:07)
+[DEBUG]      runJob:   Setting distance to 10                                                      (00:00:07)
+[DEBUG]      runJob:   Setting foldx to                                                            (00:00:07)
+[DEBUG]      runJob:   Setting tmp_dir to /private/tmp/claude-501/-Users-oleksiilukin-silken-      
+                       net/1e17a7f5-d6b1-452e-af2c-45c83443db70/scratchpad/a3d/run_asis/tmp        (00:00:07)
+[DEBUG]      runJob:   Setting remote to True                                                      (00:00:07)
+[DEBUG]      runJob:   Setting verbose to 4                                                        (00:00:07)
+[DEBUG]      runJob:   Setting chain to                                                            (00:00:07)
+[DEBUG]      runJob:   Setting work_dir to /private/tmp/claude-501/-Users-oleksiilukin-silken-     
+                       net/1e17a7f5-d6b1-452e-af2c-45c83443db70/scratchpad/a3d/run_asis            (00:00:07)
+[DEBUG]      runJob:   Setting movie to                                                            (00:00:07)
+[DEBUG]      runJob:   Setting n_models to 12                                                      (00:00:07)
+[DEBUG]      runJob:   Setting dynamic to False                                                    (00:00:07)
+[DEBUG]      runJob:   Setting cabs_dir to                                                         (00:00:07)
+[DEBUG]      runJob:   Setting subprocess to False                                                 (00:00:07)
+[DEBUG]      runJob:   Setting naccess to                                                          (00:00:07)
+[DEBUG]      runJob:   Setting auto_mutation to None                                               (00:00:07)
+[DEBUG]      runJob:   Setting cabs_config to                                                      (00:00:07)
+[DEBUG]      runJob:   Setting protein to /Users/oleksiilukin/silken_net/docs/protocols/ebfc/in_si 
+                       lico/dgrGcGDH_AF3.pdb                                                       (00:00:07)
+[DEBUG]      runJob:   Setting overwrite to False                                                  (00:00:07)
+[WARNING]    runJob:   Working directory already exists (possibly overwriting previous results -ow 
+                       to prevent this behavior)                                                   (00:00:07)
+[INFO]       runJob:   Starting aggrescan3d job on: /Users/oleksiilukin/silken_net/docs/protocols/ 
+                       ebfc/in_silico/dgrGcGDH_AF3.pdb with all chain(s) selected                  (00:00:07)
+[INFO]       runJob:   Creating pdb object from: /Users/oleksiilukin/silken_net/docs/protocols/ebf 
+                       c/in_silico/dgrGcGDH_AF3.pdb                                                (00:00:07)
+[DEBUG]      PDB:      Reading /Users/oleksiilukin/silken_net/docs/protocols/ebfc/in_silico/dgrGcG 
+                       DH_AF3.pdb                                                                  (00:00:07)
+[DEBUG]      PDB:      Validating pdb file: /private/tmp/claude-501/-Users-oleksiilukin-silken-    
+                       net/1e17a7f5-d6b1-452e-af2c-45c83443db70/scratchpad/a3d/run_asis/input.pdb  (00:00:07)
+[INFO]       runJob:   FoldX not utilized. Treating input pdb file as it was already optimized.    (00:00:07)
+[DEBUG]      freeSasa: Starting freeSasa with                                                      
+                       /Users/oleksiilukin/miniforge3/envs/a3d_py27/lib/python2.7/site-            
+                       packages/aggrescan/data/freesasa-2.0.1/src/freesasa_Darwin --resolution 100 
+                       folded.pdb --radii naccess --format pdb --format rsa                        (00:00:07)
+[INFO]       Analysis: Starting Aggrescan3D on folded.pdb                                          (00:00:07)
+[DEBUG]      Analysis: Running Aggrescan3D program on /private/tmp/claude-501/-Users-oleksiilukin- 
+                       silken-net/1e17a7f5-d6b1-452e-af2c-                                         
+                       45c83443db70/scratchpad/a3d/run_asis/tmp/folded.pdb                         (00:00:07)
+[OUT FILES]  postProc: Saving plots as A.png and A.svg                                             (00:00:07)
+[OUT FILES]  Main:     Verbosity higher than 3 - temporary files kept in /private/tmp/claude-501   
+                       /-Users-oleksiilukin-silken-net/1e17a7f5-d6b1-452e-af2c-                    
+                       45c83443db70/scratchpad/a3d/run_asis/tmp                                    (00:00:11)
+[INFO]       Main:     Simulation completed successfully.                                          (00:00:11)

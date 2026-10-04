@@ -84,7 +84,14 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
     for publication-benchmark only (tracked in docs/00_07, HW.5.IS).
 
 Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
-    NOTHING IS INSTALLED OR RUN YET - no Aggrescan3D output is in this repository
+    INSTALLED AND RUN 2026-10-04. Its output IS in this repository, and it is
+    EXCLUDED from the CC-BY-SA-4.0 grant: tools/in_silico/data/chem11_a3d/
+    (A3D.csv, Aggrescan.log, config.ini). Full provenance of the run - sdist
+    sha256, the environment, the command, the bundled freesasa binary and its
+    hash - is that folder's README.md; our own reading of the output is
+    tools/in_silico/scripts/80_chem11_a3d_crosscheck.py and its cache, both ours
+    and AGPL. The installed package itself lives in the conda environment
+    `a3d_py27`, outside the tree and outside every one of our locks.
   The hosted servers need an account, so the standalone release (PyPI package
   `aggrescan3d` 1.0.2 of 2019-01-31, sources bitbucket.org/lcbio/aggrescan3d) is the
   route this project would take for the open half of the aggregation recipe in
@@ -97,7 +104,10 @@ Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
     Two conditions belong to the posture, not to its footnotes: the FULL licence text
     - which the PyPI metadata line is not - is read by a person before anything is
     installed, and that 2019 py2-only release may not build under Python 3, in which
-    case the account-gated hosted channel remains the only one.
+    case the account-gated hosted channel remains the only one. Both are settled:
+    the licence texts went to the founder before the install (below), and the py3
+    question was answered by not asking it - the package runs in a py2.7 environment
+    built for it, and its SASA engine ships prebuilt, so nothing was compiled.
     The upstream texts disagree, and the posture was re-judged on that (read
   2026-10-02, re-ratified by the founder 2026-10-03 with both texts before him, which
   settles the "read by a person" condition above): the repository file LICENCE is the

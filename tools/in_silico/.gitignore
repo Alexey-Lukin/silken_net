@@ -30,6 +30,9 @@ __pycache__/
 *.log
 *.chk
 *.cpt
+# …but a log that IS committed provenance is not a run cache: the Aggrescan3D run's own log
+# carries the exact freesasa invocation, and its data folder is an INPUT home, not cache/runs.
+!data/chem11_a3d/*.log
 
 # Downloaded PDBs / one-off staging
 downloads/

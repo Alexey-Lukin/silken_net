@@ -1,0 +1,431 @@
+{
+  "script": "80_chem11_a3d_crosscheck.py",
+  "tracker": "00_07 HW.5.IS — CHEM.11",
+  "canon_home": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2",
+  "generated_utc": "2026-10-04T10:47:56Z",
+  "runtime_s": 0.01,
+  "inputs": {
+    "a3d_output": "tools/in_silico/data/chem11_a3d/A3D.csv",
+    "a3d_provenance": "tools/in_silico/data/chem11_a3d/README.md",
+    "structure": "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb",
+    "proxy_cache": "tools/in_silico/cache/chemistry/chem11_aggregation_compensation.json",
+    "structure_note": "the AGLYCOSYLATED 11 N→Q mutant WITHOUT the three compensations; A3D read only ATOM records, so the FAD cofactor was dropped"
+  },
+  "licence": {
+    "a3d_output_excluded_from_cc_by_sa": true,
+    "home": "/NOTICE, block «Aggrescan3D (standalone release)»"
+  },
+  "a3d_scoring_as_read_from_source": {
+    "release": "1.0.2 (sdist, sha256 in the data README)",
+    "formula": "score_i = agg_sup_i + Σ_{j≠i, d_ij<D} agg_sup_j · 1.2915 · exp(−2.56·d_ij/D);  agg_sup = matrix[resn] · 0.0599 · exp(0.0521·RSA)",
+    "distance": "CA-CA",
+    "max_dist_A": 10,
+    "exposure_gate_rsa_pct": 10,
+    "exposure_gate_effect": "agg_sup := 0 below the gate, and the final score is then forced to exactly 0.0 — a SENTINEL, not a measurement",
+    "matrix_is_signed": true,
+    "gln_matrix_value": -1.1394,
+    "why_that_matters": "an exposed Gln scores negative unless ringed by exposed hydrophobics, so 'A3D does not flag site X' is a weak absence claim for any of the eleven"
+  },
+  "exposure_gate_census": {
+    "n_sentinel": 253,
+    "n_measured": 347,
+    "sentinel_fraction": 0.422,
+    "n_sentinel_hydrophobic_by_a3d_matrix": 161,
+    "hydrophobic_set": [
+      "A",
+      "C",
+      "F",
+      "I",
+      "L",
+      "M",
+      "V",
+      "W",
+      "Y"
+    ],
+    "why_counted": "a buried hydrophobic patch and 'nothing here' print the identical 0.000 in the same column of A3D.csv"
+  },
+  "totals_of_a3d_output": {
+    "n_residues": 600,
+    "sum_of_scores": -274.1737,
+    "mean_score": -0.457,
+    "min_score": -3.4069,
+    "max_score": 2.7367,
+    "n_positive_measured": 50,
+    "note": "sum and mean include the sentinel rows as literal 0.0, which is what A3D itself reports; they are therefore totals of A3D's OUTPUT, not of the protein's surface"
+  },
+  "sites": {
+    "Gln71": {
+      "position": 71,
+      "a3d_score_own": -0.5234,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 138.1,
+      "flagged_neighbour_is_a_ratified_compensation": true,
+      "ratified_compensations_within_7A": [
+        "A70S",
+        "L80D"
+      ],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        },
+        "6.5": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        },
+        "7": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        },
+        "7.5": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        },
+        "8": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        },
+        "10": {
+          "residue": "L80",
+          "position": 80,
+          "a3d_score": 1.1339,
+          "ca_ca_distance_A": 5.46
+        }
+      }
+    },
+    "Gln100": {
+      "position": 100,
+      "a3d_score_own": -1.5952,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 33.6,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": {
+          "residue": "Y97",
+          "position": 97,
+          "a3d_score": 0.1308,
+          "ca_ca_distance_A": 7.08
+        },
+        "8": {
+          "residue": "Y97",
+          "position": 97,
+          "a3d_score": 0.1308,
+          "ca_ca_distance_A": 7.08
+        },
+        "10": {
+          "residue": "Y97",
+          "position": 97,
+          "a3d_score": 0.1308,
+          "ca_ca_distance_A": 7.08
+        }
+      }
+    },
+    "Gln192": {
+      "position": 192,
+      "a3d_score_own": -1.7011,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 0.0,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln200": {
+      "position": 200,
+      "a3d_score_own": -0.4624,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 53.7,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln249": {
+      "position": 249,
+      "a3d_score_own": -1.911,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 0.0,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln258": {
+      "position": 258,
+      "a3d_score_own": -1.4837,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 68.1,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": {
+          "residue": "V256",
+          "position": 256,
+          "a3d_score": 0.1015,
+          "ca_ca_distance_A": 6.9
+        },
+        "7.5": {
+          "residue": "V256",
+          "position": 256,
+          "a3d_score": 0.1015,
+          "ca_ca_distance_A": 6.9
+        },
+        "8": {
+          "residue": "V256",
+          "position": 256,
+          "a3d_score": 0.1015,
+          "ca_ca_distance_A": 6.9
+        },
+        "10": {
+          "residue": "V256",
+          "position": 256,
+          "a3d_score": 0.1015,
+          "ca_ca_distance_A": 6.9
+        }
+      }
+    },
+    "Gln271": {
+      "position": 271,
+      "a3d_score_own": -1.6608,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 0.0,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln355": {
+      "position": 355,
+      "a3d_score_own": -1.0998,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 0.0,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln380": {
+      "position": 380,
+      "a3d_score_own": -1.5659,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 0.0,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    },
+    "Gln405": {
+      "position": 405,
+      "a3d_score_own": -1.2466,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 119.8,
+      "flagged_neighbour_is_a_ratified_compensation": true,
+      "ratified_compensations_within_7A": [
+        "I401S"
+      ],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        },
+        "6.5": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        },
+        "7": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        },
+        "7.5": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        },
+        "8": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        },
+        "10": {
+          "residue": "I401",
+          "position": 401,
+          "a3d_score": 1.0252,
+          "ca_ca_distance_A": 5.52
+        }
+      }
+    },
+    "Gln463": {
+      "position": 463,
+      "a3d_score_own": -1.4611,
+      "a3d_score_own_is_sentinel": false,
+      "proxy_patch_apolar_A2": 21.4,
+      "flagged_neighbour_is_a_ratified_compensation": false,
+      "ratified_compensations_within_7A": [],
+      "best_measured_positive_neighbour_by_radius_A": {
+        "6": null,
+        "6.5": null,
+        "7": null,
+        "7.5": null,
+        "8": null,
+        "10": null
+      }
+    }
+  },
+  "compensated_positions": {
+    "A70S": {
+      "position": 70,
+      "wild_type_residue": "A",
+      "a3d_score": -0.5919,
+      "a3d_score_is_sentinel": false,
+      "rank_among_mature_positive": null,
+      "n_mature_positive": 37
+    },
+    "L80D": {
+      "position": 80,
+      "wild_type_residue": "L",
+      "a3d_score": 1.1339,
+      "a3d_score_is_sentinel": false,
+      "rank_among_mature_positive": 2,
+      "n_mature_positive": 37
+    },
+    "I401S": {
+      "position": 401,
+      "wild_type_residue": "I",
+      "a3d_score": 1.0252,
+      "a3d_score_is_sentinel": false,
+      "rank_among_mature_positive": 4,
+      "n_mature_positive": 37
+    }
+  },
+  "highest_scoring_mature_residue": {
+    "residue": "V514",
+    "a3d_score": 1.2712,
+    "is_a_ratified_compensation": false,
+    "nearest_deglycosylation_site": "Gln100",
+    "ca_ca_distance_to_it_A": 21.1,
+    "reading": "A3D's highest-scoring mature residue is not one the gene touches and is not beside any of the eleven sites — both instruments agree that the deglycosylation sites are NOT this protein's worst patches; they are the worst among the eleven, which is what the recipe asked about"
+  },
+  "signal_peptide": {
+    "range": [
+      1,
+      16
+    ],
+    "annotation": "UniProt G8E4B5 Signal 1-16 / Chain 17-600, ECO:0000256 — AUTOMATIC annotation (TrEMBL, annotationScore 2.0), read 2026-10-04",
+    "n_positive": 13,
+    "n_positive_whole_protein": 50,
+    "positive_positions": [
+      1,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "consequence": "the hottest stretch of the construct is the one secretion removes, so every ranking here starts at residue 17 — and whether cleavage actually happened is a QC question, not a modelling one (Spec A intact-mass MS, ebfc_chem_rfq)"
+  },
+  "controls": {
+    "run_is_deterministic": true,
+    "determinism_evidence": "the run was repeated on the identical input on 2026-10-04 and A3D.csv came back byte-identical — unlike script 69, whose pdbfixer step carries a 3.77 Å² noise floor",
+    "instrument_separates_anything": true,
+    "what_these_controls_cannot_catch": "determinism is not correctness: a reproducible instrument can still be the wrong instrument, and both instruments here are of the SAME family (exposure-weighted neighbourhood hydrophobicity)"
+  },
+  "agreement": {
+    "sites_with_a_measured_positive_neighbour_at_7A": [
+      "Gln71",
+      "Gln258",
+      "Gln405"
+    ],
+    "of_those_whose_flagged_neighbour_is_a_ratified_compensation": [
+      "Gln71",
+      "Gln405"
+    ],
+    "of_those_uncompensated": [
+      "Gln258"
+    ],
+    "compensations_that_are_themselves_flagged": [
+      "L80D",
+      "I401S"
+    ],
+    "statement": "3 of the 11 deglycosylation sites carry a measured positively-scoring neighbour within 7 Å: Gln71, Gln258, Gln405. In 2 of those 3 the flagged neighbour IS a position the ratified gene substitutes (Gln71, Gln405). The remaining 1 (Gln258) is flagged and NOT compensated, and its flag is an order of magnitude weaker (+0.1015 against +1.1339 and +1.0252)."
+  },
+  "verdict": "The open half of the L1 §2 recipe is now RUN. A3D puts its flags on L80 (+1.1339, rank 2 of the mature chain's 37 positive residues) and I401 (+1.0252, rank 4) — the two positions the ratified gene compensates, reached from Gln71 and Gln405 respectively. No OTHER deglycosylation site carries a comparable flag: Gln258's best measured positive neighbour is an order of magnitude weaker and the remaining eight have none at 7 Å. The third compensation (A70S) sits on a residue A3D scores -0.592, i.e. A3D does not support it and does not contradict it. ⚠️ Two limits that shrink this to its true size: the instruments are of the same family, and A3D's matrix makes a Gln negative almost by construction, so 'nothing new was flagged' is a weak absence claim. What the run does NOT do is close Gln258 and Gln200 — the gene carries no lever for either, and only an expressed protein will say whether that matters.",
+  "caveats": [
+    "A SASA/propensity proxy is NOT an aggregation prediction — neither instrument has a rate, a solubility or a critical concentration.",
+    "The two instruments are independent in authorship and inputs but of the SAME FAMILY (exposure-weighted neighbourhood hydrophobicity), so their agreement is worth less than agreement between two different kinds of method.",
+    "A3D's signed matrix makes a negative score at a Gln nearly structural, so 'no new site flagged' is a weak absence claim and is reported as one.",
+    "The FAD cofactor is absent from the A3D model (HETATM dropped), so exposure near the flavin pocket is over-stated.",
+    "The structure is the UNCOMPENSATED mutant; no A3D run exists on the compensated sequence, and that would need an AF3 re-prediction L1 §2 deliberately has not done.",
+    "253 of 600 residues carry the exposure-gate sentinel; any statistic that admits them reads 'buried' as 'neutral'. The first reading of this very run did exactly that.",
+    "The signal-peptide annotation is automatic (ECO:0000256), not experimental.",
+    "Gln258's positive neighbour at 7 Å is an order of magnitude weaker than those at Gln71 and Gln405 — it is reported, not treated as a flag.",
+    "Nothing here says the compensated protein expresses, folds or stays soluble; that is the CRO's QC and, downstream, coin Stage 2.",
+    "A3D's own highest-scoring mature residue is NOT a position the gene touches and is not beside any of the eleven sites — the recipe scopes the eleven, not the global worst patch, and this cache reports that rather than cropping the ranking."
+  ]
+}

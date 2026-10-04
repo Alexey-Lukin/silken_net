@@ -43,7 +43,7 @@
 | **Деглікозилювання** | **Gene-level (preferred):** синтетичний ген із вбудованими **11 N→Q** → *Pichia* фізично не глікозилює → **PNGase F не потрібен**. Fallback: PNGase F / Endo-H **тільки native conditions** (без SDS/DTT) |
 | **Послідовність** | 600 aa, 11 N→Q (N71/100/192/200/249/258/271/355/380/405/463) **+ три компенсаційні заміни L80D · A70S · I401S** (⚖️ 2026-09-17/18) — **owner [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md)**; ген синтезувати з L1 (не дублюю рядок тут — single source проти drift) |
 | **Кофактор** | FAD (нативний; expression host забезпечує флавінілювання) |
-| **QC / acceptance** | SDS-PAGE (один бенд ~600 aa, аглікозильований MW), активність (glucose-DH assay, U/mg), відсутність H₂O₂ (O₂-незалежність), MS-підтвердження N→Q-сайтів |
+| **QC / acceptance** | SDS-PAGE (один бенд ~600 aa, аглікозильований MW), активність (glucose-DH assay, U/mg), відсутність H₂O₂ (O₂-незалежність), MS-підтвердження N→Q-сайтів, **intact-mass MS відщеплення сигнального пептиду** (⚖️ founder 2026-10-04 — приймаємо масу ЗРІЛОГО ланцюга; підстава: той відрізок є найгарячішим у конструкті за A3D, 13 із 50 позитивних залишків, а розщеплення — лише автоанотація UniProt `ECO:0000256` — [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md)) |
 | **Кількість** | пілот: мг-масштаб для Stage 2 Ti-coins (HW.24); уточнити після квоти |
 | **Формат** | ліофілізат або стабілізований буфер; CoA + QC-звіт |
 | **IP** | ген відкритий (defensive disclosure / L1); CRO лише експресує; CDA — §IP |
@@ -233,7 +233,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 - Not acceptable as a substitute: glucose **oxidase** (generates H₂O₂, incompatible with our application).
 - Quantity: milligram scale for a pilot round — please quote the mg tiers you normally offer so we can size the order.
 - Delivery form: lyophilised powder or stabilised buffer; CoA and QC report required.
-- QC / acceptance: SDS-PAGE showing a single band at the aglycosylated molecular weight · specific activity by glucose-dehydrogenase assay in U/mg with the assay conditions stated · evidence that the enzyme does not generate H₂O₂ (dehydrogenase, not oxidase) · MS confirmation of the N→Q substitution sites.
+- QC / acceptance: SDS-PAGE showing a single band at the aglycosylated molecular weight · specific activity by glucose-dehydrogenase assay in U/mg with the assay conditions stated · evidence that the enzyme does not generate H₂O₂ (dehydrogenase, not oxidase) · MS confirmation of the N→Q substitution sites · **intact-mass MS of the secreted product, to confirm that the native signal peptide was cleaved** — the mass we accept is that of the mature chain, not of the full-length translation product; if your construct replaces the native signal sequence with your own secretion leader, say so and state the expected mature N-terminus.
 
 **B — tri-metallic Co/Cu/Ce ZIF laccase-mimic nanozyme**
 
@@ -390,7 +390,7 @@ Nothing is required from us for an initial quotation. On request we supply the i
 6. **Неприйнятна заміна:** глюкозооксидаза. Вона виробляє пероксид водню, несумісний із нашим застосуванням; нам потрібна саме дегідрогеназа.
 7. **Кількість:** міліграмовий масштаб на пілотний раунд. Назвіть градації за масою, у яких ви зазвичай працюєте, щоб ми визначили обсяг замовлення.
 8. **Формат поставки:** ліофілізат або стабілізований буфер; сертифікат аналізу й звіт контролю якості обовʼязкові. Назвіть умови зберігання, строк придатності й вимоги до холодового ланцюга.
-9. **Приймання (контроль якості):** електрофорез у поліакриламідному гелі з додецилсульфатом натрію — одна смуга на молекулярній масі аглікозильованої форми · питома активність за глюкозодегідрогеназним тестом у ОД/мг із наведеними умовами тесту · підтвердження, що фермент **не утворює пероксиду водню** (дегідрогеназа, не оксидаза) · мас-спектрометричне підтвердження сайтів замін N→Q. Сторонні аналітичні звіти приймаються; самодекларація без даних — ні.
+9. **Приймання (контроль якості):** електрофорез у поліакриламідному гелі з додецилсульфатом натрію — одна смуга на молекулярній масі аглікозильованої форми · питома активність за глюкозодегідрогеназним тестом у ОД/мг із наведеними умовами тесту · підтвердження, що фермент **не утворює пероксиду водню** (дегідрогеназа, не оксидаза) · мас-спектрометричне підтвердження сайтів замін N→Q · **мас-спектрометрія інтактної маси секретованого продукту — щоб підтвердити, що нативний сигнальний пептид відщепився**: ми приймаємо масу зрілого ланцюга, а не повного продукту трансляції; якщо ваша конструкція замінює нативну сигнальну послідовність власним секреторним лідером, напишіть це й назвіть очікуваний N-кінець зрілої форми. Сторонні аналітичні звіти приймаються; самодекларація без даних — ні.
 
 *2. Позиція 2 — лаказа для катода*
 

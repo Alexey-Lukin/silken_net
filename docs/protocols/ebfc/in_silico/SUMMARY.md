@@ -1089,7 +1089,7 @@ the inverted season; the recipe's set-point no longer rests on them (`01_02 §2.
 
 ---
 
-## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (script 69)
+## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)
 
 Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; decision → `00_07` HW.5.IS / CHEM.11.
 
@@ -1273,6 +1273,60 @@ the founder's presumption; this is its evidence base.
 > 📐 **pLDDT convention.** Per-residue pLDDT is the **CA atom's** `B_iso` in the AF3 CIF — the statistic
 > `L1 §4` already publishes (Tyr90 CA = 98.71; the residue *mean* is 98.23). The canonical
 > `dgrGcGDH_AF3.pdb` is **not** a source for it: OpenMM wrote that file and zeroed the B-factor column.
+
+
+### The second instrument — Aggrescan3D, run 2026-10-04 (script 80)
+
+`L1 §2`'s recipe had two halves and only one was built: this proxy, plus **an Aggrescan3D run** that
+stayed open for months because the hosted servers need an account. The standalone release was installed
+and run on 2026-10-04 (posture and the two disagreeing upstream licence texts → [`/NOTICE`](../../../../NOTICE);
+permission, recipe and the full verdict → [`L1 §2`](L1_protein_architecture.md)). ⚠️ **Its output is
+third-party and EXCLUDED from this repository's CC-BY-SA-4.0 grant**; the reading of it is ours.
+
+🔑 **The recipe's own criterion could not be applied as written.** It asked whether A3D flags the same
+Gln quartet. A3D's propensity matrix is signed and **Gln's value is −1.1394**, so an exposed Gln scores
+negative unless ringed by exposed hydrophobics — the question measures the matrix, not the protein. The
+answerable form is the one this proxy already uses: **the flag lives at the NEIGHBOUR.**
+
+| Site | A3D at the site | Best *measured positive* neighbour within 7 Å | This proxy's patch |
+|---|---|---|---|
+| **Gln71** | −0.523 | **Leu80 +1.134** — rank **2** of the mature chain's 37 positive residues · a ratified compensation | 138.1 Å² |
+| **Gln405** | −1.247 | **Ile401 +1.025** — rank **4** · a ratified compensation | 119.8 Å² |
+| Gln258 | −1.484 | Val256 +0.102 — an order of magnitude weaker, **not** compensated | 68.1 Å² |
+| Gln200 | −0.462 | none | 53.7 Å² |
+| the other seven | all negative | none | ≤ 33.6 Å² |
+
+So the second instrument puts its two strongest site-adjacent flags on the two positions the ratified
+gene substitutes, and flags no new site among the eleven. The third compensation **A70S** sits on a
+residue A3D scores **−0.592**: neither supported nor contradicted (its ground was charge-neutral patch
+reduction, not A3D).
+
+🔴 **Three limits, each of which shrinks that to its true size.**
+1. **Same family, not a different kind of method.** Both are exposure-weighted neighbourhood
+   hydrophobicity. They differ in every detail — CA-CA vs side-chain centroid, a 10 Å exponential kernel
+   vs a flat 7 Å shell, A3D's signed matrix vs Kyte-Doolittle>0 plus aromatics, freesasa RSA vs mdtraj
+   SASA — so this is corroboration, never independent confirmation.
+2. 🔴 **A3D's `0.000` is an exposure-gate SENTINEL, not a measured zero.** Below 10 % RSA it forces the
+   score to exactly `0.0`; in this run that is **253 of 600 residues (42 %), 161 of them hydrophobic by
+   A3D's own matrix**, written in the same column and format as a real value — a buried hydrophobic patch
+   and «nothing here» are indistinguishable. The **first** reading of this very run aggregated them,
+   which produced a tidy «no positive neighbour at Gln258» and hid Val256. Script 80 excludes and counts
+   them; any other consumer of `A3D.csv` must too.
+3. **The model is not the protein being ordered.** A3D read only `ATOM` records and dropped the FAD
+   silently (no warning in its log), so exposure near the flavin pocket is over-stated; and the structure
+   is the **uncompensated** mutant, since no AF3 re-prediction on the compensated sequence exists.
+
+⊕ **And a finding neither instrument was aimed at, which belongs to the ORDER rather than the model:**
+residues **1–16 hold 13 of the construct's 50** positively-scoring residues — the hottest stretch of the
+sequence being ordered is the **signal peptide**, which secretion is supposed to remove (UniProt
+`G8E4B5` Signal 1-16 / Chain 17-600, evidence `ECO:0000256` — an **automatic** annotation, not an
+experiment). Every ranking above therefore starts at residue 17, and whether cleavage happened is a QC
+question, not a modelling one — Spec A now asks for intact-mass confirmation of it.
+
+> 📐 **Determinism, and what it does not buy.** The run was repeated on the identical input and `A3D.csv`
+> came back **byte-identical** — unlike this proxy, whose pdbfixer step carries a measured 3.77 Å² noise
+> floor. A reproducible instrument can still be the wrong instrument, so determinism is reported as a
+> control on the *run*, never as evidence about the *physics*.
 
 ---
 

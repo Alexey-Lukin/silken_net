@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 259 · 15,032,640 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 265 · 15,105,987 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -113,11 +113,12 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/77_anchor_torque_path.py` | `3ca15a15294796eb137e44550b09a0c850ae4d52ecf5ac7d71cafbda234defc3` | Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion). |
 | `tools/in_silico/scripts/78_flange_cambium_heat.py` | `8155b75118fc7227d4c05afa318a47fc13fbbb4fe3ccc5e51949313f7608034a` | Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound). |
 | `tools/in_silico/scripts/79_flange_cambium_frost.py` | `6f0151963710fa35310a663e90f7d5f7c99334daa12d4a90354713119f3d40d4` | Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling (1D). |
+| `tools/in_silico/scripts/80_chem11_a3d_crosscheck.py` | `626e5e2390447b4d3ab8b271594c200fd6b72b0d3683165488b4abe661b4f824` | Aggrescan3D cross-check of the four deglycosylation hotspots of the aglycosylated FAD-GDH. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `e0846f4f8061c4cf726c024b6e627dcaf944ad650f1de9d7b2ca78d16b017fc1` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `fe2004f0005bc07fea739afbfb9e37cf99405d0edac4bfb3318d1b8736eccce7` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `1f2aeab699b3e1f20a169db4cadcd26de172aab5fa2d4d9c4c33ed4e778865e8` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -135,6 +136,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 
 | File | SHA-256 | Bytes |
 |---|---|---|
+| `tools/in_silico/cache/chemistry/chem11_a3d_crosscheck.json` | `4c2ddf98c61bd0ffb9a13ee27e8930c211916d4e8a1317bae684be7fea4427f3` | 15,428 |
 | `tools/in_silico/cache/chemistry/chem11_aggregation_compensation.json` | `c9411ace5e684a8e7c0afb4af0f8f29d02cb8945da93d9e874f51ad87a64f173` | 87,450 |
 | `tools/in_silico/cache/chemistry/chem11_ratified_gene.json` | `52f0a412f89c13d2395f849cf96e1d181290d11d97b3775dd37390e4058d7b40` | 8,128 |
 | `tools/in_silico/cache/chemistry/chem11_site_conservation.json` | `e0f4e5fedf4304374d698902740de691bf1c04feb3dd45989ddd5e0e0da50bbd` | 45,931 |
@@ -245,6 +247,10 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 
 | File | SHA-256 | Bytes |
 |---|---|---|
+| `tools/in_silico/data/chem11_a3d/A3D.csv` | `0b9bf5cf6abd6a1f64905ae4c8b76e4761f00817c257f88deb200aa2282758a8` | 14,031 |
+| `tools/in_silico/data/chem11_a3d/Aggrescan.log` | `df2593ca3ac41a164488af03028d37dfaf5f371f4802d824b729cb9c9a9c39b9` | 4,910 |
+| `tools/in_silico/data/chem11_a3d/README.md` | `21c3ef2c7c6f5cf55656cdc77a74e5e96c907605dccd8690512c2eea2031b4b8` | 6,348 |
+| `tools/in_silico/data/chem11_a3d/config.ini` | `2355d2700717d580112706a9f82403df32dc7454ab095c37b801134f45bed064` | 269 |
 | `tools/in_silico/data/chem11_conservation/README.md` | `c686259bd9257487b4bfaaf8d2a5ca1a74d049613ce0d06ab687fc24b7996de5` | 6,690 |
 | `tools/in_silico/data/chem11_conservation/external_msa_clustalo.fasta` | `24fc3380d6f047e3b6072084a24b858d878d0a560fda4b4ea854f75ef106daa3` | 106,219 |
 | `tools/in_silico/data/chem11_conservation/external_msa_input.fasta` | `8b9730fefd57d4c1fe42fa107b738277582ffe02e1c16aa61173b35584336e3b` | 52,195 |

@@ -2402,6 +2402,79 @@ CHECKS += [
 ]
 
 
+# ── CHEM.11 second instrument: SUMMARY §CHEM.11 table ⟷ script 80's cache ───────────────────
+# Pins every number the SUMMARY's second-instrument block prints. The cache is OURS (the reading);
+# the A3D output it reads is third-party and excluded from the CC-BY-SA grant (`/NOTICE`).
+# ⚠️ ONE capture group per pin — the engine above compares a single value, so a row that prints two
+# numbers gets two pins rather than one tuple (measured: a tuple reaches `_to_float` and raises).
+A3D = "chemistry/chem11_a3d_crosscheck.json"
+
+
+def _a3d_nb(site, field, radius="7"):
+    return lambda d: d["sites"][site]["best_measured_positive_neighbour_by_radius_A"][radius][field]
+
+
+CHECKS += [
+    # ── the table: each site's own A3D score, and the neighbour that carries its flag ──
+    ("CHEM.11 A3D score at Gln71 → 80 (SUMMARY §CHEM.11 second-instrument table)",
+     SUMMARY, rf"\| \*\*Gln71\*\* \| {N} \| \*\*Leu80",
+     A3D, lambda d: d["sites"]["Gln71"]["a3d_score_own"], 0.0005),
+    ("CHEM.11 A3D flag beside Gln71 is Leu80 → 80",
+     SUMMARY, rf"\*\*Leu80 \+{N}\*\* — rank",
+     A3D, _a3d_nb("Gln71", "a3d_score"), 0.0005),
+    ("CHEM.11 A3D score at Gln405 → 80",
+     SUMMARY, rf"\| \*\*Gln405\*\* \| {N} \| \*\*Ile401",
+     A3D, lambda d: d["sites"]["Gln405"]["a3d_score_own"], 0.0005),
+    ("CHEM.11 A3D flag beside Gln405 is Ile401 → 80",
+     SUMMARY, rf"\*\*Ile401 \+{N}\*\* — rank",
+     A3D, _a3d_nb("Gln405", "a3d_score"), 0.0005),
+    # the uncompensated third site — the finding the sentinel hid in the first reading of this run
+    ("CHEM.11 A3D score at Gln258 → 80 (the site the sentinel hid)",
+     SUMMARY, rf"\| Gln258 \| {N} \| Val256",
+     A3D, lambda d: d["sites"]["Gln258"]["a3d_score_own"], 0.0005),
+    ("CHEM.11 A3D weak flag beside Gln258 is Val256 → 80",
+     SUMMARY, rf"Val256 \+{N} — an order of magnitude weaker",
+     A3D, _a3d_nb("Gln258", "a3d_score"), 0.0005),
+    ("CHEM.11 A3D score at Gln200 → 80",
+     SUMMARY, rf"\| Gln200 \| {N} \| none",
+     A3D, lambda d: d["sites"]["Gln200"]["a3d_score_own"], 0.0005),
+    # the ranks: a flag is an adjective until it is a position in A3D's own ranking
+    ("CHEM.11 Leu80 rank among A3D's mature positives → 80",
+     SUMMARY, rf"\*\*Leu80 \+[\d.]+\*\* — rank \*\*{N}\*\*",
+     A3D, lambda d: d["compensated_positions"]["L80D"]["rank_among_mature_positive"], 0.0),
+    ("CHEM.11 Ile401 rank among A3D's mature positives → 80",
+     SUMMARY, rf"\*\*Ile401 \+[\d.]+\*\* — rank \*\*{N}\*\*",
+     A3D, lambda d: d["compensated_positions"]["I401S"]["rank_among_mature_positive"], 0.0),
+    ("CHEM.11 size of A3D's mature positive set → 80",
+     SUMMARY, rf"of the mature chain's {N} positive residues",
+     A3D, lambda d: d["compensated_positions"]["L80D"]["n_mature_positive"], 0.0),
+    # A70S: the compensation A3D neither supports nor contradicts
+    ("CHEM.11 A3D score at the A70S position → 80",
+     SUMMARY, rf"residue A3D scores \*\*{N}\*\*: neither supported",
+     A3D, lambda d: d["compensated_positions"]["A70S"]["a3d_score"], 0.0005),
+    # ── the exposure-gate sentinel census: the numbers that make the trap checkable ──
+    ("CHEM.11 A3D sentinel count → 80 (SUMMARY limit 2)",
+     SUMMARY, rf"in this run that is \*\*{N} of [\d]+ residues",
+     A3D, lambda d: d["exposure_gate_census"]["n_sentinel"], 0.0),
+    ("CHEM.11 A3D chain length behind that census → 80",
+     SUMMARY, rf"in this run that is \*\*[\d]+ of {N} residues",
+     A3D, lambda d: d["totals_of_a3d_output"]["n_residues"], 0.0),
+    ("CHEM.11 A3D sentinel percentage → 80",
+     SUMMARY, rf"residues \({N} %\), [\d]+ of them hydrophobic",
+     A3D, lambda d: round(100 * d["exposure_gate_census"]["sentinel_fraction"]), 0.5),
+    ("CHEM.11 A3D hydrophobic sentinels → 80",
+     SUMMARY, rf"%\), {N} of them hydrophobic by",
+     A3D, lambda d: d["exposure_gate_census"]["n_sentinel_hydrophobic_by_a3d_matrix"], 0.0),
+    # ── the signal-peptide share: the leg that reached the gene ORDER as a QC line ──
+    ("CHEM.11 A3D positive residues inside the signal peptide → 80 (the Spec A QC leg's ground)",
+     SUMMARY, rf"\*\*1–16 hold {N} of the construct's [\d]+\*\* positively-scoring",
+     A3D, lambda d: d["signal_peptide"]["n_positive"], 0.0),
+    ("CHEM.11 A3D positive residues in the whole construct → 80",
+     SUMMARY, rf"\*\*1–16 hold [\d]+ of the construct's {N}\*\* positively-scoring",
+     A3D, lambda d: d["signal_peptide"]["n_positive_whole_protein"], 0.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
@@ -2749,3 +2822,36 @@ def test_frost_worst_regime_label_matches_cache():
              "clear_diffuse_sun": "ясне небо з розсіяним сонцем", "overcast_diffuse_sun": "хмарність із розсіяним сонцем"}
     text = (REPO / CODIT).read_text(encoding="utf-8")
     assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text
+
+
+def test_a3d_crosscheck_cannot_aggregate_the_exposure_gate_sentinel():
+    """The trap this cache exists to name: A3D writes a hard 0.0 for a BURIED residue, in the same
+    column as a measured value. Every statistic script 80 reports must have excluded those rows.
+
+    CAN catch: a future edit that lets a sentinel into a max/min/ranking — the gated rows would
+    reappear as 'measured' and the counts below would stop adding up; a ranking that silently
+    includes them (the compensated positions' ranks are taken among MEASURED positives only).
+    CANNOT catch: a wrong reading of a genuinely measured score, nor whether A3D itself is the
+    right instrument — both instruments here are of the same family, which the cache says in prose.
+    """
+    d = json.loads((CACHE / A3D).read_text(encoding="utf-8"))
+    cen, tot = d["exposure_gate_census"], d["totals_of_a3d_output"]
+    assert cen["n_sentinel"] + cen["n_measured"] == tot["n_residues"], "census does not partition the chain"
+    assert cen["n_sentinel_hydrophobic_by_a3d_matrix"] <= cen["n_sentinel"]
+    assert 0.0 < cen["sentinel_fraction"] < 1.0
+    # no neighbour reported anywhere may be a sentinel or non-positive
+    for site, rec in d["sites"].items():
+        for radius, nb in rec["best_measured_positive_neighbour_by_radius_A"].items():
+            if nb is not None:
+                assert nb["a3d_score"] > 0.0, f"{site} @{radius} Å reports a non-positive neighbour"
+                assert nb["ca_ca_distance_A"] <= float(radius) + 1e-9, f"{site} neighbour outside its shell"
+    # the agreement statement must be derivable from the three lists it summarises (00_05 §5)
+    ag = d["agreement"]
+    assert set(ag["of_those_whose_flagged_neighbour_is_a_ratified_compensation"]) | set(ag["of_those_uncompensated"]) \
+        == set(ag["sites_with_a_measured_positive_neighbour_at_7A"]), "the agreement lists do not partition"
+    # a rank is meaningless unless it is taken among measured positives
+    for label, rec in d["compensated_positions"].items():
+        if rec["rank_among_mature_positive"] is not None:
+            assert not rec["a3d_score_is_sentinel"], f"{label} is ranked while being a sentinel"
+            assert rec["a3d_score"] > 0.0, f"{label} is ranked with a non-positive score"
+            assert 1 <= rec["rank_among_mature_positive"] <= rec["n_mature_positive"]
