@@ -38,8 +38,8 @@ admits those rows is reading a sentinel as a measurement (it already happened on
 reading of this run on 2026-10-04: the «max in the 7 Å shell» of Gln258 and Gln200 came out as
 `0.000` carried by buried residues, which hid a real — if marginal — positive neighbour at
 Gln258). Every statistic below therefore carries `measured_only=True` and the sentinel is
-counted, never aggregated. Class: `project_mission_criterion` §ФОЛБЕК (a sentinel read as a
-measurement) and `feedback_silent_default`.
+counted, never aggregated. Class: the fabrication taxonomy «СЛОВО ⊥ КОЛОНКА ⊥ ФОЛБЕК», canon home `05_05 §3.2` (a sentinel
+read as a measurement).
 
 WHAT IS **NOT** COMPUTED — absent, not merely undiscussed
   · **The two instruments are NOT independent in family, only in authorship and inputs.** Both are
@@ -268,8 +268,16 @@ def main() -> int:
         "min_score": round(min(score.values()), 4),
         "max_score": round(max(score.values()), 4),
         "n_positive_measured": len(all_pos),
+        "mean_score_measured_rows_only": round(
+            sum(score[i] for i in measured) / len(measured), 4
+        ),
         "note": "sum and mean include the sentinel rows as literal 0.0, which is what A3D itself "
-                "reports; they are therefore totals of A3D's OUTPUT, not of the protein's surface",
+                "reports; they are therefore totals of A3D's OUTPUT, not of the protein's surface. "
+                "⚠️ So the claim «no statistic admits the sentinel» is true of every RANKING, max, "
+                "min and neighbour search here, and FALSE of these two fields by design — which is "
+                "why the measured-only mean sits beside them: over the 347 measured rows it is "
+                "markedly lower than the 600-row mean, and quoting the wrong one understates the "
+                "surface by nearly half",
     }
 
     flagged_sites = [k for k, v in sites_out.items()
@@ -341,16 +349,40 @@ def main() -> int:
                            "actually happened is a QC question, not a modelling one (Spec A "
                            "intact-mass MS, ebfc_chem_rfq)",
         },
+        # ⚠️ `controls` holds what THIS script measures. A hand-typed boolean filed here reads like a
+        # measurement — caught by the 2026-10-04 adversary pass — so the determinism claim moved to
+        # `provenance_attested`, and the one tautological check was dropped: a protein with a single
+        # positive residue cannot fail «the instrument separates anything».
         "controls": {
-            "run_is_deterministic": True,
-            "determinism_evidence": "the run was repeated on the identical input on 2026-10-04 "
-                                    "and A3D.csv came back byte-identical — unlike script 69, "
-                                    "whose pdbfixer step carries a 3.77 Å² noise floor",
-            "instrument_separates_anything": len(all_pos) > 0 and totals["max_score"] > 0,
-            "what_these_controls_cannot_catch": "determinism is not correctness: a reproducible "
-                                                "instrument can still be the wrong instrument, and "
-                                                "both instruments here are of the SAME family "
-                                                "(exposure-weighted neighbourhood hydrophobicity)",
+            "n_measured_plus_sentinel_equals_chain": (
+                len(measured) + len(sentinels) == len(score)
+            ),
+            "no_reported_neighbour_is_a_sentinel_or_non_positive": all(
+                nb is None or nb["a3d_score"] > 0.0
+                for rec in sites_out.values()
+                for nb in rec["best_measured_positive_neighbour_by_radius_A"].values()
+            ),
+            "ranks_taken_among_measured_positives_only": all(
+                v["rank_among_mature_positive"] is None
+                or (not v["a3d_score_is_sentinel"] and v["a3d_score"] > 0.0)
+                for v in comps_out.values()
+            ),
+            "what_these_controls_cannot_catch": "they check that the SENTINEL never entered a "
+                                                "statistic; they say nothing about whether A3D is "
+                                                "the right instrument — and both instruments here "
+                                                "are of the SAME family (exposure-weighted "
+                                                "neighbourhood hydrophobicity), which no control of "
+                                                "either can see",
+        },
+        "provenance_attested": {
+            "run_repeated_byte_identical": "the run was repeated on the identical input on 2026-10-04 "
+                                           "and A3D.csv came back byte-identical. ⚠️ An ATTESTATION, "
+                                           "not a measurement by this script: only one A3D.csv is "
+                                           "committed and the committed log is the SECOND run's (it "
+                                           "carries A3D's own «Working directory already exists» "
+                                           "warning), so the comparison is not recorded in the tree",
+            "contrast": "script 69's pdbfixer step is NOT deterministic and carries a measured "
+                        "3.77 Å² noise floor",
         },
         "agreement": {
             "sites_with_a_measured_positive_neighbour_at_7A": flagged_sites,

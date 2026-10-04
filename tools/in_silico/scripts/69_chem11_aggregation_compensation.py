@@ -34,16 +34,17 @@ WHAT IS COMPUTED
      single mutations; and the Å² each declared threshold REFUSES, so its value stays visible.
 
 WHAT IS **NOT** COMPUTED — and each of these is absent, not merely undiscussed
-  · Aggrescan3D was NOT run. The hosted servers need registration/upload, outside this
-    repo's zero-network compute. A standalone release also exists — measured 2026-10-01 at
-    https://pypi.org/pypi/aggrescan3d/json: version 1.0.2 of 2019-01-31, py2-only wheels plus
-    an sdist, licence «free for non-commercial users» — so «external web server» is a property
-    of the channel tried, not of the tool. Installing it would CONSUME a non-commercial licence
-    in a commercial project; the founder RATIFIED that posture 2026-10-01 in the AF3 form (a
-    non-commercial line in /NOTICE, its output excluded from the CC-BY-SA-4.0 grant; verdict with
-    its price and weakest link in L1 §2), so the route is open — but nothing is installed here, the
-    full licence text is read by a person first (the PyPI metadata line is not the licence), and
-    the L1 §2 recipe's first half therefore remains OPEN.
+  · Aggrescan3D — the OTHER half of the L1 §2 recipe — was RUN 2026-10-04, standalone, after the
+    founder ratified the licence posture (2026-10-01, in the AF3 form: a non-commercial line in
+    /NOTICE, its output excluded from the CC-BY-SA-4.0 grant) and then permitted execution on this
+    machine (2026-10-03). The hosted servers were never used — they need registration, and «external
+    web server» was a property of the channel tried, not of the tool: release 1.0.2 of 2019-01-31 is
+    a py2 sdist, installed into a py2.7 env outside every one of our locks. Its reading is script 80
+    (cache chemistry/chem11_a3d_crosscheck.json), its committed output and full provenance live in
+    tools/in_silico/data/chem11_a3d/, and the verdict with its three limits is in L1 §2.
+    ⚠️ NOTHING in THIS cache substitutes for it, and the reverse holds too: the two instruments are
+    of the SAME FAMILY (exposure-weighted neighbourhood hydrophobicity), so their agreement is
+    corroboration, never independent confirmation.
   · This is not an aggregation PREDICTION. An exposed apolar patch is a static surface
     descriptor; aggregation is a multi-molecule, concentration-, pH- and shear-dependent
     kinetic process. Nothing here computes a rate, a solubility or a critical concentration.
@@ -1024,9 +1025,11 @@ def main() -> int:
             "single-molecule surface descriptor; aggregation is a multi-molecule kinetic process "
             "that depends on concentration, pH, ionic strength, temperature and shear. No rate, "
             "solubility or critical concentration is computed here.",
-            "Aggrescan3D was NOT run (the standalone route is open; its licence posture is ratified as "
-            "a /NOTICE line in the AF3 form), so the first half of the L1 §2 recipe stays OPEN; nothing "
-            "in this cache substitutes for it.",
+            "Aggrescan3D is the OTHER half of the L1 §2 recipe and nothing in this cache substitutes for "
+            "it. It was RUN 2026-10-04 (standalone, licence posture a /NOTICE line in the AF3 form); its "
+            "reading is script 80 and cache chemistry/chem11_a3d_crosscheck.json. ⚠️ The two instruments "
+            "are of the SAME FAMILY (exposure-weighted neighbourhood hydrophobicity), so their agreement "
+            "is corroboration, never independent confirmation.",
             "Sequence conservation is NOT an input to this score. It is measured separately "
             "(script 70) and read beside it, never merged — for Ile401 that reading is what lifted "
             "the hold (⚖️ founder 2026-09-18).",

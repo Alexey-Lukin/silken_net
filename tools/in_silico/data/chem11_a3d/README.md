@@ -18,6 +18,7 @@ that closed the open half of the `L1 §2` aggregation recipe — the half that g
 | `A3D.csv` | the measurement: A3D score per residue, 600 rows, chain A |
 | `Aggrescan.log` | the tool's own log of the run (`-r` writes it), including the exact `freesasa` invocation |
 | `config.ini` | the resolved options the run used — A3D writes this itself, so it is the command as the tool understood it |
+| `uniprot_G8E4B5_features.json` | the **signal-peptide annotation artefact**, fetched 2026-10-04 from `rest.uniprot.org/uniprotkb/G8E4B5.json` (fields: accession · protein_name · organism_name · length · ft_signal · ft_chain · annotation_score · reviewed). Committed for the same reason `chem11_conservation/` commits its FASTAs: the Signal 1-16 / Chain 17-600 split is quoted **to the CRO** in Spec A, so the claim must have a carrier. ⚠️ It records `entryType: UniProtKB unreviewed (TrEMBL)`, `annotationScore 2.0` and `ECO:0000256` on both features — i.e. a rule-based prediction, not an experiment. |
 
 ## Provenance of the run
 
@@ -35,7 +36,7 @@ that closed the open half of the `L1 §2` aggregation recipe — the half that g
 | **Aggregation distance** | `-D 10`, the tool's default |
 | **Input** | `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb`, sha256 `44f34e5af1d46c48d83a59e84e984a3c47fda8a07c6d9b709bf145753598a319` — the AF3 model of the **aglycosylated 11 N→Q mutant**, i.e. **without** the three compensations |
 | **SASA engine** | the bundled `freesasa` 2.0.1, binary `freesasa_Darwin` (Mach-O x86_64), sha256 `a9a60dc486fbc1dd6114cdfedeaa5eebf772ae4041b263d18adf14e33dae6ed9`, called as `--resolution 100 folded.pdb --radii naccess --format pdb --format rsa`. It ships **prebuilt** in the sdist, so nothing was compiled. |
-| **Network** | none during the run. The only network call in the package's core is `aggrescan/pdb.py` fetching RCSB **when the input is a 4-letter PDB code**; ours is a local file path. |
+| **Network** | none during the run. The only network call in the package's core fetches RCSB **when the input is a 4-letter PDB code**; ours is a local file path. ⚠️ **Do not read `remote : True` in `config.ini` as a network flag** — it is A3D's `--remote`, whose documented effect is «redirects output to a Aggrescan.log file created in the working directory, turns off log coloring»; the name is misleading and that flag is precisely why the log exists to be committed. |
 | **Determinism** | the run was **repeated on the identical input** and `A3D.csv` came back **byte-identical**. (Contrast script 69, whose pdbfixer step is non-deterministic and carries a measured 3.77 Å² noise floor.) |
 | **`work_dir`** | a session scratchpad **outside the tree**. The run also writes `A.png`, `A.svg`, `output.pdb` (the scored structure) and a `tmp/` directory there; they are derivable from `A3D.csv` plus the input and are **not** committed. |
 

@@ -15,6 +15,19 @@
 > DataCite-registered (Zenodo), not Crossref. Ref 51 is cited for the GAFF2 parameters used (`gaff-2.11`),
 > which have no separate paper. The founder's final reference-manager pass still applies.
 >
+> ⛔ **An integrity GATE over this numbering was measured and REFUSED — twice, 2026-09-24 and re-measured
+> 2026-10-01** (migrated here 2026-10-04 from the `00_07` HW.5.IS checkbox that carried it, before that
+> checkbox could take the verdict down with it when the leg closes). The naive form — «first appearances
+> must be monotonic with no holes» — constructs **three false orphans** on a list that is in fact correct:
+> ref 11 is cited in prose as «(cf. ref 11)» rather than as a superscript, and refs 33 and 38 appear only
+> INSIDE the ranges `32–34` and `37–39`, written with an EN-DASH. So the gate would red on a healthy list
+> and, worse, train the reader to override it. ⊕ The second ground is independent of the parsing: the
+> founder's reference-manager pass renumbers the list wholesale, so any gate pinned to the current numbers
+> measures a state the publication pipeline is designed to discard. ⚠️ What a gate CAN do is already done
+> by hand above — Crossref resolution per DOI. **Crossref confirms that a paper EXISTS, never the number
+> quoted from it:** a source for a VALUE counts only after its full text is read (that class has its own
+> home — skill `in-silico`, §Paper Citations).
+
 > **Corrections carried in this list.** 2026-06-19 pass (all 41 scaffold DOIs resolved, zero fabrications):
 > Ohara 1994→1993; Mtemeri & Hickey 2024→2023; the laccase paper's first author is Lee, not Solomon
 > (2001→2002); Boggs DOI added; Schachinger 2022→2023 (`elecom.2022.107405` is the acceptance year; print

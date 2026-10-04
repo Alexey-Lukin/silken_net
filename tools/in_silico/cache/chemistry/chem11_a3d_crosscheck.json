@@ -2,8 +2,8 @@
   "script": "80_chem11_a3d_crosscheck.py",
   "tracker": "00_07 HW.5.IS — CHEM.11",
   "canon_home": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2",
-  "generated_utc": "2026-10-04T10:47:56Z",
-  "runtime_s": 0.01,
+  "generated_utc": "2026-10-04T13:00:23Z",
+  "runtime_s": 0.02,
   "inputs": {
     "a3d_output": "tools/in_silico/data/chem11_a3d/A3D.csv",
     "a3d_provenance": "tools/in_silico/data/chem11_a3d/README.md",
@@ -51,7 +51,8 @@
     "min_score": -3.4069,
     "max_score": 2.7367,
     "n_positive_measured": 50,
-    "note": "sum and mean include the sentinel rows as literal 0.0, which is what A3D itself reports; they are therefore totals of A3D's OUTPUT, not of the protein's surface"
+    "mean_score_measured_rows_only": -0.7901,
+    "note": "sum and mean include the sentinel rows as literal 0.0, which is what A3D itself reports; they are therefore totals of A3D's OUTPUT, not of the protein's surface. ⚠️ So the claim «no statistic admits the sentinel» is true of every RANKING, max, min and neighbour search here, and FALSE of these two fields by design — which is why the measured-only mean sits beside them: over the 347 measured rows it is markedly lower than the 600-row mean, and quoting the wrong one understates the surface by nearly half"
   },
   "sites": {
     "Gln71": {
@@ -391,10 +392,14 @@
     "consequence": "the hottest stretch of the construct is the one secretion removes, so every ranking here starts at residue 17 — and whether cleavage actually happened is a QC question, not a modelling one (Spec A intact-mass MS, ebfc_chem_rfq)"
   },
   "controls": {
-    "run_is_deterministic": true,
-    "determinism_evidence": "the run was repeated on the identical input on 2026-10-04 and A3D.csv came back byte-identical — unlike script 69, whose pdbfixer step carries a 3.77 Å² noise floor",
-    "instrument_separates_anything": true,
-    "what_these_controls_cannot_catch": "determinism is not correctness: a reproducible instrument can still be the wrong instrument, and both instruments here are of the SAME family (exposure-weighted neighbourhood hydrophobicity)"
+    "n_measured_plus_sentinel_equals_chain": true,
+    "no_reported_neighbour_is_a_sentinel_or_non_positive": true,
+    "ranks_taken_among_measured_positives_only": true,
+    "what_these_controls_cannot_catch": "they check that the SENTINEL never entered a statistic; they say nothing about whether A3D is the right instrument — and both instruments here are of the SAME family (exposure-weighted neighbourhood hydrophobicity), which no control of either can see"
+  },
+  "provenance_attested": {
+    "run_repeated_byte_identical": "the run was repeated on the identical input on 2026-10-04 and A3D.csv came back byte-identical. ⚠️ An ATTESTATION, not a measurement by this script: only one A3D.csv is committed and the committed log is the SECOND run's (it carries A3D's own «Working directory already exists» warning), so the comparison is not recorded in the tree",
+    "contrast": "script 69's pdbfixer step is NOT deterministic and carries a measured 3.77 Å² noise floor"
   },
   "agreement": {
     "sites_with_a_measured_positive_neighbour_at_7A": [

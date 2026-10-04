@@ -232,8 +232,12 @@ def build() -> str:
 
     parts.append("## S4. Committed input data\n")
     parts.append(
-        "External records the desk models read at run time (climate reanalysis, wind, homolog alignments). "
-        "Their provenance (query, date, licence) is stated in the README beside each set, not here.\n")
+        "External records the desk models read at run time (climate reanalysis, wind, homolog alignments) "
+        "and, under `chem11_a3d/`, the committed OUTPUT of a third-party tool. Their provenance (query, "
+        "date, licence) is stated in the README beside each set, not here. \u26a0\ufe0f **Licence is NOT uniform "
+        "across this table:** everything under `chem11_a3d/` except its own README is Aggrescan3D output, "
+        "supplied under that tool's upstream licence and **EXCLUDED from this repository's CC-BY-SA-4.0 "
+        "grant** (see `/NOTICE`); it is listed here for reproducibility, not re-licensed by being listed.\n")
     parts.append(table(file_rows(data), ("File", "SHA-256", "Bytes")) + "\n")
 
     parts.append("## S5. Coordinates\n")

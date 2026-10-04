@@ -85,8 +85,10 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
 
 Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
     INSTALLED AND RUN 2026-10-04. Its output IS in this repository, and it is
-    EXCLUDED from the CC-BY-SA-4.0 grant: tools/in_silico/data/chem11_a3d/
-    (A3D.csv, Aggrescan.log, config.ini). Full provenance of the run - sdist
+    EXCLUDED from the CC-BY-SA-4.0 grant - the exclusion is on the VALUES, not on
+    three file paths: it covers tools/in_silico/data/chem11_a3d/ (A3D.csv,
+    Aggrescan.log, config.ini) AND any A3D output value wherever this repository
+    quotes it onward, including our cache, the canon prose and the paper SI. Full provenance of the run - sdist
     sha256, the environment, the command, the bundled freesasa binary and its
     hash - is that folder's README.md; our own reading of the output is
     tools/in_silico/scripts/80_chem11_a3d_crosscheck.py and its cache, both ours
@@ -94,7 +96,7 @@ Aggrescan3D (standalone release) - NON-COMMERCIAL, under its own licence:
     `a3d_py27`, outside the tree and outside every one of our locks.
   The hosted servers need an account, so the standalone release (PyPI package
   `aggrescan3d` 1.0.2 of 2019-01-31, sources bitbucket.org/lcbio/aggrescan3d) is the
-  route this project would take for the open half of the aggregation recipe in
+  route this project TOOK, on 2026-10-04, for the open half of the aggregation recipe in
   docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2. Its PyPI metadata
   states "free for non-commercial users". Posture ratified 2026-10-01, in the same
   form as the AF3 outputs above: any Aggrescan3D output committed here is provided

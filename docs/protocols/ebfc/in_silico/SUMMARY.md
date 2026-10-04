@@ -1096,8 +1096,9 @@ Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; de
 `L1 §2` has said since 2026-06-06 that "an in-house hydrophobic-SASA proxy flags 4 aggregation-prone sites
 (Gln71, Gln200, Gln258, Gln405)", and the recipe on top of it — Aggrescan3D plus compensating Asp/Ser near
 them — gated the dgrFAD-GDH gene freeze. Since 2026-09-18 the compensations are ratified and written
-into the order (three positions, all taken); what still gates the freeze is the recipe's OTHER half,
-the Aggrescan3D run. ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
+into the order (three positions, all taken); the recipe's OTHER half — the Aggrescan3D run — gated the
+freeze until **2026-10-04, when it was run and the founder ratified the freeze** (second-instrument
+section below). ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
 canonised the conclusion and committed neither script nor cache, so the claim had no measurer until
 2026-09-17. Script 69 is the measurer, and the first thing it had to do was ask whether a declared proxy
 re-selects the published four.
@@ -1260,8 +1261,10 @@ tree-aware weighting here, and the 85-accession external subset is a curated sam
 never recorded — all three are named in the cache's own `caveats`.
 
 **Ceiling.** An exposed apolar patch is a static, single-molecule surface descriptor — **not** an aggregation
-prediction: no rate, no solubility, no critical concentration is computed anywhere here. **Aggrescan3D was
-NOT run** (the standalone route is open; its licence posture is ratified as a /NOTICE line in the AF3 form — 00_07 HW.5.IS), so the first half of the `L1 §2` recipe stays OPEN. Sequence conservation is
+prediction: no rate, no solubility, no critical concentration is computed anywhere here. **Aggrescan3D is a
+SECOND instrument, not a check on this one** — it was run 2026-10-04 (licence posture a /NOTICE line in the
+AF3 form; state → 00_07 HW.5.IS) and its reading is the section below, ⚠️ but both are of the SAME FAMILY
+(exposure-weighted neighbourhood hydrophobicity), so neither validates the other. Sequence conservation is
 NOT consulted by THIS script — it is measured separately (script 70, below) and read beside this score, never
 merged into it — no mutant was run in MD, and no ΔΔG of folding was computed — burial and DSSP are geometric
 *proxies* for that risk. One AF3 model, one conformation. No catalytic-residue list exists in our canon for
@@ -1293,25 +1296,37 @@ answerable form is the one this proxy already uses: **the flag lives at the NEIG
 | **Gln71** | −0.523 | **Leu80 +1.134** — rank **2** of the mature chain's 37 positive residues · a ratified compensation | 138.1 Å² |
 | **Gln405** | −1.247 | **Ile401 +1.025** — rank **4** · a ratified compensation | 119.8 Å² |
 | Gln258 | −1.484 | Val256 +0.102 — an order of magnitude weaker, **not** compensated | 68.1 Å² |
-| Gln200 | −0.462 | none | 53.7 Å² |
-| the other seven | all negative | none | ≤ 33.6 Å² |
+| Gln200 | −0.462 | none measured — ⚠️ 5 of its 10 shell neighbours are gated, 3 of them hydrophobic (Leu199 · Tyr203 · Phe222) | 53.7 Å² |
+| the other seven | all negative | none measured (gated neighbours at Gln380 · Gln405 · Gln463 too) | ≤ 33.6 Å² |
 
 So the second instrument puts its two strongest site-adjacent flags on the two positions the ratified
-gene substitutes, and flags no new site among the eleven. The third compensation **A70S** sits on a
-residue A3D scores **−0.592**: neither supported nor contradicted (its ground was charge-neutral patch
-reduction, not A3D).
+gene substitutes, and flags **no site the gene does not already act at**. ⚠️ Three qualifications the
+cache carries and this sentence must not swallow. (i) Gln258 **is** flagged, only an order of magnitude
+weaker and uncompensated — "no new site" is the shell's verdict, not the protein's. (ii) The count is
+**shell-specific**: at 7.5 Å — still inside the band where script 69's own four-site selection holds —
+a fourth appears, Gln100 → Tyr97 **+0.131**, i.e. *stronger* than Val256. (iii) Every "none measured"
+above means the instrument is **silent**, not that the neighbourhood is clean: the gated neighbours are
+counted in the cache, never aggregated away. The third compensation **A70S** sits on a residue A3D
+scores **−0.592** — and A3D structurally cannot flag an Ala either way (its matrix value **+0.056** is
+the smallest positive of the twenty), which is a property of the scale, not a verdict about the
+position; script 69 meanwhile ranks Ala70 the **second-largest** apolar contributor to the Gln71 patch
+(59.0 Å² against Leu80's 76.4) and places it **closer** to the site (CA-CA 3.86 Å vs 5.46). Its ground
+was charge-neutral patch reduction, not A3D.
 
 🔴 **Three limits, each of which shrinks that to its true size.**
 1. **Same family, not a different kind of method.** Both are exposure-weighted neighbourhood
    hydrophobicity. They differ in every detail — CA-CA vs side-chain centroid, a 10 Å exponential kernel
    vs a flat 7 Å shell, A3D's signed matrix vs Kyte-Doolittle>0 plus aromatics, freesasa RSA vs mdtraj
    SASA — so this is corroboration, never independent confirmation.
-2. 🔴 **A3D's `0.000` is an exposure-gate SENTINEL, not a measured zero.** Below 10 % RSA it forces the
-   score to exactly `0.0`; in this run that is **253 of 600 residues (42 %), 161 of them hydrophobic by
-   A3D's own matrix**, written in the same column and format as a real value — a buried hydrophobic patch
-   and «nothing here» are indistinguishable. The **first** reading of this very run aggregated them,
-   which produced a tidy «no positive neighbour at Gln258» and hid Val256. Script 80 excludes and counts
-   them; any other consumer of `A3D.csv` must too.
+2. 🔴 **A3D's `0.000` is an exposure-gate SENTINEL, not a measured zero.** Below **10** % RSA the tool
+   forces the score to exactly `0.0` (`min_surf`, read in the installed source). ⚠️ What we can measure
+   in the tree is the *symptom*, not the cause: **253 of 600 rows carry an exact `0.0` (42 %), 161 of them
+   hydrophobic by A3D's own matrix** — the RSA column itself is not committed, so the identification is an
+   inference from an exact zero in a signed continuous score, which is near-certain but not a reading. They
+   are written in the same column and format as a real value, so a buried hydrophobic patch and «nothing
+   here» are indistinguishable. The **first** reading of this very run aggregated them, which produced a
+   tidy «no positive neighbour at Gln258» and hid Val256. Script 80 excludes and counts them; any other
+   consumer of `A3D.csv` must too.
 3. **The model is not the protein being ordered.** A3D read only `ATOM` records and dropped the FAD
    silently (no warning in its log), so exposure near the flavin pocket is over-stated; and the structure
    is the **uncompensated** mutant, since no AF3 re-prediction on the compensated sequence exists.
@@ -1320,13 +1335,35 @@ reduction, not A3D).
 residues **1–16 hold 13 of the construct's 50** positively-scoring residues — the hottest stretch of the
 sequence being ordered is the **signal peptide**, which secretion is supposed to remove (UniProt
 `G8E4B5` Signal 1-16 / Chain 17-600, evidence `ECO:0000256` — an **automatic** annotation, not an
-experiment). Every ranking above therefore starts at residue 17, and whether cleavage happened is a QC
-question, not a modelling one — Spec A now asks for intact-mass confirmation of it.
+experiment). Every **A3D** ranking above therefore starts at residue 17 — ⚠️ but script 69's
+protein-wide maximum does **not**: its 282.9 Å² is **Thr12, inside that same signal peptide**, and
+excluding 1–16 the maximum is Ser164 at 202.4 Å² (1.5× Gln71, not 2.0×).
+
+🔴 **And the honest ground of this finding is weaker than the number looks, in exactly the way this
+whole section condemns elsewhere.** Measured on the committed structure: residues 1–16 carry **3–6 CA
+neighbours within 10 Å (mean 5.6)** against the mature chain's **19.7**, and sit **67.6 Å from the
+chain centroid (max 87.0)** against 22.4 Å — AF3 models the signal peptide as a **detached, extended,
+fully solvent-exposed tail** hanging off the globule. So RSA there is ≈ 100 % *by construction*, the
+exposure gate never fires on any of the sixteen (**zero sentinels in 1–16**, against 253 over the
+chain), and A3D's score collapses to matrix × exp(0.0521·RSA) — which is why the construct's global
+maximum is Leu7 (+2.737). ⊕ Script 69's cache also names residue 23 as the model's **lowest-pLDDT**
+(26.43), i.e. this is the least reliable region of the prediction. **Hence the QC line is bought by the
+BIOLOGY of secretion — a hydrophobic leader that must be cleaved — and not by this score**, which is the
+same "measures the scale, not the molecule" artefact as the Gln case, pointing the other way.
 
 > 📐 **Determinism, and what it does not buy.** The run was repeated on the identical input and `A3D.csv`
 > came back **byte-identical** — unlike this proxy, whose pdbfixer step carries a measured 3.77 Å² noise
-> floor. A reproducible instrument can still be the wrong instrument, so determinism is reported as a
-> control on the *run*, never as evidence about the *physics*.
+> floor. ⚠️ This is an **attestation, not a measurement in the tree**: one `A3D.csv` is committed and the
+> committed log is the *second* run's (it carries A3D's own «Working directory already exists» warning),
+> so the byte-comparison itself is unrecorded — the cache files it under `provenance_attested`, not under
+> `controls`. And a reproducible instrument can still be the wrong instrument, so determinism says
+> nothing about the *physics*.
+>
+> 📐 **Two totals that deliberately DO admit the sentinel.** `sum_of_scores` (−274.17) and `mean_score`
+> (−0.457) divide by all **600** rows, because that is what A3D itself reports — so «no statistic admits
+> the sentinel» is true of every ranking, maximum, minimum and neighbour search here and **false of those
+> two by design**. Over the 347 measured rows the mean is **−0.790**; quoting the 600-row figure as the
+> protein's surface understates it by nearly half, which is why the cache now carries both.
 
 ---
 

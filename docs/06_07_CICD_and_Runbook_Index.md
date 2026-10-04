@@ -23,7 +23,7 @@
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | secrets/revocation |
 | [`06_05` — Puma Configuration](06_05_Puma_Configuration) | Puma runbooks |
 | [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2, **OPS.22** (dependency-ops: стан алертів і погашень; механізм — скіл `dependency-update`) |
 
 ## 📑 Зміст
 

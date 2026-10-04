@@ -2450,21 +2450,34 @@ CHECKS += [
      A3D, lambda d: d["compensated_positions"]["L80D"]["n_mature_positive"], 0.0),
     # A70S: the compensation A3D neither supports nor contradicts
     ("CHEM.11 A3D score at the A70S position → 80",
-     SUMMARY, rf"residue A3D scores \*\*{N}\*\*: neither supported",
+     SUMMARY, rf"residue A3D\nscores \*\*{N}\*\* — and A3D structurally cannot flag an Ala",
      A3D, lambda d: d["compensated_positions"]["A70S"]["a3d_score"], 0.0005),
     # ── the exposure-gate sentinel census: the numbers that make the trap checkable ──
+    # ⚠️ Anchors are kept to ONE line and short: the 2026-10-04 adversary pass rewrote this paragraph
+    # and four of these pins went red purely because the line WRAP moved, not the numbers. A long
+    # anchor spanning a wrap is a pin on the typesetting.
     ("CHEM.11 A3D sentinel count → 80 (SUMMARY limit 2)",
-     SUMMARY, rf"in this run that is \*\*{N} of [\d]+ residues",
+     SUMMARY, rf"\*\*{N} of [\d]+ rows carry an exact",
      A3D, lambda d: d["exposure_gate_census"]["n_sentinel"], 0.0),
     ("CHEM.11 A3D chain length behind that census → 80",
-     SUMMARY, rf"in this run that is \*\*[\d]+ of {N} residues",
+     SUMMARY, rf"\*\*[\d]+ of {N} rows carry an exact",
      A3D, lambda d: d["totals_of_a3d_output"]["n_residues"], 0.0),
     ("CHEM.11 A3D sentinel percentage → 80",
-     SUMMARY, rf"residues \({N} %\), [\d]+ of them hydrophobic",
+     SUMMARY, rf"an exact `0\.0` \({N} %\)",
      A3D, lambda d: round(100 * d["exposure_gate_census"]["sentinel_fraction"]), 0.5),
     ("CHEM.11 A3D hydrophobic sentinels → 80",
-     SUMMARY, rf"%\), {N} of them hydrophobic by",
+     SUMMARY, rf"%\), {N} of them",
      A3D, lambda d: d["exposure_gate_census"]["n_sentinel_hydrophobic_by_a3d_matrix"], 0.0),
+    # ── the limits block: the matrix value and the gate threshold the prose quotes ──
+    # Found missing by the adversary pass of 2026-10-04: the block printed them unpinned while the
+    # table beside it was pinned, so drift in the LIMITS would have been silent.
+    ("CHEM.11 A3D Gln matrix value → 80 (SUMMARY, the «measures the scale» limit)",
+     SUMMARY, rf"\*\*Gln's value is {N}\*\*",
+     A3D, lambda d: d["a3d_scoring_as_read_from_source"]["gln_matrix_value"], 0.0),
+    ("CHEM.11 A3D exposure-gate RSA threshold → 80",
+     SUMMARY, rf"Below \*\*{N}\*\* % RSA the tool",
+     A3D, lambda d: d["a3d_scoring_as_read_from_source"]["exposure_gate_rsa_pct"], 0.0),
+
     # ── the signal-peptide share: the leg that reached the gene ORDER as a QC line ──
     ("CHEM.11 A3D positive residues inside the signal peptide → 80 (the Spec A QC leg's ground)",
      SUMMARY, rf"\*\*1–16 hold {N} of the construct's [\d]+\*\* positively-scoring",
