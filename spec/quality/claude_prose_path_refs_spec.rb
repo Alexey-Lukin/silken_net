@@ -41,7 +41,9 @@ module ClaudeProsePathRefs
   EXEMPT = {
     "activestorage/engine.rb" => "файл ГЕМА (Rails), не наше дерево — цитується як місце дефолту",
     "radio_driver/radio.h" => "vendored Semtech API; його база (`firmware/extern/subghz-phy`) названа в ТІЙ САМІЙ комірці таблиці, тож форма однозначна для читача",
-    "Source/PicoGKVdbVoxels.h" => "файл UPSTREAM-репо `leap71/PicoGKRuntime`, не наше дерево — цитується як МІСЦЕ дефекту ядра (HW.50, архів); репо назване в тому самому реченні разом із номером issue, тож форма однозначна"
+    "Source/PicoGKVdbVoxels.h" => "файл UPSTREAM-репо `leap71/PicoGKRuntime`, не наше дерево — цитується як МІСЦЕ дефекту ядра (HW.50, архів); репо назване в тому самому реченні разом із номером issue, тож форма однозначна",
+    "aggrescan/aggrescan_3d.py" => "файл sdist `aggrescan3d` 1.0.2 (третя сторона, NON-COMMERCIAL — `/NOTICE`), не наше дерево — цитується як МІСЦЕ сентинела `min_surf`, тобто рівно те, що читач мусить відкрити в ЧУЖОМУ пакеті, а не в нас; версія релізу названа в тому самому реченні",
+    "_vendor/poetry/vcs/git/backend.py" => "файл wheel-а `conda-lock` 4.0.2 (вендорений усередині нього poetry), не наше дерево — цитується як ЄДИНИЙ споживач `dulwich`, на якому стоїть присуд `not_used` (OPS.22); пакет і версія названі в тому самому реченні"
   }.freeze
 
   # 🔴 Гейт міряє ФАЙЛОВУ СИСТЕМУ (`.exist?`), а не git-дерево — тож усе, що є на

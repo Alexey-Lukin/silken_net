@@ -190,6 +190,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 56. An `overrides` pin is OUR cap — an alert under it gets no Dependabot PR, and the silence reads as upstream's
 57. «No patch» is a claim about the PACKAGE, not about the FIX — an abandoned transitive can still be cured by an `overrides` ALIAS to a maintained fork, and the proof is a negative control that the OLD package fails
 58. `bin/brakeman` adds `--ensure-latest`, and WITHOUT a day count it contradicts the release-age quarantine (`#4`): `main` goes red on the DAY a new Brakeman ships, and the only way back to green is a version younger than a week
+59. `dismissed_comment` in the Dependabot REST API is capped at 280 characters, so the comment on an alert can only ever be a POINTER — the ground cannot live there, by construction
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
