@@ -11,7 +11,7 @@
 # strictly worse than today. So every detector is anchored narrowly and every
 # known-legitimate idiom is excluded, even at the cost of missing real instances.
 #
-# Two rules were MEASURED AND DROPPED and stay dropped:
+# Three rules were MEASURED AND DROPPED and stay dropped:
 #   · `cd` persistence — real, but the harness ALREADY carries it: 95.7% of calls
 #     ending outside the repo print "Shell cwd was reset to …". A hook here would
 #     duplicate a live carrier and add ~1,272 firings of pure noise.
@@ -24,8 +24,17 @@
 #     credibility with silence. ⛔ The refusal is about the RATE, not about the
 #     blindness, so do not re-open it on the blindness alone — re-open it on a
 #     NEW measurement of that rate. Provenance: 00_07 OPS.39 §🗄️.
+#   · squiggly heredoc `<<~` in a patch script (it strips the shared indent from
+#     the anchor AND the replacement, so text lands at column 0). Measured over
+#     161 sessions: 251 indented `<<~` bodies, only 4 meant for column 0 — ~247
+#     firings of noise, because no predicate tells an indented insert from a
+#     top-level one (narrowing it to "Python inside" does not help: a top-level
+#     Python block also belongs at column 0). Carriers live downstream — rubocop
+#     on pre-push, ruff / IndentationError, the diff — and the recipe is
+#     `<<-'RB'` in edit scripts, never `<<~`. Re-proposed once without knowing
+#     this, because the refusal was recorded only in memory.
 #
-# A THIRD was dropped and then OVERTURNED, and the reversal is the more useful
+# A FOURTH was dropped and then OVERTURNED, and the reversal is the more useful
 # record than either verdict. The refusal read: "whether a bare `$var` is a bug
 # depends on the variable's runtime CONTENT, which no regex sees." That is true
 # of the BROAD form and false of a narrow one — `for x in $list` and
