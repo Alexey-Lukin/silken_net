@@ -401,7 +401,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 |---|---|---|
 | Cellular init/e2e | RUNBOOK §5 [bench:coap] | AT-граматика, CoAP PUT→Rails, DNS-failover, poll-downlink |
 | Модем marking | RUNBOOK §5.6 | = SIM7070G (не 7000G) |
-| VBAT power | RUNBOOK §6 | tank + buck тримають просадку ≤ 300 мВ (VBAT ≥ 3.4 В) |
+| VBAT power | RUNBOOK §6 | tank + buck тримають абсолютний VBAT ≥ 3.4 В (на мінімумі VREF це просадка ≈ 284 мВ, а з ратифікованим допуском дільника ±0.1 % — ≈ 278, не 300 — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink)) |
 | LoRa RX | RUNBOOK §6 (RF-bullet, HW.31) | 868 покриття/дальність |
 
 ---
