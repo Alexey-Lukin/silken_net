@@ -63,7 +63,7 @@
 | `SCC_SLASHED_TOTAL` instrumentation | `app/services/blockchain_burning_service.rb` | ✅ Реалізовано |
 | `RPC_ERRORS_TOTAL` instrumentation | `app/workers/application_web3_worker.rb` | ✅ Реалізовано (4 точки) |
 | `TELEMETRY_PROCESSED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано |
-| `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (8 точок: 4 відкидають кадр, 4 лише сигналять) |
+| `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (7 точок: 4 відкидають кадр, 3 лише сигналять; категорійна DCI з 2026-10-05 — власний `DCI_CATEGORICAL_MISMATCH_TOTAL`, ⚖️ FW.66) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
 | Prometheus Server | `config/deploy.yml` (accessory `alloy`) | ✅ **Grafana Alloy → Grafana Cloud** |
 | Grafana | Grafana Cloud SaaS | ✅ **Дашборд імпортовано 2026-08-29** (`ruby deploy/grafana/import.rb`) |
@@ -207,7 +207,8 @@ end
 | `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: effective_burn` — [SLASH.2] on-chain-реалістичний upper-bound, свідомо НЕ pre-tax `burn_amount`, як стояло тут доти; не лічильник подій) |
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 11 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
-| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (8 точок) | Відхилені пакети (sensor noise, unknown DID) і позначені — розбіжність метаболізму чи Лоренца (DCI); позначка ≠ tamper (категорійна DCI — переважно чесний розсинхрон, [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)) |
+| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (7 точок) | Відхилені пакети (sensor noise, unknown DID) і позначені — розбіжність метаболізму чи числова DCI (FW.31, за прапорцем); позначка ≠ tamper. Категорійна DCI сюди з 2026-10-05 не пише — рядок нижче |
+| `silkennet_dci_categorical_mismatch_total` | `SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL` | — | `TelemetryUnpackerService#check_z_divergence!` | **[FW.66 нога 1, ⚖️ founder 2026-10-05]** Категорійна DCI-розбіжність — СПОСТЕРЕЖЕННЯ, не тривога: доти вона била у fraud-лічильник і будила P0 `sn-alert-fraud-detected`, а виміряно, що будила лише чесні дерева з розсинхронізованим ланцюгом (≈ 11 % дерев-діб після першої втрати) і ніколи — фальсифікатора, що заявляє homeostasis ([`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)). Читач — панель «Telemetry Ingest Rate»; ціна присуду — підроблений `stress` P0 більше не будить (FW.8 «посуха») |
 | `silkennet_panic_replay_rejected_total` | `SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL` | — | `TelemetryUnpackerService` (SEC.10 panic Frame Counter) | **[SEC.10]** Panic-пакети відкинуті як replay через `unless_exist`-nonce у Rails.cache (Solid Cache/PostgreSQL, не Redis; і НЕ справжній SET NX — [`00_07`](00_07_Action_Plan_Tracker) SEC.39). Сторожовий пес панічного каналу — сплеск тут означає legitimate retransmission (LoRa duplicate), replay-attack АБО транзієнтний збій бази кешу, на якому Solid Cache повертає «не записано» і справжні кадри відкидаються як повтор. Grafana alert при різкому стрибку → спершу логи `SolidCacheStore: … failed`, тоді attacker injection forged panic packets. |
 | `silkennet_slash_attempts_total` | `SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL` | — | `BlockchainBurningService` (intent created) | **[ARCH.45]** Спроби slash — знаменник slash success-rate SLO |
 | `silkennet_slash_success_total` | `SilkenNet::Metrics::SLASH_SUCCESS_TOTAL` | — | `BlockchainBurningService` (status→sent) | **[ARCH.45]** Успішні broadcast slash — чисельник того ж SLO |
@@ -348,6 +349,7 @@ end
 | `silkennet_blockchain_tx_reverted_total` | алертна | `direction`, `token_type` | Polygon money txs (mint/burn) whose receipt reverted on-chain, one per receipt (SLASH-1) — писачів два (поллер `BlockchainConfirmationWorker` і `MintingRollbackService` після вичерпання його ретраїв), Celo поза ним; серії засіяні нулем, щоб `increase()` бачив перший revert після рестарту; для слешу revert лишає договір `:breached` без спалення, машинного повтору свідомо немає, будить людину `sn-alert-money-tx-reverted` (рецепт [`06_08 §4.6`](06_08_Resilience_and_Failover_Policy)) |
 | `silkennet_circuit_breaker_rejections_total` | діагностична | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | алертна | `status` | Total CoAP UDP packets received by the telemetry daemon |
+| `silkennet_dci_categorical_mismatch_total` | алертна | — | FW.66: telemetry packets whose claimed band status disagrees with the server raw z band membership (an observation, mostly an honest Lorenz-chain desync, not a fraud page). ⚖️ founder 2026-10-05: алерту немає свідомо — читач панель «Telemetry Ingest Rate»; ярус «алертна» означає «має читача», не «будить» |
 | `silkennet_dci_numeric_mismatch_total` | діагностична | — | FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon [FW.31; diagnostic tier: no alert until DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]. Mismatch, не відмова: рядок персиститься; гілка стоїть до відновлення ARCH.41 |
 | `silkennet_dclimate_verification_total` | алертна | `result` | Total dClimate satellite verdicts by terminal result — [INF.26] вісь ГРОШОВА обабіч (`verified` → InsurancePayoutWorker, `rejected_fraud` → BurnCarbonTokensWorker, `inconclusive` → людський/DAO-вердикт); дім лічби — `EwsAlert.after_update_commit`, бо термінальних писачів `satellite_status` чотири й один із них у `sidekiq_retries_exhausted` воркера |
 | `silkennet_dynamic_tax_collected_total` | діагностична | `token_type` | Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate |
@@ -388,7 +390,7 @@ end
 | `silkennet_telemetry_ccm_device_z_total` | діагностична | `carried` | FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z [FW.31; diagnostic tier: no alert until the CCM flip — the consumer is the Gate D ratio carried=true / all >= 95%] |
 | `silkennet_telemetry_ccm_fc_replay_rejected_total` | алертна | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
 | `silkennet_telemetry_ccm_mic_fail_total` | алертна | — | FW.2 CCM packets rejected due to MIC verification failure |
-| `silkennet_telemetry_fraud_detected_total` | алертна | — | Telemetry packets rejected (sensor noise, unknown DID) or flagged (DCI/metabolic divergence — not every flag is tamper) |
+| `silkennet_telemetry_fraud_detected_total` | алертна | — | Telemetry packets rejected (sensor noise, unknown DID) or flagged (metabolic divergence, numeric DCI drift — not every flag is tamper); категорійна DCI-розбіжність з 2026-10-05 має власний лічильник і P0 не будить (⚖️ FW.66) |
 | `silkennet_telemetry_log_unpruned_lookups_total` | алертна | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
 | `silkennet_telemetry_processed_total` | алертна | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_treasury_check_errors_total` | алертна | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
@@ -633,7 +635,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `app/services/blockchain_minting_service.rb` | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
 | `app/services/blockchain_burning_service.rb` | `SCC_SLASHED_TOTAL.increment(by: burn_amount)` — кумулятивна сума спалених токенів | ✅ |
 | `app/workers/application_web3_worker.rb` | `RPC_ERRORS_TOTAL.increment(labels: {network:, error_type:})` | ✅ |
-| `app/services/telemetry_unpacker_service.rb` | `TELEMETRY_FRAUD_DETECTED_TOTAL.increment`, `TELEMETRY_PROCESSED_TOTAL.increment` | ✅ |
+| `app/services/telemetry_unpacker_service.rb` | `TELEMETRY_FRAUD_DETECTED_TOTAL.increment`, `DCI_CATEGORICAL_MISMATCH_TOTAL.increment`, `TELEMETRY_PROCESSED_TOTAL.increment` | ✅ |
 | `app/workers/unpack_telemetry_worker.rb` | `Sentry.set_tags(gateway_uid:)` | ✅ |
 | `app/workers/gateway_telemetry_worker.rb` | `Sentry.set_tags(queen_uid:)` | ✅ |
 | `terraform/main.tf` | `google_project_service.monitoring` (Cloud Monitoring API) | ✅ (Cloud Monitoring) |

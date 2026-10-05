@@ -727,9 +727,9 @@ end
         # device says "homeostasis" → divergence MUST be detected (server_in_band=false)
         attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
       end
 
       it "[FW.8] no divergence when z_value is within global defaults and family is nil" do
@@ -738,54 +738,68 @@ end
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis } # well within 2..45
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       it "skips when the Lorenz state is absent" do
         service = described_class.new("", nil)
         attributes = { z_value: nil, lorenz_state_z: nil, bio_status: :homeostasis }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       it "skips when device_bio_status is nil" do
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: nil }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
-      it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
+      it "counts a categorical DCI mismatch when device says homeostasis but server Z is out of band" do
         service = described_class.new("", nil)
         attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
+      end
+
+      # ⚖️ [FW.66 нога 1, founder 2026-10-05] Категорійна розбіжність лічиться ОКРЕМО й P0
+      # `sn-alert-fraud-detected` не будить: той будив лише чесні дерева з розірваним ланцюгом
+      # (`03_04 §7.3`). Мутація: поверни fraud-інкремент у гілку — червоніє цей приклад.
+      it "[FW.66] counts a categorical mismatch on its own counter and does not page fraud" do
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
+
+        described_class.new("", nil).send(:check_z_divergence!, tree_with_family,
+                                          { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis })
+
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment).once
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "does not flag when both device and server agree on healthy" do
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       it "does not flag when both device and server agree on unhealthy" do
         service = described_class.new("", nil)
         attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :stress }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       # 🔴 [FW.8] Дискримінатор смуг — `z = 3.0` (здорове глобально ≥ 2.0,
@@ -805,9 +819,9 @@ end
 
         # Spy-форма свідомо: `RSpec/MessageSpies` вмикається, і новий приклад
         # не має права дописувати в чергу міграції те, що сам же й зрізає.
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       # 🔴 [FW.8] MAX-бік — ДОСЯЖНА половина розриву, і саме її бракувало.
@@ -826,9 +840,9 @@ end
         expect(SilkenNet::Attractor.anomaly_ceiling(0.0, Tree::GLOBAL_LORENZ_Z_MAX)).to eq(45.0)
         attributes = { z_value: 42.0, lorenz_state_z: 42.0, bio_status: :homeostasis, temperature_c: 0.0 }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       # [FW.8 · ⚖️ founder 2026-09-29] Набір кандидатів: смуга, яку вузлу ВИДАНО,
@@ -841,7 +855,7 @@ end
         before do
           tree_with_family.update_columns(lorenz_band_pending: issued, lorenz_band_dlfc: 1, lorenz_band_key_epoch: 0,
                                           lorenz_band_issued_at: 1.hour.ago, lorenz_band_served_at: 1.hour.ago)
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         end
 
         def judge(**packet)
@@ -852,7 +866,7 @@ end
         it "приймає статус виданої смуги й записує його як доказ" do
           judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :stress)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
           expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
           expect(tree_with_family.lorenz_band_pending).to be_nil
         end
@@ -860,7 +874,7 @@ end
         it "і далі ловить статус, якого не дає жоден кандидат" do
           judge(z_value: 1.0, lorenz_state_z: 1.0, bio_status: :homeostasis, cold_start_flag: true)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
         end
 
         # `vm_error` статусу не рахував, а пакет із невідомим часом міг прийти з
@@ -882,7 +896,7 @@ end
 
           judge(z_value: 40.002, lorenz_state_z: 40.002, bio_status: :anomaly)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
           expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
         end
       end
@@ -895,9 +909,9 @@ end
         service = described_class.new("", nil)
         attributes = { z_value: 2.0, lorenz_state_z: 1.99996, bio_status: :stress, temperature_c: 0.0 }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
       # Дзеркало попереднього: смуга ПРИСТРОЮ лишається дієвою, тож справжня
@@ -907,9 +921,9 @@ end
         service = described_class.new("", nil)
         attributes = { z_value: 1.0, lorenz_state_z: 1.0, bio_status: :homeostasis, cold_start_flag: true }
 
-        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
       end
 
       # [FW.31] Numeric tolerance band feature-flag.
@@ -1037,15 +1051,15 @@ end
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be(true)
           expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(recovery_tree.cluster_id)
         end
 
-        it "increments fraud when no candidate matches (genuine mismatch)" do
+        it "counts a categorical mismatch when no candidate matches" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.1, 0.2, 0.5 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
@@ -1056,15 +1070,15 @@ end
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
 
-        it "skips recovery and increments fraud when cold_start_flag is true" do
+        it "skips recovery and counts the mismatch when cold_start_flag is true" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 25.0 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
@@ -1075,10 +1089,10 @@ end
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
@@ -1097,9 +1111,9 @@ end
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, no_key_tree, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
+          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
@@ -1587,6 +1601,7 @@ end
 
     it "пише сенсори NULL, не крокує Лоренц і не судить DCI" do
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
 
       described_class.call(real_panic_chunk)
 
@@ -1595,6 +1610,7 @@ end
                                       "z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
       expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
     end
 
     it "кадр ПІСЛЯ паніки стартує з хвоста ДО неї — ланцюги не розходяться" do
@@ -1629,12 +1645,14 @@ end
     it "не кличе fraud і не пише хвоста" do
       allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 20.0, 1.0, 2.0, 20.0 ])
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
 
       described_class.call(vm_error_chunk)
 
       row = TelemetryLog.where(bio_status: :vm_error).sole
       expect(row.attributes.values_at("z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
     end
 
     it "кадр ПІСЛЯ VM_ERROR стартує з хвоста ДО нього" do
@@ -1747,6 +1765,7 @@ end
     # vcap/temp/dt = 0, acoustic = 0xFF), тож і тут — NULL, без кроку Лоренца, без DCI.
     it "writes a CCM panic row as NULL sensors with no Lorenz step and no DCI verdict [ARCH.102]" do
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
 
       described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 0, acoustic: 255,
                                            dt: 0, status: 0x80, ttl: 5, fc: 46))
@@ -1756,6 +1775,7 @@ end
                                       "z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
       expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
     end
 
     # 🔴 [SILENCE-1] Бекенд-половина pulse'у. Кадр «я тут, але нічого не міряв» —
@@ -2234,10 +2254,9 @@ end
         expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
         expect(Rails.logger).to have_received(:warn)
           .with(a_string_matching(/Metabolic Divergence · exact.*recompute\(ema=3600s\)=#{gp}/))
-        # at_least: фонова z-DCI фікстури (cold-start server-Z) теж може смикнути
-        # цю ж метрику — точна гілка доведена специфічним лог-рядком вище.
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL)
-          .to have_received(:increment).at_least(:once)
+        # Рівно раз: z-DCI з FW.66 (нога 1) лічить у ВЛАСНИЙ лічильник, тож fraud тут —
+        # лише точна метаболічна гілка, доведена ще й лог-рядком вище.
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
       end
 
       it "skips the exact branch for non-homeostasis frames (panic ema=0)" do

@@ -173,7 +173,7 @@ module SilkenNet
     # Telemetry fraud/anomaly detections (monotonic counter)
     TELEMETRY_FRAUD_DETECTED_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_fraud_detected_total,
-      docstring: "Telemetry packets rejected (sensor noise, unknown DID) or flagged (DCI/metabolic divergence)"
+      docstring: "Telemetry packets rejected (sensor noise, unknown DID) or flagged (metabolic divergence, numeric DCI drift)"
     )
 
     # [SEC.10] Panic packets rejected as replay (Frame Counter nonce collision).
@@ -215,6 +215,18 @@ module SilkenNet
       :silkennet_dci_numeric_mismatch_total,
       docstring: "FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon " \
                  "[FW.31; diagnostic tier: no alert until DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
+    )
+
+    # [FW.66 нога 1 · ⚖️ founder 2026-10-05] Категорійна DCI-розбіжність: заявлений статус
+    # ⊥ членство серверного сирого z у смугах пристрою. Доти била в
+    # TELEMETRY_FRAUD_DETECTED_TOTAL і будила P0 `sn-alert-fraud-detected`, а виміряно, що
+    # будила лише чесні дерева з розсинхронізованим ланцюгом (≈ 11 % дерев-діб після першої
+    # втрати) і ніколи — фальсифікатора, що заявляє homeostasis (03_04 §7.3). Спостереження,
+    # не тривога: читач — панель «Telemetry Ingest Rate» оглядового дашборда, алерту немає.
+    DCI_CATEGORICAL_MISMATCH_TOTAL = REGISTRY.counter(
+      :silkennet_dci_categorical_mismatch_total,
+      docstring: "FW.66: telemetry packets whose claimed band status disagrees with the server raw z band membership " \
+                 "(an observation, mostly an honest Lorenz-chain desync, not a fraud page)"
     )
 
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,

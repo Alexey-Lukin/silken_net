@@ -878,7 +878,7 @@ class TelemetryUnpackerService < ApplicationService
   # ⛔ Не повертати сюди `effective_lorenz_thresholds` під підставою «щоб
   # розходження лишалось консистентним із порогами, якими провіженили прошивку»:
   # до доказу пристрій ними НЕ судить, тож для родини з `critical_z_min > 2.0`
-  # чесний пакет дає категоричний mismatch і P0-алерт на НЕВИННОМУ дереві.
+  # чесний пакет дає категоричний mismatch на НЕВИННОМУ дереві (до FW.66 — ще й P0-алерт).
   # Членство судить СИРИЙ z (`lorenz_state_z`) — ним класифікує прошивка;
   # `z_value` округлено до 4 знаків для зберігання, і на межі смуги воно
   # розводило б два обчислення. Механізм, виміри й ціна набору — `03_04 §5.3`.
@@ -958,7 +958,11 @@ class TelemetryUnpackerService < ApplicationService
         "raw_z=#{raw_z}, bands=#{judged.join(' | ')}. " \
         "Dual Computation Integrity mismatch."
       )
-      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+      # ⚖️ [FW.66 нога 1, founder 2026-10-05] Власний лічильник, НЕ fraud: P0 на цій гілці
+      # будив чесні дерева з розірваним ланцюгом і ніколи — фальсифікатора homeostasis
+      # (`03_04 §7.3`). ⛔ Ціна названа: підроблений `stress` P0 більше не будить — долю
+      # гілки «stress → посуха» вирішує FW.8.
+      SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL.increment
     elsif matching.size < bands.size
       record_band_evidence!(tree, attributes, matches)
     end

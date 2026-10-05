@@ -36,6 +36,7 @@ RSpec.describe Hil::SoldierNode do
     allow(EmergencyResponseService).to receive(:call)
     allow(IotexVerificationWorker).to receive(:perform_async)
     allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+    allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
   end
 
 
@@ -69,12 +70,13 @@ RSpec.describe Hil::SoldierNode do
   end
 
   describe "DCI acceptance (the whole point of E.64)" do
-    it "emits packets the server accepts across a WARM chain — zero fraud increments" do
+    it "emits packets the server accepts across a WARM chain — zero DCI mismatches, zero fraud" do
       3.times do
         reading = soldier.read(tree, **sensors)
         expect { send_packet(reading) }.to change(TelemetryLog, :count).by(1)
       end
 
+      expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
 
@@ -105,12 +107,14 @@ RSpec.describe Hil::SoldierNode do
 
       send_packet(forged)
 
-      # ДВІЧІ, і це пін на пару, а не на число: підробку ловлять ДВА незалежні
-      # канали — `check_z_divergence!` (заявлений статус ≠ смуга серверного Z) і
-      # `check_metabolic_divergence!` (GP=26 при `stress`, де прошивка пакує рівно 1).
-      # Якщо котрийсь тихо перестане дискримінувати, приклад почервоніє — саме те,
-      # чого не було, коли симулятор годував обидва канали випадковими числами.
-      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).twice
+      # Пін на ПАРУ каналів, а не на число: підробку ловлять два незалежні —
+      # `check_z_divergence!` (заявлений статус ≠ смуга серверного Z; з FW.66 — власний
+      # лічильник, P0 не будить) і `check_metabolic_divergence!` (GP=26 при `stress`, де
+      # прошивка пакує рівно 1; fraud). Якщо котрийсь тихо перестане дискримінувати,
+      # приклад почервоніє — саме те, чого не було, коли симулятор годував обидва канали
+      # випадковими числами.
+      expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment).once
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
     end
   end
 end

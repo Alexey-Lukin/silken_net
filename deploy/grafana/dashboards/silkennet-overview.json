@@ -108,6 +108,12 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(rate(silkennet_dci_categorical_mismatch_total{slot=~\"$slot\"}[1m]))",
+          "legendFormat": "DCI desync (FW.66 — not fraud)",
+          "refId": "D"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
           "expr": "sum by (status) (rate(silkennet_coap_packets_received_total{slot=~\"$slot\"}[1m]))",
           "legendFormat": "CoAP received ({{status}})",
           "refId": "C"

@@ -282,7 +282,7 @@ groups:
         for: 2m
         annotations:
           summary: "Fraud rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
-          description: "TelemetryUnpackerService відхилив пакети (sensor noise, unknown DID — в ECB-ері зокрема кадр під чужим ключем) або позначив розбіжність метаболізму чи Лоренца (DCI). ⚠️ Категорійна DCI-розбіжність — здебільшого чесний розсинхрон ланцюга, не атака (03_04 §7.3, FW.66). Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
+          description: "TelemetryUnpackerService відхилив пакети (sensor noise, unknown DID — в ECB-ері зокрема кадр під чужим ключем) або позначив розбіжність метаболізму (wire GP ≠ перерахунок) чи числову DCI-розбіжність (FW.31, за прапорцем). Категорійна DCI-розбіжність сюди більше не входить: вона здебільшого чесний розсинхрон ланцюга й лічиться окремо — silkennet_dci_categorical_mismatch_total, без алерту (⚖️ FW.66, 2026-10-05; 03_04 §7.3). Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
           severity: critical

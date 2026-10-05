@@ -43,6 +43,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 18. `bin/forest_simulator` рахує `bio_status` ВЛАСНИМ Lorenz-ланцюгом і читає серверний хвіст рівно раз на дерево за процес — інакше DCI або вічно червона, або зелена за побудовою
 19. DCI судить членство СИРИМ z (`lorenz_state_z`, останній елемент `calculate_z_from_state`) проти НАБОРУ смуг пристрою — не `z_value` і не одну смугу
 20. Стан Лоренца між кадрами — float32, як RTC Солдата: старт кадру й хвіст, що персиститься, звужуй через `SilkenNet::Attractor.as_rtc_state`, а суди double-z
+21. Категорійна DCI-розбіжність лічить ВЛАСНИЙ лічильник `DCI_CATEGORICAL_MISMATCH_TOTAL`, не fraud — пін «DCI мовчить», що дивиться на `TELEMETRY_FRAUD_DETECTED_TOTAL`, тепер зелений за побудовою
 
 <!-- /TELEMETRY-GOTCHAS-INDEX -->
 

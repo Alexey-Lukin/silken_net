@@ -33,6 +33,11 @@ RSpec.describe SilkenNet::Metrics do
     expect(metric).to be_a(Prometheus::Client::Counter)
   end
 
+  it "registers dci_categorical_mismatch_total counter [FW.66]" do
+    metric = described_class::REGISTRY.get(:silkennet_dci_categorical_mismatch_total)
+    expect(metric).to be_a(Prometheus::Client::Counter)
+  end
+
   it "registers sidekiq_queue_size gauge" do
     metric = described_class::REGISTRY.get(:silkennet_sidekiq_queue_size)
     expect(metric).to be_a(Prometheus::Client::Gauge)
