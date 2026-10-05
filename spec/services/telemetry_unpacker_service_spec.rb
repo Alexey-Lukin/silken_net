@@ -959,6 +959,20 @@ end
           expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
         end
 
+        # Квант дроту q/2 = 0.00098 стоїть упритул під ε = 0.001, тож `z_value` (round 4,
+        # ще ±0.00005) виносив за ε 0.36 % ЧЕСНИХ кадрів (max 0.001028). device_z = 12808/512.
+        it "judges drift by the RAW z (`lorenz_state_z`), not the 4-decimal `z_value`" do
+          stub_const("ENV", ENV.to_h.merge(
+            "DCI_NUMERIC_TOLERANCE" => "true",
+            "DCI_NUMERIC_EPSILON" => "0.001"
+          ))
+          attributes = { z_value: 25.0146, lorenz_state_z: 25.014649, bio_status: :homeostasis, device_z: 25.015625 }
+
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        end
+
         it "uses DEFAULT_DCI_EPSILON (0.001) when DCI_NUMERIC_EPSILON is unset" do
           stub_const("ENV", ENV.to_h.merge("DCI_NUMERIC_TOLERANCE" => "true").except("DCI_NUMERIC_EPSILON"))
           # |25.0 - 25.0005| = 0.0005 < 0.001 (default) → silent.

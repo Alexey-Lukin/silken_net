@@ -68,7 +68,7 @@ class TelemetryUnpackerService < ApplicationService
   # HMAC-SHA256 → signed-unit-float unpack). The DID is no longer an
   # attractor input — it is purely an identifier. With identical inputs
   # raw Z values are numerically comparable, and `check_z_divergence!`
-  # asserts that |server_z − device_z| stays inside a tight tolerance
+  # asserts that |raw z − device_z| stays inside a tight tolerance
   # band on top of the categorical bio_status check.
 
   # [ARCH.41] Firmware RTC-default epoch_day after VBAT loss.
@@ -855,7 +855,7 @@ class TelemetryUnpackerService < ApplicationService
   #   1. Categorical mismatch — device claims `homeostasis` but server Z
   #      is outside the species/cluster healthy band (or vice versa).
   #      Detects tampered firmware or replay with a forged StatusByte.
-  #   2. Numeric divergence — |server_z − device_z| larger than the
+  #   2. Numeric divergence — |raw z − device_z| larger than the
   #      tolerance band. Detects a corrupted attractor input on either
   #      side (e.g. wrong K_seed flashed, drift in the silken_sha256 port, etc.).
   # On the ECB path device Z is reconstructed from the bio_status nibble +
@@ -880,7 +880,7 @@ class TelemetryUnpackerService < ApplicationService
   # disabled by default to preserve current categorical behaviour:
   #   - `DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
   #   - `DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
-  #     allowed absolute drift between server_z and the reported
+  #     allowed absolute drift between the raw z and the reported
   #     device_z BEFORE flagging fraud.
   # The numeric branch fires only when `attributes[:device_z]` is present —
   # i.e. on the CCM path (wire-rev2 device_z; the 0xFFFF sentinel «Lorenz not
@@ -890,7 +890,6 @@ class TelemetryUnpackerService < ApplicationService
   DEFAULT_DCI_EPSILON = 0.001
 
   def check_z_divergence!(tree, attributes)
-    server_z = attributes[:z_value]
     raw_z = attributes[:lorenz_state_z]
     device_bio_status = attributes[:bio_status]
     return if raw_z.nil? || device_bio_status.nil?
@@ -919,12 +918,14 @@ class TelemetryUnpackerService < ApplicationService
     # When the device packet does carry a raw Z value (future packet
     # revision), drift > ε is treated as a fraud signal even if the
     # categorical buckets agree (catches systematic Z offset attacks).
+    # Дрейф — від СИРОГО z, як і членство нижче: квант дроту q/2 = 0.00098 стоїть упритул
+    # під ε, і `z_value` (round 4, ще ±0.00005) виносив за ε 0.36 % чесних кадрів.
     if numeric_dci_tolerance_enabled? && attributes[:device_z].present?
-      drift = (server_z.to_f - attributes[:device_z].to_f).abs
+      drift = (raw_z.to_f - attributes[:device_z].to_f).abs
       if drift > numeric_dci_epsilon
         Rails.logger.warn(
           "🔍 [Z Divergence Numeric] DID #{tree.did}: " \
-          "server_z=#{server_z}, device_z=#{attributes[:device_z]}, " \
+          "raw_z=#{raw_z}, device_z=#{attributes[:device_z]}, " \
           "drift=#{drift}, ε=#{numeric_dci_epsilon}. Numeric DCI mismatch."
         )
         SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
@@ -948,7 +949,7 @@ class TelemetryUnpackerService < ApplicationService
       judged = bands.map { |band| "#{band[:min]}..#{SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])}" }
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
-        "server_z=#{server_z}, bands=#{judged.join(' | ')}. " \
+        "raw_z=#{raw_z}, bands=#{judged.join(' | ')}. " \
         "Dual Computation Integrity mismatch."
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
@@ -1047,7 +1048,7 @@ class TelemetryUnpackerService < ApplicationService
     ENV["DCI_NUMERIC_TOLERANCE"].to_s.downcase == "true"
   end
 
-  # [FW.31] Allowed absolute drift `|server_z - device_z|` before fraud
+  # [FW.31] Allowed absolute drift `|raw z - device_z|` before fraud
   # is flagged. ENV override falls back to `DEFAULT_DCI_EPSILON` when
   # the value is missing or fails Float coercion.
   def numeric_dci_epsilon
