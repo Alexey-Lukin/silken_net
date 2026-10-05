@@ -384,7 +384,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 1. Buck-3.7 В → SIM7070G VCC; **5-cap tank ВПРИТУЛ до VBAT-піна** (C_BULK 5-10мм … C_HF2/C_RF впритул). ⚠️ На breadboard паразитна індуктивність гірша за PCB → caps максимально близько до VBAT-піна breakout'а.
 2. UART: STM32 **PA9**→SIM_RX, **PA10**→SIM_TX; PWR_KEY→GPIO (👤 обрати вільний, або тримати для always-on).
 3. Wideband антена → SMA модема; SIM-карта у breakout.
-4. **Checkpoint:** `AT`→`OK`; `AT+CGDCONT=1,"IP","<APN 👤>"`; `AT+CGATT?`→`1` (зареєстровано); осцилограф VBAT під TX-burst → просадка **≤ 300 мВ**, VBAT ≥ 3.4 В (SIMCom V1.05 §3.1; стимули й огинаюча 2 А — RUNBOOK §6).
+4. **Checkpoint:** `AT`→`OK`; `AT+CGDCONT=1,"IP","<APN 👤>"`; `AT+CGATT?`→`1` (зареєстровано); осцилограф VBAT під TX-burst → абсолютний **VBAT ≥ 3.4 В** (на мінімумі VREF це просадка ≈ 284 мВ, а з ратифікованим допуском дільника ±0.1 % — ≈ 278, не 300 — [`02_05 §2.2.1`](02_05_Queen_Hardware_and_Starlink); SIMCom V1.05 §3.1; стимули й огинаюча 2 А — RUNBOOK §6).
 
 ### 10.3 LoRa-RX
 1. 🔴 **868-антена → SMA ПЕРЕД живленням** (SX1262 PA). SX1262 у RX-continuous.
