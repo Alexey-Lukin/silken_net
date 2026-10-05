@@ -28,9 +28,9 @@ namespace SilkenCad;
 //    verdict put the pad BESIDE the piezo (02_01 §6; the piezo and its pad were then cut on 2026-09-29,
 //    HW.30 — the flat crown stays as ratified), which leaves the board stack under the 16.0 mm the
 //    crown fixes. `BellRadiusMm` now DRIVES the edge round; `BellRiseMm` stays the canon floor verify
-//    checks against. ⛔ `draw radome` is STILL refused, on TWO other grounds: the socket is reshaped
-//    by the collar leg, and the BME280 pocket floor is a PLACEHOLDER (HW.29) — the sheet waits on the LAST of those
-//    changes, never on this one alone.
+//    checks against. ⛔ `draw radome` is STILL refused, on THREE other grounds: the socket is reshaped
+//    by the collar leg, the BME280 pocket floor is a PLACEHOLDER (HW.29), and so is the pocket gasket gap
+//    (`pocket_gasket_gap_mm` 0, HW.32) — the sheet waits on the LAST of those changes, never on this one alone.
 //  • the DOME Ø is no longer frozen: the ROOT verdict (⚖️ founder 2026-09-29, 00_07 HW.9 → HW.33) opened Ø25 for the board
 //    contour, and the Ø is DERIVED (RadomeCem.DomeDiameterMm) — applied 2026-09-30 with the vent facet + BME280 pocket
 //    (⚖️ 2026-09-29, 02_01 §3.4; steps 5–7 below). The gland fill stayed at 80 % (⚖️ delegated 2026-09-30, 02_02 §3.2).
