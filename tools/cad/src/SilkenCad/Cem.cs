@@ -259,7 +259,7 @@ internal sealed record MechanicalLockCem
     public string Kind { get; init; } = "mechanical_lock";
     public string Name { get; init; } = "mechanical_lock";
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = measured on the part (01_01 §4.3)
-    public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
+    public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (canon Ø11 lands with the collar — 00_07 HW.8.9)
     public float ShankLengthMm { get; init; } = 18f;
     public float BoreDiameterMm { get; init; } = 1.35f;    // 0 ⇒ SOLID shank (no channel: the anode is printed without a core and the bus is a wire welded to its TOP face, ⚖️ 2026-09-18, 01_01 §1.4 / §3 step 1b); >0 ⇒ the cathode channel the bus wire threads (Ø1.35 since the clearance verdict, 00_07 HW.34)
     public float ContactStartMm { get; init; } = 2f;       // z where PEEK contact begins
@@ -321,14 +321,14 @@ internal sealed record ORingGlandCem
 // plane (centre GND bus + outer V+, Hard Gold — coating, NOT geometry); the side/perimeter is the cathode
 // catalytic zone (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2, фаза-2).
 // Bayonet lugs mate the PEEK Radome (Деталь 4). Barbs reuse the §4.3 lock (Zone-3 set, same local profile).
-// Shank Ø + flange thickness = HW.8 placeholders (no-premature-canon).
+// Shank Ø + length (00_07 HW.8.9) and flange thickness (HW.8.10) = placeholders; the shank Ø nominal Ø11 is canon (01_01 §1).
 internal sealed record CathodeFlangeCem
 {
     public string Kind { get; init; } = "cathode_flange";
     public string Name { get; init; } = "cathode_flange";
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (as mechanical_lock)
     public float FlangeDiameterMm { get; init; } = 29.8f;  // = Radome Ø (01_01 §1, 02_02 §1.3); derived from the board target — see RadomeCem.DomeDiameterMm
-    public float FlangeThicknessMm { get; init; } = 3f;    // placeholder (HW.8 dim-freeze)
+    public float FlangeThicknessMm { get; init; } = 3f;    // placeholder that must grow (00_07 HW.8.10)
     public float ShankDiameterMm { get; init; } = 9f;      // placeholder (HW.8); Zone-3 into PEEK
     public float ShankLengthMm { get; init; } = 14f;
     public float BoreDiameterMm { get; init; } = 1.35f;    // GND bus channel (hollow through flange+shank) — the monolithic rod threads it, isolated. This DEFAULT is the effective channel for the F3 gate on the full stack, because the assembly manifests declare no such field (00_07 HW.45) — so it moves with canon 01_01 §1.4, not behind it
@@ -538,7 +538,7 @@ internal sealed record AnchorAxialStackCem
 
     // How deep the Zone-1 anode shaft inserts into the Zone-2 bore (press-fit overlap). The Zone-3 shank
     // enters the OTHER end by its own shank length → InsertionBudget guards the two shanks don't collide.
-    // 30 is an HW.8 PLACEHOLDER, not a frozen dim (F2 budget 50−30−14 = 6 mm) — and the in-silico half
+    // 30 is a PLACEHOLDER owned by 00_07 HW.26 G1, not a frozen dim (F2 budget 50−30−14 = 6 mm) — and the in-silico half
     // re-types the same value under TWO names, `L_A_INSERT` and `Z1_INSERTION_MM`: grep both and follow
     // their importers. No gate binds the two halves, so a change here is swept BY VALUE.
     // ⚠️ `verify` judges it against the window of the Zone-1 lock this stack names below and flags it when

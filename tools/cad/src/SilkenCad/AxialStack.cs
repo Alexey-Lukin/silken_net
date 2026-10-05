@@ -74,8 +74,8 @@ internal static class AxialStack
         return aWhy.Count == 0
             ? null
             : $"zone1_insertion_mm = {fIn:F1} lies outside the Zone-1 lock's insertion window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
-              $"from the shank's free end: {string.Join("; ", aWhy)} — an HW.8 placeholder in conflict with the lock " +
-              "geometry, shared by value with the in-silico half (00_07 HW.26 G1)";
+              $"from the shank's free end: {string.Join("; ", aWhy)} — a placeholder (owner 00_07 HW.26 G1) in conflict with the lock " +
+              "geometry, shared by value with the in-silico half";
     }
 
     // Sleeve lower-end Z in the stack frame (Zone-1 top, minus how deep the anode inserts).

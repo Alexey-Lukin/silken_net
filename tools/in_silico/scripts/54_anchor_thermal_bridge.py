@@ -103,7 +103,7 @@ D_Z1_SHANK = float(_LOCK_Z1["shank_diameter_mm"])                           # Zo
 D_BORE_ANODE = float(_LOCK_Z1["bore_diameter_mm"])  # 0 = SOLID shank: the monolithic anode carries no bore (01_01 §1.4)
 D_Z3_SHANK = float(_FLANGE["shank_diameter_mm"])                            # Zone-3 cathode shank OD (HW.8 placeholder)
 D_BORE_CATHODE = float(_FLANGE["bore_diameter_mm"])  # bus channel through the cathode shank+flange — the BOTTLENECK
-# Shank insertions (F2 axial-stack: 50 − 30 − 14 = 6 mm gap) are HW.8 placeholders → the gap (effective PEEK
+# Shank insertions (F2 axial-stack: 50 − 30 − 14 = 6 mm gap) are placeholders (30 — 00_07 HW.26 G1, 14 — HW.8.9) → the gap (effective PEEK
 # break) is itself a design lever, swept below. The Zone-3 one is a manifest field; the Zone-1 one has none
 # (`Zone1InsertionMm` lives only in Cem.cs) and is deliberately NOT promoted into one — that would canonise a
 # placeholder — so it stays a by-value crossing, the same one script 55 names.

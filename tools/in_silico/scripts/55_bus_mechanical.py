@@ -64,7 +64,7 @@ FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT
   is an AXIAL Z-stack contribution, not a diametral one.
 
 GEOMETRY AXIS — read before any number. The unsupported PEEK gap, which sets the mouth station and the
-rod length, comes from `Z1_INSERTION_MM = 30`, an HW.8 PLACEHOLDER that lies OUTSIDE the Zone-1 lock's
+rod length, comes from `Z1_INSERTION_MM = 30`, a PLACEHOLDER owned by 00_07 HW.26 G1 that lies OUTSIDE the Zone-1 lock's
 own insertion window (00_07 HW.26 G1). Every equilibrium block below is computed at the placeholder AND
 at both ends of the lock window (`GEOMETRIES`); the §1–§3 free-cantilever tables stay on the placeholder
 and say so in the cache (`geometry_mm`).
@@ -131,7 +131,7 @@ SHANK_LEN_MM = float(_FLANGE["shank_length_mm"])        # Zone-3 shank — enter
 FLANGE_THK_MM = float(_FLANGE["flange_thickness_mm"])   # the disc the pogo pad sits on
 SLEEVE_LEN_MM = float(_SLEEVE["length_mm"])             # PEEK thermal break, axial (01_01 §4.1)
 # ⚠️ The ONE term with no JSON field: how deep the Zone-1 anode inserts into the sleeve. Its only home
-#    is `Cem.cs AnchorAxialStackCem.Zone1InsertionMm` — an HW.8 PLACEHOLDER, not a frozen dim — so it
+#    is `Cem.cs AnchorAxialStackCem.Zone1InsertionMm` — a PLACEHOLDER (00_07 HW.26 G1), not a frozen dim — so it
 #    crosses the machine halves BY VALUE, which is the caveat Cem.cs itself writes about scripts 54/58.
 #    ⛔ Do not promote it into a CEM field to make this line look derived: that would canonise a
 #    placeholder (00_06 §0). It is quoted here as what it is.

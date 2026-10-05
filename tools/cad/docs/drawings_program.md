@@ -144,7 +144,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
    `Drawing.cs` + `draw` verb + **DXF (netDxf)** + title block + dimension primitives, consuming the
    CEM `tolerances`/`notes` block (zero hardcoded). xUnit (DXF well-formed, dim values = CEM, no NaN).
 2. **Simple anchor parts** (**Phase 2**) — Деталь 3 flange **✅ landed** (`Drawing.CathodeFlange` +
-   `CathodeFlangeDxf`; **closes the central-pad Ø4-5 / PEEK-ring gap → HW.8**), and it now carries the
+   `CathodeFlangeDxf`; **labels the dead central-pad Ø4-5 concept and the required PEEK ring Ø ≥ 4.0 as NOT IN GEOMETRY** — the ring body waits on the pogo pin P/N, `00_07` HW.34), and it now carries the
    mirror xUnit set the Ti-coin has, including the shipped-CEM round-trip gotcha #11 prescribes for
    every `draw` kind. **§4.3 mechanical-lock shank ✅ landed** (`Drawing.MechanicalLock` +
    `MechanicalLockDxf`, HW.26 — Zone-1 anchor end + Zone-3 flange end, one CEM `kind`/generator shared
@@ -190,7 +190,7 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    ASME Y14.5 is a **GD&T standard, _not_ a projection method**. ASME (3rd-angle + Y14.5) stays as the
    non-default parameter value, only if a US partner/grant dictates.
 3. **Tolerance source** — **CEM `tolerances` block** (Noyron-native SSOT; feeds drawing + HW.8.9 +
-   HW.8 central-pad). Per LEAP 71 Noyron, manufacturing constraints live in the computational model,
+   the HW.34 pad plane). Per LEAP 71 Noyron, manufacturing constraints live in the computational model,
    not on a one-off drawing — the drawing/DXF renders them.
 4. **Title-block fields** — git-SHA as revision (provenance) + the SSOT pointer (`cem/<x>.json`); add a
    human rev-letter when a shop needs one.

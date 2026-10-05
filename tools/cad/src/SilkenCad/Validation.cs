@@ -111,7 +111,7 @@ internal sealed record GeometryMetrics
     public double? Zone1SleeveInterferenceMm { get; init; } // (shaft−bore)/2 at Zone-1↔Zone-2; >0 press-fit, ~0 line-to-line, <0 clearance
     public double? SleeveZone3InterferenceMm { get; init; } // (shank−bore)/2 at Zone-2↔Zone-3; −1.0 = the Ø9-in-Ø11 gap (F1 → HW.8)
     public double? InsertionBudgetMm { get; init; }         // sleeve bore − (Zone-1 insert + Zone-3 shank); <0 ⇒ shanks collide (F2)
-    public double? OverallStackLengthMm { get; init; }      // anode bottom → flange-disc top — embedded install span (F3, CODIT)
+    public double? OverallStackLengthMm { get; init; }      // anode bottom → flange-disc top — full stack length (02_02 §4.5); ⛔ NOT the embedded depth (AxialStack)
     public double? Zone1Zone2InterferenceMm3 { get; init; } // render overlap — 0 at nominal Ø11=Ø11 (surfaces touch, volumes don't; press-fit is +interference on bench)
     public double? Zone2Zone3InterferenceMm3 { get; init; } // render overlap — a thin shell = flange shoulder on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11 = F1)
     public bool? BusRodClears { get; init; }                // F3 — monolithic bus rod + 2·liner < cathode channel (STRICT) (01_01 §1.4); false when no rod is declared — the zero-clearance legacy reading is gone (AxialStack.BusRodClears)

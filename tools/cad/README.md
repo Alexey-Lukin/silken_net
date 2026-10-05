@@ -170,7 +170,7 @@ end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wi
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports printed leading-ramp-down as a SEPARATE part (Ti64 LPBF 60° downface, Sa≈15µm);
 on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep face down at 20° — open,
-`00_07` HW.26 G4. Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
+`00_07` HW.26 G4. Zone-1 Ø11 + Zone-3 placeholder Ø (canon Ø11 lands with the collar, HW.8.9). Grounded over canon §4.3:
 tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø29.8 (= radome Ø, derived from the board target — root ⚖️ 2026-09-29, applied 2026-09-30; Ø25 frozen before) reusing the

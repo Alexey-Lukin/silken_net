@@ -19,7 +19,7 @@ axis offset ≤ 25 µm — the WHOLE nominal radial play of the channel by itsel
 (cem/_provenance.json, 00_07 HW.34). The sleeve's ⌀0.05 is not a member: its datum is its own bore.
 
 ⚠️ READ THE GEOMETRY AXIS BEFORE ANY NUMBER. The unsupported PEEK gap — which sets both the mouth
-station and the rod length — is derived in script 55 from `Z1_INSERTION_MM = 30`, an HW.8 PLACEHOLDER
+station and the rod length — is derived in script 55 from `Z1_INSERTION_MM = 30`, a PLACEHOLDER owned by 00_07 HW.26 G1
 that the tree has already measured to lie OUTSIDE the Zone-1 lock's own insertion window
 (`MechanicalLock.InsertionWindowMm` in tools/cad, 00_07 HW.26 G1). Every table below is therefore
 computed at the placeholder AND at both ends of the lock window (script 55's `geometries()`), and the

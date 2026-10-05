@@ -101,7 +101,7 @@ _Все, що фізично інтегрується в живе дерево �
 _Електроніка Soldier/Queen, енергетичні буфери, механіка blind-mate підключення та опціональна Starlink-uplink._
 
 - [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) (BOM капсули Солдата + ASCII power tree)
-- [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий магнітний конектор Pogo-Pin до коаксіального анкера)
+- [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий конектор Pogo-Pin на байонеті до коаксіального анкера)
 - [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC + EDLC-буфер іоністор 0.47Ф / 5.5В §12)
 - [`02_04` — Bench Build & Test Guide](02_04_Bench_Build_Guide) (🔧 Живий bench build+test guide — повний Soldier поблоково на макетці: harvester-фронт + production sense/SE/radio на LoRa-E5)
 - [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)

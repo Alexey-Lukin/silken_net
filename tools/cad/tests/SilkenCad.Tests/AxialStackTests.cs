@@ -174,7 +174,7 @@ public class AxialStackTests
             File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
         MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
 
-        // The HW.8 placeholder VALUE, handed in explicitly — too deep: the mouth is past the end of the lock's shank.
+        // The placeholder VALUE (owner 00_07 HW.26 G1), handed in explicitly — too deep: the mouth is past the end of the lock's shank.
         // ⚖️ 2026-09-18 (HW.26): no longer "the groove is buried" — no ring is fitted, so the groove bounds nothing,
         // and the retired reason must not come back as the named one.
         string? strAt30 = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = 30f }, lockCem);

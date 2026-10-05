@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 266 · 15,118,334 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 266 · 15,118,435 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -87,11 +87,11 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `5505b94046b1c7cc13c84e8064a8d17266cf6b1b7330fbe8f3652a018dd2ab50` | Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours. |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `66fedba1980b4110d0b6c52f10d240d6c669f73a462d42f771e1a9b7f88d030b` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
-| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `28f0847d6ed0eff5c317c3202e5eadfb751b62503dd8c3bff101f40a1e3ade96` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
-| `tools/in_silico/scripts/55_bus_mechanical.py` | `7200056d83363a71954acb365a68a4a37ec79e5779c9b6a4580d6f6a8a586823` | Mechanical check of the central bus rod: buckling and sway fatigue. |
+| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `9c44416d4ef2114bd9fd73e0f49c8eaad251fc5da088822d51e4154017b5f3ce` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
+| `tools/in_silico/scripts/55_bus_mechanical.py` | `377715633872ed2d24bde8c73a7fe05da7e60607f0de0c65694cf79459dcb708` | Mechanical check of the central bus rod: buckling and sway fatigue. |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
-| `tools/in_silico/scripts/58_thermal_install_field.py` | `8dda118e16d87dcd81fd7dd9b14cf70736bcd385c7f2dd2d92da7124f020bd93` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
+| `tools/in_silico/scripts/58_thermal_install_field.py` | `e65e44b32c1f58e20316b9042d3ef08cb307ef63bcdfbd411a7b8f7286ca41cd` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `31a1ef5a288c1dccaef4dfffbfaa37f5985ae4c6a3aa33a9e479ddfa20b72766` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `cd23d1d2217669d2289640fff2a72fb835775457590e2f85aea1be2c819023a5` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `662d43659d424870e23dd68e8830d9e7ecf77428d1674a3877e9810ffd687008` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
@@ -101,7 +101,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `1893e0838191293f9f2ecfc0c248bed1d136ff5f94b5141828975e3502bae755` | Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ff178d89d69f927e64dda03acef57aff480dec8bbb163d053727623022743abc` | The thinnest printed feature of a gyroid lattice, per topology, at fixed porosity. |
 | `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `f741ba034c1870e799a6d69bcddc46a4465313a54c6c67ac8edd476a61282a75` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
-| `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `ca4300fc1224e2699e6d095569181c1122431c532dd9d5994dba571a54a81dfb` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
+| `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `e65920edbdb61ad02dd2e5ba439bd82915e64652299b206a0f5f61033b997b04` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `09c2f27cc96e905dfd508c35e7ce62f2fd5272bf83bd56c38a59ee01acb1d779` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `95788659543a9322202c77c2e066f2a21bd65181640da0dd7c4ca6b611ce76a1` | Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC. |
