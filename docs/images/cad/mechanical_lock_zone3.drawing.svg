@@ -72,7 +72,7 @@
 <text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   286 lookup, so calling the band Lame-computed dresses the rejected source in the required source's name. Re-deriving it is ratified</text>
 <text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-18 (00_07 HW.3) - floor: the fit still holds at +40 C, ceiling: PEEK von Mises at -30 C - and waits on its inputs only; at its</text>
 <text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   MIN the 5-34 band lies BELOW that floor, so the number WILL move). Contact plating (02_02 1.2) concerns the flange pogo face only, NOT</text>
-<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   this part - and its process is itself an open decision (02_02 1.3)</text>
+<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   this part - and its process is the plater's answer, not yet received (02_02 1.3)</text>
 <text x='20' y='737' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid shank with a central bus channel, no lattice</text>
 <text x='20' y='751' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: Barb tooth geometry MEASURED against 01_01 4.3 (alpha/beta + h specified, base DERIVED, acceptance 0.40-0.60 mm); shallow alpha</text>
 <text x='20' y='765' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ramp toward the shank tip (the end that enters the PEEK first), steep beta face toward the flange - the two ends look opposite only in</text>
@@ -102,7 +102,7 @@
 <line x1='540' y1='945' x2='790' y2='945' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='945' x2='630' y2='961' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3618e7b</text>
+<text x='635' y='956' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>394588c87</text>
 <line x1='540' y1='961' x2='790' y2='961' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='961' x2='630' y2='977' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='972' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -110,7 +110,7 @@
 <line x1='540' y1='977' x2='790' y2='977' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='977' x2='630' y2='993' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cfa750a5ace272b9d8… → FOOTER</text>
-<text x='806' y='1009' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3618e7b · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
-<text x='806' y='1021' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): cfa750a5ace272b9d84353347c77b6d9c1e5cc3a90e916ff105cccfe4ccc9d30</text>
+<text x='635' y='988' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>db895b3a18bfb14bbd… → FOOTER</text>
+<text x='806' y='1009' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 394588c87 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='806' y='1021' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): db895b3a18bfb14bbd8d8790e245ae747eb80dfc509620bee2dd025761730abd</text>
 </svg>
