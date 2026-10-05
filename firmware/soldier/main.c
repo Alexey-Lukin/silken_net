@@ -555,6 +555,35 @@ static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save 
 #ifndef FW2_CCM_ENABLED
 #define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification (RUNBOOK §2)
 #endif
+
+// [FW.54] Ціль сну — Standby з RTC на LSE без утримання SRAM2 (⚖️ founder 2026-10-05; 03_01 §1.10,
+// 02_03 §9.8). До фліпу прошивка спить у STOP2. Фліп чекає ТРЬОХ речей, а не стенда лише:
+//   (1) ⚖️ RAM-стану FW.54 — у Standby гине весь SRAM, тож RAM-only лічильники пробуджень
+//       (wakeups_since_*, ota_silent_wakeups) і soldier_unix_ts щопробудження стартували б з нуля:
+//       grace холодного старту не дораховувався б ніколи, і прохання синхронізації (0x56) замовкло б
+//       (живий набір групи C — 03_01 §2.3.1);
+//   (2) пін-мапи ключів навантажень (.ioc, 00_07 FW.46) — без неї Standby_Load_Pulls порожній;
+//   (3) виміряного сну на стенді (RUNBOOK 3.1).
+// #ifndef — щоб compile-lane hal_check_ccm збирав гілку `-DFW54_STANDBY_ENABLED=1` проти WL-HAL.
+#ifndef FW54_STANDBY_ENABLED
+#define FW54_STANDBY_ENABLED  0  // 🟡 фліп — три умови вище (00_07 FW.54)
+#endif
+#include "../common/standby_wake.h"
+#if FW54_STANDBY_ENABLED
+static uint8_t soldier_woke_from_standby = 0;   // споживач — відновлення за ⚖️ RAM-стану (умова 1)
+static void Standby_Load_Pulls(void)
+{
+    // Кожен ключ навантаження → HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_<порт>, PWR_GPIO_BIT_<n>):
+    // у Standby GPIO рівня не тримає, ключ тримає лише pull PWR. Пін-мапа — .ioc (00_07 FW.46, умова 2).
+}
+static void Standby_Pull_Config(void)        { HAL_PWREx_EnablePullUpPullDownConfig(); }   // APC = 1
+static void Standby_No_Sram_Retention(void)  { HAL_PWREx_DisableSRAMRetention(); }        // RRS = 0
+static void Standby_Clear_Wakeup(void)       { __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); }
+static void Standby_Enter_Hw(void)           { HAL_PWR_EnterSTANDBYMode(); }
+static const SilkenStandbyOps g_standby_ops = {
+    Standby_Load_Pulls, Standby_Pull_Config, Standby_No_Sram_Retention, Standby_Clear_Wakeup, Standby_Enter_Hw
+};
+#endif
 // [FW.17] Ратчет живий лише з CCM: в ECB-ері LoRa-шар знімає Королева, Rails
 // ключа вузла не бачить, тож grace ротації не закрилось би ніколи, а 0x9E
 // перевидавався б на кожному poll'і (03_05 §3.8).
@@ -1716,6 +1745,14 @@ int main(void)
 
   // 1. Відкриваємо доступ до Backup Domain (дозволяємо запис у вічну пам'ять)
   HAL_PWR_EnableBkUpAccess();
+#if FW54_STANDBY_ENABLED
+  // [FW.54] Пробудження зі Standby — це reset: відрізняє його лише C1SBF (+ цілий маркер DR19,
+  // standby_wake.h). Знімаємо прапорець одразу, інакше reset пін-ом прочитався б пробудженням.
+  soldier_woke_from_standby = Silken_Wake_From_Standby(
+      (uint8_t)(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != 0U),
+      (uint8_t)(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19) == LORENZ_STATE_MAGIC));
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+#endif
 
   // 2. Відновлюємо пам'ять з RTC (якщо було перезавантаження)
   // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8].
@@ -2882,6 +2919,10 @@ int main(void)
     HAL_RNG_DeInit(&hrng);
     __HAL_RCC_AES_CLK_DISABLE();
 
+#if FW54_STANDBY_ENABLED
+    // [FW.54] Ціль: Standby. Не повертається — наступне пробудження йде через reset у main().
+    Silken_Standby_Enter(&g_standby_ops);
+#else
     HAL_SuspendTick();
     HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
     HAL_ResumeTick();
@@ -2890,6 +2931,7 @@ int main(void)
     HAL_RNG_Init(&hrng);
     __HAL_RCC_AES_CLK_ENABLE();
     HAL_CRYP_Init(&hcryp);
+#endif
 
     /* USER CODE END WHILE */
 
@@ -2969,8 +3011,13 @@ void HAL_PWR_PVDCallback(void)
     Radio.Sleep();
 
     // 5. Падаємо у глибокий сон (Кома), поки напруга не підніметься знову
+#if FW54_STANDBY_ENABLED
+    // [FW.54] У Standby — ще нижчий струм; стан уже в DR (кроки 1–3), продовження — через reset.
+    Silken_Standby_Enter(&g_standby_ops);
+#else
     HAL_SuspendTick();
     HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
+#endif
 }
 
 // =========================================================================

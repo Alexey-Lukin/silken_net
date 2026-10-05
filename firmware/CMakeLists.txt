@@ -150,6 +150,10 @@ if(CMAKE_CROSSCOMPILING)
     # компілятора жодного разу, зокрема ротація FW.17 обабіч. Зонд `#error` у
     # гілці FW.17 (Солдат) і FW.20-Q2 (Королева), 2026-09-27: стріляє тут, мовчить
     # у hal_check.
+    # + FW54_STANDBY_ENABLED=1: гейтований шлях сну Standby (⚖️ 2026-10-05) — ops-шов
+    # standby_wake.h, HAL_PWR_EnterSTANDBYMode / HAL_PWREx_DisableSRAMRetention / PWR_FLAG_SB —
+    # проти справжнього WL-HAL: імена SRAM2-функцій у WL інші, ніж у L4, і саме цей клас («API не
+    # існує у WL») ловить лише компілятор.
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -175,7 +179,8 @@ if(CMAKE_CROSSCOMPILING)
       FW8_PARSER_ENABLED=1
       FW17_RATCHET_ENABLED=1
       FW20_MESH_RELAY_ENABLED=1
-      FW20_Q2_CMD_RELAY_ENABLED=1)
+      FW20_Q2_CMD_RELAY_ENABLED=1
+      FW54_STANDBY_ENABLED=1)
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль

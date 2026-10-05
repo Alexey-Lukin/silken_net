@@ -28,7 +28,7 @@ OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
 .PHONY: all queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
 
-all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty
+all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty standby_wake
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -150,6 +150,10 @@ lora_phy: $(BINDIR)/test_lora_phy
 tx_duty: $(BINDIR)/test_tx_duty
 	@./$(BINDIR)/test_tx_duty
 
+# [FW.54] рішення «пробудження зі Standby ⊥ холодний старт» + порядок входу в Standby (pure, ops-шов)
+standby_wake: $(BINDIR)/test_standby_wake
+	@./$(BINDIR)/test_standby_wake
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h \
                      ../queen/cifo_cache.h ../common/lora_ccm.h \
                      ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h
@@ -174,6 +178,9 @@ $(BINDIR)/test_lora_phy: test_lora_phy.c ../common/lora_phy.h ../common/lora_phy
 
 $(BINDIR)/test_tx_duty: test_tx_duty.c ../queen/tx_duty.h
 	$(CC) $(CFLAGS) -o $@ test_tx_duty.c
+
+$(BINDIR)/test_standby_wake: test_standby_wake.c ../common/standby_wake.h
+	$(CC) $(CFLAGS) -o $@ test_standby_wake.c
 
 $(BINDIR)/test_bio_contract: test_bio_contract.c
 	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm
@@ -327,7 +334,7 @@ clean:
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
 	      $(BINDIR)/test_bme280 $(BINDIR)/test_voc_maxhold $(BINDIR)/test_ds18b20 $(BINDIR)/test_audio_model \
 	      $(BINDIR)/test_tdma_schedule $(BINDIR)/test_cad_sniff \
-	      $(BINDIR)/test_lora_phy $(BINDIR)/test_tx_duty \
+	      $(BINDIR)/test_lora_phy $(BINDIR)/test_tx_duty $(BINDIR)/test_standby_wake \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
 	rm -rf $(BINDIR)/*.dSYM
 
