@@ -140,7 +140,8 @@ FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари,
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
-# The tallest READ part on the RF-deck TOP (pos. 17 LSE has no P/N yet, so its height is unbounded): the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
+# The tallest READ part on the RF-deck TOP (pos. 17 LSE is ABS06-32.768kHz-4P-T since 2026-10-05, but its datasheet height is not in
+# the tree yet — 00_07 HW.9 — so it stays unbounded here): the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
 # 2026-09-29). Until 2026-09-30 this was the Seeed LoRa-E5 module (12×12×2.5, off the board since 2026-09-25). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.4
