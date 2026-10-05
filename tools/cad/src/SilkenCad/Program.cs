@@ -849,7 +849,8 @@ internal static class Program
             $"ring ID {cem.VentRingIdMm:F1} (OD {Radome.VentRingOdMm(cem):F1}) at z {Radome.VentZMm(cem):F2} → {(oM.VentRingFits == true ? "fits" : "DOES NOT FIT")}; " +
             $"ring ID {Radome.VentRingIdVe70308Mm:F1} (VE70308) → {(Radome.VentRingFits(cem, Radome.VentRingIdVe70308Mm) ? "fits" : "does not fit")} · " +
             $"{cem.VentHoles}×Ø{cem.VentHoleDiameterMm:F1} hole under an active Ø{Radome.VentActiveDiameterMm(cem):F1} · " +
-            $"pocket {oM.PocketVolumeMm3:F0} mm³ (duct depth {Radome.DuctCavityDepthMm(cem):F2}, passage {Radome.BridgePassageHeightMm(cem):F2}; ceiling {Radome.PocketVolumeCeilingMm3:F0}) · τ≈{oM.VentTauEstimateS:F0} s");
+            $"pocket {oM.PocketVolumeMm3:F0} mm³ (duct depth {Radome.DuctCavityDepthMm(cem):F2}, passage {Radome.BridgePassageHeightMm(cem):F2}; ceiling {Radome.PocketVolumeCeilingMm3:F0}) · τ≈{oM.VentTauEstimateS:F0} s · " +
+            $"gasket gap {cem.PocketGasketGapMm:F2} (placeholder; < {Radome.PocketGasketGapCeilingMm(cem):F2} — the bridge passage bottom)");
 
         float fSocketSlot = cem.LugRadiusMm + cem.SlotClearanceMm;
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
@@ -869,7 +870,8 @@ internal static class Program
                        && cem.PocketOuterRadiusMm <= (Radome.RimCavityDiameterMm(cem) / 2f) - cem.SlotClearanceMm
                        && cem.PocketFloorOverRimMm > Radome.BossHeightMm(cem)
                        && Radome.PocketHousingTopZMm(cem) <= Radome.InnerTopZMm(cem)
-                       && Radome.BridgePassageHeightMm(cem) > 0f && Radome.DuctCavityDepthMm(cem) > cem.VentRingHeightMm;
+                       && Radome.BridgePassageHeightMm(cem) > 0f && Radome.DuctCavityDepthMm(cem) > cem.VentRingHeightMm
+                       && cem.PocketGasketGapMm >= 0f && cem.PocketGasketGapMm < Radome.PocketGasketGapCeilingMm(cem);
 
         if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
         if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
@@ -877,7 +879,7 @@ internal static class Program
         if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
         if (!bLand) Console.WriteLine($"  ⚠ seal land only {oM.SealLandSolidFraction:P0} solid over the rim face (outer edge strip {oM.SealLandEdgeSolidFraction:P0}) — the flat rim is cut where the O-ring must be backed (a counter-groove, a missing boss, or an entry slot reaching the land; 02_02 §3.5)");
         if (!bVent) Console.WriteLine($"  ⚠ vent: ring OD {Radome.VentRingOdMm(cem):F1} vs seat band {oM.VentBandMm:F2} / facet {cem.VentFacetWidthMm:F1}, hole Ø{cem.VentHoleDiameterMm:F1} vs active Ø{Radome.VentActiveDiameterMm(cem):F1} — the seat does not hold the vent (02_01 §3.4)");
-        if (!bPocket) Console.WriteLine($"  ⚠ pocket: {oM.PocketVolumeMm3:F0} mm³ (ceiling {Radome.PocketVolumeCeilingMm3:F0}) · chamber outer r {cem.PocketOuterRadiusMm:F2} vs rim cavity r {Radome.RimCavityDiameterMm(cem) / 2f:F2} · floor z {cem.PocketFloorOverRimMm:F2} vs boss {Radome.BossHeightMm(cem):F2} · housing top {Radome.PocketHousingTopZMm(cem):F2} vs inner top {Radome.InnerTopZMm(cem):F2} · passage {Radome.BridgePassageHeightMm(cem):F2} · duct depth {Radome.DuctCavityDepthMm(cem):F2} vs ring height {cem.VentRingHeightMm:F2}");
+        if (!bPocket) Console.WriteLine($"  ⚠ pocket: {oM.PocketVolumeMm3:F0} mm³ (ceiling {Radome.PocketVolumeCeilingMm3:F0}) · chamber outer r {cem.PocketOuterRadiusMm:F2} vs rim cavity r {Radome.RimCavityDiameterMm(cem) / 2f:F2} · floor z {cem.PocketFloorOverRimMm:F2} vs boss {Radome.BossHeightMm(cem):F2} · housing top {Radome.PocketHousingTopZMm(cem):F2} vs inner top {Radome.InnerTopZMm(cem):F2} · passage {Radome.BridgePassageHeightMm(cem):F2} · duct depth {Radome.DuctCavityDepthMm(cem):F2} vs ring height {cem.VentRingHeightMm:F2} · gasket gap {cem.PocketGasketGapMm:F2} vs bridge passage bottom {Radome.PocketGasketGapCeilingMm(cem):F2}");
 
         bool bOk = bSane && bHollow && bBell && bCavity && bMate && bLand && bVent && bPocket;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");

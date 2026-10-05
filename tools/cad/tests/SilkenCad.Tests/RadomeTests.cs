@@ -182,6 +182,24 @@ public class RadomeTests
         Assert.InRange(Radome.VentTauEstimateS(cem), 1f, 60f);   // seconds — the pocket is what makes the small vent sufficient (02_01 §3.4)
     }
 
+    // The gasket bead (HW.32, ⚖️ class 2026-10-05) lifts the chamber RIM, not its ceiling: the walls get shorter, the air over
+    // the board and the housing top stay put, and the volume does not move (the bead's interior is the cavity it was). The
+    // rim must stay below the bridge passage's bottom — this pins the ceiling's FORMULA, never a gasket value (the
+    // manifest carries a placeholder 0 until the molder's profile answers).
+    [Fact]
+    public void The_Gasket_Gap_Lifts_The_Chamber_Rim_And_Stays_Under_The_Bridge_Passage()
+    {
+        RadomeCem cem = new();
+        Assert.Equal(0f, cem.PocketGasketGapMm);
+        Assert.Equal(cem.PocketFloorOverRimMm, Radome.ChamberRimZMm(cem));
+        RadomeCem gap = cem with { PocketGasketGapMm = 0.5f };
+        Assert.Equal(cem.PocketFloorOverRimMm + 0.5f, Radome.ChamberRimZMm(gap), 4);
+        Assert.Equal(Radome.PocketHousingTopZMm(cem), Radome.PocketHousingTopZMm(gap));
+        Assert.Equal(Radome.PocketVolumeMm3(cem), Radome.PocketVolumeMm3(gap));
+        Assert.Equal(Radome.BridgeBoardClearanceMm + cem.PocketWallMm, Radome.PocketGasketGapCeilingMm(cem), 4);
+        Assert.True(Radome.PocketGasketGapCeilingMm(cem) < cem.PocketHeightMm, "the bridge, not the ceiling, is what bounds the bead");
+    }
+
     // Gotcha 0b, made a test: every `vent_*` / `pocket_*` key the shipped manifest carries must have a SLOT on the record —
     // `Cem.Parse` drops unmapped members without a word, so a key that evaporates would read as applied. The name map is the
     // serializer's OWN policy applied to the property names, so the test cannot disagree with the parser about spelling.

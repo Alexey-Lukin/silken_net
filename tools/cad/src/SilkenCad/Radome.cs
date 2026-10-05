@@ -136,6 +136,11 @@ internal static class Radome
     public static float ChamberCavityInnerRMm(RadomeCem cem) => ChamberCavityOuterRMm(cem) - cem.PocketOpeningDepthMm;
     public static float ChamberOuterWidthMm(RadomeCem cem) => cem.PocketOpeningWidthMm + (2f * cem.PocketWallMm);
     public static float BridgeFloorZMm(RadomeCem cem) => cem.PocketFloorOverRimMm + BridgeBoardClearanceMm;
+    // The chamber's rim stands on the gasket bead, not on the board (HW.32, ⚖️ class 2026-10-05): the bead's compressed height
+    // shortens the chamber WALLS, the ceiling over the board stays where the sensor needs it. The rim must stay below the
+    // bottom of the bridge passage — above it the passage would open UNDER the chamber wall, into the capsule.
+    public static float ChamberRimZMm(RadomeCem cem) => cem.PocketFloorOverRimMm + cem.PocketGasketGapMm;
+    public static float PocketGasketGapCeilingMm(RadomeCem cem) => BridgePassageZMm(cem) - cem.PocketFloorOverRimMm;
     public static float BridgePassageZMm(RadomeCem cem) => BridgeFloorZMm(cem) + cem.PocketWallMm;
     public static float BridgePassageHeightMm(RadomeCem cem) => PocketTopZMm(cem) - BridgePassageZMm(cem);
     public static float InnerTopZMm(RadomeCem cem) => cem.CavityHeightMm + cem.BellRadiusMm - cem.WallThicknessMm;   // flat inner top under the crown
@@ -246,7 +251,7 @@ internal static class Radome
         //    so no touching-face seam survives (step 3 records what a seam costs).
         float fHousingTop = PocketHousingTopZMm(cem);
         voxDome.BoolAdd(RadialBox(cem, DuctInnerRMm(cem), fInnerR + fSkinOverlap, cem.VentFacetWidthMm + (2f * cem.PocketWallMm), fBoss0, fHousingTop));
-        voxDome.BoolAdd(RadialBox(cem, ChamberCavityInnerRMm(cem) - cem.PocketWallMm, cem.PocketOuterRadiusMm, ChamberOuterWidthMm(cem), cem.PocketFloorOverRimMm, fHousingTop));
+        voxDome.BoolAdd(RadialBox(cem, ChamberCavityInnerRMm(cem) - cem.PocketWallMm, cem.PocketOuterRadiusMm, ChamberOuterWidthMm(cem), ChamberRimZMm(cem), fHousingTop));
         voxDome.BoolAdd(RadialBox(cem, ChamberCavityOuterRMm(cem), DuctCavityInnerRMm(cem), ChamberOuterWidthMm(cem), BridgeFloorZMm(cem), fHousingTop));
         // duct cavity: its outer face IS the flat facet (the chord plane) — the seat the vent is glued to
         voxDome.BoolSubtract(RadialBox(cem, DuctCavityInnerRMm(cem), VentFacetChordRMm(cem), cem.VentFacetWidthMm, BossHeightMm(cem), PocketTopZMm(cem)));

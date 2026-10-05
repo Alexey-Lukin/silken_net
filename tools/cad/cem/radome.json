@@ -23,6 +23,7 @@
   "pocket_wall_mm": 1.0,
   "pocket_floor_over_rim_mm": 11.85,
   "pocket_height_mm": 2.0,
+  "pocket_gasket_gap_mm": 0.0,
   "pocket_opening_width_mm": 3.82,
   "pocket_opening_depth_mm": 4.08,
   "pocket_outer_radius_mm": 9.7,

@@ -445,6 +445,7 @@ internal sealed record RadomeCem
     public float PocketWallMm { get; init; } = 1f;           // moulded PEEK housing wall (no canon floor for it — the 1.5–2.0 band is the dome wall's)
     public float PocketFloorOverRimMm { get; init; } = 11.85f;     // PLACEHOLDER: RF-deck top over the flange face at FR4 1.6 + B2B 8 (52 §vertical_stack_budget); B2B 10 / rigid-flex move it (HW.29, HW.9)
     public float PocketHeightMm { get; init; } = 2f;         // cavity over the board: BME280 0.93 (Bosch) + headroom; ≤ crown headroom
+    public float PocketGasketGapMm { get; init; } = 0f;      // PLACEHOLDER: compressed bead height between chamber rim and board (HW.32 gasket, ⚖️ class 2026-10-05); the molder's profile sets it
     public float PocketOpeningWidthMm { get; init; } = 3.82f;    // BME280 LGA-8 KiCad courtyard 2.82 × 3.08 (board_area_budget) + 0.5 clearance per side
     public float PocketOpeningDepthMm { get; init; } = 4.08f;
     public float PocketOuterRadiusMm { get; init; } = 9.7f;       // chamber's outer gasket edge = board target Ø19.97/2 − 0.3 copper edge (02_01 §3.5); the layout may pull it inward (HW.9)
