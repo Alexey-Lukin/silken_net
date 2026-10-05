@@ -37,6 +37,40 @@
         "gap_eV": 6.953183943755622
       },
       "dE_red_eV": -3.8506338782618275
+    },
+    "no2": {
+      "sigma_para": 0.78,
+      "os2": {
+        "label": "os2 no2 (wb97x)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 62,
+        "n_electrons": 328,
+        "converged": true,
+        "wall_seconds": 5040.1,
+        "E_total_Ha": -2625.812163872778,
+        "HOMO_Ha": -0.2848348794203596,
+        "LUMO_Ha": -0.06602584965181743,
+        "HOMO_eV": -7.750751920236824,
+        "LUMO_eV": -1.7966548970951364,
+        "gap_eV": 5.954097023141688
+      },
+      "os3": {
+        "label": "os3 no2 (wb97x)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 62,
+        "n_electrons": 327,
+        "converged": true,
+        "wall_seconds": 56073.5,
+        "E_total_Ha": -2625.6284418477635,
+        "HOMO_Ha": -0.34358695500973235,
+        "LUMO_Ha": -0.09531595834721873,
+        "HOMO_eV": -9.349477341852728,
+        "LUMO_eV": -2.5936793579926727,
+        "gap_eV": 6.755797983860056
+      },
+      "dE_red_eV": -4.99933098456473
     }
   }
 }
