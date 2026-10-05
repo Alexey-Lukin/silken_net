@@ -87,6 +87,9 @@ PARAMS = {
   i_run_ma: 3.40            # 48 МГц CoreMark (DS13105) — ЄДИНИЙ run-струм, який несе дерево
 }.freeze
 
+# Паспортний сон відвантаженого режиму (00_07 FW.54, 2026-10-05): прошивка спить у STOP2, а 300 нА у PARAMS —
+# ціль класу Standby. Друге прочитання вироку, не дефолт (DS13105 Rev 12, титульна: Stop2 + RTC 1.07 µA при 3 В).
+STOP2_SHIPPED_NA = 1070.0
 P_GEN_SWEEP_UW = [ 3.0, 4.0, 5.0 ].freeze # HW.44-назва смуга: "P_gen 3-5 µW"
 
 params = PARAMS.dup
@@ -279,6 +282,13 @@ def report(p)
   puts "  4. Sensitivity-блок (інтервал #{p[:interval_h]} год — припущення): #{crossover_word(p, :ecb)} · " \
        "#{crossover_word(p, :ccm)} — #{band_note}; а сам сонний баланс негативний — вікно спливає за " \
        "~%.0f год і без жодного циклу." % (win / -net_5)
+  return unless p[:i_stm32_sleep_na] == PARAMS[:i_stm32_sleep_na]
+
+  q = p.merge(i_stm32_sleep_na: STOP2_SHIPPED_NA)
+  net_q = gen_mj_per_hour(q, 5.0) - sleep_mj_per_hour(q)
+  puts "  ⚠️ Сон #{p[:i_stm32_sleep_na].round} нА — ціль класу Standby; у відвантаженому STOP2 " \
+       "(#{STOP2_SHIPPED_NA.round} нА за паспортом): #{crossover_word(q, :ecb)} · #{crossover_word(q, :ccm)}; " \
+       "вікно спливає за ~#{(win / -net_q).round} год (00_07 FW.54)"
 end
 
 if assert_mode
