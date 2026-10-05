@@ -140,8 +140,8 @@ FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари,
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
-# The tallest READ part on the RF-deck TOP (pos. 17 LSE is ABS06-32.768kHz-4P-T since 2026-10-05, but its datasheet height is not in
-# the tree yet — 00_07 HW.9 — so it stays unbounded here): the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
+# The tallest READ part on the RF-deck TOP (pos. 17 LSE is ABS06-32.768kHz-4P-T since 2026-10-05, H ≤ 0.6 mm by the maker's outline
+# drawing, rev 11-23-20 — 02_01 §3.1 pos. 17 — so it is bounded BELOW the antenna and moves nothing here): the antenna NN02-224 (RUN mXTEND booster, 12 × 3 × 2.4 mm; 02_01 §5.2, ⚖️ delegated
 # 2026-09-29). Until 2026-09-30 this was the Seeed LoRa-E5 module (12×12×2.5, off the board since 2026-09-25). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.4
@@ -656,7 +656,8 @@ def vertical_stack_budget(boss: dict) -> dict:
     `pad_beside_piezo` row — the pad filled GAP_PZ and the piezo stood outside the stack — so every number here
     is that row's, unchanged; the rejected rows are a dated record in canon (02_02 §3.5), not an input.
     Re-measure when the crown or `cavity_height_mm` moves, or when the RF front-end gets P/Ns (2026-09-30: the tallest member is
-    the antenna NN02-224 at 2.4 — pos. 19 bounded ≤ 1.10 by rf_switch_shortlist; the 2.5 module bound is retired).
+    the antenna NN02-224 at 2.4 — pos. 19 bounded ≤ 1.10 by rf_switch_shortlist; the 2.5 module bound is retired;
+    2026-10-05: pos. 17 bounded ≤ 0.6 by the ABS06 outline drawing, so the antenna stays the tallest).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
     spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
     term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
