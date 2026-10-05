@@ -334,6 +334,8 @@ internal static class Validation
         }
 
         // Cathode catalytic = the flange side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side, 02_02 §1.2).
+        // ⚠️ An UPPER bound: 01_04 §3.1 splits that face into the catalytic band and the buffer, whose heights are not
+        // set yet — and t itself is a placeholder that must grow (00_07 HW.8.10).
         double dCathodeCm2 = Math.PI * cem.FlangeDiameterMm * cem.FlangeThicknessMm / 100.0;
 
         return oBase with

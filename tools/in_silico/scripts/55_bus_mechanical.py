@@ -553,7 +553,7 @@ def liner_od_growth_m(p_c_Pa: float) -> float:
 
 def main() -> int:
     banner("HW.34 — Bus rod mechanical check (buckling + sway fatigue + contact equilibrium)")
-    print(f"  Rod Ø{D_BUS:.1f} mm; PLACEHOLDER geometry (Z1 insertion {Z1_INSERTION_MM:.0f} mm, HW.8): free length "
+    print(f"  Rod Ø{D_BUS:.1f} mm; PLACEHOLDER geometry (Z1 insertion {Z1_INSERTION_MM:.0f} mm, owner HW.26 G1): free length "
           f"unsupported {L_FREE_UNSUP:.0f} mm (no liner) vs the {L_FREE_SUP:.0f} mm gap the §2 supported column idealises")
     print("  Contact blocks (§4–§7) run on every geometry: " + " · ".join(f"{g.label} (gap {g.gap_mm:.0f}, exit {g.pad_mm:.0f})" for g in GEOMETRIES))
     print(f"  Pogo {F_POGO_N:.1f} N axial; cyclic lateral drag = µ·F_pogo (µ={MU_CONTACT:.1f})")
