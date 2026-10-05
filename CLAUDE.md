@@ -25,7 +25,7 @@
 | TinyML / log-mel / INT8 | `ml-engineering` | `03_03` + `tools/ml` |
 | EBFC DFT/MD + механіка анкера in-silico | `in-silico` | `01_03` + `protocols/ebfc/in_silico` |
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01`/`01_02 §6` + `tools/cad` |
-| Hardware §02 (BOM · BQ25570 · pogo · Queen-HW) | — (bench-важка, скілу НЕМА): механіка → `in-silico`, CAD → `picogk`, bench-збірка → `02_04`, BOM/юніт-економіка → `legal-business` | `02_01`–`02_06` |
+| Hardware §02 (BOM · BQ25570 · pogo · Queen-HW) | — (bench-важка, скілу НЕМА): механіка → `in-silico`, CAD → `picogk`, PCB (KiCad-генератор) → `tools/pcb/*/README.md`, bench-збірка → `02_04`, BOM/юніт-економіка → `legal-business` | `02_01`–`02_06` |
 | Деплой / Kamal / observability | `deploy` | `06_01`–`06_08` |
 | Юр/бізнес/академ/IP (NaaS · юніт-економіка · партнери · IP і бренд · чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `00_04` · `00_02` · `02_06` (+ стан `00_07 §00b`) |
 | Оновлення залежностей — і будь-яка вразливість / Dependabot-алерт (та сама вісь; уже-ухвалене — `00_07` OPS.22, читай ТІЛО пункту перед виміром) | `dependency-update` | (polyglot) |
