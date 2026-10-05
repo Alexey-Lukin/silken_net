@@ -2914,10 +2914,9 @@ static void MX_CRYP_Restore_From_CCM(void)
 // константна звірка Fw2_Ccm_Tag_Equal тут. MIC не б'ється / формат кривий /
 // HAL захрип → HAL_ERROR; ловець зобов'язаний дропнути пакет.
 //
-// Монотонність FC тут НЕ перевіряється — і на Rails її теж немає: там лише
-// кеш 25 год (`frame_counter_replayed?`), тож кадр, повторений після вікна,
-// проходить (docs/00_07 SEC.40). Queen-side dedup
-// через `recent_mesh_dids` — майбутня ітерація при LoRa-штормах.
+// Монотонність FC тут НЕ перевіряється: повтор відкидає Rails — ковзне вікно на
+// (DID, епоха ключа) без строку давності (`CcmReplayWindow`, docs/00_07 SEC.40).
+// Queen-side dedup через `recent_mesh_dids` — майбутня ітерація при LoRa-штормах.
 int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
                                 uint32_t *out_did, uint32_t *out_fc,
                                 uint8_t out_sensor[FW2_CCM_PLAINTEXT_LEN])

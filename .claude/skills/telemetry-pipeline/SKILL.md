@@ -44,6 +44,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 19. DCI судить членство СИРИМ z (`lorenz_state_z`, останній елемент `calculate_z_from_state`) проти НАБОРУ смуг пристрою — не `z_value` і не одну смугу
 20. Стан Лоренца між кадрами — float32, як RTC Солдата: старт кадру й хвіст, що персиститься, звужуй через `SilkenNet::Attractor.as_rtc_state`, а суди double-z
 21. Категорійна DCI-розбіжність лічить ВЛАСНИЙ лічильник `DCI_CATEGORICAL_MISMATCH_TOTAL`, не fraud — пін «DCI мовчить», що дивиться на `TELEMETRY_FRAUD_DETECTED_TOTAL`, тепер зелений за побудовою
+22. Анти-повтор CCM — ковзне вікно `CcmReplayWindow` у Postgres на (DID, епоха ключа, що пройшов MIC), а не `Rails.cache`: пре-фільтр `rejection` стоїть до побічних ефектів кадру, авторитетний `admit!` — у транзакції рядка `TelemetryLog`
 
 <!-- /TELEMETRY-GOTCHAS-INDEX -->
 

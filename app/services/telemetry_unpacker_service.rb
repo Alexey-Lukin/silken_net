@@ -18,12 +18,6 @@ class TelemetryUnpackerService < ApplicationService
   CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
   CCM_DEVICE_Z_NONE          = 0xFFFF
   CCM_DEVICE_Z_SCALE         = 512.0
-  # ⛔ [ARCH.8] 25 h = добовий heartbeat + 1 h: каденс, розтягнутий за TTL, пропускає валідний старий
-  #    кадр повз FC-guard (born-vuln → 00_07 ARCH.8, нога TTL). Лік НЕ «config_sleep_interval × N» —
-  #    прошивка цієї колонки не читає (скіл backend #53); прецедент — Gateway::LIVENESS_WINDOW_S,
-  #    виміряна константа тракту. Вузьким вікно стає з активацією добового pulse, не раніше.
-  CCM_FC_NONCE_TTL           = 25.hours
-  CCM_FC_NONCE_KEY_PREFIX    = "silken:ccm:fc"
 
   # --- КОНСТАНТИ ЕВОЛЮЦІЇ (The Immutable Offsets) ---
   # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
@@ -406,9 +400,12 @@ class TelemetryUnpackerService < ApplicationService
       return
     end
 
-    if frame_counter_replayed?(hex_did, frame_counter, key_epoch)
-      Rails.logger.warn "🛡️ [FW.2] DID #{hex_did}: frame_counter=#{frame_counter} already seen within #{CCM_FC_NONCE_TTL.inspect} window."
-      SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL.increment
+    # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха ключа, що пройшов MIC).
+    # Тут — лише пре-фільтр ДО побічних ефектів кадру (DCI, CMD_TIME_SYNC, докази смуги);
+    # авторитетний допуск — `CcmReplayWindow.admit!` у транзакції `commit_telemetry`.
+    ccm_frame = { device_uid: hex_did, key_epoch: key_epoch, frame_counter: frame_counter }
+    if (reason = CcmReplayWindow.rejection(**ccm_frame))
+      reject_ccm_replay!(ccm_frame, reason)
       return
     end
 
@@ -478,6 +475,8 @@ class TelemetryUnpackerService < ApplicationService
     # check_metabolic_divergence!. Транзієнт (не персистить, KENOSIS) —
     # server-side EMA-аналітику покриває raw dT (03_01 §13.6 / E.37).
     log_attributes[:ema_delta_t_s] = ema_delta_t_s
+    # [SEC.40] Транзієнт: допуск кадру у вікно — у транзакції рядка (`commit_telemetry`).
+    log_attributes[:ccm_frame] = ccm_frame
 
     # [FW.18b] diag-байт (wire-rev2 byte 18): [thr_invalid:5 | fauna_mode:1 |
     # fauna_skip:1 | fc_degraded:1] — дзеркало Pack_FW2_Diag (lora_ccm.h).
@@ -586,20 +585,16 @@ class TelemetryUnpackerService < ApplicationService
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
   end
 
-  # [FW.2] Per-DID Frame Counter replay guard. Same `unless_exist` pattern as
-  # the SEC.10 panic counter, with the same two Solid Cache holes (see
-  # `panic_replayed?`, 00_07 SEC.39) — reject exact FC repeats inside a 25h window.
-  # Firmware emits monotonic FC (`RTC_BKP_DR2`), so within the TTL a
-  # duplicate means either LoRa mesh retransmission (benign, but we drop
-  # to keep tokenomics idempotent) or an active replay attack.
-  # [FW.17] Епоха ключа в ключі кешу (⚖️ 2026-09-28, 03_05 §3.8): re-provision дає
-  # новий ключ і свіжий простір нонсів, а FC нової епохи, що збіглися б із FC старої
-  # за останні 25 год, інакше відкидались би як повтори — до доби тиші після
-  # кожного re-provision.
-  def frame_counter_replayed?(hex_did, frame_counter, key_epoch)
-    nonce_key = "#{CCM_FC_NONCE_KEY_PREFIX}:#{hex_did}:e#{key_epoch}:#{frame_counter}"
-    inserted = Rails.cache.write(nonce_key, "1", expires_in: CCM_FC_NONCE_TTL, unless_exist: true)
-    !inserted
+  # [SEC.40] Повтор чи кадр під вікном: дубль у межах вікна — mesh-ретрансляція, повторний
+  # флаш Королеви або атака, і жоден не має права нарахувати бали вдруге; під вікном —
+  # повтор, старший за вікно, або бэклог, старший за `CcmReplayWindow::WINDOW` кадрів.
+  # [FW.17] Епоха — та, чий ключ пройшов MIC: кадр grace після re-provision судить вікно
+  # старої епохи, тож FC нової епохи, що збігся з FC старої, не є повтором.
+  def reject_ccm_replay!(frame, reason)
+    what = reason == :below_window ? "нижче вікна анти-повтору" : "уже прийнятий"
+    Rails.logger.warn "🛡️ [SEC.40] DID #{frame[:device_uid]} e#{frame[:key_epoch]}: " \
+                      "frame_counter=#{frame[:frame_counter]} #{what} — кадр відкинуто."
+    SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL.increment
   end
 
   def ccm_enabled?
@@ -1084,12 +1079,18 @@ class TelemetryUnpackerService < ApplicationService
     # Транзакція фіксує телеметрію та стан дерева як єдине ціле.
     # Wallet credit, Sidekiq jobs та alert dispatch винесено ЗА межі транзакції (див. нижче).
     log = ActiveRecord::Base.transaction do
+      # ⚖️ [SEC.40] Авторитетний допуск CCM-кадру — у ТІЙ САМІЙ транзакції, що й рядок: відкат
+      # рядка відкочує й допуск (ретрай не загубить кадр), а допуск без рядка неможливий.
+      # Гард стоїть ПЕРЕД записом, тож Rollback тут нічого не губить.
+      frame = attributes[:ccm_frame]
+      raise ActiveRecord::Rollback if frame && !CcmReplayWindow.admit!(**frame)
+
       # [FW.57 F2] :lorenz_temperature_c is a transient DCI input (raw wire temp),
       # not a column — strip it before persisting (calibrated temperature_c stays).
       # [FW.31] :device_z (wire-rev2) — той самий транзієнт-клас: вхід numeric
       # DCI, серверна істина z_value вже зберігається окремо.
       record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s,
-                                                              :fw_report_id_mask))
+                                                              :fw_report_id_mask, :ccm_frame))
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(record.voltage_mv)
@@ -1105,6 +1106,12 @@ class TelemetryUnpackerService < ApplicationService
       check_firmware_mismatch!(tree, record.firmware_version_id, id_mask: id_mask)
 
       record
+    end
+    # [SEC.40] Конкурентний дубль програв допуск між пре-фільтром і транзакцією: ні рядка,
+    # ні балів, ні сповіщень.
+    if log.nil?
+      reject_ccm_replay!(attributes[:ccm_frame], CcmReplayWindow.rejection(**attributes[:ccm_frame]) || :duplicate)
+      return
     end
 
     # [OBSERVABILITY / INF.26] Лічимо ЗАКОМІЧЕНІ чанки — і саме тому інкремент стоїть

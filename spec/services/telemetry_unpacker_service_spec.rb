@@ -1937,8 +1937,11 @@ end
 
         expect { described_class.call(straggler) }.to change(TelemetryLog, :count).by(1)
         expect(hardware_key.reload.previous_aes_key_hex).to eq(lora_key_hex) # grace ще живий
+        # [SEC.40] Кадр grace судить ВЛАСНЕ вікно старої епохи — і його повтор там і ловиться
+        # (після першого MIC новим ключем grace закрито, і старий ключ не відкриє вже нічого).
+        expect { described_class.call(straggler) }.not_to change(TelemetryLog, :count)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).to have_received(:increment).once
         expect { described_class.call(fresh) }.to change(TelemetryLog, :count).by(1)
-        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
       end
     end
 
@@ -1966,7 +1969,7 @@ end
                               dt: 100, status: 0, ttl: 3, fc: 100)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      # Same chunk → same FC → SETNX collision → reject.
+      # Same chunk → same FC → біт вікна SEC.40 уже стоїть → reject.
       expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL)
         .to have_received(:increment).once
@@ -1994,6 +1997,55 @@ end
       expect { described_class.call(c1) }.to change(TelemetryLog, :count).by(1)
       expect { described_class.call(c2) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха) замість кешу з TTL 25 год.
+    describe "[SEC.40] sliding replay window" do
+      def frame(fc)
+        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5, dt: 100, status: 0, ttl: 3, fc: fc)
+      end
+
+      # Доти анти-повтор жив у `Rails.cache` із TTL 25 год, і справжній кадр, повторений
+      # після вікна кешу, проходив MIC і FC-гард та нараховував бали вдруге.
+      it "rejects the replay even after the cache is gone — the window lives in FC space, not time" do
+        expect { described_class.call(frame(100)) }.to change(TelemetryLog, :count).by(1)
+        balance = tree.wallet.reload.balance
+        Rails.cache.clear
+
+        travel 26.hours do
+          expect { described_class.call(frame(100)) }.not_to change(TelemetryLog, :count)
+        end
+        expect(tree.wallet.reload.balance).to eq(balance)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).to have_received(:increment).once
+      end
+
+      # Кільце ARCH.35 після аварії спершу везе живі кадри, а бэклог доливає найстаріший.
+      it "admits ring backlog below the live top, once" do
+        expect { described_class.call(frame(120)) }.to change(TelemetryLog, :count).by(1)
+        expect { described_class.call(frame(110)) }.to change(TelemetryLog, :count).by(1)
+        expect { described_class.call(frame(110)) }.not_to change(TelemetryLog, :count)
+      end
+
+      # Відкат БД: кадри після точки бекапу могли вже дати ончейн-мінт, а відновлене вікно
+      # їх не памʼятає — DR-фенс (06_06 §5.8) піднімає підлогу.
+      it "rejects a frame sent after the backup point once the DB-restore fence is up" do
+        described_class.call(frame(200))
+        CcmReplayWindow.fence!(frames: 30)
+
+        expect { described_class.call(frame(220)) }.not_to change(TelemetryLog, :count)
+        expect { described_class.call(frame(231)) }.to change(TelemetryLog, :count).by(1)
+      end
+
+      # Гонка двох воркерів: обидва пройшли пре-фільтр, допуск у транзакції рядка — лише один.
+      it "lets a duplicate that slipped past the pre-filter lose the admission inside the row's transaction" do
+        described_class.call(frame(300))
+        balance = tree.wallet.reload.balance
+        allow(CcmReplayWindow).to receive(:rejection).and_return(nil)
+
+        expect { described_class.call(frame(300)) }.not_to change(TelemetryLog, :count)
+        expect(tree.wallet.reload.balance).to eq(balance)
+        expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).to have_received(:increment).once
+      end
     end
 
     # ── wire-rev2 поля (device_z / diag / vpd_index) ──────────────────────

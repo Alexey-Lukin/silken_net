@@ -92,7 +92,7 @@ the guard that enforces it.
   (broadcast is structurally one-key; same isolation class as K_ota). Honest residual: a compromised node
   exposes the cluster's control-plane; OTA images stay separately authenticated by the K_ota HMAC dual-gate.
   Canon [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning).
-- **Replay protection** — CCM Frame Counter + a backend `SETNX` dedup window; for the interim panic path,
+- **Replay protection** — CCM Frame Counter + a backend sliding replay window per (DID, key epoch) in Postgres with no expiry (SEC.40, since 2026-10-05; before that a 25 h cache window); for the interim panic path,
   a monotonic panic counter + `SETNX` (SEC.10). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
   [`05_02`](05_02_Proof_of_Growth_Pipeline).
 - **Sanity bounds + DCI** — `TelemetryUnpackerService#valid_sensor_data?` rejects out-of-range ADC/temp;

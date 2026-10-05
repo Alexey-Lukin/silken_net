@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# [FW.17] DR ключів дерев після відкату БД із бекапу — runbook docs/06_06 §5.8.
+# [FW.17 · SEC.40] DR ключів дерев і вікон анти-повтору після відкату БД із бекапу — runbook docs/06_06 §5.8.
 # Потрібен PROVISIONING_MASTER_KEY (ключі деривуються в процесі й процесу не
 # покидають: друкуються лише епоха й версія).
 namespace :keys do
@@ -25,5 +25,13 @@ namespace :keys do
     count = Security::KeyEpochProbe.bump_downlink_frame_counters!(margin: Integer(ENV.fetch("MARGIN", "1024")),
                                                                   device_uid: ENV["DID"].presence)
     puts "DLFC піднято в #{count} рядках."
+  end
+
+  desc "[SEC.40 DR] Підняти підлогу вікон анти-повтору CCM на FRAMES над відновленим top_fc (і дати вікно деревам без нього). FRAMES > числа кадрів, які дерево могло передати після точки бекапу"
+  task fence_ccm_window: :environment do
+    abort "Usage: rake keys:fence_ccm_window FRAMES=<n>" if ENV["FRAMES"].blank?
+
+    raised, created = CcmReplayWindow.fence!(frames: Integer(ENV["FRAMES"]))
+    puts "Підлогу піднято у #{raised} вікнах; створено #{created} (дерева поточної епохи без вікна)."
   end
 end

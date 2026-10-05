@@ -599,6 +599,41 @@ CREATE TABLE public.blockchain_transactions_y2026m10 (
 
 
 --
+-- Name: ccm_replay_windows; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ccm_replay_windows (
+    id bigint NOT NULL,
+    device_uid character varying NOT NULL,
+    key_epoch integer NOT NULL,
+    top_fc integer NOT NULL,
+    floor_fc integer DEFAULT 0 NOT NULL,
+    seen bit(4096) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: ccm_replay_windows_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ccm_replay_windows_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ccm_replay_windows_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ccm_replay_windows_id_seq OWNED BY public.ccm_replay_windows.id;
+
+
+--
 -- Name: clusters; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1904,6 +1939,13 @@ ALTER TABLE ONLY public.blockchain_transactions ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: ccm_replay_windows id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ccm_replay_windows ALTER COLUMN id SET DEFAULT nextval('public.ccm_replay_windows_id_seq'::regclass);
+
+
+--
 -- Name: clusters id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2152,6 +2194,14 @@ ALTER TABLE ONLY public.blockchain_transactions_y2026m09
 
 ALTER TABLE ONLY public.blockchain_transactions_y2026m10
     ADD CONSTRAINT blockchain_transactions_y2026m10_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: ccm_replay_windows ccm_replay_windows_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ccm_replay_windows
+    ADD CONSTRAINT ccm_replay_windows_pkey PRIMARY KEY (id);
 
 
 --
@@ -3085,6 +3135,13 @@ CREATE INDEX index_bio_contract_firmwares_on_tree_family_id ON public.bio_contra
 --
 
 CREATE UNIQUE INDEX index_bio_contract_firmwares_on_version ON public.bio_contract_firmwares USING btree (version);
+
+
+--
+-- Name: index_ccm_replay_windows_on_device_uid_and_key_epoch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_ccm_replay_windows_on_device_uid_and_key_epoch ON public.ccm_replay_windows USING btree (device_uid, key_epoch);
 
 
 --
@@ -4744,6 +4801,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261005120000'),
 ('20260929140000'),
 ('20260929120000'),
 ('20260928120000'),

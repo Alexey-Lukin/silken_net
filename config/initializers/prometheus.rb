@@ -237,13 +237,14 @@ module SilkenNet
       docstring: "FW.2 CCM packets rejected due to MIC verification failure"
     )
 
-    # [FW.2] Per-DID Frame Counter not strictly monotonic — either replay
-    # of an already-seen FC or out-of-order delivery beyond what mesh
-    # buffering should produce. Grafana alert: rising rate > 0.1% of all
-    # CCM packets/min → attacker injection or device clock reset event.
+    # ⚖️ [SEC.40, founder 2026-10-05] CCM-кадр відкинуто ковзним вікном анти-повтору на
+    # (DID, епоха ключа) — `CcmReplayWindow`: або дубль усередині вікна (mesh-ретрансляція,
+    # повторний флаш, інʼєкція записаного кадру), або FC під вікном (повтор, старший за
+    # вікно, чи FC пристрою, пересіяний униз). Алерт — `sn-alert-ccm-fc-replay`.
     TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_ccm_fc_replay_rejected_total,
-      docstring: "FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing"
+      docstring: "SEC.40: CCM packets rejected by the per-(DID, key epoch) sliding replay window — " \
+                 "a duplicate inside the window or a frame counter below it"
     )
 
     # ⛔ [HW.30 ⚖️ 2026-09-29] Тут стояли `silkennet_tinyml_threshold_invalid_reports_total`
