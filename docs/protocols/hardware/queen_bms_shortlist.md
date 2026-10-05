@@ -49,6 +49,10 @@
    звірено. Публічний протокол V4 ([PDF](https://cdn.shopifycdn.net/s/files/1/0606/5199/5298/files/JDB_RS485-RS232-UART-Bluetooth-Communication_Protocol.pdf?v=1682577935))
    документує читання 0x03/0x04/0x05 і запис лише для керування MOS (0xE1, стор. 5). Реєстрів
    порогів у ньому **немає**.
+   ⊕ 2026-10-05: посібник JBDTools v1.1 (текст виробника, розділ 2.4) називає пороги холоду для заряду й
+   розряду окремими параметрами, які користувач пише в плату (`ChgUTP` ⊥ `DsgUTP`, «Customers can set
+   parameters according to their own need»). Налаштовуваність на рівні КЛАСУ тепер стоїть на тексті, а не
+   на скріншоті; чи пише їх саме DP04S007 V1.5 через свій UART, діапазон і крок — і далі питання листа.
 3. **Чи відсікається ЛИШЕ заряд.** Пороги для заряду і розряду окремі, а протокол має окремі біти:
    bit5 «charging low temperature» ⊥ bit7 «discharge low temperature» (стор. 3). Архітектурно поділ
    є. Але текст §4.5.2 («charging or discharging MOSFET is turned off, and the battery pack cannot be
