@@ -439,10 +439,12 @@ internal static class Program
             }
             default:
                 // ⛔ `radome` is deliberately absent, and the reason is not effort. The crown ground is spent (flat
-                // crown R5, ⚖️ 2026-09-11, APPLIED 2026-09-22 once ⚖️ HW.30 settled the pad); TWO grounds remain:
-                // the socket is still reshaped by the collar leg (00_07 HW.33), and the BME280 pocket floor is a
-                // PLACEHOLDER moved by the B2B / rigid-flex height (HW.29) — a sheet issued from today's generator
-                // would print both as decisions. It ships with the LAST of those changes. (Flat rim + rim boss
+                // crown R5, ⚖️ 2026-09-11, APPLIED 2026-09-22 once ⚖️ HW.30 settled the pad); THREE grounds remain:
+                // the socket is still reshaped by the collar leg (00_07 HW.33), the BME280 pocket floor is a
+                // PLACEHOLDER moved by the B2B / rigid-flex height (HW.29), and the pocket gasket gap
+                // `pocket_gasket_gap_mm` is a PLACEHOLDER 0 until the moulder's profile gives the bead height
+                // (HW.32) — a sheet issued from today's generator would print all three as decisions. It ships
+                // with the LAST of those changes. (Flat rim + rim boss
                 // applied 2026-09-14, crown 09-22.)
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }

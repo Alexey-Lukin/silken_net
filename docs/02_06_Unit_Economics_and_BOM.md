@@ -78,7 +78,7 @@
 
 > 🏠 **Component-BOM One-Home:** per-component моделі + ціни + **Electronics TOTAL живуть у [`02_01 §3`](02_01_Hardware_Architecture_and_BOM)** (component-spec дім — cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут НЕ дублюємо — §1.2 бере Electronics-підсумок (Power Deck + RF Deck) звідти; per-item розбивка (MCU/PMIC/supercap/antenna/pogo/buffer) — у домі.
 
-> **Climate add-on (BME280 + TPS22860 gate + PTFE vent, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** опційний **+ ~$2.50/вузол + вент** (ціна вента невідома — [`radome_vent_shortlist`](protocols/hardware/radome_vent_shortlist.md)) якщо populated — **НЕ** входить у baseline node-cost (§1.2), доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder False-Slashing kill — [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy) + NaaS клімат-оракул — [`00_04`](00_04_Nature_as_a_Service_Contracts)) → підвищує D-MRV-цінність для агро/страхового ринку.
+> **Climate add-on (BME280 + TPS22860 gate + PTFE vent, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** опційний **+ ~$2.50/вузол + вент і прокладка кишені** (ціни обох невідомі — [`radome_vent_shortlist`](protocols/hardware/radome_vent_shortlist.md) · [`pocket_gasket_shortlist`](protocols/hardware/pocket_gasket_shortlist.md); рядок-дім — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM) TOTAL) якщо populated — **НЕ** входить у baseline node-cost (§1.2), доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder False-Slashing kill — [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy) + NaaS клімат-оракул — [`00_04`](00_04_Nature_as_a_Service_Contracts)) → підвищує D-MRV-цінність для агро/страхового ринку.
 
 ---
 
