@@ -186,5 +186,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 29. The SI manifest (`72`) hashes the WHOLE committed in-silico tree, so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
 30. A seasonal crossing counted as «the first run ≥ threshold from 1 January» calls a winter thaw spring — make the crossing SUSTAINED and declare that rule as ours, on BOTH edges
 31. A pin over a numeric GENERATOR holds only in the environment that wrote its reference — and this pipeline now runs in THREE: the recorded osx-arm64 env writes the files, the lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and CI runs the linux-64 one
+32. A count against a threshold on QUANTIZED input has ties — and an iterative solver's tolerance decides them silently: return the degenerate root EXACTLY, and keep a control that equates the no-forcing run with its input
 
 <!-- /INSILICO-MODIFYING-INDEX -->
