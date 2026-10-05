@@ -14,7 +14,7 @@
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
 #   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
 #   0x0803E828  [magic "KEYB" :4 ][ bcast_key    :16 ]                 # Tree only — FW.2 (в) cluster control-plane; +40 (не +36): dw-вирівнювання WL
-#   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 ]                 # Tree, кожен провіжн — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
+#   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 · 0x14]                 # Tree, кожен провіжн — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
 #
 # [FW.2 гейт (в), двоключова модель] Gateway KEYL-слот прошивається
 # BROADCAST-значенням (HKDF cluster-домену, derive_broadcast_key) — Королева
@@ -171,7 +171,7 @@ module FactoryFlashing
         # деградує у fallback (амбієнт = KEYL): Королева не прочитає його аплінк,
         # а він — її downlink.
         words.merge!(block_words(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
-        # [FW.17] Re-provision: свіжий журнал (лише 0x15), версії ратчета немає →
+        # [FW.17] Re-provision: свіжий журнал (0x15 + якір FC 0x14 = 1, SEC.41), версії ратчета немає →
         # вузол на K0_e з v = 0 (03_05 §3.8).
         words.merge!(@kv_journal_words) if @kv_journal_words
       else

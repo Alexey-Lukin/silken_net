@@ -152,7 +152,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
 
     # [FW.17] Re-flash дерева = re-provision у нову епоху (⚖️ 2026-09-28, 03_05 §3.8):
     # корінь K0_1, версія 0, старий ключ — у grace до першого MIC новим; журнал
-    # стирається й пишеться свіжим (лише 0x15 = приплив OTA кластера).
+    # стирається й пишеться свіжим (0x15 = приплив OTA кластера, 0x14 = 1 — якір FC, SEC.41).
     it "re-provisions a tree into a new key epoch and leaves the old key's grace to the MIC" do
       hw_key = rotated_key_for(tree)
       hw_key.update!(downlink_frame_counter: 9)
@@ -171,6 +171,7 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       image = flash_image(shim_invocations)
       expect(image[0x0803E004]).to eq("0x#{k0_e1[0, 8]}")
       expect(image.values_at(0x0803D010, 0x0803D014)).to eq(%w[0x15A556DE 0x0000002A]) # golden 0x15 = 42
+      expect(image.values_at(0x0803D018, 0x0803D01C)).to eq(%w[0x14A513D8 0x00000001]) # SEC.41: якір FC = 1
       expect(shim_invocations).to include(a_string_matching(/-e 122 123 124 125\z/))
     end
   end

@@ -2,10 +2,12 @@
 # frozen_string_literal: true
 
 # [FW.17] Образ журналу Flash-KV для КОЖНОГО провіжну дерева — re-provision
-# (⚖️ founder 2026-09-28, 03_05 §3.8) і перший теж (⚖️ founder 2026-09-29, 03_06 §5). Конвеєр стирає обидві сторінки журналу й пише свіжий, у якому лише
-# анти-відкат OTA `0x15` = `clusters.ota_version_hiwater`: версії ратчета `0x13`
+# (⚖️ founder 2026-09-28, 03_05 §3.8) і перший теж (⚖️ founder 2026-09-29, 03_06 §5). Конвеєр стирає обидві сторінки журналу й пише свіжий, у якому два записи.
+# Анти-відкат OTA `0x15` = `clusters.ota_version_hiwater`: версії ратчета `0x13`
 # немає, тож вузол стартує на K0_e з v = 0, а K_ota (від re-provision незмінний)
-# не пропустить повтор старого підписаного OTA.
+# не пропустить повтор старого підписаного OTA. Якір лічильника кадрів CCM
+# `0x14` = 1 [SEC.41, ⚖️ founder 2026-10-05]: FC під свіжим ключем стартує біля
+# нуля, а не з HRNG рівномірно в [1, 0xFFFFFE], тож 24-бітний простір увесь попереду.
 #
 # Дзеркало `firmware/common/flash_kv.{h,c}`: елемент — один doubleword
 # `[value:32][key:8][flags 0xA5][crc16]`, заголовок сторінки — `SKV1|seq|crc` +
@@ -29,6 +31,8 @@ module FactoryFlashing
     REC_FLAGS       = 0xA5
     FIRST_SEQ       = 1
     OTA_VERSION_KEY = 0x15       # firmware: SEC20_OTA_VER_KV_KEY
+    FC_HIWATER_KEY  = 0x14       # firmware: FW2_FC_KV_KEY_HIWATER (fc_hiwater.h)
+    FC_FLOOR        = 1          # [SEC.41] перший TX = FC 2; 0 прошивка читає як «якоря немає»
 
     module_function
 
@@ -36,7 +40,7 @@ module FactoryFlashing
     def dws(ota_hiwater:)
       raise ArgumentError, "ota_hiwater must fit u32" unless ota_hiwater.is_a?(Integer) && ota_hiwater.between?(0, 0xFFFF_FFFF)
 
-      [ header(PAGE_MAGIC), header(FINI_MAGIC), record(OTA_VERSION_KEY, ota_hiwater) ]
+      [ header(PAGE_MAGIC), header(FINI_MAGIC), record(OTA_VERSION_KEY, ota_hiwater), record(FC_HIWATER_KEY, FC_FLOOR) ]
     end
 
     # { addr => "0x…" } для `CommandBuilder`: doubleword лежить у флеші

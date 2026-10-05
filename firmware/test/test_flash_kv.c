@@ -691,43 +691,49 @@ TEST(test_fw20s2_dedup_survives_remount_and_compact) {
 
 /* ════════════════════════════════════════════════════════════════════
  * [FW.17] ОБРАЗ ЖУРНАЛУ, ЯКИЙ ПИШЕ КОНВЕЄР ПРИ RE-PROVISION (⚖️ 2026-09-28,
- * 03_05 §3.8). Golden-пін обабіч: ці три doubleword'и видає Ruby-будівник
+ * 03_05 §3.8). Golden-пін обабіч: ці чотири doubleword'и видає Ruby-будівник
  * `FactoryFlashing::FlashKvImage.dws(ota_hiwater: 0x2A)` — його спека пінить ті
  * самі числа. Тут доводимо, що справжній flash_kv.c цей образ МОНТУЄ і що образ
  * дорівнює журналу, який прошивка лишила б сама («перше життя» + Put32).
  * ════════════════════════════════════════════════════════════════════ */
 #define FW17_GOLDEN_HIWATER 0x2Au
-static const uint64_t FW17_GOLDEN_IMAGE[3] = {
+#define FW17_GOLDEN_DWS 4u
+static const uint64_t FW17_GOLDEN_IMAGE[FW17_GOLDEN_DWS] = {
     0x534B56310001FDE5ull, /* SKV1 | seq 1 | crc */
     0x46494E4900010F2Eull, /* FINI | seq 1 | crc */
     0x0000002A15A556DEull, /* 0x15 = 42 | flags A5 | crc */
+    0x0000000114A513D8ull, /* [SEC.41] 0x14 = 1 — якір FC: старт біля нуля, не з HRNG */
 };
 #define FW17_KV_KEY_VERSION_TEST 0x13u /* main.c: FW17_KV_KEY_VERSION */
+#define SEC41_FC_KV_KEY_TEST     0x14u /* fc_hiwater.h: FW2_FC_KV_KEY_HIWATER */
 
 static void load_factory_image(void)
 {
     mock_init(&flash); /* обидві сторінки стерто — `-e 122 123` */
-    for (unsigned i = 0; i < 3u; i++) flash.mem[0][i] = FW17_GOLDEN_IMAGE[i];
+    for (unsigned i = 0; i < FW17_GOLDEN_DWS; i++) flash.mem[0][i] = FW17_GOLDEN_IMAGE[i];
 }
 
-TEST(test_fw17_factory_journal_mounts_with_hiwater_only) {
+TEST(test_fw17_factory_journal_mounts_with_ota_hiwater_and_fc_floor) {
     load_factory_image();
     ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
     uint32_t v = 0;
     ASSERT_TRUE(FlashKv_Get32(&kv, SEC20_OTA_VER_KV_KEY, &v));
     ASSERT_EQ(v, FW17_GOLDEN_HIWATER);
     ASSERT_FALSE(FlashKv_Get32(&kv, FW17_KV_KEY_VERSION_TEST, &v)); /* версії ратчета немає → v = 0, корінь K0_e */
-    ASSERT_EQ(FlashKv_FreeSlots(&kv), MOCK_PAGE_DWS - 3);
+    ASSERT_TRUE(FlashKv_Get32(&kv, SEC41_FC_KV_KEY_TEST, &v));      /* якір FC — 1: перший TX = FC 2 */
+    ASSERT_EQ(v, 1u);
+    ASSERT_EQ(FlashKv_FreeSlots(&kv), MOCK_PAGE_DWS - FW17_GOLDEN_DWS);
     ASSERT_FALSE(Ota_Version_Is_Fresh(&kv, 1, FW17_GOLDEN_HIWATER));      /* повтор OTA кластера — ні */
     ASSERT_TRUE(Ota_Version_Is_Fresh(&kv, 1, FW17_GOLDEN_HIWATER + 1u));  /* наступна кампанія — так */
 }
 
 TEST(test_fw17_factory_journal_equals_firmware_first_life) {
-    /* Образ ≡ те, що прошивка сама лишає на чистому флеші після Put32(0x15). */
+    /* Образ ≡ те, що прошивка сама лишає на чистому флеші після Put32(0x15) + Put32(0x14, 1). */
     fresh_mount();
     ASSERT_TRUE(FlashKv_Put32(&kv, SEC20_OTA_VER_KV_KEY, FW17_GOLDEN_HIWATER));
-    for (unsigned i = 0; i < 3u; i++) ASSERT_TRUE(flash.mem[0][i] == FW17_GOLDEN_IMAGE[i]);
-    ASSERT_TRUE(flash.mem[0][3] == 0xFFFFFFFFFFFFFFFFull);
+    ASSERT_TRUE(FlashKv_Put32(&kv, SEC41_FC_KV_KEY_TEST, 1u));
+    for (unsigned i = 0; i < FW17_GOLDEN_DWS; i++) ASSERT_TRUE(flash.mem[0][i] == FW17_GOLDEN_IMAGE[i]);
+    ASSERT_TRUE(flash.mem[0][FW17_GOLDEN_DWS] == 0xFFFFFFFFFFFFFFFFull);
     for (unsigned i = 0; i < MOCK_PAGE_DWS; i++) ASSERT_TRUE(flash.mem[1][i] == 0xFFFFFFFFFFFFFFFFull);
 }
 
@@ -738,7 +744,7 @@ TEST(test_fw17_factory_journal_loses_to_unerased_sibling) {
     ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
     ASSERT_TRUE(FlashKv_Put32(&kv, FW17_KV_KEY_VERSION_TEST, 3u));
     ASSERT_TRUE(FlashKv_Compact(&kv)); /* журнал старого життя живе на сторінці 1, seq 2 */
-    for (unsigned i = 0; i < 3u; i++) flash.mem[0][i] = FW17_GOLDEN_IMAGE[i]; /* образ БЕЗ стирання сторінки 1 */
+    for (unsigned i = 0; i < FW17_GOLDEN_DWS; i++) flash.mem[0][i] = FW17_GOLDEN_IMAGE[i]; /* образ БЕЗ стирання сторінки 1 */
     ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
     uint32_t v = 0;
     ASSERT_TRUE(FlashKv_Get32(&kv, FW17_KV_KEY_VERSION_TEST, &v));
@@ -862,7 +868,7 @@ int main(void)
     RUN(test_sec20_hiwater_survives_vbat_loss);
     RUN(test_sec20_degraded_unmounted_allows);
     RUN(test_sec20_hiwater_survives_compact);
-    RUN(test_fw17_factory_journal_mounts_with_hiwater_only);
+    RUN(test_fw17_factory_journal_mounts_with_ota_hiwater_and_fc_floor);
     RUN(test_fw17_factory_journal_equals_firmware_first_life);
     RUN(test_fw17_factory_journal_loses_to_unerased_sibling);
 

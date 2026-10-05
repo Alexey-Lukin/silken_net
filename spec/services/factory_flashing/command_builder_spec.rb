@@ -54,7 +54,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       ])
     end
 
-    # [FW.17] Re-provision: свіжий журнал Flash-KV (лише 0x15) і стирання ОБОХ його
+    # [FW.17] Re-provision: свіжий журнал Flash-KV (0x15 + якір FC 0x14, SEC.41) і стирання ОБОХ його
     # сторінок — сусідка з вищою seq інакше перемогла б при Mount (03_05 §3.8).
     it "erases both journal pages and writes the fresh journal page on a re-provision" do
       commands = described_class.new(
@@ -66,7 +66,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD mode=UR -e 122 123 124 125")
       expect(commands).to include(
         "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803D000 " \
-        "0x0001FDE5 0x534B5631 0x00010F2E 0x46494E49 0x15A556DE 0x0000002A"
+        "0x0001FDE5 0x534B5631 0x00010F2E 0x46494E49 0x15A556DE 0x0000002A 0x14A513D8 0x00000001"
       )
       expect(commands.grep(/-w32 0x0803D8/)).to be_empty # стор. 123 лише стирається
     end
