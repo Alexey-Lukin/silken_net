@@ -1157,7 +1157,7 @@ the inverted season; the recipe's set-point no longer rests on them (`01_02 §2.
 
 ## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)
 
-Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; decision → `00_07` HW.5.IS / CHEM.11.
+Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2 (also the home of the freeze verdict, ⚖️ 2026-10-04); open legs → `00_07` HW.5.IS / CHEM.11.
 
 `L1 §2` has said since 2026-06-06 that "an in-house hydrophobic-SASA proxy flags 4 aggregation-prone sites
 (Gln71, Gln200, Gln258, Gln405)", and the recipe on top of it — Aggrescan3D plus compensating Asp/Ser near
