@@ -3581,10 +3581,12 @@ int Soldier_Build_CCM_LoRa_Packet(
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
 {
     uint32_t fc = Load_Frame_Counter();
-    // Насичений інкремент: magic DR15 (0x46) живий, значення у 24-бітному вікні.
-    // Нуль обходимо — він би вбив magic-перевірку при наступному boot.
-    uint32_t next_fc = (fc + 1u) & FW2_FC_VALUE_MASK;
-    if (next_fc == 0u) next_fc = FW2_FC_HRNG_MIN;
+    // [SEC.41] Насичений інкремент — справді насичений: на вичерпанні 24-бітного
+    // простору TX відмовляє (лічильник не рухаємо), доки ротація ключа не відкриє
+    // нову епоху nonce (docs/03_05 §2.1). Доти тут стояв перехід через нуль, і після
+    // нього кожен cold start повторював nonce під тим самим KEYL.
+    uint32_t next_fc;
+    if (!Fw2_Next_Frame_Counter(fc, &next_fc)) return HAL_ERROR;
 
     // [FW.2 TRL-7] Сторожа межі (інваріант I-HW, fc_hiwater.h): за
     // дисципліни КЕНОЗИС-advance (запас MARGIN) сюди не заходимо ніколи —

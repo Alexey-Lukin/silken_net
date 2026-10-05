@@ -324,4 +324,16 @@ static inline uint32_t Reseed_FW2_Frame_Counter(uint32_t hrng_word) {
     return v;
 }
 
+/* [SEC.41] Наступний FC — НАСИЧЕННЯ, не перехід через нуль: 24-бітний простір
+ * одноразовий на ключ, і на вичерпанні TX відмовляє, доки ротація ключа (FW.17,
+ * docs/03_05 §3.8) не відкриє нову епоху nonce. Перехід через нуль доти повторював
+ * nonce: якір 0x14 застигав на 0xFFFFFF, і кожен cold start знову видавав
+ * FC = 1, 2, … під тим самим KEYL. 1 → *next_out валідний; 0 → простір вичерпано,
+ * *next_out не чіпаємо. */
+static inline int Fw2_Next_Frame_Counter(uint32_t fc, uint32_t *next_out) {
+    if (fc >= FW2_FC_VALUE_MASK) return 0;
+    *next_out = fc + 1u;
+    return 1;
+}
+
 #endif /* LORA_CCM_H */

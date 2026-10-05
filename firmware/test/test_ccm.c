@@ -302,6 +302,21 @@ static int test_fc_reseed_clamps_boundary(void) {
     return 0;
 }
 
+/* [SEC.41] Вичерпання 24-бітного простору — насичення, НЕ перехід через нуль:
+ * перехід повторював nonce під тим самим ключем на кожному cold start після нього. */
+static int test_fc_next_saturates_never_wraps(void) {
+    uint32_t next = 0;
+    ASSERT_EQ(Fw2_Next_Frame_Counter(5u, &next), 1);
+    ASSERT_EQ(next, 6u);
+    ASSERT_EQ(Fw2_Next_Frame_Counter(0xFFFFFEu, &next), 1);
+    ASSERT_EQ(next, FW2_FC_VALUE_MASK);
+    next = 0xABCDEFu;
+    ASSERT_EQ(Fw2_Next_Frame_Counter(FW2_FC_VALUE_MASK, &next), 0);
+    ASSERT_EQ(next, 0xABCDEFu); /* відмова лишає вихід недоторканим */
+    printf("  test_fc_next_saturates_never_wraps                         ✅\n");
+    return 0;
+}
+
 static int test_sensor_payload_pack_roundtrip(void) {
     uint8_t buf[FW2_CCM_PLAINTEXT_LEN];
     Pack_CCM_Sensor_Payload(3500, -15, 99, 1234, 0x5A, 0x37,
@@ -742,6 +757,7 @@ int main(void) {
     RUN(test_fc_pack_unpack);
     RUN(test_fc_cold_boot_invalid_magic);
     RUN(test_fc_reseed_clamps_boundary);
+    RUN(test_fc_next_saturates_never_wraps);
     RUN(test_sensor_payload_pack_roundtrip);
     RUN(test_soldier_to_queen_roundtrip);
     RUN(test_mic_tamper_detected);
