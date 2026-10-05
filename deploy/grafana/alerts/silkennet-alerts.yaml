@@ -282,7 +282,7 @@ groups:
         for: 2m
         annotations:
           summary: "Fraud rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
-          description: "TelemetryUnpackerService відхилив пакети: sensor noise, unknown DID, DCI mismatch (Lorenz Z divergence) або invalid AES decrypt. Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
+          description: "TelemetryUnpackerService відхилив пакети (sensor noise, unknown DID — в ECB-ері зокрема кадр під чужим ключем) або позначив розбіжність метаболізму чи Лоренца (DCI). ⚠️ Категорійна DCI-розбіжність — здебільшого чесний розсинхрон ланцюга, не атака (03_04 §7.3, FW.66). Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
           severity: critical

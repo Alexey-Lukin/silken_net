@@ -173,7 +173,7 @@ module SilkenNet
     # Telemetry fraud/anomaly detections (monotonic counter)
     TELEMETRY_FRAUD_DETECTED_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_fraud_detected_total,
-      docstring: "Total telemetry packets rejected (sensor noise, unknown DID, tamper)"
+      docstring: "Telemetry packets rejected (sensor noise, unknown DID) or flagged (DCI/metabolic divergence)"
     )
 
     # [SEC.10] Panic packets rejected as replay (Frame Counter nonce collision).

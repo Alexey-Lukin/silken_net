@@ -462,8 +462,9 @@ class TelemetryUnpackerService < ApplicationService
 
     # [FW.31 Gate D] device_z з шифртексту (wire-rev2 bytes 16..17,
     # фіксована точка ×512): живить numeric DCI-гілку check_z_divergence!.
-    # Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (ARCH.41-C
-    # grace) → атрибут відсутній, numeric branch чесно пропускається.
+    # Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (VM_ERROR чи
+    # непровіжинений seed; у grace ARCH.41-C телеметрія не летить) → атрибут
+    # відсутній, numeric branch чесно пропускається.
     # Транзієнт як lorenz_temperature_c — стрипається перед persist.
     carried = device_z_raw != CCM_DEVICE_Z_NONE
     log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE if carried
@@ -857,7 +858,9 @@ class TelemetryUnpackerService < ApplicationService
   # We catch two failure modes:
   #   1. Categorical mismatch — device claims `homeostasis` but server Z
   #      is outside the species/cluster healthy band (or vice versa).
-  #      Detects tampered firmware or replay with a forged StatusByte.
+  #      Meant to catch tampered firmware, but only on an intact warm chain — a
+  #      lost/duplicated frame or a device cold start breaks it, and a forger who
+  #      always claims homeostasis passes (`03_04 §7.3`, FW.66). Replay: see SEC.40.
   #   2. Numeric divergence — |raw z − device_z| larger than the
   #      tolerance band. Detects a corrupted attractor input on either
   #      side (e.g. wrong K_seed flashed, drift in the silken_sha256 port, etc.).

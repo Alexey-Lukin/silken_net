@@ -73,7 +73,7 @@
 | 4.2 Drift кімнатний | `04_lse_drift.py --hours 24` (pyOCD читає RTC TR/DR vs NTP) | ppm у CSV |
 | 4.3 Drift ±60°C | той самий скрипт у термокамері (TRL-7, FW.20) | ppm(T) крива |
 | 4.4 IWDG 1 год сну | сон 1 год після §1.2 | **нуль** spurious reset (SEC.15) |
-| 4.5 ARCH.41 cold-boot e2e день | VBAT-pull (повний дрейн EDLC) → перший boot: grace-вікно (Лоренц мовчить) + hello `SYNC_REQ 0x56` (DID+Vcap) → Queen перемотує маяк → синк → перший чистий пакет | до синку acoustic-байт = sentinel `0xFE` (бекенд `time_unsynced_fallback`, DCI не отруєний); після — sentinel зникає, epoch_day правильна без серверного вгадування (`03_04 §2.1` B+C) |
+| 4.5 ARCH.41 cold-boot e2e день | VBAT-pull (повний дрейн EDLC) → перший boot: grace-вікно (Лоренц мовчить) + hello `SYNC_REQ 0x56` (DID+Vcap) → Queen перемотує маяк → синк → перший чистий пакет | до синку acoustic-байт = sentinel `0xFE` (бекенд `time_unsynced_fallback`, DCI не отруєний); після — sentinel зникає, epoch_day правильна без серверного вгадування (`03_04 §2.1` B+C). ⚠️ DCI цей день не доводить: сервер із хвостом не ре-якориться, тож категорія збігається ≈ 98 % і на розірваному ланцюгу (`00_07` FW.66) |
 | 4.6 **WUT reliable multi-hour wake** (SEC.15 — понад §4.4) | сон кілька годин × N циклів | вузол НАДІЙНО прокидається кожен цикл (не лише no-spurious-reset): WUT auto-reload + IT = ЄДИНИЙ backstop під frozen-IWDG; **армінг = закоммічена ревʼюйована fn, не регенерований .ioc** — pre-req будь-якого RDP-L2 (gate §1) |
 
 ## 5. Модем SIM7070G (FW.3 / FW.56)

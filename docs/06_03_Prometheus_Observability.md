@@ -63,7 +63,7 @@
 | `SCC_SLASHED_TOTAL` instrumentation | `app/services/blockchain_burning_service.rb` | ✅ Реалізовано |
 | `RPC_ERRORS_TOTAL` instrumentation | `app/workers/application_web3_worker.rb` | ✅ Реалізовано (4 точки) |
 | `TELEMETRY_PROCESSED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано |
-| `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (2 точки) |
+| `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (8 точок: 4 відкидають кадр, 4 лише сигналять) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
 | Prometheus Server | `config/deploy.yml` (accessory `alloy`) | ✅ **Grafana Alloy → Grafana Cloud** |
 | Grafana | Grafana Cloud SaaS | ✅ **Дашборд імпортовано 2026-08-29** (`ruby deploy/grafana/import.rb`) |
@@ -207,7 +207,7 @@ end
 | `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: effective_burn` — [SLASH.2] on-chain-реалістичний upper-bound, свідомо НЕ pre-tax `burn_amount`, як стояло тут доти; не лічильник подій) |
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 11 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
-| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (2 точки) | Відхилені пакети (sensor noise, unknown DID, tamper) |
+| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (8 точок) | Відхилені пакети (sensor noise, unknown DID) і позначені — розбіжність метаболізму чи Лоренца (DCI); позначка ≠ tamper (категорійна DCI — переважно чесний розсинхрон, [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)) |
 | `silkennet_panic_replay_rejected_total` | `SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL` | — | `TelemetryUnpackerService` (SEC.10 panic Frame Counter) | **[SEC.10]** Panic-пакети відкинуті як replay через `unless_exist`-nonce у Rails.cache (Solid Cache/PostgreSQL, не Redis; і НЕ справжній SET NX — [`00_07`](00_07_Action_Plan_Tracker) SEC.39). Сторожовий пес панічного каналу — сплеск тут означає legitimate retransmission (LoRa duplicate), replay-attack АБО транзієнтний збій бази кешу, на якому Solid Cache повертає «не записано» і справжні кадри відкидаються як повтор. Grafana alert при різкому стрибку → спершу логи `SolidCacheStore: … failed`, тоді attacker injection forged panic packets. |
 | `silkennet_slash_attempts_total` | `SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL` | — | `BlockchainBurningService` (intent created) | **[ARCH.45]** Спроби slash — знаменник slash success-rate SLO |
 | `silkennet_slash_success_total` | `SilkenNet::Metrics::SLASH_SUCCESS_TOTAL` | — | `BlockchainBurningService` (status→sent) | **[ARCH.45]** Успішні broadcast slash — чисельник того ж SLO |
@@ -388,7 +388,7 @@ end
 | `silkennet_telemetry_ccm_device_z_total` | діагностична | `carried` | FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z [FW.31; diagnostic tier: no alert until the CCM flip — the consumer is the Gate D ratio carried=true / all >= 95%] |
 | `silkennet_telemetry_ccm_fc_replay_rejected_total` | алертна | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
 | `silkennet_telemetry_ccm_mic_fail_total` | алертна | — | FW.2 CCM packets rejected due to MIC verification failure |
-| `silkennet_telemetry_fraud_detected_total` | алертна | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
+| `silkennet_telemetry_fraud_detected_total` | алертна | — | Telemetry packets rejected (sensor noise, unknown DID) or flagged (DCI/metabolic divergence — not every flag is tamper) |
 | `silkennet_telemetry_log_unpruned_lookups_total` | алертна | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
 | `silkennet_telemetry_processed_total` | алертна | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_treasury_check_errors_total` | алертна | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
