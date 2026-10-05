@@ -453,7 +453,7 @@ namespace :docs do
     if bare_refs.empty?
       puts "  bare §-refs:    no bare code-span `NN_NN §X` outside owner docs (all linked) ✓"
     else
-      by_doc = bare_refs.group_by { |s| s[/\A\d\d_\d\d/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
+      by_doc = bare_refs.group_by { |s| s[/\A\d\d_\d\d/] || s[/\A[^:]+/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
       puts "  ✗ bare code-span `NN_NN §X` refs — must be `[`…`](Doc)` links (#{bare_refs.size}) — HARD:"
       puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
       bare_refs.sort.first(50).each { |s| puts "    · #{s}" }
@@ -461,7 +461,7 @@ namespace :docs do
     if bare_doc.empty?
       puts "  bare doc-ids:   no bare code-span `NN_NN` doc-id outside owner docs (all linked) ✓"
     else
-      by_doc = bare_doc.group_by { |s| s[/\A\d\d_\d\d/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
+      by_doc = bare_doc.group_by { |s| s[/\A\d\d_\d\d/] || s[/\A[^:]+/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
       puts "  ✗ bare code-span `NN_NN` doc-ids — must be `[`…`](Doc)` links (#{bare_doc.size}) — HARD:"
       puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
       bare_doc.sort.first(50).each { |s| puts "    · #{s}" }
