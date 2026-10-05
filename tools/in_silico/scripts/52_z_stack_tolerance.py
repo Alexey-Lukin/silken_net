@@ -613,9 +613,10 @@ def collar_radial_budget(boss: dict) -> dict:
                          "DRAINAGE requirement, because confined ice cannot be survived by any wall that fits "
                          "the socket band. Owner of the number stays the collar implementation leg (00_07 HW.33) "
                          "and the lug/Z redesign (HW.8); the VERDICT is 02_02 §4.4",
-        "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also "
-                    "needs a running clearance inside its socket — nothing states it — the ceiling drops by "
-                    "2*slot_clearance more (second column). The flange route is CNC-from-bar or SLM + mandatory "
+        "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). The collar does "
+                    "need a running clearance inside its socket — model 82 computes it (02_02 §4.4: route rows "
+                    "0.08–0.22 mm, below this 0.3 placeholder) — so the ceiling drops by 2*slot_clearance more "
+                    "(second column), an upper bound on the drop. The flange route is CNC-from-bar or SLM + mandatory "
                     "HIP (ratified 2026-09-18, 00_07 HW.23), so this print floor binds the SLM route only.",
     }
 

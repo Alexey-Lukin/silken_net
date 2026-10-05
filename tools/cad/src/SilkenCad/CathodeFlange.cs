@@ -69,7 +69,8 @@ internal static class CathodeFlange
         //    Each pin's local-Z = the radial outward direction; it overlaps the rim by fOverlap to fuse.
         //    ⚖️ Their Z is the mid-disc `shank + t/2`; the ratified raised COLLAR (02_02 §4.4) that would carry
         //    them at Assembly.RequiredLugZMm is not modelled — its wall is sized by the process floor, not strength
-        //    (model 73, 02_02 §4.4); what holds it is its running clearance — any non-zero one moves the root, whether it needs one nothing states (00_07 HW.33).
+        //    (model 73, 02_02 §4.4); what holds it is its running clearance — it needs a non-zero one (model 82, 02_02 §4.4),
+        //    and that moves the root (00_07 HW.33).
         float fLugZ = fShankLen + (fThick / 2f);
         const float fOverlap = 1.0f;
         for (int i = 0; i < cem.BayonetLugs; i++)
