@@ -3413,8 +3413,9 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
     double dx = 0.0, dy = 0.0, dz = 0.0;
     Silken_Derive_Initial_State(lorenz_seed, epoch_day, &dx, &dy, &dz);
 
-    // RTC Backup тримає float32 — звуження свідоме: біт-parity деривації
-    // живе на рівні double; downstream-толеранс — FW.31 / docs/03_04.
+    // RTC Backup тримає float32 — звуження свідоме, і сервер мусить робити
+    // те саме (`SilkenNet::Attractor.as_rtc_state`, FW.66): толерансом це не
+    // покрити — хаос підсилює різницю за кілька кадрів (docs/03_04 §5).
     *x0 = (float)dx;
     *y0 = (float)dy;
     *z0 = (float)dz;

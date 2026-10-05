@@ -7,7 +7,8 @@
 #   - ARM↔x86 плече вже бітово-нульове (FW.55 QEMU byte-parity, ISA-рівень;
 #     кремнієвий хвіст = той самий one-command FW.55 дамп);
 #   - тут міряється ДРУГЕ плече DCI — mruby-VM (пристрій) ↔ CRuby (сервер):
-#     кожна сторона ланцюжить ВЛАСНИЙ хвіст (модель warm-chaining DCI),
+#     кожна сторона ланцюжить ВЛАСНИЙ хвіст у double (модель warm-chaining DCI без
+#     float32-звуження між кадрами — його тримає пін FW.66, 03_04 §5),
 #     кейс-генератор бітово дзеркалить firmware/sim/parity_core.h.
 #
 #   tools/firmware/dci_epsilon_sweep.sh           # N=10000 (дефолт §7.1)

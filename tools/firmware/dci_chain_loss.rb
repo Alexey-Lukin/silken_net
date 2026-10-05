@@ -18,6 +18,7 @@
 #   ruby tools/firmware/dci_chain_loss.rb server=double    # сервер у double — дефект ДО FW.66: розрив без жодної втрати
 #   ruby tools/firmware/dci_chain_loss.rb h=1.731 frames=4000 trees=40 lost_at=-1
 #   ruby tools/firmware/dci_chain_loss.rb temp=-10         # стала температура замість добової синусоїди
+#   ruby tools/firmware/dci_chain_loss.rb claim=homeostasis lost_at=-1   # фальсифікатор: статус ВИБРАНО, не обчислено
 #
 # ⛔ СТЕЛІ, ОГОЛОШЕНІ ВГОЛОС:
 #   • обидві сторони — СЕРВЕРНЕ ядро; паритет ядер mruby ⟷ CRuby — предмет Gate L
@@ -32,7 +33,8 @@
 #     має, тож кожне — CoAP PUT і маяк Королеви, але ефірний час маяків тут не рахується;
 #   • втрата — РІВНО ОДИН кадр; живі пускачі того самого роду (морозне відкладення TX після кроку,
 #     VM_ERROR-кадр, на якому сервер крокує, а пристрій ні, перезапис CIFO Королеви, дублікат
-#     кадру) дають той самий розсинхрон, і жоден наступний його не «лагодить».
+#     кадру) і cold start пристрою, якого сервер не бачить, дають той самий розсинхрон, і жоден
+#     наступний його не «лагодить».
 
 $LOAD_PATH.unshift File.expand_path("../../app/services", __dir__)
 module SilkenNet; end
@@ -47,17 +49,20 @@ BAND_MAX = 45.0                 # дзеркало firmware LORENZ_DEFAULT_Z_MAX
 RTC_DEFAULT_EPOCH_DAY = 10_957  # дзеркало TelemetryUnpackerService::FIRMWARE_RTC_DEFAULT_EPOCH_DAY
 DAY0 = 20_300                   # довільна «сьогоднішня» доба моделі
 
-params = { "h" => 1.81, "frames" => 2000, "trees" => 20, "lost_at" => 10, "temp" => nil, "server" => "float32" }
+params = { "h" => 1.81, "frames" => 2000, "trees" => 20, "lost_at" => 10, "temp" => nil, "server" => "float32",
+           "claim" => "honest" }
 ARGV.each do |arg|
   key, value = arg.split("=", 2)
   abort "невідомий параметр: #{arg}" unless params.key?(key) && value
   params[key] = case key
   when "h", "temp" then Float(value)
-  when "server" then value
+  when "server", "claim" then value
   else Integer(value)
   end
 end
 abort "server=float32|double" unless %w[float32 double].include?(params["server"])
+abort "claim=honest|homeostasis" unless %w[honest homeostasis].include?(params["claim"])
+FORGER = params["claim"] == "homeostasis" # грошовий напрям підробки: «я в гомеостазі» на КОЖНОМУ кадрі
 h, frames, trees, lost_at = params.values_at("h", "frames", "trees", "lost_at")
 FIXED_TEMP = params["temp"]
 SERVER_NARROWS = params["server"] == "float32"
@@ -82,7 +87,7 @@ def run_tree(seed:, frames:, h:, lost_at:)
 
     _, sx, sy, sz = A.calculate_z_from_state(*server, temp, 0)
     server = server_state([ sx, sy, sz ])
-    device_in = in_band?(dz, temp) # обидві сторони судять double-Z до звуження
+    device_in = FORGER || in_band?(dz, temp) # обидві сторони судять double-Z до звуження
     next if device_in == in_band?(sz, temp)
 
     recovered = [ day, day - 1, RTC_DEFAULT_EPOCH_DAY ].any? do |d|
@@ -104,14 +109,15 @@ per_day = 24.0 / h
 report = lambda do |runs, judged|
   %i[false_fraud spurious_time_sync].each do |key|
     p_frame = sum.(runs, key).fdiv(judged)
-    puts format("    %-24s %.4f на кадр ⇒ P(≥1 на дерево-добу) ≈ %.3f", key == :false_fraud ? "хибний P0 fraud" : "хибний time-sync (ARCH.41)",
-                p_frame, 1 - (1 - p_frame)**per_day)
+    puts format("    %-24s %.4f на кадр (%d із %d) ⇒ P(≥1 на дерево-добу) ≈ %.3f",
+                key == :false_fraud ? "хибний P0 fraud" : "хибний time-sync (ARCH.41)",
+                p_frame, sum.(runs, key), judged, 1 - (1 - p_frame)**per_day)
   end
   puts "    дерев без жодного прапорця: #{runs.count { |r| r.values.sum.zero? }} із #{trees} (горизонт #{format('%.0f', frames * h / 24.0)} діб)"
 end
 
 puts "dci_chain_loss — #{trees} дерев × #{frames} кадрів, каденс #{h} год (#{format('%.1f', per_day)} кадр/добу), " \
-     "температура #{FIXED_TEMP ? "стала #{FIXED_TEMP} °C" : 'добова синусоїда 10 ± 8 °C'}, сервер #{params['server']}"
+     "температура #{FIXED_TEMP ? "стала #{FIXED_TEMP} °C" : 'добова синусоїда 10 ± 8 °C'}, сервер #{params['server']}, статус #{FORGER ? 'ВИБРАНО homeostasis (фальсифікатор)' : 'обчислено'}"
 puts "  без втрат:"
 report.(clean, trees * frames)
 if lossy
@@ -119,4 +125,4 @@ if lossy
   report.(lossy, trees * (frames - lost_at - 1))
 end
 # Код виходу — вердикт про ТОЧНІСТЬ: при server=float32 без втрат ланцюги мусять збігатися.
-exit(SERVER_NARROWS && (sum.(clean, :false_fraud) + sum.(clean, :spurious_time_sync)).positive? ? 1 : 0)
+exit(SERVER_NARROWS && !FORGER && (sum.(clean, :false_fraud) + sum.(clean, :spurious_time_sync)).positive? ? 1 : 0)

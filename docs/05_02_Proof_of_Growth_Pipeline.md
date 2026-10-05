@@ -896,7 +896,7 @@ telemetry_log.update!(
 )
 ```
 
-**Інваріант:** обидві сторони (Soldier mruby + backend Ruby) стартують з **байт-ідентичного** `(x₀, y₀, z₀)` для тієї самої пари `(K_seed, epoch_day)`. Daily epoch rotation (UTC, 86400 сек) синхронізована через FW.20 `CMD_TIME_SYNC` → forward secrecy ≤ 24 год. ⚠️ **Не тримається (виміряно кодом 2026-10-05):** обертається лише ВХІД cold start, а cold start буває лише після втрати VBAT чи збою VM — сталий режим іде продовженням FW.6 без ротації, тож злитий `K_seed` чи стан RTC дає підробку до наступного cold start; той самий теплий ланцюг рветься й від втраченого кадру ([`03_04 §7.3`](03_04_mruby_Lorenz_Attractor); нота під таблицею загроз [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning); ⚖️ якоря — [`00_07`](00_07_Action_Plan_Tracker) FW.66).
+**Інваріант:** обидві сторони (Soldier mruby + backend Ruby) стартують з **байт-ідентичного** `(x₀, y₀, z₀)` для тієї самої пари `(K_seed, epoch_day)`. Daily epoch rotation (UTC, 86400 сек) синхронізована через FW.20 `CMD_TIME_SYNC` → forward secrecy ≤ 24 год. ⚠️ **Не тримається** ні для злитого `K_seed` (він статичний, а `epoch_day` публічний), ні для злитого стану (сталий режим не ротується, а сервер не ре-якориться ніколи) — нота під таблицею загроз [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning); механізм ланцюга — [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor), ⚖️ — [`00_07`](00_07_Action_Plan_Tracker) FW.66.
 
 ### Ефект на Dual Computation Integrity
 
