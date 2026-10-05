@@ -78,14 +78,19 @@ RSpec.describe Hil::SoldierNode do
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
 
+    # [FW.66] Пін РІВНІСТЮ, не допуском: обидва хвости — float32 (RTC DR16–DR18), і після
+    # кількох кадрів вони мусять збігатися біт у біт. Мутація: прибери `as_rtc_state` з будь-
+    # якого боку (`TelemetryUnpackerService` · `Hil::SoldierNode`) — червоніє вже перший кадр,
+    # бо double-хвіст ≠ float32-хвіст; доти пін тримав `be_within(1e-9)` проти double-Z і був
+    # зеленим саме тому, що обидва боки однаково НЕ звужували.
     it "keeps the server's persisted tail in step with the node's own tail" do
-      reading = soldier.read(tree, **sensors)
-      send_packet(reading)
+      5.times do |i|
+        send_packet(soldier.read(tree, **sensors))
+        log = TelemetryLog.order(:id).last
 
-      log = TelemetryLog.last
-      # Сервер округлює до 4 знаків при персисті `z_value`; хвіст — повний Float.
-      expect(log.lorenz_state_z).to be_within(1e-9).of(reading.z)
-      expect(log.cold_start_flag).to be(true)
+        expect(log.cold_start_flag).to be(i.zero?)
+        expect([ log.lorenz_state_x, log.lorenz_state_y, log.lorenz_state_z ]).to eq(soldier.tail(tree.did))
+      end
     end
 
     # ⊥ ЛІХТАР. Без нього приклад вище зелений і на симуляторі, який ВГАДУЄ статус:

@@ -1597,7 +1597,8 @@ end
       described_class.call(normal)
 
       expect(starts.size).to eq(2)
-      expect(starts.last).to eq([ 0.1, 0.2, 0.3 ])
+      # [FW.66] Хвіст ДО паніки — у тій формі, в якій його персистять: float32, як RTC Солдата.
+      expect(starts.last).to eq(SilkenNet::Attractor.as_rtc_state([ 0.1, 0.2, 0.3 ]))
     end
   end
 

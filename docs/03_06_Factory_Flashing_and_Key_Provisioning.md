@@ -532,7 +532,7 @@ STEADY-STATE (FW.6 continuation; кожне пробудження)
 [payload_byte, x_f, y_f, z_f] = mruby calculate_state(
                                   x_prev, y_prev, z_prev,
                                   temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
-write RTC DR16-DR18 = (x_f, y_f, z_f); DR19 = "LZST"
+write RTC DR16-DR18 = (float)(x_f, y_f, z_f); DR19 = "LZST"   # float32: так стан і живе між кадрами
 
 ═══════════════════════════════════════════════════════════════════════
 SERVER MIRROR (TelemetryUnpackerService, byte-identical mathematics)
@@ -549,9 +549,11 @@ ELSE:
   cold_start_flag = false
   (x₀,y₀,z₀) = (prev.lorenz_state_x, prev.lorenz_state_y, prev.lorenz_state_z)
 
+(x₀,y₀,z₀) = Attractor.as_rtc_state(x₀, y₀, z₀)    # [FW.66] float32, як RTC Солдата (і cold-start теж)
 server_z, x_f, y_f, z_f = Attractor.calculate_z_from_state(
                             x₀, y₀, z₀, temp, acoustic, delta_t_s, vcap_mv)
-log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
+# check_z_divergence! судить z_f (double) — так класифікує й пристрій, до звуження
+log.update!(lorenz_state_(x|y|z): Attractor.as_rtc_state(x_f, y_f, z_f),
             cold_start_flag: cold_start_flag)
 ```
 

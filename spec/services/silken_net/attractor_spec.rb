@@ -23,6 +23,21 @@ RSpec.describe SilkenNet::Attractor do
     described_class.calculate_z_from_state(x, y, z, temp, acoustic, dt, vcap).first
   end
 
+  # [FW.66] Звуження стану до float32 — дзеркало RTC DR16–DR18 Солдата. Пінимо точне
+  # значення (float32-сусід 0.1, а не саме 0.1) та ідемпотентність: повторне звуження
+  # хвоста, вже записаного float32, не сміє його рухати.
+  describe ".as_rtc_state" do
+    it "narrows each coordinate to the nearest float32, exactly as `(float)` in C" do
+      expect(described_class.as_rtc_state([ 0.1, -2.5, 1.0 / 3 ]))
+        .to eq([ 0.10000000149011612, -2.5, 0.3333333432674408 ])
+    end
+
+    it "is idempotent — a tail already stored as float32 does not move" do
+      once = described_class.as_rtc_state([ 0.42, -0.17, 0.31 ])
+      expect(described_class.as_rtc_state(once)).to eq(once)
+    end
+  end
+
   describe ".calculate_z_from_state" do
     it "returns [z_rounded, x_final, y_final, z_final] of finite Floats" do
       result = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)

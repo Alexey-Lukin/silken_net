@@ -76,6 +76,9 @@ module Hil
 
     def cold?(did) = !@tails.key?(did)
 
+    # [FW.66] Хвіст ланцюга вузла — float32, як у RTC DR16–DR18 справжнього Солдата.
+    def tail(did) = @tails[did]
+
     # Обчислює кадр і РУХАЄ ланцюг. `received_at` мусить бути тим самим моментом,
     # який поїде в `UnpackTelemetryWorker` — з нього деривується `epoch_day`
     # cold-start'у, і розходження тут ламає DCI на чесному вузлі (ARCH.41).
@@ -94,8 +97,12 @@ module Hil
       end
 
       cold = cold?(tree.did)
-      x0, y0, z0 = @tails[tree.did] || restore_rtc(tree) ||
-                   SilkenNet::SeedDerivation.initial_state(seed, received_at.utc.to_i / 86_400)
+      # [FW.66] Пристрій тримає стан у float32 і на cold-start теж звужує (`*x0 = (float)dx`):
+      # двійник у double був би зеленим проти double-сервера ЗА ПОБУДОВОЮ — і сліпим до розриву.
+      x0, y0, z0 = SilkenNet::Attractor.as_rtc_state(
+        @tails[tree.did] || restore_rtc(tree) ||
+        SilkenNet::SeedDerivation.initial_state(seed, received_at.utc.to_i / 86_400)
+      )
 
       # `[3]` — СИРИЙ фінальний Z. Прошивка класифікує саме ним
       # (`calculate_z_axis` → `[z, x, y, z]`, без round); `[0]` округлений до 4 знаків
@@ -103,7 +110,7 @@ module Hil
       _z_rounded, x_f, y_f, z_f = SilkenNet::Attractor.calculate_z_from_state(
         x0, y0, z0, temperature_c, acoustic, metabolism_s, voltage_mv
       )
-      @tails[tree.did] = [ x_f, y_f, z_f ]
+      @tails[tree.did] = SilkenNet::Attractor.as_rtc_state([ x_f, y_f, z_f ])
 
       status_byte = SilkenNet::Attractor.pack_status_byte(
         z_f, temperature_c, metabolism_s,

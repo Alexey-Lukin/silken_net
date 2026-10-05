@@ -528,7 +528,8 @@ class TelemetryUnpackerService < ApplicationService
   # Паритет DCI — це й КІЛЬКІСТЬ кроків, не лише їхня арифметика (telemetry-pipeline #3):
   # на panic-кадрі пристрій Лоренц не крокує, тож і сервер не крокує, не персистить
   # хвіст і не судить DCI — інакше наступний кадр стартував би зі стану, якого
-  # пристрій не мав, і ланцюги розходились би до cold-start. ⛔ «255 → 0», як для
+  # пристрій не мав, і ланцюги розходились би назавжди: сервер не ре-якориться, а
+  # cold-start пристрою його хвоста не скидає (`03_04 §7.3`). ⛔ «255 → 0», як для
   # сентинела 0xFE, паритету не відновлює: крок лишився б зайвим.
   def step_lorenz_and_judge!(tree, attributes, status_byte)
     return if attributes[:panic]
@@ -542,6 +543,11 @@ class TelemetryUnpackerService < ApplicationService
 
     check_z_divergence!(tree, attributes)
     check_metabolic_divergence!(tree, attributes, status_byte)
+
+    # [FW.66] Судили double-Z (так класифікує пристрій); персиститься хвіст, звужений до
+    # float32, — рівно той стан, з якого Солдат почне наступний кадр (RTC DR16–DR18).
+    attributes[:lorenz_state_x], attributes[:lorenz_state_y], attributes[:lorenz_state_z] =
+      SilkenNet::Attractor.as_rtc_state(lorenz_xyz)
   end
 
   # [FW.17] Dual-Key Grace дерева. MIC — автентифікований доказ ключа, тож саме
@@ -670,7 +676,10 @@ class TelemetryUnpackerService < ApplicationService
     # давав ІНШИЙ день → іншу стартову точку (x₀,y₀,z₀) → категоричний DCI-мисматч
     # на ЧЕСНОМУ дереві. ⚠️ І саме тут його нікому зловити: `try_time_sync_recovery`
     # (ARCH.41-A) гейтований `!cold_start_flag`, а це — гілка cold_start.
-    x0, y0, z0 = previous || SilkenNet::SeedDerivation.initial_state(seed_bytes, derivation_epoch_day)
+    # [FW.66] Старт — float32, як у Солдата (cold-start теж звужує: `*x0 = (float)dx`).
+    x0, y0, z0 = SilkenNet::Attractor.as_rtc_state(
+      previous || SilkenNet::SeedDerivation.initial_state(seed_bytes, derivation_epoch_day)
+    )
 
     z_rounded, x_final, y_final, z_final = SilkenNet::Attractor.calculate_z_from_state(
       x0, y0, z0,
@@ -994,7 +1003,7 @@ class TelemetryUnpackerService < ApplicationService
     vcap     = attributes[:voltage_mv]
 
     candidates.each do |epoch_day|
-      x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)
+      x0, y0, z0 = SilkenNet::Attractor.as_rtc_state(SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day))
       *, z_candidate = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
       next unless bands.any? { |band| in_lorenz_band?(z_candidate, band, temp) == device_in_band }
 
