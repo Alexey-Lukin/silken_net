@@ -1,0 +1,257 @@
+{
+  "question": "hours per 30 years with the ISOLATED capsule below the EDLC operating floor, with the night sky (00_07 HW.37); the edge 71 left open",
+  "method": "71's lump (geometry, Churchill–Chu with |ΔT|, Churchill–Bernstein) + 79's Brutsaert clear sky; steady per hour, full T⁴, vectorised bisection",
+  "inputs": {
+    "geometry": {
+      "dome_diameter_mm": 29.8,
+      "h_over_bark_mm": 18.0,
+      "h_over_bark_from": "radome.json cavity_height_mm + bell_radius_mm (01_04 §5.5: порожнина + корона)",
+      "a_proj_max_mm2": 879.88,
+      "a_exp_mm2": 2382.62
+    },
+    "epsilon": 0.9,
+    "sky_view": 0.5,
+    "alpha": 0.5,
+    "regimes": {
+      "clear": "Brutsaert 1975 via 79 (ERA5 dew point)",
+      "overcast": "T_sky = T_air",
+      "no_sun": "no solar gain",
+      "diffuse_sun": "ERA5 diffuse through F, no beam"
+    },
+    "wind_k": [
+      0.0,
+      0.1,
+      0.3
+    ],
+    "edlc_floor_c": -25.0,
+    "capsule_requirement_min_c": -40.0,
+    "n_hours": 262992,
+    "years": 30.0
+  },
+  "controls": {
+    "mechanism_vs_79": {
+      "reference_hour": {
+        "t_air_C": -10.0,
+        "t_dew_C": -13.0
+      },
+      "depression_here_K": -5.742,
+      "depression_in_79_K": -5.74
+    },
+    "overcast_no_sun_equals_air_every_hour": true,
+    "air_count_equals_71": {
+      "hours": 64,
+      "days": 9
+    },
+    "unbroken_hourly_clock": true
+  },
+  "air": {
+    "hours_below_floor": 64,
+    "days_below_floor": 9,
+    "longest_spell_below_floor_h": 10,
+    "hours_below_capsule_requirement": 0,
+    "coldest_c": -27.4,
+    "at": "1997-12-17T09:00",
+    "t_air_at_coldest_c": -27.4,
+    "depression_at_coldest_K": 0.0
+  },
+  "runs": {
+    "clear_no_sun": {
+      "k=0.0": {
+        "hours_below_floor": 565,
+        "days_below_floor": 63,
+        "longest_spell_below_floor_h": 106,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -33.53,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -6.13
+      },
+      "k=0.1": {
+        "hours_below_floor": 251,
+        "days_below_floor": 26,
+        "longest_spell_below_floor_h": 44,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -32.14,
+        "at": "2012-02-02T10:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -4.74
+      },
+      "k=0.3": {
+        "hours_below_floor": 155,
+        "days_below_floor": 18,
+        "longest_spell_below_floor_h": 29,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -30.55,
+        "at": "2012-02-02T10:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -3.15
+      }
+    },
+    "overcast_no_sun": {
+      "k=0.0": {
+        "hours_below_floor": 64,
+        "days_below_floor": 9,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.4,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.0
+      },
+      "k=0.1": {
+        "hours_below_floor": 64,
+        "days_below_floor": 9,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.4,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.0
+      },
+      "k=0.3": {
+        "hours_below_floor": 64,
+        "days_below_floor": 9,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.4,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.0
+      }
+    },
+    "clear_diffuse_sun": {
+      "k=0.0": {
+        "hours_below_floor": 509,
+        "days_below_floor": 61,
+        "longest_spell_below_floor_h": 59,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -33.5,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -6.1
+      },
+      "k=0.1": {
+        "hours_below_floor": 225,
+        "days_below_floor": 25,
+        "longest_spell_below_floor_h": 22,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -31.3,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -3.9
+      },
+      "k=0.3": {
+        "hours_below_floor": 144,
+        "days_below_floor": 17,
+        "longest_spell_below_floor_h": 20,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -29.91,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": -2.51
+      }
+    },
+    "overcast_diffuse_sun": {
+      "k=0.0": {
+        "hours_below_floor": 57,
+        "days_below_floor": 7,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.35,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.05
+      },
+      "k=0.1": {
+        "hours_below_floor": 61,
+        "days_below_floor": 8,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.38,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.02
+      },
+      "k=0.3": {
+        "hours_below_floor": 62,
+        "days_below_floor": 8,
+        "longest_spell_below_floor_h": 10,
+        "hours_below_capsule_requirement": 0,
+        "coldest_c": -27.39,
+        "at": "1997-12-17T09:00",
+        "t_air_at_coldest_c": -27.4,
+        "depression_at_coldest_K": 0.01
+      }
+    }
+  },
+  "edges": {
+    "deep": {
+      "regime": "clear_no_sun",
+      "wind": "k=0.0",
+      "hours_below_floor": 565,
+      "days_below_floor": 63,
+      "longest_spell_below_floor_h": 106,
+      "hours_below_capsule_requirement": 0,
+      "coldest_c": -33.53,
+      "at": "1997-12-17T09:00",
+      "t_air_at_coldest_c": -27.4,
+      "depression_at_coldest_K": -6.13
+    },
+    "shallow": {
+      "regime": "overcast_diffuse_sun",
+      "wind": "k=0.0",
+      "hours_below_floor": 57,
+      "days_below_floor": 7,
+      "longest_spell_below_floor_h": 10,
+      "hours_below_capsule_requirement": 0,
+      "coldest_c": -27.35,
+      "at": "1997-12-17T09:00",
+      "t_air_at_coldest_c": -27.4,
+      "depression_at_coldest_K": 0.05
+    },
+    "coldest_c": -33.53,
+    "longest_spell_below_floor_h": 106,
+    "max_hours_below_capsule_requirement": 0,
+    "deep_over_air": 8.83
+  },
+  "sky_on_cold_days": {
+    "winter_months": [
+      12,
+      1,
+      2
+    ],
+    "sunshine_dni_w_m2": 120.0,
+    "all_winter_days": {
+      "daylight_hours": 25381,
+      "sunshine_share": 0.32
+    },
+    "days_with_air_min_below": {
+      "-15": {
+        "daylight_hours": 1670,
+        "sunshine_share": 0.66
+      },
+      "-20": {
+        "daylight_hours": 459,
+        "sunshine_share": 0.75
+      },
+      "-25": {
+        "daylight_hours": 88,
+        "sunshine_share": 0.84
+      }
+    },
+    "u10_median_m_s": {
+      "hours_air_below_floor": 3.3,
+      "all_winter_hours": 3.5
+    }
+  },
+  "verdict": "With the night sky the isolated capsule spends between 57 h on 7 days (overcast sky every hour, diffuse sun, still air) and 565 h on 63 days (clear sky every hour, no sun, still air) in 30 years below the EDLC floor −25 °C, against the air's 64 h on 9 days — up to ×8.8; the longest spell below the floor is 106 h and the coldest capsule hour −33.5 °C; no run crosses the capsule requirement −40 °C. A real winter lies between the edges. On the winter days the air falls below the floor, ERA5's own daylight sky is sunny for 0.84 of its hours against 0.32 for every winter day (direct normal irradiance ≥ 120 W/m², the WMO threshold; the day's sky as the night's proxy), so near the floor the site leans to the clear end; its 10-m wind in the hours below the floor has a median of 3.3 m/s against 3.5 m/s for every winter hour.",
+  "ceilings": [
+    "isolated lump — no heat from the bark through the flange: colder than the capsule tied to the flange",
+    "clear sky every hour at the clear end; real cloud cover is not in the tree",
+    "no sun all day with a clear sky is below any real winter day — the model's lower bound, as in 79",
+    "steady per hour — the capsule's heat capacity is not modelled; it averages past hours, so the minima here are not shallower than with it, while the hour count and the spell are not bounded the same way",
+    "one isothermal lump — the temperature INSIDE the capsule is the thermocouple leg of HW.37",
+    "ERA5 smooths station extremes — the true cold edge sits lower by an unknown margin",
+    "no snow or rime on the radome"
+  ]
+}

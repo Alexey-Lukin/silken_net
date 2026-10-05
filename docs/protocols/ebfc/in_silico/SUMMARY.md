@@ -760,7 +760,7 @@ Re-run 2026-09-30 on the Ø29.8 dome (the root verdict opened the Ø25 freeze fo
 
 Cold side: the air was below the −25 °C floor for 64 hours in 30 years (9 days, coldest −27.4 °C);
 the lump tracks the air at night in this model, and real sky cooling would make the capsule colder,
-so the count is a LOWER bound for the capsule.
+so the count is a LOWER bound for the capsule. With the sky it is computed by script 81 (next section).
 
 **Verdict** — the hot side is not exceeded for any finish in the sweep, but for a DARK finish in full
 sun the margin is of the order of the model's own uncertainty, while a light one keeps ≥ 15.0 K. The
@@ -772,6 +772,44 @@ ERA5 smoothing of station maxima (both move the hot answer UP), canopy transmitt
 is an upper bound under a crown), sky cooling at night (the cold count is a lower bound).
 (`thermal/capsule_envelope.json` → `hot_bound`, `hot_bound_h_c_sensitivity`, `aging`,
 `cold_hours_below_edlc_floor`)
+
+---
+
+## HW.37 — The Capsule's Cold Edge with the Night Sky (script 81)
+
+Canon home → [`02_03 §12.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.37.
+
+Script 71 leaves the cold side as a lower bound on purpose: its lump has no sky, so every hour without sun returns
+the air. Script 79 has the sky but ties the capsule to the bark through the flange, and gives the isolated capsule
+at one reference hour only. Script 81 runs 71's isolated lump hourly over the same thirty ERA5 years with 79's sky
+term (Brutsaert clear-sky emissivity from the ERA5 dew point), natural convection called with |ΔT| and long-wave at
+full T⁴, bracketed by sky (clear every hour ⊥ overcast every hour), sun (none ⊥ ERA5 diffuse on half a sky at the
+lightest specified α 0.50, no beam) and trunk wind (u = k·u10, k = 0 / 0.1 / 0.3). Four controls can fail: 79's
+reference hour, overcast with no sun returning the air EXACTLY on every hour, the air count equal to 71's, and an
+unbroken hourly clock. The second earned its keep on the first run: ERA5 air comes in 0.1 K steps, so hours sit ON
+the floor, and a root within the bisection tolerance tipped two of them below it — the solver now returns the air
+exactly where no gain meets no deficit.
+
+| Below −25 °C in 30 years: hours (days · longest spell) | Still air | u = 0.1·u10 | u = 0.3·u10 |
+|---|---|---|---|
+| Clear sky, no sun | 565 h (63 d · 106 h) | 251 h (26 d · 44 h) | 155 h (18 d · 29 h) |
+| Clear sky, diffuse sun | 509 h (61 d · 59 h) | 225 h (25 d · 22 h) | 144 h (17 d · 20 h) |
+| Overcast, no sun — the air itself | 64 h (9 d · 10 h) | 64 h (9 d · 10 h) | 64 h (9 d · 10 h) |
+| Overcast, diffuse sun | 57 h (7 d · 10 h) | 61 h (8 d · 10 h) | 62 h (8 d · 10 h) |
+
+Which end the site leans to near the floor is read on ERA5's own sky: on the winter days the air falls below −25 °C,
+0.84 of the daylight hours are sunny (direct normal irradiance ≥ 120 W/m², the WMO threshold) against 0.32 for every
+winter day — the day's sky as the night's proxy — while the 10-m wind in the hours below the floor has a median of
+3.3 m/s against 3.5 m/s for every winter hour. The sky near the floor is clear; the air is not calm.
+
+**Verdict** — the isolated capsule spends between 57 h (7 days) and 565 h (63 days) in 30 years below the EDLC
+floor, against the air's 64 h; the longest spell below it is up to 106 h and the coldest capsule hour −33.5 °C; no
+run crosses the capsule requirement −40 °C. Near the floor the site leans to the clear end, while the still-air
+column is a bound rather than the typical case — so the clear rows with wind are the nearest the tree comes to a
+typical winter, with k itself ours. NOT modelled: the bark's heat through the flange and the capsule's heat capacity
+(the first makes it warmer, the second raises its minimum), ERA5 smoothing of station minima (moves the edge DOWN),
+snow or rime on the radome; the temperature INSIDE the capsule is the thermocouple leg of HW.37.
+(`thermal/capsule_cold_edge_sky.json` → `runs`, `edges`, `sky_on_cold_days`, `controls`)
 
 ---
 

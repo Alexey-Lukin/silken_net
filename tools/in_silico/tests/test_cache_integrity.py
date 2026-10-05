@@ -1809,3 +1809,76 @@ def test_flange_cambium_frost_invariants():
     mech = d["mechanism"]
     assert mech["bark"]["equilibrium_minus_air_K"] < mech["capsule"]["equilibrium_minus_air_K"] < 0.0
     assert mech["capsule"]["h_c_W_m2K"] > mech["bark"]["h_c_W_m2K"]
+
+
+def test_capsule_cold_edge_sky_invariants():
+    """81 (HW.37, the cold edge 71 leaves open): controls, physical signs and every verdict clause re-derived.
+
+    CAN catch: an air count that is not `71`'s (another file or another clock); a geometry drifted from `71`'s; the
+    reference hour off `79`'s cached depression; overcast with no sun not EQUAL to the air in every field and wind
+    (mutation: dropping the exact-root branch of `solve` tips the record's hours that sit on the floor below it and
+    reds here); the declared directions failing in any cell — a clear sky colder and longer below the floor than
+    overcast, no sun than diffuse sun, more wind pulling the sky-cooled capsule up and the sun-warmed one down (these
+    four signs also FIX which runs the edges are); edges that are not the extremes of their own runs; a verdict whose
+    numbers or edge words are not those edges.
+    CANNOT catch: whether ε, F, α or the cylinder correlations are right for a short tilted capsule, real cloud cover,
+    the capsule's heat capacity, the bark's heat through the flange, or ERA5's smoothing of station minima — the
+    declared ceilings.
+    """
+    d = json.loads((THERMAL / "capsule_cold_edge_sky.json").read_text(encoding="utf-8"))
+    runs, air, e, v = d["runs"], d["air"], d["edges"], d["verdict"]
+    c71 = json.loads((THERMAL / "capsule_envelope.json").read_text(encoding="utf-8"))
+    cold71 = c71["cold_hours_below_edlc_floor"]
+    assert (air["hours_below_floor"], air["days_below_floor"], air["coldest_c"]) == (
+        cold71["hours"], cold71["days"], cold71["coldest_air_c"])
+    assert d["inputs"]["geometry"] == c71["geometry"]
+    mech79 = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))["mechanism"]
+    ctl = d["controls"]["mechanism_vs_79"]
+    assert ctl["depression_in_79_K"] == mech79["capsule"]["equilibrium_minus_air_K"]
+    assert abs(ctl["depression_here_K"] - ctl["depression_in_79_K"]) <= 0.01
+    assert set(runs) == {"clear_no_sun", "overcast_no_sun", "clear_diffuse_sun", "overcast_diffuse_sun"}
+    winds = [f"k={k}" for k in d["inputs"]["wind_k"]]
+    for k in winds:
+        assert {f: runs["overcast_no_sun"][k][f] for f in air} == air      # 71's lump without gain IS the air
+        for sun in ("no_sun", "diffuse_sun"):
+            clear, over = runs[f"clear_{sun}"][k], runs[f"overcast_{sun}"][k]
+            assert clear["hours_below_floor"] >= over["hours_below_floor"] and clear["coldest_c"] <= over["coldest_c"]
+        for sky in ("clear", "overcast"):
+            dark, lit = runs[f"{sky}_no_sun"][k], runs[f"{sky}_diffuse_sun"][k]
+            assert dark["hours_below_floor"] >= lit["hours_below_floor"] and dark["coldest_c"] <= lit["coldest_c"]
+    cool, warm = runs["clear_no_sun"], runs["overcast_diffuse_sun"]   # always below / always above the air
+    for a, b in itertools.pairwise(winds):
+        assert cool[a]["hours_below_floor"] >= cool[b]["hours_below_floor"] and cool[a]["coldest_c"] <= cool[b]["coldest_c"]
+        assert warm[a]["hours_below_floor"] <= warm[b]["hours_below_floor"] and warm[a]["coldest_c"] >= warm[b]["coldest_c"]
+    flat = [(n, k, r) for n, by_k in runs.items() for k, r in by_k.items()]
+    for _, _, r in flat:
+        assert r["days_below_floor"] <= r["hours_below_floor"] and r["longest_spell_below_floor_h"] <= r["hours_below_floor"]
+        assert (r["longest_spell_below_floor_h"] > 0) == (r["hours_below_floor"] > 0)
+    hours = [r["hours_below_floor"] for _, _, r in flat]
+    for name, pick in (("deep", max(hours)), ("shallow", min(hours))):
+        edge = e[name]
+        assert edge["hours_below_floor"] == pick
+        assert {f: edge[f] for f in air} == runs[edge["regime"]][edge["wind"]]
+    assert abs(e["coldest_c"] - min(r["coldest_c"] for _, _, r in flat)) <= 0.005   # edges keep the raw minimum
+    assert e["longest_spell_below_floor_h"] == max(r["longest_spell_below_floor_h"] for _, _, r in flat)
+    assert e["max_hours_below_capsule_requirement"] == max(r["hours_below_capsule_requirement"] for _, _, r in flat)
+    assert e["deep_over_air"] == round(e["deep"]["hours_below_floor"] / air["hours_below_floor"], 2)
+    for name in ("shallow", "deep"):
+        edge = e[name]
+        sky, sun = edge["regime"].split("_", 1)
+        assert f"{edge['hours_below_floor']} h on {edge['days_below_floor']} days ({sky} sky every hour, " \
+               f"{sun.replace('_', ' ')}, " in v
+    assert f"against the air's {air['hours_below_floor']} h on {air['days_below_floor']} days" in v
+    assert f"up to ×{e['deep']['hours_below_floor'] / air['hours_below_floor']:.1f}" in v
+    assert f"the longest spell below the floor is {e['longest_spell_below_floor_h']} h" in v
+    quoted = re.search(r"coldest capsule hour ([−-]?[\d.]+) °C", v)
+    assert quoted and abs(float(quoted.group(1).replace("−", "-")) - e["coldest_c"]) <= 0.05
+    assert ("no run crosses" in v) == (e["max_hours_below_capsule_requirement"] == 0)
+    sky = d["sky_on_cold_days"]
+    floor = sky["days_with_air_min_below"][f"{d['inputs']['edlc_floor_c']:.0f}"]
+    base, wind = sky["all_winter_days"], sky["u10_median_m_s"]
+    assert 0 < floor["daylight_hours"] < base["daylight_hours"] and 0.0 <= floor["sunshine_share"] <= 1.0
+    assert f"sunny for {floor['sunshine_share']:.2f} of its hours against {base['sunshine_share']:.2f}" in v
+    lean = "leans to the clear end" if floor["sunshine_share"] > base["sunshine_share"] else "does not lean"
+    assert f"the site {lean}" in v
+    assert f"a median of {wind['hours_air_below_floor']:.1f} m/s against {wind['all_winter_hours']:.1f} m/s" in v

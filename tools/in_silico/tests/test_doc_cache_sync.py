@@ -1971,6 +1971,95 @@ CHECKS += [
      SUMMARY, rf"9 days, coldest {N} °C\)", THERMAL, lambda d: d["cold_hours_below_edlc_floor"]["coldest_air_c"], 0.05),
 ]
 
+# 81 (HW.37, the cold edge with the sky): its canon sentence in 02_03 §12.1, its SUMMARY section and table, and the
+# ⊕ it adds to the quartz verdict in 02_02 §3.4 all quote this cache — the table cell by cell, generated below.
+COLD = "thermal/capsule_cold_edge_sky.json"
+_DAYS = r"(?:день|дні|днів)"
+
+
+def _cold_run(regime, k, field):
+    return lambda d: d["runs"][regime][k][field]
+
+
+def _cold_edge(edge, field):
+    return lambda d: d["edges"][edge][field]
+
+
+def _cold_sky(*path):
+    def resolve(d):
+        node = d["sky_on_cold_days"]
+        for key in path:
+            node = node[key]
+        return node
+    return resolve
+
+
+CHECKS += [
+    ("HW.37 · 02_03 capsule hours under the floor, shallow edge → capsule_cold_edge_sky.json",
+     POWER, rf"капсула лежить нижче −25 °C від \*\*{N} год\*\*", COLD, _cold_edge("shallow", "hours_below_floor"), 0.5),
+    ("HW.37 · 02_03 its days → capsule_cold_edge_sky.json",
+     POWER, rf"від \*\*\d+ год\*\* \({N} {_DAYS}; хмарно", COLD, _cold_edge("shallow", "days_below_floor"), 0.5),
+    ("HW.37 · 02_03 capsule hours under the floor, deep edge → capsule_cold_edge_sky.json",
+     POWER, rf"до \*\*{N} год\*\* \(\d+ {_DAYS}; ясно", COLD, _cold_edge("deep", "hours_below_floor"), 0.5),
+    ("HW.37 · 02_03 its days → capsule_cold_edge_sky.json",
+     POWER, rf"до \*\*\d+ год\*\* \({N} {_DAYS}; ясно", COLD, _cold_edge("deep", "days_below_floor"), 0.5),
+    ("HW.37 · 02_03 clear sky, k 0.1, diffuse sun → capsule_cold_edge_sky.json",
+     POWER, rf"з вітром `k` = 0\.1 — \*\*{N}–\d+ год\*\*", COLD,
+     _cold_run("clear_diffuse_sun", "k=0.1", "hours_below_floor"), 0.5),
+    ("HW.37 · 02_03 clear sky, k 0.1, no sun → capsule_cold_edge_sky.json",
+     POWER, rf"з вітром `k` = 0\.1 — \*\*\d+–{N} год\*\*", COLD, _cold_run("clear_no_sun", "k=0.1", "hours_below_floor"), 0.5),
+    ("HW.37 · 02_03 longest spell under the floor → capsule_cold_edge_sky.json",
+     POWER, rf"відрізок — до \*\*{N} год\*\*", COLD, lambda d: d["edges"]["longest_spell_below_floor_h"], 0.5),
+    ("HW.37 · 02_03 coldest capsule hour → capsule_cold_edge_sky.json",
+     POWER, rf"найхолодніша година — \*\*{N} °C\*\*", COLD, lambda d: d["edges"]["coldest_c"], 0.05),
+    ("HW.37 · 02_03 sunshine share on the floor days → capsule_cold_edge_sky.json",
+     POWER, rf"сонячні \*\*{N}\*\* світлових годин", COLD, _cold_sky("days_with_air_min_below", "-25", "sunshine_share"), 0.005),
+    ("HW.37 · 02_03 sunshine share, whole winter → capsule_cold_edge_sky.json",
+     POWER, rf"проти \*\*{N}\*\* для всієї зими", COLD, _cold_sky("all_winter_days", "sunshine_share"), 0.005),
+    ("HW.37 · 02_03 wind under the floor → capsule_cold_edge_sky.json",
+     POWER, rf"медіана вітру на 10 м \*\*{N} м/с\*\*", COLD, _cold_sky("u10_median_m_s", "hours_air_below_floor"), 0.05),
+    ("HW.37 · 02_03 wind, whole winter → capsule_cold_edge_sky.json",
+     POWER, rf"м/с\*\* проти \*\*{N}\*\* для зими", COLD, _cold_sky("u10_median_m_s", "all_winter_hours"), 0.05),
+    ("HW.37 · SUMMARY 81 sunshine share on the floor days → capsule_cold_edge_sky.json",
+     SUMMARY, rf"{N} of the daylight hours are sunny", COLD, _cold_sky("days_with_air_min_below", "-25", "sunshine_share"), 0.005),
+    ("HW.37 · SUMMARY 81 sunshine share, whole winter → capsule_cold_edge_sky.json",
+     SUMMARY, rf"the WMO threshold\) against {N} for every\s+winter day", COLD, _cold_sky("all_winter_days", "sunshine_share"), 0.005),
+    ("HW.37 · SUMMARY 81 wind under the floor → capsule_cold_edge_sky.json",
+     SUMMARY, rf"has a median of\s+{N} m/s against", COLD, _cold_sky("u10_median_m_s", "hours_air_below_floor"), 0.05),
+    ("HW.37 · SUMMARY 81 wind, whole winter → capsule_cold_edge_sky.json",
+     SUMMARY, rf"m/s against {N} m/s for every winter hour", COLD, _cold_sky("u10_median_m_s", "all_winter_hours"), 0.05),
+    ("HW.37 · SUMMARY 81 verdict, shallow hours → capsule_cold_edge_sky.json",
+     SUMMARY, rf"spends between {N} h \(\d+ days\)", COLD, _cold_edge("shallow", "hours_below_floor"), 0.5),
+    ("HW.37 · SUMMARY 81 verdict, shallow days → capsule_cold_edge_sky.json",
+     SUMMARY, rf"spends between \d+ h \({N} days\)", COLD, _cold_edge("shallow", "days_below_floor"), 0.5),
+    ("HW.37 · SUMMARY 81 verdict, deep hours → capsule_cold_edge_sky.json",
+     SUMMARY, rf"and {N} h \(\d+ days\) in 30 years", COLD, _cold_edge("deep", "hours_below_floor"), 0.5),
+    ("HW.37 · SUMMARY 81 verdict, deep days → capsule_cold_edge_sky.json",
+     SUMMARY, rf"and \d+ h \({N} days\) in 30 years", COLD, _cold_edge("deep", "days_below_floor"), 0.5),
+    ("HW.37 · SUMMARY 81 verdict, the air's hours → capsule_cold_edge_sky.json",
+     SUMMARY, rf"against the air's {N} h;", COLD, lambda d: d["air"]["hours_below_floor"], 0.5),
+    ("HW.37 · SUMMARY 81 verdict, longest spell → capsule_cold_edge_sky.json",
+     SUMMARY, rf"the longest spell below it is up to {N} h", COLD, lambda d: d["edges"]["longest_spell_below_floor_h"], 0.5),
+    ("HW.37 · SUMMARY 81 verdict, coldest capsule hour → capsule_cold_edge_sky.json",
+     SUMMARY, rf"the coldest capsule hour {N} °C;", COLD, lambda d: d["edges"]["coldest_c"], 0.05),
+    ("HW.37 · 02_02 §3.4 ⊕ to the quartz verdict, coldest capsule hour → capsule_cold_edge_sky.json",
+     "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md", rf"найхолодніша \*\*{N} °C\*\* \(ясно щогодини", COLD,
+     lambda d: d["edges"]["coldest_c"], 0.05),
+]
+_COLD_ROWS = {"clear_no_sun": "Clear sky, no sun", "clear_diffuse_sun": "Clear sky, diffuse sun",
+              "overcast_no_sun": "Overcast, no sun — the air itself", "overcast_diffuse_sun": "Overcast, diffuse sun"}
+for _regime, _label in _COLD_ROWS.items():
+    for _col, _k in enumerate(("k=0.0", "k=0.1", "k=0.3")):
+        _cell = rf"\| {re.escape(_label)} \|" + r" [^|]+ \|" * _col
+        CHECKS += [
+            (f"HW.37 · SUMMARY 81 table {_regime} {_k} hours → capsule_cold_edge_sky.json",
+             SUMMARY, _cell + rf" {N} h \(", COLD, _cold_run(_regime, _k, "hours_below_floor"), 0.5),
+            (f"HW.37 · SUMMARY 81 table {_regime} {_k} days → capsule_cold_edge_sky.json",
+             SUMMARY, _cell + rf" \d+ h \({N} d · ", COLD, _cold_run(_regime, _k, "days_below_floor"), 0.5),
+            (f"HW.37 · SUMMARY 81 table {_regime} {_k} longest spell → capsule_cold_edge_sky.json",
+             SUMMARY, _cell + rf" \d+ h \(\d+ d · {N} h\)", COLD, _cold_run(_regime, _k, "longest_spell_below_floor_h"), 0.5),
+        ]
+
 # 02_01 §5.2 — the radome-finish verdict (⚖️ delegated 2026-09-27: α ≤ 0.5, not a colour) quotes this same
 # cache as its basis. Once the tracker body was cemented into it, that paragraph became the ONLY doc home
 # of these numbers, and nothing pinned it — a re-run of 71 would have left the verdict's basis stale silently.
