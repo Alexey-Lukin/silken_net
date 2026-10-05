@@ -10,6 +10,7 @@
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
 #   ruby tools/firmware/board_area_budget.rb --booster nn02_224 --edlc fc --diameter 21
 #   ruby tools/firmware/board_area_budget.rb --pos19 verdict   # поз. 19 за присудом ⚖️ 2026-09-30 (⏸ до кореня не застосовано)
+#   ruby tools/firmware/board_area_budget.rb --standoffs m2x8  # стійки між деками — рекомендація HW.9 (⏸ член пакета кореня)
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -23,8 +24,8 @@
 #   • clearance-зона бустера не рахується: для землі нашого розміру числа немає
 #     в жодній прочитаній публікації (`02_01 §5.2`: 40 × 12 для NN03-310,
 #     20–60 × 11 для інших деталей) — рахується лише кортьярд самої деталі;
-#   • отвори стійок між поверхами (`02_01 §5.3`), UART-пади BFU-лоадера (умовні,
-#     `00_07` SEC.24) і тест-точки поза SWD не рахуються;
+#   • стійки між поверхами (`02_01 §5.3`) рахуються лише прочитанням `--standoffs` — член ⏸-пакета кореня,
+#     дефолт без них; UART-пади BFU-лоадера (умовні, `00_07` SEC.24) і тест-точки поза SWD не рахуються;
 #   • поз. 19 (RF-тракт) — до присуду 2026-09-30 клас без P/N (≈ 11 пасивів); за присудом (⚖️ founder,
 #     `02_01 §3.1`: дискретне узгодження AN5457 A.1.7 + SPDT BGS12WN6) рядок рахується поіменно —
 #     `POS19["verdict"]` нижче, — але ДЕФОЛТ лишається класовим: рядок присуду зсуває ціль контуру вище
@@ -71,6 +72,20 @@ POS19 = {
   "verdict" => [ "RF-тракт за присудом ⚖️ 2026-09-30: 23 × 0402 + BGS12WN6 TSNP-6 0.7 × 1.1 + 0.25/бік (поз. 19)", 23 * C0402 + rect(1.20, 1.60) ]
 }.freeze
 
+# Стійки між деками — позитивний упор Z (⚖️ founder 2026-10-05, `02_01 §3.4` поз. 24), × 2, P/N рекомендацією
+# (`00_07` HW.9; паспорти — `docs/protocols/hardware/deck_standoff_shortlist.md`). Кортьярд = пад або торець + 0.25
+# на бік: верх Power Deck — кільцевий пад (M2 Ø5.3 · M2.5 Ø6.0), низ RF Deck — торець корпусу (Ø4.35 · Ø5.1),
+# верх RF Deck — голова гвинта ISO 7045 (dk 4.0 · 5.0; P/N гвинта не обрано). Отвір під хвостовик іде крізь
+# Power Deck на його низ, якого модель не рахує (там проміжок pogo). Дефолт — без стійок: рух цілі — ⏸ пакетом.
+STANDOFFS = {
+  "none"   => [ "без стійок (дефолт; член ⏸-пакета кореня, `00_07` HW.9)", {} ],
+  "m2x8"   => [ "стійки Würth WA-SMSI M2 × 8.0 `9774080243R` × 2 (рекомендація HW.9, B2B 8.0)",
+                { "Power Deck, верх" => 2 * disc(5.80), "RF Deck, низ" => 2 * disc(4.85), "RF Deck, верх" => 2 * disc(4.50) } ],
+  "m2x8_stop" => [ "стійки Würth WA-SMSI M2 × 8.0 `9774080243R` × 2 БЕЗ гвинтів — лише упор (RF Deck без отворів)",
+                   { "Power Deck, верх" => 2 * disc(5.80), "RF Deck, низ" => 2 * disc(4.85) } ],
+  "m25x10" => [ "стійки Würth WA-SMSI M2.5 × 10.0 `9774100151R` × 2 (дельта B2B 10.0: M2 × 10 у серії немає)",
+                { "Power Deck, верх" => 2 * disc(6.50), "RF Deck, низ" => 2 * disc(5.60), "RF Deck, верх" => 2 * disc(5.50) } ]
+}.freeze
 # ⚖️ founder 2026-09-29 (`02_01 §6`): пʼєзо з Солдата зрізано — поз. 5 (пʼєзо) і поз. 6 (кламп BAT54S
 # + DNP-поріг перед EXTI) на платі немає. Бустер носія не має (поз. 4), а контур креслять під ОБВІДНУ
 # обох кандидатів — більший NN02-224 (⚖️ делеговано 2026-09-29, `00_07` HW.33; врізка `02_01 §3.5`):
@@ -93,7 +108,7 @@ B2B = { # поз. 12 — Samtec FW-D-SM Rev D: розмах падів 6.86, к�
   socket: rect(7.28, 5.20)
 }.freeze
 
-def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class")
+def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class", standoffs: "none")
   power = [
     [ "BQ25570 VQFN-20 3.5 × 3.5 (поз. 2; KiCad QFN-20-1EP_3.5x3.5mm)", rect(4.76, 4.76) ],
     [ "L1 22 µH Coilcraft LPS4018-223MRC (поз. 15, ⚖️ 2026-10-05; land pattern 4.40 × 3.89 + 0.25/бік)", rect(4.90, 4.40) ],
@@ -130,7 +145,10 @@ def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class")
            RADOME_CEM.fetch("pocket_opening_depth_mm") + (2 * RADOME_CEM.fetch("pocket_wall_mm"))) - rect(2.82, 3.08) ]
   ]
   rf_top << [ "пади THT-виводів EDLC × 2 (поз. 3)", EDLC.fetch(edlc)[2] ] if EDLC.fetch(edlc)[2].positive?
-  { "Power Deck, верх" => power, "RF Deck, низ" => rf_bottom, "RF Deck, верх" => rf_top }
+  sides = { "Power Deck, верх" => power, "RF Deck, низ" => rf_bottom, "RF Deck, верх" => rf_top }
+  label, areas = STANDOFFS.fetch(standoffs)
+  areas.each { |side, area| sides.fetch(side) << [ label, area ] }
+  sides
 end
 
 def usable(d) = disc(d - (2 * USABLE_EDGE_MM))
@@ -179,8 +197,8 @@ end
 
 # Ціль контуру = більше з двох осей: площа за 70 % заповнення (рівномірно по трьох сторонах) ·
 # геометрична підлога. ⚠️ Бустер — теж її вхід: носія немає (поз. 4), тож ціль береться під обвідну.
-def target_for(booster:, edlc:, rigid_flex:, pos19: "class")
-  area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:, pos19:)).values.sum / 3 / 0.7)
+def target_for(booster:, edlc:, rigid_flex:, pos19: "class", standoffs: "none")
+  area = diameter_for(sums(parts(booster:, edlc:, rigid_flex:, pos19:, standoffs:)).values.sum / 3 / 0.7)
   [ area, geometric_floor(edlc, socket: !rigid_flex) ]
 end
 
@@ -214,20 +232,22 @@ if ARGV == [ "--assert" ]
   exit(checks.values.all? ? 0 : 1)
 end
 
-opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM, pos19: "class" }
+opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM, pos19: "class", standoffs: "none" }
 ARGV.each_slice(2) do |flag, value|
   case flag
   when "--booster" then opts[:booster] = value
   when "--edlc" then opts[:edlc] = value
   when "--diameter" then opts[:diameter] = Float(value)
   when "--pos19" then opts[:pos19] = value
-  else abort "Usage: #{$PROGRAM_NAME} [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм] [--pos19 #{POS19.keys.join('|')}]"
+  when "--standoffs" then opts[:standoffs] = value
+  else abort "Usage: #{$PROGRAM_NAME} [--booster #{BOOSTER.keys.join('|')}] [--edlc #{EDLC.keys.join('|')}] [--diameter мм] [--pos19 #{POS19.keys.join('|')}] [--standoffs #{STANDOFFS.keys.join('|')}]"
   end
 end
 abort "невідомий --booster" unless BOOSTER.key?(opts[:booster])
 abort "невідомий --edlc" unless EDLC.key?(opts[:edlc])
 abort "невідомий --pos19" unless POS19.key?(opts[:pos19])
-variant = opts.slice(:booster, :edlc, :pos19)
+abort "невідомий --standoffs" unless STANDOFFS.key?(opts[:standoffs])
+variant = opts.slice(:booster, :edlc, :pos19, :standoffs)
 
 base = parts(**variant, rigid_flex: false)
 puts "Бюджет площі плати Солдата — кортьярди (HW.9, другий прохід)"
@@ -282,3 +302,14 @@ over = radome_for(alt[0]) > DOME_MM + 0.05
 puts format("поз. 19 — друге прочитання (--pos19 %s): %+.1f мм² → пара B2B Ø%.2f (радом ≈ Ø%.2f) / rigid-flex Ø%.2f — %s",
             other, POS19.fetch(other)[1] - POS19.fetch(opts[:pos19])[1], alt[0], radome_for(alt[0]), alt[1],
             over ? "НАД куполом radome.json: рух кореня — ⏸ пауза крони, `00_07` HW.9" : "під куполом radome.json")
+
+# Стійки — член того самого ⏸-пакета: друкуються окремо й разом із поз. 19 за присудом, бо корінь рухається ОДИН раз.
+STANDOFFS.each_key do |key|
+  next if key == "none"
+
+  alone = target_for(booster: opts[:booster], edlc: opts[:edlc], rigid_flex: false, pos19: "class", standoffs: key).max
+  both = target_for(booster: opts[:booster], edlc: opts[:edlc], rigid_flex: false, pos19: "verdict", standoffs: key).max
+  puts format("стійки --standoffs %s: %+.1f мм² → пара B2B Ø%.2f (радом ≈ Ø%.2f); разом із поз. 19 за присудом Ø%.2f (радом ≈ Ø%.2f) — %s",
+              key, STANDOFFS.fetch(key)[1].values.sum, alone, radome_for(alone), both, radome_for(both),
+              radome_for(alone) > DOME_MM + 0.05 ? "НАД куполом radome.json: рух кореня — ⏸ пакетом, `00_07` HW.9" : "під куполом radome.json")
+end
