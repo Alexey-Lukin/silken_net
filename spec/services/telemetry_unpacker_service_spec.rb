@@ -1616,6 +1616,45 @@ end
     end
   end
 
+  # [FW.66] VM_ERROR-кадр: Фаза 3 на пристрої впала — Лоренц не порахований, RTC не переписано,
+  # статусу з z немає. Тож, як і на паніці, сервер не крокує, не персистить хвіст і не судить DCI.
+  # Доти судив: `vm_error` ≠ homeostasis, а серверний z майже завжди в смузі, тож майже кожен
+  # VM_ERROR ставав P0 «fraud» на софт-збої прошивки (SLASH-1 читає його як firmware_fault).
+  # Стаб — z у смузі (20.0): на дефолтному 0.5 (поза смугою) старий шлях теж мовчав би.
+  describe "[FW.66] VM_ERROR-кадр не крокує Лоренц і не судить DCI" do
+    before { Rails.cache.clear }
+
+    let(:vm_error_chunk) { build_chunk(did_hex, -70, 3500, 22, 5, 100, 0x60, 3) }
+
+    it "не кличе fraud і не пише хвоста" do
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 20.0, 1.0, 2.0, 20.0 ])
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+
+      described_class.call(vm_error_chunk)
+
+      row = TelemetryLog.where(bio_status: :vm_error).sole
+      expect(row.attributes.values_at("z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z")).to all(be_nil)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "кадр ПІСЛЯ VM_ERROR стартує з хвоста ДО нього" do
+      tails = [ [ 0.1, 0.2, 0.3 ], [ 7.0, 8.0, 9.0 ], [ 1.0, 2.0, 3.0 ] ]
+      starts = []
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do |x0, y0, z0, *|
+        starts << [ x0, y0, z0 ]
+        [ 20.0, *tails[starts.size - 1] ]
+      end
+      normal = build_chunk(did_hex, -70, 3500, 22, 5, 100, 10, 3)
+
+      described_class.call(normal)
+      described_class.call(vm_error_chunk)
+      described_class.call(normal)
+
+      expect(starts.size).to eq(2)
+      expect(starts.last).to eq(SilkenNet::Attractor.as_rtc_state([ 0.1, 0.2, 0.3 ]))
+    end
+  end
+
   describe "#previous_lorenz_state_for [SEC.11]" do
     it "returns nil when the last Lorenz state row has a non-finite coordinate" do
       # Build a telemetry log with NaN in z to simulate corruption on disk.

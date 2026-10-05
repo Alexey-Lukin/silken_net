@@ -531,8 +531,11 @@ class TelemetryUnpackerService < ApplicationService
   # пристрій не мав, і ланцюги розходились би назавжди: сервер не ре-якориться, а
   # cold-start пристрою його хвоста не скидає (`03_04 §7.3`). ⛔ «255 → 0», як для
   # сентинела 0xFE, паритету не відновлює: крок лишився б зайвим.
+  # [FW.66] VM_ERROR — той самий випадок: Фаза 3 на пристрої впала, Лоренц не порахований
+  # (RTC не переписано), тож і статусу з z, який звіряла б DCI, немає. Доти кадр судився, і
+  # `vm_error` ≠ homeostasis робив майже кожен такий софт-збій P0 «fraud» (SLASH-1: не tamper).
   def step_lorenz_and_judge!(tree, attributes, status_byte)
-    return if attributes[:panic]
+    return if attributes[:panic] || attributes[:bio_status] == :vm_error
 
     server_z, lorenz_xyz, cold_start = compute_server_z(tree, attributes)
     attributes[:z_value]         = server_z
