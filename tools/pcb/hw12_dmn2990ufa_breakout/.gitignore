@@ -1,0 +1,4 @@
+# KiCad's per-user view state, and the upload zip the generator rebuilds from the text gerbers in fab/gerbers
+*.kicad_prl
+fab/*_gerbers.zip
+fab/drc.json
