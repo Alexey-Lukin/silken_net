@@ -239,7 +239,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 
 | Блок стенду | RUNBOOK-сеанс | Що атестує кремній |
 |---|---|---|
-| 3.1-3.2 Power | RUNBOOK §3 [дані для E.63] | STOP2 floor (PPK2), E_cycle, Vcap recharge-крива → калібрування delta_t |
+| 3.1-3.2 Power | RUNBOOK §3 [дані для E.63] | floor сну (PPK2), E_cycle, Vcap recharge-крива → калібрування delta_t |
 | 3.3 Compute | RUNBOOK §1-2 | flash/option-bytes, crypto-selftest (ccm/sym KAT ≡ OpenSSL) |
 | 3.4 Sense | RUNBOOK §6 (BME280 bullet) | I2C-глю (в коді ще нема) + gate-timing + VPD-калібрування |
 | 3.5 Security | RUNBOOK §6 (SE05x bullet) | cold-boot заряд + T1oI2C-латентність + SE sleep-floor за гейтом |
