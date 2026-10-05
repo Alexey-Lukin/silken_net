@@ -411,7 +411,9 @@ rb_dark() {
 # Обидві вхідні струни знято (одна переточена на скіл, друга — зі списку сиблінгів), рядок індексу злито.
 # 2026-09-28: 166 → 167 — `log_verdict_lifecycle` (тіла інстансів HW.17 · UNI.14 · FW.64, витіснені з
 # `feedback_verdict_lifecycle`, що вперся в робочу стелю 36 120 Б). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
+# 2026-10-05: 167 → 168 — `project_03_z_core_role` (ядро Z на Солдаті: три ролі в одному числі, виміри FW.66 і
+# розвилка «розвести ролі»). Підняття робить новий дім захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-168}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
