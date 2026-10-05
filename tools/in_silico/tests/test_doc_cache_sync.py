@@ -2063,6 +2063,65 @@ for _regime, _label in _COLD_ROWS.items():
              SUMMARY, _cell + rf" \d+ h \(\d+ d · {N} h\)", COLD, _cold_run(_regime, _k, "longest_spell_below_floor_h"), 0.5),
         ]
 
+# 82 (HW.33, the collar's running clearance): the ⊕ in 02_02 §4.4 and the SUMMARY section quote this cache.
+COLLAR = "mechanical/collar_running_clearance.json"
+HW_POGO = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"
+
+
+def _collar_th(key):
+    return lambda d: d["thermal_closing_mm"][key] * 1000.0
+
+
+def _collar_row(i, field):
+    return lambda d: d["routes"][i][field]
+
+
+CHECKS += [
+    ("HW.33 · 02_02 §4.4 interface Ø → collar_running_clearance.json",
+     HW_POGO, rf"смуги сокета на Ø{N}, тож", COLLAR, lambda d: d["interface"]["diameter_mm"], 0.05),
+    ("HW.33 · 02_02 §4.4 floor, isothermal at the requirement → collar_running_clearance.json",
+     HW_POGO, rf"Фізична підлога — \*\*{N} мкм\*\* на бік", COLLAR, _collar_th("isothermal_requirement"), 0.5),
+    ("HW.33 · 02_02 §4.4 floor, gradient bound → collar_running_clearance.json",
+     HW_POGO, rf"до \*\*{N} мкм\*\*, якщо Ti лишається", COLLAR, _collar_th("gradient_bound_requirement"), 0.5),
+    ("HW.33 · 02_02 §4.4 floor at 81's cold edge → collar_running_clearance.json",
+     HW_POGO, rf"`81` дає \*\*{N} мкм\*\*\)", COLLAR, _collar_th("isothermal_model_edge"), 0.5),
+    ("HW.33 · 02_02 §4.4 board ceiling, coarse end → collar_running_clearance.json",
+     HW_POGO, rf"стеля плати — \*\*{N}–[\d.]+ мм\*\* замість", COLLAR, _collar_row(-1, "ceiling_bound_mm"), 0.005),
+    ("HW.33 · 02_02 §4.4 board ceiling, machined end → collar_running_clearance.json",
+     HW_POGO, rf"стеля плати — \*\*[\d.]+–{N} мм\*\* замість", COLLAR, _collar_row(0, "ceiling_isothermal_mm"), 0.005),
+    ("HW.33 · SUMMARY floor, isothermal → collar_running_clearance.json",
+     SUMMARY, rf"The physics floor is {N} µm per side", COLLAR, _collar_th("isothermal_requirement"), 0.5),
+    ("HW.33 · SUMMARY floor, gradient bound → collar_running_clearance.json",
+     SUMMARY, rf"{N} µm if the Ti stays at 20 °C", COLLAR, _collar_th("gradient_bound_requirement"), 0.5),
+    ("HW.33 · SUMMARY floor at 81's edge → collar_running_clearance.json",
+     SUMMARY, rf"\({N} µm at `81`'s modelled cold edge\)", COLLAR, _collar_th("isothermal_model_edge"), 0.5),
+    ("HW.33 · SUMMARY verdict ceiling, coarse end → collar_running_clearance.json",
+     SUMMARY, rf"falls to\s+{N}–[\d.]+ mm rather than", COLLAR, _collar_row(-1, "ceiling_bound_mm"), 0.005),
+    ("HW.33 · SUMMARY verdict ceiling, machined end → collar_running_clearance.json",
+     SUMMARY, rf"falls to\s+[\d.]+–{N} mm rather than", COLLAR, _collar_row(0, "ceiling_isothermal_mm"), 0.005),
+]
+_COLLAR_DOC = {0: "обидві поверхні оброблені", 1: "литий пояс", 2: "грубе лиття"}
+_COLLAR_SUM = {0: "Machined collar · machined band (IT7 · IT9)", 1: "Machined collar · moulded band (IT7 · IT11)",
+               2: "Coarse: IT8 collar · IT12 moulded band"}
+for _i in range(3):
+    CHECKS += [
+        (f"HW.33 · 02_02 §4.4 route {_i} clearance, isothermal → collar_running_clearance.json",
+         HW_POGO, rf"{_COLLAR_DOC[_i]} — \*\*{N}–[\d.]+ мм\*\*", COLLAR, _collar_row(_i, "design_clearance_isothermal_mm"), 0.0005),
+        (f"HW.33 · 02_02 §4.4 route {_i} clearance, bound → collar_running_clearance.json",
+         HW_POGO, rf"{_COLLAR_DOC[_i]} — \*\*[\d.]+–{N} мм\*\*", COLLAR, _collar_row(_i, "design_clearance_bound_mm"), 0.0005),
+    ]
+    _row = rf"\| {re.escape(_COLLAR_SUM[_i])} \|"
+    CHECKS += [
+        (f"HW.33 · SUMMARY table route {_i} clearance, isothermal → collar_running_clearance.json",
+         SUMMARY, _row + rf" {N}–[\d.]+ \|", COLLAR, _collar_row(_i, "design_clearance_isothermal_mm"), 0.0005),
+        (f"HW.33 · SUMMARY table route {_i} clearance, bound → collar_running_clearance.json",
+         SUMMARY, _row + rf" [\d.]+–{N} \|", COLLAR, _collar_row(_i, "design_clearance_bound_mm"), 0.0005),
+        (f"HW.33 · SUMMARY table route {_i} ceiling, bound → collar_running_clearance.json",
+         SUMMARY, _row + rf" [\d.]+–[\d.]+ \| {N}–[\d.]+ \|", COLLAR, _collar_row(_i, "ceiling_bound_mm"), 0.005),
+        (f"HW.33 · SUMMARY table route {_i} ceiling, isothermal → collar_running_clearance.json",
+         SUMMARY, _row + rf" [\d.]+–[\d.]+ \| [\d.]+–{N} \|", COLLAR, _collar_row(_i, "ceiling_isothermal_mm"), 0.005),
+    ]
+
 # 02_01 §5.2 — the radome-finish verdict (⚖️ delegated 2026-09-27: α ≤ 0.5, not a colour) quotes this same
 # cache as its basis. Once the tracker body was cemented into it, that paragraph became the ONLY doc home
 # of these numbers, and nothing pinned it — a re-run of 71 would have left the verdict's basis stale silently.

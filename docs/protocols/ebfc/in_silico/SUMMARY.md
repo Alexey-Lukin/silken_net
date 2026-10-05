@@ -813,6 +813,34 @@ snow or rime on the radome; the temperature INSIDE the capsule is the thermocoup
 
 ---
 
+## HW.33 — The Bayonet Collar's Running Clearance (script 82)
+
+Canon home → [`02_02 §4.4`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md); decision → `00_07` HW.33 / HW.9 root package.
+
+The collar that carries the bayonet lugs grows on the Ti flange inside the radome's socket band, and the radial gap
+between its outer face and the PEEK band's inner wall is the one member of the board's radial chain no artefact
+numbered: `52` puts the socket's 0.3 mm slot clearance there because nothing states it. Script 82 computes it under
+the crown-pause exception granted 2026-10-05. The PEEK band lies OUTSIDE the Ti collar on Ø26.2 (from `73`'s
+socket band), so the cold edge closes the gap and the hot edge opens it. The physics floor is 30 µm per side at
+the capsule requirement of −40 °C with both parts at it, 37 µm if the Ti stays at 20 °C while the PEEK reaches
+−40 °C (27 µm at `81`'s modelled cold edge). Everything above the floor is manufacturing tolerance: ISO 286 grades
+computed from the standard's formula (a control holds them against the published 18–30 mm table), three routes
+that are ours until the vendors answer.
+
+| Route | Design clearance (mm) | Board ceiling at the 0.2 mm wall (mm) |
+|---|---|---|
+| Machined collar · machined band (IT7 · IT9) | 0.082–0.088 | 19.79–19.81 |
+| Machined collar · moulded band (IT7 · IT11) | 0.141–0.147 | 19.68–19.69 |
+| Coarse: IT8 collar · IT12 moulded band | 0.212–0.218 | 19.53–19.55 |
+
+**Verdict** — every route stays below the 0.3 mm placeholder, so the board ceiling at the print-floor wall falls to
+19.53–19.81 mm rather than 19.37 (19.97 with no clearance). The row is the drawing's fit; the route that pins it is
+the vendors'; the root is not moved by this script. NOT modelled: capillary water held in a narrow gap and its ice
+(a tighter gap holds water higher — the drainage requirement governs it), friction and wear of the turning fit,
+creep of the band. (`mechanical/collar_running_clearance.json` → `thermal_closing_mm`, `routes`, `controls`)
+
+---
+
 ## HW.42 — Does a Second Power Source Contaminate `delta_t`? (script 63)
 
 Canon home → [`02_03 §9`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.42.

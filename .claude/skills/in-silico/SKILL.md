@@ -76,6 +76,8 @@ Anchor mechanics (CPU):
      bark bracket) · tools/cad/cem → 79 (flange Ø and thickness, sleeve OD at runtime) — a change to any of them re-runs 79
   71 · 79 → 81 (importlib: 71's lump — geometry, convection kernels, loader · 79's sky emissivity and weather join, which
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
+  52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
+     81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
 ```
 
 ## Critical Rules

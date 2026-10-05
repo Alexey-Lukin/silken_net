@@ -1,0 +1,132 @@
+{
+  "question": "radial running clearance of the bayonet collar in the radome socket band across the capsule envelope, per manufacturing route, and the board ceiling it leaves (00_07 HW.33 / HW.9)",
+  "interface": {
+    "diameter_mm": 26.2,
+    "from": "73 geometry.band_r_inner_mm × 2",
+    "outer": "PEEK socket band (radome)",
+    "inner": "collar (Ti-6Al-4V)"
+  },
+  "inputs": {
+    "t_ref_c": 20.0,
+    "t_min_requirement_c": -40.0,
+    "t_max_requirement_c": 85.0,
+    "t_min_model_edge_c": -33.53,
+    "alpha_peek_1K": 4.7e-05,
+    "alpha_peek_sensitivity_1K": 5.5e-05,
+    "alpha_ti_1K": 8.6e-06,
+    "design_to_mm": 20.37,
+    "collar_wall_print_floor_mm": 0.2,
+    "slot_clearance_mm": 0.3,
+    "routes": [
+      [
+        "machined collar · machined band",
+        7,
+        9,
+        0.005,
+        0.01
+      ],
+      [
+        "machined collar · moulded band",
+        7,
+        11,
+        0.005,
+        0.03
+      ],
+      [
+        "coarse: IT8 collar · IT12 moulded band",
+        8,
+        12,
+        0.01,
+        0.05
+      ]
+    ],
+    "routes_are": "ours — the bracket axis until the vendors answer"
+  },
+  "iso286_grades_18_30_um": {
+    "IT5": 9,
+    "IT6": 13,
+    "IT7": 21,
+    "IT8": 33,
+    "IT9": 52,
+    "IT10": 84,
+    "IT11": 130,
+    "IT12": 210
+  },
+  "thermal_closing_mm": {
+    "isothermal_requirement": 0.0302,
+    "isothermal_model_edge": 0.0269,
+    "gradient_bound_requirement": 0.0369,
+    "isothermal_requirement_alpha_sensitivity": 0.0365,
+    "hot_edge_requirement": -0.0327
+  },
+  "floor_closing_mm": 0.0369,
+  "routes": [
+    {
+      "route": "machined collar · machined band",
+      "it_collar": 7,
+      "it_band": 9,
+      "it_collar_um": 21,
+      "it_band_um": 52,
+      "roundness_mm": [
+        0.005,
+        0.01
+      ],
+      "half_tolerance_sum_mm": 0.0365,
+      "design_clearance_isothermal_mm": 0.082,
+      "design_clearance_bound_mm": 0.088,
+      "max_gap_hot_edge_mm": 0.158,
+      "ceiling_isothermal_mm": 19.81,
+      "ceiling_bound_mm": 19.79
+    },
+    {
+      "route": "machined collar · moulded band",
+      "it_collar": 7,
+      "it_band": 11,
+      "it_collar_um": 21,
+      "it_band_um": 130,
+      "roundness_mm": [
+        0.005,
+        0.03
+      ],
+      "half_tolerance_sum_mm": 0.0755,
+      "design_clearance_isothermal_mm": 0.141,
+      "design_clearance_bound_mm": 0.147,
+      "max_gap_hot_edge_mm": 0.256,
+      "ceiling_isothermal_mm": 19.69,
+      "ceiling_bound_mm": 19.68
+    },
+    {
+      "route": "coarse: IT8 collar · IT12 moulded band",
+      "it_collar": 8,
+      "it_band": 12,
+      "it_collar_um": 33,
+      "it_band_um": 210,
+      "roundness_mm": [
+        0.01,
+        0.05
+      ],
+      "half_tolerance_sum_mm": 0.1215,
+      "design_clearance_isothermal_mm": 0.212,
+      "design_clearance_bound_mm": 0.218,
+      "max_gap_hot_edge_mm": 0.373,
+      "ceiling_isothermal_mm": 19.55,
+      "ceiling_bound_mm": 19.53
+    }
+  ],
+  "controls": {
+    "iso286_matches_published": true,
+    "chain_equals_52": {
+      "c_mm": 0.3,
+      "t_mm": 0.2,
+      "ceiling_mm": 19.37
+    },
+    "closing_sign": "zero at T_ref, opening at the hot edge"
+  },
+  "verdict": "The cold edge closes the collar's running clearance by 30 µm radially at the capsule requirement −40 °C (both parts at it), 37 µm if the Ti stays at 20 °C — that is the physics floor. The design clearance the drawing must specify is the floor plus the tolerance of the route: 0.082–0.088 mm with both surfaces machined, up to 0.212–0.218 mm for a coarse moulding — every row stays below the 0.3 mm that 52 puts there for want of a number; at the print-floor wall 0.2 mm the board ceiling becomes 19.53–19.81 mm instead of 19.37 (design_to 20.37). The row is the drawing's fit, and the route that pins it is the vendors'.",
+  "ceilings": [
+    "the routes' grades and roundness are ours until the vendors answer (DMLS / CNC / moulding letters, paused)",
+    "the radome PEEK grade is open — the CTE sensitivity row stands for it",
+    "capillary water in a narrow gap and its ice are not modelled — the drainage requirement governs them",
+    "friction, wear and creep of the turning fit are not modelled"
+  ]
+}

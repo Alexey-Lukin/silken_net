@@ -1882,3 +1882,56 @@ def test_capsule_cold_edge_sky_invariants():
     lean = "leans to the clear end" if floor["sunshine_share"] > base["sunshine_share"] else "does not lean"
     assert f"the site {lean}" in v
     assert f"a median of {wind['hours_air_below_floor']:.1f} m/s against {wind['all_winter_hours']:.1f} m/s" in v
+
+
+def test_collar_running_clearance_invariants():
+    """82 (HW.33 · HW.9 root package): the collar's running clearance re-derived from its inputs and its sibling caches.
+
+    CAN catch: an interface diameter not taken from `73`'s socket band; a thermal member that does not follow from
+    the inputs (mutation: entering the interface the other way round — PEEK inside the Ti — flips every sign and reds
+    on the hot-edge opening and on the closing at the cold edge); the gradient bound smaller than the isothermal
+    closing; ISO 286 grades off the published 18–30 mm values; a route row whose design clearance or ceiling is not
+    its own sum or `52`'s chain; the chain at the slot clearance not reproducing `52`'s cached ceiling; a verdict whose
+    numbers are not the rows.
+    CANNOT catch: whether the routes' grades and roundness are what a vendor holds (ours until they answer), the
+    radome PEEK grade's CTE, capillary water in the gap — the declared ceilings.
+    """
+    d = json.loads((MECHANICAL / "collar_running_clearance.json").read_text(encoding="utf-8"))
+    inp, th, v = d["inputs"], d["thermal_closing_mm"], d["verdict"]
+    c73 = json.loads((MECHANICAL / "collar_wall_inversion.json").read_text(encoding="utf-8"))
+    c52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))["collar_radial_budget"]
+    assert d["interface"]["diameter_mm"] == round(2.0 * c73["geometry"]["band_r_inner_mm"], 3)
+    r = d["interface"]["diameter_mm"] / 2.0
+    a_p, a_t, t0 = inp["alpha_peek_1K"], inp["alpha_ti_1K"], inp["t_ref_c"]
+    t_lo, t_hi = inp["t_min_requirement_c"], inp["t_max_requirement_c"]
+    assert abs(th["isothermal_requirement"] - r * (a_p - a_t) * (t0 - t_lo)) < 1e-4
+    assert abs(th["isothermal_model_edge"] - r * (a_p - a_t) * (t0 - inp["t_min_model_edge_c"])) < 1e-4
+    assert abs(th["gradient_bound_requirement"] - r * a_p * (t0 - t_lo)) < 1e-4
+    assert abs(th["hot_edge_requirement"] - r * (a_p - a_t) * (t0 - t_hi)) < 1e-4
+    assert th["hot_edge_requirement"] < 0.0 < th["isothermal_model_edge"] < th["isothermal_requirement"]
+    assert th["isothermal_requirement"] < th["gradient_bound_requirement"]
+    assert abs(d["floor_closing_mm"] - max(th["gradient_bound_requirement"],
+                                           th["isothermal_requirement_alpha_sensitivity"])) < 1e-4
+    assert d["iso286_grades_18_30_um"] == {"IT5": 9, "IT6": 13, "IT7": 21, "IT8": 33, "IT9": 52, "IT10": 84,
+                                           "IT11": 130, "IT12": 210}
+    t_floor, design_to = inp["collar_wall_print_floor_mm"], inp["design_to_mm"]
+    assert (t_floor, design_to) == (c52["printability_floor_mm"], c52["design_to_mm"])
+    want = next(x["ceiling_mm_if_collar_needs_running_clearance"] for x in c52["rows"] if x["collar_wall_mm"] == t_floor)
+    assert d["controls"]["chain_equals_52"]["ceiling_mm"] == want
+    assert abs(design_to - 2.0 * (t_floor + inp["slot_clearance_mm"]) - want) < 0.006
+    prev = 0.0
+    for row in d["routes"]:
+        tol = (row["it_collar_um"] + row["it_band_um"]) / 2000.0
+        base = sum(row["roundness_mm"]) + tol
+        assert abs(row["design_clearance_isothermal_mm"] - (th["isothermal_requirement"] + base)) < 6e-4
+        assert abs(row["design_clearance_bound_mm"] - (d["floor_closing_mm"] + base)) < 6e-4
+        for kind in ("isothermal", "bound"):
+            assert abs(row[f"ceiling_{kind}_mm"] - (design_to - 2.0 * (t_floor + row[f"design_clearance_{kind}_mm"]))) < 0.006
+        assert row["design_clearance_bound_mm"] > prev       # rows run from the tightest route to the coarsest
+        prev = row["design_clearance_bound_mm"]
+    lo, hi = d["routes"][0], d["routes"][-1]
+    assert f"{th['isothermal_requirement'] * 1e3:.0f} µm" in v and f"{th['gradient_bound_requirement'] * 1e3:.0f} µm" in v
+    assert f"{lo['design_clearance_isothermal_mm']:.3f}–{lo['design_clearance_bound_mm']:.3f} mm" in v
+    assert f"{hi['design_clearance_isothermal_mm']:.3f}–{hi['design_clearance_bound_mm']:.3f} mm" in v
+    assert f"{hi['ceiling_bound_mm']:.2f}–{lo['ceiling_isothermal_mm']:.2f} mm instead of {want:.2f}" in v
+    assert ("every row stays below" in v) == all(x["design_clearance_bound_mm"] < inp["slot_clearance_mm"] for x in d["routes"])
