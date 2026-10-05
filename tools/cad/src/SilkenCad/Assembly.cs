@@ -63,7 +63,7 @@ internal static class Assembly
     // ⚖️ The raised collar that carries such a lug is RATIFIED (02_02 §4.4, 2026-09-11) and this is its Z.
     // It is NOT modelled. Strength does not size its wall (model 73, 02_02 §4.4 — there is still no bayonet load
     // model, but the force no longer sizes it; the process floor does); what holds it is its running clearance:
-    // it needs a non-zero one (model 82, 02_02 §4.4: route rows 0.08–0.22 mm, board ceiling Ø19.53–19.81; the collar drawing's
+    // it needs a non-zero one (model 82, 02_02 §4.4: route rows 0.08–0.22 mm, board ceiling Ø19.53–19.81 at wall 0.2; the collar drawing's
     // fit picks the row), and that moves the root (00_07 HW.33 → HW.9, under the crown pause). It rides AFTER the
     // rim boss — now applied (Radome.cs) — whose socket band it must share. The board layout HW.9 takes the
     // boss's rim-cavity ceiling as an input, not as a gate on this (⚖️ 2026-09-14).

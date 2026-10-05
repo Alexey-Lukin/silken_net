@@ -614,10 +614,12 @@ def collar_radial_budget(boss: dict) -> dict:
                          "DRAINAGE requirement, because confined ice cannot be survived by any wall that fits "
                          "the socket band. Owner of the number stays the collar implementation leg (00_07 HW.33) "
                          "and the lug/Z redesign (HW.8); the VERDICT is 02_02 §4.4",
-        "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). The collar does "
-                    "need a running clearance inside its socket — model 82 computes it (02_02 §4.4: route rows "
-                    "0.08–0.22 mm, below this 0.3 placeholder) — so the ceiling drops by 2*slot_clearance more "
-                    "(second column), an upper bound on the drop. The flange route is CNC-from-bar or SLM + mandatory "
+        "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm, ZERO running clearance — "
+                    "no longer physical: model 82 gives a floor of 30–37 µm a side, 02_02 §4.4). The collar needs a "
+                    "running clearance c, so the ceiling is design_to − 2·(wall + c); the second column uses this "
+                    "script's 0.3 placeholder for c. Every route row 82 models (0.082–0.218 mm, ours until the vendors "
+                    "answer) lies below it, but a vendor row could exceed it, so it is a placeholder, not a bound. The "
+                    "flange route is CNC-from-bar or SLM + mandatory "
                     "HIP (ratified 2026-09-18, 00_07 HW.23), so this print floor binds the SLM route only.",
     }
 
@@ -904,8 +906,8 @@ def main() -> int:
     print(f"  (1) Radial: board Ø ≤ {collar['design_to_mm']:.2f} − 2·collar_wall, and no artefact gives the wall:")
     for r in collar["rows"]:
         print(f"      wall {r['collar_wall_mm']:.2f} → Ø ≤ {r['ceiling_mm']:.2f}   "
-              f"(Ø ≤ {r['ceiling_mm_if_collar_needs_running_clearance']:.2f} if it also needs a running clearance)")
-    print(f"      → the loosest ceiling ANY collar can leave: Ø{collar['loosest_ceiling_any_collar_mm']:.2f} "
+              f"(Ø ≤ {r['ceiling_mm_if_collar_needs_running_clearance']:.2f} at the 0.3 placeholder clearance; route rows — model 82)")
+    print(f"      → the loosest ceiling ANY collar can leave at ZERO clearance (not physical — model 82): Ø{collar['loosest_ceiling_any_collar_mm']:.2f} "
           f"(the {collar['printability_floor_mm']:.1f} mm print floor, SLM branch only)")
     ih, tr = vert["internal_height_mm"], vert["tolerance_readings_mm"]
     rss_key = "tol_pz_rss_as_quoted_02_02"
