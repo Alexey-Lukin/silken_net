@@ -293,9 +293,19 @@ def report(p)
     puts "\n  ⚠️ баланс ≤ 0: вузол не накопичує на жоден TX — H = ∞, m = 0; робочої точки, про яку далі, немає."
     return 0
   end
-  ecb, ccm = rows
-  puts
-  puts format("  → Перехід 16 Б → 30 Б коштує +%.1f %% airtime і +%.1f %% активної енергії,",
+ecb, ccm = rows
+# Частка радіо — дім чисел «≈ 51 % повного / 86 % активного» (`02_03 §9.6`, ARCH.8): активна від сну не залежить,
+# повна (= E_gen за цикл) — залежить, тож друкується зі струмом сну, на якому стоїть.
+share = lambda do |r|
+  radio = (e_tx_mj(p, r[:t_air_ms]) + e_rx_mj(p) + e_tcxo_mj(p, r[:t_air_ms])) / p[:eta_buck_active]
+  [ 100.0 * radio / r[:e_active_mj], 100.0 * radio / (e_gen_mj_h(p) * r[:h_hours]) ]
+end
+(ecb_active, ecb_full), (ccm_active, ccm_full) = share.(ecb), share.(ccm)
+puts format("  радіо (TX + RX-вікно + TCXO): %.0f %% / %.0f %% активного циклу ECB / CCM (від сну не залежить) · " \
+            "%.0f %% / %.0f %% повного бюджету (E_gen за цикл; P_gen %.1f µW, стік сну %.2f µW; без холостого ядра)",
+              ecb_active, ccm_active, ecb_full, ccm_full, p[:p_gen_uw], sleep_drain_uw(p))
+puts
+puts format("  → Перехід 16 Б → 30 Б коштує +%.1f %% airtime і +%.1f %% активної енергії,",
               100.0 * (ccm[:t_air_ms] / ecb[:t_air_ms] - 1.0),
               100.0 * (ccm[:e_active_mj] / ecb[:e_active_mj] - 1.0))
   puts format("    звідки H %.2f → %.2f год. ⚠️ Але вирішує не H, а ПОРІГ: m сідає на нуль на Δt = %.0f с",
