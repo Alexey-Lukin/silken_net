@@ -413,7 +413,7 @@ volatile uint32_t soldier_unix_ts            = 0;
 volatile uint32_t soldier_unix_ts_local_tick = 0;
 
 // [ARCH.26 L2] Кеш TDMA-розкладки з байтів 5..8 маяка. RAM-only derived
-// state (як soldier_unix_ts): гине з SRAM у RTC-only STOP2 / VBAT-loss і
+// state (як soldier_unix_ts): гине з SRAM у RTC-only сні (клас Standby, 00_07 FW.54) / VBAT-loss і
 // відновлюється наступним маяком (≤15 хв) — RTC DR і Flash-KV не потрібні
 // (бюджет DR повний, 03_01 §2). Гейт INERT: фліп = bench WUT-армінг
 // (SEC.15/FW.49); математика вікон/слотів — common/tdma_schedule.h.
@@ -1726,7 +1726,7 @@ int main(void)
       acoustic_events     = (uint8_t)(dr0_raw & 0xFFu);
       panic_frame_counter = (uint16_t)((dr0_raw >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
       // [SEC.20] Streak bytecode-збоїв переживає STOP2 у DR0[9:8] (RAM-only
-      // згорів би щоцикл у RTC-only сні). Cold-boot DR0=0 → streak=0 природно.
+      // згорів би щоцикл у RTC-only сні — клас Standby, 00_07 FW.54). Cold-boot DR0=0 → streak=0 природно.
       ota_vm_error_streak = (uint8_t)((dr0_raw >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
       // [SEC.21] Слід канарки з минулого втілення: sticky до wire-виносу.
       // Cold-boot DR0=0 → чисто природно. Слід є → заряджаємо 3 постріли

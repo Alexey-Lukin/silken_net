@@ -72,7 +72,7 @@ PARAMS = {
   tcxo_ccm_mj: 5.06,        # TCXO на кадрі CCM + RX-вікні (§9.6 врізка)
   eta_buck_active: 0.88,    # §9.1 buck active
   # ── сон + генерація для inter-cycle sensitivity (02_03 §9.1/§9.3/§9.6/§9.8) ───
-  i_stm32_sleep_na: 300,    # STOP2 RTC-only (Сценарій C, затверджено §9.8)
+  i_stm32_sleep_na: 300,    # ціль Сценарію C (§9.8) — клас Standby; відвантажений STOP2 = 1070 (00_07 FW.54)
   v_out: 3.3,
   eta_buck_sleep: 0.50,     # §9.1 buck idle
   i_bq_quiescent_na: 488,   # BQ25570 IQ (§8)

@@ -5,6 +5,8 @@
 Артефакти CSV → bench_artifacts/: пряме паливо для E.63 (медіана перезаряду →
 калібрування DELTA_T_FAST_S/DELTA_T_SLOW_S метаболічного growth_points) і FW.54 (300 нА floor —
 NB: роздільність PPK2 ~100 нА → 300 нА підтверджувати JS220/SMU).
+⚠️ 300 нА — клас Standby, не STOP2: відвантажена прошивка спить у STOP2, і паспорт (DS13105 Rev 12)
+дає там 1.07 µA typ при 3 В і 25 °C — такий floor НЕ дефект прошивки (00_07 FW.54, RUNBOOK 3.1).
 
     03_power_profile.py --mode floor|cycle|recharge [--seconds N] [--out CSV]
     03_power_profile.py --mode recharge --simulate   # синтетика для пайплайна

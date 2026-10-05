@@ -19,7 +19,7 @@
 |---|---|---|
 | ST-LINK/V3 + `STM32_Programmer_CLI` | flash, option bytes, RDP | SEC.3 pipeline вже скриптований (`EXECUTE=1`) |
 | `pyocd` (`pip install pyocd` + `pyocd pack --install stm32wl`) | SWD-оркестрація, регістри, RTT | CMSIS-pack дає flash-алгоритм WLE5 |
-| Nordic PPK2 (~$120, `pip install ppk2-api`) | µA-профілі, Vcap recharge-крива | **Floor-чесність:** роздільність ~100 нА — для атестації 300 нА STOP2 межово; підтверджувати JS220/SMU-класом |
+| Nordic PPK2 (~$120, `pip install ppk2-api`) | µA-профілі, Vcap recharge-крива | **Floor-чесність:** роздільність ~100 нА — для атестації 300-нА класу (Standby, не STOP2 — крок 3.1) межово; підтверджувати JS220/SMU-класом |
 | Joulescope JS220 / SMU (Keithley) | nA-класова стеля (FW.54 300 нА) | разова верифікація, можна позичити |
 | USB-UART (3.3В) + `minicom`/`pyserial` | SIM7070G транскрипти, parity-дамп | лог = артефакт |
 | Осцилограф, 2 канали | §6 VBAT-droop — просадка під TX-сплеском (HW.15) | можна позичити |
@@ -58,7 +58,7 @@
 
 | Крок | Скрипт | Очікуване/Артефакт |
 |---|---|---|
-| 3.1 STOP2 floor | `03_power_profile.py --mode floor` (PPK2 source-meter) | CSV; ціль ~300 нА RTC-only (`03_01 §1.10`); **300 нА підтвердити JS220/SMU** (PPK2 floor). Цей вимір = вхід відкладеного FW.54-рішення RAM-стану (RTC-реклемація vs Flash-KV vs SRAM2-retain) — приймати з числом, не з моделлю |
+| 3.1 STOP2 floor | `03_power_profile.py --mode floor` (PPK2 source-meter) | CSV; ціль ~300 нА RTC-only (`03_01 §1.10`); **300 нА підтвердити JS220/SMU** (PPK2 floor). ⚠️ **Ціль належить класу Standby, а не STOP2:** відвантажена прошивка спить у STOP2 (`HAL_PWREx_EnterSTOP2Mode`), і паспорт (DS13105 Rev 12) дає там 1.07 µA typ при 3 В і 25 °C — такий floor НЕ дефект прошивки, не шукати його в периферії; режим вирішує ⚖️ `00_07` FW.54. Цей вимір = вхід відкладеного FW.54-рішення RAM-стану (RTC-реклемація vs Flash-KV vs SRAM2-retain) — приймати з числом, не з моделлю |
 | 3.2 Active-цикл енергія | `03_power_profile.py --mode cycle` | E_cycle мДж — прямий вхід у E.63 (повний SENSE→TX) |
 | 3.3 **Vcap recharge-крива** | ⛔ **приладу ще немає** (звірено 2026-09-28; ⊕ 2026-09-30: джерело, що емулює EBFC, ОПИСАНЕ в `02_04` Блок 1 — прилад рампи 0.6–0.8 В + послідовний `R_int` за Тевеніном, §3.1, — сам прилад рампи ще 🛒; плюс потрібен логер напруги VSTOR): у source-режимі PPK2 сам живить плату фіксованою напругою, тож перезаряду EDLC немає за побудовою — `03_power_profile.py --mode recharge` на залізі тепер відмовляє, а доти писав CSV струму й видавав його за криву. Потрібне джерело, що емулює EBFC (`V_OC` + послідовний `R_int`, [`02_03 §1.5`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)), і лог напруги VSTOR (логувальний мультиметр) — або `delta_t` з кадрів, коли оживе RTC (`00_07` FW.49) | CSV кривої = медіана delta_t → калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (E.63 метаболічний growth_points, `03_04 §4.3`) |
 | 3.4 Vcap ADC калібрування | DMM vs `Adc_Raw_To_Mv` після розводки дільника | таблиця точок (FW.50) |

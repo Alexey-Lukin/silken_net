@@ -160,7 +160,11 @@ PARAMS = {
   i_tcxo_ma: 2.11,          # NT2016SF max 2.0 + Iq 0.07 + 2 % (⚖️ TCXO 2026-09-26) — живий на TX і на RX
   v_out: 3.3,
   eta_buck_active: 0.88,
-  # ── сон (Сценарій C: STOP2 RTC-only, §9.6) ───────────────────────────────
+  # ── сон (Сценарій C, §9.6) ───────────────────────────────────────────────
+  # ⚠️ 300 нА — ЦІЛЬ ратифікованого Сценарію C, і на STM32WLE5 цей клас струму дає лише Standby
+  # (без утримання SRAM2), не STOP2: прапорця «STOP2 RTC-only» і біта RRSTP у WL немає, а прошивка
+  # входить у STOP2 (`HAL_PWREx_EnterSTOP2Mode`, firmware/soldier/main.c). Відвантажений режим
+  # друкується другим прочитанням (`SLEEP_READINGS` нижче), дефолт лишається присудом — 00_07 FW.54.
   i_stm32_sleep_na: 300.0,
   eta_buck_sleep: 0.50,
   i_bq_quiescent_na: 488.0,
@@ -179,6 +183,15 @@ PARAMS = {
 WIRE_ERAS = [
   [ "ECB 16 Б (відвантажено сьогодні)", 16, 164.9, "12.79" ],
   [ "CCM 30 Б (wire-rev2.1, FW.2 bench-gated)", 30, 226.3, "17.55" ]
+].freeze
+
+# Сон за ПАСПОРТОМ режимів, яких прошивка входить або мусила б входити (00_07 FW.54, 2026-10-05):
+# друге прочитання поруч із ціллю, не дефолт — дефолт є присудом (02_03 §9.8), і рухає його власник.
+# Обидва числа — Typ при 25 °C і 3.0 В; при 55 °C паспорт дає 2.90 µA (STOP2, Табл. 43, RTC на LSI) і
+# 1.25 µA (Standby, Табл. 49), тож літо під радомом тягне сон угору, а модель цього не несе.
+SLEEP_READINGS = [
+  [ "STOP2 + RTC — режим відвантаженої прошивки (DS13105 Rev 12, титульна)", 1070.0 ],
+  [ "Standby + RTC на LSE low drive + SRAM2 (DS13105 Rev 12, Табл. 49)", 445.0 ]
 ].freeze
 
 params = PARAMS.dup
@@ -300,6 +313,7 @@ def report(p)
               ccm[:delta_t_s] - ecb[:delta_t_s], (ccm[:delta_t_s] - ecb[:delta_t_s]) / 60.0)
   puts format("  → Стік на VSTOR, який точки витримують до підлоги (самопрозряд EDLC · кламп — чисел немає): " \
               "ECB %s · CCM %s.", headroom_note(ecb), headroom_note(ccm))
+  sleep_readings(p)
   puts
   mm = money_model
   unless money_model_complete?(mm)
@@ -323,6 +337,26 @@ def report(p)
   puts "  → Грошова точка: #{money_step_note(mm)}."
   puts format("  → ECB-точка стоїть %s (%.1f %% від Δt) — %s.", *floor_side(p, ecb, v[:tol_pct]))
   0
+end
+
+# Друге прочитання сну (`SLEEP_READINGS`): той самий ланцюг, змінено лише `i_stm32_sleep_na`.
+def sleep_readings(p)
+  if p[:i_stm32_sleep_na] == PARAMS[:i_stm32_sleep_na]
+    puts format("  ⚠️ Сон %.0f нА — ціль класу Standby, а прошивка спить у STOP2 (00_07 FW.54). Той самий ланцюг " \
+                "із паспортним сном:", p[:i_stm32_sleep_na])
+  else
+    puts "  Для порівняння — той самий ланцюг із паспортним сном:"
+  end
+  SLEEP_READINGS.each do |label, na|
+    q = p.merge(i_stm32_sleep_na: na)
+    unless net_mj_h(q).positive?
+      puts format("     %s, %.0f нА: баланс ≤ 0 — H = ∞, m = 0", label, na)
+      next
+    end
+    ecb, ccm = era_rows(q)
+    puts format("     %s, %.0f нА: H %.2f / %.2f год (ECB / CCM) · m %.3f / %.3f · стік ECB %s · CCM %s",
+                label, na, ecb[:h_hours], ccm[:h_hours], ecb[:m], ccm[:m], headroom_note(ecb), headroom_note(ccm))
+  end
 end
 
 def headroom_note(row)

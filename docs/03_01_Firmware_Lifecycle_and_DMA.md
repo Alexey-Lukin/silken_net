@@ -57,7 +57,7 @@
 | **Призначення** | Повноцінна C/C++ IDE для STM32WLE5xx (ARM Cortex-M4 + радіо SX126x на кристалі) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, DMA USART1-RX Королеви, RNG, CRYP) до отримання плат |
-| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power); на TRL 6 baseline: 1.07 µA з SRAM2 retention) |
+| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power), а це клас Standby, не STOP2 — §1.10 ⚠️; на TRL 6 baseline: STOP2, 1.07 µA за паспортом) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
 | **Debugger** | Інтеграція з ST-LINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
@@ -601,6 +601,8 @@ on_lora_rx(payload, did_from_packet):
 
 > **⚠️ Power optimization target:** Раніше документ декларував STOP2 sleep current **2.1 µA**. Перерахунок енергобалансу ([`02_03 §9.5`](02_03_BQ25570_MPPT_Nano_Power)) показав, що при 2.1 µA система йде у мінус навіть з TX @ +14 dBm SF9. **Цільове значення для виходу у позитивний баланс — STOP2 у RTC-only mode (300 nA)** — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C. Це досягається відключенням SRAM2 retention (`PWR.CR1 RRSTP=1`) і збереженням стану ТІЛЬКИ у RTC Backup registers (20 × uint32). Реалізація — наступний firmware-цикл.
 
+> 🔴 **Механізм речення вище на STM32WLE5 не існує — спростовано первинкою 2026-10-05** ([`00_07`](00_07_Action_Plan_Tracker) FW.54). `PWR_CR1` WL несе LPMS · SUBGHZSPINSSSEL · FPDR · FPDS · DBP · VOS · LPR і біта `RRSTP` не має (`firmware/extern/cmsis-device-wl/Include/stm32wle5xx.h`); `PWR_CR3_RRS` керує утриманням SRAM2 лише в **Standby**, а в STOP2 SRAM1 і SRAM2 зберігаються завжди (DS13105 Rev 12, опис режимів). Тож у STOP2 «−800 нА» взяти нізвідки: паспорт дає Stop2 (+RTC) 1.07 µA при 3 В і 25 °C, а клас ≈ 300 нА — це Standby без SRAM2, де VCORE вимкнено й пробудження йде через reset (числа й обидва прочитання ланцюга — врізка під Сценарієм C [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). Інвентар §2.3.1 уже написано під цю семантику — він вважає втраченим увесь RAM-стан, не лише SRAM2. Прошивка входить у STOP2 (`HAL_PWREx_EnterSTOP2Mode` у `firmware/soldier/main.c`), тож ціль цієї секції без зміни режиму недосяжна; який режим брати — ⚖️ FW.54.
+
 ```c
 // 1. Зберігаємо стан у RTC Backup Domain (20 регістрів — повне розкладання §2)
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, dr0_packed); // усі 4 поля DR0 (§2) — часткове слово обнулить сусідів
@@ -614,7 +616,7 @@ __HAL_RCC_AES_CLK_DISABLE();   // CRYP-макросів у WL-HAL немає
 // 3. Цільова конфігурація для 300 nA (RTC-only mode):
 //    SRAM2 retention OFF — стан тільки в RTC BKP registers
 __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
-// PWR->CR3 |= PWR_CR3_RRS  // RRSTP=0: SRAM2 OFF у STOP2 → -800 nA
+// PWR->CR3 |= PWR_CR3_RRS  // RRSTP=0: SRAM2 OFF у STOP2 → -800 nA  ⚠️ на WL не існує: RRS — лише Standby (нота вище)
 // Watchdog: IWDG ЗАМОРОЖЕНО у STOP2 (option byte IWDG_STOP=0, SEC.15) —
 //           інакше spurious reset посеред сну >~32.7 с (нота нижче)
 
