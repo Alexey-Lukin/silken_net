@@ -382,7 +382,7 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 | A_electrode | 2 cm² | ONE face of the Ø16 Ti-coin COUPON — never the anchor (`lib/constants.py A_ELECTRODE`; the gyroid anode differs by 30–60×) |
 | η_BQ | 0.68 | BQ25570 datasheet (SLUSBH2G Fig.6-7, low-I_IN; [HW.47]) — ⚠️ the 15 µW point, applied here at ≈369 µW: the `02_03 §9.1` table has η rising to 0.82 by 100 µW, which would shorten every `delta_t` by ~17 % (healthy 135.2 → 111.8 s). A named model axis, not folded in (the table tops out below this power) |
 | E_cycle | 33.33 mJ | `E_active_from_VSTOR` of the node chain — a MIRROR of [`02_03 §9.6`](../../../02_03_BQ25570_MPPT_Nano_Power.md) Scenario C (ECB 16 B frame, SF9, +14 dBm; home `tools/firmware/tx_cadence_budget.rb`), pinned to that canon line. No inference term since the piezo cut ([`02_01 §6`](../../../02_01_Hardware_Architecture_and_BOM.md), 2026-09-29). Until 2026-09-27 a 5 mJ placeholder ([`00_07`](../../../00_07_Action_Plan_Tracker.md) E.63) |
-| P_sleep | 4.18 µW | Sleep drain from VSTOR between cycles, same chain (RTC-only STOP2 + BQ I_Q) — subtracted from the boosted power; it was absent before 2026-09-27 |
+| P_sleep | 4.18 µW | Sleep drain from VSTOR between cycles, same chain (300 nA sleep — the Standby-class target, not the shipped STOP2, `00_07` FW.54 — + BQ I_Q) — subtracted from the boosted power; it was absent before 2026-09-27 |
 
 ### delta_t Predictions
 

@@ -160,7 +160,8 @@ BQ25570_VIN_CS_TYP_MV = 600.0    # mV
 BQ25570_VIN_CS_MAX_MV = 700.0    # mV
 BQ25570_PIN_CS_UW = 15.0         # µW — a POWER, not 15 µA (02_03 §1.1)
 # ── Node energy chain — MIRRORS of 02_03 §9.4/§9.6 Scenario C (ECB 16 B frame, SF9,
-# +14 dBm, RTC-only STOP2); the chain's home is tools/firmware/tx_cadence_budget.rb,
+# +14 dBm, 300 nA sleep — the Standby-class target, not the shipped STOP2, 00_07 FW.54);
+# the chain's home is tools/firmware/tx_cadence_budget.rb,
 # whose --assert holds these numbers ──
 # [E.63, 2026-09-27] E_CYCLE was a 5 mJ «legacy placeholder» and delta_t() had no sleep
 # term: 8.5× below the chain, and every L4 delta_t — the old «60 s baseline makes physical

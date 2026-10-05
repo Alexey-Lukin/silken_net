@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 270 · 15,191,059 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 270 · 15,191,124 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -28,7 +28,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 |---|---|---|
 | `tools/in_silico/lib/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/lib/beam_contact.py` | `5a8c75cb965b62461a7ac6a22fdb09b73516311ce8e4f1b40e3382d2041a6f63` | A clamped Euler-Bernoulli rod in a rigid channel — unilateral contact solved by an active set. |
-| `tools/in_silico/lib/constants.py` | `4e6fa7a2ba437a6a7f082c6efd0820e1967bb6b88025de1ba5c8b9ed98584523` | Shared physical and project constants for the in-silico pipeline. |
+| `tools/in_silico/lib/constants.py` | `80c0886940c26b13f8d91ed13e1defef2fb0d80874a2bcf1afc243049554332d` | Shared physical and project constants for the in-silico pipeline. |
 | `tools/in_silico/lib/dft_utils.py` | `c157bc60e05775869cfb7f091ae7547688346b50ed87127b1c5093d6d428c32c` | Shared DFT utility functions for L3 quantum chemistry scripts. |
 | `tools/in_silico/lib/geometry.py` | `70dcca1d51fc0f4fd166b5d6dd13345c74b87eb6aa516327d5f8b2f0688be30e` | Shared geometry utilities for placing molecules in MD boxes. |
 | `tools/in_silico/lib/kinetics.py` | `c930a27c3ed1b03eafa51206c92671e01c4c5724159edf552dc18da73c5e3901` | Shared Michaelis-Menten / pH forms for the L4 kinetics scripts (30, 30b). |

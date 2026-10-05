@@ -66,7 +66,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 19. A host test that exercises a HAND-COPIED `main.c` function proves the copy, not the firmware — so when you touch a `main.c` function that `firmware/test/` mirrors, move its logic into a pure header both include, instead of editing both copies
 20. `Radio.Send` is asynchronous — the frame is still in the air for its whole time-on-air, and ANY next radio command (Send · Rx · SetTxConfig · Sleep) aborts it; so every frame goes through `Lora_Phy_Send`, and its return value is a WAIT, not a status
 21. `radio_conf.h` does not exist yet, and the ST template it will be born from sets `RF_WAKEUP_TIME` to 1 ms — shorter than our TCXO's start, so a copied template leaves the radio without a clock on every wake
-22. Standby — the ratified sleep target, gated `FW54_STANDBY_ENABLED` — wakes through a RESET: `main()` starts over and ALL SRAM is gone, so a `static` added to `firmware/soldier/main.c` silently restarts from zero on every wake after the flip
+22. Standby — the ratified sleep target, gated `FW54_STANDBY_ENABLED` — wakes through a RESET: `main()` starts over and ALL SRAM is gone, so a `static` added to `firmware/soldier/main.c` silently restarts from its initializer on every wake after the flip
 23. A power mode or HAL call taken from an app note, a forum or another STM32 family may not exist on WL — and a grep of the vendored tree can still hit its name
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
