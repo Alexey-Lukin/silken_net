@@ -95,8 +95,8 @@ B2B = { # поз. 12 — Samtec FW-D-SM Rev D: розмах падів 6.86, к�
 def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class")
   power = [
     [ "BQ25570 VQFN-20 3.5 × 3.5 (поз. 2; KiCad QFN-20-1EP_3.5x3.5mm)", rect(4.76, 4.76) ],
-    [ "L1 22 µH Coilcraft LPS4018 (поз. 15; рекомендація TI)", rect(4.90, 4.40) ],
-    [ "L2 10 µH Toko DFE252012C (поз. 15; проксі KiCad L_1008_2520Metric)", rect(3.90, 2.70) ],
+    [ "L1 22 µH Coilcraft LPS4018-223MRC (поз. 15, ⚖️ 2026-10-05; land pattern 4.40 × 3.89 + 0.25/бік)", rect(4.90, 4.40) ],
+    [ "L2 10 µH Würth 74479889310 (поз. 15, ⚖️ 2026-10-05; проксі KiCad L_1008_2520Metric ≥ його 3.7 × 2.7)", rect(3.90, 2.70) ],
     [ "буфер 47 µF 1210 (поз. 9)", rect(4.60, 3.20) ],
     [ "CIN · CSTOR 4.7 µF 0603 × 2 (SLUSBH2G §8.2: мінімум)", 2 * C0603 ],
     [ "CREF 10 nF · CBYP 0.01 µF 0402 × 2 (SLUSBH2G §8.2)", 2 * C0402 ],
