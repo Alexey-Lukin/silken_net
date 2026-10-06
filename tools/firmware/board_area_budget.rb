@@ -10,7 +10,7 @@
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
 #   ruby tools/firmware/board_area_budget.rb --booster nn02_224 --edlc fc --diameter 21
 #   ruby tools/firmware/board_area_budget.rb --pos19 verdict   # поз. 19 за присудом ⚖️ 2026-09-30 (⏸ до кореня не застосовано)
-#   ruby tools/firmware/board_area_budget.rb --standoffs m2x8  # стійки між деками — рекомендація HW.9 (⏸ член пакета кореня)
+#   ruby tools/firmware/board_area_budget.rb --standoffs m2x8_stop  # стійки між деками без гвинтів — ⚖️ founder 2026-10-05, поз. 25 (⏸ член пакета кореня)
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -72,8 +72,8 @@ POS19 = {
   "verdict" => [ "RF-тракт за присудом ⚖️ 2026-09-30: 23 × 0402 + BGS12WN6 TSNP-6 0.7 × 1.1 + 0.25/бік (поз. 19)", 23 * C0402 + rect(1.20, 1.60) ]
 }.freeze
 
-# Стійки між деками — позитивний упор Z (⚖️ founder 2026-10-05, `02_01 §3.4` поз. 24), × 2, P/N рекомендацією
-# (`00_07` HW.9; паспорти — `docs/protocols/hardware/deck_standoff_shortlist.md`). Кортьярд = пад або торець + 0.25
+# Стійки між деками — позитивний упор Z (⚖️ founder 2026-10-05, `02_01 §3.4` поз. 24), × 2; форма й P/N — `m2x8_stop`
+# (⚖️ founder 2026-10-05, поз. 25 `02_01 §3.1`; паспорти — `docs/protocols/hardware/deck_standoff_shortlist.md`). Кортьярд = пад або торець + 0.25
 # на бік: верх Power Deck — кільцевий пад (M2 Ø5.3 · M2.5 Ø6.0), низ RF Deck — торець корпусу (Ø4.35 · Ø5.1),
 # верх RF Deck — голова гвинта ISO 7045 (dk 4.0 · 5.0; P/N гвинта не обрано). Отвір під хвостовик іде крізь
 # Power Deck на його низ, якого модель не рахує (там проміжок pogo). Дефолт — без стійок: рух цілі — ⏸ пакетом.
@@ -83,7 +83,7 @@ STANDOFFS = {
                 { "Power Deck, верх" => 2 * disc(5.80), "RF Deck, низ" => 2 * disc(4.85), "RF Deck, верх" => 2 * disc(4.50) } ],
   "m2x8_stop" => [ "стійки Würth WA-SMSI M2 × 8.0 `9774080243R` × 2 БЕЗ гвинтів — лише упор (⚖️ founder 2026-10-05, HW.9)",
                    { "Power Deck, верх" => 2 * disc(5.80), "RF Deck, низ" => 2 * disc(4.85) } ],
-  "m25x10" => [ "стійки Würth WA-SMSI M2.5 × 10.0 `9774100151R` × 2 (дельта B2B 10.0: M2 × 10 у серії немає)",
+  "m25x10" => [ "стійки Würth WA-SMSI M2.5 × 10.0 `9774100151R` × 2 (дельта B2B 10.0: M2 × 10 у серії, найімовірніше, немає)",
                 { "Power Deck, верх" => 2 * disc(6.50), "RF Deck, низ" => 2 * disc(5.60), "RF Deck, верх" => 2 * disc(5.50) } ]
 }.freeze
 # ⚖️ founder 2026-09-29 (`02_01 §6`): пʼєзо з Солдата зрізано — поз. 5 (пʼєзо) і поз. 6 (кламп BAT54S
