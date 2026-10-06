@@ -80,7 +80,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 - **Гібрид живлення:** front-end — еквівалент EBFC (джерело Тевеніна `V_OC` + `R_int`,
   §3.1), згодом реальний EBFC напряму в BQ25570 (гейт `V_OC` — §6 крок 4); решта вузла — production-компоненти
   на **готовому модулі Seeed LoRa-E5 mini** (STM32WLE5JC + SX1262). Кремній уже в модулі,
-  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; ⚠️ образу для LoRa-E5 mini — bench `.ioc` на JC чи рукописний `hal_glue/boards/lora_e5/` — у дереві ще немає, ⚖️ [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
+  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; образ для LoRa-E5 mini — рукописний `hal_glue/boards/lora_e5/`, ⚖️ делеговано 2026-10-06 ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), — у дереві ще немає, нога [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
 - **🔵 Золоте правило — Спільна Земля.** Усі `−` (GND) плат, батарейки, іоністора — в
   **єдину синю шину** вздовж краю макетки. Без спільної землі логічні рівні = хаос.
 - **🔴 Дві залізні пере-умови ПЕРЕД живленням:** (1) **антена 868 МГц на місці** (SX1262
@@ -99,7 +99,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | Компонент | Модель | Статус | ⚠️ Кусає |
 |---|---|---|---|
 | SWD прошивка/дебаг | ST-LINK-V3MINIE | 🛒 | — |
-| USB-UART консоль | FT232RL (3.3 В) | ✅ | **джампер рівня → 3.3 В** (не 5 В); дублює вбудований USB-C міст LoRa-E5 |
+| USB-UART консоль | FT232RL (3.3 В) | ✅ | **джампер рівня → 3.3 В** (не 5 В); на USART2 mini (TX2/RX2) — вбудований USB-C міст сидить на USART1 (J1-18/19), не на тих самих лініях |
 | Макетка + дроти + мультиметр | — | ✅ | — |
 | Прилади виміру | Nordic PPK2 · Joulescope JS220 / SMU · осцилограф · імпульсне e-load ≥ 4 А (фронт ≤ 5 мкс) · лабораторне джерело 0–20 В ≥ 3 А · аналізатор спектра або SDR · FRA з інжекційним трансформатором · термокамера −30…+60 °C · LCR-метр 100 кГц із затискачами Кельвіна · для `[bench:rf-mockup]`: VNA з покриттям 868 МГц, Wheeler-ковпак радіусом ≥ 55 мм, ступінчастий атенюатор із кроком 1 дБ, феритові дроселі на коакс — що навіщо: `firmware/scripts/bench/RUNBOOK.md` §0 | 🛒 PPK2 · позичити решту | PPK2 бачить ~100 нА, тож сон 300 нА атестує лише JS220/SMU; осцилограф — просадки під TX-сплеском |
 | Джерело рампи нижче 0.8 В | **лабораторне джерело 0–5 В з кроком ≤ 10 мВ і обмеженням струму ≤ 10 мА** (розвилку розвʼязує §4.1: те саме джерело тримає іоністор на 4.80 В ≥ 72 год для HW.37, чого потенціометр від елемента 1.5 В не дає); 10-обертовий потенціометр від елемента 1.5 В + резистор 4.7 кΩ — лише запасний шлях для самої рампи | 🛒 | вимір `VIN(CS)` партії BQ25570 (HW.46, RUNBOOK §6 `[bench:bq-coldstart]`): PPK2 як джерело нижче 0.8 В не йде, а рампа стартує з 0.40 В · ⛔ напряму на `VIN_DC` його не вішати — лише через `R_int` еквівалента (§4.1, рядок overcharge HW.12) |
@@ -182,7 +182,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 1. LoRa-E5 mini: Type-C → комп'ютер; прошити baseline-образ **STM32CubeProgrammer**, або `firmware/scripts/bench/RUNBOOK.md` §1.1 (`00_flash.sh --elf <path> --execute`).
    🔴 **ПЕРШИЙ FLASH НЕЗВОРОТНИЙ:** Seeed виходить з RDP-L1, тож перше програмування = **mass-erase**, і заводську **AT-прошивку вже не повернути** ([`00_07`](00_07_Action_Plan_Tracker) FW.46). Тримай **третій mini недоторканим резервом** і не спалюй обидва, доки не знаєш, що саме на них ганятимеш.
    ⛔ **`factory:flash` тут НЕ підходить і образу не пише** — його `desc` каже прямо: «Create a Factory-Flashing session (status=pending)». Це запис у БД, за яким іде `factory:approve` (обов'язкові `SUPERVISOR_PASSWORD` і `SUPERVISOR_OTP`, 2-Person Rule SEC.3) і `factory:execute`; дотиснувши його соло на dev-модулі, ти або впрешся в UID-guard [FW.54], або запишеш РЕАЛЬНІ ключові блоки в плату, яка для цього не призначена ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)).
-2. FT232RL: **джампер рівня → 3.3 В**; TX/RX cross до LoRa-E5 UART → serial-консоль / mruby REPL.
+2. FT232RL: **джампер рівня → 3.3 В**; TX/RX cross до **TX2/RX2** mini (`PA2`/`PA3`, J1-13/14 — пін-мапа [`03_01`](03_01_Firmware_Lifecycle_and_DMA), «Фізичне Підключення Апаратного Відладчика») → serial-консоль. ⛔ Не на J1-18/19 «TX/RX»: це USART1 бортового моста CP2102N, знеструмленого без USB. Прошивка Солдата UART-виводу сьогодні не має — самотест читається по SWD (RUNBOOK §2.1).
 3. ST-LINK-V3MINIE: SWD (SWCLK/SWDIO/GND) до LoRa-E5 для дебагу.
 4. **⚠️ Не живити одночасно** через Type-C (крок 1) І 3V3-пін від BQ25570 (§3.3): 3V3-пін mini back-feed-ить onboard-LDO. Спершу Type-C flash → від'єднати → потім живлення від BQ25570.
 
@@ -233,7 +233,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 > (µА-профілі, crypto-KAT, timing) — **дім `firmware/scripts/bench/RUNBOOK.md`**, НЕ дублюється тут.
 > **Bench-carrier — LoRa-E5 mini (⚖️ founder 2026-07-03, [`00_07`](00_07_Action_Plan_Tracker) FW.46):** носій radio-free зрізів до board-freeze — parity FW.7/19/31 · option-bytes + RDP-L1 · factory-provisioning · Flash-KV · DMA-вуха · LSE/WUT; CCM/sym selftest — лише з образом для mini; money-path e2e (CCM/OTA/ratchet) — за SubGHz-віхою, mini його не прискорює.
 > Оскільки LoRa-E5 = готовий STM32WLE5, RUNBOOK-сеанси §1-4 (прошивка+option-bytes · crypto · живлення · час/RTC) досяжні
-> на макетці, щойно є образ для mini (bench `.ioc` на JC ⊥ рукописний `hal_glue/boards/lora_e5/` — розвилка не розсуджена,
+> на макетці, щойно є образ для mini (рукописний `hal_glue/boards/lora_e5/` — ⚖️ делеговано 2026-10-06, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA);
 > нога [`00_07`](00_07_Action_Plan_Tracker) FW.46; кремнієва нога parity-dump `sim/wle5_bench` — голий RM0461, без цього образу);
 > §5 (модем SIM7070G) — Queen-only, тут недосяжний.
 
