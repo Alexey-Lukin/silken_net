@@ -23,8 +23,8 @@
  *      forced-mode через ops-шов Bme280_Ops (прецедент FlashKvOps /
  *      g_ota_flash_ops): host = фейк регістрів, MCU = HAL_I2C у main.c.
  *
- * 🚨 DCI-guard: VPD НЕ входить у входи Атрактора Лоренца (ті —
- * temp/acoustic/delta_t/vcap) → firmware↔backend bit-identity не зачіпається.
+ * 🚨 DCI-guard: VPD НЕ входить у входи Атрактора Лоренца (ті — temp/acoustic;
+ * delta_t і vcap з E.63 Z не рухають) → firmware↔backend bit-identity не зачіпається.
  * VPD живе виключно на confounder/slashing-шарі (03_04 DCI).
  *
  * Дріт: байт 19 `vpd_index` CCM wire-rev2 (03_05 §2.1 wire-budget ledger; lora_ccm.h).

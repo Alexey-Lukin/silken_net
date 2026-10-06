@@ -323,21 +323,14 @@ class InsightGeneratorService < ApplicationService
   # would push a whole cluster past the 20% slash threshold — a FALSE slash
   # against the forester. Never RAISES stress (discount-only invariant).
   #
-  # INERT (returns stress unchanged) when ANY holds — by design we ship NO guessed
-  # kPa threshold into the slashing path:
-  #   • avg_vpd nil       → firmware not yet emitting VPD (HW.32 / 03_01)
-  #   • calibration nil   → ground-truth thresholds unset (05_05 §8)
-  #   • VPD not low        → normal/high VPD = no weather excuse for low sap
-  #   • sap near baseline  → nothing weather could account for
-  #
-  # ⚠️ Activate ONLY after firmware VPD + ground-truth calibration land.
-  # ⛔ A third dependency stood here — "ML-retrain (vpd feature in
-  # silken_forest.marshal)" — and its SUBJECT is gone: the backend ML layer was
-  # removed 2026-09-05 (00_07 E.52). The heuristic is the only path; the model's
-  # return is gated by the event named in that verdict, not by this comment.
-  # Until then a wired,
-  # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 05_05 §7) —
-  # a signed low-sap (not |dev|) test is part of that calibration follow-up.
+  # ⛔ A per-condition INERT list and «activate after firmware VPD + calibration» stood
+  # here; they described a gate this method no longer is. It returns its input
+  # unchanged, and what keeps it shut is STRUCTURAL — reason and trigger (E.63
+  # `delta_t`, not VPD calibration) are in the comment right above the method
+  # (04_02 §VPD). We still ship NO guessed kPa threshold into the slashing path.
+  # The ML-retrain dependency is gone with its subject (00_07 E.52). NB: the
+  # heuristic ignores sap entirely (GAP, 05_05 §7) — a signed low-sap (not |dev|)
+  # test belongs to the calibration that follows the trigger.
 
   # 🔴 ІНЕРТНИЙ, і причина названа. Гейт існує, щоб ЗНИЖУВАТИ стрес, коли
   # пригнічений метаболізм пояснюється погодою (насичене повітря → нульова
