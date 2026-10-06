@@ -236,10 +236,12 @@ class InsightGeneratorService < ApplicationService
     stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i)
 
     # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a humid
-    # spell cannot push a cluster over the slash threshold. Inert until firmware
-    # sends VPD + ground-truth calibration (see #apply_weather_confounder).
-    # ⚠️ Друга умова гейта — метаболічне відхилення — виміру не має, тож дисконт
-    # не спрацює й після VPD-калібрування; тригер той самий, що у фрод-гарда.
+    # spell cannot push a cluster over the slash threshold. STRUCTURALLY inert —
+    # see #apply_weather_confounder.
+    # ⚠️ Друга умова гейта — метаболічне відхилення — не має каліброваної шкали:
+    # `delta_t` пишеться як `metabolism_s`, але DELTA_T_FAST/SLOW_S — плейсхолдери
+    # до bench-калібрування E.63, тож дисконт не спрацює й після VPD-калібрування;
+    # тригер той самий, що у фрод-гарда.
     unless is_fraud
       stress_index = apply_weather_confounder(stress_index, stats.avg_vpd&.to_f)
     end
@@ -317,11 +319,12 @@ class InsightGeneratorService < ApplicationService
   end
 
   # [VPD weather-confounder gate — 04_02 §VPD, 05_05 §7] DISCOUNT-ONLY.
-  # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:
-  # saturated air (rain/fog → low VPD) gives near-zero transpiration pull, so sap
-  # legitimately drops on a HEALTHY tree. Without this, a regional humid spell
-  # would push a whole cluster past the 20% slash threshold — a FALSE slash
-  # against the forester. Never RAISES stress (discount-only invariant).
+  # Designed to lower stress_index when depressed metabolism is explained by
+  # WEATHER, not disease: saturated air (rain/fog → low VPD) gives near-zero
+  # transpiration pull, so a HEALTHY tree legitimately slows. Never RAISES stress
+  # (discount-only invariant). The «a humid spell would cross the slash threshold»
+  # counterfactual that stood here assumed a sap term the heuristic no longer has —
+  # its ceiling is 0.6 < 0.83 (05_05 §7).
   #
   # ⛔ A per-condition INERT list and «activate after firmware VPD + calibration» stood
   # here; they described a gate this method no longer is. It returns its input
@@ -329,8 +332,9 @@ class InsightGeneratorService < ApplicationService
   # `delta_t`, not VPD calibration) are in the comment right above the method
   # (04_02 §VPD). We still ship NO guessed kPa threshold into the slashing path.
   # The ML-retrain dependency is gone with its subject (00_07 E.52). NB: the
-  # heuristic ignores sap entirely (GAP, 05_05 §7) — a signed low-sap (not |dev|)
-  # test belongs to the calibration that follows the trigger.
+  # heuristic ignores sap entirely (GAP, 05_05 §7), and `delta_t` does not measure
+  # sap flow — when the trigger lands, the gate's test is a SIGNED metabolic
+  # deviation (a slowdown, not |dev|), not a low-sap one.
 
   # 🔴 ІНЕРТНИЙ, і причина названа. Гейт існує, щоб ЗНИЖУВАТИ стрес, коли
   # пригнічений метаболізм пояснюється погодою (насичене повітря → нульова
