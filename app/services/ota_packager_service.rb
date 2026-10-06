@@ -112,7 +112,8 @@ class OtaPackagerService
   # (firmware/common/ota_seal_wire.h):
   #   [0]    0x9B (CMD_OTA_SEAL)
   #   [1..2] seg_idx (1..7, big-endian)
-  #   [3..4] lora_total_chunks (big-endian) — cross-check vs bytecode 0x99 header
+  #   [3..4] lora_total_chunks (big-endian) — informational: the firmware does not read it
+  #          (the signed total comes from the 0x99 headers — 00_07 FW.68)
   #   seg 1..6: [5..15] seal segment (11 bytes; seg 6 has 9 real bytes + 2 PAD)
   #   seg 7:    [5..8] version_id (big-endian) + [9..15] PAD
   # Deterministic for fixed (seal, lora_total_chunks, version_id).
@@ -169,7 +170,8 @@ class OtaPackagerService
       total_size: @payload.bytesize,
       checksum: Zlib.crc32(@payload).to_s(16).upcase,
       sha256: @firmware.binary_sha256,
-      total_chunks: total_bytecode_chunks
+      total_chunks: total_bytecode_chunks,
+      lora_total_chunks: lora_total_chunks
     }
     return base unless sealed?
 
@@ -177,7 +179,6 @@ class OtaPackagerService
     # can iterate over (bytecode + trailer) packages without re-counting and the UI
     # progress bar stays correct.
     base.merge(
-      lora_total_chunks: lora_total_chunks,
       total_packages:    total_bytecode_chunks + OTA_TRAILER_CHUNKS,
       sealed:            true,
       seal_cluster_id:   @cluster_id

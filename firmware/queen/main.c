@@ -2581,7 +2581,7 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
             // Перемикаємося на наступний шматок для наступного дерева
             current_ota_chunk_idx++;
             if (current_ota_chunk_idx >= total_chunks) {
-                // [FW.23] Тіло прошивки відлунало; якщо всі 4 трейлер-чанки
+                // [FW.23] Тіло прошивки відлунало; якщо всі 7 трейлер-блоків
                 // (печатка + версія) зібрані — ставимо їх замість крапки.
                 if (seal_segments_received == OTA_SEAL_ALL_RECEIVED) {
                     seal_broadcast_phase = 1;
@@ -2600,7 +2600,7 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
         } else if (seal_broadcast_phase == 1 &&
                    current_seal_seg_idx < OTA_SEAL_TRAILER_CHUNKS) {
             // [FW.23] Кладемо в ефір вже готовий 16-байтний трейлер-блок
-            // (печатка seg 1..3 або version_id seg 4). Backend сформував його;
+            // (печатка seg 1..6 або version_id seg 7). Backend сформував його;
             // Королева повторює буква в букву — AES-encrypt + Radio.Send,
             // не торкаючись жодного байту (печатку не можна підправляти).
             memcpy(ota_chunk, pending_ota_seal_chunks[current_seal_seg_idx], 16);

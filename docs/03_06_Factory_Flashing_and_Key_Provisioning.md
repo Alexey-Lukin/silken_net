@@ -603,13 +603,13 @@ log.update!(lorenz_state_(x|y|z): Attractor.as_rtc_state(x_f, y_f, z_f),
 | Backend (печатка) | `app/services/ota_packager_service.rb` | `seal_message` (тіло ‖ `version_id` BE4 ‖ `total` BE2) · `compute_seal` (64 Б) · `build_seal_trailer_chunks` (7 блоків `0x9B`) · `prepare(..., cluster_id:)` opt-in з `manifest[:sealed/seal_cluster_id/lora_total_chunks/total_packages]` |
 | Firmware (дріт) | `firmware/common/ota_seal_wire.h` | константи трейлера + `Ota_Seal_Parse_Chunk` — одна копія для Королеви й Солдата, pure, без криптографії |
 | Firmware (перевірка) | `firmware/common/ota_seal.h` | `Ota_Seal_Verify` (Monocypher: стрімінговий SHA-512 → `crypto_eddsa_reduce` → `crypto_eddsa_check_equation`, без копії тіла) · `Ota_Seal_Try_Finalize` (вердикт WAIT·APPLY·REJECT) |
-| Firmware Queen | `firmware/queen/main.c` | сліпий гонець: `pending_ota_seal_chunks[7][16]`, ready-mask `OTA_SEAL_ALL_RECEIVED` = `0x7F`; Phase 1 (трейлер) після Phase 0 (тіло), 60 ms pacing; криптографії не включає |
+| Firmware Queen | `firmware/queen/main.c` | сліпий гонець: `pending_ota_seal_chunks[7][16]`, ready-mask `OTA_SEAL_ALL_RECEIVED` = `0x7F`; один блок на рефлекс-постріл після почутого uplink'у (FW.27-B, duty-лімітер FW.61), трейлер — одним проходом ([`FW.68`](00_07_Action_Plan_Tracker)); криптографії не включає |
 | Firmware Soldier | `firmware/soldier/main.c` | `Load_Ota_Seal_Pubkey` (Protected Flash `0x0803E800`, magic `"KPUB"`, ненульовий ключ, інакше `ota_seal_pubkey_valid=0` → fail-closed) · `Ota_Seal_Parse_Chunk` / `Ota_Seal_Try_Finalize` з обох RX-гілок (тіло `0x99` / печатка `0x9B`) |
 | Factory | `FactoryFlashing::CommandBuilder` · `Session` · `SecureElementProvisioner` | сторінка 125: `KPUB`-блок (magic `0x4B505542` + 8 слів публічного ключа) на місці колишнього `KOTA`; `Session` тягне `OtaSealKeyService.public_key_hex_for`; SE Slot 3 (superseded Гілка B) — той самий публічний ключ |
 | Backend specs | `spec/services/ota_seal_key_service_spec.rb` · `ota_packager_service_spec.rb` · `spec/integration/ota_firmware_flow_spec.rb` · factory-специ | золотий вектор · детермінізм повторного пакування (байт-у-байт) · relabel / truncation / tamper / чужий кластер → `Ed25519::VerifyError` · маніфест · KPUB-транскрипт |
 | Firmware host-tests | `firmware/test/test_ota_seal.c` · `test_soldier_logic.c` · `test_queen_logic.c` | золотий вектор Ruby перевіряють прошивка, Monocypher і OpenSSL · стрімінг ≡ `crypto_ed25519_check` · кожен змінений вхід ламає перевірку · збирання 7 блоків (поза порядком, дублікат, seg 6 = 9 Б, криві блоки) · `Ota_Seal_Try_Finalize` APPLY·WAIT·REJECT · реле Королеви 7 блоків, FW.52б воскресіння рівно на сьомому |
 
-**Ціна (виміряно 2026-10-06; Cortex-M4 soft-float, `-Os`, `--gc-sections`):** +11 024 Б `.text` (≈10.8 КіБ: Monocypher-перевірка + SHA-512; гармошка з викликом `Ota_Seal_Verify` проти без, верхня оцінка — спільні з образом функції libc пораховано двічі; рядок у [`03_01 §12`](03_01_Firmware_Lifecycle_and_DMA)) · пік стеку перевірки ≈2.0 КБ (статичний граф GCC `-fcallgraph-info=su`; найбільший кадр — `crypto_eddsa_check_equation` 1 128 Б) проти ~0.3 КБ HMAC · `.bss` Солдата +32 Б (печатка 64 Б замість тегу 32 Б), Королеви +48 Б (7 блоків замість 4) — RAM-гейт [FW.26] зелений · ефір +3 LoRa-блоки (≈+180 мс трансляції). 🔴 **Найслабша ланка (з подання, відкрита):** запас флешу Солдата до board-freeze не виміряно — повного `.elf` нема ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), тож +10.8 КБ стоять у черзі поруч із mruby ~117 КБ без доведеного «влазить». 🟡 **Лишається (bench, клас C):** час перевірки на кремнії (QEMU-M4 смуга [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA) виконує ISA, але не цикло-точна) + e2e на STM32: валідний APPLY + підмінений байт тіла → REJECT — RUNBOOK §2.5.
+**Ціна (виміряно 2026-10-06; Cortex-M4 soft-float, `-Os`, `--gc-sections`):** +11 024 Б `.text` (≈10.8 КіБ: Monocypher-перевірка + SHA-512; гармошка з викликом `Ota_Seal_Verify` проти без, верхня оцінка — спільні з образом функції libc пораховано двічі; рядок у [`03_01 §12`](03_01_Firmware_Lifecycle_and_DMA)) · пік стеку перевірки ≈2.0 КБ (статичний граф GCC `-fcallgraph-info=su`; найбільший кадр — `crypto_eddsa_check_equation` 1 128 Б) проти ~0.3 КБ HMAC · `.bss` Солдата +32 Б (печатка 64 Б замість тегу 32 Б), Королеви +48 Б (7 блоків замість 4) — RAM-гейт [FW.26] зелений · ефір +3 рефлекс-постріли (16 Б @ SF9 ≈ 165 мс кожен; трейлер 7 блоків замість 4). 🔴 **Найслабша ланка (з подання, відкрита):** запас флешу Солдата до board-freeze не виміряно — повного `.elf` нема ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), тож +10.8 КБ стоять у черзі поруч із mruby ~117 КБ без доведеного «влазить». 🟡 **Лишається (bench, клас C):** час перевірки на кремнії (QEMU-M4 смуга [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA) виконує ISA, але не цикло-точна) + e2e на STM32: валідний APPLY + підмінений байт тіла → REJECT — RUNBOOK §2.5 (доки стоять [`FW.67`](00_07_Action_Plan_Tracker)/[`FW.68`](00_07_Action_Plan_Tracker) — тестовим контрактом ≤ 1 019 Б і одним Солдатом).
 
 > **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker)
 > **Залежність:** FW.1 (per-device HKDF) — ✅ (03_05 §3.1); спільна master-secret інфраструктура.
@@ -664,7 +664,7 @@ Seg 7 (chunk N+6) — version envelope:
 |------|--------|------|------|
 | 0 | 1 | `0x9B` | маркер трейлера печатки (відрізняє від `0x99`) |
 | 1–2 | 2 | `seg_idx` BE | 1–6 = печатка, 7 = version envelope |
-| 3–4 | 2 | `total_chunks` BE | кількість bytecode-чанків (cross-check; частина підписаного) |
+| 3–4 | 2 | `total_chunks` BE | кількість bytecode-чанків — прошивка поле НЕ читає: підписаний total береться з `0x99`-заголовків, тож блок печатки до кампанії не прив'язаний ([`FW.68`](00_07_Action_Plan_Tracker)) |
 | 5–15 (seg 1–5) | 11 | `seal_segment` | 11 байт печатки |
 | 5–13 (seg 6) | 9 | `seal_segment` | останні 9 байт (6 × 11 = 66 ≥ 64) + 2 PAD `0x00` |
 | 5–8 (seg 7) | 4 | `version_id` BE | `firmware.id` — частина підписаного; без нього Солдат не відтворить повідомлення |
@@ -674,7 +674,7 @@ Seg 7 (chunk N+6) — version envelope:
 
 ### Backend — `OtaPackagerService` + `OtaSealKeyService`
 
-`prepare(firmware, chunk_size:, cluster_id:)` після bytecode-чанків рахує печатку над `@padded_payload` і додає 7 трейлер-блоків; `manifest[:total_packages] = total_chunks + 7` — від нього `OtaTransmissionWorker` рахує фінальний індекс. Без `cluster_id` потік непідписаний — лише для bench-стендів без кластера.
+`prepare(firmware, chunk_size:, cluster_id:)` після bytecode-чанків рахує печатку над `@padded_payload` і додає 7 трейлер-блоків; `manifest[:total_packages] = total_chunks + 7` (живий poll-тракт `Downlink::PendingQueueService` рахує від `packages.size`; push-воркер `OtaTransmissionWorker` — superseded FW.60). Без `cluster_id` потік непідписаний — лише для bench-стендів без кластера.
 
 ```
 seed   = HKDF-SHA256(ikm: master_key, salt: "cluster:#{cluster_id}", info: "silken-ota-ed25519-v1", length: 32)
@@ -683,7 +683,7 @@ seal   = sk.sign(seal_message(padded_bytecode, firmware.id, lora_total_chunks)) 
 ```
 
 **Що прив'язує повідомлення** — `version_id` і `total_chunks` входять у підписане:
-- **Re-labeling** (старий image, пере-мічений НОВОЮ версією → печатка над тілом ‖ версією не сходиться). ⚠️ **НЕ плутати з rollback:** валідно підписана СТАРА версія у свіжій сесії печатку проходить — монотонність версій закрита ОКРЕМО на Soldier (`common/ota_antirollback.h`, Flash-KV high-water ключ 0x15; [`00_07` SEC.20](00_07_Action_Plan_Tracker))
+- **Re-labeling** (старий image, пере-мічений НОВОЮ версією → печатка над тілом ‖ версією не сходиться). ⚠️ **НЕ плутати з rollback:** валідно підписана СТАРА версія у свіжій сесії печатку проходить — монотонність версій закрита ОКРЕМО на Soldier (`common/ota_antirollback.h`, Flash-KV high-water ключ 0x15; [`00_07` SEC.20](00_07_Action_Plan_Tracker)); ⚠️ брама свіжості відкрита, якщо журнал Flash-KV не змонтувався (`!mounted` → degraded-allow)
 - **Truncation attack** (відкидання останніх chunks → змінений `total_chunks` ламає печатку)
 
 **⚠️ Bump-інваріант відкликаного/проваленого OTA (SEC.20).** `Ota_Version_Commit` палить слот `0x15` **у момент APPLY** (Flash-запис contract'а), НЕ в момент доведеного успішного виконання. Наслідок жорсткий: версія N, що впала у vm-error-fallback (3 bytecode-збої → erase contract → embedded baseline), **спалена назавжди** — повторний push виправленого bytecode з тим самим `version_id=N` отримає мовчазний REJECT (`Ota_Version_Is_Fresh` вимагає строго `>`). Фікс = завжди **новий** `BioContractFirmware`-запис (auto-increment `id` > N задарма); re-deploy/re-activate старого запису = no-op на девайсі. Факт відкату видимий backend'у з кожного кадру: wire-звіт `[semantic:1|reverted:1|hiwater&0x3FFF]` у байтах 12..13 ([`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA)) / CCM vpd-байт → `TelemetryLog#firmware_report_reverted?` → `EwsAlert firmware_reverted` («re-issue версією > спаленої»).
@@ -723,19 +723,19 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
   WAIT   → нічого (тіло зібране, печатка ще летить — або навпаки)
 ```
 
-`Ota_Seal_Verify` — рівно кроки `crypto_ed25519_check` (h = reduce(SHA-512(R ‖ A ‖ повідомлення)), потім рівняння перевірки, яке відкидає S ≥ L), лише повідомлення стрімиться двома шматками: тіло (~1 КБ) лишається в `ota_buffer`, 6-байтний суфікс іде окремо, без копії в стек. Пін рівності зі склеєним `crypto_ed25519_check` — `test_ota_seal.c`.
+`Ota_Seal_Verify` — рівно кроки `crypto_ed25519_check` (h = reduce(SHA-512(R ‖ A ‖ повідомлення)), потім рівняння перевірки, яке відкидає S ≥ L), лише повідомлення стрімиться двома шматками: тіло (≤ 1 019 Б — стеля `ota_buffer`, [`FW.67`](00_07_Action_Plan_Tracker)) лишається в `ota_buffer`, 6-байтний суфікс іде окремо, без копії в стек. Пін рівності зі склеєним `crypto_ed25519_check` — `test_ota_seal.c`.
 
 **Властивості:**
 - **Performance:** брама 1 відкидає шум за ~1 µs; печатка рахується лише коли зібрано і тіло, і всі 7 блоків
 - **Defense-in-depth:** печатку перевіряють на тих самих байтах, що й браму 1 (`buf[0..data_len)`) — bit-flip між брамами «провезти» не можна
 - **Fail-safe (no key):** `ota_seal_pubkey_valid==0` (KPUB не провіжнено, нульовий ключ або стара magic) ⇒ REJECT
-- **Fail-safe (magic-wipe):** REJECT затирає `buf[0..3]` у RAM, щоб частково записаний OTA не воскрес при наступному boot
-- **Ordering-safe:** фіналізація спрацьовує з гілки, що завершилась ОСТАННЬОЮ (тіло чи печатка)
+- **Magic-wipe — прибирання, не захист:** REJECT затирає `buf[0..3]` у RAM, але boot цього буфера не читає (контракт вантажиться лише з Flash, `.bss` скидається); захищає те, що запис у Flash стоїть лише за APPLY
+- **Ordering-safe — частково:** фіналізація спрацьовує з гілки, що завершилась ОСТАННЬОЮ (тіло чи печатка), але блоки печатки, що прийшли ДО першого чанка тіла, світанок кампанії стирає ([`FW.68`](00_07_Action_Plan_Tracker))
 - **Час не секрет:** перевірка variable-time, і це законно — печатка, публічний ключ і тіло публічні; constant-time compare HMAC-ери більше не потрібен
 
 ### Queen — сліпий гонець
 
-Королева печатку НЕ перевіряє і ключа не має: включає лише `ota_seal_wire.h`, тримає 7 блоків як є й ретранслює. Автентифікація Backend → Soldier наскрізна: скомпрометована Королева може не доставити кампанію, але не може її підмінити — Солдат відкине на брамі 2. Перевірка на Королеві дала б лише economy-of-scale (1 verify замість N), а Солдатів не захистила б: вони перевіряють і так.
+Королева печатку НЕ перевіряє і ключа не має: включає лише `ota_seal_wire.h`, тримає 7 блоків як є й ретранслює. Автентифікація Backend → Soldier наскрізна: скомпрометована Королева може не доставити кампанію, але не може її підробити — Солдат відкине на брамі 2. ⚠️ Підробити ≠ підмінити: справжню печатку ІНШОЇ кампанії свого кластера з версією вище за приплив вузла вона доставити може (↓ «Стелі»). Перевірка на Королеві дала б лише economy-of-scale (1 verify замість N), а Солдатів не захистила б: вони перевіряють і так.
 
 ### Безпекові параметри
 
@@ -751,7 +751,16 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
 | Підписане | `padded_bytecode ‖ version_id ‖ total_chunks` | anti-relabel + anti-truncation |
 | Бібліотека (вузол) | Monocypher 4.0.3, pinned submodule | `crypto_eddsa_check_equation` відкидає S ≥ L (malleability) |
 | Бібліотека (бекенд) | гем `ed25519` | паритет — золотий вектор: Ruby ⇒ прошивка ⇒ OpenSSL |
-| Wire overhead | +7 LoRa-блоків (≈+420 мс трансляції) | < 1% від OTA-сесії ~745 чанків |
+| Wire overhead | +7 рефлекс-пострілів (16 Б @ SF9 ≈ 165 мс ефіру кожен) | ≥ 7 % ефіру кампанії: тіло — щонайбільше 93 чанки (стеля Солдата, [`FW.67`](00_07_Action_Plan_Tracker)) |
+
+### Стелі печатки й відкриті дефекти доставки (адверсарне рев'ю, 2026-10-06)
+
+Рев'ю застосування в рамці атакувальника (KEYB відомий, дамп вузла, захоплена Королева; модель асемблера Солдата, ~268 тис. ворожих кадрів) **непідписаного запису не знайшло**: перевірка й запис у Flash беруть той самий `ota_buffer`/`data_len`, той самий `received_ota_version` годує і свіжість, і commit, а довжина підписаного повідомлення прив'язує `data_len` до total. Знайшло інше:
+- 🔴 **Доставка — дві стелі, ширші за FW.23.** Чинний контракт (2 855 Б) не вміщується ні в `ota_buffer` (93 чанки ≈ 1 019 Б), ні у Flash-слот (одна сторінка 2 КБ) — [`FW.67`](00_07_Action_Plan_Tracker). Трейлер іде одним проходом і не перезапитується: при N Солдатах на Королеву шанс дерева зібрати 7 блоків ≈ N⁻⁷ (HMAC-ера — N⁻⁴) — [`FW.68`](00_07_Action_Plan_Tracker).
+- **Печатка прив'язує кластер, версію й total — і більше нічого.** Ні canary-когорти, ні `target_hardware_type`/`tree_family`, ні строку, ні відкликання: власник KEYB чи захоплена Королева може доставити будь-яку перехоплену справжню кампанію свого кластера з версією вище за приплив вузла — зокрема відкликану чи canary-only — на будь-якого Солдата кластера.
+- **Малопорядковий публічний ключ приймає будь-яку печатку** (перевірка Monocypher кофакторна), а `Ota_Seal_Pubkey_From_Words` відкидає лише нульовий. Шлях туди — лише запис сторінки 125, а хто її пише, той і так ставить свій ключ; HKDF-ключ бекенду малопорядковим не буває.
+- **Тегу типу в підписаному нема:** мертвий push-воркер запечатав би `TinyMlModel` тим самим ключем, з id іншої таблиці як версією, — оживляючи той шлях, додай тег типу.
+- Атакувальник може змусити щонайбільше одну перевірку на 8 пробуджень Солдата (1 чанк тіла + 7 блоків із валідним CRC і `RITE`); вікно IWDG (~26 с, [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) перевірку не обриває.
 
 ### Test Coverage — ✅
 - **Backend:** `ota_seal_key_service_spec` (формула HKDF, детермінізм, ізоляція кластерів, SEC.11, публічний ключ) · `ota_packager_service_spec` (золотий вектор, повторний `prepare` байт-у-байт, relabel/truncation/tamper, 7 блоків, маніфест) · `spec/integration/ota_firmware_flow_spec.rb` (трейлер → печатка → публічний ключ кластера приймає; підмінене тіло, чужа версія, обрізання, чужий кластер — ні)

@@ -1044,7 +1044,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 **Доступ:** Роль `admin`.
 
-Контролер валідує params + tenancy і делегує в `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)): anti-rollback guard `firmware.id > clusters.ota_version_hiwater` (строго `>`, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) → canary-когорта per-cluster → таргет `gateways.pending_firmware_id` **per gateway** [FW.60] (eligible: є `ip_address` — проксі «шлюз виходив у мережу», НЕ доставочна адреса ([`04_01`](04_01_Data_Models_and_Entities) CGNAT-нотатка); state ∉ maintenance/faulty/updating); доставку тягне Королева poll'ом + oversized-гейт 16×512=8КБ ДО burn.
+Контролер валідує params + tenancy і делегує в `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)): anti-rollback guard `firmware.id > clusters.ota_version_hiwater` (строго `>`, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) → canary-когорта per-cluster → таргет `gateways.pending_firmware_id` **per gateway** [FW.60] (eligible: є `ip_address` — проксі «шлюз виходив у мережу», НЕ доставочна адреса ([`04_01`](04_01_Data_Models_and_Entities) CGNAT-нотатка); state ∉ maintenance/faulty/updating); доставку тягне Королева poll'ом + oversized-гейт ДО burn — стеля Королеви 16×512=8КБ і стеля Солдата 93 LoRa-чанки ≈ 1 КБ (FW.67).
 
 **Request Body:**
 

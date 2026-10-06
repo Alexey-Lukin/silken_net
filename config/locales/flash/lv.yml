@@ -22,7 +22,7 @@ lv:
     firmwares:
       deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Queen vārtejas to paņems nākamajā poll pieprasījumā.
       deployment_no_targets: 'OTA noraidīta: nav piemērotu vārteju izvietošanai.'
-      deployment_oversized: 'OTA noraidīta: programmaparatūra pārsniedz Queen montāžas griestus (16 gabali x 512 B = 8 KB).'
+      deployment_oversized: 'OTA noraidīta: programmaparatūra pārsniedz montāžas griestus — Queen (16 gabali x 512 B = 8 KB) vai Soldier (93 LoRa gabali, aptuveni 1 KB).'
       deployment_rejected_stale: 'OTA noraidīta: versija nepārsniedz klastera augstākā ūdens atzīmi (anti-rollback). Izveidojiet jaunu programmaparatūras ierakstu.'
       file_too_large: Faila izmērs pārsniedz %{limit} MB ierobežojumu.
       invalid_target_type: 'target_type jābūt vienam no: %{allowed}.'

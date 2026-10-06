@@ -176,6 +176,23 @@ RSpec.describe Ota::DeploymentDispatcherService do
     it "passes a firmware that fits the 16-chunk assembly ceiling" do
       expect(call_service.dispatched?).to be(true)
     end
+
+    # [FW.67] 2 КБ влазить у стелю Королеви (4 CoAP-чанки), але не в ota_buffer Солдата
+    # (183 LoRa-чанки > 93) — збирання стало б на 93, і кампанія палила б hiwater даремно.
+    it "rejects a campaign that fits the Queen but not the Soldier assembly ceiling" do
+      too_big_for_soldier = create(:bio_contract_firmware, bytecode_payload: "01" * 2_000)
+      result = call_service(fw: too_big_for_soldier)
+
+      expect(result.skipped_clusters.map(&:reason)).to eq([ "oversized_firmware" ])
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+    end
+
+    it "mirrors the Soldier's ota_buffer — the ceiling is read off firmware/soldier/main.c" do
+      soldier = Rails.root.join("firmware/soldier/main.c").read
+
+      expect(soldier).to match(/^uint8_t ota_buffer\[#{described_class::SOLDIER_OTA_BUFFER_BYTES}\];/)
+      expect(described_class::SOLDIER_MAX_LORA_CHUNKS).to eq(93)
+    end
   end
 
   describe "targeting scope" do

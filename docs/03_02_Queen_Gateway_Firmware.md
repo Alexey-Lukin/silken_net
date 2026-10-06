@@ -628,7 +628,7 @@ if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало
 **Два типи OTA-чанків — важливо не плутати:**
 | Тип | Джерело | Розмір payload | Макс чанків | Ліміт |
 |-----|---------|----------------|-------------|-------|
-| **CoAP downlink** (Rails → Queen) | `Handle_CoAP_Command` ← Queen-driven fetch §4а (CARECV-нога, [FW.60]) | ≤512 байт | 16 | `OTA_MAX_CHUNKS` (bitmap; Rails-дзеркало = oversized-гейт dispatcher'а) |
+| **CoAP downlink** (Rails → Queen) | `Handle_CoAP_Command` ← Queen-driven fetch §4а (CARECV-нога, [FW.60]) | ≤512 байт | 16 | `OTA_MAX_CHUNKS` (bitmap; Rails-дзеркало = oversized-гейт dispatcher'а, поруч зі стелею Солдата — FW.67) |
 | **LoRa Reflex Shot** (Queen → Soldier) | Main loop | 11 байт | ≤745 | `(pending_ota_size+10)/11` |
 
 ```

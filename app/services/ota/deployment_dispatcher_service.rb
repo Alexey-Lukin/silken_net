@@ -19,6 +19,13 @@ module Ota
     # збірка зависає назавжди, тож відхиляємо кампанію ДО burn.
     QUEEN_MAX_BYTECODE_CHUNKS = 16
 
+    # [FW.67] Дзеркало стелі збирання Солдата: `ota_buffer[1024]` (firmware/soldier/main.c)
+    # бере LoRa-чанк, лише коли offset + 11 ≤ 1024, — щонайбільше 93 чанки (тіло ≤ 1 019 Б).
+    # Понад — хвіст мовчки відкидається, збирання стає на 93 і печатку не перевіряють
+    # ніколи, а стеля Королеви цього не бачить (контракт на 2 855 Б — лише 6 CoAP-чанків).
+    SOLDIER_OTA_BUFFER_BYTES = 1024
+    SOLDIER_MAX_LORA_CHUNKS = SOLDIER_OTA_BUFFER_BYTES / OtaPackagerService::LORA_MTU
+
     SkippedCluster = Struct.new(:id, :name, :reason)
     Result = Struct.new(:dispatched_gateways, :skipped_clusters, keyword_init: true) do
       def dispatched? = dispatched_gateways.positive?
@@ -52,11 +59,13 @@ module Ota
     # [FW.60] 16-чанк/8КБ-гейт: manifest дешевий (lazy-packages не
     # матеріалізуються), total_chunks = чисті bytecode-чанки 0x99 —
     # трейлер печатки 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
+    # [FW.67] Друга стеля — Солдата: lora_total_chunks того самого wire-потоку.
     def oversized_rejection
       manifest = OtaPackagerService.prepare(
         @firmware, chunk_size: OtaChunkable::CHUNK_SIZE
       )[:manifest]
-      return nil if manifest[:total_chunks] <= QUEEN_MAX_BYTECODE_CHUNKS
+      return nil if manifest[:total_chunks] <= QUEEN_MAX_BYTECODE_CHUNKS &&
+                    manifest[:lora_total_chunks] <= SOLDIER_MAX_LORA_CHUNKS
 
       target_clusters.map { |c| SkippedCluster.new(c.id, c.name, "oversized_firmware") }
     end
