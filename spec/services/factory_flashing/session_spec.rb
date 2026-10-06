@@ -253,12 +253,12 @@ end
 
     it "Гілка B: обидва OTA call-sites отримують адаптерний ключ" do
       session = make_session(gilka: "B", se_serial_hex: "0123456789ABCDEF01")
-      allow(OtaHmacKeyService).to receive(:fetch_for)
+      allow(OtaSealKeyService).to receive(:public_key_hex_for)
         .with(tree.cluster_id, master_key: di_key).and_call_original
 
       described_class.run(session: session, executor: executor, master_key_source: di_source)
 
-      expect(OtaHmacKeyService).to have_received(:fetch_for)
+      expect(OtaSealKeyService).to have_received(:public_key_hex_for)
         .with(tree.cluster_id, master_key: di_key).at_least(:once)
     end
   end

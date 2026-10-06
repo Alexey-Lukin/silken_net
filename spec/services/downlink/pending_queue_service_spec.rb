@@ -736,7 +736,7 @@ RSpec.describe Downlink::PendingQueueService do
 
     it "прогріту кампанію віддає без жодного master-key у процесі" do
       Ota::PackageStore.warm!(firmware, cluster.id)
-      allow(OtaHmacKeyService).to receive(:fetch_binary_for)
+      allow(OtaSealKeyService).to receive(:signing_key_for)
         .and_raise(SecurityError, "PROVISIONING_MASTER_KEY ENV is required")
 
       expect(decrypt_inner(poll).getbyte(0)).to eq(0x9F)

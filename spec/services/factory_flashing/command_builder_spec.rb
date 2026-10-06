@@ -11,7 +11,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   let(:aes_lora_hex) { "0123456789ABCDEF0123456789ABCDEF" }                                # 16 bytes
   let(:aes_coap_hex) { "F" * 64 }                                                          # 32 bytes
   let(:k_seed_hex)   { "00112233445566778899AABBCCDDEEFF" + "FFEEDDCCBBAA99887766554433221100" }
-  let(:k_ota_hex)    { "A1B2C3D4E5F60718293A4B5C6D7E8F90" + "0F1E2D3C4B5A69788796A5B4C3D2E1F0" }
+  let(:seal_pub_hex)    { "A1B2C3D4E5F60718293A4B5C6D7E8F90" + "0F1E2D3C4B5A69788796A5B4C3D2E1F0" }
   # [FW.2 (в)] Cluster control-plane ключ (KEYB): Tree → KEYB-слот, Gateway → її KEYL
   let(:bcast_hex)    { "B0B1B2B3C0C1C2C3D0D1D2D3E0E1E2E3" }                                # 16 bytes
 
@@ -22,7 +22,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         device: tree,
         aes_key_hex: aes_lora_hex,
         lorenz_seed_hex: k_seed_hex,
-        ota_hmac_hex: k_ota_hex,
+        ota_seal_pub_hex: seal_pub_hex,
         bcast_key_hex: bcast_hex
       ).commands
     end
@@ -31,7 +31,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     # Golden-транскрипт атомарний (один eq-масив = повний фабричний контракт) —
     # різати на шматки шкідливо для читабельності діфа при зміні layout'у.
-    it "reads the UID, erases the key pages, writes KEYL·LSED and KOTA·KEYB as whole doublewords, then IWDG and RDP" do
+    it "reads the UID, erases the key pages, writes KEYL·LSED and KPUB·KEYB as whole doublewords, then IWDG and RDP" do
       expect(commands).to eq([
         # [FW.54] SWD-read кремнієвого паспорта — wrong-board guard (Session)
         "STM32_Programmer_CLI -c port=SWD mode=UR -r32 0x1FFF7590 12 -r32 0x0803E000 4",
@@ -42,11 +42,11 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 " \
         "0x4B45594C 0x01234567 0x89ABCDEF 0x01234567 0x89ABCDEF " \
         "0x4C534544 0x00112233 0x44556677 0x8899AABB 0xCCDDEEFF 0xFFEEDDCC 0xBBAA9988 0x77665544 0x33221100",
-        # стор. 125: [FW.23] KOTA magic + 8 K_ota words (розкладка дзеркалить
-        # Load_Ota_Hmac_Key) + стерте слово до кінця doubleword'а; [FW.2 (в)]
+        # стор. 125: [FW.23] KPUB magic + 8 слів публічного ключа печатки (розкладка
+        # дзеркалить Load_Ota_Seal_Pubkey) + стерте слово до кінця doubleword'а; [FW.2 (в)]
         # KEYB magic + 4 broadcast words зі старту +40 + ще одне стерте слово
         "STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E800 " \
-        "0x4B4F5441 0xA1B2C3D4 0xE5F60718 0x293A4B5C 0x6D7E8F90 0x0F1E2D3C 0x4B5A6978 0x8796A5B4 0xC3D2E1F0 0xFFFFFFFF " \
+        "0x4B505542 0xA1B2C3D4 0xE5F60718 0x293A4B5C 0x6D7E8F90 0x0F1E2D3C 0x4B5A6978 0x8796A5B4 0xC3D2E1F0 0xFFFFFFFF " \
         "0x4B455942 0xB0B1B2B3 0xC0C1C2C3 0xD0D1D2D3 0xE0E1E2E3 0xFFFFFFFF",
         # [SEC.15] пес заморожений у STOP2/STANDBY — ДО RDP (03_01 §1.10)
         "STM32_Programmer_CLI -c port=SWD mode=UR -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0",
@@ -59,7 +59,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     it "erases both journal pages and writes the fresh journal page on a re-provision" do
       commands = described_class.new(
         session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
-        ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex,
+        ota_seal_pub_hex: seal_pub_hex, bcast_key_hex: bcast_hex,
         kv_journal_words: FactoryFlashing::FlashKvImage.words(ota_hiwater: 0x2A)
       ).flash_commands
 
@@ -85,12 +85,25 @@ RSpec.describe FactoryFlashing::CommandBuilder do
           device: tree,
           aes_key_hex: aes_lora_hex,
           lorenz_seed_hex: k_seed_hex,
-          ota_hmac_hex: k_ota_hex
+          ota_seal_pub_hex: seal_pub_hex
         )
       }.to raise_error(ArgumentError, /bcast_key_hex/)
     end
 
-    it "refuses a Tree without ota_hmac_hex — інакше OTA вічно fail-closed (FW.23)" do
+    # Шов фабрика → Flash → прошивка (FW.30 BE-слова): золотий ключ печатки, деривований
+    # OtaSealKeyService, іде рівно тими словами, які firmware/test/test_ota_seal.c розпаковує
+    # в той самий ключ і ним перевіряє Ruby-печатку. Міняєш тут → перегенеруй там.
+    it "writes the golden OTA seal public key as the KPUB words the firmware unpacks" do
+      golden_pub = OtaSealKeyService.public_key_hex_for("cluster-golden-1", master_key: "silken-fw23-golden-master-key")
+      commands = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
+                                     ota_seal_pub_hex: golden_pub, bcast_key_hex: bcast_hex).commands
+
+      expect(commands).to include(a_string_including(
+        "-w32 0x0803E800 0x4B505542 0x90B7DBB7 0x47630A9E 0x2DDE9AE8 0x6C2B28B3 0xF43421C5 0x53C6196A 0xB5F61FD6 0x732FC146 "
+      ))
+    end
+
+    it "refuses a Tree without ota_seal_pub_hex — інакше OTA вічно fail-closed (FW.23)" do
       expect {
         described_class.new(
           session: session,
@@ -99,7 +112,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
           lorenz_seed_hex: k_seed_hex,
           bcast_key_hex: bcast_hex
         )
-      }.to raise_error(ArgumentError, /ota_hmac_hex/)
+      }.to raise_error(ArgumentError, /ota_seal_pub_hex/)
     end
 
     it "emits rdp_level=0 as the L0 byte — the number 0 would lock L1" do
@@ -220,8 +233,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
                           device: device, aes_key_hex: aes_key_hex, bcast_key_hex: bcast_hex, **keys).commands
     end
 
-    it "writes the Tree the same Protected-Flash key set as Гілка A (KEYL · LSED · KOTA · KEYB)" do
-      keys = { lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex }
+    it "writes the Tree the same Protected-Flash key set as Гілка A (KEYL · LSED · KPUB · KEYB)" do
+      keys = { lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex }
       b = commands_for("B", device: tree, aes_key_hex: aes_lora_hex, **keys)
 
       expect(b).to eq(commands_for("A", device: tree, aes_key_hex: aes_lora_hex, **keys))
@@ -250,7 +263,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     [ 0, 1 ].each do |level|
       it "Солдат на L#{level}: IWDG пишеться рівно раз і ДО RDP" do
         cmds = transcript(device: tree, rdp_level: level, aes_key_hex: aes_lora_hex,
-                          lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+                          lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex)
 
         expect(cmds.count(iwdg)).to eq(1)
         expect(cmds.index(iwdg)).to be < cmds.index { |c| c.include?("-ob RDP=") }
@@ -269,7 +282,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   # [SEC.3] Форма транскрипту — під CLI і кремній WL, а не під уявну сесію: кожен
   # рядок є окремим процесом (з'єднання між процесами не живе), а Flash приймає
   # лише цілий doubleword по стертому (`-w32` сам не стирає). Доти вирівняли лише
-  # межу KOTA|KEYB — магія зі словом ключа й межа KEYL|LSED ділили doubleword.
+  # межу KPUB|KEYB — магія зі словом ключа й межа KEYL|LSED ділили doubleword.
   describe "форма запису Flash WL" do
     let(:voice_seed) { "53494C4B454E2D4E45542D4C312D514154542D474F4C44454E2D534545442121" }
     let(:transcripts) do
@@ -278,7 +291,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
                             device: device, bcast_key_hex: bcast_hex, **keys).commands
       end
       {
-        tree:        transcript_for.call(tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex),
+        tree:        transcript_for.call(tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex),
         queen:       transcript_for.call(gateway, aes_key_hex: aes_coap_hex),
         queen_voice: transcript_for.call(gateway, aes_key_hex: aes_coap_hex, ed25519_seed_hex: voice_seed)
       }
@@ -296,7 +309,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       station_sn = "066DFF485550755187121832"
       bound = described_class.new(session: build(:provisioning_session, gilka: "A", rdp_level: 1),
                                   device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
-                                  ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex, probe_sn: station_sn).commands
+                                  ota_seal_pub_hex: seal_pub_hex, bcast_key_hex: bcast_hex, probe_sn: station_sn).commands
       expect(bound).to all(start_with("STM32_Programmer_CLI -c port=SWD mode=UR sn=#{station_sn} "))
     end
 
@@ -322,7 +335,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     # Формат живе тут, редакція — в Executor (друк dry-run і персистоване повідомлення
     # помилки): пін звʼязує обидва, тож зміна форми `-w32` не вимикає редакцію мовчки.
     it "Executor.redact ховає кожне слово кожного ключа з кожного рядка" do
-      key_words = [ aes_lora_hex, k_seed_hex, k_ota_hex, bcast_hex, voice_seed ].flat_map { |hex| hex.scan(/.{8}/) }
+      key_words = [ aes_lora_hex, k_seed_hex, seal_pub_hex, bcast_hex, voice_seed ].flat_map { |hex| hex.scan(/.{8}/) }
       transcripts.each_value do |cmds|
         redacted = cmds.map { |c| FactoryFlashing::Executor.redact(c) }.join("\n").upcase
         expect(key_words.select { |w| redacted.include?(w) }).to be_empty
@@ -361,7 +374,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     end
 
     it "Tree with 64-hex AES (wrong size for LoRa) raises in #commands" do
-      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex)
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex, bcast_key_hex: bcast_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /AES-128/)
     end
 
@@ -376,17 +389,17 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       }.to raise_error(ArgumentError, /lorenz_seed_hex must be hexadecimal/)
     end
 
-    it "rejects non-hex ota_hmac_hex (64 chars but with Z's)" do
+    it "rejects non-hex ota_seal_pub_hex (64 chars but with Z's)" do
       expect {
         described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex,
-                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: "Z" * 64, bcast_key_hex: bcast_hex)
-      }.to raise_error(ArgumentError, /ota_hmac_hex must be hexadecimal/)
+                            lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: "Z" * 64, bcast_key_hex: bcast_hex)
+      }.to raise_error(ArgumentError, /ota_seal_pub_hex must be hexadecimal/)
     end
 
     it "rejects non-hex bcast_key_hex (32 chars but with Z's) — FW.2 (в)" do
       expect {
         described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex,
-                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex, bcast_key_hex: "Z" * 32)
+                            lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex, bcast_key_hex: "Z" * 32)
       }.to raise_error(ArgumentError, /bcast_key_hex must be hexadecimal/)
     end
 
@@ -394,14 +407,14 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       gilka_b = build(:provisioning_session, :gilka_b)
       expect {
         described_class.new(session: gilka_b, device: tree, aes_key_hex: aes_lora_hex,
-                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+                            lorenz_seed_hex: k_seed_hex, ota_seal_pub_hex: seal_pub_hex)
       }.to raise_error(ArgumentError, /bcast_key_hex is required/)
     end
 
     it "raises on unknown gilka value at #commands" do
       session.gilka = "C"
       builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
-                                    ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex)
+                                    ota_seal_pub_hex: seal_pub_hex, bcast_key_hex: bcast_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /Unknown gilka/)
     end
   end

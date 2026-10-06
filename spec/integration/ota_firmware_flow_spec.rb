@@ -127,32 +127,18 @@ RSpec.describe "OTA firmware deployment flow" do
   end
 
   # =========================================================================
-  # [FW.23] HMAC dual-gate end-to-end: backend signs → Queen relay → Soldier accept
+  # ⚖️ [FW.23, founder 2026-10-05/06] Ed25519 seal end-to-end:
+  # backend signs → Queen relays blind → Soldier verifies with the cluster PUBLIC key
   # =========================================================================
-  describe "FW.23 OTA HMAC trailer end-to-end" do
+  describe "FW.23 OTA seal end-to-end" do
     let(:hex_payload) { "52495445" + ("AB" * 100) }  # "RITE" magic + 200 bytes payload
     let(:firmware) { create(:bio_contract_firmware, bytecode_payload: hex_payload) }
     let(:cluster_id) { "test-cluster-fw23" }
+    let(:prepared) { OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id) }
+    let(:verify_key) { Ed25519::VerifyKey.new([ OtaSealKeyService.public_key_hex_for(cluster_id) ].pack("H*")) }
 
-    it "backend produces 4 HMAC trailer chunks at end of packages (3 tag + version)" do
-      result = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id)
-      packages = result[:packages].to_a
-      trailer  = packages.last(4)
-
-      # 0x9B marker on each trailer chunk
-      expect(trailer.map { |p| p.unpack1("C") }).to all(eq(0x9B))
-      # 16-byte LoRa-formatted blocks (single AES-256 block)
-      expect(trailer.map(&:bytesize)).to all(eq(16))
-      # seg_idx 1, 2, 3 (HMAC tag) + 4 (version_id) in big-endian
-      expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq([ 1, 2, 3, 4 ])
-      # seg 4 carries firmware.id — the version_id input the Soldier needs to verify
-      expect(trailer.last[5..8].unpack1("N")).to eq(firmware.id)
-    end
-
-    # [FW.53] LoRa-шар тепер несе WIRE-потік: padded bytecode +
-    # CRC32-хвіст (вирівняний на LORA_MTU, бо Soldier рахує байти як 11×chunks).
-    # HMAC хешує padded stream БЕЗ CRC32 — дзеркало Soldier dual-gate
-    # (ota_buffer[0..data_len) після зрізання CRC).
+    # [FW.53] LoRa-шар несе WIRE-потік: padded bytecode + CRC32-хвіст (вирівняний на
+    # LORA_MTU). Печатка — над padded stream БЕЗ CRC32, як рахує Солдат.
     def lora_padded_payload(raw)
       pad_len = (OtaPackagerService::LORA_MTU -
                  ((raw.bytesize + OtaPackagerService::LORA_CRC32_BYTES) %
@@ -160,72 +146,50 @@ RSpec.describe "OTA firmware deployment flow" do
       raw.b + ("\x00".b * pad_len)
     end
 
-    it "manifest exposes lora_total_chunks for Queen→Soldier cross-check" do
-      manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
-      # Soldier sees this `total_chunks` in 0x99 LoRa header → must match HMAC binding
-      wire_size = lora_padded_payload(firmware.binary_payload).bytesize +
-                  OtaPackagerService::LORA_CRC32_BYTES
-      expect(manifest[:lora_total_chunks]).to eq(wire_size / OtaPackagerService::LORA_MTU)
-      expect(manifest[:hmac_signed]).to be true
+    def seal_from(trailer) = trailer.first(6).map { |c| c.byteslice(5, 11) }.join.byteslice(0, 64)
+
+    it "backend produces 7 seal trailer chunks at the end of the packages (6 seal + version)" do
+      trailer = prepared[:packages].to_a.last(7)
+
+      expect(trailer.map { |p| p.unpack1("C") }).to all(eq(0x9B))
+      expect(trailer.map(&:bytesize)).to all(eq(16))
+      expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq((1..7).to_a)
+      expect(trailer.last[5..8].unpack1("N")).to eq(firmware.id)
     end
 
-    it "trailer chunks reconstruct a 32-byte HMAC tag matching .compute_hmac_tag" do
-      manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
-      packages = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
-      trailer  = packages.last(4)
+    it "manifest exposes lora_total_chunks for the Queen→Soldier cross-check" do
+      wire_size = lora_padded_payload(firmware.binary_payload).bytesize + OtaPackagerService::LORA_CRC32_BYTES
 
-      # Reconstruct tag from the 3 HMAC trailer chunks (bytes 5..); seg 4 = version.
-      reconstructed = trailer[0][5..15] + trailer[1][5..15] + trailer[2][5..14]
-
-      expected = OtaPackagerService.compute_hmac_tag(
-        lora_padded_payload(firmware.binary_payload),
-        firmware.id,
-        manifest[:lora_total_chunks],
-        cluster_id: cluster_id
-      )
-      expect(reconstructed.b).to eq(expected)
-      # seg 4 carries the exact version_id bound into that tag (firmware.id, 4B BE)
-      expect(trailer[3][5..8].unpack1("N")).to eq(firmware.id)
+      expect(prepared[:manifest][:lora_total_chunks]).to eq(wire_size / OtaPackagerService::LORA_MTU)
+      expect(prepared[:manifest][:sealed]).to be true
     end
 
-    it "Soldier dual-gate would accept a properly signed firmware (mirrors C logic)" do
-      manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
-      bytecode = firmware.binary_payload
-      expected = OtaPackagerService.compute_hmac_tag(bytecode, firmware.id, manifest[:lora_total_chunks], cluster_id: cluster_id)
+    it "the Soldier would accept: the trailer seal verifies under the cluster public key" do
+      message = OtaPackagerService.seal_message(lora_padded_payload(firmware.binary_payload), firmware.id,
+                                                prepared[:manifest][:lora_total_chunks])
 
-      # Gate 1: magic check ("RITE" little-endian = 0x45544952)
-      magic = bytecode.byteslice(0, 4).unpack1("V")
-      expect(magic).to eq(0x45544952)
-
-      # Gate 2: HMAC matches (constant-time on firmware; here we use eq for clarity)
-      received = expected.dup
-      expect(received).to eq(expected)
+      expect(firmware.binary_payload.byteslice(0, 4).unpack1("V")).to eq(0x45544952) # магія "RITE"
+      expect(verify_key.verify(seal_from(prepared[:packages].to_a.last(7)), message)).to be(true)
     end
 
-    it "Soldier dual-gate would REJECT a tampered bytecode (anti-tamper)" do
-      manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
-      original_tag = OtaPackagerService.compute_hmac_tag(
-        firmware.binary_payload, firmware.id, manifest[:lora_total_chunks], cluster_id: cluster_id
-      )
-      tampered = firmware.binary_payload.dup
-      tampered[10] = (tampered[10].ord ^ 0x01).chr
-      tampered_tag = OtaPackagerService.compute_hmac_tag(
-        tampered, firmware.id, manifest[:lora_total_chunks], cluster_id: cluster_id
-      )
-      expect(tampered_tag).not_to eq(original_tag)
+    it "the Soldier would REJECT a tampered bytecode, a relabelled version and a truncated campaign" do
+      seal = seal_from(prepared[:packages].to_a.last(7))
+      padded = lora_padded_payload(firmware.binary_payload)
+      lora_total = prepared[:manifest][:lora_total_chunks]
+      tampered = padded.dup
+      tampered.setbyte(10, tampered.getbyte(10) ^ 0x01)
+
+      expect { verify_key.verify(seal, OtaPackagerService.seal_message(tampered, firmware.id, lora_total)) }.to raise_error(Ed25519::VerifyError)
+      expect { verify_key.verify(seal, OtaPackagerService.seal_message(padded, firmware.id + 1, lora_total)) }.to raise_error(Ed25519::VerifyError)
+      expect { verify_key.verify(seal, OtaPackagerService.seal_message(padded, firmware.id, lora_total - 1)) }.to raise_error(Ed25519::VerifyError)
     end
 
-    it "Soldier dual-gate would REJECT replayed image with old version_id (anti-replay)" do
-      lora_total = 5
-      tag_v1 = OtaPackagerService.compute_hmac_tag(firmware.binary_payload, 1, lora_total, cluster_id: cluster_id)
-      tag_v2 = OtaPackagerService.compute_hmac_tag(firmware.binary_payload, 2, lora_total, cluster_id: cluster_id)
-      expect(tag_v1).not_to eq(tag_v2)
-    end
+    it "a node holds only the public key — another cluster's key does not verify the seal" do
+      foreign = Ed25519::VerifyKey.new([ OtaSealKeyService.public_key_hex_for("another-cluster") ].pack("H*"))
+      message = OtaPackagerService.seal_message(lora_padded_payload(firmware.binary_payload), firmware.id,
+                                                prepared[:manifest][:lora_total_chunks])
 
-    it "Soldier dual-gate would REJECT truncation attack (anti-truncation)" do
-      tag_full = OtaPackagerService.compute_hmac_tag(firmware.binary_payload, firmware.id, 10, cluster_id: cluster_id)
-      tag_short = OtaPackagerService.compute_hmac_tag(firmware.binary_payload, firmware.id, 9, cluster_id: cluster_id)
-      expect(tag_full).not_to eq(tag_short)
+      expect { foreign.verify(seal_from(prepared[:packages].to_a.last(7)), message) }.to raise_error(Ed25519::VerifyError)
     end
   end
 end

@@ -21,7 +21,7 @@ require "rails_helper"
 #      factory key slot? Mirror it in FactoryFlashing::CommandBuilder +
 #      03_06 §2»). Чого вісь 3 НЕ бачить: виклик HKDF поза `app/`+`lib/`.
 #   2. Salt НЕ порівнюється: він рантаймовий (`device_uid` · `"cluster:N"`), і
-#      два різні сервіси законно ділять `"cluster:N"` (KEYB ⊥ K_ota). Саме тому
+#      два різні сервіси законно ділять `"cluster:N"` (KEYB ⊥ ключ печатки OTA). Саме тому
 #      вся вага domain separation лежить на info — і саме тому його
 #      унікальність мусить бути ГЕЙТОМ, а не домовленістю.
 #   3. Конвенція «де живе ідентичність» НАВМИСНО різна між сервісами
@@ -38,7 +38,7 @@ RSpec.describe "HKDF domain separation [SEC.34]" do # rubocop:disable RSpec/Desc
       "HardwareKeyService::LORA_HKDF_INFO" => HardwareKeyService::LORA_HKDF_INFO,
       "HardwareKeyService::BROADCAST_HKDF_INFO" => HardwareKeyService::BROADCAST_HKDF_INFO,
       "HardwareKeyService::IOTEX_HKDF_INFO" => HardwareKeyService::IOTEX_HKDF_INFO,
-      "OtaHmacKeyService::HKDF_INFO" => OtaHmacKeyService::HKDF_INFO,
+      "OtaSealKeyService::HKDF_INFO" => OtaSealKeyService::HKDF_INFO,
       "SilkenNet::SeedDerivation::HKDF_INFO_PREFIX" => SilkenNet::SeedDerivation::HKDF_INFO_PREFIX
     }
   end
@@ -65,11 +65,11 @@ RSpec.describe "HKDF domain separation [SEC.34]" do # rubocop:disable RSpec/Desc
   # `info: HKDF_INFO` у новому коді підхопило б те, що в лексичному скоупі.
   # Аліас у `HardwareKeyService` знято [SEC.34]; гейт тримає лінію.
   it "keeps the bare name HKDF_INFO in exactly ONE class" do
-    owners = [ HardwareKeyService, OtaHmacKeyService, SilkenNet::SeedDerivation ].select do |klass|
+    owners = [ HardwareKeyService, OtaSealKeyService, SilkenNet::SeedDerivation ].select do |klass|
       klass.const_defined?(:HKDF_INFO, false)
     end
 
-    expect(owners.map(&:name)).to eq([ "OtaHmacKeyService" ]),
+    expect(owners.map(&:name)).to eq([ "OtaSealKeyService" ]),
                                   "голе `HKDF_INFO` мусить мати ОДНОГО власника — інакше " \
                                   "`info: HKDF_INFO` у новій деривації означає різне залежно від файлу"
   end

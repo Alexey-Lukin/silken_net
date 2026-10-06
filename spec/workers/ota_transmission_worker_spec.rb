@@ -136,14 +136,14 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
   end
 
   # -----------------------------------------------------------------------
-  # [FW.23] HMAC trailer activation — worker must forward gateway.cluster_id
-  # to OtaPackagerService so the 0x9B trailer (3 HMAC + 1 version) is appended
-  # and Soldier's dual-gate verifier can reject tampered / replayed bytecode
-  # before flash write. Without cluster_id, prepare() emits an unsigned
+  # [FW.23] Seal trailer activation — worker must forward gateway.cluster_id
+  # to OtaPackagerService so the 0x9B trailer (6 Ed25519 seal + 1 version) is
+  # appended and Soldier's dual-gate verifier can reject tampered / replayed
+  # bytecode before flash write. Without cluster_id, prepare() emits an unsealed
   # bytecode-only stream — that path is reserved for legacy bench rigs
   # (gateways without a cluster), not production traffic.
   # -----------------------------------------------------------------------
-  describe "[FW.23] HMAC trailer cluster_id forwarding" do
+  describe "[FW.23] seal trailer cluster_id forwarding" do
     it "forwards gateway.cluster_id to OtaPackagerService.prepare" do
       described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
 
@@ -153,24 +153,24 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       )
     end
 
-    it "uses manifest.total_packages (bytecode + trailer) when HMAC-signed" do
+    it "uses manifest.total_packages (bytecode + trailer) when sealed" do
       signed_packages = {
-        packages: [ "pkg1", "pkg2", "pkg3", "tag1", "tag2", "tag3", "version" ],
+        packages: [ "pkg1", "pkg2", "pkg3", *Array.new(6) { |i| "seal#{i + 1}" }, "version" ],
         manifest: {
           total_chunks: 3,
-          total_packages: 7,  # 3 bytecode + 3 HMAC tag + 1 version (FW.23)
-          hmac_signed: true,
-          hmac_cluster_id: cluster.id,
+          total_packages: 10, # 3 bytecode + 6 seal + 1 version (FW.23)
+          sealed: true,
+          seal_cluster_id: cluster.id,
           version: firmware.version
         }
       }
       allow(OtaPackagerService).to receive(:prepare).and_return(signed_packages)
 
-      # Final chunk index for the signed stream is total_packages - 1 = 6,
+      # Final chunk index for the sealed stream is total_packages - 1 = 9,
       # not total_chunks - 1 = 2. If the worker still used total_chunks the
-      # gateway would flip to :idle four chunks early — exactly the bug we
+      # gateway would flip to :idle seven chunks early — exactly the bug we
       # are guarding against.
-      described_class.new.perform(gateway.uid, "firmware", firmware.id, 6, 0)
+      described_class.new.perform(gateway.uid, "firmware", firmware.id, 9, 0)
 
       gateway.reload
       expect(gateway.state).to eq("idle")

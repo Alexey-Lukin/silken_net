@@ -174,7 +174,7 @@ module FactoryFlashing
         device:           @device,
         aes_key_hex:      @flash_aes_key_hex || hw_key.aes_key_hex,
         lorenz_seed_hex:  @flash_lorenz_seed_hex || hw_key.lorenz_seed_hex,
-        ota_hmac_hex:     tree_ota_hmac,
+        ota_seal_pub_hex: tree_ota_seal_pub,
         ed25519_seed_hex: gateway_voice_seed(hw_key),
         bcast_key_hex:    cluster_broadcast_key,
         probe_sn:         @probe_sn,
@@ -232,17 +232,18 @@ module FactoryFlashing
             "#{@session.device_uid}: REFLASH_ACK=#{@session.device_uid}"
     end
 
-    # [FW.23] Per-cluster K_ota для OTA dual-gate — обидві гілки пишуть його у
-    # Protected Flash 0x0803E800, бо HMAC рахує MCU (до 2026-06-11 емітувала лише
-    # superseded ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
-    def tree_ota_hmac
+    # ⚖️ [FW.23, founder 2026-10-05/06] Публічний Ed25519-ключ печатки OTA кластера —
+    # обидві гілки пишуть його у Protected Flash 0x0803E800, бо печатку перевіряє MCU.
+    # Приватний ключ вузла не покидає бекенд: витягнутий вузол більше не підписує
+    # контракт для кластера, як доти симетричний K_ota.
+    def tree_ota_seal_pub
       return nil unless @device.is_a?(Tree)
-      OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
+      OtaSealKeyService.public_key_hex_for(@device.cluster_id, master_key: @master_key)
     end
 
     # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — ОБИДВА типи:
     # Tree отримує його в KEYB-слот, Gateway — у свій KEYL (Королева живе
-    # ним як єдиним LoRa-ключем). Той самий salt-домен, що K_ota.
+    # ним як єдиним LoRa-ключем). Той самий salt-домен, що ключ печатки OTA.
     def cluster_broadcast_key
       HardwareKeyService.derive_broadcast_key(@device.cluster_id, master_key: @master_key)
     end
@@ -273,7 +274,7 @@ module FactoryFlashing
       return nil unless @session.gilka == "B"
       return nil unless @device.is_a?(Tree)
 
-      SecureElementProvisioner.new(session: @session, ota_hmac_hex: tree_ota_hmac).provision
+      SecureElementProvisioner.new(session: @session, ota_seal_pub_hex: tree_ota_seal_pub).provision
     end
 
     def capture_failure(error)

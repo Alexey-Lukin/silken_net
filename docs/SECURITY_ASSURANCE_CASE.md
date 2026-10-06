@@ -89,8 +89,10 @@ the guard that enforces it.
 - **Two-key model (FW.2 gate (в), 2026-07-03)** — the money-path (telemetry/panic CCM uplink) rides a
   **per-device session key** (HKDF, so a node compromise cannot forge a neighbour's mint), while the
   control-plane (downlink broadcast + `0x55`/`0x56` requests) rides a deliberate **per-cluster KEYB**
-  (broadcast is structurally one-key; same isolation class as K_ota). Honest residual: a compromised node
-  exposes the cluster's control-plane; OTA images stay separately authenticated by the K_ota HMAC dual-gate.
+  (broadcast is structurally one-key; per-cluster isolation). Honest residual: a compromised node
+  exposes the cluster's control-plane; OTA images stay separately authenticated by the cluster's
+  Ed25519 seal (dual-gate) — the node holds only the public key, so an extracted node cannot sign a
+  contract (FW.23, since 2026-10-06; the earlier symmetric K_ota HMAC key sat on every node).
   Canon [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning).
 - **Replay protection** — CCM Frame Counter + a backend sliding replay window per (DID, key epoch) in Postgres with no expiry (SEC.40, since 2026-10-05; before that a 25 h cache window); for the interim panic path,
   a monotonic panic counter + `SETNX` (SEC.10). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
@@ -198,7 +200,7 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 | **A05** | Security Misconfiguration | Strict **CSP** (nonce, `frame-ancestors 'none'`, `object-src 'none'`); `X-Frame-Options: DENY`, nosniff, Referrer/COOP/CORP/Permissions-Policy; secure cookies; HSTS preload; `RAILS_ALLOWED_HOSTS` | `config/initializers/{content_security_policy,session_store}.rb`, `config/application.rb` (security headers — SEC.35: measured live 2026-09-02, pinned by `spec/requests/security_headers_spec.rb`), `config/environments/production.rb` |
 | **A06** | Vulnerable & Outdated Components | **Dependabot** (5 ecosystems), **bundler-audit** + **Brakeman** in CI, **Slither** + **Aderyn**, **OpenSSF Scorecard**, **CodeQL** | `.github/dependabot.yml`, `.github/workflows/{ci,solidity_audit,scorecard}.yml` |
 | **A07** | Identification & Auth Failures | **Argon2id**; M2M **Ed25519** + `SETNX` nonce replay guard; one-time **recovery codes**; Rails 8 token expiry/invalidation; **Rack::Attack** Fail2Ban on 401/404 + per-IP throttle | `app/controllers/api/v1/m2m_auth_controller.rb`, `app/models/user.rb`, `config/initializers/rack_attack.rb` |
-| **A08** | Software & Data Integrity | `Marshal.load` guarded by **SHA-256** verification; **audit-log SHA-256 hash chain**; firmware **OTA HMAC-SHA256 + CRC**; firmware `binary_sha256`; **Sigstore build-provenance** on the release image | `app/services/insight_generator_service.rb`, `app/models/audit_log.rb`, `app/services/ota_packager_service.rb`, `.github/workflows/mirror-ghcr.yml` |
+| **A08** | Software & Data Integrity | `Marshal.load` guarded by **SHA-256** verification; **audit-log SHA-256 hash chain**; firmware **OTA Ed25519 seal + CRC**; firmware `binary_sha256`; **Sigstore build-provenance** on the release image | `app/services/insight_generator_service.rb`, `app/models/audit_log.rb`, `app/services/ota_packager_service.rb`, `app/services/ota_seal_key_service.rb`, `.github/workflows/mirror-ghcr.yml` |
 | **A09** | Logging & Monitoring Failures | Tamper-evident **AuditLog**; Prometheus metrics; **Sentry** with PII disabled + secret scrubbing; `filter_parameters`; Rack::Attack notifications; structured JSON logs | `app/models/audit_log.rb`, `config/initializers/{sentry,filter_parameter_logging,prometheus}.rb` |
 | **A10** | SSRF | Open-redirect **referer sanitizer** (scheme + host allowlist); outbound RPC via an ENV-configured connection pool (no caller-supplied URLs) + `Web3NetworkGuard` | `app/controllers/api/v1/locales_controller.rb`, `app/services/web3/rpc_connection_pool.rb` |
 

@@ -2467,76 +2467,76 @@ TEST(test_rereq_queen_count_zero_when_all_received) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 12. FW.23 OTA HMAC Trailer Relay (Queen-side)
- * ════════════════════════════════════════════════════════════════════ */
-#define Q_HMAC_TRAILER_MARKER       0x9B
-#define Q_HMAC_TRAILER_TOTAL_SEGS   3   /* печатка */
-#define Q_OTA_TRAILER_TOTAL_CHUNKS  4   /* [FW.23] + version_id чанк (seg 4) */
-#define Q_OTA_TRAILER_ALL_RECEIVED  0x0Fu
+ * 12. FW.23 OTA seal trailer relay (Queen-side)
+ * ════════════════════════════════════════════════════════════════════
+ * ⚖️ 2026-10-05/06 — печатка Ed25519: 6 сегментів підпису + версія = 7 блоків.
+ * Константи — ті самі, що в прошивці (../common/ota_seal_wire.h), тож за розміром
+ * трейлера ця копія гілки зберігання від queen/main.c розійтись не може. */
+#include "../common/ota_seal_wire.h"
 
-static uint8_t q_pending_hmac_chunks[Q_OTA_TRAILER_TOTAL_CHUNKS][16] = {{0}};
-static uint8_t q_hmac_segments_received = 0;
+static uint8_t q_pending_seal_chunks[OTA_SEAL_TRAILER_CHUNKS][16] = {{0}};
+static uint8_t q_seal_segments_received = 0;
 
-static uint8_t Test_Queen_Store_HMAC_Trailer(const uint8_t* inner_payload,
-                                                uint16_t inner_aligned)
+static uint8_t Test_Queen_Store_Seal_Trailer(const uint8_t* inner_payload,
+                                             uint16_t inner_aligned)
 {
     if (inner_aligned < 16)                             return 0;
-    if (inner_payload[0] != Q_HMAC_TRAILER_MARKER)      return 0;
+    if (inner_payload[0] != OTA_SEAL_MARKER)            return 0;
     uint16_t seg_idx = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
-    if (seg_idx < 1 || seg_idx > Q_OTA_TRAILER_TOTAL_CHUNKS) return 0;
-    memcpy(q_pending_hmac_chunks[seg_idx - 1], inner_payload, 16);
-    q_hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
+    if (seg_idx < 1 || seg_idx > OTA_SEAL_TRAILER_CHUNKS) return 0;
+    memcpy(q_pending_seal_chunks[seg_idx - 1], inner_payload, 16);
+    q_seal_segments_received |= (uint8_t)(1u << (seg_idx - 1));
     return 1;
 }
 
-static void reset_hmac_relay(void) {
-    memset(q_pending_hmac_chunks, 0, sizeof(q_pending_hmac_chunks));
-    q_hmac_segments_received = 0;
+static void reset_seal_relay(void) {
+    memset(q_pending_seal_chunks, 0, sizeof(q_pending_seal_chunks));
+    q_seal_segments_received = 0;
 }
 
-TEST(test_queen_relay_stores_4_trailer_chunks) {
-    /* [FW.23] 3 печатки + version_id (seg 4) → 0x0F (relay-ready). */
-    reset_hmac_relay();
-    for (uint8_t s = 1; s <= 4; s++) {
+TEST(test_queen_relay_stores_7_trailer_chunks) {
+    /* [FW.23] 6 печаток + version_id (seg 7) → 0x7F (relay-ready). */
+    reset_seal_relay();
+    for (uint8_t s = 1; s <= OTA_SEAL_TRAILER_CHUNKS; s++) {
         uint8_t chunk[16] = {0};
-        chunk[0] = Q_HMAC_TRAILER_MARKER;
+        chunk[0] = OTA_SEAL_MARKER;
         chunk[1] = 0; chunk[2] = s;
         chunk[3] = 0; chunk[4] = 5;
         chunk[5] = (uint8_t)(0xA0 + s);
-        ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 1);
+        ASSERT_EQ(Test_Queen_Store_Seal_Trailer(chunk, 16), 1);
     }
-    ASSERT_EQ(q_hmac_segments_received, Q_OTA_TRAILER_ALL_RECEIVED);
+    ASSERT_EQ(q_seal_segments_received, OTA_SEAL_ALL_RECEIVED);
 }
 
-TEST(test_queen_relay_rejects_seg_idx_5) {
-    /* seg 4 (version) is now valid; seg 5 must still be rejected. */
-    reset_hmac_relay();
+TEST(test_queen_relay_rejects_seg_idx_8) {
+    /* seg 7 (version) — останній законний; seg 8 відкидається. */
+    reset_seal_relay();
     uint8_t chunk[16] = {0};
-    chunk[0] = Q_HMAC_TRAILER_MARKER;
-    chunk[1] = 0; chunk[2] = 5;
-    ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 0);
-    ASSERT_EQ(q_hmac_segments_received, 0);
+    chunk[0] = OTA_SEAL_MARKER;
+    chunk[1] = 0; chunk[2] = 8;
+    ASSERT_EQ(Test_Queen_Store_Seal_Trailer(chunk, 16), 0);
+    ASSERT_EQ(q_seal_segments_received, 0);
 }
 
 TEST(test_queen_relay_rejects_wrong_marker) {
-    reset_hmac_relay();
+    reset_seal_relay();
     uint8_t chunk[16] = {0};
     chunk[0] = 0x99;
-    ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 0);
+    ASSERT_EQ(Test_Queen_Store_Seal_Trailer(chunk, 16), 0);
 }
 
 TEST(test_queen_relay_overwrites_same_segment) {
-    reset_hmac_relay();
+    reset_seal_relay();
     uint8_t chunk[16] = {0};
-    chunk[0] = Q_HMAC_TRAILER_MARKER;
+    chunk[0] = OTA_SEAL_MARKER;
     chunk[1] = 0; chunk[2] = 1;
     chunk[5] = 0xAA;
-    Test_Queen_Store_HMAC_Trailer(chunk, 16);
-    ASSERT_EQ(q_pending_hmac_chunks[0][5], 0xAA);
+    Test_Queen_Store_Seal_Trailer(chunk, 16);
+    ASSERT_EQ(q_pending_seal_chunks[0][5], 0xAA);
     chunk[5] = 0xBB;
-    Test_Queen_Store_HMAC_Trailer(chunk, 16);
-    ASSERT_EQ(q_pending_hmac_chunks[0][5], 0xBB);
-    ASSERT_EQ(q_hmac_segments_received, 0x01);
+    Test_Queen_Store_Seal_Trailer(chunk, 16);
+    ASSERT_EQ(q_pending_seal_chunks[0][5], 0xBB);
+    ASSERT_EQ(q_seal_segments_received, 0x01);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2549,45 +2549,45 @@ TEST(test_queen_relay_overwrites_same_segment) {
 
 TEST(test_ota_resurrect_fires_on_late_complete_trailer) {
     /* Печатка повна, вікно мертве, тіло зібране (збірка idle) → воскресіння */
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 1024, 0, 0), 1);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 1024, 0, 0), 1);
 }
 
 TEST(test_ota_resurrect_silent_while_body_broadcasting) {
     /* Вікно ще живе (тіло мовиться) — звичайний перехід зробить
      * бродкаст-цикл (main.c phase 0→1), предикат мовчить */
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 1, 1024, 0, 0), 0);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 1, 1024, 0, 0), 0);
 }
 
 TEST(test_ota_resurrect_silent_on_incomplete_trailer) {
-    /* 3 з 4 сегментів — без version envelope не воскрешаємо */
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x07, 0x0F, 0, 1024, 0, 0), 0);
+    /* 6 з 7 сегментів — без version envelope не воскрешаємо */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x3F, OTA_SEAL_ALL_RECEIVED, 0, 1024, 0, 0), 0);
 }
 
 TEST(test_ota_resurrect_silent_without_body) {
     /* Печатка є, тіла нема (новий boot / буфер не наповнювався) */
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 0, 0, 0), 0);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 0, 0, 0), 0);
 }
 
 TEST(test_ota_resurrect_silent_mid_assembly) {
     /* Тіло ще збирається (bitmap/лічильник ненульові) — недозібране
      * слово не мовиться, re-request по химері не служиться */
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 512, 0x0003, 2), 0);
-    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 512, 0, 2), 0);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 512, 0x0003, 2), 0);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 512, 0, 2), 0);
 }
 
 TEST(test_ota_resurrect_e2e_with_trailer_store) {
-    /* Інтеграція з релеєм: 4 сегменти по одному — воскресіння спрацьовує
-     * рівно на четвертому, не раніше */
-    reset_hmac_relay();
-    for (uint8_t s = 1; s <= 4; s++) {
+    /* Інтеграція з релеєм: 7 сегментів по одному — воскресіння спрацьовує
+     * рівно на сьомому, не раніше */
+    reset_seal_relay();
+    for (uint8_t s = 1; s <= OTA_SEAL_TRAILER_CHUNKS; s++) {
         uint8_t chunk[16] = {0};
-        chunk[0] = Q_HMAC_TRAILER_MARKER;
+        chunk[0] = OTA_SEAL_MARKER;
         chunk[1] = 0; chunk[2] = s;
-        ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 1);
+        ASSERT_EQ(Test_Queen_Store_Seal_Trailer(chunk, 16), 1);
         uint8_t resurrected = Ota_Late_Trailer_Resurrects(
-            q_hmac_segments_received, Q_OTA_TRAILER_ALL_RECEIVED,
+            q_seal_segments_received, OTA_SEAL_ALL_RECEIVED,
             0 /* вікно мертве */, 1024 /* тіло в RAM */, 0, 0);
-        ASSERT_EQ(resurrected, (s == 4) ? 1 : 0);
+        ASSERT_EQ(resurrected, (s == OTA_SEAL_TRAILER_CHUNKS) ? 1 : 0);
     }
 }
 
@@ -3106,9 +3106,9 @@ int main(void)
     RUN(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten);
     RUN(test_fw52_rerequest_served_immediately_while_window_still_open);
 
-    printf("\n  HMAC Trailer Relay (FW.23):\n");
-    RUN(test_queen_relay_stores_4_trailer_chunks);
-    RUN(test_queen_relay_rejects_seg_idx_5);
+    printf("\n  OTA Seal Trailer Relay (FW.23):\n");
+    RUN(test_queen_relay_stores_7_trailer_chunks);
+    RUN(test_queen_relay_rejects_seg_idx_8);
     RUN(test_queen_relay_rejects_wrong_marker);
     RUN(test_queen_relay_overwrites_same_segment);
     RUN(test_ota_resurrect_fires_on_late_complete_trailer);

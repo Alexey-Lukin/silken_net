@@ -301,7 +301,7 @@ end
   (CMD_OTA_BYTECODE 0x99 — кластерний, лишився 16B ECB на KEYB)
 ```
 
-> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_HMAC_TRAILER` (FW.23 OTA-печатка); `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18, аудіо-пороги TinyML) виведено з HW.30 — пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) — і повторно не займається.
+> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_OTA_SEAL` (FW.23 OTA-печатка Ed25519); `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18, аудіо-пороги TinyML) виведено з HW.30 — пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) — і повторно не займається.
 
 **Тіло `0x9A` (8 байт, little-endian — байт-у-байт тіло старого каркаса без `len` і CRC; цілісність несе MIC):**
 

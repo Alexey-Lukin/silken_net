@@ -50,8 +50,8 @@ class OtaTransmissionWorker
     # 2. ПАКУВАННЯ (Hardware-Aligned Packaging)
     # Отримуємо нарізані пакети з заголовками [0x99][Index][Total].
     # [FW.23] Forward gateway.cluster_id so OtaPackagerService appends the
-    # 3 HMAC-SHA256 trailer chunks (0x9B) after the bytecode stream.
-    # Soldier's dual-gate verifier rejects tampered or replayed images
+    # 7 Ed25519 seal trailer chunks (0x9B: 6 seal + version) after the bytecode
+    # stream. The Soldier's seal check rejects tampered or replayed images
     # before flash write — without the trailer that defence is inactive.
     # gateways.cluster_id is NOT NULL, so the trailer is always emitted
     # on the production path.
@@ -61,8 +61,8 @@ class OtaTransmissionWorker
       cluster_id: gateway.cluster_id
     )
     packages = ota_data[:packages].to_a
-    # [FW.23] When HMAC trailer is appended, manifest exposes total_packages
-    # (= bytecode chunks + 3 trailer); the progress bar and the "done?"
+    # [FW.23] When the seal trailer is appended, manifest exposes total_packages
+    # (= bytecode chunks + 7 trailer); the progress bar and the "done?"
     # comparison below must follow the wire count, not just the bytecode
     # chunks. Fallback to total_chunks keeps the helper safe to call from
     # a non-cluster context (specs, future Rake tasks).

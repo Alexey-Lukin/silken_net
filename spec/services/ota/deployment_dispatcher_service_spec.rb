@@ -69,7 +69,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
     end
 
     it "burns nothing when packaging fails — the same version stays dispatchable" do
-      allow(OtaHmacKeyService).to receive(:fetch_binary_for)
+      allow(OtaSealKeyService).to receive(:signing_key_for)
         .and_raise(SecurityError, "PROVISIONING_MASTER_KEY ENV is required")
 
       expect { call_service }.to raise_error(SecurityError)

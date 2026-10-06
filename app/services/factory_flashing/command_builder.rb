@@ -12,7 +12,7 @@
 #   0x0803E014  [magic "LSED" :4 ][ k_seed       :32 ]                 # Tree only
 #   0x0803E040  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
-#   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
+#   0x0803E800  [magic "KPUB" :4 ][ ota_seal_pub :32 ]                 # Tree only — FW.23 публічний ключ Ed25519-печатки OTA кластера (стор. 125; 0x0803D000 належить Flash-KV)
 #   0x0803E828  [magic "KEYB" :4 ][ bcast_key    :16 ]                 # Tree only — FW.2 (в) cluster control-plane; +40 (не +36): dw-вирівнювання WL
 #   0x0803D000  [журнал Flash-KV: SKV1 · FINI · 0x15 · 0x14]                 # Tree, кожен провіжн — FW.17 (FlashKvImage); стор. 122–123 стираються обидві
 #
@@ -27,15 +27,18 @@
 # through Executor (dry-run prints to stdout; --execute spawns subprocesses).
 module FactoryFlashing
   class CommandBuilder
-    FLASH_OTA_KEY_ADDR  = "0x0803E800"   # Сторінка 125 за KEYL-сторінкою — FW.23 per-cluster K_ota (firmware: FLASH_OTA_KEY_ADDR)
+    FLASH_OTA_KEY_ADDR  = "0x0803E800"   # Сторінка 125 за KEYL-сторінкою — FW.23 публічний ключ печатки OTA кластера (firmware: FLASH_OTA_KEY_ADDR)
     FLASH_KEY_ADDR      = "0x0803E000"
     UID_BASE_ADDR       = "0x1FFF7590"   # 96-біт silicon UID — ті самі три слова читає firmware did_derive.h
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
     FLASH_EDSK_ADDR     = "0x0803E064"   # After CoAP key (4 magic + 32) — L1 QATT голос Королеви
-    FLASH_BCAST_KEY_ADDR = "0x0803E828"  # K_ota (36B) + 4B dw-паддінг — FW.2 (в) KEYB (firmware: FLASH_BCAST_KEY_ADDR)
+    FLASH_BCAST_KEY_ADDR = "0x0803E828"  # KPUB (36B) + 4B dw-паддінг — FW.2 (в) KEYB (firmware: FLASH_BCAST_KEY_ADDR)
 
-    KOTA_MAGIC = "0x4B4F5441" # "KOTA" OTA HMAC key magic (firmware: FLASH_OTA_KEY_MAGIC) — FW.23
+    # ⚖️ [FW.23, founder 2026-10-05/06] "KPUB", не "KOTA": той самий слот несе тепер ПУБЛІЧНИЙ
+    # Ed25519-ключ печатки, а новий magic — це версія формату: стара HMAC-прошивка не
+    # прочитає ключ як K_ota, а нова — K_ota як ключ (обидві лишаються fail-closed).
+    KPUB_MAGIC = "0x4B505542" # "KPUB" OTA seal public key magic (firmware: FLASH_OTA_PUBKEY_MAGIC) — FW.23
     KEYB_MAGIC = "0x4B455942" # "KEYB" cluster broadcast key magic (firmware: FLASH_BCAST_KEY_MAGIC) — FW.2 (в)
     KEYL_MAGIC = "0x4B45594C" # "KEYL" LoRa key magic (firmware: FLASH_KEY_MAGIC)
     LSED_MAGIC = "0x4C534544" # "LSED" Lorenz K_seed magic (firmware: FLASH_SEED_MAGIC)
@@ -65,10 +68,9 @@ module FactoryFlashing
     # @param device    [Tree|Gateway]
     # @param aes_key_hex     [String] 32 hex (Tree LoRa) or 64 hex (Gateway CoAP)
     # @param lorenz_seed_hex [String, nil] 64 hex; required for Tree
-    # @param ota_hmac_hex    [String, nil] 64 hex; required for Tree — per-cluster
-    #   K_ota (OtaHmacKeyService, FW.23). До 2026-06-11 K_ota емітувала ЛИШЕ
-    #   superseded ATECC-гілка B — Гілка A не писала його взагалі, тож
-    #   Load_Ota_Hmac_Key не знаходив magic і OTA був вічно fail-closed.
+    # @param ota_seal_pub_hex [String, nil] 64 hex; required for Tree — публічний
+    #   Ed25519-ключ печатки OTA кластера (OtaSealKeyService, FW.23). Без нього
+    #   Солдат не знаходить magic "KPUB", і OTA лишається вічно fail-closed.
     # @param ed25519_seed_hex [String, nil] 64 hex; Gateway-only (L1 QATT) —
     #   генерується Session'ом на фабричному хості (SecureRandom, НЕ HKDF),
     #   у БД персиститься лише деривований pubkey. nil → Queen лишається L0.
@@ -80,7 +82,7 @@ module FactoryFlashing
     # @param kv_journal_words [Hash, nil] Tree-only, кожен провіжн — образ журналу
     #   Flash-KV (FlashKvImage.words): обидві його сторінки стираються, навіть та,
     #   у яку образ нічого не пише (FW.17, 03_05 §3.8).
-    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,
+    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_seal_pub_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil,
                    probe_sn: nil, kv_journal_words: nil)
       @session = session
       @probe_sn = probe_sn
@@ -88,7 +90,7 @@ module FactoryFlashing
       @device = device
       @aes_key_hex = aes_key_hex.to_s
       @lorenz_seed_hex = lorenz_seed_hex.to_s
-      @ota_hmac_hex = ota_hmac_hex.to_s
+      @ota_seal_pub_hex = ota_seal_pub_hex.to_s
       @ed25519_seed_hex = ed25519_seed_hex.to_s
       @bcast_key_hex = bcast_key_hex.to_s
       @kv_journal_words = kv_journal_words
@@ -119,7 +121,7 @@ module FactoryFlashing
     # Тіло гілки: стирання сторінок ключів + key-writes + IWDG-заморозка + RDP (без preflight).
     # [SE050-MIGRATION, ⚖️ делеговано 2026-09-27] Набір Protected-Flash-ключів
     # ОДИН для обох гілок: кожен із них має MCU-споживача (KEYL/KEYB — CRYP
-    # радіо-AES, LSED — Lorenz-VM, K_ota — OTA-HMAC зі стор. 125), а SE за
+    # радіо-AES, LSED — Lorenz-VM, KPUB — перевірка OTA-печатки зі стор. 125), а SE за
     # SEC.14 лише ідентичність — його кроки емітить SecureElementProvisioner.
     # ⛔ Доти Гілка B SWD-ключів не писала зовсім: KEYL-less Солдат іде в
     # Error_Handler на першому boot, а Gilka-B Королева не мала навіть KEYC.
@@ -151,21 +153,21 @@ module FactoryFlashing
       return unless @device.is_a?(Tree)
       raise ArgumentError, "Tree provisioning requires lorenz_seed_hex (64 hex)" unless @lorenz_seed_hex.length == 64
       raise ArgumentError, "lorenz_seed_hex must be hexadecimal" unless @lorenz_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
-      raise ArgumentError, "Tree provisioning requires ota_hmac_hex (64 hex, FW.23 K_ota)" unless @ota_hmac_hex.length == 64
-      raise ArgumentError, "ota_hmac_hex must be hexadecimal" unless @ota_hmac_hex.match?(/\A[0-9A-Fa-f]+\z/)
+      raise ArgumentError, "Tree provisioning requires ota_seal_pub_hex (64 hex, FW.23 OTA seal public key)" unless @ota_seal_pub_hex.length == 64
+      raise ArgumentError, "ota_seal_pub_hex must be hexadecimal" unless @ota_seal_pub_hex.match?(/\A[0-9A-Fa-f]+\z/)
     end
 
     def protected_flash_commands
       words = {}
 
       if @device.is_a?(Tree)
-        # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed + 32-byte K_ota.
+        # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed + 32-byte OTA seal public key.
         raise ArgumentError, "Tree requires 32-hex AES-128 key" unless @aes_key_hex.length == 32
         words.merge!(block_words(FLASH_KEY_ADDR, KEYL_MAGIC, @aes_key_hex))
         words.merge!(block_words(FLASH_SEED_ADDR, LSED_MAGIC, @lorenz_seed_hex))
-        # [FW.23] K_ota — окрема сторінка 0x0803E800; без нього Load_Ota_Hmac_Key
-        # лишає dual-gate fail-closed і жоден OTA не застосовується.
-        words.merge!(block_words(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
+        # [FW.23] Публічний ключ печатки — окрема сторінка 0x0803E800; без нього
+        # Load_Ota_Seal_Pubkey лишає перевірку fail-closed і жоден OTA не застосовується.
+        words.merge!(block_words(FLASH_OTA_KEY_ADDR, KPUB_MAGIC, @ota_seal_pub_hex))
         # [FW.2 (в)] KEYB — cluster control-plane (та сама стор. 125, +40):
         # без нього Солдат (в обох ерах — з 2026-09-28 KEYB амбієнт і ECB-білда)
         # деградує у fallback (амбієнт = KEYL): Королева не прочитає його аплінк,

@@ -601,17 +601,17 @@ if (current_ota_chunk_idx < total_chunks):
 
 current_ota_chunk_idx++
 if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало
-  if (усі 4 трейлер-чанки 0x9B зібрані):        ← [FW.23] печатка (3) + версія (1)
-    hmac_broadcast_phase = 1                     ← фаза печатки: 4 блоки 0x9B як є,
+  if (усі 7 трейлер-блоків 0x9B зібрані):       ← [FW.23] печатка (6) + версія (1)
+    seal_broadcast_phase = 1                     ← фаза печатки: 7 блоків 0x9B як є,
                                                     без жодного зміненого байта; після
-                                                    четвертого — вікно закривається
+                                                    сьомого — вікно закривається
   else:
     current_ota_chunk_idx = 0; ota_is_active = 0 ← без печатки Солдат не відрізнить
                                                     істинне слово від спокусника —
                                                     вікно закривається одразу
 ```
 
-Солдат пише в Flash лише після обох брам — HMAC під K_ota і версія > high-water (SEC.20) — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
+Солдат пише в Flash лише після обох брам — Ed25519-печатка кластера і версія > high-water (SEC.20) — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
 
 > 🔴 **Рефлекс ПЕЙСИТЬСЯ робочим циклом ([`00_07`](00_07_Action_Plan_Tracker) FW.61):** умови НКЕК для SRD 868 дають < 1 % — ≤ 36 с передавання на годину ([`certification_roadmap`](protocols/legal/certification_roadmap.md) §2), а серія 8 КБ — це ≈ 123 с ефіру. Тож кожен P2P-кадр Королеви (маяк · CMD · OTA-чанк · печатка · re-request) питає лімітер `firmware/queen/tx_duty.h` ДО `Send` і списує свій ефір після: журнал з 13 п'ятихвилинних кошиків тримає стелю для будь-якого ковзного годинного вікна, маяк часу має резерв 3,6 с, решту ділять OTA й CMD. Коли ефір вичерпано, чанк просто не стріляє — курсор не рухається, і той самий чанк піде на наступному uplink'у; re-request обривається, і решту пропусків Солдат перепросить наступним зойком. Ціна: серія 8 КБ при безперервному попиті закінчується не раніше ніж за ~3 год (чотири порції по 32,4 с); реальний темп задають uplink'и Солдатів. Стелі (ребут обнуляє журнал · LoRaWAN-детур сьогодні поза ним, але ділить із P2P ОДИН бюджет смуги, тож після фліпу мусить списуватись — [`00_07`](00_07_Action_Plan_Tracker) ARCH.34 · годинне вікно звірено з текстом EN 300 220-1 V3.1.1 2026-10-01, ковзне — суворіше, не мʼякше — [`certification_roadmap`](protocols/legal/certification_roadmap.md) §2.3) — шапка `tx_duty.h`.
 
@@ -619,7 +619,7 @@ if (current_ota_chunk_idx >= total_chunks):     ← тіло відлунало
 - Корисне навантаження: 11 байт (16 − 5 байт заголовка)
 - Для 8192 байт bytecode: `(8192 + 10) / 11 = 745` LoRa-чанків
 - Кожен Солдат при кожному своєму TX отримує **один** послідовний чанк
-- Після 745-го чанка йде фаза печатки (4 трейлер-чанки 0x9B), і лише тоді вікно закривається; без зібраного трейлера — одразу
+- Після 745-го чанка йде фаза печатки (7 трейлер-блоків 0x9B), і лише тоді вікно закривається; без зібраного трейлера — одразу
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
@@ -884,8 +884,10 @@ if (pending_ota_size > 0 &&
 | STOP2 між OTA-чанками (out-of-order) | `test_ota_stop2_simulation_chunks_arrive_out_of_order` | bitmap-стан переживає множинні Process-цикли; offsets коректні після злиття |
 | Той самий chunk після сну (anti-replay) | `test_ota_stop2_simulation_duplicate_after_sleep_still_rejected` | Counter не подвоюється при повторному reflex shot Королеви |
 | `total_chunks=0` malformed packet | `test_ota_total_chunks_zero_rejected` | Defence-in-depth: degenerate completion → CRC32 fail → no Flash write (not crash) |
-| HMAC trailer state cross-cycle | `test_hmac_trailer_state_survives_simulated_stop2_between_segments` | bitmask `ota_hmac_segments_received` OR-агрегується через STOP2 між сегментами 1/3/2 |
-| HMAC trailer idempotent overwrite | `test_hmac_trailer_duplicate_segment_overwrites_idempotently` | Дубль того самого сегменту не корумпує `received_hmac_tag[]` |
+| Seal trailer state cross-cycle | `test_seal_trailer_out_of_order_completes_with_version` | bitmask сегментів OR-агрегується по 7 окремих викликах у довільному порядку (кожен — окреме пробудження; STOP2 зберігає SRAM) → `0x7F`, печатка й версія цілі |
+| Seal trailer idempotent overwrite | `test_seal_trailer_duplicate_segment_is_idempotent` | Дубль того самого сегменту не корумпує `received_ota_seal[]` |
+
+> До 2026-10-06 ці два рядки несли HMAC-тести `test_hmac_trailer_*`; з Ed25519-печаткою ([`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) їх замінили тести `Ota_Seal_Parse_Chunk` у тому ж файлі.
 
 > **Cross-ref:** [`00_07`](00_07_Action_Plan_Tracker) FW.27 — повний контекст; [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage) — тест-список.
 
@@ -895,8 +897,8 @@ if (pending_ota_size > 0 &&
 
 Один повний reflex-shot OTA-цикл (§5) **повільний** (порядок днів-тижнів):
 
-1. **1 RX-пакет за пробудження (Soldier) — прийнято by-design [ADR, founder 2026-06-12].** RX-вікно обробляє максимум один пакет за wake-цикл — усі гілки (`firmware/soldier/main.c`: сценарій OTA `0x99`, mesh-естафета, HMAC-trailer `0x9B`) завершуються `break` перед `Radio.Sleep()`. Отже OTA на `N` байтів = `⌈N/11⌉` reflex-чанків = стільки ж пробуджень (1024 B → ~94). **Чому прийнято, а не «пофіксено»:** (i) після E.63 `delta_t` — це економіка дерева: зайве RX-слухання → довший перезаряд → менше growth_points; (ii) `break` після одного пакета — анти-vampire захист (флуд `0x99`-чанками не тримає Солдата з відкритим вухом); (iii) OTA рідкісний, а швидкий security-важіль (ротація ключа `0x9E`) — однопакетний downlink поза OTA-збіркою. Vcap-гейтований re-arm RX лишається опцією перегляду **після** bench-даних E_cycle/recharge (FW.50, RUNBOOK 3.2/3.3) — поріг гейта без цих кривих був би здогадкою.
-2. **✅ (2026-06-12) Запізніла печатка воскрешає вікно (Queen) — було багом, виправлено.** Печатка (4 × `0x9B`) їде окремими CoAP-chunk'ами, порядок відносно тіла не гарантований. Коли тіло відлунало без зібраного трейлера, Queen слушно гасить `ota_is_active` ([PLAN 2.5] — не проповідувати в пустоту), але раніше запізнілий трейлер лягав у пам'ять **мовчки**: тіло в RAM ціле, печатка зібрана, Солдати кричать re-request — а вікно мертве до повторного повного Rails-push. Тепер `0x9B`-хендлер при довершенні трейлера (повна маска + тіло зібране й збірка idle + вікно згасле) **воскрешає вікно одразу у фазу печатки** — предикат `Ota_Late_Trailer_Resurrects` (`firmware/queen/ota_window.h`, pure; host-тести `test_queen_logic.c`), мутація стану в `main.c`. Анти-проповідь збережена: якщо трейлер так і не приїде, вікно лишається закритим (recovery = Rails re-push, як і було). Lifetime-обмеження `pending_ota_bytecode` (§5.1.3 — перезапис наступним push) незмінне.
+1. **1 RX-пакет за пробудження (Soldier) — прийнято by-design [ADR, founder 2026-06-12].** RX-вікно обробляє максимум один пакет за wake-цикл — усі гілки (`firmware/soldier/main.c`: сценарій OTA `0x99`, mesh-естафета, трейлер печатки `0x9B`) завершуються `break` перед `Radio.Sleep()`. Отже OTA на `N` байтів = `⌈N/11⌉` reflex-чанків = стільки ж пробуджень (1024 B → ~94). **Чому прийнято, а не «пофіксено»:** (i) після E.63 `delta_t` — це економіка дерева: зайве RX-слухання → довший перезаряд → менше growth_points; (ii) `break` після одного пакета — анти-vampire захист (флуд `0x99`-чанками не тримає Солдата з відкритим вухом); (iii) OTA рідкісний, а швидкий security-важіль (ротація ключа `0x9E`) — однопакетний downlink поза OTA-збіркою. Vcap-гейтований re-arm RX лишається опцією перегляду **після** bench-даних E_cycle/recharge (FW.50, RUNBOOK 3.2/3.3) — поріг гейта без цих кривих був би здогадкою.
+2. **✅ (2026-06-12) Запізніла печатка воскрешає вікно (Queen) — було багом, виправлено.** Печатка (7 × `0x9B` з 2026-10-06) їде окремими CoAP-chunk'ами, порядок відносно тіла не гарантований. Коли тіло відлунало без зібраного трейлера, Queen слушно гасить `ota_is_active` ([PLAN 2.5] — не проповідувати в пустоту), але раніше запізнілий трейлер лягав у пам'ять **мовчки**: тіло в RAM ціле, печатка зібрана, Солдати кричать re-request — а вікно мертве до повторного повного Rails-push. Тепер `0x9B`-хендлер при довершенні трейлера (повна маска + тіло зібране й збірка idle + вікно згасле) **воскрешає вікно одразу у фазу печатки** — предикат `Ota_Late_Trailer_Resurrects` (`firmware/queen/ota_window.h`, pure; host-тести `test_queen_logic.c`), мутація стану в `main.c`. Анти-проповідь збережена: якщо трейлер так і не приїде, вікно лишається закритим (recovery = Rails re-push, як і було). Lifetime-обмеження `pending_ota_bytecode` (§5.1.3 — перезапис наступним push) незмінне.
 3. **Re-request на замороженому tick — ✅ вирішено (2026-06-11).** Стара 5-хв перевірка лічилась на `HAL_GetTick` (заморожений у STOP2 → міряла лише active-час, зойк запізнювався у ~6-15×). Тепер тиша = `OTA_REREQUEST_SILENT_WAKEUPS=10` пробуджень з відкритим вухом (§5.1.3) — STOP2-імунно за конструкцією і без залежності від FW.49 LSE; wall-clock лишається опцією уточнення post-bench, якщо знадобиться точний хвилинний інтервал.
 
 > **Cross-ref:** FW.52 (рішення + контекст), FW.49 (wall-clock tick), §5.1.3 (re-request), §5 (reflex-shot механізм).
@@ -983,7 +985,7 @@ Soldier — gossip-uplift (3-hop reach)
 | `0x56` | byte 10 = `'S'` (0x53) | `SYNC_REQ_MAGIC_BYTE`, panic sync |
 | `0x57` | byte 10 = `'E'` (0x45) | device-event; магія — анти-DID-колізія (`firmware/common/device_event.h`) |
 | `0x55` | **магії НЕМА** | OTA re-request: у коді немає ані `#define`, ані перевірки — розрізнення тримається на тому, що магія є в СУСІДІВ |
-| `0x9B` | seg_idx 1..3 печатка + 4 version | OTA dual-gate trailer |
+| `0x9B` | seg_idx 1..6 печатка + 7 version | OTA dual-gate trailer (Ed25519, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) |
 | `0x9C` | byte 10 = `'B'` (0x42) на LoRa-беконі | CoAP-лег конверта магії не несе |
 | `0x9A` · `0x9E` | довжина за опкодом (23 · 17 Б; `0x9D` — RETIRED з HW.30, байт не перевикористовується) | адресна команда під CCM сесійним ключем цілі (§5б, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)) — Королева ключа не має й перевіряє лише структуру |
 
@@ -1303,7 +1305,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | **[FW.20] Time Sync Envelope + Beacon** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
 | **[FW.20-S2] Beacon Authoritativeness Flag** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x82` (auth=1 \| TTL=2). Relay-маяки Провідників — auth=0, TTL−1. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]` |
 | **[FW.27-B] Magic Re-Request Handler** | Bitmap accept/dedup, total mismatch, no-active-OTA |
-| **[FW.23] HMAC Trailer Relay** | 3 segs storage, seg_idx>3 reject, marker mismatch |
+| **[FW.23] Seal Trailer Relay** | 7 segs storage (`ota_seal_wire.h`), seg_idx>7 reject, marker mismatch, same-segment overwrite; FW.52б late-trailer resurrect fires on the 7th |
 | **[FW.20-Q2 · FW.17] Soldier Cmd Queue** (`test_soldier_cmd_queue.c`) | Структурна перевірка на golden downlink-кадрах (чужі опкоди й довжини), адресність за DID, порядок за DLFC із переходом 0xFFFF→0x0000, бюджет спроб у ціль, освіження дубліката, жертва — найдавніше поставлений, байт-у-байт прохід кадру Rails → Солдат |
 
 **Не покрито host-тестами (справжній HW-residual):**

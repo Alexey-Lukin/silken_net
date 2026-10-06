@@ -50,8 +50,9 @@ static inline void coap_fallback_iv(uint8_t out_iv[16],
     ctx[14] = (uint8_t)(tick      >> 8);  ctx[15] = (uint8_t)(tick);
 
     /* Concat variant streams label || ctx without a combined buffer; it is
-       byte-identical to a one-shot HMAC over label||ctx (proven in
-       test_seed_derivation.c), which is itself OpenSSL-parity-proven. */
+       byte-identical to a one-shot HMAC over label||ctx — test_encryption.c
+       pins this exact derivation against OpenSSL HMAC and the one-shot
+       Silken_Hmac_Sha256. */
     Silken_Hmac_Sha256_Concat(iv_key, key_len,
                               label, sizeof(label) - 1u,  /* exclude trailing NUL */
                               ctx, sizeof(ctx),

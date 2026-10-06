@@ -4,7 +4,7 @@
 # [SEC.9] Refuse to boot production / canopy with a weak PROVISIONING_MASTER_KEY.
 #
 # The master key feeds HKDF for both `HardwareKeyService` (AES-256 device key)
-# and `OtaHmacKeyService` (K_ota). If it matches a publicly-known test vector
+# and `OtaSealKeyService` (OTA seal key). If it matches a publicly-known test vector
 # (FIPS-197, NIST SP 800-38A, RFC 3686 / 4231) or a degenerate / placeholder
 # pattern, the entire downstream key tree collapses — SEC.9 in
 # `docs/00_07_Action_Plan_Tracker.md` and §3.1а of `docs/03_05` document the
@@ -41,7 +41,7 @@ Rails.application.config.after_initialize do
   # The CoAP intake daemon (lib/daemons/coap_listener) enqueues telemetry and
   # answers the Queens' poll/chunk pulls synchronously from the DB and the shared
   # cache — and derives no keys. The poll path's only master-key consumer, OTA
-  # packaging (OtaHmacKeyService → K_ota), runs in the processes that hold the
+  # packaging (OtaSealKeyService → the cluster seal key), runs in the processes that hold the
   # key: the campaign dispatcher (web) and the OTA sweeper (job) write
   # Ota::PackageStore, coap only reads it (FW.60 — until 2026-09-27 coap packed
   # itself, so every campaign was dark on the anchor). Pinned by the «coap лише
@@ -68,7 +68,7 @@ Rails.application.config.after_initialize do
 
   if master_key.blank?
     raise SecurityError,
-          "[SEC.9] #{hint} is not set. HardwareKeyService and OtaHmacKeyService " \
+          "[SEC.9] #{hint} is not set. HardwareKeyService and OtaSealKeyService " \
           "both require it to derive device keys via HKDF. See docs/03_06 §2 " \
           "and docs/00_07 SEC.9."
   end

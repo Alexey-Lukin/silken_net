@@ -382,8 +382,8 @@ module Downlink
           # [FW.60] Єдиний виклик з не-позитивним `total` — жорстко
           # `(0, 0, "COMPLETE")` з `observe_delivered_firmware!` нижче: хінт і
           # чанк-фетч завжди несуть `packages.size`, а той має структурну
-          # підлогу > 0 (`gateways.cluster_id` NOT NULL → OTA HMAC-трейлер
-          # (`OtaPackagerService#hmac_enabled?`) додається завжди). «Хінт з
+          # підлогу > 0 (`gateways.cluster_id` NOT NULL → трейлер печатки OTA
+          # (`OtaPackagerService#sealed?`) додається завжди). «Хінт з
           # НУЛЬ чанків» — мертва гілка (00_07 FW.60 §B.4-тріаж).
           100
         end

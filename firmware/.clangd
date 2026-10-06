@@ -111,3 +111,20 @@ CompileFlags:
     - -I../extern/stm32-mw-lorawan/Utilities
     - -I../extern/subghz-phy/radio_driver
     - -DAES_DEC_PREKEYED
+
+---
+
+# [FW.23] common/ota_seal.h + test/test_soldier_logic.c — перевірка Ed25519-печатки
+# OTA тягне Monocypher (як test_queen_attest.c), а build-host DB шляху до нього не
+# знає. Дзеркало MONOCYPHER_SRC у firmware/test/Makefile (міняєш там → синкни тут).
+If:
+  PathMatch: (common/ota_seal|test/test_soldier_logic)\.(c|h)
+CompileFlags:
+  CompilationDatabase: None
+  Add:
+    - -xc          # standalone .h інакше парситься як ObjC++
+    - -std=c11
+    - -I.
+    - -I../common
+    - -I../extern/monocypher/src
+    - -I../extern/monocypher/src/optional

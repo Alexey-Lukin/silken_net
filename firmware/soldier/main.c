@@ -47,6 +47,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
+#include "../common/ota_seal.h"       // [FW.23] Ed25519-печатка OTA: розбір трейлера + вердикт (One-Home з host-тестами)
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
@@ -70,14 +71,8 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define OTA_MARKER                0x99       // Маркер OTA-пакета (перший байт)
 #define OTA_HEADER_SIZE           5          // [0x99][index:2][total:2]
 #define MIN_OTA_PACKET_SIZE       6          // OTA_HEADER_SIZE + 1 байт даних мінімум
-#define HMAC_TRAILER_MARKER       0x9B       // [FW.23] Маркер печатки OTA
-#define HMAC_TRAILER_HEADER_SIZE  5          // [FW.23] [0x9B][seg_idx:2 BE][total:2 BE]
-#define HMAC_TRAILER_SEG_BYTES    11         // [FW.23] Байт печатки на один LoRa-чанк
-#define HMAC_TAG_BYTES            32         // [FW.23] HMAC-SHA256 = 32 байти істини
-#define HMAC_TRAILER_TOTAL_SEGS   3          // [FW.23] 3 LoRa-чанки несуть 32-байтну печатку
-#define HMAC_VERSION_SEG_IDX      4          // [FW.23] seg_idx=4 несе version_id (вхід HMAC)
-#define OTA_TRAILER_TOTAL_CHUNKS  4          // [FW.23] 3 печатки + 1 версія
-#define OTA_TRAILER_ALL_RECEIVED  0x0Fu      // [FW.23] bitmask: seg 1/2/3 + version
+// [FW.23] Трейлер печатки OTA (маркер 0x9B, 6 сегментів підпису + версія) — формат і
+// константи живуть у ../common/ota_seal_wire.h, перевірка — у ../common/ota_seal.h.
 #define OTA_REQ_MARKER            0x55       // [FW.27-B] Маркер зойку «повтори, Королево» (Soldier→Queen)
 #define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
 #define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
@@ -175,21 +170,20 @@ _Static_assert(
 // EPOCH_SECONDS видалено [FW.30]: epoch_day тепер рахує
 // lorenz_seed.h (SILKEN_EPOCH_SECONDS) — One-Home, без дубля константи.
 
-// [FW.23] Flash-based OTA HMAC key (K_ota) provisioning — per-cluster 256-bit
-// HMAC-SHA256 ключ для dual-gate автентифікації OTA-байткоду. Окрема Protected
-// Flash сторінка 125 (0x0803E800, одразу після per-device key-сторінки 124),
-// бо K_ota — per-КЛАСТЕР (broadcast), тоді як LoRa AES-key — per-DEVICE:
-// польова заміна K_ota стирає СВОЮ сторінку, не чіпаючи per-device ключі.
-// Сторінка 125 = канонічний «буфер росту key-блоку» (03_01 §2.3); первісна
-// адреса 0x0803D000 колідувала з freeze-contract Flash-KV регіоном
-// (сторінки 122-123) — mount KV стер би K_ota. Factory Flashing пише
-// HKDF-SHA256(master, salt="cluster:<id>", info="silken-ota-hmac-v1") через SWD.
-// Якщо magic відсутній — ota_hmac_key_valid=0: вузол НЕ застосує жоден OTA (fail-
+// ⚖️ [FW.23, founder 2026-10-05/06] ПУБЛІЧНИЙ Ed25519-ключ печатки OTA кластера. Окрема
+// Protected Flash сторінка 125 (0x0803E800, одразу після per-device key-сторінки 124),
+// бо ключ — per-КЛАСТЕР, тоді як LoRa AES-key — per-DEVICE: заміна стирає СВОЮ сторінку,
+// не чіпаючи per-device ключі. Сторінка 125 = канонічний «буфер росту key-блоку»
+// (03_01 §2.3). Factory Flashing пише публічний ключ пари, чий seed =
+// HKDF-SHA256(master, salt="cluster:<id>", info="silken-ota-ed25519-v1"); приватний
+// ключ вузла не покидає бекенд. Доти тут лежав симетричний K_ota (magic "KOTA"), і
+// витягнутий вузол підписував контракт для всього кластера; новий magic — версія
+// формату: стара прошивка не прочитає ключ як K_ota, нова — K_ota як ключ.
+// Якщо magic відсутній — ota_seal_pubkey_valid=0: вузол НЕ застосує жоден OTA (fail-
 // safe — без ключа нема як довести походження). НЕ Error_Handler() (телеметрія
-// й Lorenz працюють без K_ota). Канон: docs/03_06 §4.
+// й Lorenz працюють без нього). Канон: docs/03_06 §4.
 #define FLASH_OTA_KEY_ADDR        0x0803E800UL  // Сторінка 125 — за per-device key-сторінкою
-#define FLASH_OTA_KEY_WORDS       8             // 8 × uint32_t = 32 bytes = 256-bit HMAC key
-#define FLASH_OTA_KEY_MAGIC       0x4B4F5441UL  // "KOTA" — OTA HMAC key magic marker
+#define FLASH_OTA_PUBKEY_MAGIC    0x4B505542UL  // "KPUB" — OTA seal public key magic marker
 
 // [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB) —
 // спільний AES-128 всього кластера для ВСЬОГО, що не є телеметрією/panic:
@@ -197,16 +191,16 @@ _Static_assert(
 // всіх → один ключ by construction) + uplink-запити 0x55/0x56 (Королева
 // читає їх сама, session-ключів вона не тримає — 03_05 §3.1). Телеметрія й
 // panic натомість їдуть CCM'ом на per-device session-ключі (KEYL вище).
-// Сторінка 125 = cluster-membership (KOTA+KEYB): переїзд дерева між
+// Сторінка 125 = cluster-membership (KPUB+KEYB): переїзд дерева між
 // кластерами стирає/пише ЛИШЕ її, per-device identity (стор. 124) живе.
-// Зсув +40, не +36: K_ota займає 36 Б, а WL програмує Flash 64-бітними
+// Зсув +40, не +36: KPUB займає 36 Б, а WL програмує Flash 64-бітними
 // doubleword'ами — старт KEYB у другій половині недописаного dw
 // спричинив би ECC-fault при фабричному -w32. Деривація —
 // HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key") — дзеркало
 // HardwareKeyService.derive_broadcast_key; ротація = re-provision (як
-// K_ota; FW.17-ратчет цього ключа СВІДОМО не торкається). Канон: 03_05 §2.1
+// ключ печатки OTA; FW.17-ратчет цього ключа СВІДОМО не торкається). Канон: 03_05 §2.1
 // flip-checklist (в) + §3.1.
-#define FLASH_BCAST_KEY_ADDR      (FLASH_OTA_KEY_ADDR + 40)  // після K_ota (36 Б) + dw-паддінг
+#define FLASH_BCAST_KEY_ADDR      (FLASH_OTA_KEY_ADDR + 40)  // після KPUB (36 Б) + dw-паддінг
 #define FLASH_BCAST_KEY_WORDS     4             // 4 × uint32_t = 16 bytes = AES-128
 #define FLASH_BCAST_KEY_MAGIC     0x4B455942UL  // "KEYB" — cluster broadcast/control key
 
@@ -346,22 +340,20 @@ uint8_t ota_silent_wakeups = 0;
 // стару незавершену кампанію і відкриваємось новій.
 uint8_t ota_total_mismatch_streak = 0;
 
-// [FW.23] HMAC-печатка OTA — 32-байтне свідчення істини, яке надходить
-// після тіла прошивки у 4-х 16-байтних LoRa-чанках з маркером 0x9B.
-// Збираємо посегментно: seg_idx=1 → bytes[0..10], seg_idx=2 → bytes[11..21],
-// seg_idx=3 → bytes[22..31] + 1 байт PAD, seg_idx=4 → version_id (BE). Бітмаска
-// ota_hmac_segments_received: біти 0/1/2 = печатка, біт 3 = версія. Усі 4 чанки
-// (== OTA_TRAILER_ALL_RECEIVED 0x0F) ⇒ маємо і печатку, і version_id, потрібний
-// як вхід HMAC — повний підпис готовий до перевірки двома брамами у Phase 4.5.
-uint8_t  received_hmac_tag[HMAC_TAG_BYTES] = {0};
-uint8_t  ota_hmac_segments_received = 0;        // Bitmask seg 1/2/3 + version (біт 3)
-uint32_t received_ota_version = 0;              // [FW.23] version_id з seg_idx=4 (вхід HMAC)
+// [FW.23] Ed25519-печатка OTA — 64-байтний підпис, що надходить після тіла прошивки
+// у 7-ми 16-байтних LoRa-блоках з маркером 0x9B: seg 1..6 несуть підпис (11 байт на
+// блок, seg 6 — 9 байт + PAD), seg 7 — version_id (BE). Бітмаска
+// ota_seal_segments_received: біти 0..5 = печатка, біт 6 = версія. Усі 7 блоків
+// (== OTA_SEAL_ALL_RECEIVED 0x7F) ⇒ є і підпис, і version_id, що входить у підписане.
+uint8_t  received_ota_seal[OTA_SEAL_SIG_BYTES] = {0};
+uint8_t  ota_seal_segments_received = 0;        // Bitmask seg 1..6 + version (біт 6)
+uint32_t received_ota_version = 0;              // [FW.23] version_id з seg_idx=7 (частина підписаного)
 
-// [FW.23] K_ota — per-cluster 256-bit HMAC ключ для OTA dual-gate.
-// Завантажується з Protected Flash через Load_Ota_Hmac_Key() при boot.
-// ota_hmac_key_valid==0 (не provisioned) ⇒ жоден OTA не застосовується (fail-safe).
-uint8_t  ota_hmac_key[32] = {0};
-uint8_t  ota_hmac_key_valid = 0;
+// [FW.23] Публічний Ed25519-ключ печатки OTA кластера (слот "KPUB", стор. 125).
+// Завантажується з Protected Flash через Load_Ota_Seal_Pubkey() при boot.
+// ota_seal_pubkey_valid==0 (не provisioned) ⇒ жоден OTA не застосовується (fail-safe).
+uint8_t  ota_seal_pubkey[OTA_SEAL_PUBKEY_BYTES] = {0};
+uint8_t  ota_seal_pubkey_valid = 0;
 
 uint8_t* current_lorenz_bytecode;
 
@@ -539,7 +531,7 @@ static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save 
 #define FW17_KV_KEY_VERSION    0x13u  // Flash-KV: [rsv:16 | version:16] — версія в молодших бітах (03_01 §2.3.1)
 
 // [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
-// 03_01 §2.3; K_ota тому переїхав на сторінку 125 — первісний 0x0803D000
+// 03_01 §2.3; ключ OTA тому переїхав на сторінку 125 — первісний 0x0803D000
 // колідував із цим регіоном). Mount спільний для споживачів FW.17 (версія
 // ratchet'а), FW.8 (Z-пороги, ../common/lorenz_thresholds.h) та FW.2
 // (FC high-water, ../common/fc_hiwater.h) — його вмикає будь-який із флагів.
@@ -1228,185 +1220,14 @@ static uint8_t Build_OTA_ReRequest_Payload(uint32_t did,
 }
 
 // =====================================================================
-// === 1.13. FW.23 Печатка OTA + дві брами (dual-gate) перед Flash =====
+// === 1.13. FW.23 Печатка OTA (Ed25519) перед Flash ====================
 // =====================================================================
-// Wire-формат одного 16-байтного LoRa-чанка (post-AES-ECB-decrypt):
-//   [0]    0x9B marker (печатка)
-//   [1..2] seg_idx (big-endian, 1..4)
-//   [3..4] total_chunks тіла прошивки (big-endian, для перехресної перевірки)
-//   seg 1..3: [5..15] hmac_segment[11 байт] (3×11 = 33; 11-й байт seg=3 = PAD)
-//   seg 4:    [5..8] version_id (big-endian) + [9..15] PAD
-//
-// Прийняті 4 чанки ⇒ ota_hmac_segments_received == OTA_TRAILER_ALL_RECEIVED
-// (0b1111 = 0x0F): received_hmac_tag[0..31] повний + *version_out заповнено.
-// Викликаючий код приходить до двох брам перед впуском прошивки у Flash:
-//   Брама 1: magic у RAM-bytecode = 0x45544952 ("RITE") — швидкий привратник
-//   Брама 2: HMAC-SHA256(K_ota, bytecode || version_id_be || total_chunks_be)
-//            == received_hmac_tag (constant-time, без шепоту таймінгу)
-//
-// Version_id їде окремим чанком (seg 4), бо у 16-байтну печатку-сегмент він не
-// влазить, а без нього Солдат не може перерахувати HMAC (3.4б). Чиста pure-
-// функція для host-тестів.
-// Повертає:
-//   1 = чанк з валідним marker та seg_idx у [1..4], печатка/версія лягли на місце
-//   0 = чанк не є печаткою (caller може спробувати інший marker)
-//   -1 = чанк має marker 0x9B, але невалідний (seg_idx поза [1..4] / size < 16)
-static int Parse_HMAC_Trailer_Chunk(const uint8_t* chunk,
-                                     uint16_t       chunk_size,
-                                     uint8_t        tag_out[HMAC_TAG_BYTES],
-                                     uint32_t*      version_out,
-                                     uint8_t*       segments_received_inout) {
-    if (chunk == NULL || tag_out == NULL || version_out == NULL ||
-        segments_received_inout == NULL)                                    return -1;
-    if (chunk_size < HMAC_TRAILER_HEADER_SIZE + HMAC_TRAILER_SEG_BYTES)      return -1;
-    if (chunk[0] != HMAC_TRAILER_MARKER)                                     return 0;
-
-    uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
-    if (seg_idx < 1 || seg_idx > OTA_TRAILER_TOTAL_CHUNKS)                   return -1;
-
-    if (seg_idx == HMAC_VERSION_SEG_IDX) {
-        // seg 4: version_id (big-endian) у байтах [5..8].
-        *version_out = ((uint32_t)chunk[HMAC_TRAILER_HEADER_SIZE]     << 24) |
-                       ((uint32_t)chunk[HMAC_TRAILER_HEADER_SIZE + 1] << 16) |
-                       ((uint32_t)chunk[HMAC_TRAILER_HEADER_SIZE + 2] <<  8) |
-                       ((uint32_t)chunk[HMAC_TRAILER_HEADER_SIZE + 3]);
-        *segments_received_inout |= (uint8_t)(1u << (HMAC_VERSION_SEG_IDX - 1));
-        return 1;
-    }
-
-    uint8_t  base = (uint8_t)((seg_idx - 1) * HMAC_TRAILER_SEG_BYTES);
-    // seg=1 → tag[0..10], seg=2 → tag[11..21], seg=3 → tag[22..31] + PAD
-    uint8_t  copy_len = HMAC_TRAILER_SEG_BYTES;
-    if (seg_idx == HMAC_TRAILER_TOTAL_SEGS) {
-        copy_len = (uint8_t)(HMAC_TAG_BYTES - base);  // 32 - 22 = 10 байт
-    }
-    memcpy(&tag_out[base], &chunk[HMAC_TRAILER_HEADER_SIZE], copy_len);
-    *segments_received_inout |= (uint8_t)(1u << (seg_idx - 1));
-    return 1;
-}
-
-// Constant-time memcmp — порівняння без шепоту таймінгу. Повертає 0 при
-// рівності, інакше ненульове. Дзеркалить Ruby `ActiveSupport::SecurityUtils.secure_compare`.
-// Привратник, що дивиться однаково довго на істину і на лжесвідчення.
-static int Hmac_Constant_Time_Compare(const uint8_t* a, const uint8_t* b, size_t len) {
-    if (a == NULL || b == NULL) return 1;
-    uint8_t diff = 0;
-    for (size_t i = 0; i < len; i++) {
-        diff |= (uint8_t)(a[i] ^ b[i]);
-    }
-    return (int)diff;
-}
-
-// Дві брами перед HAL_FLASH_Program. Чиста логіка для host-тестів.
-// Повертає 1, якщо обидві брами розчинились, інакше 0 — і прошивка
-// не входить у плоть Солдата.
-//   Брама 1 (~1 µs): bytecode[0..3] == 0x45544952 ("RITE" little-endian) —
-//                    швидкий привратник, що відсікає випадковий шум ефіру.
-//   Брама 2 (~3 мс): expected_hmac == received_hmac (constant-time) —
-//                    глибокий привратник, що відрізняє слово Творця
-//                    від слова спокусника.
-// Caller обчислює expected_hmac через pure-C silken_sha256.h (FW.30 — mbedTLS
-// не потрібен). Тут тестуємо саме гейт-логіку.
-static int OTA_Verify_Dual_Gate(const uint8_t* bytecode,
-                                 uint16_t       bytecode_size,
-                                 const uint8_t  expected_hmac[HMAC_TAG_BYTES],
-                                 const uint8_t  received_hmac[HMAC_TAG_BYTES]) {
-    if (bytecode == NULL || expected_hmac == NULL || received_hmac == NULL) return 0;
-    if (bytecode_size < 4)                                                  return 0;
-
-    // Брама 1: magic — швидке "хто там?"
-    uint32_t magic = ((uint32_t)bytecode[0])         |
-                     ((uint32_t)bytecode[1] <<  8)   |
-                     ((uint32_t)bytecode[2] << 16)   |
-                     ((uint32_t)bytecode[3] << 24);
-    if (magic != 0x45544952u) return 0;
-
-    // Брама 2: constant-time перевірка печатки
-    if (Hmac_Constant_Time_Compare(expected_hmac, received_hmac, HMAC_TAG_BYTES) != 0) return 0;
-
-    return 1;
-}
-
-// [FW.23] Вердикт фіналізації OTA — серце дуал-гейту, чиста pure-функція для
-// host-тестів (жодного звернення до глобалок чи HAL: усе через параметри).
-//
-// Чому окремий вердикт, а не запис прямо: тіло (0x99) і печатка (0x9B) приходять
-// РІЗНИМИ кадрами й у будь-якому порядку — Королева шле тіло, ПОТІМ печатку, але
-// Солдат спить між пробудженнями, тож останнім може завершитись будь-що. Раніше
-// перевірка стріляла по завершенню ТІЛА і скидала збірку — печатка, що приходила
-// пізніше, гинула, і OTA ніколи не застосовувався. Тепер обидві гілки кличуть цей
-// вердикт; APPLY настає лише коли зібрано і тіло, і всі 4 трейлер-чанки.
-//
-//   WAIT   — ще не все (тіло АБО печатка/версія) → викликач НІЧОГО не чіпає
-//   APPLY  — обидві брами + CRC + K_ota → викликач пише у Flash і ребутає
-//   REJECT — зібрано повністю, але CRC/брама/ключ впали → жертовний wipe + reset
-//
-// HMAC-вхід дзеркалить backend OtaPackagerService: тіло (без 4-байтного CRC-
-// хвоста) ‖ version_id_be(4) ‖ total_chunks_be(2). *data_len_out — довжина тіла.
-typedef enum {
-    OTA_FINALIZE_WAIT = 0,
-    OTA_FINALIZE_APPLY,
-    OTA_FINALIZE_REJECT
-} OtaFinalizeVerdict;
-
-static OtaFinalizeVerdict OTA_Try_Finalize(const uint8_t* buf,
-                                           uint16_t       bytes_received,
-                                           uint16_t       chunks_received,
-                                           uint16_t       total_chunks,
-                                           uint8_t        segments_received,
-                                           const uint8_t* k_ota,
-                                           uint8_t        k_ota_valid,
-                                           uint32_t       version_id,
-                                           const uint8_t  received_tag[HMAC_TAG_BYTES],
-                                           uint16_t*      data_len_out) {
-    if (buf == NULL || received_tag == NULL || data_len_out == NULL) return OTA_FINALIZE_REJECT;
-
-    // Ще не зібрано тіло або не прийшли всі 4 трейлер-чанки — чекаємо мовчки.
-    if (total_chunks == 0 || chunks_received < total_chunks)         return OTA_FINALIZE_WAIT;
-    if (segments_received != OTA_TRAILER_ALL_RECEIVED)               return OTA_FINALIZE_WAIT;
-
-    // Зібрано все, але тіло коротше за CRC-хвіст — це не прошивка.
-    if (bytes_received <= 4)                                         return OTA_FINALIZE_REJECT;
-
-    uint16_t data_len = (uint16_t)(bytes_received - 4u);
-    *data_len_out = data_len;
-
-    // CRC32 (ISO 3309) над тілом; останні 4 байти потоку — очікувана сума (BE).
-    uint32_t expected_crc = ((uint32_t)buf[data_len] << 24) |
-                            ((uint32_t)buf[data_len + 1] << 16) |
-                            ((uint32_t)buf[data_len + 2] << 8)  |
-                            (uint32_t)buf[data_len + 3];
-    uint32_t crc = 0xFFFFFFFFu;
-    for (uint16_t ci = 0; ci < data_len; ci++) {
-        crc ^= buf[ci];
-        for (uint8_t bit = 0; bit < 8; bit++) {
-            crc = (crc & 1u) ? ((crc >> 1) ^ 0xEDB88320u) : (crc >> 1);
-        }
-    }
-    crc = ~crc;
-    if (crc != expected_crc)                                        return OTA_FINALIZE_REJECT;
-
-    // Без K_ota походження не довести — fail-safe (краще не оновитись, ніж лжеслово).
-    if (!k_ota_valid)                                               return OTA_FINALIZE_REJECT;
-
-    // Брама 2: HMAC-SHA256(K_ota, тіло ‖ version_be ‖ total_be) проти received_tag.
-    // Тіло (~1 КБ) живе у buf; 6-байтний хвіст стрімимо окремо (Concat) — без +1 КБ стека.
-    uint8_t suffix[6];
-    suffix[0] = (uint8_t)(version_id >> 24);
-    suffix[1] = (uint8_t)(version_id >> 16);
-    suffix[2] = (uint8_t)(version_id >> 8);
-    suffix[3] = (uint8_t)(version_id & 0xFFu);
-    suffix[4] = (uint8_t)(total_chunks >> 8);
-    suffix[5] = (uint8_t)(total_chunks & 0xFFu);
-
-    uint8_t expected_hmac[HMAC_TAG_BYTES];
-    Silken_Hmac_Sha256_Concat(k_ota, 32u, buf, data_len, suffix, sizeof(suffix), expected_hmac);
-
-    if (OTA_Verify_Dual_Gate(buf, data_len, expected_hmac, received_tag) != 1) {
-        return OTA_FINALIZE_REJECT;
-    }
-    return OTA_FINALIZE_APPLY;
-}
+// Розбір трейлера — Ota_Seal_Parse_Chunk (../common/ota_seal_wire.h); вердикт
+// фіналізації (CRC32 · magic "RITE" · Ed25519-печатка ключем кластера) —
+// Ota_Seal_Try_Finalize (../common/ota_seal.h). Обидва pure і спільні з host-тестом
+// (firmware/test/test_soldier_logic.c), тож тест судить цей код, а не копію.
+// ⚖️ founder 2026-10-05/06: печатка асиметрична — вузол тримає лише публічний ключ;
+// доти тут жили HMAC-трейлер і K_ota, однакові на кожному вузлі кластера.
 
 // [FW.23] Повне скидання збірки OTA — тіло, печатка, версія, лічильники.
 // Єдине джерело: і deadlock-guard (чужий total), і успіх/відмова фіналізації
@@ -1414,12 +1235,12 @@ static OtaFinalizeVerdict OTA_Try_Finalize(const uint8_t* buf,
 // «брудним» між кампаніями.
 static void Reset_Ota_Assembly(void) {
     memset(ota_chunk_received, 0, sizeof(ota_chunk_received));
-    memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
+    memset(received_ota_seal, 0, sizeof(received_ota_seal));
     received_ota_version       = 0;
     ota_chunks_received        = 0;
     ota_bytes_received         = 0;
     ota_total_chunks           = 0;
-    ota_hmac_segments_received = 0;
+    ota_seal_segments_received = 0;
     ota_last_chunk_rx_tick     = 0;
     ota_total_mismatch_streak  = 0;
 }
@@ -1563,7 +1384,7 @@ static void Load_Broadcast_Key(void);
 // Викликається в main() при ініціалізації. K_seed використовується для
 // cold-start деривації (x₀,y₀,z₀) через HMAC-SHA256.
 static void Load_Lorenz_Seed(void);
-static void Load_Ota_Hmac_Key(void);  // [FW.23] Прочитати K_ota з Flash
+static void Load_Ota_Seal_Pubkey(void);  // [FW.23] Прочитати публічний ключ печатки OTA з Flash
 static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль вузла з Flash
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start
@@ -1714,7 +1535,7 @@ int main(void)
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
   Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
-  Load_Ota_Hmac_Key(); // [FW.23] Завантажити K_ota для OTA dual-gate (per-cluster HMAC)
+  Load_Ota_Seal_Pubkey(); // [FW.23] Публічний ключ Ed25519-печатки OTA кластера ("KPUB")
   Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
   MX_CRYP_Init(); // Вмикаємо апаратний AES (амбієнт = bcast_key в обох ерах)
 
@@ -2529,15 +2350,15 @@ int main(void)
                 // кластерним KEYB дав би будь-кому з вкраденою платою командувати
                 // кожним вузлом. Їх несе лише CCM-кадр (гілка довжини ≠ 16 вище).
 
-                // Сценарій А1: [FW.23] HMAC-печатка OTA (0x9B) — 4 LoRa-чанки
-                // після тіла прошивки: 3 несуть 32-байтну печатку, 4-й — version_id
+                // Сценарій А1: [FW.23] Ed25519-печатка OTA (0x9B) — 7 LoRa-блоків
+                // після тіла прошивки: 6 несуть 64-байтний підпис, 7-й — version_id
                 // над (bytecode || version_id_be || total_chunks_be).
-                if (decrypted_rx_payload[0] == HMAC_TRAILER_MARKER) {
-                    int rc = Parse_HMAC_Trailer_Chunk((const uint8_t*)decrypted_rx_payload,
-                                                       incoming_lora_size,
-                                                       received_hmac_tag,
-                                                       &received_ota_version,
-                                                       &ota_hmac_segments_received);
+                if (decrypted_rx_payload[0] == OTA_SEAL_MARKER) {
+                    int rc = Ota_Seal_Parse_Chunk((const uint8_t*)decrypted_rx_payload,
+                                                  incoming_lora_size,
+                                                  received_ota_seal,
+                                                  &received_ota_version,
+                                                  &ota_seal_segments_received);
                     // rc=1 ⇒ печатка/версія лягли на місце; rc=0 ⇒ не наш marker
                     // (сюди ми б не зайшли); rc=-1 ⇒ невалідна (size/seg_idx) —
                     // мовчки відкидаємо, як ефірний шум.
@@ -2545,17 +2366,17 @@ int main(void)
 
                     // [FW.23] Печатка могла прийти ПІСЛЯ останнього чанка тіла —
                     // тоді саме вона довершує OTA. Якщо тіло вже зібране й тепер є
-                    // всі 4 трейлер-чанки → фіналізуємо тут (дзеркало 0x99-гілки).
+                    // всі 7 трейлер-блоків → фіналізуємо тут (дзеркало 0x99-гілки).
                     uint16_t data_len = 0;
-                    OtaFinalizeVerdict verdict = OTA_Try_Finalize(
+                    OtaFinalizeVerdict verdict = Ota_Seal_Try_Finalize(
                         ota_buffer, ota_bytes_received,
                         ota_chunks_received, ota_total_chunks,
-                        ota_hmac_segments_received,
-                        ota_hmac_key, ota_hmac_key_valid,
-                        received_ota_version, received_hmac_tag,
+                        ota_seal_segments_received,
+                        ota_seal_pubkey, ota_seal_pubkey_valid,
+                        received_ota_version, received_ota_seal,
                         &data_len);
 
-                    // [SEC.20] Dual-gate довів справжність, але не свіжість:
+                    // [SEC.20] Печатка довела справжність, але не свіжість:
                     // старе валідно-підписане слово (replay/downgrade) чекає
                     // тієї ж жертви лжемагії, що й крипто-відмова — bio_contract
                     // тече лише вперед.
@@ -2609,9 +2430,9 @@ int main(void)
                     // якому порядку, тому обнуляємо саме на світанку, а не на
                     // заході OTA-вікна.
                     if (ota_total_chunks == 0) {
-                        memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
+                        memset(received_ota_seal, 0, sizeof(received_ota_seal));
                         received_ota_version = 0;
-                        ota_hmac_segments_received = 0;
+                        ota_seal_segments_received = 0;
                     }
                     ota_total_chunks = incoming_total;
 
@@ -2638,18 +2459,18 @@ int main(void)
                         ota_silent_wakeups = 0;
 
                         // [FW.23] Останній чанк ТІЛА міг прийти раніше за печатку
-                        // (Королева шле тіло → потім печатку). OTA_Try_Finalize дає
-                        // WAIT, якщо ще нема всіх 4 трейлер-чанків — тоді НІЧОГО не
-                        // чіпаємо: зібране тіло чекає, а фіналізацію довершить 0x9B-
-                        // гілка, коли долетить остання печатка. Запис у Flash і
-                        // ребут — лише коли обидві брами (magic + HMAC) розчинились.
+                        // (Королева шле тіло → потім печатку). Ota_Seal_Try_Finalize
+                        // дає WAIT, якщо ще нема всіх 7 трейлер-блоків — тоді НІЧОГО
+                        // не чіпаємо: зібране тіло чекає, а фіналізацію довершить
+                        // 0x9B-гілка, коли долетить остання печатка. Запис у Flash і
+                        // ребут — лише коли magic і Ed25519-печатка розчинились.
                         uint16_t data_len = 0;
-                        OtaFinalizeVerdict verdict = OTA_Try_Finalize(
+                        OtaFinalizeVerdict verdict = Ota_Seal_Try_Finalize(
                             ota_buffer, ota_bytes_received,
                             ota_chunks_received, ota_total_chunks,
-                            ota_hmac_segments_received,
-                            ota_hmac_key, ota_hmac_key_valid,
-                            received_ota_version, received_hmac_tag,
+                            ota_seal_segments_received,
+                            ota_seal_pubkey, ota_seal_pubkey_valid,
+                            received_ota_version, received_ota_seal,
                             &data_len);
 
                         // [SEC.20] Свіжість поверх справжності — див. 0x9B-гілку.
@@ -2853,7 +2674,7 @@ int main(void)
             // повертає амбієнт = bcast_key, тож downlink НЕ глухне від ротації
             // (двоключова розв'язка); новий K_v застосує наступний
             // MX_CRYP_Init_CCM. KEYB ратчет НЕ торкається — його ротація =
-            // re-provision (як K_ota).
+            // re-provision (як ключ печатки OTA).
             MX_CRYP_Init();
             lora_key_version_dirty = 0;
             Soldier_Dl_Settle_Dlfc(); // ефект уже в журналі — тепер і DLFC
@@ -3198,7 +3019,7 @@ static void Load_AES_Key(void)
 // KEYB-ери, вона деградує до односхемної поведінки на KEYL і чесно
 // позначає це прапорцем. Fail-open тут безпечний, бо fallback-ключ — той
 // самий, на якому такий кластер і живе; конвеєр пише обидва слоти в
-// будь-якій ері (command_builder), тож у полі прапорець мусить бути 0. Патерн — Load_Ota_Hmac_Key (fail-open + valid-флаг),
+// будь-якій ері (command_builder), тож у полі прапорець мусить бути 0. Патерн — Load_Ota_Seal_Pubkey (fail-open + valid-флаг),
 // НЕ Load_AES_Key (fatal). Порядок у main() несучий: виклик ПЕРЕДУЄ
 // FW17_Restore_Key_Version — fallback бере K0, ратчений session не сміє
 // текти в амбієнт. Канон: 03_05 §2.1 (в) + §3.1.
@@ -3265,44 +3086,28 @@ static void Load_Lorenz_Seed(void)
     lorenz_seed_valid = 1;
 }
 
-// [FW.23] Завантаження K_ota (per-cluster OTA HMAC key) з Protected Flash.
+// [FW.23] Завантаження публічного Ed25519-ключа печатки OTA кластера з Protected Flash.
 // Flash layout на FLASH_OTA_KEY_ADDR (0x0803E800, сторінка 125):
-//   [FLASH_OTA_KEY_MAGIC:4]["KOTA"][k_ota[0]:4]...[k_ota[7]:4] = 4 + 32 = 36 байт
-// Якщо magic відсутній/стертий або ключ нульовий — ota_hmac_key_valid=0:
-// dual-gate ніколи не пройде Браму 2 ⇒ жоден OTA не запишеться (fail-safe;
-// без ключа походження не довести). НЕ Error_Handler() — телеметрія й Lorenz
-// працюють без K_ota; лише OTA-канал лишається замкненим до provisioning.
-// Байтовий порядок дзеркалить backend OtaHmacKeyService (raw HKDF output, BE
-// слова → байти), щоб Silken_Hmac_Sha256 видав ідентичний backend'у digest.
-static void Load_Ota_Hmac_Key(void)
+//   [FLASH_OTA_PUBKEY_MAGIC:4]["KPUB"][pub[0]:4]...[pub[7]:4] = 4 + 32 = 36 байт
+// Якщо magic відсутній/стертий (зокрема старий "KOTA" — симетричний ключ, який ця
+// прошивка свідомо не читає) або ключ нульовий — ota_seal_pubkey_valid=0: печатка
+// не пройде ⇒ жоден OTA не запишеться (fail-safe; без ключа походження не довести).
+// НЕ Error_Handler() — телеметрія й Lorenz працюють без нього; лише OTA-канал
+// лишається замкненим до provisioning. Байтовий порядок — BE-слова → байти, як пише
+// FactoryFlashing::CommandBuilder (`block_words`) з 64-hex публічного ключа.
+static void Load_Ota_Seal_Pubkey(void)
 {
     const uint32_t *flash_ptr = (const uint32_t *)FLASH_OTA_KEY_ADDR;
 
-    // 1. Magic — чи K_ota записано при provisioning кластера
-    if (flash_ptr[0] != FLASH_OTA_KEY_MAGIC) {
-        ota_hmac_key_valid = 0;
+    // 1. Magic — чи публічний ключ записано при provisioning кластера
+    if (flash_ptr[0] != FLASH_OTA_PUBKEY_MAGIC) {
+        ota_seal_pubkey_valid = 0;
         return;
     }
 
-    // 2. Ключ не нульовий (magic є, але ключ порожній — corrupted provisioning)
-    uint32_t key_or = 0;
-    for (int i = 0; i < FLASH_OTA_KEY_WORDS; i++) {
-        key_or |= flash_ptr[1 + i];
-    }
-    if (key_or == 0) {
-        ota_hmac_key_valid = 0;
-        return;
-    }
-
-    // 3. Копіюємо K_ota з Flash у RAM (big-endian byte order — як backend HMAC key)
-    for (int i = 0; i < FLASH_OTA_KEY_WORDS; i++) {
-        uint32_t word = flash_ptr[1 + i];
-        ota_hmac_key[i * 4 + 0] = (uint8_t)(word >> 24);
-        ota_hmac_key[i * 4 + 1] = (uint8_t)(word >> 16);
-        ota_hmac_key[i * 4 + 2] = (uint8_t)(word >> 8);
-        ota_hmac_key[i * 4 + 3] = (uint8_t)(word & 0xFF);
-    }
-    ota_hmac_key_valid = 1;
+    // 2. Ключ — BE-слова → байти, як пише фабрика; нульовий (magic є, ключа нема —
+    //    зіпсований провіжн) ⇒ invalid. Розпак — common/ota_seal.h, пін наскрізь.
+    ota_seal_pubkey_valid = (uint8_t)Ota_Seal_Pubkey_From_Words(&flash_ptr[1], ota_seal_pubkey);
 }
 
 // [ARCH.27] Завантаження ролі вузла з Protected Flash Sector.

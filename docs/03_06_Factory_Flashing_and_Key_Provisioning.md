@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — backend provisioning + HKDF + K_seed + OTA-HMAC реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅. Відкрите: real `STM32_Programmer_CLI` + live SE05x/`sss` I²C на bench (SEC.3; SE = **SE050**, `cryptoauthlib` — ATECC-ери, superseded SEC.6), RDP Level 2 (SEC.2), K_ota bench (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — backend provisioning + HKDF + K_seed + OTA-печатку Ed25519 реалізовано (host-тести зелені); фабрична Rake-CLI dry-run ✅. Відкрите: real `STM32_Programmer_CLI` + live SE05x/`sss` I²C на bench (SEC.3; SE = **SE050**, `cryptoauthlib` — ATECC-ери, superseded SEC.6), RDP Level 2 (SEC.2), bench OTA-печатки (FW.23) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -19,10 +19,10 @@
 | Ресурс | Опис |
 |--------|------|
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Крипто-режими (AES CCM/CBC/ECB), пакети, IV, SE050 §3.7, ротація §3.8 — дім, з якого виокремлено |
-| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | RTC/Flash-KV мапа; K_ota Protected Flash сторінка |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | RTC/Flash-KV мапа; сторінка Protected Flash публічного ключа печатки OTA (KPUB) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | K_seed → (x₀,y₀,z₀) cold-start (§2.1) |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `FactoryFlashing::*`, `HardwareKeyService`, `OtaPackagerService`, `OtaHmacKeyService` |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Відкриті: SEC.2 RDP-2, SEC.3 factory bench, FW.23 K_ota bench |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `FactoryFlashing::*`, `HardwareKeyService`, `OtaPackagerService`, `OtaSealKeyService` |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Відкриті: SEC.2 RDP-2, SEC.3 factory bench, FW.23 bench OTA-печатки |
 
 ## 📑 Зміст
 
@@ -30,7 +30,7 @@
 - [1. Стратегія Масового Виробництва (Factory Flashing Pipeline)](#1-стратегія-масового-виробництва-factory-flashing-pipeline)
 - [2. HKDF Key Derivation Protocol Design](#2-hkdf-key-derivation-protocol-design-)
 - [3. Lorenz K_seed Derivation (SEC.11)](#3-lorenz-k_seed-derivation-sec11-)
-- [4. OTA Authentication Protocol Design (FW.23) ✅ Реалізовано (2026-05-02)](#4-ota-authentication-protocol-design-fw23--реалізовано-2026-05-02)
+- [4. OTA Authentication Protocol Design (FW.23) ✅ Реалізовано (2026-05-02 · Ed25519-печатка — 2026-10-06)](#4-ota-authentication-protocol-design-fw23--реалізовано-2026-05-02--ed25519-печатка--2026-10-06)
 - [5. Factory Flashing Operations Security 🤖 (SEC.3, 2026-05-17)](#5-factory-flashing-operations-security--sec3-2026-05-17)
 <!-- TOC:AUTO:END -->
 
@@ -67,7 +67,7 @@
      Продакшн-L2 — конвеєр на RDP_LEVEL=0 (ключі + IWDG), далі за 03_05 §3.6:
      self-test → WRPROT → [BOOT_LOCK] → RDP L2 останнім (порядок — ⚖️
      делеговано 2026-09-27, 03_05 §3.3). WRPROT — ПО ЧІПУ: Солдат стор.
-     124–125 (key · seed · role · KOTA/KEYB), Королева — лише 124 (її 125 —
+     124–125 (key · seed · role · KPUB/KEYB), Королева — лише 124 (її 125 —
      OTA-SHA-дзеркало FW.52, прошивка пише його в рантаймі)
 
   4. Пакування
@@ -89,16 +89,16 @@
      host уже знає UID (SWD-read крок 0 Гілки A той самий) → DID (03_01 §7)
      → TreeResolver → Rails-host деривує локально:
            aes_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")
-           ota_hmac = per-cluster HKDF (FW.23, "silken-ota-hmac-v1")
+           ota_pub  = per-cluster Ed25519 pubkey (FW.23, seed info "silken-ota-ed25519-v1")
            # ⚖️ делеговано 2026-09-27 (врізка під блоком): Гілка B пише
            # ТОЙ САМИЙ набір Protected Flash, що Гілка A — KEYL · LSED · KEYB ·
-           # K_ota, бо в кожного MCU-споживач (CRYP · Lorenz-VM · OTA-HMAC)
+           # KPUB, бо в кожного MCU-споживач (CRYP · Lorenz-VM · OTA-печатка)
        - Зберігає (DID → HardwareKey, silicon_uid_hex → Tree; tamper-detect:
          підміна чіпа → wrong-board guard / паспорт-mismatch)
        - ECC keypair + X.509 device cert (peaq DID signing, ARCH.27 evolution)
      Жоден ключ не летить мережею — runtime-ключі йдуть SWD -w32 (крок 4,
      як Гілка A), а ATCA-транскрипт (SecureElementProvisioner) несе лише
-     ідентичність і копію K_ota у Slot 3 під відкриту post-TRL-7 міграцію
+     ідентичність і копію KPUB у Slot 3 під відкриту post-TRL-7 міграцію
 
   4. STM32 → SE: write keys per slot mapping (legacy ATECC-скетч; cross-ref 03_05 §3.7):
      # SLOT 0 (AES LoRa) — ✂️ НЕ пишеться post-SEC.14 (provisioning-only):
@@ -108,7 +108,7 @@
      #   першому boot), а SecureElementProvisioner емітив Slot-0
      atcab_write_zone(SLOT 1, ecc_priv, 32B)    # Ed25519 private (голос дерева; SE05x → on-chip keygen)
      atcab_write_zone(SLOT 2, cert_der, 64B)    # X.509 device cert
-     atcab_write_zone(SLOT 3, ota_hmac, 32B)    # FW.23 OTA image HMAC verification
+     atcab_write_zone(SLOT 3, ota_pub, 32B)     # FW.23 OTA seal pubkey (копія; MCU перевіряє з KPUB)
      # Slot 4..15 — reserved (legacy ATECC-нумерація; SE05x = object-model, не slots;
      #   FW.17-ратчет ротує session на MCU — 03_05 §3.8, НЕ в SE)
 
@@ -129,13 +129,13 @@
      Лак → Box → Field (shipping-mode ✂️ не потрібен — 03_05 §3.5)
 ```
 
-> ⚖️ **Набір ключів Гілки B — делеговано 2026-09-27 ([`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker)): той самий, що в Гілці A — KEYL · LSED · KEYB · K_ota у Protected Flash тим самим SWD `-w32` (кроки 3–4 конвеєра Гілки B); SE додає лише ідентичність** (задум; сьогодні SE-транскрипт пише туди тільки копію K_ota у Slot 3 під відкриту post-TRL-7 міграцію, а слоти ідентичності 1/2 — TODO до eval-kit). **Підстава:** кожен із чотирьох має MCU-споживача, а не SE-споживача — KEYL і KEYB живлять CRYP радіо-AES, LSED — Lorenz-VM (cold-start), K_ota — OTA-HMAC, який рахує MCU (поки так, ключ мусить жити у MCU Flash незалежно від SE — відкрита ⚖️-нога OTA-auth, [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker)); а за ратифікованою роллю SE (SEC.14, provisioning-only, «мертвий SE ≠ мертва телеметрія», [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) жоден runtime-шлях через SE не йде. Отже присуд вимушений роллю, не смаком. Для Королеви SE немає за жодної гілки, тож її Гілка B = Гілка A повністю, включно з EDSK. **Ціна:** runtime-ключі Гілки B не отримують SE-нездобутності — їх захищає RDP ([`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security)), як у Гілці A; «data zone lock» у таблиці «Подвійний lock» і колонка «Гілка B» у §5.D стережуть лише вміст SE. **Найслабша ланка** — саме це очікування: хто читає «Гілка B = SE» як «ключі в SE», той переоцінює захист KEYL. Застосовано в коді того ж дня (`CommandBuilder#protected_flash_commands` — однаковий транскрипт обох гілок; `SecureElementProvisioner` Slot 0 не емітить); доти Гілка B не писала жодного SWD-ключа — KEYL-less Солдат цеглився на першому boot, Королева не мала навіть KEYC. Носії — `spec/services/factory_flashing/command_builder_spec.rb` (транскрипт B ≡ A для обох типів пристроїв) · `session_spec.rb` (KEYL через SWD; Королева з KEYC і EDSK) · `secure_element_provisioner_spec.rb` (Slot 0 порожній).
+> ⚖️ **Набір ключів Гілки B — делеговано 2026-09-27 ([`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker)): той самий, що в Гілці A — KEYL · LSED · KEYB · KPUB у Protected Flash тим самим SWD `-w32` (кроки 3–4 конвеєра Гілки B); SE додає лише ідентичність** (задум; сьогодні SE-транскрипт пише туди тільки копію KPUB — публічного ключа печатки OTA — у Slot 3 під відкриту post-TRL-7 міграцію, а слоти ідентичності 1/2 — TODO до eval-kit). **Підстава:** кожен із чотирьох має MCU-споживача, а не SE-споживача — KEYL і KEYB живлять CRYP радіо-AES, LSED — Lorenz-VM (cold-start), KPUB — перевірку печатки OTA, яку рахує MCU (з 2026-10-06 — публічний ключ Ed25519 на місці симетричного K_ota, §4; SE-резидентність дала б тут цілісність слота, не секретність — [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker)); а за ратифікованою роллю SE (SEC.14, provisioning-only, «мертвий SE ≠ мертва телеметрія», [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) жоден runtime-шлях через SE не йде. Отже присуд вимушений роллю, не смаком. Для Королеви SE немає за жодної гілки, тож її Гілка B = Гілка A повністю, включно з EDSK. **Ціна:** runtime-ключі Гілки B не отримують SE-нездобутності — їх захищає RDP ([`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security)), як у Гілці A; «data zone lock» у таблиці «Подвійний lock» і колонка «Гілка B» у §5.D стережуть лише вміст SE. **Найслабша ланка** — саме це очікування: хто читає «Гілка B = SE» як «ключі в SE», той переоцінює захист KEYL. Застосовано в коді того ж дня (`CommandBuilder#protected_flash_commands` — однаковий транскрипт обох гілок; `SecureElementProvisioner` Slot 0 не емітить); доти Гілка B не писала жодного SWD-ключа — KEYL-less Солдат цеглився на першому boot, Королева не мала навіть KEYC. Носії — `spec/services/factory_flashing/command_builder_spec.rb` (транскрипт B ≡ A для обох типів пристроїв) · `session_spec.rb` (KEYL через SWD; Королева з KEYC і EDSK) · `secure_element_provisioner_spec.rb` (Slot 0 порожній).
 
 **Подвійний lock (defense in depth, тільки Гілка B):**
 
 | Шар захисту | Що блокує | Атака, від якої захищає |
 |-------------|-----------|--------------------------|
-| **ATECC608B data zone lock** (легасі-скетч; SE05x — per-object policy) | Запис і читання data-слотів SE. Сьогодні транскрипт пише туди рівно один ключ — копію K_ota у Slot 3 (під відкриту post-TRL-7 міграцію OTA-auth), а слоти ідентичності 1/2 — TODO до eval-kit. Runtime-шлях через SE не йде: CRYP, Lorenz-VM і OTA-HMAC беруть ключі з Protected Flash, і їх стереже рядок «STM32 RDP Level 1/2» (врізка «Набір ключів Гілки B») | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
+| **ATECC608B data zone lock** (легасі-скетч; SE05x — per-object policy) | Запис і читання data-слотів SE. Сьогодні транскрипт пише туди рівно один ключ — копію KPUB у Slot 3 (під відкриту post-TRL-7 міграцію OTA-auth; з 2026-10-06 це публічний ключ, тож секрету lock сьогодні не стереже жодного), а слоти ідентичності 1/2 — TODO до eval-kit. Runtime-шлях через SE не йде: CRYP, Lorenz-VM і перевірка OTA-печатки беруть ключі з Protected Flash, і їх стереже рядок «STM32 RDP Level 1/2» (врізка «Набір ключів Гілки B») | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
 | **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
 | **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, серійник SE) пари — ⚠️ ціль, не код: сьогодні серійник лише пишеться в `provisioning_sessions.se_serial_hex` + аудит, пін у `HardwareKey` не реалізовано ([`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION) |
 
@@ -156,9 +156,9 @@
 
 **Переваги обох гілок:**
 - Компрометація одного Soldier не розкриває ключі сусідів (per-device HKDF)
-- Фізичне вилучення ключа з чіпа ускладнює RDP Lock (§5.D: L1 — ускладнено, L2 — практично неможливо), і для runtime-ключів це рівень ОБОХ гілок — у Гілці B вони теж у Protected Flash; data-zone lock Гілки B стереже лише вміст SE (сьогодні — копію K_ota; ідентичність — ціль, врізка «Набір ключів Гілки B»)
+- Фізичне вилучення ключа з чіпа ускладнює RDP Lock (§5.D: L1 — ускладнено, L2 — практично неможливо), і для runtime-ключів це рівень ОБОХ гілок — у Гілці B вони теж у Protected Flash; data-zone lock Гілки B стереже лише вміст SE (сьогодні — копію KPUB, публічну з 2026-10-06, тобто жодного секрету; ідентичність — ціль, врізка «Набір ключів Гілки B»)
 - Деривовані device-ключі ніколи не в репозиторії — лише `HardwareKey` (AR-encrypted у Vault); сам `master_key` custody = deploy-ENV Тір-0 (§5.A), **НЕ** Vault
-- Якщо Backend-side master key компрометовано → задумано перевипуск всіх ключів через field re-flash. 🔴 **Три межі, яких цей рядок не мав до 2026-09-27:** (1) **re-flash досяжний лише в L1-партіях** — пілотній і spare-резерві серії (регресія = mass erase); пілот покривають у себе вручну (⚖️ founder 2026-09-27), тож його SWD-пади захищає ручна маска, а не зовнішній coater; spare лишається під серійним Parylene з відкритими SWD-падами, якщо coater маскує дрібні пади, і їде на покриття без ключів — провіжн після повернення, інакше йде маршрутом пілоту (⚖️ founder 2026-09-27, провіжн після покриття — делеговано; [`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security) і §3.6); серійна плата — RDP L2 під Parylene, SWD мертвий назавжди, тож сьогодні її ключі не перевипускаються нічим, крім заміни плати; (2) re-provision дерева з 2026-09-28 пише НОВИЙ KEYL — корінь нової епохи від поточного master ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) — і наново деривує KOTA/KEYB, а з 2026-09-29 і K_seed: сесія деривує його поточним master і пише в рядок тією ж транзакцією (⚖️ founder, врізка «Провіжн дерева» в §5); доти LSED брався з рядка й під новим master лишався старим; KEYC Королеви — випадковий, ротується окремо; (3) Гілка B відрізняється від A не ключами (runtime-ключі в обох у Protected Flash — врізка «Набір ключів Гілки B», §1), а хвостом у SE: копія K_ota у Slot 3 лежить під data zone, замкненою назавжди, і «re-lock» фізично неможливий — lock односторонній
+- Якщо Backend-side master key компрометовано → задумано перевипуск всіх ключів через field re-flash. 🔴 **Три межі, яких цей рядок не мав до 2026-09-27:** (1) **re-flash досяжний лише в L1-партіях** — пілотній і spare-резерві серії (регресія = mass erase); пілот покривають у себе вручну (⚖️ founder 2026-09-27), тож його SWD-пади захищає ручна маска, а не зовнішній coater; spare лишається під серійним Parylene з відкритими SWD-падами, якщо coater маскує дрібні пади, і їде на покриття без ключів — провіжн після повернення, інакше йде маршрутом пілоту (⚖️ founder 2026-09-27, провіжн після покриття — делеговано; [`03_05 §3.3`](03_05_Hardware_Symmetric_Crypto_and_Security) і §3.6); серійна плата — RDP L2 під Parylene, SWD мертвий назавжди, тож сьогодні її ключі не перевипускаються нічим, крім заміни плати; (2) re-provision дерева з 2026-09-28 пише НОВИЙ KEYL — корінь нової епохи від поточного master ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) — і наново деривує KPUB/KEYB, а з 2026-09-29 і K_seed: сесія деривує його поточним master і пише в рядок тією ж транзакцією (⚖️ founder, врізка «Провіжн дерева» в §5); доти LSED брався з рядка й під новим master лишався старим; KEYC Королеви — випадковий, ротується окремо; (3) Гілка B відрізняється від A не ключами (runtime-ключі в обох у Protected Flash — врізка «Набір ключів Гілки B», §1), а хвостом у SE: копія KPUB у Slot 3 лежить під data zone, замкненою назавжди, і «re-lock» фізично неможливий — lock односторонній, тож після ротації кореня копія застаріває назавжди (з 2026-10-06 це публічний ключ, а MCU перевіряє з Protected Flash, тож застаріла копія — сміття в слоті, не витік)
 
 **Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`02_06 §8.1`](02_06_Unit_Economics_and_BOM)).
 
@@ -197,9 +197,9 @@ CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-ряд
   output len  = 16 байт (LoRa) АБО 32 байти (CoAP)
 ```
 
-> **Domain separation:** Два різні info-strings гарантують, що LoRa та CoAP ключі НЕ корелюють криптографічно — компрометація 16-байтного LoRa-ключа конкретного дерева **не дає жодної інформації** про 32-байтний CoAP-ключ Queen, який обслуговує це дерево. Те саме для `OtaHmacKeyService` (info `"silken-ota-hmac-v1"`) та `SilkenNet::SeedDerivation` (info `"silken-lorenz-seed|<DID>"`).
+> **Domain separation:** Два різні info-strings гарантують, що LoRa та CoAP ключі НЕ корелюють криптографічно — компрометація 16-байтного LoRa-ключа конкретного дерева **не дає жодної інформації** про 32-байтний CoAP-ключ Queen, який обслуговує це дерево. Те саме для `OtaSealKeyService` (info `"silken-ota-ed25519-v1"` — seed Ed25519-ключа печатки OTA) та `SilkenNet::SeedDerivation` (info `"silken-lorenz-seed|<DID>"`).
 >
-> 🔴 **[SEC.34] Ця обіцянка ТЕПЕР МАЄ НОСІЯ — `spec/security/hkdf_domain_separation_spec.rb`, і доти не мала жодного.** Причина, чому саме тут потрібен гейт, а не домовленість: HKDF-колізія **не кидає** — `OpenSSL::KDF.hkdf` віддає бездоганні байти, provisioning проходить, і **прошивка погоджується**, бо деривує те саме хибне значення. Тобто зелено на КОЖНОМУ ярусі, і єдине, що відділяє два ключі, — унікальність пари `(salt, info)`. Salt при цьому гейтувати не можна (він рантаймовий, і `"cluster:<id>"` законно спільний для KEYB ⊥ K_ota), тож уся вага лежить на info — звідси пін на попарну відмінність усіх шести info-рядків + ліхтар популяції. ⊕ Друга вісь того ж піна: голе імʼя `HKDF_INFO` жило у ДВОХ класах із різними значеннями (`HardwareKeyService` як мертвий compat-аліас ⊥ `OtaHmacKeyService` живим), тож `info: HKDF_INFO` у новій деривації означало б різне залежно від файлу; аліас знято, гейт тримає єдиність власника. ⛔ **Конвенцію «де живе ідентичність» НЕ вирівнювати** (`HardwareKeyService` кладе її в `salt`, `SeedDerivation` — в `info`): прошивка HKDF від master не рахує — вона вантажить прошиті значення, тож бекенд, що змінив конвенцію, деривуватиме ІНШІ ключі, ніж лежать у Flash, і вирівнювання = пере-ключення всього вже прошитого флоту.
+> 🔴 **[SEC.34] Ця обіцянка ТЕПЕР МАЄ НОСІЯ — `spec/security/hkdf_domain_separation_spec.rb`, і доти не мала жодного.** Причина, чому саме тут потрібен гейт, а не домовленість: HKDF-колізія **не кидає** — `OpenSSL::KDF.hkdf` віддає бездоганні байти, provisioning проходить, і **прошивка погоджується**, бо деривує те саме хибне значення. Тобто зелено на КОЖНОМУ ярусі, і єдине, що відділяє два ключі, — унікальність пари `(salt, info)`. Salt при цьому гейтувати не можна (він рантаймовий, і `"cluster:<id>"` законно спільний для KEYB ⊥ ключа печатки OTA), тож уся вага лежить на info — звідси пін на попарну відмінність усіх шести info-рядків + ліхтар популяції. ⊕ Друга вісь того ж піна: голе імʼя `HKDF_INFO` жило у ДВОХ класах із різними значеннями (`HardwareKeyService` як мертвий compat-аліас ⊥ живим у сервісі ключа OTA — тоді `OtaHmacKeyService`, з 2026-10-06 `OtaSealKeyService`), тож `info: HKDF_INFO` у новій деривації означало б різне залежно від файлу; аліас знято, гейт тримає єдиність власника. ⛔ **Конвенцію «де живе ідентичність» НЕ вирівнювати** (`HardwareKeyService` кладе її в `salt`, `SeedDerivation` — в `info`): прошивка HKDF від master не рахує — вона вантажить прошиті значення, тож бекенд, що змінив конвенцію, деривуватиме ІНШІ ключі, ніж лежать у Flash, і вирівнювання = пере-ключення всього вже прошитого флоту.
 
 **Властивості HKDF:**
 - Якщо зловмисник знає `unique_device_key[i]`, він не може відновити `master_key` або `unique_device_key[j]` — однонаправлена функція
@@ -258,7 +258,7 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      Королеву — стирає лише REFLASH_ACK=<device_uid>) →
      -e сторінок ключів (Солдат 124 125, Королева 124: -w32 не стирає, і
      re-flash без цього впав би; КОЖЕН провіжн дерева, перший теж (⚖️ founder
-     2026-09-29), додає 122 123 і пише свіжий журнал Flash-KV — FlashKvImage, FW.17) → -w32 KEYL/LSED/KOTA/KEYB (Tree; Gateway —
+     2026-09-29), додає 122 123 і пише свіжий журнал Flash-KV — FlashKvImage, FW.17) → -w32 KEYL/LSED/KPUB/KEYB (Tree; Gateway —
      KEYL=KEYB-значення/KEYC/EDSK) цілими doubleword'ами: WL програмує
      64 біти + ECC лише по стертому, тож суміжні слова йдуть одним -w32,
      а діру в зачепленому doubleword'і добиває 0xFFFFFFFF → -ob IWDG_SW=1
@@ -450,7 +450,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
   (зняття стирає відповідну сторінку Flash!)
 ```
 
-> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KOTA · KEYB @+40, dw-align) — переїзд дерева між кластерами міняє вміст лише 125-ї. ⚠️ Інструмента, що стирав би лише її, немає: конвеєр стирає й переписує 124 і 125 разом (per-device ключі повертаються тими самими — HKDF детермінований), тож роль на стор. 124 після кожного прогону пишеться наново.
+> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KPUB · KEYB @+40, dw-align) — переїзд дерева між кластерами міняє вміст лише 125-ї. ⚠️ Інструмента, що стирав би лише її, немає: конвеєр стирає й переписує 124 і 125 разом (per-device ключі повертаються тими самими — HKDF детермінований), тож роль на стор. 124 після кожного прогону пишеться наново.
 
 ### Безпекові параметри (post-ARCH.42)
 
@@ -459,10 +459,10 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C; SHA256 — software (backend OpenSSL / Soldier pure-C `silken_sha256.h`) |
 | Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (свідомий вибір, **не** SE-constraint — SE050 вміє 256, 03_05 §3.7); CoAP: AES-256 (Queen Flash, no SE constraint) |
-| Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
+| Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-ed25519-v1"` §4) |
 | Master key storage | **Deploy-ENV `PROVISIONING_MASTER_KEY`** (boot-guard SEC.9; §5.A ранжує Direct-ENV найнижче — чесний поточний тір) → KMS-MAC pre-mainnet (SEC.22, [`06_04 §5.7`](06_04_Secrets_Checklist)); **деривовані** ключі — `HardwareKey` AR-encrypted | Same | Never in-repo; on-compromise runbook → [`06_04 §5.8`](06_04_Secrets_Checklist) |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) — **обидві гілки** (SEC.14 provisioning-only; SE Slot 0 reserved для urban-варіанту — 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
-| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK: перший кадр, чий CCM-MIC пройшов новим ключем, FW.17). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Grace, але **закриває його re-provision, не uplink**: AES-CBC без MAC розшифровується будь-яким ключем у сміття без помилки, тож «розшифрувалось» ключа не підтверджує. У вікні обидва напрямки CoAP-тракту ідуть попереднім (`HardwareKey#coap_binary_key`); `FactoryFlashing::Session`, що залила поточний, закриває grace (dry-run — ні) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash (конвеєр стирає й переписує стор. 124 і 125 разом) |
+| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK: перший кадр, чий CCM-MIC пройшов новим ключем, FW.17). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; той самий клас, що KPUB) | Grace, але **закриває його re-provision, не uplink**: AES-CBC без MAC розшифровується будь-яким ключем у сміття без помилки, тож «розшифрувалось» ключа не підтверджує. У вікні обидва напрямки CoAP-тракту ідуть попереднім (`HardwareKey#coap_binary_key`); `FactoryFlashing::Session`, що залила поточний, закриває grace (dry-run — ні) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash (конвеєр стирає й переписує стор. 124 і 125 разом) |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
 > **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 Secure Element (SE050, 03_05 §3.7), SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **03_05 §10 PQC Migration Roadmap**.
@@ -591,223 +591,174 @@ log.update!(lorenz_state_(x|y|z): Attractor.as_rtc_state(x_f, y_f, z_f),
 
 ---
 
-## 4. OTA Authentication Protocol Design (FW.23) ✅ Реалізовано (2026-05-02)
+## 4. OTA Authentication Protocol Design (FW.23) ✅ Реалізовано (2026-05-02 · Ed25519-печатка — 2026-10-06)
 
-> ⚖️ **2026-10-05 — асиметричну печатку ратифіковано** (founder, [`00_07`](00_07_Action_Plan_Tracker) FW.23): кластерний HMAC `K_ota` лежить на кожному вузлі, тож витягнутий вузол підписує контракт для всього кластера. Нижче описано чинний HMAC-тракт; примітив підпису — ⚖️ поправка в FW.23 (Ed25519 замість ECDSA-P256: печатка мусить бути детермінованою, бо пакет кампанії переготовлюють, а 64-байтний ключ P-256 не влазить у слот KOTA).
+> ⚖️ **2026-10-05/06 — печатка асиметрична** (founder, [`00_07`](00_07_Action_Plan_Tracker) FW.23; поправку примітиву — Ed25519 замість ECDSA-P256 — ратифіковано 2026-10-06 й застосовано того ж дня). Доти печаткою був HMAC-SHA256 під кластерним `K_ota`, що лежав на **кожному** вузлі кластера: витягнутий вузол підписував контракт для всіх. Тепер бекенд підписує приватним ключем кластера, а вузол тримає лише **публічний** — витягнутий вузол віддає тільки те, що й так не секрет.
 
 **Статус реалізації:**
 
 | Шар | Файл | Що зроблено |
 |-----|------|-------------|
-| Backend (HKDF) | `app/services/ota_hmac_key_service.rb` | `OtaHmacKeyService.fetch_for(cluster_id, master_key: nil)` — HKDF-SHA256, info `"silken-ota-hmac-v1"`; ikm = `master_key:` параметр (фабрична Session, SEC.3 DI) або ENV-fallback, raise `SecurityError` без жодного (SEC.11 hard cutover) |
-| Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks, version_id)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]` + seg 4 `[0x9B][0x0004][total:2 BE][version_id:4 BE][PAD:7]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
-| Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 4 trailer-блоки (3 печатки + версія) у `pending_ota_hmac_chunks[4][16]`, ready-bitmask = `0x0F`; reflex broadcast loop додає Phase 1 (trailer) після Phase 0 (bytecode); 60 ms pacing |
-| Firmware Soldier | `firmware/soldier/main.c` | `Load_Ota_Hmac_Key` (K_ota з Protected Flash `0x0803E800`, magic "KOTA"; fail-safe `ota_hmac_key_valid=0`) + `Parse_HMAC_Trailer_Chunk` (seg 1..3 → `received_hmac_tag`, seg 4 → `received_ota_version`) + `OTA_Try_Finalize` (**реальний** `Silken_Hmac_Sha256_Concat(K_ota, body‖version_be‖total_be)` → `OTA_Verify_Dual_Gate`: Gate 1 magic "RITE" + Gate 2 constant-time HMAC) — фіналізація з обох гілок (тіло 0x99 / печатка 0x9B), бо печатка приходить ПІСЛЯ тіла; APPLY лише при всіх 4 трейлер-чанках; fail-safe magic-wipe при REJECT |
-| Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / version-on-wire (seg 4 = firmware.id BE) / blank input / SEC.11 |
-| Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | trailer assemble (in-order/out-of-order/version chunk/all-4=0x0F) / reject seg_idx>4 / **real HMAC compute** (`Silken_Hmac_Sha256_Concat` ≡ one-shot ≡ OpenSSL) / `OTA_Try_Finalize` APPLY·WAIT·REJECT(tampered/version-mismatch/no-key) / dual-gate magic+hmac / constant-time first/last byte / Queen relay 4 segments / wrong marker reject / overwrite same segment |
+| Backend (ключ) | `app/services/ota_seal_key_service.rb` | `OtaSealKeyService.signing_key_for(cluster_id, master_key: nil)` → `Ed25519::SigningKey` із seed = HKDF-SHA256 (info `"silken-ota-ed25519-v1"`); `public_key_hex_for` → 64 HEX для фабрики; ikm = `master_key:` (фабрична Session, SEC.3 DI) або ENV-fallback, `SecurityError` без жодного (SEC.11) |
+| Backend (печатка) | `app/services/ota_packager_service.rb` | `seal_message` (тіло ‖ `version_id` BE4 ‖ `total` BE2) · `compute_seal` (64 Б) · `build_seal_trailer_chunks` (7 блоків `0x9B`) · `prepare(..., cluster_id:)` opt-in з `manifest[:sealed/seal_cluster_id/lora_total_chunks/total_packages]` |
+| Firmware (дріт) | `firmware/common/ota_seal_wire.h` | константи трейлера + `Ota_Seal_Parse_Chunk` — одна копія для Королеви й Солдата, pure, без криптографії |
+| Firmware (перевірка) | `firmware/common/ota_seal.h` | `Ota_Seal_Verify` (Monocypher: стрімінговий SHA-512 → `crypto_eddsa_reduce` → `crypto_eddsa_check_equation`, без копії тіла) · `Ota_Seal_Try_Finalize` (вердикт WAIT·APPLY·REJECT) |
+| Firmware Queen | `firmware/queen/main.c` | сліпий гонець: `pending_ota_seal_chunks[7][16]`, ready-mask `OTA_SEAL_ALL_RECEIVED` = `0x7F`; Phase 1 (трейлер) після Phase 0 (тіло), 60 ms pacing; криптографії не включає |
+| Firmware Soldier | `firmware/soldier/main.c` | `Load_Ota_Seal_Pubkey` (Protected Flash `0x0803E800`, magic `"KPUB"`, ненульовий ключ, інакше `ota_seal_pubkey_valid=0` → fail-closed) · `Ota_Seal_Parse_Chunk` / `Ota_Seal_Try_Finalize` з обох RX-гілок (тіло `0x99` / печатка `0x9B`) |
+| Factory | `FactoryFlashing::CommandBuilder` · `Session` · `SecureElementProvisioner` | сторінка 125: `KPUB`-блок (magic `0x4B505542` + 8 слів публічного ключа) на місці колишнього `KOTA`; `Session` тягне `OtaSealKeyService.public_key_hex_for`; SE Slot 3 (superseded Гілка B) — той самий публічний ключ |
+| Backend specs | `spec/services/ota_seal_key_service_spec.rb` · `ota_packager_service_spec.rb` · `spec/integration/ota_firmware_flow_spec.rb` · factory-специ | золотий вектор · детермінізм повторного пакування (байт-у-байт) · relabel / truncation / tamper / чужий кластер → `Ed25519::VerifyError` · маніфест · KPUB-транскрипт |
+| Firmware host-tests | `firmware/test/test_ota_seal.c` · `test_soldier_logic.c` · `test_queen_logic.c` | золотий вектор Ruby перевіряють прошивка, Monocypher і OpenSSL · стрімінг ≡ `crypto_ed25519_check` · кожен змінений вхід ламає перевірку · збирання 7 блоків (поза порядком, дублікат, seg 6 = 9 Б, криві блоки) · `Ota_Seal_Try_Finalize` APPLY·WAIT·REJECT · реле Королеви 7 блоків, FW.52б воскресіння рівно на сьомому |
 
-**Статус: реальний compute — ✅ зашито (2026-06-11).** Soldier dual-gate **більше не інертний**: `OTA_Try_Finalize` обчислює `Silken_Hmac_Sha256_Concat(K_ota, body ‖ version_id_be ‖ total_be)` (pure-C `silken_sha256.h`, той самий шлях, яким FW.30 закрив seed-HMAC; byte-parity vs OpenSSL транзитивно через `_Concat ≡ one-shot`; **mbedTLS не потрібен**) і пускає у `OTA_Verify_Dual_Gate` — підмінений bytecode з валідним CRC32 тепер **відсікається** на Gate 2. Дві опори, яких бракувало, додано: (1) `Load_Ota_Hmac_Key` — K_ota з Protected Flash `0x0803E800` (magic "KOTA", окрема сторінка 125 за `KEYL`-сторінкою; первісний `0x0803D000` колідував із Flash-KV регіоном — переїзд 2026-06-11, [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA); `ota_hmac_key_valid=0` ⇒ жоден OTA не застосовується — fail-safe); (2) `version_id` на дроті — **4-й `[0x9B]` trailer-чанк** (seg_idx=4, `version_id:4 BE`), бо у 16-байтну печатку-сегмент він не влазив. Bonus-fix: фіналізація тепер спрацьовує з обох RX-гілок (тіло 0x99 / печатка 0x9B) — раніше перевірка стріляла по завершенню ТІЛА і скидала збірку, тож печатка, що Королева шле ПІСЛЯ тіла, гинула й OTA ніколи не застосовувався. ✅ (2026-06-11) **factory-тракт K_ota зашито**: Гілка A (`CommandBuilder`) емітує KOTA-блок `0x0803E800` (дзеркало `Load_Ota_Hmac_Key`, golden-спека; `Session` тягне `OtaHmacKeyService.fetch_for(cluster_id)`) — знахідка: до цього K_ota жив лише у superseded ATECC-гілці B, тобто Гілка A випускала дерева з вічно fail-closed OTA. 🟡 **Лишається (bench):** фізичний `factory:execute` (SWD) + e2e dual-gate на STM32 (валідний APPLY + tampered REJECT) — RUNBOOK §2.5.
+**Ціна (виміряно 2026-10-06; Cortex-M4 soft-float, `-Os`, `--gc-sections`):** +11 024 Б `.text` (≈10.8 КіБ: Monocypher-перевірка + SHA-512; гармошка з викликом `Ota_Seal_Verify` проти без, верхня оцінка — спільні з образом функції libc пораховано двічі; рядок у [`03_01 §12`](03_01_Firmware_Lifecycle_and_DMA)) · пік стеку перевірки ≈2.0 КБ (статичний граф GCC `-fcallgraph-info=su`; найбільший кадр — `crypto_eddsa_check_equation` 1 128 Б) проти ~0.3 КБ HMAC · `.bss` Солдата +32 Б (печатка 64 Б замість тегу 32 Б), Королеви +48 Б (7 блоків замість 4) — RAM-гейт [FW.26] зелений · ефір +3 LoRa-блоки (≈+180 мс трансляції). 🔴 **Найслабша ланка (з подання, відкрита):** запас флешу Солдата до board-freeze не виміряно — повного `.elf` нема ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), тож +10.8 КБ стоять у черзі поруч із mruby ~117 КБ без доведеного «влазить». 🟡 **Лишається (bench, клас C):** час перевірки на кремнії (QEMU-M4 смуга [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA) виконує ISA, але не цикло-точна) + e2e на STM32: валідний APPLY + підмінений байт тіла → REJECT — RUNBOOK §2.5.
 
-
-> **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅
-> **Залежність:** FW.1 (per-device HKDF) — ✅ реалізовано (03_05 §3.1); спільна master-secret інфраструктура наявна.
+> **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker)
+> **Залежність:** FW.1 (per-device HKDF) — ✅ (03_05 §3.1); спільна master-secret інфраструктура.
 
 **Мета:** усунути BLOCKER 03_05 §6 «Queen → Soldier (OTA LoRa) — MAC/MIC відсутній». Зловмисник у радіусі Queen може:
 1. **Підмінити OTA chunks** → впровадити шкідливий mruby bytecode на всі Солдати кластера
-2. **Bit-flip атака на CRC16** → CRC16-CCITT не криптографічний, валідний CRC можна підрахувати для будь-якого payload
-3. **Replay старого OTA** → відкочити Солдат на застарілу/вразливу прошивку
+2. **Підробити контрольну суму** → CRC (CRC16 чанка, CRC32 потоку) не криптографічні, валідну суму можна порахувати для будь-якого payload
+3. **Повторити старий OTA** → відкотити Солдат на застарілу/вразливу прошивку
+4. **Витягнути ключ із вузла** (фізичний доступ до дерева в лісі — найдешевша атака на цю систему) → підписати контракт для всього кластера. Цю загрозу HMAC-ера не закривала: ключ перевірки на вузлі був і ключем підпису.
 
-Симетричне шифрування (AES-128-ECB) гарантує лише **конфіденційність**, не **автентичність походження**. Дзеркало проблеми FW.2 для каналу телеметрії, але з більшою серйозністю — OTA bytecode виконується на всіх Солдатах у радіусі.
+Симетричне шифрування (AES-128-ECB, KEYB) гарантує лише **конфіденційність**, не **автентичність походження**. Дзеркало проблеми FW.2 для каналу телеметрії, але з більшою серйозністю — OTA bytecode виконується на всіх Солдатах у радіусі.
 
-### Криптографічна основа: HMAC-SHA256 поверх повного image
-
-```
-HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
-```
-
-**Чому HMAC-SHA256, а не Ed25519/ECDSA:**
-- HMAC-SHA256 рахується **програмно** (pure-C `silken_sha256.h`, FW.30 — у STM32WLE5JC є апаратний AES, але **немає** HASH/SHA-блоку, тож SHA256 завжди software): кілька SHA-проходів над image — на порядок дешевше за програмний Ed25519 verify (~80 мс)
-- 32-байтний tag поміщається у 3 LoRa-чанки (vs 64 байти Ed25519 sig → 6 чанків)
-- Симетричне рішення прийнятне ТОМУ ЩО `K_ota` per-кластер, не глобальний (компрометація Queen ≠ компрометація всієї мережі)
-- При billion-tree масштабі — міграційний шлях на асиметричний image-підпис (post-TRL 7; SE05x-ера = Ed25519, присуд → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)) — скетч механіки нижче
-
-### Wire Format — `[0x9B] HMAC-Trailer` Chunk
-
-OTA-broadcast emit'ить **4** додаткові LoRa-чанки `[0x9B]` після останнього bytecode chunk: 3 несуть 32-байтну HMAC-печатку, 4-й — `version_id`. Існуючий формат `[0x99]` для bytecode chunks не змінюється — окремий маркер дає чисте розділення payload-і-tag шарів (audit trail у логах Queen, простіший parser у firmware).
+### Криптографічна основа: Ed25519 (RFC 8032) поверх повного image
 
 ```
-LoRa Reflex Shot чанки (16 байт після AES-128-ECB encrypt):
+message = padded_bytecode ‖ version_id (4 B BE) ‖ total_chunks (2 B BE)
+seal    = Ed25519_Sign(sk_cluster, message)    → 64 B (R ‖ S)
+```
 
-Chunks 0..N-1:                                Marker
-  [0x99][idx:2][total:2][bytecode:11]          ← Bytecode chunks
+`padded_bytecode` — тіло, вирівняне під LoRa-MTU (FW.53), **без** CRC32-хвоста: рівно ті байти, що Солдат тримає в `ota_buffer[0..data_len)`.
 
-Chunk N (HMAC trailer #1):                    Marker
-  [0x9B][0x00][0x01][total:2][hmac[0..10]]     ← Перші 11 байтів HMAC tag
+**Чому Ed25519, а не ECDSA-P256 (⚖️ поправка примітиву, 2026-10-06):**
+- **Детермінізм несучий.** Пакет кампанії готують більше одного разу: `Ota::PackageStore` перегріває кеш, `OtaTransmissionWorker` пакує окремо, а Королева ретранслює ті сегменти, що дотягнула. ECDSA з випадковим k дав би дві різні печатки однієї кампанії, трейлер зшився б із сегментів обох → вічний REJECT. Детермінований ECDSA (RFC 6979) вимагав би звіреної бекенд-реалізації або зберігання печатки на кампанію; Ed25519 детермінований за побудовою (nonce = H(prefix ‖ message)). Пін «повторне `prepare` = ті самі байти» — `ota_packager_service_spec`.
+- **Ключ лягає в той самий слот:** 32 Б Ed25519 — на місце `K_ota`; ключ P-256 (64 Б) вимагав би переносу макета сторінки 125 на обох боках (з +40 уже лежить KEYB).
+- **На хості — той самий код, що на кремнії:** перевірка — портабельний C (Monocypher, pinned submodule 4.0.3, ним уже підписує QATT Королева, L1; pin-policy [`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)), тож host-тести ганяють рівно те, що вшито; ECDSA на апаратному PKA (подання 2026-10-05) на хості не перевірявся б узагалі. Нових залежностей нуль.
+- Узгоджено з SE05x-ерою: природна крива там — теж Ed25519 ([`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)).
 
-Chunk N+1 (HMAC trailer #2):                  Marker
-  [0x9B][0x00][0x02][total:2][hmac[11..21]]    ← Наступні 11 байтів
+**Чому не лишили HMAC:** він дешевший (~0.3 КБ стеку, нуль флешу понад наявний `silken_sha256.h`, 3 блоки печатки замість 6), але per-cluster `K_ota` лише обмежував шкоду від витягнутого вузла ОДНИМ кластером, а не знімав її. Ціна асиметрії виміряна вище й платиться раз на кампанію.
 
-Chunk N+2 (HMAC trailer #3):                  Marker
-  [0x9B][0x00][0x03][total:2][hmac[22..31]||PAD:1]  ← Останні 10 байт + 1 байт padding
+### Wire Format — `[0x9B]` трейлер печатки
 
-Chunk N+3 (version envelope #4):              Marker
-  [0x9B][0x00][0x04][total:2][version_id:4||PAD:7]  ← version_id (4 BE) + 7 PAD
+OTA-broadcast emit'ить **7** додаткових LoRa-блоків `[0x9B]` після останнього bytecode-чанка: 6 несуть 64-байтну печатку, 7-й — `version_id`. Формат `[0x99]` для bytecode не змінюється — окремий маркер розділяє шари тіла й печатки. Константи — `firmware/common/ota_seal_wire.h` ⟷ `OtaPackagerService`: зміна з одного боку без другого рве OTA.
+
+```
+LoRa Reflex Shot блоки (16 байт, далі AES-128-ECB під KEYB):
+
+Chunks 0..N-1:
+  [0x99][idx:2][total:2][bytecode:11]                   ← тіло
+
+Seg 1..5 (chunks N..N+4):
+  [0x9B][0x00][seg][total:2][seal[11·(seg−1) .. +10]]   ← по 11 байт печатки
+
+Seg 6 (chunk N+5):
+  [0x9B][0x00][0x06][total:2][seal[55..63] ‖ PAD:2]     ← останні 9 байт + 2 PAD
+
+Seg 7 (chunk N+6) — version envelope:
+  [0x9B][0x00][0x07][total:2][version_id:4 ‖ PAD:7]
 ```
 
 **Layout детально:**
 | Зсув | Розмір | Поле | Опис |
 |------|--------|------|------|
-| 0 | 1 | `0x9B` | HMAC-trailer marker (відрізняє від `0x99` bytecode) |
-| 1–2 | 2 | `seg_idx` BE | Сегмент: 1–3 = HMAC-печатка, 4 = version envelope |
-| 3–4 | 2 | `total_chunks` BE | Загальна кількість bytecode chunks (для cross-check) |
-| 5–15 (seg 1–3) | 11 | `hmac_segment` | 11 байтів HMAC-SHA256 tag (seg 3 має 10 байт + 1 PAD `0x00`) |
-| 5–8 (seg 4) | 4 | `version_id` BE | `firmware.id` — вхід HMAC, без нього Soldier не перерахує печатку |
-| 9–15 (seg 4) | 7 | PAD | `0x00` |
+| 0 | 1 | `0x9B` | маркер трейлера печатки (відрізняє від `0x99`) |
+| 1–2 | 2 | `seg_idx` BE | 1–6 = печатка, 7 = version envelope |
+| 3–4 | 2 | `total_chunks` BE | кількість bytecode-чанків (cross-check; частина підписаного) |
+| 5–15 (seg 1–5) | 11 | `seal_segment` | 11 байт печатки |
+| 5–13 (seg 6) | 9 | `seal_segment` | останні 9 байт (6 × 11 = 66 ≥ 64) + 2 PAD `0x00` |
+| 5–8 (seg 7) | 4 | `version_id` BE | `firmware.id` — частина підписаного; без нього Солдат не відтворить повідомлення |
+| 9–15 (seg 7) | 7 | PAD | `0x00` |
 
-**Чому 3 чанки печатки:** 32-байтний HMAC ÷ 11 байт payload = 2.91 → ceil(2.91) = 3 чанки. Альтернатива (truncated HMAC до 16 байт = 2 чанки) знижує security margin до 128-bit — недостатньо для NIST SP 800-107 у production. **Чому окремий 4-й чанк для `version_id`:** він — вхід HMAC, але у 16-байтну печатку-сегмент не влазить (1+2+2+11 зайнято); 0x99-заголовок теж повний. Окремий seg 4 під тим самим маркером — найдешевше (+1 LoRa-чанк ≈ 60 мс на ~745, той самий «<0.5%» бюджет), Queen релеїть його тим самим stateless-шляхом.
+**Чому 6 + 1:** 64 Б ÷ 11 Б = 5.82 → 6 сегментів. `version_id` у 16-байтний сегмент печатки не влазить (1+2+2+11 зайнято), `0x99`-заголовок теж повний — тож окремий seg 7 під тим самим маркером; Королева релеїть його тим самим stateless-шляхом. Ready-mask — по біту на блок: `0x7F`.
 
-### Backend HMAC Generation — `OtaPackagerService` extension
+### Backend — `OtaPackagerService` + `OtaSealKeyService`
 
-**Файл:** `app/services/ota_packager_service.rb`
-
-Розширення `prepare` методу: після генерації bytecode-chunks обчислюється HMAC поверх повного `payload`, потім додаються 4 trailer-chunks (3 печатки + version envelope). Контракт `prepare` повертає той же hash, але `packages` enumerator emit'ить додатково 4 пакети (`manifest[:total_packages] = total_chunks + 4`).
+`prepare(firmware, chunk_size:, cluster_id:)` після bytecode-чанків рахує печатку над `@padded_payload` і додає 7 трейлер-блоків; `manifest[:total_packages] = total_chunks + 7` — від нього `OtaTransmissionWorker` рахує фінальний індекс. Без `cluster_id` потік непідписаний — лише для bench-стендів без кластера.
 
 ```
-HMAC input (canonical):
-  ┌─────────────────────────────────────────────────────────────┐
-  │  full_bytecode_payload (raw, до chunking, до AES-encrypt)  │
-  │  ‖ version_id (4 bytes BE — firmware.id)                    │
-  │  ‖ total_chunks (2 bytes BE)                                 │
-  └─────────────────────────────────────────────────────────────┘
-
-K_ota = OtaHmacKeyService.fetch_for(cluster_id)   # 32-byte HMAC key
-hmac_tag = OpenSSL::HMAC.digest("SHA256", K_ota, hmac_input)  # 32 bytes
+seed   = HKDF-SHA256(ikm: master_key, salt: "cluster:#{cluster_id}", info: "silken-ota-ed25519-v1", length: 32)
+sk, pk = Ed25519(seed)                                        # OtaSealKeyService
+seal   = sk.sign(seal_message(padded_bytecode, firmware.id, lora_total_chunks))   # 64 B
 ```
 
-**Domain separation context** — `version_id` і `total_chunks` входять у HMAC input для запобігання:
-- **Re-labeling** (старий image з валідним HMAC, пере-мічений НОВОЮ версією → HMAC над тілом ‖ версією ламається). ⚠️ **НЕ плутати з rollback:** валідно-`K_ota`-підписана СТАРА версія у свіжій сесії проходить цей HMAC — монотонність версій закрита ОКРЕМО на Soldier (`common/ota_antirollback.h`, Flash-KV high-water ключ 0x15; [`00_07` SEC.20](00_07_Action_Plan_Tracker))
+**Що прив'язує повідомлення** — `version_id` і `total_chunks` входять у підписане:
+- **Re-labeling** (старий image, пере-мічений НОВОЮ версією → печатка над тілом ‖ версією не сходиться). ⚠️ **НЕ плутати з rollback:** валідно підписана СТАРА версія у свіжій сесії печатку проходить — монотонність версій закрита ОКРЕМО на Soldier (`common/ota_antirollback.h`, Flash-KV high-water ключ 0x15; [`00_07` SEC.20](00_07_Action_Plan_Tracker))
+- **Truncation attack** (відкидання останніх chunks → змінений `total_chunks` ламає печатку)
 
 **⚠️ Bump-інваріант відкликаного/проваленого OTA (SEC.20).** `Ota_Version_Commit` палить слот `0x15` **у момент APPLY** (Flash-запис contract'а), НЕ в момент доведеного успішного виконання. Наслідок жорсткий: версія N, що впала у vm-error-fallback (3 bytecode-збої → erase contract → embedded baseline), **спалена назавжди** — повторний push виправленого bytecode з тим самим `version_id=N` отримає мовчазний REJECT (`Ota_Version_Is_Fresh` вимагає строго `>`). Фікс = завжди **новий** `BioContractFirmware`-запис (auto-increment `id` > N задарма); re-deploy/re-activate старого запису = no-op на девайсі. Факт відкату видимий backend'у з кожного кадру: wire-звіт `[semantic:1|reverted:1|hiwater&0x3FFF]` у байтах 12..13 ([`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA)) / CCM vpd-байт → `TelemetryLog#firmware_report_reverted?` → `EwsAlert firmware_reverted` («re-issue версією > спаленої»).
-- **Truncation attack** (відкидання останніх chunks → змінений `total_chunks` ламає HMAC)
 
-**Rails-half дзеркало (SEC.20, 2026-07-12).** Той самий інваріант enforce-иться ДО ефіру: `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)) тримає per-cluster high-water `clusters.ota_version_hiwater` і відсікає деплой із `firmware.id ≤ hiwater` (строго `>` — число те саме, що seg-4 трейлера і слот `0x15`). Слот палиться **при dispatch** — свідомо суворіше за Солдатів APPLY-time (Rails не має ack-каналу apply-стану: fw-report асинхронний і не гарантує покриття флоту), тож обірвана кампанія теж перевипускається новим записом; кластеру без eligible-шлюзів слот НЕ палиться. UI/API-контракт відмови → [`04_03 §5.7`](04_03_REST_API_v1_Reference).
+**Rails-half дзеркало (SEC.20, 2026-07-12).** Той самий інваріант enforce-иться ДО ефіру: `Ota::DeploymentDispatcherService` ([`04_02`](04_02_Business_Logic_and_Services)) тримає per-cluster high-water `clusters.ota_version_hiwater` і відсікає деплой із `firmware.id ≤ hiwater` (строго `>` — число те саме, що seg-7 трейлера і слот `0x15`). Слот палиться **при dispatch** — свідомо суворіше за Солдатів APPLY-time (Rails не має ack-каналу apply-стану: fw-report асинхронний і не гарантує покриття флоту), тож обірвана кампанія теж перевипускається новим записом; кластеру без eligible-шлюзів слот НЕ палиться. UI/API-контракт відмови → [`04_03 §5.7`](04_03_REST_API_v1_Reference).
 
-### Key Management — `K_ota` per-cluster
+### Key Management — ключ печатки per-cluster
 
-Дзеркало дизайну HKDF з §2, але з окремим **info-string** для domain separation від AES LoRa key:
+Дзеркало HKDF-дизайну §2 з власним **info** `"silken-ota-ed25519-v1"`. Salt-домен `"cluster:<id>"` той самий, що в KEYB, — законно, бо вся вага розділення лежить на info, а його унікальність стереже гейт `spec/security/hkdf_domain_separation_spec.rb` (SEC.34, §2).
 
-```
-K_ota = HKDF-SHA256(
-  ikm:    master_key,                  # фабрика: параметр від Session (SEC.3 DI); runtime: ENV PROVISIONING_MASTER_KEY
-  salt:   "cluster:#{cluster_id}",
-  info:   "silken-ota-hmac-v1",        # ← ВІДМІННЕ від "silken-aes-256-device-key"
-  length: 32
-)
-```
-
-**Чому per-cluster, а не per-device:**
-- OTA broadcast — **broadcast** за визначенням, всі Солдати кластера отримують той самий image, тому потребують той самий ключ
-- Per-device HMAC означав би N окремих verifications → економічно неможливо для broadcast
-- Компрометація одного Солдата = компрометація `K_ota` ОДНОГО кластера, не всієї мережі
-- Cluster — природна одиниця ізоляції (один Queen / одна організація)
+**Чому per-cluster, а не per-device:** OTA — broadcast: усі Солдати кластера отримують той самий image і ту саму печатку; per-device печатка означала б N трейлерів на один ефір. Cluster — природна одиниця ізоляції (одна Королева / одна організація). Після асиметрії per-cluster стереже вже не від витягнутого вузла (йому нема чого віддати), а розводить кластери між собою: печатка одного не відкривається публічним ключем іншого (`ota_packager_service_spec`).
 
 **Storage:**
-- Backend: новий model `OtaHmacKey` (analog `HardwareKey`, AR Encryption non-deterministic) ABO derived on-demand з `PROVISIONING_MASTER_KEY` через `OtaHmacKeyService.fetch_for(cluster_id)` (рекомендовано — нульовий state)
-- Soldier firmware: `K_ota` записується у Protected Flash сторінку 125 (`0x0803E800`, одразу за per-device key-сторінкою; до 2026-06-11 — `0x0803D000`, що колідувало з Flash-KV регіоном [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)) під час Factory Flashing з тим самим magic-marker pattern як `Load_AES_Key()` — ✅ **Гілка A емітує KOTA-блок з 2026-06-11** (`CommandBuilder`, magic `0x4B4F5441` + 8 слів ключа; golden-спека дзеркалить `Load_Ota_Hmac_Key`). До того цей рядок був декларацією: K_ota емітувала лише superseded ATECC-гілка B → реальне дерево виходило з фабрики з вічно fail-closed OTA (зловлено при FW.23-ревізії)
-- SE (post-TRL 7, SE050 — ATECC superseded): SE-резидентний `K_ota` = рішення SE050-MIGRATION ([`00_07`](00_07_Action_Plan_Tracker)); поки HMAC рахує MCU → ключ мусить жити у MCU Flash незалежно від SE
+- **Backend:** нульовий state — ключ деривується на вимогу з `PROVISIONING_MASTER_KEY`, приватний живе лише в процесі, що пакує; без master — `SecurityError` (SEC.11), а не непідписаний пакет. Прогріту кампанію `Ota::PackageStore` віддає без master-key у процесі. 🔴 **Стеля:** компрометація master = підпис для будь-якого кластера — так само, як у HMAC-ері; асиметрія закрила вузол, не корінь. Runbook кореня — [`06_04 §5.8`](06_04_Secrets_Checklist).
+- **Soldier:** **публічний** ключ у Protected Flash сторінки 125 (`0x0803E800`): magic `"KPUB"` (`0x4B505542`) + 8 BE-слів; слідом — KEYB-блок з +40. Пише фабрика (Гілка A `CommandBuilder`; golden-транскрипт дзеркалить `Load_Ota_Seal_Pubkey`). Нова magic, а не стара `"KOTA"`, — щоб формати не плуталися: стара прошивка не прочитає публічний ключ як `K_ota`, нова — `K_ota` як публічний ключ; обидві лишаються fail-closed. Вузлів із KOTA у полі нема (pre-production).
+- **SE (SE050-ера):** рішення SE050-MIGRATION ([`00_07`](00_07_Action_Plan_Tracker)). Публічний ключ не секрет, тож SE-резидентність тут — про цілісність слота, не про конфіденційність.
 
-### Dual-Gate Verification (FW.23 чекбокс 5) — Soldier перед Flash write
+### Dual-Gate Verification — Soldier перед Flash write
 
-Магічний marker `0x45544952` (`"RITE"` little-endian) — **необхідний, але недостатній**: він лише підтверджує цілісність формату, не походження. HMAC — **достатній**, але дорогий. Двоступенева перевірка економить cycles на ранній відсів пошкоджених/невалідних images:
-
-Реалізація — pure-функція вердикту `OTA_Try_Finalize` (host-tested), яку кличуть **обидві** RX-гілки (0x99 тіло / 0x9B печатка), бо печатка приходить ПІСЛЯ тіла:
+Магічний marker `0x45544952` (`"RITE"` LE) — **необхідний, але недостатній**: підтверджує формат, не походження. Печатка — **достатня**, але дорожча. Вердикт — pure-функція `Ota_Seal_Try_Finalize` (`common/ota_seal.h`; host-тести кличуть той самий код, що вшито в Солдата), яку кличуть **обидві** RX-гілки (`0x99` тіло / `0x9B` печатка), бо печатка приходить ПІСЛЯ тіла:
 
 ```
-firmware/soldier/main.c — фактичний OTA Flash write path (FW.23):
+Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
+                      segments_received, pubkey, pubkey_valid, version_id, sig, &data_len)
+  1. тіло не зібране АБО segments != 0x7F           → WAIT    (нічого не чіпаємо)
+  2. bytes_received ≤ 4                             → REJECT  (це не прошивка)
+  3. CRC32(buf[0..data_len)) ≠ хвіст BE             → REJECT
+  4. !pubkey_valid                                  → REJECT  (походження не довести — fail-closed)
+  5. magic ≠ "RITE"                                 → REJECT  (брама 1, ~1 µs)
+  6. Ota_Seal_Verify(pubkey, sig, buf, data_len,
+                     version_be ‖ total_be)         → APPLY | REJECT  (брама 2)
 
-OtaFinalizeVerdict OTA_Try_Finalize(buf, bytes_received, chunks_received,
-                                    total_chunks, segments_received,
-                                    K_ota, k_ota_valid, version_id,
-                                    received_tag, &data_len)
-{
-  // Зібрано і тіло, і всі 4 трейлер-чанки? Інакше — WAIT (нічого не чіпаємо).
-  if (chunks_received < total_chunks || total_chunks == 0)  return WAIT;
-  if (segments_received != 0x0F /* 3 печатки + версія */)   return WAIT;
-
-  data_len = bytes_received - 4;                 // тіло без CRC32-хвоста
-  if (CRC32(buf, data_len) != tail_crc)          return REJECT;
-  if (!k_ota_valid)                              return REJECT;  // fail-safe
-
-  // Gate 2: HMAC над тілом ‖ version_be ‖ total_be. _Concat стрімить 6-байтний
-  // хвіст окремо — тіло (~1 КБ) живе у buf, без +1 КБ стека.
-  uint8_t suffix[6] = { version_id:4 BE, total_chunks:2 BE };
-  Silken_Hmac_Sha256_Concat(K_ota, 32, buf, data_len, suffix, 6, expected);
-
-  // OTA_Verify_Dual_Gate: Gate 1 magic "RITE" + Gate 2 constant-time compare.
-  return OTA_Verify_Dual_Gate(buf, data_len, expected, received_tag) ? APPLY : REJECT;
-}
-
-// Викликач (обидві гілки):
-//   APPLY  → Write_OTA_Contract_To_Flash(buf, data_len); NVIC_SystemReset();
-//   REJECT → buf[0..3]=0 (жертовний magic-wipe); Reset_Ota_Assembly();
-//   WAIT   → нічого (тіло зібране, печатка ще летить)
+Викликач (обидві гілки):
+  APPLY  → Ota_Version_Is_Fresh (SEC.20; інакше REJECT) → Write_OTA_Contract_To_Flash
+           → Ota_Version_Commit → NVIC_SystemReset
+  REJECT → buf[0..3]=0 (жертовний magic-wipe); Reset_Ota_Assembly()
+  WAIT   → нічого (тіло зібране, печатка ще летить — або навпаки)
 ```
 
-**Властивості dual-gate:**
-- **Performance:** Gate 1 (magic, у `OTA_Verify_Dual_Gate`) у ~1 µs відкидає «биті» images; HMAC рахується лише коли зібрано і тіло, і всі 4 трейлер-чанки
-- **Defense-in-depth:** HMAC обчислюється на тих самих байтах, що Gate 1 verify (`buf[0..data_len)`) — bit-flip між брамами «провезти» не можна
-- **Fail-safe (no key):** `k_ota_valid==0` (K_ota не provisioned) ⇒ REJECT — без ключа походження не довести, краще не оновитись
-- **Fail-safe (magic-wipe):** REJECT затирає `buf[0..3]` у RAM, щоб частково записаний OTA не воскрес при наступному boot із корумпованого RAM
-- **Ordering-safe:** фіналізація спрацьовує з гілки, що завершилась ОСТАННЬОЮ (тіло чи печатка) — раніше перевірка по завершенню ТІЛА скидала збірку, і печатка (Королева шле її ПІСЛЯ тіла) гинула
+`Ota_Seal_Verify` — рівно кроки `crypto_ed25519_check` (h = reduce(SHA-512(R ‖ A ‖ повідомлення)), потім рівняння перевірки, яке відкидає S ≥ L), лише повідомлення стрімиться двома шматками: тіло (~1 КБ) лишається в `ota_buffer`, 6-байтний суфікс іде окремо, без копії в стек. Пін рівності зі склеєним `crypto_ed25519_check` — `test_ota_seal.c`.
 
-### Queen Verification — опційний intermediate gate
+**Властивості:**
+- **Performance:** брама 1 відкидає шум за ~1 µs; печатка рахується лише коли зібрано і тіло, і всі 7 блоків
+- **Defense-in-depth:** печатку перевіряють на тих самих байтах, що й браму 1 (`buf[0..data_len)`) — bit-flip між брамами «провезти» не можна
+- **Fail-safe (no key):** `ota_seal_pubkey_valid==0` (KPUB не провіжнено, нульовий ключ або стара magic) ⇒ REJECT
+- **Fail-safe (magic-wipe):** REJECT затирає `buf[0..3]` у RAM, щоб частково записаний OTA не воскрес при наступному boot
+- **Ordering-safe:** фіналізація спрацьовує з гілки, що завершилась ОСТАННЬОЮ (тіло чи печатка)
+- **Час не секрет:** перевірка variable-time, і це законно — печатка, публічний ключ і тіло публічні; constant-time compare HMAC-ери більше не потрібен
 
-Queen МОЖЕ верифікувати HMAC перед relay (якщо знає `K_ota` своїх Солдатів — типово так, бо Queen у тому ж кластері). Це economy-of-scale gate: 1 verify на Queen vs N verify на N Солдатах.
+### Queen — сліпий гонець
 
-**Рекомендація:** Queen НЕ верифікує (Stateless-Relay підхід) — це залишає Queen-firmware простим і дозволяє Backend → Soldier end-to-end автентифікацію без довіри до проміжного Queen. Якщо Queen скомпрометовано — Soldier'и все одно відкинуть підмінений image на Gate 2.
+Королева печатку НЕ перевіряє і ключа не має: включає лише `ota_seal_wire.h`, тримає 7 блоків як є й ретранслює. Автентифікація Backend → Soldier наскрізна: скомпрометована Королева може не доставити кампанію, але не може її підмінити — Солдат відкине на брамі 2. Перевірка на Королеві дала б лише economy-of-scale (1 verify замість N), а Солдатів не захистила б: вони перевіряють і так.
 
 ### Безпекові параметри
 
 | Параметр | Значення | Обґрунтування |
 |----------|---------|---------------|
-| MAC алгоритм | HMAC-SHA256 (RFC 2104) | Стандарт NIST FIPS 198-1; SHA256 — software (pure-C `silken_sha256.h`, FW.30 — чип без HASH-блоку) |
-| Tag size | 256 біт (32 байти) | NIST SP 800-107 рекомендація для AES-256 рівня безпеки |
-| `K_ota` size | 256 біт | Match HMAC output size |
-| `K_ota` scope | Per-cluster (HKDF salt = `"cluster:#{id}"`) | Ізоляція кластерів, broadcast-сумісність |
-| Domain separation | `info: "silken-ota-hmac-v1"` | Окремо від `"silken-aes-256-device-key"` (FW.1) |
-| Magic marker | `0x45544952` ("RITE" LE) | Існуючий u-boot-style format-integrity marker (Gate 1) |
-| HMAC input | `bytecode \|\| version_id \|\| total_chunks` | Anti-replay + anti-truncation |
-| Comparison | `Hmac_Constant_Time_Compare` (constant-time) | Захист від timing attack |
-| Wire overhead | +4 LoRa chunks (3 печатки + версія, +~240 мс broadcast) | < 0.5% від загальної OTA-сесії 745 чанків |
-| Implementation | Mandatory з дня 1 | Pre-production, no fallback path needed |
+| Алгоритм | Ed25519 (RFC 8032, PureEdDSA, SHA-512) | детермінований (несуче для повторного пакування); ~128-біт рівень |
+| Печатка | 512 біт (64 Б, R ‖ S) | 6 LoRa-сегментів |
+| Ключ на вузлі | публічний, 256 біт (32 Б) | сторінка 125, magic `"KPUB"`; не секрет |
+| Ключ підпису | лише бекенд, seed = HKDF-SHA256 | `PROVISIONING_MASTER_KEY`; на вузлі НЕМА |
+| Scope | per-cluster (salt `"cluster:#{id}"`) | ізоляція кластерів, broadcast-сумісність |
+| Domain separation | `info: "silken-ota-ed25519-v1"` | гейт унікальності info (SEC.34) |
+| Magic marker | `0x45544952` ("RITE" LE) | брама 1 |
+| Підписане | `padded_bytecode ‖ version_id ‖ total_chunks` | anti-relabel + anti-truncation |
+| Бібліотека (вузол) | Monocypher 4.0.3, pinned submodule | `crypto_eddsa_check_equation` відкидає S ≥ L (malleability) |
+| Бібліотека (бекенд) | гем `ed25519` | паритет — золотий вектор: Ruby ⇒ прошивка ⇒ OpenSSL |
+| Wire overhead | +7 LoRa-блоків (≈+420 мс трансляції) | < 1% від OTA-сесії ~745 чанків |
 
-### Implementation Plan
+### Test Coverage — ✅
+- **Backend:** `ota_seal_key_service_spec` (формула HKDF, детермінізм, ізоляція кластерів, SEC.11, публічний ключ) · `ota_packager_service_spec` (золотий вектор, повторний `prepare` байт-у-байт, relabel/truncation/tamper, 7 блоків, маніфест) · `spec/integration/ota_firmware_flow_spec.rb` (трейлер → печатка → публічний ключ кластера приймає; підмінене тіло, чужа версія, обрізання, чужий кластер — ні)
+- **Firmware:** `test_ota_seal.c` (золотий вектор Ruby перевіряють прошивка, Monocypher і OpenSSL; кожен змінений вхід ламає перевірку; OpenSSL ≡ Monocypher у ключах і підписах; стрімінг ≡ `crypto_ed25519_check`) · `test_soldier_logic.c` (збирання трейлера, `Ota_Seal_Try_Finalize` APPLY·WAIT·REJECT) · `test_queen_logic.c` (реле 7 блоків, FW.52б воскресіння на сьомому)
+- **Золотий вектор** (master `"silken-fw23-golden-master-key"`, кластер `"cluster-golden-1"`) — один на обидві мови: міняєш формат повідомлення чи деривацію → перегенеровуєш у ОБОХ (`ota_packager_service_spec` ⟷ `test_ota_seal.c`). Мутаційно перевірено (2026-10-06): прибраний `version_id` у підписаному (Ruby) і нехешований суфікс (C) — обидва червоні.
 
-Реалізація — три синхронні зміни (один coordinated commit, no backward-compat shim):
-
-| Компонент | Зміна |
-|-----------|-------|
-| **Backend** (`OtaPackagerService`) | Завжди обчислювати HMAC та emit'ити 3 trailer-чанки `[0x9B]` після bytecode. Додати `OtaHmacKeyService.fetch_for(cluster_id)` (HKDF derivation) |
-| **Firmware Soldier** | Парсити `[0x9B]` chunks у RAM (32-байтний `received_hmac_tag`), виконувати dual-gate verification перед `HAL_FLASH_Program(MRUBY_CONTRACT_FLASH_ADDR, ...)` |
-| **Firmware Queen** | Stateless-relay, без verification (Backend → Soldier end-to-end) — повторюємо `[0x9B]` chunks у broadcast-циклі так само як `[0x99]` |
-
-### Future Evolution: HMAC → ECDSA-P256 (post-TRL 7)
-
-> ⚠️ **Скетч ATECC-ери (2026-05)** — SE = **SE050** (ATECC superseded, SEC.6 ✅ — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) ADR): у SE05x-ері природна крива = **Ed25519** (on-chip keygen, «голос дерева»), не P-256. Механіка кроків (HSM-підпис → pubkey у Flash → sig-чанки → software verify → асиметрія довіри) переноситься 1:1; присуд «чи мігрувати» = [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) ⚖️ OTA-auth еволюція.
-
-Архітектурний шлях (не fallback) для billion-tree масштабу де компрометація одного Queen не повинна дозволяти підпис нових images:
-1. Backend підписує image через ECDSA-P256 з master key (HSM)
-2. Public key розповсюджується у Soldier flash (slot 2 ATECC608B або Protected Flash)
-3. Wire format: `[0x9B][seg_idx:2][total:2][sig_segment]` → 6 чанків (64B sig)
-4. ECDSA verify (~80 мс, software) дорожчий за software HMAC-SHA256, але прийнятний для рідкісної OTA-операції
-5. Компрометація Soldier НЕ дозволяє підписувати OTA (асиметричні ключі — асимметрія довіри)
-
-### Test Coverage — ✅ реалізовано
-- **Backend (`spec/services/ota_packager_service_spec.rb`):** HMAC chunk generation (4 чанки = 3 печатки + версія), deterministic за фіксованого `K_ota`, replay/truncation negative cases, version_id-на-дроті (seg 4 = `firmware.id` BE)
-- **Firmware (`firmware/test/test_soldier_logic.c`):** trailer assemble (version chunk, all-4=0x0F, seg_idx>4 reject), **реальний HMAC compute** (`Silken_Hmac_Sha256_Concat ≡ one-shot ≡ OpenSSL`), `OTA_Try_Finalize` APPLY·WAIT·REJECT (tampered/version-mismatch/no-key), constant-time compare
-- **Integration (`spec/integration/ota_firmware_flow_spec.rb`):** backend → Queen relay (4 segments) → Soldier dual-gate accept/reject; tag reconstruction == `compute_hmac_tag`
-
-> **Cross-ref:** FW.1 (HKDF master-key infrastructure), FW.2 (CCM MIC для телеметрії — паралельний MAC concept), 03_05 §3.7 (SE-роль ADR; ATECC slot-map = legacy-патерн), 03_05 §6 «Queen → Soldier (OTA LoRa)» row у криптографічній таблиці.
+> **Cross-ref:** FW.1 (HKDF master-key), FW.2 (CCM MIC телеметрії — паралельний concept), SEC.20 (anti-rollback), [`03_05 §6`](03_05_Hardware_Symmetric_Crypto_and_Security) «Queen → Soldier (OTA LoRa)», [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA) опкод `0x9B`.
 
 ---
 
@@ -831,11 +782,11 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (`-c` + `-r32 0x1FFF7590 12` UID-read одним викликом, обидві гілки) + Гілка A — `-e` сторінок ключів і `STM32_Programmer_CLI -w32` цілими doubleword'ами (суміжні слова одним рядком, діру добиває `0xFFFFFFFF`; кожен рядок несе власний `-c`): Tree — `KEYL`/`LSED`/`KOTA`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), IWDG-заморозка + RDP L0/L1 (байта L2 у `RDP_OPTION_BYTE` немає — ⚖️ SEC.2 2026-09-28); Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (`-c` + `-r32 0x1FFF7590 12` UID-read одним викликом, обидві гілки) + Гілка A — `-e` сторінок ключів і `STM32_Programmer_CLI -w32` цілими doubleword'ами (суміжні слова одним рядком, діру добиває `0xFFFFFFFF`; кожен рядок несе власний `-c`): Tree — `KEYL`/`LSED`/`KPUB`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), IWDG-заморозка + RDP L0/L1 (байта L2 у `RDP_OPTION_BYTE` немає — ⚖️ SEC.2 2026-09-28); Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit. Дані `-w32` — ключі зі справжнього master key, тож і друк dry-run, і повідомлення помилки (його `Session` персистить у `provisioning_sessions.error_message`) несуть лише адресу й лічильник слів (`Executor.redact`, позиційно), а 8-hex-слова stderr маскуються. ⚠️ У argv процесу CLI ключі все одно є — вимога до фабричного хоста, §5 |
 | ATECC provisioning | `app/services/factory_flashing/secure_element_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (1/2/3; Slot 0 reserved — не пишеться з 2026-09-27) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, system_generated: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`se_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
-| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.17] Re-provision дерева** (рядок `HardwareKey` уже є) — нова епоха ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security), реалізовано 2026-09-28): KEYL = K0_e від поточного master, свіжий журнал Flash-KV (`FactoryFlashing::FlashKvImage`, стор. 122–123 стираються обидві), у БД `epoch` + 1 · `key_version` 0 · старий ключ у grace до першого MIC новим, аудит несе `key_epoch`; dry-run епоху лише планує. ⊕ 2026-09-29 (⚖️ founder, врізка «Провіжн дерева» нижче): K_seed теж деривується поточним master тією ж транзакцією, а свіжий журнал пишеться на КОЖНОМУ провіжні дерева, першому теж. Королеви це не стосується — її re-flash і є доставкою ротованого KEYC. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Безпаспортну плату (Королеву) впізнати нема чим, а `-e` сторінки ключів незворотний, тож preflight читає й перше слово стор. 124: уже прошиту (чи нечитану) таку плату конвеєр стирає лише за `REFLASH_ACK=<device_uid>` — оголошений намір, як набране «RDP2» стендового скрипта; інакше чужа Королева на джизі втратила б свої ключі. Dry-run pubkey голосу Королеви не чіпає — план не підміняє L1-ідентичність. Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
+| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.17] Re-provision дерева** (рядок `HardwareKey` уже є) — нова епоха ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security), реалізовано 2026-09-28): KEYL = K0_e від поточного master, свіжий журнал Flash-KV (`FactoryFlashing::FlashKvImage`, стор. 122–123 стираються обидві), у БД `epoch` + 1 · `key_version` 0 · старий ключ у grace до першого MIC новим, аудит несе `key_epoch`; dry-run епоху лише планує. ⊕ 2026-09-29 (⚖️ founder, врізка «Провіжн дерева» нижче): K_seed теж деривується поточним master тією ж транзакцією, а свіжий журнал пишеться на КОЖНОМУ провіжні дерева, першому теж. Королеви це не стосується — її re-flash і є доставкою ротованого KEYC. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Безпаспортну плату (Королеву) впізнати нема чим, а `-e` сторінки ключів незворотний, тож preflight читає й перше слово стор. 124: уже прошиту (чи нечитану) таку плату конвеєр стирає лише за `REFLASH_ACK=<device_uid>` — оголошений намір, як набране «RDP2» стендового скрипта; інакше чужа Королева на джизі втратила б свої ключі. Dry-run pubkey голосу Королеви не чіпає — план не підміняє L1-ідентичність. Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaSealKeyService.public_key_hex_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
 | Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` + `SUPERVISOR_OTP` env — супервайзер автентифікується власним паролем і поточним TOTP-кодом, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess; `REFLASH_ACK=<device_uid>` — перепрошивка вже прошитої безпаспортної плати, зокрема доставка ротованого KEYC Королеві; `STLINK_SN=<серійник зонда>` — станція з кількома ST-LINK: кожен рядок підключається наново, а паспорт плати звіряє лише перший, тож `sn=` стоїть у КОЖНОМУ `-c` (UM2237: `sn` ⊥ `index`, дефолт — index 0; лише алфанумерика — рядок іде в шелл). Кількість зондів конвеєр не перевіряє: вивід `--list` на кремнії не бачили) |
 
 > **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` і `SUPERVISOR_OTP` — `ProvisioningSession#approve_with_credentials!` верифікує пароль через `supervisor.authenticate` (Argon2id), а код — через `User#verify_totp!`. Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль і код зі свого автентифікатора (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5 access-control (master-key лише `super_admin` + MFA), не код.
@@ -844,7 +795,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 > ⚖️ **[FW.17] Провіжн дерева — два присуди founder 2026-09-29, ратифіковано за рекомендацією.** Обидва знайшла реалізація форми «re-provision = нова епоха ключа» ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security), ⚖️ 2026-09-28).
 >
-> **(1) K_seed на re-provision — поточним master.** Сесія передеривовує KEYL і KOTA/KEYB, а K_seed (LSED) брала з рядка `HardwareKey`, тож «перепровіжн флоту», яким ранбук [`06_04 §5.8`](06_04_Secrets_Checklist) A.3 лікує компрометацію master, лишав би DCI-сід старим і скомпрометованим. Тепер `reprovision_tree_key!` деривує K_seed (`SeedDerivation.derive_seed(did, master_key:)`) і пише його в рядок тією ж транзакцією, що й епоху. **Підстава:** K_seed = HKDF(master, DID), тож під незмінним master крок ідемпотентний (той самий сід), а під новим — рівно те, що обіцяє ранбук. **Ціна:** рядок і LSED змінюються разом лише в живому прогоні, а dry-run лише планує; K_seed живить тільки ХОЛОДНИЙ старт Лоренца, тож новий сід набирає сили з першою холодною деривацією вузла. **Найслабша ланка:** як теплий стан Лоренца в RTC (DR16–DR19 переживає SWD, поки RTC-домен живлений) поводиться проти бекендової траєкторії після зміни сіда — не відкривано й не міряно.
+> **(1) K_seed на re-provision — поточним master.** Сесія передеривовує KEYL і KPUB/KEYB, а K_seed (LSED) брала з рядка `HardwareKey`, тож «перепровіжн флоту», яким ранбук [`06_04 §5.8`](06_04_Secrets_Checklist) A.3 лікує компрометацію master, лишав би DCI-сід старим і скомпрометованим. Тепер `reprovision_tree_key!` деривує K_seed (`SeedDerivation.derive_seed(did, master_key:)`) і пише його в рядок тією ж транзакцією, що й епоху. **Підстава:** K_seed = HKDF(master, DID), тож під незмінним master крок ідемпотентний (той самий сід), а під новим — рівно те, що обіцяє ранбук. **Ціна:** рядок і LSED змінюються разом лише в живому прогоні, а dry-run лише планує; K_seed живить тільки ХОЛОДНИЙ старт Лоренца, тож новий сід набирає сили з першою холодною деривацією вузла. **Найслабша ланка:** як теплий стан Лоренца в RTC (DR16–DR19 переживає SWD, поки RTC-домен живлений) поводиться проти бекендової траєкторії після зміни сіда — не відкривано й не міряно.
 >
 > **(2) Свіжий журнал Flash-KV — і на ПЕРШОМУ провіжні.** Той самий образ (`FlashKvImage`, стирання сторінок 122–123), що й на re-provision. **Підстава:** плата, що вже бувала на стенді (dev-прошивка, скинута БД), несе чужий журнал — вціліла версія ратчета `0x13` дала б boot `ratchet^v(K0)` ≠ K0, тобто глухий вузол, а вцілілий DLFC `0x12` = N глушив би команди нового рядка Rails, доки лічильник Rails не переросте N; `0x15` = приплив кластера закриває повтор старого підписаного OTA й для нового вузла. ⊕ **Якір FC `0x14` = 1 (⚖️ founder 2026-10-05, [`00_07`](00_07_Action_Plan_Tracker) SEC.41):** лічильник кадрів CCM під свіжим ключем стартує біля нуля, а не з HRNG рівномірно в [1, 0xFFFFFE], тож 24-бітний простір увесь попереду, а пересів із HRNG лишається справжнім fallback мертвого Flash. **Ціна:** стирання двох сторінок на кожному першому провіжні (на новому чипі — no-op) і один рядок `-w32`. **Найслабша ланка:** на новому чипі сторінки й так чисті, тож виграш — лише для перевикористаних плат, частки яких у партії ніхто не знає.
 >
@@ -861,7 +812,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 [dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E000 <14 words>
           # стор. 124: KEYL magic + 4 AES words, LSED magic + 8 K_seed words — 7 doubleword'ів
 [dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -w32 0x0803E800 <16 words>
-          # стор. 125: KOTA magic + 8 K_ota words (FW.23), стерте слово, KEYB magic + 4 words (+40, FW.2 (в)), стерте слово
+          # стор. 125: KPUB magic + 8 слів публічного ключа печатки (FW.23), стерте слово, KEYB magic + 4 words (+40, FW.2 (в)), стерте слово
 [dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -ob IWDG_SW=1 IWDG_STOP=0 IWDG_STDBY=0   # SEC.15 — ДО RDP
 [dry-run] STM32_Programmer_CLI -c port=SWD mode=UR -ob RDP=0xBB          # L1 — сирий байт, не номер рівня
 ```
@@ -894,7 +845,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 **Ротація master key:**
 
 - Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)).
-- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії. ⚠️ **Механізм під цим рядком — лише половина:** з 2026-09-28 re-provision дерева пише новий KEYL (нова епоха від поточного master, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)), а з 2026-09-29 і K_seed — поточним master, тією ж транзакцією, що й рядок (⚖️ founder, врізка «Провіжн дерева» в §5; доти K_seed брався з рядка й під новим master лишався старим). Відкритими лишаються кластерні похідні, які бекенд деривує з master на льоту (K_ota — `OtaHmacKeyService`), на бекенді зміняться для всього флоту одразу, тоді як пристрої триматимуть старі — OTA-підпис розійдеться з кожним вузлом. Форма ротації й відновлення — [`00_07` — FW.17](00_07_Action_Plan_Tracker).
+- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії. ⚠️ **Механізм під цим рядком — лише половина:** з 2026-09-28 re-provision дерева пише новий KEYL (нова епоха від поточного master, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)), а з 2026-09-29 і K_seed — поточним master, тією ж транзакцією, що й рядок (⚖️ founder, врізка «Провіжн дерева» в §5; доти K_seed брався з рядка й під новим master лишався старим). Відкритими лишаються кластерні похідні, які бекенд деривує з master на льоту (ключ печатки OTA — `OtaSealKeyService`), на бекенді зміняться для всього флоту одразу, тоді як пристрої триматимуть старий публічний ключ — печатка розійдеться з кожним вузлом. Форма ротації й відновлення — [`00_07` — FW.17](00_07_Action_Plan_Tracker).
 - Fail-closed boot guard: `config/initializers/master_key_strength_check.rb` відмовляє у запуску Rails якщо `PROVISIONING_MASTER_KEY` = тест-вектор (SEC.9).
 
 ---
@@ -963,14 +914,14 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 
 ### D. Гілка A vs Гілка B Threat Model Diff
 
-> ⚠️ **Колонку «Гілка B» писано в легасі-моделі ATECC, де ключі жили в SE.** За присудом 2026-09-27 (врізка «Набір ключів Гілки B», §1) runtime-ключі Гілки B — KEYL · LSED · KEYB · K_ota, а в Королеви всі — лежать у Protected Flash і їдуть тим самим SWD `-w32` із фабричного хоста, тож у рядках «Фізичне вилучення», «Factory insider» і «Cold-boot» Гілка B для НИХ рівна Гілці A (для insider-а — не краща: копія K_ota додає ще й I²C-запис). Перевага колонки стосується лише того, що лежить у SE: ціль — ідентичність дерева, а сьогодні транскрипт пише туди тільки копію K_ota (слоти 1/2 — TODO); у Королеви SE немає, тож для неї перевага нульова.
+> ⚠️ **Колонку «Гілка B» писано в легасі-моделі ATECC, де ключі жили в SE.** За присудом 2026-09-27 (врізка «Набір ключів Гілки B», §1) runtime-ключі Гілки B — KEYL · LSED · KEYB · KPUB, а в Королеви всі — лежать у Protected Flash і їдуть тим самим SWD `-w32` із фабричного хоста, тож у рядках «Фізичне вилучення», «Factory insider» і «Cold-boot» Гілка B для НИХ рівна Гілці A (для insider-а — не краща). Перевага колонки стосується лише того, що лежить у SE: ціль — ідентичність дерева, а сьогодні транскрипт пише туди тільки копію KPUB — з 2026-10-06 публічну (слоти 1/2 — TODO), тож сьогодні перевага нульова й для Солдата; у Королеви SE немає взагалі.
 
 | Вектор атаки | Гілка A (Protected Flash STM32) | Гілка B (ATECC608B / STSAFE-A110) |
 |-------------|----------------------------------|-----------------------------------|
-| **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | Лише вміст SE (сьогодні — копія K_ota у Slot 3; ідентичність — ціль): ATECC data zone lock + DPA-hardened silicon — key never leaves chip в plaintext; fault injection → self-erase. Runtime-ключі — як Гілка A (RDP) |
+| **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | Лише вміст SE (сьогодні — копія KPUB у Slot 3, публічна; ідентичність — ціль): ATECC data zone lock + DPA-hardened silicon — key never leaves chip в plaintext; fault injection → self-erase. Runtime-ключі — як Гілка A (RDP) |
 | **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) мусить пінитись у пару `(device_uid, серійник SE)` — ⚠️ ціль: сьогодні він лише в `provisioning_sessions.se_serial_hex`, `HardwareKey` колонки не має. Чужий ATECC → provisioning API reject з 409 |
 | **Replay provisioning request** | `POST /provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
-| **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Не нижчий, ніж у Гілці A: runtime-ключі йдуть тим самим SWD `-w32` з хоста, копія K_ota додає ще й I²C-запис у Slot 3 (`atcab_write_zone` бере буфер викликача), а ідентичність у легасі-скетчі народжується на хості (крок 3 §1); нижчим ризик стане лише з on-chip keygen SE05x — ціль, не код |
+| **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Не нижчий, ніж у Гілці A: runtime-ключі йдуть тим самим SWD `-w32` з хоста, копія в Slot 3 з 2026-10-06 публічна, тож її I²C-запис секрету не несе, а ідентичність у легасі-скетчі народжується на хості (крок 3 §1); нижчим ризик стане лише з on-chip keygen SE05x — ціль, не код |
 | **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Той самий, що в Гілці A: runtime-ключі деривує Rails-хост і пише SWD, а ідентичність сьогодні теж народжується на хості (кроки 3–4 §1) — поза RAM хоста її виведе лише on-chip keygen SE05x, а це ціль, не код (`SecureElementProvisioner`: TODO) |
 | **Перехід Гілка A → Гілка B** | Можливо (re-flash MCU + добавити ATECC до PCBA = новий PCB revision) | — |
 | **Перехід Гілка B → Гілка A** | ❌ Неможливо (ATECC config zone locked permanently) | — |

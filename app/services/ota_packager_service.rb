@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 require "zlib"
-require "openssl"
 
 class OtaPackagerService
   # Стандартні розміри для різних типів ефіру
@@ -12,16 +11,16 @@ class OtaPackagerService
   # OTA / time-sync markers (docs/03_01 §4.5а). Адресні команди 0x9A · 0x9E
   # живуть у Downlink::CommandFrame (FW.17, 03_05 §2.5).
   CMD_OTA_BYTECODE   = 0x99 # mruby bytecode chunks (existing)
-  CMD_HMAC_TRAILER   = 0x9B # [FW.23] OTA HMAC-SHA256 trailer (3 LoRa chunks)
+  CMD_OTA_SEAL       = 0x9B # [FW.23] OTA Ed25519 seal trailer (6 seal chunks + version)
   CMD_TIME_SYNC      = 0x9C # backend UTC timestamp envelope (FW.20)
 
-  # [FW.23] HMAC trailer constants — wire format must mirror Soldier parser.
-  HMAC_TAG_BYTES        = 32   # HMAC-SHA256 output size
-  HMAC_TRAILER_SEGMENTS = 3    # 32 bytes split across 3 LoRa chunks (seg_idx 1..3)
-  HMAC_VERSION_SEG_IDX  = 4    # seg_idx=4 carries version_id (Soldier HMAC input)
-  OTA_TRAILER_CHUNKS    = 4    # 3 HMAC tag chunks + 1 version chunk
-  HMAC_SEG_BYTES        = 11   # 11 bytes payload per LoRa chunk (16 - 5 header)
-  HMAC_TRAILER_BLOCK    = 16   # Single AES-256 block size on the wire
+  # ⚖️ [FW.23, founder 2026-10-05/06] Seal trailer — wire format mirrors
+  # firmware/common/ota_seal_wire.h (the Soldier parses it, the Queen relays it blind).
+  SEAL_SIG_BYTES       = 64  # Ed25519 signature R ‖ S
+  SEAL_SEGMENTS        = 6   # 64 bytes across 6 LoRa chunks (seg_idx 1..6; the 6th = 9 bytes + 2 PAD)
+  SEAL_VERSION_SEG_IDX = 7   # seg_idx=7 carries version_id (part of the signed message)
+  OTA_TRAILER_CHUNKS   = 7   # 6 seal chunks + 1 version chunk
+  SEAL_SEG_BYTES       = 11  # 11 bytes payload per LoRa chunk (16 - 5 header)
 
   # [FW.8] Default species_id when tree.tree_family.species_code is unmapped
   DEFAULT_SPECIES_ID = 0xFF
@@ -83,62 +82,50 @@ class OtaPackagerService
     crc
   end
 
-  # [FW.23] Compute HMAC-SHA256 over (bytecode || version_id_be || lora_total_be).
-  #
-  # Anti-replay:    version_id binds the tag to a specific firmware revision so
-  #                 an attacker cannot replay an old (signed) image.
-  # Anti-truncation: lora_total_chunks binds the tag to the EXACT chunk count
-  #                  Soldier expects to receive — dropping trailing chunks is
-  #                  detected as HMAC mismatch.
-  #
-  # Returns 32-byte binary digest. Soldier dual-gate uses constant-time compare.
-  def self.compute_hmac_tag(bytecode_bin, version_id, lora_total_chunks, cluster_id:)
-    raise ArgumentError, "bytecode is empty"         if bytecode_bin.nil? || bytecode_bin.bytesize.zero?
-    raise ArgumentError, "version_id required"       if version_id.nil?
+  # [FW.23] The signed message: bytecode ‖ version_id_be(4) ‖ lora_total_be(2) — the
+  # same bytes the HMAC covered before the seal became asymmetric.
+  #   Anti-replay:     version_id binds the seal to a firmware revision.
+  #   Anti-truncation: lora_total_chunks binds it to the EXACT chunk count the
+  #                    Soldier expects — dropping trailing chunks breaks the seal.
+  def self.seal_message(bytecode_bin, version_id, lora_total_chunks)
+    raise ArgumentError, "bytecode is empty"          if bytecode_bin.nil? || bytecode_bin.bytesize.zero?
+    raise ArgumentError, "version_id required"        if version_id.nil?
     raise ArgumentError, "lora_total_chunks required" if lora_total_chunks.nil? || lora_total_chunks.zero?
 
-    binary_key = OtaHmacKeyService.fetch_binary_for(cluster_id)
-    message    = bytecode_bin.b +
-                 [ version_id.to_i ].pack("N") +       # 4-byte big-endian
-                 [ lora_total_chunks.to_i ].pack("n")  # 2-byte big-endian
-    OpenSSL::HMAC.digest("SHA256", binary_key, message)
+    bytecode_bin.b + [ version_id.to_i ].pack("N") + [ lora_total_chunks.to_i ].pack("n")
   end
 
-  # [FW.23] Build 4 trailer 16-byte LoRa-formatted blocks. The first 3 carry the
-  # 32-byte HMAC tag; the 4th carries version_id so the Soldier can recompute the
-  # HMAC over (bytecode ‖ version_id_be ‖ total_be) — without it the dual-gate has
-  # no version input on the wire and stays inert. Layout mirrors Soldier
-  # `Parse_HMAC_Trailer_Chunk`:
-  #   [0]    0x9B (CMD_HMAC_TRAILER)
-  #   [1..2] seg_idx (1..4, big-endian)
+  # ⚖️ [FW.23, founder 2026-10-05/06] Ed25519 seal of the cluster key (`OtaSealKeyService`).
+  # DETERMINISTIC by construction (RFC 8032), and that is load-bearing: the campaign
+  # package is prepared more than once (`Ota::PackageStore` re-warms the cache,
+  # `OtaTransmissionWorker` packs on its own) and the Queen relays whatever segments it
+  # fetched — a randomised signature would stitch a trailer out of two different seals.
+  # Returns the 64-byte signature; the Soldier verifies it with the cluster PUBLIC key only.
+  def self.compute_seal(bytecode_bin, version_id, lora_total_chunks, cluster_id:)
+    message = seal_message(bytecode_bin, version_id, lora_total_chunks)
+    OtaSealKeyService.signing_key_for(cluster_id).sign(message)
+  end
+
+  # [FW.23] Build the 7 trailer 16-byte LoRa-formatted blocks: 6 carry the 64-byte seal,
+  # the 7th carries version_id (part of the signed message — without it the Soldier has
+  # nothing to verify against). Layout mirrors `Ota_Seal_Parse_Chunk`
+  # (firmware/common/ota_seal_wire.h):
+  #   [0]    0x9B (CMD_OTA_SEAL)
+  #   [1..2] seg_idx (1..7, big-endian)
   #   [3..4] lora_total_chunks (big-endian) — cross-check vs bytecode 0x99 header
-  #   seg 1..3: [5..15] hmac segment (11 bytes; seg=3 has 10 real bytes + 1 PAD)
-  #   seg 4:    [5..8] version_id (big-endian) + [9..15] PAD
-  #
-  # Deterministic for fixed (hmac_tag, lora_total_chunks, version_id).
-  def self.build_hmac_trailer_chunks(hmac_tag, lora_total_chunks, version_id)
-    raise ArgumentError, "hmac_tag must be #{HMAC_TAG_BYTES} bytes" \
-      unless hmac_tag && hmac_tag.bytesize == HMAC_TAG_BYTES
+  #   seg 1..6: [5..15] seal segment (11 bytes; seg 6 has 9 real bytes + 2 PAD)
+  #   seg 7:    [5..8] version_id (big-endian) + [9..15] PAD
+  # Deterministic for fixed (seal, lora_total_chunks, version_id).
+  def self.build_seal_trailer_chunks(seal, lora_total_chunks, version_id)
+    raise ArgumentError, "seal must be #{SEAL_SIG_BYTES} bytes" unless seal && seal.bytesize == SEAL_SIG_BYTES
     raise ArgumentError, "version_id required" if version_id.nil?
 
-    chunks = []
-    HMAC_TRAILER_SEGMENTS.times do |i|
-      seg_idx = i + 1
-      base    = i * HMAC_SEG_BYTES
-      slice   = hmac_tag.byteslice(base, HMAC_SEG_BYTES) || ""
-      # Last segment may be < 11 bytes (32 - 22 = 10) → pad to 11 with NUL.
-      slice = slice + ("\x00" * (HMAC_SEG_BYTES - slice.bytesize)) if slice.bytesize < HMAC_SEG_BYTES
-
-      header = [ CMD_HMAC_TRAILER, seg_idx, lora_total_chunks ].pack("Cnn")
-      chunks << (header + slice)
+    chunks = Array.new(SEAL_SEGMENTS) do |i|
+      slice = seal.byteslice(i * SEAL_SEG_BYTES, SEAL_SEG_BYTES)
+      [ CMD_OTA_SEAL, i + 1, lora_total_chunks ].pack("Cnn") + slice.ljust(SEAL_SEG_BYTES, "\x00")
     end
-
-    # seg 4 — version envelope. version_id binds the tag to a firmware revision;
-    # the same 4-byte BE value goes into compute_hmac_tag's HMAC input.
-    version_header = [ CMD_HMAC_TRAILER, HMAC_VERSION_SEG_IDX, lora_total_chunks ].pack("Cnn")
-    version_body   = [ version_id.to_i ].pack("N") + ("\x00" * (HMAC_SEG_BYTES - 4))
-    chunks << (version_header + version_body)
-    chunks
+    chunks << ([ CMD_OTA_SEAL, SEAL_VERSION_SEG_IDX, lora_total_chunks ].pack("Cnn") +
+               [ version_id.to_i ].pack("N").ljust(SEAL_SEG_BYTES, "\x00"))
   end
 
   # [FW.53] LoRa MTU alignment + CRC32 trailer.
@@ -149,7 +136,7 @@ class OtaPackagerService
   # (fixed LoRa MTU), so the CRC32 must land EXACTLY at the end of the final
   # 11-byte chunk: zero-pad the bytecode until (padded + 4) % 11 == 0.
   # Trailing zero-pad is harmless to the RITE loader (irep carries its own
-  # length) and is covered by both CRC32 and the FW.23 HMAC tag.
+  # length) and is covered by both CRC32 and the FW.23 seal.
   LORA_CRC32_BYTES = 4
 
   def initialize(firmware, chunk_size, cluster_id: nil)
@@ -184,16 +171,16 @@ class OtaPackagerService
       sha256: @firmware.binary_sha256,
       total_chunks: total_bytecode_chunks
     }
-    return base unless hmac_enabled?
+    return base unless sealed?
 
-    # [FW.23] When HMAC trailer is enabled, expose extra metadata so the
-    # OtaTransmissionWorker can iterate over (bytecode + 3 trailer) packages
-    # without re-counting and so the UI progress bar stays correct.
+    # [FW.23] A sealed campaign exposes extra metadata so the OtaTransmissionWorker
+    # can iterate over (bytecode + trailer) packages without re-counting and the UI
+    # progress bar stays correct.
     base.merge(
       lora_total_chunks: lora_total_chunks,
       total_packages:    total_bytecode_chunks + OTA_TRAILER_CHUNKS,
-      hmac_signed:       true,
-      hmac_cluster_id:   @cluster_id
+      sealed:            true,
+      seal_cluster_id:   @cluster_id
     )
   end
 
@@ -221,39 +208,33 @@ class OtaPackagerService
       end
     end
 
-    return bytecode_chunks unless hmac_enabled?
+    return bytecode_chunks unless sealed?
 
-    # [FW.23] Concatenate bytecode chunks + 4 trailer chunks (3 HMAC + 1 version).
-    # Worker iterates packages.to_a; trailer chunks are 16-byte LoRa-pre-formatted
-    # blocks that Queen relays directly (stateless) and Soldier verifies via
-    # dual-gate before flash write.
+    # [FW.23] Bytecode chunks + 7 trailer chunks (6 seal + 1 version). Trailer chunks
+    # are 16-byte LoRa-pre-formatted blocks the Queen relays as-is; the Soldier checks
+    # the seal before the flash write.
     Enumerator.new do |yielder|
       bytecode_chunks.each { |bc| yielder.yield(bc) }
-      hmac_trailer_chunks.each { |tc| yielder.yield(tc) }
+      seal_trailer_chunks.each { |tc| yielder.yield(tc) }
     end
   end
 
-  def hmac_enabled?
+  def sealed?
     @cluster_id.present?
   end
 
   # [FW.53] LoRa-чанки рахуються від WIRE-потоку (padded +
   # CRC32) — він за конструкцією кратний LORA_MTU, тож ділення точне. Саме
   # це число Queen виводить з pending_ota_size і Soldier тримає як
-  # ota_total_chunks (cross-check у re-request + HMAC binding).
+  # ota_total_chunks (cross-check у re-request + у підписаному повідомленні печатки).
   def lora_total_chunks
     @lora_total_chunks ||= (@wire_payload.bytesize / LORA_MTU)
   end
 
-  def hmac_trailer_chunks
-    # HMAC над padded bytecode (БЕЗ CRC32-хвоста) — дзеркало Soldier
-    # dual-gate, який хешує ota_buffer[0..data_len) після зрізання CRC.
-    tag = self.class.compute_hmac_tag(
-      @padded_payload,
-      @firmware.id,
-      lora_total_chunks,
-      cluster_id: @cluster_id
-    )
-    self.class.build_hmac_trailer_chunks(tag, lora_total_chunks, @firmware.id)
+  def seal_trailer_chunks
+    # Печатка над padded bytecode (БЕЗ CRC32-хвоста) — дзеркало Солдата, що перевіряє
+    # ota_buffer[0..data_len) після зрізання CRC (`Ota_Seal_Try_Finalize`).
+    seal = self.class.compute_seal(@padded_payload, @firmware.id, lora_total_chunks, cluster_id: @cluster_id)
+    self.class.build_seal_trailer_chunks(seal, lora_total_chunks, @firmware.id)
   end
 end

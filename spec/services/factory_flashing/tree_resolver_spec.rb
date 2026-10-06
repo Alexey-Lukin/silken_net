@@ -20,7 +20,7 @@ RSpec.describe FactoryFlashing::TreeResolver do
       expect(tree.tree_family_id).to eq(family.id)
     end
 
-    it "відмовляє create без cluster/family (K_ota + NOT NULL передумови)" do
+    it "відмовляє create без cluster/family (ключ печатки OTA + NOT NULL передумови)" do
       expect { described_class.resolve!(uid_hex: uid) }
         .to raise_error(described_class::MissingAttributesError, /CLUSTER_ID/)
       expect(Tree.find_by(did: did)).to be_nil

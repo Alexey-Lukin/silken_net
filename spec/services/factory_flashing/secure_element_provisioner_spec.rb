@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe FactoryFlashing::SecureElementProvisioner do
   let(:session)      { build(:provisioning_session, :gilka_b, se_serial_hex: "0123456789ABCDEF01") }
-  let(:ota_hmac_hex) { "0" * 64 }
+  let(:ota_seal_pub_hex) { "0" * 64 }
   let(:ecc_priv_hex) { "F" * 64 }
   let(:cert_der_hex) { "A" * 100 }
 
@@ -14,12 +14,12 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
     # у Protected Flash (CommandBuilder) — рядок, що зникає, а не мігрує.
     it "emits init + serial read + Slot 3 + lock-config + lock-data, and never writes Slot 0" do
       result = described_class.new(
-        session: session, ota_hmac_hex: ota_hmac_hex
+        session: session, ota_seal_pub_hex: ota_seal_pub_hex
       ).provision
 
       expect(result.statements.first).to include("atcab_init")
       expect(result.statements).not_to include(a_string_matching(/atcab_write_zone\(ATCA_ZONE_DATA, 0,/))
-      expect(result.statements).to include(a_string_matching(/Slot 3 K_ota \(FW\.23\)/))
+      expect(result.statements).to include(a_string_matching(/Slot 3 OTA seal pubkey \(FW\.23\)/))
       expect(result.statements).to include(a_string_matching(/Slot 1 Ed25519 priv — TODO/))
       expect(result.statements).to include(a_string_matching(/Slot 2 cert — TODO/))
       expect(result.statements).to include("atcab_lock_config_zone()  # irreversible: slot policies frozen")
@@ -29,15 +29,15 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
 
     it "scrubs raw key bytes from the transcript (anti-leak per 03_06 §5 B)" do
       result = described_class.new(
-        session: session, ota_hmac_hex: ota_hmac_hex
+        session: session, ota_seal_pub_hex: ota_seal_pub_hex
       ).provision
 
-      expect(result.statements.join).not_to include(ota_hmac_hex)
+      expect(result.statements.join).not_to include(ota_seal_pub_hex)
     end
 
     it "emits Ed25519 priv statement when ecc_priv_hex is provided" do
       result = described_class.new(
-        session: session, ota_hmac_hex: ota_hmac_hex, ecc_priv_hex: ecc_priv_hex
+        session: session, ota_seal_pub_hex: ota_seal_pub_hex, ecc_priv_hex: ecc_priv_hex
       ).provision
 
       expect(result.statements).to include(a_string_matching(/Slot 1 Ed25519 priv/))
@@ -46,7 +46,7 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
 
     it "emits cert statement when cert_der_hex is provided" do
       result = described_class.new(
-        session: session, ota_hmac_hex: ota_hmac_hex, cert_der_hex: cert_der_hex
+        session: session, ota_seal_pub_hex: ota_seal_pub_hex, cert_der_hex: cert_der_hex
       ).provision
 
       expect(result.statements).to include(a_string_matching(/Slot 2 X\.509 cert DER$/))
@@ -54,7 +54,7 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
 
     it "preserves slot-write order so lock-config never precedes any write_zone" do
       result = described_class.new(
-        session: session, ota_hmac_hex: ota_hmac_hex
+        session: session, ota_seal_pub_hex: ota_seal_pub_hex
       ).provision
 
       lock_idx = result.statements.index("atcab_lock_config_zone()  # irreversible: slot policies frozen")
@@ -67,22 +67,22 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
     it "rejects Гілка A session" do
       a_session = build(:provisioning_session, gilka: "A")
       expect {
-        described_class.new(session: a_session, ota_hmac_hex: ota_hmac_hex)
+        described_class.new(session: a_session, ota_seal_pub_hex: ota_seal_pub_hex)
       }.to raise_error(described_class::InputError, /Гілка B only/)
     end
 
 
-    it "rejects wrong-sized K_ota (Slot 3 must be 32B)" do
+    it "rejects a wrong-sized OTA seal pubkey (Slot 3 must be 32B)" do
       expect {
-        described_class.new(session: session, ota_hmac_hex: "0" * 32)
-      }.to raise_error(described_class::InputError, /Slot 3 K_ota/)
+        described_class.new(session: session, ota_seal_pub_hex: "0" * 32)
+      }.to raise_error(described_class::InputError, /Slot 3 OTA seal pubkey/)
     end
 
 
     it "rejects too-long cert DER" do
       expect {
         described_class.new(
-          session: session, ota_hmac_hex: ota_hmac_hex, cert_der_hex: "A" * 200
+          session: session, ota_seal_pub_hex: ota_seal_pub_hex, cert_der_hex: "A" * 200
         )
       }.to raise_error(described_class::InputError, /Slot 2 cert DER/)
     end
@@ -90,15 +90,15 @@ RSpec.describe FactoryFlashing::SecureElementProvisioner do
     it "rejects wrong-sized ecc_priv_hex (Slot 1 must be 32B/64hex)" do
       expect {
         described_class.new(
-          session: session, ota_hmac_hex: ota_hmac_hex, ecc_priv_hex: "F" * 32
+          session: session, ota_seal_pub_hex: ota_seal_pub_hex, ecc_priv_hex: "F" * 32
         )
       }.to raise_error(described_class::InputError, /Slot 1 ECC priv/)
     end
 
-    it "rejects non-hex K_ota (Slot 3 must be hexadecimal)" do
+    it "rejects a non-hex OTA seal pubkey (Slot 3 must be hexadecimal)" do
       expect {
-        described_class.new(session: session, ota_hmac_hex: "Z" * 64)
-      }.to raise_error(described_class::InputError, /K_ota must be hexadecimal/)
+        described_class.new(session: session, ota_seal_pub_hex: "Z" * 64)
+      }.to raise_error(described_class::InputError, /OTA seal pubkey must be hexadecimal/)
     end
   end
 end

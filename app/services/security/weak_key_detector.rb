@@ -16,7 +16,7 @@ require "base64"
 # check:
 #
 #   * the entire HKDF derivation tree (HardwareKeyService → AES device keys,
-#     OtaHmacKeyService → K_ota) collapses if PROVISIONING_MASTER_KEY is weak,
+#     OtaSealKeyService → OTA seal key) collapses if PROVISIONING_MASTER_KEY is weak,
 #   * future rotations could silently re-introduce a placeholder,
 #   * one master is consumed by multiple services, doubling blast radius.
 #
@@ -29,7 +29,7 @@ require "base64"
 # -----
 # *Long-lived symmetric secrets only.* The current call site is
 # `PROVISIONING_MASTER_KEY` (HKDF root for both `HardwareKeyService` and
-# `OtaHmacKeyService`). The same detector can be re-used for any future
+# `OtaSealKeyService`). The same detector can be re-used for any future
 # static master (e.g. Chainlink HMAC root).
 #
 # How interpretations are checked

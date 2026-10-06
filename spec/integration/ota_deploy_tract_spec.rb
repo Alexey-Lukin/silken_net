@@ -11,7 +11,7 @@ require "rails_helper"
 # Клас бага, який цей файл вбиває назавжди: «два зелені кінці, мертвий шов» —
 # тут немає жодного мока derivation-ланцюга: PDU парситься реальним парсером,
 # конверт шифрується реальним CoapEncryption, чанки — реальним
-# OtaPackagerService (включно з FW.23 HMAC-трейлером). Мокнуто лише Turbo.
+# OtaPackagerService (включно з FW.23 трейлером печатки). Мокнуто лише Turbo.
 RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   let(:organization) { create(:organization) }
   let(:admin) { create(:user, :admin, organization: organization) }

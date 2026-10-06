@@ -210,12 +210,10 @@ static inline void Silken_Hmac_Sha256(const uint8_t *key, size_t key_len,
     Silken_Sha256_Final(&ctx, digest);
 }
 
-/* HMAC-SHA256 над конкатенацією (a ‖ b) без суцільного буфера. [FW.23]
- * OTA dual-gate хешує bytecode ‖ (version_be ‖ total_be): тіло прошивки само
- * заповнює ota_buffer (~1 КБ), тож 6-байтний хвіст стрімимо окремо замість
- * +1 КБ на стек. Тотожно Silken_Hmac_Sha256 над злитим a‖b (доведено host-
- * тестом), а той — байт-у-байт OpenSSL::HMAC (test_seed_derivation). b_len==0
- * дозволено (тоді це HMAC лише над a). */
+/* HMAC-SHA256 над конкатенацією (a ‖ b) без суцільного буфера — споживач
+ * queen/coap_iv.h (label ‖ ctx). Тотожно Silken_Hmac_Sha256 над злитим a‖b
+ * (пін — test_soldier_logic.c), а той — байт-у-байт OpenSSL::HMAC
+ * (test_seed_derivation). b_len==0 дозволено (тоді це HMAC лише над a). */
 static inline void Silken_Hmac_Sha256_Concat(const uint8_t *key, size_t key_len,
                                        const uint8_t *a, size_t a_len,
                                        const uint8_t *b, size_t b_len,

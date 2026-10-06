@@ -7,8 +7,8 @@
 # `SilkenNet::DidDerivation.wire_did_from_uid_hex` дає канонічний
 # `trees.did`. Чотири долі:
 #   • дерева нема → create! — потрібні cluster_id + tree_family_id
-#     (family = NOT NULL у БД; без cluster `OtaHmacKeyService.fetch_for`
-#     впаде на K_ota). Координати лишаються польовому register-ритуалу.
+#     (family = NOT NULL у БД; без cluster `OtaSealKeyService.public_key_hex_for`
+#     впаде на ключі печатки OTA). Координати лишаються польовому register-ритуалу.
 #   • є, паспорт порожній → bind: legacy-дерево всиновлює свій чип.
 #   • є, паспорт == uid → re-flash того самого чипа (ідемпотентний no-op).
 #   • є, паспорт інший → CollisionError: birthday-колізія 32-біт DID або
@@ -31,7 +31,7 @@ module FactoryFlashing
         if cluster_id.blank? || tree_family_id.blank?
           raise MissingAttributesError,
                 "Tree #{did} не існує — для створення потрібні CLUSTER_ID і TREE_FAMILY_ID " \
-                "(tree_family = NOT NULL; без cluster не деривується K_ota, FW.23)"
+                "(tree_family = NOT NULL; без cluster не деривується ключ печатки OTA, FW.23)"
         end
         return Tree.create!(did: did, silicon_uid_hex: uid,
                             cluster_id: cluster_id, tree_family_id: tree_family_id)

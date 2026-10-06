@@ -26,15 +26,26 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+# Monocypher (pinned submodule) — Ed25519 для печатки батча Королеви (L1 QATT) і печатки
+# OTA-контракту на Солдаті (FW.23). ⚠️ Визначено ТУТ, над правилами: make розгортає
+# змінні в ПРЕРЕКВІЗИТАХ одразу під час читання правила, тож визначення нижче за
+# `test_soldier` дало б там порожній шлях.
+MONOCYPHER_SRC = ../extern/monocypher/src
+MONOCYPHER_C   = $(MONOCYPHER_SRC)/monocypher.c $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c
+MONOCYPHER_INC = -I$(MONOCYPHER_SRC) -I$(MONOCYPHER_SRC)/optional
 
-all: queen soldier bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty standby_wake
+.PHONY: all queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty coverage size-check asan clean
+
+all: queen soldier ota_seal bio_contract logmel audio_model encryption seed_derivation ccm downlink_ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard pull_mac attest key_ratchet cmd_queue bme280 voc_maxhold ds18b20 tdma helium soft_timer helium_mac_smoke cad lora_phy tx_duty standby_wake
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
 
 soldier: $(BINDIR)/test_soldier
 	@./$(BINDIR)/test_soldier
+
+ota_seal: $(BINDIR)/test_ota_seal
+	@./$(BINDIR)/test_ota_seal
 
 bio_contract: $(BINDIR)/test_bio_contract
 	@./$(BINDIR)/test_bio_contract
@@ -154,13 +165,18 @@ tx_duty: $(BINDIR)/test_tx_duty
 standby_wake: $(BINDIR)/test_standby_wake
 	@./$(BINDIR)/test_standby_wake
 
-$(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h \
+$(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h ../common/ota_seal_wire.h \
                      ../queen/cifo_cache.h ../common/lora_ccm.h \
                      ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
-$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h
-	$(CC) $(CFLAGS) -o $@ test_soldier_logic.c
+$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h ../common/ota_seal.h ../common/ota_seal_wire.h $(MONOCYPHER_C)
+	$(CC) $(CFLAGS) $(MONOCYPHER_INC) -o $@ test_soldier_logic.c $(MONOCYPHER_C)
+
+# [FW.23] Ed25519-печатка OTA — паритет поза Monocypher: золотий вектор Ruby-пакувальника,
+# OpenSSL як незалежний підписувач/перевіряльник, стрімінг ≡ crypto_ed25519_check.
+$(BINDIR)/test_ota_seal: test_ota_seal.c ../common/ota_seal.h ../common/ota_seal_wire.h $(MONOCYPHER_C)
+	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) $(MONOCYPHER_INC) -o $@ test_ota_seal.c $(MONOCYPHER_C) $(OPENSSL_LIBS)
 
 $(BINDIR)/test_tdma_schedule: test_tdma_schedule.c ../common/tdma_schedule.h
 	$(CC) $(CFLAGS) -o $@ test_tdma_schedule.c
@@ -238,7 +254,6 @@ $(BINDIR)/test_pull_mac: test_pull_mac.c ../queen/pull_mac.h ../common/silken_sh
 
 # [L1 QATT] Queen-attestation конверт — Monocypher (pinned submodule) ↔ OpenSSL
 # parity + end-to-end збірка/розбір; golden-KAT дзеркалиться у RSpec.
-MONOCYPHER_SRC = ../extern/monocypher/src
 $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
                              ../common/reset_cause.h \
                              $(MONOCYPHER_SRC)/monocypher.c \
@@ -322,7 +337,7 @@ $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selfte
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_sym_selftest.c $(OPENSSL_LIBS)
 
 clean:
-	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
+	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_ota_seal $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_downlink_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \

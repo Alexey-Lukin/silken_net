@@ -50,7 +50,7 @@ RSpec.describe "Single tree end-to-end flow" do
 
   # ⚠️ [⚖️ 2026-07-30] Назва «standalone installation» БІЛЬШЕ НЕ описує продуктовий
   # сценарій: одиноке дерево (B2C) отримує ВЛАСНИЙ кластер із одного дерева, а не NULL —
-  # інакше воно не провіжниться взагалі (`K_ota` деривується з `cluster_id`). Блок
+  # інакше воно не провіжниться взагалі (ключ печатки OTA деривується з `cluster_id`). Блок
   # лишається регресійним захистом nil-гардів на ще-nullable колонці; читати його як
   # модель B2C не можна.
   describe "clusterless tree (nil-guard regression, NOT the B2C model)" do

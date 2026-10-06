@@ -933,8 +933,8 @@ TEST(test_ota_total_chunks_zero_rejected) {
      * `>= ota_total_chunks=0` fires immediately → return 3 (complete)
      * with zero data — which is wrong. Test pins the current behaviour
      * for regression detection. Production code path: such a packet
-     * would never pass HMAC trailer dual-gate (FW.23) since OTA total
-     * chunks are signed in HMAC tag — defence-in-depth. */
+     * would never pass the seal dual-gate (FW.23) since OTA total
+     * chunks are part of the Ed25519-signed message — defence-in-depth. */
     OTA_Init();
     uint8_t pkt[16] = {0x99, 0x00, 0x00, 0x00, 0x00, 0xAA, 0,0,0,0,0,0,0,0,0,0};
     /* Production OTA_Process_Chunk sets ota_total_chunks=0, increments
@@ -2745,81 +2745,17 @@ TEST(test_rereq_silent_counter_saturates_no_wrap) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 15. FW.23 OTA HMAC trailer — wire format + dual-gate verification
- * ════════════════════════════════════════════════════════════════════ */
-#define S_HMAC_TRAILER_MARKER       0x9B
-#define S_HMAC_TRAILER_HEADER_SIZE  5
-#define S_HMAC_TRAILER_SEG_BYTES    11
-#define S_HMAC_TAG_BYTES            32
-#define S_HMAC_TRAILER_TOTAL_SEGS   3
-#define S_HMAC_VERSION_SEG_IDX      4
-#define S_OTA_TRAILER_TOTAL_CHUNKS  4
-#define S_OTA_TRAILER_ALL_RECEIVED  0x0Fu
-#define S_OTA_RITE_MAGIC            0x45544952u  /* "RITE" little-endian */
+ * 15. FW.23 OTA seal — wire format + Ed25519 verification (⚖️ 2026-10-05/06)
+ * ════════════════════════════════════════════════════════════════════
+ * Справжній спільний код, не дзеркало (скіл firmware #19): Ota_Seal_Parse_Chunk
+ * (ota_seal_wire.h) і Ota_Seal_Verify / Ota_Seal_Try_Finalize (ota_seal.h) — ті самі
+ * функції, що кличе soldier/main.c. Підпис у тестах — crypto_ed25519_sign Monocypher'а
+ * (RFC 8032, детермінований); паритет із Ruby-пакувальником і OpenSSL — test_ota_seal.c.
+ */
+#include "../common/ota_seal.h"
 
-/* Pure-logic mirror of Parse_HMAC_Trailer_Chunk (in soldier/main.c).
- * [FW.23] seg 1..3 → tag; seg 4 → version_id (BE bytes [5..8]). */
-static int Test_Parse_HMAC_Trailer_Chunk(const uint8_t* chunk, uint16_t chunk_size,
-                                          uint8_t tag_out[S_HMAC_TAG_BYTES],
-                                          uint32_t* version_out,
-                                          uint8_t* segments_received_inout)
-{
-    if (chunk == NULL || tag_out == NULL || version_out == NULL ||
-        segments_received_inout == NULL)                                    return -1;
-    if (chunk_size < S_HMAC_TRAILER_HEADER_SIZE + S_HMAC_TRAILER_SEG_BYTES)  return -1;
-    if (chunk[0] != S_HMAC_TRAILER_MARKER)                                   return 0;
-
-    uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
-    if (seg_idx < 1 || seg_idx > S_OTA_TRAILER_TOTAL_CHUNKS)                 return -1;
-
-    if (seg_idx == S_HMAC_VERSION_SEG_IDX) {
-        *version_out = ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE]     << 24) |
-                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 1] << 16) |
-                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 2] <<  8) |
-                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 3]);
-        *segments_received_inout |= (uint8_t)(1u << (S_HMAC_VERSION_SEG_IDX - 1));
-        return 1;
-    }
-
-    uint8_t base = (uint8_t)((seg_idx - 1) * S_HMAC_TRAILER_SEG_BYTES);
-    uint8_t copy_len = S_HMAC_TRAILER_SEG_BYTES;
-    if (seg_idx == S_HMAC_TRAILER_TOTAL_SEGS) {
-        copy_len = (uint8_t)(S_HMAC_TAG_BYTES - base);
-    }
-    memcpy(&tag_out[base], &chunk[S_HMAC_TRAILER_HEADER_SIZE], copy_len);
-    *segments_received_inout |= (uint8_t)(1u << (seg_idx - 1));
-    return 1;
-}
-
-/* Constant-time compare — same as Hmac_Constant_Time_Compare. */
-static int Test_HMAC_CT_Compare(const uint8_t* a, const uint8_t* b, size_t len)
-{
-    if (a == NULL || b == NULL) return 1;
-    uint8_t diff = 0;
-    for (size_t i = 0; i < len; i++) diff |= (uint8_t)(a[i] ^ b[i]);
-    return (int)diff;
-}
-
-/* Dual-gate logic mirror of OTA_Verify_Dual_Gate. */
-static int Test_OTA_Verify_Dual_Gate(const uint8_t* bytecode, uint16_t bc_size,
-                                       const uint8_t expected[S_HMAC_TAG_BYTES],
-                                       const uint8_t received[S_HMAC_TAG_BYTES])
-{
-    if (bytecode == NULL || expected == NULL || received == NULL) return 0;
-    if (bc_size < 4)                                              return 0;
-
-    uint32_t magic = ((uint32_t)bytecode[0])       |
-                     ((uint32_t)bytecode[1] <<  8) |
-                     ((uint32_t)bytecode[2] << 16) |
-                     ((uint32_t)bytecode[3] << 24);
-    if (magic != S_OTA_RITE_MAGIC)                                return 0;
-
-    if (Test_HMAC_CT_Compare(expected, received, S_HMAC_TAG_BYTES) != 0) return 0;
-    return 1;
-}
-
-/* CRC32 (ISO 3309 / zlib) — mirror of the firmware loop, to forge valid OTA
- * stream tails for the finalize tests. */
+/* CRC32 (ISO 3309 / zlib) — незалежний від прошивки розрахунок, щоб кувати валідні
+ * CRC-хвости OTA-потоку для тестів фіналізації (печатку ловить окрема брама). */
 static uint32_t test_crc32_iso3309(const uint8_t* data, uint16_t len)
 {
     uint32_t crc = 0xFFFFFFFFu;
@@ -2832,212 +2768,142 @@ static uint32_t test_crc32_iso3309(const uint8_t* data, uint16_t len)
     return ~crc;
 }
 
-/* [FW.23] Verdict mirror of OTA_Try_Finalize. Crypto is the REAL shared
- * Silken_Hmac_Sha256_Concat (silken_sha256.h via lorenz_seed.h) — the security
- * bytes are tested for real; only the WAIT/APPLY/REJECT glue is mirrored. */
-typedef enum { S_OTA_WAIT = 0, S_OTA_APPLY, S_OTA_REJECT } STestOtaVerdict;
-
-static STestOtaVerdict Test_OTA_Try_Finalize(const uint8_t* buf, uint16_t bytes_received,
-                                             uint16_t chunks_received, uint16_t total_chunks,
-                                             uint8_t segments_received,
-                                             const uint8_t* k_ota, uint8_t k_ota_valid,
-                                             uint32_t version_id,
-                                             const uint8_t received_tag[S_HMAC_TAG_BYTES],
-                                             uint16_t* data_len_out)
+/* Детермінована тестова пара ключів «кластера» (seed не секретний). */
+static void seal_test_keypair(uint8_t seed_byte, uint8_t sk[64], uint8_t pk[32])
 {
-    if (buf == NULL || received_tag == NULL || data_len_out == NULL) return S_OTA_REJECT;
-    if (total_chunks == 0 || chunks_received < total_chunks)         return S_OTA_WAIT;
-    if (segments_received != S_OTA_TRAILER_ALL_RECEIVED)             return S_OTA_WAIT;
-    if (bytes_received <= 4)                                         return S_OTA_REJECT;
-
-    uint16_t data_len = (uint16_t)(bytes_received - 4u);
-    *data_len_out = data_len;
-
-    uint32_t expected_crc = ((uint32_t)buf[data_len] << 24) |
-                            ((uint32_t)buf[data_len + 1] << 16) |
-                            ((uint32_t)buf[data_len + 2] << 8)  |
-                            (uint32_t)buf[data_len + 3];
-    if (test_crc32_iso3309(buf, data_len) != expected_crc)          return S_OTA_REJECT;
-    if (!k_ota_valid)                                               return S_OTA_REJECT;
-
-    uint8_t suffix[6];
-    suffix[0] = (uint8_t)(version_id >> 24);
-    suffix[1] = (uint8_t)(version_id >> 16);
-    suffix[2] = (uint8_t)(version_id >> 8);
-    suffix[3] = (uint8_t)(version_id & 0xFFu);
-    suffix[4] = (uint8_t)(total_chunks >> 8);
-    suffix[5] = (uint8_t)(total_chunks & 0xFFu);
-
-    uint8_t expected_hmac[S_HMAC_TAG_BYTES];
-    Silken_Hmac_Sha256_Concat(k_ota, 32u, buf, data_len, suffix, sizeof(suffix), expected_hmac);
-
-    if (Test_OTA_Verify_Dual_Gate(buf, data_len, expected_hmac, received_tag) != 1) {
-        return S_OTA_REJECT;
-    }
-    return S_OTA_APPLY;
+    uint8_t seed[32];
+    for (int i = 0; i < 32; i++) seed[i] = (uint8_t)(seed_byte + i);
+    crypto_ed25519_key_pair(sk, pk, seed); /* Monocypher витирає seed */
 }
 
-/* Helper: build one of 3 backend HMAC tag chunks (16-byte plaintext block).
- * seg_idx ∈ {1,2,3}. Caller passes 32-byte tag; this packs segment.            */
-static void compose_hmac_trailer_chunk(uint8_t seg_idx, uint16_t total_chunks,
-                                        const uint8_t tag[S_HMAC_TAG_BYTES],
-                                        uint8_t out[16])
+/* Один 16-байтний трейлер-блок — як OtaPackagerService.build_seal_trailer_chunks. */
+static void compose_seal_chunk(uint16_t seg, uint16_t total, const uint8_t sig[OTA_SEAL_SIG_BYTES],
+                               uint32_t version, uint8_t out[16])
 {
     memset(out, 0, 16);
-    out[0] = S_HMAC_TRAILER_MARKER;
-    out[1] = (uint8_t)(seg_idx >> 8);
-    out[2] = (uint8_t)(seg_idx & 0xFFu);
-    out[3] = (uint8_t)(total_chunks >> 8);
-    out[4] = (uint8_t)(total_chunks & 0xFFu);
-
-    uint8_t base = (uint8_t)((seg_idx - 1) * S_HMAC_TRAILER_SEG_BYTES);
-    uint8_t copy_len = S_HMAC_TRAILER_SEG_BYTES;
-    if (seg_idx == S_HMAC_TRAILER_TOTAL_SEGS) {
-        copy_len = (uint8_t)(S_HMAC_TAG_BYTES - base);
+    out[0] = OTA_SEAL_MARKER;
+    out[1] = (uint8_t)(seg >> 8);   out[2] = (uint8_t)seg;
+    out[3] = (uint8_t)(total >> 8); out[4] = (uint8_t)total;
+    if (seg == OTA_SEAL_VERSION_SEG_IDX) {
+        out[5] = (uint8_t)(version >> 24); out[6] = (uint8_t)(version >> 16);
+        out[7] = (uint8_t)(version >> 8);  out[8] = (uint8_t)version;
+        return;
     }
-    memcpy(&out[S_HMAC_TRAILER_HEADER_SIZE], &tag[base], copy_len);
+    uint8_t base = (uint8_t)((seg - 1u) * OTA_SEAL_SEG_BYTES);
+    uint8_t len  = (seg == OTA_SEAL_SIG_SEGS) ? (uint8_t)(OTA_SEAL_SIG_BYTES - base) : (uint8_t)OTA_SEAL_SEG_BYTES;
+    memcpy(&out[5], &sig[base], len);
 }
 
-/* [FW.23] Helper: build the seg-4 version chunk (mirror of backend layout). */
-static void compose_version_chunk(uint16_t total_chunks, uint32_t version_id,
-                                   uint8_t out[16])
+/* Підпис тіла ‖ version_be ‖ total_be — як OtaPackagerService.compute_seal. */
+static void seal_body(const uint8_t sk[64], const uint8_t *body, uint16_t body_len,
+                      uint32_t version, uint16_t total, uint8_t sig[OTA_SEAL_SIG_BYTES])
 {
-    memset(out, 0, 16);
-    out[0] = S_HMAC_TRAILER_MARKER;
-    out[1] = (uint8_t)(S_HMAC_VERSION_SEG_IDX >> 8);
-    out[2] = (uint8_t)(S_HMAC_VERSION_SEG_IDX & 0xFFu);
-    out[3] = (uint8_t)(total_chunks >> 8);
-    out[4] = (uint8_t)(total_chunks & 0xFFu);
-    out[S_HMAC_TRAILER_HEADER_SIZE + 0] = (uint8_t)(version_id >> 24);
-    out[S_HMAC_TRAILER_HEADER_SIZE + 1] = (uint8_t)(version_id >> 16);
-    out[S_HMAC_TRAILER_HEADER_SIZE + 2] = (uint8_t)(version_id >> 8);
-    out[S_HMAC_TRAILER_HEADER_SIZE + 3] = (uint8_t)(version_id & 0xFFu);
+    uint8_t msg[OTA_BUFFER_SIZE + OTA_SEAL_SUFFIX_BYTES];
+    memcpy(msg, body, body_len);
+    msg[body_len + 0] = (uint8_t)(version >> 24); msg[body_len + 1] = (uint8_t)(version >> 16);
+    msg[body_len + 2] = (uint8_t)(version >> 8);  msg[body_len + 3] = (uint8_t)version;
+    msg[body_len + 4] = (uint8_t)(total >> 8);    msg[body_len + 5] = (uint8_t)total;
+    crypto_ed25519_sign(sig, sk, msg, (size_t)body_len + OTA_SEAL_SUFFIX_BYTES);
 }
 
-TEST(test_hmac_trailer_three_chunks_assemble_full_tag) {
-    uint8_t expected[32];
-    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
+/* OTA-буфер: тіло (magic "RITE" + наповнення) ‖ CRC32 BE; повертає bytes_received. */
+static uint16_t build_ota_image(uint8_t *buf, uint16_t body_len, uint8_t fill)
+{
+    buf[0] = 'R'; buf[1] = 'I'; buf[2] = 'T'; buf[3] = 'E';
+    for (uint16_t i = 4; i < body_len; i++) buf[i] = (uint8_t)(fill + i);
+    uint32_t crc = test_crc32_iso3309(buf, body_len);
+    buf[body_len] = (uint8_t)(crc >> 24); buf[body_len + 1] = (uint8_t)(crc >> 16);
+    buf[body_len + 2] = (uint8_t)(crc >> 8); buf[body_len + 3] = (uint8_t)crc;
+    return (uint16_t)(body_len + 4u);
+}
 
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-
-    for (uint8_t s = 1; s <= 3; s++) {
-        uint8_t chunk[16];
-        compose_hmac_trailer_chunk(s, 5, expected, chunk);
-        int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-        ASSERT_EQ(rc, 1);
+/* Повний трейлер у пам'ять Солдата через справжній парсер; повертає маску сегментів. */
+static uint8_t feed_trailer(const uint8_t sig[OTA_SEAL_SIG_BYTES], uint16_t total, uint32_t version,
+                            uint8_t recv[OTA_SEAL_SIG_BYTES], uint32_t *ver_out)
+{
+    uint8_t segs = 0, chunk[16];
+    for (uint16_t seg = 1; seg <= OTA_SEAL_TRAILER_CHUNKS; seg++) {
+        compose_seal_chunk(seg, total, sig, version, chunk);
+        if (Ota_Seal_Parse_Chunk(chunk, 16, recv, ver_out, &segs) != 1) return 0;
     }
-    ASSERT_EQ(segs, 0x07);
-    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+    return segs;
 }
 
-TEST(test_hmac_trailer_out_of_order_chunks) {
-    /* seg_idx 3, then 1, then 2 — final tag still matches expected. */
-    uint8_t expected[32];
-    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xC0 + i);
-
-    uint8_t recv[32] = {0};
+TEST(test_seal_trailer_six_chunks_assemble_full_signature) {
+    uint8_t sig[64]; for (int i = 0; i < 64; i++) sig[i] = (uint8_t)(0xA0 + i);
+    uint8_t recv[64] = {0}, chunk[16], segs = 0;
     uint32_t ver = 0;
-    uint8_t segs = 0;
-    uint8_t chunk[16];
-
-    compose_hmac_trailer_chunk(3, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    compose_hmac_trailer_chunk(2, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-
-    ASSERT_EQ(segs, 0x07);
-    ASSERT_EQ(memcmp(recv, expected, 32), 0);
-}
-
-TEST(test_hmac_trailer_version_chunk_parses) {
-    /* [FW.23] seg 4 carries version_id (BE) and sets bit 3. */
-    uint8_t chunk[16];
-    compose_version_chunk(5, 0x01020304u, chunk);
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    ASSERT_EQ(rc, 1);
-    ASSERT_EQ(ver, 0x01020304u);
-    ASSERT_EQ(segs, 0x08);  /* bit 3 only */
-}
-
-TEST(test_hmac_trailer_all_four_complete) {
-    /* [FW.23] 3 tag chunks + version → 0x0F, tag + version both present. */
-    uint8_t expected[32];
-    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0x40 + i);
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-    uint8_t chunk[16];
-
-    for (uint8_t s = 1; s <= 3; s++) {
-        compose_hmac_trailer_chunk(s, 9, expected, chunk);
-        Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
+    for (uint16_t seg = 1; seg <= OTA_SEAL_SIG_SEGS; seg++) {
+        compose_seal_chunk(seg, 5, sig, 0, chunk);
+        ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), 1);
     }
-    compose_version_chunk(9, 0xDEADBEEFu, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-
-    ASSERT_EQ(segs, S_OTA_TRAILER_ALL_RECEIVED);
-    ASSERT_EQ(memcmp(recv, expected, 32), 0);
-    ASSERT_EQ(ver, 0xDEADBEEFu);
+    ASSERT_EQ(segs, 0x3F);
+    ASSERT_EQ(memcmp(recv, sig, 64), 0);
 }
 
-TEST(test_hmac_trailer_rejects_wrong_marker) {
-    uint8_t chunk[16] = {0};
-    chunk[0] = 0x99;  /* OTA bytecode marker, not 0x9B */
-    uint8_t recv[32] = {0};
+TEST(test_seal_trailer_out_of_order_completes_with_version) {
+    static const uint16_t order[7] = { 7, 3, 1, 6, 2, 5, 4 };
+    uint8_t sig[64]; for (int i = 0; i < 64; i++) sig[i] = (uint8_t)(0x40 + i);
+    uint8_t recv[64] = {0}, chunk[16], segs = 0;
     uint32_t ver = 0;
-    uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    ASSERT_EQ(rc, 0);  /* not our marker */
+    for (int i = 0; i < 7; i++) {
+        compose_seal_chunk(order[i], 9, sig, 0xCAFE0042u, chunk);
+        ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), 1);
+    }
+    ASSERT_EQ(segs, OTA_SEAL_ALL_RECEIVED);
+    ASSERT_EQ(ver, 0xCAFE0042u);
+    ASSERT_EQ(memcmp(recv, sig, 64), 0);
+}
+
+/* Сегмент 6 несе лише 9 байтів (64 − 55): PAD-байти 9..10 не пишуться за межу підпису. */
+TEST(test_seal_trailer_last_segment_writes_only_nine_bytes) {
+    uint8_t sig[64]; for (int i = 0; i < 64; i++) sig[i] = (uint8_t)(0x10 + i);
+    uint8_t guarded[64 + 4];
+    memset(guarded, 0xEE, sizeof(guarded));
+    uint8_t chunk[16], segs = 0;
+    uint32_t ver = 0;
+    compose_seal_chunk(6, 5, sig, 0, chunk);
+    chunk[14] = 0x5A; chunk[15] = 0x5A; /* шум у PAD не мусить доїхати нікуди */
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, guarded, &ver, &segs), 1);
+    ASSERT_EQ(memcmp(&guarded[55], &sig[55], 9), 0);
+    ASSERT_EQ(guarded[64], 0xEE);
+    ASSERT_EQ(guarded[65], 0xEE);
+}
+
+TEST(test_seal_trailer_rejects_malformed_chunks) {
+    uint8_t sig[64] = {0}, recv[64] = {0}, chunk[16], segs = 0;
+    uint32_t ver = 0;
+    compose_seal_chunk(1, 5, sig, 0, chunk);
+    chunk[0] = 0x99;                                           /* чужий маркер */
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), 0);
+    compose_seal_chunk(1, 5, sig, 0, chunk);
+    chunk[2] = 0;                                              /* seg_idx 0 */
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), -1);
+    chunk[2] = 8;                                              /* seg_idx 8 > 7 */
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), -1);
+    compose_seal_chunk(1, 5, sig, 0, chunk);
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 15, recv, &ver, &segs), -1); /* короткий */
     ASSERT_EQ(segs, 0);
 }
 
-TEST(test_hmac_trailer_rejects_seg_idx_zero) {
-    uint8_t chunk[16] = {0};
-    chunk[0] = S_HMAC_TRAILER_MARKER;
-    chunk[1] = 0; chunk[2] = 0;  /* seg_idx = 0 invalid */
-    uint8_t recv[32] = {0};
+TEST(test_seal_trailer_duplicate_segment_is_idempotent) {
+    uint8_t sig[64]; for (int i = 0; i < 64; i++) sig[i] = (uint8_t)(0xB0 + i);
+    uint8_t recv[64] = {0}, chunk[16], segs = 0;
     uint32_t ver = 0;
-    uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    ASSERT_EQ(rc, -1);
+    compose_seal_chunk(1, 5, sig, 0, chunk);
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), 1);
+    ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, recv, &ver, &segs), 1);
+    ASSERT_EQ(segs, 0x01);
+    ASSERT_EQ(recv[0], 0xB0);
+    ASSERT_EQ(recv[10], 0xBA);
 }
 
-TEST(test_hmac_trailer_rejects_seg_idx_above_4) {
-    /* [FW.23] seg 4 is now valid (version); seg 5 must still be rejected. */
-    uint8_t chunk[16] = {0};
-    chunk[0] = S_HMAC_TRAILER_MARKER;
-    chunk[1] = 0; chunk[2] = 5;  /* seg_idx = 5 invalid */
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
-    ASSERT_EQ(rc, -1);
-}
-
-TEST(test_hmac_trailer_rejects_undersized_chunk) {
-    uint8_t chunk[8] = {0};
-    chunk[0] = S_HMAC_TRAILER_MARKER;
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 8, recv, &ver, &segs);
-    ASSERT_EQ(rc, -1);
-}
-
-/* [FW.23] Silken_Hmac_Sha256_Concat(a,b) must equal one-shot HMAC over a‖b.
- * The one-shot is byte-parity vs OpenSSL (test_seed_derivation), so by
- * transitivity _Concat matches the backend OtaPackagerService.compute_hmac_tag. */
+/* Silken_Hmac_Sha256_Concat(a,b) = одноразовий HMAC над a‖b. Печатка OTA пішла на
+ * Ed25519, але хелпер живий — ним деривує IV Королева (queen/coap_iv.h). */
 TEST(test_hmac_concat_equals_oneshot) {
     uint8_t key[32];   for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0x10 + i);
     uint8_t body[40];  for (int i = 0; i < 40; i++) body[i] = (uint8_t)(0x52 + i);
-    uint8_t suffix[6] = { 0x00, 0x00, 0x00, 0x2A, 0x00, 0x09 };  /* ver=42, total=9 */
+    uint8_t suffix[6] = { 0x00, 0x00, 0x00, 0x2A, 0x00, 0x09 };
 
     uint8_t joined[46];
     memcpy(joined, body, 40);
@@ -3048,232 +2914,124 @@ TEST(test_hmac_concat_equals_oneshot) {
     Silken_Hmac_Sha256(key, 32, joined, 46, via_oneshot);
     ASSERT_EQ(memcmp(via_concat, via_oneshot, 32), 0);
 
-    /* b_len==0 path equals plain HMAC over a. */
     uint8_t via_concat_a[32], via_oneshot_a[32];
     Silken_Hmac_Sha256_Concat(key, 32, body, 40, NULL, 0, via_concat_a);
     Silken_Hmac_Sha256(key, 32, body, 40, via_oneshot_a);
     ASSERT_EQ(memcmp(via_concat_a, via_oneshot_a, 32), 0);
 }
 
-/* [FW.23] Build a valid signed OTA image (RITE magic + CRC32 tail + real HMAC),
- * then drive OTA_Try_Finalize through APPLY / WAIT / REJECT paths. */
-static uint16_t forge_signed_ota(uint8_t* buf, const uint8_t* key, uint32_t version_id,
-                                 uint16_t total_chunks, uint8_t tag_out[32])
+/* Спільна обвʼязка: справжній образ, справжня печатка ключем кластера, повний трейлер. */
+typedef struct {
+    uint8_t  buf[OTA_BUFFER_SIZE];
+    uint16_t bytes;
+    uint8_t  sk[64], pk[32], sig[64], recv[64];
+    uint32_t ver;
+    uint8_t  segs;
+} SealFixture;
+
+static void seal_fixture(SealFixture *f, uint32_t version, uint16_t total)
 {
-    /* Body: RITE magic + filler. */
-    uint16_t body_len = 36;
-    buf[0] = 0x52; buf[1] = 0x49; buf[2] = 0x54; buf[3] = 0x45;  /* "RITE" */
-    for (uint16_t i = 4; i < body_len; i++) buf[i] = (uint8_t)(i * 7u + 1u);
-
-    /* HMAC over body ‖ version_be ‖ total_be (matches backend + Soldier). */
-    uint8_t suffix[6] = {
-        (uint8_t)(version_id >> 24), (uint8_t)(version_id >> 16),
-        (uint8_t)(version_id >> 8),  (uint8_t)(version_id & 0xFFu),
-        (uint8_t)(total_chunks >> 8), (uint8_t)(total_chunks & 0xFFu)
-    };
-    Silken_Hmac_Sha256_Concat(key, 32, buf, body_len, suffix, 6, tag_out);
-
-    /* Append CRC32 tail → assembled stream the Soldier holds. */
-    uint32_t crc = test_crc32_iso3309(buf, body_len);
-    buf[body_len + 0] = (uint8_t)(crc >> 24);
-    buf[body_len + 1] = (uint8_t)(crc >> 16);
-    buf[body_len + 2] = (uint8_t)(crc >> 8);
-    buf[body_len + 3] = (uint8_t)(crc & 0xFFu);
-    return (uint16_t)(body_len + 4);  /* bytes_received */
+    memset(f, 0, sizeof(*f));
+    seal_test_keypair(0x21, f->sk, f->pk);
+    f->bytes = build_ota_image(f->buf, 60, 0x30);
+    seal_body(f->sk, f->buf, (uint16_t)(f->bytes - 4u), version, total, f->sig);
+    f->segs = feed_trailer(f->sig, total, version, f->recv, &f->ver);
 }
 
-TEST(test_ota_finalize_apply_real_hmac) {
-    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
-    uint8_t buf[64], tag[32];
-    uint16_t total = 4;
-    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
-
-    uint16_t dl = 0;
-    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
-                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
-                                              0x12345678u, tag, &dl);
-    ASSERT_EQ(v, S_OTA_APPLY);
-    ASSERT_EQ(dl, 36);
+static OtaFinalizeVerdict finalize(const SealFixture *f, uint16_t total, uint8_t pk_valid)
+{
+    uint16_t data_len = 0;
+    return Ota_Seal_Try_Finalize(f->buf, f->bytes, total, total, f->segs, f->pk, pk_valid,
+                                 f->ver, f->recv, &data_len);
 }
 
-TEST(test_ota_finalize_wait_without_trailer) {
-    /* Body assembled, but the 4 trailer chunks not all in → WAIT (no reset). */
-    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
-    uint8_t buf[64], tag[32];
-    uint16_t total = 4;
-    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
-
-    uint16_t dl = 0;
-    /* only 0x07 (tag) received, version (bit 3) still missing */
-    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
-                                              0x07u, key, 1, 0x12345678u, tag, &dl);
-    ASSERT_EQ(v, S_OTA_WAIT);
+TEST(test_ota_finalize_apply_real_seal) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    ASSERT_EQ(f.segs, OTA_SEAL_ALL_RECEIVED);
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_APPLY);
 }
 
-TEST(test_ota_finalize_reject_tampered_body) {
-    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
-    uint8_t buf[64], tag[32];
-    uint16_t total = 4;
-    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
-
-    /* Attacker flips a body byte AND recomputes CRC32 (CRC is not crypto). */
-    buf[10] ^= 0xFF;
-    uint16_t data_len = (uint16_t)(bytes_received - 4);
-    uint32_t crc = test_crc32_iso3309(buf, data_len);
-    buf[data_len + 0] = (uint8_t)(crc >> 24);
-    buf[data_len + 1] = (uint8_t)(crc >> 16);
-    buf[data_len + 2] = (uint8_t)(crc >> 8);
-    buf[data_len + 3] = (uint8_t)(crc & 0xFFu);
-
-    uint16_t dl = 0;
-    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
-                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
-                                              0x12345678u, tag, &dl);
-    ASSERT_EQ(v, S_OTA_REJECT);  /* valid CRC, but HMAC catches the tamper */
+TEST(test_ota_finalize_waits_for_body_and_every_trailer_chunk) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    uint16_t data_len = 0;
+    ASSERT_EQ(Ota_Seal_Try_Finalize(f.buf, f.bytes, 6, 7, f.segs, f.pk, 1, f.ver, f.recv, &data_len),
+              OTA_FINALIZE_WAIT);                               /* тіло ще не зібрано */
+    ASSERT_EQ(Ota_Seal_Try_Finalize(f.buf, f.bytes, 7, 7, 0x3F, f.pk, 1, f.ver, f.recv, &data_len),
+              OTA_FINALIZE_WAIT);                               /* нема версії */
+    ASSERT_EQ(Ota_Seal_Try_Finalize(f.buf, f.bytes, 7, 7, 0x5F, f.pk, 1, f.ver, f.recv, &data_len),
+              OTA_FINALIZE_WAIT);                               /* нема сегмента 6 */
 }
 
-TEST(test_ota_finalize_reject_version_mismatch) {
-    /* Replay: same image+tag, but Soldier was told a different version → reject. */
-    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
-    uint8_t buf[64], tag[32];
-    uint16_t total = 4;
-    uint16_t bytes_received = forge_signed_ota(buf, key, 0x00000007u, total, tag);
-
-    uint16_t dl = 0;
-    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
-                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
-                                              0x00000008u /* wrong */, tag, &dl);
-    ASSERT_EQ(v, S_OTA_REJECT);
+/* «Чужий підпис → REJECT» — пін, яким присуд FW.23 обіцяв закрити реалізацію:
+ * контракт, підписаний будь-яким іншим ключем, вузол кластера не застосовує. */
+TEST(test_ota_finalize_rejects_a_foreign_cluster_seal) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    uint8_t foreign_sk[64], foreign_pk[32];
+    seal_test_keypair(0x77, foreign_sk, foreign_pk);
+    seal_body(foreign_sk, f.buf, (uint16_t)(f.bytes - 4u), 42, 7, f.sig);
+    f.segs = feed_trailer(f.sig, 7, 42, f.recv, &f.ver);
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_REJECT);
 }
 
-TEST(test_ota_finalize_reject_no_key) {
-    /* Without K_ota provisioned (valid=0) no OTA is ever applied (fail-safe). */
-    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
-    uint8_t buf[64], tag[32];
-    uint16_t total = 4;
-    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
-
-    uint16_t dl = 0;
-    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
-                                              S_OTA_TRAILER_ALL_RECEIVED, key, 0 /* no key */,
-                                              0x12345678u, tag, &dl);
-    ASSERT_EQ(v, S_OTA_REJECT);
+TEST(test_ota_finalize_rejects_tampered_body_with_valid_crc) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    uint16_t body_len = (uint16_t)(f.bytes - 4u);
+    f.buf[10] ^= 0x01;
+    uint32_t crc = test_crc32_iso3309(f.buf, body_len);       /* CRC перераховано — ловить лише печатка */
+    f.buf[body_len] = (uint8_t)(crc >> 24); f.buf[body_len + 1] = (uint8_t)(crc >> 16);
+    f.buf[body_len + 2] = (uint8_t)(crc >> 8); f.buf[body_len + 3] = (uint8_t)crc;
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_REJECT);
 }
 
-TEST(test_dual_gate_both_pass_returns_1) {
-    uint8_t bytecode[5] = {0x52, 0x49, 0x54, 0x45, 0xCC};  /* "RITE" + payload */
-    uint8_t expected[32]; uint8_t received[32];
-    for (int i = 0; i < 32; i++) { expected[i] = (uint8_t)i; received[i] = (uint8_t)i; }
-    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 5, expected, received), 1);
+/* Версія й кількість чанків — у підписаному повідомленні: replay старої версії під
+ * новим номером і відсічений хвіст ламають печатку. */
+TEST(test_ota_finalize_rejects_relabelled_version_and_truncation) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    f.ver = 43;
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_REJECT);
+    seal_fixture(&f, 42, 7);
+    ASSERT_EQ(finalize(&f, 6, 1), OTA_FINALIZE_REJECT);
 }
 
-TEST(test_dual_gate_magic_fail_returns_0) {
-    uint8_t bytecode[5] = {0x00, 0x00, 0x00, 0x00, 0xCC};  /* No magic */
-    uint8_t expected[32] = {0}; uint8_t received[32] = {0};
-    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 5, expected, received), 0);
+TEST(test_ota_finalize_rejects_without_pubkey_bad_magic_or_bad_crc) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    ASSERT_EQ(finalize(&f, 7, 0), OTA_FINALIZE_REJECT);       /* KPUB не прошито — fail-closed */
+    seal_fixture(&f, 42, 7);
+    f.buf[f.bytes - 1] ^= 0xFF;
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_REJECT);       /* CRC */
+    SealFixture g;
+    seal_fixture(&g, 42, 7);
+    g.buf[0] = 'X';                                            /* magic, CRC і печатка — над новим тілом */
+    uint16_t body_len = (uint16_t)(g.bytes - 4u);
+    uint32_t crc = test_crc32_iso3309(g.buf, body_len);
+    g.buf[body_len] = (uint8_t)(crc >> 24); g.buf[body_len + 1] = (uint8_t)(crc >> 16);
+    g.buf[body_len + 2] = (uint8_t)(crc >> 8); g.buf[body_len + 3] = (uint8_t)crc;
+    seal_body(g.sk, g.buf, body_len, 42, 7, g.sig);
+    g.segs = feed_trailer(g.sig, 7, 42, g.recv, &g.ver);
+    ASSERT_EQ(finalize(&g, 7, 1), OTA_FINALIZE_REJECT);
 }
 
-TEST(test_dual_gate_hmac_fail_returns_0) {
-    uint8_t bytecode[4] = {0x52, 0x49, 0x54, 0x45};  /* magic ok */
-    uint8_t expected[32]; uint8_t received[32];
-    for (int i = 0; i < 32; i++) { expected[i] = (uint8_t)i; received[i] = (uint8_t)i; }
-    received[15] ^= 0x01;  /* one-bit flip in middle of tag */
-    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 4, expected, received), 0);
-}
-
-TEST(test_dual_gate_short_bytecode_returns_0) {
-    /* < 4 bytes can't even hold magic */
-    uint8_t bytecode[3] = {0x52, 0x49, 0x54};
-    uint8_t expected[32] = {0}; uint8_t received[32] = {0};
-    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 3, expected, received), 0);
-}
-
-TEST(test_dual_gate_constant_time_compare_zero_diff) {
-    /* Identical inputs → 0 (equal) */
-    uint8_t a[32]; for (int i = 0; i < 32; i++) a[i] = (uint8_t)i;
-    ASSERT_EQ(Test_HMAC_CT_Compare(a, a, 32), 0);
-}
-
-TEST(test_dual_gate_constant_time_compare_first_byte_diff) {
-    uint8_t a[32]; uint8_t b[32];
-    for (int i = 0; i < 32; i++) { a[i] = (uint8_t)i; b[i] = (uint8_t)i; }
-    b[0] ^= 0xFF;
-    ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
-}
-
-TEST(test_dual_gate_constant_time_compare_last_byte_diff) {
-    /* Last-byte difference must be detected — accumulator design. */
-    uint8_t a[32]; uint8_t b[32];
-    for (int i = 0; i < 32; i++) { a[i] = (uint8_t)i; b[i] = (uint8_t)i; }
-    b[31] ^= 0x01;
-    ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
-}
-
-/* ─── [FW.27 + FW.23 follow-up: HMAC trailer cross-cycle, 2026-05-03] ───
- * Сторожовий пес печатки переживає STOP2: bitmask `ota_hmac_segments_received`
- * та accumulator `received_hmac_tag[32]` живуть у SRAM, що зберігається
- * у STOP2 (Lorenz state в RTC, але trailer-state у звичайному SRAM —
- * це теж переживає STOP2 за виключенням повного VBAT-loss).
- *
- * Сценарій: seg_idx=1 приходить → Soldier іде у STOP2 на час між
- * Queen reflex shots → seg_idx=2 приходить пізніше → STOP2 → seg_idx=3.
- * Bitmask має OR-агрегуватися в 0x07 без втрат байтів попередніх сегментів.
- * ─────────────────────────────────────────────────────────────────────── */
-TEST(test_hmac_trailer_state_survives_simulated_stop2_between_segments) {
-    uint8_t expected[32];
-    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
-
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
+/* Чому печатка мусить бути детермінованою: трейлер, зшитий із сегментів двох різних
+ * підписів (перепакування кампанії з випадковим nonce), не проходить — Солдат
+ * відкидає OTA. Ed25519 дає той самий підпис на те саме повідомлення, тож зшиву нема. */
+TEST(test_ota_finalize_rejects_a_trailer_stitched_from_two_seals) {
+    SealFixture f;
+    seal_fixture(&f, 42, 7);
+    uint8_t sk2[64], pk2[32], sig2[64];
+    seal_test_keypair(0x55, sk2, pk2);
+    seal_body(sk2, f.buf, (uint16_t)(f.bytes - 4u), 42, 7, sig2);
     uint8_t chunk[16];
-
-    /* seg 1 arrives */
-    compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
-    ASSERT_EQ(segs, 0x01);
-
-    /* simulated STOP2 — recv[]/segs are SRAM-persistent */
-
-    /* seg 3 arrives (out of order is OK, already proven in
-     * test_hmac_trailer_out_of_order_chunks; here we focus on
-     * cross-cycle stability of the partial state) */
-    compose_hmac_trailer_chunk(3, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
-    ASSERT_EQ(segs, 0x05);  /* bits 0+2 set */
-
-    /* simulated STOP2 again */
-
-    /* seg 2 closes */
-    compose_hmac_trailer_chunk(2, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
-    ASSERT_EQ(segs, 0x07);  /* all 3 tag bits set */
-    ASSERT_EQ(memcmp(recv, expected, 32), 0);
-}
-
-TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
-    /* If Queen retransmits seg=1 for any reason, Soldier MUST accept
-     * (idempotent overwrite) and bitmask remains 0x01 — counter stays
-     * the same. Production behaviour: parser does memcpy + |= mask,
-     * so duplicate same-segment with same payload is byte-stable. */
-    uint8_t expected[32];
-    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xB0 + i);
-
-    uint8_t recv[32] = {0};
-    uint32_t ver = 0;
-    uint8_t segs = 0;
-    uint8_t chunk[16];
-
-    compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
-    ASSERT_EQ(segs, 0x01);
-
-    /* Same segment re-arrives — OK, no double-count, no corruption */
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
-    ASSERT_EQ(segs, 0x01);  /* still just bit 0 */
-    /* Bytes 0..10 of seg 1 area unchanged */
-    ASSERT_EQ(recv[0],  0xB0);
-    ASSERT_EQ(recv[10], 0xBA);
+    for (uint16_t seg = 4; seg <= OTA_SEAL_SIG_SEGS; seg++) { /* сегменти 4..6 — з іншого підпису */
+        compose_seal_chunk(seg, 7, sig2, 42, chunk);
+        ASSERT_EQ(Ota_Seal_Parse_Chunk(chunk, 16, f.recv, &f.ver, &f.segs), 1);
+    }
+    ASSERT_EQ(finalize(&f, 7, 1), OTA_FINALIZE_REJECT);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3679,7 +3437,7 @@ TEST(test_sec21_devenv_body_len) {
  * ════════════════════════════════════════════════════════════════════
  * Golden RBAR/RASR-слова (ARMv7-M PMSA, незалежний розрахунок) + інваріант
  * розкладки: RO-code не сміє накрити жодну сторінку, яку пише HAL_FLASH
- * (KV 122-123 / identity 124 / KOTA+KEYB 125 / contract 126 / UID 127).
+ * (KV 122-123 / identity 124 / KPUB+KEYB 125 / contract 126 / UID 127).
  * Сам trap — bench-only (QEMU не моделює); host стереже МАТЕМАТИКУ.
  */
 TEST(test_sec21_mpu_rbar_golden) {
@@ -5164,30 +4922,20 @@ int main(void)
     RUN(test_rereq_silent_counter_saturates_no_wrap);
     RUN(test_rereq_should_NOT_tick_when_last_tick_zero);
 
-    printf("\n  HMAC Trailer + Dual-Gate (FW.23):\n");
-    RUN(test_hmac_trailer_three_chunks_assemble_full_tag);
-    RUN(test_hmac_trailer_out_of_order_chunks);
-    RUN(test_hmac_trailer_version_chunk_parses);
-    RUN(test_hmac_trailer_all_four_complete);
-    RUN(test_hmac_trailer_rejects_wrong_marker);
-    RUN(test_hmac_trailer_rejects_seg_idx_zero);
-    RUN(test_hmac_trailer_rejects_seg_idx_above_4);
-    RUN(test_hmac_trailer_rejects_undersized_chunk);
-    RUN(test_dual_gate_both_pass_returns_1);
-    RUN(test_dual_gate_magic_fail_returns_0);
-    RUN(test_dual_gate_hmac_fail_returns_0);
-    RUN(test_dual_gate_short_bytecode_returns_0);
-    RUN(test_dual_gate_constant_time_compare_zero_diff);
-    RUN(test_dual_gate_constant_time_compare_first_byte_diff);
-    RUN(test_dual_gate_constant_time_compare_last_byte_diff);
-    RUN(test_hmac_trailer_state_survives_simulated_stop2_between_segments);
-    RUN(test_hmac_trailer_duplicate_segment_overwrites_idempotently);
+    printf("\n  OTA Seal Trailer + Dual-Gate (FW.23):\n");
+    RUN(test_seal_trailer_six_chunks_assemble_full_signature);
+    RUN(test_seal_trailer_out_of_order_completes_with_version);
+    RUN(test_seal_trailer_last_segment_writes_only_nine_bytes);
+    RUN(test_seal_trailer_rejects_malformed_chunks);
+    RUN(test_seal_trailer_duplicate_segment_is_idempotent);
     RUN(test_hmac_concat_equals_oneshot);
-    RUN(test_ota_finalize_apply_real_hmac);
-    RUN(test_ota_finalize_wait_without_trailer);
-    RUN(test_ota_finalize_reject_tampered_body);
-    RUN(test_ota_finalize_reject_version_mismatch);
-    RUN(test_ota_finalize_reject_no_key);
+    RUN(test_ota_finalize_apply_real_seal);
+    RUN(test_ota_finalize_waits_for_body_and_every_trailer_chunk);
+    RUN(test_ota_finalize_rejects_a_foreign_cluster_seal);
+    RUN(test_ota_finalize_rejects_tampered_body_with_valid_crc);
+    RUN(test_ota_finalize_rejects_relabelled_version_and_truncation);
+    RUN(test_ota_finalize_rejects_without_pubkey_bad_magic_or_bad_crc);
+    RUN(test_ota_finalize_rejects_a_trailer_stitched_from_two_seals);
 
     printf("\n  Panic Frame Counter Anti-Replay (SEC.10):\n");
     RUN(test_sec10_dr0_pack_roundtrip);

@@ -19,7 +19,7 @@ class HardwareKeyService
   # [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB):
   # спільний AES-128 кластера для downlink-broadcast Королеви (OTA/beacon/
   # команди — один TX на всіх → один ключ by construction) + uplink 0x55/0x56.
-  # Per-cluster з тієї ж причини, що K_ota (OtaHmacKeyService — broadcast за
+  # Per-cluster з тієї ж причини, що ключ печатки OTA (OtaSealKeyService — broadcast за
   # визначенням; cluster = природна одиниця ізоляції). Соло-домен info-string;
   # ротація = re-provision (FW.17-ратчет цього ключа не торкається).
   # Прошивається: Tree → KEYB-слот (стор. 125), Gateway → її KEYL-слот
@@ -38,8 +38,8 @@ class HardwareKeyService
   # позначені «поточний default до повного code-side rollout». Rollout відбувся:
   # вимір 2026-08-23 дав НУЛЬ споживачів обох — усі сайти вже звуться явно
   # (`COAP_*`/`LORA_*`/`BROADCAST_*`/`IOTEX_*`). Не відбудовувати: голе імʼя
-  # `HKDF_INFO` існує ще й у `OtaHmacKeyService` з ІНШИМ значенням
-  # (`silken-ota-hmac-v1`), тож нова деривація, написана як `info: HKDF_INFO`,
+  # `HKDF_INFO` існує ще й у `OtaSealKeyService` з ІНШИМ значенням
+  # (`silken-ota-ed25519-v1`), тож нова деривація, написана як `info: HKDF_INFO`,
   # мовчки підхопила б те, що опинилось у лексичному скоупі — і при
   # `device_uid`-солі стала б байт-у-байт ключем CoAP-каналу Королеви.
 
@@ -122,7 +122,7 @@ class HardwareKeyService
   end
 
   # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — salt-домен той самий,
-  # що K_ota ("cluster:<id>"), info-string власний. Повертає 32-hex (16 байт).
+  # що ключ печатки OTA ("cluster:<id>"), info-string власний. Повертає 32-hex (16 байт).
   def self.derive_broadcast_key(cluster_id, master_key: nil)
     raise ArgumentError, "cluster_id is required" if cluster_id.blank?
 

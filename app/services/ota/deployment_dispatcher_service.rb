@@ -9,8 +9,8 @@ module Ota
   # superseded (CGNAT-egress inbound-недосяжний).
   #
   # Anti-rollback: firmware.id мусить СТРОГО перевершити clusters.ota_version_hiwater
-  # (Rails-дзеркало Солдатового інваріанта — той самий firmware.id їде в seg-4
-  # HMAC-трейлера і палиться у Flash-KV 0x15 при APPLY, docs/03_06 §4).
+  # (Rails-дзеркало Солдатового інваріанта — той самий firmware.id їде в seg-7
+  # трейлера печатки і палиться у Flash-KV 0x15 при APPLY, docs/03_06 §4).
   # Слот палиться при DISPATCH (свідомо суворіше за Soldier APPLY-time):
   # обірвана кампанія перевипускається НОВИМ записом прошивки, не re-issue.
   class DeploymentDispatcherService
@@ -51,7 +51,7 @@ module Ota
 
     # [FW.60] 16-чанк/8КБ-гейт: manifest дешевий (lazy-packages не
     # матеріалізуються), total_chunks = чисті bytecode-чанки 0x99 —
-    # HMAC-трейлер 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
+    # трейлер печатки 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
     def oversized_rejection
       manifest = OtaPackagerService.prepare(
         @firmware, chunk_size: OtaChunkable::CHUNK_SIZE

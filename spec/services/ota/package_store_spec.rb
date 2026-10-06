@@ -20,12 +20,12 @@ RSpec.describe Ota::PackageStore do
     expect(described_class.read(firmware.id, cluster.id)).to eq(warmed)
     expect(warmed).to eq(OtaPackagerService.prepare(firmware, chunk_size: OtaChunkable::CHUNK_SIZE,
                                                               cluster_id: cluster.id)[:packages].to_a)
-    # HMAC-трейлер під K_ota ІНШОГО кластера — чужий, тож і запис інший.
+    # Печатка ІНШОГО кластера — чужий ключ, тож і запис інший.
     expect(described_class.read(firmware.id, create(:cluster).id)).to be_nil
   end
 
   it "fails loudly in the writer when the process holds no master key" do
-    allow(OtaHmacKeyService).to receive(:fetch_binary_for)
+    allow(OtaSealKeyService).to receive(:signing_key_for)
       .and_raise(SecurityError, "PROVISIONING_MASTER_KEY ENV is required")
 
     expect { described_class.warm!(firmware, cluster.id) }.to raise_error(SecurityError)

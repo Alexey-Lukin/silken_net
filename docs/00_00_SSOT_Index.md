@@ -116,7 +116,7 @@ _Логіка STM32WLE5 (Солдат — CC, Королева — JC): STOP2 / 
 - [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (паркований з 2026-09-29 — пʼєзо з Солдата зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM): INT8 pure-C forward-pass + CMSIS-DSP log-mel — актив без носія на вузлі; класи пилки · тиші · low-freq water-stress proxy — ⛔ НЕ самої кавітації: її AE = ультразвук 25–150 кГц, поза Nyquist-8 цього тракту)
 - [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
 - [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + SE050 Secure Element + Flash Key + RDP + PQC roadmap)
-- [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + per-cluster K_ota/KEYB + Lorenz K_seed SEC.11 + OTA-HMAC FW.23 + factory-ops SEC.3)
+- [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + per-cluster KPUB/KEYB + Lorenz K_seed SEC.11 + OTA-печатка Ed25519 FW.23 + factory-ops SEC.3)
 
 ## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 

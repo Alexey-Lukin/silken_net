@@ -272,10 +272,10 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(described_class.derive_broadcast_key(cluster.id)).not_to eq(session_key)
     end
 
-    it "is domain-separated from K_ota (same salt domain, different info)" do
-      k_ota = OtaHmacKeyService.fetch_for(cluster.id)
-      keyb  = described_class.derive_broadcast_key(cluster.id)
-      expect(k_ota).not_to start_with(keyb)
+    it "is domain-separated from the OTA seal key (same salt domain, different info)" do
+      seal_seed = OtaSealKeyService.signing_key_for(cluster.id).to_bytes.unpack1("H*").upcase
+      keyb      = described_class.derive_broadcast_key(cluster.id)
+      expect(seal_seed).not_to start_with(keyb)
     end
 
     it "raises without cluster_id" do

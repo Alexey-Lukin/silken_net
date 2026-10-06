@@ -11,7 +11,7 @@
  *   #0  Flash 256K  RO+X  — код/const; фон для хвоста
  *   #1  16K @0x0803C000  RW+XN, SRD=0b00000011 — subregions 0-1 (сторінки
  *       120-121, код) ВИМКНЕНІ → провалюються у RO-#0; живими лишаються
- *       рівно сторінки 122-127 (Flash-KV 122-123 · identity 124 · KOTA/KEYB
+ *       рівно сторінки 122-127 (Flash-KV 122-123 · identity 124 · KPUB/KEYB
  *       125 · OTA-contract 126 · Queen-UID 127) — усе, що пише HAL_FLASH
  *   #2  SRAM 64K  RW+XN — NX-stack/heap/data цілком (чесно за будь-якого
  *       майбутнього .ld: стек всередині 64K)
