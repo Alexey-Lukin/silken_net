@@ -127,8 +127,9 @@ class Wallet < ApplicationRecord
   #
   # 🔴 [ARCH.115] ЦЕЙ МЕТОД НЕ ЗВАЖУЄ. Він зараховує рівно передане число; множник
   # породи (`carbon_sequestration_coefficient`) накладає ВИКЛИКАЧ —
-  # `TelemetryUnpackerService` через `tree.tree_family&.weighted_growth_points(...)`,
-  # і сьогодні він єдиний продакшн-викликач. Носій стоїть тут, а не лише в каноні,
+  # `TelemetryUnpackerService` через `tree.tree_family&.weighted_growth_points(...)`.
+  # ⚖️ [E.64] Телеметрія зараховує через `credit_telemetry!` (відро ліміту нижче) —
+  # сюди йдуть лише писачі ПОЗА телеметрією, і сьогодні продового викликача немає. Носій стоїть тут, а не лише в каноні,
   # бо канон читає той, хто документує, а цей рядок — той, хто пише ДРУГОГО писача
   # (Guild-виплата · backfill · ручна компенсація). Ціна помилки конкретна й
   # незворотна: сирі бали дають дубу −33%, сосні +25%, і `lock_and_mint!` множить
@@ -168,6 +169,46 @@ class Wallet < ApplicationRecord
     # треда; глобального капу немає ні тут, ні в гема — і він свідомо не
     # будується, доки навантаження не виміряне ([`00_07`] UI.4).
     Turbo::ThreadDebouncer.for("wallet-balance-#{id}").debounce { broadcast_balance_update }
+  end
+
+  # ⚖️ [E.64, founder 2026-10-05/06] Відро ліміту зарахування ТЕЛЕМЕТРІЇ на дерево. Ставка —
+  # частка MAX_SUPPLY на дерево: 1B SCC / ≈ 20 млн дерево-років (деривація стелі емісії,
+  # 05_03; той самий канон-арбітр, що `tools/firmware/scc_rate.rb`) = 50 SCC на рік, у балах —
+  # за чинним курсом емісії, тобто ≈ 1 370 балів/добу. Ліміт росте з цією швидкістю й тримає
+  # не більше 30 діб: у сталому режимі це добова стеля, а після мовчання uplink'а
+  # накопичене покриває бэклог кільця ARCH.35, який приїжджає одним днем (мітки часу
+  # генерації кадр не несе, тож «добу кадру» бекенд не знає). Чесна робоча точка
+  # (13.68 SCC/рік) лежить у 3.65× під ставкою, тож відро б'є лише в діру: витягнутий
+  # KEYL дає кадри з будь-яким FC і максимальним GP. ⚠️ Ціна присуду: такий ключ дає
+  # разовий сплеск до 30 діб ставки (≈ 4.1 SCC) понад добову межу.
+  TELEMETRY_CREDIT_SCC_PER_YEAR = 50
+  TELEMETRY_CREDIT_BUCKET_DAYS  = 30
+
+  # Ставка відра в балах на добу — за ЧИННИМ курсом емісії (One-Home GOV.1), бо стеля
+  # виражена в монетах: DAO, що зрушить курс, зрушить і її.
+  def self.telemetry_credit_rate_per_day
+    (BigDecimal(TELEMETRY_CREDIT_SCC_PER_YEAR * TokenomicsEvaluatorWorker.emission_threshold) / 365).round(6)
+  end
+
+  # Зараховує бали КАДРУ ТЕЛЕМЕТРІЇ в межах відра й повертає ЗАРАХОВАНЕ (0..points);
+  # надлишок не зараховується ніде — викликач лічить його й алертить. Перевірка ліміту й
+  # приріст балансу — під ОДНИМ рядковим локом, інакше два кадри одного дерева разом
+  # проходили б ліміт, розрахований для одного.
+  # 🔴 Не зважує (той самий припис, що `credit!`, ARCH.115) — бали вже зважені викликачем.
+  # ⛔ Лише телеметрія: інші писачі балів (компенсація, бекфіл) відром не судяться — їм `credit!`.
+  def credit_telemetry!(points, at: Time.current)
+    points  = BigDecimal(points.to_s)
+    granted = with_lock do
+      allowance = telemetry_credit_allowance(at)
+      grant     = points.clamp(0, allowance)
+      # Мітка лише вперед: кадр, оброблений не по порядку, не повертає час назад (інакше
+      # наступний кадр дістав би повторно нараховану годину).
+      update_columns(balance: balance + grant, credit_allowance_points: allowance - grant,
+                     credit_allowance_at: [ at, credit_allowance_at ].compact.max)
+      grant
+    end
+    Turbo::ThreadDebouncer.for("wallet-balance-#{id}").debounce { broadcast_balance_update } if granted.positive?
+    granted
   end
 
   # --- МЕТОДИ ЕМІСІЇ (Web3 Minting) ---
@@ -310,6 +351,16 @@ class Wallet < ApplicationRecord
 
   private
 
+  # [E.64] Ліміт на мить `at`: перше зарахування дістає одну добу ставки (чесний перший кадр
+  # одразу після провіжну не обрізається); далі ліміт росте з часом і впирається у відро.
+  # Час, що йде назад (кадри, оброблені не по порядку), нічого не додає.
+  def telemetry_credit_allowance(at)
+    rate = self.class.telemetry_credit_rate_per_day
+    return rate if credit_allowance_at.nil?
+
+    elapsed_days = BigDecimal([ at - credit_allowance_at, 0 ].max.to_s) / 86_400
+    [ credit_allowance_points + (rate * elapsed_days), rate * TELEMETRY_CREDIT_BUCKET_DAYS ].min.round(6)
+  end
 
   # [MRV.1] Абортить destroy за наявності settled/in-flight money-tx (докази MRV).
   # [E.60 Фаза 1б] + tx із archive_batch_id: стемпнутий tx = член archive-батчу

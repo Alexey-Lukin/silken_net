@@ -111,6 +111,55 @@ RSpec.describe Wallet, type: :model do
     end
   end
 
+  # ⚖️ [E.64, founder 2026-10-05/06] Відро ліміту зарахування телеметрії: ставка — частка
+  # MAX_SUPPLY на дерево (50 SCC/рік), відро — 30 діб.
+  describe "#credit_telemetry! [E.64]" do
+    let(:wallet) { create(:tree).wallet }
+    let(:rate) { described_class.telemetry_credit_rate_per_day }
+    let(:t0) { Time.utc(2026, 10, 6, 12) }
+
+    it "prices the rate at the MAX_SUPPLY share — 50 SCC a year at the live emission threshold" do
+      expect(rate).to eq((BigDecimal(50 * 10_000) / 365).round(6))
+      allow(TokenomicsEvaluatorWorker).to receive(:emission_threshold).and_return(20_000)
+      expect(described_class.telemetry_credit_rate_per_day).to eq((BigDecimal(50 * 20_000) / 365).round(6))
+    end
+
+    it "gives the first credit one day of allowance and cuts the rest" do
+      start = wallet.balance
+
+      expect(wallet.credit_telemetry!(rate - 10, at: t0)).to eq(rate - 10)
+      expect(wallet.credit_telemetry!(30, at: t0)).to eq(10)
+      expect(wallet.reload.balance).to eq(start + rate)
+    end
+
+    it "refills at the rate, so a steady day stays under the cap" do
+      wallet.credit_telemetry!(rate, at: t0)
+
+      expect(wallet.credit_telemetry!(rate, at: t0 + 12.hours)).to eq((rate / 2).round(6))
+    end
+
+    # Бэклог кільця ARCH.35 після k діб мовчання приїжджає одним днем — відро його тримає.
+    it "lets a silent tree's backlog through after days without frames" do
+      wallet.credit_telemetry!(1, at: t0)
+
+      expect(wallet.credit_telemetry!(rate * 3, at: t0 + 5.days)).to eq(rate * 3)
+    end
+
+    it "holds at most 30 days of rate however long the silence" do
+      wallet.credit_telemetry!(1, at: t0)
+
+      expect(wallet.credit_telemetry!(rate * 100, at: t0 + 90.days)).to eq((rate * 30).round(6))
+    end
+
+    it "adds nothing for time that runs backwards and keeps the mark moving forward" do
+      wallet.credit_telemetry!(rate, at: t0)
+
+      expect(wallet.credit_telemetry!(5, at: t0 - 1.hour)).to eq(0)
+      expect(wallet.reload.credit_allowance_at).to eq(t0)
+      expect(wallet.credit_telemetry!(rate, at: t0 + 1.hour)).to eq((rate / 24).round(6))
+    end
+  end
+
   describe "#lock_and_mint!" do
     it "locks balance using locked_balance instead of immediate decrement" do
       wallet = create(:tree).wallet

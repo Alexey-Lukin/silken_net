@@ -1768,6 +1768,8 @@ CREATE TABLE public.wallets (
     esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
     lineage_cursor_at timestamp without time zone,
     lineage_cursor_log_id bigint,
+    credit_allowance_points numeric(24,6),
+    credit_allowance_at timestamp(6) without time zone,
     CONSTRAINT wallets_balance_invariants CHECK (((balance >= (0)::numeric) AND (locked_balance >= (0)::numeric) AND (esg_retired_balance >= (0)::numeric) AND (locked_balance <= balance)))
 );
 
@@ -4801,6 +4803,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261006120000'),
 ('20261005120000'),
 ('20260929140000'),
 ('20260929120000'),

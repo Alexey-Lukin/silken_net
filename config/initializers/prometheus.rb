@@ -229,6 +229,16 @@ module SilkenNet
                  "(an observation, mostly an honest Lorenz-chain desync, not a fraud page)"
     )
 
+    # ⚖️ [E.64, founder 2026-10-05/06] Кадр телеметрії, чиї зважені бали перевищили відро
+    # ліміту зарахування дерева (`Wallet#credit_telemetry!`: ставка частки MAX_SUPPLY,
+    # 30 діб відра) і зарахувались частково. Чесне дерево сюди не доходить — алерт
+    # `sn-alert-credit-cap-hit` кличе на витягнутий ключ або баг перерахунку.
+    TELEMETRY_CREDIT_CAPPED_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_credit_capped_total,
+      docstring: "E.64: telemetry frames whose weighted growth points exceeded the tree's credit allowance " \
+                 "(30-day bucket at the MAX_SUPPLY share rate) and were credited only in part"
+    )
+
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
     # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
     # in production is a security signal worth paging on.

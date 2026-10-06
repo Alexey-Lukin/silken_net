@@ -9,7 +9,7 @@ class UnpackTelemetryWorker
   # 🔴 [ARCH.59, ⚖️ 2026-08-21] Тут СВІДОМО немає `expires_in`, і це не пропуск.
   # Доти стояло `expires_in: 5.minutes` з обґрунтуванням «застаріла телеметрія
   # лише витрачає CPU». Обґрунтування хибне: цей воркер веде до
-  # `TelemetryUnpackerService` → `tree.wallet.credit!(weighted_points)`, тобто
+  # `TelemetryUnpackerService` → `tree.wallet.credit_telemetry!(weighted_points)`, тобто
   # відкинутий пакет — це НЕЗАРАХОВАНІ growth_points, які далі стають SCC.
   # Опція інертна лише тому, що `sidekiq-pro` не в Gemfile; крок 1 DOC-R.10
   # (купити гем) озброїв би її мовчки, а за Pro-семантикою протухла джоба

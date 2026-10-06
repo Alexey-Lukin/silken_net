@@ -1177,8 +1177,22 @@ class TelemetryUnpackerService < ApplicationService
     # на зовнішній, не можна: зважування може дати нуль і з ненульового входу.
     if growth_points.positive?
       weighted_points = tree.tree_family&.weighted_growth_points(growth_points) || growth_points
-      tree.wallet.credit!(weighted_points) if weighted_points.positive?
+      if weighted_points.positive?
+        # ⚖️ [E.64] Зарахування телеметрії — лише в межах відра ліміту дерева.
+        granted = tree.wallet.credit_telemetry!(weighted_points)
+        report_credit_cap!(tree, weighted_points, granted) if granted < weighted_points
+      end
     end
+  end
+
+  # ⚖️ [E.64, founder 2026-10-05/06] Кадр уперся у відро ліміту зарахування: зараховано менше,
+  # ніж він заявив. Чесне дерево сюди не доходить (ставка в 3.65× над робочою точкою, бэклог
+  # тримає відро), тож це витягнутий ключ або баг перерахунку. Рядок лишається — свідчення
+  # не відкидаємо, — а надлишок не стає грошима ніде.
+  def report_credit_cap!(tree, claimed, granted)
+    SilkenNet::Metrics::TELEMETRY_CREDIT_CAPPED_TOTAL.increment
+    Rails.logger.warn "💰 [E.64] DID #{tree.did}: відро ліміту зарахування вичерпано — зараховано " \
+                      "#{granted.to_s('F')} з #{BigDecimal(claimed.to_s).to_s('F')} балів; надлишок не зараховано."
   end
 
   # [OTA MISMATCH DETECTION]: Перевіряємо, чи прошивка дерева актуальна.

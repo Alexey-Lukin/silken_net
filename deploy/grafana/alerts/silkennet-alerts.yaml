@@ -1770,6 +1770,53 @@ groups:
           team: security
 
       # -----------------------------------------------------------------------
+      # P1: Кадри телеметрії впираються у відро ліміту зарахування [E.64].
+      # Чесне дерево сюди не доходить: ставка відра — частка MAX_SUPPLY на дерево
+      # (≈ 1 370 балів/добу) у 3.65× над робочою точкою, а бэклог після мовчання
+      # покриває 30-денне відро. Тож будь-яке спрацювання — витягнутий KEYL або
+      # баг серверного перерахунку; поріг `gt 0` не шумить ЗА ПОБУДОВОЮ.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-credit-cap-hit
+        title: "⚠️ Telemetry credit allowance exhausted (stolen key or recompute bug)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_credit_capped_total[15m])"
+              refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Кадри телеметрії зараховуються частково ({{ $values.B.Value | printf \"%.4f\" }}/s) — відро ліміту дерева вичерпано."
+          description: "Wallet#credit_telemetry! обрізав зарахування кадру: дерево вичерпало відро ліміту (ставка — частка MAX_SUPPLY на дерево, 50 SCC/рік ≈ 1 370 балів/добу, відро 30 діб; E.64). Чесне дерево сюди не доходить — робоча точка в 3.65× нижче, бэклог після мовчання покриває відро. Отже: витягнутий KEYL (кадри з будь-яким FC і максимальним GP) або баг серверного перерахунку. DID — у рядку логу «[E.64] … відро ліміту зарахування вичерпано»; рядки TelemetryLog лишаються, надлишок не зарахований. 05_03 / E.64."
+          runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: security
+
+      # -----------------------------------------------------------------------
       # P1: Мінт-помилки рівня ГАМАНЦЯ, проковтнуті батч-воркером [ARCH.94].
       # `EvaluateTreeBatchWorker` ловить виняток КОЖНОГО гаманця в `rescue
       # StandardError`, рахує в `stats[:errors]` і віддає джобу УСПІШНОЮ: retry

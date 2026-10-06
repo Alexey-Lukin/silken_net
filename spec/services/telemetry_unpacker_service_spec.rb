@@ -169,6 +169,23 @@ end
     expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
   end
 
+  # ⚖️ [E.64, founder 2026-10-05/06] Кадр, що вперся у відро ліміту зарахування: рядок
+  # лишається (свідчення не відкидаємо), а надлишок не стає грошима. Мутація: поверни
+  # `credit!` замість `credit_telemetry!` у `commit_telemetry` — баланс зросте.
+  it "records a frame past the credit allowance but credits nothing beyond it [E.64]" do
+    allow(SilkenNet::Metrics::TELEMETRY_CREDIT_CAPPED_TOTAL).to receive(:increment)
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 10, 3)
+
+    freeze_time do
+      tree.wallet.update_columns(credit_allowance_points: 0, credit_allowance_at: Time.current)
+      balance = tree.wallet.reload.balance
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(tree.wallet.reload.balance).to eq(balance)
+    end
+    expect(SilkenNet::Metrics::TELEMETRY_CREDIT_CAPPED_TOTAL).to have_received(:increment).once
+  end
+
   it "calls AlertDispatchService to analyze telemetry" do
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
