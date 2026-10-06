@@ -170,9 +170,10 @@ tx_duty: $(BINDIR)/test_tx_duty
 # переривання радіо після сну (IRQ-глю — board-freeze) шаблон не бачить.
 standby_wake: $(BINDIR)/test_standby_wake
 	@./$(BINDIR)/test_standby_wake
-	@awk '/^[[:space:]]*phase5_kenosis:/ { f = 1; next } \
-	  f == 1 && /^[[:space:]]*(\/\/|$$)/ { next } \
-	  f == 1 { if ($$0 !~ /^[[:space:]]*Radio\.Sleep\(\);/) { print "FAIL [FW.54]: перший оператор після phase5_kenosis: — не Radio.Sleep(): " $$0; bad = 1 } f = 2; next } \
+	@awk '/^[ \t]*phase5_kenosis:/ { f = 1; next } \
+	  f == 1 && /^[ \t]*\/\// { next } \
+	  f == 1 && /^[ \t]*$$/ { next } \
+	  f == 1 { if ($$0 !~ /^[ \t]*Radio\.Sleep\(\);/) { print "FAIL [FW.54]: перший оператор після phase5_kenosis: — не Radio.Sleep(): " $$0; bad = 1 } f = 2; next } \
 	  f == 2 && /(Silken_Standby_Enter|HAL_PWREx_EnterSTOP2Mode)\(/ { f = 3 } \
 	  f == 2 && /^[^\/]*(Lora_Phy_Send|Radio\.(Rx|Send|StartCad|Standby))\(/ { print "FAIL [FW.54]: радіо будять після сну Фази 5, рядок " NR ": " $$0; bad = 1 } \
 	  /^void HAL_PWR_PVDCallback/ { p = 1 } \
