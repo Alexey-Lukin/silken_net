@@ -448,11 +448,12 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // Цілісність несе MIC (CRC старого каркаса знято); розпаковка й інваріанти —
 // Lorenz_Thresholds_From_Wire (../common/lorenz_thresholds.h).
 //
-// 🟡 СТАТУС: Deferred TRL-7 (FW.8). Приймач — спільний CCM-шлях адресних
+// ⚫ СТАТУС: FW.8 поглинуто гілкою (Б) 2026-10-06 (00_07 FW.66) — фліпу не буде,
+// тракт знімає реалізація (Б); доти він тут як є. Приймач — спільний CCM-шлях адресних
 // команд (секція 1.14: вікно відкриває, КЕНОЗИС застосовує) за гейтом
 // `FW8_PARSER_ENABLED`, за замовчуванням ВИМКНЕНИЙ. Відправник у Rails —
 // Downlink::ThresholdBand за ENV-гейтом FW8_THRESHOLDS_DOWNLINK_ENABLED
-// (default off; вмикається ПІСЛЯ цього фліпу, ⚖️ 2026-09-29).
+// (default off; порядок «ПІСЛЯ фліпу» ⚖️ 2026-09-29 — історія ECB-ери, 03_04 §5.3).
 //
 // ПРИЧИНА defer: із 20 RTC Backup Register'ів (DR0..DR19) після FW.2
 // freeze-contract (DR15 → CCM Frame Counter) вільний лише DR7 (FW.54) — одне
