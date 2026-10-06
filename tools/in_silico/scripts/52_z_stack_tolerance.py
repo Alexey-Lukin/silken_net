@@ -657,7 +657,8 @@ def vertical_stack_budget(boss: dict) -> dict:
     is that row's, unchanged; the rejected rows are a dated record in canon (02_02 §3.5), not an input.
     Re-measure when the crown or `cavity_height_mm` moves, or when the RF front-end gets P/Ns (2026-09-30: the tallest member is
     the antenna NN02-224 at 2.4 — pos. 19 bounded ≤ 1.10 by rf_switch_shortlist; the 2.5 module bound is retired;
-    2026-10-05/06: pos. 17 bounded ≤ 0.6 by the ABS06-107 outline drawing, so the antenna stays the tallest).
+    2026-10-05: pos. 17 bounded ≤ 0.6 by the ABS06 outline drawing, so the antenna stays the tallest;
+    2026-10-06: P/N → ABS06-107, whose drawing gives the same H ≤ 0.6).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
     spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
     term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
