@@ -163,24 +163,31 @@ tx_duty: $(BINDIR)/test_tx_duty
 
 # [FW.54] рішення «пробудження зі Standby ⊥ холодний старт» + порядок входу в Standby (pure, ops-шов)
 # [FW.54] Друга половина — носій ДИСЦИПЛІНИ: радіо спить на КОЖНОМУ шляху в кенозис.
-# Перший оператор після `phase5_kenosis:` — `Radio.Sleep();`, між ним і входом у сон
-# радіо не будять, а PVD-колбек присипляє його до свого входу в сон. Без цього мороз,
-# низький vcap і зойк OTA засинали з радіо в STDBY_RC — 0.7 мА проти 140 нА сну.
+# Set_Sleep радіо приймає ЛИШЕ зі Standby (RM0461 Rev 11 §4.8.3), тож: приймач, запущений
+# `Radio.Rx(` чи `Radio.StartCad(`, до `phase5_kenosis:` гасить `Radio.Standby();`; перший
+# оператор після мітки — `Radio.Sleep();`; між ним і входом у STOP2 (обидві гілки — і Standby-
+# гейт, і відвантажена) жодного виклику `Radio.*` чи `Lora_Phy_*`; PVD-колбек перед своїм сном
+# робить `Radio.Standby();` → `Radio.Sleep();`. Без цього мороз, низький vcap і зойк OTA
+# засинали з радіо в STDBY_RC (0.7 мА), а звичайний шлях — із живим приймачем (4.82 мА).
 # ⚠️ Стеля: читає текст `main.c` — виклик радіо всередині іншої функції чи пізнє
 # переривання радіо після сну (IRQ-глю — board-freeze) шаблон не бачить.
 standby_wake: $(BINDIR)/test_standby_wake
 	@./$(BINDIR)/test_standby_wake
-	@awk '/^[ \t]*phase5_kenosis:/ { f = 1; next } \
+	@awk '/^[ \t]*Radio\.(Rx|StartCad)\(/ { r = 1 } \
+	  /^[ \t]*Radio\.Standby\(\);/ { r = 0 } \
+	  /^[ \t]*phase5_kenosis:/ { if (r) { print "FAIL [FW.54]: на вході у Фазу 5 приймач живий — Set_Sleep радіо приймає лише зі Standby"; bad = 1 } f = 1; next } \
 	  f == 1 && /^[ \t]*\/\// { next } \
 	  f == 1 && /^[ \t]*$$/ { next } \
 	  f == 1 { if ($$0 !~ /^[ \t]*Radio\.Sleep\(\);/) { print "FAIL [FW.54]: перший оператор після phase5_kenosis: — не Radio.Sleep(): " $$0; bad = 1 } f = 2; next } \
-	  f == 2 && /(Silken_Standby_Enter|HAL_PWREx_EnterSTOP2Mode)\(/ { f = 3 } \
-	  f == 2 && /^[^\/]*(Lora_Phy_Send|Radio\.(Rx|Send|StartCad|Standby))\(/ { print "FAIL [FW.54]: радіо будять після сну Фази 5, рядок " NR ": " $$0; bad = 1 } \
-	  /^void HAL_PWR_PVDCallback/ { p = 1 } \
-	  p == 1 && /Radio\.Sleep\(\)/ { p = 2 } \
+	  f == 2 && /HAL_PWREx_EnterSTOP2Mode\(/ { f = 3 } \
+	  f == 2 && /^[^\/]*(Lora_Phy_[A-Za-z_]+|Radio\.[A-Za-z]+)\(/ { print "FAIL [FW.54]: радіо будять після сну Фази 5, рядок " NR ": " $$0; bad = 1 } \
+	  /^void HAL_PWR_PVDCallback/ { p = 1; ps = 0 } \
+	  p == 1 && /^[ \t]*Radio\.Standby\(\);/ { ps = 1 } \
+	  p == 1 && /^[ \t]*Radio\.Sleep\(\);/ { if (!ps) { print "FAIL [FW.54]: PVD-колбек присипляє радіо без Radio.Standby() перед тим"; bad = 1 } p = 2 } \
 	  p == 1 && /(Silken_Standby_Enter|HAL_PWREx_EnterSTOP2Mode)\(/ { print "FAIL [FW.54]: PVD-колбек входить у сон до Radio.Sleep()"; bad = 1; p = 3 } \
-	  END { if (f < 3) { print "FAIL [FW.54]: немає ланцюга phase5_kenosis: → Radio.Sleep() → вхід у сон"; bad = 1 } \
-	        if (p == 0 || p == 1) { print "FAIL [FW.54]: PVD-колбек без Radio.Sleep() перед сном"; bad = 1 } \
+	  p == 1 && /^}/ { print "FAIL [FW.54]: PVD-колбек закінчився без Radio.Sleep()"; bad = 1; p = 3 } \
+	  END { if (f < 3) { print "FAIL [FW.54]: немає ланцюга phase5_kenosis: → Radio.Sleep() → вхід у STOP2"; bad = 1 } \
+	        if (p == 0) { print "FAIL [FW.54]: не знайдено HAL_PWR_PVDCallback"; bad = 1 } \
 	        exit bad }' ../soldier/main.c
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h ../common/ota_seal_wire.h \
