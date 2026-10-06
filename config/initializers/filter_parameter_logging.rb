@@ -12,7 +12,7 @@ Rails.application.config.filter_parameters += [
   # ⛔ **ДВА З ЦИХ ТРЬОХ ІМЕН НЕ МАЮТЬ КОЛОНКИ — І ЦЕ НАВМИСНО, НЕ ЗАЛИШОК.**
   # `phone_number` знято ⚖️ 2026-08-20 разом зі SMS-каналом [ARCH.78];
   # `telegram_chat_id` — ⚖️ 2026-09-06 разом із каналом [ARCH.60]; провенанс обох
-  # ALTER-ів — у шапці `db/migrate/20260905133000_init_consolidated.rb`.
+  # ALTER-ів — у шапці squash-анкера `db/migrate/*_init_consolidated.rb`.
   # `push_token` колонку має, але з 2026-09-06 не приймається жодним екшеном
   # (поверхню знято [ARCH.60]) — тобто рухається в той самий бік.
   #

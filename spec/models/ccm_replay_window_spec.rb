@@ -16,6 +16,18 @@ RSpec.describe CcmReplayWindow, type: :model do
     described_class.rejection(device_uid:, key_epoch:, frame_counter: fc)
   end
 
+# Ширина бітової карти живе двічі — WINDOW і тип колонки `seen bit(4096)`; розійдуться —
+# і SQL у admit! мовчки ріже чи доповнює карту. Доти цей зв'язок тримав лише коментар
+# у файлі міграції, якого після сквошу (OPS.24) більше нема.
+it "keeps WINDOW equal to the declared width of the seen bit column" do
+  width = described_class.connection.select_value(<<~SQL)
+    SELECT character_maximum_length FROM information_schema.columns
+    WHERE table_name = 'ccm_replay_windows' AND column_name = 'seen'
+  SQL
+
+  expect(width).to eq(window)
+end
+
   it "admits a frame once and rejects its exact repeat" do
     expect(admit(100)).to be(true)
     expect(rejection(100)).to eq(:duplicate)
