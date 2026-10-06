@@ -88,7 +88,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 | Rails → Soldier: адресні команди `0x9A`·`0x9E` (з 2026-09-29; `0x9D` виведено з пʼєзо, HW.30) | AES-128-CCM · **session KEYL цілі** наскрізь, Королева сліпа; анти-повтор — DLFC (`03_05 §2.5`) |
 | Queen → Rails (CoAP) / downlink | AES-256-CBC (HRNG IV) · KEYC per-gateway |
 
-**Lorenz / StatusByte** (дім `03_04` + `firmware`-скіл — точну bit-розкладку бери ТАМ, не звідси):
+**Lorenz / StatusByte** (дім `03_04` + `firmware`-скіл — точну bit-розкладку бери ТАМ, не звідси; ⚖️ 2026-10-05 гілка (Б): Лоренц іде з пристрою разом із фліпом FW.2, `00_07` FW.66 — нижче ECB-ера):
 - Константи (Float!): `BASE_SIGMA=10.0 · BASE_RHO=28.0 · BASE_BETA=8.0/3.0 · DT=0.01 · ITERATIONS=250 · CRITICAL_Z_MIN=2.0`; anomaly_ceiling **ρ-relative** (E.64), growth_points = метаболічна `m(delta_t)` (E.63, β фіксований; wire-rev2.1 несе EMA-вхід GP — «wire = вхід GP», stateless recompute observational до bench → `03_04 §4.3`).
 - StatusByte (post-FW.29): `[PanicFlag:1 | status:2 | growth_points:5]`, пак `(status<<5)|gp`, маска `0x1F`. Ruby unpack 16-байт payload ECB-чанка (21 B): `"N n c C n C C a4"`.
 

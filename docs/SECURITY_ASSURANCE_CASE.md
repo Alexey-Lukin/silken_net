@@ -124,7 +124,7 @@ the guard that enforces it.
 *Trust shift:* backend-unpacked data → externally attested proof.
 *Guard:* **Dual-Computation Integrity** — backend (`SilkenNet::Attractor`, IEEE-754 double) and device
 (mruby Float) compute Z from the same persisted state with identical Lorenz constants (owned in
-[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance flags tampering — ⚠️ on an intact chain only, see FW.66 (DCI, SEC.11 in
+[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance was meant to flag tampering — ⚠️ measured otherwise (FW.66 leg 1, 2026-10-05): it woke honest trees with a desynchronised chain and never a forger who always claims homeostasis, so it now feeds its own counter, not the fraud P0, and under the ratified branch (Б) Lorenz leaves the device altogether (DCI, SEC.11 in
 [`05_02`](05_02_Proof_of_Growth_Pipeline)). Per-device signing strengthens along the trust-origin ladder
 (L0 custodial → L1 gateway → L2 SE050 device).
 
