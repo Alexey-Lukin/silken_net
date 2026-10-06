@@ -760,7 +760,8 @@ volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() в момен�
 // бекенді (03_05 §3.8).
 //
 // 🟡 СТАТУС: ВИМКНЕНО (FW20_Q2_CMD_RELAY_ENABLED 0) — фліп разом із
-// приймачами Солдата (FW8_PARSER_ENABLED · FW17_RATCHET_ENABLED): без них
+// приймачем Солдата FW17_RATCHET_ENABLED (FW8_PARSER_ENABLED — ⚫ FW.8,
+// не фліпається; 0x9A знімає реалізація (Б), 00_07 FW.66): без нього
 // кадр долітає до вузла, який його не відкриває. Логіка черги pure (host-тести test_soldier_cmd_queue.c); канон —
 // 03_02 §5б.
 #include "soldier_cmd_queue.h"

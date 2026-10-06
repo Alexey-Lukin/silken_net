@@ -955,8 +955,9 @@ class TelemetryUnpackerService < ApplicationService
       )
       # ⚖️ [FW.66 нога 1, founder 2026-10-05] Власний лічильник, НЕ fraud: P0 на цій гілці
       # будив чесні дерева з розірваним ланцюгом і ніколи — фальсифікатора homeostasis
-      # (`03_04 §7.3`). ⛔ Ціна названа: підроблений `stress` P0 більше не будить, а гілку
-      # «stress → посуха» знімає реалізація (Б) (`00_07` FW.66; FW.8 ⚫ 2026-10-06).
+      # (`03_04 §7.3`). ⛔ Ціна названа: підроблений `stress` P0 більше не будить — долю
+      # гілки «stress → посуха» вирішує FW.8 (⊕ 2026-10-06: FW.8 ⚫, гілку знімає
+      # реалізація (Б), `00_07` FW.66).
       SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL.increment
     elsif matching.size < bands.size
       record_band_evidence!(tree, attributes, matches)

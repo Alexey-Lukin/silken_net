@@ -319,8 +319,9 @@ class Tree < ApplicationRecord
   #   - Downlink::ThresholdBand (видача 0x9A з poll-деривації Королеви —
   #     `Downlink::PendingQueueService`, адресний CCM-кадр, 03_05 §2.5): тіло —
   #     `OtaPackagerService.threshold_config_body`, гард «лише звуження» — тут же.
-  #     ⚠️ Шлях ENV-гейтований (`FW8_THRESHOLDS_DOWNLINK_ENABLED`, default off), і
-  #     вмикається ПІСЛЯ фліпу прошивки: до того ланцюг конфігурує видачу, якої немає.
+  #     ⚠️ Шлях ENV-гейтований (`FW8_THRESHOLDS_DOWNLINK_ENABLED`, default off) і
+  #     не вмикається: FW.8 ⚫ 2026-10-06 — фліпу прошивки не буде, видачу знімає
+  #     реалізація (Б) (`00_07` FW.66); доти ланцюг конфігурує видачу, якої немає.
   def effective_lorenz_thresholds
     family    = tree_family
     overrides = cluster && family&.scientific_name ? cluster.lorenz_overrides_for(family.scientific_name) : {}

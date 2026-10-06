@@ -478,10 +478,10 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // test_flash_kv.c). Mount KV + HAL_FLASH глю ✅ написано (секція FW.17 нижче,
 // спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`). Wiring
 // Save/Load ✅ написано за цим же гейтом: boot-restore після mount'а,
-// КЕНОЗИС-write по dirty-флагу прийнятого 0x9A. Лишається bench: фліп
-// `FW8_PARSER_ENABLED 1` + верифікація HAL-глю на кремнії.
+// КЕНОЗИС-write по dirty-флагу прийнятого 0x9A. Фліпу `FW8_PARSER_ENABLED 1`
+// не буде (FW.8 ⚫ 2026-10-06) — цей тракт знімає реалізація (Б).
 #ifndef FW8_PARSER_ENABLED
-#define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
+#define FW8_PARSER_ENABLED                0  // ⚫ FW.8 — не фліпати (див. блок вище)
 #endif
 #define LORENZ_DEFAULT_Z_MIN_X100         200    // 2.00
 #define LORENZ_DEFAULT_Z_MAX_X100         4500   // 45.00

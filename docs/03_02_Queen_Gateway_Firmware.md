@@ -935,7 +935,7 @@ Soldier — direct
    │       може давати довші сухі смуги
    │  ④ Per-hop drift compensation + anti-storm журнал поколінь (mesh-relay)           ✅ FW.20-S2 (3/5 + 4/5)
    │     — `Soldier_Try_Relay_Time_Beacon` вшито у RX-гілку Сценарію 0 за гейтом
-   │       `FW20_MESH_RELAY_ENABLED` (фліп = bench Flash-KV HAL, як FW.17/FW.8/FW.2);
+   │       `FW20_MESH_RELAY_ENABLED` (фліп = bench Flash-KV HAL, як FW.17/FW.2; FW.8 ⚫);
    │       журнал — Flash-KV `0x20` (`common/beacon_dedup.h`, реєстр 03_01 §2.3.1):
    │       ≤1 ретрансляція на покоління (`unix_ts/900`) на Провідника — TTL задає
    │       ГЛИБИНУ mesh'а, журнал гасить ОБСЯГ (подвійний маяк у такті, пінг-понг
@@ -1044,7 +1044,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
-- ✅ (2026-06-12) **Anti-storm журнал поколінь** — реалізовано: `common/beacon_dedup.h` поверх Flash-KV ключа `0x20` (реєстр — [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28)); wiring у `soldier/main.c` за гейтом `FW20_MESH_RELAY_ENABLED=0` — residual = чистий bench-фліп (верифікація Flash-KV HAL, спільна з FW.17/FW.8/FW.2)
+- ✅ (2026-06-12) **Anti-storm журнал поколінь** — реалізовано: `common/beacon_dedup.h` поверх Flash-KV ключа `0x20` (реєстр — [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28)); wiring у `soldier/main.c` за гейтом `FW20_MESH_RELAY_ENABLED=0` — residual = чистий bench-фліп (верифікація Flash-KV HAL, спільна з FW.17/FW.2; FW.8 ⚫)
 - ✅ (2026-06-12) **Queen beacon TTL=2** (`BEACON_BYTE9_AUTHORITATIVE = 0x82`) — канонічна умова «перемикається коли реалізуємо anti-storm» виконана. Глибше TTL (3+ хопи) — рішення founder'а про airtime: журнал робить його шторм-безпечним (TTL обмежує лише глибину, обсяг ≤1 ретрансляція/покоління/Провідник), фліп = одна константа
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому. (Дім у CCM-кадрі вже зарезервовано — AAD byte 4, wire-rev2: gossip переживає per-Soldier ключі; CCM-фліп вшиває pack-половину автоматично через параметр `Soldier_Build_CCM_LoRa_Packet`)
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
@@ -1055,7 +1055,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 ## 📨 5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів
 
-**Статус:** ✅ написано (2026-06-12), переписано під downlink-wire-ревізію 2026-09-29 (адресні CCM-кадри, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); інертне за гейтом `FW20_Q2_CMD_RELAY_ENABLED 0` — фліп разом із приймачами Солдата (`FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED`).
+**Статус:** ✅ написано (2026-06-12), переписано під downlink-wire-ревізію 2026-09-29 (адресні CCM-кадри, [`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); інертне за гейтом `FW20_Q2_CMD_RELAY_ENABLED 0` — фліп разом із приймачем Солдата `FW17_RATCHET_ENABLED` (`FW8_PARSER_ENABLED` — ⚫ FW.8 2026-10-06, не фліпається; `0x9A` знімає реалізація (Б), [`00_07`](00_07_Action_Plan_Tracker) FW.66).
 
 Королева — **сліпий курʼєр** для команд, адресованих одному Солдату: `0x9A` пороги Лоренца · `0x9E` ротація ключа (`0x9D` аудіо-пороги виведено з пʼєзо, HW.30; опкод-карта [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4)). Кадр `[opcode][DID][DLFC_lsb][CCM(body)][MIC]` підписує Rails сесійним ключем цілі; ключа Королева не має. Дім коду: `firmware/queen/soldier_cmd_queue.h` (pure) + глю в `queen/main.c`; формат — `firmware/common/downlink_ccm.h`; host-тести `firmware/test/test_soldier_cmd_queue.c` (`make -C firmware/test cmd_queue`).
 
