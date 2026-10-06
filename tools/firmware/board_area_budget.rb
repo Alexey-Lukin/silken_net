@@ -128,7 +128,7 @@ def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class", standoffs: "none")
     [ "STM32WLE5CC UFQFPN48 (поз. 1; KiCad QFN-48-1EP_7x7mm)", rect(8.26, 8.26) ],
     [ "розвʼязка DS13105 Rev 12 рис. 14: 0402 × 3 + 0603 × 2", 3 * C0402 + 2 * C0603 ],
     [ "TCXO NT2016SF (поз. 16; проксі Crystal_SMD_2016-4Pin) + 0402 × 3", rect(3.00, 2.60) + 3 * C0402 ],
-    [ "LSE-кварц Abracon ABS06-32.768kHz-4P-T (поз. 17, ⚖️ 2026-10-05; 2.0 × 1.2, клас 2012) + 0402 × 2", rect(3.00, 2.20) + 2 * C0402 ],
+    [ "LSE-кварц Abracon ABS06-107-32.768kHz-T (поз. 17, ⚖️ клас 2026-10-05 · P/N 2026-10-06; 2.0 × 1.2, клас 2012) + 0402 × 2", rect(3.00, 2.20) + 2 * C0402 ],
     [ "SMPS MLZ2012M150W 0805 + 470 nF 0603 (поз. 18)", rect(3.50, 1.70) + C0603 ],
     POS19.fetch(pos19),
     [ BOOSTER.fetch(booster)[0] + " + П-ланка 0402 × 3 (поз. 4)", BOOSTER.fetch(booster)[1] + 3 * C0402 ],
