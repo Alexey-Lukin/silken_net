@@ -1005,6 +1005,8 @@ void HAL_PWR_PVDCallback(void) {
 }
 ```
 
+> ⚠️ `RadioSleep()` закінчується `RADIO_DELAY_MS(2)`, а в шаблоні ST це `HAL_Delay`, який у цьому перериванні не повернеться (SysTick — найнижчий пріоритет): створюючи `radio_conf.h`, див. гоча `firmware` #21.
+
 **Trigger_Emergency_LoRa_TX (Panic Payload + SEC.10 Frame Counter)** — з HW.30 викликача немає: транспорт лишено як можливого носія сигналу «моє дерево впало» ([`00_07`](00_07_Action_Plan_Tracker) HW.52; ⛔ прибирається лише разом із його присудом):
 ```c
 // [SEC.10] Інкрементуємо лічильник panic-кадрів (saturating @ 0xFFFF) ПЕРЕД пакуванням.
