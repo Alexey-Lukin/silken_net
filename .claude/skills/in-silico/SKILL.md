@@ -37,6 +37,7 @@ L3 DFT anode (CPU):
   21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
   21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade) · 21e `wb97x` (the centre pair of `vs_b3lyp`)
   34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
+  21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` (`ends_decomposition`, read when it exists)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)
@@ -191,5 +192,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 31. A pin over a numeric GENERATOR holds only in the environment that wrote its reference — and this pipeline now runs in THREE: the recorded osx-arm64 env writes the files, the lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and CI runs the linux-64 one
 32. A count against a threshold on QUANTIZED input has ties — and an iterative solver's tolerance decides them silently: return the degenerate root EXACTLY, and keep a control that equates the no-forcing run with its input
 33. A cross-check that changes TWO things at once and AGREES may be two effects cancelling — before calling it robustness, look for the intermediate tier, which may already sit in another script's cache
+34. An overnight run of NEW code is rehearsed before it is launched — every write target with a stubbed SCF, the geometry check BEFORE the SCF, and an adversary on the RUN PATH, not only on the record
 
 <!-- /INSILICO-MODIFYING-INDEX -->
