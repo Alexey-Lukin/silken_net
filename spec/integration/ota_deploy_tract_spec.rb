@@ -152,7 +152,7 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
     expect(gateway.firmware_version).not_to eq(firmware.version)
   end
 
-  it "answers a CON retransmit (same MID) with byte-identical reply without re-derivation" do
+  it "answers a duplicated datagram (same MID and same request) with byte-identical reply without re-derivation" do
     post "/firmwares/#{firmware.id}/deploy",
          params: { cluster_id: cluster.id }, headers: headers, as: :json
 
