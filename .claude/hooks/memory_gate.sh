@@ -423,7 +423,9 @@ rb_dark() {
 # розвилка «розвести ролі»). Підняття робить новий дім захищеним підлогою.
 # 2026-10-08: 168 → 169 — `reference_memory_packages` (реєстр пакетів стартового ритуалу, DOC-T.120: членство
 # секцій, яке друкує `--package`). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-169}
+# 2026-10-08: 169 → 170 — `log_frozen_snapshot` (тіла граней осі «нотатка = застиглий кадр»; хаб перейшов в
+# індекс-форму, DOC-T.120). Підняття робить новий журнал захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-170}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
