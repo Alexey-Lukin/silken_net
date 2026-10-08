@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.8.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **deps:** replace unmaintained decompress with @xhmikosr/decompress 11.1.4 via override in /subgraph [OPS.22] ([1422334](https://github.com/Alexey-Lukin/silken_net/commit/142233437b3e3376dfdbb6152ace45e89595412f))
+
 ## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
