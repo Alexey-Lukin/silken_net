@@ -43,7 +43,7 @@ jobs:
       shell: ${{ steps.filter.outputs.shell }}
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -203,7 +203,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -268,7 +268,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout (with submodules)
@@ -403,7 +403,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -422,7 +422,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -455,7 +455,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -477,7 +477,7 @@ jobs:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -526,7 +526,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -577,7 +577,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -617,7 +617,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -640,7 +640,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -707,7 +707,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -752,7 +752,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -831,7 +831,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -938,7 +938,7 @@ jobs:
 
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
@@ -990,7 +990,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
         with:
           egress-policy: audit
       - name: Checkout code
