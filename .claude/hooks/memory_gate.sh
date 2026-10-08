@@ -425,7 +425,10 @@ rb_dark() {
 # секцій, яке друкує `--package`). Підняття робить новий дім захищеним підлогою.
 # 2026-10-08: 169 → 170 — `log_frozen_snapshot` (тіла граней осі «нотатка = застиглий кадр»; хаб перейшов в
 # індекс-форму, DOC-T.120). Підняття робить новий журнал захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-170}
+# 2026-10-08: 170 → 177 — сім нових журналів-двійників кампанії індекс-форми (DOC-T.120): `log_curated_sample` ·
+# `log_computational_honesty` · `log_vilize_sweep` · `log_volatile_counts` · `log_irreversibility` · `log_parallel_edit` ·
+# `log_verify_before_commit` — тіла рядків хабів, що досі не мали журналу. Підняття робить нові журнали захищеними підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-177}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -555,7 +558,11 @@ index_reach_expected() {
 # власний опис стиснуто (273 → 208 B) ПЕРЕД бампом, чужих не підрізано.
 # 2026-09-26: 43410 → 41500 (−1910) — прохід памʼяті §02/§03: описи роутерів §02/§03 переписано як тригери
 # (без хроніки й надгробків), опис стаба `reference_ml_skill` пішов разом із файлом; зекономлене не стає запасом.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41500}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
+# (до рядка 41500, та сама подія 2026-09-26: +15 — описи журналів цитують слаг свого дому.)
+# 2026-10-08: 41500 → 41844 (+344) — описи тих самих семи журналів-двійників DOC-T.120 (шаблон «Тіла правил з <слаг>»,
+# 394 B — мінімальний тригер, стискати нема чого). Прецедент дотримано: власні описи пʼяти хабів осі перед тим стиснуто
+# (−44 B, звірка з виправленими шапками), чужих не підрізано.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41844}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
