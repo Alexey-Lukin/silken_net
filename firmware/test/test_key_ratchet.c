@@ -3,7 +3,7 @@
  * test_key_ratchet.c — [FW.17] Hash-Ratchet ротація LoRa-ключа (host).
  *
  * Golden-KAT (K0=000102..0F, DID=0xDEADBEEF) заморожено freeze-contract'ом
- * з бекендом: ті самі вектори звіряє spec/lib/cryptography/key_ratchet_spec.rb
+ * з бекендом: ті самі вектори звіряє spec/services/cryptography/key_ratchet_spec.rb
  * (OpenSSL::HMAC) — byte-parity pure-C ↔ Ruby. Wire-кадр 0x9E дзеркалиться
  * проти OtaPackagerService.build_rotate_key_block.
  *

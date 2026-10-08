@@ -46,9 +46,9 @@ class HardwareKeyService
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end
 
-  # [FW.17] Ratchet-ротація Tree-ключа замкнена, поки LoRa-downlink не
-  # автентифікований (FW.2 CCM): підроблений 0x9E у ECB-флоті двигає версію
-  # вперед → desync → вузол глухне. Дзеркало firmware FW17_RATCHET_ENABLED.
+  # [FW.17] Ratchet-ротація Tree-ключа замкнена до FW.2 CCM: в ECB-ері LoRa-шар
+  # знімає Королева, Rails ключа вузла не бачить, тож grace ротації не закрилось би
+  # ніколи, а 0x9E перевидавався б на кожному poll'і. Дзеркало FW17_RATCHET_ENABLED.
   class RatchetGateClosedError < StandardError; end
 
   # ENV-гейт диспатчу ратчет-ротації (default off — інертний шлях, 03_05 §3.8).

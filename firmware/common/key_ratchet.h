@@ -18,9 +18,9 @@
  * Властивості (чесно): ratchet дає BACKWARD secrecy — витік K_v не
  * відкриває K_{v-1} і записаний раніше трафік (головна цінність для
  * GDPR/ISO 27001/NIST SP 800-57). Витік K_v БУДЬ-ЯКОГО кінця відкриває
- * майбутні ключі (вони похідні) — задумано лікувати re-provisioning або
- * ECDH-alt, але першого сьогодні НЕМА: провіжн пише той самий ключ, а HKDF
- * від master детермінований (03_05 §3.8, 00_07 FW.17). Фізичний витяг K0
+ * майбутні ключі (вони похідні) — лікує re-provision у нову ЕПОХУ (корінь
+ * K0_e не виводиться зі злитого K_v, 03_05 §3.8) або ECDH-alt; проти витоку
+ * самого master епоха безсила. Фізичний витяг K0
  * з пристрою = поза моделлю (RDP2 / SE050-L2).
  *
  * Persist: у Flash-KV їде ЛИШЕ версія (ключ 0x13, 03_01 §2.3.1) — журнал
@@ -29,9 +29,10 @@
  * за ключ (Key_Ratchet_Commit).
  *
  * Дзеркало бекенда: Cryptography::KeyRatchet (golden-KAT parity —
- * test_key_ratchet.c ↔ spec/lib/cryptography/key_ratchet_spec.rb).
- * Активація — ПІСЛЯ FW.2 CCM (ECB-downlink без MAC не сміє командувати
- * ротацією) + mount Flash-KV: 00_07 FW.17. Канон: 03_05 §3.8.
+ * test_key_ratchet.c ↔ spec/services/cryptography/key_ratchet_spec.rb).
+ * Активація — ПІСЛЯ FW.2 CCM (в ECB-ері LoRa-шар знімає Королева, Rails
+ * ключа вузла не бачить, тож grace ротації не закрилось би ніколи) + mount
+ * Flash-KV: 00_07 FW.17. Канон: 03_05 §3.8.
  */
 #ifndef SILKEN_KEY_RATCHET_H
 #define SILKEN_KEY_RATCHET_H
