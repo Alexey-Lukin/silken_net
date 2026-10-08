@@ -160,7 +160,9 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
         assert r["geometry_max_dev_A"] <= 1e-3, f"{name}: the two tiers ran on different geometries"
     sigmas = [r["sigma_para"] for r in v["points"]]
     assert sigmas == sorted(sigmas), "points not ordered by σ"
-    assert set(w["complexes"]) <= set(rows), "a converged ωB97X extreme is missing from the comparison"
+    converged = {n for n, c in w["complexes"].items() if "dE_red_eV" in c}
+    assert converged <= set(rows), "a converged ωB97X point is missing from the comparison"
+    assert v["not_compared_not_converged"] == [n for n in w["complexes"] if n not in converged]
     assert v["common_fit_subset"] == [n for n in fit_set if n in rows], "fit subset ≠ canonical fit-set ∩ points"
 
     def slope(key):
@@ -173,14 +175,19 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
     assert math.isclose(v["slope_ratio_wb97x_over_b3lyp"], v["slope_wb97x_eV_per_sigma"] / v["slope_b3lyp_eV_per_sigma"])
     offs = [r["omega_minus_b3_eV"] for r in v["points"]]
     assert v["offset_range_eV"] == [min(offs), max(offs)]
-    lo, hi = v["points"][0], v["points"][-1]
-    assert (v["span"]["from"], v["span"]["to"]) == (lo["name"], hi["name"])
+    lo, hi = rows["nme2"], rows["no2"]   # the span is named, so an added acceptor point cannot move it
+    assert (v["span"]["from"], v["span"]["to"]) == ("nme2", "no2")
     assert v["span"]["wb97x_eV"] == hi["wb97x_dE_red_eV"] - lo["wb97x_dE_red_eV"]
     assert v["span"]["b3lyp_eV"] == hi["b3lyp_dE_red_eV"] - lo["b3lyp_dE_red_eV"]
     gap = v["donor_plateau_gap_nme2_minus_nh2_eV"]
     for tier in ("b3lyp", "wb97x"):
         assert gap[tier] == rows["nme2"][f"{tier}_dE_red_eV"] - rows["nh2"][f"{tier}_dE_red_eV"]
     assert v["donor_plateau_gap_same_sign"] == (gap["b3lyp"] * gap["wb97x"] > 0)
+    gap = v["acceptor_gap_so2cf3_minus_no2_eV"]
+    assert (gap is None) == ("so2cf3" not in rows)
+    if gap is not None:
+        for tier in ("b3lyp", "wb97x"):
+            assert gap[tier] == rows["so2cf3"][f"{tier}_dE_red_eV"] - rows["no2"][f"{tier}_dE_red_eV"]
     order = {t: [r["name"] for r in sorted(v["points"], key=lambda r: r[f"{t}_dE_red_eV"])] for t in ("b3lyp", "wb97x")}
     assert v["same_order_by_dE_red"] == (order["b3lyp"] == order["wb97x"])
     # the centre split: B3LYP/6-31G(d) → ωB97X/6-31G(d) (34b chloro) → ωB97X/def2-TZVP
@@ -200,6 +207,64 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
     cs = cd["local_slope_eV_per_sigma"]
     assert v["centre_functional_and_basis_pull_opposite_ways"] == (
         (cs["wb97x_631gd"] - cs["b3lyp_631gd"]) * (cs["wb97x_def2tzvp"] - cs["wb97x_631gd"]) < 0)
+    # the ends split: this script's own small-basis cache, when it exists
+    ends = v["ends_decomposition"]
+    small_path = DFT / "os_mediator_series_wb97x_631gd.json"
+    small = json.loads(small_path.read_text())["complexes"] if small_path.exists() else {}
+    assert [p["name"] for p in ends["points"]] == sorted(
+        (n for n, c in small.items() if "dE_red_eV" in c and n in rows), key=lambda n: rows[n]["sigma_para"])
+    for p in ends["points"]:
+        assert p["wb97x_631gd_eV"] == small[p["name"]]["dE_red_eV"]
+        assert p["functional_eV"] == p["wb97x_631gd_eV"] - rows[p["name"]]["b3lyp_dE_red_eV"]
+        assert p["basis_eV"] == rows[p["name"]]["wb97x_dE_red_eV"] - p["wb97x_631gd_eV"]
+        assert p["geometry_max_dev_A"] <= 1e-3
+    tiers = {p["name"]: p for p in cd["points"] + ends["points"]}
+    es = ends["slope_over_common_subset_by_tier"]
+    assert (es is None) == (not all(n in tiers for n in v["common_fit_subset"]))
+    if es is not None:
+        for tier, val in es.items():
+            assert math.isclose(val, _ols_slope([tiers[n]["sigma_para"] for n in v["common_fit_subset"]],
+                                                [tiers[n][f"{tier}_eV"] for n in v["common_fit_subset"]]), abs_tol=1e-9)
+        assert math.isclose(es["wb97x_def2tzvp"], v["slope_wb97x_eV_per_sigma"], abs_tol=1e-9)
+        assert math.isclose(es["b3lyp_631gd"], v["slope_b3lyp_eV_per_sigma"], abs_tol=1e-9)
+
+
+def _ols_slope(xs, ys):
+    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=True)) / sum((x - mx) ** 2 for x in xs)
+
+
+def test_21e_small_basis_mode_never_writes_the_def2tzvp_cache(tmp_path, monkeypatch):
+    """The first draft of `wb97x-631gd` wrote each converged state into OUT_WB97X — one state of NH₂ would have
+    overwritten the committed def2-TZVP series. Rehearsed with a stubbed SCF (no compute).
+
+    CAN catch: any write of the small-basis mode into the def2-TZVP cache; a tier that drifts from 34b's
+    (functional, basis, shift per state, tolerance). CANNOT catch: what a real SCF returns.
+    """
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("s21e", Path(__file__).parents[1] / "scripts" / "21e_dft_os_mediator_series.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    import pyscf
+    calls = []
+
+    def fake(atoms, charge, spin, label="", xc="b3lyp", conv_tol=1e-6, level_shift_open=0.0, basis_light=None, **_):
+        calls.append((charge, spin, xc, conv_tol, level_shift_open, basis_light))
+        return {"E_total_Ha": -1.0 - 0.1 * charge, "converged": True, "wall_seconds": 0.0}
+
+    tz = tmp_path / "tz.json"
+    tz.write_text('{"sentinel": true}\n')
+    monkeypatch.setattr(m, "dft_singlepoint", fake)
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))   # the platform's RDKit is not this test's subject
+    monkeypatch.setattr(m, "OUT_WB97X", tz)
+    monkeypatch.setattr(m, "OUT_WB97X_631GD", tmp_path / "small.json")
+    m.main_wb97x(["nh2"], small_basis=True)
+    assert tz.read_text() == '{"sentinel": true}\n', "the small-basis mode wrote into the def2-TZVP cache"
+    assert calls == [(1, 0, "wb97x", 1e-6, 0.0, None), (2, 1, "wb97x", 1e-6, 0.3, None)], calls
+    assert "nh2" in json.loads((tmp_path / "small.json").read_text())["complexes"]
 
 
 # ── lib/os_geometry: the default path IS the committed geometry; the C-min closure realises or refuses ──

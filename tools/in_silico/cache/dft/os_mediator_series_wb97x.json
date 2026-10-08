@@ -170,6 +170,7 @@
     "slope_wb97x_eV_per_sigma": -0.7906378819577343,
     "r2_wb97x": 0.9996431399047617,
     "slope_ratio_wb97x_over_b3lyp": 0.8492074614573791,
+    "not_compared_not_converged": [],
     "span": {
       "from": "nme2",
       "to": "no2",
@@ -215,6 +216,11 @@
       }
     },
     "centre_functional_and_basis_pull_opposite_ways": true,
-    "verdict": "\u03c9\u2212B3 runs +0.055 (nme2) \u2026 +0.263 eV (no2), a range of 0.208 eV; over dmbpy, bpy, no2 the \u03c9B97X slope is -0.791 against -0.931 eV/\u03c3 (\u00d70.85); the donor-plateau gap (nme2 \u2212 nh2) is -4.4 \u22a5 -4.0 meV, the same sign. At the centre, where \u03c9B97X also exists with the small basis, the local slope is -0.876 (B3LYP) \u2192 -0.800 (\u03c9B97X, same basis) \u2192 -0.878 eV/\u03c3 (def2-TZVP): the functional and the basis pull opposite ways there; at the ends the two are not separated, and neither tier is checked against a measured series."
+    "ends_decomposition": {
+      "points": [],
+      "slope_over_common_subset_by_tier": null
+    },
+    "acceptor_gap_so2cf3_minus_no2_eV": null,
+    "verdict": "\u03c9\u2212B3 runs +0.055 (nme2) \u2026 +0.263 eV (no2), a range of 0.208 eV; over dmbpy, bpy, no2 the \u03c9B97X slope is -0.791 against -0.931 eV/\u03c3 (\u00d70.85); the donor-plateau gap (nme2 \u2212 nh2) is -4.4 \u22a5 -4.0 meV, the same sign. At the centre, where \u03c9B97X also exists with the small basis, the local slope is -0.876 (B3LYP) \u2192 -0.800 (\u03c9B97X, same basis) \u2192 -0.878 eV/\u03c3 (def2-TZVP): the functional and the basis pull opposite ways there; at the ends the two are not separated; neither tier is checked against a measured series."
   }
 }

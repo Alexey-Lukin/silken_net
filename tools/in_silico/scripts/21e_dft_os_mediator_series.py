@@ -35,11 +35,15 @@ acceptor end. CANNOT show: an adiabatic or speciation effect (vertical, chloro f
 verdict — the authoritative reading stays the verified E°s.
 Once every extreme has converged it writes the comparison with the B3LYP series into the same cache
 (`vs_b3lyp`, see _vs_b3lyp) — the numbers SUMMARY §Mediator and the paper quote.
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py wb97x-631gd [nh2 no2]
+the same tier with the B3LYP basis (34b's tier, ⚖️ 2026-10-08) into its own cache; `vs_b3lyp` reads it to split the
+ends' change into functional and basis. Both modes refuse a geometry that is not the B3LYP row's BEFORE any SCF.
 """
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -92,6 +96,7 @@ WB97X_631GD_ENDS = ["nh2", "no2"]
 WB97X_CENTRE = {"dmbpy": ("os_complex_wb97xd_dmbpy.json", "os_dmbpy_meim_cl_full.xyz"),   # 21f wb97x tier
                 "bpy": ("os_complex_wb97xd.json", "os_bpy_im_cl.xyz")}                   # 21d (21b's ligand file)
 SAME_GEOMETRY_TOL_A = 1e-3   # the xyz files carry 6 decimals; a rebuild lands within 5e-7 Å
+SPAN_ENDS = ("nme2", "no2")   # named, not «lowest/highest σ»: an added acceptor point must not move the span
 # ωB97X with the SMALL basis exists at the centre only — the chloro form of 34b's speciation cross-check — and it
 # splits the centre's B3LYP → ωB97X/def2-TZVP change into a functional and a basis part (the ends have no such point).
 WB97X_SMALL_BASIS = {"dmbpy": "wb97x_speciation_dmbpy.json", "bpy": "wb97x_speciation.json"}
@@ -123,6 +128,21 @@ def _read_xyz(path: Path) -> list:
     return [(ln.split()[0], tuple(float(v) for v in ln.split()[1:4])) for ln in lines[2:2 + int(lines[0])]]
 
 
+def _save(path: Path, rec: dict) -> None:
+    """Write a cache atomically — a kill mid-write leaves the previous file, never a truncated one."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _series_geometry_dev(name: str, atoms: list) -> float:
+    """Max |Δxyz| between a rebuilt series complex and the xyz its B3LYP row was computed on."""
+    ref = LIGANDS_DIR / f"os_{name}_meim_cl.xyz"
+    if not ref.exists():
+        sys.exit(f"{name}: no B3LYP geometry {ref.name} to compare with")
+    return _max_dev_A([(el, tuple(xyz)) for el, xyz in atoms], _read_xyz(ref))
+
+
 def _max_dev_A(a: list, b: list) -> float:
     """Largest coordinate difference between two geometries; inf when the atom lists differ."""
     if [e for e, _ in a] != [e for e, _ in b]:
@@ -143,10 +163,13 @@ def _vs_b3lyp(rec: dict) -> dict:
     b3 = {c["name"]: c for c in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]}
     series_smiles = {name: smi for name, smi, _, _ in SERIES}
     points = []
+    skipped = []   # a point whose two states did not both converge has no ΔE to compare — named, never a crash
     for name, c in rec["complexes"].items():
+        if "dE_red_eV" not in c:
+            skipped.append(name)
+            continue
         atoms, _ = build_os_complex(bpy_smiles=series_smiles[name])
-        dev = _max_dev_A([(el, tuple(xyz)) for el, xyz in atoms], _read_xyz(LIGANDS_DIR / f"os_{name}_meim_cl.xyz"))
-        points.append((name, c["dE_red_eV"], OUT_WB97X.name, dev))
+        points.append((name, c["dE_red_eV"], OUT_WB97X.name, _series_geometry_dev(name, atoms)))
     for name, (cache, xyz) in WB97X_CENTRE.items():
         w = json.loads((DFT_CACHE / cache).read_text(encoding="utf-8"))
         assert w["os2_plus"]["converged"] and w["os3_plus"]["converged"], f"{cache}: a state did not converge"
@@ -164,15 +187,25 @@ def _vs_b3lyp(rec: dict) -> dict:
     sig = [by[n]["sigma_para"] for n in subset]
     sb3, _, r2b3 = _ls(sig, [by[n]["b3lyp_dE_red_eV"] for n in subset])
     sw, _, r2w = _ls(sig, [by[n]["wb97x_dE_red_eV"] for n in subset])
-    lo, hi = rows[0], rows[-1]
+    lo, hi = by[SPAN_ENDS[0]], by[SPAN_ENDS[1]]
     offsets = [r["omega_minus_b3_eV"] for r in rows]
     span_b3 = hi["b3lyp_dE_red_eV"] - lo["b3lyp_dE_red_eV"]
     span_w = hi["wb97x_dE_red_eV"] - lo["wb97x_dE_red_eV"]
+    acceptor_gap = ({t: by["so2cf3"][f"{t}_dE_red_eV"] - by["no2"][f"{t}_dE_red_eV"] for t in ("b3lyp", "wb97x")}
+                    if "so2cf3" in by else None)
     plateau = {t: by["nme2"][f"{t}_dE_red_eV"] - by["nh2"][f"{t}_dE_red_eV"] for t in ("b3lyp", "wb97x")}
     same_sign = plateau["b3lyp"] * plateau["wb97x"] > 0
     centre = _centre_decomposition(by, series_smiles)
     cs = centre["local_slope_eV_per_sigma"]
     opposite = (cs["wb97x_631gd"] - cs["b3lyp_631gd"]) * (cs["wb97x_def2tzvp"] - cs["wb97x_631gd"]) < 0
+    ends = _ends_decomposition(by, series_smiles, centre, subset)
+    es = ends["slope_over_common_subset_by_tier"]
+    ends_clause = (f"over {', '.join(subset)} the slope runs {es['b3lyp_631gd']:+.3f} → {es['wb97x_631gd']:+.3f} "
+                   f"(ωB97X, 6-31G(d)) → {es['wb97x_def2tzvp']:+.3f} eV/σ, so of the ×{sw / sb3:.2f} the functional "
+                   f"carries ×{es['wb97x_631gd'] / es['b3lyp_631gd']:.2f} and the basis "
+                   f"×{es['wb97x_def2tzvp'] / es['wb97x_631gd']:.2f}" if es else "at the ends the two are not separated")
+    gap_clause = (f" The acceptor gap so2cf3 − no2 is {acceptor_gap['b3lyp'] * 1000:+.1f} (B3LYP) ⊥ "
+                  f"{acceptor_gap['wb97x'] * 1000:+.1f} meV (ωB97X)." if acceptor_gap else "")
     return {
         "method_pair": "B3LYP/6-31G(d) (os_mediator_series.json) ⊥ ωB97X/def2-TZVP (this cache + WB97X_CENTRE), "
                        "LANL2DZ(Os), C-PCM, vertical ΔSCF on one geometry per point",
@@ -182,6 +215,7 @@ def _vs_b3lyp(rec: dict) -> dict:
         "slope_b3lyp_eV_per_sigma": sb3, "r2_b3lyp": r2b3,
         "slope_wb97x_eV_per_sigma": sw, "r2_wb97x": r2w,
         "slope_ratio_wb97x_over_b3lyp": sw / sb3,
+        "not_compared_not_converged": skipped,
         "span": {"from": lo["name"], "to": hi["name"], "b3lyp_eV": span_b3, "wb97x_eV": span_w,
                  "ratio_wb97x_over_b3lyp": span_w / span_b3},
         "donor_plateau_gap_nme2_minus_nh2_eV": plateau,
@@ -190,7 +224,9 @@ def _vs_b3lyp(rec: dict) -> dict:
                                  == [r["name"] for r in sorted(rows, key=lambda r: r["wb97x_dE_red_eV"])]),
         "centre_decomposition": centre,
         "centre_functional_and_basis_pull_opposite_ways": opposite,
-        "verdict": (f"ω−B3 runs {offsets[0]:+.3f} ({lo['name']}) … {offsets[-1]:+.3f} eV ({hi['name']}), a range "
+        "ends_decomposition": ends,
+        "acceptor_gap_so2cf3_minus_no2_eV": acceptor_gap,
+        "verdict": (f"ω−B3 runs {offsets[0]:+.3f} ({rows[0]['name']}) … {offsets[-1]:+.3f} eV ({rows[-1]['name']}), a range "
                     f"of {max(offsets) - min(offsets):.3f} eV; over {', '.join(subset)} the ωB97X slope is {sw:+.3f} "
                     f"against {sb3:+.3f} eV/σ (×{sw / sb3:.2f}); the donor-plateau gap (nme2 − nh2) is "
                     f"{plateau['b3lyp'] * 1000:+.1f} ⊥ {plateau['wb97x'] * 1000:+.1f} meV, "
@@ -198,8 +234,39 @@ def _vs_b3lyp(rec: dict) -> dict:
                     f"with the small basis, the local slope is {cs['b3lyp_631gd']:+.3f} (B3LYP) → "
                     f"{cs['wb97x_631gd']:+.3f} (ωB97X, same basis) → {cs['wb97x_def2tzvp']:+.3f} eV/σ (def2-TZVP): "
                     f"the functional and the basis {'pull opposite ways' if opposite else 'pull the same way'} there; "
-                    "at the ends the two are not separated, and neither tier is checked against a measured series."),
+                    f"{ends_clause}; neither tier is checked against a measured series.{gap_clause}"),
     }
+
+
+def _ends_decomposition(by: dict, series_smiles: dict, centre: dict, subset: list) -> dict:
+    """The same split at the ends, from this script's own small-basis cache (`wb97x-631gd`), when it exists.
+
+    Each point is rebuilt and refused unless it equals the series xyz. With the centre pair (34b) it can give every
+    member of the common fit subset all three tiers — then the subset slope is reported per tier, which says how much
+    of the def2-TZVP ×ratio is the functional and how much the basis. CANNOT say it for a point that has no
+    small-basis value (SO₂CF₃), nor which tier is right.
+    """
+    small = {}
+    if OUT_WB97X_631GD.exists():
+        for name, c in json.loads(OUT_WB97X_631GD.read_text(encoding="utf-8"))["complexes"].items():
+            if "dE_red_eV" in c and name in by:
+                atoms, _ = build_os_complex(bpy_smiles=series_smiles[name])
+                dev = _series_geometry_dev(name, atoms)
+                if dev > SAME_GEOMETRY_TOL_A:
+                    sys.exit(f"{OUT_WB97X_631GD.name} {name} is not the series geometry (max |Δxyz| {dev} Å)")
+                small[name] = (c["dE_red_eV"], dev)
+    pts = sorted(({"name": n, "sigma_para": by[n]["sigma_para"], "b3lyp_631gd_eV": by[n]["b3lyp_dE_red_eV"],
+                   "wb97x_631gd_eV": e, "wb97x_def2tzvp_eV": by[n]["wb97x_dE_red_eV"],
+                   "functional_eV": e - by[n]["b3lyp_dE_red_eV"], "basis_eV": by[n]["wb97x_dE_red_eV"] - e,
+                   "wb97x_631gd_source": OUT_WB97X_631GD.name, "geometry_max_dev_A": d}
+                  for n, (e, d) in small.items()), key=lambda p: p["sigma_para"])
+    tiers = {p["name"]: p for p in centre["points"] + pts}
+    slopes = None
+    if all(n in tiers for n in subset):
+        sig = [tiers[n]["sigma_para"] for n in subset]
+        slopes = {t: _ls(sig, [tiers[n][f"{t}_eV"] for n in subset])[0]
+                  for t in ("b3lyp_631gd", "wb97x_631gd", "wb97x_def2tzvp")}
+    return {"points": pts, "slope_over_common_subset_by_tier": slopes}
 
 
 def _centre_decomposition(by: dict, series_smiles: dict) -> dict:
@@ -365,6 +432,9 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
         smi, sigma = series[name]
         c = rec["complexes"].setdefault(name, {"sigma_para": sigma})
         atoms, _ = build_os_complex(bpy_smiles=smi)
+        dev = _series_geometry_dev(name, atoms)
+        if dev > SAME_GEOMETRY_TOL_A:   # refused BEFORE the SCF: an off-geometry point costs seconds, not a night
+            sys.exit(f"{name}: rebuilt geometry is {dev} Å off its B3LYP row — not comparable, refused")
         for state, charge, spin, shift in (("os2", 1, 0, 0.0), ("os3", 2, 1, lshift)):
             if c.get(state, {}).get("converged"):
                 banner(f"① ωB97X {name} {state} — reused from {out.name}")
@@ -373,16 +443,16 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
             c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({xc})",
                                        xc=xc, basis_light=basis_light, conv_tol=conv, level_shift_open=shift)
             print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, conv={c[state]['converged']})")
-            out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+            _save(out, rec)
         if c["os2"]["converged"] and c["os3"]["converged"]:
             c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV   # full precision
-            out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+            _save(out, rec)
             print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
     if not small_basis and all("dE_red_eV" in rec["complexes"].get(n, {}) for n in WB97X_EXTREMES):
         rec["vs_b3lyp"] = _vs_b3lyp(rec)
-        out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+        _save(out, rec)
         print(f"  ω−B3: {rec['vs_b3lyp']['verdict']}")
-    banner(f"✅ saved {out.relative_to(REPO_ROOT)}")
+    banner(f"✅ saved {out.name}")
     return 0
 
 
