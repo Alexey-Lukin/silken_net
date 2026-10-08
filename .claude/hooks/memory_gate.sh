@@ -894,6 +894,16 @@ files.each do |f|
   end
 end
 
+# Index form (DOC-T.120): a hub and the journal that DECLARES itself its twin are ONE home —
+# the index line summarises a body that lives in the twin by design, and a router to the hub
+# reaches that body through the line number. The declaration is the twin's own line
+# «Тіла рядків хаба [[hub]]», so a journal that never says it is a twin gains nothing here.
+twin_of = Hash.new { |h, k| h[k] = Set.new }
+files.grep(/\Alog_/).each do |f|
+  File.read(File.join(dir, f)).scan(/Тіла рядків хаба \[\[([a-zA-Z0-9_-]+)\]\]/).flatten.each { |h| twin_of[h] << f.sub(/\.md\z/, "") }
+end
+reach = ->(links, target) { links.include?(target) || links.any? { |h| twin_of[h].include?(target) } }
+
 blk.keys.combination(2) do |ka, kb|
   next if ka[0] == kb[0]
   inter = (blk[ka][0] & blk[kb][0]).size
@@ -902,8 +912,9 @@ blk.keys.combination(2) do |ka, kb|
   next if coef < coef_floor
   # The prescribed shape is "instance + router". A pointer INSIDE the overlapping
   # block means the copy knows where its rule lives; anything else drifts silently.
-  next if blk[ka][1].include?(kb[0].sub(/\.md\z/, "")) ||
-          blk[kb][1].include?(ka[0].sub(/\.md\z/, ""))
+  sa, sb = ka[0].sub(/\.md\z/, ""), kb[0].sub(/\.md\z/, "")
+  next if twin_of[sa].include?(sb) || twin_of[sb].include?(sa)
+  next if reach.(blk[ka][1], sb) || reach.(blk[kb][1], sa)
   puts format("OVERLAP %s#%d and %s#%d share %d%% of the smaller block (%d 6-grams) " \
               "with no [[router]] between them — one rule, two homes: keep the rule in ONE " \
               "and leave \"instance + router\" in the other",
@@ -2729,6 +2740,23 @@ RUBY
   else
     fail=$((fail+1)); printf '  FAIL  %s\n         on: %s\n         off: %s\n' "START-HEAVY fires past the line and only there" "$heavy_on" "$heavy_off"
   fi
+
+# 33a-33c [DOC-T.120] Index form: a hub and the journal that DECLARES itself its twin are
+# one home. The extension must not mute a real duplicate, so the undeclared pair stays red.
+_st_par='Seven quiet ravens counted every granite stone along the winding northern river before the early autumn frost arrived over the silent valley this year'
+_st_build "$d"
+printf -- '---\nname: feedback_hubx\ndescription: "H"\nmetadata:\n  type: feedback\n---\n\n%s\n' "$_st_par" >"$d/feedback_hubx.md"
+printf -- '---\nname: log_hubx\ndescription: "L"\nmetadata:\n  type: project\n---\n\nТіла рядків хаба [[feedback_hubx]] за номером `(N)`, дослівно (DOC-T.120).\n\n%s\n' "$_st_par" >"$d/log_hubx.md"
+_st_check "a hub and its DECLARED twin journal are one home (no OVERLAP)" reject 'OVERLAP'
+_st_build "$d"
+printf -- '---\nname: feedback_hubx\ndescription: "H"\nmetadata:\n  type: feedback\n---\n\n%s\n' "$_st_par" >"$d/feedback_hubx.md"
+printf -- '---\nname: log_hubx\ndescription: "L"\nmetadata:\n  type: project\n---\n\n%s\n' "$_st_par" >"$d/log_hubx.md"
+_st_check "the same pair WITHOUT the twin declaration is OVERLAP" expect 'OVERLAP.*hubx'
+_st_build "$d"
+printf -- '---\nname: feedback_hubx\ndescription: "H"\nmetadata:\n  type: feedback\n---\n\nIndex line.\n' >"$d/feedback_hubx.md"
+printf -- '---\nname: log_hubx\ndescription: "L"\nmetadata:\n  type: project\n---\n\nТіла рядків хаба [[feedback_hubx]] за номером `(N)`, дослівно (DOC-T.120).\n\n%s\n' "$_st_par" >"$d/log_hubx.md"
+printf -- '---\nname: log_other\ndescription: "O"\nmetadata:\n  type: project\n---\n\n%s Rule home: [[feedback_hubx]]\n' "$_st_par" >"$d/log_other.md"
+_st_check "a router to the hub reaches its declared twin (no OVERLAP)" reject 'OVERLAP'
 
   # RUBY RESOLUTION. The class these pin is not "a check is wrong" but "a check
   # did not run and the battery said OK" — the failure that hid for weeks
