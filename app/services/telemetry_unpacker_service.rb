@@ -429,7 +429,8 @@ class TelemetryUnpackerService < ApplicationService
     mesh_ttl     = (mesh_ctrl >> 4) & 0x0F
     bio_status   = interpret_status((status_byte >> 5) & 0x03)
 
-    # [SEC.20] vpd-байт тимчасово (до BME280/HW.32 → rev3) несе contract-звіт
+    # [SEC.20] vpd-байт тимчасово (до wire-rev2.2: FW.66 переносить звіт у байт 11, а байт 19
+    # віддає VPD HW.32) несе contract-звіт
     # [reverted:1 | id7] — складаємо у спільні 16 біт fw_report-семантики
     # (semantic-біт ставимо самі: CCM-прошивка з патчем шле звіт завжди),
     # щоб TelemetryLog-хелпери працювали однаково для обох ер.

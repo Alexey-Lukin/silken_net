@@ -22,7 +22,10 @@
  * +2B EMA field rides airtime-free inside the block rev2 already paid
  * for (wire-budget ledger, docs/03_05 §2.1): the frame homes EVERY known
  * claimant (device_z, diag bits, VPD, gossip, EMA-delta_t) so no field
- * migration is pending.
+ * migration was pending at rev2.1. ⊕ wire-rev2.2 (⚖️ founder 2026-10-08,
+ * ledger docs/03_05 §2.1) re-homes bytes 11 · 16..17 · 18 · 19 under
+ * branch (Б) in the same 30 B — implementation is 00_07 FW.66, so the
+ * map below is still rev2.1, the bytes this firmware actually packs.
  * ⚠️ This line said SF10 / "28..31B / 48 symbols / 493.6 ms" until the
  * profile was reconciled: those are LoRaWAN-detour numbers (ARCH.34), not
  * ours. The conclusion survived the correction — 28B and 30B are still one
@@ -54,7 +57,7 @@
  *   │ Byte 19   : vpd_index (uint8) — НЕ резерв: до BME280 несе    │
  *   │             SEC.20-звіт відкату [reverted:1|id7]             │
  *   │             (fw_report.h), єдиний сигнал відкату CCM-ери;    │
- *   │             VPD (HW.32) забере його лише рішенням rev3       │
+ *   │             wire-rev2.2 віддає байт VPD, звіт — у байт 11    │
  *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
  *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
  *   │             mruby metabolic_health цього циклу (сатуроване   │
@@ -111,7 +114,7 @@
 /* B0 flags (NIST SP 800-38C §A.2.1): Adata=1 (маємо AAD), M'=(t-2)/2 при
  * t=8, L'=q-1 при q=15-nonce_len=3 → 0x40 | 0x18 | 0x02 = 0x5A. Байт
  * зашитий константою (не рахується в рантаймі): зміна t/q = зміна wire,
- * а wire ревізується лише пакетом rev3 (budget-ledger 03_05 §2.1). */
+ * а wire ревізується лише пакетом ревізії (budget-ledger 03_05 §2.1). */
 #define FW2_CCM_B0_FLAGS           0x5Au
 
 /* RTC_BKP_DR15 magic marker (high 8 bits). Distinct from
@@ -152,7 +155,9 @@
  * thr_invalid — FW.18b saturating-лічильник відкинутих OTA-порогів
  * (у 21B жив у байті 11 [thr:5|TTL:3]; CCM TTL живе у mesh_ctrl).
  * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа.
- * thr_invalid і fauna-біти з HW.30 завжди 0; долю слоту вирішує FW.59. */
+ * thr_invalid і fauna-біти з HW.30 завжди 0; у wire-rev2.2 (ledger 03_05 §2.1)
+ * ці біти несуть reset_cause · time_uncertain · voc_attempt — реалізація
+ * 00_07 FW.66. */
 #define FW2_DIAG_THR_INVALID_SHIFT 3u
 #define FW2_DIAG_THR_INVALID_MAX   31u
 #define FW2_DIAG_FAUNA_MODE_BIT    0x04u

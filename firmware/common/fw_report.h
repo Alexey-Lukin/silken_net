@@ -19,7 +19,8 @@
  *   [13:0] id14    — hiwater (ключ 0x15) & 0x3FFF: біжуча версія, або спалена
  *                    при reverted (Rails одразу знає, від чого bump'ати).
  *                    Стеля 16383 = BioContractFirmware.id modulo; переповнення
- *                    віддасть ширше поле wire-rev3
+ *                    віддасть ширше поле наступній wire-ревізії (wire-rev2.2
+ *                    лишила CCM-ехо id7, лише переніс його в байт 11)
  *
  * CCM-ера: той самий звіт стискається у vpd_index-байт (до BME280/HW.32):
  *   [7] reverted | [6:0] id7. Несучий біт — reverted; echo 7 біт = best-effort
