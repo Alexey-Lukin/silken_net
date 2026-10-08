@@ -4,7 +4,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати конвеєр **Factory Flashing** (масове виробництво) та повний протокол **provisioning ключів** вузлів Soldier/Queen: дві гілки фабрики (Protected Flash STM32 / Secure Element), HKDF-деривація per-device AES-ключів, Lorenz K_seed (SEC.11), OTA image authentication (FW.23 HMAC dual-gate) та operations-security threat model заводського каналу (SEC.3). Виокремлено з [`03_05 §3.4`](03_05_Hardware_Symmetric_Crypto_and_Security) (там лишаються крипто-режими/пакети/IV/SE050/ротація; тут — provisioning-підсистема).
+Зафіксувати конвеєр **Factory Flashing** (масове виробництво) та повний протокол **provisioning ключів** вузлів Soldier/Queen: дві гілки фабрики (Protected Flash STM32 / Secure Element), HKDF-деривація per-device AES-ключів, Lorenz K_seed (SEC.11), OTA image authentication (FW.23: Ed25519-печатка кластера, dual-gate) та operations-security threat model заводського каналу (SEC.3). Виокремлено з [`03_05 §3.4`](03_05_Hardware_Symmetric_Crypto_and_Security) (там лишаються крипто-режими/пакети/IV/SE050/ротація; тут — provisioning-підсистема).
 
 ---
 
@@ -242,7 +242,7 @@ STEP 2: Factory Flashing (конвеєр на заводі)
                  # [FW.17] re-provision (рядок уже є) — епоха e+1, info "…:e<N>" (03_05 §3.8);
                  # тією ж транзакцією downlink_frame_counter = 0 (03_05 §2.5)
      k_seed    = SeedDerivation (§3, info "silken-lorenz-seed|<DID>")     # Tree, 32B
-     k_ota     = per-cluster HKDF (§4, FW.23)                             # Tree, 32B
+     ota_pub   = OtaSealKeyService.public_key_hex_for (§4, FW.23)         # Tree, 32B — KPUB
      bcast_key = HardwareKeyService.derive_broadcast_key(cluster_id)      # ОБИДВА, 16B — KEYB
                  # = HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key")
                  # Tree → KEYB-слот (стор. 125, +40); Gateway → її KEYL-слот
@@ -788,7 +788,7 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
 | Шар | Файл | Статус |
 |-----|------|--------|
 | Session AASM | `app/models/provisioning_session.rb` | ✅ `pending → supervisor_approved → active → completed \| failed`; 2-Person Rule = `supervisor_id != operator_id` (валідація) **+ `approve` guard `credentials_verified?` (true лише через `approve_with_credentials!` — Argon2id-пароль і TOTP супервайзера, без активного MFA — відмова); сирий `approve!` з console відмовляється → оператор, що лише *назвав* супервайзера, схвалити сам НЕ може** |
-| Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
+| Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bws` — CLI Secrets Manager, токен машинного акаунта `BWS_ACCESS_TOKEN`). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
 | UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
 | Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (`-c` + `-r32 0x1FFF7590 12` UID-read одним викликом, обидві гілки) + Гілка A — `-e` сторінок ключів і `STM32_Programmer_CLI -w32` цілими doubleword'ами (суміжні слова одним рядком, діру добиває `0xFFFFFFFF`; кожен рядок несе власний `-c`): Tree — `KEYL`/`LSED`/`KPUB`/`KEYB`, Gateway — `KEYL` (= KEYB-значення)/`KEYC`/`EDSK` (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), IWDG-заморозка + RDP L0/L1 (байта L2 у `RDP_OPTION_BYTE` немає — ⚖️ SEC.2 2026-09-28); Гілка B — **той самий** `-w32`-набір обох типів (`protected_flash_commands`; Гілка B = A + identity-chip, ⚖️ делеговано 2026-09-27 — врізка «Набір ключів Гілки B», §1; доти skip-key-writes = цегла на першому boot, а Gilka-B Королева не мала ні KEYC, ні EDSK) |
@@ -917,7 +917,7 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 - Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity`).
 - Мінімальний retention: ⚖️ **строк НЕ ухвалено** — дім рішення [`00_07`](00_07_Action_Plan_Tracker) SEC.18, і RoPA свідомо тримає `[TBD]`. 🔴 Тут стояло «7 років (GDPR Article 17(3)(b) — legal obligation exception)», і обидві половини не тримаються: число не було ухвалене ніде (а сусідня нога SEC.18 прямо забороняє ВИГАДУВАТИ строки), а літера **(b)** до нас текстуально не тягнеться — [`dpia_art35`](protocols/legal/dpia_art35.md) R3 (2026-09-06) прочитав первинку: (b) вимагає обовʼязку «*by Union or Member State law*», якій ПКУ/ЗУ про бухоблік не відповідають, тож кандидати — **(e)** або Art.6(1)(f), і вибір належить юристу.
 
-**2-Person Rule (рекомендовано для > 100 unit batch):** supervisor має підтвердити сесію через окремий Rails UI перед тим як інструмент отримає session token. Реалізується через `ProvisioningSession` AASM: `pending → supervisor_approved → active → completed/failed`.
+**2-Person Rule (обовʼязкове для КОЖНОЇ сесії — AASM-гард):** supervisor схвалює сесію `rake factory:approve` власним паролем і поточним TOTP (`SUPERVISOR_PASSWORD` · `SUPERVISOR_OTP`); без активного MFA — відмова для будь-якої ролі (врізка «[SEC.3] Authenticated 2-Person approval» вище). Окремого Rails UI і session token немає. `ProvisioningSession` AASM: `pending → supervisor_approved → active → completed/failed`.
 
 ---
 
