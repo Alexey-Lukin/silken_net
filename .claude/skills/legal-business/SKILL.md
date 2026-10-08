@@ -1,6 +1,6 @@
 ---
 name: legal-business
-description: "Use when working on the silken_net legal / business / academic-partner / IP-and-brand surface. Covers NaaS contract terms and financial constants (00_04), unit economics · BOM rollup · ROI (02_06 §1-§10), the university partner registry · publication plan · defensive-publication IP posture · SilkenNet brand (00_02), and the working draft layer in docs/protocols/{legal,business,procurement,outreach,research}/ (MSA skeleton, B2C ToS/Privacy, entity structure, tax posture, trademark brief, securities review, SLA exhibit, carbon registry matrix, E&O spec, vendor templates, outreach dispatch map). Knows the non-obvious traps — a draft is never a signed document and a spec is never a bought policy; SCC is an internal accounting convention, NOT a registry-recognised carbon credit; our own analysis is publishable but a third party's operational facts are not; the rate-guard and solc-guard DO scan docs/protocols/** and fire on a customer-facing document that restates a rate; protocols/ refs need relative hrefs with correct ../-depth; one advisor workshop cannot close a securities question. The honesty bounds and the domain rules are indexed here one line each and written in full in bounds.md and domain_rules.md, which load on demand — open them when an index line stops you, and domain_rules.md before writing a letter to a vendor, lab or regulator, pricing a BOM cell or packing a question for a specialist. Routes to the 00_04 + 00_02 canon + 00_07 state (§00b · §02c · the item named in an artifact's header), does not restate. NOT this skill: canon-doc mechanics / linters / wiki → ssot-maintenance; token & money-path code → web3-pipeline. Examples: \"draft an NaaS clause\", \"онови юніт-економіку після нового BOM\", \"is SCC a security?\", \"що просити в Аблязова\", \"додай документ у protocols/legal\", \"статус MoU з ЧНУ\", \"trademark strategy\", \"чи можна назвати це вуглецевим кредитом\"."
+description: "Use when working on the silken_net legal / business / academic-partner / IP-and-brand surface. Covers NaaS contract terms and financial constants (00_04), unit economics · BOM rollup · ROI (02_06 §1-§10), the university partner registry · publication plan · defensive-publication IP posture · SilkenNet brand (00_02), and the working draft layer in docs/protocols/{legal,business,procurement,outreach,research}/ (MSA skeleton, B2C ToS/Privacy, entity structure, tax posture, trademark brief, securities review, SLA exhibit, carbon registry matrix, E&O spec, vendor templates, outreach dispatch map). Knows the non-obvious traps — a draft is never a signed document and a spec is never a bought policy; SCC is an internal accounting convention, NOT a registry-recognised carbon credit; our own analysis is publishable but a third party's operational facts are not; the rate-guard and solc-guard DO scan docs/protocols/** and fire on a customer-facing document that restates a rate; protocols/ refs need relative hrefs with correct ../-depth; one advisor workshop cannot close a securities question. The honesty bounds and the domain rules are indexed here one line each and written in full in bounds.md and domain_rules.md, which load on demand — open them when an index line stops you, and domain_rules.md before writing a letter to a vendor, lab or regulator, pricing a BOM cell, packing a question for a specialist, or touching the licence matrix or the brand name. Routes to the 00_04 + 00_02 canon + 00_07 state (§00b · §02c · the item named in an artifact's header), does not restate. NOT this skill: canon-doc mechanics / linters / wiki → ssot-maintenance; token & money-path code → web3-pipeline. Examples: \"draft an NaaS clause\", \"онови юніт-економіку після нового BOM\", \"is SCC a security?\", \"що просити в Аблязова\", \"додай документ у protocols/legal\", \"статус MoU з ЧНУ\", \"trademark strategy\", \"чи можна назвати це вуглецевим кредитом\"."
 ---
 
 # Legal / Business / Academic / IP
@@ -13,24 +13,24 @@ description: "Use when working on the silken_net legal / business / academic-par
 
 Порушення будь-якої з них дорожче за будь-який технічний баг у цьому домені.
 
-**Тіла — у [`bounds.md`](bounds.md): відкривай, щойно рядок нижче тебе спинив.** Рядок індексу — НОСІЙ і читається на вході в домен; механізм, інстанс і межі чинності — там. Цитуй `Межі #N`; правило прав ТАМ.
+**Тіла — у [`bounds.md`](bounds.md): відкривай, щойно рядок нижче тебе спинив, і перш ніж нести твердження про зрілість, право, особу, третю сторону чи стан айтема в текст для людини або в публічне дерево.** Рядок індексу — НОСІЙ і читається на вході в домен; механізм, інстанс і межі чинності — там. Цитуй `Межі #N`; правило прав ТАМ.
 
 <!-- LEGAL-BOUNDS-INDEX:AUTO — generated from bounds.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
 1. Чернетка ≠ підписаний документ. Спека ≠ куплений поліс. План ≠ виконаний прохід
-2. SCC ≠ сертифікований вуглецевий кредит: курс SCC→tCO₂ — внутрішня облікова конвенція, а кредит видає зовнішній реєстр
-3. Наш аналіз публікуємо — чужі факти ні: операційні факти третьої компанії генеризуй, зміст лишай
-4. Securities — регістр трекера, не юр-висновок про себе
-5. Імена — тільки ті, що називає канон; де виконавця немає — «TBD, не контактовано», персону не вигадуй
-6. `R1`–`R6` у `protocols/research/` — не джерело істини: це датовані web-знімки, не верифіковані пофактно, і як факт їх не цитують
+2. SCC ≠ сертифікований вуглецевий кредит: курс SCC→tCO₂ — внутрішня облікова конвенція; жоден реєстр не бере сигнал дерева прямим входом, кредит видає зовнішній реєстр за власною методологією
+3. Наш аналіз публікуємо — чужі факти ні: операційні факти третьої компанії генеризуй, зміст лишай; а перш ніж оголосити щось «експозицією», грепни, чи воно ВЖЕ публічне
+4. Securities — регістр трекера, не юр-висновок про себе: ніколи «ми є незареєстрованим цінним папером»
+5. Імена — тільки ті, що називає канон; де виконавця немає — «TBD, не контактовано»: персону не вигадуй, адресата на домовленість не перетворюй
+6. `R1`–`R6` у `protocols/research/` — не джерело істини: це датовані web-знімки, не верифіковані пофактно, — як факт їх не цитують, а самі знімки не переписують
 7. UA-режим НЕ дзеркалить EU — і саме тут найлегше збрехати впевнено
-8. Item трекера може брехати про ВЛАСНИЙ артефакт — перед плануванням роботи за item'ом цього домену відкрий названий артефакт
-9. Вік документа тут = валідність, а не стиль
-9a. Теза може старіти в ЗАСПОКІЙЛИВИЙ бік — і тоді її ніхто не перечитує, бо вона ж не помилка
+8. Item трекера може брехати про ВЛАСНИЙ артефакт — перед плануванням роботи за item'ом цього домену відкрий названий артефакт і перевір, чи діра ще існує; хибну премісу звужуй, не стирай
+9. Вік документа тут = валідність, а не стиль: протермінований юр-документ може бути просто неправильним, а чужі FAQ відстають від чинного права — спирайся на первинку
+9a. Теза може старіти в ЗАСПОКІЙЛИВИЙ бік — і тоді її ніхто не перечитує, бо вона ж не помилка; пишучи «поки що ні», назви ПОДІЮ, що це вбʼє, і де вона видима
 10. Юр-задача буває ДВОШАРОВОЮ, і другий шар забувають — питай про нього ПЕРШ ніж називати задачу одним підписом
 11. Мовна локаль вітрини = юрисдикційний сигнал наміру, незалежний від місця інкорпорації
 12. Юр-твердження живуть і в НЕюридичних документах — свіпаючи юр-ризик, не обмежуйся `00_04`/`00_02` і `protocols/legal/`
-12a. Номенклатура, яку клієнт побачить першою, може не мати канон-ДОМУ — і саме тому розходиться сама з собою
+12a. Номенклатура, яку клієнт побачить першою, може не мати канон-ДОМУ — і саме тому розходиться сама з собою; грепни слово по корпусу ДО введення, а брак дому назви відкритою діркою, не мандатом канонізувати
 13. «Повний перелік» ловиться лише СЕРІЄЮ інструментів, і кожен зріз має ВЛАСНУ сліпоту — тож питання не «чи перелік повний», а «яким приладом його востаннє міряли й до чого той прилад сліпий»
 14. Контрагентський документ легко продає ВІДВАНТАЖЕННЯ як ДОВЕДЕНІСТЬ — і ці два твердження змішувати не можна
 15. ДЕРИВАЦІЯ ⊥ ЛІТЕРА норми — і в документі для фахівця це різні речі
@@ -154,17 +154,17 @@ description: "Use when working on the silken_net legal / business / academic-par
 
 ## Доменні правила, які легко зламати не помітивши
 
-**Тіла — у [`domain_rules.md`](domain_rules.md): відкривай, перш ніж писати лист вендорові, лабораторії чи регулятору, ставити ціну в клітинку BOM або класти питання про чужий текст у пакет фахівцеві.** Рядок нижче — носій; механізм, інстанс і межі — там. Цитуй `Доменні правила #N`; правило прав ТАМ.
+**Тіла — у [`domain_rules.md`](domain_rules.md): відкривай, перш ніж писати лист вендорові, лабораторії чи регулятору, ставити ціну в клітинку BOM, класти питання про чужий текст у пакет фахівцеві або правити ліцензійну матрицю чи назву бренду.** Рядок нижче — носій; механізм, інстанс і межі — там. Цитуй `Доменні правила #N`; правило прав ТАМ.
 
 <!-- LEGAL-DOMAIN-INDEX:AUTO — generated from domain_rules.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
 1. AF3 carve-out: виходи AlphaFold-3 лишаються під non-commercial Terms і виключені з CC-BY-SA — не «спрощуй» ліцензійну матрицю, стираючи цей виняток
 2. Бренд один — SilkenNet; друге, федеративне імʼя знято повністю (⚖️ founder 2026-10-04, [`00_02 §5`](../../../docs/00_02_Academic_Integration_and_IP.md))
 3. Procurement — це ДВА workflow, не один: R&D-RFQ (`protocols/procurement/`) ⊥ production-procurement (Frame Agreement, `02_06 §8`)
-4. Лист вендорові чи лабі не сміє вирішити відкритий ⚖️ тим, ЩО він просить
-5. Лист, що купує ПОСЛУГУ виміру (лабораторія · тест-хаус), зʼїдає власний зміст кількома способами (перелік нижче — ⛔ не лічимо), і жоден гейт їх не бачить
-6. Форму, адресата й габарит листа вирішують ДО тексту — і кожне з трьох уже раз зламалось
-7. Питання до людини, чий предмет — ЧУЖИЙ ТЕКСТ (ліцензія · T&C реєстру · закон · регламент), спершу читається в самому тексті — і часто закривається ним
+4. Лист вендорові чи лабі не сміє вирішити відкритий ⚖️ тим, ЩО він просить — питай про ОБИДВІ гілки; а ратифікований ⚖️ робить хибним кожен пункт листа, що досі питає обидві
+5. Лист, що купує ПОСЛУГУ виміру (лабораторія · тест-хаус), зʼїдає власний зміст, і жоден гейт цього не бачить: проси один базовий кейс, а кожне «we …» листа звір із відкритими ⚖️
+6. Форму, адресата й габарит листа вирішують ДО тексту; кандидата й P/N звіряють з аркушем виробника — P/N з опцій чи зі схеми ще не код замовлення, а «не знайшов» ≠ «немає»
+7. Питання до людини, чий предмет — ЧУЖИЙ ТЕКСТ (ліцензія · T&C реєстру · закон · регламент), спершу читається в самому тексті: літера закриває його ЗАЙВУ частину, а фахівцеві лишається те, де вона мовчить
 8. Ціна з картки дистрибʼютора — драбина, а не число, і три її місця брешуть про партію; «starting at» на сайті вендора — підлога, а не ціна
 
 <!-- /LEGAL-DOMAIN-INDEX -->
