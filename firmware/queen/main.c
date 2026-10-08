@@ -2226,11 +2226,10 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 // [СИНХРОНІЗОВАНО з Rails]: Downlink::PendingQueueService формує payload poll-відповіді:
 //   [IV:16][AES-256-CBC зашифровані дані]
 //   Відкритий текст (post-FW.20): [0x9C][unix_ts_be:4][inner_payload]
-//   inner_payload може бути одним з:
-//     - "CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>"  → актуатор
-//     - [0x99][chunk_idx:2][total:2][bytecode][CRC]      → OTA-чанк байткоду
-//     - [0x9A][len_le:2][body:10]                         → CMD_SET_THRESHOLDS
-//     - [0x9E][len_le:2 = 4][target_version:u16le][crc16] → CMD_ROTATE_KEY (FW.17)
+//   inner_payload — "CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>" для актуатора,
+//   OTA-кадри 0x99/0x9B/0x9F або адресні CCM-кадри 0x9A/0x9E. ⛔ Байтових форматів
+//   тут не дублюємо — копія не стежить за дротом: OTA — `03_05 §2.3`, адресні —
+//   `03_05 §2.5`.
 // Приклад: CMD:OPEN_VALVE:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 // ACTION самоописовий за типом пристрою — Королева реєстру не тримає, тож
 // наказ мусить нести своє призначення сам (03_02 §6, присуд UI.14).
@@ -2241,8 +2240,7 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 // потім маршрутизує inner_payload через існуючу логіку (CMD: / 0x99 / 0x9A).
 //
 // [OTA Downlink]: чанк пакує OtaPackagerService, видає з Ota::PackageStore poll-тракт
-//   (Downlink::PendingQueueService); payload після зрізання конверта:
-//   [0x99][chunk_index:2][total_chunks:2][bytecode:≤512][CRC:2]
+//   (Downlink::PendingQueueService); формат кадру після зрізання конверта — `03_05 §2.3`.
 // [FW.60] Повертає 1, коли по знятті 0x9C-конверта БУВ inner-контент
 // (CMD/OTA/трейлер/hint — байдуже, чи прийнятий), 0 — порожній time-only
 // конверт або відмова. Poll-цикл на 0 зупиняє дренаж черги.

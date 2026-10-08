@@ -84,7 +84,7 @@
 
 Статус дерева воркер НЕ чіпає (dormant = людське рішення, removed/deceased запускають slashing). Grafana: `silkennet_trees_silent` / `silkennet_tree_silence_total` ([`06_03 §2.8`](06_03_Prometheus_Observability)) + P1-правило `sn-alert-trees-silent` (warning, for 30m — масовий кейс несе P0 `sn-alert-gateway-faulty`, сюди не дублюється). ⚠️ Це sweeper-**нога** розрізнювача: «мовчазне здоров'я ↔ смерть/крадіжка» остаточно розділяє лише signed daily heartbeat (firmware-нога, bench-gated) — стан і ⚖️-пороги → [`00_07` SILENCE-1](00_07_Action_Plan_Tracker); ARCH.8 event-triggered TX лишається гейтованим до heartbeat-ноги.
 
-**Третій сторож — актуаторний [ARCH.58, ✅ 2026-07-27]:** `ActuatorSafetySweepWorker` (cron `12,42`, черга `downlink`). Два перші стережуть **тишу пристрою**; цей — **загублений слід власної команди**: актуатор числиться `active` довше за вікно найновішої своєї команди (втрачена scheduled-джоба Reset у Redis, крах між комітом видачі та `perform_in`, вичерпані ретраї). Три свідомі відмінності від сусідів:
+**Третій сторож — актуаторний [ARCH.58, ✅ 2026-07-27]:** `ActuatorSafetySweepWorker` (cron `12,42`, черга `downlink`). Два перші стережуть **тишу пристрою**; цей — **загублений слід власної команди**: актуатор числиться `active` довше за вікно найновішої своєї команди (втрачена scheduled-джоба Reset у Redis, крах між комітом луни та `perform_in`, вичерпані ретраї). Три свідомі відмінності від сусідів:
 
 - **Черга `downlink`, не `alerts`** — продукт проходу є downlink-наказ (override-`STOP`), алерт побічний.
 - **Counter без gauge-двійника** — sweep стан УСУВАЄ тим самим проходом, тож «скільки зараз залипло» читалось би вічним нулем (на відміну від `gateways_faulty`, де faulty персистентний).

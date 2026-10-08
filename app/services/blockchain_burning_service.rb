@@ -845,7 +845,7 @@ class BlockchainBurningService < ApplicationService
     # обидва людські сайти передають user. Звуження свідоме: оператор, що полагодив Королеву
     # без paperwork, штрафу уникне — false-negative, а burn необоротний (05_05 §3.2 асиметрія).
     # [ARCH.58] І :actuator_stuck — Rails загубив слід ВЛАСНОЇ команди (втрачена
-    # scheduled-джоба / крах між комітом видачі та плануванням). Той самий
+    # scheduled-джоба / крах між комітом луни та плануванням). Той самий
     # vendor-attributable клас, що firmware_fault: виїзд лісника нашого
     # bookkeeping-збою не лікує, а карати оператора за нього — те саме, що
     # штрафувати за mruby-crash.

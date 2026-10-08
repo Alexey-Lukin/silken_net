@@ -125,7 +125,7 @@ module Downlink
         if command.expired?
           # [FW.60] `pending_commands` віддає лише `.pending` = [:issued, :sent],
           # а подія `fail` приймає їх НАДмножину `from:` — тут `may_fail?`
-          # завжди true. Гард знято як мертву гілку (00_07 FW.60 §B.4-тріаж).
+          # завжди true. Гард знято як мертву гілку (FW.60 тріаж `04_06 §B.4` 2026-09-09).
           command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})")
           # [UI.4] Fail теж мусить доїхати до UI. Поки бейдж був статичним, німий
           # fail-шлях не мав симптому; з живою підпискою він застигав би на
@@ -147,7 +147,7 @@ module Downlink
           next
         end
 
-        # [00_07 FW.60 case 3, §B.4-тріаж] `pending_commands.first` — без `FOR
+        # [FW.60 case 3, тріаж `04_06 §B.4` 2026-09-09] `pending_commands.first` — без `FOR
         # UPDATE`. Гард нижче НЕДОСЯЖНИЙ сьогодні: єдиний прод call-site цього
         # сервісу — однопроцесний однопотоковий `lib/daemons/coap_listener`
         # (наступний датаграм читається лише ПІСЛЯ повного коміту цієї
@@ -281,7 +281,7 @@ module Downlink
       pending_id = @gateway.pending_firmware_id
       return unless pending_id && delivered_id >= pending_id
 
-      # [00_07 FW.60 case 4, §B.4-тріаж] `pending_id` — голий bigint без FK:
+      # [FW.60 case 4, тріаж `04_06 §B.4` 2026-09-09] `pending_id` — голий bigint без FK:
       # застосунок сьогодні не має ЖОДНОГО кодового шляху видалення
       # BioContractFirmware (виміряно — нуль destroy/delete у app/+lib/,
       # `resources :firmwares` без :destroy), але оператор у `rails console`
@@ -384,7 +384,7 @@ module Downlink
           # чанк-фетч завжди несуть `packages.size`, а той має структурну
           # підлогу > 0 (`gateways.cluster_id` NOT NULL → трейлер печатки OTA
           # (`OtaPackagerService#sealed?`) додається завжди). «Хінт з
-          # НУЛЬ чанків» — мертва гілка (00_07 FW.60 §B.4-тріаж).
+          # НУЛЬ чанків» — мертва гілка (FW.60 тріаж `04_06 §B.4` 2026-09-09).
           100
         end
 

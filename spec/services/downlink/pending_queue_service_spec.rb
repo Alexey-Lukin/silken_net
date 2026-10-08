@@ -228,8 +228,9 @@ RSpec.describe Downlink::PendingQueueService do
     end
 
     # 🔴 [ARCH.75] Найгостріший клас, знайдений виміром: `EmergencyResponseService`
-    # пише `insert_all` (валідації обходить) і ріже тривалість за власною
-    # константою 3600, не за `actuator.max_active_duration_s` — а сіди везуть
+    # пише `insert_all` (валідації обходить) і до ARCH.75 різав тривалість за
+    # власною константою 3600, не за `actuator.max_active_duration_s` (тепер
+    # `can_sustain?` відсіює актуатор ДО запису) — а сіди везуть
     # клапан зі стелею 300 і сирену зі 120. Тоді КОЖЕН AASM-перехід такого
     # наказу б'ється об валідацію, включно з TTL-прибиранням. Демон виняток
     # ЛОВИТЬ (`rescue StandardError`), але `reply` лишається непризначеним —
@@ -594,7 +595,7 @@ RSpec.describe Downlink::PendingQueueService do
       expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
     end
 
-    # [00_07 FW.60 case 5, §B.4-тріаж] Точна пара, яку `GatewayStalenessSweepWorker`
+    # [FW.60 case 5, тріаж `04_06 §B.4` 2026-09-09] Точна пара, яку `GatewayStalenessSweepWorker`
     # називає «unannounced» [ARCH.59]: `pending_firmware_id` присутній, а СТАН
     # НЕ `:updating`. Тест вище доводить ІНШУ половину пари — `fw=` приходить,
     # поки шлюз УЖЕ `:updating` (нормальний, анонсований шлях). Тут — інверсія:
@@ -616,7 +617,7 @@ RSpec.describe Downlink::PendingQueueService do
     end
   end
 
-  # [00_07 FW.60 case 4, §B.4-тріаж] `gateways.pending_firmware_id` — голий
+  # [FW.60 case 4, тріаж `04_06 §B.4` 2026-09-09] `gateways.pending_firmware_id` — голий
   # bigint без FK (structure.sql). Виміряно: `app/`+`lib/` не мають ЖОДНОГО
   # `destroy`/`delete`/`delete_all` на BioContractFirmware, а `resources
   # :firmwares` не оголошує `:destroy` — застосунок сьогодні НЕ ВМІЄ видалити

@@ -10,9 +10,10 @@ module OtaChunkable
   # із [FW.60] і чий файл піде після bench-верифікації poll-тракту — а константу читають два
   # живі сайти (`Ota::PackageStore`, `Ota::DeploymentDispatcherService`). Тут воно
   # стоїть біля обох методів, які ним ріжуть, тож наступний, хто зноситиме воркер, не візьме
-  # з собою живе значення. ⚠️ Підняття вище MTU конверта CoAP не перевіряє ніщо —
-  # `Ota::PackageStore` нарізає через `OtaPackagerService`, а `Downlink::PendingQueueService`
-  # віддає без контролю розміру (спека того сервісу це фіксує).
+  # з собою живе значення. ⚠️ Підняття вище MTU конверта CoAP ловить лише backstop на виході:
+  # `Ota::PackageStore` нарізає через `OtaPackagerService` без перевірки MTU, а
+  # `Downlink::PendingQueueService` ловить уже зашифрований конверт понад стелю й віддає
+  # time-only (спека того сервісу пінить) — і тоді кампанія стоїть.
   CHUNK_SIZE = 512
 
   # Розбиття на сегменти (MTU-friendly). byteslice без regex: O(n/chunk) memcpy
