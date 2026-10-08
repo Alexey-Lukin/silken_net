@@ -90,6 +90,7 @@ append-only (`0a` · `0b` · `4a` · `9b` are items of their own).
 19. Editing a `cem/*.json` through a JSON PARSER rewrites the whole file, and the reformat hides the one line you meant to change
 20. The gallery has TWO artefact kinds with DIFFERENT triggers, and only one of them is pinned — so the reflex that says «re-run the drawing loops» (#18 ⊕) leaves the renders stale by its own wording
 21. Moving a ROOT dimension is not a manifest edit — it is an inventory of every CARRIER OF THE NUMBER, by class, and the gates cover a third of them
+22. Order is load-bearing: apply a ratified GEOMETRY change first, then run the measurement that stands on it — before a run, ask whether a verdict already ratified but not yet applied changes this part
 
 <!-- /PICOGK-GOTCHAS-INDEX -->
 
