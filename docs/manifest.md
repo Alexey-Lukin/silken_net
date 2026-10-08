@@ -33,7 +33,7 @@ Each node in the network is an **Autonomous Metabolic Oracle** — a sensor surg
 
 #### 2.1. Energetic Autonomy via Enzymatic Bio-Fuel Cells (EBFC, Gen 2.0)
 
-The node is **powered by the tree itself**. No batteries, no solar harvesters, no grid — and the design target is no scheduled maintenance for the operational lifetime of the host organism (20–25 years). The energy buffer's own service life at that horizon is an open engineering question, not yet settled (`docs/02_03 §12.1`, `00_07` HW.37) — first-order vendor extrapolation puts it well short of 20 years at full charge voltage, and the fix is a lower operating setpoint, priced against stored energy.
+The node is **powered by the tree itself**. No batteries, no solar harvesters, no grid — and the design target is no scheduled maintenance for the operational lifetime of the host organism (20–25 years). The energy buffer's own service life at that horizon is an open engineering question, not yet settled (`docs/02_03 §12.1`, `00_07` HW.37) — first-order vendor extrapolation puts it well short of 20 years at full charge voltage, and a lower operating setpoint, priced against stored energy, has already been adopted (`docs/02_03 §4`); whether it reaches the horizon waits on the vendor's voltage-acceleration figure.
 
 The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V (the BASELINE alloy — the final one is decided by the six-alloy coin bake-off, `docs/01_02 §2.5`; a V-free Zone 1 is already the ratified direction) via DMLS (Direct Metal Laser Sintering) with HIP post-processing. The geometry is not arbitrary:
 
