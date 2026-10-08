@@ -428,7 +428,9 @@ rb_dark() {
 # 2026-10-08: 170 → 177 — сім нових журналів-двійників кампанії індекс-форми (DOC-T.120): `log_curated_sample` ·
 # `log_computational_honesty` · `log_vilize_sweep` · `log_volatile_counts` · `log_irreversibility` · `log_parallel_edit` ·
 # `log_verify_before_commit` — тіла рядків хабів, що досі не мали журналу. Підняття робить нові журнали захищеними підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-177}
+# 2026-10-08: 177 → 179 — `log_mutually_masking` і `log_dedup_id_search`: журнали-двійники двох останніх домів осі нижче
+# порогу стіни, переведених в індекс-форму (DOC-T.120). Підняття робить нові журнали захищеними підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -562,7 +564,9 @@ index_reach_expected() {
 # 2026-10-08: 41500 → 41844 (+344) — описи тих самих семи журналів-двійників DOC-T.120 (шаблон «Тіла правил з <слаг>»,
 # 394 B — мінімальний тригер, стискати нема чого). Прецедент дотримано: власні описи пʼяти хабів осі перед тим стиснуто
 # (−44 B, звірка з виправленими шапками), чужих не підрізано.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41844}
+# 2026-10-08: 41844 → 41928 (+84) — описи тих двох журналів (шаблон «Тіла правил з <слаг>», 111 B); власні описи
+# хабів кампанії того ж дня вже стиснуто (−107 B) і покрили решту; чужих не підрізано.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-41928}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
