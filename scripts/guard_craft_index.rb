@@ -227,6 +227,26 @@ TARGETS = [
     open:  "<!-- TELEMETRY-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
     close: "<!-- /TELEMETRY-GOTCHAS-INDEX -->" },
+  # 2026-10-09 (DOC-T.120) — ONE skill, TWO scales, the in-silico/deploy precedent. legal-business was
+  # the heaviest AUTO-INVOKED artifact of the practice (80.5 kB, `memory_gate.sh --weight`) and the
+  # skill of six section packages. §Межі чесності 30 % + §Доменні правила 23 % = 54 %; both were already
+  # numbered and cited BY SECTION («Межі #14», «Доменні правила #6» — from RFQ headers and memory), so
+  # the numbers stayed. The skill's form is deliberately INVERTED (honesty bounds FIRST): the §Межі
+  # index stays the first section of the body — only the bodies moved.
+  { name:  "legal-business (Межі)",
+    skill: File.join(ROOT, ".claude/skills/legal-business/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/legal-business/bounds.md"),
+    floor: 17,
+    open:  "<!-- LEGAL-BOUNDS-INDEX:AUTO — generated from bounds.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /LEGAL-BOUNDS-INDEX -->" },
+  { name:  "legal-business (Доменні правила)",
+    skill: File.join(ROOT, ".claude/skills/legal-business/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/legal-business/domain_rules.md"),
+    floor: 8,
+    open:  "<!-- LEGAL-DOMAIN-INDEX:AUTO — generated from domain_rules.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /LEGAL-DOMAIN-INDEX -->" },
   # 2026-10-08 (DOC-T.121) — the first target that is not a skill: the cementation PLAYBOOK grew
   # as an anthology (91.3 → 102.6 kB in two weeks), each session appending a dated paragraph. A
   # procedure, so a rule line must stand INSIDE the phase where it fires, not in one block at the
