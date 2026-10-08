@@ -45,6 +45,7 @@ def build() -> str:
     `test_doc_cache_sync` compares it with the committed file (a generator no CI ran
     lay broken three days after a cache-schema change, and the table was hand-edited)."""
     series = _load("os_mediator_series.json")
+    series_wb = _load("os_mediator_series_wb97x.json")   # 21e `wb97x` — the ω−B3 column of Table 4
     zif = _load("zif_hopping.json")
     fodft = _load("fodft_coupling.json")
     ket = _load("cathode_ket_lambda.json")
@@ -158,21 +159,34 @@ def build() -> str:
 
     # ── Table 4 — mediator structure–activity series ──
     md.append("## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)\n")
-    md.append("cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF.\n")
-    md.append("| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note |")
-    md.append("|---|---|---|---|---|---|")
+    md.append("cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; "
+              "last column — the same ΔSCF at ωB97X/def2-TZVP on the same geometry, minus the B3LYP value.\n")
+    md.append("| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note | ω−B3 (eV) |")
+    md.append("|---|---|---|---|---|---|---|")
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
            "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
     note = {"nme2": "donor saturation", "bpy": "reference", "cf3": "inert option",
             "no2": "unstable on cycling", "so2cf3": "realistic optimum (inert)"}
+    vs = series_wb["vs_b3lyp"]
+    omega = {p["name"]: p["omega_minus_b3_eV"] for p in vs["points"]}
     for c in sorted(series["complexes"], key=lambda x: x["sigma_para"]):
         n = c["name"]
+        om = f"{omega[n]:+.3f}" if n in omega else "—"
         md.append(f"| {lbl.get(n, n)} | {c['sigma_para']:+.2f} | {c['dE_red_eV']:.3f} | "
-                  f"{c['os3']['LUMO_eV']:.3f} | {c['cascade_delta_eV']:.4f} | {note.get(n, '')} |")
+                  f"{c['os3']['LUMO_eV']:.3f} | {c['cascade_delta_eV']:.4f} | {note.get(n, '')} | {om} |")
     lf_slope = series["lfer"]["slope_eV_per_sigma"]
+    sub = ", ".join(lbl[n] for n in vs["common_fit_subset"])
+    cs = vs["centre_decomposition"]["local_slope_eV_per_sigma"]
     md.append(f"\n*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
-              f"the cell optimum (~+309 mV) balances driving force vs overpotential.*\n")
+              f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "
+              f"over {sub} the slope is {vs['slope_wb97x_eV_per_sigma']:.2f} against "
+              f"{vs['slope_b3lyp_eV_per_sigma']:.2f} eV/σ at B3LYP (×{vs['slope_ratio_wb97x_over_b3lyp']:.2f}, resting "
+              f"on the one acceptor point); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs "
+              f"{cs['b3lyp_631gd']:.3f} → {cs['wb97x_631gd']:.3f} → {cs['wb97x_def2tzvp']:.3f} eV/σ, i.e. the "
+              f"functional and the basis change pull "
+              f"{'opposite ways' if vs['centre_functional_and_basis_pull_opposite_ways'] else 'the same way'}; at "
+              f"the ends the two are not separated.*\n")
 
     return "\n".join(md) + "\n"
 

@@ -48,16 +48,25 @@ depends on it.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** (r² = 1.00; Fig 3b; Table 4). This is a trend within one method: it is not
+≈ **−0.92 eV per σ unit** at B3LYP (r² = 1.00; Fig 3b; Table 4). This is a computed trend: it is not
 triangulated here against Lever's additive E_L parametrisation<sup>23</sup> or against a measured substituent series.
+A cross-check with the range-separated ωB97X on five of the nine members — the same vertical ΔSCF at
+ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the donor-resonance plateau of NMe₂/NH₂,
+the only pair close enough for a change of method to reorder, but not the magnitude: the ωB97X − B3LYP
+difference rises from +0.05 eV at the donor end to +0.26 eV at NO₂, so over the
+points of the fit set that both have (Me, H, NO₂) the slope is −0.79 against −0.93 eV per σ unit — a ratio
+that rests on the single acceptor point. Where ωB97X also exists with the smaller basis (Me, H; §2.2), the
+functional alone flattens the local slope by ≈9 % and the larger basis restores it, so the two tiers agree
+there by cancellation; at the ends the two changes are not separated. The robust content of the rule is
+therefore its direction; its slope is method-dependent, and neither value is checked here against experiment.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation.
 
 The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
 pH (it reduces to the amine on cycling,<sup>55</sup> collapsing the cascade to its worst case). The realistic
-optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV but
-without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
+optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP — it has
+no ωB97X point — but without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
 optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
@@ -212,8 +221,8 @@ is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF f
 raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies 62 mV from
 experiment (free flavin −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
-at constant charge: ΔE_red(III→II) is linear in σ_para (slope −0.92 eV/σ, r² = 1.00; fit over the
-OMe→NO₂ regime), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
+at constant charge: ΔE_red(III→II) is linear in σ_para (B3LYP slope −0.92 eV/σ, r² = 1.00; fit over the
+OMe→NO₂ regime; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
 cascade driving force; the realistic optimum is the electrochemically inert SO₂CF₃ (NO₂ degrades on
 cycling).
 

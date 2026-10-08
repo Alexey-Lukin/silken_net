@@ -95,7 +95,7 @@ reading — and each needs its own route before the ACS pass.
 
 **Applied 2026-10-02 — route (b) for σ_para, route (c) for the FO-DFT attribution; −208 mV stays the founder's.**
 §2.3 now calls the σ_para values the conventional tabulated constants taken as an ASSUMED input, not checked
-against a primary compilation, and says what that costs (the fitted slope — the predictive part of the design rule,
+against a primary compilation, and says what that costs (the fitted slope — the quantitative part of the design rule,
 `00_02 §2.1` — inherits whatever error they carry); the code carries the label (a comment block
 over `SERIES` in `21e` naming the Hansch–Leo–Taft compilation, Crossref ✓, values unread). §2.5 now defines the
 FO-DFT label as a two-state orbital diabatisation and says it is neither the textbook
@@ -226,6 +226,9 @@ legend line stays in each, as the criterion allows.
   "triangulated against the additive Lever E_L scheme and the measured series"; no script, cache or
   SUMMARY/L3 entry performs either comparison, so §3.3 now says the slope is a within-method trend that is
   NOT triangulated here. Restoring the claim needs an instrument (a script and its cache), not a citation.
+  📌 2026-10-08 (the record above is not rewritten): §3.3 now calls the slope a computed trend and adds a
+  ωB97X cross-check (`21e … wb97x`, Table 4) — a second METHOD, not a measurement, so the withdrawn
+  triangulation stays withdrawn.
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.

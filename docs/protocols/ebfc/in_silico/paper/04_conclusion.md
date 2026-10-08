@@ -8,7 +8,8 @@ principles, following the electron from the buried flavin to the external circui
 their own. The **PCET potential of the FAD cofactor** is recovered to within 62 mV of experiment once
 the proton is treated thermodynamically, and the anode reorganisation energy is obtained from the
 physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
-rule** for the osmium mediator gives a predictive, transferable design handle and rationalises the
+rule** for the osmium mediator gives a design handle that is predictive in direction — a ωB97X/def2-TZVP
+cross-check keeps its donor plateau and makes its slope ≈15 % shallower — and rationalises the
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a
 clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with the enzyme's T1 site oriented

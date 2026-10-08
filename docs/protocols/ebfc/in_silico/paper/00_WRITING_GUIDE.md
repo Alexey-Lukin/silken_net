@@ -41,6 +41,7 @@ insights to sell (all are "new physical insight"):
    redox DFT on charged metal complexes.
 2. **A predictive design rule.** The Hammett LFER for the Os(III/II) mediator + the cascade-alignment
    rule gives a *predictive handle* and rationalizes the known experimental optimum — predictive value
+   (in DIRECTION: a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its magnitude is method-dependent)
    is "especially welcome" at JPCB.
 3. **An honest, mechanistic cathode finding.** The borderline λ-limited DET (a *finding*, corrected from
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.

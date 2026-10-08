@@ -49,19 +49,19 @@
 
 ## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)
 
-cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF.
+cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; last column — the same ΔSCF at ωB97X/def2-TZVP on the same geometry, minus the B3LYP value.
 
-| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note |
-|---|---|---|---|---|---|
-| NMe₂ | -0.83 | -3.910 | -3.636 | -1.5013 | donor saturation |
-| NH₂ | -0.66 | -3.905 | -3.637 | -1.4997 |  |
-| OMe | -0.27 | -4.286 | -4.002 | -1.1355 |  |
-| Me | -0.17 | -4.381 | -4.086 | -1.0514 |  |
-| H | +0.00 | -4.530 | -4.228 | -0.9093 | reference |
-| COOH | +0.45 | -4.936 | -4.595 | -0.5424 |  |
-| CF₃ | +0.54 | -4.957 | -4.635 | -0.5023 | inert option |
-| NO₂ | +0.78 | -5.262 | -4.905 | -0.2319 | unstable on cycling |
-| SO₂CF₃ | +0.96 | -5.256 | -4.910 | -0.2269 | realistic optimum (inert) |
+| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note | ω−B3 (eV) |
+|---|---|---|---|---|---|---|
+| NMe₂ | -0.83 | -3.910 | -3.636 | -1.5013 | donor saturation | +0.055 |
+| NH₂ | -0.66 | -3.905 | -3.637 | -1.4997 |  | +0.055 |
+| OMe | -0.27 | -4.286 | -4.002 | -1.1355 |  | — |
+| Me | -0.17 | -4.381 | -4.086 | -1.0514 |  | +0.138 |
+| H | +0.00 | -4.530 | -4.228 | -0.9093 | reference | +0.137 |
+| COOH | +0.45 | -4.936 | -4.595 | -0.5424 |  | — |
+| CF₃ | +0.54 | -4.957 | -4.635 | -0.5023 | inert option | — |
+| NO₂ | +0.78 | -5.262 | -4.905 | -0.2319 | unstable on cycling | +0.263 |
+| SO₂CF₃ | +0.96 | -5.256 | -4.910 | -0.2269 | realistic optimum (inert) | — |
 
-*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential.*
+*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is -0.79 against -0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs -0.876 → -0.800 → -0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; at the ends the two are not separated.*
 

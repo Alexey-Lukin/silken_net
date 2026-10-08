@@ -132,6 +132,76 @@ def test_os_mediator_series_lfer():
     assert lf["r2"] > 0.999, f"LFER r² unexpectedly low: {lf['r2']}"
 
 
+def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
+    """① ω−B3 (21e `wb97x`, 2026-10-08): every field of `vs_b3lyp` must follow from the caches it cites.
+
+    CAN catch: a hand-edited or stale comparison — a point whose B3LYP or ωB97X value no longer equals its
+    source cache (the series row · this cache's own extreme · E_total of 21f/21d at full precision), an offset
+    that is not their difference, a fit-subset that is not the canonical fit-set ∩ the points, a slope, span or
+    sign flag that does not follow from the rows, and a point whose two tiers ran on different geometries.
+    CANNOT catch: whether either tier is right, nor whether the B3LYP→ωB97X shift is the functional or the basis.
+    """
+    w = json.loads((DFT / "os_mediator_series_wb97x.json").read_text())
+    b3 = {c["name"]: c for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
+    fit_set = json.loads((DFT / "os_mediator_series.json").read_text())["lfer"]["fit_set"]
+    v = w["vs_b3lyp"]
+    nh2 = w["complexes"]["nh2"]
+    h2ev = nh2["dE_red_eV"] / (nh2["os2"]["E_total_Ha"] - nh2["os3"]["E_total_Ha"])
+    rows = {r["name"]: r for r in v["points"]}
+    for name, r in rows.items():
+        assert r["b3lyp_dE_red_eV"] == b3[name]["dE_red_eV"], f"{name}: B3LYP value ≠ the series row"
+        if name in w["complexes"]:
+            assert r["wb97x_dE_red_eV"] == w["complexes"][name]["dE_red_eV"], f"{name}: ωB97X ≠ this cache's row"
+        else:
+            src = json.loads((DFT / r["wb97x_source"]).read_text())
+            e = (src["os2_plus"]["E_total_Ha"] - src["os3_plus"]["E_total_Ha"]) * h2ev
+            assert math.isclose(r["wb97x_dE_red_eV"], e, abs_tol=1e-9), f"{name}: ωB97X ≠ E_total of {r['wb97x_source']}"
+        assert r["omega_minus_b3_eV"] == r["wb97x_dE_red_eV"] - r["b3lyp_dE_red_eV"], f"{name}: offset ≠ difference"
+        assert r["geometry_max_dev_A"] <= 1e-3, f"{name}: the two tiers ran on different geometries"
+    sigmas = [r["sigma_para"] for r in v["points"]]
+    assert sigmas == sorted(sigmas), "points not ordered by σ"
+    assert set(w["complexes"]) <= set(rows), "a converged ωB97X extreme is missing from the comparison"
+    assert v["common_fit_subset"] == [n for n in fit_set if n in rows], "fit subset ≠ canonical fit-set ∩ points"
+
+    def slope(key):
+        xs = [rows[n]["sigma_para"] for n in v["common_fit_subset"]]
+        ys = [rows[n][key] for n in v["common_fit_subset"]]
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        return sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=True)) / sum((x - mx) ** 2 for x in xs)
+    assert math.isclose(v["slope_b3lyp_eV_per_sigma"], slope("b3lyp_dE_red_eV"), abs_tol=1e-9)
+    assert math.isclose(v["slope_wb97x_eV_per_sigma"], slope("wb97x_dE_red_eV"), abs_tol=1e-9)
+    assert math.isclose(v["slope_ratio_wb97x_over_b3lyp"], v["slope_wb97x_eV_per_sigma"] / v["slope_b3lyp_eV_per_sigma"])
+    offs = [r["omega_minus_b3_eV"] for r in v["points"]]
+    assert v["offset_range_eV"] == [min(offs), max(offs)]
+    lo, hi = v["points"][0], v["points"][-1]
+    assert (v["span"]["from"], v["span"]["to"]) == (lo["name"], hi["name"])
+    assert v["span"]["wb97x_eV"] == hi["wb97x_dE_red_eV"] - lo["wb97x_dE_red_eV"]
+    assert v["span"]["b3lyp_eV"] == hi["b3lyp_dE_red_eV"] - lo["b3lyp_dE_red_eV"]
+    gap = v["donor_plateau_gap_nme2_minus_nh2_eV"]
+    for tier in ("b3lyp", "wb97x"):
+        assert gap[tier] == rows["nme2"][f"{tier}_dE_red_eV"] - rows["nh2"][f"{tier}_dE_red_eV"]
+    assert v["donor_plateau_gap_same_sign"] == (gap["b3lyp"] * gap["wb97x"] > 0)
+    order = {t: [r["name"] for r in sorted(v["points"], key=lambda r: r[f"{t}_dE_red_eV"])] for t in ("b3lyp", "wb97x")}
+    assert v["same_order_by_dE_red"] == (order["b3lyp"] == order["wb97x"])
+    # the centre split: B3LYP/6-31G(d) → ωB97X/6-31G(d) (34b chloro) → ωB97X/def2-TZVP
+    cd = v["centre_decomposition"]
+    for p in cd["points"]:
+        form = next(f for f in json.loads((DFT / p["wb97x_631gd_source"].split()[0]).read_text())["forms"]
+                    if f["name"] == "chloro")
+        assert math.isclose(p["wb97x_631gd_eV"], (form["E_os2_Ha"] - form["E_os3_Ha"]) * h2ev, abs_tol=1e-9), p["name"]
+        assert p["b3lyp_631gd_eV"] == rows[p["name"]]["b3lyp_dE_red_eV"]
+        assert p["wb97x_def2tzvp_eV"] == rows[p["name"]]["wb97x_dE_red_eV"]
+        assert p["functional_eV"] == p["wb97x_631gd_eV"] - p["b3lyp_631gd_eV"]
+        assert p["basis_eV"] == p["wb97x_def2tzvp_eV"] - p["wb97x_631gd_eV"]
+        assert p["geometry_max_dev_A"] <= 1e-3, f"{p['name']}: 34b chloro is not the series geometry"
+    lo, hi = cd["points"][0], cd["points"][-1]
+    for tier, s in cd["local_slope_eV_per_sigma"].items():
+        assert math.isclose(s, (hi[f"{tier}_eV"] - lo[f"{tier}_eV"]) / (hi["sigma_para"] - lo["sigma_para"]))
+    cs = cd["local_slope_eV_per_sigma"]
+    assert v["centre_functional_and_basis_pull_opposite_ways"] == (
+        (cs["wb97x_631gd"] - cs["b3lyp_631gd"]) * (cs["wb97x_def2tzvp"] - cs["wb97x_631gd"]) < 0)
+
+
 # ── lib/os_geometry: the default path IS the committed geometry; the C-min closure realises or refuses ──
 _SERIES_SMILES = {   # 21e's SERIES, by the file name each one writes (os_<name>_meim_cl.xyz)
     "nme2": "CN(C)c1ccnc(-c2cc(N(C)C)ccn2)c1", "nh2": "Nc1ccnc(-c2cc(N)ccn2)c1",

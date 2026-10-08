@@ -35,7 +35,8 @@ Parameterization (CPU) → L2 MD (GPU), via ligand SDF + gaff_cache:
 L3 DFT anode (CPU):
   20 (FAD, lumiflavin.json) → 21b · 21c · 21e · 21f · 22 · 32 · 34
   21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
-  21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade)
+  21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade) · 21e `wb97x` (the centre pair of `vs_b3lyp`)
+  34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)

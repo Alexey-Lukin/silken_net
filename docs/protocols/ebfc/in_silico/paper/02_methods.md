@@ -26,11 +26,12 @@ reported here is computed on it.
 All density-functional calculations used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
 geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
-energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for a higher-rung adiabatic cross-check. The
+energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the adiabatic cascade, §2.3; five members of the
+Hammett series, vertical, §3.3). The
 basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL2DZ** effective-core potential
 and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> The
 adiabatic ωB97X cross-check (§2.3) replaced 6-31G(d) by **def2-TZVP**<sup>42</sup> on the non-metal atoms, keeping LANL2DZ
-on osmium; the ωB97X speciation cross-check kept the 6-31G(d)/LANL2DZ basis of the B3LYP tier. Aqueous
+on osmium, and so did the ωB97X Hammett cross-check; the ωB97X speciation cross-check kept the 6-31G(d)/LANL2DZ basis of the B3LYP tier. Aqueous
 solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.3553) for the redox, speciation and
 reorganisation-energy calculations, on PySCF's default cavity — modified-Bondi radii scaled by 1.2, 302 Lebedev
 points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce, which the radius table lacks (how
@@ -57,7 +58,7 @@ osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
 source is used in this work; a shared parameterised builder generated the single-complex reference,
-the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope, which is the predictive part of the design rule, inherits whatever error they carry), and the chloro / aqua / bis-imidazole **speciation**
+the 4,4′-substituent **Hammett series**<sup>22</sup> (its σ_para values are the conventional tabulated constants, taken as an ASSUMED input that this work did not check against a primary compilation — the fitted slope, which is the quantitative part of the design rule, inherits whatever error they carry), and the chloro / aqua / bis-imidazole **speciation**
 forms from one source. The monodentate distances are realised as targeted, the rigid chelate is not: the realised
 geometry has Os–N(bpy) 2.091–2.099 Å and a bite angle of 80.1–80.6° across the series. For comparison only — no
 crystal structure of this complex class was found — related osmium centres in the Crystallography Open Database

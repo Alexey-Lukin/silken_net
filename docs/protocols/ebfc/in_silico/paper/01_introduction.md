@@ -78,8 +78,8 @@ complete Gen-2.0 EBFC chain, and — equally — an honest assessment of where a
 implicit-solvation density-functional theory reaches its limit on this problem. Specifically, we (i)
 reproduce the proton-coupled FAD redox potential to within 62 mV of experiment using a thermodynamic
 proton reference, isolating the cascade discrepancy to the mediator rather than the flavin; (ii)
-establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive and
-rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
+establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive in direction —
+its slope moves by ≈15 % between two method tiers — and rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
 bimetallic-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
 finding a λ- and driving-force-limited margin that straddles enzymatic turnover — a corrected finding, not the orders-of-magnitude artefact an
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,

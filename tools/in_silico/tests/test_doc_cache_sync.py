@@ -169,6 +169,85 @@ CHECKS = [
         SUMMARY, rf"slope ≈ {N} eV/σ",
         "dft/os_mediator_series.json", lambda d: d["lfer"]["slope_eV_per_sigma"], 0.005,
     ),
+    # ── ① ωB97X ⊥ B3LYP along σ (21e `wb97x`, vs_b3lyp block, 2026-10-08) — one pin per table row ──
+    *[(
+        f"ω−B3 {label} → os_mediator_series_wb97x.json vs_b3lyp",
+        SUMMARY, rf"\| {re.escape(label)} \| [^|\n]* \| [^|\n]* \| [^|\n]* \| \*\*\+{N}\*\* \|",
+        "dft/os_mediator_series_wb97x.json",
+        lambda d, name=name: named(d["vs_b3lyp"]["points"], "name", name)["omega_minus_b3_eV"], 0.0001,
+    ) for label, name in (("NMe₂", "nme2"), ("NH₂", "nh2"), ("Me (dmbpy)", "dmbpy"), ("H (bpy)", "bpy"),
+                          ("NO₂", "no2"))],
+    (
+        "ωB97X slope over the shared fit points → vs_b3lyp",
+        SUMMARY, rf"the ωB97X slope is \*\*{N} against",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["slope_wb97x_eV_per_sigma"], 0.001,
+    ),
+    (
+        "B3LYP slope over the same points → vs_b3lyp",
+        SUMMARY, rf"against {N} eV/σ at B3LYP \(×",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["slope_b3lyp_eV_per_sigma"], 0.001,
+    ),
+    (
+        "ωB97X/B3LYP slope ratio → vs_b3lyp",
+        SUMMARY, rf"eV/σ at B3LYP \(×{N}\)\*\*",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["slope_ratio_wb97x_over_b3lyp"], 0.01,
+    ),
+    # the centre split (34b's ωB97X/6-31G(d) chloro points) — local slope per tier, functional and basis per point
+    *[(
+        f"centre local slope {tier} → vs_b3lyp centre_decomposition",
+        SUMMARY, anchor,
+        "dft/os_mediator_series_wb97x.json",
+        lambda d, tier=tier: d["vs_b3lyp"]["centre_decomposition"]["local_slope_eV_per_sigma"][tier], 0.001,
+    ) for tier, anchor in (("b3lyp_631gd", rf"the local slope runs \*\*{N} \(B3LYP\) →"),
+                           ("wb97x_631gd", rf"→ {N} \(ωB97X, 6-31G\(d\)\) →"),
+                           ("wb97x_def2tzvp", rf"→ {N} eV/σ \(ωB97X, def2-TZVP\)"))],
+    *[(
+        f"centre {part} part at {name} → vs_b3lyp centre_decomposition",
+        SUMMARY, anchor,
+        "dft/os_mediator_series_wb97x.json",
+        lambda d, part=part, name=name: named(d["vs_b3lyp"]["centre_decomposition"]["points"], "name", name)[part], 0.001,
+    ) for part, name, anchor in (("functional_eV", "dmbpy", rf"the functional alone moves ΔE_red by \+{N} \(Me\)"),
+                                 ("functional_eV", "bpy", rf"\(Me\) / \+{N} eV \(H\) and the basis"),
+                                 ("basis_eV", "dmbpy", rf"the basis change by \+{N} / "),
+                                 ("basis_eV", "bpy", rf"by \+[\d.]+ / {N} eV, so the local slope"))],
+    # the paper's §3.3 sentence and the «≈15 %» every summary of it carries (abstract · intro · conclusion · cover letter)
+    (
+        "paper §3.3 ω−B3 donor end → vs_b3lyp",
+        PAPER_RESULTS, rf"rises from \+{N} eV at the donor end",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["points"][0]["omega_minus_b3_eV"], 0.006,
+    ),
+    (
+        "paper §3.3 ω−B3 at NO₂ → vs_b3lyp",
+        PAPER_RESULTS, rf"to \+{N} eV at NO₂, so over the",
+        "dft/os_mediator_series_wb97x.json",
+        lambda d: named(d["vs_b3lyp"]["points"], "name", "no2")["omega_minus_b3_eV"], 0.006,
+    ),
+    (
+        "paper §3.3 ωB97X slope → vs_b3lyp",
+        PAPER_RESULTS, rf"\(Me, H, NO₂\) the slope is {N} against",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["slope_wb97x_eV_per_sigma"], 0.006,
+    ),
+    (
+        "paper §3.3 B3LYP slope, same points → vs_b3lyp",
+        PAPER_RESULTS, rf"the slope is [^ ]+ against {N} eV per σ unit",
+        "dft/os_mediator_series_wb97x.json", lambda d: d["vs_b3lyp"]["slope_b3lyp_eV_per_sigma"], 0.006,
+    ),
+    (
+        "paper §3.3 functional-alone flattening at the centre → vs_b3lyp centre_decomposition",
+        PAPER_RESULTS, rf"functional alone flattens the local slope by ≈{N} %",
+        "dft/os_mediator_series_wb97x.json",
+        lambda d: (1 - d["vs_b3lyp"]["centre_decomposition"]["local_slope_eV_per_sigma"]["wb97x_631gd"]
+                   / d["vs_b3lyp"]["centre_decomposition"]["local_slope_eV_per_sigma"]["b3lyp_631gd"]) * 100, 0.6,
+    ),
+    *[(
+        f"«≈15 %» shallower slope in {where} → vs_b3lyp",
+        f"docs/protocols/ebfc/in_silico/paper/{where}", anchor,
+        "dft/os_mediator_series_wb97x.json",
+        lambda d: (1 - d["vs_b3lyp"]["slope_ratio_wb97x_over_b3lyp"]) * 100, 0.6,
+    ) for where, anchor in (("05_abstract.md", rf"≈{N} % shallower at ωB97X/def2-TZVP"),
+                            ("07_cover_letter.md", rf"≈{N} % shallower at ωB97X/def2-TZVP"),
+                            ("01_introduction.md", rf"its slope moves by ≈{N} % between"),
+                            ("04_conclusion.md", rf"makes its slope ≈{N} % shallower"))],
     # ── Micro-solvation ② (2nd-shell = plain file, ligand-independent benchmark) ──
     (
         "2nd-shell PCM shift → microsolvation.json n18−n6",

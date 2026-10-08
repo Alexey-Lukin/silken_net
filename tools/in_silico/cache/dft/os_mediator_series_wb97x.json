@@ -71,6 +71,150 @@
         "gap_eV": 6.755797983860056
       },
       "dE_red_eV": -4.99933098456473
+    },
+    "nme2": {
+      "sigma_para": -0.83,
+      "os2": {
+        "label": "os2 nme2 (wb97x)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 86,
+        "n_electrons": 336,
+        "converged": true,
+        "wall_seconds": 7006.2,
+        "E_total_Ha": -2343.6304804483716,
+        "HOMO_Ha": -0.23776881116877394,
+        "LUMO_Ha": -0.0008237293479603319,
+        "HOMO_eV": -6.470018957962893,
+        "LUMO_eV": -0.022414817449504437,
+        "gap_eV": 6.447604140513389
+      },
+      "os3": {
+        "label": "os3 nme2 (wb97x)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 86,
+        "n_electrons": 335,
+        "converged": true,
+        "wall_seconds": 24560.2,
+        "E_total_Ha": -2343.488823901047,
+        "HOMO_Ha": -0.2971434557718385,
+        "LUMO_Ha": -0.04763556851979788,
+        "HOMO_eV": -8.085685345475149,
+        "LUMO_eV": -1.296229854039447,
+        "gap_eV": 6.789455491435702
+      },
+      "dE_red_eV": -3.854671023522795
     }
+  },
+  "vs_b3lyp": {
+    "method_pair": "B3LYP/6-31G(d) (os_mediator_series.json) \u22a5 \u03c9B97X/def2-TZVP (this cache + WB97X_CENTRE), LANL2DZ(Os), C-PCM, vertical \u0394SCF on one geometry per point",
+    "points": [
+      {
+        "name": "nme2",
+        "sigma_para": -0.83,
+        "b3lyp_dE_red_eV": -3.9095910591877114,
+        "wb97x_dE_red_eV": -3.854671023522795,
+        "omega_minus_b3_eV": 0.05492003566491643,
+        "wb97x_source": "os_mediator_series_wb97x.json",
+        "geometry_max_dev_A": 4.985674168828287e-07
+      },
+      {
+        "name": "nh2",
+        "sigma_para": -0.66,
+        "b3lyp_dE_red_eV": -3.9051624186588794,
+        "wb97x_dE_red_eV": -3.8506338782618275,
+        "omega_minus_b3_eV": 0.054528540397051906,
+        "wb97x_source": "os_mediator_series_wb97x.json",
+        "geometry_max_dev_A": 4.968738136490458e-07
+      },
+      {
+        "name": "dmbpy",
+        "sigma_para": -0.17,
+        "b3lyp_dE_red_eV": -4.380799366613249,
+        "wb97x_dE_red_eV": -4.242963935852531,
+        "omega_minus_b3_eV": 0.1378354307607177,
+        "wb97x_source": "os_complex_wb97xd_dmbpy.json",
+        "geometry_max_dev_A": 0.0
+      },
+      {
+        "name": "bpy",
+        "sigma_para": 0.0,
+        "b3lyp_dE_red_eV": -4.529655365611094,
+        "wb97x_dE_red_eV": -4.39229308935021,
+        "omega_minus_b3_eV": 0.13736227626088393,
+        "wb97x_source": "os_complex_wb97xd.json",
+        "geometry_max_dev_A": 0.0
+      },
+      {
+        "name": "no2",
+        "sigma_para": 0.78,
+        "b3lyp_dE_red_eV": -5.261956952292413,
+        "wb97x_dE_red_eV": -4.99933098456473,
+        "omega_minus_b3_eV": 0.26262596772768276,
+        "wb97x_source": "os_mediator_series_wb97x.json",
+        "geometry_max_dev_A": 4.978152389428393e-07
+      }
+    ],
+    "offset_range_eV": [
+      0.054528540397051906,
+      0.26262596772768276
+    ],
+    "common_fit_subset": [
+      "dmbpy",
+      "bpy",
+      "no2"
+    ],
+    "slope_b3lyp_eV_per_sigma": -0.9310303051281135,
+    "r2_b3lyp": 0.9998974157823842,
+    "slope_wb97x_eV_per_sigma": -0.7906378819577343,
+    "r2_wb97x": 0.9996431399047617,
+    "slope_ratio_wb97x_over_b3lyp": 0.8492074614573791,
+    "span": {
+      "from": "nme2",
+      "to": "no2",
+      "b3lyp_eV": -1.3523658931047011,
+      "wb97x_eV": -1.1446599610419348,
+      "ratio_wb97x_over_b3lyp": 0.8464129174494897
+    },
+    "donor_plateau_gap_nme2_minus_nh2_eV": {
+      "b3lyp": -0.004428640528832073,
+      "wb97x": -0.004037145260967545
+    },
+    "donor_plateau_gap_same_sign": true,
+    "same_order_by_dE_red": true,
+    "centre_decomposition": {
+      "points": [
+        {
+          "name": "dmbpy",
+          "sigma_para": -0.17,
+          "b3lyp_631gd_eV": -4.380799366613249,
+          "wb97x_631gd_eV": -4.246581145929096,
+          "wb97x_def2tzvp_eV": -4.242963935852531,
+          "functional_eV": 0.13421822068415246,
+          "basis_eV": 0.003617210076565236,
+          "wb97x_631gd_source": "wb97x_speciation_dmbpy.json (34b, chloro)",
+          "geometry_max_dev_A": 4.943104343624327e-07
+        },
+        {
+          "name": "bpy",
+          "sigma_para": 0.0,
+          "b3lyp_631gd_eV": -4.529655365611094,
+          "wb97x_631gd_eV": -4.382605541473987,
+          "wb97x_def2tzvp_eV": -4.39229308935021,
+          "functional_eV": 0.147049824137107,
+          "basis_eV": -0.009687547876223057,
+          "wb97x_631gd_source": "wb97x_speciation.json (34b, chloro)",
+          "geometry_max_dev_A": 4.984413672914911e-07
+        }
+      ],
+      "local_slope_eV_per_sigma": {
+        "b3lyp_631gd": -0.8756235235167382,
+        "wb97x_631gd": -0.8001435032052411,
+        "wb97x_def2tzvp": -0.8784067852804662
+      }
+    },
+    "centre_functional_and_basis_pull_opposite_ways": true,
+    "verdict": "\u03c9\u2212B3 runs +0.055 (nme2) \u2026 +0.263 eV (no2), a range of 0.208 eV; over dmbpy, bpy, no2 the \u03c9B97X slope is -0.791 against -0.931 eV/\u03c3 (\u00d70.85); the donor-plateau gap (nme2 \u2212 nh2) is -4.4 \u22a5 -4.0 meV, the same sign. At the centre, where \u03c9B97X also exists with the small basis, the local slope is -0.876 (B3LYP) \u2192 -0.800 (\u03c9B97X, same basis) \u2192 -0.878 eV/\u03c3 (def2-TZVP): the functional and the basis pull opposite ways there; at the ends the two are not separated, and neither tier is checked against a measured series."
   }
 }
