@@ -8,10 +8,11 @@ module OtaChunkable
 
   # One-Home пакувального кроку OTA. Число жило в `OtaTransmissionWorker`, чий ПУСКАЧ мертвий
   # із [FW.60] і чий файл піде після bench-верифікації poll-тракту — а константу читають два
-  # живі сайти (`Downlink::PendingQueueService`, `Ota::DeploymentDispatcherService`). Тут воно
+  # живі сайти (`Ota::PackageStore`, `Ota::DeploymentDispatcherService`). Тут воно
   # стоїть біля обох методів, які ним ріжуть, тож наступний, хто зноситиме воркер, не візьме
   # з собою живе значення. ⚠️ Підняття вище MTU конверта CoAP не перевіряє ніщо —
-  # `PendingQueueService` нарізає без контролю розміру (спека того сервісу це фіксує).
+  # `Ota::PackageStore` нарізає через `OtaPackagerService`, а `Downlink::PendingQueueService`
+  # віддає без контролю розміру (спека того сервісу це фіксує).
   CHUNK_SIZE = 512
 
   # Розбиття на сегменти (MTU-friendly). byteslice без regex: O(n/chunk) memcpy

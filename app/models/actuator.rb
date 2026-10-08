@@ -86,7 +86,7 @@ class Actuator < ApplicationRecord
     state :offline
     state :maintenance_needed
 
-    # Активація пристрою (виклик від ActuatorCommandWorker)
+    # Активація пристрою (виклик від Downlink::PendingQueueService на луні `?cmd=`)
     event :activate do
       before do
         self.last_activated_at = Time.current

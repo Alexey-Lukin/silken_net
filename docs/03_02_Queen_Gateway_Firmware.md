@@ -504,7 +504,7 @@ loopback-довід `spec/lib/coap_smoke_spec.rb`) заведений post-deplo
 
 Push із Rails фізично не долітає (`gateway.ip_address` = CGNAT-egress,
 `CASERVER` мережево мертвий — банер §4), тож **Королева сама питає свій
-downlink** одразу після `send_success`: модем теплий, IP резольвлений,
+downlink** (⚖️ founder) одразу після `send_success`: модем теплий, IP резольвлений,
 NAT-pinhole свіжий — єдине живе вікно. Реалізація — `Queen_Poll_Downlink`
 (`main.c`, викликається з хвоста `Flush_Cache_To_Rails`; це **перший
 call-site** усього inbound-тракту — доти `Handle_CoAP_Command` був мертвим

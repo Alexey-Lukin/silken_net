@@ -1034,7 +1034,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 }
 ```
 
-> **[ARCH.58] Override-команди 409 НЕ отримують.** `STOP` / `EMERGENCY_SHUTDOWN` / `EMERGENCY_STOP` (`ActuatorCommand::OVERRIDE_COMMANDS`, розпізнаються за базовою частиною до `:`) проходять in-flight гард навіть коли черга зайнята — інакше оператор не подасть аварійну зупинку рівно тоді, коли вона потрібна. Override дорогою скасовує решту pending для цього актуатора (`cancel_pending_for_actuator!`) і минає readiness-перевірку `dispatch_to_edge!`, яка вимагає `idle?`.
+> **[ARCH.58] Override-команди 409 НЕ отримують.** `STOP` / `EMERGENCY_SHUTDOWN` / `EMERGENCY_STOP` (`ActuatorCommand::OVERRIDE_COMMANDS`, точний збіг — двокрапку в ACTION заборонено) проходять in-flight гард навіть коли черга зайнята — інакше оператор не подасть аварійну зупинку рівно тоді, коли вона потрібна. Override дорогою скасовує решту pending для цього актуатора (`cancel_pending_for_actuator!`) і минає readiness-перевірку `dispatch_to_edge!`, яка вимагає `idle?`.
 >
 > ⚠️ **`202 accepted` ≠ «виконається».** Команда може мовчки згаснути ще до видачі: (а) звичайна (не-override) команда на актуаторі в стані `active` одразу стає `failed` («Актуатор недоступний»); (б) команда з `expires_at` гине по TTL, якщо наступний poll шлюза не встиг у вікно ([`00_07`](00_07_Action_Plan_Tracker) ARCH.75). Реальний стан читається лише через `GET /actuator_commands/:id` (#48) — не з коду відповіді.
 

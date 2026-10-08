@@ -153,9 +153,9 @@ module Downlink
         # (наступний датаграм читається лише ПІСЛЯ повного коміту цієї
         # транзакції), тож двох одночасних `pending_commands.first` не існує
         # СТРУКТУРНО — не Rails request-per-thread (тут нема Puma/контролера
-        # взагалі), а серіалізація самим демоном. Стеля названа при класі
-        # (`WORST_CASE_POLL_INTERVAL_S`-сусід): «одна Королева, коли їх стане
-        # багато — не зараз» — це день, коли цей гард прокинеться.
+        # взагалі), а серіалізація самим демоном. Стеля — день, коли CoAP-інтейк
+        # перестане бути одним процесом: гарантію дає ОТОЧЕННЯ, не цей код, і
+        # тоді гард прокинеться без жодної зміни тут (скіл `backend` #85).
         command.dispatch! if command.may_dispatch?
         ActuatorCommandWorker.broadcast_command_state_static(command)
 
@@ -164,10 +164,10 @@ module Downlink
         # [FW.63] Єдиний запис тут — сам `command` (`dispatch!`); `actuator` цей
         # метод більше не чіпає (mark_active! переїхав у observe_delivered_command!),
         # тож `e.record` завжди `ActuatorCommand` — дублювати перевірку не треба.
-        # `EmergencyResponseService` пише `insert_all` (валідації обходить) і ріже
-        # тривалість за ВЛАСНОЮ константою, не за стелею актуатора — тож при
-        # `max_active_duration_s < 3600` (сіди: клапан 300, сирена 120) кожна
-        # пожежна команда лягає невалідною. Тоді БУДЬ-який AASM-перехід б'ється
+        # `EmergencyResponseService` пише `insert_all` (валідації обходить); з ARCH.75
+        # він відсіює актуатори за стелею ДО запису, тож невалідним рядок тут стає,
+        # коли стелю актуатора знизили вже ПІСЛЯ запису (той самий клас, що
+        # `force_close_unpersistable!`). Тоді БУДЬ-який AASM-перехід б'ється
         # об `duration_within_safety_envelope` — включно з TTL-прибиранням, тож
         # рядок не вміє навіть померти. Демон виняток ЛОВИТЬ (`rescue StandardError`
         # у `lib/daemons/coap_listener`; `SecurityError` < Exception летів би повз,

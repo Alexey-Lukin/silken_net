@@ -1140,7 +1140,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `downlink` |
 | **Retry** | false (самостійна retry-логіка) |
-| **Тригер** | ⚠️ **ЖОДНОГО — enqueuer'ів у дереві НУЛЬ** (виміряно 2026-08-13, [ARCH.59](00_07_Action_Plan_Tracker)). Доти цей рядок називав `Ota::DeploymentDispatcherService` «єдиним enqueuer'ом» і суперечив сусідньому рядку Side Effects: диспетчер після [FW.60] лише пише `pending_firmware_id`, а `OtaTransmissionWorker` кличе хіба що його константу `CHUNK_SIZE`. Живим лишається self-scheduling `perform_in` між чанками — але тільки якщо воркер хтось запустить |
+| **Тригер** | ⚠️ **ЖОДНОГО — enqueuer'ів у дереві НУЛЬ** (виміряно 2026-08-13, [ARCH.59](00_07_Action_Plan_Tracker)). Доти цей рядок називав `Ota::DeploymentDispatcherService` «єдиним enqueuer'ом» і суперечив сусідньому рядку Side Effects: диспетчер після [FW.60] лише пише `pending_firmware_id`, а `CHUNK_SIZE` читає з `OtaChunkable` (2026-09-10; у воркері лишився псевдонім), тож самого воркера не кличе ніхто. Живим лишається self-scheduling `perform_in` між чанками — але тільки якщо воркер хтось запустить |
 | **Вхід** | `queen_uid`, `firmware_type` (`mruby`/`firmware`/`tinyml`/`weights`), `record_id`, `chunk_index` (default 0), `retry_count` (default 0) |
 | **Сервіси** | `OtaPackagerService.prepare(firmware, chunk_size: CHUNK_SIZE, cluster_id: gateway.cluster_id)` |
 | **Side Effects** | ⚠️ **[FW.60 superseded]**: push-конвеєр більше не enqueue'иться — dispatcher пише `gateways.pending_firmware_id`, чанки тягне сама Королева (`GET ota/<uid>?v=&ch=` → chunk-server `Downlink::PendingQueueService`); видалити після bench. Канал/target Turbo-прогресу (`ota_channel_<uid>`/`ota_progress_<uid>`) повторно використані живим [SEC.20] producer'ом у `PendingQueueService` — прогрес-опис нижче історичний. Історична механіка: CoAP PUT до Queen (AES-256-CBC), pacing `perform_in(0.4.seconds, ...)` між чанками. **[FW.23]** Worker завжди форвардить `gateway.cluster_id` (колонка `NOT NULL` у `gateways`), тож `packages` Enumerator автоматично містить 7 трейлер-блоків печатки `[0x9B]` (6 сегментів + версія) після bytecode; логіка pacing без змін. Queen relay-ює `[0x9B]`-блоки stateless; Soldier верифікує dual-gate перед FLASH write. `total_chunks` worker'а береться з `manifest[:total_packages]` (= bytecode + 7 trailer) і саме за цим лічильником Turbo Stream `OtaProgressBar` рахує процент та переводить шлюз у `:idle` — без фолбеку на `total_chunks` шлюз би "завершив" OTA за 7 блоків до отримання печатки. При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у `:updating`. |
@@ -1659,8 +1659,8 @@ CoAP UDP (port 5683)
         │     │     └─ persist log.lorenz_state_x/y/z + cold_start_flag
         │     ├─→ AlertDispatchService.analyze_and_trigger!
         │     │     └─→ EmergencyResponseService.call
-        │     │           └─→ ActuatorCommandWorker [downlink]
-        │     │                 └─→ ResetActuatorStateWorker [downlink]
+        │     │           └─ insert_all у чергу ActuatorCommand; доставляє poll-тракт
+        │     │              Downlink::PendingQueueService, Reset планує луна ?cmd= [FW.60/FW.63]
         │     └─→ IotexVerificationWorker [web3_critical]
         │           └─→ Iotex::W3bstreamVerificationService
         │                 └─→ ChainlinkDispatchWorker [web3_critical]

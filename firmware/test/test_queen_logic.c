@@ -1872,7 +1872,7 @@ TEST(test_cbc_during_flush) {
  * ════════════════════════════════════════════════════════════════════ */
 
 /* Simulates Handle_CoAP_Command CBC→ECB transition:
- * [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker sends [IV:16][CBC ciphertext]
+ * [СИНХРОНІЗОВАНО з Rails]: Downlink::PendingQueueService serves [IV:16][CBC ciphertext]
  * Queen must switch to CBC for decryption, then restore ECB for LoRa. */
 static void simulate_cmd_cbc_decrypt(void)
 {
