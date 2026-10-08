@@ -156,8 +156,8 @@
  * (у 21B жив у байті 11 [thr:5|TTL:3]; CCM TTL живе у mesh_ctrl).
  * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа.
  * thr_invalid і fauna-біти з HW.30 завжди 0; у wire-rev2.2 (ledger 03_05 §2.1)
- * ці біти несуть reset_cause · time_uncertain · voc_attempt — реалізація
- * 00_07 FW.66. */
+ * біти thr_invalid несуть reset_cause · time_uncertain · voc_attempt, а
+ * fauna-біти стають резервом — реалізація 00_07 FW.66. */
 #define FW2_DIAG_THR_INVALID_SHIFT 3u
 #define FW2_DIAG_THR_INVALID_MAX   31u
 #define FW2_DIAG_FAUNA_MODE_BIT    0x04u

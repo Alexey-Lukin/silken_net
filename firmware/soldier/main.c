@@ -255,7 +255,7 @@ uint8_t lorenz_seed[32] = {0};
 uint8_t lorenz_seed_valid = 0;  // 1 = loaded from Flash, 0 = not provisioned
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
-uint8_t acoustic_events = 0;           // З HW.30 (пʼєзо зрізано) не інкрементується — 0; CCM-байт віддав wire-rev2.2 (03_05 §2.1, FW.66)
+uint8_t acoustic_events = 0;           // З HW.30 (пʼєзо зрізано) не інкрементується — 0; CCM-байт віддає wire-rev2.2 — реалізація FW.66 (03_05 §2.1)
 uint32_t last_wakeup_timestamp = 0;    // Час попереднього пробудження
 uint32_t delta_t_seconds = 0;          // Швидкість заряду іоністора (Метаболізм)
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
@@ -1914,7 +1914,7 @@ int main(void)
     uint8_t grace_hello = (time_uncertain &&
                            wakeups_since_boot < TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1u : 0u;
 
-    // Байт 7: акустичний слот (з HW.30 лічильник завжди 0; ECB-кадр лишається як є — CCM-байт віддав wire-rev2.2, FW.66).
+    // Байт 7: акустичний слот (з HW.30 лічильник завжди 0; ECB-кадр лишається як є — CCM-байт віддає wire-rev2.2, реалізація FW.66).
     // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
     // [ARCH.41-B] sentinel-підміна при невідомому часі (реальний лічильник
     // цього пробудження жертвується — час важливіший за один відлік).
@@ -1928,7 +1928,7 @@ int main(void)
     lora_payload[9] = (uint8_t)(dt_wire & 0xFF);
 
     // Байт 11 [FW.18b]: бітфілд [thr_invalid:5 | TTL:3] (../common/ttl_byte.h).
-    // TTL = 3 стрибки; thr_invalid з HW.30 завжди 0 (ECB-кадр лишається як є; CCM-біти віддав wire-rev2.2, FW.66),
+    // TTL = 3 стрибки; thr_invalid з HW.30 завжди 0 (ECB-кадр лишається як є; CCM-біти віддає wire-rev2.2, реалізація FW.66),
     // тож байт бітово ідентичний старому чистому TTL.
     lora_payload[11] = Ttl_Byte_Pack(DEFAULT_TTL, 0u);
 
@@ -2139,7 +2139,7 @@ int main(void)
         // FW.29-маски, acoustic з ARCH.41-B sentinel-логікою. mesh_ctrl =
         // [TTL:4|fw_low:4] (розкладка 03_05 §2.1; low-nibble версії — 16-епох
         // ротація через OTA-config). thr_invalid і fauna-біти з HW.30 завжди 0
-        // (у wire-rev2.2 їх займуть reset_cause · time_uncertain · voc_attempt, FW.66). Збій збірки (HAL
+        // (у wire-rev2.2 біти thr_invalid займуть reset_cause · time_uncertain · voc_attempt, а fauna-біти стануть резервом, FW.66). Збій збірки (HAL
         // захрип) → мовчимо цей цикл: 16B-фолбек у CCM-ері Королева однаково
         // дропне (atomic-cutover), то був би спалений airtime, не телеметрія.
         uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
@@ -3390,7 +3390,7 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
 //   device_z   — Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid): сирий Z
 //                для FW.31 numeric DCI (сентинель NONE коли Лоренц спав)
 //   diag       — Pack_FW2_Diag(0, 0, 0, fc_hiwater_degraded): thr_invalid і
-//                fauna-біти з HW.30 завжди 0 (у wire-rev2.2 ці біти несуть нові поля, FW.66)
+//                fauna-біти з HW.30 завжди 0 (у wire-rev2.2 thr_invalid-біти несуть нові поля, fauna — резерв, FW.66)
 //   vpd_index  — 0x00 до приходу BME280 (HW.32)
 //   gossip_ts_lsb — Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts): їде у
 //                cleartext-AAD, сусіди читають без ключа (FW.20-S2 #5)

@@ -578,7 +578,8 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
      * як call-site у soldier/main.c (mesh_ctrl = TTL|fw-nibble, dt-сатурація,
      * сирий vcap), а розкладка на виході — та, яку читає process_ccm_chunk.
      * diag: main.c з HW.30 шле Pack_FW2_Diag(0,0,0,fc_degraded); ненульовий
-     * thr тут свідомо — доводить бітфілд наскрізь, доки слот живий (FW.59). */
+     * thr тут свідомо — доводить бітфілд наскрізь, доки реалізація wire-rev2.2
+     * (00_07 FW.66) не віддала ці біти новим полям. */
     enum { DEFAULT_TTL_M = 3, FIRMWARE_VERSION_ID_M = 0x0001 };
     uint32_t key[4] = {0x11110000, 0x22220000, 0x33330000, 0x44440000};
     const uint32_t did = 0x00C0FFEE;

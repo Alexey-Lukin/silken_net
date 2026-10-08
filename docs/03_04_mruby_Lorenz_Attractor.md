@@ -160,7 +160,7 @@ firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
 │
 ├── internal_temp ← HAL_ADC_GetValue(&hadc)  [ADC, канал internal temp]
 ├── delta_t_seconds ← EMA (RTC DR10), vcap_mv ← EMA (RTC DR12)  [FW.21; метаболізм→GP §4.3, E.63]
-└── acoustic_events ← 0 з HW.30 (пʼєзо зрізано; байт лишається — FW.59)  [RTC DR0]
+└── acoustic_events ← 0 з HW.30 (пʼєзо зрізано; ECB — 0, CCM-байт віддає wire-rev2.2 — FW.66)  [RTC DR0]
 
 firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигнатура post-SEC.11)
 │
