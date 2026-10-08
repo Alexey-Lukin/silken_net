@@ -226,7 +226,31 @@ TARGETS = [
     floor: 18,
     open:  "<!-- TELEMETRY-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /TELEMETRY-GOTCHAS-INDEX -->" }
+    close: "<!-- /TELEMETRY-GOTCHAS-INDEX -->" },
+  # 2026-10-08 (DOC-T.121) — the first target that is not a skill: the cementation PLAYBOOK grew
+  # as an anthology (91.3 → 102.6 kB in two weeks), each session appending a dated paragraph. A
+  # procedure, so a rule line must stand INSIDE the phase where it fires, not in one block at the
+  # end — hence `section:`: ONE companion, ONE append-only scale across it, one index block per
+  # `## <section>` of it. The adversary forms are a SECOND companion, not a section: they carry
+  # their own scale, cited from memory as «форма (N)», and a brief consumes them whole.
+  *{ "Шпаргалка" => 8, "Фаза 1" => 5, "Фаза 1 — пара" => 7, "Фаза 2" => 3, "Фаза 3" => 1,
+     "Фаза 4" => 2, "Фаза 5" => 7, "Фаза 6" => 1, "Anti-patterns" => 14 }.map do |sec, floor|
+    { name:    "item_cementation (#{sec})",
+      skill:   File.join(ROOT, ".claude/prompts/item_cementation.md"),
+      aux:     File.join(ROOT, ".claude/prompts/item_cementation_rules.md"),
+      section: sec,
+      floor:   floor,
+      open:    "<!-- CEMENT-RULES-INDEX:#{sec}:AUTO — generated from item_cementation_rules.md by " \
+               "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+      close:   "<!-- /CEMENT-RULES-INDEX:#{sec} -->" }
+  end,
+  { name:  "item_cementation (Адверсар)",
+    skill: File.join(ROOT, ".claude/prompts/item_cementation.md"),
+    aux:   File.join(ROOT, ".claude/prompts/item_cementation_adversary.md"),
+    floor: 14,
+    open:  "<!-- CEMENT-ADVERSARY-INDEX:AUTO — generated from item_cementation_adversary.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit forms THERE, never here -->",
+    close: "<!-- /CEMENT-ADVERSARY-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
@@ -280,6 +304,16 @@ def items(text)
   end
 end
 
+# Тіло розділу `## <name>` aux-файла (без заголовка), до наступного `## `; nil, якщо
+# заголовка немає. Розділ дає ОДНОМУ компаньйонові кілька блоків індексу, кожен у тому
+# місці процедури, де його правила спрацьовують (плейбук цементації, DOC-T.121).
+def section_slice(text, name)
+  lines = text.lines
+  i = lines.index { _1.chomp == "## #{name}" } or return nil
+  j = lines[(i + 1)..].index { _1.start_with?("## ") }
+  lines[(i + 1)...(j ? i + 1 + j : lines.size)].join
+end
+
 def render(list, t)
   lines = list.map do |it|
     "#{it[:num]}. #{it[:lead]}"
@@ -293,13 +327,20 @@ TARGETS.each do |t|
     warn "guard_craft_index ✗ — #{t[:name]}: aux file missing (#{t[:aux]}) — the index has no source"
     ok = false; next
   end
-  list  = items(File.read(t[:aux]))
+  aux_text = File.read(t[:aux])
+  scope = t[:section] ? section_slice(aux_text, t[:section]) : aux_text
+  unless scope
+    warn "guard_craft_index ✗ — #{t[:name]}: section «## #{t[:section]}» not found in #{File.basename(t[:aux])}"
+    ok = false; next
+  end
+  list  = items(scope)
   block = render(list, t)
 
   # ── guards ────────────────────────────────────────────────────────────────
   errs = []
   errs << "item count #{list.size} < floor #{t[:floor]} — a vanished number orphans its citations" if list.size < t[:floor]
-  dupes = list.map { _1[:num] }.tally.select { |_, v| v > 1 }
+  # Дублі — по ВСЬОМУ aux, не по розділу: номер є адресою в межах файла.
+  dupes = items(aux_text).map { _1[:num] }.tally.select { |_, v| v > 1 }
   errs << "duplicate item numbers: #{dupes.keys.join(', ')}" if dupes.any?
   list.each do |it|
     # Порожній рефлекс = сам заголовок «Рефлекс:» стоїть УСЕРЕДИНІ жирного, а
@@ -382,5 +423,21 @@ end
     warn "  (if you edited the index by hand, move the edit into #{File.basename(t[:aux])} — it is the source)"
     ok = false
   end
+end
+
+# 🔴 Пункт компаньйона з розділами, що лежить поза КОЖНИМ оголошеним розділом, не рендерить
+# жоден блок — правило тихо випадає з процедури при зелених рядках вище (кожен судить СВІЙ
+# розділ). Тож судиться покриття файла цілком: номери файла мінус номери всіх його розділів.
+TARGETS.select { _1[:section] }.group_by { _1[:aux] }.each do |aux, rows|
+  next unless File.exist?(aux)
+
+  text = File.read(aux)
+  covered = rows.flat_map { |r| (s = section_slice(text, r[:section])) ? items(s).map { _1[:num] } : [] }
+  stray = items(text).map { _1[:num] } - covered
+  next if stray.empty?
+
+  warn "guard_craft_index ✗ — #{File.basename(aux)}: item(s) #{stray.join(', ')} sit outside every " \
+       "declared section — no index block renders them; move each under its `## <section>`"
+  ok = false
 end
 exit(ok ? 0 : 1)
