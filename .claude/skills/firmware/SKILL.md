@@ -69,6 +69,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 22. Standby — the ratified sleep target, gated `FW54_STANDBY_ENABLED` — wakes through a RESET: `main()` starts over and ALL SRAM is gone, so a `static` added to `firmware/soldier/main.c` silently restarts from its initializer on every wake after the flip
 23. A power mode or HAL call taken from an app note, a forum or another STM32 family may not exist on WL — and a grep of the vendored tree can still hit its name
 24. On the cycle the radio sleeps in ONE place — the first statement of Phase 5 (`phase5_kenosis:`; the PVD callback is the only other site) — and every path into low power must pass it; a `goto` past it or a TX after it leaves the radio in STDBY_RC, 0.7 mA against 140 nA of sleep, and `Set_Sleep` is accepted only from Standby, so a live receiver ignores it
+25. A byte of the CCM plaintext has MORE THAN ONE WRITER — the panic path packs its own literals into the same 14 bytes the telemetry path fills, so re-homing a byte is an audit of every call site of `Soldier_Build_CCM_LoRa_Packet` and of every backend reader of that byte, not an edit of one `Pack_*` helper
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 
