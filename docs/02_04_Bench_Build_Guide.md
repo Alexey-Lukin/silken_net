@@ -350,7 +350,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 | Корпус | IP67 ABS/PC ≥2.5 л (світлий RAL 7035 проти sun-load) | bench-некритично; freeze-pending |
 | _(Phase 3)_ Starlink | Starlink Mini + ESP32-S3 WiFi-міст | 🔴 прошивки ESP32 НЕ існує → не збирати зараз (§12) |
 
-**Bench-carrier комплект (🛒):** LoRa-E5 mini · SIM7070G breakout · Victron 75/15 · LiFePO4 20Ah + BMS · панель 50W · антени 868+wideband · 5 VBAT-caps · каскад поз. 9 на `LMR33640EVM` (RFBB замінити) + TVS поз. 21 · ферит поз. 22 · Шотткі поз. 25 ([`00_07`](00_07_Action_Plan_Tracker) HW.15, нога закупівлі).
+**Bench-carrier комплект (🛒):** LoRa-E5 mini · SIM7070G breakout · Victron 75/15 · LiFePO4 20Ah + BMS · панель 50W · антени 868+wideband · 5 VBAT-caps · каскад поз. 9 на `LMR33640EVM` (обидва плечі дільника замінити на ±0.1 % — заводські 1 %, ⚖️ 2026-10-04) + TVS поз. 21 · ферит поз. 22 · Шотткі поз. 25 ([`00_07`](00_07_Action_Plan_Tracker) HW.15, нога закупівлі).
 
 ---
 
