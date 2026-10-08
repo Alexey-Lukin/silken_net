@@ -53,6 +53,8 @@ Sentry.init do |config|
   # `enable_logs`/`enable_metrics`, so writing those setters now raises NoMethodError at boot. Rails structured logging — the category 7.0
   # ships unasked, one log per request — is stopped at its source; the two callbacks drop
   # items from any other emitter, including SDK-emitted metrics a later 7.x may start sending.
+  # 7.1.0 turned structured logging back off by default — the line stays: this default has
+  # flipped both ways in two releases, and the posture is declared, not inherited.
   config.rails.structured_logging.enabled = false
   config.before_send_log = ->(_log) { nil }
   config.before_send_metric = ->(_metric) { nil }
