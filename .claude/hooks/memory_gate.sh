@@ -245,6 +245,14 @@ FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known rela
 # structurally once; the ceiling moves with it once. ⛔ Not a licence to raise it again for ordinary growth.
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
 ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ignores them, before it is worth a router
+# The start ritual's package registry (00_05 §3 крок 1, DOC-T.120) and the price line of its START tier.
+# 16 KiB sits above every file the two ritual cuts of 2026-09-19 (DOC-T.113 · DOC-T.116) kept as a start
+# read, and below the first one that outgrew its slot: `feedback_verdict_lifecycle` was 14 kB when it was
+# named «малий» and 36 kB a week later. A start member over it is paid by EVERY session of its section, so
+# `--package` prints START-HEAVY beside it — a price to read, never a verdict: the cure is either evicting
+# instance bodies into the log_* twin or moving the file to the event tier, and only a READ chooses.
+PKG_REG=reference_memory_packages.md
+START_WARN=${MEMORY_GATE_START_WARN:-16384}
 
 # 🔴 RUBY RESOLUTION — because `command -v ruby` answers the wrong question.
 #
@@ -413,7 +421,9 @@ rb_dark() {
 # `feedback_verdict_lifecycle`, що вперся в робочу стелю 36 120 Б). Підняття робить новий дім захищеним підлогою.
 # 2026-10-05: 167 → 168 — `project_03_z_core_role` (ядро Z на Солдаті: три ролі в одному числі, виміри FW.66 і
 # розвилка «розвести ролі»). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-168}
+# 2026-10-08: 168 → 169 — `reference_memory_packages` (реєстр пакетів стартового ритуалу, DOC-T.120: членство
+# секцій, яке друкує `--package`). Підняття робить новий дім захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-169}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -1090,6 +1100,45 @@ files.sort.each do |f|
   puts(f.start_with?("log_") ?
     "UNSTRUNG #{f}.md is a journal nothing links to — it has no index row either, so it is unreachable" :
     "UNSTRUNG #{f}.md has an index row but nothing links to it — a row orients on the first read, the string is what carries recall afterwards")
+end
+RUBY
+  return 0
+}
+
+# The package registry is the THIRD address book of the corpus (beside the index and the
+# [[strings]]), and the only one the start ritual reads (00_05 §3 крок 1, DOC-T.120). It
+# rots the way the other two do — a rename or a delete that never reaches it — plus one
+# way of its own: a new home that nobody packs is read by NO session, whatever its index
+# row says. So the moment that matters is the Write of a new `project_*`/`reference_*`,
+# and this runs in both stances. Scope is EVERY non-journal home (⚖️ founder 2026-10-08:
+# «щоб не залишилась якась память яка ніколи не використовується ні по якому модулю») —
+# a cross-module axis home belongs in core's event tier, not outside the registry; `log_*`
+# stay out because unstrung_check already owns their only lifeline, the string from a home.
+# The registry becomes REQUIRED once the corpus holds a project/reference home — a
+# fixture without one has nothing a session would route to. Missing is LOUD (#47).
+package_check() {
+  [ -n "$RB" ] || return 0
+  "$RB" - "$MEM_DIR" "$PKG_REG" "$REPO" <<'RUBY'
+dir, reg, repo = ARGV
+path = File.join(dir, reg)
+packable = Dir[File.join(dir, "{project,reference}_*.md")].map { File.basename(_1, ".md") } - [File.basename(reg, ".md")]
+unless File.exist?(path)
+  # A corpus with nothing to pack needs no registry — a true negative, not a quiet skip.
+  puts "PKGREG #{reg} is missing — the start ritual (00_05 §3) has no package registry, and UNPACKED has nothing to judge against" unless packable.empty?
+  exit
+end
+lines  = File.readlines(path)
+listed = lines.grep(/^- (?:start|event):/).join.scan(/\b(?:user|feedback|project|reference)_[a-z0-9_]+/).uniq
+listed.reject { File.exist?(File.join(dir, "#{_1}.md")) }.each do |s|
+  puts "PKGDEAD #{reg} lists #{s} — no such file: a rename or a delete did not reach the registry"
+end
+lines.grep(/^- skill:/).flat_map { _1.sub(/^- skill:/, "").split("·").map(&:strip) }.reject(&:empty?).uniq.each do |s|
+  next if File.exist?(File.join(repo, ".claude", "skills", s, "SKILL.md"))
+  puts "PKGDEAD #{reg} names skill #{s} — there is no .claude/skills/#{s}/SKILL.md"
+end
+Dir[File.join(dir, "*.md")].map { File.basename(_1, ".md") }.reject { _1 == "MEMORY" || _1.start_with?("log_") }.sort.each do |s|
+  next if "#{s}.md" == reg || listed.include?(s)
+  puts "UNPACKED #{s}.md sits in no package — add it to a section of #{reg}: start (read every session of that section) or event (opened when its index row's moment comes)"
 end
 RUBY
   return 0
@@ -2623,6 +2672,62 @@ RUBY
   if printf '%s' "$out" | grep -q 'PARITY-OK'; then pass=$((pass+1)); printf '  ok    %s\n' "no check is audit-only without being a declared exemption"
   else fail=$((fail+1)); printf '  FAIL  %s\n         %s — it runs in --audit but not at the moment of the write\n' "no check is audit-only without being a declared exemption" "$out"; fi
 
+  # 32a-32f [DOC-T.120] The package registry — the start ritual's third address book.
+  # Every axis gets a positive AND a negative, because a check that prints nothing on
+  # a corpus with nothing to pack is indistinguishable from one that never ran.
+  _st_pkg_home() {   # a packable home, indexed and strung, so only the package axes move
+    printf -- '---\nname: project_delta\ndescription: "D"\nmetadata:\n  type: project\n---\n\nBody. Kin: [[feedback_alpha]]\n' >"$d/project_delta.md"
+    printf -- '- [Delta](project_delta.md) — x\n- [Reg](reference_memory_packages.md) — y\n' >>"$d/MEMORY.md"
+    printf '\nPackages: [[project_delta]] · [[reference_memory_packages]]\n' >>"$d/feedback_beta.md"
+  }
+  _st_pkg_reg() {    # $1 = body lines of the registry
+    printf -- '---\nname: reference_memory_packages\ndescription: "P"\nmetadata:\n  type: reference\n---\n\n%s\n' "$1" >"$d/reference_memory_packages.md"
+  }
+  _st_build "$d"; _st_pkg_home
+  _st_check "PKGREG when there is something to pack and no registry" expect 'PKGREG'
+  _st_build "$d"; _st_pkg_home; _st_pkg_reg "## core
+- start: feedback_alpha"
+  _st_check "UNPACKED on a project home in no package" expect 'UNPACKED project_delta'
+  _st_build "$d"; _st_pkg_home; _st_pkg_reg "## core
+- start: feedback_alpha · feedback_beta
+- event: project_delta"
+  _st_check "a packed home is not UNPACKED" reject 'UNPACKED'
+  # 32c+. The scope is EVERY non-journal home (founder 2026-10-08), not project/reference only.
+  _st_build "$d"; _st_pkg_home; _st_pkg_reg "## core
+- start: feedback_alpha
+- event: project_delta"
+  _st_check "UNPACKED on a feedback home in no package" expect 'UNPACKED feedback_beta'
+  _st_build "$d"; _st_pkg_home; _st_pkg_reg "## core
+- start: feedback_alpha · project_ghost
+- event: project_delta"
+  _st_check "PKGDEAD on a registry slug with no file" expect 'PKGDEAD.*project_ghost'
+
+  # 32e. ID resolution must stop at the archive heading: a closed item resolving to the
+  #      section it USED to live in would hand a session a package for finished work.
+  _st_build "$d"; _st_pkg_home; _st_pkg_reg "## core
+- start: feedback_alpha
+- event: project_delta
+## 02a · Node
+- start: feedback_beta"
+  printf '## §02a · Node\n\n#### fixlive — live\n\n## 🗄️ Архів\n\n#### fixgone — closed\n' >"$d.repo/docs/00_07_Action_Plan_Tracker.md"
+  out=$(env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" bash "$SELF" --package fixlive fixgone 2>&1)
+  if printf '%s' "$out" | grep -q 'fixlive → §02a' && printf '%s' "$out" | grep -q '✗ fixgone' &&
+     printf '%s' "$out" | grep -q 'feedback_beta'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "--package resolves a live ID to its section and refuses an archived one"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n%s\n' "--package resolves a live ID to its section and refuses an archived one" "$(printf '%s' "$out" | sed 's/^/         | /')"
+  fi
+
+  # 32f. START-HEAVY is a computed price: it must appear when a start member crosses the
+  #      line and stay silent when none does — else the flag is decoration either way.
+  heavy_on=$(env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" MEMORY_GATE_START_WARN=10 bash "$SELF" --package 02a 2>&1)
+  heavy_off=$(env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" bash "$SELF" --package 02a 2>&1)
+  if printf '%s' "$heavy_on" | grep -q 'START-HEAVY' && ! printf '%s' "$heavy_off" | grep -q 'START-HEAVY'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "START-HEAVY fires past the line and only there"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         on: %s\n         off: %s\n' "START-HEAVY fires past the line and only there" "$heavy_on" "$heavy_off"
+  fi
+
   # RUBY RESOLUTION. The class these pin is not "a check is wrong" but "a check
   # did not run and the battery said OK" — the failure that hid for weeks
   # because CI installs `.ruby-version` while the hook takes whatever PATH
@@ -2690,7 +2795,7 @@ case "${1:-}" in
     # check actually EXECUTED — so state the precondition before reading it.
     out=$( { [ -n "$RB" ] || rb_dark "ten checks"
              override_check; index_check; desc_check; corpus_floor_check; integrity_check
-             unstrung_check; asset_check
+             unstrung_check; asset_check; package_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
@@ -2888,6 +2993,113 @@ puts <<~CEIL
 CEIL
 RUBY
     ;;
+  --package)
+    # The start ritual's VARIABLE half (00_05 §3 крок 1, DOC-T.120): core memory, the
+    # packages of the sections a task touches (deduped), the canon-map command for their
+    # modules and their skills — every file with its CURRENT weight. Computed on each run
+    # on purpose: the hand list it replaced called its start set «малі» and the set doubled
+    # within a week, i.e. a written size is the self-description this gate distrusts.
+    # Membership lives in the registry; the ORDER and the fixed reads live in 00_05.
+    # WORKLIST stance — exit 0 unless the registry is missing: START-HEAVY is a price to
+    # read at the moment it is paid, and in --audit it would make EXIT 1 permanent.
+    [ -n "$RB" ] || { rb_dark "--package"; exit 1; }
+    shift
+    "$RB" - "$MEM_DIR" "$REPO" "$PKG_REG" "$START_WARN" "$@" <<'RUBY'
+dir, repo, reg, warn = ARGV.shift(4)
+warn = warn.to_i
+path = File.join(dir, reg)
+abort "PKGREG #{reg} is missing — no package to print" unless File.exist?(path)
+SLUG = /\b(?:user|feedback|project|reference)_[a-z0-9_]+/
+secs = {}
+cur  = nil
+File.foreach(path) do |l|
+  if l =~ /^## (\S+)\s*(.*)$/
+    cur = $1
+    secs[cur] = { title: $2.sub(/\A·\s*/, "").strip, start: [], event: [], skill: [] }
+  elsif cur && l =~ /^- (start|event|skill):\s*(.*)$/
+    k, v = $1.to_sym, $2
+    secs[cur][k].concat(k == :skill ? v.split("·").map(&:strip).reject(&:empty?) : v.scan(SLUG))
+  end
+end
+kb   = ->(b) { format("%5.1f kB", b / 1000.0) }
+size = ->(s) { f = File.join(dir, "#{s}.md"); File.exist?(f) ? File.size(f) : nil }
+
+if ARGV.empty?
+  puts "ПАКЕТИ ПАМʼЯТІ · #{reg} — старт-вага кожної секції (core іде завжди; стеля старт-члена #{kb.(warn).strip})"
+  secs.each do |k, s|
+    w = s[:start].sum { size.(_1) || 0 }
+    h = s[:start].count { (size.(_1) || 0) >= warn }
+    printf("  %-5s %s · %2d файлів%s · %s\n", k, kb.(w), s[:start].size, h.zero? ? "" : " · ⚠ #{h} START-HEAVY", s[:title])
+  end
+  puts "виклик: --package <секції · модуль · ID пункту>   напр. --package 01a 02a · --package 02 · --package HW.9"
+  exit 0
+end
+
+mods    = secs.keys.grep(/\A\d\d/).group_by { _1[0, 2] }
+tracker = File.join(repo, "docs", "00_07_Action_Plan_Tracker.md")
+live_section = lambda do |id|
+  return nil unless File.exist?(tracker)
+  sec = nil
+  File.foreach(tracker) do |l|
+    if l.start_with?("## ") then sec = l[/\A## §(\S+)/, 1]   # the archive heading resets it
+    elsif sec && l.start_with?("#### #{id} ") then return sec
+    end
+  end
+  nil
+end
+keys, notes = ["core"], []
+ARGV.each do |a|
+  k = a.delete("§")
+  if secs.key?(k) && k != "core" then keys << k
+  elsif mods.key?(k) then keys.concat(mods[k])
+  elsif (s = live_section.(a)) && secs.key?(s) then keys << s; notes << "#{a} → §#{s}"
+  else notes << "✗ #{a} — not a section, a module or a LIVE tracker item (an archived ID resolves to nothing)"
+  end
+end
+keys.uniq!
+
+owner = Hash.new { |h, k| h[k] = [] }
+keys.each { |k| (secs[k][:start] + secs[k][:event]).each { |x| owner[x] << k unless owner[x].include?(k) } }
+core  = secs["core"][:start]
+start = keys.drop(1).flat_map { secs[_1][:start] }.uniq - core
+event = keys.flat_map { secs[_1][:event] }.uniq - core - start
+heavy = []
+row = lambda do |x, tier|
+  sz = size.(x)
+  next "  ✗ MISSING  #{x}" unless sz
+  flag = tier == :start && sz >= warn ? (heavy << x; "  ⚠ START-HEAVY") : ""
+  "  #{kb.(sz)}  #{x.ljust(46)} #{owner[x].join(' ')}#{flag}"
+end
+block = lambda do |label, list, tier|
+  w = list.sum { size.(_1) || 0 }
+  puts "#{label} (#{list.size} · #{kb.(w).strip})"
+  list.sort_by { -(size.(_1) || Float::INFINITY) }.each { puts row.(_1, tier) }
+end
+
+puts "ПАКЕТ ПАМʼЯТІ · #{keys.join(' + ')}   — #{dir}/"
+notes.each { puts "  #{_1}" }
+block.("ЧЕРГА 1 · core — читай цілком одразу після 00_05", core, :start)
+block.("ЧЕРГА 2 · пакет секцій — читай цілком", start, :start)
+nums = keys.drop(1).map { _1[0, 2] }.uniq
+unless nums.empty?
+  last = Dir[File.join(repo, "docs", "#{nums.max}_[0-9][0-9]_*.md")].map { File.basename(_1)[0, 5] }.max
+  puts "  + карта канону: ruby scripts/doc_structure_map.rb 00_01 #{last || "#{nums.max}_99"} --secs"
+end
+puts "ПОДІЯ · великі доми, що стріляють у цих секціях — відкривай у мить, яку називає їхній рядок індексу (#{event.size})"
+event.each { puts row.(_1, :event) }
+skills = keys.flat_map { secs[_1][:skill] }.uniq
+unless skills.empty?
+  puts "ЧЕРГА 4 · скіли секцій"
+  skills.each do |s|
+    f = File.join(repo, ".claude", "skills", s, "SKILL.md")
+    puts File.exist?(f) ? "  #{kb.(File.size(f))}  .claude/skills/#{s}/SKILL.md" : "  ✗ MISSING  skill #{s}"
+  end
+end
+unless heavy.empty?
+  puts "⚠ ДОГЛЯД · #{heavy.size} старт-членів ≥ #{kb.(warn).strip}: їх платить КОЖНА сесія цих секцій — евікція тіл у log_*-двійник або переїзд у event; обирає READ (00_07 DOC-T.120)"
+end
+RUBY
+    ;;
   --stale-state)
     # WORKLIST (always exit 0) — see the block comment on stale_state_check for
     # why this cannot live in --audit and why its trigger is in the REPO, not here.
@@ -2946,6 +3158,8 @@ RUBY
               path_check "$fp"
               unstrung_check
               asset_check
+              # A new home is WRITTEN here; this is the one moment it can still be packed.
+              package_check
               privacy_check
               # Runs on BOTH stances (the UNSTRUNG lesson): severing a section a
               # string points at happens WHILE rewriting, not while auditing. The
