@@ -45,7 +45,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
+from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
 from lib.os_geometry import BPY_SMILES, DCBPY_SMILES, DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
@@ -83,6 +83,10 @@ REF_LFER_SET = ["ome", "dmbpy", "bpy", "dcbpy", "no2"]
 OUT = DFT_CACHE / "os_mediator_series.json"
 OUT_WB97X = DFT_CACHE / "os_mediator_series_wb97x.json"   # ωB97X extremes — its own cache (one cache per model)
 WB97X_EXTREMES = ["nh2", "no2", "nme2"]   # donor plateau pair + acceptor end, cheapest first (⚖️ 2026-10-02)
+# 34b's tier (ωB97X, B3LYP's 6-31G(d) basis) at the axis ends — splits the ×0.85 into functional and basis there
+# (⚖️ founder 2026-10-08, 00_07 HW.5.IS); its own cache, because it is another model (§When Modifying #17)
+OUT_WB97X_631GD = DFT_CACHE / "os_mediator_series_wb97x_631gd.json"
+WB97X_631GD_ENDS = ["nh2", "no2"]
 # The centre of the comparison was computed at the same ωB97X/def2-TZVP tier by other scripts, each on a file that
 # must equal this series' own geometry of that complex (checked at runtime, never assumed): (cache, xyz it ran on).
 WB97X_CENTRE = {"dmbpy": ("os_complex_wb97xd_dmbpy.json", "os_dmbpy_meim_cl_full.xyz"),   # 21f wb97x tier
@@ -336,20 +340,24 @@ def _recorded_pyscf() -> str:
     return re.search(r"/pyscf-(\d+\.\d+\.\d+)-", explicit.read_text(encoding="utf-8")).group(1)
 
 
-def main_wb97x(names: list[str]) -> int:
+def main_wb97x(names: list[str], small_basis: bool = False) -> int:
     import pyscf
 
     if pyscf.__version__ != _recorded_pyscf():
         sys.exit(f"PySCF {pyscf.__version__} is not the recorded {_recorded_pyscf()} — the ωB97X points this is "
                  f"compared with were computed there; run in silken_md")
     xc, basis_light, lshift, _, conv = _tier_21f_wb97x()
+    out = OUT_WB97X
+    if small_basis:   # 34b's tier: the same functional, shift and tolerance, the B3LYP tier's basis
+        basis_light, out = None, OUT_WB97X_631GD
     series = {name: (smi, sigma) for name, smi, sigma, _ in SERIES}
     unknown = [n for n in names if n not in series]
     if unknown:
         sys.exit(f"not in SERIES: {unknown}")
-    rec = json.loads(OUT_WB97X.read_text(encoding="utf-8")) if OUT_WB97X.exists() else {
-        "method": f"{xc.upper()}/{basis_light}+LANL2DZ(Os)+C-PCM(water) vertical ΔSCF — 21f's wb97x tier, imported; "
-                  f"Os(III) level shift {lshift:g}, conv_tol {conv:g}",
+    tier_note = " with the B3LYP tier basis — 34b's tier" if small_basis else ""
+    rec = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {
+        "method": f"{xc.upper()}/{basis_light or BASIS_LIGHT}+LANL2DZ(Os)+C-PCM(water) vertical ΔSCF — 21f's wb97x "
+                  f"tier, imported{tier_note}; Os(III) level shift {lshift:g}, conv_tol {conv:g}",
         "environment": {"pyscf": pyscf.__version__},
         "complexes": {},
     }
@@ -359,24 +367,26 @@ def main_wb97x(names: list[str]) -> int:
         atoms, _ = build_os_complex(bpy_smiles=smi)
         for state, charge, spin, shift in (("os2", 1, 0, 0.0), ("os3", 2, 1, lshift)):
             if c.get(state, {}).get("converged"):
-                banner(f"① ωB97X {name} {state} — reused from {OUT_WB97X.name}")
+                banner(f"① ωB97X {name} {state} — reused from {out.name}")
                 continue
             banner(f"① ωB97X {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
             c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({xc})",
                                        xc=xc, basis_light=basis_light, conv_tol=conv, level_shift_open=shift)
             print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, conv={c[state]['converged']})")
-            OUT_WB97X.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+            out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
         if c["os2"]["converged"] and c["os3"]["converged"]:
             c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV   # full precision
-            OUT_WB97X.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+            out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
             print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
-    if all("dE_red_eV" in rec["complexes"].get(n, {}) for n in WB97X_EXTREMES):
+    if not small_basis and all("dE_red_eV" in rec["complexes"].get(n, {}) for n in WB97X_EXTREMES):
         rec["vs_b3lyp"] = _vs_b3lyp(rec)
-        OUT_WB97X.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+        out.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
         print(f"  ω−B3: {rec['vs_b3lyp']['verdict']}")
-    banner(f"✅ saved {OUT_WB97X.relative_to(REPO_ROOT)}")
+    banner(f"✅ saved {out.relative_to(REPO_ROOT)}")
     return 0
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["wb97x-631gd"]:
+        raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_631GD_ENDS, small_basis=True))
     raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_EXTREMES) if sys.argv[1:2] == ["wb97x"] else main())

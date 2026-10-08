@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 270 · 15,218,240 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 270 · 15,218,998 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -57,7 +57,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | `b551d14109cc7972ccdc8cfcd7013bdc56abed57aa4d1cfef82f1d79f153ba5b` | L3 step 2b — frontier orbitals of the FULL Os redox mediator. |
 | `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | `cc7efccd26040a58739f1669c167afc55de9c4e474a18fae5981c964b83c26d1` | L3 step 2c — DFT geometry optimization of [Os(bpy)₂(1-MeIm)Cl]ⁿ⁺. |
 | `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | `a6da54390b8c1cc38839463ba72ff0c8f5c232475e64e1e6d753ddb68265d0b4` | L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex. |
-| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `db0ef5d11ef1f99c1a784bf71c86263fb202b322c780343423060cd7ea74d795` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
+| `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `3fefe0dd2a784e0e18322c74b72026fd4a596067236292adff26c5c2d8d887bd` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `ba75dbd699c1c7c1b71a63c4fac4fdc4918b6151745becfcaf400b24ace4dd7a` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `2f2b5b6e42e663a575fc1e12efeac62cb579030b3951627c484472a2a23bc11a` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |

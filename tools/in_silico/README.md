@@ -43,7 +43,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 21b | `21b_dft_os_bpy_full.py` | L3 DFT: Os mediator — full [Os(bpy)₂(1-MeIm)Cl] with π-backbonding | ~15-30 min |
 | 21c | `21c_dft_os_bpy_geomopt.py` | L3 DFT: Os mediator — geometry optimization via PySCF + geomeTRIC (terminated — Cl flat PES) | ~6-12 h |
 | 21d | `21d_dft_os_bpy_wb97xd.py` | L3 DFT: publication-grade ωB97X/def2-TZVP Os complex (adiabatic ΔSCF cross-check) | ~hours |
-| 21e | `21e_dft_os_mediator_series.py` | L3 ①: Os 4,4'-substituent Hammett series (9× vertical ΔSCF) → LFER mediator design rule; `wb97x [names]` — ωB97X/def2-TZVP on the σ-axis ends + the `vs_b3lyp` comparison | ~30-60 min (B3LYP) · ~9–17 h per complex (`wb97x`) |
+| 21e | `21e_dft_os_mediator_series.py` | L3 ①: Os 4,4'-substituent Hammett series (9× vertical ΔSCF) → LFER mediator design rule; `wb97x [names]` — ωB97X/def2-TZVP on the σ-axis ends + the `vs_b3lyp` comparison; `wb97x-631gd [names]` — the same at 34b's 6-31G(d) basis, own cache | ~30-60 min (B3LYP) · ~9–17 h per complex (`wb97x`) |
 | 22 | `22_compare_homo_lumo.py` | L3 aggregator: Marcus cascade diagram + verdict | ~1 s |
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
 | 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals, crude State-A/B (Marcus ET rates through ZIF) | ~3-4 h |
