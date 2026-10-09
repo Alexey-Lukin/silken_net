@@ -886,7 +886,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `ota_chunk_received[256]` | `uint8_t` | 256 B | OTA dedup bitmap (один bit = один chunk) |
 | **Всього** | | **~2 KB** | Лише перелічені змінні (аудіо-буферів з HW.30 немає); повну статику TU міряє CI-гейт [FW.26] (`firmware/scripts/check_ram_budget.sh --hal-objects`) |
 
-**Стек — окремо від статики:** перевірка печатки OTA бере пік ≈2.0 КБ (FW.23, статичний граф GCC, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) — проти 12 КБ стек-резерву, чий One-Home до продового `.ld` — `firmware/sim/wle5_bench/stm32wle5.ld` (`__stack_reserve__`). Рахується поверх глибини місця виклику (RX-гілка головного циклу), а не від нуля.
+**Стек — окремо від статики:** перевірка печатки OTA бере пік ≈2.0 КБ (FW.23, статичний граф GCC, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) — проти 12 КБ стек-резерву, чий One-Home до продового `.ld` — `firmware/sim/wle5_bench/stm32wle5.ld` (`__stack_reserve__`); ⊕ 2026-10-09: карта образу для mini (`hal_glue/boards/lora_e5/stm32wle5jc_soldier.ld`) несе його дзеркало, і рівність судить CI (крок FW.26), а ELF образу проходить той самий бюджет статики Солдата. Рахується поверх глибини місця виклику (RX-гілка головного циклу), а не від нуля.
 
 ---
 

@@ -23,7 +23,9 @@ __stack_reserve__ = 12288;
 MEMORY
 {
   FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 244K
-  RAM   (rw)  : ORIGIN = 0x20000000, LENGTH = 64K   /* коду в RAM немає — без x */
+  RAM   (rw)  : ORIGIN = 0x20000000, LENGTH = 64K   /* коду в RAM немає — без x (лише атрибут
+                                                       лінкера; виконання з SRAM на кремнії знімає
+                                                       MPU — SEC.21) */
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);

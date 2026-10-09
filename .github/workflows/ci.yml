@@ -364,7 +364,20 @@ jobs:
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj
         # (compile-lane вище). Леджер — шапка check_ram_budget.sh; tensor arena з
         # HW.30 на Солдат не лягає (інференсу немає; 03_03 §6 — історія дизайну).
-        run: firmware/scripts/check_ram_budget.sh --hal-objects firmware/build
+        # [FW.46] Образ mini — справжній лінк: статика ELF проти бюджету Солдата; його стек-
+        # резерв — дзеркало One-Home FW.55 (docs/03_01, «Стек — окремо від статики»), і
+        # рівність судить цей крок, а не памʼять того, хто правитиме одну з двох карт.
+        run: |
+          firmware/scripts/check_ram_budget.sh --hal-objects firmware/build
+          test -f firmware/build/soldier_lora_e5.elf \
+            || { echo "❌ FW.46: soldier_lora_e5.elf немає — HAL compile-lane мав його злінкувати"; exit 1; }
+          firmware/scripts/check_ram_budget.sh firmware/build/soldier_lora_e5.elf
+          home=$(grep -o '__stack_reserve__ = [0-9]*' firmware/sim/wle5_bench/stm32wle5.ld)
+          mirror=$(grep -o '__stack_reserve__ = [0-9]*' firmware/hal_glue/boards/lora_e5/stm32wle5jc_soldier.ld)
+          if [ -z "$home" ] || [ "$home" != "$mirror" ]; then
+            echo "❌ FW.46: стек-резерв образу mini ($mirror) розійшовся з One-Home FW.55 ($home)"; exit 1
+          fi
+          echo "✅ FW.46: стек-резерв образу mini = One-Home FW.55 ($home)"
 
       - name: '[FW.55] QEMU-M4 bit-parity — host golden ↔ Cortex-M4 mruby (mps2-an386)'
         # Той самий committed-байткод на реальному M4 код-шляху (software-double
