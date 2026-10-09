@@ -179,12 +179,12 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 > Можна зупинитись на будь-якому блоці (деталі приходять поступово).
 
 ### 3.0 Інструменти
-1. LoRa-E5 mini: Type-C → комп'ютер; прошити baseline-образ **STM32CubeProgrammer**, або `firmware/scripts/bench/RUNBOOK.md` §1.1 (`00_flash.sh --elf <path> --execute`).
+1. LoRa-E5 mini: Type-C → комп'ютер (живлення); прошити baseline-образ через SWD (ST-LINK — крок 3) **STM32CubeProgrammer**-ом, або `firmware/scripts/bench/RUNBOOK.md` §1.1 (`00_flash.sh --elf <path> --execute`).
    🔴 **ПЕРШИЙ FLASH НЕЗВОРОТНИЙ:** Seeed виходить з RDP-L1, тож перше програмування = **mass-erase**, і заводську **AT-прошивку вже не повернути** ([`00_07`](00_07_Action_Plan_Tracker) FW.46). Тримай **третій mini недоторканим резервом** і не спалюй обидва, доки не знаєш, що саме на них ганятимеш.
    ⛔ **`factory:flash` тут НЕ підходить і образу не пише** — його `desc` каже прямо: «Create a Factory-Flashing session (status=pending)». Це запис у БД, за яким іде `factory:approve` (обов'язкові `SUPERVISOR_PASSWORD` і `SUPERVISOR_OTP`, 2-Person Rule SEC.3) і `factory:execute`; дотиснувши його соло на dev-модулі, ти або впрешся в UID-guard [FW.54], або запишеш РЕАЛЬНІ ключові блоки в плату, яка для цього не призначена ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)).
 2. FT232RL: **джампер рівня → 3.3 В**; TX/RX cross до **TX2/RX2** mini (`PA2`/`PA3`, J1-13/14 — пін-мапа [`03_01`](03_01_Firmware_Lifecycle_and_DMA), «Фізичне Підключення Апаратного Відладчика») → serial-консоль. ⛔ Не на J1-18/19 «TX/RX»: це USART1 бортового моста CP2102N, знеструмленого без USB. Прошивка Солдата UART-виводу сьогодні не має — самотест читається по SWD (RUNBOOK §2.1).
-3. ST-LINK-V3MINIE: SWD (SWCLK/SWDIO/NRST/GND) до LoRa-E5 — і для прошивки (`00_flash.sh` підключається `mode=UR`, тобто скидом через NRST, і без нього не підключиться), і для дебагу.
-4. **⚠️ Не живити одночасно** через Type-C (крок 1) І 3V3-пін від BQ25570 (§3.3): 3V3-пін mini back-feed-ить onboard-LDO. Спершу Type-C flash → від'єднати → потім живлення від BQ25570.
+3. ST-LINK-V3MINIE: SWD (SWCLK/SWDIO/NRST/GND) до LoRa-E5 — і для прошивки (`00_flash.sh` підключається `mode=UR` — під апаратним скидом, тож NRST потрібен за семантикою UR; на кремнії ще не перевірено), і для дебагу.
+4. **⚠️ Не живити одночасно** через Type-C (крок 1) І 3V3-пін від BQ25570 (§3.3): 3V3-пін mini back-feed-ить onboard-LDO. Спершу SWD-прошивка під живленням Type-C → від'єднати → потім живлення від BQ25570.
 
 ### 3.1 Еквівалент EBFC (джерело Тевеніна)
 Компоненти: Блок 1. Навіщо саме так: продукт живить BQ25570 від EBFC — `V_OC` 0.6–0.8 В через `R_int` сотні Ом — кілоОми, — і найризикованіше місце силового тракту є холодний старт на порозі `VIN(CS)` 600 мВ typ / 700 мВ max при `PIN(CS)` 15 мкВт ([`02_03 §1.1`](02_03_BQ25570_MPPT_Nano_Power), [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power); FMEA #23). Еквівалент ставить BQ25570 рівно в цю точку.

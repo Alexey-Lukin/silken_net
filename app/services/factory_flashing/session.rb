@@ -12,7 +12,9 @@
 #      every HKDF derivation below (SEC.3 DI — so a non-ENV adapter is
 #      honoured, not bypassed).
 #   2. Materialize the HardwareKey row through HardwareKeyService.provision
-#      (single source of truth for HKDF — same derivation firmware will run).
+#      (the row's HKDF — same derivation firmware will run; KEYB and the epoch
+#      KEYL come from HardwareKeyService too, the seed from SeedDerivation,
+#      the OTA-seal pubkey from OtaSealKeyService — no fourth path).
 #   3. Generate the STM32CubeProgrammer command sequence (CommandBuilder).
 #   4. For Гілка B — also emit the ATCA write-zone transcript.
 #   5. Execute (dry-run or live subprocess via Executor).

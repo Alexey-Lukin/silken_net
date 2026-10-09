@@ -13,7 +13,7 @@
 # `[value:32][key:8][flags 0xA5][crc16]`, заголовок сторінки — `SKV1|seq|crc` +
 # `FINI|seq|crc`, «перше життя» — сторінка 0 із seq 1. Образ побайтово дорівнює
 # тому, що прошивка сама лишила б після `FlashKv_Mount` на чистому флеші +
-# `FlashKv_Put32(0x15, hiwater)`; golden-пін обабіч —
+# `FlashKv_Put32(0x15, hiwater)` + `FlashKv_Put32(0x14, 1)`; golden-пін обабіч —
 # `spec/services/factory_flashing/flash_kv_image_spec.rb` ⟷
 # `firmware/test/test_flash_kv.c` (`test_fw17_factory_journal_*`). Зміна
 # формату з одного боку червонить протилежний пін.

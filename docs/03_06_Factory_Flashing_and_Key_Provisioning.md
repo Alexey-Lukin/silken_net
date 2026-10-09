@@ -840,8 +840,8 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
 | Роль | Право | Умова |
 |------|-------|-------|
 | `super_admin` | Ініціювати provisioning сесію | HSM presence + MFA. MFA стоїть і на ВХОДІ (TOTP живий з 2026-08-20, [`00_07`](00_07_Action_Plan_Tracker) `S6.21` §🗄️), і на СХВАЛЕННІ сесії: `factory:approve` вимагає пароль і поточний TOTP супервайзера, без активного MFA — відмова для будь-якої ролі (⚖️ делеговано 2026-09-28 — врізка «[SEC.3] Authenticated 2-Person approval» вище) |
-| `admin` | Спостерігати за прогресом | Read-only audit view |
-| Factory Operator (без Rails-ролі) | Виконувати фізичне підключення | Лише після авторизації supervisor'а; UI показує тільки статус, не ключ |
+| `admin` | Спостерігати за прогресом | Read-only — аудит-ланцюг `AuditLog` (окремого UI немає) |
+| Factory Operator (без Rails-ролі) | Виконувати фізичне підключення | Лише після авторизації supervisor'а; працює через `rake factory:execute`, друк якого редагований (`Executor.redact`) |
 
 **Як master key потрапляє до інструменту (три варіанти, від кращого до гіршого).** Після SEC.3 DI деривація приймає ключ параметром від `MasterKeySource` — варіанти 1–2 підключаються новим адаптером без правок derivation-сервісів (до DI non-ENV adapter був би мертвим кодом — деривація однаково читала ENV):
 
@@ -854,7 +854,7 @@ Ota_Seal_Try_Finalize(buf, bytes_received, chunks_received, total_chunks,
 **Ротація master key:**
 
 - Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)).
-- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії. ⚠️ **Механізм під цим рядком — лише половина:** з 2026-09-28 re-provision дерева пише новий KEYL (нова епоха від поточного master, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)), а з 2026-09-29 і K_seed — поточним master, тією ж транзакцією, що й рядок (⚖️ founder, врізка «Провіжн дерева» в §5; доти K_seed брався з рядка й під новим master лишався старим). Відкритими лишаються кластерні похідні, які бекенд деривує з master на льоту (ключ печатки OTA — `OtaSealKeyService`), на бекенді зміняться для всього флоту одразу, тоді як пристрої триматимуть старий публічний ключ — печатка розійдеться з кожним вузлом. Ротація master сьогодні = перевипуск усього, що з нього деривовано (fleet re-flash), а на компрометацію master відповіді немає — рядок `PROVISIONING_MASTER_KEY` у [`06_04`](06_04_Secrets_Checklist); ратчет FW.17 цих ключів не торкається.
+- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії. ⚠️ **Механізм під цим рядком — лише половина:** з 2026-09-28 re-provision дерева пише новий KEYL (нова епоха від поточного master, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)), а з 2026-09-29 і K_seed — поточним master, тією ж транзакцією, що й рядок (⚖️ founder, врізка «Провіжн дерева» в §5; доти K_seed брався з рядка й під новим master лишався старим). Відкритими лишаються кластерні похідні, які бекенд деривує з master на льоту (ключ печатки OTA — `OtaSealKeyService`), на бекенді зміняться для всього флоту одразу, тоді як пристрої триматимуть старий публічний ключ — печатка розійдеться з кожним вузлом. Ротація master сьогодні = перевипуск усього, що з нього деривовано (fleet re-flash), а на компрометацію master він «effectively un-rotatable»: порядок дій — ранбук [`06_04 §5.8`](06_04_Secrets_Checklist) A (перешивка досяжних плат; L2 — заміна), рядок `PROVISIONING_MASTER_KEY` у [`06_04`](06_04_Secrets_Checklist); ратчет FW.17 цих ключів не торкається.
 - Fail-closed boot guard: `config/initializers/master_key_strength_check.rb` відмовляє у запуску Rails якщо `PROVISIONING_MASTER_KEY` = тест-вектор (SEC.9).
 
 ---
@@ -886,7 +886,7 @@ PROVISIONING_MASTER_KEY
 | Загроза | Захід |
 |---------|-------|
 | Скріншот/відеозапис ключа | UI не рендерить ключ; Backend повертає лише `{ status }` |
-| Clipboard intercept | Кнопки Copy відсутні на сторінці provisioning UI |
+| Clipboard intercept | Provisioning UI немає, а друк не несе ключів (`Executor.redact`) — копіювати нічого |
 | Logfile з ключем | `filter_parameters += [:aes_key, :lorenz_seed, :device_key, :binary_key]` у Rails; `Sentry` scrub_patterns покривають `aes_key` |
 | Persistent key cache на factory machine | Ключі живуть у памʼяті Ruby-процесу (`HardwareKey` → рядки команд `Executor`) і в argv процесу CLI; zero-copy чи перезапису буфера в коді немає. Друк dry-run і персистоване повідомлення помилки ключів не несуть (`Executor.redact`). ⚠️ **Вимога до фабричного хоста:** однокористувацький kiosk, `/proc` з `hidepid=2`, без auditd-логування argv (execve) — інакше ключі читаються з таблиці процесів, і в кожному рядку `-w32` лежить цілий блок |
 | Shoulder surfing / screen recording | Factory laptop з privacy screen filter; Provisioning Tool запускається у fullscreen kiosk mode без title bar |
@@ -937,7 +937,7 @@ __DSB(); __ISB();  // barrier — унеможливлює оптимізаці�
 
 **Рекомендований мінімум для TRL 6 (pilot batch ≤ 100 unit):**
 - Гілка A + envelope encryption (Bitwarden Secrets Automation, short-lived token TTL 15 хв)
-- 2-person rule (operator + supervisor)
+- 2-person rule (operator + supervisor) — у коді обовʼязкове для кожної сесії, не лише тут
 - AuditLog chain-hash + MaintenanceRecord :installation
 - RDP Level 1 відразу після Flash write
 
