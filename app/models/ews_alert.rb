@@ -669,7 +669,7 @@ class EwsAlert < ApplicationRecord
 
   # [COSMIC EYE / INS.1]: Чи потребує цей алерт НЕЗАЛЕЖНОГО Trigger-2-підтвердження (поза нашим AI)?
   # Страхові перили (пожежа/посуха) + chainsaw ([SLASH-1] — НЕ страховий,
-  # але критичний акустичний детект вимагає незалежної перевірки). Маршрут РІЗНИЙ
+  # але критичний детект пилки — з HW.30 без писача — вимагає незалежної перевірки). Маршрут РІЗНИЙ
   # (Dclimate::VerificationService): fire → dClimate FIRMS-супутник; не-пожежа
   # (drought/chainsaw) → Field Audit (fire-супутник не адьюдикує).
   def requires_satellite_consensus?

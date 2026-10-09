@@ -75,7 +75,7 @@ class TinyMlModel < ApplicationRecord
     self.metadata = (metadata || {}).merge("accuracy_score" => value&.to_s)
   end
 
-  # BigDecimal для threshold — детермінований поріг P(anomaly); з HW.30 тригера EwsAlert на ньому немає
+  # BigDecimal для threshold — детермінований поріг P(anomaly); читача в app/ немає й не було — тригером EwsAlert він не був ніколи
   def threshold
     val = metadata&.dig("threshold")
     return nil if val.nil?

@@ -225,7 +225,8 @@ class InsightGeneratorService < ApplicationService
   def generate_for_tree(tree, baseline, stats)
     return false unless stats&.avg_temp
 
-    # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники
+    # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники — ІНЕРТНА свідомо
+    # (другої виміряної осі немає, див. #detect_fraud?)
     is_fraud = detect_fraud?(stats, baseline)
 
     # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес

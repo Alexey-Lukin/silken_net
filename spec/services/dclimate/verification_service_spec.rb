@@ -220,7 +220,7 @@ RSpec.describe Dclimate::VerificationService, type: :service do
     # спростувати → ескалація у Field Audit (:inconclusive), НІКОЛИ rejected_fraud/slashing. Раніше
     # severe_drought йшов крізь fire-двигун → no-fire → rejected_fraud → trigger_slashing (Potemkin-peril).
     # [ARCH.102] Другим членом циклу був знятий insect-перил; його місце зайняв chainsaw —
-    # живий не-fire тип цього ж маршруту (severity кожного = як у його диспетчера).
+    # не-fire тип цього ж маршруту (з HW.30 писача немає — тест тримає маршрут, не джерело).
     context "when alert is non-fire (fire-satellite cannot adjudicate)" do
       { severe_drought: :medium, chainsaw_detected: :critical }.each do |peril, severity|
         context "when the alert_type is #{peril}" do
