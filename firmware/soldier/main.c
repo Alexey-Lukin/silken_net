@@ -757,7 +757,8 @@ static void FW17_Restore_Key_Version(uint32_t did)
 // Час-пороги — у ПРОБУДЖЕННЯХ, не мілісекундах: HAL_GetTick заморожений у
 // STOP2, tick-різниця міряла лише active-час (~2-5 с/цикл) і розтягувала
 // інтервали у ~6-15× wall (та сама пастка, що FW.27-B тиша). Цикл 26-32 с
-// (IWDG-вікно) → пробудження і є wall-квант Солдата.
+// (IWDG-вікно) → пробудження і є wall-квант Солдата. ⚠️ Лише на цьому циклі:
+// армінг WUT і Standby його змінюють, і тоді ці пороги — на wall-мітки (00_07 FW.54).
 #define TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS 1440u     // ≈12 год без beacon'а → панікуємо
 #define TIME_SYNC_REQUEST_COOLDOWN_WAKEUPS 120u     // ≈1 год між повторними зойками
 #define TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS  20u      // ≈10 хв після boot перш ніж панікувати
@@ -1068,6 +1069,9 @@ static inline uint8_t Soldier_Pack_Gossip_Ts_Byte(uint32_t unix_ts)
 // Wrap-safe для unsigned modular arithmetic. Якщо різниця >127 в обидві
 // сторони після вибору вікна — gossip недостовірний (стрибок >128 сек =
 // сусід має ще старіший дрейф), повертаємо local_ts без змін.
+// ⛔ [SEC.42] Цей годинник сусіда зсуває календар до 127 с НАЗАД — далі за межу маяка.
+// Вживлюючи gossip, проведи його рішення крізь Silken_Beacon_Clock_Target (wall_time.h):
+// інакше повтор чужого кадру поверне безключовий шлях до балів, який закрив SEC.42.
 static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb)
 {
     if (local_ts == 0) return 0;  // cold-boot: gossip недостатньо
@@ -2294,13 +2298,19 @@ int main(void)
                                          (uint32_t)decrypted_rx_payload[4];
 
                     if (beacon_ts != 0) {
-                        soldier_unix_ts            = beacon_ts;
+                        // [SEC.42] Маяк без MAC і FC: повтор старого ставив би годинник
+                        // назад і вкорочував наступний delta_t, тобто піднімав бали. Назад
+                        // календар іде не далі за дрейф від останнього синку (wall_time.h).
+                        uint32_t clock_ts = Silken_Beacon_Clock_Target(Wall_Seconds_Now(),
+                                                                       beacon_ts,
+                                                                       soldier_unix_ts);
+                        soldier_unix_ts            = clock_ts;
                         soldier_unix_ts_local_tick = HAL_GetTick();
                         wakeups_since_sync         = 0; // голос Королеви — тиша скінчилась
                         // [FW.49 S1] UTC у RTC-календар: wall-clock стає
                         // абсолютним — delta_t/epoch_day переживають STOP2
                         // без tick-екстраполяції (вона лишається фолбеком).
-                        Wall_Calendar_Set(beacon_ts);
+                        Wall_Calendar_Set(clock_ts);
                     }
 
                     // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9

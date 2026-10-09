@@ -77,6 +77,32 @@ static inline uint32_t Silken_Wall_Elapsed_Seconds(uint32_t wall_now, uint32_t s
 }
 
 /*
+ * [SEC.42] Межа кроку годинника НАЗАД за маяком часу: підлога (ціла секунда маяка й
+ * латентність ефіру) + дрейф LSE від останнього синку. 50 ppm — у 2.5× ширше за допуск
+ * кварцу (±20 ppm), тож чесний Солдат у межу не впирається за будь-якого проміжку синку.
+ */
+#define SILKEN_BEACON_BACKSTEP_FLOOR_S    2u
+#define SILKEN_BEACON_BACKSTEP_DRIFT_DIV  20000u   /* 1 с на 20 000 с = 50 ppm */
+
+/*
+ * [SEC.42] Куди ставити календар за маяком часу (03_05 §2.4). Уперед — як є: повтор дає
+ * лише старі мітки, а майбутньої без KEYB не підробити. Назад — не далі за межу вище:
+ * більший крок КЛЕМПИТЬСЯ до неї, а не ігнорується, тож Солдат, що побіг уперед,
+ * сходиться до UTC, а повтор маяка вкорочує наступний delta_t щонайбільше на межу.
+ * since_sync_wall — мітка останнього синку в часі календаря (0 = синку не було або
+ * стан загублено → лише підлога). wall_now = 0 (RTC не прочитано) → маяк як є.
+ */
+static inline uint32_t Silken_Beacon_Clock_Target(uint32_t wall_now, uint32_t beacon_ts,
+                                                  uint32_t since_sync_wall)
+{
+    if (beacon_ts >= wall_now) return beacon_ts;
+    uint32_t max_back = SILKEN_BEACON_BACKSTEP_FLOOR_S +
+        Silken_Wall_Elapsed_Seconds(wall_now, since_sync_wall) / SILKEN_BEACON_BACKSTEP_DRIFT_DIV;
+    uint32_t back = wall_now - beacon_ts;
+    return (back <= max_back) ? beacon_ts : (wall_now - max_back);
+}
+
+/*
  * [FW.49 S1] Чи несе wall-значення справжній UTC? Незсинхований календар
  * біжить від RTC-default 2000-01-01 (946684800) — щоб перетнути цей поріг
  * (2020-09) без time-sync, вузол мусив би пропрацювати ~20 років. Дельтам

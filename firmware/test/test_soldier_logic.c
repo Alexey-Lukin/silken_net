@@ -4674,6 +4674,64 @@ TEST(test_fw49_wall_is_utc_boundary) {
     ASSERT_EQ(Silken_Wall_Is_Utc(1781267696u), 1);  /* сьогодення */
 }
 
+/* [SEC.42] Крок годинника за маяком: уперед — як є, назад — не далі за підлогу + дрейф
+ * від останнього синку; більший крок клемпиться. Повтор маяка без ключа більше не
+ * вкорочує delta_t понад межу, а чесний дрейф у неї не впирається. */
+#define SEC42_NOW 1781267696u
+
+TEST(test_sec42_forward_and_equal_taken_as_is) {
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW + 3600u, SEC42_NOW - 600u), SEC42_NOW + 3600u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW, SEC42_NOW - 600u), SEC42_NOW);
+}
+
+TEST(test_sec42_unsynced_calendar_and_unreadable_rtc_take_beacon) {
+    /* Перший синк: календар іде від 2000-01-01 — UTC-маяк завжди «уперед». */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(946684800u + 3600u, SEC42_NOW, 0u), SEC42_NOW);
+    /* RTC не прочитано (Wall_Seconds_Now = 0) — поведінка як доти. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(0u, SEC42_NOW, SEC42_NOW - 600u), SEC42_NOW);
+}
+
+TEST(test_sec42_replay_right_after_sync_clamped_to_floor) {
+    /* Повтор маяка 30-секундної давності одразу після синку: годинник іде назад
+     * лише на підлогу, не на 30 с. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW),
+              SEC42_NOW - SILKEN_BEACON_BACKSTEP_FLOOR_S);
+    /* У межах підлоги — як є (ціла секунда маяка). */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 2u, SEC42_NOW), SEC42_NOW - 2u);
+    /* Стан синку загублено (since = 0) — лише підлога. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, 0u),
+              SEC42_NOW - SILKEN_BEACON_BACKSTEP_FLOOR_S);
+}
+
+TEST(test_sec42_allowance_grows_with_time_since_sync) {
+    /* 200 000 с від синку → підлога 2 + 10 с дрейфу = 12 с. */
+    const uint32_t since = SEC42_NOW - 200000u;
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 12u, since), SEC42_NOW - 12u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 13u, since), SEC42_NOW - 12u);
+}
+
+TEST(test_sec42_honest_drift_never_hits_the_bound) {
+    /* Кварц +20 ppm (допуск поз. 17) і ціла секунда маяка: за будь-якого проміжку синку
+     * від хвилини до року годинник Солдата наздоганяє UTC ПОВНІСТЮ. */
+    for (uint32_t elapsed = 60u; elapsed <= 365u * 86400u; elapsed *= 2u) {
+        const uint32_t ahead = 1u + (uint32_t)(((uint64_t)elapsed * 20u) / 1000000u);
+        ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - ahead, SEC42_NOW - elapsed),
+                  SEC42_NOW - ahead);
+    }
+}
+
+TEST(test_sec42_replay_every_wake_shaves_at_most_the_floor) {
+    /* Атакер повторює маяк у вікні після кожного TX; синк попереднього пробудження —
+     * один проміжок тому. Каденс CCM-ери (≈1.8 год) і відвантажений (30 с): вкорочення
+     * delta_t за пробудження ≤ межі, що на цих проміжках дорівнює підлозі. */
+    const uint32_t intervals[] = { 30u, 6500u };
+    for (unsigned i = 0; i < sizeof(intervals) / sizeof(intervals[0]); i++) {
+        const uint32_t since  = SEC42_NOW - intervals[i];
+        const uint32_t target = Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 600u, since);
+        ASSERT_EQ(SEC42_NOW - target, SILKEN_BEACON_BACKSTEP_FLOOR_S);
+    }
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * [FW.18b] ttl_byte — бітфілд байта 11: [thr_invalid:5 | TTL:3]
  *
@@ -5123,6 +5181,12 @@ int main(void)
     RUN(test_fw49_civil_from_unix_goldens);
     RUN(test_fw49_civil_unix_roundtrip_sweep);
     RUN(test_fw49_wall_is_utc_boundary);
+    RUN(test_sec42_forward_and_equal_taken_as_is);
+    RUN(test_sec42_unsynced_calendar_and_unreadable_rtc_take_beacon);
+    RUN(test_sec42_replay_right_after_sync_clamped_to_floor);
+    RUN(test_sec42_allowance_grows_with_time_since_sync);
+    RUN(test_sec42_honest_drift_never_hits_the_bound);
+    RUN(test_sec42_replay_every_wake_shaves_at_most_the_floor);
 
     printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");
     RUN(test_fw18b_pack_zero_counter_is_legacy_byte);
