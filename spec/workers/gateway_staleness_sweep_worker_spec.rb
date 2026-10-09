@@ -265,6 +265,34 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect(alert.message_params["firmware_id"]).to eq(42)
     end
 
+    # [SEC.20] Зняття мусить дійти й до відкритої сторінки: без цього бар лишався
+    # на TRANSMITTING, а FAILED діставав лише від мертвого push-воркера.
+    it "шле FAILED на прогрес-бар шлюза після зняття кампанії" do
+      gateway = updating_gateway(started_ago: 30.hours)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to).and_call_original
+
+      sweep
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
+        .with(TurboStreams::Name.gateway_ota(gateway),
+              hash_including(target: Firmwares::OtaProgressBar.dom_id(gateway.uid),
+                             html: a_string_including("FAILED")))
+    end
+
+    it "збій FAILED-броадкасту не обриває прохід для решти флоту" do
+      first  = updating_gateway(started_ago: 30.hours)
+      second = updating_gateway(started_ago: 30.hours, firmware_id: 78)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+        .with(TurboStreams::Name.gateway_ota(first), any_args)
+        .and_raise(StandardError, "cable down")
+
+      sweep
+
+      expect([ first.reload.state, second.reload.state ]).to eq(%w[idle idle])
+      expect(second.pending_firmware_id).to be_nil
+    end
+
     # 🔴 Негативна половина, і без неї пін вище був би небезпечним: watchdog, що
     # не розрізняє живу кампанію, убивав би КОЖЕН OTA-деплой. Вікно виведене з
     # каденсу (4 чанки/флаш, флаш ≈ година), тож 2 години — нормальна кампанія.

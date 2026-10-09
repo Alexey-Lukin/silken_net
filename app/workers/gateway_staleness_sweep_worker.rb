@@ -145,6 +145,7 @@ class GatewayStalenessSweepWorker
         create_ota_stuck_alert(gateway, abandoned_firmware_id, started_at)
       end
       count += 1
+      broadcast_ota_failed(gateway)
     rescue ActiveRecord::ActiveRecordError, AASM::InvalidTransition => e
       # Rescue НА ЗАПИС (дзеркало ActuatorSafetySweepWorker): одна проблемна
       # Королева не сміє обірвати прохід для решти флоту.
@@ -152,6 +153,24 @@ class GatewayStalenessSweepWorker
     end
 
     count
+  end
+
+  # [SEC.20] Бар прогресу дізнається, що кампанію знято: без цього відкрита сторінка
+  # лишалась на останньому стані (TRANSMITTING, а в ще не анонсованої — PENDING), а
+  # FAILED бар діставав лише від superseded OtaTransmissionWorker. Летить ПІСЛЯ коміту
+  # зняття (до коміту бар показав би FAILED і при відкаті) і під ВЛАСНИМ rescue: збій
+  # кабелю не сміє обірвати прохід для решти флоту (frontend-гоча #9). Лічильника
+  # пакетів тут нема, тож total 0 — бар ховає рядок CHUNK і лишає саме слово FAILED.
+  def broadcast_ota_failed(gateway)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      TurboStreams::Name.gateway_ota(gateway),
+      target: Firmwares::OtaProgressBar.dom_id(gateway.uid),
+      html: Firmwares::OtaProgressBar.new(
+        uid: gateway.uid, percent: 0, current: 0, total: 0, status: "FAILED"
+      ).call
+    )
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [SEC.20] FAILED-броадкаст OTA не пройшов для #{gateway.uid}: #{e.message}"
   end
 
   # ТРИ предикати, і вони ловлять три РІЗНІ поломки — межу між ними легко
