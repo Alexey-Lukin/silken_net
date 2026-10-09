@@ -17,14 +17,18 @@ RSpec.describe Downlink::PullMac do
     expect(described_class.hex(keyc: keyc, route: "ota", uid: "SNET-Q-00000001", mid: 65_535,
                                raw_query: [ "v=12", "ch=3" ]))
       .to eq("84e60570ae08fb40967c76f9a90fefda")
+    # [FW.60] nonce — третя опція перед m=; той самий вектор у test_pull_mac.c.
+    expect(described_class.hex(keyc: keyc, route: "poll", uid: "SNET-Q-00000001", mid: 1,
+                               raw_query: [ "fw=0", "n=0011223344556677" ]))
+      .to eq("5c56260210a15a778bec42dcd5a29a4a")
   end
 
-# [FW.60] Той самий вектор заморожено в firmware/test/test_pull_mac.c (Pull_Mac_Reply_Tag).
-it "matches the firmware golden reply tag" do
-  tag = described_class.reply_tag(keyc: keyc, m_hex: "4919db6f8e65d85e178ac31330b5f73f",
-                                  envelope: (0..47).to_a.pack("C*"))
-  expect(tag.unpack1("H*")).to eq("776e7562d30028766e3f56d255f0f11a")
-end
+  # [FW.60] Той самий вектор заморожено в firmware/test/test_pull_mac.c (Pull_Mac_Reply_Tag).
+  it "matches the firmware golden reply tag" do
+    tag = described_class.reply_tag(keyc: keyc, m_hex: "4919db6f8e65d85e178ac31330b5f73f",
+                                    envelope: (0..47).to_a.pack("C*"))
+    expect(tag.unpack1("H*")).to eq("776e7562d30028766e3f56d255f0f11a")
+  end
 
   describe ".authentic?" do
     let(:gateway) { create(:gateway) }

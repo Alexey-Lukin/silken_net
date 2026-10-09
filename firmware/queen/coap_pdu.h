@@ -91,7 +91,8 @@ static inline uint16_t Coap_Build_Put(uint8_t *out, uint16_t out_max,
 static inline uint16_t Coap_Build_Get(uint8_t *out, uint16_t out_max,
                                       uint16_t message_id,
                                       const char *seg1, const char *seg2,
-                                      const char *q1, const char *q2, const char *q3)
+                                      const char *q1, const char *q2, const char *q3,
+                                      const char *q4)
 {
     if (out_max < 4u) return 0;
     out[0] = COAP_VER1_CON_TKL0;
@@ -111,8 +112,8 @@ static inline uint16_t Coap_Build_Get(uint8_t *out, uint16_t out_max,
     }
 
     delta = (uint16_t)(COAP_OPT_URI_QUERY - COAP_OPT_URI_PATH);
-    const char *qs[3] = { q1, q2, q3 };
-    for (int i = 0; i < 3; i++) {
+    const char *qs[4] = { q1, q2, q3, q4 };
+    for (int i = 0; i < 4; i++) {
         if (!qs[i]) continue;
         size_t l = strlen(qs[i]);
         if (l == 0u) return 0;

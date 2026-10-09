@@ -55,36 +55,36 @@ TEST(test_keyc_words_become_big_endian_bytes) {
 TEST(test_golden_poll_with_fw_and_cmd) {
     char q[PULL_MAC_QUERY_LEN + 1u];
     ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 4660,
-                               "fw=7", "cmd=0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0", q));
+                               "fw=7", "cmd=0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0", NULL, q));
     ASSERT_STR(q, "m=4919db6f8e65d85e178ac31330b5f73f");
 }
 
 TEST(test_golden_poll_fw_only_skips_missing_query) {
     char q[PULL_MAC_QUERY_LEN + 1u];
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, q));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, NULL, q));
     ASSERT_STR(q, "m=be29f3cefc29a8a9550fce0089cdd998");
 }
 
 TEST(test_golden_ota_route_is_part_of_the_mac) {
     char q[PULL_MAC_QUERY_LEN + 1u];
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "ota", "SNET-Q-00000001", 65535, "v=12", "ch=3", q));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "ota", "SNET-Q-00000001", 65535, "v=12", "ch=3", NULL, q));
     ASSERT_STR(q, "m=84e60570ae08fb40967c76f9a90fefda");
 }
 
 /* Будь-яке поле запиту змінює MAC — інакше його можна було б підробити. */
 TEST(test_every_field_moves_the_mac) {
     char base[PULL_MAC_QUERY_LEN + 1u], other[PULL_MAC_QUERY_LEN + 1u];
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, base));
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=1", NULL, other));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, NULL, base));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=1", NULL, NULL, other));
     ASSERT_TRUE(strcmp(base, other) != 0);
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000002", 1, "fw=0", NULL, other));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000002", 1, "fw=0", NULL, NULL, other));
     ASSERT_TRUE(strcmp(base, other) != 0);
-    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 2, "fw=0", NULL, other));
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 2, "fw=0", NULL, NULL, other));
     ASSERT_TRUE(strcmp(base, other) != 0);
     uint32_t other_key[PULL_MAC_KEY_WORDS];
     memcpy(other_key, kKeycWords, sizeof other_key);
     other_key[7] ^= 1u;
-    ASSERT_TRUE(Pull_Mac_Query(other_key, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, other));
+    ASSERT_TRUE(Pull_Mac_Query(other_key, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, NULL, other));
     ASSERT_TRUE(strcmp(base, other) != 0);
 }
 
@@ -93,7 +93,25 @@ TEST(test_oversized_canonical_refuses) {
     char long_q[200];
     memset(long_q, 'x', sizeof long_q - 1u);
     long_q[sizeof long_q - 1u] = '\0';
-    ASSERT_EQ(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, long_q, NULL, q), 0);
+    ASSERT_EQ(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, long_q, NULL, NULL, q), 0);
+}
+
+/* [FW.60] Nonce — третя опція перед m=; той самий вектор заморожено в pull_mac_spec.rb. */
+TEST(test_golden_poll_with_nonce) {
+    static const uint8_t nonce[PULL_MAC_NONCE_BYTES] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
+    char qn[PULL_MAC_NONCE_QUERY_LEN + 1u];
+    char q[PULL_MAC_QUERY_LEN + 1u];
+    Pull_Mac_Nonce_Query(nonce, qn);
+    ASSERT_STR(qn, "n=0011223344556677");
+    ASSERT_TRUE(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, qn, q));
+    ASSERT_STR(q, "m=5c56260210a15a778bec42dcd5a29a4a");
+}
+
+TEST(test_zero_keyc_refuses) {
+    static const uint32_t zero[PULL_MAC_KEY_WORDS] = { 0 };
+    char q[PULL_MAC_QUERY_LEN + 1u];
+    ASSERT_EQ(Pull_Mac_Query(zero, "poll", "SNET-Q-00000001", 1, "fw=0", NULL, NULL, q), 0);
+    ASSERT_EQ(Pull_Mac_Key_Is_Zero(kKeycWords), 0);
 }
 
 /* [FW.60] Тег відповіді: той самий вектор заморожено в pull_mac_spec.rb (reply_tag). */
@@ -144,6 +162,8 @@ int main(void) {
     RUN(test_golden_ota_route_is_part_of_the_mac);
     RUN(test_every_field_moves_the_mac);
     RUN(test_oversized_canonical_refuses);
+    RUN(test_golden_poll_with_nonce);
+    RUN(test_zero_keyc_refuses);
     RUN(test_golden_reply_tag);
     RUN(test_reply_verify_strips_tag_and_rejects_forgery);
     printf("\n══════════════════════════════════════════════════════════════\n");

@@ -2675,6 +2675,39 @@ static void Queen_Reflex_Shots(uint32_t heard_did, uint8_t first_hand)
 // сирена. Дренаж: до QUEEN_POLL_MAX_PER_FLUSH повідомлень (порожній time-only
 // конверт = «черга порожня», Handle_CoAP_Command → 0), далі — фетч OTA-чанків
 // за hint'ом (Queen-driven: Rails стану прогресу не веде, bitmap наш).
+// [FW.60] Скільки poll-відповідей Королева відкинула через чужий тег — читати SWD-ом
+// (RUNBOOK §5.7): відмова мовчазна, як транспортний збій, і без лічильника її не видно
+// ніде, крім відсутньої луни `cmd=`/`fw=` на боці Rails. Насичується, не загортається.
+volatile uint32_t g_poll_reply_tag_rejects = 0;
+
+static void Queen_Count_Reply_Tag_Reject(void)
+{
+    if (g_poll_reply_tag_rejects != UINT32_MAX) g_poll_reply_tag_rejects++;
+}
+
+// [FW.60] Nonce запиту (pull_mac.h): 8 Б із HRNG; при відмові HRNG — та сама деривація,
+// що IV батча (SEC.12, coap_iv.h: HMAC під KEYC, непередбачувана без ключа) зі старшим
+// бітом лічильника, щоб її простір не перетинався з лічильником флашів.
+static uint32_t coap_poll_nonce_seq;
+static void Queen_Poll_Nonce(char out[PULL_MAC_NONCE_QUERY_LEN + 1u])
+{
+    uint32_t w[4] = { 0 };
+    uint8_t ok = 0;
+    hrng.Instance = RNG;
+    if (HAL_RNG_Init(&hrng) == HAL_OK) {
+        ok = (uint8_t)(HAL_RNG_GenerateRandomNumber(&hrng, &w[0]) == HAL_OK &&
+                       HAL_RNG_GenerateRandomNumber(&hrng, &w[1]) == HAL_OK);
+        HAL_RNG_DeInit(&hrng);
+    }
+    if (!ok) {
+        coap_poll_nonce_seq++;
+        coap_fallback_iv((uint8_t *)w, (const uint8_t *)coap_key, sizeof(coap_key),
+                         HAL_GetTick(), djb2_hash(queen_uid, strlen(queen_uid)),
+                         queen_unix_ts, 0x80000000u | coap_poll_nonce_seq);
+    }
+    Pull_Mac_Nonce_Query((const uint8_t *)w, out);
+}
+
 static void Queen_Poll_Downlink(void)
 {
     if (coap_server_ip[0] == '\0' || queen_uid[0] == '\0') return;
@@ -2686,8 +2719,8 @@ static void Queen_Poll_Downlink(void)
     // = 135 Б. Запас лишається, не претендуючи на точність до байта.
     static uint8_t poll_pdu[160];
     static uint8_t poll_reply[QUEEN_POLL_REPLY_MAX];
-    // [FW.60] Найбільша відповідь — OTA-чанк: конверт 560 Б + тег 16 + CoAP-заголовок,
-    // маркер payload і запас на опції ACK (≤ 8 Б) — 584 з 600.
+    // [FW.60] Найбільша відповідь — конверт на стелі Rails MAX_ENVELOPE_BYTES 560 Б
+    // (OTA-чанк — 544) + тег 16 + заголовок і маркер payload (5) = 581; assert бере запас 8.
     _Static_assert(QUEEN_POLL_REPLY_MAX >= CMD_DECRYPT_BUF_SIZE + 16u + PULL_MAC_REPLY_TAG_LEN + 8u,
                    "poll_reply мусить умістити найбільший конверт із тегом відповіді");
     // q2: OTA-фетч нижче кладе туди лише "ch=<u16>" (≤8 Б), але POLL-цикл тепер
@@ -2697,6 +2730,7 @@ static void Queen_Poll_Downlink(void)
     // [SEC.38] MAC запиту — Rails без нього відповідає 4.01, тож Queen, що не
     // може його порахувати, запиту не шле зовсім (`pull_mac.h`).
     char qm[PULL_MAC_QUERY_LEN + 1u];
+    char qn[PULL_MAC_NONCE_QUERY_LEN + 1u]; // [FW.60] nonce кожного запиту (pull_mac.h)
 
     for (uint8_t i = 0; i < QUEEN_POLL_MAX_PER_FLUSH; i++) {
         HAL_IWDG_Refresh(&hiwdg);
@@ -2712,9 +2746,10 @@ static void Queen_Poll_Downlink(void)
             q2_ptr = q2;
         }
         coap_mid++;
-        if (!Pull_Mac_Query(coap_key, "poll", queen_uid, coap_mid, q1, q2_ptr, qm)) return;
+        Queen_Poll_Nonce(qn);
+        if (!Pull_Mac_Query(coap_key, "poll", queen_uid, coap_mid, q1, q2_ptr, qn, qm)) return;
         uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
-                                          "poll", queen_uid, q1, q2_ptr, qm);
+                                          "poll", queen_uid, q1, q2_ptr, qn, qm);
         if (pdu_len == 0u) return;
 
         UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
@@ -2733,7 +2768,10 @@ static void Queen_Poll_Downlink(void)
         // [FW.60 ⚖️ 2026-10-09] Тег відповіді — до розшифрування: без нього зміна IV
         // переписувала б час і OTA-hint, а стару відповідь можна було б повторити.
         // Чужий тег = транспортний збій: наступний флаш спитає знову.
-        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) return;
+        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) {
+            Queen_Count_Reply_Tag_Reject();
+            return;
+        }
 
         // poll_reply — наш буфер: const знімається легально (decrypt читає
         // envelope, пише в cmd_decrypt_buf; CBC→ECB restore всередині).
@@ -2756,9 +2794,10 @@ static void Queen_Poll_Downlink(void)
         snprintf(q1, sizeof q1, "v=%lu", (unsigned long)g_ota_fetch_fw_id);
         snprintf(q2, sizeof q2, "ch=%u", (unsigned)g_ota_fetch_next_ch);
         coap_mid++;
-        if (!Pull_Mac_Query(coap_key, "ota", queen_uid, coap_mid, q1, q2, qm)) return;
+        Queen_Poll_Nonce(qn);
+        if (!Pull_Mac_Query(coap_key, "ota", queen_uid, coap_mid, q1, q2, qn, qm)) return;
         uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
-                                          "ota", queen_uid, q1, q2, qm);
+                                          "ota", queen_uid, q1, q2, qn, qm);
         if (pdu_len == 0u) return;
 
         UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
@@ -2781,7 +2820,10 @@ static void Queen_Poll_Downlink(void)
             return;
         }
         if (env_len == 0u) return;
-        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) return; // курсор стоїть
+        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) { // курсор стоїть
+            Queen_Count_Reply_Tag_Reject();
+            return;
+        }
         (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
         g_ota_fetch_next_ch++;
     }

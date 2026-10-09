@@ -1354,9 +1354,10 @@ RAILS BACKEND
   UnpackTelemetryWorker: [L1 QATT] verify-до-decrypt → strip конверта
   TelemetryUnpackerService.decrypt_and_parse(payload)
          │
-         │ CoAP Downlink (AES-256-CBC, [IV:16][Ciphertext]) —
+         │ CoAP Downlink (AES-256-CBC, [IV:16][Ciphertext][Tag:16]) —
          │ їде відповіддю на Королевин poll/<uid> [FW.60], НЕ push/сервер
          ▼
+Pull_Mac_Reply_Verify(): тег над [IV][ct] під K_rmac, прив'язаний до m= запиту — чужий → відмова
 Handle_CoAP_Command():
   1. cmd_iv = payload[0..15]
   2. hcryp → CBC mode, pInitVect = cmd_iv
@@ -1376,7 +1377,7 @@ Handle_CoAP_Command():
 | **Soldier → Queen** (LoRa, 30B rev2.1 — target FW.2, INERT за `FW2_CCM_ENABLED`) | AES-128 | CCM | **KEYL session (per-device)** | ✅ Nonce = DID‖FC24 (DR15 + Flash high-water) | ✅ 8B MIC (64-bit) | wire-rev2 §2.1; integration authored 2026-07-03, фліп = bench-атестація |
 | **Soldier → Queen** (`0x55`/`0x56` control-запити, 16B) | AES-128 | ECB | **KEYB cluster** (Королева читає сама) | ❌ Відсутній | ❌ Відсутній | control-plane; лишається ECB і в CCM-еру |
 | **Queen → Rails** (CoAP Batch) | AES-256 | CBC | KEYC (per-gateway) | ✅ HRNG (128-bit) | 🟡 **Ed25519 batch-sig (L1 QATT, §2.2)** — detached, encrypt-then-sign; legacy L0 без підпису приймається | IV prepend; sig хвостом |
-| **Rails → Queen** (CoAP Command) | AES-256 | CBC | KEYC (per-gateway); тег — підключ `K_rmac = HMAC-SHA256(KEYC, "silken-reply-mac-v1")` | ✅ Від Backend | ✅ **HMAC-SHA256, 128 біт** хвостом над конвертом, прив'язаний до тегу `m=` свого запиту (FW.60 ⚖️ делеговано 2026-10-09) | IV в перших 16 байтах, тег — в останніх; чужий тег Королева читає як транспортний збій; 4.xx тегу не несуть; транспорт = poll-після-флашу [FW.60] ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)) |
+| **Rails → Queen** (CoAP Command) | AES-256 | CBC | KEYC (per-gateway); тег — підключ `K_rmac = HMAC-SHA256(KEYC, "silken-reply-mac-v1")` | ✅ Від Backend | ✅ **HMAC-SHA256, 128 біт** хвостом над конвертом, прив'язаний до тегу `m=` свого запиту (FW.60 ⚖️ делеговано 2026-10-09) | IV в перших 16 байтах, тег — в останніх; чужий тег Королева читає як транспортний збій (лічильник SWD); свіжість — nonce `n=` у запиті; тегу не несуть статусні відповіді без тіла — 4.xx на poll/фетч і 2.04/2.xx на PUT батча й подій (підроблена 2.04 звільняє CIFO), а для CON/NON-відповідей MID не звіряється ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)); транспорт = poll-після-флашу [FW.60] ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)) |
 | **Queen → Rails** (pull-запит `poll/<uid>` · `ota/<uid>`) | — (запит відкритий) | — | підключ `K_mac = HMAC-SHA256(KEYC, "silken-poll-mac-v1")` | — | ✅ **HMAC-SHA256, 128 біт** над маршрутом · uid · MID · query (`m=`, SEC.38 ⚖️ founder 2026-09-27) | без MAC — 4.01 до будь-якої зміни стану; ⚠️ свіжості не дає (повтор перехопленого запиту лише перевидає голову черги) |
 | **Queen → Soldier** (downlink LoRa: OTA/beacon/CMD) | AES-128 | ECB | **KEYB cluster** | ❌ Відсутній | ❌ MAC відсутній (стеля — §2.4); OTA-image гейтований Ed25519-печаткою кластера (FW.23, [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) | broadcast-структурний; ротації FW.17 цей канал не несе — `0x9E` іде адресно під CCM сесійного ключа (§2.5) |
 

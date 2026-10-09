@@ -53,13 +53,45 @@ static inline void Pull_Mac_Keyc_Bytes(const uint32_t words[PULL_MAC_KEY_WORDS],
     }
 }
 
-/* 1 — у `out` лежить "m=<32 hex>" + NUL; 0 — канонічний рядок не вліз
- * (запит тоді не йде зовсім: без MAC Rails однаково відповів би 4.01). */
+/* [FW.60] Nonce запиту `n=` — 8 Б у hex, ОСТАННЬОЮ query-опцією перед m=. Канонічний
+ * рядок MAC бере всі опції, крім m=, тож nonce покриває і MAC запиту, і — через m= —
+ * тег відповіді: Королева не повторює m= ніколи, тому відповідь, яку атакер вициганив
+ * у Rails на старий запит, не підходить жодному новому (свіжість, якої 16-бітний MID
+ * давав лише ймовірнісно). Rails про nonce не знає: невідома опція просто йде в MAC. */
+#define PULL_MAC_NONCE_BYTES      8u
+#define PULL_MAC_NONCE_QUERY_LEN  (2u + 2u * PULL_MAC_NONCE_BYTES) /* "n=" + hex, без NUL */
+
+static inline void Pull_Mac_Nonce_Query(const uint8_t nonce[PULL_MAC_NONCE_BYTES],
+                                        char out[PULL_MAC_NONCE_QUERY_LEN + 1u])
+{
+    static const char hex[] = "0123456789abcdef";
+    out[0] = 'n';
+    out[1] = '=';
+    for (uint32_t i = 0; i < PULL_MAC_NONCE_BYTES; i++) {
+        out[2u + 2u * i] = hex[nonce[i] >> 4];
+        out[3u + 2u * i] = hex[nonce[i] & 0x0Fu];
+    }
+    out[PULL_MAC_NONCE_QUERY_LEN] = '\0';
+}
+
+/* Нульовий KEYC — Королева без провіжну (Load_CoAP_Key лишає нулі): ключ публічний, тож
+ * і MAC запиту, і тег відповіді під ним підробить будь-хто. Такий запит не йде. */
+static inline int Pull_Mac_Key_Is_Zero(const uint32_t keyc_words[PULL_MAC_KEY_WORDS])
+{
+    uint32_t acc = 0;
+    for (uint32_t i = 0; i < PULL_MAC_KEY_WORDS; i++) acc |= keyc_words[i];
+    return acc == 0u;
+}
+
+/* 1 — у `out` лежить "m=<32 hex>" + NUL; 0 — канонічний рядок не вліз або KEYC нульовий
+ * (запит тоді не йде зовсім: без чинного MAC Rails однаково відповів би 4.01). q1..q3 —
+ * опції в порядку надсилання; q3 — nonce (NULL у golden-векторах SEC.38). */
 static inline int Pull_Mac_Query(const uint32_t keyc_words[PULL_MAC_KEY_WORDS],
                                  const char *route, const char *uid, uint16_t mid,
-                                 const char *q1, const char *q2,
+                                 const char *q1, const char *q2, const char *q3,
                                  char out[PULL_MAC_QUERY_LEN + 1u])
 {
+    if (Pull_Mac_Key_Is_Zero(keyc_words)) return 0;
     uint8_t keyc[4u * PULL_MAC_KEY_WORDS];
     uint8_t k_mac[SILKEN_SHA256_DIGEST_LEN];
     uint8_t digest[SILKEN_SHA256_DIGEST_LEN];
@@ -72,8 +104,8 @@ static inline int Pull_Mac_Query(const uint32_t keyc_words[PULL_MAC_KEY_WORDS],
     int n = snprintf(canon, sizeof canon, "%s\n%s\n%s\n%u",
                      PULL_MAC_VERSION, route, uid, (unsigned)mid);
     if (n < 0 || (size_t)n >= sizeof canon) return 0;
-    const char *qs[2] = { q1, q2 };
-    for (int i = 0; i < 2; i++) {
+    const char *qs[3] = { q1, q2, q3 };
+    for (int i = 0; i < 3; i++) {
         if (!qs[i]) continue;
         int m = snprintf(canon + n, sizeof canon - (size_t)n, "\n%s", qs[i]);
         if (m < 0 || (size_t)(n + m) >= sizeof canon) return 0;
