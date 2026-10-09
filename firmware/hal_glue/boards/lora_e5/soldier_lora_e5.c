@@ -122,7 +122,7 @@ static void MX_RTC_Init(void)
 static void MX_SUBGHZ_Init(void) { /* радіо — заглушка нижче */ }
 
 /* ── MSP: такти периферії, яких main.c не вмикає ─────────────────────────── */
-// NVIC для PVD тут СВІДОМО не вмикається: це робить main.c після відновлення стану (FW.69).
+// Вектор PVD і його NVIC тут СВІДОМО відсутні: обидва тримає main.c (FW.69).
 void HAL_CRYP_MspInit(CRYP_HandleTypeDef *h)
 {
     (void)h;
@@ -164,7 +164,6 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *h)
 
 /* ── Переривання, яких main.c не визначає ────────────────────────────────── */
 void SysTick_Handler(void) { HAL_IncTick(); }               // без нього HAL-таймаути не спливають
-void PVD_PVM_IRQHandler(void) { HAL_PWREx_PVD_PVM_IRQHandler(); } // → HAL_PWR_PVDCallback (main.c)
 
 /* ── Купа для newlib (mruby): від `end` до стек-резерву лінкер-карти ─────── */
 extern char end;
