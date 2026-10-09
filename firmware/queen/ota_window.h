@@ -39,34 +39,54 @@ static inline uint8_t Ota_Late_Trailer_Resurrects(uint8_t  trailer_seg_mask,
 }
 
 // =========================================================================
-// 🧭 Ota_Fetch_Rewind — куди повернути курсор фетчу (⚖️ FW.60, делеговано 2026-10-09)
+// 🧭 Збирання кампанії й курсор фетчу (⚖️ FW.60, делеговано 2026-10-09)
 // =========================================================================
 //
-// Курсор фетчу рухається на кожній відповіді, а відкинутий пакет (CRC тіла, конверт
-// понад стелю) лишає діру: дійшовши кінця без живого вікна, курсор інакше стояв би там
-// до ребуту Королеви, і `fw=` не прийшов би ніколи. Тож чого бракує, каже не курсор, а
-// збирання: тіло — бітмап CoAP-чанків, поки збирання не довершене; печатка — маска
-// трейлера, коли тіло зібране. Пакети кампанії нумеровані, як їх видає
-// OtaPackagerService: тіло (0..body_n−1), тоді trailer_n блоків печатки. Повертає
-// перший відсутній пакет або fetch_total — бракує нічого, фетчити нема чого.
+// Тіло зібране, коли розмір є, а мапа й лічильник обнулені завершенням (0x99-гілка
+// main.c обнуляє їх саме тоді). Стан липкий до світанку нової кампанії, а світанок
+// робить лише зміна fw у хінті (Queen_Ota_Campaign_Dawn): кожна кампанія приходить
+// після свого hint'а. Тому пакет тіла, що прийшов після завершення, — дубль тієї ж
+// кампанії (повторний фетч), а не світанок: інакше він стирав би щойно зібране.
+static inline uint8_t Ota_Body_Complete(uint16_t body_size, uint16_t assembly_bitmap,
+                                        uint16_t assembly_received)
+{
+    return (uint8_t)(body_size > 0u && assembly_bitmap == 0u && assembly_received == 0u);
+}
+
+static inline uint8_t Ota_Body_Is_Duplicate(uint16_t body_size, uint16_t assembly_bitmap,
+                                            uint16_t assembly_received, uint16_t chunk_bit)
+{
+    if (Ota_Body_Complete(body_size, assembly_bitmap, assembly_received)) return 1;
+    return (uint8_t)((assembly_bitmap & chunk_bit) != 0u);
+}
+
+// Що тягнути наступним, каже збирання, а не курсор: перший пакет, якого бракує,
+// починаючи з `from` і по колу. Пакети кампанії нумеровані, як їх видає
+// OtaPackagerService: тіло (0..body_n−1), тоді trailer_n блоків печатки. Тіло, поки не
+// зібране, — бітмап CoAP-чанків; печатка — маска трейлера. Відкинутий пакет (транзитна
+// CRC тіла, битий блок) лишає діру, і курсор вертається до неї на наступному колі;
+// зібране вдруге не тягнеться. Повертає fetch_total — бракує нічого.
 // Межу повторів дає не лічильник, а сторож ARCH.59: знята кампанія відповідає 4.04, і
 // викликач гасить pending (канон 03_02 §4а).
 //
 // Pure: host-тести firmware/test/test_queen_logic.c. Викликач — Queen_Poll_Downlink.
-static inline uint16_t Ota_Fetch_Rewind(uint16_t fetch_total, uint16_t trailer_n,
-                                        uint8_t  body_complete, uint16_t body_bitmap,
-                                        uint8_t  seal_mask)
+static inline uint16_t Ota_Fetch_Next_Missing(uint16_t from, uint16_t fetch_total,
+                                              uint16_t trailer_n, uint8_t body_complete,
+                                              uint16_t body_bitmap, uint8_t seal_mask)
 {
     if (fetch_total <= trailer_n) return fetch_total;
     const uint16_t body_n = (uint16_t)(fetch_total - trailer_n);
-    if (!body_complete) {
-        for (uint16_t i = 0; i < body_n && i < 16u; i++) {
-            if (!(body_bitmap & (uint16_t)(1u << i))) return i;
+    if (from >= fetch_total) from = 0;
+    for (uint16_t k = 0; k < fetch_total; k++) {
+        const uint16_t i = (uint16_t)((from + k) % fetch_total);
+        if (i < body_n) {
+            /* поза 16-бітною мапою (стеля OTA_MAX_CHUNKS) — не тягнемо: такої кампанії
+             * диспетчер не видає, а тягнути безкінечно те, що не ляже, гірше */
+            if (!body_complete && i < 16u && !(body_bitmap & (uint16_t)(1u << i))) return i;
+        } else {
+            const uint16_t s = (uint16_t)(i - body_n);
+            if (s < 8u && !(seal_mask & (uint8_t)(1u << s))) return i;
         }
-        return fetch_total;   /* поза 16-бітною мапою — стеля OTA_MAX_CHUNKS */
-    }
-    for (uint16_t s = 0; s < trailer_n && s < 8u; s++) {
-        if (!(seal_mask & (uint8_t)(1u << s))) return (uint16_t)(body_n + s);
     }
     return fetch_total;
 }

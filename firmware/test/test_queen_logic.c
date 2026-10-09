@@ -36,6 +36,7 @@ static uint32_t aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42 Variant B) */
  * збірка тестувала і ECB16, і CCM_AIR; у main.c ширина гейтована. */
 #define EDGE_SLOT_PAYLOAD_MAX (FW2_CCM_AIR_PACKET_LEN - 4u)
 #include "../queen/cifo_cache.h"
+#include "../queen/ota_window.h"   /* рішення про дубль тіла — те саме, що в main.c */
 
 /* ── Globals for testable functions ─────────────────────────────────── */
 static EdgeCache forest_cache[CACHE_MAX_ENTRIES];
@@ -279,16 +280,12 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 
     if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
 
-    /* [FW.53] Світанок нової кампанії: idle-стан збирання
-     * (порожній bitmap) → pending_ota_size починає з нуля, інакше менша
-     * нова прошивка успадковує хвости старої (mirrors queen/main.c). */
-    if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
-        pending_ota_size = 0;
-    }
-
-    /* [FIX: AUDIT] Дедуплікація OTA-чанків через бітову карту */
+    /* [FIX: AUDIT · FW.60] Дедуп — тим самим рішенням, що queen/main.c: і бітмап, і
+     * пакет тієї ж кампанії після завершення тіла. Свіжий розмір нової кампанії (FW.53)
+     * дає світанок на зміні fw у хінті — тут його імітує ota_assembly_reset(). */
     uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
-    if (ota_chunk_bitmap & chunk_bit) {
+    if (Ota_Body_Is_Duplicate(pending_ota_size, ota_chunk_bitmap, ota_chunks_received,
+                              chunk_bit)) {
         return 2; /* Дублікат — ігноруємо */
     }
 
@@ -1612,10 +1609,10 @@ TEST(test_ota_assembly_size_tracking) {
     ASSERT_EQ(ota_is_active_flag, 1);  /* All chunks received */
 }
 
-/* [FW.53] Stale pending_ota_size між кампаніями: після повної
- * збірки великої прошивки наступна МЕНША кампанія мусить почати розмір з нуля.
- * Раніше max-трек `if (offset+len > pending_ota_size)` тримав старий більший
- * розмір → total_chunks для broadcast рахувався від химери зі старих хвостів. */
+/* [FW.53 · FW.60] Після повної збірки пакет тієї ж кампанії (повторний фетч курсора)
+ * — дубль, а не світанок: інакше він стирав би щойно зібране, і кампанія крутилась
+ * би до сторожа (адверсар FW.60). Свіжий розмір нової, МЕНШОЇ кампанії дає світанок
+ * на зміні fw у хінті — ota_assembly_reset() нижче. */
 TEST(test_ota_assembly_new_campaign_resets_stale_size) {
     ota_assembly_reset();
     ota_is_active_flag = 0;
@@ -1631,7 +1628,13 @@ TEST(test_ota_assembly_new_campaign_resets_stale_size) {
     ASSERT_EQ(pending_ota_size, 537);
     ASSERT_EQ(ota_is_active_flag, 1);    /* Збірка A завершена, bitmap очищено */
 
-    /* Кампанія B: один малий чанк → розмір НЕ успадковує 537 */
+    /* Повторний фетч пакета A після завершення — дубль: зібране ціле */
+    Build_CoAP_OTA_Frame(1, 2, data, 25, pkt, sizeof(pkt));
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 2);
+    ASSERT_EQ(pending_ota_size, 537);
+
+    /* Кампанія B після світанку за хінтом: один малий чанк → розмір НЕ успадковує 537 */
+    ota_assembly_reset();
     Build_CoAP_OTA_Frame(0, 1, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(pending_ota_size, 25);     /* Свіжий розмір кампанії B, не 537 */
@@ -2547,8 +2550,6 @@ TEST(test_queen_relay_overwrites_same_segment) {
  * Сценарій-баг (§5.1.6 п.2): тіло відлунало → ota_is_active=0; печатка
  * доїздить пізніше по CoAP → без предиката лягала мовчки, OTA мертвий
  * до повторного Rails-push, хоч усе потрібне вже в RAM Королеви. */
-#include "../queen/ota_window.h"
-
 TEST(test_ota_resurrect_fires_on_late_complete_trailer) {
     /* Печатка повна, вікно мертве, тіло зібране (збірка idle) → воскресіння */
     ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 1024, 0, 0), 1);
@@ -2577,25 +2578,36 @@ TEST(test_ota_resurrect_silent_mid_assembly) {
     ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 512, 0, 2), 0);
 }
 
-/* [FW.60 ⚖️ 2026-10-09] Курсор фетчу на відкинутому пакеті: чого бракує, каже
- * збирання. Кампанія тут — 4 пакети тіла + 7 трейлера = 11. */
-TEST(test_fw60_rewind_to_first_missing_body_package) {
-    /* пакет 1 тіла відкинуто (CRC), 0/2/3 лягли → курсор назад на 1 */
-    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 0, 0x000Du, 0x00u), 1);
-    /* нічого не лягло — від нуля */
-    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x7Fu), 0);
+/* [FW.60 ⚖️ 2026-10-09] Що тягнути наступним, каже збирання: перший відсутній пакет
+ * від курсора, по колу. Кампанія тут — 2 пакети тіла + 7 трейлера = 9 (стеля Солдата
+ * FW.67 дає тіло ≤ 2 CoAP-пакети). */
+TEST(test_fw60_next_missing_skips_held_and_wraps) {
+    /* пакет 0 тіла відкинуто, 1 ліг; трейлер повний: від курсора 9 (кінець) — по колу на 0 */
+    ASSERT_EQ(Ota_Fetch_Next_Missing(9, 9, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0002u, 0x7Fu), 0);
+    /* від 1 — 1 уже є, трейлер повний → по колу 0 */
+    ASSERT_EQ(Ota_Fetch_Next_Missing(1, 9, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0002u, 0x7Fu), 0);
 }
 
-TEST(test_fw60_rewind_to_first_missing_trailer_block) {
-    /* тіло зібране, бракує seg 3 (біт 2) і seg 6 → пакет 4 + 2 = 6 */
-    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, 0x5Bu), 6);
+TEST(test_fw60_next_missing_does_not_refetch_completed_body) {
+    /* тіло зібране, бракує seg 3 (біт 2): курсор на 0 → одразу 2 + 2 = 4, тіла не тягне */
+    ASSERT_EQ(Ota_Fetch_Next_Missing(0, 9, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, 0x7Bu), 4);
 }
 
-TEST(test_fw60_rewind_nothing_missing_keeps_cursor_at_end) {
-    /* усе є — фетчити нема чого (кампанію оживить сама збірка) */
-    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, OTA_SEAL_ALL_RECEIVED), 11);
-    /* виродження: без тіла — нема куди вертатись */
-    ASSERT_EQ(Ota_Fetch_Rewind(7, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x00u), 7);
+TEST(test_fw60_next_missing_nothing_missing) {
+    ASSERT_EQ(Ota_Fetch_Next_Missing(3, 9, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, OTA_SEAL_ALL_RECEIVED), 9);
+    /* виродження: без тіла — тягнути нема чого */
+    ASSERT_EQ(Ota_Fetch_Next_Missing(0, 7, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x00u), 7);
+}
+
+TEST(test_fw60_body_complete_is_sticky_duplicate) {
+    /* після завершення (розмір є, мапа й лічильник — нуль) будь-який пакет тіла — дубль */
+    ASSERT_EQ(Ota_Body_Complete(537, 0, 0), 1);
+    ASSERT_EQ(Ota_Body_Is_Duplicate(537, 0, 0, 0x0001u), 1);
+    /* до завершення — дубль лише за бітом */
+    ASSERT_EQ(Ota_Body_Is_Duplicate(512, 0x0002u, 1, 0x0001u), 0);
+    ASSERT_EQ(Ota_Body_Is_Duplicate(512, 0x0002u, 1, 0x0002u), 1);
+    /* після світанку (розмір 0) — нічого не зібрано */
+    ASSERT_EQ(Ota_Body_Complete(0, 0, 0), 0);
 }
 
 TEST(test_ota_resurrect_e2e_with_trailer_store) {
@@ -3143,9 +3155,10 @@ int main(void)
     RUN(test_ota_resurrect_silent_on_incomplete_trailer);
     RUN(test_ota_resurrect_silent_without_body);
     RUN(test_ota_resurrect_silent_mid_assembly);
-    RUN(test_fw60_rewind_to_first_missing_body_package);
-    RUN(test_fw60_rewind_to_first_missing_trailer_block);
-    RUN(test_fw60_rewind_nothing_missing_keeps_cursor_at_end);
+    RUN(test_fw60_next_missing_skips_held_and_wraps);
+    RUN(test_fw60_next_missing_does_not_refetch_completed_body);
+    RUN(test_fw60_next_missing_nothing_missing);
+    RUN(test_fw60_body_complete_is_sticky_duplicate);
     RUN(test_ota_resurrect_e2e_with_trailer_store);
 
     printf("\n  LoRa RX Ring Buffer (FW.3):\n");

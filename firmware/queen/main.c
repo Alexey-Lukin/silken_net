@@ -704,7 +704,8 @@ uint16_t ota_chunks_received = 0;        // Скільки чанків вже �
 
 // [FW.60] RAM-стан фетч-кампанії (гине з ребутом — СВІДОМО: fw=0 у першому
 // poll'і чесно каже Rails «я нічого не пам'ятаю» → повторний hint → безпечний
-// idempotent re-fetch; bitmap і 0x9B-гілка дедуплікують повтори).
+// idempotent re-fetch; 0x99-гілка — Ota_Body_Is_Duplicate — і маска трейлера
+// дедуплікують повтори, зокрема й після завершення тіла).
 static uint32_t g_ota_delivered_fw_id = 0; // повністю зібраний contract-id (їде в poll ?fw=)
 
 // [FW.63] RAM-токен останньої УСПІШНО обробленої CMD (нове виконання АБО
@@ -2331,19 +2332,14 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return 1;
 
-        // [FW.53] Світанок нової кампанії: pending_ota_size
-        // раніше лише ріс (max-трек) і переживав попередню прошивку — менша
-        // нова збірка успадковувала б хвости старої, total_chunks рахувався б
-        // від химери, і Солдати діставали б зіпсуте слово (вічний CRC-fail).
-        // Idle-стан збирання (порожній bitmap) → розмір починає життя з нуля.
-        if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
-            Queen_Ota_Campaign_Dawn();
-        }
-
-        // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
+        // [FIX: AUDIT CRITICAL · FW.60] Дедуплікація OTA-чанків — і після завершення тіла:
+        // тоді мапу й лічильник обнулено, тож пакет тієї ж кампанії (повторний фетч) інакше
+        // читався б як світанок і стирав зібране. Світанок нової кампанії (FW.53: розмір з
+        // нуля, щоб менша прошивка не успадкувала хвостів старої) — лише зміна fw у хінті,
+        // Queen_Ota_Campaign_Dawn; кожна кампанія приходить після свого hint'а.
         uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
-        if (ota_chunk_bitmap & chunk_bit) {
-            // Дублікат — дані вже є в RAM, просто ігноруємо
+        if (Ota_Body_Is_Duplicate(pending_ota_size, ota_chunk_bitmap, ota_chunks_received,
+                                  chunk_bit)) {
             return 1;
         }
 
@@ -2446,9 +2442,10 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
 }
 
-// [FW.68] Світанок кампанії: стан збирання, вікна, трейлера й боргу — з нуля. Пускачі
-// два, і обидва — нова кампанія: перший CoAP-чанк тіла при порожньому збиранні та зміна
-// `fw` у хінті (недозбирана попередня кампанія інакше злилась би з новою). Трейлер
+// [FW.68 · FW.60] Світанок кампанії: стан збирання, вікна, трейлера й боргу — з нуля.
+// Пускач один — зміна `fw` у хінті: кожна кампанія приходить після свого hint'а, а
+// недозбирана попередня інакше злилась би з новою. «Порожнє збирання» пускачем бути не
+// може: після завершення тіла воно теж порожнє, і повторний фетч стер би зібране. Трейлер
 // попередньої кампанії тримався до цієї миті — заради перезапиту печатки; печатку
 // нової тягнемо ПІСЛЯ тіла (курсор фетчу йде за пакунками OtaPackagerService), тож
 // світанок її не зітре. Вікно гасне теж: курсор інакше читав би буфер, який нова
@@ -2720,20 +2717,17 @@ static void Queen_Poll_Downlink(void)
     }
 
     if (!g_ota_fetch_pending) return;
-    // [FW.60 ⚖️ делеговано 2026-10-09] Курсор дійшов кінця, а кампанія не ожила —
-    // відкинутий пакет (CRC тіла, конверт понад стелю) лишив діру. Чого бракує, каже
-    // збирання, не курсор (Ota_Fetch_Rewind, ota_window.h); перемотка — до циклу, щоб
-    // діра дісталась бюджетові цього ж флашу.
-    if (g_ota_fetch_next_ch >= g_ota_fetch_total && !ota_is_active) {
-        const uint8_t body_complete = (uint8_t)(pending_ota_size > 0u &&
-                                                ota_chunk_bitmap == 0u &&
-                                                ota_chunks_received == 0u);
-        g_ota_fetch_next_ch = Ota_Fetch_Rewind(g_ota_fetch_total, OTA_SEAL_TRAILER_CHUNKS,
-                                               body_complete, ota_chunk_bitmap,
-                                               seal_segments_received);
-    }
-    for (uint8_t f = 0; f < QUEEN_OTA_FETCH_PER_FLUSH &&
-                        g_ota_fetch_next_ch < g_ota_fetch_total; f++) {
+    // [FW.60 ⚖️ делеговано 2026-10-09] Що тягнути, каже збирання, а не курсор: кожна
+    // розмова бере наступний ВІДСУТНІЙ пакет від курсора, по колу (Ota_Fetch_Next_Missing,
+    // ota_window.h). Відкинутий пакет (транзитна CRC тіла, битий блок) лишає діру, і
+    // курсор вертається до неї; зібраного вдруге не тягне.
+    for (uint8_t f = 0; f < QUEEN_OTA_FETCH_PER_FLUSH; f++) {
+        const uint16_t ch = Ota_Fetch_Next_Missing(
+            g_ota_fetch_next_ch, g_ota_fetch_total, OTA_SEAL_TRAILER_CHUNKS,
+            Ota_Body_Complete(pending_ota_size, ota_chunk_bitmap, ota_chunks_received),
+            ota_chunk_bitmap, seal_segments_received);
+        if (ch >= g_ota_fetch_total) break; // нічого не бракує
+        g_ota_fetch_next_ch = ch;
         HAL_IWDG_Refresh(&hiwdg);
         snprintf(q1, sizeof q1, "v=%lu", (unsigned long)g_ota_fetch_fw_id);
         snprintf(q2, sizeof q2, "ch=%u", (unsigned)g_ota_fetch_next_ch);
@@ -2766,9 +2760,12 @@ static void Queen_Poll_Downlink(void)
         (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
         g_ota_fetch_next_ch++;
     }
-    // Пакети вичерпані (0x9B-трейлер іде хвостом списку) і збірка ожила →
-    // кампанія доставлена: наступний poll понесе fw=<id>, Rails згасить hint.
-    if (g_ota_fetch_next_ch >= g_ota_fetch_total && ota_is_active) {
+    // Доставлено = ЗІБРАНО: тіло й увесь трейлер. Не «вікно живе»: вікно — стан
+    // проповіді Солдатам, а не збирання, і гасне, щойно тіло відлунало, — тоді доставку
+    // не оголошено б ніколи (хибний FAILED сторожа), а живе вікно з неповним трейлером
+    // оголошувало б успіх без печатки.
+    if (Ota_Body_Complete(pending_ota_size, ota_chunk_bitmap, ota_chunks_received) &&
+        seal_segments_received == OTA_SEAL_ALL_RECEIVED) {
         g_ota_delivered_fw_id = g_ota_fetch_fw_id;
         g_ota_fetch_pending   = 0;
     }
