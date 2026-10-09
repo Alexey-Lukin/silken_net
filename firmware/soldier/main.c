@@ -1453,6 +1453,31 @@ __attribute__((noreturn)) void __stack_chk_fail(void)
 
 /* USER CODE END 0 */
 
+// [FW.46 · FW.50] Одне читання внутрішнього каналу АЦП: канал стає на ранг 1 ЯВНО перед
+// кожним стартом (MX_ADC_Init — ScanConvMode = ADC_SCAN_DISABLE, лише ранг 1). Цикл доти
+// читав два канали двома парами Start/Stop без вибору каналу, тобто покладався на те,
+// що позиція в послідовності ранґів переживе HAL_ADC_Stop, — а той щоразу вимикає АЦП
+// (ADDIS), і такої пам'яті не обіцяють ні HAL WL, ні RM0461. Якби вона не пережила,
+// друге читання знову брало б температуру, а vcap рахувався б із неї; з явним вибором
+// відповідь кремнію на це питання ролі не грає. 1 — відлік у *out.
+static uint8_t Soldier_Adc_Read(uint32_t channel, uint16_t *out)
+{
+    ADC_ChannelConfTypeDef ch = {0};
+    ch.Channel      = channel;
+    ch.Rank         = ADC_REGULAR_RANK_1;
+    ch.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
+    if (HAL_ADC_ConfigChannel(&hadc, &ch) != HAL_OK) return 0;
+
+    uint8_t ok = 0;
+    HAL_ADC_Start(&hadc);
+    if (HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK) {
+        *out = (uint16_t)HAL_ADC_GetValue(&hadc);
+        ok = 1;
+    }
+    HAL_ADC_Stop(&hadc);
+    return ok;
+}
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -1792,26 +1817,20 @@ int main(void)
     uint16_t internal_temp = 0;
     uint16_t vcap_voltage = 0;
 
-    // Роздвоєння циклу Start/Stop для стабільної роботи АЦП (Анти-Дедлок)
-    HAL_ADC_Start(&hadc);
-    if (HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK) {
-        internal_temp = HAL_ADC_GetValue(&hadc); // Канал температури
-    }
-    HAL_ADC_Stop(&hadc);
+    // Два канали — два читання з ЯВНИМ вибором каналу (Soldier_Adc_Read).
+    (void)Soldier_Adc_Read(ADC_CHANNEL_TEMPSENSOR, &internal_temp);
 
-    HAL_ADC_Start(&hadc);
-    if (HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK) {
+    uint16_t vrefint_raw = 0;
+    if (Soldier_Adc_Read(ADC_CHANNEL_VREFINT, &vrefint_raw)) {
         // [FW.50, рішення founder 2026-06-12] VREFINT + заводська каліброванка
         // → справжні мВ VDDA. Це ПРОКСІ заряду (≈3300, поки buck тримає; сідає
         // лише при брауноуті) — без нього сирий відлік ~1500 < 2800 тримав
         // вухо RX-вікна зачиненим НАЗАВЖДИ (OTA/mesh/time-sync глухі на
         // кремнії). Реальний Vcap іоністора — окремий канал + дільник
         // (hardware-гейт 👤: Adc_Raw_To_Mv, номінали — 02_03).
-        uint16_t vrefint_raw = HAL_ADC_GetValue(&hadc);
         vcap_voltage = Adc_Vdda_Mv(vrefint_raw,
                                    *(volatile const uint16_t*)ADC_VREFINT_CAL_ADDR);
     }
-    HAL_ADC_Stop(&hadc);
 
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
     // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);

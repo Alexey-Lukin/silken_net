@@ -314,24 +314,18 @@ delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp
 
 > **In-silico L4 (2026-05-25; переглянуто 2026-09-27, [`00_07` E.63](00_07_Action_Plan_Tracker)):** колишній висновок «модель підтверджує `BASELINE_DELTA_T_S=60` фізично обґрунтованим» спростовано — він тримався на заглушці ціни циклу 5 мДж без сон-члена, у 8.5 раза нижчій за канон-ланцюг [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power). Зі зведеною ціною навіть pH-7.4 лабораторна стеля на купоні 2 см² дає `delta_t` понад 60 с у кожному сценарії, тож 60 с лишається лише дефолт-аргументом хаос-частини ([`03_04`](03_04_mruby_Lorenz_Attractor)), а не фізичним твердженням. Числа — [`in_silico/SUMMARY.md` §L4](protocols/ebfc/in_silico/SUMMARY.md) (машинний дім — `cache/kinetics/delta_t_lookup.json` + `monte_carlo.json`); деталі → [`01_03 §3.4 L4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell).
 
-**АЦП (два окремих цикли Start/Poll/Stop):**
+**АЦП (два читання з явним вибором каналу — `Soldier_Adc_Read`):**
 
 ```c
-// Цикл 1: Температура (внутрішній датчик STM32)
-HAL_ADC_Start(&hadc);
-HAL_ADC_PollForConversion(&hadc, 10);
-internal_temp = HAL_ADC_GetValue(&hadc);
-HAL_ADC_Stop(&hadc);
+// Канал стає на ранг 1 перед кожним стартом (MX_ADC_Init: ADC_SCAN_DISABLE)
+(void)Soldier_Adc_Read(ADC_CHANNEL_TEMPSENSOR, &internal_temp);
 
-// Цикл 2: VREFINT-відлік → справжні мВ VDDA (проксі заряду — FW.50 нижче)
-HAL_ADC_Start(&hadc);
-HAL_ADC_PollForConversion(&hadc, 10);
-uint16_t vrefint_raw = HAL_ADC_GetValue(&hadc);
-vcap_voltage = Adc_Vdda_Mv(vrefint_raw, *(volatile const uint16_t*)ADC_VREFINT_CAL_ADDR);
-HAL_ADC_Stop(&hadc);
+uint16_t vrefint_raw = 0;   // VREFINT → справжні мВ VDDA (проксі заряду — FW.50 нижче)
+if (Soldier_Adc_Read(ADC_CHANNEL_VREFINT, &vrefint_raw))
+    vcap_voltage = Adc_Vdda_Mv(vrefint_raw, *(volatile const uint16_t*)ADC_VREFINT_CAL_ADDR);
 ```
 
-> ⚠️ **Чому два окремих цикли?** STM32 ADC з подвійним каналом (температура + VREFINT) вимагає перемикання між каналами. Роздвоєний Start/Stop запобігає deadlock при прочитанні VREFINT одразу після температурного каналу.
+> ⚠️ **Чому канал обирається явно (2026-10-09, знайдено розвідкою образу для mini — [`00_07` FW.46](00_07_Action_Plan_Tracker)).** Доти цикл читав два канали двома парами `HAL_ADC_Start`/`Poll`/`Stop` без вибору каналу, а пояснення тут казало, що роздвоєння «запобігає deadlock». Насправді ж воно покладалося на те, що позиція в послідовності ранґів переживе `HAL_ADC_Stop`, а той щоразу вимикає АЦП (ADDIS). Такої пам'яті не обіцяють ні HAL WL, ні RM0461; якби її не було, друге читання знову брало б температуру, і `vcap` рахувався б із неї. Тепер `Soldier_Adc_Read` ставить канал на ранг 1 перед кожним стартом, і відповідь кремнію на те питання ролі не грає. **Межа покриття:** `main.c` хост не компілює — лише ARM compile-lane; чи читає кожен виклик саме названий канал, покаже стенд (RUNBOOK §3.4).
 
 > **🟡 `vcap_voltage` = VDDA-проксі у справжніх мВ [FW.50, рішення founder 2026-06-12].** До фіксу сирий 12-bit VREFINT-відлік (~1500) трактувався ЯК мілівольти: RX-вікно (`VCAP_LISTEN_THRESHOLD=2800`) **не відкривалось ніколи** — на кремнії Солдат був би глухий до OTA/mesh/time-sync/ротації ключа, а Vcap-енергогейти працювали з фейкових величин. Тепер call-site конвертує через `Adc_Vdda_Mv()` (factory VREFINT-cal, `firmware/common/adc_convert.h`, One-Home + host-тести): `vcap_voltage` = чесні мВ VDDA (≈3300, поки buck тримає; сідає лише при брауноуті). Семантика гейтів до живого Vcap-каналу — **порогів на цій шині ТРИ на ЧОТИРЬОХ сайтах порівняння** (перелік [ARCH.99] 2026-08-13 був неповний на один, дописано 2026-09-27; ⊕ 2026-09-29 fauna-гейт пішов із пʼєзо, HW.30): «слухай» (`VCAP_LISTEN_THRESHOLD=2800`) = живлення здорове (3300 > 2800 — вухо відкрите), і той самий поріг несе енергогейт FC-hiwater (`Fc_Hiwater_Advance`, CCM-гейтований, дрімає) — він пропускає Flash-advance завжди; CAD panic-преамбула (`CAD_PANIC_PREAMBLE_VCAP_MIN_MV=4500`) чесно зачинена (стеля VREFINT-тракту < 4500), extended-half fail-closed — а сам panic-транспорт з HW.30 викликача не має; 🔴 **cold-TX-defer (`COLD_TX_DEFER_VCAP_MV=4000`) — істинний завжди, тож кон'юнкція `Should_Defer_TX` згортається до самої температури** (§1.8а). **Залишок hardware:** VREFINT міряє VDDA, НЕ напругу EDLC — реальний Vcap = окремий ADC-канал з дільником за TPS22860-гейтом (⚖️ делеговано 2026-09-27; цільовий тракт = вузол VBAT/VSTOR BQ25570 через дільник — `VBAT_SEC` є піном BQ25505, не BQ25570; [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)); конверсія та сама (`Adc_Raw_To_Mv`, дільник-параметр), номінали узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power) — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker).
 
