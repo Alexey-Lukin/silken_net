@@ -233,6 +233,8 @@ TARGETS = [
   # numbered and cited BY SECTION («Межі #14», «Доменні правила #6» — from RFQ headers and memory), so
   # the numbers stayed. The skill's form is deliberately INVERTED (honesty bounds FIRST): the §Межі
   # index stays the first section of the body — only the bodies moved.
+  # floor 8 → 10 the same day: the two lessons of §«Хто на яке питання» (the tier lesson · the ІПК bound)
+  # moved in as Доменні правила #9 · #10 when that section shed its STATE copies to their homes.
   { name:  "legal-business (Межі)",
     skill: File.join(ROOT, ".claude/skills/legal-business/SKILL.md"),
     aux:   File.join(ROOT, ".claude/skills/legal-business/bounds.md"),
@@ -243,7 +245,7 @@ TARGETS = [
   { name:  "legal-business (Доменні правила)",
     skill: File.join(ROOT, ".claude/skills/legal-business/SKILL.md"),
     aux:   File.join(ROOT, ".claude/skills/legal-business/domain_rules.md"),
-    floor: 8,
+    floor: 10,
     open:  "<!-- LEGAL-DOMAIN-INDEX:AUTO — generated from domain_rules.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
     close: "<!-- /LEGAL-DOMAIN-INDEX -->" },
