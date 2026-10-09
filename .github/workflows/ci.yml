@@ -410,7 +410,8 @@ jobs:
     # `python_lint` (ruff). Standalone: cppcheck parses the sources directly, no
     # cross-compile or HAL headers needed (vendored extern/ + .toolchain/ excluded).
     # Single entry point firmware/scripts/cppcheck.sh — the same command devs run
-    # locally. cppcheck is pinned by the ubuntu-24.04 image (apt); the gating set
+    # locally. cppcheck is pinned by the ubuntu-24.04 image (apt) — its minor is
+    # mirrored as CI_MINOR in cppcheck.sh, so bump both with the image; the gating set
     # is warning+performance+portability+style at --check-level=exhaustive on a
     # custom Cortex-M4 platform (unsigned char). Justified false-positives are
     # documented suppressions in the runner + inline `// cppcheck-suppress`.

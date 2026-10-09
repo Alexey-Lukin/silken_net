@@ -16,10 +16,13 @@
 #   firmware/scripts/cppcheck.sh --misra     # + MISRA C:2012 advisory (non-gating)
 #   CPPCHECK=/path/to/cppcheck firmware/scripts/cppcheck.sh   # override binary
 #
-# Local install (no system package needed) — pin CI's minor: a newer cppcheck
-# classifies diagnostics differently, so its green proves nothing about CI
-# (firmware skill gotcha 12):
-#   conda create -n silken_lint -c conda-forge cppcheck=2.13 && conda activate silken_lint
+# Local install (no system package needed) — pin CI's minor (CI_MINOR below): a newer
+# cppcheck classifies diagnostics differently, so its green proves nothing about CI
+# (firmware skill gotcha 12). conda-forge builds 2.13 only up to python 3.12:
+#   conda create -n silken_lint -c conda-forge cppcheck=2.13
+# The pre-push hook takes `cppcheck` from PATH, so put this env's binary first there
+# (e.g. a two-line `exec` wrapper in ~/.local/bin) — a cppcheck in conda base or
+# Homebrew otherwise wins, and the version line below then warns.
 # CI installs apt's cppcheck on a pinned ubuntu image (see ci.yml: firmware_lint).
 #
 # Why these project-wide suppressions are FALSE POSITIVES for THIS codebase
@@ -41,6 +44,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 CPPCHECK="${CPPCHECK:-cppcheck}"
+# CI's minor — apt on the ubuntu-24.04 image (ci.yml: firmware_lint); bump it with the image.
+CI_MINOR="2.13"
 PLATFORM="firmware/.cppcheck/stm32wle5.xml"
 
 # sim/ = owned bare-metal C QEMU-ноги (FW.55) — лінтиться нарівні з firmware.
@@ -76,7 +81,12 @@ ARGS=(
   "${INCLUDES[@]}"
 )
 
-echo "▶ $("$CPPCHECK" --version) — gating soldier + queen + common + sim (Cortex-M4 platform)"
+VERSION="$("$CPPCHECK" --version)"
+echo "▶ $VERSION — gating soldier + queen + common + sim (Cortex-M4 platform)"
+case "$VERSION" in
+  "Cppcheck $CI_MINOR"*) ;;
+  *) echo "⚠ CI gates cppcheck $CI_MINOR — this green says nothing about firmware_lint (firmware gotcha 12)" ;;
+esac
 "$CPPCHECK" "${ARGS[@]}" "${SOURCES[@]}"
 
 # [HW.16] Каталог дає cppcheck лише .c, а .h він читає ТІЛЬКИ через #include — тож pure
