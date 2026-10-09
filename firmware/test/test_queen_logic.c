@@ -2234,12 +2234,12 @@ static OtaRrTable q_rr;
 
 /* Допуск тим самим ланцюгом, що в обробнику 0x55 queen/main.c. */
 static uint8_t Test_Admit(const uint8_t* req, uint16_t pending_size,
-                          uint8_t ota_active, uint8_t seal_held)
+                          uint8_t ota_active, uint16_t seal_total_held)
 {
     uint16_t body_total = (uint16_t)((pending_size + 10u) / 11u);
     uint8_t  same = Ota_Rr_Body_Buffer_Same(&q_sha_ops, NULL, pending_ota_bytecode,
                                             pending_size, ota_active);
-    return Ota_Rr_Admissible(req, body_total, same, seal_held);
+    return Ota_Rr_Admissible(req, body_total, same, seal_total_held);
 }
 
 /* Зойк про тіло: чанки, яких бракує, — перелічені в missing[]. */
@@ -2339,9 +2339,18 @@ TEST(test_fw52_rerequest_admitted_while_window_open_nothing_persisted) {
 
 TEST(test_rereq_seal_sentinel_admitted_only_when_trailer_held) {
     uint8_t req[16];
-    ASSERT_EQ(Ota_Req_Build_Seal(0x77u, 0x7Cu /* бракує seg 1, 2 */, req), 1);
+    ASSERT_EQ(Ota_Req_Build_Seal(0x77u, 0x7Cu /* бракує seg 1, 2 */, 90u, req), 1);
     ASSERT_EQ(Test_Admit(req, 88, 1, 0), 0);    /* трейлера немає — мовчимо */
-    ASSERT_EQ(Test_Admit(req, 0, 0, 1), 1);     /* тримаємо цілком — борг приймаємо */
+    ASSERT_EQ(Test_Admit(req, 0, 0, 90), 1);    /* тримаємо трейлер ЦІЄЇ кампанії */
+}
+
+TEST(test_rereq_seal_of_foreign_campaign_not_admitted) {
+    /* Адверсар FW.68 (A1): Солдат проспав кампанію N і досі чекає печатку P, а
+     * Королева після «аміня» N тримає трейлер N. Без total у запиті вона платила б
+     * сім блоків, які дерево відкине, — щоп'ять хвилин, доки не прийде світанок. */
+    uint8_t req[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0x77u, 0x00u, 90u, req), 1);
+    ASSERT_EQ(Test_Admit(req, 0, 0, 91), 0);
 }
 
 TEST(test_rereq_debt_paid_one_block_per_heard_frame) {
@@ -2399,8 +2408,8 @@ TEST(test_rereq_repeat_after_lost_answer_is_debt_again) {
 TEST(test_rereq_seal_debt_names_trailer_blocks) {
     Ota_Rr_Clear(&q_rr);
     uint8_t req[16];
-    ASSERT_EQ(Ota_Req_Build_Seal(0xD1u, 0x3Bu /* бракує seg 3 і seg 7 */, req), 1);
-    req[8] = 0xFFu;                                  /* сміття поза маскою печатки */
+    ASSERT_EQ(Ota_Req_Build_Seal(0xD1u, 0x3Bu /* бракує seg 3 і seg 7 */, 90u, req), 1);
+    req[10] = 0xFFu;                                 /* сміття поза маскою печатки */
     ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
     uint8_t is_seal; uint16_t idx;
     int s = Ota_Rr_Peek(&q_rr, 0xD1u, &is_seal, &idx);
@@ -3092,6 +3101,7 @@ int main(void)
     RUN(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten);
     RUN(test_fw52_rerequest_admitted_while_window_open_nothing_persisted);
     RUN(test_rereq_seal_sentinel_admitted_only_when_trailer_held);
+    RUN(test_rereq_seal_of_foreign_campaign_not_admitted);
     RUN(test_rereq_debt_paid_one_block_per_heard_frame);
     RUN(test_rereq_debt_is_per_did);
     RUN(test_rereq_repeat_after_lost_answer_is_debt_again);

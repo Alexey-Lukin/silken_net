@@ -32,6 +32,7 @@
 // [SEC.21 L1] uplink 0x57 device-event: розпізнати, витягти cleartext →
 // підписати EDSK (тег QEVT1) → окремий PUT device/event/<uid> (§Шар 2).
 #include "../common/device_event.h"
+#include "../common/ttl_byte.h"   // [FW.18b · FW.68] TTL у байті 11 ECB-кадру: з перших рук ⊥ ретрансльований
 // [FW.3] Байтовий AT-токенайзер + транзакції (pure, host-tested)
 #include "at_engine.h"
 // [FW.56] CoAP PDU будує хост: SIM7070G — UDP-труба, не CoAP-стек
@@ -928,7 +929,8 @@ static uint32_t djb2_hash(const char* str, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 static void Queen_Poll_Downlink(void);
-static void Queen_Reflex_Shots(uint32_t heard_did);
+static void Queen_Reflex_Shots(uint32_t heard_did, uint8_t first_hand);
+static void Queen_Ota_Campaign_Dawn(void);
 // [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
 // [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
@@ -1223,7 +1225,7 @@ int main(void)
                     // Рефлекс і тут: до 2026-09-29 `continue` нижче обходив його,
                     // і в CCM-ері Солдат після своєї телеметрії не чув ні
                     // команди, ні OTA-чанка (Queen_Reflex_Shots).
-                    Queen_Reflex_Shots(ccm_did);
+                    Queen_Reflex_Shots(ccm_did, 1u);   // star-only: кадр завжди з перших рук
                     Process_And_Cache_Data(ccm_did, &rx_payload[4],
                                            rx_rssi, rx_snr, EDGE_FMT_CCM_AIR);
                 }
@@ -1254,8 +1256,12 @@ int main(void)
             uint8_t  same_buffer = Ota_Rr_Body_Buffer_Same(&queen_ota_sha_ops, NULL,
                                                            pending_ota_bytecode,
                                                            pending_ota_size, ota_is_active);
+            // Трейлер, який Королева тримає, несе total своєї кампанії в кожному блоці.
+            uint16_t seal_total_held = (seal_segments_received == OTA_SEAL_ALL_RECEIVED)
+                ? (uint16_t)(((uint16_t)pending_ota_seal_chunks[0][3] << 8) | pending_ota_seal_chunks[0][4])
+                : 0u;
             if (Ota_Rr_Admissible((const uint8_t*)decrypted_payload, body_total, same_buffer,
-                                  (uint8_t)(seal_segments_received == OTA_SEAL_ALL_RECEIVED))) {
+                                  seal_total_held)) {
                 (void)Ota_Rr_Record(&g_ota_rr, (const uint8_t*)decrypted_payload);
             }
             // Цей пакет не лягає у CIFO/CoAP — він не належить літопису рою.
@@ -1282,10 +1288,13 @@ int main(void)
         // 0x56 (вухо мусить почути перемотаний маяк, а не OTA-чанк). DID — перші 4
         // байти, як у телеметрії; 0x57 несе там маркер, тож адресний постріл за ним не
         // влучає (хіба випадком ~2⁻²⁴ — і тоді кадр згорить на Солдаті як чужий).
+        // Кадр, ретрансльований сусідом (TTL < TTL автора), до вуха автора не веде:
+        // адресні постріли — команда й борг — лише на кадр із перших рук (⚖️ FW.68).
         Queen_Reflex_Shots(((uint32_t)decrypted_payload[0] << 24) |
                            ((uint32_t)decrypted_payload[1] << 16) |
                            ((uint32_t)decrypted_payload[2] << 8)  |
-                           (uint32_t)decrypted_payload[3]);
+                           (uint32_t)decrypted_payload[3],
+                           (uint8_t)(Ttl_Byte_Ttl(decrypted_payload[11]) == TTL_BYTE_ORIGIN));
 
         // [SEC.21 L1] Device-event 0x57 (canary-слід тощо): не телеметрія — у
         // літопис (CIFO) не лягає, stride священний. Королева ВЖЕ декриптувала
@@ -2328,15 +2337,7 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // від химери, і Солдати діставали б зіпсуте слово (вічний CRC-fail).
         // Idle-стан збирання (порожній bitmap) → розмір починає життя з нуля.
         if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
-            pending_ota_size = 0;
-            // [FW.68] Трейлер попередньої кампанії тримався до цієї миті — заради
-            // перезапиту печатки; тепер він чужий. Печатку нової кампанії тягнемо ПІСЛЯ
-            // тіла (курсор фетчу йде за пакунками OtaPackagerService: тіло, тоді трейлер),
-            // тож світанок її не зітре.
-            seal_segments_received = 0;
-            seal_broadcast_phase   = 0;
-            current_seal_seg_idx   = 0;
-            Ota_Rr_Clear(&g_ota_rr);
+            Queen_Ota_Campaign_Dawn();
         }
 
         // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
@@ -2423,6 +2424,9 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             if (hint_fw != g_ota_fetch_fw_id) {
                 g_ota_fetch_fw_id   = hint_fw;   // нова кампанія → курсор на 0
                 g_ota_fetch_next_ch = 0;
+                // [FW.68] І світанок: недозбирана попередня кампанія інакше злилась би з
+                // новою в один бітмап, а її трейлер спарувався б із новим тілом.
+                Queen_Ota_Campaign_Dawn();
             }
             g_ota_fetch_total   = hint_total;
             g_ota_fetch_pending = 1;
@@ -2442,15 +2446,27 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
 }
 
-// =========================================================================
-// [FW.20-Q2 · FW.2] РЕФЛЕКС ПІСЛЯ ПОЧУТОГО СОЛДАТА — команда, потім OTA-чанк
-// =========================================================================
-// Солдат слухає ефір ~500 мс після власного TX, тож постріл услід за його
-// голосом — єдине гарантовано чуте вікно (ADR у soldier_cmd_queue.h). Кличуть
-// обидві ери дренажу рингу: ECB-шлях — після декрипту, CCM-шлях — після
-// демуксу за відкритим DID. До 2026-09-29 цей код жив інлайном лише в
-// ECB-шляху, а CCM-гілка робила `continue` раніше за нього: у CCM-ері OTA-чанк
-// летів би лише за рідкісними 16-Б зойками 0x55/0x56, а команда — ніколи.
+// [FW.68] Світанок кампанії: стан збирання, вікна, трейлера й боргу — з нуля. Пускачі
+// два, і обидва — нова кампанія: перший CoAP-чанк тіла при порожньому збиранні та зміна
+// `fw` у хінті (недозбирана попередня кампанія інакше злилась би з новою). Трейлер
+// попередньої кампанії тримався до цієї миті — заради перезапиту печатки; печатку
+// нової тягнемо ПІСЛЯ тіла (курсор фетчу йде за пакунками OtaPackagerService), тож
+// світанок її не зітре. Вікно гасне теж: курсор інакше читав би буфер, який нова
+// кампанія вже переписує.
+static void Queen_Ota_Campaign_Dawn(void)
+{
+    ota_chunk_bitmap          = 0;
+    ota_chunks_received       = 0;
+    ota_total_expected_chunks = 0;
+    pending_ota_size          = 0;
+    ota_is_active             = 0;
+    current_ota_chunk_idx     = 0;
+    seal_segments_received    = 0;
+    seal_broadcast_phase      = 0;
+    current_seal_seg_idx      = 0;
+    Ota_Rr_Clear(&g_ota_rr);
+}
+
 // [FW.27 · FW.68] Один LoRa-блок тіла кампанії: [0x99][idx:2 BE][total:2 BE][≤ 11 Б
 // байткоду]. Його стріляють і глобальний курсор, і адресний борг — одна розкладка.
 // 0 — індекс поза зібраним буфером.
@@ -2470,7 +2486,17 @@ static uint8_t Queen_Ota_Body_Block(uint16_t idx, uint8_t out[16])
     return 1;
 }
 
-static void Queen_Reflex_Shots(uint32_t heard_did)
+// =========================================================================
+// [FW.20-Q2 · FW.2 · FW.68] РЕФЛЕКС ПІСЛЯ ПОЧУТОГО СОЛДАТА — один постріл за кадр
+// =========================================================================
+// Солдат слухає ефір ~500 мс після власного TX, тож постріл услід за його
+// голосом — єдине гарантовано чуте вікно (ADR у soldier_cmd_queue.h). Кличуть
+// обидві ери дренажу рингу: ECB-шлях — після декрипту, CCM-шлях — після
+// демуксу за відкритим DID. Вухо бере ОДИН пакет за пробудження (ADR FW.52), тож
+// постріл один: адресна команда, інакше блок боргу цього DID, інакше глобальний
+// курсор. Адресні (команда й борг) — лише на кадр із перших рук: ретрансльований
+// кадр до вуха автора не веде, а `Take`/`Mark_Sent` списали б постріл.
+static void Queen_Reflex_Shots(uint32_t heard_did, uint8_t first_hand)
 {
 #if FW20_Q2_CMD_RELAY_ENABLED
     // =========================================================================
@@ -2478,9 +2504,9 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
     // =========================================================================
     // Лише для почутого DID і з найменшим DLFC (soldier_cmd_queue.h). Кадр
     // летить як є — його вже підписав Rails, Королева нічого не шифрує.
-    // Найдовший кадр (23 Б ≈ 206 мс) + OTA-чанк (≈ 165 мс) ≈ 371 мс < 500 мс
-    // вікна. Команда першою: ротація ключа важливіша за чанк прошивки.
-    {
+    // Команда першою й ЄДИНОЮ: ротація ключа важливіша за блок прошивки, а OTA-блок
+    // після неї летів би в уже закрите вухо (кадр довжини ≠ 16 → прийом і `break`).
+    if (first_hand) {
         const int slot = Soldier_Cmd_Queue_Find_For(&soldier_cmd_queue, heard_did);
         if (slot >= 0) {
             const uint8_t  cmd_len = soldier_cmd_queue.len[slot];
@@ -2492,11 +2518,10 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
                 Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), cmd_air);
                 // PHY доказує пакет перед наступним TX/RX
                 HAL_Delay(Lora_Phy_Send(cmd_frame, cmd_len, LORA_PHY_PREAMBLE_SYMBOLS));
+                return;
             }
         }
     }
-#else
-    (void)heard_did;
 #endif
 
     // =========================================================================
@@ -2507,7 +2532,7 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
     // буфера, з якого борг записано (світанок кампанії борг знімає); трейлер —
     // буква в букву, як у фазі печатки нижче. Один блок за кадр: вухо Солдата бере
     // один пакет (ADR FW.52). Вичерпаний ефір — пейсинг: борг чекає наступного кадру.
-    {
+    if (first_hand) {
         uint8_t  debt_is_seal = 0;
         uint16_t debt_idx     = 0;
         const int debt_slot = Ota_Rr_Peek(&g_ota_rr, heard_did, &debt_is_seal, &debt_idx);

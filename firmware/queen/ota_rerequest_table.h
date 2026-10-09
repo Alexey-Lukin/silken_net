@@ -39,14 +39,17 @@ static inline void Ota_Rr_Clear(OtaRrTable *t) { memset(t, 0, sizeof *t); }
 
 /* Чи зойк узагалі можна обслужити. Тіло — лише з того самого буфера (вікно живе або
  * SHA-256 збігся, FW.52) і з тим самим total; печатка — лише коли Королева тримає
- * трейлер цілком. */
+ * трейлер цілком (seal_total_held ≠ 0 — total, вшитий у її блоки) і саме тієї
+ * кампанії, до якої перепитують: чужий трейлер Солдат однаково відкине. */
 static inline uint8_t Ota_Rr_Admissible(const uint8_t req[OTA_REQ_PACKET_SIZE],
                                         uint16_t body_total, uint8_t body_buffer_same,
-                                        uint8_t seal_held)
+                                        uint16_t seal_total_held)
 {
     if (req[0] != OTA_REQ_MARKER) return 0;
     uint16_t total = Ota_Req_Total(req);
-    if (total == OTA_REQ_SEAL_SENTINEL) return seal_held;
+    if (total == OTA_REQ_SEAL_SENTINEL) {
+        return (uint8_t)(seal_total_held != 0u && Ota_Req_Seal_Total(req) == seal_total_held);
+    }
     return (uint8_t)(body_total != 0u && body_buffer_same && total == body_total);
 }
 

@@ -2525,7 +2525,8 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
  *   [5..6] total_chunks big-endian (cross-check with Queen)
  *   [7..15] missing_bitmap (LSB-first; bit i ⇔ chunk_idx i missing)
  *
- * Triggered when ota_chunks_received < ota_total_chunks AND
+ * Triggered when the assembly misses body chunks — or, the body complete, seal
+ * blocks (sentinel total = 0xFFFF, FW.68) — AND
  * OTA_REREQUEST_SILENT_WAKEUPS тихих пробуджень поспіль (≈5 хв wall —
  * tick-різниця мертва у STOP2, лічимо пробудження з відкритим вухом).
  * ════════════════════════════════════════════════════════════════════ */
@@ -2541,7 +2542,7 @@ static uint8_t Test_OTA_Silent_Wakeup_Tick(uint16_t total, uint16_t received,
                                            uint8_t *silent_wakeups)
 {
     OtaReqKind kind = Ota_Req_Kind(total, received, OTA_SEAL_ALL_RECEIVED);
-    if (!Ota_Req_Silence_Due(kind, (uint8_t)(last_rx_tick != 0), silent_wakeups)) return 0;
+    if (!Ota_Req_Silence_Due(kind, (uint8_t)(last_rx_tick != 0), silent_wakeups, 0u)) return 0;
     *silent_wakeups = 0;
     return 1;
 }
@@ -2705,17 +2706,19 @@ TEST(test_rereq_silent_counter_saturates_no_wrap) {
 /* ── [FW.68] Перезапит печатки: сентинел total = 0xFFFF + маска відсутніх блоків ── */
 TEST(test_rereq_seal_sentinel_and_missing_mask) {
     uint8_t out[16];
-    ASSERT_EQ(Ota_Req_Build_Seal(0xDEADBEEFu, 0x3Bu, out), 1);   /* бракує seg 3 і seg 7 */
+    ASSERT_EQ(Ota_Req_Build_Seal(0xDEADBEEFu, 0x3Bu, 0x005Au, out), 1);  /* бракує seg 3 і seg 7 */
     ASSERT_EQ(out[0], OTA_REQ_MARKER);
     ASSERT_EQ(out[1], 0xDE); ASSERT_EQ(out[4], 0xEF);
     ASSERT_EQ(out[5], 0xFF); ASSERT_EQ(out[6], 0xFF);             /* сентинел */
     ASSERT_EQ(out[7], 0x44);                                     /* біти 2 і 6 */
-    for (int i = 8; i < 16; i++) ASSERT_EQ(out[i], 0x00);
+    ASSERT_EQ(out[8], 0x00); ASSERT_EQ(out[9], 0x5A);             /* total тіла (FW.68 A1) */
+    ASSERT_EQ(Ota_Req_Seal_Total(out), 0x005Au);
+    for (int i = 10; i < 16; i++) ASSERT_EQ(out[i], 0x00);
 }
 
 TEST(test_rereq_seal_none_when_trailer_complete) {
     uint8_t out[16];
-    ASSERT_EQ(Ota_Req_Build_Seal(0x1u, OTA_SEAL_ALL_RECEIVED, out), 0);
+    ASSERT_EQ(Ota_Req_Build_Seal(0x1u, OTA_SEAL_ALL_RECEIVED, 90u, out), 0);
 }
 
 TEST(test_rereq_body_builder_refuses_sentinel_total) {
@@ -2739,8 +2742,26 @@ TEST(test_rereq_silence_ticks_while_only_seal_missing) {
     uint8_t silent = 0;
     OtaReqKind kind = Ota_Req_Kind(10, 10, 0x7Eu);
     for (int w = 1; w <= 9; w++)
-        ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent), 0);
-    ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent), 1);
+        ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent, 0u), 0);
+    ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent, 0u), 1);
+}
+
+TEST(test_rereq_seal_needs_body_total) {
+    /* Запит печатки без total свого тіла — ні до чого не привʼязаний; не будуємо. */
+    uint8_t out[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0x1u, 0x00u, 0u, out), 0);
+    ASSERT_EQ(Ota_Req_Build_Seal(0x1u, 0x00u, OTA_REQ_SEAL_SENTINEL, out), 0);
+}
+
+TEST(test_rereq_backoff_doubles_pause_and_caps) {
+    /* Адверсар FW.68 (A8): Королева, що не тримає запитаного, не мусить коштувати
+     * Солдатові TX кожні 10 пробуджень довіку — пауза подвоюється до стелі. */
+    uint8_t silent = 0;
+    for (int w = 1; w < 20; w++) ASSERT_EQ(Ota_Req_Silence_Due(OTA_REQ_SEAL, 1, &silent, 1u), 0);
+    ASSERT_EQ(Ota_Req_Silence_Due(OTA_REQ_SEAL, 1, &silent, 1u), 1);       /* 20-те */
+    silent = 0;
+    for (int w = 1; w < 160; w++) ASSERT_EQ(Ota_Req_Silence_Due(OTA_REQ_BODY, 1, &silent, 9u), 0);
+    ASSERT_EQ(Ota_Req_Silence_Due(OTA_REQ_BODY, 1, &silent, 9u), 1);      /* стеля 160, не 5120 */
 }
 
 TEST(test_seal_block_belongs_only_to_active_assembly) {
@@ -4936,6 +4957,8 @@ int main(void)
     RUN(test_rereq_kind_body_then_seal_then_none);
     RUN(test_rereq_silence_ticks_while_only_seal_missing);
     RUN(test_seal_block_belongs_only_to_active_assembly);
+    RUN(test_rereq_seal_needs_body_total);
+    RUN(test_rereq_backoff_doubles_pause_and_caps);
 
     printf("\n  OTA Seal Trailer + Dual-Gate (FW.23):\n");
     RUN(test_seal_trailer_six_chunks_assemble_full_signature);

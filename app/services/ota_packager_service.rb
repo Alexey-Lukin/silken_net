@@ -113,8 +113,8 @@ class OtaPackagerService
   #   [0]    0x9B (CMD_OTA_SEAL)
   #   [1..2] seg_idx (1..7, big-endian)
   #   [3..4] lora_total_chunks (big-endian) — signed; the Soldier accepts a seal block only
-  #         with the total of its own assembly (FW.68), so a foreign trailer never lands
-  #          (the signed total comes from the 0x99 headers — 00_07 FW.68)
+  #         with the total of its own assembly (FW.68). A trailer of another campaign with
+  #         the SAME total does land, and the Ed25519 check rejects it (REJECT).
   #   seg 1..6: [5..15] seal segment (11 bytes; seg 6 has 9 real bytes + 2 PAD)
   #   seg 7:    [5..8] version_id (big-endian) + [9..15] PAD
   # Deterministic for fixed (seal, lora_total_chunks, version_id).

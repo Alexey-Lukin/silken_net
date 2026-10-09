@@ -11,7 +11,9 @@
  *             кількість LoRa-чанків тіла → [7..15] бітмап тіла: біт i = чанк i БРАКУЄ
  *             (LSB-first, i < 72 — більше в 9 байтів не влазить);
  *             OTA_REQ_SEAL_SENTINEL (0xFFFF) → тіло зібране, бракує печатки:
- *             [7] біти 0..6 = трейлер-блоки seg 1..7, яких БРАКУЄ; [8..15] — нулі.
+ *             [7] біти 0..6 = трейлер-блоки seg 1..7, яких БРАКУЄ; [8..9] — total
+ *             тіла, до якого печатка (Королева відповідає лише трейлером ЦІЄЇ кампанії);
+ *             [10..15] — нулі.
  *
  * Відповідь Королеви — НЕ залп одразу (Солдат після зойку засинає), а адресний
  * рефлекс-постріл на наступний почутий кадр цього DID, по блоку за раз
@@ -56,16 +58,25 @@ static inline OtaReqKind Ota_Req_Kind(uint16_t total_chunks, uint16_t chunks_rec
 /* Скільки тихих пробуджень з відкритим вухом до зойку: «5 хв тиші» лічимо
  * ПРОБУДЖЕННЯМИ, бо HAL_GetTick заморожений у STOP2 (10 × цикл 26-32 с ≈ 5 хв). */
 #define OTA_REREQUEST_SILENT_WAKEUPS  10u
+/* Зойк без відповіді подвоює наступну паузу (10 → 20 → … → 160 пробуджень): Королева,
+ * що не тримає запитаного (трейлер ще не скачано · ребут), не мусить коштувати
+ * Солдатові TX кожні 5 хв довіку. Новий блок скидає відступ у нуль. */
+#define OTA_REREQUEST_BACKOFF_MAX     4u
+
+_Static_assert((OTA_REREQUEST_SILENT_WAKEUPS << OTA_REREQUEST_BACKOFF_MAX) <= 255u,
+               "найдовша пауза мусить влазити в uint8_t лічильника тиші");
 
 /* Епілог вуха Фази 4.5: якщо є що перепитувати і Королеву вже чули, ця тиха ніч
  * іде в лічильник; 1 — час зойкнути. Лічильник у нуль скидає ВИКЛИКАЧ, коли зойк
- * справді відлетів, а новий блок (тіла чи печатки) — у гілці прийому. */
+ * справді відлетів, а новий блок (тіла чи печатки) — у гілці прийому; він же гасить
+ * відступ `backoff` (OTA_REREQUEST_BACKOFF_MAX). */
 static inline uint8_t Ota_Req_Silence_Due(OtaReqKind kind, uint8_t heard_before,
-                                          uint8_t *silent_wakeups)
+                                          uint8_t *silent_wakeups, uint8_t backoff)
 {
     if (kind == OTA_REQ_NONE || !heard_before || silent_wakeups == NULL) return 0;
+    if (backoff > OTA_REREQUEST_BACKOFF_MAX) backoff = OTA_REREQUEST_BACKOFF_MAX;
     if (*silent_wakeups < 255u) (*silent_wakeups)++;
-    return (uint8_t)(*silent_wakeups >= OTA_REREQUEST_SILENT_WAKEUPS);
+    return (uint8_t)(*silent_wakeups >= (uint8_t)(OTA_REREQUEST_SILENT_WAKEUPS << backoff));
 }
 
 static inline void Ota_Req_Header(uint32_t did, uint16_t total, uint8_t out[OTA_REQ_PACKET_SIZE])
@@ -103,16 +114,26 @@ static inline uint8_t Ota_Req_Build_Body(uint32_t did, uint16_t total_chunks,
     return any_missing;
 }
 
-/* Зойк про печатку: сентинел замість total, маска відсутніх трейлер-блоків у [7]. */
-static inline uint8_t Ota_Req_Build_Seal(uint32_t did, uint8_t seal_segs,
+/* Зойк про печатку: сентинел замість total, маска відсутніх трейлер-блоків у [7],
+ * total тіла, до якого печатка, — у [8..9]. Без нього трейлер ЧУЖОЇ кампанії, який
+ * Королева тримає після «аміня», платився б дереву, що його однаково відкине. */
+static inline uint8_t Ota_Req_Build_Seal(uint32_t did, uint8_t seal_segs, uint16_t body_total,
                                          uint8_t out[OTA_REQ_PACKET_SIZE])
 {
-    if (out == NULL) return 0;
+    if (out == NULL || body_total == 0u || body_total == OTA_REQ_SEAL_SENTINEL) return 0;
     uint8_t missing = (uint8_t)(~seal_segs & OTA_SEAL_ALL_RECEIVED);
     if (missing == 0u) return 0;
     Ota_Req_Header(did, OTA_REQ_SEAL_SENTINEL, out);
-    out[OTA_REQ_HEADER_SIZE] = missing;
+    out[OTA_REQ_HEADER_SIZE]      = missing;
+    out[OTA_REQ_HEADER_SIZE + 1u] = (uint8_t)(body_total >> 8);
+    out[OTA_REQ_HEADER_SIZE + 2u] = (uint8_t)(body_total & 0xFFu);
     return 1;
+}
+
+/* total тіла, до якого перепитують печатку (лише для сентинела). */
+static inline uint16_t Ota_Req_Seal_Total(const uint8_t req[OTA_REQ_PACKET_SIZE])
+{
+    return (uint16_t)(((uint16_t)req[OTA_REQ_HEADER_SIZE + 1u] << 8) | req[OTA_REQ_HEADER_SIZE + 2u]);
 }
 
 static inline uint32_t Ota_Req_Did(const uint8_t req[OTA_REQ_PACKET_SIZE])

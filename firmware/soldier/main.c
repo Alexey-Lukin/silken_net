@@ -97,7 +97,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define LORA_RX_LOOP_MS           600        // Максимальний час очікування пакета (мс)
 #define TX_JITTER_MAX_MS          500        // Максимальна рандомізована затримка TX (мс)
 #define PANIC_TTL                 5          // TTL для екстрених пакетів
-#define DEFAULT_TTL               3          // Стандартний TTL для пакетів
+#define DEFAULT_TTL               TTL_BYTE_ORIGIN  // TTL автора кадру (../common/ttl_byte.h — Королева ним відрізняє кадр із перших рук)
 #define PANIC_FLAG_BIT            0x80       // [FW.29] Bit 7 of StatusByte: panic disambiguation
 
 // [SEC.10] Frame Counter anti-replay для panic packets.
@@ -324,6 +324,7 @@ uint32_t ota_last_chunk_rx_tick = 0;
 // зойку (даємо Королеві стільки ж часу на ретрансляцію). SRAM: переживає
 // STOP2, гине разом із OTA-буфером при VBAT-loss — узгоджено.
 uint8_t ota_silent_wakeups = 0;
+uint8_t ota_rereq_backoff  = 0;   // [FW.68] зойк без відповіді подвоює паузу; новий блок — у нуль
 
 // [FW.53] Сторожовий лічильник зміни кампанії: якщо Солдат
 // застряг із недозібраною прошивкою (total=X), а Королева вже проповідує
@@ -1162,6 +1163,17 @@ static inline uint8_t EMA_Is_Warmed_Up(void) {
 // Розкладка зойку 0x55 і будівники (тіло · сентинел печатки) — спільні з Королевою й
 // host-тестами: ../common/ota_rerequest_wire.h. Коли саме зойкати — Фаза 4.5.
 
+// [FW.68] Службові uplink-кадри (0x55 · 0x56 · 0x57) mesh-естафета не пересилає: байт
+// 11 у них — не TTL (у зойку 0x55 це бітмап чанків 32..39), і декремент «TTL» мовчки
+// псував би запит. Класифікація та сама, що в Королеви: маркер, а для 0x56/0x57 —
+// маркер із магією.
+static inline uint8_t Soldier_Is_Uplink_Control(const uint8_t p[16])
+{
+    return (uint8_t)(p[0] == OTA_REQ_MARKER ||
+                     (p[0] == SYNC_REQ_MARKER && p[10] == SYNC_REQ_MAGIC_BYTE) ||
+                     Device_Event_Is(p));
+}
+
 // =====================================================================
 // === 1.13. FW.23 Печатка OTA (Ed25519) перед Flash ====================
 // =====================================================================
@@ -1186,6 +1198,7 @@ static void Reset_Ota_Assembly(void) {
     ota_seal_segments_received = 0;
     ota_last_chunk_rx_tick     = 0;
     ota_total_mismatch_streak  = 0;
+    ota_rereq_backoff          = 0;
 }
 
 // =====================================================================
@@ -2057,9 +2070,10 @@ int main(void)
 
     // 2-3. Шифруємо і відправляємо. [ARCH.41-C] У grace-вікні замість
     // телеметрії летить hello 0x56 (DID + Vcap + TIME_REQ): Королева
-    // відповість маяком (перемотка last_beacon_time), а OTA-рефлекс живе —
-    // він стріляє на БУДЬ-ЯКИЙ валідний RX ще до розбору маркера. Вікно
-    // слухання (Фаза 4.5) спільне — маяк буде почуто цим же пробудженням.
+    // відповість маяком (перемотка last_beacon_time) — і лише ним: рефлексу
+    // на hello вона не стріляє (FW.68), бо вухо бере один пакет, і першим мусить
+    // бути маяк. Вікно слухання (Фаза 4.5) спільне — маяк буде почуто цим же
+    // пробудженням; OTA чекає кінця grace.
     if (grace_hello) {
         uint8_t hello_plain[SYNC_REQ_PACKET_SIZE];
         Build_Time_Sync_Request_Payload(hello_plain, tree_did,
@@ -2067,8 +2081,9 @@ int main(void)
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)hello_plain, 4, (uint32_t*)encrypted_payload, 1000);
         HAL_Delay(Lora_Phy_Send(encrypted_payload, 16, LORA_PHY_PREAMBLE_SYMBOLS));
         // Cooldown НЕ чіпаємо: grace-hello летить КОЖНЕ пробудження навмисно
-        // (замість телеметрії — Королеві потрібен uplink для OTA-рефлексу);
-        // cooldown належить сплячому drift-watchdog'у (0x56 ПОВЕРХ телеметрії).
+        // (замість телеметрії — щоб кожне пробудження дало Королеві привід
+        // перемотати маяк); cooldown належить сплячому drift-watchdog'у
+        // (0x56 ПОВЕРХ телеметрії).
     } else {
         // [ARCH.102] Прапорець спільний для обох збірок: у CCM-гілці передача
         // умовна (білд кадру може не вдатись), у ECB — безумовна, а лічильник
@@ -2301,10 +2316,18 @@ int main(void)
                 if (decrypted_rx_payload[0] == OTA_SEAL_MARKER) {
                     // [FW.68] Трейлер чужої кампанії (total ≠ total нашого збирання тіла) —
                     // шум: інакше він мовчки перезаписав би печатку, і чесне тіло дістало б REJECT.
+                    // Іде в той самий streak, що й чужий чанк тіла (FW.53): дерево, яке проспало
+                    // свою печатку, на N поспіль чужих блоках відпускає мертву кампанію й може
+                    // приєднатись до нової, а не чекає вічно.
                     if (!Ota_Seal_Block_Belongs((const uint8_t*)decrypted_rx_payload,
                                                 incoming_lora_size, ota_total_chunks)) {
+                        if (ota_total_chunks != 0 &&
+                            ++ota_total_mismatch_streak >= OTA_MISMATCH_RESET_THRESHOLD) {
+                            Reset_Ota_Assembly();
+                        }
                         break;
                     }
+                    ota_total_mismatch_streak = 0;
                     const uint8_t segs_before = ota_seal_segments_received;
                     int rc = Ota_Seal_Parse_Chunk((const uint8_t*)decrypted_rx_payload,
                                                   incoming_lora_size,
@@ -2315,8 +2338,11 @@ int main(void)
                     // (сюди ми б не зайшли); rc=-1 ⇒ невалідна (size/seg_idx) —
                     // мовчки відкидаємо, як ефірний шум.
                     (void)rc;
-                    // Новий блок печатки — теж нове слово: лічильник тиші в нуль (FW.27-B).
-                    if (ota_seal_segments_received != segs_before) ota_silent_wakeups = 0;
+                    // Новий блок печатки — теж нове слово: лічильник тиші й відступ — у нуль.
+                    if (ota_seal_segments_received != segs_before) {
+                        ota_silent_wakeups = 0;
+                        ota_rereq_backoff  = 0;
+                    }
 
                     // [FW.23] Печатка могла прийти ПІСЛЯ останнього чанка тіла —
                     // тоді саме вона довершує OTA. Якщо тіло вже зібране й тепер є
@@ -2378,17 +2404,6 @@ int main(void)
                     }
                     ota_total_mismatch_streak = 0;
 
-                    // [FW.23] При першому чанку нового OTA-вікна стираємо
-                    // стару печатку з пам'яті — нова прошивка прийде з новою
-                    // істиною. Печатка-чанки (0x9B) можуть надходити у будь-
-                    // якому порядку, тому обнуляємо саме на світанку, а не на
-                    // заході OTA-вікна. Ціна: блоки печатки, що прийшли ДО
-                    // першого чанка тіла, теж гинуть (00_07 FW.68).
-                    if (ota_total_chunks == 0) {
-                        memset(received_ota_seal, 0, sizeof(received_ota_seal));
-                        received_ota_version = 0;
-                        ota_seal_segments_received = 0;
-                    }
                     ota_total_chunks = incoming_total;
 
                     // Явне приведення типів для розрахунку зміщення (MISRA C)
@@ -2412,6 +2427,7 @@ int main(void)
                         // перепитати про пропуски.
                         ota_last_chunk_rx_tick = HAL_GetTick();
                         ota_silent_wakeups = 0;
+                        ota_rereq_backoff  = 0;
 
                         // [FW.23] Останній чанк ТІЛА міг прийти раніше за печатку
                         // (Королева шле тіло → потім печатку). Ota_Seal_Try_Finalize
@@ -2462,7 +2478,8 @@ int main(void)
                 // релей сміття марнує мДж. Star-only = свідома ціна фліпа
                 // (ARCH.43 резолюція «прийняти на поточному TRL»); mesh
                 // повертається лише з addressing-шаром ARCH.43.
-                else if (incoming_lora_size == 16) {
+                else if (incoming_lora_size == 16 &&
+                         !Soldier_Is_Uplink_Control((const uint8_t*)decrypted_rx_payload)) {
                     // [FW.18b] Байт 11 — бітфілд: живість пакета = лише
                     // нижні 3 біти TTL, верхні 5 — лічильник origin-Солдата
                     // (інакше чужий ненульовий лічильник = вічний релей).
@@ -2531,13 +2548,14 @@ int main(void)
         const OtaReqKind req_kind = Ota_Req_Kind(ota_total_chunks, ota_chunks_received,
                                                  ota_seal_segments_received);
         if (Ota_Req_Silence_Due(req_kind, (uint8_t)(ota_last_chunk_rx_tick != 0),
-                                &ota_silent_wakeups)) {
+                                &ota_silent_wakeups, ota_rereq_backoff)) {
             uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
 
             uint8_t any_missing = (req_kind == OTA_REQ_BODY)
                 ? Ota_Req_Build_Body(tree_did, ota_total_chunks, ota_chunk_received,
                                      sizeof(ota_chunk_received), req_payload)
-                : Ota_Req_Build_Seal(tree_did, ota_seal_segments_received, req_payload);
+                : Ota_Req_Build_Seal(tree_did, ota_seal_segments_received, ota_total_chunks,
+                                     req_payload);
             if (any_missing) {
                 uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
                 // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
@@ -2547,8 +2565,10 @@ int main(void)
                 HAL_Delay(Lora_Phy_Send(encrypted_req, OTA_REQ_PACKET_SIZE,
                                         LORA_PHY_PREAMBLE_SYMBOLS));
                 // Лічильник у нуль: Королева віддаватиме борг по блоку на наступних
-                // кадрах; блок, що загубиться, перепитає наступна десята тиха ніч.
+                // кадрах; блок, що загубиться, перепитає наступна тиха серія. Без відповіді
+                // серія подвоюється (OTA_REREQUEST_BACKOFF_MAX), новий блок скидає відступ.
                 ota_silent_wakeups = 0;
+                if (ota_rereq_backoff < OTA_REREQUEST_BACKOFF_MAX) ota_rereq_backoff++;
             }
         }
     }

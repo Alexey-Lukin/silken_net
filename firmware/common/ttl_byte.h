@@ -27,6 +27,9 @@
 #include <stdint.h>
 
 #define TTL_BYTE_TTL_MASK      0x07u
+/* TTL, з яким кадр виходить від автора: менший — кадр ретрансльовано сусідом, і вухо
+ * автора вже закрите (рефлекс Королеви — лише на кадр із перших рук, ⚖️ FW.68). */
+#define TTL_BYTE_ORIGIN        3u
 #define TTL_BYTE_INVALID_SHIFT 3u
 #define TTL_BYTE_INVALID_MAX   31u /* 5 біт на дроті; RAM-лічильник сатурує @255 */
 
