@@ -133,10 +133,12 @@ static inline uint8_t Silken_Beacon_Commit(const SilkenCalendarOps *ops, uint32_
     const uint32_t target = Silken_Beacon_Clock_Target(before, beacon_ts, *sync_mark);
     ops->write_wall(target);
     const uint32_t after = ops->read_wall();
+    // cppcheck-suppress identicalConditionAfterEarlyExit // між читаннями write_wall; 2.13 бере непрямий виклик за чистий
     if (after == 0u) {                          /* кроку не зміряти: вважаємо, що крок НАЗАД ліг */
         if (*wake_base != 0u && target < before) *wake_base -= before - target;
         return 0u;
     }
+    // cppcheck-suppress duplicateExpression // те саме: after — перечитування ПІСЛЯ запису
     if (*wake_base != 0u) *wake_base += after - before;
     if (after != target && after != target + 1u) return 0u;   /* запис не ліг */
     *sync_mark = target;

@@ -16,8 +16,10 @@
 #   firmware/scripts/cppcheck.sh --misra     # + MISRA C:2012 advisory (non-gating)
 #   CPPCHECK=/path/to/cppcheck firmware/scripts/cppcheck.sh   # override binary
 #
-# Local install (no system package needed):
-#   conda create -n silken_lint -c conda-forge cppcheck && conda activate silken_lint
+# Local install (no system package needed) — pin CI's minor: a newer cppcheck
+# classifies diagnostics differently, so its green proves nothing about CI
+# (firmware skill gotcha 12):
+#   conda create -n silken_lint -c conda-forge cppcheck=2.13 && conda activate silken_lint
 # CI installs apt's cppcheck on a pinned ubuntu image (see ci.yml: firmware_lint).
 #
 # Why these project-wide suppressions are FALSE POSITIVES for THIS codebase
