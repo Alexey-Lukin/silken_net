@@ -19,7 +19,7 @@
  *
  * Дзеркало бекенда: TelemetryUnpackerService (маски ідентичні, golden
  * у test_soldier_logic.c ↔ telemetry_unpacker_service_spec.rb).
- * Канон: 03_01 §1.6 (wire) + 03_03 §5.4 (лічильник) + 00_07 FW.18b.
+ * Канон: 03_05 §2.1 (wire) + 03_03 §5.4 (лічильник) + 00_07 FW.18b.
  */
 #ifndef SILKEN_TTL_BYTE_H
 #define SILKEN_TTL_BYTE_H
