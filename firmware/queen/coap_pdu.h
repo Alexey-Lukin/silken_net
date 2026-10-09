@@ -156,6 +156,19 @@ static inline int Coap_Reply_Confirms(const uint8_t *in, uint16_t len,
     return Coap_Code_Class(h.code) == 2u;
 }
 
+/* [FW.60] 4.xx на НАШ запит — сервер відмовив по суті (OTA-кампанію знято чи
+ * доставлено; пакунки ще не прогріто), а не транспорт: тоді викликач гасить стан, що
+ * цей запит породив, а живу кампанію наступний hint увімкне знову. */
+static inline int Coap_Reply_Client_Error(const uint8_t *in, uint16_t len,
+                                          uint16_t expect_mid)
+{
+    CoapHead h;
+    if (!Coap_Parse_Head(in, len, &h)) return 0;
+    if (h.type == 3u) return 0;                     /* RST */
+    if (h.type == 2u && h.message_id != expect_mid) return 0; /* чужий ACK */
+    return Coap_Code_Class(h.code) == 4u;
+}
+
 /* [FW.60] Payload з підтвердженої відповіді: той самий вердикт, що
  * Coap_Reply_Confirms, плюс skip token (TKL) і опцій до маркера 0xFF —
  * досі RX-байти після заголовка викидались, хоч і прилітали (golden-вектор

@@ -2720,6 +2720,18 @@ static void Queen_Poll_Downlink(void)
     }
 
     if (!g_ota_fetch_pending) return;
+    // [FW.60 ⚖️ делеговано 2026-10-09] Курсор дійшов кінця, а кампанія не ожила —
+    // відкинутий пакет (CRC тіла, конверт понад стелю) лишив діру. Чого бракує, каже
+    // збирання, не курсор (Ota_Fetch_Rewind, ota_window.h); перемотка — до циклу, щоб
+    // діра дісталась бюджетові цього ж флашу.
+    if (g_ota_fetch_next_ch >= g_ota_fetch_total && !ota_is_active) {
+        const uint8_t body_complete = (uint8_t)(pending_ota_size > 0u &&
+                                                ota_chunk_bitmap == 0u &&
+                                                ota_chunks_received == 0u);
+        g_ota_fetch_next_ch = Ota_Fetch_Rewind(g_ota_fetch_total, OTA_SEAL_TRAILER_CHUNKS,
+                                               body_complete, ota_chunk_bitmap,
+                                               seal_segments_received);
+    }
     for (uint8_t f = 0; f < QUEEN_OTA_FETCH_PER_FLUSH &&
                         g_ota_fetch_next_ch < g_ota_fetch_total; f++) {
         HAL_IWDG_Refresh(&hiwdg);
@@ -2742,7 +2754,14 @@ static void Queen_Poll_Downlink(void)
         const uint8_t *envelope = NULL;
         uint16_t env_len = 0;
         if (!Coap_Reply_Extract_Payload(poll_reply, reply_len, coap_mid,
-                                        &envelope, &env_len)) return; // 4.04 = кампанія зникла
+                                        &envelope, &env_len)) {
+            // 4.xx — сервер відмовив по суті (кампанію знято сторожем ARCH.59 чи
+            // доставлено; пакунки ще не прогріто): pending гасне, а живу кампанію
+            // наступний hint увімкне знову. Без цього знята кампанія коштувала б
+            // розмову щофлашу довіку. Решта (RST · чужий ACK · формат) — транспорт.
+            if (Coap_Reply_Client_Error(poll_reply, reply_len, coap_mid)) g_ota_fetch_pending = 0;
+            return;
+        }
         if (env_len == 0u) return;
         (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
         g_ota_fetch_next_ch++;

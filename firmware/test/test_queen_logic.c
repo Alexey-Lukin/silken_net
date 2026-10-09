@@ -2577,6 +2577,27 @@ TEST(test_ota_resurrect_silent_mid_assembly) {
     ASSERT_EQ(Ota_Late_Trailer_Resurrects(OTA_SEAL_ALL_RECEIVED, OTA_SEAL_ALL_RECEIVED, 0, 512, 0, 2), 0);
 }
 
+/* [FW.60 ⚖️ 2026-10-09] Курсор фетчу на відкинутому пакеті: чого бракує, каже
+ * збирання. Кампанія тут — 4 пакети тіла + 7 трейлера = 11. */
+TEST(test_fw60_rewind_to_first_missing_body_package) {
+    /* пакет 1 тіла відкинуто (CRC), 0/2/3 лягли → курсор назад на 1 */
+    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 0, 0x000Du, 0x00u), 1);
+    /* нічого не лягло — від нуля */
+    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x7Fu), 0);
+}
+
+TEST(test_fw60_rewind_to_first_missing_trailer_block) {
+    /* тіло зібране, бракує seg 3 (біт 2) і seg 6 → пакет 4 + 2 = 6 */
+    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, 0x5Bu), 6);
+}
+
+TEST(test_fw60_rewind_nothing_missing_keeps_cursor_at_end) {
+    /* усе є — фетчити нема чого (кампанію оживить сама збірка) */
+    ASSERT_EQ(Ota_Fetch_Rewind(11, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, OTA_SEAL_ALL_RECEIVED), 11);
+    /* виродження: без тіла — нема куди вертатись */
+    ASSERT_EQ(Ota_Fetch_Rewind(7, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x00u), 7);
+}
+
 TEST(test_ota_resurrect_e2e_with_trailer_store) {
     /* Інтеграція з релеєм: 7 сегментів по одному — воскресіння спрацьовує
      * рівно на сьомому, не раніше */
@@ -3122,6 +3143,9 @@ int main(void)
     RUN(test_ota_resurrect_silent_on_incomplete_trailer);
     RUN(test_ota_resurrect_silent_without_body);
     RUN(test_ota_resurrect_silent_mid_assembly);
+    RUN(test_fw60_rewind_to_first_missing_body_package);
+    RUN(test_fw60_rewind_to_first_missing_trailer_block);
+    RUN(test_fw60_rewind_nothing_missing_keeps_cursor_at_end);
     RUN(test_ota_resurrect_e2e_with_trailer_store);
 
     printf("\n  LoRa RX Ring Buffer (FW.3):\n");

@@ -367,6 +367,21 @@ TEST(test_coap_parse_official_note_reply) {
     ASSERT_FALSE(Coap_Reply_Confirms(reply, n, 0x1111)); /* чужий ACK */
 }
 
+TEST(test_coap_reply_client_error_names_refusal_not_transport) {
+    /* [FW.60] 4.xx на наш MID — відмова по суті: Королева гасить OTA-pending. */
+    uint8_t r[8]; uint16_t n = 0;
+    ASSERT_TRUE(At_Hex_Decode(r, sizeof r, "60841234", &n));  /* ACK 4.04 */
+    ASSERT_TRUE(Coap_Reply_Client_Error(r, n, 0x1234));
+    ASSERT_FALSE(Coap_Reply_Client_Error(r, n, 0x9999));      /* чужий ACK */
+    ASSERT_TRUE(At_Hex_Decode(r, sizeof r, "60811234", &n));  /* ACK 4.01 (MAC) */
+    ASSERT_TRUE(Coap_Reply_Client_Error(r, n, 0x1234));
+    ASSERT_TRUE(At_Hex_Decode(r, sizeof r, "60451234", &n));  /* 2.05 — не відмова */
+    ASSERT_FALSE(Coap_Reply_Client_Error(r, n, 0x1234));
+    ASSERT_TRUE(At_Hex_Decode(r, sizeof r, "70001234", &n));  /* RST — транспорт */
+    ASSERT_FALSE(Coap_Reply_Client_Error(r, n, 0x1234));
+    ASSERT_FALSE(Coap_Reply_Client_Error(r, 3, 0x1234));       /* куций */
+}
+
 TEST(test_coap_reply_rejects) {
     uint8_t r[8]; uint16_t n = 0;
     ASSERT_TRUE(At_Hex_Decode(r, sizeof r, "60841234", &n)); /* ACK 4.04 */
@@ -844,6 +859,7 @@ int main(void)
     RUN(test_coap_build_guards);
     RUN(test_coap_parse_official_note_reply);
     RUN(test_coap_reply_rejects);
+    RUN(test_coap_reply_client_error_names_refusal_not_transport);
 
     printf("\n— Повна розмова —\n");
     RUN(test_conversation_happy_path);
