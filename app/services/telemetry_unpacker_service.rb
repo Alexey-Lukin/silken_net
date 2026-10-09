@@ -292,7 +292,7 @@ class TelemetryUnpackerService < ApplicationService
       # залишалося у звичному 0..62 діапазоні (≤1.6% resolution loss vs
       # legacy 0..63). Так зберігається tokenomic invariant
       # (`Wallet#lock_and_mint!` поріг 10000 SCC), а wire-байт виправлено
-      # під дизайн з docs/03_01 §1.6 і docs/03_05 §FW.2.
+      # під дизайн з docs/03_04 (StatusByte) і docs/03_05 §2.1.
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
       # [FW.18b] Байт 11 — бітфілд [thr_invalid:5 | TTL:3], One-Home
       # firmware/common/ttl_byte.h. Стара прошивка (чистий TTL ≤ 5) дає

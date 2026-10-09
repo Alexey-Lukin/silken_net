@@ -410,10 +410,11 @@ URI-Path: third segment = queen_uid (Flash-provisioned або "UNPROV-{HEX}") �
 Rails → CoAP downlink → queen RAM assembly (pending_ota_bytecode[8192])
 Queen → LoRa broadcast (рефлекторний постріл після кожного RX):
   Chunk size: 11 bytes payload + 5 bytes header = 16 bytes (1 AES block)
-  Format: [0x99][index:2][total:2][bytecode:11]
+  Format: [0x99][index:2][total:2][bytecode:11]; за тілом — 7 блоків печатки [0x9B] (FW.23, 03_06 §4)
   AES-128-ECB encrypted before TX (LoRa OTA reflex використовує той самий LoRa key, post-ARCH.42)
-  Pacing: 60ms delay між чанками
+  Pacing: один блок на кожен почутий uplink (рефлекс-постріл) під лімітером ефіру FW.61 — фіксованої затримки немає
 Soldier:
+  APPLY: CRC32 → KPUB → RITE → Ed25519 → свіжість SEC.20 (03_06 §4)
   MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000
   Magic check: 0x45544952 ("RITE") → load OTA bytecode
   Else → load embedded lorenz_bytecode[]

@@ -566,9 +566,9 @@ Duty cycle = T_airtime / T_period       (кадр 30B rev2.1, T_air = 226.3 мс
 - `Acoustic` (byte 7): лічильник акустичних подій — з HW.30 (пʼєзо зрізано) писача немає, завжди 0; `0xFE` — сентинел «час невідомий» (ARCH.41-B), `0xFF` — код паніки (panic-кадр нижче); доля слоту — [`00_07`](00_07_Action_Plan_Tracker) FW.59
 - `ΔT` (bytes 8-9): `delta_t_seconds` — час між пробудженнями (швидкість метаболізму EBFC)
 - `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; логіка й пакування — дім [`03_04`](03_04_mruby_Lorenz_Attractor); значення `status`: `0`=homeostasis · `1`=stress · `2`=anomaly · `3`=**`vm_error`** — mruby VM-збій, ⛔ **НЕ** tamper [SLASH-1 P0]; фізичний tamper їде PanicFlag-каналом, з HW.30 без пускача — пʼєзо зрізано. panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
-- `TTL byte` (byte 11): [FW.18b] бітфілд `[thr_invalid:5|TTL:3]` — нижні 3 біти Time to Live (початково 3, panic 5; −1 на hop), верхні 5 — лічильник відкинутих OTA-порогів, з HW.30 завжди 0 (писача немає; ECB-кадр лишається як є, а CCM-біти diag віддає пакет wire-rev2.2, §2.1) (wire-дім [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA))
+- `TTL byte` (byte 11): [FW.18b] бітфілд `[thr_invalid:5|TTL:3]` — нижні 3 біти Time to Live (початково 3, panic 5; −1 на hop), верхні 5 — лічильник відкинутих OTA-порогів, з HW.30 завжди 0 (писача немає; ECB-кадр лишається як є, а CCM-біти diag віддає пакет wire-rev2.2, §2.1)
 - `FwRep` (bytes 12-13): **[SEC.20] Wire-звіт contract-стану**, BE uint16 — `[semantic:1 | reverted:1 | hiwater & 0x3FFF]` (`firmware/common/fw_report.h`, компонує `Fw_Report_Compose`). ⛔ **НЕ «Firmware Version ID»** — та константа лишається лише як `semantic=0`-легасі-гілка.
-- `Gossip` (byte 14): **[FW.20-S2 §5]** у non-panic кадрі — `soldier_unix_ts & 0xFF` (час-gossip піггібек); у panic-кадрі той самий байт належить SEC.10 frame-counter'у, тобто **значення залежить від ТИПУ кадру** — розкладка обох у [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA). ⛔ Не описувати як «резерв, не використовується».
+- `Gossip` (byte 14): **[FW.20-S2 §5]** у non-panic кадрі — `soldier_unix_ts & 0xFF` (час-gossip піггібек); у panic-кадрі той самий байт належить SEC.10 frame-counter'у, тобто **значення залежить від ТИПУ кадру** — розкладка обох — рядок `PAD` нижче. ⛔ Не описувати як «резерв, не використовується».
 - `PAD` (byte 15): нульовий padding у non-panic кадрі; у **panic**-кадрі байти 14-15 разом несуть SEC.10 frame counter (BE).
 
 > ⚖️ **Кільце дому РОЗВʼЯЗАНО 2026-09-04 (DOC-T.98): ця секція є домом байтової розкладки uplink-пакета, обидві ери.** Підстава — оголошений периметр: Мета цього документа дослівно називає «структуру зашифрованих пакетів», а Мета [`03_01`](03_01_Firmware_Lifecycle_and_DMA) — «життєвий цикл · переходи сну · ISR», де байтової мапи немає; реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard) призначає байт-позиції сюди. [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA) тримає САМУ ФАЗУ пакування (коли біжить, яка критична секція) і реферить сюди. ⛔ **Не заводити другої мапи — поки їх було дві, вони розійшлись на трьох байтах, і кожна сторона мала свою половину правди:** точна семантика `FwContractReport`/`gossip_ts_lsb` була в копії, а тут стояло хибне «`Vcap` = напруга суперконденсатора», тобто порушення [ARCH.99], який `CLAUDE.md §6` тримає інлайн.
@@ -708,6 +708,8 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 (заголовок 7 Б = OTA_COAP_HEADER_SIZE; білдер — OtaPackagerService, pack("Cnnn"))
 ```
 
+За тілом іде трейлер печатки [FW.23] — 7 сирих 16-байтних блоків `[0x9B]` (6 сегментів Ed25519 + версія) без `len` і CRC16: Королева ретранслює їх буква в букву, цілісність тримає сама печатка; формат — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
+
 ---
 
 ### 2.4 Queen → Soldier: OTA LoRa Broadcast (AES-128-ECB)
@@ -721,6 +723,8 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 | (OTA)  |  [MSB] |  [LSB] |  [MSB] |  [LSB] |                        |
 +--------+--------+--------+--------+--------+--------+--------+--------+
 ```
+
+Тими самими 16-байтними блоками за тілом летить трейлер печатки `[0x9B]` (FW.23): APPLY лише після CRC32 → KPUB → `RITE` → Ed25519 → свіжість SEC.20 — [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning).
 
 ---
 

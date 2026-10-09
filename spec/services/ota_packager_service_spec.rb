@@ -311,8 +311,8 @@ RSpec.describe OtaPackagerService do
         expect(verify_key(cluster_id).verify(seal, described_class.seal_message(payload, 42, 5))).to be(true)
       end
 
-      # Несуче: пакет кампанії переготовлюють (`Ota::PackageStore` перегріває кеш, окремо
-      # пакує `OtaTransmissionWorker`), а Королева ретранслює ті сегменти, що дотягнула —
+      # Несуче: пакет кампанії переготовлюють (`Ota::PackageStore` — при dispatch'і й знову,
+      # коли `GatewayStalenessSweepWorker` перегріває кеш), а Королева ретранслює ті сегменти, що дотягнула —
       # випадковий підпис зшив би трейлер із двох печаток.
       it "is deterministic — re-packaging a campaign yields the same seal" do
         first = described_class.compute_seal(payload, 42, 5, cluster_id: cluster_id)

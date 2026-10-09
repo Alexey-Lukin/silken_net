@@ -705,7 +705,7 @@ if (mrb) {
 2. `OtaPackagerService` різбиває на 512-байтні CoAP-чанки `[0x99][idx:2][total:2][len:2][bytecode][crc16:2]`; Королева тягне їх сама (`GET ota/<uid>?v=&ch=` — poll-fetch [FW.60], [`03_02 §4а`](03_02_Queen_Gateway_Firmware))
 3. Queen збирає chunks у `pending_ota_bytecode[8192]` (bitmap-дедуп)
 4. Queen передає chunks Soldier через LoRa Reflex Shot після кожного RX
-5. Soldier збирає chunks у `ota_buffer`, перевіряє CRC32 (ISO 3309)
+5. Soldier збирає chunks у `ota_buffer`, за ними — 7 блоків печатки `[0x9B]` (FW.23); APPLY лише після CRC32 (ISO 3309) → KPUB → `RITE` → Ed25519 → свіжість версії SEC.20 ([`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning))
 6. При успіху — записує у Flash (`0x0803F000`), виконує `NVIC_SystemReset()`
 7. Після рестарту VM завантажує новий контракт
 

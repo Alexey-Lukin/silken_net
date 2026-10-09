@@ -884,7 +884,7 @@ if (pending_ota_size > 0 &&
 |----------|------|-----------|
 | Дублікат з ІНШИМ payload | `test_ota_duplicate_with_different_payload_preserves_original` | Anti-tamper: production guard `!ota_chunk_received[chunk_idx]` блокує перезапис, оригінальний payload незмінний байт-у-байт |
 | STOP2 між OTA-чанками (out-of-order) | `test_ota_stop2_simulation_chunks_arrive_out_of_order` | bitmap-стан переживає множинні Process-цикли; offsets коректні після злиття |
-| Той самий chunk після сну (anti-replay) | `test_ota_stop2_simulation_duplicate_after_sleep_still_rejected` | Counter не подвоюється при повторному reflex shot Королеви |
+| Той самий chunk після сну (дедуп у межах збирання, не транспортний анти-повтор) | `test_ota_stop2_simulation_duplicate_after_sleep_still_rejected` | Counter не подвоюється при повторному reflex shot Королеви |
 | `total_chunks=0` malformed packet | `test_ota_total_chunks_zero_rejected` | Defence-in-depth: degenerate completion → CRC32 fail → no Flash write (not crash) |
 | Seal trailer state cross-cycle | `test_seal_trailer_out_of_order_completes_with_version` | bitmask сегментів OR-агрегується по 7 окремих викликах у довільному порядку (кожен — окреме пробудження; STOP2 зберігає SRAM) → `0x7F`, печатка й версія цілі |
 | Seal trailer idempotent overwrite | `test_seal_trailer_duplicate_segment_is_idempotent` | Дубль того самого сегменту не корумпує `received_ota_seal[]` |

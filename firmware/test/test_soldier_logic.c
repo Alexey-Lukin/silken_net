@@ -913,7 +913,8 @@ TEST(test_ota_stop2_simulation_chunks_arrive_out_of_order) {
 }
 
 TEST(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected) {
-    /* Anti-replay через сон: chunk прийшов, sleep, той самий chunk прийшов
+    /* Дедуп через сон (у межах одного збирання — не транспортний анти-повтор,
+     * якого OTA-кадри не мають): chunk прийшов, sleep, той самий chunk прийшов
      * знов (наприклад, Queen reflex shot повторив бо ми не ACK'нули). */
     OTA_Init();
     uint8_t pkt[11] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
