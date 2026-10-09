@@ -9,7 +9,7 @@ FAIL однозначно вказує на HAL/кремній.
 Шлях звіту — той, що має прошивка: POST у `firmware/soldier/main.c`
 (`#if defined(CCM_SELFTEST)`) кладе результат у два глобали,
 `g_ccm_selftest_failed` і `g_sym_selftest_failed`, а UART-виводу Солдат не має
-зовсім. До 2026-09-28 цей скрипт чекав UART-звіту, якого не друкує ніхто.
+зовсім.
 
     02_selftest_attest.py --plan                       # кроки дня
     02_selftest_attest.py --elf soldier.elf [--sn SN]  # прочитати глобали через SWD
@@ -34,7 +34,8 @@ import sys
 
 PLAN = """\
 — план крипто-атестації —
-1. Бенч-збірка .elf Солдата з -DCCM_SELFTEST (повний .elf — board-freeze, 00_07 FW.46).
+1. Бенч-збірка .elf Солдата з -DCCM_SELFTEST: на LoRa-E5 mini — таргет soldier_lora_e5,
+   кроки збірки — RUNBOOK 2.1 (повний .elf плати вузла — board-freeze, 00_07 FW.46).
 2. firmware/scripts/bench/00_flash.sh --elf soldier.elf --execute
 3. Дати платі завантажитись: POST іде в main() до головного циклу.
 4. 02_selftest_attest.py --elf soldier.elf  → читання обох глобалів через SWD
