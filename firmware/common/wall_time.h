@@ -78,10 +78,12 @@ static inline uint32_t Silken_Wall_Elapsed_Seconds(uint32_t wall_now, uint32_t s
 
 /*
  * [SEC.42] Межа кроку годинника НАЗАД за маяком часу: підлога (ціла секунда маяка й
- * латентність ефіру) + дрейф LSE від останнього синку. 100 ppm — допуск кварцу (±20 ppm)
- * плюс його тягнення навантаженням («десятки ppm», 02_01 §3.1) із запасом. Мітку синку
- * губить кожен скид SRAM, а календар у backup-домені тим часом несе весь дрейф від синку,
- * тож без мітки межа бере найдовшу тишу, яку лічить сторож синку на каденсі CCM-ери.
+ * латентність ефіру) + дрейф від останнього синку. 100 ppm — допуск кварцу LSE (±20 ppm)
+ * плюс його тягнення навантаженням («десятки ppm», 02_01 §3.1) із запасом; ⚠️ передумова —
+ * RTC на LSE: на LSI (відсотки) чесний маяк клемпився б щоразу. Мітку синку губить кожен
+ * скид SRAM, а календар у backup-домені тим часом несе дрейф від синку, тож без мітки межа
+ * бере найдовшу тишу, яку дозволяє сторож синку на каденсі CCM-ери (1440 пробуджень ×
+ * ≈ 1.8 год ≈ 108 діб), із запасом. Межа обмежує КРОК, не суму кроків.
  */
 #define SILKEN_BEACON_BACKSTEP_FLOOR_S      2u
 #define SILKEN_BEACON_BACKSTEP_DRIFT_DIV    10000u            /* 1 с на 10 000 с = 100 ppm */
@@ -92,7 +94,6 @@ static inline uint32_t Silken_Wall_Elapsed_Seconds(uint32_t wall_now, uint32_t s
  * лише старі мітки, а майбутньої без KEYB не підробити. Назад — не далі за межу вище:
  * більший крок КЛЕМПИТЬСЯ до неї, а не ігнорується, тож Солдат, що побіг уперед,
  * сходиться до UTC. since_sync_wall — мітка останнього синку в часі календаря.
- * wall_now = 0 (RTC не прочитано) → маяк як є.
  */
 static inline uint32_t Silken_Beacon_Clock_Target(uint32_t wall_now, uint32_t beacon_ts,
                                                   uint32_t since_sync_wall)
@@ -105,28 +106,37 @@ static inline uint32_t Silken_Beacon_Clock_Target(uint32_t wall_now, uint32_t be
     return (back <= max_back) ? beacon_ts : (wall_now - max_back);
 }
 
-/*
- * [SEC.42] Застосування маяка — ОДНА точка для main.c і host-тестів. Крок календаря
- * зсуває й базу delta_t на той самий крок, тож наступний delta_t міряє лише справжній
- * проміжок: жоден крок годинника — повтор без ключа, похибка Королеви, чесний синк
- * уперед — грошей не торкається, а межа вище стереже лише абсолютний час. База 0
- * (попереднього пробудження немає) і нечитаний RTC базу не рухають.
- */
+/* Шов календаря: читання (0 = RTC не прочитано) і best-effort запис, який судить перечитування. */
 typedef struct {
-    uint32_t clock_ts;    /* що писати в календар і в мітку синку */
-    uint32_t base_wall;   /* база delta_t після кроку */
-    uint8_t  clamped;     /* крок назад обрізано межею — це не повний синк */
-} SilkenBeaconStep;
+    uint32_t (*read_wall)(void);
+    void     (*write_wall)(uint32_t unix_ts);
+} SilkenCalendarOps;
 
-static inline SilkenBeaconStep Silken_Beacon_Apply(uint32_t wall_now, uint32_t beacon_ts,
-                                                   uint32_t since_sync_wall, uint32_t base_wall)
+/*
+ * [SEC.42] Застосування маяка — ОДНА функція для main.c і host-тестів, разом зі станом,
+ * який воно рухає. База delta_t іде за ФАКТИЧНИМ кроком календаря, перечитаним після
+ * запису, а не за наміром: невдалий чи частковий запис (SetTime так, SetDate ні) гроші не
+ * зачіпає, а наступний delta_t міряє справжній проміжок, хоч би звідки прийшов крок.
+ * ⚠️ Залишок — до секунди на застосований маяк: календар судиться цілими секундами, а запис
+ * починає секунду наново. Мітку синку й сторож рухає лише запис, що ЛІГ; сторож скидає лише
+ * повний синк — обрізаний крок не скидає. Нечитаний RTC — календаря не чіпаємо.
+ * Повертає 1, коли запис ліг.
+ */
+static inline uint8_t Silken_Beacon_Commit(const SilkenCalendarOps *ops, uint32_t beacon_ts,
+                                           volatile uint32_t *sync_mark, uint32_t *wake_base,
+                                           uint16_t *watchdog_wakeups)
 {
-    SilkenBeaconStep s;
-    s.clock_ts  = Silken_Beacon_Clock_Target(wall_now, beacon_ts, since_sync_wall);
-    s.clamped   = (uint8_t)(s.clock_ts != beacon_ts);
-    s.base_wall = (base_wall == 0u || wall_now == 0u) ? base_wall
-                                                      : base_wall + (s.clock_ts - wall_now);
-    return s;
+    const uint32_t before = ops->read_wall();
+    if (before == 0u) return 0u;
+    const uint32_t target = Silken_Beacon_Clock_Target(before, beacon_ts, *sync_mark);
+    ops->write_wall(target);
+    const uint32_t after = ops->read_wall();
+    if (after == 0u) return 0u;                 /* кроку не зміряти — базу не руш */
+    if (*wake_base != 0u) *wake_base += after - before;
+    if (after != target && after != target + 1u) return 0u;   /* запис не ліг */
+    *sync_mark = target;
+    if (target == beacon_ts) *watchdog_wakeups = 0u;
+    return 1u;
 }
 
 /*

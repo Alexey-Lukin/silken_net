@@ -757,8 +757,10 @@ static void FW17_Restore_Key_Version(uint32_t did)
 // Час-пороги — у ПРОБУДЖЕННЯХ, не мілісекундах: HAL_GetTick заморожений у
 // STOP2, tick-різниця міряла лише active-час (~2-5 с/цикл) і розтягувала
 // інтервали у ~6-15× wall (та сама пастка, що FW.27-B тиша). Цикл 26-32 с
-// (IWDG-вікно) → пробудження і є wall-квант Солдата. ⚠️ Лише на цьому циклі:
-// армінг WUT і Standby його змінюють, і тоді ці пороги — на wall-мітки (00_07 FW.54).
+// (IWDG-вікно) → пробудження і є wall-квант Солдата. ⚠️ Правдиві ці пороги лише там, де
+// SRAM живе між пробудженнями І цикл ≈ 30 с, — такого режиму немає: цикл IWDG — це скид
+// (лічильники обнуляються щоразу), а WUT/STOP2 і Standby мають інший каденс; переведення
+// на wall-мітки — 00_07 FW.54.
 #define TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS 1440u     // ≈12 год без beacon'а → панікуємо
 #define TIME_SYNC_REQUEST_COOLDOWN_WAKEUPS 120u     // ≈1 год між повторними зойками
 #define TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS  20u      // ≈10 хв після boot перш ніж панікувати
@@ -1071,9 +1073,9 @@ static inline uint8_t Soldier_Pack_Gossip_Ts_Byte(uint32_t unix_ts)
 // сусід має ще старіший дрейф), повертаємо local_ts без змін.
 // ⛔ [SEC.42] Календаря цей годинник сусіда НЕ пише — ні назад, ні вперед: байт LSB
 // повторюється кожні 256 с, тож старий кадр декодується зсувом до ±127 с, а в CCM-ері він
-// ще й AAD, якого сусід без ключа відправника не автентифікує. Вживлюючи gossip, бери його
-// лише підказкою epoch_day, поки синку не було; Silken_Beacon_Apply він не годиться —
-// той бере крок уперед як є, бо маяка без KEYB не підробити, а gossip — підробити.
+// ще й AAD, якого сусід без ключа відправника не автентифікує. Безпечного вживання для
+// календаря в нього немає: без локального UTC (local_ts = 0 → 0) доби він не несе, а з ним
+// — підробний; Silken_Beacon_Commit він не годиться, бо та бере крок уперед як є.
 static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb)
 {
     if (local_ts == 0) return 0;  // cold-boot: gossip недостатньо
@@ -1356,6 +1358,8 @@ static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль ву
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
 static uint32_t Wall_Seconds_Now(void);          // [FW.49 S1] RTC-календар → unix-секунди
 static void Wall_Calendar_Set(uint32_t unix_ts); // [FW.49 S1] beacon-UTC → RTC-календар
+// [SEC.42] Шов календаря для Silken_Beacon_Commit (wall_time.h): запис судить перечитування.
+static const SilkenCalendarOps soldier_calendar_ops = { Wall_Seconds_Now, Wall_Calendar_Set };
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -2300,21 +2304,16 @@ int main(void)
                                          (uint32_t)decrypted_rx_payload[4];
 
                     if (beacon_ts != 0) {
-                        // [SEC.42] Маяк без MAC і FC: повтор старого ставив би годинник
-                        // назад і вкорочував наступний delta_t, тобто піднімав бали. Тож
-                        // крок календаря зсуває й базу delta_t (гроші він не чіпає), а назад
-                        // календар іде не далі за дрейф від останнього синку (wall_time.h).
-                        SilkenBeaconStep beacon_step = Silken_Beacon_Apply(Wall_Seconds_Now(), beacon_ts,
-                                                                           soldier_unix_ts, last_wakeup_timestamp);
-                        soldier_unix_ts            = beacon_step.clock_ts;
-                        soldier_unix_ts_local_tick = HAL_GetTick();
-                        last_wakeup_timestamp      = beacon_step.base_wall;
-                        // Обрізаний крок — не повний синк: сторож дрейфу далі лічить і попросить маяк.
-                        if (!beacon_step.clamped) wakeups_since_sync = 0;
-                        // [FW.49 S1] UTC у RTC-календар: wall-clock стає
-                        // абсолютним — delta_t/epoch_day переживають STOP2
-                        // без tick-екстраполяції (вона лишається фолбеком).
-                        Wall_Calendar_Set(beacon_step.clock_ts);
+                        // [SEC.42] Маяк без MAC і FC: повтор старого ставив би годинник назад і вкорочував
+                        // наступний delta_t, тобто піднімав бали. Застосування — одна функція (wall_time.h):
+                        // назад календар іде не далі за дрейф від останнього синку, база delta_t — за
+                        // ФАКТИЧНИМ кроком календаря, а мітка синку й сторож дрейфу — лише за записом, що ліг.
+                        // [FW.49 S1] UTC у RTC-календар: wall-clock стає абсолютним — delta_t/epoch_day
+                        // переживають STOP2 без tick-екстраполяції (вона лишається фолбеком).
+                        if (Silken_Beacon_Commit(&soldier_calendar_ops, beacon_ts, &soldier_unix_ts,
+                                                 &last_wakeup_timestamp, &wakeups_since_sync)) {
+                            soldier_unix_ts_local_tick = HAL_GetTick();
+                        }
                     }
 
                     // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9

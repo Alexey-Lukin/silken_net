@@ -42,19 +42,22 @@ queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
 
 # [SEC.42] Друга половина — носій ДИСЦИПЛІНИ, якої host-тест не бачить (main.c хост не
-# компілює): календар Солдата пише лише прийом маяка, і лише кроком Silken_Beacon_Apply
-# з міткою синку й базою delta_t — інакше повтор маяка без ключа знову вкорочує delta_t.
-# ⚠️ Стеля: читає текст main.c — виклик усередині іншої функції шаблон не відрізнить.
+# компілює): календар Солдата пише лише Silken_Beacon_Commit (wall_time.h) — вона ж рухає
+# мітку синку, базу delta_t і сторож, — і рівно один раз, з тим самим станом; іншого
+# писача (виклику Wall_Calendar_Set чи HAL_RTC_Set* поза його тілом) немає.
+# ⚠️ Стеля: читає текст main.c — виклик, розбитий інакше по рядках, дасть хибне червоне;
+# писача за межами main.c (тіло MX_RTC_Init з .ioc) шаблон не бачить.
 soldier: $(BINDIR)/test_soldier
 	@./$(BINDIR)/test_soldier
-	@grep -qE 'Silken_Beacon_Apply\(Wall_Seconds_Now\(\), beacon_ts,' ../soldier/main.c && \
-	 grep -qE '^[[:space:]]+soldier_unix_ts, last_wakeup_timestamp\);' ../soldier/main.c && \
-	 grep -qE '^[[:space:]]+last_wakeup_timestamp[[:space:]]+= beacon_step\.base_wall;' ../soldier/main.c || \
-	 { echo "FAIL [SEC.42]: прийом маяка не застосовує крок через Silken_Beacon_Apply з міткою синку й базою delta_t"; exit 1; }
-	@if grep -nE '^[^/*]*Wall_Calendar_Set\(' ../soldier/main.c | grep -vE 'Wall_Calendar_Set\((uint32_t unix_ts|beacon_step\.clock_ts)\)'; then \
-	  echo "FAIL [SEC.42]: календар пише щось, крім кроку маяка (beacon_step.clock_ts)"; \
+	@[ "$$(grep -cE 'Silken_Beacon_Commit\(&soldier_calendar_ops, beacon_ts, &soldier_unix_ts,$$' ../soldier/main.c)" = 1 ] && \
+	 grep -qE '^[[:space:]]+&last_wakeup_timestamp, &wakeups_since_sync\)\) \{$$' ../soldier/main.c || \
+	 { echo "FAIL [SEC.42]: прийом маяка мусить кликати Silken_Beacon_Commit рівно раз — із міткою синку, базою delta_t і сторожем"; exit 1; }
+	@if grep -nE 'Wall_Calendar_Set\(' ../soldier/main.c | grep -vE 'Wall_Calendar_Set\(uint32_t unix_ts\)'; then \
+	  echo "FAIL [SEC.42]: календар пишуть повз Silken_Beacon_Commit"; \
 	  exit 1; \
 	fi
+	@[ "$$(grep -cE 'HAL_RTC_Set(Time|Date)\(' ../soldier/main.c)" = 2 ] || \
+	 { echo "FAIL [SEC.42]: HAL_RTC_SetTime/SetDate — лише в тілі Wall_Calendar_Set"; exit 1; }
 
 ota_seal: $(BINDIR)/test_ota_seal
 	@./$(BINDIR)/test_ota_seal

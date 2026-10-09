@@ -2425,18 +2425,22 @@ TEST(test_lorenz_c_mirror_stays_finite) {
 #define S_BEACON_PLAINTEXT_SIZE  16
 #define S_OTA_MARKER             0x99
 
-#include "../common/wall_time.h"   /* [SEC.42] Silken_Beacon_Apply — та сама точка, що в main.c */
+#include "../common/wall_time.h"   /* [SEC.42] Silken_Beacon_Commit — та сама точка, що в main.c */
 
 /* Soldier-side authoritative UTC (mirrors soldier_unix_ts in main.c). */
 static uint32_t test_soldier_unix_ts            = 0;
 static uint32_t test_soldier_unix_ts_local_tick = 0;
-static uint32_t test_wall_now                   = 0;   /* Wall_Seconds_Now(); 0 = RTC не прочитано */
-static uint32_t test_wake_base                  = 0;   /* last_wakeup_timestamp */
+static uint32_t test_wall_now                   = 946684800u + 100u; /* RTC-календар; від 2000-01-01 до синку */
+static uint32_t test_wake_base                  = 0;                 /* last_wakeup_timestamp */
+static uint16_t test_beacon_wakeups             = 0;
+static uint32_t test_read_wall(void)          { return test_wall_now; }
+static void     test_write_wall(uint32_t ts)  { test_wall_now = ts; }
+static const SilkenCalendarOps test_calendar_ops = { test_read_wall, test_write_wall };
 
 /* Extract from soldier/main.c RX branch:
  *  if (size == 16 && plaintext[0] == 0x9C && plaintext[10] == 'B') -> consume.
- * Час застосовує спільна Silken_Beacon_Apply (wall_time.h), а не копія її логіки;
- * що main.c кличе саме її й з тими аргументами, стереже grep у цілі `soldier` Makefile.
+ * Час застосовує спільна Silken_Beacon_Commit (wall_time.h), а не копія її логіки;
+ * що main.c кличе саме її з тим самим станом, стереже grep у цілі `soldier` Makefile.
  * Returns: 1 = beacon consumed (don't relay/route further), 0 = not a beacon. */
 static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
 {
@@ -2448,14 +2452,14 @@ static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
                   ((uint32_t)plaintext[3] << 8)  | (uint32_t)plaintext[4];
     if (ts == 0) return 1;  /* Frame is well-formed but ts=0 — drop without persisting */
 
-    const SilkenBeaconStep step = Silken_Beacon_Apply(test_wall_now, ts, test_soldier_unix_ts, test_wake_base);
-    test_soldier_unix_ts            = step.clock_ts;
-    test_soldier_unix_ts_local_tick = 12345;
-    test_wake_base                  = step.base_wall;
+    if (Silken_Beacon_Commit(&test_calendar_ops, ts, &test_soldier_unix_ts,
+                             &test_wake_base, &test_beacon_wakeups)) {
+        test_soldier_unix_ts_local_tick = 12345;
+    }
     return 1;
 }
 
-TEST(test_beacon_rx_replay_is_clamped_through_shared_apply) {
+TEST(test_beacon_rx_replay_is_clamped_through_shared_commit) {
     /* [SEC.42] Синк щойно, повтор маяка 30-секундної давності: годинник назад лише на 2 с,
      * а база delta_t — разом із ним. */
     test_wall_now        = 1781267696u;
@@ -2467,7 +2471,7 @@ TEST(test_beacon_rx_replay_is_clamped_through_shared_apply) {
     ASSERT_EQ(Recv_Time_Beacon(plain, 16), 1);
     ASSERT_EQ(test_soldier_unix_ts, 1781267696u - 2u);
     ASSERT_EQ(test_wake_base, 1781267691u - 2u);
-    test_wall_now = 0; test_soldier_unix_ts = 0; test_wake_base = 0;
+    test_wall_now = 946684800u + 100u; test_soldier_unix_ts = 0; test_wake_base = 0;
 }
 
 TEST(test_beacon_rx_sets_unix_ts) {
@@ -4760,37 +4764,90 @@ TEST(test_sec42_replay_every_wake_shaves_at_most_two_seconds) {
     }
 }
 
-/* Розв'язка: наступний delta_t міряє справжній проміжок, хоч би який крок зробив годинник. */
-static uint32_t sec42_next_delta(SilkenBeaconStep s, uint32_t real_after_step)
+/* Застосування — Silken_Beacon_Commit на фейковому календарі: база delta_t іде за ФАКТИЧНИМ
+ * кроком, мітка синку й сторож — лише за записом, що ліг. */
+static uint32_t sec42_cal;          /* «RTC-календар» */
+static uint8_t  sec42_cal_mode;     /* 0 пише · 1 запис не лягає · 2 лягає з помилкою доби · 3 читання гине після запису */
+static uint8_t  sec42_cal_written;
+static uint32_t sec42_read(void) { return (sec42_cal_mode == 3u && sec42_cal_written) ? 0u : sec42_cal; }
+static void     sec42_write(uint32_t ts)
 {
-    return Silken_Wall_Delta_Seconds(s.clock_ts + real_after_step, s.base_wall, 60u, 7u * 86400u);
+    sec42_cal_written = 1u;
+    if (sec42_cal_mode == 0u || sec42_cal_mode == 3u) sec42_cal = ts;
+    if (sec42_cal_mode == 2u) sec42_cal = ts + 86400u;   /* SetTime ліг, SetDate — ні */
+}
+static const SilkenCalendarOps sec42_ops = { sec42_read, sec42_write };
+
+static volatile uint32_t sec42_mark;
+static uint32_t          sec42_base;
+static uint16_t          sec42_wakeups;
+
+static uint8_t sec42_commit(uint32_t cal, uint8_t mode, uint32_t mark, uint32_t base, uint32_t beacon_ts)
+{
+    sec42_cal = cal; sec42_cal_mode = mode; sec42_cal_written = 0u;
+    sec42_mark = mark; sec42_base = base; sec42_wakeups = 7u;
+    return Silken_Beacon_Commit(&sec42_ops, beacon_ts, &sec42_mark, &sec42_base, &sec42_wakeups);
 }
 
-TEST(test_sec42_step_moves_delta_t_base_replay_shaves_nothing) {
+/* Наступне пробудження — через `real` справжніх секунд після кроку. */
+static uint32_t sec42_next_delta(uint32_t real)
+{
+    return Silken_Wall_Delta_Seconds(sec42_cal + real, sec42_base, 60u, 7u * 86400u);
+}
+
+TEST(test_sec42_commit_replay_clamps_and_shaves_nothing) {
     /* Фаза 1 була 5 с тому; повтор маяка в RX-вікні; до наступного пробудження ще 6495 с. */
-    const SilkenBeaconStep s = Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW, SEC42_NOW - 5u);
-    ASSERT_EQ(s.clock_ts, SEC42_NOW - 2u);
-    ASSERT_EQ(s.clamped, 1);
-    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 0u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 1);
+    ASSERT_EQ(sec42_cal, SEC42_NOW - 2u);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 2u);
+    ASSERT_EQ(sec42_wakeups, 7u);               /* обрізаний крок — не повний синк */
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
 }
 
-TEST(test_sec42_forward_sync_does_not_lengthen_delta_t) {
-    /* Повільний кварц: маяк на 40 с попереду — чесний синк уперед проміжку не подовжує. */
-    const SilkenBeaconStep s = Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW + 40u, SEC42_NOW - 600u, SEC42_NOW - 5u);
-    ASSERT_EQ(s.clamped, 0);
-    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+TEST(test_sec42_commit_forward_sync_resets_watchdog_without_lengthening) {
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 0u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW + 40u), 1);
+    ASSERT_EQ(sec42_mark, SEC42_NOW + 40u);
+    ASSERT_EQ(sec42_wakeups, 0u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
 }
 
-TEST(test_sec42_first_sync_moves_base_into_utc) {
-    /* Календар від 2000-01-01 → перший синк: наступний кадр уже має виміряний delta_t. */
-    const SilkenBeaconStep s = Silken_Beacon_Apply(946684800u + 3600u, SEC42_NOW, 0u, 946684800u + 3595u);
-    ASSERT_EQ(s.clock_ts, SEC42_NOW);
-    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+TEST(test_sec42_commit_first_sync_moves_base_into_utc) {
+    ASSERT_EQ(sec42_commit(946684800u + 3600u, 0u, 0u, 946684800u + 3595u, SEC42_NOW), 1);
+    ASSERT_EQ(sec42_cal, SEC42_NOW);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
 }
 
-TEST(test_sec42_base_zero_and_unreadable_rtc_keep_base) {
-    ASSERT_EQ(Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW + 40u, SEC42_NOW, 0u).base_wall, 0u);
-    ASSERT_EQ(Silken_Beacon_Apply(0u, SEC42_NOW, SEC42_NOW, 1234u).base_wall, 1234u);
+TEST(test_sec42_commit_failed_write_moves_nothing) {
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 1u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 600u);
+    ASSERT_EQ(sec42_base, SEC42_NOW - 5u);
+    ASSERT_EQ(sec42_wakeups, 7u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
+}
+
+TEST(test_sec42_commit_half_write_base_follows_calendar) {
+    /* Час ліг, дата — ні: календар на добу далі за ціль. Синком це не є, але гроші не чіпає. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 2u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 600u);
+    ASSERT_EQ(sec42_wakeups, 7u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
+}
+
+TEST(test_sec42_commit_unreadable_rtc_does_not_write) {
+    ASSERT_EQ(sec42_commit(0u, 0u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
+    ASSERT_EQ(sec42_cal_written, 0);
+    ASSERT_EQ(sec42_base, SEC42_NOW - 5u);
+}
+
+TEST(test_sec42_commit_read_dies_after_write_keeps_base) {
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 3u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
+    ASSERT_EQ(sec42_base, SEC42_NOW - 5u);
+    ASSERT_EQ(sec42_mark, SEC42_NOW);
+}
+
+TEST(test_sec42_commit_base_zero_stays_zero) {
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 0u, SEC42_NOW, 0u, SEC42_NOW + 40u), 1);
+    ASSERT_EQ(sec42_base, 0u);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5045,7 +5102,7 @@ int main(void)
 
     printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
     RUN(test_beacon_rx_sets_unix_ts);
-    RUN(test_beacon_rx_replay_is_clamped_through_shared_apply);
+    RUN(test_beacon_rx_replay_is_clamped_through_shared_commit);
     RUN(test_beacon_rx_rejects_wrong_marker);
     RUN(test_beacon_rx_rejects_wrong_magic_byte);
     RUN(test_beacon_rx_rejects_wrong_size);
@@ -5251,10 +5308,14 @@ int main(void)
     RUN(test_sec42_lost_sync_mark_takes_longest_silence);
     RUN(test_sec42_honest_drift_never_hits_the_bound);
     RUN(test_sec42_replay_every_wake_shaves_at_most_two_seconds);
-    RUN(test_sec42_step_moves_delta_t_base_replay_shaves_nothing);
-    RUN(test_sec42_forward_sync_does_not_lengthen_delta_t);
-    RUN(test_sec42_first_sync_moves_base_into_utc);
-    RUN(test_sec42_base_zero_and_unreadable_rtc_keep_base);
+    RUN(test_sec42_commit_replay_clamps_and_shaves_nothing);
+    RUN(test_sec42_commit_forward_sync_resets_watchdog_without_lengthening);
+    RUN(test_sec42_commit_first_sync_moves_base_into_utc);
+    RUN(test_sec42_commit_failed_write_moves_nothing);
+    RUN(test_sec42_commit_half_write_base_follows_calendar);
+    RUN(test_sec42_commit_unreadable_rtc_does_not_write);
+    RUN(test_sec42_commit_read_dies_after_write_keeps_base);
+    RUN(test_sec42_commit_base_zero_stays_zero);
 
     printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");
     RUN(test_fw18b_pack_zero_counter_is_legacy_byte);

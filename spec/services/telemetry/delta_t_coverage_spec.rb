@@ -20,10 +20,19 @@ RSpec.describe Telemetry::DeltaTCoverage do
     expect(described_class.ratio([ 60 ], since: now - 60, now: now)).to be_within(1e-9).of(1.0)
   end
 
-  it "мовчить, коли хоч один кадр без виміру — сентинел чи сатурований дріт" do
+  it "рахує по виміряних кадрах: сентинел пропускає, сатурований дріт — нижньою межею" do
     unknown = SilkenNet::Attractor::DELTA_T_UNKNOWN_S
-    expect(described_class.ratio([ 3600, unknown ], since: now - 7200, now: now)).to be_nil
-    expect(described_class.ratio([ 3600, 0xFFFF ], since: now - 7200, now: now)).to be_nil
+    expect(described_class.ratio([ 3600, unknown ], since: now - 7200, now: now)).to be_within(1e-9).of(0.5)
+    expect(described_class.ratio([ 70_000 ], since: now - 70_000, now: now)).to be_within(1e-9).of(65_535 / 70_000.0)
+  end
+
+  it "один сентинел на конверт не засліплює підробку — частка лишається низькою" do
+    unknown = SilkenNet::Attractor::DELTA_T_UNKNOWN_S
+    expect(described_class.ratio([ 600, 600, unknown ], since: now - 13_000, now: now)).to be < 0.1
+  end
+
+  it "мовчить, коли жодного виміряного кадру" do
+    expect(described_class.ratio([ SilkenNet::Attractor::DELTA_T_UNKNOWN_S ], since: now - 3600, now: now)).to be_nil
   end
 
   it "кадр без поля (паніка) пропускає, а без жодного виміряного — мовчить" do
