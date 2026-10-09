@@ -112,7 +112,8 @@ class OtaPackagerService
   # (firmware/common/ota_seal_wire.h):
   #   [0]    0x9B (CMD_OTA_SEAL)
   #   [1..2] seg_idx (1..7, big-endian)
-  #   [3..4] lora_total_chunks (big-endian) — informational: the firmware does not read it
+  #   [3..4] lora_total_chunks (big-endian) — signed; the Soldier accepts a seal block only
+  #         with the total of its own assembly (FW.68), so a foreign trailer never lands
   #          (the signed total comes from the 0x99 headers — 00_07 FW.68)
   #   seg 1..6: [5..15] seal segment (11 bytes; seg 6 has 9 real bytes + 2 PAD)
   #   seg 7:    [5..8] version_id (big-endian) + [9..15] PAD

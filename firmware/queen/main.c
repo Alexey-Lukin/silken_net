@@ -105,14 +105,12 @@
 // плоті Солдата (той тримає публічний ключ кластера).
 #include "../common/ota_seal_wire.h"
 
-// [FW.27-B] Magic Re-Request — крик Солдата у бік Королеви:
-//   [0x55][DID:4][total_chunks:2 BE][bitmap:9] = один 16-байтний ECB-блок.
-// Королева пам'ятає (DID, missing_bitmap) через cmd_dedup_ring 5 хв і
-// вдруге не озивається. Озвучує лише пропущені чанки — не цілий wave.
-#define OTA_REQ_MARKER             0x55
-#define OTA_REQ_HEADER_SIZE        7
-#define OTA_REQ_BITMAP_MAX_BYTES   9
-#define OTA_REQ_PACKET_SIZE        16
+// [FW.27-B · FW.68] Magic Re-Request — зойк Солдата «повтори» (0x55): wire —
+// ../common/ota_rerequest_wire.h. Королева його лише ЗАПИСУЄ (ota_rerequest_table.h)
+// і віддає борг по блоку рефлекс-пострілом на наступний почутий кадр того ж DID:
+// після зойку Солдат засинає, тож відповідь одразу летіла б у сон.
+#include "../common/ota_rerequest_wire.h"
+#include "ota_rerequest_table.h"
 
 // [ARCH.41-C / FW.20-S2] SYNC_REQ — зойк «Королево, час!» (дзеркало
 // soldier/main.c freeze-contract): [0x56][DID:4][secs_since_sync:4][TTL]
@@ -739,6 +737,9 @@ uint16_t ota_chunk_bitmap = 0;
 // LoRa-блок. seal_segments_received = bitmask (біти 0..5 = печатка, біт 6 =
 // версія) ⇒ всі 7 == OTA_SEAL_ALL_RECEIVED (0x7F).
 uint8_t  pending_ota_seal_chunks[OTA_SEAL_TRAILER_CHUNKS][16] = {{0}};
+// [FW.68] Борг перед Солдатами, що перепитали (зойк 0x55): DID → блоки тіла чи
+// трейлера. Знімається світанком нової кампанії (гілка 0x99 CoAP).
+static OtaRrTable g_ota_rr;
 uint8_t  seal_segments_received = 0;
 uint8_t  current_seal_seg_idx   = 0;     // Хто з 7-ми трейлер-блоків зараз летить в ефір
 uint8_t  seal_broadcast_phase   = 0;     // 0 = bytecode-фаза; 1 = фаза печатки/версії
@@ -924,7 +925,6 @@ static void Radio_Reinit_RawLoRa_868MHz(void);
 static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN]);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
-static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 static void Queen_Poll_Downlink(void);
@@ -1236,14 +1236,6 @@ int main(void)
             // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
             HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
-        // Почутий DID — перші 4 байти, як і в телеметрії нижче. Службові кадри
-        // (0x55/0x56/0x57) несуть там маркер, тож адресний постріл за ними не
-        // влучає (хіба випадком ~2⁻²⁴ — і тоді кадр згорить на Солдаті як чужий).
-        Queen_Reflex_Shots(((uint32_t)decrypted_payload[0] << 24) |
-                           ((uint32_t)decrypted_payload[1] << 16) |
-                           ((uint32_t)decrypted_payload[2] << 8)  |
-                           (uint32_t)decrypted_payload[3]);
-
         // =========================================================================
         // ОБРОБКА ДАНИХ (КЕШУВАННЯ)
         // =========================================================================
@@ -1251,72 +1243,20 @@ int main(void)
         // ловимо маркер ПЕРЕД CIFO та CoAP. Це не телеметрія, не пам'ять рою —
         // це службовий крик, який не повинен потрапити у річний літопис.
         if (decrypted_payload[0] == OTA_REQ_MARKER) {
-            // Дедуплікація через cmd_dedup_ring (та ж пам'ять, що береже
-            // Королеву від повторних CMD UUID): один зойк — одна відповідь,
-            // 5 хв тиші. Ефемерний djb2-хеш над 16-байтним plaintext-блоком —
-            // простіший за окремий (DID, bitmap) tuple, бо блок уже містить обидва.
-            uint32_t req_hash = djb2_hash_bytes((const uint8_t*)decrypted_payload, 16);
-            if (Cmd_Dedup_Check(req_hash) == 0) {
-                // Свіжий голос — повторюємо лише пропущене. OTA-вікно живе
-                // (ota_is_active=1) → буфер напевно свіжий, обслуговуємо
-                // без питань. Вікно ЗГАСЛО (ota_is_active=0) — буфер МІГ
-                // бути перезаписаний наступним CoAP-push'ем (03_02 §5.1.3,
-                // FW.52): звіряємо SHA-256 поточного вмісту проти того, що
-                // персистували при прийомі. Збіглося → та сама прошивка,
-                // мовчання broadcast-циклу не зіпсувало байти — обслуговуємо
-                // й тут. Розійшлося / нічого не персистовано → буфер уже
-                // чужий, мовчимо (Солдат воскресне через CoAP-push з Rails —
-                // та сама стеля, що й до FW.52, лише тепер РІЗНИТЬ безпечний
-                // випадок від небезпечного замість забороняти обидва).
-                if (pending_ota_size > 0 &&
-                    (ota_is_active ||
-                     Ota_Sha_Verify(&queen_ota_sha_ops, NULL,
-                                     pending_ota_bytecode, pending_ota_size))) {
-                    uint16_t total_chunks = (pending_ota_size + 10) / 11;
-                    uint16_t soldier_total = ((uint16_t)decrypted_payload[5] << 8) |
-                                              decrypted_payload[6];
-                    // Перехресна перевірка: якщо Солдат тримає у голові
-                    // інше total_chunks (інша прошивка) — мовчимо, чекаємо
-                    // на воскресіння через Rails.
-                    if (soldier_total == total_chunks) {
-                        const uint8_t* bitmap = &decrypted_payload[OTA_REQ_HEADER_SIZE];
-                        uint16_t cap = (total_chunks > OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                                          ? (uint16_t)(OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                                          : total_chunks;
-                        // Прицільна проповідь — повторюємо лише ті чанки,
-                        // яких бракує у пам'яті Солдата.
-                        const uint32_t req_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
-                        for (uint16_t i = 0; i < cap; i++) {
-                            uint8_t bit_set = bitmap[i / 8u] & (uint8_t)(1u << (i % 8u));
-                            if (!bit_set) continue;  // Цей чанк Солдат уже носить у плоті
-                            // [FW.61] Годинний ефір вичерпано — решту пропусків
-                            // Солдат перепросить наступним зойком (FW.27-B).
-                            if (!Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), req_air, TX_DUTY_BULK)) break;
-
-                            uint8_t ota_chunk[16] = {0};
-                            uint8_t encrypted_ota[16] = {0};
-                            ota_chunk[0] = OTA_MARKER;
-                            ota_chunk[1] = (uint8_t)(i >> 8);
-                            ota_chunk[2] = (uint8_t)(i & 0xFFu);
-                            ota_chunk[3] = (uint8_t)(total_chunks >> 8);
-                            ota_chunk[4] = (uint8_t)(total_chunks & 0xFFu);
-                            uint16_t offset = (uint16_t)(i * 11);
-                            if (offset < pending_ota_size) {
-                                uint8_t to_copy = (pending_ota_size - offset > 11)
-                                                     ? 11
-                                                     : (uint8_t)(pending_ota_size - offset);
-                                memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], to_copy);
-                            }
-                            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
-                                              (uint32_t*)encrypted_ota, 1000);
-                            // Кадр відлітає цілком, лише тоді наступний; до 72 кадрів
-                            // ≈ 12.6 с ефіру — пса годуємо на кожному (цикл обмежений cap).
-                            Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), req_air);
-                            HAL_Delay(Lora_Phy_Send(encrypted_ota, 16, LORA_PHY_PREAMBLE_SYMBOLS));
-                            HAL_IWDG_Refresh(&hiwdg);
-                        }
-                    }
-                }
+            // [FW.68] Лише ЗАПИС боргу: після зойку Солдат засинає, тож відповідь одразу
+            // летіла б у сон, а вухо бере один пакет за пробудження (ADR FW.52). Борг
+            // віддає Queen_Reflex_Shots по блоку на кожен наступний почутий кадр цього
+            // DID. Дедупу немає: повторний запис — не дія, темп тримають каденс зойку
+            // й лімітер ефіру. Тіло — лише з того самого буфера: вікно живе, або
+            // SHA-256 збігся з персистованим при прийомі (FW.52); печатка — лише коли
+            // трейлер тримається цілком (до світанку наступної кампанії).
+            uint16_t body_total = (uint16_t)((pending_ota_size + 10u) / 11u);
+            uint8_t  same_buffer = Ota_Rr_Body_Buffer_Same(&queen_ota_sha_ops, NULL,
+                                                           pending_ota_bytecode,
+                                                           pending_ota_size, ota_is_active);
+            if (Ota_Rr_Admissible((const uint8_t*)decrypted_payload, body_total, same_buffer,
+                                  (uint8_t)(seal_segments_received == OTA_SEAL_ALL_RECEIVED))) {
+                (void)Ota_Rr_Record(&g_ota_rr, (const uint8_t*)decrypted_payload);
             }
             // Цей пакет не лягає у CIFO/CoAP — він не належить літопису рою.
             // Re-arm RX і переходимо до наступного голосу у рингу.
@@ -1336,6 +1276,16 @@ int main(void)
             Radio.Rx(LORA_RX_INFINITE);
             continue;
         }
+
+        // Рефлекс услід за почутим кадром — єдине чуте вікно Солдата. Не на зойк 0x55
+        // (Солдат після нього спить; борг віддасть його НАСТУПНИЙ кадр) і не на hello
+        // 0x56 (вухо мусить почути перемотаний маяк, а не OTA-чанк). DID — перші 4
+        // байти, як у телеметрії; 0x57 несе там маркер, тож адресний постріл за ним не
+        // влучає (хіба випадком ~2⁻²⁴ — і тоді кадр згорить на Солдаті як чужий).
+        Queen_Reflex_Shots(((uint32_t)decrypted_payload[0] << 24) |
+                           ((uint32_t)decrypted_payload[1] << 16) |
+                           ((uint32_t)decrypted_payload[2] << 8)  |
+                           (uint32_t)decrypted_payload[3]);
 
         // [SEC.21 L1] Device-event 0x57 (canary-слід тощо): не телеметрія — у
         // літопис (CIFO) не лягає, stride священний. Королева ВЖЕ декриптувала
@@ -2191,21 +2141,6 @@ static uint32_t djb2_hash(const char* str, uint8_t len)
     return h;
 }
 
-// [FW.27-B] Length-strict DJB2 для двійкових пакетів (re-request-зойки
-// можуть нести 0x00 байти всередині). На відміну від звичайного djb2_hash,
-// НЕ зупиняється на NUL-байті — слухає всі `len` байт до кінця, щоб
-// (DID, total, missing_bitmap) усі вплелися у пам'ять Королеви. Без цього
-// два різні bitmap'и звучали б для неї однією піснею (бо total_chunks
-// BE-upper байт = 0 для total<256), і другий зойк затих би в дедуплікації.
-static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len)
-{
-    uint32_t h = 5381;
-    for (uint8_t i = 0; i < len; i++) {
-        h = ((h << 5) + h) + buf[i];
-    }
-    return h;
-}
-
 // Перевіряє наявність хешу в кільцевому буфері та зберігає новий.
 // Повертає: 0 = новий (виконувати), 1 = дублікат (ігнорувати)
 uint8_t Cmd_Dedup_Check(uint32_t hash)
@@ -2394,6 +2329,14 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // Idle-стан збирання (порожній bitmap) → розмір починає життя з нуля.
         if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
             pending_ota_size = 0;
+            // [FW.68] Трейлер попередньої кампанії тримався до цієї миті — заради
+            // перезапиту печатки; тепер він чужий. Печатку нової кампанії тягнемо ПІСЛЯ
+            // тіла (курсор фетчу йде за пакунками OtaPackagerService: тіло, тоді трейлер),
+            // тож світанок її не зітре.
+            seal_segments_received = 0;
+            seal_broadcast_phase   = 0;
+            current_seal_seg_idx   = 0;
+            Ota_Rr_Clear(&g_ota_rr);
         }
 
         // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
@@ -2446,13 +2389,17 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         if (seg_idx < 1 || seg_idx > OTA_SEAL_TRAILER_CHUNKS) return 1;
         // Беремо перші 16 байт inner_payload — готовий до повторної проповіді блок.
         memcpy(pending_ota_seal_chunks[seg_idx - 1], inner_payload, 16);
+        // Трейлер тепер тримається до світанку наступної кампанії, тож повний — ще не
+        // «щойно довершений»: дубль сегмента не воскрешає вже промовлене вікно.
+        uint8_t seal_was_complete = (uint8_t)(seal_segments_received == OTA_SEAL_ALL_RECEIVED);
         seal_segments_received |= (uint8_t)(1u << (seg_idx - 1));
 
         // [FW.52б] Запізніла печатка: тіло вже відлунало і вікно згасло
         // (§5.1.6 п.2), а цей сегмент щойно довершив трейлер → воскрешаємо
         // вікно одразу у фазу печатки. Анти-проповідь [PLAN 2.5] збережена;
         // Солдати з частковим тілом знову почуті (re-request живий).
-        if (Ota_Late_Trailer_Resurrects(seal_segments_received,
+        if (!seal_was_complete &&
+            Ota_Late_Trailer_Resurrects(seal_segments_received,
                                         OTA_SEAL_ALL_RECEIVED,
                                         ota_is_active, pending_ota_size,
                                         ota_chunk_bitmap, ota_chunks_received)) {
@@ -2504,6 +2451,25 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 // демуксу за відкритим DID. До 2026-09-29 цей код жив інлайном лише в
 // ECB-шляху, а CCM-гілка робила `continue` раніше за нього: у CCM-ері OTA-чанк
 // летів би лише за рідкісними 16-Б зойками 0x55/0x56, а команда — ніколи.
+// [FW.27 · FW.68] Один LoRa-блок тіла кампанії: [0x99][idx:2 BE][total:2 BE][≤ 11 Б
+// байткоду]. Його стріляють і глобальний курсор, і адресний борг — одна розкладка.
+// 0 — індекс поза зібраним буфером.
+static uint8_t Queen_Ota_Body_Block(uint16_t idx, uint8_t out[16])
+{
+    const uint16_t total  = (uint16_t)((pending_ota_size + 10u) / 11u);
+    const uint32_t offset = (uint32_t)idx * 11u;
+    if (idx >= total || offset >= pending_ota_size) return 0;
+    memset(out, 0, 16);
+    out[0] = OTA_MARKER;
+    out[1] = (uint8_t)(idx >> 8);
+    out[2] = (uint8_t)(idx & 0xFFu);
+    out[3] = (uint8_t)(total >> 8);
+    out[4] = (uint8_t)(total & 0xFFu);
+    const uint8_t n = (pending_ota_size - offset > 11u) ? 11u : (uint8_t)(pending_ota_size - offset);
+    memcpy(&out[5], &pending_ota_bytecode[offset], n);
+    return 1;
+}
+
 static void Queen_Reflex_Shots(uint32_t heard_did)
 {
 #if FW20_Q2_CMD_RELAY_ENABLED
@@ -2534,6 +2500,47 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
 #endif
 
     // =========================================================================
+    // [FW.68] АДРЕСНИЙ БОРГ — блок, який почутий Солдат перепитав зойком 0x55
+    // =========================================================================
+    // Перед глобальним курсором: Солдат, що перепитав, решту кампанії вже має, і
+    // чанк «для наступного дерева» дістався б йому дублем. Тіло — з того самого
+    // буфера, з якого борг записано (світанок кампанії борг знімає); трейлер —
+    // буква в букву, як у фазі печатки нижче. Один блок за кадр: вухо Солдата бере
+    // один пакет (ADR FW.52). Вичерпаний ефір — пейсинг: борг чекає наступного кадру.
+    {
+        uint8_t  debt_is_seal = 0;
+        uint16_t debt_idx     = 0;
+        const int debt_slot = Ota_Rr_Peek(&g_ota_rr, heard_did, &debt_is_seal, &debt_idx);
+        if (debt_slot >= 0) {
+            uint8_t debt_block[16] = {0};
+            uint8_t have = 0;
+            if (debt_is_seal) {
+                if (seal_segments_received == OTA_SEAL_ALL_RECEIVED &&
+                    debt_idx < OTA_SEAL_TRAILER_CHUNKS) {
+                    memcpy(debt_block, pending_ota_seal_chunks[debt_idx], 16);
+                    have = 1;
+                }
+            } else {
+                have = Queen_Ota_Body_Block(debt_idx, debt_block);
+            }
+            if (!have) {
+                Ota_Rr_Drop(&g_ota_rr, debt_slot);   // буфера, з якого винні, вже немає
+            } else {
+                const uint32_t debt_air = Lora_Phy_Time_On_Air_Ms(LORA_PHY_PREAMBLE_SYMBOLS, 16u);
+                if (Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), debt_air, TX_DUTY_BULK)) {
+                    uint8_t debt_encrypted[16] = {0};
+                    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)debt_block, 4,
+                                      (uint32_t*)debt_encrypted, 1000);
+                    Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), debt_air);
+                    HAL_Delay(Lora_Phy_Send(debt_encrypted, 16, LORA_PHY_PREAMBLE_SYMBOLS));
+                    Ota_Rr_Mark_Sent(&g_ota_rr, debt_slot, debt_idx);
+                }
+                return;
+            }
+        }
+    }
+
+    // =========================================================================
     // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
     // Солдат прямо зараз (після відправки) слухає ефір рівно 500 мс.
     // Ми маємо блискавично вистрілити шматком нової прошивки йому у відповідь.
@@ -2554,21 +2561,8 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
         // Перехід з 0 → 1 коли тіло прошивки відлунало в ефір, а печатка
         // вже зібрана у пам'яті Королеви.
         if (seal_broadcast_phase == 0 && current_ota_chunk_idx < total_chunks) {
-            // [FIX: AUDIT] Перевірка індексу перед використанням
-            // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
-            ota_chunk[0] = 0x99;
-            ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
-            ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
-            ota_chunk[3] = (uint8_t)(total_chunks >> 8);
-            ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
-
-            // Копіюємо до 11 байт коду в пакет
-            uint16_t offset = current_ota_chunk_idx * 11;
-            // [FIX: AUDIT CRITICAL] Перевірка на підтікання (offset >= pending_ota_size)
-            if (offset < pending_ota_size) {
-                uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (uint8_t)(pending_ota_size - offset);
-                memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
-            }
+            // Заголовок і до 11 байт коду — тим самим хелпером, що й адресний борг.
+            (void)Queen_Ota_Body_Block(current_ota_chunk_idx, ota_chunk);
 
             // Шифруємо цей шматок коду
             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
@@ -2613,10 +2607,11 @@ static void Queen_Reflex_Shots(uint32_t heard_did)
             current_seal_seg_idx++;
             if (current_seal_seg_idx >= OTA_SEAL_TRAILER_CHUNKS) {
                 // OTA-цикл (тіло + печатка) промовлено повністю — амінь.
+                // [FW.68] seal_segments_received НЕ гаситься: трейлер тримається
+                // до світанку наступної кампанії — з нього відповідає перезапит.
                 current_ota_chunk_idx   = 0;
                 current_seal_seg_idx    = 0;
                 seal_broadcast_phase    = 0;
-                seal_segments_received  = 0;
                 ota_is_active           = 0;
             }
         } else {

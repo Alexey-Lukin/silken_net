@@ -6,8 +6,8 @@
  * перевірка). Дзеркало — `OtaPackagerService` (Ruby): зміна тут без зміни там рве OTA.
  *
  * 16-байтний LoRa-блок трейлера, маркер 0x9B:
- *   [0] 0x9B · [1..2] seg_idx BE · [3..4] total_chunks BE (прошивка не читає — підписаний
- *   total береться з 0x99-заголовків; блок до кампанії не прив'язаний, 00_07 FW.68)
+ *   [0] 0x9B · [1..2] seg_idx BE · [3..4] total_chunks BE (входить у підписане повідомлення;
+ *   Солдат приймає блок лише з total свого збирання — Ota_Seal_Block_Belongs, ⚖️ FW.68)
  *   seg 1..6: [5..15] 11 байт Ed25519-підпису (6 × 11 = 66 ≥ 64; seg 6 — 9 байт + 2 PAD)
  *   seg 7:    [5..8] version_id BE + [9..15] PAD
  * Доти (HMAC-SHA256 під кластерним K_ota) печатка мала 32 байти й 3 сегменти + версію.
@@ -58,6 +58,15 @@ static inline int Ota_Seal_Parse_Chunk(const uint8_t *chunk, uint16_t chunk_size
     }
     *segs_inout |= (uint8_t)(1u << (seg - 1u));
     return 1;
+}
+
+/* [FW.68] Чий це трейлер: total блоку мусить дорівнювати total активного збирання тіла.
+ * Без збирання (0) блок нічий — чужий трейлер інакше мовчки перезаписав би печатку. */
+static inline uint8_t Ota_Seal_Block_Belongs(const uint8_t *chunk, uint16_t chunk_size,
+                                             uint16_t active_total)
+{
+    if (chunk == NULL || chunk_size < OTA_SEAL_HEADER_SIZE || active_total == 0u) return 0;
+    return (uint8_t)((uint16_t)(((uint16_t)chunk[3] << 8) | chunk[4]) == active_total);
 }
 
 #endif /* SILKEN_OTA_SEAL_WIRE_H */

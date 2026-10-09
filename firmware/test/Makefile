@@ -192,10 +192,11 @@ standby_wake: $(BINDIR)/test_standby_wake
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h ../common/ota_seal_wire.h \
                      ../queen/cifo_cache.h ../common/lora_ccm.h \
-                     ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h
+                     ../queen/sim7070_init.h ../queen/sim7070_coap.h ../queen/at_engine.h ../queen/coap_pdu.h \
+                     ../queen/ota_rerequest_table.h ../common/ota_rerequest_wire.h ../queen/ota_sha_guard.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
-$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h ../common/ota_seal.h ../common/ota_seal_wire.h $(MONOCYPHER_C)
+$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h ../common/ota_seal.h ../common/ota_seal_wire.h ../common/ota_rerequest_wire.h $(MONOCYPHER_C)
 	$(CC) $(CFLAGS) $(MONOCYPHER_INC) -o $@ test_soldier_logic.c $(MONOCYPHER_C)
 
 # [FW.23] Ed25519-печатка OTA — паритет поза Monocypher: золотий вектор Ruby-пакувальника,

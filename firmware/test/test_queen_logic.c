@@ -122,16 +122,6 @@ static uint32_t djb2_hash(const char* str, uint8_t len)
     return h;
 }
 
-/* [FW.27-B] Length-strict DJB2 — does NOT stop at NUL byte. */
-static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len)
-{
-    uint32_t h = 5381;
-    for (uint8_t i = 0; i < len; i++) {
-        h = ((h << 5) + h) + buf[i];
-    }
-    return h;
-}
-
 /* Command dedup ring — identical to queen/main.c */
 static uint8_t Cmd_Dedup_Check(uint32_t hash)
 {
@@ -2194,18 +2184,16 @@ TEST(test_fw20s2_queen_beacon_byte9_exact_value) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 11. FW.27-B Magic Re-Request Handler (Queen-side)
+ * 11. FW.27-B · FW.68 Magic Re-Request (Queen-side)
  * ════════════════════════════════════════════════════════════════════
- * Queen recognizes 0x55 marker in decrypted LoRa RX path:
- *   - Dedups (DID, missing_bitmap) via existing cmd_dedup_ring (5-min replay)
- *   - Targeted re-broadcast: only chunks where bitmap bit is set (missing)
- *   - Does NOT enter CIFO cache, does NOT go to CoAP — pure service packet
- *   - [FW.52] window closed (ota_active=0) → served ONLY if the buffer's
- *     current SHA-256 still matches what was persisted on receipt
+ * Зойк 0x55 Королева лише ЗАПИСУЄ як борг (../queen/ota_rerequest_table.h), а
+ * віддає його рефлекс-пострілом на наступний почутий кадр того ж DID, по блоку
+ * за раз (⚖️ FW.68, 03_02 §5.1.3). Тест кличе ті самі pure-функції, що
+ * queen/main.c, а не їхню копію (гоча firmware #19):
+ *   - тіло — лише з того самого буфера (вікно живе або SHA-256 збігся, FW.52)
+ *     і з тим самим total; печатка — лише коли трейлер тримається цілком;
+ *   - дедупу немає: повтор зойку після втраченої відповіді — знову борг.
  * ════════════════════════════════════════════════════════════════════ */
-#define Q_OTA_REQ_MARKER             0x55
-#define Q_OTA_REQ_HEADER_SIZE        7
-#define Q_OTA_REQ_BITMAP_MAX_BYTES   9
 
 /* [FW.52] Pure header — same code firmware/queen/main.c compiles against
  * (Ota_Sha_Persist/Verify). RAM-mock FlashKvOps mirrors test_flash_ota.c's
@@ -2213,6 +2201,7 @@ TEST(test_fw20s2_queen_beacon_byte9_exact_value) {
  * direct dw-indexed RAM access — no fault-injection needed here, that
  * discipline is already proven standalone in test_ota_sha_guard.c. */
 #include "../queen/ota_sha_guard.h"
+#include "../queen/ota_rerequest_table.h"
 
 #define Q_SHA_FLASH_DWS 8u
 static uint64_t g_sha_flash_mem[Q_SHA_FLASH_DWS];
@@ -2241,151 +2230,72 @@ static void reset_sha_flash(void)
     memset(g_sha_flash_mem, 0xFF, sizeof g_sha_flash_mem);  /* erased-flash state */
 }
 
-/* Pure-logic decision: should Queen re-broadcast in response to this packet?
- * Returns: 1 = re-broadcast, 0 = drop (non-rerequest, dedup, or invalid).
- * `pending_bytecode` is what main.c's `pending_ota_bytecode` would hold —
- * needed (only on the ota_active=0 path) to recompute the FW.52 SHA-256
- * cross-check against what q_sha_ops has persisted. */
-static uint8_t Test_Should_Handle_Rerequest(const uint8_t* decrypted,
-                                              const uint8_t* pending_bytecode,
-                                              uint16_t pending_size,
-                                              uint8_t  ota_active)
+static OtaRrTable q_rr;
+
+/* Допуск тим самим ланцюгом, що в обробнику 0x55 queen/main.c. */
+static uint8_t Test_Admit(const uint8_t* req, uint16_t pending_size,
+                          uint8_t ota_active, uint8_t seal_held)
 {
-    if (decrypted[0] != Q_OTA_REQ_MARKER) return 0;
-
-    uint32_t hash = djb2_hash_bytes(decrypted, 16);
-    if (Cmd_Dedup_Check(hash) == 1) return 0;  /* duplicate */
-
-    if (pending_size == 0) return 0;
-
-    // [FW.52] Вікно живе → буфер напевно свіжий, обслуговуємо без питань.
-    // Вікно згасло → буфер МІГ бути перезаписаний наступним CoAP-push'ем —
-    // обслуговуємо лише якщо поточний вміст досі хешується в те, що
-    // персистували при прийомі (Ota_Sha_Persist, main.c).
-    if (!ota_active &&
-        !Ota_Sha_Verify(&q_sha_ops, NULL, pending_bytecode, pending_size)) {
-        return 0;
-    }
-
-    uint16_t total_chunks  = (pending_size + 10) / 11;
-    uint16_t soldier_total = ((uint16_t)decrypted[5] << 8) | decrypted[6];
-    if (soldier_total != total_chunks) return 0;
-
-    return 1;
+    uint16_t body_total = (uint16_t)((pending_size + 10u) / 11u);
+    uint8_t  same = Ota_Rr_Body_Buffer_Same(&q_sha_ops, NULL, pending_ota_bytecode,
+                                            pending_size, ota_active);
+    return Ota_Rr_Admissible(req, body_total, same, seal_held);
 }
 
-static uint16_t Test_Count_Missing_From_Bitmap(const uint8_t* decrypted,
-                                                 uint16_t total_chunks)
+/* Зойк про тіло: чанки, яких бракує, — перелічені в missing[]. */
+static void body_req(uint32_t did, uint16_t total, const uint16_t* missing,
+                     uint8_t n_missing, uint8_t out[16])
 {
-    uint16_t cap = (total_chunks > Q_OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                      ? (uint16_t)(Q_OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                      : total_chunks;
-    uint16_t missing = 0;
-    const uint8_t* bm = &decrypted[Q_OTA_REQ_HEADER_SIZE];
-    for (uint16_t i = 0; i < cap; i++) {
-        if (bm[i / 8u] & (uint8_t)(1u << (i % 8u))) missing++;
-    }
-    return missing;
+    uint8_t got[OTA_REQ_BODY_CAP];
+    memset(got, 1, sizeof got);
+    for (uint8_t i = 0; i < n_missing; i++) got[missing[i]] = 0;
+    (void)Ota_Req_Build_Body(did, total, got, sizeof got, out);
 }
 
-static void compose_rereq_packet(uint32_t did, uint16_t total,
-                                   const uint8_t* missing_bitmap,
-                                   uint8_t bitmap_bytes,
-                                   uint8_t out[16])
-{
-    memset(out, 0, 16);
-    out[0] = Q_OTA_REQ_MARKER;
-    out[1] = (uint8_t)(did >> 24);
-    out[2] = (uint8_t)(did >> 16);
-    out[3] = (uint8_t)(did >> 8);
-    out[4] = (uint8_t)(did & 0xFFu);
-    out[5] = (uint8_t)(total >> 8);
-    out[6] = (uint8_t)(total & 0xFFu);
-    if (missing_bitmap && bitmap_bytes <= Q_OTA_REQ_BITMAP_MAX_BYTES) {
-        memcpy(&out[Q_OTA_REQ_HEADER_SIZE], missing_bitmap, bitmap_bytes);
-    }
-}
-
-TEST(test_rereq_queen_accepts_valid_packet) {
-    reset_dedup();
-    uint8_t bm[1] = {0xFF};  /* chunks 0..7 missing */
-    uint8_t pkt[16];
-    /* pending_size=88 → total=8 chunks; soldier_total=8 matches. */
-    compose_rereq_packet(0xDEADBEEFu, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 1);
-}
-
-TEST(test_rereq_queen_dedups_replay) {
-    reset_dedup();
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0xCAFEBABEu, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 1);
-    /* Replay — dedup */
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 0);
-}
-
-TEST(test_rereq_queen_different_bitmaps_not_deduped) {
-    reset_dedup();
-    uint8_t bm1[1] = {0xFF}; uint8_t bm2[1] = {0x0F};
-    uint8_t pkt1[16], pkt2[16];
-    compose_rereq_packet(0xAAAAAAAAu, 8, bm1, 1, pkt1);
-    compose_rereq_packet(0xAAAAAAAAu, 8, bm2, 1, pkt2);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt1, pending_ota_bytecode, 88, 1), 1);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt2, pending_ota_bytecode, 88, 1), 1);
-}
-
-TEST(test_rereq_queen_drops_when_no_active_ota_and_nothing_persisted) {
-    /* [FW.52] Вікно закрите (ota_active=0) І нічого не персистовано (fresh
-     * boot / ще не було жодного OTA) — той самий "чекай CoAP-push" фолбек,
-     * що й до FW.52, лише тепер з ІНШОЮ підставою (hash-verify fail-closed,
-     * не сам ota_active). */
-    reset_dedup();
+TEST(test_rereq_body_admitted_while_window_open) {
     reset_sha_flash();
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 0), 0);
+    uint16_t miss[] = {0, 3};
+    uint8_t req[16];
+    body_req(0xDEADBEEFu, 8, miss, 2, req);           /* 88 Б → total 8 */
+    ASSERT_EQ(Test_Admit(req, 88, 1, 0), 1);
 }
 
-TEST(test_rereq_queen_drops_when_pending_empty) {
-    reset_dedup();
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 0, 1), 0);
+TEST(test_rereq_drops_when_pending_empty) {
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0x1u, 8, miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, 0, 1, 0), 0);
 }
 
-TEST(test_rereq_queen_drops_when_total_mismatch) {
-    reset_dedup();
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    /* Soldier reports total=8, but Queen pending_size=11 ⇒ total=1 */
-    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 11, 1), 0);
+TEST(test_rereq_drops_when_total_mismatch) {
+    /* Солдат тримає total=8, а в Королеви 11 Б ⇒ total=1: інша прошивка. */
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0x1u, 8, miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, 11, 1, 0), 0);
 }
 
-TEST(test_rereq_queen_drops_non_rerequest_marker) {
-    reset_dedup();
-    uint8_t pkt[16] = {0};
-    pkt[0] = 0x99;
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 0);
-    /* Critical: must NOT consume a dedup slot */
-    uint8_t bm[1] = {0xFF};
-    uint8_t valid[16];
-    compose_rereq_packet(0x1u, 8, bm, 1, valid);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(valid, pending_ota_bytecode, 88, 1), 1);
+TEST(test_rereq_drops_non_rerequest_marker) {
+    uint8_t req[16] = {0};
+    req[0] = 0x99;
+    ASSERT_EQ(Test_Admit(req, 88, 1, 1), 0);
+}
+
+TEST(test_rereq_drops_when_window_closed_and_nothing_persisted) {
+    /* [FW.52] Вікно закрите й нічого не персистовано — буфер не доведено тим
+     * самим, тож борг не записується (fail-closed). */
+    reset_sha_flash();
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0x1u, 8, miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, 88, 0, 0), 0);
 }
 
 /* ── [FW.52] SHA-256 cross-check on a re-request after the window closed ──
- * Canon (03_02 §5.1.3, 00_07 FW.52): "після ota_is_active=0 буфер
- * pending_ota_bytecode може бути перезаписаний наступним CoAP-push'ем,
- * тоді re-request не обслуговується" — a persisted SHA-256 lets Queen tell
- * the SAFE case (buffer untouched since receipt) from the DANGEROUS one
- * (buffer already mid-overwrite by a newer, different OTA) apart, instead
- * of refusing both alike. */
+ * After ota_is_active=0 the buffer may be overwritten by the next CoAP push; a
+ * persisted SHA-256 tells the SAFE case (buffer untouched since receipt) from
+ * the DANGEROUS one (buffer mid-overwrite by a different OTA). */
 TEST(test_fw52_sha_persist_then_verify_roundtrip) {
-    /* (a) hash gets persisted on a successful OTA receipt. */
     reset_sha_flash();
     memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
     uint16_t size = (uint16_t)sizeof(ota_test_data);
@@ -2393,77 +2303,160 @@ TEST(test_fw52_sha_persist_then_verify_roundtrip) {
     ASSERT_TRUE(Ota_Sha_Verify(&q_sha_ops, NULL, pending_ota_bytecode, size));
 }
 
-TEST(test_fw52_rerequest_served_after_window_closed_same_ota) {
-    /* (b) re-request for the SAME OTA after ota_is_active=0 succeeds
-     * against the persisted hash — buffer untouched since receipt. */
-    reset_dedup();
+TEST(test_fw52_rerequest_admitted_after_window_closed_same_ota) {
     reset_sha_flash();
     memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
     uint16_t size = (uint16_t)sizeof(ota_test_data);
     ASSERT_TRUE(Ota_Sha_Persist(&q_sha_ops, NULL, pending_ota_bytecode, size));
-
-    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
-    /* ota_active=0: window already closed, but hash still matches. */
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 0), 1);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0xABCDEFu, (uint16_t)((size + 10) / 11), miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, size, 0, 0), 1);
 }
 
 TEST(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten) {
-    /* (c) re-request for a DIFFERENT OTA (hash mismatch) is correctly
-     * rejected rather than silently serving stale/wrong bytecode — a new
-     * CoAP-push has started overwriting the buffer since the persist. */
-    reset_dedup();
     reset_sha_flash();
     memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
     uint16_t size = (uint16_t)sizeof(ota_test_data);
     ASSERT_TRUE(Ota_Sha_Persist(&q_sha_ops, NULL, pending_ota_bytecode, size));
-
-    /* Буфер уже наполовину чужий — новий CoAP-push пише зверху. */
-    pending_ota_bytecode[0] ^= 0xFFu;
-
-    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 0), 0);
+    pending_ota_bytecode[0] ^= 0xFFu;   /* новий CoAP-push уже пише зверху */
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0xABCDEFu, (uint16_t)((size + 10) / 11), miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, size, 0, 0), 0);
 }
 
-TEST(test_fw52_rerequest_served_immediately_while_window_still_open) {
-    /* ota_active=1 short-circuits the hash-verify entirely (cheap common
-     * path) — must still succeed even with NOTHING persisted yet. */
-    reset_dedup();
+TEST(test_fw52_rerequest_admitted_while_window_open_nothing_persisted) {
+    /* Живе вікно — дешевий шлях без хешу: буфер свіжий за побудовою. */
     reset_sha_flash();
     memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
     uint16_t size = (uint16_t)sizeof(ota_test_data);
-    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
-    uint8_t bm[1] = {0xFF};
-    uint8_t pkt[16];
-    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 1), 1);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0xABCDEFu, (uint16_t)((size + 10) / 11), miss, 1, req);
+    ASSERT_EQ(Test_Admit(req, size, 1, 0), 1);
 }
 
-TEST(test_rereq_queen_count_missing_full_bitmap) {
-    uint8_t pkt[16] = {0};
-    uint8_t bm[2] = {0xFF, 0xFF};
-    compose_rereq_packet(0x1u, 16, bm, 2, pkt);
-    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 16), 16);
+TEST(test_rereq_seal_sentinel_admitted_only_when_trailer_held) {
+    uint8_t req[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0x77u, 0x7Cu /* бракує seg 1, 2 */, req), 1);
+    ASSERT_EQ(Test_Admit(req, 88, 1, 0), 0);    /* трейлера немає — мовчимо */
+    ASSERT_EQ(Test_Admit(req, 0, 0, 1), 1);     /* тримаємо цілком — борг приймаємо */
 }
 
-TEST(test_rereq_queen_count_missing_partial) {
-    /* bitmap = 0xAA = 0b10101010 → 4 bits set */
-    uint8_t pkt[16] = {0};
-    uint8_t bm[1] = {0xAA};
-    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 8), 4);
+TEST(test_rereq_debt_paid_one_block_per_heard_frame) {
+    /* Серце FW.68: блоки віддаються по одному, у порядку зростання, і слот
+     * звільняється, щойно борг сплачено. */
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {1, 3};
+    uint8_t req[16];
+    body_req(0xA1u, 8, miss, 2, req);
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+
+    uint8_t is_seal = 9; uint16_t idx = 999;
+    int s = Ota_Rr_Peek(&q_rr, 0xA1u, &is_seal, &idx);
+    ASSERT_TRUE(s >= 0);
+    ASSERT_EQ(is_seal, 0); ASSERT_EQ(idx, 1);
+    /* Peek стану не міняє: лімітер ефіру міг відмовити. */
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xA1u, &is_seal, &idx), s);
+    ASSERT_EQ(idx, 1);
+    Ota_Rr_Mark_Sent(&q_rr, s, idx);
+
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xA1u, &is_seal, &idx), s);
+    ASSERT_EQ(idx, 3);
+    Ota_Rr_Mark_Sent(&q_rr, s, idx);
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xA1u, &is_seal, &idx), -1);
+    ASSERT_EQ(Ota_Rr_Find(&q_rr, 0xA1u), -1);    /* слот вільний */
 }
 
-TEST(test_rereq_queen_count_zero_when_all_received) {
-    uint8_t pkt[16] = {0};
-    uint8_t bm[1] = {0x00};
-    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 8), 0);
+TEST(test_rereq_debt_is_per_did) {
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0xB1u, 4, miss, 1, req);
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    uint8_t is_seal; uint16_t idx;
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xB2u, &is_seal, &idx), -1);   /* сусідові не винні */
+    ASSERT_TRUE(Ota_Rr_Peek(&q_rr, 0xB1u, &is_seal, &idx) >= 0);
+}
+
+TEST(test_rereq_repeat_after_lost_answer_is_debt_again) {
+    /* Дедупу немає: блок загубився, Солдат перепитав тим самим кадром — борг
+     * записується знову, а не зникає в кільці (стара пастка cmd_dedup_ring). */
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {2};
+    uint8_t req[16];
+    body_req(0xC1u, 4, miss, 1, req);
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    uint8_t is_seal; uint16_t idx;
+    int s = Ota_Rr_Peek(&q_rr, 0xC1u, &is_seal, &idx);
+    Ota_Rr_Mark_Sent(&q_rr, s, idx);                 /* «відстріляли», але не дійшло */
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);         /* той самий зойк — знову борг */
+    ASSERT_TRUE(Ota_Rr_Peek(&q_rr, 0xC1u, &is_seal, &idx) >= 0);
+    ASSERT_EQ(idx, 2);
+}
+
+TEST(test_rereq_seal_debt_names_trailer_blocks) {
+    Ota_Rr_Clear(&q_rr);
+    uint8_t req[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0xD1u, 0x3Bu /* бракує seg 3 і seg 7 */, req), 1);
+    req[8] = 0xFFu;                                  /* сміття поза маскою печатки */
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    uint8_t is_seal; uint16_t idx;
+    int s = Ota_Rr_Peek(&q_rr, 0xD1u, &is_seal, &idx);
+    ASSERT_EQ(is_seal, 1); ASSERT_EQ(idx, 2);        /* seg 3 = блок 2 */
+    Ota_Rr_Mark_Sent(&q_rr, s, idx);
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xD1u, &is_seal, &idx), s);
+    ASSERT_EQ(idx, 6);                               /* seg 7 = версія */
+    Ota_Rr_Mark_Sent(&q_rr, s, idx);
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0xD1u, &is_seal, &idx), -1);   /* сміття не стало боргом */
+}
+
+TEST(test_rereq_body_bits_beyond_total_are_not_debt) {
+    Ota_Rr_Clear(&q_rr);
+    uint8_t req[16];
+    Ota_Req_Header(0xE1u, 3, req);
+    req[OTA_REQ_HEADER_SIZE] = 0xF8u;                /* біти 3..7 — поза total=3 */
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 0);         /* боргу немає */
+    ASSERT_EQ(Ota_Rr_Find(&q_rr, 0xE1u), -1);
+}
+
+TEST(test_rereq_empty_request_clears_existing_debt) {
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0xF1u, 4, miss, 1, req);
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    uint8_t empty[16];
+    Ota_Req_Header(0xF1u, 4, empty);                 /* усе вже має */
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, empty), 0);
+    ASSERT_EQ(Ota_Rr_Find(&q_rr, 0xF1u), -1);
+}
+
+TEST(test_rereq_full_table_evicts_round_robin) {
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    for (uint32_t d = 1; d <= OTA_RR_SLOTS; d++) {
+        body_req(d, 4, miss, 1, req);
+        ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    }
+    body_req(0x99u, 4, miss, 1, req);                /* дев'ятий DID */
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    ASSERT_TRUE(Ota_Rr_Find(&q_rr, 0x99u) >= 0);
+    ASSERT_EQ(Ota_Rr_Find(&q_rr, 1u), -1);           /* перший витіснено */
+    ASSERT_TRUE(Ota_Rr_Find(&q_rr, 2u) >= 0);
+}
+
+TEST(test_rereq_campaign_dawn_clears_all_debt) {
+    Ota_Rr_Clear(&q_rr);
+    uint16_t miss[] = {0};
+    uint8_t req[16];
+    body_req(0x5u, 4, miss, 1, req);
+    ASSERT_EQ(Ota_Rr_Record(&q_rr, req), 1);
+    Ota_Rr_Clear(&q_rr);                             /* світанок нової кампанії */
+    uint8_t is_seal; uint16_t idx;
+    ASSERT_EQ(Ota_Rr_Peek(&q_rr, 0x5u, &is_seal, &idx), -1);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3088,23 +3081,26 @@ int main(void)
     RUN(test_fw20s2_queen_beacon_byte9_has_auth_bit_set);
     RUN(test_fw20s2_queen_beacon_byte9_exact_value);
 
-    printf("\n  Magic Re-Request Handler (FW.27-B):\n");
-    RUN(test_rereq_queen_accepts_valid_packet);
-    RUN(test_rereq_queen_dedups_replay);
-    RUN(test_rereq_queen_different_bitmaps_not_deduped);
-    RUN(test_rereq_queen_drops_when_no_active_ota_and_nothing_persisted);
-    RUN(test_rereq_queen_drops_when_pending_empty);
-    RUN(test_rereq_queen_drops_when_total_mismatch);
-    RUN(test_rereq_queen_drops_non_rerequest_marker);
-    RUN(test_rereq_queen_count_missing_full_bitmap);
-    RUN(test_rereq_queen_count_missing_partial);
-    RUN(test_rereq_queen_count_zero_when_all_received);
-
-    printf("\n  OTA SHA-256 Cross-Check (FW.52):\n");
+    printf("\n  Magic Re-Request — борг рефлексом (FW.27-B · FW.68, FW.52 SHA):\n");
+    RUN(test_rereq_body_admitted_while_window_open);
+    RUN(test_rereq_drops_when_pending_empty);
+    RUN(test_rereq_drops_when_total_mismatch);
+    RUN(test_rereq_drops_non_rerequest_marker);
+    RUN(test_rereq_drops_when_window_closed_and_nothing_persisted);
     RUN(test_fw52_sha_persist_then_verify_roundtrip);
-    RUN(test_fw52_rerequest_served_after_window_closed_same_ota);
+    RUN(test_fw52_rerequest_admitted_after_window_closed_same_ota);
     RUN(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten);
-    RUN(test_fw52_rerequest_served_immediately_while_window_still_open);
+    RUN(test_fw52_rerequest_admitted_while_window_open_nothing_persisted);
+    RUN(test_rereq_seal_sentinel_admitted_only_when_trailer_held);
+    RUN(test_rereq_debt_paid_one_block_per_heard_frame);
+    RUN(test_rereq_debt_is_per_did);
+    RUN(test_rereq_repeat_after_lost_answer_is_debt_again);
+    RUN(test_rereq_seal_debt_names_trailer_blocks);
+    RUN(test_rereq_body_bits_beyond_total_are_not_debt);
+    RUN(test_rereq_empty_request_clears_existing_debt);
+    RUN(test_rereq_full_table_evicts_round_robin);
+    RUN(test_rereq_campaign_dawn_clears_all_debt);
+
 
     printf("\n  OTA Seal Trailer Relay (FW.23):\n");
     RUN(test_queen_relay_stores_7_trailer_chunks);

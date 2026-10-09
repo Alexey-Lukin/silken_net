@@ -2519,7 +2519,7 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
 /* ════════════════════════════════════════════════════════════════════
  * 14. FW.27-B Magic Re-Request — Soldier-initiated vector OTA recovery
  * ════════════════════════════════════════════════════════════════════
- * Wire (16-byte AES-256-ECB block):
+ * Wire (один 16-байтний AES-128-ECB блок під KEYB; дім — ../common/ota_rerequest_wire.h):
  *   [0]    OTA_REQ_MARKER (0x55)
  *   [1..4] DID big-endian
  *   [5..6] total_chunks big-endian (cross-check with Queen)
@@ -2529,64 +2529,21 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
  * OTA_REREQUEST_SILENT_WAKEUPS тихих пробуджень поспіль (≈5 хв wall —
  * tick-різниця мертва у STOP2, лічимо пробудження з відкритим вухом).
  * ════════════════════════════════════════════════════════════════════ */
-#define S_OTA_REQ_MARKER             0x55
-#define S_OTA_REQ_HEADER_SIZE        7
-#define S_OTA_REQ_BITMAP_MAX_BYTES   9
-#define S_OTA_REQ_PACKET_SIZE        16
-#define S_OTA_REREQUEST_SILENT_WAKEUPS 10u
+/* Справжні будівник і рішення про тишу — ті самі, що кличе soldier/main.c і читає
+ * Королева (../common/ota_rerequest_wire.h), не копія (скіл firmware #19). */
+#include "../common/ota_rerequest_wire.h"
 
-/* Pure-logic mirror of Build_OTA_ReRequest_Payload (in soldier/main.c).
- * Returns 1 if any chunk is missing (TX), 0 if all received (skip TX). */
-static uint8_t Test_Build_OTA_ReRequest_Payload(uint32_t did,
-                                                 uint16_t total_chunks,
-                                                 const uint8_t* chunks_received,
-                                                 uint16_t       chunks_received_size,
-                                                 uint8_t out[S_OTA_REQ_PACKET_SIZE])
-{
-    if (total_chunks == 0)                         return 0;
-    if (chunks_received == NULL || out == NULL)    return 0;
-
-    memset(out, 0, S_OTA_REQ_PACKET_SIZE);
-    out[0] = S_OTA_REQ_MARKER;
-    out[1] = (uint8_t)(did >> 24);
-    out[2] = (uint8_t)(did >> 16);
-    out[3] = (uint8_t)(did >> 8);
-    out[4] = (uint8_t)(did & 0xFFu);
-    out[5] = (uint8_t)(total_chunks >> 8);
-    out[6] = (uint8_t)(total_chunks & 0xFFu);
-
-    uint16_t cap = (total_chunks > S_OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                       ? (uint16_t)(S_OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                       : total_chunks;
-    uint8_t any_missing = 0;
-    for (uint16_t i = 0; i < cap; i++) {
-        uint8_t got = (i < chunks_received_size) ? chunks_received[i] : 0;
-        if (!got) {
-            out[S_OTA_REQ_HEADER_SIZE + (i / 8u)] |= (uint8_t)(1u << (i % 8u));
-            any_missing = 1;
-        }
-    }
-    return any_missing;
-}
-
-/* Pure decision — mirror of Phase 4.5 epilogue: ЛІЧИЛЬНИК тихих пробуджень
- * замість tick-різниці (HAL_GetTick мертвий у STOP2 → стара 5-хв перевірка
- * запізнювала зойк у ~6-15×; 10 пробуджень × цикл 26-32 с ≈ той самий
- * 5-хв інтент wall-часу). Мутує *silent_wakeups як епілог циклу: інкремент
- * при відкритому вікні, скидання при fire. 1 = подати зойк. */
+/* Епілог Фази 4.5 так, як його пише main.c: рішення — Ota_Req_Silence_Due, а
+ * лічильник у нуль скидає викликач, коли зойк відлетів. Печатка тут повна, тож
+ * «збирання відкрите» = бракує тіла; печатку пінять окремі тести нижче. */
 static uint8_t Test_OTA_Silent_Wakeup_Tick(uint16_t total, uint16_t received,
-                                            uint32_t last_rx_tick,
-                                            uint8_t *silent_wakeups)
+                                           uint32_t last_rx_tick,
+                                           uint8_t *silent_wakeups)
 {
-    if (total == 0)             return 0;
-    if (received >= total)      return 0;
-    if (last_rx_tick == 0)      return 0;
-    if (*silent_wakeups < 255u) (*silent_wakeups)++;
-    if (*silent_wakeups >= S_OTA_REREQUEST_SILENT_WAKEUPS) {
-        *silent_wakeups = 0; /* даємо Королеві стільки ж тихих пробуджень */
-        return 1;
-    }
-    return 0;
+    OtaReqKind kind = Ota_Req_Kind(total, received, OTA_SEAL_ALL_RECEIVED);
+    if (!Ota_Req_Silence_Due(kind, (uint8_t)(last_rx_tick != 0), silent_wakeups)) return 0;
+    *silent_wakeups = 0;
+    return 1;
 }
 
 TEST(test_rereq_full_bitmap_when_no_chunks) {
@@ -2595,9 +2552,9 @@ TEST(test_rereq_full_bitmap_when_no_chunks) {
     uint8_t chunks[16] = {0};
     uint8_t out[16] = {0};
 
-    uint8_t any = Test_Build_OTA_ReRequest_Payload(did, total, chunks, 16, out);
+    uint8_t any = Ota_Req_Build_Body(did, total, chunks, 16, out);
     ASSERT_EQ(any, 1);
-    ASSERT_EQ(out[0], S_OTA_REQ_MARKER);
+    ASSERT_EQ(out[0], OTA_REQ_MARKER);
     /* DID big-endian */
     ASSERT_EQ(out[1], 0xDE); ASSERT_EQ(out[2], 0xAD);
     ASSERT_EQ(out[3], 0xBE); ASSERT_EQ(out[4], 0xEF);
@@ -2616,7 +2573,7 @@ TEST(test_rereq_partial_bitmap) {
     uint8_t chunks[6] = {1, 0, 1, 0, 1, 1};
     uint8_t out[16] = {0};
 
-    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x01020304u, total, chunks, 6, out);
+    uint8_t any = Ota_Req_Build_Body(0x01020304u, total, chunks, 6, out);
     ASSERT_EQ(any, 1);
     ASSERT_EQ(out[7], 0x0A);
     /* No bitmap bits beyond cap=6 */
@@ -2628,14 +2585,14 @@ TEST(test_rereq_no_missing_returns_zero) {
     uint8_t chunks[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     uint8_t out[16] = {0};
 
-    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x12345678u, total, chunks, 8, out);
+    uint8_t any = Ota_Req_Build_Body(0x12345678u, total, chunks, 8, out);
     ASSERT_EQ(any, 0);  /* No TX needed */
 }
 
 TEST(test_rereq_total_zero_skipped) {
     uint8_t chunks[1] = {0};
     uint8_t out[16] = {0};
-    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x1u, 0, chunks, 1, out);
+    uint8_t any = Ota_Req_Build_Body(0x1u, 0, chunks, 1, out);
     ASSERT_EQ(any, 0);
 }
 
@@ -2645,7 +2602,7 @@ TEST(test_rereq_did_endian_consistent) {
     uint8_t chunks[1] = {0};
     uint8_t out[16] = {0};
 
-    Test_Build_OTA_ReRequest_Payload(did, total, chunks, 1, out);
+    Ota_Req_Build_Body(did, total, chunks, 1, out);
     ASSERT_EQ(out[1], 0xCA); ASSERT_EQ(out[2], 0xFE);
     ASSERT_EQ(out[3], 0xBA); ASSERT_EQ(out[4], 0xBE);
 }
@@ -2677,7 +2634,7 @@ TEST(test_rereq_bitmap_capped_at_72_chunks) {
     uint8_t chunks[100] = {0};
     uint8_t out[16] = {0};
 
-    Test_Build_OTA_ReRequest_Payload(0x1u, total, chunks, 100, out);
+    Ota_Req_Build_Body(0x1u, total, chunks, 100, out);
     /* All 9 bitmap bytes 0xFF (72 chunks all "missing"); high bits beyond 72 are unset */
     for (int i = 0; i < 9; i++) ASSERT_EQ(out[7 + i], 0xFF);
 }
@@ -2688,7 +2645,7 @@ TEST(test_rereq_chunk_71_set_72_unset) {
     uint8_t chunks[72] = {0};
     uint8_t out[16] = {0};
 
-    Test_Build_OTA_ReRequest_Payload(0x1u, total, chunks, 72, out);
+    Ota_Req_Build_Body(0x1u, total, chunks, 72, out);
     /* Byte 8 (offset 7+8=15) covers bits 64..71 → all 8 bits set = 0xFF */
     ASSERT_EQ(out[15], 0xFF);
 }
@@ -2743,6 +2700,57 @@ TEST(test_rereq_silent_counter_saturates_no_wrap) {
     (void)Test_OTA_Silent_Wakeup_Tick(100, 80, 1000, &silent); /* 255 → fire */
     silent = 255;
     ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(100, 80, 1000, &silent), 1);
+}
+
+/* ── [FW.68] Перезапит печатки: сентинел total = 0xFFFF + маска відсутніх блоків ── */
+TEST(test_rereq_seal_sentinel_and_missing_mask) {
+    uint8_t out[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0xDEADBEEFu, 0x3Bu, out), 1);   /* бракує seg 3 і seg 7 */
+    ASSERT_EQ(out[0], OTA_REQ_MARKER);
+    ASSERT_EQ(out[1], 0xDE); ASSERT_EQ(out[4], 0xEF);
+    ASSERT_EQ(out[5], 0xFF); ASSERT_EQ(out[6], 0xFF);             /* сентинел */
+    ASSERT_EQ(out[7], 0x44);                                     /* біти 2 і 6 */
+    for (int i = 8; i < 16; i++) ASSERT_EQ(out[i], 0x00);
+}
+
+TEST(test_rereq_seal_none_when_trailer_complete) {
+    uint8_t out[16];
+    ASSERT_EQ(Ota_Req_Build_Seal(0x1u, OTA_SEAL_ALL_RECEIVED, out), 0);
+}
+
+TEST(test_rereq_body_builder_refuses_sentinel_total) {
+    /* 0xFFFF — сентинел печатки, а не 65535 чанків тіла. */
+    uint8_t chunks[1] = {0};
+    uint8_t out[16];
+    ASSERT_EQ(Ota_Req_Build_Body(0x1u, OTA_REQ_SEAL_SENTINEL, chunks, 1, out), 0);
+}
+
+TEST(test_rereq_kind_body_then_seal_then_none) {
+    ASSERT_EQ(Ota_Req_Kind(0, 0, 0), OTA_REQ_NONE);                       /* збирання немає */
+    ASSERT_EQ(Ota_Req_Kind(10, 9, 0), OTA_REQ_BODY);                      /* бракує тіла */
+    ASSERT_EQ(Ota_Req_Kind(10, 9, OTA_SEAL_ALL_RECEIVED), OTA_REQ_BODY);  /* тіло першим */
+    ASSERT_EQ(Ota_Req_Kind(10, 10, 0x0Fu), OTA_REQ_SEAL);                 /* тіло є, печатки ні */
+    ASSERT_EQ(Ota_Req_Kind(10, 10, OTA_SEAL_ALL_RECEIVED), OTA_REQ_NONE); /* усе є */
+}
+
+TEST(test_rereq_silence_ticks_while_only_seal_missing) {
+    /* Корінь FW.68: дерево з повним тілом і неповною печаткою мовчало вічно —
+     * лічильник тиші жив лише поки бракувало тіла. */
+    uint8_t silent = 0;
+    OtaReqKind kind = Ota_Req_Kind(10, 10, 0x7Eu);
+    for (int w = 1; w <= 9; w++)
+        ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent), 0);
+    ASSERT_EQ(Ota_Req_Silence_Due(kind, 1, &silent), 1);
+}
+
+TEST(test_seal_block_belongs_only_to_active_assembly) {
+    uint8_t blk[16] = {0};
+    blk[0] = OTA_SEAL_MARKER; blk[1] = 0x00; blk[2] = 0x01;
+    blk[3] = 0x00; blk[4] = 0x5A;                                 /* total = 90 */
+    ASSERT_EQ(Ota_Seal_Block_Belongs(blk, 16, 90), 1);
+    ASSERT_EQ(Ota_Seal_Block_Belongs(blk, 16, 91), 0);            /* чужа кампанія */
+    ASSERT_EQ(Ota_Seal_Block_Belongs(blk, 16, 0), 0);             /* збирання немає */
+    ASSERT_EQ(Ota_Seal_Block_Belongs(blk, 4, 90), 0);             /* обрізаний */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4922,6 +4930,12 @@ int main(void)
     RUN(test_rereq_should_NOT_tick_when_window_inactive);
     RUN(test_rereq_silent_counter_saturates_no_wrap);
     RUN(test_rereq_should_NOT_tick_when_last_tick_zero);
+    RUN(test_rereq_seal_sentinel_and_missing_mask);
+    RUN(test_rereq_seal_none_when_trailer_complete);
+    RUN(test_rereq_body_builder_refuses_sentinel_total);
+    RUN(test_rereq_kind_body_then_seal_then_none);
+    RUN(test_rereq_silence_ticks_while_only_seal_missing);
+    RUN(test_seal_block_belongs_only_to_active_assembly);
 
     printf("\n  OTA Seal Trailer + Dual-Gate (FW.23):\n");
     RUN(test_seal_trailer_six_chunks_assemble_full_signature);

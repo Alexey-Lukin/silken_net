@@ -48,6 +48,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
 #include "../common/ota_seal.h"       // [FW.23] Ed25519-печатка OTA: розбір трейлера + вердикт (One-Home з host-тестами)
+#include "../common/ota_rerequest_wire.h" // [FW.27-B · FW.68] зойк 0x55: розкладка й будівники (One-Home з Королевою й host-тестами)
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
@@ -73,15 +74,6 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define MIN_OTA_PACKET_SIZE       6          // OTA_HEADER_SIZE + 1 байт даних мінімум
 // [FW.23] Трейлер печатки OTA (маркер 0x9B, 6 сегментів підпису + версія) — формат і
 // константи живуть у ../common/ota_seal_wire.h, перевірка — у ../common/ota_seal.h.
-#define OTA_REQ_MARKER            0x55       // [FW.27-B] Маркер зойку «повтори, Королево» (Soldier→Queen)
-#define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
-#define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
-#define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES блок (16 байт fixed, post-ARCH.42 LoRa AES-128), як у телеметрії
-// [FW.27-B] «5 хв тиші» → подати голос про пропуски. Лічимо ТИХІ ПРОБУДЖЕННЯ
-// з відкритим вухом (Фаза 4.5), а не мілісекунди: HAL_GetTick заморожений у
-// STOP2, тож tick-різниця міряла активний час і запізнювала зойк у ~6-15×.
-// 10 пробуджень × цикл 26-32 с ≈ інтент «5 хв» (03_02 §5.1.3).
-#define OTA_REREQUEST_SILENT_WAKEUPS  10u    // [FW.27-B] тихих пробуджень до re-request
 #define OTA_MISMATCH_RESET_THRESHOLD 3       // [FW.53] N поспіль чужих total → відпустити мертву кампанію
 // Мітка помилки mruby VM на дроті: [panic:0|status:11=vm_error|growth:00000].
 // [FW.29] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
@@ -1165,60 +1157,10 @@ static inline uint8_t EMA_Is_Warmed_Up(void) {
 }
 
 // =====================================================================
-// === 1.12. FW.27-B Magic Re-Request — голос Солдата у бік Королеви ===
+// === 1.12. FW.27-B · FW.68 Magic Re-Request — голос Солдата у бік Королеви ===
 // =====================================================================
-// Коли Солдат тримає в пам'яті `ota_chunks_received < ota_total_chunks`
-// і OTA_REREQUEST_TIMEOUT_MS (5 хв) тиші збігло без нової проповіді —
-// він подає голос: уплінк-зойк зі списком того, чого бракує. Королева
-// чує і повторює лише пропущене.
-//
-// Wire-формат (16 байт plaintext, 1× AES-128-ECB блок, post-ARCH.42):
-//   [0]    0x55 marker
-//   [1..4] DID (big-endian) — Королева пам'ятає (DID, missing_bitmap)
-//   [5..6] total_chunks (big-endian) — перехресна перевірка
-//   [7..15] missing_bitmap (9 байт, LSB-first: бит i ⇔ chunk_idx i пропущено)
-//
-// chunks_received[] — той самий масив-літопис, що Солдат веде під час OTA
-// (uint8_t flag per slot). Будуємо bitmap так: для кожного chunk_idx у
-// [0..total_chunks), якщо chunks_received[idx] == 0 → бит i = 1 (пропущено).
-// 9 байт bitmap = до 72 чанків на один голос — для Queen OTA_MAX_CHUNKS=16
-// з добрим запасом.
-//
-// Повертає: 1 = є хоча б один пропуск (payload готовий до пострілу в ефір),
-//           0 = всі чанки на місці (зойк не потрібен, тиша — теж відповідь).
-static uint8_t Build_OTA_ReRequest_Payload(uint32_t did,
-                                            uint16_t       total_chunks,
-                                            const uint8_t* chunks_received,
-                                            uint16_t       chunks_received_size,
-                                            uint8_t        out[OTA_REQ_PACKET_SIZE]) {
-    if (total_chunks == 0)                         return 0;
-    if (chunks_received == NULL || out == NULL)    return 0;
-
-    memset(out, 0, OTA_REQ_PACKET_SIZE);
-    out[0] = OTA_REQ_MARKER;
-    out[1] = (uint8_t)(did >> 24);
-    out[2] = (uint8_t)(did >> 16);
-    out[3] = (uint8_t)(did >> 8);
-    out[4] = (uint8_t)(did & 0xFFu);
-    out[5] = (uint8_t)(total_chunks >> 8);
-    out[6] = (uint8_t)(total_chunks & 0xFFu);
-
-    // Обмежуємо total ємністю bitmap'а; чанки понад межу не звучатимуть у зойку
-    // (Королева усе одно пройдеться повним sweep'ом при наступній CoAP-проповіді).
-    uint16_t cap = (total_chunks > OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                       ? (uint16_t)(OTA_REQ_BITMAP_MAX_BYTES * 8u)
-                       : total_chunks;
-
-    uint8_t any_missing = 0;
-    for (uint16_t i = 0; i < cap; i++) {
-        uint8_t got = (i < chunks_received_size) ? chunks_received[i] : 0;
-        if (!got) {
-            out[OTA_REQ_HEADER_SIZE + (i / 8u)] |= (uint8_t)(1u << (i % 8u));
-            any_missing = 1;
-        }
-    }
-    return any_missing;
-}
+// Розкладка зойку 0x55 і будівники (тіло · сентинел печатки) — спільні з Королевою й
+// host-тестами: ../common/ota_rerequest_wire.h. Коли саме зойкати — Фаза 4.5.
 
 // =====================================================================
 // === 1.13. FW.23 Печатка OTA (Ed25519) перед Flash ====================
@@ -2357,6 +2299,13 @@ int main(void)
                 // після тіла прошивки: 6 несуть 64-байтний підпис, 7-й — version_id
                 // над (bytecode || version_id_be || total_chunks_be).
                 if (decrypted_rx_payload[0] == OTA_SEAL_MARKER) {
+                    // [FW.68] Трейлер чужої кампанії (total ≠ total нашого збирання тіла) —
+                    // шум: інакше він мовчки перезаписав би печатку, і чесне тіло дістало б REJECT.
+                    if (!Ota_Seal_Block_Belongs((const uint8_t*)decrypted_rx_payload,
+                                                incoming_lora_size, ota_total_chunks)) {
+                        break;
+                    }
+                    const uint8_t segs_before = ota_seal_segments_received;
                     int rc = Ota_Seal_Parse_Chunk((const uint8_t*)decrypted_rx_payload,
                                                   incoming_lora_size,
                                                   received_ota_seal,
@@ -2366,6 +2315,8 @@ int main(void)
                     // (сюди ми б не зайшли); rc=-1 ⇒ невалідна (size/seg_idx) —
                     // мовчки відкидаємо, як ефірний шум.
                     (void)rc;
+                    // Новий блок печатки — теж нове слово: лічильник тиші в нуль (FW.27-B).
+                    if (ota_seal_segments_received != segs_before) ota_silent_wakeups = 0;
 
                     // [FW.23] Печатка могла прийти ПІСЛЯ останнього чанка тіла —
                     // тоді саме вона довершує OTA. Якщо тіло вже зібране й тепер є
@@ -2569,40 +2520,35 @@ int main(void)
         Radio.Standby();
 
         // =====================================================================
-        // [FW.27-B] Magic Re-Request: Солдат подає голос про пропуски
+        // [FW.27-B · FW.68] Magic Re-Request: Солдат подає голос про пропуски
         // =====================================================================
-        // Якщо OTA-вікно відкрите (>0 чанків лежить у пам'яті, але < total),
-        // а вухо цього пробудження не почуло нового слова — ще одна тиха ніч
-        // у лічильник. Десята (≈5 хв wall при циклі 26-32 с) — і Солдат
-        // стріляє в ефір зойком [0x55][DID:4][total:2 BE][bitmap:9], а
-        // Королева повторює лише те, чого бракує. Власний jitter
-        // (TX_JITTER_MAX_MS) розводить голоси сусідніх дерев у часі.
-        if (ota_total_chunks > 0 &&
-            ota_chunks_received < ota_total_chunks &&
-            ota_last_chunk_rx_tick != 0) {
+        // Збирання відкрите — бракує чанків тіла АБО, за повного тіла, блоків печатки, —
+        // а вухо цього пробудження не почуло нового слова: ще одна тиха ніч у
+        // лічильник. Десята (≈5 хв wall при циклі 26-32 с) — і Солдат стріляє зойком
+        // (бітмап тіла або сентинел печатки з маскою). Королева зойк лише ЗАПИСУЄ, а
+        // блоки віддає рефлекс-пострілом на наступні кадри цього дерева — по одному за
+        // пробудження, у вухо, що вже слухає (⚖️ FW.68, 03_02 §5.1.3).
+        const OtaReqKind req_kind = Ota_Req_Kind(ota_total_chunks, ota_chunks_received,
+                                                 ota_seal_segments_received);
+        if (Ota_Req_Silence_Due(req_kind, (uint8_t)(ota_last_chunk_rx_tick != 0),
+                                &ota_silent_wakeups)) {
+            uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
 
-            if (ota_silent_wakeups < 255u) ota_silent_wakeups++;
-
-            if (ota_silent_wakeups >= OTA_REREQUEST_SILENT_WAKEUPS) {
-                uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
-
-                uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
-                                                                   ota_total_chunks,
-                                                                   ota_chunk_received,
-                                                                   sizeof(ota_chunk_received),
-                                                                   req_payload);
-                if (any_missing) {
-                    uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
-                    // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
-                    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
-                                      (uint32_t*)encrypted_req, 1000);
-                    // Далі Фаза 5 гасить радіо (Radio.Sleep) — зойк мусить відлетіти ДО.
-                    HAL_Delay(Lora_Phy_Send(encrypted_req, OTA_REQ_PACKET_SIZE,
-                                            LORA_PHY_PREAMBLE_SYMBOLS));
-                    // Лічильник у нуль — даємо Королеві стільки ж тихих
-                    // пробуджень на ретрансляцію перед наступним зойком.
-                    ota_silent_wakeups = 0;
-                }
+            uint8_t any_missing = (req_kind == OTA_REQ_BODY)
+                ? Ota_Req_Build_Body(tree_did, ota_total_chunks, ota_chunk_received,
+                                     sizeof(ota_chunk_received), req_payload)
+                : Ota_Req_Build_Seal(tree_did, ota_seal_segments_received, req_payload);
+            if (any_missing) {
+                uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
+                // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
+                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
+                                  (uint32_t*)encrypted_req, 1000);
+                // Далі Фаза 5 гасить радіо (Radio.Sleep) — зойк мусить відлетіти ДО.
+                HAL_Delay(Lora_Phy_Send(encrypted_req, OTA_REQ_PACKET_SIZE,
+                                        LORA_PHY_PREAMBLE_SYMBOLS));
+                // Лічильник у нуль: Королева віддаватиме борг по блоку на наступних
+                // кадрах; блок, що загубиться, перепитає наступна десята тиха ніч.
+                ota_silent_wakeups = 0;
             }
         }
     }
