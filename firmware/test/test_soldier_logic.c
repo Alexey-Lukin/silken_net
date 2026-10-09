@@ -4702,8 +4702,8 @@ TEST(test_fw49_wall_is_utc_boundary) {
 }
 
 /* [SEC.42] Крок годинника за маяком: уперед — як є, назад — не далі за підлогу + дрейф
- * від останнього синку; більший крок клемпиться. Крок зсуває й базу delta_t, тож гроші
- * він не чіпає за побудовою, а межа стереже лише абсолютний час. Числа — літералами:
+ * від останнього синку; більший крок клемпиться. База delta_t іде за фактичним кроком
+ * календаря (до секунди-двох на маяк), а межа обмежує КРОК, не суму. Числа — літералами:
  * пін, що порівнює з самим макросом, пропускає мутант будь-якої величини. */
 #define SEC42_NOW 1781267696u
 
@@ -4767,7 +4767,7 @@ TEST(test_sec42_replay_every_wake_shaves_at_most_two_seconds) {
 /* Застосування — Silken_Beacon_Commit на фейковому календарі: база delta_t іде за ФАКТИЧНИМ
  * кроком, мітка синку й сторож — лише за записом, що ліг. */
 static uint32_t sec42_cal;          /* «RTC-календар» */
-static uint8_t  sec42_cal_mode;     /* 0 пише · 1 запис не лягає · 2 лягає з помилкою доби · 3 читання гине після запису */
+static uint8_t  sec42_cal_mode;     /* 0 пише · 1 запис не лягає · 2 лягає з помилкою доби · 3 читання гине після запису · 4 секунда тікає під час запису */
 static uint8_t  sec42_cal_written;
 static uint32_t sec42_read(void) { return (sec42_cal_mode == 3u && sec42_cal_written) ? 0u : sec42_cal; }
 static void     sec42_write(uint32_t ts)
@@ -4775,6 +4775,7 @@ static void     sec42_write(uint32_t ts)
     sec42_cal_written = 1u;
     if (sec42_cal_mode == 0u || sec42_cal_mode == 3u) sec42_cal = ts;
     if (sec42_cal_mode == 2u) sec42_cal = ts + 86400u;   /* SetTime ліг, SetDate — ні */
+    if (sec42_cal_mode == 4u) sec42_cal = ts + 1u;
 }
 static const SilkenCalendarOps sec42_ops = { sec42_read, sec42_write };
 
@@ -4839,10 +4840,27 @@ TEST(test_sec42_commit_unreadable_rtc_does_not_write) {
     ASSERT_EQ(sec42_base, SEC42_NOW - 5u);
 }
 
-TEST(test_sec42_commit_read_dies_after_write_keeps_base) {
+TEST(test_sec42_commit_read_dies_after_write_errs_toward_longer_delta_t) {
+    /* Кроку не зміряти: база йде так, ніби крок НАЗАД ліг, — delta_t не коротшає. */
     ASSERT_EQ(sec42_commit(SEC42_NOW, 3u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
-    ASSERT_EQ(sec42_base, SEC42_NOW - 5u);
     ASSERT_EQ(sec42_mark, SEC42_NOW);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
+}
+
+TEST(test_sec42_commit_honest_beacon_behind_resets_watchdog) {
+    /* Найчастіший чесний синк: маяк на секунду позаду, у межах підлоги — повний синк. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 0u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW - 1u), 1);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 1u);
+    ASSERT_EQ(sec42_wakeups, 0u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6500u);
+}
+
+TEST(test_sec42_commit_second_tick_during_write_costs_one_second) {
+    /* Названий залишок: секунда минула під час запису, і перечитаний крок її вбирає — справжній
+     * проміжок від Фази 1 = 5 + 1 + 6495 = 6501 с, а виміряно 6500: на 1 с коротше. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 4u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 1);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 2u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6501u - 1u);
 }
 
 TEST(test_sec42_commit_base_zero_stays_zero) {
@@ -5314,7 +5332,9 @@ int main(void)
     RUN(test_sec42_commit_failed_write_moves_nothing);
     RUN(test_sec42_commit_half_write_base_follows_calendar);
     RUN(test_sec42_commit_unreadable_rtc_does_not_write);
-    RUN(test_sec42_commit_read_dies_after_write_keeps_base);
+    RUN(test_sec42_commit_read_dies_after_write_errs_toward_longer_delta_t);
+    RUN(test_sec42_commit_honest_beacon_behind_resets_watchdog);
+    RUN(test_sec42_commit_second_tick_during_write_costs_one_second);
     RUN(test_sec42_commit_base_zero_stays_zero);
 
     printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");

@@ -3239,8 +3239,9 @@ static void Load_Node_Role(void)
 // у STOP2, на відміну від замороженого SysTick). До першого time-sync
 // календар біжить від RTC-default 2000-01-01 — дельтам (delta_t) цього
 // досить; абсолютним він стає, коли beacon-UTC записується у календар
-// (Wall_Calendar_Set нижче). 0 = HAL-читання не вдалось (чесна відмова —
-// викликачі мають baseline/fallback гілки). Кремнієва верифікація
+// (Wall_Calendar_Set нижче). 0 = HAL-читання не вдалось — на запіненому WL-HAL недосяжне
+// (GetTime/GetDate завжди HAL_OK): незатактований RTC дає застиглу НЕНУЛЬОВУ мітку, і
+// delta_t = 0 стає сентинелом лише тому, що DELTA_T_UNKNOWN_S = 0. Кремнієва верифікація
 // (LSE bring-up + MX_RTC_Init clock-tree) — bench, RUNBOOK §4.
 static uint32_t Wall_Seconds_Now(void)
 {
@@ -3255,8 +3256,10 @@ static uint32_t Wall_Seconds_Now(void)
 
 // [FW.49 S1] Beacon-UTC → RTC-календар: відтепер wall-clock абсолютний, і
 // epoch_day (SEC.11) переживає будь-який STOP2 без tick-екстраполяції.
-// Best-effort: невдача запису не фатальна — legacy-шлях (unix_ts + tick)
-// лишається фолбеком у Derive_Cold_Start_State.
+// Best-effort: чи запис ліг, судить перечитування в Silken_Beacon_Commit (wall_time.h) —
+// на невдалому записі мітка синку не рухається. ⚠️ HAL_RTC_SetTime ховає таймаут входу в
+// INIT (його статус перезаписує вихід), тож можливий запис лише дати — базу delta_t це не
+// зачіпає (вона йде за перечитаним), а абсолютний час до наступного синку хибить.
 static void Wall_Calendar_Set(uint32_t unix_ts)
 {
     int32_t year; uint32_t month, day, hh, mm, ss;
@@ -3283,7 +3286,7 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
         // кандидат, який бекенд тримає у Mitigation A (ARCH.41 recovery).
         epoch_day = Silken_Epoch_Day_From_Unix(wall_now);
     } else if (soldier_unix_ts != 0u) {
-        // Sync був, але календар не взяв UTC (Set не вдався) — legacy
+        // Синк ліг, а календар відтоді втратив UTC (скид backup-домену без втрати SRAM) — legacy
         // tick-екстраполяція (заморожена у STOP2 — відома вада; сервер
         // тримає кандидатів, 03_04 Mitigation A).
         uint32_t now_ts = soldier_unix_ts +

@@ -23,7 +23,7 @@ RSpec.describe Telemetry::DeltaTCoverage do
   it "рахує по виміряних кадрах: сентинел пропускає, сатурований дріт — нижньою межею" do
     unknown = SilkenNet::Attractor::DELTA_T_UNKNOWN_S
     expect(described_class.ratio([ 3600, unknown ], since: now - 7200, now: now)).to be_within(1e-9).of(0.5)
-    expect(described_class.ratio([ 70_000 ], since: now - 70_000, now: now)).to be_within(1e-9).of(65_535 / 70_000.0)
+    expect(described_class.ratio([ 0xFFFF ], since: now - 70_000, now: now)).to be_within(1e-9).of(65_535 / 70_000.0)
   end
 
   it "один сентинел на конверт не засліплює підробку — частка лишається низькою" do

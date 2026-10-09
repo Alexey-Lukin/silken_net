@@ -106,7 +106,8 @@ static inline uint32_t Silken_Beacon_Clock_Target(uint32_t wall_now, uint32_t be
     return (back <= max_back) ? beacon_ts : (wall_now - max_back);
 }
 
-/* Шов календаря: читання (0 = RTC не прочитано) і best-effort запис, який судить перечитування. */
+/* Шов календаря: читання (0 = RTC не прочитано — на запіненому WL-HAL недосяжно, гілки на ньому
+ * стоять на майбутнє й помиляються в бік довшого delta_t) і best-effort запис, який судить перечитування. */
 typedef struct {
     uint32_t (*read_wall)(void);
     void     (*write_wall)(uint32_t unix_ts);
@@ -117,9 +118,10 @@ typedef struct {
  * який воно рухає. База delta_t іде за ФАКТИЧНИМ кроком календаря, перечитаним після
  * запису, а не за наміром: невдалий чи частковий запис (SetTime так, SetDate ні) гроші не
  * зачіпає, а наступний delta_t міряє справжній проміжок, хоч би звідки прийшов крок.
- * ⚠️ Залишок — до секунди на застосований маяк: календар судиться цілими секундами, а запис
- * починає секунду наново. Мітку синку й сторож рухає лише запис, що ЛІГ; сторож скидає лише
- * повний синк — обрізаний крок не скидає. Нечитаний RTC — календаря не чіпаємо.
+ * ⚠️ Залишок — до секунди на маяк (до двох, якщо секунда тікнула між читанням і записом), а
+ * більше — лише на апаратному збої RTCCLK під час запису: календар судиться цілими секундами,
+ * а запис починає секунду наново. Мітку синку й сторож рухає запис, що ліг (календар у
+ * [ціль, ціль + 1]); сторож скидає лише повний синк — обрізаний крок не скидає.
  * Повертає 1, коли запис ліг.
  */
 static inline uint8_t Silken_Beacon_Commit(const SilkenCalendarOps *ops, uint32_t beacon_ts,
@@ -131,7 +133,10 @@ static inline uint8_t Silken_Beacon_Commit(const SilkenCalendarOps *ops, uint32_
     const uint32_t target = Silken_Beacon_Clock_Target(before, beacon_ts, *sync_mark);
     ops->write_wall(target);
     const uint32_t after = ops->read_wall();
-    if (after == 0u) return 0u;                 /* кроку не зміряти — базу не руш */
+    if (after == 0u) {                          /* кроку не зміряти: вважаємо, що крок НАЗАД ліг */
+        if (*wake_base != 0u && target < before) *wake_base -= before - target;
+        return 0u;
+    }
     if (*wake_base != 0u) *wake_base += after - before;
     if (after != target && after != target + 1u) return 0u;   /* запис не ліг */
     *sync_mark = target;
