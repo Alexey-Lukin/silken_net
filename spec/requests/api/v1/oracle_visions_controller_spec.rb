@@ -261,7 +261,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response.parsed_body["emission_forecast"]).to eq(1.0)
     end
 
-    it "handles tree with nil telemetry (sap_flow defaults to 0.0)" do
+    it "handles a tree with no telemetry (unmeasured — skipped, not counted as zero)" do
       Rails.cache.clear
 
       create(:tree, cluster: cluster, status: :active)

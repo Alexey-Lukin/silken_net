@@ -123,8 +123,8 @@ class TelemetryLog < ApplicationRecord
   # ⛔ [ARCH.84] `ACOUSTIC_CALM_MAX` (20) і `HEALTHY_TEMP_MAX_C` (50) знято разом
   # із `healthy?` — обидва були bootstrap-числами того самого коміту 2026-03-02,
   # без калібрувального сліду. Новіший код тієї ж платформи вже так не робить:
-  # acoustic-term у `InsightGeneratorService` ІНЕРТНИЙ, доки поріг не заданий
-  # ground-truth'ом («no guessed count in live slashing»). Третім пішов
+  # acoustic-term у `InsightGeneratorService` ЗНЯТО 2026-08-16 (05_05 §7): твердження
+  # без вимірювача знімають, а не калібрують. Третім пішов
   # `ACOUSTIC_STORM_MIN` (50) — разом зі скоупом `anomalies`, у якого не було
   # жодного викликача (FW.65, 2026-09-27).
 

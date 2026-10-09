@@ -12,7 +12,8 @@ class TinyMlModel < ApplicationRecord
   MODEL_FORMATS = %w[tflite edge_impulse onnx c_array].freeze
 
   # --- ЗВ'ЯЗКИ ---
-  # Дерева, що використовують цей інтелект
+  # Дерева, прив'язані до моделі. ⚠️ [HW.30] На Солдаті моделі немає (пʼєзо
+  # зрізано) — це актив без носія на пристрої, інференсу тут не відбувається (04_01).
   has_many :trees, dependent: :nullify
   # Специфікація породи (Акустика дуба != Акустика сосни)
   belongs_to :tree_family, optional: true
@@ -74,7 +75,7 @@ class TinyMlModel < ApplicationRecord
     self.metadata = (metadata || {}).merge("accuracy_score" => value&.to_s)
   end
 
-  # BigDecimal для threshold, щоб P(anomaly) > threshold був детермінованим тригером EwsAlert
+  # BigDecimal для threshold — детермінований поріг P(anomaly); з HW.30 тригера EwsAlert на ньому немає
   def threshold
     val = metadata&.dig("threshold")
     return nil if val.nil?
