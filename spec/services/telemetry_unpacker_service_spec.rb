@@ -74,6 +74,32 @@ describe "[ARCH.41] доба cold-derive береться з ПРИЙОМУ, н�
   end
 end
 
+  # [SEC.42 (б)] Частка покриття Σ delta_t — спостереження: гістограма на справжньому шляху
+  # конверта, а точкою відліку є прийом ДО цієї обробки, не той, що рухає `mark_seen!`.
+  describe "[SEC.42 (б)] частка покриття Σ delta_t" do
+    let(:metric) { SilkenNet::Metrics::TELEMETRY_DELTA_T_COVERAGE }
+
+    before { allow(metric).to receive(:observe) }
+
+    it "спостерігає Σ сирих delta_t кадрів дерева проти часу від ПОПЕРЕДНЬОГО прийому" do
+      now = Time.utc(2026, 10, 9, 12, 0, 0)
+      tree.update_column(:last_seen_at, now - 7200)
+      batch = build_chunk(did_hex, -70, 3500, 22, 0, 3600, 10, 3) + build_chunk(did_hex, -70, 3500, 22, 0, 1800, 10, 3)
+
+      travel_to(now) { described_class.call(batch) }
+
+      expect(metric).to have_received(:observe).with(be_within(1e-9).of(0.75)).once
+    end
+
+    it "мовчить на першому прийомі дерева" do
+      tree.update_column(:last_seen_at, nil)
+
+      described_class.call(build_chunk(did_hex, -70, 3500, 22, 0, 3600, 10, 3))
+
+      expect(metric).not_to have_received(:observe)
+    end
+  end
+
   describe "[FW.57 F2] Lorenz/DCI uses the raw wire temp, not drift-corrected temperature_c" do
     it "passes the RAW wire temp to the attractor; persists the calibrated value" do
       tree.device_calibration.update!(temperature_offset_c: 3.0)

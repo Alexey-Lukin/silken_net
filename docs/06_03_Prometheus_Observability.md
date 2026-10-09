@@ -448,6 +448,7 @@ end
 |---|---|---|---|
 | `silkennet_lorenz_computation_duration_seconds` | діагностична | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
 | `silkennet_oracle_dispatch_duration_seconds` | алертна | — | Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down) |
+| `silkennet_telemetry_delta_t_coverage_ratio` | діагностична | — | SEC.42 (b): sum of a tree's raw delta_t over the time since its previous reception [SEC.42; diagnostic tier: no alert until a strictness verdict picks the threshold from this field distribution — frame loss, frost-deferred TX and a KEYL forger all pull it down] |
 **Регенерація таблиць** (після зміни реєстру метрик у коді):
 
 ```bash

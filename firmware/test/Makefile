@@ -41,8 +41,20 @@ all: queen soldier ota_seal bio_contract logmel audio_model encryption seed_deri
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
 
+# [SEC.42] Друга половина — носій ДИСЦИПЛІНИ, якої host-тест не бачить (main.c хост не
+# компілює): календар Солдата пише лише прийом маяка, і лише кроком Silken_Beacon_Apply
+# з міткою синку й базою delta_t — інакше повтор маяка без ключа знову вкорочує delta_t.
+# ⚠️ Стеля: читає текст main.c — виклик усередині іншої функції шаблон не відрізнить.
 soldier: $(BINDIR)/test_soldier
 	@./$(BINDIR)/test_soldier
+	@grep -qE 'Silken_Beacon_Apply\(Wall_Seconds_Now\(\), beacon_ts,' ../soldier/main.c && \
+	 grep -qE '^[[:space:]]+soldier_unix_ts, last_wakeup_timestamp\);' ../soldier/main.c && \
+	 grep -qE '^[[:space:]]+last_wakeup_timestamp[[:space:]]+= beacon_step\.base_wall;' ../soldier/main.c || \
+	 { echo "FAIL [SEC.42]: прийом маяка не застосовує крок через Silken_Beacon_Apply з міткою синку й базою delta_t"; exit 1; }
+	@if grep -nE '^[^/*]*Wall_Calendar_Set\(' ../soldier/main.c | grep -vE 'Wall_Calendar_Set\((uint32_t unix_ts|beacon_step\.clock_ts)\)'; then \
+	  echo "FAIL [SEC.42]: календар пише щось, крім кроку маяка (beacon_step.clock_ts)"; \
+	  exit 1; \
+	fi
 
 ota_seal: $(BINDIR)/test_ota_seal
 	@./$(BINDIR)/test_ota_seal

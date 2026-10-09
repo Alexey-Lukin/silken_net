@@ -78,28 +78,55 @@ static inline uint32_t Silken_Wall_Elapsed_Seconds(uint32_t wall_now, uint32_t s
 
 /*
  * [SEC.42] Межа кроку годинника НАЗАД за маяком часу: підлога (ціла секунда маяка й
- * латентність ефіру) + дрейф LSE від останнього синку. 50 ppm — у 2.5× ширше за допуск
- * кварцу (±20 ppm), тож чесний Солдат у межу не впирається за будь-якого проміжку синку.
+ * латентність ефіру) + дрейф LSE від останнього синку. 100 ppm — допуск кварцу (±20 ppm)
+ * плюс його тягнення навантаженням («десятки ppm», 02_01 §3.1) із запасом. Мітку синку
+ * губить кожен скид SRAM, а календар у backup-домені тим часом несе весь дрейф від синку,
+ * тож без мітки межа бере найдовшу тишу, яку лічить сторож синку на каденсі CCM-ери.
  */
-#define SILKEN_BEACON_BACKSTEP_FLOOR_S    2u
-#define SILKEN_BEACON_BACKSTEP_DRIFT_DIV  20000u   /* 1 с на 20 000 с = 50 ppm */
+#define SILKEN_BEACON_BACKSTEP_FLOOR_S      2u
+#define SILKEN_BEACON_BACKSTEP_DRIFT_DIV    10000u            /* 1 с на 10 000 с = 100 ppm */
+#define SILKEN_BEACON_UNKNOWN_SINCE_S       (180u * 86400u)   /* мітку загублено скидом */
 
 /*
  * [SEC.42] Куди ставити календар за маяком часу (03_05 §2.4). Уперед — як є: повтор дає
  * лише старі мітки, а майбутньої без KEYB не підробити. Назад — не далі за межу вище:
  * більший крок КЛЕМПИТЬСЯ до неї, а не ігнорується, тож Солдат, що побіг уперед,
- * сходиться до UTC, а повтор маяка вкорочує наступний delta_t щонайбільше на межу.
- * since_sync_wall — мітка останнього синку в часі календаря (0 = синку не було або
- * стан загублено → лише підлога). wall_now = 0 (RTC не прочитано) → маяк як є.
+ * сходиться до UTC. since_sync_wall — мітка останнього синку в часі календаря.
+ * wall_now = 0 (RTC не прочитано) → маяк як є.
  */
 static inline uint32_t Silken_Beacon_Clock_Target(uint32_t wall_now, uint32_t beacon_ts,
                                                   uint32_t since_sync_wall)
 {
     if (beacon_ts >= wall_now) return beacon_ts;
-    uint32_t max_back = SILKEN_BEACON_BACKSTEP_FLOOR_S +
-        Silken_Wall_Elapsed_Seconds(wall_now, since_sync_wall) / SILKEN_BEACON_BACKSTEP_DRIFT_DIV;
+    uint32_t elapsed = (since_sync_wall == 0u) ? SILKEN_BEACON_UNKNOWN_SINCE_S
+                                               : Silken_Wall_Elapsed_Seconds(wall_now, since_sync_wall);
+    uint32_t max_back = SILKEN_BEACON_BACKSTEP_FLOOR_S + elapsed / SILKEN_BEACON_BACKSTEP_DRIFT_DIV;
     uint32_t back = wall_now - beacon_ts;
     return (back <= max_back) ? beacon_ts : (wall_now - max_back);
+}
+
+/*
+ * [SEC.42] Застосування маяка — ОДНА точка для main.c і host-тестів. Крок календаря
+ * зсуває й базу delta_t на той самий крок, тож наступний delta_t міряє лише справжній
+ * проміжок: жоден крок годинника — повтор без ключа, похибка Королеви, чесний синк
+ * уперед — грошей не торкається, а межа вище стереже лише абсолютний час. База 0
+ * (попереднього пробудження немає) і нечитаний RTC базу не рухають.
+ */
+typedef struct {
+    uint32_t clock_ts;    /* що писати в календар і в мітку синку */
+    uint32_t base_wall;   /* база delta_t після кроку */
+    uint8_t  clamped;     /* крок назад обрізано межею — це не повний синк */
+} SilkenBeaconStep;
+
+static inline SilkenBeaconStep Silken_Beacon_Apply(uint32_t wall_now, uint32_t beacon_ts,
+                                                   uint32_t since_sync_wall, uint32_t base_wall)
+{
+    SilkenBeaconStep s;
+    s.clock_ts  = Silken_Beacon_Clock_Target(wall_now, beacon_ts, since_sync_wall);
+    s.clamped   = (uint8_t)(s.clock_ts != beacon_ts);
+    s.base_wall = (base_wall == 0u || wall_now == 0u) ? base_wall
+                                                      : base_wall + (s.clock_ts - wall_now);
+    return s;
 }
 
 /*

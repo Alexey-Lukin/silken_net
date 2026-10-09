@@ -1069,9 +1069,11 @@ static inline uint8_t Soldier_Pack_Gossip_Ts_Byte(uint32_t unix_ts)
 // Wrap-safe для unsigned modular arithmetic. Якщо різниця >127 в обидві
 // сторони після вибору вікна — gossip недостовірний (стрибок >128 сек =
 // сусід має ще старіший дрейф), повертаємо local_ts без змін.
-// ⛔ [SEC.42] Цей годинник сусіда зсуває календар до 127 с НАЗАД — далі за межу маяка.
-// Вживлюючи gossip, проведи його рішення крізь Silken_Beacon_Clock_Target (wall_time.h):
-// інакше повтор чужого кадру поверне безключовий шлях до балів, який закрив SEC.42.
+// ⛔ [SEC.42] Календаря цей годинник сусіда НЕ пише — ні назад, ні вперед: байт LSB
+// повторюється кожні 256 с, тож старий кадр декодується зсувом до ±127 с, а в CCM-ері він
+// ще й AAD, якого сусід без ключа відправника не автентифікує. Вживлюючи gossip, бери його
+// лише підказкою epoch_day, поки синку не було; Silken_Beacon_Apply він не годиться —
+// той бере крок уперед як є, бо маяка без KEYB не підробити, а gossip — підробити.
 static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb)
 {
     if (local_ts == 0) return 0;  // cold-boot: gossip недостатньо
@@ -2299,18 +2301,20 @@ int main(void)
 
                     if (beacon_ts != 0) {
                         // [SEC.42] Маяк без MAC і FC: повтор старого ставив би годинник
-                        // назад і вкорочував наступний delta_t, тобто піднімав бали. Назад
+                        // назад і вкорочував наступний delta_t, тобто піднімав бали. Тож
+                        // крок календаря зсуває й базу delta_t (гроші він не чіпає), а назад
                         // календар іде не далі за дрейф від останнього синку (wall_time.h).
-                        uint32_t clock_ts = Silken_Beacon_Clock_Target(Wall_Seconds_Now(),
-                                                                       beacon_ts,
-                                                                       soldier_unix_ts);
-                        soldier_unix_ts            = clock_ts;
+                        SilkenBeaconStep beacon_step = Silken_Beacon_Apply(Wall_Seconds_Now(), beacon_ts,
+                                                                           soldier_unix_ts, last_wakeup_timestamp);
+                        soldier_unix_ts            = beacon_step.clock_ts;
                         soldier_unix_ts_local_tick = HAL_GetTick();
-                        wakeups_since_sync         = 0; // голос Королеви — тиша скінчилась
+                        last_wakeup_timestamp      = beacon_step.base_wall;
+                        // Обрізаний крок — не повний синк: сторож дрейфу далі лічить і попросить маяк.
+                        if (!beacon_step.clamped) wakeups_since_sync = 0;
                         // [FW.49 S1] UTC у RTC-календар: wall-clock стає
                         // абсолютним — delta_t/epoch_day переживають STOP2
                         // без tick-екстраполяції (вона лишається фолбеком).
-                        Wall_Calendar_Set(clock_ts);
+                        Wall_Calendar_Set(beacon_step.clock_ts);
                     }
 
                     // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9

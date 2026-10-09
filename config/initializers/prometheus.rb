@@ -239,6 +239,18 @@ module SilkenNet
                  "(30-day bucket at the MAX_SUPPLY share rate) and were credited only in part"
     )
 
+    # ⚖️ [SEC.42 (б), делеговано 2026-10-09] Частка покриття: Σ сирих delta_t кадрів дерева
+    # одного конверта / час від його попереднього прийому (`Telemetry::DeltaTCoverage`).
+    # Спостереження без алерту: втрата кадру, морозне відкладення TX і фальсифікатор із KEYL
+    # тягнуть її в один бік, тож поріг строгості обирає окремий присуд за цим розподілом.
+    TELEMETRY_DELTA_T_COVERAGE = REGISTRY.histogram(
+      :silkennet_telemetry_delta_t_coverage_ratio,
+      docstring: "SEC.42 (b): sum of a tree's raw delta_t over the time since its previous reception " \
+                 "[SEC.42; diagnostic tier: no alert until a strictness verdict picks the threshold from this field " \
+                 "distribution — frame loss, frost-deferred TX and a KEYL forger all pull it down]",
+      buckets: [ 0.1, 0.25, 0.5, 0.75, 0.9, 1.1, 1.5, 2.5 ]
+    )
+
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
     # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
     # in production is a security signal worth paging on.

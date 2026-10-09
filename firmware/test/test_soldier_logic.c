@@ -2425,12 +2425,18 @@ TEST(test_lorenz_c_mirror_stays_finite) {
 #define S_BEACON_PLAINTEXT_SIZE  16
 #define S_OTA_MARKER             0x99
 
+#include "../common/wall_time.h"   /* [SEC.42] Silken_Beacon_Apply — та сама точка, що в main.c */
+
 /* Soldier-side authoritative UTC (mirrors soldier_unix_ts in main.c). */
 static uint32_t test_soldier_unix_ts            = 0;
 static uint32_t test_soldier_unix_ts_local_tick = 0;
+static uint32_t test_wall_now                   = 0;   /* Wall_Seconds_Now(); 0 = RTC не прочитано */
+static uint32_t test_wake_base                  = 0;   /* last_wakeup_timestamp */
 
 /* Extract from soldier/main.c RX branch:
  *  if (size == 16 && plaintext[0] == 0x9C && plaintext[10] == 'B') -> consume.
+ * Час застосовує спільна Silken_Beacon_Apply (wall_time.h), а не копія її логіки;
+ * що main.c кличе саме її й з тими аргументами, стереже grep у цілі `soldier` Makefile.
  * Returns: 1 = beacon consumed (don't relay/route further), 0 = not a beacon. */
 static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
 {
@@ -2442,9 +2448,26 @@ static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
                   ((uint32_t)plaintext[3] << 8)  | (uint32_t)plaintext[4];
     if (ts == 0) return 1;  /* Frame is well-formed but ts=0 — drop without persisting */
 
-    test_soldier_unix_ts            = ts;
+    const SilkenBeaconStep step = Silken_Beacon_Apply(test_wall_now, ts, test_soldier_unix_ts, test_wake_base);
+    test_soldier_unix_ts            = step.clock_ts;
     test_soldier_unix_ts_local_tick = 12345;
+    test_wake_base                  = step.base_wall;
     return 1;
+}
+
+TEST(test_beacon_rx_replay_is_clamped_through_shared_apply) {
+    /* [SEC.42] Синк щойно, повтор маяка 30-секундної давності: годинник назад лише на 2 с,
+     * а база delta_t — разом із ним. */
+    test_wall_now        = 1781267696u;
+    test_soldier_unix_ts = 1781267696u;
+    test_wake_base       = 1781267691u;
+    const uint32_t old_ts = 1781267696u - 30u;
+    uint8_t plain[16] = { 0x9C, (uint8_t)(old_ts >> 24), (uint8_t)(old_ts >> 16), (uint8_t)(old_ts >> 8),
+                          (uint8_t)old_ts, 0,0,0,0, 1, 'B', 0,0,0,0,0 };
+    ASSERT_EQ(Recv_Time_Beacon(plain, 16), 1);
+    ASSERT_EQ(test_soldier_unix_ts, 1781267696u - 2u);
+    ASSERT_EQ(test_wake_base, 1781267691u - 2u);
+    test_wall_now = 0; test_soldier_unix_ts = 0; test_wake_base = 0;
 }
 
 TEST(test_beacon_rx_sets_unix_ts) {
@@ -4675,9 +4698,16 @@ TEST(test_fw49_wall_is_utc_boundary) {
 }
 
 /* [SEC.42] Крок годинника за маяком: уперед — як є, назад — не далі за підлогу + дрейф
- * від останнього синку; більший крок клемпиться. Повтор маяка без ключа більше не
- * вкорочує delta_t понад межу, а чесний дрейф у неї не впирається. */
+ * від останнього синку; більший крок клемпиться. Крок зсуває й базу delta_t, тож гроші
+ * він не чіпає за побудовою, а межа стереже лише абсолютний час. Числа — літералами:
+ * пін, що порівнює з самим макросом, пропускає мутант будь-якої величини. */
 #define SEC42_NOW 1781267696u
+
+TEST(test_sec42_constants_pinned) {
+    ASSERT_EQ(SILKEN_BEACON_BACKSTEP_FLOOR_S, 2u);
+    ASSERT_EQ(SILKEN_BEACON_BACKSTEP_DRIFT_DIV, 10000u);          /* 100 ppm */
+    ASSERT_EQ(SILKEN_BEACON_UNKNOWN_SINCE_S, 15552000u);          /* 180 діб */
+}
 
 TEST(test_sec42_forward_and_equal_taken_as_is) {
     ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW + 3600u, SEC42_NOW - 600u), SEC42_NOW + 3600u);
@@ -4687,49 +4717,80 @@ TEST(test_sec42_forward_and_equal_taken_as_is) {
 TEST(test_sec42_unsynced_calendar_and_unreadable_rtc_take_beacon) {
     /* Перший синк: календар іде від 2000-01-01 — UTC-маяк завжди «уперед». */
     ASSERT_EQ(Silken_Beacon_Clock_Target(946684800u + 3600u, SEC42_NOW, 0u), SEC42_NOW);
-    /* RTC не прочитано (Wall_Seconds_Now = 0) — поведінка як доти. */
+    /* RTC не прочитано (Wall_Seconds_Now = 0) — маяк як є. */
     ASSERT_EQ(Silken_Beacon_Clock_Target(0u, SEC42_NOW, SEC42_NOW - 600u), SEC42_NOW);
 }
 
 TEST(test_sec42_replay_right_after_sync_clamped_to_floor) {
-    /* Повтор маяка 30-секундної давності одразу після синку: годинник іде назад
-     * лише на підлогу, не на 30 с. */
-    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW),
-              SEC42_NOW - SILKEN_BEACON_BACKSTEP_FLOOR_S);
-    /* У межах підлоги — як є (ціла секунда маяка). */
+    /* Повтор маяка 30-секундної давності одразу після синку: назад лише на 2 с. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW), SEC42_NOW - 2u);
     ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 2u, SEC42_NOW), SEC42_NOW - 2u);
-    /* Стан синку загублено (since = 0) — лише підлога. */
-    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, 0u),
-              SEC42_NOW - SILKEN_BEACON_BACKSTEP_FLOOR_S);
 }
 
 TEST(test_sec42_allowance_grows_with_time_since_sync) {
-    /* 200 000 с від синку → підлога 2 + 10 с дрейфу = 12 с. */
-    const uint32_t since = SEC42_NOW - 200000u;
-    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 12u, since), SEC42_NOW - 12u);
-    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 13u, since), SEC42_NOW - 12u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW - 9999u), SEC42_NOW - 2u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW - 10000u), SEC42_NOW - 3u);
+    /* 200 000 с від синку → 2 + 20 = 22 с. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 22u, SEC42_NOW - 200000u), SEC42_NOW - 22u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 23u, SEC42_NOW - 200000u), SEC42_NOW - 22u);
+}
+
+TEST(test_sec42_lost_sync_mark_takes_longest_silence) {
+    /* Скид SRAM загубив мітку, а календар несе дрейф від синку: межа = 2 + 180 діб × 100 ppm. */
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 1557u, 0u), SEC42_NOW - 1557u);
+    ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 1558u, 0u), SEC42_NOW - 1557u);
 }
 
 TEST(test_sec42_honest_drift_never_hits_the_bound) {
-    /* Кварц +20 ppm (допуск поз. 17) і ціла секунда маяка: за будь-якого проміжку синку
-     * від хвилини до року годинник Солдата наздоганяє UTC ПОВНІСТЮ. */
+    /* Кварц +20 ppm допуску + 50 ppm тягнення і ціла секунда маяка: за будь-якого
+     * проміжку синку від хвилини до року годинник Солдата наздоганяє UTC ПОВНІСТЮ. */
     for (uint32_t elapsed = 60u; elapsed <= 365u * 86400u; elapsed *= 2u) {
-        const uint32_t ahead = 1u + (uint32_t)(((uint64_t)elapsed * 20u) / 1000000u);
+        const uint32_t ahead = 1u + (uint32_t)(((uint64_t)elapsed * 70u) / 1000000u);
         ASSERT_EQ(Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - ahead, SEC42_NOW - elapsed),
                   SEC42_NOW - ahead);
     }
 }
 
-TEST(test_sec42_replay_every_wake_shaves_at_most_the_floor) {
-    /* Атакер повторює маяк у вікні після кожного TX; синк попереднього пробудження —
-     * один проміжок тому. Каденс CCM-ери (≈1.8 год) і відвантажений (30 с): вкорочення
-     * delta_t за пробудження ≤ межі, що на цих проміжках дорівнює підлозі. */
+TEST(test_sec42_replay_every_wake_shaves_at_most_two_seconds) {
+    /* Повтор у вікні після кожного TX, синк — один проміжок тому (30 с і ≈ 1.8 год). */
     const uint32_t intervals[] = { 30u, 6500u };
     for (unsigned i = 0; i < sizeof(intervals) / sizeof(intervals[0]); i++) {
-        const uint32_t since  = SEC42_NOW - intervals[i];
-        const uint32_t target = Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 600u, since);
-        ASSERT_EQ(SEC42_NOW - target, SILKEN_BEACON_BACKSTEP_FLOOR_S);
+        const uint32_t target = Silken_Beacon_Clock_Target(SEC42_NOW, SEC42_NOW - 600u, SEC42_NOW - intervals[i]);
+        ASSERT_EQ(SEC42_NOW - target, 2u);
     }
+}
+
+/* Розв'язка: наступний delta_t міряє справжній проміжок, хоч би який крок зробив годинник. */
+static uint32_t sec42_next_delta(SilkenBeaconStep s, uint32_t real_after_step)
+{
+    return Silken_Wall_Delta_Seconds(s.clock_ts + real_after_step, s.base_wall, 60u, 7u * 86400u);
+}
+
+TEST(test_sec42_step_moves_delta_t_base_replay_shaves_nothing) {
+    /* Фаза 1 була 5 с тому; повтор маяка в RX-вікні; до наступного пробудження ще 6495 с. */
+    const SilkenBeaconStep s = Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW - 30u, SEC42_NOW, SEC42_NOW - 5u);
+    ASSERT_EQ(s.clock_ts, SEC42_NOW - 2u);
+    ASSERT_EQ(s.clamped, 1);
+    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+}
+
+TEST(test_sec42_forward_sync_does_not_lengthen_delta_t) {
+    /* Повільний кварц: маяк на 40 с попереду — чесний синк уперед проміжку не подовжує. */
+    const SilkenBeaconStep s = Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW + 40u, SEC42_NOW - 600u, SEC42_NOW - 5u);
+    ASSERT_EQ(s.clamped, 0);
+    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+}
+
+TEST(test_sec42_first_sync_moves_base_into_utc) {
+    /* Календар від 2000-01-01 → перший синк: наступний кадр уже має виміряний delta_t. */
+    const SilkenBeaconStep s = Silken_Beacon_Apply(946684800u + 3600u, SEC42_NOW, 0u, 946684800u + 3595u);
+    ASSERT_EQ(s.clock_ts, SEC42_NOW);
+    ASSERT_EQ(sec42_next_delta(s, 6495u), 6500u);
+}
+
+TEST(test_sec42_base_zero_and_unreadable_rtc_keep_base) {
+    ASSERT_EQ(Silken_Beacon_Apply(SEC42_NOW, SEC42_NOW + 40u, SEC42_NOW, 0u).base_wall, 0u);
+    ASSERT_EQ(Silken_Beacon_Apply(0u, SEC42_NOW, SEC42_NOW, 1234u).base_wall, 1234u);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4984,6 +5045,7 @@ int main(void)
 
     printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
     RUN(test_beacon_rx_sets_unix_ts);
+    RUN(test_beacon_rx_replay_is_clamped_through_shared_apply);
     RUN(test_beacon_rx_rejects_wrong_marker);
     RUN(test_beacon_rx_rejects_wrong_magic_byte);
     RUN(test_beacon_rx_rejects_wrong_size);
@@ -5181,12 +5243,18 @@ int main(void)
     RUN(test_fw49_civil_from_unix_goldens);
     RUN(test_fw49_civil_unix_roundtrip_sweep);
     RUN(test_fw49_wall_is_utc_boundary);
+    RUN(test_sec42_constants_pinned);
     RUN(test_sec42_forward_and_equal_taken_as_is);
     RUN(test_sec42_unsynced_calendar_and_unreadable_rtc_take_beacon);
     RUN(test_sec42_replay_right_after_sync_clamped_to_floor);
     RUN(test_sec42_allowance_grows_with_time_since_sync);
+    RUN(test_sec42_lost_sync_mark_takes_longest_silence);
     RUN(test_sec42_honest_drift_never_hits_the_bound);
-    RUN(test_sec42_replay_every_wake_shaves_at_most_the_floor);
+    RUN(test_sec42_replay_every_wake_shaves_at_most_two_seconds);
+    RUN(test_sec42_step_moves_delta_t_base_replay_shaves_nothing);
+    RUN(test_sec42_forward_sync_does_not_lengthen_delta_t);
+    RUN(test_sec42_first_sync_moves_base_into_utc);
+    RUN(test_sec42_base_zero_and_unreadable_rtc_keep_base);
 
     printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");
     RUN(test_fw18b_pack_zero_counter_is_legacy_byte);

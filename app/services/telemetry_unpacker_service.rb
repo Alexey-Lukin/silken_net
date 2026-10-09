@@ -159,6 +159,9 @@ class TelemetryUnpackerService < ApplicationService
 
     # ⚡ [ОПТИМІЗАЦІЯ N+1]: Спершу витягуємо всі DID з батчу
     preload_trees(chunks, chunk_size)
+    # [SEC.42 (б)] Попередній прийом — ДО обробки: `mark_seen!` нижче рухає його на кожному кадрі.
+    @seen_before = @trees_cache.transform_values(&:last_seen_at)
+    @frame_delta_ts = Hash.new { |h, did| h[did] = [] }
 
     @committed = 0
     @statuses  = Hash.new(0)
@@ -176,10 +179,20 @@ class TelemetryUnpackerService < ApplicationService
       end
     end
 
+    observe_delta_t_coverage
     Summary.new(records: records, committed: @committed, statuses: @statuses.dup, panics: @panics)
   end
 
   private
+
+  # [SEC.42 (б)] Спостереження, не вердикт — механізм і стеля в шапці `Telemetry::DeltaTCoverage`.
+  def observe_delta_t_coverage
+    now = Time.current
+    @frame_delta_ts.each do |did, delta_ts|
+      ratio = Telemetry::DeltaTCoverage.ratio(delta_ts, since: @seen_before[did], now: now)
+      SilkenNet::Metrics::TELEMETRY_DELTA_T_COVERAGE.observe(ratio) if ratio
+    end
+  end
 
   # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
   # [ВИПРАВЛЕНО: DID Prefix Mismatch]: Реконструюємо повний SNET-XXXXXXXX формат
@@ -1127,6 +1140,7 @@ class TelemetryUnpackerService < ApplicationService
     # лічильника вище, бо в них тотожна семантика «чанк справді ліг у БД». Розводити
     # їх означало б завести другу відповідь на одне питання.
     tally_for_summary(attributes)
+    @frame_delta_ts[tree.did] << log.metabolism_s
 
     # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
     # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.
