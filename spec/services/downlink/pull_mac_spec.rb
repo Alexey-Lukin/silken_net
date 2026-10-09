@@ -19,6 +19,13 @@ RSpec.describe Downlink::PullMac do
       .to eq("84e60570ae08fb40967c76f9a90fefda")
   end
 
+# [FW.60] Той самий вектор заморожено в firmware/test/test_pull_mac.c (Pull_Mac_Reply_Tag).
+it "matches the firmware golden reply tag" do
+  tag = described_class.reply_tag(keyc: keyc, m_hex: "4919db6f8e65d85e178ac31330b5f73f",
+                                  envelope: (0..47).to_a.pack("C*"))
+  expect(tag.unpack1("H*")).to eq("776e7562d30028766e3f56d255f0f11a")
+end
+
   describe ".authentic?" do
     let(:gateway) { create(:gateway) }
     let!(:hardware_key) { create(:hardware_key, device_uid: gateway.uid, aes_key_hex: keyc.unpack1("H*").upcase) }
@@ -52,6 +59,17 @@ RSpec.describe Downlink::PullMac do
       expect(described_class.authentic?(gateway: gateway, result: result_for(signed([ "fw=7" ]), mid: 4661))).to be(false)
       as_ota = result_for(signed([ "v=12", "ch=3" ]), status: :ota_chunk_fetch)
       expect(described_class.authentic?(gateway: gateway, result: as_ota)).to be(false)
+    end
+
+    it "seals the reply with a tag bound to THIS request's m=" do
+      query = signed([ "fw=7" ])
+      sealed = described_class.seal_reply(gateway: gateway, result: result_for(query), envelope: "E" * 32)
+      m_hex = query.last.delete_prefix("m=")
+
+      expect(sealed.byteslice(0, 32)).to eq("E" * 32)
+      expect(sealed.byteslice(32, 16)).to eq(described_class.reply_tag(keyc: keyc, m_hex: m_hex, envelope: "E" * 32))
+      other = described_class.reply_tag(keyc: keyc, m_hex: signed([ "fw=8" ]).last.delete_prefix("m="), envelope: "E" * 32)
+      expect(sealed.byteslice(32, 16)).not_to eq(other)
     end
 
     it "rejects everything when the gateway has no KEYC" do

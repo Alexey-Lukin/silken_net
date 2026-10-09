@@ -20,12 +20,15 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   let!(:gateway) { create(:gateway, cluster: cluster, state: :idle) }
   let!(:key_record) { create(:hardware_key, device_uid: gateway.uid) }
   let!(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
+  # [FW.60] Тег відповіді чинний лише для свого запиту — запамʼятовуємо `m=` останнього.
+  let(:sent_macs) { {} }
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     CoapGate::REPLY_CACHE.clear
     Rails.cache.clear
   end
+
 
   # Незалежний GET-білдер (не реюзить CoapServerPdu/CoapClient — спека мусить
   # ловити регресію нашого ж парсера чужими байтами, дзеркало coap_smoke).
@@ -46,16 +49,21 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
       mac = Downlink::PullMac.hex(keyc: key_record.coap_binary_key, route: segments[0], uid: segments[1],
                                   mid: mid, raw_query: pairs)
       pairs += [ "m=#{mac}" ]
+      sent_macs[:last] = mac
     end
     pairs.each { |pair| emit.call(15, pair) }                     # Uri-Query: RFC — опція на пару
     pdu
   end
 
-  # Розпаковка poll-відповіді: 2.05 → [IV:16][CBC] → strip [0x9C][ts:4] → inner.
+  # Розпаковка poll-відповіді: 2.05 → [IV:16][CBC][тег:16] → тег звірено → strip [0x9C][ts:4] → inner.
   def unwrap(reply)
     expect(reply.getbyte(1)).to eq(0x45) # 2.05 Content
     marker = reply.index("\xFF".b)
-    envelope = reply.byteslice(marker + 1, reply.bytesize)
+    sealed = reply.byteslice(marker + 1, reply.bytesize)
+    envelope = sealed.byteslice(0, sealed.bytesize - Downlink::PullMac::REPLY_TAG_LEN)
+    # [FW.60] Тег чинний лише для СВОГО запиту — як його звіряє Королева.
+    expect(sealed.byteslice(-Downlink::PullMac::REPLY_TAG_LEN, Downlink::PullMac::REPLY_TAG_LEN))
+      .to eq(Downlink::PullMac.reply_tag(keyc: key_record.coap_binary_key, m_hex: sent_macs[:last], envelope: envelope))
     cipher = OpenSSL::Cipher.new("aes-256-cbc").decrypt
     cipher.key = key_record.binary_key
     cipher.iv = envelope.byteslice(0, 16)

@@ -97,7 +97,7 @@
 #define OTA_FETCH_HINT_LEN         7
 #define QUEEN_POLL_MAX_PER_FLUSH   3u    // дренаж CMD-черги без вічного циклу
 #define QUEEN_OTA_FETCH_PER_FLUSH  4u    // IWDG-бюджет: розмови ≤ вікна пса
-#define QUEEN_POLL_REPLY_MAX       600u  // конверт ≤ 560 (buf 544 + IV) + CoAP-обгортка
+#define QUEEN_POLL_REPLY_MAX       600u  // конверт ≤ 560 (buf 544 + IV) + тег відповіді 16 + CoAP-обгортка
 
 // [FW.23] Трейлер Ed25519-печатки OTA — backend пакує 64-байтний підпис у 6× 16-байтних
 // LoRa-блоків + 7-й блок з version_id, усі з маркером 0x9B; формат і константи —
@@ -1066,6 +1066,11 @@ int main(void)
       hrng.Instance = RNG;
       if (HAL_RNG_Init(&hrng) == HAL_OK) {
           if (HAL_RNG_GenerateRandomNumber(&hrng, &canary_r) != HAL_OK) canary_r = 0;
+          // [FW.60] Початковий CoAP MID — з HRNG (RFC 7252 §4.4): з нуля запит після
+          // ребуту повторювався б побайтово, і стара poll-відповідь із тим самим MID
+          // пройшла б звірку тегу (pull_mac.h). Відмова RNG лишає нуль — як доти.
+          uint32_t mid_r = 0;
+          if (HAL_RNG_GenerateRandomNumber(&hrng, &mid_r) == HAL_OK) coap_mid = (uint16_t)mid_r;
           HAL_RNG_DeInit(&hrng);
       }
       __stack_chk_guard = Canary_Guard_Derive(
@@ -2681,6 +2686,10 @@ static void Queen_Poll_Downlink(void)
     // = 135 Б. Запас лишається, не претендуючи на точність до байта.
     static uint8_t poll_pdu[160];
     static uint8_t poll_reply[QUEEN_POLL_REPLY_MAX];
+    // [FW.60] Найбільша відповідь — OTA-чанк: конверт 560 Б + тег 16 + CoAP-заголовок,
+    // маркер payload і запас на опції ACK (≤ 8 Б) — 584 з 600.
+    _Static_assert(QUEEN_POLL_REPLY_MAX >= CMD_DECRYPT_BUF_SIZE + 16u + PULL_MAC_REPLY_TAG_LEN + 8u,
+                   "poll_reply мусить умістити найбільший конверт із тегом відповіді");
     // q2: OTA-фетч нижче кладе туди лише "ch=<u16>" (≤8 Б), але POLL-цикл тепер
     // може нести "cmd=" + UUID_STR_LEN — спільний буфер тому розмірений під
     // більшого споживача.
@@ -2721,6 +2730,10 @@ static void Queen_Poll_Downlink(void)
         if (!Coap_Reply_Extract_Payload(poll_reply, reply_len, coap_mid,
                                         &envelope, &env_len)) return; // 4.04/RST
         if (env_len == 0u) return;
+        // [FW.60 ⚖️ 2026-10-09] Тег відповіді — до розшифрування: без нього зміна IV
+        // переписувала б час і OTA-hint, а стару відповідь можна було б повторити.
+        // Чужий тег = транспортний збій: наступний флаш спитає знову.
+        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) return;
 
         // poll_reply — наш буфер: const знімається легально (decrypt читає
         // envelope, пише в cmd_decrypt_buf; CBC→ECB restore всередині).
@@ -2768,6 +2781,7 @@ static void Queen_Poll_Downlink(void)
             return;
         }
         if (env_len == 0u) return;
+        if (!Pull_Mac_Reply_Verify(coap_key, qm, envelope, &env_len)) return; // курсор стоїть
         (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
         g_ota_fetch_next_ch++;
     }

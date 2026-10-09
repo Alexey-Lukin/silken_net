@@ -89,6 +89,8 @@ RSpec.describe CoapGate do
       # [SEC.38] Автентичність тут стабимо: MAC судять pull_mac_spec (golden-вектори) і
       # ota_deploy_tract_spec (справжні датаграми); ця спека — про маршрутизацію гейту.
       allow(Downlink::PullMac).to receive(:authentic?).and_return(true)
+      # Тег відповіді — те саме: справжню криптографію судять pull_mac_spec і ota_deploy_tract_spec.
+      allow(Downlink::PullMac).to receive(:seal_reply) { |envelope:, **| envelope }
     end
 
     it "derive'ить чергу і відповідає 2.05 з конвертом" do
@@ -98,6 +100,8 @@ RSpec.describe CoapGate do
       allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_content: "REPLY205".b)
 
       expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("REPLY205".b)
+      expect(Downlink::PullMac).to have_received(:seal_reply)
+        .with(gateway: gateway, result: anything, envelope: "ENVELOPE".b)
     end
 
     it "невідомий uid → 4.04, derivation не торкається" do
@@ -132,7 +136,7 @@ RSpec.describe CoapGate do
     end
 
     # 🔴 [FW.63] Протилежний бік того самого MID, і ціна в нього протилежна:
-    # `coap_mid` живе в RAM Королеви й обнуляється ребутом, а слот кешу TTL не
+    # `coap_mid` живе в RAM Королеви й на ребуті стартує заново (з HRNG), а слот кешу TTL не
     # має — тож той самий номер приносить ІНШЕ питання. Віддати кеш тут означає
     # відповісти на чуже: поточний pending мовчки не доїде.
     it "пост-ребутна колізія MID (той самий MID, ІНШЕ питання) → свіжа деривація, не кеш" do

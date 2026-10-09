@@ -23,7 +23,7 @@
  * місці: Pull_Mac_Keyc_Bytes = big-endian байти кожного слова.
  *
  * Стеля, названа свідомо: свіжості MAC не дає — перехоплений справжній запит
- * можна повторити (MID після ребуту Королеви починається знову). Повтор нічого не
+ * можна повторити (MID після ребуту Королеви починається знову, з FW.60 — з HRNG). Повтор нічого не
  * підробляє (fw= і cmd= — справжні), лише перевидає голову черги; час Королева
  * отримує саме з poll-відповіді, тож штамп часу в MAC дав би дедлок першого poll'а.
  */
@@ -89,6 +89,64 @@ static inline int Pull_Mac_Query(const uint32_t keyc_words[PULL_MAC_KEY_WORDS],
         out[3u + 2u * i] = hex[digest[i] & 0x0Fu];
     }
     out[PULL_MAC_QUERY_LEN] = '\0';
+    return 1;
+}
+
+/*
+ * [FW.60 ⚖️ делеговано 2026-10-09] MAC над poll-ВІДПОВІДДЮ — дзеркало Rails
+ * `Downlink::PullMac.reply_tag`, golden-вектор спільний (test_pull_mac.c ⟷ pull_mac_spec.rb).
+ * Конверт [IV:16][AES-256-CBC KEYC] ховав, ЩО каже Rails, але не доводив, що казав Rails:
+ * зміна IV переписує перший блок відкритого тексту (час і OTA-hint), а стару відповідь
+ * можна повторити. Тег — 16 Б хвостом після конверта:
+ *   K_rmac = HMAC-SHA256(KEYC, "silken-reply-mac-v1");
+ *   tag    = перші 16 Б HMAC-SHA256(K_rmac, "silken-reply-v1" "\n" m_hex "\n" ‖ конверт),
+ *   m_hex  = 32 hex тегу ЦЬОГО запиту — відповідь чинна лише для свого запиту.
+ * Королева звіряє тег ДО розшифрування (encrypt-then-MAC). Свіжість між ребутами дає
+ * випадковий початковий MID (queen/main.c): без нього запит після ребуту повторювався б
+ * побайтово, а з ним — і чинний тег старої відповіді.
+ */
+#define PULL_MAC_REPLY_LABEL    "silken-reply-mac-v1"
+#define PULL_MAC_REPLY_VERSION  "silken-reply-v1"
+#define PULL_MAC_REPLY_TAG_LEN  16u
+
+static inline void Pull_Mac_Reply_Tag(const uint32_t keyc_words[PULL_MAC_KEY_WORDS],
+                                      const char m_hex[PULL_MAC_HEX_LEN],
+                                      const uint8_t *envelope, uint16_t env_len,
+                                      uint8_t out[PULL_MAC_REPLY_TAG_LEN])
+{
+    uint8_t keyc[4u * PULL_MAC_KEY_WORDS];
+    uint8_t k_rmac[SILKEN_SHA256_DIGEST_LEN];
+    uint8_t digest[SILKEN_SHA256_DIGEST_LEN];
+    uint8_t prefix[sizeof(PULL_MAC_REPLY_VERSION) + PULL_MAC_HEX_LEN + 1u]; /* ver \n hex \n */
+    size_t n = sizeof(PULL_MAC_REPLY_VERSION) - 1u;
+
+    Pull_Mac_Keyc_Bytes(keyc_words, keyc);
+    Silken_Hmac_Sha256(keyc, sizeof keyc, (const uint8_t *)PULL_MAC_REPLY_LABEL,
+                       sizeof(PULL_MAC_REPLY_LABEL) - 1u, k_rmac);
+    memcpy(prefix, PULL_MAC_REPLY_VERSION, n);
+    prefix[n++] = '\n';
+    memcpy(prefix + n, m_hex, PULL_MAC_HEX_LEN);
+    n += PULL_MAC_HEX_LEN;
+    prefix[n++] = '\n';
+    Silken_Hmac_Sha256_Concat(k_rmac, sizeof k_rmac, prefix, n, envelope, env_len, digest);
+    memcpy(out, digest, PULL_MAC_REPLY_TAG_LEN);
+}
+
+/* 1 — хвіст payload'а несе чинний тег для запиту з `qm` ("m=<hex>"), і *len зменшено
+ * до самого конверта; 0 — тегу немає чи він чужий (підробка, повтор, збій): відповідь
+ * не читається зовсім, як транспортний збій. Порівняння — без раннього виходу. */
+static inline int Pull_Mac_Reply_Verify(const uint32_t keyc_words[PULL_MAC_KEY_WORDS],
+                                        const char qm[PULL_MAC_QUERY_LEN + 1u],
+                                        const uint8_t *payload, uint16_t *len)
+{
+    if (payload == NULL || len == NULL || *len < PULL_MAC_REPLY_TAG_LEN) return 0;
+    const uint16_t env_len = (uint16_t)(*len - PULL_MAC_REPLY_TAG_LEN);
+    uint8_t want[PULL_MAC_REPLY_TAG_LEN];
+    uint8_t diff = 0;
+    Pull_Mac_Reply_Tag(keyc_words, qm + 2u, payload, env_len, want);
+    for (uint32_t i = 0; i < PULL_MAC_REPLY_TAG_LEN; i++) diff |= (uint8_t)(want[i] ^ payload[env_len + i]);
+    if (diff != 0u) return 0;
+    *len = env_len;
     return 1;
 }
 

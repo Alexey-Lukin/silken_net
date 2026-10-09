@@ -96,6 +96,45 @@ TEST(test_oversized_canonical_refuses) {
     ASSERT_EQ(Pull_Mac_Query(kKeycWords, "poll", "SNET-Q-00000001", 1, long_q, NULL, q), 0);
 }
 
+/* [FW.60] Тег відповіді: той самий вектор заморожено в pull_mac_spec.rb (reply_tag). */
+static const char kGoldenM[] = "4919db6f8e65d85e178ac31330b5f73f";
+
+TEST(test_golden_reply_tag) {
+    uint8_t env[48];
+    uint8_t tag[PULL_MAC_REPLY_TAG_LEN];
+    static const uint8_t want[PULL_MAC_REPLY_TAG_LEN] = {
+        0x77, 0x6e, 0x75, 0x62, 0xd3, 0x00, 0x28, 0x76,
+        0x6e, 0x3f, 0x56, 0xd2, 0x55, 0xf0, 0xf1, 0x1a,
+    };
+    for (int i = 0; i < 48; i++) env[i] = (uint8_t)i;
+    Pull_Mac_Reply_Tag(kKeycWords, kGoldenM, env, sizeof env, tag);
+    for (int i = 0; i < (int)PULL_MAC_REPLY_TAG_LEN; i++) ASSERT_EQ(tag[i], want[i]);
+}
+
+TEST(test_reply_verify_strips_tag_and_rejects_forgery) {
+    char qm[PULL_MAC_QUERY_LEN + 1u] = "m=";
+    uint8_t buf[48 + PULL_MAC_REPLY_TAG_LEN];
+    uint16_t len = sizeof buf;
+    memcpy(qm + 2, kGoldenM, PULL_MAC_HEX_LEN + 1u);
+    for (int i = 0; i < 48; i++) buf[i] = (uint8_t)i;
+    Pull_Mac_Reply_Tag(kKeycWords, kGoldenM, buf, 48, buf + 48);
+
+    ASSERT_TRUE(Pull_Mac_Reply_Verify(kKeycWords, qm, buf, &len));
+    ASSERT_EQ(len, 48);                      /* тег знято — лишився конверт */
+
+    len = sizeof buf;
+    buf[0] ^= 0x01u;                         /* зміна IV — саме та підробка, що переписує час */
+    ASSERT_EQ(Pull_Mac_Reply_Verify(kKeycWords, qm, buf, &len), 0);
+    ASSERT_EQ(len, sizeof buf);              /* відмова довжини не чіпає */
+    buf[0] ^= 0x01u;
+
+    qm[2] = (qm[2] == 'a') ? 'b' : 'a';      /* чужий запит — той самий конверт не чинний */
+    ASSERT_EQ(Pull_Mac_Reply_Verify(kKeycWords, qm, buf, &len), 0);
+
+    len = PULL_MAC_REPLY_TAG_LEN - 1u;       /* коротше за тег */
+    ASSERT_EQ(Pull_Mac_Reply_Verify(kKeycWords, qm, buf, &len), 0);
+}
+
 int main(void) {
     printf("\n[SEC.38] Pull_Mac_Query — MAC над Queen-pull запитом\n");
     printf("══════════════════════════════════════════════════════════════\n");
@@ -105,6 +144,8 @@ int main(void) {
     RUN(test_golden_ota_route_is_part_of_the_mac);
     RUN(test_every_field_moves_the_mac);
     RUN(test_oversized_canonical_refuses);
+    RUN(test_golden_reply_tag);
+    RUN(test_reply_verify_strips_tag_and_rejects_forgery);
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);
     return tests_failed == 0 ? 0 : 1;
