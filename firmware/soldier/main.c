@@ -1734,11 +1734,15 @@ int main(void)
   HAL_NVIC_SetPriority(PVD_PVM_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(PVD_PVM_IRQn);
   // Переривання — на ФРОНТ: старт, що вже нижче порогу, фронту не дасть, тож рефлекс сам.
-  // У thread mode sleep-on-exit не спрацює (виходу з ISR немає) — спимо тут; підйом VDD
-  // витісняє WFI перериванням PVD, і колбек робить скид.
+  // У thread mode sleep-on-exit не спрацює (виходу з ISR немає) — спимо тут. PVDO — перед
+  // КОЖНИМ WFI: підйом, що прийшов, поки колбек ще не поставив коми, поглинуло б саме
+  // переривання PVD (без коми воно лише повертається), і WFI спав би на здоровій шині без виходу.
   if (__HAL_PWR_GET_FLAG(PWR_FLAG_PVDO)) {
       HAL_PWR_PVDCallback();
-      for (;;) { __WFI(); }
+      for (;;) {
+          if (!__HAL_PWR_GET_FLAG(PWR_FLAG_PVDO)) NVIC_SystemReset();
+          __WFI();
+      }
   }
 
   // 3. Калібрування АЦП (Встановлюємо абсолютний фізичний нуль)
@@ -2884,12 +2888,23 @@ void HAL_PWR_PVDCallback(void)
     // Кома — через sleep-on-exit: STOP2, SLEEPDEEP і SLEEPONEXIT, і ядро засинає на виході з
     // цього ISR. Підйом VDD посеред тіла лишить IRQ PVD очікуваним — він ланцюжком увійде знову
     // й скине; пізніший — неактивне переривання, воно витісняє сон так само. Інші переривання
-    // (майбутній WUT, SEC.15) лише відбудуть своє й повернуть плату в сон: петлі скидів немає.
+    // (майбутній WUT, SEC.15) не біжать зовсім: їх замасковано нижче — петлі скидів немає.
     pvd_coma = 1;
+    // Під час коми не біжить ніщо, крім PVD: при sleep-on-exit обробник радіо чи RTC ланцюжком
+    // розбудив би радіо зі сну, а транзакція SUBGHZ, перервана посередині, лишила б HAL у BUSY —
+    // і неочищуване переривання крутилось би без сну. Кома кінчається скидом, тож відновлювати
+    // нічого. Очікування самого PVD не чіпаємо: підйом, що вже прийшов, мусить скинути.
+    for (uint32_t k = 0; k < (uint32_t)(sizeof NVIC->ICER / sizeof NVIC->ICER[0]); k++) {
+        const uint32_t keep = (k == ((uint32_t)PVD_PVM_IRQn >> 5)) ?
+                              (1u << ((uint32_t)PVD_PVM_IRQn & 31u)) : 0u;
+        NVIC->ICER[k] = ~keep;
+        NVIC->ICPR[k] = ~keep;
+    }
     HAL_SuspendTick();
     MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_LOWPOWERMODE_STOP2);
     SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
     HAL_PWR_EnableSleepOnExit();
+    __DSB(); // запис у PWR і SCB завершено до виходу з ISR
 #endif
 }
 
