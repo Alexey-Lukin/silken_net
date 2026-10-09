@@ -122,14 +122,7 @@ static void MX_RTC_Init(void)
 static void MX_SUBGHZ_Init(void) { /* радіо — заглушка нижче */ }
 
 /* ── MSP: такти периферії, яких main.c не вмикає ─────────────────────────── */
-void HAL_MspInit(void)
-{
-    // «Датчик смерті» (ARCH.21): HAL_PWR_ConfigPVD у main.c налаштовує лише лінію, а без
-    // NVIC колбек не стрельне ніколи; у CubeMX це робить згенерований HAL_MspInit.
-    HAL_NVIC_SetPriority(PVD_PVM_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(PVD_PVM_IRQn);
-}
-
+// NVIC для PVD тут СВІДОМО не вмикається: це робить main.c після відновлення стану (FW.69).
 void HAL_CRYP_MspInit(CRYP_HandleTypeDef *h)
 {
     (void)h;

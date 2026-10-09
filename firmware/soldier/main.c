@@ -1514,14 +1514,12 @@ int main(void)
   Silken_Mpu_Apply(); // [SEC.21] NX-stack + RO-code (draft; активація bench)
 #endif
 
-  Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
-  Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
-  Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
-  Load_Ota_Seal_Pubkey(); // [FW.23] Публічний ключ Ed25519-печатки OTA кластера ("KPUB")
-  Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
-  MX_CRYP_Init(); // Вмикаємо апаратний AES (амбієнт = bcast_key в обох ерах)
-
 #if defined(CCM_SELFTEST)
+  // [FW.46 · FW.2, 2026-10-09] POST — ДО завантаження ключів: KAT-и ставлять власні ключі,
+  // а Load_AES_Key на порожній сторінці ключа (плата без конвеєра RUNBOOK 1.3) кличе
+  // Error_Handler → скид, і POST не виконався б ніколи. MX_CRYP_Init тут лише дає
+  // периферію (Instance, DataType); амбієнтний ключ ще нульовий — KAT його не читає.
+  MX_CRYP_Init();
   // [FW.2] POST: бенч-атестація CCM-двигуна на реальному кремнії. Результат у
   // g_ccm_selftest_failed (читати через SWD): 0 → кремній == OpenSSL == backend
   // → дозволено flip FW2_CCM_ENABLED; >0 → HAL/endianness/errata → CCM не вмикати.
@@ -1536,18 +1534,14 @@ int main(void)
   MX_CRYP_Init();
 #endif
 
-  /* USER CODE BEGIN 2 */
+  Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+  Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
+  Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
+  Load_Ota_Seal_Pubkey(); // [FW.23] Публічний ключ Ed25519-печатки OTA кластера ("KPUB")
+  Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
+  MX_CRYP_Init(); // Вмикаємо апаратний AES (амбієнт = bcast_key в обох ерах)
 
-  // Ініціалізація Датчика Смерті (PVD - Programmable Voltage Detector)
-  // PVD стежить за VDD, не за іоністором: шину тримає buck, тож VDD < 2.2 В означає, що
-  // тримати вже нічим. [FW.46, 2026-10-09] Доти тут стояв PWR_PVDLEVEL_7 — у WL це не
-  // поріг, а зовнішній аналоговий вхід, порівняний із VREFINT, і жодна ніжка WLE5 його не
-  // виводить (DS13105 Rev 12: пороги лише VPVD0..VPVD6, у PB7 додаткових функцій немає).
-  PWR_PVDTypeDef sConfigPVD = {0};
-  sConfigPVD.PVDLevel = PWR_PVDLEVEL_1; // VPVD1: спад 2.15–2.25 В (DS13105)
-  sConfigPVD.Mode = PWR_PVD_MODE_IT_RISING_FALLING; // Генерувати переривання
-  HAL_PWR_ConfigPVD(&sConfigPVD);
-  HAL_PWR_EnablePVD();
+  /* USER CODE BEGIN 2 */
 
   // 1. Відкриваємо доступ до Backup Domain (дозволяємо запис у вічну пам'ять)
   HAL_PWR_EnableBkUpAccess();
@@ -1720,6 +1714,27 @@ int main(void)
   // Silken_Wall_Delta_Seconds трактує last==0 як cold-start → сентинел
   // «не виміряно» (DELTA_T_UNKNOWN_S, ARCH.102) для першого циклу,
   // а Phase 1 сама виставить wall-маркер.
+
+  // Ініціалізація Датчика Смерті (PVD - Programmable Voltage Detector)
+  // PVD стежить за VDD, не за іоністором: шину тримає buck, тож VDD < 2.2 В означає, що
+  // тримати вже нічим. [FW.46, 2026-10-09] Доти тут стояв PWR_PVDLEVEL_7 — у WL це не
+  // поріг, а зовнішній аналоговий вхід, порівняний із VREFINT, і жодна ніжка WLE5 його не
+  // виводить (DS13105 Rev 12: пороги лише VPVD0..VPVD6, у PB7 додаткових функцій немає).
+  // [FW.69 ⚖️ делеговано 2026-10-09] Озброюємо ПІСЛЯ відновлення стану з DR вище: колбек
+  // пише в DR саме цей стан, і раніший брауноут затер би його нулями з RAM. Хибний pending,
+  // що міг набігти, поки компаратор вставав, знімаємо до NVIC; NVIC вмикає саме цей код
+  // (не згенерований HAL_MspInit — той озброїв би його задовго до відновлення).
+  PWR_PVDTypeDef sConfigPVD = {0};
+  sConfigPVD.PVDLevel = PWR_PVDLEVEL_1; // VPVD1: спад 2.15–2.25 В (DS13105)
+  sConfigPVD.Mode = PWR_PVD_MODE_IT_RISING_FALLING; // спад — рефлекс; підйом — пробудження з нього
+  HAL_PWR_ConfigPVD(&sConfigPVD);
+  HAL_PWR_EnablePVD();
+  __HAL_PWR_PVD_EXTI_CLEAR_FLAG();
+  HAL_NVIC_ClearPendingIRQ(PVD_PVM_IRQn);
+  HAL_NVIC_SetPriority(PVD_PVM_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(PVD_PVM_IRQn);
+  // Переривання — на ФРОНТ: старт, що вже нижче порогу, фронту не дасть, тож рефлекс сам.
+  if (__HAL_PWR_GET_FLAG(PWR_FLAG_PVDO)) HAL_PWR_PVDCallback();
 
   // 3. Калібрування АЦП (Встановлюємо абсолютний фізичний нуль)
   HAL_ADCEx_Calibration_Start(&hadc);
@@ -2802,13 +2817,17 @@ void OnCadDone(bool channelActivityDetected)
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС СМЕРТІ (PVD Interrupt) — ARCH.21
 // =========================================================================
-// Ця функція миттєво викликається апаратно, якщо VDD падає нижче 2.2 В
-// (PWR_PVDLEVEL_1 = VPVD1). Брауноут — то крик ксилеми, що задихається; ми маємо
+// Ця функція миттєво викликається апаратно, коли VDD перетинає 2.2 В (PWR_PVDLEVEL_1 =
+// VPVD1) — в обидва боки; рефлекс робить лише спад (PVDO), підйом будить його сон. Брауноут — то крик ксилеми, що задихається; ми маємо
 // мікросекунди до того, як SRAM почне корумпуватись. Симетрія до Phase 5:
 // ховаємо у RTC Backup Domain все, що дозволить наступному boot'у продовжити
 // траєкторію Лоренца без "холодного" cold-start через HKDF.
 void HAL_PWR_PVDCallback(void)
 {
+    // [FW.69] Лише СПАД: PVDO = 1, поки VDD нижче порогу. Підйом (шина відновилась)
+    // приходить тим самим IRQ і тут нічого не робить — у сні нижче він і є пробудженням.
+    if (!__HAL_PWR_GET_FLAG(PWR_FLAG_PVDO)) return;
+
     // 1. [SEC.10] Спакована плоть DR0 — рятуємо лічильник panic-кадрів і
     //    acoustic_events єдиним 32-бітним словом, щоб panic-replay захист
     //    не зник при брауноуті між Phase 5 циклами.
@@ -2845,8 +2864,16 @@ void HAL_PWR_PVDCallback(void)
     // [FW.54] У Standby — ще нижчий струм; стан уже в DR (кроки 1–3), продовження — через reset.
     Silken_Standby_Enter(&g_standby_ops);
 #else
+    // [FW.69 ⚖️ делеговано 2026-10-09] Сон — через WFE із SEVONPEND, а не WFI: ми всередині
+    // переривання з найвищим пріоритетом, і WFI розбудило б лише те, що його ПЕРЕВИЩУЄ, —
+    // тобто ніщо: плата спала б до скиду. SEVONPEND робить подією будь-яке очікуване
+    // переривання незалежно від пріоритету — і підйом VDD (той самий IRQ PVD, чий pending HAL
+    // зняв перед цим колбеком), і майбутній WUT (SEC.15). Прокинувшись, продовжуємо через
+    // скид: стан уже в DR (кроки 1–3), так само, як у Standby-гілці вище.
     HAL_SuspendTick();
-    HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
+    SET_BIT(SCB->SCR, SCB_SCR_SEVONPEND_Msk);
+    HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFE);
+    NVIC_SystemReset();
 #endif
 }
 
