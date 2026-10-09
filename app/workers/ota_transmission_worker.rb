@@ -24,9 +24,9 @@ require "timeout"
 # `OTA_CHUNKS_SENT_TOTAL` живе ЛИШЕ в спеці цього воркера (рядок пінів у `06_03`), а
 # живий писач метрики `Downlink::PendingQueueService` не пінить жодна спека — пін
 # ПЕРЕНЕСТИ на сервіс ДО зняття, інакше разом із файлом зникне вся перевірка метрики;
-# (2) речення, що тримають цей воркер за живого пакувальника, — «пакує окремо» як причина
-# детермінізму печатки (підстава FW.23), — переписати на poll-тракт:
-# `git grep -n -e OtaTransmissionWorker -e 'пакує окремо' -- docs app`.
+# (2) поле `manifest[:total_packages]` у `OtaPackagerService.prepare` у рантаймі читає лише
+# цей воркер (живий poll-тракт рахує `packages.size`) — зняти разом із ним, а спеки, що
+# його пінять, переглянути: `git grep -n total_packages -- app spec`.
 # ⚠️ І не читай «superseded» як «адреса мертва»: `TurboStreams::Name.gateway_ota`
 # нижче має ДВОХ живих підписників (`Gateways::Show` · `Firmwares::Index`) і
 # другого, живого продюсера (`Downlink::PendingQueueService`). Мертвий тут

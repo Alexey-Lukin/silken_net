@@ -97,8 +97,8 @@ class OtaPackagerService
 
   # ⚖️ [FW.23, founder 2026-10-05/06] Ed25519 seal of the cluster key (`OtaSealKeyService`).
   # DETERMINISTIC by construction (RFC 8032), and that is load-bearing: the campaign
-  # package is prepared more than once (`Ota::PackageStore` re-warms the cache,
-  # `OtaTransmissionWorker` packs on its own) and the Queen relays whatever segments it
+  # package is prepared more than once (`Ota::PackageStore` packs at dispatch and again
+  # when `GatewayStalenessSweepWorker` re-warms a missed cache) and the Queen relays whatever segments it
   # fetched — a randomised signature would stitch a trailer out of two different seals.
   # Returns the 64-byte signature; the Soldier verifies it with the cluster PUBLIC key only.
   def self.compute_seal(bytecode_bin, version_id, lora_total_chunks, cluster_id:)
@@ -175,9 +175,9 @@ class OtaPackagerService
     }
     return base unless sealed?
 
-    # [FW.23] A sealed campaign exposes extra metadata so the OtaTransmissionWorker
-    # can iterate over (bytecode + trailer) packages without re-counting and the UI
-    # progress bar stays correct.
+    # [FW.23] A sealed campaign exposes the (bytecode + trailer) package count. Its only
+    # runtime reader is the superseded OtaTransmissionWorker (FW.60) — the live poll-tract
+    # counts `packages.size` — so the field goes away together with that worker.
     base.merge(
       total_packages:    total_bytecode_chunks + OTA_TRAILER_CHUNKS,
       sealed:            true,

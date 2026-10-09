@@ -2,8 +2,8 @@
 /*
  * flash_ota.h — [FW.52-г] OTA contract blob writer for STM32WLE5JC.
  *
- * Навіщо: Soldier збирає OTA mruby-байткод у `ota_buffer`, звіряє CRC32 +
- * HMAC, тоді мусить ЗАПИСАТИ його у contract-сторінку Flash, щоб boot
+ * Навіщо: Soldier збирає OTA mruby-байткод у `ota_buffer`, звіряє CRC32 і
+ * Ed25519-печатку (FW.23), тоді мусить ЗАПИСАТИ його у contract-сторінку Flash, щоб boot
  * magic-check (RITE @ MRUBY_CONTRACT_FLASH_ADDR) завантажив його наступним
  * reset'ом. Без цього запису OTA нефункціональний end-to-end — зібраний
  * байткод ніколи не доходить до Flash (раніше `Write_OTA_Contract_To_Flash`
