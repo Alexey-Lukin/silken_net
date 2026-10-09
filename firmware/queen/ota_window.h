@@ -3,6 +3,7 @@
 #define OTA_WINDOW_H
 
 #include <stdint.h>
+#include "../common/ota_seal_wire.h"   /* OTA_SEAL_ALL_RECEIVED — повна маска трейлера */
 
 // = =========================================================================
 // 🕯️ Ota_Late_Trailer_Resurrects — воскресіння OTA-вікна запізнілою печаткою
@@ -64,8 +65,12 @@ static inline uint8_t Ota_Body_Is_Duplicate(uint16_t body_size, uint16_t assembl
 // починаючи з `from` і по колу. Пакети кампанії нумеровані, як їх видає
 // OtaPackagerService: тіло (0..body_n−1), тоді trailer_n блоків печатки. Тіло, поки не
 // зібране, — бітмап CoAP-чанків; печатка — маска трейлера. Відкинутий пакет (транзитна
-// CRC тіла, битий блок) лишає діру, і курсор вертається до неї на наступному колі;
+// CRC тіла, блок печатки з номером поза межею) лишає діру, і курсор вертається до неї
+// на наступному колі;
 // зібране вдруге не тягнеться. Повертає fetch_total — бракує нічого.
+// ⚠️ «Битий блок» трейлера діри не лишає: Королева приймає 0x9B за маркером і номером,
+// цілісності блоку не звіряючи, тож спотворений блок лічиться прийнятим, а відкидає його
+// вже Солдат печаткою (fail-closed — кампанія не пройде, а не пройде непідписаною).
 // Межу повторів дає не лічильник, а сторож ARCH.59: знята кампанія відповідає 4.04, і
 // викликач гасить pending (канон 03_02 §4а).
 //
@@ -89,6 +94,25 @@ static inline uint16_t Ota_Fetch_Next_Missing(uint16_t from, uint16_t fetch_tota
         }
     }
     return fetch_total;
+}
+
+// Кампанію почато, коли hint несе НОВИЙ fw: той самий fw — повтор hint'а (курсор і
+// збирання тримаються), нуль — не кампанія.
+static inline uint8_t Ota_Hint_Starts_Campaign(uint32_t hint_fw, uint32_t fetch_fw)
+{
+    return (uint8_t)(hint_fw != 0u && hint_fw != fetch_fw);
+}
+
+// Доставлено — коли зібрано тіло й увесь трейлер САМЕ тієї кампанії, яку тягнемо.
+// Збирання липке до світанку (Ota_Body_Complete вище), тож без звірки fw пропущений
+// світанок оголосив би нову кампанію доставленою без жодного фетчу: Rails згасив би
+// hint, а ліс прошивки не дістав би. Зі звіркою той самий збій мовчить — і сторож
+// ARCH.59 чесно знімає кампанію як FAILED.
+static inline uint8_t Ota_Campaign_Delivered(uint32_t assembly_fw, uint32_t fetch_fw,
+                                             uint8_t body_complete, uint8_t seal_mask)
+{
+    return (uint8_t)(fetch_fw != 0u && assembly_fw == fetch_fw && body_complete &&
+                     seal_mask == OTA_SEAL_ALL_RECEIVED);
 }
 
 #endif // OTA_WINDOW_H

@@ -1611,9 +1611,11 @@ TEST(test_ota_assembly_size_tracking) {
 
 /* [FW.53 · FW.60] Після повної збірки пакет тієї ж кампанії (повторний фетч курсора)
  * — дубль, а не світанок: інакше він стирав би щойно зібране, і кампанія крутилась
- * би до сторожа (адверсар FW.60). Свіжий розмір нової, МЕНШОЇ кампанії дає світанок
- * на зміні fw у хінті — ota_assembly_reset() нижче. */
-TEST(test_ota_assembly_new_campaign_resets_stale_size) {
+ * би до сторожа (адверсар FW.60). Свіжий розмір нової, МЕНШОЇ кампанії (FW.53) дає
+ * світанок на зміні fw у хінті — його пускач і звірку доставки пінують
+ * test_fw60_hint_dawn_and_delivery_bind_campaign нижче; тіло світанку (скидання
+ * глобалів main.c) — ARM compile-lane, без виконання. */
+TEST(test_ota_assembly_duplicate_after_complete_keeps_size) {
     ota_assembly_reset();
     ota_is_active_flag = 0;
     uint8_t data[25];
@@ -1632,12 +1634,6 @@ TEST(test_ota_assembly_new_campaign_resets_stale_size) {
     Build_CoAP_OTA_Frame(1, 2, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 2);
     ASSERT_EQ(pending_ota_size, 537);
-
-    /* Кампанія B після світанку за хінтом: один малий чанк → розмір НЕ успадковує 537 */
-    ota_assembly_reset();
-    Build_CoAP_OTA_Frame(0, 1, data, 25, pkt, sizeof(pkt));
-    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
-    ASSERT_EQ(pending_ota_size, 25);     /* Свіжий розмір кампанії B, не 537 */
 }
 
 TEST(test_ota_assembly_duplicate_chunk_ignored) {
@@ -1680,7 +1676,7 @@ TEST(test_ota_assembly_chunk_index_above_max) {
 }
 
 TEST(test_ota_assembly_bitmap_reset_after_complete) {
-    /* After successful assembly, bitmap must be reset for next OTA cycle */
+    /* Після збірки бітмап і лічильник обнулено — це і є мітка «тіло зібране» (Ota_Body_Complete); наступну кампанію починає світанок за хінтом */
     ota_assembly_reset();
     ota_is_active_flag = 0;
     uint8_t data[4] = {0xCA, 0xFE, 0xBA, 0xBE};
@@ -2586,6 +2582,9 @@ TEST(test_fw60_next_missing_skips_held_and_wraps) {
     ASSERT_EQ(Ota_Fetch_Next_Missing(9, 9, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0002u, 0x7Fu), 0);
     /* від 1 — 1 уже є, трейлер повний → по колу 0 */
     ASSERT_EQ(Ota_Fetch_Next_Missing(1, 9, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0002u, 0x7Fu), 0);
+    /* старт — від курсора, не від нуля: інакше вперто битий пакет 0 з'їдав би всі
+     * розмови флашу, а решта кампанії стояла */
+    ASSERT_EQ(Ota_Fetch_Next_Missing(1, 9, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x00u), 1);
 }
 
 TEST(test_fw60_next_missing_does_not_refetch_completed_body) {
@@ -2597,6 +2596,22 @@ TEST(test_fw60_next_missing_nothing_missing) {
     ASSERT_EQ(Ota_Fetch_Next_Missing(3, 9, OTA_SEAL_TRAILER_CHUNKS, 1, 0x0000u, OTA_SEAL_ALL_RECEIVED), 9);
     /* виродження: без тіла — тягнути нема чого */
     ASSERT_EQ(Ota_Fetch_Next_Missing(0, 7, OTA_SEAL_TRAILER_CHUNKS, 0, 0x0000u, 0x00u), 7);
+}
+
+/* [FW.60 · FW.53] Світанок робить лише НОВИЙ fw у хінті, а доставку оголошують лише
+ * для кампанії, якій належить збирання. Сценарій адверсара 3-го раунду: кампанію A
+ * зібрано, прийшов hint B — без звірки fw липке «зібрано» A оголосило б B доставленою
+ * без жодного фетчу (Rails гасить hint, ліс B не дістає). */
+TEST(test_fw60_hint_dawn_and_delivery_bind_campaign) {
+    ASSERT_EQ(Ota_Hint_Starts_Campaign(0xB0u, 0xA0u), 1);   /* новий fw — світанок */
+    ASSERT_EQ(Ota_Hint_Starts_Campaign(0xA0u, 0xA0u), 0);   /* повтор hint'а — тримаємо */
+    ASSERT_EQ(Ota_Hint_Starts_Campaign(0u, 0xA0u), 0);      /* нуль — не кампанія */
+    /* A зібрано, тягнемо B — не доставлено */
+    ASSERT_EQ(Ota_Campaign_Delivered(0xA0u, 0xB0u, 1, OTA_SEAL_ALL_RECEIVED), 0);
+    ASSERT_EQ(Ota_Campaign_Delivered(0xB0u, 0xB0u, 1, OTA_SEAL_ALL_RECEIVED), 1);
+    ASSERT_EQ(Ota_Campaign_Delivered(0xB0u, 0xB0u, 1, 0x7Eu), 0);   /* бракує блоку печатки */
+    ASSERT_EQ(Ota_Campaign_Delivered(0xB0u, 0xB0u, 0, OTA_SEAL_ALL_RECEIVED), 0);
+    ASSERT_EQ(Ota_Campaign_Delivered(0u, 0u, 1, OTA_SEAL_ALL_RECEIVED), 0);  /* до першого hint'а */
 }
 
 TEST(test_fw60_body_complete_is_sticky_duplicate) {
@@ -3057,7 +3072,7 @@ int main(void)
     RUN(test_ota_assembly_single_chunk);
     RUN(test_ota_assembly_two_chunks);
     RUN(test_ota_assembly_full_512_chunk);
-    RUN(test_ota_assembly_new_campaign_resets_stale_size);
+    RUN(test_ota_assembly_duplicate_after_complete_keeps_size);
     RUN(test_ota_assembly_bounds_overflow);
     RUN(test_ota_assembly_invalid_marker);
     RUN(test_ota_assembly_zero_total_chunks);
@@ -3158,6 +3173,7 @@ int main(void)
     RUN(test_fw60_next_missing_skips_held_and_wraps);
     RUN(test_fw60_next_missing_does_not_refetch_completed_body);
     RUN(test_fw60_next_missing_nothing_missing);
+    RUN(test_fw60_hint_dawn_and_delivery_bind_campaign);
     RUN(test_fw60_body_complete_is_sticky_duplicate);
     RUN(test_ota_resurrect_e2e_with_trailer_store);
 

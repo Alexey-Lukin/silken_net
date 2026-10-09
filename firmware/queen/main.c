@@ -707,6 +707,7 @@ uint16_t ota_chunks_received = 0;        // Скільки чанків вже �
 // idempotent re-fetch; 0x99-гілка — Ota_Body_Is_Duplicate — і маска трейлера
 // дедуплікують повтори, зокрема й після завершення тіла).
 static uint32_t g_ota_delivered_fw_id = 0; // повністю зібраний contract-id (їде в poll ?fw=)
+static uint32_t g_ota_assembly_fw_id  = 0; // чия кампанія в буфері збирання (ставить світанок)
 
 // [FW.63] RAM-токен останньої УСПІШНО обробленої CMD (нове виконання АБО
 // дедуп-збіг повтору — обидва означають «конверт доїхав»), дзеркало
@@ -740,7 +741,7 @@ uint16_t ota_chunk_bitmap = 0;
 // версія) ⇒ всі 7 == OTA_SEAL_ALL_RECEIVED (0x7F).
 uint8_t  pending_ota_seal_chunks[OTA_SEAL_TRAILER_CHUNKS][16] = {{0}};
 // [FW.68] Борг перед Солдатами, що перепитали (зойк 0x55): DID → блоки тіла чи
-// трейлера. Знімається світанком нової кампанії (гілка 0x99 CoAP).
+// трейлера. Знімається світанком нової кампанії (зміна fw у хінті).
 static OtaRrTable g_ota_rr;
 uint8_t  seal_segments_received = 0;
 uint8_t  current_seal_seg_idx   = 0;     // Хто з 7-ми трейлер-блоків зараз летить в ефір
@@ -931,7 +932,7 @@ uint8_t Cmd_Dedup_Check(uint32_t hash);
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 static void Queen_Poll_Downlink(void);
 static void Queen_Reflex_Shots(uint32_t heard_did, uint8_t first_hand);
-static void Queen_Ota_Campaign_Dawn(void);
+static void Queen_Ota_Campaign_Dawn(uint32_t fw_id);
 // [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
 // [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
@@ -2187,8 +2188,9 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 // [OTA Downlink]: чанк пакує OtaPackagerService, видає з Ota::PackageStore poll-тракт
 //   (Downlink::PendingQueueService); формат кадру після зрізання конверта — `03_05 §2.3`.
 // [FW.60] Повертає 1, коли по знятті 0x9C-конверта БУВ inner-контент
-// (CMD/OTA/трейлер/hint — байдуже, чи прийнятий), 0 — порожній time-only
-// конверт або відмова. Poll-цикл на 0 зупиняє дренаж черги.
+// (CMD/OTA/трейлер — байдуже, чи прийнятий), 0 — порожній time-only
+// конверт, відмова або OTA-hint (нижче за нього в драбині Rails дренувати нічого).
+// Poll-цикл на 0 зупиняє дренаж черги.
 int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 {
     // Мінімум: IV (16 байт) + один AES-блок (16 байт) = 32 байти
@@ -2416,17 +2418,22 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
                            (uint32_t)inner_payload[4];
         uint16_t hint_total = (uint16_t)(((uint16_t)inner_payload[5] << 8) |
                                          inner_payload[6]);
+        if (hint_total != 0u && Ota_Hint_Starts_Campaign(hint_fw, g_ota_fetch_fw_id)) {
+            g_ota_fetch_fw_id   = hint_fw;   // нова кампанія → курсор на 0
+            g_ota_fetch_next_ch = 0;
+            // [FW.68] І світанок: недозбирана попередня кампанія інакше злилась би з
+            // новою в один бітмап, а її трейлер спарувався б із новим тілом.
+            Queen_Ota_Campaign_Dawn(hint_fw);
+        }
         if (hint_fw != 0u && hint_total != 0u) {
-            if (hint_fw != g_ota_fetch_fw_id) {
-                g_ota_fetch_fw_id   = hint_fw;   // нова кампанія → курсор на 0
-                g_ota_fetch_next_ch = 0;
-                // [FW.68] І світанок: недозбирана попередня кампанія інакше злилась би з
-                // новою в один бітмап, а її трейлер спарувався б із новим тілом.
-                Queen_Ota_Campaign_Dawn();
-            }
             g_ota_fetch_total   = hint_total;
             g_ota_fetch_pending = 1;
         }
+        // [FW.60] Після hint'а дренувати нічого: нижче за нього в драбині Rails
+        // (Downlink::PendingQueueService#next_inner_payload) лише пороги 0x9A, яких hint і
+        // так затінює до fw=, тож наступний poll цього флашу повернув би той самий hint —
+        // зайва LTE-розмова, і так до стелі QUEEN_POLL_MAX_PER_FLUSH щофлашу кампанії.
+        return 0;
     }
     // [FW.20-Q2 · FW.17] Адресні команди (0x9A · 0x9E, 03_05 §2.5) →
     // черга адресних пострілів (soldier_cmd_queue.h). Довжину конверт не
@@ -2442,7 +2449,9 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     return 1; // inner-контент був (навіть нерозпізнаний) — черга може мати ще
 }
 
-// [FW.68 · FW.60] Світанок кампанії: стан збирання, вікна, трейлера й боргу — з нуля.
+// [FW.68 · FW.60] Світанок кампанії `fw_id`: стан збирання, вікна, трейлера й боргу — з нуля,
+// і збирання відтепер належить `fw_id` (Ota_Campaign_Delivered звіряє саме його); застаре
+// `fw=` попередньої кампанії гасне — її байтів у RAM уже немає.
 // Пускач один — зміна `fw` у хінті: кожна кампанія приходить після свого hint'а, а
 // недозбирана попередня інакше злилась би з новою. «Порожнє збирання» пускачем бути не
 // може: після завершення тіла воно теж порожнє, і повторний фетч стер би зібране. Трейлер
@@ -2450,8 +2459,10 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 // нової тягнемо ПІСЛЯ тіла (курсор фетчу йде за пакунками OtaPackagerService), тож
 // світанок її не зітре. Вікно гасне теж: курсор інакше читав би буфер, який нова
 // кампанія вже переписує.
-static void Queen_Ota_Campaign_Dawn(void)
+static void Queen_Ota_Campaign_Dawn(uint32_t fw_id)
 {
+    g_ota_assembly_fw_id      = fw_id;
+    g_ota_delivered_fw_id     = 0;
     ota_chunk_bitmap          = 0;
     ota_chunks_received       = 0;
     ota_total_expected_chunks = 0;
@@ -2719,8 +2730,8 @@ static void Queen_Poll_Downlink(void)
     if (!g_ota_fetch_pending) return;
     // [FW.60 ⚖️ делеговано 2026-10-09] Що тягнути, каже збирання, а не курсор: кожна
     // розмова бере наступний ВІДСУТНІЙ пакет від курсора, по колу (Ota_Fetch_Next_Missing,
-    // ota_window.h). Відкинутий пакет (транзитна CRC тіла, битий блок) лишає діру, і
-    // курсор вертається до неї; зібраного вдруге не тягне.
+    // ota_window.h). Відкинутий пакет (транзитна CRC тіла) лишає діру, і курсор
+    // вертається до неї; зібраного вдруге не тягне.
     for (uint8_t f = 0; f < QUEEN_OTA_FETCH_PER_FLUSH; f++) {
         const uint16_t ch = Ota_Fetch_Next_Missing(
             g_ota_fetch_next_ch, g_ota_fetch_total, OTA_SEAL_TRAILER_CHUNKS,
@@ -2760,12 +2771,14 @@ static void Queen_Poll_Downlink(void)
         (void)Handle_CoAP_Command((uint8_t *)(uintptr_t)envelope, env_len);
         g_ota_fetch_next_ch++;
     }
-    // Доставлено = ЗІБРАНО: тіло й увесь трейлер. Не «вікно живе»: вікно — стан
-    // проповіді Солдатам, а не збирання, і гасне, щойно тіло відлунало, — тоді доставку
-    // не оголошено б ніколи (хибний FAILED сторожа), а живе вікно з неповним трейлером
-    // оголошувало б успіх без печатки.
-    if (Ota_Body_Complete(pending_ota_size, ota_chunk_bitmap, ota_chunks_received) &&
-        seal_segments_received == OTA_SEAL_ALL_RECEIVED) {
+    // Доставлено = ЗІБРАНО: тіло й увесь трейлер цієї кампанії. Не «вікно живе»: вікно —
+    // стан проповіді Солдатам, а не збирання, і гасне, щойно тіло відлунало, — тоді
+    // доставку не оголошено б ніколи (хибний FAILED сторожа), а живе вікно з неповним
+    // трейлером оголошувало б успіх без печатки.
+    if (Ota_Campaign_Delivered(g_ota_assembly_fw_id, g_ota_fetch_fw_id,
+                               Ota_Body_Complete(pending_ota_size, ota_chunk_bitmap,
+                                                 ota_chunks_received),
+                               seal_segments_received)) {
         g_ota_delivered_fw_id = g_ota_fetch_fw_id;
         g_ota_fetch_pending   = 0;
     }
