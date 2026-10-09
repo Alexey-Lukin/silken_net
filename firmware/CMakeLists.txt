@@ -230,6 +230,76 @@ if(CMAKE_CROSSCOMPILING)
       STM32WLE5xx USE_HAL_DRIVER)
     target_compile_options(lorawan_mac_check PRIVATE -Wall -Wextra -Os
       -Wno-unused-parameter)
+
+    # [FW.46 ⚖️ делеговано 2026-10-06] Образ Солдата для bench-carrier LoRa-E5 mini
+    # (STM32WLE5JC) — ПЕРШИЙ ЛІНКОВАНИЙ .elf: OBJECT-лейни вище компілюють, але не
+    # лінкують, тож посилання без дефініції (клас link-бомби ARCH.26) бачить лише цей
+    # таргет. Рукописна плата hal_glue/boards/lora_e5/ (тіла MX_* і MSP, заглушка
+    # радіо, newlib _sbrk) + вендорний startup і system + модулі WL-HAL, яких торкається
+    # цикл. Збірка — з CCM_SELFTEST: перший зріз на кремнії — самотест CCM/sym
+    # (RUNBOOK 2.1–2.2). Межі зрізу (MSI без LSE, RTC на LSI, без WUT, радіо-заглушка) —
+    # шапка soldier_lora_e5.c і docs/03_01 §12.4. ⚠️ Локально на darwin-тулчейні лінк
+    # просить libssp (скіл firmware #7 (4)); CI-тулчейн її має.
+    if(NOT DEFINED SILKEN_MRUBY_ARM_LIB)
+      set(SILKEN_MRUBY_ARM_LIB ${SILKEN_EXTERN}/mruby/build/arm-none-eabi/lib/libmruby.a
+          CACHE FILEPATH "mruby ARM library (newlib-nano, як QEMU-нога FW.55)")
+    endif()
+    set(WL_HAL_SRC ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Src)
+    set(LORA_E5_DIR ${CMAKE_CURRENT_SOURCE_DIR}/hal_glue/boards/lora_e5)
+    add_executable(soldier_lora_e5
+      ${LORA_E5_DIR}/soldier_lora_e5.c
+      common/flash_kv.c          # база Flash-KV — її тримає анти-відкат SEC.20 (гоча firmware #18)
+      common/flash_ota.c         # Flash_Write_Contract — запис контракту OTA (FW.52-г)
+      ${SILKEN_EXTERN}/cmsis-device-wl/Source/Templates/gcc/startup_stm32wle5xx.s
+      ${SILKEN_EXTERN}/cmsis-device-wl/Source/Templates/system_stm32wlxx.c
+      ${WL_HAL_SRC}/stm32wlxx_hal.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_cortex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_rcc.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_rcc_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_pwr.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_pwr_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_adc.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_adc_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_cryp.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_cryp_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_rng.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_iwdg.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_rtc.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_rtc_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_flash.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_flash_ex.c
+      ${WL_HAL_SRC}/stm32wlxx_hal_dma.c)
+    target_include_directories(soldier_lora_e5 PRIVATE
+      hal_glue common
+      ${SILKEN_EXTERN}/subghz-phy/radio_driver
+      ${SILKEN_EXTERN}/cmsis-device-wl/Include
+      ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
+      ${CMSISCORE}/Include
+      ${SILKEN_EXTERN}/mruby/include
+      ${SILKEN_MRUBY_ARM_INC}
+      ${SILKEN_EXTERN}/monocypher/src
+      ${SILKEN_EXTERN}/monocypher/src/optional)
+    target_compile_definitions(soldier_lora_e5 PRIVATE
+      STM32WLE5xx USE_HAL_DRIVER
+      MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
+      CCM_SELFTEST)
+    target_compile_options(soldier_lora_e5 PRIVATE -Os
+      $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
+    # Вендорні TU (HAL, startup, system) — не наш код: їхні попередження не чистимо.
+    set_source_files_properties(
+      ${SILKEN_EXTERN}/cmsis-device-wl/Source/Templates/system_stm32wlxx.c
+      PROPERTIES COMPILE_OPTIONS "-w")
+    file(GLOB _wl_hal_used ${WL_HAL_SRC}/stm32wlxx_hal*.c)
+    set_source_files_properties(${_wl_hal_used} PROPERTIES COMPILE_OPTIONS "-w")
+    target_link_libraries(soldier_lora_e5 PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)
+    target_link_options(soldier_lora_e5 PRIVATE
+      "-T${LORA_E5_DIR}/stm32wle5jc_soldier.ld"
+      --specs=nano.specs --specs=nosys.specs
+      "-Wl,-Map=$<TARGET_FILE_DIR:soldier_lora_e5>/soldier_lora_e5.map"
+      -Wl,--print-memory-usage)
+    set_target_properties(soldier_lora_e5 PROPERTIES
+      SUFFIX ".elf"
+      LINK_DEPENDS "${LORA_E5_DIR}/stm32wle5jc_soldier.ld")
   endif()
 else()
   # Host build: FFT packing-parity harness (Phase 4) — proves the CMSIS RFFT

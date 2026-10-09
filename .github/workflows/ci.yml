@@ -319,12 +319,15 @@ jobs:
         # lorawan_mac_check = LoRaMac-node + glue Королеви (ARCH.34): доти його не
         # будував жоден крок, і він не збирався (без hal_glue у include-шляхах —
         # stm32wlxx_hal_conf.h not found) при зелених двох сусідах (FW.65, 2026-09-27).
+        # soldier_lora_e5 = образ Солдата для LoRa-E5 mini — ЄДИНИЙ таргет, що ЛІНКУЄ
+        # (OBJECT-лейни лише компілюють): посилання без дефініції, лінкер-карта під сторінкою
+        # 122 і стек-резерв судить саме він (FW.46, ⚖️ 2026-10-06).
         run: |
           cmake -B firmware/build -S firmware -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake" \
             -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core" \
             -DSILKEN_WITH_HAL=ON
-          cmake --build firmware/build --target hal_check hal_check_ccm lorawan_mac_check
+          cmake --build firmware/build --target hal_check hal_check_ccm lorawan_mac_check soldier_lora_e5
 
       - name: '[SEC.21] Stack-canary flag gate — -fstack-protector-strong у ARM build-config'
         # Прапор мусить бути реально переданий крос-компілятору (attacker-reachable

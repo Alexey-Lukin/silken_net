@@ -80,7 +80,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 - **Гібрид живлення:** front-end — еквівалент EBFC (джерело Тевеніна `V_OC` + `R_int`,
   §3.1), згодом реальний EBFC напряму в BQ25570 (гейт `V_OC` — §6 крок 4); решта вузла — production-компоненти
   на **готовому модулі Seeed LoRa-E5 mini** (STM32WLE5JC + SX1262). Кремній уже в модулі,
-  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; образ для LoRa-E5 mini — рукописний `hal_glue/boards/lora_e5/`, ⚖️ делеговано 2026-10-06 ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), — у дереві ще немає, нога [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
+  тож crypto-selftest та I2C bring-up **досяжні на макетці, щойно є образ з HAL для mini** (§4; образ для LoRa-E5 mini — рукописний `hal_glue/boards/lora_e5/`, ⚖️ делеговано 2026-10-06 ([`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)), — ✅ є з 2026-10-09: таргет `soldier_lora_e5` (crypto-selftest; I²C-зрізу в ньому немає), [`00_07`](00_07_Action_Plan_Tracker) FW.46; `ccm_selftest` ганяється в `.elf` з HAL, RUNBOOK §2.1; parity-dump і SWD-кроки образу не чекають).
 - **🔵 Золоте правило — Спільна Земля.** Усі `−` (GND) плат, батарейки, іоністора — в
   **єдину синю шину** вздовж краю макетки. Без спільної землі логічні рівні = хаос.
 - **🔴 Дві залізні пере-умови ПЕРЕД живленням:** (1) **антена 868 МГц на місці** (SX1262
@@ -233,7 +233,7 @@ V_OC 0.6–0.8В ─[R_int]──────  →  BQ25570 (VSTOR)  →  LoRa-E
 > (µА-профілі, crypto-KAT, timing) — **дім `firmware/scripts/bench/RUNBOOK.md`**, НЕ дублюється тут.
 > **Bench-carrier — LoRa-E5 mini (⚖️ founder 2026-07-03, [`00_07`](00_07_Action_Plan_Tracker) FW.46):** носій radio-free зрізів до board-freeze — без нашого образу: parity FW.7/19/31 (голий RM0461, `sim/wle5_bench`) · option-bytes + RDP-L1 · factory-provisioning по SWD; з образом для mini: CCM/sym selftest · Flash-KV · LSE/WUT; DMA-вуха — кремній Королеви (RUNBOOK 5.4), на mini потребували б її образу, якого дерево не будує; money-path e2e (CCM/OTA/ratchet) — за SubGHz-віхою, mini його не прискорює.
 > Оскільки LoRa-E5 = готовий STM32WLE5, RUNBOOK-сеанси §1-4 (прошивка+option-bytes · crypto · живлення · час/RTC) досяжні
-> на макетці, щойно є образ для mini (рукописний `hal_glue/boards/lora_e5/` — ⚖️ делеговано 2026-10-06, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA);
+> на макетці, щойно є образ для mini (рукописний `hal_glue/boards/lora_e5/` — ⚖️ делеговано 2026-10-06, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA); ✅ є з 2026-10-09, таргет `soldier_lora_e5`;
 > нога [`00_07`](00_07_Action_Plan_Tracker) FW.46; кремнієва нога parity-dump `sim/wle5_bench` — голий RM0461, без цього образу);
 > §5 (модем SIM7070G) — Queen-only, тут недосяжний.
 
