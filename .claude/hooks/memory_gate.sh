@@ -430,7 +430,7 @@ rb_dark() {
 # `log_verify_before_commit` — тіла рядків хабів, що досі не мали журналу. Підняття робить нові журнали захищеними підлогою.
 # 2026-10-08: 177 → 179 — `log_mutually_masking` і `log_dedup_id_search`: журнали-двійники двох останніх домів осі нижче
 # порогу стіни, переведених в індекс-форму (DOC-T.120). Підняття робить нові журнали захищеними підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-180}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
