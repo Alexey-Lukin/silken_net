@@ -27,7 +27,7 @@ lt:
           minted_description: Išleista %{amount} tinkle %{network}
           minted_title: "%{token} — išleista"
         fraud:
-          description: 'DI sargybinis aptiko anomaliją: sap_flow nuokrypis nuo bazinės linijos > %{deviation}%'
+          description: 'DI sargybinis aptiko anomaliją: nuokrypis nuo klasterio bazinės linijos > %{deviation}%'
           title: DI sargybinio anomalija
         homeostasis:
           description: 'Medis pasiekė gilią homeostazę. Vidutinė Z per parą: %{z_value}'

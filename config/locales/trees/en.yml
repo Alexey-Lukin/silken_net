@@ -26,7 +26,7 @@ en:
           minted_description: Minted %{amount} tokens on %{network}
           minted_title: "%{token} Minted"
         fraud:
-          description: 'AI Guard detected anomaly: sap_flow deviation from baseline > %{deviation}%'
+          description: 'AI Guard detected anomaly: deviation from the cluster baseline > %{deviation}%'
           title: AI Guard Anomaly
         homeostasis:
           description: 'Tree entered deep homeostasis. Mean Z for the day: %{z_value}'

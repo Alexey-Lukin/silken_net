@@ -14,7 +14,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         tree = create(:tree, status: :active)
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
+          acoustic_events: 0, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: Date.new(2026, 3, 6).beginning_of_day + 12.hours)
       end
@@ -32,7 +32,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         yesterday = Time.current.utc.to_date - 1
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
+          acoustic_events: 0, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: yesterday.beginning_of_day + 12.hours)
 

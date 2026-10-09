@@ -51,7 +51,7 @@ RSpec.describe "Maintenance and ecosystem healing flow" do
       # Create a fire alert with silence filter
       log = create(:telemetry_log, tree: tree, temperature_c: 70,
                                    bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 5, z_value: 25.0)
+                                   acoustic_events: 0, z_value: 25.0)
       AlertDispatchService.analyze_and_trigger!(log)
 
       alert = EwsAlert.last
@@ -65,7 +65,7 @@ RSpec.describe "Maintenance and ecosystem healing flow" do
       # Now a new fire alert can be created
       log2 = create(:telemetry_log, tree: tree, temperature_c: 72,
                                     bio_status: :homeostasis, voltage_mv: 3500,
-                                    acoustic_events: 5, z_value: 25.0)
+                                    acoustic_events: 0, z_value: 25.0)
       expect { AlertDispatchService.analyze_and_trigger!(log2) }
         .to change(EwsAlert, :count).by(1)
     end

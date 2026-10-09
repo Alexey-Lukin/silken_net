@@ -22,7 +22,7 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       before do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
+          acoustic_events: 0, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end
@@ -100,12 +100,12 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       before do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
+          acoustic_events: 0, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
         create(:telemetry_log, tree: tree2,
           temperature_c: 30.0, voltage_mv: 4000, z_value: 0.8,
-          acoustic_events: 5, growth_points: 20,
+          acoustic_events: 0, growth_points: 20,
           bio_status: :homeostasis, metabolism_s: 1200,
           created_at: date.beginning_of_day + 12.hours)
       end
@@ -129,7 +129,7 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
         [ tree, normal_tree ].each do |t|
           create(:telemetry_log, tree: t,
             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-            acoustic_events: 2, growth_points: 10,
+            acoustic_events: 0, growth_points: 10,
             bio_status: :homeostasis, metabolism_s: 1000,
             created_at: date.beginning_of_day + 12.hours)
         end
@@ -137,7 +137,7 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
         # Тепле дерево: температура відхиляється >30% від базлайну — одна вісь
         create(:telemetry_log, tree: warm_edge_tree,
           temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
+          acoustic_events: 0, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end

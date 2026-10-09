@@ -85,7 +85,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
     it "creates a fire alert when temperature exceeds threshold" do
       log = create(:telemetry_log, tree: tree, temperature_c: 70,
                                    bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 5, z_value: 25.0)
+                                   acoustic_events: 0, z_value: 25.0)
 
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
@@ -105,7 +105,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
     it "НЕ створює алерт на низькому z_value, якщо пристрій каже homeostasis" do
       log = create(:telemetry_log, tree: tree, temperature_c: 20,
                                    bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 5, z_value: 0.1)
+                                   acoustic_events: 0, z_value: 0.1)
 
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .not_to change(EwsAlert, :count)
@@ -114,7 +114,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
     it "створює drought-алерт, коли ПРИСТРІЙ повідомив stress" do
       log = create(:telemetry_log, tree: tree, temperature_c: 20,
                                    bio_status: :stress, voltage_mv: 3500,
-                                   acoustic_events: 5, z_value: 0.1)
+                                   acoustic_events: 0, z_value: 0.1)
 
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
@@ -126,13 +126,13 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
     it "respects silence filter — does not duplicate alerts within window" do
       log1 = create(:telemetry_log, tree: tree, temperature_c: 70,
                                     bio_status: :homeostasis, voltage_mv: 3500,
-                                    acoustic_events: 5, z_value: 25.0)
+                                    acoustic_events: 0, z_value: 25.0)
       AlertDispatchService.analyze_and_trigger!(log1)
       expect(EwsAlert.count).to eq(1)
 
       log2 = create(:telemetry_log, tree: tree, temperature_c: 75,
                                     bio_status: :homeostasis, voltage_mv: 3500,
-                                    acoustic_events: 5, z_value: 25.0)
+                                    acoustic_events: 0, z_value: 25.0)
       # Silence filter should prevent duplicate fire alert
       expect { AlertDispatchService.analyze_and_trigger!(log2) }
         .not_to change(EwsAlert, :count)

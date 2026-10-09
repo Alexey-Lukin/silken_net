@@ -26,7 +26,7 @@ lv:
           minted_description: Emitēts %{amount} tīklā %{network}
           minted_title: "%{token} — emitēts"
         fraud:
-          description: 'AI sargs konstatēja anomāliju: sap_flow novirze no bāzlīnijas > %{deviation}%'
+          description: 'AI sargs konstatēja anomāliju: novirze no klastera bāzlīnijas > %{deviation}%'
           title: AI sarga anomālija
         homeostasis:
           description: 'Koks iegāja dziļā homeostāzē. Vidējā Z dienā: %{z_value}'

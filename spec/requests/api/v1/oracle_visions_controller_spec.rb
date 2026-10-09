@@ -99,7 +99,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         tree = create(:tree, cluster: cluster, status: :active, latest_stress_index: 0.2)
         create(:telemetry_log, tree: tree, sap_flow: 2.0,
                temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-               acoustic_events: 2, growth_points: 10,
+               acoustic_events: 0, growth_points: 10,
                bio_status: :homeostasis, metabolism_s: 1000)
 
         get "/oracle_visions", headers: forester_headers, as: :json
@@ -120,7 +120,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         [ measured, unmeasured ].each do |tree|
           create(:telemetry_log, tree: tree, sap_flow: 2.0,
                  temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-                 acoustic_events: 2, growth_points: 10,
+                 acoustic_events: 0, growth_points: 10,
                  bio_status: :homeostasis, metabolism_s: 1000)
         end
 

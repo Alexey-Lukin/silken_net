@@ -25,11 +25,11 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       travel_to yesterday.beginning_of_day + 12.hours do
         create(:telemetry_log, tree: tree1, temperature_c: 25.0,
                                voltage_mv: 3500, z_value: 25.0,
-                               acoustic_events: 5, growth_points: 10,
+                               acoustic_events: 0, growth_points: 10,
                                bio_status: :homeostasis)
         create(:telemetry_log, tree: tree2, temperature_c: 26.0,
                                voltage_mv: 3600, z_value: 24.0,
-                               acoustic_events: 3, growth_points: 15,
+                               acoustic_events: 0, growth_points: 15,
                                bio_status: :homeostasis)
       end
     end
@@ -69,12 +69,12 @@ RSpec.describe "Insight generation and daily aggregation flow" do
         # Одноосьове екстремальне відхилення температури від базлайну кластера
         create(:telemetry_log, tree: tree1, temperature_c: 80.0,
                                voltage_mv: 3500, z_value: 25.0,
-                               acoustic_events: 5, growth_points: 10,
+                               acoustic_events: 0, growth_points: 10,
                                bio_status: :homeostasis)
         # Normal tree
         create(:telemetry_log, tree: tree2, temperature_c: 22.0,
                                voltage_mv: 3500, z_value: 25.0,
-                               acoustic_events: 5, growth_points: 10,
+                               acoustic_events: 0, growth_points: 10,
                                bio_status: :homeostasis)
       end
 
@@ -115,7 +115,7 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       travel_to yesterday.beginning_of_day + 12.hours do
         create(:telemetry_log, tree: tree, temperature_c: 22.0,
                                voltage_mv: 3500, z_value: 25.0,
-                               acoustic_events: 5, growth_points: 10)
+                               acoustic_events: 0, growth_points: 10)
       end
 
       DailyAggregationWorker.new.perform(yesterday.to_s)

@@ -7,7 +7,7 @@ FactoryBot.define do
     bio_status { :homeostasis }
     voltage_mv { 4200 }
     temperature_c { 22.5 }
-    acoustic_events { 5 }
+    acoustic_events { 0 } # [HW.30] пʼєзо зрізано — на дроті лише 0 (або 0xFE, ARCH.41-B)
     metabolism_s { 120 }
     growth_points { 10 }
     # Direct normal-пакет: стартовий DEFAULT_TTL=3 без жодного relay
@@ -22,19 +22,19 @@ FactoryBot.define do
     trait :healthy do
       bio_status { :homeostasis }
       temperature_c { 22.5 }
-      acoustic_events { 5 }
+      acoustic_events { 0 }
     end
 
     trait :stressed do
       bio_status { :stress }
       temperature_c { 35.0 }
-      acoustic_events { 30 }
+      acoustic_events { 0 }
     end
 
     trait :anomaly do
       bio_status { :anomaly }
       temperature_c { 55.0 }
-      acoustic_events { 80 }
+      acoustic_events { 0 }
     end
 
     # [SLASH-1] status=3 = софт-збій прошивки (vm_error), НЕ tamper —
@@ -47,7 +47,7 @@ FactoryBot.define do
       bio_status { :homeostasis }
       voltage_mv { 4200 }
       temperature_c { 22.5 }
-      acoustic_events { 5 }
+      acoustic_events { 0 }
       # Lorenz attractor optimum (FW.8 / BioContract::OPTIMAL_Z_TARGET).
       # Раніше факторі вживали 0.35 — реліквія до-FW.8 normalised range;
       # реальні Z значення йдуть у 2.0..45.0, з sweet spot ≈ 29.0.

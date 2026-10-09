@@ -435,7 +435,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entangle
 
 **A. `PROVISIONING_MASTER_KEY` compromised** (HKDF-корінь **6** класів ключів — §5.2; blast-radius вищий за minter-ключ):
 
-1. **Detection:** масові DCI-дивергенції, що «сходяться» (fraud, який ПРОХОДИТЬ Z-звірку = сигнатура K_seed-компрометації — чесний збій дає розбіжність, не збіг) · fauna/telemetry-аномалії кластерами · невпізнані provisioning-запити в `AuditLog` · IoTeX-верифікації від неіснуючих пристроїв.
+1. **Detection:** масові DCI-дивергенції, що «сходяться» (fraud, який ПРОХОДИТЬ Z-звірку = сигнатура K_seed-компрометації — чесний збій дає розбіжність, не збіг) · telemetry-аномалії кластерами (fauna-сигналу немає з HW.30) · невпізнані provisioning-запити в `AuditLog` · IoTeX-верифікації від неіснуючих пристроїв.
 2. **Containment (порядок = за незворотністю шкоди):**
    - **Зупинити provisioning** нових пристроїв (кожен новий = розширення компрометованого кореня); ротувати ENV на новий master для **майбутнього** provisioning — старі деривації в `HardwareKey`/Flash лишаються під старим коренем (це і є un-rotatable половина).
    - **Підняти недовіру до телеметрії всього existing-fleet:** K_seed відтворюється offline із master + публічного `device_uid` (DID on-chain) → **DCI anti-fraud invariant зламано для ВСІХ прошитих дерев до re-flash** — найвищий blast-radius клас із шести. Мінт-рішення (freeze/manual_review-режим) = founder per-інцидент.

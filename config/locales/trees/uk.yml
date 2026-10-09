@@ -28,7 +28,7 @@ uk:
           minted_description: Намінтовано %{amount} у мережі %{network}
           minted_title: "%{token} — намінтовано"
         fraud:
-          description: 'AI-вартовий виявив аномалію: відхилення sap_flow від базової лінії > %{deviation}%'
+          description: 'AI-вартовий виявив аномалію: відхилення від базової лінії кластера > %{deviation}%'
           title: Аномалія AI-вартового
         homeostasis:
           description: 'Дерево увійшло в глибокий гомеостаз. Середнє Z за добу: %{z_value}'

@@ -19,7 +19,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
 
     it "creates fire alert for extreme temperature" do
       log = create(:telemetry_log, tree: tree, temperature_c: 70, bio_status: :homeostasis,
-                                   voltage_mv: 3500, acoustic_events: 5)
+                                   voltage_mv: 3500, acoustic_events: 0)
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
 
@@ -35,7 +35,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
     # severe_drought судить лише ПРИСТРІЙНИЙ bio_status (E.64).
     it "creates firmware_fault alert for a vm_error frame" do
       log = create(:telemetry_log, tree: tree, bio_status: :vm_error,
-                                   temperature_c: 25, voltage_mv: 3500, acoustic_events: 5,
+                                   temperature_c: 25, voltage_mv: 3500, acoustic_events: 0,
                                    z_value: 25.0)
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
@@ -45,7 +45,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
 
     it "creates low voltage alert without halting analysis" do
       log = create(:telemetry_log, tree: tree, voltage_mv: 50, temperature_c: 70,
-                                   bio_status: :homeostasis, acoustic_events: 5)
+                                   bio_status: :homeostasis, acoustic_events: 0)
       # Should create both system_fault AND fire_detected
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(2)
@@ -57,7 +57,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
 
     it "handles fire alert without cluster" do
       log = create(:telemetry_log, tree: tree, temperature_c: 70, bio_status: :homeostasis,
-                                   voltage_mv: 3500, acoustic_events: 5)
+                                   voltage_mv: 3500, acoustic_events: 0)
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
 
@@ -69,7 +69,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
     it "uses family fire_resistance_rating as fallback" do
       tree_family.update!(fire_resistance_rating: 80)
       log = create(:telemetry_log, tree: tree, temperature_c: 75, bio_status: :homeostasis,
-                                   voltage_mv: 3500, acoustic_events: 5, z_value: 25.0)
+                                   voltage_mv: 3500, acoustic_events: 0, z_value: 25.0)
       # 75°C < 80 threshold, so NO fire alert
       # z_value 25.0 is within tree_family bounds (5.0–45.0), so NO drought alert
       expect { AlertDispatchService.analyze_and_trigger!(log) }
