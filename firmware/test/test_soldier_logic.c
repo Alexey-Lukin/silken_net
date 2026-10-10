@@ -2440,7 +2440,7 @@ static const SilkenCalendarOps test_calendar_ops = { test_read_wall, test_write_
 /* Extract from soldier/main.c RX branch:
  *  if (size == 16 && plaintext[0] == 0x9C && plaintext[10] == 'B') -> consume.
  * Час застосовує спільна Silken_Beacon_Commit (wall_time.h), а не копія її логіки;
- * що main.c кличе саме її з тим самим станом, стереже grep у цілі `soldier` Makefile.
+ * що main.c кличе саме її з тим самим станом, стереже `tools/firmware/check_sec42_calendar.py`.
  * Returns: 1 = beacon consumed (don't relay/route further), 0 = not a beacon. */
 static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
 {
@@ -4864,6 +4864,23 @@ TEST(test_sec42_commit_dead_read_after_forward_step_keeps_base) {
     ASSERT_EQ(sec42_commit(SEC42_NOW, 3u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW + 40u), 0);
     ASSERT_EQ(sec42_cal, SEC42_NOW + 40u);
     ASSERT_EQ(sec42_next_delta(6495u), 6540u);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 600u);    /* не зміряний запис — не синк */
+    ASSERT_EQ(sec42_wakeups, 7u);
+}
+
+TEST(test_sec42_commit_failed_forward_write_is_not_a_sync) {
+    /* Запис уперед не ліг: календар лишився позаду цілі — мітка й сторож стоять. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 1u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW + 40u), 0);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 600u);
+    ASSERT_EQ(sec42_wakeups, 7u);
+}
+
+TEST(test_sec42_commit_full_sync_judged_by_target_not_reread) {
+    /* Чесний маяк на секунду позаду, а під час запису тікнула секунда: перечитане — ціль + 1,
+     * і це все одно ПОВНИЙ синк, бо ціль дорівнює маяку. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 4u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW - 1u), 1);
+    ASSERT_EQ(sec42_mark, SEC42_NOW - 1u);
+    ASSERT_EQ(sec42_wakeups, 0u);
 }
 
 TEST(test_sec42_commit_honest_beacon_behind_resets_watchdog) {
@@ -5354,6 +5371,8 @@ int main(void)
     RUN(test_sec42_commit_read_dies_after_write_errs_toward_longer_delta_t);
     RUN(test_sec42_commit_dead_read_after_failed_write_still_errs_longer);
     RUN(test_sec42_commit_dead_read_after_forward_step_keeps_base);
+    RUN(test_sec42_commit_failed_forward_write_is_not_a_sync);
+    RUN(test_sec42_commit_full_sync_judged_by_target_not_reread);
     RUN(test_sec42_commit_honest_beacon_behind_resets_watchdog);
     RUN(test_sec42_commit_second_tick_during_write_costs_one_second);
     RUN(test_sec42_commit_base_zero_stays_zero);
