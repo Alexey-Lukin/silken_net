@@ -54,7 +54,7 @@ module Api
           format.json do
             render json: {
               data: @firmwares.as_json(
-                only: [ :id, :version, :target_hardware_type, :created_at, :binary_sha256 ],
+                only: [ :id, :version, :target_hardware_type, :wire_era, :created_at, :binary_sha256 ],
                 methods: [ :deployment_count ]
               ),
               pagy: pagy_metadata(@pagy)
@@ -129,7 +129,7 @@ module Api
               # Набір дзеркалить `index` і контракт `04_03 §5.8`.
               render json: {
                 message: I18n.t("flash.firmwares.uploaded", version: @firmware.version),
-                firmware: @firmware.as_json(only: [ :id, :version, :target_hardware_type, :binary_sha256, :created_at ])
+                firmware: @firmware.as_json(only: [ :id, :version, :target_hardware_type, :wire_era, :binary_sha256, :created_at ])
               }, status: :created
             end
             format.html { redirect_to firmwares_path, success: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
@@ -229,6 +229,8 @@ module Api
               "deployment_oversized"
             elsif result.skipped_clusters.any? { |sc| sc.reason == "rollback" }
               "deployment_rejected_stale"
+            elsif result.skipped_clusters.any? { |sc| %w[wire_era_mismatch no_era_pulse].include?(sc.reason) }
+              "deployment_era_mismatch"
             else
               "deployment_no_targets"
             end
@@ -296,7 +298,7 @@ module Api
         # мас-присвоєння (`create` робить `.except` рівно на цю пару), тож ключ без
         # колонки — не «зайвий дозвіл», а `ActiveModel::UnknownAttributeError` → 500.
         # Саме так тут жили `target_hardware` і `notes`.
-        params.require(:firmware).permit(:version, :binary_file, :target_hardware_type, :tree_family_id, :bytecode_payload)
+        params.require(:firmware).permit(:version, :binary_file, :target_hardware_type, :tree_family_id, :bytecode_payload, :wire_era)
       end
     end
   end

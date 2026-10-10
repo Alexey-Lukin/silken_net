@@ -345,7 +345,8 @@ CREATE TABLE public.bio_contract_firmwares (
     target_hardware_type character varying,
     tree_family_id bigint,
     rollout_percentage integer DEFAULT 0,
-    compatible_hardware_versions jsonb DEFAULT '[]'::jsonb NOT NULL
+    compatible_hardware_versions jsonb DEFAULT '[]'::jsonb NOT NULL,
+    wire_era character varying NOT NULL
 );
 
 
@@ -4798,6 +4799,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261011090000'),
 ('20261010180000'),
 ('20261010102918'),
 ('20261006075239');

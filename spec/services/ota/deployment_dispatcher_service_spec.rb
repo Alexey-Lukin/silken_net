@@ -8,6 +8,17 @@ RSpec.describe Ota::DeploymentDispatcherService do
   let(:cluster) { create(:cluster, organization: organization) }
   let(:firmware) { create(:bio_contract_firmware) }
 
+  # ⚖️ [FW.66 S4] Гард ери читає останній пульс КОЖНОГО шлюзу когорти, і без пульсу відмовляє —
+  # тож шлюз цієї спеки народжується з пульсом. Фабрика контракту — ECB, тож дефолтний пульс теж.
+  def queen(ccm: false, **attrs)
+    create(:gateway, **attrs).tap { |gw| pulse!(gw, ccm: ccm) }
+  end
+
+  def pulse!(gateway, ccm: false, at: Time.current)
+    create(:gateway_telemetry_log, gateway: gateway, created_at: at,
+                                   health_flags: ccm ? GatewayTelemetryLog::HFLAG_CCM_ERA : 0)
+  end
+
   def call_service(cluster_id: cluster.id, canary_percentage: 100, fw: firmware)
     described_class.call(
       firmware: fw,
@@ -19,7 +30,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
 
 
   describe "per-gateway targeting (FW.60 poll-тракт)" do
-    let!(:gateways) { create_list(:gateway, 2, cluster: cluster) }
+    let!(:gateways) { Array.new(2) { queen(cluster: cluster) } }
 
     it "persists pending_firmware_id per eligible gateway and never push-enqueues" do
       result = call_service
@@ -77,7 +88,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
   end
 
   describe "anti-rollback guard (Rails mirror of Soldier Flash-KV 0x15, strictly >)" do
-    let!(:gateway) { create(:gateway, cluster: cluster) }
+    let!(:gateway) { queen(cluster: cluster) }
 
     it "skips a cluster whose hiwater already reached firmware.id" do
       cluster.update!(ota_version_hiwater: firmware.id)
@@ -111,11 +122,11 @@ RSpec.describe Ota::DeploymentDispatcherService do
 
   describe "eligibility filter" do
     it "skips gateways without ip_address, in maintenance/faulty/updating" do
-      create(:gateway, cluster: cluster, ip_address: nil)
-      create(:gateway, cluster: cluster, state: :maintenance)
-      create(:gateway, cluster: cluster, state: :faulty)
-      create(:gateway, cluster: cluster, state: :updating)
-      eligible = create(:gateway, cluster: cluster, state: :idle)
+      queen(cluster: cluster, ip_address: nil)
+      queen(cluster: cluster, state: :maintenance)
+      queen(cluster: cluster, state: :faulty)
+      queen(cluster: cluster, state: :updating)
+      eligible = queen(cluster: cluster, state: :idle)
 
       result = call_service
 
@@ -125,7 +136,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
     end
 
     it "does NOT burn hiwater for a cluster with zero eligible gateways" do
-      create(:gateway, cluster: cluster, ip_address: nil)
+      queen(cluster: cluster, ip_address: nil)
 
       result = call_service
 
@@ -137,7 +148,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
   end
 
   describe "canary cohort (per-cluster, stable first-N-by-id)" do
-    let!(:gateways) { create_list(:gateway, 4, cluster: cluster) }
+    let!(:gateways) { Array.new(4) { queen(cluster: cluster) } }
 
     it "takes ceil(count * pct / 100) gateways, lowest ids first" do
       result = call_service(canary_percentage: 25)
@@ -155,7 +166,7 @@ RSpec.describe Ota::DeploymentDispatcherService do
   end
 
   describe "oversized-firmware gate (FW.60 — дзеркало Queen OTA_MAX_CHUNKS=16)" do
-    let!(:gateway) { create(:gateway, cluster: cluster) }
+    let!(:gateway) { queen(cluster: cluster) }
     let(:oversized) { create(:bio_contract_firmware, bytecode_payload: "01" * 9_000) } # 9 КБ binary ≥ 18 чанків
 
     it "rejects the campaign BEFORE burning hiwater or targeting gateways" do
@@ -190,13 +201,77 @@ RSpec.describe Ota::DeploymentDispatcherService do
     end
   end
 
+  # ⚖️ [FW.66 S4, 2026-10-10 — врізка 03_04 §7.3] Контракт чужої ери на вузлі — три vm_error,
+  # відкат і спалена версія; гард судить когорту ДО спалення hiwater.
+  describe "wire-era guard (contract era ⟷ the cohort's Queen pulse)" do
+    let(:ccm_firmware) { create(:bio_contract_firmware, wire_era: "ccm") }
+
+    it "rejects an era mismatch before burning hiwater or targeting anyone" do
+      gw = queen(cluster: cluster) # ECB-пульс
+
+      result = call_service(fw: ccm_firmware)
+
+      expect(result.skipped_clusters.map(&:reason)).to eq([ "wire_era_mismatch" ])
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+      expect(gw.reload.pending_firmware_id).to be_nil
+    end
+
+    it "fails closed on a Queen that has sent no pulse yet" do
+      create(:gateway, cluster: cluster)
+
+      expect(call_service.skipped_clusters.map(&:reason)).to eq([ "no_era_pulse" ])
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+    end
+
+    it "dispatches a CCM contract to a CCM cohort" do
+      queen(cluster: cluster, ccm: true)
+
+      expect(call_service(fw: ccm_firmware).dispatched_gateways).to eq(1)
+    end
+
+    it "reads the era from the LATEST pulse (a Queen flipped to CCM is CCM)" do
+      gw = create(:gateway, cluster: cluster)
+      pulse!(gw, at: 2.hours.ago)
+      pulse!(gw, ccm: true, at: 1.hour.ago)
+
+      expect(call_service(fw: ccm_firmware).dispatched_gateways).to eq(1)
+    end
+
+    it "asks a pulse only of the canary cohort, not of the gateways it leaves out" do
+      first = queen(cluster: cluster)
+      create(:gateway, cluster: cluster) # поза когортою 25 % і без пульсу
+
+      result = call_service(canary_percentage: 25)
+
+      expect(result.dispatched_gateways).to eq(1)
+      expect(first.reload.pending_firmware_id).to eq(firmware.id)
+    end
+
+    # Печатка й KEYB — на кластер: кампанію чує кожен Солдат, що чує будь-яку Королеву когорти.
+    it "refuses on a mismatch anywhere in the cluster, even outside the canary cohort" do
+      queen(cluster: cluster)              # у когорті 25 % — ECB, як контракт
+      queen(cluster: cluster, ccm: true)   # поза когортою — CCM
+
+      expect(call_service(canary_percentage: 25).skipped_clusters.map(&:reason)).to eq([ "wire_era_mismatch" ])
+    end
+
+    # Пульс пишеться лише з підписаного конверта, а `last_seen_at` рухає кожен батч.
+    it "treats a pulse older than the liveness window before last_seen_at as no pulse" do
+      gw = create(:gateway, cluster: cluster)
+      pulse!(gw, at: (Gateway::LIVENESS_WINDOW_S + 3600).seconds.ago)
+      gw.update_column(:last_seen_at, Time.current)
+
+      expect(call_service.skipped_clusters.map(&:reason)).to eq([ "no_era_pulse" ])
+    end
+  end
+
   describe "targeting scope" do
     it "whole-forest (nil cluster_id) covers every org cluster but never foreign orgs" do
       second_cluster = create(:cluster, organization: organization)
-      create(:gateway, cluster: cluster)
-      create(:gateway, cluster: second_cluster)
+      queen(cluster: cluster)
+      queen(cluster: second_cluster)
       foreign_cluster = create(:cluster) # інша організація
-      create(:gateway, cluster: foreign_cluster)
+      queen(cluster: foreign_cluster)
 
       result = call_service(cluster_id: nil)
 
@@ -206,8 +281,8 @@ RSpec.describe Ota::DeploymentDispatcherService do
 
     it "mixed forest: stale cluster skipped, fresh cluster dispatched" do
       stale = create(:cluster, organization: organization, ota_version_hiwater: firmware.id)
-      create(:gateway, cluster: stale)
-      create(:gateway, cluster: cluster)
+      queen(cluster: stale)
+      queen(cluster: cluster)
 
       result = call_service(cluster_id: nil)
 

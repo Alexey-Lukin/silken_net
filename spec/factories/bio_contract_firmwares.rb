@@ -5,6 +5,7 @@ FactoryBot.define do
   factory :bio_contract_firmware do
     sequence(:version) { |n| "#{n}.0.0" }
     bytecode_payload { "AABBCCDD" }
+    wire_era { "ecb" }
     is_active { false }
     target_hardware_type { nil }
     tree_family { nil }

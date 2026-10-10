@@ -4,6 +4,9 @@ lt:
     create_error_title: Evoliucijos klaida
     form:
       binary_label: Dvejetainis artefaktas (.bin)
+      era_ccm: CCM — 14 baitų plaintext
+      era_ecb: ECB — Lorenz, calculate_state
+      era_label: Ryšio era (kontrakto įėjimo taškas)
       submit: PATVIRTINTI EVOLIUCIJĄ
       target_gateway: Queen (šliuzas)
       target_label: Tikslinė aparatūros architektūra

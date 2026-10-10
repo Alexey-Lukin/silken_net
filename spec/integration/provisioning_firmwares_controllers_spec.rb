@@ -118,7 +118,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     it "POST /firmwares creates firmware" do
       expect {
         post "/firmwares",
-             params: { firmware: { version: "6.0.0", bytecode_payload: "AABB0011" } },
+             params: { firmware: { version: "6.0.0", bytecode_payload: "AABB0011", wire_era: "ecb" } },
              headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
       }.to change(BioContractFirmware, :count).by(1)
 
@@ -155,6 +155,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
 
     it "POST /firmwares/:id/deploy targets gateways for the poll-тракт (FW.60)" do
       gateway = create(:gateway, cluster: cluster)
+      create(:gateway_telemetry_log, gateway: gateway) # ⚖️ [FW.66 S4] ера Королеви — з її пульсу
 
       post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, target_type: "Tree", canary_percentage: 10 },

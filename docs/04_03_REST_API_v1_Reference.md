@@ -1074,7 +1074,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 }
 ```
 
-**Rejected Response `422 Unprocessable Content`** — жодного шлюзу не відправлено: усі цільові кластери відсіяні anti-rollback guard'ом (`reason: "rollback"` — версія ≤ high-water, слот спалений при попередньому dispatch: «фікс завжди НОВИЙ запис») та/або не мають eligible-шлюзів (`reason: "no_gateways"` — hiwater такому кластеру НЕ палиться):
+**Rejected Response `422 Unprocessable Content`** — жодного шлюзу не відправлено: усі цільові кластери відсіяні anti-rollback guard'ом (`reason: "rollback"` — версія ≤ high-water, слот спалений при попередньому dispatch: «фікс завжди НОВИЙ запис»), не мають eligible-шлюзів (`reason: "no_gateways"` — hiwater такому кластеру НЕ палиться) та/або не пройшли гард ери [FW.66 S4] (`reason: "wire_era_mismatch"` — ера контракту ≠ ера Королев когорти з їхнього останнього пульсу; `"no_era_pulse"` — Королева когорти ще не надіслала свіжого пульсу; hiwater не палиться). Текст `error` — за першою причиною в порядку `oversized_firmware` → `rollback` → ери (`flash.firmwares.deployment_era_mismatch`) → `deployment_no_targets`; повний перелік — `skipped_clusters`:
 
 ```json
 {
@@ -1096,6 +1096,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `firmware[binary_file]` | File | Бінарний файл прошивки (макс. 20 МБ) |
 | `firmware[target_hardware_type]` | String | `"Tree"` або `"Gateway"` (allow-list `BioContractFirmware::HARDWARE_TYPES`) — **єдине** поле цільового заліза, і саме його шле форма завантаження |
 | `firmware[tree_family_id]` | Integer | Прив'язка до породи (опційно) |
+| `firmware[wire_era]` | String | **Обовʼязковий** — `"ecb"` або `"ccm"` (`BioContractFirmware::WIRE_ERAS`): ера дроту, під яку зібрано байткод (точка входу контракту, [FW.66 S4]); дефолту немає, без нього — `422`. Форма завантаження шле його полем без попереднього вибору |
 | `firmware[bytecode_payload]` | String (HEX) | Альтернатива `binary_file`: hex-encoded bytecode. Розмір обмежено до `MAX_BYTECODE_PAYLOAD_HEX_SIZE = 2 × MAX_FIRMWARE_SIZE` (40 MB hex = 20 MB binary). |
 
 **Success Response `201 Created`:**
@@ -1107,6 +1108,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
     "id": 12,
     "version": "1.4.2",
     "target_hardware_type": "Tree",
+    "wire_era": "ecb",
     "binary_sha256": "A3F2...",
     "created_at": "2026-03-22T17:00:00Z"
   }

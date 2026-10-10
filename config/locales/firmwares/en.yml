@@ -4,6 +4,9 @@ en:
     create_error_title: Evolution Error
     form:
       binary_label: Binary Artifact (.bin)
+      era_ccm: CCM — 14-byte plaintext
+      era_ecb: ECB — Lorenz, calculate_state
+      era_label: Wire era (contract entry point)
       submit: COMMIT EVOLUTION
       target_gateway: Queen (Gateway)
       target_label: Target Hardware Architecture

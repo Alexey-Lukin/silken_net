@@ -21,6 +21,7 @@ lt:
       invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
     firmwares:
       deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Queen šliuzai jį paims kitame poll užklausime.
+      deployment_era_mismatch: 'OTA atmesta: kontrakto ryšio era (ECB/CCM) nesutampa su klasterio Queen era, arba Queen dar neatsiuntė pulso, iš kurio skaitoma era.'
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'
       deployment_oversized: 'OTA atmesta: mikroprograminė įranga viršija surinkimo lubas — Queen (16 gabalų x 512 B = 8 KB) arba Soldier (93 LoRa gabalai, apie 1 KB).'
       deployment_rejected_stale: 'OTA atmesta: versija neviršija klasterio aukščiausios žymos (anti-rollback). Sukurkite naują mikroprograminės įrangos įrašą.'

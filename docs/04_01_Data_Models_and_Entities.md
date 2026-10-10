@@ -744,7 +744,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `temperature_c` | decimal | Температура корпусу (°C) |
 | `cellular_signal_csq` | integer | Сила сигналу LTE (0-31, 99=unknown) |
 | `uptime_min` · `cifo_fill` · `lora_rx_drops` · `coap_fail_count` | integer | **[ARCH.54]** Пульс із підписаного health-блоку QATT-v2 ([`03_02 §7`](03_02_Queen_Gateway_Firmware)) |
-| `health_flags` | integer | **[ARCH.54]** Бітфілд того ж пульсу. НЕ однорідний: `HFLAG_CCM_ERA`/`RING`/`LEGACY_DROPS`/`CCM_SPOOF` — молодші чотири; bit4 заброньовано [SEC.21]; старші три — **reset-cause** [FW.59]. Розкладка-дім — `firmware/common/queen_attest.h` |
+| `health_flags` | integer | **[ARCH.54]** Бітфілд того ж пульсу. НЕ однорідний: `HFLAG_CCM_ERA`/`RING`/`LEGACY_DROPS`/`CCM_SPOOF` — молодші чотири; bit4 заброньовано [SEC.21]; старші три — **reset-cause** [FW.59]. Розкладка-дім — `firmware/common/queen_attest.h`. `HFLAG_CCM_ERA` (біт 0 — збірка Королеви з `FW2_CCM_ENABLED`) читає гард ери диспетчера OTA [FW.66 S4] |
 
 **Константи:** `LOW_BATTERY_THRESHOLD=3300` мВ, `OVERHEAT_THRESHOLD=65` °C, `LOW_TEMPERATURE_THRESHOLD=-20` °C (межа розряду комірки; заводський поріг розряду BMS на теплому краю допуску гасить Королеву раніше — [`02_05 §4а.5`](02_05_Queen_Hardware_and_Starlink)), `LOW_SIGNAL_THRESHOLD=5` CSQ.
 
@@ -832,6 +832,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `is_active` | boolean | Активна версія |
 | `rollout_percentage` | integer | Phased diffusion (0-100) |
 | `tree_family_id` | bigint | Специфічна порода (optional) |
+| `wire_era` | string (enum, NOT NULL, без дефолту) | **[FW.66 S4]** Ера дроту, під яку зібрано байткод: `ecb` (міст кличе `calculate_state`, 9 аргументів) · `ccm` (власна точка входу, 14 байт plaintext). C-міст OTA не оновлює, тож контракт чужої ери на вузлі — три `vm_error`, відкат і спалена версія; `Ota::DeploymentDispatcherService` звіряє еру з пульсом Королев кластера. Дефолту немає свідомо — ера є властивістю байткоду (⚖️ 2026-10-10, врізка [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)). ⚠️ `deploy_globally!` гасить інші активні контракти того ж `target_hardware_type` без огляду на еру — латентно, доки Rails одноерний (`TELEMETRY_CCM_ENABLED`), і живе з першим шляхом «дві ери під одним Rails» |
 
 **Методи:** `binary_payload`, `payload_size`, `binary_sha256`, `verify_integrity!`, `deploy_globally!(percentage:)`, `chunks(512)`.
 

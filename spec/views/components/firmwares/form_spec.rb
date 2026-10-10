@@ -57,7 +57,7 @@ RSpec.describe Firmwares::Form do
     it "associates every label with a real form control" do
       doc = Nokogiri::HTML5.fragment(html)
 
-      expect(doc.css("label").size).to eq(3), "очікувались 3 мітки — пін інакше вакуумний"
+      expect(doc.css("label").size).to eq(4), "очікувались 4 мітки — пін інакше вакуумний"
       expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
     end
 
@@ -81,9 +81,22 @@ RSpec.describe Firmwares::Form do
     # `esp32_s3` — значення поза `HARDWARE_TYPES`, тож навіть із правильним іменем
     # поля запис не створився б. Мітки при цьому виглядали правдоподібно, бо називали
     # MCU — і теж помилково: обидва наші процесори — STM32WLE5 (Солдат — CC, Королева — JC).
+    def option_values(select_name)
+      Nokogiri::HTML5.fragment(html).css(%(select[name="firmware[#{select_name}]"] option)).map { |o| o["value"] }
+    end
+
     it "пропонує рівно ті значення цільового заліза, які приймає модель" do
-      expect(html.scan(/<option value="([^"]*)"/).flatten)
-        .to match_array(BioContractFirmware::HARDWARE_TYPES)
+      expect(option_values("target_hardware_type")).to match_array(BioContractFirmware::HARDWARE_TYPES)
+    end
+
+    # ⚖️ [FW.66 S4] Ера — властивість байткоду: поле без попереднього вибору (порожній варіант
+    # першим і нічого `selected`), обовʼязкове, і значення — рівно ті, що приймає модель.
+    it "пропонує ери дроту моделі без попереднього вибору" do
+      select = Nokogiri::HTML5.fragment(html).at_css('select[name="firmware[wire_era]"]')
+
+      expect(option_values("wire_era")).to eq([ "" ] + BioContractFirmware::WIRE_ERAS)
+      expect(select["required"]).not_to be_nil
+      expect(select.css("option[selected]")).to be_empty
     end
 
     it "renders the Tree (Soldier) hardware option" do

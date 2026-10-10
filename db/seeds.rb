@@ -381,6 +381,7 @@ puts "💾 Завантаження прошивки BioContract..."
 firmware = BioContractFirmware.create!(
   version: "v2.1.0-silken",
   bytecode_payload: SecureRandom.hex(256),
+  wire_era: "ecb",
   is_active: true
 )
 

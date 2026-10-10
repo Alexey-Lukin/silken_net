@@ -18,6 +18,8 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
   let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
   let(:cluster) { create(:cluster, organization: organization) }
   let!(:gateway) { create(:gateway, cluster: cluster, state: :idle) }
+  # ⚖️ [FW.66 S4] Диспетчер читає еру Королеви з її останнього пульсу; без нього — відмова.
+  let!(:era_pulse) { create(:gateway_telemetry_log, gateway: gateway) }
   let!(:key_record) { create(:hardware_key, device_uid: gateway.uid) }
   let!(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
   # [FW.60] Тег відповіді чинний лише для свого запиту — запамʼятовуємо `m=` останнього.

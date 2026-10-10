@@ -4,6 +4,9 @@ uk:
     create_error_title: Помилка еволюції
     form:
       binary_label: Бінарний артефакт (.bin)
+      era_ccm: CCM — 14 байт plaintext
+      era_ecb: ECB — Лоренц, calculate_state
+      era_label: Ера дроту (точка входу контракту)
       submit: ЗАФІКСУВАТИ ЕВОЛЮЦІЮ
       target_gateway: Королева (шлюз)
       target_label: Цільова архітектура обладнання

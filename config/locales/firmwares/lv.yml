@@ -4,6 +4,9 @@ lv:
     create_error_title: Evolūcijas kļūda
     form:
       binary_label: Binārais artefakts (.bin)
+      era_ccm: CCM — 14 baitu plaintext
+      era_ecb: ECB — Lorenz, calculate_state
+      era_label: Sakaru ēra (līguma ieejas punkts)
       submit: APSTIPRINĀT EVOLŪCIJU
       target_gateway: Queen (vārteja)
       target_label: Mērķa aparatūras arhitektūra

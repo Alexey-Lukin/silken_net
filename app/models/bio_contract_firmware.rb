@@ -14,6 +14,16 @@ class BioContractFirmware < ApplicationRecord
   # Допустимі типи обладнання для прошивки
   HARDWARE_TYPES = %w[Tree Gateway].freeze
 
+  # ⚖️ [FW.66 S4, 2026-10-10 — врізка `03_04 §7.3`] Ера дроту, під яку зібрано контракт: ECB-міст
+  # кличе `calculate_state` (9 аргументів), CCM — власну точку входу з 14 байтами plaintext. C-міст
+  # OTA не оновлює, тож контракт чужої ери на вузлі — три `vm_error`, відкат і спалена версія;
+  # диспетчер звіряє еру з пульсом Королеви (`Ota::DeploymentDispatcherService`). Дефолту немає
+  # свідомо: ера — властивість байткоду, і вгадувати її не можна.
+  WIRE_ERAS = %w[ecb ccm].freeze
+  # Присутність — окремим валідатором: порожній вибір форми каже «заповніть», а не «поза переліком».
+  enum :wire_era, WIRE_ERAS.index_with(&:itself), prefix: true, validate: { allow_nil: true }
+  validates :wire_era, presence: true
+
   # --- ЗВ'ЯЗКИ ---
   # Трекінг версій — per-device SemVer-РЯДОК, і це вся правда:
   #   * `Tree.firmware_version` + `Gateway.firmware_version` (рядок SemVer)

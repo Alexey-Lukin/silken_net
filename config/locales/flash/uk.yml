@@ -21,6 +21,7 @@ uk:
       invalid_token_type: 'Невірний фільтр token_type: %{value}.'
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} поставлено в чергу — Королеви заберуть його власним poll-ом після наступного флашу.
+      deployment_era_mismatch: 'OTA відхилено: ера контракту (ECB/CCM) не збігається з ерою Королев кластера, або Королева ще не надіслала пульсу, з якого ера читається.'
       deployment_no_targets: 'OTA відхилено: немає придатних шлюзів для розгортання.'
       deployment_oversized: 'OTA відхилено: прошивка понад стелю збирання — Королеви (16 чанків × 512 Б = 8 КБ) або Солдата (93 LoRa-чанки ≈ 1 КБ).'
       deployment_rejected_stale: 'OTA відхилено: версія не перевищує high-water кластера (anti-rollback). Створіть новий запис прошивки.'

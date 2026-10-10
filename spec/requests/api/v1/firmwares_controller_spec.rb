@@ -11,10 +11,22 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
   describe "POST /firmwares/:id/deploy" do
     let!(:firmware) do
-      BioContractFirmware.create!(version: "2.0.0", bytecode_payload: "AABBCCDD")
+      BioContractFirmware.create!(version: "2.0.0", bytecode_payload: "AABBCCDD", wire_era: "ecb")
     end
     let(:cluster) { create(:cluster, organization: organization) }
-    let!(:gateway) { create(:gateway, cluster: cluster) }
+    # ⚖️ [FW.66 S4] Ера Королеви читається з її пульсу; без пульсу диспетчер відмовляє.
+    let!(:gateway) { create(:gateway, cluster: cluster).tap { |gw| create(:gateway_telemetry_log, gateway: gw) } }
+
+    it "rejects a contract of the other wire era with 422 and names the reason" do
+      ccm = BioContractFirmware.create!(version: "2.1.0", bytecode_payload: "AABBCCDD", wire_era: "ccm")
+
+      post "/firmwares/#{ccm.id}/deploy", params: { cluster_id: cluster.id }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to eq(I18n.t("flash.firmwares.deployment_era_mismatch"))
+      expect(response.parsed_body["skipped_clusters"].sole["reason"]).to eq("wire_era_mismatch")
+      expect(gateway.reload.pending_firmware_id).to be_nil
+    end
 
 
     it "targets the gateway via pending_firmware_id (FW.60 poll-тракт, без push-enqueue)" do
@@ -127,7 +139,7 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
   describe "GET /firmwares (index)" do
     let!(:firmware) do
-      BioContractFirmware.create!(version: "3.0.0", bytecode_payload: "AABBCCDD")
+      BioContractFirmware.create!(version: "3.0.0", bytecode_payload: "AABBCCDD", wire_era: "ecb")
     end
 
     it "returns firmware list as JSON" do
@@ -242,11 +254,12 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       rendered_fields = response.body.scan(/name="firmware\[([a-z_]+)\]"/).flatten.uniq
       # Пін на РОЗМІР множини: зішкрібання, що не знайшло нічого, зробило б приклад
       # вакуумним — порожній payload проходить будь-яким контролером.
-      expect(rendered_fields).to include("version", "target_hardware_type")
+      expect(rendered_fields).to include("version", "target_hardware_type", "wire_era")
 
       known = {
         "version" => "7.7.7",
         "target_hardware_type" => BioContractFirmware::HARDWARE_TYPES.first,
+        "wire_era" => "ccm",
         "binary_file" => Rack::Test::UploadedFile.new(
           StringIO.new("\xDE\xAD".b), "application/octet-stream", true, original_filename: "fw.bin"
         )
@@ -256,8 +269,9 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            headers: html_headers
 
       expect(response).to redirect_to(firmwares_path)
-      expect(BioContractFirmware.find_by(version: "7.7.7")&.target_hardware_type)
-        .to eq(BioContractFirmware::HARDWARE_TYPES.first)
+      saved = BioContractFirmware.find_by(version: "7.7.7")
+      expect(saved&.target_hardware_type).to eq(BioContractFirmware::HARDWARE_TYPES.first)
+      expect(saved&.wire_era).to eq("ccm")
     end
 
     # Дзеркало round-trip'а з боку API: застарілий клієнт шле ключі, яких на моделі
@@ -266,16 +280,25 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     # того, що надішле клієнт.
     it "ключ, якого модель не має, більше не валить сервер" do
       post "/firmwares",
-           params: { firmware: { version: "8.8.8", bytecode_payload: "DEADBEEF",
+           params: { firmware: { version: "8.8.8", bytecode_payload: "DEADBEEF", wire_era: "ecb",
                                  target_hardware: "stm32_l0", notes: "легасі-клієнт" } },
            headers: headers, as: :json
 
       expect(response).to have_http_status(:created)
     end
 
+    # ⚖️ [FW.66 S4] Ера — властивість байткоду, дефолту немає: без неї контракт не народжується.
+    it "refuses a contract that does not name its wire era" do
+      post "/firmwares", params: { firmware: { version: "4.0.1", bytecode_payload: "DEADBEEF" } },
+                         headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(BioContractFirmware.find_by(version: "4.0.1")).to be_nil
+    end
+
     it "creates firmware successfully as JSON" do
       post "/firmwares",
-           params: { firmware: { version: "4.0.0", bytecode_payload: "DEADBEEF" } },
+           params: { firmware: { version: "4.0.0", bytecode_payload: "DEADBEEF", wire_era: "ecb" } },
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
       # Відповідь не повертає завантажений байткод: голий `@firmware` серіалізує
@@ -335,13 +358,13 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
   describe "POST /firmwares/:id/deploy (HTML format)" do
     let!(:firmware) do
-      BioContractFirmware.create!(version: "5.0.0", bytecode_payload: "AABBCCDD")
+      BioContractFirmware.create!(version: "5.0.0", bytecode_payload: "AABBCCDD", wire_era: "ecb")
     end
     let(:cluster) { create(:cluster, organization: organization) }
 
 
     it "redirects with a notice on successful HTML deploy (the UI one-click path)" do
-      gw = create(:gateway, cluster: cluster)
+      gw = create(:gateway, cluster: cluster).tap { |queen| create(:gateway_telemetry_log, gateway: queen) }
 
       post "/firmwares/#{firmware.id}/deploy",
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }

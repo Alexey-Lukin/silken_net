@@ -41,7 +41,8 @@ RSpec.describe "validation attribute names are localized" do # rubocop:disable R
   # `:base` виключено свідомо: Rails друкує такі повідомлення БЕЗ префікса
   # атрибута, тож імені вони не потребують.
   def validated_attributes(model)
-    model.validators.flat_map(&:attributes).uniq.reject { |a| a == :base } .sort
+    # `to_sym`: `enum … validate:` реєструє атрибут РЯДКОМ, і без нормалізації `.sort` падає на суміші.
+    model.validators.flat_map(&:attributes).map(&:to_sym).uniq.reject { |a| a == :base } .sort
   end
 
   # Обидва доми, у порядку, у якому їх питає Rails: модель-специфічний

@@ -264,7 +264,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
         uploaded_file = Rack::Test::UploadedFile.new(file.path, "application/octet-stream")
 
         post "/firmwares",
-             params: { firmware: { version: "99.0.0", binary_file: uploaded_file } },
+             params: { firmware: { version: "99.0.0", binary_file: uploaded_file, wire_era: "ecb" } },
              headers: admin_headers
 
         expect(response).to have_http_status(:created)

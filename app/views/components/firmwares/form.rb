@@ -40,6 +40,15 @@ module Firmwares
                      {}, class: input_classes, **aria
           end
 
+          # ⚖️ [FW.66 S4] Ера дроту — властивість байткоду (точка входу контракту), тож поле без
+          # попереднього вибору: UI, що підставив би ECB, вгадував би за оператора те, що диспетчер
+          # потім звірятиме з пульсом Королеви.
+          field_container(f, :wire_era, t(".era_label")) do |aria|
+            f.select :wire_era,
+                     BioContractFirmware::WIRE_ERAS.map { |era| [ t(".era_#{era}"), era ] },
+                     { include_blank: true }, class: input_classes, required: true, **aria
+          end
+
           field_container(f, :binary_file, t(".binary_label")) do |aria|
             f.file_field :binary_file, class: "w-full text-gaia-text-muted text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gaia-surface-sunken file:text-gaia-primary-strong hover:file:bg-gaia-primary/20 cursor-pointer", required: true, **aria
           end

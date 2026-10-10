@@ -91,6 +91,11 @@ module Ota
             next
           end
 
+          if (era_reason = era_rejection(cluster, uids))
+            skipped << SkippedCluster.new(cluster.id, cluster.name, era_reason)
+            next
+          end
+
           # [FW.60] Пакуємо ТУТ, бо coap-процес, що віддаватиме чанки, master-key
           # не має (SEC.22) і сам пакувати не сміє — `Ota::PackageStore`. До
           # спалення hiwater: збій пакування відкочує транзакцію, і та сама версія
@@ -112,6 +117,27 @@ module Ota
       end
 
       [ cohort_uids, skipped ]
+    end
+
+    # ⚖️ [FW.66 S4, 2026-10-10 — врізка `03_04 §7.3`] Ера контракту ⟷ ера Королев: ера Королеви —
+    # прапорець її останнього СВІЖОГО пульсу (`ccm_era?`). Пульс потрібен від кожного шлюзу КОГОРТИ
+    # (без нього — відмова, fail-closed), а розбіжність судиться по ВСІХ Королевах кластера з пульсом:
+    # печатка й KEYB — на кластер, тож кампанію чує кожен Солдат, що чує будь-яку Королеву когорти.
+    # До спалення hiwater, тож відмова версії не палить. Печатку OTA це не змінює.
+    def era_rejection(cluster, cohort_uids)
+      seen = cluster.gateways.pluck(:uid, :last_seen_at).to_h
+      pulses = GatewayTelemetryLog.latest_per_gateway(seen.keys)
+                                  .select { |uid, pulse| era_pulse_fresh?(pulse, seen[uid]) }
+      return "no_era_pulse" unless cohort_uids.all? { |uid| pulses.key?(uid) }
+      return "wire_era_mismatch" unless pulses.each_value.all? { |pulse| pulse.ccm_era? == @firmware.wire_era_ccm? }
+
+      nil
+    end
+
+    # Пульс пишеться лише з підписаного конверта, а `last_seen_at` рухає кожен батч — тож Королева
+    # у провалі атестації чи щойно перепрошита жива, а її ера сказала б пульсом будь-якого віку.
+    def era_pulse_fresh?(pulse, last_seen_at)
+      last_seen_at.nil? || pulse.created_at >= last_seen_at - Gateway::LIVENESS_WINDOW_S.seconds
     end
 
     def target_clusters
