@@ -8,7 +8,6 @@ lt:
   attributes:
     action_type: Veiksmo tipas
     ai_sensitivity: DI jautrumas
-    alert_threshold_critical_z: Įspėjimo slenkstis (Kritinis Z)
     bark_thickness: Žievės storis
     billing_email: Atsiskaitymo el. paštas
     biomass_yield_kg: Išgauta biomasė (kg)
@@ -16,8 +15,6 @@ lt:
     carbon_sequestration_coefficient: CO₂ sekvestracijos koeficientas
     cluster: Klasteris
     config_sleep_interval_s: Miego intervalas (s)
-    critical_z_max: Kritinis Z maks.
-    critical_z_min: Kritinis Z min.
     crypto_public_address: Kriptovaliutos viešasis adresas
     data_region: Duomenų regionas
     did: DID
@@ -34,7 +31,6 @@ lt:
     longitude: Ilguma
     name: Pavadinimas
     notes: Lauko pastabos
-    optimal_z_target: Optimalus Z tikslas
     parts_cost: Atsarginių dalių kaina
     password: Slaptažodis
     performed_at: Atlikimo laikas

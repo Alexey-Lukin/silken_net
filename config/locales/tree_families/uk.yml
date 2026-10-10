@@ -7,8 +7,6 @@ uk:
       bark_thickness: Товщина кори (мм)
       co2_coefficient: Коеф. поглинання CO₂
       co2_placeholder: '1.0'
-      critical_z_max: Критичний Z Макс
-      critical_z_min: Критичний Z Мін
       scientific_name: Наукова назва (латиною)
       scientific_placeholder: напр. Quercus robur
       species_identity: Ідентичність виду
@@ -19,7 +17,6 @@ uk:
       audit_aria: Аудит виду %{name}
       columns:
         command: Команда
-        family_z_band: Z-смуга породи
         population: Популяція
         species_name: Назва виду
       define_aria: Визначити новий вид дерева
@@ -27,7 +24,6 @@ uk:
       edit: РЕДАГ
       edit_aria: Редагувати вид %{name}
       kicker: Біологічна матриця
-      range_value: "%{min} - %{max}"
       soldiers_count:
         few: "%{count} солдати"
         many: "%{count} солдатів"

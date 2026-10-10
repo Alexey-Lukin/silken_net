@@ -32,19 +32,23 @@ module Hil
   #
   # Targeted Z bands:
   #
-  #   :homeostasis — z ∈ [critical_z_min .. critical_z_max]  (rejection sampling)
-  #   :stress      — z <  critical_z_min                      (synthesised)
+  #   :homeostasis — z ∈ [band min .. band max]               (rejection sampling)
+  #   :stress      — z <  band min                            (synthesised)
   #   :anomaly     — z >  Attractor.anomaly_ceiling(temp, max) (synthesised)
+  #
+  # The band defaults to the one the DEVICE judges by — the factory
+  # `Tree::DEVICE_DEFAULT_LORENZ_BAND` (2.0/45.0), the only band the ECB
+  # contract holds — so a fixture's label and the shipped classification
+  # agree at the stress floor; `band:` overrides it.
   #
   # 🔴 [E.64] The two ceilings are NOT the same number and the difference is
   # load-bearing. The shipped classifier (`SilkenNet::Attractor.homeostatic?`)
   # judges the top edge ρ-RELATIVELY — ρ(temp) + (max − BASE_RHO) — so ambient
   # heat can no longer fake an anomaly. `#synthesize` therefore asks Attractor
   # for it (see `forced_z_for`). The `:homeostasis` rejection target keeps the
-  # ABSOLUTE family max on purpose: while `temperature_c ≥ 0` (ρ ≥ BASE_RHO)
+  # ABSOLUTE band max on purpose: while `temperature_c ≥ 0` (ρ ≥ BASE_RHO)
   # the absolute band is a SUBSET of the shipped envelope, so a fixture that
-  # lands in it is homeostatic by both rules, and callers asking for a
-  # family-band fixture get exactly that.
+  # lands in it is homeostatic by both rules.
   #
   # ⚠️ DECLARED CEILING — the subset argument covers the REJECTION TARGET only
   # (`#sample_in_state`, `#batch(in_band: true)`). `#sample` and the default
@@ -55,17 +59,15 @@ module Hil
   # from `batch(state: :homeostasis, count: N)` carries roughly one row per
   # thousand whose LABEL and whose shipped classification disagree. Read the
   # `state` column as «which profile generated it», never as a verdict; when a
-  # consumer needs the verdict, ask `Attractor.homeostatic?(z, family, temp)`.
+  # consumer needs the verdict, ask `Attractor.homeostatic?(z, band, temp)`.
   # (A sub-zero `temperature_c:` override additionally inverts the inclusion
   # for the rejection target itself.)
   #
   # Acoustic input: always 0 by default — see `DEFAULT_ACOUSTIC_EVENTS`.
   # = ===================================================================
   class LorenzGenerator
-    # Default Z-band thresholds when no TreeFamily is supplied. Match
-    # SilkenNet::Attractor's homeostasis envelope (Pinus sylvestris).
-    DEFAULT_Z_MIN = 5.0
-    DEFAULT_Z_MAX = 45.0
+    DEFAULT_Z_MIN = Tree::DEVICE_DEFAULT_LORENZ_BAND[:min]
+    DEFAULT_Z_MAX = Tree::DEVICE_DEFAULT_LORENZ_BAND[:max]
 
     # 🔴 [HW.30 ⚖️ 2026-09-29] The piezo is cut from the Soldier, so the wire
     # byte `acoustic_events` is always 0 (the ARCH.41-B 0xFE time sentinel is
@@ -77,7 +79,7 @@ module Hil
     DEFAULT_ACOUSTIC_EVENTS = 0
 
     # Per-state default knobs (chosen so rejection sampling converges in
-    # < 10 iterations on the global default Z band).
+    # < 10 iterations on the default Z band).
     STATE_PROFILES = {
       homeostasis: {
         temp_range:     (15..30),
@@ -101,10 +103,10 @@ module Hil
 
     DEFAULT_MAX_ATTEMPTS = 50
 
-    attr_reader :tree_family, :seed_bytes
+    attr_reader :band, :seed_bytes
 
-    def initialize(tree_family: nil, seed_hex: nil, rng: Random.new)
-      @tree_family = tree_family
+    def initialize(band: Tree::DEVICE_DEFAULT_LORENZ_BAND, seed_hex: nil, rng: Random.new)
+      @band = band
       @rng = rng
       @seed_bytes = resolve_seed_bytes(seed_hex)
     end
@@ -131,8 +133,8 @@ module Hil
     def sample_in_state(state:, max_attempts: DEFAULT_MAX_ATTEMPTS, **overrides)
       unless state == :homeostasis
         raise ArgumentError,
-              "sample_in_state only supports :homeostasis. Z < critical_z_min and " \
-              "Z > critical_z_max are rare (not unreachable), so a bounded " \
+              "sample_in_state only supports :homeostasis. Z below the band and " \
+              "Z above its ceiling are rare (not unreachable), so a bounded " \
               "rejection loop cannot promise to land there — use " \
               "`synthesize(state: #{state.inspect})` for hand-tuned stress / " \
               "anomaly fixtures."
@@ -269,15 +271,6 @@ module Hil
     # profile's own 55..80 °C, ρ lands at 39..44 and the real ceiling at
     # 56..61, i.e. 46.5 sat well INSIDE the envelope. The stress floor stays
     # absolute because `Attractor.homeostatic?` compares it that way.
-    #
-    # ⚠️ NAME THE FRAME, because the two sides of this method answer to
-    # different bands. Everything here is the FAMILY band (`DEFAULT_Z_MIN` 5.0
-    # / a `TreeFamily`'s own pair). What judges in PRODUCTION is the DEVICE side —
-    # `Tree#device_lorenz_bands`: the factory 2.0/45.0 (`BioContract::CRITICAL_Z_MIN`)
-    # plus whatever 0x9A band the node may hold — and DCI compares against that [FW.8].
-    # So a `:stress` fixture at `5.0 − 1.5 = 3.5` is stress by the family band
-    # and HOMEOSTASIS by the device band. That is correct for a family-band
-    # fixture and wrong the moment someone feeds it to a device-band consumer.
     def forced_z_for(state, temp)
       min, max = z_thresholds
       case state
@@ -289,8 +282,7 @@ module Hil
     end
 
     def z_thresholds
-      return [ DEFAULT_Z_MIN, DEFAULT_Z_MAX ] if @tree_family.nil?
-      [ @tree_family.critical_z_min.to_f, @tree_family.critical_z_max.to_f ]
+      [ @band[:min].to_f, @band[:max].to_f ]
     end
 
     # Resolve a 32-byte K_seed for SilkenNet::SeedDerivation. If the

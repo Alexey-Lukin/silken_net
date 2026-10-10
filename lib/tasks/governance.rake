@@ -101,12 +101,11 @@ namespace :governance do
   #      ground was already canon): 01_01 §6 Stage 4 = Черкаський бір, the anchor is tuned to
   #      *Pinus sylvestris* and oak is a separate SKU, so the first roster is ONE family. Its
   #      NUMBERS are declared PROVISIONAL in the row itself (`biological_properties.provenance`),
-  #      because the calibration protocol (05_05 §8) has not run: the Z-window is the engineering
-  #      estimate the demo seed carries, `optimal_z_target` mirrors the firmware constant (29.0,
-  #      BioContract::OPTIMAL_Z_TARGET) and `fire_resistance_rating` the platform fire threshold
-  #      (60 °C, AlertDispatchService#fire_limit); the sequestration coefficient is the RATIFIED
-  #      default 1.0 (ARCH.84) — not the demo's uncited 0.8. Never updated once present: numbers
-  #      the operator calibrated are theirs (same rule as the actor above).
+  #      because the calibration protocol (05_05 §8) has not run: `fire_resistance_rating` is the
+  #      platform fire threshold (60 °C, AlertDispatchService#fire_limit) and the sequestration
+  #      coefficient is the RATIFIED default 1.0 (ARCH.84) — not the demo's uncited 0.8. A species
+  #      carries no Lorenz band (FW.66): the device judges status by its factory band. Never
+  #      updated once present: numbers the operator calibrated are theirs (same rule as the actor above).
   desc "Production bootstrap composition (OPS.38): oracle_executioner + governance parameters; idempotent"
   task bootstrap: :environment do
     oracle = User.find_or_create_by!(email_address: User::ORACLE_EXECUTIONER_EMAIL) do |u|
@@ -121,11 +120,10 @@ namespace :governance do
 
     first_family = {
       name: "Сосна звичайна", scientific_name: "Pinus sylvestris",
-      critical_z_min: 5.0, critical_z_max: 45.0, carbon_sequestration_coefficient: 1.0,
+      carbon_sequestration_coefficient: 1.0,
       biological_properties: {
-        "optimal_z_target" => 29.0, "fire_resistance_rating" => 60,
-        "provenance" => "provisional — 00_07 OPS.38 ⚖️ 2026-09-03: Z-window is an engineering estimate, " \
-                        "calibration protocol 05_05 §8 not yet run; optimal_z_target = firmware constant, " \
+        "fire_resistance_rating" => 60,
+        "provenance" => "provisional — 00_07 OPS.38 ⚖️ 2026-09-03: calibration protocol 05_05 §8 not yet run; " \
                         "fire_resistance_rating = platform fire threshold"
       }
     }

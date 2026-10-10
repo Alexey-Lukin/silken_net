@@ -270,8 +270,8 @@ RSpec.describe Tracker::Dashboard do
         .to include(a_string_matching(%r{03_01 §3\.1}))
     end
 
-    it "resolves a parent-group ref whose children exist (§4а ⇐ 4а.1..4а.5)" do
-      expect(described_class.file_section_dangling_refs("[`05_02 §4а`](05_02_Proof_of_Growth_Pipeline)")).to be_empty
+    it "resolves a parent-group ref whose children exist (§2 ⇐ 2.1..2.9)" do
+      expect(described_class.file_section_dangling_refs("[`06_03 §2`](06_03_Prometheus_Observability)")).to be_empty
     end
 
     it "skips a lowercase '.x' wildcard placeholder, resolves a real section" do

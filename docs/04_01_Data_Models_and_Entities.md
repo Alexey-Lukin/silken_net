@@ -215,27 +215,24 @@ normalize_identifier :device_uid  # HardwareKey
 |------|-----|------|
 | `name` | string | Унікальна назва (напр. "Сосна Звичайна") |
 | `scientific_name` | string | Латинська назва (nullable, для міжнародних контрактів) |
-| `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу); ⚖️ [FW.8, 2026-09-29] `≥ 2.0` — лише ЗВУЖЕННЯ заводської смуги |
-| `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`, `≤ 45.0` — той самий гард). ⚠️ Межі гарда — лямбдами, не константами в тілі класу: `Tree` вантажить `TreeFamily` зсередини власного тіла (`belongs_to … counter_cache`) ще до своїх `GLOBAL_LORENZ_Z_*`, і пряме посилання давало `NameError` на eager-load |
+| `critical_z_min` · `critical_z_max` | decimal | ⚫ [FW.66] Поза моделлю (`ignored_columns`): родинна Z-смуга не мала вердиктного читача в жодній ері — DCI судить заводською смугою пристрою (`Tree::DEVICE_DEFAULT_LORENZ_BAND`), а видачу смуги FW.8 знято (присуд — врізка [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)). Колонки в БД — до `remove_column` другим кроком після деплою першого |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
-| `biological_properties` | jsonb | `bark_thickness`, `foliage_density`, `fire_resistance_rating`, `optimal_z_target` (`sap_flow_index` знято [ARCH.102] ⚖️ 08-20 — споживача не існувало; історичні ключі в jsonb нешкідливі) |
+| `biological_properties` | jsonb | `bark_thickness`, `foliage_density`, `fire_resistance_rating` (`sap_flow_index` знято [ARCH.102] ⚖️ 08-20 — споживача не існувало; `optimal_z_target` [FW.66] — разом із родинною смугою; історичні ключі в jsonb нешкідливі) |
 
 **Ключові методи:**
 
 | Метод | Повертає | Опис |
 |-------|----------|------|
-| `effective_optimal_z_target` | Float | [FW.8] `optimal_z_target || 29.0` — per-species sweet spot або global default |
-| `healthy_z?(z_value)` | Boolean | Чи Z у межах гомеостазу |
 | `weighted_growth_points(raw)` | Float | `raw * carbon_sequestration_coefficient` |
 | `display_name` | String | "Quercus robur (Дуб звичайний)" або просто назва |
 
 > 🔴 **[ARCH.84] `biological_properties` нормалізується ПЕРЕД валідацією, і це не гігієна — це дві живі поломки.** `store_accessor` кладе в JSONB рівно те, що приїхало, а з HTML-форми приїжджає **рядок**. Звідси: (1) порожній `number_field` шле `""`, `allow_nil` його не покриває — і кожна ОПЦІЙНА властивість ставала де-факто обовʼязковою (єдиний UI-шлях завести породу відповідав 422 «is not a number»); (2) заповнене поле осідало рядком, а `AlertDispatchService` ним арифметичить — `temperature_c >= "60"` (fire-поріг бере `fire_resistance_rating`) кидає `ArgumentError`, і ціна оманлива: його ловить сусідній `rescue ArgumentError` і рапортує «корупція Base64» на невинний шлюз, тобто провину приписано не туди. Тому `before_validation :normalize_biological_properties`: порожній рядок → ключ знімається, числовий рядок → число, **нечисловий лишається рядком** (щоб `numericality` про нього доповіла). ⛔ Не міняти на `to_f`: він зробив би «abc» нулем, тобто невалідне валідним, а fire-поріг — нульовим. ⚠️ `normalizes` тут не працює — `store_accessor` не є справжнім атрибутом (переміряно).
 >
-> 🔴 **[ARCH.86] Імпедансної осі тут НЕМАЄ, і це присуд, а не пропуск.** `baseline_impedance` (з `presence: true`), `death_threshold_impedance`, `stress_level` і пара `attractor_thresholds`/`_cached` знято 2026-08-13: пристрій імпеданс не міряє й ніколи не слав (немає поля в жодній ері wire-формату, ADC Солдата має два канали, у BOM немає компонента), а сідові значення були рядом номіналів резисторів E12. Дім порогів Лоренца для СПОЖИВАЧІВ — `Tree#effective_lorenz_thresholds` (він накладає ще й cluster-overrides); знята пара мала нуль продакшн-викликачів, а її докстрінг називав неіснуючих. ⛔ Не відбудовувати без рішення про сенсорний тракт — підстава й дослідження в [`00_07 §🗄️`](00_07_Action_Plan_Tracker) ARCH.86.
+> 🔴 **[ARCH.86] Імпедансної осі тут НЕМАЄ, і це присуд, а не пропуск.** `baseline_impedance` (з `presence: true`), `death_threshold_impedance`, `stress_level` і пара `attractor_thresholds`/`_cached` знято 2026-08-13: пристрій імпеданс не міряє й ніколи не слав (немає поля в жодній ері wire-формату, ADC Солдата має два канали, у BOM немає компонента), а сідові значення були рядом номіналів резисторів E12. Смуга Лоренца, якою судить DCI, — заводська (`Tree::DEVICE_DEFAULT_LORENZ_BAND`), родинної немає [FW.66]; знята пара мала нуль продакшн-викликачів, а її докстрінг називав неіснуючих. ⛔ Не відбудовувати без рішення про сенсорний тракт — підстава й дослідження в [`00_07 §🗄️`](00_07_Action_Plan_Tracker) ARCH.86.
 >
 > ⚖️ **[ARCH.84] `carbon_sequestration_coefficient DEFAULT 1.0 NOT NULL` ЛИШАЄТЬСЯ — присуд founder 2026-08-19, і підстава в тому, що шкала ВІДНОСНА.** Дуб 1.5, сосна 0.8, тож `1.0` означає «рівно середній вид» — це законне значення, а не підстановка на місце невиміряного, і саме цим колонка відрізняється від решти класу. ⚠️ **Механізм не той, що здається:** порожнє поле форма ВІДХИЛЯЄ (`numericality` без `allow_nil` → 422), тобто дефолт спрацьовує не «коли забули», а показується людині вже підставленим у `number_field` — значення АВТОРСЬКЕ, підтверджене збереженням. ⛔ Не робити nullable: колонка годує `weighted_growth_points` → `Wallet#credit!` → мінт, тож нульабельність купила б fail-closed-гілку на грошовому тракті заради величини, яка визначена. ⊥ Дзеркало з ПРОТИЛЕЖНИМ вердиктом — `device_calibrations.vcap_coefficient` (той самий `DEFAULT 1.0`, але писача немає взагалі): картка `DeviceCalibration` нижче. **Однакова форма дефолту не означає однакового вердикту — вирішує наявність писача, не число.**
 
-**Callbacks:** немає — пороги читаються ЖИВО (`Tree#effective_lorenz_thresholds`: `Cluster#lorenz_overrides_for` → `TreeFamily` → глобальні константи), кешу порогів не існує, тож і колбека-інвалідатора немає. ⛔ Не дописувати сюди `invalidate_thresholds_cache`: такого методу в моделі нема (виміряно 2026-09-03, OPS.38).
+**Callbacks:** немає — порогів Лоренца в родини немає [FW.66], тож кешувати й інвалідувати нічого. ⛔ Не дописувати сюди `invalidate_thresholds_cache`: такого методу в моделі нема (виміряно 2026-09-03, OPS.38).
 
 ---
 
@@ -276,11 +273,7 @@ normalize_identifier :device_uid  # HardwareKey
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
 | `altitude` | numeric | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, `GeoLocatable` знає лише lat/lng. Намір колись стояв у [`00_02 §1`](00_02_Academic_Integration_and_IP) (висоти Queen-шлюзів за оглядовими точками), але 2026-09-26 його знято й обернено — висоту судить link budget, не історія місця (`cultural_layer.md`); жоден інженерний розділ його й не розвивав — link-budget [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) моделює відстань і матеріали, не висоту |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
-| `lorenz_band_held` | jsonb, `[]` | ⚖️ [FW.8, 2026-09-29] x100-пари `[min, max]` смуг, які пристрій може тримати, крім заводської: доведена + заміщені видачі, чий кадр міг долетіти першим. Пише лише `Downlink::ThresholdBand` (під замком рядка). ⚠️ jsonb, а не `bytea[]`: Rails 8.1 пише `bytea[]` сміттям (виміряно) |
-| `lorenz_band_pending` | bytea | Тіло `0x9A` відкритої видачі (8 Б, байт-у-байт) — перевидача запечатує рівно його; `NULL` = видачі немає |
-| `lorenz_band_dlfc` · `lorenz_band_key_epoch` | bigint · integer | Нонс відкритої видачі: перевидача тим самим кадром законна, лише поки обидва збігаються з `HardwareKey` (re-provision обнуляє DLFC у новій епосі) |
-| `lorenz_band_issued_at` · `lorenz_band_served_at` | datetime | Початок вікна доставки · остання видача (`NULL` = пора видавати) |
-| `lorenz_band_stale_count` | smallint, 0 | Пакети зі СТАРОЮ смугою після вікна доставки; на третьому — per-tree `field_audit` `lorenz_band_not_applied` |
+| `lorenz_band_held` · `lorenz_band_pending` · `lorenz_band_dlfc` · `lorenz_band_key_epoch` · `lorenz_band_issued_at` · `lorenz_band_served_at` · `lorenz_band_stale_count` | jsonb · bytea · bigint · integer · datetime ×2 · smallint | ⚫ [FW.66] Поза моделлю (`ignored_columns`): облік видачі смуги FW.8 (`0x9A`), знятий разом із видачею. Колонки в БД — до `remove_column` другим кроком після деплою першого |
 
 **AASM State Machine (column: `status`):**
 
@@ -295,10 +288,8 @@ dormant ──reactivate──► active
 - ⛔ **`VCAP_MIN_MV` / `VCAP_MAX_MV` / `LOW_POWER_MV` ЗНЯТО** — [ARCH.99], присуд founder 2026-08-13. Вони описували шкалу іоністора, а прикладались до `latest_voltage_mv` = мВ VDDA; BQ25570 стабілізує ту шину на 3.3 В від VSTOR ≥ 3.4 В аж до 5.5 на іоністорі ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), тож вона **за конструкцією не несе інформації про запас енергії** — buck існує рівно щоб сховати напругу сховища від MCU. Разом із константами знято `charge_percentage` і `low_power?`. **Повертати шкалу можна ЛИШЕ разом із живим Vcap-каналом** ([`00_07` — FW.50](00_07_Action_Plan_Tracker)); носій заборони — `spec/models/tree_spec.rb` «energy semantics [ARCH.99]»
 - `SILENCE_THRESHOLD = 24.hours` — [transitional] дефолт порога тиші, ОДИН дім на `scope :silent` і `#fresh_signal?`; рантайм веде `TreeStalenessSweepWorker` через `SystemParameter`. **Дім сигналу «мало енергії»**: нижче `VBAT_OK` (≈3.31 В) BQ25570 закриває buck і знеструмлює MCU, тож низький запас спостережуваний ЛИШЕ як тиша, ніколи як низьке число. ⚠️ Поріг саме `VBAT_OK`, НЕ `VBAT_UV` — останній внутрішній (1.95 В) і є аварійним стопом кремнію, до якого шлях не доходить ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power))
 - `DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/`
-- `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
-- `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback
-- `GLOBAL_LORENZ_Z_OPTIMAL = 29.0` — [FW.8] global fallback
-- `DEVICE_DEFAULT_LORENZ_BAND` — [FW.8] заводська смуга пристрою `{ min: 2.0, max: 45.0 }`, кандидат DCI за будь-якого обліку
+- `GLOBAL_LORENZ_Z_MIN = 2.0` · `GLOBAL_LORENZ_Z_MAX = 45.0` — межі заводської смуги (дзеркало `BioContract::CRITICAL_Z_MIN/MAX` і `LORENZ_DEFAULT_Z_{MIN,MAX}_X100` прошивки)
+- `DEVICE_DEFAULT_LORENZ_BAND` — заводська смуга пристрою `{ min: 2.0, max: 45.0 }`, ЄДИНА смуга категоричного DCI: інших пристрій не тримає [FW.66]
 
 **Ключові методи:**
 
@@ -311,8 +302,6 @@ dormant ──reactivate──► active
 | `fresh_signal?(threshold = SILENCE_THRESHOLD)` | **[ARCH.99]** Рядковий бік сигналу тиші — ОДИН дім порога для скоупа й в'ю. ⊥ Свідомо НЕ дзеркало `scope :silent`: той відкидає `last_seen_at IS NULL` (sweeper не гонить Field Audit на вузол, що ще не виходив в ефір), глядачеві ж «жодного пакета» = така сама відсутність свіжого сигналу. 🔴 **[ARCH.84, 2026-08-14] Периметр домкнуто — сайтів було ТРИ, і третій прожив довше за фікс:** `trees/index` перейшов на цей предикат ще при [ARCH.99], а `trees/show` лишався на рукописних «15 хв від `@latest_log.created_at`». Обидві величини штампуються в одній транзакції, тож розходились не дані, а ПОРОГИ — і одне дерево було зеленим у списку й мертвим на власній сторінці ~23 год 45 хв із кожних 24. ⊕ Заразом зникла тихіша розбіжність: `@latest_log` це останній РЯДОК телеметрії, тобто `nil` після retention-зрізу — сторінка називала мертвим дерево з живим `last_seen_at`. **Грепати такий залишок треба за СПІЛЬНИМ ВХОДОМ (`last_seen_at`), а не за іменем предиката: обхід його не згадує за побудовою** (той самий урок, що `Gateway#online?` — скіл `backend` #10) |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
 | `broadcast_map_update` | Turbo Stream → `geospatial_matrix_org_{cluster.organization_id}` — імʼя **org-скоуплене** (SEC.25); дерево без кластера не броадкастить узагалі (fail-closed; ⚠️ це вже НЕ «звичайний стан» — каскад став `restrict_with_error`, ⚖️ 2026-07-30, і гард лишається як defense-in-depth) |
-| `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default — відповідає на «**ЩО СЛАТИ** на пристрій». Споживач — видача `0x9A` (`Downlink::ThresholdBand`, з poll-деривації Королеви), ENV-гейтована `FW8_THRESHOLDS_DOWNLINK_ENABLED` і не вмикається — FW.8 ⚫ 2026-10-06, фліпу прошивки не буде, видачу знімає реалізація (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.66); тіло — `OtaPackagerService.threshold_config_body`. 🔴 **[2026-09-05] `TelemetryUnpackerService#check_z_divergence!` тут БІЛЬШЕ НЕ значиться** — DCI судить за `device_lorenz_bands` ↓, бо порівнювати треба два обчислення, а не дві конфігурації.
-| `device_lorenz_bands` | [FW.8 · ⚖️ founder 2026-09-29] НАБІР смуг `[{ min:, max: }]`, будь-якою з яких може судити пристрій: заводська `DEVICE_DEFAULT_LORENZ_BAND` (завжди) + `lorenz_band_held` + відкрита видача. Межі — x100 тіла `0x9A`, поділені як на пристрої (`OtaPackagerService.threshold_band`). Єдиний споживач — категоричний DCI; облік веде `Downlink::ThresholdBand`. Механізм, ціна й поправки застосування — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor). |
 
 **Callbacks:**
 - `after_create :build_default_wallet` — автоматично створює Wallet
@@ -395,16 +384,8 @@ dormant ──reactivate──► active
 | `health_index` | **double precision, nullable** | Денормалізований індекс `1.0 - stress_index` (0..1). ⚡ **`NULL` = «не виміряно» — окремий СТАН, не нуль і не порожнеча** [ARCH.84], див. нижче. ⚠️ Тут доти стояло `decimal`, а схема каже `double precision` — і в цьому дереві різниця не косметична: `decimal` приходить у Ruby BigDecimal'ом, а `CLAUDE.md §6` окремо вимагає Float (IEEE 754) на Lorenz-шляху, бо він бітово дзеркалить mruby |
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
-| `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone`, `lorenz_overrides_by_species` |
+| `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone` (ключ `lorenz_overrides_by_species` знято [FW.66] разом із видачею смуги FW.8, єдиним читачем; історичні значення нешкідливі) |
 | `ota_version_hiwater` | bigint | [SEC.20] Anti-rollback high-water: максимальний `BioContractFirmware#id`, ВЖЕ dispatch-нутий у кластер. Guard `firmware.id > hiwater` + бамп — `Ota::DeploymentDispatcherService` ([`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)); default 0 = кампаній не було |
-
-> **`lorenz_overrides_by_species`** [FW.8] — JSONB hash з per-species Lorenz thresholds для цього кластера. Ключ: `scientific_name` (string); значення: `{ "min": Float, "max": Float, "optimal": Float }`, кожне опційне. Дозволяє override для конкретного виду тільки в цьому кластері. Підлягає валідації через `validate_lorenz_overrides_by_species`: інші ключі відкидаються як невідомі (доти приклад нижче ніс `z_min`/`z_max`/`z_optimal`, тобто форму, якої валідатор не пропускає), `min < max`, `optimal` між ними, і ⚖️ **[FW.8, 2026-09-29] лише ЗВУЖЕННЯ заводської смуги**: `min ≥ 2.0`, `max ≤ 45.0` — кожна межа окремо, бо оверрайд частковий (підстава й ціна — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)). Складений ланцюг (оверрайд + родина) ще раз судить `Downlink::ThresholdBand` перед видачею. Писача в застосунку немає. Приклад:
-> ```json
-> {
->   "Pinus sylvestris": { "min": 6.0, "max": 40.0, "optimal": 30.0 },
->   "Quercus robur":    { "min": 8.0, "max": 38.0, "optimal": 27.0 }
-> }
-> ```
 
 **Ключові методи:**
 
@@ -419,7 +400,6 @@ dormant ──reactivate──► active
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
 | `mapped?` | Чи є GeoJSON координати |
-| `lorenz_overrides_for(scientific_name)` | [FW.8] Повертає `{ min:, max:, optimal: }` для даного виду; не налаштоване значення — `nil` (хеш є завжди). Читає `lorenz_overrides_by_species[scientific_name]`. |
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
 
@@ -557,7 +537,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації); same conditional length |
 | `key_version` | integer (0..65535, default 0) | **[FW.17]** версія Hash-Ratchet дерева: `rotate!` піднімає, provision і re-provision ставлять 0 ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 | `epoch` | integer (≥ 0, default 0) | **[FW.17]** епоха кореня ключа дерева: піднімає лише re-provision (`FactoryFlashing::Session`), корінь — HKDF з info `…:e<N>`; e = 0 бітово ключ до епох ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)). Входить у ключ анти-повтору CCM (`#previous_key_epoch` — епоха ключа під grace) |
-| `downlink_frame_counter` | bigint (0..0xFFFFFFFF, default 0; bigint, бо `integer` Postgres знаковий, а стеля — u32) | **[FW.17]** DLFC адресних команд Rails → Солдат ([`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)): останній ВИДАНИЙ; видається команді один раз (`rotate!` — кадру `0x9E`, `#issue_downlink_frame_counter!` — решті, під grace відмовляє) і живе з нею — перевидача шле той самий кадр. У нонсі CCM цілком, в ефірі молодші 16 біт; firmware-дзеркало — останній ПРИЙНЯТИЙ, Flash-KV `0x12`. Re-provision обнуляє разом з новою епохою |
+| `downlink_frame_counter` | bigint (0..0xFFFFFFFF, default 0; bigint, бо `integer` Postgres знаковий, а стеля — u32) | **[FW.17]** DLFC адресних команд Rails → Солдат ([`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)): останній ВИДАНИЙ; видається команді один раз (`rotate!` — кадру `0x9E`, єдиної адресної команди; під живим grace іншої видачі не буває) і живе з нею — перевидача шле той самий кадр. У нонсі CCM цілком, в ефірі молодші 16 біт; firmware-дзеркало — останній ПРИЙНЯТИЙ, Flash-KV `0x12`. Re-provision обнуляє разом з новою епохою |
 | `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning) |
 | `ed25519_public_key_hex` | string | Публічний ключ Gateway: (а) M2M auth (`POST /api/v1/auth/m2m_token`); (б) **[L1 QATT]** верифікація Ed25519-підпису CoAP-батчів — wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security). Тільки для Gateway, не Tree. Приватна сім'я (`EDSK`) — лише у Protected Flash пристрою; бекенд її НЕ знає (НЕ HKDF-від-master — інакше L1 не захищав би від backend-compromise) |
 | `rotated_at` | datetime | Час останньої ротації |
@@ -945,7 +925,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `crypto_public_address` | string | Ethereum/Polygon-адреса (EIP-55, strip without downcase) |
 | `hadron_kyc_status` | string | [KYC.1] KYC бенефіціара custodial-мінту (default `pending`; успадковується гаманцями без власної адреси через `Wallet#kyc_approved_for_minting?`); біндинг/зміна адреси → reset у `pending` + enqueue `HadronKycVerificationWorker` |
 | `data_region` | string | `eu-west / eu-central / us-east / us-west / ap-southeast` (GDPR sharding) |
-| `alert_threshold_critical_z` | decimal | Поріг Z для власних тривог (0..10) |
+| `alert_threshold_critical_z` | decimal | ⚫ [FW.66] Поза моделлю (`ignored_columns`): «поріг тривоги», якого не читав жоден шлях (клас `СЛОВО`, [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)). Колонка в БД — до `remove_column` другим кроком після деплою першого |
 | `ai_sensitivity` | decimal | Чутливість AI (0..1) |
 | `locale` | string | [I18N.1] Мова, якою організація отримує **пошту** (`AlertMailer` → `billing_email`). Не дубль `users.locale`: за цією скринькою може не стояти жоден User. `nil` = «не обрано» → базова локаль; валідація деривує перелік з `available_locales` ([`04_04 §12.8`](04_04_Phlex_UI_and_Tailwind)) |
 | `stream_epoch` | integer | [SEC.25 Ф3] Покоління імен Turbo-стрімів (`..._org_{id}_e{epoch}`), default 1, NOT NULL. Єдиний механізм відкликання виданого capability-токена: підпис детермінований і без TTL, тож знецінити збережене імʼя можна лише **покинувши адресу**. Важіль — `#rotate_stream_epoch!` (bump → tombstone у стару адресу → слід ARCH.57); стелі й чому `:map` не гаситься — [`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind) |

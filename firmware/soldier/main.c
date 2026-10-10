@@ -433,66 +433,11 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
                                              // WUT-цикл «нюх-замість-RX» (RUNBOOK)
 #endif
 
-// [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца. З
-// downlink-ревізії (03_05 §2.5, 2026-09-29) — адресна команда під CCM
-// сесійним ключем цього вузла (../common/downlink_ccm.h), тіло 8 Б:
-//   [z_min_x100:s16le][z_max_x100:s16le][z_opt_x100:s16le]
-//   [species_id:u8][config_version:u8]
-// Цілісність несе MIC (CRC старого каркаса знято); розпаковка й інваріанти —
-// Lorenz_Thresholds_From_Wire (../common/lorenz_thresholds.h).
-//
-// ⚫ СТАТУС: FW.8 поглинуто гілкою (Б) 2026-10-06 (00_07 FW.66) — фліпу не буде,
-// тракт знімає реалізація (Б); доти він тут як є. Приймач — спільний CCM-шлях адресних
-// команд (секція 1.14: вікно відкриває, КЕНОЗИС застосовує) за гейтом
-// `FW8_PARSER_ENABLED`, за замовчуванням ВИМКНЕНИЙ. Відправник у Rails —
-// Downlink::ThresholdBand за ENV-гейтом FW8_THRESHOLDS_DOWNLINK_ENABLED
-// (default off; порядок «ПІСЛЯ фліпу» ⚖️ 2026-09-29 — історія ECB-ери, 03_04 §5.3).
-//
-// ПРИЧИНА defer: із 20 RTC Backup Register'ів (DR0..DR19) після FW.2
-// freeze-contract (DR15 → CCM Frame Counter) вільний лише DR7 (FW.54) — одне
-// 32-бітне слово, а 8-байтний body порогів туди не вміщається без Flash-KV. Повна розкладка
-// — SSOT 03_01 §2 (Canonical Backup Map), тут НЕ дублюємо.
-//
-// Альтернативи відкинуто:
-//   • Flash sector — 2 KB на 8 байт, wear ~10k erase × at-most-daily re-send
-//     дає 27 років, але erase ~30 мс блокує LoRa RX → конфлікт з anti-pingpong
-//     RX-вікном після TX. Механічна підстава лишається чинною.
-//     ⛔ Друга підстава — «на TRL-6 нічого не змінює, всі види на однакових
-//     firmware-defaults» — СПРОСТОВАНА власними сідами (`db/seeds.rb`: сосна
-//     `critical_z_min` 5.0, дуб 8.0/40.0 проти firmware-дефолтів 2.0/45.0).
-//     Не відроджувати її як аргумент відкладення: види РОЗХОДЯТЬСЯ вже сьогодні.
-//   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
-//     заради no-op feature. Чесніше відкласти.
-//
-// ВІДНОВЛЕННЯ: єдиний вільний регістр (DR7) тіла не вміщає, тож FW.8
-// повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр.
-// Persist-логіка ✅ host-готова: ../common/lorenz_thresholds.h — Save/Load на
-// ключах 0x10/0x11 (порвана/невалідна пара → дефолти; power-cut тести у
-// test_flash_kv.c). Mount KV + HAL_FLASH глю ✅ написано (секція FW.17 нижче,
-// спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`). Wiring
-// Save/Load ✅ написано за цим же гейтом: boot-restore після mount'а,
-// КЕНОЗИС-write по dirty-флагу прийнятого 0x9A. Фліпу `FW8_PARSER_ENABLED 1`
-// не буде (FW.8 ⚫ 2026-10-06) — цей тракт знімає реалізація (Б).
-#ifndef FW8_PARSER_ENABLED
-#define FW8_PARSER_ENABLED                0  // ⚫ FW.8 — не фліпати (див. блок вище)
-#endif
-#define LORENZ_DEFAULT_Z_MIN_X100         200    // 2.00
-#define LORENZ_DEFAULT_Z_MAX_X100         4500   // 45.00
-#define LORENZ_DEFAULT_Z_OPT_X100         2900   // 29.00
-
-int16_t lorenz_z_min_x100      = LORENZ_DEFAULT_Z_MIN_X100;
-int16_t lorenz_z_max_x100      = LORENZ_DEFAULT_Z_MAX_X100;
-int16_t lorenz_z_opt_x100      = LORENZ_DEFAULT_Z_OPT_X100;
-uint8_t lorenz_species_id      = 0xFF;  // unmapped (OtaPackagerService::DEFAULT_SPECIES_ID)
-uint8_t lorenz_config_version  = 0;     // 0 = firmware-baked defaults
-
-// [FW.8] Save/Load порогів поверх Flash-KV (ключі 0x10/0x11) — One-Home
-// ../common/lorenz_thresholds.h; дефолти там дзеркалять LORENZ_DEFAULT_*.
+// Смуга Лоренца, якою контракт судить статус кадру, — заводські константи
+// LORENZ_DEFAULT_Z_{MIN,MAX}_X100 (../common/lorenz_thresholds.h). Інших Солдат не
+// приймає й не тримає: видачу смуги FW.8 (0x9A) разом із її журналом Flash-KV
+// знято гілкою (Б) (00_07 FW.66), тож міст нижче передає лише ці константи.
 #include "../common/lorenz_thresholds.h"
-
-#if FW8_PARSER_ENABLED
-static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save у КЕНОЗИСІ
-#endif
 
 // CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [FW.53]
 // (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
@@ -527,8 +472,8 @@ static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save 
 // [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
 // 03_01 §2.3; ключ OTA тому переїхав на сторінку 125 — первісний 0x0803D000
 // колідував із цим регіоном). Mount спільний для споживачів FW.17 (версія
-// ratchet'а), FW.8 (Z-пороги, ../common/lorenz_thresholds.h) та FW.2
-// (FC high-water, ../common/fc_hiwater.h) — його вмикає будь-який із флагів.
+// ratchet'а) та FW.2 (FC high-water, ../common/fc_hiwater.h) — його вмикає
+// будь-який із флагів.
 #define FLASH_KV_BASE_ADDR     0x0803D000UL
 #define FLASH_KV_FIRST_PAGE    122u
 #define FLASH_KV_PAGE_DWS      256u   // 2 КБ / 8 Б на dw-елемент
@@ -620,17 +565,17 @@ static uint16_t wire_ema_delta_t_s = 0;
 // [FW.20-S2 4/5] Гейт повного mesh-relay Time Beacon'а: Провідник несе далі
 // й relay'ні маяки (auth=0), шторм гасить журнал поколінь у Flash-KV 0x20
 // (../common/beacon_dedup.h — політика й чому Flash, не SRAM). Фліп ЛИШЕ
-// після bench-верифікації Flash-KV HAL-глю (та сама умова, що FW.17/FW.8):
+// після bench-верифікації Flash-KV HAL-глю (та сама умова, що FW.17):
 // без журналу дедуп тримається тільки на auth-біті (2-hop стеля, NULL-гілка
 // Soldier_Try_Relay_Time_Beacon). Королева вже транслює TTL=2 (03_02 §5а).
 #ifndef FW20_MESH_RELAY_ENABLED
 #define FW20_MESH_RELAY_ENABLED 0
 #endif
-// [FW.17 · 03_05 §2.5] Приймач адресних команд Rails → Солдат (0x9A · 0x9E)
+// [FW.17 · 03_05 §2.5] Приймач адресних команд Rails → Солдат (0x9E)
 // — лише CCM сесійним ключем цього вузла; ECB-шлях їх не приймає
 // взагалі (живий приймач під кластерним KEYB = підробка на весь кластер).
 // Живий, коли живий бодай один опкод; DLFC — Flash-KV 0x12 (секція 1.14).
-#define DL_CCM_RX_ENABLED (FW8_PARSER_ENABLED || FW17_RATCHET_ENABLED)
+#define DL_CCM_RX_ENABLED (FW17_RATCHET_ENABLED)
 // [SEC.20] Anti-rollback — перший НЕ-gated споживач journal Flash-KV: база
 // (ops+mount+compact) мусить жити НЕЗАЛЕЖНО від фліп-гейтів фіч (OTA живий завжди).
 #define SEC20_OTA_ANTIROLLBACK_ENABLED 1
@@ -638,7 +583,7 @@ static uint16_t wire_ema_delta_t_s = 0;
 // mount, compact. Новий споживач Flash-KV дописується СЮДИ, а не в окремий
 // сайт: сайт, що відстав, мовчки лишить журнал без ущільнення, і після
 // ~254 APPLY high-water замерзне — анти-rollback обернеться на replay-downgrade.
-#define FLASH_KV_BASE_ENABLED (FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || DL_CCM_RX_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED)
+#define FLASH_KV_BASE_ENABLED (FW17_RATCHET_ENABLED || DL_CCM_RX_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED || SEC20_OTA_ANTIROLLBACK_ENABLED)
 #if SEC20_OTA_ANTIROLLBACK_ENABLED && !FLASH_KV_BASE_ENABLED
 #error "[SEC.20] anti-rollback живе на журналі Flash-KV — FLASH_KV_BASE_ENABLED мусить містити SEC20_OTA_ANTIROLLBACK_ENABLED"
 #endif
@@ -1212,8 +1157,8 @@ static void Reset_Ota_Assembly(void) {
 // =====================================================================
 // === 1.14. [FW.17 · 03_05 §2.5] Адресні команди Rails → Солдат (CCM) ===
 // =====================================================================
-// 0x9A пороги Лоренца (FW.8) · 0x9E ротація ключа (FW.17) підписує Rails
-// сесійним ключем САМЕ цього вузла; кадр і його відкриття —
+// 0x9E ротацію ключа (FW.17) підписує Rails сесійним ключем САМЕ цього вузла;
+// кадр і його відкриття —
 // ../common/downlink_ccm{,_open}.h. Два такти, як у ратчета:
 //   RX-вікно — лише відкриття (MIC, DID, DLFC); стан не змінюється;
 //   КЕНОЗИС  — зміст, потім дія, і лише після її успіху DLFC у Flash-KV
@@ -1234,8 +1179,7 @@ static void MX_CRYP_Restore_From_CCM(void);
 // Опкод, чий приймач у цій збірці живий; решту кадрів навіть не відкриваємо.
 static uint8_t Soldier_Dl_Opcode_Live(uint8_t op)
 {
-    return (uint8_t)((FW8_PARSER_ENABLED   && op == DL_CCM_OP_THRESHOLDS) ||
-                     (FW17_RATCHET_ENABLED && op == DL_CCM_OP_ROTATE_KEY));
+    return (uint8_t)(FW17_RATCHET_ENABLED && op == DL_CCM_OP_ROTATE_KEY);
 }
 
 // RX-вікно: відкрити кадр сесійним ключем (KEYL / K_v). Відмова будь-якого
@@ -1255,16 +1199,17 @@ static void Soldier_Dl_Cmd_Receive(const uint8_t *frame, uint16_t len)
 
 // DLFC у журнал — ПІСЛЯ того, як ефект команди вже записано (at-least-once,
 // ⚖️ founder 2026-09-29, 03_05 §2.5). Струм, що зник між ними, лишає команду
-// неспожитою, і перевиданий Rails той самий кадр застосується ще раз: обидві
-// команди ідемпотентні, тож повтор нешкідливий, а втрата — ні. Невдалий запис
+// неспожитою, і перевиданий Rails той самий кадр застосується ще раз: 0x9E
+// ідемпотентна (новий опкод мусить бути таким самим, перш ніж стане сюди), тож
+// повтор нешкідливий, а втрата — ні. Невдалий запис
 // DLFC — те саме: RAM-кеш не рухається, повтор прийметься.
 static void Soldier_Dl_Persist_Dlfc(uint32_t dlfc)
 {
     if (FlashKv_Put32(&soldier_kv, DL_CCM_KV_KEY_DLFC, dlfc)) dl_last_dlfc = dlfc;
 }
 
-// Для 0x9E і 0x9A ефект комітять блоки FW.17 / FW.8 нижче в КЕНОЗИСІ, тож DLFC
-// чекає їхнього успіху тут і пишеться лише з їхньої гілки успіху.
+// Для 0x9E ефект комітить блок FW.17 нижче в КЕНОЗИСІ, тож DLFC чекає його
+// успіху тут і пишеться лише з його гілки успіху.
 static void Soldier_Dl_Settle_Dlfc(void)
 {
     if (dl_dlfc_settle == 0u) return;
@@ -1272,9 +1217,9 @@ static void Soldier_Dl_Settle_Dlfc(void)
     dl_dlfc_settle = 0u;
 }
 
-// КЕНОЗИС, першою дією. 0x9E і 0x9A лише виставляють dirty — блоки FW.17 і
-// FW.8 нижче в цьому ж КЕНОЗИСІ комітять їх звичним шляхом і лише тоді
-// записують DLFC (Soldier_Dl_Settle_Dlfc).
+// КЕНОЗИС, першою дією. 0x9E лише виставляє dirty — блок FW.17 нижче в цьому ж
+// КЕНОЗИСІ комітить її звичним шляхом і лише тоді записує DLFC
+// (Soldier_Dl_Settle_Dlfc).
 static void Soldier_Dl_Cmd_Commit(void)
 {
     if (!dl_cmd_pending) return;
@@ -1289,20 +1234,6 @@ static void Soldier_Dl_Cmd_Commit(void)
         if (Key_Ratchet_Steps(lora_key_version, target) == 0u) return;
         lora_key_target_version = target;
         lora_key_version_dirty  = 1;
-        dl_dlfc_settle          = dl_cmd_dlfc;
-        return;
-    }
-#endif
-#if FW8_PARSER_ENABLED
-    case DL_CCM_OP_THRESHOLDS: {
-        LorenzThresholds t;
-        if (!Lorenz_Thresholds_From_Wire(dl_cmd_body, &t)) return;
-        lorenz_z_min_x100       = t.z_min_x100;
-        lorenz_z_max_x100       = t.z_max_x100;
-        lorenz_z_opt_x100       = t.z_opt_x100;
-        lorenz_species_id       = t.species_id;
-        lorenz_config_version   = t.config_version;
-        lorenz_thresholds_dirty = 1;
         dl_dlfc_settle          = dl_cmd_dlfc;
         return;
     }
@@ -1691,20 +1622,6 @@ int main(void)
       fc_hiwater_cache = Fc_Hiwater_Load(&soldier_kv);
   }
 #endif
-#if FW8_PARSER_ENABLED
-  // [FW.8] Boot-restore Z-порогів: Load жене збережене через ті самі
-  // інваріанти, що парсер 0x9A; нічого валідного → t = firmware-дефолти
-  // (ідентичні поточним глобалкам, тож безумовне застосування безпечне).
-  if (soldier_kv_mounted) {
-      LorenzThresholds t;
-      Lorenz_Thresholds_Load(&soldier_kv, &t);
-      lorenz_z_min_x100     = t.z_min_x100;
-      lorenz_z_max_x100     = t.z_max_x100;
-      lorenz_z_opt_x100     = t.z_opt_x100;
-      lorenz_species_id     = t.species_id;
-      lorenz_config_version = t.config_version;
-  }
-#endif
 #if FW17_RATCHET_ENABLED
   // [FW.17] ПІСЛЯ Load_AES_Key (K0) і DID-блоку (Context KDF): якщо KV має
   // версію — доганяємо K_current і ре-ініціалізуємо CRYP.
@@ -2004,7 +1921,7 @@ int main(void)
       }
 
       if (lorenz_state_valid) {
-          // [SEC.11 / FW.30] Єдиний виклик calculate_state (9 аргументів з FW.8).
+          // [SEC.11 / FW.30] Єдиний виклик calculate_state (9 аргументів — ABI-підлога, 03_04).
           // Повертає [payload_byte, x_final, y_final, z_final].
           // [E.63] delta_t_for_lorenz/vcap_for_lorenz обчислені над гілкуванням
           // Фази 3 (контракт «wire = вхід GP» — те саме сатуроване число йде
@@ -2022,12 +1939,10 @@ int main(void)
           args[4] = mrb_fixnum_value(time_uncertain ? 0 : lora_payload[7]); // Акустика
           args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [E.63] delta_t → growth_points
           args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [E.63] vcap (reserved)
-          // [FW.8] Смуга, ЧИННА на пристрої. Глобалки міняють лише парсер 0x9A і
-          // boot-restore з Flash-KV — обидва під FW8_PARSER_ENABLED, тож доставка
-          // і споживання вмикаються ОДНИМ фліпом, а бойова збірка шле дефолти
-          // (= BioContract::CRITICAL_Z_MIN/MAX) навіть із залишком порогів у KV.
+          // Смуга — заводські константи (= BioContract::CRITICAL_Z_MIN/MAX): інших
+          // Солдат не приймає й не тримає (FW.66, ../common/lorenz_thresholds.h).
           double band[2];
-          Lorenz_Band_Args(lorenz_z_min_x100, lorenz_z_max_x100, band);
+          Lorenz_Band_Args(LORENZ_DEFAULT_Z_MIN_X100, LORENZ_DEFAULT_Z_MAX_X100, band);
           args[7] = mrb_float_value(mrb, band[0]);
           args[8] = mrb_float_value(mrb, band[1]);
 
@@ -2364,7 +2279,7 @@ int main(void)
                     break;
                 }
 
-                // [FW.17 · 03_05 §2.5] Адресних команд (0x9A · 0x9E) на
+                // [FW.17 · 03_05 §2.5] Адресних команд (0x9E) на
                 // 16-байтному ECB-шляху НЕМАЄ і не повертати: живий приймач під
                 // кластерним KEYB дав би будь-кому з вкраденою платою командувати
                 // кожним вузлом. Їх несе лише CCM-кадр (гілка довжини ≠ 16 вище).
@@ -2647,7 +2562,7 @@ int main(void)
     Radio.Sleep();
 #if DL_CCM_RX_ENABLED
     // [FW.17] Прийнята у вікні команда — першою: її ефект мусить устигнути в
-    // блоки FW.17 / FW.8 нижче в цьому ж КЕНОЗИСІ (секція 1.14).
+    // блок FW.17 нижче в цьому ж КЕНОЗИСІ (секція 1.14).
     Soldier_Dl_Cmd_Commit();
 #endif
     // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8]
@@ -2718,24 +2633,6 @@ int main(void)
             // re-provision (як ключ печатки OTA).
             MX_CRYP_Init();
             lora_key_version_dirty = 0;
-            Soldier_Dl_Settle_Dlfc(); // ефект уже в журналі — тепер і DLFC
-        }
-    }
-#endif
-#if FW8_PARSER_ENABLED
-    // [FW.8] Прийняті 0x9A-пороги — у Flash-KV у тій самій безпечній фазі.
-    // Невалідну конфігурацію Save не пише взагалі; power-cut між парою
-    // ключів лікує перевидача з бекенду за доказом зі статусу (ADR у
-    // lorenz_thresholds.h).
-    if (lorenz_thresholds_dirty && soldier_kv_mounted) {
-        LorenzThresholds t;
-        t.z_min_x100     = lorenz_z_min_x100;
-        t.z_max_x100     = lorenz_z_max_x100;
-        t.z_opt_x100     = lorenz_z_opt_x100;
-        t.species_id     = lorenz_species_id;
-        t.config_version = lorenz_config_version;
-        if (Lorenz_Thresholds_Save(&soldier_kv, &t)) {
-            lorenz_thresholds_dirty = 0;
             Soldier_Dl_Settle_Dlfc(); // ефект уже в журналі — тепер і DLFC
         }
     }
@@ -3373,7 +3270,7 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 }
 #endif
 
-#if FW2_CCM_ENABLED || DL_CCM_RX_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // Гігієна після CCM: ECB-контекст назад (дисципліна Restore_ECB_Mode) і
 // жодного висячого вказівника у Init — B0/Header жили на стеку викликача.
 // Width-unit'и ОБОВ'ЯЗКОВО назад у WORD: MX_CRYP_Init їх не чіпає, а
@@ -3381,8 +3278,8 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 // [FW.2 (в)] Вкладений MX_CRYP_Init повертає й КЛЮЧ: session (aes_key)
 // скоупований CCM-фазою, амбієнт знову cluster-plane (bcast_key) — RX-вікно
 // Фази 4.5 декриптує downlink Королеви правильним ключем автоматично.
-// [FW.17] Кличе й відкриття адресної команди (секція 1.14) — у тому числі
-// в ECB-ері, звідси ширший гейт, ніж у MX_CRYP_Init_CCM.
+// [FW.17] Кличе й відкриття адресної команди (секція 1.14) — та живе лише в
+// CCM-ері (FW17_RATCHET_ENABLED без FW2_CCM_ENABLED — #error), тож гейт той самий.
 static void MX_CRYP_Restore_From_CCM(void)
 {
     hcryp.Init.B0              = NULL;

@@ -30,7 +30,7 @@
 #include <mruby/array.h>
 
 #include "lorenz_bytecode.h" /* -I firmware/common */
-#include "lorenz_thresholds.h" /* [FW.8] Lorenz_Band_Args — той самий хелпер, що в main.c */
+#include "lorenz_thresholds.h" /* Lorenz_Band_Args — той самий хелпер, що в main.c */
 
 /* Зонд пам'яті для bare-metal ніг (хто скільки з'їв: open/irep/cases) —
  * no-op на host-голдені. Нога визначає PARITY_MEM_MARK ДО include
@@ -81,13 +81,11 @@ static int Parity_Run(void)
     double x = 1.0, y = 1.0, z = 1.0;
     uint32_t seed = 0x53494C4Bu; /* "SILK" */
 
-    /* [FW.8] Смуга бойової збірки (FW8_PARSER_ENABLED = 0 → дефолти), побудована тим
-     * самим хелпером, що й міст Солдата: паритет і PARITY-MEM міряють 9-аргументний
-     * виклик пристрою, а не 7-аргументний дефолтний шлях. */
-    LorenzThresholds shipped;
-    Lorenz_Thresholds_Defaults(&shipped);
+    /* Смуга бойової збірки — заводські константи, побудовані тим самим хелпером, що
+     * й міст Солдата: паритет і PARITY-MEM міряють 9-аргументний виклик пристрою, а
+     * не 7-аргументний дефолтний шлях. */
     double band[2];
-    Lorenz_Band_Args(shipped.z_min_x100, shipped.z_max_x100, band);
+    Lorenz_Band_Args(LORENZ_DEFAULT_Z_MIN_X100, LORENZ_DEFAULT_Z_MAX_X100, band);
 
     /* Краєві піни попереду — клампи/гілки status'а мають побувати в обох
      * світах до того, як хаос піде гуляти. */

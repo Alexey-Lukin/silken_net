@@ -177,21 +177,6 @@ class HardwareKey < ApplicationRecord
     key_version.zero? && epoch.positive? ? epoch - 1 : epoch
   end
 
-  # [FW.17 · 03_05 §2.5] Видати DLFC новій адресній команді — один раз, при
-  # ВИДАЧІ: команда живе з ним, і повторна видача шле той самий кадр. Під живим
-  # grace не видається нічого — там їде лише 0x9E, чий DLFC видав rotate!
-  # (Downlink::CommandFrame). Замок рядка: два видачі одного значення під тим
-  # самим ключем = повтор нонса CCM.
-  def issue_downlink_frame_counter!
-    with_lock do
-      raise Downlink::CommandFrame::GraceOpenError, "#{device_uid}: grace відкритий — команда чекає" \
-        if previous_aes_key_hex.present?
-
-      update!(downlink_frame_counter: downlink_frame_counter + 1)
-    end
-    downlink_frame_counter
-  end
-
   # Метод для зачистки "хвостів" після успішної синхронізації.
   def clear_grace_period!
     return if previous_aes_key_hex.blank?

@@ -7,7 +7,7 @@ module Downlink
   # derive'ить «що віддати» з наявного стану БД, без власної таблиці-черги.
   #
   # Пріоритет: CMD (life-safety) > 0x9E ratchet (gated FW.17) > OTA-hint >
-  # 0x9A смуга Лоренца (gated FW.8) > time-only конверт. 0x9C у пріоритет-рядку
+  # time-only конверт. 0x9C у пріоритет-рядку
   # трекера задовольняється тотожно:
   # CoapEncryption вшиває [0x9C][ts:4] у КОЖЕН конверт — будь-яка відповідь
   # (включно з порожньою time-only) синхронізує RTC Королеви.
@@ -103,7 +103,7 @@ module Downlink
 
     # Пріоритет-драбина. Кожна сходинка повертає inner-байти або nil.
     def next_inner_payload
-      actuator_command_payload || key_rotation_payload || ota_hint_payload || thresholds_payload || "".b
+      actuator_command_payload || key_rotation_payload || ota_hint_payload || "".b
     end
 
     # ── CMD (найпріоритетніший — сирена/клапан) ──────────────────────────
@@ -252,26 +252,6 @@ module Downlink
       end
 
       [ OTA_HINT_MARKER, firmware_id, packages.size ].pack("CNn")
-    end
-
-    # ── 0x9A смуга Лоренца (gated FW.8, ⚖️ founder 2026-09-29) ──────────
-    # НИЖЧЕ OTA-hint свідомо: hint живе до `fw=`, тобто лише поки Королева сама
-    # качає образ, а видача смуги лишається відкритою тижнями — доказ її
-    # застосування рідкісний (03_04 §5.3), тож вище за hint вона морила б OTA.
-    # Один кадр на poll; першим — дерево, якому найдовше не видавали. Що видати
-    # і коли перевидати, вирішує Downlink::ThresholdBand.
-    def thresholds_payload
-      return nil unless Downlink::ThresholdBand.dispatch_enabled?
-
-      now = Time.current
-      Tree.where(cluster_id: @gateway.cluster_id, status: %i[active dormant])
-          .includes(:cluster, :tree_family, :hardware_key)
-          .order(Arel.sql("lorenz_band_served_at ASC NULLS FIRST"), :id)
-          .each do |tree|
-        frame = Downlink::ThresholdBand.serve!(tree, now: now)
-        return frame if frame
-      end
-      nil
     end
 
     # Спостережене підтвердження доставки: Queen несе свій RAM-стан

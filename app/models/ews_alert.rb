@@ -338,6 +338,10 @@ class EwsAlert < ApplicationRecord
   # `alerts.messages.chainsaw_detected_panic`: писача знято разом із гілкою пилки
   # (`AlertDispatchService`), а історичні рядки рендеряться саме через них. Не видаляти.
   # **Ключ рендера переживає свій механізм — це не борг, а память.**
+  # ⊥ Межа: правило несе ІСТОРИЧНИЙ рядок. Ключі, чий писач не міг писати НІКОЛИ, знімають
+  # разом із механізмом — так пішли `lorenz_band_not_applied` / `lorenz_band_applied` [FW.66]:
+  # видачу смуги FW.8 стеріг ENV-гейт, якого не ставила жодна деплой-поверхня, тож рядків
+  # із цими ключами не існує.
   def message
     return nil if message_key.blank?
 

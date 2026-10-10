@@ -2538,11 +2538,6 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
     ASSERT_EQ(test_soldier_unix_ts, 0u);
 }
 
-/* [FW.8] Тіло 0x9A і його інваріанти — Lorenz_Thresholds_From_Wire
- * (common/lorenz_thresholds.h, тести — test_flash_kv.c); кадр і MIC —
- * common/downlink_ccm.h (test_downlink_ccm.c). До downlink-ревізії
- * (2026-09-29) тут жила рукописна копія обробника main.c. */
-
 /* ════════════════════════════════════════════════════════════════════
  * 14. FW.27-B Magic Re-Request — Soldier-initiated vector OTA recovery
  * ════════════════════════════════════════════════════════════════════
@@ -5162,8 +5157,6 @@ int main(void)
     RUN(test_beacon_rx_rejects_wrong_size);
     RUN(test_beacon_rx_ts_zero_well_formed_but_dropped);
     RUN(test_beacon_rx_does_not_collide_with_ota);
-
-    printf("\n  CMD_SET_THRESHOLDS Frame Parsing (FW.8):\n");
 
     printf("\n  Magic Re-Request (FW.27-B):\n");
     RUN(test_rereq_full_bitmap_when_no_chunks);

@@ -220,9 +220,9 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
     {
       "0x9E rotate-key" => { key: (0..15).to_a.pack("C*"), opcode: 0x9E, did: 0x534E4554, dlfc: 0x0001_0002,
                              body: [ 3 ].pack("v"), frame: "9e534e45540002651cdc65306dc0c12c0a" },
-      "0x9A Lorenz thresholds" => { key: "\x00".b * 16, opcode: 0x9A, did: 0x01020304, dlfc: 0xFFFF,
-                                    body: [ 200, 4500, 2900, 0xFF, 1 ].pack("s<s<s<CC"),
-                                    frame: "9a01020304ffffeeeb30e4fb70658c58427d5c5f0c3c06" }
+      # DL2 — zero key, a second DID and the DLFC at the 0xFFFF carry edge.
+      "0x9E zero-key carry-edge" => { key: "\x00".b * 16, opcode: 0x9E, did: 0x01020304, dlfc: 0xFFFF,
+                                      body: [ 7 ].pack("v"), frame: "9e01020304ffff21eb38125fa69f344a15" }
     }.each do |name, v|
       it "builds the firmware-pinned #{name} frame" do
         frame = described_class.encrypt_downlink(key: v[:key], opcode: v[:opcode],
@@ -248,14 +248,15 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
 
     it "rejects a body whose length is not the opcode's" do
       expect {
-        described_class.encrypt_downlink(key: zero_key, opcode: 0x9A, did_bytes: did_bytes, dlfc: 1,
-                                         body: [ 1 ].pack("v"))
-      }.to raise_error(Cryptography::LoraCcm::InputError, /body must be 8 bytes/)
+        described_class.encrypt_downlink(key: zero_key, opcode: 0x9E, did_bytes: did_bytes, dlfc: 1,
+                                         body: "\x00".b * 8)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /body must be 2 bytes/)
     end
 
-    # 0x9D — retired with HW.30 (piezo cut): the firmware opens no such frame any more.
+    # Retired, never reused: 0x9D with HW.30 (piezo cut), 0x9A with FW.66 (Lorenz band) —
+    # the firmware opens neither frame any more.
     it "rejects an opcode that is not a per-node command" do
-      [ 0x9C, 0x9D ].each do |opcode|
+      [ 0x9C, 0x9D, 0x9A ].each do |opcode|
         expect {
           described_class.encrypt_downlink(key: zero_key, opcode: opcode, did_bytes: did_bytes, dlfc: 1,
                                            body: "\x00\x00".b)

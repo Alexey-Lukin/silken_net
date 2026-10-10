@@ -122,13 +122,6 @@ RSpec.describe "Cluster health and tree family management" do
   end
 
   describe "TreeFamily management" do
-    it "checks healthy z range" do
-      # common_oak: z_min=8.0, z_max=40.0
-      expect(tree_family.healthy_z?(20.0)).to be true
-      expect(tree_family.healthy_z?(5.0)).to be false
-      expect(tree_family.healthy_z?(45.0)).to be false
-    end
-
     it "generates display_name with scientific name" do
       expect(tree_family.display_name).to eq("Quercus robur (Common Oak)")
     end
@@ -155,11 +148,11 @@ RSpec.describe "Cluster health and tree family management" do
     end
 
     it "checks homeostasis correctly" do
-      family = create(:tree_family) # z_min: 5.0, z_max: 45.0
-      # [E.64] homeostatic? now takes temp (ρ-relative ceiling); temp=0 → ρ=28 → ceiling=45
-      expect(SilkenNet::Attractor.homeostatic?(25.0, family, 0.0)).to be true
-      expect(SilkenNet::Attractor.homeostatic?(1.0, family, 0.0)).to be false
-      expect(SilkenNet::Attractor.homeostatic?(50.0, family, 0.0)).to be false
+      band = Tree::DEVICE_DEFAULT_LORENZ_BAND # 2.0 / 45.0
+      # [E.64] homeostatic? takes temp (ρ-relative ceiling); temp=0 → ρ=28 → ceiling=45
+      expect(SilkenNet::Attractor.homeostatic?(25.0, band, 0.0)).to be true
+      expect(SilkenNet::Attractor.homeostatic?(1.0, band, 0.0)).to be false
+      expect(SilkenNet::Attractor.homeostatic?(50.0, band, 0.0)).to be false
     end
 
     it "generates trajectory as flat array" do

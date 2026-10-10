@@ -51,16 +51,15 @@ class Cluster < ApplicationRecord
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   # ⚠️ Ключі тут НЕ рівноцінні за живістю, і різницю видно лише звідси: `custom_fire_threshold`
-  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` — добовий шар,
-  # `lorenz_overrides_by_species` — [FW.8]; а ⛔ `seismic_sensitivity_threshold` не читає НІХТО
+  # читає `AlertDispatchService` (перша ланка `fire_limit`), `timezone` — добовий шар;
+  # а ⛔ `seismic_sensitivity_threshold` не читає НІХТО
   # [ARCH.102] — сейсмічний вердикт знято разом із його вимірювачем. Лишається оголошеним
   # forward-контрактом (валідація й рендер чинні на випадок, коли ключ таки виставлять руками),
   # але сід його більше не заповнює: показувати чутливість неіснуючого детектора = фабрикація.
   store_accessor :environmental_settings,
                  :custom_fire_threshold,
                  :seismic_sensitivity_threshold,
-                 :timezone,
-                 :lorenz_overrides_by_species
+                 :timezone
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
@@ -69,12 +68,8 @@ class Cluster < ApplicationRecord
   validates :custom_fire_threshold, :seismic_sensitivity_threshold,
             numericality: { greater_than: 0 }, allow_nil: true
 
-  # [FW.8] Per-species Lorenz threshold overrides for this cluster.
-  # Schema: { "<scientific_name>" => { "min" => Float, "max" => Float, "optimal" => Float } }
-  # A cluster may host trees of several species; each species gets its own
-  # biome-adjusted overrides. Unspecified keys fall through to TreeFamily defaults.
-  # Governance flow: organization-scoped admin sets overrides per species.
-  validate :validate_lorenz_overrides_by_species
+  # [FW.66] Ключ `lorenz_overrides_by_species` знято разом із видачею смуги FW.8, єдиним
+  # його читачем; історичні значення в jsonb нешкідливі, операторської поверхні він не мав.
 
   normalizes :geojson_polygon, with: ->(json) { json.is_a?(Hash) ? json.deep_stringify_keys : json }
 
@@ -245,97 +240,6 @@ class Cluster < ApplicationRecord
   def active_contract
     naas_contracts.active.order(created_at: :desc).first
   end
-
-  # [FW.8] Per-species Lorenz overrides for trees of `scientific_name` in this cluster.
-  # Returns Hash{ min:, max:, optimal: } with Float-or-nil values. Used by
-  # Tree#effective_lorenz_thresholds to override TreeFamily defaults for a specific
-  # biome (e.g., subarctic Pinus needs different bounds than Mediterranean Pinus).
-  # Returns all-nil hash if no override is configured for that species.
-  def lorenz_overrides_for(scientific_name)
-    overrides = lorenz_overrides_by_species.is_a?(Hash) ? lorenz_overrides_by_species[scientific_name.to_s] : nil
-    overrides = {} unless overrides.is_a?(Hash)
-
-    {
-      min:     numeric_or_nil(overrides["min"]),
-      max:     numeric_or_nil(overrides["max"]),
-      optimal: numeric_or_nil(overrides["optimal"])
-    }
-  end
-
-  private
-
-  def numeric_or_nil(value)
-    return nil if value.nil?
-    Float(value)
-  rescue ArgumentError, TypeError
-    nil
-  end
-
-  # [FW.8] Validate per-species Lorenz overrides JSONB shape:
-  #   - top-level value must be a Hash
-  #   - keys must be non-empty Strings (scientific names)
-  #   - per-species value must be a Hash with optional numeric min/max/optimal
-  #   - if min and max are both set, min < max
-  #   - if optimal is set, it lies between min and max (using each present bound)
-  def validate_lorenz_overrides_by_species
-    raw = lorenz_overrides_by_species
-    return if raw.nil?
-
-    unless raw.is_a?(Hash)
-      errors.add(:lorenz_overrides_by_species, "must be a Hash keyed by scientific_name")
-      return
-    end
-
-    raw.each do |species, bounds|
-      if species.to_s.strip.empty?
-        errors.add(:lorenz_overrides_by_species, "has a blank species key")
-        next
-      end
-      unless bounds.is_a?(Hash)
-        errors.add(:lorenz_overrides_by_species, "value for '#{species}' must be a Hash")
-        next
-      end
-
-      min = numeric_or_nil(bounds["min"])
-      max = numeric_or_nil(bounds["max"])
-      optimal = numeric_or_nil(bounds["optimal"])
-
-      bounds.each_key do |k|
-        unless %w[min max optimal].include?(k.to_s)
-          errors.add(:lorenz_overrides_by_species, "unknown key '#{k}' for species '#{species}'")
-        end
-      end
-
-      %w[min max optimal].each do |k|
-        next if bounds[k].nil?
-        if numeric_or_nil(bounds[k]).nil?
-          errors.add(:lorenz_overrides_by_species, "'#{k}' for species '#{species}' must be numeric")
-        end
-      end
-
-      if min && max && min >= max
-        errors.add(:lorenz_overrides_by_species, "'min' must be < 'max' for species '#{species}'")
-      end
-      # [FW.8 · ⚖️ 2026-09-29] Лише ЗВУЖЕННЯ заводської смуги — той самий гард, що на
-      # родині (`TreeFamily`); складений ланцюг ще раз судить Downlink::ThresholdBand.
-      if min && min < Tree::GLOBAL_LORENZ_Z_MIN
-        errors.add(:lorenz_overrides_by_species,
-                   "'min' must be >= #{Tree::GLOBAL_LORENZ_Z_MIN} (device default) for species '#{species}'")
-      end
-      if max && max > Tree::GLOBAL_LORENZ_Z_MAX
-        errors.add(:lorenz_overrides_by_species,
-                   "'max' must be <= #{Tree::GLOBAL_LORENZ_Z_MAX} (device default) for species '#{species}'")
-      end
-      if optimal && min && optimal <= min
-        errors.add(:lorenz_overrides_by_species, "'optimal' must be > 'min' for species '#{species}'")
-      end
-      if optimal && max && optimal >= max
-        errors.add(:lorenz_overrides_by_species, "'optimal' must be < 'max' for species '#{species}'")
-      end
-    end
-  end
-
-  public
 
   def compute_geo_center
     return nil unless mapped?

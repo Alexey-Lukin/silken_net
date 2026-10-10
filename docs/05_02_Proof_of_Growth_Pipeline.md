@@ -283,68 +283,9 @@ end
 
 ---
 
-#### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
+#### ⚫ FW.8 — per-species пороги Лоренца на пристрої (знято, FW.66)
 
-> **Cross-ref:** [`00_07` — FW.8](00_07_Action_Plan_Tracker) — дизайн завершено ✅
-
-**Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
-
-**Рішення:** синхронізувати per-species пороги через OTA Config Payload — без перекомпіляції firmware.
-
-##### 4а.1 Нова структура OTA Config Payload
-
-Поточний OTA downlink передає лише mruby bytecode (bio_contract). Додаємо окремий **Config Block** як перший фрагмент batch:
-
-```
-Адресна команда 0x9A (з 2026-09-29 — downlink-wire-ревізія, 03_05 §2.5):
-  [0x9A][DID:4 BE][DLFC_lsb:2 BE] ‖ CCM(тіло:8) ‖ MIC:8   = 23 Б
-  (CMD_OTA_BYTECODE 0x99 — кластерний, лишився 16B ECB на KEYB)
-```
-
-> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_OTA_SEAL` (FW.23 OTA-печатка Ed25519); `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18, аудіо-пороги TinyML) виведено з HW.30 — пʼєзо зрізано ([`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) — і повторно не займається.
-
-**Тіло `0x9A` (8 байт, little-endian — байт-у-байт тіло старого каркаса без `len` і CRC; цілісність несе MIC):**
-
-```
-Байти  Поле                   Тип    Опис
-0–1    z_min_fixed            int16  CRITICAL_Z_MIN × 100 (наприклад, 200 = 2.0)
-2–3    z_max_fixed            int16  CRITICAL_Z_MAX × 100 (наприклад, 4500 = 45.0)
-4–5    z_optimal_fixed        int16  OPTIMAL_Z_TARGET × 100 (наприклад, 2900 = 29.0)
-6      species_id             uint8  0=Pinus, 1=Quercus, 2=Fagus, 3=Picea, 4=Betula, 0xFF=unmapped
-7      config_version         uint8  семантична версія (загортається через 256); анти-повтор несе DLFC кадру
-```
-
-**LoRa-канал (Queen→Soldier):** з 2026-09-29 — адресний CCM-кадр сесійним ключем ЦІЛІ, Королева — сліпий курʼєр ([`03_05 §2.5`](03_05_Hardware_Symmetric_Crypto_and_Security)); 16B ECB на KEYB лишився кластерним кадрам. До ревізії `0x9A` їхав ECB на KEYB, і підробити його міг будь-хто з кластерним ключем. **CoAP-магістраль (Rails→Queen):** AES-256-CBC (без змін).
-
-##### 4а.2 Firmware-persist (Flash-KV)
-
-> Прийняті пороги firmware зберігає у **Flash-KV** — bit-layout (ключі `0x10`/`0x11`: z_min/z_max/z_opt ×100 · `species_id` · `config_version`), інваріанти «порвана/невалідна пара → firmware-дефолти» + power-cut семантика = канон-дім [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA). Код — `common/lorenz_thresholds.h` (`Save/Load` + `Lorenz_Thresholds_From_Wire`, host-готові) + приймач адресних команд у `firmware/soldier/main.c` (секція 1.14, CCM-шлях), гейт `FW8_PARSER_ENABLED 0` (⚫ FW.8 2026-10-06 — фліпу не буде, тракт знімає реалізація (Б), [`00_07`](00_07_Action_Plan_Tracker) FW.66). RTC-підхід **відкинуто**: STM32WLE5JC має лише `DR0..DR19` (карта [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), суміжних байтів під пороги немає. Повний статус персисту/wiring → [`00_07` — FW.8](00_07_Action_Plan_Tracker).
-
-##### 4а.3 Backend — OtaPackagerService та TreeFamily
-
-Тіло — `OtaPackagerService.threshold_config_body(tree, config_version:)`: пороги з трирівневого ланцюга `tree.effective_lorenz_thresholds` (cluster > family > global) ×100 плюс `species_id` із `SPECIES_ID_MAP`. Кадр — `Downlink::CommandFrame.thresholds(hardware_key, body:, dlfc:)`: CCM поточним ключем дерева над ЗАПИСАНИМ тілом видачі, під живим grace ротації відмовляє; DLFC команді видає один раз `HardwareKey#issue_downlink_frame_counter!`. Видачу, перевидачу й доказ застосування веде `Downlink::ThresholdBand` із poll-деривації Королеви ([`04_02`](04_02_Business_Logic_and_Services); присуд — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)). Кодом тут свідомо не дзеркалимо — дім коду сам код.
-
-> **Статус [FW.8]:** ⚫ 2026-10-06 — поглинуто гілкою (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.8 · FW.66): активації не буде, пороги родин переїжджають на сервер, де їх судять прямі сигнали (нога E.64), а тракт нижче знімає реалізація (Б). Доти: ✅ Rails-будівник кадру й приймач Солдата (CCM-шлях, тіло судить той самий `Valid`, що й журнал) + персист + gate (`FW8_PARSER_ENABLED 0`) — §4а.2 вище; відправник — `Downlink::ThresholdBand` за ENV-гейтом `FW8_THRESHOLDS_DOWNLINK_ENABLED` (⚖️ 2026-09-29; не вмикати — фліпу прошивки не буде). Soldier використовує хардкодовані пороги (дім [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)).
-
-##### 4а.4 Per-Species Default Thresholds
-
-| Вид дерева | `critical_z_min` | `critical_z_max` | `optimal_z_target` | Обґрунтування |
-|---|---|---|---|---|
-| *Pinus sylvestris* (Сосна звичайна) | **2.0** | **45.0** | **29.0** | Базові (поточні) |
-| *Quercus robur* (Дуб звичайний) | **3.0** | **42.0** | **27.0** | Нижчий піковий стрес, менша варіативність |
-| *Fagus sylvatica* (Бук лісовий) | **2.5** | **43.0** | **28.0** | Помірний діапазон |
-| *Picea abies* (Ялина звичайна) | **1.5** | **46.0** | **30.0** | Ширший діапазон гомеостазу |
-| *Betula pendula* (Береза бородавчаста) | **2.0** | **44.0** | **28.5** | Подібна до сосни |
-
-> **Джерело значень:** Попередні пороги (сосна). Точні значення інших видів потребують калібрування з Lorenz trajectory analysis. **Рекомендовано:** запросити ботанічний baseline від Спрягайла/Гаврилюка (ЧНУ, [`00_02`](00_02_Academic_Integration_and_IP)).
->
-> 🔴 **Таблиця вище — ПРОПОЗИЦІЯ, і вона РОЗІЙШЛАСЬ із тим, що реально засіяно** (виміряно 2026-09-05): `db/seeds.rb` дає сосні `critical_z_min` **5.0** (не 2.0) і дубу **8.0 / 45.0**. Живі значення — у сідах, ця таблиця їх не наздогнала. ⚠️ Різниця не косметична: саме засіяні числа годують `Tree#effective_lorenz_thresholds`, тож будь-яке міркування «на TRL-6 усі види на однакових дефолтах» вже неправдиве. Яке з двох правильне — ⚖️ некалібрований присуд, не факт; обидва набори чекають того самого ботанічного baseline. Стан → [`00_07`](00_07_Action_Plan_Tracker) FW.8. ⊕ 2026-10-09: калібрувати пару не доведеться — її знімають разом із машинерією FW.8 (⚖️ делеговано, [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)): вердиктного читача в неї немає, а z прямим сигналом не є; таблиця й сіди живуть до реалізації (Б) ([`00_07`](00_07_Action_Plan_Tracker) FW.66).
->
-> ⚖️ **[FW.8, 2026-09-29] Рядок ялини (1.5 / 46.0) РОЗШИРЮЄ заводську смугу, а гард «лише звуження» такого не пропускає** ні в родину, ні в кластерний оверрайд, ні у видачу: ширша смуга рідше давала б «аномалію», тобто більше балів, і DCI цього не бачить. Виду, якому вона справді потрібна, міняють дефолт прошивки — присудом ([`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)).
-
-##### 4а.5 Backend Mirror (TelemetryUnpackerService)
-
-Backend має `TreeFamily#critical_z_min|max|optimal_z_target` через `calculate_z` pipeline, і це відповідь на «**що слати**». 🔴 **Верифікація DCI натомість НЕ звіряється з ними** — вона судить НАБОРОМ смуг, які може тримати пристрій (заводська + утримувані + відкрита видача, ⚖️ 2026-09-29); порівнювати треба два обчислення, а не дві конфігурації. Набір наповнює ВИДАЧА з Rails (ENV `FW8_THRESHOLDS_DOWNLINK_ENABLED`), а не прапор прошивки: доки видачу не ввімкнено, у наборі лише заводська смуга, а ввімкнена раніше за фліп `FW8_PARSER_ENABLED` вона наповнює його смугами, яких вузол прийняти не може (mruby смугу вже приймає аргументами, але бойова збірка шле дефолти). Дім механізму й ціни — [`03_04 §5.3`](03_04_mruby_Lorenz_Attractor).
+> ⚫ Видачу per-species смуги на Солдат — адресна команда `0x9A`, журнал Flash-KV `0x10/0x11`, будівник `OtaPackagerService.threshold_config_body`, облік `Downlink::ThresholdBand`, родинна пара `TreeFamily#critical_z_min/max` і кластерні оверрайди — поглинуто гілкою (Б) і знято разом із кодом обабіч ([`00_07`](00_07_Action_Plan_Tracker) FW.8 · FW.66); опкод `0x9A` — RETIRED ([`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA)). Пристрій судить статус заводською смугою 2.0/45.0, і нею ж — DCI ([`03_04 §5.3`](03_04_mruby_Lorenz_Attractor)); пороги родин і сезонів переїжджають на сервер, де їх судитимуть прямі сигнали (нога E.64; вимірювачів ще немає). ⛔ Не відбудовувати per-species смугу на пристрої як «калібрування»: z прямим сигналом здоровʼя не є, тож I(статус; здоровʼя | входи) = 0 для будь-якої смуги (межа брейншторму, [`z_core_forks`](protocols/hardware/z_core_forks.md) §6.1); присуди — врізка [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor).
 
 ---
 

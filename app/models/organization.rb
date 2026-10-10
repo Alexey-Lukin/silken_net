@@ -86,8 +86,12 @@ class Organization < ApplicationRecord
   before_update :reset_hadron_kyc_on_address_change
   after_commit :enqueue_hadron_kyc_verification, if: :saved_change_to_crypto_public_address?
 
-  # Пороги тривоги та AI-чутливість (The Brain Map)
-  validates :alert_threshold_critical_z, numericality: { greater_than: 0, less_than_or_equal_to: 10 }, allow_nil: true
+  # [FW.66] `alert_threshold_critical_z` знято: оператор редагував його як поріг тривоги,
+  # а не читав його жоден шлях (клас `СЛОВО`, `05_05 §3.2`). Колонка — до `remove_column`
+  # окремим комітом ПІСЛЯ деплою цього (той самий двокроковий рецепт, що `TreeFamily`).
+  self.ignored_columns += %w[alert_threshold_critical_z]
+
+  # AI-чутливість (The Brain Map)
   validates :ai_sensitivity, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }, allow_nil: true
 
   # --- Data Residency (Зона 4: GDPR/Sharding) ---

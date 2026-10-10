@@ -4,21 +4,10 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Index do
-  # [TEST.12] Реальний незбережений TreeFamily: `critical_z_*` — колонки `numeric`,
-  # тобто BigDecimal — у проді діапазон друкується «10.0 - 80.0», а OpenStruct з
-  # Integer дозволяв сюїті вимагати «10 - 80», якого жоден реальний запис не рендерить.
-  # `model_name`/`to_key`/`to_param` тепер справжні (рукописні дозволяли `dom_id`
-  # розійтися з рендереним).
-  def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
-                  critical_z_min: 10, critical_z_max: 80, trees_count: 120)
-    TreeFamily.new(
-      id: id,
-      name: name,
-      scientific_name: scientific_name,
-      critical_z_min: critical_z_min,
-      critical_z_max: critical_z_max,
-      trees_count: trees_count
-    )
+  # [TEST.12] Реальний незбережений TreeFamily: `model_name`/`to_key`/`to_param`
+  # справжні (рукописні дозволяли `dom_id` розійтися з рендереним).
+  def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur", trees_count: 120)
+    TreeFamily.new(id: id, name: name, scientific_name: scientific_name, trees_count: trees_count)
   end
 
   let(:family)   { mock_family }
@@ -79,13 +68,11 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("Species Name")
     end
 
-    # ⛔ [E.64 ⚖️ 2026-09-05] Заголовок був «Safe Range», і пін тримав саме ту
-    # брехню: після зняття Z-похідних вердиктів родинна смуга не судить нічого,
-    # тож напис «безпечний» стверджував, що поза нею НЕБЕЗПЕЧНО. Ім'я тепер
-    # ОПИСОВЕ. Негативна половина несуча — без неї перейменування можна відкотити,
-    # і жоден приклад не почервоніє.
-    it "renders the Z-band column DESCRIPTIVELY, never as a safety verdict" do
-      expect(html).to include("Species Z Band")
+    # ⛔ [FW.66] Смуги Лоренца в породи немає — статус кадру рахує пристрій заводською
+    # смугою. Колонка, що друкувала родинну пару, показувала поріг, яким не судить
+    # ніщо (клас `СЛОВО`, `05_05 §3.2`), тож ні описового, ні «безпечного» напису.
+    it "renders no Z-band column — a species carries no Lorenz band" do
+      expect(html).not_to include("Species Z Band")
       expect(html).not_to include("Safe Range")
     end
 
@@ -107,12 +94,6 @@ RSpec.describe TreeFamilies::Index do
       fam = mock_family(scientific_name: nil)
       rendered = render_component(families: [ fam ], pagy: mock_pagy(count: 1))
       expect(rendered).to include(fam.name)
-    end
-
-    # [TEST.12] Очікування з РЕАЛЬНОГО виводу: numeric-колонки віддають BigDecimal,
-    # тож прод друкує «10.0», а не «10» — колишній пін вимагав вивід, якого не буває.
-    it "renders safe range" do
-      expect(html).to include("10.0 - 80.0")
     end
 
     it "renders tree count as Soldiers" do

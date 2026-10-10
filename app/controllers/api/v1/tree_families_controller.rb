@@ -6,38 +6,11 @@ module Api
     class TreeFamiliesController < BaseController
       before_action :authorize_admin!
       # [SEC]: TreeFamily = ГЛОБАЛЬНА довідкова таблиця (не org-scoped), і її
-      # поля мутує super_admin, бо радіус вибуху глобальний. ДВА поля, ДВА
-      # різні радіуси — не злипати:
-      #   • `carbon_sequestration_coefficient` → `Wallet#credit!` → mint. Гроші,
-      #     живі сьогодні, для ВСІХ org.
-      #   • `critical_z_min/max` → ⛔ [E.64 ⚖️ 2026-09-05] НЕ називати це
-      #     anti-fraud смугою. Anti-fraud = DCI, а той судить за
-      #     `Tree#device_lorenz_bands` (заводська 2.0/45.0 плюс утримувані
-      #     вузлом, доки доказ їх не відкине, і відкрита видача, FW.8);
-      #     СЕРВЕРНУ Z-гілку вердикту знято (Z є DCI-only, `05_05 §8.1`).
-      #     ⚠️ «Знято» має точний периметр: пристрійна гілка
-      #     `bio_status_stress?` → `severe_drought` СТОЇТЬ у коді
-      #     (`AlertDispatchService`) і НЕ мертва: «недосяжна за ρ-clamp» стояло
-      #     на 0 з 5 000 cold-start-прогонів, а ρ-clamp обмежує рівновагу, не
-      #     траєкторію — теплий ланцюг дає stress рідко й холодом (2026-09-29,
-      #     `03_04 §5.3`). ⛔ Не знімати її «як мертву» — вона жива; знімає її
-      #     реалізація (Б) (`00_07` FW.66; FW.8 ⚫ 2026-10-06 — фліпу зі
-      #     смугою родини не буде).
-      #     ⚠️ І читачів у пари БАГАТО — валідації `TreeFamily` (`comparison`
-      #     та межі `optimal_z_target`, живі саме в цьому запиті), форма й
-      #     таблиця адмінки, спекове дзеркало `Attractor.homeostatic?`. Точне
-      #     твердження не «споживач один», а **пара не виносить ЖОДНОГО
-      #     вердикту сама — ні алерту, ні мінту** (те саме формулювання, що
-      #     в сиблінгу `TreeFamilies::Index`); вердиктний шлях у неї ОДИН і
-      #     гейтований — видача `CMD_SET_THRESHOLDS 0x9A`
-      #     (`Downlink::ThresholdBand`, ENV `FW8_THRESHOLDS_DOWNLINK_ENABLED` за
-      #     прошивковим фліпом FW.8). Після нього пара СТАЄ смугою, якою пристрій
-      #     рахує статус, а отже й бали, — тому її межі лише звужують заводську
-      #     (валідація `TreeFamily`, ⚖️ 2026-09-29): радіус тут грошовий.
-      #     ⊕ FW.8 ⚫ 2026-10-06: цього фліпу не буде — `0x9A` знімає реалізація
-      #     (Б) (`00_07` FW.66); пороги родин переїжджають на сервер, де їх
-      #     судять прямі сигнали (нога E.64), а не Z-смуга; гард звуження
-      #     лишається, доки живий сам код видачі.
+      # поля мутує super_admin, бо радіус вибуху глобальний: найгостріше з них —
+      # `carbon_sequestration_coefficient` → `Wallet#credit!` → mint, тобто гроші
+      # для ВСІХ org. ⛔ [FW.66] Пару `critical_z_min/max` знято — порогом, яким
+      # пристрій рахує статус, вона так і не стала (видачу FW.8 знято разом із нею),
+      # а сервер судить DCI заводською смугою (`Tree::DEVICE_DEFAULT_LORENZ_BAND`).
       # (on-chain параметри вже Timelock-governed, off-chain константи
       # заслуговують на еквівалентний захист.)
       before_action :authorize_super_admin!, only: [ :new, :create, :edit, :update ]
@@ -142,8 +115,7 @@ module Api
 
       def family_params
         params.require(:tree_family).permit(
-          :name, :scientific_name, :critical_z_min, :critical_z_max,
-          :carbon_sequestration_coefficient,
+          :name, :scientific_name, :carbon_sequestration_coefficient,
           :bark_thickness, :foliage_density, :fire_resistance_rating
         )
       end

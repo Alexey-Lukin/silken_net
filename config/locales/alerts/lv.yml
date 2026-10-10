@@ -51,7 +51,6 @@ lv:
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: 24h iekšējā apdrošināšanas emisija %{window_sum} %{token_type} pārsniedz griestus %{cap}. Izmaksa apturēta — pārbaudi ekspozīciju pirms manuālas atrisināšanas.'
       insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: rezervi neizdevās novērtēt, tāpēc vārti nostrādāja fail-closed. Error: %{error}'
       insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] priekš #%{id}: 30 dienu iekšējā apdrošināšanas emisija %{outstanding} pārsniedz rezervi %{reserve} × %{ratio}. Izmaksa apturēta — papildini DAO_TREASURY pirms manuālas atrisināšanas.'
-      lorenz_band_not_applied: "📡 Mezgls %{did} nerāda izdoto Lorenca joslu (izdota %{issued_at}): pakešu ar veco joslu pēc piegādes loga — %{stale_packets}. Kadrs nav piegādāts vai nav piemērots; DCI pieņem jebkuras izdotās joslas statusu, tāpēc tā nav krāpšana. Cēlonis ir piegādē (OTA kampaņa aizņem poll, Queen rinda izspiež kadrus) vai mezglā (programmaparatūra bez joslas parsētāja, nepiemontēts Flash-KV žurnāls, mezgla komandu skaitītājs apsteidz mūsējo). Vispirms pārbaudīt piegādi, tad — mezglu uz vietas."
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} kalts pēdējās %{window}, kas pārsniedz konfigurēto griestu (%{ceiling}). Iespējama programmaparatūras/konveijera kļūda vai ļaunprātīgi izmantota MINTER atslēga. Pārbaudi nesenos mint tx pirms griestu celšanas.'
       non_fire_peril: 'Brīdinājuma #%{alert_id} risku nevar izvērtēt ugunsgrēka satelīts (FIRMS redz tikai ugunsgrēku) — ne apstiprināt, ne atspēkot. Izmaksa un lēmums paliek iesaldēti līdz fiziskai pārbaudei: nepieciešams izbraukums.'
       obscured_critical_fire: "🔥 Kritisko ugunsgrēka brīdinājumu #%{alert_id} aizsedz mākoņi/vainags — satelīts to nevar ne apstiprināt, ne atspēkot. Nepieciešama TŪLĪTĒJA fiziska pārbaude: gaidīt 48 h uz orbītas pārlidojumu šeit nav pieļaujami (dzīvības drošība)."
@@ -73,7 +72,6 @@ lv:
       tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
     resolutions:
       gateway_returned: Vārteja %{uid} atkal ēterā (%{seen_at}).
-      lorenz_band_applied: Mezgls %{did} piemēroja izdoto joslu — to pierādīja paketes statuss zonā, kur joslas atšķiras.
       maintenance_restored: 'Atjaunots ar apkopi (ieraksts #%{record_id}).'
       mint_volume_detector_disabled: Mint-volume detektors ir izslēgts (`mint_volume_hourly_max_scc` = 0) — brīdinājums slēgts kā bezpriekšmeta, nevis kā novērsts.
       mint_volume_recovered: "%{token_type} kalšanas apjoms atkal zem griestiem (%{volume} <= %{max} SCC)."

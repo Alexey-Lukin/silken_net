@@ -23,7 +23,7 @@
  * (real or hal_mock.h) + lora_ccm.h to be included by the caller first.
  *
  * [FW.17 · 03_05 §2.5] Downlink-вектори (адресна команда Rails → Солдат) —
- * окремий прохід: AAD 7 Б і тіла 2/8 Б — інший кадр, ніж 14-байтне тіло
+ * окремий прохід: AAD 7 Б і тіло 2 Б — інший кадр, ніж 14-байтне тіло
  * аплінку, тож атестація аплінку про нього нічого не каже. Крім KAT-раннера,
  * кожен вектор відкриває сама польова Dl_Ccm_Open.
  */
@@ -49,7 +49,7 @@ typedef void (*ccm_selftest_report_fn)(const char *name, int pass);
  * Returns 1 on full pass, else 0.
  * key/nonce/aad копіюються у word-aligned буфери (STM32 CRYP HAL споживає
  * uint32_t*, а const-таблиці векторів вирівнювання не обіцяють).
- * Довжини AAD і тіла — параметри: аплінк 8/14, downlink 7/2..8 (стелі —
+ * Довжини AAD і тіла — параметри: аплінк 8/14, downlink 7/2 (стелі —
  * аплінкові, бо довший кадр у цій прошивці не літає).
  * `hcryp` is an INJECTED handle (host harness passes a mock, target passes the
  * global &hcryp) — it deliberately mirrors the HAL global name for readability. */

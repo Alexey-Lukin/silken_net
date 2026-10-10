@@ -7,8 +7,6 @@ lt:
       bark_thickness: Žievės storis (mm)
       co2_coefficient: CO₂ sekvestracijos koeficientas
       co2_placeholder: '1.0'
-      critical_z_max: Kritinis Z maks.
-      critical_z_min: Kritinis Z min.
       scientific_name: Mokslinis pavadinimas (lotynų k.)
       scientific_placeholder: pvz. Quercus robur
       species_identity: Rūšies tapatybė
@@ -19,7 +17,6 @@ lt:
       audit_aria: Audituoti %{name} rūšį
       columns:
         command: Komanda
-        family_z_band: Rūšies Z juosta
         population: Populiacija
         species_name: Rūšies pavadinimas
       define_aria: Apibrėžti naują medžių rūšį
@@ -27,7 +24,6 @@ lt:
       edit: REDAGUOTI
       edit_aria: Redaguoti %{name} rūšį
       kicker: Biologinė matrica
-      range_value: "%{min} - %{max}"
       soldiers_count:
         few: "%{count} kariai"
         one: "%{count} karys"

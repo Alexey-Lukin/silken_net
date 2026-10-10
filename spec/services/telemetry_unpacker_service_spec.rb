@@ -761,31 +761,6 @@ end
         t
       end
 
-      it "[FW.8] uses global defaults when tree_family is nil (governance fallback)" do
-        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC02".to_i(16)), cluster: cluster, tree_family: tree_family)
-        # Simulate nil tree_family by stubbing the association
-        allow(tree_no_family).to receive(:tree_family).and_return(nil)
-        service = described_class.new("", nil)
-        # z=50 is ABOVE global default Tree::GLOBAL_LORENZ_Z_MAX (45.0)
-        # device says "homeostasis" → divergence MUST be detected (server_in_band=false)
-        attributes = { z_value: 50.0, lorenz_state_z: 50.0, bio_status: :homeostasis }
-
-        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
-        service.send(:check_z_divergence!, tree_no_family, attributes)
-        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
-      end
-
-      it "[FW.8] no divergence when z_value is within global defaults and family is nil" do
-        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC03".to_i(16)), cluster: cluster, tree_family: tree_family)
-        allow(tree_no_family).to receive(:tree_family).and_return(nil)
-        service = described_class.new("", nil)
-        attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis } # well within 2..45
-
-        allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
-        service.send(:check_z_divergence!, tree_no_family, attributes)
-        expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
-      end
-
       it "skips when the Lorenz state is absent" do
         service = described_class.new("", nil)
         attributes = { z_value: nil, lorenz_state_z: nil, bio_status: :homeostasis }
@@ -845,103 +820,28 @@ end
         expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
-      # 🔴 [FW.8] Дискримінатор смуг — `z = 3.0` (здорове глобально ≥ 2.0,
-      # «хворе» для родини < 5.0). ⛔ Не перевертати очікування назад на родинну
-      # смугу: судити треба за тією, що ЧИННА НА ПРИСТРОЇ, бо per-species до
-      # `bio_status` не доходять жодним шляхом — інакше сервер оголошує ФРОДОМ
-      # чесний пакет, і то на КОЖНОМУ фабричному дереві (фабрика родини несе
-      # `critical_z_min = 5.0`). Механізм і виміри — `03_04 §5.3`.
-      it "[FW.8] судить за ПРИСТРОЄВОЮ смугою, а не за родинною — чесний пакет не є фродом" do
-        service = described_class.new("", nil)
-        # Ліхтарі: якщо фікстура з'їде так, що 3.0 перестане розрізняти смуги,
-        # приклад мусить сказати це прямо, а не тихо стати вакуумним.
-        expect(tree_with_family.effective_lorenz_thresholds[:min]).to eq(5.0)
-        expect(tree_with_family.device_lorenz_bands).to eq([ Tree::DEVICE_DEFAULT_LORENZ_BAND ])
-        expect(Tree::GLOBAL_LORENZ_Z_MIN).to be < 3.0
+      # 🔴 DCI судить тією смугою, якою рахує ПРИСТРІЙ, — заводською 2.0/45.0. Чесний
+      # пакет біля її підлоги (z = 3.0) і під її ρ-стелею (z = 42 при 0 °C) — не
+      # розбіжність. ⛔ Не судити смугою родини чи кластера: пристрій нею не рахує,
+      # тож сервер оголосив би розбіжність на невинному дереві (`03_04 §5.3`).
+      it "судить заводською смугою пристрою — чесний пакет біля підлоги не є розбіжністю" do
+        # Ліхтар: смуга — саме заводські 2.0/45.0 (`LORENZ_DEFAULT_Z_*_X100`), інакше 3.0 не розрізняє.
+        expect(Tree::DEVICE_DEFAULT_LORENZ_BAND).to eq(min: 2.0, max: 45.0)
         attributes = { z_value: 3.0, lorenz_state_z: 3.0, bio_status: :homeostasis }
 
-        # Spy-форма свідомо: `RSpec/MessageSpies` вмикається, і новий приклад
-        # не має права дописувати в чергу міграції те, що сам же й зрізає.
         allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
-        service.send(:check_z_divergence!, tree_with_family, attributes)
+        described_class.new("", nil).send(:check_z_divergence!, tree_with_family, attributes)
         expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
       end
 
-      # 🔴 [FW.8] MAX-бік — ДОСЯЖНА половина розриву, і саме її бракувало.
-      # Виміряно на реальному cold-start (5 000 прогонів): MIN-вікно [2, family_min)
-      # трапляється 0.14 %, а це — 1.4 %, удесятеро частіше, бо тепла погода
-      # штовхає Z угору: для родини з `critical_z_max = 40` стеля ρ+12, тоді як
-      # пристрій має ρ+17. Без цього приклада фікс лишався б обґрунтованим
-      # рідкісним боком, а перевіреним — лише ним.
-      it "[FW.8] не виписує фрод на теплому Z під стелею ПРИСТРОЮ, але над стелею родини" do
-        service = described_class.new("", nil)
-        narrow  = create(:tree_family, critical_z_min: 5.0, critical_z_max: 40.0)
-        tree    = create(:tree, tree_family: narrow)
-
-        # temp = 0 → ρ = 28: стеля родини 40, стеля пристрою 45. Z=42 лежить МІЖ.
-        expect(SilkenNet::Attractor.anomaly_ceiling(0.0, 40.0)).to eq(40.0)
-        expect(SilkenNet::Attractor.anomaly_ceiling(0.0, Tree::GLOBAL_LORENZ_Z_MAX)).to eq(45.0)
+      it "не виписує розбіжності на теплому Z під ρ-стелею заводської смуги" do
+        # temp = 0 → ρ = 28: стеля заводської смуги рівно 45, Z = 42 під нею.
+        expect(SilkenNet::Attractor.anomaly_ceiling(0.0, Tree::DEVICE_DEFAULT_LORENZ_BAND[:max])).to eq(45.0)
         attributes = { z_value: 42.0, lorenz_state_z: 42.0, bio_status: :homeostasis, temperature_c: 0.0 }
 
         allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
-        service.send(:check_z_divergence!, tree, attributes)
+        described_class.new("", nil).send(:check_z_divergence!, tree_with_family, attributes)
         expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
-      end
-
-      # [FW.8 · ⚖️ founder 2026-09-29] Набір кандидатів: смуга, яку вузлу ВИДАНО,
-      # чесна поряд із заводською. Z = 3.0 заводська судить гомеостазом, видана
-      # 5.0/40.0 — стресом; пакет «stress» пасує лише виданій, тож він і не фрод, і
-      # ДОКАЗ, що вузол її тримає.
-      describe "з виданою смугою [FW.8]" do
-        let(:issued) { [ 500, 4000, 2900, 0xFF, 1 ].pack("s<s<s<CC") }
-
-        before do
-          tree_with_family.update_columns(lorenz_band_pending: issued, lorenz_band_dlfc: 1, lorenz_band_key_epoch: 0,
-                                          lorenz_band_issued_at: 1.hour.ago, lorenz_band_served_at: 1.hour.ago)
-          allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
-        end
-
-        def judge(**packet)
-          described_class.new("", nil).send(:check_z_divergence!, tree_with_family,
-                                            { temperature_c: 0.0, **packet })
-        end
-
-        it "приймає статус виданої смуги й записує його як доказ" do
-          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :stress)
-
-          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
-          expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
-          expect(tree_with_family.lorenz_band_pending).to be_nil
-        end
-
-        it "і далі ловить статус, якого не дає жоден кандидат" do
-          judge(z_value: 1.0, lorenz_state_z: 1.0, bio_status: :homeostasis, cold_start_flag: true)
-
-          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
-        end
-
-        # `vm_error` статусу не рахував, а пакет із невідомим часом міг прийти з
-        # іншого ланцюга Лоренца — доказом смуги не є жоден.
-        it "не бере доказу з vm_error і з пакета з невідомим часом" do
-          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :vm_error)
-          judge(z_value: 3.0, lorenz_state_z: 3.0, bio_status: :stress, time_unsynced_fallback: true)
-
-          expect(tree_with_family.reload.lorenz_band_pending).to eq(issued)
-        end
-
-        # 🔴 Квантизація: родинне 40.004 їде на дріт як 4000, і пристрій судить 40.0.
-        # Z = 40.002 при temp 0 — аномалія для нього й гомеостаз для бажаних 40.004;
-        # кандидат із недоквантованою межею не пасував би ніде, і чесний пакет став
-        # би фродом.
-        it "судить видану смугу так, як її поділив пристрій (x100 / 100.0)" do
-          tree_with_family.tree_family.update!(critical_z_max: 40.004)
-          tree_with_family.update_columns(lorenz_band_pending: OtaPackagerService.threshold_config_body(tree_with_family))
-
-          judge(z_value: 40.002, lorenz_state_z: 40.002, bio_status: :anomaly)
-
-          expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
-          expect(tree_with_family.reload.lorenz_band_held).to eq([ [ 500, 4000 ] ])
-        end
       end
 
       # 🔴 [FW.8] Членство судить СИРИЙ z: ним класифікує прошивка
@@ -1167,14 +1067,14 @@ end
           t
         end
         let(:service) { described_class.new("", nil) }
-        let(:bands) { [ Tree::DEVICE_DEFAULT_LORENZ_BAND ] }
+        let(:band) { Tree::DEVICE_DEFAULT_LORENZ_BAND }
 
         it "returns false when tree has no hardware_key" do
           bare_tree = create(:tree, did: format("SNET-%08X", "0000AC21".to_i(16)), cluster: cluster)
           bare_tree.create_device_calibration! if bare_tree.device_calibration.nil?
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          expect(service.send(:try_time_sync_recovery, bare_tree, attributes, bands, true)).to be(false)
+          expect(service.send(:try_time_sync_recovery, bare_tree, attributes, band, true)).to be(false)
           expect(attributes[:time_unsynced_fallback]).to be_nil
         end
 
@@ -1183,7 +1083,7 @@ end
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, band, true)
           expect(SilkenNet::SeedDerivation).to have_received(:initial_state).exactly(3).times
         end
 
@@ -1196,7 +1096,7 @@ end
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.5 ])
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, band, true)
 
           expect(captured).to include(described_class::FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
         end
@@ -1219,7 +1119,7 @@ end
           end
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, band, true)
 
           expect(call_count).to eq(1)
         end

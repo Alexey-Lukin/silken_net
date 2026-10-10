@@ -7,8 +7,6 @@ en:
       bark_thickness: Bark Thickness (mm)
       co2_coefficient: CO₂ Sequestration Coefficient
       co2_placeholder: '1.0'
-      critical_z_max: Critical Z Max
-      critical_z_min: Critical Z Min
       scientific_name: Scientific Name (Latin)
       scientific_placeholder: e.g. Quercus robur
       species_identity: Species Identity
@@ -19,7 +17,6 @@ en:
       audit_aria: Audit %{name} species
       columns:
         command: Command
-        family_z_band: Species Z Band
         population: Population
         species_name: Species Name
       define_aria: Define new tree species
@@ -27,7 +24,6 @@ en:
       edit: EDIT
       edit_aria: Edit %{name} species
       kicker: Biological Matrix
-      range_value: "%{min} - %{max}"
       soldiers_count:
         one: "%{count} Soldier"
         other: "%{count} Soldiers"

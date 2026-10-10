@@ -93,32 +93,32 @@ RSpec.describe SilkenNet::Attractor do
   end
 
   describe ".homeostatic? [E.64 ρ-relative anomaly ceiling]" do
-    let(:family) { build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0) }
+    let(:band) { { min: 5.0, max: 45.0 } }
 
     it "returns true when z within bounds (temp=0 → ρ=28 → ceiling=45)" do
-      expect(described_class.homeostatic?(25.0, family, 0.0)).to be true
+      expect(described_class.homeostatic?(25.0, band, 0.0)).to be true
     end
 
-    it "returns false below critical_z_min (absolute stress floor)" do
-      expect(described_class.homeostatic?(3.0, family, 0.0)).to be false
+    it "returns false below the band min (absolute stress floor)" do
+      expect(described_class.homeostatic?(3.0, band, 0.0)).to be false
     end
 
     it "returns false above the ρ-relative anomaly ceiling (temp=0 → 45)" do
-      expect(described_class.homeostatic?(50.0, family, 0.0)).to be false
+      expect(described_class.homeostatic?(50.0, band, 0.0)).to be false
     end
 
     it "returns true at boundary values (inclusive, temp=0)" do
-      expect(described_class.homeostatic?(5.0, family, 0.0)).to be true
-      expect(described_class.homeostatic?(45.0, family, 0.0)).to be true
+      expect(described_class.homeostatic?(5.0, band, 0.0)).to be true
+      expect(described_class.homeostatic?(45.0, band, 0.0)).to be true
     end
 
     it "[E.64] warm temp raises the ceiling — z=50 anomaly@temp=0, homeostatic@temp=60" do
       # temp=60 → ρ=40 → ceiling = 40 + (45-28) = 57; z=50 < 57 → homeostatic (not a warm-day false anomaly)
-      expect(described_class.homeostatic?(50.0, family, 0.0)).to be false
-      expect(described_class.homeostatic?(50.0, family, 60.0)).to be true
+      expect(described_class.homeostatic?(50.0, band, 0.0)).to be false
+      expect(described_class.homeostatic?(50.0, band, 60.0)).to be true
     end
 
-    it "[E.64] anomaly_ceiling preserves critical_z_max at ρ=BASE_RHO (temp=0)" do
+    it "[E.64] anomaly_ceiling preserves the band max at ρ=BASE_RHO (temp=0)" do
       expect(described_class.anomaly_ceiling(0.0, 45.0)).to be_within(1e-9).of(45.0)
     end
   end
@@ -233,12 +233,8 @@ RSpec.describe SilkenNet::Attractor do
     # [E.64] ПОВНИЙ байт — status ⊕ growth_points разом. Класифікацію прошивка робить
     # із СИРОГО z (`calculate_z_axis` → `[z, x, y, z]`, без round), тож дзеркало
     # годується `[3]`, а не `[0]`.
-    def mirrored_status_byte(be_z, temp, delta_t, fw_family)
-      SilkenNet::Attractor.pack_status_byte(
-        be_z, temp, delta_t,
-        critical_z_min: fw_family.critical_z_min,
-        critical_z_max: fw_family.critical_z_max
-      )
+    def mirrored_status_byte(be_z, temp, delta_t, fw_band)
+      SilkenNet::Attractor.pack_status_byte(be_z, temp, delta_t, critical_z_min: fw_band[:min], critical_z_max: fw_band[:max])
     end
 
     # ⛔ ОГОЛОШЕНА СТЕЛЯ [ARCH.8, 2026-09-09; переміряно 2026-09-20]: межа
@@ -257,14 +253,14 @@ RSpec.describe SilkenNet::Attractor do
     # просто не випало, а точка 7884 (> порогу) недосяжна ЗА ПОБУДОВОЮ — не плутати
     # «не випало» з «неможливе».
     it "matches the backend Z + bio_status on a 200-case fuzz sweep (real contract, not a mirror)" do
-      fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
+      fw_band = Tree::DEVICE_DEFAULT_LORENZ_BAND
       rng = Random.new(20_260_502)
       cases = Array.new(200) do
         [ rng.rand(-1.0..1.0), rng.rand(-1.0..1.0), rng.rand(-1.0..1.0),
           rng.rand(-40.0..60.0), rng.rand(0..255), rng.rand(0..described_class::DELTA_T_SLOW_S) ]
       end
 
-      expect_contract_parity(cases, run_firmware_contract(cases), fw_family)
+      expect_contract_parity(cases, run_firmware_contract(cases), fw_band)
     end
 
     # 🔴 [ARCH.8] Саторований режим (`m = 0`, `delta_t > DELTA_T_SLOW_S`) — стеля фазза
@@ -277,28 +273,29 @@ RSpec.describe SilkenNet::Attractor do
     # значенням, а не лише збіг двох сторін. Окремий нижній клемп `m` він не чує — це
     # еквівалентний мутант (підлогу однаково ставить `gp.clamp`), виміряно 2026-09-27.
     it "matches the real contract byte-for-byte in the saturated regime and lands on the GP floor" do
-      fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
+      fw_band = Tree::DEVICE_DEFAULT_LORENZ_BAND
       slow = described_class::DELTA_T_SLOW_S
       states = [ [ 0.1, -0.2, 0.3, 18.0, 3 ], [ -0.5, 0.4, -0.1, -5.0, 0 ], [ 0.9, 0.9, -0.9, 35.0, 200 ] ]
       cases = [ slow, slow + 1, 7884, 2 * slow ].product(states).map { |dt, (x, y, z, temp, ac)| [ x, y, z, temp, ac, dt ] }
 
       fw = run_firmware_contract(cases)
-      expect_contract_parity(cases, fw, fw_family)
+      expect_contract_parity(cases, fw, fw_band)
 
       homeostasis_gp = fw.filter_map { |payload, _| payload & 0x1F if (payload >> 5).nobits?(0x03) }
       expect(homeostasis_gp).not_to be_empty
       expect(homeostasis_gp).to all(eq(described_class::GP_HOMEO_MIN))
     end
 
-    # [FW.8] Смуга, ЧИННА на пристрої, доходить до вердикту: справжній контракт отримує
-    # z_min/z_max і мусить судити ТІЄЮ Ж per-species смугою, що й дзеркало. Кейси — лише
-    # ті, де родина (5.0/40.0) і дефолти (2.0/45.0) дають РІЗНИЙ статус: на решті обидві
-    # сторони збіглися б і без споживання, тобто приклад був би вакуумним. Той самий
-    # набір без смуги мусить зійтися з дефолтами — так пін судить СПОЖИВАННЯ, а не лише
-    # паритет. ⚠️ C-дзеркало `test_bio_contract.c` цього не бачить за побудовою (гоча #19).
-    it "classifies with the per-species band it is handed (FW.8 consumer), not the baked defaults" do
-      family = Struct.new(:critical_z_min, :critical_z_max).new(5.0, 40.0)
-      defaults = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
+    # 9-аргументний ABI контракту (`03_04` — ABI-підлога): смуга приходить АРГУМЕНТАМИ, і
+    # контракт мусить судити саме нею, хоч C-міст ECB-збірки й передає лише заводські
+    # константи [FW.66]. Кейси — лише ті, де вужча смуга (5.0/40.0) і заводська (2.0/45.0)
+    # дають РІЗНИЙ статус: на решті обидві сторони збіглися б і без споживання, тобто
+    # приклад був би вакуумним. Той самий набір без смуги мусить зійтися з заводською —
+    # так пін судить СПОЖИВАННЯ, а не лише паритет. ⚠️ C-дзеркало `test_bio_contract.c`
+    # цього не бачить за побудовою (гоча #19).
+    it "classifies with the band it is handed (9-argument ABI), not the baked defaults" do
+      family = { min: 5.0, max: 40.0 }
+      defaults = Tree::DEVICE_DEFAULT_LORENZ_BAND
       rng = Random.new(20_260_927)
       pool = Array.new(3000) do
         [ rng.rand(-1.0..1.0), rng.rand(-1.0..1.0), rng.rand(-1.0..1.0),
@@ -311,12 +308,12 @@ RSpec.describe SilkenNet::Attractor do
       picked = pool.select { |c| status.(c, family) != status.(c, defaults) }
       expect(picked.map { |c| status.(c, family) }.uniq).to contain_exactly(1, 2)
 
-      banded = picked.map { |c| c + [ family.critical_z_min, family.critical_z_max ] }
+      banded = picked.map { |c| c + [ family[:min], family[:max] ] }
       expect_contract_parity(banded, run_firmware_contract(banded), family)
       expect_contract_parity(picked, run_firmware_contract(picked), defaults)
     end
 
-    def expect_contract_parity(cases, fw, fw_family)
+    def expect_contract_parity(cases, fw, fw_band)
       z_div = []
       status_div = []
       byte_div = []
@@ -332,14 +329,14 @@ RSpec.describe SilkenNet::Attractor do
         fw_status = (fw_payload >> 5) & 0x03
         agree =
           case fw_status
-          when 0 then described_class.homeostatic?(be_z, fw_family, temp)
-          when 1 then be_z < fw_family.critical_z_min                                        # stress
-          when 2 then be_z > described_class.anomaly_ceiling(temp, fw_family.critical_z_max) # anomaly
+          when 0 then described_class.homeostatic?(be_z, fw_band, temp)
+          when 1 then be_z < fw_band[:min]                                        # stress
+          when 2 then be_z > described_class.anomaly_ceiling(temp, fw_band[:max]) # anomaly
           else true # tamper/VM-error not produced by evaluate_and_pack
           end
         status_div << [ i, fw_status, be_z.round(4), temp.round(1) ] unless agree
 
-        be_payload = mirrored_status_byte(be_z, temp, dt, fw_family)
+        be_payload = mirrored_status_byte(be_z, temp, dt, fw_band)
         byte_div << [ i, fw_payload, be_payload, be_z.round(4), temp.round(1), dt ] unless be_payload == fw_payload
       end
 

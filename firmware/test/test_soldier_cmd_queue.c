@@ -91,7 +91,10 @@ TEST(test_shoots_only_for_its_did) {
     ASSERT_TRUE(Soldier_Cmd_Queue_Find_For(&q, CCM_KAT_DOWNLINK[1].did) >= 0);
 }
 
-/* Королева віддає рівно той кадр, що приніс Rails: без шифрування й паддингу. */
+/* Королева віддає рівно той кадр, що приніс Rails: без шифрування й паддингу.
+ * ⚠️ Поки живий опкод один (0x9E, 17 Б = DL_CCM_FRAME_MAX), довжина слота дорівнює
+ * стелі буфера, тож мутант «повернути DL_CCM_FRAME_MAX замість len[слот]» тут
+ * еквівалентний; зуби довжина дістане знову з першим опкодом іншої довжини. */
 TEST(test_take_passes_frame_byte_for_byte) {
     SoldierCmdQueue q;
     Soldier_Cmd_Queue_Init(&q);

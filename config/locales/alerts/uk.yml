@@ -51,7 +51,6 @@ uk:
       insurance_reserve_hold_aggregate_cap: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: добова внутрішня емісія %{window_sum} %{token_type} перевищує стелю %{cap}. Виплату зупинено — звір експозицію перед ручним resolve.'
       insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: резерв не вдалося оцінити, тож гейт спрацював fail-closed. Error: %{error}'
       insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: 30-денна внутрішня емісія %{outstanding} перевищує резерв %{reserve} × %{ratio}. Виплату зупинено — поповни DAO_TREASURY перед ручним resolve.'
-      lorenz_band_not_applied: "📡 Вузол %{did} не показує виданої смуги Лоренца (видано %{issued_at}): пакетів зі старою смугою після вікна доставки — %{stale_packets}. Кадр не доставлено або не застосовано; DCI приймає статус будь-якої з виданих смуг, тож фроду тут немає. Причина — у доставці (OTA-кампанія займає poll, черга Королеви витісняє кадри) або на вузлі (прошивка без парсера смуги, журнал Flash-KV не змонтовано, лічильник команд вузла попереду нашого). Спершу перевірити доставку, тоді — вузол на місці."
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} намінтовано за %{window}, що перевищує стелю (%{ceiling}). Можливий баг прошивки/пайплайну або зловжитий MINTER-ключ. Звір останні mint-tx перед підняттям стелі.'
       non_fire_peril: 'Перил алерту #%{alert_id} не адьюдикує fire-супутник (FIRMS бачить лише пожежу) — ані підтвердити, ані спростувати. Виплата й вирок заморожені до фізичного огляду: потрібен виїзд.'
       obscured_critical_fire: "🔥 Критичний fire-алерт #%{alert_id} затемнений хмарою/кронопокривом — супутник не підтвердить і не спростує. Потрібен НЕГАЙНИЙ фізичний огляд: чекати 48 год на орбіту тут неприйнятно (life-safety)."
@@ -73,7 +72,6 @@ uk:
       tree_silent: "🌳 Вузол %{did} мовчить ~%{silent_for_h} год (останній ефір %{last_seen_at}, поріг %{threshold_h} год). Мовчазне здоров’я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
     resolutions:
       gateway_returned: Королева %{uid} повернулась в ефір (%{seen_at}).
-      lorenz_band_applied: Вузол %{did} застосував видану смугу — це довів статус пакета в зоні, де смуги розходяться.
       maintenance_restored: 'Відновлено обслуговуванням (запис #%{record_id}).'
       mint_volume_detector_disabled: Детектор mint-volume вимкнено (`mint_volume_hourly_max_scc` = 0) — алерт закрито як безпредметний, а не як усунутий.
       mint_volume_recovered: Обсяг мінтингу %{token_type} повернувся під стелю (%{volume} <= %{max} SCC).

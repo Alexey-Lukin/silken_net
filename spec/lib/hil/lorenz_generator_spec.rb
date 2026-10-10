@@ -93,17 +93,12 @@ RSpec.describe Hil::LorenzGenerator do
         .to raise_error(ArgumentError, /only supports :homeostasis/)
     end
 
-    context "with a custom TreeFamily" do
+    context "with a custom band" do
       subject(:generator) do
-        described_class.new(tree_family: tree_family, seed_hex: seed_hex, rng: Random.new(3))
+        described_class.new(band: { min: 10.0, max: 35.0 }, seed_hex: seed_hex, rng: Random.new(3))
       end
 
-      let(:tree_family) do
-        build(:tree_family, critical_z_min: 10.0, critical_z_max: 35.0)
-      end
-
-
-      it "respects the family-specific z thresholds" do
+      it "respects the band it is given" do
         sample = generator.sample_in_state(state: :homeostasis)
         expect(sample[:z_value]).to be_between(10.0, 35.0).inclusive
       end
@@ -111,8 +106,7 @@ RSpec.describe Hil::LorenzGenerator do
 
     it "raises RuntimeError when max_attempts is exhausted without landing in band" do
       # Force an impossible band so rejection sampling can never succeed.
-      family = build(:tree_family, critical_z_min: 9_999.0, critical_z_max: 10_000.0)
-      gen = described_class.new(tree_family: family, seed_hex: seed_hex, rng: Random.new(13))
+      gen = described_class.new(band: { min: 9_999.0, max: 10_000.0 }, seed_hex: seed_hex, rng: Random.new(13))
       expect { gen.sample_in_state(state: :homeostasis, max_attempts: 3) }
         .to raise_error(RuntimeError, /could not land in homeostasis band/)
     end

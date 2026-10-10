@@ -10,17 +10,16 @@ RSpec.describe Settings::Show do
   # вигадки. Адреса доти мала 12 символів при `ETH_ADDRESS_FORMAT` на 42 —
   # значення, недосяжне для будь-якого записаного рядка, і саме через його
   # довжину скорочення у сховищі особистості не спрацьовувало НІКОЛИ.
-  # Пороги — `numeric`, тож їх форму тепер видно з сюїти.
+  # Чутливість — `numeric`, тож її форму тепер видно з сюїти.
   def build_org(name: "Forest Org", billing_email: "billing@org.org",
                 crypto_public_address: "0x1234567890abcdef1234567890abcdef12345678",
-                alert_threshold_critical_z: 2.5, ai_sensitivity: 0.7,
+                ai_sensitivity: 0.7,
                 id: 1, created_at: 2.years.ago, updated_at: 1.hour.ago,
                 logo_attached: false, error_messages: [])
     org = Organization.new(
       name: name,
       billing_email: billing_email,
       crypto_public_address: crypto_public_address,
-      alert_threshold_critical_z: alert_threshold_critical_z,
       ai_sensitivity: ai_sensitivity,
       id: id,
       created_at: created_at,
@@ -149,20 +148,14 @@ RSpec.describe Settings::Show do
     end
   end
 
-  describe "alert threshold and AI sensitivity fields" do
-    it "renders alert_threshold_critical_z field" do
-      expect(html).to include('name="organization[alert_threshold_critical_z]"')
-    end
-
+  describe "AI sensitivity field" do
     it "renders ai_sensitivity field" do
       expect(html).to include('name="organization[ai_sensitivity]"')
     end
 
-    # Обидві колонки `numeric`, тобто модель віддає BigDecimal — доти сюїта
-    # пінила лише ІМЕНА полів, тож питання «що оператор бачить у полі порогу»
-    # з неї неможливо було поставити.
-    it "pre-fills both thresholds with the value the operator will see" do
-      expect(html).to include('value="2.5"')
+    # Колонка `numeric`, тобто модель віддає BigDecimal — доти сюїта пінила лише
+    # ІМʼЯ поля, тож питання «що оператор бачить у полі» з неї неможливо було поставити.
+    it "pre-fills the AI sensitivity with the value the operator will see" do
       expect(html).to include('value="0.7"')
     end
   end

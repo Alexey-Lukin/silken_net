@@ -20,7 +20,6 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       body = response.parsed_body
       expect(body["organization"]["name"]).to eq(organization.name)
       expect(body["organization"]["billing_email"]).to eq(organization.billing_email)
-      expect(body["organization"]).to have_key("alert_threshold_critical_z")
       expect(body["organization"]).to have_key("ai_sensitivity")
       expect(body["organization"]).to have_key("logo_url")
     end
@@ -131,16 +130,14 @@ RSpec.describe Api::V1::SettingsController, type: :request do
         .to be > response.body.index('id="flash_polite"')
     end
 
-    it "updates alert threshold and AI sensitivity" do
+    it "updates AI sensitivity" do
       patch "/settings",
             headers: admin_headers,
-            params: { organization: { alert_threshold_critical_z: "3.0", ai_sensitivity: "0.85" } },
+            params: { organization: { ai_sensitivity: "0.85" } },
             as: :json
 
       expect(response).to have_http_status(:ok)
-      organization.reload
-      expect(organization.alert_threshold_critical_z).to eq(3.0)
-      expect(organization.ai_sensitivity).to eq(0.85)
+      expect(organization.reload.ai_sensitivity).to eq(0.85)
     end
 
     it "returns 403 for non-admin users" do

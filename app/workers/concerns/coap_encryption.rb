@@ -31,7 +31,7 @@ module CoapEncryption
 
   AES_BLOCK_SIZE = 16
 
-  # [FW.20] CMD_TIME_SYNC marker (per docs/05_02 §4а.1).
+  # [FW.20] CMD_TIME_SYNC marker (opcode map — docs/03_01 §4.5а).
   # Inserted at the start of every downlink plaintext so Queen can synchronise
   # RTC from server-authoritative UTC before routing the inner payload.
   CMD_TIME_SYNC = 0x9C

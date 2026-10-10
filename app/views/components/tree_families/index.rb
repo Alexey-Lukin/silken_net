@@ -23,14 +23,6 @@ module TreeFamilies
             thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.species_name") }
-                # ⛔ [E.64 ⚖️ 2026-09-05] Заголовок був «Безпечний діапазон», і це
-                # твердження, а не назва: після зняття Z-похідних вердиктів родинна
-                # смуга `critical_z_min..max` сама НЕ судить нічого — ні алерту, ні
-                # мінту, а DCI бере `Tree#device_lorenz_bands`, куди вона входить
-                # лише ВИДАНОЮ вузлу (FW.8, ENV-гейт). Напис
-                # стверджував, що поза нею НЕБЕЗПЕЧНО, тобто ніс знятий вердикт у
-                # єдиному місці, де його ще читала людина. Ім'я тепер ОПИСОВЕ.
-                th(scope: "col", class: "p-4") { t(".columns.family_z_band") }
                 th(scope: "col", class: "p-4") { t(".columns.population") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
               end
@@ -75,7 +67,6 @@ module TreeFamilies
             span(class: "text-mini italic text-gaia-text-muted") { family.scientific_name }
           end
         end
-        td(class: "p-4 text-gaia-text-muted") { t(".range_value", min: family.critical_z_min, max: family.critical_z_max) }
         td(class: "p-4 text-gaia-text-subtle") { t(".soldiers_count", count: family.trees_count) }
         td(class: "p-4 text-right space-x-4") do
           a(href: tree_family_path(family), class: "text-gaia-text-muted hover:text-gaia-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong", aria_label: t(".audit_aria", name: family.name)) { t(".audit") }

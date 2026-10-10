@@ -110,8 +110,6 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         tree_family: {
           name: "Silver Birch",
           scientific_name: "Betula pendula",
-          critical_z_min: 6.0,
-          critical_z_max: 42.0,
           carbon_sequestration_coefficient: 1.2
         }
       }
@@ -121,8 +119,6 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       {
         tree_family: {
           name: "",
-          critical_z_min: nil,
-          critical_z_max: nil,
           carbon_sequestration_coefficient: nil
         }
       }

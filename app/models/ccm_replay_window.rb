@@ -55,8 +55,8 @@ class CcmReplayWindow < ApplicationRecord
       connection.select_value(sql) == 1
     end
 
-    # Нелокуюче читання — пре-фільтр ДО побічних ефектів кадру (DCI, CMD_TIME_SYNC,
-    # докази смуги FW.8): очевидний повтор далі не йде. Рішення ухвалює лише `admit!`.
+    # Нелокуюче читання — пре-фільтр ДО побічних ефектів кадру (DCI, CMD_TIME_SYNC):
+    # очевидний повтор далі не йде. Рішення ухвалює лише `admit!`.
     # nil — кадр свіжий; :duplicate — уже прийнятий; :below_window — під вікном.
     def rejection(device_uid:, key_epoch:, frame_counter:)
       window = find_by(device_uid:, key_epoch:) or return nil

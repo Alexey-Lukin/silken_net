@@ -6,17 +6,15 @@ class TreeFamily < ApplicationRecord
   # Захист цілісності: не можна видалити геном, поки живий хоч один його носій
   has_many :trees, dependent: :restrict_with_error
 
+  # ⚖️ [FW.66, делеговано 2026-10-09 — врізка `03_04 §7.3`] Пару `critical_z_min/max`
+  # знято разом із видачею смуги FW.8: вердиктного читача вона не мала в жодній ері,
+  # тобто була порогом, яким не судить ніщо (клас `СЛОВО`, `05_05 §3.2`). Колонки
+  # лишаються в БД до другого кроку — `remove_column` окремим комітом ПІСЛЯ деплою
+  # цього (`db:prepare` у entrypoint мігрує під живим старим контейнером).
+  self.ignored_columns += %w[critical_z_min critical_z_max]
+
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
-  # [FW.8 · ⚖️ 2026-09-29] Смуга родини — лише ЗВУЖЕННЯ заводської (2.0/45.0):
-  # ширша рідше давала б «аномалію», тобто більше балів, і DCI цього не бачить,
-  # бо пристрій справді рахує нею. Виду, якому потрібна ширша, міняють дефолт
-  # прошивки — присудом, не правкою довідника.
-  # ⚠️ Межі — лямбдами, не константами в тілі класу: `Tree` вантажить цей клас
-  # зсередини ВЛАСНОГО тіла (`belongs_to … counter_cache`) ще до своїх
-  # `GLOBAL_LORENZ_Z_*`, тож пряме посилання давало NameError на eager-load.
-  validates :critical_z_min, presence: true,
-            numericality: { greater_than_or_equal_to: ->(_) { Tree::GLOBAL_LORENZ_Z_MIN } }
 
   # [Series D: Глобальний Аудит]: Латинська назва для міжнародних контрактів та страхування
   validates :scientific_name, uniqueness: true, allow_nil: true
@@ -29,36 +27,22 @@ class TreeFamily < ApplicationRecord
   validates :carbon_sequestration_coefficient,
             numericality: { greater_than: 0 }
 
-  # [ВИПРАВЛЕНО: Захист законів фізики]:
-  # Гарантуємо, що межі Атрактора не перехрещуються
-  validates :critical_z_max,
-            presence: true,
-            numericality: { less_than_or_equal_to: ->(_) { Tree::GLOBAL_LORENZ_Z_MAX } },
-            comparison: { greater_than: :critical_z_min }
-
   # --- JSONB PROPERTIES (The TinyML Support) ---
   # Гнучкі властивості для специфічного аналізу кожної породи
   # [ARCH.102 ⚖️ 08-20] `sap_flow_index` ЗНЯТО: єдиний алгоритмічний споживач
   # (pest-множник) демонтовано 08-16 разом із вердиктами, і поле лишалось
   # фікцією без одиниць та літературного якоря, яку адмін мусив вигадувати.
-  # Історичні значення в jsonb нешкідливі; повернеться разом із реальним
-  # вимірювачем, якщо буде треба.
+  # [FW.66] `optimal_z_target` знято тим самим кроком, що й пару `critical_z_*`:
+  # його читала лише видача смуги FW.8. Історичні ключі в jsonb нешкідливі.
   store_accessor :biological_properties,
                  :bark_thickness,
                  :foliage_density,
-                 :fire_resistance_rating,
-                 :optimal_z_target
+                 :fire_resistance_rating
 
   # [ВИПРАВЛЕНО: Типізація JSONB-полів]:
   # Виганяємо "Data Type Phantom" — гарантуємо, що параметри для TinyML є числами
   validates :bark_thickness, :foliage_density, :fire_resistance_rating,
             numericality: true,
-            allow_nil: true
-
-  # [FW.8] Per-species OPTIMAL_Z_TARGET (Lorenz attractor sweet spot for max CO2 sequestration).
-  # Default 29.0 mirrors firmware/bio_contracts/bio_contract.rb BioContract::OPTIMAL_Z_TARGET.
-  validates :optimal_z_target,
-            numericality: { greater_than: :critical_z_min, less_than: :critical_z_max },
             allow_nil: true
 
   # --- КОЛБЕКИ ---
@@ -87,14 +71,6 @@ class TreeFamily < ApplicationRecord
 
   # --- МЕТОДИ (The Lens of Truth) ---
 
-  # [FW.8] Effective OPTIMAL_Z_TARGET — per-species value or global default 29.0.
-  # Mirrored on firmware as BioContract::OPTIMAL_Z_TARGET.
-  # Дім порогів Лоренца для споживачів — `Tree#effective_lorenz_thresholds`
-  # (він накладає ще й cluster-overrides); тут лише per-species значення.
-  def effective_optimal_z_target
-    optimal_z_target.present? ? optimal_z_target.to_f : 29.0
-  end
-
   # [Series D]: Назва для відображення в UI та міжнародних контрактах
   # Формат: "Quercus robur (Дуб звичайний)" або просто "Дуб звичайний"
   def display_name
@@ -110,38 +86,6 @@ class TreeFamily < ApplicationRecord
   # тому коефіцієнт використовується у Wallet#credit! для справедливого розподілу.
   def weighted_growth_points(raw_points)
     (raw_points * carbon_sequestration_coefficient).round(2)
-  end
-
-  # Перевірка гомеостазу: чи вписується Z-значення в межі стабільності даної породи.
-  #
-  # ⚠️ [OPS.33] АСИМЕТРІЯ, названа явно, бо імʼя її не видає: цей предикат судить
-  # ВИКЛЮЧНО за родинною парою `critical_z_min/max` і НЕ бачить кластерних
-  # per-species override-ів. Ланцюг «кластер → родина → глобальний дефолт» дає
-  # `Tree#effective_lorenz_thresholds`; викликачів у `app/`/`lib/` цей метод не
-  # має ЖОДНОГО. ⛔ Не тягни його в продовий шлях «бо назва пасує»: так
-  # governance-шар знімається мовчки. Легітимний ужиток — твердження про саму
-  # породу (спеки насіння й родинних меж), де кластера в питанні немає.
-  #
-  # 🔴 [FW.8] ⛔ Не приписувати цей ланцюг категоричному DCI: той судить за
-  # `Tree#device_lorenz_bands` (смуги, які може тримати ПРИСТРІЙ), бо порівнювати
-  # треба два обчислення, а не дві конфігурації (`03_04 §5.3`).
-  # ⛔ [E.64 ⚖️ 2026-09-05] Родинна смуга більше НЕ судить продових вердиктів:
-  # біо-гілку `AlertDispatchService` → `Attractor.homeostatic?` → `severe_drought`
-  # знято як Z-похідне твердження про здоровʼя (`05_05 §8.1` — Z є DCI-only).
-  # `homeostatic?` лишається живим в одній ролі — ДЗЕРКАЛО firmware-класифікації
-  # у спеці DCI-парності, де його годують ЗАШИТИМИ константами, не родиною.
-  # ⛔ І саме тому його НЕ МОЖНА зносити «як мертвий продовий код» (пропозицію
-  # виміряно й відхилено 2026-09-05): `attractor_spec` порівнює status-біти
-  # СПРАВЖНЬОЇ прошивки з класифікацією бекенду й робить це навмисно через цей
-  # предикат — «no hand-copied kernel logic». Знявши його, спека мусила б
-  # переписати класифікацію від руки, тобто звіряла б прошивку з ВЛАСНОЮ копією
-  # прошивки: парність стала б тавтологією, зеленою на будь-якому розходженні.
-  # 🔴 Продових викликачів нуль, і це не ознака смерті — це ознака, що роль
-  # ЛИШЕ спекова; вимірюй множину ЦІЛКОМ (`grep -c`, не `| head`), інакше
-  # обрізаний вивід сам призначить код мертвим.
-  def healthy_z?(z_value)
-    # Завдяки валідації comparison, цей метод тепер завжди працює коректно
-    z_value.to_f.between?(critical_z_min, critical_z_max)
   end
 
   private

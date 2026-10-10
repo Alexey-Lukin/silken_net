@@ -48,21 +48,20 @@ static DlCcmResult Open_Vector_Frame(const CcmDownlinkKatVector *v, const uint8_
 static int test_frame_lengths_by_opcode(void)
 {
     ASSERT_EQ(Dl_Ccm_Frame_Len(DL_CCM_OP_ROTATE_KEY), 17);
-    ASSERT_EQ(Dl_Ccm_Frame_Len(DL_CCM_OP_THRESHOLDS), 23);
     /* Кластерні кадри (маяк, OTA, печатка) командами не є — лишаються ECB. */
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x99), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x9B), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x9C), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Len(0x9D), 0); /* RETIRED з HW.30 */
+    ASSERT_EQ(Dl_Ccm_Frame_Len(0x9A), 0); /* RETIRED з FW.66 */
     /* 16 Б не збігається з жодною командною довжиною: розрізнення з ECB
      * за довжиною не має перетину. */
     uint8_t f[DL_CCM_FRAME_MAX] = { DL_CCM_OP_ROTATE_KEY };
     ASSERT_EQ(Dl_Ccm_Frame_Well_Formed(f, 16), 0);
     ASSERT_EQ(Dl_Ccm_Frame_Well_Formed(f, 17), 1);
     ASSERT_EQ(Dl_Ccm_Frame_Well_Formed(f, 18), 0);
-    f[0] = DL_CCM_OP_THRESHOLDS;
+    f[0] = 0x9Au; /* знятий опкод не стає командою жодної довжини */
     ASSERT_EQ(Dl_Ccm_Frame_Well_Formed(f, 17), 0);
-    ASSERT_EQ(Dl_Ccm_Frame_Well_Formed(f, 23), 1);
     printf("  test_frame_lengths_by_opcode                               ✅\n");
     return 0;
 }
@@ -161,7 +160,7 @@ static int test_every_region_is_authenticated(void)
     uint8_t  body[DL_CCM_BODY_MAX];
     uint32_t dlfc = 0;
     /* DLFC_lsb (AAD), кожен байт шифротексту й MIC. DID-біт — чужий кадр
-     * (попередній тест), опкод-біт — інша довжина (MALFORMED нижче). */
+     * (попередній тест), опкод-біт — не командний опкод (MALFORMED нижче). */
     for (uint8_t pos = DL_CCM_DLFC_OFFSET; pos < len; pos++) {
         uint8_t frame[DL_CCM_FRAME_MAX];
         memcpy(frame, v->frame, len);
@@ -174,7 +173,7 @@ static int test_every_region_is_authenticated(void)
     }
     uint8_t frame[DL_CCM_FRAME_MAX];
     memcpy(frame, v->frame, len);
-    frame[0] = DL_CCM_OP_ROTATE_KEY; /* 0x9A→0x9E: довжина вже не та */
+    frame[0] = 0x9Au; /* 0x9E→знятий 0x9A: команди такої довжини немає */
     uint32_t key_w[4];
     memcpy(key_w, v->key, 16);
     ASSERT_EQ(Dl_Ccm_Open(&hcryp, key_w, frame, len, v->did, 0u, body, &dlfc), DL_CCM_MALFORMED);

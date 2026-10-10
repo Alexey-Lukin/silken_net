@@ -6,7 +6,6 @@ en:
         heading: Configuration
       fields:
         ai_sensitivity: AI Sensitivity (0.0 — 1.0)
-        alert_threshold: Alert Threshold (Critical Z)
         billing_email: Billing Email
         crypto_address: Crypto Public Address
         current_logo: 'Current: %{filename}'

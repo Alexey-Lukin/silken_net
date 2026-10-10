@@ -42,23 +42,4 @@ RSpec.describe Downlink::CommandFrame, type: :service do
       expect { described_class.rotate_key(in_grace) }.to raise_error(ArgumentError, /DLFC ротації не видано/)
     end
   end
-
-  describe ".thresholds" do
-    let(:settled) { key_record(device_uid: "SNET-01020304", current_hex: "00" * 16) }
-    # DL2: зона 2.00 / 45.00 / 29.00, вид без відображення (0xFF), версія 1. Тіло —
-    # те, що записала видача (Downlink::ThresholdBand), а не живий governance.
-    let(:body) { [ 200, 4500, 2900, 0xFF, 1 ].pack("s<s<s<CC") }
-
-    it "seals the recorded body into the firmware-pinned DL2 frame" do
-      frame = described_class.thresholds(settled, body: body, dlfc: 0xFFFF)
-      expect(frame.unpack1("H*")).to eq("9a01020304ffffeeeb30e4fb70658c58427d5c5f0c3c06")
-    end
-
-    it "waits while a rotation is unconfirmed — only 0x9E rides a grace" do
-      settled.previous_aes_key_hex = "CD" * 16
-      expect {
-        described_class.thresholds(settled, body: body, dlfc: 0xFFFF)
-      }.to raise_error(described_class::GraceOpenError)
-    end
-  end
 end

@@ -8,7 +8,6 @@ en:
   attributes:
     action_type: Action type
     ai_sensitivity: AI sensitivity
-    alert_threshold_critical_z: Alert threshold (Critical Z)
     bark_thickness: Bark thickness
     billing_email: Billing email
     biomass_yield_kg: Biomass extracted (kg)
@@ -16,8 +15,6 @@ en:
     carbon_sequestration_coefficient: CO₂ sequestration coefficient
     cluster: Cluster
     config_sleep_interval_s: Sleep interval (s)
-    critical_z_max: Critical Z max
-    critical_z_min: Critical Z min
     crypto_public_address: Crypto public address
     data_region: Data region
     did: DID
@@ -34,7 +31,6 @@ en:
     longitude: Longitude
     name: Name
     notes: Field notes
-    optimal_z_target: Optimal Z target
     parts_cost: Parts cost
     password: Password
     performed_at: Time performed

@@ -583,9 +583,9 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(json["errors"]).to be_present
       end
 
-      it "returns errors for out-of-range alert threshold" do
+      it "returns errors for out-of-range AI sensitivity" do
         patch "/settings",
-              params: { organization: { alert_threshold_critical_z: 999 } },
+              params: { organization: { ai_sensitivity: 999 } },
               headers: admin_headers
 
         expect(response).to have_http_status(:unprocessable_content)

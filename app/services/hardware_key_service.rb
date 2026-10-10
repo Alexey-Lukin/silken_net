@@ -287,7 +287,7 @@ class HardwareKeyService
     # grace кластера, а CMD-черга порожня (межа — `00_07` FW.17).
     # [FW.17 · 03_05 §2.5] DLFC кадру 0x9E видається тут, тією ж транзакцією, що
     # відкриває grace, і живе з ротацією: перевидача на кожному poll — той самий
-    # кадр. Під grace інших команд не видають (HardwareKey#issue_downlink_frame_counter!).
+    # кадр. 0x9E — єдина адресна команда: інших DLFC не видає ніхто.
     key_record.update!(
       previous_aes_key_hex: old_key, # "Подушка безпеки" до першого uplink'а на K_{v+1}
       aes_key_hex: new_hex_key,

@@ -11,7 +11,6 @@ RSpec.describe TreeFamilies::Show do
   # виводить маршрут.
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
                   carbon_sequestration_coefficient: 1.2,
-                  critical_z_min: 10.0, critical_z_max: 80.0,
                   bark_thickness: 12, foliage_density: 85,
                   fire_resistance_rating: 60)
     build_stubbed(:tree_family,
@@ -19,8 +18,6 @@ RSpec.describe TreeFamilies::Show do
                   name: name,
                   scientific_name: scientific_name,
                   carbon_sequestration_coefficient: carbon_sequestration_coefficient,
-                  critical_z_min: critical_z_min,
-                  critical_z_max: critical_z_max,
                   bark_thickness: bark_thickness,
                   foliage_density: foliage_density,
                   fire_resistance_rating: fire_resistance_rating)

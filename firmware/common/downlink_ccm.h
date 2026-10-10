@@ -10,7 +10,7 @@
  *   [body:N]                              ← CCM-шифротекст
  *   [MIC:8]
  *
- *   0x9E ротація ключа  N=2 → 17 Б · 0x9A пороги Лоренца N=8 → 23 Б.
+ *   0x9E ротація ключа  N=2 → 17 Б.
  *   16 Б лишається ECB-шляхом (маяк, OTA), тож довжина розводить два шляхи
  *   без жодного прапорця.
  *
@@ -43,7 +43,7 @@
 
 #include "lora_ccm.h"
 
-#define DL_CCM_OP_THRESHOLDS        0x9Au  /* FW.8  — пороги Лоренца   */
+/* 0x9A — RETIRED з FW.66 (смуга Лоренца FW.8, ролі Z розведено); ⛔ не перевикористовувати. */
 /* 0x9D — RETIRED з HW.30 (аудіо-пороги зрізаного пʼєзо); ⛔ не перевикористовувати. */
 #define DL_CCM_OP_ROTATE_KEY        0x9Eu  /* FW.17 — ротація ключа     */
 
@@ -54,16 +54,16 @@
 #define DL_CCM_MIC_LEN              FW2_CCM_MIC_LEN
 
 #define DL_CCM_BODY_ROTATE_KEY      2u     /* [target_version:u16le] */
-#define DL_CCM_BODY_THRESHOLDS      8u     /* [z_min][z_max][z_opt:s16le][species][ver] */
-#define DL_CCM_BODY_MAX             DL_CCM_BODY_THRESHOLDS
-#define DL_CCM_FRAME_MAX            (DL_CCM_AAD_LEN + DL_CCM_BODY_MAX + DL_CCM_MIC_LEN) /* 23 */
+/* Найбільше тіло ЖИВОГО опкоду: ним розмірені буфер Солдата й слот черги Королеви,
+ * тож новий опкод із довшим тілом піднімає цю межу тим самим кроком. */
+#define DL_CCM_BODY_MAX             DL_CCM_BODY_ROTATE_KEY
+#define DL_CCM_FRAME_MAX            (DL_CCM_AAD_LEN + DL_CCM_BODY_MAX + DL_CCM_MIC_LEN) /* 17 */
 
 /* Довжина тіла за опкодом; 0 = опкод не командний. */
 static inline uint8_t Dl_Ccm_Body_Len(uint8_t opcode)
 {
     switch (opcode) {
     case DL_CCM_OP_ROTATE_KEY: return (uint8_t)DL_CCM_BODY_ROTATE_KEY;
-    case DL_CCM_OP_THRESHOLDS: return (uint8_t)DL_CCM_BODY_THRESHOLDS;
     default:                   return 0u;
     }
 }
@@ -134,8 +134,7 @@ static inline void Build_DL_CCM_Nonce(uint32_t did, uint32_t dlfc,
 #define DL_CCM_KV_KEY_DLFC          0x12u
 
 /* ── Тіла команд — little-endian поля старого каркаса (OtaPackagerService) ──
- * Розпаковка й межі самого поля; зміст судить домен: ратчет —
- * Key_Ratchet_Steps, пороги Лоренца — Lorenz_Thresholds_From_Wire. */
+ * Розпаковка й межі самого поля; зміст судить домен: ратчет — Key_Ratchet_Steps. */
 
 /* 0x9E: [target_version:u16le]. */
 static inline uint16_t Dl_Cmd_Rotate_Target(const uint8_t body[DL_CCM_BODY_ROTATE_KEY])

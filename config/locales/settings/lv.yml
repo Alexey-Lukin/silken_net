@@ -6,7 +6,6 @@ lv:
         heading: Konfigurācija
       fields:
         ai_sensitivity: MI jutība (0.0 — 1.0)
-        alert_threshold: Brīdinājuma slieksnis (Kritiskais Z)
         billing_email: Norēķinu e-pasts
         crypto_address: Kriptogrāfijas publiskā adrese
         current_logo: 'Pašreizējais: %{filename}'

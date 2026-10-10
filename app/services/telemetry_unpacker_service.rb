@@ -866,7 +866,7 @@ class TelemetryUnpackerService < ApplicationService
   # same Float64 kernel. So the raw Z values are numerically comparable.
   # We catch two failure modes:
   #   1. Categorical mismatch — device claims `homeostasis` but server Z
-  #      is outside the species/cluster healthy band (or vice versa).
+  #      is outside the device's factory band (or vice versa).
   #      Meant to catch tampered firmware, but only on an intact warm chain — a
   #      lost/duplicated frame or a device cold start breaks it, and a forger who
   #      always claims homeostasis passes (`03_04 §7.3`, FW.66). Replay: see SEC.40.
@@ -878,19 +878,14 @@ class TelemetryUnpackerService < ApplicationService
   # the CCM frame (wire-rev2) carries device_z, so the numeric check has a real
   # input there — kept behind a metric that surfaces the magnitude even when it
   # is within tolerance.
-  # [FW.8 · ⚖️ founder 2026-09-29] Судимо за НАБОРОМ смуг, які може тримати
-  # пристрій (`Tree#device_lorenz_bands`: заводська + видані), а не за бажаними
-  # per-species: пакет чесний, якщо його статус дає бодай один кандидат. Поза
-  # зоною, де кандидати розходяться, вони збігаються, тож перевірка там точна;
-  # у зоні пакет, що відкинув частину кандидатів, — ДОКАЗ смуги
-  # (`Downlink::ThresholdBand.record_evidence!`).
-  # ⛔ Не повертати сюди `effective_lorenz_thresholds` під підставою «щоб
-  # розходження лишалось консистентним із порогами, якими провіженили прошивку»:
-  # до доказу пристрій ними НЕ судить, тож для родини з `critical_z_min > 2.0`
-  # чесний пакет дає категоричний mismatch на НЕВИННОМУ дереві (до FW.66 — ще й P0-алерт).
+  # Судимо тією смугою, якою рахує ПРИСТРІЙ, — заводською
+  # (`Tree::DEVICE_DEFAULT_LORENZ_BAND`, константи ECB-контракту): інших він не
+  # тримає, бо видачу смуги FW.8 знято [FW.66]. ⛔ Не судити смугою родини чи
+  # кластера: пристрій нею не рахує, тож чесний пакет давав би категоричний
+  # mismatch на невинному дереві — порівнюються два ОБЧИСЛЕННЯ, а не дві конфігурації.
   # Членство судить СИРИЙ z (`lorenz_state_z`) — ним класифікує прошивка;
   # `z_value` округлено до 4 знаків для зберігання, і на межі смуги воно
-  # розводило б два обчислення. Механізм, виміри й ціна набору — `03_04 §5.3`.
+  # розводило б два обчислення. Механізм — `03_04 §5.3`.
   # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
   # disabled by default to preserve current categorical behaviour:
   #   - `DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
@@ -909,8 +904,8 @@ class TelemetryUnpackerService < ApplicationService
     device_bio_status = attributes[:bio_status]
     return if raw_z.nil? || device_bio_status.nil?
 
-    temp  = lorenz_temperature(attributes)
-    bands = tree.device_lorenz_bands
+    temp = lorenz_temperature(attributes)
+    band = Tree::DEVICE_DEFAULT_LORENZ_BAND
     # ⛔ [E.64 2026-09-05] Імена БУЛИ `server_healthy`/`device_healthy` — і саме
     # цей епітет є насінням класу, що коштував трьох механізмів за один день
     # (per-tree алерт · per-cluster ентропія · ML-фіча). Тут не «здоровʼя», а
@@ -925,8 +920,6 @@ class TelemetryUnpackerService < ApplicationService
     # `🔴 Telemetry fraud detected` читав межу, яка вироку не виносила (у теплу
     # погоду ρ-стеля вища за 45). **Друкуй ту величину, яка СУДИЛА.**
     device_in_band = device_bio_status == :homeostasis
-    matches = ->(band) { in_lorenz_band?(raw_z, band, temp) == device_in_band }
-    matching = bands.select(&matches)
 
     # [FW.31] Optional numeric drift check (feature-flagged, default off).
     # Runs IN ADDITION to the categorical check below — never replaces it.
@@ -948,52 +941,33 @@ class TelemetryUnpackerService < ApplicationService
       end
     end
 
-    if matching.empty?
-      # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
-      # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
-      # cold-boot uses firmware's RTC default (day 10_957, FIRMWARE_RTC_DEFAULT_EPOCH_DAY) as epoch_day instead
-      # of today's, producing a different (x₀,y₀,z₀) that diverges from the
-      # server's warm-start chain. If any candidate matches categorically,
-      # the packet is legitimate — mark time_unsynced_fallback instead of
-      # counting fraud (the clock rides every 2.05 poll reply — FW.60).
-      if !attributes[:cold_start_flag] &&
-          try_time_sync_recovery(tree, attributes, bands, device_in_band)
-        return
-      end
+    return if in_lorenz_band?(raw_z, band, temp) == device_in_band
 
-      judged = bands.map { |band| "#{band[:min]}..#{SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])}" }
-      Rails.logger.warn(
-        "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
-        "raw_z=#{raw_z}, bands=#{judged.join(' | ')}. " \
-        "Dual Computation Integrity mismatch."
-      )
-      # ⚖️ [FW.66 нога 1, founder 2026-10-05] Власний лічильник, НЕ fraud: P0 на цій гілці
-      # будив чесні дерева з розірваним ланцюгом і ніколи — фальсифікатора homeostasis
-      # (`03_04 §7.3`). ⛔ Ціна названа: підроблений `stress` P0 більше не будить — долю
-      # гілки «stress → посуха» вирішує FW.8 (⊕ 2026-10-06: FW.8 ⚫, гілку знімає
-      # реалізація (Б), `00_07` FW.66).
-      SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL.increment
-    elsif matching.size < bands.size
-      record_band_evidence!(tree, attributes, matches)
-    end
+    # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
+    # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
+    # cold-boot uses firmware's RTC default (day 10_957, FIRMWARE_RTC_DEFAULT_EPOCH_DAY) as epoch_day instead
+    # of today's, producing a different (x₀,y₀,z₀) that diverges from the
+    # server's warm-start chain. If any candidate matches categorically,
+    # the packet is legitimate — mark time_unsynced_fallback instead of
+    # counting fraud (the clock rides every 2.05 poll reply — FW.60).
+    return if !attributes[:cold_start_flag] && try_time_sync_recovery(tree, attributes, band, device_in_band)
+
+    Rails.logger.warn(
+      "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
+      "raw_z=#{raw_z}, band=#{band[:min]}..#{SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])}. " \
+      "Dual Computation Integrity mismatch."
+    )
+    # ⚖️ [FW.66 нога 1, founder 2026-10-05] Власний лічильник, НЕ fraud: P0 на цій гілці
+    # будив чесні дерева з розірваним ланцюгом і ніколи — фальсифікатора homeostasis
+    # (`03_04 §7.3`). ⛔ Ціна названа: підроблений `stress` P0 більше не будить — гілку
+    # «stress → посуха» знімає реалізація (Б) (`00_07` FW.66).
+    SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL.increment
   end
 
-  # [FW.8] Членство Z у смузі так, як його судить прошивка: stress-підлога
+  # Членство Z у смузі так, як його судить прошивка: stress-підлога
   # абсолютна, а стеля аномалії ρ-ВІДНОСНА [E.64] — дзеркало `pack_status_byte`.
   def in_lorenz_band?(z, band, temp)
     z >= band[:min] && z <= SilkenNet::Attractor.anomaly_ceiling(temp, band[:max])
-  end
-
-  # [FW.8] Пакет, що відкинув частину кандидатів, — доказ смуги на пристрої.
-  # `vm_error` статусу не рахував, а пакет із невідомим часом міг прийти з
-  # ІНШОГО ланцюга Лоренца (cold-boot зі старою добою): жоден не свідчить.
-  BAND_EVIDENCE_STATUSES = %i[homeostasis stress anomaly].freeze
-
-  def record_band_evidence!(tree, attributes, matches)
-    return unless BAND_EVIDENCE_STATUSES.include?(attributes[:bio_status])
-    return if attributes[:time_unsynced_fallback]
-
-    Downlink::ThresholdBand.record_evidence!(tree, received_at: @received_at || Time.current, &matches)
   end
 
   # [ARCH.41] Attempt cold-start re-derivation with three epoch_day candidates
@@ -1005,10 +979,10 @@ class TelemetryUnpackerService < ApplicationService
   # Side effect on match: sets attributes[:time_unsynced_fallback] = true. Свіжий
   # час не ставиться в чергу окремо — Королева дістає `[0x9C][ts:4]` у кожній
   # 2.05-відповіді poll'а й перемотує маяк сама (FW.60, `03_02 §5а`).
-  # [FW.8] Збіг — з БУДЬ-ЯКОЮ смугою-кандидатом, тим самим сирим z, що й
-  # основний шлях: інакше recovery «знаходив» би чужу добу там, де основний шлях
-  # відкинув пакет лише через смугу.
-  def try_time_sync_recovery(tree, attributes, bands, device_in_band)
+  # Збіг судиться тією самою смугою й тим самим сирим z, що й основний шлях:
+  # інакше recovery «знаходив» би чужу добу там, де основний шлях відкинув пакет
+  # лише через смугу.
+  def try_time_sync_recovery(tree, attributes, band, device_in_band)
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     return false if seed_bytes.nil?
 
@@ -1026,7 +1000,7 @@ class TelemetryUnpackerService < ApplicationService
     candidates.each do |epoch_day|
       x0, y0, z0 = SilkenNet::Attractor.as_rtc_state(SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day))
       *, z_candidate = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
-      next unless bands.any? { |band| in_lorenz_band?(z_candidate, band, temp) == device_in_band }
+      next unless in_lorenz_band?(z_candidate, band, temp) == device_in_band
 
       attributes[:time_unsynced_fallback] = true
       Rails.logger.info(

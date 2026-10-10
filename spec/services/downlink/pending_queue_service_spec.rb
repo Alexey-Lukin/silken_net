@@ -434,59 +434,6 @@ RSpec.describe Downlink::PendingQueueService do
     end
   end
 
-  # [FW.8 · ⚖️ founder 2026-09-29] Смуга Лоренца — найнижча сходинка: видача
-  # лишається відкритою тижнями (доказ рідкісний), тож вище за OTA-hint вона
-  # морила б OTA. Що саме видати — пінує spec/services/downlink/threshold_band_spec.rb.
-  describe "0x9A смуга Лоренца (gated FW.8)" do
-    let(:family) { create(:tree_family, critical_z_min: 5.0, critical_z_max: 40.0) }
-    let!(:tree) { create(:tree, cluster: cluster, tree_family: family) }
-    let!(:tree_key) { create(:hardware_key, :for_tree, tree: tree) }
-
-    def band_frame(key, did, dlfc)
-      Cryptography::LoraCcm.encrypt_downlink(
-        key: [ key.aes_key_hex ].pack("H*"), opcode: 0x9A,
-        did_bytes: [ Cryptography::KeyRatchet.did_to_u32(did) ].pack("N"), dlfc: dlfc,
-        body: [ 500, 4000, 2900, 0xFF, 1 ].pack("s<s<s<CC")
-      )
-    end
-
-    it "мовчить, поки FW8-гейт зачинений" do
-      allow(Downlink::ThresholdBand).to receive(:dispatch_enabled?).and_return(false)
-
-      expect(decrypt_inner(poll).bytes).to all(eq(0))
-      expect(tree_key.reload.downlink_frame_counter).to eq(0)
-    end
-
-    it "видає смугу, якої пристрій ще не тримає, адресним CCM-кадром" do
-      allow(Downlink::ThresholdBand).to receive(:dispatch_enabled?).and_return(true)
-
-      expected = band_frame(tree_key, tree.did, 1)
-      expect(decrypt_inner(poll).byteslice(0, expected.bytesize)).to eq(expected)
-    end
-
-    it "поступається OTA-hint'у" do
-      allow(Downlink::ThresholdBand).to receive(:dispatch_enabled?).and_return(true)
-      firmware = create(:bio_contract_firmware, bytecode_payload: "AB" * 64)
-      gateway.update!(pending_firmware_id: firmware.id)
-      Ota::PackageStore.warm!(firmware, cluster.id)
-
-      expect(decrypt_inner(poll).getbyte(0)).to eq(0x9F)
-      expect(tree_key.reload.downlink_frame_counter).to eq(0)
-    end
-
-    it "першим обслуговує дерево, якому найдовше не видавали, і не перевидає до паузи" do
-      allow(Downlink::ThresholdBand).to receive(:dispatch_enabled?).and_return(true)
-      second = create(:tree, cluster: cluster, tree_family: family)
-      second_key = create(:hardware_key, :for_tree, tree: second)
-
-      first_frame  = band_frame(tree_key, tree.did, 1)
-      second_frame = band_frame(second_key, second.did, 1)
-      expect(decrypt_inner(poll).byteslice(0, first_frame.bytesize)).to eq(first_frame)
-      expect(decrypt_inner(poll).byteslice(0, second_frame.bytesize)).to eq(second_frame)
-      expect(decrypt_inner(poll).bytes).to all(eq(0))
-    end
-  end
-
   describe "OTA-hint + chunk-server" do
     let(:firmware) { create(:bio_contract_firmware, bytecode_payload: "AB" * 64) }
 

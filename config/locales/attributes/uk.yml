@@ -8,7 +8,6 @@ uk:
   attributes:
     action_type: Тип дії
     ai_sensitivity: Чутливість AI
-    alert_threshold_critical_z: Поріг тривоги (Critical Z)
     bark_thickness: Товщина кори
     billing_email: Платіжний Email
     biomass_yield_kg: Вилучена біомаса (кг)
@@ -16,8 +15,6 @@ uk:
     carbon_sequestration_coefficient: Коеф. поглинання CO₂
     cluster: Кластер
     config_sleep_interval_s: Інтервал сну (с)
-    critical_z_max: Критичний Z макс.
-    critical_z_min: Критичний Z мін.
     crypto_public_address: Публічна крипто-адреса
     data_region: Регіон даних
     did: DID
@@ -34,7 +31,6 @@ uk:
     longitude: Довгота
     name: Назва
     notes: Польові нотатки
-    optimal_z_target: Оптимальний Z
     parts_cost: Вартість деталей
     password: Пароль
     performed_at: Час виконання

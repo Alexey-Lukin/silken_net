@@ -250,8 +250,8 @@ $(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../quee
 	$(CC) $(CFLAGS) -o $@ test_uart_rx_ring.c
 
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
-# (+ FW.8 Z-пороги та FW.2 FC high-water — споживацькі секції поверх KV.)
-$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h ../common/lorenz_thresholds.h ../common/fc_hiwater.h ../common/lora_ccm.h ../common/beacon_dedup.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h
+# (+ FW.2 FC high-water — споживацька секція поверх KV.)
+$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h ../common/fc_hiwater.h ../common/lora_ccm.h ../common/beacon_dedup.h ../common/ota_antirollback.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
 
 # [ARCH.35] W25Q32 sector-ring — NOR-мок (program 1→0) + power-cut fault-injection.
@@ -297,7 +297,7 @@ $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
 $(BINDIR)/test_key_ratchet: test_key_ratchet.c ../common/key_ratchet.h ../common/silken_sha256.h ../common/downlink_ccm.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) -o $@ test_key_ratchet.c
 
-# [FW.20-Q2] Черга Soldier-bound команд (0x9A/0x9E) — рефлекс-реле Королеви.
+# [FW.20-Q2] Черга Soldier-bound команд (0x9E) — рефлекс-реле Королеви.
 $(BINDIR)/test_soldier_cmd_queue: test_soldier_cmd_queue.c ../queen/soldier_cmd_queue.h ../common/downlink_ccm.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_cmd_queue.c
 

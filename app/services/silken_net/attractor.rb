@@ -140,7 +140,8 @@ module SilkenNet
     end
 
     # [E.64] homeostasis = вище stress-підлоги (absolute critical_z_min) і нижче
-    # ρ-відносної anomaly-стелі. `temp` обов'язковий (потрібен для ρ).
+    # ρ-відносної anomaly-стелі. `temp` обов'язковий (потрібен для ρ). `band` — `{ min:, max: }`,
+    # та сама форма, що `Tree::DEVICE_DEFAULT_LORENZ_BAND`, якою судить DCI.
     #
     # ⛔ [E.64 ⚖️ 2026-09-05] ПРОДОВИХ ВИКЛИКАЧІВ НУЛЬ — і це НЕ ознака смерті.
     # Біо-гілку `AlertDispatchService` → `severe_drought` знято як Z-похідне
@@ -150,12 +151,9 @@ module SilkenNet
     # нього («no hand-copied kernel logic»). Знявши його «як мертвий код», спека
     # мусила б переписати класифікацію від руки — тобто звіряла б прошивку з
     # ВЛАСНОЮ копією прошивки, і парність стала б тавтологією, зеленою на будь-якому
-    # розходженні. ⚠️ Застереження стоїть ТУТ, у домі самого методу: доти воно
-    # жило лише в докстрінгу `TreeFamily#healthy_z?` — тобто над ІНШИМ методом в
-    # іншому файлі, і прибиральник, що читає цей файл, підстави не бачив.
-    def self.homeostatic?(z_value, tree_family, temp)
-      z_value >= tree_family.critical_z_min &&
-        z_value <= anomaly_ceiling(temp, tree_family.critical_z_max)
+    # розходженні. Знімається разом з ECB-ерою — нога ECB-зносу `00_07` FW.66, не раніше.
+    def self.homeostatic?(z_value, band, temp)
+      z_value >= band[:min] && z_value <= anomaly_ceiling(temp, band[:max])
     end
 
     # [E.64] Дзеркало firmware `BioContract.pack_status_byte` — (Z, temp, delta_t) →

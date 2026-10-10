@@ -75,67 +75,6 @@ RSpec.describe TreeFamily, type: :model do
       end
     end
 
-    describe "critical_z_min" do
-      it "requires presence" do
-        family = build(:tree_family, critical_z_min: nil)
-        expect(family).not_to be_valid
-      end
-
-      it "requires numericality" do
-        family = build(:tree_family, critical_z_min: "abc")
-        expect(family).not_to be_valid
-      end
-    end
-
-    describe "critical_z_max" do
-      it "requires presence" do
-        family = build(:tree_family, critical_z_max: nil)
-        expect(family).not_to be_valid
-      end
-
-      it "requires numericality" do
-        family = build(:tree_family, critical_z_max: "abc")
-        expect(family).not_to be_valid
-      end
-
-      it "must be greater than critical_z_min" do
-        family = build(:tree_family, critical_z_min: 10.0, critical_z_max: 5.0)
-        expect(family).not_to be_valid
-        expect(family.errors[:critical_z_max]).to be_present
-      end
-
-      it "cannot equal critical_z_min" do
-        family = build(:tree_family, critical_z_min: 10.0, critical_z_max: 10.0)
-        expect(family).not_to be_valid
-      end
-
-      it "accepts values greater than critical_z_min" do
-        family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0)
-        expect(family).to be_valid
-      end
-    end
-
-    # [FW.8 · ⚖️ 2026-09-29] Родина лише ЗВУЖУЄ заводську смугу: ширша рідше
-    # давала б «аномалію», тобто більше балів, і DCI цього не бачить, бо пристрій
-    # справді рахує нею. Межі самої заводської смуги — законні.
-    describe "narrowing guard (factory band 2.0/45.0)" do
-      it "rejects a floor below the device default" do
-        family = build(:tree_family, critical_z_min: 1.99)
-        expect(family).not_to be_valid
-        expect(family.errors.of_kind?(:critical_z_min, :greater_than_or_equal_to)).to be(true)
-      end
-
-      it "rejects a ceiling above the device default" do
-        family = build(:tree_family, critical_z_max: 45.01)
-        expect(family).not_to be_valid
-        expect(family.errors.of_kind?(:critical_z_max, :less_than_or_equal_to)).to be(true)
-      end
-
-      it "accepts the factory band itself" do
-        expect(build(:tree_family, critical_z_min: 2.0, critical_z_max: 45.0)).to be_valid
-      end
-    end
-
     describe "carbon_sequestration_coefficient" do
       it "requires a positive value" do
         family = build(:tree_family, carbon_sequestration_coefficient: 0)
@@ -309,34 +248,6 @@ RSpec.describe TreeFamily, type: :model do
     it "handles negative raw points (sensor anomaly pass-through)" do
       family = build(:tree_family, carbon_sequestration_coefficient: 1.5)
       expect(family.weighted_growth_points(-5)).to eq(-7.5)
-    end
-  end
-
-  describe "#healthy_z?" do
-    let(:family) { build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0) }
-
-    it "returns true for a value within bounds" do
-      expect(family.healthy_z?(25.0)).to be true
-    end
-
-    it "returns true at the lower boundary" do
-      expect(family.healthy_z?(5.0)).to be true
-    end
-
-    it "returns true at the upper boundary" do
-      expect(family.healthy_z?(45.0)).to be true
-    end
-
-    it "returns false below the lower boundary" do
-      expect(family.healthy_z?(4.9)).to be false
-    end
-
-    it "returns false above the upper boundary" do
-      expect(family.healthy_z?(45.1)).to be false
-    end
-
-    it "converts string values to float" do
-      expect(family.healthy_z?("25.0")).to be true
     end
   end
 

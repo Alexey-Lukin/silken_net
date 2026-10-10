@@ -74,7 +74,6 @@ RSpec.describe "governance:bootstrap" do # rubocop:disable RSpec/DescribeClass
     aggregate_failures do
       expect(TreeFamily.count).to eq(1)
       expect(family.carbon_sequestration_coefficient).to eq(1.0)  # ratified default (ARCH.84), not the demo's 0.8
-      expect(family.effective_optimal_z_target).to eq(29.0)        # firmware BioContract::OPTIMAL_Z_TARGET
       expect(family.fire_resistance_rating).to eq(60)              # platform fire threshold
       expect(family.biological_properties["provenance"]).to include("provisional")
       expect(result[:out]).to include("first_family=created tree_families=1")
@@ -86,12 +85,12 @@ RSpec.describe "governance:bootstrap" do # rubocop:disable RSpec/DescribeClass
 
   it "never touches a family that already exists (operator-calibrated numbers stay)" do
     existing = create(:tree_family, scientific_name: "Pinus sylvestris",
-                                    critical_z_min: 7.5, critical_z_max: 42.0)
+                                    carbon_sequestration_coefficient: 0.75)
     stamp = existing.updated_at
 
     run_task
 
     expect(existing.reload.updated_at).to eq(stamp)
-    expect(existing.critical_z_min).to eq(7.5)
+    expect(existing.carbon_sequestration_coefficient).to eq(0.75)
   end
 end

@@ -48,17 +48,18 @@ class Tree < ApplicationRecord
   # --- ДЕЛЕГУВАННЯ ---
   delegate :name, to: :tree_family, prefix: true
 
-  # [FW.8] Global Lorenz defaults — match firmware/bio_contracts/bio_contract.rb
-  # BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET. Used as final fallback when
-  # neither cluster override nor tree_family per-species value is set.
-  GLOBAL_LORENZ_Z_MIN     = 2.0
-  GLOBAL_LORENZ_Z_MAX     = 45.0
-  GLOBAL_LORENZ_Z_OPTIMAL = 29.0
-
-  # [FW.8] Смуга, з якою пристрій виходить із заводу (firmware-дефолти 200/4500,
-  # `FW8_DEFAULT_Z_*_X100`), — кандидат DCI за будь-якого обліку: re-provision
-  # зі свіжим журналом чи порвана пара ключів повертають на неї без нашого кадру.
+  # Смуга Лоренца, якою судить ECB-контракт пристрою — заводські константи
+  # `BioContract::CRITICAL_Z_MIN/MAX` (C-міст передає їх як `LORENZ_DEFAULT_Z_{MIN,MAX}_X100`).
+  # Інших смуг пристрій не тримає: видачу FW.8 (`0x9A`) знято [FW.66], тож це
+  # ЄДИНА смуга категоричного DCI (`TelemetryUnpackerService#check_z_divergence!`).
+  GLOBAL_LORENZ_Z_MIN = 2.0
+  GLOBAL_LORENZ_Z_MAX = 45.0
   DEVICE_DEFAULT_LORENZ_BAND = { min: GLOBAL_LORENZ_Z_MIN, max: GLOBAL_LORENZ_Z_MAX }.freeze
+
+  # [FW.66] Облік видачі смуги FW.8 знято разом із видачею; колонки лишаються в БД
+  # до `remove_column` окремим комітом ПІСЛЯ деплою цього (те саме, що `TreeFamily`).
+  self.ignored_columns += %w[lorenz_band_held lorenz_band_pending lorenz_band_dlfc lorenz_band_key_epoch
+                             lorenz_band_issued_at lorenz_band_served_at lorenz_band_stale_count]
 
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
@@ -292,65 +293,6 @@ class Tree < ApplicationRecord
       target: Dashboard::MapNode.dom_id(id),
       html: Dashboard::MapNode.new(tree: self).call
     )
-  end
-
-  # [FW.8] Effective Lorenz thresholds with three-level priority chain (governance):
-  #   1. Cluster-level per-species override (cluster.lorenz_overrides_for(scientific_name))
-  #      — a cluster may host trees of several species; each species gets its own
-  #        biome-adjusted overrides set by org admin.
-  #   2. TreeFamily per-species value
-  #   3. Global default (BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET)
-  #
-  # Returns Hash{ min:, max:, optimal: } of Float values.
-  #
-  # 🔴 РОЛЬ ЦЬОГО МЕТОДУ — «ЩО СЛАТИ на пристрій», і саме тому DCI його НЕ вживає
-  # (див. `#device_lorenz_bands`). Доти докстрінг називав другим споживачем
-  # `TelemetryUnpackerService`, тобто судження про ЦІЛІСНІСТЬ обчислення бралось
-  # за БАЖАНИМИ порогами, яких пристрій не має.
-  #
-  # ⚠️ «Роль одна» — про ЦЕЙ метод: після ⚖️ 2026-09-05 (E.64 варіант A) родинна
-  # смуга не судить ЖОДНОГО продового вердикту — біо-гілку на Z знято разом із
-  # `attractor_destabilised`. ⛔ Не відроджувати її «бо назва пасує»: Z не є
-  # оракулом здоровʼя (`05_05 §8.1`). Розвели
-  # не «сервер проти родини», а два РІЗНІ питання: «чи збіглись обчислення» ⊥ «чи
-  # дерево поза своєю нормою».
-  #
-  # SSOT consumed by:
-  #   - Downlink::ThresholdBand (видача 0x9A з poll-деривації Королеви —
-  #     `Downlink::PendingQueueService`, адресний CCM-кадр, 03_05 §2.5): тіло —
-  #     `OtaPackagerService.threshold_config_body`, гард «лише звуження» — тут же.
-  #     ⚠️ Шлях ENV-гейтований (`FW8_THRESHOLDS_DOWNLINK_ENABLED`, default off) і
-  #     не вмикається: FW.8 ⚫ 2026-10-06 — фліпу прошивки не буде, видачу знімає
-  #     реалізація (Б) (`00_07` FW.66); доти ланцюг конфігурує видачу, якої немає.
-  def effective_lorenz_thresholds
-    family    = tree_family
-    overrides = cluster && family&.scientific_name ? cluster.lorenz_overrides_for(family.scientific_name) : {}
-
-    {
-      min:     overrides[:min]     || family&.critical_z_min&.to_f || GLOBAL_LORENZ_Z_MIN,
-      max:     overrides[:max]     || family&.critical_z_max&.to_f || GLOBAL_LORENZ_Z_MAX,
-      optimal: overrides[:optimal] || family&.effective_optimal_z_target || GLOBAL_LORENZ_Z_OPTIMAL
-    }
-  end
-
-  # [FW.8] Смуги, будь-якою з яких може судити САМ ПРИСТРІЙ, — друга роль,
-  # свідомо розведена з `#effective_lorenz_thresholds` («що слати»). Єдиний
-  # споживач — категоричний DCI (`TelemetryUnpackerService#check_z_divergence!`).
-  #
-  # 🔴 Чому набір, а не одна смуга (⚖️ founder 2026-09-29): ефір підтвердження
-  # смуги не несе, тож до доказу бекенд не знає, котра з виданих чинна, — а
-  # дефолт лишається кандидатом завжди. Звідки кожна смуга й коли вона випадає,
-  # веде облік `Downlink::ThresholdBand`. Судити однією смугою означало б
-  # порівнювати не два обчислення, а дві КОНФІГУРАЦІЇ — механізм, виміряні
-  # частоти й ціна набору — ОДИН дім, `03_04 §5.3`.
-  #
-  # Межі — x100-цілі тіла 0x9A, поділені як на пристрої
-  # (`OtaPackagerService.threshold_band`), а не бажані Float-и: інакше DCI
-  # розійшовся б із кремнієм на межі на останньому знаку.
-  def device_lorenz_bands
-    pairs = lorenz_band_held.dup
-    pairs << lorenz_band_pending.unpack("s<s<") if lorenz_band_pending
-    [ DEVICE_DEFAULT_LORENZ_BAND, *pairs.map { |z_min, z_max| OtaPackagerService.threshold_band(z_min, z_max) } ].uniq
   end
 
   private

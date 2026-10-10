@@ -6,7 +6,6 @@ lt:
         heading: Konfigūracija
       fields:
         ai_sensitivity: DI jautrumas (0.0 — 1.0)
-        alert_threshold: Įspėjimo slenkstis (Kritinis Z)
         billing_email: Atsiskaitymo el. paštas
         crypto_address: Kriptografijos viešasis adresas
         current_logo: 'Dabartinis: %{filename}'

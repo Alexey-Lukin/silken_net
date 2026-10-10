@@ -8,8 +8,8 @@ class OtaPackagerService
   LORA_MTU = 11  # Для 16-байтних LoRa-пакетів (5 байтів заголовок: 1 маркер + 2 index + 2 total)
   COAP_MTU = 512 # Оптимально для Starlink/LTE
 
-  # OTA / time-sync markers (docs/03_01 §4.5а). Адресні команди 0x9A · 0x9E
-  # живуть у Downlink::CommandFrame (FW.17, 03_05 §2.5).
+  # OTA / time-sync markers (docs/03_01 §4.5а). Адресна команда 0x9E живе в
+  # Downlink::CommandFrame (FW.17, 03_05 §2.5).
   CMD_OTA_BYTECODE   = 0x99 # mruby bytecode chunks (existing)
   CMD_OTA_SEAL       = 0x9B # [FW.23] OTA Ed25519 seal trailer (6 seal chunks + version)
   CMD_TIME_SYNC      = 0x9C # backend UTC timestamp envelope (FW.20)
@@ -22,52 +22,11 @@ class OtaPackagerService
   OTA_TRAILER_CHUNKS   = 7   # 6 seal chunks + 1 version chunk
   SEAL_SEG_BYTES       = 11  # 11 bytes payload per LoRa chunk (16 - 5 header)
 
-  # [FW.8] Default species_id when tree.tree_family.species_code is unmapped
-  DEFAULT_SPECIES_ID = 0xFF
-
-  # [FW.8] Map of tree_family.scientific_name → species_id byte sent to firmware.
-  # Firmware uses species_id only as a hint for log/observability; thresholds are
-  # the source of truth.
-  SPECIES_ID_MAP = {
-    "Pinus sylvestris" => 0,
-    "Quercus robur"    => 1,
-    "Fagus sylvatica"  => 2,
-    "Picea abies"      => 3,
-    "Betula pendula"   => 4
-  }.freeze
-
   def self.prepare(firmware, chunk_size: COAP_MTU, cluster_id: nil)
     new(firmware, chunk_size, cluster_id: cluster_id).prepare
   end
 
-  # [FW.8] Тіло команди 0x9A для дерева — 8 Б:
-  #   [z_min_x100:s16le][z_max_x100:s16le][z_opt_x100:s16le][species_id:u8][config_version:u8]
-  # Пороги — з governance-ланцюга (cluster override > family > global,
-  # Tree#effective_lorenz_thresholds). Кадр навколо тіла — CCM сесійним ключем
-  # дерева (Downlink::CommandFrame.thresholds, 03_05 §2.5); len і CRC старого
-  # каркаса зняла downlink-ревізія — цілісність несе MIC.
-  def self.threshold_config_body(tree, config_version: 1)
-    thresholds = tree.effective_lorenz_thresholds
-    z_min   = (thresholds[:min]     * 100).round.to_i
-    z_max   = (thresholds[:max]     * 100).round.to_i
-    z_opt   = (thresholds[:optimal] * 100).round.to_i
-
-    # tree_family — required belongs_to; unmapped scientific_name → DEFAULT
-    species_id = SPECIES_ID_MAP[tree.tree_family.scientific_name] || DEFAULT_SPECIES_ID
-
-    [ z_min, z_max, z_opt, species_id, config_version & 0xFF ].pack("s<s<s<CC")
-  end
-
-  # [FW.8] Смуга з x100-пари тіла 0x9A такою, якою її бачить пристрій: ціле
-  # ділиться на 100.0 (`Lorenz_Band_Args`, common/lorenz_thresholds.h) — той самий
-  # Float, що судить на кремнії. DCI читає смугу звідси, а не з
-  # `effective_lorenz_thresholds`: родинне 5.004 їде на дріт як 500, тож пристрій
-  # судить 5.0, і Z із [5.0, 5.004) розвело б два обчислення на чесному пакеті.
-  def self.threshold_band(z_min_x100, z_max_x100)
-    { min: z_min_x100 / 100.0, max: z_max_x100 / 100.0 }
-  end
-
-  # [FW.8] Class-level CRC16-CCITT (XMODEM polynomial 0x1021, init 0xFFFF)
+  # Class-level CRC16-CCITT (XMODEM polynomial 0x1021, init 0xFFFF)
   # Mirrored on firmware/queen/main.c:verify_crc16(). Exposed as class method so
   # FactoryFlashing::FlashKvImage (журнал Flash-KV) може кликати без інстансу сервісу.
   def self.crc16_ccitt(data)

@@ -6,7 +6,7 @@
  * ключем цільового вузла (downlink-wire-ревізія, 03_05 §2.5; формат —
  * common/downlink_ccm.h):
  *
- *   [opcode:1][DID:4][DLFC_lsb:2][CCM(body)][MIC:8]   — 17 / 23 Б
+ *   [opcode:1][DID:4][DLFC_lsb:2][CCM(body)][MIC:8]   — 17 Б
  *
  * Ключа Королева не має, тож перевіряє лише структуру (командний опкод і рівно
  * його довжина) і стріляє кадр як є, нічим його не шифруючи.
@@ -48,7 +48,7 @@
 
 typedef struct {
     uint8_t  frame[SOLDIER_CMD_QUEUE_SLOTS][DL_CCM_FRAME_MAX];
-    uint8_t  len[SOLDIER_CMD_QUEUE_SLOTS];   /* кадр + довжина = 24 Б слот */
+    uint8_t  len[SOLDIER_CMD_QUEUE_SLOTS];   /* кадр + довжина = 18 Б слот */
     uint8_t  shots[SOLDIER_CMD_QUEUE_SLOTS]; /* лишок бюджету; 0 = слот вільний */
     uint32_t seq[SOLDIER_CMD_QUEUE_SLOTS];   /* коли поставлено чи освіжено */
     uint32_t clock;

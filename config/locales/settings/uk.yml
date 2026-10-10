@@ -6,7 +6,6 @@ uk:
         heading: Конфігурація
       fields:
         ai_sensitivity: Чутливість AI (0.0 — 1.0)
-        alert_threshold: Поріг тривоги (Critical Z)
         billing_email: Платіжний Email
         crypto_address: Публічна крипто-адреса
         current_logo: 'Поточний: %{filename}'

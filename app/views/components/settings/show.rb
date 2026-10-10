@@ -48,14 +48,13 @@ module Settings
         # МАРШРУТ — `organization_path`, для якого PATCH-роуту не існує взагалі.
         form_with(url: settings_path, method: :patch, multipart: true, class: "space-y-6") do
           # [SEC.25] Контролер рендерить цю сторінку на 422 (кривий billing_email,
-          # зайнята назва, поріг поза діапазоном), і доти причина нікуди не їхала —
+          # зайнята назва, чутливість поза діапазоном), і доти причина нікуди не їхала —
           # `org.errors` бачила лише JSON-гілка.
           render Views::Shared::UI::ErrorSummary.new(messages: @organization.errors.full_messages)
 
           render_field(t(".fields.org_name"), "organization[name]", @organization.name)
           render_field(t(".fields.billing_email"), "organization[billing_email]", @organization.billing_email, placeholder: "billing@example.org")
           render_field(t(".fields.crypto_address"), "organization[crypto_public_address]", @organization.crypto_public_address, placeholder: "0x...")
-          render_field(t(".fields.alert_threshold"), "organization[alert_threshold_critical_z]", @organization.alert_threshold_critical_z, placeholder: "2.5")
           render_field(t(".fields.ai_sensitivity"), "organization[ai_sensitivity]", @organization.ai_sensitivity, placeholder: "0.7")
           render_locale_field
           render_logo_field

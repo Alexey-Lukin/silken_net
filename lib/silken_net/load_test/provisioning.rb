@@ -74,10 +74,7 @@ module SilkenNet
           cluster = ::Cluster.create!(
             organization: org, name: "loadtest-cluster-#{tag}", region: "loadtest"
           )
-          family = ::TreeFamily.create!(
-            name: "loadtest-family-#{tag}",
-            critical_z_min: 5.0, critical_z_max: 45.0
-          )
+          family = ::TreeFamily.create!(name: "loadtest-family-#{tag}")
           [ org, cluster, family ]
         end
 

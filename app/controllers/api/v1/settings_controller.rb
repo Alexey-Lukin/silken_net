@@ -19,7 +19,6 @@ module Api
                 name: org.name,
                 billing_email: org.billing_email,
                 crypto_public_address: org.crypto_public_address,
-                alert_threshold_critical_z: org.alert_threshold_critical_z,
                 ai_sensitivity: org.ai_sensitivity,
                 logo_url: org.logo.attached? ? url_for(org.logo) : nil,
                 created_at: org.created_at
@@ -36,7 +35,7 @@ module Api
       end
 
       # PATCH /settings
-      # Оновлення конфігурації Організації (логотип, пороги тривоги, AI-чутливість)
+      # Оновлення конфігурації Організації (логотип, AI-чутливість)
       def update
         org = acting_organization!
 
@@ -50,7 +49,6 @@ module Api
                   name: org.name,
                   billing_email: org.billing_email,
                   crypto_public_address: org.crypto_public_address,
-                  alert_threshold_critical_z: org.alert_threshold_critical_z,
                   ai_sensitivity: org.ai_sensitivity,
                   logo_url: org.logo.attached? ? url_for(org.logo) : nil
                 }
@@ -84,8 +82,7 @@ module Api
       # користувача тут не підходить). Валідацію значення тримає модель.
       def settings_params
         params.require(:organization).permit(:name, :billing_email, :crypto_public_address,
-                                             :alert_threshold_critical_z, :ai_sensitivity, :logo,
-                                             :locale)
+                                             :ai_sensitivity, :logo, :locale)
       end
     end
   end
