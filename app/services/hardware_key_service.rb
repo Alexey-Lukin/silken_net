@@ -281,15 +281,9 @@ class HardwareKeyService
       to: target_version
     )
 
-    # ⚡ [ARCH.59]: коміт БД-ротації, і ЛИШЕ потім enqueue 0x9E. Спільна
-    # транзакція відкочувала ключ разом із версією — тобто в бік, якого тракт
-    # лікувати НЕ вміє: без `previous_aes_key_hex` Grace-декрипту нема за що
-    # вхопитись, вузол німіє, а Sidekiq бачив job ще до коміту (phantom-job).
-    # Після коміту відмова падає в бік із backstop'ом: Grace-вікно робить
-    # незавершену ротацію видимою `Downlink::PendingQueueService
-    # #key_rotation_payload`, тож 0x9E добере наступний poll Королеви.
-    # Виняток НЕ ковтаємо — кадр не поїхав, і повтор упреться в
-    # RotationPendingError, а не в подвійний advance.
+    # [FW.60] Доставки тут немає: відкритий Grace (`previous_aes_key_hex`) і Є
+    # заявкою — `Downlink::PendingQueueService#key_rotation_payload` деривує з
+    # нього кадр 0x9E на кожному poll'і Королеви, доки вузол не доведе новий ключ.
     # [FW.17 · 03_05 §2.5] DLFC кадру 0x9E видається тут, тією ж транзакцією, що
     # відкриває grace, і живе з ротацією: перевидача на кожному poll — той самий
     # кадр. Під grace інших команд не видають (HardwareKey#issue_downlink_frame_counter!).
@@ -300,7 +294,6 @@ class HardwareKeyService
       downlink_frame_counter: key_record.downlink_frame_counter + 1,
       rotated_at: Time.current
     )
-    KeyRotationDownlinkWorker.perform_async(@device_uid, target_version)
 
     Rails.logger.warn "🔄 [FW.17] Ratchet-ротація #{@device_uid} → v#{target_version}. " \
                       "Старий ключ у Grace до першого пакета на новому."

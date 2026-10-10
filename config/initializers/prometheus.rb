@@ -581,8 +581,7 @@ module SilkenNet
       docstring: "OTA firmware chunk DELIVERIES served to polling gateways — re-polled chunks count again by design " \
                  "(stateless chunk-server), so this measures downlink traffic, never unique-chunk progress " \
                  "[INF.26 verdict 2026-08-30; diagnostic tier: no alert until the first field OTA campaign — the flow is episodic, " \
-                 "a threshold over an episodic series is noise; failure-side alerting would hang off handle_chunk_failure, not off sends. " \
-                 "The dead push-era write site leaves with OtaTransmissionWorker itself (FW.60 superseded, bench:coap-gated removal)]",
+                 "a threshold over an episodic series is noise; failure-side alerting would hang off a chunk-failure signal, not off sends]",
       labels: [ :firmware_version ]
     )
 

@@ -145,11 +145,8 @@ class BioContractFirmware < ApplicationRecord
       update!(is_active: true, rollout_percentage: clamped)
 
       # 3. Позначення активної істини — і НІЯКОЇ синхронізації тут не стається.
-      # ⚠️ Тут доти стояло «OtaTransmissionWorker підхопить її за розкладом»:
-      # розкладу не існує, а сам воркер `OtaTransmissionWorker` не має ЖОДНОГО
-      # enqueuer'а з часів [FW.60] — це канон і фіксує (`04_02` картка воркера
-      # каже «Тригер — ЖОДНОГО»). Тобто коментар обіцяв автомат, якого немає, і
-      # читач `deploy_globally!` виносив із нього хибну модель роботи.
+      # ⚠️ Автоматичної доставки за розкладом НЕМАЄ: кампанію таргетує диспетчер
+      # (`Ota::DeploymentDispatcherService`), а тягне сама Королева poll'ом [FW.60].
       #
       # ✅ Як воно ПРАЦЮЄ насправді: когорту вибирає й hiwater палить
       # `Ota::DeploymentDispatcherService` у ТОМУ САМОМУ виклику (він і кличе цей

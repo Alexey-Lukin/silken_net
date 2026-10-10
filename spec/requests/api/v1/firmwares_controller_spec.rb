@@ -16,7 +16,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     let(:cluster) { create(:cluster, organization: organization) }
     let!(:gateway) { create(:gateway, cluster: cluster) }
 
-    before { OtaTransmissionWorker.clear }
 
     it "targets the gateway via pending_firmware_id (FW.60 poll-тракт, без push-enqueue)" do
       post "/firmwares/#{firmware.id}/deploy",
@@ -26,7 +25,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response.parsed_body["canary_percentage"]).to eq(5)
       expect(response.parsed_body["dispatched_gateways"]).to eq(1)
       expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "defaults canary_percentage to 100 when not specified" do
@@ -58,7 +56,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("anti-rollback")
       expect(response.parsed_body["skipped_clusters"].sole["reason"]).to eq("rollback")
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "rejects a deploy with no eligible gateways with 422" do
@@ -69,7 +66,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["skipped_clusters"].sole["reason"]).to eq("no_gateways")
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "mixed whole-forest rejection carries BOTH skip reasons; stale message wins the headline" do
@@ -82,7 +78,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response.parsed_body["error"]).to include("anti-rollback")
       reasons = response.parsed_body["skipped_clusters"].to_h { |sc| [ sc["id"], sc["reason"] ] }
       expect(reasons).to eq(cluster.id => "rollback", empty_cluster.id => "no_gateways")
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     # =========================================================================
@@ -95,7 +90,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("Tree", "Gateway")
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "rejects target_type contradicting the firmware hardware type with 400" do
@@ -106,7 +100,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
 
       expect(response).to have_http_status(:bad_request)
       expect(response.parsed_body["error"]).to include("Tree")
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "accepts a matching target_type and reports the cluster target" do
@@ -129,7 +122,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            params: { cluster_id: other_cluster.id }, headers: headers, as: :json
 
       expect(response).to have_http_status(:not_found)
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end
 
@@ -347,7 +339,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
     end
     let(:cluster) { create(:cluster, organization: organization) }
 
-    before { OtaTransmissionWorker.clear }
 
     it "redirects with a notice on successful HTML deploy (the UI one-click path)" do
       gw = create(:gateway, cluster: cluster)
@@ -373,7 +364,6 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to redirect_to(firmwares_path)
       expect(flash[:error]).to be_present
       expect(flash[:pending]).to be_blank
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
   end
 end

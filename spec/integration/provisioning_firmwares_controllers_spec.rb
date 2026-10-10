@@ -155,7 +155,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
 
     it "POST /firmwares/:id/deploy targets gateways for the poll-тракт (FW.60)" do
       gateway = create(:gateway, cluster: cluster)
-      OtaTransmissionWorker.clear
 
       post "/firmwares/#{firmware.id}/deploy",
            params: { cluster_id: cluster.id, target_type: "Tree", canary_percentage: 10 },
@@ -163,7 +162,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
 
       expect(response).to have_http_status(:accepted)
       expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "returns 403 for non-admin" do

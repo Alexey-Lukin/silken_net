@@ -1083,10 +1083,9 @@ end
         end
         let(:service) { described_class.new("", nil) }
 
-        it "sets time_unsynced_fallback and enqueues TimeSyncDownlinkWorker on candidate match" do
+        it "sets time_unsynced_fallback on candidate match" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 25.0 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
             z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
@@ -1099,13 +1098,11 @@ end
 
           expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).not_to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be(true)
-          expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(recovery_tree.cluster_id)
         end
 
         it "counts a categorical mismatch when no candidate matches" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.1, 0.2, 0.5 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
             z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
@@ -1118,13 +1115,11 @@ end
 
           expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
 
         it "skips recovery and counts the mismatch when cold_start_flag is true" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 25.0 ])
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
             z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
@@ -1137,7 +1132,6 @@ end
 
           expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
 
         it "skips recovery when tree has no hardware_key" do
@@ -1146,7 +1140,6 @@ end
             cluster: cluster,
             tree_family: tree_family)
           no_key_tree.create_device_calibration! if no_key_tree.device_calibration.nil?
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
           attributes = {
             z_value: 0.5, lorenz_state_z: 0.5, bio_status: :homeostasis,
@@ -1157,7 +1150,6 @@ end
           allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, no_key_tree, attributes)
           expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
 
@@ -1188,7 +1180,6 @@ end
 
         it "tries exactly three epoch_day candidates" do
           allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.5 ])
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
@@ -1226,24 +1217,11 @@ end
             call_count += 1
             [ 25.0, 0.0, 0.0, 25.0 ]
           end
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
           service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
 
           expect(call_count).to eq(1)
-        end
-
-        it "does not enqueue TimeSyncDownlinkWorker when cluster_id is nil" do
-          allow(recovery_tree).to receive(:cluster_id).and_return(nil)
-          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
-          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.0, 0.0, 25.0 ])
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
-          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
-
-          service.send(:try_time_sync_recovery, recovery_tree, attributes, bands, true)
-
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
 
@@ -1263,20 +1241,16 @@ end
         end
         let(:service) { described_class.new("", nil) }
 
-        it "neutralizes 0xFE to zero, flags time_unsynced_fallback and enqueues CMD_TIME_SYNC" do
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+        it "neutralizes 0xFE to zero and flags time_unsynced_fallback" do
           attributes = { acoustic_events: 0xFE }
 
           service.send(:apply_time_uncertain_sentinel!, sentinel_tree, attributes, "0000AC30")
 
           expect(attributes[:acoustic_events]).to eq(0)
           expect(attributes[:time_unsynced_fallback]).to be(true)
-          expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(sentinel_tree.cluster_id)
         end
 
         it "leaves real acoustic counts untouched (incl. FW.22 saturation 255 and clamped 253)" do
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
-
           [ 0, 42, 0xFD, 0xFF ].each do |real_count|
             attributes = { acoustic_events: real_count }
             service.send(:apply_time_uncertain_sentinel!, sentinel_tree, attributes, "0000AC30")
@@ -1284,20 +1258,6 @@ end
             expect(attributes[:acoustic_events]).to eq(real_count)
             expect(attributes[:time_unsynced_fallback]).to be_nil
           end
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
-        end
-
-        it "still neutralizes and flags when tree has no cluster (no worker enqueue)" do
-          orphan_tree = sentinel_tree
-          allow(orphan_tree).to receive(:cluster_id).and_return(nil)
-          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
-          attributes = { acoustic_events: 0xFE }
-
-          service.send(:apply_time_uncertain_sentinel!, orphan_tree, attributes, "0000AC31")
-
-          expect(attributes[:acoustic_events]).to eq(0)
-          expect(attributes[:time_unsynced_fallback]).to be(true)
-          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
     end

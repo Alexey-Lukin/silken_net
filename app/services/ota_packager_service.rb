@@ -176,11 +176,9 @@ class OtaPackagerService
     }
     return base unless sealed?
 
-    # [FW.23] A sealed campaign exposes the (bytecode + trailer) package count. Its only
-    # runtime reader is the superseded OtaTransmissionWorker (FW.60) — the live poll-tract
-    # counts `packages.size` — so the field goes away together with that worker.
+    # [FW.23] The wire package count of a sealed campaign is `packages.size` (bytecode +
+    # trailer) — the poll-tract counts it there, so the manifest does not repeat it.
     base.merge(
-      total_packages:    total_bytecode_chunks + OTA_TRAILER_CHUNKS,
       sealed:            true,
       seal_cluster_id:   @cluster_id
     )

@@ -17,7 +17,6 @@ RSpec.describe HardwareKeyService, type: :service do
       deterministic_key: "test-deterministic-key-long-enough",
       key_derivation_salt: "test-salt-value-for-derivation-ok"
     )
-    allow(KeyRotationDownlinkWorker).to receive(:perform_async)
   end
 
   # [FW.17] Tree-ротація гейтована на CCM-flip; тут відкриваємо для тестів шляху.
@@ -64,8 +63,8 @@ RSpec.describe HardwareKeyService, type: :service do
     end
 
     # [FW.17] Tree-шлях — ратчет, не SecureRandom: новий ключ детермінований
-    # (K_{v+1} = KeyRatchet), версія інкрементована, 0x9E поставлено в чергу.
-    it "derives the Tree key via Hash-Ratchet and dispatches CMD_ROTATE_KEY" do
+    # (K_{v+1} = KeyRatchet), версія інкрементована.
+    it "derives the Tree key via Hash-Ratchet" do
       open_ratchet_gate!
       expected = Cryptography::KeyRatchet.advance_hex(
         original_key, Cryptography::KeyRatchet.did_to_u32(tree.did), from: 0, to: 1
@@ -76,7 +75,6 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(new_key).to eq(expected)
       hardware_key.reload
       expect(hardware_key.key_version).to eq(1)
-      expect(KeyRotationDownlinkWorker).to have_received(:perform_async).with(tree.did, 1)
     end
 
     # [FW.17 · 03_05 §2.5] DLFC кадру 0x9E видається тією ж транзакцією, що
@@ -107,7 +105,7 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(new_key).to eq("C2A8861DEF01E2A944D3CD989A7CF117")
     end
 
-    it "refuses Tree rotation while the FW17 gate is closed (no DB change, no dispatch)" do
+    it "refuses Tree rotation while the FW17 gate is closed (no DB change)" do
       service = described_class.new(tree)
 
       expect { service.rotate! }
@@ -116,7 +114,6 @@ RSpec.describe HardwareKeyService, type: :service do
       hardware_key.reload
       expect(hardware_key.aes_key_hex).to eq(original_key)
       expect(hardware_key.key_version).to eq(0)
-      expect(KeyRotationDownlinkWorker).not_to have_received(:perform_async)
     end
 
     it "raises error when previous rotation is still pending (dead-end protection)" do
@@ -133,27 +130,18 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(hardware_key.aes_key_hex).to eq(original_key)
     end
 
-    # [ARCH.59] Дзеркало знятої «атомарності»: enqueue стоїть ПІСЛЯ коміту, тож
-    # мертвий Redis більше не відкочує ротацію. Це вибір НАПРЯМКУ відмови, а не
-    # послаблення: стан, що лишається, тракт лікує сам, і другу половину доказу
-    # несе `spec/services/downlink/pending_queue_service_spec.rb` («derivable з
-    # Dual-Key Grace») — шов між ними рівно один, колонка нижче.
-    it "survives a failed downlink enqueue and arms the Grace backstop" do
+    # [FW.60] Доставки 0x9E в ротації немає — заявкою є відкритий Grace:
+    # `Downlink::PendingQueueService#key_rotation_payload` деривує з нього кадр на
+    # кожному poll'і Королеви (друга половина доказу —
+    # `spec/services/downlink/pending_queue_service_spec.rb`, «derivable з Dual-Key Grace»).
+    it "arms the Grace the poll-tract derives 0x9E from" do
       open_ratchet_gate!
-      service = described_class.new(tree)
 
-      # Simulate Redis/Sidekiq failure at 0x9E enqueue time
-      allow(KeyRotationDownlinkWorker).to receive(:perform_async).and_raise(StandardError.new("Redis unavailable"))
-
-      expect {
-        service.rotate!
-      }.to raise_error(StandardError, /Redis unavailable/)
+      described_class.new(tree).rotate!
 
       hardware_key.reload
       expect(hardware_key.aes_key_hex).not_to eq(original_key)
       expect(hardware_key.key_version).to eq(1)
-      # Саме це поле читає `Downlink::PendingQueueService#key_rotation_payload`:
-      # непорожнє = незавершена ротація доїде 0x9E на наступному poll'і Королеви.
       expect(hardware_key.previous_aes_key_hex).to eq(original_key)
     end
 
@@ -545,19 +533,6 @@ RSpec.describe HardwareKeyService, type: :service do
 
       expect(new_key).to be_present
       expect(ActuatorCommandWorker).not_to have_received(:perform_async)
-      expect(KeyRotationDownlinkWorker).not_to have_received(:perform_async)
-    end
-
-    it "tree rotation enqueues only the 0x9E ratchet command (key never airborne)" do
-      open_ratchet_gate!
-      tree_device = create(:tree, cluster: cluster)
-      # Post-ARCH.42: Tree-shaped HardwareKey = 32 hex (16-byte AES-128 LoRa key).
-      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
-
-      new_key = described_class.rotate(tree_device.did)
-
-      expect(new_key).to be_present
-      expect(KeyRotationDownlinkWorker).to have_received(:perform_async).with(tree_device.did, 1)
     end
   end
 

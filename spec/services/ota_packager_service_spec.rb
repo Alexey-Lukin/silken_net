@@ -397,11 +397,10 @@ RSpec.describe OtaPackagerService do
         expect(packages.last(7).map { |p| p.getbyte(0) }).to all(eq(0x9B))
       end
 
-      it "exposes the seal metadata and the wire package count in the manifest" do
+      it "exposes the seal metadata in the manifest" do
         manifest = prepared.fetch(:manifest)
 
         expect(manifest).to include(sealed: true, seal_cluster_id: cluster_id)
-        expect(manifest[:total_packages]).to eq(manifest[:total_chunks] + 7)
         expect(manifest[:lora_total_chunks]).to be_a(Integer)
       end
 
@@ -432,7 +431,6 @@ RSpec.describe OtaPackagerService do
 
         expect(prepared.fetch(:packages).to_a.map { |p| p.getbyte(0) }).to all(eq(0x99))
         expect(prepared.fetch(:manifest)).not_to have_key(:sealed)
-        expect(prepared.fetch(:manifest)).not_to have_key(:total_packages)
       end
     end
   end

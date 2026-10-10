@@ -6,11 +6,9 @@
 module OtaChunkable
   extend ActiveSupport::Concern
 
-  # One-Home пакувального кроку OTA. Число жило в `OtaTransmissionWorker`, чий ПУСКАЧ мертвий
-  # із [FW.60] і чий файл піде після bench-верифікації poll-тракту — а константу читають два
-  # живі сайти (`Ota::PackageStore`, `Ota::DeploymentDispatcherService`). Тут воно
-  # стоїть біля обох методів, які ним ріжуть, тож наступний, хто зноситиме воркер, не візьме
-  # з собою живе значення. ⚠️ Підняття вище MTU конверта CoAP ловить лише backstop на виході:
+  # One-Home пакувального кроку OTA — його читають `Ota::PackageStore` і
+  # `Ota::DeploymentDispatcherService`, і воно стоїть біля обох методів, які ним ріжуть.
+  # ⚠️ Підняття вище MTU конверта CoAP ловить лише backstop на виході:
   # `Ota::PackageStore` нарізає через `OtaPackagerService` без перевірки MTU, а
   # `Downlink::PendingQueueService` ловить уже зашифрований конверт понад стелю й віддає
   # time-only (спека того сервісу пінить) — і тоді кампанія стоїть.
@@ -20,12 +18,9 @@ module OtaChunkable
   # без backtracking. На 256 KB binary payload (FW.4 max) це ~3× швидше за
   # regex.scan і не виділяє inter-buffer regex match data.
   #
-  # ⚠️ **Споживача СЬОГОДНІ немає, і доти тут стояв мертвий** (переміряно
-  # 2026-08-17): коментар називав `OtaTransmissionWorker`, який із часів [FW.60]
-  # не має жодного enqueuer'а, а власних викликачів `#chunks` у дереві нуль —
-  # живий poll-тракт нарізає чанки сам (`OtaPackagerService`). Метод лишено, не
-  # зрізано: зняття push-ери гейтоване стендом (`00_07` ARCH.59-нитка), і в
-  # передпродовому дереві нуль викликачів вимірює недобудованість, не смерть.
+  # ⚠️ Продового викликача `#chunks` немає: poll-тракт нарізає чанки сам
+  # (`OtaPackagerService`). Метод лишено як заготовку передпродового дерева —
+  # нуль викликачів тут вимірює недобудованість, не смерть.
   def chunks(chunk_size = CHUNK_SIZE)
     size = payload_size
     return [] if size.zero?

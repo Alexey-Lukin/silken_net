@@ -1002,9 +1002,9 @@ class TelemetryUnpackerService < ApplicationService
   # preventing a false-positive fraud increment for a legitimate node that simply
   # hasn't received CMD_TIME_SYNC yet.
   #
-  # Side effects on match:
-  #   * sets attributes[:time_unsynced_fallback] = true
-  #   * enqueues TimeSyncDownlinkWorker for the tree's cluster
+  # Side effect on match: sets attributes[:time_unsynced_fallback] = true. Свіжий
+  # час не ставиться в чергу окремо — Королева дістає `[0x9C][ts:4]` у КОЖНІЙ
+  # poll-відповіді й перемотує маяк сама (FW.60, `03_02 §5а`).
   # [FW.8] Збіг — з БУДЬ-ЯКОЮ смугою-кандидатом, тим самим сирим z, що й
   # основний шлях: інакше recovery «знаходив» би чужу добу там, де основний шлях
   # відкинув пакет лише через смугу.
@@ -1031,9 +1031,8 @@ class TelemetryUnpackerService < ApplicationService
       attributes[:time_unsynced_fallback] = true
       Rails.logger.info(
         "[ARCH.41] DID #{tree.did}: epoch_day=#{epoch_day} cold-start candidate matched — " \
-        "time_unsynced_fallback set, CMD_TIME_SYNC queued."
+        "time_unsynced_fallback set."
       )
-      TimeSyncDownlinkWorker.perform_async(tree.cluster_id) if tree.cluster_id.present?
       return true
     end
 
@@ -1043,8 +1042,8 @@ class TelemetryUnpackerService < ApplicationService
   # [ARCH.41-B] Явний sentinel «час невідомий» з прошивки (acoustic = 0xFE).
   # На відміну від recovery (ARCH.41-A, детектив постфактум) — це голос самого
   # Солдата: «мій epoch_day застарілий». Нейтралізуємо acoustic до 0 ДО DCI
-  # (пристрій рахував Лоренц з 0 — дзеркало Soldier_Acoustic_Wire_Value),
-  # ставимо time_unsynced_fallback і одразу просимо CMD_TIME_SYNC. З HW.30 байт
+  # (пристрій рахував Лоренц з 0 — дзеркало Soldier_Acoustic_Wire_Value) і
+  # ставимо time_unsynced_fallback; час доїде конвертом poll-відповіді. З HW.30 байт
   # іншого змісту, крім сентинела, не несе, тож після нейтралізації в рядку лежить
   # рівно правда дроту — 0, а не 254 вигаданих «подій».
   # DCI при цьому НЕ обходиться —
@@ -1056,9 +1055,8 @@ class TelemetryUnpackerService < ApplicationService
     attributes[:time_unsynced_fallback] = true
     Rails.logger.info(
       "🕰️ [ARCH.41-B] DID #{hex_did}: acoustic sentinel 0xFE — Soldier ще не чув " \
-      "beacon'а (cold-boot після VBAT-loss?). Лоренц з acoustic=0; CMD_TIME_SYNC у чергу."
+      "beacon'а (cold-boot після VBAT-loss?). Лоренц з acoustic=0."
     )
-    TimeSyncDownlinkWorker.perform_async(tree.cluster_id) if tree.cluster_id.present?
   end
 
   # [FW.31] Feature-flag — defaults to false so production behaviour

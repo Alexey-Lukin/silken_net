@@ -304,9 +304,9 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       expect(EwsAlert.where(message_key: "queen_ota_stuck")).to be_empty
     end
 
-    # Backstop-предикат: стан без якоря. Живий код такого не створює
-    # (`PendingQueueService` пише пару одним `update!`), але мертвий
-    # `OtaTransmissionWorker` умів — і саме цей випадок sweep інакше не бачить.
+    # Backstop-предикат: стан без якоря. Код такого не створює
+    # (`PendingQueueService` пише пару одним `update!`), а ручна правка даних
+    # може — і саме цей випадок sweep інакше не бачить.
     it "ловить :updating БЕЗ якоря ota_started_at" do
       gateway = updating_gateway(started_ago: nil)
       gateway.update_columns(updated_at: 30.hours.ago)

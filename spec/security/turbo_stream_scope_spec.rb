@@ -183,7 +183,6 @@ RSpec.describe "Turbo stream scope axis" do # rubocop:disable RSpec/DescribeClas
       app/services/downlink/pending_queue_service.rb
       app/workers/actuator_command_worker.rb
       app/workers/gateway_staleness_sweep_worker.rb
-      app/workers/ota_transmission_worker.rb
       app/workers/unpack_telemetry_worker.rb
     ]
   end

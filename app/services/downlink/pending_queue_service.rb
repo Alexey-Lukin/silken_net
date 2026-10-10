@@ -206,7 +206,7 @@ module Downlink
                      .pending.by_priority
     end
 
-    # ── 0x9E ratchet (gated FW.17 — той самий guard, що KeyRotationDownlinkWorker) ──
+    # ── 0x9E ratchet (gated FW.17 — `HardwareKeyService.ratchet_dispatch_enabled?`) ──
     # Джерело derivable: tree-ключ кластера в Dual-Key Grace
     # (previous_aes_key_hex ≠ NULL = ротація не підтверджена Солдатом).
     def key_rotation_payload
@@ -369,7 +369,7 @@ module Downlink
       nil
     end
 
-    # [SEC.20] Живий producer OTA-прогрес-бара (push-воркер superseded FW.60):
+    # [SEC.20] Producer OTA-прогрес-бара в poll-тракті FW.60:
     # hint = старт, chunk-fetch = прогрес, fw= у poll'і = завершення.
     # Підписники: Gateways::Show + Firmwares::Index (04_04 §8).
     # Rescue-ізоляція: ми в синхронному reply-шляху coap-демона — збій

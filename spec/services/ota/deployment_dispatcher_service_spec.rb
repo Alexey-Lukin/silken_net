@@ -17,7 +17,6 @@ RSpec.describe Ota::DeploymentDispatcherService do
     )
   end
 
-  before { OtaTransmissionWorker.clear }
 
   describe "per-gateway targeting (FW.60 poll-тракт)" do
     let!(:gateways) { create_list(:gateway, 2, cluster: cluster) }
@@ -30,7 +29,6 @@ RSpec.describe Ota::DeploymentDispatcherService do
         expect(gw.reload.pending_firmware_id).to eq(firmware.id)
       end
       # [FW.60] push-fan-out superseded: доставку тягне Королева через poll.
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "burns the cluster hiwater to firmware.id on dispatch" do
@@ -88,19 +86,16 @@ RSpec.describe Ota::DeploymentDispatcherService do
 
       expect(result.dispatched?).to be(false)
       expect(result.skipped_clusters.map(&:reason)).to eq([ "rollback" ])
-      expect(OtaTransmissionWorker.jobs).to be_empty
       expect(firmware.reload.is_active).to be(false)
     end
 
     it "burns the slot at dispatch: re-issuing the SAME firmware is rejected (fix = new record)" do
       expect(call_service.dispatched?).to be(true)
 
-      OtaTransmissionWorker.clear
       second = call_service
 
       expect(second.dispatched?).to be(false)
       expect(second.skipped_clusters.map(&:reason)).to eq([ "rollback" ])
-      expect(OtaTransmissionWorker.jobs).to be_empty
     end
 
     it "does not lower hiwater when a newer campaign already passed" do

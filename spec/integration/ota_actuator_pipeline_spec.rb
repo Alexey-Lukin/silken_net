@@ -3,7 +3,7 @@
 
 require "rails_helper"
 
-RSpec.describe "OTA transmission and actuator command pipeline" do
+RSpec.describe "Actuator command pipeline" do
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
   let!(:gateway) { create(:gateway, cluster: cluster, ip_address: "10.0.0.1") }
@@ -13,83 +13,6 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(ActionCable.server).to receive(:broadcast)
-  end
-
-  # ---------------------------------------------------------------------------
-  # OtaTransmissionWorker
-  # ---------------------------------------------------------------------------
-  describe "OtaTransmissionWorker" do
-    let!(:firmware) { create(:bio_contract_firmware, version: "3.0.0", bytecode_payload: "AA" * 600) }
-
-    let(:mock_response) { instance_double(CoapClient::Response, success?: true, code: "2.04") }
-
-    before do
-      allow(CoapClient).to receive(:put).and_return(mock_response)
-    end
-
-    it "transmits first chunk and schedules next" do
-      allow(OtaTransmissionWorker).to receive(:perform_in).with(0.4.seconds, gateway.uid, "firmware", firmware.id, 1, 0)
-
-      OtaTransmissionWorker.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
-
-      expect(OtaTransmissionWorker).to have_received(:perform_in).with(0.4.seconds, gateway.uid, "firmware", firmware.id, 1, 0)
-      gateway.reload
-      expect(gateway.state).to eq("updating")
-    end
-
-    it "completes OTA on last chunk" do
-      # Small firmware that fits in one chunk
-      small_fw = create(:bio_contract_firmware, version: "3.1.0", bytecode_payload: "BB" * 200)
-      # [FW.23] Worker forwards gateway.cluster_id, so prepare() appends the
-      # 7-block trailer (6 Ed25519 seal segments + 1 version); the "last chunk" index must come
-      # from total_packages, not the bytecode-only total_chunks.
-      ota_data = OtaPackagerService.prepare(small_fw, chunk_size: 512, cluster_id: gateway.cluster_id)
-      total = ota_data[:manifest][:total_packages] || ota_data[:manifest][:total_chunks]
-
-      # Simulate transmitting the last chunk (index = total - 1)
-      OtaTransmissionWorker.new.perform(gateway.uid, "firmware", small_fw.id, total - 1, 0)
-
-      gateway.reload
-      expect(gateway.state).to eq("idle")
-      expect(gateway.firmware_version).to eq("3.1.0")
-    end
-
-    it "handles TinyML model OTA" do
-      model = create(:tiny_ml_model, version: "v5.0.0", binary_weights_payload: "CC" * 200)
-      ota_data = OtaPackagerService.prepare(model, chunk_size: 512, cluster_id: gateway.cluster_id)
-      total = ota_data[:manifest][:total_packages] || ota_data[:manifest][:total_chunks]
-
-      OtaTransmissionWorker.new.perform(gateway.uid, "tinyml", model.id, total - 1, 0)
-
-      gateway.reload
-      expect(gateway.state).to eq("idle")
-      expect(gateway.firmware_version).to eq("v5.0.0")
-    end
-
-    it "retries with exponential backoff on CoAP failure" do
-      allow(CoapClient).to receive(:put).and_raise(StandardError, "CoAP NACK")
-
-      allow(OtaTransmissionWorker).to receive(:perform_in).with(15.seconds, gateway.uid, "firmware", firmware.id, 0, 1)
-
-      OtaTransmissionWorker.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
-
-      expect(OtaTransmissionWorker).to have_received(:perform_in).with(15.seconds, gateway.uid, "firmware", firmware.id, 0, 1)
-    end
-
-    it "marks gateway faulty after max retries" do
-      allow(CoapClient).to receive(:put).and_raise(StandardError, "CoAP NACK")
-
-      OtaTransmissionWorker.new.perform(gateway.uid, "firmware", firmware.id, 0, 5)
-
-      gateway.reload
-      expect(gateway.state).to eq("faulty")
-    end
-
-    it "raises for unknown firmware type" do
-      expect {
-        OtaTransmissionWorker.new.perform(gateway.uid, "unknown_type", 1)
-      }.to raise_error(ArgumentError, /Невідомий тип прошивки/)
-    end
   end
 
   # ---------------------------------------------------------------------------

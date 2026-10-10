@@ -546,6 +546,19 @@ RSpec.describe Downlink::PendingQueueService do
       )).to be_nil
     end
 
+    # [FW.60] Метрику OTA_CHUNKS_SENT_TOTAL пише лише цей тракт: видані чанки, не запити.
+    it "лічить виданий чанк у OTA_CHUNKS_SENT_TOTAL і мовчить на відхиленому запиті" do
+      metric = SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL
+      labels = { firmware_version: firmware.version.to_s }
+      before_val = metric.get(labels: labels)
+
+      described_class.ota_chunk_reply(gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" })
+      expect(metric.get(labels: labels) - before_val).to eq(1)
+
+      described_class.ota_chunk_reply(gateway: gateway, query: { "v" => (firmware.id + 99).to_s, "ch" => "0" })
+      expect(metric.get(labels: labels) - before_val).to eq(1)
+    end
+
     # 🔴 Гард «без KEYC → nil» мав пін лише на ОДНОМУ з двох входів (`poll_reply`,
     # див. «порожня черга»), а chunk-сервер — окрема точка входу CoapGate й окремий
     # `return nil unless encryption_key`. Дзеркало наполовину: зняття гарда саме тут

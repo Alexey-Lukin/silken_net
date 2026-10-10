@@ -5,8 +5,8 @@ module Ota
   # [SEC.20 Rails-half] Диспетчер OTA-кампанії: таргетує прошивку на шлюзи
   # організації через per-gateway `pending_firmware_id` — [FW.60] доставку
   # виконує сама Королева (poll-після-флашу → OTA-hint → chunk-server
-  # `Downlink::PendingQueueService`), push-fan-out OtaTransmissionWorker
-  # superseded (CGNAT-egress inbound-недосяжний).
+  # `Downlink::PendingQueueService`); push на шлюз неможливий (CGNAT-egress
+  # inbound-недосяжний).
   #
   # Anti-rollback: firmware.id мусить СТРОГО перевершити clusters.ota_version_hiwater
   # (Rails-дзеркало Солдатового інваріанта — той самий firmware.id їде в seg-7
