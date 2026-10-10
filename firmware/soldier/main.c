@@ -46,7 +46,8 @@ _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
 #include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM байт 11)
-#include "../common/reset_cause.h"  // [FW.59] коди diag[7..5] CCM-кадру (джерело — S6b; доти «не повідомлено»)
+#include "../common/reset_cause.h"  // [FW.59] причина ребуту: декодер RCC_CSR + рішення «стан під Standby» → diag[7..5] CCM-кадру
+#include "../common/soldier_dr0.h"  // розкладка DR0 — один пакувальник на всіх писачів (03_01 §2)
 #include "../common/mpu_regions.h"  // [SEC.21] MPU NX-stack/RO-code розкладка (draft)
 #include "../common/device_event.h" // [SEC.21] uplink 0x57 device-event (canary-слід → Rails)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
@@ -113,34 +114,15 @@ _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
 // Сторожовий пес вмирає при cold boot — перший boot після VBAT-loss заново
 // сіє лічильник з HRNG (range 0x0001..0xFFFF), щоб після відродження старі
 // nonce'и Redis не закрили нову трансляцію.
-#define PANIC_COUNTER_DR0_SHIFT   16          // DR0[31:16] = panic_frame_counter (uint16)
-#define PANIC_COUNTER_MASK        0xFFFFu
-// [SEC.20] DR0[9:8] = ota_vm_error_streak (0..3): N поспіль bytecode-збоїв →
-// auto-fallback на embedded baseline. Vacant-байт DR0[15:11] (§2.3.2), DR7 цілий.
-#define OTA_VM_ERR_STREAK_DR0_SHIFT 8
-#define OTA_VM_ERR_STREAK_MASK      0x03u
+// Розкладка DR0 — firmware/common/soldier_dr0.h (поля, non-overlap static-assert і
+// пакувальник, який кличуть усі писачі DR0 нижче); тут лише логіка навколо полів.
+// [SEC.20] N поспіль bytecode-збоїв (DR0[9:8]) → auto-fallback на embedded baseline.
 #define SEC20_VM_ERROR_FALLBACK_N   3u
 // [SEC.21] DR0[10] = canary_tripped: __stack_chk_fail лишає слід перед
 // перевтіленням — переписаний кадр стека то потенційний слід атаки, він
 // мусить пережити reset (RAM-слід згорів би разом зі стеком). Гасить його
 // wire-винос: три best-effort постріли event-кадру 0x57 (device_event.h),
 // після третього Фаза 5 пише DR0[10]=0; доти — sticky, видимий і SWD'ом.
-#define CANARY_TRIP_DR0_SHIFT       10
-#define CANARY_TRIP_MASK            0x01u
-// [FW.54 guard] DR0 bit-map compile-time non-overlap: panic[31:16] | rsv[15:11] |
-// canary[10] | vm_err_streak[9:8] | acoustic[7:0]. Нова фіча, що вкраде слот
-// (§2.3.2 vacant [15:11] або DR7), впаде ТУТ на компіляції — не тихо перекриє
-// money-path-лічильник у полі.
-_Static_assert(
-    (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     & 0xFFu) == 0u &&
-    (((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT) & 0xFFu) == 0u &&
-    (((uint32_t)CANARY_TRIP_MASK       << CANARY_TRIP_DR0_SHIFT)       & 0xFFu) == 0u &&
-    (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT)     &
-     ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT)) == 0u &&
-    (((uint32_t)CANARY_TRIP_MASK       << CANARY_TRIP_DR0_SHIFT)       &
-     (((uint32_t)PANIC_COUNTER_MASK     << PANIC_COUNTER_DR0_SHIFT) |
-      ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT))) == 0u,
-    "DR0 bit-map collision — panic[31:16]/canary[10]/vm_streak[9:8]/acoustic[7:0] перетнулись; ревізувати 03_01 §2");
 #define PANIC_COUNTER_MAX         0xFFFFu     // Saturating maximum
 #define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
 #define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
@@ -1396,6 +1378,44 @@ __attribute__((noreturn)) void __stack_chk_fail(void)
     for (;;) { } // недосяжно: заспокоює noreturn-аналіз
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// [FW.59] RESET-CAUSE: чому Солдат перевтілився (diag[7..5] CCM-кадру wire-rev2.2)
+// ════════════════════════════════════════════════════════════════════════
+// Маркер HardFault'а: наш handler виходить через NVIC_SystemReset, тобто в кремнії лишає
+// той самий SFTRSTF, що й штатний ребут, — розрізняє їх лише RAM поза зоною обнулення.
+// Секцію дає лінкер-карта образу (stm32wle5jc_soldier.ld), а її ASSERT валить лінк, якщо
+// маркер ліг поза неї; тому символ глобальний — статичного лінкер-скрипт не бачить.
+SILKEN_NOINIT volatile uint32_t soldier_fault_marker;
+
+// Причина останнього СПРАВЖНЬОГО ребуту — стан, який несе кожен кадр. Під Standby
+// переживає пробудження в DR0[13:11] (soldier_dr0.h), бо пробудження теж є скидом.
+static uint8_t soldier_reset_cause = SILKEN_RESET_UNKNOWN;
+
+// Справжній HardFault замість вендорного Default_Handler: той крутить вічний цикл, і через
+// ≈ 32 с вузол кусав пес — тобто HardFault читався б як IWDG, «завис головний цикл», а це вже
+// підміна причини, не її відсутність. (MemManage під SEC21_MPU_ENABLED і NMI досі падають у
+// Default_Handler — тіло MemManage є board-freeze-рішенням SEC.21, не цього зрізу.) Тіло мінімальне: стек у fault-контексті може бути
+// зіпсований, тож один запис у RAM і скид.
+__attribute__((noreturn)) void HardFault_Handler(void)
+{
+    soldier_fault_marker = SILKEN_RESET_FAULT_MAGIC;
+    NVIC_SystemReset();
+    for (;;) { } // недосяжно: заспокоює noreturn-аналіз
+}
+
+// Слово DR0 зі стану в RAM — єдиний вираз для всіх писачів регістра (soldier_dr0.h).
+static uint32_t Soldier_Dr0_Word(void)
+{
+    SoldierDr0 dr0 = {
+        .panic_counter   = panic_frame_counter,
+        .reset_cause     = soldier_reset_cause,
+        .canary_tripped  = canary_tripped,
+        .vm_err_streak   = ota_vm_error_streak,
+        .acoustic_events = acoustic_events,
+    };
+    return Soldier_Dr0_Pack(&dr0);
+}
+
 /* USER CODE END 0 */
 
 // [FW.46 · FW.50] Одне читання внутрішнього каналу АЦП: канал стає на ранг 1 ЯВНО перед
@@ -1430,6 +1450,25 @@ static uint8_t Soldier_Adc_Read(uint32_t channel, uint16_t *out)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  // [FW.59] ПЕРШОЮ дією, як у Королеви: прапорці RCC_CSR накопичуються до RMVF (незгашені
+  // перетворили б кожен наступний ребут на вічний «IWDG»), а .noinit-маркер живий лише доти,
+  // доки його ніхто не переписав. Яку причину несе кадр, вирішує Silken_Reset_Cause_Resolve
+  // нижче, після читання DR0.
+  const uint32_t boot_rcc_csr = RCC->CSR;
+  const uint8_t boot_fault_marker =
+      (soldier_fault_marker == SILKEN_RESET_FAULT_MAGIC) ? 1u : 0u;
+  soldier_fault_marker = 0u;
+  __HAL_RCC_CLEAR_RESET_FLAGS();
+#if FW54_STANDBY_ENABLED
+  // [FW.54 · FW.59] C1SBF — теж першою дією: системний скид його НЕ гасить (лише запис C1CSSF
+  // або POR), тож збій ініціалізації нижче (HardFault · Error_Handler · канарка) одразу після
+  // пробудження, якби прапорець ще стояв, наступний boot прочитав би пробудженням — і кадр поніс
+  // би позаминулу причину замість виміряного HardFault. Регістр PWR на WL тактується завжди.
+  const uint8_t boot_from_standby = (uint8_t)(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != 0U);
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+#else
+  const uint8_t boot_from_standby = 0u;   // STOP2 пробуджується без скиду
+#endif
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -1491,30 +1530,36 @@ int main(void)
   // 1. Відкриваємо доступ до Backup Domain (дозволяємо запис у вічну пам'ять)
   HAL_PWR_EnableBkUpAccess();
 #if FW54_STANDBY_ENABLED
-  // [FW.54] Пробудження зі Standby — це reset: відрізняє його лише C1SBF (+ цілий маркер DR19,
-  // standby_wake.h). Знімаємо прапорець одразу, інакше reset пін-ом прочитався б пробудженням.
+  // [FW.54] Пробудження зі Standby — це reset: відрізняє його лише C1SBF (знятий першою дією
+  // main()) + цілий маркер DR19 (standby_wake.h) — для довіри до стану Лоренца в DR.
   soldier_woke_from_standby = Silken_Wake_From_Standby(
-      (uint8_t)(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != 0U),
+      boot_from_standby,
       (uint8_t)(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19) == LORENZ_STATE_MAGIC));
-  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
 #endif
 
   // 2. Відновлюємо пам'ять з RTC (якщо було перезавантаження)
-  // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8].
+  // [SEC.10/SEC.20/SEC.21/FW.59] DR0 — розкладка й пакувальник у soldier_dr0.h.
   // При cold-boot DR0 == 0 → лічильник пересіємо з HRNG нижче, щоб уникнути
   // колізії з nonce'ами Redis від попереднього втілення вузла.
   {
-      uint32_t dr0_raw = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
-      acoustic_events     = (uint8_t)(dr0_raw & 0xFFu);
-      panic_frame_counter = (uint16_t)((dr0_raw >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
+      const SoldierDr0 dr0 = Soldier_Dr0_Unpack(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0));
+      acoustic_events     = dr0.acoustic_events;
+      panic_frame_counter = dr0.panic_counter;
       // [SEC.20] Streak bytecode-збоїв переживає STOP2 у DR0[9:8] (RAM-only
       // згорів би щоцикл у RTC-only сні — клас Standby, 00_07 FW.54). Cold-boot DR0=0 → streak=0 природно.
-      ota_vm_error_streak = (uint8_t)((dr0_raw >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
+      ota_vm_error_streak = dr0.vm_err_streak;
       // [SEC.21] Слід канарки з минулого втілення: sticky до wire-виносу.
       // Cold-boot DR0=0 → чисто природно. Слід є → заряджаємо 3 постріли
       // 0x57 (LoRa губить кадри; повтори в наступних циклах best-effort).
-      canary_tripped = (uint8_t)((dr0_raw >> CANARY_TRIP_DR0_SHIFT) & CANARY_TRIP_MASK);
+      canary_tripped = dr0.canary_tripped;
       if (canary_tripped) canary_evt_shots = 3u;
+      // [FW.59] Справжній ребут — причину каже RCC_CSR (+ маркер HardFault'а); вихід зі Standby
+      // ребутом не є, і причину несе DR0. Маркер стану Лоренца (DR19) тут НЕ потрібен: DR0
+      // пишуть безумовно перед кожним входом у Standby (Фаза 5 і рятувальний шлях PVD), тож
+      // довіру йому дає сам C1SBF — а маркер DR19 пишеться лише за валідного стану Лоренца
+      // (не до першого маяка й не без K_seed) і з гілкою (Б) переписується.
+      soldier_reset_cause = Silken_Reset_Cause_Resolve(boot_from_standby, boot_rcc_csr,
+                                                       boot_fault_marker, dr0.reset_cause);
       if (panic_frame_counter == 0) {
           // [SEC.10] Cold-boot resync: HRNG-сів значення у [1, 0xFFFF],
           // щоб panic-stream після перезавантаження не зустрів живі
@@ -1991,12 +2036,10 @@ int main(void)
                   Ota_Hal_Erase((void *)0, OTA_CONTRACT_PAGE);
                   ota_vm_error_streak = 0;
                   // NVIC_SystemReset зберігає DR0 (не VBAT-loss) → персистимо
-                  // streak=0 ЯВНО, інакше boot прочитав би старе значення й
-                  // erase-нув би передчасно ще раз. Canary-слід [10] бережемо.
-                  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-                      ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-                      ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-                      (uint32_t)acoustic_events);
+                  // streak=0 ЯВНО (його обнулено рядком вище), інакше boot прочитав
+                  // би старе значення й erase-нув би передчасно ще раз. Решту слова
+                  // (canary-слід [10], причина ребуту) пакувальник бере з RAM як є.
+                  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
                   NVIC_SystemReset();
               }
           }
@@ -2087,8 +2130,8 @@ int main(void)
         // Байт 11 — SEC.20-звіт (акустики й коду 0xFE у CCM-кадрі більше немає: час
         // невідомий їде бітом diag). Поля без джерела пишуться власним «не виміряно»,
         // а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19), vpd_index
-        // — call-site BME280 бенчевий (HW.32), reset_cause — читання причини ребуту
-        // приходить окремим зрізом (FW.59). Збій збірки (HAL захрип) → мовчимо цей
+        // — call-site BME280 бенчевий (HW.32). reset_cause — стан (FW.59): причина
+        // останнього справжнього ребуту, вирішена на boot. Збій збірки (HAL захрип) → мовчимо цей
         // цикл: 16B-фолбек у CCM-ері Королева однаково дропне (atomic-cutover).
         uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
         uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
@@ -2099,7 +2142,7 @@ int main(void)
                                 Fw_Report_To_Ccm7(fw_contract_report),
                                 (uint16_t)dt_wire, lora_payload[10], ccm_mesh_ctrl,
                                 (uint16_t)FW2_VOC_MV_UNKNOWN,
-                                Pack_FW2_Diag(SILKEN_RESET_UNKNOWN, time_uncertain,
+                                Pack_FW2_Diag(soldier_reset_cause, time_uncertain,
                                               0u /* voc_attempt */, fc_hiwater_degraded),
                                 (uint8_t)FW2_VPD_INDEX_NONE,
                                 wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
@@ -2583,12 +2626,8 @@ int main(void)
     // блок FW.17 нижче в цьому ж КЕНОЗИСІ (секція 1.14).
     Soldier_Dl_Cmd_Commit();
 #endif
-    // [SEC.10/SEC.20] DR0: [panic:16 | rsv:6 | vm_err_streak:2 | acoustic:8]
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
-        (uint32_t)acoustic_events);
+    // [SEC.10/SEC.20/SEC.21/FW.59] DR0 — розкладка в soldier_dr0.h
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, has_mesh_relay);
 
@@ -2775,14 +2814,10 @@ void HAL_PWR_PVDCallback(void)
     }
     if (pvd_coma) return; // ще один спад посеред коми — вже спимо
 
-    // 1. [SEC.10] Спакована плоть DR0 — рятуємо лічильник panic-кадрів і
-    //    acoustic_events єдиним 32-бітним словом, щоб panic-replay захист
+    // 1. [SEC.10] Спакована плоть DR0 — рятуємо лічильник panic-кадрів (і решту
+    //    полів слова) одним 32-бітним записом, щоб panic-replay захист
     //    не зник при брауноуті між Phase 5 циклами.
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
-        (uint32_t)acoustic_events);
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
 
     // 2. [ARCH.21] Зберігаємо timestamp пробудження, щоб delta_t після
     //    відновлення живлення не стрибнув на гігантське значення.
@@ -2860,7 +2895,7 @@ void Trigger_Emergency_LoRa_TX(void)
                                          << FW2_MESH_TTL_SHIFT) |
                                         (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
     Pack_CCM_Panic_Payload(Fw_Report_To_Ccm7(fw_contract_report), panic_mesh_ctrl,
-                           Pack_FW2_Diag(SILKEN_RESET_UNKNOWN,
+                           Pack_FW2_Diag(soldier_reset_cause,
                                          (soldier_unix_ts == 0u) ? 1u : 0u,
                                          0u /* voc_attempt */, fc_hiwater_degraded),
                            panic_pt);
@@ -2905,13 +2940,8 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // [SEC.10] Персистимо новий лічильник у DR0 НЕГАЙНО, до того як
     // PVD-брауноут або soft-reset встигне поглинути нас перед Phase 5.
-    // [SEC.20] Зберігаємо й vm_err_streak[9:8] — інакше panic-запис обнуляв би
-    // лічильник bytecode-збоїв (DR0-мапа §2 дотримана на ВСІХ трьох write).
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
-        (uint32_t)acoustic_events);
+    // Решту слова пакувальник бере з RAM — panic-запис не обнуляє ні streak, ні причину.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
 
     // 4. Шифруємо AES-128 (post-ARCH.42) і миттєво вистрілюємо
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);

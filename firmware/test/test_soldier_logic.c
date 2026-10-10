@@ -3098,37 +3098,40 @@ TEST(test_ota_finalize_rejects_a_trailer_stitched_from_two_seals) {
 /* ════════════════════════════════════════════════════════════════════
  * [SEC.10] Frame Counter anti-replay для panic packets
  * ════════════════════════════════════════════════════════════════════
- * Логіка пакування DR0[31:16] = panic_frame_counter, DR0[7:0] = acoustic.
+ * Розкладка DR0 — справжній пакувальник прошивки (common/soldier_dr0.h, ним
+ * пишуть усі чотири писачі DR0 у main.c); помічники нижче лише звужують
+ * його до полів, про які питає кожен тест. Доти тут жили три наскладені
+ * копії ВИРАЗУ слова DR0 з main.c — і доводили копію, не прошивку (гоча
+ * firmware #19). Послідовність записів PVD (Simulate_PVD_Brownout_Save нижче)
+ * лишається дзеркалом main.c — слово DR0 вона вже пакує справжнім пакувальником.
  * Counter=0 cold-boot → reseed (HRNG); transmit BE у panic_payload[14..15].
  */
-#define PANIC_COUNTER_DR0_SHIFT   16
-#define PANIC_COUNTER_MASK        0xFFFFu
+#include "../common/soldier_dr0.h"
+#include "../common/standby_wake.h"
 #define PANIC_COUNTER_MAX         0xFFFFu
 #define PANIC_COUNTER_PAD_HI      14
 #define PANIC_COUNTER_PAD_LO      15
 
-/* Pack DR0: packed plot of acoustic_events + panic_frame_counter. */
 static uint32_t Pack_DR0(uint16_t panic_counter, uint8_t acoustic) {
-    return ((uint32_t)panic_counter << PANIC_COUNTER_DR0_SHIFT) | (uint32_t)acoustic;
+    SoldierDr0 s = { .panic_counter = panic_counter, .acoustic_events = acoustic };
+    return Soldier_Dr0_Pack(&s);
 }
 static uint16_t Unpack_DR0_Counter(uint32_t dr0) {
-    return (uint16_t)((dr0 >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
+    return Soldier_Dr0_Unpack(dr0).panic_counter;
 }
 static uint8_t Unpack_DR0_Acoustic(uint32_t dr0) {
-    return (uint8_t)(dr0 & 0xFFu);
+    return Soldier_Dr0_Unpack(dr0).acoustic_events;
 }
 
-/* [SEC.20] Розширення DR0-mirror: + vm_err_streak у vacant-байті [9:8]
- * (panic[31:16]/acoustic[7:0] недоторкані). Дзеркалить main.c DR0-write. */
-#define OTA_VM_ERR_STREAK_DR0_SHIFT 8
-#define OTA_VM_ERR_STREAK_MASK      0x03u
+/* [SEC.20] vm_err_streak у DR0[9:8] (panic[31:16]/acoustic[7:0] недоторкані). */
 #define SEC20_VM_ERROR_FALLBACK_N   3u
 static uint32_t Pack_DR0_Full(uint16_t panic_counter, uint8_t streak, uint8_t acoustic) {
-    return Pack_DR0(panic_counter, acoustic) |
-           ((uint32_t)(streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT);
+    SoldierDr0 s = { .panic_counter = panic_counter, .vm_err_streak = streak,
+                     .acoustic_events = acoustic };
+    return Soldier_Dr0_Pack(&s);
 }
 static uint8_t Unpack_DR0_Streak(uint32_t dr0) {
-    return (uint8_t)((dr0 >> OTA_VM_ERR_STREAK_DR0_SHIFT) & OTA_VM_ERR_STREAK_MASK);
+    return Soldier_Dr0_Unpack(dr0).vm_err_streak;
 }
 static int Sec20_Should_Fallback(uint8_t streak) {
     return streak >= SEC20_VM_ERROR_FALLBACK_N;
@@ -3369,17 +3372,15 @@ TEST(test_sec20_report_ccm7_squeeze) {
  * Сам __stack_chk_fail/NVIC_SystemReset — ARM-only, host спостерігає
  * лише «що лягло в DR0 перед перевтіленням».
  */
-#define CANARY_TRIP_DR0_SHIFT 10
-#define CANARY_TRIP_MASK      0x01u
-
-/* Дзеркало main.c DR0-write усіх чотирьох sites (post-SEC.21). */
+/* Той самий пакувальник, що в усіх чотирьох писачів DR0 main.c (soldier_dr0.h). */
 static uint32_t Pack_DR0_Canary(uint16_t panic_counter, uint8_t canary,
                                 uint8_t streak, uint8_t acoustic) {
-    return Pack_DR0_Full(panic_counter, streak, acoustic) |
-           ((uint32_t)(canary & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT);
+    SoldierDr0 s = { .panic_counter = panic_counter, .canary_tripped = canary,
+                     .vm_err_streak = streak, .acoustic_events = acoustic };
+    return Soldier_Dr0_Pack(&s);
 }
 static uint8_t Unpack_DR0_Canary(uint32_t dr0) {
-    return (uint8_t)((dr0 >> CANARY_TRIP_DR0_SHIFT) & CANARY_TRIP_MASK);
+    return Soldier_Dr0_Unpack(dr0).canary_tripped;
 }
 
 TEST(test_sec21_guard_derive_hrng_nonzero_null_lsb) {
@@ -3419,7 +3420,7 @@ TEST(test_sec21_canary_bit_dr0_roundtrip_fields_intact) {
 }
 
 TEST(test_sec21_canary_bit_no_overlap) {
-    /* Дзеркало _Static_assert'а main.c: маска сліду не перетинає сусідів. */
+    /* Runtime-двійник _Static_assert'а soldier_dr0.h: маска сліду не перетинає сусідів. */
     uint32_t canary_field = (uint32_t)CANARY_TRIP_MASK << CANARY_TRIP_DR0_SHIFT;
     ASSERT_EQ(canary_field & ((uint32_t)PANIC_COUNTER_MASK << PANIC_COUNTER_DR0_SHIFT), 0u);
     ASSERT_EQ(canary_field & ((uint32_t)OTA_VM_ERR_STREAK_MASK << OTA_VM_ERR_STREAK_DR0_SHIFT), 0u);
@@ -3433,6 +3434,110 @@ TEST(test_sec21_canary_preserved_through_dr0_writeback) {
     uint8_t restored = Unpack_DR0_Canary(before);
     uint32_t after = Pack_DR0_Canary(0x1235, restored, 1, 0x06);
     ASSERT_EQ(Unpack_DR0_Canary(after), 1);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.59] Причина ребуту Солдата — стан у DR0[13:11] під Standby
+ * ════════════════════════════════════════════════════════════════════
+ * Кадр несе причину останнього СПРАВЖНЬОГО ребуту (diag[7..5], wire-rev2.2).
+ * Пробудження зі Standby — теж скид; причину тоді дає DR0, а вихід зі Standby
+ * відрізняє C1SBF, знятий першою дією main() (маркер Лоренца DR19 — ні: його
+ * пишуть не щоразу). Тести — чек-лист 03_01 §2.2 п.6: холодний старт · теплий
+ * roundtrip · сміття в DR. ⚠️ Проводку в main.c (порядок знімання прапорців,
+ * аргументи викликів) host не компілює — тести нижче судять заголовки.
+ */
+TEST(test_fw59_dr0_reset_cause_roundtrip_neighbours_intact) {
+    SoldierDr0 in = { .panic_counter = 0xBEEF, .reset_cause = SILKEN_RESET_HARDFAULT,
+                      .canary_tripped = 1, .vm_err_streak = 2, .acoustic_events = 0x7A };
+    SoldierDr0 out = Soldier_Dr0_Unpack(Soldier_Dr0_Pack(&in));
+    ASSERT_EQ(out.reset_cause, SILKEN_RESET_HARDFAULT);
+    ASSERT_EQ(out.panic_counter, 0xBEEF);
+    ASSERT_EQ(out.canary_tripped, 1);
+    ASSERT_EQ(out.vm_err_streak, 2);
+    ASSERT_EQ(out.acoustic_events, 0x7A);
+}
+
+TEST(test_fw59_dr0_cause_sits_in_bits_13_11_reserve_untouched) {
+    SoldierDr0 only_cause = { .reset_cause = SILKEN_RESET_CAUSE_MAX };
+    ASSERT_EQ(Soldier_Dr0_Pack(&only_cause), 0x00003800u);
+    /* Усі поля в максимумі — резерв [15:14] лишається нулем. */
+    SoldierDr0 full = { .panic_counter = 0xFFFF, .reset_cause = 0x07, .canary_tripped = 0xFF,
+                        .vm_err_streak = 0xFF, .acoustic_events = 0xFF };
+    ASSERT_EQ(Soldier_Dr0_Pack(&full) & 0x0000C000u, 0u);
+}
+
+TEST(test_fw59_dr0_out_of_range_cause_is_unknown_not_aliased) {
+    /* 9 & 7 = 1 = POWER_ON — вигадана причина; пакувальник пише «не повідомлено». */
+    SoldierDr0 s = { .panic_counter = 0x1234, .reset_cause = 9 };
+    uint32_t w = Soldier_Dr0_Pack(&s);
+    ASSERT_EQ(Soldier_Dr0_Unpack(w).reset_cause, SILKEN_RESET_UNKNOWN);
+    ASSERT_EQ(Soldier_Dr0_Unpack(w).panic_counter, 0x1234);
+}
+
+TEST(test_fw59_real_reset_decodes_csr_not_dr0) {
+    /* Справжній ребут: DR0 несе ПОПЕРЕДНЮ причину — вона не сміє перекрити нову. */
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(0u, SILKEN_RCC_CSR_IWDGRSTF | SILKEN_RCC_CSR_PINRSTF,
+                                         0u, SILKEN_RESET_HARDFAULT), SILKEN_RESET_IWDG);
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(0u, SILKEN_RCC_CSR_SFTRSTF, 1u, SILKEN_RESET_IWDG),
+              SILKEN_RESET_HARDFAULT);
+}
+
+TEST(test_fw59_standby_wake_carries_persisted_cause_ignoring_csr) {
+    /* Пробудження: що б не лишив у CSR вихід зі Standby (тут — POR-подібні прапорці
+     * й несвіжа магія маркера), кадр несе причину з DR0. */
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(1u, SILKEN_RCC_CSR_BORRSTF | SILKEN_RCC_CSR_PINRSTF |
+                                             SILKEN_RCC_CSR_SFTRSTF, 1u, SILKEN_RESET_IWDG),
+              SILKEN_RESET_IWDG);
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(1u, 0u, 0u, 0xFFu), SILKEN_RESET_UNKNOWN);
+}
+
+TEST(test_fw59_cause_survives_standby_cycles_until_next_real_reset) {
+    /* (b) теплий roundtrip: пес → кожне пробудження несе IWDG → HardFault → HARDFAULT. */
+    SoldierDr0 ram = { .panic_counter = 0x0101 };
+    ram.reset_cause = Silken_Reset_Cause_Resolve(0u /* C1SBF */, SILKEN_RCC_CSR_IWDGRSTF, 0u, 0u);
+    uint32_t dr0 = Soldier_Dr0_Pack(&ram);                 /* Фаза 5 перед сном */
+    for (int wake = 0; wake < 3; wake++) {
+        SoldierDr0 restored = Soldier_Dr0_Unpack(dr0);
+        uint8_t cause = Silken_Reset_Cause_Resolve(1u /* C1SBF */, SILKEN_RCC_CSR_BORRSTF, 0u,
+                                                   restored.reset_cause);
+        ASSERT_EQ(cause, SILKEN_RESET_IWDG);
+        restored.reset_cause = cause;
+        dr0 = Soldier_Dr0_Pack(&restored);
+    }
+    /* HardFault в ініціалізації одразу після пробудження: C1SBF уже погашено першою
+     * дією main(), тож наступний boot — справжній ребут, і причина нова, не позаминула. */
+    uint8_t next = Silken_Reset_Cause_Resolve(0u /* C1SBF */, SILKEN_RCC_CSR_SFTRSTF, 1u,
+                                              Soldier_Dr0_Unpack(dr0).reset_cause);
+    ASSERT_EQ(next, SILKEN_RESET_HARDFAULT);
+}
+
+TEST(test_fw59_cold_boot_junk_dr0_is_not_trusted) {
+    /* (a)+(c): холодний старт (POR гасить C1SBF) із сміттям у DR0 — причина з CSR. */
+    uint8_t persisted = Soldier_Dr0_Unpack(0xFFFFFFFFu).reset_cause;
+    ASSERT_EQ(persisted, SILKEN_RESET_LOW_POWER);
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(0u /* C1SBF */, SILKEN_RCC_CSR_BORRSTF, 0u, persisted),
+              SILKEN_RESET_POWER_ON);
+}
+
+TEST(test_fw59_wake_before_first_beacon_keeps_cause_without_lorenz_marker) {
+    /* До першого маяка (чи без K_seed) DR19 не пишеться, і Silken_Wake_From_Standby
+     * читає холодним стартом — причина ребуту від нього не залежить: C1SBF + DR0. */
+    ASSERT_EQ(Silken_Wake_From_Standby(1u, 0u), 0u);
+    SoldierDr0 before_sleep = { .reset_cause = SILKEN_RESET_PIN };
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(1u /* C1SBF */, SILKEN_RCC_CSR_BORRSTF |
+                                         SILKEN_RCC_CSR_PINRSTF, 0u,
+                                         Soldier_Dr0_Unpack(Soldier_Dr0_Pack(&before_sleep)).reset_cause),
+              SILKEN_RESET_PIN);
+}
+
+TEST(test_fw59_wake_after_pre_fw59_dr0_reads_unknown) {
+    /* DR0, записаний прошивкою до FW.59 (біти [13:11] нулі): пробудження чесно
+     * каже «не повідомлено», а не вигадує причину. Слово — літерал старої розкладки
+     * (panic 0x4242 · canary · streak 1), не вихід нового пакувальника. */
+    uint32_t legacy = 0x42420500u;
+    ASSERT_EQ(Silken_Reset_Cause_Resolve(1u, SILKEN_RCC_CSR_SFTRSTF, 1u,
+                                         Soldier_Dr0_Unpack(legacy).reset_cause),
+              SILKEN_RESET_UNKNOWN);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5257,6 +5362,15 @@ int main(void)
     RUN(test_sec21_canary_bit_dr0_roundtrip_fields_intact);
     RUN(test_sec21_canary_bit_no_overlap);
     RUN(test_sec21_canary_preserved_through_dr0_writeback);
+    RUN(test_fw59_dr0_reset_cause_roundtrip_neighbours_intact);
+    RUN(test_fw59_dr0_cause_sits_in_bits_13_11_reserve_untouched);
+    RUN(test_fw59_dr0_out_of_range_cause_is_unknown_not_aliased);
+    RUN(test_fw59_real_reset_decodes_csr_not_dr0);
+    RUN(test_fw59_standby_wake_carries_persisted_cause_ignoring_csr);
+    RUN(test_fw59_cause_survives_standby_cycles_until_next_real_reset);
+    RUN(test_fw59_cold_boot_junk_dr0_is_not_trusted);
+    RUN(test_fw59_wake_before_first_beacon_keeps_cause_without_lorenz_marker);
+    RUN(test_fw59_wake_after_pre_fw59_dr0_reads_unknown);
     RUN(test_sec21_mpu_rbar_golden);
     RUN(test_sec21_mpu_rasr_golden);
     RUN(test_sec21_mpu_tail_base_aligned_to_size);

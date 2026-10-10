@@ -283,7 +283,7 @@ HAL_IWDG_Refresh(&hiwdg);
 
 ### 1.3.1 Error_Handler: Soft Reset замість Вічного Циклу (FW.14)
 
-При HardFault або критичній помилці HAL викликається `Error_Handler()`. До виправлення (FW.14) він входив у нескінченний цикл — вузол зависав назавжди. Тепер реалізований soft reset:
+При критичній помилці HAL викликається `Error_Handler()` (HardFault — інший шлях: власний handler, §6.1, FW.59). До виправлення (FW.14) він входив у нескінченний цикл — вузол зависав назавжди. Тепер реалізований soft reset:
 
 ```c
 void Error_Handler(void) {
@@ -628,7 +628,7 @@ on_lora_rx(payload, did_from_packet):
 // Імена API — з вендорованого stm32wlxx-hal-driver (не L4: там SRAM2-функції звуться інакше).
 
 // 1. Стан, що мусить пережити сон, — у RTC Backup Domain (DR0..DR19, §2) і Flash-KV (група C, §2.3.1)
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, dr0_packed); // усі 4 поля DR0 (§2) — часткове слово обнулить сусідів
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word()); // усі 5 полів DR0 одним пакувальником (§2, soldier_dr0.h)
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
 // ... DR2..DR19 (mesh state, EMA, Lorenz state — розкладка §2)
 
@@ -696,13 +696,13 @@ Fallback на `ROLE_SOLDIER` безпечний — переважна біль�
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація [`03_04`](03_04_mruby_Lorenz_Attractor) (Lorenz state), [`03_03`](03_03_TinyML_Acoustic_Inference) (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
 
-> **Політика розширення (cross-ref [ARCH.28](00_07_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після **[FW.2 freeze-contract, 2026-05-24]** (DR15 → CCM Frame Counter) **вільні DR7** (звільнено FW.54: `tree_did` тепер `f(UID)`) **і DR13/DR14** (звільнено HW.30, 2026-09-29: TinyML-пороги пішли разом із пʼєзо) — їх витрачають за процедурою §2.2, а далі нова RTC-resident фіча йде у Flash-KV (§2.3; так уже маршрутизовано FW.20-S2 anti-storm bitmap). Перед будь-якою зміною RTC: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні. DR0-розкладку додатково стереже compile-time `_Static_assert` non-overlap (panic[31:16]/vm_streak[9:8]/acoustic[7:0], `soldier/main.c` [FW.54 guard]) — фіча, що вкраде зайнятий біт-слот, впаде на компіляції, не тихо перекриє money-path-лічильник у полі.
+> **Політика розширення (cross-ref [ARCH.28](00_07_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після **[FW.2 freeze-contract, 2026-05-24]** (DR15 → CCM Frame Counter) **вільні DR7** (звільнено FW.54: `tree_did` тепер `f(UID)`) **і DR13/DR14** (звільнено HW.30, 2026-09-29: TinyML-пороги пішли разом із пʼєзо) — їх витрачають за процедурою §2.2, а далі нова RTC-resident фіча йде у Flash-KV (§2.3; так уже маршрутизовано FW.20-S2 anti-storm bitmap). Перед будь-якою зміною RTC: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні. DR0-розкладку додатково стереже compile-time `_Static_assert` non-overlap усіх пʼяти полів (`firmware/common/soldier_dr0.h` — там же пакувальник, яким пишуть УСІ писачі DR0 і який кличуть host-тести, FW.59) — фіча, що вкраде зайнятий біт-слот, впаде на компіляції, не тихо перекриє money-path-лічильник у полі.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
-| `DR0` | `[panic_frame_counter:16 \| rsv:5 \| canary_trip:1 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт — з HW.30 писача немає, поле завжди 0 (доля слоту — [`00_07`](00_07_Action_Plan_Tracker) FW.59). **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). **[SEC.21]** `canary_trip` (`DR0[10]`): sticky-слід власного `__stack_chk_fail` (пише напряму `TAMP->BKP0R` перед `NVIC_SystemReset`; усі 4 write-sites preserve); гасить його wire-винос: три best-effort постріли event-кадру 0x57 (`device_event.h`), після третього Фаза 5 пише `DR0[10]=0`; доти — sticky, видимий і SWD'ом. Біти `[15:11]` зарезервовано. Пакетне збереження економить регістр — без packing знадобився б новий слот, тобто єдиний нині вільний DR7 (FW.54). Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими replay-ключами `Rails.cache` попереднього втілення. |
+| `DR0` | `[panic_frame_counter:16 \| rsv:2 \| reset_cause:3 \| canary_trip:1 \| vm_err_streak:2 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт — з HW.30 писача немає, поле завжди 0 (у кадр поле не йде: CCM-кадр wire-rev2.2 акустики не несе — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security); біти DR0 не звільнено). **[SEC.20]** `vm_err_streak` (uint2, `DR0[9:8]`): N=3 поспіль bytecode-exec збоїв OTA-байткоду → erase contract → auto-fallback на embedded baseline (лічить лише bytecode-fault, не no-seed/OOM; переживає STOP2, cold-boot=0 природно). **[SEC.21]** `canary_trip` (`DR0[10]`): sticky-слід власного `__stack_chk_fail` (пише напряму `TAMP->BKP0R` перед `NVIC_SystemReset`; усі 4 write-sites preserve); гасить його wire-винос: три best-effort постріли event-кадру 0x57 (`device_event.h`), після третього Фаза 5 пише `DR0[10]=0`; доти — sticky, видимий і SWD'ом. **[FW.59]** `reset_cause` (`DR0[13:11]`, коди `firmware/common/reset_cause.h`): причина останнього СПРАВЖНЬОГО ребуту — стан, який несе кожен CCM-кадр (`diag[7..5]`, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). На справжньому ребуті її каже `RCC_CSR` разом із маркером HardFault у `.noinit`; пробудження зі Standby ребутом не є, і причину тоді дає це поле — вихід зі Standby відрізняє прапорець C1SBF, знятий першою дією `main()` разом із `RCC_CSR` (системний скид його не гасить, тож пізнє читання видало б за пробудження збій ініціалізації), — `Silken_Reset_Cause_Resolve`. Маркер стану Лоренца (DR19) тут свідомо не береться: його пишуть лише за валідного стану, а DR0 — безумовно перед кожним входом у Standby. Власного маркера поле не має: довіру йому дає C1SBF (POR гасить прапорець, тож сміття в DR0 після холодного старту не читається); код поза діапазоном пакувальник пише `0` «не повідомлено», а не маскою. Біти `[15:14]` зарезервовано. Пакетне збереження економить регістр — без packing знадобився б новий слот, тобто один із вільних DR7 · DR13 · DR14. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими replay-ключами `Rails.cache` попереднього втілення. |
 | `DR1` | `last_wakeup_timestamp` | uint32 | **[FW.49 S1]** Wall-маркер останнього пробудження — з HW.30 його рухає кожне пробудження (§1.4; EXTI-пробудження пішло з пʼєзо, §1.10) (`Wall_Seconds_Now()`, unix-секунди RTC-календаря; до 2026-06-12 — заморожений у STOP2 `HAL_GetTick/1000`). Перехід tick→wall значень поглинають guard-и `wall_time.h` (стрибок → сентинел «не виміряно», ARCH.102). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |
@@ -725,7 +725,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **DR7 — звільнений [FW.54 Вісь 2]:** до 2026-06-12 тримав write-once `tree_did` (стара схема `UID⊕random`). DID тепер деривується з UID на кожному boot (§7) — ідентичність пережила б і повний VBAT-loss, і OTA-ребут без жодного збереженого слова.
 
-> **DR16-DR19 — Стан Лоренца (FW.6):** (⊕ 2026-10-06: під ратифікованою гілкою (Б) Лоренц іде з пристрою разом із фліпом FW.2 — ці чотири регістри стануть кандидатами на звільнення з її реалізацією — рішення за зміною мапи цієї секції; [`00_07`](00_07_Action_Plan_Tracker) FW.66; доти мапа як є.) Зберігається/відновлюється при кожному циклі сну (STOP2; у цільовому Standby так само — DR живі). При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим cold-start від K_seed через HKDF/HMAC деривацію `(x₀,y₀,z₀)` (**[SEC.11 / FW.30]** — замість старого `chaos_seed`). K_seed зчитується з Protected Flash Sector (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 20` post-ARCH.42, magic `"LSED"` = `0x4C534544`). NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). **Після FW.2 freeze-contract (2026-05-24) DR15 зайнято CCM Frame Counter** (24-bit + 8-bit magic); вільні DR7 (FW.54) і DR13/DR14 (HW.30) — рядки вище.
+> **DR16-DR19 — Стан Лоренца (FW.6):** (⊕ 2026-10-06: під ратифікованою гілкою (Б) Лоренц іде з пристрою разом із фліпом FW.2 — ці чотири регістри стануть кандидатами на звільнення з її реалізацією — рішення за зміною мапи цієї секції; [`00_07`](00_07_Action_Plan_Tracker) FW.66; доти мапа як є. ⚠️ DR19 несе не лише Лоренца: за ним `Silken_Wake_From_Standby` (`firmware/common/standby_wake.h`) відрізняє пробудження зі Standby від ребуту для відновлення стану (FW.54). Звільняючи регістри стану Лоренца, маркер пробудження треба зберегти — або замінити власним, що пишеться при КОЖНОМУ вході в Standby: сьогодні DR19 пишуть лише за валідного стану Лоренца, тож до першого маяка й без `K_seed` кожне пробудження читається холодним стартом. Причина ребуту (FW.59, рядок DR0) від цього маркера не залежить — вона бере C1SBF.) Зберігається/відновлюється при кожному циклі сну (STOP2; у цільовому Standby так само — DR живі). При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим cold-start від K_seed через HKDF/HMAC деривацію `(x₀,y₀,z₀)` (**[SEC.11 / FW.30]** — замість старого `chaos_seed`). K_seed зчитується з Protected Flash Sector (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 20` post-ARCH.42, magic `"LSED"` = `0x4C534544`). NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). **Після FW.2 freeze-contract (2026-05-24) DR15 зайнято CCM Frame Counter** (24-bit + 8-bit magic); вільні DR7 (FW.54) і DR13/DR14 (HW.30) — рядки вище.
 
 > **DR13/DR14 — звільнено [HW.30, 2026-09-29]:** тримали два TinyML confidence-пороги FW.18 (WARNING/CRITICAL), які ставив OTA-опкод `0x9D`. Разом із пʼєзо пішли Фаза 1.5 (§1.5), пороги з їхнім writeback і сам опкод — `0x9D` RETIRED у прошивці й Rails, байт не перевикористовується (§4.5а); дизайн порогів як історія — [`03_03 §5`](03_03_TinyML_Acoustic_Inference).
 
@@ -756,14 +756,14 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 1. **SSOT-рев'ю.** Прочитати §2 (цю таблицю) ПОВНІСТЮ. Чи поле справді потребує переживання STOP2? Якщо ні — RAM-only достатньо. Якщо так, але переживає лише warm-boot, а не VBAT-loss → теж RAM (SRAM зберігається у STOP2). ⊕ 2026-10-05: у цільовому Standby (⚖️, §1.10) SRAM гине на кожному пробудженні, тож там «теж RAM» не тримається — гоча `firmware` #22.
 2. **Packing-аудит.** Перевірити для кожного існуючого packed-регістру (DR0, DR12), чи є вільні бітові щілини для нового поля. Реальні розміри:
-   - `DR0[15:11]` — 5 біт vacant (`[10]` = `canary_trip` SEC.21, `[9:8]` = `vm_err_streak` SEC.20 — див. §2 DR0-рядок).
+   - `DR0[15:14]` — 2 біти vacant (`[13:11]` = `reset_cause` FW.59, `[10]` = `canary_trip` SEC.21, `[9:8]` = `vm_err_streak` SEC.20 — див. §2 DR0-рядок).
    - `DR12[31:24]` — `valid:8` зайнято, але вільних бітів немає.
    - Більшість «full uint32» регістрів використовують лише частину діапазону (але НЕ `last_wakeup_timestamp` у DR1: це unix-секунди RTC-календаря — ≥ 946 684 800, тобто 30+ біт, і будь-яке звуження обрізало б базу delta_t, що годує GP).
 3. **ASCII bit-field діаграма.** ОБОВ'ЯЗКОВО для будь-якого packed-регістру. Приклад з DR0:
    ```
-   DR0 = [panic_frame_counter:16][rsv:5][canary:1][vm_err_streak:2][acoustic_events:8]
-          ↑              MSB       [10]=SEC.21   [9:8]=SEC.20        LSB ↑
-          PANIC_COUNTER_DR0_SHIFT=16                              raw uint8
+   DR0 = [panic_frame_counter:16][rsv:2][reset_cause:3][canary:1][vm_err_streak:2][acoustic_events:8]
+          ↑              MSB              [13:11]=FW.59  [10]=SEC.21 [9:8]=SEC.20     LSB ↑
+          PANIC_COUNTER_DR0_SHIFT=16                                                raw uint8
    ```
    Без діаграми наступна людина (або ти за рік) не зрозумієш порядок бітів.
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як колишні TinyML-пороги DR13/DR14 до HW.30: `0.0f` → fallback на дефолт), маркер не потрібен — достатньо range-check.
@@ -799,9 +799,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **Передумова.** У цільовому RTC-only режимі (§1.10, 300 нА) **RTC Backup Domain (DR0..DR19) виживає** — це його суть. Втрачається лише runtime-стан у SRAM. Тому інвентар ділить увесь file-scope стан `firmware/soldier/main.c` на три групи; у Flash-KV їде **лише** група C (RTC повний — §2).
 
-**Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, FW.2 Frame Counter (`tree_did` RTC більше не несе — `f(UID)` на boot, §7). Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
+**Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, причина останнього ребуту `soldier_reset_cause` (`DR0[13:11]`, FW.59 — на пробудженні зі Standby читається звідси, а не з `RCC_CSR`), `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, FW.2 Frame Counter (`tree_did` RTC більше не несе — `f(UID)` на boot, §7). Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
 
-**Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорець `lora_rx_flag`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11). Персистити нічого.
+**Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорець `lora_rx_flag`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11), маркер HardFault `soldier_fault_marker` (`.noinit`; переживає лише теплий скид, читається й гаситься першою дією `main()` — FW.59). Персистити нічого.
 
 **Група C — must-survive, але RAM-only → Flash-KV ключі.** Стан, що мусить нести значення **між** циклами, але якому нема місця у RTC (DR0..DR19 практично повні — вільні лише DR7 і DR13/DR14, §2):
 
@@ -831,11 +831,11 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | DR | Реальні біти | Реклемація | Ціна |
 |----|--------------|------------|------|
-| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:11]` ⇒ **DR2 вільний** | нуль, mode-independent |
+| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:14]` ⇒ **DR2 вільний** | нуль, mode-independent |
 | `DR13` / `DR14` | 0 — з HW.30 не несуть нічого | реклемація не потрібна: TinyML-пороги пішли з пʼєзо ⇒ **обидва вільні** (§2) | нуль |
-| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 5-біт sentinel у `DR0[15:11]` (як EMA `0x45` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
+| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | ~~5-біт sentinel у `DR0[15:11]`~~ — ⊕ 2026-10-10 не вміщається: `[13:11]` зайняла причина ребуту (FW.59), вільні лише `[15:14]`; і DR19 тепер несе ще рішення пробудження зі Standby (рядок DR16-DR19 §2). Тиску звільняти його немає: гілка (Б) звільняє DR16–DR18 | — |
 
-> `has_mesh_relay` (1 біт) сідає у вільні біти `DR0[15:11]` **без жодного нового регістру**. ⊕ 2026-09-29 (HW.30): `warning_counter`, головний live-споживач FW.54, що мав сісти туди ж, пішов разом із пʼєзо.
+> `has_mesh_relay` (1 біт) сідає у вільні біти `DR0[15:14]` **без жодного нового регістру**. ⊕ 2026-09-29 (HW.30): `warning_counter`, головний live-споживач FW.54, що мав сісти туди ж, пішов разом із пʼєзо.
 
 **Вісь 2 — частота запису (інверсія RTC↔Flash).** RTC backup безкоштовний щодо wear; Flash має wear + erase-блокує-шину. Оптимум: **write-ONCE → Flash** (нуль wear, ідеально), **часто-оновлюване → RTC**. Зараз **навпаки**:
 
@@ -849,7 +849,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 - `DR3`–`DR6` mesh-relay payload + `DR8`/`DR9`/`DR11` anti-pingpong кеш — транзитний/операційний (чужий пакет у транзиті; recent-DID дедуп). Втрата на cold-path безпечна (мережа має TTL/retry). У RTC лише щоб пережити майбутній SRAM2-off.
 - **Реклемація (mode-coupled):** під per-mode SRAM2 (§2.3.1 OTA-висновок: SRAM2 ON у вузьких активних вікнах, RTC-only у steady-state) цей клас живе у SRAM → до **~8 регістрів** звільняється. Ціна: зчеплено з per-mode рішенням + втрата mesh-стану на холодних шляхах. `recent_mesh_dids` додатково стискається до 16-біт DID-хешів (3 у ~1.5 рег) ціною рідких хеш-колізій.
 
-**Синтез + bottom-line для FW.54.** Усі 20 *allocated*, але мапа mis-allocated по трьох осях. Дешева реклемація (Вісь 1: DR2 тривіально; `warning_counter` у `DR0[15:11]`) **повністю розміщує live-набір FW.54 у RTC — Flash-KV для нього НЕ потрібен**. ⊕ 2026-09-29 (HW.30): live-набір звузився до двох wall-маркерів (`0x02`/`0x03`), а вільних регістрів уже без жодної реклемації три (DR7 · DR13 · DR14). Flash-KV (§2.3) лишається виправданим лише для (а) gated bulk (FW.20-S2 bitmap; FW.8 config — ⚫ 2026-10-06) ЯКЩО активуються, і (б) **не** OTA-буфера (це per-mode SRAM2, §2.3.1). Найбільший одиничний чистий виграш — **Вісь 2 (DR7/DID)**, що заразом закриває latent identity-orphaning. Порядок при наступній витраті регістру (доповнює §2.3): **(0) реклемація DR — Вісь 1 → Вісь 2 → Вісь 3 перед будь-яким Flash**.
+**Синтез + bottom-line для FW.54.** Усі 20 *allocated*, але мапа mis-allocated по трьох осях. Дешева реклемація (Вісь 1: DR2 тривіально; `warning_counter` у `DR0[15:11]` — ⊕ 2026-10-10 з них вільні лише `[15:14]`, FW.59) **повністю розміщує live-набір FW.54 у RTC — Flash-KV для нього НЕ потрібен**. ⊕ 2026-09-29 (HW.30): live-набір звузився до двох wall-маркерів (`0x02`/`0x03`), а вільних регістрів уже без жодної реклемації три (DR7 · DR13 · DR14). Flash-KV (§2.3) лишається виправданим лише для (а) gated bulk (FW.20-S2 bitmap; FW.8 config — ⚫ 2026-10-06) ЯКЩО активуються, і (б) **не** OTA-буфера (це per-mode SRAM2, §2.3.1). Найбільший одиничний чистий виграш — **Вісь 2 (DR7/DID)**, що заразом закриває latent identity-orphaning. Порядок при наступній витраті регістру (доповнює §2.3): **(0) реклемація DR — Вісь 1 → Вісь 2 → Вісь 3 перед будь-яким Flash**.
 
 ### 2.4 Helper macros sketch (RTC_BKUP_Read32 / Write32) [ARCH.28]
 
@@ -968,7 +968,8 @@ Init → Radio.Init → Radio.SetChannel → Lora_Phy_Apply_Tx/Rx [FW.61] → Ra
 | Callback | Тригер | Дія | Пріоритет |
 |----------|--------|-----|-----------|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX complete (SX1262) | `memcpy` → volatile buffer, RSSI clamp [-128,127], `lora_rx_flag = 1` | Апаратний |
-| `HAL_PWR_PVDCallback()` | VDD < 2.2 В (VPVD1; іоністор PVD не бачить — шину тримає buck) | **[ARCH.21]** BKUPWrite packed DR0 (усі 4 поля: panic · canary · vm_err_streak · acoustic) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Standby → Radio.Sleep (`Set_Sleep` радіо приймає лише зі Standby — RM0461 Rev 11 §4.8.3), кома: STOP2 через sleep-on-exit, кінець — скид на підйомі VDD (за `FW54_STANDBY_ENABLED` — Standby, вихід лише через WUT); спад — за PVDO ([`FW.69`](00_07_Action_Plan_Tracker)) | пріоритет 0 — найвищий налаштовний, не NMI |
+| `HAL_PWR_PVDCallback()` | VDD < 2.2 В (VPVD1; іоністор PVD не бачить — шину тримає buck) | **[ARCH.21]** BKUPWrite packed DR0 (усі 5 полів одним пакувальником `soldier_dr0.h`: panic · reset_cause · canary · vm_err_streak · acoustic) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Standby → Radio.Sleep (`Set_Sleep` радіо приймає лише зі Standby — RM0461 Rev 11 §4.8.3), кома: STOP2 через sleep-on-exit, кінець — скид на підйомі VDD (за `FW54_STANDBY_ENABLED` — Standby, вихід лише через WUT); спад — за PVDO ([`FW.69`](00_07_Action_Plan_Tracker)) | пріоритет 0 — найвищий налаштовний, не NMI |
+| `HardFault_Handler` | апаратний fault | **[FW.59]** магія в `soldier_fault_marker` (`.noinit` — RAM поза зоною обнулення; розміщення стереже `ASSERT` лінкер-карти образу mini) → `NVIC_SystemReset`; наступний boot декодує `HARDFAULT` (маркер ∧ `SFTRSTF`) у `diag[7..5]` CCM-кадру. Доти Солдат падав у вендорний `Default_Handler` (вічний цикл), і через ≈ 32 с кусав пес — HardFault читався б як `iwdg` (MemManage під `SEC21_MPU_ENABLED` і NMI досі йдуть туди — тіло MemManage є рішенням SEC.21) | фіксований (−1) |
 
 > ⛔ **EXTI- і DMA-рефлексів у Солдата з HW.30 (2026-09-29) немає:** `HAL_GPIO_EXTI_Callback` + `EXTI0_IRQHandler` і `HAL_ADC_ConvCpltCallback` / `HAL_ADC_ErrorCallback` + `DMA1_Channel1_IRQHandler` пішли разом із пʼєзо й аудіо-вікном (§1.5). `DMA1_Channel1_IRQHandler` Королеви (§6.2) — інший чіп і власний USART1-RX, до цього не причетний. Урок про вектори (власного `stm32wlxx_it.c` репо не має — вектори живуть у `main.c`, і board-freeze [`FW.46`](00_07_Action_Plan_Tracker) зведе їх із `.ioc`-івським `_it.c` гучно, на лінку) — `firmware`-гоча #14.
 
@@ -983,12 +984,9 @@ void HAL_PWR_PVDCallback(void) {
         return;
     }
     if (pvd_coma) return;                      // ще один спад посеред коми
-    // [SEC.10 · SEC.20 · SEC.21] Спакована DR0 — усі 4 write-sites пишуть ЧОТИРИ поля (§2)
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-        ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-        ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
-        (uint32_t)acoustic_events);  // усі 4 поля — часткове слово обнулить сусідів
+    // [SEC.10 · SEC.20 · SEC.21 · FW.59] Спакована DR0 — усі 4 write-sites кличуть один
+    // пакувальник (soldier_dr0.h), тож поле, додане в нього, не загубить жоден сайт
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp); // delta_t continuity
     // [ARCH.21] Сторожовий пес траєкторії — рятуємо Lorenz state симетрично до Phase 5.
     // Без цього rescue брауноут = втрата траєкторії = cold-start через HKDF на наступному
@@ -1035,12 +1033,8 @@ panic_payload[11] = Ttl_Byte_Pack(5, 0u);  // [FW.18b] TTL=5 у нижніх 3 �
 // [SEC.10] Counter BE у байтах 14..15 (вільні PAD bytes після firmware_id у 12..13)
 panic_payload[14] = (uint8_t)(panic_frame_counter >> 8);
 panic_payload[15] = (uint8_t)(panic_frame_counter & 0xFF);
-// Persist негайно у DR0 — до Phase 5 могло не дійти при PVD/reset (усі 4 поля, §2)
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
-    ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
-    ((uint32_t)(canary_tripped & CANARY_TRIP_MASK) << CANARY_TRIP_DR0_SHIFT) |
-    ((uint32_t)(ota_vm_error_streak & OTA_VM_ERR_STREAK_MASK) << OTA_VM_ERR_STREAK_DR0_SHIFT) |
-    (uint32_t)acoustic_events);
+// Persist негайно у DR0 — до Phase 5 могло не дійти при PVD/reset (усі поля, §2)
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
 // AES-128-ECB Encrypt → Radio.Send [post-ARCH.42] → 100ms → Radio.Sleep
 ```
 

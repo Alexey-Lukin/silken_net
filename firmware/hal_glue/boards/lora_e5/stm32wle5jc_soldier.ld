@@ -5,13 +5,16 @@
  * (Source/Templates/gcc/linker/STM32WLE5XX_FLASH.ld, Apache-2.0 —
  * firmware/extern/cmsis-device-wl/LICENSE.md): ті самі імена символів, яких чекає
  * вендорний startup_stm32wle5xx.s (_sidata · _sdata · _edata · _sbss · _ebss · _estack).
- * Змінено дві речі:
+ * Змінено три речі:
  *  · FLASH — лише сторінки 0..121 (0x08000000..0x0803CFFF, 244 КБ). Сторінки 122..127 —
  *    дані вузла: журнал Flash-KV, ідентичність, кластер (KPUB/KEYB), контракт OTA
  *    (docs/03_01 §2.3, «Розміщення»). Образ, що виріс би туди, стер би їх першою ж
  *    прошивкою; так лінкер упаде раніше.
  *  · RAM — SRAM1 + SRAM2 суцільно (64 КБ), як у карти FW.55 (firmware/sim/wle5_bench):
  *    купа (newlib _sbrk, soldier_lora_e5.c) росте від `end` до стек-резерву.
+ *  · .noinit — RAM, якої startup не чіпає (поза `_sbss…_ebss` і без LMA): там маркер
+ *    HardFault'а (FW.59, firmware/common/reset_cause.h), що мусить пережити теплий скид.
+ *    Без цієї секції її місце обирала б евристика сирітських секцій лінкера.
  */
 ENTRY(Reset_Handler)
 
@@ -120,6 +123,20 @@ SECTIONS
     __bss_end__ = _ebss;
   } > RAM
 
+  /* [FW.59] Переживає теплий скид: startup обнуляє лише `_sbss…_ebss` і копіює лише .data,
+   * тож вміст цієї секції лишається тим, що записав HardFault_Handler перед скидом.
+   * Холодний старт лишає тут сміття — декодер reset_cause.h бере маркер лише разом із
+   * SFTRSTF, тож несвіжа магія HardFault'а не підніме. */
+  .noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    __noinit_start__ = .;
+    *(.noinit)
+    *(.noinit*)
+    . = ALIGN(4);
+    __noinit_end__ = .;
+  } > RAM
+
   /* Купа росте від `end` (newlib _sbrk) до стек-резерву. */
   .heap (NOLOAD) :
   {
@@ -130,6 +147,12 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
+
+/* Маркер, що ліг поза .noinit, startup обнулить на кожному скиді, і HardFault мовчки читався б
+ * як SOFTWARE — тож це помилка лінку, а не стенду. */
+ASSERT(soldier_fault_marker >= __noinit_start__ && soldier_fault_marker + 4 <= __noinit_end__,
+       "[FW.59] маркер HardFault поза .noinit: startup його обнулить")
+ASSERT(__noinit_start__ >= _ebss, "[FW.59] .noinit перетнула зону обнулення .bss")
 
 /* Статика, що з'їла стек-резерв, — помилка лінку, а не стек, що мовчки топче .bss. */
 ASSERT(end + __stack_reserve__ <= _estack, "[FW.46] статика не лишає стек-резерву під 64 КБ SRAM")
