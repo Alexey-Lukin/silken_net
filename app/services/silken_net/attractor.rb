@@ -32,7 +32,7 @@ module SilkenNet
     # [E.63] β БІЛЬШЕ НЕ збурюється метаболізмом (раніше [FW.5] perturb_beta).
     # β не рухає z-нерухому точку Лоренца (z_eq = ρ−1) → delta_t-сигнал виходив
     # економічно нульовий, vcap — інвертований. Метаболізм тепер задає
-    # growth_points НАПРЯМУ на пристрої (firmware BioContract.metabolic_health);
+    # growth_points НАПРЯМУ на пристрої (firmware Metabolic.homeostasis_gp — metabolic_core.rb);
     # backend декодує wire growth_points у TelemetryUnpackerService
     # (`(status_byte & 0x1F) * 2`). Лоренц тут — чистий хаос для DCI: server-Z
     # та device-Z обидва на β=BASE_BETA → категоричний check_z_divergence!
@@ -46,7 +46,7 @@ module SilkenNet
     # check TelemetryUnpackerService#check_metabolic_divergence!: homeostasis →
     # GP ∈ [GP_HOMEO_MIN, GP_HOMEO_MAX]; stress → GP_STRESS.
     # [E.63 (г), wire-rev2.1 2026-07-03] The wire now ALSO carries the
-    # EMA-smoothed delta_t — the exact number metabolic_health consumed on
+    # EMA-smoothed delta_t — the exact number Metabolic.homeostasis_gp consumed on
     # the device (contract «wire = GP input») → the exact stateless recompute
     # below (expected_homeostasis_gp) is possible; it stays OBSERVATIONAL
     # (warn+metric, no gate) until the bench calibrates the placeholder
@@ -71,14 +71,15 @@ module SilkenNet
     # money-path не відкриває.
     GP_UNMEASURED = 0
 
-    # [E.63 (г)] Byte-identical mirror of firmware BioContract.metabolic_health →
-    # growth_points quantization (bio_contract.rb §4.3 — the One-Home of the
-    # formula and the calibration-pending thresholds; edit THERE first).
+    # [E.63 (г)] Byte-identical mirror of firmware Metabolic.homeostasis_gp (metabolic_core.rb;
+    # parity with the REAL CCM contract — attractor_spec, FW.66 S4) →
+    # growth_points quantization (firmware/bio_contracts/metabolic_core.rb — the One-Home
+    # of the formula and the calibration-pending thresholds, 03_04 §4.3; edit THERE first).
     DELTA_T_FAST_S = 600
     DELTA_T_SLOW_S = 7200
 
     # [ARCH.102] «Метаболізм не виміряно» — сентинел, не число (дім значення й
-    # підстави — `bio_contract.rb`). Пристрій віддає його, коли guard'и wall-time
+    # підстави — `firmware/bio_contracts/metabolic_core.rb`). Пристрій віддає його, коли guard'и wall-time
     # спрацювали або EMA ще не прогрілась; тоді при `status = 0` на дроті стоїть
     # `growth_points = 0`. Дзеркало мусить давати ТЕ САМЕ, інакше DCI-звірка
     # оголосила б розходженням якраз чесну відмову.

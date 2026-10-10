@@ -12,7 +12,9 @@ lorenz_core:
   - SIGMA_MAX
   - RHO_MIN
   - RHO_MAX
-  sha256: 65bed100a839390686a1712da5dea89aebe4c80b2622dcdf4ad4cf4a3c0ee627
+  - CRITICAL_Z_MIN
+  - CRITICAL_Z_MAX
+  sha256: 9a910cbdc3b1a49570658c697f2ec7fe210d7b337f1611c1e1a8a94054e168fb
   mirrors:
   - CLAUDE.md §5 «Критичні інваріанти» (Lorenz константи-block)
   - app/services/silken_net/attractor.rb (SIGMA_LIMITS/RHO_LIMITS Range-form mirrors
@@ -20,7 +22,7 @@ lorenz_core:
   - docs/03_04_mruby_Lorenz_Attractor.md (§4.1 const table + iterate listings)
   note: 'SSOT = this code. On drift: reconcile the mirrors, regen lorenz_bytecode.h
     (FW.46) + full bin/rspec, then `rake docs:repin`.'
-  repinned: '2026-06-16'
+  repinned: '2026-10-11'
 wire_payload_format:
   source: app/services/telemetry_unpacker_service.rb
   consts:
@@ -69,27 +71,27 @@ slashing_curve:
     the mirror + bin/rspec, then `rake docs:repin`.'
   repinned: '2026-09-03'
 metabolic_gp_core:
-  source: firmware/bio_contracts/bio_contract.rb
+  source: firmware/bio_contracts/metabolic_core.rb
   consts:
   - DELTA_T_FAST_S
   - DELTA_T_SLOW_S
   - GP_HOMEO_MIN
   - GP_HOMEO_MAX
-  - CRITICAL_Z_MIN
-  - CRITICAL_Z_MAX
-  sha256: 35c0396923cb0bd8a85a7c4b74cffafd7e1644311cc95d3b9a6ce3120d501ddc
+  sha256: 2bfb99a9ec710d10e6be2cd98abd64560b2007285ceaba9b4d8f6fd3bfe80112
   mirrors:
   - app/services/silken_net/attractor.rb (self-declared "byte-identical mirror" —
-    GP_HOMEO_MIN/MAX + DELTA_T_FAST_S/SLOW_S; server-half parity is NOT spec-covered,
-    attractor_spec defers metabolic_health to FW.2)
+    GP_HOMEO_MIN/MAX + DELTA_T_FAST_S/SLOW_S; [FW.66 S4] parity with the REAL CCM-era
+    contract is spec-covered — attractor_spec «CCM-era contract parity», boundaries
+    + sweep)
   - docs/03_04_mruby_Lorenz_Attractor.md §4.3 — m(delta_t) formula + GP table
-  - CLAUDE.md §5 «Критичні інваріанти» (CRITICAL_Z_MIN + growth_points)
+  - CLAUDE.md §5 «Критичні інваріанти» (growth_points = m(delta_t); CRITICAL_Z_* — lorenz_core)
   note: 'Post-E.63 the EMISSION MAGNITUDE is m(delta_t), not Z — so these consts ARE
     the token rate (10 000 GP = 1 SCC). GP_HOMEO_MAX=31 is also the 5-bit wire ceiling
-    (status<<5|gp). lorenz_core pins the CHAOS half of this same file; this pins the
-    money half. On drift: reconcile mirrors, regen lorenz_bytecode.h (FW.46) + full
-    bin/rspec, then `rake docs:repin`.'
-  repinned: '2026-07-16'
+    (status<<5|gp). [FW.66 S4] metabolic_core.rb is the ONE device home of the formula,
+    compiled into BOTH contracts (ECB bio_contract.rb · CCM ccm_contract.rb); lorenz_core
+    pins the chaos half (bio_contract.rb). On drift: reconcile mirrors, regen both mirrors
+    (tools/firmware/gen_bytecode.sh) + full bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-10-11'
 qatt_envelope:
   source: app/workers/unpack_telemetry_worker.rb
   consts:

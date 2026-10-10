@@ -851,7 +851,7 @@ class TelemetryUnpackerService < ApplicationService
 
     if conformant
       # [E.63 (г), wire-rev2.1] ТОЧНА гілка: кадр несе EMA-delta_t — САМЕ те
-      # число, що з'їла metabolic_health на пристрої (контракт «wire = вхід
+      # число, що з'їла Metabolic.homeostasis_gp на пристрої (контракт «wire = вхід
       # GP», Soldier Фаза-3) → stateless recompute мусить збігтися БАЙТ-точно.
       # OBSERVATIONAL до bench-калібрування порогів (placeholder 600/7200 —
       # 03_04 §4.3): warn + метрика, мінт НЕ гейтиться (клас z-DCI: ловить

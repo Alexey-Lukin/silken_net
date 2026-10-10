@@ -394,13 +394,13 @@ module DocsLinter
   #   (1) pre-FW.29-PACK 6-bit wire clamp `clamp(reward, 10, 63)`;
   #   (2) pre-E.63 chaos-derived reward `(reward / 2).clamp(5, 31)` from `50 - deviation`
   #       (|OPTIMAL_Z − z|) — proven economically null/inverted (00_07 E.63).
-  # [E.63] growth_points in homeostasis is now `metabolic_health(delta_t)` (monotonic
-  # recharge vigor), owned by 03_04 §4.3 and mirrored in firmware `bio_contract.rb`;
+  # [E.63] growth_points in homeostasis is now `Metabolic.homeostasis_gp(delta_t)` (monotonic
+  # recharge vigor), owned by 03_04 §4.3 and living in firmware `metabolic_core.rb` (FW.66 S4);
   # backend only DECODES the wire value (`(status_byte & 0x1F) * 2`). It is the
   # token-MINTING reward, so a stale copy of EITHER dead formula silently misstates
   # emission — invisible to every other guard (Lorenz knows only β; rate-guard exempts
   # manifest). Signature tokens unique to the dead formulas: `clamp(… 10, 63 …)`,
-  # `reward / 2`, `50 - deviation`. The live form (`5 + m * 26` / `metabolic_health`)
+  # `reward / 2`, `50 - deviation`. The live form (`5 + m * 26` / `homeostasis_gp`)
   # never matches. NOT table-skipped (drift lived in a manifest table cell). Owner
   # 03_04 (may keep history) + standard 00_06 (cites it) + 00_07 (tracker) exempt —
   # 03_01 was DROPPED from the exempt set in E.63 so its stale mirror is forced to a
@@ -414,7 +414,7 @@ module DocsLinter
     text.each_line.filter_map do |line|
       next unless line.match?(GP_CLAMP_RETIRED_RE)
 
-      "retired growth_points formula (`10,63` / `reward / 2` / `50 - deviation`) — [E.63] live form is `metabolic_health(delta_t)` (03_04 §4.3) → #{line.strip[0, 100]}"
+      "retired growth_points formula (`10,63` / `reward / 2` / `50 - deviation`) — [E.63] live form is `Metabolic.homeostasis_gp(delta_t)` (03_04 §4.3) → #{line.strip[0, 100]}"
     end
   end
 

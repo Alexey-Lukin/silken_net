@@ -11,7 +11,7 @@
  *
  * Power-cut safety: magic-doubleword (несе "RITE" у `data[0..3]`) програмиться
  * ОСТАННІМ. Перерваний запис → dw[0] лишається стертим (0xFF…) → boot не бачить
- * RITE → fallback на embedded `lorenz_bytecode` (безпечно). Запис, що дійшов до
+ * RITE → fallback на вбудований контракт ери (`ccm_bytecode` · `lorenz_bytecode`, FW.66 S4) (безпечно). Запис, що дійшов до
  * magic → повний (безпечно). Як у flash_kv: dw-програмування атомарне щодо ECC,
  * тож «порваного» dw не існує — або записаний, або стертий 0xFF.
  *

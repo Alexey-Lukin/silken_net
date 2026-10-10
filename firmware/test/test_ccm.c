@@ -578,6 +578,36 @@ static int test_diag_byte_pack(void) {
     return 0;
 }
 
+/* [FW.66 S4 (а)] Контракт CCM-ери бачить plaintext, складений зі статусом 0, а TX лише
+ * вписує байт статусу — тож «скласти зі статусом S» мусить дорівнювати «скласти з 0 і
+ * вписати S»: інакше контракт рахував би бали над іншими байтами, ніж ті, що в ефірі. */
+static int test_ccm_pt_set_status_equals_packing_with_status(void) {
+    uint8_t with_status[FW2_CCM_PLAINTEXT_LEN], patched[FW2_CCM_PLAINTEXT_LEN];
+    const uint8_t diag = Pack_FW2_Diag(SILKEN_RESET_IWDG, 1, 0, 1);
+    for (unsigned st = 0; st <= 0xFFu; st += 0x11u) {
+        Pack_CCM_Sensor_Payload(3300, -7, 0x2A, 600, (uint8_t)st, 0x31, 2926, diag, 0x42, 3600, with_status);
+        Pack_CCM_Sensor_Payload(3300, -7, 0x2A, 600, 0u, 0x31, 2926, diag, 0x42, 3600, patched);
+        ASSERT_EQ(patched[FW2_CCM_PT_STATUS_IDX], 0);
+        Ccm_Pt_Set_Status(patched, (uint8_t)st);
+        ASSERT_MEM_EQ(patched, with_status, FW2_CCM_PLAINTEXT_LEN);
+    }
+    printf("  test_ccm_pt_set_status_equals_packing_with_status          ✅\n");
+    return 0;
+}
+
+/* [FW.66 S4] Межа того, що міст бере від контракту CCM-ери: валідний байт статусу без паніки й
+ * без коду vm_error (його пише сам міст); усе інше — збій контракту, не тихо обрізаний байт. */
+static int test_ccm_contract_status_gate(void) {
+    for (long long v = 0; v <= 0x5F; v++) ASSERT_EQ(Ccm_Contract_Status_Ok(v), 1);      /* status 0..2 */
+    for (long long v = 0x60; v <= 0x7F; v++) ASSERT_EQ(Ccm_Contract_Status_Ok(v), 0);  /* status 3 */
+    ASSERT_EQ(Ccm_Contract_Status_Ok(0x80), 0);        /* PANIC-біт — лише C-шлях паніки */
+    ASSERT_EQ(Ccm_Contract_Status_Ok(0x100 + 19), 0);  /* без «тихого» (uint8_t)-обрізання */
+    ASSERT_EQ(Ccm_Contract_Status_Ok(-1), 0);          /* інакше 0xFF → 0x7F після маски паніки */
+    ASSERT_EQ(Ccm_Contract_Status_Ok(31), 1);           /* status 0 · gp 31 */
+    printf("  test_ccm_contract_status_gate                              ✅\n");
+    return 0;
+}
+
 /* [FW.66 · wire-rev2.2] ЗОЛОТИЙ plaintext — один на дві мови. Pack_CCM_Sensor_Payload з
  * джерелами test_phase4 нижче МУСИТЬ дати рівно ці 14 байт, а Ruby-спека
  * (`telemetry_unpacker_service_spec.rb`, «golden wire-rev2.2 plaintext») читає цей самий
@@ -594,7 +624,8 @@ static const uint8_t G_PT_REV22[FW2_CCM_PLAINTEXT_LEN] = {
 
 static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     /* e2e дзеркало Фази 4 → ефір → 31B-запис Королеви: аргументи складені
-     * як call-site у soldier/main.c (mesh_ctrl = TTL|fw-nibble, dt-сатурація,
+     * як складання у soldier/main.c (Фаза 3 пакує зі статусом 0, перед TX вписує статус —
+     * рівність пінить test_ccm_pt_set_status_equals_packing_with_status; mesh_ctrl = TTL|fw-nibble, dt-сатурація,
      * сирий vcap), а розкладка на виході — та, яку читає process_ccm_chunk.
      * [FW.66 · wire-rev2.2] Поля, що в main.c поки пишуться «не виміряно»
      * (voc_mv · vpd · reset_cause), тут свідомо НЕНУЛЬОВІ — доводять бітфілд і
@@ -803,6 +834,8 @@ int main(void) {
     RUN(test_mesh_ctrl_bitfield_extraction);
     RUN(test_gossip_byte_is_mic_protected);
     RUN(test_diag_byte_pack);
+    RUN(test_ccm_pt_set_status_equals_packing_with_status);
+    RUN(test_ccm_contract_status_gate);
     RUN(test_phase4_marshalling_e2e_to_backend_bytes);
     RUN(test_panic_marshalling_ccm);
     RUN(test_two_key_scoping_contract);

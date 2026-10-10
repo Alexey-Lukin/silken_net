@@ -445,9 +445,9 @@ mrb_full_gc(mrb);                         // [FW.55] VM вічна → повн�
 ```c
 uint32_t* flash_check = (uint32_t*)MRUBY_CONTRACT_FLASH_ADDR; // 0x0803F000
 if (*flash_check == 0x45544952) { // "RITE" в little-endian
-    current_lorenz_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR; // OTA-оновлений
+    current_contract_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR; // OTA-оновлений
 } else {
-    current_lorenz_bytecode = (uint8_t*)lorenz_bytecode; // Вбудований
+    current_contract_bytecode = (uint8_t*)SOLDIER_EMBEDDED_CONTRACT; // вбудований контракт ери (FW.66 S4)
 }
 ```
 
@@ -801,7 +801,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 **Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, причина останнього ребуту `soldier_reset_cause` (`DR0[13:11]`, FW.59 — на пробудженні зі Standby читається звідси, а не з `RCC_CSR`), `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, FW.2 Frame Counter (`tree_did` RTC більше не несе — `f(UID)` на boot, §7). Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
 
-**Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорець `lora_rx_flag`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11), маркер HardFault `soldier_fault_marker` (`.noinit`; переживає лише теплий скид, читається й гаситься першою дією `main()` — FW.59). Персистити нічого.
+**Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорець `lora_rx_flag`, `delta_t_seconds` (рахується щоциклу), `current_contract_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11), маркер HardFault `soldier_fault_marker` (`.noinit`; переживає лише теплий скид, читається й гаситься першою дією `main()` — FW.59). Персистити нічого.
 
 **Група C — must-survive, але RAM-only → Flash-KV ключі.** Стан, що мусить нести значення **між** циклами, але якому нема місця у RTC (DR0..DR19 практично повні — вільні лише DR7 і DR13/DR14, §2):
 
@@ -1188,7 +1188,7 @@ make -C firmware/test asan        # ASan+UBSan dynamic memory-safety lane (TEST.
 
 ## 🌿 11. Bio-Contract Specification (`firmware/bio_contracts/bio_contract.rb`)
 
-Цей файл є мостом між C-ядром та математикою Атрактора Лоренца. Компілюється `mrbc` у байт-код (committed mirror `firmware/common/lorenz_bytecode.h`, генерує `tools/firmware/gen_bytecode.sh`, drift-gated — §12.4), який:
+Цей файл є мостом між C-ядром та математикою Атрактора Лоренца — контрактом **ECB-ери**. ⚖️ [FW.66 S4] CCM-ера має власний контракт без Лоренца — `firmware/bio_contracts/ccm_contract.rb` (`ccm_state(pt)`: 14 байт plaintext → байт статусу; ABI — [`03_04 §6`](03_04_mruby_Lorenz_Attractor)), а метаболічна формула в обох одна — `firmware/bio_contracts/metabolic_core.rb`, яку `mrbc` компілює першою в кожен контракт. Компілюється `mrbc` у байт-код (committed mirrors `firmware/common/lorenz_bytecode.h` (ECB) і `firmware/common/ccm_bytecode.h` (CCM), генерує `tools/firmware/gen_bytecode.sh`, drift-gated — §12.4), який:
 - Вбудовується у `lorenz_bytecode[]` через `#include` (FW.46; раніше — manual paste, був placeholder-stub)
 - Або оновлюється через OTA → Flash-сектор `0x0803F000`
 
@@ -1200,7 +1200,7 @@ module SilkenNet
   class BioContract   # Бізнес-логіка (токеноміка + статуси)
 end
 
-# C bridge — єдина публічна точка входу (9-арг сигнатура: SEC.11 cutover + FW.8 смуга; owner [`03_04 §6`](03_04_mruby_Lorenz_Attractor)):
+# C bridge ECB-ери — точка входу (9-арг сигнатура: SEC.11 cutover + FW.8 смуга; owner [`03_04 §6`](03_04_mruby_Lorenz_Attractor)); CCM-ера — ccm_state(pt):
 def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
   SilkenNet::BioContract.evaluate_and_pack(...)   # логіка status/GP — 03_04 §4/§4.3
 end
@@ -1328,7 +1328,7 @@ firmware/
   mruby/build_config.rb       — mruby builds (host mrbc / host-min / arm minimal)
   extern/                     — pinned submodules (перелік — `.gitmodules`; ролі й піни — §12.5)
 tools/firmware/
-  gen_bytecode.sh             — mrbc: bio_contract.rb → lorenz_bytecode.h (+ --check drift)
+  gen_bytecode.sh             — mrbc: metabolic_core.rb + bio_contract.rb → lorenz_bytecode.h · + ccm_contract.rb → ccm_bytecode.h (+ --check drift)
   check_bytecode.py           — light stdlib stamp-gate (CI firmware_test)
   run_bytecode_vm.sh          — minimal-VM harness: ганяє committed bytecode (mrb_load_irep)
 ```
@@ -1361,7 +1361,7 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 | logmel.c (наш DSP, `LOGMEL_USE_CMSIS`) | ~6.3 KB | 28 B |
 | lorenz_bytecode (mrbc) | ~2.5 KB | 0 |
 | Ed25519-перевірка печатки OTA (Monocypher + SHA-512, FW.23, 2026-10-06) | ~10.8 KB | 0 (пік стеку ≈2.0 КБ) |
-| **Повний злінкований образ Солдата** — LoRa-E5 mini, `CCM_SELFTEST` (`soldier_lora_e5`, 2026-10-09) | ≈ 80 % із 244 КБ під сторінкою 122 — число залежить від тулчейну: 198 552 Б (Arm GNU 13.2.Rel1, локально) · 200 960 Б (apt-тулчейн CI) | 3 536 Б статики (+ купа `_sbrk` до стек-резерву 12 КБ) |
+| **Повний злінкований образ Солдата** — LoRa-E5 mini, `CCM_SELFTEST` (`soldier_lora_e5`, 2026-10-09) | ≈ 80 % із 244 КБ під сторінкою 122 — число залежить від тулчейну: 199 024 Б (Arm GNU 13.2.Rel1, локально, переміряно 2026-10-11 — +472 Б: FW.59 і спільне метаболічне ядро в ECB-байткоді) · 200 960 Б (apt-тулчейн CI, вимір 2026-10-09 — після нього не переміряно) | 3 536 Б статики (+ купа `_sbrk` до стек-резерву 12 КБ) |
 
 > mruby ≈ 46% від 256 KB Flash — інherentна ціна за **OTA-оновлюваний bio-contract** (байткод OTA'ється без reflash). Тримати в бюджеті при HAL-інтеграції. TinyML-модель (baseline 972 B) з HW.30 в образ Солдата не лягає — актив без call-site ([`00_07` — FW.4](00_07_Action_Plan_Tracker), архів).
 

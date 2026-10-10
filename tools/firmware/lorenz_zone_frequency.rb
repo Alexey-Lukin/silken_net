@@ -18,6 +18,8 @@
 # (03_04 §5.3). Числа — вибірка з фіксованих зерен; інша популяція старту дасть інші.
 #
 #   ruby tools/firmware/lorenz_zone_frequency.rb [--cycles N]
+# [FW.66 S4] Спільне метаболічне ядро — ПЕРШИМ: bio_contract.rb посилається на SilkenNet::Metabolic (як mrbc).
+load File.expand_path("../../firmware/bio_contracts/metabolic_core.rb", __dir__)
 load File.expand_path("../../firmware/bio_contracts/bio_contract.rb", __dir__)
 
 cycles = ARGV.include?("--cycles") ? Integer(ARGV[ARGV.index("--cycles") + 1]) : 60_000

@@ -7,7 +7,7 @@
  * we re-implement the pure-math functions in C and verify:
  *   - Sigma/Rho clamping boundaries
  *   - Z-axis bounds (CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0)
- *   - [E.63] growth_points = monotonic metabolic_health(delta_t), NOT |29-Z|
+ *   - [E.63] growth_points = monotonic Metabolic.homeostasis_gp(delta_t), NOT |29-Z|
  *   - [E.63] Z is INDEPENDENT of metabolism (β = BASE_BETA, fixed)
  *   - StatusByte encoding: [PanicFlag:1 | status:2 | growth_points:5] (FW.29-PACK)
  *   - Edge cases: extreme temperatures, extreme acoustics, zero seed
@@ -21,7 +21,7 @@
 #include <math.h>
 
 /* ════════════════════════════════════════════════════════════════════
- * CONSTANTS (from firmware/bio_contracts/bio_contract.rb)
+ * CONSTANTS (from firmware/bio_contracts/bio_contract.rb + metabolic_core.rb)
  * ════════════════════════════════════════════════════════════════════ */
 #define BASE_SIGMA       10.0
 #define BASE_RHO         28.0
@@ -72,7 +72,7 @@ static int clamp_i(int val, int lo, int hi) {
 }
 
 /* [E.63] Monotonic metabolic vigor ∈ [0,1] from recharge time.
- * Mirrors BioContract.metabolic_health. Faster recharge → higher. */
+ * Mirrors Metabolic.homeostasis_gp (metabolic_core.rb). Faster recharge → higher. */
 static double metabolic_health(uint16_t delta_t_s) {
     double m = ((double)DELTA_T_SLOW_S - (double)delta_t_s) /
                ((double)DELTA_T_SLOW_S - (double)DELTA_T_FAST_S);

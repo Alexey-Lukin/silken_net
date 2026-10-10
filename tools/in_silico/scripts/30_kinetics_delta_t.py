@@ -14,7 +14,7 @@ Physical model
 
 This closes the final level of the 4-level Zero-Lab pipeline (01_03 §3.4).
 The output delta_t is the EBFC recharge time that, per [E.63], now drives
-growth_points DIRECTLY (bio_contract.rb metabolic_health) — NOT β-perturbation,
+growth_points DIRECTLY (metabolic_core.rb Metabolic.homeostasis_gp) — NOT β-perturbation,
 which was reversed as economically null/inverted (00_07 E.63 / 03_04 §4.3).
 
 Key literature parameters
@@ -347,7 +347,7 @@ def main() -> int:
           f" at pH 7.4 on graphite). The old 60s baseline +")
     print("      β-perturbation coupling was REVERSED in E.63 (delta_t→β was economically")
     print("      null/inverted). delta_t now drives growth_points DIRECTLY via")
-    print("      metabolic_health(delta_t); FAST/SLOW thresholds are field-scale and")
+    print("      Metabolic.homeostasis_gp(delta_t); FAST/SLOW thresholds are field-scale and")
     print("      calibration-pending on the bench recharge curve (RUNBOOK §3.2-3.3).")
 
     banner("L4 complete — EBFC recharge-kinetics model (delta_t → growth_points, E.63)")

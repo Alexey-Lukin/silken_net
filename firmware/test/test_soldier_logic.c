@@ -1884,14 +1884,14 @@ TEST(test_ema_rtc_first_boot_no_magic) {
  * "not measured" sentinel (DELTA_T_UNKNOWN_S = 0, ARCH.102) and nominal
  * 3300 mV; once warmed up, the smoothed EMA
  * values are forwarded. [E.63] delta_t now drives growth_points DIRECTLY
- * (metabolic_health, 03_04 §4.3), NOT β — β is fixed at BASE_BETA and
+ * (Metabolic.homeostasis_gp, 03_04 §4.3), NOT β — β is fixed at BASE_BETA and
  * vcap is reserved. This test pins WHICH inputs the C side selects —
  * unchanged by E.63 (the selection logic is independent of the coupling).
  * ──────────────────────────────────────────────────────────────────── */
 
-/* [ARCH.102] Sentinel, not the old "neutral" 60 s: metabolic_health(60) clamps to 1.0
+/* [ARCH.102] Sentinel, not the old "neutral" 60 s: m(60) clamps to 1.0
  * → GP_HOMEO_MAX, i.e. refusing to measure used to mint the MAXIMUM. */
-#define FW5_UNKNOWN_DELTA_T_S 0u     /* DELTA_T_UNKNOWN_S in bio_contract.rb / main.c */
+#define FW5_UNKNOWN_DELTA_T_S 0u     /* DELTA_T_UNKNOWN_S in metabolic_core.rb / main.c */
 #define FW5_DEFAULT_VCAP_MV   3300u  /* NOMINAL_VCAP_MV     in bio_contract.rb */
 
 /* Pure-function mirror of the firmware selection — no globals, no HAL. */

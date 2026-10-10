@@ -4,7 +4,7 @@
 # [ARCH.8 · E.63] Метаболічне квантування балів — ОДИН дім арифметики `Δt → m → wire-GP → SCC`,
 # яку доти несли три прилади порізно: `scc_rate.rb` (значення), `uncertainty_budget.rb` (точність)
 # і `tx_cadence_budget.rb` (грошова робоча точка ⊥ енергомодель). Дзеркало прошивки —
-# `metabolic_health` у firmware/bio_contracts/bio_contract.rb (канон 03_04 §4.3).
+# `Metabolic.homeostasis_gp` у firmware/bio_contracts/metabolic_core.rb (канон 03_04 §4.3).
 #
 # ⛔ ЧОМУ ЦЕ БІБЛІОТЕКА, А НЕ ЧЕТВЕРТА КОПІЯ. Гроші квантовані: 5-бітний wire-GP сходинками, тож
 # гейт, що судить робочу точку ВІДСОТКОМ Δt, сліпий до сходинки — ±8 % у Δt біля 7027 с дають

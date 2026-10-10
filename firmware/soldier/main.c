@@ -98,7 +98,7 @@ _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
 // Attractor::DELTA_T_UNKNOWN_S. Нуль секунд між пробудженнями не є інтервалом
 // перезаряду в жодному прочитанні, тож значення вільне. Guard-и wall-time і
 // непрогріта EMA віддають САМЕ його: доти вони віддавали baseline 60, який
-// mruby мапить у growth_points = МАКСИМУМ (див. bio_contract.rb).
+// mruby мапить у growth_points = МАКСИМУМ (див. bio_contracts/metabolic_core.rb).
 #define DELTA_T_UNKNOWN_S         0u
 #define DELTA_T_MAX_PLAUSIBLE_S   604800u    // 7 діб: довше = стрибок епохи (перший sync) / wrap
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
@@ -337,7 +337,7 @@ uint32_t received_ota_version = 0;              // [FW.23] version_id з seg_idx
 uint8_t  ota_seal_pubkey[OTA_SEAL_PUBKEY_BYTES] = {0};
 uint8_t  ota_seal_pubkey_valid = 0;
 
-uint8_t* current_lorenz_bytecode;
+uint8_t* current_contract_bytecode;
 
 // === 1.9. СТАН АТРАКТОРА ЛОРЕНЦА (FW.6: State Persistence) ===
 // Зберігаємо (x, y, z) між циклами STOP2 через RTC Backup Registers DR16-DR18.
@@ -541,7 +541,7 @@ uint8_t  bcast_key_is_fallback = 0; // 1 = KEYB-слот порожній → ж
                                     // (bench-плата, прошита до KEYB-ери)
 
 #if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
-// [E.63 (г)] Wire-байти 20..21: EMA-delta_t, ЯК він пішов у metabolic_health
+// [E.63 (г)] Wire-байти 20..21: EMA-delta_t, ЯК він пішов у Metabolic.homeostasis_gp
 // цього циклу (контракт «wire = вхід GP» — Фаза 3 виставляє ДО гілкування,
 // VM_ERROR-кадр несе чесне поточне значення). Panic-шлях шле 0 (не-homeostasis,
 // recompute скипається бекендом).
@@ -1231,10 +1231,18 @@ static void Soldier_Dl_Cmd_Commit(void)
 #endif // DL_CCM_RX_ENABLED
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
-// Скомпільований скрипт Атрактора Лоренца (`bio_contracts/bio_contract.rb`).
-// [FW.46] Викарбуваний mrbc у build-час → committed-дзеркало `lorenz_bytecode[]`,
-// drift-gated. Регенерація: tools/firmware/gen_bytecode.sh · гейт: check_bytecode.py
+// Вбудований контракт ери — committed-дзеркало mrbc, drift-gated (FW.46; регенерація:
+// tools/firmware/gen_bytecode.sh · гейт: check_bytecode.py). ⚖️ [FW.66 S4] Ера має ВЛАСНИЙ
+// контракт і власну точку входу: CCM — `ccm_state` (bio_contracts/ccm_contract.rb, 14 байт
+// plaintext → байт статусу, без Лоренца), ECB — `calculate_state` (bio_contract.rb, Лоренц).
+// Метаболічна формула в обох — одна (bio_contracts/metabolic_core.rb).
+#if FW2_CCM_ENABLED
+#include "../common/ccm_bytecode.h"
+#define SOLDIER_EMBEDDED_CONTRACT ccm_bytecode
+#else
 #include "../common/lorenz_bytecode.h"
+#define SOLDIER_EMBEDDED_CONTRACT lorenz_bytecode
+#endif
 #include "../common/flash_ota.h"  // [FW.52-г] OTA contract blob writer (host-tested logic)
 #include "../common/ota_antirollback.h"  // [SEC.20] версійний anti-rollback приплив (Flash-KV 0x15)
 
@@ -1272,7 +1280,9 @@ static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль ву
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start
 // (VBAT loss → DR19 != LORENZ_STATE_MAGIC). Використовує K_seed з Flash
 // + epoch_day (UTC unix_time / 86400). Дзеркало firmware/test/test_seed_derivation.c.
+#if !FW2_CCM_ENABLED  // [FW.66 S4] CCM-збірка Лоренца не рахує — знос ланцюга K_seed: S5
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
+#endif
 static uint32_t Wall_Seconds_Now(void);          // [FW.49 S1] RTC-календар → unix-секунди
 static void Wall_Calendar_Set(uint32_t unix_ts); // [FW.49 S1] beacon-UTC → RTC-календар
 // [SEC.42] Шов календаря для Silken_Beacon_Commit (wall_time.h): запис судить перечитування.
@@ -1414,6 +1424,29 @@ static uint32_t Soldier_Dr0_Word(void)
         .acoustic_events = acoustic_events,
     };
     return Soldier_Dr0_Pack(&dr0);
+}
+
+// Збій контракту (виняток mruby чи невалідний результат) — чесний VM_ERROR (бекенд: vm_error →
+// firmware_fault, НЕ вандалізм), спільний для обох ер (FW.66 S4). [SEC.20] N поспіль збоїв
+// байткоду → OTA-версія стабільно бита: стираємо contract-сторінку (magic зникне) → наступний
+// boot падає на вбудований контракт ери — «не карати жертву» на firmware-рівні замість вічного
+// vm_error. Лічимо ЛИШЕ bytecode-exec збій — не no-seed/OOM (fallback їх не лікує, лише зітер
+// би валідний OTA даремно), тож їхні гілки цю функцію не кличуть.
+static void Soldier_Contract_Failed(mrb_state *mrb)
+{
+    lora_payload[10] = BIO_STATUS_VM_ERROR;
+    if (mrb->exc) mrb->exc = NULL;
+    if (ota_vm_error_streak < OTA_VM_ERR_STREAK_MASK) ota_vm_error_streak++;
+    if (ota_vm_error_streak >= SEC20_VM_ERROR_FALLBACK_N) {
+        Ota_Hal_Erase((void *)0, OTA_CONTRACT_PAGE);
+        ota_vm_error_streak = 0;
+        // NVIC_SystemReset зберігає DR0 (не VBAT-loss) → персистимо streak=0 ЯВНО (його
+        // обнулено рядком вище), інакше boot прочитав би старе значення й erase-нув би
+        // передчасно ще раз. Решту слова (canary-слід [10], причина ребуту) пакувальник
+        // бере з RAM як є.
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
+        NVIC_SystemReset();
+    }
 }
 
 /* USER CODE END 0 */
@@ -1756,9 +1789,9 @@ int main(void)
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код
   const uint32_t* flash_check = (const uint32_t*)MRUBY_CONTRACT_FLASH_ADDR;
   if (*flash_check == 0x45544952) { // "RITE" у little-endian (ознака mruby байткоду)
-      current_lorenz_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR;
+      current_contract_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR;
   } else {
-      current_lorenz_bytecode = (uint8_t*)lorenz_bytecode;
+      current_contract_bytecode = (uint8_t*)SOLDIER_EMBEDDED_CONTRACT;
   }
 
   // [SEC.20] Wire-звіт contract-стану: спалений приплив (0x15) при зниклому
@@ -1776,7 +1809,7 @@ int main(void)
   // Це рятує нас від OOM (Out Of Memory) та фрагментації купи в циклі
   mrb_state *mrb = mrb_open();
   if (mrb) {
-      mrb_load_irep(mrb, current_lorenz_bytecode);
+      mrb_load_irep(mrb, current_contract_bytecode);
   }
 
   /* USER CODE END 2 */
@@ -1809,8 +1842,8 @@ int main(void)
     // (cold-start / зсув назад / стрибок епохи при першому sync) — wall_time.h.
     // wall_now == 0 (HAL-збій) → гілка «назад» чи cold-start guard'а → сентинел ↓.
     // [ARCH.102] Guard'и віддають СЕНТИНЕЛ «не виміряно», а не «нейтральні» 60 с:
-    // ті 60 мапились у `metabolic_health` = 1.0, тобто відмова виміряти мінтила
-    // МАКСИМУМ балів. Дім значення й підстави — `bio_contracts/bio_contract.rb`.
+    // ті 60 мапились у `Metabolic.homeostasis_gp` = 1.0, тобто відмова виміряти мінтила
+    // МАКСИМУМ балів. Дім значення й підстави — `bio_contracts/metabolic_core.rb`.
     uint32_t current_time = Wall_Seconds_Now();
     delta_t_seconds = Silken_Wake_Delta_Seconds(current_time, &last_wakeup_timestamp,
                                                 DELTA_T_UNKNOWN_S,
@@ -1944,7 +1977,7 @@ int main(void)
 
     // [E.63 (г)] КОНТРАКТ «wire = вхід GP»: одне число на обидва споживачі —
     // сатуроване до wire-u16 EMA (чи сентинел до прогріву) йде і в mruby
-    // metabolic_health, і у wire-байти 20..21. Обчислюється ДО гілкування:
+    // Metabolic.homeostasis_gp, і у wire-байти 20..21. Обчислюється ДО гілкування:
     // VM_ERROR-кадр (mruby скип) теж мусить нести чесне поточне значення,
     // а не залишок минулого циклу.
     // [ARCH.102] До прогріву EMA метаболізм НЕ виміряно — і це сентинел, а не
@@ -1952,10 +1985,36 @@ int main(void)
     // що ще не набрав `EMA_WARMUP_CYCLES` зразків.
     uint32_t delta_t_for_lorenz = Silken_Wake_Lorenz_Delta_T(EMA_Is_Warmed_Up(), EMA_Get_DeltaT_Sec(),
                                                              DELTA_T_UNKNOWN_S);
+#if !FW2_CCM_ENABLED
+    // vcap — аргумент лише ECB-контракту (reserved); CCM-контракт бачить plaintext (FW.66 S4).
     uint16_t vcap_for_lorenz    = EMA_Is_Warmed_Up() ? EMA_Get_Vcap_Mv()
                                                      : 3300u;  // nominal (NOMINAL_VCAP_MV; reserved)
+#endif
 #if FW2_CCM_ENABLED
     wire_ema_delta_t_s = (uint16_t)delta_t_for_lorenz;
+    // ⚖️ [FW.66 S4 (а)] CCM-plaintext (wire-rev2.2, розкладка — lora_ccm.h, ledger 03_05 §2.1)
+    // складається ОДИН раз — ДО контракту: контракт CCM-ери бачить рівно ті байти, які підуть в
+    // ефір і які сервер розпакує (байт статусу — 0: його повертає сам контракт), а Фаза 4 лише
+    // вписує статус (Ccm_Pt_Set_Status). Два складання могли б розійтись мовчки (гоча firmware
+    // #25). Джерела — ті САМІ живі значення, що вже лягли в lora_payload (байт-парність
+    // семантики): сирий vcap_voltage, dt_wire із сатурацією 0xFFFF. mesh_ctrl = [TTL:4|fw_low:4]
+    // (low-nibble — 16-епох ротація через OTA-config). Байт 11 — SEC.20-звіт (акустики й коду
+    // 0xFE у CCM-кадрі більше немає: час невідомий їде бітом diag). Поля без джерела пишуться
+    // власним «не виміряно», а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19),
+    // vpd_index — call-site BME280 бенчевий (HW.32). reset_cause — стан (FW.59): причина
+    // останнього справжнього ребуту, вирішена на boot.
+    uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
+    Pack_CCM_Sensor_Payload(vcap_voltage, (int8_t)lora_payload[6],
+                            Fw_Report_To_Ccm7(fw_contract_report),
+                            (uint16_t)dt_wire, 0u /* статус — від контракту ↓ */,
+                            (uint8_t)(((DEFAULT_TTL & FW2_MESH_TTL_MASK) << FW2_MESH_TTL_SHIFT) |
+                                      (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK)),
+                            (uint16_t)FW2_VOC_MV_UNKNOWN,
+                            Pack_FW2_Diag(soldier_reset_cause, time_uncertain,
+                                          0u /* voc_attempt */, fc_hiwater_degraded),
+                            (uint8_t)FW2_VPD_INDEX_NONE,
+                            wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
+                            ccm_pt);
 #endif
 
     if (grace_hello) {
@@ -1972,6 +2031,25 @@ int main(void)
       // повільному «витоку» пам'яті через тижні безперервної роботи.
       int arena_idx = mrb_gc_arena_save(mrb);
 
+#if FW2_CCM_ENABLED
+      {
+          // ⚖️ [FW.66 S4] Контракт CCM-ери (bio_contracts/ccm_contract.rb): без Лоренца, ABI
+          // (заморожений фліпом — C-міст OTA не оновлює) — `ccm_state(pt)`, 14 байт plaintext →
+          // байт статусу [status:2 = 0 | growth_points:5]. Контракт ECB-ери (лише
+          // `calculate_state`) тут падає NoMethodError-ом → VM_ERROR, а не біжить із чужими
+          // аргументами.
+          mrb_value pt_str = mrb_str_new(mrb, (const char *)ccm_pt, FW2_CCM_PLAINTEXT_LEN);
+          mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
+              mrb_intern_lit(mrb, "ccm_state"), 1, &pt_str);
+          if (!mrb->exc && mrb_integer_p(ruby_result) &&
+              Ccm_Contract_Status_Ok((long long)mrb_integer(ruby_result))) {
+              lora_payload[10] = (uint8_t)mrb_integer(ruby_result);
+              ota_vm_error_streak = 0; // [SEC.20] успіх — ланцюг збоїв обірвано
+          } else {
+              Soldier_Contract_Failed(mrb);
+          }
+      }
+#else
       // [SEC.11 / FW.30] Cold-start: якщо стан не відновлено з RTC — деривуємо
       // початкові координати з K_seed. Потрібен валідний lorenz_seed.
       if (!lorenz_state_valid) {
@@ -1989,7 +2067,7 @@ int main(void)
           // [E.63] delta_t_for_lorenz/vcap_for_lorenz обчислені над гілкуванням
           // Фази 3 (контракт «wire = вхід GP» — те саме сатуроване число йде
           // у wire-байти 20..21). delta_t живить growth_points напряму
-          // (metabolic_health, 03_04 §4.3); β лишається фіксованим (BASE_BETA) —
+          // (Metabolic.homeostasis_gp, 03_04 §4.3); β лишається фіксованим (BASE_BETA) —
           // стара FW.5 β-перетурбація реверсована.
           mrb_value args[9];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
@@ -2020,34 +2098,16 @@ int main(void)
               lorenz_z = (float)mrb_float(mrb_ary_entry(ruby_result, 3));
               ota_vm_error_streak = 0; // [SEC.20] успіх — ланцюг збоїв обірвано
           } else {
-              // Помилка mruby або невалідний результат — чесний VM_ERROR
-              // (бекенд: vm_error → firmware_fault, НЕ вандалізм)
-              lora_payload[10] = BIO_STATUS_VM_ERROR;
               lorenz_state_valid = 0; // Скидаємо для наступного циклу
-              if (mrb->exc) mrb->exc = NULL;
-              // [SEC.20] N поспіль bytecode-збоїв → OTA-версія стабільно бита.
-              // Стираємо contract-сторінку (magic зникне) → наступний boot падає
-              // на вбудований baseline: «не карати жертву» на firmware-рівні —
-              // замість вічного vm_error вузол сам відкочується на робочу версію.
-              // Лічимо ЛИШЕ цей, bytecode-exec, збій — не no-seed/OOM нижче
-              // (fallback їх не лікує, лише зітер би валідний OTA даремно).
-              if (ota_vm_error_streak < OTA_VM_ERR_STREAK_MASK) ota_vm_error_streak++;
-              if (ota_vm_error_streak >= SEC20_VM_ERROR_FALLBACK_N) {
-                  Ota_Hal_Erase((void *)0, OTA_CONTRACT_PAGE);
-                  ota_vm_error_streak = 0;
-                  // NVIC_SystemReset зберігає DR0 (не VBAT-loss) → персистимо
-                  // streak=0 ЯВНО (його обнулено рядком вище), інакше boot прочитав
-                  // би старе значення й erase-нув би передчасно ще раз. Решту слова
-                  // (canary-слід [10], причина ребуту) пакувальник бере з RAM як є.
-                  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, Soldier_Dr0_Word());
-                  NVIC_SystemReset();
-              }
+              Soldier_Contract_Failed(mrb);
           }
       } else {
           // [SEC.11 / FW.30] Ні RTC state, ні K_seed не доступні.
           // Пристрій не provisioned або Flash пошкоджений.
           lora_payload[10] = BIO_STATUS_VM_ERROR;
       }
+
+#endif
 
       mrb_gc_arena_restore(mrb, arena_idx);
 
@@ -2122,31 +2182,12 @@ int main(void)
         // мусить споживатись рівно там, де кадр справді пішов.
         uint8_t telemetry_sent = 0u;
 #if FW2_CCM_ENABLED
-        // [FW.2 · FW.66] Wire-rev2.2: телеметрія = 30B CCM замість 16B ECB
-        // (розкладка — lora_ccm.h, ledger 03_05 §2.1). Джерела — ті САМІ живі
-        // значення, що вже лягли в lora_payload (байт-парність семантики): сирий
-        // vcap_voltage, dt_wire із сатурацією 0xFFFF, StatusByte після FW.29-маски.
-        // mesh_ctrl = [TTL:4|fw_low:4] (low-nibble — 16-епох ротація через OTA-config).
-        // Байт 11 — SEC.20-звіт (акустики й коду 0xFE у CCM-кадрі більше немає: час
-        // невідомий їде бітом diag). Поля без джерела пишуться власним «не виміряно»,
-        // а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19), vpd_index
-        // — call-site BME280 бенчевий (HW.32). reset_cause — стан (FW.59): причина
-        // останнього справжнього ребуту, вирішена на boot. Збій збірки (HAL захрип) → мовчимо цей
-        // цикл: 16B-фолбек у CCM-ері Королева однаково дропне (atomic-cutover).
+        // [FW.2 · FW.66] Wire-rev2.2: телеметрія = 30B CCM замість 16B ECB. Plaintext уже
+        // складено у Фазі 3 (той самий, що бачив контракт, FW.66 S4) — лишається вписати
+        // StatusByte після FW.29-маски. Збій збірки (HAL захрип) → мовчимо цей цикл: 16B-фолбек
+        // у CCM-ері Королева однаково дропне (atomic-cutover).
         uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
-        uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
-        uint8_t ccm_mesh_ctrl = (uint8_t)(((DEFAULT_TTL & FW2_MESH_TTL_MASK)
-                                           << FW2_MESH_TTL_SHIFT) |
-                                          (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
-        Pack_CCM_Sensor_Payload(vcap_voltage, (int8_t)lora_payload[6],
-                                Fw_Report_To_Ccm7(fw_contract_report),
-                                (uint16_t)dt_wire, lora_payload[10], ccm_mesh_ctrl,
-                                (uint16_t)FW2_VOC_MV_UNKNOWN,
-                                Pack_FW2_Diag(soldier_reset_cause, time_uncertain,
-                                              0u /* voc_attempt */, fc_hiwater_degraded),
-                                (uint8_t)FW2_VPD_INDEX_NONE,
-                                wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
-                                ccm_pt);
+        Ccm_Pt_Set_Status(ccm_pt, lora_payload[10]);
         if (Soldier_Build_CCM_LoRa_Packet(tree_did, ccm_pt,
                                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
                                           ccm_air) == HAL_OK) {
@@ -3220,6 +3261,7 @@ static void Wall_Calendar_Set(uint32_t unix_ts)
     (void)HAL_RTC_SetDate(&hrtc, &d, RTC_FORMAT_BIN);
 }
 
+#if !FW2_CCM_ENABLED  // [FW.66 S4] CCM-збірка Лоренца не рахує — знос ланцюга K_seed: S5
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 {
     uint64_t epoch_day;
@@ -3253,6 +3295,7 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
     *y0 = (float)dy;
     *z0 = (float)dz;
 }
+#endif
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
 // Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (вибір; SE = SE050 — 03_05 §3.7).

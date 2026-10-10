@@ -413,7 +413,7 @@ RSpec.describe DocsLinter do
     it "flags the retired `clamp(reward, 10, 63)` wire range outside the owner" do
       hits = described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = clamp(reward, 10, 63)\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("metabolic_health")
+      expect(hits.first).to include("homeostasis_gp")
     end
 
     it "flags the retired clamp even inside a table cell (the real manifest:78 drift)" do

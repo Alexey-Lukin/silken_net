@@ -222,9 +222,9 @@ jobs:
         # the heavy librosa≡stdlib parity runs in ml_smoke.yml.
         run: python3 tools/ml/scripts/check_firmware_tables.py
 
-      - name: '[FW.46] Bytecode mirror stamp matches bio_contract.rb (stdlib)'
-        # Light drift gate: sha256(bio_contract.rb) == the stamp inside the
-        # committed lorenz_bytecode.h. No mruby build — the deep mrbc regen-diff
+      - name: '[FW.46] Bytecode mirror stamps match their contract sources (stdlib)'
+        # Light drift gate: sha256(sources) == the stamp inside each committed
+        # *_bytecode.h (ECB lorenz_ · CCM ccm_, FW.66 S4). No mruby build — the deep mrbc regen-diff
         # runs in the firmware_arm_build job. docs/03_01 §12.4.
         run: python3 tools/firmware/check_bytecode.py
 
@@ -290,10 +290,10 @@ jobs:
             gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
             cmake ninja-build ruby rake qemu-system-arm
 
-      - name: '[FW.46] Bytecode mirror == bio_contract.rb (deep mrbc regen-diff)'
+      - name: '[FW.46] Bytecode mirrors == contract sources (deep mrbc regen-diff)'
         run: tools/firmware/gen_bytecode.sh --check
 
-      - name: '[FW.46] Minimal mruby VM runs the committed bytecode'
+      - name: '[FW.46] Minimal mruby VM runs both committed contracts (ECB + CCM)'
         run: tools/firmware/run_bytecode_vm.sh
 
       - name: '[FW.46] Cross-compile owned code (logmel.c) + arm-none-eabi-size'

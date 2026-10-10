@@ -62,7 +62,7 @@
  *   │ Byte 19   : vpd_index (uint8, HW.32); 0 = «немає сенсора»    │
  *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
  *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
- *   │             mruby metabolic_health цього циклу (сатуроване   │
+ *   │             mruby homeostasis_gp цього циклу (сатуроване     │
  *   │             min(EMA,0xFFFF); не-warmed → DELTA_T_UNKNOWN_S   │
  *   │             = 0, НЕ 60 [ARCH.102]; panic теж → 0). Сентинел  │
  *   │             тут несучий: 60 мапиться у GP = максимум, тобто  │
@@ -240,6 +240,28 @@ static inline uint8_t Pack_FW2_Diag(uint8_t reset_cause, uint8_t time_uncertain,
                      (fc_degraded    ? FW2_DIAG_FC_DEGRADED_BIT    : 0u));
 }
 
+/* [FW.66 S4 (а)] Індекс байта статусу в plaintext. Контракт CCM-ери отримує plaintext зі
+ * статусом 0 і повертає байт статусу, а TX лише вписує його сюди — тож байти, які бачить
+ * контракт, і байти в ефірі складає ОДИН виклик Pack_CCM_Sensor_Payload. */
+#define FW2_CCM_PT_STATUS_IDX 6u
+
+static inline void Ccm_Pt_Set_Status(uint8_t pt[FW2_CCM_PLAINTEXT_LEN], uint8_t status_byte) {
+    pt[FW2_CCM_PT_STATUS_IDX] = status_byte;
+}
+
+/* [FW.66 S4] Що контракт CCM-ери ВЗАГАЛІ має право повернути: байт статусу без PANIC-біта (його
+ * пише лише C-шлях паніки) і НЕ зі статусом 3 — vm_error пише C-міст сам (⚖️ коди, 03_05 §2.1).
+ * Усе інше — збій контракту (VM_ERROR і лічильник відкату SEC.20), а не тихо обрізаний байт:
+ * 256+x інакше став би x, −1 — 0x7F (статус 3 · gp 31), а контракт, що «заявляє» 3, обнуляв би
+ * лічильник відкату й не відкочувався б ніколи. Статуси 1 і 2 приймаються — їх як порушення
+ * відповідності судить сервер. Міст фліп FW.2 заморожує, тож ця перевірка — тут або ніде. */
+#define FW2_STATUS_CODE_VM_ERROR   3u
+
+static inline int Ccm_Contract_Status_Ok(long long result) {
+    return result >= 0 && result <= 0x7F &&
+           ((uint8_t)((result & FW2_STATUS_CODE_MASK) >> FW2_STATUS_CODE_SHIFT)) != FW2_STATUS_CODE_VM_ERROR;
+}
+
 static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
                                            uint8_t fw_report7, uint16_t delta_t_s,
                                            uint8_t status_byte, uint8_t mesh_ctrl,
@@ -252,7 +274,7 @@ static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
     out[3]  = fw_report7;
     out[4]  = (uint8_t)(delta_t_s >> 8);
     out[5]  = (uint8_t)(delta_t_s);
-    out[6]  = status_byte;
+    out[FW2_CCM_PT_STATUS_IDX] = status_byte;
     out[7]  = mesh_ctrl;
     out[8]  = (uint8_t)(voc_mv >> 8);
     out[9]  = (uint8_t)(voc_mv);

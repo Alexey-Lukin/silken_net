@@ -237,10 +237,10 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 #### Фаза 2 — mruby BioContract (on-device Lorenz Attractor)
 
-**Файл:** `firmware/bio_contracts/bio_contract.rb`
+**Файл:** `firmware/bio_contracts/bio_contract.rb` (ECB-ера; метаболічна формула — спільне `metabolic_core.rb`). ⚖️ [FW.66 S4] CCM-ера має власний контракт без Лоренца — `ccm_contract.rb` (`ccm_state(pt)`: 14 байт plaintext → байт статусу, ABI — [`03_04 §6`](03_04_mruby_Lorenz_Attractor)); бали пристрій там лише ЗАЯВЛЯЄ — гроші рахує сервер, а розбіжність заяви «утримує» бали кадру ([`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)).
 
 **Мова:** mruby (Ruby для embedded). Компілюється в байткод `mrbc` → вбудовується
-в Flash (`lorenz_bytecode[]`) або оновлюється OTA (`MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`).
+в Flash (`lorenz_bytecode[]` · у CCM-збірці `ccm_bytecode[]`) або оновлюється OTA (`MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`).
 
 **Модуль `SilkenNet::Attractor` (firmware):**
 ```ruby
@@ -273,7 +273,7 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
   elsif delta_t_s == DELTA_T_UNKNOWN_S → status=0, growth_points=0  # [ARCH.102] гомеостаз виміряно, метаболізм — ні: «не міряли» ≠ «зрив»
   else                          → status=0                    # homeostasis
     # [E.63] growth_points = метаболічна жвавість m(delta_t), НЕ |29−z| — SSOT 03_04 §4.3
-    growth_points = metabolic_health(delta_t_s)               # 5-bit wire (5..31)
+    growth_points = Metabolic.homeostasis_gp(delta_t_s)       # 5-bit wire (5..31), metabolic_core.rb
   end
   payload_byte = (status << 5) | growth_points  # [PanicFlag:1 (FW.29) | Status:2 | GP:5]
 end
@@ -793,7 +793,7 @@ blockchain_transactions
 | Provisioning | `HardwareKeyService.provision` атомарно деривує AES key + K_seed одним викликом | `app/services/hardware_key_service.rb` |
 | Attractor | Sole entry-point `Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, …)`; legacy `calculate_z(seed, …)` ВИДАЛЕНО | `app/services/silken_net/attractor.rb` |
 | Unpacker | Per-tree dispatch: warm tail з попереднього `TelemetryLog.lorenz_state_*`, cold start з `K_seed/epoch_day` + `cold_start_flag = true`; persist tail | `app/services/telemetry_unpacker_service.rb` |
-| Firmware | mruby `bio_contract.rb` єдина сигнатура `calculate_state(x, y, z, …)`; chaos_seed та DID-as-seed видалено | `firmware/bio_contracts/bio_contract.rb` |
+| Firmware | mruby `bio_contract.rb` єдина сигнатура `calculate_state(x, y, z, …)` ECB-ери (CCM-ера — `ccm_state(pt)`, FW.66 S4); chaos_seed та DID-as-seed видалено | `firmware/bio_contracts/bio_contract.rb` |
 | Parity | Host-test OpenSSL HKDF/HMAC ↔ `silken_sha256.h` на MCU (детерміновані вектори + 100-case fuzz mirror Ruby) | `firmware/test/test_seed_derivation.c` |
 
 ### Cold-start vs Warm continuation dispatch у `TelemetryUnpackerService`

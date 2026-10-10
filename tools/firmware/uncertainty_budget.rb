@@ -36,7 +36,7 @@
 PARAMS = {
   # ── робоча точка (02_03 §9.6 Variant C — беззапасна точка) ───────────────────
   delta_t_s: 5533.0,      # 1.54 год — ⚖️ 2026-09-26: = енергомодель tx_cadence_budget.rb (ECB, 16 Б; без інференсу — ⚖️ 2026-09-29); CCM 30 Б → ≈ 1.81 год
-  # ── межі метаболічного відображення (bio_contract.rb, placeholder [E.63]) ───
+  # ── межі метаболічного відображення (metabolic_core.rb, placeholder [E.63]) ───
   delta_t_fast_s: 600.0,  # m = 1.0
   delta_t_slow_s: 7200.0, # m = 0.0
   # ── wire-квантування GP (FW.29-PACK, 5 біт) ────────────────────────────────
@@ -53,7 +53,7 @@ PARAMS = {
   coverage_k: 2.0                  # k=2 ≈ 95% (GUM §6.2 розширена невизначеність)
 }.freeze
 
-# Метаболічне відображення delta_t → m ∈ [0,1] (bio_contract.rb). Арифметика — один дім із
+# Метаболічне відображення delta_t → m ∈ [0,1] (metabolic_core.rb). Арифметика — один дім із
 # scc_rate.rb і tx_cadence_budget.rb (lib/growth_steps.rb); числа смуги — у PARAMS тут.
 require_relative "lib/growth_steps"
 

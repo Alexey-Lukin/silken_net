@@ -50,9 +50,10 @@
 #     (emit_c.py `_banner`, gen_bytecode.sh heredoc, export/__init__.py). They are our own
 #     output and must carry the licence; excluding them would leave them unlicensed for
 #     good. `--check` gates then see the tag as part of the expected bytes. NB
-#     firmware/bio_contracts/bio_contract.rb is hand-written source and IS tagged — but
-#     gen_bytecode.sh stamps its sha256 into lorenz_bytecode.h, so tagging it REQUIRES
-#     regenerating that header in the same commit.
+#     firmware/bio_contracts/*.rb (bio_contract · ccm_contract · metabolic_core) are
+#     hand-written sources and ARE tagged — but gen_bytecode.sh stamps the sha256 of their
+#     concatenation into lorenz_bytecode.h / ccm_bytecode.h, so tagging one REQUIRES
+#     regenerating the headers in the same commit.
 #   · config/locales/** (136 files) — the CI step "Check locale YAML files are normalized"
 #     compares each file BYTE-FOR-BYTE against a freshly rendered dump
 #     (i18n-tasks file_formats.rb#normalized?), and that dump is produced by

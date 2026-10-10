@@ -372,4 +372,44 @@ RSpec.describe SilkenNet::Attractor do
         .to eq(described_class::GP_HOMEO_MIN)
     end
   end
+
+  # ⚖️ [FW.66 S4] Контракт CCM-ери (firmware/bio_contracts/ccm_contract.rb + metabolic_core.rb) ⟷
+  # серверна формула. У CCM-ері заява пристрою — тест відповідності: розбіжність коштує балів кадру
+  # («утримання» GP, 03_04 §7.3), тож межі Δt пінимо тут — на СПРАВЖНЬОМУ контракті (підпроцес,
+  # як у DCI-секції), над байтами, які складає серверний же формат розпаковки CCM-кадру.
+  describe "CCM-era contract parity (ccm_state ⟷ .expected_homeostasis_gp)" do
+    def run_ccm_contract(plaintexts)
+      runner = Rails.root.join("tools/firmware/contract_runner.rb").to_s
+      out = IO.popen([ Gem.ruby, runner ], "r+") do |io|
+        io.write(JSON.generate(ccm_cases: plaintexts.map { |pt| pt.unpack1("H*") }))
+        io.close_write
+        io.read
+      end
+      raise "contract_runner.rb failed (status #{$?.exitstatus}): #{out}" unless $?.success?
+      JSON.parse(out)
+    end
+
+    def plaintext(ema)
+      [ 3300, 25, 0x2A, 600, 0, 0x31, 0, 0, 0, ema ].pack(TelemetryUnpackerService::CCM_SENSOR_PAYLOAD_FORMAT)
+    end
+
+    # ВЕСЬ uint16-діапазон, не вибірка: межі (0 · 599–601 · 7199–7201 · 0xFFFF) і обидва точні
+    # півцілі (2250 → 24.5 → 25 · 5550 → 11.5 → 12 — round half away в обох рантаймах) — усередині.
+    it "claims exactly the server's GP for every EMA in the uint16 range, with status 0" do
+      emas = (0..0xFFFF).to_a
+      claims = run_ccm_contract(emas.map { |ema| plaintext(ema) })
+
+      expect(claims.map { |byte| byte >> 5 }).to all(eq(0))
+      expect(claims.map { |byte| byte & 0x1F }).to eq(emas.map { |ema| described_class.expected_homeostasis_gp(ema) })
+    end
+
+    it "reads the EMA from the bytes the firmware's golden plaintext carries (test_ccm.c G_PT_REV22)" do
+      src = Rails.root.join("firmware/test/test_ccm.c").read
+      golden = src[/G_PT_REV22\[[^\]]*\]\s*=\s*\{([^}]*)\}/m, 1].to_s.scan(/0x(\h{2})/).flatten.map { |h| h.to_i(16) }
+      expect(golden.size).to eq(14)
+      ema = golden.pack("C*").unpack(TelemetryUnpackerService::CCM_SENSOR_PAYLOAD_FORMAT).last
+
+      expect(run_ccm_contract([ golden.pack("C*") ])).to eq([ described_class.expected_homeostasis_gp(ema) ])
+    end
+  end
 end

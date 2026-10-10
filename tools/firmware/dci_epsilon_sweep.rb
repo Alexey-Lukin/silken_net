@@ -15,6 +15,8 @@
 #
 # Виклик: tools/firmware/dci_epsilon_sweep.sh (будує і годує VM-дамп).
 
+# [FW.66 S4] Спільне метаболічне ядро — ПЕРШИМ: bio_contract.rb посилається на SilkenNet::Metabolic (як mrbc).
+require_relative "../../firmware/bio_contracts/metabolic_core"
 require_relative "../../firmware/bio_contracts/bio_contract"
 
 EPSILON = 0.001 # ε знятої числової DCI FW.31 (код знято 2026-10-10, FW.66 (Б)); прилад лишається свідком паритету mruby-VM ⟷ CRuby (03_04 §7.1, Gate L)

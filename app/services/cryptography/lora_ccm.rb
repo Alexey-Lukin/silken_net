@@ -17,7 +17,7 @@ require "openssl"
 #   │ Vcap[2 BE] │ temp[1] │ fw_report7[1] │ dt[2 BE, RAW] │ status[1]  │
 #   │ ctrl[1] │ voc_mv[2 BE; 0 = none] │ diag[1] │ vpd[1; 0 = none]      │
 #   │ ema_delta_t_s[2 BE — «wire = вхід GP»: САМЕ це число з'їла        │
-#   │   metabolic_health на пристрої; stateless GP-recompute]           │
+#   │   homeostasis_gp на пристрої; stateless GP-recompute]             │
 #   ├─ MIC (CCM authentication tag, 64-bit) ────────────────────────────┤
 #   │ tag[8]                                                             │
 #   └────────────────────────────────────────────────────────────────────┘

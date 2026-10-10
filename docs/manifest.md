@@ -70,7 +70,7 @@ On-device, an **mruby Bio-Contract** integrates a Lorenz attractor for 250 Euler
 
 - **σ** by an acoustic event count — an input the contract keeps, held at zero since the node's acoustic sensor was cut (§2.4),
 - **ρ** by the xylem temperature gradient,
-- **β** is FIXED at `8/3` ([E.63] — β no longer carries metabolism: it does not move the Lorenz z-fixed-point `z_eq=ρ−1`, so the old `delta_t`/`vcap`→β coupling proved economically null/inverted). EBFC metabolic vigor (`delta_t_s` recharge time) now drives `growth_points` **directly** via a monotonic `metabolic_health(delta_t)` (03_04 §4.3), decoupled from the chaotic attractor.
+- **β** is FIXED at `8/3` ([E.63] — β no longer carries metabolism: it does not move the Lorenz z-fixed-point `z_eq=ρ−1`, so the old `delta_t`/`vcap`→β coupling proved economically null/inverted). EBFC metabolic vigor (`delta_t_s` recharge time) now drives `growth_points` **directly** via a monotonic `Metabolic.homeostasis_gp(delta_t)` (03_04 §4.3), decoupled from the chaotic attractor.
 
 The Z-coordinate of the final point gates the tree into one of three homeostatic regimes — a *status* classifier, not a reward function:
 

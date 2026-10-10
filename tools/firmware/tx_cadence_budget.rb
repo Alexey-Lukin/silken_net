@@ -172,7 +172,7 @@ PARAMS = {
   # ── генерація ────────────────────────────────────────────────────────────
   p_gen_uw: 15.0,
   eta_boost: 0.68,
-  # ── метаболічна смуга (firmware/bio_contracts/bio_contract.rb, E.63) ──────
+  # ── метаболічна смуга (firmware/bio_contracts/metabolic_core.rb, E.63) ──────
   delta_t_fast_s: 600.0,
   delta_t_slow_s: 7200.0
 }.freeze
@@ -239,7 +239,7 @@ def interval_h(p, t_air_ms)
   net.positive? ? e_active_from_vstor_mj(p, t_air_ms) / net : Float::INFINITY
 end
 
-# m(Δt) — метаболічне відображення (bio_contract.rb). Нижче нуля воно не
+# m(Δt) — метаболічне відображення (metabolic_core.rb). Нижче нуля воно не
 # опускається: GP сідає на підлогу, і саме тому «H зріс» і «мінт упав» — різні
 # твердження з різними порогами.
 def metabolic_m(p, delta_t_s)

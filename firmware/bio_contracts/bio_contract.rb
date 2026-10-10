@@ -39,7 +39,7 @@ module SilkenNet
     # (z_eq = ρ−1 залежить від ρ, не від β) → delta_t-сигнал виходив
     # економічно нульовий, а vcap — інвертований (здорове дерево → менше
     # балів). Метаболізм тепер задає growth_points НАПРЯМУ та МОНОТОННО
-    # (BioContract.metabolic_health); Лоренц лишається чистим хаос-детектором
+    # (Metabolic.homeostasis_gp, metabolic_core.rb); Лоренц лишається чистим хаос-детектором
     # стану. Емпіричний присуд + докази — 00_07 E.63 / 03_04.
     # BASELINE_DELTA_T_S / NOMINAL_VCAP_MV лишаються лише як default-аргументи
     # сигнатур; на Z вони більше не впливають. C-міст передає 9 аргументів (FW.8):
@@ -48,18 +48,9 @@ module SilkenNet
     BASELINE_DELTA_T_S = 60
     NOMINAL_VCAP_MV    = 3300
 
-    # [ARCH.102] «Метаболізм не виміряно» — окремий СТАН, не число. Нуль секунд
-    # між пробудженнями не є інтервалом перезаряду в жодному прочитанні (ні як
-    # вимір, ні як фізика), тож він вільний під сентинел і не забирає жодного
-    # досяжного значення. Guard-и `wall_time.h` (cold-start · зсув годинника
-    # назад · стрибок епохи · HAL-збій) і непрогріта EMA віддають САМЕ його.
-    #
-    # 🔴 Чому це несуче: доти ті ж гілки віддавали `BASELINE_DELTA_T_S = 60`,
-    # поданий як «нейтральний», — а `metabolic_health(60)` = 1.08 → clamp 1.0 →
-    # `growth_points = GP_HOMEO_MAX`. Тобто відмова виміряти мінтила МАКСИМУМ,
-    # і на кремнії це не крайній випадок: `Wall_Seconds_Now()` повертає 0 до
-    # LSE/RTC bring-up (FW.49), отже cold-start-гілка спрацьовує щоцикла.
-    DELTA_T_UNKNOWN_S  = 0
+    # [ARCH.102] «Метаболізм не виміряно» — дім сентинела й підстава — metabolic_core.rb
+    # (спільний для обох контрактів, FW.66 S4); тут аліас для наявних посилань.
+    DELTA_T_UNKNOWN_S  = Metabolic::DELTA_T_UNKNOWN_S
 
     # Sole entry-point: takes initial (x, y, z) directly. Returns
     # [z, x_final, y_final, z_final] for RTC persistence. [E.63] Чистий
@@ -105,25 +96,9 @@ module SilkenNet
     # хаотичним шумом, не сигналом).
     OPTIMAL_Z_TARGET = 29.0
 
-    # [E.63] Метаболічна винагорода: швидкість перезаряду EBFC (delta_t) →
-    # growth_points, МОНОТОННО і у польовому масштабі. Лоренц лише гейтить
-    # статус (стрес / аномалія / гомеостаз); у гомеостазі магнітуда балів =
-    # метаболічна жвавість m(delta_t), а не |OPTIMAL−Z| (хаотичний шум).
-    # Калібрувальні пороги — placeholder, чекають bench recharge-кривої
-    # (firmware/scripts/bench/RUNBOOK.md §3.3 / 00_07 E.63); фінал —
-    # per-deployment/species, не хардкод.
-    DELTA_T_FAST_S = 600     # ≤ цього → пік жвавості (m = 1.0)
-    DELTA_T_SLOW_S = 7200    # ≥ цього → мінімум (m = 0.0)
-    GP_HOMEO_MIN   = 5       # 5-бітний wire-діапазон гомеостазу (FW.29-PACK)
-    GP_HOMEO_MAX   = 31
-
-    # Монотонна метаболічна жвавість ∈ [0.0, 1.0]: швидший перезаряд → вище.
-    def self.metabolic_health(delta_t_s)
-      m = (DELTA_T_SLOW_S - delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)
-      m = 0.0 if m < 0.0
-      m = 1.0 if m > 1.0
-      m
-    end
+    # [E.63] Метаболічна винагорода (швидкість перезаряду EBFC → growth_points) — дім
+    # формули й порогів — metabolic_core.rb (`SilkenNet::Metabolic`, спільний для обох
+    # контрактів, FW.66 S4). Лоренц тут лише гейтить статус (стрес / аномалія / гомеостаз).
 
     # Sole evaluation entry-point. Returns [payload_byte, x, y, z] —
     # C-side persists the trajectory tail back to RTC DR16-DR18.
@@ -173,10 +148,7 @@ module SilkenNet
         status = 0            # Гомеостаз (здоровий хаос)
         # [E.63] growth_points = метаболічна жвавість (швидкість перезаряду),
         # монотонно: швидший перезаряд → більше балів. 5-бітний wire (5..31).
-        m = metabolic_health(delta_t_s)
-        growth_points = (GP_HOMEO_MIN + (m * (GP_HOMEO_MAX - GP_HOMEO_MIN))).round
-        growth_points = GP_HOMEO_MIN if growth_points < GP_HOMEO_MIN
-        growth_points = GP_HOMEO_MAX if growth_points > GP_HOMEO_MAX
+        growth_points = Metabolic.homeostasis_gp(delta_t_s)
       end
 
       # Захист від переповнення для 5-бітного wire-простору (максимум 31).

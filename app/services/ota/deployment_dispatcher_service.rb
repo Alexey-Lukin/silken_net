@@ -22,9 +22,14 @@ module Ota
     # [FW.67] Дзеркало стелі збирання Солдата: `ota_buffer[1024]` (firmware/soldier/main.c)
     # бере LoRa-чанк, лише коли offset + 11 ≤ 1024, — щонайбільше 93 чанки (тіло ≤ 1 019 Б).
     # Понад — хвіст мовчки відкидається, збирання стає на 93 і печатку не перевіряють
-    # ніколи, а стеля Королеви цього не бачить (контракт на 2 855 Б — лише 6 CoAP-чанків).
+    # ніколи, а стеля Королеви цього не бачить (ECB-контракт на 3 019 Б — лише 6 CoAP-чанків).
     SOLDIER_OTA_BUFFER_BYTES = 1024
     SOLDIER_MAX_LORA_CHUNKS = SOLDIER_OTA_BUFFER_BYTES / OtaPackagerService::LORA_MTU
+    # [FW.67 · FW.66 S4] Третя стеля — покриття перезапиту 0x55: бітмапа зойку несе
+    # `OTA_REQ_BITMAP_MAX_BYTES × 8` = 72 чанки (firmware/common/ota_rerequest_wire.h; пінить спека),
+    # і в рої чанк із індексом ≥ 72, пропущений першим проходом, не добирається ніколи — збирання
+    # стає. Тож реальна стеля тіла — менша з двох (72), доки перезапит не сторінкують (драбина FW.67).
+    SOLDIER_REREQUEST_MAX_CHUNKS = 72
 
     SkippedCluster = Struct.new(:id, :name, :reason)
     Result = Struct.new(:dispatched_gateways, :skipped_clusters, keyword_init: true) do
@@ -59,13 +64,14 @@ module Ota
     # [FW.60] 16-чанк/8КБ-гейт: manifest дешевий (lazy-packages не
     # матеріалізуються), total_chunks = чисті bytecode-чанки 0x99 —
     # трейлер печатки 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
-    # [FW.67] Друга стеля — Солдата: lora_total_chunks того самого wire-потоку.
+    # [FW.67] Друга й третя стелі — Солдата: lora_total_chunks того самого wire-потоку проти
+    # `ota_buffer` (93) і проти бітмапи перезапиту 0x55 (72).
     def oversized_rejection
       manifest = OtaPackagerService.prepare(
         @firmware, chunk_size: OtaChunkable::CHUNK_SIZE
       )[:manifest]
       return nil if manifest[:total_chunks] <= QUEEN_MAX_BYTECODE_CHUNKS &&
-                    manifest[:lora_total_chunks] <= SOLDIER_MAX_LORA_CHUNKS
+                    manifest[:lora_total_chunks] <= [ SOLDIER_MAX_LORA_CHUNKS, SOLDIER_REREQUEST_MAX_CHUNKS ].min
 
       target_clusters.map { |c| SkippedCluster.new(c.id, c.name, "oversized_firmware") }
     end

@@ -193,6 +193,34 @@ RSpec.describe Ota::DeploymentDispatcherService do
       expect(cluster.reload.ota_version_hiwater).to eq(0)
     end
 
+    # [FW.67] Стеля перезапиту 0x55 (72 чанки) — гейт, а не лише пін: у рої чанк понад неї,
+    # пропущений першим проходом, не добирається, і збирання стає, хоч `ota_buffer` (93) його вмістив би.
+    it "rejects a campaign that fits ota_buffer but not the 0x55 re-request bitmap" do
+      past_rerequest = create(:bio_contract_firmware, bytecode_payload: "01" * 800) # 73 LoRa-чанки
+      queen(cluster: cluster)
+
+      expect(call_service(fw: past_rerequest).skipped_clusters.map(&:reason)).to eq([ "oversized_firmware" ])
+      expect(cluster.reload.ota_version_hiwater).to eq(0)
+    end
+
+    # ⚖️ [FW.66 S4 · FW.67] Справжній контракт CCM-ери мусить вкладатися в УСІ стелі OTA без
+    # підйому — інакше ратифікована драбина FW.67 вимагає підняти ту стелю тією ж ревізією
+    # (00_07 FW.67). Байткод і стелю бітмапи перезапиту 0x55 пін читає з прошивки.
+    it "fits the real CCM-era contract under the Queen, Soldier and 0x55 re-request ceilings" do
+      header = Rails.root.join("firmware/common/ccm_bytecode.h").read
+      hex = header[header.index("{")..header.rindex("}")].scan(/0x(\h{2})/).join
+      rereq = Rails.root.join("firmware/common/ota_rerequest_wire.h").read
+      rereq_cap = rereq[/#define OTA_REQ_BITMAP_MAX_BYTES\s+(\d+)u/, 1].to_i * 8
+      ccm = create(:bio_contract_firmware, bytecode_payload: hex, wire_era: "ccm")
+
+      manifest = OtaPackagerService.prepare(ccm, chunk_size: OtaChunkable::CHUNK_SIZE)[:manifest]
+
+      expect(rereq_cap).to eq(described_class::SOLDIER_REREQUEST_MAX_CHUNKS)
+      expect(manifest[:lora_total_chunks]).to be <= rereq_cap
+      expect(manifest[:lora_total_chunks]).to be <= described_class::SOLDIER_MAX_LORA_CHUNKS
+      expect(manifest[:total_chunks]).to be <= described_class::QUEEN_MAX_BYTECODE_CHUNKS
+    end
+
     it "mirrors the Soldier's ota_buffer — the ceiling is read off firmware/soldier/main.c" do
       soldier = Rails.root.join("firmware/soldier/main.c").read
 
