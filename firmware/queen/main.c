@@ -853,8 +853,9 @@ static const FlashKvOps queen_kv_ops = {
 };
 static FlashKv queen_kv;
 // adapter-TU (lorawan_glue/helium_mac.c) у збірці лише разом із гейтом —
-// прототип тут, дзеркало test_helium_mac_smoke.c
+// прототипи тут, дзеркало test_helium_mac_smoke.c
 void Helium_Mac_Bind_Nvm(FlashKv *kv);
+uint32_t Helium_Mac_Episode_Air_Max_Ms(void);
 #endif // ARCH34_HELIUM_ENABLED
 
 // [FW.52] Queen-side OTA SHA-256 mirror — page 125 (0x0803E800), Queen's
@@ -925,7 +926,7 @@ void Flush_Cache_To_Rails(void);
 static void Queen_Apply_Lora_Baseline(void);
 // [ARCH.34] SOS-обв'язка + повернення вух у raw-LoRa після LoRaWAN-детуру
 static void Radio_Reinit_RawLoRa_868MHz(void);
-static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN]);
+static int queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN]);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
@@ -1416,8 +1417,12 @@ int main(void)
                 // Королева ще не має (board-freeze); flags=0 (rsv).
                 Helium_Sos_Pack(sos, did, 0u, Helium_Sos_Error_Code(fill_pct),
                                 g_uptime_minutes, 0u);
-                queen_helium_lorawan_uplink(sos);
-                g_last_helium_sos_tick = HAL_GetTick();
+                // Відмова лімітера смуги — не пауза SOS: крик повториться,
+                // щойно ковзне вікно звільнить ефір.
+                // cppcheck-suppress knownConditionTrueFalse // при ARCH34=0 завжди 1; при 1 лімітер може відмовити
+                if (queen_helium_lorawan_uplink(sos)) {
+                    g_last_helium_sos_tick = HAL_GetTick();
+                }
             }
         }
     }
@@ -1588,8 +1593,19 @@ static void Radio_Reinit_RawLoRa_868MHz(void)
 // живе тут і компілюється КОЖНОЮ збіркою — за гейтом лише сам MAC-виклик.
 // Порядок пунктів канону: (1) пес ситий до сліпої зони → (2) MAC-сесія з
 // дедлайном → (3) вуха назад → (5) AES-контекст назад → (4) вирок бюджету.
-static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN])
+// Детур ділить із P2P ОДИН бюджет 1 % смуги (tx_duty.h): стелю ефіру епізоду
+// питаємо до сліпоти й списуємо після — навіть коли епізод здався, бо
+// JoinRequest міг полетіти. Клас BULK: резерв маяка лишається маякові.
+// 0 — лімітер відмовив, і епізоду не було.
+static int queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN])
 {
+#if ARCH34_HELIUM_ENABLED
+    const uint32_t episode_air = Helium_Mac_Episode_Air_Max_Ms();
+    if (!Tx_Duty_Allows(&g_tx_duty, HAL_GetTick(), episode_air, TX_DUTY_BULK)) {
+        return 0;
+    }
+#endif
+
     HAL_IWDG_Refresh(&hiwdg);
     uint32_t session_start = HAL_GetTick();
 
@@ -1597,8 +1613,9 @@ static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_
     // OTAA join + один unconfirmed uplink 12 Б; канальний hop і FCntUp —
     // усередині LoRaMac-node, дедлайн ріже сесію ДО стелі бюджету.
     (void)Helium_Mac_SendSos(sos_frame, HELIUM_BLIND_WINDOW_MAX_MS);
+    Tx_Duty_Charge(&g_tx_duty, HAL_GetTick(), episode_air);
 #else
-    (void)sos_frame; // стек ще не vendored — сесії нема, сліпота нульова
+    (void)sos_frame; // гейт вимкнено — сесії нема, ефіру й сліпоти теж
 #endif
 
     Radio_Reinit_RawLoRa_868MHz();
@@ -1611,6 +1628,7 @@ static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_
     if (Helium_Blind_Budget_Ok(session_start, HAL_GetTick())) {
         HAL_IWDG_Refresh(&hiwdg);
     }
+    return 1;
 }
 
 // [FW.3] UART-клей під чистий AT-двигун (at_engine.h). Еволюція у три кроки:

@@ -20,6 +20,7 @@
  */
 #include "../helium_sos.h"
 #include "../../common/flash_kv.h"
+#include "../../common/lora_phy.h"
 
 #include "platform.h"
 #include "lorawan_conf.h"
@@ -27,9 +28,50 @@
 #include "lora_info.h"
 #include "LmHandler.h"
 #include "LoRaMac.h"
+#include "radio.h"
 
 #define HELIUM_SOS_FPORT        2u
 #define HELIUM_KV_KEY_DEVNONCE  0x30u /* Queen KV-простір 0x30+ (00_07 ARCH.34) */
+
+/* ── потужність детуру — під тією ж стелею, що P2P Королеви ───────────────
+ * MAC рахує провідну як floor(MaxEIRP − 2·індекс − підсилення антени)
+ * (RegionCommonComputeTxPower); без підсилення він бере дефолт регіону
+ * 2.15 дБі, і з 5-dBi антеною Королеви ЕВП детуру лягала б понад 25 мВт
+ * (certification_roadmap §2.3). Тож MAC знає справжнє підсилення
+ * (LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI), а індекс тримає провідну не вище
+ * LORA_PHY_TX_POWER_DBM_QUEEN — того самого числа, що в P2P-тракті, бо PA один.
+ * Крок індексу EU868 — 2 дБ, тож детур на 1 дБ тихіший за P2P (+9 проти +10).
+ * MaxEIRP — EU868_DEFAULT_MAX_EIRP (RegionEU868.h), у сотих дБ. */
+#define HELIUM_EU868_MAX_EIRP_CDBM  1600
+#define HELIUM_TX_POWER_HEADROOM_CDB \
+    ( HELIUM_EU868_MAX_EIRP_CDBM - LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI - LORA_PHY_TX_POWER_DBM_QUEEN * 100 )
+#define HELIUM_TX_POWER_INDEX \
+    ( HELIUM_TX_POWER_HEADROOM_CDB > 0 ? ( HELIUM_TX_POWER_HEADROOM_CDB + 199 ) / 200 : 0 )
+_Static_assert( HELIUM_EU868_MAX_EIRP_CDBM - 200 * HELIUM_TX_POWER_INDEX - LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI
+                    <= LORA_PHY_TX_POWER_DBM_QUEEN * 100,
+                "LoRaWAN detour conducted power above the Queen's ratified ceiling (00_07 ARCH.34)" );
+
+/* ── стеля ефіру одного епізоду ───────────────────────────────────────────
+ * Детур лежить у тій самій смузі 868.0–868.6, що P2P Королеви, а EN 300 220-1
+ * п. 5.4.1 міряє робочий цикл на всю смугу — бюджет 1 % у них ОДИН, і веде його
+ * tx_duty.h (main.c питає цю стелю до епізоду й списує її після). Епізод —
+ * щонайбільше JoinRequest і один unconfirmed uplink на DR_0 (EU868: SF12, BW125,
+ * CR 4/5, преамбула 8, CRC — параметри, з якими RegionEU868 сам рахує ефір);
+ * FOpts — за стелею LoRaWAN 15 Б, тож стеля ніколи не нижча за справжній ефір. */
+#define HELIUM_JOIN_REQUEST_LEN  23u
+#define HELIUM_UPLINK_MAX_LEN    ( 13u + 15u + HELIUM_SOS_WIRE_LEN )
+#define HELIUM_DR0_SF            12u
+#define HELIUM_DR0_BW            0u  /* 125 кГц у кодуванні Radio_s */
+#define HELIUM_DR0_CR            1u  /* 4/5 */
+#define HELIUM_DR0_PREAMBLE      8u
+
+uint32_t Helium_Mac_Episode_Air_Max_Ms( void )
+{
+    return Radio.TimeOnAir( MODEM_LORA, HELIUM_DR0_BW, HELIUM_DR0_SF, HELIUM_DR0_CR,
+                            HELIUM_DR0_PREAMBLE, false, HELIUM_JOIN_REQUEST_LEN, true )
+         + Radio.TimeOnAir( MODEM_LORA, HELIUM_DR0_BW, HELIUM_DR0_SF, HELIUM_DR0_CR,
+                            HELIUM_DR0_PREAMBLE, false, HELIUM_UPLINK_MAX_LEN, true );
+}
 
 /* ── стан епізоду (single-threaded main loop) ─────────────────────────── */
 static uint8_t  g_initialized;
@@ -131,7 +173,7 @@ static LmHandlerParams_t g_params = {
     .AdrEnable           = false,       /* SOS = фіксований DR, не оптимізація */
     .IsTxConfirmed       = LORAMAC_HANDLER_UNCONFIRMED_MSG,
     .TxDatarate          = DR_0,        /* SF12 — максимальний reach до hotspot'а */
-    .TxPower             = 0,           /* TX_POWER_0 = максимум регіону */
+    .TxPower             = HELIUM_TX_POWER_INDEX, /* стеля Королеви, не максимум регіону */
     .PublicNetworkEnable = true,
     .DutyCycleEnabled    = true,        /* ETSI EU868 — не обхідний */
     .DataBufferMaxSize   = sizeof g_lmh_data_buffer,
@@ -207,6 +249,21 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
         return 0;
     }
     g_initialized = 1u;
+
+    /* Обидва слоти: OTAA-join скидає поточне підсилення з ДЕФОЛТНОГО
+     * (ResetMacParameters), а Configure щойно записав туди 2.15 регіону.
+     * Не прийняв MAC підсилення — епізоду немає: дефолт дав би ЕВП понад стелю. */
+    MibRequestConfirm_t gain;
+    gain.Type = MIB_DEFAULT_ANTENNA_GAIN;
+    gain.Param.DefaultAntennaGain = LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI / 100.0f;
+    if ( LoRaMacMibSetRequestConfirm( &gain ) != LORAMAC_STATUS_OK ) {
+        return 0;
+    }
+    gain.Type = MIB_ANTENNA_GAIN;
+    gain.Param.AntennaGain = LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI / 100.0f;
+    if ( LoRaMacMibSetRequestConfirm( &gain ) != LORAMAC_STATUS_OK ) {
+        return 0;
+    }
 
     /* fresh join щоепізоду; DevNonce тягнемо З persist ДО join, назад —
      * ПІСЛЯ (LoRaMacCrypto інкрементить його на кожен JoinRequest). */

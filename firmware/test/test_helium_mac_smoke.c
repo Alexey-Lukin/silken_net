@@ -38,6 +38,7 @@
 
 #include "../queen/helium_sos.h"
 #include "../common/flash_kv.h"
+#include "../common/lora_phy.h"
 #include "radio.h"
 #include "lorawan_aes.h" /* мок-LNS: ті самі vendored-примітиви, що soft-se */
 #include "cmac.h"
@@ -46,6 +47,7 @@
 #include <stdint.h>
 
 void Helium_Mac_Bind_Nvm( FlashKv *kv );
+uint32_t Helium_Mac_Episode_Air_Max_Ms( void );
 
 #define ASSERT_EQ(a, b) do { \
     if ((a) != (b)) { \
@@ -78,6 +80,15 @@ static uint8_t  g_last_tx_len;
 static int      g_rx_requested;
 static int      g_tx_pending;
 static int      g_rx_timeout_pending;
+/* [ARCH.34] що MAC віддав драйверу на останньому SetTxConfig, і ефір,
+ * який той самий драйвер порахував би кадрам, що СПРАВДІ полетіли */
+static int8_t   g_last_tx_power;
+static uint32_t g_last_tx_bw;
+static uint32_t g_last_tx_sf;
+static uint8_t  g_last_tx_cr;
+static uint16_t g_last_tx_preamble;
+static int8_t   g_max_tx_power = -128;
+static uint32_t g_air_sent_ms;
 
 /* ── мок-LNS: server-половина рукостискання на нуль-ключах se-identity ──
  * Крипто — ті самі vendored cmac.c + lorawan_aes.c, що лінкує soft-se
@@ -206,10 +217,15 @@ static void stub_SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
                               bool fixLen, bool crcOn, bool freqHopOn,
                               uint8_t hopPeriod, bool iqInverted, uint32_t timeout )
 {
-    ( void )modem; ( void )power; ( void )fdev; ( void )bandwidth;
-    ( void )datarate; ( void )coderate; ( void )preambleLen; ( void )fixLen;
+    ( void )modem; ( void )fdev; ( void )fixLen;
     ( void )crcOn; ( void )freqHopOn; ( void )hopPeriod; ( void )iqInverted;
     ( void )timeout;
+    g_last_tx_power    = power;
+    g_last_tx_bw       = bandwidth;
+    g_last_tx_sf       = datarate;
+    g_last_tx_cr       = coderate;
+    g_last_tx_preamble = preambleLen;
+    if ( power > g_max_tx_power ) g_max_tx_power = power;
 }
 static bool     stub_CheckRfFrequency( uint32_t f ) { ( void )f; return true; }
 static uint32_t stub_TimeOnAir( RadioModems_t modem, uint32_t bandwidth,
@@ -217,16 +233,19 @@ static uint32_t stub_TimeOnAir( RadioModems_t modem, uint32_t bandwidth,
                                 uint16_t preambleLen, bool fixLen,
                                 uint8_t payloadLen, bool crcOn )
 {
-    ( void )modem; ( void )bandwidth; ( void )datarate; ( void )coderate;
-    ( void )preambleLen; ( void )fixLen; ( void )payloadLen; ( void )crcOn;
-    /* реалістичний порядок SF12-кадру (~1.3-1.6 с) — duty-cycle-математика
-     * region-коду ганяється на чесних числах, не на іграшкових */
-    return 1500u;
+    ( void )modem; ( void )bandwidth; ( void )coderate;
+    ( void )preambleLen; ( void )fixLen; ( void )crcOn;
+    /* реалістичний порядок SF12-кадру (~1.5 с) — duty-cycle-математика
+     * region-коду ганяється на чесних числах, не на іграшкових; росте з SF і
+     * довжиною, тож стеля ефіру епізоду судиться й по тому, й по тому */
+    return ( 1u << datarate ) / 4u + 20u * payloadLen;
 }
 // cppcheck-suppress constParameterCallback // ABI Radio_s — const зламав би тип поля
 static radio_status_t stub_Send( uint8_t *buffer, uint8_t size )
 {
     g_tx_count++;
+    g_air_sent_ms += stub_TimeOnAir( MODEM_LORA, g_last_tx_bw, g_last_tx_sf, g_last_tx_cr,
+                                     g_last_tx_preamble, false, size, true );
     g_last_tx_len = ( size < sizeof g_last_tx ) ? size : (uint8_t)sizeof g_last_tx;
     memcpy( g_last_tx, buffer, g_last_tx_len );
     if ( g_lns_enabled ) {
@@ -441,6 +460,47 @@ static int test_mock_lns_full_join_and_uplink(void) {
     return 0;
 }
 
+static int test_detour_power_under_queen_ceiling(void) {
+    /* [ARCH.34] Кожен кадр детуру — JoinRequest і data-uplink — MAC віддає
+     * драйверу з провідною не вище ратифікованої Королеви (той самий PA, що
+     * в P2P), і ЕВП з її антеною — під стелею НКЕК. Без справжнього
+     * підсилення в обох слотах MIB MAC узяв би дефолт 2.15 дБі → +11 дБм. */
+    g_max_tx_power = -128;
+    g_lns_enabled  = 1;
+    uint8_t sos[HELIUM_SOS_WIRE_LEN];
+    Helium_Sos_Pack( sos, 0xA1B2C3D4u, 1u, 3u, 46u, 1u );
+    ASSERT_EQ( Helium_Mac_SendSos( sos, HELIUM_BLIND_WINDOW_MAX_MS ), 1 );
+
+    ASSERT_TRUE( g_max_tx_power > -128 );                        /* TX був */
+    ASSERT_TRUE( g_max_tx_power <= LORA_PHY_TX_POWER_DBM_QUEEN );
+    ASSERT_TRUE( g_max_tx_power * 100 + LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI - 215
+                 <= LORA_PHY_SRD_ERP_MAX_CDBM );
+    ASSERT_TRUE( g_max_tx_power + 2 > LORA_PHY_TX_POWER_DBM_QUEEN ); /* найгучніший крок під стелею */
+    printf("  test_detour_power_under_queen_ceiling                      ✅\n");
+    return 0;
+}
+
+static int test_episode_air_bound_covers_what_flew(void) {
+    /* [ARCH.34] Стеля ефіру епізоду, яку main.c списує на журнал смуги
+     * (tx_duty.h), не нижча за ефір кадрів, що СПРАВДІ полетіли, — і
+     * порахована з тими параметрами, з якими MAC їх відправив. */
+    g_lns_enabled = 1;
+    g_air_sent_ms = 0u;
+    int tx_before = g_tx_count;
+    uint8_t sos[HELIUM_SOS_WIRE_LEN];
+    Helium_Sos_Pack( sos, 0xA1B2C3D4u, 1u, 3u, 47u, 1u );
+    ASSERT_EQ( Helium_Mac_SendSos( sos, HELIUM_BLIND_WINDOW_MAX_MS ), 1 );
+
+    ASSERT_EQ( g_tx_count - tx_before, 2 );     /* JoinRequest + uplink, не більше */
+    ASSERT_EQ( g_last_tx_sf, 12u );             /* DR_0 = SF12 … */
+    ASSERT_EQ( g_last_tx_bw, 0u );              /* … BW125 … */
+    ASSERT_EQ( g_last_tx_cr, 1u );              /* … CR 4/5 … */
+    ASSERT_EQ( g_last_tx_preamble, 8u );        /* … преамбула 8 — як у стелі */
+    ASSERT_TRUE( g_air_sent_ms <= Helium_Mac_Episode_Air_Max_Ms( ) );
+    printf("  test_episode_air_bound_covers_what_flew                    ✅\n");
+    return 0;
+}
+
 int main(void) {
     int fails = 0;
     printf("test_helium_mac_smoke — [ARCH.34] справжній LoRaMac на стаб-радіо:\n");
@@ -453,6 +513,8 @@ int main(void) {
     fails += test_devnonce_monotonic_between_episodes();
     fails += test_devnonce_survives_reboot_via_kv();
     fails += test_mock_lns_full_join_and_uplink();
+    fails += test_detour_power_under_queen_ceiling();
+    fails += test_episode_air_bound_covers_what_flew();
     if (fails) {
         fprintf(stderr, "❌ test_helium_mac_smoke: %d failed\n", fails);
         return 1;
