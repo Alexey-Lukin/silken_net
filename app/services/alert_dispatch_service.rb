@@ -100,47 +100,16 @@ class AlertDispatchService
                         "аномалія прошивки (або підробка); алерт не піднято."
     end
 
-    # 4. ПОСУХА — лише ПРИСТРІЙНИЙ status-гейт [E.64 ⚖️ 2026-09-05, варіант A]
-    #
-    # ⛔ Серверна Z-гілка ЗНЯТА, і повертати її не можна. Вона піднімала
-    # `attractor_destabilised` за `!Attractor.homeostatic?(z, family, temp)` —
-    # тобто друкувала ВЕРДИКТ ПРО ЗДОРОВʼЯ, виведений із Z, тоді як присуд E.64
-    # каже протилежне: Лоренц-оракул здоровʼя декоративний, роль Z = DCI-only
-    # (`05_05 §8.1`). Обидва входи предиката були недостовірні: Z↔здоровʼя —
-    # недоведена гіпотеза (`05_05 §7`), а `critical_z_min/max` у сідах —
-    # заповнювач, не вимір (⚖️ founder). Клас — `СЛОВО` (`05_05 §3.2`): мітка є,
-    # вимірювача немає, і лік для нього названий один — ЗНЯТИ поверхню, ніколи
-    # не «дописати джерело, щоб напис став правдивим».
-    # 🔑 Свідчення при цьому не втрачено: `z_value`/`bio_status` лежать у
-    # Merkle-листі, тож класифікацію можна перерахувати по історії будь-коли.
-    #
-    # ⚠️ ЦІНА НАЗВАНА ВГОЛОС: цей сервіс — ЄДИНИЙ авто-писач `severe_drought`,
-    # і гілка нижче (`bio_status_stress?` = пристрійний `z < 2.0`) ЖИВА, хоч і
-    # рідкісна. 🔴 [2026-09-29] Доти тут стояло «недосяжна за конструкцією —
-    # ρ-clamp тримає `z_eq ≥ 9`, нуль випадків на 5 000 прогонів», і це було
-    # хибно: ρ-clamp обмежує РІВНОВАГУ, не траєкторію, а 0 з 5 000 міряли на
-    # cold-start. Теплий ланцюг справжнього контракту дає stress 0.022 % циклів за
-    # −25 °C і 0–1 подію на 180 000 циклів за +20…+30 °C (роздільність вибірки),
-    # тобто «посуха» тут свідчить про МОРОЗ (`tools/firmware/lorenz_zone_frequency.rb`,
-    # `03_04 §5.3`). Наслідок без гейта — не полив: `EmergencyResponseService`
-    # просить 7200 с серіями по 3600 с, і клапан, що серії не витримує, недоступний
-    # чи відсутній, дає CRITICAL `emergency_response_undeliverable` — лист клієнтові
-    # й `under_threat`; придатний клапан дає лише ЗАПИСАНИЙ полив (Королева квитує
-    # токен луною, ACTION не виконуючи, `03_02 §6`). За гейтами — утримання ВСІХ
-    # виплат кластера (оракул страхування вимкнено) і, з dClimate, CRITICAL
-    # `field_audit` `non_fire_peril`; платити посуха не може — писача `:verified`
-    # для неї немає. Фліпу FW.8 зі смугами родин не буде: FW.8 ⚫ 2026-10-06
-    # (поглинуто гілкою (Б)) — пороги переїжджають на сервер, а цю гілку знімає
-    # реалізація (Б), `00_07` FW.66; доти вона жива.
-    # ⛔ Порожній екран тут як і раніше
-    # означає «ніхто не міряв», НІКОЛИ «посухи немає» (`00_01 §1.1`); повернення
-    # чесного голосу = прямі сигнали (sap/VPD), `00_07` E.64.
-    if telemetry_log.bio_status_stress?
-      create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :medium,
-        alert_type: :severe_drought, message_key: "hydrological_stress", message_params: {}
-      )
-    end
+    # 4. ⛔ ПОСУХИ З ПРИСТРІЙНОГО СТАТУСУ НЕМАЄ [FW.66 (Б), `03_04 §5.3`]. Гілку
+    # `bio_status_stress?` → `severe_drought` знято: у ECB-ері stress — це z < 2.0
+    # атрактора, тобто статус із нашого `K_seed`, і частота його росте з МОРОЗОМ (0.022 %
+    # циклів за −25 °C), а не з посухою; у CCM-ері біти статусу несуть валідність виміру,
+    # не біологію. Серверну Z-гілку (`attractor_destabilised`) знято ще раніше (E.64) з
+    # тієї ж причини — Z здоровʼя не міряє (`05_05 §8.1`), тож не повертати жодну.
+    # `severe_drought` лишився без авто-писача, як `chainsaw_detected`: страхування,
+    # dClimate і `EmergencyResponseService` чекають писача з прямих сигналів (sap/VPD,
+    # `00_07` E.64). ⛔ Порожній екран означає «ніхто не міряв», НІКОЛИ «посухи немає»
+    # (`00_01 §1.1`).
   end
 
   # Публічний метод для DCI-розбіжності з InsightGeneratorService. Окремий від
@@ -204,20 +173,22 @@ class AlertDispatchService
     # Note: Read/write has a small race window, acceptable because:
     # (1) alert dispatch is typically serial within telemetry processing,
     # (2) per-type silence filter (5 min) provides additional protection.
-    if severity == :critical
-      time_bucket = Time.current.to_i / DID_RATE_LIMIT_WINDOW.to_i
-      rate_key = "ews_did_rate:#{tree.did}:#{time_bucket}"
-      current_count = (Rails.cache.read(rate_key) || 0).to_i
+    # ⚠️ [FW.66] Без гарда `severity == :critical`: з посухою пішов останній некритичний
+    # алерт цього сервісу, тож кожен виклик тут критичний, а гілка «не критичний» стала
+    # станом, якого жоден писач не створює (backend #76). Повертаючи некритичний тип —
+    # поверни й гард.
+    time_bucket = Time.current.to_i / DID_RATE_LIMIT_WINDOW.to_i
+    rate_key = "ews_did_rate:#{tree.did}:#{time_bucket}"
+    current_count = (Rails.cache.read(rate_key) || 0).to_i
 
-      if current_count >= MAX_ALERTS_PER_DID_PER_WINDOW
-        Rails.logger.warn "🛡️ [SEC.10] Per-DID rate limit exceeded for #{tree.did}: " \
-                          "#{current_count}/#{MAX_ALERTS_PER_DID_PER_WINDOW} critical alerts in #{DID_RATE_LIMIT_WINDOW}. " \
-                          "Suppressed: #{alert_type}"
-        return
-      end
-
-      Rails.cache.write(rate_key, current_count + 1, expires_in: DID_RATE_LIMIT_WINDOW * 2)
+    if current_count >= MAX_ALERTS_PER_DID_PER_WINDOW
+      Rails.logger.warn "🛡️ [SEC.10] Per-DID rate limit exceeded for #{tree.did}: " \
+                        "#{current_count}/#{MAX_ALERTS_PER_DID_PER_WINDOW} critical alerts in #{DID_RATE_LIMIT_WINDOW}. " \
+                        "Suppressed: #{alert_type}"
+      return
     end
+
+    Rails.cache.write(rate_key, current_count + 1, expires_in: DID_RATE_LIMIT_WINDOW * 2)
 
     # 🔴 ДЕДУП ⊥ ПОМИЛКА. Тиша — лише швидкий шлях; «один активний алерт типу на вузол»
     # тримає uniqueness (`[tree_id, status]` + частковий unique-index). Кадр стану, що
@@ -251,7 +222,7 @@ class AlertDispatchService
 
     # [ІНВАЛІДАЦІЯ КЕШУ]: Критичні аномалії мають негайно оновити прогноз Оракула,
     # щоб Dashboard не показував застарілий "оптимістичний" прогноз під час катастрофи.
-    Organization.invalidate_expected_yield_cache(cluster&.organization_id) if severity == :critical
+    Organization.invalidate_expected_yield_cache(cluster&.organization_id)
 
     Rails.logger.warn "🚨 [EWS ALERT] #{alert_type} | #{tree.did}"
 

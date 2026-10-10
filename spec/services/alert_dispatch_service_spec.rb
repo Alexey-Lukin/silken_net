@@ -250,26 +250,6 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(Rails.cache.read(Organization.expected_yield_cache_key(cluster.organization_id))).to be_nil
       expect(Rails.cache.read(Organization.expected_yield_cache_key(other_org.id))).to eq(42.0)
     end
-
-    it "does not clear oracle yield cache for non-critical alerts" do
-      Rails.cache.write(Organization.expected_yield_cache_key(cluster.organization_id), 42.0)
-
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: true,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-
-      expect(Rails.cache.read(Organization.expected_yield_cache_key(cluster.organization_id))).to eq(42.0)
-    end
   end
 
 # ⛔ [E.64 ⚖️ 2026-09-05, варіант A] Серверна Z-гілка ЗНЯТА, і цей приклад —
@@ -298,9 +278,9 @@ describe "attractor homeostasis check [E.64: Z більше НЕ судить з
     }.not_to change(EwsAlert, :count)
   end
 
-  # Дзеркало: пристрійний status-гейт лишається дієвим, інакше фікс не
-  # відрізнити від «посуху вимкнули цілком».
-  it "піднімає `hydrological_stress`, коли ПРИСТРІЙ каже stress" do
+  # [FW.66 (Б)] І пристрійного status-гейта посухи більше немає: stress — статус із z
+  # нашого `K_seed` (`03_04 §5.3`). Пін — «жодного алерту», а не «не той тип» (backend #56).
+  it "не піднімає алерт і тоді, коли ПРИСТРІЙ каже stress" do
     log = instance_double(TelemetryLog,
       tree: tree,
       bio_status_vm_error?: false,
@@ -315,11 +295,7 @@ describe "attractor homeostasis check [E.64: Z більше НЕ судить з
 
     expect {
       described_class.analyze_and_trigger!(log)
-    }.to change(EwsAlert, :count).by(1)
-
-    alert = EwsAlert.last
-    expect(alert.alert_type).to eq("severe_drought")
-    expect(alert.message_key).to eq("hydrological_stress")
+    }.not_to change(EwsAlert, :count)
   end
 end
 
@@ -393,10 +369,10 @@ end
         bio_status_vm_error?: false,
         firmware_report_reverted?: false,
         voltage_mv: 3500,
-        temperature_c: 25,
+        temperature_c: 95,
         bio_status_anomaly?: false,
         panic?: false,
-        bio_status_stress?: true,
+        bio_status_stress?: false,
         z_value: 20.0
       )
 
@@ -570,26 +546,6 @@ end
       described_class.analyze_and_trigger!(log)
 
       expect(EmergencyResponseService).to have_received(:call).with(kind_of(EwsAlert))
-    end
-  end
-
-  describe "drought with stress bio_status" do
-    it "creates drought alert with stress message when bio_status is stress" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: true,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.message_key).to eq("hydrological_stress")
-      I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("ПОСУХА") }
     end
   end
 

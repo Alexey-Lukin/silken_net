@@ -869,21 +869,19 @@ puts "   📜 Кодекс-ліси: #{codex_forests.size} кластери · #
 puts "🚨 Створення тестових тривог..."
 anomaly_tree = cherkasy_trees.last
 
-drought_alert = EwsAlert.create!(
+# ⛔ Демо-medium не малює стан, якого система не породжує (клас «фікстура пінить
+# недосяжне»): `attractor_destabilised` знято з серверною Z-гілкою [E.64 ⚖️ 2026-09-05], а
+# `severe_drought` / `hydrological_stress` — з пристрійним status-гейтом посухи [FW.66 (Б)],
+# і авто-писача в посухи немає. Тож тут — дрейф калібрування, у формі, якою його пише
+# `DeviceCalibration` (живий medium-писач).
+calibration_alert = EwsAlert.create!(
   cluster: cherkasy_forest,
   tree: anomaly_tree,
-  alert_type: :severe_drought,
+  alert_type: :system_fault,
   severity: :medium,
   status: :active,
-  # ⛔ [E.64 ⚖️ 2026-09-05] `attractor_destabilised` СЮДИ НЕ ПОВЕРТАТИ: серверну
-  # Z-гілку знято, продовий писач такого ключа більше не створює, і сід малював би
-  # демо-глядачеві стан, якого система не породжує (клас «фікстура пінить недосяжне»).
-  # ⚠️ Чесно про цей рядок: він пишеться ПРЯМО, в обхід `AlertDispatchService`, а
-  # єдиний авто-писач посухи (пристрійний `stress`) живий, але рідкісний — холодом,
-  # частки відсотка кадрів (канон 00_04 §2), — тож рядок існує, щоб демо мало
-  # medium-алерт для UI, а не щоб зображати типовий стан.
-  message_key: "hydrological_stress",
-  message_params: {}
+  message_key: "hardware_decay",
+  message_params: { did: anomaly_tree.did }
 )
 
 fire_alert = EwsAlert.create!(
@@ -1033,10 +1031,10 @@ puts "🔧 Реєстрація технічного обслуговуванн�
 MaintenanceRecord.create!(
   user: forester,
   maintainable: cherkasy_trees[5],
-  ews_alert: drought_alert,
+  ews_alert: calibration_alert,
   action_type: :inspection,
   performed_at: 1.day.ago,
-  notes: "Візуальний огляд після тривоги посухи. Стан задовільний, листя не всохло.",
+  notes: "Огляд після тривоги дрейфу калібрування. Корпус цілий, сенсор чистий.",
   hardware_verified: true
 )
 

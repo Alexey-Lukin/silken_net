@@ -340,6 +340,8 @@ class EwsAlert < ApplicationRecord
   # ⛔ [HW.30 ⚖️ 2026-09-29] Той самий стан — у `alerts.messages.chainsaw_detected` і
   # `alerts.messages.chainsaw_detected_panic`: писача знято разом із гілкою пилки
   # (`AlertDispatchService`), а історичні рядки рендеряться саме через них. Не видаляти.
+  # ⛔ [FW.66 (Б)] Так само `alerts.messages.hydrological_stress`: пристрійний status-гейт
+  # посухи знято (`AlertDispatchService`), тип `severe_drought` лишився без авто-писача.
   # ⛔ [FW.50] Так само `alerts.messages.power_loss`: гілку знято (її єдиним пускачем був нуль
   # відмови АЦП), а рядки з нею лишали panic-кадри з vcap = 0 до гарда SLASH-1. Не видаляти.
   # **Ключ рендера переживає свій механізм — це не борг, а память.**

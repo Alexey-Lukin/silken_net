@@ -111,16 +111,15 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
         .not_to change(EwsAlert, :count)
     end
 
-    it "створює drought-алерт, коли ПРИСТРІЙ повідомив stress" do
+    # [FW.66 (Б)] Пристрійний stress — статус із z нашого `K_seed`, і росте він із морозом,
+    # а не з посухою (`03_04 §5.3`): вердикту про воду з нього немає.
+    it "НЕ створює drought-алерт і тоді, коли ПРИСТРІЙ повідомив stress" do
       log = create(:telemetry_log, tree: tree, temperature_c: 20,
                                    bio_status: :stress, voltage_mv: 3500,
                                    acoustic_events: 0, z_value: 0.1)
 
       expect { AlertDispatchService.analyze_and_trigger!(log) }
-        .to change(EwsAlert, :count).by(1)
-
-      expect(EwsAlert.last.alert_type).to eq("severe_drought")
-      expect(EwsAlert.last.message_key).to eq("hydrological_stress")
+        .not_to change(EwsAlert, :count)
     end
 
     it "respects silence filter — does not duplicate alerts within window" do
