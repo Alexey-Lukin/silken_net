@@ -148,13 +148,13 @@ class HardwareKey < ApplicationRecord
   end
 
   # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.
-  # Service version includes downlink notification to the device.
+  # Service version runs the ratchet and opens the Grace the poll tract derives 0x9E from.
   # This model method is kept for backward compatibility but logs a deprecation warning.
   # Post-ARCH.42: rotate produces a key of the same length as the current one
   # (16 bytes for Tree LoRa AES-128, 32 bytes for Gateway CoAP AES-256).
   def rotate_key!
     Rails.logger.warn "⚠️ [Deprecation] HardwareKey#rotate_key! called for #{device_uid}. " \
-                      "Use HardwareKeyService.rotate(device_uid) for full rotation with downlink."
+                      "Use HardwareKeyService.rotate(device_uid) for full rotation (ratchet + Grace)."
 
     # Match the existing key byte-length (Tree: 16 bytes / Gateway: 32 bytes)
     byte_len = aes_key_hex.length / 2

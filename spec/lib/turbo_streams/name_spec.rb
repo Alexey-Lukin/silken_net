@@ -11,7 +11,7 @@ require "rails_helper"
 # 🔴 І головне, що ці літерали справді пінять: вони мусять бути БАЙТ-У-БАЙТ
 # тими самими рядками, які пінять спеки продюсерів (`tree_spec:346`,
 # `ews_alert_spec:714,754`, `unpack_telemetry_worker_spec:63`,
-# `ota_transmission_worker_spec:66`, `pending_queue_service_spec`) і підписників
+# `pending_queue_service_spec`) і підписників
 # (`telemetry_controller_spec:41`, `alerts_controller_spec:157`,
 # `dashboard_controller_spec:105`, `firmwares_controller_spec:176`,
 # `gateways_controller_spec`). Розбіжність тут = тихо мертвий тракт.

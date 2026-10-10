@@ -954,8 +954,8 @@ class TelemetryUnpackerService < ApplicationService
       # cold-boot uses firmware's RTC default (day 10_957, FIRMWARE_RTC_DEFAULT_EPOCH_DAY) as epoch_day instead
       # of today's, producing a different (x₀,y₀,z₀) that diverges from the
       # server's warm-start chain. If any candidate matches categorically,
-      # the packet is legitimate — mark time_unsynced_fallback and request RTC
-      # correction via TimeSyncDownlinkWorker instead of counting fraud.
+      # the packet is legitimate — mark time_unsynced_fallback instead of
+      # counting fraud (the clock rides every 2.05 poll reply — FW.60).
       if !attributes[:cold_start_flag] &&
           try_time_sync_recovery(tree, attributes, bands, device_in_band)
         return
@@ -1003,8 +1003,8 @@ class TelemetryUnpackerService < ApplicationService
   # hasn't received CMD_TIME_SYNC yet.
   #
   # Side effect on match: sets attributes[:time_unsynced_fallback] = true. Свіжий
-  # час не ставиться в чергу окремо — Королева дістає `[0x9C][ts:4]` у КОЖНІЙ
-  # poll-відповіді й перемотує маяк сама (FW.60, `03_02 §5а`).
+  # час не ставиться в чергу окремо — Королева дістає `[0x9C][ts:4]` у кожній
+  # 2.05-відповіді poll'а й перемотує маяк сама (FW.60, `03_02 §5а`).
   # [FW.8] Збіг — з БУДЬ-ЯКОЮ смугою-кандидатом, тим самим сирим z, що й
   # основний шлях: інакше recovery «знаходив» би чужу добу там, де основний шлях
   # відкинув пакет лише через смугу.

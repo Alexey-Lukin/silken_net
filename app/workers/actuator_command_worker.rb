@@ -8,9 +8,9 @@ require "timeout"
 # цей воркер: команда чекає в .pending, Королева забирає її власним poll'ом
 # (Downlink::PendingQueueService — там же повний success-lifecycle
 # dispatch→acknowledge→Reset-план). Гірше за недоставку: швидкі ретраї сюди
-# fail!'или команду ДО першого poll'а. Видалити після bench-верифікації
-# poll-тракту [bench:coap]; broadcast_command_state_static лишається живим
-# UI-хелпером (кличе PendingQueueService).
+# fail!'или команду ДО першого poll'а. Знос push-половини — нога `00_07` FW.60
+# (стенд її не тримає: Королева не слухає); broadcast_command_state_static
+# лишається живим UI-хелпером (кличе PendingQueueService).
 class ActuatorCommandWorker
   include Sidekiq::Job
   include CoapEncryption

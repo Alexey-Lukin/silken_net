@@ -174,8 +174,8 @@ class Gateway < ApplicationRecord
   # станах + НЕ у своїй кампанії (updating): Queen тримає один глобальний
   # OTA-буфер — campaign-id (FW.60) знає лише курсор фетчу, а збірка чанків і
   # маска печатки за ним не скидаються, тож перекриті кампанії = битий образ.
-  # Ширший за best_gateway_for downlink-воркерів рівно на :updating
-  # (одиночна дейтаграма кампанії не боїться).
+  # Межа одиночних наказів — `maintenance faulty`; кампанія виключає ще й
+  # :updating (одиночна дейтаграма кампанії не боїться).
   scope :ota_deployable, -> {
     where.not(ip_address: [ nil, "" ]).where.not(state: %w[maintenance faulty updating])
   }
