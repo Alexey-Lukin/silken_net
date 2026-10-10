@@ -639,13 +639,13 @@ RSpec.describe InsightGeneratorService, type: :service do
   end
 
   describe "nil stats branch" do
-    it "returns false when stats.avg_temp is nil" do
+    it "returns false when the day holds no measured (non-panic) row" do
       service = described_class.new
       # ⚠️ Verifying double тут НЕМОЖЛИВИЙ: `stats` — рядок GROUP BY-агрегату
-      # (`prefetch_tree_stats`), де `avg_temp` живе лише як SQL-псевдонім SELECT.
+      # (`prefetch_tree_stats`), де `measured_rows` живе лише як SQL-псевдонім SELECT.
       # `TelemetryLog` не оголошує його статично, тож `instance_double(TelemetryLog)`
-      # падає «does not implement the instance method: avg_temp» (виміряно).
-      stats = double("stats", avg_temp: nil) # rubocop:disable RSpec/VerifiedDoubles
+      # падає «does not implement the instance method» (виміряно).
+      stats = double("stats", measured_rows: 0) # rubocop:disable RSpec/VerifiedDoubles
       result = service.send(:generate_for_tree, tree, { temp: 25.0, z: 0.5 }, stats)
       expect(result).to be false
     end
@@ -704,6 +704,26 @@ RSpec.describe InsightGeneratorService, type: :service do
       # [E.64] stress(1) → 0.6 (z/temp terms removed); VPD present but gate inert → unchanged 0.6
       expect(insight.stress_index).to eq(0.6)
       expect(insight.reasoning["avg_vpd"]).to eq(0.1)
+    end
+  end
+
+  # [FW.50] Сентинел температури пише `temperature_c` NULL при живих решті полях кадру. Така
+  # доба ВИМІРЯНА: прочитана тишею, вона випала б зі знаменника свідків слешингу, хоча бали
+  # за ті самі кадри нараховано. І температура в інсайті — NULL, не вигаданий нуль.
+  describe "a day of live frames without temperature (FW.50 sentinel)" do
+    it "still writes the insight, with average_temperature NULL and no fabricated temperature in the summary" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: nil, voltage_mv: 3300, z_value: nil,
+        acoustic_events: 0, growth_points: 10,
+        bio_status: :stress, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      expect(insight).to be_present
+      expect(insight.average_temperature).to be_nil
+      expect(insight.summary).to include("температуру не виміряно")
     end
   end
 
@@ -807,16 +827,16 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(AiInsight.where(analyzable: tree_with_logs, target_date: date)).to exist
     end
 
-    it "does not count trees whose generate_for_tree returns false (avg_temp nil)" do
-      # AVG(temperature_c) is NULL when every row's temperature_c is NULL.
-      # That yields stats present but stats.avg_temp == nil → generate_for_tree
-      # returns false → @processed_count stays put.
-      tree_no_temp = create(:tree, cluster: cluster, status: :active)
-      [ tree, tree_no_temp ].each do |t|
-        create(:telemetry_log, tree: t,
-          temperature_c: nil, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 0, growth_points: 0,
-          bio_status: :homeostasis, metabolism_s: 1000,
+    it "does not count trees whose day holds only panic rows (no measurement)" do
+      # Panic rows carry no sensors (ARCH.102), so the day has stats but zero measured
+      # rows → generate_for_tree returns false → @processed_count stays put. ⚠️ [FW.50]
+      # A NULL temperature alone no longer means «not measured» — see the sentinel example.
+      tree_panic_only = create(:tree, cluster: cluster, status: :active)
+      [ tree, tree_panic_only ].each do |t|
+        create(:telemetry_log, tree: t, panic: true,
+          temperature_c: nil, voltage_mv: nil, z_value: nil,
+          acoustic_events: nil, growth_points: 0,
+          bio_status: :homeostasis, metabolism_s: nil,
           created_at: date.beginning_of_day + 12.hours)
       end
 

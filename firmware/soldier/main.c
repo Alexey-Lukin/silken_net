@@ -41,6 +41,8 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // константою тримає компілятор, бо 3.0 В інших родин занижувало б кожен відлік на ~9 %.
 _Static_assert(ADC_VREFINT_CAL_MV == VREFINT_CAL_VREF,
                "[FW.50] ADC_VREFINT_CAL_MV мусить дорівнювати VREFINT_CAL_VREF (stm32wlxx_ll_adc.h)");
+_Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
+               "[FW.50] ADC_TEMP_CALC_ERROR_C мусить дорівнювати LL_ADC_TEMPERATURE_CALC_ERROR");
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
 #include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM vpd)
@@ -1776,7 +1778,7 @@ int main(void)
     uint16_t vcap_voltage = 0;
 
     // Два канали — два читання з ЯВНИМ вибором каналу (Soldier_Adc_Read).
-    (void)Soldier_Adc_Read(ADC_CHANNEL_TEMPSENSOR, &internal_temp);
+    uint8_t temp_read_ok = Soldier_Adc_Read(ADC_CHANNEL_TEMPSENSOR, &internal_temp);
 
     uint16_t vrefint_raw = 0;
     if (Soldier_Adc_Read(ADC_CHANNEL_VREFINT, &vrefint_raw)) {
@@ -1821,7 +1823,19 @@ int main(void)
     lora_payload[5] = (uint8_t)(vcap_voltage & 0xFF);
 
     // Байт 6: Температура (°C)
+#if FW2_CCM_ENABLED
+    // [FW.50 · FW.66 (Б)] CCM-ера: невдалий відлік — сентинел «не виміряно» (adc_convert.h),
+    // а не °C, які формула зробила б із сирого нуля. ECB-збірку свідомо не латаємо: там байт —
+    // вхід ρ Лоренца, і ця ера в поле не йде (00_07 FW.50). ⚠️ Перехідний стан: Лоренц у
+    // CCM-збірці ще живий до (Б), і −128 доходить і до нього — ρ клампиться до RHO_MIN;
+    // зміряно на 2000 фазах, що статус циклу лишається гомеостазом (stress — ≈0.05 %), а
+    // бекенд CCM-ери z не судить; зникне разом із Лоренцом.
+    lora_payload[6] = (uint8_t)Adc_Temp_Wire_C(temp_read_ok,
+        __LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B));
+#else
+    (void)temp_read_ok;
     lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
+#endif
 
     // [FW.28] Атомарне хапання звуку: замикаємо вікно між ISR та пакуванням
     // на один міг. Жоден крик ксилеми не розчиниться між читанням і обнуленням —

@@ -1646,6 +1646,15 @@ TEST(test_tx_defer_boundary_minus15_zero_vcap) {
     ASSERT_FALSE(Should_Defer_TX(-15, 0));
 }
 
+TEST(test_tx_defer_unmeasured_temp_transmits) {
+    /* [FW.50] The Vcap half is always true on the VDDA rail (ARCH.99), so the conjunction
+     * would defer on EVERY failed temperature read and silence the one frame that reports
+     * it; the sentinel transmits (delegated verdict 2026-10-10, 03_01 §1.8а). */
+    ASSERT_FALSE(Should_Defer_TX(ADC_TEMP_UNMEASURED_C, 0));
+    ASSERT_FALSE(Should_Defer_TX(ADC_TEMP_UNMEASURED_C, 3300));
+    ASSERT_TRUE(Should_Defer_TX(-127, 3300));   /* a real −127 °C is still cold */
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * FW.21 — EXPONENTIAL MOVING AVERAGE (delta_t / vcap)
  *
@@ -4541,6 +4550,23 @@ TEST(test_adc_pin_two_thirds) {
     ASSERT_EQ(Adc_Pin_Mv(2730, 3000), 2000);
 }
 
+TEST(test_adc_temp_wire_failed_read_is_sentinel) {
+    /* [FW.50 · FW.66 (Б)] A failed read is «not measured», never the °C the formula makes
+     * out of a raw zero (ARCH.102). */
+    ASSERT_EQ(Adc_Temp_Wire_C(0, 25), ADC_TEMP_UNMEASURED_C);
+    ASSERT_EQ(Adc_Temp_Wire_C(0, -128), ADC_TEMP_UNMEASURED_C);
+    /* Blank factory calibration: the vendor macro returns its error code, not a °C. */
+    ASSERT_EQ(Adc_Temp_Wire_C(1, ADC_TEMP_CALC_ERROR_C), ADC_TEMP_UNMEASURED_C);
+}
+
+TEST(test_adc_temp_wire_measured_never_hits_sentinel) {
+    ASSERT_EQ(Adc_Temp_Wire_C(1, 25), 25);
+    ASSERT_EQ(Adc_Temp_Wire_C(1, -40), -40);
+    ASSERT_EQ(Adc_Temp_Wire_C(1, -128), -127);  /* clamped off the sentinel */
+    ASSERT_EQ(Adc_Temp_Wire_C(1, -300), -127);
+    ASSERT_EQ(Adc_Temp_Wire_C(1, 300), 127);
+}
+
 TEST(test_adc_pin_zero) {
     ASSERT_EQ(Adc_Pin_Mv(0, 3300), 0);
 }
@@ -5091,6 +5117,7 @@ int main(void)
     RUN(test_tx_defer_extreme_cold_high_vcap_battery_backed);
     RUN(test_tx_defer_warm_minus5_low_vcap);
     RUN(test_tx_defer_boundary_minus15_zero_vcap);
+    RUN(test_tx_defer_unmeasured_temp_transmits);
 
     printf("\n  EMA — delta_t / vcap smoothing (FW.21):\n");
     RUN(test_ema_cold_start);
@@ -5324,6 +5351,8 @@ int main(void)
     RUN(test_adc_vdda_div_by_zero_guard);
     RUN(test_adc_pin_full_scale);
     RUN(test_adc_pin_two_thirds);
+    RUN(test_adc_temp_wire_failed_read_is_sentinel);
+    RUN(test_adc_temp_wire_measured_never_hits_sentinel);
     RUN(test_adc_pin_zero);
     RUN(test_adc_raw_to_mv_direct);
     RUN(test_adc_raw_to_mv_divider_2to1);

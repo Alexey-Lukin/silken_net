@@ -63,4 +63,27 @@ static inline uint16_t Adc_Raw_To_Mv(uint16_t adc_raw, uint16_t vrefint_raw,
     return (uint16_t)((pin * div_num) / div_den);
 }
 
+/* [FW.50 · FW.66 (Б)] «Температуру не виміряно» — байт температури CCM-кадру на невдалому
+ * відліку. INT8_MIN лежить поза будь-якою температурою MCU і поза межею розбору бекенду
+ * (SAFE_TEMP_RANGE −45..90): бекенд розпізнає його ДО межі й пише NULL
+ * (TelemetryUnpackerService::CCM_TEMP_UNMEASURED_C — дзеркало, рівність пінить спека). */
+#define ADC_TEMP_UNMEASURED_C  (-128)
+
+/* Вендорський макрос температури повертає це значення, коли заводська каліброванка
+ * непридатна (TS_CAL1 == TS_CAL2), — теж невимір, а не +127 °C. Рівність із
+ * LL_ADC_TEMPERATURE_CALC_ERROR тримає `_Static_assert` у firmware/soldier/main.c. */
+#define ADC_TEMP_CALC_ERROR_C  0x7FFF
+
+/* Байт температури для дроту. Невдалий відлік чи помилка обчислення — сентинел, а не °C,
+ * які формула зробила б із сирого нуля (клас ARCH.102: фабрикація замість «не виміряно»).
+ * Виміряне значення обрізається до [−127, 127], тож чесний вимір зі сентинелом не
+ * збігається ніколи. */
+static inline int8_t Adc_Temp_Wire_C(int read_ok, int32_t celsius)
+{
+    if (!read_ok || celsius == ADC_TEMP_CALC_ERROR_C) return (int8_t)ADC_TEMP_UNMEASURED_C;
+    if (celsius < -127) return -127;
+    if (celsius > 127) return 127;
+    return (int8_t)celsius;
+}
+
 #endif /* SILKEN_ADC_CONVERT_H */

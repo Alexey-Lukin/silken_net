@@ -175,6 +175,14 @@ end
     expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
   end
 
+  # [FW.50] Сентинел температури — лише CCM-ери: ECB-розбір і далі судить −128 межею
+  # `SAFE_TEMP_RANGE`, тож межа ер не протікає (ECB-байт не латали — там він вхід ρ Лоренца).
+  it "still rejects the CCM temperature sentinel on the ECB path" do
+    chunk = build_chunk(did_hex, -70, 3500, described_class::CCM_TEMP_UNMEASURED_C, 5, 100, 0, 3)
+
+    expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+  end
+
   it "skips chunks shorter than 21 bytes" do
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)[0..19]
 
@@ -1579,6 +1587,26 @@ end
 
     # [ARCH.102] CCM-паніка несе ті самі legacy-нулі (Soldier_Build_CCM_LoRa_Packet із
     # vcap/temp/dt = 0, acoustic = 0xFF), тож і тут — NULL, без кроку Лоренца, без DCI.
+    # [FW.50 · FW.66 (Б)] Сентинел температури розпізнається ДО межі `SAFE_TEMP_RANGE`: інакше
+    # межа відкинула б кадр разом з усіма вимірами й полічила fraud. dt/ema = 0 — pulse, щоб
+    # метаболічна звірка мовчала чесно, а предметом лишалась температура.
+    it "writes a CCM row with temperature NULL on the ADC-failure sentinel instead of rejecting the frame [FW.50]" do
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3300, temp: described_class::CCM_TEMP_UNMEASURED_C, acoustic: 0,
+                              dt: 0, ema: 0, status: 0, ttl: 3, fc: 49)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.temperature_c).to be_nil
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    # Сентинел живе обабіч дроту, а розходження тихе — бекенд відкинув би кадр як шум. Тож
+    # рівність пінимо читанням заголовка прошивки, а не двома коментарями.
+    it "mirrors ADC_TEMP_UNMEASURED_C from firmware/common/adc_convert.h" do
+      header = Rails.root.join("firmware/common/adc_convert.h").read
+      expect(header[/#define ADC_TEMP_UNMEASURED_C\s+\((-?\d+)\)/, 1]&.to_i).to eq(described_class::CCM_TEMP_UNMEASURED_C)
+    end
+
     it "writes a CCM panic row as NULL sensors with no Lorenz step and no DCI verdict [ARCH.102]" do
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
       allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)

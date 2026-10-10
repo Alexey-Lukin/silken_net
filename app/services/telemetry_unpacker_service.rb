@@ -39,6 +39,9 @@ class TelemetryUnpackerService < ApplicationService
   # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
+  # [FW.50 · FW.66 (Б)] Сентинел «температуру не виміряно» CCM-кадру — дзеркало
+  # `ADC_TEMP_UNMEASURED_C` (firmware/common/adc_convert.h; рівність пінить спека).
+  CCM_TEMP_UNMEASURED_C = -128
 
   # [PERF.1] Вікно ШВИДКОГО ШЛЯХУ пошуку хвоста Лоренца — параметр ПРУНІНГУ,
   # не поріг тиші. Число partition-shaped: партиції `telemetry_logs` місячні
@@ -428,7 +431,8 @@ class TelemetryUnpackerService < ApplicationService
     vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl,
       _device_z_raw, diag_byte, vpd_index, ema_delta_t_s = sensor
 
-    unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && SAFE_TEMP_RANGE.cover?(temp_c)
+    temp_unmeasured = temp_c == CCM_TEMP_UNMEASURED_C
+    unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && (temp_unmeasured || SAFE_TEMP_RANGE.cover?(temp_c))
       Rails.logger.warn "📡 [CCM Sensor Noise] DID #{hex_did}: vcap=#{vcap_mv} temp=#{temp_c} — out of physical bounds."
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
       return
@@ -455,7 +459,7 @@ class TelemetryUnpackerService < ApplicationService
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
       voltage_mv: supply_mv(calibration, vcap_mv, hex_did),
-      temperature_c: calibration.normalize_temperature(temp_c),
+      temperature_c: ccm_temperature_c(calibration, temp_c, temp_unmeasured, hex_did),
       acoustic_events: acoustic,
       metabolism_s: delta_t_s,
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
@@ -537,6 +541,17 @@ class TelemetryUnpackerService < ApplicationService
     return calibration.normalize_voltage(raw_mv) unless raw_mv.zero?
 
     Rails.logger.warn "📡 [FW.50] DID #{hex_did}: VDDA 0 мВ — не виміряно (відмова АЦП чи panic-кадр), напругу записано NULL."
+    nil
+  end
+
+  # [FW.50 · FW.66 (Б)] Невдалий відлік температури CCM-кадр несе сентинелом, а не числом,
+  # яке формула зробила б із сирого нуля; рядок пише NULL («не виміряно») і warn — та сама
+  # форма, що `supply_mv` для нуля VDDA. Розпізнається ДО межі `SAFE_TEMP_RANGE`: інакше межа
+  # відкинула б кадр разом з усіма іншими вимірами й полічила б його fraud-лічильником.
+  def ccm_temperature_c(calibration, raw_c, unmeasured, hex_did)
+    return calibration.normalize_temperature(raw_c) unless unmeasured
+
+    Rails.logger.warn "🌡️ [FW.50] DID #{hex_did}: температуру не виміряно (відмова АЦП), записано NULL."
     nil
   end
 

@@ -181,7 +181,11 @@ class InsightGeneratorService < ApplicationService
                   "AVG(vpd) as avg_vpd",
                   "MAX(acoustic_events) as max_acoustic",
                   "SUM(growth_points) as total_growth",
-                  "MAX(bio_status) as max_status"
+                  "MAX(bio_status) as max_status",
+                  # [FW.50 · ARCH.102] Доба ВИМІРЯНА, якщо є хоч один не-panic рядок: panic
+                  # сенсорів не несе, а температура вже не свідок виміру — CCM-кадр із
+                  # сентинелом пише її NULL при живих решті полях.
+                  "COUNT(*) FILTER (WHERE NOT panic) as measured_rows"
                 ).each_with_object({}) do |row, hash|
                   hash[row.tree_id] = row
                 end
@@ -205,9 +209,12 @@ class InsightGeneratorService < ApplicationService
       # уникала. Ціна нульова за скануванням: цикл уже обходить КОЖНЕ дерево
       # кластера, `prefetch_tree_stats` — один згрупований запит; додається
       # лише запис, і лише для мовчазної меншості (поріг тиші — 24 год).
-      # [ARCH.102] Доба, де лежать лише panic-рядки, ВИМІРУ теж не має (сенсори там
-      # NULL, тож AVG = NULL) — вона падає в ту саму гілку, а не лишає вчорашній стрес.
-      unless stats&.avg_temp
+      # [ARCH.102] Доба, де лежать лише panic-рядки, ВИМІРУ теж не має — вона падає в ту
+      # саму гілку, а не лишає вчорашній стрес. ⚠️ [FW.50] Гейт — лічильник не-panic рядків,
+      # НЕ `avg_temp`: доба, де застряг лише температурний канал, виміряна (кадр живий), і
+      # прочитана тишею вона випала б зі знаменника свідків слешингу й штовхала кластер у
+      # blackout, тоді як бали за ті самі кадри нараховано.
+      unless measured_day?(stats)
         # [ARCH.84] `update_column` колбеків не пускає, тож броадкаст явний —
         # інакше маркер лишався б учорашнім кольором до перезавантаження.
         # Гард `unless nil?` уже означає «значення змінилось», тож зайвих не буде.
@@ -223,7 +230,7 @@ class InsightGeneratorService < ApplicationService
   end
 
   def generate_for_tree(tree, baseline, stats)
-    return false unless stats&.avg_temp
+    return false unless measured_day?(stats)
 
     # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники — ІНЕРТНА свідомо
     # (другої виміряної осі немає, див. #detect_fraud?)
@@ -247,13 +254,14 @@ class InsightGeneratorService < ApplicationService
       stress_index = apply_weather_confounder(stress_index, stats.avg_vpd&.to_f)
     end
 
-    summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
+    summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp&.to_f)
 
     AiInsight.create!(
       analyzable: tree,
       insight_type: :daily_health_summary,
       target_date: @date,
-      average_temperature: stats.avg_temp.to_f.round(2),
+      # NULL, коли температуру за добу не виміряно (FW.50) — не 0.0 °C (backend #64).
+      average_temperature: stats.avg_temp&.to_f&.round(2),
       stress_index: stress_index,
       total_growth_points: final_growth,
       summary: summary,
@@ -522,6 +530,10 @@ class InsightGeneratorService < ApplicationService
     )
   end
 
+  def measured_day?(stats)
+    stats&.measured_rows.to_i.positive?
+  end
+
   def generate_summary(status, temp)
     case status
     when 3 then "ЗБІЙ ПРОШИВКИ: пристрій не зміг порахувати біостатус (mruby VM error) — потрібен re-flash/OTA."
@@ -531,7 +543,7 @@ class InsightGeneratorService < ApplicationService
     # зовнішнє середовище» при супутній температурі — обидва читались як діагноз,
     # і обидва йдуть у `AiInsight#summary` просто на екран.
     when 2 then "АНОМАЛІЯ: Z вийшов за обвідну гомеостазу; причину сигнал не називає."
-    when 1 then "СТРЕС: Z нижче критичного мінімуму (супутня температура #{temp.round(1)}°C)."
+    when 1 then "СТРЕС: Z нижче критичного мінімуму (#{temp ? "супутня температура #{temp.round(1)}°C" : 'температуру не виміряно'})."
     # ⛔ [E.64] Дзеркало заборони вище, і воно було пропущене: позитивна гілка
     # виносила з того самого Z вердикт «стан ідеальний». Атрактор свідчить про
     # ПОЛОЖЕННЯ Z, і мовчання про аномалію не є твердженням про здоровʼя.
