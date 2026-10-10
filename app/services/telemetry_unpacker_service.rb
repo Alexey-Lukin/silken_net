@@ -295,7 +295,7 @@ class TelemetryUnpackerService < ApplicationService
     log_attributes = {
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
-      voltage_mv: calibration.normalize_voltage(parsed_data[1]),
+      voltage_mv: supply_mv(calibration, parsed_data[1], hex_did),
       temperature_c: calibration.normalize_temperature(parsed_data[2]),
       lorenz_temperature_c: parsed_data[2], # [FW.57 F2] raw wire temp — DCI anchor (stripped pre-persist)
       acoustic_events: parsed_data[3],
@@ -454,7 +454,7 @@ class TelemetryUnpackerService < ApplicationService
     log_attributes = {
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
-      voltage_mv: calibration.normalize_voltage(vcap_mv),
+      voltage_mv: supply_mv(calibration, vcap_mv, hex_did),
       temperature_c: calibration.normalize_temperature(temp_c),
       lorenz_temperature_c: temp_c, # [FW.57 F2] raw wire temp — DCI anchor (stripped pre-persist)
       acoustic_events: acoustic,
@@ -537,6 +537,19 @@ class TelemetryUnpackerService < ApplicationService
     return unless attributes[:panic]
 
     PANIC_UNMEASURED_ATTRIBUTES.each { |key| attributes[key] = nil }
+  end
+
+  # [FW.50 · ARCH.102] 0 мВ VDDA — не вимір, а слід відмови АЦП: прошивка пише нуль, коли
+  # VREFINT не прочитався (`Adc_Vdda_Mv` на сирому 0, ініціалізатор `vcap_voltage`), а живий
+  # MCU нижче ~1.8 В не працює й кадру не шле — тож нуль у кадрі може бути лише невиміром.
+  # Прочитаний напругою, він малював би на екрані браунаут, якого ніхто не міряв. Судимо
+  # СИРЕ значення дроту, не каліброване: коефіцієнт не сміє зробити нулем справжній вимір.
+  # Warn — бо `mark_seen!` без напруги колонки не чіпає, і відмова АЦП інакше не видна ніде.
+  def supply_mv(calibration, raw_mv, hex_did)
+    return calibration.normalize_voltage(raw_mv) unless raw_mv.zero?
+
+    Rails.logger.warn "📡 [FW.50] DID #{hex_did}: VDDA 0 мВ — не виміряно (відмова АЦП чи panic-кадр), напругу записано NULL."
+    nil
   end
 
   # Паритет DCI — це й КІЛЬКІСТЬ кроків, не лише їхня арифметика (telemetry-pipeline #3):

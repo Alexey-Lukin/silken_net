@@ -112,7 +112,7 @@ class GatewayTelemetryWorker
     # кожен наступний пульс не повинен плодити дублікати (log-створення
     # щофлешу, ~щогодини; tree_id тут nil → модельна uniqueness мовчить).
     # [SLASH-1] Звуження tree_id: nil несуче: tree-scoped system_fault (fraud /
-    # power-loss / hardware-decay) — чужі сигнали без авто-резолвера, і без
+    # hardware-decay) — чужі сигнали без авто-резолвера, і без
     # звуження один стоячий tree-алерт безстроково глушив НОВИЙ gateway-fault.
     # Стеля: залишковий конфлат з іншими cluster-level писарями (Actuator,
     # slashing-failure) розкладе типова декомпозиція кошика → 00_07 SLASH-1.

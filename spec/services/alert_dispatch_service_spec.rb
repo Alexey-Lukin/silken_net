@@ -133,7 +133,9 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(alert_types).to include("fire_detected")
     end
 
-    it "continues fire analysis when voltage is low but no tamper" do
+    # ⛔ [FW.50 · ARCH.99] Поле напруги — мВ VDDA за buck'ом, і вердикту «втрата живлення»
+    # з нього немає: низьке значення досяжне лише як нуль відмови АЦП. Вогонь судиться далі.
+    it "infers no power loss from the supply field — fire alone fires" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
@@ -148,32 +150,9 @@ RSpec.describe AlertDispatchService, type: :service do
 
       expect {
         described_class.analyze_and_trigger!(log)
-      }.to change(EwsAlert, :count).by(2)
-
-      alert_types = EwsAlert.last(2).map(&:alert_type)
-      expect(alert_types).to include("hardware_fault")   # [SLASH-1] power_loss → клас атрибуції
-      expect(alert_types).to include("fire_detected")
-    end
-
-    it "does not trigger fire when voltage is low but temperature is normal" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 50,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        z_value: 20.0
-      )
-
-      expect {
-        described_class.analyze_and_trigger!(log)
       }.to change(EwsAlert, :count).by(1)
 
-      alert = EwsAlert.last
-      expect(alert.alert_type).to eq("hardware_fault")   # [SLASH-1] power_loss → клас атрибуції
+      expect(EwsAlert.last.alert_type).to eq("fire_detected")
     end
   end
 
@@ -217,8 +196,8 @@ RSpec.describe AlertDispatchService, type: :service do
 
     # Форма РЕАЛЬНОГО panic-кадру (`Trigger_Emergency_LoRa_TX`: status=homeostasis +
     # PANIC_FLAG + vcap=0): розпакувальник пише його з NULL-сенсорами [ARCH.102], і саме
-    # з NULL кадр мусить пройти гарди напруги й вогню без винятку та без фантомного
-    # `power_loss`. Пін — «жодного алерту», тобто накриває й `hardware_fault`, і будь-який
+    # з NULL кадр мусить пройти гард вогню без винятку. Пін — «жодного алерту», тобто
+    # накриває й `hardware_fault`, і будь-який
     # тип, який хтось колись повісить на цей кадр (backend #56: пін на ОДИН тип вакуумний).
     it "raises NO alert for a panic frame — it has no Soldier writer since HW.30 — and says so in the log" do
       allow(Rails.logger).to receive(:warn).and_call_original
@@ -552,30 +531,15 @@ end
     end
   end
 
-  describe "voltage boundary (100mV)" do
-    it "triggers system_fault at exactly 99mV" do
+  # Пін «жодного алерту», а не «не той тип» (backend #56): значення — 0, рівно те, що
+  # прошивка пише на відмові АЦП, — найгостріший вхід для вердикту з поля напруги.
+  describe "supply field is never a verdict [FW.50 · ARCH.99]" do
+    it "raises nothing on the ADC-failure zero with a normal temperature" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
         firmware_report_reverted?: false,
-        voltage_mv: 99,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        z_value: 20.0
-      )
-
-      described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.alert_type).to eq("hardware_fault") # [SLASH-1] power_loss → клас атрибуції
-    end
-
-    it "does not trigger system_fault at exactly 100mV" do
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 100,
+        voltage_mv: 0,
         temperature_c: 25,
         bio_status_anomaly?: false,
         panic?: false,

@@ -81,7 +81,7 @@ RSpec.describe Trees::Index do
     # [ARCH.84] Носія в цієї осі не було ЗОВСІМ — фікс «0mV → не виміряно» не
     # червонив нічого, бо жоден приклад не подавав невиміряного дерева. Пара
     # обовʼязкова: сама лише поява напису не відрізняє «не виміряно» від
-    # «виміряно нуль», а нуль на шині VDDA означає БРАУНАУТ, тобто найгірший
+    # «виміряно нуль», а нуль на шині VDDA читається БРАУНАУТОМ, тобто найгірший
     # можливий вимір, підставлений мовчанню.
     it "says «not measured» instead of a brownout-grade 0mV for a silent node" do
       rendered = render_component(cluster: cluster, trees: [ build_tree(latest_voltage_mv: nil) ], pagy: pagy)
@@ -90,7 +90,7 @@ RSpec.describe Trees::Index do
       expect(rendered).not_to include("0mV")
     end
 
-    it "still prints a genuinely measured zero" do
+    it "still prints a stored zero as stored — NULL, not the renderer, says «not measured»" do
       rendered = render_component(cluster: cluster, trees: [ build_tree(latest_voltage_mv: 0) ], pagy: pagy)
 
       expect(rendered).to include("0mV")

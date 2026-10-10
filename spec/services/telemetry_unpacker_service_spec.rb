@@ -1664,6 +1664,14 @@ end
       expect(TelemetryLog.last.panic).to be(true)
     end
 
+    it "writes a CCM row with voltage NULL on the ADC-failure zero, keeping the other fields [FW.50]" do
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 25, acoustic: 5,
+                                           dt: 100, status: 0, ttl: 3, fc: 47))
+      log = TelemetryLog.last
+      expect(log.voltage_mv).to be_nil
+      expect([ log.temperature_c, log.metabolism_s ]).to eq([ 25.0, 100 ])
+    end
+
     # [ARCH.102] CCM-паніка несе ті самі legacy-нулі (Soldier_Build_CCM_LoRa_Packet із
     # vcap/temp/dt = 0, acoustic = 0xFF), тож і тут — NULL, без кроку Лоренца, без DCI.
     it "writes a CCM panic row as NULL sensors with no Lorenz step and no DCI verdict [ARCH.102]" do
@@ -2259,6 +2267,15 @@ end
 
       expect { described_class.call(chunk) }
         .to raise_error(TelemetryUnpackerService::MissingLorenzSeedError)
+    end
+  end
+
+  # [FW.50 · ARCH.102] 0 мВ VDDA — слід відмови АЦП, не вимір: живий MCU нижче ~1.8 В кадру
+  # не шле, тож рядок пише NULL («не виміряно»), а не браунаут.
+  describe "ADC-failure zero on the supply field" do
+    it "writes the ECB row with voltage NULL, not 0 mV" do
+      described_class.call(build_chunk(did_hex, -70, 0, 25, 5, 100, 10, 3))
+      expect(TelemetryLog.last.voltage_mv).to be_nil
     end
   end
 

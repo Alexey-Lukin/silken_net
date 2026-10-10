@@ -31,7 +31,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
 
     # [SLASH-1 P0] status=3 = софт-збій прошивки → firmware_fault, НЕ vandalism_breach.
     # z_value у межах породи: vm_error більше не обриває аналіз, тож фабричний
-    # z=0.35 (поза 5..45) сам собою вже НІЧОГО не додає — з 2026-09-05
+    # z=0.35 (поза смугою 2..45) сам собою вже НІЧОГО не додає — з 2026-09-05
     # severe_drought судить лише ПРИСТРІЙНИЙ bio_status (E.64).
     it "creates firmware_fault alert for a vm_error frame" do
       log = create(:telemetry_log, tree: tree, bio_status: :vm_error,
@@ -43,12 +43,13 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
       expect(EwsAlert.last.alert_type).to eq("firmware_fault")
     end
 
-    it "creates low voltage alert without halting analysis" do
+    # ⛔ [FW.50 · ARCH.99] Поле напруги — мВ VDDA, вердикту «втрата живлення» з нього немає.
+    it "creates the fire alert alone — no power-loss verdict from the supply field" do
       log = create(:telemetry_log, tree: tree, voltage_mv: 50, temperature_c: 70,
                                    bio_status: :homeostasis, acoustic_events: 0)
-      # Should create both system_fault AND fire_detected
       expect { AlertDispatchService.analyze_and_trigger!(log) }
-        .to change(EwsAlert, :count).by(2)
+        .to change(EwsAlert, :count).by(1)
+      expect(EwsAlert.last.alert_type).to eq("fire_detected")
     end
   end
 
@@ -71,7 +72,7 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
       log = create(:telemetry_log, tree: tree, temperature_c: 75, bio_status: :homeostasis,
                                    voltage_mv: 3500, acoustic_events: 0, z_value: 25.0)
       # 75°C < 80 threshold, so NO fire alert
-      # z_value 25.0 is within tree_family bounds (5.0–45.0), so NO drought alert
+      # z_value 25.0 is within the factory band (2.0–45.0), so NO drought alert
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .not_to change(EwsAlert, :count)
     end

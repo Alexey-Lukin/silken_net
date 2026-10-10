@@ -65,22 +65,11 @@ class AlertDispatchService
       )
     end
 
-    # [SLASH-1] Panic-кадр несе vcap=0 (legacy-parity обох збирачів —
-    # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на ньому — фантом,
-    # що забруднював comms_no_ack? (system_fault ∈ whitelist) і з'їдав SEC.10-ліміт.
-    # [HW.30] Писача паніки в Солдата більше немає, але гард лишається: кадр із
-    # PANIC_FLAG, що все ж прийшов (стара прошивка, збій, підробка), фантома не породить.
-    # [ARCH.102] Розпакувальник пише такий рядок із NULL («не виміряно»), тож гард
-    # стоїть і на ВІДСУТНОСТІ виміру: напруги, якої не міряли, вердикт не судить.
-    if telemetry_log.voltage_mv && telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
-      create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :hardware_fault,
-        message_key: "power_loss", message_params: { did: tree.did, voltage_mv: telemetry_log.voltage_mv }
-      )
-      # НЕ робимо return — продовжуємо термоаналіз,
-      # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
-    end
+    # ⛔ [FW.50 · ARCH.99] Вердикту «втрата живлення» з поля напруги тут немає і не буде: поле —
+    # мВ VDDA за buck'ом BQ25570, що за конструкцією не каже про запас енергії, а живий MCU
+    # нижче ~1.8 В кадру не шле — тож гілка `voltage_mv < 100` стріляла лише на нулі відмови
+    # АЦП, тобто виводила CRITICAL `power_loss` із невиміру. Сигнал «мало енергії» — тиша
+    # (`Tree.silent`); поріг енергії можливий лише на живому Vcap-каналі (`00_07` FW.50).
 
     # 2а. ПОЖЕЖА (Thermal) — температура вище біом-порога.
     # [АДАПТИВНО]: Поріг тепер залежить від біома

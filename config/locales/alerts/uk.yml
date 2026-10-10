@@ -58,8 +58,8 @@ uk:
       power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
       queen_ota_stuck: "👑 Королева %{uid} зависла посеред OTA на %{stuck_for_h} год (прошивка #%{firmware_id}). Кампанію знято, шлюз звільнено — майбутні оновлення знову доступні; версія прошивки лишилась старою. Повторний деплой — вручну, перевіривши звʼязок."
       queen_silent: "👑 Королева %{uid} мовчить %{silent_for_min} хв (останній зв’язок %{last_seen_at}). Кластер без uplink — телеметрія дерев не надходить."
-      queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
-      queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}mV, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
+      queen_uplink_lost: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}, uptime=%{uptime_min}min). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
+      queen_uplink_lost_reported: "🆘 Королева %{uid} втратила ВСІ uplink’и (%{reason}; vcap=%{vcap_mv}, uptime=%{uptime_min}min, reported_at=%{reported_at}). Крик дійшов через Helium — телеметрія буферизується, потрібен виїзд."
       slash_evasion_cluster: 'Slash-ухилення (кластер #%{cluster_id}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
       slash_evasion_tree: 'Slash-ухилення (дерево %{tree_did}): доказ Категорії A є, але власник вивів усі SCC до виконання вироку (запит %{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (05_05 §3.2).'
       slash_frozen_evidence_spent_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): після цього доказу Категорії A вже записано спалення за іншим договором цього кластера (слеш або форфейтура) — одна шкода, один слеш. Нічого не спалено — Field Audit вирішує, чи це окрема шкода (Категорія C, 05_05 §3.2/§5).'

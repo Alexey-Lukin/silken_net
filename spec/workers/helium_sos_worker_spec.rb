@@ -31,7 +31,7 @@ RSpec.describe HeliumSosWorker, type: :worker do
     alert = EwsAlert.alert_type_queen_uplink_lost.last
     expect(alert.cluster_id).to eq(cluster.id)
     expect(alert.severity_critical?).to be(true)
-    expect(alert.message).to include(gateway.uid, "starlink_down", "11800mV")
+    expect(alert.message).to include(gateway.uid, "starlink_down", "vcap=11800 mV")
   end
 
   it "ідемпотентний: SOS-ретрансміт не плодить другий алерт" do
@@ -109,6 +109,15 @@ RSpec.describe HeliumSosWorker, type: :worker do
     expect {
       described_class.new.perform(gateway.helium_dev_eui, "%%%not-base64%%%")
     }.not_to change(EwsAlert, :count)
+  end
+
+  # [FW.50] Сьогоднішня Королева шле vcap_mv = 0 як «не виміряно» (ADC батареї немає):
+  # друкувати «0 мВ» означало б браунаут шлюза, що щойно прокричав через Helium.
+  it "друкує vcap = 0 як «не виміряно», а не нуль мілівольт" do
+    described_class.new.perform(gateway.helium_dev_eui, sos_payload(vcap: 0))
+    message = EwsAlert.last.message
+    expect(message).to include("vcap=#{I18n.t('ui.measurement.not_measured')}")
+    expect(message).not_to include("vcap=0")
   end
 
   it "розшифровує error-code у людську причину" do
