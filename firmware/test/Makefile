@@ -259,7 +259,7 @@ $(BINDIR)/test_flash_ring: test_flash_ring.c ../common/flash_ring.c ../common/fl
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_ring.c ../common/flash_ring.c
 
 # [HW.32] BME280 компенсація (int datasheet §8.2 ↔ float-референс §8.1) + VPD-confounder.
-$(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h
+$(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h ../common/lora_ccm.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_bme280.c -lm
 
 # [HW.19] max-hold V_OC у MPPT-вікні BQ25570 — арифметика вікна (фаза · крок · розрив), pure.
@@ -267,7 +267,7 @@ $(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h
 $(BINDIR)/test_ds18b20: test_ds18b20.c ../common/ds18b20.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_ds18b20.c
 
-$(BINDIR)/test_voc_maxhold: test_voc_maxhold.c ../common/voc_maxhold.h
+$(BINDIR)/test_voc_maxhold: test_voc_maxhold.c ../common/voc_maxhold.h ../common/lora_ccm.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_voc_maxhold.c
 
 # [FW.52-г] OTA contract blob writer — RAM-мок + magic-LAST power-cut safety.
@@ -309,7 +309,7 @@ $(BINDIR)/test_seed_derivation: test_seed_derivation.c ../common/lorenz_seed.h .
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_seed_derivation.c $(OPENSSL_LIBS) -lm
 
 # [FW.2] AES-128-CCM packet roundtrip — links libcrypto for the mock HAL.
-$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h
+$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h ../common/downlink_ccm.h ../common/fw_report.h ../common/reset_cause.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm.c $(OPENSSL_LIBS)
 
 # [FW.2] On-target CCM self-test (POST) — host verification via OpenSSL mock.

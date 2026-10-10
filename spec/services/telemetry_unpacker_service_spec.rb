@@ -1545,7 +1545,7 @@ end
     end
 
     it "decrypts a CCM chunk (air+1) and creates a telemetry log" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 42)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -1554,7 +1554,8 @@ end
       expect(log.tree).to eq(tree)
       expect(log.voltage_mv).to eq(3500)
       expect(log.temperature_c).to eq(25.0)
-      expect(log.acoustic_events).to eq(5)
+      # [FW.66 · wire-rev2.2] акустики CCM-кадр не везе — NULL, не виміряний нуль
+      expect(log.acoustic_events).to be_nil
       expect(log.metabolism_s).to eq(100)
       expect(log.rssi).to eq(-70)
       expect(log.mesh_ttl).to eq(3)
@@ -1565,9 +1566,9 @@ end
     it "persists the PanicFlag from the CCM status byte" do
       # [FW.29] Soldier_Build_CCM_LoRa_Packet кладе той самий StatusByte
       # у CCM-плейн — біт 7 (0x80) мусить доїхати до telemetry_logs.panic.
-      normal = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      normal = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                dt: 100, status: 0, ttl: 3, fc: 44)
-      panic  = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
+      panic  = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                dt: 100, status: 0x80, ttl: 5, fc: 45)
 
       described_class.call(normal)
@@ -1578,21 +1579,21 @@ end
     end
 
     it "writes a CCM row with voltage NULL on the ADC-failure zero, keeping the other fields [FW.50]" do
-      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 25, acoustic: 5,
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 25,
                                            dt: 100, status: 0, ttl: 3, fc: 47))
       log = TelemetryLog.last
       expect(log.voltage_mv).to be_nil
       expect([ log.temperature_c, log.metabolism_s ]).to eq([ 25.0, 100 ])
     end
 
-    # [ARCH.102] CCM-паніка несе ті самі legacy-нулі (Soldier_Build_CCM_LoRa_Packet із
-    # vcap/temp/dt = 0, acoustic = 0xFF), тож і тут — NULL, без кроку Лоренца, без DCI.
+    # [ARCH.102] CCM-паніка несе ті самі legacy-нулі (Pack_CCM_Panic_Payload: vcap/temp/dt = 0;
+    # байт 11 — SEC.20-звіт, wire-rev2.2), тож і тут — NULL, без кроку Лоренца, без DCI.
     # [FW.50 · FW.66 (Б)] Сентинел температури розпізнається ДО межі `SAFE_TEMP_RANGE`: інакше
     # межа відкинула б кадр разом з усіма вимірами й полічила fraud. dt/ema = 0 — pulse, щоб
     # метаболічна звірка мовчала чесно, а предметом лишалась температура.
     it "writes a CCM row with temperature NULL on the ADC-failure sentinel instead of rejecting the frame [FW.50]" do
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3300, temp: described_class::CCM_TEMP_UNMEASURED_C, acoustic: 0,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3300, temp: described_class::CCM_TEMP_UNMEASURED_C,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 49)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -1611,7 +1612,7 @@ end
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
       allow(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to receive(:increment)
 
-      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 0, acoustic: 255,
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 0, temp: 0,
                                            dt: 0, status: 0x80, ttl: 5, fc: 46))
 
       row = TelemetryLog.where(panic: true).sole
@@ -1642,7 +1643,7 @@ end
       balance_before = tree.wallet.balance
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
 
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -1655,7 +1656,7 @@ end
     end
 
     it "rejects a chunk with a tampered ciphertext byte" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 43)
       tampered = chunk.dup
       tampered.setbyte(10, tampered.getbyte(10) ^ 0x01)
@@ -1665,7 +1666,7 @@ end
     end
 
     it "rejects a chunk with a tampered MIC" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 44)
       tampered = chunk.dup
       tampered.setbyte(25, tampered.getbyte(25) ^ 0x80) # MIC = chunk bytes 21..28
@@ -1677,7 +1678,7 @@ end
     # [FW.17 DR] Після відкату БД записи з MIC-фейлом — єдиний вхід `rake keys:probe_epoch`
     # (06_06 §5.8): без байтів у рядку логу інструменту нема з чим працювати.
     it "logs the raw record on a MIC failure — the DR epoch probe reads exactly this" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 44)
       tampered = chunk.dup
       tampered.setbyte(25, tampered.getbyte(25) ^ 0x80)
@@ -1691,7 +1692,7 @@ end
     it "rejects a chunk whose cleartext gossip byte was tampered (AAD under MIC)" do
       # [wire-rev2] gossip_ts_lsb (chunk byte 5) їде відкритим для
       # сусідів-Солдатів, але бекенд автентифікує його MIC'ом.
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 46, gossip_ts_lsb: 0x42)
       tampered = chunk.dup
       tampered.setbyte(5, tampered.getbyte(5) ^ 0xA5)
@@ -1711,7 +1712,7 @@ end
       end
 
       it "accepts a frame under the previous key and keeps the grace open" do
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 100, status: 0, ttl: 3, fc: 300)
 
         expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -1720,9 +1721,9 @@ end
       end
 
       it "closes the grace on the first MIC pass under the new key, after which the old key is dead" do
-        fresh = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        fresh = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 100, status: 0, ttl: 3, fc: 301, key: next_key_bin)
-        stale = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        stale = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 100, status: 0, ttl: 3, fc: 302)
 
         expect { described_class.call(fresh) }.to change(TelemetryLog, :count).by(1)
@@ -1732,7 +1733,7 @@ end
       end
 
       it "rejects a frame under neither key and keeps the grace open" do
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 100, status: 0, ttl: 3, fc: 303, key: SecureRandom.random_bytes(16))
 
         expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
@@ -1753,12 +1754,12 @@ end
       end
 
       it "accepts the same frame counter again under the new epoch — not a replay" do
-        old_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        old_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                     dt: 100, status: 0, ttl: 3, fc: 500)
         expect { described_class.call(old_frame) }.to change(TelemetryLog, :count).by(1)
 
         reprovision!
-        new_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        new_frame = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                     dt: 100, status: 0, ttl: 3, fc: 500, key: epoch1_key_bin)
 
         expect { described_class.call(new_frame) }.to change(TelemetryLog, :count).by(1)
@@ -1767,9 +1768,9 @@ end
 
       it "keys a straggler under the previous key in the OLD epoch, so the new epoch's same FC still lands" do
         reprovision!
-        straggler = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        straggler = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                     dt: 100, status: 0, ttl: 3, fc: 600)
-        fresh     = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        fresh     = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                     dt: 100, status: 0, ttl: 3, fc: 600, key: epoch1_key_bin)
 
         expect { described_class.call(straggler) }.to change(TelemetryLog, :count).by(1)
@@ -1789,8 +1790,8 @@ end
                                                         id: BioContractFirmware.maximum(:id).to_i + 200)
       residue = latest.id & TelemetryLog::FW_REPORT_CCM_ID_MASK
       allow(Rails.logger).to receive(:info)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5, dt: 100, status: 0, ttl: 3,
-                              fc: 400, vpd_index: 0x80 | residue)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3,
+                              fc: 400, fw_report7: 0x80 | residue)
 
       described_class.call(chunk)
 
@@ -1802,7 +1803,7 @@ end
     end
 
     it "rejects a replayed frame counter for the same DID" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 100)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -1824,9 +1825,9 @@ end
         lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
-      c1 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      c1 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                            dt: 100, status: 0, ttl: 3, fc: 7)
-      c2 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      c2 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                            dt: 100, status: 0, ttl: 3, fc: 7,
                            did_hex_arg: other_did_hex,
                            key: [ other_key_hex ].pack("H*"))
@@ -1839,7 +1840,7 @@ end
     # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха) замість кешу з TTL 25 год.
     describe "[SEC.40] sliding replay window" do
       def frame(fc)
-        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5, dt: 100, status: 0, ttl: 3, fc: fc)
+        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3, fc: fc)
       end
 
       # Доти анти-повтор жив у `Rails.cache` із TTL 25 год, і справжній кадр, повторений
@@ -1885,48 +1886,93 @@ end
       end
     end
 
-    # ── wire-rev2 поля (diag / vpd_index) ─────────────────────────────────
+    # ── wire-rev2.2 поля (байт 11 · diag · vpd_index) — ledger 03_05 §2.1, FW.66 ─────────
 
-    # [HW.30] Метрику має лише fc_degraded — thr_invalid і fauna_skip писача не мають
-    # (TinyML і фауна на Солдаті паркуються), тож їхні біти лишились тільки в лозі.
-    it "surfaces diag-byte bits: fc_degraded as a metric, the parked TinyML/fauna bits as warn logs" do
+    # Біти diag — дзеркало FW2_DIAG_*; SHA-пін `wire_payload_format` бачить лише рядок
+    # формату, а той у rev2.2 не змінився, тож ЗМІСТ байта стереже саме цей пін.
+    it "mirrors the wire-rev2.2 diag bits from firmware/common/lora_ccm.h" do
+      header = Rails.root.join("firmware/common/lora_ccm.h").read
+      fw_bit = ->(name) { header[/#define #{name}\s+(0x\h+)u/, 1]&.to_i(16) }
+      expect(fw_bit.call("FW2_DIAG_TIME_UNCERTAIN_BIT")).to eq(described_class::CCM_DIAG_TIME_UNCERTAIN_BIT)
+      expect(fw_bit.call("FW2_DIAG_FC_DEGRADED_BIT")).to eq(described_class::CCM_DIAG_FC_DEGRADED_BIT)
+    end
+
+    # 🔴 Розкладка МІЖ мовами: золотий plaintext, який прошивка мусить дати (`test_ccm.c`
+    # G_PT_REV22, там його пінить Pack_CCM_Sensor_Payload), читається звідти ж і йде через
+    # справжній розпакувальник. Без цього піна кожна сторона звіряла б розкладку лише сама з
+    # собою, а обмін байтів в обох C-функціях разом лишив би обидві сюїти зеленими.
+    it "decodes the firmware's golden wire-rev2.2 plaintext (test_ccm.c G_PT_REV22) field by field" do
+      src   = Rails.root.join("firmware/test/test_ccm.c").read
+      bytes = src[/G_PT_REV22\[[^\]]*\]\s*=\s*\{([^}]*)\}/m, 1].to_s.scan(/0x(\h{2})/).flatten
+      expect(bytes.size).to eq(14)
+      allow(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to receive(:increment)
+      chunk = build_ccm_chunk_from_plaintext(did_hex: did_hex, key: lora_key_bin, rssi: -70, fc: 60,
+                                             plaintext: bytes.map { |h| h.to_i(16) }.pack("C*"))
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last).to have_attributes(
+        voltage_mv: 3300,                    # PT[0..1]
+        temperature_c: -7.0,                 # PT[2]
+        firmware_report_reverted?: true,     # PT[3] = 0xAA
+        firmware_report_contract_id: 42,
+        metabolism_s: 0xFFFF,                # PT[4..5]
+        mesh_ttl: 3,                         # PT[7]
+        time_unsynced_fallback: true,        # PT[10] біт 4
+        acoustic_events: nil,
+        vpd: nil                             # PT[11] — колонка чекає шкали HW.32
+      )
+      expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment) # PT[10] біт 0
+    end
+
+    # fc_degraded — метрика; reset_cause і voc_attempt споживача не мають, і саме тому старий
+    # декодер (thr_invalid/fauna) мовчить: код ребуту не сміє читатись «порогами TinyML».
+    it "surfaces fc_degraded as a metric and reads no TinyML/fauna bits from the new diag fields" do
       allow(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to receive(:increment)
       allow(Rails.logger).to receive(:warn).and_call_original
 
-      diag  = (3 << 3) | 0x02 | 0x01 # thr_invalid=3 | fauna_skip | fc_degraded
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
+      diag  = (6 << 5) | 0x08 | 0x01 # reset_cause=HardFault | voc_attempt | fc_degraded
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 49, diag: diag)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment)
-      expect(Rails.logger).to have_received(:warn).with(/FW\.18b.*лічильник 3/)
-      expect(Rails.logger).to have_received(:warn).with(/FW\.42.*fauna-сесію пропущено/)
+      expect(Rails.logger).not_to have_received(:warn).with(/FW\.18b|FW\.42/)
+      expect(TelemetryLog.last.time_unsynced_fallback).to be(false)
     end
 
-    it "annotates wire-saturation when the CCM diag threshold_invalid counter is 31" do
-      allow(Rails.logger).to receive(:warn).and_call_original
-
-      diag  = (31 << 3) # thr_invalid=31 (wire-сатурація), без fauna/fc бітів
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                              dt: 100, status: 0, ttl: 3, fc: 52, diag: diag)
+    # [ARCH.41-B] «Час невідомий» CCM-кадр несе бітом diag, а не кодом 0xFE в акустиці.
+    it "flags time_unsynced_fallback from the diag time_uncertain bit" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
+                              dt: 100, status: 0, ttl: 3, fc: 52, diag: 0x10)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(Rails.logger).to have_received(:warn).with(/лічильник 31 \(wire-сатурація/)
+      log = TelemetryLog.last
+      expect(log.time_unsynced_fallback).to be(true)
+      expect(log.acoustic_events).to be_nil
     end
 
     it "keeps the vpd column nil until HW.32 calibration defines the index scale" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 50, vpd_index: 77)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(TelemetryLog.last.vpd).to be_nil
     end
 
-    # [SEC.20] vpd-байт тимчасово несе contract-звіт [rev:1|id7] —
+    # 🔴 Байт 19 у rev2.2 — лише VPD: його старший біт більше НЕ відкат (доти звіт їхав тут).
+    it "never reads a revert from the vpd byte" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
+                              dt: 100, status: 0, ttl: 3, fc: 51, vpd_index: 0x80 | 42)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.firmware_report_reverted?).to be(false)
+    end
+
+    # [SEC.20 · wire-rev2.2] Байт 11 несе contract-звіт [rev:1|id7] —
     # unpacker складає його у 16-бітну fw_report-семантику.
-    it "assembles the SEC.20 fw-report from the vpd byte (running contract)" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                              dt: 100, status: 0, ttl: 3, fc: 53, vpd_index: 42)
+    it "assembles the SEC.20 fw-report from byte 11 (running contract)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
+                              dt: 100, status: 0, ttl: 3, fc: 53, fw_report7: 42)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       log = TelemetryLog.last
@@ -1935,10 +1981,10 @@ end
       expect(log.firmware_report_contract_id).to eq(42)
     end
 
-    it "raises the reverted flag from the vpd high bit (SEC.20 baseline-revert)" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+    it "raises the reverted flag from the byte-11 high bit (SEC.20 baseline-revert)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 54,
-                              vpd_index: 0x80 | 42)
+                              fw_report7: 0x80 | 42)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       log = TelemetryLog.last
@@ -1946,9 +1992,35 @@ end
       expect(log.firmware_report_contract_id).to eq(42)
     end
 
+    # 🔴 0xFE у байті 11 — звичайний звіт (відкат id 126), НЕ ECB-сентинел часу: цей байт
+    # ARCH.41-B-нейтралізації не проходить, інакше відкат губився б, а час «невідомим» ставав.
+    it "reads 0xFE in byte 11 as a revert of contract 126, never as the ECB time sentinel" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
+                              dt: 100, status: 0, ttl: 3, fc: 55, fw_report7: 0xFE)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      log = TelemetryLog.last
+      expect(log.firmware_report_reverted?).to be(true)
+      expect(log.firmware_report_contract_id).to eq(126)
+      expect(log.time_unsynced_fallback).to be(false)
+    end
+
+    # 🔴 [скіл firmware #25] Panic-кадр rev2.2 несе в байті 11 той самий звіт, не код 0xFF —
+    # робочий контракт у зойку відкатом не читається (інакше critical-алерт на кожну паніку).
+    it "reads a panic frame's byte 11 as the running report, not as a revert" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 0, temp: 0,
+                              dt: 0, status: 0x80, ttl: 5, fc: 56, fw_report7: 5, ema: 0)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      log = TelemetryLog.last
+      expect(log.panic).to be(true)
+      expect(log.firmware_report_reverted?).to be(false)
+      expect(log.firmware_report_contract_id).to eq(5)
+    end
+
     it "drops the Queen-sentinel CCM packet (DID=0) without raising or committing a log" do
       # CCM path does not support Queen self-telemetry — see process_ccm_chunk.
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 1,
                               did_hex_arg: "00000000",
                               key: ("\x00".b * 16))
@@ -1958,20 +2030,20 @@ end
     end
 
     it "skips a chunk shorter than the CCM stride" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 1)
       expect { described_class.call(chunk[0..23]) }.not_to change(TelemetryLog, :count)
     end
 
     it "rejects sensor data outside the safe voltage range (post-decrypt sanity check)" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 5500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 5500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 50)
       expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
     end
 
     it "credits growth_points × 2 the same way as the 21B path" do
       # Wire status_byte = 10 → growth_points nibble = 10 → stored gp = 20.
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 10, ttl: 3, fc: 200)
       expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
     end
@@ -1986,8 +2058,8 @@ end
     # ------------------------------------------------------------------
     # Coverage gaps for the CCM uplink guards.
     # Every branch below corresponds to a real-logic guard (unknown
-    # device, missing/invalid key, gateway routing, fw nibble, acoustic
-    # overflow, broad rescue) — NOT defensive `&.`-nil padding.
+    # device, missing/invalid key, gateway routing, fw nibble, panic ema,
+    # broad rescue) — NOT defensive `&.`-nil padding.
     # ------------------------------------------------------------------
 
     it "drops the chunk and flags fraud when the DID is not in the trees cache" do
@@ -1995,7 +2067,7 @@ end
       allow(Rails.logger).to receive(:warn)
 
       unknown_did_hex = "DEADC0DE"
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 11,
                               did_hex_arg: unknown_did_hex)
 
@@ -2014,7 +2086,7 @@ end
       # Encrypt with a throwaway key so the chunk is well-formed; service
       # rejects it before attempting decrypt anyway.
       throwaway_key = "\x00".b * 16
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 12, key: throwaway_key)
       hardware_key.destroy!
 
@@ -2032,7 +2104,7 @@ end
       # size check the service performs after key load.
       allow_any_instance_of(HardwareKey).to receive(:binary_key).and_return("A" * 24)
 
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 13)
 
       expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
@@ -2043,7 +2115,7 @@ end
 
     it "records gateway uid when the CCM packet is routed via a known gateway" do
       gateway = create(:gateway)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 14)
 
       expect { described_class.call(chunk, gateway.id) }.to change(TelemetryLog, :count).by(1)
@@ -2057,7 +2129,7 @@ end
         ema = 3600
         gp  = SilkenNet::Attractor.expected_homeostasis_gp(ema)
         allow(Rails.logger).to receive(:warn)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 200, status: gp, ttl: 3, fc: 41, ema: ema)
 
         expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -2071,7 +2143,7 @@ end
         bad_gp = gp == SilkenNet::Attractor::GP_HOMEO_MAX ? gp - 1 : gp + 1
         allow(Rails.logger).to receive(:warn)
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 200, status: bad_gp, ttl: 3, fc: 42, ema: ema)
 
         # Observational: запис СТВОРЮЄТЬСЯ (мінт-гейт не чіпаємо до калібрування).
@@ -2085,7 +2157,7 @@ end
 
       it "skips the exact branch for non-homeostasis frames (panic ema=0)" do
         allow(Rails.logger).to receive(:warn)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0xFF,
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                                 dt: 0, status: 0x80, ttl: 5, fc: 43, ema: 0) # 0x80 = PanicFlag
 
         expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -2095,9 +2167,9 @@ end
     end
 
     # [SEC.20] mesh_ctrl fw-нібл = C-image epoch (транзієнт): contract-звіт
-    # їде vpd-байтом, тож нібл БІЛЬШЕ НЕ пише у firmware_version_id.
-    it "keeps the mesh fw-nibble out of firmware_version_id (vpd report owns the column)" do
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+    # їде байтом 11 (wire-rev2.2), тож нібл БІЛЬШЕ НЕ пише у firmware_version_id.
+    it "keeps the mesh fw-nibble out of firmware_version_id (byte-11 report owns the column)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fw_nibble: 7, fc: 15)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
@@ -2111,7 +2183,7 @@ end
       allow_any_instance_of(described_class).to receive(:commit_telemetry)
         .and_raise(StandardError, "boom in commit")
 
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 18)
 
       expect { described_class.call(chunk) }.not_to raise_error
@@ -2124,7 +2196,7 @@ end
     it "lands a CCM row for a tree without a K_seed — the CCM path never reads it" do
       allow_any_instance_of(HardwareKey).to receive(:binary_lorenz_seed).and_return(nil)
 
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 100, status: 0, ttl: 3, fc: 19)
 
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)

@@ -25,6 +25,7 @@
 #include <math.h>
 
 #include "../common/bme280.h"
+#include "../common/lora_ccm.h"   /* [FW.66] сентинел байта 19 wire-rev2.2 */
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -492,6 +493,13 @@ static void test_no_conversion_is_not_a_measurement(void)
     if (t < 1500 || t > 3500) FAILF("скид-патерн дав %d (°C×100) — не «правдоподібний»?", t);
 }
 
+/* [FW.66 · wire-rev2.2] Байт 19 CCM-кадру: «немає сенсора» — рівно на крок нижче за
+ * найменший виміряний індекс, тож жоден вимір його не дає; бекенд читає той самий нуль. */
+static void test_ccm_vpd_none_sits_below_measured_floor(void)
+{
+    ASSERT_EQ(FW2_VPD_INDEX_NONE, BME280_VPD_INDEX_MIN - 1u);
+}
+
 static void test_end_to_end_bosch_vector(void)
 {
     /* Шина → калібровка → forced burst → компенсація. Очікування — приклад
@@ -546,6 +554,7 @@ int main(void)
     RUN(test_foreign_chip_id_touches_nothing);
     RUN(test_no_conversion_is_not_a_measurement);
     RUN(test_end_to_end_bosch_vector);
+    RUN(test_ccm_vpd_none_sits_below_measured_floor);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

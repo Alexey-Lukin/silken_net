@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "../common/voc_maxhold.h"
+#include "../common/lora_ccm.h"   /* [FW.66] сентинел байтів 16..17 wire-rev2.2 */
 
 static int tests_passed = 0;
 static int tests_failed = 0;
@@ -141,6 +142,13 @@ static void test_time_backwards_spoils(void)
     ASSERT_EQ(Voc_MaxHold_Result(&s), VOC_MV_UNKNOWN);
 }
 
+/* [FW.66 · wire-rev2.2] Байти 16..17 CCM-кадру: «не виміряно» — той самий нуль, що дає
+ * семплер, і бекенд читає його так само (ніколи не «нуль вольт»). */
+static void test_ccm_voc_unknown_mirrors_sampler(void)
+{
+    ASSERT_EQ(FW2_VOC_MV_UNKNOWN, VOC_MV_UNKNOWN);
+}
+
 static void test_zero_mv_reads_as_floor_not_sentinel(void)
 {
     /* Мертве джерело (0 мВ увесь час) — це ВИМІР, і він не сміє злитися з
@@ -176,6 +184,7 @@ int main(void)
     RUN(test_gap_spoils_even_if_window_was_caught);
     RUN(test_time_backwards_spoils);
     RUN(test_zero_mv_reads_as_floor_not_sentinel);
+    RUN(test_ccm_voc_unknown_mirrors_sampler);
     RUN(test_sample_counter_saturates);
     printf("\n%d passed, %d failed\n", tests_passed, tests_failed);
     return tests_failed == 0 ? 0 : 1;

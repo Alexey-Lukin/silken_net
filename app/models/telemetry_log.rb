@@ -22,11 +22,11 @@ class TelemetryLog < ApplicationRecord
   # belongs_to :bio_contract_firmware, foreign_key: :firmware_version_id, optional: true
 
   # [SEC.20] Дзеркало fw_report.h — wire-звіт contract-стану (байти 12..13
-  # legacy / vpd-байт CCM, unpacker складає у спільні 16 біт).
+  # legacy / байт 11 CCM wire-rev2.2, unpacker складає у спільні 16 біт).
   FW_REPORT_SEMANTIC_BIT = 0x8000
   FW_REPORT_REVERTED_BIT = 0x4000
   FW_REPORT_ID_MASK      = 0x3FFF
-  # [FW.65] CCM-ера везе той самий звіт у vpd-байті `[reverted:1 | id7]` (Fw_Report_To_Vpd):
+  # [FW.65] CCM-ера везе той самий звіт у байті 11 `[reverted:1 | id7]` (Fw_Report_To_Ccm7, wire-rev2.2):
   # contract-id там — лише залишок за модулем 128, і порівнювати його з повним id не можна.
   FW_REPORT_CCM_ID_MASK  = 0x7F
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
  * test_ccm.c — Host-based unit tests for [FW.2 / ARCH.42 Variant B]
- *              AES-128-CCM LoRa packet emission and reception (wire-rev2.1 30B).
+ *              AES-128-CCM LoRa packet emission and reception (wire-rev2.2 30B).
  *
  * Build & run: make -C firmware/test ccm
  *
@@ -32,6 +32,8 @@
 
 #include "hal_mock.h"
 #include "../common/lora_ccm.h"
+#include "../common/fw_report.h"    /* [FW.66] байт 11 wire-rev2.2 — SEC.20-звіт */
+#include "../common/reset_cause.h"  /* [FW.59] коди diag[7..5] */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -319,23 +321,29 @@ static int test_fc_next_saturates_never_wraps(void) {
 
 static int test_sensor_payload_pack_roundtrip(void) {
     uint8_t buf[FW2_CCM_PLAINTEXT_LEN];
-    Pack_CCM_Sensor_Payload(3500, -15, 99, 1234, 0x5A, 0x37,
-                            0x2E00 /* z=23.0 x512 */, 0xAD, 0x42,
+    Pack_CCM_Sensor_Payload(3500, -15, 0xAA /* fw_report7 */, 1234, 0x5A, 0x37,
+                            0x0B6E /* voc_mv 2926 */, 0xAD, 0x42,
                             4321 /* [E.63 (г)] ema */, buf);
-    uint16_t vcap; int8_t temp; uint8_t acoustic; uint16_t dt;
-    uint8_t status, ctrl, diag, vpd; uint16_t dz; uint16_t ema;
-    Unpack_CCM_Sensor_Payload(buf, &vcap, &temp, &acoustic, &dt, &status, &ctrl,
-                              &dz, &diag, &vpd, &ema);
+    /* [FW.66 · wire-rev2.2] Позиції — за ledger 03_05 §2.1 (air = PT + 8):
+     * байт 11 ← PT[3] звіт, 16..17 ← PT[8..9] voc_mv BE, 18 ← diag, 19 ← vpd. */
+    ASSERT_EQ(buf[3], 0xAA);
+    ASSERT_EQ(buf[8], 0x0B); ASSERT_EQ(buf[9], 0x6E);
+    ASSERT_EQ(buf[10], 0xAD);
+    ASSERT_EQ(buf[11], 0x42);
+    uint16_t vcap; int8_t temp; uint8_t report; uint16_t dt;
+    uint8_t status, ctrl, diag, vpd; uint16_t voc; uint16_t ema;
+    Unpack_CCM_Sensor_Payload(buf, &vcap, &temp, &report, &dt, &status, &ctrl,
+                              &voc, &diag, &vpd, &ema);
     ASSERT_EQ(vcap, 3500);
     ASSERT_EQ((uint32_t)(int32_t)temp, (uint32_t)(int32_t)-15);
-    ASSERT_EQ(acoustic, 99);
+    ASSERT_EQ(report, 0xAA);
     ASSERT_EQ(dt, 1234);
     ASSERT_EQ(status, 0x5A);
     ASSERT_EQ(ctrl, 0x37);
     /* mesh_ctrl bitfield: TTL=3, fw_nibble=7 */
     ASSERT_EQ((ctrl >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, 3);
     ASSERT_EQ(ctrl & FW2_MESH_FW_NIBBLE_MASK, 7);
-    ASSERT_EQ(dz, 0x2E00);
+    ASSERT_EQ(voc, 2926);
     ASSERT_EQ(diag, 0xAD);
     ASSERT_EQ(vpd, 0x42);
     ASSERT_EQ(ema, 4321); /* [E.63 (г)] wire-rev2.1 bytes 12..13 плейну */
@@ -359,9 +367,9 @@ static int test_soldier_to_queen_roundtrip(void) {
 
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
-    Pack_CCM_Sensor_Payload(4200, 22, 7, 600, 0x00, 0x53,
-                            Pack_FW2_Device_Z(28.731f, 1), 0x00, 0x00,
-                            550 /* ema */, pt);
+    Pack_CCM_Sensor_Payload(4200, 22, Fw_Report_To_Ccm7(0x8000u | 7u), 600, 0x00, 0x53,
+                            (uint16_t)FW2_VOC_MV_UNKNOWN, 0x00,
+                            (uint8_t)FW2_VPD_INDEX_NONE, 550 /* ema */, pt);
 
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key_words, nonce, aad, pt, ct, mic), HAL_OK);
 
@@ -500,8 +508,9 @@ static int test_panic_flag_inside_encrypted_payload(void) {
     uint8_t ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(0xAABBCCDD, 42, nonce);
     Build_CCM_AAD(0xAABBCCDD, 0x00, 42, aad);
-    Pack_CCM_Sensor_Payload(3500, 25, 5, 100, 0x00 /* no panic */, 0x33,
-                            FW2_DEVICE_Z_NONE, 0x00, 0x00, 90 /* ema */, pt);
+    Pack_CCM_Sensor_Payload(3500, 25, 0x00, 100, 0x00 /* no panic */, 0x33,
+                            (uint16_t)FW2_VOC_MV_UNKNOWN, 0x00,
+                            (uint8_t)FW2_VPD_INDEX_NONE, 90 /* ema */, pt);
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
     memcpy(&pkt[0],  aad, FW2_CCM_AAD_LEN);
     memcpy(&pkt[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
@@ -543,43 +552,53 @@ static int test_gossip_byte_is_mic_protected(void) {
     return 0;
 }
 
-static int test_device_z_quantization(void) {
-    /* [FW.31 Gate D] q=2⁻⁹: round-to-nearest, похибка ≤ 0.00098 < ε=0.001. */
-    ASSERT_EQ(Pack_FW2_Device_Z(0.0f, 1), 0);
-    ASSERT_EQ(Pack_FW2_Device_Z(23.0f, 1), 23 * 512);
-    /* 28.7310 × 512 = 14710.27 → 14710; назад 14710/512 = 28.73046875,
-     * |Δ| = 0.00053 < ε. */
-    ASSERT_EQ(Pack_FW2_Device_Z(28.731f, 1), 14710);
-    /* Лоренц спав (ARCH.41-C grace) → сентинель, не нуль. */
-    ASSERT_EQ(Pack_FW2_Device_Z(28.731f, 0), FW2_DEVICE_Z_NONE);
-    /* Сатурація на стелі: сентинель недосяжний для реальних z. */
-    ASSERT_EQ(Pack_FW2_Device_Z(1000.0f, 1), FW2_DEVICE_Z_MAX);
-    /* Від'ємне/сміття → чесний нуль. */
-    ASSERT_EQ(Pack_FW2_Device_Z(-3.0f, 1), 0);
-    printf("  test_device_z_quantization                                 ✅\n");
-    return 0;
-}
-
 static int test_diag_byte_pack(void) {
-    /* [thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1] */
-    ASSERT_EQ(Pack_FW2_Diag(0, 0, 0, 0), 0x00);
-    ASSERT_EQ(Pack_FW2_Diag(1, 0, 0, 1), 0x09);
-    ASSERT_EQ(Pack_FW2_Diag(31, 1, 1, 1), 0xFF);
-    /* RAM-лічильник сатурує на wire-стелі 31 (патерн ttl_byte.h). */
-    ASSERT_EQ(Pack_FW2_Diag(200, 0, 0, 0), (uint8_t)(31u << FW2_DIAG_THR_INVALID_SHIFT));
-    ASSERT_EQ(Pack_FW2_Diag(0, 1, 0, 0), FW2_DIAG_FAUNA_MODE_BIT);
-    ASSERT_EQ(Pack_FW2_Diag(0, 0, 1, 0), FW2_DIAG_FAUNA_SKIP_BIT);
+    /* [FW.66 · wire-rev2.2] [reset_cause:3 | time_uncertain:1 | voc_attempt:1 |
+     * резерв:2 | fc_degraded:1] — ledger 03_05 §2.1. */
+    ASSERT_EQ(Pack_FW2_Diag(SILKEN_RESET_UNKNOWN, 0, 0, 0), 0x00);
+    ASSERT_EQ(Pack_FW2_Diag(SILKEN_RESET_IWDG, 0, 0, 0), 0x80);    /* 4 << 5 */
+    ASSERT_EQ(Pack_FW2_Diag(SILKEN_RESET_LOW_POWER, 1, 1, 1), 0xF9); /* усе, крім резерву */
+    ASSERT_EQ(Pack_FW2_Diag(0, 1, 0, 0), FW2_DIAG_TIME_UNCERTAIN_BIT);
+    ASSERT_EQ(Pack_FW2_Diag(0, 0, 1, 0), FW2_DIAG_VOC_ATTEMPT_BIT);
+    ASSERT_EQ(Pack_FW2_Diag(0, 0, 0, 1), FW2_DIAG_FC_DEGRADED_BIT);
+    /* Код поза 0..7 — «не повідомлено», а не обрізаний маскою ЧУЖИЙ код (8 & 7 = 0
+     * випадково збіглося б, 14 & 7 = 6 = HardFault — вигадана причина). */
+    ASSERT_EQ(Pack_FW2_Diag(14, 0, 0, 0), 0x00);
+    /* Резервні біти не пише жоден вхід. */
+    for (unsigned rc = 0; rc <= 255u; rc++)
+        ASSERT_EQ(Pack_FW2_Diag((uint8_t)rc, 1, 1, 1) & FW2_DIAG_RESERVED_MASK, 0);
+    /* Поля не налазять одне на одне — і біти сходяться в повний байт без резерву. */
+    ASSERT_EQ((FW2_DIAG_RESET_CAUSE_MASK << FW2_DIAG_RESET_CAUSE_SHIFT) |
+              FW2_DIAG_TIME_UNCERTAIN_BIT | FW2_DIAG_VOC_ATTEMPT_BIT |
+              FW2_DIAG_RESERVED_MASK | FW2_DIAG_FC_DEGRADED_BIT, 0xFF);
+    ASSERT_EQ((FW2_DIAG_RESET_CAUSE_MASK << FW2_DIAG_RESET_CAUSE_SHIFT) &
+              (FW2_DIAG_TIME_UNCERTAIN_BIT | FW2_DIAG_VOC_ATTEMPT_BIT |
+               FW2_DIAG_RESERVED_MASK | FW2_DIAG_FC_DEGRADED_BIT), 0);
     printf("  test_diag_byte_pack                                        ✅\n");
     return 0;
 }
+
+/* [FW.66 · wire-rev2.2] ЗОЛОТИЙ plaintext — один на дві мови. Pack_CCM_Sensor_Payload з
+ * джерелами test_phase4 нижче МУСИТЬ дати рівно ці 14 байт, а Ruby-спека
+ * (`telemetry_unpacker_service_spec.rb`, «golden wire-rev2.2 plaintext») читає цей самий
+ * масив звідси й проганяє його через справжній розпакувальник поле за полем. Без нього
+ * кожна мова перевіряла б розкладку лише проти СЕБЕ: обмін out[10]⟷out[11] разом з
+ * Unpack лишив би обидві сюїти зеленими, а бекенд читав би VPD як diag.
+ * vcap 3300 · temp −7 · звіт 0xAA (відкат id 42) · dt 0xFFFF · status 0x25 · mesh 0x31 ·
+ * voc 2926 · diag 0xD9 (HardFault | time_uncertain | voc_attempt | fc_degraded) ·
+ * vpd 0x42 · ema 3600. VPD свідомо БЕЗ бітів 4 і 0 — тих, що бекенд читає з diag: обмін
+ * diag⟷vpd тоді червонить і Ruby-бік, а не лише цей масив. */
+static const uint8_t G_PT_REV22[FW2_CCM_PLAINTEXT_LEN] = {
+    0x0C, 0xE4, 0xF9, 0xAA, 0xFF, 0xFF, 0x25, 0x31, 0x0B, 0x6E, 0xD9, 0x42, 0x0E, 0x10
+};
 
 static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     /* e2e дзеркало Фази 4 → ефір → 31B-запис Королеви: аргументи складені
      * як call-site у soldier/main.c (mesh_ctrl = TTL|fw-nibble, dt-сатурація,
      * сирий vcap), а розкладка на виході — та, яку читає process_ccm_chunk.
-     * diag: main.c з HW.30 шле Pack_FW2_Diag(0,0,0,fc_degraded); ненульовий
-     * thr тут свідомо — доводить бітфілд наскрізь, доки реалізація wire-rev2.2
-     * (00_07 FW.66) не віддала ці біти новим полям. */
+     * [FW.66 · wire-rev2.2] Поля, що в main.c поки пишуться «не виміряно»
+     * (voc_mv · vpd · reset_cause), тут свідомо НЕНУЛЬОВІ — доводять бітфілд і
+     * позиції наскрізь до дня, коли в них зʼявляться джерела. */
     enum { DEFAULT_TTL_M = 3, FIRMWARE_VERSION_ID_M = 0x0001 };
     uint32_t key[4] = {0x11110000, 0x22220000, 0x33330000, 0x44440000};
     const uint32_t did = 0x00C0FFEE;
@@ -588,15 +607,16 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     /* Джерела Фази 4 (імена дзеркалять main.c): */
     uint16_t vcap_voltage = 3300;                     /* сирий, НЕ EMA */
     int8_t   temp_c       = -7;
-    uint8_t  acoustic     = 0xFD;                     /* ARCH.41-B кап реального 0xFE */
+    uint8_t  fw_report7   = Fw_Report_To_Ccm7(0xC000u | 42u); /* SEC.20: відкат id 42 */
     uint32_t delta_t_raw  = 200000;                   /* зимова доба > 0xFFFF */
     uint32_t dt_wire      = (delta_t_raw > 0xFFFFu) ? 0xFFFFu : delta_t_raw;
     uint8_t  status_byte  = 0x25 & (uint8_t)~0x80u;   /* після FW.29-маски */
     uint8_t  mesh_ctrl    = (uint8_t)(((DEFAULT_TTL_M & FW2_MESH_TTL_MASK)
                                        << FW2_MESH_TTL_SHIFT) |
                                       (FIRMWARE_VERSION_ID_M & FW2_MESH_FW_NIBBLE_MASK));
-    uint8_t  diag         = Pack_FW2_Diag(7, 0, 0, 1);
-    uint16_t device_z     = Pack_FW2_Device_Z(28.5f, 1);
+    uint8_t  diag         = Pack_FW2_Diag(SILKEN_RESET_HARDFAULT, 1, 1, 1);
+    uint16_t voc_mv       = 2926;                     /* V_OC EBFC, мВ */
+    uint8_t  vpd_index    = 0x42;
     uint8_t  gossip       = (uint8_t)(0x66554433u & 0xFFu); /* unix_ts LSB */
     uint16_t wire_ema     = 3600; /* [E.63 (г)] контракт «wire = вхід GP» */
 
@@ -604,9 +624,10 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN], ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, gossip, fc, aad);
-    Pack_CCM_Sensor_Payload(vcap_voltage, temp_c, acoustic, (uint16_t)dt_wire,
-                            status_byte, mesh_ctrl, device_z, diag, 0x00,
+    Pack_CCM_Sensor_Payload(vcap_voltage, temp_c, fw_report7, (uint16_t)dt_wire,
+                            status_byte, mesh_ctrl, voc_mv, diag, vpd_index,
                             wire_ema, pt);
+    ASSERT_MEM_EQ(pt, G_PT_REV22, FW2_CCM_PLAINTEXT_LEN); /* та сама розкладка, що читає Ruby */
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
 
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
@@ -638,28 +659,32 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     Build_CCM_AAD(r_did, r_gossip, r_fc, r_aad);
     ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, r_nonce, r_aad, &rec[REC_CT], &rec[REC_MIC], r_pt), HAL_OK);
 
-    uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
-    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
-    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
-                              &u_dz, &u_diag, &u_vpd, &u_ema);
+    uint16_t u_vcap, u_dt, u_voc; int8_t u_temp;
+    uint8_t u_rep, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
+    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_rep, &u_dt, &u_st, &u_mc,
+                              &u_voc, &u_diag, &u_vpd, &u_ema);
     ASSERT_EQ(u_vcap, vcap_voltage);
     ASSERT_EQ((uint32_t)(int32_t)u_temp, (uint32_t)(int32_t)temp_c);
-    ASSERT_EQ(u_ac, acoustic);
+    ASSERT_EQ(u_rep, 0x80 | 42);              /* reverted-біт + id7 */
     ASSERT_EQ(u_dt, 0xFFFF);                   /* сатурація доїхала */
     ASSERT_EQ(u_st, status_byte);
     ASSERT_EQ((u_mc >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, DEFAULT_TTL_M);
     ASSERT_EQ(u_mc & FW2_MESH_FW_NIBBLE_MASK, FIRMWARE_VERSION_ID_M & 0x0F);
-    ASSERT_EQ(u_dz, device_z);
+    ASSERT_EQ(u_voc, voc_mv);
     ASSERT_EQ(u_diag, diag);
-    ASSERT_EQ(u_vpd, 0x00);
+    ASSERT_EQ(u_diag >> FW2_DIAG_RESET_CAUSE_SHIFT, SILKEN_RESET_HARDFAULT);
+    ASSERT_EQ(u_vpd, vpd_index);
     ASSERT_EQ(u_ema, wire_ema); /* [E.63 (г)] EMA доїхав до «Rails» байт-точно */
     printf("  test_phase4_marshalling_e2e_to_backend_bytes               ✅\n");
     return 0;
 }
 
 static int test_panic_marshalling_ccm(void) {
-    /* Дзеркало CCM-гілки Trigger_Emergency_LoRa_TX: нулі vcap/temp/dt
-     * (legacy-parity), acoustic=0xFF, status=PANIC_FLAG, TTL=PANIC(5). */
+    /* [FW.66 · wire-rev2.2] Справжній Pack_CCM_Panic_Payload — той, що кличе CCM-гілка
+     * Trigger_Emergency_LoRa_TX (скіл firmware #19: копія доводила б копію). Нулі
+     * vcap/temp/dt (legacy-parity), status=PANIC_FLAG, TTL=PANIC(5), ema=0. 🔴 Байт 11
+     * — SEC.20-звіт, а НЕ panic-код 0xFF: у rev2.2 0xFF читався б відкатом із
+     * critical-алертом `firmware_reverted` на КОЖНОМУ зойку (скіл firmware #25). */
     enum { PANIC_TTL_M = 5, FIRMWARE_VERSION_ID_M = 0x0001 };
     uint32_t key[4] = {0x51CC0000, 0x51CC0001, 0x51CC0002, 0x51CC0003};
     const uint32_t did = 0x0BAD5EED;
@@ -672,24 +697,32 @@ static int test_panic_marshalling_ccm(void) {
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN], ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
-    Pack_CCM_Sensor_Payload(0, 0, 0xFF, 0, FW2_STATUS_PANIC_BIT, mesh_ctrl,
-                            Pack_FW2_Device_Z(31.2f, 1), Pack_FW2_Diag(0, 0, 0, 0),
-                            0x00, 0 /* ema: panic ≠ homeostasis */, pt);
+    /* Робочий (не відкочений) контракт id 5, час невідомий. */
+    Pack_CCM_Panic_Payload(Fw_Report_To_Ccm7(0x8000u | 5u), mesh_ctrl,
+                           Pack_FW2_Diag(SILKEN_RESET_UNKNOWN, 1, 0, 0), pt);
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
 
     uint8_t r_pt[FW2_CCM_PLAINTEXT_LEN];
     ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, nonce, aad, ct, mic, r_pt), HAL_OK);
 
-    uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
-    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
-    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
-                              &u_dz, &u_diag, &u_vpd, &u_ema);
+    uint16_t u_vcap, u_dt, u_voc; int8_t u_temp;
+    uint8_t u_rep, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
+    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_rep, &u_dt, &u_st, &u_mc,
+                              &u_voc, &u_diag, &u_vpd, &u_ema);
+    ASSERT_EQ(u_rep, 5);                                   /* звіт, не код паніки */
+    ASSERT_EQ(u_rep & 0x80, 0);                            /* і НЕ вигаданий відкат */
     ASSERT_EQ(u_ema, 0);                                   /* panic: ema=0 */
-    ASSERT_EQ(u_ac, 0xFF);                                 /* код паніки */
     ASSERT_EQ(u_st & FW2_STATUS_PANIC_BIT, FW2_STATUS_PANIC_BIT);
     ASSERT_EQ((u_st & FW2_STATUS_GROWTH_MASK), 0);         /* панічний зойк не мінтить */
     ASSERT_EQ((u_mc >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, PANIC_TTL_M);
-    ASSERT_EQ(u_vcap, 0); ASSERT_EQ(u_dt, 0);
+    ASSERT_EQ(u_vcap, 0); ASSERT_EQ(u_dt, 0); ASSERT_EQ(u_temp, 0);
+    ASSERT_EQ(u_voc, FW2_VOC_MV_UNKNOWN);
+    ASSERT_EQ(u_vpd, FW2_VPD_INDEX_NONE);
+    ASSERT_EQ(u_diag, FW2_DIAG_TIME_UNCERTAIN_BIT);
+
+    /* Справжній відкат доїжджає і в зойку — єдиний сигнал відкату CCM-ери не губиться. */
+    Pack_CCM_Panic_Payload(Fw_Report_To_Ccm7(0xC000u | 42u), mesh_ctrl, 0x00, pt);
+    ASSERT_EQ(pt[3], 0x80 | 42);
     printf("  test_panic_marshalling_ccm                                 ✅\n");
     return 0;
 }
@@ -745,7 +778,7 @@ static int test_two_key_scoping_contract(void) {
 int main(void) {
     int passed = 0, failed = 0;
     printf("════════════════════════════════════════════════════════════════════\n");
-    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 30-byte (wire-rev2.1) LoRa packet tests\n");
+    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 30-byte (wire-rev2.2) LoRa packet tests\n");
     printf("════════════════════════════════════════════════════════════════════\n");
 
     Reset_Mock_State();
@@ -769,7 +802,6 @@ int main(void) {
     RUN(test_panic_flag_inside_encrypted_payload);
     RUN(test_mesh_ctrl_bitfield_extraction);
     RUN(test_gossip_byte_is_mic_protected);
-    RUN(test_device_z_quantization);
     RUN(test_diag_byte_pack);
     RUN(test_phase4_marshalling_e2e_to_backend_bytes);
     RUN(test_panic_marshalling_ccm);

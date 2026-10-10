@@ -45,7 +45,8 @@ _Static_assert(ADC_TEMP_CALC_ERROR_C == LL_ADC_TEMPERATURE_CALC_ERROR,
                "[FW.50] ADC_TEMP_CALC_ERROR_C мусить дорівнювати LL_ADC_TEMPERATURE_CALC_ERROR");
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
-#include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM vpd)
+#include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM байт 11)
+#include "../common/reset_cause.h"  // [FW.59] коди diag[7..5] CCM-кадру (джерело — S6b; доти «не повідомлено»)
 #include "../common/mpu_regions.h"  // [SEC.21] MPU NX-stack/RO-code розкладка (draft)
 #include "../common/device_event.h" // [SEC.21] uplink 0x57 device-event (canary-слід → Rails)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
@@ -533,10 +534,7 @@ static const SilkenStandbyOps g_standby_ops = {
 // Прототип: тіло живе у freeze-contract секції внизу файла, а call-sites
 // (Фаза 4 TX + Trigger_Emergency_LoRa_TX) — вище за течією.
 int Soldier_Build_CCM_LoRa_Packet(
-    uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
-    uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
-    uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
-    uint16_t ema_delta_t_s,
+    uint32_t did, const uint8_t pt[FW2_CCM_PLAINTEXT_LEN], uint8_t gossip_ts_lsb,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN]);
 #endif
 
@@ -1854,14 +1852,16 @@ int main(void)
     // [ARCH.41-B/C] Час невідомий: ні beacon'а від народження (cold-boot після
     // VBAT-loss, або Королева ще мовчить). У grace-вікні (C) шлемо hello 0x56
     // замість телеметрії зі застарілим epoch_day; після grace (B) телеметрія
-    // йде, але з sentinel 0xFE в acoustic і Лоренцом від acoustic=0.
+    // йде, але з sentinel 0xFE в acoustic і Лоренцом від acoustic=0 (ECB-кадр; CCM-кадр
+    // wire-rev2.2 несе той самий сигнал бітом diag `time_uncertain`, FW.66).
     uint8_t time_uncertain = (soldier_unix_ts == 0u) ? 1u : 0u;
     // Grace — у пробудженнях (tick мертвий у STOP2: 10 хв tick-grace тривали б
     // ~1-2 год wall, відкладаючи телеметрію у стільки ж разів).
     uint8_t grace_hello = (time_uncertain &&
                            wakeups_since_boot < TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1u : 0u;
 
-    // Байт 7: акустичний слот (з HW.30 лічильник завжди 0; ECB-кадр лишається як є — CCM-байт віддає wire-rev2.2, реалізація FW.66).
+    // Байт 7: акустичний слот ECB-кадру (з HW.30 лічильник завжди 0). CCM-кадр wire-rev2.2
+    // цей байт не везе — на його місці (байт 11) SEC.20-звіт (FW.66).
     // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
     // [ARCH.41-B] sentinel-підміна при невідомому часі (реальний лічильник
     // цього пробудження жертвується — час важливіший за один відлік).
@@ -2079,36 +2079,33 @@ int main(void)
         // мусить споживатись рівно там, де кадр справді пішов.
         uint8_t telemetry_sent = 0u;
 #if FW2_CCM_ENABLED
-        // [FW.2] Wire-rev2.1: телеметрія = 30B CCM замість 16B ECB. Джерела —
-        // ті САМІ живі значення, що вже лягли в lora_payload (байт-парність
-        // семантики): сирий vcap_voltage (wire завжди носив сирий, EMA — то
-        // їжа Лоренца), dt_wire із сатурацією 0xFFFF, StatusByte після
-        // FW.29-маски, acoustic з ARCH.41-B sentinel-логікою. mesh_ctrl =
-        // [TTL:4|fw_low:4] (розкладка 03_05 §2.1; low-nibble версії — 16-епох
-        // ротація через OTA-config). thr_invalid і fauna-біти з HW.30 завжди 0
-        // (у wire-rev2.2 біти thr_invalid займуть reset_cause · time_uncertain · voc_attempt, а fauna-біти стануть резервом, FW.66). Збій збірки (HAL
-        // захрип) → мовчимо цей цикл: 16B-фолбек у CCM-ері Королева однаково
-        // дропне (atomic-cutover), то був би спалений airtime, не телеметрія.
+        // [FW.2 · FW.66] Wire-rev2.2: телеметрія = 30B CCM замість 16B ECB
+        // (розкладка — lora_ccm.h, ledger 03_05 §2.1). Джерела — ті САМІ живі
+        // значення, що вже лягли в lora_payload (байт-парність семантики): сирий
+        // vcap_voltage, dt_wire із сатурацією 0xFFFF, StatusByte після FW.29-маски.
+        // mesh_ctrl = [TTL:4|fw_low:4] (low-nibble — 16-епох ротація через OTA-config).
+        // Байт 11 — SEC.20-звіт (акустики й коду 0xFE у CCM-кадрі більше немає: час
+        // невідомий їде бітом diag). Поля без джерела пишуться власним «не виміряно»,
+        // а не вигаданим числом: voc_mv — HAL-половини V_OC ще немає (HW.19), vpd_index
+        // — call-site BME280 бенчевий (HW.32), reset_cause — читання причини ребуту
+        // приходить окремим зрізом (FW.59). Збій збірки (HAL захрип) → мовчимо цей
+        // цикл: 16B-фолбек у CCM-ері Королева однаково дропне (atomic-cutover).
         uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
+        uint8_t ccm_pt[FW2_CCM_PLAINTEXT_LEN];
         uint8_t ccm_mesh_ctrl = (uint8_t)(((DEFAULT_TTL & FW2_MESH_TTL_MASK)
                                            << FW2_MESH_TTL_SHIFT) |
                                           (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
-        uint8_t ccm_diag = Pack_FW2_Diag(0u, 0u, 0u, fc_hiwater_degraded);
-        if (Soldier_Build_CCM_LoRa_Packet(tree_did, vcap_voltage,
-                                          (int8_t)lora_payload[6],
-                                          lora_payload[7],
-                                          (uint16_t)dt_wire,
-                                          lora_payload[10],
-                                          ccm_mesh_ctrl,
-                                          Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
-                                          ccm_diag,
-                                          /* [SEC.20] vpd-байт тимчасово несе
-                                             contract-звіт [rev:1|id7] до
-                                             BME280 (HW.32) → wire-rev2.2 (FW.66)
-                                             переносить його в байт 11 */
-                                          Fw_Report_To_Vpd(fw_contract_report),
+        Pack_CCM_Sensor_Payload(vcap_voltage, (int8_t)lora_payload[6],
+                                Fw_Report_To_Ccm7(fw_contract_report),
+                                (uint16_t)dt_wire, lora_payload[10], ccm_mesh_ctrl,
+                                (uint16_t)FW2_VOC_MV_UNKNOWN,
+                                Pack_FW2_Diag(SILKEN_RESET_UNKNOWN, time_uncertain,
+                                              0u /* voc_attempt */, fc_hiwater_degraded),
+                                (uint8_t)FW2_VPD_INDEX_NONE,
+                                wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
+                                ccm_pt);
+        if (Soldier_Build_CCM_LoRa_Packet(tree_did, ccm_pt,
                                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
-                                          wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                                           ccm_air) == HAL_OK) {
             HAL_Delay(Lora_Phy_Send(ccm_air, FW2_CCM_AIR_PACKET_LEN, LORA_PHY_PREAMBLE_SYMBOLS));
             telemetry_sent = 1u;
@@ -2121,6 +2118,9 @@ int main(void)
         telemetry_sent = 1u;
 #endif
 
+        // ⚠️ [FW.66] CCM-кадр wire-rev2.2 акустики не везе (байт 11 — SEC.20-звіт), тож у
+        // CCM-збірці «поїхало» на дріт рівно нуль; споживати знімок тут не губить нічого
+        // лише тому, що з HW.30 інкременту немає і знімок завжди 0.
         // [ARCH.102] Спожити рівно СТІЛЬКИ, скільки поїхало на дріт. Віднімання,
         // не обнулення: між знімком і передачею лічильник не росте (з HW.30
         // інкременту немає взагалі), але віднімання лишається правдивим і
@@ -2850,22 +2850,22 @@ void Trigger_Emergency_LoRa_TX(void)
 #if FW2_CCM_ENABLED
     // [FW.2] Panic їде тим САМИМ CCM-потоком, що телеметрія: FC у нонсі =
     // anti-replay для ВСІХ кадрів (03_05 §2.1 — SEC.10 DR0[31:16]-лічильник
-    // звільнено фліпом), а MIC не дає зліпити зойк із чужих байтів. Поля
-    // дзеркалять legacy-паніку (нулі vcap/temp/dt — ECB-кадр теж їх не ніс),
-    // acoustic=0xFF = код паніки, + чесний device_z поточного стану.
+    // звільнено фліпом), а MIC не дає зліпити зойк із чужих байтів. Літерали
+    // паніки живуть у Pack_CCM_Panic_Payload (lora_ccm.h, host-тест): байт 11 несе
+    // той самий SEC.20-звіт, що й телеметрія — panic-код 0xFF у rev2.2 читався б
+    // відкатом із critical-алертом (скіл firmware #25).
     uint8_t panic_air[FW2_CCM_AIR_PACKET_LEN];
+    uint8_t panic_pt[FW2_CCM_PLAINTEXT_LEN];
     uint8_t panic_mesh_ctrl = (uint8_t)(((PANIC_TTL & FW2_MESH_TTL_MASK)
                                          << FW2_MESH_TTL_SHIFT) |
                                         (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
-    uint8_t panic_diag = Pack_FW2_Diag(0u, 0u, 0u, fc_hiwater_degraded);
-    int panic_built = Soldier_Build_CCM_LoRa_Packet(tree_did,
-                          0u /* vcap: legacy-parity */, 0 /* temp */,
-                          0xFFu /* акустика: код паніки */, 0u /* dt */,
-                          FW2_STATUS_PANIC_BIT, panic_mesh_ctrl,
-                          Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
-                          panic_diag, 0x00,
+    Pack_CCM_Panic_Payload(Fw_Report_To_Ccm7(fw_contract_report), panic_mesh_ctrl,
+                           Pack_FW2_Diag(SILKEN_RESET_UNKNOWN,
+                                         (soldier_unix_ts == 0u) ? 1u : 0u,
+                                         0u /* voc_attempt */, fc_hiwater_degraded),
+                           panic_pt);
+    int panic_built = Soldier_Build_CCM_LoRa_Packet(tree_did, panic_pt,
                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
-                          0u /* ema: panic ≠ homeostasis, recompute скип */,
                           panic_air);
 #else
     uint8_t panic_payload[16] = {0};
@@ -3360,25 +3360,19 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc_24bit));
 }
 
-// Зібрати повний 30-байтний CCM LoRa-пакет (wire-rev2.1) та просунути
-// лічильник кадрів. Успіх: out_packet[0..29] — готовий до ефіру, HAL_OK.
-// Збій HAL_CRYPEx: повертає HAL_ERROR — TX заборонено, лічильник не рухаємо.
+// Зашифрувати готовий 14-байтний plaintext (wire-rev2.2) у 30-байтний CCM
+// LoRa-пакет і просунути лічильник кадрів. Успіх: out_packet[0..29] — готовий до
+// ефіру, HAL_OK. Збій HAL_CRYPEx: HAL_ERROR — TX заборонено, лічильник не рухаємо.
 //
-// Нові поля rev2/rev2.1 (джерела на боці викликача при фліп-вшиванні):
-//   device_z   — Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid): сирий Z
-//                для FW.31 numeric DCI (сентинель NONE коли Лоренц спав)
-//   diag       — Pack_FW2_Diag(0, 0, 0, fc_hiwater_degraded): thr_invalid і
-//                fauna-біти з HW.30 завжди 0 (у wire-rev2.2 thr_invalid-біти несуть нові поля, fauna — резерв, FW.66)
-//   vpd_index  — 0x00 до приходу BME280 (HW.32)
+// Plaintext складають викликачі чистими функціями lora_ccm.h — Pack_CCM_Sensor_Payload
+// (телеметрія) і Pack_CCM_Panic_Payload (паніка): розкладку кожного байта (золотий вектор,
+// спільний із Ruby) і panic-літерали пінить host-сюїта (скіл firmware #19 · #25). ⚠️ Яке
+// живе значення лягає в який аргумент телеметричного виклику — досі ЦЕЙ файл, а host його
+// не компілює: сусідні uint8_t-аргументи (diag ⟷ vpd) переставляються без жодної помилки.
 //   gossip_ts_lsb — Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts): їде у
 //                cleartext-AAD, сусіди читають без ключа (FW.20-S2 #5)
-//   ema_delta_t_s — [E.63 (г)] wire_ema_delta_t_s: САМЕ те число, що пішло
-//                у metabolic_health цього циклу (контракт «wire = вхід GP»)
 int Soldier_Build_CCM_LoRa_Packet(
-    uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
-    uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
-    uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
-    uint16_t ema_delta_t_s,
+    uint32_t did, const uint8_t pt[FW2_CCM_PLAINTEXT_LEN], uint8_t gossip_ts_lsb,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
 {
     uint32_t fc = Load_Frame_Counter();
@@ -3402,6 +3396,9 @@ int Soldier_Build_CCM_LoRa_Packet(
     // але інваріант чесно позначається втраченим до наступного advance.
     // (Гейт окремий від HAL_MOCK_CCM_ENABLED: host-мок живе без Flash-KV.)
 #if FW2_CCM_ENABLED
+    // Енергогейт читає Vcap самого кадру (plaintext-байти 0..1) — той самий, що доти
+    // приходив окремим аргументом.
+    uint16_t vcap_mv = (uint16_t)((pt[0] << 8) | pt[1]);
     if (fc_hiwater_cache != 0 && next_fc >= fc_hiwater_cache) {
         if (!soldier_kv_mounted || vcap_mv < VCAP_LISTEN_THRESHOLD ||
             !Fc_Hiwater_Advance(&soldier_kv, Fc_Hiwater_Target(next_fc),
@@ -3423,10 +3420,7 @@ int Soldier_Build_CCM_LoRa_Packet(
 
     Build_CCM_AAD(did, gossip_ts_lsb, next_fc, (uint8_t *)aad_w);
     Build_CCM_B0(did, next_fc, (uint8_t *)b0_w); // нонс живе всередині B0
-    Pack_CCM_Sensor_Payload(vcap_mv, temp_c, acoustic, delta_t_s,
-                            status_byte, mesh_ctrl,
-                            device_z, diag, vpd_index, ema_delta_t_s,
-                            (uint8_t *)pt_w);
+    memcpy(pt_w, pt, FW2_CCM_PLAINTEXT_LEN);
 
     // Двофазний WL-флоу: payload-фаза → тег-фаза (invocation shape — lora_ccm.h).
     MX_CRYP_Init_CCM(b0_w, aad_w);

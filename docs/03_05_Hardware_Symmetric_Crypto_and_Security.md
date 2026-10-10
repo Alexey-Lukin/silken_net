@@ -143,9 +143,9 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 └────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
 ┌─ Encrypted payload (sensor data, 14 байтів) ──────────────────────────┐
 │ Byte 8 │ Byte 9 │Byte 10 │Byte 11 │Byte 12 │Byte 13 │Byte 14 │Byte 15 │
-│    Vcap (mV, BE)  │  Temp  │ Acous. │ delta_t RAW (BE)  │ Status │ Ctrl│
+│    Vcap (mV, BE)  │  Temp  │ FwRep. │ delta_t RAW (BE)  │ Status │ Ctrl│
 │Byte 16 │Byte 17 │Byte 18 │Byte 19 │Byte 20 │Byte 21 │                 │
-│  device_z (BE)    │  diag  │  vpd   │ ema_delta_t (BE)  │              │
+│  voc_mv (BE)      │  diag  │  vpd   │ ema_delta_t (BE)  │              │
 └────────┴────────┴────────┴────────┴────────┴────────┴─────────────────┘
 ┌─ MIC (Message Integrity Code, 8 байтів) ──────────────────────────────┐
 │Byte 22 │Byte 23 │Byte 24 │Byte 25 │Byte 26 │Byte 27 │Byte 28 │Byte 29 │
@@ -153,19 +153,19 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 └────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
 ```
 
-**14-байтний sensor payload (bytes 8..21):**
+**14-байтний sensor payload (bytes 8..21) — wire-rev2.2 (⚖️ 2026-10-08, застосовано 2026-10-10 — [`00_07` — FW.66](00_07_Action_Plan_Tracker)):**
 
 | Зсув | Поле | Тип | Діапазон / Кодування | Походження |
 |------|------|-----|----------------------|------------|
 | 0..1 | `Vcap_mv` | uint16 BE | 0..65535 мВ ⚠️ [ARCH.99] фактично ≈ VDDA-шина біля 3300, а не 0..5500: іменем поле обіцяє іоністор, а несе `Adc_Vdda_Mv()` ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) FW.50) | повна 1 мВ-роздільність, як у поточному 16B |
 | 2 | `temp_c` | int8 | −128..+127 °C | без змін · ⊕ 2026-10-10: `−128` = «не виміряно» в CCM-ері (`ADC_TEMP_UNMEASURED_C`, FW.50) — виміряне значення обрізається до −127..127 |
-| 3 | `acoustic_events` | uint8 (saturating) | 0..255 — з HW.30 завжди 0, крім сентинела часу `0xFE` (ARCH.41-B) | FW.22 — saturating increment, без overflow ambiguity; ⊕ з HW.30 писача немає (пʼєзо зрізано); ECB-кадр лишається як є, а CCM-байт віддає пакет wire-rev2.2 (§2.1, реалізація [`00_07`](00_07_Action_Plan_Tracker) FW.66) |
+| 3 | `fw_report7` | bitfield | `[reverted:1 \| id7]` — SEC.20 contract-звіт (`Fw_Report_To_Ccm7`, `fw_report.h`); legacy `0x00`; і в panic-кадрі | **[SEC.20 · wire-rev2.2]** перенесений із байта 19; panic-літерали живуть у `Pack_CCM_Panic_Payload` (`lora_ccm.h`, host-тест), бо `0xFF` panic-коду rev2.1 тут читався б відкатом із critical-алертом `firmware_reverted`. ⚠️ `0xFE`/`0xFF` у цьому байті — звичайні звіти (відкат id 126/127), не сентинели. До 2026-10-10 байт ніс `acoustic_events` (з HW.30 завжди 0), код часу `0xFE` (ARCH.41-B — тепер біт diag) і panic-код `0xFF` |
 | 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для [E.63] метаболічного `growth_points` (delta_t→GP на пристрої; backend декодує wire, точна звірка — FW.2, [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)) |
 | 6 | `status_byte` | bitfield | `[panic:1 \| status:2 \| growth_points:5]` | FW.29 PANIC_FLAG_BIT (bit 7) + status (bits 6..5) + growth (bits 4..0); зменшено growth з 6 → 5 бітів (0..31), масштабований діапазон у `bio_contract.rb` |
 | 7 | `mesh_ctrl` | bitfield | `[ttl:4 \| fw_version_id_low:4]` | TTL у верхніх 4 бітах (FW.10, max 15 hop), FW low-nibble (16-version rotation epoch керується OTA config) |
-| 8..9 | `device_z` | uint16 BE | фіксована точка z×512 (q=2⁻⁹, 0..127.99); `0xFFFF` = «Лоренц не рахувався» (VM_ERROR / сід не провіжинено; у grace-вікні ARCH.41-C кадру телеметрії немає) | **[FW.31 Gate D]** numeric DCI: похибка квантування ≤ 0.00098 < ε 0.001 (⊕ 2026-10-10: числову DCI й читання поля бекендом знято, FW.66 (Б)); у шифртексті (z = здоров'я дерева); pack — `Pack_FW2_Device_Z` · ⊕ «z = здоров'я» спростовано присудом Z = DCI-only ([`05_05 §8.1`](05_05_Slashing_and_Risk_Policy)), а під гілкою (Б) поле стає резервом wire-ревізії ([`00_07` — FW.66](00_07_Action_Plan_Tracker); ledger нижче) |
-| 10 | `diag` | bitfield | `[thr_invalid:5 \| fauna_mode:1 \| fauna_skip:1 \| fc_degraded:1]` | **[FW.18b]** лічильник відкинутих OTA-порогів (у 21B жив у байті 11) + **[FW.42]** fauna-маркери ([`03_03 §10.4`](03_03_TinyML_Acoustic_Inference)) + **[FW.2]** I-HW degraded-прапорець; pack — `Pack_FW2_Diag`. ⊕ З HW.30 `thr_invalid` і fauna-біти завжди 0 (писача немає — пороги й фауна пішли з пʼєзо); живий лише `fc_degraded`, доля слоту — [`00_07`](00_07_Action_Plan_Tracker) FW.59 |
-| 11 | `vpd_index` | uint8 | до BME280 — SEC.20 contract-звіт `[reverted:1 \| id7]` (`Fw_Report_To_Vpd`); legacy `0x00` | **[HW.32]** дім VPD-індексу — ⚠️ до BME280 байт ЗАЙНЯТИЙ: це єдиний сигнал відкату прошивки в CCM-ері (бекенд читає його як `firmware_version_id`), тож «вільним» його не читати; шкала index→kPa визначається при калібруванні сенсора — закриває double-booking байта 14 з gossip'ом у 21B-плані |
+| 8..9 | `voc_mv` | uint16 BE | мВ `V_OC` EBFC; `0` = «не виміряно» (`FW2_VOC_MV_UNKNOWN` ≡ `VOC_MV_UNKNOWN`) | **[HW.19 · wire-rev2.2]** лише спроба max-hold, що завершилась після попереднього кадру; без мультиплексу. До HAL-половини V_OC ([`00_07` — HW.19](00_07_Action_Plan_Tracker)) прошивка пише 0; бекенд поле не персистить — колонка й VOC-корекція є гейтованою ногою HW.19. До 2026-10-10 байти несли `device_z` (FW.31 numeric DCI, знято з гілкою (Б)) |
+| 10 | `diag` | bitfield | `[reset_cause:3 \| time_uncertain:1 \| voc_attempt:1 \| резерв:2 \| fc_degraded:1]` | **[wire-rev2.2]** `reset_cause` — код `reset_cause.h` (`0` = «не повідомлено»; джерело — нога [`00_07` — FW.59](00_07_Action_Plan_Tracker), доти 0); `time_uncertain` — ARCH.41-B (`soldier_unix_ts == 0`; бекенд ставить `time_unsynced_fallback`); `voc_attempt` — «вікно max-hold закрилось» (HW.19); `fc_degraded` — FW.2 I-HW (біт не рухався з rev2). Pack — `Pack_FW2_Diag`; бекенд-дзеркало бітів — `TelemetryUnpackerService::CCM_DIAG_*` (рівність пінить спека). До 2026-10-10: `[thr_invalid:5 \| fauna_mode:1 \| fauna_skip:1 \| fc_degraded:1]` |
+| 11 | `vpd_index` | uint8 | `0` = «немає сенсора» (`FW2_VPD_INDEX_NONE` < `BME280_VPD_INDEX_MIN`) | **[HW.32 · wire-rev2.2]** лише VPD-індекс; call-site BME280 — бенчева нога HW.32, доти 0; шкала index→kPa визначається при калібруванні сенсора (VPD-колонку бекенд не пише до неї) — закриває double-booking байта 14 з gossip-ом у 21B-плані. До 2026-10-10 байт ніс SEC.20-звіт (тепер байт 11) |
 | 12..13 | `ema_delta_t_s` | uint16 BE | 0..65535 с (сатурація min(EMA, 0xFFFF)) | **[E.63 (г), rev2.1]** КОНТРАКТ «wire = вхід GP»: САМЕ це число з'їла `metabolic_health` цього циклу (Soldier Фаза-3 сатурує ДО mruby і пакує те саме; panic → 0, **не-warmed EMA → `DELTA_T_UNKNOWN_S` = 0**, не 60) → backend `expected_homeostasis_gp(ema)` recompute'ить GP **stateless байт-точно**; ⛔ **«BASELINE 60» тут стояло до 2026-09-11 і було СПРОСТОВАНЕ кодом:** `soldier/main.c` ініціалізує `delta_t_for_lorenz = DELTA_T_UNKNOWN_S` і переписує його лише під `EMA_Is_Warmed_Up()`, тож на дроті нуль. Не повертати: `metabolic_health(60)` дає clamp 1.0 = `GP_HOMEO_MAX`, тобто «нейтральний» baseline приземлявся рівно на МАКСИМУМ грошового виходу (ARCH.102, [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)); observational до bench-калібрування порогів. RAW dT (bytes 4..5) лишається для діагностики/server-EMA ([`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)). Транзієнт (не персистить) |
 
 **Поля, які видалено / переміщено з поточного 16-байтного payload:**
@@ -415,19 +415,19 @@ static void MX_CRYP_Init(void)
 
 | Претендент | Розмір | Дім у rev2 | Статус |
 |---|---|---|---|
-| FW.31 Gate D `device_z` (numeric DCI; покриття ≥95% → мультиплексувати не можна) | 2 B | ciphertext bytes 16..17 (`×512`, сентинель `0xFFFF`) | ✅ · ⊕ під гілкою (Б) (⚖️ founder 2026-10-05, [`00_07` — FW.66](00_07_Action_Plan_Tracker)) — резерв wire-ревізії: Лоренц іде з пристрою, числова DCI FW.31 втрачає предмет, тож обидва байти звільняться з реалізацією (Б) всередині того самого кадру (нуль ефіру); доля — wire-rev2.2 ↓: байти несуть `voc_mv` |
+| FW.31 Gate D `device_z` (numeric DCI; покриття ≥95% → мультиплексувати не можна) | 2 B | ciphertext bytes 16..17 (`×512`, сентинель `0xFFFF`) | ✅ · ⊕ під гілкою (Б) (⚖️ founder 2026-10-05, [`00_07` — FW.66](00_07_Action_Plan_Tracker)) — резерв wire-ревізії: Лоренц іде з пристрою, числова DCI FW.31 втрачає предмет, тож обидва байти звільняться з реалізацією (Б) всередині того самого кадру (нуль ефіру); доля — wire-rev2.2 ↓: байти несуть `voc_mv` · ⊕ звільнено 2026-10-10 — байти 16..17 несуть `voc_mv` (wire-rev2.2) |
 | FW.18b `thr_invalid` (випав із 24B-freeze!) | 5 біт | `diag[7..3]` | ✅ · ⊕ з HW.30 завжди 0 — писача немає; у wire-rev2.2 ↓ ці біти несуть `reset_cause` · `time_uncertain` · `voc_attempt` |
 | FW.42 fauna mode + skip | 2 біти | `diag[2..1]` | ✅ · ⊕ з HW.30 завжди 0 — писача немає; у wire-rev2.2 ↓ ці біти — резерв |
 | FW.2 `fc_degraded` (I-HW сторожа без транспорту) | 1 біт | `diag[0]` | ✅ |
 | FW.20-S2 gossip `ts_lsb` (МУСИТЬ бути cleartext) | 1 B | AAD byte 4 (екс-FC-нуль — задарма) | ✅ |
-| HW.32 VPD-індекс (закрив double-booking байта 14 у 21B-плані: 03_01 §HW.32 і 03_02 §5а.2 обидва претендували на byte 14) | 1 B | ciphertext byte 19 (до BME280 — SEC.20 contract-звіт `[reverted:1\|id7]`) | ✅ (шкала — при калібруванні) · ⊕ у wire-rev2.2 ↓ SEC.20 переїжджає в байт 11, байт 19 — лише VPD |
+| HW.32 VPD-індекс (закрив double-booking байта 14 у 21B-плані: 03_01 §HW.32 і 03_02 §5а.2 обидва претендували на byte 14) | 1 B | ciphertext byte 19 (до BME280 — SEC.20 contract-звіт `[reverted:1\|id7]`) | ✅ (шкала — при калібруванні) · ⊕ у wire-rev2.2 ↓ SEC.20 переїжджає в байт 11, байт 19 — лише VPD (застосовано 2026-10-10) |
 
 
 **Розв'язана черга (wire-rev2.2, ⚖️ founder 2026-10-08 — розкладку ратифіковано, реалізація — нога [`00_07` — FW.66](00_07_Action_Plan_Tracker)):**
 
-> ⚖️ **Пакет слотів CCM-кадру під гілкою (Б) — РАТИФІКОВАНО founder 2026-10-08 за рекомендацією** (дослівно: «FW.59 HW.41 BIZ.25 - так, застосовуй»; подання — ⚖️-нога [`00_07` — FW.59](00_07_Action_Plan_Tracker) того ж дня). Довжина кадру та сама — 30 Б, ефір — нуль. До реалізації прошивка пакує rev2.1 (шапка `firmware/common/lora_ccm.h`), тож рядки нижче — ціль ревізії (Б), не опис чинного коду.
+> ⚖️ **Пакет слотів CCM-кадру під гілкою (Б) — РАТИФІКОВАНО founder 2026-10-08 за рекомендацією** (дослівно: «FW.59 HW.41 BIZ.25 - так, застосовуй»; подання — ⚖️-нога [`00_07` — FW.59](00_07_Action_Plan_Tracker) того ж дня). Довжина кадру та сама — 30 Б, ефір — нуль. До реалізації прошивка пакує rev2.1 (шапка `firmware/common/lora_ccm.h`), тож рядки нижче — ціль ревізії (Б), не опис чинного коду. ⊕ **Застосовано 2026-10-10** ([`00_07` — FW.66](00_07_Action_Plan_Tracker)): прошивка (обидва писачі plaintext — `Pack_CCM_Sensor_Payload` і `Pack_CCM_Panic_Payload` у `lora_ccm.h`) і бекенд пакують і читають rev2.2; поля без джерела пишуться власним «не виміряно» — `voc_mv` (HAL-половина V_OC, HW.19), `vpd_index` (call-site BME280, HW.32), `reset_cause` (читання причини ребуту й стан під Standby — окремий зріз FW.59).
 
-| Байт | rev2.1 (чинний код) | wire-rev2.2 |
+| Байт | rev2.1 (до 2026-10-10) | wire-rev2.2 (чинний код) |
 |---|---|---|
 | 11 | `acoustic_events` — писача немає з HW.30; несе `0xFE` ARCH.41-B і `0xFF` panic-код | SEC.20-звіт `[reverted:1\|id7]`, перенесений із байта 19, — і в panic-кадрі: інакше його `0xFF` читався б відкатом із critical-алертом `firmware_reverted` (`AlertDispatchService`) |
 | 16..17 | `device_z` (знімає (Б)) | `voc_mv` uint16 BE, мВ; 0 = «не виміряно» (`VOC_MV_UNKNOWN`); лише спроба max-hold, що завершилась після попереднього кадру |
@@ -1451,7 +1451,7 @@ HAL_CRYP_Init(&hcryp);
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
 | **Зберігання ключа** | ✅ Protected Flash Sector (session `"KEYL"`, cluster control-plane `"KEYB"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) ⚫ **RESERVED і НЕ використовується** — post-SEC.14 ключ лишається у Protected Flash в обох гілках |
 | **Унікальність ключа** | ✅ Двоключова модель (FW.2 (в), §3.1) | Session per-device: `HKDF(MASTER, uid, "silken-aes-128-lora-key")` — money-path ізольований (злам 1 вузла ≠ підробка мінта сусідів); control-plane per-cluster: `HKDF(MASTER, "cluster:<id>", "silken-aes-128-broadcast-key")` — свідомий broadcast-структурний per-cluster секрет; CoAP per-gateway. Domain separation 03_06 §2 |
-| **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 30B wire-rev2.1 packet + Frame Counter + 8B MIC) |
+| **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 30B wire-rev2.2 packet + Frame Counter + 8B MIC) |
 | **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
 | **CoAP batch origin + integrity** | 🟡 **L1 QATT shipped** (2026-06-07) | Ed25519 batch-підпис Королеви (§2.2): закриває CBC-malleability/injection + anti-replay у nonce-вікні; legacy L0 без підпису ще приймається (fleet-перехід); 👤 bench: EDSK на кремнії. Ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |

@@ -11,11 +11,17 @@ class TelemetryUnpackerService < ApplicationService
   # Enabled via ENV `TELEMETRY_CCM_ENABLED=true`; defaults to ECB so the
   # production wire format is unchanged until firmware ships CCM emission.
   # Rev2 rationale + повна розкладка: docs/03_05 wire-budget ledger.
-  CCM_CHUNK_SIZE             = 31 # wire-rev2.1: air 30B + Queen |RSSI| (E.63 (г))
-  # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE, RAW) Status(u8) MeshCtrl(u8)
-  # DeviceZ(2BE ×512, 0xFFFF=none) Diag(u8) VpdIndex(u8)
+  CCM_CHUNK_SIZE             = 31 # wire-rev2.2: air 30B + Queen |RSSI| (E.63 (г))
+  # Vcap(2BE) Temp(i8) FwReport7(u8 [reverted:1|id7]) dt(2BE, RAW) Status(u8) MeshCtrl(u8)
+  # VocMv(2BE, 0=не виміряно) Diag(u8) VpdIndex(u8, 0=немає сенсора)
   # EmaDeltaT(2BE — «wire = вхід GP», E.63 (г): stateless recompute)
   CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
+  # [FW.66 · wire-rev2.2] diag-байт CCM-кадру = [reset_cause:3 | time_uncertain:1 |
+  # voc_attempt:1 | резерв:2 | fc_degraded:1] — дзеркало FW2_DIAG_* (firmware/common/
+  # lora_ccm.h), рівність пінить спека. Бекенд читає два біти; reset_cause і
+  # voc_attempt споживача тут не мають (нижче, у розборі).
+  CCM_DIAG_TIME_UNCERTAIN_BIT = 0x10
+  CCM_DIAG_FC_DEGRADED_BIT    = 0x01
 
   # --- КОНСТАНТИ ЕВОЛЮЦІЇ (The Immutable Offsets) ---
   # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
@@ -76,7 +82,9 @@ class TelemetryUnpackerService < ApplicationService
   # recovery candidate must match the real value.
   FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_957
 
-  # [ARCH.41-B] Wire-sentinel «час невідомий»: Soldier без жодного beacon'а
+  # [ARCH.41-B] Wire-sentinel «час невідомий» ECB-кадру (CCM-кадр wire-rev2.2 несе той
+  # самий сигнал бітом diag `time_uncertain`, і акустичного байта в ньому немає):
+  # Soldier без жодного beacon'а
   # (cold-boot після VBAT-loss / Королева мовчить) шле 0xFE в acoustic-байті,
   # а Лоренц НА ПРИСТРОЇ рахується з acoustic=0 — дзеркальна нейтралізація
   # тут (до DCI) тримає паритет. З HW.30 (пʼєзо зрізано) інших значень цей
@@ -415,7 +423,7 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха ключа, що пройшов MIC).
-    # Тут — лише пре-фільтр ДО побічних ефектів кадру (метаболічна звірка, CMD_TIME_SYNC);
+    # Тут — лише пре-фільтр ДО побічних ефектів кадру (метаболічна звірка, лічильники, логи);
     # авторитетний допуск — `CcmReplayWindow.admit!` у транзакції `commit_telemetry`.
     ccm_frame = { device_uid: hex_did, key_epoch: key_epoch, frame_counter: frame_counter }
     if (reason = CcmReplayWindow.rejection(**ccm_frame))
@@ -426,10 +434,12 @@ class TelemetryUnpackerService < ApplicationService
     SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL.increment
 
     sensor   = plaintext.unpack(CCM_SENSOR_PAYLOAD_FORMAT)
-    # Байти 16..17 (`device_z` wire-rev2.1) бекенд не читає [FW.66 (Б)]: Лоренца в CCM-ері
-    # немає, а wire-rev2.2 віддає їх `voc_mv` (`03_05 §2.1`).
-    vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl,
-      _device_z_raw, diag_byte, vpd_index, ema_delta_t_s = sensor
+    # [FW.66 · wire-rev2.2] Розкладка — ledger `03_05 §2.1`. Байти 16..17 (`voc_mv`, HW.19) і
+    # 19 (`vpd_index`, HW.32) споживача тут ще не мають: колонка `voc_mv` і VOC-корекція —
+    # гейтована нога HW.19 (0 читати «не виміряно», ніколи нулем вольт), VPD-колонка чекає
+    # шкали index→kPa. Тож іменовані, але не персистяться — вигадувати їм колонки рано.
+    vcap_mv, temp_c, fw_report7, delta_t_s, status_byte, mesh_ctrl,
+      _voc_mv, diag_byte, _vpd_index, ema_delta_t_s = sensor
 
     temp_unmeasured = temp_c == CCM_TEMP_UNMEASURED_C
     unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && (temp_unmeasured || SAFE_TEMP_RANGE.cover?(temp_c))
@@ -442,25 +452,27 @@ class TelemetryUnpackerService < ApplicationService
 
     # mesh_ctrl bitfield = [ttl:4 (high nibble) | fw_version_epoch_nibble:4 (low nibble)].
     # Low-nibble = C-image epoch (compile-time, bytecode-OTA її не міняє) —
-    # contract-версію несе vpd-байт (SEC.20, нижче), нібл лишається транзієнтом.
+    # contract-версію несе байт 11 (SEC.20, нижче), нібл лишається транзієнтом.
     mesh_ttl     = (mesh_ctrl >> 4) & 0x0F
     bio_status   = interpret_status((status_byte >> 5) & 0x03)
 
-    # [SEC.20] vpd-байт тимчасово (до wire-rev2.2: FW.66 переносить звіт у байт 11, а байт 19
-    # віддає VPD HW.32) несе contract-звіт
-    # [reverted:1 | id7] — складаємо у спільні 16 біт fw_report-семантики
-    # (semantic-біт ставимо самі: CCM-прошивка з патчем шле звіт завжди),
-    # щоб TelemetryLog-хелпери працювали однаково для обох ер.
+    # [SEC.20 · wire-rev2.2] Байт 11 несе contract-звіт [reverted:1 | id7] — і в panic-кадрі
+    # (паніку несе біт статусу, не код у цьому байті). Складаємо у спільні 16 біт
+    # fw_report-семантики (semantic-біт ставимо самі: CCM-прошивка шле звіт завжди),
+    # щоб TelemetryLog-хелпери працювали однаково для обох ер. ⚠️ Значення 0xFE/0xFF тут
+    # — звичайні звіти (відкат id 126/127), НЕ сентинели ECB-ери: цей байт ARCH.41-B-
+    # нейтралізації не проходить.
     fw_report = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
-                (vpd_index.anybits?(0x80) ? TelemetryLog::FW_REPORT_REVERTED_BIT : 0) |
-                (vpd_index & TelemetryLog::FW_REPORT_CCM_ID_MASK)
+                (fw_report7.anybits?(0x80) ? TelemetryLog::FW_REPORT_REVERTED_BIT : 0) |
+                (fw_report7 & TelemetryLog::FW_REPORT_CCM_ID_MASK)
 
     log_attributes = {
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
       voltage_mv: supply_mv(calibration, vcap_mv, hex_did),
       temperature_c: ccm_temperature_c(calibration, temp_c, temp_unmeasured, hex_did),
-      acoustic_events: acoustic,
+      # `acoustic_events` — свідомо НІЧОГО (NULL): CCM-кадр wire-rev2.2 акустики не везе (пʼєзо
+      # зрізано, HW.30), а 0 був би виміряним нулем.
       metabolism_s: delta_t_s,
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: mesh_ttl,
@@ -482,31 +494,20 @@ class TelemetryUnpackerService < ApplicationService
     # [SEC.40] Транзієнт: допуск кадру у вікно — у транзакції рядка (`commit_telemetry`).
     log_attributes[:ccm_frame] = ccm_frame
 
-    # [FW.18b] diag-байт (wire-rev2 byte 18): [thr_invalid:5 | fauna_mode:1 |
-    # fauna_skip:1 | fc_degraded:1] — дзеркало Pack_FW2_Diag (lora_ccm.h).
-    # [HW.30] thr_invalid і fauna_skip писача не мають (TinyML і фауна на Солдаті
-    # паркуються): їхні метрики знято, декодування й warn-логи лишаються сторожею
-    # старої прошивки. fc_degraded — живий: метрика без per-DID мітки, дерево — у лозі.
-    threshold_invalid = (diag_byte >> 3) & 0x1F
-    if threshold_invalid.positive?
-      Rails.logger.warn(
-        "🎚️ [FW.18b] #{hex_did}: відкинуті OTA-пороги TinyML — лічильник #{threshold_invalid}" \
-        "#{threshold_invalid == 31 ? ' (wire-сатурація, реальне значення може бути більшим)' : ''}"
-      )
-    end
-    if diag_byte.anybits?(0x02) # fauna_skip [FW.42]
-      Rails.logger.warn "🦉 [FW.42] #{hex_did}: fauna-сесію пропущено через низький Vcap (брауноут-захист)."
-    end
-    if diag_byte.anybits?(0x01) # fc_degraded [FW.2 I-HW]
+    # [FW.66 · wire-rev2.2] diag-байт (byte 18) — CCM_DIAG_* ↑. Читаємо два біти:
+    # fc_degraded (FW.2 I-HW; метрика без per-DID мітки, дерево — у лозі) і time_uncertain
+    # (ARCH.41-B; у rev2.1 він їхав кодом 0xFE в акустичному байті). reset_cause (FW.59) і
+    # voc_attempt (HW.19) споживача на бекенді ще не мають — ⛔ не декодуй їх як колишні
+    # thr_invalid/fauna: ті біти з HW.30 без писача, і старий декодер прочитав би новий
+    # код ребуту «відкинутими порогами TinyML».
+    if diag_byte.anybits?(CCM_DIAG_FC_DEGRADED_BIT)
       SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL.increment
       Rails.logger.warn "🛡️ [FW.2] #{hex_did}: інваріант FC high-water втрачено (Flash відмовляє) — nonce-гарантія деградована."
     end
-
-    # [HW.32] Калібрований VPD у цьому байті ще не живе (шкала index→kPa
-    # прийде з BME280; vpd-колонка чекає) — до того байт несе SEC.20-звіт ↑.
-
-    # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО метаболічної звірки + CMD_TIME_SYNC.
-    apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
+    if diag_byte.anybits?(CCM_DIAG_TIME_UNCERTAIN_BIT)
+      log_attributes[:time_unsynced_fallback] = true
+      Rails.logger.info "🕰️ [ARCH.41-B] DID #{hex_did}: Soldier ще не чув часу (diag time_uncertain) — час доїде конвертом poll-відповіді."
+    end
 
     # ⚖️ [FW.66 (Б)] CCM-ера Лоренца не має: ні серверного кроку, ні DCI, ні `K_seed`
     # (`03_04 §7.3`). Печатку кадру тримає криптографія — MIC і межа повтору SEC.40, — а

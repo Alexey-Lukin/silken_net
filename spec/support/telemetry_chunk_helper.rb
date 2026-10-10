@@ -82,20 +82,19 @@ module TelemetryChunkHelper
   end
 
   # ---------------------------------------------------------------------
-  # 31-byte AES-128-CCM chunk (FW.2 wire-rev2.1: rev2 2026-06-12 +
-  # 2B EMA-delta_t 2026-07-03, E.63 (г)).
+  # 31-byte AES-128-CCM chunk (FW.2 wire-rev2.2: rev2 2026-06-12 +
+  # 2B EMA-delta_t 2026-07-03, E.63 (г); байти 11 · 16..17 · 18 · 19 перерозкладено (Б), FW.66).
   #
   #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:14][MIC:8]
   #
   # Plaintext sensor layout (14 bytes, `CCM_SENSOR_PAYLOAD_FORMAT`):
-  #   vcap_mv(2), temp_c(1), acoustic(1), delta_t_s(2, RAW),
-  #   status_byte(1), mesh_ctrl(1), device_z(2 BE, ×512; 0xFFFF = none),
-  #   diag(1), vpd_index(1), ema_delta_t_s(2 BE — «wire = вхід GP»)
+  #   vcap_mv(2), temp_c(1), fw_report7(1, SEC.20 [reverted:1|id7]), delta_t_s(2, RAW),
+  #   status_byte(1), mesh_ctrl(1), voc_mv(2 BE; 0 = не виміряно),
+  #   diag(1), vpd_index(1; 0 = немає сенсора), ema_delta_t_s(2 BE — «wire = вхід GP»)
   #
   # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`;
-  # `diag` packs `[thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1]`.
-  # Байти 16..17 (`device_z` wire-rev2.1) несуть 0xFFFF — «Лоренц не рахувався»: бекенд
-  # їх не читає [FW.66 (Б)], а wire-rev2.2 віддає їх `voc_mv`.
+  # `diag` packs `[reset_cause:3 | time_uncertain:1 | voc_attempt:1 | резерв:2 | fc_degraded:1]`
+  # (дзеркало Pack_FW2_Diag, firmware/common/lora_ccm.h).
   # `ema:` дефолтить у `dt` — контракт «wire = вхід GP» для спек, яким EMA
   # неважливий; точна metabolic-гілка тестується явним `ema:`.
   #
@@ -104,14 +103,20 @@ module TelemetryChunkHelper
   # across many calls should define a thin local wrapper that fills
   # them in, keeping this helper pure and reusable.
   # ---------------------------------------------------------------------
-  def build_ccm_chunk(did_hex:, key:, rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:,
-                      fw_nibble: 0, fc: 1, diag: 0, vpd_index: 0,
+  def build_ccm_chunk(did_hex:, key:, rssi:, vcap:, temp:, dt:, status:, ttl:,
+                      fw_nibble: 0, fc: 1, fw_report7: 0, voc_mv: 0, diag: 0, vpd_index: 0,
                       gossip_ts_lsb: 0, ema: nil)
-    did_int      = did_hex.to_i(16)
-    did_bytes    = [ did_int ].pack("N")
     mesh_ctrl    = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
-    plaintext = [ vcap, temp, acoustic, dt, status, mesh_ctrl,
-                  0xFFFF, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
+    plaintext = [ vcap, temp, fw_report7, dt, status, mesh_ctrl,
+                  voc_mv, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
+    build_ccm_chunk_from_plaintext(did_hex: did_hex, key: key, rssi: rssi, plaintext: plaintext,
+                                   fc: fc, gossip_ts_lsb: gossip_ts_lsb)
+  end
+
+  # Чанк із ГОТОВОГО 14-байтного plaintext — для золотих векторів прошивки
+  # (`firmware/test/test_ccm.c` G_PT_REV22): розкладку тоді задає прошивка, а не цей хелпер.
+  def build_ccm_chunk_from_plaintext(did_hex:, key:, rssi:, plaintext:, fc: 1, gossip_ts_lsb: 0)
+    did_bytes = [ did_hex.to_i(16) ].pack("N")
     ct, mic   = Cryptography::LoraCcm.encrypt(
       key: key, did_bytes: did_bytes, frame_counter: fc,
       gossip_ts_lsb: gossip_ts_lsb, plaintext: plaintext

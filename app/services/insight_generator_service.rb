@@ -270,7 +270,9 @@ class InsightGeneratorService < ApplicationService
         # CCM-рядків дає NULL, а `.to_f` зробив би з нього виміряний нуль, який хроніка
         # друкує замість «немає даних» (backend #64).
         avg_z: stats.avg_z&.to_f&.round(4),
-        max_acoustic: stats.max_acoustic.to_i,
+        # [FW.66 · wire-rev2.2] CCM-рядок акустики не везе (NULL) — `.to_i` зробив би з нього
+        # виміряний нуль, той самий клас, що `avg_z` рядком нижче (backend #64).
+        max_acoustic: stats.max_acoustic&.to_i,
         avg_vcap: stats.avg_vcap.to_i,
         avg_vpd: stats.avg_vpd&.to_f&.round(3) # nil доки firmware не шле VPD (HW.32)
       }

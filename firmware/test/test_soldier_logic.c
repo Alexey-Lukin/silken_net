@@ -3320,7 +3320,7 @@ TEST(test_sec10_two_panics_have_distinct_counters) {
 /* ════════════════════════════════════════════════════════════════════
  * [SEC.20] fw_report — wire-звіт contract-стану (common/fw_report.h)
  * ════════════════════════════════════════════════════════════════════
- * [sem:1|rev:1|id14] у байтах 12..13 (BE) + стиск у CCM vpd-байт.
+ * [sem:1|rev:1|id14] у байтах 12..13 (BE) + стиск у байт 11 CCM-кадру (wire-rev2.2).
  * Несучий інваріант: reverted ⇔ (kv ∧ hiwater>0 ∧ contract мертвий) —
  * сигнатура auto-fallback, що інакше тонула у здоровій телеметрії.
  */
@@ -3352,13 +3352,13 @@ TEST(test_sec20_report_id_modulo_14bit) {
     ASSERT_EQ(Fw_Report_Compose(1, 0x4001u, 0, 0), 0xC000 | 0x0001);
 }
 
-TEST(test_sec20_report_vpd_squeeze) {
+TEST(test_sec20_report_ccm7_squeeze) {
     /* CCM-стиск [rev:1|id7]: legacy → 0x00 (байт як слався до патча). */
-    ASSERT_EQ(Fw_Report_To_Vpd(0x0001), 0x00);              /* legacy      */
-    ASSERT_EQ(Fw_Report_To_Vpd(0x8000), 0x00);              /* factory     */
-    ASSERT_EQ(Fw_Report_To_Vpd(0x8000 | 42), 42);           /* running     */
-    ASSERT_EQ(Fw_Report_To_Vpd(0xC000 | 42), 0x80 | 42);    /* reverted    */
-    ASSERT_EQ(Fw_Report_To_Vpd(0x8000 | 0x2A85), 0x05);     /* id modulo 7 */
+    ASSERT_EQ(Fw_Report_To_Ccm7(0x0001), 0x00);              /* legacy      */
+    ASSERT_EQ(Fw_Report_To_Ccm7(0x8000), 0x00);              /* factory     */
+    ASSERT_EQ(Fw_Report_To_Ccm7(0x8000 | 42), 42);           /* running     */
+    ASSERT_EQ(Fw_Report_To_Ccm7(0xC000 | 42), 0x80 | 42);    /* reverted    */
+    ASSERT_EQ(Fw_Report_To_Ccm7(0x8000 | 0x2A85), 0x05);     /* id modulo 7 */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5249,7 +5249,7 @@ int main(void)
     RUN(test_sec20_report_running_ota);
     RUN(test_sec20_report_reverted_carries_burned_id);
     RUN(test_sec20_report_id_modulo_14bit);
-    RUN(test_sec20_report_vpd_squeeze);
+    RUN(test_sec20_report_ccm7_squeeze);
     RUN(test_sec21_guard_derive_hrng_nonzero_null_lsb);
     RUN(test_sec21_guard_derive_hrng_dead_falls_back);
     RUN(test_sec21_guard_derive_total_silence_last_resort);

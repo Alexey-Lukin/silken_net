@@ -24,7 +24,8 @@
  *                    віддасть ширше поле наступній wire-ревізії (wire-rev2.2
  *                    лишила CCM-ехо id7, лише переніс його в байт 11)
  *
- * CCM-ера: той самий звіт стискається у vpd_index-байт (до BME280/HW.32):
+ * CCM-ера: той самий звіт стискається в байт 11 CCM-кадру (wire-rev2.2, ⚖️ 2026-10-08;
+ *   у rev2.1 він їхав vpd-байтом 19, який тепер віддано VPD HW.32) — і в panic-кадрі:
  *   [7] reverted | [6:0] id7. Несучий біт — reverted; echo 7 біт = best-effort
  *   (колізія modulo НІКОЛИ не маскує відкат). Фліп-день перепрошиває всі
  *   вузли → неоднозначність legacy-CCM (0x00 = factory АБО стара прошивка)
@@ -55,9 +56,9 @@ static inline uint16_t Fw_Report_Compose(int kv_mounted, uint32_t hiwater,
     return FW_REPORT_SEMANTIC_BIT; /* factory baseline — OTA ще не жив тут */
 }
 
-/* CCM vpd_index-байт: [reverted:1 | id7]. Legacy-семантика (semantic=0) →
+/* Байт 11 CCM-кадру: [reverted:1 | id7]. Legacy-семантика (semantic=0) →
  * 0x00, як байт слався до цього патча. */
-static inline uint8_t Fw_Report_To_Vpd(uint16_t report)
+static inline uint8_t Fw_Report_To_Ccm7(uint16_t report)
 {
     if (!(report & FW_REPORT_SEMANTIC_BIT)) return 0x00u;
     return (uint8_t)(((report & FW_REPORT_REVERTED_BIT) ? 0x80u : 0x00u) |

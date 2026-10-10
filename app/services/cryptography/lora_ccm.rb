@@ -9,13 +9,13 @@ require "openssl"
 # channel.
 #
 # Wire format on the air (30 bytes) — see docs/03_05 §2.1 (CCM wire) +
-# wire-budget ledger (the rev2/rev2.1 rationale):
+# wire-budget ledger (the rev2/rev2.1/rev2.2 rationale):
 #
 #   ┌─ AAD (cleartext, MIC-protected) ──────────────────────────────────┐
 #   │ DID[4] │ gossip_ts_lsb[1] │ FrameCounter[3 BE — справжня ширина]   │
 #   ├─ Ciphertext (sensor payload, encrypted, 14B) ─────────────────────┤
-#   │ Vcap[2 BE] │ temp[1] │ acoustic[1] │ dt[2 BE, RAW] │ status[1]    │
-#   │ ctrl[1] │ device_z[2 BE, ×512; 0xFFFF = none] │ diag[1] │ vpd[1]  │
+#   │ Vcap[2 BE] │ temp[1] │ fw_report7[1] │ dt[2 BE, RAW] │ status[1]  │
+#   │ ctrl[1] │ voc_mv[2 BE; 0 = none] │ diag[1] │ vpd[1; 0 = none]      │
 #   │ ema_delta_t_s[2 BE — «wire = вхід GP»: САМЕ це число з'їла        │
 #   │   metabolic_health на пристрої; stateless GP-recompute]           │
 #   ├─ MIC (CCM authentication tag, 64-bit) ────────────────────────────┤

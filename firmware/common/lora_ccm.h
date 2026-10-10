@@ -23,9 +23,11 @@
  * for (wire-budget ledger, docs/03_05 §2.1): the frame homes EVERY known
  * claimant (device_z, diag bits, VPD, gossip, EMA-delta_t) so no field
  * migration was pending at rev2.1. ⊕ wire-rev2.2 (⚖️ founder 2026-10-08,
- * ledger docs/03_05 §2.1) re-homes bytes 11 · 16..17 · 18 · 19 under
- * branch (Б) in the same 30 B — implementation is 00_07 FW.66, so the
- * map below is still rev2.1, the bytes this firmware actually packs.
+ * ledger docs/03_05 §2.1, implemented 00_07 FW.66) re-homes bytes 11 ·
+ * 16..17 · 18 · 19 under branch (Б) in the same 30 B — the map below is
+ * rev2.2, the bytes this firmware packs. The length is unchanged, so the
+ * frame carries no revision discriminator: safe only because no CCM frame
+ * has flown in the field before the FW.2 flip (ledger «Ціна»).
  * ⚠️ This line said SF10 / "28..31B / 48 symbols / 493.6 ms" until the
  * profile was reconciled: those are LoRaWAN-detour numbers (ARCH.34), not
  * ours. The conclusion survived the correction — 28B and 30B are still one
@@ -44,20 +46,20 @@
  *   ├─ Ciphertext (encrypted sensor payload) ──────────────────────┤
  *   │ Byte 8..9 : Vcap (uint16 BE, mV)                             │
  *   │ Byte 10   : temp_c (int8, °C)                                │
- *   │ Byte 11   : acoustic_events (uint8, saturating)              │
+ *   │ Byte 11   : SEC.20 contract report [reverted:1 | id7]        │
+ *   │             (Fw_Report_To_Ccm7, fw_report.h) — і в panic-   │
+ *   │             кадрі: доти тут їхав акустичний лічильник (з     │
+ *   │             HW.30 завжди 0), код часу 0xFE і panic-код 0xFF  │
  *   │ Byte 12..13: delta_t_s (uint16 BE, seconds — RAW останнього  │
  *   │             циклу; діагностика + server-side EMA, 03_01 §13.6)│
  *   │ Byte 14   : status_byte [panic:1 | status:2 | growth:5]      │
  *   │ Byte 15   : mesh_ctrl  [ttl:4 | fw_epoch_nibble:4]           │
- *   │ Byte 16..17: device_z (uint16 BE, z × 512; 0xFFFF = «не      │
- *   │             обчислено» — FW.31 numeric DCI, q=2⁻⁹ ⇒          │
- *   │             похибка ≤ 0.00098 < ε 0.001, діапазон 0..127.99) │
- *   │ Byte 18   : diag [thr_invalid:5 | fauna_mode:1 |             │
- *   │             fauna_skip:1 | fc_degraded:1] (FW.18b/FW.42/FW.2)│
- *   │ Byte 19   : vpd_index (uint8) — НЕ резерв: до BME280 несе    │
- *   │             SEC.20-звіт відкату [reverted:1|id7]             │
- *   │             (fw_report.h), єдиний сигнал відкату CCM-ери;    │
- *   │             wire-rev2.2 віддає байт VPD, звіт — у байт 11    │
+ *   │ Byte 16..17: voc_mv (uint16 BE, мВ V_OC EBFC, HW.19); 0 =     │
+ *   │             «не виміряно» — лише спроба max-hold, що         │
+ *   │             завершилась після попереднього кадру             │
+ *   │ Byte 18   : diag [reset_cause:3 | time_uncertain:1 |         │
+ *   │             voc_attempt:1 | резерв:2 | fc_degraded:1]        │
+ *   │ Byte 19   : vpd_index (uint8, HW.32); 0 = «немає сенсора»    │
  *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
  *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
  *   │             mruby metabolic_health цього циклу (сатуроване   │
@@ -137,32 +139,28 @@
 #define FW2_MESH_TTL_MASK          0x0Fu
 #define FW2_MESH_FW_NIBBLE_MASK    0x0Fu
 
-/* device_z (bytes 16..17): фіксована точка z × 512 (q = 2⁻⁹).
- * Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (ARCH.41-C grace,
- * невалідний seed) — бекенд пропускає numeric DCI-гілку (Gate D guard).
- * Стеля 0xFFFE = z 127.996 — вище за будь-який легальний z, і запас міряється
- * проти САМОГО z, не проти E.64-стелі: та при ρ_max=50 дорівнює 67, тобто
- * МЕНША за величину, яку мала б обмежувати. Пакується КІНЦЕВЕ z після 250
- * ітерацій; зміряний максимум на обох клампах (ρ=50 і σ=30, 1500 cold-start
- * зерен) — 83.8, запас ≈44. Сатурація у полі не зустрічається.
- * Дім виміру — 03_04 §7.1. */
-#define FW2_DEVICE_Z_SCALE         512u
-#define FW2_DEVICE_Z_NONE          0xFFFFu
-#define FW2_DEVICE_Z_MAX           0xFFFEu
+/* «Не виміряно» полів wire-rev2.2 — у самому значенні, без окремих біт валідності
+ * (ledger 03_05 §2.1, найслабша ланка (1)). Дзеркала: VOC_MV_UNKNOWN (voc_maxhold.h) і
+ * BME280_VPD_INDEX_MIN − 1 (bme280.h); рівність пінять test_voc_maxhold.c і test_bme280.c,
+ * бекенд читає ті самі нулі (TelemetryUnpackerService). */
+#define FW2_VOC_MV_UNKNOWN         0u
+#define FW2_VPD_INDEX_NONE         0u
 
-/* diag byte (byte 18) = [thr_invalid:5 | fauna_mode:1 | fauna_skip:1 |
- * fc_degraded:1] — лічильник зверху, прапорці знизу (патерн ttl_byte.h).
- * thr_invalid — FW.18b saturating-лічильник відкинутих OTA-порогів
- * (у 21B жив у байті 11 [thr:5|TTL:3]; CCM TTL живе у mesh_ctrl).
- * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа.
- * thr_invalid і fauna-біти з HW.30 завжди 0; у wire-rev2.2 (ledger 03_05 §2.1)
- * біти thr_invalid несуть reset_cause · time_uncertain · voc_attempt, а
- * fauna-біти стають резервом — реалізація 00_07 FW.66. */
-#define FW2_DIAG_THR_INVALID_SHIFT 3u
-#define FW2_DIAG_THR_INVALID_MAX   31u
-#define FW2_DIAG_FAUNA_MODE_BIT    0x04u
-#define FW2_DIAG_FAUNA_SKIP_BIT    0x02u
-#define FW2_DIAG_FC_DEGRADED_BIT   0x01u
+/* diag byte (byte 18), wire-rev2.2 = [reset_cause:3 | time_uncertain:1 |
+ * voc_attempt:1 | резерв:2 | fc_degraded:1].
+ * reset_cause — код firmware/common/reset_cause.h (0 = «не повідомлено», FW.59);
+ * time_uncertain — Солдат ще не чув часу (soldier_unix_ts == 0, ARCH.41-B; у
+ * rev2.1 цей сигнал їхав кодом 0xFE у байті 11); voc_attempt — спроба max-hold
+ * V_OC завершилась (voc_mv 0 з voc_attempt 1 = «міряв, вікно зіпсоване», з 0 —
+ * «не міряв»); fc_degraded — FW.2 I-HW сторожа, біт не рухався з rev2 (у rev2.1
+ * над ним жили thr_invalid і fauna-біти — з HW.30 без писача). Дзеркало бітів у
+ * бекенді — TelemetryUnpackerService::CCM_DIAG_*, рівність пінить спека. */
+#define FW2_DIAG_RESET_CAUSE_SHIFT  5u
+#define FW2_DIAG_RESET_CAUSE_MASK   0x07u
+#define FW2_DIAG_TIME_UNCERTAIN_BIT 0x10u
+#define FW2_DIAG_VOC_ATTEMPT_BIT    0x08u
+#define FW2_DIAG_RESERVED_MASK      0x06u
+#define FW2_DIAG_FC_DEGRADED_BIT    0x01u
 
 /* ----- pure-bit helpers (no HAL dependency, host-testable directly) ----- */
 
@@ -232,63 +230,65 @@ static inline int Fw2_Ccm_Tag_Equal(const uint8_t a[FW2_CCM_MIC_LEN],
     return diff == 0;
 }
 
-/* Квантування device_z для дроту. valid=0 (Лоренц не рахувався) →
- * сентинель NONE. Від'ємний/несинченний z (не трапляється на атракторі,
- * захист від сміття) → 0. Round-to-nearest: похибка ≤ q/2 = 0.00098. */
-static inline uint16_t Pack_FW2_Device_Z(float z, uint8_t valid) {
-    if (!valid) return (uint16_t)FW2_DEVICE_Z_NONE;
-    if (!(z > 0.0f)) return 0u; /* NaN теж сюди — чесний нуль, не сміття */
-    float scaled = z * (float)FW2_DEVICE_Z_SCALE + 0.5f;
-    if (scaled >= (float)FW2_DEVICE_Z_MAX) return (uint16_t)FW2_DEVICE_Z_MAX;
-    return (uint16_t)scaled;
-}
-
-static inline uint8_t Pack_FW2_Diag(uint8_t thr_invalid, uint8_t fauna_mode,
-                                    uint8_t fauna_skip, uint8_t fc_degraded) {
-    uint8_t capped = (thr_invalid > FW2_DIAG_THR_INVALID_MAX)
-                         ? (uint8_t)FW2_DIAG_THR_INVALID_MAX
-                         : thr_invalid;
-    return (uint8_t)((uint8_t)(capped << FW2_DIAG_THR_INVALID_SHIFT) |
-                     (fauna_mode  ? FW2_DIAG_FAUNA_MODE_BIT  : 0u) |
-                     (fauna_skip  ? FW2_DIAG_FAUNA_SKIP_BIT  : 0u) |
-                     (fc_degraded ? FW2_DIAG_FC_DEGRADED_BIT : 0u));
+/* Код поза 0..7 не обрізається маскою в ЧУЖИЙ код — він стає «не повідомлено». */
+static inline uint8_t Pack_FW2_Diag(uint8_t reset_cause, uint8_t time_uncertain,
+                                    uint8_t voc_attempt, uint8_t fc_degraded) {
+    uint8_t cause = (reset_cause <= FW2_DIAG_RESET_CAUSE_MASK) ? reset_cause : 0u;
+    return (uint8_t)((uint8_t)(cause << FW2_DIAG_RESET_CAUSE_SHIFT) |
+                     (time_uncertain ? FW2_DIAG_TIME_UNCERTAIN_BIT : 0u) |
+                     (voc_attempt    ? FW2_DIAG_VOC_ATTEMPT_BIT    : 0u) |
+                     (fc_degraded    ? FW2_DIAG_FC_DEGRADED_BIT    : 0u));
 }
 
 static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
-                                           uint8_t acoustic, uint16_t delta_t_s,
+                                           uint8_t fw_report7, uint16_t delta_t_s,
                                            uint8_t status_byte, uint8_t mesh_ctrl,
-                                           uint16_t device_z, uint8_t diag,
+                                           uint16_t voc_mv, uint8_t diag,
                                            uint8_t vpd_index, uint16_t ema_delta_t_s,
                                            uint8_t out[FW2_CCM_PLAINTEXT_LEN]) {
     out[0]  = (uint8_t)(vcap_mv >> 8);
     out[1]  = (uint8_t)(vcap_mv);
     out[2]  = (uint8_t)temp_c;
-    out[3]  = acoustic;
+    out[3]  = fw_report7;
     out[4]  = (uint8_t)(delta_t_s >> 8);
     out[5]  = (uint8_t)(delta_t_s);
     out[6]  = status_byte;
     out[7]  = mesh_ctrl;
-    out[8]  = (uint8_t)(device_z >> 8);
-    out[9]  = (uint8_t)(device_z);
+    out[8]  = (uint8_t)(voc_mv >> 8);
+    out[9]  = (uint8_t)(voc_mv);
     out[10] = diag;
     out[11] = vpd_index;
     out[12] = (uint8_t)(ema_delta_t_s >> 8);
     out[13] = (uint8_t)(ema_delta_t_s);
 }
 
+/* Plaintext panic-кадру wire-rev2.2 — ОДИН дім panic-літералів (скіл firmware #25:
+ * у байта більше одного писача). Сенсорних полів паніка не несе (нулі, як legacy),
+ * EMA = 0 (не-гомеостаз — бекенд recompute пропускає), voc/vpd — свої «не виміряно»;
+ * а байт 11 несе той самий SEC.20-звіт, що й телеметрія: доти тут стояв panic-код
+ * 0xFF, і в rev2.2 він читався б відкатом із critical-алертом `firmware_reverted`.
+ * Паніку бекенд читає з біта статусу, не з коду. */
+static inline void Pack_CCM_Panic_Payload(uint8_t fw_report7, uint8_t mesh_ctrl,
+                                          uint8_t diag,
+                                          uint8_t out[FW2_CCM_PLAINTEXT_LEN]) {
+    Pack_CCM_Sensor_Payload(0u, 0, fw_report7, 0u, (uint8_t)FW2_STATUS_PANIC_BIT,
+                            mesh_ctrl, (uint16_t)FW2_VOC_MV_UNKNOWN, diag,
+                            (uint8_t)FW2_VPD_INDEX_NONE, 0u, out);
+}
+
 static inline void Unpack_CCM_Sensor_Payload(const uint8_t in[FW2_CCM_PLAINTEXT_LEN],
                                              uint16_t *vcap_mv, int8_t *temp_c,
-                                             uint8_t *acoustic, uint16_t *delta_t_s,
+                                             uint8_t *fw_report7, uint16_t *delta_t_s,
                                              uint8_t *status_byte, uint8_t *mesh_ctrl,
-                                             uint16_t *device_z, uint8_t *diag,
+                                             uint16_t *voc_mv, uint8_t *diag,
                                              uint8_t *vpd_index, uint16_t *ema_delta_t_s) {
     *vcap_mv       = (uint16_t)((in[0] << 8) | in[1]);
     *temp_c        = (int8_t)in[2];
-    *acoustic      = in[3];
+    *fw_report7    = in[3];
     *delta_t_s     = (uint16_t)((in[4] << 8) | in[5]);
     *status_byte   = in[6];
     *mesh_ctrl     = in[7];
-    *device_z      = (uint16_t)((in[8] << 8) | in[9]);
+    *voc_mv        = (uint16_t)((in[8] << 8) | in[9]);
     *diag          = in[10];
     *vpd_index     = in[11];
     *ema_delta_t_s = (uint16_t)((in[12] << 8) | in[13]);
