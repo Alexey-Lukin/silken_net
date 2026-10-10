@@ -37,6 +37,10 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/ttl_byte.h"   // [FW.18b] бітфілд байта 11: [thr_invalid:5|TTL:3]
 #include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
 #include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
+// [FW.50] Каліброванку VREFINT на WL знято при Vref+ = 3.3 В: рівність із вендорською
+// константою тримає компілятор, бо 3.0 В інших родин занижувало б кожен відлік на ~9 %.
+_Static_assert(ADC_VREFINT_CAL_MV == VREFINT_CAL_VREF,
+               "[FW.50] ADC_VREFINT_CAL_MV мусить дорівнювати VREFINT_CAL_VREF (stm32wlxx_ll_adc.h)");
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/stack_canary.h" // [SEC.21] сів вартової канарки (One-Home з host-тестами)
 #include "../common/fw_report.h"    // [SEC.20] wire-звіт contract-стану (байти 12..13 / CCM vpd)

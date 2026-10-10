@@ -4519,13 +4519,13 @@ TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
 #include "../common/adc_convert.h"
 
 TEST(test_adc_vdda_nominal) {
-    /* VREFINT reads its cal point → VDDA == 3.0 V cal reference. */
-    ASSERT_EQ(Adc_Vdda_Mv(1500, 1500), 3000);
+    /* VREFINT reads its cal point → VDDA == the WL 3.3 V cal reference. */
+    ASSERT_EQ(Adc_Vdda_Mv(1500, 1500), 3300);
 }
 
 TEST(test_adc_vdda_high_supply) {
-    /* Lower VREFINT_DATA ⇒ higher VDDA: 3000×1500/1200 = 3750 mV. */
-    ASSERT_EQ(Adc_Vdda_Mv(1200, 1500), 3750);
+    /* Lower VREFINT_DATA ⇒ higher VDDA: 3300×1500/1200 = 4125 mV. */
+    ASSERT_EQ(Adc_Vdda_Mv(1200, 1500), 4125);
 }
 
 TEST(test_adc_vdda_div_by_zero_guard) {
@@ -4547,13 +4547,13 @@ TEST(test_adc_pin_zero) {
 
 TEST(test_adc_raw_to_mv_direct) {
     /* div 1:1 (no divider) at full scale → VDDA. */
-    ASSERT_EQ(Adc_Raw_To_Mv(4095, 1500, 1500, 1, 1), 3000);
+    ASSERT_EQ(Adc_Raw_To_Mv(4095, 1500, 1500, 1, 1), 3300);
 }
 
 TEST(test_adc_raw_to_mv_divider_2to1) {
-    /* Vcap 4000 mV through a 2:1 divider → pin 2000 mV (adc 2730 @ VDDA 3000),
-     * scaled back ×2 → 4000 mV. */
-    ASSERT_EQ(Adc_Raw_To_Mv(2730, 1500, 1500, 2, 1), 4000);
+    /* Vcap 4400 mV through a 2:1 divider → pin 2200 mV (adc 2730 @ VDDA 3300),
+     * scaled back ×2 → 4400 mV. */
+    ASSERT_EQ(Adc_Raw_To_Mv(2730, 1500, 1500, 2, 1), 4400);
 }
 
 TEST(test_adc_raw_to_mv_div_by_zero_guard) {
@@ -4562,10 +4562,10 @@ TEST(test_adc_raw_to_mv_div_by_zero_guard) {
 
 TEST(test_fw50_raw_count_is_not_mv) {
     /* The bug, concretely: the OLD code compared a raw VREFINT count to a
-     * 2800 mV threshold — never true; the same count is the 3.0 V cal point. */
+     * 2800 mV threshold — never true; the same count is the 3.3 V cal point. */
     uint16_t raw = 1500;
     ASSERT_TRUE(raw < 2800);                  /* OLD: "vcap" < LISTEN → RX never opens */
-    ASSERT_EQ(Adc_Vdda_Mv(raw, 1500), 3000);  /* real VDDA is 3000 mV, not 1500 */
+    ASSERT_EQ(Adc_Vdda_Mv(raw, 1500), 3300);  /* real VDDA is 3300 mV, not 1500 */
 }
 
 /* ════════════════════════════════════════════════════════════════════

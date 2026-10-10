@@ -15,9 +15,13 @@
  *   V_pin(мВ)  = VDDA × ADC_DATA / 4095
  *   V_node(мВ) = V_pin × (R_top + R_bot) / R_bot      ← дільник, hardware
  *
- * VREFINT_CAL — заводська константа @0x1FFF75AA (зміряна при VDDA = 3.0 В,
- * 30 °C). У прошивці читається як *(uint16_t*)ADC_VREFINT_CAL_ADDR; чисті
- * функції беруть її параметром, щоб host-тести лишались без апаратної адреси.
+ * VREFINT_CAL — заводська константа @0x1FFF75AA, на STM32WL зміряна при
+ * Vref+ = 3.3 В і 30 °C (`VREFINT_CAL_VREF` = 3300 у вендорському
+ * stm32wlxx_ll_adc.h; 3.0 В — це L4/G4, не WL: з ним кожен відлік VDDA
+ * занижувався на ~9 %). Рівність із вендорською константою тримає
+ * `_Static_assert` у soldier/main.c — його бачить ARM-лейн. У прошивці
+ * читається як *(uint16_t*)ADC_VREFINT_CAL_ADDR; чисті функції беруть її
+ * параметром, щоб host-тести лишались без апаратної адреси.
  */
 
 #ifndef SILKEN_ADC_CONVERT_H
@@ -25,7 +29,7 @@
 
 #include <stdint.h>
 
-#define ADC_VREFINT_CAL_MV    3000u          /* мВ — VDDA при заводській каліброванці */
+#define ADC_VREFINT_CAL_MV    3300u          /* мВ — Vref+ заводської каліброванки WL */
 #define ADC_FULL_SCALE_12BIT  4095u          /* 2^12 − 1 */
 #define ADC_VREFINT_CAL_ADDR  0x1FFF75AAUL   /* uint16_t factory cal (firmware-only) */
 
