@@ -56,11 +56,6 @@ class Tree < ApplicationRecord
   GLOBAL_LORENZ_Z_MAX = 45.0
   DEVICE_DEFAULT_LORENZ_BAND = { min: GLOBAL_LORENZ_Z_MIN, max: GLOBAL_LORENZ_Z_MAX }.freeze
 
-  # [FW.66] Облік видачі смуги FW.8 знято разом із видачею; колонки лишаються в БД
-  # до `remove_column` окремим комітом ПІСЛЯ деплою цього (те саме, що `TreeFamily`).
-  self.ignored_columns += %w[lorenz_band_held lorenz_band_pending lorenz_band_dlfc lorenz_band_key_epoch
-                             lorenz_band_issued_at lorenz_band_served_at lorenz_band_stale_count]
-
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
 

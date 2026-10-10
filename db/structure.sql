@@ -1111,7 +1111,6 @@ CREATE TABLE public.organizations (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     billing_email character varying,
-    alert_threshold_critical_z numeric(5,2) DEFAULT 2.5,
     ai_sensitivity numeric(3,2) DEFAULT 0.7,
     data_region character varying DEFAULT 'eu-west'::character varying,
     solana_public_address character varying,
@@ -1623,8 +1622,6 @@ ALTER SEQUENCE public.tiny_ml_models_id_seq OWNED BY public.tiny_ml_models.id;
 CREATE TABLE public.tree_families (
     id bigint NOT NULL,
     name character varying,
-    critical_z_min numeric,
-    critical_z_max numeric,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     biological_properties jsonb,
@@ -1677,14 +1674,7 @@ CREATE TABLE public.trees (
     peaq_did_compromised boolean DEFAULT false NOT NULL,
     latest_stress_index numeric(4,3),
     silicon_uid_hex character varying,
-    status_changed_at timestamp(6) without time zone,
-    lorenz_band_held jsonb DEFAULT '[]'::jsonb NOT NULL,
-    lorenz_band_pending bytea,
-    lorenz_band_dlfc bigint,
-    lorenz_band_key_epoch integer,
-    lorenz_band_issued_at timestamp(6) without time zone,
-    lorenz_band_served_at timestamp(6) without time zone,
-    lorenz_band_stale_count smallint DEFAULT 0 NOT NULL
+    status_changed_at timestamp(6) without time zone
 );
 
 
@@ -4803,5 +4793,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261010102918'),
 ('20261006075239');
 

@@ -215,7 +215,6 @@ normalize_identifier :device_uid  # HardwareKey
 |------|-----|------|
 | `name` | string | Унікальна назва (напр. "Сосна Звичайна") |
 | `scientific_name` | string | Латинська назва (nullable, для міжнародних контрактів) |
-| `critical_z_min` · `critical_z_max` | decimal | ⚫ [FW.66] Поза моделлю (`ignored_columns`): родинна Z-смуга не мала вердиктного читача в жодній ері — DCI судить заводською смугою пристрою (`Tree::DEVICE_DEFAULT_LORENZ_BAND`), а видачу смуги FW.8 знято (присуд — врізка [`03_04 §7.3`](03_04_mruby_Lorenz_Attractor)). Колонки в БД — до `remove_column` другим кроком після деплою першого |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
 | `biological_properties` | jsonb | `bark_thickness`, `foliage_density`, `fire_resistance_rating` (`sap_flow_index` знято [ARCH.102] ⚖️ 08-20 — споживача не існувало; `optimal_z_target` [FW.66] — разом із родинною смугою; історичні ключі в jsonb нешкідливі) |
 
@@ -273,7 +272,6 @@ normalize_identifier :device_uid  # HardwareKey
 | `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
 | `altitude` | numeric | ⚠️ **Не задротовано** [ARCH.103]: нуль посилань у `app/`/`lib/`, `GeoLocatable` знає лише lat/lng. Намір колись стояв у [`00_02 §1`](00_02_Academic_Integration_and_IP) (висоти Queen-шлюзів за оглядовими точками), але 2026-09-26 його знято й обернено — висоту судить link budget, не історія місця (`cultural_layer.md`); жоден інженерний розділ його й не розвивав — link-budget [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) моделює відстань і матеріали, не висоту |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
-| `lorenz_band_held` · `lorenz_band_pending` · `lorenz_band_dlfc` · `lorenz_band_key_epoch` · `lorenz_band_issued_at` · `lorenz_band_served_at` · `lorenz_band_stale_count` | jsonb · bytea · bigint · integer · datetime ×2 · smallint | ⚫ [FW.66] Поза моделлю (`ignored_columns`): облік видачі смуги FW.8 (`0x9A`), знятий разом із видачею. Колонки в БД — до `remove_column` другим кроком після деплою першого |
 
 **AASM State Machine (column: `status`):**
 
@@ -925,7 +923,6 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `crypto_public_address` | string | Ethereum/Polygon-адреса (EIP-55, strip without downcase) |
 | `hadron_kyc_status` | string | [KYC.1] KYC бенефіціара custodial-мінту (default `pending`; успадковується гаманцями без власної адреси через `Wallet#kyc_approved_for_minting?`); біндинг/зміна адреси → reset у `pending` + enqueue `HadronKycVerificationWorker` |
 | `data_region` | string | `eu-west / eu-central / us-east / us-west / ap-southeast` (GDPR sharding) |
-| `alert_threshold_critical_z` | decimal | ⚫ [FW.66] Поза моделлю (`ignored_columns`): «поріг тривоги», якого не читав жоден шлях (клас `СЛОВО`, [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)). Колонка в БД — до `remove_column` другим кроком після деплою першого |
 | `ai_sensitivity` | decimal | Чутливість AI (0..1) |
 | `locale` | string | [I18N.1] Мова, якою організація отримує **пошту** (`AlertMailer` → `billing_email`). Не дубль `users.locale`: за цією скринькою може не стояти жоден User. `nil` = «не обрано» → базова локаль; валідація деривує перелік з `available_locales` ([`04_04 §12.8`](04_04_Phlex_UI_and_Tailwind)) |
 | `stream_epoch` | integer | [SEC.25 Ф3] Покоління імен Turbo-стрімів (`..._org_{id}_e{epoch}`), default 1, NOT NULL. Єдиний механізм відкликання виданого capability-токена: підпис детермінований і без TTL, тож знецінити збережене імʼя можна лише **покинувши адресу**. Важіль — `#rotate_stream_epoch!` (bump → tombstone у стару адресу → слід ARCH.57); стелі й чому `:map` не гаситься — [`04_04 §8.1`](04_04_Phlex_UI_and_Tailwind) |

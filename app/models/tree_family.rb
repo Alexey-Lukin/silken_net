@@ -6,13 +6,6 @@ class TreeFamily < ApplicationRecord
   # Захист цілісності: не можна видалити геном, поки живий хоч один його носій
   has_many :trees, dependent: :restrict_with_error
 
-  # ⚖️ [FW.66, делеговано 2026-10-09 — врізка `03_04 §7.3`] Пару `critical_z_min/max`
-  # знято разом із видачею смуги FW.8: вердиктного читача вона не мала в жодній ері,
-  # тобто була порогом, яким не судить ніщо (клас `СЛОВО`, `05_05 §3.2`). Колонки
-  # лишаються в БД до другого кроку — `remove_column` окремим комітом ПІСЛЯ деплою
-  # цього (`db:prepare` у entrypoint мігрує під живим старим контейнером).
-  self.ignored_columns += %w[critical_z_min critical_z_max]
-
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
 
