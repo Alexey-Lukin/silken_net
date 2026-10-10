@@ -40,6 +40,7 @@
 #include "../common/flash_kv.h"
 #include "../common/lora_phy.h"
 #include "radio.h"
+#include "LoRaMac.h"
 #include "lorawan_aes.h" /* мок-LNS: ті самі vendored-примітиви, що soft-se */
 #include "cmac.h"
 #include <stdio.h>
@@ -89,6 +90,9 @@ static uint8_t  g_last_tx_cr;
 static uint16_t g_last_tx_preamble;
 static int8_t   g_max_tx_power = -128;
 static uint32_t g_air_sent_ms;
+static uint32_t g_cur_freq;          /* останній SetChannel */
+static uint32_t g_last_tx_freq;      /* частота, на якій полетів останній кадр */
+static int      g_rx_at_last_tx;     /* g_rx_requested у мить останнього Send */
 
 /* ── мок-LNS: server-половина рукостискання на нуль-ключах se-identity ──
  * Крипто — ті самі vendored cmac.c + lorawan_aes.c, що лінкує soft-se
@@ -97,10 +101,12 @@ static uint32_t g_air_sent_ms;
  * відновлює encrypt-ом — девайсовій половині decrypt не потрібен ніде.
  * Вимкнений LNS (тести TX-половини) мовчить — RX-вікна таймаутять. */
 static int      g_lns_enabled;
+static int      g_lns_cflist;         /* JoinAccept несе CFList мережевого плану */
 static int      g_lns_accept_pending; /* Send прийняв join → чекаємо RX-вікна */
 static int      g_lns_rx_answer;      /* вікно відкрите → pump доставить кадр */
 static uint32_t g_lns_join_nonce;     /* строго вгору — IsJoinNonce10xOk (1.0.4) */
-static uint8_t  g_lns_join_accept[17]; /* MHDR + enc(payload 12 + MIC 4), без CFList */
+static uint8_t  g_lns_join_accept[33]; /* MHDR + enc(payload 12 [+ CFList 16] + MIC 4) */
+static uint8_t  g_lns_join_accept_len;
 static uint8_t  g_lns_nwk_s_key[16];
 static uint8_t  g_lns_app_s_key[16];
 
@@ -166,7 +172,7 @@ static void lns_answer_join_request( const uint8_t *jr, uint8_t len )
 
     /* block[0]=MHDR (лише для CMAC); [1..16] = AES-блок plaintext+MIC:
      * JoinNonce(3) NetID(3) DevAddr(4) DLSettings RxDelay | MIC(4) */
-    uint8_t block[17];
+    uint8_t block[33];
     block[0]  = 0x20u;
     block[1]  = (uint8_t)( join_nonce );
     block[2]  = (uint8_t)( join_nonce >> 8 );
@@ -180,10 +186,26 @@ static void lns_answer_join_request( const uint8_t *jr, uint8_t len )
     block[10] = (uint8_t)( LNS_DEV_ADDR >> 24 );
     block[11] = 0x00u; /* DLSettings: OptNeg=0 (1.0.x), RX1offset=0, RX2=DR0 */
     block[12] = 0x01u; /* RxDelay = 1 с */
-    lns_cmac4( LNS_NWK_KEY, block, 13u, block + 13 );
+    uint8_t payload_len = 12u;
+    if ( g_lns_cflist ) {
+        /* CFList мережевого плану EU868 (TTN · ChirpStack · Helium): 867.1–867.9,
+         * п'ять частот по 3 Б little-endian у сотнях Гц, тип 0 */
+        for ( unsigned i = 0; i < 5u; i++ ) {
+            uint32_t f = ( 867100000u + i * 200000u ) / 100u;
+            block[13 + 3 * i]     = (uint8_t)( f );
+            block[13 + 3 * i + 1] = (uint8_t)( f >> 8 );
+            block[13 + 3 * i + 2] = (uint8_t)( f >> 16 );
+        }
+        block[28] = 0x00u;
+        payload_len = 28u;
+    }
+    lns_cmac4( LNS_NWK_KEY, block, payload_len + 1u, block + payload_len + 1 );
 
     g_lns_join_accept[0] = 0x20u;
-    lns_aes_dec( LNS_NWK_KEY, block + 1, g_lns_join_accept + 1 );
+    for ( unsigned off = 1; off < payload_len + 5u; off += 16u ) {
+        lns_aes_dec( LNS_NWK_KEY, block + off, g_lns_join_accept + off );
+    }
+    g_lns_join_accept_len = (uint8_t)( payload_len + 5u );
     g_lns_accept_pending = 1;
 
     /* LNS виводить сесійні ключі зі СВОГО боку — ними тест звірить uplink */
@@ -194,7 +216,7 @@ static void lns_answer_join_request( const uint8_t *jr, uint8_t len )
 static void         stub_Init( RadioEvents_t *events ) { g_events = events; }
 static RadioState_t stub_GetStatus( void ) { return RF_IDLE; }
 static void         stub_SetModem( RadioModems_t m ) { ( void )m; }
-static void         stub_SetChannel( uint32_t f ) { ( void )f; }
+static void         stub_SetChannel( uint32_t f ) { g_cur_freq = f; }
 static bool         stub_IsChannelFree( uint32_t f, uint32_t bw, int16_t t, uint32_t m )
 { ( void )f; ( void )bw; ( void )t; ( void )m; return true; }
 static uint32_t     stub_Random( void ) { return 0xC0FFEEu; }
@@ -244,6 +266,8 @@ static uint32_t stub_TimeOnAir( RadioModems_t modem, uint32_t bandwidth,
 static radio_status_t stub_Send( uint8_t *buffer, uint8_t size )
 {
     g_tx_count++;
+    g_last_tx_freq  = g_cur_freq;
+    g_rx_at_last_tx = g_rx_requested;
     g_air_sent_ms += stub_TimeOnAir( MODEM_LORA, g_last_tx_bw, g_last_tx_sf, g_last_tx_cr,
                                      g_last_tx_preamble, false, size, true );
     g_last_tx_len = ( size < sizeof g_last_tx ) ? size : (uint8_t)sizeof g_last_tx;
@@ -308,7 +332,7 @@ void Helium_Test_Pump_Radio( void )
     }
     if ( g_lns_rx_answer && g_events != NULL && g_events->RxDone != NULL ) {
         g_lns_rx_answer = 0;
-        g_events->RxDone( g_lns_join_accept, sizeof g_lns_join_accept, -50, 8 );
+        g_events->RxDone( g_lns_join_accept, g_lns_join_accept_len, -50, 8 );
     }
     if ( g_rx_timeout_pending && g_events != NULL && g_events->RxTimeout != NULL ) {
         g_rx_timeout_pending = 0;
@@ -412,6 +436,10 @@ static int test_mock_lns_full_join_and_uplink(void) {
     int ok = Helium_Mac_SendSos( sos, HELIUM_BLIND_WINDOW_MAX_MS );
 
     ASSERT_EQ( ok, 1 );                 /* повний цикл: join + TxDone        */
+    /* [ARCH.34] епізод виходить ПІСЛЯ кадру даних: TxDone віддано, RX-вікна за ним
+     * відкрились — інакше main.c обривав би кадр в ефірі (Radio_Reinit). */
+    ASSERT_EQ( g_tx_pending, 0 );
+    ASSERT_TRUE( g_rx_requested > g_rx_at_last_tx );
     ASSERT_EQ( g_last_tx_len, 25u );    /* MHDR+DevAddr+FCtrl+FCnt+FPort+12+MIC */
     ASSERT_EQ( g_last_tx[0], 0x40u );   /* UnconfirmedDataUp                 */
     uint32_t addr = (uint32_t)g_last_tx[1] | ( (uint32_t)g_last_tx[2] << 8 ) |
@@ -480,6 +508,39 @@ static int test_detour_power_under_queen_ceiling(void) {
     return 0;
 }
 
+static int test_cflist_never_moves_sos_off_band(void) {
+    /* [ARCH.34] JoinAccept із CFList мережевого плану вмикає 867.1–867.9, а вони поза
+     * смугою 868.0–868.6 (бюджет 1 % спільний із P2P, рядок умов НКЕК). Після join
+     * маска мусить лишити лише LC1–3, і кадр даних — летіти на 868.1/.3/.5. */
+    g_lns_enabled = 1;
+    g_lns_cflist  = 1;
+    uint8_t sos[HELIUM_SOS_WIRE_LEN];
+    Helium_Sos_Pack( sos, 0xA1B2C3D4u, 1u, 3u, 48u, 1u );
+    int ok = Helium_Mac_SendSos( sos, HELIUM_BLIND_WINDOW_MAX_MS );
+    g_lns_cflist = 0;
+
+    ASSERT_EQ( ok, 1 );
+    MibRequestConfirm_t mib;
+    mib.Type = MIB_CHANNELS_MASK;
+    ASSERT_EQ( LoRaMacMibGetRequestConfirm( &mib ), LORAMAC_STATUS_OK );
+    ASSERT_EQ( mib.Param.ChannelsMask[0], 0x0007u );
+    ASSERT_TRUE( g_last_tx_freq == 868100000u || g_last_tx_freq == 868300000u ||
+                 g_last_tx_freq == 868500000u );
+    printf("  test_cflist_never_moves_sos_off_band                       ✅\n");
+    return 0;
+}
+
+static int test_cert_port_closed(void) {
+    /* [ARCH.34] Порт 224 вміє безперервну несучу з потужністю з downlink'а повз
+     * індекс і підсилення — у SOS-епізоді він вимкнений. */
+    MibRequestConfirm_t mib;
+    mib.Type = MIB_IS_CERT_FPORT_ON;
+    ASSERT_EQ( LoRaMacMibGetRequestConfirm( &mib ), LORAMAC_STATUS_OK );
+    ASSERT_TRUE( !mib.Param.IsCertPortOn );
+    printf("  test_cert_port_closed                                      ✅\n");
+    return 0;
+}
+
 static int test_episode_air_bound_covers_what_flew(void) {
     /* [ARCH.34] Стеля ефіру епізоду, яку main.c списує на журнал смуги
      * (tx_duty.h), не нижча за ефір кадрів, що СПРАВДІ полетіли, — і
@@ -515,6 +576,8 @@ int main(void) {
     fails += test_mock_lns_full_join_and_uplink();
     fails += test_detour_power_under_queen_ceiling();
     fails += test_episode_air_bound_covers_what_flew();
+    fails += test_cflist_never_moves_sos_off_band();
+    fails += test_cert_port_closed();
     if (fails) {
         fprintf(stderr, "❌ test_helium_mac_smoke: %d failed\n", fails);
         return 1;

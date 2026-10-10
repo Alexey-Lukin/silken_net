@@ -35,9 +35,9 @@
 
 /* ── потужність детуру — під тією ж стелею, що P2P Королеви ───────────────
  * MAC рахує провідну як floor(MaxEIRP − 2·індекс − підсилення антени)
- * (RegionCommonComputeTxPower); без підсилення він бере дефолт регіону
- * 2.15 дБі, і з 5-dBi антеною Королеви ЕВП детуру лягала б понад 25 мВт
- * (certification_roadmap §2.3). Тож MAC знає справжнє підсилення
+ * (RegionCommonComputeTxPower); без підсилення він бере дефолт регіону 2.15 дБі,
+ * тож на індексі 0 провідна вийшла б +13 дБм — з 5-dBi антеною Королеви ЕВП
+ * 15.85 дБм, понад стелю 25 мВт (certification_roadmap §2.3). Тож MAC знає справжнє підсилення
  * (LORA_PHY_QUEEN_ANTENNA_GAIN_CDBI), а індекс тримає провідну не вище
  * LORA_PHY_TX_POWER_DBM_QUEEN — того самого числа, що в P2P-тракті, бо PA один.
  * Крок індексу EU868 — 2 дБ, тож детур на 1 дБ тихіший за P2P (+9 проти +10).
@@ -64,6 +64,9 @@ _Static_assert( HELIUM_EU868_MAX_EIRP_CDBM - 200 * HELIUM_TX_POWER_INDEX - LORA_
 #define HELIUM_DR0_BW            0u  /* 125 кГц у кодуванні Radio_s */
 #define HELIUM_DR0_CR            1u  /* 4/5 */
 #define HELIUM_DR0_PREAMBLE      8u
+
+/* LC1|LC2|LC3 — канали 0..2 EU868 (868.1/.3/.5), `EU868_JOIN_CHANNELS` регіону. */
+#define HELIUM_SOS_CHANNELS_MASK ( ( uint16_t )0x0007u )
 
 uint32_t Helium_Mac_Episode_Air_Max_Ms( void )
 {
@@ -121,10 +124,15 @@ static void OnJoinRequest( LmHandlerJoinParams_t *params )
     }
 }
 
+/* Кінець кадру — лише підтвердження ДАНИХ (MCPS, після RX-вікон): LmHandler кличе
+ * цей самий колбек і на підтвердження JOIN (MLME), і тоді очікування uplink'у
+ * виходило б одразу, а main.c обривав би кадр в ефірі (`Radio_Reinit_RawLoRa_868MHz`). */
+// cppcheck-suppress constParameterCallback // ABI LmHandlerCallbacks_t — const зламав би тип поля
 static void OnTxData( LmHandlerTxParams_t *params )
 {
-    ( void )params;
-    g_tx_done = 1u;
+    if ( params != NULL && params->IsMcpsConfirm ) {
+        g_tx_done = 1u;
+    }
 }
 
 /* Решта — свідомі no-op: SOS не приймає downlink-даних (RX-вікна MAC
@@ -264,6 +272,15 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
     if ( LoRaMacMibSetRequestConfirm( &gain ) != LORAMAC_STATUS_OK ) {
         return 0;
     }
+    /* Порт сертифікації (224) — вимкнено: його пакет уміє безперервну несучу з
+     * потужністю з downlink'а повз індекс і підсилення вище. SOS-профілю він не
+     * потрібен, а EU868 MAC вмикає його за замовчуванням. */
+    MibRequestConfirm_t cert;
+    cert.Type = MIB_IS_CERT_FPORT_ON;
+    cert.Param.IsCertPortOn = false;
+    if ( LoRaMacMibSetRequestConfirm( &cert ) != LORAMAC_STATUS_OK ) {
+        return 0;
+    }
 
     /* fresh join щоепізоду; DevNonce тягнемо З persist ДО join, назад —
      * ПІСЛЯ (LoRaMacCrypto інкрементить його на кожен JoinRequest). */
@@ -280,6 +297,19 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
 
     if ( !g_joined ) {
         devnonce_persist( ); /* JoinRequest уже спалив DevNonce — зберегти */
+        return 0;
+    }
+
+    /* Data-uplink — лише на 868.1/.3/.5 (LC1–3, ті самі, що несуть JoinRequest):
+     * CFList у JoinAccept вмикає канали мережевого плану (зазвичай 867.1–867.9), а
+     * вони лежать поза смугою 868.0–868.6, де детур ділить бюджет 1 % із P2P
+     * (`tx_duty.h`) і де стоїть рядок умов НКЕК (certification_roadmap §2.3). */
+    static uint16_t sos_channels[6] = { HELIUM_SOS_CHANNELS_MASK };
+    MibRequestConfirm_t chans;
+    chans.Type = MIB_CHANNELS_MASK;
+    chans.Param.ChannelsMask = sos_channels;
+    if ( LoRaMacMibSetRequestConfirm( &chans ) != LORAMAC_STATUS_OK ) {
+        devnonce_persist( );
         return 0;
     }
 
