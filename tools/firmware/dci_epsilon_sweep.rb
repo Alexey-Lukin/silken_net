@@ -17,7 +17,7 @@
 
 require_relative "../../firmware/bio_contracts/bio_contract"
 
-EPSILON = 0.001 # дзеркало TelemetryUnpackerService::DEFAULT_DCI_EPSILON
+EPSILON = 0.001 # ε знятої числової DCI FW.31 (код знято 2026-10-10, FW.66 (Б)); прилад лишається свідком паритету mruby-VM ⟷ CRuby (03_04 §7.1, Gate L)
 
 dump_path = ARGV.fetch(0)
 vm_cases = []
@@ -80,7 +80,7 @@ puts format("  p50        = %.3e", pct.call(0.50))
 puts format("  p99        = %.3e", pct.call(0.99))
 puts format("  p99.9      = %.3e", pct.call(0.999))
 puts format("  p99.99     = %.3e", pct.call(0.9999))
-puts format("  ε (поточний DEFAULT_DCI_EPSILON) = %.0e → запас = %.1f порядків",
+puts format("  ε (FW.31, історичний) = %.0e → запас = %.1f порядків",
             EPSILON, Math.log10(EPSILON / [ max_dz, Float::MIN ].max))
 
 if payload_mismatches.positive?

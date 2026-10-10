@@ -163,7 +163,7 @@ class InsightGeneratorService < ApplicationService
          ).each_with_object({}) do |row, hash|
            hash[row.cluster_id] = {
              temp: row.avg_temp.to_f,
-             z: row.avg_z.to_f
+             z: row.avg_z&.to_f
            }
          end
   end
@@ -259,7 +259,10 @@ class InsightGeneratorService < ApplicationService
       summary: summary,
       fraud_detected: is_fraud,
       reasoning: {
-        avg_z: stats.avg_z.to_f.round(4),
+        # [FW.66 (Б)] CCM-рядок z не має (Лоренца в CCM-ері немає), тож доба лише з
+        # CCM-рядків дає NULL, а `.to_f` зробив би з нього виміряний нуль, який хроніка
+        # друкує замість «немає даних» (backend #64).
+        avg_z: stats.avg_z&.to_f&.round(4),
         max_acoustic: stats.max_acoustic.to_i,
         avg_vcap: stats.avg_vcap.to_i,
         avg_vpd: stats.avg_vpd&.to_f&.round(3) # nil доки firmware не шле VPD (HW.32)

@@ -16,8 +16,6 @@ class TelemetryUnpackerService < ApplicationService
   # DeviceZ(2BE ×512, 0xFFFF=none) Diag(u8) VpdIndex(u8)
   # EmaDeltaT(2BE — «wire = вхід GP», E.63 (г): stateless recompute)
   CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
-  CCM_DEVICE_Z_NONE          = 0xFFFF
-  CCM_DEVICE_Z_SCALE         = 512.0
 
   # --- КОНСТАНТИ ЕВОЛЮЦІЇ (The Immutable Offsets) ---
   # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
@@ -62,8 +60,8 @@ class TelemetryUnpackerService < ApplicationService
   # HMAC-SHA256 → signed-unit-float unpack). The DID is no longer an
   # attractor input — it is purely an identifier. With identical inputs
   # raw Z values are numerically comparable, and `check_z_divergence!`
-  # asserts that |raw z − device_z| stays inside a tight tolerance
-  # band on top of the categorical bio_status check.
+  # checks the device's categorical bio_status against them — ECB-only:
+  # the CCM path carries no Lorenz at all [FW.66 (Б)].
 
   # [ARCH.41] Firmware RTC-default epoch_day after VBAT loss.
   # STM32WLE5JC RTC resets to 2000-01-01 00:00:00 UTC → day 10_957 since
@@ -414,7 +412,7 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха ключа, що пройшов MIC).
-    # Тут — лише пре-фільтр ДО побічних ефектів кадру (DCI, CMD_TIME_SYNC, докази смуги);
+    # Тут — лише пре-фільтр ДО побічних ефектів кадру (метаболічна звірка, CMD_TIME_SYNC);
     # авторитетний допуск — `CcmReplayWindow.admit!` у транзакції `commit_telemetry`.
     ccm_frame = { device_uid: hex_did, key_epoch: key_epoch, frame_counter: frame_counter }
     if (reason = CcmReplayWindow.rejection(**ccm_frame))
@@ -425,8 +423,10 @@ class TelemetryUnpackerService < ApplicationService
     SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL.increment
 
     sensor   = plaintext.unpack(CCM_SENSOR_PAYLOAD_FORMAT)
+    # Байти 16..17 (`device_z` wire-rev2.1) бекенд не читає [FW.66 (Б)]: Лоренца в CCM-ері
+    # немає, а wire-rev2.2 віддає їх `voc_mv` (`03_05 §2.1`).
     vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl,
-      device_z_raw, diag_byte, vpd_index, ema_delta_t_s = sensor
+      _device_z_raw, diag_byte, vpd_index, ema_delta_t_s = sensor
 
     unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && SAFE_TEMP_RANGE.cover?(temp_c)
       Rails.logger.warn "📡 [CCM Sensor Noise] DID #{hex_did}: vcap=#{vcap_mv} temp=#{temp_c} — out of physical bounds."
@@ -456,7 +456,6 @@ class TelemetryUnpackerService < ApplicationService
       rssi: actual_rssi,
       voltage_mv: supply_mv(calibration, vcap_mv, hex_did),
       temperature_c: calibration.normalize_temperature(temp_c),
-      lorenz_temperature_c: temp_c, # [FW.57 F2] raw wire temp — DCI anchor (stripped pre-persist)
       acoustic_events: acoustic,
       metabolism_s: delta_t_s,
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
@@ -470,19 +469,6 @@ class TelemetryUnpackerService < ApplicationService
       panic: status_byte.anybits?(PANIC_FLAG_BIT)
     }
     neutralize_panic_row!(log_attributes)
-
-    # [FW.31 Gate D] device_z з шифртексту (wire-rev2 bytes 16..17,
-    # фіксована точка ×512): живить numeric DCI-гілку check_z_divergence!.
-    # Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (VM_ERROR чи
-    # непровіжинений seed; у grace ARCH.41-C телеметрія не летить) → атрибут
-    # відсутній, numeric branch чесно пропускається.
-    # Транзієнт як lorenz_temperature_c — стрипається перед persist.
-    carried = device_z_raw != CCM_DEVICE_Z_NONE
-    log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE if carried
-    # Panic-кадр — не рядок виміру (DCI його не судить), тож у знаменник Gate D не входить.
-    unless log_attributes[:panic]
-      SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL.increment(labels: { carried: carried.to_s })
-    end
 
     # [E.63 (г)] EMA-delta_t з шифртексту (wire-rev2.1 bytes 20..21) —
     # контракт «wire = вхід GP»: живить точний stateless recompute у
@@ -515,14 +501,16 @@ class TelemetryUnpackerService < ApplicationService
     # [HW.32] Калібрований VPD у цьому байті ще не живе (шкала index→kPa
     # прийде з BME280; vpd-колонка чекає) — до того байт несе SEC.20-звіт ↑.
 
-    # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
+    # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО метаболічної звірки + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
-    step_lorenz_and_judge!(tree, log_attributes, status_byte)
+    # ⚖️ [FW.66 (Б)] CCM-ера Лоренца не має: ні серверного кроку, ні DCI, ні `K_seed`
+    # (`03_04 §7.3`). Печатку кадру тримає криптографія — MIC і межа повтору SEC.40, — а
+    # звірка лишається метаболічна; panic-кадр рядком виміру не є (ARCH.102), а VM_ERROR
+    # вона й сама приймає без суду.
+    check_metabolic_divergence!(tree, log_attributes, status_byte) unless log_attributes[:panic]
     commit_telemetry(tree, log_attributes)
 
-  rescue MissingLorenzSeedError
-    raise
   rescue StandardError => e
     trace = e.backtrace.first(5).join("\n")
     Rails.logger.error "🛑 [CCM Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
@@ -672,7 +660,7 @@ class TelemetryUnpackerService < ApplicationService
   # firmware packed Z from), NOT the drift-corrected `temperature_c` (physical/
   # display). They coincide while `temperature_offset_c == 0` (today), but a
   # future temp drift-calibration would make `temperature_c` diverge → server_z
-  # would chaotically miss device_z (a 5°C offset shifts Z by up to ~16 units)
+  # would chaotically leave the device's Z (a 5°C offset shifts Z by up to ~16 units)
   # and false-flag fraud on every calibrated node. Z + anomaly_ceiling use this;
   # the calibrated value is persisted for physical/display only. 00_07 — FW.57.
   def lorenz_temperature(attributes)
@@ -877,20 +865,14 @@ class TelemetryUnpackerService < ApplicationService
   # iterate the Lorenz attractor from byte-identical (x₀, y₀, z₀)
   # derived from per-tree K_seed via SilkenNet::SeedDerivation, with the
   # same Float64 kernel. So the raw Z values are numerically comparable.
-  # We catch two failure modes:
-  #   1. Categorical mismatch — device claims `homeostasis` but server Z
+  # The check — categorical mismatch: device claims `homeostasis` but server Z
   #      is outside the device's factory band (or vice versa).
   #      Meant to catch tampered firmware, but only on an intact warm chain — a
   #      lost/duplicated frame or a device cold start breaks it, and a forger who
   #      always claims homeostasis passes (`03_04 §7.3`, FW.66). Replay: see SEC.40.
-  #   2. Numeric divergence — |raw z − device_z| larger than the
-  #      tolerance band. Detects a corrupted attractor input on either
-  #      side (e.g. wrong K_seed flashed, drift in the silken_sha256 port, etc.).
-  # On the ECB path device Z is reconstructed from the bio_status nibble +
-  # growth_points only categorically (the 21-byte frame does not carry raw Z);
-  # the CCM frame (wire-rev2) carries device_z, so the numeric check has a real
-  # input there — kept behind a metric that surfaces the magnitude even when it
-  # is within tolerance.
+  # ECB-only: the 21-byte frame carries no raw Z, so device Z is judged categorically
+  # from the status bits; the CCM path runs no DCI at all [FW.66 (Б)], and with it
+  # went the numeric FW.31 branch (`03_04 §7.1`).
   # Судимо тією смугою, якою рахує ПРИСТРІЙ, — заводською
   # (`Tree::DEVICE_DEFAULT_LORENZ_BAND`, константи ECB-контракту): інших він не
   # тримає, бо видачу смуги FW.8 знято [FW.66]. ⛔ Не судити смугою родини чи
@@ -899,19 +881,6 @@ class TelemetryUnpackerService < ApplicationService
   # Членство судить СИРИЙ z (`lorenz_state_z`) — ним класифікує прошивка;
   # `z_value` округлено до 4 знаків для зберігання, і на межі смуги воно
   # розводило б два обчислення. Механізм — `03_04 §5.3`.
-  # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
-  # disabled by default to preserve current categorical behaviour:
-  #   - `DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
-  #   - `DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
-  #     allowed absolute drift between the raw z and the reported
-  #     device_z BEFORE flagging fraud.
-  # The numeric branch fires only when `attributes[:device_z]` is present —
-  # i.e. on the CCM path (wire-rev2 device_z; the 0xFFFF sentinel «Lorenz not
-  # computed this cycle» leaves it absent), which stays flag-off
-  # (TELEMETRY_CCM_ENABLED) until the FW.2 flip — so in production today, never.
-  # Lab measurement on real STM32WLE5JC vs GCP x86-64 must inform the final ε value.
-  DEFAULT_DCI_EPSILON = 0.001
-
   def check_z_divergence!(tree, attributes)
     raw_z = attributes[:lorenz_state_z]
     device_bio_status = attributes[:bio_status]
@@ -933,26 +902,6 @@ class TelemetryUnpackerService < ApplicationService
     # `🔴 Telemetry fraud detected` читав межу, яка вироку не виносила (у теплу
     # погоду ρ-стеля вища за 45). **Друкуй ту величину, яка СУДИЛА.**
     device_in_band = device_bio_status == :homeostasis
-
-    # [FW.31] Optional numeric drift check (feature-flagged, default off).
-    # Runs IN ADDITION to the categorical check below — never replaces it.
-    # When the device packet does carry a raw Z value (future packet
-    # revision), drift > ε is treated as a fraud signal even if the
-    # categorical buckets agree (catches systematic Z offset attacks).
-    # Дрейф — від СИРОГО z, як і членство нижче: квант дроту q/2 = 0.00098 стоїть упритул
-    # під ε, і `z_value` (round 4, ще ±0.00005) виносив за ε 0.36 % чесних кадрів.
-    if numeric_dci_tolerance_enabled? && attributes[:device_z].present?
-      drift = (raw_z.to_f - attributes[:device_z].to_f).abs
-      if drift > numeric_dci_epsilon
-        Rails.logger.warn(
-          "🔍 [Z Divergence Numeric] DID #{tree.did}: " \
-          "raw_z=#{raw_z}, device_z=#{attributes[:device_z]}, " \
-          "drift=#{drift}, ε=#{numeric_dci_epsilon}. Numeric DCI mismatch."
-        )
-        SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
-        SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL.increment
-      end
-    end
 
     return if in_lorenz_band?(raw_z, band, temp) == device_in_band
 
@@ -1046,25 +995,6 @@ class TelemetryUnpackerService < ApplicationService
     )
   end
 
-  # [FW.31] Feature-flag — defaults to false so production behaviour
-  # is unchanged until the lab measurement of real ARM↔x86 Float drift
-  # confirms a safe ε.
-  def numeric_dci_tolerance_enabled?
-    ENV["DCI_NUMERIC_TOLERANCE"].to_s.downcase == "true"
-  end
-
-  # [FW.31] Allowed absolute drift `|raw z - device_z|` before fraud
-  # is flagged. ENV override falls back to `DEFAULT_DCI_EPSILON` when
-  # the value is missing or fails Float coercion.
-  def numeric_dci_epsilon
-    raw = ENV["DCI_NUMERIC_EPSILON"]
-    return DEFAULT_DCI_EPSILON if raw.blank?
-
-    Float(raw)
-  rescue ArgumentError, TypeError
-    DEFAULT_DCI_EPSILON
-  end
-
   def commit_telemetry(tree, attributes)
     # [L1 QATT] Походження батча (Queen-attestation) — на кожному рядку:
     # downstream (mint-гейти майбутніх рунгів, fraud-аналіз, UI) бачить,
@@ -1087,9 +1017,7 @@ class TelemetryUnpackerService < ApplicationService
 
       # [FW.57 F2] :lorenz_temperature_c is a transient DCI input (raw wire temp),
       # not a column — strip it before persisting (calibrated temperature_c stays).
-      # [FW.31] :device_z (wire-rev2) — той самий транзієнт-клас: вхід numeric
-      # DCI, серверна істина z_value вже зберігається окремо.
-      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s,
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :ema_delta_t_s,
                                                               :fw_report_id_mask, :ccm_frame))
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1

@@ -173,7 +173,7 @@ module SilkenNet
     # Telemetry fraud/anomaly detections (monotonic counter)
     TELEMETRY_FRAUD_DETECTED_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_fraud_detected_total,
-      docstring: "Telemetry packets rejected (sensor noise, unknown DID) or flagged (metabolic divergence, numeric DCI drift)"
+      docstring: "Telemetry packets rejected (sensor noise, unknown DID) or flagged (metabolic divergence)"
     )
 
     # [SEC.10] Panic packets rejected as replay (Frame Counter nonce collision).
@@ -192,29 +192,6 @@ module SilkenNet
       :silkennet_telemetry_ccm_decrypt_ok_total,
       docstring: "FW.2 CCM packets successfully decrypted with valid MIC " \
                  "[FW.2; diagnostic tier: no alert until TELEMETRY_CCM_ENABLED ships fleet-wide — the consumer is its ~1:1 ratio against telemetry_processed_total]"
-    )
-
-    # [FW.31 Gate D] Прилад, який 03_04 §7.1 називає для гейта «device_z у ≥ 95 %
-    # пакетів». Рахується в самій розвилці, без panic-кадрів (DCI їх не судить). Стара
-    # форма «1 − сентинели / decrypt_ok» завищила б покриття: decrypt_ok інкрементується
-    # ДО перевірки шуму сенсора, тож відкинуті кадри сиділи б у знаменнику, але ніколи
-    # не в сентинелях.
-    TELEMETRY_CCM_DEVICE_Z_TOTAL = REGISTRY.counter(
-      :silkennet_telemetry_ccm_device_z_total,
-      docstring: "FW.31 Gate D: CCM packets that reached the device_z branch, by whether they carried device_z " \
-                 "[FW.31; diagnostic tier: no alert until the CCM flip — the consumer is the Gate D ratio carried=true / all >= 95%]",
-      labels: [ :carried ]
-    )
-
-    # [FW.31 Gate C] Числова DCI-гілка (drift > ε). Доти вона била лише в спільний
-    # TELEMETRY_FRAUD_DETECTED_TOTAL, куди пишуть вісім місць, тож канарку Gate C
-    # (03_04 §7.1: «очікувано 0») не було чим прочитати окремо. MISMATCH, не rejection:
-    # гілка лише сигналить, рядок персиститься. ⚠️ Стеля: гілка стоїть ДО відновлення
-    # ARCH.41, тож рахує й кадри, які далі врятує time_unsynced_fallback.
-    DCI_NUMERIC_MISMATCH_TOTAL = REGISTRY.counter(
-      :silkennet_dci_numeric_mismatch_total,
-      docstring: "FW.31 Gate C: telemetry packets whose absolute server_z vs device_z drift exceeded the numeric DCI epsilon " \
-                 "[FW.31; diagnostic tier: no alert until DCI_NUMERIC_TOLERANCE is flipped — the consumer is the Gate C canary expecting 0]"
     )
 
     # [FW.66 нога 1 · ⚖️ founder 2026-10-05] Категорійна DCI-розбіжність: заявлений статус

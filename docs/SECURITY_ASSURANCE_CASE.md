@@ -98,8 +98,11 @@ the guard that enforces it.
   a monotonic panic counter + `SETNX` (SEC.10). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
   [`05_02`](05_02_Proof_of_Growth_Pipeline).
 - **Sanity bounds + DCI** — `TelemetryUnpackerService#valid_sensor_data?` rejects out-of-range ADC/temp;
-  `check_z_divergence!` rejects a device whose Z disagrees with the backend recomputation (DCI, SEC.11 in
-  [`05_02`](05_02_Proof_of_Growth_Pipeline)).
+  on the ECB path `check_z_divergence!` counts a device whose categorical status disagrees with the
+  backend recomputation (DCI, SEC.11 in [`05_02`](05_02_Proof_of_Growth_Pipeline)) — an observation with its
+  own counter, not a rejection (FW.66 leg 1); the CCM path carries no Lorenz (FW.66 (Б)) and rests on the
+  CCM MIC and the SEC.40 replay window. ⚠️ Neither stops a forger who holds the device key: that residual is
+  bounded only by the E.64 per-tree credit cap (and, once built, the server-side GP recompute — FW.66).
 
 ### Boundary B — Queen → Rails (CoAP)
 *Crosses:* an AES-256-CBC batch of per-device-encrypted records.
@@ -124,7 +127,7 @@ the guard that enforces it.
 *Trust shift:* backend-unpacked data → externally attested proof.
 *Guard:* **Dual-Computation Integrity** — backend (`SilkenNet::Attractor`, IEEE-754 double) and device
 (mruby Float) compute Z from the same persisted state with identical Lorenz constants (owned in
-[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance was meant to flag tampering — ⚠️ measured blind to the homeostasis forger (FW.66 leg 1, 2026-10-05): it woke honest trees with a desynchronised chain and never a forger who always claims homeostasis, so it now feeds its own counter, not the fraud P0; under the ratified branch (Б) Lorenz leaves the device, and this boundary is guarded by the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor (DCI, SEC.11 in
+[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance was meant to flag tampering — ⚠️ measured blind to the homeostasis forger (FW.66 leg 1, 2026-10-05): it woke honest trees with a desynchronised chain and never a forger who always claims homeostasis, so it now feeds its own counter, not the fraud P0; under the ratified branch (Б) Lorenz leaves the device, and this boundary is guarded by the CCM MIC + the replay bound SEC.40 + QATT + the E.60 raw-record anchor — ⚠️ pending: until leaf v2 lands (FW.66), a CCM leaf commits no measurement (DCI, SEC.11 in
 [`05_02`](05_02_Proof_of_Growth_Pipeline)). Per-device signing strengthens along the trust-origin ladder
 (L0 custodial → L1 gateway → L2 SE050 device).
 

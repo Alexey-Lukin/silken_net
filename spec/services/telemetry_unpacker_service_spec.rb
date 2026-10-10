@@ -869,101 +869,6 @@ end
         expect(SilkenNet::Metrics::DCI_CATEGORICAL_MISMATCH_TOTAL).to have_received(:increment)
       end
 
-      # [FW.31] Numeric tolerance band feature-flag.
-      # Categorical default is preserved; numeric branch only fires when
-      # `DCI_NUMERIC_TOLERANCE=true` AND `device_z` is present in
-      # the attributes hash. Wire-home для device_z існує з FW.2 wire-rev2
-      # (CCM bytes 16..17, ×512; сентинель 0xFFFF → атрибут відсутній) —
-      # e2e-шлях покритий у describe "FW.2 CCM path".
-      describe "[FW.31] numeric tolerance band" do
-        let(:service) { described_class.new("", nil) }
-
-        it "does NOT run the numeric branch when feature-flag is off (default)" do
-          stub_const("ENV", ENV.to_h.except("DCI_NUMERIC_TOLERANCE", "DCI_NUMERIC_EPSILON"))
-          # Categorical agreement (both healthy) → no fraud
-          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 999.0 }
-
-          # Even with absurd device_z drift, when toggle is off the
-          # categorical pathway is the only one that runs and stays silent.
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
-        end
-
-        it "runs numeric branch and stays silent when drift is within ε" do
-          stub_const("ENV", ENV.to_h.merge(
-            "DCI_NUMERIC_TOLERANCE" => "true",
-            "DCI_NUMERIC_EPSILON" => "0.001"
-          ))
-          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
-
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
-        end
-
-        it "increments fraud metric when drift exceeds ε (numeric mismatch)" do
-          stub_const("ENV", ENV.to_h.merge(
-            "DCI_NUMERIC_TOLERANCE" => "true",
-            "DCI_NUMERIC_EPSILON" => "0.001"
-          ))
-          # |25.0 - 25.5| = 0.5 ≫ 0.001 — numeric branch fires.
-          # Categorical also passes (both healthy) → only ONE increment from numeric.
-          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.5 }
-
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
-        end
-
-        # Квант дроту q/2 = 0.00098 стоїть упритул під ε = 0.001, тож `z_value` (round 4,
-        # ще ±0.00005) виносив за ε 0.36 % ЧЕСНИХ кадрів (max 0.001028). device_z = 12808/512.
-        it "judges drift by the RAW z (`lorenz_state_z`), not the 4-decimal `z_value`" do
-          stub_const("ENV", ENV.to_h.merge(
-            "DCI_NUMERIC_TOLERANCE" => "true",
-            "DCI_NUMERIC_EPSILON" => "0.001"
-          ))
-          attributes = { z_value: 25.0146, lorenz_state_z: 25.014649, bio_status: :homeostasis, device_z: 25.015625 }
-
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
-        end
-
-        it "uses DEFAULT_DCI_EPSILON (0.001) when DCI_NUMERIC_EPSILON is unset" do
-          stub_const("ENV", ENV.to_h.merge("DCI_NUMERIC_TOLERANCE" => "true").except("DCI_NUMERIC_EPSILON"))
-          # |25.0 - 25.0005| = 0.0005 < 0.001 (default) → silent.
-          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
-
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
-          expect(service.send(:numeric_dci_epsilon)).to eq(described_class::DEFAULT_DCI_EPSILON)
-        end
-
-        it "falls back to DEFAULT_DCI_EPSILON when DCI_NUMERIC_EPSILON is malformed" do
-          stub_const("ENV", ENV.to_h.merge(
-            "DCI_NUMERIC_TOLERANCE" => "true",
-            "DCI_NUMERIC_EPSILON" => "not-a-float"
-          ))
-
-          expect(service.send(:numeric_dci_epsilon)).to eq(described_class::DEFAULT_DCI_EPSILON)
-        end
-
-        it "skips numeric branch when device_z is absent (current LoRa packet shape)" do
-          stub_const("ENV", ENV.to_h.merge(
-            "DCI_NUMERIC_TOLERANCE" => "true",
-            "DCI_NUMERIC_EPSILON" => "0.001"
-          ))
-          # No device_z key — feature-flagged hook cannot fire.
-          attributes = { z_value: 25.0, lorenz_state_z: 25.0, bio_status: :homeostasis }
-
-          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-          service.send(:check_z_divergence!, tree_with_family, attributes)
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
-        end
-      end
-
       # [ARCH.41] Cold-Start Time Paradox — time-sync recovery fallback.
       # When a warm-start (has history) categorical DCI mismatch is detected,
       # the service tries to re-derive Z from three epoch_day candidates.
@@ -1708,13 +1613,6 @@ end
       tree.update_columns(last_seen_at: 30.hours.ago)
       balance_before = tree.wallet.balance
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-      # ⚠️ Файловий `before` пінить `calculate_z_from_state` у `[0.5, …]`, тобто
-      # server_z = 0.5 < 2.0 — поза смугою. Під ним Z-канал кричить ЗАКОННО на
-      # будь-якому кадрі, що заявляє гомеостаз, і пін мовчання нижче міряв би МОК,
-      # а не систему. Тож саме тут z повертається в смугу: предмет прикладу —
-      # МЕТАБОЛІЧНИЙ канал, і решта звірок мусить мовчати чесно.
-      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
-        .and_return([ 32.0, 0.1, 0.2, 32.0 ])
 
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)
@@ -1959,72 +1857,7 @@ end
       end
     end
 
-    # ── wire-rev2 поля (device_z / diag / vpd_index) ──────────────────────
-
-    it "feeds wire device_z into the numeric DCI branch end-to-end (FW.31 Gate D)" do
-      stub_const("ENV", ENV.to_h.merge(
-        "DCI_NUMERIC_TOLERANCE" => "true",
-        "DCI_NUMERIC_EPSILON" => "0.001"
-      ))
-      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-      allow(SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL).to receive(:increment)
-      allow(Rails.logger).to receive(:warn).and_call_original
-
-      # device_z = 99.0 — за E.64 стелею (≤ ~67) жоден server_z так не зайде:
-      # drift > ε гарантовано → numeric-гілка мусить крикнути.
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                              dt: 100, status: 0, ttl: 3, fc: 47, device_z: 99.0)
-
-      # Лог комітиться (numeric DCI = сигнал, не відмова) — і це водночас
-      # доводить strip транзієнта :device_z перед create! (не-колонка).
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(Rails.logger).to have_received(:warn).with(/Z Divergence Numeric/)
-      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL)
-        .to have_received(:increment).at_least(:once)
-      # [FW.31 Gate C] канарка читає саме цей лічильник — спільний fraud_detected не розрізнити
-      expect(SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL).to have_received(:increment).once
-    end
-
-    it "skips the numeric branch on the device_z sentinel (Lorenz slept — ARCH.41-C)" do
-      stub_const("ENV", ENV.to_h.merge(
-        "DCI_NUMERIC_TOLERANCE" => "true",
-        "DCI_NUMERIC_EPSILON" => "0.001"
-      ))
-      allow(Rails.logger).to receive(:warn).and_call_original
-
-      allow(SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL).to receive(:increment)
-      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                              dt: 100, status: 0, ttl: 3, fc: 48, device_z: nil)
-
-      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(Rails.logger).not_to have_received(:warn).with(/Z Divergence Numeric/)
-      expect(SilkenNet::Metrics::DCI_NUMERIC_MISMATCH_TOTAL).not_to have_received(:increment)
-    end
-
-    # [FW.31 Gate D] Прилад гейта «device_z у ≥ 95 %» рахує саму розвилку: обидві
-    # гілки, одна мітка на кадр — інакше частка не має знаменника.
-    it "counts every frame that reaches the device_z branch, by whether it carried device_z" do
-      allow(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL).to receive(:increment)
-
-      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                                           dt: 100, status: 0, ttl: 3, fc: 49, device_z: 25.0))
-      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
-                                           dt: 100, status: 0, ttl: 3, fc: 50, device_z: nil))
-
-      expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL)
-        .to have_received(:increment).with(labels: { carried: "true" }).once
-      expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL)
-        .to have_received(:increment).with(labels: { carried: "false" }).once
-    end
-
-    it "keeps panic frames out of the Gate D denominator — DCI never judges them" do
-      allow(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL).to receive(:increment)
-
-      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
-                                           dt: 100, status: 0x80, ttl: 5, fc: 51, device_z: nil))
-
-      expect(SilkenNet::Metrics::TELEMETRY_CCM_DEVICE_Z_TOTAL).not_to have_received(:increment)
-    end
+    # ── wire-rev2 поля (diag / vpd_index) ─────────────────────────────────
 
     # [HW.30] Метрику має лише fc_degraded — thr_invalid і fauna_skip писача не мають
     # (TinyML і фауна на Солдаті паркуються), тож їхні біти лишились тільки в лозі.
@@ -2258,15 +2091,18 @@ end
         .with(a_string_matching(/\[CCM Telemetry Error\] DID .+: boom in commit/))
     end
 
-    it "re-raises MissingLorenzSeedError raised on the CCM path so the worker can retry" do
-      allow_any_instance_of(described_class).to receive(:compute_server_z)
-        .and_raise(TelemetryUnpackerService::MissingLorenzSeedError, "no seed")
+    # ⚖️ [FW.66 (Б)] CCM-ера Лоренца не має, тож `K_seed` цей шлях не читає: дерево без
+    # зерна дістає рядок, а не `MissingLorenzSeedError` (доти тут пінили re-raise).
+    it "lands a CCM row for a tree without a K_seed — the CCM path never reads it" do
+      allow_any_instance_of(HardwareKey).to receive(:binary_lorenz_seed).and_return(nil)
 
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 19)
 
-      expect { described_class.call(chunk) }
-        .to raise_error(TelemetryUnpackerService::MissingLorenzSeedError)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.attributes.values_at("z_value", "lorenz_state_x", "lorenz_state_y", "lorenz_state_z"))
+        .to all(be_nil)
+      expect(SilkenNet::Attractor).not_to have_received(:calculate_z_from_state)
     end
   end
 

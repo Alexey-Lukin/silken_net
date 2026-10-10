@@ -867,21 +867,20 @@ end
 puts "   📜 Кодекс-ліси: #{codex_forests.size} кластери · #{codex_trees.size} дерев"
 
 puts "🚨 Створення тестових тривог..."
-anomaly_tree = cherkasy_trees.last
-
 # ⛔ Демо-medium не малює стан, якого система не породжує (клас «фікстура пінить
-# недосяжне»): `attractor_destabilised` знято з серверною Z-гілкою [E.64 ⚖️ 2026-09-05], а
+# недосяжне»): `attractor_destabilised` знято з серверною Z-гілкою [E.64 ⚖️ 2026-09-05],
 # `severe_drought` / `hydrological_stress` — з пристрійним status-гейтом посухи [FW.66 (Б)],
-# і авто-писача в посухи немає. Тож тут — дрейф калібрування, у формі, якою його пише
-# `DeviceCalibration` (живий medium-писач).
-calibration_alert = EwsAlert.create!(
+# а `hardware_decay` писача має, та предикат `DeviceCalibration` сьогодні не істинний
+# ніколи (ARCH.84). Тож тут — застрягла OTA Королеви у формі живого писача
+# `GatewayStalenessSweepWorker` (кластерний `system_fault`, без дерева).
+ota_stuck_gateway = gateways.first
+ota_stuck_alert = EwsAlert.create!(
   cluster: cherkasy_forest,
-  tree: anomaly_tree,
   alert_type: :system_fault,
   severity: :medium,
   status: :active,
-  message_key: "hardware_decay",
-  message_params: { did: anomaly_tree.did }
+  message_key: "queen_ota_stuck",
+  message_params: { uid: ota_stuck_gateway.uid, stuck_for_h: 26, firmware_id: 1 }
 )
 
 fire_alert = EwsAlert.create!(
@@ -1030,11 +1029,11 @@ puts "🔧 Реєстрація технічного обслуговуванн�
 # [СИНХРОНІЗОВАНО]: hardware_verified обов'язковий (validates inclusion: [true, false])
 MaintenanceRecord.create!(
   user: forester,
-  maintainable: cherkasy_trees[5],
-  ews_alert: calibration_alert,
+  maintainable: ota_stuck_gateway,
+  ews_alert: ota_stuck_alert,
   action_type: :inspection,
   performed_at: 1.day.ago,
-  notes: "Огляд після тривоги дрейфу калібрування. Корпус цілий, сенсор чистий.",
+  notes: "Огляд Королеви після застряглої OTA: живлення й антена в нормі, кампанію знято.",
   hardware_verified: true
 )
 

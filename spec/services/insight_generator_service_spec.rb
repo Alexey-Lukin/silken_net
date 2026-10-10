@@ -707,6 +707,23 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
+  # [FW.66 (Б)] CCM-рядок z не має, тож доба лише з таких рядків дає `AVG(z_value)` = NULL —
+  # і хроніка мусить сказати «немає даних», а не надрукувати виміряний нуль (backend #64).
+  describe "a day of rows without z (CCM era)" do
+    it "keeps reasoning avg_z nil instead of a fabricated 0.0" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 20.0, voltage_mv: 3300, z_value: nil,
+        acoustic_events: 0, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      expect(insight.reasoning.fetch("avg_z")).to be_nil
+    end
+  end
+
   # 🔴 [ARCH.102] СТЕЛЯ евристики — несуча властивість, не побічний ефект:
   # прямих сигналів у ній НЕМАЄ (sap_flow без писача; acoustic_events з HW.30 теж
   # без писача — пʼєзо зрізано, байт завжди 0), тож евристичний шлях

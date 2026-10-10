@@ -94,8 +94,8 @@ module TelemetryChunkHelper
   #
   # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`;
   # `diag` packs `[thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1]`.
-  # `device_z:` приймає Float (квантується тут, дзеркало Pack_FW2_Device_Z)
-  # або `nil` → сентинель 0xFFFF («Лоренц не рахувався»).
+  # Байти 16..17 (`device_z` wire-rev2.1) несуть 0xFFFF — «Лоренц не рахувався»: бекенд
+  # їх не читає [FW.66 (Б)], а wire-rev2.2 віддає їх `voc_mv`.
   # `ema:` дефолтить у `dt` — контракт «wire = вхід GP» для спек, яким EMA
   # неважливий; точна metabolic-гілка тестується явним `ema:`.
   #
@@ -105,19 +105,13 @@ module TelemetryChunkHelper
   # them in, keeping this helper pure and reusable.
   # ---------------------------------------------------------------------
   def build_ccm_chunk(did_hex:, key:, rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:,
-                      fw_nibble: 0, fc: 1, device_z: nil, diag: 0, vpd_index: 0,
+                      fw_nibble: 0, fc: 1, diag: 0, vpd_index: 0,
                       gossip_ts_lsb: 0, ema: nil)
     did_int      = did_hex.to_i(16)
     did_bytes    = [ did_int ].pack("N")
     mesh_ctrl    = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
-    device_z_raw =
-      if device_z.nil?
-        TelemetryUnpackerService::CCM_DEVICE_Z_NONE
-      else
-        [ (device_z * TelemetryUnpackerService::CCM_DEVICE_Z_SCALE + 0.5).floor, 0xFFFE ].min
-      end
     plaintext = [ vcap, temp, acoustic, dt, status, mesh_ctrl,
-                  device_z_raw, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
+                  0xFFFF, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
     ct, mic   = Cryptography::LoraCcm.encrypt(
       key: key, did_bytes: did_bytes, frame_counter: fc,
       gossip_ts_lsb: gossip_ts_lsb, plaintext: plaintext

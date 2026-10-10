@@ -38,7 +38,7 @@ class AlertDispatchService
     # на дроті не існує (див. actuator.rb / cluster.rb).
     if telemetry_log.bio_status_vm_error?
       create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
+        cluster: cluster, tree: tree,
         alert_type: :firmware_fault,
         message_key: "firmware_fault", message_params: { did: tree.did }
       )
@@ -54,7 +54,7 @@ class AlertDispatchService
     # немає: стан прошивки не сміє глушити пожежну гілку нижче.
     if telemetry_log.firmware_report_reverted?
       create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
+        cluster: cluster, tree: tree,
         alert_type: :firmware_reverted,
         message_key: "firmware_reverted",
         # «re-issue лише вищою» — а вищою за ПОВНИЙ id, який дріт CCM не несе: голий залишок
@@ -77,7 +77,7 @@ class AlertDispatchService
     # і саме тому panic-кадр доходить до свого лог-рядка нижче.
     if telemetry_log.temperature_c && telemetry_log.temperature_c >= fire_limit
       create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :critical,
+        cluster: cluster, tree: tree,
         alert_type: :fire_detected,
         message_key: "fire_detected",
         message_params: { temperature_c: telemetry_log.temperature_c, fire_limit: fire_limit }
@@ -158,7 +158,7 @@ class AlertDispatchService
   # `message_key` + `message_params` замість готового рядка: алерт народжується
   # у воркері, де локалі глядача не існує, тож фраза мусить збиратись у момент
   # показу (дім механізму — `EwsAlert#message`, ключі — `alerts.messages.*`).
-  private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message_key:, message_params: {})
+  private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, alert_type:, message_key:, message_params: {})
     # --- ⚡ [ОПТИМІЗАЦІЯ]: SILENCE FILTER ---
     # Rails.cache замість SQL .exists?, щоб не "вбити" Postgres на кожній тривозі.
     # ⚠️ Прод-стор тут Solid Cache (PostgreSQL), НЕ Redis — заголовок казав інакше.
@@ -173,10 +173,10 @@ class AlertDispatchService
     # Note: Read/write has a small race window, acceptable because:
     # (1) alert dispatch is typically serial within telemetry processing,
     # (2) per-type silence filter (5 min) provides additional protection.
-    # ⚠️ [FW.66] Без гарда `severity == :critical`: з посухою пішов останній некритичний
-    # алерт цього сервісу, тож кожен виклик тут критичний, а гілка «не критичний» стала
-    # станом, якого жоден писач не створює (backend #76). Повертаючи некритичний тип —
-    # поверни й гард.
+    # ⚠️ [FW.66] Метод створює лише КРИТИЧНІ алерти, і тримає це його сигнатура, не гард:
+    # з посухою пішов останній некритичний писач сервісу, тож гілка «не критичний» була б
+    # станом, якого ніхто не створює (backend #76). Повертаючи некритичний тип — поверни
+    # параметр `severity:` разом із гардами per-DID ліміту й інвалідації кешу прогнозу.
     time_bucket = Time.current.to_i / DID_RATE_LIMIT_WINDOW.to_i
     rate_key = "ews_did_rate:#{tree.did}:#{time_bucket}"
     current_count = (Rails.cache.read(rate_key) || 0).to_i
@@ -200,7 +200,7 @@ class AlertDispatchService
     alert = begin
       EwsAlert.transaction(requires_new: true) do
         EwsAlert.create!(
-          cluster: cluster, tree: tree, severity: severity,
+          cluster: cluster, tree: tree, severity: :critical,
           alert_type: alert_type, message_key: message_key, message_params: message_params
         )
       end
