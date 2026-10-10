@@ -657,6 +657,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |
 | `lorenz_state_x/y/z` | float | Хвіст траєкторії Лоренца для chain-старту наступного пакету |
 | `time_unsynced_fallback` | boolean | `true`, коли Солдат сам каже «час невідомий» (ARCH.41-B: ECB — сентинел `0xFE` в акустичному байті, CCM wire-rev2.2 — біт diag `time_uncertain`) або коли DCI mismatch відновлено через ARCH.41 epoch_day fallback (застарілий RTC після VBAT loss). Окремої команди синку немає: час доїжджає конвертом poll-відповіді (FW.60) |
+| `reset_cause` | smallint (enum, nullable) | **[FW.59]** Причина останнього СПРАВЖНЬОГО ребуту Солдата — код `diag[7..5]` CCM-кадру (`ResetCause`: `unknown` · `power_on` · `pin` · `software` · `iwdg` · `wwdg` · `hardfault` · `low_power`; wire-дім — `firmware/common/reset_cause.h`, парність пінить `spec/models/reset_cause_spec.rb`). Стан, а не подія: повторюється кожним кадром до наступного ребуту. NULL — кадр поля не має (ECB-ера); `unknown` — «не повідомлено», ніколи «холодний старт». `firmware_fault` — лише на переході в причину-збій (`#reset_cause_changed_since_previous_frame?`, ⚖️ — врізка під `AlertDispatchService` у [`04_02`](04_02_Business_Logic_and_Services)) |
 
 **Ключові методи:**
 
@@ -757,6 +758,17 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `reset_cause` | **[FW.59]** Причина ребута Королеви зі старших трьох бітів `health_flags`: `unknown · power_on · pin · software · iwdg · wwdg · hardfault · low_power`. 🔴 `unknown` — сентинел «не повідомлено» (кожен рядок, старший за FW.59, несе тут нуль), НІКОЛИ «холодний старт». Коди й порядок декоду — [`03_02 §7.1`](03_02_Queen_Gateway_Firmware) |
 | `reset_fault?` | Причина є збоєм ПРОШИВКИ (`iwdg`/`wwdg`/`hardfault`/`low_power`) — vendor-attributable. ⛔ `power_on` сюди не входить: brownout це залізо й майданчик, а не наш код, і саме атрибуція вирішує, кому колись виставить рахунок slashing |
 | `critical_fault?` | Диз'юнкція названих умов: battery low · overheat · freeze · weak signal · `coap_fail_count ≥ COAP_FAIL_ALERT_THRESHOLD` · `reset_fault?`. ⚠️ Тут стояло «будь-яка з **чотирьох** констант» при пʼятьох живих гілках — лічильник у прозі старіє окремо від переліку, тому названо члени ([`00_06 §1`](00_06_SSOT_Documentation_Standard)). Nil-safe: `false` коли voltage/temperature/csq ще не зафіксовано (insert_all hot path). |
+
+
+### `ResetCause` — Причина Ребуту Вузла [FW.59]
+
+**Не AR-модель** — модуль-словник у `app/models/` (звідси й місце в цьому реєстрі): ОДИН Ruby-дім 3-бітного коду причини ребуту для обох вузлів — пульсу Королеви (`GatewayTelemetryLog#reset_cause`, health-flags) і CCM-кадру Солдата (`TelemetryLog#reset_cause`, `diag[7..5]`). Wire-дім кодів — `firmware/common/reset_cause.h`; парність кодів і кошика збоїв із ним пінить `spec/models/reset_cause_spec.rb` (доти її не пінив ніхто: фабрика пульсу свідомо бере літерали).
+
+| Член | Опис |
+|------|------|
+| `CAUSES` | Індекс = код на дроті: `unknown · power_on · pin · software · iwdg · wwdg · hardfault · low_power`. 🔴 `unknown` (0) — сентинел «не повідомлено», ніколи «холодний старт» |
+| `FAULT_CAUSES` | Vendor-attributable кошик (`iwdg` · `wwdg` · `hardfault` · `low_power`) — дзеркало `Silken_Reset_Cause_Is_Fault`; `power_on` (brownout) сюди не входить |
+| `from_code(code)` · `fault?(cause)` | Код → імʼя (поза діапазоном — `unknown`) · чи причина є збоєм прошивки |
 
 ---
 

@@ -1895,6 +1895,9 @@ end
       fw_bit = ->(name) { header[/#define #{name}\s+(0x\h+)u/, 1]&.to_i(16) }
       expect(fw_bit.call("FW2_DIAG_TIME_UNCERTAIN_BIT")).to eq(described_class::CCM_DIAG_TIME_UNCERTAIN_BIT)
       expect(fw_bit.call("FW2_DIAG_FC_DEGRADED_BIT")).to eq(described_class::CCM_DIAG_FC_DEGRADED_BIT)
+      expect(fw_bit.call("FW2_DIAG_RESET_CAUSE_MASK")).to eq(described_class::CCM_DIAG_RESET_CAUSE_MASK)
+      expect(header[/#define FW2_DIAG_RESET_CAUSE_SHIFT\s+(\d+)u/, 1]&.to_i)
+        .to eq(described_class::CCM_DIAG_RESET_CAUSE_SHIFT)
     end
 
     # 🔴 Розкладка МІЖ мовами: золотий plaintext, який прошивка мусить дати (`test_ccm.c`
@@ -1918,14 +1921,15 @@ end
         metabolism_s: 0xFFFF,                # PT[4..5]
         mesh_ttl: 3,                         # PT[7]
         time_unsynced_fallback: true,        # PT[10] біт 4
+        reset_cause: "hardfault",            # PT[10] біти 7..5 = 6
         acoustic_events: nil,
         vpd: nil                             # PT[11] — колонка чекає шкали HW.32
       )
       expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment) # PT[10] біт 0
     end
 
-    # fc_degraded — метрика; reset_cause і voc_attempt споживача не мають, і саме тому старий
-    # декодер (thr_invalid/fauna) мовчить: код ребуту не сміє читатись «порогами TinyML».
+    # fc_degraded — метрика; reset_cause — колонка (FW.59), voc_attempt споживача не має, і саме
+    # тому старий декодер (thr_invalid/fauna) мовчить: код ребуту не сміє читатись «порогами TinyML».
     it "surfaces fc_degraded as a metric and reads no TinyML/fauna bits from the new diag fields" do
       allow(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to receive(:increment)
       allow(Rails.logger).to receive(:warn).and_call_original
@@ -1937,7 +1941,17 @@ end
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment)
       expect(Rails.logger).not_to have_received(:warn).with(/FW\.18b|FW\.42/)
-      expect(TelemetryLog.last.time_unsynced_fallback).to be(false)
+      expect(TelemetryLog.last).to have_attributes(time_unsynced_fallback: false, reset_cause: "hardfault")
+    end
+
+    # ⚖️ [FW.59] Причина ребуту — колонка кожного CCM-рядка (стан, не подія); перехід судить
+    # AlertDispatchService (тут заглушений — його пінить alert_dispatch_service_spec на рядках БД).
+    it "records the reset cause of every CCM frame, the ECB-free 'not reported' code included" do
+      chunk = ->(fc, diag) { build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3, fc: fc, diag: diag) }
+
+      described_class.call(chunk.call(53, 4 << 5)) # iwdg
+      described_class.call(chunk.call(54, 0))      # прошивка без джерела причини
+      expect(TelemetryLog.order(:created_at).last(2).map(&:reset_cause)).to eq(%w[iwdg unknown])
     end
 
     # [ARCH.41-B] «Час невідомий» CCM-кадр несе бітом diag, а не кодом 0xFE в акустиці.

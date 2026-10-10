@@ -87,6 +87,11 @@ class TelemetryLog < ApplicationRecord
     I18n.t("#{BIO_STATUS_LABEL_SCOPE}.#{key}", default: key)
   end
 
+  # [FW.59] Причина останнього СПРАВЖНЬОГО ребуту Солдата — `diag[7..5]` CCM-кадру (коди й
+  # кошик збоїв — `ResetCause`). Стан, а не подія: повторюється КОЖНИМ кадром, доки вузол не
+  # ребутнеться знову. NULL — кадр поля не має (ECB-ера), а не «не повідомлено» (`unknown`).
+  enum :reset_cause, ResetCause::CAUSES.each_with_index.to_h, prefix: true
+
   # [BLOCKER-12 FIX]: Enum для oracle_status замість plain string.
   # Забезпечує type safety, Rails-level валідацію та автоматичні scope-методи.
   enum :oracle_status, {
@@ -198,6 +203,22 @@ class TelemetryLog < ApplicationRecord
   # панічний з 5 (panic персиститься з PanicFlag StatusByte, FW.29).
   def relayed_via_mesh?
     mesh_ttl < (panic? ? INITIAL_TTL_PANIC : INITIAL_TTL_NORMAL)
+  end
+
+  def reset_fault? = ResetCause.fault?(reset_cause)
+
+  # ⚖️ [FW.59, 2026-10-10 — врізка під `AlertDispatchService` у 04_02] Алерт на ПЕРЕХОДІ, не на
+  # кадрі: попередній ДОЇХАЛИЙ кадр того ж дерева несе іншу причину або його немає (перший
+  # CCM-кадр після фліпу, що вже несе збій, — перехід). Дерево в стані збою платить цей запит
+  # КОЖНИМ кадром, тож спершу закрите вікно (зрізає партиції разом із default, скіл
+  # telemetry-pipeline #6), а безмежний пошук — лише коли у вікні попередника немає.
+  PREVIOUS_FRAME_WINDOW = 2.days
+
+  def reset_cause_changed_since_previous_frame?
+    earlier = TelemetryLog.where(tree_id: tree_id).order(created_at: :desc)
+    recent  = earlier.where(created_at: (created_at - PREVIOUS_FRAME_WINDOW)...created_at)
+    previous = recent.exists? ? recent.pick(:reset_cause) : earlier.where(created_at: ...created_at).pick(:reset_cause)
+    previous != reset_cause
   end
 
   # Швидка перевірка на критичність для UI

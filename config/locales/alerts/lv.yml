@@ -68,6 +68,7 @@ lv:
       slash_frozen_indeterminate_tree: 'Slashing bloķēts (koks %{tree_did}): A kategorijas pierādījums pastāv, bet kaitējuma APJOMS nav nosakāms (nav AiInsight datu par datumu). Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing bloķēts (koks %{tree_did}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      soldier_reset_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: koka mezgls pārstartējās %{cause} dēļ — mūsu pašu kods pakārās vai avarēja. Nepieciešams re-flash/OTA; tā NAV operatora vaina. DID: %{did}"
       telemetry_divergence_detected: "⚠️ DCI NESAKRITĪBA: ierīces un servera Lorenca stāvoklis nesakrita par %{target_date}. Tas ir signāls pārbaudei, nevis krāpšanas spriedums."
       tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
     resolutions:

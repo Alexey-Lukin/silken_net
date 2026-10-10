@@ -68,6 +68,7 @@ lt:
       slash_frozen_indeterminate_tree: 'Slashing užblokuotas (medis %{tree_did}): A kategorijos įrodymas yra, bet žalos MASTAS neapibrėžtas (nėra AiInsight duomenų tai datai). Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing užblokuotas (medis %{tree_did}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      soldier_reset_fault: "⚙️ PROGRAMINĖS ĮRANGOS GEDIMAS: medžio mazgas persikrovė dėl %{cause} — pakibo arba lūžo mūsų kodas. Reikalingas re-flash/OTA; tai NE operatoriaus kaltė. DID: %{did}"
       telemetry_divergence_detected: "⚠️ DCI NEATITIKIMAS: įrenginio ir serverio Lorenzo būsena nesutapo už %{target_date}. Tai signalas patikrinti, o ne sukčiavimo verdiktas."
       tree_silent: "🌳 Mazgas %{did} tyli ~%{silent_for_h} h (paskutinis siuntimas %{last_seen_at}, slenkstis %{threshold_h} h). Tyli sveikata ir mirtis/vagystė neatskiriamos iki heartbeat — reikia išvykti klausytis."
     resolutions:

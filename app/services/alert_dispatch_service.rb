@@ -26,6 +26,24 @@ class AlertDispatchService
     # одного дерева, а не NULL. Гард лишається захистом на ще-nullable колонці.
     fire_limit = cluster&.custom_fire_threshold || family.fire_resistance_rating || DEFAULT_FIRE_TEMP_C
 
+    # 0. [FW.59] ПРИЧИНА РЕБУТУ СОЛДАТА (CCM diag[7..5]) — пес, HardFault, live-lock у
+    # low-power: завис або впав НАШ код. Причина — СТАН, що повторюється кожним кадром, а
+    # Солдат штатно не ребутиться, тож алерт лише на ПЕРЕХОДІ (⚖️ 2026-10-10, врізка в 04_02):
+    # на кожному кадрі він висів би місяцями після одного укусу пса. Питання до бази —
+    # лише для кадру з причиною-збоєм. 🔴 Гілка стоїть ПЕРЕД `vm_error` свідомо: обидві
+    # пишуть `firmware_fault`, тиша й дедуп у них спільні, а перехід ОДНОРАЗОВИЙ — проковтнутий
+    # тишею від `vm_error` того ж кадру (OTA, що валить і mruby, і C-код), він не повторився б
+    # ніколи, тоді як `vm_error` повторюється щокадру. Що відкритий `firmware_fault` дерева
+    # ковтає перехід і так — ціна, названа у врізці 04_02.
+    if telemetry_log.reset_fault? && telemetry_log.reset_cause_changed_since_previous_frame?
+      create_and_dispatch_alert!(
+        cluster: cluster, tree: tree,
+        alert_type: :firmware_fault,
+        message_key: "soldier_reset_fault",
+        message_params: { did: tree.did, cause: telemetry_log.reset_cause }
+      )
+    end
+
     # 1. СОФТ-ЗБІЙ ПРОШИВКИ (wire status=3 = BIO_STATUS_VM_ERROR)
     # [SLASH-1] Раніше status=3 хибно читався «вандалізмом» (vandalism_breach →
     # positive_a? → необоротний slash жертви OTA-бага). Насправді 0b11 пише лише

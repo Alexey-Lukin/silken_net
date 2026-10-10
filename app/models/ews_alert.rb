@@ -98,9 +98,12 @@ class EwsAlert < ApplicationRecord
     # OTA), НЕ біо-сигнал і НЕ вина оператора: не в A-сеті (vandalism_breach ↑), не в
     # comms_no_ack? whitelist (вузол ЖИВИЙ — радіо працює) і виключений з
     # critical_unmaintained? — не карати оператора за наш баг.
-    # ПИСАЧІВ ДВА, і в них різне залізо під однаковою атрибуцією:
+    # ПИСАЧІВ ТРИ, і в них різне залізо під однаковою атрибуцією:
     #   · Soldier — wire status=3 (BIO_STATUS_VM_ERROR: mruby-crash / VM-OOM /
     #     unprovisioned; зламаний лише mruby, радіо працює);
+    #   · [FW.59] Soldier — ПЕРЕХІД причини ребуту в CCM diag[7..5] у збій (IWDG / WWDG /
+    #     HardFault / нелегальний low-power; ключ `soldier_reset_fault`) — лише на переході,
+    #     бо причина повторюється щокадру (⚖️ 2026-10-10, врізка в 04_02);
     #   · [FW.59] Queen — причина ребута в health-flags пульсу є збоєм прошивки
     #     (IWDG / WWDG / HardFault / нелегальний low-power), тобто завис або впав
     #     наш C-код. Свідомо СЮДИ, а не в `hardware_fault`/`system_fault`: обидва

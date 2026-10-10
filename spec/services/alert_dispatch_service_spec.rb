@@ -18,7 +18,7 @@ RSpec.describe AlertDispatchService, type: :service do
   describe "defensive nil / defined?-guards" do
     def base_log(**overrides)
       instance_double(TelemetryLog, {
-        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: false,
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500, temperature_c: 25,
         bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
         z_value: 20.0
@@ -40,13 +40,78 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
+  # ⚖️ [FW.59, 2026-10-10 — врізка під AlertDispatchService у 04_02] Причина ребуту Солдата —
+  # СТАН, що повторюється кожним кадром, тож firmware_fault лише на ПЕРЕХОДІ в причину-збій
+  # відносно попереднього доїхалого кадру того ж дерева. Рядки справжні: перехід читає БД.
+  describe "soldier reset cause (FW.59 — transition, not frame)" do
+    def frame(cause, at:, on: tree)
+      create(:telemetry_log, tree: on, reset_cause: cause, created_at: at)
+    end
+
+    def soldier_reset_alerts = EwsAlert.where(message_key: "soldier_reset_fault")
+
+    it "raises firmware_fault when the previous frame carried a different cause" do
+      frame(:power_on, at: 2.hours.ago)
+      log = frame(:iwdg, at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.to change(soldier_reset_alerts, :count).by(1)
+      expect(soldier_reset_alerts.last).to have_attributes(alert_type: "firmware_fault", severity: "critical")
+      I18n.with_locale(:en) { expect(soldier_reset_alerts.last.message).to include("iwdg", log.tree.did.to_s) }
+    end
+
+    it "stays silent while the same fault cause repeats frame after frame" do
+      frame(:iwdg, at: 2.hours.ago)
+      log = frame(:iwdg, at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.not_to change(EwsAlert, :count)
+    end
+
+    it "reads the first fault frame after an ECB predecessor (no field) as a transition" do
+      frame(nil, at: 2.hours.ago)
+      log = frame(:hardfault, at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.to change(soldier_reset_alerts, :count).by(1)
+    end
+
+    it "does not alert on a change into a non-fault cause" do
+      frame(:iwdg, at: 2.hours.ago)
+      log = frame(:software, at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.not_to change(EwsAlert, :count)
+    end
+
+    # Перехід одноразовий, а тиша й дедуп `firmware_fault` спільні з vm_error — тому гілка
+    # переходу йде ПЕРШОЮ: OTA, що валить і mruby, і C-код, мусить дати саме reset-алерт.
+    it "reports the transition even when the same frame also carries vm_error" do
+      frame(:power_on, at: 2.hours.ago)
+      log = create(:telemetry_log, tree: tree, reset_cause: :hardfault, bio_status: :vm_error, created_at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.to change(soldier_reset_alerts, :count).by(1)
+    end
+
+    it "finds a predecessor older than the closed window (repeat stays silent)" do
+      frame(:iwdg, at: (TelemetryLog::PREVIOUS_FRAME_WINDOW + 1.day).ago)
+      log = frame(:iwdg, at: 1.hour.ago)
+
+      expect { described_class.analyze_and_trigger!(log) }.not_to change(EwsAlert, :count)
+    end
+
+    it "judges the transition against this tree's frames only, and only earlier ones" do
+      frame(:iwdg, at: 2.hours.ago, on: create(:tree, cluster: cluster, tree_family: family))
+      log = frame(:iwdg, at: 1.hour.ago)
+      frame(:iwdg, at: 10.minutes.ago) # пізніший кадр того ж дерева попередником не є
+
+      expect { described_class.analyze_and_trigger!(log) }.to change(soldier_reset_alerts, :count).by(1)
+    end
+  end
+
   # [SEC.20] Reverted-біт wire fw-report = термінальний відкат на baseline:
   # окремий тип firmware_reverted (ops-дія «re-issue версією > спаленої»),
   # НЕ транзієнтний firmware_fault і тим паче не A-сет.
   describe "firmware_reverted (SEC.20 baseline-revert)" do
     def reverted_log(**overrides)
       instance_double(TelemetryLog, {
-        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true,
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true, reset_fault?: false,
         firmware_report_contract_id: 42,
         voltage_mv: 3500, temperature_c: 25,
         bio_status_anomaly?: false, panic?: false, bio_status_stress?: false,
@@ -90,7 +155,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -115,7 +180,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 80,
         bio_status_anomaly?: false,
@@ -139,7 +204,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 50,
         temperature_c: 80,
         bio_status_anomaly?: false,
@@ -164,7 +229,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3300,
         temperature_c: 25,
         bio_status_anomaly?: true,
@@ -181,7 +246,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3300,
         temperature_c: 80,
         bio_status_anomaly?: true
@@ -204,7 +269,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: nil,        # panic-кадр нічого не міряв — NULL, не legacy-нуль
         temperature_c: nil,
         bio_status_anomaly?: false,
@@ -236,7 +301,7 @@ RSpec.describe AlertDispatchService, type: :service do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -264,7 +329,7 @@ describe "attractor homeostasis check [E.64: Z більше НЕ судить з
     log = instance_double(TelemetryLog,
       tree: tree,
       bio_status_vm_error?: false,
-      firmware_report_reverted?: false,
+      firmware_report_reverted?: false, reset_fault?: false,
       voltage_mv: 3500,
       temperature_c: 25,
       bio_status_anomaly?: false,
@@ -284,7 +349,7 @@ describe "attractor homeostasis check [E.64: Z більше НЕ судить з
     log = instance_double(TelemetryLog,
       tree: tree,
       bio_status_vm_error?: false,
-      firmware_report_reverted?: false,
+      firmware_report_reverted?: false, reset_fault?: false,
       voltage_mv: 3500,
       temperature_c: 25,
       bio_status_anomaly?: false,
@@ -307,7 +372,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 70,  # above default 60 but below family's 80
         bio_status_anomaly?: false,
@@ -325,7 +390,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 80,  # exactly at family's fire_resistance_rating
         bio_status_anomaly?: false,
@@ -347,7 +412,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree_custom,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 85,  # above family's 80 but below cluster's 90
         bio_status_anomaly?: false,
@@ -367,7 +432,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 95,
         bio_status_anomaly?: false,
@@ -398,7 +463,7 @@ end
 
     def reverted_frame(**overrides)
       instance_double(TelemetryLog, {
-        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true,
+        tree: tree, bio_status_vm_error?: false, firmware_report_reverted?: true, reset_fault?: false,
         firmware_report_contract_id: 42, voltage_mv: 3500, temperature_c: 25,
         panic?: false, bio_status_stress?: false
       }.merge(overrides))
@@ -493,7 +558,7 @@ end
       log = instance_double(TelemetryLog,
         tree: target_tree,
         bio_status_vm_error?: true,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -514,7 +579,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 0,
         temperature_c: 25,
         bio_status_anomaly?: false,
@@ -534,7 +599,7 @@ end
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_vm_error?: true,
-        firmware_report_reverted?: false,
+        firmware_report_reverted?: false, reset_fault?: false,
         voltage_mv: 3500,
         temperature_c: 25,
         bio_status_anomaly?: false,

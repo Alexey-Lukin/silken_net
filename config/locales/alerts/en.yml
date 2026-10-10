@@ -68,6 +68,7 @@ en:
       slash_frozen_indeterminate_tree: 'Slashing blocked (tree %{tree_did}): Category A evidence exists, but the MAGNITUDE of the damage is indeterminate (no AiInsight data for the date). Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing blocked (cluster #%{cluster_id}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing blocked (tree %{tree_did}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      soldier_reset_fault: "⚙️ FIRMWARE FAULT: the tree node rebooted via %{cause} — our own code hung or crashed. Re-flash/OTA required; NOT the operator's fault. DID: %{did}"
       telemetry_divergence_detected: "⚠️ DCI DIVERGENCE: device and server Lorenz state disagreed for %{target_date}. A signal to investigate, not a fraud verdict."
       tree_silent: "🌳 Node %{did} has been silent for ~%{silent_for_h} h (last transmission %{last_seen_at}, threshold %{threshold_h} h). Silent health and death/theft are indistinguishable until a heartbeat — go and listen."
     resolutions:

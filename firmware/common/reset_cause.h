@@ -149,8 +149,10 @@ static inline uint8_t Silken_Reset_Cause_Resolve(uint8_t woke_from_standby, uint
  * Чи є причина збоєм ПРОШИВКИ (на відміну від штатного чи зовнішнього
  * ребута). Vendor-attributable: пес і HardFault означають, що завис або
  * упав НАШ код; live-lock у low-power — так само наша конфігурація.
- * Живий споживач — бекенд (GatewayTelemetryLog#reset_fault?); тут форма
- * тримається поруч із кодами, щоб два боки не розійшлись у визначенні.
+ * Живі споживачі — бекенд (GatewayTelemetryLog#reset_fault? для Королеви,
+ * TelemetryLog#reset_fault? для Солдата; Ruby-дзеркало — ResetCause::FAULT_CAUSES,
+ * рівність пінить spec/models/reset_cause_spec.rb); тут форма тримається поруч
+ * із кодами, щоб два боки не розійшлись у визначенні.
  */
 static inline uint8_t Silken_Reset_Cause_Is_Fault(uint8_t cause)
 {

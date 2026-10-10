@@ -1382,7 +1382,8 @@ CREATE TABLE public.telemetry_logs (
     gateway_attested boolean DEFAULT false NOT NULL,
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
-    merkle_leaf character varying(64)
+    merkle_leaf character varying(64),
+    reset_cause smallint
 )
 PARTITION BY RANGE (created_at);
 
@@ -1443,7 +1444,8 @@ CREATE TABLE public.telemetry_logs_default (
     gateway_attested boolean DEFAULT false NOT NULL,
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
-    merkle_leaf character varying(64)
+    merkle_leaf character varying(64),
+    reset_cause smallint
 );
 
 
@@ -1484,7 +1486,8 @@ CREATE TABLE public.telemetry_logs_y2026m08 (
     gateway_attested boolean DEFAULT false NOT NULL,
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
-    merkle_leaf character varying(64)
+    merkle_leaf character varying(64),
+    reset_cause smallint
 );
 
 
@@ -1525,7 +1528,8 @@ CREATE TABLE public.telemetry_logs_y2026m09 (
     gateway_attested boolean DEFAULT false NOT NULL,
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
-    merkle_leaf character varying(64)
+    merkle_leaf character varying(64),
+    reset_cause smallint
 );
 
 
@@ -1566,7 +1570,8 @@ CREATE TABLE public.telemetry_logs_y2026m10 (
     gateway_attested boolean DEFAULT false NOT NULL,
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
-    merkle_leaf character varying(64)
+    merkle_leaf character varying(64),
+    reset_cause smallint
 );
 
 
@@ -4793,6 +4798,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261010180000'),
 ('20261010102918'),
 ('20261006075239');
 

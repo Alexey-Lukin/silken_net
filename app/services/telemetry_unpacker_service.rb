@@ -18,8 +18,9 @@ class TelemetryUnpackerService < ApplicationService
   CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
   # [FW.66 · wire-rev2.2] diag-байт CCM-кадру = [reset_cause:3 | time_uncertain:1 |
   # voc_attempt:1 | резерв:2 | fc_degraded:1] — дзеркало FW2_DIAG_* (firmware/common/
-  # lora_ccm.h), рівність пінить спека. Бекенд читає два біти; reset_cause і
-  # voc_attempt споживача тут не мають (нижче, у розборі).
+  # lora_ccm.h), рівність пінить спека. voc_attempt споживача тут не має (нижче, у розборі).
+  CCM_DIAG_RESET_CAUSE_SHIFT  = 5
+  CCM_DIAG_RESET_CAUSE_MASK   = 0x07
   CCM_DIAG_TIME_UNCERTAIN_BIT = 0x10
   CCM_DIAG_FC_DEGRADED_BIT    = 0x01
 
@@ -494,12 +495,14 @@ class TelemetryUnpackerService < ApplicationService
     # [SEC.40] Транзієнт: допуск кадру у вікно — у транзакції рядка (`commit_telemetry`).
     log_attributes[:ccm_frame] = ccm_frame
 
-    # [FW.66 · wire-rev2.2] diag-байт (byte 18) — CCM_DIAG_* ↑. Читаємо два біти:
-    # fc_degraded (FW.2 I-HW; метрика без per-DID мітки, дерево — у лозі) і time_uncertain
-    # (ARCH.41-B; у rev2.1 він їхав кодом 0xFE в акустичному байті). reset_cause (FW.59) і
-    # voc_attempt (HW.19) споживача на бекенді ще не мають — ⛔ не декодуй їх як колишні
-    # thr_invalid/fauna: ті біти з HW.30 без писача, і старий декодер прочитав би новий
-    # код ребуту «відкинутими порогами TinyML».
+    # [FW.66 · wire-rev2.2] diag-байт (byte 18) — CCM_DIAG_* ↑. Читаємо: reset_cause (FW.59 —
+    # причина останнього справжнього ребуту, колонка; алерт на переході судить
+    # AlertDispatchService), fc_degraded (FW.2 I-HW; метрика без per-DID мітки, дерево — у лозі)
+    # і time_uncertain (ARCH.41-B; у rev2.1 він їхав кодом 0xFE в акустичному байті).
+    # voc_attempt (HW.19) споживача ще не має — ⛔ не декодуй старші біти як колишні
+    # thr_invalid/fauna: ті біти з HW.30 без писача, і старий декодер прочитав би код ребуту
+    # «відкинутими порогами TinyML».
+    log_attributes[:reset_cause] = (diag_byte >> CCM_DIAG_RESET_CAUSE_SHIFT) & CCM_DIAG_RESET_CAUSE_MASK
     if diag_byte.anybits?(CCM_DIAG_FC_DEGRADED_BIT)
       SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL.increment
       Rails.logger.warn "🛡️ [FW.2] #{hex_did}: інваріант FC high-water втрачено (Flash відмовляє) — nonce-гарантія деградована."

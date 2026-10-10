@@ -35,16 +35,7 @@ class GatewayTelemetryLog < ApplicationRecord
   # [FW.59] Причина ребута Королеви — старші ТРИ біти того ж байта.
   HFLAG_RESET_SHIFT  = 5
   HFLAG_RESET_MASK   = 0xE0
-  # Індекс = 3-бітний код на дроті (wire-дім: firmware/common/reset_cause.h).
-  # 🔴 `:unknown` на нулі — сентинел «не повідомлено», НІКОЛИ «холодний старт»:
-  # кожен рядок пульсу, старший за FW.59, несе в цьому полі нуль, тож будь-яке
-  # інше прочитання приписало б усій історії причину, якої ніхто не міряв.
-  RESET_CAUSES = %i[unknown power_on pin software iwdg wwdg hardfault low_power].freeze
-  # Vendor-attributable кошик: завис або впав НАШ код. Дзеркало —
-  # `Silken_Reset_Cause_Is_Fault` у тому ж заголовку (host-тест пінить обидва
-  # боки визначення). ⚠️ `power_on` сюди НЕ входить: brownout — це залізо/сонце,
-  # не прошивка, і атрибуція вирішує, кому потім виставить рахунок slashing.
-  RESET_FAULT_CAUSES = %i[iwdg wwdg hardfault low_power].freeze
+  # Коди й кошик збоїв — `ResetCause` (спільні з причиною Солдата, wire-дім reset_cause.h).
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
@@ -135,11 +126,11 @@ class GatewayTelemetryLog < ApplicationRecord
   # boot, тож повторюється КОЖНИМ пульсом — читач бере останній рядок, а не
   # полює за першим після ребута (той цілком міг не доїхати).
   def reset_cause
-    RESET_CAUSES.fetch((health_flags.to_i & HFLAG_RESET_MASK) >> HFLAG_RESET_SHIFT, :unknown)
+    ResetCause.from_code((health_flags.to_i & HFLAG_RESET_MASK) >> HFLAG_RESET_SHIFT)
   end
 
   # Збій ПРОШИВКИ, а не штатний/зовнішній ребут — vendor-attributable.
-  def reset_fault? = RESET_FAULT_CAUSES.include?(reset_cause)
+  def reset_fault? = ResetCause.fault?(reset_cause)
 
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
   # Використовується GatewayTelemetryWorker для ініціації EwsAlert.
