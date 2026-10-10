@@ -41,37 +41,12 @@ all: queen soldier ota_seal bio_contract logmel audio_model encryption seed_deri
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
 
-# [SEC.42] Друга половина — носій ДИСЦИПЛІНИ, якої host-тест не бачить (main.c хост не
-# компілює): календар Солдата пише лише Silken_Beacon_Commit (wall_time.h) — вона ж рухає
-# мітку синку, базу delta_t і сторож, — рівно один раз, з тим самим станом і з дослівним
-# швом {Wall_Seconds_Now, Wall_Calendar_Set}; базу delta_t, крім неї, пишуть лише оголошення,
-# відновлення з DR1 і Фаза 1; іншого писача календаря (виклику Wall_Calendar_Set чи шва,
-# HAL_RTC_Set* поза тілом, DST/SynchroShift/SmoothCalib, LL_RTC, прямого RTC->TR/DR) немає.
-# Рахує код без рядків-коментарів.
-# ⚠️ Стеля: це носій від ВИПАДКОВОЇ регресії, а не межа проти навмисної правки — читає текст
-# main.c, тож виклик усередині іншої функції чи під #if 0 він не відрізнить, а писача за
-# межами main.c (тіло MX_RTC_Init з .ioc) не бачить; виклик, розбитий інакше по рядках, дасть
-# хибне червоне.
+# [SEC.42] Друга половина — носій ДИСЦИПЛІНИ календаря, якої host-тест не бачить (main.c хост
+# не компілює): один виклик застосування маяка з тим самим станом, дослівний шов і його читач,
+# жодного іншого писача календаря, бази delta_t чи DR1. Що саме й де його стеля — шапка скрипта.
 soldier: $(BINDIR)/test_soldier
 	@./$(BINDIR)/test_soldier
-	@code=$$(grep -vE '^[[:space:]]*(//|/?\*)' ../soldier/main.c); \
-	 [ "$$(printf '%s\n' "$$code" | grep -cE 'Silken_Beacon_Commit[[:space:]]*\(&soldier_calendar_ops, beacon_ts, &soldier_unix_ts,$$')" = 1 ] && \
-	 printf '%s\n' "$$code" | grep -qE '^[[:space:]]+&last_wakeup_timestamp, &wakeups_since_sync\)\) \{$$' && \
-	 [ "$$(printf '%s\n' "$$code" | grep -cE '^static const SilkenCalendarOps soldier_calendar_ops = \{ Wall_Seconds_Now, Wall_Calendar_Set \};$$')" = 1 ] || \
-	 { echo "FAIL [SEC.42]: прийом маяка мусить кликати Silken_Beacon_Commit рівно раз — із міткою синку, базою delta_t, сторожем і дослівним швом календаря"; exit 1; }
-	@code=$$(grep -vE '^[[:space:]]*(//|/?\*)' ../soldier/main.c); \
-	 [ "$$(printf '%s\n' "$$code" | grep -cE 'last_wakeup_timestamp[[:space:]]*=[^=]')" = 2 ] && \
-	 [ "$$(printf '%s\n' "$$code" | grep -cE '&last_wakeup_timestamp')" = 2 ] || \
-	 { echo "FAIL [SEC.42]: базу delta_t пише хтось, крім оголошення, відновлення з DR1, Фази 1 і Silken_Beacon_Commit"; exit 1; }
-	@code=$$(grep -vE '^[[:space:]]*(//|/?\*)' ../soldier/main.c); \
-	 if printf '%s\n' "$$code" | grep -nE 'Wall_Calendar_Set[[:space:]]*\(' | grep -vE 'Wall_Calendar_Set\(uint32_t unix_ts\)'; then \
-	   echo "FAIL [SEC.42]: календар пишуть повз Silken_Beacon_Commit"; exit 1; \
-	 fi; \
-	 if printf '%s\n' "$$code" | grep -nE '\.(write|read)_wall|HAL_RTC_DST_|SetSynchroShift|SetSmoothCalib|LL_RTC_(TIME|DATE)_Set|RTC->(TR|DR)[[:space:]]*='; then \
-	   echo "FAIL [SEC.42]: інший писач календаря чи виклик крізь шов повз Silken_Beacon_Commit"; exit 1; \
-	 fi; \
-	 [ "$$(printf '%s\n' "$$code" | grep -cE 'HAL_RTC_Set(Time|Date)[[:space:]]*\(')" = 2 ] || \
-	 { echo "FAIL [SEC.42]: HAL_RTC_SetTime/SetDate — лише в тілі Wall_Calendar_Set"; exit 1; }
+	@python3 ../../tools/firmware/check_sec42_calendar.py
 
 ota_seal: $(BINDIR)/test_ota_seal
 	@./$(BINDIR)/test_ota_seal

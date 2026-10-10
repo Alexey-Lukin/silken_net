@@ -4767,9 +4767,12 @@ TEST(test_sec42_replay_every_wake_shaves_at_most_two_seconds) {
 /* Застосування — Silken_Beacon_Commit на фейковому календарі: база delta_t іде за ФАКТИЧНИМ
  * кроком, мітка синку й сторож — лише за записом, що ліг. */
 static uint32_t sec42_cal;          /* «RTC-календар» */
-static uint8_t  sec42_cal_mode;     /* 0 пише · 1 запис не лягає · 2 лягає з помилкою доби · 3 читання гине після запису · 4 секунда тікає під час запису */
+static uint8_t  sec42_cal_mode;     /* 0 пише · 1 запис не лягає · 2 лягає з помилкою доби · 3 читання гине після запису · 4 секунда тікає під час запису · 5 запис не лягає, і читання гине */
 static uint8_t  sec42_cal_written;
-static uint32_t sec42_read(void) { return (sec42_cal_mode == 3u && sec42_cal_written) ? 0u : sec42_cal; }
+static uint32_t sec42_read(void)
+{
+    return ((sec42_cal_mode == 3u || sec42_cal_mode == 5u) && sec42_cal_written) ? 0u : sec42_cal;
+}
 static void     sec42_write(uint32_t ts)
 {
     sec42_cal_written = 1u;
@@ -4845,6 +4848,22 @@ TEST(test_sec42_commit_read_dies_after_write_errs_toward_longer_delta_t) {
     ASSERT_EQ(sec42_commit(SEC42_NOW, 3u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
     ASSERT_EQ(sec42_mark, SEC42_NOW);
     ASSERT_EQ(sec42_next_delta(6495u), 6500u);
+}
+
+TEST(test_sec42_commit_dead_read_after_failed_write_still_errs_longer) {
+    /* Запис не ліг, а перечитування гине: база йде так, ніби крок назад ліг, — справжній
+     * проміжок 6500 с, виміряно на 2 с ДОВШЕ. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 5u, SEC42_NOW, SEC42_NOW - 5u, SEC42_NOW - 30u), 0);
+    ASSERT_EQ(sec42_cal, SEC42_NOW);
+    ASSERT_EQ(sec42_next_delta(6495u), 6502u);
+}
+
+TEST(test_sec42_commit_dead_read_after_forward_step_keeps_base) {
+    /* Крок уперед ліг, а перечитування гине: база стоїть — рух уперед укоротив би delta_t, —
+     * тож виміряно на крок ДОВШЕ за справжні 6500 с. */
+    ASSERT_EQ(sec42_commit(SEC42_NOW, 3u, SEC42_NOW - 600u, SEC42_NOW - 5u, SEC42_NOW + 40u), 0);
+    ASSERT_EQ(sec42_cal, SEC42_NOW + 40u);
+    ASSERT_EQ(sec42_next_delta(6495u), 6540u);
 }
 
 TEST(test_sec42_commit_honest_beacon_behind_resets_watchdog) {
@@ -5333,6 +5352,8 @@ int main(void)
     RUN(test_sec42_commit_half_write_base_follows_calendar);
     RUN(test_sec42_commit_unreadable_rtc_does_not_write);
     RUN(test_sec42_commit_read_dies_after_write_errs_toward_longer_delta_t);
+    RUN(test_sec42_commit_dead_read_after_failed_write_still_errs_longer);
+    RUN(test_sec42_commit_dead_read_after_forward_step_keeps_base);
     RUN(test_sec42_commit_honest_beacon_behind_resets_watchdog);
     RUN(test_sec42_commit_second_tick_during_write_costs_one_second);
     RUN(test_sec42_commit_base_zero_stays_zero);
