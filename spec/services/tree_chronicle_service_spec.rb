@@ -67,6 +67,22 @@ RSpec.describe TreeChronicleService do
         expect(entry.severity).to eq(:critical)
         expect(entry.icon).to eq("\u26A0")
       end
+
+      # ⚖️ [E.64 (Б)] Доба без виміру стресу запису не дістає: `else`-гілка сервісу друкує
+      # «Deep Homeostasis» — твердження, якого ніхто не робив. Фрод від стресу не залежить.
+      it "writes no entry for a day whose stress was not measured" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: nil)
+
+        expect(described_class.call(tree: tree)[:entries]).to be_empty
+      end
+
+      it "keeps the fraud entry of a day whose stress is nil" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: nil, fraud_detected: true)
+
+        expect(described_class.call(tree: tree)[:entries].map(&:event_type)).to eq([ :fraud ])
+      end
     end
 
     context "with EwsAlert events" do

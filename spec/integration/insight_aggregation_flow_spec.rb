@@ -42,7 +42,8 @@ RSpec.describe "Insight generation and daily aggregation flow" do
 
       tree1_insight = AiInsight.find_by(analyzable: tree1, target_date: yesterday)
       expect(tree1_insight).to be_present
-      expect(tree1_insight.stress_index).to be_between(0, 1)
+      # [E.64 (Б)] без прямого сигналу стрес не виміряно — `nil`, не число з 0..1
+      expect(tree1_insight.stress_index).to be_nil
       expect(tree1_insight.total_growth_points).to eq(10)
     end
 
@@ -52,6 +53,20 @@ RSpec.describe "Insight generation and daily aggregation flow" do
       cluster_insight = AiInsight.find_by(analyzable: cluster, target_date: yesterday)
       expect(cluster_insight).to be_present
       expect(cluster_insight.total_growth_points).to eq(25) # 10 + 15
+    end
+
+    # ⚖️ [E.64 (Б)] Ратифікована ціна наскрізь, без стабів: генератор → стрес кластера `nil`
+    # → `health_index` «не виміряно» → Celo-гейт тримає виплату. Розірве будь-яку ланку
+    # (повернений член, `avg.to_f`, `nil.to_f` у здоровʼї) — червоніє тут.
+    it "carries «not measured» from the generator to cluster health and the Celo hold" do
+      InsightGeneratorService.call(yesterday)
+
+      cluster_insight = AiInsight.find_by(analyzable: cluster, target_date: yesterday)
+      expect(cluster_insight.stress_index).to be_nil
+      expect(cluster_insight.measured_trees).to eq(2)
+      expect(cluster.recalculate_health_index!(yesterday)).to be_nil
+      expect(cluster.reload.health_index).to be_nil
+      expect(Celo::CommunityRewardService.new(cluster, yesterday).send(:eligible_for_reward?, cluster_insight)).to be(false)
     end
 
     it "is idempotent — re-running clears old insights" do

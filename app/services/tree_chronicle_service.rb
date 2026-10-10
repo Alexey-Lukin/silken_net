@@ -57,9 +57,13 @@ class TreeChronicleService < ApplicationService
   end
 
   # --- AiInsight entries ---
+  # ⚖️ [E.64 (Б)] Доба без виміру стресу запису не дістає: `nil` тут — «не виміряно», а
+  # гілка `else` нижче друкує «глибокий гомеостаз», тобто твердження, якого ніхто не
+  # робив. Фрод-запис від стресу не залежить і лишається.
   def insight_entries
     @tree.ai_insights
          .daily_health_summary
+         .where("fraud_detected OR stress_index IS NOT NULL")
          .order(target_date: :desc)
          .limit(50)
          .map { |insight| format_insight(insight) }

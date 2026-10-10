@@ -152,7 +152,8 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
         )
         expect(insight).to be_present
         expect(insight.fraud_detected).to be false
-        expect(insight.stress_index).not_to eq(1.0)
+        # ⊥ Ні фродовий 1.0, ні будь-яке інше число: без прямого сигналу стрес `nil` [E.64 (Б)]
+        expect(insight.stress_index).to be_nil
         expect(insight.total_growth_points).to eq(10)
 
         cluster_insight = AiInsight.find_by(

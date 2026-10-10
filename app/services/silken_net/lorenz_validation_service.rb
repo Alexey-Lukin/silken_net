@@ -115,7 +115,9 @@ module SilkenNet
 
     def report(samples)
       samples.each_with_index do |s, i|
-        missing = MANDATORY_KEYS.reject { |k| s.key?(k) }
+        # [E.64 (Б)] `nil` — теж «не виміряно» (стрес без прямого сигналу саме такий), а
+        # `.to_f` нижче зробив би з нього виміряний нуль.
+        missing = MANDATORY_KEYS.reject { |k| !s[k].nil? }
         next if missing.empty?
 
         raise MissingSampleKeyError,

@@ -300,11 +300,11 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**
-- `stress_index ≤ 0.2` (кластер здоровий)
+- `stress_index ≤ 0.2` (кластер здоровий; `nil` — «не виміряно» — виплату тримає)
 - `fraud_detected == false`
 - Організація має зареєстровану crypto-адресу
 
-**Сума:** 5 cUSD на здоровий кластер на день
+**Сума:** 5 cUSD на здоровий кластер на день. ⚖️ [E.64 (Б), 2026-10-10] **Сьогодні на ПАУЗІ для всіх кластерів:** без прямого сигналу `stress_index` = `nil` на кожній добі, а гейт тримає виплату на `nil` — ратифікована ціна присуду, [`05_05 §7`](05_05_Slashing_and_Risk_Policy); оживає з першим прямим сигналом.
 
 **Особливості:** **[ARCH.50]** Money-path-hardened — durable `:pending` intent ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ chain-prefix Kredis-lock (`lock:web3:celo:oracle:`) + Celo-aware reconcile (`CeloConfirmationWorker`, бо `BlockchainConfirmationWorker` хардкоднутий на Polygon) + deterministic-vs-transient rescue split (dedicated `ORACLE_CELO_PRIVATE_KEY`). Закрив детермінований daily double-pay (логічний ключ ≠ `created_at`-партиція). **[ARCH.64]** Той reconcile покриває лише `:sent`; застрягле `:pending` без tx_hash (transient-timeout → dedup-skip, self-masking retry) підбирає `CeloRewardReconcileWorker` cron (:25/:55) → `:manual_review` (money-safe, не blind re-pay; раніше — тиха недоплата cUSD, дім [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy)).
 

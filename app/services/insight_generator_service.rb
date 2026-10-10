@@ -239,9 +239,8 @@ class InsightGeneratorService < ApplicationService
     # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес
     final_growth = is_fraud ? 0 : stats.total_growth.to_i
 
-    # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
-    # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
-    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i)
+    # Фрод тримає стрес на 1.0; інакше — лише прямі сигнали, а без них `nil` [E.64 (Б)].
+    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats)
 
     # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a humid
     # spell cannot push a cluster over the slash threshold. STRUCTURALLY inert —
@@ -336,7 +335,7 @@ class InsightGeneratorService < ApplicationService
   # transpiration pull, so a HEALTHY tree legitimately slows. Never RAISES stress
   # (discount-only invariant). The «a humid spell would cross the slash threshold»
   # counterfactual that stood here assumed a sap term the heuristic no longer has —
-  # its ceiling is 0.6 < 0.83 (05_05 §7).
+  # without a direct signal it gives no verdict at all, `nil` passes through (05_05 §7).
   #
   # ⛔ A per-condition INERT list and «activate after firmware VPD + calibration» stood
   # here; they described a gate this method no longer is. It returns its input
@@ -372,58 +371,34 @@ class InsightGeneratorService < ApplicationService
   # (⚖️ 2026-09-29) не матиме за КОНСТРУКЦІЄЮ: пʼєзо з Солдата зрізано, байт
   # на дроті завжди 0 (`02_01 §6`). `avg_temp`
   # евристика вже відкинула як погодний конфаунд. Модель, натренована зараз,
-  # вивчала б шум під іменем здоровʼя — і, на відміну від евристики, БЕЗ стелі
-  # 0.6 < 0.83, тобто здатна перетнути поріг слешингу.
+  # вивчала б шум під іменем здоровʼя — і, на відміну від евристики (вердикту без
+  # прямого сигналу не виносить зовсім), здатна перетнути поріг слешингу.
   # ⛔ Гейт (`kill-switch` / відмова при малій арності) розглянуто й ВІДХИЛЕНО:
   # це процесний шар навколо механізму, який не має підстави існувати —
   # `00_05 §5` / [У-ВЕЙ, ⚖️ 08-09]. Прибрати дешевше, ніж стерегти.
   # ⏳ **ПОДІЯ ПОВЕРНЕННЯ названа (амана — відкладення без строку стає відмовою):**
   # перший польовий кадр, що несе ПРЯМИЙ сигнал (`vpd_index` — після bring-up
   # HW.32; `sap_flow` — лише після вимірювача сокоруху в BOM і wire-ревізії,
-  # ARCH.102); оголошує її той, хто закриває ту ногу. Доти вердикт про
-  # стрес виносить ЛИШЕ евристика — і робить це з оголошеною стелею.
-  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0)
-    calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
-  end
-
-  # [E.64] Conformance with 05_05 §7 "Z alone never slashes" (audit #3).
-  # `_avg_temp`/`_avg_z` are accepted but NO LONGER used — both were confounds
-  # (see below). ⛔ They are NOT "symmetry with the ML path": that path was
-  # removed 2026-09-05 (00_07 E.52), so the only reason they still stand is the
-  # call-site contract. Whether to drop them is a live question, not a design.
-  def calculate_stress_index_heuristic(max_status, _avg_temp, _max_acoustic, _avg_z)
-    # [SLASH-1] vm_error (status 3) = софт-збій прошивки (mruby crash / unprovisioned),
-    # NOT bio-stress and NOT tamper: the old `>= 3 → 1.0` short-circuit put a firmware
-    # bug ABOVE the slash threshold (0.83) — a cluster-wide bad OTA read as max-stress
-    # on every tree (slash trigger + damage sizing at once). The status channel on a
-    # vm_error day is simply UNKNOWN → contribute 0, let DIRECT signals speak; the
-    # ops-side lives in the :firmware_fault EwsAlert (AlertDispatchService). Deliberate
-    # conservatism: MAX(bio_status) with vm_error masks a same-day stress/anomaly —
-    # undercounting stress < falsely slashing («не карати жертву»).
-    # [E.64] Removed two confounded terms: the always-on `avg_z>2 → +0.2` (z_eq=ρ−1≥9,
-    # so it never discriminated — a constant sitting at the 0.20 threshold) and the
-    # ambient `temp → +0.1` weather term (humid/extreme weather suppresses sap on a
-    # HEALTHY tree — the VPD gate DISCOUNTS for that; weather must never ADD stress).
-    # Stress now = status-category (Z-categorical, ρ-relative E.64) + DIRECT signals.
-    # A Z-derived ANOMALY (status 2) does NOT slash alone: bounded 0.6 < 0.83 tree
-    # slash threshold (05_05 §3) — only a DIRECT signal could carry it past the
-    # threshold, and since HW.30 the one left is `delta_t` (05_05 §7: cavitation went
-    # with the piezo, sap never had a writer); none is wired into this heuristic.
-    # Єдине місце поза enum'ом, що трактує bio_status-інти (SQL MAX-агрегат) —
-    # тримаємо прив'язку до TelemetryLog.bio_statuses, не голі літерали.
-    stress_code  = TelemetryLog.bio_statuses.fetch("stress")
-    anomaly_code = TelemetryLog.bio_statuses.fetch("anomaly")
-    # 🔴 [ARCH.102] Прямих сигналів у евристиці НЕМАЄ, і це СТЕЛЯ, не пропуск.
-    # Обидва кандидати відпали з однієї причини — величини, про яку вони мали
-    # свідчити, ніхто не міряє: `sap_flow` не мав писача взагалі, а `acoustic_events`
-    # з HW.30 (⚖️ 2026-09-29) не має й писача — пʼєзо з Солдата зрізано, байт завжди 0
-    # (доти канал був ЗМІШАНИЙ: кавітація й пилка в одному uint8).
-    # ⛔ Наслідок мусить бути видно саме звідси: евристичний шлях має стелю
-    # 0.6 < 0.83 (поріг слешингу дерева, 05_05 §3) — слешинг ним НЕДОСЯЖНИЙ.
-    # Колишня умова повернення — роздільний лічильник кавітація ⊥ пилка (ARCH.102) —
-    # ВІДПАЛА разом із датчиком: ділити нічого. Прямий сигнал, що лишився, — `delta_t`
-    # (05_05 §7); терм повертається лише на ПРЯМОМУ вимірі, не з новою калібровкою.
-    max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0
+  # ARCH.102); оголошує її той, хто закриває ту ногу. Доти вердикту про стрес
+  # НЕМАЄ — метод нижче повертає `nil`.
+  #
+  # ⚖️ [E.64 · (Б), ратифіковано founder 2026-10-10, `05_05 §7`] Стрес = лише ПРЯМІ
+  # сигнали, а жодного не задротовано — тож вердикту немає, і це `nil`, НЕ 0.0:
+  # 0.0 — виміряний нуль, з якого `Cluster#recalculate_health_index!` зробив би
+  # «здоровʼя 100 %», хроніка — «глибокий гомеостаз», а Celo-гейт — виплату.
+  # Останнім знято член статусу (0.6 на stress/anomaly): статус — категорія z
+  # нашого `K_seed` (межа (Б): I(статус; здоровʼя | входи) = 0), тобто лотерея зерна
+  # на ≈ 11–27 % чесних дерев-діб. Раніше тим самим шляхом пішли z і ambient temp
+  # (конфаунди), акустика (HW.30: пʼєзо зрізано, байт завжди 0), `sap_flow` (писача
+  # не було) і vm_error (SLASH-1: софт-збій ≠ стрес).
+  # 💰 Ціна ратифікована разом із присудом: Celo-винагорода спільноти стоїть на паузі
+  # для всіх кластерів (`Celo::CommunityRewardService` тримає виплату на `nil`) до
+  # першого прямого сигналу. Слешинг (0.83) і страховий Trigger-1 (0.8) NULL не беруть —
+  # недосяжні так само, як були під колишньою стелею 0.6.
+  # 🔓 Член повертається лише на ПРЯМОМУ вимірі (`delta_t`, `05_05 §7`), не з новою
+  # калібровкою статусу; хто його задротовує, той і вирішує, що повертати тут.
+  def calculate_stress_index(_stats)
+    nil
   end
 
   def aggregate_clusters!(cluster_ids)
@@ -506,6 +481,14 @@ class InsightGeneratorService < ApplicationService
     measured_trees = per_tree.size
     return if measured_trees.zero?
 
+    # ⚖️ [E.64 (Б)] Середнє стверджує про ВСІХ `measured_trees` — пара покриття їде поруч і
+    # пінується в IPFS, — тож рахується лише тоді, коли стрес виміряно в КОЖНОГО свідка,
+    # інакше `nil`. Доти тут стояв `avg.to_f`, і NULL-стрес дерева ставав виміряним
+    # нулем: кластер, якого ніхто не міряв, діставав «здоровʼя 100 %» (backend #64).
+    # ⚠️ Фрод-дерево (1.0) серед невиміряних теж дає `nil`: фрод-сигнал кластера живе в
+    # `fraud_trees` нижче, не в середньому стресу (сьогодні інертно — `detect_fraud?`).
+    stresses = per_tree.map(&:first)
+
     total_trees = cluster.trees.active.count
     # ⚡ [ОПТИМІЗАЦІЯ]: Використовуємо boolean колонку замість JSONB @> оператора
     fraud_trees = tree_insights.where(fraud_detected: true).select(:analyzable_id).distinct.count
@@ -520,7 +503,7 @@ class InsightGeneratorService < ApplicationService
       analyzable: cluster,
       insight_type: :daily_health_summary,
       target_date: @date,
-      stress_index: (per_tree.sum { |avg, _| avg.to_f } / measured_trees).round(3),
+      stress_index: stresses.all? ? (stresses.sum(&:to_f) / measured_trees).round(3) : nil,
       total_growth_points: per_tree.sum { |_, gp| gp.to_i },
       summary: summary,
       # [SEC.18] `fraud_trees` тут, а не лише в прозі `summary`: саме ця магнітуда

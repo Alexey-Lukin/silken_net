@@ -64,7 +64,8 @@ module Api
             # заговорило за звітну добу. Доба береться з ОДНОГО дому
             # (`AiInsight.reporting_date`, ARCH.100) — власного виразу тут бути не
             # може, інакше читач промахнеться повз запис писача, і промах ТИХИЙ.
-            # `nil` = інсайту за добу немає, і тоді `health_index` теж `nil`.
+            # `nil` = інсайту за добу немає, і тоді `health_index` теж `nil`; ⊕ [E.64 (Б)] інсайт є,
+            # а стрес у ньому `nil` (свідки без прямого сигналу) — `health_index` теж `nil`.
             @health_insight = @cluster.ai_insights.daily_health_summary
                                       .for_date(AiInsight.reporting_date).first
             render_dashboard(

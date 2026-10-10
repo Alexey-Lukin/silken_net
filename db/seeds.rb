@@ -108,7 +108,7 @@ system_params = [
   { key: "slash_threshold", value: "0.2", value_type: "float", category: "alerts",
     min_value: 0.05, max_value: 1.0, description: "Cluster degradation fraction that triggers the slashing checkpoint" },
   { key: "stress_threshold", value: "0.83", value_type: "float", category: "alerts",
-    min_value: 0.65, max_value: 1.0, description: "RF-confidence stress threshold for slash trigger + damage sizing (ARCH.46); floor 0.65 > Z-anomaly base_stress 0.6 (E.64 §7 «Z alone never slashes» — mirror PARAMETER_MAP)" },
+    min_value: 0.65, max_value: 1.0, description: "RF-confidence stress threshold for slash trigger + damage sizing (ARCH.46); floor 0.65 above every stress-heuristic output (E.64 §7 «Z alone never slashes»; no verdict without a direct signal since 2026-10-10 — mirror PARAMETER_MAP)" },
   { key: "slash_gamma", value: "1.3", value_type: "float", category: "alerts",
     min_value: 1.0, max_value: 3.0, description: "Convex slash curve exponent (05_05 §3)" },
   { key: "slash_penalty_factor_max", value: "2.0", value_type: "float", category: "alerts",
@@ -723,17 +723,16 @@ PINE_SHARE_IN_MIX = 0.69
     insight_type: :daily_health_summary,
     target_date: AiInsight.reporting_date,
     average_temperature: is_anomaly ? 38.0 : 21.0,
-    stress_index: is_anomaly ? 0.95 : 0.1,
+    # ⚖️ [E.64 (Б)] Без прямого сигналу генератор стресу не виміряє — сід пише те саме, бо
+    # він і є даними canopy: число тут показувало б «здоровʼя» й Celo-придатність, яких код
+    # не народжує. Аномальну історію несуть телеметрія й алерти, не вигаданий стрес.
+    stress_index: nil,
     summary: is_anomaly ? "Критично: Виявлено аномальний тепловий фон." : "Стабільно: Вузол у стані гомеостазу.",
     reasoning: { max_z: (is_anomaly ? 55.0 : 28.5), source: "Simulation" }
   )
 
-  # [ARCH.84] Денормалізацію пише сам сід, як це робить `InsightGeneratorService`
-  # після створення інсайту. Доти сіди створювали інсайт і НЕ писали колонку — а
-  # та мала `DEFAULT 0.0`, тож розбіжність не було видно. Після зняття дефолту
-  # мовчання сіда означало б «не виміряно» на кожному засіяному дереві, і
-  # найгучніше — на аномальних, чий інсайт каже 0.95.
-  tree.update_column(:latest_stress_index, is_anomaly ? 0.95 : 0.1)
+  # [ARCH.84 · E.64 (Б)] Денормалізацію сід тримає в парі з інсайтом, як `InsightGeneratorService`:
+  # інсайт каже «не виміряно», тож і колонка `latest_stress_index` лишається NULL — запису не треба.
 end
 
 puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
@@ -784,13 +783,12 @@ demo_metabolism_s = 20
     insight_type: :daily_health_summary,
     target_date: AiInsight.reporting_date,
     average_temperature: 31.0,
-    stress_index: 0.15,
+    stress_index: nil, # [E.64 (Б)] дзеркало сіду Черкас вище
     summary: "Стабільно: Тропічний вузол у нормі.",
     reasoning: { max_z: 24.0, source: "Simulation" }
   )
 
-  # [ARCH.84] Дзеркало сіда вище: денормалізацію пише сід, не дефолт колонки.
-  tree.update_column(:latest_stress_index, 0.15)
+  # [ARCH.84 · E.64 (Б)] Дзеркало сіда вище: інсайт «не виміряно» — колонка лишається NULL.
 end
 
 # =========================================================================
@@ -1158,7 +1156,7 @@ AiInsight.create!(
   analyzable: cherkasy_forest,
   insight_type: :daily_health_summary,
   target_date: AiInsight.reporting_date,
-  stress_index: 0.12,
+  stress_index: nil, # [E.64 (Б)] кластерне середнє без виміряного стресу свідків — `nil`
   summary: "Сектор #{cherkasy_forest.name}: Оброблено #{cherkasy_measured_trees} вузлів. Стан стабільний.",
   reasoning: {
     avg_z: 28.5, max_temp: 24.0, source: "ClusterHealthCheckWorker",
@@ -1181,7 +1179,7 @@ AiInsight.create!(
   analyzable: amazon_sector,
   insight_type: :daily_health_summary,
   target_date: AiInsight.reporting_date,
-  stress_index: 0.45,
+  stress_index: nil, # [E.64 (Б)] дзеркало рядка вище
   summary: "Підвищений стрес через виявлену пожежу на периферії.",
   reasoning: {
     avg_z: 41.5, max_temp: 62.0, source: "ClusterHealthCheckWorker",

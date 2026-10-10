@@ -86,6 +86,15 @@ RSpec.describe SilkenNet::LorenzValidationService do
     # двох прикладів правка виглядає як коментар: `nil.to_f` мовчазний, а
     # продових викликачів у сервісу нуль, тож першим його запустить ЛЮДИНА в полі.
     context "when a sample lacks a mandatory key" do
+      # [E.64 (Б)] Ключ є, а значення `nil` — стрес без прямого сигналу саме такий; `.to_f`
+      # зробив би з нього виміряний нуль.
+      it "ВІДМОВЛЯЄ і на nil-значенні ключа — «не виміряно», не нуль" do
+        samples = [ { stress_index: nil, ground_truth_decline: 1.0 } ]
+
+        expect { described_class.report(samples) }
+          .to raise_error(described_class::MissingSampleKeyError, /stress_index/)
+      end
+
       it "ВІДМОВЛЯЄ замість того, щоб віддати 0.0 з виглядом виміру" do
         samples = [
           { stress_index: 0.1, ground_truth_decline: 1.0 },

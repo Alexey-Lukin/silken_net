@@ -48,12 +48,16 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       )
     end
 
-    # [E.64 §7] «Z alone never slashes»: stress_threshold floor мусить лишатись ВИЩИМ за
-    # Z-anomaly base_stress (0.6, insight_generator_service.rb:337) — інакше DAO-vote у
-    # (0.6, floor] дав би Z-anomaly (0.6) перетнути поріг → slash на одному Z. Structural guard.
-    it "keeps stress_threshold floor above Z-anomaly base_stress 0.6 (§7 «Z alone never slashes»)" do
-      z_anomaly_base_stress = 0.6 # insight_generator_service.rb#calculate_stress_index_heuristic
-      expect(described_class::PARAMETER_MAP[:stress_threshold][:min]).to be > z_anomaly_base_stress
+    # [E.64 §7] «Z alone never slashes»: stress_threshold floor мусить лишатись ВИЩИМ за будь-який
+    # вихід шва стресу на будь-якому статусі — інакше DAO-vote нижче нього дав би статусові
+    # (z нашого `K_seed`) перетнути поріг → slash на одному Z. Носій читає ЖИВИЙ шов, не
+    # літерал: доти тут стояло 0.6, а з 2026-10-10 шов без прямого сигналу дає `nil`.
+    it "keeps stress_threshold floor above every stress-seam output (§7 «Z alone never slashes»)" do
+      day = Struct.new(:max_status, :avg_temp, :max_acoustic, :avg_z)
+      outputs = TelemetryLog.bio_statuses.values.map { |status|
+        InsightGeneratorService.new.send(:calculate_stress_index, day.new(status, 40.0, 0, 3.0))
+      }
+      expect(outputs.compact).to all(be < described_class::PARAMETER_MAP[:stress_threshold][:min])
     end
 
     it "contains NO Lorenz keys (DCI-locked, GOV.1)" do

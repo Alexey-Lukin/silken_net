@@ -24,6 +24,11 @@ RSpec.describe InsightGeneratorService, type: :service do
   # `next unless stats`, і колонка тримала понеділковий показник на вівторковій
   # темряві — підміна виміру, лише постаріла, і тим небезпечніша, що правдоподібна.
   describe "денормалізований стрес мовчазного дерева" do
+    # ⚖️ [E.64 (Б)] Без прямого сигналу шов стресу дає `nil` на КОЖНІЙ добі, тож «виміряне ⊥
+    # мовчазне» розрізняє лише день, коли сигнал Є. Стаб — саме такий день: механізм чекає
+    # його, а без стаба ліхтарі нижче гасли б (обидві гілки давали б `nil`).
+    before { allow_any_instance_of(described_class).to receive(:calculate_stress_index).and_return(0.37) }
+
     # 🔴 ЯДРО ноги: дерево замовкло всередині кластера, який ДАНІ МАЄ. Саме тут
     # жив «понеділковий 0.42 на вівторковій темряві» — сусіди цокочуть, кластер
     # обробляється, а це дерево тримає позавчорашній показник. Два інші приклади
@@ -157,6 +162,10 @@ RSpec.describe InsightGeneratorService, type: :service do
 
     before do
       allow_any_instance_of(Tree).to receive(:broadcast_map_update) { |t| redrawn[t.did] = t.latest_stress_index }
+      # ⚖️ [E.64 (Б)] Без прямого сигналу шов стресу дає `nil` на КОЖНІЙ добі, тож «виміряне ⊥
+      # мовчазне» розрізняє лише день, коли сигнал Є. Стаб — саме такий день: механізм чекає
+      # його, а без стаба ліхтарі нижче гасли б (обидві гілки давали б `nil`).
+      allow_any_instance_of(described_class).to receive(:calculate_stress_index).and_return(0.37)
     end
 
     def loud_neighbour(in_cluster)
@@ -282,12 +291,14 @@ RSpec.describe InsightGeneratorService, type: :service do
           target_date: date
         )
         expect(insight.total_growth_points).to eq(10)
-        # [E.64] температура — не стрес-терм; homeostasis → чесний 0.0, не фродовий 1.0
-        expect(insight.stress_index).to be_zero
+        # [E.64 (Б)] не фродовий 1.0 — і не вигаданий 0.0: прямого сигналу нема, вердикту нема
+        expect(insight.stress_index).to be_nil
       end
     end
 
-    it "calculates correct stress_index for healthy trees (status 0)" do
+    # ⚖️ [E.64 (Б)] Гомеостаз — категорія z нашого `K_seed`, не вимір здоровʼя: 0.0 тут був би
+    # виміряним нулем, з якого кластер дістав би «здоровʼя 100 %», а хроніка — «гомеостаз».
+    it "[E.64 (Б)] gives a homeostasis day no stress verdict — nil, not a measured 0.0" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
         acoustic_events: 0, growth_points: 10,
@@ -297,8 +308,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      # homeostasis (0) → base 0.0, z=0.5 (≤2.0) → no penalty, temp=25 (normal) → no penalty
-      expect(insight.stress_index).to be_zero
+      expect(insight).to be_present
+      expect(insight.stress_index).to be_nil
     end
 
     it "is idempotent - reruns delete and recreate insights" do
@@ -401,6 +412,26 @@ RSpec.describe InsightGeneratorService, type: :service do
         expect(insight.total_growth_points).to eq(110)
         expect(insight.measured_trees).to eq(2)
       end
+    end
+
+    # ⚖️ [E.64 (Б)] Середнє стверджує про ВСІХ `measured_trees` (пара покриття пінується в
+    # IPFS поруч), тож свідок без стресу робить середнє `nil`, а не нулем у сумі: доти
+    # `avg.to_f` давав тут (0.2 + 0) / 2 = 0.1 — число про двох, виміряне в одного.
+    it "writes a nil cluster stress when any witnessing tree has no stress verdict" do
+      service = described_class.new(date)
+      other = create(:tree, cluster: cluster, tree_family: tree.tree_family)
+      create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                          target_date: date, stress_index: 0.2, total_growth_points: 10)
+      create(:ai_insight, analyzable: other, insight_type: :daily_health_summary,
+                          target_date: date, stress_index: nil, total_growth_points: 10)
+
+      service.send(:aggregate_cluster!, cluster)
+
+      insight = AiInsight.find_by(analyzable: cluster, insight_type: :daily_health_summary,
+                                  target_date: date)
+      expect(insight.stress_index).to be_nil
+      expect(insight.measured_trees).to eq(2)
+      expect(insight.total_growth_points).to eq(20)
     end
 
     # 🔴 [ARCH.84] Популяція середнього = ЖИВИЙ ліс, як у всіх трьох денних читачів
@@ -530,77 +561,28 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(Rails.logger).to have_received(:error).with(/Insight.*Помилка/)
     end
 
-    context "with stress_index calculations" do
-      it "[E.64] no longer penalizes raw avg_z (degenerate always-on term removed)" do
-        create(:telemetry_log, tree: tree,
-          temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
-          acoustic_events: 0, growth_points: 10,
-          bio_status: :homeostasis, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
+    # ⚖️ [E.64 (Б), founder 2026-10-10] Стрес = лише ПРЯМІ сигнали, а жодного не задротовано —
+    # тож на БУДЬ-ЯКОМУ статусі й за будь-яких z/temp вердикту немає: `nil`. Не 0.0 (виміряний
+    # нуль), не 0.6 (член статусу — лотерея `K_seed`), не 1.0 на vm_error (SLASH-1). Історія
+    # знятих членів — коментар шва `calculate_stress_index`.
+    context "with stress_index calculations [E.64 (Б)]" do
+      TelemetryLog.bio_statuses.each_key do |status|
+        it "#{status} day with z=3.0 and 40 °C → stress nil in the insight and on the tree" do
+          # Учорашнє 0.6 колишнього члена статусу мусить зійти в `nil`, а не дожити.
+          tree.update_column(:latest_stress_index, 0.6)
+          create(:telemetry_log, tree: tree,
+            temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0,
+            acoustic_events: 0, growth_points: 0,
+            bio_status: status, metabolism_s: 1000,
+            created_at: date.beginning_of_day + 12.hours)
 
-        described_class.call(date)
+          described_class.call(date)
 
-        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # [E.64] homeostasis(0); z=3.0 no longer adds +0.2 (z_eq≥9 → was always-on); sap/acoustic inert → 0
-        expect(insight.stress_index).to be_zero
-      end
-
-      it "[E.64] no longer adds an ambient-temperature weather penalty (high or low)" do
-        create(:telemetry_log, tree: tree,
-          temperature_c: 40.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 0, growth_points: 10,
-          bio_status: :homeostasis, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
-
-        described_class.call(date)
-
-        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # [E.64] homeostasis(0); temp=40 no longer adds +0.1 (weather discounts via VPD gate, never adds) → 0
-        expect(insight.stress_index).to be_zero
-      end
-
-      it "[E.64] anomaly (status 2) → bounded 0.6, NOT 1.0 (05_05 §7 Z alone never slashes; < 0.83)" do
-        create(:telemetry_log, tree: tree,
-          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 0, growth_points: 5,
-          bio_status: :anomaly, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
-
-        described_class.call(date)
-
-        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # [E.64] anomaly(2) → 0.6 base (no auto-1.0); below 0.83 tree slash threshold → cannot slash alone
-        expect(insight.stress_index).to eq(0.6)
-      end
-
-      # [SLASH-1 P0] Інвертовано: старий пін `>= 3 → 1.0` цементував конфляцію
-      # софт-збою з tamper — кластерний OTA-баг читався max-стресом на кожному
-      # дереві (тригер слешу + damage-sizing разом). vm_error = статус НЕВІДОМИЙ
-      # (пристрій не порахував) → 0.0, говорять лише прямі сигнали.
-      it "[SLASH-1] vm_error (status 3) → 0.0 (firmware fault, NOT bio-stress)" do
-        service = described_class.new
-        expect(service.send(:calculate_stress_index_heuristic, 3, 25.0, 0, 0.5)).to eq(0.0)
-      end
-
-      it "[E.64] status 1 (stress) → bounded 0.6 (z/temp terms removed)" do
-        create(:telemetry_log, tree: tree,
-          temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0,
-          acoustic_events: 0, growth_points: 5,
-          bio_status: :stress, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
-
-        described_class.call(date)
-
-        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # [E.64] stress(1) → 0.6; z=3.0/temp=40 no longer contribute; sap/acoustic inert
-        expect(insight.stress_index).to eq(0.6)
-      end
-
-      it "[E.64] calculate_stress_index status 1 → 0.6 (heuristic ignores z/temp)" do
-        service = described_class.new
-        # [E.64] status=1 → 0.6 base; avg_temp=40 / avg_z=3.0 no longer add
-        result = service.send(:calculate_stress_index, 1, 40.0, 0, 3.0)
-        expect(result).to eq(0.6)
+          insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+          expect(insight).to be_present
+          expect(insight.stress_index).to be_nil
+          expect(tree.reload.latest_stress_index).to be_nil
+        end
       end
     end
 
@@ -701,8 +683,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      # [E.64] stress(1) → 0.6 (z/temp terms removed); VPD present but gate inert → unchanged 0.6
-      expect(insight.stress_index).to eq(0.6)
+      # [E.64 (Б)] no verdict without a direct signal; the inert gate passes `nil` through unchanged
+      expect(insight.stress_index).to be_nil
       expect(insight.reasoning["avg_vpd"]).to eq(0.1)
     end
   end
@@ -744,18 +726,18 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  # 🔴 [ARCH.102] СТЕЛЯ евристики — несуча властивість, не побічний ефект:
-  # прямих сигналів у ній НЕМАЄ (sap_flow без писача; acoustic_events з HW.30 теж
-  # без писача — пʼєзо зрізано, байт завжди 0), тож евристичний шлях
-  # сягає щонайбільше 0.6 і слешинг дерева (поріг 0.83) ним НЕДОСЯЖНИЙ.
-  # Хтось поверне доданок без ПРЯМОГО виміру — пін червоніє.
-  describe "евристична стеля нижча за поріг слешингу [ARCH.102]" do
+  # 🔴 [ARCH.102 · E.64 (Б)] Стеля евристики — несуча властивість, не побічний ефект:
+  # прямих сигналів у ній НЕМАЄ (sap_flow без писача; acoustic_events з HW.30 теж без
+  # писача — пʼєзо зрізано, байт завжди 0), а член статусу знято 2026-10-10, тож шов
+  # вердикту не дає зовсім, і слешинг дерева (поріг 0.83) ним НЕДОСЯЖНИЙ. Хтось поверне
+  # доданок без ПРЯМОГО виміру — пін червоніє.
+  describe "шов стресу без прямого сигналу вердикту не дає [ARCH.102 · E.64 (Б)]" do
     let(:service) { described_class.new }
 
-    it "навіть найгірший вхід (anomaly + сатурована акустика + спека) лишається строго під slash_stress_threshold" do
-      anomaly = TelemetryLog.bio_statuses.fetch("anomaly")
-      worst = service.send(:calculate_stress_index_heuristic, anomaly, 55.0, 255, 9.9)
-      expect(worst).to be < AiInsight.slash_stress_threshold
+    it "навіть найгірший вхід (anomaly + сатурована акустика + спека) дає nil" do
+      worst = Struct.new(:max_status, :avg_temp, :max_acoustic, :avg_z)
+                    .new(TelemetryLog.bio_statuses.fetch("anomaly"), 55.0, 255, 9.9)
+      expect(service.send(:calculate_stress_index, worst)).to be_nil
     end
   end
 

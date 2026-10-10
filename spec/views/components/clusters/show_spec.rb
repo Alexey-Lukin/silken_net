@@ -123,6 +123,16 @@ RSpec.describe Clusters::Show do
       expect(partial).to include(I18n.t("ui.measurement.coverage", measured: 1, total: 5))
     end
 
+    # ⚖️ [E.64 (Б)] Свідки є, а стресу в них немає — «виміряно 1 з 5» під «не виміряно»
+    # суперечив би сам собі: підстава належить ЧИСЛУ, а числа немає.
+    it "prints no coverage under «not measured», even when witnesses reported" do
+      unmeasured = render_component(cluster: build_cluster(health_index: nil), gateways: [], recent_alerts: [],
+                                    health_measured: 1, health_total: 5)
+
+      expect(unmeasured).to include(I18n.t("ui.measurement.not_measured"))
+      expect(unmeasured).not_to include(I18n.t("ui.measurement.coverage", measured: 1, total: 5))
+    end
+
     it "stays SILENT about coverage when every living tree of the sector reported" do
       full = render_component(cluster: cluster, gateways: [], recent_alerts: [],
                               health_measured: 5, health_total: 5)

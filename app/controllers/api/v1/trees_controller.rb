@@ -44,7 +44,8 @@ module Api
         # а `show` писав його тіло сам. Дублікат ховався не другим ВИКЛИКОМ, а другим
         # ВИВОДОМ, тож греп за іменем методу показував сироту (backend #48).
         @latest_log = @tree.latest_telemetry_log
-        @insights = @tree.ai_insights.daily_health_summary.limit(7)
+        # Сім ОСТАННІХ діб: без ORDER `limit` віддавав довільні рядки.
+        @insights = @tree.ai_insights.daily_health_summary.order(target_date: :desc).limit(7)
 
         respond_to do |format|
           format.json do

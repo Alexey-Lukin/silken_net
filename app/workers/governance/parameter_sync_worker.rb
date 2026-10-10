@@ -43,7 +43,7 @@ module Governance
       scc_per_tonne_co2:         { value_type: "integer", category: "tokenomics", min: 100,    max: 100_000 },
       # Slashing (05_05 §3) + slash/stress пороги
       slash_threshold:           { value_type: "float",   category: "alerts",     min: 0.05,   max: 1.0 },
-      stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.65,   max: 1.0 }, # [E.64] floor > Z-anomaly base_stress 0.6 (§7 «Z alone never slashes»: DAO не може опустити поріг під anomaly-рівень, інакше Z сам би слешив)
+      stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.65,   max: 1.0 }, # [E.64] floor > будь-якого виходу шва стресу (§7 «Z alone never slashes»); член статусу 0.6, під який її ставили, знято 2026-10-10 — без прямого сигналу шов вердикту не дає (`nil`), підлога лишилась запасом, і переглядати її — рішення DAO/founder-а
       slash_gamma:               { value_type: "float",   category: "alerts",     min: 1.0,    max: 3.0 },
       slash_penalty_factor_max:  { value_type: "float",   category: "alerts",     min: 1.0,    max: 5.0 }
     }.freeze

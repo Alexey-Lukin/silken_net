@@ -23,7 +23,8 @@ module Clusters
     # @param recent_alerts [Array<EwsAlert>] pre-loaded unresolved alerts
     # @param active_contract [NaasContract, nil] pre-loaded; nil = контракту немає
     # @param health_measured [Integer, nil] скільки живих дерев сектора заговорило за звітну добу
-    # @param health_total [Integer, nil] скільки їх усього живих; пара — підстава під `health_index`
+    # @param health_total [Integer, nil] скільки їх усього живих; пара — підстава під `health_index`,
+    #   і лише під ЧИСЛОМ: з E.64 (Б) інсайт буває без стресу, тож «не виміряно» підстави не має
     #
     # 🔴 [ARCH.84] Пара покриття БЕЗ дефолту свідомо, і причина та сама, що в
     # `Gateways::Index#latest_logs` (PERF.1): `nil`-дефолт зробив би забуту проводку
@@ -102,8 +103,10 @@ module Clusters
           # деревах, що заговорили, тож без покриття «100%» на лісі, виміряному на
           # пʼяту частину, невідрізнимі від повного. `measurement_coverage` мовчить на
           # повному покритті — рядок зʼявляється рівно тоді, коли щось означає.
+          # ⚖️ [E.64 (Б)] Свідки без виміряного стресу дають `health_index` = nil; підрядок
+          # «виміряно 4 з 5» під «не виміряно» суперечив би сам собі — покриття лише під числом.
           vital_block(t(".vitals.health_index"), measured_percent(@cluster.health_index),
-                      sub: measurement_coverage(@health_measured, @health_total))
+                      sub: (measurement_coverage(@health_measured, @health_total) unless @cluster.health_index.nil?))
           vital_block(t(".vitals.active_trees"), @cluster.total_active_trees.to_s)
           vital_block(t(".vitals.queen_gateways"), @gateways.size.to_s)
         end

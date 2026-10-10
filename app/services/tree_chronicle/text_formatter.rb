@@ -44,8 +44,8 @@ module TreeChronicle
     # віддавав «N/A», а `stress_index` підставляв нуль — під заголовком «Elevated
     # Stress Detected», тобто запис у хроніку дерева стверджував нульовий стрес
     # рівно там, де його оголошено підвищеним. `ai_insights.stress_index`
-    # легально `NULL` (`allow_nil` + nullable-колонка), а нуль тут ДОСЯЖНИЙ —
-    # `calculate_stress_index_heuristic` віддає рівно `0.0` здоровому дереву.
+    # легально `NULL` (`allow_nil` + nullable-колонка), а нуль — досяжний виміряний
+    # стан, не синонім невиміру.
     def stress_description(insight)
       stress_pct = insight.stress_index ? "#{(insight.stress_index * 100).round(1)}%" : template("not_available")
       template("stress.description",

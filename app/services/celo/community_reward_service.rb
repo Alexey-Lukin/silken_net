@@ -93,7 +93,15 @@ module Celo
     def reward_community!
       # Guard Clause 1: Перевірка здоров'я кластера через AiInsight
       insight = fetch_health_insight
-      return unless eligible_for_reward?(insight)
+      unless eligible_for_reward?(insight)
+        # ⚖️ [E.64 (Б)] Пауза мусить мати голос: без прямого сигналу стрес `nil` на кожній добі,
+        # і мовчазний `return` читався б як «кластер нездоровий», а не «не виміряно».
+        if insight && insight.stress_index.nil?
+          Rails.logger.info "⏸️ [Celo] #{@cluster.name} (#{@target_date}): стрес не виміряно — " \
+                            "винагорода на паузі до першого прямого сигналу (E.64 (Б), 05_05 §7)."
+        end
+        return
+      end
 
       # Guard Clause 2: Перевірка наявності гаманця організації
       organization = @cluster.organization
@@ -213,8 +221,11 @@ module Celo
               .first
     end
 
+    # ⚖️ [E.64 (Б), founder 2026-10-10] Без прямого сигналу стрес = `nil` на КОЖНІЙ
+    # добі, тож гард `nil?` нижче тримає виплату для всіх кластерів — це ратифікована
+    # ціна присуду, не збій (`05_05 §7`); оживає з першим прямим сигналом.
     # [SLASH-1, founder-ратифікація] День з vm_error-кадром (софт-збій прошивки)
-    # СВІДОМО reward-eligible: stress_index за нього = 0.0 (vm_error ≠ біо-стрес),
+    # СВІДОМО reward-eligible: vm_error стресу не підвищує (vm_error ≠ біо-стрес),
     # сенсорна половина кадру жива (зламаний лише Лоренц-статус), а карати дерево
     # за НАШ баг — «не карати жертву». Емісія захищена окремо (vm_error → 0 GP
     # per-frame); маскування стресу через vm_error домінується фейк-homeostasis

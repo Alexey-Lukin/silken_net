@@ -332,9 +332,11 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }.to change(BlockchainTransaction, :count).by(1)
     end
 
-    # [SLASH-1, founder-ратифікація] vm_error-день (софт-збій прошивки → stress_index
-    # 0.0 після P0-reframe) СВІДОМО reward-eligible — «не карати жертву» нашого бага;
+    # [SLASH-1, founder-ратифікація] vm_error-день (софт-збій прошивки) СВІДОМО reward-eligible,
+    # коли стрес виміряно: vm_error стресу не підвищує — «не карати жертву» нашого бага;
     # емісія захищена окремо (vm_error-кадри → 0 GP). Пін РІШЕННЯ, не випадковості.
+    # ⚠️ [E.64 (Б)] Сьогодні такої доби генератор не дає: без прямого сигналу стрес `nil` і
+    # виплата на паузі (пін нижче). Цей пін тримає правило на день прямого сигналу.
     it "stays eligible on a vm_error day (stress_index 0.0 — firmware fault is OUR bug)" do
       stub_healthy_and_eligible
       AiInsight.last.update!(stress_index: 0.0,
@@ -348,10 +350,14 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
     end
 
-    it "skips a nil stress_index" do
+    # ⚖️ [E.64 (Б)] Без прямого сигналу це стан КОЖНОЇ доби — тож пауза мусить мати голос:
+    # мовчазний `return` читався б як «кластер нездоровий», а не «не виміряно».
+    it "skips a nil stress_index and says it is a pause, not a verdict" do
       create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                           target_date: target_date, stress_index: nil, fraud_detected: false)
+      allow(Rails.logger).to receive(:info).and_call_original
       expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+      expect(Rails.logger).to have_received(:info).with(/стрес не виміряно — винагорода на паузі/)
     end
 
     it "skips without an org crypto address" do
