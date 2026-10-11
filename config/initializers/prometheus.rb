@@ -206,6 +206,17 @@ module SilkenNet
                  "(an observation, mostly an honest Lorenz-chain desync, not a fraud page)"
     )
 
+    # ⚖️ [FW.66 (Б) · «утримання» GP, founder 2026-10-10] CCM-кадр, чия заява (байт статусу)
+    # розійшлась із серверним перерахунком `expected_homeostasis_gp(ema)` — бали кадру не
+    # нараховано (`TelemetryUnpackerService#ccm_growth_points`). Не fraud: на вузлі не наш
+    # контракт (баг чи підміна), а гроші й так рахує сервер; читач — warning-правило
+    # `sn-alert-gp-conformance-mismatch`, DID — у warn-лозі «[GP Conformance]».
+    GP_CONFORMANCE_MISMATCH_TOTAL = REGISTRY.counter(
+      :silkennet_gp_conformance_mismatch_total,
+      docstring: "FW.66: CCM frames whose device status-byte claim disagreed with the server growth-points " \
+                 "recompute; the frame's points were withheld (not a fraud page)"
+    )
+
     # ⚖️ [E.64, founder 2026-10-05/06] Кадр телеметрії, чиї зважені бали перевищили відро
     # ліміту зарахування дерева (`Wallet#credit_telemetry!`: ставка частки MAX_SUPPLY,
     # 30 діб відра) і зарахувались частково. Чесне дерево сюди не доходить — алерт

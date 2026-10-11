@@ -95,8 +95,10 @@ module TelemetryChunkHelper
   # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`;
   # `diag` packs `[reset_cause:3 | time_uncertain:1 | voc_attempt:1 | резерв:2 | fc_degraded:1]`
   # (дзеркало Pack_FW2_Diag, firmware/common/lora_ccm.h).
-  # `ema:` дефолтить у `dt` — контракт «wire = вхід GP» для спек, яким EMA
-  # неважливий; точна metabolic-гілка тестується явним `ema:`.
+  # `ema:` дефолтить у `DELTA_T_UNKNOWN_S` (0, «не виміряно»): з FW.66 (Б) бали CCM-кадру
+  # рахує сервер з EMA, а заява пристрою — тест відповідності, тож дефолт мусить бути
+  # УЗГОДЖЕНИМ із дефолтним `status: 0` — інакше кожна спека тихо лічила б розбіжність
+  # (`GP_CONFORMANCE_MISMATCH_TOTAL`). Бали й утримання тестуються явним `ema:`.
   #
   # `did_hex:` and `key:` are required — no implicit lookup from
   # surrounding `let` bindings. Specs that share a fixed key/DID
@@ -108,7 +110,7 @@ module TelemetryChunkHelper
                       gossip_ts_lsb: 0, ema: nil)
     mesh_ctrl    = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
     plaintext = [ vcap, temp, fw_report7, dt, status, mesh_ctrl,
-                  voc_mv, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
+                  voc_mv, diag, vpd_index, ema || 0 ].pack("n c C n C C n C C n")
     build_ccm_chunk_from_plaintext(did_hex: did_hex, key: key, rssi: rssi, plaintext: plaintext,
                                    fc: fc, gossip_ts_lsb: gossip_ts_lsb)
   end

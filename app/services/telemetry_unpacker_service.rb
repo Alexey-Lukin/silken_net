@@ -475,7 +475,7 @@ class TelemetryUnpackerService < ApplicationService
       # `acoustic_events` — свідомо НІЧОГО (NULL): CCM-кадр wire-rev2.2 акустики не везе (пʼєзо
       # зрізано, HW.30), а 0 був би виміряним нулем.
       metabolism_s: delta_t_s,
-      growth_points: emission_eligible_growth_points(status_byte, bio_status),
+      growth_points: ccm_growth_points(hex_did, status_byte, bio_status, ema_delta_t_s),
       mesh_ttl: mesh_ttl,
       firmware_version_id: fw_report,
       # [FW.65] транзієнт: ширина contract-id цієї ери — судить mismatch і підпис алерту
@@ -487,11 +487,6 @@ class TelemetryUnpackerService < ApplicationService
     }
     neutralize_panic_row!(log_attributes)
 
-    # [E.63 (г)] EMA-delta_t з шифртексту (wire-rev2.1 bytes 20..21) —
-    # контракт «wire = вхід GP»: живить точний stateless recompute у
-    # check_metabolic_divergence!. Транзієнт (не персистить, KENOSIS) —
-    # server-side EMA-аналітику покриває raw dT (03_01 §13.6 / E.37).
-    log_attributes[:ema_delta_t_s] = ema_delta_t_s
     # [SEC.40] Транзієнт: допуск кадру у вікно — у транзакції рядка (`commit_telemetry`).
     log_attributes[:ccm_frame] = ccm_frame
 
@@ -514,9 +509,7 @@ class TelemetryUnpackerService < ApplicationService
 
     # ⚖️ [FW.66 (Б)] CCM-ера Лоренца не має: ні серверного кроку, ні DCI, ні `K_seed`
     # (`03_04 §7.3`). Печатку кадру тримає криптографія — MIC і межа повтору SEC.40, — а
-    # звірка лишається метаболічна; panic-кадр рядком виміру не є (ARCH.102), а VM_ERROR
-    # вона й сама приймає без суду.
-    check_metabolic_divergence!(tree, log_attributes, status_byte) unless log_attributes[:panic]
+    # звірка метаболічна, і вона вже відбулась у `ccm_growth_points` вище: бали рахує сервер.
     commit_telemetry(tree, log_attributes)
 
   rescue StandardError => e
@@ -802,27 +795,63 @@ class TelemetryUnpackerService < ApplicationService
   # бали за кожен error-пакет. Firmware-сторона виправлена (VM_ERROR=0x60,
   # gp=0); цей гейт — defense-in-depth для старих прошивок і бітфліпів.
   EMISSION_ELIGIBLE_STATUSES = %i[homeostasis stress].freeze
+  # [FW.29-PACK] 5-бітні бали дроту → бали рядка (0..62); множник обох ер.
+  GROWTH_POINTS_WIRE_SCALE = 2
 
   def emission_eligible_growth_points(status_byte, bio_status)
     return 0 unless EMISSION_ELIGIBLE_STATUSES.include?(bio_status)
 
-    (status_byte & 0x1F) * 2
+    (status_byte & 0x1F) * GROWTH_POINTS_WIRE_SCALE
   end
 
-  # [E.63/E.64 DCI] Conformance for the growth_points wire field — defense-in-depth
-  # twin of check_z_divergence! for the metabolic channel (E.63 made delta_t drive
-  # growth_points directly on-device, out of the Z-divergence net). Two layers.
-  # STRUCTURAL, every frame: the wire dT carries the RAW delta_t but firmware packs
-  # GP from the EMA-smoothed delta_t, so without the EMA only the band is
-  # stateless-knowable: homeostasis → GP ∈ [GP_HOMEO_MIN..GP_HOMEO_MAX] (or the
-  # GP_UNMEASURED sentinel), stress → GP_STRESS (anomaly/vm_error already zeroed
-  # upstream). EXACT, CCM frames only: wire-rev2.1 carries `ema_delta_t_s`
-  # («wire = вхід GP», 00_07 E.63), so the recompute must match byte-for-byte —
-  # branch below; the 21B ECB frame carries no EMA and skips it. A structural
-  # violation ⇒ a corrupt ECB block
-  # (no MIC in the transitional frame), a forged StatusByte, or stale firmware.
-  # Observational (fraud metric, never drops the packet) — same posture as
-  # check_z_divergence!.
+  # ⚖️ [FW.66 (Б) · «утримання» GP — founder 2026-10-10, присуд (1) врізки `03_04 §7.3`] У CCM-ері
+  # бали рахує СЕРВЕР — `expected_homeostasis_gp` над MIC-автентифікованим EMA-входом, — а байт
+  # статусу пристрою лише тест відповідності. Розбіжність = бали кадру не нараховуються зовсім
+  # (ні відкладено, ні шляхом повернення — ескроу-архітектури немає, ARCH.116) і лічаться власним
+  # лічильником під warning-правилом `sn-alert-gp-conformance-mismatch`, без `EwsAlert` і без
+  # fraud-лічильника: той будить P0, а розбіжність — це «на вузлі не наш контракт» (баг чи
+  # підміна), не доказ крадіжки. Коди статусу CCM-ери (⚖️ делеговано 2026-10-10, `03_05 §2.1`):
+  # 0 — контракт відпрацював; 3 — `vm_error`, вердикт пристрою про себе, якому сервер довіряє
+  # (балів немає, суду теж); 1 і 2 — резерв, тобто порушення відповідності, хоч рядок і зберігає
+  # сирий код в `bio_status`. Panic-кадр рядком виміру не є (ARCH.102) — нуль без суду.
+  # ⚠️ Ціна (названа присудом): флотовий розсинхрон формули контракт ⟷ сервер забирає бали
+  # уражених кадрів у чесних дерев НАЗАВЖДИ; заяву справжнього контракту на всьому uint16-діапазоні
+  # EMA пінить `attractor_spec`. «Не виміряно» (`DELTA_T_UNKNOWN_S`) виключене з балів, не з
+  # тесту: формула дає нуль, а ненульова заява на ньому — той самий слід чужого контракту.
+  # ⚠️ Лічильник спрацьовує ДО авторитетного допуску SEC.40 (`commit_telemetry`), як і
+  # `TELEMETRY_CCM_DECRYPT_OK_TOTAL`: дубль, що прослизнув пре-фільтр у гонці воркерів, лічиться
+  # двічі — завищує число, стану правила `gt 0` не змінює. ⛔ Резервні коди тут — лише гроші:
+  # рядок і далі пише сирий код у `bio_status`, і UI/інсайти/лист v1 читають його біологією
+  # (стеля названа в `03_05 §2.1`; чесна прошивка цих кодів не шле — їх пропускає лише чужий контракт).
+  def ccm_growth_points(hex_did, status_byte, bio_status, ema_delta_t_s)
+    return 0 if status_byte.anybits?(PANIC_FLAG_BIT) || bio_status == :vm_error
+
+    wire_gp = status_byte & 0x1F
+    expected_gp = SilkenNet::Attractor.expected_homeostasis_gp(ema_delta_t_s)
+    if bio_status != :homeostasis
+      reason = "резервний код статусу #{(status_byte >> 5) & 0x03}"
+    elsif wire_gp != expected_gp
+      reason = "gp=#{wire_gp} ≠ перерахунок(ema=#{ema_delta_t_s}s)=#{expected_gp}"
+    else
+      return expected_gp * GROWTH_POINTS_WIRE_SCALE
+    end
+
+    SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL.increment
+    Rails.logger.warn("🔍 [GP Conformance] DID #{hex_did}: заява пристрою не пройшла тест — #{reason}; бали кадру утримано (FW.66 (Б)).")
+    0
+  end
+
+  # [E.63/E.64 DCI] Conformance for the growth_points wire field of the ECB frame —
+  # defense-in-depth twin of check_z_divergence! for the metabolic channel (E.63 made
+  # delta_t drive growth_points directly on-device, out of the Z-divergence net).
+  # STRUCTURAL only: the 21B frame carries the RAW delta_t, but firmware packs GP from
+  # the EMA-smoothed one, so only the band is stateless-knowable: homeostasis → GP ∈
+  # [GP_HOMEO_MIN..GP_HOMEO_MAX] (or the GP_UNMEASURED sentinel), stress → GP_STRESS
+  # (anomaly/vm_error already zeroed upstream). A violation ⇒ a corrupt ECB block (no MIC
+  # in the transitional frame), a forged StatusByte, or stale firmware. Observational
+  # (fraud metric, never drops the packet) — same posture as check_z_divergence!.
+  # The EXACT recompute is the CCM era's and it is no longer observational: it decides
+  # the points themselves — `ccm_growth_points` [FW.66 (Б)].
   def check_metabolic_divergence!(tree, attributes, status_byte)
     wire_gp = status_byte & 0x1F
 
@@ -849,28 +878,7 @@ class TelemetryUnpackerService < ApplicationService
         true # anomaly/vm_error GP already neutralised by emission_eligible_growth_points
       end
 
-    if conformant
-      # [E.63 (г), wire-rev2.1] ТОЧНА гілка: кадр несе EMA-delta_t — САМЕ те
-      # число, що з'їла Metabolic.homeostasis_gp на пристрої (контракт «wire = вхід
-      # GP», Soldier Фаза-3) → stateless recompute мусить збігтися БАЙТ-точно.
-      # OBSERVATIONAL до bench-калібрування порогів (placeholder 600/7200 —
-      # 03_04 §4.3): warn + метрика, мінт НЕ гейтиться (клас z-DCI: ловить
-      # баги/десинк, не anti-fraud — консистентну брехню обома полями CCM+MIC
-      # однаково не ловить). ECB-шлях ema не несе (nil) — гілка скипається.
-      ema = attributes[:ema_delta_t_s]
-      return if ema.nil? || attributes[:bio_status] != :homeostasis
-
-      expected_gp = SilkenNet::Attractor.expected_homeostasis_gp(ema)
-      return if wire_gp == expected_gp
-
-      Rails.logger.warn(
-        "🔍 [Metabolic Divergence · exact] DID #{tree.did}: wire_gp=#{wire_gp} ≠ " \
-        "recompute(ema=#{ema}s)=#{expected_gp}. Contract «wire = вхід GP» broken " \
-        "(threshold desync / EMA-state corruption / firmware bug)."
-      )
-      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
-      return
-    end
+    return if conformant
 
     Rails.logger.warn(
       "🔍 [Metabolic Divergence] DID #{tree.did}: status=#{attributes[:bio_status]}, " \
@@ -1036,8 +1044,7 @@ class TelemetryUnpackerService < ApplicationService
 
       # [FW.57 F2] :lorenz_temperature_c is a transient DCI input (raw wire temp),
       # not a column — strip it before persisting (calibrated temperature_c stays).
-      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :ema_delta_t_s,
-                                                              :fw_report_id_mask, :ccm_frame))
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :fw_report_id_mask, :ccm_frame))
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(record.voltage_mv)

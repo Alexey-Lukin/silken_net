@@ -282,7 +282,7 @@ groups:
         for: 2m
         annotations:
           summary: "Fraud rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
-          description: "TelemetryUnpackerService відхилив пакети (sensor noise, unknown DID — в ECB-ері зокрема кадр під чужим ключем) або позначив розбіжність метаболізму (wire GP ≠ перерахунок). Категорійна DCI-розбіжність сюди більше не входить: вона здебільшого чесний розсинхрон ланцюга й лічиться окремо — silkennet_dci_categorical_mismatch_total, без алерту (⚖️ FW.66, 2026-10-05; 03_04 §7.3). Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
+          description: "TelemetryUnpackerService відхилив пакети (sensor noise, unknown DID — в ECB-ері зокрема кадр під чужим ключем) або позначив розбіжність метаболізму ECB-кадру (GP поза смугою прошивки; CCM-розбіжність заяви з перерахунком лічиться окремо — silkennet_gp_conformance_mismatch_total, warning, ⚖️ FW.66 (Б)). Категорійна DCI-розбіжність сюди більше не входить: вона здебільшого чесний розсинхрон ланцюга й лічиться окремо — silkennet_dci_categorical_mismatch_total, без алерту (⚖️ FW.66, 2026-10-05; 03_04 §7.3). Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
           severity: critical
@@ -1811,6 +1811,57 @@ groups:
           summary: "Кадри телеметрії зараховуються частково ({{ $values.B.Value | printf \"%.4f\" }}/s) — відро ліміту дерева вичерпано."
           description: "Wallet#credit_telemetry! обрізав зарахування кадру: дерево вичерпало відро ліміту (ставка — частка MAX_SUPPLY на дерево, 50 SCC/рік ≈ 1 370 балів/добу, відро 30 діб; E.64). Чесне дерево сюди не доходить — робоча точка в 3.65× нижче, бэклог після мовчання покриває відро. Отже: витягнутий KEYL (кадри з будь-яким FC і максимальним GP) або баг серверного перерахунку. DID — у рядку логу «[E.64] … відро ліміту зарахування вичерпано»; рядки TelemetryLog лишаються, надлишок не зарахований. 05_03 / E.64."
           runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P1: Заява CCM-кадру розійшлась із серверним перерахунком балів [FW.66 (Б)].
+      # ⚖️ «Утримання» GP (founder 2026-10-10, 03_04 §7.3): у CCM-ері бали рахує
+      # сервер, і розбіжність уже не нараховує балів кадру — тож правило не
+      # захищає гроші, а кличе людину на ПРИЧИНУ: на вузлі не наш контракт (баг
+      # OTA-контракту, розсинхрон формули при калібруванні порогів, підміна).
+      # Чесний флот сюди не доходить — заяву справжнього контракту на всьому
+      # uint16-діапазоні EMA пінить `attractor_spec`, тож поріг `gt 0` не шумить.
+      # ⊥ Не fraud-сторінка: `sn-alert-fraud-detected` (P0) цієї розбіжності
+      # більше не бачить — присуд прибрав її з fraud-лічильника свідомо.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-gp-conformance-mismatch
+        title: "⚠️ CCM GP claim ≠ server recompute (points withheld — foreign contract on node)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "increase(silkennet_gp_conformance_mismatch_total[1h])"
+              refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} CCM-кадрів за 1h із заявою балів, що розійшлась із перерахунком, — бали утримано."
+          description: "TelemetryUnpackerService#ccm_growth_points не нарахував балів кадру: байт статусу пристрою (код 0 і бали) розійшовся з серверним expected_homeostasis_gp над EMA-входом кадру, або кадр ніс резервний код 1/2. Бали втрачені назавжди — ескроу немає (ARCH.116). Причина на вузлі: OTA-контракт чужої формули (перевір останню кампанію bio_contract_firmwares і hiwater), розсинхрон порогів метаболізму між metabolic_core.rb і SilkenNet::Attractor, або підміна. Флотовий сплеск після оновлення формули — ціна присуду: зупини кампанію, а не алерт. DID — у warn-лозі «[GP Conformance]». 03_04 §7.3 / FW.66."
+          runbook_url: "docs/03_04_mruby_Lorenz_Attractor.md"
         labels:
           severity: warning
           component: telemetry

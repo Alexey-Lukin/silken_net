@@ -102,7 +102,9 @@ the guard that enforces it.
   backend recomputation (DCI, SEC.11 in [`05_02`](05_02_Proof_of_Growth_Pipeline)) — an observation with its
   own counter, not a rejection (FW.66 leg 1); the CCM path carries no Lorenz (FW.66 (Б)) and rests on the
   CCM MIC and the SEC.40 replay window. ⚠️ Neither stops a forger who holds the device key: that residual is
-  bounded only by the E.64 per-tree credit cap (and, once built, the server-side GP recompute — FW.66).
+  bounded only by the 5-bit GP cap and the E.64 per-tree credit cap. The server-side GP recompute (FW.66 (Б),
+  `ccm_growth_points`) does NOT bound it: a key-holder picks the EMA field and claims the matching maximum;
+  the recompute ties the claim to that field, so it catches a foreign contract on genuine firmware, not a forger.
 
 ### Boundary B — Queen → Rails (CoAP)
 *Crosses:* an AES-256-CBC batch of per-device-encrypted records.

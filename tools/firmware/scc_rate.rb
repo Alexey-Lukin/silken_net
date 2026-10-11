@@ -19,7 +19,8 @@
 # Джерела (firmware/bio_contracts/metabolic_core.rb — placeholder до bench, E.63):
 #   DELTA_T_FAST_S=600 (m=1.0), DELTA_T_SLOW_S=7200 (m=0.0)
 #   wire = round(GP_HOMEO_MIN + m*(GP_HOMEO_MAX-GP_HOMEO_MIN)), 5..31
-#   stored = 2*wire (backend ×2 upscale, FW.29-PACK; 03_04 (status & 0x1F) * 2)
+#   stored = 2*wire (backend ×2 upscale, FW.29-PACK; 03_04 (status & 0x1F) * 2 — на CCM-кадрі
+#   2 × серверний перерахунок, що при відповідності заяви дорівнює тому самому, FW.66 (Б))
 #   EMISSION_THRESHOLD = 10_000 GP = 1 SCC (05_03 tokenomics_evaluator_worker.rb)
 # Стеля [E.63]: DELTA_T_* = placeholder, чекають bench recharge-кривої → magnitude
 # уточнити при bench (RUNBOOK §3.3). Guard тримає self-consistency + фізичну стелю,

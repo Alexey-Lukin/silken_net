@@ -1638,10 +1638,14 @@ end
     # порушення смуги, тобто цей самий кадр щоразу інкрементував
     # `TELEMETRY_FRAUD_DETECTED_TOTAL`. Пін був зелений на прикладі, який його описує —
     # рівно клас «гейт, що НЕ БІГ по своїй третій осі».
-    it "pulse (метаболізм не виміряно) штампує живість, НЕ дає балів і НЕ кричить fraud [SILENCE-1 / ARCH.102]" do
+    # ⊕ 2026-10-11 [FW.66 (Б)]: CCM-шлях `check_metabolic_divergence!` більше не кличе — бали й
+    # відповідність судить `ccm_growth_points`, тож третя половина тепер міряє МОВЧАННЯ лічильника
+    # відповідності; fraud-мовчання лишається, але на цьому шляху воно зелене за побудовою.
+    it "pulse (метаболізм не виміряно) штампує живість, НЕ дає балів і НЕ кричить ні fraud, ні розбіжність [SILENCE-1 / ARCH.102]" do
       tree.update_columns(last_seen_at: 30.hours.ago)
       balance_before = tree.wallet.balance
       allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to receive(:increment)
 
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)
@@ -1652,6 +1656,7 @@ end
       expect(tree.reload.last_seen_at).to be > 1.minute.ago
       expect(Tree.silent(24.hours)).not_to include(tree)
       expect(tree.wallet.reload.balance).to eq(balance_before)
+      expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).not_to have_received(:increment)
       expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
 
@@ -1839,14 +1844,17 @@ end
 
     # ⚖️ [SEC.40, founder 2026-10-05] Ковзне вікно на (DID, епоха) замість кешу з TTL 25 год.
     describe "[SEC.40] sliding replay window" do
+      # Кадр, що ВАРТИЙ балів (узгоджена заява, m(3600 с) = 19 → 38): на кадрі за нуль балів
+      # «баланс не змінився після повтору» зелене й за подвійного зарахування.
       def frame(fc)
-        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3, fc: fc)
+        gp = SilkenNet::Attractor.expected_homeostasis_gp(3600)
+        build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: gp, ema: 3600, ttl: 3, fc: fc)
       end
 
       # Доти анти-повтор жив у `Rails.cache` із TTL 25 год, і справжній кадр, повторений
       # після вікна кешу, проходив MIC і FC-гард та нараховував бали вдруге.
       it "rejects the replay even after the cache is gone — the window lives in FC space, not time" do
-        expect { described_class.call(frame(100)) }.to change(TelemetryLog, :count).by(1)
+        expect { described_class.call(frame(100)) }.to change { tree.wallet.reload.balance }.by_at_least(1)
         balance = tree.wallet.reload.balance
         Rails.cache.clear
 
@@ -1876,7 +1884,7 @@ end
 
       # Гонка двох воркерів: обидва пройшли пре-фільтр, допуск у транзакції рядка — лише один.
       it "lets a duplicate that slipped past the pre-filter lose the admission inside the row's transaction" do
-        described_class.call(frame(300))
+        expect { described_class.call(frame(300)) }.to change { tree.wallet.reload.balance }.by_at_least(1)
         balance = tree.wallet.reload.balance
         allow(CcmReplayWindow).to receive(:rejection).and_return(nil)
 
@@ -2055,11 +2063,12 @@ end
       expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
     end
 
-    it "credits growth_points × 2 the same way as the 21B path" do
-      # Wire status_byte = 10 → growth_points nibble = 10 → stored gp = 20.
+    it "credits the server recompute × 2 when the device claim conforms" do
+      # [FW.66 (Б)] Бали CCM-кадру рахує сервер: m(ema = 3600 с) → 19, рядок — 38.
+      gp = SilkenNet::Attractor.expected_homeostasis_gp(3600)
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
-                              dt: 100, status: 10, ttl: 3, fc: 200)
-      expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
+                              dt: 100, status: gp, ttl: 3, fc: 200, ema: 3600)
+      expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(gp * 2)
     end
 
     it "falls back to the 21B ECB path when the feature flag is unset" do
@@ -2072,7 +2081,7 @@ end
     # ------------------------------------------------------------------
     # Coverage gaps for the CCM uplink guards.
     # Every branch below corresponds to a real-logic guard (unknown
-    # device, missing/invalid key, gateway routing, fw nibble, panic ema,
+    # device, missing/invalid key, gateway routing, fw nibble,
     # broad rescue) — NOT defensive `&.`-nil padding.
     # ------------------------------------------------------------------
 
@@ -2136,47 +2145,76 @@ end
       expect(TelemetryLog.last.queen_uid).to eq(gateway.uid)
     end
 
-    # [E.63 (г), wire-rev2.1] Точний stateless GP-recompute з wire-EMA —
-    # контракт «wire = вхід GP» (observational до bench-калібрування порогів).
-    describe "exact metabolic recompute (ema_delta_t_s, E.63 (г))" do
-      it "passes silently when wire GP matches m(ema) byte-exactly" do
-        ema = 3600
-        gp  = SilkenNet::Attractor.expected_homeostasis_gp(ema)
-        allow(Rails.logger).to receive(:warn)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
-                                dt: 200, status: gp, ttl: 3, fc: 41, ema: ema)
+    # ⚖️ [FW.66 (Б) · «утримання» GP, founder 2026-10-10 — `03_04 §7.3` присуд (1)] Бали CCM-кадру
+    # рахує СЕРВЕР (`expected_homeostasis_gp` над EMA-входом кадру), а байт статусу пристрою —
+    # тест відповідності: розбіжність = нуль балів кадру й власний лічильник, fraud не чіпається.
+    describe "GP hold — the server recompute decides the points, the claim is a conformance test" do
+      let(:ema) { 3600 }
+      let(:gp) { SilkenNet::Attractor.expected_homeostasis_gp(ema) }
 
-        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-        expect(Rails.logger).not_to have_received(:warn)
-          .with(a_string_matching(/Metabolic Divergence/))
-      end
-
-      it "warns + flags fraud metric when wire GP diverges from m(ema) — contract broken" do
-        ema = 3600
-        gp  = SilkenNet::Attractor.expected_homeostasis_gp(ema)
-        bad_gp = gp == SilkenNet::Attractor::GP_HOMEO_MAX ? gp - 1 : gp + 1
+      before do
         allow(Rails.logger).to receive(:warn)
+        allow(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to receive(:increment)
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
-                                dt: 200, status: bad_gp, ttl: 3, fc: 42, ema: ema)
-
-        # Observational: запис СТВОРЮЄТЬСЯ (мінт-гейт не чіпаємо до калібрування).
-        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-        expect(Rails.logger).to have_received(:warn)
-          .with(a_string_matching(/Metabolic Divergence · exact.*recompute\(ema=3600s\)=#{gp}/))
-        # Рівно раз: z-DCI з FW.66 (нога 1) лічить у ВЛАСНИЙ лічильник, тож fraud тут —
-        # лише точна метаболічна гілка, доведена ще й лог-рядком вище.
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
       end
 
-      it "skips the exact branch for non-homeostasis frames (panic ema=0)" do
-        allow(Rails.logger).to receive(:warn)
-        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25,
-                                dt: 0, status: 0x80, ttl: 5, fc: 43, ema: 0) # 0x80 = PanicFlag
-
+      def ccm_row(status:, fc:, ema: self.ema, dt: 200)
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: dt, status: status, ttl: 3, fc: fc, ema: ema)
         expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-        expect(Rails.logger).not_to have_received(:warn)
-          .with(a_string_matching(/Metabolic Divergence · exact/))
+        TelemetryLog.last
+      end
+
+      it "credits 2 × recompute and stays silent when the claim matches byte-exactly" do
+        expect(ccm_row(status: gp, fc: 41).growth_points).to eq(gp * 2)
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).not_to have_received(:increment)
+        expect(Rails.logger).not_to have_received(:warn).with(a_string_matching(/GP Conformance/))
+      end
+
+      it "withholds the frame's points on a diverging claim — own counter, never the fraud page" do
+        bad_gp = gp == SilkenNet::Attractor::GP_HOMEO_MAX ? gp - 1 : gp + 1
+
+        # Рядок пишеться (вимір лишається), бали — ні: ні відкладено, ні шляхом повернення.
+        expect(ccm_row(status: bad_gp, fc: 42).growth_points).to eq(0)
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to have_received(:increment).once
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+        expect(Rails.logger).to have_received(:warn)
+          .with(a_string_matching(/GP Conformance.*gp=#{bad_gp} ≠ перерахунок\(ema=3600s\)=#{gp}/))
+      end
+
+      # 03_05 §2.1 (⚖️ делеговано 2026-10-10): коди 1 і 2 CCM-ери — резерв. Код 1 доти проходив
+      # як ECB-ний `stress` і отримував бали; тепер — порушення. Бали в обох рядках УЗГОДЖЕНІ з
+      # перерахунком, тож червоніє саме гілка коду, а не розбіжність балів.
+      it "withholds the points of the reserved status codes 1 and 2 even with a matching gp" do
+        stress_row  = ccm_row(status: (1 << 5) | gp, fc: 43)
+        anomaly_row = ccm_row(status: (2 << 5) | gp, fc: 44)
+
+        expect([ stress_row.growth_points, anomaly_row.growth_points ]).to eq([ 0, 0 ])
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to have_received(:increment).twice
+        expect(Rails.logger).to have_received(:warn).with(a_string_matching(/резервний код статусу 1/))
+      end
+
+      it "trusts vm_error and skips panic frames without judging them" do
+        vm_row    = ccm_row(status: (3 << 5) | gp, fc: 45)
+        panic_row = ccm_row(status: 0x80 | gp, fc: 46) # 0x80 = PanicFlag
+
+        expect([ vm_row.growth_points, panic_row.growth_points ]).to eq([ 0, 0 ])
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).not_to have_received(:increment)
+      end
+
+      it "reads the unmeasured EMA as zero points, and an honest zero claim as conformant" do
+        unknown = SilkenNet::Attractor::DELTA_T_UNKNOWN_S
+
+        expect(ccm_row(status: 0, fc: 47, ema: unknown, dt: 0).growth_points).to eq(0)
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).not_to have_received(:increment)
+      end
+
+      # «Не виміряно» виключене з БАЛІВ, не з ТЕСТУ: справжній контракт на EMA = 0 заявляє нуль,
+      # тож ненульова заява — той самий слід чужого контракту, і лічильник його бачить.
+      it "still judges a non-zero claim at the unmeasured EMA — a foreign contract's trace" do
+        unknown = SilkenNet::Attractor::DELTA_T_UNKNOWN_S
+
+        expect(ccm_row(status: gp, fc: 48, ema: unknown, dt: 0).growth_points).to eq(0)
+        expect(SilkenNet::Metrics::GP_CONFORMANCE_MISMATCH_TOTAL).to have_received(:increment).once
       end
     end
 

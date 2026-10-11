@@ -154,6 +154,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║              + telemetry_log.cold_start_flag = true                  ║
 ║    persist tail → telemetry_log.lorenz_state_x/y/z (mirror RTC)     ║
 ║    growth_points = (status_byte & 0x1F) * 2 (×2 upscale, FW.29-PACK)║
+║      CCM [FW.66 (Б)]: 2×expected_homeostasis_gp(ema), рахує сервер; ║
+║      заява ≠ перерахунок → 0 балів кадру (утримання GP, 03_04 §7.3) ║
 ║    bio_status = (status_byte >> 5) & 0x03 (bits 6..5, FW.29-PACK)   ║
 ║    AlertDispatchService.analyze_and_trigger!(log)  [ізольовано,     ║
 ║      ARCH.121: виняток → лог + Sentry, гроші йдуть далі]            ║
@@ -740,7 +742,7 @@ trees
 
 telemetry_logs  [PARTITION BY RANGE(created_at)]
   ├─ z_value              :decimal           Lorenz Z (BigDecimal 18 precision)
-  ├─ growth_points        :integer           [FW.29-PACK] stored 0..62 = wire bits [4:0] (0..31) × 2 backend upscale
+  ├─ growth_points        :integer           [FW.29-PACK] stored 0..62 = wire bits [4:0] (0..31) × 2 backend upscale; CCM — 2 × серверний перерахунок (FW.66 (Б))
   ├─ bio_status           :integer enum      0=homeostasis|1=stress|2=anomaly|3=vm_error
   ├─ verified_by_iotex    :boolean  NOT NULL DEFAULT false
   ├─ zk_proof_ref         :string            "proof_id" або "receipt_id" від W3bstream

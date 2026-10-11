@@ -396,7 +396,8 @@ module DocsLinter
   #       (|OPTIMAL_Z − z|) — proven economically null/inverted (00_07 E.63).
   # [E.63] growth_points in homeostasis is now `Metabolic.homeostasis_gp(delta_t)` (monotonic
   # recharge vigor), owned by 03_04 §4.3 and living in firmware `metabolic_core.rb` (FW.66 S4);
-  # backend only DECODES the wire value (`(status_byte & 0x1F) * 2`). It is the
+  # on ECB the backend only DECODES the wire value (`(status_byte & 0x1F) * 2`); on CCM it recomputes
+  # it from the EMA input (`ccm_growth_points`, FW.66 (Б)). It is the
   # token-MINTING reward, so a stale copy of EITHER dead formula silently misstates
   # emission — invisible to every other guard (Lorenz knows only β; rate-guard exempts
   # manifest). Signature tokens unique to the dead formulas: `clamp(… 10, 63 …)`,

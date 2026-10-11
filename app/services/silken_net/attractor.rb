@@ -33,8 +33,9 @@ module SilkenNet
     # β не рухає z-нерухому точку Лоренца (z_eq = ρ−1) → delta_t-сигнал виходив
     # економічно нульовий, vcap — інвертований. Метаболізм тепер задає
     # growth_points НАПРЯМУ на пристрої (firmware Metabolic.homeostasis_gp — metabolic_core.rb);
-    # backend декодує wire growth_points у TelemetryUnpackerService
-    # (`(status_byte & 0x1F) * 2`). Лоренц тут — чистий хаос для DCI: server-Z
+    # backend декодує wire growth_points ECB-кадру у TelemetryUnpackerService
+    # (`(status_byte & 0x1F) * 2`), а бали CCM-кадру рахує сам — expected_homeostasis_gp
+    # нижче (`ccm_growth_points`, FW.66 (Б)). Лоренц тут — чистий хаос для DCI: server-Z
     # та device-Z обидва на β=BASE_BETA → категоричний check_z_divergence!
     # лишається валідним. delta_t_s/vcap_mv приймаються лише для сумісності
     # викликів — на Z більше не впливають. Присуд — 00_07 E.63.
@@ -48,9 +49,10 @@ module SilkenNet
     # [E.63 (г), wire-rev2.1 2026-07-03] The wire now ALSO carries the
     # EMA-smoothed delta_t — the exact number Metabolic.homeostasis_gp consumed on
     # the device (contract «wire = GP input») → the exact stateless recompute
-    # below (expected_homeostasis_gp) is possible; it stays OBSERVATIONAL
-    # (warn+metric, no gate) until the bench calibrates the placeholder
-    # thresholds. Raw dT keeps riding bytes 12..13 for diagnostics (03_01 §13.6).
+    # below (expected_homeostasis_gp) is possible, and on the CCM path it is no
+    # longer observational: it DECIDES the frame's points, the device claim is a
+    # conformance test (TelemetryUnpackerService#ccm_growth_points — FW.66 (Б) GP
+    # hold, 03_04 §7.3). Raw dT keeps riding bytes 12..13 for diagnostics (03_01 §13.6).
     GP_HOMEO_MIN = 5
     GP_HOMEO_MAX = 31
     GP_STRESS    = 1
