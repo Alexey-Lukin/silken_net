@@ -1070,7 +1070,8 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
 
       # [MRV.1/ARCH.12] Транзитивна печатка lineage: корінь вікна їде в AuditLog-ланцюг
-      # (→ leaf0 наступного тижневого якоря); nil = чесний unsealed у bundle.
+      # (→ leaf0 наступного тижневого якоря; ⚠️ ARCH.122 — leaf0 несе голову ланцюга лише організації,
+      # що писала останньою); nil = чесний unsealed у bundle.
       it "carries telemetry_merkle_root in metadata (lineage transitive seal)" do
         tx.update!(telemetry_merkle_root: "ab" * 32)
         tx.process!
