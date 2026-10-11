@@ -173,6 +173,7 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
     accepted = {n for n, c in w["complexes"].items() if "dE_red_eV" in c and ok(c["os2"]) and ok(c["os3"])}
     assert accepted <= set(rows), "an accepted ωB97X point is missing from the comparison"
     assert set(v["not_compared"]) == set(w["complexes"]) - accepted, "not_compared ≠ the points not accepted"
+    assert v["os3_s2_max_accepted"] == S2_MAX_DOUBLET, "the comparison does not record the threshold its acceptance applies"
     small_path = DFT / "os_mediator_series_wb97x_631gd.json"
     small = json.loads(small_path.read_text())["complexes"] if small_path.exists() else {}
     unrecorded = [f"os_mediator_series_wb97x.json:{n}" for n, c in w["complexes"].items()

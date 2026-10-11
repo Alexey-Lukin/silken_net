@@ -177,16 +177,33 @@ def build() -> str:
     lf_slope = series["lfer"]["slope_eV_per_sigma"]
     sub = ", ".join(lbl[n] for n in vs["common_fit_subset"])
     cs = vs["centre_decomposition"]["local_slope_eV_per_sigma"]
+    # every clause from the cache (in-silico §When Modifying #5): the acceptor and the ends sentences were typed once
+    # and turned false when SO₂CF₃ and the small-basis ends landed (2026-10-11)
+    sigma = {c["name"]: c["sigma_para"] for c in series["complexes"]}
+    fit_acceptors = [n for n in vs["common_fit_subset"] if sigma[n] > 0]
+    extra = [p for p in vs["points"] if p["sigma_para"] > 0 and p["name"] not in vs["common_fit_subset"]]
+    def m(x: float, spec: str) -> str:   # the table's minus sign, not a hyphen
+        return f"{x:{spec}}".replace("-", "−")
+    acceptor = ((f"resting on the {'one acceptor point' if len(fit_acceptors) == 1 else 'acceptor points'} of that set, "
+                 f"{', '.join(lbl[n] for n in fit_acceptors)}" if fit_acceptors else "with no acceptor point in that set")
+                + (f"; outside the fit, {', '.join(lbl[p['name']] for p in extra)} "
+                   f"{'carries' if len(extra) == 1 else 'carry'} ω−B3 "
+                   + ", ".join(f"{p['omega_minus_b3_eV']:+.3f}" for p in extra) if extra else ""))
+    es = vs["ends_decomposition"]["slope_over_common_subset_by_tier"]
+    ends = (f"with ωB97X also at 6-31G(d) on every point of {sub}, the slope runs {m(es['b3lyp_631gd'], '.3f')} → "
+            f"{m(es['wb97x_631gd'], '.3f')} → {m(es['wb97x_def2tzvp'], '.3f')} eV/σ — functional ×"
+            f"{es['wb97x_631gd'] / es['b3lyp_631gd']:.2f}, basis ×{es['wb97x_def2tzvp'] / es['wb97x_631gd']:.2f}"
+            if es else "at the ends the two are not separated")
     md.append(f"\n*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "
-              f"over {sub} the slope is {vs['slope_wb97x_eV_per_sigma']:.2f} against "
-              f"{vs['slope_b3lyp_eV_per_sigma']:.2f} eV/σ at B3LYP (×{vs['slope_ratio_wb97x_over_b3lyp']:.2f}, resting "
-              f"on the one acceptor point); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs "
-              f"{cs['b3lyp_631gd']:.3f} → {cs['wb97x_631gd']:.3f} → {cs['wb97x_def2tzvp']:.3f} eV/σ, i.e. the "
+              f"over {sub} the slope is {m(vs['slope_wb97x_eV_per_sigma'], '.2f')} against "
+              f"{m(vs['slope_b3lyp_eV_per_sigma'], '.2f')} eV/σ at B3LYP (×{vs['slope_ratio_wb97x_over_b3lyp']:.2f}, "
+              f"{acceptor}); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs "
+              f"{m(cs['b3lyp_631gd'], '.3f')} → {m(cs['wb97x_631gd'], '.3f')} → {m(cs['wb97x_def2tzvp'], '.3f')} eV/σ, i.e. the "
               f"functional and the basis change pull "
-              f"{'opposite ways' if vs['centre_functional_and_basis_pull_opposite_ways'] else 'the same way'}; at "
-              f"the ends the two are not separated.*\n")
+              f"{'opposite ways' if vs['centre_functional_and_basis_pull_opposite_ways'] else 'the same way'}; "
+              f"{ends}.*\n")
 
     return "\n".join(md) + "\n"
 

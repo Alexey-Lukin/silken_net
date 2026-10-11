@@ -37,7 +37,9 @@ L3 DFT anode (CPU):
   21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
   21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade) · 21e `wb97x` (the centre pair of `vs_b3lyp`)
   34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
-  21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` (`ends_decomposition`, read when it exists)
+  21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` · `wb97x-compare` (`ends_decomposition`, read when it exists;
+     `wb97x-compare` rewrites `vs_b3lyp` from the caches alone, no SCF)
+  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) → 83 (computed ⊥ measured series)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)

@@ -32,7 +32,7 @@ Run:  conda activate silken_md
 21f's own ωB97X tier (imported) on the named complexes only, into its OWN cache (OUT_WB97X) at full precision,
 written after EACH state — so a stop costs one SCF, not the night. Refuses any PySCF but the RECORDED one: the
 dmbpy and bpy ωB97X points it is compared with were computed there, and a lock run would put a second cavity
-convention into the same table. ≈ 8–29 h per complex (×23–46 the B3LYP pair) — one per night, nothing else heavy.
+convention into the same table. ≈ 8–27 h per complex (×14–46 the B3LYP pair) — one per night, nothing else heavy.
 CAN show: whether ωB97X keeps the B3LYP offset (≈ +0.138 eV on the dmbpy/bpy pair) at the donor plateau and the
 acceptor end. CANNOT show: an adiabatic or speciation effect (vertical, chloro form only), nor a new cascade
 verdict — the authoritative reading stays the verified E°s.
@@ -106,8 +106,8 @@ WB97X_CENTRE = {"dmbpy": ("os_complex_wb97xd_dmbpy.json", "os_dmbpy_meim_cl_full
                 "bpy": ("os_complex_wb97xd.json", "os_bpy_im_cl.xyz")}                   # 21d (21b's ligand file)
 SAME_GEOMETRY_TOL_A = 1e-3   # the xyz files carry 6 decimals; a rebuild lands within 5e-7 Å
 SPAN_ENDS = ("nme2", "no2")   # named, not «lowest/highest σ»: an added acceptor point must not move the span
-# ωB97X with the SMALL basis exists at the centre only — the chloro form of 34b's speciation cross-check — and it
-# splits the centre's B3LYP → ωB97X/def2-TZVP change into a functional and a basis part (the ends have no such point).
+# ωB97X with the SMALL basis at the centre — the chloro form of 34b's speciation cross-check — splits the centre's
+# B3LYP → ωB97X/def2-TZVP change into a functional and a basis part (the ends' points of that tier: `wb97x-631gd`).
 WB97X_SMALL_BASIS = {"dmbpy": "wb97x_speciation_dmbpy.json", "bpy": "wb97x_speciation.json"}
 
 
@@ -309,6 +309,7 @@ def _vs_b3lyp(rec: dict) -> dict:
         "slope_wb97x_eV_per_sigma": sw, "r2_wb97x": r2w,
         "slope_ratio_wb97x_over_b3lyp": sw / sb3,
         "not_compared": not_compared,
+        "os3_s2_max_accepted": S2_MAX_DOUBLET,   # what `_acceptance` holds a RECORDED <S²> to; os3_s2_not_recorded stand on `converged` alone
         "os3_s2_not_recorded": s2_not_recorded,
         "span": {"from": lo["name"], "to": hi["name"], "b3lyp_eV": span_b3, "wb97x_eV": span_w,
                  "ratio_wb97x_over_b3lyp": span_w / span_b3},

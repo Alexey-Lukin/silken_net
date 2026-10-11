@@ -50,14 +50,20 @@ Varying the 4,4′-bipyridine substituents across the experimental potential ran
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
 ≈ **−0.92 eV per σ unit** at B3LYP (r² = 1.00; Fig 3b; Table 4). This is a computed trend: it is not
 triangulated here against Lever's additive E_L parametrisation<sup>23</sup> or against a measured substituent series.
-A cross-check with the range-separated ωB97X on five of the nine members — the same vertical ΔSCF at
-ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the donor-resonance plateau of NMe₂/NH₂,
-the only pair close enough for a change of method to reorder, but not the magnitude: the ωB97X − B3LYP
+A cross-check with the range-separated ωB97X on six of the nine members — the same vertical ΔSCF at
+ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the direction and the donor-resonance
+plateau of NMe₂/NH₂ but not the magnitude: the ωB97X − B3LYP
 difference rises from +0.05 eV at the donor end to +0.26 eV at NO₂, so over the
 points of the fit set that both have (Me, H, NO₂) the slope is −0.79 against −0.93 eV per σ unit — a ratio
-that rests on the single acceptor point. Where ωB97X also exists with the smaller basis (Me, H; §2.2), the
+that rests on the single acceptor point of that set. The second acceptor, SO₂CF₃, lies outside the fit and
+carries a smaller difference (+0.18 eV), so the difference is not monotone along σ, and the two acceptors swap
+order between the methods (at B3LYP the ΔE_red of SO₂CF₃ is 6 meV less negative than that of NO₂, out of σ order;
+at ωB97X it is 72 meV more negative).
+Where ωB97X also exists with the smaller basis (§2.2), the change splits. At the centre (Me, H) the
 functional alone flattens the local slope by ≈9 % and the larger basis restores it, so the two tiers agree
-there by cancellation; at the ends the two changes are not separated. The robust content of the rule is
+there by cancellation; over Me, H and NO₂ the slope runs −0.93 (B3LYP) → −0.79 (ωB97X at 6-31G(d)) → −0.79
+eV per σ unit (def2-TZVP), so the shallower slope there is the functional's — on a slope that leans on the NO₂
+point. The robust content of the rule is
 therefore its direction; its slope is method-dependent, and neither value is checked here against experiment.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation.
@@ -65,8 +71,8 @@ predictive design handle rather than a one-off optimisation.
 The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
 pH (it reduces to the amine on cycling,<sup>55</sup> collapsing the cascade to its worst case). The realistic
-optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP — it has
-no ωB97X point — but without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
+optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP,
+but without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
 optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 

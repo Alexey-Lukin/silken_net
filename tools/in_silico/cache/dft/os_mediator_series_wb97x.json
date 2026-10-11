@@ -214,6 +214,7 @@
     "r2_wb97x": 0.9996431399047617,
     "slope_ratio_wb97x_over_b3lyp": 0.8492074614573791,
     "not_compared": {},
+    "os3_s2_max_accepted": 0.8,
     "os3_s2_not_recorded": [
       "os_mediator_series_wb97x.json:nh2",
       "os_mediator_series_wb97x.json:no2",

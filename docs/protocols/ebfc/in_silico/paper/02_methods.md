@@ -26,12 +26,12 @@ reported here is computed on it.
 All density-functional calculations used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
 geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
-energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the adiabatic cascade, §2.3; five members of the
+energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the adiabatic cascade, §2.3; six members of the
 Hammett series, vertical, §3.3). The
 basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL2DZ** effective-core potential
 and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> The
 adiabatic ωB97X cross-check (§2.3) replaced 6-31G(d) by **def2-TZVP**<sup>42</sup> on the non-metal atoms, keeping LANL2DZ
-on osmium, and so did the ωB97X Hammett cross-check; the ωB97X speciation cross-check kept the 6-31G(d)/LANL2DZ basis of the B3LYP tier. Aqueous
+on osmium, and so did the ωB97X Hammett cross-check, whose NH₂ and NO₂ ends were also computed with the 6-31G(d)/LANL2DZ basis of the B3LYP tier, as was the ωB97X speciation cross-check. In the ωB97X Hammett cross-check an open-shell Os(III) state was accepted on its ⟨S²⟩ (≤ 0.80; a pure doublet is 0.75), not on convergence alone. For its end points (NMe₂, NH₂, NO₂, SO₂CF₃) the value was read from run logs that are not part of the deposited data, and one run failed — NO₂ at ωB97X/6-31G(d), where the second-order solver had reached a spin-contaminated state that its record still marked as converged; it was recomputed from a doublet start built from its Os(II) orbitals, and that record carries ⟨S²⟩, internal stability and an aufbau filling. No ⟨S²⟩ was kept for the B3LYP Hammett series, whose points rest on SCF convergence. Aqueous
 solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.3553) for the redox, speciation and
 reorganisation-energy calculations, on PySCF's default cavity — modified-Bondi radii scaled by 1.2, 302 Lebedev
 points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce, which the radius table lacks (how
