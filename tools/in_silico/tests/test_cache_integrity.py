@@ -408,6 +408,59 @@ def test_21e_small_basis_mode_never_writes_the_def2tzvp_cache(tmp_path, monkeypa
     assert "dE_red_eV" in json.loads((tmp_path / "small.json").read_text())["complexes"]["nh2"]
 
 
+def test_21e_os_basis_mode_changes_only_the_os_basis(tmp_path, monkeypatch):
+    """`b3lyp-osdef2` (00_07 HW.5.IS) must be the B3LYP series protocol with ONE change — def2-TZVP/ECP on Os — so a moved
+    pair is the osmium basis and nothing else. Rehearsed with a stubbed SCF (no compute), before the first real run.
+
+    CAN catch: a write into any other cache; a call that is not B3LYP, not at the series tolerance, level-shifted, started
+    from a density, stability-followed, on another ligand basis or without basis_os='def2-tzvp'; an off-geometry point
+    reaching the SCF; a comparison block that does not follow from the two caches. CANNOT catch: what a real SCF returns.
+    """
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import pyscf
+    m = _load_21e()
+    calls = []
+
+    def fake(atoms, **kw):   # every keyword recorded — a protocol change that rides on a default is a new keyword
+        calls.append({k: v for k, v in kw.items() if k != "label"})
+        return {"E_total_Ha": -1.0 - 0.1 * kw["charge"] - 0.001 * len(atoms), "converged": True, "wall_seconds": 0.0,
+                "aufbau": True, **({"s2": 0.755} if kw["spin"] else {})}
+
+    guarded = {k: tmp_path / f"{k}.json" for k in ("OUT", "OUT_WB97X", "OUT_WB97X_631GD")}
+    series = json.loads((DFT / "os_mediator_series.json").read_text())
+    guarded["OUT"].write_text(json.dumps(series))
+    for k in ("OUT_WB97X", "OUT_WB97X_631GD"):
+        guarded[k].write_text('{"sentinel": true}\n')
+    before = {k: v.read_text() for k, v in guarded.items()}
+    monkeypatch.setattr(m, "dft_singlepoint", fake)
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))   # the platform's RDKit is not this test's subject
+    for k, v in guarded.items():
+        monkeypatch.setattr(m, k, v)
+    out = tmp_path / "osdef2.json"
+    monkeypatch.setattr(m, "OUT_OSDEF2", out)
+    m.main_os_basis(["bpy", "dmbpy"])
+    assert {k: v.read_text() for k, v in guarded.items()} == before, "the Os-basis mode wrote into another cache"
+    proto = {"basis_os": "def2-tzvp", "max_cycle": m.OSDEF2_MAX_CYCLE}   # everything else: dft_singlepoint's defaults, as main()
+    assert calls == [{"charge": 1, "spin": 0, **proto}, {"charge": 2, "spin": 1, **proto}] * 2, calls
+    rec = json.loads(out.read_text())
+    lanl = {c["name"]: c["dE_red_eV"] for c in series["complexes"]}
+    (pair,) = rec["vs_lanl2dz"]["pairs"]
+    d2 = {n: rec["complexes"][n]["dE_red_eV"] for n in ("bpy", "dmbpy")}
+    assert (pair["x"], pair["ref"]) == ("dmbpy", "bpy")
+    assert pair["lanl2dz_mV"] == -(lanl["dmbpy"] - lanl["bpy"]) / 4 * 1000
+    s83 = json.loads((DFT / "os_series_vs_measured.json").read_text())   # sign and units against 83, independently
+    assert pair["lanl2dz_mV"] == pytest.approx(s83["computed"]["b3lyp_631gd"]["dmbpy"]["shift_per_substituent_V"] * 1000, abs=1e-9)
+    assert pair["def2tzvp_mV"] == -(d2["dmbpy"] - d2["bpy"]) / 4 * 1000 and pair["change_mV"] == pair["def2tzvp_mV"] - pair["lanl2dz_mV"]
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", 0.0)
+    monkeypatch.setattr(m, "_series_geometry_dev", lambda name, atoms: 1.0)
+    calls.clear()
+    with pytest.raises(SystemExit):
+        m.main_os_basis(["ome"])
+    assert calls == [], "an off-geometry point reached the SCF"
+
+
 def _load_21e():
     import importlib.util
     spec = importlib.util.spec_from_file_location("s21e", Path(__file__).parents[1] / "scripts" / "21e_dft_os_mediator_series.py")

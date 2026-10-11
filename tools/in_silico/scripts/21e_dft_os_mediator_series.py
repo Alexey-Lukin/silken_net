@@ -101,6 +101,14 @@ WB97X_EXTREMES = ["nh2", "no2", "nme2"]   # donor plateau pair + acceptor end, c
 # 34b's tier (ωB97X, B3LYP's 6-31G(d) basis) at the axis ends — splits the ×0.85 into functional and basis there
 # (⚖️ founder 2026-10-08, 00_07 HW.5.IS); its own cache, because it is another model (§When Modifying #17)
 OUT_WB97X_631GD = DFT_CACHE / "os_mediator_series_wb97x_631gd.json"
+# The B3LYP series protocol with ONE change — def2-TZVP and its ECP on osmium instead of LANL2DZ (00_07 HW.5.IS: which part of
+# our protocol carries the Me excess the aqueous measured series shows). Own cache; the points of that comparison by default.
+OUT_OSDEF2 = DFT_CACHE / "os_mediator_series_osdef2.json"
+OSDEF2_POINTS = ["bpy", "dmbpy", "ome", "cl"]
+N_SUBST = 4   # two 4,4'-X2-bpy per complex
+OSDEF2_MAX_CYCLE = 400   # the LANL2DZ rows of bpy · dmbpy · ome were run at 400 cycles, no Newton rescue (c60e01d09, 2026-06-05);
+                         # cl at today's 100 + rescue converged unrescued — 400 keeps every pair on the path its row took
+OSDEF2_PAIRS = (("dmbpy", "bpy"), ("ome", "bpy"), ("cl", "bpy"), ("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))
 WB97X_631GD_ENDS = ["nh2", "no2"]
 # The centre of the comparison was computed at the same ωB97X/def2-TZVP tier by other scripts, each on a file that
 # must equal this series' own geometry of that complex (checked at runtime, never assumed): (cache, xyz it ran on).
@@ -588,6 +596,73 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
     return 0
 
 
+def _vs_lanl2dz(rec: dict) -> dict:
+    """Per-substituent pair shifts of E° (mV, −ΔΔE_red/4) with LANL2DZ (the series cache) ⊥ def2-TZVP/ECP (this cache) on Os.
+
+    CAN show: how much of each pair the osmium basis/ECP moves, on the same geometry and the same SCF protocol.
+    CANNOT show: which of the two is nearer experiment — that is `83`'s job, against its measured series."""
+    lanl = {c["name"]: c["dE_red_eV"] for c in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]}
+    d2 = {n: c["dE_red_eV"] for n, c in rec["complexes"].items() if "dE_red_eV" in c}
+    pairs = []
+    for x, ref in OSDEF2_PAIRS:
+        if x in d2 and ref in d2:
+            lo, hi = -(lanl[x] - lanl[ref]) / N_SUBST * 1000, -(d2[x] - d2[ref]) / N_SUBST * 1000
+            pairs.append({"x": x, "ref": ref, "lanl2dz_mV": lo, "def2tzvp_mV": hi, "change_mV": hi - lo})
+    rescued = sorted(n for n, c in rec["complexes"].items() for s in ("os2", "os3") if c.get(s, {}).get("rescued"))
+    return {"pairs": pairs, "point_shift_eV": {n: d2[n] - lanl[n] for n in d2}, "rescued_def2_rows": rescued}
+
+
+def main_os_basis(names: list[str]) -> int:
+    """The B3LYP series protocol (plain start, no level shift, its tolerance) with def2-TZVP/ECP on Os — nothing else moves."""
+    import pyscf
+
+    if pyscf.__version__ != _recorded_pyscf():
+        sys.exit(f"PySCF {pyscf.__version__} is not the recorded {_recorded_pyscf()} — the LANL2DZ rows it is compared with "
+                 f"were computed there; run in silken_md")
+    series = {name: (smi, sigma) for name, smi, sigma, _ in SERIES}
+    unknown = [n for n in names if n not in series]
+    if unknown:
+        sys.exit(f"not in SERIES: {unknown}")
+    rec = json.loads(OUT_OSDEF2.read_text(encoding="utf-8")) if OUT_OSDEF2.exists() else {
+        "method": "B3LYP/6-31G(d)+def2-TZVP/ECP(Os)+C-PCM(water) vertical ΔSCF — the B3LYP series protocol, Os basis/ECP only "
+                  f"changed; max_cycle {OSDEF2_MAX_CYCLE} as the June LANL2DZ rows",
+        "environment": {"pyscf": pyscf.__version__}, "complexes": {}}
+    rec.pop("vs_lanl2dz", None)   # rebuilt at the end — a crash mid-run must not leave a comparison of rows since replaced
+    for name in names:
+        smi, sigma = series[name]
+        c = rec["complexes"].setdefault(name, {"sigma_para": sigma})
+        atoms, _ = build_os_complex(bpy_smiles=smi)
+        dev = _series_geometry_dev(name, atoms)
+        if dev > SAME_GEOMETRY_TOL_A:   # refused BEFORE the SCF
+            sys.exit(f"{name}: rebuilt geometry is {dev} Å off its B3LYP row — not comparable, refused")
+        for state, charge, spin in (("os2", 1, 0), ("os3", 2, 1)):
+            verdict = _acceptance(c.get(state, {}), spin != 0)
+            if verdict == "accepted":
+                banner(f"① def2(Os) {name} {state} — reused from {OUT_OSDEF2.name}")
+                continue
+            if state in c:
+                print(f"  replacing {name} {state}: {verdict}")
+                c.pop("dE_red_eV", None)
+                _save(OUT_OSDEF2, rec)
+            banner(f"① def2(Os) {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
+            c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} (b3lyp, def2 Os)",
+                                       basis_os="def2-tzvp", max_cycle=OSDEF2_MAX_CYCLE)
+            s2 = c[state].get("s2")
+            print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, {_acceptance(c[state], spin != 0)}"
+                  + ("" if s2 is None else f", <S²> {s2:.4f}") + ")")
+            _save(OUT_OSDEF2, rec)
+        if all(_acceptance(c[s], s == "os3") == "accepted" for s in ("os2", "os3")):
+            c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV
+            _save(OUT_OSDEF2, rec)
+            print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
+    rec["vs_lanl2dz"] = _vs_lanl2dz(rec)
+    _save(OUT_OSDEF2, rec)
+    for p in rec["vs_lanl2dz"]["pairs"]:
+        print(f"  {p['x']}−{p['ref']}: {p['lanl2dz_mV']:+.1f} (LANL2DZ) → {p['def2tzvp_mV']:+.1f} mV (def2-TZVP)")
+    banner(f"✅ saved {OUT_OSDEF2.name}")
+    return 0
+
+
 def main_compare() -> int:
     """Rewrite `vs_b3lyp` from the caches alone — no SCF, so no reuse question and no recompute of a row whose
     <S²> was written before it was recorded (that is the strict reuse of main_wb97x, and it would cost a night)."""
@@ -605,6 +680,8 @@ def main_compare() -> int:
 if __name__ == "__main__":
     if sys.argv[1:2] == ["wb97x-631gd"]:
         raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_631GD_ENDS, small_basis=True))
+    if sys.argv[1:2] == ["b3lyp-osdef2"]:
+        raise SystemExit(main_os_basis(sys.argv[2:] or OSDEF2_POINTS))
     if sys.argv[1:2] == ["wb97x-compare"]:
         raise SystemExit(main_compare())
     raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_EXTREMES) if sys.argv[1:2] == ["wb97x"] else main())

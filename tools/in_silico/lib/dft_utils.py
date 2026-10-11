@@ -53,7 +53,7 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     xc: str = "b3lyp", with_pcm: bool = True,
                     conv_tol: float = 1e-6, max_cycle: int = 100,
                     level_shift_open: float = 0.0,
-                    basis_light: str | None = None,
+                    basis_light: str | None = None, basis_os: str | None = None,
                     dm0=None, chkfile: str | None = None,
                     stability: bool = False, max_stability_steps: int = 3) -> dict:
     """DFT single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
@@ -62,7 +62,8 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     is a list of (symbol, xyz-array). `xc` selects the functional (b3lyp screening /
     wb97x range-separated); `basis_light` overrides the light-atom basis (default
     `None` → constants.BASIS_LIGHT = 6-31G(d); pass "def2-tzvp" for the
-    publication-grade ωB97X tier). Os always uses LANL2DZ+ECP. `level_shift_open`
+    publication-grade ωB97X tier). `basis_os` sets the Os basis AND its ECP together (default `None` → LANL2DZ/LANL2DZ;
+    "def2-tzvp" = def2-TZVP with the def2 ECP — both remove a 60-electron core). `level_shift_open`
     is OFF by default (0.0): the committed B3LYP Os rows were converged so (21b-faithful),
     and a shift changes the path an SCF takes, hence possibly the state it lands on.
     The shift does NOT bias the reported orbital energies of a converged run: PySCF
@@ -94,7 +95,7 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     light = basis_light or BASIS_LIGHT
     atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]
     mol = gto.M(atom=atoms_pyscf,
-                basis={"Os": BASIS_OS, "default": light}, ecp={"Os": ECP_OS},
+                basis={"Os": basis_os or BASIS_OS, "default": light}, ecp={"Os": basis_os or ECP_OS},
                 charge=charge, spin=spin, unit="Angstrom")
     mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
     mf.xc = xc
