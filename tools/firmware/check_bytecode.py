@@ -52,7 +52,8 @@ def main() -> int:
     if absent:
         print(f"❌ [FW.46] missing {', '.join(sorted(absent))} — run tools/firmware/gen_bytecode.sh")
         return 1
-    return 0 if all([check(h) for h in headers]) else 1
+    results = [check(h) for h in headers]   # every mirror reports — a generator would stop at the first ❌
+    return 0 if all(results) else 1
 
 
 if __name__ == "__main__":
