@@ -77,8 +77,10 @@ module DisclosurePdf
 
   # One part of a hyphenated compound — a comma only INSIDE it («4,4′-dimethyl»), so a trailing comma stays outside the span.
   WORD = /[[:alnum:]µ.′]+(?:,[[:alnum:]µ.′]+)*/
-  # Author-only marks a manuscript must not carry: an open founder decision, an unsourced claim, Ukrainian working prose.
-  UNFINISHED = /\[finalise|\[CITATION NEEDED\]|\p{Cyrillic}/
+  # Author-only marks a manuscript must not carry: an open founder decision, an unsourced claim, Ukrainian working prose, and
+  # the verdict glyph ⚖ — a founder-decision note, and poppler drops it together with the rest of its line (08_declarations,
+  # 2026-10-11: three ⚖ lines unmatched in a non-manuscript print; the manuscript strips or refuses all three today).
+  UNFINISHED = /\[finalise|\[CITATION NEEDED\]|\p{Cyrillic}|⚖/
   # …and a link to a working document (the outline, the writing guide, the 00_* canon, the reference index the list is printed from):
   # a draft note woven into a sentence rather than a blockquote shows up this way (08_declarations, 2026-10-11).
   WORKSHOP_LINK = %r{\]\((?![a-z]+:)(?:[^)\s]*/)?(?:00_[^/)\s]*|09_references)\.md}
@@ -280,7 +282,7 @@ module DisclosurePdf
            [ "[o](00_OUTLINE.md)", "[c](../../../../00_02_Academic_Integration_and_IP.md)", "see [l](09_references.md)" ].all? { |l| l.match?(WORKSHOP_LINK) } &&
            [ "![f](figures/a.png)", "[x](https://e.org/00_a.md)", "[s](10_supporting_information.md)", "[y](foo00_bar.md)" ].none? { |l| l.match?(WORKSHOP_LINK) })
     t.call("author-only marks are recognised, plain English is not",
-           [ "x [finalise: y]", "[CITATION NEEDED]", "Стаття" ].all? { |l| l.match?(UNFINISHED) } && !"a draft-free line".match?(UNFINISHED))
+           [ "x [finalise: y]", "[CITATION NEEDED]", "Стаття", "Route (⚖️ founder 2026-10-03)" ].all? { |l| l.match?(UNFINISHED) } && !"a draft-free line".match?(UNFINISHED))
     puts(fails.zero? ? "disclosure_pdf --selftest: OK (12 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
