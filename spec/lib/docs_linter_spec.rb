@@ -648,7 +648,7 @@ end
         "- Copilot first\n## AI Use Disclosure\n- Gemini\n"                    => "before the first heading",
         "## Other\n```\n## AI Use Disclosure\n```\n- Copilot leaks\n"           => "a heading inside a fence",
         "## AI Use Disclosure\n### Detail\n- Gemini\n# Next\n- Copilot\n"       => "an H1 ends it, an H3 does not",
-        "## AI Use Disclosure (draft)\n- Copilot\n"                           => "a decorated heading",
+        "## AI Use Disclosure (draft)\n- Copilot\n"                           => "a decorated heading"
       }.each do |text, edge|
         expect(described_class.ai_vendor_name_drift("08_declarations", text).size).to eq(1), edge
       end
