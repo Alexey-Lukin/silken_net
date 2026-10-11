@@ -46,6 +46,15 @@ rewrites `vs_b3lyp` from the caches alone — no SCF — e.g. after the small-ba
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py wb97x-631gd [nh2 no2]
 the same tier with the B3LYP basis (34b's tier, ⚖️ 2026-10-08) into its own cache; `vs_b3lyp` reads it to split the
 ends' change into functional and basis. Both modes refuse a geometry that is not the B3LYP row's BEFORE any SCF.
+
+One-knob variants of THIS protocol (00_07 HW.5.IS: which part of it carries the Me excess the aqueous measured series
+shows) — each into its own cache, on bpy · dmbpy · ome · cl by default, with a per-pair comparison to the series rows:
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-osdef2      # def2-TZVP/ECP on Os
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-iefpcm      # IEF-PCM, the same cavity
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-uffcavity   # UFF ×1.1 radii (Gaussian 16's)
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-gas         # no continuum
+CAN show: how much of each pair the one knob moves. CANNOT show: relaxation or free-energy terms (vertical ΔSCF on one
+geometry in every variant), nor which variant is nearer experiment — that is `83`.
 """
 from __future__ import annotations
 
@@ -101,14 +110,17 @@ WB97X_EXTREMES = ["nh2", "no2", "nme2"]   # donor plateau pair + acceptor end, c
 # 34b's tier (ωB97X, B3LYP's 6-31G(d) basis) at the axis ends — splits the ×0.85 into functional and basis there
 # (⚖️ founder 2026-10-08, 00_07 HW.5.IS); its own cache, because it is another model (§When Modifying #17)
 OUT_WB97X_631GD = DFT_CACHE / "os_mediator_series_wb97x_631gd.json"
-# The B3LYP series protocol with ONE change — def2-TZVP and its ECP on osmium instead of LANL2DZ (00_07 HW.5.IS: which part of
-# our protocol carries the Me excess the aqueous measured series shows). Own cache; the points of that comparison by default.
-OUT_OSDEF2 = DFT_CACHE / "os_mediator_series_osdef2.json"
-OSDEF2_POINTS = ["bpy", "dmbpy", "ome", "cl"]
+# The B3LYP series protocol with ONE change each (00_07 HW.5.IS: which part of our protocol carries the Me excess the aqueous
+# measured series shows) — each its own cache (§When Modifying #17), the same points and pairs by default.
+OUT_OSDEF2 = DFT_CACHE / "os_mediator_series_osdef2.json"      # def2-TZVP and its ECP on Os instead of LANL2DZ
+OUT_IEFPCM = DFT_CACHE / "os_mediator_series_iefpcm.json"      # IEF-PCM instead of C-PCM, the cavity unchanged
+OUT_UFFCAV = DFT_CACHE / "os_mediator_series_uffcavity.json"   # the cavity radii: UFF ×1.1 (Gaussian 16's default) for ours
+OUT_GAS = DFT_CACHE / "os_mediator_series_gas.json"            # no continuum — the share of each pair the solvent model carries
+VARIANT_POINTS = ["bpy", "dmbpy", "ome", "cl"]
 N_SUBST = 4   # two 4,4'-X2-bpy per complex
-OSDEF2_MAX_CYCLE = 400   # the LANL2DZ rows of bpy · dmbpy · ome were run at 400 cycles, no Newton rescue (c60e01d09, 2026-06-05);
-                         # cl at today's 100 + rescue converged unrescued — 400 keeps every pair on the path its row took
-OSDEF2_PAIRS = (("dmbpy", "bpy"), ("ome", "bpy"), ("cl", "bpy"), ("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))
+VARIANT_MAX_CYCLE = 400   # the LANL2DZ rows of bpy · dmbpy · ome were run at 400 cycles, no Newton rescue (c60e01d09, 2026-06-05);
+                          # cl at today's 100 + rescue converged unrescued — 400 keeps every pair on the path its row took
+VARIANT_PAIRS = (("dmbpy", "bpy"), ("ome", "bpy"), ("cl", "bpy"), ("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))
 WB97X_631GD_ENDS = ["nh2", "no2"]
 # The centre of the comparison was computed at the same ωB97X/def2-TZVP tier by other scripts, each on a file that
 # must equal this series' own geometry of that complex (checked at runtime, never assumed): (cache, xyz it ran on).
@@ -596,38 +608,66 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
     return 0
 
 
-def _vs_lanl2dz(rec: dict) -> dict:
-    """Per-substituent pair shifts of E° (mV, −ΔΔE_red/4) with LANL2DZ (the series cache) ⊥ def2-TZVP/ECP (this cache) on Os.
+# mode → (the ONE dft_singlepoint keyword set that differs from main()'s call, the method line of its cache, the comparison
+# block's key, its (series, variant) column names, the rescued-rows key). The def2 names are kept: 83 and the pins read them.
+_VAR = ("vs_series", ("series_mV", "variant_mV"), "rescued_rows")
+VARIANTS = {
+    "b3lyp-osdef2": ({"basis_os": "def2-tzvp"}, "B3LYP/6-31G(d)+def2-TZVP/ECP(Os)+C-PCM(water) vertical ΔSCF — the B3LYP "
+                     "series protocol, Os basis/ECP only changed", "vs_lanl2dz", ("lanl2dz_mV", "def2tzvp_mV"), "rescued_def2_rows"),
+    "b3lyp-iefpcm": ({"pcm_method": "IEF-PCM"}, "B3LYP/6-31G(d)+LANL2DZ(Os)+IEF-PCM(water) vertical ΔSCF — the B3LYP series "
+                     "protocol, the boundary formulation only changed (IEF-PCM for C-PCM), the cavity unchanged", *_VAR),
+    "b3lyp-uffcavity": ({"pcm_radii": "uff-1.1"}, "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) vertical ΔSCF — the B3LYP series "
+                        "protocol, the cavity radii only changed: UFF ×1.1 with a sphere on every H (Gaussian 16's default "
+                        "radii, not its surface discretisation) for PySCF's default table — modified Bondi ×1.2, Os a 2.40 Å "
+                        "placeholder (1.72 Å here)", *_VAR),
+    "b3lyp-gas": ({"with_pcm": False}, "B3LYP/6-31G(d)+LANL2DZ(Os) gas phase vertical ΔSCF — the B3LYP series protocol, "
+                  "the continuum only removed", *_VAR),
+}
 
-    CAN show: how much of each pair the osmium basis/ECP moves, on the same geometry and the same SCF protocol.
+
+def _variant_out(mode: str) -> Path:
+    """Looked up at call time, so a rehearsal can redirect each cache."""
+    return {"b3lyp-osdef2": OUT_OSDEF2, "b3lyp-iefpcm": OUT_IEFPCM, "b3lyp-uffcavity": OUT_UFFCAV, "b3lyp-gas": OUT_GAS}[mode]
+
+
+def _vs_series(rec: dict, mode: str) -> dict:
+    """Per-substituent pair shifts of E° (mV, −ΔΔE_red/4) in the series cache ⊥ this variant's cache.
+
+    CAN show: how much of each pair the one changed knob moves, on the same geometry and the same SCF protocol.
     CANNOT show: which of the two is nearer experiment — that is `83`'s job, against its measured series."""
-    lanl = {c["name"]: c["dE_red_eV"] for c in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]}
+    _, _, _, (col_s, col_v), rescued_key = VARIANTS[mode]
+    rows = json.loads(OUT.read_text(encoding="utf-8"))["complexes"]
+    base = {c["name"]: c["dE_red_eV"] for c in rows}
     d2 = {n: c["dE_red_eV"] for n, c in rec["complexes"].items() if "dE_red_eV" in c}
     pairs = []
-    for x, ref in OSDEF2_PAIRS:
+    for x, ref in VARIANT_PAIRS:
         if x in d2 and ref in d2:
-            lo, hi = -(lanl[x] - lanl[ref]) / N_SUBST * 1000, -(d2[x] - d2[ref]) / N_SUBST * 1000
-            pairs.append({"x": x, "ref": ref, "lanl2dz_mV": lo, "def2tzvp_mV": hi, "change_mV": hi - lo})
+            lo, hi = -(base[x] - base[ref]) / N_SUBST * 1000, -(d2[x] - d2[ref]) / N_SUBST * 1000
+            pairs.append({"x": x, "ref": ref, col_s: lo, col_v: hi, "change_mV": hi - lo})
     rescued = sorted(n for n, c in rec["complexes"].items() for s in ("os2", "os3") if c.get(s, {}).get("rescued"))
-    return {"pairs": pairs, "point_shift_eV": {n: d2[n] - lanl[n] for n in d2}, "rescued_def2_rows": rescued}
+    out = {"pairs": pairs, "point_shift_eV": {n: d2[n] - base[n] for n in d2}, rescued_key: rescued}
+    if mode != "b3lyp-osdef2":   # the series side of each pair stands on `converged` where its row predates <S²> (§Critical Rules #14)
+        out["series_os3_s2_not_recorded"] = sorted(c["name"] for c in rows if c["name"] in d2 and "s2" not in c["os3"])
+    return out
 
 
-def main_os_basis(names: list[str]) -> int:
-    """The B3LYP series protocol (plain start, no level shift, its tolerance) with def2-TZVP/ECP on Os — nothing else moves."""
+def main_variant(mode: str, names: list[str]) -> int:
+    """The B3LYP series protocol (plain start, no level shift, its tolerance) with ONE knob changed — nothing else moves."""
     import pyscf
 
     if pyscf.__version__ != _recorded_pyscf():
-        sys.exit(f"PySCF {pyscf.__version__} is not the recorded {_recorded_pyscf()} — the LANL2DZ rows it is compared with "
+        sys.exit(f"PySCF {pyscf.__version__} is not the recorded {_recorded_pyscf()} — the series rows it is compared with "
                  f"were computed there; run in silken_md")
+    kw, method, cmp_key, (col_s, col_v), _ = VARIANTS[mode]
+    out = _variant_out(mode)
     series = {name: (smi, sigma) for name, smi, sigma, _ in SERIES}
     unknown = [n for n in names if n not in series]
     if unknown:
         sys.exit(f"not in SERIES: {unknown}")
-    rec = json.loads(OUT_OSDEF2.read_text(encoding="utf-8")) if OUT_OSDEF2.exists() else {
-        "method": "B3LYP/6-31G(d)+def2-TZVP/ECP(Os)+C-PCM(water) vertical ΔSCF — the B3LYP series protocol, Os basis/ECP only "
-                  f"changed; max_cycle {OSDEF2_MAX_CYCLE} as the June LANL2DZ rows",
+    rec = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {
+        "method": f"{method}; max_cycle {VARIANT_MAX_CYCLE} as the June LANL2DZ rows",
         "environment": {"pyscf": pyscf.__version__}, "complexes": {}}
-    rec.pop("vs_lanl2dz", None)   # rebuilt at the end — a crash mid-run must not leave a comparison of rows since replaced
+    rec.pop(cmp_key, None)   # rebuilt at the end — a crash mid-run must not leave a comparison of rows since replaced
     for name in names:
         smi, sigma = series[name]
         c = rec["complexes"].setdefault(name, {"sigma_para": sigma})
@@ -638,29 +678,33 @@ def main_os_basis(names: list[str]) -> int:
         for state, charge, spin in (("os2", 1, 0), ("os3", 2, 1)):
             verdict = _acceptance(c.get(state, {}), spin != 0)
             if verdict == "accepted":
-                banner(f"① def2(Os) {name} {state} — reused from {OUT_OSDEF2.name}")
+                banner(f"① {mode} {name} {state} — reused from {out.name}")
                 continue
             if state in c:
                 print(f"  replacing {name} {state}: {verdict}")
                 c.pop("dE_red_eV", None)
-                _save(OUT_OSDEF2, rec)
-            banner(f"① def2(Os) {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
-            c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} (b3lyp, def2 Os)",
-                                       basis_os="def2-tzvp", max_cycle=OSDEF2_MAX_CYCLE)
+                _save(out, rec)
+            banner(f"① {mode} {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
+            c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({mode})",
+                                       max_cycle=VARIANT_MAX_CYCLE, **kw)
             s2 = c[state].get("s2")
             print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, {_acceptance(c[state], spin != 0)}"
                   + ("" if s2 is None else f", <S²> {s2:.4f}") + ")")
-            _save(OUT_OSDEF2, rec)
+            _save(out, rec)
         if all(_acceptance(c[s], s == "os3") == "accepted" for s in ("os2", "os3")):
             c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV
-            _save(OUT_OSDEF2, rec)
+            _save(out, rec)
             print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
-    rec["vs_lanl2dz"] = _vs_lanl2dz(rec)
-    _save(OUT_OSDEF2, rec)
-    for p in rec["vs_lanl2dz"]["pairs"]:
-        print(f"  {p['x']}−{p['ref']}: {p['lanl2dz_mV']:+.1f} (LANL2DZ) → {p['def2tzvp_mV']:+.1f} mV (def2-TZVP)")
-    banner(f"✅ saved {OUT_OSDEF2.name}")
+    rec[cmp_key] = _vs_series(rec, mode)
+    _save(out, rec)
+    for p in rec[cmp_key]["pairs"]:
+        print(f"  {p['x']}−{p['ref']}: {p[col_s]:+.1f} (series) → {p[col_v]:+.1f} mV ({mode})")
+    banner(f"✅ saved {out.name}")
     return 0
+
+
+def main_os_basis(names: list[str]) -> int:
+    return main_variant("b3lyp-osdef2", names)
 
 
 def main_compare() -> int:
@@ -680,8 +724,10 @@ def main_compare() -> int:
 if __name__ == "__main__":
     if sys.argv[1:2] == ["wb97x-631gd"]:
         raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_631GD_ENDS, small_basis=True))
-    if sys.argv[1:2] == ["b3lyp-osdef2"]:
-        raise SystemExit(main_os_basis(sys.argv[2:] or OSDEF2_POINTS))
+    if sys.argv[1:2] and sys.argv[1] not in {"wb97x", "wb97x-631gd", "wb97x-compare", *VARIANTS}:
+        sys.exit(f"unknown mode {sys.argv[1]!r} — a typo would fall through to main() and rewrite {OUT.name}")
+    if sys.argv[1:2] and sys.argv[1] in VARIANTS:
+        raise SystemExit(main_variant(sys.argv[1], sys.argv[2:] or VARIANT_POINTS))
     if sys.argv[1:2] == ["wb97x-compare"]:
         raise SystemExit(main_compare())
     raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_EXTREMES) if sys.argv[1:2] == ["wb97x"] else main())

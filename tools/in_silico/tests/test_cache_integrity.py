@@ -496,7 +496,7 @@ def test_21e_os_basis_mode_changes_only_the_os_basis(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "OUT_OSDEF2", out)
     m.main_os_basis(["bpy", "dmbpy"])
     assert {k: v.read_text() for k, v in guarded.items()} == before, "the Os-basis mode wrote into another cache"
-    proto = {"basis_os": "def2-tzvp", "max_cycle": m.OSDEF2_MAX_CYCLE}   # everything else: dft_singlepoint's defaults, as main()
+    proto = {"basis_os": "def2-tzvp", "max_cycle": m.VARIANT_MAX_CYCLE}   # everything else: dft_singlepoint's defaults, as main()
     assert calls == [{"charge": 1, "spin": 0, **proto}, {"charge": 2, "spin": 1, **proto}] * 2, calls
     rec = json.loads(out.read_text())
     lanl = {c["name"]: c["dE_red_eV"] for c in series["complexes"]}
@@ -513,6 +513,85 @@ def test_21e_os_basis_mode_changes_only_the_os_basis(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         m.main_os_basis(["ome"])
     assert calls == [], "an off-geometry point reached the SCF"
+
+
+
+@pytest.mark.parametrize("mode, knob", [("b3lyp-iefpcm", {"pcm_method": "IEF-PCM"}),
+                                        ("b3lyp-uffcavity", {"pcm_radii": "uff-1.1"}),
+                                        ("b3lyp-gas", {"with_pcm": False})])
+def test_21e_solvation_variants_change_one_knob(tmp_path, monkeypatch, mode, knob):
+    """The solvation variants of 00_07 HW.5.IS (2026-10-11) — the B3LYP series protocol with ONE change each, so a moved
+    pair is that knob and nothing else. Rehearsed with a stubbed SCF (no compute), before the first real run.
+
+    CAN catch: a write into any other cache (the series, the ωB97X caches, def2 and the sister variants); a call carrying
+    any keyword but the series' max_cycle and its own knob; an off-geometry point reaching the SCF; a comparison block
+    that does not follow from the two caches. CANNOT catch: whether PySCF applies the knob (a real-SCF check on water
+    does that — test_dft_singlepoint_solvation_knobs_reach_pyscf), nor what a real SCF returns.
+    """
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import pyscf
+    m = _load_21e()
+    calls = []
+
+    def fake(atoms, **kw):
+        calls.append({k: v for k, v in kw.items() if k != "label"})
+        return {"E_total_Ha": -1.0 - 0.1 * kw["charge"] - 0.001 * len(atoms), "converged": True, "wall_seconds": 0.0,
+                "aufbau": True, **({"s2": 0.755} if kw["spin"] else {})}
+
+    caches = ("OUT", "OUT_WB97X", "OUT_WB97X_631GD", "OUT_OSDEF2", "OUT_IEFPCM", "OUT_UFFCAV", "OUT_GAS")
+    guarded = {k: tmp_path / f"{k}.json" for k in caches}
+    series = json.loads((DFT / "os_mediator_series.json").read_text())
+    guarded["OUT"].write_text(json.dumps(series))
+    for k in caches[1:]:
+        guarded[k].write_text('{"sentinel": true}\n')
+    for k, v in guarded.items():
+        monkeypatch.setattr(m, k, v)
+    own = m._variant_out(mode)
+    own.unlink()
+    before = {k: v.read_text() for k, v in guarded.items() if v != own}
+    monkeypatch.setattr(m, "dft_singlepoint", fake)
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))   # the platform's RDKit is not this test's subject
+    m.main_variant(mode, ["bpy", "dmbpy"])
+    assert {k: v.read_text() for k, v in guarded.items() if v != own} == before, f"{mode} wrote into another cache"
+    proto = {"max_cycle": m.VARIANT_MAX_CYCLE, **knob}
+    assert calls == [{"charge": 1, "spin": 0, **proto}, {"charge": 2, "spin": 1, **proto}] * 2, calls
+    rec = json.loads(own.read_text())
+    base = {c["name"]: c["dE_red_eV"] for c in series["complexes"]}
+    (pair,) = rec["vs_series"]["pairs"]
+    d2 = {n: rec["complexes"][n]["dE_red_eV"] for n in ("bpy", "dmbpy")}
+    assert (pair["x"], pair["ref"]) == ("dmbpy", "bpy") and rec["vs_series"]["rescued_rows"] == []
+    assert pair["series_mV"] == -(base["dmbpy"] - base["bpy"]) / 4 * 1000
+    assert pair["variant_mV"] == -(d2["dmbpy"] - d2["bpy"]) / 4 * 1000 and pair["change_mV"] == pair["variant_mV"] - pair["series_mV"]
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", 0.0)
+    monkeypatch.setattr(m, "_series_geometry_dev", lambda name, atoms: 1.0)
+    calls.clear()
+    with pytest.raises(SystemExit):
+        m.main_variant(mode, ["ome"])
+    assert calls == [], "an off-geometry point reached the SCF"
+
+
+
+def test_dft_singlepoint_solvation_knobs_reach_pyscf():
+    """`pcm_method` and `pcm_radii` (2026-10-11) must reach PySCF — a stubbed rehearsal of 21e cannot see a knob that
+    dft_singlepoint drops. A real SCF on water (B3LYP/6-31G(d), seconds): each knob alone moves E, and the defaults
+    reproduce the call every committed row made. Measured 2026-10-11: two identical runs differ by ~1e-13 Ha (thread
+    summation order), the smallest knob (IEF-PCM) moves E by 6.5e-5, the cavity by 3.0e-3, the gas phase by 1.0e-2 — so
+    «same» is ≤ 1e-9 and «moved» > 1e-6. CAN catch: a knob ignored, or a default that is no longer C-PCM on the
+    modified-Bondi ×1.2 cavity. CANNOT catch: the size of a knob's effect on an Os complex (that is 21e's own run).
+    """
+    pytest.importorskip("pyscf")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.dft_utils import dft_singlepoint
+    water = [("O", (0.0, 0.0, 0.1173)), ("H", (0.0, 0.7572, -0.4692)), ("H", (0.0, -0.7572, -0.4692))]
+    e = {k: dft_singlepoint(water, charge=0, spin=0, **kw)["E_total_Ha"] for k, kw in {
+        "default": {}, "explicit": {"pcm_method": "C-PCM", "pcm_radii": None}, "ief": {"pcm_method": "IEF-PCM"},
+        "uff": {"pcm_radii": "uff-1.1"}, "gas": {"with_pcm": False}}.items()}
+    assert abs(e["default"] - e["explicit"]) <= 1e-9, e
+    assert all(abs(e[k] - e["default"]) > 1e-6 for k in ("ief", "uff", "gas")), e
+    with pytest.raises(ValueError):
+        dft_singlepoint(water, charge=0, spin=0, pcm_radii="bondi")
 
 
 def _load_21e():

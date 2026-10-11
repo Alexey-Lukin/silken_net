@@ -150,6 +150,31 @@ def verdict(rec: dict) -> str:
             f"counterpart here.")
 
 
+SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for C-PCM"),
+                      ("uffcavity", "os_mediator_series_uffcavity.json", "Gaussian 16's UFF ×1.1 cavity radii"),
+                      ("gas", "os_mediator_series_gas.json", "no continuum"))   # 21e's one-knob variants (00_07 HW.5.IS)
+
+
+def _solvation_clause(aq: dict) -> str:
+    """What the continuum variants say about the OMe−Me excess — built from the block (pinned whole with the verdict).
+
+    The threshold «half the excess» is OURS: a variant that moves the pair by less than half of what separates ours from
+    the measured cannot by itself explain it. The gas phase is a bound (the continuum's whole share), not a candidate."""
+    sc = aq.get("solvation_check")
+    if not sc or not all(k in sc for k, _, _ in SOLVATION_VARIANTS):
+        return "so the vertical ΔSCF on one programmatic geometry or the C-PCM continuum; three points do not say which. "
+    ex = sc["ome_dmbpy_excess_mV"]
+    moves = {k: sc[k]["ome_dmbpy_change_mV"] for k, _, _ in SOLVATION_VARIANTS}
+    reach = [lab for k, _, lab in SOLVATION_VARIANTS[:2] if abs(moves[k]) >= abs(ex) / 2]
+    head = (f"nor the continuum's formulation or its cavity radii: on OMe−Me, whose computed excess over the measured is "
+            f"{ex:+.1f} mV, IEF-PCM moves the pair by {moves['iefpcm']:+.1f} mV and the UFF ×1.1 radii by "
+            f"{moves['uffcavity']:+.1f} mV, while removing the continuum altogether moves it by {moves['gas']:+.1f} mV — ")
+    if reach:
+        return head + f"so {' and '.join(reach)} reach half the excess or more, and the continuum stays a candidate. "
+    return head + ("the continuum carries much of the pair, but neither of its variants reaches half the excess, which "
+                   "leaves the vertical ΔSCF on one programmatic geometry. ")
+
+
 def verdict_aqueous(aq: dict) -> str:
     """The aqueous block's prose, built from the block alone (pinned whole, like `verdict`)."""
     pairs = aq["pairs"]
@@ -161,8 +186,7 @@ def verdict_aqueous(aq: dict) -> str:
             f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the other two series show it too); "
             f"the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what "
             f"our two tiers share: " + (f"not the osmium basis/ECP (def2-TZVP moves every pair by at most "
-            f"{aq['os_basis_check']['max_pair_change_mV']:.1f} mV), so the vertical ΔSCF on one programmatic geometry or "
-            f"the C-PCM continuum; three points do not say which. " if "os_basis_check" in aq else
+            f"{aq['os_basis_check']['max_pair_change_mV']:.1f} mV), " + _solvation_clause(aq) if "os_basis_check" in aq else
             "vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM; three points do not say which. ")
             + f"Its one acceptor point, Cl, comes out larger than "
             f"measured in both computations. The measured shifts are not linear in σp (pairwise slopes "
@@ -249,6 +273,22 @@ def aqueous(sigma: dict, b3: dict) -> dict:
         aq["os_basis_check"] = {"max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]),
                                 "point_shift_meV": [min(v["point_shift_eV"].values()) * 1000, max(v["point_shift_eV"].values()) * 1000],
                                 "pairs": len(v["pairs"]), "rescued_def2_rows": v["rescued_def2_rows"]}
+    present = [(k, DFT_CACHE / f) for k, f, _ in SOLVATION_VARIANTS   # a cache still being written has no vs_series yet
+               if (DFT_CACHE / f).exists() and "vs_series" in json.loads((DFT_CACHE / f).read_text(encoding="utf-8"))]
+    if present:   # 21e's continuum variants — each the series protocol with one knob changed
+        meas = next(p["measured_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        ours = next(p["ours_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        aq["solvation_check"] = {"ome_dmbpy_excess_mV": ours - meas}
+        for k, path in present:
+            v = json.loads(path.read_text(encoding="utf-8"))["vs_series"]
+            by = {(p["x"], p["ref"]): p for p in v["pairs"]}
+            aq["solvation_check"][k] = {
+                "max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]), "pairs": len(v["pairs"]),
+                "ome_dmbpy_change_mV": by[("ome", "dmbpy")]["change_mV"],
+                "aqueous_pairs_over_measured": {f"{x}-{r}": by[(x, r)]["variant_mV"]
+                                                / next(p["measured_mV"] for p in pairs if (p["x"], p["ref"]) == (x, r))
+                                                for x, r in AQ_PAIRS},
+                "rescued_rows": v["rescued_rows"], "series_os3_s2_not_recorded": v["series_os3_s2_not_recorded"]}
     aq["verdict"] = verdict_aqueous(aq)
     return aq
 

@@ -55,7 +55,8 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     level_shift_open: float = 0.0,
                     basis_light: str | None = None, basis_os: str | None = None,
                     dm0=None, chkfile: str | None = None,
-                    stability: bool = False, max_stability_steps: int = 3) -> dict:
+                    stability: bool = False, max_stability_steps: int = 3,
+                    pcm_method: str = "C-PCM", pcm_radii: str | None = None) -> dict:
     """DFT single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
 
     Shared SSOT runner for the L3 Os scripts (21b / 21e / 34 / 34b series). `atoms`
@@ -85,6 +86,17 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     first SCF found, when an instability was followed). `aufbau` — no occupied orbital lies above an
     empty one of the same spin. CAN show: the solution is a local minimum in orbital space with an
     aufbau filling. CANNOT show: it is the global one — no start guarantees the ground state.
+
+    `pcm_method` — the continuum's boundary formulation ('C-PCM' as every committed row, or 'IEF-PCM'); the cavity
+    is not touched by it. `pcm_radii` — the atomic radii of the cavity: `None` = PySCF's default table (modified Bondi
+    ×1.2; for Os a 2.0 Å placeholder ×1.2 = 2.40 Å — every committed row), "uff-1.1" = UFF radii ×1.1 with a sphere on
+    every hydrogen, Gaussian 16's default radii (gaussian.com/scrf; G16's own surface discretisation is not reproduced).
+    ⚠️ Under PySCF ≤ 2.12 the switching function of an ECP atom's sphere takes its radius at Z_eff (Os/LANL2DZ → sulfur's)
+    while its surface points sit on its own (paper §2.7) — in both tables, so the radii knob also moves Os's own sphere
+    (2.40 → 1.72 Å), and with it most of that artefact's area; it stays the one knob «radii».
+
+    For an open shell with osmium, `os_spin_mulliken` = the Mulliken spin density (α−β) on Os: <S²> and aufbau cannot
+    tell a doublet whose hole sits on a ligand from one whose hole sits on the metal; this can (≈ 1 on Os(III)).
     """
     import time
 
@@ -104,7 +116,12 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     if with_pcm:
         mf = solvent.PCM(mf)
         mf.with_solvent.eps = SOLVENT_EPS_WATER
-        mf.with_solvent.method = "C-PCM"
+        mf.with_solvent.method = pcm_method
+        if pcm_radii == "uff-1.1":
+            from pyscf.data import radii
+            mf.with_solvent.radii_table = 1.1 * radii.UFF
+        elif pcm_radii is not None:
+            raise ValueError(f"unknown pcm_radii {pcm_radii!r}")
     mf.conv_tol = conv_tol
     mf.max_cycle = max_cycle
     if chkfile:
@@ -139,6 +156,11 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     dt = time.time() - t0
     if spin != 0:
         extra["s2"] = float(mf.spin_square()[0])
+        os_atoms = [i for i in range(mol.natm) if mol.atom_symbol(i) == "Os"]
+        if os_atoms:
+            from pyscf.scf.uhf import mulliken_spin_pop
+            ms = mulliken_spin_pop(mol, mf.make_rdm1(), verbose=0)[1]
+            extra["os_spin_mulliken"] = float(sum(ms[i] for i in os_atoms))
     # aufbau per spin: the Newton solver keeps the occupation it started from, so a converged state can hold an
     # electron above an empty orbital of the same spin — an excited state with a clean <S²> (adversary, 2026-10-11)
     occ, e = (mf.mo_occ, mf.mo_energy) if spin != 0 else ([mf.mo_occ], [mf.mo_energy])
