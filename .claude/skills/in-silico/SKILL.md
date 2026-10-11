@@ -39,7 +39,9 @@ L3 DFT anode (CPU):
   34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
   21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` · `wb97x-compare` (`ends_decomposition`, read when it exists;
      `wb97x-compare` rewrites `vs_b3lyp` from the caches alone, no SCF)
-  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) → 83 (computed ⊥ measured series)
+  21e (default · os_mediator_series.json) → 21e `b3lyp-osdef2` (the same protocol, def2-TZVP/ECP on Os; own cache, `vs_lanl2dz`)
+  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2` (read when it
+     exists) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)
@@ -191,7 +193,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 26. In a stochastic pipeline the noise floor measured from REFERENCE replicates under-estimates the pipeline's own scatter — and the cheapest independent estimate sits where the perturbation does NOT act
 27. A cluster BUILDER can orient a ligand by a quantity that is not the bond it must form — the accident holds only for the ligand it was tuned on, and CORRECTING it is where the real damage happens
 28. A number you derive to CHECK a claim inherits an idealization, and the idealization — not the arithmetic — is what must be justified. Both instances below were MINE, both were arithmetically right, and one of them shipped into canon before I caught it
-29. The SI manifest (`72`) hashes the WHOLE committed in-silico tree, so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
+29. The SI manifest (`72`) hashes every committed file of its sections S1–S7 (env · scripts · lib · tests · caches · inputs · geometries · figures), so it is re-rendered LAST — after the final edit to anything it lists, including a file that did not exist when it last ran
 30. A seasonal crossing counted as «the first run ≥ threshold from 1 January» calls a winter thaw spring — make the crossing SUSTAINED and declare that rule as ours, on BOTH edges
 31. A pin over a numeric GENERATOR holds only in the environment that wrote its reference — and this pipeline now runs in THREE: the recorded osx-arm64 env writes the files, the lock pins a DIFFERENT RDKit on linux-64 than on osx-arm64, and CI runs the linux-64 one
 32. A count against a threshold on QUANTIZED input has ties — and an iterative solver's tolerance decides them silently: return the degenerate root EXACTLY, and keep a control that equates the no-forcing run with its input

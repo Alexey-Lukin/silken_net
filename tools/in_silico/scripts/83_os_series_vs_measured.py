@@ -13,7 +13,7 @@ is the measured 4,4'-X2-bpy Os(III/II) series the ChemRxiv scout found (00_07 HW
   the rendered page image of the preprint PDF on 2026-10-11 (entries 1, 3, 4, 5; the text of §2.2 states the same four
   values). The reference electrode cancels in every number below: only DIFFERENCES to the bpy parent are used.
 
-CAN show: (1) the per-pair shift, per substituent, of each donor BOTH series have (Me · OMe against H) — the primary
+For THIS first series — CAN show: (1) the per-pair shift, per substituent, of each donor BOTH series have (Me · OMe against H) — the primary
 reading: does each computed pair agree with its measured one; (2) the three-point slope over those donors (H · Me · OMe)
 — a DERIVED reading, not a second agreement: Me's leverage in it is small, so it mostly restates the OMe pair; (3) the
 measured alkyl-only line (H · Me · tBu), which has no computed counterpart (tBu is not in 21e). CANNOT show: the
