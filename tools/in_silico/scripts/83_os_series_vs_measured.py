@@ -156,24 +156,33 @@ SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for 
 
 
 def _solvation_clause(aq: dict) -> str:
-    """What the continuum variants say about the OMe−Me excess — built from the block (pinned whole with the verdict).
+    """What the continuum variants say about the OMe−Me gap — built from the block (pinned whole with the verdict).
 
     The threshold «half the excess» is OURS: a variant that moves the pair TOWARD the measured by less than half of what
-    separates ours from it cannot by itself explain it (a move away counts as none). The gas phase is a bound (the
-    continuum's whole share), not a candidate. What is left stands under A1′ — the axial N-donor is ours in both tiers."""
+    separates ours from it cannot by itself explain it (a move away counts as none). The gas phase is a bound, not a
+    candidate: it gives the continuum's whole share of the pair, whose sign says whether the continuum attenuates or
+    amplifies it. What is left is listed, never closed — the frame has members no variant moved (adversary, 2026-10-12)."""
     sc = aq.get("solvation_check")
     if not sc or not all(k in sc for k, _, _ in SOLVATION_VARIANTS):
         return "so the vertical ΔSCF on one programmatic geometry or the C-PCM continuum; three points do not say which. "
     ex = sc["ome_dmbpy_excess_mV"]
+    if abs(ex) < 0.05:
+        return "and ours meets the measured on OMe−Me, so no part of the protocol is singled out by this pair. "
     moves = {k: sc[k]["ome_dmbpy_change_mV"] for k, _, _ in SOLVATION_VARIANTS}
     reach = [lab for k, _, lab in SOLVATION_VARIANTS[:2] if -moves[k] / ex >= 0.5]
-    head = (f"nor the continuum's formulation or its cavity radii: on OMe−Me, whose computed excess over the measured is "
-            f"{ex:+.1f} mV, IEF-PCM moves the pair by {moves['iefpcm']:+.1f} mV and the UFF ×1.1 radii by "
-            f"{moves['uffcavity']:+.1f} mV, while removing the continuum altogether moves it by {moves['gas']:+.1f} mV — ")
+    ours = next(p["ours_mV"] for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+    share = -moves["gas"]   # the continuum's part of the pair: series − gas
+    role = "attenuates" if share * ours < 0 else "amplifies"
+    nums = (f"on OMe−Me, whose computed excess over the measured is {ex:+.1f} mV, IEF-PCM moves the pair by "
+            f"{moves['iefpcm']:+.1f} mV and the UFF ×1.1 radii by {moves['uffcavity']:+.1f} mV; removing the continuum "
+            f"moves it by {moves['gas']:+.1f} mV, so the continuum {role} the pair by {abs(share):.1f} mV")
     if reach:
-        return head + f"so {' and '.join(reach)} close half the excess or more, and the continuum stays a candidate. "
-    return head + ("the continuum carries much of the pair, but neither of its variants closes half the excess, which "
-                   "under A1′ leaves the vertical ΔSCF on one programmatic geometry. ")
+        return (f"and of the continuum: {nums} — {' and '.join(reach)} move it toward the measured by half the excess or "
+                f"more, so the continuum stays a candidate. ")
+    return (f"nor the continuum's formulation or its radii: {nums}, but neither variant moves it toward the measured by "
+            f"half the excess. Left untested (under A1′–A2′): the vertical ΔSCF on one programmatic geometry against "
+            f"optimised states and free energies, the program's own cavity discretisation and, on this pair, the ligand "
+            f"basis. ")
 
 
 def verdict_aqueous(aq: dict) -> str:
@@ -184,11 +193,11 @@ def verdict_aqueous(aq: dict) -> str:
                     f"(×{p['ours_over_measured']:.2f}; theirs ×{p['source_dft_over_measured']:.2f})" for p in pairs)
     pw = aq["measured_pairwise_slope_per_substituent_V_per_sigma"]
     return (f"Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), "
-            f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the other two series show it too); "
-            f"the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what "
-            f"our two tiers share: " + (f"not the osmium basis/ECP (def2-TZVP moves every pair by at most "
+            f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me point, so they are not independent; "
+            f"the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the "
+            f"functional; of the protocol, " + (f"not the osmium basis/ECP (def2-TZVP moves every pair by at most "
             f"{aq['os_basis_check']['max_pair_change_mV']:.1f} mV), " + _solvation_clause(aq) if "os_basis_check" in aq else
-            "vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM; three points do not say which. ")
+            "the vertical ΔSCF on one programmatic geometry, LANL2DZ on Os or C-PCM; three points do not say which. ")
             + f"Its one acceptor point, Cl, comes out larger than "
             f"measured in both computations. The measured shifts are not linear in σp (pairwise slopes "
             f"{pw['ome-dmbpy']:.3f} and {pw['dmbpy-cl']:.3f} V/σ per substituent), so no slope is read from three points.")

@@ -293,7 +293,7 @@ CHECKS = [
      "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][0], 0.5),
     ("SUMMARY Os-basis point shift high → osdef2", SUMMARY, rf"point by \+[\d.]+…\+{N} meV and every pair by",
      "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][1], 0.5),
-    ("SUMMARY Os-basis max pair change → osdef2", SUMMARY, rf"every pair by ≤ {N} mV per substituent\), nor",
+    ("SUMMARY Os-basis max pair change → osdef2", SUMMARY, rf"every pair by ≤ {N} mV per substituent\); the ligand basis",
      "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["max_pair_change_mV"], 0.05),
     # the continuum variants (21e `b3lyp-iefpcm` · `b3lyp-uffcavity` · `b3lyp-gas`, via 83 `aqueous_series.solvation_check`;
     # the UFF point shifts from that variant's own `vs_series`) — the paper and SUMMARY
@@ -304,13 +304,13 @@ CHECKS = [
            lambda c: c["ome_dmbpy_excess_mV"], 0.5),
           ("paper §3.3", PAPER_RESULTS, "IEF move", rf"in place of C-PCM moves the pair by \+{N} mV",
            lambda c: c["iefpcm"]["ome_dmbpy_change_mV"], 0.05),
-          ("paper §3.3", PAPER_RESULTS, "UFF move", rf"with a sphere on every hydrogen, by {N} mV",
+          ("paper §3.3", PAPER_RESULTS, "UFF move", rf"the source states none — by {N} mV",
            lambda c: c["uffcavity"]["ome_dmbpy_change_mV"], 0.05),
           ("paper §3.3", PAPER_RESULTS, "IEF max pair", rf"every pair by at most {N} and [\d.]+ mV\)",
            lambda c: c["iefpcm"]["max_pair_change_mV"], 0.05),
           ("paper §3.3", PAPER_RESULTS, "UFF max pair", rf"every pair by at most [\d.]+ and {N} mV\)",
            lambda c: c["uffcavity"]["max_pair_change_mV"], 0.05),
-          ("paper §3.3", PAPER_RESULTS, "gas move", rf"altogether moves it by {N} mV:",
+          ("paper §3.3", PAPER_RESULTS, "gas move", rf"Removing the continuum moves the pair by {N} mV",
            lambda c: c["gas"]["ome_dmbpy_change_mV"], 0.05),
           ("SUMMARY", SUMMARY, "OMe−Me excess", rf"computed excess over the measured is \+{N} mV per substituent",
            lambda c: c["ome_dmbpy_excess_mV"], 0.05),
@@ -324,6 +324,27 @@ CHECKS = [
            lambda c: c["uffcavity"]["max_pair_change_mV"], 0.05),
           ("SUMMARY", SUMMARY, "gas move", rf"a bound, not a candidate — moves it by {N} mV",
            lambda c: c["gas"]["ome_dmbpy_change_mV"], 0.05))],
+    # where the OMe−Me gap sits (83 `pvi_series`: ours − measured per pair) and the ligand basis on Me−H (21e `wb97x`
+    # `vs_b3lyp.centre_decomposition`: functional, then basis, per substituent) — adversary 2026-10-12
+    *[(f"{doc_name} {what}", doc, anchor, cache, get, tol) for doc_name, doc, what, anchor, cache, get, tol in (
+        ("paper §3.3", PAPER_RESULTS, "PVI OMe−H short", rf"OMe against H {N} mV per substituent short",
+         "dft/os_series_vs_measured.json", lambda d: _pvi_gap(d, "ome", "bpy"), 0.05),
+        ("paper §3.3", PAPER_RESULTS, "PVI Me−H over", rf"Me against H {N} mV over",
+         "dft/os_series_vs_measured.json", lambda d: abs(_pvi_gap(d, "dmbpy", "bpy")), 0.05),
+        ("paper §3.3", PAPER_RESULTS, "PVI OMe−H percent short", rf"falls {N} % short in the other",
+         "dft/os_series_vs_measured.json", lambda d: (1 - _pvi_ratio(d, "ome", "bpy")) * 100, 0.5),
+        ("SUMMARY", SUMMARY, "PVI OMe−H short", rf"OMe−H {N} mV short and Me−H",
+         "dft/os_series_vs_measured.json", lambda d: _pvi_gap(d, "ome", "bpy"), 0.05),
+        ("SUMMARY", SUMMARY, "PVI Me−H over", rf"short and Me−H {N} mV over",
+         "dft/os_series_vs_measured.json", lambda d: abs(_pvi_gap(d, "dmbpy", "bpy")), 0.05),
+        ("paper §3.3", PAPER_RESULTS, "Me−H functional", rf"moves the shift by \+{N} mV per substituent",
+         "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[0], 0.05),
+        ("paper §3.3", PAPER_RESULTS, "Me−H basis", rf"def2-TZVP then by {N} mV",
+         "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[1], 0.05),
+        ("SUMMARY", SUMMARY, "Me−H functional", rf"def2-TZVP: \+{N}, then",
+         "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[0], 0.05),
+        ("SUMMARY", SUMMARY, "Me−H basis", rf"then {N} mV per substituent — our two tiers",
+         "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[1], 0.05))],
     ("SUMMARY UFF point shift low → uffcavity", SUMMARY, rf"every absolute point, by {N}…",
      "dft/os_mediator_series_uffcavity.json", lambda d: max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift high → uffcavity", SUMMARY, rf"every absolute point, by [^…]+…{N} meV",
@@ -399,9 +420,9 @@ CHECKS = [
           ("Cl−OMe ratio", rf"{N} times for\s+Cl against OMe", 2, "ours_over_measured", 0.005),
           ("Cl−OMe ours", rf"Cl against OMe \(\+{N} against", 2, "ours_mV", 0.05),
           ("Cl−OMe measured", rf"Cl against OMe \(\+[\d.]+ against \+{N} mV\)", 2, "measured_mV", 0.05),
-          ("source DFT OMe−Me", rf"gives {N}, [\d.]+ and [\d.]+ for the same pairs", 0, "source_dft_over_measured", 0.005),
-          ("source DFT Cl−Me", rf"gives [\d.]+, {N} and [\d.]+ for the same pairs", 1, "source_dft_over_measured", 0.005),
-          ("source DFT Cl−OMe", rf"gives [\d.]+, [\d.]+ and {N} for the same pairs", 2, "source_dft_over_measured", 0.005))],
+          ("source DFT OMe−Me", rf"gives {N},\s+[\d.]+\s+and\s+[\d.]+\s+for the same pairs", 0, "source_dft_over_measured", 0.005),
+          ("source DFT Cl−Me", rf"gives [\d.]+,\s+{N}\s+and\s+[\d.]+\s+for the same pairs", 1, "source_dft_over_measured", 0.005),
+          ("source DFT Cl−OMe", rf"gives [\d.]+,\s+[\d.]+\s+and\s+{N}\s+for the same pairs", 2, "source_dft_over_measured", 0.005))],
     *[(f"SUMMARY aqueous {what} → os_series_vs_measured.json", SUMMARY, anchor,
        "dft/os_series_vs_measured.json", lambda d, i=i, key=key: d["aqueous_series"]["pairs"][i][key], 0.005)
       for what, anchor, i, key in (
@@ -412,7 +433,7 @@ CHECKS = [
           ("Cl−OMe ours (limit 2)", rf"Cl−Me ×[\d.]+, Cl−OMe ×{N} — the two pairs", 2, "ours_over_measured"),
           ("OMe−Me source DFT (limit 2)", rf"\(both states optimised, ΔG\) gives ×{N}, ×", 0, "source_dft_over_measured"),
           ("Cl−Me source DFT (limit 2)", rf"ΔG\) gives ×[\d.]+, ×{N}, ×", 1, "source_dft_over_measured"),
-          ("Cl−OMe source DFT (limit 2)", rf"ΔG\) gives ×[\d.]+, ×[\d.]+, ×{N}, so the Me excess", 2, "source_dft_over_measured"))],
+          ("Cl−OMe source DFT (limit 2)", rf"ΔG\) gives ×[\d.]+, ×[\d.]+, ×{N}, and its functional is ours", 2, "source_dft_over_measured"))],
     ("paper §3.3 second-acceptor difference → vs_b3lyp", PAPER_RESULTS, rf"carries a smaller difference \(\+{N} eV\)",
      "dft/os_mediator_series_wb97x.json", lambda d: named(d["vs_b3lyp"]["points"], "name", "so2cf3")["omega_minus_b3_eV"], 0.005),
     ("paper §3.3 acceptor swap at B3LYP (meV) → vs_b3lyp", PAPER_RESULTS, rf"the ΔE_red of SO₂CF₃ is {N} meV less negative than that of NO₂",
@@ -2934,6 +2955,26 @@ CHECKS += [
 # ── HW.53 R_Ω bench sheet ⟷ script 84 (2026-10-11): budgets per R_int reading, the geometry, requirements per kΩ ──
 BENCH_R_OMEGA = "docs/protocols/ebfc/cathode_ionic_path_bench.md"
 R_OMEGA = "kinetics/cathode_ionic_path.json"
+
+
+def _pvi_pair(d, x, ref):
+    return next(p for p in d["pvi_series"]["pairs"] if (p["x"], p["ref"]) == (x, ref))
+
+
+def _pvi_gap(d, x, ref):   # ours − measured, mV per substituent
+    p = _pvi_pair(d, x, ref)
+    return p["ours_mV"] - p["measured_mV"]
+
+
+def _pvi_ratio(d, x, ref):
+    return _pvi_pair(d, x, ref)["ours_over_measured"]
+
+
+def _centre_split(d):
+    """(functional, basis) part of the Me−H shift per substituent, mV: B3LYP/6-31G(d) → ωB97X/6-31G(d) → ωB97X/def2-TZVP."""
+    pts = {p["name"]: p for p in d["vs_b3lyp"]["centre_decomposition"]["points"]}
+    f = lambda k: -(pts["dmbpy"][k] - pts["bpy"][k]) / 4 * 1000   # noqa: E731
+    return f("wb97x_631gd_eV") - f("b3lyp_631gd_eV"), f("wb97x_def2tzvp_eV") - f("wb97x_631gd_eV")
 
 
 def _budget(d, cell, reading):

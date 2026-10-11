@@ -49,6 +49,97 @@ def cascade_verdict(homo_donor_eV: float, lumo_acceptor_eV: float) -> dict:
     }
 
 
+def _scf_object(atoms, charge: int, spin: int, xc: str = "b3lyp", with_pcm: bool = True, conv_tol: float = 1e-6,
+                max_cycle: int = 100, level_shift_open: float = 0.0, basis_light: str | None = None,
+                basis_os: str | None = None, chkfile: str | None = None, pcm_method: str = "C-PCM",
+                pcm_radii: str | None = None):
+    """The SCF object of the shared protocol (keywords: `dft_singlepoint`) — ONE home for the single point and the
+    geometry optimisation, so a relaxed point and a vertical one cannot differ in anything but the geometry."""
+    from pyscf import dft, gto, solvent
+
+    from .constants import BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER
+
+    light = basis_light or BASIS_LIGHT
+    atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]
+    mol = gto.M(atom=atoms_pyscf,
+                basis={"Os": basis_os or BASIS_OS, "default": light}, ecp={"Os": basis_os or ECP_OS},
+                charge=charge, spin=spin, unit="Angstrom")
+    mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
+    mf.xc = xc
+    if spin != 0 and level_shift_open:
+        mf.level_shift = level_shift_open
+    if with_pcm:
+        mf = solvent.PCM(mf)
+        mf.with_solvent.eps = SOLVENT_EPS_WATER
+        mf.with_solvent.method = pcm_method
+        if pcm_radii == "uff-1.1":
+            from pyscf.data import radii
+            mf.with_solvent.radii_table = 1.1 * radii.UFF
+        elif pcm_radii is not None:
+            raise ValueError(f"unknown pcm_radii {pcm_radii!r}")
+    mf.conv_tol = conv_tol
+    mf.max_cycle = max_cycle
+    if chkfile:
+        mf.chkfile = chkfile
+    return mol, mf
+
+
+def dft_optimize(atoms, charge: int, spin: int, label: str = "", maxsteps: int = 100,
+                 conv_params: dict | None = None, on_step=None, **protocol) -> tuple[list, dict]:
+    """Relax a geometry with geomeTRIC on the SCF object `dft_singlepoint` builds (`_scf_object`, `protocol` = its
+    keywords) — one protocol, one home.
+
+    The gradient carries the DFT grid response: without it the analytic gradient of this protocol departs from the
+    central difference of its own energy by ~1e-4 Ha/Bohr on a light atom — a third of geomeTRIC's default gmax — in
+    gas and in C-PCM alike, so the C-PCM gradient (with PySCF ≤ 2.12's ECP-sphere switching) is consistent and the grid
+    is not; with the response, ≤ 1e-5 (OsO₄, LANL2DZ/6-31G(d), B3LYP, measured 2026-10-12). The SCF tolerance of the
+    steps matters the same way: at conv_tol 1e-6 a warm-started gradient is off by up to 7e-5 Ha/Bohr, at 1e-8 by
+    ≤ 6e-6 (same molecule, same day) — the caller sets it (`conv_tol` in `protocol`).
+
+    Never loses a step: `on_step(geometry_Å, trajectory)` runs after every gradient (the geometry is read from the
+    step's `mol` in Å — the engine's `coords` local is in Bohr); an SCF that fails at a step ends the run as NOT
+    converged with its reason, it does not raise. Returns (atoms in Å, info): on convergence the final geometry, else
+    the LOWEST-energy geometry evaluated — the restart point. CANNOT show: that the minimum found is the global one."""
+    import time
+
+    import geometric
+    import numpy as np
+    from pyscf.geomopt.geometric_solver import kernel as geomopt
+
+    _, mf = _scf_object(atoms, charge, spin, **protocol)
+    grad = mf.nuc_grad_method()
+    grad.grid_response = True
+    trajectory, best = [], {}
+
+    def record(env):
+        m = env["mol"]
+        xyz = m.atom_coords(unit="Angstrom")
+        geom = [(m.atom_symbol(i), xyz[i]) for i in range(m.natm)]
+        trajectory.append({"E_Ha": float(env["energy"]), "grad_max_Ha_bohr": float(np.abs(env["gradients"]).max()),
+                           "grid_response": bool(env["g_scanner"].grid_response)})
+        if not best or trajectory[-1]["E_Ha"] < best["E_Ha"]:
+            best.update(E_Ha=trajectory[-1]["E_Ha"], geometry=geom, step=len(trajectory))
+        if on_step:
+            on_step(best["geometry"], trajectory)
+
+    t0 = time.time()
+    error = None
+    try:
+        converged, mol_eq = geomopt(grad, assert_convergence=True, callback=record, maxsteps=maxsteps,
+                                    **(conv_params or {}))
+    except RuntimeError as exc:   # the wrapper's «Nuclear gradients … not converged»: an SCF failed at a step
+        converged, mol_eq, error = False, None, str(exc)
+    if converged:
+        xyz = mol_eq.atom_coords(unit="Angstrom")
+        out = [(mol_eq.atom_symbol(i), xyz[i]) for i in range(mol_eq.natm)]
+    else:
+        out = best.get("geometry", [(sym, np.asarray(x, float)) for sym, x in atoms])
+    return out, {"label": label, "converged": bool(converged), "steps": len(trajectory), "trajectory": trajectory,
+                 "returned": "final" if converged else f"lowest-energy step {best.get('step')}", "error": error,
+                 "conv_params": conv_params or {}, "maxsteps": maxsteps, "geometric": geometric.__version__,
+                 "wall_seconds": round(time.time() - t0, 1)}
+
+
 def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     xc: str = "b3lyp", with_pcm: bool = True,
                     conv_tol: float = 1e-6, max_cycle: int = 100,
@@ -59,7 +150,8 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     pcm_method: str = "C-PCM", pcm_radii: str | None = None) -> dict:
     """DFT single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
 
-    Shared SSOT runner for the L3 Os scripts (21b / 21e / 34 / 34b series). `atoms`
+    Shared SSOT runner for the L3 Os scripts that import it (21e · 21f · 34 · 34b · 75 · 76, grep 2026-10-12; 20, 21,
+    21b and 21d keep local copies of their own). `atoms`
     is a list of (symbol, xyz-array). `xc` selects the functional (b3lyp screening /
     wb97x range-separated); `basis_light` overrides the light-atom basis (default
     `None` → constants.BASIS_LIGHT = 6-31G(d); pass "def2-tzvp" for the
@@ -100,33 +192,9 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     """
     import time
 
-    from pyscf import dft, gto, solvent
-
-    from .constants import BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER
-
-    light = basis_light or BASIS_LIGHT
-    atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]
-    mol = gto.M(atom=atoms_pyscf,
-                basis={"Os": basis_os or BASIS_OS, "default": light}, ecp={"Os": basis_os or ECP_OS},
-                charge=charge, spin=spin, unit="Angstrom")
-    mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
-    mf.xc = xc
-    if spin != 0 and level_shift_open:
-        mf.level_shift = level_shift_open
-    if with_pcm:
-        mf = solvent.PCM(mf)
-        mf.with_solvent.eps = SOLVENT_EPS_WATER
-        mf.with_solvent.method = pcm_method
-        if pcm_radii == "uff-1.1":
-            from pyscf.data import radii
-            mf.with_solvent.radii_table = 1.1 * radii.UFF
-        elif pcm_radii is not None:
-            raise ValueError(f"unknown pcm_radii {pcm_radii!r}")
-    mf.conv_tol = conv_tol
-    mf.max_cycle = max_cycle
-    if chkfile:
-        mf.chkfile = chkfile
-
+    mol, mf = _scf_object(atoms, charge, spin, xc=xc, with_pcm=with_pcm, conv_tol=conv_tol, max_cycle=max_cycle,
+                          level_shift_open=level_shift_open, basis_light=basis_light, basis_os=basis_os,
+                          chkfile=chkfile, pcm_method=pcm_method, pcm_radii=pcm_radii)
     t0 = time.time()
     e_total = mf.kernel(dm0=dm0)
     rescued = not mf.converged

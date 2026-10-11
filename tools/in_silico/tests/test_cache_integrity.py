@@ -11,6 +11,7 @@ import re
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 REPO = Path(__file__).resolve().parents[3]
@@ -261,6 +262,36 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
                                                 [tiers[n][f"{tier}_eV"] for n in v["common_fit_subset"]]), abs_tol=1e-9)
         assert math.isclose(es["wb97x_def2tzvp"], v["slope_wb97x_eV_per_sigma"], abs_tol=1e-9)
         assert math.isclose(es["b3lyp_631gd"], v["slope_b3lyp_eV_per_sigma"], abs_tol=1e-9)
+
+
+def test_83_solvation_clause_branches_follow_the_numbers():
+    """The continuum clause of 83's aqueous verdict on SYNTHETIC numbers. On the real data a revert of the threshold to
+    `abs(move) ≥ |excess|/2`, or a role printed whatever the gas share, gives a byte-identical verdict (adversary,
+    2026-10-12), so the pinned verdict alone cannot hold the branches.
+    CAN catch: a move AWAY from the measured counted as closing; a variant toward it not counted; «attenuates» printed
+    for a continuum that amplifies; a divide by a zero excess; the reach branch still asserting «nor the continuum».
+    CANNOT catch: whether «half the excess» is the right threshold (it is ours)."""
+    import importlib.util
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    spec = importlib.util.spec_from_file_location("s83", Path(__file__).parents[1] / "scripts" / "83_os_series_vs_measured.py")
+    s83 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s83)
+
+    def aq(excess, ief, uff, gas, ours=-23.6):
+        sc = {"ome_dmbpy_excess_mV": excess, **{k: {"ome_dmbpy_change_mV": m} for k, m in
+                                                (("iefpcm", ief), ("uffcavity", uff), ("gas", gas))}}
+        return {"solvation_check": sc, "pairs": [{"x": "ome", "ref": "dmbpy", "ours_mV": ours}]}
+
+    real = s83._solvation_clause(aq(16.1, 0.1, -1.1, -29.0))
+    assert real.startswith("nor the continuum") and "attenuates the pair by 29.0 mV" in real and "Left untested" in real
+    toward = s83._solvation_clause(aq(16.1, 0.1, -9.0, -29.0))
+    assert "UFF ×1.1 cavity radii move it toward the measured" in toward and "stays a candidate" in toward
+    assert not toward.startswith("nor"), "the reach branch must not deny the continuum"
+    away = s83._solvation_clause(aq(16.1, 0.1, +9.0, -29.0))
+    assert away.startswith("nor the continuum"), "a move AWAY from the measured counted as closing"
+    assert "amplifies the pair by 5.0 mV" in s83._solvation_clause(aq(16.1, 0.1, -1.1, +5.0))
+    assert "toward the measured" in s83._solvation_clause(aq(-16.1, 9.0, 0.0, -29.0))   # the other sign of the excess
+    assert "no part of the protocol" in s83._solvation_clause(aq(0.0, 0.1, -1.1, -29.0))
 
 
 def test_os_series_vs_measured_is_derived_from_its_sources():
@@ -562,9 +593,192 @@ def test_21e_os_basis_mode_changes_only_the_os_basis(tmp_path, monkeypatch):
 
 
 
+def test_21e_relaxed_mode_changes_only_the_geometry(tmp_path, monkeypatch):
+    """`b3lyp-relaxed-os2` (00_07 HW.5.IS leg 3a): the series protocol with its geometry relaxed at Os(II) — rehearsed
+    with a stubbed optimiser and SCF (no compute), before the first real run (§When Modifying #34), against the run-path
+    adversary's findings (2026-10-12).
+
+    CAN catch: a write into any other cache; an optimiser call that is not Os(II), not at the declared thresholds and SCF
+    tolerance, or without the per-step keeper; single points that are not exactly two per point, both on the relaxed
+    atoms; a non-converged point that stops the run or yields a pair; a re-run that restarts from the programmatic geometry
+    instead of the saved one; a converged geometry recomputed; refusals that never fire (off-geometry before the optimiser,
+    step 0 off the series row, a units slip at a step, a single point off the last step). CANNOT catch: what geomeTRIC and
+    a real SCF return."""
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import pyscf
+    m = _load_21e()
+    sp, opt = [], []
+    series = json.loads((DFT / "os_mediator_series.json").read_text())
+    e0 = {r["name"]: r["os2"]["E_total_Ha"] for r in series["complexes"]}
+    nonconv = set()
+
+    def fake_sp(atoms, **kw):
+        sp.append(({k: v for k, v in kw.items() if k != "label"}, float(atoms[1][1][0])))
+        last = -2.0 - 0.01 * float(atoms[1][1][0])   # the optimiser's last step on these atoms (fake_opt below)
+        return {"E_total_Ha": last if kw["charge"] == 1 else last + 0.15, "converged": True, "wall_seconds": 0.0,
+                "aufbau": True, **({"s2": 0.755} if kw["spin"] else {})}
+
+    def fake_opt(atoms, charge, spin, label="", maxsteps=0, conv_params=None, on_step=None, **protocol):
+        name = label.split()[1]
+        opt.append({"charge": charge, "spin": spin, "maxsteps": maxsteps, "conv_params": conv_params, **protocol,
+                    "start_x": float(atoms[1][1][0]), "keeper": callable(on_step)})
+        moved = [(e, np.asarray(x, float) + (0.05 if i == 1 else 0.0)) for i, (e, x) in enumerate(atoms)]
+        tr = [{"E_Ha": e0[name], "grad_max_Ha_bohr": 0.01}, {"E_Ha": -2.0 - 0.01 * float(moved[1][1][0]), "grad_max_Ha_bohr": 1e-4}]
+        on_step(atoms, tr[:1])
+        on_step(moved, tr)
+        ok = name not in nonconv
+        return moved, {"label": label, "converged": ok, "steps": 2, "wall_seconds": 0.0, "trajectory": tr,
+                       "returned": "final" if ok else "lowest-energy step 2", "error": None if ok else "stub: not converged",
+                       "conv_params": conv_params}
+
+    caches = ("OUT", "OUT_WB97X", "OUT_WB97X_631GD", "OUT_OSDEF2", "OUT_IEFPCM", "OUT_UFFCAV", "OUT_GAS", "OUT_PYAXIAL",
+              "OUT_RELAXED")
+    guarded = {k: tmp_path / f"{k}.json" for k in caches}
+    guarded["OUT"].write_text(json.dumps(series))
+    for k in caches[1:-1]:
+        guarded[k].write_text('{"sentinel": true}\n')
+    for k, v in guarded.items():
+        monkeypatch.setattr(m, k, v)
+    before = {k: v.read_text() for k, v in guarded.items() if k != "OUT_RELAXED"}
+    monkeypatch.setattr(m, "dft_singlepoint", fake_sp)
+    monkeypatch.setattr(m, "dft_optimize", fake_opt)
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))   # the platform's RDKit is not this test's subject
+    nonconv.add("ome")   # the first point fails: the run must go on to the next
+    m.main_variant("b3lyp-relaxed-os2", ["ome", "bpy", "dmbpy"])
+    assert {k: v.read_text() for k, v in guarded.items() if k != "OUT_RELAXED"} == before, "the relaxed mode wrote elsewhere"
+    proto = {"charge": 1, "spin": 0, "maxsteps": m.RELAX_MAXSTEPS, "conv_params": m.RELAX_CONV,
+             "max_cycle": m.VARIANT_MAX_CYCLE, "conv_tol": m.RELAX_SCF_CONV_TOL, "keeper": True}
+    assert [{k: v for k, v in o.items() if k != "start_x"} for o in opt] == [proto] * 3, opt
+    rec = json.loads(guarded["OUT_RELAXED"].read_text())
+    for n in ("bpy", "dmbpy"):
+        x = rec["complexes"][n]["geometry_os2_relaxed"]["atoms"][1][1][0]
+        on = [kw["charge"] for kw, sx in sp if abs(sx - x) < 1e-12]
+        assert sorted(on) == [1, 2], f"{n}: not exactly the two states on the relaxed atoms ({on})"
+    assert len(sp) == 4, sp
+    ome = rec["complexes"]["ome"]
+    assert "dE_red_eV" not in ome and "os2" not in ome and not ome["geometry_os2_relaxed"]["info"]["converged"]
+    assert [(p["x"], p["ref"]) for p in rec["vs_series"]["pairs"]] == [("dmbpy", "bpy")]
+    # the re-run: converged points reused (no optimiser, no SCF); the failed one restarts from ITS saved geometry
+    saved_x = ome["geometry_os2_relaxed"]["atoms"][1][1][0]
+    sp.clear()
+    opt.clear()
+    nonconv.clear()
+    m.main_variant("b3lyp-relaxed-os2", ["ome", "bpy", "dmbpy"])
+    assert len(opt) == 1 and abs(opt[0]["start_x"] - saved_x) < 1e-12, "the re-run did not restart from the saved geometry"
+    assert sorted(kw["charge"] for kw, _ in sp) == [1, 2], sp
+    rec = json.loads(guarded["OUT_RELAXED"].read_text())
+    assert rec["complexes"]["ome"]["geometry_os2_relaxed"]["info"]["restarted_from"] == "lowest-energy step 2"
+    # refusals
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", 0.0)
+    monkeypatch.setattr(m, "_series_geometry_dev", lambda name, atoms: 1.0)
+    opt.clear()
+    with pytest.raises(SystemExit):
+        m.main_variant("b3lyp-relaxed-os2", ["cl"])
+    assert opt == [], "an off-geometry point reached the optimiser"
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))
+    e0["cl"] += 1e-3   # step 0 is not the series row's energy: another protocol
+    with pytest.raises(SystemExit, match="step 0"):
+        m.main_variant("b3lyp-relaxed-os2", ["cl"])
+    e0["cl"] -= 1e-3
+
+    def slip(atoms, charge, spin, label="", maxsteps=0, conv_params=None, on_step=None, **protocol):
+        on_step([(e, np.asarray(x, float) * 0.529177) for e, x in atoms], [{"E_Ha": e0["cl"], "grad_max_Ha_bohr": 0.0}])
+        raise AssertionError("the keeper should have refused the units slip")
+    monkeypatch.setattr(m, "dft_optimize", slip)
+    rec = json.loads(guarded["OUT_RELAXED"].read_text())
+    rec["complexes"].pop("cl", None)
+    guarded["OUT_RELAXED"].write_text(json.dumps(rec))
+    with pytest.raises(SystemExit, match="units slip"):
+        m.main_variant("b3lyp-relaxed-os2", ["cl"])
+    monkeypatch.setattr(m, "dft_optimize", fake_opt)
+    monkeypatch.setattr(m, "dft_singlepoint", lambda atoms, **kw: {**fake_sp(atoms, **kw), "E_total_Ha": 0.0})
+    with pytest.raises(SystemExit, match="single point"):
+        m.main_variant("b3lyp-relaxed-os2", ["cl"])
+
+
+def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):
+    """The real `dft_optimize` with geomeTRIC stubbed (no SCF): what it hands the optimiser and what it returns — the
+    run-path adversary (2026-10-12) found it never executed by any test.
+    CAN catch: grid response off; the protocol not on the SCF object (C-PCM, ε, tolerance, cycles); assert_convergence
+    off; thresholds not passed; Bohr returned as Å or atoms reordered; an SCF failure at a step that raises instead of
+    returning NOT converged with the lowest-energy geometry; a keeper that never sees a step. CANNOT catch: geomeTRIC's
+    own steps."""
+    pytest.importorskip("pyscf")
+    import pyscf.geomopt.geometric_solver as gs
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib import dft_utils
+    from lib.constants import SOLVENT_EPS_WATER
+    seen, kept = {}, []
+    atoms = [("O", np.array([0.0, 0.0, 0.0])), ("H", np.array([0.0, 0.76, 0.59])), ("H", np.array([0.0, -0.76, 0.59]))]
+
+    def fake_kernel(method, assert_convergence=True, callback=None, maxsteps=100, **kw):
+        seen.update(method=method, assert_convergence=assert_convergence, maxsteps=maxsteps, kw=kw)
+        mol = method.mol.copy()
+        for e in (-76.0, -76.2, -76.1):   # the lowest-energy step is the second
+            mol.set_geom_(mol.atom_coords() * (1.0 + 0.01 * len(kept)), unit="Bohr")
+            callback({"mol": mol, "energy": e, "gradients": np.full((3, 3), 1e-3), "g_scanner": method})
+        if seen.get("fail"):
+            raise RuntimeError("Nuclear gradients of stub not converged")
+        return True, mol
+
+    monkeypatch.setattr(gs, "kernel", fake_kernel)
+    conv = {"convergence_gmax": 4.5e-4}
+    out, info = dft_utils.dft_optimize(atoms, charge=0, spin=0, maxsteps=7, conv_params=conv, conv_tol=1e-8,
+                                       max_cycle=400, on_step=lambda g, tr: kept.append((g, list(tr))))
+    meth = seen["method"]
+    assert meth.grid_response is True and seen["assert_convergence"] is True and seen["maxsteps"] == 7
+    assert {k: v for k, v in seen["kw"].items() if k.startswith("convergence")} == conv
+    base = meth.base
+    assert base.with_solvent.method == "C-PCM" and base.with_solvent.eps == SOLVENT_EPS_WATER
+    assert base.conv_tol == 1e-8 and base.max_cycle == 400 and base.xc == "b3lyp"
+    assert [e for e, _ in out] == ["O", "H", "H"] and len(kept) == 3 and info["converged"]
+    assert abs(float(out[1][1][1]) - 0.76 * 1.0 * 1.01 * 1.02) < 1e-6, "the geometry is not returned in Å"
+    assert all(t["grid_response"] for t in info["trajectory"])
+    seen["fail"] = True
+    kept.clear()
+    out, info = dft_utils.dft_optimize(atoms, charge=0, spin=0, maxsteps=7, conv_params=conv, conv_tol=1e-8,
+                                       max_cycle=400, on_step=lambda g, tr: kept.append((g, list(tr))))
+    assert not info["converged"] and "not converged" in info["error"] and info["returned"] == "lowest-energy step 2"
+    assert abs(float(out[1][1][1]) - 0.76 * 1.0 * 1.01) < 1e-6, "not the lowest-energy step's geometry"
+
+
+def test_21e_relax_conv_keys_reach_geomeTRIC():
+    """geomeTRIC reads its thresholds with `kwargs.get`, so a misspelt key is silently the default — read them back
+    through geomeTRIC's own parameter object. No compute."""
+    pytest.importorskip("geometric")
+    pytest.importorskip("rdkit")
+    import geometric.params
+    m = _load_21e()
+    p = geometric.params.OptParams(**m.RELAX_CONV)
+    assert {k: getattr(p, "C" + k[1:]) for k in m.RELAX_CONV} == m.RELAX_CONV
+
+
+def test_21e_pyaxial_changes_only_the_axial_ligand():
+    """`b3lyp-pyaxial` (00_07 HW.5.IS, A1′): the knob is the builder's axial N-donor, so Os, both chelates and Cl must be
+    the series' own atoms and the swap must be refused the moment it moves them. No SCF.
+    CAN catch: a swap that moves the rest of the octahedron; a ligand that is not pyridine; a refusal that never fires.
+    CANNOT catch: whether pyridine at the series' Os–N is the right model of the aqueous series' ampy (A1′ itself)."""
+    pytest.importorskip("rdkit")
+    m = _load_21e()
+    smi = next(s for n, s, _, _ in m.SERIES if n == "dmbpy")
+    series, _ = m.build_os_complex(bpy_smiles=smi)
+    var = m._axial_swap("dmbpy", series, smi, m.VARIANT_AXIAL["b3lyp-pyaxial"])
+    k = len(series) - 12 - 1   # 1-methylimidazole: C4H6N2
+    tup = lambda a: [(e, tuple(float(c) for c in p)) for e, p in a]   # noqa: E731 — the builder's coordinates are arrays
+    assert m._max_dev_A(tup(var[:k]), tup(series[:k])) == 0.0 and m._max_dev_A(tup(var[-1:]), tup(series[-1:])) == 0.0
+    assert len(var) == len(series) - 1   # pyridine: C5H5N
+    assert sorted(e for e, _ in var[k:-1]) == sorted("C" * 5 + "H" * 5 + "N")
+    shifted = [(e, (x + 0.1, y, z)) if i == 1 else (e, (x, y, z)) for i, (e, (x, y, z)) in enumerate(series)]
+    with pytest.raises(SystemExit):
+        m._axial_swap("dmbpy", shifted, smi, m.VARIANT_AXIAL["b3lyp-pyaxial"])
+
+
 @pytest.mark.parametrize("mode, knob", [("b3lyp-iefpcm", {"pcm_method": "IEF-PCM"}),
                                         ("b3lyp-uffcavity", {"pcm_radii": "uff-1.1"}),
-                                        ("b3lyp-gas", {"with_pcm": False})])
+                                        ("b3lyp-gas", {"with_pcm": False}),
+                                        ("b3lyp-pyaxial", {})])
 def test_21e_solvation_variants_change_one_knob(tmp_path, monkeypatch, mode, knob):
     """The solvation variants of 00_07 HW.5.IS (2026-10-11) — the B3LYP series protocol with ONE change each, so a moved
     pair is that knob and nothing else. Rehearsed with a stubbed SCF (no compute), before the first real run.
@@ -585,7 +799,7 @@ def test_21e_solvation_variants_change_one_knob(tmp_path, monkeypatch, mode, kno
         return {"E_total_Ha": -1.0 - 0.1 * kw["charge"] - 0.001 * len(atoms), "converged": True, "wall_seconds": 0.0,
                 "aufbau": True, **({"s2": 0.755} if kw["spin"] else {})}
 
-    caches = ("OUT", "OUT_WB97X", "OUT_WB97X_631GD", "OUT_OSDEF2", "OUT_IEFPCM", "OUT_UFFCAV", "OUT_GAS")
+    caches = ("OUT", "OUT_WB97X", "OUT_WB97X_631GD", "OUT_OSDEF2", "OUT_IEFPCM", "OUT_UFFCAV", "OUT_GAS", "OUT_PYAXIAL")
     guarded = {k: tmp_path / f"{k}.json" for k in caches}
     series = json.loads((DFT / "os_mediator_series.json").read_text())
     guarded["OUT"].write_text(json.dumps(series))

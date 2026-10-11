@@ -73,24 +73,28 @@ than adding a second agreement. A third measured series — the E½ of [Os(4,4�
 chloro core, formal charge and solvent, so its monodentate N-donor (a pyridine against our 1-methylimidazole) is the
 one structural difference, and it has one acceptor. Per substituent, our computed shifts are 0.59 times the measured
 for OMe against Me (−23.6 against −39.8 mV), 2.2 times for Cl against Me (+79.1 against +36.3 mV) and 1.35 times for
-Cl against OMe (+102.8 against +76.0 mV). The two pairs taken to Me share the excess of our Me point, which the other
-series show too, so they are not independent; the source's own B3LYP, with both oxidation states optimised and the
-potential taken from free energies, gives 1.01, 1.45 and 1.22 for the same pairs,<sup>56</sup> so the Me excess sits in
-our protocol rather than in the functional. It survives our change of functional and ligand basis together (the Me
-shift of the acetonitrile comparison is the same in both tiers), so it sits in what our tiers share and the source's
-calculation does not. It is not the osmium basis: replacing LANL2DZ by def2-TZVP with its core potential moves every
-point by 62–65 meV and every pair by at most 0.8 mV per substituent. Nor is it the continuum's formulation or its
-cavity: on OMe against Me, where ours falls about 16 mV per substituent short of experiment, the integral-equation
-formulation (IEF-PCM)<sup>57</sup> in place of C-PCM moves the pair by +0.1 mV and UFF radii<sup>58</sup> scaled by 1.1,
-with a sphere on every hydrogen, by −1.1 mV (every pair by at most 0.6 and 4.7 mV), while removing the continuum
-altogether moves it by −29.0 mV: the continuum carries much of the pair, but neither variant moves it by a tenth of
-the gap. If the N-donor shifts the potential rather than the substituent effect, what remains is the vertical ΔSCF on
-one programmatic geometry against optimised states and free energies, which these points do not test. On its one
+Cl against OMe (+102.8 against +76.0 mV). The two pairs taken to Me share our Me point, so they are not independent;
+the source's own B3LYP, with both oxidation states optimised and the potential taken from free energies, gives 1.01,
+1.45 and 1.22 for the same pairs,<sup>56</sup> and as its functional is ours, the gap on OMe against Me sits in our
+protocol rather than in the functional. Which of the two points carries it this series cannot say, having no H: in
+ref 8's series, with our N-donor, it splits about evenly — OMe against H 9.1 mV per substituent short of experiment,
+Me against H 9.5 mV over — while in acetonitrile it lies on Me. It is not the osmium basis: replacing LANL2DZ by
+def2-TZVP with its core potential moves every point by 62–65 meV and every pair by at most 0.8 mV per substituent.
+The ligand basis is bounded on one pair only: on Me against H the range-separated functional at our small basis
+moves the shift by +3.2 mV per substituent and def2-TZVP then by −3.3 mV, so our two tiers agree there by
+cancellation, and no OMe point exists at the larger basis. Nor is it the continuum's formulation or its radii: on OMe
+against Me, where ours falls about 16 mV per substituent short of experiment, the source's formulation
+(IEF-PCM)<sup>57</sup> in place of C-PCM moves the pair by +0.1 mV and a second set of radii — UFF<sup>58</sup> scaled
+by 1.1, with a sphere on every hydrogen; the source states none — by −1.1 mV (every pair by at most 0.6 and 4.7 mV).
+Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates it, and neither variant moves it by a
+tenth of the gap. Left untested, if the N-donor shifts the potential rather than the substituent effect, are the
+vertical ΔSCF on one programmatic geometry against optimised states and free energies, and our program's own
+discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two
-series) our OMe effect is about right and our Me effect too large, and toward the acceptor end our effect is too large
-in both series that reach Cl.
+series) our Me effect is too large in both and our OMe effect agrees in one and falls 13 % short in the other, and
+toward the acceptor end our effect is too large in both series that reach Cl.
 A cross-check with the range-separated ωB97X on six of the ten members — the same vertical ΔSCF at
 ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the direction and the donor-resonance
 plateau of NMe₂/NH₂ but not the magnitude: the ωB97X − B3LYP

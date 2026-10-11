@@ -53,8 +53,11 @@ shows) — each into its own cache, on bpy · dmbpy · ome · cl by default, wit
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-iefpcm      # IEF-PCM, the same cavity
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-uffcavity   # UFF ×1.1 radii (Gaussian 16's)
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-gas         # no continuum
-CAN show: how much of each pair the one knob moves. CANNOT show: relaxation or free-energy terms (vertical ΔSCF on one
-geometry in every variant), nor which variant is nearer experiment — that is `83`.
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-pyaxial     # pyridine for 1-MeIm (A1′)
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-relaxed-os2 # Os(II) relaxed (dmbpy ome bpy)
+CAN show: how much of each pair the one knob moves. CANNOT show: free-energy terms or the Os(III) state's own relaxation
+(every variant is a vertical ΔSCF on one geometry per point — `b3lyp-relaxed-os2` moves that geometry to Os(II)'s
+minimum), nor which variant is nearer experiment — that is `83`.
 """
 from __future__ import annotations
 
@@ -66,10 +69,21 @@ import sys
 import tempfile
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT, S2_MAX_DOUBLET
-from lib.dft_utils import dft_singlepoint
-from lib.os_geometry import BPY_SMILES, DCBPY_SMILES, DMBPY_SMILES, build_os_complex, write_xyz
+from lib.dft_utils import dft_optimize, dft_singlepoint
+from lib.os_geometry import (
+    BPY_SMILES,
+    DCBPY_SMILES,
+    DMBPY_SMILES,
+    MEIM_SMILES,
+    PY_SMILES,
+    build_monodentate,
+    build_os_complex,
+    write_xyz,
+)
 from lib.utils import banner
 
 # 4,4'-X-2,2'-bipyridine series, ordered by Hammett σ_para (donor → acceptor).
@@ -116,6 +130,21 @@ OUT_OSDEF2 = DFT_CACHE / "os_mediator_series_osdef2.json"      # def2-TZVP and i
 OUT_IEFPCM = DFT_CACHE / "os_mediator_series_iefpcm.json"      # IEF-PCM instead of C-PCM, the cavity unchanged
 OUT_UFFCAV = DFT_CACHE / "os_mediator_series_uffcavity.json"   # the cavity radii: UFF ×1.1 (Gaussian 16's default) for ours
 OUT_GAS = DFT_CACHE / "os_mediator_series_gas.json"            # no continuum — the share of each pair the solvent model carries
+OUT_PYAXIAL = DFT_CACHE / "os_mediator_series_pyaxial.json"    # pyridine for 1-MeIm — the axial N-donor of the aqueous series
+OUT_RELAXED = DFT_CACHE / "os_mediator_series_relaxed_os2.json"   # each point at its own relaxed Os(II) geometry
+RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H for Me−H; Cl only on request (~5–8 h a point)
+# Declared before the first run (00_07 HW.5.IS leg 3a): energy and gradient at Gaussian's default thresholds (geomeTRIC's
+# GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico, DFT Gotchas: displacement never met).
+# What bounds the error is the GRADIENT, not the step (run-path adversary, 2026-10-12): at the Os(II) minimum Os(III) is
+# not stationary, so a leftover geometry error δ ≤ gmax/k enters ΔE_red at first order — ≲ 2 meV a complex, ≲ 1 mV per
+# substituent on a pair (an estimate: λ(III) ≈ 0.03 eV, k ≈ 0.1 Ha/Bohr²), an order under the 16 mV asked about.
+RELAX_CONV = {"convergence_energy": 1e-6, "convergence_grms": 3e-4, "convergence_gmax": 4.5e-4,
+              "convergence_drms": 6.7e-3, "convergence_dmax": 1e-2}
+RELAX_MAXSTEPS = 120
+RELAX_SCF_CONV_TOL = 1e-8   # the steps' SCF; at the series' 1e-6 a warm-started gradient is off by up to 7e-5 Ha/Bohr
+#                             (≈ 15 % of gmax), at 1e-8 by ≤ 6e-6 (OsO₄, 2026-10-12); the single points stay at 1e-6
+RELAX_ENERGY_TOL_HA = 1e-5  # step 0 ⊥ the series row, and the relaxed single point ⊥ the optimiser's last step
+RELAX_MAX_DONOR_SHIFT_A = 0.3   # an Os–donor distance moving this far is a units slip, not chemistry — refused at the step
 VARIANT_POINTS = ["bpy", "dmbpy", "ome", "cl"]
 N_SUBST = 4   # two 4,4'-X2-bpy per complex
 VARIANT_MAX_CYCLE = 400   # the LANL2DZ rows of bpy · dmbpy · ome were run at 400 cycles, no Newton rescue (c60e01d09, 2026-06-05);
@@ -622,12 +651,96 @@ VARIANTS = {
                         "placeholder (1.72 Å here)", *_VAR),
     "b3lyp-gas": ({"with_pcm": False}, "B3LYP/6-31G(d)+LANL2DZ(Os) gas phase vertical ΔSCF — the B3LYP series protocol, "
                   "the continuum only removed", *_VAR),
+    "b3lyp-pyaxial": ({}, "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) vertical ΔSCF — the B3LYP series protocol, the axial "
+                      "N-donor only changed: pyridine for 1-methylimidazole (the aqueous series' ampy is a 4-substituted "
+                      "pyridine), placed by the series builder at the same Os–N; Os, both chelates and Cl are the series' "
+                      "own atoms", *_VAR),
+    "b3lyp-relaxed-os2": ({}, "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) vertical ΔSCF — the B3LYP series protocol, the "
+                          "geometry only changed: each point's Os(II) geometry relaxed with the same protocol (geomeTRIC, "
+                          "DFT grid response on; energy and gradient at Gaussian's default thresholds, displacement at its "
+                          "loose ones — the flat Os–Cl mode), both states then at that geometry", *_VAR),
 }
+VARIANT_RELAX = {"b3lyp-relaxed-os2"}   # the knob is the geometry itself (`_relaxed_os2`)
+# The knob of a geometry variant is the builder's axial set, not an SCF keyword (`_axial_swap`).
+VARIANT_AXIAL = {"b3lyp-pyaxial": (("ligand", PY_SMILES, "N"), ("cl",))}
 
 
 def _variant_out(mode: str) -> Path:
     """Looked up at call time, so a rehearsal can redirect each cache."""
-    return {"b3lyp-osdef2": OUT_OSDEF2, "b3lyp-iefpcm": OUT_IEFPCM, "b3lyp-uffcavity": OUT_UFFCAV, "b3lyp-gas": OUT_GAS}[mode]
+    return {"b3lyp-osdef2": OUT_OSDEF2, "b3lyp-iefpcm": OUT_IEFPCM, "b3lyp-uffcavity": OUT_UFFCAV, "b3lyp-gas": OUT_GAS,
+            "b3lyp-pyaxial": OUT_PYAXIAL, "b3lyp-relaxed-os2": OUT_RELAXED}[mode]
+
+
+def _donor_distances(atoms: list) -> list:
+    """Os (the builder's atom 0) to its six nearest atoms, Å, sorted — frame-free, unlike a coordinate difference."""
+    os_xyz = np.asarray(atoms[0][1], float)
+    return sorted(round(float(np.linalg.norm(np.asarray(x, float) - os_xyz)), 4) for _, x in atoms[1:])[:6]
+
+
+def _atoms_json(atoms: list) -> list:
+    return [(e, [float(v) for v in x]) for e, x in atoms]
+
+
+def _relaxed_os2(out: Path, rec: dict, c: dict, name: str, atoms: list):
+    """Leg (3a): the point's Os(II) geometry relaxed with the series protocol. A converged geometry in the cache is reused;
+    a non-converged one, or the partial geometry a killed run left, is the RESTART point (never the programmatic one again
+    — the same input would fail the same way); every step's lowest-energy geometry is written to the cache as it comes.
+    Refused at the step: a step 0 that is not the series row's own energy (another protocol), an Os–donor distance moved
+    by more than RELAX_MAX_DONOR_SHIFT_A (a units slip). Returns the relaxed atoms, or None when the optimisation did not
+    converge — that point then has no ΔE_red and no pair, and the run goes on to the next point."""
+    g = c.get("geometry_os2_relaxed")
+    same = g and g["info"].get("conv_params") == RELAX_CONV and g["info"].get("scf_conv_tol") == RELAX_SCF_CONV_TOL
+    if g and g["info"]["converged"] and same:
+        banner(f"① b3lyp-relaxed-os2 {name} — relaxed Os(II) geometry reused from {out.name}")
+        return [(e, np.asarray(x, float)) for e, x in g["atoms"]]
+    resume = c.get("geometry_os2_partial") or g
+    start = [(e, np.asarray(x, float)) for e, x in resume["atoms"]] if resume else atoms
+    restarted_from = None if not resume else ("partial" if "geometry_os2_partial" in c else
+                                              g["info"]["returned"] if not g["info"]["converged"] else "other thresholds")
+    series_e = next(r["os2"]["E_total_Ha"] for r in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]
+                    if r["name"] == name)
+    ref_dd = _donor_distances(atoms)
+
+    def keep(geom: list, tr: list):
+        if restarted_from is None and len(tr) == 1 and abs(tr[0]["E_Ha"] - series_e) > RELAX_ENERGY_TOL_HA:
+            sys.exit(f"{name}: step 0 is {tr[0]['E_Ha']:.8f} Ha against the series row's {series_e:.8f} — "
+                     f"not the series protocol, refused")
+        shift = max(abs(x - y) for x, y in zip(_donor_distances(geom), ref_dd, strict=True))
+        if shift > RELAX_MAX_DONOR_SHIFT_A:
+            sys.exit(f"{name}: an Os–donor distance moved by {shift:.3f} Å — a units slip, not chemistry; refused")
+        c["geometry_os2_partial"] = {"atoms": _atoms_json(geom), "steps": len(tr), "E_min_Ha": min(t["E_Ha"] for t in tr),
+                                     "restarted_from": restarted_from}
+        _save(out, rec)
+
+    banner(f"① b3lyp-relaxed-os2 {name} — relaxing Os(II) (≤ {RELAX_MAXSTEPS} steps"
+           + (f", restarted from the {restarted_from} geometry)" if restarted_from else ")"))
+    new, info = dft_optimize(start, charge=1, spin=0, label=f"os2 {name} relax", maxsteps=RELAX_MAXSTEPS,
+                             conv_params=RELAX_CONV, on_step=keep, max_cycle=VARIANT_MAX_CYCLE,
+                             conv_tol=RELAX_SCF_CONV_TOL)
+    tr = info["trajectory"]
+    info.update(restarted_from=restarted_from, scf_conv_tol=RELAX_SCF_CONV_TOL,
+                donor_distances_A={"programmatic": ref_dd, "relaxed": _donor_distances(new)},
+                step0_minus_series_Ha=(tr[0]["E_Ha"] - series_e) if tr and restarted_from is None else None,
+                relaxation_meV=(series_e - min(t["E_Ha"] for t in tr)) * HARTREE_TO_EV * 1000 if tr else None)
+    c["geometry_os2_relaxed"] = {"atoms": _atoms_json(new), "info": info}
+    c.pop("geometry_os2_partial", None)
+    for k in ("os2", "os3", "dE_red_eV"):   # single points of another geometry are not this geometry's
+        c.pop(k, None)
+    _save(out, rec)
+    print(f"  {'converged' if info['converged'] else 'NOT converged'} in {info['steps']} steps, {info['wall_seconds']} s; "
+          f"relaxation {info['relaxation_meV']} meV" + (f"; {info['error']}" if info["error"] else ""))
+    return new if info["converged"] else None
+
+
+def _axial_swap(name: str, series_atoms: list, smi: str, axial: tuple) -> list:
+    """Rebuild a series complex with another axial set; refused unless Os, both chelates and the chloride are the series'
+    own atoms (the builder's order: Os · bpy₁ · bpy₂ · axial[0] · Cl), so the axial ligand is the one thing changed."""
+    var, _ = build_os_complex(bpy_smiles=smi, axial=axial)
+    k = len(series_atoms) - len(build_monodentate(MEIM_SMILES)[0]) - 1
+    dev = max(_max_dev_A(var[:k], series_atoms[:k]), _max_dev_A(var[-1:], series_atoms[-1:]))
+    if dev > SAME_GEOMETRY_TOL_A or var[-1][0] != "Cl":
+        sys.exit(f"{name}: the {axial[0][1]} build moves the rest of the octahedron ({dev} Å) — not one knob, refused")
+    return var
 
 
 def _vs_series(rec: dict, mode: str) -> dict:
@@ -675,6 +788,12 @@ def main_variant(mode: str, names: list[str]) -> int:
         dev = _series_geometry_dev(name, atoms)
         if dev > SAME_GEOMETRY_TOL_A:   # refused BEFORE the SCF
             sys.exit(f"{name}: rebuilt geometry is {dev} Å off its B3LYP row — not comparable, refused")
+        if mode in VARIANT_AXIAL:
+            atoms = _axial_swap(name, atoms, smi, VARIANT_AXIAL[mode])
+        if mode in VARIANT_RELAX:
+            atoms = _relaxed_os2(out, rec, c, name, atoms)
+            if atoms is None:
+                continue
         for state, charge, spin in (("os2", 1, 0), ("os3", 2, 1)):
             verdict = _acceptance(c.get(state, {}), spin != 0)
             if verdict == "accepted":
@@ -691,6 +810,13 @@ def main_variant(mode: str, names: list[str]) -> int:
             print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, {_acceptance(c[state], spin != 0)}"
                   + ("" if s2 is None else f", <S²> {s2:.4f}") + ")")
             _save(out, rec)
+        if mode in VARIANT_RELAX and "os2" in c:   # the single point must sit on the optimiser's last step
+            last = c["geometry_os2_relaxed"]["info"]["trajectory"][-1]["E_Ha"]
+            c["os2_minus_last_step_Ha"] = c["os2"]["E_total_Ha"] - last
+            if abs(c["os2_minus_last_step_Ha"]) > RELAX_ENERGY_TOL_HA:
+                _save(out, rec)
+                sys.exit(f"{name}: the Os(II) single point is {c['os2_minus_last_step_Ha']:+.2e} Ha off the optimiser's "
+                         f"last step — not on the relaxed geometry, refused")
         if all(_acceptance(c[s], s == "os3") == "accepted" for s in ("os2", "os3")):
             c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV
             _save(out, rec)
@@ -727,7 +853,8 @@ if __name__ == "__main__":
     if sys.argv[1:2] and sys.argv[1] not in {"wb97x", "wb97x-631gd", "wb97x-compare", *VARIANTS}:
         sys.exit(f"unknown mode {sys.argv[1]!r} — a typo would fall through to main() and rewrite {OUT.name}")
     if sys.argv[1:2] and sys.argv[1] in VARIANTS:
-        raise SystemExit(main_variant(sys.argv[1], sys.argv[2:] or VARIANT_POINTS))
+        raise SystemExit(main_variant(sys.argv[1], sys.argv[2:] or (RELAX_POINTS if sys.argv[1] in VARIANT_RELAX
+                                                                    else VARIANT_POINTS)))
     if sys.argv[1:2] == ["wb97x-compare"]:
         raise SystemExit(main_compare())
     raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_EXTREMES) if sys.argv[1:2] == ["wb97x"] else main())
