@@ -261,6 +261,27 @@ CHECKS = [
         "dft/os_mediator_series_wb97x.json",
         lambda d: named(d["vs_b3lyp"]["points"], "name", "no2")["omega_minus_b3_eV"], 0.006,
     ),
+    # the donor comparison with the one measured series (script 83, Goldschmid 2021) — per 4,4'-substituent against H, in mV
+    *[(f"paper §3.3 donor comparison {what} → os_series_vs_measured.json", PAPER_RESULTS, anchor,
+       "dft/os_series_vs_measured.json", get, tol)
+      for what, anchor, get, tol in (
+          ("OMe computed", rf"OMe agrees\s+\({N} mV computed at B3LYP",
+           lambda d: d["computed"]["b3lyp_631gd"]["ome"]["shift_per_substituent_V"] * 1000, 0.05),
+          ("OMe measured", rf"computed at B3LYP, {N} mV measured\)",
+           lambda d: d["measured"]["ome"]["shift_per_substituent_V"] * 1000, 0.05),
+          ("Me computed B3LYP", rf"Me does not \({N} mV at B3LYP",
+           lambda d: d["computed"]["b3lyp_631gd"]["dmbpy"]["shift_per_substituent_V"] * 1000, 0.05),
+          ("Me computed ωB97X", rf"at B3LYP and {N} mV at\s+ωB97X/def2-TZVP",
+           lambda d: d["computed"]["wb97x_def2tzvp"]["dmbpy"]["shift_per_substituent_V"] * 1000, 0.05),
+          ("Me measured", rf"against\s+{N} mV measured\)",
+           lambda d: d["measured"]["dmbpy"]["shift_per_substituent_V"] * 1000, 0.05),
+          ("measured r² over H, Me, OMe", rf"the measured do\s+not \(r² = {N}\)",
+           lambda d: d["measured_readings"]["matched"]["r2"], 0.005),
+          ("tBu measured", rf"tBu, is as weak\s+\({N} mV, with its σ_para unchecked",
+           lambda d: d["measured"]["dtbbpy"]["shift_per_substituent_V"] * 1000, 0.05),
+          *[(f"Me computed over measured at {tier}", rf"the measured Me shift is about {N} times smaller than the",
+             lambda d, tier=tier: d["ratio_computed_over_measured_per_substituent"][f"{tier}:dmbpy"], 0.05)
+            for tier in ("b3lyp_631gd", "wb97x_def2tzvp")])],
     ("paper §3.3 second-acceptor difference → vs_b3lyp", PAPER_RESULTS, rf"carries a smaller difference \(\+{N} eV\)",
      "dft/os_mediator_series_wb97x.json", lambda d: named(d["vs_b3lyp"]["points"], "name", "so2cf3")["omega_minus_b3_eV"], 0.005),
     ("paper §3.3 acceptor swap at B3LYP (meV) → vs_b3lyp", PAPER_RESULTS, rf"the ΔE_red of SO₂CF₃ is {N} meV less negative than that of NO₂",

@@ -41,7 +41,7 @@
 > (vol 22). Method sources added for every method named in §2 (B3LYP, ωB97X, 6-31G(d), LANL2DZ,
 > Stuttgart RSC, def2, C-PCM, PySCF, MMFF94s, RDKit, ChimeraX, AlphaFold 3, Beratan–Onuchic, Marcus,
 > Nelsen, Hammett, cluster-continuum), and 2026-09-24 (second pass) for the VWN term of the PySCF B3LYP and
-> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 55 is the one
+> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 57 (55 until the renumbering of 2026-10-11) is the one
 > `[CITATION NEEDED]` closed from an open-access full text (§2.1 of that paper: aryl-NO₂ films are reduced to
 > aryl-NH₂ and aryl-NHOH under acidic electrochemical conditions — grafted films on gold, not the
 > 4,4′-nitro-bpy ligand, so it supports the chemistry, not the device).
@@ -234,6 +234,8 @@ legend line stays in each, as the criterion allows.
   homoleptic, MeCN; scout log at the end of this file), under transfer assumptions named in its cache. It has no
   acceptor point, so it cannot triangulate the slope the paper quotes; what §3.3 may say about it is the
   integration leg's call (`00_07` HW.5.IS).
+  📌 2026-10-11, later (the records above are not rewritten): §3.3 now prints the donor comparison (Goldschmid 2021,
+  numbers pinned to `os_series_vs_measured.json`) — OMe agrees, Me does not — and keeps the slope untriangulated.
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.
@@ -309,9 +311,11 @@ legend line stays in each, as the criterion allows.
 52. Wang, L.-P.; Martinez, T. J.; Pande, V. S. Building Force Fields: An Automatic, Systematic, and Reproducible Approach. *J. Phys. Chem. Lett.* **2014**, *5*, 1885–1891. DOI: 10.1021/jz500737m.
 53. McGibbon, R. T.; Beauchamp, K. A.; Harrigan, M. P.; Klein, C.; Swails, J. M.; Hernández, C. X.; Schwantes, C. R.; Wang, L.-P.; Lane, T. J.; Pande, V. S. MDTraj: A Modern Open Library for the Analysis of Molecular Dynamics Trajectories. *Biophys. J.* **2015**, *109*, 1528–1532. DOI: 10.1016/j.bpj.2015.08.015.
 54. Sterling, C. M.; Bjornsson, R. Multistep Explicit Solvation Protocol for Calculation of Redox Potentials. *J. Chem. Theory Comput.* **2019**, *15*, 52–67. DOI: 10.1021/acs.jctc.8b00982.
-55. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
-56. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
-57. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
+55. Goldschmid, S. L.; Bednářová, E.; Beck, L. R.; Xie, K.; Tay, N. E. S.; Ravetz, B. D.; Li, J.; Joe, C. L.; Rovis, T. Tuning the Electrochemical and Photophysical Properties of Osmium Complexes for Application in Photoredox Catalysis. *ChemRxiv* **2021**, DOI: 10.26434/chemrxiv-2021-jfmqq (Table 2 read from this version); published as *Synlett* **2022** (as «Tuning the Electrochemical and Photophysical Properties of Osmium-Based Photoredox Catalysts»), *33*, 247–258, DOI: 10.1055/s-0041-1737792.
+56. Carducci, N. G. G.; Arnott, M.; Yankson, E.; Ng, H. J. C.; Li, H.; Hickey, D. Polymer Immobilization Governs Mediated Bioelectrocatalysis and Enables Automated Redox Mediator Screening. *ChemRxiv* **2026**, DOI: 10.26434/chemrxiv.15004343/v1.
+57. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
+58. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
+59. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
 
 ## Verified but not cited in the text (NOT part of the numbered list)
 
@@ -335,11 +339,12 @@ Searched through a browser (chemrxiv.org answers WebFetch with HTTP 403) by the 
 positive control «QMzyme» returned its preprint, so the zero-result queries below are negatives of THIS index, not of
 the instrument. `[✓ read 2026-10-11]` = title, authors, licence and abstract read on the preprint page by the machine
 itself; unmarked = reported by the agent, page not re-read — re-read it before it enters the text. Each line names the
-open question it serves (`00_07` HW.5 / HW.5.IS); where it goes is the integration leg's call, not this list's.
+open question it serves (`00_07` HW.5 / HW.5.IS); a line that entered the paper names its section (integration of
+2026-10-11; the number is the list's, and the reference-manager pass renumbers it), and an unmarked line stays a candidate of its question.
 
 - Goldschmid, S. L. *et al.* (Rovis) — Os(II) polypyridyl library, measured E1/2(Os III/II) in MeCN vs Fc/Fc⁺;
   doi:10.26434/chemrxiv-2021-jfmqq (VoR *Synlett* 2022). `[✓ read 2026-10-11 — Table 2 transcribed from the page image]`
-  → ① the measured 4,4'-X2-bpy series (H · Me · tBu · OMe) that script `83` compares with `21e` — found by the queries
+  → **cited in §3.3 (2026-10-11)**; ① the measured 4,4'-X2-bpy series (H · Me · tBu · OMe) that script `83` compares with `21e` — found by the queries
   `osmium complex redox potential` (machine) and `osmium complexes electrochemistry` (agent); the result is the verdict of
   its cache, not this line.
 - Liu, R.; Nishida, S.; Kobayashi, A.; Sowa, K.; Lojou, E.; de Poulpiquet, A.; Mazurenko, I. — interfacial pH at a
@@ -347,7 +352,7 @@ open question it serves (`00_07` HW.5 / HW.5.IS); where it goes is the integrati
   *J. Am. Chem. Soc.* 2026). `[✓ read 2026-10-11]` → cathode stability in weakly buffered sap (`01_03 §3.2`, CHEM.36).
 - Carducci, N. G. G.; Arnott, M.; Yankson, E.; Ng, H. J. C.; Li, H.; Hickey, D. — catalytic activity and reversibility of
   mediated bioelectrocatalysis differ between polymer matrices even for mediators with similar E°;
-  doi:10.26434/chemrxiv.15004343/v1 (preprint). `[✓ read 2026-10-11]` → ① a named limit of the design rule (E° tuning
+  doi:10.26434/chemrxiv.15004343/v1 (preprint). `[✓ read 2026-10-11]` → **cited in §3.3 (2026-10-11)**: ① a named limit of the design rule (E° tuning
   ≠ current in a polymer matrix) and the Os-polymer RFQ.
 - Mtemeri & Hickey — the ChemRxiv version (doi:10.26434/chemrxiv-2023-tk505) of ref 18. `[✓ read 2026-10-11]`
 - Hruska, E.; Gale, A.; Liu, F. — ML corrections to implicit/explicit-solvent redox potentials, ROP313 set;
@@ -360,7 +365,9 @@ open question it serves (`00_07` HW.5 / HW.5.IS); where it goes is the integrati
   (VoR *J. Phys. Chem. B* 2024) → capstone ④ (protein-environment shift) methods.
 - Bowling, P. *et al.* (Herbert) — heterogeneous PCM vs exact Poisson; doi:10.26434/chemrxiv-2024-9wfb9 (VoR *JCTC* 2025)
   and Wittmann, L.; Pausch, A. — a smooth PCM cavity; doi:10.26434/chemrxiv.15003893/v2 → §2.7 «cavity convention is
-  result-bearing».
+  result-bearing». `[✓ read 2026-10-11 — both abstracts; NOT a fit]`: Bowling tests per-sphere dielectric constants
+  (HetPCM) against a Poisson solver, Wittmann a smooth differentiable cavity (surface charges, gradients); neither
+  speaks to a radius convention moving a redox energy, so §2.7 keeps its own measurement (script `75`, PySCF PR 3159).
 - Gayvert, J. *et al.* (Bravaya) — eMap 2.0, electron-transfer pathways in protein families;
   doi:10.26434/chemrxiv-2025-bvnp7-v2 → a cross-check of the `28` tunnelling pathway.
 - Sedenho, G. *et al.* (Crespilho) — bilirubin oxidase in a Nafion biogel on a gas-diffusion electrode;
