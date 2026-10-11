@@ -158,21 +158,22 @@ SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for 
 def _solvation_clause(aq: dict) -> str:
     """What the continuum variants say about the OMe−Me excess — built from the block (pinned whole with the verdict).
 
-    The threshold «half the excess» is OURS: a variant that moves the pair by less than half of what separates ours from
-    the measured cannot by itself explain it. The gas phase is a bound (the continuum's whole share), not a candidate."""
+    The threshold «half the excess» is OURS: a variant that moves the pair TOWARD the measured by less than half of what
+    separates ours from it cannot by itself explain it (a move away counts as none). The gas phase is a bound (the
+    continuum's whole share), not a candidate. What is left stands under A1′ — the axial N-donor is ours in both tiers."""
     sc = aq.get("solvation_check")
     if not sc or not all(k in sc for k, _, _ in SOLVATION_VARIANTS):
         return "so the vertical ΔSCF on one programmatic geometry or the C-PCM continuum; three points do not say which. "
     ex = sc["ome_dmbpy_excess_mV"]
     moves = {k: sc[k]["ome_dmbpy_change_mV"] for k, _, _ in SOLVATION_VARIANTS}
-    reach = [lab for k, _, lab in SOLVATION_VARIANTS[:2] if abs(moves[k]) >= abs(ex) / 2]
+    reach = [lab for k, _, lab in SOLVATION_VARIANTS[:2] if -moves[k] / ex >= 0.5]
     head = (f"nor the continuum's formulation or its cavity radii: on OMe−Me, whose computed excess over the measured is "
             f"{ex:+.1f} mV, IEF-PCM moves the pair by {moves['iefpcm']:+.1f} mV and the UFF ×1.1 radii by "
             f"{moves['uffcavity']:+.1f} mV, while removing the continuum altogether moves it by {moves['gas']:+.1f} mV — ")
     if reach:
-        return head + f"so {' and '.join(reach)} reach half the excess or more, and the continuum stays a candidate. "
-    return head + ("the continuum carries much of the pair, but neither of its variants reaches half the excess, which "
-                   "leaves the vertical ΔSCF on one programmatic geometry. ")
+        return head + f"so {' and '.join(reach)} close half the excess or more, and the continuum stays a candidate. "
+    return head + ("the continuum carries much of the pair, but neither of its variants closes half the excess, which "
+                   "under A1′ leaves the vertical ΔSCF on one programmatic geometry. ")
 
 
 def verdict_aqueous(aq: dict) -> str:

@@ -358,6 +358,21 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
         ob = aq["os_basis_check"]
         assert ob["max_pair_change_mV"] == max(abs(p["change_mV"]) for p in vl["pairs"]) and ob["pairs"] == len(vl["pairs"])
         assert ob["point_shift_meV"] == [min(vl["point_shift_eV"].values()) * 1000, max(vl["point_shift_eV"].values()) * 1000]
+    # the continuum variants (21e `b3lyp-iefpcm` · `b3lyp-uffcavity` · `b3lyp-gas`): in the block iff a finished cache exists
+    done = {k: json.loads((DFT / f).read_text())["vs_series"] for k, f, _ in s83.SOLVATION_VARIANTS
+            if (DFT / f).exists() and "vs_series" in json.loads((DFT / f).read_text())}
+    assert ("solvation_check" in aq) == bool(done), "the continuum check is in the block iff a finished variant cache exists"
+    if done:
+        sc = aq["solvation_check"]
+        meas = {(p["x"], p["ref"]): p["measured_mV"] for p in aq["pairs"]}
+        om = next(p for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        assert sc["ome_dmbpy_excess_mV"] == om["ours_mV"] - om["measured_mV"] and set(sc) == {"ome_dmbpy_excess_mV", *done}
+        for k, vs in done.items():
+            by = {(p["x"], p["ref"]): p for p in vs["pairs"]}
+            assert sc[k]["max_pair_change_mV"] == max(abs(p["change_mV"]) for p in vs["pairs"]) and sc[k]["pairs"] == len(vs["pairs"]), k
+            assert sc[k]["ome_dmbpy_change_mV"] == by[("ome", "dmbpy")]["change_mV"], k
+            assert sc[k]["aqueous_pairs_over_measured"] == {f"{x}-{r_}": by[(x, r_)]["variant_mV"] / meas[(x, r_)]
+                                                            for x, r_ in s83.AQ_PAIRS}, k
     assert aq["verdict"] == s83.verdict_aqueous(aq), "the aqueous verdict is not the one its fields build"
     # paper ref 8's series (Zafar 2012 Table 1, polymers b, c, d, f at loading 1:9): pairs, pairwise slopes, the loading control
     pv = v["pvi_series"]
@@ -406,6 +421,37 @@ def test_os_mediator_series_osdef2_is_derived_from_both_caches():
         x, r = p["x"], p["ref"]
         assert p["lanl2dz_mV"] == -(lanl[x] - lanl[r]) / 4 * 1000 and p["def2tzvp_mV"] == -(d2[x] - d2[r]) / 4 * 1000, (x, r)
         assert p["change_mV"] == p["def2tzvp_mV"] - p["lanl2dz_mV"], (x, r)
+
+
+@pytest.mark.parametrize("name", ["iefpcm", "uffcavity", "gas"])
+def test_os_mediator_series_continuum_variant_is_derived_from_both_caches(name):
+    """21e's continuum variants (2026-10-11, 00_07 HW.5.IS leg 2): each point accepted (converged, aufbau, <S²> ≤
+    S2_MAX_DOUBLET), none rescued, its ΔE from its own rows, and `vs_series` from the two caches — E° shift = −ΔΔE_red per
+    4 substituents, in mV; the series rows that stand on `converged` alone are named.
+    CAN catch: a stale or hand-edited comparison, an unaccepted row counted, a sign or unit slip. CANNOT catch: which
+    continuum is nearer experiment (that is `83`'s `solvation_check`)."""
+    path = DFT / f"os_mediator_series_{name}.json"
+    if not path.exists():
+        pytest.skip(f"21e b3lyp-{name} not run")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV, S2_MAX_DOUBLET
+    rec = json.loads(path.read_text())
+    series = json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]
+    base = {c["name"]: c["dE_red_eV"] for c in series}
+    var = {}
+    for n, c in rec["complexes"].items():
+        o2, o3 = c["os2"], c["os3"]
+        assert o2["converged"] and o3["converged"] and o2.get("aufbau") and o3.get("aufbau"), n
+        assert o3["s2"] <= S2_MAX_DOUBLET and not o2.get("rescued") and not o3.get("rescued"), n
+        assert c["dE_red_eV"] == (o2["E_total_Ha"] - o3["E_total_Ha"]) * HARTREE_TO_EV, n
+        var[n] = c["dE_red_eV"]
+    v = rec["vs_series"]
+    assert v["point_shift_eV"] == {n: var[n] - base[n] for n in var} and v["rescued_rows"] == []
+    assert v["series_os3_s2_not_recorded"] == sorted(c["name"] for c in series if c["name"] in var and "s2" not in c["os3"])
+    for p in v["pairs"]:
+        x, r = p["x"], p["ref"]
+        assert p["series_mV"] == -(base[x] - base[r]) / 4 * 1000 and p["variant_mV"] == -(var[x] - var[r]) / 4 * 1000, (x, r)
+        assert p["change_mV"] == p["variant_mV"] - p["series_mV"], (x, r)
 
 
 def test_os_mediator_series_rows_that_record_s2_are_doublets():

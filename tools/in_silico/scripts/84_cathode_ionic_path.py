@@ -85,8 +85,15 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import (BQ25570_PIN_CS_UW, BQ25570_VIN_CS_MAX_MV, BQ25570_VIN_CS_TYP_MV, CACHE_DIR,
-                           R_INT_EBFC_EST_KOHM, R_OUTER_M, REPO_ROOT)
+from lib.constants import (
+    BQ25570_PIN_CS_UW,
+    BQ25570_VIN_CS_MAX_MV,
+    BQ25570_VIN_CS_TYP_MV,
+    CACHE_DIR,
+    R_INT_EBFC_EST_KOHM,
+    R_OUTER_M,
+    REPO_ROOT,
+)
 from lib.utils import banner
 
 SI_DESCRIPTION = ("Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by "
@@ -179,7 +186,7 @@ def fv_factor(h: float, rod: tuple | None = None, sphere: tuple | None = None, f
     nr, nz = len(r), len(z)
     R, Z = np.meshgrid(r, z, indexing="ij")
     body = ((R ** 2 + (Z - zc) ** 2) <= rs ** 2 * (1 + 1e-9)) if sphere else \
-        ((R <= a * (1 + 1e-9)) & (Z >= z0 * (1 - 1e-9)) & (Z <= z1 * (1 + 1e-9)))
+        ((a * (1 + 1e-9) >= R) & (z0 * (1 - 1e-9) <= Z) & (z1 * (1 + 1e-9) >= Z))
     fixed = body.copy()
     fixed[-1, :] = fixed[:, -1] = fixed[:, 0] = True
     val = body.astype(float).ravel()

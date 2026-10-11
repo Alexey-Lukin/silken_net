@@ -250,7 +250,58 @@
       "pairs": 6,
       "rescued_def2_rows": []
     },
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the other two series show it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share: not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), so the vertical ΔSCF on one programmatic geometry or the C-PCM continuum; three points do not say which. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "solvation_check": {
+      "ome_dmbpy_excess_mV": 16.110891792566132,
+      "iefpcm": {
+        "max_pair_change_mV": 0.5573217375425301,
+        "pairs": 6,
+        "ome_dmbpy_change_mV": 0.12796866078956626,
+        "aqueous_pairs_over_measured": {
+          "ome-dmbpy": 0.5914752087206113,
+          "cl-dmbpy": 2.1968994553010908,
+          "cl-ome": 1.3572203263330112
+        },
+        "rescued_rows": [],
+        "series_os3_s2_not_recorded": [
+          "bpy",
+          "dmbpy",
+          "ome"
+        ]
+      },
+      "uffcavity": {
+        "max_pair_change_mV": 4.677486723531089,
+        "pairs": 6,
+        "ome_dmbpy_change_mV": -1.0790720790547788,
+        "aqueous_pairs_over_measured": {
+          "ome-dmbpy": 0.6218410134965697,
+          "cl-dmbpy": 2.2816493254648402,
+          "cl-ome": 1.4135258991393302
+        },
+        "rescued_rows": [],
+        "series_os3_s2_not_recorded": [
+          "bpy",
+          "dmbpy",
+          "ome"
+        ]
+      },
+      "gas": {
+        "max_pair_change_mV": 101.10676128972341,
+        "pairs": 6,
+        "ome_dmbpy_change_mV": -28.96802718684199,
+        "aqueous_pairs_over_measured": {
+          "ome-dmbpy": 1.3234499470258076,
+          "cl-dmbpy": 4.172416758800153,
+          "cl-ome": 2.682332143431334
+        },
+        "rescued_rows": [],
+        "series_os3_s2_not_recorded": [
+          "bpy",
+          "dmbpy",
+          "ome"
+        ]
+      }
+    },
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the other two series show it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share: not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its cavity radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV, while removing the continuum altogether moves it by -29.0 mV — the continuum carries much of the pair, but neither of its variants closes half the excess, which under A1′ leaves the vertical ΔSCF on one programmatic geometry. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
   },
   "pvi_series": {
     "source": {

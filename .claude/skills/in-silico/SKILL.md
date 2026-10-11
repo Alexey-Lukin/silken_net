@@ -204,5 +204,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 33. A cross-check that changes TWO things at once and AGREES may be two effects cancelling — before calling it robustness, look for the intermediate tier, which may already sit in another script's cache
 34. An overnight run of NEW code is rehearsed before it is launched — every write target with a stubbed SCF, the geometry check BEFORE the SCF, and an adversary on the RUN PATH, not only on the record — and a chained link stays editable only until it STARTS, so fix inside that window and freeze what the run reads
 35. Comparing a computed series with a measured one: on the SAME points, pair by pair first — a slope over several points restates the pair with the most leverage, and a «bracket» built on a point the other series lacks is not a comparison
+36. Eliminating a cause with one-knob variants: declare the threshold before the data and count a move only TOWARD the measured; add a BOUND run that says whether the knob's whole family could carry the effect at all; and name the assumption under which «what remains» is what remains
 
 <!-- /INSILICO-MODIFYING-INDEX -->
