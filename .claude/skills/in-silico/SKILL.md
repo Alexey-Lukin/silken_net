@@ -39,9 +39,10 @@ L3 DFT anode (CPU):
   34b (its chloro forms — ωB97X with the small basis) + its FORMS row (importlib) → 21e `wb97x` (`centre_decomposition`)
   21e `wb97x-631gd` (34b's tier at the axis ends; own cache) → 21e `wb97x` · `wb97x-compare` (`ends_decomposition`, read when it exists;
      `wb97x-compare` rewrites `vs_b3lyp` from the caches alone, no SCF)
-  21e (default · os_mediator_series.json) → 21e `b3lyp-osdef2` (the same protocol, def2-TZVP/ECP on Os; own cache, `vs_lanl2dz`)
-  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2` (read when it
-     exists) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
+  21e (default · os_mediator_series.json) → 21e `b3lyp-osdef2` (the same protocol, def2-TZVP/ECP on Os; own cache, `vs_lanl2dz`) · `b3lyp-iefpcm` ·
+     `b3lyp-uffcavity` · `b3lyp-gas` (one knob each — the continuum's formulation · its radii · none; own caches, `vs_series`)
+  21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2` and the three
+     continuum variants (read when each exists and holds its comparison) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)
@@ -84,6 +85,8 @@ Anchor mechanics (CPU):
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
+  58 (T_PHLOEM, importlib) · 78 (`bark_bracket`, importlib) · tools/cad/cem (anode, sleeve, flange at runtime) → 84
+     (cathode_ionic_path.json — the R_Ω requirements; a change to 58's inner-bark or 78's bark bracket re-runs 84)
 ```
 
 ## Critical Rules
