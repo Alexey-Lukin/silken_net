@@ -282,6 +282,19 @@ CHECKS = [
           *[(f"Me computed over measured (MeCN) at {tier}", rf"\(ref 8\) to {N} times \(acetonitrile",
              lambda d, tier=tier: d["ratio_computed_over_measured_per_substituent"][f"{tier}:dmbpy"], 0.05)
             for tier in ("b3lyp_631gd", "wb97x_def2tzvp")])],
+    # the osmium-basis check (21e `b3lyp-osdef2`, via 83 `aqueous_series.os_basis_check`) — the paper and SUMMARY
+    ("paper §3.3 Os-basis point shift low → osdef2", PAPER_RESULTS, rf"moves every\s+point by {N}–[\d.]+ meV",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][0], 0.5),
+    ("paper §3.3 Os-basis point shift high → osdef2", PAPER_RESULTS, rf"point by [\d.]+–{N} meV and every pair",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][1], 0.5),
+    ("paper §3.3 Os-basis max pair change → osdef2", PAPER_RESULTS, rf"every pair by at most {N} mV per substituent",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["max_pair_change_mV"], 0.05),
+    ("SUMMARY Os-basis point shift low → osdef2", SUMMARY, rf"moves every point by \+{N}…\+[\d.]+ meV and every pair",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][0], 0.5),
+    ("SUMMARY Os-basis point shift high → osdef2", SUMMARY, rf"point by \+[\d.]+…\+{N} meV and every pair by",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["point_shift_meV"][1], 0.5),
+    ("SUMMARY Os-basis max pair change → osdef2", SUMMARY, rf"every pair by ≤ {N} mV per substituent\), so",
+     "dft/os_series_vs_measured.json", lambda d: d["aqueous_series"]["os_basis_check"]["max_pair_change_mV"], 0.05),
     # paper ref 8's own series (script 83 `pvi_series`, Zafar 2012 Table 1) — our core and N-donor; pairs[i] in PVI_PAIRS order:
     # OMe−H, Me−H, Cl−H, OMe−Me, Cl−Me, Cl−OMe; pairwise slopes in σ order ome-dmbpy, dmbpy-bpy, bpy-cl
     *[(f"paper §3.3 ref-8 series {what} → os_series_vs_measured.json", PAPER_RESULTS, anchor,

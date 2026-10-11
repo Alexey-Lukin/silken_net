@@ -160,8 +160,11 @@ def verdict_aqueous(aq: dict) -> str:
     return (f"Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), "
             f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the other two series show it too); "
             f"the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what "
-            f"our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say "
-            f"which. Its one acceptor point, Cl, comes out larger than "
+            f"our two tiers share: " + (f"not the osmium basis/ECP (def2-TZVP moves every pair by at most "
+            f"{aq['os_basis_check']['max_pair_change_mV']:.1f} mV), so the vertical ΔSCF on one programmatic geometry or "
+            f"the C-PCM continuum; three points do not say which. " if "os_basis_check" in aq else
+            "vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM; three points do not say which. ")
+            + f"Its one acceptor point, Cl, comes out larger than "
             f"measured in both computations. The measured shifts are not linear in σp (pairwise slopes "
             f"{pw['ome-dmbpy']:.3f} and {pw['dmbpy-cl']:.3f} V/σ per substituent), so no slope is read from three points.")
 
@@ -240,6 +243,12 @@ def aqueous(sigma: dict, b3: dict) -> dict:
                                                            / measured[n]["shift_per_substituent_V"]
                                                            for n in AQ_MEASURED_E12_V if n != AQ_REF},
           "slope": slope, "slope_note": "a weighted mix of the pairs — the measured shifts are not linear in σp; not read as a slope"}
+    osd = DFT_CACHE / "os_mediator_series_osdef2.json"   # 21e `b3lyp-osdef2`: the same protocol, def2-TZVP/ECP on Os
+    if osd.exists():
+        v = json.loads(osd.read_text(encoding="utf-8"))["vs_lanl2dz"]
+        aq["os_basis_check"] = {"max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]),
+                                "point_shift_meV": [min(v["point_shift_eV"].values()) * 1000, max(v["point_shift_eV"].values()) * 1000],
+                                "pairs": len(v["pairs"]), "rescued_def2_rows": v["rescued_def2_rows"]}
     aq["verdict"] = verdict_aqueous(aq)
     return aq
 

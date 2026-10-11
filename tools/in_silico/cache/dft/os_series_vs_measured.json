@@ -241,7 +241,16 @@
       "ratio_computed_over_measured": 1.511884922314689
     },
     "slope_note": "a weighted mix of the pairs — the measured shifts are not linear in σp; not read as a slope",
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the other two series show it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "os_basis_check": {
+      "max_pair_change_mV": 0.8255364493676751,
+      "point_shift_meV": [
+        61.84247353305228,
+        65.14461933052296
+      ],
+      "pairs": 6,
+      "rescued_def2_rows": []
+    },
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the other two series show it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share: not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), so the vertical ΔSCF on one programmatic geometry or the C-PCM continuum; three points do not say which. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
   },
   "pvi_series": {
     "source": {

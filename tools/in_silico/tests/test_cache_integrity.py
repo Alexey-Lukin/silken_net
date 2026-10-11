@@ -351,6 +351,13 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
     pw = aq["measured_pairwise_slope_per_substituent_V_per_sigma"]
     for a, b in (("ome", "dmbpy"), ("dmbpy", "cl")):
         assert pw[f"{a}-{b}"] == (am[b]["E12_V"] - am[a]["E12_V"]) / (am[b]["sigma_para"] - am[a]["sigma_para"]) / 4
+    osd = DFT / "os_mediator_series_osdef2.json"
+    assert ("os_basis_check" in aq) == osd.exists(), "the Os-basis check is in the block iff its cache exists"
+    if osd.exists():
+        vl = json.loads(osd.read_text())["vs_lanl2dz"]
+        ob = aq["os_basis_check"]
+        assert ob["max_pair_change_mV"] == max(abs(p["change_mV"]) for p in vl["pairs"]) and ob["pairs"] == len(vl["pairs"])
+        assert ob["point_shift_meV"] == [min(vl["point_shift_eV"].values()) * 1000, max(vl["point_shift_eV"].values()) * 1000]
     assert aq["verdict"] == s83.verdict_aqueous(aq), "the aqueous verdict is not the one its fields build"
     # paper ref 8's series (Zafar 2012 Table 1, polymers b, c, d, f at loading 1:9): pairs, pairwise slopes, the loading control
     pv = v["pvi_series"]
@@ -372,6 +379,33 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
     assert lc["shift_mV"] == (lc["loading_1_11_V"] - lc["loading_1_9_V"]) * 1000 and lc["loading_1_9_V"] == pm["dmbpy"]
     assert lc["shift_mV"] > abs(pm["bpy"] - pm["dmbpy"]) * 1000, "the prose says the loading effect exceeds all four Me → H"
     assert pv["verdict"] == s83.verdict_pvi(pv), "the PVI verdict is not the one its fields build"
+
+
+def test_os_mediator_series_osdef2_is_derived_from_both_caches():
+    """21e `b3lyp-osdef2` (2026-10-11): each point accepted (converged, aufbau, <S²> ≤ S2_MAX_DOUBLET), none rescued, its ΔE
+    from its own rows, and `vs_lanl2dz` from the two caches — E° shift = −ΔΔE_red per 4 substituents, in mV.
+    CAN catch: a stale or hand-edited comparison, an unaccepted row counted, a sign or unit slip. CANNOT catch: whether
+    LANL2DZ or def2-TZVP is nearer experiment (that is `83`)."""
+    path = DFT / "os_mediator_series_osdef2.json"
+    if not path.exists():
+        pytest.skip("21e b3lyp-osdef2 not run")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV, S2_MAX_DOUBLET
+    rec = json.loads(path.read_text())
+    lanl = {c["name"]: c["dE_red_eV"] for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
+    d2 = {}
+    for n, c in rec["complexes"].items():
+        o2, o3 = c["os2"], c["os3"]
+        assert o2["converged"] and o3["converged"] and o2.get("aufbau") and o3.get("aufbau"), n
+        assert o3["s2"] <= S2_MAX_DOUBLET and not o2.get("rescued") and not o3.get("rescued"), n
+        assert c["dE_red_eV"] == (o2["E_total_Ha"] - o3["E_total_Ha"]) * HARTREE_TO_EV, n
+        d2[n] = c["dE_red_eV"]
+    v = rec["vs_lanl2dz"]
+    assert v["point_shift_eV"] == {n: d2[n] - lanl[n] for n in d2} and v["rescued_def2_rows"] == []
+    for p in v["pairs"]:
+        x, r = p["x"], p["ref"]
+        assert p["lanl2dz_mV"] == -(lanl[x] - lanl[r]) / 4 * 1000 and p["def2tzvp_mV"] == -(d2[x] - d2[r]) / 4 * 1000, (x, r)
+        assert p["change_mV"] == p["def2tzvp_mV"] - p["lanl2dz_mV"], (x, r)
 
 
 def test_os_mediator_series_rows_that_record_s2_are_doublets():

@@ -78,8 +78,9 @@ series show too, so they are not independent; the source's own B3LYP, with both 
 potential taken from free energies, gives 1.01, 1.45 and 1.22 for the same pairs,<sup>56</sup> so the Me excess sits in
 our protocol rather than in the functional. It survives our change of functional and ligand basis together (the Me
 shift of the acetonitrile comparison is the same in both tiers), so it sits in what our tiers share and the source's
-calculation does not — a vertical ΔSCF on one programmatic geometry against optimised states and free energies,
-LANL2DZ against def2-TZVP on osmium, and the continuum model — and three points cannot say which. On its one acceptor
+calculation does not. It is not the osmium basis: replacing LANL2DZ by def2-TZVP with its core potential moves every
+point by 62–65 meV and every pair by at most 0.8 mV per substituent. Of the rest — a vertical ΔSCF on one programmatic
+geometry against optimised states and free energies, and the continuum model — these points cannot say which. On its one acceptor
 point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two
