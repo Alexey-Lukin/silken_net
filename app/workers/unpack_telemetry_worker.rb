@@ -33,21 +33,24 @@ class UnpackTelemetryWorker
   # UID з CoAP URI вшито у підпис (батч не сплайснути між шлюзами).
   # Health 8B: [uptime_min:u24 BE][cifo_fill][lora_rx_drops][coap_fail][csq][flags]
   # — пульс Королеви ПІДПИСАНИЙ разом з батчем (masking-attack закритий);
-  # wire-дім: firmware/common/queen_attest.h (One-Home розкладки).
-  QATT_SIG_LEN    = 64
-  QATT_HEALTH_LEN = 8
-  QATT_HEADER_LEN = 17
-  QATT_VERSION_2  = 0x02
-  QATT_DOMAIN_TAG = "SLKN-QATT2".b.freeze
+  # wire-дім: firmware/common/queen_attest.h (One-Home розкладки); серверна половина розкладки й
+  # повідомлення підпису — lib/qatt_envelope_signature.rb (її читають і офлайн-верифікатори), тут — посилання.
+  QATT_SIG_LEN    = QattEnvelopeSignature::SIG_LEN
+  QATT_HEALTH_LEN = QattEnvelopeSignature::HEALTH_LEN
+  QATT_HEADER_LEN = QattEnvelopeSignature::HEADER_LEN
+  QATT_VERSION_2  = QattEnvelopeSignature::VERSION
+  QATT_DOMAIN_TAG = QattEnvelopeSignature::DOMAIN_TAG
   QATT_CSQ_NOT_READ = 0xFF
   # Residue-дискримінатор: legacy [IV][ct] ≡ 0 (mod 16), підписаний ≡ 1 —
   # довжини ніколи не перетинаються, magic-вгадування проти random-IV не треба.
   # ct = 0 легальний ([ARCH.54] empty-flush heartbeat — конверт без записів).
-  QATT_RESIDUE    = (QATT_HEADER_LEN + AES_IV_SIZE + QATT_SIG_LEN) % 16
-  QATT_MIN_SIZE   = QATT_HEADER_LEN + AES_IV_SIZE + QATT_SIG_LEN
+  QATT_RESIDUE    = QattEnvelopeSignature::RESIDUE
+  QATT_MIN_SIZE   = QattEnvelopeSignature::MIN_LEN
   # Replay-вікно: дубль підпису (SHA256-nonce, патерн M2M/S6.1) ріжеться
   # в межах TTL; replay ПІСЛЯ вікна — задокументований residual (03_05 §2.2),
-  # строго кращий за «replay будь-коли» на L0.
+  # строго кращий за «replay будь-коли» на L0. ⊕ [S8b] Для атестованого батча з даними його
+  # закрито назавжди — розпакований конверт лежить у `qatt_envelopes` (`verify_qatt_envelope`);
+  # лишається для heartbeat, який не зберігається.
   QATT_NONCE_TTL  = 30.days
   # Finalize-маркер двофазного nonce: батч розпаковано, будь-який повтор
   # (свій чи чужий) = replay. Колізія з owner-token структурно неможлива:
@@ -110,7 +113,9 @@ class UnpackTelemetryWorker
     # :unverified = конверт є, але pubkey не зареєстровано → обробка як L0
     # (суворість нічого не дає, поки L0 приймається беззастережно) + метрика.
     gateway_attested = false
+    qatt_envelope_sha256 = nil
     if qatt_envelope?(binary_payload)
+      envelope = binary_payload
       verdict = verify_qatt_envelope(binary_payload, gateway, key_record)
       if verdict == :reject
         SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_rejected" })
@@ -131,6 +136,20 @@ class UnpackTelemetryWorker
         finalize_qatt_nonce! if @qatt_nonce_digest
         return
       end
+
+      # ⚖️ [FW.66 (Б) · S8b — `05_02 §E.60`] Конверт АТЕСТОВАНОГО батча — доказ листа Меркла v2: його
+      # байти зберігаються ДО розпакування (рядки посилаються на вже записаний), ідемпотентно для ретраю.
+      # Неатестований (`:unverified`) і heartbeat не зберігаються: перший нічого не доводить, на другий
+      # не посилається жоден рядок.
+      if gateway_attested
+        qatt_envelope_sha256 = QattEnvelope.record!(
+          envelope: envelope, gateway: gateway, public_key_hex: key_record.ed25519_public_key_hex,
+          received_at: parse_received_at(received_at_iso) || Time.current
+        )
+        # Конверт, що вже належить ІНШІЙ Королеві, доказом цього батча не є: рядки йдуть як L0, щоб
+        # NULL-хеш на рядку завжди означав «не атестовано», а не «атестовано без доказу».
+        gateway_attested = false if qatt_envelope_sha256.nil?
+      end
     end
 
     decrypted_data = decrypt_aes(binary_payload, key_record.coap_binary_key)
@@ -149,6 +168,7 @@ class UnpackTelemetryWorker
     # [ARCH.41] received_at — стабільний між ретраями якір доби для cold-derive.
     summary = TelemetryUnpackerService.call(decrypted_data, gateway.id,
                                             gateway_attested: gateway_attested,
+                                            qatt_envelope_sha256: qatt_envelope_sha256,
                                             received_at: parse_received_at(received_at_iso))
 
     # ⚡ [СИНХРОНІЗАЦІЯ]: Трансляція ЗВЕДЕННЯ конверта в Матрицю (UI).
@@ -162,6 +182,13 @@ class UnpackTelemetryWorker
     # інший і скромніший: не втратити конверт через кабель, а не врятувати тракт.
     broadcast_to_matrix(gateway, summary)
 
+    # [FW.66 (Б) · S8b] Довговічна половина «done» — ДО nonce: переживає втрату Redis, і свіжий claim
+    # на розпакованому конверті читається повтором, а на нерозпакованому — дотисканням батча.
+    # «Розпаковано» = закомічено хоч один рядок: розпакувальник ковтає помилки окремих чанків, тож батч,
+    # з якого не лягло нічого, лишається відкритим для повторної доставки (CCM-дублі відкине вікно повтору).
+    if qatt_envelope_sha256 && summary.committed.positive?
+      QattEnvelope.where(sha256: qatt_envelope_sha256).update_all(unpacked_at: Time.current)
+    end
     # [L1 QATT] Фаза 2: батч розпаковано — nonce стає незворотним ("done").
     finalize_qatt_nonce! if @qatt_nonce_digest
 
@@ -230,10 +257,8 @@ class UnpackTelemetryWorker
       return :reject
     end
 
-    signature = payload.byteslice(-QATT_SIG_LEN, QATT_SIG_LEN)
-    body      = payload.byteslice(0, payload.bytesize - QATT_SIG_LEN)
-    uid       = gateway.uid.to_s
-    message   = QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
+    signature = QattEnvelopeSignature.signature(payload)
+    message   = QattEnvelopeSignature.message(gateway.uid, payload)
 
     valid = Ed25519Crypto::SigningService.verify(
       key_record.ed25519_public_key_hex, signature.unpack1("H*"), message
@@ -252,6 +277,18 @@ class UnpackTelemetryWorker
       return :reject
     when :resumed
       Rails.logger.info "🔁 [L1 QATT] #{gateway.uid}: crash-retry власного батча (#{qatt_owner_token}) — resume без спалення nonce."
+    else # :acquired
+      # [FW.66 (Б) · S8b] Nonce живе QATT_NONCE_TTL, а збережений конверт — назавжди: свіжий claim на
+      # конверті, який ми вже РОЗПАКУВАЛИ, — повтор після вікна (з бандлів аудитора конверт можна
+      # відтворити байт у байт). Свій crash-retry сюди не потрапляє — він `:resumed`. ⚠️ Записаний, але
+      # нерозпакований конверт повтором НЕ вважається: так виглядає й ретрай після втрати Redis-nonce між
+      # записом конверта і фіналізацією, а батч, який Королева вже звільнила з CIFO, втратити не можна —
+      # канон обирає разову інфляцію, не безповоротну втрату (`03_05 §2.2`).
+      if QattEnvelope.where(sha256: QattEnvelopeSignature.sha256(payload)).where.not(unpacked_at: nil).exists?
+        Rails.logger.warn "⚠️ [L1 QATT] #{gateway.uid}: REPLAY уже збереженого конверта заблоковано."
+        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_replay" })
+        return :reject
+      end
     end
 
     _ver, unix_ts, flush_seq = payload.unpack("CNN")
@@ -431,11 +468,12 @@ class UnpackTelemetryWorker
     # в Sidekiq-retry й пере-обробить УЖЕ закомічений конверт.
     #
     # ⚠️ СТЕЛЯ, названа чесно й ЗВУЖЕНА проти того, що обіцяв пункт: втрачений кадр
-    # стрічки не повторюється, і backfill'у зведень НЕ ІСНУЄ — «флаш» не є сутністю
-    # в БД (у `telemetry_logs` немає ознаки конверта), а реконструкція по
-    # `queen_uid` + секунді розриває частину батчів навпіл, тобто брехала б про
-    # кількість флашів. ⛔ Не будувати її: правильний носій — персистована сутність
-    # флашу, якої ми свідомо не заводимо. Порожнеча натомість лікується не
+    # стрічки не повторюється, і backfill'у зведень НЕ ІСНУЄ — зведення флашу не є
+    # сутністю в БД. ⊕ [S8b, 2026-10-11] Ознаку батча тепер несуть рядки АТЕСТОВАНИХ
+    # батчів (`qatt_envelope_sha256` → `qatt_envelopes`), але L0-батчі її не мають, а їх
+    # реконструкція по `queen_uid` + секунді розриває частину батчів навпіл — тож backfill
+    # або брехав би про кількість флашів, або показував би лише атестовані. ⛔ Не будувати
+    # його: присуд UI.16 стоїть на цій звуженій підставі. Порожнеча натомість лікується не
     # відтворенням стрічки, а ЧЕСНИМ виміром у плейсхолдері (`Telemetry::LiveStream`
     # ← `last_record`), тож сторінка більше не показує вічний спінер над живим лісом.
     Rails.logger.warn "📡 [UI.4] broadcast_to_matrix #{gateway.uid}: #{e.class}: #{e.message}"

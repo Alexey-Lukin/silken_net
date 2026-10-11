@@ -84,32 +84,37 @@ metabolic_gp_core:
     contract is spec-covered — attractor_spec «CCM-era contract parity», boundaries
     + sweep)
   - docs/03_04_mruby_Lorenz_Attractor.md §4.3 — m(delta_t) formula + GP table
-  - CLAUDE.md §5 «Критичні інваріанти» (growth_points = m(delta_t); CRITICAL_Z_* — lorenz_core)
+  - CLAUDE.md §5 «Критичні інваріанти» (growth_points = m(delta_t); CRITICAL_Z_* —
+    lorenz_core)
   note: 'Post-E.63 the EMISSION MAGNITUDE is m(delta_t), not Z — so these consts ARE
     the token rate (10 000 GP = 1 SCC). GP_HOMEO_MAX=31 is also the 5-bit wire ceiling
     (status<<5|gp). [FW.66 S4] metabolic_core.rb is the ONE device home of the formula,
     compiled into BOTH contracts (ECB bio_contract.rb · CCM ccm_contract.rb); lorenz_core
-    pins the chaos half (bio_contract.rb). On drift: reconcile mirrors, regen both mirrors
-    (tools/firmware/gen_bytecode.sh) + full bin/rspec, then `rake docs:repin`.'
+    pins the chaos half (bio_contract.rb). On drift: reconcile mirrors, regen both
+    mirrors (tools/firmware/gen_bytecode.sh) + full bin/rspec, then `rake docs:repin`.'
   repinned: '2026-10-11'
 qatt_envelope:
-  source: app/workers/unpack_telemetry_worker.rb
+  source: lib/qatt_envelope_signature.rb
   consts:
-  - QATT_SIG_LEN
-  - QATT_HEALTH_LEN
-  - QATT_HEADER_LEN
-  - QATT_VERSION_2
-  - QATT_DOMAIN_TAG
-  - QATT_RESIDUE
-  sha256: 847ae3893f854fd5e72dfd55dd5fc2c238419ca181cacc97b4511bd892e1b235
+  - SIG_LEN
+  - HEALTH_LEN
+  - HEADER_LEN
+  - IV_LEN
+  - VERSION
+  - DOMAIN_TAG
+  - RESIDUE
+  sha256: 0a8771fdef7b58784449d7fec7ba8df52a4b0206a796b41c15a65196741fa188
   mirrors:
   - firmware/common/queen_attest.h — the C half (#define QATT_HEADER_LEN/SIG_LEN/
     DOMAIN_TAG/RESIDUE); the pin engine parses Ruby `NAME = value` only, so the C
     side rides here as prose — reconcile it BY HAND on any hit
   - docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §2.2 — QATT-v2 envelope
+  - 'app/workers/unpack_telemetry_worker.rb — QATT_* aliases REFERENCE these consts
+    (no values of their own since FW.66 (Б) · S8b, 2026-10-11: lib is the one home
+    the offline verifiers share)'
   note: 'Ed25519 signs DOMAIN_TAG‖uid_len‖uid‖body by CONCATENATION — a one-byte HEADER_LEN
     skew or one letter in the domain-tag fails EVERY cluster batch, and telemetry
     dies silently (minting stops). QATT_RESIDUE discriminates the CCM era from legacy
     [IV][ct] — a shift there mis-parses both. On drift: reconcile the C header + 03_05
     §2.2 + bin/rspec, then `rake docs:repin`.'
-  repinned: '2026-07-16'
+  repinned: '2026-10-11'

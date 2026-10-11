@@ -43,7 +43,9 @@ RSpec.describe Mrv::TelemetryLeaf do
   describe ".payload_for — версія на рядку" do
     let(:raw) { [ 0x000DDF01 ].pack("N") + (1..26).to_a.pack("C*") }
     let(:ccm_log) do
-      create(:telemetry_log, :ccm_leaf, tree: tree, raw_record: raw, created_at: Time.utc(2026, 7, 19, 12, 0, 0))
+      # build: пінений хеш конверта ні на що не вказує, а FK рядка на конверт його в базу не пустить
+      build(:telemetry_log, :ccm_leaf, tree: tree, raw_record: raw, qatt_envelope_sha256: ("\x11" * 32).b,
+                                        ema_delta_t_s: 3600, growth_points: 38, created_at: Time.utc(2026, 7, 19, 12, 0, 0))
     end
 
     it "ключі обох версій — рівно ті, що судить офлайн-верифікатор (один дім набору)" do
@@ -58,6 +60,22 @@ RSpec.describe Mrv::TelemetryLeaf do
       expect(LeafPayloadShape.errors(payload.transform_keys(&:to_s))).to be_empty
     end
 
+    # ⚖️ [S8b] Лист v2 несе те, що сервер вивів із кадру: ратчет знищує ключ, тож потім не виведе ніхто.
+    it "v2 несе хеш конверта нижнім hex, вхід формули й бали цілим, а не BigDecimal колонки" do
+      payload = described_class.payload_for(ccm_log)
+
+      expect(payload).to include(qatt_envelope_sha256: "11" * 32, ema_delta_t_s: 3600, growth_points: 38)
+      expect(payload[:growth_points]).to be_an(Integer)
+    end
+
+    # Формулу v2 заморожено в LeafPayloadShape; доки v2 чинний, вона ≡ живій формулі сервера на ВСЬОМУ
+    # u16. Калібрування E.63 червонить цей пін — і це лист v3, а не правка V2_POINTS.
+    it "заморожена формула балів v2 ≡ серверному перерахунку на всьому діапазоні u16" do
+      live = ->(ema) { SilkenNet::Attractor.expected_homeostasis_gp(ema) * TelemetryUnpackerService::GROWTH_POINTS_WIRE_SCALE }
+
+      expect((0..0xFFFF).reject { |ema| LeafPayloadShape.v2_credited_points(ema) == live.call(ema) }).to be_empty
+    end
+
     it "невідома версія — неможливий стан, і він падає голосно, а не хешується як v1" do
       expect { described_class.payload_for(build(:telemetry_log, tree: tree, leaf_version: 3)) }
         .to raise_error(ArgumentError, /невідома версія листа 3/)
@@ -66,7 +84,7 @@ RSpec.describe Mrv::TelemetryLeaf do
     it "пінений CID листа v2 (id=42) — v1-вектор нижче від нього не залежить" do
       allow(ccm_log).to receive(:id).and_return(42)
       expect(described_class.cid_for(ccm_log))
-        .to eq("bafkreic2lczq77wn7wrqtncs665ymq7v7uzbnfjuhiorvy37s5lt6ynzzq")
+        .to eq("bafkreidfssjggt7lrbd4ryynku26kk5dxhjy4r4ferbaa6fguuyk4qzv5a")
     end
   end
 

@@ -358,6 +358,32 @@ RSpec.describe TelemetryLog, type: :model do
         .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
     end
 
+    # ⚖️ [S8b] Вміст листа v2 понад кадр: бали — ще й база мінту, тож ні переписати, ні дробити.
+    it "refuses to rewrite the envelope hash, the formula input or the points after INSERT" do
+      log = create(:telemetry_log, :ccm_leaf, tree: tree)
+
+      expect { log.update!(qatt_envelope_sha256: Random.bytes(32)) }.to raise_error(ActiveRecord::ReadonlyAttributeError)
+      expect { log.update!(ema_delta_t_s: 600) }.to raise_error(ActiveRecord::ReadonlyAttributeError)
+      expect { log.update!(growth_points: 62) }.to raise_error(ActiveRecord::ReadonlyAttributeError)
+    end
+
+    it "the CHECK holds v2 points whole and present, the EMA in u16 and the hash at 32 bytes" do
+      [ nil, 10.5, -2 ].each do |points|
+        expect { create(:telemetry_log, :ccm_leaf, tree: tree, growth_points: points) }
+          .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+      end
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, ema_delta_t_s: 65_536) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_ema_delta_t_s_range/)
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, qatt_envelope_sha256: Random.bytes(31)) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_qatt_envelope_sha256_shape/)
+    end
+
+    # Висячий хеш у заякореному листі верифікатор читав би підробкою назавжди — тож його не пускає FK.
+    it "the FK refuses an envelope hash that points at no stored envelope" do
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, qatt_envelope_sha256: Random.bytes(32)) }
+        .to raise_error(ActiveRecord::InvalidForeignKey)
+    end
+
     it "has no schema default — a writer that forgets the version fails loudly, not as v1" do
       expect(described_class.column_defaults["leaf_version"]).to be_nil
       expect { create(:telemetry_log, tree: tree, leaf_version: nil) }

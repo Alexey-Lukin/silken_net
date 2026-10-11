@@ -19,9 +19,12 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
   # Жива пара для повних worker-сценаріїв (golden-пара — окремо нижче)
   let(:keypair) { Ed25519Crypto::SigningService.generate_keypair }
 
+  # Розпакувальник повертає зведення; «закомічено хоч один рядок» вирішує, чи конверт розпаковано [S8b].
+  let(:committed_summary) { TelemetryUnpackerService::Summary.new(records: 1, committed: 1, statuses: {}, panics: 0) }
+
   before do
     key_record.update!(ed25519_public_key_hex: keypair[:public_key_hex])
-    allow(TelemetryUnpackerService).to receive(:call)
+    allow(TelemetryUnpackerService).to receive(:call).and_return(committed_summary)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     allow(ActionCable.server).to receive(:broadcast)
@@ -96,7 +99,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: true, received_at: nil)
+        .with(anything, gateway.id, gateway_attested: true, qatt_envelope_sha256: Digest::SHA256.digest(payload),
+                                    received_at: nil)
     end
 
     it "ставить gateways.last_attested_at" do
@@ -157,7 +161,10 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
     it "передає сервісу РІВНО legacy-байти [IV][ct] (конверт зрізано)" do
       decrypted = nil
-      allow(TelemetryUnpackerService).to receive(:call) { |data, _id, **| decrypted = data }
+      allow(TelemetryUnpackerService).to receive(:call) do |data, _id, **|
+        decrypted = data
+        committed_summary
+      end
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
@@ -177,6 +184,58 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call).once
+    end
+
+    # ⚖️ [FW.66 (Б) · S8b] Конверт атестованого батча — доказ листа v2: зберігається до розпакування.
+    describe "збереження конверта [S8b]" do
+      it "зберігає підписаний конверт зі знімком ключа, що його перевірив" do
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+        expect(QattEnvelope.find_by!(sha256: Digest::SHA256.digest(payload)))
+          .to have_attributes(gateway_id: gateway.id, gateway_uid: gateway.uid, envelope: payload,
+                              public_key_hex: keypair[:public_key_hex].downcase)
+      end
+
+      # Nonce живе QATT_NONCE_TTL, конверт — назавжди; з бандла аудитора його відтворять байт у байт.
+      it "повтор конверта після вікна nonce — відмова, бо конверт уже збережено" do
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+        nonce = Kredis.namespaced_key("qatt_nonce:#{Digest::SHA256.hexdigest(payload.byteslice(-64, 64))}")
+        Kredis.redis(config: :shared).del(nonce)
+
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+        expect(TelemetryUnpackerService).to have_received(:call).once
+        expect(QattEnvelope.count).to eq(1)
+      end
+
+      # NULL-хеш на рядку мусить означати «не атестовано», а не «атестовано без доказу».
+      it "конверт, що вже належить іншій Королеві, — батч іде як L0 без хеша" do
+        QattEnvelope.record!(envelope: payload, gateway: create(:gateway), public_key_hex: "ab" * 32, received_at: Time.current)
+
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+        expect(TelemetryUnpackerService).to have_received(:call)
+          .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
+      end
+
+      # Розпакувальник ковтає помилки окремих чанків: батч, з якого не лягло жодного рядка, «розпакованим»
+      # не є — повторна доставка його ще дотисне (CCM-дублі відкине вікно повтору).
+      it "батч, з якого не закомічено жодного рядка, лишається нерозпакованим" do
+        allow(TelemetryUnpackerService).to receive(:call)
+          .and_return(TelemetryUnpackerService::Summary.new(records: 3, committed: 0, statuses: {}, panics: 0))
+
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+        expect(QattEnvelope.sole.unpacked_at).to be_nil
+      end
+
+      it "heartbeat не зберігається — на нього не посилається жоден рядок" do
+        heartbeat = build_signed_payload(seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: OpenSSL::Random.random_bytes(16))
+        allow(GatewayTelemetryWorker).to receive(:perform_async)
+
+        expect { described_class.new.perform(Base64.strict_encode64(heartbeat), "10.0.0.1", gateway.uid) }
+          .not_to change(QattEnvelope, :count)
+      end
     end
 
     it "блокує replay через Solid-Cache fallback при відмові Redis" do
@@ -218,7 +277,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+          .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
       end
 
       it "не ставить last_attested_at" do
@@ -234,7 +293,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+        .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
     end
 
     # Двофазний owner-nonce (crash-window, патерн ARCH.45): claim(jid) ДО
@@ -254,6 +313,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         allow(TelemetryUnpackerService).to receive(:call) do
           calls += 1
           raise ActiveRecord::ConnectionTimeoutError, "crash mid-unpack" if calls == 1
+
+          committed_summary
         end
       end
 
@@ -291,6 +352,41 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         expect(TelemetryUnpackerService).to have_received(:call).once
         expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
           .to have_received(:increment).with(labels: { status: "attest_replay" })
+      end
+
+      # Регресія, спіймана на S8b: постійна перевірка повтору відкидала б і ретрай, що прийшов після
+      # втрати Redis-nonce між записом конверта і фіналізацією, — а Королева батч уже звільнила.
+      it "[S8b] записаний, але НЕрозпакований конверт після втрати nonce дотискається, а не відкидається" do
+        unpacker_raises_once!
+        expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+        Kredis.redis(config: :shared).del(Kredis.namespaced_key("qatt_nonce:#{Digest::SHA256.hexdigest(payload.byteslice(-64, 64))}"))
+
+        perform_with_jid("d" * 24)
+
+        expect(TelemetryUnpackerService).to have_received(:call).twice
+        expect(QattEnvelope.sole.unpacked_at).to be_present
+      end
+
+      it "[S8b] те саме, коли ретрай іде через Solid Cache, бо Redis упав між спробами" do
+        unpacker_raises_once!
+        expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+        allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
+
+        perform_with_jid(worker_jid)
+
+        expect(TelemetryUnpackerService).to have_received(:call).twice
+        expect(QattEnvelope.sole.unpacked_at).to be_present
+      end
+
+      it "[S8b] crash-retry не дублює конверт і передає той самий sha256" do
+        unpacker_raises_once!
+
+        expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+        perform_with_jid(worker_jid)
+
+        expect(QattEnvelope.count).to eq(1)
+        expect(TelemetryUnpackerService).to have_received(:call)
+          .with(anything, gateway.id, hash_including(qatt_envelope_sha256: Digest::SHA256.digest(payload))).twice
       end
 
       it "після успіху nonce-ключ тримає done (контракт-пін фіналізації)" do
@@ -348,7 +444,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(Base64.strict_encode64(legacy), "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+        .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
     end
   end
 end

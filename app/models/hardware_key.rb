@@ -190,6 +190,39 @@ class HardwareKey < ApplicationRecord
     tree || gateway
   end
 
+  # ⚖️ [FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11, `05_02 §E.60`] Один дім реєстрації й
+  # ротації Ed25519-ключа атестації Королеви. Ключ іде в ланцюг AuditLog організації, тож аудитор, що
+  # перевіряє підпис QATT-конверта з бандла, бачить, чи ключ не зареєстровано пізніше за лист.
+  # ⚠️ [ARCH.122] Незмінною ця дата стає лише під якорем: leaf0 сьогодні запечатує голову ланцюга
+  # організації, що писала останньою, — не кожної.
+  # 🔴 Пишеться ЛИШЕ публічний ключ, явним записом: generic `Auditable` тут не годиться — його колбеки
+  # логували б зміни атрибутів, а цей рядок тримає секрети. Запис синхронний і в тій самій транзакції
+  # (слід про дію, що вирішує долю доказів, — backend #41).
+  ATTESTATION_KEY_AUDIT_ACTION = "attestation_key_registered"
+
+  def register_attestation_key!(public_key_hex, user_id: nil)
+    public_key_hex = public_key_hex.to_s.downcase
+    previous = ed25519_public_key_hex&.downcase
+    return if previous == public_key_hex
+
+    raise ArgumentError, "#{device_uid}: ключ атестації реєструється лише для Королеви" unless gateway
+
+    actor_id = user_id || Auditable.system_actor_id
+    # Домашня політика `Auditable#record_audit_trail!` («актор невідомий — запису немає») тут не годиться:
+    # ключ без запису не має дати реєстрації, тож відмова — fail-closed, ДО зміни ключа.
+    raise ArgumentError, "#{device_uid}: ключ атестації без актора аудиту (oracle_executioner відсутній)" if actor_id.blank?
+
+    transaction do
+      update!(ed25519_public_key_hex: public_key_hex)
+      AuditLog.create!(action: ATTESTATION_KEY_AUDIT_ACTION,
+                       organization_id: gateway.cluster.organization_id,
+                       user_id: actor_id,
+                       auditable: self,
+                       metadata: { gateway_uid: device_uid, public_key_hex: public_key_hex,
+                                   previous_public_key_hex: previous })
+    end
+  end
+
   private
 
   # Versioned cache key: includes updated_at to auto-invalidate on any change.

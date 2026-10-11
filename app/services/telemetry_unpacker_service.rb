@@ -39,8 +39,10 @@ class TelemetryUnpackerService < ApplicationService
   PANIC_NONCE_TTL            = 25.hours       # Трохи довше за 24h replay-вікно
   PANIC_NONCE_KEY_PREFIX     = "silken:panic:nonce"
   # [ARCH.102] Поля, яких panic-кадр НЕ міряє: vcap/temp/dt — legacy-нулі обох
-  # збирачів `Trigger_Emergency_LoRa_TX`, акустичний байт — код паніки 0xFF, не лічба.
-  PANIC_UNMEASURED_ATTRIBUTES = %i[voltage_mv temperature_c lorenz_temperature_c metabolism_s acoustic_events].freeze
+  # збирачів `Trigger_Emergency_LoRa_TX`, акустичний байт — код паніки 0xFF, не лічба;
+  # EMA-delta_t CCM-кадру паніки — літерал 0 (`wire_ema_delta_t_s` пише лише Фаза 3).
+  PANIC_UNMEASURED_ATTRIBUTES = %i[voltage_mv temperature_c lorenz_temperature_c metabolism_s acoustic_events
+                                   ema_delta_t_s].freeze
 
   # --- МЕЖІ РЕАЛЬНОСТІ (Sanity Bounds) ---
   # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
@@ -103,10 +105,13 @@ class TelemetryUnpackerService < ApplicationService
   # чесним якорем доби для cold-start деривації Лоренца: і `Time.now.utc`, і
   # `telemetry_log.created_at` рухаються разом зі СПРОБОЮ, а пристрій деривує зі
   # свого RTC-дня, зафіксованого в момент передачі. `nil` ⇒ «зараз» (bench/HIL).
-  def initialize(binary_batch, gateway_id = nil, gateway_attested: false, received_at: nil)
+  # ⚖️ [FW.66 (Б) · S8b] `qatt_envelope_sha256` — хеш збереженого конверта атестованого батча
+  # (`QattEnvelope.record!`); nil — батч без збереженого конверта.
+  def initialize(binary_batch, gateway_id = nil, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
     @gateway_attested = gateway_attested
+    @qatt_envelope_sha256 = qatt_envelope_sha256
     @received_at = received_at
     @trees_cache = {}
     @latest_firmware_id = nil
@@ -477,6 +482,9 @@ class TelemetryUnpackerService < ApplicationService
       # `acoustic_events` — свідомо НІЧОГО (NULL): CCM-кадр wire-rev2.2 акустики не везе (пʼєзо
       # зрізано, HW.30), а 0 був би виміряним нулем.
       metabolism_s: delta_t_s,
+      # ⚖️ [FW.66 (Б) · S8b, `05_02 §E.60`] Вхід формули балів — у рядок і лист v2: ратчет знищує
+      # сесійний ключ, тож розшифрувати його з `raw_record` потім не вийде ні в кого.
+      ema_delta_t_s: ema_delta_t_s,
       growth_points: ccm_growth_points(hex_did, status_byte, bio_status, ema_delta_t_s),
       # ⚖️ [FW.66 (Б) · S8, `05_02 §E.60`] Лист v2 — сирий кадр ефіру (30 Б): чанк без RSSI, який
       # Королева дописала сама й MIC не покриває. Байт gossip лишається — він в AAD CCM.
@@ -1034,6 +1042,9 @@ class TelemetryUnpackerService < ApplicationService
     # чи запис приїхав під валідним підписом Королеви. Єдина точка для
     # обох шляхів (ECB process_chunk + CCM process_ccm_chunk).
     attributes[:gateway_attested] = @gateway_attested
+    # ⚖️ [FW.66 (Б) · S8b] Посилання на підписаний конверт — і на ECB-рядку (лист v1 його не несе,
+    # рядок — так): доказ походження один на батч, незалежно від ери кадру.
+    attributes[:qatt_envelope_sha256] = @qatt_envelope_sha256
 
     growth_points = attributes[:growth_points]
     # [FW.65] Ширина contract-id на дроті: 14 біт на ECB, 7 на CCM (транзієнт CCM-шляху).

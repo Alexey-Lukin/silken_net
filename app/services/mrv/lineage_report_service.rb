@@ -39,7 +39,8 @@ module Mrv
     # офлайн-верифіковне З ЦЬОГО ФАЙЛУ — payload→CID, mint-root sealed-кредитів,
     # tier1-субкорінь, tier2→state_root, device_uid↔tree_did. Issuer-asserted
     # (офлайн НЕ перевіриш): amount, ПОВНОТА набору кредитів/листя, континуїтет
-    # вікон; backstop = org AuditLog-ланцюг, запечатаний у leaf0 тижневих якорів.
+    # вікон; backstop = org AuditLog-ланцюг. ⚠️ [ARCH.122] leaf0 тижневого якоря запечатує голову
+    # ланцюга лише тієї організації, що писала останньою перед якорем, — не кожної.
     #
     # [DOC-T.89] `insurance_payouts:` не додає до перевірюваного НІЧОГО: крипто під ним
     # немає за конструкцією (немає листя — немає CID, кореня і шляхів), тож секція цілком
@@ -56,12 +57,28 @@ module Mrv
       "commits to the IDENTITY of a " \
       "CCM air frame, not to a measurement: raw_record is ciphertext under the node's session " \
       "key, which the key ratchet destroys, so its MIC and contents are checkable only by the " \
-      "key holder while that key lives. THEN verify each printed state_root on-chain: the " \
+      "key holder while that key lives. A v2 leaf also carries what the server DERIVED from " \
+      "the frame: the EMA input of the points formula (the server's statement — decrypted from " \
+      "ciphertext you cannot open), the frame's points before weighting (0, or the v2 formula of " \
+      "that input, frozen with the leaf version — their CONSISTENCY is checked, not the input; a " \
+      "zero at a positive formula means the points were held, and the leaf does not carry why) " \
+      "and the sha256 of " \
+      "the Queen-signed QATT envelope of its batch (null = the batch was not attested). Those " \
+      "envelopes travel in this bundle only, never in the public archive artifact: the verifier " \
+      "checks each one's hash, frame and Ed25519 signature (strict, S < L) under the key named " \
+      "beside it. That this key is the Queen's is NOT proven by the file: cross-check " \
+      "`key_registration` against the org AuditLog export (the weekly anchor's leaf0 seals " \
+      "only the chain head of the organization that wrote last before it — ARCH.122 — so for " \
+      "other organizations the registration date is issuer-asserted). That a leaf's frame lies inside its envelope is issuer-asserted " \
+      "(the ciphertext is under the Queen's key). The sum of leaf points is the BASE of a " \
+      "credit, not its amount: the tree-family coefficient and the E.64 daily bucket apply " \
+      "outside the leaf. THEN verify each printed state_root on-chain: the " \
       "storeStateRoot tx MUST target the canonical StateRootAnchor contract — cross-check " \
       "the `anchor_contract` address against an INDEPENDENT source (project canon / official " \
       "site), never against this file alone. Issuer-asserted (NOT offline-verifiable): tx " \
       "amounts, completeness of the credit/leaf set, window continuity; backstop = the org " \
-      "AuditLog hash-chain sealed into every weekly anchor's leaf0. " \
+      "AuditLog hash-chain (sealed into a weekly anchor's leaf0 only when this organization " \
+      "wrote the last audit row before it — ARCH.122). " \
       "SCOPE OF `credits`: MEASURED GROWTH ONLY. An insurance payout is SCC minted against a " \
       "LOSS, carries no telemetry window by construction and is NOT a carbon credit; payouts " \
       "are listed separately under `insurance_payouts` and that section is ENTIRELY " \
@@ -93,6 +110,7 @@ module Mrv
         period: { from: @from.utc.iso8601, to: @to.utc.iso8601 },
         anchor_contract: ENV["ETHEREUM_ANCHOR_CONTRACT"],
         credits: credits,
+        **(v2 ? { qatt_envelopes: qatt_envelope_entries(credits) } : {}),
         insurance_payouts: insurance_payout_transactions.map { |tx| insurance_payout_entry(tx) },
         verification_instructions: VERIFICATION_INSTRUCTIONS
       }
@@ -255,6 +273,45 @@ module Mrv
                      .where("(created_at, id) > (?, ?)", prev.created_at, prev.id)
       end
       scope.order(:created_at, :id)
+    end
+
+    # ⚖️ [FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11, `05_02 §E.60`] Підписані конверти
+    # QATT, на які посилається v2-листя бандла, — ЛИШЕ тут, в аудиторському каналі: у публічний
+    # архівний артефакт IPFS вони не йдуть (публікація незворотна, а підписаний заголовок не
+    # редагується). До кожного — запис реєстрації ключа Королеви в ланцюгу AuditLog: останній до
+    # прийому конверта, тобто ключ, чинний у ту мить (дата, яку емітент заднім числом не перепише).
+    def qatt_envelope_entries(credits)
+      shas = credits.flat_map { |c| c[:leaves].filter_map { |l| l[:payload][:qatt_envelope_sha256] } }.uniq
+      return [] if shas.empty?
+
+      envelopes = QattEnvelope.where(sha256: shas.map { |hex| [ hex ].pack("H*") }).to_a
+      registrations = AuditLog.where(action: HardwareKey::ATTESTATION_KEY_AUDIT_ACTION)
+                              .where("metadata->>'gateway_uid' IN (?)", envelopes.map(&:gateway_uid).uniq)
+                              .order(:created_at, :id).to_a
+      envelopes.map { |env| qatt_envelope_entry(env, registrations) }.sort_by { |entry| entry[:sha256] }
+    end
+
+    # Запис реєстрації САМЕ того ключа, що перевірив конверт: останній до прийому, а якщо такого немає —
+    # найраніший після (верифікатор тоді чесно скаже, що ключ зареєстровано пізніше за лист). Вибір за
+    # датою без ключа брав би запис попереднього ключа, щойно годинник заводу випередив прийом.
+    def qatt_envelope_entry(env, registrations)
+      same_key = registrations.select { |r| r.metadata.values_at("gateway_uid", "public_key_hex") == [ env.gateway_uid, env.public_key_hex ] }
+      registration = same_key.reverse.find { |r| r.created_at <= env.received_at } || same_key.first
+      {
+        sha256: env.sha256.unpack1("H*"),
+        gateway_uid: env.gateway_uid,
+        public_key_hex: env.public_key_hex,
+        received_at: env.received_at.utc.iso8601(6),
+        envelope: env.envelope.unpack1("H*"),
+        key_registration: registration && {
+          audit_log_id: registration.id,
+          organization_id: registration.organization_id,
+          created_at: registration.created_at.utc.iso8601(6),
+          chain_hash: registration.chain_hash,
+          gateway_uid: registration.metadata["gateway_uid"],
+          public_key_hex: registration.metadata["public_key_hex"]
+        }
+      }
     end
 
     def leaf_entry(log, window_source:)

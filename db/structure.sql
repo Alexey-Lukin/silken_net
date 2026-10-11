@@ -1225,6 +1225,44 @@ ALTER SEQUENCE public.provisioning_sessions_id_seq OWNED BY public.provisioning_
 
 
 --
+-- Name: qatt_envelopes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.qatt_envelopes (
+    id bigint NOT NULL,
+    sha256 bytea NOT NULL,
+    gateway_id bigint NOT NULL,
+    gateway_uid character varying NOT NULL,
+    envelope bytea NOT NULL,
+    public_key_hex character varying(64) NOT NULL,
+    received_at timestamp(6) without time zone NOT NULL,
+    unpacked_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT qatt_envelopes_public_key_hex_shape CHECK (((public_key_hex)::text ~ '^[0-9a-f]{64}$'::text)),
+    CONSTRAINT qatt_envelopes_sha256_is_envelope_hash CHECK ((sha256 = sha256(envelope)))
+);
+
+
+--
+-- Name: qatt_envelopes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.qatt_envelopes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: qatt_envelopes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.qatt_envelopes_id_seq OWNED BY public.qatt_envelopes.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1387,7 +1425,11 @@ CREATE TABLE public.telemetry_logs (
     reset_cause smallint,
     raw_record bytea,
     leaf_version smallint NOT NULL,
-    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
+    qatt_envelope_sha256 bytea,
+    ema_delta_t_s integer,
+    CONSTRAINT telemetry_logs_ema_delta_t_s_range CHECK (((ema_delta_t_s IS NULL) OR ((ema_delta_t_s >= 0) AND (ema_delta_t_s <= 65535)))),
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30) AND (growth_points IS NOT NULL) AND (growth_points >= (0)::numeric) AND (growth_points = trunc(growth_points))))),
+    CONSTRAINT telemetry_logs_qatt_envelope_sha256_shape CHECK (((qatt_envelope_sha256 IS NULL) OR (octet_length(qatt_envelope_sha256) = 32)))
 )
 PARTITION BY RANGE (created_at);
 
@@ -1452,7 +1494,11 @@ CREATE TABLE public.telemetry_logs_default (
     reset_cause smallint,
     raw_record bytea,
     leaf_version smallint NOT NULL,
-    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
+    qatt_envelope_sha256 bytea,
+    ema_delta_t_s integer,
+    CONSTRAINT telemetry_logs_ema_delta_t_s_range CHECK (((ema_delta_t_s IS NULL) OR ((ema_delta_t_s >= 0) AND (ema_delta_t_s <= 65535)))),
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30) AND (growth_points IS NOT NULL) AND (growth_points >= (0)::numeric) AND (growth_points = trunc(growth_points))))),
+    CONSTRAINT telemetry_logs_qatt_envelope_sha256_shape CHECK (((qatt_envelope_sha256 IS NULL) OR (octet_length(qatt_envelope_sha256) = 32)))
 );
 
 
@@ -1497,7 +1543,11 @@ CREATE TABLE public.telemetry_logs_y2026m08 (
     reset_cause smallint,
     raw_record bytea,
     leaf_version smallint NOT NULL,
-    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
+    qatt_envelope_sha256 bytea,
+    ema_delta_t_s integer,
+    CONSTRAINT telemetry_logs_ema_delta_t_s_range CHECK (((ema_delta_t_s IS NULL) OR ((ema_delta_t_s >= 0) AND (ema_delta_t_s <= 65535)))),
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30) AND (growth_points IS NOT NULL) AND (growth_points >= (0)::numeric) AND (growth_points = trunc(growth_points))))),
+    CONSTRAINT telemetry_logs_qatt_envelope_sha256_shape CHECK (((qatt_envelope_sha256 IS NULL) OR (octet_length(qatt_envelope_sha256) = 32)))
 );
 
 
@@ -1542,7 +1592,11 @@ CREATE TABLE public.telemetry_logs_y2026m09 (
     reset_cause smallint,
     raw_record bytea,
     leaf_version smallint NOT NULL,
-    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
+    qatt_envelope_sha256 bytea,
+    ema_delta_t_s integer,
+    CONSTRAINT telemetry_logs_ema_delta_t_s_range CHECK (((ema_delta_t_s IS NULL) OR ((ema_delta_t_s >= 0) AND (ema_delta_t_s <= 65535)))),
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30) AND (growth_points IS NOT NULL) AND (growth_points >= (0)::numeric) AND (growth_points = trunc(growth_points))))),
+    CONSTRAINT telemetry_logs_qatt_envelope_sha256_shape CHECK (((qatt_envelope_sha256 IS NULL) OR (octet_length(qatt_envelope_sha256) = 32)))
 );
 
 
@@ -1587,7 +1641,11 @@ CREATE TABLE public.telemetry_logs_y2026m10 (
     reset_cause smallint,
     raw_record bytea,
     leaf_version smallint NOT NULL,
-    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
+    qatt_envelope_sha256 bytea,
+    ema_delta_t_s integer,
+    CONSTRAINT telemetry_logs_ema_delta_t_s_range CHECK (((ema_delta_t_s IS NULL) OR ((ema_delta_t_s >= 0) AND (ema_delta_t_s <= 65535)))),
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30) AND (growth_points IS NOT NULL) AND (growth_points >= (0)::numeric) AND (growth_points = trunc(growth_points))))),
+    CONSTRAINT telemetry_logs_qatt_envelope_sha256_shape CHECK (((qatt_envelope_sha256 IS NULL) OR (octet_length(qatt_envelope_sha256) = 32)))
 );
 
 
@@ -2043,6 +2101,13 @@ ALTER TABLE ONLY public.provisioning_sessions ALTER COLUMN id SET DEFAULT nextva
 
 
 --
+-- Name: qatt_envelopes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.qatt_envelopes ALTER COLUMN id SET DEFAULT nextval('public.qatt_envelopes_id_seq'::regclass);
+
+
+--
 -- Name: sessions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2343,6 +2408,14 @@ ALTER TABLE ONLY public.parametric_insurances
 
 ALTER TABLE ONLY public.provisioning_sessions
     ADD CONSTRAINT provisioning_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: qatt_envelopes qatt_envelopes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.qatt_envelopes
+    ADD CONSTRAINT qatt_envelopes_pkey PRIMARY KEY (id);
 
 
 --
@@ -3428,6 +3501,20 @@ CREATE INDEX index_provisioning_sessions_on_state_and_batch_id ON public.provisi
 --
 
 CREATE INDEX index_provisioning_sessions_on_supervisor_id ON public.provisioning_sessions USING btree (supervisor_id);
+
+
+--
+-- Name: index_qatt_envelopes_on_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_qatt_envelopes_on_gateway_id ON public.qatt_envelopes USING btree (gateway_id);
+
+
+--
+-- Name: index_qatt_envelopes_on_sha256; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_qatt_envelopes_on_sha256 ON public.qatt_envelopes USING btree (sha256);
 
 
 --
@@ -4544,6 +4631,14 @@ ALTER TABLE ONLY public.ews_alerts
 
 
 --
+-- Name: telemetry_logs fk_rails_1e23c91813; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.telemetry_logs
+    ADD CONSTRAINT fk_rails_1e23c91813 FOREIGN KEY (qatt_envelope_sha256) REFERENCES public.qatt_envelopes(sha256);
+
+
+--
 -- Name: audit_logs fk_rails_1f26bc34ae; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4621,6 +4716,14 @@ ALTER TABLE ONLY public.gateways
 
 ALTER TABLE ONLY public.actuator_commands
     ADD CONSTRAINT fk_rails_6458121e3f FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: qatt_envelopes fk_rails_6925fbf1de; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.qatt_envelopes
+    ADD CONSTRAINT fk_rails_6925fbf1de FOREIGN KEY (gateway_id) REFERENCES public.gateways(id);
 
 
 --
@@ -4814,6 +4917,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261011160000'),
 ('20261011140000'),
 ('20261011090000'),
 ('20261010180000'),

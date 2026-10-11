@@ -22,11 +22,16 @@
 #      немає; ловить ДОСЛІВНИЙ повтор — кадр, що виглядає унікальним, власник ключа вигадає)
 #   5. версія: артефакт v1 не несе листя v2, артефакт v2 — несе; шапка leaf_version = найвища
 #      версія листя
+#   6. [FW.66 (Б) · S8b] вміст листа v2 понад кадр (той самий `lib/leaf_payload_shape.rb`): бали = 0
+#      або формула v2 від ema_delta_t_s, заморожена разом із версією листа (нуль при додатній
+#      формулі — «утримано», рахується); qatt_envelope_sha256 — форма хеша. Самих конвертів тут
+#      НЕМАЄ (⚖️ 2026-10-11: публічний артефакт незворотний, а підписаний заголовок не редагується) —
+#      їхні підписи перевіряє `scripts/verify_lineage_bundle.rb` на lineage-бандлі організації
 #
 # Межа довіри (свідома, задекларована — дзеркало artifact.verification_instructions):
-# amount кожної tx (growth_points у листі немає: v1 несе Z, v2 — сирий кадр ефіру, який
-# зобовʼязує щодо ІДЕНТИЧНОСТІ кадру, не щодо виміру — це шифртекст сесійним ключем, що його
-# ратчет знищує), ПОВНОТА набору
+# amount кожної tx (v1 балів не несе — лише Z; у v2 сума балів листя — БАЗА, не amount: коефіцієнт
+# породи й денне відро E.64 накладаються поза листом; сирий кадр v2 зобовʼязує щодо ІДЕНТИЧНОСТІ
+# кадру, не щодо виміру — це шифртекст сесійним ключем, що його ратчет знищує), ПОВНОТА набору
 # tx/листя, відповідність archive_root → ipfs_cid (discovery через реєстр
 # issuer'а) — issuer-asserted. Root = свідок evidence-набору ДИСПАТЧУ (N:1):
 # вікна не-мінтованих tx (failed/poisoned/KYC-skip) присутні легально.
@@ -138,6 +143,14 @@ puts "── Archive batch: root #{archive_root[0, 16]}… · #{artifact['token_
      "#{leaves.size} leaves · #{txs.size} txs #{statuses.inspect}"
 puts "   leaf_version=#{artifact['leaf_version']} order=#{artifact['leaf_order']} " \
      "tax_rate=#{artifact['tax_rate_applied'].inspect}"
+v2_payloads = leaves.map { |l| l.fetch("payload") }
+                    .select { |p| LeafPayloadShape.version_of(p) == 2 && LeafPayloadShape.errors(p).empty? }
+if v2_payloads.any?
+  enveloped = v2_payloads.count { |p| p["qatt_envelope_sha256"] }
+  puts "   v2: листів=#{v2_payloads.size} · бали утримано=#{v2_payloads.count { |p| LeafPayloadShape.v2_points_held?(p) }} " \
+       "(причину лист не несе) · з конвертом QATT=#{enveloped} (підписи — у lineage-бандлі, тут не публікуються) · " \
+       "без конверта=#{v2_payloads.size - enveloped} (батч не атестовано)"
+end
 
 non_minted = txs.reject { |tx| %w[sent confirmed].include?(tx["status_at_pin"]) }
 if non_minted.any?

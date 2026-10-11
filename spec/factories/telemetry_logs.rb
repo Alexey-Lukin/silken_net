@@ -75,6 +75,9 @@ FactoryBot.define do
       leaf_version { 2 }
       z_value { nil }
       raw_record { [ tree.did.delete_prefix("SNET-").to_i(16) ].pack("N") + Random.bytes(26) }
+      # [S8b] Бали листа v2 — формула v2 від входу (`LeafPayloadShape.v2_credited_points`):
+      # EMA 7200 с → мінімум гомеостазу 5 × масштаб 2 = базові 10 фабрики.
+      ema_delta_t_s { 7200 }
     end
   end
 end

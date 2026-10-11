@@ -43,6 +43,9 @@ class Gateway < ApplicationRecord
   # тримає у флеші CoAP-ключ, QATT-seed і KEYB усього кластера, а Dual-Key Grace без
   # фізичного re-provision не гасне ніколи) → `00_07` ARCH.76.
   has_many :maintenance_records, as: :maintainable, dependent: :restrict_with_error
+  # [FW.66 (Б) · S8b] Підписані конверти атестованих батчів — доказ листа Меркла v2; шлюз із ними
+  # не видаляється (FK стоїть у схемі — без цього рядка падав би DB-винятком замість валідації).
+  has_many :qatt_envelopes, dependent: :restrict_with_error
 
   has_many :actuators, dependent: :destroy
   has_many :actuator_commands, through: :actuators

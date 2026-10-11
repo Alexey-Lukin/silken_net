@@ -297,6 +297,26 @@ RSpec.describe TelemetryArchiveBatchWorker do
       expect([ ok, out ]).to match([ false, a_string_including("невідома версія листа 3") ])
     end
 
+    # ⚖️ [FW.66 (Б) · S8b] Конверт у публічному артефакті не публікується — лише хеш і лічба; утримання
+    # балів — рахунок, не падіння; третє значення балів — підробка, і падає на формулі v2, не на CID.
+    it "v2 несе хеш конверта без самого конверта, утримання рахується, третє значення балів — відмова" do
+      envelope_sha = QattEnvelope.record!(envelope: "\x02".b + Random.bytes(96), gateway: create(:gateway),
+                                          public_key_hex: "ab" * 32, received_at: 6.hours.ago)
+      create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 5.hours.ago, qatt_envelope_sha256: envelope_sha, growth_points: 0)
+      create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 4.hours.ago)
+      artifact = captured_artifact!
+
+      out, ok = run_verifier(artifact)
+      expect([ ok, artifact.to_json ]).to match([ true, satisfy { |json| !json.include?("qatt_envelopes") } ])
+      expect(out).to include("бали утримано=1", "з конвертом QATT=1", "без конверта=1")
+
+      leaf = artifact["leaves"].find { |l| l["payload"]["leaf_version"] == 2 && l["payload"]["growth_points"] == 10 }
+      leaf["payload"]["growth_points"] = 11
+      leaf["leaf_cid"] = Filecoin::CidGenerator.cidv1(leaf["payload"])
+      artifact["archive_root"] = MerkleTree.root(artifact["leaves"].map { |l| l["leaf_cid"] })
+      expect(run_verifier(artifact)).to match([ a_string_including("growth_points 11 ∉ {0, 10}"), false ])
+    end
+
     it "дослівний дубль листа, брехлива шапка й артефакт v1 із v2-листям — кожне на власному чеку" do
       create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 5.hours.ago)
       artifact = captured_artifact!

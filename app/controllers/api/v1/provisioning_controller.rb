@@ -134,7 +134,7 @@ module Api
           # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
           if provisioning_params[:ed25519_public_key].present?
             hw_key = HardwareKey.find_by!(device_uid: device_identifier)
-            hw_key.update!(ed25519_public_key_hex: provisioning_params[:ed25519_public_key])
+            hw_key.register_attestation_key!(provisioning_params[:ed25519_public_key], user_id: current_user.id)
           end
 
           # ФІКСАЦІЯ МОНТАЖУ

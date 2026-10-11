@@ -457,6 +457,7 @@ dormant ──reactivate──► active
 | `gateway_telemetry_logs` | `has_many, dependent: :delete_all` | Власна діагностика |
 | `latest_gateway_telemetry_log` | `has_one` (ordered) | Останній стан Королеви |
 | `maintenance_records` | `has_many, polymorphic, restrict_with_error` | Журнал (незмінний) |
+| `qatt_envelopes` | `has_many, restrict_with_error` | **[FW.66 (Б) · S8b]** Підписані конверти атестованих батчів — доказ листа Меркла v2; шлюз із ними не видаляється (FK у схемі) |
 | `actuators` | `has_many, dependent: :destroy` | Виконавчі пристрої |
 
 **Ключові поля:**
@@ -554,6 +555,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується. Deprecated — використовуйте `HardwareKeyService.rotate` |
 | `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації. Підтвердників рівно два, за типом власника: Tree — перший кадр, чий CCM-MIC пройшов новим ключем (FW.17); Gateway — `FactoryFlashing::Session`, що живо залила поточний KEYC |
 | `owner` | `tree || gateway` |
+| `register_attestation_key!(public_key_hex, user_id:)` | ⚖️ **[FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11]** Один дім реєстрації й ротації Ed25519-ключа атестації Королеви: в одній транзакції пише ключ (нижній hex) і запис `AuditLog` `attestation_key_registered` у ланцюг організації шлюзу — `metadata` несе ЛИШЕ `gateway_uid` · `public_key_hex` · `previous_public_key_hex` (generic `Auditable` тут свідомо ні — його колбеки логували б секретні атрибути). Запис несе lineage-бандл поруч із конвертом (дата реєстрації ≤ найранішого листа на конверт — перевіряє верифікатор). ⚠️ Незмінною дата стає лише під якорем, а `leaf0` сьогодні запечатує голову ланцюга лише організації, що писала останньою ([`00_07`](00_07_Action_Plan_Tracker) ARCH.122). Викликачі: провіженінг (актор — користувач) і заводська прошивка (актор — оператор станції); без жодного актора ключ пишеться, а відсутність запису — помилка в лозі. Той самий ключ повторно — no-op |
 
 **Callbacks:** немає cache-інвалідаційних callbacks (`after_commit :clear_key_cache` видалено). Інвалідація відбувається автоматично через `versioned_cache_key`.
 
@@ -584,6 +586,23 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 ⚠️ **Стелі.** (а) Бэклог кільця ARCH.35, старший за `WINDOW` = 4096 кадрів від живого `top_fc`, відкидається: на каденції CCM-ери за ARCH.8 (1 TX за 1.81 год) це ≈ 300 діб мовчання uplink'а, на відвантаженому циклі 26–32 с — ≈ 34 год. (б) FC пристрою, пересіяний униз (HRNG без якоря), лягає під вікно, і вузол мовкне до re-provision у нову епоху — межа не слабшає (заводський якір SEC.41 робить це рідкісним). (в) Фенс не покриває дерево, провіжнене до SEC.41 й без жодного кадру до точки бекапу.
 
 ---
+
+### `QattEnvelope` — Підписаний Конверт Батча Королеви [FW.66 (Б) · S8b]
+
+**Призначення:** ⚖️ **[ратифіковано founder 2026-10-11]** доказ, на який посилається лист Меркла v2 (`telemetry_logs.qatt_envelope_sha256`): байти Ed25519-підписаного QATT-конверта АТЕСТОВАНОГО батча, як Королева їх надіслала (wire — [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)). Неатестовані конверти й heartbeat (ct=0) не зберігаються: перші нічого не доводять, на другий не посилається жоден рядок. Публікується лише в lineage-бандлі організації (аудиторський канал), НЕ в публічному IPFS-артефакті архіву (⚖️ делеговано й ратифіковано 2026-10-11 — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)).
+
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `sha256` | bytea (unique) | Хеш байтів конверта — CHECK `qatt_envelopes_sha256_is_envelope_hash` (`sha256 = sha256(envelope)`): ключ поруч із чужими байтами не запише жоден писач |
+| `gateway_id` · `gateway_uid` | FK · string | Королева, чий підпис конверт несе; UID — знімок (його вшито в підписане повідомлення) |
+| `envelope` | bytea | Конверт цілком, із хвостовим підписом |
+| `public_key_hex` | string(64) | Ключ, що конверт перевірив, на мить прийому (ключ ротується) — CHECK нижнього hex |
+| `received_at` | datetime | Мітка прийому з job-аргументів (ARCH.41) |
+| `unpacked_at` | datetime (nullable) | ЄДИНЕ змінне поле: воркер ставить його `update_all`-ом, коли з батча закомічено хоч один рядок (розпакувальник ковтає помилки окремих чанків), ДО nonce-фіналізації — довговічна половина «done», що переживає втрату Redis |
+
+**Поведінка:** `QattEnvelope.record!` — ідемпотентний запис (ретрай · crash-resume) без перезапису; конверт, уже записаний за ІНШОЮ Королевою, не привласнюється (nil — рядки батча хешу не дістають). Рядок незмінний після запису (`readonly?`), крім `unpacked_at`. Свіжий claim на ВЖЕ РОЗПАКОВАНОМУ конверті воркер відкидає як повтор назавжди — nonce живе `QATT_NONCE_TTL`, конверт довше; записаний, але нерозпакований — дотискає (так виглядає й ретрай після втрати Redis-nonce, а батч Королева вже звільнила). ⚠️ Таблиця не партиційована й без ретенції: ретенцію конвертів вирішувати разом із дропом партицій телеметрії ([`00_07`](00_07_Action_Plan_Tracker) ARCH.70), бо конверт переживе рядки, що на нього посилались.
 
 ### `DeviceCalibration` — Офсети Датчиків
 
@@ -641,7 +660,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `queen_uid` | string | UID Королеви-ретранслятора |
 | `oracle_status` | enum | **[BLOCKER-12 FIX]** `pending / dispatched / fulfilled / failed` (string-backed Rails enum з prefix `oracle_status_`). Забезпечує type safety, валідацію та автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо). Default: `pending`. |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |
-| `growth_points` | numeric | Нараховані бали зростання (raw) |
+| `growth_points` | numeric | Нараховані бали зростання (raw — до коефіцієнта породи й денного відра E.64). **[FW.66 (Б) · S8b]** `attr_readonly` (база мінту і поле листа v2); на CCM-рядку — 0 або формула v2 від `ema_delta_t_s` × масштаб, і CHECK `telemetry_logs_leaf_version_shape` тримає їх цілими й не NULL |
 | `metabolism_s` | integer | Час метаболічного циклу (с) |
 | `rssi` | integer | RSSI LoRa-каналу (дБм) |
 | `sap_flow` | numeric | ⚠️ **Колонка без ЖОДНОГО писача** — поля немає в жодному wire-форматі, тож у проді вона структурно `NULL` [ARCH.102]. Два читачі (sap-терм стресу, ML-фіча `sap_deviation`) знято 2026-08-16 — вимірювача не існує. 🔴 **А ТРЕТІЙ живий і донині, і саме він робить порожньою цілу сторінку** [ARCH.103, виміряно 2026-08-17]: `OracleVisionsController#calculate_expected_yield` бере `sap_flow` через мапу `TelemetryLog.latest_per_tree`, тож `next if sap_index.nil?` спрацьовує на КОЖНОМУ дереві — покриття прогнозу структурно `0 з N`, а «Projected 24h Emission» є константою `0.0`. Число при цьому НЕ бреше (покриття їде поруч), тож читач лишений свідомо з названою умовою оживлення. ⚖️ **Умова оживлення — вимірювач сокоруху в BOM + wire-ревізія з рядком `sap_flow` у ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)** (founder 2026-10-09, за рекомендацією [ARCH.102]). Підстава: колишня умова «поле `sap_flow` у wire-форматі (bench, [`02_04`](02_04_Bench_Build_Guide))» не перевірена — у [`02_04`](02_04_Bench_Build_Guide) сокоруху немає, wire-rev2.2 лишила поле поза пакетом, а вимірювача в BOM немає, і єдиний запланований вимір сокоруху — закупний (ще не куплений) еталонний прилад, не поле Солдата ([`05_05 §8.3`](05_05_Slashing_and_Risk_Policy)); тож такої події в плані немає. Найслабша ланка: якщо прогноз-шар [ARCH.103] дістане вимірювач іншим шляхом (еталонний прилад → API), умова «BOM + wire» стане завузькою. Окремої ціни для умови подання не називало — його ціна про місце пункту ([`00_07`](00_07_Action_Plan_Tracker) ARCH.102). ⚠️ **Урок про свіп:** попереднє «читачі знято» було чесним виміром за ІМЕНЕМ колонки; цей сайт заходить за спільним ВХОДОМ (мапа `tree_id → log`), тобто імені моделі поруч не має. Прецедент маркування — `tamper_detected` нижче |
@@ -655,6 +674,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `tamper_detected` | boolean | ⚠️ **DEAD-колонка** — жоден код не читає і не пише (tamper-семантика живе в алертах: лише ручний `vandalism_breach` — авто-писача немає, бо panic-кадр з HW.30 лише логується, а `chainsaw_detected` лишився без писача); кандидат на прибирання або майбутній HW tamper-канал (tamper-switch/SE05x/датчик нахилу — [`00_07`](00_07_Action_Plan_Tracker) HW.52) |
 | `archive_root` / `merkle_leaf` | string(64) ×2 | **[E.60]** стемп архів-батчу (пише pin-воркер raw-SQL'ем ПІСЛЯ звірки кореня): `archive_root` = корінь батчу-власника (join-ключ до `TelemetryArchiveBatch`), `merkle_leaf` = CID листа. Partial index `WHERE merkle_leaf IS NOT NULL` (sweeper-семпл). **Seal-guard** `before_update` (перший AR-колбек моделі; прецедент `AuditLog#forbid_business_field_mutation!`): мутація leaf-payload-поля (`z_value`/`bio_status`/`created_at`/`tree_id`/`raw_record`/`leaf_version`) стемпнутого рядка = raise; пара захистів — guard тримає AR-шлях, sweeper-нога ловить raw-SQL. KENOSIS недоторканий (intake = `create!`, а `before_update` на INSERT не стріляє) |
 | `leaf_version` · `raw_record` | smallint NOT NULL (без дефолту) · bytea | **[FW.66 (Б) · S8]** Версія листа Меркла — на рядку: `1` — ECB (Z), `2` — CCM (сирий кадр ефіру 30 Б: DID ‖ gossip ‖ FC ‖ шифртекст ‖ MIC). Версію називає кожен писач (дефолт схеми знято тим самим кроком — тихий дефолт дав би CCM-рядку хибну мітку). CHECK `telemetry_logs_leaf_version_shape`: v1 — без кадру, v2 — рівно 30 Б (`raw_record IS NOT NULL` у v2-гілці несучий: CHECK приймає NULL-вираз). `attr_readonly` обох: у корені (мінт, тижневий L1) рядок буває раніше за стемп, тож пломби запізно. Формула — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) |
+| `qatt_envelope_sha256` | bytea (32 Б, nullable) | ⚖️ **[FW.66 (Б) · S8b, 2026-10-11]** sha256 підписаного конверта QATT батча, з якого прийшов рядок (`QattEnvelope`); NULL — конверт не збережено (батч не атестовано). Ставиться на рядку ОБОХ ер (лист v1 його не несе, рядок — так), `attr_readonly`, CHECK довжини. ⊕ Звідси членство рядка в батчі точне — але лише для атестованих батчів |
+| `ema_delta_t_s` | integer (0..65535, nullable) | ⚖️ **[FW.66 (Б) · S8b]** Вхід формули балів CCM-кадру (EMA перезаряду, с), розшифрований сервером — ратчет знищує сесійний ключ, тож із `raw_record` його потім не виведе ніхто. NULL — ECB-рядок (кадр його не несе) і panic-рядок (паніка шле там літерал 0). `attr_readonly`, CHECK діапазону; поле листа v2 |
 | `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |
 | `lorenz_state_x/y/z` | float | Хвіст траєкторії Лоренца для chain-старту наступного пакету |
 | `time_unsynced_fallback` | boolean | `true`, коли Солдат сам каже «час невідомий» (ARCH.41-B: ECB — сентинел `0xFE` в акустичному байті, CCM wire-rev2.2 — біт diag `time_uncertain`) або коли DCI mismatch відновлено через ARCH.41 epoch_day fallback (застарілий RTC після VBAT loss). Окремої команди синку немає: час доїжджає конвертом poll-відповіді (FW.60) |
@@ -1693,6 +1714,7 @@ Organization
   │     ├── Gateways (restrict_with_error)
   │     │     ├── HardwareKey (destroy)
   │     │     ├── GatewayTelemetryLogs (delete_all) ← PARTITION
+  │     │     ├── QattEnvelopes (restrict_with_error)
   │     │     ├── Actuators (destroy)
   │     │     │     └── ActuatorCommands (delete_all)
   │     │     └── MaintenanceRecords (restrict_with_error)

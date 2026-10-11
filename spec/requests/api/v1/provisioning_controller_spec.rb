@@ -242,6 +242,15 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(hw_key).to be_present
         expect(hw_key.ed25519_public_key_hex).to eq(ed25519_key_hex)
       end
+
+      # [FW.66 (Б) · S8b] Ключ атестації Королеви — у ланцюг аудиту, від того, хто її зареєстрував.
+      it "records the key registration in the audit chain on behalf of the registering user" do
+        post "/provisioning/register", params: ed25519_gateway_params, headers: headers, as: :json
+
+        registration = AuditLog.find_by!(action: HardwareKey::ATTESTATION_KEY_AUDIT_ACTION)
+        expect(registration.user_id).to eq(forester.id)
+        expect(registration.metadata["public_key_hex"]).to eq(ed25519_key_hex.downcase)
+      end
     end
 
     context "when registering a gateway" do

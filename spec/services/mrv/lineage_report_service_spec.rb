@@ -169,6 +169,116 @@ RSpec.describe Mrv::LineageReportService do
     expect(run_lineage_verifier(doubled)).to match([ false, a_string_including("лист повторюється в межах кредиту") ])
   end
 
+  # ⚖️ [FW.66 (Б) · S8b — ратифіковано 2026-10-11] Бандл несе підписані конверти, на які посилається
+  # v2-листя, і запис реєстрації ключа Королеви. Ланцюг тут справжній: ключ зареєстровано ДО прийому,
+  # конверт підписано OpenSSL (незалежно від серверного будівника), рядок посилається на збережений.
+  describe "конверти QATT у бандлі [S8b]" do
+    let(:gateway) { create(:gateway, cluster: cluster) }
+    let(:queen_key) { OpenSSL::PKey.generate_key("ED25519") }
+    let(:envelope) do
+      # IV + шифртекст на один 31-байтний CCM-запис (вирівняний до 32): місткість конверта — один лист
+      body = [ 0x02, 1_750_000_000, 7 ].pack("CNN") + ("\x00" * 8) + Random.bytes(16 + 32)
+      body + queen_key.sign(nil, "SLKN-QATT2".b + [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body)
+    end
+
+    let(:operator) { create(:user, organization: organization) }
+    let(:hw_key) { create(:hardware_key, device_uid: gateway.uid) }
+
+    def envelope_bundle(growth_points: 38, register: true, leaves: 1)
+      if register
+        travel_to(3.hours.ago) { hw_key.register_attestation_key!(queen_key.raw_public_key.unpack1("H*"), user_id: operator.id) }
+      else
+        hw_key.update!(ed25519_public_key_hex: queen_key.raw_public_key.unpack1("H*"))
+      end
+      sha = QattEnvelope.record!(envelope: envelope, gateway: gateway, public_key_hex: hw_key.reload.ed25519_public_key_hex,
+                                 received_at: 150.minutes.ago)
+      leaves.times do
+        create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 2.hours.ago, qatt_envelope_sha256: sha,
+                                          ema_delta_t_s: 3600, growth_points: growth_points)
+      end
+      mint_confirmed!
+      anchor_confirmed!
+      JSON.parse(JSON.generate(bundle))
+    end
+
+    def releafed(data)
+      leaf = data["credits"][0]["leaves"][0]
+      yield leaf["payload"]
+      leaf["leaf_cid"] = Filecoin::CidGenerator.cidv1(leaf["payload"])
+      data["credits"][0]["telemetry_merkle_root"] = MerkleTree.root([ leaf["leaf_cid"] ])
+      data
+    end
+
+    it "несе конверт із записом реєстрації ключа, і верифікатор перевіряє підпис" do
+      data = envelope_bundle
+      entry = data["qatt_envelopes"].sole
+
+      expect(entry).to include("gateway_uid" => gateway.uid, "envelope" => envelope.unpack1("H*"))
+      expect(entry["key_registration"]).to include("public_key_hex" => entry["public_key_hex"])
+      expect(run_lineage_verifier(data)).to match([ true, a_string_including("конвертів=1", "підписи конвертів QATT") ])
+    end
+
+    it "утримані бали рахуються, а не падають; третє значення балів — підробка листа" do
+      expect(run_lineage_verifier(envelope_bundle(growth_points: 0))).to match([ true, a_string_including("бали утримано=1") ])
+
+      forged = releafed(JSON.parse(JSON.generate(bundle))) { |payload| payload["growth_points"] = 40 }
+      expect(run_lineage_verifier(forged)).to match([ false, a_string_including("growth_points 40 ∉ {0, 38}") ])
+    end
+
+    it "байт конверта, підставлений разом із хешем, ламає підпис Королеви" do
+      data = envelope_bundle
+      entry = data["qatt_envelopes"].sole
+      bytes = [ entry["envelope"] ].pack("H*").tap { |b| b.setbyte(20, b.getbyte(20) ^ 0x01) }
+      entry["envelope"] = bytes.unpack1("H*")
+      entry["sha256"] = Digest::SHA256.hexdigest(bytes)
+
+      expect(run_lineage_verifier(data)).to match([ false, a_string_including("не сходиться") ])
+    end
+
+    it "конверт, якого бракує, і конверт, на який ніхто не посилається, — відмова" do
+      data = envelope_bundle
+      missing = JSON.parse(JSON.generate(data)).tap { |b| b["qatt_envelopes"] = [] }
+      stray = JSON.parse(JSON.generate(data)).tap { |b| b["qatt_envelopes"] << b["qatt_envelopes"].first.merge("sha256" => "ff" * 32) }
+
+      expect(run_lineage_verifier(missing)).to match([ false, a_string_including("якого бандл не несе") ])
+      expect(run_lineage_verifier(stray)).to match([ false, a_string_including("не посилається жоден лист") ])
+    end
+
+    # Дати судить час, запечатаний у листі: `received_at` і дата запису реєстрації — твердження емітента.
+    it "реєстрація ключа чи прийом, заявлені ПІЗНІШЕ за найраніший лист, — відмова" do
+      data = envelope_bundle
+      late_key = JSON.parse(JSON.generate(data)).tap { |b| b["qatt_envelopes"].sole["key_registration"]["created_at"] = 1.minute.ago.utc.iso8601(6) }
+      late_receipt = JSON.parse(JSON.generate(data)).tap { |b| b["qatt_envelopes"].sole["received_at"] = 1.minute.ago.utc.iso8601(6) }
+
+      expect(run_lineage_verifier(late_key)).to match([ false, a_string_including("ключ зареєстровано ПІЗНІШЕ за найраніший лист") ])
+      expect(run_lineage_verifier(late_receipt)).to match([ false, a_string_including("прийом заявлено ПІЗНІШЕ") ])
+    end
+
+    # Вибір за датою без ключа взяв би запис іншого ключа, зареєстрованого пізніше, — вічна хибна відмова.
+    it "бере запис реєстрації САМЕ ключа, що перевірив конверт, а не останній за датою" do
+      data = envelope_bundle
+      travel_to(170.minutes.ago) { hw_key.register_attestation_key!("cd" * 32, user_id: operator.id) }
+
+      entry = JSON.parse(JSON.generate(bundle))["qatt_envelopes"].sole
+      expect(entry["key_registration"]["public_key_hex"]).to eq(data["qatt_envelopes"].sole["public_key_hex"])
+    end
+
+    it "листів на конверт більше, ніж CCM-записів уміщає його шифртекст, — відмова" do
+      expect(run_lineage_verifier(envelope_bundle(leaves: 2))).to match([ false, a_string_including("несе щонайбільше 1 CCM-записів, а листів на нього 2") ])
+    end
+
+    it "конверт без запису реєстрації проходить, але ✓ не обіцяє дати ключа" do
+      expect(run_lineage_verifier(envelope_bundle(register: false)))
+        .to match([ true, a_string_including("лише самоузгодженість", "без дати реєстрації ключа)") ])
+    end
+
+    it "битий запис секції — відмова з причиною, а не виняток" do
+      data = envelope_bundle.tap { |b| b["qatt_envelopes"] << nil }
+
+      expect(run_lineage_verifier(data)).to match([ false, a_string_including("qatt_envelopes[1] не є обʼєктом JSON") ])
+    end
+  end
+
   it "мітки «вгору» на v1-листі — схема v2 і lineage_version 2 без жодного v2-листа — відмова" do
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
     mint_confirmed!

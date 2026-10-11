@@ -74,6 +74,7 @@ module FactoryFlashing
         se_transcript = run_secure_element_if_needed
         @executor.run(build_commands(hw_key))
         confirm_gateway_key_delivery!(hw_key)
+        register_gateway_voice!(hw_key)
         audit = AuditTrail.new(
           session:      @session,
           device:       @device,
@@ -266,10 +267,18 @@ module FactoryFlashing
       return nil unless @device.is_a?(Gateway)
 
       seed_hex = SecureRandom.hex(32)
-      unless @executor.dry_run?
-        hw_key.update!(ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
-      end
+      @gateway_voice_pub_hex = Ed25519Crypto::SigningService.public_key_from_seed(seed_hex) unless @executor.dry_run?
       seed_hex
+    end
+
+    # ⚖️ [FW.66 (Б) · S8b] Ключ реєструється ПІСЛЯ прошивки: до неї жоден чип його не тримає, а запис
+    # аудиту бере advisory-лок ланцюга організації — тримати його крізь фізичну прошивку означало б
+    # блокувати весь аудит організації на час `@executor.run`. Транзакція та сама, тож збій прошивки
+    # відкочує й реєстрацію. Актор — оператор станції, як і в `factory_flash`.
+    def register_gateway_voice!(hw_key)
+      return unless @gateway_voice_pub_hex
+
+      hw_key.register_attestation_key!(@gateway_voice_pub_hex, user_id: @session.operator_id)
     end
 
     def run_secure_element_if_needed

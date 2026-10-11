@@ -150,6 +150,18 @@ end
     expect([ TelemetryLog.last.leaf_version, TelemetryLog.last.raw_record ]).to eq([ 1, nil ])
   end
 
+  # ⚖️ [FW.66 (Б) · S8b] Доказ походження один на батч — і на ECB-рядку (лист v1 його не несе, рядок — так).
+  it "stamps the stored envelope hash on the row, and nil for a batch without one [S8b]" do
+    sha = QattEnvelope.record!(envelope: "\x02".b + Random.bytes(96), gateway: create(:gateway),
+                               public_key_hex: "ab" * 32, received_at: Time.current)
+
+    described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3), nil, gateway_attested: true, qatt_envelope_sha256: sha)
+    expect(TelemetryLog.last.qatt_envelope_sha256).to eq(sha)
+
+    described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 101, 0, 3))
+    expect(TelemetryLog.last.qatt_envelope_sha256).to be_nil
+  end
+
   # [FW.29] PanicFlag (біт 7 StatusByte) персиститься — панічність queryable,
   # relayed_via_mesh? знає стартовий TTL (3 normal / 5 panic)
   it "does not mark a normal packet as panic (PanicFlag bit 7 = 0)" do
@@ -1581,6 +1593,16 @@ end
 
       described_class.call(panic)
       expect(TelemetryLog.last.panic).to be(true)
+    end
+
+    # ⚖️ [FW.66 (Б) · S8b] Вхід формули балів — у рядок і лист v2: ратчет знищує сесійний ключ, тож із
+    # raw_record його потім не розшифрує ніхто. Паніка шле в тих байтах літерал 0 — це NULL, не вимір.
+    it "persists the decrypted EMA input of a measured frame and NULL for a panic frame [S8b]" do
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3, fc: 48, ema: 3600))
+      expect(TelemetryLog.last.ema_delta_t_s).to eq(3600)
+
+      described_class.call(build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0x80, ttl: 5, fc: 49, ema: 0))
+      expect(TelemetryLog.last.ema_delta_t_s).to be_nil
     end
 
     it "writes a CCM row with voltage NULL on the ADC-failure zero, keeping the other fields [FW.50]" do

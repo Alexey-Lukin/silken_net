@@ -246,6 +246,10 @@ end
       expect(shim_invocations.grep(/ -e 124\z/)).not_to be_empty
       expect(Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
         .to eq(outcome.hardware_key.reload.ed25519_public_key_hex)
+      # [S8b] Прошита сім'я — у ланцюг аудиту від оператора станції, тим самим ключем.
+      registration = AuditLog.find_by!(action: HardwareKey::ATTESTATION_KEY_AUDIT_ACTION)
+      expect(registration.metadata["public_key_hex"]).to eq(outcome.hardware_key.ed25519_public_key_hex)
+      expect(registration.user_id).to eq(outcome.audit_log.user_id)
     end
   end
 

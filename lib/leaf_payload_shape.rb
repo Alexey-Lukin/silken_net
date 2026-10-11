@@ -12,10 +12,21 @@
 module LeafPayloadShape
   KEYS = {
     1 => %w[telemetry_log_id device_uid z_value bio_status created_at].freeze,
-    2 => %w[leaf_version telemetry_log_id device_uid raw_record created_at].freeze
+    2 => %w[leaf_version telemetry_log_id device_uid raw_record qatt_envelope_sha256 ema_delta_t_s
+            growth_points created_at].freeze
   }.freeze
   RAW_RECORD_HEX = /\A\h{60}\z/ # 30 Б кадру ефіру CCM у нижньому hex
+  SHA256_HEX = /\A\h{64}\z/
   DID_FORMAT = "SNET-%08X"
+  EMA_MAX_S = 0xFFFF # u16 кадру
+
+  # ⚖️ [FW.66 (Б) · S8b, `05_02 §E.60`] Формула балів листа v2 — ЗАМОРОЖЕНИЙ свідок. Живі пороги
+  # (`firmware/bio_contracts/metabolic_core.rb`) — placeholder до bench-кривої E.63, і з калібруванням
+  # вони зміняться; верифікатор, що читав би їх з чекауту, оголосив би кожен старий лист підробкою.
+  # Тож формула — власність ВЕРСІЇ листа: тут вона назавжди та, з якою v2-листи писались, а
+  # калібрування = лист v3 із власною формулою. Рівність живій формулі пінить спека
+  # `Mrv::TelemetryLeaf` на всьому діапазоні u16 — доки v2 чинний, розійтись вони не можуть.
+  V2_POINTS = { delta_t_fast_s: 600, delta_t_slow_s: 7200, gp_min: 5, gp_max: 31, wire_scale: 2 }.freeze
 
   module_function
 
@@ -36,7 +47,42 @@ module LeafPayloadShape
 
     errs = []
     errs << "ключі v#{version}: #{payload.keys.sort.inspect} ≠ #{keys.sort.inspect}" unless payload.keys.sort == keys.sort
-    errs.concat(raw_record_errors(payload)) if version == 2
+    errs.concat(raw_record_errors(payload) + v2_content_errors(payload)) if version == 2
+    errs
+  end
+
+  # Бали кадру гомеостазу з цим входом за формулою v2 — база до коефіцієнта породи й відра E.64.
+  # NULL (паніка) і 0 («не виміряно», ARCH.102) — нуль. Вхід — твердження сервера: перевірна лише
+  # узгодженість балів із ним, не сам вхід.
+  def v2_credited_points(ema_delta_t_s)
+    return 0 if ema_delta_t_s.nil? || ema_delta_t_s.zero?
+
+    f = V2_POINTS
+    m = (f[:delta_t_slow_s] - ema_delta_t_s).to_f / (f[:delta_t_slow_s] - f[:delta_t_fast_s])
+    gp = (f[:gp_min] + (m.clamp(0.0, 1.0) * (f[:gp_max] - f[:gp_min]))).round
+    gp.clamp(f[:gp_min], f[:gp_max]) * f[:wire_scale]
+  end
+
+  # Нуль при додатній формулі — бали кадру утримано: тест відповідності не пройдено або статус не
+  # гомеостаз (паніку, vm_error чи стрес несе шифртекст). Причину лист не несе — лише факт.
+  def v2_points_held?(payload)
+    payload["growth_points"].zero? && v2_credited_points(payload["ema_delta_t_s"]).positive?
+  end
+
+  # Вміст v2 понад кадр. Бали рівно дві законні: нуль (утримано / не гомеостаз) або формула v2
+  # від входу — третє значення є підробкою листа, бо сервер іншого не пише.
+  def v2_content_errors(payload)
+    sha = payload["qatt_envelope_sha256"]
+    ema = payload["ema_delta_t_s"]
+    points = payload["growth_points"]
+    errs = []
+    errs << "qatt_envelope_sha256 не null і не 64 нижніх hex" unless sha.nil? || (sha.is_a?(String) && sha.match?(SHA256_HEX) && sha == sha.downcase)
+    errs << "ema_delta_t_s не null і не ціле 0..#{EMA_MAX_S}" unless ema.nil? || (ema.is_a?(Integer) && ema.between?(0, EMA_MAX_S))
+    return errs << "growth_points не невідʼємне ціле" unless points.is_a?(Integer) && points >= 0
+    return errs unless errs.empty?
+
+    expected = v2_credited_points(ema)
+    errs << "growth_points #{points} ∉ {0, #{expected}} — формула v2 від ema_delta_t_s=#{ema.inspect}" unless [ 0, expected ].include?(points)
     errs
   end
 

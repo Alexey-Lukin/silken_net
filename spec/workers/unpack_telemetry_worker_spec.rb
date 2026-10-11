@@ -57,7 +57,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       # [ARCH.41] `received_at:` присутній у контракті виклику; тут воркер кличуть
       # напряму без мітки, тож він чесно `nil` = «прийом зараз» (bench/HIL-форма).
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+        .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
     end
 
     # 🔴 [ARCH.41] Мітка прийому — єдина величина тракту, що не рухається між
@@ -72,7 +72,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
         expect(TelemetryUnpackerService).to have_received(:call)
           .with(anything, gateway.id,
-                gateway_attested: false, received_at: Time.utc(2026, 8, 20, 23, 59, 30))
+                gateway_attested: false, qatt_envelope_sha256: nil, received_at: Time.utc(2026, 8, 20, 23, 59, 30))
       end
 
       # ⚠️ Крива мітка НЕ сміє коштувати пакета: цей воркер веде до
@@ -84,7 +84,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid, "не-дата")
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+          .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
         expect(Rails.logger).to have_received(:warn).with(/ARCH\.41.*Невалідний received_at/)
       end
     end
@@ -142,7 +142,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }.not_to raise_error
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+          .with(anything, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
       end
 
       # Ізоляція мусить бути ЧУТНОЮ: мовчазний `rescue` тут перетворив би
@@ -189,7 +189,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(plaintext, gateway.id, gateway_attested: false, received_at: nil)
+          .with(plaintext, gateway.id, gateway_attested: false, qatt_envelope_sha256: nil, received_at: nil)
       end
 
       it "never closes the grace from an uplink — the re-provision session does" do

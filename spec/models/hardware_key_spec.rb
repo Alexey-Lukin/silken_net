@@ -401,4 +401,62 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.owner).to be_nil
     end
   end
+
+  # ⚖️ [FW.66 (Б) · S8b — делеговано й ратифіковано 2026-10-11] Ключ атестації Королеви — у ланцюг
+  # AuditLog організації: дата чинності ключа, яку емітент заднім числом не перепише.
+  describe "#register_attestation_key!" do
+    let(:gateway) { create(:gateway) }
+    let(:hw_key) { create(:hardware_key, device_uid: gateway.uid) }
+    let(:operator) { create(:user, organization: gateway.cluster.organization) }
+    let(:key_hex) { "AB" * 32 }
+
+    def registrations = AuditLog.where(action: described_class::ATTESTATION_KEY_AUDIT_ACTION)
+
+    it "пише ключ і запис аудиту з ЛИШЕ публічним ключем у ланцюг організації шлюзу" do
+      hw_key.register_attestation_key!(key_hex, user_id: operator.id)
+
+      expect(hw_key.reload.ed25519_public_key_hex).to eq("ab" * 32)
+      expect(registrations.sole).to have_attributes(user_id: operator.id, auditable: hw_key,
+                                                    organization_id: gateway.cluster.organization_id)
+      expect(registrations.sole.metadata)
+        .to eq("gateway_uid" => gateway.uid, "public_key_hex" => "ab" * 32, "previous_public_key_hex" => nil)
+    end
+
+    it "ротація несе попередній ключ, а повтор того самого ключа нового запису не пише" do
+      hw_key.register_attestation_key!(key_hex, user_id: operator.id)
+      hw_key.register_attestation_key!("cd" * 32, user_id: operator.id)
+      hw_key.register_attestation_key!("CD" * 32, user_id: operator.id)
+
+      expect(registrations.order(:id).last.metadata["previous_public_key_hex"]).to eq("ab" * 32)
+      expect(registrations.count).to eq(2)
+    end
+
+    it "ключ не Королеви (дерева) — відмова: атестація батчів є лише в шлюза" do
+      tree_key = create(:hardware_key, :for_tree, device_uid: create(:tree).did)
+
+      expect { tree_key.register_attestation_key!(key_hex, user_id: operator.id) }
+        .to raise_error(ArgumentError, /лише для Королеви/)
+    end
+
+    it "без жодного актора — відмова ДО зміни ключа: ключ без дати реєстрації не лишається" do
+      expect { hw_key.register_attestation_key!(key_hex) }.to raise_error(ArgumentError, /без актора аудиту/)
+      expect(hw_key.reload.ed25519_public_key_hex).to be_nil
+      expect(registrations).to be_empty
+    end
+
+    it "без явного актора пише від системного (oracle_executioner)" do
+      system_actor = create(:user, :super_admin, email_address: User::ORACLE_EXECUTIONER_EMAIL)
+
+      hw_key.register_attestation_key!(key_hex)
+
+      expect(registrations.sole.user_id).to eq(system_actor.id)
+    end
+
+    it "невдалий запис аудиту відкочує й ключ — ключ без дати чинності не лишається" do
+      allow(AuditLog).to receive(:create!).and_raise(ActiveRecord::RecordInvalid)
+
+      expect { hw_key.register_attestation_key!(key_hex, user_id: operator.id) }.to raise_error(ActiveRecord::RecordInvalid)
+      expect(hw_key.reload.ed25519_public_key_hex).to be_nil
+    end
+  end
 end

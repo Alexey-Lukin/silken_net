@@ -24,11 +24,22 @@
 #   8. один telemetry_log_id на весь бандл — один leaf_cid (рядок незмінний, тож спільний лист
 #      завжди той самий); у межах кредиту лист не повторюється; «sealed» виводиться з наявності
 #      кореня, а мітка `seal`, що з ним розходиться, — відмова (інакше «unsealed» минав би 3 і 7)
+#   9. [FW.66 (Б) · S8b] вміст листа v2 понад кадр: бали = 0 або формула v2 від ema_delta_t_s
+#      (заморожена разом із версією листа; нуль при додатній формулі — «утримано», рахується);
+#      конверти QATT (секція `qatt_envelopes`, лише схема v2): sha256 = хеш байтів, рамка конверта,
+#      Ed25519-підпис Королеви над ним і її UID (OpenSSL, строгий S < L — самоперевірка на векторі
+#      RFC 8032 перед першим конвертом); кожен v2-лист із хешем знаходить свій конверт, зайвий
+#      конверт — відмова; запис реєстрації ключа (якщо є) — той самий ключ і до прийому конверта
 #
 # Межа довіри (свідома, задекларована): amount, ПОВНОТА набору кредитів/листя і
-# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг у leaf0). Лист v2
+# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг; у leaf0 якоря — голова лише
+# організації, що писала останньою, ARCH.122). Лист v2
 # зобовʼязує щодо ІДЕНТИЧНОСТІ кадру ефіру, не щодо виміру: кадр — шифртекст сесійним
 # ключем вузла, який ратчет знищує, тож MIC і вміст перевіряє лише власник ключа, поки той живий.
+# Підпис конверта доводить, що його підписав ключ, НАЗВАНИЙ у бандлі; що це ключ Королеви — звір
+# `key_registration` з експортом AuditLog організації (запечатаний у leaf0 лише ланцюг організації, що
+# писала останньою перед якорем, — ARCH.122; для решти дата реєстрації issuer-asserted).
+# Що кадр листа лежить усередині конверта — issuer-asserted: шифртекст під ключем Королеви.
 # [DOC-T.89] `insurance_payouts` — емісія за ЗБИТОК, НЕ вуглецеві кредити: крипто під
 # нею немає за конструкцією (немає листя), тож тут вона лише ПЕРЕЛІЧУЄТЬСЯ вголос.
 # Мовчазна секція гірша за відсутню: аудитор прийняв би її за перевірену.
@@ -43,9 +54,11 @@
 require "json"
 require "digest"
 require "bigdecimal"
+require "time"
 require_relative "../lib/merkle_tree"
 require_relative "../app/services/filecoin/cid_generator"
 require_relative "../lib/leaf_payload_shape"
+require_relative "../lib/qatt_envelope_signature"
 
 abort "Usage: ruby scripts/verify_lineage_bundle.rb <bundle.json>" if ARGV.empty?
 
@@ -84,6 +97,7 @@ roots_to_check = {}
 raw_seen = {}
 id_cid = {}
 max_seen = nil
+v2_payloads = {} # leaf_cid → payload: той самий лист у кількох кредитах рахується раз
 
 bundle.fetch("credits").each do |credit|
   tx_id = credit.dig("tx", "id")
@@ -113,6 +127,7 @@ bundle.fetch("credits").each do |credit|
     LeafPayloadShape.errors(payload).each { |err| failures << "tx #{tx_id} / log #{log_id}: #{err}" }
     version = LeafPayloadShape.version_of(payload)
     max_seen = [ max_seen, version ].compact.max if version.is_a?(Integer)
+    v2_payloads[leaf["leaf_cid"]] = payload if version == 2 && LeafPayloadShape.errors(payload).empty?
     # 8. Той самий запис — завжди той самий лист
     first_cid_for_id = (id_cid[log_id] ||= leaf["leaf_cid"])
     failures << "tx #{tx_id} / log #{log_id}: той самий запис стоїть під іншим листом" unless first_cid_for_id == leaf["leaf_cid"]
@@ -187,10 +202,100 @@ if (bundle["schema"] == "silken.mrv.lineage.v2") != (max_seen == 2)
   failures << "схема #{bundle['schema']} не відповідає листю (найвища версія листа #{max_seen.inspect})"
 end
 
+# 9. Конверти QATT: лише схема v2 їх несе, і несе рівно ті, на які посилається її листя
+envelopes = bundle["qatt_envelopes"]
+if bundle["schema"] == "silken.mrv.lineage.v2"
+  failures << "схема v2 без масиву qatt_envelopes" unless envelopes.is_a?(Array)
+elsif !envelopes.nil?
+  failures << "схема #{bundle['schema']} несе qatt_envelopes"
+end
+envelopes = [] unless envelopes.is_a?(Array)
+if envelopes.any? && !QattEnvelopeSignature.self_test
+  abort "✗ Самоперевірка Ed25519 не пройшла (вектор RFC 8032 і відмова мутації S + L) — " \
+        "OpenSSL цієї машини не годиться для перевірки підписів Королеви."
+end
+
+# Час, який лист ЗАПЕЧАТУЄ (created_at у payload під CID), — єдиний якір дати, що його емітент
+# заднім числом не пересуне; `received_at` і дата запису реєстрації — його ж твердження. Допуск —
+# розбіжність годинників хостів (прийом, воркер, фабрика): хибна відмова заякореного бандла була б
+# вічною, а п'ять хвилин атаці «зареєструвати ключ після листа» нічого не дають.
+CLOCK_SKEW_S = 300
+leaves_by_envelope = v2_payloads.values.select { |p| p["qatt_envelope_sha256"] }.group_by { |p| p["qatt_envelope_sha256"] }
+envelope_shas = {}
+unregistered = 0
+foreign_org = 0
+envelopes.each_with_index do |env, i|
+  unless env.is_a?(Hash)
+    failures << "qatt_envelopes[#{i}] не є обʼєктом JSON"
+    next
+  end
+  sha = env["sha256"]
+  label = "конверт #{sha.to_s[0, 16]}…"
+  unless sha.is_a?(String) && sha.match?(LeafPayloadShape::SHA256_HEX) && sha == sha.downcase &&
+         env["envelope"].is_a?(String) && env["envelope"].match?(/\A(?:\h\h)+\z/) && env["envelope"] == env["envelope"].downcase
+    failures << "#{label}: sha256 / envelope не нижній hex"
+    next
+  end
+  failures << "#{label}: повторюється в секції" if envelope_shas.key?(sha)
+  envelope_shas[sha] = true
+  bytes = [ env["envelope"] ].pack("H*")
+  failures << "#{label}: sha256 ≠ хеш байтів конверта" unless QattEnvelopeSignature.sha256(bytes).unpack1("H*") == sha
+  failures << "#{label}: рамка конверта QATT v2 не ціла" unless QattEnvelopeSignature.shape_ok?(bytes)
+  unless QattEnvelopeSignature.verify(bytes, uid: env["gateway_uid"], public_key_hex: env["public_key_hex"])
+    failures << "#{label}: підпис Королеви #{env['gateway_uid'].inspect} ключем #{env['public_key_hex'].to_s[0, 16]}… не сходиться"
+  end
+
+  leaves = leaves_by_envelope.fetch(sha, [])
+  # Кожен CCM-запис займає в шифртексті 31 Б (кадр ефіру + RSSI), тож листів на конверт не більше.
+  capacity = [ bytes.bytesize - QattEnvelopeSignature::MIN_LEN, 0 ].max / 31
+  failures << "#{label}: несе щонайбільше #{capacity} CCM-записів, а листів на нього #{leaves.size}" if leaves.size > capacity
+  first_leaf_at = leaves.map { |p| Time.iso8601(p["created_at"].to_s) }.min
+  if first_leaf_at && Time.iso8601(env["received_at"].to_s) > first_leaf_at + CLOCK_SKEW_S
+    failures << "#{label}: прийом заявлено ПІЗНІШЕ за найраніший лист, що на конверт посилається"
+  end
+
+  registration = env["key_registration"]
+  if registration.nil?
+    unregistered += 1
+  elsif !registration.is_a?(Hash)
+    failures << "#{label}: key_registration не є обʼєктом JSON"
+  elsif registration["gateway_uid"] != env["gateway_uid"] || registration["public_key_hex"] != env["public_key_hex"]
+    failures << "#{label}: запис реєстрації ##{registration['audit_log_id']} — інший шлюз або ключ, ніж підписав конверт"
+  else
+    foreign_org += 1 unless registration["organization_id"] == bundle.dig("organization", "id")
+    if first_leaf_at && Time.iso8601(registration["created_at"].to_s) > first_leaf_at + CLOCK_SKEW_S
+      failures << "#{label}: ключ зареєстровано ПІЗНІШЕ за найраніший лист, що на конверт посилається (##{registration['audit_log_id']})"
+    end
+  end
+rescue ArgumentError, TypeError => e
+  failures << "конверт #{env.is_a?(Hash) ? env['sha256'].to_s[0, 16] : i}…: #{e.message}"
+end
+shas_in_order = envelopes.map { |e| e.is_a?(Hash) ? e["sha256"].to_s : "" }
+failures << "qatt_envelopes не впорядковано за sha256" unless shas_in_order == shas_in_order.sort
+
+referenced = leaves_by_envelope.keys
+(referenced - envelope_shas.keys).each { |sha| failures << "лист посилається на конверт #{sha[0, 16]}…, якого бандл не несе" }
+(envelope_shas.keys - referenced).each { |sha| failures << "конверт #{sha[0, 16]}… — на нього не посилається жоден лист" }
+without_envelope = v2_payloads.values.count { |p| p["qatt_envelope_sha256"].nil? }
+held = v2_payloads.values.count { |p| LeafPayloadShape.v2_points_held?(p) }
+
 puts "── Lineage bundle: #{bundle['credits'].size} credits " \
      "(org #{bundle.dig('organization', 'id')}, #{bundle.dig('period', 'from')}..#{bundle.dig('period', 'to')})"
 puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} subroot_diverged=#{diverged} · " \
      "credits sealed=#{sealed_credits} unsealed=#{unsealed_credits}"
+if v2_payloads.any?
+  puts "   v2: листів=#{v2_payloads.size} · бали утримано=#{held} (причину лист не несе) · " \
+       "без конверта=#{without_envelope} (батч не атестовано) · конвертів=#{envelopes.size} · " \
+       "ключ без запису реєстрації=#{unregistered} · Королев інших організацій=#{foreign_org}"
+  puts "   ⚠️  Підпис конверта доводить ключ, НАЗВАНИЙ у бандлі. Що він Королевин — звір key_registration " \
+       "з експортом AuditLog організації (для Королеви іншої організації — з ЇЇ експортом); вхід " \
+       "ema_delta_t_s і бали — твердження сервера (перевірено лише їхню узгодженість за формулою v2); " \
+       "що кадр листа лежить у конверті — issuer-asserted."
+  if unregistered.positive?
+    puts "   ⚠️  #{unregistered} конверт(и) без запису реєстрації ключа: їхній підпис доводить лише " \
+         "самоузгодженість бандла — емітент, що вигадав рядки, вигадав би й ключ."
+  end
+end
 
 # [DOC-T.89] Страхові виплати: НЕ верифікуються (нічого верифікувати) — але й НЕ
 # замовчуються. М'яке читання замість `fetch` свідомо: bundle без секції (старіший
@@ -234,5 +339,7 @@ if failures.any?
   exit 1
 end
 
-puts "✓ Всі крипто-перевірки пройшли (leaf-CID + did-binding + mint-root + tier1 + tier2)."
+envelope_claim = envelopes.any? ? " + підписи конвертів QATT" : ""
+envelope_claim += " (#{unregistered} — без дати реєстрації ключа)" if unregistered.positive?
+puts "✓ Всі крипто-перевірки пройшли (leaf-CID + did-binding + mint-root + tier1 + tier2#{envelope_claim})."
 exit 0
