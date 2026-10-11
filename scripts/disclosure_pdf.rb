@@ -84,6 +84,10 @@ module DisclosurePdf
   # …and a link to a working document (the outline, the writing guide, the 00_* canon, the reference index the list is printed from):
   # a draft note woven into a sentence rather than a blockquote shows up this way (08_declarations, 2026-10-11).
   WORKSHOP_LINK = %r{\]\((?![a-z]+:)(?:[^)\s]*/)?(?:00_[^/)\s]*|09_references)\.md}
+  # …and a draft note that names no file: a canon address set as code («`00_01 §8`») or a «Draft (date …» prefix — after the
+  # author answers the [finalise markers of 08_declarations these were what printed (simulated 2026-10-11; none in the other
+  # seven sections, so the rule costs nothing there).
+  WORKSHOP_NOTE = /`0\d_\d\d[ `§]|\bDraft \(/
 
   module_function
 
@@ -111,7 +115,7 @@ module DisclosurePdf
       manuscript ? manuscript(src, p) : src
     end
     if manuscript
-      bad = srcs.join("\n").lines.grep(Regexp.union(UNFINISHED, WORKSHOP_LINK)).first(5)
+      bad = srcs.join("\n").lines.grep(Regexp.union(UNFINISHED, WORKSHOP_LINK, WORKSHOP_NOTE)).first(5)
       abort "manuscript: author-only marks or working-document links left:\n#{bad.join}" unless bad.empty?
     end
     md = paths.zip(srcs).map do |p, src|
@@ -283,7 +287,10 @@ module DisclosurePdf
            [ "![f](figures/a.png)", "[x](https://e.org/00_a.md)", "[s](10_supporting_information.md)", "[y](foo00_bar.md)" ].none? { |l| l.match?(WORKSHOP_LINK) })
     t.call("author-only marks are recognised, plain English is not",
            [ "x [finalise: y]", "[CITATION NEEDED]", "Стаття", "Route (⚖️ founder 2026-10-03)" ].all? { |l| l.match?(UNFINISHED) } && !"a draft-free line".match?(UNFINISHED))
-    puts(fails.zero? ? "disclosure_pdf --selftest: OK (12 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
+    t.call("a draft note woven into the text is recognised, the paper's own prose is not",
+           [ "(publish-to-protect, `00_01 §8`)", "Draft (2026-09-30 — x): *text*", "see `01_03` here" ].all? { |l| l.match?(WORKSHOP_NOTE) } &&
+           [ "Methods §2.1", "a draft (of the text)", "`delta_t` and 4,4′-dimethyl" ].none? { |l| l.match?(WORKSHOP_NOTE) })
+    puts(fails.zero? ? "disclosure_pdf --selftest: OK (13 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
 end
