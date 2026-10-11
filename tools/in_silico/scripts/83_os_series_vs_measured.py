@@ -153,6 +153,7 @@ def verdict(rec: dict) -> str:
 SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for C-PCM"),
                       ("uffcavity", "os_mediator_series_uffcavity.json", "Gaussian 16's UFF ×1.1 cavity radii"),
                       ("gas", "os_mediator_series_gas.json", "no continuum"))   # 21e's one-knob variants (00_07 HW.5.IS)
+AXIAL_VARIANT = ("pyaxial", "os_mediator_series_pyaxial.json")   # 21e `b3lyp-pyaxial`: pyridine for 1-MeIm — the A1′ knob
 
 
 def _solvation_clause(aq: dict) -> str:
@@ -179,10 +180,19 @@ def _solvation_clause(aq: dict) -> str:
     if reach:
         return (f"and of the continuum: {nums} — {' and '.join(reach)} move it toward the measured by half the excess or "
                 f"more, so the continuum stays a candidate. ")
-    return (f"nor the continuum's formulation or its radii: {nums}, but neither variant moves it toward the measured by "
-            f"half the excess. Left untested (under A1′–A2′): the vertical ΔSCF on one programmatic geometry against "
-            f"optimised states and free energies, the program's own cavity discretisation and, on this pair, the ligand "
-            f"basis. ")
+    head = (f"nor the continuum's formulation or its radii: {nums}, but neither variant moves it toward the measured by "
+            f"half the excess. ")
+    under = "A1′–A2′"
+    ax = aq.get("axial_check")
+    if ax:
+        mv = ax["ome_dmbpy_change_mV"]
+        if -mv / ex >= 0.5:
+            return head + (f"The axial N-donor does: pyridine for 1-MeIm moves the pair by {mv:+.1f} mV toward the measured, "
+                           f"so A1′ does not hold for this pair. ")
+        head += f"Nor the axial N-donor: pyridine for 1-MeIm moves the pair by {mv:+.1f} mV, so A1′ holds for it. "
+        under = "A2′"
+    return head + (f"Left untested (under {under}): the vertical ΔSCF on one programmatic geometry against optimised "
+                   f"states and free energies, the program's own cavity discretisation and, on this pair, the ligand basis. ")
 
 
 def verdict_aqueous(aq: dict) -> str:
@@ -283,22 +293,29 @@ def aqueous(sigma: dict, b3: dict) -> dict:
         aq["os_basis_check"] = {"max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]),
                                 "point_shift_meV": [min(v["point_shift_eV"].values()) * 1000, max(v["point_shift_eV"].values()) * 1000],
                                 "pairs": len(v["pairs"]), "rescued_def2_rows": v["rescued_def2_rows"]}
-    present = [(k, DFT_CACHE / f) for k, f, _ in SOLVATION_VARIANTS   # a cache still being written has no vs_series yet
-               if (DFT_CACHE / f).exists() and "vs_series" in json.loads((DFT_CACHE / f).read_text(encoding="utf-8"))]
-    if present:   # 21e's continuum variants — each the series protocol with one knob changed
-        meas = next(p["measured_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
-        ours = next(p["ours_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
-        aq["solvation_check"] = {"ome_dmbpy_excess_mV": ours - meas}
-        for k, path in present:
-            v = json.loads(path.read_text(encoding="utf-8"))["vs_series"]
-            by = {(p["x"], p["ref"]): p for p in v["pairs"]}
-            aq["solvation_check"][k] = {
-                "max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]), "pairs": len(v["pairs"]),
+    def finished(f: str):   # a cache still being written has no vs_series yet
+        path = DFT_CACHE / f
+        return json.loads(path.read_text(encoding="utf-8"))["vs_series"] if path.exists() and \
+            "vs_series" in json.loads(path.read_text(encoding="utf-8")) else None
+
+    def entry(v: dict) -> dict:
+        by = {(p["x"], p["ref"]): p for p in v["pairs"]}
+        return {"max_pair_change_mV": max(abs(p["change_mV"]) for p in v["pairs"]), "pairs": len(v["pairs"]),
                 "ome_dmbpy_change_mV": by[("ome", "dmbpy")]["change_mV"],
                 "aqueous_pairs_over_measured": {f"{x}-{r}": by[(x, r)]["variant_mV"]
                                                 / next(p["measured_mV"] for p in pairs if (p["x"], p["ref"]) == (x, r))
                                                 for x, r in AQ_PAIRS},
                 "rescued_rows": v["rescued_rows"], "series_os3_s2_not_recorded": v["series_os3_s2_not_recorded"]}
+
+    present = [(k, v) for k, f, _ in SOLVATION_VARIANTS if (v := finished(f))]
+    if present:   # 21e's continuum variants — each the series protocol with one knob changed
+        meas = next(p["measured_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        ours = next(p["ours_mV"] for p in pairs if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        aq["solvation_check"] = {"ome_dmbpy_excess_mV": ours - meas}
+        for k, v in present:
+            aq["solvation_check"][k] = entry(v)
+    if (v := finished(AXIAL_VARIANT[1])):   # 21e `b3lyp-pyaxial` — the axial N-donor, the one knob of A1′
+        aq["axial_check"] = entry(v)
     aq["verdict"] = verdict_aqueous(aq)
     return aq
 

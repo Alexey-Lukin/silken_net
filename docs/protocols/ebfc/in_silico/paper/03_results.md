@@ -87,9 +87,9 @@ against Me, where ours falls about 16 mV per substituent short of experiment, th
 (IEF-PCM)<sup>57</sup> in place of C-PCM moves the pair by +0.1 mV and a second set of radii — UFF<sup>58</sup> scaled
 by 1.1, with a sphere on every hydrogen; the source states none — by −1.1 mV (every pair by at most 0.6 and 4.7 mV).
 Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates it, and neither variant moves it by a
-tenth of the gap. Left untested, if the N-donor shifts the potential rather than the substituent effect, are the
-vertical ΔSCF on one programmatic geometry against optimised states and free energies, and our program's own
-discretisation of the cavity. On its one
+tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
+away from experiment (every pair by at most 3.6 mV). Left untested are the vertical ΔSCF on one programmatic geometry
+against optimised states and free energies, and our program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two

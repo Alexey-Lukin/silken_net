@@ -345,6 +345,14 @@ CHECKS = [
          "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[0], 0.05),
         ("SUMMARY", SUMMARY, "Me−H basis", rf"then {N} mV per substituent — our two tiers",
          "dft/os_mediator_series_wb97x.json", lambda d: _centre_split(d)[1], 0.05))],
+    # the axial N-donor (21e `b3lyp-pyaxial`, via 83 `aqueous_series.axial_check`)
+    *[(f"{doc_name} axial {what} → axial_check", doc, anchor, "dft/os_series_vs_measured.json",
+       lambda d, k=k: d["aqueous_series"]["axial_check"][k], 0.05)
+      for doc_name, doc, what, anchor, k in (
+          ("paper §3.3", PAPER_RESULTS, "OMe−Me move", rf"1-methylimidazole moves the pair by \+{N} mV", "ome_dmbpy_change_mV"),
+          ("paper §3.3", PAPER_RESULTS, "max pair", rf"\(every pair by at most {N} mV\)\. Left untested", "max_pair_change_mV"),
+          ("SUMMARY", SUMMARY, "OMe−Me move", rf"pyridine for 1-MeIm moves OMe−Me by \+{N} mV", "ome_dmbpy_change_mV"),
+          ("SUMMARY", SUMMARY, "max pair", rf"and every pair by ≤ {N} mV per substituent\), so A1′", "max_pair_change_mV"))],
     ("SUMMARY UFF point shift low → uffcavity", SUMMARY, rf"every absolute point, by {N}…",
      "dft/os_mediator_series_uffcavity.json", lambda d: max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift high → uffcavity", SUMMARY, rf"every absolute point, by [^…]+…{N} meV",

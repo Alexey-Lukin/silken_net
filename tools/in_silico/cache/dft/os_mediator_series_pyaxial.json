@@ -1,0 +1,226 @@
+{
+  "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) vertical \u0394SCF \u2014 the B3LYP series protocol, the axial N-donor only changed: pyridine for 1-methylimidazole (the aqueous series' ampy is a 4-substituted pyridine), placed by the series builder at the same Os\u2013N; Os, both chelates and Cl are the series' own atoms; max_cycle 400 as the June LANL2DZ rows",
+  "environment": {
+    "pyscf": "2.11.0"
+  },
+  "complexes": {
+    "bpy": {
+      "sigma_para": 0.0,
+      "os2": {
+        "label": "os2 bpy (b3lyp-pyaxial)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 53,
+        "n_electrons": 238,
+        "converged": true,
+        "wall_seconds": 340.1,
+        "E_total_Ha": -1790.3331111197758,
+        "HOMO_Ha": -0.18282552117007286,
+        "LUMO_Ha": -0.08050820313208229,
+        "HOMO_eV": -4.9749358721829084,
+        "LUMO_eV": -2.190739811397552,
+        "gap_eV": 2.7841960607853564,
+        "rescued": false,
+        "aufbau": true
+      },
+      "os3": {
+        "label": "os3 bpy (b3lyp-pyaxial)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 53,
+        "n_electrons": 237,
+        "converged": true,
+        "wall_seconds": 684.1,
+        "E_total_Ha": -1790.1631461718116,
+        "HOMO_Ha": -0.236711025086829,
+        "LUMO_Ha": -0.15872941542081911,
+        "HOMO_eV": -6.441235132321459,
+        "LUMO_eV": -4.319247431615793,
+        "gap_eV": 2.1219877007056662,
+        "rescued": false,
+        "s2": 0.7540045132097077,
+        "os_spin_mulliken": 0.909365359226876,
+        "aufbau": true
+      },
+      "dE_red_eV": -4.624981847333576
+    },
+    "dmbpy": {
+      "sigma_para": -0.17,
+      "os2": {
+        "label": "os2 dmbpy (b3lyp-pyaxial)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 65,
+        "n_electrons": 270,
+        "converged": true,
+        "wall_seconds": 485.4,
+        "E_total_Ha": -1947.6094229530054,
+        "HOMO_Ha": -0.17747819942124726,
+        "LUMO_Ha": -0.07564424274664587,
+        "HOMO_eV": -4.829427834694043,
+        "LUMO_eV": -2.058384706664257,
+        "gap_eV": 2.771043128029786,
+        "rescued": false,
+        "aufbau": true
+      },
+      "os3": {
+        "label": "os3 dmbpy (b3lyp-pyaxial)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 65,
+        "n_electrons": 269,
+        "converged": true,
+        "wall_seconds": 963.4,
+        "E_total_Ha": -1947.4447567876214,
+        "HOMO_Ha": -0.23109530148760782,
+        "LUMO_Ha": -0.1534736626986957,
+        "HOMO_eV": -6.288423508412341,
+        "LUMO_eV": -4.176231114280689,
+        "gap_eV": 2.112192394131652,
+        "rescued": false,
+        "s2": 0.753916096443362,
+        "os_spin_mulliken": 0.9089120123648339,
+        "aufbau": true
+      },
+      "dE_red_eV": -4.480794627909915
+    },
+    "ome": {
+      "sigma_para": -0.27,
+      "os2": {
+        "label": "os2 ome (b3lyp-pyaxial)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 69,
+        "n_electrons": 302,
+        "converged": true,
+        "wall_seconds": 579.5,
+        "E_total_Ha": -2248.43514808302,
+        "HOMO_Ha": -0.1735944191810228,
+        "LUMO_Ha": -0.0751367216750761,
+        "HOMO_eV": -4.723744790482759,
+        "LUMO_eV": -2.044574354757794,
+        "gap_eV": 2.679170435724965,
+        "rescued": false,
+        "aufbau": true
+      },
+      "os3": {
+        "label": "os3 ome (b3lyp-pyaxial)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 69,
+        "n_electrons": 301,
+        "converged": true,
+        "wall_seconds": 1085.1,
+        "E_total_Ha": -2248.273830823845,
+        "HOMO_Ha": -0.22669618321157578,
+        "LUMO_Ha": -0.1505861123631242,
+        "HOMO_eV": -6.168717401861449,
+        "LUMO_eV": -4.097656866794721,
+        "gap_eV": 2.0710605350667275,
+        "rescued": false,
+        "s2": 0.7537969920985006,
+        "os_spin_mulliken": 0.9006235164985588,
+        "aufbau": true
+      },
+      "dE_red_eV": -4.389666247558365
+    },
+    "cl": {
+      "sigma_para": 0.23,
+      "os2": {
+        "label": "os2 cl (b3lyp-pyaxial)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 53,
+        "n_electrons": 302,
+        "converged": true,
+        "wall_seconds": 418.0,
+        "E_total_Ha": -3628.6890713627663,
+        "HOMO_Ha": -0.189234910708215,
+        "LUMO_Ha": -0.09181669898264222,
+        "HOMO_eV": -5.149344246506288,
+        "LUMO_eV": -2.4984596598482907,
+        "gap_eV": 2.6508845866579978,
+        "rescued": false,
+        "aufbau": true
+      },
+      "os3": {
+        "label": "os3 cl (b3lyp-pyaxial)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 53,
+        "n_electrons": 301,
+        "converged": true,
+        "wall_seconds": 790.4,
+        "E_total_Ha": -3628.5131786969205,
+        "HOMO_Ha": -0.24086017250293754,
+        "LUMO_Ha": -0.1643490239530101,
+        "HOMO_eV": -6.5541391852527315,
+        "LUMO_eV": -4.472164769936491,
+        "gap_eV": 2.0819744153162403,
+        "rescued": false,
+        "s2": 0.7541624204447999,
+        "os_spin_mulliken": 0.8996150609744985,
+        "aufbau": true
+      },
+      "dE_red_eV": -4.786283268167169
+    }
+  },
+  "vs_series": {
+    "pairs": [
+      {
+        "x": "dmbpy",
+        "ref": "bpy",
+        "series_mV": -37.21399974946138,
+        "variant_mV": -36.04680485591527,
+        "change_mV": 1.1671948935461103
+      },
+      {
+        "x": "ome",
+        "ref": "bpy",
+        "series_mV": -60.85310795689524,
+        "variant_mV": -58.828899943802696,
+        "change_mV": 2.0242080130925473
+      },
+      {
+        "x": "cl",
+        "ref": "bpy",
+        "series_mV": 41.89737365416279,
+        "variant_mV": 40.32535520839842,
+        "change_mV": -1.572018445764371
+      },
+      {
+        "x": "ome",
+        "ref": "dmbpy",
+        "series_mV": -23.639108207433868,
+        "variant_mV": -22.78209508788742,
+        "change_mV": 0.8570131195464477
+      },
+      {
+        "x": "cl",
+        "ref": "dmbpy",
+        "series_mV": 79.11137340362417,
+        "variant_mV": 76.37216006431369,
+        "change_mV": -2.7392133393104814
+      },
+      {
+        "x": "cl",
+        "ref": "ome",
+        "series_mV": 102.75048161105804,
+        "variant_mV": 99.1542551522011,
+        "change_mV": -3.5962264588569326
+      }
+    ],
+    "point_shift_eV": {
+      "bpy": -0.09532648172248148,
+      "dmbpy": -0.09999526129666592,
+      "ome": -0.1034233137748517,
+      "cl": -0.08903840793942397
+    },
+    "rescued_rows": [],
+    "series_os3_s2_not_recorded": [
+      "bpy",
+      "dmbpy",
+      "ome"
+    ]
+  }
+}

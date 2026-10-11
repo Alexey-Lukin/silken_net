@@ -292,6 +292,13 @@ def test_83_solvation_clause_branches_follow_the_numbers():
     assert "amplifies the pair by 5.0 mV" in s83._solvation_clause(aq(16.1, 0.1, -1.1, +5.0))
     assert "toward the measured" in s83._solvation_clause(aq(-16.1, 9.0, 0.0, -29.0))   # the other sign of the excess
     assert "no part of the protocol" in s83._solvation_clause(aq(0.0, 0.1, -1.1, -29.0))
+    held = aq(16.1, 0.1, -1.1, -29.0) | {"axial_check": {"ome_dmbpy_change_mV": -2.0}}
+    txt = s83._solvation_clause(held)
+    assert "Nor the axial N-donor" in txt and "A1′ holds" in txt and "(under A2′)" in txt and "A1′–A2′" not in txt
+    failed = aq(16.1, 0.1, -1.1, -29.0) | {"axial_check": {"ome_dmbpy_change_mV": -9.0}}
+    assert "A1′ does not hold" in s83._solvation_clause(failed)
+    away = aq(16.1, 0.1, -1.1, -29.0) | {"axial_check": {"ome_dmbpy_change_mV": +9.0}}
+    assert "A1′ holds" in s83._solvation_clause(away), "a move AWAY counted as the axial donor closing the gap"
 
 
 def test_os_series_vs_measured_is_derived_from_its_sources():
@@ -404,6 +411,14 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
             assert sc[k]["ome_dmbpy_change_mV"] == by[("ome", "dmbpy")]["change_mV"], k
             assert sc[k]["aqueous_pairs_over_measured"] == {f"{x}-{r_}": by[(x, r_)]["variant_mV"] / meas[(x, r_)]
                                                             for x, r_ in s83.AQ_PAIRS}, k
+    axp = DFT / s83.AXIAL_VARIANT[1]   # 21e `b3lyp-pyaxial`: in the block iff its cache is finished
+    axv = json.loads(axp.read_text()).get("vs_series") if axp.exists() else None
+    assert ("axial_check" in aq) == bool(axv), "the axial check is in the block iff its finished cache exists"
+    if axv:
+        by = {(p["x"], p["ref"]): p for p in axv["pairs"]}
+        ax = aq["axial_check"]
+        assert ax["ome_dmbpy_change_mV"] == by[("ome", "dmbpy")]["change_mV"] and ax["pairs"] == len(axv["pairs"])
+        assert ax["max_pair_change_mV"] == max(abs(p["change_mV"]) for p in axv["pairs"])
     assert aq["verdict"] == s83.verdict_aqueous(aq), "the aqueous verdict is not the one its fields build"
     # paper ref 8's series (Zafar 2012 Table 1, polymers b, c, d, f at loading 1:9): pairs, pairwise slopes, the loading control
     pv = v["pvi_series"]
