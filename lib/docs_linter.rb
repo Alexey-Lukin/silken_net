@@ -589,14 +589,27 @@ module DocsLinter
   AI_VENDOR_OWNER_DOC = /\A00_06_|\A00_07_/
   AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
   AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_06 §0/i
+  # The ONE exception to «no instances anywhere» (⚖️ founder 2026-10-11, 00_02 §2.1): a preprint's AI-use disclosure
+  # must NAME its tools (ChemRxiv FAQ), and it is a dated fact about one version, not a roster. Only the
+  # «## AI Use Disclosure» section of the paper's declarations file; the rest of that file, and the same heading in any
+  # other file, are scanned as everywhere. Any H1/H2 outside a fence ends the section (an H3 stays inside it).
+  # ⛔ Ceilings, named: the key is the file's BASENAME (a second `08_declarations.md` elsewhere would inherit the
+  # exception silently — one exists today), and a setext heading (`===`/`---` underline) does not end the section.
+  AI_VENDOR_DISCLOSURE_FILE    = "08_declarations"
+  AI_VENDOR_DISCLOSURE_SECTION = /\A## AI Use Disclosure\s*\z/
+  AI_VENDOR_SECTION_END        = /\A {0,3}\#{1,2}(?:\s|\z)/
 
   def ai_vendor_name_drift(basename, text)
     return [] if basename.match?(AI_VENDOR_OWNER_DOC)
 
     in_fence = false
+    in_disclosure = false
     text.each_line.filter_map do |line|
       in_fence = !in_fence if line.start_with?("```")
-      next if in_fence
+      if !in_fence && basename == AI_VENDOR_DISCLOSURE_FILE && line.match?(AI_VENDOR_SECTION_END)
+        in_disclosure = line.match?(AI_VENDOR_DISCLOSURE_SECTION)
+      end
+      next if in_fence || in_disclosure
       next if line.match?(AI_VENDOR_MIRROR_RE)
       next unless (m = line.match(AI_VENDOR_RE))
 

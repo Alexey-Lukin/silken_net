@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 270 · 15,227,597 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 270 · 15,227,615 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -73,7 +73,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/29_dft_reorganization_energy.py` | `db0cfd88495e4daec75961c220cf29fd5a90a3aa26620b502a3848e2b16e9136` | L3 — Nelsen 4-point reorganization energy λ for FADH₂/FADH₂⁺. |
 | `tools/in_silico/scripts/29b_dft_semiquinone_lambda.py` | `3ec93960b4d15e14dca577f59367b81515dc7fc16fbbe5c6928aa5637a96cd99` | L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple. |
 | `tools/in_silico/scripts/29c_outer_sphere_lambda.py` | `d34c4871d919cab82e8b5ca9cb23d214574c11b683bbd9c2377df8469696b7a4` | 29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET. |
-| `tools/in_silico/scripts/30_kinetics_delta_t.py` | `ba3b2eb67a7b527be935b53a374c525908dadd891c7728bb64e851a0570b14c3` | L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from |
+| `tools/in_silico/scripts/30_kinetics_delta_t.py` | `7d91d1a8748a2b4604b03680f55a260e2762de2b82263d2b961bd2164a3bf841` | L4 — EBFC kinetics: predict delta_t (supercapacitor charge time) from |
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | `32e86c4eebd08d6ae06c68a83f1b35a8287e765b62566aa55465a2d71b71d732` | L4b — Monte Carlo uncertainty analysis for delta_t predictions. |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
 | `tools/in_silico/scripts/31b_cathode_det_rct.py` | `1aaba6f16ef5c209c4accddbdf5b0e22614ab34b63fd771648d7b63a602093dc` | 31b — cathode DET charge-transfer resistance band (③, INDICATIVE). |

@@ -15,10 +15,17 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Structure prediction.** The enzyme model was generated with **AlphaFold 3** (cited in Methods §2.1);
   predicted geometries were assessed by pLDDT and a molecular-dynamics ensemble before use.
 - **Computational pipeline & analysis.** The DFT/MD pipeline was implemented with the assistance of an
-  **LLM coding-agent**; every calculation is deterministic, run in a recorded version-exact environment, scripted, and
+  LLM coding agent — **Claude (Anthropic), used through Claude Code**; the model behind a change is recorded in the
+  `Co-Authored-By` trailer of nearly every commit in the repository; every calculation is deterministic, run in a recorded version-exact environment, scripted, and
   reproducible from the Supporting Information, and all numerical results were verified against committed
   result caches.
-- **Manuscript preparation.** An LLM assisted with drafting and editing. **All scientific content,
+- **Manuscript preparation.** Claude (Anthropic, through Claude Code) assisted with drafting and editing.
+- **Other tools.** Google Gemini may also have been used outside the repository over the project's development;
+  that use is not recorded. [finalise — the author confirms this sentence and states the method of use at deposit:
+  ChemRxiv requires the name of every AI tool and how it was used (chemrxiv.org FAQ, read 2026-10-11); the author's
+  own word, 2026-10-11: «може Gemini»]
+
+**All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
   author.** AI tools were not used to generate or fabricate data, results, or references.
 
@@ -27,7 +34,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Data Availability.** Scripts, golden reference outputs, and result caches provided as Supporting
   Information / repository (publish-to-protect, `00_01 §8`); the SI itself is the generated manifest
   [`10_supporting_information.md`](10_supporting_information.md) (script 72 — sha256 of every committed
-  file it lists). [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
+  file it lists). The manuscript and its computations are developed openly in a public repository — the development tree of this preprint, whose history predates it. [finalise — repository DOI; in a later journal version also the ChemRxiv preprint DOI
   beside it — ⚖️ 2026-10-03]
   *Snapshot recipe (prepared 2026-10-01; minting the DOI needs the founder's account, and the archive
   channel — e.g. Zenodo's GitHub-release integration — is his choice):* neither §2.7 nor the SI names a

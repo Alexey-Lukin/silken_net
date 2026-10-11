@@ -632,6 +632,28 @@ end
         "01_02_Ti", "ростер — дзеркало, правити в домі (Cursor/Copilot)\n")).to be_empty
     end
 
+    # ⚖️ founder 2026-10-11 (00_02 §2.1): the preprint's AI-use disclosure must name its tools (ChemRxiv). Both negative
+    # halves are load-bearing: the rest of the same file, and the same heading in another file, must still go red.
+    it "exempts only the «## AI Use Disclosure» section of 08_declarations" do
+      text = "## AI Use Disclosure\n- Claude Code assisted; Gemini may have been used.\n## Other required declarations\n- Copilot did X\n"
+      hits = described_class.ai_vendor_name_drift("08_declarations", text)
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("AI-vendor name `Copilot`")
+      expect(described_class.ai_vendor_name_drift("03_results", text).size).to eq(2)
+    end
+
+    # The edges the second adversary round found open (2026-10-11): each case carries ONE vendor outside the section.
+    it "keeps the exception exactly that narrow — text before it, a fenced heading, an H1 end, a decorated heading" do
+      {
+        "- Copilot first\n## AI Use Disclosure\n- Gemini\n"                    => "before the first heading",
+        "## Other\n```\n## AI Use Disclosure\n```\n- Copilot leaks\n"           => "a heading inside a fence",
+        "## AI Use Disclosure\n### Detail\n- Gemini\n# Next\n- Copilot\n"       => "an H1 ends it, an H3 does not",
+        "## AI Use Disclosure (draft)\n- Copilot\n"                           => "a decorated heading",
+      }.each do |text, edge|
+        expect(described_class.ai_vendor_name_drift("08_declarations", text).size).to eq(1), edge
+      end
+    end
+
     it "skips fenced code and does not false-positive on lowercase cursor/grok or excluded tokens" do
       expect(described_class.ai_vendor_name_drift("03_01_Firmware", "```\nGemini api call\n```\n")).to be_empty
       expect(described_class.ai_vendor_name_drift("04_02_Business", "move the cursor; agents grok the spec\n")).to be_empty
