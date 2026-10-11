@@ -15,7 +15,9 @@
 # arXiv leg of UNI.3 can print its paper the same way, and Стаття 1 goes to ChemRxiv through it (⚖️ 2026-10-11,
 # 00_07 HW.5.IS): a comma-separated list prints several section files as one document, each resolving its own
 # relative links, and a figure is EMBEDDED from the tree at <sha> as a data: URI — a relative image link would
-# otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture.
+# otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture. Its manuscript
+# order (`--manuscript`, docs/protocols/ebfc/in_silico/paper/): 05_abstract · 01_introduction · 02_methods · 03_results ·
+# 04_conclusion · 06_tables · 08_declarations · 09_references — printed on the tagged commit of the deposit.
 #
 # 🔑 Indexers and patent examiners read the TEXT LAYER, not the page, and which extractor a
 # given index runs is unknown — so `check` asks two independent ones (poppler `pdftotext`;
