@@ -16,9 +16,11 @@ the requirements, never the verdict.
 THE ELECTRODES' OWN R_int — no instrument in the tree has measured it, and canon carries readings ×100 apart:
   • the prose estimate «5–20 kΩ» (02_03 §1.5) — born 2026-05-15 (a27783ef6) as an assumption in the cold-start
     voltage-drop arithmetic, no primary (lib.constants R_INT_EBFC_EST_KOHM);
-  • the models: script 31's EIS model of the ANODE (Rs 100 Ω ASSUMED + Rct 72.9 Ω, 2 cm²) and 31b's INDICATIVE cathode
-    band (Rct ≈ 0.002 Ω … 29.8 kΩ, 2 cm²) — so Rs + Rct(anode) + Rct(cathode) runs ≈ 0.17 … 30 kΩ.
-  The budget is therefore printed for two readings — the model's low end (≈ 0.17 kΩ) and the prose estimate's low end
+  • the models: script 31's EIS model of the ANODE, read through its OWN ranges for the coin (Rs 50–200 Ω — ASSUMED —
+    and Rct 36–146 Ω, ×0.5…×2 its 72.9 Ω, 2 cm²) and 31b's INDICATIVE cathode band (Rct ≈ 0.002 Ω … 29.8 kΩ, 2 cm²) —
+    so Rs + Rct(anode) + Rct(cathode) runs ≈ 0.09 … 30 kΩ (the 31b corner near 0.002 Ω implies an exchange current of
+    order 1 A/cm² — the band's own verdict calls it «NOT a single value»).
+  The budget is therefore printed for two readings — the models' low end (≈ 0.09 kΩ) and the prose estimate's low end
   (5 kΩ); the coin EIS of Stage 2 (00_07 HW.24) is the arbiter. A coin measured «in synthetic sap» includes its own
   electrolyte (Rs) — subtracting the path from a coin-based budget counts that Rs twice (≈ 0.1 kΩ, small).
 
@@ -27,9 +29,13 @@ flange rests on shallowly faced dead bark, ⚖️ 2026-10-03; PTFE-GDL covers th
 in, 01_04 §5.1/§5.4). Current leaves the anode (Zone 1) into sapwood, reaches the living inner bark at the cambium,
 converges in that thin sheet toward the flange perimeter, crosses the dead bark (rhytidome) radially, runs as a water
 film over the non-catalytic buffer up to the band, and must ENTER the catalyst layer. Five elements in series:
-  1. sapwood — the gyroid envelope as an equipotential cylinder (Ø11 × L; its pores hold sap) at depth d below the
-     cambium, the living inner bark a conducting plane; Laplace solved by axisymmetric finite volumes (graded grid,
-     V = 0 on the plane and 3 m away). d = L_sleeve − (dead bark under the flange + inner bark); L = the lattice length
+  1. sapwood — the anode as an equipotential cylinder at depth d below the cambium, the living inner bark a conducting
+     plane, the PEEK sleeve (OD 15 = the bore, from the cambium down to the anode) an INSULATOR; Laplace solved by
+     axisymmetric finite volumes (graded grid, V = 0 on the plane and 3 m away). The gyroid (Ø11) stands in a Ø15 bore
+     with a ≈ 2 mm gap (01_01, the fork-C note «Hexagonal Anti-Rotation Key»; install_and_log_bench §A) — two states: «sap gap» (the gap filled
+     with sap, far more conductive than wood: the equipotential is the bore wall, Ø15) and «ingrown» (wood in the gap:
+     Ø11); an AIR gap — sap in the bore only in the pressure season (HW.53 desk) — is not modelled: layer 1 then runs
+     through contact points only, and the path is open. d = L_sleeve − (dead bark under the flange + inner bark); L = the lattice length
      outside the sleeve: 40 mm if Zone 1 enters only by its shank (18 mm, the lock manifest), 28 mm at the PLACEHOLDER
      insertion 30 mm (Cem.cs Zone1InsertionMm, `58` L_A_INSERT) — the standing conflict 00_07 HW.26 G1. The wood is
      taken as ISOTROPIC at the ERT reading; wood conducts better along the grain, so R1 is likely an overestimate.
@@ -46,8 +52,9 @@ film over the non-catalytic buffer up to the band, and must ENTER the catalyst l
   5. the entry into the catalyst layer — de Levie transmission line if water reaches the layer's lower edge: ionic
      sheet resistance R_sq,cl = ρ_cl·τ/(ε·δ_cl) up the band; full-height bound R_sq,cl·h_band/(2π r2). Neither δ_cl,
      nor the electrolyte in the layer, nor R_ct per area has a number in canon.
-     ⚠️ Canon describes NO electrolyte path into the catalyst layer: its only electrolytes are internal (the thin film
-     of 01_04 §5.1); the one fixation it names is a mechanical crimp around the PTFE's perimeter, no adhesive (01_04
+     ⚠️ Canon describes NO electrolyte path into the catalyst layer: the electrolyte it puts IN the layer is the water
+     film the PTFE holds in (01_04 §5.1/§5.4), and it places the cathode at the bark/air boundary because of the O₂
+     dissolved in sap (§5.1), but names no route by which sap reaches the layer; the one fixation it names is a mechanical crimp around the PTFE's perimeter, no adhesive (01_04
      §5.3 table, «Метод фіксації»), and whether that crimp is tight — and where it sits relative to the layer — is open
      (the lamination is an open leg, 00_07 HW.25; the GDL stand treats the tape seam and crimp edge as a LEAK path). If
      the crimp seals the layer, element 5 is open (R5 = ∞) whatever the tissue path; the requirement printed for it is
@@ -55,20 +62,28 @@ film over the non-catalytic buffer up to the band, and must ENTER the catalyst l
 
 DIRECTION OF EACH CHOICE: the thinnest dead bark under the flange (`78`'s deep-edge contact) and the widest annulus
 make R3 SMALL; the image plane and an isotropic ERT reading push R1 opposite ways (the plane lowers it, isotropy likely
-raises it); the budget is printed at the LOW end of each R_int reading. The geometric closed forms (2–5) carry
+raises it); the sap gap lowers R1 against the ingrown state, the insulating sleeve raises it against wood in its place;
+the budget is printed at the LOW end of each R_int reading. The geometric closed forms (2–5) carry
 ±tens of %, so a sum within that of a budget decides nothing — the comparison is printed, not judged.
 
 CONTROLS that can fail (raise, never warn):
   1. the finite-volume solver reproduces the exact capacitance of a sphere above a conducting plane (the sinh series)
-     within 1.5 % at the control spacing — the same code path as element 1, staircase surface included;
-  2. element 1 is grid-converged: halving the spacing moves G1 by < 1 %;
+     within 1.5 % — at HALF element 1's spacing (at its own spacing the curved staircase is 1.7 % off; the rods are
+     grid-aligned, so their accuracy is control 2's);
+  2. element 1 is grid-converged in both states: halving the spacing moves G1 by < 1 %;
+  4. the insulator obeys monotonicity (Rayleigh): taking conductor away cannot lower a resistance, so G1 with the
+     sleeve ≥ G1 with wood in its place, both states.
+  ⚠️ Bound of these controls: a solver defect of ~2 % passes all of them (a face radius taken at the outer node moved
+  G1 by −2.2 % and passed, adversary 2026-10-12) — inside the ±tens of % the closed forms carry, never a reason to read
+  G1 to better than a few %.
   3. the ceiling formula of 02_03 §1.5 is zero at V_OC = VIN(CS) and its printed table values come out
      (700/800 mV × typ/max → 4.0 · none · 8.0 · 4.7 kΩ to the table's rounding).
 
 CAN show: what each material number must be to fit a given budget; how the budget moves with the electrodes' R_int;
 where the published readings fall against both. CANNOT show: a measured R_Ω (that is the bench) or the electrodes' own
 R_int (the coin); a 3D current distribution (elements 2–5 are closed forms with named geometries, ±tens of %);
-anisotropic wood; whether the catalyst layer has any ionic entry at all (a construction question, 00_07 HW.53).
+anisotropic wood; an air gap around the anode; a finite trunk (taken as a half-space below the cambium); whether the
+catalyst layer has any ionic entry at all (a construction question, 00_07 HW.53).
 
 Run:  python tools/in_silico/scripts/84_cathode_ionic_path.py      # ~1 s
 """
@@ -173,21 +188,30 @@ def _graded(edges: list, h: float, far: float, growth: float = 1.08) -> np.ndarr
     return np.array(pts)
 
 
-def fv_factor(h: float, rod: tuple | None = None, sphere: tuple | None = None, far: float = FAR_M) -> float:
+def fv_factor(h: float, rod: tuple | None = None, sphere: tuple | None = None, far: float = FAR_M,
+              insulator: tuple | None = None, field: bool = False):
     """G (1/m), R = ρ·G, of an equipotential body in a uniform medium bounded by a conducting plane z = 0 (V = 0) and a
     far boundary (V = 0). Axisymmetric finite volumes on a graded (r, z) grid; rod = (radius, z_top, z_bottom) ·
-    sphere = (radius, centre_z). Current = the flux out of the body's nodes; G = 1/current at V_body = 1, σ = 1."""
+    sphere = (radius, centre_z) · insulator = (radius, z_top, z_bottom), a non-conducting cylinder: every link touching
+    its nodes carries nothing. Current = the flux out of the body's nodes; G = 1/current at V_body = 1, σ = 1. With
+    `field`, also (r, z, V[r, z])."""
+    ins_edges = ([insulator[0]], [insulator[1], insulator[2]]) if insulator else ([], [])
     if sphere:
         rs, zc = sphere
         r, z = _graded([rs], h, far), _graded([zc - rs, zc + rs], h, far)
     else:
         a, z0, z1 = rod
-        r, z = _graded([a], h, far), _graded([z0, z1], h, far)
+        r = _graded(sorted({a, *ins_edges[0]}), h, far)
+        z = _graded(sorted({e for e in (z0, z1, *ins_edges[1]) if e > 0}), h, far)
     nr, nz = len(r), len(z)
     R, Z = np.meshgrid(r, z, indexing="ij")
     body = ((R ** 2 + (Z - zc) ** 2) <= rs ** 2 * (1 + 1e-9)) if sphere else \
         ((a * (1 + 1e-9) >= R) & (z0 * (1 - 1e-9) <= Z) & (z1 * (1 + 1e-9) >= Z))
-    fixed = body.copy()
+    ins = np.zeros_like(body)
+    if insulator:
+        ri, zi0, zi1 = insulator
+        ins = (ri * (1 - 1e-9) > R) & (zi0 + 1e-12 < Z) & (zi1 * (1 - 1e-9) > Z) & ~body
+    fixed = body | ins
     fixed[-1, :] = fixed[:, -1] = fixed[:, 0] = True
     val = body.astype(float).ravel()
     rf = np.concatenate([[0.0], (r[1:] + r[:-1]) / 2, [r[-1]]])
@@ -198,6 +222,7 @@ def fv_factor(h: float, rod: tuple | None = None, sphere: tuple | None = None, f
     a_ = np.concatenate([(ii[:-1] * nz + jj[:-1]).ravel(), (ii[:, :-1] * nz + jj[:, :-1]).ravel()])
     b_ = np.concatenate([(ii[1:] * nz + jj[1:]).ravel(), (ii[:, 1:] * nz + jj[:, 1:]).ravel()])
     g_ = np.concatenate([g_r.ravel(), g_z.ravel()])
+    g_[ins.ravel()[a_] | ins.ravel()[b_]] = 0.0
     fx, bd = fixed.ravel(), body.ravel()
     k = -np.ones(nr * nz, dtype=int)
     k[~fx] = np.arange((~fx).sum())
@@ -213,7 +238,7 @@ def fv_factor(h: float, rod: tuple | None = None, sphere: tuple | None = None, f
     v[~fx] = spla.spsolve(A, rhs)
     out, inn = bd[a_] & ~bd[b_], bd[b_] & ~bd[a_]
     current = (g_[out] * (v[a_[out]] - v[b_[out]])).sum() + (g_[inn] * (v[b_[inn]] - v[a_[inn]])).sum()
-    return float(1.0 / current)
+    return (float(1.0 / current), r, z, v.reshape(nr, nz)) if field else float(1.0 / current)
 
 
 def sphere_plane_exact(radius: float, centre: float) -> float:
@@ -231,22 +256,40 @@ def geometry() -> dict:
     into_bore = max(0.0, S58.L_A_INSERT - lock["shank_length_mm"])   # lattice inside the sleeve at the placeholder insertion
     return {"flange_radius_m": bark["flange_diameter_mm"] / 2e3, "wound_radius_m": R_OUTER_M,
             "anode_radius_m": zone1["outer_diameter_mm"] / 2e3,
+            "bore_radius_m": (sleeve["bore_diameter_mm"] / 2 + sleeve["wall_thickness_mm"]) / 1e3,   # sleeve OD = the bore
             "anode_exposed_length_m": ((lattice - into_bore) / 1e3, lattice / 1e3),
             "zone1_insertion_placeholder_mm": S58.L_A_INSERT, "zone1_shank_mm": lock["shank_length_mm"],
             "sleeve_length_m": sleeve["length_mm"] / 1e3, "inner_bark_m": S58.T_PHLOEM / 1e3,
             "dead_bark_under_flange_m": (bark["thin_mm"] / 1e3, bark["thick_mm"] / 1e3), "bark_source": bark}
 
 
+ANODE_STATES = ("sap_gap", "ingrown")   # the equipotential at the bore wall (Ø15) · at the gyroid (Ø11); air gap: not modelled
+
+
+def _depths(g: dict) -> list:
+    return sorted(g["sleeve_length_m"] - (t + g["inner_bark_m"]) for t in g["dead_bark_under_flange_m"])   # thick bark → shallow
+
+
+def _layer1(g: dict, state: str, d: float, L: float, h: float = H_FD_M, field: bool = False):
+    """Element 1 in one anode state: the equipotential cylinder of that state below the insulating sleeve."""
+    a = g["bore_radius_m"] if state == "sap_gap" else g["anode_radius_m"]
+    return fv_factor(h, rod=(a, d, d + L), insulator=(g["bore_radius_m"], 0.0, d), field=field)
+
+
 def factors(g: dict, h: float = H_FD_M) -> dict:
     """Every element's geometric factor, as a bracket where the geometry is a bracket."""
-    r2, a, t_ph = g["flange_radius_m"], g["anode_radius_m"], g["inner_bark_m"]
-    depths = sorted(g["sleeve_length_m"] - (t + t_ph) for t in g["dead_bark_under_flange_m"])   # thick bark → shallow
-    corners = [{"depth_m": d, "length_m": L, "G_per_m": fv_factor(h, rod=(a, d, d + L))}
-               for d in depths for L in g["anode_exposed_length_m"]]
-    gs = [c["G_per_m"] for c in corners]
+    r2, t_ph = g["flange_radius_m"], g["inner_bark_m"]
+    depths = _depths(g)
+    states = {}
+    for st in ANODE_STATES:
+        corners = [{"depth_m": d, "length_m": L, "G_per_m": _layer1(g, st, d, L, h)}
+                   for d in depths for L in g["anode_exposed_length_m"]]
+        states[st] = {"corners": corners, "bracket": [min(c["G_per_m"] for c in corners), max(c["G_per_m"] for c in corners)]}
+    gs = [b for st in states.values() for b in st["bracket"]]
     r_in = (min(depths), max(depths) + max(g["anode_exposed_length_m"]))
     t_rh = g["dead_bark_under_flange_m"]
-    return {"1_sapwood_per_m": {"corners": corners, "bracket": [min(gs), max(gs)], "depth_below_cambium_m": depths},
+    return {"1_sapwood_per_m": {"states": states, "bracket": [min(gs), max(gs)], "depth_below_cambium_m": depths,
+                                "air_gap": "not modelled — layer 1 then runs through contact points only; the path is open"},
             "2_inner_bark_sheet": {"R_in_m": list(r_in), "thickness_m": t_ph,
                                    "ln_over_2pi": [math.log(r / r2) / (2 * math.pi) for r in r_in]},
             "3_dead_bark_per_m": {"thickness_m": list(t_rh),
@@ -257,12 +300,14 @@ def factors(g: dict, h: float = H_FD_M) -> dict:
 
 
 def electrode_readings() -> dict:
-    """The electrodes' own R_int as canon carries it — low ends (kΩ); no measured value exists."""
-    eis = json.loads(EIS.read_text(encoding="utf-8"))["parameters"]
+    """The electrodes' own R_int as canon carries it — [low, high] (kΩ); no measured value exists. The anode is read
+    through 31's OWN ranges for the coin (its central Rs + Rct is not the low end — adversary 2026-10-12)."""
+    pred = json.loads(EIS.read_text(encoding="utf-8"))["predictions_for_ti_coin"]
+    rs, rct = ([float(x) for x in pred[k].split("-")] for k in ("expected_Rs_range_ohm", "expected_Rct_range_ohm"))
     cat = json.loads(CATHODE_RCT.read_text(encoding="utf-8"))["grid"]
-    model = [(eis["Rs_ohm"] + eis["Rct_ohm"] + min(c["rct_ohm"] for c in cat)) / 1e3,
-             (eis["Rs_ohm"] + eis["Rct_ohm"] + max(c["rct_ohm"] for c in cat)) / 1e3]
-    return {"models_31_31b_kohm": model, "prose_estimate_02_03_kohm": list(R_INT_EBFC_EST_KOHM)}
+    model = [(rs[0] + rct[0] + min(c["rct_ohm"] for c in cat)) / 1e3, (rs[1] + rct[1] + max(c["rct_ohm"] for c in cat)) / 1e3]
+    return {"models_31_31b_kohm": model, "anode_31_ranges_ohm": {"Rs": rs, "Rct": rct},
+            "prose_estimate_02_03_kohm": list(R_INT_EBFC_EST_KOHM)}
 
 
 def budgets(readings: dict) -> list:
@@ -311,18 +356,41 @@ def controls(g: dict) -> dict:
     fv, ex = fv_factor(H_FD_M / 2, sphere=(rs, zc)), sphere_plane_exact(rs, zc)
     if abs(fv / ex - 1) > 0.015:
         raise SystemExit(f"control 1: finite volumes {fv:.4f} vs the exact sphere-plane {ex:.4f} /m")
-    a, L = g["anode_radius_m"], max(g["anode_exposed_length_m"])
-    d = g["sleeve_length_m"] - (max(g["dead_bark_under_flange_m"]) + g["inner_bark_m"])
-    coarse, fine = fv_factor(H_FD_M, rod=(a, d, d + L)), fv_factor(H_FD_M / 2, rod=(a, d, d + L))
-    if abs(coarse / fine - 1) > 0.01:
-        raise SystemExit(f"control 2: element 1 not grid-converged ({coarse:.4f} vs {fine:.4f} /m)")
+    L, d = max(g["anode_exposed_length_m"]), min(_depths(g))
+    conv, mono = {}, {}
+    for st in ANODE_STATES:
+        coarse, fine = _layer1(g, st, d, L), _layer1(g, st, d, L, H_FD_M / 2)
+        if abs(coarse / fine - 1) > 0.01:
+            raise SystemExit(f"control 2: element 1 ({st}) not grid-converged ({coarse:.4f} vs {fine:.4f} /m)")
+        a = g["bore_radius_m"] if st == "sap_gap" else g["anode_radius_m"]
+        wood = fv_factor(H_FD_M, rod=(a, d, d + L))   # wood where the sleeve is
+        if coarse < wood:
+            raise SystemExit(f"control 4: the insulating sleeve LOWERED G1 ({st}: {coarse:.4f} < {wood:.4f} /m)")
+        conv[st], mono[st] = coarse / fine, coarse / wood
     table = {(700.0, "typ"): 4.0, (800.0, "typ"): 8.0, (800.0, "max"): 4.7}   # 02_03 §1.5 printed table
     got = {(v, lab): ceiling_kohm(v, vin) for v in V_OC_MV
            for lab, vin in (("typ", BQ25570_VIN_CS_TYP_MV), ("max", BQ25570_VIN_CS_MAX_MV))}
     if any(abs(got[k] - v) > 0.05 for k, v in table.items()) or got[(700.0, "max")] > 0 or ceiling_kohm(600, 600) != 0:
         raise SystemExit(f"control 3: ceilings {got} ≠ the 02_03 §1.5 table {table}")
-    return {"sphere_plane_fv_over_exact": fv / ex, "element_1_coarse_over_fine": coarse / fine,
-            "ceiling_table_02_03": {f"{k[0]:.0f}/{k[1]}": v for k, v in got.items()}}
+    return {"sphere_plane_fv_over_exact": fv / ex, "sphere_plane_spacing_m": H_FD_M / 2, "element_1_coarse_over_fine": conv,
+            "element_1_sleeve_over_wood": mono, "ceiling_table_02_03": {f"{k[0]:.0f}/{k[1]}": v for k, v in got.items()}}
+
+
+VPLUS_OFFSETS_MM = (0.0, 1.0, 2.0, 3.0)   # a V+ needle this far into the wood from the bore wall
+
+
+def vplus_dropout(g: dict) -> dict:
+    """The share of layer 1 a V+ electrode leaves out when it sits in the WOOD at the bore wall + offset, at the
+    anode's mid-depth (sap-gap state, the bench's 4-contact configuration): 1 − V(r) with V = 1 on the anode, 0 on the
+    plane. In the sap of the gap the share is 0 by construction (the sap is the equipotential)."""
+    out = {}
+    for d in _depths(g):
+        for L in g["anode_exposed_length_m"]:
+            _, r, z, v = _layer1(g, "sap_gap", d, L, field=True)
+            j = int(np.argmin(abs(z - (d + L / 2))))
+            out[f"d{1e3 * d:.1f}_L{1e3 * L:.0f}"] = {
+                f"{o:.0f}mm": float(1 - np.interp(g["bore_radius_m"] + o / 1e3, r, v[:, j])) for o in VPLUS_OFFSETS_MM}
+    return out
 
 
 def main() -> int:
@@ -335,25 +403,34 @@ def main() -> int:
     req = {f"{r['V_OC_mV']:.0f}/{r['VIN_CS']} · {k}": requirements(f, v * 1e3)
            for r in b for k, v in r["budget_kohm"].items() if v > 0}
     pts = literature_points(f)
+    for p in pts:   # which open cells each reading's ends exceed — counted, never «most» by eye (adversary 2026-10-12)
+        p["open_cells_exceeded"] = {end: sorted(k for k, v in req.items() if v["budget_ohm"] < p["element_ohm"][i])
+                                    for i, end in enumerate(("lenient", "adverse"))}
     pine = [p for p in pts if p["species"] == "Pinus sylvestris"]
     floor = sum(min(p["element_ohm"]) for p in pine)
     g1 = f["1_sapwood_per_m"]["bracket"]
-    print(f"  anode Ø{2e3 * g['anode_radius_m']:.0f} × {1e3 * g['anode_exposed_length_m'][0]:.0f}–"
-          f"{1e3 * g['anode_exposed_length_m'][1]:.0f} mm at {1e3 * min(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f}–"
-          f"{1e3 * max(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f} mm below the cambium: G1 = {g1[0]:.2f}–{g1[1]:.2f} /m")
+    print(f"  anode Ø{2e3 * g['anode_radius_m']:.0f} (bore Ø{2e3 * g['bore_radius_m']:.0f}) × "
+          f"{1e3 * g['anode_exposed_length_m'][0]:.0f}–{1e3 * g['anode_exposed_length_m'][1]:.0f} mm at "
+          f"{1e3 * min(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f}–"
+          f"{1e3 * max(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f} mm below the cambium: G1 = {g1[0]:.2f}–{g1[1]:.2f} /m "
+          + " · ".join(f"{st} {v['bracket'][0]:.2f}–{v['bracket'][1]:.2f}" for st, v in f["1_sapwood_per_m"]["states"].items()))
     print(f"  electrodes' own R_int (kΩ): models {readings['models_31_31b_kohm']} · prose estimate {readings['prose_estimate_02_03_kohm']}")
     for r in b:
         print(f"  V_OC {r['V_OC_mV']:.0f} mV, VIN(CS) {r['VIN_CS']}: ceiling {r['ceiling_kohm']:+.2f} kΩ → budget "
               + " · ".join(f"{k} {v:+.2f}" for k, v in r["budget_kohm"].items()))
     for p in pts:
-        print(f"  {p['element']} {p['species']}: {p['element_ohm'][0] / 1e3:.2f}–{p['element_ohm'][1] / 1e3:.2f} kΩ")
+        print(f"  {p['element']} {p['species']}: {p['element_ohm'][0] / 1e3:.2f}–{p['element_ohm'][1] / 1e3:.2f} kΩ; "
+              f"its adverse end exceeds {len(p['open_cells_exceeded']['adverse'])} of {len(req)} open cells")
+    vp = vplus_dropout(g)
+    print("  V+ in the wood at the bore wall + 0/1/2/3 mm leaves out of layer 1: "
+          + " · ".join(f"{k} " + "/".join(f"{x:.2f}" for x in row.values()) for k, row in vp.items()))
     print(f"  Scots pine, sapwood + film at their most lenient: {floor / 1e3:.2f} kΩ")
     out = {"script": Path(__file__).name, "item": "00_07 HW.53",
            "question": "what must each layer of the anode → cathode ionic path be for R_Ω to fit the cold-start budget, "
                        "for each reading of the electrodes' own R_int canon carries?",
            "geometry": g, "controls": ctl, "factors": f, "electrode_r_int_readings": readings, "budgets": b,
            "requirements_alone_at_lenient_geometry": req, "requirements_per_kohm_of_budget": requirements(f, 1000.0),
-           "literature_points": pts,
+           "literature_points": pts, "vplus_share_of_layer_1_left_out": vp,
            "dead_bark_literature": DEAD_BARK_NOTE, "inner_bark_literature": INNER_BARK_NOTE,
            "scots_pine_sapwood_plus_film_lenient_ohm": floor,
            "open_budget_cells_that_hold_it": sorted(k for k, v in req.items() if v["budget_ohm"] >= floor),

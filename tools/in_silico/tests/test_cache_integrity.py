@@ -2769,11 +2769,13 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib.constants import BQ25570_PIN_CS_UW, BQ25570_VIN_CS_MAX_MV, BQ25570_VIN_CS_TYP_MV, R_INT_EBFC_EST_KOHM
     d = json.loads((REPO / "tools/in_silico/cache/kinetics/cathode_ionic_path.json").read_text())
-    eis = json.loads((DFT.parent / "kinetics/eis_model.json").read_text())["parameters"]
+    pred = json.loads((DFT.parent / "kinetics/eis_model.json").read_text())["predictions_for_ti_coin"]
+    rs, rct = ([float(x) for x in pred[k].split("-")] for k in ("expected_Rs_range_ohm", "expected_Rct_range_ohm"))
     cat = json.loads((DFT.parent / "kinetics/cathode_det_rct.json").read_text())["grid"]
     rd = d["electrode_r_int_readings"]
-    assert rd["models_31_31b_kohm"] == [(eis["Rs_ohm"] + eis["Rct_ohm"] + min(c["rct_ohm"] for c in cat)) / 1e3,
-                                        (eis["Rs_ohm"] + eis["Rct_ohm"] + max(c["rct_ohm"] for c in cat)) / 1e3]
+    assert rd["anode_31_ranges_ohm"] == {"Rs": rs, "Rct": rct}
+    assert rd["models_31_31b_kohm"] == [(rs[0] + rct[0] + min(c["rct_ohm"] for c in cat)) / 1e3,
+                                        (rs[1] + rct[1] + max(c["rct_ohm"] for c in cat)) / 1e3]
     assert rd["prose_estimate_02_03_kohm"] == list(R_INT_EBFC_EST_KOHM)
     low = {"models_31_31b": rd["models_31_31b_kohm"][0], "prose_estimate_02_03": rd["prose_estimate_02_03_kohm"][0]}
     vin = {"typ": BQ25570_VIN_CS_TYP_MV, "max": BQ25570_VIN_CS_MAX_MV}
@@ -2792,10 +2794,21 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
         assert req["4_film_sheet_max_ohm_sq"] == b / min(f["4_film_per_sq"])
         assert req["5_layer_sheet_x_band_height_max_ohm"] == b / f["5_layer_full_height_per_sq_per_m"]
     assert d["requirements_per_kohm_of_budget"]["budget_ohm"] == 1000.0
-    gs = [c["G_per_m"] for c in f["1_sapwood_per_m"]["corners"]]
-    assert f["1_sapwood_per_m"]["bracket"] == [min(gs), max(gs)] and len(gs) == 4
+    states = f["1_sapwood_per_m"]["states"]
+    assert set(states) == {"sap_gap", "ingrown"}
+    for st in states.values():
+        gs = [c["G_per_m"] for c in st["corners"]]
+        assert st["bracket"] == [min(gs), max(gs)] and len(gs) == 4
+    for i, (a, b) in enumerate(zip(states["sap_gap"]["corners"], states["ingrown"]["corners"], strict=True)):
+        assert (a["depth_m"], a["length_m"]) == (b["depth_m"], b["length_m"]) and a["G_per_m"] < b["G_per_m"], i   # sap lowers R1
+    every = [x for st in states.values() for x in st["bracket"]]
+    assert f["1_sapwood_per_m"]["bracket"] == [min(every), max(every)]
     ctl = d["controls"]
-    assert abs(ctl["sphere_plane_fv_over_exact"] - 1) <= 0.015 and abs(ctl["element_1_coarse_over_fine"] - 1) <= 0.01
+    assert abs(ctl["sphere_plane_fv_over_exact"] - 1) <= 0.015 and ctl["sphere_plane_spacing_m"] < 0.25e-3
+    assert all(abs(v - 1) <= 0.01 for v in ctl["element_1_coarse_over_fine"].values())
+    assert all(v >= 1.0 for v in ctl["element_1_sleeve_over_wood"].values()), "the insulating sleeve lowered G1"
+    vp = d["vplus_share_of_layer_1_left_out"]
+    assert len(vp) == 4 and all(row["0mm"] < 1e-9 and list(row.values()) == sorted(row.values()) for row in vp.values())
     assert d["element_5_in_canon"]["electrolyte_path_described"] is False
 
 
@@ -2815,5 +2828,8 @@ def test_cathode_ionic_path_literature_points_follow_from_the_readings():
     assert ec["element_ohm"] == [min(rho) / max(film) * min(f["4_film_per_sq"]), max(rho) / min(film) * max(f["4_film_per_sq"])]
     floor = sum(min(p["element_ohm"]) for p in pts if p["species"] == "Pinus sylvestris")
     assert d["scots_pine_sapwood_plus_film_lenient_ohm"] == floor
-    assert d["open_budget_cells_that_hold_it"] == sorted(k for k, v in d["requirements_alone_at_lenient_geometry"].items()
-                                                         if v["budget_ohm"] >= floor)
+    req = d["requirements_alone_at_lenient_geometry"]
+    assert d["open_budget_cells_that_hold_it"] == sorted(k for k, v in req.items() if v["budget_ohm"] >= floor)
+    for p in pts:   # counted, never «most» by eye
+        assert p["open_cells_exceeded"] == {end: sorted(k for k, v in req.items() if v["budget_ohm"] < p["element_ohm"][i])
+                                            for i, end in enumerate(("lenient", "adverse"))}, p["source"]

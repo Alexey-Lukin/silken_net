@@ -6,6 +6,7 @@
     "flange_radius_m": 0.0149,
     "wound_radius_m": 0.0075,
     "anode_radius_m": 0.0055,
+    "bore_radius_m": 0.0075,
     "anode_exposed_length_m": [
       0.028,
       0.04
@@ -27,7 +28,15 @@
   },
   "controls": {
     "sphere_plane_fv_over_exact": 1.0084642597962217,
-    "element_1_coarse_over_fine": 0.9993605955945016,
+    "sphere_plane_spacing_m": 0.000125,
+    "element_1_coarse_over_fine": {
+      "sap_gap": 0.9973852061427935,
+      "ingrown": 0.9978992285533901
+    },
+    "element_1_sleeve_over_wood": {
+      "sap_gap": 1.0563915675997564,
+      "ingrown": 1.0795600570070891
+    },
     "ceiling_table_02_03": {
       "700/typ": 4.0,
       "700/max": 0.0,
@@ -37,36 +46,73 @@
   },
   "factors": {
     "1_sapwood_per_m": {
-      "corners": [
-        {
-          "depth_m": 0.026000000000000002,
-          "length_m": 0.028,
-          "G_per_m": 7.180211038636821
+      "states": {
+        "sap_gap": {
+          "corners": [
+            {
+              "depth_m": 0.026000000000000002,
+              "length_m": 0.028,
+              "G_per_m": 6.327178116824986
+            },
+            {
+              "depth_m": 0.026000000000000002,
+              "length_m": 0.04,
+              "G_per_m": 5.255083918420166
+            },
+            {
+              "depth_m": 0.038675,
+              "length_m": 0.028,
+              "G_per_m": 6.553730043005309
+            },
+            {
+              "depth_m": 0.038675,
+              "length_m": 0.04,
+              "G_per_m": 5.443942400721082
+            }
+          ],
+          "bracket": [
+            5.255083918420166,
+            6.553730043005309
+          ]
         },
-        {
-          "depth_m": 0.026000000000000002,
-          "length_m": 0.04,
-          "G_per_m": 5.945521841745317
-        },
-        {
-          "depth_m": 0.038675,
-          "length_m": 0.028,
-          "G_per_m": 7.439129283512807
-        },
-        {
-          "depth_m": 0.038675,
-          "length_m": 0.04,
-          "G_per_m": 6.1585372961733
+        "ingrown": {
+          "corners": [
+            {
+              "depth_m": 0.026000000000000002,
+              "length_m": 0.028,
+              "G_per_m": 7.900380237335479
+            },
+            {
+              "depth_m": 0.026000000000000002,
+              "length_m": 0.04,
+              "G_per_m": 6.418547898411468
+            },
+            {
+              "depth_m": 0.038675,
+              "length_m": 0.028,
+              "G_per_m": 8.11879134301887
+            },
+            {
+              "depth_m": 0.038675,
+              "length_m": 0.04,
+              "G_per_m": 6.60035377705429
+            }
+          ],
+          "bracket": [
+            6.418547898411468,
+            8.11879134301887
+          ]
         }
-      ],
+      },
       "bracket": [
-        5.945521841745317,
-        7.439129283512807
+        5.255083918420166,
+        8.11879134301887
       ],
       "depth_below_cambium_m": [
         0.026000000000000002,
         0.038675
-      ]
+      ],
+      "air_gap": "not modelled — layer 1 then runs through contact points only; the path is open"
     },
     "2_inner_bark_sheet": {
       "R_in_m": [
@@ -95,9 +141,19 @@
   },
   "electrode_r_int_readings": {
     "models_31_31b_kohm": [
-      0.1729018201037166,
-      29.92290061663106
+      0.08600182010371658,
+      30.09600061663106
     ],
+    "anode_31_ranges_ohm": {
+      "Rs": [
+        50.0,
+        200.0
+      ],
+      "Rct": [
+        36.0,
+        146.0
+      ]
+    },
     "prose_estimate_02_03_kohm": [
       5.0,
       20.0
@@ -109,7 +165,7 @@
       "VIN_CS": "typ",
       "ceiling_kohm": 4.0,
       "budget_kohm": {
-        "models_31_31b": 3.8270981798962835,
+        "models_31_31b": 3.9139981798962835,
         "prose_estimate_02_03": -1.0
       }
     },
@@ -118,7 +174,7 @@
       "VIN_CS": "max",
       "ceiling_kohm": 0.0,
       "budget_kohm": {
-        "models_31_31b": -0.1729018201037166,
+        "models_31_31b": -0.08600182010371658,
         "prose_estimate_02_03": -5.0
       }
     },
@@ -127,7 +183,7 @@
       "VIN_CS": "typ",
       "ceiling_kohm": 8.0,
       "budget_kohm": {
-        "models_31_31b": 7.827098179896283,
+        "models_31_31b": 7.913998179896283,
         "prose_estimate_02_03": 3.0
       }
     },
@@ -136,48 +192,48 @@
       "VIN_CS": "max",
       "ceiling_kohm": 4.666666666666667,
       "budget_kohm": {
-        "models_31_31b": 4.49376484656295,
+        "models_31_31b": 4.58066484656295,
         "prose_estimate_02_03": -0.33333333333333304
       }
     }
   ],
   "requirements_alone_at_lenient_geometry": {
     "700/typ · models_31_31b": {
-      "budget_ohm": 3827.0981798962835,
-      "1_sapwood_rho_max_ohm_m": 643.6942427870777,
-      "2_inner_bark_sheet_max_ohm_sq": 43191.73936022774,
-      "3_dead_bark_rho_max_ohm_m": 676.771641615512,
-      "4_film_sheet_max_ohm_sq": 716581.7381811303,
-      "5_layer_sheet_x_band_height_max_ohm": 358.29086909056514
+      "budget_ohm": 3913.9981798962835,
+      "1_sapwood_rho_max_ohm_m": 744.8022221256836,
+      "2_inner_bark_sheet_max_ohm_sq": 44172.47253559287,
+      "3_dead_bark_rho_max_ohm_m": 692.1387560431804,
+      "4_film_sheet_max_ohm_sq": 732852.8005163088,
+      "5_layer_sheet_x_band_height_max_ohm": 366.42640025815433
     },
     "800/typ · models_31_31b": {
-      "budget_ohm": 7827.098179896283,
-      "1_sapwood_rho_max_ohm_m": 1316.469502296644,
-      "2_inner_bark_sheet_max_ohm_sq": 88334.80842191378,
-      "3_dead_bark_rho_max_ohm_m": 1384.1186808637735,
-      "4_film_sheet_max_ohm_sq": 1465537.426796937,
-      "5_layer_sheet_x_band_height_max_ohm": 732.7687133984683
+      "budget_ohm": 7913.998179896283,
+      "1_sapwood_rho_max_ohm_m": 1505.9698955816991,
+      "2_inner_bark_sheet_max_ohm_sq": 89315.5415972789,
+      "3_dead_bark_rho_max_ohm_m": 1399.485795291442,
+      "4_film_sheet_max_ohm_sq": 1481808.4891321152,
+      "5_layer_sheet_x_band_height_max_ohm": 740.9042445660575
     },
     "800/typ · prose_estimate_02_03": {
       "budget_ohm": 3000.0,
-      "1_sapwood_rho_max_ohm_m": 504.5814446321747,
+      "1_sapwood_rho_max_ohm_m": 570.8757550920118,
       "2_inner_bark_sheet_max_ohm_sq": 33857.301796264546,
       "3_dead_bark_rho_max_ohm_m": 530.5102794361964,
       "4_film_sheet_max_ohm_sq": 561716.766461855,
       "5_layer_sheet_x_band_height_max_ohm": 280.8583832309275
     },
     "800/max · models_31_31b": {
-      "budget_ohm": 4493.76484656295,
-      "1_sapwood_rho_max_ohm_m": 755.8234527053387,
-      "2_inner_bark_sheet_max_ohm_sq": 50715.584203842074,
-      "3_dead_bark_rho_max_ohm_m": 794.6628148235555,
-      "4_film_sheet_max_ohm_sq": 841407.6862837648,
-      "5_layer_sheet_x_band_height_max_ohm": 420.7038431418823
+      "budget_ohm": 4580.66484656295,
+      "1_sapwood_rho_max_ohm_m": 871.6635010350194,
+      "2_inner_bark_sheet_max_ohm_sq": 51696.3173792072,
+      "3_dead_bark_rho_max_ohm_m": 810.029929251224,
+      "4_film_sheet_max_ohm_sq": 857678.748618943,
+      "5_layer_sheet_x_band_height_max_ohm": 428.8393743094715
     }
   },
   "requirements_per_kohm_of_budget": {
     "budget_ohm": 1000.0,
-    "1_sapwood_rho_max_ohm_m": 168.19381487739156,
+    "1_sapwood_rho_max_ohm_m": 190.29191836400392,
     "2_inner_bark_sheet_max_ohm_sq": 11285.767265421515,
     "3_dead_bark_rho_max_ohm_m": 176.83675981206545,
     "4_film_sheet_max_ohm_sq": 187238.92215395166,
@@ -197,9 +253,17 @@
       ],
       "quantity": "rho_ohm_m",
       "element_ohm": [
-        1302.0692833422245,
-        4418.842794406608
-      ]
+        1150.8633781340163,
+        4822.562057753209
+      ],
+      "open_cells_exceeded": {
+        "lenient": [],
+        "adverse": [
+          "700/typ · models_31_31b",
+          "800/max · models_31_31b",
+          "800/typ · prose_estimate_02_03"
+        ]
+      }
     },
     {
       "element": "1_sapwood",
@@ -214,9 +278,17 @@
       ],
       "quantity": "rho_ohm_m",
       "element_ohm": [
-        1406.1159155727676,
-        5522.065667151556
-      ]
+        1242.827346706369,
+        6026.578813922907
+      ],
+      "open_cells_exceeded": {
+        "lenient": [],
+        "adverse": [
+          "700/typ · models_31_31b",
+          "800/max · models_31_31b",
+          "800/typ · prose_estimate_02_03"
+        ]
+      }
     },
     {
       "element": "4_film",
@@ -233,12 +305,47 @@
       "element_ohm": [
         1173.6924011982674,
         118333.86364677241
-      ]
+      ],
+      "open_cells_exceeded": {
+        "lenient": [],
+        "adverse": [
+          "700/typ · models_31_31b",
+          "800/max · models_31_31b",
+          "800/typ · models_31_31b",
+          "800/typ · prose_estimate_02_03"
+        ]
+      }
     }
   ],
+  "vplus_share_of_layer_1_left_out": {
+    "d26.0_L28": {
+      "0mm": 0.0,
+      "1mm": 0.0757507769805359,
+      "2mm": 0.14306296952885122,
+      "3mm": 0.20308581512212442
+    },
+    "d26.0_L40": {
+      "0mm": 0.0,
+      "1mm": 0.06684127754931668,
+      "2mm": 0.12632392016386562,
+      "3mm": 0.17953544253111253
+    },
+    "d38.7_L28": {
+      "0mm": 0.0,
+      "1mm": 0.07325399560530521,
+      "2mm": 0.13835158333014475,
+      "3mm": 0.19640765330539534
+    },
+    "d38.7_L40": {
+      "0mm": 0.0,
+      "1mm": 0.06473042733961099,
+      "2mm": 0.12233707343557387,
+      "3mm": 0.17387530137161145
+    }
+  },
   "dead_bark_literature": "No resistivity of living rhytidome — of any species, dry or wet — was found (desk 2026-10-11). The nearest numeric proxy is processed Quercus suber cork in air, conductivity of order 1e-12 S/m (Lança et al. 2011, Ciência & Tecnologia dos Materiais 23(3/4):64–70, Table 2; read by the agent): a dry layer anywhere near it is an insulator, so element 3 has a number only when wet — the bench's question.",
   "inner_bark_literature": "No resistivity of living phloem in Ω·m was found; cambial-electrical-resistance readings (Shigometer, pulsed DC) are kΩ between needles of a stated geometry, e.g. 2.1–16.6 kΩ between 4.2-cm needles 1.8 cm apart in sweet gum (Clark et al. 1992, doi:10.48044/jauf.1992.001; read by the agent) — not converted.",
-  "scots_pine_sapwood_plus_film_lenient_ohm": 2475.761684540492,
+  "scots_pine_sapwood_plus_film_lenient_ohm": 2324.5557793322837,
   "open_budget_cells_that_hold_it": [
     "700/typ · models_31_31b",
     "800/max · models_31_31b",
