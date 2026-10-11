@@ -89,8 +89,9 @@ module Trees
               # `&.to_f` тримає ФОРМАТ: `z_value` — колонка `decimal`, тобто BigDecimal
               # із точністю схеми. Зникнути вона вже не може (`ApplicationComponent`
               # заповнив Phlex-хук `format_object`), але без цього тут друкувалась би
-              # сира точність замість числа під `text-6xl`. ⚠️ Фолбек `|| "---"` не
-              # спрацьовує НІКОЛИ — BigDecimal істинний, гілка не береться. Дім → `04_04 §2`.
+              # сира точність замість числа під `text-6xl`. Фолбек `|| "---"` бере рядок без
+              # `z` — CCM-ера Лоренца не має (FW.66 (Б), `03_04 §8`) — і дерево без жодного
+              # рядка. Дім → `04_04 §2`.
               span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value&.to_f || "---" }
               # [ARCH.86] Підпис називає ВЕЛИЧИНУ, а не одиницю: Z безрозмірний.
               span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.lorenz_z") }
