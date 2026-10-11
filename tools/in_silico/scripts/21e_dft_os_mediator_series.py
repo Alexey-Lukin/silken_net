@@ -77,7 +77,7 @@ SERIES = [
     ("ome", "COc1ccnc(-c2cc(OC)ccn2)c1", -0.27, "4,4'-dimethoxy (donor)"),
     ("dmbpy", DMBPY_SMILES, -0.17, "4,4'-dimethyl (weak donor)"),
     ("bpy", BPY_SMILES, 0.00, "parent (reproduces 21b)"),
-    # the acceptor point of the one measured aqueous series of this scaffold (Montón-Vicente 2026, Langmuir, script 83)
+    # the acceptor point of the measured series of this scaffold — ref 8's PVI polymers and Montón-Vicente 2026 (script 83)
     ("cl", "Clc1ccnc(-c2cc(Cl)ccn2)c1", 0.23, "4,4'-dichloro (weak acceptor)"),
     ("dcbpy", DCBPY_SMILES, 0.45, "4,4'-dicarboxy (acceptor)"),
     ("no2", "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1", 0.78, "4,4'-dinitro (strong acceptor)"),

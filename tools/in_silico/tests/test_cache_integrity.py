@@ -352,6 +352,26 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
     for a, b in (("ome", "dmbpy"), ("dmbpy", "cl")):
         assert pw[f"{a}-{b}"] == (am[b]["E12_V"] - am[a]["E12_V"]) / (am[b]["sigma_para"] - am[a]["sigma_para"]) / 4
     assert aq["verdict"] == s83.verdict_aqueous(aq), "the aqueous verdict is not the one its fields build"
+    # paper ref 8's series (Zafar 2012 Table 1, polymers b, c, d, f at loading 1:9): pairs, pairwise slopes, the loading control
+    pv = v["pvi_series"]
+    pm = {n: r["E_V"] for n, r in pv["measured_E_V"].items()}
+    assert pm == {n: e for n, (e, _) in s83.PVI_MEASURED_E_V.items()}, "PVI transcription ≠ script"
+    assert all(r["sigma_para"] == b3[n]["sigma_para"] for n, r in pv["measured_E_V"].items())
+    assert [(p["x"], p["ref"]) for p in pv["pairs"]] == list(s83.PVI_PAIRS)
+    for p in pv["pairs"]:
+        x, r_ = p["x"], p["ref"]
+        assert p["measured_mV"] == (pm[x] - pm[r_]) / 4 * 1000 and p["ours_mV"] == (-b3[x]["dE_red_eV"] + b3[r_]["dE_red_eV"]) / 4 * 1000, (x, r_)
+        assert p["ours_over_measured"] == p["ours_mV"] / p["measured_mV"], (x, r_)
+    order = sorted(pm, key=lambda n: b3[n]["sigma_para"])
+    assert list(pv["pairwise_slope_per_substituent_V_per_sigma"]) == [f"{a}-{b}" for a, b in itertools.pairwise(order)]
+    for a, b in itertools.pairwise(order):
+        sl = pv["pairwise_slope_per_substituent_V_per_sigma"][f"{a}-{b}"]
+        ds = b3[b]["sigma_para"] - b3[a]["sigma_para"]
+        assert sl["measured"] == (pm[b] - pm[a]) / ds / 4 and sl["ours"] == (-b3[b]["dE_red_eV"] + b3[a]["dE_red_eV"]) / ds / 4, (a, b)
+    lc = pv["loading_control"]
+    assert lc["shift_mV"] == (lc["loading_1_11_V"] - lc["loading_1_9_V"]) * 1000 and lc["loading_1_9_V"] == pm["dmbpy"]
+    assert lc["shift_mV"] > abs(pm["bpy"] - pm["dmbpy"]) * 1000, "the prose says the loading effect exceeds all four Me → H"
+    assert pv["verdict"] == s83.verdict_pvi(pv), "the PVI verdict is not the one its fields build"
 
 
 def test_os_mediator_series_rows_that_record_s2_are_doublets():

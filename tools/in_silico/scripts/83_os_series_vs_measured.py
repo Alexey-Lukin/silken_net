@@ -3,8 +3,8 @@
 """① against a MEASURED series — the substituent shift of E°(Os III/II) per 4,4'-substituent, computed ⊥ measured.
 
 The paper withdrew the claim that the Hammett slope was «triangulated against … the measured series» (2026-09-25,
-paper/09_references.md §3.3): no script or cache performed the comparison. This is that instrument, for the one
-measured 4,4'-X2-bpy Os(III/II) series found (00_07 HW.5.IS, ChemRxiv scout 2026-10-11):
+paper/09_references.md §3.3): no script or cache performed the comparison. This is that instrument; its first series
+is the measured 4,4'-X2-bpy Os(III/II) series the ChemRxiv scout found (00_07 HW.5.IS, 2026-10-11):
 
   Goldschmid, S. L.; Bednářová, E.; Beck, L. R.; Xie, K.; Tay, N. E. S.; Ravetz, B. D.; Li, J.; Joe, C. L.; Rovis, T.
   «Tuning the Electrochemical and Photophysical Properties of Osmium Complexes for Application in Photoredox
@@ -25,8 +25,8 @@ acceptor side (the series has no 4,4'-acceptor), nor OUR complex's measured slop
        same compilation, equally unchecked;
   (A4) a vertical ΔSCF difference (computed) is compared with an E1/2 difference (measured, adiabatic).
 
-A SECOND, aqueous series of our own scaffold (`aqueous_series` block, 2026-10-11 — found looking for the ligands of
-paper ref 8, which stay unread):
+A SECOND, aqueous series of our own scaffold (`aqueous_series` block, 2026-10-11 — found while looking for the ligands of
+paper ref 8, read later the same day — the third block below):
 
   Montón-Vicente et al., «Tunable Osmium Complexes …», Langmuir 2026, 42, 24074–24085, doi:10.1021/acs.langmuir.6c02628
   (CC BY; PMC13523742). Table 1, E1/2(Os II/III) of [Os(4,4'-X2-bpy)2Cl(ampy)]+, ampy = 4-(aminomethyl)pyridine —
@@ -42,12 +42,24 @@ paper ref 8, which stay unread):
   — the measured shifts are not linear in σp (the two pairwise slopes differ ×4), so the three-point slope ratio is
   kept in the cache as a mix of the pairs, not read as a slope.
 
+A THIRD series — OUR scaffold to the N-donor (`pvi_series` block, 2026-10-11): paper ref 8 itself,
+
+  Zafar, Wang, Sygmund, Ludwig, Leech, Gorton, Anal. Chem. 2012, 84, 334–341, doi:10.1021/ac202647z. Table 1, E°′ of the
+  Os polymers [Os(4,4'-X2-bpy)2(PVI)Cl]+ (PVI = poly(N-vinylimidazole), the imidazole N-donor our 1-MeIm models), films
+  on graphite in 50 mM phosphate buffer pH 7.4, measured in that paper (CVs of its Fig. 1A) — read from the page image of
+  a copy the founder downloaded on 2026-10-11 — an academia.edu upload of the ACS typeset PDF, pp. 334–341 (the text layer
+  gives the same numbers; the copy is kept out of the repository).
+  X = OMe · Me · H · Cl at one Os loading (1:9, polymers b, c, d, f). (A5) The film's environment moves E°′ by more than a
+  substituent does — the same Me complex at loading 1:11 (polymer e) sits +135 mV from polymer c — so only the equal-
+  loading points are compared, on the premise that their environment is common. No A1/A1′: the N-donor is ours.
+
 Run:  conda activate silken_md; python tools/in_silico/scripts/83_os_series_vs_measured.py
       (reads caches, no SCF — but it imports 21e for its σ table, one home, and 21e loads lib/ with RDKit)
 """
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -55,9 +67,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 
-SI_DESCRIPTION = ("Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with two measured "
-                  "series: homoleptic osmium complexes in acetonitrile (donors only) and an aqueous series of the same "
-                  "bis-bipyridine chloro core (one acceptor), under named transfer assumptions.")  # its row in the paper SI (72): English, no repo jargon
+SI_DESCRIPTION = ("Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with three measured "
+                  "series: homoleptic osmium complexes in acetonitrile (donors only), an aqueous series of the same "
+                  "bis-bipyridine chloro core, and the osmium redox polymers of the same core with an imidazole donor "
+                  "(paper ref 8), under named transfer assumptions.")  # its row in the paper SI (72): English, no repo jargon
 SOURCE = {"doi": "10.26434/chemrxiv-2021-jfmqq", "version": "preprint v1 (2021-10-22)", "table": "Table 2",
           "medium": "MeCN, 0.1 M TBAPF6, 100 mV/s, N2", "reference": "Fc/Fc+ (cancels in differences)",
           "read": "2026-10-11, rendered page image of the preprint PDF; §2.2 text states the same values",
@@ -83,6 +96,18 @@ AQ_PAIRS = (("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))   # (X, reference)
 # E1/2(Os II/III), V vs Ag/AgCl — Table 1 of AQ_SOURCE; key = the 21e SERIES name. 4 substituents, as in ours.
 AQ_MEASURED_E12_V = {"ome": (0.036, "complex 1"), "dmbpy": (0.195, "complex 2"), "cl": (0.340, "complex 3")}
 AQ_REF = "dmbpy"   # the series has no parent bpy
+PVI_SOURCE = {"doi": "10.1021/ac202647z", "journal": "Anal. Chem. 2012, 84, 334–341 (paper ref 8)", "table": "Table 1",
+              "complex": "[Os(4,4'-X2-bpy)2(PVI)Cl]+, Os:PVI loading 1:9 (polymers b, c, d, f)",
+              "medium": "adsorbed films on spectrographic graphite with PEGDGE, 50 mM phosphate buffer pH 7.4; E°′ from CV (Fig. 1A)",
+              "reference": "NHE as printed (cancels in differences)",
+              "read": "2026-10-11, page image (p. 337) of a copy the founder downloaded — an academia.edu upload of the ACS typeset "
+                      "PDF; the text layer gives the same numbers; no uncertainties or replicates printed",
+              "polymer_e": "the Me complex at loading 1:11 is PVI12-[Os(dmbpy)2Cl], a gift from TheraSense — another source as well"}
+# E°′(Os II/III), V vs NHE — Table 1 of PVI_SOURCE; key = the 21e SERIES name. 4 substituents, as in ours.
+PVI_MEASURED_E_V = {"ome": (0.140, "polymer b"), "dmbpy": (0.309, "polymer c"), "bpy": (0.420, "polymer d"),
+                    "cl": (0.489, "polymer f")}
+PVI_LOADING_CONTROL = {"same_complex": "dmbpy", "loading_1_9_V": 0.309, "loading_1_11_V": 0.444, "where": "polymers c and e"}
+PVI_PAIRS = (("ome", "bpy"), ("dmbpy", "bpy"), ("cl", "bpy"), ("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))
 OUT = DFT_CACHE / "os_series_vs_measured.json"
 
 
@@ -133,11 +158,49 @@ def verdict_aqueous(aq: dict) -> str:
                     f"(×{p['ours_over_measured']:.2f}; theirs ×{p['source_dft_over_measured']:.2f})" for p in pairs)
     pw = aq["measured_pairwise_slope_per_substituent_V_per_sigma"]
     return (f"Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), "
-            f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the MeCN series shows it too); "
+            f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the other two series show it too); "
             f"the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what "
-            f"our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. The one acceptor point measured, Cl, comes out larger than "
+            f"our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say "
+            f"which. Its one acceptor point, Cl, comes out larger than "
             f"measured in both computations. The measured shifts are not linear in σp (pairwise slopes "
             f"{pw['ome-dmbpy']:.3f} and {pw['dmbpy-cl']:.3f} V/σ per substituent), so no slope is read from three points.")
+
+
+def verdict_pvi(pv: dict) -> str:
+    """The PVI block's prose, built from the block alone (pinned whole, like `verdict`)."""
+    lab = {"ome": "OMe", "dmbpy": "Me", "bpy": "H", "cl": "Cl"}
+    pairs = "; ".join(f"{lab[p['x']]}−{lab[p['ref']]} {p['ours_mV']:+.1f} ours against {p['measured_mV']:+.1f} measured "
+                      f"(×{p['ours_over_measured']:.2f})" for p in pv["pairs"])
+    sl = pv["pairwise_slope_per_substituent_V_per_sigma"]
+    seg = "; ".join(f"{k}: {v['measured']:.3f} measured, {v['ours']:.3f} ours" for k, v in sl.items())
+    return (f"Against paper ref 8's own series — our core with an imidazole N-donor, [Os(X2-bpy)2(PVI)Cl]+ at one loading, "
+            f"pH 7.4 — per 4,4'-substituent: {pairs}. The measured sensitivity falls from the donor to the acceptor side "
+            f"and ours much less (pairwise slopes, V/σ per substituent — {seg}), so the computed effect is about right for "
+            f"OMe against H and too large toward the acceptor end. The same Me complex from another source at another loading "
+            f"sits {pv['loading_control']['shift_mV']:+.0f} mV away (A5) — more than all four Me → H — so the film and its "
+            f"preparation move E°′ by more than the pairs compared, and only the equal-loading points of one route are compared.")
+
+
+def pvi(sigma: dict, b3: dict) -> dict:
+    e_meas = {n: e for n, (e, _) in PVI_MEASURED_E_V.items()}
+    e_ours = {n: -b3[n]["dE_red_eV"] for n in PVI_MEASURED_E_V}   # E° up to a constant: −ΔE_red
+    pairs = []
+    for x, ref in PVI_PAIRS:
+        meas = (e_meas[x] - e_meas[ref]) / N_SUBST_COMPUTED * 1000
+        ours = (e_ours[x] - e_ours[ref]) / N_SUBST_COMPUTED * 1000
+        pairs.append({"x": x, "ref": ref, "measured_mV": meas, "ours_mV": ours, "ours_over_measured": ours / meas})
+    order = sorted(PVI_MEASURED_E_V, key=lambda n: sigma[n])
+    slopes = {f"{a}-{b}": {"measured": (e_meas[b] - e_meas[a]) / (sigma[b] - sigma[a]) / N_SUBST_COMPUTED,
+                           "ours": (e_ours[b] - e_ours[a]) / (sigma[b] - sigma[a]) / N_SUBST_COMPUTED}
+              for a, b in itertools.pairwise(order)}
+    lc = PVI_LOADING_CONTROL
+    pv = {"source": PVI_SOURCE, "measured_E_V": {n: {"E_V": e, "where": w, "sigma_para": sigma[n]} for n, (e, w) in PVI_MEASURED_E_V.items()},
+          "pairs": pairs, "pairwise_slope_per_substituent_V_per_sigma": slopes,
+          "loading_control": {**lc, "shift_mV": (lc["loading_1_11_V"] - lc["loading_1_9_V"]) * 1000},
+          "assumptions": ["A3 sigma_para as in 21e SERIES, unchecked", "A4 vertical ΔSCF difference against an E°′ difference",
+                          "A5 the film environment is common to the equal-loading polymers b, c, d, f"]}
+    pv["verdict"] = verdict_pvi(pv)
+    return pv
 
 
 def aqueous(sigma: dict, b3: dict) -> dict:
@@ -239,11 +302,13 @@ def main() -> int:
         "ratio_computed_over_measured_per_substituent": ratios,
         "not_covered": "the acceptor side — the measured series has no 4,4'-acceptor; OMe at ωB97X — not computed",
         "aqueous_series": aqueous(sigma, b3),
+        "pvi_series": pvi(sigma, b3),
     }
     rec["verdict"] = verdict(rec)
     OUT.write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(rec["verdict"])
     print(rec["aqueous_series"]["verdict"])
+    print(rec["pvi_series"]["verdict"])
     print(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

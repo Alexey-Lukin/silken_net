@@ -48,10 +48,19 @@ depends on it.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** at B3LYP (r² = 1.00; Fig 3b; Table 4). This is a computed trend. It is not
-triangulated here against Lever's additive E_L parametrisation,<sup>23</sup> and the one measured series of the same
-substitution that a search of ChemRxiv returned covers only its donor side: the E½(Os III/II) of homoleptic
-[Os(4,4′-X₂-bpy)₃]²⁺ in acetonitrile for X = H, Me, tBu and OMe.<sup>55</sup> Compared per 4,4′-substituent against H —
+≈ **−0.92 eV per σ unit** at B3LYP (r² = 1.00; Fig 3b; Table 4). This is a computed trend; it is
+not triangulated here against Lever's additive E_L parametrisation,<sup>23</sup> but three measured series test it pair
+by pair, per 4,4′-substituent so that the reference electrode and the absolute offset cancel. The closest is the series
+behind the device mediator itself: the formal potentials of the osmium polymers [Os(4,4′-X₂-bpy)₂(PVI)Cl]⁺ — our core
+with the same imidazole N-donor — measured as films in phosphate buffer at pH 7.4 for X = OMe, Me, H and Cl at one Os
+loading (polymers synthesised in one route).<sup>8</sup> Against it our shifts are 0.87 times the measured for OMe against H (−60.9 against −70.0 mV), 1.34
+times for Me (−37.2 against −27.7 mV) and 2.43 times for Cl (+41.9 against +17.2 mV): the measured sensitivity falls
+from the donor to the acceptor side (0.422, 0.163 and 0.075 V per σ unit and substituent over the successive pairs)
+while ours falls much less (0.236, 0.219 and 0.182). The same complex from another source at another polymer loading
+sits 135 mV away — more than replacing all four methyl groups by hydrogen — so the film and its preparation move E°′ by
+more than the substituent pairs compared here, and only the equal-loading points of one route are compared. The second series is
+the E½(Os III/II) of homoleptic [Os(4,4′-X₂-bpy)₃]²⁺ in acetonitrile for X = H, Me, tBu and OMe, returned by a search
+of ChemRxiv.<sup>55</sup> Compared per 4,4′-substituent against H —
 assuming that the shift is additive across tris and bis complexes, that solvent and charge state move the absolute
 potential but not the difference, and that a vertical ΔSCF difference stands for a difference of E½ — OMe agrees
 (−60.9 mV computed at B3LYP, −61.7 mV measured) and Me does not (−37.2 mV at B3LYP and −37.3 mV at
@@ -59,20 +68,23 @@ potential but not the difference, and that a vertical ΔSCF difference stands fo
 not (r² = 0.82), yet the measured Me is not a lone outlier: the other measured alkyl donor, tBu, is as weak
 (−20.0 mV, with its σ_para unchecked and no computed tBu point), so which side carries the difference is not
 settled here. Me has little leverage on a donor fit, so a slope through H, Me and OMe restates the OMe pair rather
-than adding a second agreement. A second measured series — the E½ of [Os(4,4′-X₂-bpy)₂Cl(ampy)]⁺ (ampy =
+than adding a second agreement. A third measured series — the E½ of [Os(4,4′-X₂-bpy)₂Cl(ampy)]⁺ (ampy =
 4-(aminomethyl)pyridine) in phosphate buffer at pH 7.4 for X = OMe, Me and Cl<sup>56</sup> — has our bis-bipyridine
 chloro core, formal charge and solvent, so its monodentate N-donor (a pyridine against our 1-methylimidazole) is the
 one structural difference, and it has one acceptor. Per substituent, our computed shifts are 0.59 times the measured
 for OMe against Me (−23.6 against −39.8 mV), 2.2 times for Cl against Me (+79.1 against +36.3 mV) and 1.35 times for
-Cl against OMe (+102.8 against +76.0 mV). The two pairs taken to Me share the excess of our Me point, which the first
-series shows too, so they are not independent; the source's own B3LYP, with both oxidation states optimised and the
+Cl against OMe (+102.8 against +76.0 mV). The two pairs taken to Me share the excess of our Me point, which the other
+series show too, so they are not independent; the source's own B3LYP, with both oxidation states optimised and the
 potential taken from free energies, gives 1.01, 1.45 and 1.22 for the same pairs,<sup>56</sup> so the Me excess sits in
 our protocol rather than in the functional. It survives our change of functional and ligand basis together (the Me
-shift of the first comparison is the same in both tiers), so it sits in what our tiers share and the source's
+shift of the acetonitrile comparison is the same in both tiers), so it sits in what our tiers share and the source's
 calculation does not — a vertical ΔSCF on one programmatic geometry against optimised states and free energies,
-LANL2DZ against def2-TZVP on osmium, and the continuum model — and three points cannot say which. On the one acceptor
-point measured, both computations put the effect above experiment, and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
-the measured shifts are not linear in σ_para, so no slope is read from these three points.
+LANL2DZ against def2-TZVP on osmium, and the continuum model — and three points cannot say which. On its one acceptor
+point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
+as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
+the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two
+series) our OMe effect is about right and our Me effect too large, and toward the acceptor end our effect is too large
+in both series that reach Cl.
 A cross-check with the range-separated ωB97X on six of the ten members — the same vertical ΔSCF at
 ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the direction and the donor-resonance
 plateau of NMe₂/NH₂ but not the magnitude: the ωB97X − B3LYP
@@ -87,8 +99,9 @@ functional alone flattens the local slope by ≈9 % and the larger basis restore
 there by cancellation; over Me, H and NO₂ the slope runs −0.93 (B3LYP) → −0.79 (ωB97X at 6-31G(d)) → −0.79
 eV per σ unit (def2-TZVP), so the shallower slope there is the functional's — on a slope that leans on the NO₂
 point. The robust content of the rule is
-therefore its direction; its slope is method-dependent, the measured Me shift is about 2.5 times smaller than our
-B3LYP and ωB97X/def2-TZVP ones, and on the one measured acceptor point the computed effect exceeds the measured.
+therefore its direction; its slope is method-dependent, the measured Me shift is 1.3 (ref 8) to 2.5 times (acetonitrile,
+at both tiers) smaller than ours, and on the acceptor side, where the realistic optimum lies, our Cl pairs exceed the
+measured ones 1.2 to 2.4 times across the two series that reach Cl, with no measured point beyond Cl.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation. E° is not the whole of it: with naphthoquinone mediators
 and glucose oxidase or diaphorase immobilised in modified linear-polyethylenimine films, catalytic activity and reversibility differed

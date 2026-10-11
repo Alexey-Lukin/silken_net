@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """L3 — Os mediator on the REAL 4,4'-dimethyl-bpy ligand (OS-RECOMPUTE 2026-06-17).
 
-The verified device mediator is Zafar 2012's [Os(4,4'-dimethyl-2,2'-bipyridine)₂(PVI)Cl]⁺
-(E°' = 21 mV vs Ag/AgCl 0.1 M KCl = +309 mV vs NHE), NOT the plain-bpy model that scripts
+The verified device mediator is [Os(4,4'-dimethyl-2,2'-bipyridine)₂(PVI)Cl]⁺, +309 mV vs NHE (Zafar 2012, Anal. Chem.,
+Table 1; the +21 mV vs Ag/AgCl 0.1 M KCl reading is the other Zafar 2012, Anal. Bioanal. Chem.), NOT the plain-bpy model that scripts
 21b/21d computed. The 4,4'-dimethyl groups are weak donors (σ_para = −0.17) → they raise the
 Os(III) LUMO → make the raw cascade slightly more uphill (the "substituent" axis the ② gap
 decomposition did not separate). This script recomputes the Os(II)/Os(III) couple on the

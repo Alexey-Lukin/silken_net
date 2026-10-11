@@ -279,9 +279,66 @@ CHECKS = [
            lambda d: d["measured_readings"]["matched"]["r2"], 0.005),
           ("tBu measured", rf"tBu, is as weak\s+\({N} mV, with its σ_para unchecked",
            lambda d: d["measured"]["dtbbpy"]["shift_per_substituent_V"] * 1000, 0.05),
-          *[(f"Me computed over measured at {tier}", rf"the measured Me shift is about {N} times smaller than our",
+          *[(f"Me computed over measured (MeCN) at {tier}", rf"\(ref 8\) to {N} times \(acetonitrile",
              lambda d, tier=tier: d["ratio_computed_over_measured_per_substituent"][f"{tier}:dmbpy"], 0.05)
             for tier in ("b3lyp_631gd", "wb97x_def2tzvp")])],
+    # paper ref 8's own series (script 83 `pvi_series`, Zafar 2012 Table 1) — our core and N-donor; pairs[i] in PVI_PAIRS order:
+    # OMe−H, Me−H, Cl−H, OMe−Me, Cl−Me, Cl−OMe; pairwise slopes in σ order ome-dmbpy, dmbpy-bpy, bpy-cl
+    *[(f"paper §3.3 ref-8 series {what} → os_series_vs_measured.json", PAPER_RESULTS, anchor,
+       "dft/os_series_vs_measured.json", get, tol)
+      for what, anchor, get, tol in (
+          ("OMe−H ratio", rf"our shifts are {N} times the measured for OMe against H",
+           lambda d: d["pvi_series"]["pairs"][0]["ours_over_measured"], 0.005),
+          ("OMe−H ours", rf"OMe against H \({N} against", lambda d: d["pvi_series"]["pairs"][0]["ours_mV"], 0.05),
+          ("OMe−H measured", rf"OMe against H \([−\-][\d.]+ against {N} mV\), [\d.]+",
+           lambda d: d["pvi_series"]["pairs"][0]["measured_mV"], 0.05),
+          ("Me−H ratio", rf"{N}\s+times for Me \(", lambda d: d["pvi_series"]["pairs"][1]["ours_over_measured"], 0.005),
+          ("Me−H ours", rf"times for Me \({N} against", lambda d: d["pvi_series"]["pairs"][1]["ours_mV"], 0.05),
+          ("Me−H measured", rf"times for Me \([−\-][\d.]+ against {N} mV\)",
+           lambda d: d["pvi_series"]["pairs"][1]["measured_mV"], 0.051),   # −27.75: an exact .x5 tie
+          ("Cl−H ratio", rf"and {N} times for Cl \(", lambda d: d["pvi_series"]["pairs"][2]["ours_over_measured"], 0.005),
+          ("Cl−H ours", rf"times for Cl \(\+{N} against", lambda d: d["pvi_series"]["pairs"][2]["ours_mV"], 0.05),
+          ("Cl−H measured", rf"times for Cl \(\+[\d.]+ against \+{N} mV\)",
+           lambda d: d["pvi_series"]["pairs"][2]["measured_mV"], 0.051),   # +17.25: an exact .x5 tie
+          *[(f"measured slope {k}", anchor, lambda d, k=k: d["pvi_series"]["pairwise_slope_per_substituent_V_per_sigma"][k]["measured"], 0.00051)
+            for k, anchor in (("ome-dmbpy", rf"side \({N}, [\d.]+ and [\d.]+ V per σ unit"),   # 0.4225: tie, tol below
+                              ("dmbpy-bpy", rf"side \([\d.]+, {N} and [\d.]+ V per σ unit"),
+                              ("bpy-cl", rf"side \([\d.]+, [\d.]+ and {N} V per σ unit"))],
+          *[(f"our slope {k}", anchor, lambda d, k=k: d["pvi_series"]["pairwise_slope_per_substituent_V_per_sigma"][k]["ours"], 0.0005)
+            for k, anchor in (("ome-dmbpy", rf"ours falls much less \({N}, [\d.]+ and [\d.]+\)"),
+                              ("dmbpy-bpy", rf"ours falls much less \([\d.]+, {N} and [\d.]+\)"),
+                              ("bpy-cl", rf"ours falls much less \([\d.]+, [\d.]+ and {N}\)"))],
+          ("loading control", rf"another polymer loading\s+sits {N} mV away",
+           lambda d: d["pvi_series"]["loading_control"]["shift_mV"], 0.5),
+          ("Me−H ratio (closing)", rf"the measured Me shift is {N} \(ref 8\) to",
+           lambda d: d["pvi_series"]["pairs"][1]["ours_over_measured"], 0.05),
+          ("smallest Cl pair (closing)", rf"exceed the\s+measured ones {N} to [\d.]+ times across",
+           lambda d: min(p["ours_over_measured"] for blk in ("pvi_series", "aqueous_series")
+                         for p in d[blk]["pairs"] if "cl" in (p["x"], p["ref"])), 0.05),
+          ("largest Cl pair (closing)", rf"measured ones [\d.]+ to {N} times across",
+           lambda d: max(p["ours_over_measured"] for blk in ("pvi_series", "aqueous_series")
+                         for p in d[blk]["pairs"] if "cl" in (p["x"], p["ref"])), 0.05),
+          ("aqueous measured slope OMe→Me", rf"as ref 8's do \({N} and [\d.]+ V per σ unit",
+           lambda d: d["aqueous_series"]["measured_pairwise_slope_per_substituent_V_per_sigma"]["ome-dmbpy"], 0.00051),   # 0.3975: an exact .x5 tie
+          ("aqueous measured slope Me→Cl", rf"as ref 8's do \([\d.]+ and {N} V per σ unit",
+           lambda d: d["aqueous_series"]["measured_pairwise_slope_per_substituent_V_per_sigma"]["dmbpy-cl"], 0.0005))],
+    *[(f"SUMMARY ref-8 series {what} → os_series_vs_measured.json", SUMMARY, anchor,
+       "dft/os_series_vs_measured.json", get, tol)
+      for what, anchor, get, tol in (
+          ("Cl−H (🔑)", rf"own series the computed sensitivity is ×{N} the measured",
+           lambda d: d["pvi_series"]["pairs"][2]["ours_over_measured"], 0.005),
+          ("OMe−H (limit 2)", rf"per substituent OMe−H ×{N}, Me−H", lambda d: d["pvi_series"]["pairs"][0]["ours_over_measured"], 0.005),
+          ("Me−H (limit 2)", rf"OMe−H ×[\d.]+, Me−H ×{N}, Cl−H", lambda d: d["pvi_series"]["pairs"][1]["ours_over_measured"], 0.005),
+          ("Cl−H (limit 2)", rf"Me−H ×[\d.]+, Cl−H ×{N}; the measured", lambda d: d["pvi_series"]["pairs"][2]["ours_over_measured"], 0.005),
+          *[(f"SUMMARY ref-8 slope {k} {side}", rf"{anchor}", lambda d, k=k, side=side: d["pvi_series"]["pairwise_slope_per_substituent_V_per_sigma"][k][side], tol)
+            for k, side, anchor, tol in (("ome-dmbpy", "measured", rf"donor to acceptor \(pairwise {N} → [\d.]+ → [\d.]+ V/σ", 0.005),
+                                         ("dmbpy-bpy", "measured", rf"donor to acceptor \(pairwise [\d.]+ → {N} → [\d.]+ V/σ", 0.005),
+                                         ("bpy-cl", "measured", rf"donor to acceptor \(pairwise [\d.]+ → [\d.]+ → {N} V/σ", 0.0005),
+                                         ("ome-dmbpy", "ours", rf"ours much less \({N} → [\d.]+ → [\d.]+\)", 0.005),
+                                         ("dmbpy-bpy", "ours", rf"ours much less \([\d.]+ → {N} → [\d.]+\)", 0.005),
+                                         ("bpy-cl", "ours", rf"ours much less \([\d.]+ → [\d.]+ → {N}\)", 0.005))],
+          ("loading control (limit 2)", rf"another loading sits \+{N} mV away",
+           lambda d: d["pvi_series"]["loading_control"]["shift_mV"], 0.5))],
     # the aqueous series of our own core (script 83 `aqueous_series`, Montón-Vicente 2026) — per-substituent pairs, read three
     # ways (measured · ours · the source's relaxed B3LYP); pairs[i] in the order of 83's AQ_PAIRS: OMe−Me, Cl−Me, Cl−OMe
     *[(f"paper §3.3 aqueous {what} → os_series_vs_measured.json", PAPER_RESULTS, anchor,
@@ -302,8 +359,8 @@ CHECKS = [
     *[(f"SUMMARY aqueous {what} → os_series_vs_measured.json", SUMMARY, anchor,
        "dft/os_series_vs_measured.json", lambda d, i=i, key=key: d["aqueous_series"]["pairs"][i][key], 0.005)
       for what, anchor, i, key in (
-          ("Cl−OMe ours (🔑)", rf"the computed effect is ×{N} the measured against OMe", 2, "ours_over_measured"),
-          ("Cl−OMe source DFT (🔑)", rf"the source\'s relaxed B3LYP gives ×{N}; limit 2\)", 2, "source_dft_over_measured"),
+          ("Cl−OMe ours (🔑)", rf"Cl against OMe in a second aqueous series is ×{N} \(the", 2, "ours_over_measured"),
+          ("Cl−OMe source DFT (🔑)", rf"\(the source's relaxed B3LYP ×{N}\);", 2, "source_dft_over_measured"),
           ("OMe−Me ours (limit 2)", rf"per substituent, OMe−Me ×{N}, Cl−Me", 0, "ours_over_measured"),
           ("Cl−Me ours (limit 2)", rf"OMe−Me ×[\d.]+, Cl−Me ×{N}, Cl−OMe", 1, "ours_over_measured"),
           ("Cl−OMe ours (limit 2)", rf"Cl−Me ×[\d.]+, Cl−OMe ×{N} — the two pairs", 2, "ours_over_measured"),

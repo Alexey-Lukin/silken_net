@@ -242,6 +242,11 @@ legend line stays in each, as the criterion allows.
   Cl−OMe ×1.35 (the pairs taken to Me share our Me excess), with the source's own relaxed B3LYP ×1.22; the
   measured shifts are not linear in σp, so no slope is read; beyond Cl the slope stays untriangulated. Found while looking for the six polymers
   of ref 8, which stay unread (`00_07` HW.5.IS).
+  📌 2026-10-11, ref 8 read (the records above are not rewritten): ref 8's own Table 1 (p. 337, page image of a copy the
+  founder downloaded — an academia.edu upload of the ACS typeset PDF, kept out of the repository) gives the series of
+  our core and N-donor, [Os(X2-bpy)2(PVI)Cl]⁺ at one loading, X = OMe · Me · H · Cl — `83`'s `pvi_series`, now the lead
+  comparison of §3.3 (Cl−H ×2.43; the measured sensitivity falls toward the acceptor end, ours much less). Ref 8 also
+  prints +309 mV vs NHE and its +288 mV reference conversion (p. 336); only +21 mV vs Ag/AgCl is the other Zafar 2012.
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.
@@ -379,6 +384,13 @@ open question it serves (`00_07` HW.5 / HW.5.IS); a line that entered the paper 
   doi:10.26434/chemrxiv-2025-bvnp7-v2 → a cross-check of the `28` tunnelling pathway.
 - Sedenho, G. *et al.* (Crespilho) — bilirubin oxidase in a Nafion biogel on a gas-diffusion electrode;
   doi:10.26434/chemrxiv.12046629.v1 (VoR *J. Power Sources* 2021) → cathode/GDE design.
+
+**Leads beyond ChemRxiv (2026-10-11; agents' reports — re-read before use):** the Lund thesis of K. Hasan (2016, Table 1;
+open at lup.lub.lu.se) compiles E°′ of the same [Os(X-bpy)2(PVI)Cl] polymers from several papers, vs Ag|AgCl (sat. KCl):
+OMe −0.069 · Me +0.110 · H +0.220 · Cl +0.350 V — while two appended papers of the same group print Cl at +0.29 V; the
+60 mV scatter in Cl is of the size of ref 8's whole H → Cl span (69 mV), so the Cl value is the weakest point of the
+comparison (+0.29 V sits at ref 8's 489 mV vs NHE, +0.35 V would not). The Boland 2008 Galway thesis that the other
+Zafar 2012 cites for these polymers was not reachable from here; OpenAlex lists ref 8 as closed.
 
 **Negatives (query → no relevant hit on ChemRxiv, 2026-10-11; the Goldschmid series came from other queries, above):** `osmium bipyridine redox` · `Hammett ruthenium redox
 potential` · `glucose dehydrogenase FAD` · `glucose dehydrogenase electrode` · `laccase cathode` · `xylem sap` ·

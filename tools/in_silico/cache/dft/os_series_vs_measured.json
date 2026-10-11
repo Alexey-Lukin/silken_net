@@ -241,7 +241,112 @@
       "ratio_computed_over_measured": 1.511884922314689
     },
     "slope_note": "a weighted mix of the pairs — the measured shifts are not linear in σp; not read as a slope",
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the MeCN series shows it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. The one acceptor point measured, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the other two series show it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+  },
+  "pvi_series": {
+    "source": {
+      "doi": "10.1021/ac202647z",
+      "journal": "Anal. Chem. 2012, 84, 334–341 (paper ref 8)",
+      "table": "Table 1",
+      "complex": "[Os(4,4'-X2-bpy)2(PVI)Cl]+, Os:PVI loading 1:9 (polymers b, c, d, f)",
+      "medium": "adsorbed films on spectrographic graphite with PEGDGE, 50 mM phosphate buffer pH 7.4; E°′ from CV (Fig. 1A)",
+      "reference": "NHE as printed (cancels in differences)",
+      "read": "2026-10-11, page image (p. 337) of a copy the founder downloaded — an academia.edu upload of the ACS typeset PDF; the text layer gives the same numbers; no uncertainties or replicates printed",
+      "polymer_e": "the Me complex at loading 1:11 is PVI12-[Os(dmbpy)2Cl], a gift from TheraSense — another source as well"
+    },
+    "measured_E_V": {
+      "ome": {
+        "E_V": 0.14,
+        "where": "polymer b",
+        "sigma_para": -0.27
+      },
+      "dmbpy": {
+        "E_V": 0.309,
+        "where": "polymer c",
+        "sigma_para": -0.17
+      },
+      "bpy": {
+        "E_V": 0.42,
+        "where": "polymer d",
+        "sigma_para": 0.0
+      },
+      "cl": {
+        "E_V": 0.489,
+        "where": "polymer f",
+        "sigma_para": 0.23
+      }
+    },
+    "pairs": [
+      {
+        "x": "ome",
+        "ref": "bpy",
+        "measured_mV": -69.99999999999999,
+        "ours_mV": -60.85310795689524,
+        "ours_over_measured": 0.8693301136699322
+      },
+      {
+        "x": "dmbpy",
+        "ref": "bpy",
+        "measured_mV": -27.749999999999996,
+        "ours_mV": -37.21399974946138,
+        "ours_over_measured": 1.3410450360166264
+      },
+      {
+        "x": "cl",
+        "ref": "bpy",
+        "measured_mV": 17.25,
+        "ours_mV": 41.89737365416279,
+        "ours_over_measured": 2.428833255313785
+      },
+      {
+        "x": "ome",
+        "ref": "dmbpy",
+        "measured_mV": -42.24999999999999,
+        "ours_mV": -23.639108207433868,
+        "ours_over_measured": 0.5595055197025769
+      },
+      {
+        "x": "cl",
+        "ref": "dmbpy",
+        "measured_mV": 45.0,
+        "ours_mV": 79.11137340362417,
+        "ours_over_measured": 1.758030520080537
+      },
+      {
+        "x": "cl",
+        "ref": "ome",
+        "measured_mV": 87.25,
+        "ours_mV": 102.75048161105804,
+        "ours_over_measured": 1.1776559496969403
+      }
+    ],
+    "pairwise_slope_per_substituent_V_per_sigma": {
+      "ome-dmbpy": {
+        "measured": 0.42249999999999993,
+        "ours": 0.23639108207433868
+      },
+      "dmbpy-bpy": {
+        "measured": 0.16323529411764703,
+        "ours": 0.21890588087918456
+      },
+      "bpy-cl": {
+        "measured": 0.075,
+        "ours": 0.1821624941485339
+      }
+    },
+    "loading_control": {
+      "same_complex": "dmbpy",
+      "loading_1_9_V": 0.309,
+      "loading_1_11_V": 0.444,
+      "where": "polymers c and e",
+      "shift_mV": 135.0
+    },
+    "assumptions": [
+      "A3 sigma_para as in 21e SERIES, unchecked",
+      "A4 vertical ΔSCF difference against an E°′ difference",
+      "A5 the film environment is common to the equal-loading polymers b, c, d, f"
+    ],
+    "verdict": "Against paper ref 8's own series — our core with an imidazole N-donor, [Os(X2-bpy)2(PVI)Cl]+ at one loading, pH 7.4 — per 4,4'-substituent: OMe−H -60.9 ours against -70.0 measured (×0.87); Me−H -37.2 ours against -27.7 measured (×1.34); Cl−H +41.9 ours against +17.2 measured (×2.43); OMe−Me -23.6 ours against -42.2 measured (×0.56); Cl−Me +79.1 ours against +45.0 measured (×1.76); Cl−OMe +102.8 ours against +87.2 measured (×1.18). The measured sensitivity falls from the donor to the acceptor side and ours much less (pairwise slopes, V/σ per substituent — ome-dmbpy: 0.422 measured, 0.236 ours; dmbpy-bpy: 0.163 measured, 0.219 ours; bpy-cl: 0.075 measured, 0.182 ours), so the computed effect is about right for OMe against H and too large toward the acceptor end. The same Me complex from another source at another loading sits +135 mV away (A5) — more than all four Me → H — so the film and its preparation move E°′ by more than the pairs compared, and only the equal-loading points of one route are compared."
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }
