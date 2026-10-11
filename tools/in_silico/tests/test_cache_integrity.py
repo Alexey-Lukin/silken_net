@@ -2501,44 +2501,59 @@ def test_collar_running_clearance_invariants():
 
 
 def test_cathode_ionic_path_is_derived_from_its_inputs():
-    """84 (00_07 HW.53, 2026-10-11): each budget is the 02_03 §1.5 ceiling minus the electrode estimate, each requirement
-    is that budget over its element's lenient factor, and exactly one budget cell is open. CAN catch: a hand-edited
-    requirement, a ceiling or estimate that drifted from lib.constants, a second open cell nobody read. CANNOT catch:
-    whether a geometric factor is physically right (the script's own controls) or what the bench measures."""
+    """84 (00_07 HW.53, 2026-10-11): every budget is the 02_03 §1.5 ceiling minus the LOW end of each canon reading of the
+    electrodes' own R_int (models 31/31b from their caches · the prose estimate from lib.constants), and every requirement
+    is that budget over its element's lenient factor. CAN catch: a hand-edited budget or requirement, a reading that
+    drifted from its cache or constant, a control that stopped being recorded. CANNOT catch: whether a geometric factor
+    is physically right (the script's own controls) or what the bench measures."""
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib.constants import BQ25570_PIN_CS_UW, BQ25570_VIN_CS_MAX_MV, BQ25570_VIN_CS_TYP_MV, R_INT_EBFC_EST_KOHM
     d = json.loads((REPO / "tools/in_silico/cache/kinetics/cathode_ionic_path.json").read_text())
+    eis = json.loads((DFT.parent / "kinetics/eis_model.json").read_text())["parameters"]
+    cat = json.loads((DFT.parent / "kinetics/cathode_det_rct.json").read_text())["grid"]
+    rd = d["electrode_r_int_readings"]
+    assert rd["models_31_31b_kohm"] == [(eis["Rs_ohm"] + eis["Rct_ohm"] + min(c["rct_ohm"] for c in cat)) / 1e3,
+                                        (eis["Rs_ohm"] + eis["Rct_ohm"] + max(c["rct_ohm"] for c in cat)) / 1e3]
+    assert rd["prose_estimate_02_03_kohm"] == list(R_INT_EBFC_EST_KOHM)
+    low = {"models_31_31b": rd["models_31_31b_kohm"][0], "prose_estimate_02_03": rd["prose_estimate_02_03_kohm"][0]}
     vin = {"typ": BQ25570_VIN_CS_TYP_MV, "max": BQ25570_VIN_CS_MAX_MV}
+    f = d["factors"]
     for r in d["budgets"]:
         c = (r["V_OC_mV"] - vin[r["VIN_CS"]]) * vin[r["VIN_CS"]] / BQ25570_PIN_CS_UW / 1000.0
-        assert r["ceiling_kohm"] == c and r["budget_best_electrode_kohm"] == c - R_INT_EBFC_EST_KOHM[0], r
-    open_cells = [r for r in d["budgets"] if r["budget_best_electrode_kohm"] > 0]
-    assert d["budget_cells_open"] == len(open_cells) == len(d["requirements_alone_at_lenient_geometry"]) == 1
-    (req,) = d["requirements_alone_at_lenient_geometry"].values()
-    f, b = d["factors"], req["budget_ohm"]
-    assert b == open_cells[0]["budget_best_electrode_kohm"] * 1e3
-    assert req["1_sapwood_rho_max_ohm_m"] == b / min(f["1_sapwood_per_m"]["with_image"])
-    assert req["2_inner_bark_sheet_max_ohm_sq"] == b / min(f["2_inner_bark_sheet"]["ln_over_2pi"])
-    assert req["3_dead_bark_rho_max_ohm_m"] == b / f["3_dead_bark_per_m"]["lenient"]
-    assert req["4_film_sheet_max_ohm_sq"] == b / min(f["4_film_per_sq"])
-    assert req["5_layer_sheet_x_band_height_max_ohm"] == b / f["5_layer_full_height_per_sq_per_m"]
-    assert d["element_5_in_canon_state"]["state"] == "open"
+        assert r["ceiling_kohm"] == c and r["budget_kohm"] == {k: c - e for k, e in low.items()}, r
+        for k, b in r["budget_kohm"].items():
+            key = f"{r['V_OC_mV']:.0f}/{r['VIN_CS']} · {k}"
+            assert (key in d["requirements_alone_at_lenient_geometry"]) == (b > 0), key
+    for req in [*d["requirements_alone_at_lenient_geometry"].values(), d["requirements_per_kohm_of_budget"]]:
+        b = req["budget_ohm"]
+        assert req["1_sapwood_rho_max_ohm_m"] == b / f["1_sapwood_per_m"]["bracket"][0]
+        assert req["2_inner_bark_sheet_max_ohm_sq"] == b / min(f["2_inner_bark_sheet"]["ln_over_2pi"])
+        assert req["3_dead_bark_rho_max_ohm_m"] == b / f["3_dead_bark_per_m"]["lenient"]
+        assert req["4_film_sheet_max_ohm_sq"] == b / min(f["4_film_per_sq"])
+        assert req["5_layer_sheet_x_band_height_max_ohm"] == b / f["5_layer_full_height_per_sq_per_m"]
+    assert d["requirements_per_kohm_of_budget"]["budget_ohm"] == 1000.0
+    gs = [c["G_per_m"] for c in f["1_sapwood_per_m"]["corners"]]
+    assert f["1_sapwood_per_m"]["bracket"] == [min(gs), max(gs)] and len(gs) == 4
+    ctl = d["controls"]
+    assert abs(ctl["sphere_plane_fv_over_exact"] - 1) <= 0.015 and abs(ctl["element_1_coarse_over_fine"] - 1) <= 0.01
+    assert d["element_5_in_canon"]["electrolyte_path_described"] is False
 
 
 def test_cathode_ionic_path_literature_points_follow_from_the_readings():
     """84's literature points: each element resistance is the reading × the element's factor at the stated geometry end,
-    and the Scots-pine floor is the sum of the lenient ends. CAN catch: a point retyped by hand or computed from another
-    factor. CANNOT catch: a misread source — the transcriptions are pinned to their pages in the script, not here."""
+    and the Scots-pine floor is the sum of the lenient ends; the cells that «hold it» are exactly the open budgets ≥ it.
+    CAN catch: a point retyped by hand or computed from another factor. CANNOT catch: a misread source — the
+    transcriptions are pinned to their pages in the script, not here."""
     d = json.loads((REPO / "tools/in_silico/cache/kinetics/cathode_ionic_path.json").read_text())
     f, pts = d["factors"], d["literature_points"]
-    g1 = f["1_sapwood_per_m"]["with_image"]
+    g1 = f["1_sapwood_per_m"]["bracket"]
     for p in pts[:2]:
-        assert p["element_ohm"] == [p["values"][0] * min(g1), p["values"][1] * max(g1)], p["source"]
+        assert p["element_ohm"] == [p["values"][0] * g1[0], p["values"][1] * g1[1]], p["source"]
     (ec,) = [p for p in pts if p["quantity"] == "EC_uS_per_cm"]
     film = (0.041e-3, 0.128e-3)
     rho = [1e4 / v for v in ec["values"]]
     assert ec["element_ohm"] == [min(rho) / max(film) * min(f["4_film_per_sq"]), max(rho) / min(film) * max(f["4_film_per_sq"])]
-    pine = [p for p in pts if p["species"] == "Pinus sylvestris"]
-    assert d["scots_pine_sapwood_plus_film_lenient_ohm"] == sum(min(p["element_ohm"]) for p in pine)
-    (budget,) = [v["budget_ohm"] for v in d["requirements_alone_at_lenient_geometry"].values()]
-    assert d["scots_pine_sapwood_plus_film_lenient_exceeds_budget"] == (d["scots_pine_sapwood_plus_film_lenient_ohm"] > budget)
+    floor = sum(min(p["element_ohm"]) for p in pts if p["species"] == "Pinus sylvestris")
+    assert d["scots_pine_sapwood_plus_film_lenient_ohm"] == floor
+    assert d["open_budget_cells_that_hold_it"] == sorted(k for k, v in d["requirements_alone_at_lenient_geometry"].items()
+                                                         if v["budget_ohm"] >= floor)

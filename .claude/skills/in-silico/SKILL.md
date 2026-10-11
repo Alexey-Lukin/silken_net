@@ -85,8 +85,9 @@ Anchor mechanics (CPU):
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
-  58 (T_PHLOEM, importlib) · 78 (`bark_bracket`, importlib) · tools/cad/cem (anode, sleeve, flange at runtime) → 84
-     (cathode_ionic_path.json — the R_Ω requirements; a change to 58's inner-bark or 78's bark bracket re-runs 84)
+  58 (T_PHLOEM, L_A_INSERT, importlib) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the
+     electrodes' own R_int readings) · tools/cad/cem (anode, lock shank, sleeve, flange at runtime) → 84 (cathode_ionic_path.json —
+     the R_Ω requirements; a change to any of them re-runs 84)
 ```
 
 ## Critical Rules

@@ -1,12 +1,17 @@
 {
   "script": "84_cathode_ionic_path.py",
   "item": "00_07 HW.53",
-  "question": "what must each layer of the anode → cathode ionic path be for R_Ω to fit the cold-start budget?",
+  "question": "what must each layer of the anode → cathode ionic path be for R_Ω to fit the cold-start budget, for each reading of the electrodes' own R_int canon carries?",
   "geometry": {
     "flange_radius_m": 0.0149,
     "wound_radius_m": 0.0075,
     "anode_radius_m": 0.0055,
-    "anode_length_m": 0.04,
+    "anode_exposed_length_m": [
+      0.028,
+      0.04
+    ],
+    "zone1_insertion_placeholder_mm": 30.0,
+    "zone1_shank_mm": 18.0,
     "sleeve_length_m": 0.05,
     "inner_bark_m": 0.003,
     "dead_bark_under_flange_m": [
@@ -21,8 +26,8 @@
     }
   },
   "controls": {
-    "slender_rod_solver_over_closed_form": 0.9926453676524305,
-    "image_far_over_isolated": 1.0012742775773145,
+    "sphere_plane_fv_over_exact": 1.0084642597962217,
+    "element_1_coarse_over_fine": 0.9993605955945016,
     "ceiling_table_02_03": {
       "700/typ": 4.0,
       "700/max": 0.0,
@@ -32,27 +37,47 @@
   },
   "factors": {
     "1_sapwood_per_m": {
+      "corners": [
+        {
+          "depth_m": 0.026000000000000002,
+          "length_m": 0.028,
+          "G_per_m": 7.180211038636821
+        },
+        {
+          "depth_m": 0.026000000000000002,
+          "length_m": 0.04,
+          "G_per_m": 5.945521841745317
+        },
+        {
+          "depth_m": 0.038675,
+          "length_m": 0.028,
+          "G_per_m": 7.439129283512807
+        },
+        {
+          "depth_m": 0.038675,
+          "length_m": 0.04,
+          "G_per_m": 6.1585372961733
+        }
+      ],
+      "bracket": [
+        5.945521841745317,
+        7.439129283512807
+      ],
       "depth_below_cambium_m": [
-        0.038675,
-        0.026000000000000002
-      ],
-      "with_image": [
-        5.098448762500486,
-        5.448620036585241
-      ],
-      "isolated": 6.005044060098198,
-      "closed_form_isolated": 6.673679274264305
+        0.026000000000000002,
+        0.038675
+      ]
     },
     "2_inner_bark_sheet": {
       "R_in_m": [
         0.026000000000000002,
         0.078675
       ],
+      "thickness_m": 0.003,
       "ln_over_2pi": [
         0.08860717897877463,
         0.2648281323324494
-      ],
-      "thickness_m": 0.003
+      ]
     },
     "3_dead_bark_per_m": {
       "thickness_m": [
@@ -60,76 +85,104 @@
         0.021
       ],
       "lenient": 5.654932837848631,
-      "adverse": 10.681539804825192,
-      "w_m": {
-        "band": [
-          0.008324999999999999,
-          0.021
-        ],
-        "footprint_plus_band": [
-          0.015725,
-          0.0284
-        ]
-      }
+      "adverse": 10.681539804825192
     },
     "4_film_per_sq": [
-      0.010681539804825191,
+      0.005340769902412596,
       0.06622554678991618
     ],
     "5_layer_full_height_per_sq_per_m": 10.681539804825192
+  },
+  "electrode_r_int_readings": {
+    "models_31_31b_kohm": [
+      0.1729018201037166,
+      29.92290061663106
+    ],
+    "prose_estimate_02_03_kohm": [
+      5.0,
+      20.0
+    ]
   },
   "budgets": [
     {
       "V_OC_mV": 700.0,
       "VIN_CS": "typ",
       "ceiling_kohm": 4.0,
-      "budget_best_electrode_kohm": -1.0,
-      "budget_worst_electrode_kohm": -16.0
+      "budget_kohm": {
+        "models_31_31b": 3.8270981798962835,
+        "prose_estimate_02_03": -1.0
+      }
     },
     {
       "V_OC_mV": 700.0,
       "VIN_CS": "max",
       "ceiling_kohm": 0.0,
-      "budget_best_electrode_kohm": -5.0,
-      "budget_worst_electrode_kohm": -20.0
+      "budget_kohm": {
+        "models_31_31b": -0.1729018201037166,
+        "prose_estimate_02_03": -5.0
+      }
     },
     {
       "V_OC_mV": 800.0,
       "VIN_CS": "typ",
       "ceiling_kohm": 8.0,
-      "budget_best_electrode_kohm": 3.0,
-      "budget_worst_electrode_kohm": -12.0
+      "budget_kohm": {
+        "models_31_31b": 7.827098179896283,
+        "prose_estimate_02_03": 3.0
+      }
     },
     {
       "V_OC_mV": 800.0,
       "VIN_CS": "max",
       "ceiling_kohm": 4.666666666666667,
-      "budget_best_electrode_kohm": -0.33333333333333304,
-      "budget_worst_electrode_kohm": -15.333333333333332
+      "budget_kohm": {
+        "models_31_31b": 4.49376484656295,
+        "prose_estimate_02_03": -0.33333333333333304
+      }
     }
   ],
   "requirements_alone_at_lenient_geometry": {
-    "800/typ": {
+    "700/typ · models_31_31b": {
+      "budget_ohm": 3827.0981798962835,
+      "1_sapwood_rho_max_ohm_m": 643.6942427870777,
+      "2_inner_bark_sheet_max_ohm_sq": 43191.73936022774,
+      "3_dead_bark_rho_max_ohm_m": 676.771641615512,
+      "4_film_sheet_max_ohm_sq": 716581.7381811303,
+      "5_layer_sheet_x_band_height_max_ohm": 358.29086909056514
+    },
+    "800/typ · models_31_31b": {
+      "budget_ohm": 7827.098179896283,
+      "1_sapwood_rho_max_ohm_m": 1316.469502296644,
+      "2_inner_bark_sheet_max_ohm_sq": 88334.80842191378,
+      "3_dead_bark_rho_max_ohm_m": 1384.1186808637735,
+      "4_film_sheet_max_ohm_sq": 1465537.426796937,
+      "5_layer_sheet_x_band_height_max_ohm": 732.7687133984683
+    },
+    "800/typ · prose_estimate_02_03": {
       "budget_ohm": 3000.0,
-      "1_sapwood_rho_max_ohm_m": 588.4142686821233,
+      "1_sapwood_rho_max_ohm_m": 504.5814446321747,
       "2_inner_bark_sheet_max_ohm_sq": 33857.301796264546,
       "3_dead_bark_rho_max_ohm_m": 530.5102794361964,
-      "4_film_sheet_max_ohm_sq": 280858.3832309275,
+      "4_film_sheet_max_ohm_sq": 561716.766461855,
       "5_layer_sheet_x_band_height_max_ohm": 280.8583832309275
+    },
+    "800/max · models_31_31b": {
+      "budget_ohm": 4493.76484656295,
+      "1_sapwood_rho_max_ohm_m": 755.8234527053387,
+      "2_inner_bark_sheet_max_ohm_sq": 50715.584203842074,
+      "3_dead_bark_rho_max_ohm_m": 794.6628148235555,
+      "4_film_sheet_max_ohm_sq": 841407.6862837648,
+      "5_layer_sheet_x_band_height_max_ohm": 420.7038431418823
     }
   },
-  "element_5_in_canon_state": {
-    "state": "open",
-    "why": "the PTFE tape is laminated with a mechanical crimp around its perimeter over a catalyst layer on solid Ti, so its lower edge is crimped too",
-    "homes": [
-      "01_04 §5.3 (Метод фіксації)",
-      "01_04 §5.1",
-      "01_04 §5.4",
-      "01_04 §3.1"
-    ]
+  "requirements_per_kohm_of_budget": {
+    "budget_ohm": 1000.0,
+    "1_sapwood_rho_max_ohm_m": 168.19381487739156,
+    "2_inner_bark_sheet_max_ohm_sq": 11285.767265421515,
+    "3_dead_bark_rho_max_ohm_m": 176.83675981206545,
+    "4_film_sheet_max_ohm_sq": 187238.92215395166,
+    "5_layer_sheet_x_band_height_max_ohm": 93.61946107697582
   },
-  "budget_cells_open": 1,
-  "budget_cells": 4,
   "literature_points": [
     {
       "element": "1_sapwood",
@@ -144,19 +197,15 @@
       ],
       "quantity": "rho_ohm_m",
       "element_ohm": [
-        1116.5602789876066,
-        3236.480301731633
-      ],
-      "share_of_budget": [
-        0.3721867596625355,
-        1.0788267672438776
+        1302.0692833422245,
+        4418.842794406608
       ]
     },
     {
       "element": "1_sapwood",
       "species": "Pinus cembra",
       "what": "living stem, ERT in situ — the WHOLE cross-section mean, not sapwood alone",
-      "conditions": "October ⊥ end of winter (March; the authors attribute the peak to frozen trunks), DBH ≈ 5–6 cm, Tyrol",
+      "conditions": "October ⊥ end of winter (March; the authors: «probably» frozen trunks), DBH ≈ 5–6 cm, Tyrol",
       "source": "Losso et al. 2020, Trees 34:999–1008, doi:10.1007/s00468-020-01976-x, p. 1002",
       "read": "full text",
       "values": [
@@ -165,12 +214,8 @@
       ],
       "quantity": "rho_ohm_m",
       "element_ohm": [
-        1205.7831323313649,
-        4044.5106531572237
-      ],
-      "share_of_budget": [
-        0.40192771077712164,
-        1.3481702177190746
+        1406.1159155727676,
+        5522.065667151556
       ]
     },
     {
@@ -178,7 +223,7 @@
       "species": "Pinus sylvestris",
       "what": "stemflow, monthly means May–August (whole summer 222.0 ± 44.35)",
       "conditions": "pole-stage stand, central Finland, summer 1974; the column unit is printed «µS» — read as µS/cm (ours)",
-      "source": "Lehtonen, Westman & Kellomäki 1976, Silva Fennica 10(4):277–287, doi:10.14214/sf.a14798, Table 1 (cont.), p. 281 — a scan with no text layer, read from the page image",
+      "source": "Lehtonen, Westman & Kellomäki 1976 (author order as printed on p. 277), Silva Fennica 10(4):277–287, doi:10.14214/sf.a14798, Table 1 (cont.), p. 281 — a scan with no text layer, read from the page image",
       "read": "full text",
       "values": [
         136.5,
@@ -186,17 +231,23 @@
       ],
       "quantity": "EC_uS_per_cm",
       "element_ohm": [
-        2347.3848023965347,
+        1173.6924011982674,
         118333.86364677241
-      ],
-      "share_of_budget": [
-        0.7824616007988449,
-        39.44462121559081
       ]
     }
   ],
   "dead_bark_literature": "No resistivity of living rhytidome — of any species, dry or wet — was found (desk 2026-10-11). The nearest numeric proxy is processed Quercus suber cork in air, conductivity of order 1e-12 S/m (Lança et al. 2011, Ciência & Tecnologia dos Materiais 23(3/4):64–70, Table 2; read by the agent): a dry layer anywhere near it is an insulator, so element 3 has a number only when wet — the bench's question.",
   "inner_bark_literature": "No resistivity of living phloem in Ω·m was found; cambial-electrical-resistance readings (Shigometer, pulsed DC) are kΩ between needles of a stated geometry, e.g. 2.1–16.6 kΩ between 4.2-cm needles 1.8 cm apart in sweet gum (Clark et al. 1992, doi:10.48044/jauf.1992.001; read by the agent) — not converted.",
-  "scots_pine_sapwood_plus_film_lenient_ohm": 3463.9450813841413,
-  "scots_pine_sapwood_plus_film_lenient_exceeds_budget": true
+  "scots_pine_sapwood_plus_film_lenient_ohm": 2475.761684540492,
+  "open_budget_cells_that_hold_it": [
+    "700/typ · models_31_31b",
+    "800/max · models_31_31b",
+    "800/typ · models_31_31b",
+    "800/typ · prose_estimate_02_03"
+  ],
+  "element_5_in_canon": {
+    "electrolyte_path_described": false,
+    "named_fixation": "a mechanical crimp around the PTFE's perimeter, no adhesive (01_04 §5.3)",
+    "crimp_tightness_and_position": "open — the lamination is an open leg (00_07 HW.25); the GDL stand treats the tape seam and crimp edge as a leak path"
+  }
 }
