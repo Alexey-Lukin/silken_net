@@ -2898,6 +2898,54 @@ CHECKS += [
      A3D, lambda d: d["signal_peptide"]["n_positive_whole_protein"], 0.0),
 ]
 
+# ── HW.53 R_Ω bench sheet ⟷ script 84 (2026-10-11): the budget, the geometry and each layer's requirement ──
+BENCH_R_OMEGA = "docs/protocols/ebfc/cathode_ionic_path_bench.md"
+R_OMEGA = "kinetics/cathode_ionic_path.json"
+
+
+def _req(d, key):
+    (cell,) = d["requirements_alone_at_lenient_geometry"].values()   # the one open budget cell — a second one fails here
+    return cell[key]
+
+
+CHECKS += [
+    ("R_Ω budget in the one open cell → 84", BENCH_R_OMEGA, rf"лишає шляхові крізь дерево \*\*\+{N} кΩ\*\*",
+     R_OMEGA, lambda d: max(r["budget_best_electrode_kohm"] for r in d["budgets"]), 0.05),
+    ("R_Ω anode depth below the cambium (low) → 84", BENCH_R_OMEGA, rf"\| {N}–[\d.]+ мм = втулка 50 мм",
+     R_OMEGA, lambda d: 1e3 * min(d["factors"]["1_sapwood_per_m"]["depth_below_cambium_m"]), 0.05),
+    ("R_Ω anode depth below the cambium (high) → 84", BENCH_R_OMEGA, rf"\| [\d.]+–{N} мм = втулка 50 мм",
+     R_OMEGA, lambda d: 1e3 * max(d["factors"]["1_sapwood_per_m"]["depth_below_cambium_m"]), 0.05),
+    ("R_Ω sapwood factor (low) → 84", BENCH_R_OMEGA, rf"розв'язано на сегментах \| {N}–[\d.]+ /м",
+     R_OMEGA, lambda d: min(d["factors"]["1_sapwood_per_m"]["with_image"]), 0.005),
+    ("R_Ω sapwood factor (high) → 84", BENCH_R_OMEGA, rf"розв'язано на сегментах \| [\d.]+–{N} /м",
+     R_OMEGA, lambda d: max(d["factors"]["1_sapwood_per_m"]["with_image"]), 0.005),
+    ("R_Ω sapwood requirement → 84", BENCH_R_OMEGA, rf"розв'язано на сегментах \| [\d.]+–[\d.]+ /м \| ρ ≤ \*\*{N}\*\*",
+     R_OMEGA, lambda d: _req(d, "1_sapwood_rho_max_ohm_m"), 0.5),
+    ("R_Ω inner-bark requirement at t = 3 mm → 84", BENCH_R_OMEGA, rf"при t = 3 мм: ρ ≤ \*\*{N}\*\*",
+     R_OMEGA, lambda d: _req(d, "2_inner_bark_sheet_max_ohm_sq") * d["factors"]["2_inner_bark_sheet"]["thickness_m"], 0.5),
+    ("R_Ω dead-bark requirement → 84", BENCH_R_OMEGA, rf"\| [\d.]+–[\d.]+ /м \| ρ ≤ \*\*{N}\*\* Ω·м \(поблажлива",
+     R_OMEGA, lambda d: _req(d, "3_dead_bark_rho_max_ohm_m"), 0.5),
+    ("R_Ω film requirement → 84", BENCH_R_OMEGA, rf"R□ ≤ {N}·10⁵ Ω/□",
+     R_OMEGA, lambda d: _req(d, "4_film_sheet_max_ohm_sq") / 1e5, 0.05),
+    ("R_Ω catalyst-layer requirement → 84", BENCH_R_OMEGA, rf"R□,cl·h_band ≤ {N} Ω·м",
+     R_OMEGA, lambda d: _req(d, "5_layer_sheet_x_band_height_max_ohm"), 0.5),
+    ("R_Ω closed-form overestimate on our anode → 84", BENCH_R_OMEGA, rf"замкнена формула завищує на {N} %",
+     R_OMEGA, lambda d: 100 * (d["factors"]["1_sapwood_per_m"]["closed_form_isolated"]
+                               / d["factors"]["1_sapwood_per_m"]["isolated"] - 1), 0.5),
+    ("R_Ω Scots-pine sapwood + film floor → 84", BENCH_R_OMEGA, rf"найпоблажливішому прочитанні дають {N} кΩ проти бюджету",
+     R_OMEGA, lambda d: d["scots_pine_sapwood_plus_film_lenient_ohm"] / 1e3, 0.005),
+    ("R_Ω Scots-pine sapwood element (low) → 84", BENCH_R_OMEGA, rf"8⅓ Гц\) \| {N}–[\d.]+ \|",
+     R_OMEGA, lambda d: d["literature_points"][0]["element_ohm"][0] / 1e3, 0.005),
+    ("R_Ω Scots-pine sapwood element (high) → 84", BENCH_R_OMEGA, rf"8⅓ Гц\) \| [\d.]+–{N} \|",
+     R_OMEGA, lambda d: d["literature_points"][0]["element_ohm"][1] / 1e3, 0.005),
+    ("R_Ω P. cembra element (high) → 84", BENCH_R_OMEGA, rf"мерзлим стовбуром\) \| [\d.]+–{N} \|",
+     R_OMEGA, lambda d: d["literature_points"][1]["element_ohm"][1] / 1e3, 0.005),
+    ("R_Ω stemflow film element (low) → 84", BENCH_R_OMEGA, rf"плівки на корі не знайдено\) \| {N}–[\d.]+ \|",
+     R_OMEGA, lambda d: d["literature_points"][2]["element_ohm"][0] / 1e3, 0.005),
+    ("R_Ω stemflow film element (high) → 84", BENCH_R_OMEGA, rf"плівки на корі не знайдено\) \| [\d.]+–{N} \|",
+     R_OMEGA, lambda d: d["literature_points"][2]["element_ohm"][1] / 1e3, 0.5),
+]
+
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])

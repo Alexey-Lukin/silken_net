@@ -1,0 +1,202 @@
+{
+  "script": "84_cathode_ionic_path.py",
+  "item": "00_07 HW.53",
+  "question": "what must each layer of the anode → cathode ionic path be for R_Ω to fit the cold-start budget?",
+  "geometry": {
+    "flange_radius_m": 0.0149,
+    "wound_radius_m": 0.0075,
+    "anode_radius_m": 0.0055,
+    "anode_length_m": 0.04,
+    "sleeve_length_m": 0.05,
+    "inner_bark_m": 0.003,
+    "dead_bark_under_flange_m": [
+      0.008324999999999999,
+      0.021
+    ],
+    "bark_source": {
+      "flange_diameter_mm": 29.8,
+      "facing_spread_mm": 5.175,
+      "thin_mm": 8.325,
+      "thick_mm": 21.0
+    }
+  },
+  "controls": {
+    "slender_rod_solver_over_closed_form": 0.9926453676524305,
+    "image_far_over_isolated": 1.0012742775773145,
+    "ceiling_table_02_03": {
+      "700/typ": 4.0,
+      "700/max": 0.0,
+      "800/typ": 8.0,
+      "800/max": 4.666666666666667
+    }
+  },
+  "factors": {
+    "1_sapwood_per_m": {
+      "depth_below_cambium_m": [
+        0.038675,
+        0.026000000000000002
+      ],
+      "with_image": [
+        5.098448762500486,
+        5.448620036585241
+      ],
+      "isolated": 6.005044060098198,
+      "closed_form_isolated": 6.673679274264305
+    },
+    "2_inner_bark_sheet": {
+      "R_in_m": [
+        0.026000000000000002,
+        0.078675
+      ],
+      "ln_over_2pi": [
+        0.08860717897877463,
+        0.2648281323324494
+      ],
+      "thickness_m": 0.003
+    },
+    "3_dead_bark_per_m": {
+      "thickness_m": [
+        0.008324999999999999,
+        0.021
+      ],
+      "lenient": 5.654932837848631,
+      "adverse": 10.681539804825192,
+      "w_m": {
+        "band": [
+          0.008324999999999999,
+          0.021
+        ],
+        "footprint_plus_band": [
+          0.015725,
+          0.0284
+        ]
+      }
+    },
+    "4_film_per_sq": [
+      0.010681539804825191,
+      0.06622554678991618
+    ],
+    "5_layer_full_height_per_sq_per_m": 10.681539804825192
+  },
+  "budgets": [
+    {
+      "V_OC_mV": 700.0,
+      "VIN_CS": "typ",
+      "ceiling_kohm": 4.0,
+      "budget_best_electrode_kohm": -1.0,
+      "budget_worst_electrode_kohm": -16.0
+    },
+    {
+      "V_OC_mV": 700.0,
+      "VIN_CS": "max",
+      "ceiling_kohm": 0.0,
+      "budget_best_electrode_kohm": -5.0,
+      "budget_worst_electrode_kohm": -20.0
+    },
+    {
+      "V_OC_mV": 800.0,
+      "VIN_CS": "typ",
+      "ceiling_kohm": 8.0,
+      "budget_best_electrode_kohm": 3.0,
+      "budget_worst_electrode_kohm": -12.0
+    },
+    {
+      "V_OC_mV": 800.0,
+      "VIN_CS": "max",
+      "ceiling_kohm": 4.666666666666667,
+      "budget_best_electrode_kohm": -0.33333333333333304,
+      "budget_worst_electrode_kohm": -15.333333333333332
+    }
+  ],
+  "requirements_alone_at_lenient_geometry": {
+    "800/typ": {
+      "budget_ohm": 3000.0,
+      "1_sapwood_rho_max_ohm_m": 588.4142686821233,
+      "2_inner_bark_sheet_max_ohm_sq": 33857.301796264546,
+      "3_dead_bark_rho_max_ohm_m": 530.5102794361964,
+      "4_film_sheet_max_ohm_sq": 280858.3832309275,
+      "5_layer_sheet_x_band_height_max_ohm": 280.8583832309275
+    }
+  },
+  "element_5_in_canon_state": {
+    "state": "open",
+    "why": "the PTFE tape is laminated with a mechanical crimp around its perimeter over a catalyst layer on solid Ti, so its lower edge is crimped too",
+    "homes": [
+      "01_04 §5.3 (Метод фіксації)",
+      "01_04 §5.1",
+      "01_04 §5.4",
+      "01_04 §3.1"
+    ]
+  },
+  "budget_cells_open": 1,
+  "budget_cells": 4,
+  "literature_points": [
+    {
+      "element": "1_sapwood",
+      "species": "Pinus sylvestris",
+      "what": "living sapwood, ERT in situ — the 5 % and 95 % quantiles of the sapwood's resistivity, means of nine trees",
+      "conditions": "September 2006, 69–88-yr trees near Göttingen, 30 cm above ground, 8 1/3 Hz dipole-dipole",
+      "source": "Bieker & Rust 2010, Silva Fennica 44(2):267–273, doi:10.14214/sf.153, p. 269",
+      "read": "full text",
+      "values": [
+        219.0,
+        594.0
+      ],
+      "quantity": "rho_ohm_m",
+      "element_ohm": [
+        1116.5602789876066,
+        3236.480301731633
+      ],
+      "share_of_budget": [
+        0.3721867596625355,
+        1.0788267672438776
+      ]
+    },
+    {
+      "element": "1_sapwood",
+      "species": "Pinus cembra",
+      "what": "living stem, ERT in situ — the WHOLE cross-section mean, not sapwood alone",
+      "conditions": "October ⊥ end of winter (March; the authors attribute the peak to frozen trunks), DBH ≈ 5–6 cm, Tyrol",
+      "source": "Losso et al. 2020, Trees 34:999–1008, doi:10.1007/s00468-020-01976-x, p. 1002",
+      "read": "full text",
+      "values": [
+        236.5,
+        742.3
+      ],
+      "quantity": "rho_ohm_m",
+      "element_ohm": [
+        1205.7831323313649,
+        4044.5106531572237
+      ],
+      "share_of_budget": [
+        0.40192771077712164,
+        1.3481702177190746
+      ]
+    },
+    {
+      "element": "4_film",
+      "species": "Pinus sylvestris",
+      "what": "stemflow, monthly means May–August (whole summer 222.0 ± 44.35)",
+      "conditions": "pole-stage stand, central Finland, summer 1974; the column unit is printed «µS» — read as µS/cm (ours)",
+      "source": "Lehtonen, Westman & Kellomäki 1976, Silva Fennica 10(4):277–287, doi:10.14214/sf.a14798, Table 1 (cont.), p. 281 — a scan with no text layer, read from the page image",
+      "read": "full text",
+      "values": [
+        136.5,
+        355.5
+      ],
+      "quantity": "EC_uS_per_cm",
+      "element_ohm": [
+        2347.3848023965347,
+        118333.86364677241
+      ],
+      "share_of_budget": [
+        0.7824616007988449,
+        39.44462121559081
+      ]
+    }
+  ],
+  "dead_bark_literature": "No resistivity of living rhytidome — of any species, dry or wet — was found (desk 2026-10-11). The nearest numeric proxy is processed Quercus suber cork in air, conductivity of order 1e-12 S/m (Lança et al. 2011, Ciência & Tecnologia dos Materiais 23(3/4):64–70, Table 2; read by the agent): a dry layer anywhere near it is an insulator, so element 3 has a number only when wet — the bench's question.",
+  "inner_bark_literature": "No resistivity of living phloem in Ω·m was found; cambial-electrical-resistance readings (Shigometer, pulsed DC) are kΩ between needles of a stated geometry, e.g. 2.1–16.6 kΩ between 4.2-cm needles 1.8 cm apart in sweet gum (Clark et al. 1992, doi:10.48044/jauf.1992.001; read by the agent) — not converted.",
+  "scots_pine_sapwood_plus_film_lenient_ohm": 3463.9450813841413,
+  "scots_pine_sapwood_plus_film_lenient_exceeds_budget": true
+}

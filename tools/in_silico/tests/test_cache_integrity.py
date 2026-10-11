@@ -2498,3 +2498,47 @@ def test_collar_running_clearance_invariants():
     assert f"{hi['design_clearance_isothermal_mm']:.3f}–{hi['design_clearance_bound_mm']:.3f} mm" in v
     assert f"{hi['ceiling_bound_mm']:.2f}–{lo['ceiling_isothermal_mm']:.2f} mm instead of {want:.2f}" in v
     assert ("every row stays below" in v) == all(x["design_clearance_bound_mm"] < inp["slot_clearance_mm"] for x in d["routes"])
+
+
+def test_cathode_ionic_path_is_derived_from_its_inputs():
+    """84 (00_07 HW.53, 2026-10-11): each budget is the 02_03 §1.5 ceiling minus the electrode estimate, each requirement
+    is that budget over its element's lenient factor, and exactly one budget cell is open. CAN catch: a hand-edited
+    requirement, a ceiling or estimate that drifted from lib.constants, a second open cell nobody read. CANNOT catch:
+    whether a geometric factor is physically right (the script's own controls) or what the bench measures."""
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import BQ25570_PIN_CS_UW, BQ25570_VIN_CS_MAX_MV, BQ25570_VIN_CS_TYP_MV, R_INT_EBFC_EST_KOHM
+    d = json.loads((REPO / "tools/in_silico/cache/kinetics/cathode_ionic_path.json").read_text())
+    vin = {"typ": BQ25570_VIN_CS_TYP_MV, "max": BQ25570_VIN_CS_MAX_MV}
+    for r in d["budgets"]:
+        c = (r["V_OC_mV"] - vin[r["VIN_CS"]]) * vin[r["VIN_CS"]] / BQ25570_PIN_CS_UW / 1000.0
+        assert r["ceiling_kohm"] == c and r["budget_best_electrode_kohm"] == c - R_INT_EBFC_EST_KOHM[0], r
+    open_cells = [r for r in d["budgets"] if r["budget_best_electrode_kohm"] > 0]
+    assert d["budget_cells_open"] == len(open_cells) == len(d["requirements_alone_at_lenient_geometry"]) == 1
+    (req,) = d["requirements_alone_at_lenient_geometry"].values()
+    f, b = d["factors"], req["budget_ohm"]
+    assert b == open_cells[0]["budget_best_electrode_kohm"] * 1e3
+    assert req["1_sapwood_rho_max_ohm_m"] == b / min(f["1_sapwood_per_m"]["with_image"])
+    assert req["2_inner_bark_sheet_max_ohm_sq"] == b / min(f["2_inner_bark_sheet"]["ln_over_2pi"])
+    assert req["3_dead_bark_rho_max_ohm_m"] == b / f["3_dead_bark_per_m"]["lenient"]
+    assert req["4_film_sheet_max_ohm_sq"] == b / min(f["4_film_per_sq"])
+    assert req["5_layer_sheet_x_band_height_max_ohm"] == b / f["5_layer_full_height_per_sq_per_m"]
+    assert d["element_5_in_canon_state"]["state"] == "open"
+
+
+def test_cathode_ionic_path_literature_points_follow_from_the_readings():
+    """84's literature points: each element resistance is the reading × the element's factor at the stated geometry end,
+    and the Scots-pine floor is the sum of the lenient ends. CAN catch: a point retyped by hand or computed from another
+    factor. CANNOT catch: a misread source — the transcriptions are pinned to their pages in the script, not here."""
+    d = json.loads((REPO / "tools/in_silico/cache/kinetics/cathode_ionic_path.json").read_text())
+    f, pts = d["factors"], d["literature_points"]
+    g1 = f["1_sapwood_per_m"]["with_image"]
+    for p in pts[:2]:
+        assert p["element_ohm"] == [p["values"][0] * min(g1), p["values"][1] * max(g1)], p["source"]
+    (ec,) = [p for p in pts if p["quantity"] == "EC_uS_per_cm"]
+    film = (0.041e-3, 0.128e-3)
+    rho = [1e4 / v for v in ec["values"]]
+    assert ec["element_ohm"] == [min(rho) / max(film) * min(f["4_film_per_sq"]), max(rho) / min(film) * max(f["4_film_per_sq"])]
+    pine = [p for p in pts if p["species"] == "Pinus sylvestris"]
+    assert d["scots_pine_sapwood_plus_film_lenient_ohm"] == sum(min(p["element_ohm"]) for p in pine)
+    (budget,) = [v["budget_ohm"] for v in d["requirements_alone_at_lenient_geometry"].values()]
+    assert d["scots_pine_sapwood_plus_film_lenient_exceeds_budget"] == (d["scots_pine_sapwood_plus_film_lenient_ohm"] > budget)

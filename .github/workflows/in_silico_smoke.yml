@@ -37,6 +37,7 @@ on:
       - 'docs/protocols/outreach/lock_fea_prony_brief.md'
       - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
       - 'docs/protocols/anchor/install_and_log_bench.md'
+      - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -70,6 +71,7 @@ jobs:
               - 'docs/protocols/outreach/lock_fea_prony_brief.md'
               - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
               - 'docs/protocols/anchor/install_and_log_bench.md'
+              - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
               - '.github/workflows/in_silico_smoke.yml'
 
   lock_sync:
