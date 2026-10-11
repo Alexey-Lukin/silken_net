@@ -128,6 +128,19 @@ RSpec.describe Ed25519Crypto::SigningService do
       expect(result).to be false
     end
 
+    # [SEC.43] Мутація S + L: ref10 гема її приймає (пін нижче доводить, що гард несучий), а
+    # анти-повтор викликачів ключований на SHA256(підпис) — свіжий nonce був би повтором повз захист.
+    it "rejects the malleated signature S + L that the bare ref10 verifier accepts" do
+      raw = [ signature ].pack("H*")
+      s = raw.byteslice(32, 32).reverse.unpack1("H*").to_i(16) + described_class::GROUP_ORDER
+      skip "S + L переповнює 253 біти для цього підпису" if s >= 2**253
+      malleated = raw.byteslice(0, 32) + [ s.to_s(16).rjust(64, "0") ].pack("H*").reverse
+
+      bare = ::Ed25519::VerifyKey.new([ keypair[:public_key_hex] ].pack("H*")).verify(malleated, message) rescue false
+      expect(bare).to be(true)
+      expect(described_class.verify(keypair[:public_key_hex], malleated.unpack1("H*"), message)).to be false
+    end
+
     it "returns false for corrupted signature" do
       corrupted = "00" * 64
 

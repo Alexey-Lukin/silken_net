@@ -29,6 +29,8 @@ module Ed25519Crypto
     SEED_BYTES = 32
     PUBLIC_KEY_BYTES = 32
     SIGNATURE_BYTES = 64
+    # [SEC.43] Порядок групи Ed25519 (RFC 8032 §5.1): канонічний скаляр підпису S < L.
+    GROUP_ORDER = (2**252) + 27_742_317_777_372_353_535_851_937_790_883_648_493
 
     class SigningError < StandardError; end
 
@@ -74,6 +76,12 @@ module Ed25519Crypto
 
       public_key_bytes = [ public_key_hex ].pack("H*")
       signature_bytes = [ signature_hex ].pack("H*")
+      # 🔴 [SEC.43] ref10 у геме `ed25519` перевіряє лише три старші біти S, тож мутований підпис
+      # S + L (тих самих R і повідомлення) він ПРИЙМАЄ. Анти-повтор усіх трьох викликачів (M2M,
+      # QATT, device-event) ключований на SHA256(підпис), тож мутація давала свіжий nonce — повтор
+      # повз захист. Строга перевірка RFC 8032 §5.1.7 (S < L) — тут, у домі, для всіх; так само
+      # судить OpenSSL, тож офлайн-верифікатор і сервер приймають одну множину підписів.
+      return false unless canonical_scalar?(signature_bytes)
 
       verify_key = ::Ed25519::VerifyKey.new(public_key_bytes)
       verify_key.verify(signature_bytes, message.to_s)
@@ -81,6 +89,12 @@ module Ed25519Crypto
     rescue ::Ed25519::VerifyError
       false
     end
+
+    # S — другі 32 байти підпису, little-endian.
+    def self.canonical_scalar?(signature_bytes)
+      signature_bytes.byteslice(32, 32).reverse.unpack1("H*").to_i(16) < GROUP_ORDER
+    end
+    private_class_method :canonical_scalar?
 
     # Валідація hex-рядка на коректність формату та довжину.
     def self.validate_hex!(hex_string, expected_bytes, field_name)

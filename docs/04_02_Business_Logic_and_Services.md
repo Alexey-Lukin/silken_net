@@ -459,7 +459,7 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/ed25519_crypto/signing_service.rb` |
 | **Вхід** | `seed_hex`, `message` або `public_key_hex`, `signature_hex` |
-| **Що робить** | Ed25519 криптографія для non-EVM мереж (Solana, peaq). Генерація ключів, підпис, верифікація. Валідація hex-рядків на довжину (32/64 bytes). |
+| **Що робить** | Ed25519 криптографія для non-EVM мереж (Solana, peaq) і перевірка підписів Королеви (M2M, QATT, device-event). Генерація ключів, підпис, верифікація. Валідація hex-рядків на довжину (32/64 bytes). 🔴 **[SEC.43] `verify` строгий (RFC 8032 §5.1.7: S < L):** ref10 гема `ed25519` перевіряє лише три старші біти S і приймає мутований підпис S + L, а анти-повтор усіх трьох викликачів ключований на `SHA256(підпис)` — мутація давала свіжий nonce, тобто повтор повз захист. Строгість у домі — для всіх викликачів одразу, і так само судить OpenSSL офлайн-верифікаторів. |
 | **Вихід** | `generate_keypair → { seed_hex:, public_key_hex: }`. `sign → signature_hex (String)`. `verify → Boolean`. Raises `SigningError`. |
 
 ---
