@@ -97,10 +97,3 @@ series, and the solvation methodology; long-timescale matrix stability and the d
 delta-t/impedance behaviour are deferred to companion work and enter here only as experimental-closure
 predictions for the forthcoming titanium-coin measurements. All calculations are reproducible from the
 accompanying scripts and their recorded environment.
-
----
-
-## References
-
-The numbered list (ACS, by first appearance across the assembled paper) and its Crossref provenance
-live in [`09_references.md`](09_references.md).

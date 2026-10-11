@@ -5,8 +5,8 @@
 # Disclosure PDF — print a repo Markdown file AT A COMMIT into a submission PDF, and check any
 # PDF's text layer against that same source [UNI.3].
 #
-#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path>[,<md-path>…] <out.pdf> [title]   # + Google Chrome
-#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path>[,<md-path>…] <pdf> [--ignore REGEX]...
+#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path>[,<md-path>…] <out.pdf> [title] [--manuscript]   # + Google Chrome
+#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path>[,<md-path>…] <pdf> [--ignore REGEX]... [--manuscript]
 #   bundle exec ruby scripts/disclosure_pdf.rb --selftest
 #
 # Relative links become GitHub URLs pinned to <sha>, so incorporation by reference points at
@@ -28,7 +28,10 @@
 #     PDFKit kept in place («delta_t» read 0 of 16 in Menlo), and Monaco's synthetic bold split
 #     «delta_t» again; a bare identifier with an underscore («V_OC») is set as code;
 #   · a hyphenated compound never ends a line — poppler drops a line-final hyphen
-#     («flavin-|dependent» → «flavindependent»);
+#     («flavin-|dependent» → «flavindependent»); a part may carry a prime and an inner comma («4,4′-dimethyl»);
+#   · a circled digit (①, the paper's program labels) is set in Arial Unicode MS: the fallback face is a Type 3 font
+#     whose glyph poppler drops together with the rest of the line, and at line-height 1, since that face's taller
+#     metrics otherwise move a wrapped table line into a block of its own that poppler reads after the table (2026-10-11);
 #   · a table's first column never wraps (poppler read a wrapped cell across the row), and a
 #     heading never ends a page.
 #
@@ -61,6 +64,8 @@ module DisclosurePdf
     td:first-child { white-space: nowrap; }
     h1, h2, h3 { break-after: avoid; } tr { break-inside: avoid; }
     .src { font-size: 8.5pt; color: #444; margin-bottom: 10pt; }
+    .cd { font-family: "Arial Unicode MS"; line-height: 1; }
+    .ms td:first-child { white-space: normal; }
   CSS
   SWIFT = <<~SWIFT
     import PDFKit
@@ -68,9 +73,28 @@ module DisclosurePdf
     print((0..<d.pageCount).map { d.page(at: $0)?.string ?? "" }.joined(separator: "\\n"))
   SWIFT
 
+  # One part of a hyphenated compound — a comma only INSIDE it («4,4′-dimethyl»), so a trailing comma stays outside the span.
+  WORD = /[[:alnum:]µ.′]+(?:,[[:alnum:]µ.′]+)*/
+  # Author-only marks a manuscript must not carry: an open founder decision, an unsourced claim, Ukrainian working prose.
+  UNFINISHED = /\[finalise|\[CITATION NEEDED\]|\p{Cyrillic}/
+  # …and a link to a working document (the outline, the writing guide, the 00_* canon, the reference index the list is printed from):
+  # a draft note woven into a sentence rather than a blockquote shows up this way (08_declarations, 2026-10-11).
+  WORKSHOP_LINK = %r{\]\((?![a-z]+:)(?:[^)\s]*/)?(?:00_[^/)\s]*|09_references)\.md}
+
   module_function
 
-  def html(sha, path, title = nil)
+  # A manuscript prints the paper, not its workshop [00_07 HW.5.IS]: every blockquote of a section is a working note (checked
+  # 2026-10-11 — none carries paper text), an H1 keeps its name without the « — draft …» tail, and of the reference file only
+  # the numbered list goes in.
+  def manuscript(src, path)
+    if File.basename(path) == "09_references.md"
+      list = src[/^## References\n(.*?)(?=^## |\z)/m, 1] or abort "manuscript: no «## References» in #{path}"
+      return "# References\n#{list}"
+    end
+    src.sub(/\A# (.+?) — .*$/, '# \1').gsub(/^>.*\n(?:>.*\n)*\n?/, "")
+  end
+
+  def html(sha, path, title = nil, manuscript: false)
     full, st = Open3.capture2("git", "rev-parse", "--verify", "--quiet", "#{sha}^{commit}")
     abort "not a commit: #{sha}" unless st.success?
     sha = full.strip # links pin the FULL hash — the submitted PDF did, and a short one can grow ambiguous
@@ -80,7 +104,11 @@ module DisclosurePdf
     srcs = paths.map do |p|
       src, st = Open3.capture2("git", "show", "#{sha}:#{p}")
       abort "git show #{sha}:#{p} failed" unless st.success?
-      src
+      manuscript ? manuscript(src, p) : src
+    end
+    if manuscript
+      bad = srcs.join("\n").lines.grep(Regexp.union(UNFINISHED, WORKSHOP_LINK)).first(5)
+      abort "manuscript: author-only marks or working-document links left:\n#{bad.join}" unless bad.empty?
     end
     md = paths.zip(srcs).map do |p, src|
       rewrite(src, p, base) do |target|
@@ -95,7 +123,7 @@ module DisclosurePdf
     files = paths.one? ? "" : " — sections, in this order: #{paths.map { |q| CGI.escapeHTML(q) }.join(' · ')}"
     hygiene(<<~HTML)
       <!doctype html><html lang="en"><head><meta charset="utf-8"><title>#{CGI.escapeHTML(title || srcs.first[/^# (.+)$/, 1].to_s)}</title><style>#{CSS}</style></head>
-      <body><p class="src">Source: <a href="#{url}"><code>#{url}</code></a>#{files} (git commit #{sha}). All references below are pinned to that commit.</p>
+      <body#{' class="ms"' if manuscript}><p class="src">Source: <a href="#{url}"><code>#{url}</code></a>#{files} (git commit #{sha}). All references below are pinned to that commit.</p>
       #{body}</body></html>
     HTML
   end
@@ -128,19 +156,20 @@ module DisclosurePdf
     doc = Nokogiri::HTML(html.gsub(/\u26A0\uFE0F?/, %(<span class="warn">\u26A0\uFE0E</span>)))
     doc.xpath("//body//text()[not(ancestor::pre or ancestor::style)]").each do |t|
       s = CGI.escapeHTML(t.content)
-      s = s.gsub(/[[:alnum:]µ.]+(?:-[[:alnum:]µ.]+)+/) { %(<span class="nw">#{Regexp.last_match(0)}</span>) }
+      s = s.gsub(/#{WORD}(?:-#{WORD})+/o) { %(<span class="nw">#{Regexp.last_match(0)}</span>) }
+      s = s.gsub(/[\u2460-\u2473]/) { %(<span class="cd">#{Regexp.last_match(0)}</span>) }
       s = s.gsub(/\b[[:alnum:]]+_[[:alnum:]_]+\b/) { %(<code>#{Regexp.last_match(0)}</code>) } if t.ancestors("a").empty? && t.ancestors("code").empty?
       t.replace(Nokogiri::HTML::DocumentFragment.parse(s)) unless s == CGI.escapeHTML(t.content)
     end
     doc.to_html
   end
 
-  def render(sha, path, out, title = nil)
+  def render(sha, path, out, title = nil, manuscript: false)
     abort "usage: render <sha> <md-path>[,…] <out.pdf> [title]" unless sha && path && out
     out = File.expand_path(out)
     Dir.mktmpdir do |tmp|
       page = File.join(tmp, "page.html")
-      File.write(page, html(sha, path, title))
+      File.write(page, html(sha, path, title, manuscript:))
       FileUtils.rm_f(out)
       pid = Process.spawn(CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--user-data-dir=#{tmp}/profile",
                           "--print-to-pdf=#{out}", "file://#{page}", %i[out err] => File::NULL, pgroup: true)
@@ -199,9 +228,9 @@ module DisclosurePdf
     lo
   end
 
-  def check(sha, path, pdf, ignores = [])
+  def check(sha, path, pdf, ignores = [], manuscript: false)
     abort "usage: check <sha> <md-path> <pdf> [--ignore REGEX]..." unless sha && path && pdf
-    want = blocks(html(sha, path))
+    want = blocks(html(sha, path, nil, manuscript:))
     red = false
     texts(pdf).each do |name, raw|
       raw = raw.lines.grep_v(Regexp.union(ignores)).join unless ignores.empty?
@@ -241,22 +270,32 @@ module DisclosurePdf
            r.include?(%(![Fig](data:image/png;base64,iVBORw== "T"))) && read == [ "docs/p/figures/a.png" ] && !r.include?("B/docs/p/figures"))
     t.call("a relative link is pinned per section; an absolute image is left alone",
            r.include?("](B/docs/x.md#s)") && r.include?("![w](https://e.org/b.png)"))
-    puts(fails.zero? ? "disclosure_pdf --selftest: OK (8 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
+    m = manuscript("# 1. Intro — draft (Стаття 1)\n\n> **Draft section** a\n> b\n\nBody > not a quote.\n\n> note\nTail\n", "p/01.md")
+    t.call("a manuscript drops every blockquote and an H1's draft tail, and keeps the prose", m == "# 1. Intro\n\nBody > not a quote.\n\nTail\n")
+    r = manuscript("# References — x\n> n\n## Claims\nc\n## References\n1. A\n2. B\n## Verified\nv\n", "p/09_references.md")
+    t.call("of the reference file a manuscript keeps only the numbered list", r == "# References\n1. A\n2. B\n")
+    t.call("a link to a working document is recognised, a figure or a URL is not",
+           [ "[o](00_OUTLINE.md)", "[c](../../../../00_02_Academic_Integration_and_IP.md)", "see [l](09_references.md)" ].all? { |l| l.match?(WORKSHOP_LINK) } &&
+           [ "![f](figures/a.png)", "[x](https://e.org/00_a.md)", "[s](10_supporting_information.md)", "[y](foo00_bar.md)" ].none? { |l| l.match?(WORKSHOP_LINK) })
+    t.call("author-only marks are recognised, plain English is not",
+           [ "x [finalise: y]", "[CITATION NEEDED]", "Стаття" ].all? { |l| l.match?(UNFINISHED) } && !"a draft-free line".match?(UNFINISHED))
+    puts(fails.zero? ? "disclosure_pdf --selftest: OK (12 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
 end
 
 if $PROGRAM_NAME == __FILE__
+  manuscript = !ARGV.delete("--manuscript").nil?
   case ARGV.shift
   when "--selftest" then DisclosurePdf.selftest
-  when "render" then DisclosurePdf.render(*ARGV.first(4))
+  when "render" then DisclosurePdf.render(*ARGV.first(4), manuscript:)
   when "check"
     ignores = []
     while (i = ARGV.index("--ignore"))
       ARGV.delete_at(i)
       ignores << Regexp.new(ARGV.delete_at(i))
     end
-    DisclosurePdf.check(*ARGV.first(3), ignores)
-  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path>[,…] <out.pdf> [title] | check <sha> <md-path>[,…] <pdf> [--ignore REGEX]... | --selftest"
+    DisclosurePdf.check(*ARGV.first(3), ignores, manuscript:)
+  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path>[,…] <out.pdf> [title] [--manuscript] | check <sha> <md-path>[,…] <pdf> [--ignore REGEX]... [--manuscript] | --selftest"
   end
 end
