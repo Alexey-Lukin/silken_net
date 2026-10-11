@@ -229,6 +229,11 @@ legend line stays in each, as the criterion allows.
   📌 2026-10-08 (the record above is not rewritten): §3.3 now calls the slope a computed trend and adds a
   ωB97X cross-check (`21e … wb97x`, Table 4) — a second METHOD, not a measurement, so the withdrawn
   triangulation stays withdrawn.
+  📌 2026-10-11 (the records above are not rewritten): the instrument now exists for the DONOR side — script `83`
+  compares `21e` with the one measured 4,4'-X2-bpy Os(III/II) series the ChemRxiv scout found (Goldschmid 2021,
+  homoleptic, MeCN; scout log at the end of this file), under transfer assumptions named in its cache. It has no
+  acceptor point, so it cannot triangulate the slope the paper quotes; what §3.3 may say about it is the
+  integration leg's call (`00_07` HW.5.IS).
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.
@@ -323,3 +328,47 @@ enter an ACS list.
 paper's scope; Stier & Kästner: cluster vs QM/MM protein redox, a candidate for §3.6; Lee: laccase
 trinuclear cluster; Hay & Wadt *82*, 270: the large-core companion of ref 40, not the LANL2DZ set for
 Co/Cu/Os/Ru.)
+
+## Scout log — ChemRxiv, 2026-10-11 (candidates; NOT part of the numbered list)
+
+Searched through a browser (chemrxiv.org answers WebFetch with HTTP 403) by the machine and one read-only agent;
+positive control «QMzyme» returned its preprint, so the zero-result queries below are negatives of THIS index, not of
+the instrument. `[✓ read 2026-10-11]` = title, authors, licence and abstract read on the preprint page by the machine
+itself; unmarked = reported by the agent, page not re-read — re-read it before it enters the text. Each line names the
+open question it serves (`00_07` HW.5 / HW.5.IS); where it goes is the integration leg's call, not this list's.
+
+- Goldschmid, S. L. *et al.* (Rovis) — Os(II) polypyridyl library, measured E1/2(Os III/II) in MeCN vs Fc/Fc⁺;
+  doi:10.26434/chemrxiv-2021-jfmqq (VoR *Synlett* 2022). `[✓ read 2026-10-11 — Table 2 transcribed from the page image]`
+  → ① the measured 4,4'-X2-bpy series (H · Me · tBu · OMe) that script `83` compares with `21e` — found by the queries
+  `osmium complex redox potential` (machine) and `osmium complexes electrochemistry` (agent); the result is the verdict of
+  its cache, not this line.
+- Liu, R.; Nishida, S.; Kobayashi, A.; Sowa, K.; Lojou, E.; de Poulpiquet, A.; Mazurenko, I. — interfacial pH at a
+  bilirubin-oxidase DET microelectrode, FEM + operando confocal pH imaging; doi:10.26434/chemrxiv.15006753/v1 (VoR
+  *J. Am. Chem. Soc.* 2026). `[✓ read 2026-10-11]` → cathode stability in weakly buffered sap (`01_03 §3.2`, CHEM.36).
+- Carducci, N. G. G.; Arnott, M.; Yankson, E.; Ng, H. J. C.; Li, H.; Hickey, D. — catalytic activity and reversibility of
+  mediated bioelectrocatalysis differ between polymer matrices even for mediators with similar E°;
+  doi:10.26434/chemrxiv.15004343/v1 (preprint). `[✓ read 2026-10-11]` → ① a named limit of the design rule (E° tuning
+  ≠ current in a polymer matrix) and the Os-polymer RFQ.
+- Mtemeri & Hickey — the ChemRxiv version (doi:10.26434/chemrxiv-2023-tk505) of ref 18. `[✓ read 2026-10-11]`
+- Hruska, E.; Gale, A.; Liu, F. — ML corrections to implicit/explicit-solvent redox potentials, ROP313 set;
+  doi:10.26434/chemrxiv-2021-mthjp-v2 (VoR *JCTC* 2022) → ① functional-dependent bias of DFT E°; ② cluster-in-PCM.
+- Hartmann, M. *et al.* (Bräse) — DELFIN, automated spin-state + redox prediction benchmarked on experiment;
+  doi:10.26434/chemrxiv-2025-4c256 → ① external benchmark context.
+- Bonfrate, S.; Ferré, N.; Huix-Rotllant, M. — electrostatic-embedding QM/MM thermodynamic integration for redox
+  potentials in water; doi:10.26434/chemrxiv-2025-s31pf-v2 → ② and the explicit-water capstone.
+- Kılıç, M.; Ensing, B. — flavin redox potentials in BLUF/LOV proteins from QM/MM MD; doi:10.26434/chemrxiv-2023-lng5h
+  (VoR *J. Phys. Chem. B* 2024) → capstone ④ (protein-environment shift) methods.
+- Bowling, P. *et al.* (Herbert) — heterogeneous PCM vs exact Poisson; doi:10.26434/chemrxiv-2024-9wfb9 (VoR *JCTC* 2025)
+  and Wittmann, L.; Pausch, A. — a smooth PCM cavity; doi:10.26434/chemrxiv.15003893/v2 → §2.7 «cavity convention is
+  result-bearing».
+- Gayvert, J. *et al.* (Bravaya) — eMap 2.0, electron-transfer pathways in protein families;
+  doi:10.26434/chemrxiv-2025-bvnp7-v2 → a cross-check of the `28` tunnelling pathway.
+- Sedenho, G. *et al.* (Crespilho) — bilirubin oxidase in a Nafion biogel on a gas-diffusion electrode;
+  doi:10.26434/chemrxiv.12046629.v1 (VoR *J. Power Sources* 2021) → cathode/GDE design.
+
+**Negatives (query → no relevant hit on ChemRxiv, 2026-10-11; the Goldschmid series came from other queries, above):** `osmium bipyridine redox` · `Hammett ruthenium redox
+potential` · `glucose dehydrogenase FAD` · `glucose dehydrogenase electrode` · `laccase cathode` · `xylem sap` ·
+`implicit solvent redox metal complexes` · `Nafion grafting` · `Pichia pastoris glycosylation` · `Lever ligand
+electrochemical parameter` · `ligand electrochemical series` · `osmium redox polymer` · `genipin chitosan`. These queries
+returned no FAD-GDH preprint, no Lever-parameter work and — apart from the series above — no measured substituted-bpy
+Os/Ru E° series; a wider search of ChemRxiv or of the journals was not made.

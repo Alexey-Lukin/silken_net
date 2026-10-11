@@ -8,6 +8,7 @@ import itertools
 import json
 import math
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -227,6 +228,65 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
                                                 [tiers[n][f"{tier}_eV"] for n in v["common_fit_subset"]]), abs_tol=1e-9)
         assert math.isclose(es["wb97x_def2tzvp"], v["slope_wb97x_eV_per_sigma"], abs_tol=1e-9)
         assert math.isclose(es["b3lyp_631gd"], v["slope_b3lyp_eV_per_sigma"], abs_tol=1e-9)
+
+
+def test_os_series_vs_measured_is_derived_from_its_sources():
+    """① ⊥ measured (script 83, 2026-10-11): every field follows from the transcription and the series caches, and the
+    verdict equals the one `83.verdict()` builds from those fields — compared WHOLE, so no printed number escapes.
+
+    CAN catch: a cache whose transcription no longer equals the script's (a fix in the script without a re-run), a σ
+    that is not 21e's or the script's tBu value, a shift, per-substituent value (6 measured, 4 computed), slope or r²
+    that does not follow from the rows, a matched reading not tied to its measured reading, a missing or extra ratio, a
+    fit set other than the series cache's, and a verdict that differs from the one the fields produce. CANNOT catch: a
+    transcription error against the PDF (the source is not in the tree), nor whether assumptions A1–A4 hold.
+    """
+    import importlib.util
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV
+
+    spec = importlib.util.spec_from_file_location("s83", Path(__file__).parents[1] / "scripts" / "83_os_series_vs_measured.py")
+    s83 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s83)   # top level imports lib.constants only; 21e is loaded inside main()
+    v = json.loads((DFT / "os_series_vs_measured.json").read_text())
+    series = json.loads((DFT / "os_mediator_series.json").read_text())
+    b3 = {c["name"]: c for c in series["complexes"]}
+    m = v["measured"]
+    assert {n: r["E12_V"] for n, r in m.items()} == {n: e for n, (e, _) in s83.MEASURED_E12_V.items()}, "transcription ≠ script"
+    for n, row in m.items():
+        assert row["sigma_para"] == (s83.SIGMA_P_TBU if n == "dtbbpy" else b3[n]["sigma_para"]), n
+        assert row["shift_V"] == row["E12_V"] - m["bpy"]["E12_V"], n
+        assert row["shift_per_substituent_V"] == row["shift_V"] / 6, n
+    for n in ("dmbpy", "ome"):
+        row = v["computed"]["b3lyp_631gd"][n]
+        assert row["shift_V"] == -(b3[n]["dE_red_eV"] - b3["bpy"]["dE_red_eV"]), n
+        assert row["shift_per_substituent_V"] == row["shift_V"] / 4, n
+    cen = {}
+    for n, f in (("dmbpy", "os_complex_wb97xd_dmbpy.json"), ("bpy", "os_complex_wb97xd.json")):
+        w = json.loads((DFT / f).read_text())
+        cen[n] = (w["os2_plus"]["E_total_Ha"] - w["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV
+    wrow = v["computed"]["wb97x_def2tzvp"]["dmbpy"]
+    assert wrow["shift_V"] == -(cen["dmbpy"] - cen["bpy"]) and wrow["shift_per_substituent_V"] == wrow["shift_V"] / 4
+    ratios = v["ratio_computed_over_measured_per_substituent"]
+    assert set(ratios) == {"b3lyp_631gd:dmbpy", "b3lyp_631gd:ome", "wb97x_def2tzvp:dmbpy"}
+    for key, ratio in ratios.items():
+        tier, n = key.split(":")
+        assert ratio == v["computed"][tier][n]["shift_per_substituent_V"] / m[n]["shift_per_substituent_V"], key
+    for label, rd in v["measured_readings"].items():
+        slope, r2 = s83._slope_r2([m[n]["sigma_para"] for n in rd["points"]], [m[n]["E12_V"] for n in rd["points"]])
+        assert (rd["slope_V_per_sigma"], rd["r2"], rd["per_substituent_V_per_sigma"]) == (slope, r2, slope / 6), label
+    ms = v["matched_slope"]
+    mr = v["measured_readings"]["matched"]
+    assert ms["points"] == mr["points"] and (ms["measured_per_substituent_V_per_sigma"], ms["measured_r2"]) == (
+        mr["per_substituent_V_per_sigma"], mr["r2"])
+    cslope, cr2 = s83._slope_r2([m[n]["sigma_para"] for n in ms["points"]],
+                                [-(b3[n]["dE_red_eV"] - b3["bpy"]["dE_red_eV"]) for n in ms["points"]])
+    assert (ms["computed_b3lyp_per_substituent_V_per_sigma"], ms["computed_b3lyp_r2"]) == (cslope / 4, cr2)
+    assert ms["ratio_computed_over_measured"] == ms["computed_b3lyp_per_substituent_V_per_sigma"] / ms["measured_per_substituent_V_per_sigma"]
+    fit = series["lfer"]["fit_set"]
+    assert v["computed_lfer_fit_set"] == fit
+    lslope, _ = s83._slope_r2([b3[n]["sigma_para"] for n in fit], [b3[n]["dE_red_eV"] for n in fit])
+    assert v["computed_lfer_per_substituent_V_per_sigma"] == -lslope / 4
+    assert v["verdict"] == s83.verdict(v), "the verdict is not the one its fields build"
 
 
 def _ols_slope(xs, ys):

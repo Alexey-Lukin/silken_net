@@ -1450,6 +1450,12 @@ CHECKS += [
     ("01_02 §2.1 pH side series (canon → script 67 premise: re-run 67 on a recipe change)",
      METALLURGY, rf"бічна серія \*\*{N}\*\* \(лише ICP-MS",
      SAP, lambda d: d["q6_ratified_point"]["conditions"]["side_series"]["ph"], 0.0),
+    ("01_02 §2.1 buffer capacity at the set-point → script 67 Q6 (2026-10-11; read by 01_03 §3.2, the cathode pH margin)",
+     METALLURGY, rf"ємність при уставці \*\*{N}\*\* мМ/pH",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.005),
+    ("01_02 §2.1 buffer capacity, side series → script 67 Q6 (2026-10-11)",
+     METALLURGY, rf"у бічній серії \*\*{N}\*\* мМ/pH",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["side_series"]["buffer_capacity_mM_per_pH_25c"], 0.005),
 ] + [
     (f"sap ratified point, {quantity} {end} at pH {ph_re.replace(chr(92), '')} → sap_recipe_saturation.json (01_02 §2.1)",
      METALLURGY, pattern, SAP,

@@ -1,0 +1,127 @@
+{
+  "script": "83_os_series_vs_measured.py",
+  "question": "① — does the computed substituent shift of E°(Os III/II) agree with a measured 4,4'-X2-bpy series?",
+  "source": {
+    "doi": "10.26434/chemrxiv-2021-jfmqq",
+    "version": "preprint v1 (2021-10-22)",
+    "table": "Table 2",
+    "medium": "MeCN, 0.1 M TBAPF6, 100 mV/s, N2",
+    "reference": "Fc/Fc+ (cancels in differences)",
+    "read": "2026-10-11, rendered page image of the preprint PDF; §2.2 text states the same values",
+    "licence": "CC BY-NC 4.0"
+  },
+  "assumptions": [
+    "A1 additivity per substituent across homoleptic tris and heteroleptic bis complexes",
+    "A2 solvent and charge state shift the absolute E°, not the substituent difference",
+    "A3 sigma_para as in 21e SERIES; tBu -0.20 from the same compilation, unchecked",
+    "A4 vertical ΔSCF difference (computed) against an E1/2 difference (measured)"
+  ],
+  "measured": {
+    "bpy": {
+      "E12_V": 0.44,
+      "where": "Os12, entry 1",
+      "sigma_para": 0.0,
+      "shift_V": 0.0,
+      "shift_per_substituent_V": 0.0
+    },
+    "dmbpy": {
+      "E12_V": 0.35,
+      "where": "Os26, entry 3",
+      "sigma_para": -0.17,
+      "shift_V": -0.09000000000000002,
+      "shift_per_substituent_V": -0.015000000000000005
+    },
+    "dtbbpy": {
+      "E12_V": 0.32,
+      "where": "Os27, entry 4",
+      "sigma_para": -0.2,
+      "shift_V": -0.12,
+      "shift_per_substituent_V": -0.02
+    },
+    "ome": {
+      "E12_V": 0.07,
+      "where": "Os28, entry 5",
+      "sigma_para": -0.27,
+      "shift_V": -0.37,
+      "shift_per_substituent_V": -0.06166666666666667
+    }
+  },
+  "measured_readings": {
+    "matched": {
+      "points": [
+        "bpy",
+        "dmbpy",
+        "ome"
+      ],
+      "slope_V_per_sigma": 1.2808586762075134,
+      "r2": 0.8210338515349862,
+      "per_substituent_V_per_sigma": 0.21347644603458557
+    },
+    "alkyl_only": {
+      "points": [
+        "bpy",
+        "dmbpy",
+        "dtbbpy"
+      ],
+      "slope_V_per_sigma": 0.5759312320916905,
+      "r2": 0.9894203217985453,
+      "per_substituent_V_per_sigma": 0.09598853868194841
+    },
+    "all_measured": {
+      "points": [
+        "bpy",
+        "dmbpy",
+        "dtbbpy",
+        "ome"
+      ],
+      "slope_V_per_sigma": 1.1776649746192893,
+      "r2": 0.7256793469101597,
+      "per_substituent_V_per_sigma": 0.19627749576988154
+    }
+  },
+  "matched_slope": {
+    "points": [
+      "bpy",
+      "dmbpy",
+      "ome"
+    ],
+    "computed_b3lyp_per_substituent_V_per_sigma": 0.22469257537131965,
+    "computed_b3lyp_r2": 0.9995801279865335,
+    "measured_per_substituent_V_per_sigma": 0.21347644603458557,
+    "measured_r2": 0.8210338515349862,
+    "ratio_computed_over_measured": 1.0525403600494498
+  },
+  "computed": {
+    "b3lyp_631gd": {
+      "dmbpy": {
+        "shift_V": -0.14885599899784552,
+        "shift_per_substituent_V": -0.03721399974946138
+      },
+      "ome": {
+        "shift_V": -0.243412431827581,
+        "shift_per_substituent_V": -0.06085310795689525
+      }
+    },
+    "wb97x_def2tzvp": {
+      "dmbpy": {
+        "shift_V": -0.14932915349767928,
+        "shift_per_substituent_V": -0.03733228837441982
+      }
+    }
+  },
+  "computed_lfer_per_substituent_V_per_sigma": 0.2307614298162877,
+  "computed_lfer_fit_set": [
+    "ome",
+    "dmbpy",
+    "bpy",
+    "dcbpy",
+    "no2"
+  ],
+  "ratio_computed_over_measured_per_substituent": {
+    "b3lyp_631gd:dmbpy": 2.480933316630758,
+    "b3lyp_631gd:ome": 0.9868071560577607,
+    "wb97x_def2tzvp:dmbpy": 2.4888192249613206
+  },
+  "not_covered": "the acceptor side — the measured series has no 4,4'-acceptor; OMe at ωB97X — not computed",
+  "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
+}
