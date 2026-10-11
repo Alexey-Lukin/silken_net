@@ -15,9 +15,20 @@
 #      (набір і порядок листя прив'язані до кредиту, не issuer-asserted)
 #   4. tier1: leaf_cid + path → ПЕРЕРАХОВАНИЙ субкорінь == заявленому
 #   5. tier2: субкорінь + path → state_root якоря
+#   6. форма листа за версією (lib/leaf_payload_shape.rb): точні ключі v1/v2, у v2 — DID у перших
+#      4 байтах сирого кадру = device_uid; невідома версія — відмова; той самий сирий кадр під
+#      РІЗНИМИ листами — відмова (той самий лист легально стоїть у кількох кредитах; ловить
+#      ДОСЛІВНИЙ повтор — кадр, що виглядає унікальним, власник ключа вигадає)
+#   7. версія: схема v1 не несе листя v2, схема v2 — несе; мітка sealed-кредиту lineage_version =
+#      найвища версія його own-window листя
+#   8. один telemetry_log_id на весь бандл — один leaf_cid (рядок незмінний, тож спільний лист
+#      завжди той самий); у межах кредиту лист не повторюється; «sealed» виводиться з наявності
+#      кореня, а мітка `seal`, що з ним розходиться, — відмова (інакше «unsealed» минав би 3 і 7)
 #
 # Межа довіри (свідома, задекларована): amount, ПОВНОТА набору кредитів/листя і
-# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг у leaf0).
+# континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг у leaf0). Лист v2
+# зобовʼязує щодо ІДЕНТИЧНОСТІ кадру ефіру, не щодо виміру: кадр — шифртекст сесійним
+# ключем вузла, який ратчет знищує, тож MIC і вміст перевіряє лише власник ключа, поки той живий.
 # [DOC-T.89] `insurance_payouts` — емісія за ЗБИТОК, НЕ вуглецеві кредити: крипто під
 # нею немає за конструкцією (немає листя), тож тут вона лише ПЕРЕЛІЧУЄТЬСЯ вголос.
 # Мовчазна секція гірша за відсутню: аудитор прийняв би її за перевірену.
@@ -34,6 +45,7 @@ require "digest"
 require "bigdecimal"
 require_relative "../lib/merkle_tree"
 require_relative "../app/services/filecoin/cid_generator"
+require_relative "../lib/leaf_payload_shape"
 
 abort "Usage: ruby scripts/verify_lineage_bundle.rb <bundle.json>" if ARGV.empty?
 
@@ -57,7 +69,8 @@ begin
 rescue JSON::ParserError => e
   abort "✗ Bundle відхилено: #{e.message}"
 end
-abort "Невідома схема: #{bundle['schema']}" unless bundle["schema"] == "silken.mrv.lineage.v1"
+SCHEMAS = %w[silken.mrv.lineage.v1 silken.mrv.lineage.v2].freeze
+abort "Невідома схема: #{bundle['schema']}" unless SCHEMAS.include?(bundle["schema"])
 
 failures = []
 anchored = 0
@@ -68,6 +81,9 @@ total_leaves = 0
 sealed_credits = 0
 unsealed_credits = 0
 roots_to_check = {}
+raw_seen = {}
+id_cid = {}
+max_seen = nil
 
 bundle.fetch("credits").each do |credit|
   tx_id = credit.dig("tx", "id")
@@ -91,6 +107,18 @@ bundle.fetch("credits").each do |credit|
     end
     unless payload["telemetry_log_id"] == log_id
       failures << "tx #{tx_id} / log #{log_id}: payload.telemetry_log_id #{payload['telemetry_log_id'].inspect} ≠ leaf-id"
+    end
+    # 6. Форма за версією й повтор сирого кадру (той самий лист легально стоїть у кількох кредитах —
+    # повтор це той самий КАДР під РІЗНИМИ листами, тобто під іншим leaf_cid)
+    LeafPayloadShape.errors(payload).each { |err| failures << "tx #{tx_id} / log #{log_id}: #{err}" }
+    version = LeafPayloadShape.version_of(payload)
+    max_seen = [ max_seen, version ].compact.max if version.is_a?(Integer)
+    # 8. Той самий запис — завжди той самий лист
+    first_cid_for_id = (id_cid[log_id] ||= leaf["leaf_cid"])
+    failures << "tx #{tx_id} / log #{log_id}: той самий запис стоїть під іншим листом" unless first_cid_for_id == leaf["leaf_cid"]
+    if (raw = payload["raw_record"])
+      first_cid = (raw_seen[raw] ||= leaf["leaf_cid"])
+      failures << "tx #{tx_id} / log #{log_id}: сирий кадр уже стоїть під іншим листом — повтор кадру" unless first_cid == leaf["leaf_cid"]
     end
 
     proof = leaf.fetch("anchor_proof")
@@ -127,9 +155,22 @@ bundle.fetch("credits").each do |credit|
 
   # 3. Sealed-кредит: mint-root перераховується з own-window листя (канонічний порядок
   # = порядок масиву; підміна набору/порядку/листа → mismatch)
-  if credit["seal"] == "sealed"
+  # 8. Лист не повторюється в межах кредиту; «sealed» — це наявний корінь, а не мітка з файлу
+  repeated = credit["leaves"].map { |l| l["leaf_cid"] }.tally.select { |_cid, n| n > 1 }.keys
+  failures << "tx #{tx_id}: лист повторюється в межах кредиту (#{repeated.size})" if repeated.any?
+  sealed = !credit["telemetry_merkle_root"].nil?
+  unless credit["seal"] == (sealed ? "sealed" : "unsealed")
+    failures << "tx #{tx_id}: мітка seal #{credit['seal'].inspect} розходиться з коренем (#{sealed ? 'є' : 'немає'})"
+  end
+  if sealed
     sealed_credits += 1
-    own_cids = credit["leaves"].select { |l| l["window_source"] == tx_id }.map { |l| l["leaf_cid"] }
+    own = credit["leaves"].select { |l| l["window_source"] == tx_id }
+    own_cids = own.map { |l| l["leaf_cid"] }
+    # 7. Мітка кредиту — найвища версія ЙОГО листя (не константа емітента)
+    own_max = own.map { |l| LeafPayloadShape.version_of(l.fetch("payload")) }.grep(Integer).max
+    unless credit["lineage_version"] == own_max
+      failures << "tx #{tx_id}: lineage_version #{credit['lineage_version'].inspect} ≠ найвища версія own-window листя #{own_max.inspect}"
+    end
     recomputed_root = MerkleTree.root(own_cids)
     unless recomputed_root == credit["telemetry_merkle_root"]
       failures << "tx #{tx_id}: mint-root mismatch (перераховано #{recomputed_root.inspect}, " \
@@ -139,6 +180,11 @@ bundle.fetch("credits").each do |credit|
   else
     unsealed_credits += 1
   end
+end
+
+# 7. Схема бандла ⟷ версії листя: v1-схема без v2-листя, v2-схема — з ним
+if (bundle["schema"] == "silken.mrv.lineage.v2") != (max_seen == 2)
+  failures << "схема #{bundle['schema']} не відповідає листю (найвища версія листа #{max_seen.inspect})"
 end
 
 puts "── Lineage bundle: #{bundle['credits'].size} credits " \

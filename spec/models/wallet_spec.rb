@@ -210,10 +210,20 @@ RSpec.describe Wallet, type: :model do
 
       expect(tx.telemetry_window_from_at).to be_nil
       expect(tx.telemetry_window_to_id).to eq(old_log.id)
-      expect(tx.telemetry_lineage_version).to eq(Mrv::TelemetryLeaf::LEAF_VERSION)
       expect(tx.reload.telemetry_merkle_root)
         .to eq(MerkleTree.root([ Mrv::TelemetryLeaf.cid_for(old_log) ]))
+      # [FW.66 (Б) · S8] Мітка — найвища версія листя ВІКНА, не константа: мінт до фліпу — v1.
+      expect(tx.telemetry_lineage_version).to eq(1)
       expect(wallet.lineage_cursor_log_id).to eq(old_log.id)
+    end
+
+    it "labels a window that holds a CCM row with leaf version 2 — from the same rows the root hashes" do
+      create(:telemetry_log, tree: wallet.tree, created_at: 3.hours.ago)
+      ccm_log = create(:telemetry_log, :ccm_leaf, tree: wallet.tree, created_at: 2.hours.ago)
+      tx = wallet.lock_and_mint!(500, 100).reload
+
+      expect(tx.telemetry_lineage_version).to eq(2)
+      expect(Mrv::TelemetryLeaf.payload_for(ccm_log)).to include(leaf_version: 2)
     end
 
     it "GRACE: log younger than WINDOW_GRACE stays out of the window (next mint's business)" do
@@ -223,6 +233,7 @@ RSpec.describe Wallet, type: :model do
 
       expect(tx.telemetry_window_to_at).to be_nil
       expect(tx.reload.telemetry_merkle_root).to be_nil
+      expect(tx.telemetry_lineage_version).to be_nil # порожнє вікно версії листя не має
       expect(wallet.lineage_cursor_log_id).to be_nil
     end
 
@@ -279,13 +290,14 @@ RSpec.describe Wallet, type: :model do
 
     it "fail-open: root computation failure never blocks the mint (WARN + metric, root NULL)" do
       create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
-      allow(Mrv::LineageWindow).to receive(:root_for).and_raise(StandardError, "leaf exploded")
+      allow(Mrv::LineageWindow).to receive(:seal_for).and_raise(StandardError, "leaf exploded")
       allow(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to receive(:increment)
 
       tx = wallet.lock_and_mint!(500, 100)
 
       expect(tx).to be_persisted
       expect(tx.reload.telemetry_merkle_root).to be_nil
+      expect(tx.telemetry_lineage_version).to be_nil # невідома — не вигадана
       expect(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to have_received(:increment)
     end
 

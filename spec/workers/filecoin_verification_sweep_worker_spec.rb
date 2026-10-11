@@ -105,5 +105,23 @@ RSpec.describe FilecoinVerificationSweepWorker, type: :worker do
 
       expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL).not_to have_received(:increment)
     end
+
+    # ⚖️ [FW.66 (Б) · S8] Диспетчер версій свіпера — `Mrv::TelemetryLeaf` на РЯДКУ: стемп листа v2
+    # звіряється формулою v2, а підміна сирого кадру сирим SQL (повз attr_readonly) — дрейф.
+    it "судить CCM-рядок формулою листа v2 і ловить підміну кадру сирим SQL" do
+      log = create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 1.hour.ago)
+      TelemetryLog.where(id: log.id, created_at: log.created_at)
+                  .update_all(merkle_leaf: Mrv::TelemetryLeaf.cid_for(log))
+      allow(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL).to receive(:increment)
+
+      described_class.new.perform
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL).not_to have_received(:increment)
+
+      TelemetryLog.where(id: log.id, created_at: log.created_at)
+                  .update_all(raw_record: log.raw_record.byteslice(0, 4) + Random.bytes(26))
+      described_class.new.perform
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to have_received(:increment).with(labels: { reason: "leaf_stamp_drift" })
+    end
   end
 end

@@ -332,4 +332,36 @@ RSpec.describe TelemetryLog, type: :model do
       expect { log.reload.update!(oracle_status: :fulfilled) }.not_to raise_error
     end
   end
+
+  # ⚖️ [FW.66 (Б) · S8] Версія листа й сирий кадр: у корені (мінт, тижневий L1) рядок буває
+  # раніше за стемп, тож пломби запізно — пару тримають attr_readonly і CHECK у базі (KENOSIS:
+  # AR-валідації гарячий шлях не тримає, а CHECK бачить і `insert_all`, і сирий SQL).
+  describe "leaf version ⟷ raw frame" do
+    let(:tree) { create(:tree) }
+
+    it "refuses to re-label or re-frame a row after INSERT (attr_readonly)" do
+      log = create(:telemetry_log, :ccm_leaf, tree: tree)
+      expect { log.update!(leaf_version: 1) }.to raise_error(ActiveRecord::ReadonlyAttributeError)
+      expect { log.update!(raw_record: Random.bytes(30)) }.to raise_error(ActiveRecord::ReadonlyAttributeError)
+    end
+
+    it "the CHECK refuses v2 without a 30-byte frame and v1 with one — even past the model" do
+      expect { create(:telemetry_log, tree: tree, leaf_version: 2, raw_record: nil) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+      expect { create(:telemetry_log, tree: tree, leaf_version: 1, raw_record: Random.bytes(30)) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, raw_record: Random.bytes(29)) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, raw_record: Random.bytes(31)) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+      expect { create(:telemetry_log, :ccm_leaf, tree: tree, leaf_version: 3) }
+        .to raise_error(ActiveRecord::StatementInvalid, /telemetry_logs_leaf_version_shape/)
+    end
+
+    it "has no schema default — a writer that forgets the version fails loudly, not as v1" do
+      expect(described_class.column_defaults["leaf_version"]).to be_nil
+      expect { create(:telemetry_log, tree: tree, leaf_version: nil) }
+        .to raise_error(ActiveRecord::NotNullViolation)
+    end
+  end
 end

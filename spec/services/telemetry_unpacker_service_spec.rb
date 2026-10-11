@@ -145,6 +145,11 @@ end
     expect(log.gateway_attested).to be(false)
   end
 
+  it "writes an ECB row as a v1 leaf — Z, no raw frame [FW.66 (Б) · S8]" do
+    described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+    expect([ TelemetryLog.last.leaf_version, TelemetryLog.last.raw_record ]).to eq([ 1, nil ])
+  end
+
   # [FW.29] PanicFlag (біт 7 StatusByte) персиститься — панічність queryable,
   # relayed_via_mesh? знає стартовий TTL (3 normal / 5 panic)
   it "does not mark a normal packet as panic (PanicFlag bit 7 = 0)" do
@@ -2134,6 +2139,18 @@ end
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
       expect(Rails.logger).to have_received(:warn)
         .with(a_string_matching(/missing\/invalid LoRa AES-128 key \(expected 16 bytes, got 24\)/))
+    end
+
+    # ⚖️ [FW.66 (Б) · S8] Лист v2: рядок несе сирий кадр ефіру — чанк без RSSI, який дописала
+    # Королева (MIC його не покриває), з байтом gossip (він в AAD) — і проходить CHECK бази.
+    it "persists the 30-byte air frame as a v2 leaf — the chunk without the Queen's RSSI byte" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, dt: 100, status: 0, ttl: 3, fc: 61)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      log = TelemetryLog.last
+      expect(log.leaf_version).to eq(2)
+      expect(log.raw_record).to eq(chunk.byteslice(0, 4) + chunk.byteslice(5, 26))
+      expect(log.raw_record.bytesize).to eq(30)
     end
 
     it "records gateway uid when the CCM packet is routed via a known gateway" do

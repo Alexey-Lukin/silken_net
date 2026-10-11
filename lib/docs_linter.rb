@@ -334,7 +334,7 @@ module DocsLinter
   end
 
   # [SSOT anti-drift] telemetry_logs has NO chain_hash column (it lives in audit_logs /
-  # ethereum_anchors). The Merkle-anchor (ARCH.12) leaf-formula is Z-based (05_02 §E.60),
+  # ethereum_anchors). The Merkle-anchor (ARCH.12) leaf-formula is per-record (05_02 §E.60: v1 over Z, v2 over the raw CCM frame),
   # NOT a tree over TelemetryLog.chain_hash — a plausible-but-false recipe that drifted in
   # 05_04. Catches the POSITIVE claim; negation/explanation lines (the drift-fix itself,
   # which must name the wrong token to forbid it) are exempt. No owner doc — the column
@@ -348,7 +348,7 @@ module DocsLinter
       next unless line.match?(TL_CHAIN_HASH_RE)
       next if line.match?(TL_CHAIN_HASH_EXEMPT)
 
-      "telemetry_logs has no chain_hash column — Merkle leaf = Z-based (05_02 §E.60), not TelemetryLog.chain_hash → #{line.strip[0, 100]}"
+      "telemetry_logs has no chain_hash column — Merkle leaf = per-record CID (05_02 §E.60), not TelemetryLog.chain_hash → #{line.strip[0, 100]}"
     end
   end
 

@@ -31,6 +31,9 @@ module Mrv
   # ==========================================================================
   class LineageReportService
     SCHEMA = "silken.mrv.lineage.v1"
+    # [FW.66 (Б) · S8] Бандл із листям v2 несе схему v2: верифікатор, написаний до v2, на ній
+    # падає, а не приймає v2-листя без перевірок кадру.
+    SCHEMA_V2 = "silken.mrv.lineage.v2"
 
     # Чесна межа довіри (анти-overclaim — клас, за який архівовано ARCH.53):
     # офлайн-верифіковне З ЦЬОГО ФАЙЛУ — payload→CID, mint-root sealed-кредитів,
@@ -46,7 +49,14 @@ module Mrv
       "Run `ruby scripts/verify_lineage_bundle.rb <bundle.json>` (pure Ruby, offline). " \
       "Cryptographically verified from this file alone: leaf payload -> CID, per-credit " \
       "window Merkle-root (sealed credits), tier1 subroot recomputation, tier2 -> state_root, " \
-      "device_uid <-> tree_did binding. THEN verify each printed state_root on-chain: the " \
+      "device_uid <-> tree_did binding (leaf v2 also: the first 4 bytes of raw_record are the " \
+      "DID, and a raw frame never appears under two different leaves — this catches VERBATIM " \
+      "repeats only, since the issuer holds the keys; one telemetry_log_id is one leaf across " \
+      "the bundle, and a credit counts as sealed by its root, not by its label). A v2 leaf " \
+      "commits to the IDENTITY of a " \
+      "CCM air frame, not to a measurement: raw_record is ciphertext under the node's session " \
+      "key, which the key ratchet destroys, so its MIC and contents are checkable only by the " \
+      "key holder while that key lives. THEN verify each printed state_root on-chain: the " \
       "storeStateRoot tx MUST target the canonical StateRootAnchor contract — cross-check " \
       "the `anchor_contract` address against an INDEPENDENT source (project canon / official " \
       "site), never against this file alone. Issuer-asserted (NOT offline-verifiable): tx " \
@@ -74,13 +84,15 @@ module Mrv
     end
 
     def call
+      credits = credit_transactions.map { |tx| credit_entry(tx) }
+      v2 = credits.any? { |c| c[:leaves].any? { |l| l[:payload][:leaf_version] == 2 } }
       {
-        schema: SCHEMA,
+        schema: v2 ? SCHEMA_V2 : SCHEMA,
         generated_at: Time.current.utc.iso8601,
         organization: { id: @organization.id, name: @organization.name },
         period: { from: @from.utc.iso8601, to: @to.utc.iso8601 },
         anchor_contract: ENV["ETHEREUM_ANCHOR_CONTRACT"],
-        credits: credit_transactions.map { |tx| credit_entry(tx) },
+        credits: credits,
         insurance_payouts: insurance_payout_transactions.map { |tx| insurance_payout_entry(tx) },
         verification_instructions: VERIFICATION_INSTRUCTIONS
       }

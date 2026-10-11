@@ -250,6 +250,81 @@ RSpec.describe TelemetryArchiveBatchWorker do
       expect(status.success?).to be(false)
       expect(out).to match(/відхилено|duplicate/)
     end
+
+    # ⚖️ [FW.66 (Б) · S8] Змішаний батч через фліп FW.2: v1 (Z) і v2 (сирий кадр ефіру). Кожна
+    # підміна перераховує CID листа й корінь — інакше вона падала б на СУСІДНЬОМУ чеку, і пін
+    # форми v2 був би вакуумним.
+    it "змішаний батч v1+v2 проходить; кожна підміна v2 падає на чеку ФОРМИ, не на CID" do
+      2.times { |i| create(:telemetry_log, :ccm_leaf, tree: tree, created_at: (5 - i).hours.ago) }
+      artifact = captured_artifact!
+      v2 = ->(a) { a["leaves"].each_index.select { |i| a["leaves"][i]["payload"]["leaf_version"] == 2 } }
+      reseal = lambda do |a|
+        a["leaves"].each { |l| l["leaf_cid"] = Filecoin::CidGenerator.cidv1(l["payload"]) }
+        a["archive_root"] = MerkleTree.root(a["leaves"].map { |l| l["leaf_cid"] })
+        a
+      end
+
+      # шапка — найвища версія листя; артефакт із v2-листям — версії 2 (старий верифікатор на ньому падає)
+      expect([ v2.call(artifact).size, artifact["leaf_version"], artifact["artifact_version"] ]).to eq([ 2, 2, 2 ])
+      out, ok = run_verifier(artifact)
+      expect(ok).to be(true), "змішаний артефакт мав пройти: #{out}"
+
+      # (д) кадр чужого DID під цим деревом
+      tampered = JSON.parse(JSON.generate(artifact))
+      leaf = tampered["leaves"][v2.call(tampered).first]["payload"]
+      leaf["raw_record"] = "ffffffff" + leaf["raw_record"][8..]
+      out, ok = run_verifier(reseal.call(tampered))
+      expect([ ok, out ]).to match([ false, a_string_including("DID кадру SNET-FFFFFFFF") ])
+
+      # (е) той самий кадр під двома записами — повтор
+      tampered = JSON.parse(JSON.generate(artifact))
+      first, second = v2.call(tampered).map { |i| tampered["leaves"][i]["payload"] }
+      second["raw_record"] = first["raw_record"]
+      out, ok = run_verifier(reseal.call(tampered))
+      expect([ ok, out ]).to match([ false, a_string_including("повтор кадру") ])
+
+      # (є) лист «без версії» з підкладеним кадром — точні ключі v1 його не пускають
+      tampered = JSON.parse(JSON.generate(artifact))
+      v1_leaf = tampered["leaves"].find { |l| !l["payload"].key?("leaf_version") }["payload"]
+      v1_leaf["raw_record"] = "00" * 30
+      out, ok = run_verifier(reseal.call(tampered))
+      expect([ ok, out ]).to match([ false, a_string_including("ключі v1") ])
+
+      # (ж) версія, якої верифікатор не знає, — відмова, а не тихий пропуск її перевірок
+      tampered = JSON.parse(JSON.generate(artifact))
+      tampered["leaves"][v2.call(tampered).first]["payload"]["leaf_version"] = 3
+      out, ok = run_verifier(reseal.call(tampered))
+      expect([ ok, out ]).to match([ false, a_string_including("невідома версія листа 3") ])
+    end
+
+    it "дослівний дубль листа, брехлива шапка й артефакт v1 із v2-листям — кожне на власному чеку" do
+      create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 5.hours.ago)
+      artifact = captured_artifact!
+      reseal = lambda do |a|
+        a["archive_root"] = MerkleTree.root(a["leaves"].map { |l| l["leaf_cid"] })
+        a
+      end
+
+      tampered = JSON.parse(JSON.generate(artifact))
+      tampered["leaves"] << JSON.parse(JSON.generate(tampered["leaves"].first))
+      out, ok = run_verifier(reseal.call(tampered))
+      expect([ ok, out ]).to match([ false, a_string_including("повтор запису") ])
+
+      tampered = JSON.parse(JSON.generate(artifact)).merge("leaf_version" => 1)
+      out, ok = run_verifier(tampered)
+      expect([ ok, out ]).to match([ false, a_string_including("шапка leaf_version 1") ])
+
+      tampered = JSON.parse(JSON.generate(artifact)).merge("artifact_version" => 1)
+      out, ok = run_verifier(tampered)
+      expect([ ok, out ]).to match([ false, a_string_including("artifact_version 1 не відповідає листю") ])
+    end
+
+    it "артефакт v1-листя з міткою «вгору» (artifact_version 2) — відмова" do
+      artifact = captured_artifact!
+      expect([ artifact["artifact_version"], artifact["leaf_version"] ]).to eq([ 1, 1 ])
+      out, ok = run_verifier(artifact.merge("artifact_version" => 2))
+      expect([ ok, out ]).to match([ false, a_string_including("artifact_version 2 не відповідає листю") ])
+    end
   end
 
   describe "артефакт: tax_rate + непорожня from-межа вікна" do

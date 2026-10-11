@@ -1384,7 +1384,10 @@ CREATE TABLE public.telemetry_logs (
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
     merkle_leaf character varying(64),
-    reset_cause smallint
+    reset_cause smallint,
+    raw_record bytea,
+    leaf_version smallint NOT NULL,
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
 )
 PARTITION BY RANGE (created_at);
 
@@ -1446,7 +1449,10 @@ CREATE TABLE public.telemetry_logs_default (
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
     merkle_leaf character varying(64),
-    reset_cause smallint
+    reset_cause smallint,
+    raw_record bytea,
+    leaf_version smallint NOT NULL,
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
 );
 
 
@@ -1488,7 +1494,10 @@ CREATE TABLE public.telemetry_logs_y2026m08 (
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
     merkle_leaf character varying(64),
-    reset_cause smallint
+    reset_cause smallint,
+    raw_record bytea,
+    leaf_version smallint NOT NULL,
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
 );
 
 
@@ -1530,7 +1539,10 @@ CREATE TABLE public.telemetry_logs_y2026m09 (
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
     merkle_leaf character varying(64),
-    reset_cause smallint
+    reset_cause smallint,
+    raw_record bytea,
+    leaf_version smallint NOT NULL,
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
 );
 
 
@@ -1572,7 +1584,10 @@ CREATE TABLE public.telemetry_logs_y2026m10 (
     panic boolean DEFAULT false NOT NULL,
     archive_root character varying(64),
     merkle_leaf character varying(64),
-    reset_cause smallint
+    reset_cause smallint,
+    raw_record bytea,
+    leaf_version smallint NOT NULL,
+    CONSTRAINT telemetry_logs_leaf_version_shape CHECK ((((leaf_version = 1) AND (raw_record IS NULL)) OR ((leaf_version = 2) AND (raw_record IS NOT NULL) AND (octet_length(raw_record) = 30))))
 );
 
 
@@ -4799,6 +4814,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261011140000'),
 ('20261011090000'),
 ('20261010180000'),
 ('20261010102918'),

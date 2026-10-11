@@ -291,7 +291,9 @@ class Wallet < ApplicationRecord
         telemetry_window_from_id: lineage_cursor_log_id,
         telemetry_window_to_at: window_to_at,
         telemetry_window_to_id: window_to_id,
-        telemetry_lineage_version: Mrv::TelemetryLeaf::LEAF_VERSION,
+        # [FW.66 (Б) · S8] Версію листя вікна знає лише корінь (attach_lineage_root нижче):
+        # константа тут дала б мінтам до фліпу FW.2 хибну мітку, а порожньому вікну — вигадану.
+        telemetry_lineage_version: nil,
         notes: "Конвертація #{converted_points} балів росту (Поріг: #{threshold})."
       )
 
@@ -322,8 +324,8 @@ class Wallet < ApplicationRecord
 
   # [MRV.1] Merkle-корінь lineage-вікна tx (Mrv::LineageWindow — One-Home запиту).
   def attach_lineage_root(tx)
-    root = Mrv::LineageWindow.root_for(tx)
-    tx.update!(telemetry_merkle_root: root) if root
+    root, leaf_version = Mrv::LineageWindow.seal_for(tx)
+    tx.update!(telemetry_merkle_root: root, telemetry_lineage_version: leaf_version) if root
   rescue StandardError => e
     Rails.logger.warn "⚠️ [MRV.1] Lineage-root failed для tx ##{tx.id} (мінт НЕ зачеплено): #{e.message}"
     SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL.increment

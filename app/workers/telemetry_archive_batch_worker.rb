@@ -40,6 +40,8 @@ class TelemetryArchiveBatchWorker
 
   STAMP_SLICE = 500
   ARTIFACT_VERSION = 1
+  # [FW.66 (Б) · S8] Артефакт із листям v2 — версії 2: верифікатор, написаний до v2, на ньому падає.
+  ARTIFACT_VERSION_V2 = 2
 
   # Trust-boundary артефакту — самоописова (урок 1а «верифікатор сам overclaim'ить»);
   # дзеркалиться scripts/verify_archive_bundle.rb.
@@ -47,8 +49,9 @@ class TelemetryArchiveBatchWorker
     "ВЕРИФІКОВНЕ ОФЛАЙН: кожен leaf.payload → CIDv1 (raw+sha2-256, base32) має збігатися з leaf_cid;",
     "MerkleTree.root над leaf_cid'ами у порядку масиву (глобальний (created_at, id) asc) має збігатися з archive_root;",
     "archive_root має збігатися з on-chain archiveRoot події CarbonMinted/ForestMinted відповідного мінта (contract-адресу звіряй з НЕЗАЛЕЖНИМ джерелом, не з цим файлом);",
-    "device_uid кожного листа = did дерева (прив'язка лист ↔ дерево).",
-    "ISSUER-ASSERTED (НЕ верифіковне з цього файла): amount кожної tx (growth_points у листі немає — leaf v1 = Z);",
+    "device_uid кожного листа = did дерева (прив'язка лист ↔ дерево); лист v2 (`leaf_version: 2`) — ще й перші 4 байти raw_record = DID; жоден сирий кадр і жоден telemetry_log_id не стоять у наборі двічі (ловить ДОСЛІВНИЙ повтор — ключі в емітента, тож кадр, що виглядає унікальним, він вигадати може);",
+    "ISSUER-ASSERTED (НЕ верифіковне з цього файла): amount кожної tx (growth_points у листі немає — у v1 лист несе Z, у v2 — сирий кадр ефіру);",
+    "raw_record листа v2 — шифртекст сесійним ключем вузла, який ратчет знищує: MIC і вимір кадру перевіряє лише власник ключа й лише поки ключ живий — лист зобов'язує щодо ідентичності кадру, не щодо виміру;",
     "повнота набору tx/листя; межі вікон; відповідність root → ipfs_cid (discovery через реєстр issuer'а);",
     "root = свідок evidence-набору ДИСПАТЧУ (N:1): вікна tx'ів, що не мінтились (failed/poisoned/KYC-skip), присутні легально."
   ].freeze
@@ -130,11 +133,12 @@ class TelemetryArchiveBatchWorker
 
   def build_artifact(batch, txs, leaves)
     {
-      artifact_version: ARTIFACT_VERSION,
+      artifact_version: leaves.any? { |log, _cid| log.leaf_version == 2 } ? ARTIFACT_VERSION_V2 : ARTIFACT_VERSION,
       kind: "silkennet-telemetry-archive-batch",
       archive_root: batch.archive_root,
       token_type: batch.token_type,
-      leaf_version: Mrv::TelemetryLeaf::LEAF_VERSION,
+      # [FW.66 (Б) · S8] Версія — на рядку; шапка каже найвищу (v2-payload декларує себе сам).
+      leaf_version: leaves.map { |log, _cid| log.leaf_version }.max,
       hash_algorithm: "sha256 (RFC-6962 domain-sep 0x00/0x01, MerkleTree)",
       leaf_order: "global (created_at, id) asc",
       tax_rate_applied: batch.tax_rate_applied&.to_s,

@@ -674,6 +674,7 @@ PINE_SHARE_IN_MIX = 0.69
   # свій замір, є станом, якого світ не має.
   TelemetryLog.create!(
     tree: tree,
+    leaf_version: 1, # ECB-рядок із Z — лист v1 (05_02 §E.60)
     queen_uid: gateway.uid,
     voltage_mv: packet_voltage_mv,
     temperature_c: is_anomaly ? 41.0 : 22.0,
@@ -764,6 +765,7 @@ demo_metabolism_s = 20
   # Дуб (oak): band 8..40, optimum 24 → ставимо homeostasis ~ 24.
   TelemetryLog.create!(
     tree: tree,
+    leaf_version: 1,
     queen_uid: amazon_gw.uid,
     voltage_mv: amazon_packet_voltage_mv,
     temperature_c: 32.0,
@@ -848,6 +850,7 @@ codex_forests.each_with_index do |(slug, family), idx|
     tree.wallet.update!(balance: rand(2000..8000))
     TelemetryLog.create!(
       tree: tree,
+      leaf_version: 1,
       queen_uid: gw_uid,
       voltage_mv: 3800,
       temperature_c: 18.0,

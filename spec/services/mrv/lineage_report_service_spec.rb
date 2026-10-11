@@ -81,6 +81,107 @@ RSpec.describe Mrv::LineageReportService do
     FileUtils.rm_f(path) if path
   end
 
+  # ⚖️ [FW.66 (Б) · S8] Кредит, чиє вікно несе CCM-рядок: лист v2 (сирий кадр ефіру), мітка
+  # кредиту — найвища версія вікна; верифікатор судить форму v2, а підміна DID кадру дає САМЕ
+  # повідомлення перевірки форми (CID перераховано — падати на ньому підміна не може).
+  it "лист v2 у кредиті проходить верифікатор, а кадр чужого DID — ні" do
+    create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    anchor_confirmed!
+    result = JSON.parse(JSON.generate(bundle))
+    credit = result["credits"].first
+    expect([ result["schema"], credit["lineage_version"] ]).to eq([ "silken.mrv.lineage.v2", 2 ])
+    expect(credit["leaves"].first["payload"]["leaf_version"]).to eq(2)
+
+    path = Rails.root.join("tmp/lineage_v2_spec_#{Process.pid}.json")
+    verifier = Rails.root.join("scripts/verify_lineage_bundle.rb").to_s
+    File.write(path, JSON.generate(result))
+    out, status = Open3.capture2e(RbConfig.ruby, verifier, path.to_s)
+    expect(status.success?).to be(true), "бандл із v2 мав пройти: #{out}"
+
+    leaf = result["credits"][0]["leaves"][0]
+    leaf["payload"]["raw_record"] = "ffffffff" + leaf["payload"]["raw_record"][8..]
+    leaf["leaf_cid"] = Filecoin::CidGenerator.cidv1(leaf["payload"])
+    File.write(path, JSON.generate(result))
+    out, status = Open3.capture2e(RbConfig.ruby, verifier, path.to_s)
+    expect(status.success?).to be(false)
+    expect(out).to include("DID кадру SNET-FFFFFFFF")
+  ensure
+    FileUtils.rm_f(path) if path
+  end
+
+  def run_lineage_verifier(data)
+    path = Rails.root.join("tmp/lineage_verify_spec_#{Process.pid}.json")
+    File.write(path, JSON.generate(data))
+    out, status = Open3.capture2e(RbConfig.ruby, Rails.root.join("scripts/verify_lineage_bundle.rb").to_s, path.to_s)
+    [ status.success?, out ]
+  ensure
+    FileUtils.rm_f(path)
+  end
+
+  it "мітка кредиту й схема бандла звіряються з листям, а не довіряються емітенту" do
+    create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    anchor_confirmed!
+    clean = JSON.parse(JSON.generate(bundle))
+
+    labelled = JSON.parse(JSON.generate(clean)).tap { |b| b["credits"][0]["lineage_version"] = 1 }
+    expect(run_lineage_verifier(labelled)).to match([ false, a_string_including("lineage_version 1 ≠ найвища версія") ])
+    old_schema = clean.merge("schema" => "silken.mrv.lineage.v1")
+    expect(run_lineage_verifier(old_schema)).to match([ false, a_string_including("схема silken.mrv.lineage.v1 не відповідає") ])
+    # «unsealed» з коренем минав би і mint-root, і мітку версії — тож мітка seal теж судиться
+    relabelled = JSON.parse(JSON.generate(clean)).tap { |b| b["credits"][0]["seal"] = "unsealed" }
+    expect(run_lineage_verifier(relabelled)).to match([ false, a_string_including("мітка seal \"unsealed\" розходиться") ])
+  end
+
+  # Спільний лист у кількох кредитах — легальний (той самий CID); той самий запис чи кадр під
+  # ІНШИМ листом, лист двічі в кредиті й мітки «вгору» на v1-листі — ні.
+  it "розводить легальний спільний лист і підміни запису, кадру та міток" do
+    create(:telemetry_log, :ccm_leaf, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    anchor_confirmed!
+    clean = JSON.parse(JSON.generate(bundle))
+    # другий, незапечатаний кредит, що успадкував той самий лист
+    shared = lambda do |b|
+      copy = JSON.parse(JSON.generate(b["credits"][0]))
+      copy["tx"]["id"] = 999_999
+      copy.merge!("telemetry_merkle_root" => nil, "seal" => "unsealed", "lineage_version" => nil)
+      copy["leaves"].each { |l| l["window_source"] = nil }
+      b["credits"] << copy
+      b
+    end
+
+    expect(run_lineage_verifier(shared.call(JSON.parse(JSON.generate(clean))))).to match([ true, anything ])
+
+    other = shared.call(JSON.parse(JSON.generate(clean)))
+    leaf = other["credits"][1]["leaves"][0]
+    leaf["payload"]["raw_record"] = leaf["payload"]["raw_record"][0, 8] + "00" * 26
+    leaf["leaf_cid"] = Filecoin::CidGenerator.cidv1(leaf["payload"])
+    expect(run_lineage_verifier(other)).to match([ false, a_string_including("той самий запис стоїть під іншим листом") ])
+
+    reframed = shared.call(JSON.parse(JSON.generate(clean)))
+    leaf = reframed["credits"][1]["leaves"][0]
+    leaf["payload"]["telemetry_log_id"] = leaf["telemetry_log_id"] = 424_242
+    leaf["leaf_cid"] = Filecoin::CidGenerator.cidv1(leaf["payload"])
+    expect(run_lineage_verifier(reframed)).to match([ false, a_string_including("сирий кадр уже стоїть під іншим листом") ])
+
+    doubled = JSON.parse(JSON.generate(clean)).tap { |b| b["credits"][0]["leaves"] *= 2 }
+    expect(run_lineage_verifier(doubled)).to match([ false, a_string_including("лист повторюється в межах кредиту") ])
+  end
+
+  it "мітки «вгору» на v1-листі — схема v2 і lineage_version 2 без жодного v2-листа — відмова" do
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    mint_confirmed!
+    anchor_confirmed!
+    clean = JSON.parse(JSON.generate(bundle))
+
+    expect(clean["schema"]).to eq("silken.mrv.lineage.v1")
+    expect(run_lineage_verifier(clean.merge("schema" => "silken.mrv.lineage.v2")))
+      .to match([ false, a_string_including("схема silken.mrv.lineage.v2 не відповідає") ])
+    up = JSON.parse(JSON.generate(clean)).tap { |b| b["credits"][0]["lineage_version"] = 2 }
+    expect(run_lineage_verifier(up)).to match([ false, a_string_including("lineage_version 2 ≠ найвища версія") ])
+  end
+
   it "офлайн-верифікатор валить кожен tamper-клас: payload · mint-root · dup-key" do
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
     mint_confirmed!

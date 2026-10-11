@@ -16,9 +16,17 @@
 #      набору/порядку/листа → mismatch)
 #   3. window-binding: кожен лист ∈ РІВНО ОДНЕ вікно tx свого дерева
 #      (0 вікон = smuggled leaf; >1 = зламаний курсор-інваріант)
+#   4. форма листа за версією (lib/leaf_payload_shape.rb): точні ключі v1/v2, у v2 — DID у перших
+#      4 байтах сирого кадру = device_uid; невідома версія — відмова; жоден сирий кадр і жоден
+#      telemetry_log_id не стоять у наборі двічі (вікна батчу не перетинаються, тож чесного повтору
+#      немає; ловить ДОСЛІВНИЙ повтор — кадр, що виглядає унікальним, власник ключа вигадає)
+#   5. версія: артефакт v1 не несе листя v2, артефакт v2 — несе; шапка leaf_version = найвища
+#      версія листя
 #
 # Межа довіри (свідома, задекларована — дзеркало artifact.verification_instructions):
-# amount кожної tx (growth_points у leaf v1 НЕМАЄ — leaf = Z), ПОВНОТА набору
+# amount кожної tx (growth_points у листі немає: v1 несе Z, v2 — сирий кадр ефіру, який
+# зобовʼязує щодо ІДЕНТИЧНОСТІ кадру, не щодо виміру — це шифртекст сесійним ключем, що його
+# ратчет знищує), ПОВНОТА набору
 # tx/листя, відповідність archive_root → ipfs_cid (discovery через реєстр
 # issuer'а) — issuer-asserted. Root = свідок evidence-набору ДИСПАТЧУ (N:1):
 # вікна не-мінтованих tx (failed/poisoned/KYC-skip) присутні легально.
@@ -33,6 +41,7 @@ require "json"
 require "digest"
 require_relative "../lib/merkle_tree"
 require_relative "../app/services/filecoin/cid_generator"
+require_relative "../lib/leaf_payload_shape"
 
 abort "Usage: ruby scripts/verify_archive_bundle.rb <artifact.json>" if ARGV.empty?
 
@@ -52,7 +61,7 @@ rescue JSON::ParserError => e
   abort "✗ Artifact відхилено: #{e.message}"
 end
 
-unless artifact["kind"] == "silkennet-telemetry-archive-batch" && artifact["artifact_version"] == 1
+unless artifact["kind"] == "silkennet-telemetry-archive-batch" && [ 1, 2 ].include?(artifact["artifact_version"])
   abort "Невідома схема: kind=#{artifact['kind'].inspect} version=#{artifact['artifact_version'].inspect}"
 end
 
@@ -61,15 +70,33 @@ archive_root = artifact.fetch("archive_root")
 leaves = artifact.fetch("leaves")
 txs = artifact.fetch("transactions")
 
-# 1. Цілісність кожного листа: payload → CID
+# 1. Цілісність кожного листа: payload → CID; 4. форма за версією й повтори
+raw_seen = {}
+id_seen = {}
 leaf_cids = leaves.each_with_index.map do |leaf, i|
   payload = leaf.fetch("payload")
+  log_id = payload["telemetry_log_id"]
   recomputed = Filecoin::CidGenerator.cidv1(payload)
   unless recomputed == leaf.fetch("leaf_cid")
-    failures << "leaf ##{i} (log #{payload['telemetry_log_id']}): payload → CID mismatch " \
-                "(#{recomputed} ≠ #{leaf['leaf_cid']})"
+    failures << "leaf ##{i} (log #{log_id}): payload → CID mismatch (#{recomputed} ≠ #{leaf['leaf_cid']})"
+  end
+  LeafPayloadShape.errors(payload).each { |err| failures << "leaf ##{i} (log #{log_id}): #{err}" }
+  failures << "leaf ##{i} (log #{log_id}): telemetry_log_id уже стоїть у листі ##{id_seen[log_id]} — повтор запису" if id_seen.key?(log_id)
+  id_seen[log_id] ||= i
+  if (raw = payload["raw_record"])
+    failures << "leaf ##{i} (log #{log_id}): сирий кадр уже стоїть у листі ##{raw_seen[raw]} — повтор кадру" if raw_seen.key?(raw)
+    raw_seen[raw] ||= i
   end
   leaf.fetch("leaf_cid")
+end
+
+# 5. Версія артефакту й шапки ⟷ версії листя
+max_version = leaves.map { |l| LeafPayloadShape.version_of(l.fetch("payload")) }.grep(Integer).max
+if (artifact["artifact_version"] == 2) != (max_version == 2)
+  failures << "artifact_version #{artifact['artifact_version']} не відповідає листю (найвища версія листа #{max_version.inspect})"
+end
+unless artifact["leaf_version"] == max_version
+  failures << "шапка leaf_version #{artifact['leaf_version'].inspect} ≠ найвища версія листя #{max_version.inspect}"
 end
 
 # 2. Корінь над листям У ПОРЯДКУ МАСИВУ == archive_root

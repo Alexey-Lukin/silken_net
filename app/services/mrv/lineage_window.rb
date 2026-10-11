@@ -34,8 +34,14 @@ module Mrv
     end
 
     # Merkle-корінь вікна (nil для порожнього) — leaf-формула One-Home Mrv::TelemetryLeaf.
-    def root_for(tx)
-      MerkleTree.root(logs_for(tx).preload(:tree).map { |log| Mrv::TelemetryLeaf.cid_for(log) })
+    def root_for(tx) = seal_for(tx).first
+
+    # [FW.66 (Б) · S8] Корінь і НАЙВИЩА версія листа у вікні — з ОДНОГО набору рядків: окремий
+    # запит міг би побачити інше вікно, ніж хешоване. Версія — на рядку, тож вікно через фліп FW.2
+    # несе обидві; мітка tx каже найвищу (v2-payload декларує себе сам, v1 — без ключа версії).
+    def seal_for(tx)
+      logs = logs_for(tx).preload(:tree).to_a
+      [ MerkleTree.root(logs.map { |log| Mrv::TelemetryLeaf.cid_for(log) }), logs.map(&:leaf_version).max ]
     end
   end
 end

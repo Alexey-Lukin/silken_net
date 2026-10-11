@@ -637,7 +637,7 @@ end
     if tl_chain_hash.empty?
       puts "  TL chain_hash: no false telemetry_logs.chain_hash claim (Merkle leaf = 05_02 §E.60) ✓"
     else
-      puts "  TELEMETRY_LOGS.CHAIN_HASH DRIFT (#{tl_chain_hash.size}) — no such column; Merkle leaf is Z-based (05_02 §E.60):"
+      puts "  TELEMETRY_LOGS.CHAIN_HASH DRIFT (#{tl_chain_hash.size}) — no such column; Merkle leaf is per-record (05_02 §E.60):"
       tl_chain_hash.sort.each { |d| puts "    ✗ #{d}" }
     end
     if bio_potential.empty?

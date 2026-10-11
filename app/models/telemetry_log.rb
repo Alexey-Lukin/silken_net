@@ -121,8 +121,13 @@ class TelemetryLog < ApplicationRecord
   # (колбек не стріляє) і nil→value проходить guard (merkle_leaf_was порожній).
   # KENOSIS недоторканий: intake — `create!` (TelemetryUnpackerService), а before_update на INSERT не стріляє.
   # Прецедент: AuditLog#forbid_business_field_mutation! (ARCH.57).
-  LEAF_PAYLOAD_COLUMNS = %w[z_value bio_status created_at tree_id].freeze
+  LEAF_PAYLOAD_COLUMNS = %w[z_value bio_status created_at tree_id raw_record leaf_version].freeze
   before_update :forbid_sealed_leaf_mutation!
+  # ⚖️ [FW.66 (Б) · S8] Версія листа й сирий кадр ефіру CCM-рядка законного писача після INSERT не
+  # мають, а в корені (мінт, тижневий L1) рядок потрапляє раніше, ніж його стемпне pin-воркер, —
+  # тож гард пломби вище для них запізно. Форму пари тримає CHECK `telemetry_logs_leaf_version_shape`
+  # (v1 — без кадру, v2 — рівно 30 Б); диспетчер версій — `Mrv::TelemetryLeaf`.
+  attr_readonly :raw_record, :leaf_version
 
   # --- ПОРОГИ АНАЛІТИКИ ---
   # ⛔ [ARCH.84] `ACOUSTIC_CALM_MAX` (20) і `HEALTHY_TEMP_MAX_C` (50) знято разом

@@ -31,7 +31,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 6. Partition-aware lookups: prune through the One-Home helper picked by CARDINALITY, never hand-roll `created_at` equality, and retain only by dropping partitions
 7. «Wire = вхід GP»: the CCM frame carries the exact EMA `delta_t` the device fed into growth points, and the server recomputes GP from it statelessly
 8. `firmware_version_id` — це wire-ЗВІТ, не FK: читай через `TelemetryLog#firmware_report_*`, ніколи не джойни й не порівнюй з `BioContractFirmware.id`
-9. TelemetryLog несе MRV-lineage сліди, і стемпнутий рядок запечатаний — мутація leaf-поля кидає raise, а нове leaf-поле вимагає `LEAF_VERSION`-bump
+9. TelemetryLog несе MRV-lineage сліди, і стемпнутий рядок запечатаний — мутація leaf-поля кидає raise, а нова leaf-формула — це нова версія НА РЯДКУ (`leaf_version`), не bump константи
 10. Device-event 0x57 = ОКРЕМИЙ L1-канал, не телеметрія (SEC.21, 2026-07-12)
 11. OTA-mismatch у розпакувальнику СПОСТЕРЕЖНИЙ (ARCH.85): колонку-гейт тепер пише форма, тож гілка біжить, але лише логує й `fw_pending` не ставить — а перш ніж довіритись гілці, гейтованій колонкою, перелічи ПИСАЛЬНИКІВ, не читачів
 12. `acoustic_events` з HW.30 завжди 0 — пʼєзо зрізано, живий лише сентинел часу `0xFE` ECB-кадру (CCM-рядок wire-rev2.2 — NULL, байта немає); вердикту на цьому полі не будуй (доти кавітація й пилка йшли одним лічильником, ARCH.102)
@@ -51,5 +51,5 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 
 ## Common Tasks
 
-- **Add telemetry field**: FIRST a row in the wire-budget ledger `03_05 §2.1` (headroom after rev2.1 is zero → a new field is a wire revision, `03_01 §1.6`) → firmware pack on both eras (ECB `PAYLOAD_FORMAT` · CCM `CCM_SENSOR_PAYLOAD_FORMAT`) → unpack in both chunk paths + decide column ⊥ transient (the strip-list in `commit_telemetry`) → migration + the `TelemetryLog` row in `04_01 §3` → a leaf field needs a `LEAF_VERSION` bump (#9); it never enters Lorenz-Z; add a reader only together with its writer (#13)
+- **Add telemetry field**: FIRST a row in the wire-budget ledger `03_05 §2.1` (headroom after rev2.1 is zero → a new field is a wire revision, `03_01 §1.6`) → firmware pack on both eras (ECB `PAYLOAD_FORMAT` · CCM `CCM_SENSOR_PAYLOAD_FORMAT`) → unpack in both chunk paths + decide column ⊥ transient (the strip-list in `commit_telemetry`) → migration + the `TelemetryLog` row in `04_01 §3` → a leaf field means a new leaf VERSION on the row, never a field added to an anchored version (#9); it never enters Lorenz-Z; add a reader only together with its writer (#13)
 - **Change minting logic**: `BlockchainMintingService` (service-home `04_02 §4`). Guard-clauses (PATH 1 latent · PATH 2 optimistic · beneficiary KYC — the only VERIFICATION gate of PATH 2, today a closed door until a real provider, BIZ.20; beside it stand non-verification SKIP/HOLD: SEC.13 `peaq_did_compromised`, the SFC block, the ARCH.62 circuit-flag) → `CLAUDE.md §6` «Мінтинг guard-clauses»; mechanism → `web3-pipeline` #1 · #12 · #1e; tokenomics → `05_03`. ⛔ Never read the KYC line as a working safeguard.

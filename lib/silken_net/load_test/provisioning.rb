@@ -126,7 +126,7 @@ module SilkenNet
             ts = now - (k * 43_200) # 12-год кроки
             ts = earliest if ts < earliest
             tree.telemetry_logs.create!(
-              created_at: ts,
+              created_at: ts, leaf_version: 1, # ECB-рядок із Z — лист v1
               bio_status: :homeostasis, z_value: z0, growth_points: 18, voltage_mv: 4000,
               lorenz_state_x: x0, lorenz_state_y: y0, lorenz_state_z: z0
             )

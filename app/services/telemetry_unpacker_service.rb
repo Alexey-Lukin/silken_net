@@ -317,6 +317,8 @@ class TelemetryUnpackerService < ApplicationService
       # (`Wallet#lock_and_mint!` поріг 10000 SCC), а wire-байт виправлено
       # під дизайн з docs/03_04 (StatusByte) і docs/03_05 §2.1.
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
+      # [FW.66 (Б) · S8] ECB-рядок — лист v1 (Z); версію називає писач, дефолту в схемі немає.
+      leaf_version: 1,
       # [FW.18b] Байт 11 — бітфілд [thr_invalid:5 | TTL:3], One-Home
       # firmware/common/ttl_byte.h. Стара прошивка (чистий TTL ≤ 5) дає
       # ті самі нижні біти і counter=0 — маска backward-сумісна.
@@ -476,6 +478,10 @@ class TelemetryUnpackerService < ApplicationService
       # зрізано, HW.30), а 0 був би виміряним нулем.
       metabolism_s: delta_t_s,
       growth_points: ccm_growth_points(hex_did, status_byte, bio_status, ema_delta_t_s),
+      # ⚖️ [FW.66 (Б) · S8, `05_02 §E.60`] Лист v2 — сирий кадр ефіру (30 Б): чанк без RSSI, який
+      # Королева дописала сама й MIC не покриває. Байт gossip лишається — він в AAD CCM.
+      leaf_version: 2,
+      raw_record: did_bytes + chunk[5..30],
       mesh_ttl: mesh_ttl,
       firmware_version_id: fw_report,
       # [FW.65] транзієнт: ширина contract-id цієї ери — судить mismatch і підпис алерту

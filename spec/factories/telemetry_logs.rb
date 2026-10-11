@@ -18,6 +18,8 @@ FactoryBot.define do
     # бути ВАЛІДНИЙ, але НЕоптимальний, інакше трейт перестає щось означати.
     z_value { 25.0 }
     rssi { -65 }
+    # [FW.66 (Б) · S8] Версію листа називає писач (дефолту в схемі немає); ECB-рядок — v1.
+    leaf_version { 1 }
 
     trait :healthy do
       bio_status { :homeostasis }
@@ -65,6 +67,14 @@ FactoryBot.define do
 
     trait :hot do
       temperature_c { 55.0 }
+    end
+
+    # [FW.66 (Б) · S8] CCM-рядок: лист v2 над сирим кадром ефіру (30 Б), Z немає. Перші 4 байти —
+    # DID дерева, як у справжньому кадрі; решта — довільні (шифртекст офлайн не читається).
+    trait :ccm_leaf do
+      leaf_version { 2 }
+      z_value { nil }
+      raw_record { [ tree.did.delete_prefix("SNET-").to_i(16) ].pack("N") + Random.bytes(26) }
     end
   end
 end

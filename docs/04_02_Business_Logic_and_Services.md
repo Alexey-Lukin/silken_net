@@ -403,7 +403,7 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/mrv/telemetry_leaf.rb` |
 | **Вхід** | `log` (TelemetryLog AR instance) |
-| **Що робить** | Код-дім canonical leaf-формули Merkle-дерев (leaf-контент канонізовано у [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)): будує **пінений** payload `{telemetry_log_id, device_uid = tree.did (attr_readonly — лист не «переїжджає»), z_value = BigDecimal#to_s("F") (plain fixed-point, НЕ scientific; NULL → JSON null — рядок ніколи не виключається з дерева), bio_status = сирий enum-integer (rename-proof), created_at = utc.iso8601(6)}` → `Filecoin::CidGenerator.cidv1`. `LEAF_VERSION = 1`: зміна формули = bump (historical-верифікація за версією). Споживачі: тижневий Eth-L1 `state_root` (ARCH.12 Фаза 1а), mint-lineage вікна (MRV.1), Polygon `archive_root` (E.60 Фаза 1б — `Mrv::TelemetryArchiveBatchService`). Golden-vector spec пінить CID. |
+| **Що робить** | Код-дім canonical leaf-формули Merkle-дерев (leaf-контент канонізовано у [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)): будує **пінений** payload `{telemetry_log_id, device_uid = tree.did (attr_readonly — лист не «переїжджає»), z_value = BigDecimal#to_s("F") (plain fixed-point, НЕ scientific; NULL → JSON null — рядок ніколи не виключається з дерева), bio_status = сирий enum-integer (rename-proof), created_at = utc.iso8601(6)}` → `Filecoin::CidGenerator.cidv1`. Версія — на РЯДКУ (`telemetry_logs.leaf_version`; [FW.66 (Б) · S8]): v1 — payload вище, v2 (CCM) — `{leaf_version: 2, telemetry_log_id, device_uid, raw_record (нижній hex кадру ефіру), created_at}`; невідома версія — `ArgumentError` (неможливий стан під CHECK бази). Тож свіп-воркер, тижневий L1, lineage й архів успадковують диспетчер, нічого не знаючи про версії. Споживачі: тижневий Eth-L1 `state_root` (ARCH.12 Фаза 1а), mint-lineage вікна (MRV.1), Polygon `archive_root` (E.60 Фаза 1б — `Mrv::TelemetryArchiveBatchService`). Golden-vector spec пінить CID. |
 | **Зовнішні виклики** | — (pure; лише `Filecoin::CidGenerator`) |
 | **Вихід** | `payload_for(log)` → Hash · `cid_for(log)` → CIDv1 String (`bafkrei…`) |
 
@@ -415,7 +415,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вхід** | `tx` (BlockchainTransaction з lineage-вікном) |
 | **Що робить** | One-Home запиту «логи вікна tx»: tuple-діапазон `(from_at, from_id) < (created_at, id) <= (to_at, to_id)` по логах дерева гаманця — суміжні вікна не перетинаються і не лишають дір; порожнє вікно (from == to або to NULL) = нуль рядків. Юзають fail-open обчислення кореня при мінті (`Wallet#attach_lineage_root`) і lineage-bundle (аудиторський перерахунок). `root_for(tx)` = `MerkleTree.root` над leaf-CID'ами вікна (nil для порожнього). GRACE-лаг меж = `Mrv::WINDOW_GRACE` (One-Home константи, спільна з тижневим якорем). |
 | **Зовнішні виклики** | — (pure AR-запит + `MerkleTree`/`Mrv::TelemetryLeaf`) |
-| **Вихід** | `logs_for(tx)` → AR-relation (ordered) · `root_for(tx)` → 64-hex String \| nil |
+| **Вихід** | `logs_for(tx)` → AR-relation (ordered) · `seal_for(tx)` → `[root, найвища версія листа]` з ОДНОГО набору рядків (`Wallet#attach_lineage_root` пише обидва на tx; порожнє вікно — `[nil, nil]`; [FW.66 (Б) · S8]) · `root_for(tx)` → 64-hex String \| nil |
 
 ### `Mrv::LineageReportService` [MRV.1/ARCH.12 — перший inclusion-proof-споживач]
 
