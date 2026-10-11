@@ -5,14 +5,17 @@
 # Disclosure PDF — print a repo Markdown file AT A COMMIT into a submission PDF, and check any
 # PDF's text layer against that same source [UNI.3].
 #
-#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path> <out.pdf> [title]   # + Google Chrome
-#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path> <pdf> [--ignore REGEX]...
+#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path>[,<md-path>…] <out.pdf> [title]   # + Google Chrome
+#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path>[,<md-path>…] <pdf> [--ignore REGEX]...
 #   bundle exec ruby scripts/disclosure_pdf.rb --selftest
 #
 # Relative links become GitHub URLs pinned to <sha>, so incorporation by reference points at
 # the dated snapshot, never at a moving `main`. Written for the TDCommons submission of
 # `docs/protocols/anchor/defensive_disclosure.md` (2026-10-04, printed from `5bd8636f5`); the
-# arXiv leg of UNI.3 can print its paper the same way.
+# arXiv leg of UNI.3 can print its paper the same way, and Стаття 1 goes to ChemRxiv through it (⚖️ 2026-10-11,
+# 00_07 HW.5.IS): a comma-separated list prints several section files as one document, each resolving its own
+# relative links, and a figure is EMBEDDED from the tree at <sha> as a data: URI — a relative image link would
+# otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture.
 #
 # 🔑 Indexers and patent examiners read the TEXT LAYER, not the page, and which extractor a
 # given index runs is unknown — so `check` asks two independent ones (poppler `pdftotext`;
@@ -45,6 +48,7 @@ module DisclosurePdf
   REPO = "https://github.com/Alexey-Lukin/silken_net/blob"
   CHROME = ENV.fetch("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
   LIGATURE_OR_BROKEN = /[\uFB00-\uFB06\uFFFD]/
+  IMAGE_TYPES = { ".png" => "image/png", ".jpg" => "image/jpeg", ".jpeg" => "image/jpeg", ".svg" => "image/svg+xml" }.freeze
   CSS = <<~CSS
     @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
     body { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 10pt; line-height: 1.42; color: #111; font-variant-ligatures: none; }
@@ -70,25 +74,53 @@ module DisclosurePdf
     full, st = Open3.capture2("git", "rev-parse", "--verify", "--quiet", "#{sha}^{commit}")
     abort "not a commit: #{sha}" unless st.success?
     sha = full.strip # links pin the FULL hash — the submitted PDF did, and a short one can grow ambiguous
-    src, st = Open3.capture2("git", "show", "#{sha}:#{path}")
-    abort "git show #{sha}:#{path} failed" unless st.success?
+    paths = path.split(",", -1)
+    abort "empty entry in the path list: #{path.inspect}" if paths.any?(&:empty?)
     base = "#{REPO}/#{sha}/"
-    md = src.gsub(/\]\(([^)\s]+)\)/) do
-      href = Regexp.last_match(1)
-      next "](#{href})" if href.match?(%r{\A(?:https?:|#|mailto:)})
-
-      target = File.expand_path(href.sub(/#.*/, ""), "/#{File.dirname(path)}/").delete_prefix("/")
-      "](#{base}#{target}#{href[/#.*/]})"
+    srcs = paths.map do |p|
+      src, st = Open3.capture2("git", "show", "#{sha}:#{p}")
+      abort "git show #{sha}:#{p} failed" unless st.success?
+      src
     end
-    md = md.gsub("`/NOTICE`", "[`/NOTICE`](#{base}NOTICE)")
+    md = paths.zip(srcs).map do |p, src|
+      rewrite(src, p, base) do |target|
+        bytes, st = Open3.capture2("git", "show", "#{sha}:#{target}", binmode: true)
+        abort "embed: git show #{sha}:#{target} failed" unless st.success?
+        bytes
+      end
+    end.join("\n\n")
     body = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new, tables: true, fenced_code_blocks: true, autolink: true,
                                                                 strikethrough: true, no_intra_emphasis: true).render(md)
-    url = "#{base}#{path}"
+    url = paths.one? ? "#{base}#{path}" : "#{base}#{File.dirname(paths.first)}"
+    files = paths.one? ? "" : " — sections, in this order: #{paths.map { |q| CGI.escapeHTML(q) }.join(' · ')}"
     hygiene(<<~HTML)
-      <!doctype html><html lang="en"><head><meta charset="utf-8"><title>#{CGI.escapeHTML(title || src[/^# (.+)$/, 1].to_s)}</title><style>#{CSS}</style></head>
-      <body><p class="src">Source: <a href="#{url}"><code>#{url}</code></a> (git commit #{sha}). All references below are pinned to that commit.</p>
+      <!doctype html><html lang="en"><head><meta charset="utf-8"><title>#{CGI.escapeHTML(title || srcs.first[/^# (.+)$/, 1].to_s)}</title><style>#{CSS}</style></head>
+      <body><p class="src">Source: <a href="#{url}"><code>#{url}</code></a>#{files} (git commit #{sha}). All references below are pinned to that commit.</p>
       #{body}</body></html>
     HTML
+  end
+
+  # Relative links of ONE section → URLs pinned to the commit; a relative IMAGE → a data: URI of the bytes `read` returns
+  # for its tree path — the block (embedded, so the PDF does not depend on the network or on GitHub serving a `blob` page).
+  def rewrite(src, path, base)
+    resolve = ->(href) { File.expand_path(href.sub(/#.*/, ""), "/#{File.dirname(path)}/").delete_prefix("/") }
+    md = src.gsub(/!\[([^\]]*)\]\(([^)\s]+)(\s+"[^"]*")?\)/) do
+      alt, href, title = Regexp.last_match(1), Regexp.last_match(2), Regexp.last_match(3)
+      next Regexp.last_match(0) if href.match?(%r{\A(?:https?:|data:)})
+
+      target = resolve.call(href)
+      type = IMAGE_TYPES[File.extname(target).downcase] or abort "embed: no image type for #{target}"
+      "![#{alt}](data:#{type};base64,#{[ yield(target) ].pack('m0')}#{title})"
+    end
+    left = md.scan(/!\[[^\]]*\]\(\s*<?([^)\s>]+)/).flatten.reject { |h| h.match?(%r{\A(?:https?:|data:)}) }
+    abort "embed: image link(s) the pass could not embed in #{path}: #{left.join(', ')}" unless left.empty?
+    md = md.gsub(/\]\(([^)\s]+)\)/) do
+      href = Regexp.last_match(1)
+      next "](#{href})" if href.match?(%r{\A(?:https?:|#|mailto:|data:)})
+
+      "](#{base}#{resolve.call(href)}#{href[/#.*/]})"
+    end
+    md.gsub("`/NOTICE`", "[`/NOTICE`](#{base}NOTICE)")
   end
 
   # The text-layer rules of the header that live in the markup rather than in the CSS.
@@ -104,7 +136,7 @@ module DisclosurePdf
   end
 
   def render(sha, path, out, title = nil)
-    abort "usage: render <sha> <md-path> <out.pdf> [title]" unless sha && path && out
+    abort "usage: render <sha> <md-path>[,…] <out.pdf> [title]" unless sha && path && out
     out = File.expand_path(out)
     Dir.mktmpdir do |tmp|
       page = File.join(tmp, "page.html")
@@ -200,7 +232,16 @@ module DisclosurePdf
     t.call("a hyphenated compound is kept on one line", h.include?(%(<span class="nw">flavin-dependent</span>)))
     t.call("a colour emoji becomes the text glyph", h.include?(%(<span class="warn">\u26A0\uFE0E</span>)) && !h.include?("\uFE0F"))
     t.call("code is left alone", h.include?("<code>delta_t</code>") && !h.include?("<code><code>"))
-    puts(fails.zero? ? "disclosure_pdf --selftest: OK (6 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
+    read = []
+    r = rewrite("![Fig](figures/a.png \"T\") see [m](../x.md#s) and ![w](https://e.org/b.png)", "docs/p/03.md", "B/") do |target|
+      read << target
+      "\x89PNG".b
+    end
+    t.call("a relative image (with a title) is embedded from ITS tree path as a data: URI, never linked to a blob page",
+           r.include?(%(![Fig](data:image/png;base64,iVBORw== "T"))) && read == [ "docs/p/figures/a.png" ] && !r.include?("B/docs/p/figures"))
+    t.call("a relative link is pinned per section; an absolute image is left alone",
+           r.include?("](B/docs/x.md#s)") && r.include?("![w](https://e.org/b.png)"))
+    puts(fails.zero? ? "disclosure_pdf --selftest: OK (8 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
 end
@@ -216,6 +257,6 @@ if $PROGRAM_NAME == __FILE__
       ignores << Regexp.new(ARGV.delete_at(i))
     end
     DisclosurePdf.check(*ARGV.first(3), ignores)
-  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path> <out.pdf> [title] | check <sha> <md-path> <pdf> [--ignore REGEX]... | --selftest"
+  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path>[,…] <out.pdf> [title] | check <sha> <md-path>[,…] <pdf> [--ignore REGEX]... | --selftest"
   end
 end
