@@ -77,6 +77,8 @@ SERIES = [
     ("ome", "COc1ccnc(-c2cc(OC)ccn2)c1", -0.27, "4,4'-dimethoxy (donor)"),
     ("dmbpy", DMBPY_SMILES, -0.17, "4,4'-dimethyl (weak donor)"),
     ("bpy", BPY_SMILES, 0.00, "parent (reproduces 21b)"),
+    # the acceptor point of the one measured aqueous series of this scaffold (Montón-Vicente 2026, Langmuir, script 83)
+    ("cl", "Clc1ccnc(-c2cc(Cl)ccn2)c1", 0.23, "4,4'-dichloro (weak acceptor)"),
     ("dcbpy", DCBPY_SMILES, 0.45, "4,4'-dicarboxy (acceptor)"),
     ("no2", "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1", 0.78, "4,4'-dinitro (strong acceptor)"),
     # CHEM.23: NO₂ is electrochemically UNSTABLE (reduces NO₂→NHOH→NH₂ on Os cycling at
@@ -489,7 +491,8 @@ def main() -> int:
     fit_pts = [(by_name[n]["sigma_para"], by_name[n]["dE_red_eV"]) for n in REF_LFER_SET]
     lfer = _lfer_fit([s for s, _ in fit_pts], [e for _, e in fit_pts])
     lfer["fit_set"] = REF_LFER_SET
-    lfer["excluded"] = {"donor_saturation": ["nme2", "nh2"], "inert_design_picks": ["cf3", "so2cf3"]}
+    lfer["excluded"] = {"donor_saturation": ["nme2", "nh2"], "inert_design_picks": ["cf3", "so2cf3"],
+                        "measured_series_points": ["cl"]}   # added 2026-10-11 for script 83, not to move the canonical fit
     lfer["x"], lfer["y"] = "sigma_para", "dE_red_eV"
     results["lfer"] = lfer
     print(f"  ① LFER slope (OMe→NO₂, n={lfer['n']}): {lfer['slope_eV_per_sigma']:+.3f} eV/σ "

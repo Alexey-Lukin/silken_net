@@ -279,9 +279,37 @@ CHECKS = [
            lambda d: d["measured_readings"]["matched"]["r2"], 0.005),
           ("tBu measured", rf"tBu, is as weak\s+\({N} mV, with its σ_para unchecked",
            lambda d: d["measured"]["dtbbpy"]["shift_per_substituent_V"] * 1000, 0.05),
-          *[(f"Me computed over measured at {tier}", rf"the measured Me shift is about {N} times smaller than the",
+          *[(f"Me computed over measured at {tier}", rf"the measured Me shift is about {N} times smaller than our",
              lambda d, tier=tier: d["ratio_computed_over_measured_per_substituent"][f"{tier}:dmbpy"], 0.05)
             for tier in ("b3lyp_631gd", "wb97x_def2tzvp")])],
+    # the aqueous series of our own core (script 83 `aqueous_series`, Montón-Vicente 2026) — per-substituent pairs, read three
+    # ways (measured · ours · the source's relaxed B3LYP); pairs[i] in the order of 83's AQ_PAIRS: OMe−Me, Cl−Me, Cl−OMe
+    *[(f"paper §3.3 aqueous {what} → os_series_vs_measured.json", PAPER_RESULTS, anchor,
+       "dft/os_series_vs_measured.json", lambda d, i=i, key=key: d["aqueous_series"]["pairs"][i][key], tol)
+      for what, anchor, i, key, tol in (
+          ("OMe−Me ratio", rf"our computed shifts are {N} times the measured", 0, "ours_over_measured", 0.005),
+          ("OMe−Me ours", rf"for OMe against Me \({N} against", 0, "ours_mV", 0.05),
+          ("OMe−Me measured", rf"OMe against Me \([−\-][\d.]+ against {N} mV\)", 0, "measured_mV", 0.051),   # an exact .x5 tie
+          ("Cl−Me ratio", rf"{N} times for Cl against Me", 1, "ours_over_measured", 0.05),
+          ("Cl−Me ours", rf"Cl against Me \(\+{N} against", 1, "ours_mV", 0.05),
+          ("Cl−Me measured", rf"Cl against Me \(\+[\d.]+ against \+{N} mV\)", 1, "measured_mV", 0.051),   # an exact .x5 tie
+          ("Cl−OMe ratio", rf"{N} times for\s+Cl against OMe", 2, "ours_over_measured", 0.005),
+          ("Cl−OMe ours", rf"Cl against OMe \(\+{N} against", 2, "ours_mV", 0.05),
+          ("Cl−OMe measured", rf"Cl against OMe \(\+[\d.]+ against \+{N} mV\)", 2, "measured_mV", 0.05),
+          ("source DFT OMe−Me", rf"gives {N}, [\d.]+ and [\d.]+ for the same pairs", 0, "source_dft_over_measured", 0.005),
+          ("source DFT Cl−Me", rf"gives [\d.]+, {N} and [\d.]+ for the same pairs", 1, "source_dft_over_measured", 0.005),
+          ("source DFT Cl−OMe", rf"gives [\d.]+, [\d.]+ and {N} for the same pairs", 2, "source_dft_over_measured", 0.005))],
+    *[(f"SUMMARY aqueous {what} → os_series_vs_measured.json", SUMMARY, anchor,
+       "dft/os_series_vs_measured.json", lambda d, i=i, key=key: d["aqueous_series"]["pairs"][i][key], 0.005)
+      for what, anchor, i, key in (
+          ("Cl−OMe ours (🔑)", rf"the computed effect is ×{N} the measured against OMe", 2, "ours_over_measured"),
+          ("Cl−OMe source DFT (🔑)", rf"the source\'s relaxed B3LYP gives ×{N}; limit 2\)", 2, "source_dft_over_measured"),
+          ("OMe−Me ours (limit 2)", rf"per substituent, OMe−Me ×{N}, Cl−Me", 0, "ours_over_measured"),
+          ("Cl−Me ours (limit 2)", rf"OMe−Me ×[\d.]+, Cl−Me ×{N}, Cl−OMe", 1, "ours_over_measured"),
+          ("Cl−OMe ours (limit 2)", rf"Cl−Me ×[\d.]+, Cl−OMe ×{N} — the two pairs", 2, "ours_over_measured"),
+          ("OMe−Me source DFT (limit 2)", rf"\(both states optimised, ΔG\) gives ×{N}, ×", 0, "source_dft_over_measured"),
+          ("Cl−Me source DFT (limit 2)", rf"ΔG\) gives ×[\d.]+, ×{N}, ×", 1, "source_dft_over_measured"),
+          ("Cl−OMe source DFT (limit 2)", rf"ΔG\) gives ×[\d.]+, ×[\d.]+, ×{N}, so the Me excess", 2, "source_dft_over_measured"))],
     ("paper §3.3 second-acceptor difference → vs_b3lyp", PAPER_RESULTS, rf"carries a smaller difference \(\+{N} eV\)",
      "dft/os_mediator_series_wb97x.json", lambda d: named(d["vs_b3lyp"]["points"], "name", "so2cf3")["omega_minus_b3_eV"], 0.005),
     ("paper §3.3 acceptor swap at B3LYP (meV) → vs_b3lyp", PAPER_RESULTS, rf"the ΔE_red of SO₂CF₃ is {N} meV less negative than that of NO₂",

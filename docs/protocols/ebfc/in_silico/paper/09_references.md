@@ -41,7 +41,7 @@
 > (vol 22). Method sources added for every method named in §2 (B3LYP, ωB97X, 6-31G(d), LANL2DZ,
 > Stuttgart RSC, def2, C-PCM, PySCF, MMFF94s, RDKit, ChimeraX, AlphaFold 3, Beratan–Onuchic, Marcus,
 > Nelsen, Hammett, cluster-continuum), and 2026-09-24 (second pass) for the VWN term of the PySCF B3LYP and
-> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 57 (55 until the renumbering of 2026-10-11) is the one
+> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 58 (55 until the renumberings of 2026-10-11) is the one
 > `[CITATION NEEDED]` closed from an open-access full text (§2.1 of that paper: aryl-NO₂ films are reduced to
 > aryl-NH₂ and aryl-NHOH under acidic electrochemical conditions — grafted films on gold, not the
 > 4,4′-nitro-bpy ligand, so it supports the chemistry, not the device).
@@ -236,6 +236,12 @@ legend line stays in each, as the criterion allows.
   integration leg's call (`00_07` HW.5.IS).
   📌 2026-10-11, later (the records above are not rewritten): §3.3 now prints the donor comparison (Goldschmid 2021,
   numbers pinned to `os_series_vs_measured.json`) — OMe agrees, Me does not — and keeps the slope untriangulated.
+  📌 2026-10-11, last (the records above are not rewritten): a second series has our own core in water and one ACCEPTOR —
+  Montón-Vicente et al., *Langmuir* 2026 ([PMC13523742](https://pmc.ncbi.nlm.nih.gov/articles/PMC13523742/), Table 1
+  read by the machine): `83`'s `aqueous_series` block against a computed Cl point added to `21e` the same day, read pairwise —
+  Cl−OMe ×1.35 (the pairs taken to Me share our Me excess), with the source's own relaxed B3LYP ×1.22; the
+  measured shifts are not linear in σp, so no slope is read; beyond Cl the slope stays untriangulated. Found while looking for the six polymers
+  of ref 8, which stay unread (`00_07` HW.5.IS).
 - §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
   from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
   says the cluster is only *defined*). §2.1 now says which model the energies stand on.
@@ -312,10 +318,11 @@ legend line stays in each, as the criterion allows.
 53. McGibbon, R. T.; Beauchamp, K. A.; Harrigan, M. P.; Klein, C.; Swails, J. M.; Hernández, C. X.; Schwantes, C. R.; Wang, L.-P.; Lane, T. J.; Pande, V. S. MDTraj: A Modern Open Library for the Analysis of Molecular Dynamics Trajectories. *Biophys. J.* **2015**, *109*, 1528–1532. DOI: 10.1016/j.bpj.2015.08.015.
 54. Sterling, C. M.; Bjornsson, R. Multistep Explicit Solvation Protocol for Calculation of Redox Potentials. *J. Chem. Theory Comput.* **2019**, *15*, 52–67. DOI: 10.1021/acs.jctc.8b00982.
 55. Goldschmid, S. L.; Bednářová, E.; Beck, L. R.; Xie, K.; Tay, N. E. S.; Ravetz, B. D.; Li, J.; Joe, C. L.; Rovis, T. Tuning the Electrochemical and Photophysical Properties of Osmium Complexes for Application in Photoredox Catalysis. *ChemRxiv* **2021**, DOI: 10.26434/chemrxiv-2021-jfmqq (Table 2 read from this version); published as *Synlett* **2022** (as «Tuning the Electrochemical and Photophysical Properties of Osmium-Based Photoredox Catalysts»), *33*, 247–258, DOI: 10.1055/s-0041-1737792.
-56. Carducci, N. G. G.; Arnott, M.; Yankson, E.; Ng, H. J. C.; Li, H.; Hickey, D. Polymer Immobilization Governs Mediated Bioelectrocatalysis and Enables Automated Redox Mediator Screening. *ChemRxiv* **2026**, DOI: 10.26434/chemrxiv.15004343/v1.
-57. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
-58. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
-59. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
+56. Montón-Vicente, A.; Quilez-Alburquerque, J.; Gramolini, L.; Morillo-Victorero, L.; García-Iriepa, C.; Marazzi, M.; Díaz Díaz, D.; Alba, M. Tunable Osmium Complexes as pH-Insensitive Redox Reporters for Electrochemical Biosensing. *Langmuir* **2026**, *42*, 24074–24085. DOI: 10.1021/acs.langmuir.6c02628.
+57. Carducci, N. G. G.; Arnott, M.; Yankson, E.; Ng, H. J. C.; Li, H.; Hickey, D. Polymer Immobilization Governs Mediated Bioelectrocatalysis and Enables Automated Redox Mediator Screening. *ChemRxiv* **2026**, DOI: 10.26434/chemrxiv.15004343/v1.
+58. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
+59. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
+60. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
 
 ## Verified but not cited in the text (NOT part of the numbered list)
 

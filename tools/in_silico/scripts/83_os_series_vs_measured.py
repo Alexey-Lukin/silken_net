@@ -25,6 +25,23 @@ acceptor side (the series has no 4,4'-acceptor), nor OUR complex's measured slop
        same compilation, equally unchecked;
   (A4) a vertical ΔSCF difference (computed) is compared with an E1/2 difference (measured, adiabatic).
 
+A SECOND, aqueous series of our own scaffold (`aqueous_series` block, 2026-10-11 — found looking for the ligands of
+paper ref 8, which stay unread):
+
+  Montón-Vicente et al., «Tunable Osmium Complexes …», Langmuir 2026, 42, 24074–24085, doi:10.1021/acs.langmuir.6c02628
+  (CC BY; PMC13523742). Table 1, E1/2(Os II/III) of [Os(4,4'-X2-bpy)2Cl(ampy)]+, ampy = 4-(aminomethyl)pyridine —
+  air-equilibrated PBS pH 7.4, 25 °C, vs Ag/AgCl, measured in that paper in triplicate — read from the PMC text on
+  2026-10-11 (complexes 1–3; the text of §3.3 states the same three values). X = OMe · Me · Cl, no parent bpy, so the
+  differences are taken to Me. Same charge (+1/+2), same solvent, same bis-bpy chloro core as ours: of A1–A2 only the
+  axial N-donor remains — (A1′) pyridine ⊥ 1-methylimidazole shifts the absolute E°, not the substituent difference.
+  The same Table 1 prints the authors' own B3LYP E1/2 (def2-TZVP/ECP on Os, def2-SVP elsewhere, IEFPCM water; both
+  oxidation states optimised, vibrational frequencies, potential from ΔG — their §2.6 and §3.3), so every pair is read
+  three ways: measured · ours (vertical ΔSCF on one programmatic geometry) · theirs (relaxed, free energy).
+  CAN show: per-substituent pair shifts OMe−Me, Cl−Me and Cl−OMe — Cl is an ACCEPTOR point — and whether the source's
+  relaxed B3LYP reproduces a pair ours misses (a protocol effect, A4, rather than the functional). CANNOT show: a slope
+  — the measured shifts are not linear in σp (the two pairwise slopes differ ×4), so the three-point slope ratio is
+  kept in the cache as a mix of the pairs, not read as a slope.
+
 Run:  conda activate silken_md; python tools/in_silico/scripts/83_os_series_vs_measured.py
       (reads caches, no SCF — but it imports 21e for its σ table, one home, and 21e loads lib/ with RDKit)
 """
@@ -38,8 +55,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 
-SI_DESCRIPTION = ("Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with a measured "
-                  "series of homoleptic osmium complexes (donor side only, under named transfer assumptions).")  # its row in the paper SI (72): English, no repo jargon
+SI_DESCRIPTION = ("Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with two measured "
+                  "series: homoleptic osmium complexes in acetonitrile (donors only) and an aqueous series of the same "
+                  "bis-bipyridine chloro core (one acceptor), under named transfer assumptions.")  # its row in the paper SI (72): English, no repo jargon
 SOURCE = {"doi": "10.26434/chemrxiv-2021-jfmqq", "version": "preprint v1 (2021-10-22)", "table": "Table 2",
           "medium": "MeCN, 0.1 M TBAPF6, 100 mV/s, N2", "reference": "Fc/Fc+ (cancels in differences)",
           "read": "2026-10-11, rendered page image of the preprint PDF; §2.2 text states the same values",
@@ -51,6 +69,20 @@ MEASURED_E12_V = {"bpy": (0.44, "Os12, entry 1"), "dmbpy": (0.35, "Os26, entry 3
 N_SUBST_MEASURED = 6
 N_SUBST_COMPUTED = 4   # cis-[Os(4,4'-X2-bpy)2(1-MeIm)Cl]: two bpy, two substituents each
 SIGMA_P_TBU = -0.20    # (A3) Hansch, Leo & Taft 1991 compilation — the source 21e's SERIES names; not checked against it
+AQ_SOURCE = {"doi": "10.1021/acs.langmuir.6c02628", "journal": "Langmuir 2026, 42 (33), 24074–24085", "pmc": "PMC13523742",
+             "table": "Table 1", "complex": "[Os(4,4'-X2-bpy)2Cl(ampy)]+, ampy = 4-(aminomethyl)pyridine",
+             "medium": "air-equilibrated PBS pH 7.4, 25 °C; E1/2 = mean of the CV peak potentials, triplicate",
+             "reference": "Ag/AgCl (3 M NaCl; cancels in differences)", "cv": "5 V/s, 2 mm gold disk",
+             "peak_separation_V": {"ome": 0.12, "dmbpy": 0.08, "cl": 0.14}, "uncertainty": "no SEM printed for E1/2",
+             "read": "2026-10-11, PMC text of Table 1, §2.6 and §3.3; §3.3 states the same measured values",
+             "licence": "CC BY 4.0"}
+# the source's own computed E1/2 (Table 1, «E1/2 calc», V vs Ag/AgCl) — B3LYP, def2-TZVP+ECP (Os) / def2-SVP, IEFPCM water,
+# both oxidation states optimised with frequencies, E = ΔG/nF − 4.637 V (its §2.6, §3.3)
+AQ_SOURCE_DFT_E12_V = {"ome": -0.031, "dmbpy": 0.129, "cl": 0.339}
+AQ_PAIRS = (("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))   # (X, reference) — per substituent, X minus reference
+# E1/2(Os II/III), V vs Ag/AgCl — Table 1 of AQ_SOURCE; key = the 21e SERIES name. 4 substituents, as in ours.
+AQ_MEASURED_E12_V = {"ome": (0.036, "complex 1"), "dmbpy": (0.195, "complex 2"), "cl": (0.340, "complex 3")}
+AQ_REF = "dmbpy"   # the series has no parent bpy
 OUT = DFT_CACHE / "os_series_vs_measured.json"
 
 
@@ -91,6 +123,62 @@ def verdict(rec: dict) -> str:
             f"{rec['computed_lfer_per_substituent_V_per_sigma']:.3f}. Donor side only, one homoleptic series in MeCN, "
             f"under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured "
             f"counterpart here.")
+
+
+def verdict_aqueous(aq: dict) -> str:
+    """The aqueous block's prose, built from the block alone (pinned whole, like `verdict`)."""
+    pairs = aq["pairs"]
+    lab = {"ome": "OMe", "dmbpy": "Me", "cl": "Cl"}
+    txt = "; ".join(f"{lab[p['x']]}−{lab[p['ref']]} {p['ours_mV']:+.1f} ours against {p['measured_mV']:+.1f} measured "
+                    f"(×{p['ours_over_measured']:.2f}; theirs ×{p['source_dft_over_measured']:.2f})" for p in pairs)
+    pw = aq["measured_pairwise_slope_per_substituent_V_per_sigma"]
+    return (f"Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), "
+            f"per 4,4'-substituent: {txt}. The two pairs taken to Me share our Me excess (the MeCN series shows it too); "
+            f"the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what "
+            f"our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. The one acceptor point measured, Cl, comes out larger than "
+            f"measured in both computations. The measured shifts are not linear in σp (pairwise slopes "
+            f"{pw['ome-dmbpy']:.3f} and {pw['dmbpy-cl']:.3f} V/σ per substituent), so no slope is read from three points.")
+
+
+def aqueous(sigma: dict, b3: dict) -> dict:
+    e_ref = AQ_MEASURED_E12_V[AQ_REF][0]
+    measured = {n: {"E12_V": e, "where": w, "sigma_para": sigma[n], "shift_V": e - e_ref,
+                    "shift_per_substituent_V": (e - e_ref) / N_SUBST_COMPUTED} for n, (e, w) in AQ_MEASURED_E12_V.items()}
+    computed = {}
+    for n in AQ_MEASURED_E12_V:   # E° relative to Me = −(ΔE_red(X) − ΔE_red(Me))
+        shift = -(b3[n]["dE_red_eV"] - b3[AQ_REF]["dE_red_eV"])
+        computed[n] = {"shift_V": shift, "shift_per_substituent_V": shift / N_SUBST_COMPUTED}
+    names = sorted(AQ_MEASURED_E12_V, key=lambda n: sigma[n])
+    xs = [sigma[n] for n in names]
+    c_slope, c_r2 = _slope_r2(xs, [computed[n]["shift_V"] for n in names])
+    m_slope, m_r2 = _slope_r2(xs, [measured[n]["shift_V"] for n in names])
+    slope = {"points": names, "computed_b3lyp_per_substituent_V_per_sigma": c_slope / N_SUBST_COMPUTED,
+             "computed_b3lyp_r2": c_r2, "measured_per_substituent_V_per_sigma": m_slope / N_SUBST_COMPUTED,
+             "measured_r2": m_r2, "ratio_computed_over_measured": c_slope / m_slope}
+    def per_sub(e: dict, x: str, ref: str) -> float:
+        return (e[x] - e[ref]) / N_SUBST_COMPUTED * 1000
+    e_meas = {n: e for n, (e, _) in AQ_MEASURED_E12_V.items()}
+    e_ours = {n: -b3[n]["dE_red_eV"] for n in AQ_MEASURED_E12_V}   # E° up to a constant: −ΔE_red
+    pairs = []
+    for x, ref in AQ_PAIRS:
+        meas, ours, theirs = (per_sub(e, x, ref) for e in (e_meas, e_ours, AQ_SOURCE_DFT_E12_V))
+        pairs.append({"x": x, "ref": ref, "measured_mV": meas, "ours_mV": ours, "source_dft_mV": theirs,
+                      "ours_over_measured": ours / meas, "source_dft_over_measured": theirs / meas})
+    aq = {"source": AQ_SOURCE, "reference_point": AQ_REF, "source_dft_E12_V": AQ_SOURCE_DFT_E12_V, "pairs": pairs,
+          "measured_pairwise_slope_per_substituent_V_per_sigma": {
+              f"{a}-{b}": (e_meas[b] - e_meas[a]) / (sigma[b] - sigma[a]) / N_SUBST_COMPUTED
+              for a, b in (("ome", "dmbpy"), ("dmbpy", "cl"))},
+          "assumptions": ["A1′ the monodentate N-donor (pyridine ⊥ 1-methylimidazole) shifts the absolute E°, not the substituent difference",
+                          "A2′ formal charge +1/+2 in both; the free amine of ampy is likely protonated at pH 7.4 and PBS carries an "
+                          "ionic strength our C-PCM lacks — both constant across the series",
+                          "A3 sigma_para as in 21e SERIES, unchecked", "A4 vertical ΔSCF difference against an E1/2 difference"],
+          "measured": measured, "computed_b3lyp": computed,
+          "ratio_computed_over_measured_per_substituent": {n: computed[n]["shift_per_substituent_V"]
+                                                           / measured[n]["shift_per_substituent_V"]
+                                                           for n in AQ_MEASURED_E12_V if n != AQ_REF},
+          "slope": slope, "slope_note": "a weighted mix of the pairs — the measured shifts are not linear in σp; not read as a slope"}
+    aq["verdict"] = verdict_aqueous(aq)
+    return aq
 
 
 def main() -> int:
@@ -150,10 +238,12 @@ def main() -> int:
         "computed_lfer_fit_set": lfer["fit_set"],
         "ratio_computed_over_measured_per_substituent": ratios,
         "not_covered": "the acceptor side — the measured series has no 4,4'-acceptor; OMe at ωB97X — not computed",
+        "aqueous_series": aqueous(sigma, b3),
     }
     rec["verdict"] = verdict(rec)
     OUT.write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(rec["verdict"])
+    print(rec["aqueous_series"]["verdict"])
     print(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

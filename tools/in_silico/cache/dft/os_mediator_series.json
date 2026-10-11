@@ -258,6 +258,74 @@
       "cascade_delta_eV": -0.9093
     },
     {
+      "name": "cl",
+      "sigma_para": 0.23,
+      "desc": "4,4'-dichloro (weak acceptor)",
+      "geometry": {
+        "n_atoms": 54,
+        "min_contact_A": 1.081,
+        "min_pair": "C#43-H#50",
+        "min_interlig_A": 2.055,
+        "min_interlig_pair": "N#13-H#51",
+        "os_coord_distances_A": [
+          2.096,
+          2.096,
+          2.096,
+          2.096,
+          2.1,
+          2.38
+        ],
+        "os_n_bpy_A": [
+          2.0957,
+          2.0957,
+          2.0957,
+          2.0957
+        ],
+        "bite_deg": [
+          80.38,
+          80.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) cl",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 54,
+        "n_electrons": 304,
+        "converged": true,
+        "wall_seconds": 398.3,
+        "E_total_Ha": -3645.9325510922354,
+        "HOMO_Ha": -0.18595420610761945,
+        "LUMO_Ha": -0.0906458018369244,
+        "HOMO_eV": -5.060071726460493,
+        "LUMO_eV": -2.4665979253618384,
+        "gap_eV": 2.5934738010986553,
+        "rescued": false,
+        "aufbau": true
+      },
+      "os3": {
+        "label": "Os(III) cl",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 54,
+        "n_electrons": 303,
+        "converged": true,
+        "wall_seconds": 683.7,
+        "E_total_Ha": -3645.759930527529,
+        "HOMO_Ha": -0.23799357964048248,
+        "LUMO_Ha": -0.16116140446038174,
+        "HOMO_eV": -6.476135219662474,
+        "LUMO_eV": -4.38542522471734,
+        "gap_eV": 2.0907099949451338,
+        "rescued": false,
+        "s2": 0.7542071678226137,
+        "aufbau": true
+      },
+      "dE_red_eV": -4.6972448602277455,
+      "converged": true,
+      "cascade_delta_eV": -0.7516
+    },
+    {
       "name": "dcbpy",
       "sigma_para": 0.45,
       "desc": "4,4'-dicarboxy (acceptor)",
@@ -485,6 +553,9 @@
       "inert_design_picks": [
         "cf3",
         "so2cf3"
+      ],
+      "measured_series_points": [
+        "cl"
       ]
     },
     "x": "sigma_para",

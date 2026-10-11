@@ -139,7 +139,7 @@ def fig3() -> None:
     # ---- (b) Hammett LFER ----
     cx = series["complexes"]
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
-           "dcbpy": "COOH", "no2": "NO₂", "cf3": "CF₃", "so2cf3": "SO₂CF₃"}
+           "cl": "Cl", "dcbpy": "COOH", "no2": "NO₂", "cf3": "CF₃", "so2cf3": "SO₂CF₃"}
     sig = np.array([c["sigma_para"] for c in cx])
     dered = np.array([c["dE_red_eV"] for c in cx])
     casc = np.array([c["cascade_delta_eV"] for c in cx])

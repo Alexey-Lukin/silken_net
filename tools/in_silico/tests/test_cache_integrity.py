@@ -320,6 +320,51 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
     lslope, _ = s83._slope_r2([b3[n]["sigma_para"] for n in fit], [b3[n]["dE_red_eV"] for n in fit])
     assert v["computed_lfer_per_substituent_V_per_sigma"] == -lslope / 4
     assert v["verdict"] == s83.verdict(v), "the verdict is not the one its fields build"
+    # the aqueous series of our own core (Langmuir 2026): differences to Me, 4 substituents on both sides, one acceptor
+    aq = v["aqueous_series"]
+    am, ref = aq["measured"], s83.AQ_REF
+    assert {n: r["E12_V"] for n, r in am.items()} == {n: e for n, (e, _) in s83.AQ_MEASURED_E12_V.items()}, "aqueous transcription ≠ script"
+    for n, row in am.items():
+        assert row["sigma_para"] == b3[n]["sigma_para"] and row["shift_V"] == row["E12_V"] - am[ref]["E12_V"], n
+        assert row["shift_per_substituent_V"] == row["shift_V"] / 4, n
+        crow = aq["computed_b3lyp"][n]
+        assert crow["shift_V"] == -(b3[n]["dE_red_eV"] - b3[ref]["dE_red_eV"]) and crow["shift_per_substituent_V"] == crow["shift_V"] / 4, n
+    assert set(aq["ratio_computed_over_measured_per_substituent"]) == set(am) - {ref}
+    for n, ratio in aq["ratio_computed_over_measured_per_substituent"].items():
+        assert ratio == aq["computed_b3lyp"][n]["shift_per_substituent_V"] / am[n]["shift_per_substituent_V"], n
+    sl = aq["slope"]
+    xs = [am[n]["sigma_para"] for n in sl["points"]]
+    cs, cr = s83._slope_r2(xs, [aq["computed_b3lyp"][n]["shift_V"] for n in sl["points"]])
+    ms_, mr_ = s83._slope_r2(xs, [am[n]["shift_V"] for n in sl["points"]])
+    assert sorted(sl["points"], key=lambda n: am[n]["sigma_para"]) == sl["points"] and set(sl["points"]) == set(am)
+    assert (sl["computed_b3lyp_per_substituent_V_per_sigma"], sl["computed_b3lyp_r2"]) == (cs / 4, cr)
+    assert (sl["measured_per_substituent_V_per_sigma"], sl["measured_r2"], sl["ratio_computed_over_measured"]) == (ms_ / 4, mr_, cs / ms_)
+    assert aq["source_dft_E12_V"] == s83.AQ_SOURCE_DFT_E12_V, "the source's computed E1/2 ≠ the script's transcription"
+    assert [(p["x"], p["ref"]) for p in aq["pairs"]] == list(s83.AQ_PAIRS)
+    ours = {n: -b3[n]["dE_red_eV"] for n in am}
+    for p in aq["pairs"]:
+        x, r_ = p["x"], p["ref"]
+        assert p["measured_mV"] == (am[x]["E12_V"] - am[r_]["E12_V"]) / 4 * 1000, (x, r_)
+        assert p["ours_mV"] == (ours[x] - ours[r_]) / 4 * 1000, (x, r_)
+        assert p["source_dft_mV"] == (s83.AQ_SOURCE_DFT_E12_V[x] - s83.AQ_SOURCE_DFT_E12_V[r_]) / 4 * 1000, (x, r_)
+        assert (p["ours_over_measured"], p["source_dft_over_measured"]) == (p["ours_mV"] / p["measured_mV"], p["source_dft_mV"] / p["measured_mV"])
+    pw = aq["measured_pairwise_slope_per_substituent_V_per_sigma"]
+    for a, b in (("ome", "dmbpy"), ("dmbpy", "cl")):
+        assert pw[f"{a}-{b}"] == (am[b]["E12_V"] - am[a]["E12_V"]) / (am[b]["sigma_para"] - am[a]["sigma_para"]) / 4
+    assert aq["verdict"] == s83.verdict_aqueous(aq), "the aqueous verdict is not the one its fields build"
+
+
+def test_os_mediator_series_rows_that_record_s2_are_doublets():
+    """A B3LYP series row written since <S²> is recorded (dft_singlepoint, 2026-10-11) is held to the acceptance the
+    ωB97X rows meet — <S²> ≤ S2_MAX_DOUBLET and an aufbau filling (§Critical Rules #14). The older rows record no <S²>
+    and stand on `converged`, as the paper says (§2.2); a NEW row cannot slip in on `converged` alone."""
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import S2_MAX_DOUBLET
+    rows = json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]
+    for c in rows:
+        o3 = c["os3"]
+        if "s2" in o3:
+            assert o3["s2"] <= S2_MAX_DOUBLET and o3.get("aufbau") is True, (c["name"], o3["s2"], o3.get("aufbau"))
 
 
 def _ols_slope(xs, ys):
@@ -467,7 +512,7 @@ def test_21e_doublet_start_is_a_doublet_with_its_hole_in_the_homo(tmp_path):
 # ── lib/os_geometry: the default path IS the committed geometry; the C-min closure realises or refuses ──
 _SERIES_SMILES = {   # 21e's SERIES, by the file name each one writes (os_<name>_meim_cl.xyz)
     "nme2": "CN(C)c1ccnc(-c2cc(N(C)C)ccn2)c1", "nh2": "Nc1ccnc(-c2cc(N)ccn2)c1",
-    "ome": "COc1ccnc(-c2cc(OC)ccn2)c1", "no2": "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1",
+    "ome": "COc1ccnc(-c2cc(OC)ccn2)c1", "cl": "Clc1ccnc(-c2cc(Cl)ccn2)c1", "no2": "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1",
     "cf3": "FC(F)(F)c1ccnc(-c2cc(C(F)(F)F)ccn2)c1",
     "so2cf3": "O=S(=O)(C(F)(F)F)c1ccnc(-c2cc(S(=O)(=O)C(F)(F)F)ccn2)c1",
 }

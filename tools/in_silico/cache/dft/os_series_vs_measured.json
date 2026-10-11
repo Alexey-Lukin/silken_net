@@ -123,5 +123,125 @@
     "wb97x_def2tzvp:dmbpy": 2.4888192249613206
   },
   "not_covered": "the acceptor side — the measured series has no 4,4'-acceptor; OMe at ωB97X — not computed",
+  "aqueous_series": {
+    "source": {
+      "doi": "10.1021/acs.langmuir.6c02628",
+      "journal": "Langmuir 2026, 42 (33), 24074–24085",
+      "pmc": "PMC13523742",
+      "table": "Table 1",
+      "complex": "[Os(4,4'-X2-bpy)2Cl(ampy)]+, ampy = 4-(aminomethyl)pyridine",
+      "medium": "air-equilibrated PBS pH 7.4, 25 °C; E1/2 = mean of the CV peak potentials, triplicate",
+      "reference": "Ag/AgCl (3 M NaCl; cancels in differences)",
+      "cv": "5 V/s, 2 mm gold disk",
+      "peak_separation_V": {
+        "ome": 0.12,
+        "dmbpy": 0.08,
+        "cl": 0.14
+      },
+      "uncertainty": "no SEM printed for E1/2",
+      "read": "2026-10-11, PMC text of Table 1, §2.6 and §3.3; §3.3 states the same measured values",
+      "licence": "CC BY 4.0"
+    },
+    "reference_point": "dmbpy",
+    "source_dft_E12_V": {
+      "ome": -0.031,
+      "dmbpy": 0.129,
+      "cl": 0.339
+    },
+    "pairs": [
+      {
+        "x": "ome",
+        "ref": "dmbpy",
+        "measured_mV": -39.75,
+        "ours_mV": -23.639108207433868,
+        "source_dft_mV": -40.0,
+        "ours_over_measured": 0.5946945460989652,
+        "source_dft_over_measured": 1.0062893081761006
+      },
+      {
+        "x": "cl",
+        "ref": "dmbpy",
+        "measured_mV": 36.25000000000001,
+        "ours_mV": 79.11137340362417,
+        "source_dft_mV": 52.50000000000001,
+        "ours_over_measured": 2.1823827145827353,
+        "source_dft_over_measured": 1.4482758620689655
+      },
+      {
+        "x": "cl",
+        "ref": "ome",
+        "measured_mV": 76.00000000000001,
+        "ours_mV": 102.75048161105804,
+        "source_dft_mV": 92.5,
+        "ours_over_measured": 1.3519800211981319,
+        "source_dft_over_measured": 1.2171052631578945
+      }
+    ],
+    "measured_pairwise_slope_per_substituent_V_per_sigma": {
+      "ome-dmbpy": 0.39749999999999996,
+      "dmbpy-cl": 0.09062500000000001
+    },
+    "assumptions": [
+      "A1′ the monodentate N-donor (pyridine ⊥ 1-methylimidazole) shifts the absolute E°, not the substituent difference",
+      "A2′ formal charge +1/+2 in both; the free amine of ampy is likely protonated at pH 7.4 and PBS carries an ionic strength our C-PCM lacks — both constant across the series",
+      "A3 sigma_para as in 21e SERIES, unchecked",
+      "A4 vertical ΔSCF difference against an E1/2 difference"
+    ],
+    "measured": {
+      "ome": {
+        "E12_V": 0.036,
+        "where": "complex 1",
+        "sigma_para": -0.27,
+        "shift_V": -0.159,
+        "shift_per_substituent_V": -0.03975
+      },
+      "dmbpy": {
+        "E12_V": 0.195,
+        "where": "complex 2",
+        "sigma_para": -0.17,
+        "shift_V": 0.0,
+        "shift_per_substituent_V": 0.0
+      },
+      "cl": {
+        "E12_V": 0.34,
+        "where": "complex 3",
+        "sigma_para": 0.23,
+        "shift_V": 0.14500000000000002,
+        "shift_per_substituent_V": 0.036250000000000004
+      }
+    },
+    "computed_b3lyp": {
+      "ome": {
+        "shift_V": -0.09455643282973547,
+        "shift_per_substituent_V": -0.023639108207433868
+      },
+      "dmbpy": {
+        "shift_V": -0.0,
+        "shift_per_substituent_V": -0.0
+      },
+      "cl": {
+        "shift_V": 0.3164454936144967,
+        "shift_per_substituent_V": 0.07911137340362417
+      }
+    },
+    "ratio_computed_over_measured_per_substituent": {
+      "ome": 0.5946945460989652,
+      "cl": 2.1823827145827357
+    },
+    "slope": {
+      "points": [
+        "ome",
+        "dmbpy",
+        "cl"
+      ],
+      "computed_b3lyp_per_substituent_V_per_sigma": 0.203294526161243,
+      "computed_b3lyp_r2": 0.9990193266782104,
+      "measured_per_substituent_V_per_sigma": 0.1344642857142857,
+      "measured_r2": 0.8758663266924394,
+      "ratio_computed_over_measured": 1.511884922314689
+    },
+    "slope_note": "a weighted mix of the pairs — the measured shifts are not linear in σp; not read as a slope",
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me excess (the MeCN series shows it too); the source's relaxed B3LYP reproduces OMe−Me, so that excess sits in our protocol, not in the functional — in what our two tiers share (vertical ΔSCF on one programmatic geometry, LANL2DZ on Os, C-PCM); three points do not say which. The one acceptor point measured, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+  },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }

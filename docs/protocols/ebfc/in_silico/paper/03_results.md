@@ -59,9 +59,21 @@ potential but not the difference, and that a vertical ΔSCF difference stands fo
 not (r² = 0.82), yet the measured Me is not a lone outlier: the other measured alkyl donor, tBu, is as weak
 (−20.0 mV, with its σ_para unchecked and no computed tBu point), so which side carries the difference is not
 settled here. Me has little leverage on a donor fit, so a slope through H, Me and OMe restates the OMe pair rather
-than adding a second agreement, and the acceptor side — most of the σ range of the fit — has no measured
-counterpart.
-A cross-check with the range-separated ωB97X on six of the nine members — the same vertical ΔSCF at
+than adding a second agreement. A second measured series — the E½ of [Os(4,4′-X₂-bpy)₂Cl(ampy)]⁺ (ampy =
+4-(aminomethyl)pyridine) in phosphate buffer at pH 7.4 for X = OMe, Me and Cl<sup>56</sup> — has our bis-bipyridine
+chloro core, formal charge and solvent, so its monodentate N-donor (a pyridine against our 1-methylimidazole) is the
+one structural difference, and it has one acceptor. Per substituent, our computed shifts are 0.59 times the measured
+for OMe against Me (−23.6 against −39.8 mV), 2.2 times for Cl against Me (+79.1 against +36.3 mV) and 1.35 times for
+Cl against OMe (+102.8 against +76.0 mV). The two pairs taken to Me share the excess of our Me point, which the first
+series shows too, so they are not independent; the source's own B3LYP, with both oxidation states optimised and the
+potential taken from free energies, gives 1.01, 1.45 and 1.22 for the same pairs,<sup>56</sup> so the Me excess sits in
+our protocol rather than in the functional. It survives our change of functional and ligand basis together (the Me
+shift of the first comparison is the same in both tiers), so it sits in what our tiers share and the source's
+calculation does not — a vertical ΔSCF on one programmatic geometry against optimised states and free energies,
+LANL2DZ against def2-TZVP on osmium, and the continuum model — and three points cannot say which. On the one acceptor
+point measured, both computations put the effect above experiment, and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
+the measured shifts are not linear in σ_para, so no slope is read from these three points.
+A cross-check with the range-separated ωB97X on six of the ten members — the same vertical ΔSCF at
 ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the direction and the donor-resonance
 plateau of NMe₂/NH₂ but not the magnitude: the ωB97X − B3LYP
 difference rises from +0.05 eV at the donor end to +0.26 eV at NO₂, so over the
@@ -75,17 +87,17 @@ functional alone flattens the local slope by ≈9 % and the larger basis restore
 there by cancellation; over Me, H and NO₂ the slope runs −0.93 (B3LYP) → −0.79 (ωB97X at 6-31G(d)) → −0.79
 eV per σ unit (def2-TZVP), so the shallower slope there is the functional's — on a slope that leans on the NO₂
 point. The robust content of the rule is
-therefore its direction; its slope is method-dependent, the measured Me shift is about 2.5 times smaller than the
-B3LYP and the ωB97X/def2-TZVP one, and on the acceptor side neither value is checked against experiment.
+therefore its direction; its slope is method-dependent, the measured Me shift is about 2.5 times smaller than our
+B3LYP and ωB97X/def2-TZVP ones, and on the one measured acceptor point the computed effect exceeds the measured.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation. E° is not the whole of it: with naphthoquinone mediators
 and glucose oxidase or diaphorase immobilised in modified linear-polyethylenimine films, catalytic activity and reversibility differed
-between polymer matrices even for mediators of similar redox potential,<sup>56</sup> so the rule orders the driving
+between polymer matrices even for mediators of similar redox potential,<sup>57</sup> so the rule orders the driving
 force but does not by itself set the current.
 
 The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
-pH (it reduces to the amine on cycling,<sup>57</sup> collapsing the cascade to its worst case). The realistic
+pH (it reduces to the amine on cycling,<sup>58</sup> collapsing the cascade to its worst case). The realistic
 optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP,
 but without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
@@ -154,7 +166,7 @@ conduction, if present, would only add to the hopping we model — so charge tra
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
 transport would require a conductive MOF (one of the levers above). A predicted cathode
 charge-transfer resistance is correspondingly uncertain: with the DET-rate bracket and the unknown
-nanozyme site coverage, a surface-confined (Laviron<sup>58</sup>) estimate spans ~0.002 Ω to ~30 kΩ — the cathode arc could
+nanozyme site coverage, a surface-confined (Laviron<sup>59</sup>) estimate spans ~0.002 Ω to ~30 kΩ — the cathode arc could
 be negligible or exceed the anode's by more than two orders of magnitude, so it cannot be fixed a priori, and the kinetic competition
 (rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
 experiment is the decisive empirical test.
@@ -190,7 +202,7 @@ explicit-water QM/MM of the **chloro** species.
 
 ## 3.6 The protein environment on the FAD potential
 
-The bound enzyme potential is **E°(FAD-GDH) = −265 mV vs SHE** (an experimentally verified value<sup>59</sup>); the
+The bound enzyme potential is **E°(FAD-GDH) = −265 mV vs SHE** (an experimentally verified value<sup>60</sup>); the
 protein shifts the cofactor from the free-flavin −220 mV (§3.2) to a more negative −265 mV, i.e. makes FAD a
 *better* electron donor and enlarges the cascade driving force — a mechanistic gain, not a gap. An
 active-site cluster (isoalloxazine plus the catalytic His537, the charged Glu61 and the backbone amide
@@ -237,7 +249,7 @@ N5 sits **16.0 Å** below the surface — a lower bound on the separation from a
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
 rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
 is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +1.03 eV on the dimethyl mediator (+0.88 eV plain-bpy reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
-[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>59</sup>); the
+[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>60</sup>); the
 raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies 62 mV from
 experiment (free flavin −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺

@@ -164,7 +164,7 @@ def build() -> str:
     md.append("| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note | ω−B3 (eV) |")
     md.append("|---|---|---|---|---|---|---|")
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
-           "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
+           "cl": "Cl", "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
     note = {"nme2": "donor saturation", "bpy": "reference", "cf3": "inert option",
             "no2": "unstable on cycling", "so2cf3": "realistic optimum (inert)"}
     vs = series_wb["vs_b3lyp"]
