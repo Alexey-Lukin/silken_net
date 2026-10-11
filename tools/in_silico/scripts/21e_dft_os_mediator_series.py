@@ -17,8 +17,11 @@ PREDICTION (fixed): ΔE_red decreases (E° rises) and the cascade Δ rises towar
 (less uphill) as σ_para increases (electron-withdrawing 4,4'-substituents).
 
 Method: B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM, vertical ΔSCF, level_shift OFF (21b-faithful).
-Sequential single process (feedback_dft_sequential). Cache-skip: complexes already
-present + converged in os_mediator_series.json are reused (no recompute). Cascade Δ
+Sequential single process (feedback_dft_sequential). Cache-skip: complexes already present with both states
+`converged` in os_mediator_series.json are reused (no recompute) — `converged` is a stationary point, not an
+accepted state (in-silico §Critical Rules #14), and these B3LYP rows carry no <S²> (their negative check is by gap and
+LFER — PIPELINE_STATUS ① residue); a stricter reuse here would recompute the canonical series under whatever PySCF
+runs it, since this path has no version guard. Cascade Δ
 uses FADH₂ HOMO from dft/lumiflavin.json. Numbers feed SUMMARY.md (One-Home) once done.
 
 Run:  conda activate silken_md
@@ -33,8 +36,13 @@ convention into the same table. ≈ 8–29 h per complex (×23–46 the B3LYP pa
 CAN show: whether ωB97X keeps the B3LYP offset (≈ +0.138 eV on the dmbpy/bpy pair) at the donor plateau and the
 acceptor end. CANNOT show: an adiabatic or speciation effect (vertical, chloro form only), nor a new cascade
 verdict — the authoritative reading stays the verified E°s.
-Once every extreme has converged it writes the comparison with the B3LYP series into the same cache
+Once every extreme is accepted it writes the comparison with the B3LYP series into the same cache
 (`vs_b3lyp`, see _vs_b3lyp) — the numbers SUMMARY §Mediator and the paper quote.
+An Os(III) state is ACCEPTED by its <S²> (≤ S2_MAX_DOUBLET), never by `converged` (§Critical Rules #14): a state is
+reused only when accepted, and a recomputed Os(III) starts from the Os(II) closed shell minus one β electron and is
+checked for internal stability (⚖️ founder 2026-10-09, 00_07 HW.5.IS).
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py wb97x-compare
+rewrites `vs_b3lyp` from the caches alone — no SCF — e.g. after the small-basis cache changed.
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py wb97x-631gd [nh2 no2]
 the same tier with the B3LYP basis (34b's tier, ⚖️ 2026-10-08) into its own cache; `vs_b3lyp` reads it to split the
 ends' change into functional and basis. Both modes refuse a geometry that is not the B3LYP row's BEFORE any SCF.
@@ -46,10 +54,11 @@ import json
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
+from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT, S2_MAX_DOUBLET
 from lib.dft_utils import dft_singlepoint
 from lib.os_geometry import BPY_SMILES, DCBPY_SMILES, DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
@@ -150,6 +159,63 @@ def _max_dev_A(a: list, b: list) -> float:
     return max(abs(p - q) for (_, x), (_, y) in zip(a, b, strict=True) for p, q in zip(x, y, strict=True))
 
 
+def _acceptance(state: dict, open_shell: bool) -> str:
+    """'accepted' · 'not_converged' · 'not_aufbau' · 'unstable' · 'spin_contaminated' · 's2_not_recorded'.
+
+    A converged SCF is a stationary point, not the ground state (in-silico §Critical Rules #14): an open-shell
+    state is accepted by its <S²> ≤ S2_MAX_DOUBLET, an aufbau filling and — when it was checked — internal
+    stability. 's2_not_recorded' = a row written before <S²> was recorded (2026-10-11): in the cache it stands on
+    `converged` alone (a run log may print its <S²>; not every source has one) — the reuse path recomputes it, the
+    comparison names it. A field that is absent (rows before 2026-10-11)
+    is not read as a pass or a fail of that criterion; only `s2` is required for a reuse.
+    """
+    if not state.get("converged"):
+        return "not_converged"
+    if state.get("aufbau") is False:
+        return "not_aufbau"
+    if not open_shell:
+        return "accepted"
+    if state.get("stable_internal") is False:
+        return "unstable"
+    if state.get("s2") is None:
+        return "s2_not_recorded"
+    return "accepted" if state["s2"] <= S2_MAX_DOUBLET else "spin_contaminated"
+
+
+def _doublet_start(atoms: list, chk: Path, os2_row: dict, xc: str, basis_light, conv: float, charge: int = 1) -> tuple:
+    """A UKS start for Os(III) on its own Os(II) closed shell: the converged orbitals minus one β electron from the HOMO.
+
+    The rescue that let NO₂ Os(III) land at <S²> 1.767 starts from the failed orbitals (§Critical Rules #14); this
+    start puts the hole where the doublet keeps it. When `chk` holds no orbitals, Os(II) is re-run into it and refused
+    unless it reproduces the row's E_total within the SCF tolerance — the start then stands on the same closed shell
+    as the cached row. CAN show: the start is a doublet with the hole in the HOMO, and how much of that orbital is on
+    Os (`hole_os_fraction`, Mulliken). CANNOT show: that the SCF stays on it — `s2` and the stability check judge that.
+    """
+    import numpy as np
+    from pyscf.scf import chkfile
+
+    rerun_delta = None
+    if not chk.exists():
+        os2 = dft_singlepoint(atoms, charge=charge, spin=0, label="closed shell re-run for the doublet start", xc=xc,
+                              basis_light=basis_light, conv_tol=conv, chkfile=str(chk))
+        rerun_delta = os2["E_total_Ha"] - os2_row["E_total_Ha"]
+        if not os2["converged"] or abs(rerun_delta) > conv:
+            sys.exit(f"Os(II) re-run does not reproduce its row (ΔE {rerun_delta:+.2e} Ha, converged "
+                     f"{os2['converged']}) — the doublet start would stand on another closed shell; refused")
+    mol = chkfile.load_mol(str(chk))
+    mo, occ = chkfile.load(str(chk), "scf/mo_coeff"), chkfile.load(str(chk), "scf/mo_occ")
+    homo = int(np.flatnonzero(occ > 0)[-1])
+    occ_a, occ_b = occ / 2, occ / 2
+    occ_b[homo] = 0.0
+    c = mo[:, homo]
+    pop = c * (mol.intor_symmetric("int1e_ovlp") @ c)
+    os_ao = [i for a, (_, _, p0, p1) in enumerate(mol.aoslice_by_atom()) if mol.atom_symbol(a) == "Os"
+             for i in range(p0, p1)]
+    start = {"from": "Os(II) closed shell minus one β electron from its HOMO",
+             "hole_os_fraction": float(pop[os_ao].sum()), "os2_rerun_delta_Ha": rerun_delta}
+    return np.array([(mo * occ_a) @ mo.T, (mo * occ_b) @ mo.T]), start
+
+
 def _vs_b3lyp(rec: dict) -> dict:
     """ω−B3 at every σ point that BOTH tiers computed on the SAME geometry, at full precision.
 
@@ -163,16 +229,25 @@ def _vs_b3lyp(rec: dict) -> dict:
     b3 = {c["name"]: c for c in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]}
     series_smiles = {name: smi for name, smi, _, _ in SERIES}
     points = []
-    skipped = []   # a point whose two states did not both converge has no ΔE to compare — named, never a crash
+    not_compared = {}   # a point with no accepted pair has no ΔE to compare — named with its reason, never a crash
+    s2_not_recorded = []   # Os(III) states compared on their run log only — named, never silently passed
     for name, c in rec["complexes"].items():
-        if "dE_red_eV" not in c:
-            skipped.append(name)
+        verdicts = {s: _acceptance(c.get(s, {}), s == "os3") for s in ("os2", "os3")}
+        refused = {s: v for s, v in verdicts.items() if v not in ("accepted", "s2_not_recorded")}
+        if refused or "dE_red_eV" not in c:
+            not_compared[name] = refused or {"pair": "no dE_red_eV"}
             continue
+        if verdicts["os3"] == "s2_not_recorded":
+            s2_not_recorded.append(f"{OUT_WB97X.name}:{name}")
         atoms, _ = build_os_complex(bpy_smiles=series_smiles[name])
         points.append((name, c["dE_red_eV"], OUT_WB97X.name, _series_geometry_dev(name, atoms)))
     for name, (cache, xyz) in WB97X_CENTRE.items():
         w = json.loads((DFT_CACHE / cache).read_text(encoding="utf-8"))
-        assert w["os2_plus"]["converged"] and w["os3_plus"]["converged"], f"{cache}: a state did not converge"
+        verdicts = {"os2": _acceptance(w["os2_plus"], False), "os3": _acceptance(w["os3_plus"], True)}
+        if verdicts["os2"] != "accepted" or verdicts["os3"] not in ("accepted", "s2_not_recorded"):
+            sys.exit(f"{cache}: a centre state is not accepted {verdicts}")
+        if verdicts["os3"] == "s2_not_recorded":
+            s2_not_recorded.append(cache)
         dE = (w["os2_plus"]["E_total_Ha"] - w["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV   # full precision
         dev = _max_dev_A(_read_xyz(LIGANDS_DIR / xyz), _read_xyz(LIGANDS_DIR / f"os_{name}_meim_cl.xyz"))
         points.append((name, dE, cache, dev))
@@ -199,6 +274,7 @@ def _vs_b3lyp(rec: dict) -> dict:
     cs = centre["local_slope_eV_per_sigma"]
     opposite = (cs["wb97x_631gd"] - cs["b3lyp_631gd"]) * (cs["wb97x_def2tzvp"] - cs["wb97x_631gd"]) < 0
     ends = _ends_decomposition(by, series_smiles, centre, subset)
+    s2_not_recorded += centre.pop("s2_not_recorded") + ends.pop("s2_not_recorded")
     es = ends["slope_over_common_subset_by_tier"]
     ends_clause = (f"over {', '.join(subset)} the slope runs {es['b3lyp_631gd']:+.3f} → {es['wb97x_631gd']:+.3f} "
                    f"(ωB97X, 6-31G(d)) → {es['wb97x_def2tzvp']:+.3f} eV/σ, so of the ×{sw / sb3:.2f} the functional "
@@ -206,6 +282,23 @@ def _vs_b3lyp(rec: dict) -> dict:
                    f"×{es['wb97x_def2tzvp'] / es['wb97x_631gd']:.2f}" if es else "at the ends the two are not separated")
     gap_clause = (f" The acceptor gap so2cf3 − no2 is {acceptor_gap['b3lyp'] * 1000:+.1f} (B3LYP) ⊥ "
                   f"{acceptor_gap['wb97x'] * 1000:+.1f} meV (ωB97X)." if acceptor_gap else "")
+    # every pair whose order by ΔE_red differs between the tiers, and the tier that keeps its σ order (a larger σ
+    # lowers ΔE_red) — built from the rows, so the prose cannot claim «the order is kept» past a swap
+    swaps = [{"pair": [a["name"], b["name"]],
+              "sigma_order_kept_by": "b3lyp" if (b["b3lyp_dE_red_eV"] - a["b3lyp_dE_red_eV"]) * (b["sigma_para"] - a["sigma_para"]) < 0
+              else "wb97x"}
+             for i, a in enumerate(rows) for b in rows[i + 1:]
+             if (a["b3lyp_dE_red_eV"] - b["b3lyp_dE_red_eV"]) * (a["wb97x_dE_red_eV"] - b["wb97x_dE_red_eV"]) < 0]
+    order_clause = ("the order by ΔE_red is the same at both tiers" if not swaps else
+                    "the order by ΔE_red is the same except " + "; ".join(
+                        f"{s['pair'][0]}/{s['pair'][1]}, which swap (σ order kept by "
+                        f"{'B3LYP' if s['sigma_order_kept_by'] == 'b3lyp' else 'ωB97X'})" for s in swaps))
+    lo_off = min(rows, key=lambda r: r["omega_minus_b3_eV"])
+    hi_off = max(rows, key=lambda r: r["omega_minus_b3_eV"])
+    n_sources = len(rows) + len(centre["points"]) + len(ends["points"])
+    s2_clause = (f" The Os(III) <S²> is not in the cache for {len(s2_not_recorded)} of the {n_sources} sources compared "
+                 f"(`os3_s2_not_recorded`); in the cache those points stand on `converged` alone — for the 21e rows a run "
+                 f"log prints their <S²>, for the other sources no log is kept." if s2_not_recorded else "")
     return {
         "method_pair": "B3LYP/6-31G(d) (os_mediator_series.json) ⊥ ωB97X/def2-TZVP (this cache + WB97X_CENTRE), "
                        "LANL2DZ(Os), C-PCM, vertical ΔSCF on one geometry per point",
@@ -215,26 +308,29 @@ def _vs_b3lyp(rec: dict) -> dict:
         "slope_b3lyp_eV_per_sigma": sb3, "r2_b3lyp": r2b3,
         "slope_wb97x_eV_per_sigma": sw, "r2_wb97x": r2w,
         "slope_ratio_wb97x_over_b3lyp": sw / sb3,
-        "not_compared_not_converged": skipped,
+        "not_compared": not_compared,
+        "os3_s2_not_recorded": s2_not_recorded,
         "span": {"from": lo["name"], "to": hi["name"], "b3lyp_eV": span_b3, "wb97x_eV": span_w,
                  "ratio_wb97x_over_b3lyp": span_w / span_b3},
         "donor_plateau_gap_nme2_minus_nh2_eV": plateau,
         "donor_plateau_gap_same_sign": same_sign,
         "same_order_by_dE_red": ([r["name"] for r in sorted(rows, key=lambda r: r["b3lyp_dE_red_eV"])]
                                  == [r["name"] for r in sorted(rows, key=lambda r: r["wb97x_dE_red_eV"])]),
+        "order_swaps": swaps,
         "centre_decomposition": centre,
         "centre_functional_and_basis_pull_opposite_ways": opposite,
         "ends_decomposition": ends,
         "acceptor_gap_so2cf3_minus_no2_eV": acceptor_gap,
-        "verdict": (f"ω−B3 runs {offsets[0]:+.3f} ({rows[0]['name']}) … {offsets[-1]:+.3f} eV ({rows[-1]['name']}), a range "
-                    f"of {max(offsets) - min(offsets):.3f} eV; over {', '.join(subset)} the ωB97X slope is {sw:+.3f} "
-                    f"against {sb3:+.3f} eV/σ (×{sw / sb3:.2f}); the donor-plateau gap (nme2 − nh2) is "
+        "verdict": (f"ω−B3 runs from {lo_off['omega_minus_b3_eV']:+.3f} ({lo_off['name']}) to "
+                    f"{hi_off['omega_minus_b3_eV']:+.3f} eV ({hi_off['name']}), a range of "
+                    f"{max(offsets) - min(offsets):.3f} eV; {order_clause}; over {', '.join(subset)} the ωB97X slope "
+                    f"is {sw:+.3f} against {sb3:+.3f} eV/σ (×{sw / sb3:.2f}); the donor-plateau gap (nme2 − nh2) is "
                     f"{plateau['b3lyp'] * 1000:+.1f} ⊥ {plateau['wb97x'] * 1000:+.1f} meV, "
                     f"{'the same' if same_sign else 'an opposite'} sign. At the centre, where ωB97X also exists "
                     f"with the small basis, the local slope is {cs['b3lyp_631gd']:+.3f} (B3LYP) → "
                     f"{cs['wb97x_631gd']:+.3f} (ωB97X, same basis) → {cs['wb97x_def2tzvp']:+.3f} eV/σ (def2-TZVP): "
                     f"the functional and the basis {'pull opposite ways' if opposite else 'pull the same way'} there; "
-                    f"{ends_clause}; neither tier is checked against a measured series.{gap_clause}"),
+                    f"{ends_clause}; neither tier is checked against a measured series.{gap_clause}{s2_clause}"),
     }
 
 
@@ -246,10 +342,16 @@ def _ends_decomposition(by: dict, series_smiles: dict, centre: dict, subset: lis
     of the def2-TZVP ×ratio is the functional and how much the basis. CANNOT say it for a point that has no
     small-basis value (SO₂CF₃), nor which tier is right.
     """
-    small = {}
+    small, refused, s2_not_recorded = {}, {}, []
     if OUT_WB97X_631GD.exists():
         for name, c in json.loads(OUT_WB97X_631GD.read_text(encoding="utf-8"))["complexes"].items():
             if "dE_red_eV" in c and name in by:
+                os3 = _acceptance(c["os3"], True)
+                if os3 not in ("accepted", "s2_not_recorded"):   # an SCF artefact must not read as a method effect
+                    refused[name] = os3
+                    continue
+                if os3 == "s2_not_recorded":
+                    s2_not_recorded.append(f"{OUT_WB97X_631GD.name}:{name}")
                 atoms, _ = build_os_complex(bpy_smiles=series_smiles[name])
                 dev = _series_geometry_dev(name, atoms)
                 if dev > SAME_GEOMETRY_TOL_A:
@@ -266,7 +368,8 @@ def _ends_decomposition(by: dict, series_smiles: dict, centre: dict, subset: lis
         sig = [tiers[n]["sigma_para"] for n in subset]
         slopes = {t: _ls(sig, [tiers[n][f"{t}_eV"] for n in subset])[0]
                   for t in ("b3lyp_631gd", "wb97x_631gd", "wb97x_def2tzvp")}
-    return {"points": pts, "slope_over_common_subset_by_tier": slopes}
+    return {"points": pts, "slope_over_common_subset_by_tier": slopes, "not_compared": refused,
+            "s2_not_recorded": s2_not_recorded}
 
 
 def _centre_decomposition(by: dict, series_smiles: dict) -> dict:
@@ -280,10 +383,11 @@ def _centre_decomposition(by: dict, series_smiles: dict) -> dict:
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     _, axial, twists, _, _ = next(f for f in mod.FORMS if f[0] == "chloro")
-    pts = []
+    pts, s2_not_recorded = [], []
     for name, cache in WB97X_SMALL_BASIS.items():
         form = next(f for f in json.loads((DFT_CACHE / cache).read_text(encoding="utf-8"))["forms"] if f["name"] == "chloro")
         assert form["converged"], f"{cache}: chloro did not converge"
+        s2_not_recorded.append(f"{cache}:chloro")   # 34b's forms carry one `converged` for both states, no <S²>
         atoms, _ = build_os_complex(bpy_smiles=series_smiles[name], axial=axial, axial_twists=twists)
         dev = _max_dev_A([(el, tuple(xyz)) for el, xyz in atoms], _read_xyz(LIGANDS_DIR / f"os_{name}_meim_cl.xyz"))
         if dev > SAME_GEOMETRY_TOL_A:
@@ -297,7 +401,8 @@ def _centre_decomposition(by: dict, series_smiles: dict) -> dict:
     lo, hi = pts[0], pts[-1]
     dsig = hi["sigma_para"] - lo["sigma_para"]
     return {"points": pts, "local_slope_eV_per_sigma": {
-        t: (hi[f"{t}_eV"] - lo[f"{t}_eV"]) / dsig for t in ("b3lyp_631gd", "wb97x_631gd", "wb97x_def2tzvp")}}
+        t: (hi[f"{t}_eV"] - lo[f"{t}_eV"]) / dsig for t in ("b3lyp_631gd", "wb97x_631gd", "wb97x_def2tzvp")},
+        "s2_not_recorded": s2_not_recorded}
 
 
 def _load_cache() -> dict:
@@ -428,26 +533,49 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
         "environment": {"pyscf": pyscf.__version__},
         "complexes": {},
     }
-    for name in names:
-        smi, sigma = series[name]
-        c = rec["complexes"].setdefault(name, {"sigma_para": sigma})
-        atoms, _ = build_os_complex(bpy_smiles=smi)
-        dev = _series_geometry_dev(name, atoms)
-        if dev > SAME_GEOMETRY_TOL_A:   # refused BEFORE the SCF: an off-geometry point costs seconds, not a night
-            sys.exit(f"{name}: rebuilt geometry is {dev} Å off its B3LYP row — not comparable, refused")
-        for state, charge, spin, shift in (("os2", 1, 0, 0.0), ("os3", 2, 1, lshift)):
-            if c.get(state, {}).get("converged"):
-                banner(f"① ωB97X {name} {state} — reused from {out.name}")
-                continue
-            banner(f"① ωB97X {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
-            c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({xc})",
-                                       xc=xc, basis_light=basis_light, conv_tol=conv, level_shift_open=shift)
-            print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, conv={c[state]['converged']})")
-            _save(out, rec)
-        if c["os2"]["converged"] and c["os3"]["converged"]:
-            c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV   # full precision
-            _save(out, rec)
-            print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
+    with tempfile.TemporaryDirectory() as tmp:
+        for name in names:
+            smi, sigma = series[name]
+            c = rec["complexes"].setdefault(name, {"sigma_para": sigma})
+            atoms, _ = build_os_complex(bpy_smiles=smi)
+            dev = _series_geometry_dev(name, atoms)
+            if dev > SAME_GEOMETRY_TOL_A:   # refused BEFORE the SCF: an off-geometry point costs seconds, not a night
+                sys.exit(f"{name}: rebuilt geometry is {dev} Å off its B3LYP row — not comparable, refused")
+            chk = Path(tmp) / f"{name}_os2.chk"
+            for state, charge, spin, shift in (("os2", 1, 0, 0.0), ("os3", 2, 1, lshift)):
+                verdict = _acceptance(c.get(state, {}), spin != 0)
+                if verdict == "accepted":
+                    banner(f"① ωB97X {name} {state} — reused from {out.name}")
+                    continue
+                if state == "os3" and _acceptance(c["os2"], False) != "accepted":
+                    print(f"  {name} os3 not computed: os2 is not accepted, so its orbitals cannot start the doublet")
+                    continue
+                if state in c:   # a stale row is replaced, never reused because it says `converged`
+                    print(f"  replacing {name} {state}: {verdict}")
+                    c.pop("dE_red_eV", None)
+                    _save(out, rec)   # before the SCF: a crash mid-run must not leave the stale ΔE on disk
+                banner(f"① ωB97X {name} {state} (σ_para={sigma:+.2f}, PySCF {pyscf.__version__})")
+                if state == "os2":
+                    c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({xc})",
+                                               xc=xc, basis_light=basis_light, conv_tol=conv, chkfile=str(chk))
+                else:
+                    dm0, start = _doublet_start(atoms, chk, c["os2"], xc, basis_light, conv)
+                    rerun = start["os2_rerun_delta_Ha"]
+                    print(f"  doublet start: hole on Os {start['hole_os_fraction']:.3f}"
+                          + ("" if rerun is None else f", Os(II) re-run ΔE {rerun:+.1e} Ha"))
+                    c[state] = dft_singlepoint(atoms, charge=charge, spin=spin, label=f"{state} {name} ({xc})",
+                                               xc=xc, basis_light=basis_light, conv_tol=conv,
+                                               level_shift_open=shift, dm0=dm0, stability=True)
+                    c[state]["start"] = start
+                s2 = c[state].get("s2")
+                print(f"  E={c[state]['E_total_Ha']:.8f} Ha ({c[state]['wall_seconds']}s, "
+                      f"conv={c[state]['converged']}, {_acceptance(c[state], spin != 0)}"
+                      + ("" if s2 is None else f", <S²> {s2:.4f}") + ")")
+                _save(out, rec)
+            if all(_acceptance(c[s], s == "os3") == "accepted" for s in ("os2", "os3")):
+                c["dE_red_eV"] = (c["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV   # full precision
+                _save(out, rec)
+                print(f"  ΔE_red(III→II) {name} = {c['dE_red_eV']:+.6f} eV")
     if not small_basis and all("dE_red_eV" in rec["complexes"].get(n, {}) for n in WB97X_EXTREMES):
         rec["vs_b3lyp"] = _vs_b3lyp(rec)
         _save(out, rec)
@@ -456,7 +584,23 @@ def main_wb97x(names: list[str], small_basis: bool = False) -> int:
     return 0
 
 
+def main_compare() -> int:
+    """Rewrite `vs_b3lyp` from the caches alone — no SCF, so no reuse question and no recompute of a row whose
+    <S²> was written before it was recorded (that is the strict reuse of main_wb97x, and it would cost a night)."""
+    rec = json.loads(OUT_WB97X.read_text(encoding="utf-8"))
+    missing = [n for n in WB97X_EXTREMES if "dE_red_eV" not in rec["complexes"].get(n, {})]
+    if missing:
+        sys.exit(f"{OUT_WB97X.name}: no accepted ΔE_red for {missing} — nothing to compare")
+    rec["vs_b3lyp"] = _vs_b3lyp(rec)
+    _save(OUT_WB97X, rec)
+    print(f"  ω−B3: {rec['vs_b3lyp']['verdict']}")
+    banner(f"✅ saved {OUT_WB97X.name}")
+    return 0
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["wb97x-631gd"]:
         raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_631GD_ENDS, small_basis=True))
+    if sys.argv[1:2] == ["wb97x-compare"]:
+        raise SystemExit(main_compare())
     raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_EXTREMES) if sys.argv[1:2] == ["wb97x"] else main())

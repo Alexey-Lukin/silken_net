@@ -96,7 +96,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 2. A SMILES fix cascades — fixing one in 02-08 means rerunning ALL downstream MD that uses that ligand
 3. DFT: NEVER two heavy jobs on same CPU
 4. No density_fit() for Os/Ce — the auto-generated aux basis for heavy metals is 3× SLOWER than standard integrals
-5. Open-shell transition metals can oscillate forever — `level_shift=0.3` stops UKS on Os(III), Co-Ce and Ce, but it biases the reported LUMO, so switch it on only where the SCF oscillates and then read E_total, not LUMO
+5. Open-shell transition metals can oscillate forever — `level_shift=0.3` stops UKS on Os(III), Co-Ce and Ce; it steers the PATH an SCF takes (hence possibly the state it lands on), not the orbital energies a converged run reports, so switch it on only where the SCF oscillates
 6. MD goes NaN at the NVT ramp unless it pre-relaxes at 10K and ramps from 50K in 10K steps
 7. MD trajectories are gitignored — commit only the JSON/PNG summaries
 8. The CI smoke MD went NaN from BOX SIZE, not RNG — shrink the box (drop disordered tails), never just re-run or raise the iteration cap
@@ -194,5 +194,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 32. A count against a threshold on QUANTIZED input has ties — and an iterative solver's tolerance decides them silently: return the degenerate root EXACTLY, and keep a control that equates the no-forcing run with its input
 33. A cross-check that changes TWO things at once and AGREES may be two effects cancelling — before calling it robustness, look for the intermediate tier, which may already sit in another script's cache
 34. An overnight run of NEW code is rehearsed before it is launched — every write target with a stubbed SCF, the geometry check BEFORE the SCF, and an adversary on the RUN PATH, not only on the record — and a chained link stays editable only until it STARTS, so fix inside that window and freeze what the run reads
+35. Comparing a computed series with a measured one: on the SAME points, pair by pair first — a slope over several points restates the pair with the most leverage, and a «bracket» built on a point the other series lacks is not a comparison
 
 <!-- /INSILICO-MODIFYING-INDEX -->

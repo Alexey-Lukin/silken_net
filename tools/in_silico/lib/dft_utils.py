@@ -53,7 +53,9 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     xc: str = "b3lyp", with_pcm: bool = True,
                     conv_tol: float = 1e-6, max_cycle: int = 100,
                     level_shift_open: float = 0.0,
-                    basis_light: str | None = None) -> dict:
+                    basis_light: str | None = None,
+                    dm0=None, chkfile: str | None = None,
+                    stability: bool = False, max_stability_steps: int = 3) -> dict:
     """DFT single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
 
     Shared SSOT runner for the L3 Os scripts (21b / 21e / 34 / 34b series). `atoms`
@@ -61,13 +63,27 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     wb97x range-separated); `basis_light` overrides the light-atom basis (default
     `None` → constants.BASIS_LIGHT = 6-31G(d); pass "def2-tzvp" for the
     publication-grade ωB97X tier). Os always uses LANL2DZ+ECP. `level_shift_open`
-    is OFF by default (0.0) to match the validated 21b behaviour and keep reported
-    virtual-orbital energies physical — PySCF's level_shift adds a constant to
-    virtual MO energies, so an enabled shift biases the reported LUMO (E_total stays
-    shift-invariant). Enable it only where SCF oscillates (in-silico skill gotcha
-    #5: UKS on Os(III)/Co/Ce) and then read E_total, not LUMO. No `density_fit`
-    (gotcha #4: heavy-metal aux basis is slower). Returns E_total (Ha) + frontier
-    energies (eV).
+    is OFF by default (0.0): the committed B3LYP Os rows were converged so (21b-faithful),
+    and a shift changes the path an SCF takes, hence possibly the state it lands on.
+    The shift does NOT bias the reported orbital energies of a converged run: PySCF
+    re-diagonalises the unshifted Fock matrix once converged (`scf/hf.py` kernel,
+    `conv_check`), and the Newton solver canonicalises with the shift at 0 — verified in
+    the source of 2.11.0 (recorded) and 2.13.1 (lock), 2026-10-11. Enable it only where
+    SCF oscillates (in-silico §Critical Rules #5: UKS on Os(III)/Co/Ce). No `density_fit`
+    (#4: heavy-metal aux basis is slower). Returns E_total (Ha) + frontier energies (eV)
+    + `rescued` (the first SCF did not converge and the Newton solver took over) and, for
+    an open shell, `s2` = <S²>: `converged` certifies a stationary point, not the ground
+    state, so an open-shell point is accepted by its `s2` (§Critical Rules #14).
+
+    `dm0` — the initial density (e.g. a doublet start built from the closed-shell
+    neighbour's orbitals); `chkfile` — PySCF writes the converged orbitals there, for such
+    a start; `stability` — after convergence, run the internal stability analysis of the
+    UKS solution (with the solvent response) and follow an instability downhill with the
+    Newton solver, at most `max_stability_steps` times; the result then carries
+    `stable_internal` and `stability_steps` (and `pre_stability` = E and <S²> of the state the
+    first SCF found, when an instability was followed). `aufbau` — no occupied orbital lies above an
+    empty one of the same spin. CAN show: the solution is a local minimum in orbital space with an
+    aufbau filling. CANNOT show: it is the global one — no start guarantees the ground state.
     """
     import time
 
@@ -90,24 +106,48 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
         mf.with_solvent.method = "C-PCM"
     mf.conv_tol = conv_tol
     mf.max_cycle = max_cycle
+    if chkfile:
+        mf.chkfile = chkfile
 
     t0 = time.time()
-    e_total = mf.kernel()
-    if not mf.converged:
-        # SOSCF (Newton) rescue for oscillating open-shell SCF (e.g. CF₃/SO₂CF₃
-        # Os(III) UKS at level_shift=0). Converges the hard case WITHOUT a level
-        # shift, so the reported LUMO stays physical (unlike level_shift, which
-        # biases virtual MO energies — matters because 21e's cascade Δ reads LUMO).
+    e_total = mf.kernel(dm0=dm0)
+    rescued = not mf.converged
+    if rescued:
+        # SOSCF (Newton) rescue for an oscillating open-shell SCF (e.g. CF₃/SO₂CF₃ Os(III)).
+        # It starts from the failed orbitals AND occupation, so it can converge to a
+        # spin-contaminated stationary point — the reason `s2` is recorded (§Critical Rules #14).
         mf = mf.newton()
         mf.max_cycle = 100
         e_total = mf.kernel()
+    extra = {"rescued": rescued}
+    if stability and spin != 0 and mf.converged:
+        steps = 0
+        first = {"E_total_Ha": float(e_total), "s2": float(mf.spin_square()[0])}
+        while True:
+            mo_i, _, stable, _ = mf.stability(return_status=True)
+            if stable or steps == max_stability_steps:
+                break
+            steps += 1
+            mf = mf.newton()   # returns mf itself when it already is the Newton solver
+            e_total = mf.kernel(mo_i, mf.mo_occ)
+            if not mf.converged:
+                break
+        extra.update(stable_internal=bool(stable), stability_steps=steps)
+        if steps:   # the state the first SCF found is replaced — kept, not overwritten without a trace
+            extra["pre_stability"] = first
     dt = time.time() - t0
+    if spin != 0:
+        extra["s2"] = float(mf.spin_square()[0])
+    # aufbau per spin: the Newton solver keeps the occupation it started from, so a converged state can hold an
+    # electron above an empty orbital of the same spin — an excited state with a clean <S²> (adversary, 2026-10-11)
+    occ, e = (mf.mo_occ, mf.mo_energy) if spin != 0 else ([mf.mo_occ], [mf.mo_energy])
+    extra["aufbau"] = all(float(ei[oi > 0].max()) <= float(ei[oi == 0].min()) for oi, ei in zip(occ, e, strict=True))
     homo_ha, lumo_ha = extract_frontier(mf, mol)
     return {
         "label": label, "charge": charge, "spin": spin,
         "n_atoms": int(mol.natm), "n_electrons": int(mol.nelectron),
         "converged": bool(mf.converged), "wall_seconds": round(dt, 1),
-        "E_total_Ha": float(e_total), **frontier_to_ev(homo_ha, lumo_ha),
+        "E_total_Ha": float(e_total), **frontier_to_ev(homo_ha, lumo_ha), **extra,
     }
 
 

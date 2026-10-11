@@ -105,6 +105,40 @@
         "gap_eV": 6.789455491435702
       },
       "dE_red_eV": -3.854671023522795
+    },
+    "so2cf3": {
+      "sigma_para": 0.96,
+      "os2": {
+        "label": "os2 so2cf3 (wb97x)",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 78,
+        "n_electrons": 496,
+        "converged": true,
+        "wall_seconds": 10084.1,
+        "E_total_Ha": -5350.671382075248,
+        "HOMO_Ha": -0.2876171394089607,
+        "LUMO_Ha": -0.05525988827879395,
+        "HOMO_eV": -7.826461071423407,
+        "LUMO_eV": -1.5036981638644071,
+        "gap_eV": 6.322762907558999
+      },
+      "os3": {
+        "label": "os3 so2cf3 (wb97x)",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 78,
+        "n_electrons": 495,
+        "converged": true,
+        "wall_seconds": 88165.3,
+        "E_total_Ha": -5350.485005441653,
+        "HOMO_Ha": -0.346709765932844,
+        "LUMO_Ha": -0.09392576403876807,
+        "HOMO_eV": -9.43445335605471,
+        "LUMO_eV": -2.5558502437084476,
+        "gap_eV": 6.878603112346263
+      },
+      "dE_red_eV": -5.07156656399415
     }
   },
   "vs_b3lyp": {
@@ -154,6 +188,15 @@
         "omega_minus_b3_eV": 0.26262596772768276,
         "wb97x_source": "os_mediator_series_wb97x.json",
         "geometry_max_dev_A": 4.978152389428393e-07
+      },
+      {
+        "name": "so2cf3",
+        "sigma_para": 0.96,
+        "b3lyp_dE_red_eV": -5.2557696174359645,
+        "wb97x_dE_red_eV": -5.07156656399415,
+        "omega_minus_b3_eV": 0.18420305344181465,
+        "wb97x_source": "os_mediator_series_wb97x.json",
+        "geometry_max_dev_A": 4.969968010470893e-07
       }
     ],
     "offset_range_eV": [
@@ -170,7 +213,18 @@
     "slope_wb97x_eV_per_sigma": -0.7906378819577343,
     "r2_wb97x": 0.9996431399047617,
     "slope_ratio_wb97x_over_b3lyp": 0.8492074614573791,
-    "not_compared_not_converged": [],
+    "not_compared": {},
+    "os3_s2_not_recorded": [
+      "os_mediator_series_wb97x.json:nh2",
+      "os_mediator_series_wb97x.json:no2",
+      "os_mediator_series_wb97x.json:nme2",
+      "os_mediator_series_wb97x.json:so2cf3",
+      "os_complex_wb97xd_dmbpy.json",
+      "os_complex_wb97xd.json",
+      "wb97x_speciation_dmbpy.json:chloro",
+      "wb97x_speciation.json:chloro",
+      "os_mediator_series_wb97x_631gd.json:nh2"
+    ],
     "span": {
       "from": "nme2",
       "to": "no2",
@@ -183,7 +237,16 @@
       "wb97x": -0.004037145260967545
     },
     "donor_plateau_gap_same_sign": true,
-    "same_order_by_dE_red": true,
+    "same_order_by_dE_red": false,
+    "order_swaps": [
+      {
+        "pair": [
+          "no2",
+          "so2cf3"
+        ],
+        "sigma_order_kept_by": "wb97x"
+      }
+    ],
     "centre_decomposition": {
       "points": [
         {
@@ -217,10 +280,41 @@
     },
     "centre_functional_and_basis_pull_opposite_ways": true,
     "ends_decomposition": {
-      "points": [],
-      "slope_over_common_subset_by_tier": null
+      "points": [
+        {
+          "name": "nh2",
+          "sigma_para": -0.66,
+          "b3lyp_631gd_eV": -3.9051624186588794,
+          "wb97x_631gd_eV": -3.8283552215908023,
+          "wb97x_def2tzvp_eV": -3.8506338782618275,
+          "functional_eV": 0.07680719706807704,
+          "basis_eV": -0.022278656671025132,
+          "wb97x_631gd_source": "os_mediator_series_wb97x_631gd.json",
+          "geometry_max_dev_A": 4.968738136490458e-07
+        },
+        {
+          "name": "no2",
+          "sigma_para": 0.78,
+          "b3lyp_631gd_eV": -5.261956952292413,
+          "wb97x_631gd_eV": -4.996817724249036,
+          "wb97x_def2tzvp_eV": -4.99933098456473,
+          "functional_eV": 0.26513922804337664,
+          "basis_eV": -0.002513260315693877,
+          "wb97x_631gd_source": "os_mediator_series_wb97x_631gd.json",
+          "geometry_max_dev_A": 4.978152389428393e-07
+        }
+      ],
+      "slope_over_common_subset_by_tier": {
+        "b3lyp_631gd": -0.9310303051281135,
+        "wb97x_631gd": -0.7890209112943964,
+        "wb97x_def2tzvp": -0.7906378819577343
+      },
+      "not_compared": {}
     },
-    "acceptor_gap_so2cf3_minus_no2_eV": null,
-    "verdict": "\u03c9\u2212B3 runs +0.055 (nme2) \u2026 +0.263 eV (no2), a range of 0.208 eV; over dmbpy, bpy, no2 the \u03c9B97X slope is -0.791 against -0.931 eV/\u03c3 (\u00d70.85); the donor-plateau gap (nme2 \u2212 nh2) is -4.4 \u22a5 -4.0 meV, the same sign. At the centre, where \u03c9B97X also exists with the small basis, the local slope is -0.876 (B3LYP) \u2192 -0.800 (\u03c9B97X, same basis) \u2192 -0.878 eV/\u03c3 (def2-TZVP): the functional and the basis pull opposite ways there; at the ends the two are not separated; neither tier is checked against a measured series."
+    "acceptor_gap_so2cf3_minus_no2_eV": {
+      "b3lyp": 0.006187334856448068,
+      "wb97x": -0.07223557942942005
+    },
+    "verdict": "\u03c9\u2212B3 runs from +0.055 (nh2) to +0.263 eV (no2), a range of 0.208 eV; the order by \u0394E_red is the same except no2/so2cf3, which swap (\u03c3 order kept by \u03c9B97X); over dmbpy, bpy, no2 the \u03c9B97X slope is -0.791 against -0.931 eV/\u03c3 (\u00d70.85); the donor-plateau gap (nme2 \u2212 nh2) is -4.4 \u22a5 -4.0 meV, the same sign. At the centre, where \u03c9B97X also exists with the small basis, the local slope is -0.876 (B3LYP) \u2192 -0.800 (\u03c9B97X, same basis) \u2192 -0.878 eV/\u03c3 (def2-TZVP): the functional and the basis pull opposite ways there; over dmbpy, bpy, no2 the slope runs -0.931 \u2192 -0.789 (\u03c9B97X, 6-31G(d)) \u2192 -0.791 eV/\u03c3, so of the \u00d70.85 the functional carries \u00d70.85 and the basis \u00d71.00; neither tier is checked against a measured series. The acceptor gap so2cf3 \u2212 no2 is +6.2 (B3LYP) \u22a5 -72.2 meV (\u03c9B97X). The Os(III) <S\u00b2> is not in the cache for 9 of the 10 sources compared (`os3_s2_not_recorded`); in the cache those points stand on `converged` alone \u2014 for the 21e rows a run log prints their <S\u00b2>, for the other sources no log is kept."
   }
 }

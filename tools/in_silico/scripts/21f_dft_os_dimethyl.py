@@ -19,7 +19,8 @@ the dimethyl twin of 21b/21d with no duplicated geometry code. The plain-bpy 21b
 the parent reference (π-backbonding demonstration; superseded as the device baseline).
 
 Discipline (in-silico skill): no density_fit for Os; level_shift=0.3 on the Os(III) UKS
-doublet (read E_total, not LUMO, when shifted); DFT jobs sequential — do NOT run a second
+doublet (it steers the SCF path; a converged run reports unshifted orbital energies — §Critical
+Rules #5); DFT jobs sequential — do NOT run a second
 heavy job on the same CPU.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/21f_dft_os_dimethyl.py b3lyp

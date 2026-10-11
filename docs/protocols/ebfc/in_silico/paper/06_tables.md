@@ -61,7 +61,7 @@ cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+
 | COOH | +0.45 | -4.936 | -4.595 | -0.5424 |  | — |
 | CF₃ | +0.54 | -4.957 | -4.635 | -0.5023 | inert option | — |
 | NO₂ | +0.78 | -5.262 | -4.905 | -0.2319 | unstable on cycling | +0.263 |
-| SO₂CF₃ | +0.96 | -5.256 | -4.910 | -0.2269 | realistic optimum (inert) | — |
+| SO₂CF₃ | +0.96 | -5.256 | -4.910 | -0.2269 | realistic optimum (inert) | +0.184 |
 
 *Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is -0.79 against -0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs -0.876 → -0.800 → -0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; at the ends the two are not separated.*
 

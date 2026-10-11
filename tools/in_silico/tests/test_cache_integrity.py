@@ -139,9 +139,15 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
     CAN catch: a hand-edited or stale comparison — a point whose B3LYP or ωB97X value no longer equals its
     source cache (the series row · this cache's own extreme · E_total of 21f/21d at full precision), an offset
     that is not their difference, a fit-subset that is not the canonical fit-set ∩ the points, a slope, span or
-    sign flag that does not follow from the rows, and a point whose two tiers ran on different geometries.
-    CANNOT catch: whether either tier is right, nor whether the B3LYP→ωB97X shift is the functional or the basis.
+    sign flag that does not follow from the rows, and a point whose two tiers ran on different geometries;
+    since 2026-10-11 also a compared point whose Os(III) <S²> is on record above the doublet threshold, an Os(III)
+    compared without <S²> and not named so, an order swap the rows show and the field omits, and a verdict that
+    names a σ end instead of the offset's min and max.
+    CANNOT catch: whether either tier is right, nor whether the B3LYP→ωB97X shift is the functional or the basis;
+    nor a contaminated state whose <S²> was never recorded — that one is only NAMED (`os3_s2_not_recorded`).
     """
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import S2_MAX_DOUBLET
     w = json.loads((DFT / "os_mediator_series_wb97x.json").read_text())
     b3 = {c["name"]: c for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
     fit_set = json.loads((DFT / "os_mediator_series.json").read_text())["lfer"]["fit_set"]
@@ -161,9 +167,34 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
         assert r["geometry_max_dev_A"] <= 1e-3, f"{name}: the two tiers ran on different geometries"
     sigmas = [r["sigma_para"] for r in v["points"]]
     assert sigmas == sorted(sigmas), "points not ordered by σ"
-    converged = {n for n, c in w["complexes"].items() if "dE_red_eV" in c}
-    assert converged <= set(rows), "a converged ωB97X point is missing from the comparison"
-    assert v["not_compared_not_converged"] == [n for n in w["complexes"] if n not in converged]
+    def ok(state):   # accepted or s2_not_recorded — the comparison's admission rule, mirroring 21e `_acceptance`
+        return (state.get("converged") and state.get("aufbau") is not False and state.get("stable_internal") is not False
+                and (state.get("s2") is None or state["s2"] <= S2_MAX_DOUBLET))
+    accepted = {n for n, c in w["complexes"].items() if "dE_red_eV" in c and ok(c["os2"]) and ok(c["os3"])}
+    assert accepted <= set(rows), "an accepted ωB97X point is missing from the comparison"
+    assert set(v["not_compared"]) == set(w["complexes"]) - accepted, "not_compared ≠ the points not accepted"
+    small_path = DFT / "os_mediator_series_wb97x_631gd.json"
+    small = json.loads(small_path.read_text())["complexes"] if small_path.exists() else {}
+    unrecorded = [f"os_mediator_series_wb97x.json:{n}" for n, c in w["complexes"].items()
+                  if n in accepted and c["os3"].get("s2") is None]
+    unrecorded += [r["wb97x_source"] for r in v["points"] if r["name"] not in w["complexes"]
+                   and json.loads((DFT / r["wb97x_source"]).read_text())["os3_plus"].get("s2") is None]
+    unrecorded += [f"{p['wb97x_631gd_source'].split()[0]}:chloro" for p in v["centre_decomposition"]["points"]]
+    unrecorded += [f"os_mediator_series_wb97x_631gd.json:{p['name']}" for p in v["ends_decomposition"]["points"]
+                   if small[p["name"]]["os3"].get("s2") is None]
+    assert sorted(v["os3_s2_not_recorded"]) == sorted(unrecorded), "an Os(III) compared without <S²> is not named"
+    swaps = [[a["name"], b["name"]] for i, a in enumerate(v["points"]) for b in v["points"][i + 1:]
+             if (a["b3lyp_dE_red_eV"] - b["b3lyp_dE_red_eV"]) * (a["wb97x_dE_red_eV"] - b["wb97x_dE_red_eV"]) < 0]
+    assert [s["pair"] for s in v["order_swaps"]] == swaps, "order_swaps ≠ the pairs the rows reorder"
+    for s in v["order_swaps"]:
+        a, b = rows[s["pair"][0]], rows[s["pair"][1]]
+        keeps = {t: (b[f"{t}_dE_red_eV"] - a[f"{t}_dE_red_eV"]) * (b["sigma_para"] - a["sigma_para"]) < 0
+                 for t in ("b3lyp", "wb97x")}
+        assert keeps[s["sigma_order_kept_by"]], f"{s}: that tier does not keep the σ order"
+    lo_off = min(v["points"], key=lambda r: r["omega_minus_b3_eV"])
+    hi_off = max(v["points"], key=lambda r: r["omega_minus_b3_eV"])
+    assert (f"runs from {lo_off['omega_minus_b3_eV']:+.3f} ({lo_off['name']}) to "
+            f"{hi_off['omega_minus_b3_eV']:+.3f} eV ({hi_off['name']})") in v["verdict"], "verdict misnames the offset ends"
     assert v["common_fit_subset"] == [n for n in fit_set if n in rows], "fit subset ≠ canonical fit-set ∩ points"
 
     def slope(key):
@@ -210,10 +241,11 @@ def test_os_mediator_series_wb97x_vs_b3lyp_is_derived_from_its_sources():
         (cs["wb97x_631gd"] - cs["b3lyp_631gd"]) * (cs["wb97x_def2tzvp"] - cs["wb97x_631gd"]) < 0)
     # the ends split: this script's own small-basis cache, when it exists
     ends = v["ends_decomposition"]
-    small_path = DFT / "os_mediator_series_wb97x_631gd.json"
-    small = json.loads(small_path.read_text())["complexes"] if small_path.exists() else {}
     assert [p["name"] for p in ends["points"]] == sorted(
-        (n for n, c in small.items() if "dE_red_eV" in c and n in rows), key=lambda n: rows[n]["sigma_para"])
+        (n for n, c in small.items() if "dE_red_eV" in c and n in rows and ok(c["os3"])),
+        key=lambda n: rows[n]["sigma_para"]), "ends points ≠ the accepted small-basis rows"
+    assert set(ends["not_compared"]) == {n for n, c in small.items() if "dE_red_eV" in c and n in rows and not ok(c["os3"])}, (
+        "ends not_compared ≠ the small-basis rows refused by <S²>")
     for p in ends["points"]:
         assert p["wb97x_631gd_eV"] == small[p["name"]]["dE_red_eV"]
         assert p["functional_eV"] == p["wb97x_631gd_eV"] - rows[p["name"]]["b3lyp_dE_red_eV"]
@@ -310,21 +342,125 @@ def test_21e_small_basis_mode_never_writes_the_def2tzvp_cache(tmp_path, monkeypa
     import pyscf
     calls = []
 
-    def fake(atoms, charge, spin, label="", xc="b3lyp", conv_tol=1e-6, level_shift_open=0.0, basis_light=None, **_):
-        calls.append((charge, spin, xc, conv_tol, level_shift_open, basis_light))
-        return {"E_total_Ha": -1.0 - 0.1 * charge, "converged": True, "wall_seconds": 0.0}
+    def fake(atoms, charge, spin, label="", xc="b3lyp", conv_tol=1e-6, level_shift_open=0.0, basis_light=None,
+             dm0=None, stability=False, **_):
+        calls.append((charge, spin, xc, conv_tol, level_shift_open, basis_light, dm0 is not None, stability))
+        return {"E_total_Ha": -1.0 - 0.1 * charge, "converged": True, "wall_seconds": 0.0, **({"s2": 0.755} if spin else {})}
 
     tz = tmp_path / "tz.json"
     tz.write_text('{"sentinel": true}\n')
     monkeypatch.setattr(m, "dft_singlepoint", fake)
+    monkeypatch.setattr(m, "_doublet_start", lambda *a: ("dm0", {"from": "stub", "hole_os_fraction": 1.0,
+                                                                 "os2_rerun_delta_Ha": None}))
     monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
     monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))   # the platform's RDKit is not this test's subject
     monkeypatch.setattr(m, "OUT_WB97X", tz)
     monkeypatch.setattr(m, "OUT_WB97X_631GD", tmp_path / "small.json")
     m.main_wb97x(["nh2"], small_basis=True)
     assert tz.read_text() == '{"sentinel": true}\n', "the small-basis mode wrote into the def2-TZVP cache"
-    assert calls == [(1, 0, "wb97x", 1e-6, 0.0, None), (2, 1, "wb97x", 1e-6, 0.3, None)], calls
-    assert "nh2" in json.loads((tmp_path / "small.json").read_text())["complexes"]
+    assert calls == [(1, 0, "wb97x", 1e-6, 0.0, None, False, False), (2, 1, "wb97x", 1e-6, 0.3, None, True, True)], calls
+    assert "dE_red_eV" in json.loads((tmp_path / "small.json").read_text())["complexes"]["nh2"]
+
+
+def _load_21e():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("s21e", Path(__file__).parents[1] / "scripts" / "21e_dft_os_mediator_series.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+@pytest.mark.parametrize("fresh_s2, writes_dE", [(1.767, False), (0.755, True)])
+def test_21e_reuse_reads_s2_not_converged(tmp_path, monkeypatch, fresh_s2, writes_dE):
+    """The night of 2026-10-09: NO₂ Os(III) «converged» at <S²> 1.767, and `main_wb97x` reused ANY converged state —
+    a re-run would have taken the artefact back. Rehearsed with a stubbed SCF (no compute).
+
+    CAN catch: a reuse that reads `converged` (a closed Os(II) is reused, an Os(III) with no <S²> on record is
+    recomputed, never kept); a contaminated recomputed state that still writes ΔE_red, or leaves the stale one.
+    CANNOT catch: what a real SCF returns, nor whether the doublet start lands on the ground state.
+    """
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import pyscf
+    m = _load_21e()
+    small = tmp_path / "small.json"
+    small.write_text(json.dumps({"method": "stub", "environment": {}, "complexes": {"no2": {
+        "sigma_para": 0.78, "os2": {"converged": True, "E_total_Ha": -2.1},
+        "os3": {"converged": True, "E_total_Ha": -2.0}, "dE_red_eV": -7.76}}}))
+    calls = []
+
+    def fake(atoms, charge, spin, **kw):
+        calls.append((charge, spin, kw.get("dm0") is not None, kw.get("stability")))
+        return {"E_total_Ha": -1.9, "converged": True, "wall_seconds": 0.0, "s2": fresh_s2}
+
+    monkeypatch.setattr(m, "dft_singlepoint", fake)
+    monkeypatch.setattr(m, "_doublet_start", lambda *a: ("dm0", {"from": "stub", "hole_os_fraction": 1.0,
+                                                                 "os2_rerun_delta_Ha": 0.0}))
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    monkeypatch.setattr(m, "SAME_GEOMETRY_TOL_A", float("inf"))
+    monkeypatch.setattr(m, "OUT_WB97X", tmp_path / "tz.json")
+    monkeypatch.setattr(m, "OUT_WB97X_631GD", small)
+    m.main_wb97x(["no2"], small_basis=True)
+    assert calls == [(2, 1, True, True)], f"only Os(III) is recomputed, from the doublet start: {calls}"
+    row = json.loads(small.read_text())["complexes"]["no2"]
+    assert row["os3"]["s2"] == fresh_s2 and row["os3"]["start"]["from"] == "stub"
+    assert ("dE_red_eV" in row) == writes_dE, f"<S²> {fresh_s2}: dE_red_eV present = {'dE_red_eV' in row}"
+    if writes_dE:   # the FRESH pair, not the stale −7.76 the row carried
+        assert row["dE_red_eV"] == (row["os2"]["E_total_Ha"] - row["os3"]["E_total_Ha"]) * m.HARTREE_TO_EV
+
+
+@pytest.mark.parametrize("state, open_shell, verdict", [
+    ({"converged": False, "s2": 0.755}, True, "not_converged"),
+    ({"converged": True, "s2": 0.755, "aufbau": False}, True, "not_aufbau"),
+    ({"converged": True, "s2": 0.755, "stable_internal": False}, True, "unstable"),
+    ({"converged": True, "s2": 1.767}, True, "spin_contaminated"),
+    ({"converged": True}, True, "s2_not_recorded"),
+    ({"converged": True, "s2": 0.755, "aufbau": True, "stable_internal": True}, True, "accepted"),
+    ({"converged": True}, False, "accepted"),
+    ({"converged": True, "aufbau": False}, False, "not_aufbau"),
+])
+def test_21e_acceptance_is_never_converged_alone(state, open_shell, verdict):
+    """`_acceptance` — one verdict per criterion. CAN catch: a criterion dropped or read as its opposite, an absent
+    field read as a fail. CANNOT catch: whether the thresholds are right (S2_MAX_DOUBLET is OUR threshold)."""
+    pytest.importorskip("rdkit")
+    assert _load_21e()._acceptance(state, open_shell) == verdict
+
+
+def test_21e_doublet_start_is_a_doublet_with_its_hole_in_the_homo(tmp_path):
+    """`_doublet_start` on H₂O → H₂O⁺ (no Os — seconds, real SCF): the start must hold N_α = N_β + 1 electrons with the
+    β hole in the closed shell's HOMO, the re-run of the closed shell must reproduce the row it is checked against,
+    and the UKS that starts from it must land on a clean doublet.
+
+    CAN catch: a hole in the wrong spin (the electron counts) or in the wrong orbital (the β population of the closed
+    shell's HOMO must be 0 and its α population 1), a reproduction check that cannot fail (a planted 1 mHa offset must
+    be refused); and it carries in-silico §Critical Rules #5's measurement — a 0.3 E_h level shift moves the converged
+    LUMO of this doublet by noise, not by 0.3 E_h. CANNOT catch: the Os(III) case — `hole_os_fraction` is 0 here by
+    construction — nor the instability-following branch (water is stable), and no start guarantees the ground state.
+    """
+    pytest.importorskip("pyscf")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.dft_utils import dft_singlepoint
+    m = _load_21e()
+    water = [("O", (0.0, 0.0, 0.117)), ("H", (0.0, 0.757, -0.467)), ("H", (0.0, -0.757, -0.467))]
+    row = dft_singlepoint(water, charge=0, spin=0, xc="b3lyp")
+    dm0, start = m._doublet_start(water, tmp_path / "a.chk", row, "b3lyp", None, 1e-6, charge=0)
+    assert abs(start["os2_rerun_delta_Ha"]) <= 1e-6 and start["hole_os_fraction"] == 0.0
+    from pyscf import gto
+    s1e = gto.M(atom=water, basis="6-31g(d)").intor_symmetric("int1e_ovlp")
+    assert [round(float((d * s1e).sum()), 6) for d in dm0] == [5.0, 4.0], "start is not N_α = N_β + 1 = 5 + 4"
+    from pyscf.scf import chkfile
+    mo, occ = chkfile.load(str(tmp_path / "a.chk"), "scf/mo_coeff"), chkfile.load(str(tmp_path / "a.chk"), "scf/mo_occ")
+    homo = mo[:, int((occ > 0).nonzero()[0][-1])]
+    pop = [float(homo @ s1e @ d @ s1e @ homo) for d in dm0]
+    assert abs(pop[0] - 1.0) < 1e-8 and abs(pop[1]) < 1e-8, f"the hole is not the β HOMO: α {pop[0]:.3g}, β {pop[1]:.3g}"
+    ion = dft_singlepoint(water, charge=1, spin=1, xc="b3lyp", dm0=dm0, stability=True)
+    assert ion["converged"] and ion["s2"] < 0.76 and ion["stable_internal"] and ion["aufbau"], ion
+    shifted = dft_singlepoint(water, charge=1, spin=1, xc="b3lyp", dm0=dm0, level_shift_open=0.3)
+    assert abs(shifted["LUMO_eV"] - ion["LUMO_eV"]) < 0.01, "a level shift biased the converged LUMO (§Critical Rules #5)"
+    assert row["aufbau"] and "s2" not in row and "stable_internal" not in row, "closed shell: no <S²>, no stability"
+    row_off = dict(row, E_total_Ha=row["E_total_Ha"] + 1e-3)
+    with pytest.raises(SystemExit):
+        m._doublet_start(water, tmp_path / "c.chk", row_off, "b3lyp", None, 1e-6, charge=0)
 
 
 # ── lib/os_geometry: the default path IS the committed geometry; the C-min closure realises or refuses ──

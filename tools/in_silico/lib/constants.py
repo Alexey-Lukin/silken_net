@@ -60,6 +60,10 @@ BASIS_LIGHT = "6-31g(d)"
 BASIS_OS = "lanl2dz"
 ECP_OS = "lanl2dz"
 SOLVENT_EPS_WATER = 78.3553
+# Acceptance of an Os(III) UKS doublet: <S²> at most this (a pure doublet is 0.75; the clean ωB97X Os(III) points
+# sit at 0.7546–0.7560). OUR threshold, not a standard — ⚖️ founder 2026-10-09, 00_07 HW.5.IS; a converged SCF is a
+# stationary point, not the ground state (in-silico §Critical Rules #14).
+S2_MAX_DOUBLET = 0.80
 
 # ── CHEM.11 — the three compensating substitutions of the ORDERED gene (mirror of L1 §2) ──
 # The frozen dgrFAD-GDH sequence is `600 aa · 11 N→Q` PLUS these three: ⚖️ founder 2026-09-17

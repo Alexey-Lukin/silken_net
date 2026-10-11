@@ -41,8 +41,9 @@ SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin red
 charge-localised ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
 oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
 reorganisation and ZIF-cluster calculations (0.5 E_h to reach the second charge-localised state of a cluster
-pair), 0.2 E_h on the open-shell flavin species — and wherever it was applied, total energies, not the
-(shift-biased) virtual orbital energies, were used for any energy difference. The B3LYP osmium couples whose
+pair), 0.2 E_h on the open-shell flavin species — and wherever it was applied, every energy difference was
+taken from total energies; the shift only steers convergence, since the orbital energies of a converged run are
+re-diagonalised without it. The B3LYP osmium couples whose
 Os(III) LUMO is reported (the device mediator and the Hammett series) were converged without a shift, a
 second-order (Newton) solver taking over where DIIS stalled. Heavy-metal `density_fit` was *not* used
 (the auto-generated auxiliary basis is slower for Os/Ce than the exact integrals).
