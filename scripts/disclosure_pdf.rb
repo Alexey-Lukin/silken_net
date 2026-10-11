@@ -13,10 +13,10 @@
 # the dated snapshot, never at a moving `main`. Written for the TDCommons submission of
 # `docs/protocols/anchor/defensive_disclosure.md` (2026-10-04, printed from `5bd8636f5`); the
 # arXiv leg of UNI.3 can print its paper the same way, and Стаття 1 goes to ChemRxiv through it (⚖️ 2026-10-11,
-# 00_07 HW.5.IS): a comma-separated list prints several section files as one document, each resolving its own
+# docs/00_02 §2.1; leg 00_07 HW.5.IS): a comma-separated list prints several section files as one document, each resolving its own
 # relative links, and a figure is EMBEDDED from the tree at <sha> as a data: URI — a relative image link would
-# otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture. Its manuscript
-# order (`--manuscript`, docs/protocols/ebfc/in_silico/paper/): 05_abstract · 01_introduction · 02_methods · 03_results ·
+# otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture. The order to pass
+# for the manuscript (the script prints the comma list as given and checks no order; docs/protocols/ebfc/in_silico/paper/): 05_abstract · 01_introduction · 02_methods · 03_results ·
 # 04_conclusion · 06_tables · 08_declarations · 09_references — printed on the tagged commit of the deposit.
 #
 # 🔑 Indexers and patent examiners read the TEXT LAYER, not the page, and which extractor a
@@ -85,7 +85,7 @@ module DisclosurePdf
 
   module_function
 
-  # A manuscript prints the paper, not its workshop [00_07 HW.5.IS]: every blockquote of a section is a working note (checked
+  # A manuscript prints the paper, not its workshop [⚖️ docs/00_02 §2.1; 00_07 HW.5.IS]: every blockquote of a section is a working note (checked
   # 2026-10-11 — none carries paper text), an H1 keeps its name without the « — draft …» tail, and of the reference file only
   # the numbered list goes in.
   def manuscript(src, path)
