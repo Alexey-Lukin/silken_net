@@ -175,6 +175,11 @@ tx_duty: $(BINDIR)/test_tx_duty
 # засинали з радіо в STDBY_RC (0.7 мА), а звичайний шлях — із живим приймачем (4.82 мА).
 # ⚠️ Стеля: читає текст `main.c` — виклик радіо всередині іншої функції чи пізнє
 # переривання радіо після сну (IRQ-глю — board-freeze) шаблон не бачить.
+# [FW.66 (Б) · S5] Третя половина — проводка маркера пробудження, якої host не компілює: вхід у
+# Standby лише через Standby_Enter_Hw (тобто через Silken_Standby_Enter, що пише маркер першим
+# кроком), маркер — безумовне тіло Standby_Write_Wake_Marker в DR7, одне читання DR7 — аргумент
+# рішення пробудження, і одразу після нього гасіння (маркер одноразовий). Стеля та сама: текст,
+# не семантика; ECB-збірку з FW54_STANDBY_ENABLED=1 не компілює жоден ARM-лейн.
 standby_wake: $(BINDIR)/test_standby_wake
 	@./$(BINDIR)/test_standby_wake
 	@awk '/^[ \t]*Radio\.(Rx|StartCad)\(/ { r = 1 } \
@@ -192,6 +197,21 @@ standby_wake: $(BINDIR)/test_standby_wake
 	  p == 1 && /^}/ { print "FAIL [FW.54]: PVD-колбек закінчився без Radio.Sleep()"; bad = 1; p = 3 } \
 	  END { if (f < 3) { print "FAIL [FW.54]: немає ланцюга phase5_kenosis: → Radio.Sleep() → вхід у STOP2"; bad = 1 } \
 	        if (p == 0) { print "FAIL [FW.54]: не знайдено HAL_PWR_PVDCallback"; bad = 1 } \
+	        exit bad }' ../soldier/main.c
+	@awk '{ sub(/\/\/.*/, "") } \
+	  /HAL_PWR_EnterSTANDBYMode\(/ { n_enter++; if ($$0 !~ /^static void Standby_Enter_Hw\(void\)/) { print "FAIL [FW.66 S5]: вхід у Standby повз Silken_Standby_Enter, рядок " NR; bad = 1 } } \
+	  /RTC_BKP_DR7/ && /HAL_RTCEx_BKUPWrite\(/ { n_w++ } \
+	  /^static void Standby_Write_Wake_Marker\(void\)[ \t]*\{[ \t]*HAL_RTCEx_BKUPWrite\(&hrtc, RTC_BKP_DR7, SILKEN_STANDBY_WAKE_MAGIC\);[ \t]*\}/ { n_mark++ } \
+	  /HAL_RTCEx_BKUPWrite\(&hrtc, RTC_BKP_DR7, 0u\);/ { n_clr++; clr_at = NR } \
+	  /Silken_Wake_From_Standby\(/ { wake_at = NR } \
+	  /HAL_RTCEx_BKUPRead\(&hrtc, RTC_BKP_DR7\)/ { n_r++; if (NR - wake_at > 1) { print "FAIL [FW.66 S5]: DR7 читає не рішення пробудження, рядок " NR; bad = 1 } rd_at = NR } \
+	  /\.write_wake_marker[ \t]*=[ \t]*Standby_Write_Wake_Marker,/ { n_op++ } \
+	  END { if (n_enter != 1) { print "FAIL [FW.66 S5]: HAL_PWR_EnterSTANDBYMode — очікувано рівно один (у Standby_Enter_Hw), знайдено " n_enter + 0; bad = 1 } \
+	        if (n_mark != 1) { print "FAIL [FW.66 S5]: маркер пробудження пишеться не безумовним тілом Standby_Write_Wake_Marker"; bad = 1 } \
+	        if (n_clr != 1 || clr_at <= rd_at) { print "FAIL [FW.66 S5]: маркер не гаситься одразу після читання (одноразовий)"; bad = 1 } \
+	        if (n_w != 2) { print "FAIL [FW.66 S5]: записів DR7 очікувано 2 (маркер + гасіння), знайдено " n_w + 0; bad = 1 } \
+	        if (n_r != 1) { print "FAIL [FW.66 S5]: читань DR7 очікувано 1, знайдено " n_r + 0; bad = 1 } \
+	        if (n_op != 1) { print "FAIL [FW.66 S5]: маркер не стоїть іменованим полем g_standby_ops"; bad = 1 } \
 	        exit bad }' ../soldier/main.c
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h ../common/ota_seal_wire.h \

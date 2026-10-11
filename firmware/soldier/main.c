@@ -30,7 +30,9 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #endif
 #include <mruby/irep.h>
 #include <mruby/array.h>
-#include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
+#if !FW2_CCM_ENABLED
+#include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state (лише ECB-збірка)
+#endif
 // [SEC.11 / FW.30] Pure-C HMAC-SHA256 деривація cold-start
 // стану Лоренца — повний parity з backend SeedDerivation (без mbedTLS).
 #include "../common/lorenz_seed.h"
@@ -232,8 +234,13 @@ uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 (ARCH.42 LoRa-вибір; SE 
 // Loaded from Protected Flash Sector via Load_Lorenz_Seed().
 // Format: HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1",
 //         info="silken-lorenz-seed|<DID>", len=32).
+// ⚖️ [FW.66 (Б) · S5] Лише ECB-збірка: CCM-збірка Лоренца не рахує, тож і K_seed не читає —
+// секрет, якого образ не потребує, не лежить у його RAM. Блок "LSED" у Flash лишається
+// (фабрика пише його до зносу ECB-ланцюга — 00_07 FW.66), CCM-образ його просто не торкається.
+#if !FW2_CCM_ENABLED
 uint8_t lorenz_seed[32] = {0};
 uint8_t lorenz_seed_valid = 0;  // 1 = loaded from Flash, 0 = not provisioned
+#endif
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
 uint8_t acoustic_events = 0;           // З HW.30 (пʼєзо зрізано) не інкрементується — 0; CCM-байт віддає wire-rev2.2 — реалізація FW.66 (03_05 §2.1)
@@ -345,6 +352,9 @@ uint8_t* current_contract_bytecode;
 // [SEC.11 / FW.30] При першому старті (DR19 != MAGIC) — cold-start з K_seed
 // через HKDF-SHA256/HMAC-SHA256 деривацію (замість chaos_seed).
 // При наступних — продовження безперервної траєкторії на атракторі.
+// ⚖️ [FW.66 (Б) · S5] Лише ECB-збірка: у CCM-збірці стану Лоренца немає, і DR16–DR19 вона не
+// пише й не читає (мапа — docs/03_01 §2). Маркер пробудження FW.54 від DR19 не залежить — свій.
+#if !FW2_CCM_ENABLED
 #define LORENZ_STATE_MAGIC 0x4C5A5354  // "LZST" — маркер збереженого стану
 float lorenz_x = 0.0f, lorenz_y = 0.0f, lorenz_z = 0.0f;
 uint8_t lorenz_state_valid = 0;  // 1 = відновлено з RTC, 0 = перший старт
@@ -361,6 +371,7 @@ static inline float uint32_to_float(uint32_t u) {
     memcpy(&f, &u, sizeof(f));
     return f;
 }
+#endif // !FW2_CCM_ENABLED — стан Лоренца
 
 // [FW.20-S1] LoRa-маяк синхронізації часу від Королеви.
 // 16-байтний відкритий текст (після AES-128-ECB decrypt, post-ARCH.42):
@@ -425,8 +436,11 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // Смуга Лоренца, якою контракт судить статус кадру, — заводські константи
 // LORENZ_DEFAULT_Z_{MIN,MAX}_X100 (../common/lorenz_thresholds.h). Інших Солдат не
 // приймає й не тримає: видачу смуги FW.8 (0x9A) разом із її журналом Flash-KV
-// знято гілкою (Б) (00_07 FW.66), тож міст нижче передає лише ці константи.
+// знято гілкою (Б) (00_07 FW.66), тож міст нижче передає лише ці константи. Лише ECB-збірка:
+// контракт CCM-ери смуги не має.
+#if !FW2_CCM_ENABLED
 #include "../common/lorenz_thresholds.h"
+#endif
 
 // CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [FW.53]
 // (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
@@ -491,6 +505,11 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 #include "../common/standby_wake.h"
 #if FW54_STANDBY_ENABLED
 static uint8_t soldier_woke_from_standby = 0;   // споживач — відновлення за ⚖️ RAM-стану (умова 1)
+// [FW.54 · FW.66 (Б) · S5] Маркер пробудження — власний регістр DR7 (мапа docs/03_01 §2), не DR19
+// стану Лоренца: той пишуть лише за валідного стану, а в CCM-збірці його немає зовсім. Регістр —
+// літералом, не макросом: лічба записів backup-регістрів (tools/firmware/check_sec42_calendar.py)
+// бачить лише літерал RTC_BKP_DRn.
+static void Standby_Write_Wake_Marker(void)  { HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, SILKEN_STANDBY_WAKE_MAGIC); }
 static void Standby_Load_Pulls(void)
 {
     // Кожен ключ навантаження → HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_<порт>, PWR_GPIO_BIT_<n>):
@@ -500,8 +519,14 @@ static void Standby_Pull_Config(void)        { HAL_PWREx_EnablePullUpPullDownCon
 static void Standby_No_Sram_Retention(void)  { HAL_PWREx_DisableSRAMRetention(); }        // RRS = 0
 static void Standby_Clear_Wakeup(void)       { __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); }
 static void Standby_Enter_Hw(void)           { HAL_PWR_EnterSTANDBYMode(); }
+// Поля — іменами: усі вони `void (*)(void)`, і переставлені позиційні записи компілювались би мовчки.
 static const SilkenStandbyOps g_standby_ops = {
-    Standby_Load_Pulls, Standby_Pull_Config, Standby_No_Sram_Retention, Standby_Clear_Wakeup, Standby_Enter_Hw
+    .write_wake_marker      = Standby_Write_Wake_Marker,
+    .set_load_pulls         = Standby_Load_Pulls,
+    .enable_pull_config     = Standby_Pull_Config,
+    .disable_sram_retention = Standby_No_Sram_Retention,
+    .clear_wakeup_flags     = Standby_Clear_Wakeup,
+    .enter_standby          = Standby_Enter_Hw,
 };
 #endif
 // [FW.17] Ратчет живий лише з CCM: в ECB-ері LoRa-шар знімає Королева, Rails
@@ -1273,14 +1298,16 @@ static void Load_Broadcast_Key(void);
 // [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
 // Викликається в main() при ініціалізації. K_seed використовується для
 // cold-start деривації (x₀,y₀,z₀) через HMAC-SHA256.
+#if !FW2_CCM_ENABLED  // [FW.66 (Б) · S5] CCM-збірка K_seed не читає
 static void Load_Lorenz_Seed(void);
+#endif
 static void Load_Ota_Seal_Pubkey(void);  // [FW.23] Прочитати публічний ключ печатки OTA з Flash
 static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль вузла з Flash
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start
 // (VBAT loss → DR19 != LORENZ_STATE_MAGIC). Використовує K_seed з Flash
 // + epoch_day (UTC unix_time / 86400). Дзеркало firmware/test/test_seed_derivation.c.
-#if !FW2_CCM_ENABLED  // [FW.66 S4] CCM-збірка Лоренца не рахує — знос ланцюга K_seed: S5
+#if !FW2_CCM_ENABLED  // [FW.66 (Б)] CCM-збірка Лоренца не рахує
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
 #endif
 static uint32_t Wall_Seconds_Now(void);          // [FW.49 S1] RTC-календар → unix-секунди
@@ -1553,7 +1580,9 @@ int main(void)
 
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
   Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
+#if !FW2_CCM_ENABLED
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
+#endif
   Load_Ota_Seal_Pubkey(); // [FW.23] Публічний ключ Ed25519-печатки OTA кластера ("KPUB")
   Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
   MX_CRYP_Init(); // Вмикаємо апаратний AES (амбієнт = bcast_key в обох ерах)
@@ -1564,10 +1593,14 @@ int main(void)
   HAL_PWR_EnableBkUpAccess();
 #if FW54_STANDBY_ENABLED
   // [FW.54] Пробудження зі Standby — це reset: відрізняє його лише C1SBF (знятий першою дією
-  // main()) + цілий маркер DR19 (standby_wake.h) — для довіри до стану Лоренца в DR.
+  // main()) + цілий маркер пробудження в DR7, який пише кожен вхід у Standby (standby_wake.h,
+  // мапа 03_01 §2) — для довіри до стану в DR.
   soldier_woke_from_standby = Silken_Wake_From_Standby(
-      boot_from_standby,
-      (uint8_t)(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19) == LORENZ_STATE_MAGIC));
+      boot_from_standby, HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR7));
+  // Маркер одноразовий: гасимо одразу після читання. Інакше після першого входу в Standby він
+  // стояв би вічно, і пробудження після входу ПОВЗ Silken_Standby_Enter (без запису стану) теж
+  // читалося б пробудженням — довіра до DR, яких той вхід не писав.
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, 0u);
 #endif
 
   // 2. Відновлюємо пам'ять з RTC (якщо було перезавантаження)
@@ -1587,10 +1620,9 @@ int main(void)
       canary_tripped = dr0.canary_tripped;
       if (canary_tripped) canary_evt_shots = 3u;
       // [FW.59] Справжній ребут — причину каже RCC_CSR (+ маркер HardFault'а); вихід зі Standby
-      // ребутом не є, і причину несе DR0. Маркер стану Лоренца (DR19) тут НЕ потрібен: DR0
-      // пишуть безумовно перед кожним входом у Standby (Фаза 5 і рятувальний шлях PVD), тож
-      // довіру йому дає сам C1SBF — а маркер DR19 пишеться лише за валідного стану Лоренца
-      // (не до першого маяка й не без K_seed) і з гілкою (Б) переписується.
+      // ребутом не є, і причину несе DR0. Маркер пробудження тут НЕ потрібен: DR0 пишуть
+      // безумовно перед кожним входом у Standby (Фаза 5 і рятувальний шлях PVD), тож довіру
+      // йому дає сам C1SBF.
       soldier_reset_cause = Silken_Reset_Cause_Resolve(boot_from_standby, boot_rcc_csr,
                                                        boot_fault_marker, dr0.reset_cause);
       if (panic_frame_counter == 0) {
@@ -1647,6 +1679,7 @@ int main(void)
       }
   }
 
+#if !FW2_CCM_ENABLED  // [FW.66 (Б) · S5] стан Лоренца — лише ECB-збірка
   // =========================================================================
   // [FW.6] ВІДНОВЛЕННЯ СТАНУ АТРАКТОРА ЛОРЕНЦА (RTC DR16-DR19)
   // =========================================================================  // Перевіряємо маркер валідності в DR19. Якщо LORENZ_STATE_MAGIC —
@@ -1669,12 +1702,13 @@ int main(void)
           }
       }
   }
+#endif
 
   // =========================================================================
   // ДЕРИВАЦІЯ DECENTRALIZED IDENTITY (DID)
   // =========================================================================
   // [FW.54 Вісь 2] Ім'я дерева детерміноване: f(96-біт кремнієвого паспорта),
-  // recompute на кожному boot — зберігати нічого (DR7 звільнено, 03_01 §2).
+  // recompute на кожному boot — зберігати нічого (DR7 відтоді — маркер пробудження Standby, 03_01 §2).
   // VBAT-loss більше не сиротить identity/гаманець; фабрика (SEC.3) деривує
   // той самий DID з UID по SWD ще до прошивки — однопрохідний провіженінг.
   // DID виводиться з кремнію детерміновано, тож колізії ловить фабрика
@@ -1880,7 +1914,7 @@ int main(void)
 
     // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)
     // [SEC.11 / FW.30] chaos_seed більше НЕ використовується для Lorenz attractor.
-    // Початковий стан (x₀,y₀,z₀) деривується з K_seed через HKDF/HMAC.
+    // Початковий стан (x₀,y₀,z₀) ECB-збірка деривує з K_seed через HKDF/HMAC (CCM-збірка Лоренца не має).
     uint32_t chaos_seed = 0;
     HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 
@@ -1967,8 +2001,9 @@ int main(void)
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
     // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv, z_min, z_max)
-    // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
+    // ECB-збірка — Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation);
     // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
+    // CCM-збірка — контракт `ccm_state(pt)` без Лоренца і без стану (FW.66 (Б)).
     // delta_t_s/vcap_mv у mruby: EMA-згладжені після прогріву (FW.49-S1 wired);
     // до прогріву — delta_t СЕНТИНЕЛ (DELTA_T_UNKNOWN_S), vcap nominal 3300
     // (03_01 §13.3). Дві різні відповіді на дві різні відсутності: метаболізм
@@ -2020,7 +2055,7 @@ int main(void)
     if (grace_hello) {
       // [ARCH.41-C] Лоренц відкладено до першого beacon'а: cold-start
       // деривація від застарілого epoch_day отруїла б RTC-ланцюг траєкторії.
-      // lorenz_state_valid лишається 0 → стан у RTC не пишеться; після синку
+      // lorenz_state_valid (ECB-збірка) лишається 0 → стан у RTC не пишеться; після синку
       // перша деривація піде з ПРАВИЛЬНОЇ доби — серверу не доведеться
       // вгадувати кандидатів. ⚠️ [FW.66] Але серверу, що має хвіст цього дерева,
       // доба не допоможе: він не ре-якориться (біта cold-start на дроті немає) —
@@ -2701,7 +2736,8 @@ int main(void)
         ((uint32_t)ema_count << 16) |
         (ema_vcap_x10 & EMA_VCAP_X10_MASK));
 
-    // [FW.6] Зберігаємо стан Атрактора Лоренца перед STOP2
+#if !FW2_CCM_ENABLED
+    // [FW.6] Зберігаємо стан Атрактора Лоренца перед STOP2 (лише ECB-збірка — FW.66 (Б) · S5)
     // Якщо стан валідний — записуємо (x, y, z) + маркер LORENZ_STATE_MAGIC
     if (lorenz_state_valid) {
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, float_to_uint32(lorenz_x));
@@ -2709,6 +2745,7 @@ int main(void)
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
     }
+#endif
 
 #if FW17_RATCHET_ENABLED
     // [FW.17] Ротація комітиться саме тут, у КЕНОЗИСІ: erase/program не сміє
@@ -2839,7 +2876,7 @@ void OnCadDone(bool channelActivityDetected)
 // підйом закінчує його кому. Брауноут — то крик ксилеми, що задихається; ми маємо
 // мікросекунди до того, як SRAM почне корумпуватись. Симетрія до Phase 5:
 // ховаємо у RTC Backup Domain все, що дозволить наступному boot'у продовжити
-// траєкторію Лоренца без "холодного" cold-start через HKDF.
+// траєкторію Лоренца без "холодного" cold-start через HKDF (ECB-збірка; CCM-збірка Лоренца не має).
 // [FW.69] Кома брауноуту триває: рефлекс приспав плату, і наступний підйом VDD — її кінець.
 static volatile uint8_t pvd_coma = 0;
 
@@ -2868,12 +2905,15 @@ void HAL_PWR_PVDCallback(void)
     //    Phase 5. Без цього rescue брауноут = втрата траєкторії =
     //    cold-start через HKDF на наступному boot'і = розрив growth_points
     //    streak = false slashing проти живого здорового дерева.
+    //    Лише ECB-збірка: у CCM-збірці стану Лоренца немає (FW.66 (Б) · S5).
+#if !FW2_CCM_ENABLED
     if (lorenz_state_valid) {
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, float_to_uint32(lorenz_x));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR17, float_to_uint32(lorenz_y));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
     }
+#endif
 
     // 4. Жорстко вимикаємо радіо (живиться окремо, але RX state-machine
     //    тримає піковий струм). Брауноут ловить радіо й посеред TX/RX, а Set_Sleep
@@ -3119,6 +3159,7 @@ static void Load_Broadcast_Key(void)
 // видасть BIO_STATUS_VM_ERROR замість деривованих координат).
 // НЕ викликає Error_Handler() — на відміну від AES key, відсутність K_seed не є
 // фатальною (warm continuation через RTC все ще працює).
+#if !FW2_CCM_ENABLED  // [FW.66 (Б) · S5] CCM-збірка K_seed не читає
 static void Load_Lorenz_Seed(void)
 {
     const uint32_t *flash_ptr = (const uint32_t *)FLASH_SEED_ADDR;
@@ -3149,6 +3190,7 @@ static void Load_Lorenz_Seed(void)
     }
     lorenz_seed_valid = 1;
 }
+#endif
 
 // [FW.23] Завантаження публічного Ed25519-ключа печатки OTA кластера з Protected Flash.
 // Flash layout на FLASH_OTA_KEY_ADDR (0x0803E800, сторінка 125):

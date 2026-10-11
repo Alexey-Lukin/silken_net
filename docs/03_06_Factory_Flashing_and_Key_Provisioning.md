@@ -583,7 +583,7 @@ log.update!(lorenz_state_(x|y|z): Attractor.as_rtc_state(x_f, y_f, z_f),
 | Backend AR Encryption поле | `HardwareKey#lorenz_seed_hex` (validated `presence: true`) |
 | Backend dispatch | `app/services/telemetry_unpacker_service.rb` (ECB-шлях raises `MissingLorenzSeedError` без K_seed; CCM-шлях K_seed не читає — FW.66 (Б)) |
 | Backend attractor entry-point | `Attractor.calculate_z_from_state(x₀, y₀, z₀, …)` |
-| Firmware pure-C bridge (FW.30) | `firmware/soldier/main.c` → `silken_sha256.h` (HKDF/HMAC, без mbedTLS) |
+| Firmware pure-C bridge (FW.30) | `firmware/soldier/main.c` → `silken_sha256.h` (HKDF/HMAC, без mbedTLS) — лише ECB-збірка: CCM-збірка `K_seed` не читає, у RAM не копіює й стану Лоренца в RTC не тримає (FW.66 (Б) · S5, 2026-10-11; блок `LSED` у Flash лишається до зносу ECB-ланцюга) |
 | Firmware mruby entry-point | `firmware/bio_contracts/bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` |
 | Host-parity test | `firmware/test/test_seed_derivation.c` (OpenSSL HKDF/HMAC = `silken_sha256.h` на MCU) |
 | Backend specs | `spec/services/silken_net/seed_derivation_spec.rb` |

@@ -3441,8 +3441,8 @@ TEST(test_sec21_canary_preserved_through_dr0_writeback) {
  * ════════════════════════════════════════════════════════════════════
  * Кадр несе причину останнього СПРАВЖНЬОГО ребуту (diag[7..5], wire-rev2.2).
  * Пробудження зі Standby — теж скид; причину тоді дає DR0, а вихід зі Standby
- * відрізняє C1SBF, знятий першою дією main() (маркер Лоренца DR19 — ні: його
- * пишуть не щоразу). Тести — чек-лист 03_01 §2.2 п.6: холодний старт · теплий
+ * відрізняє C1SBF, знятий першою дією main() (маркер пробудження — ні: довіру DR0
+ * дає сам C1SBF). Тести — чек-лист 03_01 §2.2 п.6: холодний старт · теплий
  * roundtrip · сміття в DR. ⚠️ Проводку в main.c (порядок знімання прапорців,
  * аргументи викликів) host не компілює — тести нижче судять заголовки.
  */
@@ -3519,9 +3519,11 @@ TEST(test_fw59_cold_boot_junk_dr0_is_not_trusted) {
               SILKEN_RESET_POWER_ON);
 }
 
-TEST(test_fw59_wake_before_first_beacon_keeps_cause_without_lorenz_marker) {
-    /* До першого маяка (чи без K_seed) DR19 не пишеться, і Silken_Wake_From_Standby
-     * читає холодним стартом — причина ребуту від нього не залежить: C1SBF + DR0. */
+TEST(test_fw59_cause_rides_dr0_even_when_the_wake_marker_is_absent) {
+    /* Причина ребуту від маркера пробудження не залежить (C1SBF + DR0): навіть коли маркера немає
+     * (вхід повз Silken_Standby_Enter чи бітфліп — рішення тоді «холодний старт»), кадр несе
+     * причину, збережену в DR0 перед сном. До S5 цей випадок був буденним — маркером був DR19
+     * стану Лоренца, якого до першого маяка немає (FW.66 (Б) · S5). */
     ASSERT_EQ(Silken_Wake_From_Standby(1u, 0u), 0u);
     SoldierDr0 before_sleep = { .reset_cause = SILKEN_RESET_PIN };
     ASSERT_EQ(Silken_Reset_Cause_Resolve(1u /* C1SBF */, SILKEN_RCC_CSR_BORRSTF |
@@ -3655,7 +3657,8 @@ TEST(test_sec21_mpu_code_pages_not_writable) {
  * валідний (magic == LORENZ_STATE_MAGIC) і всі координати збереглись.
  */
 
-/* Mirror of HAL_PWR_PVDCallback save sequence. */
+/* Mirror of HAL_PWR_PVDCallback save sequence — ECB-збірки: у CCM-збірці (FW.66 (Б) · S5) запису
+ * DR16-DR19 немає, і це дзеркало його не моделює (main.c host не компілює — гоча firmware #19). */
 static void Simulate_PVD_Brownout_Save(uint16_t panic_counter, uint8_t acoustic,
                                         uint32_t last_wakeup_ts,
                                         float lx, float ly, float lz,
@@ -5369,7 +5372,7 @@ int main(void)
     RUN(test_fw59_standby_wake_carries_persisted_cause_ignoring_csr);
     RUN(test_fw59_cause_survives_standby_cycles_until_next_real_reset);
     RUN(test_fw59_cold_boot_junk_dr0_is_not_trusted);
-    RUN(test_fw59_wake_before_first_beacon_keeps_cause_without_lorenz_marker);
+    RUN(test_fw59_cause_rides_dr0_even_when_the_wake_marker_is_absent);
     RUN(test_fw59_wake_after_pre_fw59_dr0_reads_unknown);
     RUN(test_sec21_mpu_rbar_golden);
     RUN(test_sec21_mpu_rasr_golden);
