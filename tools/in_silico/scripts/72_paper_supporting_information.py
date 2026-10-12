@@ -55,8 +55,12 @@ COORD_SPECS = [f"{IN_SILICO}/dgrGcGDH_AF3.pdb", f"{IN_SILICO}/deglycosylate.rb",
                f"{IN_SILICO}/alphafold3", f"{IN_SILICO}/ligands"]
 FIG_SPECS = [f"{IN_SILICO}/paper/figures"]
 
-# The article title has ONE home — the publication plan in 00_02 — so the SI reads it rather than retyping it.
+# The article title has ONE home — the publication plan in 00_02 — so the SI reads it rather than retyping it. Every paper
+# of that plan carries a «Назва (EN)» line, so the title is the one in the block under Стаття 1's own heading: the first
+# match in the file is a position, not an address. The manuscript print reads it by the same rule
+# (scripts/disclosure_pdf.rb `paper_title`) — change both together.
 TITLE_DOC = REPO_ROOT / "docs/00_02_Academic_Integration_and_IP.md"
+PAPER_BLOCK_RE = re.compile(r"^#### Стаття 1:[^\n]*\n(?P<block>.*?)(?=^#{2,4} |\Z)", re.MULTILINE | re.DOTALL)
 TITLE_RE = re.compile(r'^\*\*Назва \(EN\):\*\* _"(?P<title>[^"]+)"_\s*$', re.MULTILINE)
 
 # What a journal reader must never meet in an S2 description: the repository's internal jargon. The ID test is the
@@ -131,9 +135,11 @@ def jargon(text: str, ids: set[str]) -> list[str]:
 
 
 def article_title() -> str:
-    match = TITLE_RE.search(TITLE_DOC.read_text(encoding="utf-8"))
+    block = PAPER_BLOCK_RE.search(TITLE_DOC.read_text(encoding="utf-8"))
+    match = block and TITLE_RE.search(block.group("block"))
     if not match:
-        raise SystemExit(f"72: no «**Назва (EN):** _\"…\"_» line in {TITLE_DOC.relative_to(REPO_ROOT)} — the title has no home")
+        raise SystemExit(f"72: no «**Назва (EN):** _\"…\"_» line under «#### Стаття 1:» in {TITLE_DOC.relative_to(REPO_ROOT)}"
+                         " — the title has no home")
     return match.group("title")
 
 

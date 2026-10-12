@@ -5,8 +5,8 @@
 # Disclosure PDF — print a repo Markdown file AT A COMMIT into a submission PDF, and check any
 # PDF's text layer against that same source [UNI.3].
 #
-#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path>[,<md-path>…] <out.pdf> [title] [--manuscript]   # + Google Chrome
-#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path>[,<md-path>…] <pdf> [--ignore REGEX]... [--manuscript]
+#   bundle exec ruby scripts/disclosure_pdf.rb render <sha> <md-path>[,<md-path>…] <out.pdf> [title] [--manuscript --byline TEXT]   # + Google Chrome
+#   bundle exec ruby scripts/disclosure_pdf.rb check  <sha> <md-path>[,<md-path>…] <pdf> [--ignore REGEX]... [--manuscript [--byline TEXT]]
 #   bundle exec ruby scripts/disclosure_pdf.rb --selftest
 #
 # Relative links become GitHub URLs pinned to <sha>, so incorporation by reference points at
@@ -68,6 +68,7 @@ module DisclosurePdf
     .src { font-size: 8.5pt; color: #444; margin-bottom: 10pt; }
     .cd { font-family: "Arial Unicode MS"; line-height: 1; }
     .ms td:first-child { white-space: normal; }
+    h1.title { font-size: 19pt; line-height: 1.25; margin: 0 0 6pt; } .byline { font-size: 11pt; margin: 0 0 12pt; }
   CSS
   SWIFT = <<~SWIFT
     import PDFKit
@@ -88,8 +89,26 @@ module DisclosurePdf
   # author answers the [finalise markers of 08_declarations these were what printed (simulated 2026-10-11; none in the other
   # seven sections, so the rule costs nothing there).
   WORKSHOP_NOTE = /`0\d_\d\d[ `§]|\bDraft \(/
+  # A manuscript opens with its title and byline, and no section file carries either: the title's ONE home is the publication
+  # plan, in the block under Стаття 1's own heading (every paper of the plan has a «Назва (EN)» line, so the first match of the
+  # file is a position, not an address — the SI generator 72 reads it by the same rule; change both together). The byline is
+  # given at print time, never committed: contacts and city are not kept in the repository (⚖️ docs/00_02 §2.1).
+  TITLE_DOC = "docs/00_02_Academic_Integration_and_IP.md"
+  PAPER_BLOCK = /^#### Стаття 1:[^\n]*\n(.*?)(?=^\#{2,4} |\z)/m
+  TITLE_LINE = /^\*\*Назва \(EN\):\*\* _"([^"]+)"_\s*$/
 
   module_function
+
+  def title_from(plan)
+    block = plan[PAPER_BLOCK, 1] or return nil
+    block[TITLE_LINE, 1]
+  end
+
+  def paper_title(sha)
+    plan, st = Open3.capture2("git", "show", "#{sha}:#{TITLE_DOC}")
+    abort "manuscript: git show #{sha}:#{TITLE_DOC} failed" unless st.success?
+    title_from(plan) or abort "manuscript: no «**Назва (EN):** _\"…\"_» line under «#### Стаття 1:» in #{TITLE_DOC} at #{sha}"
+  end
 
   # A manuscript prints the paper, not its workshop [⚖️ docs/00_02 §2.1; 00_07 HW.5.IS]: every blockquote of a section is a working note (checked
   # 2026-10-11 — none carries paper text), an H1 keeps its name without the « — draft …» tail, and of the reference file only
@@ -102,7 +121,7 @@ module DisclosurePdf
     src.sub(/\A# (.+?) — .*$/, '# \1').gsub(/^>.*\n(?:>.*\n)*\n?/, "")
   end
 
-  def html(sha, path, title = nil, manuscript: false)
+  def html(sha, path, title = nil, manuscript: false, byline: nil)
     full, st = Open3.capture2("git", "rev-parse", "--verify", "--quiet", "#{sha}^{commit}")
     abort "not a commit: #{sha}" unless st.success?
     sha = full.strip # links pin the FULL hash — the submitted PDF did, and a short one can grow ambiguous
@@ -129,9 +148,16 @@ module DisclosurePdf
                                                                 strikethrough: true, no_intra_emphasis: true).render(md)
     url = paths.one? ? "#{base}#{path}" : "#{base}#{File.dirname(paths.first)}"
     files = paths.one? ? "" : " — sections, in this order: #{paths.map { |q| CGI.escapeHTML(q) }.join(' · ')}"
+    front = ""
+    if manuscript
+      planned = paper_title(sha)
+      abort "manuscript: the title's home is #{TITLE_DOC} (#{planned.inspect}); a different one was passed" if title && title != planned
+      title = planned
+      front =%(<h1 class="title">#{CGI.escapeHTML(title)}</h1>#{%(<p class="byline">#{CGI.escapeHTML(byline)}</p>) if byline})
+    end
     hygiene(<<~HTML)
       <!doctype html><html lang="en"><head><meta charset="utf-8"><title>#{CGI.escapeHTML(title || srcs.first[/^# (.+)$/, 1].to_s)}</title><style>#{CSS}</style></head>
-      <body#{' class="ms"' if manuscript}><p class="src">Source: <a href="#{url}"><code>#{url}</code></a>#{files} (git commit #{sha}). All references below are pinned to that commit.</p>
+      <body#{' class="ms"' if manuscript}>#{front}<p class="src">Source: <a href="#{url}"><code>#{url}</code></a>#{files} (git commit #{sha}). All references below are pinned to that commit.</p>
       #{body}</body></html>
     HTML
   end
@@ -172,12 +198,13 @@ module DisclosurePdf
     doc.to_html
   end
 
-  def render(sha, path, out, title = nil, manuscript: false)
+  def render(sha, path, out, title = nil, manuscript: false, byline: nil)
     abort "usage: render <sha> <md-path>[,…] <out.pdf> [title]" unless sha && path && out
+    abort "render --manuscript needs --byline \"<author> · <affiliation> · <contact>\" (author and affiliation — docs/00_02 §2.1)" if manuscript && byline.to_s.strip.empty?
     out = File.expand_path(out)
     Dir.mktmpdir do |tmp|
       page = File.join(tmp, "page.html")
-      File.write(page, html(sha, path, title, manuscript:))
+      File.write(page, html(sha, path, title, manuscript:, byline:))
       FileUtils.rm_f(out)
       pid = Process.spawn(CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--user-data-dir=#{tmp}/profile",
                           "--print-to-pdf=#{out}", "file://#{page}", %i[out err] => File::NULL, pgroup: true)
@@ -236,9 +263,9 @@ module DisclosurePdf
     lo
   end
 
-  def check(sha, path, pdf, ignores = [], manuscript: false)
+  def check(sha, path, pdf, ignores = [], manuscript: false, byline: nil)
     abort "usage: check <sha> <md-path> <pdf> [--ignore REGEX]..." unless sha && path && pdf
-    want = blocks(html(sha, path, nil, manuscript:))
+    want = blocks(html(sha, path, nil, manuscript:, byline:))
     red = false
     texts(pdf).each do |name, raw|
       raw = raw.lines.grep_v(Regexp.union(ignores)).join unless ignores.empty?
@@ -290,23 +317,27 @@ module DisclosurePdf
     t.call("a draft note woven into the text is recognised, the paper's own prose is not",
            [ "(publish-to-protect, `00_01 §8`)", "Draft (2026-09-30 — x): *text*", "see `01_03` here" ].all? { |l| l.match?(WORKSHOP_NOTE) } &&
            [ "Methods §2.1", "a draft (of the text)", "`delta_t` and 4,4′-dimethyl" ].none? { |l| l.match?(WORKSHOP_NOTE) })
-    puts(fails.zero? ? "disclosure_pdf --selftest: OK (13 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
+    plan = "#### Стаття 0: x\n**Назва (EN):** _\"Wrong\"_\n#### Стаття 13: z\n**Назва (EN):** _\"Nor\"_\n#### Стаття 1: y\ntext\n**Назва (EN):** _\"Right\"_\n"
+    t.call("the title is the one under Стаття 1's heading, not the first in the plan nor Стаття 13's",
+           title_from(plan) == "Right" && title_from(plan.sub("**Назва (EN):** _\"Right\"_\n", "")).nil?)
+    puts(fails.zero? ? "disclosure_pdf --selftest: OK (14 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
   end
 end
 
 if $PROGRAM_NAME == __FILE__
   manuscript = !ARGV.delete("--manuscript").nil?
+  byline = (i = ARGV.index("--byline")) && ARGV.delete_at(i) && ARGV.delete_at(i)
   case ARGV.shift
   when "--selftest" then DisclosurePdf.selftest
-  when "render" then DisclosurePdf.render(*ARGV.first(4), manuscript:)
+  when "render" then DisclosurePdf.render(*ARGV.first(4), manuscript:, byline:)
   when "check"
     ignores = []
     while (i = ARGV.index("--ignore"))
       ARGV.delete_at(i)
       ignores << Regexp.new(ARGV.delete_at(i))
     end
-    DisclosurePdf.check(*ARGV.first(3), ignores, manuscript:)
-  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path>[,…] <out.pdf> [title] [--manuscript] | check <sha> <md-path>[,…] <pdf> [--ignore REGEX]... [--manuscript] | --selftest"
+    DisclosurePdf.check(*ARGV.first(3), ignores, manuscript:, byline:)
+  else abort "usage: ruby #{$PROGRAM_NAME} render <sha> <md-path>[,…] <out.pdf> [title] [--manuscript --byline TEXT] | check <sha> <md-path>[,…] <pdf> [--ignore REGEX]... [--manuscript [--byline TEXT]] | --selftest"
   end
 end
