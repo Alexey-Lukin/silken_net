@@ -95,4 +95,4 @@
 | `tools/cad/cem/zone2_sleeve.json` · `tools/cad/cem/_provenance.json` | габарит, матеріал, порядок відпалу, ноти · провенанс ⌀0.05 |
 | [`anchor_flange_cnc_rfq`](anchor_flange_cnc_rfq.md) | сусідній лист (фланець сідає уступом на торець цієї втулки) |
 | [`rfq_registry`](rfq_registry.md) · [`ua_vendor_map`](ua_vendor_map.md) | індекс аркушів · адресати |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.3 (дім стану — вхід смуги) · HW.26 (hex) · UNI.17 |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.3 (дім стану — вхід смуги) · HW.26 (hex) · UNI.17 (§🗄️ 2026-10-12) |
