@@ -8,9 +8,10 @@
 ## Script Execution Status
 
 > **Running: `21e … b3lyp-relaxed-os2`** (leg (3a) of [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, started
-> 2026-10-12 01:47 in the background): `dmbpy` converged, `ome` relaxing, `bpy` queued; the cache
+> 2026-10-12 01:47 in the background; state as of 2026-10-12 16:30 — `dmbpy` converged, `ome` relaxing, `bpy` queued;
+> whether it still runs is `pgrep -f b3lyp-relaxed-os2`, not this line): the cache
 > `cache/dft/os_mediator_series_relaxed_os2.json` is written at every optimisation step, and re-running the same command
-> resumes (converged geometries reused, the partial one restarted). The OMe−Me pair is integrated as soon as
+> resumes (a converged geometry is reused when its convergence thresholds are unchanged, the partial one restarted). The OMe−Me pair is integrated as soon as
 > `ome.dE_red_eV` lands — what then moves is listed in the leg. Every other script below is complete or closed. Volatile
 > counts live here only (other docs link, not duplicate).
 
