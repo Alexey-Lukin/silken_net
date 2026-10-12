@@ -3059,6 +3059,116 @@ CHECKS += [
      R_OMEGA, lambda d: d["scots_pine_sapwood_plus_film_lenient_ohm"] / 1e3, 0.005),
 ]
 
+# ── HW.5.IS coin half of the ΔpH leg ⟷ script 85 (2026-10-12): the face pH of the coin electrodes in the media the letter
+# allows. The tracker's ⚖️ leg carries a dated snapshot of these for the decision — its home is SUMMARY, and 00_07 sits
+# outside the smoke workflow's paths on purpose (it changes on nearly every push). ──
+FACE_PH = "kinetics/electrode_interfacial_ph.json"
+EBFC = "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"
+_ANODE_RUNS = ("ceiling_hold", "ph_bracket_hold_low", "ph_bracket_hold_high")
+
+
+def _anode(d, edge, runs, end, key="delta_star_um"):
+    """δ* (µm) at a face-pH edge over the named current readings — the low end of the lowest or the high end of the highest."""
+    vals = [d["anode"]["delta_star"][f"face_pH_{edge}"][r][key][end] for r in runs]
+    return min(vals) if end == 0 else max(vals)
+
+
+def _medium(d, name):
+    return d["cathode"]["media"][name]
+
+
+def _liu(d, key, i=None):
+    v = d["checks"]["liu_fem_point"][key]["0.077"]
+    return v if i is None else v[i]
+
+
+CHECKS += [
+    ("face pH: Liu conserving film → 85", SUMMARY, rf"zero net citrate flux gives \*\*{N}\*\*",
+     FACE_PH, lambda d: _liu(d, "film_pH_centre"), 0.0005),
+    ("face pH: Liu single-D bracket low → 85", SUMMARY, rf"brackets it \({N}–[\d.]+\)",
+     FACE_PH, lambda d: _liu(d, "single_D_bracket_pH", 0), 0.0005),
+    ("face pH: Liu single-D bracket high → 85", SUMMARY, rf"brackets it \([\d.]+–{N}\)",
+     FACE_PH, lambda d: _liu(d, "single_D_bracket_pH", 1), 0.0005),
+    ("face pH: Liu δ band low → 85", SUMMARY, rf"holds δ between {N} and [\d.]+ of the radius",
+     FACE_PH, lambda d: d["checks"]["liu_fem_point"]["passing_delta_over_radius"][0], 0.005),
+    ("face pH: Liu δ band high → 85", SUMMARY, rf"holds δ between [\d.]+ and {N} of the radius",
+     FACE_PH, lambda d: d["checks"]["liu_fem_point"]["passing_delta_over_radius"][1], 0.005),
+    ("face pH: film exponent, stagnant low corner → 85", SUMMARY, rf"moves the low corner {N} → [\d.]+ → [\d.]+",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["stagnant"][0], 0.005),
+    ("face pH: film exponent, Levich low corner → 85", SUMMARY, rf"moves the low corner [\d.]+ → {N} → [\d.]+",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["Levich"][0], 0.005),
+    ("face pH: film exponent, transient low corner → 85", SUMMARY, rf"moves the low corner [\d.]+ → [\d.]+ → {N}",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["transient"][0], 0.005),
+    ("face pH: sap 4.5 f low → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*{N}–",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6"][0], 0.005),
+    ("face pH: sap 4.5 f high → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*[\d.]+–{N}\*\*",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6"][1], 0.005),
+    ("face pH: sap 4.5 citrate-like low → 85", SUMMARY, rf"citrate-like D {N}–[\d.]+, succinate-like",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_D_end"]["citrate_like"][0], 0.005),
+    ("face pH: sap 4.5 citrate-like high → 85", SUMMARY, rf"citrate-like D [\d.]+–{N}, succinate-like",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_D_end"]["citrate_like"][1], 0.005),
+    ("face pH: sap 4.5 succinate-like low → 85", SUMMARY, rf"succinate-like {N}–[\d.]+ \|",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_D_end"]["succinate_like"][0], 0.005),
+    ("face pH: sap 4.5 succinate-like high → 85", SUMMARY, rf"succinate-like [\d.]+–{N} \|",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_D_end"]["succinate_like"][1], 0.005),
+    ("face pH: sap 4.5 corners crossing → 85", SUMMARY, rf"crosses pH 6 first in {N} of [\d]+ corners",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows_crossing_pH6_below_O2_limit"], 0.0),
+    ("face pH: sap 4.5 corners total → 85", SUMMARY, rf"crosses pH 6 first in [\d]+ of {N} corners",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows"], 0.0),
+    ("face pH: sap 4.5 face at the limit low → 85", SUMMARY, rf"the face is at pH {N}–[\d.]+, and in",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["face_pH_at_O2_limit_where_reached"][0], 0.05),
+    ("face pH: sap 4.5 face at the limit high → 85", SUMMARY, rf"the face is at pH [\d.]+–{N}, and in",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["face_pH_at_O2_limit_where_reached"][1], 0.05),
+    ("face pH: sap 4.5 malate spent first → 85", SUMMARY, rf"and in {N} corners the malate is spent first",
+     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows_beyond_model_at_O2_limit"], 0.0),
+    ("face pH: sap 5.75 f low → 85", SUMMARY, rf"one compartment\) \| \*\*{N}–",
+     FACE_PH, lambda d: _medium(d, "sap_pH5.75")["f_pH6"][0], 0.005),
+    ("face pH: sap 5.75 f high → 85", SUMMARY, rf"one compartment\) \| \*\*[\d.]+–{N}\*\*",
+     FACE_PH, lambda d: _medium(d, "sap_pH5.75")["f_pH6"][1], 0.006),   # 0.095 printed at two decimals
+    ("face pH: buffered f low → 85", SUMMARY, rf"malic acid 10 mM, pH 4\.5 \| \*\*{N}–",
+     FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["f_pH6"][0], 0.005),
+    ("face pH: buffered f high → 85", SUMMARY, rf"malic acid 10 mM, pH 4\.5 \| \*\*[\d.]+–{N}\*\*",
+     FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["f_pH6"][1], 0.005),
+    ("face pH: buffered face at the limit low → 85", SUMMARY, rf"never crosses; the face is at pH {N}–",
+     FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["face_pH_at_O2_limit_where_reached"][0], 0.05),
+    ("face pH: buffered face at the limit high → 85", SUMMARY, rf"never crosses; the face is at pH [\d.]+–{N} \|",
+     FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["face_pH_at_O2_limit_where_reached"][1], 0.05),
+    ("face pH: load B δ* low → 85", SUMMARY, rf"only for\s+δ ≥ {N}–[\d.]+ mm",
+     FACE_PH, lambda d: d["cathode"]["load_B_delta_star_mm_sap_pH4.5"][0], 0.005),
+    ("face pH: load B δ* high → 85", SUMMARY, rf"only for\s+δ ≥ [\d.]+–{N} mm",
+     FACE_PH, lambda d: d["cathode"]["load_B_delta_star_mm_sap_pH4.5"][1], 0.05),
+    ("face pH: anode ceiling current → 85", SUMMARY, rf"predicted current for the hold \({N} µA/cm²",
+     FACE_PH, lambda d: d["anode"]["delta_star"]["face_pH_4.5"]["ceiling_hold"]["j_uA_cm2"], 0.5),
+    ("face pH: anode δ* at the ceiling, low → 85", SUMMARY, rf"\*\*{N}–[\d.]+ µm\*\* \([\d.]+–[\d.]+ µm at one proton",
+     FACE_PH, lambda d: _anode(d, 4.5, ("ceiling_hold",), 0), 0.5),
+    ("face pH: anode δ* at the ceiling, high → 85", SUMMARY, rf"\*\*[\d.]+–{N} µm\*\* \([\d.]+–[\d.]+ µm at one proton",
+     FACE_PH, lambda d: _anode(d, 4.5, ("ceiling_hold",), 1), 0.5),
+    ("face pH: anode δ* at the ceiling, n=1 low → 85", SUMMARY, rf"\({N}–[\d.]+ µm at one proton per electron\)",
+     FACE_PH, lambda d: _anode(d, 4.5, ("ceiling_hold",), 0, "delta_star_um_n1"), 0.5),
+    ("face pH: anode bracket current low → 85", SUMMARY, rf"beside that ceiling \({N}–[\d.]+ µA/cm²\)",
+     FACE_PH, lambda d: d["anode"]["delta_star"]["face_pH_4.5"]["ph_bracket_hold_low"]["j_uA_cm2"], 0.5),
+    ("face pH: anode bracket current high → 85", SUMMARY, rf"beside that ceiling \([\d.]+–{N} µA/cm²\)",
+     FACE_PH, lambda d: d["anode"]["delta_star"]["face_pH_4.5"]["ph_bracket_hold_high"]["j_uA_cm2"], 0.5),
+    ("face pH: anode δ* at the bracket, low → 85", SUMMARY, rf"µA/cm²\) once δ\s+exceeds \*\*{N}–",
+     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS[1:], 0), 0.5),
+    ("face pH: anode δ* at the bracket, high → 85", SUMMARY, rf"µA/cm²\) once δ\s+exceeds \*\*[\d.]+–{N} µm",
+     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS[1:], 1), 0.5),
+    ("face pH: anode below pH 5.5, low → 85", SUMMARY, rf"once δ exceeds {N}–[\d.]+ µm\. Glucose",
+     FACE_PH, lambda d: _anode(d, 5.5, _ANODE_RUNS, 0), 0.5),
+    ("face pH: anode below pH 5.5, high → 85", SUMMARY, rf"once δ exceeds [\d.]+–{N} µm\. Glucose",
+     FACE_PH, lambda d: _anode(d, 5.5, _ANODE_RUNS, 1), 0.5),
+    ("face pH: unstirred δ low → 85", SUMMARY, rf"Unstirred aqueous layers are {N}–[\d.]+ µm",
+     FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
+    ("face pH: unstirred δ high → 85", SUMMARY, rf"Unstirred aqueous layers are [\d.]+–{N} µm",
+     FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][1], 0.0),
+    ("face pH: 01_03 §3.5 anode δ* low → 85", EBFC, rf"щойно дифузійний шар товщий за {N}–[\d.]+ мкм, а нерозмішувана",
+     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS, 0), 0.5),
+    ("face pH: 01_03 §3.5 anode δ* high → 85", EBFC, rf"щойно дифузійний шар товщий за [\d.]+–{N} мкм, а нерозмішувана",
+     FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS, 1), 0.5),
+    ("face pH: 01_03 §3.5 unstirred δ low → 85", EBFC, rf"нерозмішувана комірка дає {N}–[\d.]+ мкм",
+     FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
+]
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

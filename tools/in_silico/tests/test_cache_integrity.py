@@ -2462,6 +2462,7 @@ EXPECTED_SCRIPTS = [
     "69_chem11_aggregation_compensation.py",
     "71_capsule_thermal_envelope.py",
     "74_site_rain_dew.py",
+    "85_electrode_interfacial_ph.py",
 ]
 
 
@@ -2825,6 +2826,58 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
     vp = d["vplus_share_of_layer_1_left_out"]
     assert len(vp) == 4 and all(row["0mm"] < 1e-9 and list(row.values()) == sorted(row.values()) for row in vp.values())
     assert d["element_5_in_canon"]["electrolyte_path_described"] is False
+
+
+def test_electrode_interfacial_ph_invariants():
+    """85 (00_07 HW.5.IS, the coin half of the ΔpH leg, 2026-10-12): invariants that hold whatever the constants move to.
+
+    CAN catch: a control that stopped being recorded or holding (67's titration; Liu's FEM point and the single-D form
+    bracketing it); a summary range that is not the min/max of its own rows; the media out of order (less buffer between
+    5.75 and 6 than between 4.5 and 6, more with 10 mM malate — a sign, pH or totals swap would break it); the malate
+    spent before the face reaches pH 6; the citrate-like end of the D bracket not below the succinate-like one; a film
+    exponent that stops ordering f; an anode δ* that does not fall as current rises or is not larger at the farther pH
+    edge, or that grows when protons per electron grow. CANNOT catch: whether the film is the right model for the
+    laboratory's cell, malate's own D (not found — bracketed), or the pH inside the coatings; the script's declared ceilings.
+    """
+    d = json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(encoding="utf-8"))
+    assert d["checks"]["titration_vs_67"]["max_abs_dev_mol_l"] < 1e-9
+    liu = d["checks"]["liu_fem_point"]
+    assert liu["film_pH_centre"] and all(abs(v - liu["fem_pH_centre"]) <= liu["tolerance_pH"]
+                                         for v in liu["film_pH_centre"].values())
+    for i, (lo, hi) in liu["single_D_bracket_pH"].items():
+        assert lo < liu["film_pH_centre"][i] < hi, i
+    band = liu["passing_delta_over_radius"]
+    assert band[0] < 1.0 < band[1]
+    media = d["cathode"]["media"]
+    assert set(media) == {"sap_pH4.5", "sap_pH5.75", "buffered_pH4.5"}
+    rows = media["sap_pH4.5"]["row_table"]
+    assert len(rows) == media["sap_pH4.5"]["rows"]
+    assert {r["t_c"] for r in rows} == {20.0, 25.0} and {r["film"] for r in rows} == {"stagnant", "Levich", "transient"}
+    for key in ("f_pH6", "f_malate_spent"):
+        vals = [r[key] for r in rows]
+        assert media["sap_pH4.5"][key] == [round(min(vals), 3), round(max(vals), 3)], key
+    for r in rows:
+        assert r["f_pH6"] < r["f_malate_spent"], r
+        reached = r["face_pH_at_O2_limit"]
+        assert (reached is None) == (r["f_malate_spent"] < 1.0), r
+        if reached is not None:
+            assert (reached < 6.0) == (r["f_pH6"] > 1.0), r
+    assert media["sap_pH4.5"]["rows_crossing_pH6_below_O2_limit"] == sum(r["f_pH6"] < 1.0 for r in rows)
+    for name, m in media.items():
+        by = m["f_pH6_by_D_end"]
+        assert by["citrate_like"][0] < by["succinate_like"][0] and by["citrate_like"][1] < by["succinate_like"][1], name
+        assert m["f_pH6_by_film"]["stagnant"][0] < m["f_pH6_by_film"]["Levich"][0] < m["f_pH6_by_film"]["transient"][0], name
+    assert media["sap_pH5.75"]["f_pH6"][1] < media["sap_pH4.5"]["f_pH6"][0] < media["buffered_pH4.5"]["f_pH6"][0]
+    ds = d["anode"]["delta_star"]
+    for edge in ds.values():
+        by_j = sorted(edge.values(), key=lambda v: v["j_uA_cm2"])
+        assert all(a["delta_star_um"][0] > b["delta_star_um"][0] for a, b in itertools.pairwise(by_j)), "δ* must fall with j"
+        for v in edge.values():
+            assert v["delta_star_um_n1"][0] >= v["delta_star_um"][0] and v["delta_star_um_n1"][1] == v["delta_star_um"][1]
+    for run in ds["face_pH_4.5"]:
+        assert ds["face_pH_4.5"][run]["delta_star_um"][0] > ds["face_pH_5.5"][run]["delta_star_um"][0], run
+    chk = d["anode_check_medium"]
+    assert chk["capacity_gain_to_pH_4.5"] > 1.0 and chk["ionic_strength_mol_l"][1] > chk["ionic_strength_mol_l"][0]
 
 
 def test_cathode_ionic_path_literature_points_follow_from_the_readings():

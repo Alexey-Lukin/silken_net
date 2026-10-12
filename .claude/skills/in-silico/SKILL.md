@@ -62,8 +62,10 @@ L3b DFT cathode (CPU):
   24 (importlib) + 25 → 24c → 24d      25 + 31 → 31b
 
 L4 kinetics (CPU, seconds):
-  lib/kinetics (MM + the [S]-dependent pH-ratio form; ONE home) → 30 · 30b — a change re-runs BOTH
+  lib/kinetics (MM + the [S]-dependent pH-ratio form; ONE home) → 30 · 30b · 85 — a change re-runs all three
   lib J_MAX_25C → 30 · 30b · 31 · 57      22 · 30 · 30b · 31 → 40
+  67 (speciation, importlib) · lib J_MAX_25C · KM_GLUCOSE · ph_current_ratio → 85 (electrode_interfacial_ph.json — the pH at
+     the coin electrodes' faces; a change to 67's speciation or to the L4 anchor re-runs 85)
 
 Paper: 60 (figures) · 61 (tables) read the L3/L3b caches — re-run them after any upstream change
 

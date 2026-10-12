@@ -1162,6 +1162,73 @@ the inverted season; the recipe's set-point no longer rests on them (`01_02 §2.
 
 ---
 
+## HW.5.IS — The pH at the Coin Electrodes' Faces under Their Own Current (script 85)
+
+Leg → [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, «оцінка інтерфейсного ΔpH на катоді» — its **coin
+half**; the anchor half waits on HW.53, which decides what electrolyte the anchor cathode sees at all. Mechanism →
+[`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), the BOD row: laccase in ZIF inactivates at pH ≥ 6.
+
+**What the letter leaves open.** The Stage-2 letter says «Cathode medium: pH 4.5, air-exposed.» and names no
+composition; the ratified sap is 5.75 for the electrode tests and 4.5 only for the uncoated ICP-MS series
+([`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)). Nor does the letter fix the convection. The laboratory
+chooses, and the script prices three choices: the sap brought to 4.5; the sap at 5.75, which is where the cathode sits in
+a one-compartment cell; and a buffered cathode medium — the sap's salts with malic acid at 10 mM, pH 4.5. A standard
+laccase buffer (citrate or acetate near 0.1 M) is not computed.
+
+**The equation (the leg forbids reproducing the FEM of its source).** A steady Nernst layer, acid–base equilibrium
+everywhere, no migration: the proton flux a face at pH_s receives is Σ D_k·Δc_k/δ over the bound protons (67's own
+speciation, every documented malate reading) and free H⁺. The ORR consumes one proton per electron; FAD-GDH through the
+Os polymer releases one (1.5 only if the gluconolactone hydrolyses inside the layer — the unlikely end). **Control** —
+Liu … Mazurenko (*J. Am. Chem. Soc.* 2026, doi:10.1021/jacs.6c15657), whose SI gives one interfacial pH at a stated
+current, read off the axes of Fig. S4: ≈ 5.59 at the centre of a 300 µm bilirubin-oxidase disk at ≈ 65.6 µA/cm², 10 mM
+citrate pH 5.4, air. A film with their constants and zero net citrate flux gives **5.604**, and the single-D form used
+below, run at their lowest and highest species D, brackets it (5.556–5.647). The control's resolving power is that a
+±0.05 pH band holds δ between 0.69 and 1.18 of the radius — it rules out a missing buffer term or a factor-2 error, not
+a 20 % one — and it is the linear regime only: in their 1 mM buffer the FEM redistributes current over the disk.
+
+**Constants — read, not typed.** H⁺ and the succinate stand-in from limiting conductances (Apelblat & Barthel
+1991/1992, Nernst–Einstein); O₂ diffusion from the formula in Han & Bartels 1996 — its abstract, the one reading in
+hand; O₂ at air saturation from the USGS table on Benson & Krause. **Malate's own D was not found**: it is bracketed
+between hydrogen citrate (larger anion, as Liu model it) and hydrogen succinate (smaller). The succinate value is a
+best-fit its source flags and likely high — and it is the end that keeps the cathode's face under pH 6, so the bracket
+errs toward «no risk». Unstirred aqueous layers are 150–1000 µm (Katona et al. 2021's review).
+
+**Cathode — a fraction of its own O₂ limit.** O₂ crosses the same layer, so the fraction f of the O₂ transport limit at
+which the face reaches pH 6 depends on the hydrodynamics only through the exponent of D in each flux — stagnant,
+convective or transient (a CV, a recessed window's first hours) moves the low corner 0.55 → 0.68 → 0.80 — and far more
+on malate's D, which nobody has measured:
+
+| cathode medium | f at pH 6 | at the O₂ limit |
+|---|---|---|
+| the sap brought to 4.5 | **0.55–1.31** · citrate-like D 0.55–0.94, succinate-like 0.97–1.31 | crosses pH 6 first in 44 of 84 corners — every citrate-like one; where the model reaches the limit the face is at pH 5.4–6.8, and in 37 corners the malate is spent first |
+| the sap at 5.75 (one compartment) | **0.03–0.10** | crosses pH 6 first in every corner |
+| buffered: malic acid 10 mM, pH 4.5 | **1.99–5.58** | never crosses; the face is at pH 4.7–5.0 |
+
+So in the sap at 4.5 a cathode that draws near its O₂ transport limit has no margin to the laccase threshold, and
+malate's D decides whether it crosses; whether a given cathode gets near that limit is its own kinetics — a CV plateau
+can be enzyme-limited. In a one-compartment cell the face crosses at a few % of the limit; the buffered medium keeps it
+about 1 pH unit below. The cold-start load B (25 µA on the 2 cm² face) reaches pH 6 in the sap at 4.5 only for
+δ ≥ 0.84–1.8 mm — at most the thickest natural-convection layers.
+
+**Anode — a thickness.** At L4's predicted current for the hold (369 µA/cm², the pH-7.4 laboratory ceiling `J_MAX_25C`)
+its face leaves the acid end of the enzyme's measured stability band (pH 4.5, Sygmund 2011) once δ exceeds
+**20–57 µm** (31–57 µm at one proton per electron); at the pH bracket printed beside that ceiling (213–251 µA/cm²) once δ
+exceeds **30–99 µm**. Unstirred layers are 150–1000 µm. The face drops below 5.5 — the acid end of the only measured pH
+pair of the enzyme's kinetics, i.e. out of the L4 bracket itself — once δ exceeds 2–11 µm. Glucose transport, not
+computed here, may cap the current in thick layers first; either way an unstirred cell cannot carry the ceiling current
+with the face inside the band. If the anode does approach that current, A's glucose series and C's hold measure the
+medium's buffer together with the enzyme. The coatings' own transport resistance comes on top, and stirring cannot
+remove it.
+
+⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Every shift is a
+**lower bound at the enzyme**: protons are made or consumed under the anode's hydrogel and membrane and inside the
+cathode's porous layer, which the outer-face film does not see. Not computed: migration (its sign helps the anode; for
+the cathode it brings H⁺ in and takes hydrogen malate out), salting-out of O₂ in test D's NaCl steps (raises f), the
+anode at 20 °C, and whether a face at pH 6 inactivates laccase reversibly. What it implies for the letter is a founder
+verdict → [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.24.
+
+---
+
 ## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)
 
 Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2 (also the home of the freeze verdict, ⚖️ 2026-10-04); open legs → `00_07` HW.5.IS / CHEM.11.

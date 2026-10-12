@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Shared Michaelis-Menten / pH forms for the L4 kinetics scripts (30, 30b).
+"""Shared Michaelis-Menten / pH forms for the L4 kinetics scripts (30, 30b) and the face-pH estimate (85).
 
 One home for the forms themselves — the CONSTANTS they consume stay in `constants.py`, and the
 absolute results stay in each script's cache. Pure stdlib, so the unit tests stay CI-safe
