@@ -1802,7 +1802,7 @@ def test_coaxiality_allocation():
                 room = 1.0 / target - r["mean_MPa"] / a["yield_MPa"]
                 if r["k_break_even"] is not None:
                     assert abs(g["amplitude_MPa"] / (a["endurance_MPa"] * room) - r["k_break_even"]) <= 1e-4, (geo, name, r)
-            for x, y in zip(rows, rows[1:], strict=False):
+            for x, y in itertools.pairwise(rows):
                 assert y["mean_MPa"] >= x["mean_MPa"] and y["sf_wire"] <= x["sf_wire"], (geo, name, y)
     for b in d["branches"].values():
         assert b["iso1101_coaxiality_zone_mm"] == round(2 * b["radial_offset_budget_um"] / 1000.0, 3)
