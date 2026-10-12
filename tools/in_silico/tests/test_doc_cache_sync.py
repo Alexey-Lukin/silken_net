@@ -698,6 +698,22 @@ CHECKS = [
         lambda d: next(h["cambium_peak_C"] for h in d["duration_sweep"] if h["hold_s"] == 10.0),
         0.1,
     ),
+    # ── HW.26 G1 sign run of 58 (the record above is deliberately NOT re-run; in-silico §When Modifying #37) ──
+    # ⛔ These four stood in canon for an hour as numbers with no owner (adversary 2026-10-12): a sign «measured once» in a
+    #    run nobody can repeat is a remembered number. `58 --insertion-from-lock` writes this cache and nothing else.
+    *[(f"58 G1 sign run, {what} → thermal_install_field.g1_insertion.json", doc, anchor, "mechanical/thermal_install_field.g1_insertion.json", fn, tol)
+      for what, doc, anchor, fn, tol in (
+          ("canon-row cambium peak", SUMMARY, rf"canon row 117\.9 → {N} °C",
+           lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["cambium_peak_C"], 0.05),
+          ("cambial ring", SUMMARY, rf"cambial ring Ø44\.5 → Ø{N}",
+           lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["thermal_wound_dia_50C_mm"], 0.05),
+          ("min DBH", SUMMARY, rf"min DBH 111 → {N} cm",
+           lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["min_dbh_for_thermal_wound_cm"], 0.5),
+          ("10 s pulse", SUMMARY, rf"the 10 s pulse 49\.3 → {N} °C",
+           lambda d: next(h["cambium_peak_C"] for h in d["duration_sweep"] if h["hold_s"] == 10.0), 0.05),
+          ("min DBH, canon mirror", CODIT, rf"ПАДАЮТЬ \(111 → {N} см\)",
+           lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["min_dbh_for_thermal_wound_cm"], 0.5),
+      )],
     # ── PTFE-GDL breakthrough (01_04 §5.3/§5.6) ──
     (
         "pore demanded at the spec-floor theta → gdl_breakthrough.json (01_04 §5.3)",
@@ -763,7 +779,7 @@ CHECKS = [
     ),
     (
         "solid-Ti no-break reference → teg_across_peek_break.json (SUMMARY §HW.21 table)",
-        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.27e−2 W/K \| 8× \| \*\*{N} °C",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.27e−2 W/K \| [\d.]+× \| \*\*{N} °C",
         "mechanical/teg_across_peek_break.json",
         lambda d: d["baseline_from_script_54"]["solid_ti_no_break_t_anode_C"], 0.005,
     ),
@@ -926,6 +942,21 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["vertical_stack_budget"]["summary"]["alt_b2b_lever"]["antenna_z_mm"], 0.005,
     ),
+    # ── HW.34 bus thermal bridge: numbers SUMMARY quotes from script 54 ──
+    # ⛔ No pin stood here until 2026-10-12, and the HW.26 G1 re-run (6 → 18 mm PEEK gap) flipped a frost-gate
+    # verdict — CP-Ti from «freeze» to «safe» — under prose that stayed green. The gate's two sides are pinned.
+    *[(f"bus thermal bridge, anode pocket, {what} → anchor_thermal_bridge.json", SUMMARY, anchor,
+       "mechanical/anchor_thermal_bridge.json", fn, tol)
+      for what, anchor, fn, tol in (
+          ("Cu bus", rf"drags the Zone-1 anode pocket to \*\*{N} °C\*\*",
+           lambda d: d["steady_state_baseline"]["t_anode_C"]["Cu"], 0.05),
+          ("monolithic Ti", rf"thermally near-invisible \(\*\*\+?{N} °C\*\*",
+           lambda d: d["steady_state_baseline"]["t_anode_C"]["Ti"], 0.005),
+          ("CP-Ti", rf"CP-Ti \(λ17\) \*\*{N}\*\*",
+           lambda d: next(r for r in d["per_alloy_monolithic_bus"]["rows"] if r["alloy"] == "CP-Ti-Gr4")["t_anode_C"], 0.005),
+          ("Ta", rf"Ta \(λ57, benchmark\) \*\*{N}\*\*",
+           lambda d: next(r for r in d["per_alloy_monolithic_bus"]["rows"] if r["alloy"] == "Ta")["t_anode_C"], 0.005),
+      )],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield
@@ -959,38 +990,38 @@ CHECKS = [
                        if r["at"] == "ratified_nominal")["mu_crit"], 0.0005,
     ),
     (
-        "mouth approach angle per µm of channel offset, shipped branch, placeholder → bus_mechanical.json §edge_bearing",
-        SUMMARY, rf"the approach angle grows at \*\*{N}°/µm\*\* of offset past the play on the placeholder",
+        "mouth approach angle per µm of channel offset, shipped branch, shipped geometry → bus_mechanical.json §edge_bearing",
+        SUMMARY, rf"the approach angle grows at \*\*{N}°/µm\*\* of offset past the play on the shipped geometry",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["clearance_regime"]["edge_bearing"]["rows"]
-                       if r["geometry"].startswith("script 55 placeholder") and r["branch"].startswith("PEEK liner"))
+                       if r["geometry"].startswith("shipped") and r["branch"].startswith("PEEK liner"))
         ["approach_angle_deg_per_um_past_play"], 0.00005,
     ),
     (
         "mouth approach angle per µm, canon mirror → bus_mechanical.json §edge_bearing",
-        COAXIAL, rf"кут росте на \*\*{N}°\*\* на мікрометр зсуву понад люфт на плейсхолдері",
+        COAXIAL, rf"кут росте на \*\*{N}°\*\* на мікрометр зсуву понад люфт на чинній геометрії",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["clearance_regime"]["edge_bearing"]["rows"]
-                       if r["geometry"].startswith("script 55 placeholder") and r["branch"].startswith("PEEK liner"))
+                       if r["geometry"].startswith("shipped") and r["branch"].startswith("PEEK liner"))
         ["approach_angle_deg_per_um_past_play"], 0.00005,
     ),
     (
-        "exit landing angle of the touched-down rod, placeholder → bus_mechanical.json §edge_bearing.exit_contact",
+        "exit landing angle of the touched-down rod, shipped geometry → bus_mechanical.json §edge_bearing.exit_contact",
         SUMMARY, rf"lands on the bore's exit edge at \*\*{N}°\*\*",
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["edge_bearing"]["exit_contact"][0]["landing_angle_deg_rigid_wall"], 0.0005,
     ),
-    # ⛔ The SIGN of this ratio is the finding (the 6 mm column OVERSTATES the rigid-wall end of the coaxial bracket, where the drift
+    # ⛔ The SIGN of this ratio is the finding (the supported column OVERSTATES the rigid-wall end of the coaxial bracket, where the drift
     # picture had it «understated by 40.8 %»), so the number canon and SUMMARY quote is pinned in both.
     (
-        "§2 supported column over the rigid-wall end, placeholder → bus_mechanical.json §supported_column_vs_equilibrium",
-        SUMMARY, rf"OVERSTATES that rigid-wall end ×\*\*{N}\*\* at nominal µ on the placeholder",
+        "§2 supported column over the rigid-wall end, shipped geometry → bus_mechanical.json §supported_column_vs_equilibrium",
+        SUMMARY, rf"OVERSTATES that rigid-wall end ×\*\*{N}\*\* at nominal µ on the shipped geometry",
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["column_over_cap_nominal"], 0.005,
     ),
     (
         "§2 supported column over the coaxial cap, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
-        COAXIAL, rf"ЗАВИЩУЄ ×\*\*{N}\*\* при номінальному терті на плейсхолдері",
+        COAXIAL, rf"ЗАВИЩУЄ ×\*\*{N}\*\* при номінальному терті на чинній геометрії",
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["column_over_cap_nominal"], 0.005,
     ),
@@ -1068,10 +1099,19 @@ CHECKS = [
     # picture on 2026-09-14; the bare-rod sweep is what remains.)
     (
         "endurance band, binding Ta SF at the low end → bus_mechanical.json §endurance_ratio_band",
-        SUMMARY, rf"\| \*\*0\.40 \(model, ⚖️ ratified\)\*\* \| \*\*5 / 6\*\* \| \*\*{N}\*\* \|",
+        SUMMARY, rf"\| \*\*0\.40 \(model, ⚖️ ratified\)\*\* \| \*\*\d / 6\*\* \| \*\*{N}\*\* \|",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
                        if r["endurance_over_yield"] == 0.40)["binding_sf_unsupported"], 0.005,
+    ),
+    # ⛔ The COUNT beside the binding SF is a verdict of its own (5 / 6 on the 23 mm placeholder span, 4 / 6 since HW.26 G1);
+    # the row above matches it with `\d` only to anchor, so the count gets its own pin.
+    (
+        "endurance band, bare ∞-life count at the low end → bus_mechanical.json §endurance_ratio_band",
+        SUMMARY, rf"\| \*\*0\.40 \(model, ⚖️ ratified\)\*\* \| \*\*{N} / 6\*\* \|",
+        "mechanical/bus_mechanical.json",
+        lambda d: len(next(r for r in d["endurance_ratio_band"]["rows"]
+                           if r["endurance_over_yield"] == 0.40)["unsupported_infinite_life"]), 0.0,
     ),
     # ── HW.34 wear budget: the two ends SUMMARY quotes from script 55 §wear_budget ──
     # ⛔ Both ends are pinned, not just the headline, and the reason is the finding itself: the SPAN
@@ -1132,9 +1172,15 @@ CHECKS = [
     ),
     (
         "coaxial root-stress bracket, upper end, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
-        COAXIAL, rf"дужка \[8\.04, \*\*{N}\*\*\] МПа на плейсхолдері",
+        COAXIAL, rf"дужка \[[\d.]+, \*\*{N}\*\*\] МПа на чинній геометрії",
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][1], 0.05,
+    ),
+    (
+        "coaxial root-stress bracket, lower end, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
+        COAXIAL, rf"дужка \[{N}, \*\*[\d.]+\*\*\] МПа на чинній геометрії",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][0], 0.005,
     ),
     # ── HW.43 part references: the table SUMMARY quotes from script 59 ──
     # ⛔ Every bracket is pinned at BOTH ends (same rule as the cycle-budget block below): the numbers here are
@@ -1793,13 +1839,13 @@ CHECKS += [
 
 
 # ── HW.34 / HW.23: script 68's table in SUMMARY §HW.34, cell by cell ──
-# ⛔ Every cell is pinned because the ROWS are the message: the same quantity at the insertion placeholder and at
-# the lock window differs by an order of magnitude, so a doc that kept one row current and let another rot would
-# still read as a sweep while having stopped being one.
+# ⛔ Every cell is pinned because the ROWS are the message: the shipped row is the design figure and the shallow end its
+# assembly bound (up to 1.5× apart), so a doc that kept one row current and let the other rot would still read as a
+# sweep while having stopped being one. (Until HW.26 G1, 2026-10-12, a placeholder row stood first, an order of
+# magnitude off the window — retired with the placeholder.)
 _BUS68 = "mechanical/bus_contact_equilibrium.json"
-_BUS68_ROWS = (("30 mm — script 55 placeholder", "script 55 placeholder (HW.8)"),
-               ("18 mm — lock window near end", "lock window, near end"),
-               ("14 mm — lock window far end", "lock window, far end"))
+_BUS68_ROWS = (("18 mm — shipped, the whole lock shank", "shipped — the whole lock shank (HW.26 G1)"),
+               ("14 mm — lock window shallow end", "lock window, shallow end"))
 
 
 def _bus68_cell(k: int) -> str:
@@ -3017,7 +3063,7 @@ CHECKS += [
      R_OMEGA, lambda d: 1e3 * min(d["factors"]["1_sapwood_per_m"]["depth_below_cambium_m"]), 0.05),
     ("R_Ω anode depth below the cambium (high) → 84", BENCH_R_OMEGA, rf"\| [\d.]+–{N} мм = втулка 50 мм",
      R_OMEGA, lambda d: 1e3 * max(d["factors"]["1_sapwood_per_m"]["depth_below_cambium_m"]), 0.05),
-    ("R_Ω anode exposed length (short) → 84", BENCH_R_OMEGA, rf"поза втулкою \*\*{N}–[\d.]+ мм\*\*",
+    ("R_Ω anode exposed length → 84", BENCH_R_OMEGA, rf"поза втулкою \*\*{N} мм\*\*",
      R_OMEGA, lambda d: 1e3 * d["geometry"]["anode_exposed_length_m"][0], 0.05),
     ("R_Ω sapwood factor (low) → 84", BENCH_R_OMEGA, rf"вросла в зазор \(Ø11\) \| {N}–[\d.]+ /м",
      R_OMEGA, lambda d: d["factors"]["1_sapwood_per_m"]["bracket"][0], 0.005),

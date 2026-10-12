@@ -130,7 +130,7 @@ internal static class Program
             }
             case "anchor_axial_stack":
             {
-                AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(strJson);
+                AnchorAxialStackCem cem = AxialStack.Load(strCemPath);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(AxialStack.Build(cem).Merged, cem.Name));
             }
             default:
@@ -185,8 +185,8 @@ internal static class Program
             }
             case "anchor_axial_stack":
             {
-                AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(strJson);
-                MechanicalLockCem? lockCem = AxialStack.Zone1Lock(cem, strCemPath);   // before the render: a dangling name fails fast
+                AnchorAxialStackCem cem = AxialStack.Load(strCemPath);                 // before the render: a dangling or absent lock fails fast
+                MechanicalLockCem? lockCem = AxialStack.Zone1Lock(cem, strCemPath);
                 return RunHeadless(cem.VoxelSizeMm, () => ReportAxialStack(cem, AxialStack.Build(cem), lockCem));
             }
             default:
@@ -508,7 +508,7 @@ internal static class Program
                 // gold → the welded wire runs from the anode's TOP face (the weld seam, 01_01 §3 step 1b), up
                 // the PEEK gap, through the cathode channel, to the flange-top pogo pad (01_01 §1.4). Silver
                 // stack (zones) + gold wire.
-                AxialStackVoxels s = AxialStack.Build(Cem.Parse<AnchorAxialStackCem>(strJson));
+                AxialStackVoxels s = AxialStack.Build(AxialStack.Load(strCemPath));
                 BBox3 bb = s.Merged.oCalculateBoundingBox();
                 Vector3 sz = bb.vecSize(), ctr = bb.vecCenter();
                 Voxels voxHalf = new BaseBox(new LocalFrame(new Vector3(bb.vecMin.X + (sz.X / 4f), ctr.Y, bb.vecMin.Z)),
@@ -529,7 +529,7 @@ internal static class Program
             }
             else
             {
-                Voxels vox = ConstructVoxels(strKind, strJson);
+                Voxels vox = ConstructVoxels(strKind, strJson, strCemPath);
                 if (bSection)
                 {
                     // Generic cutaway: keep the −X half (cut face = the YZ plane through the axis).
@@ -559,7 +559,7 @@ internal static class Program
 
     // Per-kind voxel construction (mirrors Build) — shared by render; voxels need the Library.Go runtime,
     // so this runs INSIDE the task.
-    private static Voxels ConstructVoxels(string strKind, string strJson) => strKind switch
+    private static Voxels ConstructVoxels(string strKind, string strJson, string strCemPath) => strKind switch
     {
         "ti_coin" => TiCoin.Build(Cem.Parse<TiCoinCem>(strJson)),
         "anchor_zone1" => Zone1Anode.Build(Cem.Parse<AnchorCem>(strJson)),
@@ -568,7 +568,7 @@ internal static class Program
         "radome" => Radome.Build(Cem.Parse<RadomeCem>(strJson)),
         "anchor_assembly" => Assembly.Build(Cem.Parse<AnchorAssemblyCem>(strJson)).Merged,
         "zone2_sleeve" => Zone2Sleeve.Build(Cem.Parse<Zone2SleeveCem>(strJson)),
-        "anchor_axial_stack" => AxialStack.Build(Cem.Parse<AnchorAxialStackCem>(strJson)).Merged,
+        "anchor_axial_stack" => AxialStack.Build(AxialStack.Load(strCemPath)).Merged,
         _ => throw new InvalidDataException($"render: unknown CEM kind {strKind}"),
     };
 
@@ -993,22 +993,15 @@ internal static class Program
             $"  insertion budget={oM.InsertionBudgetMm:F1} mm · stack length={oM.OverallStackLengthMm:F1} mm (anode bottom → flange top; " +
             $"embedded depth {AxialStack.OverallStackLengthMm(cem) - cem.Capsule.Flange.FlangeThicknessMm:F1} mm to the flange UNDERSIDE = " +
             $"the bark line, ⚖️ HW.33 2026-09-18) · bus-rod clears channel={oM.BusRodClears}");
-        // Zone-1 insertion beside the window its own lock admits (00_07 HW.26) — printed on every run, since
-        // the conflict below is the standing state; an unnamed lock prints as loud absence, never a default.
-        if (lockCem is null)
+        // Zone-1 insertion (⚖️ G1 2026-10-12): the lock's shank inserts whole — printed beside the
+        // window that lock admits; Load refused a stack without a lock, so lockCem is the one the shank came from.
+        if (lockCem is not null)
         {
-            Console.WriteLine($"  Zone-1 insertion={cem.Zone1InsertionMm:F1} mm · lock window {Drawing.NotSpecified} " +
-                              "(no zone1_lock_manifest — nothing to judge the insertion against)");
-        }
-        else
-        {
-            // ⚖️ 2026-09-18 (00_07 HW.26): the deep end is the end of the shank, groove or not — no ring is fitted as a
-            // backup, so a groove still in the geometry bounds nothing (the window lost its upper bound until G1/G3).
             MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
-            Console.WriteLine($"  Zone-1 insertion={cem.Zone1InsertionMm:F1} mm · lock window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
-                              $"from the shank's free end ({cem.Zone1LockManifest}: PEEK-contact zone end → end of the shank; " +
-                              $"{(MechanicalLock.HasGroove(lockCem) ? "its DIN-471 groove bounds nothing, no ring is fitted" : "no groove")} — 00_07 HW.26; " +
-                              $"Ø{lockCem.ShankDiameterMm:F0} shank{(lockCem.BoreDiameterMm > 0f ? $" with a Ø{lockCem.BoreDiameterMm:F2} channel" : ", solid")})");
+            Console.WriteLine($"  Zone-1 insertion={AxialStack.Zone1InsertionMm(cem):F1} mm = the whole shank of {cem.Zone1LockManifest} " +
+                              $"(⚖️ 00_07 HW.26 G1 2026-10-12; what holds that depth is open, HW.26 — no step on a Ø11 anode) · " +
+                              $"lock window {w.MinMm:F1}–{w.MaxMm:F1} mm · gyroid body {cem.Zone1.LengthMm:F1} mm below the sleeve, all of it in the wood · " +
+                              $"Ø{lockCem.ShankDiameterMm:F0} shank{(lockCem.BoreDiameterMm > 0f ? $" with a Ø{lockCem.BoreDiameterMm:F2} channel" : ", solid")}");
         }
         Console.WriteLine(
             $"  liner: length={oM.LinerLengthMm:F1} mm (channel {AxialStack.ChannelTopZMm(cem) - AxialStack.ChannelBottomZMm(cem):F1} + " +
@@ -1028,8 +1021,6 @@ internal static class Program
             Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the press-fit band (from the Lamé window, inputs open: 00_07 HW.3)");
         if (oM.InsertionBudgetMm is { } dB && dB < 0)
             Console.WriteLine($"  ⚠ press-fit F2: insertion budget {dB:F1} mm < 0 — Zone-1 + Zone-3 shanks collide inside the {cem.Zone2.LengthMm:F0} mm bore");
-        if (lockCem is not null && AxialStack.Zone1InsertionConflict(cem, lockCem) is { } strConflict)
-            Console.WriteLine($"  ⚠ {strConflict}");
         if (oM.BusRodClears is false)
             Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
                 // ⛔ `≥`, not `>`: the gate is STRICT since 2026-09-11, so a zero-clearance stack fails it too; and

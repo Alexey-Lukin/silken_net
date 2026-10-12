@@ -27,7 +27,7 @@
 | Геометрія замка Zone 1 | Ø11 · довжина купона 18.0 · контакт 12.0 від 2.0 · 4 ряди · `h` 0.28 · α 30° · β 70° · основа — ПОХІДНА `h·(cot α + cot β)` | маніфест [`mechanical_lock.zone1.json`](../../../tools/cad/cem/mechanical_lock.zone1.json) (+ [`.zone3.json`](../../../tools/cad/cem/mechanical_lock.zone3.json)); норма профілю — [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) A; креслення — `draw mechanical_lock` |
 | Напрям профілю | у рамці ДЕТАЛІ однаковий на обох кінцях: пологий α — до торця, що входить першим | [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) A |
 | Втулка PEEK | отвір Ø11, стінка 2 мм | [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (фриз), [`01_01 §4.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) |
-| **Вікно вставляння** | **14.0–18.0 мм** — рахувати на ОБОХ кінцях: вони розходяться, і одне число «у вікні замка» проза мати не має права | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); числа кінців — [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.34 |
+| **Вікно вставляння** | **18.0 мм — проєктна** (увесь хвостовик, ⚖️ [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26 G1 2026-10-12) · **14.0 — межа допуску складання** (уся контактна зона ще в PEEK); рахувати обидва, але 14 ніколи не цитувати замість 18 | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); числа кінців — [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.34 |
 | Натяг | смуга 5–34 мкм діаметрально — робочий вхід, НЕ розрахунок Ламе (провенанс — таблиця ISO 286); мінімум лежить НИЖЧЕ підлоги вікна (ефективний натяг −3.45 мкм при +40 °C) — число ПЕРЕРАХУЮТЬ | [`01_01 §4.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) |
 | Температури | вікно −30 °C … +40 °C; цикл ±35 °C | [`01_01 §4.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (FEA-валідація) |
 | Посадка | гаряча, PEEK 150 °C (вище T_g 143 °C) | [`01_01 §3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) крок 4 · [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) A |
@@ -86,8 +86,8 @@
 
 ## 7. Відомі невизначеності — назвати у звіті, не вирішувати
 
-- **G1 — фізична довжина хвостовика:** у дереві три несумісні моделі одного хвостовика (18 мм купон · 30 мм суцільного Ti · 30 мм гіроїдної оболонки у втулці). FEA рахується на вікні купона 14.0–18.0, і результат на 30 мм без перерахунку ⛔ не переноситься.
-- **G3 — перехід гіроїд → хвостовик** не визначено; упору всередині вікна немає (пресування за силою).
+- **G1 — ✅ розсуджено 2026-10-12:** хвостовик 18 мм — фізичний і входить у втулку цілим (одна модель — купон замка; 30-мм варіанти зрізано, [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) A). FEA рахується на 18 і на межі складання 14.
+- **G3 — перехід гіроїд → хвостовик** не визначено; упору всередині вікна немає (пресування за силою; чим тримати глибину — ⚖️-нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26, рекомендовано упор преса, не деталь).
 - **G4 — орієнтація друку інтегрованого тіла:** «кінчик донизу» ([`01_02 §1.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) ставить крутий β донизу під 20° від горизонталі, не самопідтримно — форма й шорсткість граней барба as-printed відкриті; FEA — на номінальному профілі.
 - **Поверхня:** хвостовик ТРАВЛЕНИЙ до посадки, і чи переживає травлена поверхня посадку, скільки активація знімає з натягу — відкрито ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26); тертя й натяг — параметри.
 - **Смуга натягу** переписується з вікна Ламе ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3) — тому матриця параметрична.
@@ -174,7 +174,7 @@
 *3. Вихідні дані.*
 - **Хвостовик:** Ø11 мм, довжина 18 мм. Зона зубців — 12 мм, починаючи за 2 мм від вільного торця, тобто того, що входить у втулку першим. Чотири ряди зубців, висота зубця 0.28 мм. Кути граней відносно осі: 30° для пологої і 70° для крутої. Основа зубця — похідна від висоти й кутів, близько 0.59 мм.
 - **Напрям профілю:** полога грань звернена до вільного торця.
-- **Діапазон вставляння 14–18 мм:** від кінця зони зубців до всієї довжини хвостовика. Остаточну глибину ще не зафіксовано, і на двох кінцях діапазону результати різняться, тому потрібні обидва.
+- **Діапазон вставляння 14–18 мм:** від кінця зони зубців до всієї довжини хвостовика. Проєктна глибина — уся довжина хвостовика, 18 мм; 14 мм — найменша глибина, на якій уся зона зубців ще в PEEK, тобто межа допуску складання. Результати на двох кінцях різняться, тому потрібні обидва.
 - **Втулка:** PEEK Victrex 450G, отвір Ø11 мм, стінка 2 мм. Модуль Юнга 4.0 ГПа, коефіцієнт Пуассона 0.4, межа плинності близько 98–100 МПа.
 - **Титан:** модуль Юнга близько 110 ГПа — база; сплав не обрано, тож модуль є параметром.
 - **КТР:** титан 8.6·10⁻⁶ K⁻¹, PEEK 47·10⁻⁶ K⁻¹.
@@ -198,7 +198,7 @@
 - **Запас:** якщо найгірший кейс на 10-му році дає понад 200 Н, запас підтверджено. Якщо ні — не підтверджено, і для нас це так само цінний результат.
 
 *6. Відомі невизначеності — просимо назвати їх у звіті, вирішувати не потрібно.*
-- Фізична довжина хвостовика ще не остаточна: в нас кілька несумісних варіантів. Розрахунок робимо на діапазоні вставляння 14–18 мм, і на інші довжини без перерахунку ми його не переносимо.
+- Фізична довжина хвостовика — 18 мм, і хвостовик входить у втулку на всю довжину. Розрахунок робимо на діапазоні вставляння 14–18 мм, і на інші довжини без перерахунку ми його не переносимо.
 - Перехід від гіроїдної частини анода до хвостовика не визначено. Упору всередині діапазону вставляння немає, запресовують за силою.
 - Орієнтацію друку не обрано. В орієнтації, яку ми розглядаємо для анода, крута грань зубця звернена донизу під 20° до горизонталі й сама себе не тримає, тож форма і шорсткість граней після друку поки невідомі. Розрахунок — на номінальному профілі.
 - Поверхню хвостовика травлять перед посадкою. Чи витримує травлена поверхня посадку і скільки травлення знімає з натягу — невідомо, тому тертя й натяг задано параметрами.
@@ -289,7 +289,7 @@ If the full matrix is too large, please propose one baseline case and price the 
 *3. Input data.*
 - **Shank:** Ø11 mm, length 18 mm. Tooth zone 12 mm long, starting 2 mm from the free end (the end that enters the sleeve first). Four rows of teeth, tooth height 0.28 mm. Flank angles to the axis: 30° for the shallow flank and 70° for the steep one. The tooth base is derived from height and angles, about 0.59 mm.
 - **Profile direction:** the shallow flank faces the free end.
-- **Insertion range 14–18 mm:** from the end of the tooth zone to the full shank length. The final depth is not fixed, and the results differ at the two ends of the range, so both are needed.
+- **Insertion range 14–18 mm:** from the end of the tooth zone to the full shank length. The design depth is the full shank, 18 mm; 14 mm is the shallowest depth at which the whole tooth zone is still in the PEEK, i.e. the assembly tolerance limit. The results differ at the two ends of the range, so both are needed.
 - **Sleeve:** PEEK Victrex 450G, bore Ø11 mm, wall 2 mm. Young's modulus 4.0 GPa, Poisson's ratio 0.4, yield strength about 98–100 MPa.
 - **Titanium:** Young's modulus about 110 GPa — baseline; the alloy is not chosen, so the modulus is a parameter.
 - **Coefficients of thermal expansion:** titanium 8.6·10⁻⁶ K⁻¹, PEEK 47·10⁻⁶ K⁻¹.
@@ -313,7 +313,7 @@ If the full matrix is too large, please propose one baseline case and price the 
 - **Margin:** if the worst case at year 10 gives more than 200 N, the margin is confirmed. If not, it is not confirmed — and for us that is an equally valuable result.
 
 *6. Known uncertainties — please name them in the report; they do not need to be resolved.*
-- The physical shank length is not final: we have several incompatible variants. The analysis is done on the 14–18 mm insertion range, and we do not transfer it to other lengths without recomputing.
+- The physical shank length is 18 mm, and the shank is pressed into the sleeve along its whole length. The analysis is done on the 14–18 mm insertion range, and we do not transfer it to other lengths without recomputing.
 - The transition from the gyroid part of the anode to the shank is undefined. There is no stop within the insertion range; the part is pressed in by force.
 - The build orientation is not chosen. In the orientation we are considering for the anode the steep flank of the tooth faces down at 20° to the horizontal and is not self-supporting, so the as-built shape and roughness of the flanks are unknown for now. Analyse the nominal profile.
 - The shank surface is etched before the fit. Whether the etched surface survives the fit and how much the etch takes off the interference is unknown, so friction and interference are given as parameters.

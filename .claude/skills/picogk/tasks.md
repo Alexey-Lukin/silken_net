@@ -120,12 +120,17 @@
   🔑 **`BasePipe`/`BaseCylinder` Z-origin = `[0, L]` from the frame** (grows along +localZ; verified in LEAP
   `Frames.cs` — NOT centred), so stack lifts are absolute; the render overlap sleeve∩capsule is the flange
   SHOULDER on the sleeve top face, not the shank (the Ø9 floats in the bore).
-  ⊕ **The Zone-1 insertion is judged against its OWN lock (`00_07` HW.26 G1):** the stack NAMES the lock by
-  file (`zone1_lock_manifest`) and never copies its numbers — a nested `MechanicalLockCem` fills absent fields from defaults
-  whose contact zone and shank length ARE the Zone-1 lock's, so a wrong or empty copy would print the right window (hence the
-  `kind` check in `AxialStack.Zone1Lock`). One home: `MechanicalLock.InsertionWindowMm`; `verify` prints it beside
-  `zone1_insertion_mm` and flags an insertion outside it. 🔑 **Pin a detector with the value HANDED IN, never read from
-  the default** — a pin asserting that the shipped placeholder stays outside cements the defect and reds the day G1 is fixed.
+  ⊕ **The Zone-1 insertion IS its own lock's whole shank (⚖️ `00_07` HW.26 G1, 2026-10-12; home `01_01 §4.3` A):** the
+  stack NAMES the lock by file (`zone1_lock_manifest`) and never copies its numbers — a nested `MechanicalLockCem` fills
+  absent fields from defaults whose contact zone and shank length ARE the Zone-1 lock's, so a wrong or empty copy would print
+  the right window (hence the `kind` check in `AxialStack.Zone1Lock`). 🔴 **Go through `AxialStack.Load`, never
+  `Cem.Parse<AnchorAxialStackCem>` alone:** the shank length is RESOLVED from the lock manifest into the `[JsonIgnore]`
+  `Zone1ShankLengthMm`, so a bare parse leaves it null and every derived Z (`Zone1TopZMm`, sleeve bottom, bus bottom) throws
+  «not resolved» — by design: a silent default there would be the placeholder back under another name. The window's one home
+  stays `MechanicalLock.InsertionWindowMm`; the shipped insertion is its DEEP end. ⊕ The lesson the retired detector
+  (`Zone1InsertionConflict`) taught, kept because it generalises: pin a detector with the value HANDED IN, never read from the
+  default — a pin asserting the placeholder stays outside would have cemented the defect; on G1 the detector went entirely,
+  because the insertion stopped being an input.
 - **Generate an engineering drawing (`Drawing.cs` / `draw`, SHIPPED)**: `draw <cem>` emits
   **SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — no PDF (scoped in research, never
   built); ⚠️ read gotcha #11 BEFORE touching notes/tolerances — pure-managed, no Library.Go,

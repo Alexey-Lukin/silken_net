@@ -2,10 +2,10 @@
   "method": "slender-beam closed form \u2014 Euler buckling (fixed-free) + cantilever tip-load bending + S-N endurance ratio (\u03c3_e \u2248 k\u00b7\u03c3_y, as-printed derate) for the free-cantilever tables; the contact blocks (\u00a74-\u00a77) solve the rod in the rigid channel as a unilateral-contact equilibrium (lib.beam_contact, the solver script 68 shipped). No FEA beyond that beam element.",
   "geometry_mm": {
     "bus_dia": 1.0,
-    "free_len_unsupported": 23.0,
-    "free_len_supported": 6.0,
-    "insertion_placeholder_mm": 30.0,
-    "note": "free_len_* are the PLACEHOLDER geometry's spans (Z1_INSERTION_MM = 30, an HW.8 placeholder outside the Zone-1 lock window, 00_07 HW.26 G1); the \u00a71-\u00a73 tables stand on them, the contact blocks are computed on every geometry in clearance_regime.geometries"
+    "free_len_unsupported": 35.0,
+    "free_len_supported": 18.0,
+    "insertion_mm": 18.0,
+    "note": "free_len_* are the SHIPPED geometry's spans (Z1_INSERTION_MM = the whole Zone-1 lock shank, \u2696\ufe0f 00_07 HW.26 G1 2026-10-12); the \u00a71-\u00a73 tables stand on them, the contact blocks are computed on every geometry in clearance_regime.geometries"
   },
   "loads": {
     "pogo_axial_N": 1.0,
@@ -24,26 +24,26 @@
     "mean_stress_correction_modelled": false
   },
   "buckling": {
-    "p_cr_unsupported_N": 25.2,
-    "p_cr_supported_N": 370.1,
-    "sf_unsupported": 25.2
+    "p_cr_unsupported_N": 10.9,
+    "p_cr_supported_N": 41.1,
+    "sf_unsupported": 10.9
   },
   "bending_stress_MPa": {
-    "unsupported": 70.3,
-    "supported": 18.3
+    "unsupported": 107.0,
+    "supported": 55.0
   },
   "per_alloy_fatigue": [
     {
       "alloy": "Ti-15Zr",
       "yield_MPa": 950.0,
       "endurance_MPa_printed": 190.0,
-      "sf_unsupported_printed": 2.7,
-      "sf_supported_printed": 10.36,
-      "unsupported_infinite_life_printed": true,
+      "sf_unsupported_printed": 1.78,
+      "sf_supported_printed": 3.45,
+      "unsupported_infinite_life_printed": false,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 380.0,
-      "sf_unsupported_welded": 5.41,
-      "sf_supported_welded": 20.73,
+      "sf_unsupported_welded": 3.55,
+      "sf_supported_welded": 6.91,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     },
@@ -51,13 +51,13 @@
       "alloy": "beta-Ti-13Nb-13Zr",
       "yield_MPa": 900.0,
       "endurance_MPa_printed": 180.0,
-      "sf_unsupported_printed": 2.56,
-      "sf_supported_printed": 9.82,
-      "unsupported_infinite_life_printed": true,
+      "sf_unsupported_printed": 1.68,
+      "sf_supported_printed": 3.27,
+      "unsupported_infinite_life_printed": false,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 360.0,
-      "sf_unsupported_welded": 5.12,
-      "sf_supported_welded": 19.63,
+      "sf_unsupported_welded": 3.37,
+      "sf_supported_welded": 6.54,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     },
@@ -65,13 +65,13 @@
       "alloy": "Ti-6Al-4V",
       "yield_MPa": 880.0,
       "endurance_MPa_printed": 176.0,
-      "sf_unsupported_printed": 2.5,
-      "sf_supported_printed": 9.6,
-      "unsupported_infinite_life_printed": true,
+      "sf_unsupported_printed": 1.65,
+      "sf_supported_printed": 3.2,
+      "unsupported_infinite_life_printed": false,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 352.0,
-      "sf_unsupported_welded": 5.01,
-      "sf_supported_welded": 19.2,
+      "sf_unsupported_welded": 3.29,
+      "sf_supported_welded": 6.4,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     },
@@ -79,13 +79,13 @@
       "alloy": "Ti-6Al-7Nb",
       "yield_MPa": 850.0,
       "endurance_MPa_printed": 170.0,
-      "sf_unsupported_printed": 2.42,
-      "sf_supported_printed": 9.27,
-      "unsupported_infinite_life_printed": true,
+      "sf_unsupported_printed": 1.59,
+      "sf_supported_printed": 3.09,
+      "unsupported_infinite_life_printed": false,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 340.0,
-      "sf_unsupported_welded": 4.84,
-      "sf_supported_welded": 18.54,
+      "sf_unsupported_welded": 3.18,
+      "sf_supported_welded": 6.18,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     },
@@ -93,27 +93,27 @@
       "alloy": "CP-Ti-Gr4",
       "yield_MPa": 480.0,
       "endurance_MPa_printed": 96.0,
-      "sf_unsupported_printed": 1.37,
-      "sf_supported_printed": 5.24,
+      "sf_unsupported_printed": 0.9,
+      "sf_supported_printed": 1.75,
       "unsupported_infinite_life_printed": false,
-      "unsupported_predicted_failure_printed": false,
+      "unsupported_predicted_failure_printed": true,
       "endurance_MPa_welded": 192.0,
-      "sf_unsupported_welded": 2.73,
-      "sf_supported_welded": 10.47,
-      "unsupported_infinite_life_welded": true,
+      "sf_unsupported_welded": 1.8,
+      "sf_supported_welded": 3.49,
+      "unsupported_infinite_life_welded": false,
       "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "Ta",
       "yield_MPa": 345.0,
       "endurance_MPa_printed": 69.0,
-      "sf_unsupported_printed": 0.98,
-      "sf_supported_printed": 3.76,
+      "sf_unsupported_printed": 0.65,
+      "sf_supported_printed": 1.25,
       "unsupported_infinite_life_printed": false,
       "unsupported_predicted_failure_printed": true,
       "endurance_MPa_welded": 138.0,
-      "sf_unsupported_welded": 1.96,
-      "sf_supported_welded": 7.53,
+      "sf_unsupported_welded": 1.29,
+      "sf_supported_welded": 2.51,
       "unsupported_infinite_life_welded": false,
       "unsupported_predicted_failure_welded": false
     }
@@ -121,18 +121,40 @@
   "fabrication_branches": {
     "printed": {
       "sf_unsupported_range": [
-        0.98,
-        2.7
+        0.65,
+        1.78
       ],
       "sf_supported_range": [
-        3.76,
-        10.36
+        1.25,
+        3.45
       ],
       "unsupported_predicted_failure": [
+        "CP-Ti-Gr4",
         "Ta"
       ],
       "unsupported_marginal": [
-        "CP-Ti-Gr4"
+        "Ti-15Zr",
+        "beta-Ti-13Nb-13Zr",
+        "Ti-6Al-4V",
+        "Ti-6Al-7Nb"
+      ],
+      "unsupported_infinite_life": [],
+      "unsupported_infinite_life_for_all": false,
+      "supported_infinite_life_for_all": false
+    },
+    "welded": {
+      "sf_unsupported_range": [
+        1.29,
+        3.55
+      ],
+      "sf_supported_range": [
+        2.51,
+        6.91
+      ],
+      "unsupported_predicted_failure": [],
+      "unsupported_marginal": [
+        "CP-Ti-Gr4",
+        "Ta"
       ],
       "unsupported_infinite_life": [
         "Ti-15Zr",
@@ -142,106 +164,76 @@
       ],
       "unsupported_infinite_life_for_all": false,
       "supported_infinite_life_for_all": true
-    },
-    "welded": {
-      "sf_unsupported_range": [
-        1.96,
-        5.41
-      ],
-      "sf_supported_range": [
-        7.53,
-        20.73
-      ],
-      "unsupported_predicted_failure": [],
-      "unsupported_marginal": [
-        "Ta"
-      ],
-      "unsupported_infinite_life": [
-        "Ti-15Zr",
-        "beta-Ti-13Nb-13Zr",
-        "Ti-6Al-4V",
-        "Ti-6Al-7Nb",
-        "CP-Ti-Gr4"
-      ],
-      "unsupported_infinite_life_for_all": false,
-      "supported_infinite_life_for_all": true
     }
   },
   "friction_sweep": [
     {
       "mu": 0.2,
       "f_lat_N": 0.2,
-      "sigma_unsup_MPa": 46.9,
-      "sigma_sup_MPa": 12.2,
-      "sf_unsup_4v_printed": 3.76,
-      "sf_sup_4v_printed": 14.4,
-      "sf_unsup_4v_welded": 7.51,
-      "sf_sup_4v_welded": 28.8
+      "sigma_unsup_MPa": 71.3,
+      "sigma_sup_MPa": 36.7,
+      "sf_unsup_4v_printed": 2.47,
+      "sf_sup_4v_printed": 4.8,
+      "sf_unsup_4v_welded": 4.94,
+      "sf_sup_4v_welded": 9.6
     },
     {
       "mu": 0.3,
       "f_lat_N": 0.3,
-      "sigma_unsup_MPa": 70.3,
-      "sigma_sup_MPa": 18.3,
-      "sf_unsup_4v_printed": 2.5,
-      "sf_sup_4v_printed": 9.6,
-      "sf_unsup_4v_welded": 5.01,
-      "sf_sup_4v_welded": 19.2
+      "sigma_unsup_MPa": 107.0,
+      "sigma_sup_MPa": 55.0,
+      "sf_unsup_4v_printed": 1.65,
+      "sf_sup_4v_printed": 3.2,
+      "sf_unsup_4v_welded": 3.29,
+      "sf_sup_4v_welded": 6.4
     },
     {
       "mu": 0.4,
       "f_lat_N": 0.4,
-      "sigma_unsup_MPa": 93.7,
-      "sigma_sup_MPa": 24.4,
-      "sf_unsup_4v_printed": 1.88,
-      "sf_sup_4v_printed": 7.2,
-      "sf_unsup_4v_welded": 3.76,
-      "sf_sup_4v_welded": 14.4
+      "sigma_unsup_MPa": 142.6,
+      "sigma_sup_MPa": 73.3,
+      "sf_unsup_4v_printed": 1.23,
+      "sf_sup_4v_printed": 2.4,
+      "sf_unsup_4v_welded": 2.47,
+      "sf_sup_4v_welded": 4.8
     },
     {
       "mu": 0.5,
       "f_lat_N": 0.5,
-      "sigma_unsup_MPa": 117.1,
-      "sigma_sup_MPa": 30.6,
-      "sf_unsup_4v_printed": 1.5,
-      "sf_sup_4v_printed": 5.76,
-      "sf_unsup_4v_welded": 3.01,
-      "sf_sup_4v_welded": 11.52
+      "sigma_unsup_MPa": 178.3,
+      "sigma_sup_MPa": 91.7,
+      "sf_unsup_4v_printed": 0.99,
+      "sf_sup_4v_printed": 1.92,
+      "sf_unsup_4v_welded": 1.97,
+      "sf_sup_4v_welded": 3.84
     }
   ],
   "clearance_regime": {
     "method": "unilateral contact of the clamped rod in a rigid frictionless channel, cubic Hermite elements + active set (lib.beam_contact, one home with script 68); the drag acts at the exit (the pad is the rod's own end face). Upper bounds on the wall/clamp account",
     "channel": {
       "dia_mm": 1.35,
-      "start_mm": 6.0,
+      "start_mm": 18.0,
       "length_mm": 17.0,
       "drilled_depth_mm": 17.0,
       "aspect_ratio_l_over_d": 12.59,
       "aspect_note": "L/D of the bore as machined (depth = shank + flange, read from cem/cathode_flange.json). It decides which operation the vendor needs and is the ratio quoted in canon prose - derived here so it moves with the diameter instead of being retyped",
-      "note": "the wall runs from the mouth to the EXIT on the pogo face \u2014 the full drilled depth \u2014 because under the equilibrium the exit is the station the drag is reacted at, and a run cut short (the shank only, as this key once read) would move it; start_mm is the placeholder geometry's mouth"
+      "note": "the wall runs from the mouth to the EXIT on the pogo face \u2014 the full drilled depth \u2014 because under the equilibrium the exit is the station the drag is reacted at, and a run cut short (the shank only, as this key once read) would move it; start_mm is the shipped geometry's mouth"
     },
-    "insertion_placeholder_mm": 30.0,
+    "insertion_mm": 18.0,
     "lock_insertion_window_mm": [
       14.0,
       18.0
     ],
     "geometries": [
       {
-        "label": "script 55 placeholder (HW.8)",
-        "insertion_mm": 30.0,
-        "gap_mm": 6.0,
-        "pad_mm": 23.0,
-        "liner_from_mm": 5.0
-      },
-      {
-        "label": "lock window, near end",
+        "label": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "insertion_mm": 18.0,
         "gap_mm": 18.0,
         "pad_mm": 35.0,
         "liner_from_mm": 17.0
       },
       {
-        "label": "lock window, far end",
+        "label": "lock window, shallow end",
         "insertion_mm": 14.0,
         "gap_mm": 22.0,
         "pad_mm": 39.0,
@@ -250,236 +242,7 @@
     ],
     "branches": [
       {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "coating_or_liner_mm": 0.01,
-        "play_side": "rod",
-        "radial_play_mm": 0.165,
-        "ei_Nm2_bare_rod": 0.0054,
-        "ei_Nm2_bonded": 0.0054,
-        "touchdown_drag_N_bonded": 0.21968,
-        "touchdown_drag_N_bare_closed_form": 0.21968,
-        "coaxial_cap_sigma_MPa_bare_closed_form": 51.47,
-        "coaxial_root_bound": "LOWER end \u2014 rigid wall. A compliant polymer wall lets the exit yield by R/k and raises the root moment by 3EI\u00b7(R/k)/L\u00b2; the UPPER end is the Ti-bore stop (the polymer wall fully yielded) or the free cantilever F\u00b7L where the drag cannot reach it \u2014 sigma_root_MPa_upper_end per \u00b5. Where the root sits in [lower, upper] is set by the contact compliance, MEASURED NOWHERE",
-        "by_mu": {
-          "0.2": {
-            "touches_down": false,
-            "contact_station_mm": null,
-            "sigma_root_MPa_bonded": 46.86,
-            "sigma_root_MPa_bare": 46.86,
-            "sigma_root_MPa_upper_end": 46.86,
-            "upper_end_is": "free cantilever \u2014 the drag cannot reach the Ti bore",
-            "sigma_root_MPa_free_cantilever": 46.86,
-            "exit_reaction_N_upper_rigid_wall": 0.0,
-            "deflection_at_mouth_um": 14.0,
-            "slope_at_exit_mrad_rigid_wall": 9.797,
-            "in_contact_rotation_path_per_cycle_um_upper": 0.0
-          },
-          "0.3": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 51.47,
-            "sigma_root_MPa_bare": 51.47,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 70.28,
-            "exit_reaction_N_upper_rigid_wall": 0.0803,
-            "deflection_at_mouth_um": 15.38,
-            "slope_at_exit_mrad_rigid_wall": 10.7609,
-            "in_contact_rotation_path_per_cycle_um_upper": 1.33
-          },
-          "0.4": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 51.47,
-            "sigma_root_MPa_bare": 51.47,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 93.71,
-            "exit_reaction_N_upper_rigid_wall": 0.1803,
-            "deflection_at_mouth_um": 15.38,
-            "slope_at_exit_mrad_rigid_wall": 10.7609,
-            "in_contact_rotation_path_per_cycle_um_upper": 1.33
-          },
-          "0.5": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 51.47,
-            "sigma_root_MPa_bare": 51.47,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 117.14,
-            "exit_reaction_N_upper_rigid_wall": 0.2803,
-            "deflection_at_mouth_um": 15.38,
-            "slope_at_exit_mrad_rigid_wall": 10.7609,
-            "in_contact_rotation_path_per_cycle_um_upper": 1.33
-          }
-        },
-        "touches_down_on_mus": [
-          0.3,
-          0.4,
-          0.5
-        ],
-        "touches_down_on_every_mu": false,
-        "contact_station_when_touched_down_mm": 23.0,
-        "mouth_reached_on_any_mu": false,
-        "regime": "touches down at the EXIT on \u00b5 0.3, 0.4, 0.5 only; free cantilever on the rest"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "coating_or_liner_mm": 0.005,
-        "play_side": "rod",
-        "radial_play_mm": 0.17,
-        "ei_Nm2_bare_rod": 0.0054,
-        "ei_Nm2_bonded": 0.0054,
-        "touchdown_drag_N_bonded": 0.22633,
-        "touchdown_drag_N_bare_closed_form": 0.22633,
-        "coaxial_cap_sigma_MPa_bare_closed_form": 53.02,
-        "coaxial_root_bound": "LOWER end \u2014 rigid wall. A compliant polymer wall lets the exit yield by R/k and raises the root moment by 3EI\u00b7(R/k)/L\u00b2; the UPPER end is the Ti-bore stop (the polymer wall fully yielded) or the free cantilever F\u00b7L where the drag cannot reach it \u2014 sigma_root_MPa_upper_end per \u00b5. Where the root sits in [lower, upper] is set by the contact compliance, MEASURED NOWHERE",
-        "by_mu": {
-          "0.2": {
-            "touches_down": false,
-            "contact_station_mm": null,
-            "sigma_root_MPa_bonded": 46.86,
-            "sigma_root_MPa_bare": 46.86,
-            "sigma_root_MPa_upper_end": 46.86,
-            "upper_end_is": "free cantilever \u2014 the drag cannot reach the Ti bore",
-            "sigma_root_MPa_free_cantilever": 46.86,
-            "exit_reaction_N_upper_rigid_wall": 0.0,
-            "deflection_at_mouth_um": 14.0,
-            "slope_at_exit_mrad_rigid_wall": 9.797,
-            "in_contact_rotation_path_per_cycle_um_upper": 0.0
-          },
-          "0.3": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 53.02,
-            "sigma_root_MPa_bare": 53.02,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 70.28,
-            "exit_reaction_N_upper_rigid_wall": 0.0737,
-            "deflection_at_mouth_um": 15.84,
-            "slope_at_exit_mrad_rigid_wall": 11.087,
-            "in_contact_rotation_path_per_cycle_um_upper": 0.659
-          },
-          "0.4": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 53.02,
-            "sigma_root_MPa_bare": 53.02,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 93.71,
-            "exit_reaction_N_upper_rigid_wall": 0.1737,
-            "deflection_at_mouth_um": 15.84,
-            "slope_at_exit_mrad_rigid_wall": 11.087,
-            "in_contact_rotation_path_per_cycle_um_upper": 0.659
-          },
-          "0.5": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 53.02,
-            "sigma_root_MPa_bare": 53.02,
-            "sigma_root_MPa_upper_end": 54.58,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 117.14,
-            "exit_reaction_N_upper_rigid_wall": 0.2737,
-            "deflection_at_mouth_um": 15.84,
-            "slope_at_exit_mrad_rigid_wall": 11.087,
-            "in_contact_rotation_path_per_cycle_um_upper": 0.659
-          }
-        },
-        "touches_down_on_mus": [
-          0.3,
-          0.4,
-          0.5
-        ],
-        "touches_down_on_every_mu": false,
-        "contact_station_when_touched_down_mm": 23.0,
-        "mouth_reached_on_any_mu": false,
-        "regime": "touches down at the EXIT on \u00b5 0.3, 0.4, 0.5 only; free cantilever on the rest"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "coating_or_liner_mm": 0.15,
-        "play_side": "channel",
-        "radial_play_mm": 0.025,
-        "ei_Nm2_bare_rod": 0.0054,
-        "ei_Nm2_bonded": 0.0058,
-        "touchdown_drag_N_bonded": 0.03432,
-        "touchdown_drag_N_bare_closed_form": 0.03328,
-        "coaxial_cap_sigma_MPa_bare_closed_form": 7.8,
-        "coaxial_root_bound": "LOWER end \u2014 rigid wall. A compliant polymer wall lets the exit yield by R/k and raises the root moment by 3EI\u00b7(R/k)/L\u00b2; the UPPER end is the Ti-bore stop (the polymer wall fully yielded) or the free cantilever F\u00b7L where the drag cannot reach it \u2014 sigma_root_MPa_upper_end per \u00b5. Where the root sits in [lower, upper] is set by the contact compliance, MEASURED NOWHERE",
-        "by_mu": {
-          "0.2": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 8.04,
-            "sigma_root_MPa_bare": 7.8,
-            "sigma_root_MPa_upper_end": 46.86,
-            "upper_end_is": "free cantilever \u2014 the drag cannot reach the Ti bore",
-            "sigma_root_MPa_free_cantilever": 46.86,
-            "exit_reaction_N_upper_rigid_wall": 0.1657,
-            "deflection_at_mouth_um": 2.4,
-            "slope_at_exit_mrad_rigid_wall": 1.6163,
-            "in_contact_rotation_path_per_cycle_um_upper": 20.283
-          },
-          "0.3": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 8.04,
-            "sigma_root_MPa_bare": 7.8,
-            "sigma_root_MPa_upper_end": 56.29,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 70.28,
-            "exit_reaction_N_upper_rigid_wall": 0.2657,
-            "deflection_at_mouth_um": 2.4,
-            "slope_at_exit_mrad_rigid_wall": 1.6163,
-            "in_contact_rotation_path_per_cycle_um_upper": 25.214
-          },
-          "0.4": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 8.04,
-            "sigma_root_MPa_bare": 7.8,
-            "sigma_root_MPa_upper_end": 56.29,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 93.71,
-            "exit_reaction_N_upper_rigid_wall": 0.3657,
-            "deflection_at_mouth_um": 2.4,
-            "slope_at_exit_mrad_rigid_wall": 1.6163,
-            "in_contact_rotation_path_per_cycle_um_upper": 25.214
-          },
-          "0.5": {
-            "touches_down": true,
-            "contact_station_mm": 23.0,
-            "sigma_root_MPa_bonded": 8.04,
-            "sigma_root_MPa_bare": 7.8,
-            "sigma_root_MPa_upper_end": 56.29,
-            "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-            "sigma_root_MPa_free_cantilever": 117.14,
-            "exit_reaction_N_upper_rigid_wall": 0.4657,
-            "deflection_at_mouth_um": 2.4,
-            "slope_at_exit_mrad_rigid_wall": 1.6163,
-            "in_contact_rotation_path_per_cycle_um_upper": 25.214
-          }
-        },
-        "touches_down_on_mus": [
-          0.2,
-          0.3,
-          0.4,
-          0.5
-        ],
-        "touches_down_on_every_mu": true,
-        "contact_station_when_touched_down_mm": 23.0,
-        "mouth_reached_on_any_mu": false,
-        "regime": "touches down at the EXIT on every swept \u00b5"
-      },
-      {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "coating_or_liner_mm": 0.01,
         "play_side": "rod",
@@ -556,7 +319,7 @@
         "regime": "touches down at the EXIT on every swept \u00b5"
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "coating_or_liner_mm": 0.005,
         "play_side": "rod",
@@ -633,7 +396,7 @@
         "regime": "touches down at the EXIT on every swept \u00b5"
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "coating_or_liner_mm": 0.15,
         "play_side": "channel",
@@ -710,7 +473,7 @@
         "regime": "touches down at the EXIT on every swept \u00b5"
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "coating_or_liner_mm": 0.01,
         "play_side": "rod",
@@ -787,7 +550,7 @@
         "regime": "touches down at the EXIT on every swept \u00b5"
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "coating_or_liner_mm": 0.005,
         "play_side": "rod",
@@ -864,7 +627,7 @@
         "regime": "touches down at the EXIT on every swept \u00b5"
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "coating_or_liner_mm": 0.15,
         "play_side": "channel",
@@ -943,20 +706,7 @@
     ],
     "by_geometry": [
       {
-        "geometry": "script 55 placeholder (HW.8)",
-        "mouth_mm": 6.0,
-        "exit_mm": 23.0,
-        "forced_on_every_mu_branches": [
-          "PEEK liner 0.15 mm"
-        ],
-        "partly_branches": [
-          "conformal 10 \u00b5m film",
-          "conformal TiO2 ~5 \u00b5m"
-        ],
-        "free_on_every_mu_branches": []
-      },
-      {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "mouth_mm": 18.0,
         "exit_mm": 35.0,
         "forced_on_every_mu_branches": [
@@ -968,7 +718,7 @@
         "free_on_every_mu_branches": []
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "mouth_mm": 22.0,
         "exit_mm": 39.0,
         "forced_on_every_mu_branches": [
@@ -985,94 +735,7 @@
       "reference_excess_past_play_um": 5.0,
       "rows": [
         {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal 10 \u00b5m film",
-          "radial_play_um": 165.0,
-          "mouth_mm": 6.0,
-          "mouth_is_station_for_offset_beyond_um": 165.0,
-          "reference_excess_past_play_um": 5.0,
-          "at_reference": {
-            "offset_um": 170.0,
-            "contacts": [
-              {
-                "force_N": 0.375,
-                "station_mm": 6.0
-              }
-            ],
-            "mouth_reaction_N": 0.375,
-            "approach_angle_deg": 0.0716,
-            "sigma_root_MPa": 22.92
-          },
-          "approach_angle_deg_per_um_past_play": 0.01432,
-          "mouth_reaction_N_per_um_past_play": 0.075,
-          "lead_in_chamfer_deg": [
-            30.0,
-            45.0
-          ],
-          "chamfer_over_approach_at_reference": 419,
-          "coaxial_regime_reaches_mouth": false,
-          "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal TiO2 ~5 \u00b5m",
-          "radial_play_um": 170.0,
-          "mouth_mm": 6.0,
-          "mouth_is_station_for_offset_beyond_um": 170.0,
-          "reference_excess_past_play_um": 5.0,
-          "at_reference": {
-            "offset_um": 175.0,
-            "contacts": [
-              {
-                "force_N": 0.375,
-                "station_mm": 6.0
-              }
-            ],
-            "mouth_reaction_N": 0.375,
-            "approach_angle_deg": 0.0716,
-            "sigma_root_MPa": 22.92
-          },
-          "approach_angle_deg_per_um_past_play": 0.01432,
-          "mouth_reaction_N_per_um_past_play": 0.075,
-          "lead_in_chamfer_deg": [
-            30.0,
-            45.0
-          ],
-          "chamfer_over_approach_at_reference": 419,
-          "coaxial_regime_reaches_mouth": false,
-          "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "PEEK liner 0.15 mm",
-          "radial_play_um": 25.0,
-          "mouth_mm": 6.0,
-          "mouth_is_station_for_offset_beyond_um": 25.0,
-          "reference_excess_past_play_um": 5.0,
-          "at_reference": {
-            "offset_um": 30.0,
-            "contacts": [
-              {
-                "force_N": 0.3751,
-                "station_mm": 6.0
-              }
-            ],
-            "mouth_reaction_N": 0.3751,
-            "approach_angle_deg": 0.0715,
-            "sigma_root_MPa": 22.92
-          },
-          "approach_angle_deg_per_um_past_play": 0.01432,
-          "mouth_reaction_N_per_um_past_play": 0.075,
-          "lead_in_chamfer_deg": [
-            30.0,
-            45.0
-          ],
-          "chamfer_over_approach_at_reference": 419,
-          "coaxial_regime_reaches_mouth": false,
-          "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
-        },
-        {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal 10 \u00b5m film",
           "radial_play_um": 165.0,
           "mouth_mm": 18.0,
@@ -1101,7 +764,7 @@
           "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "radial_play_um": 170.0,
           "mouth_mm": 18.0,
@@ -1130,7 +793,7 @@
           "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "PEEK liner 0.15 mm",
           "radial_play_um": 25.0,
           "mouth_mm": 18.0,
@@ -1159,7 +822,7 @@
           "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal 10 \u00b5m film",
           "radial_play_um": 165.0,
           "mouth_mm": 22.0,
@@ -1188,7 +851,7 @@
           "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "radial_play_um": 170.0,
           "mouth_mm": 22.0,
@@ -1217,7 +880,7 @@
           "regime_note": "the mouth is a contact station ONLY off-axis; coaxially the drag contact is the exit (\u00a74)"
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "PEEK liner 0.15 mm",
           "radial_play_um": 25.0,
           "mouth_mm": 22.0,
@@ -1262,20 +925,7 @@
       },
       "exit_contact": [
         {
-          "geometry": "script 55 placeholder (HW.8)",
-          "exit_mm": 23.0,
-          "feature": "tube end face flush with the pogo face against the bore's exit edge \u2014 ring on ring",
-          "landing_angle_deg_rigid_wall": 0.0926,
-          "reaction_N_over_swept_mu_upper_rigid_wall": [
-            0.1657,
-            0.4657
-          ],
-          "reaction_bound": "UPPER \u2014 rigid wall: the drag minus the touchdown drag on every cycle; a compliant polymer edge takes less, down to nothing at the free end",
-          "exit_radius_specified_mm": null,
-          "exit_protrusion_specified_mm": null
-        },
-        {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "exit_mm": 35.0,
           "feature": "tube end face flush with the pogo face against the bore's exit edge \u2014 ring on ring",
           "landing_angle_deg_rigid_wall": 0.0609,
@@ -1288,7 +938,7 @@
           "exit_protrusion_specified_mm": null
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "exit_mm": 39.0,
           "feature": "tube end face flush with the pogo face against the bore's exit edge \u2014 ring on ring",
           "landing_angle_deg_rigid_wall": 0.0547,
@@ -1329,36 +979,18 @@
       "constrained_stress_MPa_at_80K": 12.29
     },
     "supported_column_vs_equilibrium": {
-      "idealisation": "a 6 mm cantilever (the placeholder's PEEK gap) propped where the bore begins \u2014 the \u00a72 \u00absupported\u00bb column, computed on the placeholder only",
+      "idealisation": "a 18 mm cantilever (the shipped geometry's PEEK gap) propped where the bore begins \u2014 the \u00a72 \u00absupported\u00bb column, computed on the shipped geometry only",
       "supported_column_sigma_MPa": {
-        "nominal_mu": 18.3,
-        "worst_mu": 30.6
+        "nominal_mu": 55.0,
+        "worst_mu": 91.7
       },
       "coaxial_cap_bound": "LOWER \u2014 rigid wall; a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop / free cantilever is the UPPER end (bracket_MPa_* per geometry), and the contact compliance that places the root in it is measured nowhere",
       "by_geometry": [
         {
-          "geometry": "script 55 placeholder (HW.8)",
-          "coaxial_cap_MPa_bonded": 8.04,
-          "column_over_cap_nominal": 2.28,
-          "column_over_cap_worst": 3.8,
-          "bracket_MPa_nominal_mu": [
-            8.04,
-            56.29
-          ],
-          "bracket_MPa_worst_mu": [
-            8.04,
-            56.29
-          ],
-          "column_position_nominal_mu": "inside the bracket",
-          "column_position_worst_mu": "inside the bracket",
-          "binding_alloy_sf_shipped_at_rigid_end": 17.16,
-          "binding_alloy_sf_shipped_at_upper_end": 2.45
-        },
-        {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "coaxial_cap_MPa_bonded": 3.4,
-          "column_over_cap_nominal": 5.39,
-          "column_over_cap_worst": 8.99,
+          "column_over_cap_nominal": 16.18,
+          "column_over_cap_worst": 26.96,
           "bracket_MPa_nominal_mu": [
             3.4,
             23.78
@@ -1367,16 +999,16 @@
             3.4,
             23.78
           ],
-          "column_position_nominal_mu": "inside the bracket",
+          "column_position_nominal_mu": "above the upper end",
           "column_position_worst_mu": "above the upper end",
           "binding_alloy_sf_shipped_at_rigid_end": 40.59,
           "binding_alloy_sf_shipped_at_upper_end": 5.8
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "coaxial_cap_MPa_bonded": 2.73,
-          "column_over_cap_nominal": 6.72,
-          "column_over_cap_worst": 11.19,
+          "column_over_cap_nominal": 20.15,
+          "column_over_cap_worst": 33.58,
           "bracket_MPa_nominal_mu": [
             2.73,
             19.1
@@ -1385,13 +1017,13 @@
             2.73,
             19.1
           ],
-          "column_position_nominal_mu": "inside the bracket",
+          "column_position_nominal_mu": "above the upper end",
           "column_position_worst_mu": "above the upper end",
           "binding_alloy_sf_shipped_at_rigid_end": 50.55,
           "binding_alloy_sf_shipped_at_upper_end": 7.23
         }
       ],
-      "coaxial_sign": "against a RIGID wall the column OVERSTATES the root stress on every geometry; against a compliant wall the root lies in [rigid, upper] and the column sits inside the bracket at nominal \u00b5 / inside the bracket at worst \u00b5 (script 55 placeholder (HW.8)), inside the bracket at nominal \u00b5 / above the upper end at worst \u00b5 (lock window, near end), inside the bracket at nominal \u00b5 / above the upper end at worst \u00b5 (lock window, far end)",
+      "coaxial_sign": "against a RIGID wall the column OVERSTATES the root stress on every geometry; against a compliant wall the root lies in [rigid, upper] and the column sits above the upper end at nominal \u00b5 / above the upper end at worst \u00b5 (shipped \u2014 the whole lock shank (HW.26 G1)), above the upper end at nominal \u00b5 / above the upper end at worst \u00b5 (lock window, shallow end)",
       "offset_regime": "not comparable \u2014 a mean stress"
     }
   },
@@ -1405,56 +1037,7 @@
     "break_even_k_not_derived_because": "SF_seam = k\u00b7SF_wire needs ONE fully-reversed stress at the root. The equilibrium gives the root two regimes: on a coaxial channel the drag is fully reversed with an amplitude that is a BRACKET (rigid wall = LOWER end, Ti-bore stop = upper, the contact compliance between them unmeasured); a channel off the root axis by more than the play puts a STATIC mean on the same section with the drag as amplitude. No mean-stress correction exists in this file, so the offset regime cannot be priced, and a k inverted from the rigid-wall end of the coaxial bracket alone would silently assume both a coaxiality the stack carries only as a NOT-SPECIFIED requirement (ratified 2026-09-18, its number after 00_07 HW.26 G1) and a rigid wall. Until 2026-09-14 a k was inverted from a stress no equilibrium configuration produces",
     "root_section_loading": [
       {
-        "geometry": "script 55 placeholder (HW.8)",
-        "coaxial": {
-          "amplitude_MPa_lower_rigid_wall": 8.04,
-          "amplitude_MPa_upper_end": 56.29,
-          "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-          "mean_MPa": 0.0,
-          "bound": "the rigid-wall figure is the LOWER end \u2014 a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2; the upper end is the Ti-bore stop (or the free cantilever where the drag cannot reach it); the contact compliance that places the amplitude in the bracket is measured nowhere",
-          "note": "fully reversed; at the zero-interference play (the largest play, so the largest rigid-wall figure \u2014 the fit's OD growth lowers it, script 68 sweeps the window rows)"
-        },
-        "offset": {
-          "mean_MPa_per_um_past_play": 5.742,
-          "secant_between_um": [
-            30,
-            100
-          ],
-          "by_offset": [
-            {
-              "offset_um": 0,
-              "mean_MPa": 0.0,
-              "amplitude_MPa": 8.04
-            },
-            {
-              "offset_um": 10,
-              "mean_MPa": 0.0,
-              "amplitude_MPa": 8.04
-            },
-            {
-              "offset_um": 25,
-              "mean_MPa": 0.0,
-              "amplitude_MPa": 8.04
-            },
-            {
-              "offset_um": 50,
-              "mean_MPa": 127.98,
-              "amplitude_MPa": 5.96
-            },
-            {
-              "offset_um": 100,
-              "mean_MPa": 424.87,
-              "amplitude_MPa": 1.25
-            }
-          ],
-          "amplitude_MPa_max_over_swept_offsets": 8.04,
-          "bound": "rigid-wall figures: the static mean is an UPPER bound (a compliant mouth relieves a displacement-driven load); the amplitude bracket under a compliant mouth is not derived",
-          "note": "the mean is a FUNCTION of an offset measured nowhere; the amplitude is the reversing worst-\u00b5 drag on top of it, and on the lock-window geometry it exceeds the rigid-wall coaxial figure"
-        },
-        "peak_moment_at_root_in_every_solve": true
-      },
-      {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "coaxial": {
           "amplitude_MPa_lower_rigid_wall": 3.4,
           "amplitude_MPa_upper_end": 23.78,
@@ -1503,7 +1086,7 @@
         "peak_moment_at_root_in_every_solve": true
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "coaxial": {
           "amplitude_MPa_lower_rigid_wall": 2.73,
           "amplitude_MPa_upper_end": 19.1,
@@ -1554,7 +1137,7 @@
     ],
     "what_a_seam_acceptance_needs": [
       "the joint's fatigue class / knockdown k from the vendor (weld class, WPS, toe treatment) \u2014 RFQ, 00_07 HW.34",
-      "the channel offset the stack delivers relative to the root axis \u2014 computed nowhere; its price is an order of magnitude apart between the insertion placeholder and the lock window (HW.26 G1 first)",
+      "the channel offset the stack delivers relative to the root axis \u2014 computed nowhere; its price is an order of magnitude apart between the insertion shipped geometry and the lock window's shallow end (HW.26 G1)",
       "a mean-stress model for the offset regime \u2014 absent from this tree"
     ],
     "markers": [
@@ -1586,10 +1169,35 @@
     "model_runs_at": 0.4,
     "band_is_measured": false,
     "band_provenance": "the ends are the ones the constant's own comment has carried from the first commit (wrought-Ti fatigue ratio ~0.4-0.5). They are NOT measured for our alloys and are NOT a distribution - a bracket",
-    "sweeps": "the \u00a72 free-cantilever column on the placeholder span only; the seam column this block carried until 2026-09-14 was priced on the retired drift-picture stress and no seam k exists to sweep (weld_seam.break_even_k_not_derived_because)",
+    "sweeps": "the \u00a72 free-cantilever column on the shipped span only; the seam column this block carried until 2026-09-14 was priced on the retired drift-picture stress and no seam k exists to sweep (weld_seam.break_even_k_not_derived_because)",
     "rows": [
       {
         "endurance_over_yield": 0.4,
+        "unsupported_infinite_life": [
+          "Ti-15Zr",
+          "beta-Ti-13Nb-13Zr",
+          "Ti-6Al-4V",
+          "Ti-6Al-7Nb"
+        ],
+        "unsupported_marginal": [
+          "CP-Ti-Gr4",
+          "Ta"
+        ],
+        "unsupported_predicted_failure": [],
+        "unsupported_infinite_life_for_all": false,
+        "sf_unsupported_by_alloy": {
+          "Ti-15Zr": 3.55,
+          "beta-Ti-13Nb-13Zr": 3.37,
+          "Ti-6Al-4V": 3.29,
+          "Ti-6Al-7Nb": 3.18,
+          "CP-Ti-Gr4": 1.8,
+          "Ta": 1.29
+        },
+        "binding_alloy_unsupported": "Ta",
+        "binding_sf_unsupported": 1.29
+      },
+      {
+        "endurance_over_yield": 0.45,
         "unsupported_infinite_life": [
           "Ti-15Zr",
           "beta-Ti-13Nb-13Zr",
@@ -1603,39 +1211,15 @@
         "unsupported_predicted_failure": [],
         "unsupported_infinite_life_for_all": false,
         "sf_unsupported_by_alloy": {
-          "Ti-15Zr": 5.41,
-          "beta-Ti-13Nb-13Zr": 5.12,
-          "Ti-6Al-4V": 5.01,
-          "Ti-6Al-7Nb": 4.84,
-          "CP-Ti-Gr4": 2.73,
-          "Ta": 1.96
+          "Ti-15Zr": 4.0,
+          "beta-Ti-13Nb-13Zr": 3.79,
+          "Ti-6Al-4V": 3.7,
+          "Ti-6Al-7Nb": 3.58,
+          "CP-Ti-Gr4": 2.02,
+          "Ta": 1.45
         },
         "binding_alloy_unsupported": "Ta",
-        "binding_sf_unsupported": 1.96
-      },
-      {
-        "endurance_over_yield": 0.45,
-        "unsupported_infinite_life": [
-          "Ti-15Zr",
-          "beta-Ti-13Nb-13Zr",
-          "Ti-6Al-4V",
-          "Ti-6Al-7Nb",
-          "CP-Ti-Gr4",
-          "Ta"
-        ],
-        "unsupported_marginal": [],
-        "unsupported_predicted_failure": [],
-        "unsupported_infinite_life_for_all": true,
-        "sf_unsupported_by_alloy": {
-          "Ti-15Zr": 6.08,
-          "beta-Ti-13Nb-13Zr": 5.76,
-          "Ti-6Al-4V": 5.63,
-          "Ti-6Al-7Nb": 5.44,
-          "CP-Ti-Gr4": 3.07,
-          "Ta": 2.21
-        },
-        "binding_alloy_unsupported": "Ta",
-        "binding_sf_unsupported": 2.21
+        "binding_sf_unsupported": 1.45
       },
       {
         "endurance_over_yield": 0.5,
@@ -1644,25 +1228,26 @@
           "beta-Ti-13Nb-13Zr",
           "Ti-6Al-4V",
           "Ti-6Al-7Nb",
-          "CP-Ti-Gr4",
+          "CP-Ti-Gr4"
+        ],
+        "unsupported_marginal": [
           "Ta"
         ],
-        "unsupported_marginal": [],
         "unsupported_predicted_failure": [],
-        "unsupported_infinite_life_for_all": true,
+        "unsupported_infinite_life_for_all": false,
         "sf_unsupported_by_alloy": {
-          "Ti-15Zr": 6.76,
-          "beta-Ti-13Nb-13Zr": 6.4,
-          "Ti-6Al-4V": 6.26,
-          "Ti-6Al-7Nb": 6.05,
-          "CP-Ti-Gr4": 3.41,
-          "Ta": 2.45
+          "Ti-15Zr": 4.44,
+          "beta-Ti-13Nb-13Zr": 4.21,
+          "Ti-6Al-4V": 4.11,
+          "Ti-6Al-7Nb": 3.97,
+          "CP-Ti-Gr4": 2.24,
+          "Ta": 1.61
         },
         "binding_alloy_unsupported": "Ta",
-        "binding_sf_unsupported": 2.45
+        "binding_sf_unsupported": 1.61
       }
     ],
-    "bare_infinite_life_for_all_is_invariant": false
+    "bare_infinite_life_for_all_is_invariant": true
   },
   "interference_window": {
     "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon carried no nominal for that pair until 2026-09-18 (now 01_01 1.4: bore = wire - 11.41 um, fitted hot). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
@@ -2004,61 +1589,7 @@
     "branch_discrimination": {
       "rows": [
         {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal 10 \u00b5m film",
-          "mu": 0.3,
-          "film_over_liner_tight_bound": 1.263,
-          "film_over_liner_tight_rigid_figure": 0.0128,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal 10 \u00b5m film",
-          "mu": 0.4,
-          "film_over_liner_tight_bound": 1.263,
-          "film_over_liner_tight_rigid_figure": 0.0128,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal 10 \u00b5m film",
-          "mu": 0.5,
-          "film_over_liner_tight_bound": 1.263,
-          "film_over_liner_tight_rigid_figure": 0.0128,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal TiO2 ~5 \u00b5m",
-          "mu": 0.3,
-          "film_over_liner_tight_bound": 1.276,
-          "film_over_liner_tight_rigid_figure": 0.0063,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal TiO2 ~5 \u00b5m",
-          "mu": 0.4,
-          "film_over_liner_tight_bound": 1.276,
-          "film_over_liner_tight_rigid_figure": 0.0063,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "script 55 placeholder (HW.8)",
-          "branch": "conformal TiO2 ~5 \u00b5m",
-          "mu": 0.5,
-          "film_over_liner_tight_bound": 1.276,
-          "film_over_liner_tight_rigid_figure": 0.0063,
-          "film_stricter_on_bound": false,
-          "film_stricter_on_rigid_figure": true
-        },
-        {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.2,
           "film_over_liner_tight_bound": 1.264,
@@ -2067,7 +1598,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.3,
           "film_over_liner_tight_bound": 1.264,
@@ -2076,7 +1607,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.4,
           "film_over_liner_tight_bound": 1.264,
@@ -2085,7 +1616,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.5,
           "film_over_liner_tight_bound": 1.264,
@@ -2094,7 +1625,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.2,
           "film_over_liner_tight_bound": 1.277,
@@ -2103,7 +1634,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.3,
           "film_over_liner_tight_bound": 1.277,
@@ -2112,7 +1643,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.4,
           "film_over_liner_tight_bound": 1.277,
@@ -2121,7 +1652,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, near end",
+          "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.5,
           "film_over_liner_tight_bound": 1.277,
@@ -2130,7 +1661,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.2,
           "film_over_liner_tight_bound": 1.265,
@@ -2139,7 +1670,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.3,
           "film_over_liner_tight_bound": 1.265,
@@ -2148,7 +1679,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.4,
           "film_over_liner_tight_bound": 1.265,
@@ -2157,7 +1688,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal 10 \u00b5m film",
           "mu": 0.5,
           "film_over_liner_tight_bound": 1.265,
@@ -2166,7 +1697,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.2,
           "film_over_liner_tight_bound": 1.278,
@@ -2175,7 +1706,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.3,
           "film_over_liner_tight_bound": 1.278,
@@ -2184,7 +1715,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.4,
           "film_over_liner_tight_bound": 1.278,
@@ -2193,7 +1724,7 @@
           "film_stricter_on_rigid_figure": true
         },
         {
-          "geometry": "lock window, far end",
+          "geometry": "lock window, shallow end",
           "branch": "conformal TiO2 ~5 \u00b5m",
           "mu": 0.5,
           "film_over_liner_tight_bound": 1.278,
@@ -2230,1042 +1761,7 @@
     "duty_note": "cycle counts are LOADED from script 62 (ten years of real NASA POWER wind for Cherkasy, times a bracket of two field sway-frequency readings), never retyped. Script 62's own verdict is that neither closes to a single number, so the anchors are a bracket and its ceiling is 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
     "rows": [
       {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "regime": "coaxial",
-        "mu": 0.2,
-        "contact": false,
-        "why": "below the touchdown drag the rod never reaches the wall \u2014 a free cantilever at this \u00b5, so no rubbing is priced"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "regime": "coaxial",
-        "mu": 0.3,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.01,
-        "rubbing_od_mm": 1.02,
-        "reaction_N_upper_rigid_wall": 0.0803,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 10.7609,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
-        "sliding_in_contact_per_cycle_um_upper": 1.33,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00027,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.0008,
-          "3.0": 0.00027
-        },
-        "area_projected_full_run_mm2": 17.34,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 437.5,
-            "duty_N_m_upper": 35.1,
-            "k_bound_edge_mm3_per_Nm": 7.619044771068373e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.004935774707235078,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.617602891715203e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00029913786105482547
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 154.3,
-            "duty_N_m_upper": 12.4,
-            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.01399689681551555,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978507e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000848296776727051
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 21.6,
-            "duty_N_m_upper": 1.7,
-            "k_bound_edge_mm3_per_Nm": 1.542762735540717e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.09994335928123049,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006057173289979607
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 621.4,
-            "duty_N_m_upper": 49.9,
-            "k_bound_edge_mm3_per_Nm": 5.364407841811634e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0034751742955297783,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562678763034e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00021061662397873636
-          }
-        ],
-        "k_span_ratio": 64782.1
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "regime": "coaxial",
-        "mu": 0.4,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.01,
-        "rubbing_od_mm": 1.02,
-        "reaction_N_upper_rigid_wall": 0.1803,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 10.7609,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
-        "sliding_in_contact_per_cycle_um_upper": 1.33,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.0006,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.0018,
-          "3.0": 0.0006
-        },
-        "area_projected_full_run_mm2": 17.34,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 437.5,
-            "duty_N_m_upper": 78.9,
-            "k_bound_edge_mm3_per_Nm": 7.619044771068373e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002198240205163487,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.6176028917152025e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001332266791053937
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 154.3,
-            "duty_N_m_upper": 27.8,
-            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00623378155455296,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978505e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00037780494271315686
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 21.6,
-            "duty_N_m_upper": 3.9,
-            "k_bound_edge_mm3_per_Nm": 1.5427627355407167e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.044511656962189734,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0026976761796193146
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 621.4,
-            "duty_N_m_upper": 112.0,
-            "k_bound_edge_mm3_per_Nm": 5.364407841811634e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001547734309101726,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562678763034e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.380207934272063e-05
-          }
-        ],
-        "k_span_ratio": 28851.9
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "regime": "coaxial",
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.01,
-        "rubbing_od_mm": 1.02,
-        "reaction_N_upper_rigid_wall": 0.2803,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 10.7609,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
-        "sliding_in_contact_per_cycle_um_upper": 1.33,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00093,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.0028,
-          "3.0": 0.00093
-        },
-        "area_projected_full_run_mm2": 17.34,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 437.5,
-            "duty_N_m_upper": 122.6,
-            "k_bound_edge_mm3_per_Nm": 7.619044771068374e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0014139946806670594,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.617602891715203e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.569664731609877e-05
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 154.3,
-            "duty_N_m_upper": 43.2,
-            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004009813821926145,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978507e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00024301901951902314
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 21.6,
-            "duty_N_m_upper": 6.1,
-            "k_bound_edge_mm3_per_Nm": 1.542762735540717e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.028631650910748516,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.001735251570408
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 621.4,
-            "duty_N_m_upper": 174.2,
-            "k_bound_edge_mm3_per_Nm": 5.3644078418116346e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0009955636672530903,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.251156267876304e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.033719195680532e-05
-          }
-        ],
-        "k_span_ratio": 18558.7
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal 10 \u00b5m film",
-        "regime": "offset",
-        "contact": false,
-        "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (165 \u00b5m), so the mouth is never a station on the sweep"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "regime": "coaxial",
-        "mu": 0.2,
-        "contact": false,
-        "why": "below the touchdown drag the rod never reaches the wall \u2014 a free cantilever at this \u00b5, so no rubbing is priced"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "regime": "coaxial",
-        "mu": 0.3,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.005,
-        "rubbing_od_mm": 1.01,
-        "reaction_N_upper_rigid_wall": 0.0737,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 11.087,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
-        "sliding_in_contact_per_cycle_um_upper": 0.659,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00025,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00074,
-          "3.0": 0.00025
-        },
-        "area_projected_full_run_mm2": 17.17,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 216.6,
-            "duty_N_m_upper": 16.0,
-            "k_bound_edge_mm3_per_Nm": 7.69448085699895e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0053777843818726715,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.26308260535117e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015817012890317336
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 76.4,
-            "duty_N_m_upper": 5.6,
-            "k_bound_edge_mm3_per_Nm": 2.182005075039268e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.015250350259874175,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406337e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004485397135953737
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 10.7,
-            "duty_N_m_upper": 0.8,
-            "k_bound_edge_mm3_per_Nm": 1.5580376139258217e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.10889351084575179,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081766e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0032027503194901187
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 307.6,
-            "duty_N_m_upper": 22.7,
-            "k_bound_edge_mm3_per_Nm": 5.417520790098564e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.003786383933486798,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5933884679235174e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011136423335514298
-          }
-        ],
-        "k_span_ratio": 69891.5
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "regime": "coaxial",
-        "mu": 0.4,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.005,
-        "rubbing_od_mm": 1.01,
-        "reaction_N_upper_rigid_wall": 0.1737,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 11.087,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
-        "sliding_in_contact_per_cycle_um_upper": 0.659,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00058,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00174,
-          "3.0": 0.00058
-        },
-        "area_projected_full_run_mm2": 17.17,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 216.6,
-            "duty_N_m_upper": 37.6,
-            "k_bound_edge_mm3_per_Nm": 7.694480856998947e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0022817657394589284,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826053511695e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.711075705333262e-05
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 76.4,
-            "duty_N_m_upper": 13.3,
-            "k_bound_edge_mm3_per_Nm": 2.1820050750392674e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0064706437199351,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406335e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00019031305061588394
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 10.7,
-            "duty_N_m_upper": 1.9,
-            "k_bound_edge_mm3_per_Nm": 1.5580376139258215e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.04620294616771392,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081765e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0013589101816144028
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 307.6,
-            "duty_N_m_upper": 53.4,
-            "k_bound_edge_mm3_per_Nm": 5.4175207900985634e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0016065428664247382,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.593388467923517e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.725126078453677e-05
-          }
-        ],
-        "k_span_ratio": 29654.6
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "regime": "coaxial",
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.005,
-        "rubbing_od_mm": 1.01,
-        "reaction_N_upper_rigid_wall": 0.2737,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 11.087,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
-        "sliding_in_contact_per_cycle_um_upper": 0.659,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00091,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00274,
-          "3.0": 0.00091
-        },
-        "area_projected_full_run_mm2": 17.17,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 216.6,
-            "duty_N_m_upper": 59.3,
-            "k_bound_edge_mm3_per_Nm": 7.694480856998948e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0014480917389258893,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826053511695e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.2590933504435065e-05
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 76.4,
-            "duty_N_m_upper": 20.9,
-            "k_bound_edge_mm3_per_Nm": 2.1820050750392674e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004106506445570796,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406335e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012077960135907577
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 10.7,
-            "duty_N_m_upper": 2.9,
-            "k_bound_edge_mm3_per_Nm": 1.5580376139258215e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.029322074349038756,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081765e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008624139515762578
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 307.6,
-            "duty_N_m_upper": 84.2,
-            "k_bound_edge_mm3_per_Nm": 5.4175207900985634e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001019570682857059,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5933884679235172e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 2.998737302986495e-05
-          }
-        ],
-        "k_span_ratio": 18819.9
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "conformal TiO2 ~5 \u00b5m",
-        "regime": "offset",
-        "contact": false,
-        "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (170 \u00b5m), so the mouth is never a station on the sweep"
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "coaxial",
-        "mu": 0.2,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "reaction_N_upper_rigid_wall": 0.1657,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 1.6163,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
-        "sliding_in_contact_per_cycle_um_upper": 20.283,
-        "upper_end_is": "free cantilever \u2014 the drag cannot reach the Ti bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00055,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00166,
-          "3.0": 0.00055
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 6670.0,
-            "duty_N_m_upper": 1105.2,
-            "k_bound_edge_mm3_per_Nm": 7.496240926454135e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002999401167313876,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236450636095e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01447726177837763
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 2352.1,
-            "duty_N_m_upper": 389.7,
-            "k_bound_edge_mm3_per_Nm": 2.1257880874915298e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.008505718177470636,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578332551893e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.04105469785444722
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 329.4,
-            "duty_N_m_upper": 54.6,
-            "k_bound_edge_mm3_per_Nm": 1.5178964693689518e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.060734179794303865,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2931467218720259
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 9473.4,
-            "duty_N_m_upper": 1569.7,
-            "k_bound_edge_mm3_per_Nm": 5.2779442591910456e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002111814751867027,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010193132990475752
-          }
-        ],
-        "k_span_ratio": 40012.1
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "coaxial",
-        "mu": 0.3,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "reaction_N_upper_rigid_wall": 0.2657,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 1.6163,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
-        "sliding_in_contact_per_cycle_um_upper": 25.214,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00089,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00266,
-          "3.0": 0.00089
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 8291.4,
-            "duty_N_m_upper": 2203.0,
-            "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0015047561640241269,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009028536984106786
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 2923.8,
-            "duty_N_m_upper": 776.9,
-            "k_bound_edge_mm3_per_Nm": 1.7100963887658416e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00426719573109429,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02560317438645805
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 409.5,
-            "duty_N_m_upper": 108.8,
-            "k_bound_edge_mm3_per_Nm": 1.2210762145399443e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.03046945917350331,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.182816755040251
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 11776.2,
-            "duty_N_m_upper": 3128.9,
-            "k_bound_edge_mm3_per_Nm": 4.24585755789074e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010594669028534287,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006356801417093835
-          }
-        ],
-        "k_span_ratio": 24953.0
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "coaxial",
-        "mu": 0.4,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "reaction_N_upper_rigid_wall": 0.3657,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 1.6163,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
-        "sliding_in_contact_per_cycle_um_upper": 25.214,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00122,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00366,
-          "3.0": 0.00122
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 8291.4,
-            "duty_N_m_upper": 3032.2,
-            "k_bound_edge_mm3_per_Nm": 6.030372741798046e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010932833272660938,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.618223645063609e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006559699963568972
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 2923.8,
-            "duty_N_m_upper": 1069.2,
-            "k_bound_edge_mm3_per_Nm": 1.710096388765841e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0031003388180250277,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.018602032908071928
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 409.5,
-            "duty_N_m_upper": 149.7,
-            "k_bound_edge_mm3_per_Nm": 1.2210762145399443e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.02213764096909989,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208851e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1328258458140407
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 11776.2,
-            "duty_N_m_upper": 4306.6,
-            "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0007697576048349904,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.547514534723728e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.004618545628990517
-          }
-        ],
-        "k_span_ratio": 18129.6
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "coaxial",
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 23.0,
-        "station": "exit \u2014 the tube's flush end against the bore's exit edge",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "reaction_N_upper_rigid_wall": 0.4657,
-        "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-        "landing_angle_mrad_rigid_wall": 1.6163,
-        "sliding_in_contact_um_rigid_kinematics": 0.0,
-        "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
-        "sliding_in_contact_per_cycle_um_upper": 25.214,
-        "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
-        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
-        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-        "area_material_bound_mm2": 0.00155,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00466,
-          "3.0": 0.00155
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m_upper": 8291.4,
-            "duty_N_m_upper": 3861.3,
-            "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0008585220373227625,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005151132223914909
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m_upper": 2923.8,
-            "duty_N_m_upper": 1361.6,
-            "k_bound_edge_mm3_per_Nm": 1.7100963887658413e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0024346014725182582,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608835048108
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m_upper": 409.5,
-            "duty_N_m_upper": 190.7,
-            "k_bound_edge_mm3_per_Nm": 1.221076214539944e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.017384013962636526,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408377538047
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m_upper": 11776.2,
-            "duty_N_m_upper": 5484.2,
-            "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0006044671593046082,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029558123942
-          }
-        ],
-        "k_span_ratio": 14236.6
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "offset",
-        "offset_um": 30,
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 6.0,
-        "station": "mouth \u2014 the bore's entry edge against the tube's flank",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "mouth_reaction_N": {
-          "static": 0.3751,
-          "+drag": 0.0,
-          "-drag": 0.6826
-        },
-        "mouth_loaded_through_the_cycle": false,
-        "reaction_N_upper_rigid_wall": 0.6826,
-        "rotation_about_mouth_per_cycle_mrad": 0.6825,
-        "slip_per_cycle_um_rigid_wall": 0.887,
-        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth relieves a displacement-driven load), and the in-contact rotation about a compliant mouth is not derived \u2014 2\u00b7r\u00b7\u0394\u03b8 is the rigid-wall rotation about the loaded mouth as the drag reverses; a sliding contact under a sustained load when the mouth stays loaded through the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
-        "area_material_bound_mm2": 0.00228,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.00683,
-          "3.0": 0.00228
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m": 291.8,
-            "duty_N_m": 199.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.713607391541606e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01664403311737599
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m": 102.9,
-            "duty_N_m": 70.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.859457180359966e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0471992398268189
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m": 14.4,
-            "duty_N_m": 9.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.469843932478705e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.337021173049133
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m": 414.4,
-            "duty_N_m": 282.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.206514622919477e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011718710738289092
-          }
-        ],
-        "k_span_ratio": 9712.9
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "offset",
-        "offset_um": 40,
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 6.0,
-        "station": "mouth \u2014 the bore's entry edge against the tube's flank",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "mouth_reaction_N": {
-          "static": 1.3232,
-          "+drag": 1.3232,
-          "-drag": 2.0479
-        },
-        "mouth_loaded_through_the_cycle": true,
-        "reaction_N_upper_rigid_wall": 2.0479,
-        "rotation_about_mouth_per_cycle_mrad": 0.6315,
-        "slip_per_cycle_um_rigid_wall": 0.821,
-        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth relieves a displacement-driven load), and the in-contact rotation about a compliant mouth is not derived \u2014 2\u00b7r\u00b7\u0394\u03b8 is the rigid-wall rotation about the loaded mouth as the drag reverses; a sliding contact under a sustained load when the mouth stays loaded through the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
-        "area_material_bound_mm2": 0.00683,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.02048,
-          "3.0": 0.00683
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m": 269.9,
-            "duty_N_m": 552.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522558044615472e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005996609201416114
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m": 95.2,
-            "duty_N_m": 194.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637105373708e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.017005217055826794
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m": 13.3,
-            "duty_N_m": 27.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.7505898937138866e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.12142395134197506
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m": 383.4,
-            "duty_N_m": 785.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3041340300591694e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.004222085365150786
-          }
-        ],
-        "k_span_ratio": 3237.5
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "offset",
-        "offset_um": 50,
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 6.0,
-        "station": "mouth \u2014 the bore's entry edge against the tube's flank",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "mouth_reaction_N": {
-          "static": 2.6884,
-          "+drag": 2.6884,
-          "-drag": 3.4131
-        },
-        "mouth_loaded_through_the_cycle": true,
-        "reaction_N_upper_rigid_wall": 3.4131,
-        "rotation_about_mouth_per_cycle_mrad": 0.6315,
-        "slip_per_cycle_um_rigid_wall": 0.821,
-        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth relieves a displacement-driven load), and the in-contact rotation about a compliant mouth is not derived \u2014 2\u00b7r\u00b7\u0394\u03b8 is the rigid-wall rotation about the loaded mouth as the drag reverses; a sliding contact under a sustained load when the mouth stays loaded through the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
-        "area_material_bound_mm2": 0.01138,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.03413,
-          "3.0": 0.01138
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m": 269.9,
-            "duty_N_m": 921.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522558044726404e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003598035798439426
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m": 95.2,
-            "duty_N_m": 324.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637105405166e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010203329527068134
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m": 13.3,
-            "duty_N_m": 45.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.7505898937363486e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.07285579383982888
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m": 383.4,
-            "duty_N_m": 1308.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.30413403006698e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0025333007000510025
-          }
-        ],
-        "k_span_ratio": 1942.5
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "offset",
-        "offset_um": 75,
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 6.0,
-        "station": "mouth \u2014 the bore's entry edge against the tube's flank",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "mouth_reaction_N": {
-          "static": 6.3453,
-          "+drag": 6.3453,
-          "-drag": 6.3727
-        },
-        "mouth_loaded_through_the_cycle": true,
-        "reaction_N_upper_rigid_wall": 6.3727,
-        "rotation_about_mouth_per_cycle_mrad": 0.0944,
-        "slip_per_cycle_um_rigid_wall": 0.123,
-        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth relieves a displacement-driven load), and the in-contact rotation about a compliant mouth is not derived \u2014 2\u00b7r\u00b7\u0394\u03b8 is the rigid-wall rotation about the loaded mouth as the drag reverses; a sliding contact under a sustained load when the mouth stays loaded through the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
-        "area_material_bound_mm2": 0.02124,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.06373,
-          "3.0": 0.02124
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m": 40.4,
-            "duty_N_m": 257.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2385713710740155e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.012885791250522891
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m": 14.2,
-            "duty_N_m": 90.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.5123474444979244e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03654159705779535
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m": 2.0,
-            "duty_N_m": 12.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.0002507954493004799,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2609214036220412
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m": 57.3,
-            "duty_N_m": 365.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.720518352724106e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009072612343050956
-          }
-        ],
-        "k_span_ratio": 1040.4
-      },
-      {
-        "geometry": "script 55 placeholder (HW.8)",
-        "branch": "PEEK liner 0.15 mm",
-        "regime": "offset",
-        "offset_um": 100,
-        "mu": 0.5,
-        "contact": true,
-        "station_mm": 6.0,
-        "station": "mouth \u2014 the bore's entry edge against the tube's flank",
-        "wall_allowance_mm": 0.15,
-        "rubbing_od_mm": 1.3,
-        "mouth_reaction_N": {
-          "static": 11.1476,
-          "+drag": 11.1558,
-          "-drag": 10.8126
-        },
-        "mouth_loaded_through_the_cycle": true,
-        "reaction_N_upper_rigid_wall": 11.1558,
-        "rotation_about_mouth_per_cycle_mrad": 0.1326,
-        "slip_per_cycle_um_rigid_wall": 0.172,
-        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth relieves a displacement-driven load), and the in-contact rotation about a compliant mouth is not derived \u2014 2\u00b7r\u00b7\u0394\u03b8 is the rigid-wall rotation about the loaded mouth as the drag reverses; a sliding contact under a sustained load when the mouth stays loaded through the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
-        "area_material_bound_mm2": 0.03719,
-        "area_by_constraint_factor_mm2": {
-          "1.0": 0.11156,
-          "3.0": 0.03719
-        },
-        "area_projected_full_run_mm2": 22.1,
-        "by_duty_anchor": [
-          {
-            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
-            "n_cycles": 328840000.0,
-            "sliding_distance_m": 56.7,
-            "duty_N_m": 632.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.821566793276874e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005242742594831898
-          },
-          {
-            "anchor": "Beaufort 4 (small branches move)",
-            "n_cycles": 115960000.0,
-            "sliding_distance_m": 20.0,
-            "duty_N_m": 223.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5016247191282924e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01486739802418525
-          },
-          {
-            "anchor": "Beaufort 5 (small trees begin to sway)",
-            "n_cycles": 16240000.0,
-            "sliding_distance_m": 2.8,
-            "duty_N_m": 31.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.00017862586356534287,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10615908096579567
-          },
-          {
-            "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
-            "n_cycles": 467050000.0,
-            "sliding_distance_m": 80.5,
-            "duty_N_m": 898.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.211078095067269e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036913038751408235
-          }
-        ],
-        "k_span_ratio": 594.3
-      },
-      {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.2,
@@ -3334,7 +1830,7 @@
         "k_span_ratio": 37777.8
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.3,
@@ -3403,7 +1899,7 @@
         "k_span_ratio": 21884.7
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.4,
@@ -3472,7 +1968,7 @@
         "k_span_ratio": 15404.2
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.5,
@@ -3541,14 +2037,14 @@
         "k_span_ratio": 11884.9
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal 10 \u00b5m film",
         "regime": "offset",
         "contact": false,
         "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (165 \u00b5m), so the mouth is never a station on the sweep"
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.2,
@@ -3617,7 +2113,7 @@
         "k_span_ratio": 37930.8
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.3,
@@ -3686,7 +2182,7 @@
         "k_span_ratio": 21844.8
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.4,
@@ -3755,7 +2251,7 @@
         "k_span_ratio": 15339.5
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.5,
@@ -3824,14 +2320,14 @@
         "k_span_ratio": 11819.6
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "offset",
         "contact": false,
         "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (170 \u00b5m), so the mouth is never a station on the sweep"
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.2,
@@ -3900,7 +2396,7 @@
         "k_span_ratio": 34803.1
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.3,
@@ -3969,7 +2465,7 @@
         "k_span_ratio": 22822.7
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.4,
@@ -4038,7 +2534,7 @@
         "k_span_ratio": 16978.2
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.5,
@@ -4107,7 +2603,7 @@
         "k_span_ratio": 13516.8
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 30,
@@ -4170,7 +2666,7 @@
         "k_span_ratio": 141970.0
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 40,
@@ -4233,7 +2729,7 @@
         "k_span_ratio": 47357.1
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 50,
@@ -4296,7 +2792,7 @@
         "k_span_ratio": 28406.2
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 75,
@@ -4359,7 +2855,7 @@
         "k_span_ratio": 14203.1
       },
       {
-        "geometry": "lock window, near end",
+        "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 100,
@@ -4422,7 +2918,7 @@
         "k_span_ratio": 9468.7
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.2,
@@ -4491,7 +2987,7 @@
         "k_span_ratio": 33583.0
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.3,
@@ -4560,7 +3056,7 @@
         "k_span_ratio": 20408.0
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.4,
@@ -4629,7 +3125,7 @@
         "k_span_ratio": 14657.7
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "regime": "coaxial",
         "mu": 0.5,
@@ -4698,14 +3194,14 @@
         "k_span_ratio": 11435.5
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal 10 \u00b5m film",
         "regime": "offset",
         "contact": false,
         "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (165 \u00b5m), so the mouth is never a station on the sweep"
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.2,
@@ -4774,7 +3270,7 @@
         "k_span_ratio": 33535.2
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.3,
@@ -4843,7 +3339,7 @@
         "k_span_ratio": 20311.5
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.4,
@@ -4912,7 +3408,7 @@
         "k_span_ratio": 14567.3
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "coaxial",
         "mu": 0.5,
@@ -4981,14 +3477,14 @@
         "k_span_ratio": 11355.8
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "conformal TiO2 ~5 \u00b5m",
         "regime": "offset",
         "contact": false,
         "why": "the swept offsets (\u2264 100 \u00b5m) lie inside this branch's play (170 \u00b5m), so the mouth is never a station on the sweep"
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.2,
@@ -5057,7 +3553,7 @@
         "k_span_ratio": 34334.5
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.3,
@@ -5126,7 +3622,7 @@
         "k_span_ratio": 22620.3
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.4,
@@ -5195,7 +3691,7 @@
         "k_span_ratio": 16865.9
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "coaxial",
         "mu": 0.5,
@@ -5264,7 +3760,7 @@
         "k_span_ratio": 13445.5
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 30,
@@ -5327,7 +3823,7 @@
         "k_span_ratio": 225510.2
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 40,
@@ -5390,7 +3886,7 @@
         "k_span_ratio": 75255.4
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 50,
@@ -5453,7 +3949,7 @@
         "k_span_ratio": 45163.5
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 75,
@@ -5516,7 +4012,7 @@
         "k_span_ratio": 22589.4
       },
       {
-        "geometry": "lock window, far end",
+        "geometry": "lock window, shallow end",
         "branch": "PEEK liner 0.15 mm",
         "regime": "offset",
         "offset_um": 100,
@@ -5610,73 +4106,73 @@
       "note": "the liner's differential axial travel against Ti, the only other sliding this geometry produces. Its cycle count is SWEPT (seasonal = 1/yr by definition, diurnal is nowhere in this tree) because the finding is the ORDER: even the generous end stays orders below the sway term, so the sway drag is the wear axis. DERIVED, not assumed"
     },
     "binding": {
-      "geometry": "script 55 placeholder (HW.8)",
+      "geometry": "shipped \u2014 the whole lock shank (HW.26 G1)",
       "branch": "PEEK liner 0.15 mm",
       "regime": "coaxial",
       "mu": 0.5,
       "contact": true,
-      "station_mm": 23.0,
+      "station_mm": 35.0,
       "station": "exit \u2014 the tube's flush end against the bore's exit edge",
       "wall_allowance_mm": 0.15,
       "rubbing_od_mm": 1.3,
-      "reaction_N_upper_rigid_wall": 0.4657,
+      "reaction_N_upper_rigid_wall": 0.4905,
       "reaction_bound": "UPPER \u2014 rigid wall (drag \u2212 touchdown drag); a compliant polymer edge takes less",
-      "landing_angle_mrad_rigid_wall": 1.6163,
+      "landing_angle_mrad_rigid_wall": 1.0627,
       "sliding_in_contact_um_rigid_kinematics": 0.0,
-      "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
-      "sliding_in_contact_per_cycle_um_upper": 25.214,
+      "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.763,
+      "sliding_in_contact_per_cycle_um_upper": 16.577,
       "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
       "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
       "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
-      "area_material_bound_mm2": 0.00155,
+      "area_material_bound_mm2": 0.00163,
       "area_by_constraint_factor_mm2": {
-        "1.0": 0.00466,
-        "3.0": 0.00155
+        "1.0": 0.0049,
+        "3.0": 0.00163
       },
       "area_projected_full_run_mm2": 22.1,
       "by_duty_anchor": [
         {
           "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
           "n_cycles": 328840000.0,
-          "sliding_distance_m_upper": 8291.4,
-          "duty_N_m_upper": 3861.3,
-          "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
-          "k_bound_conformal_mm3_per_Nm": 0.0008585220373227625,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005151132223914909
+          "sliding_distance_m_upper": 5451.3,
+          "duty_N_m_upper": 2673.9,
+          "k_bound_edge_mm3_per_Nm": 9.172132836843181e-08,
+          "k_bound_conformal_mm3_per_Nm": 0.0012397806464479163,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 5.503279702165125e-07,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00743868387876754
         },
         {
           "anchor": "Beaufort 4 (small branches move)",
           "n_cycles": 115960000.0,
-          "sliding_distance_m_upper": 2923.8,
-          "duty_N_m_upper": 1361.6,
-          "k_bound_edge_mm3_per_Nm": 1.7100963887658413e-07,
-          "k_bound_conformal_mm3_per_Nm": 0.0024346014725182582,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608835048108
+          "sliding_distance_m_upper": 1922.3,
+          "duty_N_m_upper": 942.9,
+          "k_bound_edge_mm3_per_Nm": 2.6010384288267606e-07,
+          "k_bound_conformal_mm3_per_Nm": 0.00351577671419397,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5606230573128491e-06,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.021094660285390806
         },
         {
           "anchor": "Beaufort 5 (small trees begin to sway)",
           "n_cycles": 16240000.0,
-          "sliding_distance_m_upper": 409.5,
-          "duty_N_m_upper": 190.7,
-          "k_bound_edge_mm3_per_Nm": 1.221076214539944e-06,
-          "k_bound_conformal_mm3_per_Nm": 0.017384013962636526,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408377538047
+          "sliding_distance_m_upper": 269.2,
+          "duty_N_m_upper": 132.1,
+          "k_bound_edge_mm3_per_Nm": 1.8572439421597978e-06,
+          "k_bound_conformal_mm3_per_Nm": 0.02510403126711409,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 1.1143463653078692e-05,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.15062418760430527
         },
         {
           "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
           "n_cycles": 467050000.0,
-          "sliding_distance_m_upper": 11776.2,
-          "duty_N_m_upper": 5484.2,
-          "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
-          "k_bound_conformal_mm3_per_Nm": 0.0006044671593046082,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029558123942
+          "sliding_distance_m_upper": 7742.4,
+          "duty_N_m_upper": 3797.7,
+          "k_bound_edge_mm3_per_Nm": 6.457904211685069e-08,
+          "k_bound_conformal_mm3_per_Nm": 0.0008729032604173704,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 3.874742527052735e-07,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005237419562560578
         }
       ],
-      "k_span_ratio": 14236.6
+      "k_span_ratio": 13516.8
     },
     "reaction_cancels_at_the_tight_end": "A = R/p_flow and duty = R x s, so k = h x A / duty reduces EXACTLY to h / (p_flow x s). The flow-limited budget therefore contains no contact force, and the weakest input of the chain has no say in the binding half of the answer. It survives only in the worn-in end, through the projected area. Pinned in-run against the closed form, not merely described",
     "not_modelled": {
@@ -5708,8 +4204,8 @@
         "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.0,
         "radial_play_mm": 0.0,
-        "coaxial_cap_sigma_MPa_placeholder": null,
-        "touchdown_drag_N_placeholder": null,
+        "coaxial_cap_sigma_MPa_shipped": null,
+        "touchdown_drag_N_shipped": null,
         "assembles": false
       },
       {
@@ -5721,8 +4217,8 @@
         "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
-        "coaxial_cap_sigma_MPa_placeholder": 7.8,
-        "touchdown_drag_N_placeholder": 0.0333,
+        "coaxial_cap_sigma_MPa_shipped": 3.37,
+        "touchdown_drag_N_shipped": 0.0094,
         "assembles": true
       },
       {
@@ -5734,8 +4230,8 @@
         "is_shipped_geometry": true,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
-        "coaxial_cap_sigma_MPa_placeholder": 7.8,
-        "touchdown_drag_N_placeholder": 0.0333,
+        "coaxial_cap_sigma_MPa_shipped": 3.37,
+        "touchdown_drag_N_shipped": 0.0094,
         "assembles": true
       },
       {
@@ -5747,13 +4243,13 @@
         "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
-        "coaxial_cap_sigma_MPa_placeholder": 7.41,
-        "touchdown_drag_N_placeholder": 0.0271,
+        "coaxial_cap_sigma_MPa_shipped": 3.2,
+        "touchdown_drag_N_shipped": 0.0077,
         "assembles": true
       }
     ],
     "note": "radial_play answers ASSEMBLY, the coaxial cap and touchdown answer SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 7.5-20.7x (infinite life, all alloys) on the 6 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 5 of 6 alloys (SF 2.0-5.4x, placeholder span); short of the SF-2 line: Ta; none is predicted to fail. On the superseded PRINTED branch 4 of 6 reach infinite life bare (CP-Ti-Gr4 short of the SF-2 line), predicted failure: Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in script 55 placeholder (HW.8) [8.04, 56.3] MPa / lock window, near end [3.40, 23.8] MPa / lock window, far end [2.73, 19.1] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); script 55 placeholder (HW.8): forced PEEK liner 0.15 mm, partly conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, free none; lock window, near end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, far end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, \u2696\ufe0f 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both window ends, the \u00a71-\u00a73 tables the placeholder only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, 01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 11x); the bore liner doubles as lateral support -> fatigue SF 2.5-6.9x (infinite life, all alloys) on the 18 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.3-3.5x, shipped span); short of the SF-2 line: CP-Ti-Gr4, Ta; none is predicted to fail. On the superseded PRINTED branch 0 of 6 reach infinite life bare (Ti-15Zr, beta-Ti-13Nb-13Zr, Ti-6Al-4V, Ti-6Al-7Nb short of the SF-2 line), predicted failure: CP-Ti-Gr4, Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in shipped \u2014 the whole lock shank (HW.26 G1) [3.40, 23.8] MPa / lock window, shallow end [2.73, 19.1] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); shipped \u2014 the whole lock shank (HW.26 G1): forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, shallow end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, \u2696\ufe0f 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from the Zone-1 insertion \u2014 the whole lock shank since \u2696\ufe0f 00_07 HW.26 G1 2026-10-12; the contact blocks carry the shipped geometry AND the lock window's shallow end, the \u00a71-\u00a73 tables the shipped geometry only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, 01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
 }

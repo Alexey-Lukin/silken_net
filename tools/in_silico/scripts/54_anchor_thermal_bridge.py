@@ -103,11 +103,11 @@ D_Z1_SHANK = float(_LOCK_Z1["shank_diameter_mm"])                           # Zo
 D_BORE_ANODE = float(_LOCK_Z1["bore_diameter_mm"])  # 0 = SOLID shank: the monolithic anode carries no bore (01_01 §1.4)
 D_Z3_SHANK = float(_FLANGE["shank_diameter_mm"])                            # Zone-3 cathode shank OD (HW.8 placeholder)
 D_BORE_CATHODE = float(_FLANGE["bore_diameter_mm"])  # bus channel through the cathode shank+flange — the BOTTLENECK
-# Shank insertions (F2 axial-stack: 50 − 30 − 14 = 6 mm gap) are placeholders (30 — 00_07 HW.26 G1, 14 — HW.8.9) → the gap (effective PEEK
-# break) is itself a design lever, swept below. The Zone-3 one is a manifest field; the Zone-1 one has none
-# (`Zone1InsertionMm` lives only in Cem.cs) and is deliberately NOT promoted into one — that would canonise a
-# placeholder — so it stays a by-value crossing, the same one script 55 names.
-L_A_INSERT = 30.0                                  # Zone-1 anode shank insertion (Cem.cs Zone1InsertionMm)
+# Shank insertions (F2 axial-stack: 50 − 18 − 14 = 18 mm gap). The Zone-1 one is the lock's WHOLE shank (⚖️ founder
+# 2026-10-12, 00_07 HW.26 G1 branch (А): the shoulder is the stop — the same reading AxialStack.Load makes; 30 was the
+# retired placeholder); the Zone-3 one is a manifest field, a placeholder of HW.8.9. The gap (effective PEEK break) is
+# still a design lever, swept below.
+L_A_INSERT = float(_LOCK_Z1["shank_length_mm"])    # Zone-1 anode shank insertion = the whole lock shank (G1)
 L_C_INSERT = float(_FLANGE["shank_length_mm"])    # Zone-3 cathode shank insertion
 
 # The conducting cross-section is the ROD, not the channel it threads: the remaining Ø1.35 − Ø1.0 is the
@@ -332,7 +332,7 @@ def main() -> int:
     print(f"  {'L_a':>4s} {'L_c':>4s} {'gap':>4s} | {'R_anchor Cu':>12s} {'R_anchor Ti':>12s} {'R_anchor none':>14s}")
     print(f"  {'-'*58}")
     insertion_rows = []
-    for l_a, l_c in [(30.0, 14.0), (20.0, 10.0), (10.0, 8.0), (6.0, 6.0)]:
+    for l_a, l_c in [(30.0, 14.0), (L_A_INSERT, L_C_INSERT), (10.0, 8.0), (6.0, 6.0)]:   # 30/14 = the retired G1 placeholder
         if l_a + l_c >= L_SLEEVE:
             continue
         rc = 1.0 / g_anchor(LAMBDA_CU, l_a, l_c)["g_total"]

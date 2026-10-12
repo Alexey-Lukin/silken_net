@@ -140,7 +140,13 @@ D_SLEEVE_BORE = 11.0     # sleeve bore = Zone-1 shank Ø (frozen)
 D_Z3_SHANK = 9.0         # Zone-3 cathode shank OD (cem placeholder, HW.8)
 D_BUS = D_BUS_ROD_MM     # monolithic bus rod Ø — one home: lib.constants (01_01 §1.4 frozen)
 L_SLEEVE = 50.0          # PEEK thermal-break length (frozen)
-L_A_INSERT = 30.0        # Zone-1 shank insertion into the sleeve (placeholder, 00_07 HW.26 G1, script 54)
+L_A_INSERT = 30.0        # Zone-1 shank insertion at the time of THIS run — the placeholder ⚖️ HW.26 G1 retired 2026-10-12 (the
+                         # whole lock shank, 18, since). ⚠️ NOT re-run, like D_FLANGE: the procedure is gone, and a run moving only
+                         # this input would describe neither the record nor the part. Its SIGN was measured once (2026-10-12, at 18):
+                         # every cambium figure FALLS, so this record is the conservative side of both halves of the verdict.
+                         # The sign run is reproducible, not a remembered number: `--insertion-from-lock` re-runs this model at
+                         # the lock's shank and writes its own cache (`.g1_insertion.json`, no plot), never this record. Live
+                         # readers of the shank → the lock manifest, never this constant.
 L_C_INSERT = 14.0        # Zone-3 shank insertion (placeholder, 00_07 HW.8.9, script 54)
 L_GYROID = 40.0          # Zone-1 gyroid in sapwood — cem/anchor_zone1.pine.json (canon 30-50)
 POROSITY_GYROID = 0.65   # 01_01 §5.2 nominal (⚖️ 2026-09-17; the shop band is 60-70 %, judged on the whole part)
@@ -528,7 +534,16 @@ def summarise(res: dict, dom: dict) -> dict:
 
 
 def main() -> int:
-    banner("HW.6 — thermal-install radial field: does the cambium stay below 50 °C?")
+    global L_A_INSERT
+    # ⚖️ HW.26 G1 sign run: the record above stays at the insertion it was run on; this flag re-runs the SAME model at
+    # the lock's whole shank and writes a separate cache, so the sign the canon quotes has an owner.
+    sign_run = "--insertion-from-lock" in sys.argv[1:]
+    if sign_run:
+        L_A_INSERT = float(json.loads((REPO_ROOT / "tools/cad/cem/mechanical_lock.zone1.json").read_text(encoding="utf-8"))
+                           ["shank_length_mm"])
+    stem = "thermal_install_field" + (".g1_insertion" if sign_run else "")
+    banner("HW.6 — thermal-install radial field: does the cambium stay below 50 °C?"
+           + (f"  [G1 sign run, Zone-1 insertion {L_A_INSERT:.0f} mm]" if sign_run else ""))
 
     # ── (A) orphan-cache generator ─────────────────────────────────────────
     banner("(A) Generator for the orphan cache kinetics/thermal_penetration.json")
@@ -975,9 +990,10 @@ def main() -> int:
     ax3.set_title(f"S1a field at {t_hold / 60:.0f} min (cyan = 50 °C)")
     fig.colorbar(im, ax=ax3, label="°C")
     plt.tight_layout()
-    fig_path = OUT_DIR / "thermal_install_field.png"
-    plt.savefig(fig_path, dpi=150)
-    print(f"\n  Plot: {fig_path.relative_to(REPO_ROOT)}")
+    if not sign_run:
+        fig_path = OUT_DIR / "thermal_install_field.png"
+        plt.savefig(fig_path, dpi=150)
+        print(f"\n  Plot: {fig_path.relative_to(REPO_ROOT)}")
 
     out = {
         "method": "2D axisymmetric transient finite-volume conduction (explicit, harmonic-mean "
@@ -1037,7 +1053,12 @@ def main() -> int:
                     "Every other listed omission biases tissue temperature UPWARD, so the "
                     "cambium verdict is conservative.",
     }
-    json_path = OUT_DIR / "thermal_install_field.json"
+    if sign_run:
+        out["g1_sign_run"] = {"record": "mechanical/thermal_install_field.json (insertion 30, the retired placeholder)",
+                              "insertion_mm": L_A_INSERT, "why": "00_07 HW.26 G1 2026-10-12: the record is deliberately not "
+                              "re-run (a hybrid of the new insertion and the old flange premise would describe neither); this "
+                              "run measures only the SIGN of the insertion move, which the canon quotes beside the record"}
+    json_path = OUT_DIR / f"{stem}.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))
     banner(f"Saved {json_path.relative_to(REPO_ROOT)}")
 

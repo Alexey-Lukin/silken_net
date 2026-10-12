@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 284 · 16,534,368 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 285 · 16,454,355 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -87,21 +87,21 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | `5505b94046b1c7cc13c84e8064a8d17266cf6b1b7330fbe8f3652a018dd2ab50` | Component degradation models: Arrhenius ageing, Kirkendall diffusion, H7/s6 press-fit and EDLC endurance hours. |
 | `tools/in_silico/scripts/52_z_stack_tolerance.py` | `ec51404fd77239f9a77f21d9ee0938ddada7f8814d3fbb6117c27bf1ae0af359` | Axial Z-stack tolerance of the sensor capsule's blind mate to the anchor (pogo pins and O-ring as two springs). |
 | `tools/in_silico/scripts/53_oxide_det_per_alloy.py` | `4478077492c51936376836ad377739348e119abe4302ce5c490f84dc396f9733` | Per-alloy native-oxide tunnelling model: direct-electron-transfer feasibility across the candidate anchor alloys. |
-| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `9c44416d4ef2114bd9fd73e0f49c8eaad251fc5da088822d51e4154017b5f3ce` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
-| `tools/in_silico/scripts/55_bus_mechanical.py` | `5103315e9f0637c4b0b0a1717520df3e88f68d892be006f787c11cea74a3413d` | Mechanical check of the central bus rod: buckling and sway fatigue. |
+| `tools/in_silico/scripts/54_anchor_thermal_bridge.py` | `b95c67309b8bce54b570fb5551a430cd412c8f1367f4648e06a8784c5ca7c689` | Axial thermal bridge of the central bus conductor through the anchor's PEEK thermal break. |
+| `tools/in_silico/scripts/55_bus_mechanical.py` | `12126df73dfef6139ffb2d664009a927aa3917eedb18075d5d7b99b43607e4a5` | Mechanical check of the central bus rod: buckling and sway fatigue. |
 | `tools/in_silico/scripts/56_unified_press_fit_lame.py` | `540c96b92a3d8b411b7b321f13a730a123eb6c19533a49eec2aaebf67f7fa9e8` | Unified thick-wall Lamé model: press-fit interference and thermal mismatch in one model. |
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
-| `tools/in_silico/scripts/58_thermal_install_field.py` | `e65e44b32c1f58e20316b9042d3ef08cb307ef63bcdfbd411a7b8f7286ca41cd` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
+| `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `31a1ef5a288c1dccaef4dfffbfaa37f5985ae4c6a3aa33a9e479ddfa20b72766` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
 | `tools/in_silico/scripts/60_paper_figures.py` | `e9ffa6c0b2d113a62c473287999987f984c2c54cea832b3204b02bd8fc0fbd46` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `6c2d340a8033a4205dd6aaf894aa3b2799c546e458a47178ccfa3b61a147441a` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
-| `tools/in_silico/scripts/64_teg_across_peek_break.py` | `3a8bd4b553b40b71f3f177d341140426e5ed282878b62d1d2936061b3814b11c` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
+| `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `1893e0838191293f9f2ecfc0c248bed1d136ff5f94b5141828975e3502bae755` | Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ff178d89d69f927e64dda03acef57aff480dec8bbb163d053727623022743abc` | The thinnest printed feature of a gyroid lattice, per topology, at fixed porosity. |
 | `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `f741ba034c1870e799a6d69bcddc46a4465313a54c6c67ac8edd476a61282a75` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
-| `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `e65920edbdb61ad02dd2e5ba439bd82915e64652299b206a0f5f61033b997b04` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
+| `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `00545e0d358b802b9be31d7e041cd4642fb8c13c7805ac3bb003d621bd5278e6` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `09c2f27cc96e905dfd508c35e7ce62f2fd5272bf83bd56c38a59ee01acb1d779` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `95788659543a9322202c77c2e066f2a21bd65181640da0dd7c4ca6b611ce76a1` | Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC. |
@@ -117,13 +117,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/81_capsule_cold_edge_sky.py` | `796730c1eca2d7b4b968ce08ab7289ba84aa817e11e80f68070ade27ec9fd8c3` | Cold edge of the sensor capsule's thermal envelope with clear-sky and overcast long-wave exchange, over thirty years of hourly weather, against the operating floor of its supercapacitor. |
 | `tools/in_silico/scripts/82_collar_running_clearance.py` | `72ff1cebfe494be649a75db7afae9d98b97c358bd035acd7fd2c49f64eb33b1f` | Running clearance of the bayonet collar in the radome's socket band across the capsule temperature envelope, as a function of the manufacturing route, and the board ceiling each route leaves. |
 | `tools/in_silico/scripts/83_os_series_vs_measured.py` | `0b535e3496c85477ccfdafa0aa130dc3aa0690805d79acbfab34a3d69e8d8697` | Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with three measured series: homoleptic osmium complexes in acetonitrile (donors only), an aqueous series of the same bis-bipyridine chloro core, and the osmium redox polymers of the same core with an imidazole donor (paper ref 8), under named transfer assumptions. |
-| `tools/in_silico/scripts/84_cathode_ionic_path.py` | `136cf756735e1231f3e78c88d1473a51da72945dbb5dee0037bf8c812f4eecda` | Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by element, against the cold-start budget of the energy harvester for two readings of the electrodes' own internal resistance: the material value each layer would need, with published tree and stemflow readings beside it. |
+| `tools/in_silico/scripts/84_cathode_ionic_path.py` | `cb926373b6babb3642ee6de50159b311085ac4858000dbef55fc079af4af6de0` | Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by element, against the cold-start budget of the energy harvester for two readings of the electrodes' own internal resistance: the material value each layer would need, with published tree and stemflow readings beside it. |
 | `tools/in_silico/scripts/85_electrode_interfacial_ph.py` | `e0ea54e6e7c0b8575eb5ea59199b766af39104e9b6892d710aade320b5967f68` | How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, the anode as the diffusion-layer thickness its predicted current tolerates. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `b69fafaae2aa9486ebd216baf817e71e085f8509871be02c8cd32bbf8bfaa908` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `4150a871e8b4622a2d8e06fd8bdd10fe1ca288f3f79bbe6f0ce23843139563d2` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `3cff779816d618cbea1269da9857d87fd1098e594776b3fa359cfb4f8552eeb6` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `317d18de253f4bc9ca736e9487051e004a111830d339e20a432d5e35ce3ce080` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -193,7 +193,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | File | SHA-256 | Bytes |
 |---|---|---|
 | `tools/in_silico/cache/kinetics/cathode_det_rct.json` | `33e223198355268c268f0c87b21ad9a71aa136527f912ccc1e37e5c8def4b4f0` | 5,308 |
-| `tools/in_silico/cache/kinetics/cathode_ionic_path.json` | `c1c465f6851facba0b6a58511e78d0b1f530ba7c3a6b6743f45cde294d01a9ce` | 11,281 |
+| `tools/in_silico/cache/kinetics/cathode_ionic_path.json` | `950a7f42de09b85b9d378171117ca3589ac21f43902128d3ac94fb1166c26112` | 10,317 |
 | `tools/in_silico/cache/kinetics/delta_t_aux_power_sensitivity.json` | `928324654a47c77d30bf9e4a921dd8916d9421604c11dc1b420b12df4993146e` | 21,324 |
 | `tools/in_silico/cache/kinetics/delta_t_heatmap.png` | `87f2882c22bca8a9b4f69862a64d12634700cb5cb66a5842a3d0df660a2c2705` | 98,902 |
 | `tools/in_silico/cache/kinetics/delta_t_lookup.json` | `e35048010689622eca81d4d01490b1b9f4a5f1f205bd09ec31067c7c0974ef89` | 4,489 |
@@ -222,17 +222,18 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 
 | File | SHA-256 | Bytes |
 |---|---|---|
-| `tools/in_silico/cache/mechanical/anchor_thermal_bridge.json` | `02eb21883a5c45e6b25304713685fd5dd6c7b0e2deb33a6df93535ea1410bb5d` | 15,322 |
-| `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `55a71dad9f55279cf45a3cc97abc802b80b5cc4daacde13a4890340e9015c16f` | 114,408 |
+| `tools/in_silico/cache/mechanical/anchor_thermal_bridge.json` | `dac7658314bf1e37d92beaf31b4146e430617e9f78bb3f94c4365878882b75ea` | 15,304 |
+| `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `50f53691c01e9960a36d2508299b4b3deabf3234f6eb444bf42331a7938d0ba8` | 110,967 |
 | `tools/in_silico/cache/mechanical/anchor_torque_path.json` | `c2752d18386c03bab9edb8256d42841edcb34e48aed038158da65ffcaa7d16b4` | 16,509 |
-| `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `9b1731a77f4f8d0366792d33a7f19d87d35a88d4ad8c2d8e68dab5eccdb69f3f` | 106,711 |
-| `tools/in_silico/cache/mechanical/bus_mechanical.json` | `e7593ef3fe02afec49769604bc93e827e829c5ac57d9737962cf4d31bc57b748` | 314,276 |
+| `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `69cba405183613e4b462f6e5ff7717f7eb49888d34186f7eac7e1dc775a44088` | 72,799 |
+| `tools/in_silico/cache/mechanical/bus_mechanical.json` | `68de8e77fc683f471c2816bcf92f32922c97a3294ce61820d317646b7f0ac35c` | 234,387 |
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `0cb6ea63053fb6a149ccc21e26e00ded17decd1aa7d14ca797b72e4ce136d5b9` | 5,541 |
 | `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `d26fa3104c1d9b6cdc6cbeafde8831d957dfea8e37ece79829c7c3118eaf1e6d` | 9,257 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
-| `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `c4d038312f9dd6b6dd080a1e1de2d3d4c8203d781a11431637edda9967f0efa7` | 67,160 |
-| `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `6d0af0d6d808c6edd245087470b2486591df93a9b682be2eb7ea0c6e17810ae7` | 152,028 |
+| `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `434d4456b3eb5cf79e3af7da4f916419eb34accc094455d36053898485c5c055` | 67,177 |
+| `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `87e017e898f28f38daedce70804a3954693580a7ed7adc5416b3dca0831aba06` | 151,967 |
+| `tools/in_silico/cache/mechanical/thermal_install_field.g1_insertion.json` | `7de39dfe8085a991e4967581e6aef2fe1106838355ae48440ed05843745af450` | 31,477 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `678670894a04ba007117efa9fee4b62c7b2cafda7fa78c7b3a5a83fdc6bba901` | 5,923 |

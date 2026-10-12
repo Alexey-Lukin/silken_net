@@ -36,8 +36,11 @@ film over the non-catalytic buffer up to the band, and must ENTER the catalyst l
      with sap, far more conductive than wood: the equipotential is the bore wall, Ø15) and «ingrown» (wood in the gap:
      Ø11); an AIR gap — sap in the bore only in the pressure season (HW.53 desk) — is not modelled: layer 1 then runs
      through contact points only, and the path is open. d = L_sleeve − (dead bark under the flange + inner bark); L = the lattice length
-     outside the sleeve: 40 mm if Zone 1 enters only by its shank (18 mm, the lock manifest), 28 mm at the PLACEHOLDER
-     insertion 30 mm (Cem.cs Zone1InsertionMm, `58` L_A_INSERT) — the standing conflict 00_07 HW.26 G1. The wood is
+     outside the sleeve: the whole 40 mm — since ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)) only the lock's shank
+     enters the sleeve, so the length is the VERDICT, not an input (no insertion number exists any more; the cache records
+     the lock's shank beside it) and the pair the corner grid swept collapses to one value; until then the placeholder
+     insertion 30 put 12 mm of this model's lattice in the bore and the short end was 28 mm. ⚠️ What HOLDS the depth is
+     open (00_07 HW.26): on a Ø11 lattice nothing in the part stops it following the shank in. The wood is
      taken as ISOTROPIC at the ERT reading; wood conducts better along the grain, so R1 is likely an overestimate.
   2. living inner bark (phloem + cambial zone) — a sheet of thickness t, radial convergence from R_in to the flange
      radius r2: R2 = (ρ/t)·ln(R_in/r2)/(2π), R_in ∈ [d, d + L] — where the rod's current reaches the plane.
@@ -253,12 +256,12 @@ def geometry() -> dict:
     lock = json.loads((CEM / "mechanical_lock.zone1.json").read_text(encoding="utf-8"))
     sleeve = json.loads((CEM / "zone2_sleeve.json").read_text(encoding="utf-8"))
     lattice = zone1["length_mm"]
-    into_bore = max(0.0, S58.L_A_INSERT - lock["shank_length_mm"])   # lattice inside the sleeve at the placeholder insertion
     return {"flange_radius_m": bark["flange_diameter_mm"] / 2e3, "wound_radius_m": R_OUTER_M,
             "anode_radius_m": zone1["outer_diameter_mm"] / 2e3,
             "bore_radius_m": (sleeve["bore_diameter_mm"] / 2 + sleeve["wall_thickness_mm"]) / 1e3,   # sleeve OD = the bore
-            "anode_exposed_length_m": ((lattice - into_bore) / 1e3, lattice / 1e3),
-            "zone1_insertion_placeholder_mm": S58.L_A_INSERT, "zone1_shank_mm": lock["shank_length_mm"],
+            # ⚖️ HW.26 G1: only the lock's shank enters the sleeve, so the WHOLE lattice is outside it — one value
+            "anode_exposed_length_m": (lattice / 1e3,),
+            "zone1_insertion_mm": lock["shank_length_mm"],
             "sleeve_length_m": sleeve["length_mm"] / 1e3, "inner_bark_m": S58.T_PHLOEM / 1e3,
             "dead_bark_under_flange_m": (bark["thin_mm"] / 1e3, bark["thick_mm"] / 1e3), "bark_source": bark}
 
@@ -410,7 +413,7 @@ def main() -> int:
     floor = sum(min(p["element_ohm"]) for p in pine)
     g1 = f["1_sapwood_per_m"]["bracket"]
     print(f"  anode Ø{2e3 * g['anode_radius_m']:.0f} (bore Ø{2e3 * g['bore_radius_m']:.0f}) × "
-          f"{1e3 * g['anode_exposed_length_m'][0]:.0f}–{1e3 * g['anode_exposed_length_m'][1]:.0f} mm at "
+          f"{'–'.join(f'{1e3 * L:.0f}' for L in g['anode_exposed_length_m'])} mm at "
           f"{1e3 * min(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f}–"
           f"{1e3 * max(f['1_sapwood_per_m']['depth_below_cambium_m']):.1f} mm below the cambium: G1 = {g1[0]:.2f}–{g1[1]:.2f} /m "
           + " · ".join(f"{st} {v['bracket'][0]:.2f}–{v['bracket'][1]:.2f}" for st, v in f["1_sapwood_per_m"]["states"].items()))

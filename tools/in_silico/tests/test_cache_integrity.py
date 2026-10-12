@@ -1708,7 +1708,8 @@ def test_bus_contact_equilibrium():
       1. under coaxial drag the shipped liner meets the wall ONLY at its geometry's pad plane, on every µ and play;
       2. the liner caps the root below every conformal film on the same geometry (the ratio the tracker quotes);
       3. an offset inside the play bends nothing, and past it the static root stress rises monotonically;
-      4. the insertion placeholder prices the offset far above the lock window — the reason every row is swept;
+      4. the offset secant falls as the unsupported gap grows — the shipped geometry (whole shank inserted, the
+         shortest gap, HW.26 G1) prices it above the lock window's shallow end;
       5. a tilt the play can take up about its pivot bends nothing;
       6. the peak-moment section is READ per solve, its exceptions listed, and the tilt rows carry the station;
       7. scripts 55 and 68 — one solver, two caches — agree on the coaxial cap (one quantity, two owners).
@@ -1741,8 +1742,8 @@ def test_bus_contact_equilibrium():
         assert all(p_["sigma_root_MPa"] == 0.0 and not p_["contacts"] for p_ in inside), f"{o['geometry']}/{o['play']}"
         assert past == sorted(past) and past[0] < past[-1], f"{o['geometry']}/{o['play']}: not monotone"
     secant = {o["geometry"]: o["secant_MPa_per_um"] for o in d["offset_static_shipped_branch"] if o["play"] == "zero interference"}
-    placeholder = next(g for g in pad if "placeholder" in g)
-    assert all(secant[placeholder] >= 5.0 * v for g, v in secant.items() if g != placeholder), secant
+    by_gap = [secant[g["label"]] for g in sorted(d["inputs"]["geometries"], key=lambda g: g["gap_mm"])]
+    assert len(by_gap) >= 2 and by_gap == sorted(by_gap, reverse=True) and by_gap[0] > by_gap[-1], secant
     for t in d["tilt_static_shipped_branch"]:
         for row in t["by_tilt"]:
             if row["tilt_mrad"] <= t["tilt_taken_up_by_play_mrad"]:
@@ -2858,9 +2859,12 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
     assert d["requirements_per_kohm_of_budget"]["budget_ohm"] == 1000.0
     states = f["1_sapwood_per_m"]["states"]
     assert set(states) == {"sap_gap", "ingrown"}
+    # ⚖️ HW.26 G1 (2026-10-12): the whole lattice is outside the sleeve, so ONE exposed length × the two depths.
+    assert len(d["geometry"]["anode_exposed_length_m"]) == 1 and len(f["1_sapwood_per_m"]["depth_below_cambium_m"]) == 2
+    n_corners = 2
     for st in states.values():
         gs = [c["G_per_m"] for c in st["corners"]]
-        assert st["bracket"] == [min(gs), max(gs)] and len(gs) == 4
+        assert st["bracket"] == [min(gs), max(gs)] and len(gs) == n_corners
     for i, (a, b) in enumerate(zip(states["sap_gap"]["corners"], states["ingrown"]["corners"], strict=True)):
         assert (a["depth_m"], a["length_m"]) == (b["depth_m"], b["length_m"]) and a["G_per_m"] < b["G_per_m"], i   # sap lowers R1
     every = [x for st in states.values() for x in st["bracket"]]
@@ -2870,7 +2874,7 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
     assert all(abs(v - 1) <= 0.01 for v in ctl["element_1_coarse_over_fine"].values())
     assert all(v >= 1.0 for v in ctl["element_1_sleeve_over_wood"].values()), "the insulating sleeve lowered G1"
     vp = d["vplus_share_of_layer_1_left_out"]
-    assert len(vp) == 4 and all(row["0mm"] < 1e-9 and list(row.values()) == sorted(row.values()) for row in vp.values())
+    assert len(vp) == n_corners and all(row["0mm"] < 1e-9 and list(row.values()) == sorted(row.values()) for row in vp.values())
     assert d["element_5_in_canon"]["electrolyte_path_described"] is False
 
 

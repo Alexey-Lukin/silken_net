@@ -90,7 +90,7 @@ Anchor mechanics (CPU):
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
-  58 (T_PHLOEM, L_A_INSERT, importlib) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the
+  58 (T_PHLOEM, importlib — never its frozen L_A_INSERT, §When Modifying #37) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the
      electrodes' own R_int readings) · tools/cad/cem (anode, lock shank, sleeve, flange at runtime) → 84 (cathode_ionic_path.json —
      the R_Ω requirements; a change to any of them re-runs 84)
 ```
@@ -211,5 +211,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 34. An overnight run of NEW code is rehearsed before it is launched — every write target with a stubbed SCF, the geometry check BEFORE the SCF, and an adversary on the RUN PATH, not only on the record — and a chained link stays editable only until it STARTS, so fix inside that window and freeze what the run reads
 35. Comparing a computed series with a measured one: on the SAME points, pair by pair first — a slope over several points restates the pair with the most leverage, and a «bracket» built on a point the other series lacks is not a comparison
 36. Eliminating a cause with one-knob variants: declare the threshold before the data and count a move only TOWARD the measured; add a BOUND run that says whether the knob's whole family could carry the effect at all; and name the assumption under which «what remains» is what remains
+37. A cache kept frozen ON PURPOSE stays frozen when one of its inputs moves — measure the sign once, write it beside the record, and repoint every LIVE reader of that input away from the record's module
 
 <!-- /INSILICO-MODIFYING-INDEX -->

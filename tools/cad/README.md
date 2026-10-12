@@ -216,12 +216,14 @@ shanks at 150 °C (no hex anti-rotation on this part — `§4.3 C` was dropped o
 **Full axial stack / mate-audit (shipped)** — `AxialStack.cs` + `anchor_axial_stack` CEM brings ALL FOUR zones (anode
 → Zone-2 sleeve → flange → radome) into one axis and MEASURES the press-fit interfaces the capsule-end never touched:
 **Zone1↔Zone2 = 0.00 mm line-to-line** (real +interference = the press-fit band on bench — no ISO 286 table class is ratified: the band is solved from the Lamé window, `00_07` HW.3, only its inputs open) · **Zone2↔Zone3 = −1.0 mm
-= the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 6 mm · overall stack length 63 mm (anode bottom → flange top; embedded depth 60 — to the flange UNDERSIDE = the bark line, ⚖️ HW.33 2026-09-18) · bus continuous.
-The Zone-1 insertion is also judged against the window its OWN lock admits: the stack names that lock by file
-(`zone1_lock_manifest`, never a copy of its numbers) and `MechanicalLock.InsertionWindowMm` derives the window from the
-shank's free end — PEEK-contact zone end → end of the shank (⚖️ 2026-09-18, HW.26: no ring is fitted as a backup, so the
-Zone-1 groove bounds nothing and the window lost its upper bound until G1/G3); `verify` prints it beside `zone1_insertion_mm` and
-flags an insertion outside it (the standing conflict → `00_07` HW.26 G1).
+= the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 18 mm · overall stack length 93 mm (anode bottom → flange top; embedded depth 90 — to the flange UNDERSIDE = the bark line, ⚖️ HW.33 2026-09-18; 63 / 60 until ⚖️ HW.26 G1 2026-10-12) · bus continuous.
+The Zone-1 insertion IS its own lock's whole shank (⚖️ founder 2026-10-12, `00_07` HW.26 G1, branch (А); verdict home
+`01_01 §4.3` A): the stack names that lock by file (`zone1_lock_manifest`, never a copy of its numbers), `AxialStack.Load`
+resolves `Zone1ShankLengthMm` from it — the manifest has no insertion field any more, so there is nothing to drift — and
+`MechanicalLock.InsertionWindowMm` derives the window from the shank's free end, PEEK-contact zone end → end of the shank
+(⚖️ 2026-09-18: no ring is fitted as a backup). The shipped insertion is the window's DEEP end; what HOLDS it there is open
+(`00_07` HW.26 — the gyroid-to-shank step is zero on a Ø11 anode); `verify` prints the insertion as the whole shank. Until G1 a typed 30 mm placeholder sat outside
+the window and `verify` flagged it.
 An AUDIT table like the capsule-end — render-sanity exit only, findings asserted by `AxialStackTests`. Render uses the
 Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the
 flange SHOULDER resting on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11). Reuses `Zone1Anode.Envelope` ·

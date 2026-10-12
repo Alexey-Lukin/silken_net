@@ -31,10 +31,33 @@ internal static class AxialStack
     public static float SleeveZone3InterferenceMm(AnchorAxialStackCem cem)
         => (cem.Capsule.Flange.ShankDiameterMm - cem.Zone2.BoreDiameterMm) / 2f;
 
-    // Insertion budget inside the 50 mm bore: the Zone-1 shaft enters one end by Zone1InsertionMm, the
-    // Zone-3 shank the other by its shank length. <0 ⇒ they collide inside the sleeve (F2). 01_01 §3/§4.1.
+    // The stack as the CLI reads it: the manifest plus the shank length of the Zone-1 lock it names (⚖️ 2026-10-12,
+    // 00_07 HW.26 G1 — the shank's one home is the lock manifest). A stack that names no lock cannot be laid out.
+    internal static AnchorAxialStackCem Load(string strCemPath)
+    {
+        AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(File.ReadAllText(strCemPath));
+        MechanicalLockCem lockCem = Zone1Lock(cem, strCemPath)
+            ?? throw new InvalidDataException(
+                "anchor_axial_stack names no zone1_lock_manifest — the Zone-1 shank, and so the insertion, has no home");
+        return cem with { Zone1ShankLengthMm = lockCem.ShankLengthMm };
+    }
+
+    public static float Zone1ShankMm(AnchorAxialStackCem cem)
+        => cem.Zone1ShankLengthMm
+           ?? throw new InvalidOperationException("axial stack not resolved against its Zone-1 lock (AxialStack.Load)");
+
+    // ⚖️ G1 2026-10-12: the shank inserts WHOLE. The window the lock admits (MechanicalLock.InsertionWindowMm) ends at the
+    // shank's end, so the insertion sits on its deep edge by construction. WHAT holds it there is open (00_07 HW.26): the
+    // gyroid-to-shank step is zero on a Ø11 anode, so the junction plane is a datum of this model, not a stop.
+    public static float Zone1InsertionMm(AnchorAxialStackCem cem) => Zone1ShankMm(cem);
+
+    // The anode's top face — gyroid body + shank — where the bus is welded.
+    public static float Zone1TopZMm(AnchorAxialStackCem cem) => cem.Zone1.LengthMm + Zone1ShankMm(cem);
+
+    // Insertion budget inside the 50 mm bore: the Zone-1 shank enters one end whole, the Zone-3 shank the other by
+    // its shank length — what is left between them is the PEEK gap the bus crosses. <0 ⇒ they collide (F2).
     public static float InsertionBudgetMm(AnchorAxialStackCem cem)
-        => cem.Zone2.LengthMm - (cem.Zone1InsertionMm + cem.Capsule.Flange.ShankLengthMm);
+        => cem.Zone2.LengthMm - (Zone1InsertionMm(cem) + cem.Capsule.Flange.ShankLengthMm);
 
     // The Zone-1 lock this stack NAMES (Cem.cs Zone1LockManifest), read from its own manifest beside this
     // one. null ⇔ the stack names none. A dangling name throws: a broken manifest, not an audit finding.
@@ -53,34 +76,9 @@ internal static class AxialStack
                 $"zone1_lock_manifest '{cem.Zone1LockManifest}' is a '{strKind}' manifest, not a mechanical_lock");
     }
 
-    // null ⇔ the Zone-1 insertion sits inside the window its lock admits (MechanicalLock.InsertionWindowMm —
-    // the arithmetic's one home); otherwise the finding, naming the input and the feature it misplaces.
-    // ⛔ A DETECTOR, not a cement: nothing here says what the insertion SHOULD be. Moving the placeholder is
-    //    00_07 HW.26 G1's verdict, because the in-silico half carries the same value under its own names.
-    // ⚖️ 2026-09-18 (HW.26): the deep side is no longer "the groove is buried, no ring can be fitted" — no ring is
-    //    fitted at all — but "the mouth is past the end of the lock's shank", i.e. the stack presses deeper than the
-    //    geometry the lock manifest describes (the three-models conflict of G1), with nothing in the tree to stop it.
-    public static string? Zone1InsertionConflict(AnchorAxialStackCem cem, MechanicalLockCem lockCem)
-    {
-        MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
-        float fIn = cem.Zone1InsertionMm;
-        var aWhy = new List<string>(2);
-        if (fIn < w.MinMm)
-            aWhy.Add($"the PEEK-contact zone (barbs) ends {w.MinMm - fIn:F1} mm outside the sleeve");
-        if (fIn > w.MaxMm)
-            aWhy.Add($"the sleeve mouth sits {fIn - w.MaxMm:F1} mm past the end of the lock's {w.MaxMm:F1} mm shank — deeper than " +
-                     "the geometry the lock manifest describes, and nothing in the tree stops Zone 1 moving deeper " +
-                     "(no ring is fitted; whether that end needs a stop is HW.26 G1/G3)");
-        return aWhy.Count == 0
-            ? null
-            : $"zone1_insertion_mm = {fIn:F1} lies outside the Zone-1 lock's insertion window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
-              $"from the shank's free end: {string.Join("; ", aWhy)} — a placeholder (owner 00_07 HW.26 G1) in conflict with the lock " +
-              "geometry, shared by value with the in-silico half";
-    }
-
-    // Sleeve lower-end Z in the stack frame (Zone-1 top, minus how deep the anode inserts).
+    // Sleeve lower-end Z in the stack frame: the anode's top face minus the inserted shank — the gyroid-to-shank junction.
     public static float SleeveBottomZMm(AnchorAxialStackCem cem)
-        => cem.Zone1.LengthMm - cem.Zone1InsertionMm;
+        => Zone1TopZMm(cem) - Zone1InsertionMm(cem);
 
     public static float SleeveTopZMm(AnchorAxialStackCem cem)
         => SleeveBottomZMm(cem) + cem.Zone2.LengthMm;
@@ -89,10 +87,11 @@ internal static class AxialStack
     public static float CapsuleLiftZMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) - cem.Capsule.Flange.ShankLengthMm;
 
-    // Overall stack length: anode bottom (z=0) → flange disc TOP (63 at the frozen dims). ⛔ NOT the embedded depth:
-    // the flange seats ON the bark — its underside is the bark line and the catalytic strip of its side face stands
-    // above it (⚖️ HW.33 2026-09-18) — so the depth in the wood is this minus the flange thickness (60, to the flange
-    // UNDERSIDE). The radome bayonets above both, over the bark — install depth / DBH (CODIT, 01_04 §3).
+    // Overall stack length: anode bottom (z=0) → flange disc TOP (93 at the frozen dims since G1, 2026-10-12; 63 before,
+    // on the placeholder). ⛔ NOT the embedded depth: the flange seats ON the bark — its underside is the bark line and
+    // the catalytic strip of its side face stands above it (⚖️ HW.33 2026-09-18) — so the depth in the wood is this minus
+    // the flange thickness (90, to the flange UNDERSIDE: sleeve 50 + gyroid 40). The radome bayonets above both, over the
+    // bark — install depth / DBH (CODIT, 01_04 §3).
     public static float OverallStackLengthMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 
@@ -100,7 +99,7 @@ internal static class AxialStack
     // Its lower end is the weld seam on the anode's top face; its upper end is the pogo pad on the
     // flange's top face. ⛔ Both ends are GEOMETRY, not a choice: the seam position follows from the
     // anode's own length and the pad from the stack, so neither is a number this file may pick.
-    public static float BusWireBottomZMm(AnchorAxialStackCem cem) => cem.Zone1.LengthMm;
+    public static float BusWireBottomZMm(AnchorAxialStackCem cem) => Zone1TopZMm(cem);
 
     public static float BusWireLengthMm(AnchorAxialStackCem cem)
         => OverallStackLengthMm(cem) - BusWireBottomZMm(cem);
@@ -176,13 +175,13 @@ internal static class AxialStack
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)
     {
-        // Zone-1 ENVELOPE (solid Ø11 rod) — OD is what press-fits; porosity lives in anchor_zone1.
-        // Built z∈[0, LengthMm] from the origin frame (BasePipe, as Zone1Anode.Envelope). ⚠️ Since the
-        // welded branch was applied (2026-09-18) the anode carries NO core: the envelope is a full
-        // cylinder and the bus wire below starts at its TOP FACE.
-        Voxels voxZone1 = Zone1Anode.Envelope(cem.Zone1);
+        // Zone-1 ENVELOPE (solid Ø11 rod) — OD is what press-fits; porosity lives in anchor_zone1. It runs the gyroid
+        // body AND the lock's shank (⚖️ G1 2026-10-12), both Ø11, z∈[0, Zone1TopZMm] from the origin frame (BasePipe, as
+        // Zone1Anode.Envelope). ⚠️ Since the welded branch was applied (2026-09-18) the anode carries NO core: the
+        // envelope is a full cylinder and the bus wire below starts at its TOP FACE — the shank's.
+        Voxels voxZone1 = Zone1Anode.Envelope(cem.Zone1 with { LengthMm = Zone1TopZMm(cem) });
 
-        // Zone-2 sleeve lifted so its bore overlaps the Zone-1 top end by Zone1InsertionMm.
+        // Zone-2 sleeve lifted so its bore swallows the whole shank: its mouth sits on the gyroid-to-shank junction.
         float fZ2Bot = SleeveBottomZMm(cem);
         Voxels voxZone2 = MeshUtility.voxApplyTransformation(
             Zone2Sleeve.Build(cem.Zone2), v => v + new Vector3(0f, 0f, fZ2Bot));

@@ -141,7 +141,7 @@ internal static class MechanicalLock
 
     // The insertion depths this lock admits (00_07 HW.26): where the sleeve MOUTH may sit along the shank,
     // measured in the LOCK's frame — from local z = 0, the free end that enters the PEEK first (gotcha #15).
-    // A depth is frame-invariant (entering end → mouth), so AnchorAxialStackCem.Zone1InsertionMm compares directly;
+    // A depth is frame-invariant (entering end → mouth), so AxialStack.Zone1InsertionMm (= the whole shank since G1) compares directly;
     // what must never be reused in the anode frame is the lock's GEOMETRY (G4), not this scalar.
     //   Min = end of the declared PEEK-contact zone: shallower, the last barbs and the PEEK that has to sit
     //         behind their steep faces are outside the sleeve (01_01 §4.3 A).

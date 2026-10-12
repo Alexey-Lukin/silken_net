@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SilkenCad;
 
@@ -537,15 +538,14 @@ internal sealed record AnchorAxialStackCem
     public string Name { get; init; } = "anchor_axial_stack";
     public float VoxelSizeMm { get; init; } = 0.2f;     // stack-scale (Ø15 × ~100 mm) — measures fit/interference, not porosity
 
-    // How deep the Zone-1 anode shaft inserts into the Zone-2 bore (press-fit overlap). The Zone-3 shank
-    // enters the OTHER end by its own shank length → InsertionBudget guards the two shanks don't collide.
-    // 30 is a PLACEHOLDER owned by 00_07 HW.26 G1, not a frozen dim (F2 budget 50−30−14 = 6 mm) — and the in-silico half
-    // re-types the same value under TWO names, `L_A_INSERT` and `Z1_INSERTION_MM`: grep both and follow
-    // their importers. No gate binds the two halves, so a change here is swept BY VALUE.
-    // ⚠️ `verify` judges it against the window of the Zone-1 lock this stack names below and flags it when
-    // outside (AxialStack.Zone1InsertionConflict; the standing conflict is 00_07 HW.26 G1) — a detector,
-    // never a correction.
-    public float Zone1InsertionMm { get; init; } = 30f;
+    // ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)): the Zone-1 anode is the gyroid body (Zone1.LengthMm, the
+    // anchor_zone1 manifest) PLUS the solid shank of its lock — the lock manifest named below is the shank's one home —
+    // and the shank inserts WHOLE, so the insertion is no number of its own (what HOLDS that depth is open, HW.26 — the
+    // gyroid-to-shank step is zero on a Ø11 anode). Resolved at load from that lock (AxialStack.Load), never read from this manifest: a JSON key of this name is
+    // ignored, and an unresolved record throws on first use — loud absence, never a default. Until 2026-10-12 a
+    // placeholder `zone1_insertion_mm = 30` lived here: it put 30 mm of the 40 mm Zone-1 envelope inside the PEEK bore
+    // and only 10 mm in the sapwood (embedded depth 60 instead of 90) — the three-models conflict G1 resolved.
+    [JsonIgnore] public float? Zone1ShankLengthMm { get; init; }
 
     // The Zone-1 lock that insertion is judged against — a FILENAME beside this manifest, never a copy of
     // its numbers: the barb/groove geometry has one home, the lock manifest, and a nested MechanicalLockCem

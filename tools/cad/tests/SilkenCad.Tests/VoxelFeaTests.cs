@@ -366,13 +366,13 @@ public class VoxelFeaTests
     [Fact]
     public void A_Downskin_Dilation_Grows_Metal_Toward_The_Tip_The_Part_Is_Printed_On()
     {
-        AnchorAxialStackCem stack = Cem.Parse<AnchorAxialStackCem>(
-            File.ReadAllText(Path.Combine(CemFixtures.Dir(), "anchor_axial_stack.json")));
+        AnchorAxialStackCem stack = AxialStack.Load(Path.Combine(CemFixtures.Dir(), "anchor_axial_stack.json"));
         float fSleeveBottom = AxialStack.SleeveBottomZMm(stack);
-        // The sleeve's lower end sits above z = 0 and below the anode top, so it rides the z = L end: the uncovered end,
-        // z = 0, is the tree-side tip — the end tip-down printing puts on the plate.
-        Assert.True(fSleeveBottom > 0f && fSleeveBottom < stack.Zone1.LengthMm,
-            $"the Zone-2 sleeve must reach the anode from its z = L end only (its lower end sits at z = {fSleeveBottom} mm)");
+        // Since G1 (2026-10-12) the sleeve's lower end sits EXACTLY on the gyroid-to-shank junction (z = the gyroid's length),
+        // so it rides the z = L end of the gyroid: the uncovered end, z = 0, is the tree-side tip — the end tip-down printing
+        // puts on the plate. Equality, not a range: a range was true by construction once the shank inserts whole.
+        Assert.True(fSleeveBottom > 0f, $"the Zone-2 sleeve must reach the anode from its z = L end only (z = {fSleeveBottom} mm)");
+        Assert.Equal(stack.Zone1.LengthMm, fSleeveBottom, 3);
 
         AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 2.0f };
         const float fStep = 0.125f, fLength = 0.25f, fSlabLo = 0.75f, fSlabHi = 1.25f;

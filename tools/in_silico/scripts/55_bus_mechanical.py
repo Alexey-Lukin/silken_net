@@ -29,8 +29,9 @@ liner from FATIGUE, and that ground is RETIRED, not narrowed (⚖️ founder, 00
 columns are FREE cantilevers — no wall anywhere — while the real rod threads a Ø1.35 bore, so a branch
 that leaves play can take it up and BEAR on the wall. WHERE it bears is an EQUILIBRIUM question, and §4
 answers it with the contact solver of `lib.beam_contact` (the one script 68 shipped 2026-09-14), on the
-insertion placeholder AND at both ends of the Zone-1 lock window: on a coaxial channel the touchdown
-drag is far below every swept µ·F, the ONLY contact under drag is the exit plane (the pad plane, where
+shipped geometry (the whole Zone-1 lock shank inserted, ⚖️ 00_07 HW.26 G1 2026-10-12) AND at the shallow end
+of the Zone-1 lock window (the least insertion that keeps the lock's whole PEEK contact
+zone engaged): on a coaxial channel the touchdown drag is far below every swept µ·F, the ONLY contact under drag is the exit plane (the pad plane, where
 the tube ends flush), and against a RIGID wall the root stress is 3·E·c·g/L² whatever the drag — the
 LOWER end of a bracket whose upper end is the Ti-bore stop behind the polymer wall (the free cantilever
 where the drag cannot reach it), the contact compliance between them measured nowhere; a channel off the
@@ -40,7 +41,7 @@ so through DERIVED flags, never through prose. What the liner carries instead is
 is forced on every swept µ, and a 10 µm conformal film asked to be a bearing in a THROUGH bore of
 L/D ≈ 12.6 wears through to a ~0.5 V anode↔cathode short. The supported/unsupported columns stay because
 they price the DIAMETER and the FABRICATION branch honestly — they are simply not the argument for the
-liner, and the 6 mm «supported span» they use is an idealisation §4c measures against the equilibrium.
+liner, and the «supported span» they use (the PEEK gap) is an idealisation §4c measures against the equilibrium.
 
 FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT, not a parameter.
   ⚖️ 2026-09-10 (00_07 HW.34) ratified the rod as a WELDED cold-drawn wire, so the as-built knockdown
@@ -64,10 +65,11 @@ FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT
   is an AXIAL Z-stack contribution, not a diametral one.
 
 GEOMETRY AXIS — read before any number. The unsupported PEEK gap, which sets the mouth station and the
-rod length, comes from `Z1_INSERTION_MM = 30`, a PLACEHOLDER owned by 00_07 HW.26 G1 that lies OUTSIDE the Zone-1 lock's
-own insertion window (00_07 HW.26 G1). Every equilibrium block below is computed at the placeholder AND
-at both ends of the lock window (`GEOMETRIES`); the §1–§3 free-cantilever tables stay on the placeholder
-and say so in the cache (`geometry_mm`).
+rod length, follows from the Zone-1 insertion, and since ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)) that is the
+lock's WHOLE shank — `Z1_INSERTION_MM` reads it from the lock manifest, the deep end of the lock's own window; until then
+it was a typed placeholder 30, OUTSIDE that window. Every equilibrium block below is computed on the shipped geometry
+AND at the window's shallow end (`GEOMETRIES`); the §1–§3 free-cantilever tables stand on the shipped geometry and say so in
+the cache (`geometry_mm`).
 
 Per-alloy endurance is keyed to yield (σ_e ≈ k·σ_y) from lib ALLOY_PROPERTIES — ties HW.34 ↔ HW.24.
 No FEA — slender-beam closed form (Euler buckling + cantilever bending + S-N endurance ratio).
@@ -130,12 +132,10 @@ _FLANGE, _SLEEVE = cem("cathode_flange"), cem("zone2_sleeve")
 SHANK_LEN_MM = float(_FLANGE["shank_length_mm"])        # Zone-3 shank — enters the sleeve from the top
 FLANGE_THK_MM = float(_FLANGE["flange_thickness_mm"])   # the disc the pogo pad sits on
 SLEEVE_LEN_MM = float(_SLEEVE["length_mm"])             # PEEK thermal break, axial (01_01 §4.1)
-# ⚠️ The ONE term with no JSON field: how deep the Zone-1 anode inserts into the sleeve. Its only home
-#    is `Cem.cs AnchorAxialStackCem.Zone1InsertionMm` — a PLACEHOLDER (00_07 HW.26 G1), not a frozen dim — so it
-#    crosses the machine halves BY VALUE, which is the caveat Cem.cs itself writes about scripts 54/58.
-#    ⛔ Do not promote it into a CEM field to make this line look derived: that would canonise a
-#    placeholder (00_06 §0). It is quoted here as what it is.
-Z1_INSERTION_MM = 30.0
+# How deep the Zone-1 anode inserts into the sleeve: the lock's WHOLE shank (⚖️ founder 2026-10-12, 00_07 HW.26 G1,
+#    branch (А) — its shoulder is the stop), read from the lock manifest, the shank's one home; the stack makes the same
+#    reading (AxialStack.Load). Until then a typed placeholder 30 lived here, outside the lock's own window.
+Z1_INSERTION_MM = float(cem("mechanical_lock.zone1")["shank_length_mm"])
 # F2 insertion budget (AxialStack.InsertionBudgetMm) — what is left of the sleeve bore once both shanks
 # are in. This IS the unsupported PEEK gap: the rod crosses it with no wall on either side.
 PEEK_GAP_MM = SLEEVE_LEN_MM - Z1_INSERTION_MM - SHANK_LEN_MM
@@ -151,7 +151,7 @@ L_FREE_SUP = PEEK_GAP_MM                                    # liner supports the
 # here while the contact question was «does the rod reach the wall at all»; under the equilibrium the
 # question is WHERE the wall ends, because that is the station the drag is reacted at, and a run cut
 # short would move it. The exit is therefore the drilled depth, read from the CEM.
-CHANNEL_START_MM = PEEK_GAP_MM     # the PEEK gap ends and the bore begins (placeholder geometry)
+CHANNEL_START_MM = PEEK_GAP_MM     # the PEEK gap ends and the bore begins (shipped geometry)
 # Full DRILLED depth of the bore (shank + flange disc) — the MACHINING referent, and what the L/D
 # ratio is about — which operation the bore needs. ⛔ That ratio lived in prose (here and in SUMMARY)
 # with no cache owner, so it could not be checked against the diameter it divides by. Derived now.
@@ -184,8 +184,8 @@ D_CHANNEL_MM = float(_FLANGE["bore_diameter_mm"])     # cathode channel Ø (cano
 LINER_WALL_MM = float(_FLANGE["bus_liner_thickness_mm"])
 
 
-# ── The geometry AXIS: the placeholder and both ends of the Zone-1 lock window ────────────────────
-# ⛔ One home for the three geometries scripts 55 and 68 compute on; 68 imports these (it imports this
+# ── The geometry AXIS: the shipped geometry (the window's deep end) and the window's shallow end ──────────
+# ⛔ One home for the two geometries scripts 55 and 68 compute on; 68 imports these (it imports this
 #    module), so the two cannot drift apart on the mouth or the exit. The lock window is the formula of
 #    `MechanicalLock.InsertionWindowMm` in tools/cad — a by-value crossing, pinned there by
 #    `MechanicalLockTests`, and nothing binds this line to it.
@@ -214,8 +214,8 @@ def lock_insertion_window_mm() -> tuple[float, float]:
     more, so a groove bounds nothing, including the Zone-1 groove that stays in the geometry until G1/G3.
     What is left is the extent of the lock itself, and on Zone 1 nothing in the tree stops the mouth there:
     past it the mouth leaves the geometry this manifest describes, which IS the G1 conflict to report.
-    ⛔ `shank_length_mm` is the MODELLED length of the lock coupon, never a physical shank length (that
-    length is G1) — so the upper end is a statement about this model. Mirrors `MechanicalLock.InsertionWindowMm`
+    Since G1 (⚖️ 2026-10-12) `shank_length_mm` is the PHYSICAL Zone-1 shank, and the shipped insertion is this upper
+    end. Mirrors `MechanicalLock.InsertionWindowMm`
     (tools/cad) BY VALUE: the formula's one home is there, pinned by `MechanicalLockTests`, and nothing binds
     this line to it."""
     lock = cem("mechanical_lock.zone1")
@@ -224,15 +224,15 @@ def lock_insertion_window_mm() -> tuple[float, float]:
 
 def geometries() -> list[Geometry]:
     lo, hi = lock_insertion_window_mm()
-    return [Geometry.at_insertion("script 55 placeholder (HW.8)", Z1_INSERTION_MM),
-            Geometry.at_insertion("lock window, near end", hi),
-            Geometry.at_insertion("lock window, far end", lo)]
+    assert hi == Z1_INSERTION_MM, "the shipped insertion is the whole lock shank — the window's deep end (G1)"
+    return [Geometry.at_insertion("shipped — the whole lock shank (HW.26 G1)", Z1_INSERTION_MM),
+            Geometry.at_insertion("lock window, shallow end", lo)]
 
 
 GEOMETRIES = geometries()
-PLACEHOLDER_GEOMETRY = GEOMETRIES[0]
-assert abs(PLACEHOLDER_GEOMETRY.pad_mm - L_FREE_UNSUP) < 1e-9 and abs(PLACEHOLDER_GEOMETRY.gap_mm - L_FREE_SUP) < 1e-9, \
-    "the free-cantilever spans and the placeholder geometry disagree"
+SHIPPED_GEOMETRY = GEOMETRIES[0]
+assert abs(SHIPPED_GEOMETRY.pad_mm - L_FREE_UNSUP) < 1e-9 and abs(SHIPPED_GEOMETRY.gap_mm - L_FREE_SUP) < 1e-9, \
+    "the free-cantilever spans and the shipped geometry disagree"
 # The channel-offset sweeps (µm), shared with script 68 so that 55's seam inputs and 68's offset table are
 # the same points of the same model. SWEPT, never measured: which offset the stack delivers is computed
 # nowhere in the tree (00_07 HW.34 ⚖️ coaxiality).
@@ -553,7 +553,7 @@ def liner_od_growth_m(p_c_Pa: float) -> float:
 
 def main() -> int:
     banner("HW.34 — Bus rod mechanical check (buckling + sway fatigue + contact equilibrium)")
-    print(f"  Rod Ø{D_BUS:.1f} mm; PLACEHOLDER geometry (Z1 insertion {Z1_INSERTION_MM:.0f} mm, owner HW.26 G1): free length "
+    print(f"  Rod Ø{D_BUS:.1f} mm; SHIPPED geometry (Z1 insertion {Z1_INSERTION_MM:.0f} mm = the whole lock shank, HW.26 G1): free length "
           f"unsupported {L_FREE_UNSUP:.0f} mm (no liner) vs the {L_FREE_SUP:.0f} mm gap the §2 supported column idealises")
     print("  Contact blocks (§4–§7) run on every geometry: " + " · ".join(f"{g.label} (gap {g.gap_mm:.0f}, exit {g.pad_mm:.0f})" for g in GEOMETRIES))
     print(f"  Pogo {F_POGO_N:.1f} N axial; cyclic lateral drag = µ·F_pogo (µ={MU_CONTACT:.1f})")
@@ -686,7 +686,7 @@ def main() -> int:
     # on the drag is reacted there. Script 68 solved the contact (2026-09-14), and every block that stood
     # on the free-shape reading (edge bearing at the mouth · the first-contact range under the protrusion
     # · the span optimism and through it the seam bound · the wear station) is re-derived here on the
-    # same solver (`lib.beam_contact`, one home), on the placeholder AND at both ends of the lock window.
+    # same solver (`lib.beam_contact`, one home), on the shipped geometry AND at the lock window's shallow end.
     # ⛔ What the coaxial solve can say: WHETHER a branch touches down (µ·F against the touchdown drag),
     #    WHERE (the exit, asserted), the rigid-wall root stress — the LOWER end of a bracket (below) — and
     #    the wall reaction. What it cannot: anything about a channel off the root axis — that is §4b.
@@ -747,7 +747,7 @@ def main() -> int:
                 sig_free = bending_stress_MPa(f_lat, geo.pad_mm)
                 assert sig_upper <= sig_free * 1.0001, "the Ti-bore stop cannot exceed the free cantilever"
                 assert sig_upper >= root_sigma_MPa(res["clamp_moment_Nm"]) - 1e-9, "the upper end fell below the rigid-wall end"
-                if geo is PLACEHOLDER_GEOMETRY:
+                if geo is SHIPPED_GEOMETRY:
                     # CONTROL, two owners of one quantity: the free-cantilever end IS §3's unsupported column at this µ.
                     _mu_row = next(m for m in mu_rows if m["mu"] == mu)
                     assert abs(sig_free - _mu_row["sigma_unsup_MPa"]) <= 0.05, "free-cantilever end ≠ §3 sigma_unsup"
@@ -811,8 +811,8 @@ def main() -> int:
 
     # The canon sentence this table feeds (01_01 §1.4) used to quote a "hundredfold" reduction. DERIVE it
     # — the factor is a ratio of two rows here and moves whenever either does.
-    rod_side = [r for r in regimes if r["play_side"] == "rod" and r["geometry"] == PLACEHOLDER_GEOMETRY.label]
-    chan_side = [r for r in regimes if r["play_side"] == "channel" and r["geometry"] == PLACEHOLDER_GEOMETRY.label]
+    rod_side = [r for r in regimes if r["play_side"] == "rod" and r["geometry"] == SHIPPED_GEOMETRY.label]
+    chan_side = [r for r in regimes if r["play_side"] == "channel" and r["geometry"] == SHIPPED_GEOMETRY.label]
     play_reduction = None
     if rod_side and chan_side:
         worst_film = max(r["radial_play_mm"] for r in rod_side)
@@ -916,7 +916,7 @@ def main() -> int:
             theta = bc.slope_rad(res, geo.gap_mm)
             p_mouth = res["contacts"][0]["force_N"]
             # CONTROLS with an independent formula, on the bare lever (the composite starts at the liner's
-            # lower end, so on the placeholder 1 of the 6 mm is composite — hence 2 %, not 0.5 %):
+            # lower end, so 1 mm of the gap is composite — 1 of 18 on the shipped geometry — hence 2 %, not 0.5 %):
             # a cantilever of length a deflected by δ at its tip has tip slope 3δ/(2a) and needs 3·EI·δ/a³.
             theta_closed = 3.0 * excess_um * 1e-6 / (2.0 * a_m)
             p_closed = 3.0 * ei_bare * excess_um * 1e-6 / a_m ** 3
@@ -989,10 +989,10 @@ def main() -> int:
                              "exit_radius_specified_mm": None, "exit_protrusion_specified_mm": None})
     print(f"  → Exit contact (coaxial drag): edge on edge at the tube's flush end, landing at "
           f"{exit_contact[0]['landing_angle_deg_rigid_wall']:.3f}° with at most {exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][0]:.2f}–"
-          f"{exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][1]:.2f} N (rigid wall) on the placeholder; the exit radius is ratified as a FORM (not a chamfer), its value NOT SPECIFIED.")
+          f"{exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][1]:.2f} N (rigid wall) on the shipped geometry; the exit radius is ratified as a FORM (not a chamfer), its value NOT SPECIFIED.")
 
     # ── 4c. The §2 «supported» column against the equilibrium ────────────────────────────────────
-    # The §2 table prices the liner-supported rod as a 6 mm cantilever (the placeholder's PEEK gap) propped
+    # The §2 table prices the liner-supported rod as a cantilever of the PEEK gap (the shipped geometry's) propped
     # where the bore begins. 🔴 Until 2026-09-14 this block measured that idealisation against the free-shape
     # first contact and reported the column «understated by 40.8 %». Under the equilibrium there is no propped
     # 6 mm span: against a RIGID wall the coaxial root stress is set by the exit contact and the column OVERSTATES
@@ -1002,8 +1002,8 @@ def main() -> int:
     # then carries a MEAN the column does not represent at all.
     sup_nominal = bending_stress_MPa(MU_CONTACT * F_POGO_N, L_FREE_SUP)
     sup_worst = bending_stress_MPa(max(MU_SWEEP) * F_POGO_N, L_FREE_SUP)
-    supported_check = {"idealisation": f"a {L_FREE_SUP:.0f} mm cantilever (the placeholder's PEEK gap) propped where the bore "
-                                       "begins — the §2 «supported» column, computed on the placeholder only",
+    supported_check = {"idealisation": f"a {L_FREE_SUP:.0f} mm cantilever (the shipped geometry's PEEK gap) propped where the bore "
+                                       "begins — the §2 «supported» column, computed on the shipped geometry only",
                        "supported_column_sigma_MPa": {"nominal_mu": round(sup_nominal, 1), "worst_mu": round(sup_worst, 1)},
                        "coaxial_cap_bound": "LOWER — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², "
                                             "the Ti-bore stop / free cantilever is the UPPER end (bracket_MPa_* per geometry), "
@@ -1044,7 +1044,7 @@ def main() -> int:
     # ── 4d. Allocation candidates — the OTHER question the same geometry answers ─────────────────
     banner("Assembly-clearance allocation — which frozen dim moves (00_07 HW.34)")
     print(f"  {'candidate':<26s} {'rod Ø':>6s} {'liner':>6s} {'chan Ø':>7s} {'DIAMETRAL':>10s} "
-          f"{'RADIAL':>8s} {'cap σ (placeholder)':>20s} {'F_td':>8s}")
+          f"{'RADIAL':>8s} {'cap σ (shipped)':>20s} {'F_td':>8s}")
     print(f"  {'-' * 100}")
     allocations = []
     for label, rod_mm, liner_mm, chan_mm in ASSEMBLY_CLEARANCE_CANDIDATES:
@@ -1052,11 +1052,11 @@ def main() -> int:
         diametral = chan_mm - stack_mm
         play = diametral / 2.0
         assembles = diametral > 0.0
-        # Closed forms on the candidate's OWN rod: cap = 3·E·c·g/L², touchdown = 3·EI·g/L³ (bare rod, placeholder
+        # Closed forms on the candidate's OWN rod: cap = 3·E·c·g/L², touchdown = 3·EI·g/L³ (bare rod, shipped
         # exit) — a candidate that moves the ROD (г) is priced on its own I, never on the canon one.
         ei_c = E_TI * second_moment_m4(rod_mm)
-        cap = 3.0 * E_TI * (rod_mm / 2.0) * MM_M * play * MM_M / (PLACEHOLDER_GEOMETRY.pad_mm * MM_M) ** 2 / 1e6 if assembles else None
-        f_td = 3.0 * ei_c * play * MM_M / (PLACEHOLDER_GEOMETRY.pad_mm * MM_M) ** 3 if assembles else None
+        cap = 3.0 * E_TI * (rod_mm / 2.0) * MM_M * play * MM_M / (SHIPPED_GEOMETRY.pad_mm * MM_M) ** 2 / 1e6 if assembles else None
+        f_td = 3.0 * ei_c * play * MM_M / (SHIPPED_GEOMETRY.pad_mm * MM_M) ** 3 if assembles else None
         shipped_row = (abs(rod_mm - D_BUS) < 1e-9 and abs(liner_mm - LINER_WALL_MM) < 1e-9
                        and abs(chan_mm - D_CHANNEL_MM) < 1e-9)
         tag = ("   ⛔ zero/negative — does not assemble" if not assembles
@@ -1069,8 +1069,8 @@ def main() -> int:
                             "is_shipped_geometry": bool(shipped_row),
                             "diametral_clearance_mm": round(diametral, 4),
                             "radial_play_mm": round(play, 4),
-                            "coaxial_cap_sigma_MPa_placeholder": round(cap, 2) if cap is not None else None,
-                            "touchdown_drag_N_placeholder": round(f_td, 4) if f_td is not None else None,
+                            "coaxial_cap_sigma_MPa_shipped": round(cap, 2) if cap is not None else None,
+                            "touchdown_drag_N_shipped": round(f_td, 4) if f_td is not None else None,
                             "assembles": bool(assembles)})
     _ok = [a for a in allocations if a["assembles"]]
     _play = {round(a["radial_play_mm"] * 1000) for a in _ok}
@@ -1100,7 +1100,7 @@ def main() -> int:
     mu_worst = max(MU_SWEEP)
     shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
     root_loading = []
-    liner_row = next(r for r in regimes if r["play_side"] == "channel" and r["geometry"] == PLACEHOLDER_GEOMETRY.label)
+    liner_row = next(r for r in regimes if r["play_side"] == "channel" and r["geometry"] == SHIPPED_GEOMETRY.label)
     liner_def = {"branch": liner_row["branch"], "coating_or_liner_mm": liner_row["coating_or_liner_mm"], "play_side": "channel"}
     zero_play, _ = branch_member(liner_def)
     for geo in GEOMETRIES:
@@ -1181,7 +1181,7 @@ def main() -> int:
                                          "toe treatment) — RFQ, 00_07 HW.34",
                                          "the channel offset the stack delivers relative to the root axis — computed "
                                          "nowhere; its price is an order of magnitude apart between the insertion "
-                                         "placeholder and the lock window (HW.26 G1 first)",
+                                         "shipped geometry and the lock window's shallow end (HW.26 G1)",
                                          "a mean-stress model for the offset regime — absent from this tree"],
         "markers": [{"label": lbl, "k": k} for lbl, k in WELD_KNOCKDOWN_MARKERS],
         "markers_note": "OUR scale for reading a vendor's k (as bad as an as-printed surface ⊥ as good as the drawn "
@@ -1624,9 +1624,9 @@ def main() -> int:
     # 🔑 SELF-CHECK against a CLOSED-FORM solution, not against a frozen baseline: the touched-down bare rod's
     #    exit slope is 3·g/(2·L) (a cantilever deflected by g at its tip), and the exit reaction is the drag
     #    minus the touchdown drag (asserted per row in §4).
-    _chk = _coax_solves[(PLACEHOLDER_GEOMETRY.label, liner_def["branch"], max(MU_SWEEP), "bare")]
-    assert abs(bc.slope_rad(_chk, PLACEHOLDER_GEOMETRY.pad_mm) - 3.0 * zero_play * MM_M / (2.0 * PLACEHOLDER_GEOMETRY.pad_mm * MM_M)) \
-        <= 0.005 * 3.0 * zero_play * MM_M / (2.0 * PLACEHOLDER_GEOMETRY.pad_mm * MM_M), "exit slope of the touched-down rod ≠ 3g/(2L)"
+    _chk = _coax_solves[(SHIPPED_GEOMETRY.label, liner_def["branch"], max(MU_SWEEP), "bare")]
+    assert abs(bc.slope_rad(_chk, SHIPPED_GEOMETRY.pad_mm) - 3.0 * zero_play * MM_M / (2.0 * SHIPPED_GEOMETRY.pad_mm * MM_M)) \
+        <= 0.005 * 3.0 * zero_play * MM_M / (2.0 * SHIPPED_GEOMETRY.pad_mm * MM_M), "exit slope of the touched-down rod ≠ 3g/(2L)"
     wear_rows: list[dict] = []
     duty_anchors: list[dict] = []
     thermal_rows: list[dict] = []
@@ -1914,7 +1914,7 @@ def main() -> int:
     print(f"  4. CONTACT (§4, equilibrium): the shipped liner touches down at the EXIT on every swept µ on every geometry: "
           f"{shipped_forced_everywhere}; the mouth is never reached coaxially; the root stress lies in "
           + " / ".join(f"[{g['bracket_MPa_worst_mu'][0]:.2f}, {g['bracket_MPa_worst_mu'][1]:.1f}]" for g in supported_check["by_geometry"])
-          + " MPa at worst µ (placeholder / lock window near / far) — rigid wall LOWER, Ti-bore stop or free cantilever UPPER, "
+          + " MPa at worst µ (shipped / lock window shallow end) — rigid wall LOWER, Ti-bore stop or free cantilever UPPER, "
           "the contact compliance unmeasured; the §2 supported column overstates the rigid-wall end ×"
           + "/".join(f"{g['column_over_cap_nominal']:.1f}" for g in supported_check["by_geometry"]) + " at nominal µ and sits "
           + " / ".join(g["column_position_nominal_mu"] for g in supported_check["by_geometry"]) + ".")
@@ -1992,9 +1992,9 @@ def main() -> int:
                   "the contact blocks (§4-§7) solve the rod in the rigid channel as a unilateral-contact "
                   "equilibrium (lib.beam_contact, the solver script 68 shipped). No FEA beyond that beam element.",
         "geometry_mm": {"bus_dia": D_BUS, "free_len_unsupported": L_FREE_UNSUP, "free_len_supported": L_FREE_SUP,
-                        "insertion_placeholder_mm": Z1_INSERTION_MM,
-                        "note": "free_len_* are the PLACEHOLDER geometry's spans (Z1_INSERTION_MM = 30, an HW.8 "
-                                "placeholder outside the Zone-1 lock window, 00_07 HW.26 G1); the §1-§3 tables stand on "
+                        "insertion_mm": Z1_INSERTION_MM,
+                        "note": "free_len_* are the SHIPPED geometry's spans (Z1_INSERTION_MM = the whole Zone-1 lock "
+                                "shank, ⚖️ 00_07 HW.26 G1 2026-10-12); the §1-§3 tables stand on "
                                 "them, the contact blocks are computed on every geometry in clearance_regime.geometries"},
         "loads": {"pogo_axial_N": F_POGO_N, "friction_mu": MU_CONTACT, "lateral_drag_N": MU_CONTACT * F_POGO_N},
         # ⚠️ `weld_seam_modelled: false` stood here until 2026-09-12 and four doc homes cited it.
@@ -2031,8 +2031,8 @@ def main() -> int:
                         "note": "the wall runs from the mouth to the EXIT on the pogo face — the full drilled "
                                 "depth — because under the equilibrium the exit is the station the drag is reacted "
                                 "at, and a run cut short (the shank only, as this key once read) would move it; "
-                                "start_mm is the placeholder geometry's mouth"},
-            "insertion_placeholder_mm": Z1_INSERTION_MM,
+                                "start_mm is the shipped geometry's mouth"},
+            "insertion_mm": Z1_INSERTION_MM,
             "lock_insertion_window_mm": list(lock_insertion_window_mm()),
             "geometries": [g.__dict__ for g in GEOMETRIES],
             "branches": regimes,
@@ -2063,7 +2063,7 @@ def main() -> int:
             "band_provenance": "the ends are the ones the constant's own comment has carried from "
                                "the first commit (wrought-Ti fatigue ratio ~0.4-0.5). They are NOT "
                                "measured for our alloys and are NOT a distribution - a bracket",
-            "sweeps": "the §2 free-cantilever column on the placeholder span only; the seam column this block "
+            "sweeps": "the §2 free-cantilever column on the shipped span only; the seam column this block "
                       "carried until 2026-09-14 was priced on the retired drift-picture stress and no seam k "
                       "exists to sweep (weld_seam.break_even_k_not_derived_because)",
             "rows": ratio_rows,
@@ -2175,10 +2175,10 @@ def main() -> int:
         "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4), SHIPPED fabrication = "
                     f"{SHIPPED_BRANCH} (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue "
                     f"(SF {p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> "
-                    f"fatigue SF {sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys) on the 6 mm supported "
+                    f"fatigue SF {sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys) on the {L_FREE_SUP:.0f} mm supported "
                     f"idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn "
                     f"wire reaches infinite life for {len(shipped['unsupported_infinite_life'])} of "
-                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x, placeholder span); "
+                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x, shipped span); "
                     # ⛔ DERIVED from branch_summary, never typed: this sentence read «NOT over the SF-2 line.
                     #    On the superseded PRINTED branch not one of the six cleared it» for a whole day after
                     #    the L_FREE_UNSUP=36 inputs were retired — the printed report was derived, the cache
@@ -2213,9 +2213,9 @@ def main() -> int:
                     "ranking as thermal -> leading HW.24 candidates win on both. " + wear_verdict_sentence),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
                    "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. "
-                   "GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside "
-                   "the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both "
-                   "window ends, the §1-§3 tables the placeholder only. "
+                   "GEOMETRY: the unsupported PEEK gap comes from the Zone-1 insertion — the whole lock shank since "
+                   "⚖️ 00_07 HW.26 G1 2026-10-12; the contact blocks carry the shipped geometry AND the lock window's shallow "
+                   "end, the §1-§3 tables the shipped geometry only. "
                    "CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure "
                    "differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall "
                    "raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or free cantilever is the upper end), under a "

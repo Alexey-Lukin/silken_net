@@ -258,8 +258,17 @@ def main() -> int:
     t_gap_inf = t54.t_anode(g_gap_inf, r_wood, t_air, t_deep)
     print(f"\n  Reference — solid Ti, NO PEEK break:  G={g_solid:.3e} W/K, T_anode={t_solid:+.2f} °C")
     print(f"  Asymptote — gap mount, G_TEG → ∞:     G={g_gap_inf:.3e} W/K, T_anode={t_gap_inf:+.2f} °C")
-    print(f"  → a gap-spanning module saturates {abs(t_gap_inf - t_solid):.2f} °C from the NO-BREAK condition: "
-          f"past a few mW/K it is not «partly» defeating Zone 2, it has REVERTED the design to pre-PEEK.")
+    # The SIGN against the solid reference is derived: a shorted gap leaves only the two shanks in series, so once
+    # they fill less of the sleeve than the solid rod would, the short is COLDER than no break at all (HW.26 G1).
+    vs_solid = (f"within {abs(t_gap_inf - t_solid):.2f} C of" if t_gap_inf >= t_solid - 0.5 else
+                f"{t_solid - t_gap_inf:.2f} C COLDER than")
+    vs_solid_means = ("reverts the design to exactly the pre-PEEK condition Zone 2 exists to prevent (01_01 4.1)"
+                      if t_gap_inf >= t_solid - 0.5 else
+                      f"goes BEYOND the pre-PEEK condition Zone 2 exists to prevent (01_01 4.1) — the shorted gap "
+                      f"leaves only the two shanks ({t54.L_A_INSERT + t54.L_C_INSERT:.0f} of the {t54.L_SLEEVE:.0f} mm "
+                      f"sleeve) in series")
+    print(f"  → a gap-spanning module saturates {vs_solid} the NO-BREAK condition: "
+          f"past a few mW/K it is not «partly» defeating Zone 2, it {vs_solid_means}.")
 
     # ── 1. Catalogue module sweep ──
     banner("Q1 — catalogue Bi₂Te₃ modules across the break (κ_eff 1.2–1.6, t 2–4 mm)")
@@ -448,7 +457,7 @@ def main() -> int:
     print(f"     ×{small['x_vs_ti_bus_anchor']:.0f} the conductance of the ENTIRE anchor and puts the pocket "
           f"at {small['gap']['t_anode_C']:+.1f} °C.")
     print(f"  2. 🔴 It is not a partial defeat. A gap-spanning module saturates at {t_gap_inf:+.1f} °C, "
-          f"{abs(t_gap_inf - t_solid):.2f} °C from a")
+          f"{vs_solid} a")
     print(f"     SOLID Ti anchor with no PEEK break at all ({t_solid:+.1f} °C) — the exact condition Zone 2 "
           "exists to")
     print("     prevent (01_01 §4.1: cambium crystallisation).")
@@ -598,9 +607,7 @@ def main() -> int:
                     "kappa x mount combinations fail) the -2.0 C cambium gate: the smallest part swept "
                     "(8x8x4 mm) already conducts ~{:.0f}x the ENTIRE anchor and drops the Zone-1 pocket to "
                     "{:.1f} C. It is not a partial defeat - a gap-spanning module saturates at {:.1f} C, "
-                    "within {:.2f} C of a SOLID Ti anchor with no PEEK break at all ({:.1f} C), i.e. it "
-                    "reverts the design to exactly the pre-PEEK condition Zone 2 exists to prevent "
-                    "(01_01 4.1). The budget for anything crossing the break is <= {:.1e} W/K (~{:.1f} mm2 "
+                    "{} a SOLID Ti anchor with no PEEK break at all ({:.1f} C), i.e. it {}. The budget for anything crossing the break is <= {:.1e} W/K (~{:.1f} mm2 "
                     "at 3 mm, x{:.0f} smaller than the smallest module), and over the live wood grid that "
                     "budget goes NEGATIVE. Honest residual: at the budget a bespoke sub-mm2 micro-TEG still "
                     "yields ~{:.0f} uW - {} HW.21's own 50-200 uW target - but at zero gate margin and "
@@ -608,7 +615,7 @@ def main() -> int:
                     "the ratified HW.42: the conductance that harvests IS the conductance that kills the "
                     "break."
                     ).format(len(rows) * 2 - n_pass, len(rows) * 2, small["x_vs_ti_bus_anchor"],
-                             small["gap"]["t_anode_C"], t_gap_inf, abs(t_gap_inf - t_solid), t_solid,
+                             small["gap"]["t_anode_C"], t_gap_inf, vs_solid, t_solid, vs_solid_means,
                              budgets["gap"]["g_teg_max_W_K"],
                              budgets["gap"]["footprint_mm2_at_kappa1p4_t3mm"], ratio_gap,
                              out_b["p_uW"], rel, v_oc_1couple_mv, VIN_CS_MV / v_oc_1couple_mv),

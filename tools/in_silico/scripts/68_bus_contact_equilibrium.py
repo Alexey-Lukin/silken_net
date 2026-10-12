@@ -19,11 +19,10 @@ axis offset ≤ 25 µm — the WHOLE nominal radial play of the channel by itsel
 (cem/_provenance.json, 00_07 HW.34). The sleeve's ⌀0.05 is not a member: its datum is its own bore.
 
 ⚠️ READ THE GEOMETRY AXIS BEFORE ANY NUMBER. The unsupported PEEK gap — which sets both the mouth
-station and the rod length — is derived in script 55 from `Z1_INSERTION_MM = 30`, a PLACEHOLDER owned by 00_07 HW.26 G1
-that the tree has already measured to lie OUTSIDE the Zone-1 lock's own insertion window
-(`MechanicalLock.InsertionWindowMm` in tools/cad, 00_07 HW.26 G1). Every table below is therefore
-computed at the placeholder AND at both ends of the lock window (script 55's `geometries()`), and the
-offset price moves by an order of magnitude between them. The radial play is likewise swept: the
+station and the rod length — is derived in script 55 from `Z1_INSERTION_MM`, since ⚖️ founder 2026-10-12 (00_07 HW.26 G1,
+branch (А)) the Zone-1 lock's WHOLE shank: the deep end of its own insertion window (`MechanicalLock.InsertionWindowMm` in
+tools/cad); until then a typed placeholder 30 outside that window. Every table below is computed on the shipped geometry
+AND at the window's shallow end (script 55's `geometries()`). The radial play is likewise swept: the
 zero-interference value AND the three rows of script 55's `interference_window` (the fit swells the tube
 and eats the play).
 
@@ -260,9 +259,9 @@ def main() -> int:
                           "tilt_taken_up_by_play_mrad": round(zero_play / reach * 1000.0, 3), "by_tilt": per_t})
 
     # ── controls: discretisation on a grazing row, and the offsets that cycled the old solver ─────────
-    # The 75 µm row on the placeholder geometry has a mouth contact plus an upper-wall contact whose true station
-    # (20.57 mm, continuum analytic solution of the 2026-09-14 adversarial review) falls BETWEEN nodes — the one
-    # kind of row where element size can matter. The assert below only requires the two contacts to exist.
+    # The 75 µm row on the first geometry has a mouth contact plus an upper-wall contact whose true station falls BETWEEN
+    # nodes — the one kind of row where element size can matter (on the retired placeholder geometry it sat at 20.57 mm,
+    # continuum analytic solution of the 2026-09-14 adversarial review). The assert below only requires the two contacts.
     geo0 = geos[0]
     graze_c = solve(geo0, liner, zero_play, offset_mm=0.075, block="control")
     graze_f = solve(geo0, liner, zero_play, offset_mm=0.075, h_mm=ELEMENT_MM / 2.0, block="control")
@@ -288,7 +287,7 @@ def main() -> int:
                             "mouth takes up the play on both walls, and where the pogo couple applied at the exit "
                             "exceeds the root moment of the long rod"}
 
-    placeholder, near, far = geos
+    shipped, far = geos
     _zero = {g.label: next(d for d in drag if d["geometry"] == g.label and d["play"] == "zero interference"
                            and d["branch"].startswith("PEEK liner"))["by_mu"][str(mu_worst)] for g in geos}
     cap_zero = {k: v["sigma_root_MPa_bonded"] for k, v in _zero.items()}
@@ -304,10 +303,7 @@ def main() -> int:
     # divergence here means the two scripts disagree on geometry, member or play, never on physics.
     assert s55_caps == cap_zero, f"script 55 and 68 disagree on the coaxial cap: {s55_caps} vs {cap_zero}"
     assert s55_upper == upper_zero, f"script 55 and 68 disagree on the upper end: {s55_upper} vs {upper_zero}"
-    lock_caps = sorted((cap_zero[near.label], cap_zero[far.label]))
-    lock_secants = sorted((sec_zero[near.label], sec_zero[far.label]))
     pad_peak = {g.label: max(p["sigma_root_MPa"] for p in pad if p["geometry"] == g.label) for g in geos}
-    lock_pad = sorted((pad_peak[near.label], pad_peak[far.label]))
     amp_max = {g.label: max(r_["sigma_amplitude_MPa"] for r_ in reversing if r_["geometry"] == g.label) for g in geos}
     amp_clause = "; ".join(
         f"{g.label}: up to {amp_max[g.label]:.2f} MPa against its cap {cap_zero[g.label]:.2f}"
@@ -324,9 +320,9 @@ def main() -> int:
                     "(00_07 HW.34 / HW.23)",
         "inputs": {
             "source": "imported from 55_bus_mechanical.py; the channel run, flange and sleeve lengths come from "
-                      "cem/*.json via 55, but the unsupported GAP depends on the Zone-1 insertion, which in 55 is the "
-                      "HW.8 PLACEHOLDER Z1_INSERTION_MM — swept here against the Zone-1 lock window",
-            "insertion_placeholder_mm": s55.Z1_INSERTION_MM,
+                      "cem/*.json via 55, and the unsupported GAP depends on the Zone-1 insertion Z1_INSERTION_MM — the "
+                      "whole lock shank since ⚖️ HW.26 G1 2026-10-12 — computed here with the lock window's shallow end beside it",
+            "insertion_mm": s55.Z1_INSERTION_MM,
             "lock_insertion_window_mm": list(s55.lock_insertion_window_mm()),
             "lock_window_source": "cem/mechanical_lock.zone1.json, formula of MechanicalLock.InsertionWindowMm "
                                   "(tools/cad) — by-value crossing, not gated here",
@@ -346,7 +342,7 @@ def main() -> int:
         "peak_moment_section": peak_summary,
         "script55_side_by_side": {
             "script55_supported_column_sigma_nominal_MPa": s55_column,
-            "script55_supported_column_note": "µ_nominal·F on the 6 mm PEEK gap propped where the bore begins — the §2 "
+            "script55_supported_column_note": f"µ_nominal·F on the {s55.L_FREE_SUP:.0f} mm PEEK gap propped where the bore begins — the §2 "
                                               "«supported» idealisation; script 55 measures it against these caps itself "
                                               "(clearance_regime.supported_column_vs_equilibrium)",
             "script55_coaxial_cap_MPa_at_worst_mu_bonded": s55_caps,
@@ -359,22 +355,19 @@ def main() -> int:
         },
         "summary": (
             f"Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush; "
-            f"against a RIGID wall the root stress is µ-invariant — {cap_zero[placeholder.label]:.2f} MPa on script 55's "
-            f"placeholder geometry, {lock_caps[0]:.2f}–{lock_caps[1]:.2f} MPa across the Zone-1 lock "
-            f"window (zero-interference play, bonded member) — and that figure is the LOWER end of the root stress: the "
+            f"against a RIGID wall the root stress is µ-invariant — {cap_zero[shipped.label]:.2f} MPa on the shipped "
+            f"geometry (the whole Zone-1 lock shank inserted, HW.26 G1), {cap_zero[far.label]:.2f} MPa at the lock window's "
+            f"shallow end (zero-interference play, bonded member) — and that figure is the LOWER end of the root stress: the "
             f"polymer wall on the Ti bore's edge yields by R/k, and the upper end (the Ti-bore stop, or the free cantilever "
-            f"where the drag cannot reach the bore) is {upper_zero[placeholder.label]:.1f} MPa on the placeholder and "
-            f"{min(upper_zero[near.label], upper_zero[far.label]):.1f}–{max(upper_zero[near.label], upper_zero[far.label]):.1f} MPa "
-            f"across the lock window at the worst swept µ; where in that bracket the root sits is set by the contact "
-            f"compliance, measured nowhere. Script 55's 6 mm supported column prices that section at "
-            f"{s55_column:.2f} MPa nominal — above the rigid-wall end on every geometry, inside the bracket. Channel off the "
+            f"where the drag cannot reach the bore) is {upper_zero[shipped.label]:.1f} MPa on the shipped geometry and "
+            f"{upper_zero[far.label]:.1f} MPa at the shallow end at the worst swept µ; where in that bracket the root sits is set "
+            f"by the contact compliance, measured nowhere. Script 55's {s55.L_FREE_SUP:.0f} mm supported column prices that "
+            f"section at {s55_column:.2f} MPa nominal — compare it with the rigid-wall end per geometry above. Channel off the "
             f"root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a "
-            f"secant {sec_zero[placeholder.label]:.2f} MPa/µm on the placeholder and "
-            f"{lock_secants[0]:.2f}–{lock_secants[1]:.2f} "
-            f"MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of "
-            f"magnitude. Reversing drag on a static offset, amplitude over the swept offsets — {amp_clause}. A pogo "
-            f"contact off the rod axis by the rod radius, with the worst drag, gives up to {pad_peak[placeholder.label]:.2f} MPa "
-            f"on the placeholder and {lock_pad[0]:.2f}–{lock_pad[1]:.2f} MPa across the lock window — above the drag cap there. "
+            f"secant {sec_zero[shipped.label]:.2f} MPa/µm on the shipped geometry and {sec_zero[far.label]:.2f} MPa/µm at the "
+            f"shallow end. Reversing drag on a static offset, amplitude over the swept offsets — {amp_clause}. A pogo "
+            f"contact off the rod axis by the rod radius, with the worst drag, gives up to {pad_peak[shipped.label]:.2f} MPa "
+            f"on the shipped geometry and {pad_peak[far.label]:.2f} MPa at the shallow end. "
             f"The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. Peak moment: {peak_clause}. "
             f"MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT "
             f"computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. "

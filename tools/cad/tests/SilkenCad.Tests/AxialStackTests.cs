@@ -17,7 +17,9 @@ public class AxialStackTests
         Assert.Equal(11f, cem.Zone1.OuterDiameterMm);          // nested Zone-1 frozen dim inherited
         Assert.Equal(11f, cem.Zone2.BoreDiameterMm);           // nested Zone-2 frozen dim inherited
         Assert.Equal(9f, cem.Capsule.Flange.ShankDiameterMm);  // nested Деталь-3 shank PLACEHOLDER (HW.8)
-        Assert.Equal(30f, cem.Zone1InsertionMm);
+        Assert.Null(cem.Zone1ShankLengthMm);                    // resolved at load from the lock — never parsed (⚖️ G1 2026-10-12)
+        Assert.Null(Cem.Parse<AnchorAxialStackCem>(
+            """{ "kind": "anchor_axial_stack", "name": "x", "zone1_shank_length_mm": 30, "zone1_insertion_mm": 30 }""").Zone1ShankLengthMm);
     }
 
     [Fact]
@@ -44,25 +46,29 @@ public class AxialStackTests
     [Fact]
     public void Insertion_Budget_Is_Positive__Shanks_Do_Not_Collide__F2()
     {
-        // F2: bore 50 − (Zone-1 insert 30 + Zone-3 shank 14) = 6 mm clearance between the two shank ends.
-        AnchorAxialStackCem cem = new();
-        Assert.Equal(6f, AxialStack.InsertionBudgetMm(cem), 3);
+        // F2: bore 50 − (the Zone-1 lock's whole shank 18 + Zone-3 shank 14) = 18 mm of PEEK gap between the two shank
+        // ends (⚖️ G1 2026-10-12; 6 mm on the retired placeholder insertion 30).
+        AnchorAxialStackCem cem = R(new());
+        Assert.Equal(18f, AxialStack.InsertionBudgetMm(cem), 3);
         Assert.True(AxialStack.InsertionBudgetMm(cem) >= 0, "the two shanks must not collide inside the sleeve bore");
     }
 
     [Fact]
     public void Z_Layout_Stacks_From_The_Tree_Side_Up()
     {
-        // Datum: anode bottom z=0. Sleeve bottom = Zone-1 top (40) − insertion (30) = 10; sleeve top = 60;
-        // capsule lifts so the flange shank (14) inserts into the sleeve top ⇒ lift = 60 − 14 = 46;
-        // overall stack length = sleeve top 60 + flange thickness 3 = 63 (anode bottom → flange top). The embedded
-        // depth is 60, not 63: the flange seats on the bark, so its UNDERSIDE is the bark line (⚖️ HW.33
-        // 2026-09-18); the radome bayonets above, over the bark.
-        AnchorAxialStackCem cem = new();
-        Assert.Equal(10f, AxialStack.SleeveBottomZMm(cem), 3);
-        Assert.Equal(60f, AxialStack.SleeveTopZMm(cem), 3);
-        Assert.Equal(46f, AxialStack.CapsuleLiftZMm(cem), 3);
-        Assert.Equal(63f, AxialStack.OverallStackLengthMm(cem), 3);
+        // Datum: anode bottom z=0. The anode is the gyroid body (40) + the lock's shank (18), top face at 58; the shank
+        // inserts whole (⚖️ G1 2026-10-12), so the sleeve bottom sits on the gyroid-to-shank junction at 40 and the whole gyroid is below
+        // it, in the wood; sleeve top = 90; capsule lifts so the flange shank (14) inserts ⇒ lift = 90 − 14 = 76; overall
+        // stack length = 90 + flange thickness 3 = 93. The embedded depth is 90, not 93: the flange seats on the bark, so
+        // its UNDERSIDE is the bark line (⚖️ HW.33 2026-09-18). (Until G1: 10 · 60 · 46 · 63 — 30 mm of the 40 mm envelope in the bore.)
+        AnchorAxialStackCem cem = R(new());
+        Assert.Equal(58f, AxialStack.Zone1TopZMm(cem), 3);
+        Assert.Equal(40f, AxialStack.SleeveBottomZMm(cem), 3);
+        Assert.Equal(cem.Zone1.LengthMm, AxialStack.SleeveBottomZMm(cem), 3);   // no lattice inside the sleeve
+        Assert.Equal(90f, AxialStack.SleeveTopZMm(cem), 3);
+        Assert.Equal(76f, AxialStack.CapsuleLiftZMm(cem), 3);
+        Assert.Equal(93f, AxialStack.OverallStackLengthMm(cem), 3);
+        Assert.Equal(58f, AxialStack.BusWireBottomZMm(cem), 3);   // welded on the shank's top face
     }
 
     [Fact]
@@ -116,8 +122,8 @@ public class AxialStackTests
         // CATHODE METAL, which surrounds the rod over the entire channel INCLUDING the top face — and
         // its lower end reaches 1.0 mm further, into the PEEK gap.
         AnchorAxialStackCem cem = Fix();
-        Assert.Equal(45f, AxialStack.LinerBottomZMm(cem), 3);   // shank face 46 − 1.0 protrusion
-        Assert.Equal(63f, AxialStack.LinerTopZMm(cem), 3);      // flush with the pogo face
+        Assert.Equal(75f, AxialStack.LinerBottomZMm(cem), 3);   // shank face 76 − 1.0 protrusion
+        Assert.Equal(93f, AxialStack.LinerTopZMm(cem), 3);      // flush with the pogo face
         Assert.Equal(18f, AxialStack.LinerLengthMm(cem), 3);    // channel 17 + protrusion 1
         Assert.True(AxialStack.LinerCoversChannel(cem));
     }
@@ -149,7 +155,7 @@ public class AxialStackTests
     }
 
     private static AnchorAxialStackCem Fix(float linerMm = 0.15f, float protrusionMm = 1.0f)
-        => new()
+        => R(new()
         {
             Zone1 = new AnchorCem { BusRodDiameterMm = 1.0f },
             Capsule = new AnchorAssemblyCem
@@ -160,40 +166,47 @@ public class AxialStackTests
                     BusLinerProtrusionMm = protrusionMm,
                 },
             },
-        };
+        });
 
-    // ── Zone-1 insertion vs the window its own lock admits (00_07 HW.26 G1) ──
+    // ── Zone-1 insertion = the lock's whole shank (⚖️ 00_07 HW.26 G1, 2026-10-12, branch (А)) ──
 
-    // ⛔ A DETECTOR pin, never a cement: every insertion below is SET, never read from the stack default — so the
-    //    day G1 moves `zone1_insertion_mm` into the window this stays green and only the verify ⚠ goes quiet.
-    // MUTATION: drop either comparison in AxialStack.Zone1InsertionConflict ⇒ its row reds.
+    // The shank's one home is the lock manifest, and the stack takes it at load; the insertion is that shank, on the
+    // deep edge of the window the lock admits. MUTATION: type a number into Zone1InsertionMm · read the shank from the
+    // record default instead of the lock · drop the Load refusal ⇒ a row reds.
     [Fact]
-    public void An_Insertion_Outside_The_Zone1_Lock_Window_Is_Reported_By_Name()
+    public void The_Shank_Inserts_Whole__Its_Length_Comes_From_The_Lock_And_Sits_On_The_Window_Deep_Edge()
     {
-        MechanicalLockCem lockCem = Cem.Parse<MechanicalLockCem>(
-            File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
+        string strStack = Path.Combine(CemFixtures.Dir(), "anchor_axial_stack.json");
+        AnchorAxialStackCem cem = AxialStack.Load(strStack);
+        MechanicalLockCem lockCem = Lock();
         MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
-
-        // The placeholder VALUE (owner 00_07 HW.26 G1), handed in explicitly — too deep: the mouth is past the end of the lock's shank.
-        // ⚖️ 2026-09-18 (HW.26): no longer "the groove is buried" — no ring is fitted, so the groove bounds nothing,
-        // and the retired reason must not come back as the named one.
-        string? strAt30 = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = 30f }, lockCem);
-        Assert.NotNull(strAt30);
-        Assert.Contains("zone1_insertion_mm", strAt30);
-        Assert.Contains("past the end of the lock's", strAt30);
-        Assert.DoesNotContain("DIN-471", strAt30);
-        Assert.DoesNotContain("PEEK-contact zone", strAt30);
-        Assert.Contains("HW.26 G1", strAt30);
-
-        // Too shallow: the barbs stick out, and only that is named.
-        string? strShallow = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = w.MinMm - 1f }, lockCem);
-        Assert.NotNull(strShallow);
-        Assert.Contains("PEEK-contact zone", strShallow);
-        Assert.DoesNotContain("past the end of the lock's", strShallow);
-
-        Assert.Null(AxialStack.Zone1InsertionConflict(
-            new AnchorAxialStackCem { Zone1InsertionMm = (w.MinMm + w.MaxMm) / 2f }, lockCem));
+        Assert.Equal(lockCem.ShankLengthMm, cem.Zone1ShankLengthMm);
+        Assert.Equal(lockCem.ShankLengthMm, AxialStack.Zone1InsertionMm(cem), 3);
+        Assert.Equal(w.MaxMm, AxialStack.Zone1InsertionMm(cem), 3);
+        Assert.True(AxialStack.Zone1InsertionMm(cem) >= w.MinMm, "the barbs must be inside the sleeve");
+        // A lock with a longer shank moves the insertion and the sleeve with it — nothing typed in the stack.
+        AnchorAxialStackCem longer = cem with { Zone1ShankLengthMm = lockCem.ShankLengthMm + 4f };
+        Assert.Equal(AxialStack.SleeveBottomZMm(cem), AxialStack.SleeveBottomZMm(longer), 3);   // still on the junction
+        Assert.Equal(AxialStack.InsertionBudgetMm(cem) - 4f, AxialStack.InsertionBudgetMm(longer), 3);
     }
+
+    // Loud absence: a stack that was never resolved against its lock cannot be laid out, and one that names no lock
+    // cannot be loaded — never a default shank.
+    [Fact]
+    public void An_Unresolved_Stack_Throws__A_Stack_Naming_No_Lock_Is_Refused_At_Load()
+    {
+        Assert.Throws<InvalidOperationException>(() => AxialStack.SleeveBottomZMm(new AnchorAxialStackCem()));
+        string strTmp = Path.Combine(Path.GetTempPath(), $"stack_no_lock_{Guid.NewGuid():N}.json");
+        File.WriteAllText(strTmp, """{ "kind": "anchor_axial_stack", "name": "x" }""");
+        try { Assert.Throws<InvalidDataException>(() => AxialStack.Load(strTmp)); }
+        finally { File.Delete(strTmp); }
+    }
+
+    private static MechanicalLockCem Lock()
+        => Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
+
+    // A stack resolved against the shipped Zone-1 lock, as AxialStack.Load does for a manifest on disk.
+    private static AnchorAxialStackCem R(AnchorAxialStackCem cem) => cem with { Zone1ShankLengthMm = Lock().ShankLengthMm };
 
     // The shipped stack NAMES its Zone-1 lock instead of copying it, and the name must land on the right PART: a
     // solid shank of the Zone-1 shaft's own Ø — the Zone-3 lock has a channel, and its Ø is an HW.8 placeholder that
