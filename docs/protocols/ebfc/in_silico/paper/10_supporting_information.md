@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 283 · 15,569,947 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 283 · 15,570,153 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -118,7 +118,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/82_collar_running_clearance.py` | `72ff1cebfe494be649a75db7afae9d98b97c358bd035acd7fd2c49f64eb33b1f` | Running clearance of the bayonet collar in the radome's socket band across the capsule temperature envelope, as a function of the manufacturing route, and the board ceiling each route leaves. |
 | `tools/in_silico/scripts/83_os_series_vs_measured.py` | `0b535e3496c85477ccfdafa0aa130dc3aa0690805d79acbfab34a3d69e8d8697` | Computed shift of the Os(III/II) potential per 4,4'-bipyridine substituent compared with three measured series: homoleptic osmium complexes in acetonitrile (donors only), an aqueous series of the same bis-bipyridine chloro core, and the osmium redox polymers of the same core with an imidazole donor (paper ref 8), under named transfer assumptions. |
 | `tools/in_silico/scripts/84_cathode_ionic_path.py` | `136cf756735e1231f3e78c88d1473a51da72945dbb5dee0037bf8c812f4eecda` | Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by element, against the cold-start budget of the energy harvester for two readings of the electrodes' own internal resistance: the material value each layer would need, with published tree and stemflow readings beside it. |
-| `tools/in_silico/scripts/85_electrode_interfacial_ph.py` | `7e71192b0048bd7553dde65f50790fb8eb58dd24209b25a05354d34626ed17ae` | How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, the anode as the diffusion-layer thickness its predicted current tolerates. |
+| `tools/in_silico/scripts/85_electrode_interfacial_ph.py` | `e0ea54e6e7c0b8575eb5ea59199b766af39104e9b6892d710aade320b5967f68` | How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, the anode as the diffusion-layer thickness its predicted current tolerates. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
@@ -200,7 +200,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/kinetics/delta_t_monte_carlo.png` | `175d0aed01352901a3982e49593564727babc56280a0c6d2c141a354d46f6320` | 82,744 |
 | `tools/in_silico/cache/kinetics/eis_model.json` | `45871889b21f37bdc6762a006759c9469a9f8a7388877abf968789e64a5129ed` | 627 |
 | `tools/in_silico/cache/kinetics/eis_nyquist.png` | `a6c3064dd66ffe18e1c5189972df7c5d69f5ecd7aee7f0c55716aff802785cc1` | 99,759 |
-| `tools/in_silico/cache/kinetics/electrode_interfacial_ph.json` | `99f5a5646fea51fe9f41e6bcb8f67b0cc01a9a2fe4374e9ac80252c0c40826db` | 39,049 |
+| `tools/in_silico/cache/kinetics/electrode_interfacial_ph.json` | `cde3fcb26f2149ffbd82200b06a78806226bc1069f437afe1a49e109c12ef31c` | 39,105 |
 | `tools/in_silico/cache/kinetics/gdl_breakthrough.json` | `1e3dffa213987f9c4b4a1663c44f5907bdd0cc85706ca80af99f785ff5b9c96e` | 9,215 |
 | `tools/in_silico/cache/kinetics/gusak_degradation.json` | `79394f5c748c55525a56ba5ade1117bb8f5af0bea01f31d6458a1eee12163564` | 8,913 |
 | `tools/in_silico/cache/kinetics/monte_carlo.json` | `346967338f004564c87e4cfee610ee7f6dca6f2f41530fc90aa258321bca972f` | 4,880 |

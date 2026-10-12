@@ -11,7 +11,7 @@ composition; the ratified sap (01_02 §2.1: malic acid 2.2 mM the only buffer, K
 electrode tests and 4.5 ONLY for the uncoated ICP-MS series. So the letter leaves the cathode medium to the laboratory,
 and this script prices the readings it allows (MEDIA): the sap brought to 4.5 · the sap at 5.75 (a one-compartment
 cell, where the cathode shares the anode's medium) · a buffered cathode medium (the sap's salts, malic acid at 10 mM,
-pH 4.5 — the reading the HW.24 ⚖️ leg weighs). A standard laccase buffer (citrate, acetate at ~0.1 M) is NOT computed.
+pH 4.5 — the medium the letter specifies since ⚖️ founder 2026-10-12, 01_03 §3.5). A standard laccase buffer (citrate, acetate at ~0.1 M) is NOT computed.
 The ORR consumes one proton per electron (O₂ + 4H⁺ + 4e⁻ → 2H₂O); a weak buffer has to carry them to the face.
 The anode is the mirror (beyond the leg's words, the same equation and the same letter): FAD-GDH wired by the Os
 polymer releases one proton per electron at the face (FADH₂ → FAD + 2H⁺ + 2e⁻ through the mediator). N_H_ANODE runs
@@ -167,7 +167,7 @@ PH_MODEL_CEILING = 6.99           # OH⁻ is not modelled: a face beyond this is
 PH_SAP = 5.75                     # the ratified set-point (01_02 §2.1) — the letter's electrode-test medium
 PH_ANODE_KINETIC_EDGE = 5.5       # acid end of PH_KINETICS_SYGMUND — the only measured pH pair of the L4 bracket
 PH_ANODE_STABILITY_EDGE = 4.5     # acid end of the measured thermostability band (01_03 §1, Sygmund 2011)
-BUFFERED_MALIC_MM = 10.0          # the buffered cathode medium the HW.24 ⚖️ leg weighs — the sap's salts, more malic acid
+BUFFERED_MALIC_MM = 10.0          # the cathode medium of ⚖️ 2026-10-12 (01_03 §3.5) — the sap's salts, more malic acid
 GLUCOSE_HOLD_MM = 10.0            # the letter's hold concentration (01_03 §3.5)
 GLUCOSE_SERIES_TOP_MM = 50.0      # top of the day-0 glucose series (01_03 §3.5)
 LOAD_B_A = 25e-6                  # the letter's load point B (02_03 §1.5 cold-start pair), on one face (A_ELECTRODE)
@@ -180,7 +180,8 @@ TOTALS_BUFFERED = S67.totals_mm({**S67.RATIFIED_POINT_MM, "malic": BUFFERED_MALI
 MEDIA = {   # name: (totals, bulk pH, what it is)
     "sap_pH4.5": (TOTALS, 4.5, "the ratified sap brought to 4.5 — a laboratory's likeliest reading of the letter"),
     "sap_pH5.75": (TOTALS, PH_SAP, "the ratified sap at its set-point — the cathode in a one-compartment cell"),
-    "buffered_pH4.5": (TOTALS_BUFFERED, 4.5, f"the sap's salts with malic acid at {BUFFERED_MALIC_MM:.0f} mM, pH 4.5"),
+    "buffered_pH4.5": (TOTALS_BUFFERED, 4.5, f"the sap's salts with malic acid at {BUFFERED_MALIC_MM:.0f} mM, pH 4.5 — "
+                                             "the letter's cathode medium since ⚖️ 2026-10-12"),
 }
 
 
@@ -357,7 +358,7 @@ def anode() -> dict:
 
 
 def diagnostic_medium() -> dict:
-    """The anode's day-0 check of the HW.24 ⚖️ leg: the ratified sap at 5.75 with malic acid at BUFFERED_MALIC_MM —
+    """The anode's day-0 check of ⚖️ 2026-10-12 (01_03 §3.5): the ratified sap at 5.75 with malic acid at BUFFERED_MALIC_MM —
     what it changes besides the buffer (ionic strength, KOH) and how much capacity it adds down to pH 4.5."""
     sc, m = S67.SC["selected"], S67.model_for(S67.SC["selected"], 25.0)
     base, strong = S67.speciate(m, TOTALS, PH_SAP), S67.speciate(m, TOTALS_BUFFERED, PH_SAP)

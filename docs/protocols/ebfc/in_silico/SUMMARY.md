@@ -1224,8 +1224,9 @@ remove it.
 **lower bound at the enzyme**: protons are made or consumed under the anode's hydrogel and membrane and inside the
 cathode's porous layer, which the outer-face film does not see. Not computed: migration (its sign helps the anode; for
 the cathode it brings H⁺ in and takes hydrogen malate out), salting-out of O₂ in test D's NaCl steps (raises f), the
-anode at 20 °C, and whether a face at pH 6 inactivates laccase reversibly. What it implies for the letter is a founder
-verdict → [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.24.
+anode at 20 °C, and whether a face at pH 6 inactivates laccase reversibly. The letter now specifies the buffered
+cathode medium, the convection and a day-0 diagnostic CV of the anode (⚖️ founder 2026-10-12,
+[`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
 ---
 
