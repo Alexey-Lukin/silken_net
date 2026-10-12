@@ -12,7 +12,7 @@
 # decision (CNCF recommendation, OpenInfra CLA→DCO 2025, Nextcloud-AGPL
 # precedent) — rationale + the two honest caveats (university thesis/grant IP,
 # dual-license tension) live in `docs/protocols/business/oss_web3_standards.md`
-# §4, state in `00_07` UNI.20.
+# §4, policy in `00_01 §8` (`00_07` UNI.20 archived 2026-10-12).
 #
 # WHY hand-rolled instead of the `dcoapp/app` GitHub App: a third-party app
 # needs an org-level install with write scope on a public repo, and its default

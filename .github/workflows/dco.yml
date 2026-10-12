@@ -8,7 +8,7 @@ name: Sec · DCO
 # rather than a gate. This closes that. DCO over CLA is a ratified choice (CNCF
 # recommendation, OpenInfra CLA→DCO 2025, Nextcloud's AGPL precedent) — rationale and
 # the two honest caveats (university thesis/grant IP; dual-license tension) live in
-# docs/protocols/business/oss_web3_standards.md §4; state in 00_07 UNI.20.
+# docs/protocols/business/oss_web3_standards.md §4; policy in 00_01 §8 (UNI.20 archived 2026-10-12).
 #
 # NO paths-filter, deliberately: unlike every other gate here, DCO is about WHO wrote
 # a commit, not WHICH files it touched — a docs-only PR needs the same certification as

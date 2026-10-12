@@ -105,8 +105,8 @@ takes, rather than a blanket ban.
   means.
 
 Why this project permits AI assistance instead of prohibiting it — and what that
-means for copyright in our jurisdiction — is recorded under `UNI.20` in
-[`docs/00_07`](docs/00_07_Action_Plan_Tracker.md).
+means for copyright in our jurisdiction — is recorded in
+[`docs/00_01` §8](docs/00_01_Vision_Mission_and_Roadmap.md) (inbound contributions).
 
 ## License of contributions
 

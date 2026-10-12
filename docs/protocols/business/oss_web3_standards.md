@@ -4,7 +4,7 @@
 > **Concern-шар** (як [`procurement/`](../procurement/rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе тут — робоча чернетка й вказівники на канон; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
 > **⏳ Станом на 2026-07-24.** Спирається на зовнішнє право/ринок, що рухається незалежно від нас — перед використанням звіряй актуальність.
 > **⚠️ Не юридична / податкова / фінансова порада.** Робочий вхід у платну консультацію з фахівцем, не її заміна.
-> **Дім стану:** [`00_07`](../../00_07_Action_Plan_Tracker.md) — UNI.20 (DCO) / BIZ.24 (SBOM/CRA); суміжні BIZ.22 · UNI.16 · BIZ.20 · UNI.3; DOC-T.47 — закритий.
+> **Дім стану:** [`00_07`](../../00_07_Action_Plan_Tracker.md) — UNI.20 (DCO — §🗄️ 2026-10-12, політика — `00_01 §8`) / BIZ.24 (SBOM/CRA); суміжні BIZ.22 · UNI.16 · BIZ.20 · UNI.3; DOC-T.47 — закритий.
 
 **Дата:** 2026-07-24 · **Тип:** best-practices gap-analysis (web-research 2025-26 + наші артефакти), **НЕ юридична порада**
 **Вхідні артефакти:** [`entity_structure`](../legal/entity_structure.md) (token-контур/фази) · [`securities_review`](../legal/securities_review.md) (securities fact-pattern F1–F15) · [`trademark_brief`](../legal/trademark_brief.md) · [`R2_offshore_token_securities`](../research/R2_offshore_token_securities.md) · [`R5_trademark_ip`](../research/R5_trademark_ip.md)
