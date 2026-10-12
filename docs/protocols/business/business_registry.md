@@ -26,7 +26,7 @@
 | [`eo_insurance_spec.md`](eo_insurance_spec.md) | Спека coverage-вимог для страхового брокера (E&O / CGL) | [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (параметричне страхування **клієнта** — сусіднє, не це) · [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) | **BIZ.21** (поліс gated на BIZ.20-entity) |
 | [`b2b_readiness.md`](b2b_readiness.md) | Що вимагає enterprise-procurement × наша phase-gated готовність | [`00_03`](../../00_03_TRL_Matrix_HIL_and_Beyond.md) (чесний TRL) · [`00_04 §1.1`](../../00_04_Nature_as_a_Service_Contracts.md) | живить **BIZ.2** / **BIZ.18** |
 | [`carbon_integrity_standards.md`](carbon_integrity_standards.md) | Buyer-side integrity-стек: ICVCM CCP, VCMI, Oxford, SBTi, ISO 14064, IAPB | [`02_06 §7.1`](../../02_06_Unit_Economics_and_BOM.md) (growth_points → CO₂-еквівалент) · [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) | **BIZ.9** / **BIZ.23** (biodiversity = stewardship, не offset) |
-| [`oss_web3_standards.md`](oss_web3_standards.md) | Web3-токен + open-source best practices: SPDX/REUSE, SBOM/CRA, DCO, AGPL | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (ліцензійна матриця) · [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | **UNI.20** (DCO) / **BIZ.24** (CRA/SBOM) |
+| [`oss_web3_standards.md`](oss_web3_standards.md) | Web3-токен + open-source best practices: SPDX/REUSE, SBOM/CRA, DCO, AGPL | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (ліцензійна матриця) · [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | UNI.20 §🗄️ (DCO — політика `00_01 §8`) / **BIZ.24** (CRA/SBOM) |
 
 ---
 

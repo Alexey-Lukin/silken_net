@@ -53,7 +53,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 ## 3. Cross-cutting procurement-політики (вказівники на доми)
 
 - **IP / CDA / NDA:** [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) — **defensive-publication** → RFQ-specs **відкриті** (вже prior art); CDA = **стандартні комерц-умови** (ціни/строки/QC), НЕ для новизни, і **не передумова запиту** — квоту просимо без угоди, взаємний CDA вендора підписуємо на комерційній стадії (кожен EN-лист каже це розділом Confidentiality); NDA **лише** для нерозкритого (prod-keys/telemetry/ML-ваги). RFQ-аркуші це наслідують у §IP.
-- **Академічний канал** ([`00_02`](../../00_02_Academic_Integration_and_IP.md)): co-pub (ЧНУ/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = лаб-MoU ЧНУ/ЧДТУ (ЧНУ passive — **UNI.18** ⚫; ЧДТУ — **UNI.10**) + CDA/NDA legal (**UNI.14** — UA-господарник TBD, вхід — Аблязов); які прилади MoU справді відкриває — [`00_02 §1`](../../00_02_Academic_Integration_and_IP.md), «Режим контрактації».
+- **Канали ВНЗ** ([`00_02 §1`](../../00_02_Academic_Integration_and_IP.md); з 2026-10-12 — установа → контакт → одна дія, MoU не передумова): co-pub (ЧНУ/ЧДТУ) = $0 + Q1-публікація, але темп-партнер-залежний; commercial CRO = $ + швидше + стандартний CDA. **Гібрид** на критичному шляху (HW.5: academ-валідація архітектури + commercial-експресія). Партнер-MoU гейт = лаб-MoU ЧНУ/ЧДТУ (ЧНУ passive — **UNI.18** ⚫; ЧДТУ — **UNI.10**) + CDA/NDA legal (**UNI.14** — UA-господарник TBD, вхід — Аблязов); які прилади MoU справді відкриває — [`00_02 §1`](../../00_02_Academic_Integration_and_IP.md), «Режим контрактації».
 - **Фінансування-гейти** ([`00_07` BIZ.20](../../00_07_Action_Plan_Tracker.md)): procurement-authority вивільняється поетапно з self-fund (operational-особа вже існує) (перша 100-партія CAPEX gated на BIZ.20).
 
 ---
@@ -109,5 +109,5 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у |
 | [`02_06 §8`](../../02_06_Unit_Economics_and_BOM.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
-| [`00_02`](../../00_02_Academic_Integration_and_IP.md) | академічні co-pub канали (ЧНУ/ЧДТУ) |
+| [`00_02`](../../00_02_Academic_Integration_and_IP.md) | канали ВНЗ (установа → контакт → одна дія, §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.*/BIZ.* procurement-action-items + DOC-T (інкрементальне авторство) |

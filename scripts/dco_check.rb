@@ -4,7 +4,7 @@
 
 # [UNI.20] DCO sign-off gate for INBOUND pull requests (CI `dco.yml`).
 #
-# The project is AGPL and expects inbound code from universities/students
+# The project is AGPL and accepts inbound code from outside contributors
 # (`CONTRIBUTING.md` §DCO already asks for `git commit -s`) — but nothing
 # ENFORCED it: a PR without a `Signed-off-by` trailer merged silently, so the
 # copyright-origin certification the AGPL posture leans on (00_01 §8) existed

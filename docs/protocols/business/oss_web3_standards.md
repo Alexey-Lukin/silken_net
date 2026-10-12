@@ -8,7 +8,7 @@
 
 **Дата:** 2026-07-24 · **Тип:** best-practices gap-analysis (web-research 2025-26 + наші артефакти), **НЕ юридична порада**
 **Вхідні артефакти:** [`entity_structure`](../legal/entity_structure.md) (token-контур/фази) · [`securities_review`](../legal/securities_review.md) (securities fact-pattern F1–F15) · [`trademark_brief`](../legal/trademark_brief.md) · [`R2_offshore_token_securities`](../research/R2_offshore_token_securities.md) · [`R5_trademark_ip`](../research/R5_trademark_ip.md)
-**Трекер-прив'язки:** 🔴 **BIZ.22** (securities-fact-pattern у коді) · **UNI.20** (ВНЗ-contribution-governance, DCO) · **BIZ.24** (SBOM / EU CRA) · ✅ **DOC-T.47** (contracts = MIT — ратифіковано 2026-07-24) · UNI.16 · BIZ.20 · UNI.3 · BIZ.15
+**Трекер-прив'язки:** 🔴 **BIZ.22** (securities-fact-pattern у коді) · UNI.20 §🗄️ 2026-10-12 (ВНЗ-contribution-governance, DCO — політика `00_01 §8`) · **BIZ.24** (SBOM / EU CRA) · ✅ **DOC-T.47** (contracts = MIT — ратифіковано 2026-07-24) · UNI.16 · BIZ.20 · UNI.3 · BIZ.15
 
 **Phase-легенда:** 🟢 = зараз (Phase-1, pre-token, дешево) · 🟡 = token-launch-gate (Phase-2, gated на UNI.16-консультацію + mint-horizon + TRL4+, за [`entity_structure`](../legal/entity_structure.md) §3.3) · ⚪ = later (Phase-3 / far-horizon)
 
@@ -115,7 +115,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 
 ---
 
-## 4. CLA/DCO contribution-governance — 🟢, прив'язка **UNI.20** (ВНЗ)
+## 4. CLA/DCO contribution-governance — 🟢, прив'язка UNI.20 (ВНЗ; §🗄️ 2026-10-12, політика — `00_01 §8`)
 
 Стан поля 2025-26 — консенсус зсунувся до DCO:
 - **CNCF:** вимагає CLA або DCO, **рекомендує DCO** («unless strong necessity») ([cncf/foundation#130](https://github.com/cncf/foundation/issues/130)); **OpenInfra Foundation: офіційний перехід CLA→DCO з 1 лип 2025** ([openinfra.org/dco](https://openinfra.org/dco/)); Linux kernel = походження DCO; **Nextcloud (AGPL!) = DCO-only** — прямий прецедент нашої ліцензії (R5 §5.2); GitLab теж мігрував CLA→DCO.
@@ -155,7 +155,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 | 8 | Ліцензійна карта доків = коду | ✅ **ЗАКРИТО** (ратифіковано 2026-07-24): `/NOTICE` + [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) вирівняні — contracts = MIT (industry-правильно: composability/tooling/OZ) | — (зроблено) | ✅ | DOC-T.47 (closed) |
 | 9 | SBOM у CI (CycloneDX/SPDX); CRA: reporting 2026-09-11, full 2027-12-11 | Image-SBOM у CI вже є (mirror-ghcr, OPS.10); повного multi-lock SBOM нема; зараз поза скоупом бо не розміщено на ринку (⛔ НЕ через FOSS-виняток — [`eu_market_entry`](../legal/eu_market_entry.md) §3); Soldier/Queen = майбутній «product with digital elements» | Multi-lock SBOM-CI-job зараз; manufacturer-процеси — при EU-market-вході | 🟢 старт / 🟡 hard | **BIZ.24** |
 | 10 | OpenSSF Scorecard + Best Practices Badge (Baseline 2025) | ✅ Badge **silver earned 2026-06-25**; Scorecard Action live (weekly, публічний бейдж — [`06_07 §1`](../../06_07_CICD_and_Runbook_Index.md)); SHA-pin, branch-protection, fuzzing стоять | — (стоїть; тримати). Residual ⚪ gold — gated bus-factor >1, свідомо не цілимо | ✅/⚪ | OPS.10 |
-| 11 | DCO + enforcement-bot (CNCF/OpenInfra 2025-консенсус; Nextcloud-AGPL-прецедент) | ✅ `CONTRIBUTING.md` §DCO + enforcement власним гейтом (`scripts/dco_check.rb` у `dco.yml`) | ✅ required-контекст із 2026-07-25; лишився ВНЗ-MoU IP-пункт | 🟢 | **UNI.20** |
+| 11 | DCO + enforcement-bot (CNCF/OpenInfra 2025-консенсус; Nextcloud-AGPL-прецедент) | ✅ `CONTRIBUTING.md` §DCO + enforcement власним гейтом (`scripts/dco_check.rb` у `dco.yml`) | ✅ required-контекст із 2026-07-25; IP-пункт про дані з ВНЗ — нога UNI.10 (студентського каналу немає) | 🟢 | UNI.20 §🗄️ |
 | 12 | AGPL-монетизація: open-core/dual-license/hosted (Grafana-патерн) | Постава aligned ✅; MSA ще немає | AGPL-пункт у MSA-шаблон; механіка монетизації — Phase-2 | 🟢 пункт / 🟡 механіка | BIZ.2/BIZ.20 |
 
 ---
@@ -165,7 +165,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 **🟢 ЗАРАЗ (Phase-1, усе дешеве, нічого не гейтиться токеном):**
 1. **BIZ.22-redesign** — лишається найвищим пріоритетом, але ПРЕДМЕТ звузився (звірено 2026-09-07): мову інверсовано, refund/exit-fee й yield знято з коду серпнем 2026, тож відкритою є **одна вісь — конструкція передоплати** (імʼя колонки вирівняно 2026-09-25), поки контракти не задеплоєні (мапа → [`securities_review`](../legal/securities_review.md)); «no-price-talk» у публічних доках — настанова вже зараз.
 2. ✅ **DOC-T.47 — закрито 2026-07-24** (contracts = MIT ратифіковано; `/NOTICE` + [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) вирівняні) — знято зі списку.
-3. ✅ **DCO — зроблено 2026-07-25:** `CONTRIBUTING.md` §DCO + власний гейт `dco.yml` (не `dcoapp`, причина — §4). Флип branch-protection ✅ зроблено 2026-07-25; лишається ВНЗ-MoU IP-пункт (= UNI.20).
+3. ✅ **DCO — зроблено 2026-07-25:** `CONTRIBUTING.md` §DCO + власний гейт `dco.yml` (не `dcoapp`, причина — §4). Флип branch-protection ✅ зроблено 2026-07-25; IP-пункт про дані з ВНЗ — нога UNI.10 (UNI.20 §🗄️ 2026-10-12; студентського каналу немає).
 4. ✅ **Multi-lock SBOM-CI-job — зроблено 2026-07-25** (`sbom.yml`, BIZ.24 🤖-half закрита; оголошені стелі — §3.2). Scorecard-action ✅ уже live — дій не потребує.
 5. UNI.16-консультація = гейт-подія, що відкриває все 🟡.
 
