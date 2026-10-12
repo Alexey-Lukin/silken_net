@@ -350,27 +350,54 @@ CHECKS = [
        lambda d, k=k: d["aqueous_series"]["axial_check"][k], 0.05)
       for doc_name, doc, what, anchor, k in (
           ("paper §3.3", PAPER_RESULTS, "OMe−Me move", rf"1-methylimidazole moves the pair by \+{N} mV", "ome_dmbpy_change_mV"),
-          ("paper §3.3", PAPER_RESULTS, "max pair", rf"\(every pair by at most {N} mV\)\. It is the geometry", "max_pair_change_mV"),
+          ("paper §3.3", PAPER_RESULTS, "max pair", rf"\(every pair by at most {N} mV\)\. Relaxing the Os\(II\)", "max_pair_change_mV"),
           ("SUMMARY", SUMMARY, "OMe−Me move", rf"pyridine for 1-MeIm moves OMe−Me by \+{N} mV", "ome_dmbpy_change_mV"),
           ("SUMMARY", SUMMARY, "max pair", rf"and every pair by ≤ {N} mV per substituent\), so A1′", "max_pair_change_mV"))],
-# the Os(II) geometry (21e `b3lyp-relaxed-os2`, via 83 `aqueous_series.relaxation_check` and the variant's own vs_series)
-*[(f"{doc_name} relaxed OMe−Me move → relaxation_check", doc, anchor, "dft/os_series_vs_measured.json",
-   lambda d: d["aqueous_series"]["relaxation_check"]["ome_dmbpy_change_mV"], 0.05)
-  for doc_name, doc, anchor in (
-      ("paper §3.3", PAPER_RESULTS, rf"Os\(III\) vertical on it, moves the pair by {N} mV"),
-      ("SUMMARY", SUMMARY, rf"Os\(III\) vertical on it — OMe−Me moves by {N} mV"))],
-*[(f"{doc_name} relaxed OMe−Me value → relaxed_os2", doc, anchor, "dft/os_mediator_series_relaxed_os2.json",
-   lambda d: next(p["variant_mV"] for p in d["vs_series"]["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")), 0.05)
-  for doc_name, doc, anchor in (
-      ("paper §3.3", PAPER_RESULTS, rf"moves the pair by [^,]+, to {N} against"),
-      ("SUMMARY", SUMMARY, rf"OMe−Me moves by [^,]+, to {N} against"))],
-*[(f"SUMMARY relaxed point shift {n} → relaxed_os2", SUMMARY, anchor, "dft/os_mediator_series_relaxed_os2.json",
-   lambda d, n=n: d["vs_series"]["point_shift_eV"][n] * 1000, 0.5)
-  for n, anchor in (("ome", rf"move by {N} \(OMe\)"), ("bpy", rf"\(OMe\), {N} \(H\)"), ("dmbpy", rf"\(H\) and {N} meV \(Me\)"))],
-("paper §3.3 relaxed points low → relaxed_os2", PAPER_RESULTS, rf"the three relaxed points by {N} to",
- "dft/os_mediator_series_relaxed_os2.json", lambda d: -max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
-("paper §3.3 relaxed points high → relaxed_os2", PAPER_RESULTS, rf"the three relaxed points by [\d.]+ to {N} meV",
- "dft/os_mediator_series_relaxed_os2.json", lambda d: -min(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
+    # the Os(II) geometry (21e `b3lyp-relaxed-os2`, via 83 `aqueous_series.relaxation_check` and the variant's own vs_series)
+    *[(f"{doc_name} relaxed OMe−Me move → relaxation_check", doc, anchor, "dft/os_series_vs_measured.json",
+       lambda d: d["aqueous_series"]["relaxation_check"]["ome_dmbpy_change_mV"], 0.05)
+      for doc_name, doc, anchor in (
+          ("paper §3.3", PAPER_RESULTS, rf"\(Cl not relaxed\), closes this pair \({N} mV"),
+          ("SUMMARY", SUMMARY, rf"Cl not relaxed — OMe−Me moves by {N} mV"))],
+    *[(f"{doc_name} relaxed OMe−Me value → relaxed_os2", doc, anchor, "dft/os_mediator_series_relaxed_os2.json",
+       lambda d: next(p["variant_mV"] for p in d["vs_series"]["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")), 0.05)
+      for doc_name, doc, anchor in (
+          ("paper §3.3", PAPER_RESULTS, rf"closes this pair \([^,]+, to {N} against"),
+          ("SUMMARY", SUMMARY, rf"OMe−Me moves by [^,]+, to {N} against"))],
+    *[(f"SUMMARY relaxed point shift {n} → relaxed_os2", SUMMARY, anchor, "dft/os_mediator_series_relaxed_os2.json",
+       lambda d, n=n: d["vs_series"]["point_shift_eV"][n] * 1000, 0.5)
+      for n, anchor in (("ome", rf"move by {N} \(OMe\)"), ("bpy", rf"\(OMe\), {N} \(H\)"), ("dmbpy", rf"\(H\) and {N} meV \(Me\)"))],
+    # the same relaxation across every series sharing its points (83 `relaxed_geometry_check`) — ratios, slope, Os–Cl
+    *[(f"{doc_name} relaxed {what} → relaxed_geometry_check", doc, anchor, "dft/os_series_vs_measured.json", fn, tol)
+      for doc_name, doc, what, anchor, fn, tol in (
+          ("paper §3.3", PAPER_RESULTS, "ref 8 OMe−Me", rf"and ref 8's \({N} times\)",
+           lambda d: d["relaxed_geometry_check"]["pvi_ratio_ours_over_measured"]["ome-dmbpy"]["relaxed"], 0.005),
+          ("paper §3.3", PAPER_RESULTS, "MeCN OMe before", rf"acetonitrile goes from {N} to",
+           lambda d: d["relaxed_geometry_check"]["mecn_ratio_ours_over_measured"]["ome"]["series"], 0.005),
+          ("paper §3.3", PAPER_RESULTS, "MeCN OMe after", rf"acetonitrile goes from [\d.]+ to {N} times",
+           lambda d: d["relaxed_geometry_check"]["mecn_ratio_ours_over_measured"]["ome"]["relaxed"], 0.005),
+          ("paper §3.3", PAPER_RESULTS, "donor slope", rf"our donor slope rises by {N} %",
+           lambda d: d["relaxed_geometry_check"]["donor_slope_change"] * 100, 0.5),
+          ("paper §3.3", PAPER_RESULTS, "Os–Cl low", rf"The relaxed Os–Cl, {N}–",
+           lambda d: min(v["relaxed"] for v in d["relaxed_geometry_check"]["os_cl_A"].values()), 0.005),
+          ("paper §3.3", PAPER_RESULTS, "Os–Cl high", rf"The relaxed Os–Cl, [\d.]+–{N} Å",
+           lambda d: max(v["relaxed"] for v in d["relaxed_geometry_check"]["os_cl_A"].values()), 0.005),
+          ("SUMMARY", SUMMARY, "MeCN OMe after", rf"OMe−H in MeCN goes ×[\d.]+ → ×{N}",
+           lambda d: d["relaxed_geometry_check"]["mecn_ratio_ours_over_measured"]["ome"]["relaxed"], 0.005),
+          ("SUMMARY", SUMMARY, "donor slope", rf"the donor slope rises by \+{N} %",
+           lambda d: d["relaxed_geometry_check"]["donor_slope_change"] * 100, 0.5))],
+    *[(f"«21 %» donor slope on relaxed geometries in {where} → relaxed_geometry_check",
+       f"docs/protocols/ebfc/in_silico/paper/{where}", anchor, "dft/os_series_vs_measured.json",
+       lambda d: d["relaxed_geometry_check"]["donor_slope_change"] * 100, 0.5)
+      for where, anchor in (("05_abstract.md", rf"its donor part {N} % steeper"),
+                            ("07_cover_letter.md", rf"its donor part {N} % steeper"),
+                            ("04_conclusion.md", rf"its donor part {N} % steeper"),
+                            ("01_introduction.md", rf"its donor part by {N} % between"))],
+    *[(f"paper §2.3 relaxed points {end} → relaxed_os2", "docs/protocols/ebfc/in_silico/paper/02_methods.md", anchor,
+       "dft/os_mediator_series_relaxed_os2.json", fn, 0.5)
+      for end, anchor, fn in (
+          ("low", rf"moves the points by {N}–", lambda d: -max(d["vs_series"]["point_shift_eV"].values()) * 1000),
+          ("high", rf"moves the points by [\d.]+–{N} meV", lambda d: -min(d["vs_series"]["point_shift_eV"].values()) * 1000))],
     ("SUMMARY UFF point shift low → uffcavity", SUMMARY, rf"every absolute point, by {N}…",
      "dft/os_mediator_series_uffcavity.json", lambda d: max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift high → uffcavity", SUMMARY, rf"every absolute point, by [^…]+…{N} meV",

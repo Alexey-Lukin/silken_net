@@ -88,10 +88,14 @@ against Me, where ours falls about 16 mV per substituent short of experiment, th
 by 1.1, with a sphere on every hydrogen; the source states none — by −1.1 mV (every pair by at most 0.6 and 4.7 mV).
 Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates it, and neither variant moves it by a
 tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
-away from experiment (every pair by at most 3.6 mV). It is the geometry: relaxing each point's Os(II) geometry with
-the same protocol, Os(III) vertical on it, moves the pair by −18.2 mV, to −41.9 against −39.8 mV per substituent
-(1.05 times; the source's optimised B3LYP gives 1.01), and the three relaxed points by 40 to 113 meV. Left untested
-are the Os(III) state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
+away from experiment (every pair by at most 3.6 mV). Relaxing the Os(II) geometry of OMe, Me and H with the same
+protocol, Os(III) vertical on it (Cl not relaxed), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
+substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and ref 8's (0.99 times), but moves the donor points
+unevenly: OMe against H in acetonitrile goes from 0.99 to 1.23 times the measured, Me against H stays above the
+measured in both series, and our donor slope rises by 21 %. The relaxed Os–Cl, 2.52–2.53 Å, overshoots the Os(II)
+range of §2.3 (2.40–2.44 Å) by about 0.09 Å, while the programmatic 2.38 Å falls just short of it, so neither geometry is a reference: the
+substituent sensitivity of the vertical protocol carries a geometry uncertainty of about a fifth. Left untested are
+the Os(III) state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two

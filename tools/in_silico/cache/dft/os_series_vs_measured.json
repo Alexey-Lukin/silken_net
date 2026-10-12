@@ -336,7 +336,7 @@
         "ome"
       ]
     },
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. The Os(II) geometry does: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by -18.2 mV toward the measured, so the programmatic geometry carries the excess. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. The Os(II) geometry does, on this pair: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by -18.2 mV toward the measured; what it does to the other series sharing these points is the block relaxed_geometry_check. Left untested (under A2′): the Os(III) state's own relaxation and free energies, the program's own cavity discretisation and, on this pair, the ligand basis. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
   },
   "pvi_series": {
     "source": {
@@ -442,6 +442,63 @@
       "A5 the film environment is common to the equal-loading polymers b, c, d, f"
     ],
     "verdict": "Against paper ref 8's own series — our core with an imidazole N-donor, [Os(X2-bpy)2(PVI)Cl]+ at one loading, pH 7.4 — per 4,4'-substituent: OMe−H -60.9 ours against -70.0 measured (×0.87); Me−H -37.2 ours against -27.7 measured (×1.34); Cl−H +41.9 ours against +17.2 measured (×2.43); OMe−Me -23.6 ours against -42.2 measured (×0.56); Cl−Me +79.1 ours against +45.0 measured (×1.76); Cl−OMe +102.8 ours against +87.2 measured (×1.18). The measured sensitivity falls from the donor to the acceptor side and ours much less (pairwise slopes, V/σ per substituent — ome-dmbpy: 0.422 measured, 0.236 ours; dmbpy-bpy: 0.163 measured, 0.219 ours; bpy-cl: 0.075 measured, 0.182 ours), so the computed effect is about right for OMe against H and too large toward the acceptor end. The same Me complex from another source at another loading sits +135 mV away (A5) — more than all four Me → H — so the film and its preparation move E°′ by more than the pairs compared, and only the equal-loading points of one route are compared."
+  },
+  "relaxed_geometry_check": {
+    "points": [
+      "ome",
+      "dmbpy",
+      "bpy"
+    ],
+    "not_relaxed": "Cl and the acceptor side",
+    "os3": "vertical on the relaxed Os(II) geometry",
+    "mecn_ratio_ours_over_measured": {
+      "ome": {
+        "series": 0.9868071560577607,
+        "relaxed": 1.2305693657770944
+      },
+      "dmbpy": {
+        "series": 2.480933316630758,
+        "relaxed": 2.2678514589624954
+      }
+    },
+    "pvi_ratio_ours_over_measured": {
+      "ome-bpy": {
+        "series": 0.8693301136699322,
+        "relaxed": 1.0840730127083928
+      },
+      "dmbpy-bpy": {
+        "series": 1.3410450360166264,
+        "relaxed": 1.2258656534932413
+      },
+      "ome-dmbpy": {
+        "series": 0.5595055197025768,
+        "relaxed": 0.9909429350331374
+      }
+    },
+    "aqueous_ome_dmbpy_ratio_ours_over_measured": {
+      "series": 0.5946945460989652,
+      "relaxed": 1.053266390066668
+    },
+    "donor_slope_per_substituent_V_per_sigma": {
+      "series": 0.22469257537131965,
+      "relaxed": 0.27243949070713763
+    },
+    "donor_slope_change": 0.21249885652391054,
+    "os_cl_A": {
+      "dmbpy": {
+        "programmatic": 2.38,
+        "relaxed": 2.527
+      },
+      "ome": {
+        "programmatic": 2.38,
+        "relaxed": 2.533
+      },
+      "bpy": {
+        "programmatic": 2.38,
+        "relaxed": 2.5215
+      }
+    },
+    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves the donor points unevenly: OMe−Me goes from ×0.59 to ×1.05 of the aqueous series and from ×0.56 to ×0.99 of ref 8's films, but OMe against H in MeCN goes from ×0.99 to ×1.23 and Me against H stays over it (MeCN ×2.48 → ×2.27, films ×1.34 → ×1.23); the donor slope changes by +21 %. The relaxed Os–Cl is 2.522–2.533 Å against 2.38 Å programmatic. So the substituent sensitivity of this vertical protocol depends on the geometry at that level, and which of the two geometries stands for the real complex this computation cannot say."
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }

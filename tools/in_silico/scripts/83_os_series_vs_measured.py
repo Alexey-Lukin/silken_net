@@ -198,11 +198,13 @@ def _solvation_clause(aq: dict) -> str:
     rx = aq.get("relaxation_check")
     if rx:
         mv = rx["ome_dmbpy_change_mV"]
-        if -mv / ex >= 0.5:
-            return head + (f"The Os(II) geometry does: relaxing it with the same protocol, Os(III) vertical on it, moves the "
-                           f"pair by {mv:+.1f} mV toward the measured, so the programmatic geometry carries the excess. ")
-        head += (f"Nor the Os(II) geometry: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by "
-                 f"{mv:+.1f} mV. ")
+        if -mv / ex >= 0.5:   # ON THIS PAIR only — what the same relaxation does to the other series is its own block
+            head += (f"The Os(II) geometry does, on this pair: relaxing it with the same protocol, Os(III) vertical on it, "
+                     f"moves the pair by {mv:+.1f} mV toward the measured; what it does to the other series sharing these "
+                     f"points is the block relaxed_geometry_check. ")
+        else:
+            head += (f"Nor the Os(II) geometry: relaxing it with the same protocol, Os(III) vertical on it, moves the pair "
+                     f"by {mv:+.1f} mV. ")
         geometry = "the Os(III) state's own relaxation and free energies"
     return head + (f"Left untested (under {under}): {geometry}, the program's own cavity discretisation and, on this pair, "
                    f"the ligand basis. ")
@@ -340,6 +342,64 @@ def aqueous(sigma: dict, b3: dict) -> dict:
     return aq
 
 
+def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | None:
+    """The Os(II) relaxation (21e `b3lyp-relaxed-os2`) read against EVERY measured series that shares its points.
+
+    It relaxes OMe, Me and H only (Cl and the acceptor side are not relaxed), Os(III) vertical on each relaxed geometry,
+    so it reaches: the MeCN homoleptic donors (OMe, Me against H), ref 8's films (OMe−H, Me−H, OMe−Me) and the aqueous
+    OMe−Me — reading one pair of one series alone overstated what the geometry explains (adversary, 2026-10-13)."""
+    path = DFT_CACHE / RELAX_VARIANT[1]
+    if not path.exists():
+        return None
+    d = json.loads(path.read_text(encoding="utf-8"))
+    if "vs_series" not in d:
+        return None
+    rx = {n: c["dE_red_eV"] for n, c in d["complexes"].items()}
+    pts = sorted(rx, key=lambda n: sigma[n])
+    src = {"series": {n: b3[n]["dE_red_eV"] for n in pts}, "relaxed": rx}
+
+    def shift(e: dict, x: str, ref: str) -> float:   # per substituent, V: E° up to a constant is −ΔE_red
+        return -(e[x] - e[ref]) / N_SUBST_COMPUTED
+
+    mecn = {n: {t: shift(e, n, "bpy") / measured[n]["shift_per_substituent_V"] for t, e in src.items()}
+            for n in pts if n != "bpy"}
+    pv_meas = {n: e for n, (e, _) in PVI_MEASURED_E_V.items()}
+    pvi_pairs = (("ome", "bpy"), ("dmbpy", "bpy"), ("ome", "dmbpy"))
+    pvi_r = {f"{x}-{r}": {t: shift(e, x, r) / ((pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for t, e in src.items()}
+             for x, r in pvi_pairs}
+    aq_meas = next(p["measured_mV"] for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")) / 1000
+    aq_r = {t: shift(e, "ome", "dmbpy") / aq_meas for t, e in src.items()}
+    slope = {t: _slope_r2([sigma[n] for n in pts], [shift(e, n, "bpy") for n in pts])[0] for t, e in src.items()}
+    os_cl = {n: {"programmatic": max(c["geometry_os2_relaxed"]["info"]["donor_distances_A"]["programmatic"]),
+                 "relaxed": max(c["geometry_os2_relaxed"]["info"]["donor_distances_A"]["relaxed"])}
+             for n, c in d["complexes"].items()}   # Os–Cl is the longest donor bond in both geometries
+    out = {"points": pts, "not_relaxed": "Cl and the acceptor side", "os3": "vertical on the relaxed Os(II) geometry",
+           "mecn_ratio_ours_over_measured": mecn, "pvi_ratio_ours_over_measured": pvi_r,
+           "aqueous_ome_dmbpy_ratio_ours_over_measured": aq_r,
+           "donor_slope_per_substituent_V_per_sigma": slope,
+           "donor_slope_change": slope["relaxed"] / slope["series"] - 1,
+           "os_cl_A": os_cl}
+    out["verdict"] = verdict_relaxed(out)
+    return out
+
+
+def verdict_relaxed(rg: dict) -> str:
+    """The relaxation's reading across the series — built from the block alone."""
+    aq, pv, mc = (rg["aqueous_ome_dmbpy_ratio_ours_over_measured"], rg["pvi_ratio_ours_over_measured"],
+                  rg["mecn_ratio_ours_over_measured"])
+    cl = [v["relaxed"] for v in rg["os_cl_A"].values()]
+    prog = sorted({v["programmatic"] for v in rg["os_cl_A"].values()})
+    return (f"Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves the donor "
+            f"points unevenly: OMe−Me goes from ×{aq['series']:.2f} to ×{aq['relaxed']:.2f} of the aqueous series and from "
+            f"×{pv['ome-dmbpy']['series']:.2f} to ×{pv['ome-dmbpy']['relaxed']:.2f} of ref 8's films, but OMe against H in "
+            f"MeCN goes from ×{mc['ome']['series']:.2f} to ×{mc['ome']['relaxed']:.2f} and Me against H stays over it "
+            f"(MeCN ×{mc['dmbpy']['series']:.2f} → ×{mc['dmbpy']['relaxed']:.2f}, films ×{pv['dmbpy-bpy']['series']:.2f} → "
+            f"×{pv['dmbpy-bpy']['relaxed']:.2f}); the donor slope changes by {rg['donor_slope_change'] * 100:+.0f} %. "
+            f"The relaxed Os–Cl is {min(cl):.3f}–{max(cl):.3f} Å against {', '.join(f'{p:.2f}' for p in prog)} Å "
+            f"programmatic. So the substituent sensitivity of this vertical protocol depends on the geometry at that "
+            f"level, and which of the two geometries stands for the real complex this computation cannot say.")
+
+
 def main() -> int:
     s21e = _load("21e_dft_os_mediator_series")
     sigma = {name: sig for name, _, sig, _ in s21e.SERIES} | {"dtbbpy": SIGMA_P_TBU}
@@ -400,11 +460,15 @@ def main() -> int:
         "aqueous_series": aqueous(sigma, b3),
         "pvi_series": pvi(sigma, b3),
     }
+    if (rg := relaxed_geometry(sigma, b3, measured, rec["aqueous_series"])):
+        rec["relaxed_geometry_check"] = rg
     rec["verdict"] = verdict(rec)
     OUT.write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(rec["verdict"])
     print(rec["aqueous_series"]["verdict"])
     print(rec["pvi_series"]["verdict"])
+    if "relaxed_geometry_check" in rec:
+        print(rec["relaxed_geometry_check"]["verdict"])
     print(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

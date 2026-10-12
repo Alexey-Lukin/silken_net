@@ -304,7 +304,8 @@ def test_83_solvation_clause_branches_follow_the_numbers():
     assert "Nor the Os(II) geometry" in kept and "the Os(III) state's own relaxation" in kept
     assert "programmatic geometry against optimised" not in kept, "a relaxed geometry still listed as untested"
     closed = s83._solvation_clause(aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": -9.0}})
-    assert "programmatic geometry carries the excess" in closed and "Left untested" not in closed
+    assert "toward the measured" in closed and "Left untested" in closed and "the Os(III) state's own relaxation" in closed
+    assert "carries the excess" not in closed, "one pair of one series named the geometry as THE carrier"
     away = aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": +9.0}}
     assert "Nor the Os(II) geometry" in s83._solvation_clause(away), "a move AWAY counted as the geometry closing the gap"
     assert "programmatic geometry against optimised" in txt, "without a relaxation the geometry must stay untested"

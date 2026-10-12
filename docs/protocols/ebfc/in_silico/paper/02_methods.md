@@ -54,8 +54,9 @@ The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
 single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
-geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the one osmium optimisation in
-this work, of each Os(II) point of the substituent check in §3.3, does not enter the cascade. The
+geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the three osmium optimisations
+in this work — the Os(II) points of OMe, Me and H in the substituent check of §3.3, converged at the default energy
+and gradient thresholds and the loose displacement threshold the flat Os–Cl mode needs — do not enter the cascade. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
@@ -71,8 +72,9 @@ aqua or hydroxo ligands across the two oxidation states (COD 4305719, 4305720, 4
 targets thus sit inside the [Os(bpy)₃]²⁺ ranges, the Cl target at the top of the Os(III) range and below the
 Os(II) one, and the monodentate N and O targets inside the related ranges, while the realised chelate is up to 0.04 Å longer and
 3° wider than in [Os(bpy)₃]²⁺. The same geometry is used for both oxidation states and for every member of the
-substituent and speciation series, so an error in it is largely common to the points of a series; we expect it
-to bear more on absolute redox energies than on within-series trends. Its size on an absolute number was computed
+substituent and speciation series, so an error in it is largely common to the points of a series; we expected it
+to bear more on absolute redox energies than on within-series trends, and for three donor points §3.3 measures
+both: relaxing the Os(II) geometry moves the points by 40–113 meV and the donor slope by about a fifth. Its size on an absolute number was computed
 for the device couple: closing both chelates onto the targets — each bipyridine re-optimised (MMFF94s) with its
 N···N held at the spacing the two targets imply, which realises Os–N(bpy) 2.060 Å at a 78.0° bite — lowers the
 Os(II) state by 0.069 eV and the Os(III) state by 0.044 eV and so moves the vertical ΔE_red(III→II) by −0.026 eV
