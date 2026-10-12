@@ -450,6 +450,32 @@ if printf '%s\n' "$_changed" | grep -qE '\.rb$|^\.rubocop|^Gemfile|^Rakefile'; t
   fi
 fi
 
+# [OPS.28 ⊕] ruff — шостий блок, куплений ТИМ САМИМ інцидентом, що й rubocop, але на Python
+# (2026-10-12): коміт `77061a2ce` дав червоний `CI · Code` на джобі `python_lint` — RUF007 у
+# тесті, ДОПИСАНОМУ після останнього локального `ruff check`. Механіка дослівно та сама, що
+# купила rubocop-блок 2026-08-28: точковий прогін на тому, що правили, а файл, народжений
+# пізніше в сесії, у прогін не входив; pytest зелений і сказати про лінт не може.
+# Скоуп і версія — паритет із CI: фільтр `python` у ci.yml (`**/*.py` · `ruff.toml`) і
+# `ruff check` від кореня (CI: ruff-action 0.15.16, `check`), ПОВНИЙ, а не по змінених файлах
+# — та сама причина, що в rubocop-блоці (інкрементальна стійка розходиться з CI тихо).
+# ЦІНА виміряна: < 1 с на все дерево. NOT-RUN ⊥ FAILED — як у сусідів: без ruff на машині
+# гучна нота й пропуск; CI запустить сам.
+if printf '%s\n' "$_changed" | grep -qE '\.py$|^ruff\.toml$'; then
+  if command -v ruff >/dev/null 2>&1; then
+    if ! ( cd "$root" && ruff check ); then
+      echo
+      echo "pre-push BLOCKED — ruff reports violations (above)."
+      echo "Fix:  ruff check --fix        # autocorrect what is safe"
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  else
+    echo "pre-push NOTE — Python changed but ruff is not installed locally."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`python_lint\`)."
+    echo "  Install:  brew install ruff"
+  fi
+fi
+
 # Success line names NO block roster on purpose: the hook grows, a list rots
 # (this line said "DCO + i18n parity OK." while five blocks ran — 00_06 §3 class).
 echo "pre-push: OK — every block that ran passed (roster = this file's blocks)."
