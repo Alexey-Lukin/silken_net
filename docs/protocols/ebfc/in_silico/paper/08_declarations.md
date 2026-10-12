@@ -43,20 +43,25 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   beside it — ⚖️ 2026-10-03]
 
 > Data Availability — provenance: publish-to-protect, `00_01 §8`.
-> *Snapshot recipe (⚖️ founder 2026-10-12 — a manual Zenodo upload with a reserved DOI, no GitHub Release;
-> grounds, price and weakest link in `00_02 §2.1`; the founder's account does steps 1 and 5):* neither §2.7
-> nor the SI names a commit or a tag; the SI binds to the tree by the SHA-256 of every file it lists, and the
-> manuscript is printed from the tagged commit — so the DOI has to be in this file BEFORE the tag. Hence
-> (1) open a new Zenodo upload draft and reserve its DOI («Get a DOI now!»); keep the draft until publication,
-> since deleting it loses the DOI; (2) write that DOI into Data Availability above, answering its
-> `[finalise` marker; (3) re-render the SI LAST (script 72) and commit; (4) tag THAT commit with a plain tag
-> outside `v*` (that namespace is release-please's), and ⛔ cut NO GitHub Release from it — a published
-> release starts Deploy · Production in this repository (`06_07`); (5) upload `git archive` of the tag to
-> the same Zenodo draft and publish it; (6) on a fresh checkout of the tag,
-> `python -m pytest tools/in_silico/tests -q` must pass — `test_paper_si_matches_its_generator` re-renders the
-> SI and compares it byte for byte, which proves the archived tree is the one the SI describes — and the
-> manuscript is printed and checked on that same commit (`scripts/disclosure_pdf.rb … --manuscript`). A tag
-> cut before the last SI render archives a tree the SI does not describe.
+> *Snapshot recipe.* ⚖️ The founder ratified the route on 2026-10-12 — a manual Zenodo upload with a reserved DOI
+> (grounds, price and weakest link in `00_02 §2.1`). The order below, the verification before publication and
+> the ⛔ on a GitHub Release are the machine's, added when the ruling was applied the same day. Neither §2.7 nor
+> the SI names a commit or a tag: the SI binds to the tree by the SHA-256 of every file it lists, and the
+> manuscript is printed from the tagged commit — so everything the manuscript prints, the DOI included, is
+> final BEFORE the tag. (1) Open a new Zenodo upload draft and reserve its DOI («Get a DOI now!»); keep the
+> draft until publication, since deleting it loses the DOI [founder's account]. (2) Answer EVERY `[finalise`
+> marker of this file — the DOI in Data Availability, and the AI-use, Competing Interests and Funding items
+> [founder's words]. (3) From a clean tree — 72 hashes the working-tree bytes of the tracked files, so a
+> modified, uncommitted file would enter the SI as bytes the commit does not hold — re-render the SI LAST
+> (script 72), commit and push. (4) Before any tag, on a fresh clone of that commit:
+> `python -m pytest tools/in_silico/tests -q` passes (`test_paper_si_matches_its_generator` re-renders the SI
+> and compares it byte for byte), and the manuscript prints and checks clean (`scripts/disclosure_pdf.rb`
+> `render` and `check` with `--manuscript --byline …`). (5) Tag THAT commit with a plain tag outside `v*`
+> (for instance `article1-preprint-1`) and push the tag; ⛔ cut NO GitHub Release from it — `release: published`
+> starts Deploy · Production, the image mirror and the SBOM here (`06_07`), and a `v*` tag would also pass the
+> production environment's ref policy. (6) `git archive --format=zip --prefix=<tag>/ -o <tag>.zip <tag>`,
+> upload it to the same Zenodo draft and publish [founder's account]. A tag cut before the last SI render, or a
+> publication before step 4, archives under the DOI a tree the SI or the manuscript does not describe.
 
 - **Competing Interests.** *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here

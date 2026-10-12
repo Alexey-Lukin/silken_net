@@ -17,9 +17,10 @@ Supporting Information») and 08_declarations «Data Availability»:
   S6  the paper figures and the script that renders each
   S7  the reproduction recipe
 
-Every row comes from `git ls-files` (committed bytes only — an untracked scratch file cannot leak in) and
-carries a sha256, so the SI is a MANIFEST of the tree, not a prose description of it. Deterministic: sorted,
-no timestamps — `test_paper_si_matches_its_generator` pins the rendered file exactly as 61's tables are pinned.
+Every row is a TRACKED path from `git ls-files` (an untracked scratch file cannot leak in) and carries the sha256
+of that file's bytes in the WORKING TREE — so render from a clean tree: a tracked file modified and not committed
+would enter the SI as bytes the commit does not hold. So the SI is a MANIFEST of the tree, not a prose
+description of it. Deterministic: sorted, no timestamps — `test_paper_si_matches_its_generator` pins the rendered file exactly as 61's tables are pinned.
 Re-run after ANY cache, script or figure change (in-silico §When Modifying #19) — the pin will tell you.
 
 Run:  python tools/in_silico/scripts/72_paper_supporting_information.py                    # stdlib only, no env
