@@ -317,7 +317,26 @@
         "ome"
       ]
     },
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. Left untested (under A2′): the vertical ΔSCF on one programmatic geometry against optimised states and free energies, the program's own cavity discretisation and, on this pair, the ligand basis. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "relaxation_check": {
+      "ome_dmbpy_change_mV": -18.228230797716183,
+      "pairs_change_mV": {
+        "dmbpy-bpy": 3.1962278650239355,
+        "ome-bpy": -15.03200293269225,
+        "ome-dmbpy": -18.228230797716183
+      },
+      "point_shift_meV": {
+        "dmbpy": -112.61975287496462,
+        "ome": -39.70682968409989,
+        "bpy": -99.83484141486886
+      },
+      "rescued_rows": [],
+      "series_os3_s2_not_recorded": [
+        "bpy",
+        "dmbpy",
+        "ome"
+      ]
+    },
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. The Os(II) geometry does: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by -18.2 mV toward the measured, so the programmatic geometry carries the excess. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
   },
   "pvi_series": {
     "source": {

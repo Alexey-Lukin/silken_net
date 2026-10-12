@@ -350,9 +350,27 @@ CHECKS = [
        lambda d, k=k: d["aqueous_series"]["axial_check"][k], 0.05)
       for doc_name, doc, what, anchor, k in (
           ("paper §3.3", PAPER_RESULTS, "OMe−Me move", rf"1-methylimidazole moves the pair by \+{N} mV", "ome_dmbpy_change_mV"),
-          ("paper §3.3", PAPER_RESULTS, "max pair", rf"\(every pair by at most {N} mV\)\. Left untested", "max_pair_change_mV"),
+          ("paper §3.3", PAPER_RESULTS, "max pair", rf"\(every pair by at most {N} mV\)\. It is the geometry", "max_pair_change_mV"),
           ("SUMMARY", SUMMARY, "OMe−Me move", rf"pyridine for 1-MeIm moves OMe−Me by \+{N} mV", "ome_dmbpy_change_mV"),
           ("SUMMARY", SUMMARY, "max pair", rf"and every pair by ≤ {N} mV per substituent\), so A1′", "max_pair_change_mV"))],
+# the Os(II) geometry (21e `b3lyp-relaxed-os2`, via 83 `aqueous_series.relaxation_check` and the variant's own vs_series)
+*[(f"{doc_name} relaxed OMe−Me move → relaxation_check", doc, anchor, "dft/os_series_vs_measured.json",
+   lambda d: d["aqueous_series"]["relaxation_check"]["ome_dmbpy_change_mV"], 0.05)
+  for doc_name, doc, anchor in (
+      ("paper §3.3", PAPER_RESULTS, rf"Os\(III\) vertical on it, moves the pair by {N} mV"),
+      ("SUMMARY", SUMMARY, rf"Os\(III\) vertical on it — OMe−Me moves by {N} mV"))],
+*[(f"{doc_name} relaxed OMe−Me value → relaxed_os2", doc, anchor, "dft/os_mediator_series_relaxed_os2.json",
+   lambda d: next(p["variant_mV"] for p in d["vs_series"]["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")), 0.05)
+  for doc_name, doc, anchor in (
+      ("paper §3.3", PAPER_RESULTS, rf"moves the pair by [^,]+, to {N} against"),
+      ("SUMMARY", SUMMARY, rf"OMe−Me moves by [^,]+, to {N} against"))],
+*[(f"SUMMARY relaxed point shift {n} → relaxed_os2", SUMMARY, anchor, "dft/os_mediator_series_relaxed_os2.json",
+   lambda d, n=n: d["vs_series"]["point_shift_eV"][n] * 1000, 0.5)
+  for n, anchor in (("ome", rf"move by {N} \(OMe\)"), ("bpy", rf"\(OMe\), {N} \(H\)"), ("dmbpy", rf"\(H\) and {N} meV \(Me\)"))],
+("paper §3.3 relaxed points low → relaxed_os2", PAPER_RESULTS, rf"the three relaxed points by {N} to",
+ "dft/os_mediator_series_relaxed_os2.json", lambda d: -max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
+("paper §3.3 relaxed points high → relaxed_os2", PAPER_RESULTS, rf"the three relaxed points by [\d.]+ to {N} meV",
+ "dft/os_mediator_series_relaxed_os2.json", lambda d: -min(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift low → uffcavity", SUMMARY, rf"every absolute point, by {N}…",
      "dft/os_mediator_series_uffcavity.json", lambda d: max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift high → uffcavity", SUMMARY, rf"every absolute point, by [^…]+…{N} meV",

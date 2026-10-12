@@ -54,7 +54,8 @@ The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
 single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
-geometries relaxed and the osmium couple kept vertical, since no osmium geometry is optimised in this work. The
+geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the one osmium optimisation in
+this work, of each Os(II) point of the substituent check in §3.3, does not enter the cascade. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
