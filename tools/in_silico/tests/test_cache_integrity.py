@@ -299,6 +299,15 @@ def test_83_solvation_clause_branches_follow_the_numbers():
     assert "A1′ does not hold" in s83._solvation_clause(failed)
     away = aq(16.1, 0.1, -1.1, -29.0) | {"axial_check": {"ome_dmbpy_change_mV": +9.0}}
     assert "A1′ holds" in s83._solvation_clause(away), "a move AWAY counted as the axial donor closing the gap"
+    held_ax = {"axial_check": {"ome_dmbpy_change_mV": -2.0}}
+    kept = s83._solvation_clause(aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": -3.0}})
+    assert "Nor the Os(II) geometry" in kept and "the Os(III) state's own relaxation" in kept
+    assert "programmatic geometry against optimised" not in kept, "a relaxed geometry still listed as untested"
+    closed = s83._solvation_clause(aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": -9.0}})
+    assert "programmatic geometry carries the excess" in closed and "Left untested" not in closed
+    away = aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": +9.0}}
+    assert "Nor the Os(II) geometry" in s83._solvation_clause(away), "a move AWAY counted as the geometry closing the gap"
+    assert "programmatic geometry against optimised" in txt, "without a relaxation the geometry must stay untested"
 
 
 def test_os_series_vs_measured_is_derived_from_its_sources():

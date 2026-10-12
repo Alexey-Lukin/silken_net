@@ -154,6 +154,9 @@ SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for 
                       ("uffcavity", "os_mediator_series_uffcavity.json", "Gaussian 16's UFF ×1.1 cavity radii"),
                       ("gas", "os_mediator_series_gas.json", "no continuum"))   # 21e's one-knob variants (00_07 HW.5.IS)
 AXIAL_VARIANT = ("pyaxial", "os_mediator_series_pyaxial.json")   # 21e `b3lyp-pyaxial`: pyridine for 1-MeIm — the A1′ knob
+RELAX_VARIANT = ("relaxed", "os_mediator_series_relaxed_os2.json")   # 21e `b3lyp-relaxed-os2`: each point's Os(II) geometry
+# relaxed with the series protocol, Os(III) vertical on it — the geometry knob; it computes OMe, Me and H only (21e
+# RELAX_POINTS), so of the aqueous pairs it reaches OMe−Me alone
 
 
 def _solvation_clause(aq: dict) -> str:
@@ -191,8 +194,18 @@ def _solvation_clause(aq: dict) -> str:
                            f"so A1′ does not hold for this pair. ")
         head += f"Nor the axial N-donor: pyridine for 1-MeIm moves the pair by {mv:+.1f} mV, so A1′ holds for it. "
         under = "A2′"
-    return head + (f"Left untested (under {under}): the vertical ΔSCF on one programmatic geometry against optimised "
-                   f"states and free energies, the program's own cavity discretisation and, on this pair, the ligand basis. ")
+    geometry = "the vertical ΔSCF on one programmatic geometry against optimised states and free energies"
+    rx = aq.get("relaxation_check")
+    if rx:
+        mv = rx["ome_dmbpy_change_mV"]
+        if -mv / ex >= 0.5:
+            return head + (f"The Os(II) geometry does: relaxing it with the same protocol, Os(III) vertical on it, moves the "
+                           f"pair by {mv:+.1f} mV toward the measured, so the programmatic geometry carries the excess. ")
+        head += (f"Nor the Os(II) geometry: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by "
+                 f"{mv:+.1f} mV. ")
+        geometry = "the Os(III) state's own relaxation and free energies"
+    return head + (f"Left untested (under {under}): {geometry}, the program's own cavity discretisation and, on this pair, "
+                   f"the ligand basis. ")
 
 
 def verdict_aqueous(aq: dict) -> str:
@@ -316,6 +329,13 @@ def aqueous(sigma: dict, b3: dict) -> dict:
             aq["solvation_check"][k] = entry(v)
     if (v := finished(AXIAL_VARIANT[1])):   # 21e `b3lyp-pyaxial` — the axial N-donor, the one knob of A1′
         aq["axial_check"] = entry(v)
+    if (v := finished(RELAX_VARIANT[1])) and any((p["x"], p["ref"]) == ("ome", "dmbpy") for p in v["pairs"]):
+        by = {(p["x"], p["ref"]): p for p in v["pairs"]}   # 21e `b3lyp-relaxed-os2` — the geometry knob, OMe−Me reached
+        aq["relaxation_check"] = {"ome_dmbpy_change_mV": by[("ome", "dmbpy")]["change_mV"],
+                                  "pairs_change_mV": {f"{x}-{r}": q["change_mV"] for (x, r), q in by.items()},
+                                  "point_shift_meV": {n: s * 1000 for n, s in v["point_shift_eV"].items()},
+                                  "rescued_rows": v["rescued_rows"],
+                                  "series_os3_s2_not_recorded": v["series_os3_s2_not_recorded"]}
     aq["verdict"] = verdict_aqueous(aq)
     return aq
 
