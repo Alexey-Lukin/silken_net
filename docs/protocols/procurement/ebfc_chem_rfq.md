@@ -196,7 +196,7 @@
 - [ ] 👤 **Spec D (мембрана)** — окремий fluoropolymer-вендор (3–6 тиж); UA — позиція 3 ТЗ для ІХВС (першим — питання про здатність).
 - [ ] 👤 **Spec E (CNC)** — закупка ENERON.
 - [ ] 👤 **Spec G · H · I (лаказа · хітозан · fMWCNT)** — закупка паралельно; у лаказі — підтвердження «без азиду», у трубках — задекларовані залишкові Co/Ni/Fe.
-- [ ] 👤 Усі deliverables → **Stage 2 Ti-coins (HW.24)**: in-vitro CV/EIS у синтетичному ксилемному соку (рецептура й pH — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), ⚖️ 2026-09-17; вимір реального соку — біо-хаб ЧНУ, [`00_02`](../../00_02_Academic_Integration_and_IP.md)), 30-day stability, chloride-tolerance (0.25 М NaCl), UCST winter-lock. Електрод із «вушком» під потенціостат-кліпсу, A=2 см². Лист лабораторії, що це міряє, — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md).
+- [ ] 👤 Усі deliverables → **Stage 2 Ti-coins (HW.24)**: in-vitro CV/EIS у синтетичному ксилемному соку (рецептура й pH — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), ⚖️ 2026-09-17; вимір реального соку — виконавця немає, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3), 30-day stability, chloride-tolerance (0.25 М NaCl), UCST winter-lock. Електрод із «вушком» під потенціостат-кліпсу, A=2 см². Лист лабораторії, що це міряє, — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md).
 
 > **Залежність:** Spec A–I живлять **Stage 2** гейту HW.24 (Ti-coins) → Stage 3 (full anchor) → Stage 4
 > (100 шт). Передчасне замовлення 100-DMLS-партії без Stage 2/3 — методологічна помилка ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24).
@@ -737,5 +737,5 @@ Nothing is required from us for an initial quotation. On request we supply the i
 | [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | CRO-нюанси: Pichia-not-E.coli, ZIF SEM-gate, мембрана-bottleneck |
 | [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md) | **owner** мутованої послідовності (600 aa, 11 N→Q) + CHEM.10/11 gate |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.5 (хім-стек action items) · HW.24 (staged validation) · HW.5.IS (CHEM.*) |
-| [`00_02`](../../00_02_Academic_Integration_and_IP.md) | ЧНУ нанохімія (ZIF) + біо-хаб (рецептура соку) |
+| [`00_02`](../../00_02_Academic_Integration_and_IP.md) | ЧНУ нанохімія (ZIF) |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава (defensive publication) — owner |

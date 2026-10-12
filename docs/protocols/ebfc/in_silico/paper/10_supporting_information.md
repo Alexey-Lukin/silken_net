@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 287 · 16,499,114 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 287 · 16,499,159 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -36,7 +36,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/lib/mechanics.py` | `3a5034ca5204666b5ae5f5858dbd58e258da449eeb293d61b8c06bec94651d70` | Shared thick-wall (Lamé) mechanics helpers for the anchor's titanium–PEEK press-fit. |
 | `tools/in_silico/lib/os_geometry.py` | `c6c89f016883729718e1572663cecab06122319cc313ec6c62bcd1ffc63dad6b` | Parameterized octahedral Os-complex geometry builder (shared SSOT). |
 | `tools/in_silico/lib/utils.py` | `85922b09a1138a2303ea79f3fe02a1c313d7f30dc535a7814d913a03111a05b3` | Shared utility functions for the in-silico pipeline. |
-| `tools/in_silico/lib/xylem_sap.py` | `914d5e903763a4ac63bb57285a1d017e88ca8c559e2672e39f57c91106eb8770` | Xylem sap composition profiles for different tree species. |
+| `tools/in_silico/lib/xylem_sap.py` | `f7b52de2c93e97c38cc52fedee46f19c940d92bfa0a281fabe7588a54476a06b` | Xylem sap composition profiles for different tree species. |
 | `tools/in_silico/scripts/01_smoke_test_water_box.py` | `13e0efaba871a4fbeb070b56789a9a6693ecacca270030abf3748b9a9dfda252` | L2 smoke test — physical engine sanity check. |
 | `tools/in_silico/scripts/02_parameterize_fad.py` | `300b785863b0b282a85e9780becb079a026c06198e2d0d1153214fd343fd1e69` | L2 step 2a — parameterize FAD cofactor for GAFF (General Amber Force Field). |
 | `tools/in_silico/scripts/03_parameterize_genipin.py` | `3b7b021bd82f7f934aa97e7cb8839694641d374d0672723d26ceb22837dba4d7` | L2 step 2b — parameterize genipin (the natural crosslinker) for GAFF. |

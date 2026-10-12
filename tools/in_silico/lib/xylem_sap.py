@@ -27,8 +27,8 @@ from __future__ import annotations
 # ═══════════════════════════════════════════════════════════════════
 # Sources:
 #   Pinus sylvestris: 00_02 §1.1 (Xylem-Sim) protocol. ⛔ «Spriahailo data» stood here, and no such data
-#     exists in this tree and none is awaited — the ЧНУ sap-composition role was cut 2026-10-12
-#     (00_02 §1.1) — so these are assumptions.
+#     exists in this tree, and no partner measures it — the ЧНУ sap-composition role was cut 2026-10-12
+#     (00_02 §1.1; the open measurement — 00_07 HW.3) — so these are assumptions.
 #   Quercus robur: Losso et al. 2016, Tree Physiology      ⎫ cited as written; NOT verified in this tree
 #   Picea abies: Mayr et al. 2014, New Phytologist          ⎬ against Crossref (00_07 HW.3 could not trace
 #   Fagus sylvatica: Cochard 2006, Comptes Rendus Geoscience⎭ the canon recipe's own sources by title)

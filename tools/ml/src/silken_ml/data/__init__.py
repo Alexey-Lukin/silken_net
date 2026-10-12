@@ -11,7 +11,8 @@ re-litigating process):
   - Deterministic, STRATIFIED, CLIP-level train/val/test split (seeded). Frames from one
     clip never straddle the boundary — splitting at the frame level silently leaks.
   - Interim corpus: ESC-50 (wind/chainsaw + animal fauna proxy) + synthetic silence /
-    cavitation. Field-valid replacement: the Cherkasy Soundscape Library (docs/03_03 §10).
+    cavitation. Field-valid replacement: the Cherkasy Soundscape Library (docs/03_03 §10) —
+    no carrier since the Soldier piezo was cut (00_07 UNI.13a, archived).
 
 See ``tools/ml/docs/baseline_model_program.md`` for the program.
 """

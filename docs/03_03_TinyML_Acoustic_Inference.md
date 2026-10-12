@@ -487,7 +487,7 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 
 > **⚖️ Field-валідність landed-baseline (`FW.4`) per-class — НЕ плутати з цілісністю пайплайну:**
 > wind/chainsaw — **реальні** (ESC-50); fauna — **interim** ESC-50-проксі (реальне = Cherkasy
-> Soundscape Library, post-TRL 7); **silence + cavitation — синтетичні placeholder'и** —
+> Soundscape Library, post-TRL 7; носія немає — архів UNI.13a); **silence + cavitation — синтетичні placeholder'и** —
 > cavitation (ключовий фізіологічний клас) натреновано лише на фізично-вмотивованому
 > генераторі, **поки НЕ field-валідовано**. Тому baseline-точність (число → run-provenance `tools/ml`) — метрика **цілісності пайплайну** на змішаному корпусі, **НЕ** польова
 > точність детекції. Джерела/генератори per-class — `tools/ml/docs/baseline_model_program.md` §2.1.
@@ -721,7 +721,7 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Byte 7: Acoustic Events
 > - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
 > - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
 >
-> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального soundscape-датасету (UNI.13a; див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
+> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) DSP-шляху (Path B log-mel обрано self-owned), (2) калібрувального soundscape-датасету (UNI.13a — архів, носія немає; див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
 
 ---
 
@@ -806,7 +806,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 
 ## 🌿 10. Mongabay Pivot — 5-й клас «Fauna Activity» та біорізноманіття як D-MRV сигнал
 
-> ⚠️ **"Pivot" тут = augmentation, НЕ заміна:** carbon (`growth_points`→SCC) лишається ядром економіки; biodiversity — другий вимір ПОВЕРХ (5-й acoustic-клас + `biodiversity_score` метадані ForestNFT). Ратифіковано founder 2026-07-20. Дім рішення → [`E.59`](00_07_Action_Plan_Tracker).
+> ⚠️ **"Pivot" тут = augmentation, НЕ заміна:** carbon (`growth_points`→SCC) лишається ядром економіки; biodiversity — другий вимір ПОВЕРХ (5-й acoustic-клас + `biodiversity_score` метадані ForestNFT). Ратифіковано founder 2026-07-20. Дім рішення → [`E.59`](00_07_Action_Plan_Tracker) (архів 2026-10-12: вимір без носія; рамка й рецепт відродження — там).
 
 > ⚠️ **Fauna на Солдаті — історія дизайну (§10.2–§10.8):** акустичного датчика на вузлі з 2026-09-29 немає (пʼєзо зрізано, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)), тож fauna-сесій на Солдаті немає ([`02_03 §9.9`](02_03_BQ25570_MPPT_Nano_Power)). Звук — властивість ділянки, і кандидат-носій фауни — мікрофон Королеви ([`00_07` HW.52](00_07_Action_Plan_Tracker): 🌿 далекий горизонт, не план). Контекст джерела (§10.1) лишається довідкою.
 
@@ -901,9 +901,9 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
 | ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | — (SPI/DMA-оптимізація — [`00_07` E.9](00_07_Action_Plan_Tracker), дім DMA — [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) |
 | Калібрувальний датасет з dawn/dusk записами Черкаського бору | — (⏸ носія немає — пʼєзо знято; можливий носій ділянки — мікрофон Королеви) | [`00_07` UNI.13a](00_07_Action_Plan_Tracker) (архів — рецепт відродження) · HW.52 | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
-| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk — опційний апгрейд | — (self-owned: пошук параметрів — машинна робота; партнера знято ⚖️ 2026-09-26) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) (Біо-хаб — ground truth) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo) на локальній машині — зовнішнього кластера немає; питання compute виникне лише зі зростанням датасету |
-| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | — (наш NDVI-адаптер і наша статистика; ⏸ разом із мікро-сигналом — пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | [`00_07` E.14](00_07_Action_Plan_Tracker) (архів) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA |
-| Статистика розподілів `fauna_activity_index` між ділянками | — (наша; ⏸ — даних немає: пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | — | ANOVA dawn/dusk peak amplitude між ландшафтами |
+| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk — опційний апгрейд | — (self-owned: пошук параметрів — машинна робота; партнера знято ⚖️ 2026-09-26) | [`00_07` UNI.13a](00_07_Action_Plan_Tracker) (архів — рецепт датасету) · HW.52 | Фітнес-функція з ground-truth (data-gate = датасет носія ділянки, якого немає); GA generic (pymoo) на локальній машині — зовнішнього кластера немає; питання compute виникне лише зі зростанням датасету |
+| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | — (наш NDVI-адаптер; метод статистики не обрано — ⚖️ при відродженні; ⏸ разом із мікро-сигналом — пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | [`00_07` E.14](00_07_Action_Plan_Tracker) (архів) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA |
+| Статистика розподілів `fauna_activity_index` між ділянками | — (метод не обрано; ⏸ — даних немає: пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | [`00_07` E.59](00_07_Action_Plan_Tracker) (архів) | ANOVA dawn/dusk peak amplitude між ландшафтами |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 

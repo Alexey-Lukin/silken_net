@@ -105,7 +105,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 | 1 wind | ESC-50 `wind` | реальне |
 | 2 **cavitation** | **немає відкритих даних** → фізично-вмотивований синтетичний генератор (імпульсні broadband сплески ~5–8 кГц) | **placeholder, марковано**; робить smoke-тест класу 2 реальним |
 | 3 chainsaw | ESC-50 `chainsaw` | реальне |
-| 4 fauna | ESC-50 тваринні (`crickets`/`chirping_birds`/`frog`/`insects`) як interim soundscape-проксі | **interim**; реальне = Cherkasy Soundscape Library (post-TRL 7) |
+| 4 fauna | ESC-50 тваринні (`crickets`/`chirping_birds`/`frog`/`insects`) як interim soundscape-проксі | **interim**; реальне = Cherkasy Soundscape Library (post-TRL 7; носія немає — `00_07` UNI.13a §🗄️) |
 
 > **One-Home:** канонічна field-валідність-теза (що field-valid, що placeholder, + framing «pipeline-метрика, не польова точність») живе в [`03_03 §4.2`](../../../docs/03_03_TinyML_Acoustic_Inference.md); ця таблиця — джерела/генератори (HOW), не дублює канон.
 
