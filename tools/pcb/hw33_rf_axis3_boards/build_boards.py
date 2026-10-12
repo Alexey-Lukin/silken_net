@@ -25,14 +25,19 @@ the numbers below are their transcription, with the page each was read on):
     tolerance ±0.05. User manual UM_NN02-201 (Last Update December 2025, sha256 95db0170…5ed08fda) §2.1, p. 10: body
     7.0 × 3.0 × 1.0 mm — WIDER than its pads, so the body, not the pads, meets the contour first; §3, p. 11, Fig. 7: the
     pads are symmetrical, «This pad must NOT be grounded».
-  · Application note AN_NN02-224_ISM (Last Update March 2021, sha256 5bcc531d…9014): THREE evaluation networks in our band,
-    and they differ in topology, not only in values —
+  · Application note AN_NN02-224_ISM (Last Update March 2021, sha256 5bcc531d…9014): SIX evaluation networks, every one
+    read off its schematic, and they differ in topology, not only in values —
       §2.3, p. 7 — 863–870 MHz on 131 × 60 (clearance 11 × 60, booster 8.0 mm from the ground): an L, 30 nH in series
                    from the booster and 20 nH shunt at the port (LQW18AN30NG00 / LQW18AN20NG00), efficiency > 85 %;
+      §3.3, p. 11 — 902–928 MHz on 131 × 60: an L, 30 nH series · 39 nH shunt;
       §4.3, p. 15 — 863–928 MHz on 131 × 60: a T, 22 nH series · 8.7 nH shunt · 2.0 pF series;
-      §5.3, p. 19 — 863–870 MHz on CR80, 86 × 54 (clearance 11 × 54) — the ground closest to ours: a T, 30 nH series ·
-                   13 nH shunt · 3 nH series (LQW18AN30NG00 / LQW18AN13NG00 / LQW15AN3N0B80D), efficiency > 60 %.
-    So the bench starts from the CR80 T on sites B · C · D, not from the big board's L. Not one of the three is a π.
+      §5.3, p. 19 — 863–870 MHz on CR80, 86 × 54 (clearance 11 × 54, so a 75 × 54 ground): a T, 30 nH series · 13 nH
+                   shunt · 3 nH series (LQW18AN30NG00 / LQW18AN13NG00 / LQW15AN3N0B80D), efficiency > 60 %;
+      §6.3, p. 23 — 902–928 MHz on CR80: a T, 27 nH · 13 nH shunt · 2.4 nH;  §7.3, p. 27 — 863–928 MHz on CR80: a T,
+                   24 nH · 7.5 nH shunt · 1.8 pF.
+    Not one is a π. The smallest published ground for NN02-224, though, is 40 × 20 from another application note
+    (02_01 §5.3: 27 nH · 8.2 nH · 2.0 pF, efficiency 27.1 % at 863 MHz) whose topology this pass did not see — the bench
+    starts from those values, and the board takes a π as well as a T.
     The vendor states the values move with every ground and every nearby part; ⛔ they are a starting point for tuning
     on the bench, never ours (bench sheet §5; 02_01 §5.3).
 
@@ -42,7 +47,7 @@ Layout choices that are ours, not the vendor's — each one is a knob below, and
     evaluation boards use an 11 mm strip. Ours is the narrowest the footprint allows ON PURPOSE: 02_01 §3.5 leaves the
     booster's clearance uncounted and the RF deck's top side is already over-full, so a product board will not afford
     a wide strip — the board measures the efficiency the product can have. «Narrowest» is not «small»: the segment over
-    the chord is printed per board on every run (a third of the disc for NN02-224, a sixth for NN02-201), and that
+    the chord is printed per board on every run (a third of the disc for NN02-224, a fifth for NN02-201), and that
     area is what 02_01 §3.5 does not count. Price: the number comes out MORE pessimistic than a wide clearance would
     give; a wide-clearance variant is a change of GAP_TO_GROUND, not a new board.
   • 2 layers, FR4 1.6 mm (the deck thickness, 02_01 §3.1 pos. 8 — the decks themselves are 4-layer); ground poured on
