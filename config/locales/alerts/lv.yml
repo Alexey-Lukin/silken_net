@@ -106,7 +106,7 @@ lv:
         unassigned: Brīdinājumu vēl neviens nav paņēmis
       sop:
         domain:
-          pending: Lietotne nesniedz domēna taktiku šim brīdinājuma tipam.
+          pending: Platforma nesniedz domēna taktiku šim brīdinājuma veidam — SOP teksta avots nav izvēlēts.
           title: Domēna taktika
         steps:
           acknowledge:

@@ -57,9 +57,9 @@ RSpec.describe Alerts::Show do
   end
 
   describe "domain placeholder" do
-    # Чесний порожній стан: називає ВІДСУТНІСТЬ партнерського джерела,
+    # Чесний порожній стан: називає ВІДСУТНІСТЬ джерела SOP-тексту й причину,
     # а не тимчасовість (клас ARCH.103 «порожнеча мусить мати голос»).
-    it "honestly names the missing partner SOP content" do
+    it "honestly names that the platform provides no domain tactics, and why" do
       expect(html).to include(I18n.t("alerts.show.sop.domain.pending"))
     end
 

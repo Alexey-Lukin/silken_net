@@ -106,7 +106,7 @@ lt:
         unassigned: Įspėjimo dar niekas nepaėmė
       sop:
         domain:
-          pending: Programėlė nepateikia šio įspėjimo tipo srities taktikos.
+          pending: Platforma nepateikia šio įspėjimo tipo srities taktikos — SOP teksto šaltinis nepasirinktas.
           title: Srities taktika
         steps:
           acknowledge:

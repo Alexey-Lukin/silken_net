@@ -106,7 +106,7 @@ en:
         unassigned: Nobody has taken this alert yet
       sop:
         domain:
-          pending: The app does not provide domain tactics for this alert type.
+          pending: The platform does not provide domain tactics for this alert type — no source for the SOP text has been chosen.
           title: Domain tactics
         steps:
           acknowledge:
