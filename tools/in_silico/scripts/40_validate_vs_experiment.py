@@ -131,6 +131,7 @@ EXPERIMENTAL = {
     # "stability_30d_pct": 92,      # Activity retention after 30 days — reported only
     # "OCV_mV": 750,                # V_OC of the pair — acceptance gate
     # "R_int_ohm": 4000,            # two-point R_int (V_OC + cell voltage at ≈25 µA) — acceptance gate
+    # "R_partition_ohm": 300,       # the compartment JOINT alone (EIS, two identical inert electrodes, no coupons)
 }
 
 # EXPERIMENTAL key → the prediction key it is compared with.
@@ -142,6 +143,11 @@ COMPARED = {
 }
 REPORTED_ONLY = {"j_cv_peak_uA_cm2", "Rs_ohm", "delta_t_measured_s", "stability_30d_pct"}
 GATES = {"OCV_mV", "R_int_ohm"}
+# ⚖️ founder 2026-10-12 (00_07 HW.24): the coin cell has two compartments, so the two-point R_int carries the joint
+# (membrane / frit / salt bridge) too — a property of the CELL, not of the electrodes, which the cold-start gate must
+# not charge to the pair. The lab measures the joint alone (measurement B, anchor_coin_electrochem_rfq) and it is
+# subtracted here; EIS A sees each electrode in its own three-electrode cell and cannot see the joint.
+GATE_INPUTS = {"R_partition_ohm"}
 METADATA = {"exposed_area_cm2"}
 
 
@@ -165,13 +171,19 @@ def unit_of(key: str) -> str:
 
 
 def check_keys(exp: dict) -> None:
-    unknown = set(exp) - set(COMPARED) - REPORTED_ONLY - GATES - METADATA
+    unknown = set(exp) - set(COMPARED) - REPORTED_ONLY - GATES - GATE_INPUTS - METADATA
     if unknown:
         raise SystemExit(f"EXPERIMENTAL keys in no class: {sorted(unknown)} — classify them above")
     if "Rct_ohm" in exp and "exposed_area_cm2" not in exp:
         raise SystemExit("Rct_ohm needs exposed_area_cm2: Ω is comparable only per cm²")
     if "R_int_ohm" in exp and "OCV_mV" not in exp:
         raise SystemExit("R_int_ohm needs OCV_mV: its ceiling is a function of V_OC (02_03 §1.5)")
+    if "R_int_ohm" in exp and "R_partition_ohm" not in exp:
+        raise SystemExit("R_int_ohm of the two-compartment cell needs R_partition_ohm: the joint belongs to the cell, "
+                         "not the electrodes (00_07 HW.24, 2026-10-12)")
+    if "R_partition_ohm" in exp and not 0.0 <= exp["R_partition_ohm"] < exp.get("R_int_ohm", float("inf")):
+        raise SystemExit("R_partition_ohm must lie in [0, R_int_ohm): a joint at least as resistive as the whole cell "
+                         "means the two readings are not of one configuration")
 
 
 def acceptance_gates(exp: dict) -> list[dict]:
@@ -183,10 +195,12 @@ def acceptance_gates(exp: dict) -> list[dict]:
                      "limit": BQ25570_VIN_CS_MAX_MV, "pass": v_oc >= BQ25570_VIN_CS_MAX_MV})
         if "R_int_ohm" in exp:
             ceiling = r_int_ceiling_ohm(v_oc, BQ25570_VIN_CS_MAX_MV)
-            rows.append({"gate": "R_int <= ceiling at VIN(CS) max", "measured": exp["R_int_ohm"],
+            electrodes = exp["R_int_ohm"] - exp["R_partition_ohm"]   # the joint is the cell's, not the pair's
+            rows.append({"gate": "R_int <= ceiling at VIN(CS) max", "measured": electrodes,
+                         "cell_R_int_ohm": exp["R_int_ohm"], "partition_ohm": exp["R_partition_ohm"],
                          "limit": ceiling,
                          "limit_at_typ": r_int_ceiling_ohm(v_oc, BQ25570_VIN_CS_TYP_MV),
-                         "pass": ceiling is not None and exp["R_int_ohm"] <= ceiling})
+                         "pass": ceiling is not None and electrodes <= ceiling})
     return rows
 
 
@@ -195,8 +209,9 @@ def gate_line(g: dict) -> str:
     def shown(limit):
         return "impossible" if limit is None else f"{limit:.0f}"
     typ = f"  (typ ceiling {shown(g['limit_at_typ'])})" if "limit_at_typ" in g else ""
+    split = (f"  [cell {g['cell_R_int_ohm']:.0f} − joint {g['partition_ohm']:.0f}]" if "partition_ohm" in g else "")
     return (f"  {g['gate']:<34s} measured {g['measured']:>8.0f}  limit {shown(g['limit']):>10s}  "
-            f"{'PASS' if g['pass'] else 'FAIL'}{typ}")
+            f"{'PASS' if g['pass'] else 'FAIL'}{split}{typ}")
 
 
 def compare(preds: dict, exp: dict) -> list[dict]:

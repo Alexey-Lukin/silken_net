@@ -47,21 +47,21 @@ def test_r_int_impossible_at_or_below_threshold(v_oc):
 
 def test_gates_judge_on_worst_case_threshold():
     # Both gates at VIN(CS) max are ratified: V_OC (2026-09-27) and the R_int ceiling (2026-10-01).
-    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 690.0, "R_int_ohm": 1000.0})}
+    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 690.0, "R_int_ohm": 1000.0, "R_partition_ohm": 0.0})}
     assert not gates["V_OC >= VIN(CS) max"]["pass"]          # 690 clears typ 600, not max 700
     assert not gates["R_int <= ceiling at VIN(CS) max"]["pass"]
-    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 4500.0})}
+    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 4500.0, "R_partition_ohm": 0.0})}
     assert gates["V_OC >= VIN(CS) max"]["pass"] and gates["R_int <= ceiling at VIN(CS) max"]["pass"]
-    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 5000.0})}
+    gates = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 5000.0, "R_partition_ohm": 0.0})}
     assert not gates["R_int <= ceiling at VIN(CS) max"]["pass"]   # passes typ (8 kΩ), fails max
 
 
 def test_gate_row_prints_typ_ceiling_beside_max():
-    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 700.0, "R_int_ohm": 3000.0})}
+    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 700.0, "R_int_ohm": 3000.0, "R_partition_ohm": 0.0})}
     assert "typ ceiling" not in rows["V_OC >= VIN(CS) max"]
     r_int = rows["R_int <= ceiling at VIN(CS) max"]
     assert "impossible" in r_int and "FAIL" in r_int and r_int.endswith("(typ ceiling 4000)")
-    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 600.0, "R_int_ohm": 3000.0})}
+    rows = {g["gate"]: v40.gate_line(g) for g in v40.acceptance_gates({"OCV_mV": 600.0, "R_int_ohm": 3000.0, "R_partition_ohm": 0.0})}
     assert rows["R_int <= ceiling at VIN(CS) max"].endswith("(typ ceiling impossible)")
 
 
@@ -69,10 +69,25 @@ def test_gate_row_prints_typ_ceiling_beside_max():
     {"j_max_uA_cm2": 450},                    # the old ambiguous key — must not vanish silently
     {"Rct_ohm": 180},                         # Ω without the window area
     {"R_int_ohm": 4000},                      # a ceiling without V_OC
+    {"OCV_mV": 800, "R_int_ohm": 4000},       # a two-compartment R_int without its joint (HW.24, 2026-10-12)
+    {"OCV_mV": 800, "R_int_ohm": 4000, "R_partition_ohm": 4000},   # a joint as resistive as the whole cell
+    {"OCV_mV": 800, "R_int_ohm": 4000, "R_partition_ohm": -1},     # a negative joint
 ])
 def test_bad_experimental_input_refuses(exp):
     with pytest.raises(SystemExit):
         v40.check_keys(exp)
+
+
+def test_joint_is_subtracted_before_the_r_int_gate():
+    # ⚖️ 2026-10-12 (HW.24): at V_OC 800 mV the max-VIN(CS) ceiling lies between 4500 and 5000 Ω (test above). A cell
+    # reading 5000 Ω fails when the joint is charged to the electrodes and passes once its 500 Ω are removed — the
+    # case the verdict exists for; the printed row names both terms.
+    cell_only = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 5000.0, "R_partition_ohm": 0.0})}
+    assert not cell_only["R_int <= ceiling at VIN(CS) max"]["pass"]
+    split = {g["gate"]: g for g in v40.acceptance_gates({"OCV_mV": 800.0, "R_int_ohm": 5000.0, "R_partition_ohm": 500.0})}
+    row = split["R_int <= ceiling at VIN(CS) max"]
+    assert row["pass"] and row["measured"] == pytest.approx(4500.0)
+    assert "[cell 5000 − joint 500]" in v40.gate_line(row)
 
 
 def test_rct_compared_per_area():
