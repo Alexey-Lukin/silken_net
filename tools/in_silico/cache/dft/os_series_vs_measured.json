@@ -479,11 +479,88 @@
       "series": 0.5946945460989652,
       "relaxed": 1.053266390066668
     },
+    "computed_pair_change": {
+      "ome-bpy": 0.24702112081670546,
+      "dmbpy-bpy": -0.08588778111845385,
+      "ome-dmbpy": 0.7711048419323996
+    },
     "donor_slope_per_substituent_V_per_sigma": {
       "series": 0.22469257537131965,
       "relaxed": 0.27243949070713763
     },
+    "donor_r2": {
+      "series": 0.9995801279865335,
+      "relaxed": 0.9572630806636105
+    },
     "donor_slope_change": 0.21249885652391054,
+    "os_donors_A": {
+      "dmbpy": {
+        "programmatic": {
+          "N_bpy": [
+            2.0986,
+            2.0986,
+            2.0986,
+            2.0986
+          ],
+          "N_L": 2.1,
+          "Cl": 2.38
+        },
+        "relaxed": {
+          "N_bpy": [
+            2.0479,
+            2.0711,
+            2.086,
+            2.0882
+          ],
+          "N_L": 2.1427,
+          "Cl": 2.527
+        }
+      },
+      "ome": {
+        "programmatic": {
+          "N_bpy": [
+            2.097,
+            2.097,
+            2.097,
+            2.097
+          ],
+          "N_L": 2.1,
+          "Cl": 2.38
+        },
+        "relaxed": {
+          "N_bpy": [
+            2.0538,
+            2.0775,
+            2.0914,
+            2.0931
+          ],
+          "N_L": 2.1407,
+          "Cl": 2.533
+        }
+      },
+      "bpy": {
+        "programmatic": {
+          "N_bpy": [
+            2.0989,
+            2.0989,
+            2.0989,
+            2.0989
+          ],
+          "N_L": 2.1,
+          "Cl": 2.38
+        },
+        "relaxed": {
+          "N_bpy": [
+            2.0471,
+            2.0705,
+            2.0844,
+            2.087
+          ],
+          "N_L": 2.1419,
+          "Cl": 2.5215
+        }
+      }
+    },
     "os_cl_A": {
       "dmbpy": {
         "programmatic": 2.38,
@@ -498,7 +575,7 @@
         "relaxed": 2.5215
       }
     },
-    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves the donor points unevenly: OMe−Me goes from ×0.59 to ×1.05 of the aqueous series and from ×0.56 to ×0.99 of ref 8's films, but OMe against H in MeCN goes from ×0.99 to ×1.23 and Me against H stays over it (MeCN ×2.48 → ×2.27, films ×1.34 → ×1.23); the donor slope changes by +21 %. The relaxed Os–Cl is 2.522–2.533 Å against 2.38 Å programmatic. So the substituent sensitivity of this vertical protocol depends on the geometry at that level, and which of the two geometries stands for the real complex this computation cannot say."
+    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves every computed pair of our own core toward the measured — ref 8's films OMe−H ×0.87 → ×1.08, Me−H ×1.34 → ×1.23, OMe−Me ×0.56 → ×0.99, and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H toward it (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). Os–N(bpy) goes from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) still vertical on it."
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }

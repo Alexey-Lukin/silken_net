@@ -342,12 +342,28 @@ def aqueous(sigma: dict, b3: dict) -> dict:
     return aq
 
 
+def _os_donors(atoms: list) -> dict:
+    """Os (atom 0) to its N(bpy) ×4, N(L) and Cl, Å — order-free: a coordinating N with another coordinating N within
+    2.8 Å is a chelate N (bpy bite ≈ 2.6 Å; a cis N(bpy)···N(L) is ≈ 3.0 Å)."""
+    xyz = {i: [float(v) for v in x] for i, (_, x) in enumerate(atoms)}
+    dist = lambda a, b: sum((p - q) ** 2 for p, q in zip(xyz[a], xyz[b], strict=True)) ** 0.5   # noqa: E731
+    coord = [i for i, (e, _) in enumerate(atoms) if e == "N" and dist(0, i) < 2.4]
+    chelate = [i for i in coord if any(j != i and dist(i, j) < 2.8 for j in coord)]
+    lig = [i for i in coord if i not in chelate]
+    cl = [i for i, (e, _) in enumerate(atoms) if e == "Cl" and dist(0, i) < 2.8]
+    if len(chelate) != 4 or len(lig) != 1 or len(cl) != 1:
+        sys.exit(f"not an [Os(bpy)2(L)Cl] core: {len(chelate)} chelate N, {len(lig)} N(L), {len(cl)} Cl")
+    return {"N_bpy": sorted(round(dist(0, i), 4) for i in chelate), "N_L": round(dist(0, lig[0]), 4),
+            "Cl": round(dist(0, cl[0]), 4)}
+
+
 def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | None:
     """The Os(II) relaxation (21e `b3lyp-relaxed-os2`) read against EVERY measured series that shares its points.
 
     It relaxes OMe, Me and H only (Cl and the acceptor side are not relaxed), Os(III) vertical on each relaxed geometry,
     so it reaches: the MeCN homoleptic donors (OMe, Me against H), ref 8's films (OMe−H, Me−H, OMe−Me) and the aqueous
-    OMe−Me — reading one pair of one series alone overstated what the geometry explains (adversary, 2026-10-13)."""
+    OMe−Me — reading one pair of one series alone overstated what the geometry explains, and reading the one series it
+    worsens alone understated it (adversaries, 2026-10-13)."""
     path = DFT_CACHE / RELAX_VARIANT[1]
     if not path.exists():
         return None
@@ -367,37 +383,54 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     pvi_pairs = (("ome", "bpy"), ("dmbpy", "bpy"), ("ome", "dmbpy"))
     pvi_r = {f"{x}-{r}": {t: shift(e, x, r) / ((pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for t, e in src.items()}
              for x, r in pvi_pairs}
+    pair_change = {f"{x}-{r}": shift(src["relaxed"], x, r) / shift(src["series"], x, r) - 1 for x, r in pvi_pairs}
     aq_meas = next(p["measured_mV"] for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")) / 1000
     aq_r = {t: shift(e, "ome", "dmbpy") / aq_meas for t, e in src.items()}
-    slope = {t: _slope_r2([sigma[n] for n in pts], [shift(e, n, "bpy") for n in pts])[0] for t, e in src.items()}
-    os_cl = {n: {"programmatic": max(c["geometry_os2_relaxed"]["info"]["donor_distances_A"]["programmatic"]),
-                 "relaxed": max(c["geometry_os2_relaxed"]["info"]["donor_distances_A"]["relaxed"])}
-             for n, c in d["complexes"].items()}   # Os–Cl is the longest donor bond in both geometries
+    fits = {t: _slope_r2([sigma[n] for n in pts], [shift(e, n, "bpy") for n in pts]) for t, e in src.items()}
+    donors = {n: {"programmatic": _os_donors(_xyz_atoms(LIGANDS_DIR / f"os_{n}_meim_cl.xyz")),
+                  "relaxed": _os_donors(c["geometry_os2_relaxed"]["atoms"])} for n, c in d["complexes"].items()}
     out = {"points": pts, "not_relaxed": "Cl and the acceptor side", "os3": "vertical on the relaxed Os(II) geometry",
            "mecn_ratio_ours_over_measured": mecn, "pvi_ratio_ours_over_measured": pvi_r,
-           "aqueous_ome_dmbpy_ratio_ours_over_measured": aq_r,
-           "donor_slope_per_substituent_V_per_sigma": slope,
-           "donor_slope_change": slope["relaxed"] / slope["series"] - 1,
-           "os_cl_A": os_cl}
+           "aqueous_ome_dmbpy_ratio_ours_over_measured": aq_r, "computed_pair_change": pair_change,
+           "donor_slope_per_substituent_V_per_sigma": {t: f[0] for t, f in fits.items()},
+           "donor_r2": {t: f[1] for t, f in fits.items()},
+           "donor_slope_change": fits["relaxed"][0] / fits["series"][0] - 1,
+           "os_donors_A": donors,
+           "os_cl_A": {n: {t: v[t]["Cl"] for t in v} for n, v in donors.items()}}
     out["verdict"] = verdict_relaxed(out)
     return out
 
 
+def _xyz_atoms(path: Path) -> list:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [(ln.split()[0], [float(v) for v in ln.split()[1:4]]) for ln in lines[2:2 + int(lines[0])]]
+
+
 def verdict_relaxed(rg: dict) -> str:
     """The relaxation's reading across the series — built from the block alone."""
-    aq, pv, mc = (rg["aqueous_ome_dmbpy_ratio_ours_over_measured"], rg["pvi_ratio_ours_over_measured"],
-                  rg["mecn_ratio_ours_over_measured"])
-    cl = [v["relaxed"] for v in rg["os_cl_A"].values()]
-    prog = sorted({v["programmatic"] for v in rg["os_cl_A"].values()})
-    return (f"Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves the donor "
-            f"points unevenly: OMe−Me goes from ×{aq['series']:.2f} to ×{aq['relaxed']:.2f} of the aqueous series and from "
-            f"×{pv['ome-dmbpy']['series']:.2f} to ×{pv['ome-dmbpy']['relaxed']:.2f} of ref 8's films, but OMe against H in "
-            f"MeCN goes from ×{mc['ome']['series']:.2f} to ×{mc['ome']['relaxed']:.2f} and Me against H stays over it "
-            f"(MeCN ×{mc['dmbpy']['series']:.2f} → ×{mc['dmbpy']['relaxed']:.2f}, films ×{pv['dmbpy-bpy']['series']:.2f} → "
-            f"×{pv['dmbpy-bpy']['relaxed']:.2f}); the donor slope changes by {rg['donor_slope_change'] * 100:+.0f} %. "
-            f"The relaxed Os–Cl is {min(cl):.3f}–{max(cl):.3f} Å against {', '.join(f'{p:.2f}' for p in prog)} Å "
-            f"programmatic. So the substituent sensitivity of this vertical protocol depends on the geometry at that "
-            f"level, and which of the two geometries stands for the real complex this computation cannot say.")
+    aq, pv, mc, ch = (rg["aqueous_ome_dmbpy_ratio_ours_over_measured"], rg["pvi_ratio_ours_over_measured"],
+                      rg["mecn_ratio_ours_over_measured"], rg["computed_pair_change"])
+    don = rg["os_donors_A"].values()
+
+    def span(t: str, k: str) -> str:
+        vals = [x for v in don for x in (v[t][k] if isinstance(v[t][k], list) else [v[t][k]])]
+        return f"{min(vals):.3f}–{max(vals):.3f}" if max(vals) - min(vals) >= 0.0005 else f"{min(vals):.3f}"
+
+    r2 = rg["donor_r2"]
+    return (f"Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves every computed "
+            f"pair of our own core toward the measured — ref 8's films OMe−H ×{pv['ome-bpy']['series']:.2f} → "
+            f"×{pv['ome-bpy']['relaxed']:.2f}, Me−H ×{pv['dmbpy-bpy']['series']:.2f} → ×{pv['dmbpy-bpy']['relaxed']:.2f}, "
+            f"OMe−Me ×{pv['ome-dmbpy']['series']:.2f} → ×{pv['ome-dmbpy']['relaxed']:.2f}, and the aqueous OMe−Me "
+            f"×{aq['series']:.2f} → ×{aq['relaxed']:.2f} — and makes Me weak against the line through H and OMe, as "
+            f"measured (r² of the three donors {r2['series']:.4f} → {r2['relaxed']:.3f}); against the homoleptic MeCN series "
+            f"OMe−H moves away (×{mc['ome']['series']:.2f} → ×{mc['ome']['relaxed']:.2f}) and Me−H toward it "
+            f"(×{mc['dmbpy']['series']:.2f} → ×{mc['dmbpy']['relaxed']:.2f}). The computed pairs change by "
+            f"{ch['dmbpy-bpy'] * 100:+.0f} % (Me−H) to {ch['ome-dmbpy'] * 100:+.0f} % (OMe−Me), the three-point donor slope by "
+            f"{rg['donor_slope_change'] * 100:+.0f} % (OMe−H {ch['ome-bpy'] * 100:+.0f} %). Os–N(bpy) goes from "
+            f"{span('programmatic', 'N_bpy')} to {span('relaxed', 'N_bpy')} Å, Os–N(L) from {span('programmatic', 'N_L')} to "
+            f"{span('relaxed', 'N_L')} Å, Os–Cl from {span('programmatic', 'Cl')} to {span('relaxed', 'Cl')} Å. So the "
+            f"substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, "
+            f"and on our own core the relaxed geometry agrees better with experiment — with Os(III) still vertical on it.")
 
 
 def main() -> int:

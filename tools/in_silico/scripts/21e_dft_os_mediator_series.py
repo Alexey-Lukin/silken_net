@@ -57,7 +57,9 @@ shows) — each into its own cache, on bpy · dmbpy · ome · cl by default, wit
       python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-relaxed-os2 # Os(II) relaxed (dmbpy ome bpy)
 CAN show: how much of each pair the one knob moves. CANNOT show: free-energy terms or the Os(III) state's own relaxation
 (every variant is a vertical ΔSCF on one geometry per point — `b3lyp-relaxed-os2` moves that geometry to Os(II)'s
-minimum), nor which variant is nearer experiment — that is `83`.
+minimum), nor which variant is nearer experiment — that is `83`. The Os(III) state's own relaxation is leg (3б):
+      python tools/in_silico/scripts/21e_dft_os_mediator_series.py b3lyp-relaxed-os3 # Os(III) from each relaxed Os(II)
+— the adiabatic ΔE_red and λ_III per point, into its own cache (`main_relaxed_os3`).
 """
 from __future__ import annotations
 
@@ -132,6 +134,7 @@ OUT_UFFCAV = DFT_CACHE / "os_mediator_series_uffcavity.json"   # the cavity radi
 OUT_GAS = DFT_CACHE / "os_mediator_series_gas.json"            # no continuum — the share of each pair the solvent model carries
 OUT_PYAXIAL = DFT_CACHE / "os_mediator_series_pyaxial.json"    # pyridine for 1-MeIm — the axial N-donor of the aqueous series
 OUT_RELAXED = DFT_CACHE / "os_mediator_series_relaxed_os2.json"   # each point at its own relaxed Os(II) geometry
+OUT_RELAXED3 = DFT_CACHE / "os_mediator_series_relaxed_os3.json"  # (3б): Os(III) relaxed from each relaxed Os(II)
 RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H for Me−H; Cl only on request (~5–8 h a point)
 # Declared before the first run (00_07 HW.5.IS leg 3a): energy and gradient at Gaussian's default thresholds (geomeTRIC's
 # GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico, DFT Gotchas: displacement never met).
@@ -681,51 +684,61 @@ def _atoms_json(atoms: list) -> list:
     return [(e, [float(v) for v in x]) for e, x in atoms]
 
 
-def _relaxed_os2(out: Path, rec: dict, c: dict, name: str, atoms: list):
-    """Leg (3a): the point's Os(II) geometry relaxed with the series protocol. A converged geometry in the cache is reused;
-    a non-converged one, or the partial geometry a killed run left, is the RESTART point (never the programmatic one again
-    — the same input would fail the same way); every step's lowest-energy geometry is written to the cache as it comes.
-    Refused at the step: a step 0 that is not the series row's own energy (another protocol), an Os–donor distance moved
-    by more than RELAX_MAX_DONOR_SHIFT_A (a units slip). Returns the relaxed atoms, or None when the optimisation did not
+def _relaxed_os2(out: Path, rec: dict, c: dict, name: str, atoms: list, state: str = "os2", ref_e: float | None = None):
+    """Leg (3a) — and, with state="os3", leg (3б): the point's Os(II) (or Os(III)) geometry relaxed with the series
+    protocol from `atoms`, whose own energy in that state is `ref_e` (default: the series row's Os(II)). A converged
+    geometry in the cache is reused; a non-converged one, or the partial geometry a killed run left, is the RESTART point
+    (never the start again — the same input would fail the same way); every step's lowest-energy geometry is written to
+    the cache as it comes. Refused at the step: a step 0 that is not `ref_e` (another protocol or state), an Os–donor
+    distance moved by more than RELAX_MAX_DONOR_SHIFT_A from the start (a units slip), an open-shell step whose <S²>
+    exceeds S2_MAX_DOUBLET (§Critical Rules #14). Returns the relaxed atoms, or None when the optimisation did not
     converge — that point then has no ΔE_red and no pair, and the run goes on to the next point."""
-    g = c.get("geometry_os2_relaxed")
+    charge, spin, label = (1, 0, "Os(II)") if state == "os2" else (2, 1, "Os(III)")
+    key, part = f"geometry_{state}_relaxed", f"geometry_{state}_partial"
+    g = c.get(key)
     same = g and g["info"].get("conv_params") == RELAX_CONV and g["info"].get("scf_conv_tol") == RELAX_SCF_CONV_TOL
     if g and g["info"]["converged"] and same:
-        banner(f"① b3lyp-relaxed-os2 {name} — relaxed Os(II) geometry reused from {out.name}")
+        banner(f"① b3lyp-relaxed-{state} {name} — relaxed {label} geometry reused from {out.name}")
         return [(e, np.asarray(x, float)) for e, x in g["atoms"]]
-    resume = c.get("geometry_os2_partial") or g
+    resume = c.get(part) or g
     start = [(e, np.asarray(x, float)) for e, x in resume["atoms"]] if resume else atoms
-    restarted_from = None if not resume else ("partial" if "geometry_os2_partial" in c else
+    restarted_from = None if not resume else ("partial" if part in c else
                                               g["info"]["returned"] if not g["info"]["converged"] else "other thresholds")
-    series_e = next(r["os2"]["E_total_Ha"] for r in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]
-                    if r["name"] == name)
+    series_e = ref_e if ref_e is not None else next(
+        r["os2"]["E_total_Ha"] for r in json.loads(OUT.read_text(encoding="utf-8"))["complexes"] if r["name"] == name)
     ref_dd = _donor_distances(atoms)
+    # a restart is checked against the saved geometry's OWN energy — a plain start there may land in another state
+    start_e = series_e if not resume else (c[part]["E_min_Ha"] if part in c else
+                                           min(t["E_Ha"] for t in g["info"]["trajectory"] if t.get("scf_converged", True)))
 
     def keep(geom: list, tr: list):
-        if restarted_from is None and len(tr) == 1 and abs(tr[0]["E_Ha"] - series_e) > RELAX_ENERGY_TOL_HA:
-            sys.exit(f"{name}: step 0 is {tr[0]['E_Ha']:.8f} Ha against the series row's {series_e:.8f} — "
-                     f"not the series protocol, refused")
+        if len(tr) == 1 and abs(tr[0]["E_Ha"] - start_e) > RELAX_ENERGY_TOL_HA:
+            sys.exit(f"{name}: step 0 is {tr[0]['E_Ha']:.8f} Ha against the start's {start_e:.8f} — "
+                     f"not the series protocol or not the same state, refused")
+        if spin and tr[-1].get("s2", float("inf")) > S2_MAX_DOUBLET:
+            sys.exit(f"{name}: step {len(tr)} has <S²> {tr[-1].get('s2')} — not the doublet, refused")
         shift = max(abs(x - y) for x, y in zip(_donor_distances(geom), ref_dd, strict=True))
         if shift > RELAX_MAX_DONOR_SHIFT_A:
             sys.exit(f"{name}: an Os–donor distance moved by {shift:.3f} Å — a units slip, not chemistry; refused")
-        c["geometry_os2_partial"] = {"atoms": _atoms_json(geom), "steps": len(tr), "E_min_Ha": min(t["E_Ha"] for t in tr),
-                                     "restarted_from": restarted_from}
+        c[part] = {"atoms": _atoms_json(geom), "steps": len(tr), "E_min_Ha": min(t["E_Ha"] for t in tr),
+                   "restarted_from": restarted_from}
         _save(out, rec)
 
-    banner(f"① b3lyp-relaxed-os2 {name} — relaxing Os(II) (≤ {RELAX_MAXSTEPS} steps"
+    banner(f"① b3lyp-relaxed-{state} {name} — relaxing {label} (≤ {RELAX_MAXSTEPS} steps"
            + (f", restarted from the {restarted_from} geometry)" if restarted_from else ")"))
-    new, info = dft_optimize(start, charge=1, spin=0, label=f"os2 {name} relax", maxsteps=RELAX_MAXSTEPS,
+    new, info = dft_optimize(start, charge=charge, spin=spin, label=f"{state} {name} relax", maxsteps=RELAX_MAXSTEPS,
                              conv_params=RELAX_CONV, on_step=keep, max_cycle=VARIANT_MAX_CYCLE,
                              conv_tol=RELAX_SCF_CONV_TOL)
     tr = info["trajectory"]
     info.update(restarted_from=restarted_from, scf_conv_tol=RELAX_SCF_CONV_TOL,
-                donor_distances_A={"programmatic": ref_dd, "relaxed": _donor_distances(new)},
+                donor_distances_A={"start": ref_dd, "relaxed": _donor_distances(new)} if state == "os3" else
+                {"programmatic": ref_dd, "relaxed": _donor_distances(new)},
                 step0_minus_series_Ha=(tr[0]["E_Ha"] - series_e) if tr and restarted_from is None else None,
                 relaxation_meV=(series_e - min(t["E_Ha"] for t in tr)) * HARTREE_TO_EV * 1000 if tr else None)
-    c["geometry_os2_relaxed"] = {"atoms": _atoms_json(new), "info": info}
-    c.pop("geometry_os2_partial", None)
-    for k in ("os2", "os3", "dE_red_eV"):   # single points of another geometry are not this geometry's
-        c.pop(k, None)
+    c[key] = {"atoms": _atoms_json(new), "info": info}
+    c.pop(part, None)
+    for k in (("os2", "os3", "dE_red_eV") if state == "os2" else ("os3", "dE_red_adiabatic_eV", "lambda_os3_meV")):
+        c.pop(k, None)   # single points of another geometry are not this geometry's
     _save(out, rec)
     print(f"  {'converged' if info['converged'] else 'NOT converged'} in {info['steps']} steps, {info['wall_seconds']} s; "
           f"relaxation {info['relaxation_meV']} meV" + (f"; {info['error']}" if info["error"] else ""))
@@ -829,6 +842,93 @@ def main_variant(mode: str, names: list[str]) -> int:
     return 0
 
 
+def main_relaxed_os3(names: list[str]) -> int:
+    """Leg (3б) of 00_07 HW.5.IS: each point's Os(III) relaxed with the series protocol from its relaxed Os(II) geometry
+    (`b3lyp-relaxed-os2`, which must hold an accepted point) — the adiabatic ΔE_red = E(Os(II) at its minimum) −
+    E(Os(III) at its own), and λ_III = E(Os(III) vertical at the Os(II) minimum) − E(Os(III) at its own). The Os(II)
+    side is the os2 cache's own record (the same geometry and protocol), never recomputed; its vertical Os(III) is the
+    step-0 reference, so the optimiser must start in the same state.
+    CAN show: how much of each point and pair the Os(III) state's own relaxation moves — the «vertical» assumption, and
+    the size of the point shift the trigger of D is read on (PIPELINE_STATUS, D). CANNOT show: free energies, or which
+    geometry is nearer the real complex."""
+    import pyscf
+
+    if pyscf.__version__ != _recorded_pyscf():
+        sys.exit(f"PySCF {pyscf.__version__} is not the recorded {_recorded_pyscf()} — run in silken_md")
+    src = json.loads(OUT_RELAXED.read_text(encoding="utf-8"))["complexes"]
+    out = OUT_RELAXED3
+    rec = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {
+        "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) adiabatic ΔSCF — the B3LYP series protocol; Os(II) at its "
+                  f"relaxed geometry ({OUT_RELAXED.name}), Os(III) relaxed from it with the same optimiser and thresholds; "
+                  f"max_cycle {VARIANT_MAX_CYCLE}",
+        "environment": {"pyscf": pyscf.__version__}, "complexes": {}}
+    rec.pop("vs_vertical", None)   # rebuilt at the end
+    for name in names:
+        s = src.get(name, {})
+        g2 = s.get("geometry_os2_relaxed")
+        if not (g2 and g2["info"]["converged"] and "dE_red_eV" in s
+                and all(_acceptance(s.get(k, {}), k == "os3") == "accepted" for k in ("os2", "os3"))):
+            sys.exit(f"{name}: no accepted relaxed Os(II) point in {OUT_RELAXED.name} — run b3lyp-relaxed-os2 first")
+        c = rec["complexes"].setdefault(name, {"sigma_para": s["sigma_para"]})
+        if "os2_E_Ha" in c and c["os2_E_Ha"] != s["os2"]["E_total_Ha"]:   # the Os(II) start moved: nothing here is its
+            print(f"  {name}: the relaxed Os(II) point changed in {OUT_RELAXED.name} — its Os(III) record is discarded")
+            for k in [k for k in c if k != "sigma_para"]:
+                c.pop(k)
+        c.update(os2_E_Ha=s["os2"]["E_total_Ha"], os3_vertical_E_Ha=s["os3"]["E_total_Ha"],
+                 dE_red_vertical_eV=s["dE_red_eV"], source=OUT_RELAXED.name)
+        atoms = _relaxed_os2(out, rec, c, name, [(e, np.asarray(x, float)) for e, x in g2["atoms"]], state="os3",
+                             ref_e=s["os3"]["E_total_Ha"])
+        if atoms is None:
+            continue
+        if _acceptance(c.get("os3", {}), True) != "accepted":
+            if "os3" in c:
+                print(f"  replacing {name} os3: {_acceptance(c['os3'], True)}")
+            banner(f"① b3lyp-relaxed-os3 {name} os3 at its own minimum (PySCF {pyscf.__version__})")
+            c["os3"] = dft_singlepoint(atoms, charge=2, spin=1, label=f"os3 {name} (b3lyp-relaxed-os3)",
+                                       max_cycle=VARIANT_MAX_CYCLE)
+            _save(out, rec)
+        verdict = _acceptance(c["os3"], True)
+        print(f"  E={c['os3']['E_total_Ha']:.8f} Ha ({c['os3']['wall_seconds']}s, {verdict}, <S²> {c['os3'].get('s2')})")
+        if verdict != "accepted":
+            continue
+        off = c["os3"]["E_total_Ha"] - c["geometry_os3_relaxed"]["info"]["trajectory"][-1]["E_Ha"]
+        if abs(off) > RELAX_ENERGY_TOL_HA:   # not dropped silently, not kept: the next point still runs
+            c["os3_refused"] = (f"the plain-start single point is {off:+.2e} Ha off the optimiser's last step — "
+                                + ("a lower state: the optimiser followed an excited one" if off < 0 else
+                                   "a higher state, or not this geometry"))
+            c.pop("os3")
+            _save(out, rec)
+            print(f"  {name}: refused — {c['os3_refused']}")
+            continue
+        c.pop("os3_refused", None)
+        c["os3_minus_last_step_Ha"] = off
+        c["dE_red_adiabatic_eV"] = (c["os2_E_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV
+        c["lambda_os3_meV"] = (c["os3_vertical_E_Ha"] - c["os3"]["E_total_Ha"]) * HARTREE_TO_EV * 1000
+        _save(out, rec)
+        print(f"  ΔE_red adiabatic {name} = {c['dE_red_adiabatic_eV']:+.6f} eV (λ_III {c['lambda_os3_meV']:.1f} meV)")
+    rec["vs_vertical"] = _vs_vertical(rec)
+    _save(out, rec)
+    for n, v in rec["vs_vertical"]["point_shift_eV"].items():
+        print(f"  {n}: adiabatic − series (programmatic, vertical) = {v:+.4f} eV")
+    banner(f"✅ saved {out.name}")
+    return 0
+
+
+def _vs_vertical(rec: dict) -> dict:
+    """Each adiabatic point ⊥ the series row (programmatic geometry, vertical) and ⊥ the (3a) vertical point; the
+    per-substituent pairs (mV, −ΔΔE_red/4) in all three. CANNOT show which is nearer experiment — that is `83`."""
+    base = {c["name"]: c["dE_red_eV"] for c in json.loads(OUT.read_text(encoding="utf-8"))["complexes"]}
+    d = {n: c for n, c in rec["complexes"].items() if "dE_red_adiabatic_eV" in c}
+    cols = {"series_mV": base, "relaxed_os2_mV": {n: c["dE_red_vertical_eV"] for n, c in d.items()},
+            "adiabatic_mV": {n: c["dE_red_adiabatic_eV"] for n, c in d.items()}}
+    pairs = [{"x": x, "ref": r, **{k: -(e[x] - e[r]) / N_SUBST * 1000 for k, e in cols.items()}}
+             for x, r in VARIANT_PAIRS if x in d and r in d]
+    for p in pairs:
+        p["change_mV"] = p["adiabatic_mV"] - p["relaxed_os2_mV"]
+    return {"pairs": pairs, "point_shift_eV": {n: c["dE_red_adiabatic_eV"] - base[n] for n, c in d.items()},
+            "lambda_os3_meV": {n: c["lambda_os3_meV"] for n, c in d.items()}}
+
+
 def main_os_basis(names: list[str]) -> int:
     return main_variant("b3lyp-osdef2", names)
 
@@ -850,6 +950,8 @@ def main_compare() -> int:
 if __name__ == "__main__":
     if sys.argv[1:2] == ["wb97x-631gd"]:
         raise SystemExit(main_wb97x(sys.argv[2:] or WB97X_631GD_ENDS, small_basis=True))
+    if sys.argv[1:2] == ["b3lyp-relaxed-os3"]:
+        raise SystemExit(main_relaxed_os3(sys.argv[2:] or RELAX_POINTS))
     if sys.argv[1:2] and sys.argv[1] not in {"wb97x", "wb97x-631gd", "wb97x-compare", *VARIANTS}:
         sys.exit(f"unknown mode {sys.argv[1]!r} — a typo would fall through to main() and rewrite {OUT.name}")
     if sys.argv[1:2] and sys.argv[1] in VARIANTS:

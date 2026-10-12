@@ -64,8 +64,8 @@ of ChemRxiv.<sup>55</sup> Compared per 4,4′-substituent against H —
 assuming that the shift is additive across tris and bis complexes, that solvent and charge state move the absolute
 potential but not the difference, and that a vertical ΔSCF difference stands for a difference of E½ — OMe agrees
 (−60.9 mV computed at B3LYP, −61.7 mV measured) and Me does not (−37.2 mV at B3LYP and −37.3 mV at
-ωB97X/def2-TZVP, against −15.0 mV measured). The computed H, Me and OMe lie on one σ_para line and the measured do
-not (r² = 0.82), yet the measured Me is not a lone outlier: the other measured alkyl donor, tBu, is as weak
+ωB97X/def2-TZVP, against −15.0 mV measured). The computed H, Me and OMe lie on one σ_para line on the programmatic
+geometry (relaxed, below, Me falls under it too) and the measured do not (r² = 0.82), yet the measured Me is not a lone outlier: the other measured alkyl donor, tBu, is as weak
 (−20.0 mV, with its σ_para unchecked and no computed tBu point), so which side carries the difference is not
 settled here. Me has little leverage on a donor fit, so a slope through H, Me and OMe restates the OMe pair rather
 than adding a second agreement. A third measured series — the E½ of [Os(4,4′-X₂-bpy)₂Cl(ampy)]⁺ (ampy =
@@ -90,12 +90,16 @@ Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates
 tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
 away from experiment (every pair by at most 3.6 mV). Relaxing the Os(II) geometry of OMe, Me and H with the same
 protocol, Os(III) vertical on it (Cl not relaxed), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
-substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and ref 8's (0.99 times), but moves the donor points
-unevenly: OMe against H in acetonitrile goes from 0.99 to 1.23 times the measured, Me against H stays above the
-measured in both series, and our donor slope rises by 21 %. The relaxed Os–Cl, 2.52–2.53 Å, overshoots the Os(II)
-range of §2.3 (2.40–2.44 Å) by about 0.09 Å, while the programmatic 2.38 Å falls just short of it, so neither geometry is a reference: the
-substituent sensitivity of the vertical protocol carries a geometry uncertainty of about a fifth. Left untested are
-the Os(III) state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
+substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and moves every pair of ref 8 toward the measured
+(OMe−H from 0.87 to 1.08 times, Me−H from 1.34 to 1.23, OMe−Me from 0.56 to 0.99); Me then falls below the line
+through H and OMe, as it does in the measured series (r² of the three computed donors from 0.9996 to 0.957). Only the
+homoleptic acetonitrile series, compared under the transfer assumptions above, moves away: OMe against H goes from
+0.99 to 1.23 times the measured. The computed pairs change by −9 % (Me−H) to +77 % (OMe−Me) — the three-point donor
+slope by 21 % — so the substituent sensitivity of the vertical protocol rests on the geometry at the level of the
+pairs themselves. The relaxed chelate comes closer to the crystal ranges of §2.3 (Os–N(bpy) 2.05–2.09 Å against the
+programmatic 2.10 Å), while Os–N(L) lengthens to 2.14 Å and Os–Cl to 2.52–2.53 Å, about 0.09 Å over the Os(II)
+range — the same within 0.012 Å at the three points, so largely common to the pairs. Left untested are the Os(III)
+state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two

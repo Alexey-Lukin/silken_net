@@ -92,7 +92,8 @@ def dft_optimize(atoms, charge: int, spin: int, label: str = "", maxsteps: int =
     The gradient carries the DFT grid response: without it the analytic gradient of this protocol departs from the
     central difference of its own energy by ~1e-4 Ha/Bohr on a light atom — a third of geomeTRIC's default gmax — in
     gas and in C-PCM alike, so the C-PCM gradient (with PySCF ≤ 2.12's ECP-sphere switching) is consistent and the grid
-    is not; with the response, ≤ 1e-5 (OsO₄, LANL2DZ/6-31G(d), B3LYP, measured 2026-10-12). The SCF tolerance of the
+    is not; with the response, ≤ 1e-5 (OsO₄, LANL2DZ/6-31G(d), B3LYP, measured 2026-10-12; the doublet [OsO₄]⁺ in UKS, ≤ 7e-6,
+    2026-10-13). An open shell's trajectory records each step's <S²>. The SCF tolerance of the
     steps matters the same way: at conv_tol 1e-6 a warm-started gradient is off by up to 7e-5 Ha/Bohr, at 1e-8 by
     ≤ 6e-6 (same molecule, same day) — the caller sets it (`conv_tol` in `protocol`).
 
@@ -103,6 +104,7 @@ def dft_optimize(atoms, charge: int, spin: int, label: str = "", maxsteps: int =
     import time
 
     import geometric
+    import geometric.errors
     import numpy as np
     from pyscf.geomopt.geometric_solver import kernel as geomopt
 
@@ -115,8 +117,13 @@ def dft_optimize(atoms, charge: int, spin: int, label: str = "", maxsteps: int =
         m = env["mol"]
         xyz = m.atom_coords(unit="Angstrom")
         geom = [(m.atom_symbol(i), xyz[i]) for i in range(m.natm)]
+        ok = bool(getattr(env["g_scanner"], "converged", True))
         trajectory.append({"E_Ha": float(env["energy"]), "grad_max_Ha_bohr": float(np.abs(env["gradients"]).max()),
-                           "grid_response": bool(env["g_scanner"].grid_response)})
+                           "grid_response": bool(env["g_scanner"].grid_response), "scf_converged": ok})
+        if m.spin:   # an open shell's step is a stationary point, not its state (§Critical Rules #14) — the caller judges
+            trajectory[-1]["s2"] = float(env["g_scanner"].base.spin_square()[0])
+        if not ok:   # PySCF calls back BEFORE it raises on a failed SCF: that step is neither the best nor the keeper's
+            return
         if not best or trajectory[-1]["E_Ha"] < best["E_Ha"]:
             best.update(E_Ha=trajectory[-1]["E_Ha"], geometry=geom, step=len(trajectory))
         if on_step:
@@ -127,8 +134,8 @@ def dft_optimize(atoms, charge: int, spin: int, label: str = "", maxsteps: int =
     try:
         converged, mol_eq = geomopt(grad, assert_convergence=True, callback=record, maxsteps=maxsteps,
                                     **(conv_params or {}))
-    except RuntimeError as exc:   # the wrapper's «Nuclear gradients … not converged»: an SCF failed at a step
-        converged, mol_eq, error = False, None, str(exc)
+    except (RuntimeError, geometric.errors.Error) as exc:   # an SCF failed at a step («Nuclear gradients … not
+        converged, mol_eq, error = False, None, f"{type(exc).__name__}: {exc}"   # converged»), or geomeTRIC gave up
     if converged:
         xyz = mol_eq.atom_coords(unit="Angstrom")
         out = [(mol_eq.atom_symbol(i), xyz[i]) for i in range(mol_eq.natm)]

@@ -9,6 +9,7 @@ import json
 import math
 import re
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -636,11 +637,11 @@ def test_21e_relaxed_mode_changes_only_the_geometry(tmp_path, monkeypatch):
     sp, opt = [], []
     series = json.loads((DFT / "os_mediator_series.json").read_text())
     e0 = {r["name"]: r["os2"]["E_total_Ha"] for r in series["complexes"]}
-    nonconv = set()
+    nonconv, saved_e = set(), {}   # saved_e: the energy of each geometry the stub returned — a restart starts there
 
     def fake_sp(atoms, **kw):
         sp.append(({k: v for k, v in kw.items() if k != "label"}, float(atoms[1][1][0])))
-        last = -2.0 - 0.01 * float(atoms[1][1][0])   # the optimiser's last step on these atoms (fake_opt below)
+        last = saved_e.get(float(atoms[1][1][0]), -2.0)   # the optimiser's last step on these atoms (fake_opt below)
         return {"E_total_Ha": last if kw["charge"] == 1 else last + 0.15, "converged": True, "wall_seconds": 0.0,
                 "aufbau": True, **({"s2": 0.755} if kw["spin"] else {})}
 
@@ -649,7 +650,9 @@ def test_21e_relaxed_mode_changes_only_the_geometry(tmp_path, monkeypatch):
         opt.append({"charge": charge, "spin": spin, "maxsteps": maxsteps, "conv_params": conv_params, **protocol,
                     "start_x": float(atoms[1][1][0]), "keeper": callable(on_step)})
         moved = [(e, np.asarray(x, float) + (0.05 if i == 1 else 0.0)) for i, (e, x) in enumerate(atoms)]
-        tr = [{"E_Ha": e0[name], "grad_max_Ha_bohr": 0.01}, {"E_Ha": -2.0 - 0.01 * float(moved[1][1][0]), "grad_max_Ha_bohr": 1e-4}]
+        tr = [{"E_Ha": saved_e.get(float(atoms[1][1][0]), e0[name]), "grad_max_Ha_bohr": 0.01}]
+        tr.append({"E_Ha": tr[0]["E_Ha"] - 1e-3, "grad_max_Ha_bohr": 1e-4})   # a real optimiser goes DOWN
+        saved_e[float(moved[1][1][0])] = tr[1]["E_Ha"]
         on_step(atoms, tr[:1])
         on_step(moved, tr)
         ok = name not in nonconv
@@ -723,6 +726,153 @@ def test_21e_relaxed_mode_changes_only_the_geometry(tmp_path, monkeypatch):
         m.main_variant("b3lyp-relaxed-os2", ["cl"])
 
 
+def test_21e_relaxed_os3_mode_relaxes_only_os3(tmp_path, monkeypatch):
+    """`b3lyp-relaxed-os3` (00_07 HW.5.IS leg 3б): Os(III) relaxed from each point's relaxed Os(II) — rehearsed with a
+    stubbed optimiser and SCF before the first real run (§When Modifying #34).
+
+    CAN catch: a write into any other cache (the os2 cache included); an optimiser call that is not Os(III) from the
+    relaxed Os(II) atoms at the declared thresholds, or without the keeper; an Os(II) recomputed; single points that are
+    not exactly one Os(III) per point on its relaxed atoms; λ_III or the adiabatic ΔE_red from the wrong energies; a
+    non-converged point that stops the run or yields a pair; a re-run that restarts from the start instead of the saved
+    geometry; refusals that never fire (no relaxed Os(II), step 0 off the vertical Os(III), a spin-contaminated step, a
+    units slip, a single point off the last step). CANNOT catch: what geomeTRIC and a real UKS return."""
+    pytest.importorskip("pyscf")
+    pytest.importorskip("rdkit")
+    import pyscf
+    m = _load_21e()
+    sp, opt = [], []
+    src = json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text())
+    ev = {n: c["os3"]["E_total_Ha"] for n, c in src["complexes"].items()}
+    nonconv, s2_bad, saved_e = set(), set(), {}
+
+    def fake_sp(atoms, **kw):
+        sp.append(({k: v for k, v in kw.items() if k != "label"}, float(atoms[1][1][0])))
+        return {"E_total_Ha": saved_e.get(float(atoms[1][1][0]), -3.0), "converged": True, "wall_seconds": 0.0,
+                "aufbau": True, "s2": 0.755}
+
+    def fake_opt(atoms, charge, spin, label="", maxsteps=0, conv_params=None, on_step=None, **protocol):
+        name = label.split()[1]
+        opt.append({"charge": charge, "spin": spin, "maxsteps": maxsteps, "conv_params": conv_params, **protocol,
+                    "start_x": float(atoms[1][1][0]), "keeper": callable(on_step)})
+        moved = [(e, np.asarray(x, float) + (0.04 if i == 1 else 0.0)) for i, (e, x) in enumerate(atoms)]
+        tr = [{"E_Ha": saved_e.get(float(atoms[1][1][0]), ev[name]), "grad_max_Ha_bohr": 0.01, "s2": 0.755}]
+        tr.append({"E_Ha": tr[0]["E_Ha"] - 1e-3, "grad_max_Ha_bohr": 1e-4, "s2": 0.9 if name in s2_bad else 0.755})
+        saved_e[float(moved[1][1][0])] = tr[1]["E_Ha"]
+        on_step(atoms, tr[:1])
+        on_step(moved, tr)
+        ok = name not in nonconv
+        return moved, {"label": label, "converged": ok, "steps": 2, "wall_seconds": 0.0, "trajectory": tr,
+                       "returned": "final" if ok else "lowest-energy step 2", "error": None if ok else "stub: not converged",
+                       "conv_params": conv_params}
+
+    caches = ("OUT", "OUT_WB97X", "OUT_WB97X_631GD", "OUT_OSDEF2", "OUT_IEFPCM", "OUT_UFFCAV", "OUT_GAS", "OUT_PYAXIAL",
+              "OUT_RELAXED", "OUT_RELAXED3")
+    guarded = {k: tmp_path / f"{k}.json" for k in caches}
+    guarded["OUT"].write_text((DFT / "os_mediator_series.json").read_text())
+    guarded["OUT_RELAXED"].write_text(json.dumps(src))
+    for k in caches[1:-2]:
+        guarded[k].write_text('{"sentinel": true}\n')
+    for k, v in guarded.items():
+        monkeypatch.setattr(m, k, v)
+    before = {k: v.read_text() for k, v in guarded.items() if k != "OUT_RELAXED3"}
+    monkeypatch.setattr(m, "dft_singlepoint", fake_sp)
+    monkeypatch.setattr(m, "dft_optimize", fake_opt)
+    monkeypatch.setattr(m, "_recorded_pyscf", lambda: pyscf.__version__)
+    nonconv.add("ome")
+    m.main_relaxed_os3(["ome", "bpy", "dmbpy"])
+    assert {k: v.read_text() for k, v in guarded.items() if k != "OUT_RELAXED3"} == before, "the os3 mode wrote elsewhere"
+    proto = {"charge": 2, "spin": 1, "maxsteps": m.RELAX_MAXSTEPS, "conv_params": m.RELAX_CONV,
+             "max_cycle": m.VARIANT_MAX_CYCLE, "conv_tol": m.RELAX_SCF_CONV_TOL, "keeper": True}
+    assert [{k: v for k, v in o.items() if k != "start_x"} for o in opt] == [proto] * 3, opt
+    starts = {n: c["geometry_os2_relaxed"]["atoms"][1][1][0] for n, c in src["complexes"].items()}
+    assert [o["start_x"] for o in opt] == [starts[n] for n in ("ome", "bpy", "dmbpy")], "not started at the Os(II) minimum"
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    assert len(sp) == 2 and all(kw["charge"] == 2 and kw["spin"] == 1 for kw, _ in sp), sp
+    for n in ("bpy", "dmbpy"):
+        c, s = rec["complexes"][n], src["complexes"][n]
+        assert any(abs(sx - c["geometry_os3_relaxed"]["atoms"][1][1][0]) < 1e-12 for _, sx in sp), n
+        assert c["dE_red_adiabatic_eV"] == pytest.approx((s["os2"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * m.HARTREE_TO_EV)
+        assert c["lambda_os3_meV"] == pytest.approx((s["os3"]["E_total_Ha"] - c["os3"]["E_total_Ha"]) * m.HARTREE_TO_EV * 1e3)
+    ome = rec["complexes"]["ome"]
+    assert "dE_red_adiabatic_eV" not in ome and "os3" not in ome and not ome["geometry_os3_relaxed"]["info"]["converged"]
+    assert [(p["x"], p["ref"]) for p in rec["vs_vertical"]["pairs"]] == [("dmbpy", "bpy")]
+    assert set(rec["vs_vertical"]["point_shift_eV"]) == {"bpy", "dmbpy"}
+    # the re-run: converged points reused (no optimiser, no SCF); the failed one restarts from ITS saved geometry
+    saved_x = ome["geometry_os3_relaxed"]["atoms"][1][1][0]
+    sp.clear()
+    opt.clear()
+    nonconv.clear()
+    m.main_relaxed_os3(["ome", "bpy", "dmbpy"])
+    assert len(opt) == 1 and abs(opt[0]["start_x"] - saved_x) < 1e-12, "the re-run did not restart from the saved geometry"
+    assert len(sp) == 1, sp
+    # a restart whose first SCF is not the saved geometry's own energy is refused: a plain start there may land in
+    # another doublet with a clean <S²> and bias λ_III silently (run-path adversary, 2026-10-13)
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    b = rec["complexes"]["bpy"]
+    b["geometry_os3_partial"] = {"atoms": b.pop("geometry_os3_relaxed")["atoms"], "steps": 1, "E_min_Ha": -1.0,
+                                 "restarted_from": None}
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    with pytest.raises(SystemExit, match="step 0"):
+        m.main_relaxed_os3(["bpy"])
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("bpy")
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    # refusals
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("dmbpy")
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    bad = json.loads(json.dumps(src))
+    bad["complexes"]["dmbpy"]["geometry_os2_relaxed"]["info"]["converged"] = False
+    guarded["OUT_RELAXED"].write_text(json.dumps(bad))
+    opt.clear()
+    with pytest.raises(SystemExit, match="no accepted relaxed Os"):
+        m.main_relaxed_os3(["dmbpy"])
+    assert opt == [], "a point without a relaxed Os(II) reached the optimiser"
+    guarded["OUT_RELAXED"].write_text(json.dumps(src))
+    ev["dmbpy"] += 1e-3   # step 0 is not the vertical Os(III): another state or protocol
+    with pytest.raises(SystemExit, match="step 0"):
+        m.main_relaxed_os3(["dmbpy"])
+    ev["dmbpy"] -= 1e-3
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("dmbpy", None)
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    s2_bad.add("dmbpy")
+    with pytest.raises(SystemExit, match="S²"):
+        m.main_relaxed_os3(["dmbpy"])
+    s2_bad.clear()
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("dmbpy", None)
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+
+    def slip(atoms, charge, spin, label="", maxsteps=0, conv_params=None, on_step=None, **protocol):
+        on_step([(e, np.asarray(x, float) * 0.529177) for e, x in atoms],
+                [{"E_Ha": ev["dmbpy"], "grad_max_Ha_bohr": 0.0, "s2": 0.755}])
+        raise AssertionError("the keeper should have refused the units slip")
+    monkeypatch.setattr(m, "dft_optimize", slip)
+    with pytest.raises(SystemExit, match="units slip"):
+        m.main_relaxed_os3(["dmbpy"])
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("dmbpy", None)
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    monkeypatch.setattr(m, "dft_optimize", fake_opt)
+    monkeypatch.setattr(m, "dft_singlepoint", lambda atoms, **kw: {**fake_sp(atoms, **kw), "E_total_Ha": 0.0})
+    m.main_relaxed_os3(["dmbpy", "bpy"])   # a single point off the last step is refused, recorded, and the run goes on
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    c = rec["complexes"]["dmbpy"]
+    assert "os3" not in c and "dE_red_adiabatic_eV" not in c and "higher state" in c["os3_refused"]
+    assert "os3_refused" in rec["complexes"]["bpy"], "the refusal stopped the next point"
+    # the Os(II) start moved: the Os(III) record built on the old one is discarded, not reused
+    moved_src = json.loads(json.dumps(src))
+    moved_src["complexes"]["bpy"]["os2"]["E_total_Ha"] += 1e-4
+    guarded["OUT_RELAXED"].write_text(json.dumps(moved_src))
+    monkeypatch.setattr(m, "dft_singlepoint", fake_sp)
+    opt.clear()
+    m.main_relaxed_os3(["bpy"])
+    assert len(opt) == 1, "an Os(III) geometry relaxed from another Os(II) start was reused"
+    assert {k: v.read_text() for k, v in guarded.items() if k not in ("OUT_RELAXED3", "OUT_RELAXED")} == {
+        k: v for k, v in before.items() if k != "OUT_RELAXED"}
+
+
 def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):
     """The real `dft_optimize` with geomeTRIC stubbed (no SCF): what it hands the optimiser and what it returns — the
     run-path adversary (2026-10-12) found it never executed by any test.
@@ -743,7 +893,9 @@ def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):
         mol = method.mol.copy()
         for e in (-76.0, -76.2, -76.1):   # the lowest-energy step is the second
             mol.set_geom_(mol.atom_coords() * (1.0 + 0.01 * len(kept)), unit="Bohr")
-            callback({"mol": mol, "energy": e, "gradients": np.full((3, 3), 1e-3), "g_scanner": method})
+            gs = method if not (seen.get("unconv") and e == -76.2) else types.SimpleNamespace(
+                grid_response=True, converged=False, base=method.base)   # PySCF calls back, THEN raises on a failed SCF
+            callback({"mol": mol, "energy": e, "gradients": np.full((3, 3), 1e-3), "g_scanner": gs})
         if seen.get("fail"):
             raise RuntimeError("Nuclear gradients of stub not converged")
         return True, mol
@@ -767,6 +919,12 @@ def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):
                                        max_cycle=400, on_step=lambda g, tr: kept.append((g, list(tr))))
     assert not info["converged"] and "not converged" in info["error"] and info["returned"] == "lowest-energy step 2"
     assert abs(float(out[1][1][1]) - 0.76 * 1.0 * 1.01) < 1e-6, "not the lowest-energy step's geometry"
+    seen["unconv"] = True   # the second step's SCF failed: it is recorded, but neither the best nor the keeper's
+    kept.clear()
+    out, info = dft_utils.dft_optimize(atoms, charge=0, spin=0, maxsteps=7, conv_params=conv, conv_tol=1e-8,
+                                       max_cycle=400, on_step=lambda g, tr: kept.append((g, list(tr))))
+    assert [t["scf_converged"] for t in info["trajectory"]] == [True, False, True] and len(kept) == 2
+    assert info["returned"] == "lowest-energy step 3", "an unconverged step became the restart point"
 
 
 def test_21e_relax_conv_keys_reach_geomeTRIC():

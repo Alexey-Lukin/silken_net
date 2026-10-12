@@ -10,7 +10,8 @@ the proton is treated thermodynamically, and the anode reorganisation energy is 
 physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
 rule** for the osmium mediator gives a design handle that is predictive in direction — a ωB97X/def2-TZVP
 cross-check keeps its donor plateau and makes its slope ≈15 % shallower, and relaxing the osmium(II) geometry makes
-its donor part 21 % steeper, so the rule's magnitude carries both uncertainties — and rationalises the
+its three donor points 21 % steeper and the pairs of the same core closer to experiment, so the magnitude of its
+donor part rests on the geometry as well as the functional — and rationalises the
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a
 clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with the enzyme's T1 site oriented
