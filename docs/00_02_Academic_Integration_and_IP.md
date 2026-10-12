@@ -307,7 +307,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | Етап | Дія | Власник |
 |---|---|---|
 | 1 | Prior-art **query-set** готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); самі пошуки ще НЕ прогнані, hit-лог порожній, висновок умовний | 👤 residual (перекласифіковано з 🤖 — прогін іде через TISC) → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 |
-| 2 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) — **подано 2026-10-04**; запис з'явиться після схвалення bepress → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 | 👤 + 🤖 |
+| 2 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) — **опубліковано 2026-10-06** (подано 2026-10-04): https://www.tdcommons.org/dpubs_series/12006; лишилась звірка текстового шару опублікованого PDF → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 | 👤 + 🤖 |
 | 3 | Заявка на ™ (прямий повірений УкрНОІВІ) — **після** розкриття, не перед ним (присуд ↓; режими юридично незалежні) | 👤 повірений |
 | 4 | UA-юр-review (господарник TBD + крипто/IP-юрист; вхід — Аблязов; адресатів крипто-юриста обрано 2026-09-26) | 👤 |
 | 5 | Депонування препринту Статті 1 — це й є її публікація (вже unblocked — publish-to-protect; маршрут — §2.1) | 👤 |

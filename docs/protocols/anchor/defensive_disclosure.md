@@ -4,7 +4,8 @@
 > **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-10-04
 > **First published on 2026-10-04:** §2.1 and §3.1 in full, and every passage or table entry marked
 > «added 2026-10-04» or «corrected 2026-10-04».
-> **Status:** disclosure-ready for submission to Technical Disclosure Commons.
+> **Status:** published on Technical Disclosure Commons on 2026-10-06 (submitted 2026-10-04, printed from
+> commit `5bd8636f5` of this file) — https://www.tdcommons.org/dpubs_series/12006, under CC BY-SA 4.0.
 >
 > **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
 > published **as prior art**. The goal is the opposite of a patent: to place the invention in the public
@@ -414,7 +415,9 @@ they constitute an enabling publication of the combination described in §2 and 
 ## 5. Publication anchors
 
 - **Technical Disclosure Commons** — a no-fee defensive-publication venue whose records are indexed and
-  consulted by patent offices.
+  consulted by patent offices. This disclosure: «Defensive Disclosure — SilkenNet Self-Powered Tree-Health
+  Monitor (Prior Art)», Defensive Publications Series, published 2026-10-06 —
+  https://www.tdcommons.org/dpubs_series/12006.
 - **The public SilkenNet git repository** — this file, with a verifiable commit date.
 - **A preprint of Article 1** ([`00_02 §2.1`](../../00_02_Academic_Integration_and_IP.md)) — **planned, not
   yet deposited**: a computational study of the cell's electron-transfer energetics, to be deposited on
