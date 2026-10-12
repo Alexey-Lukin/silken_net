@@ -654,7 +654,7 @@ RSpec.describe Tracker::Dashboard do
     md = <<~MD
       ## §07a · Академічна інтеграція
       #### 🌿 UNI.13a — emoji-prefixed item
-      - **P1** · 👤 · → `00_02 §2.2`
+      - **P1** · 👤 · → `00_02 §2.1`
     MD
     expect(described_class.parse(md).map(&:id)).to contain_exactly("UNI.13a")
   end
