@@ -900,9 +900,9 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 |------------|---------|----------|-------------|
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
 | ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | — (SPI/DMA-оптимізація — [`00_07` E.9](00_07_Action_Plan_Tracker), дім DMA — [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) |
-| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
+| Калібрувальний датасет з dawn/dusk записами Черкаського бору | — (⏸ носія немає — пʼєзо знято; можливий носій ділянки — мікрофон Королеви) | [`00_07` UNI.13a](00_07_Action_Plan_Tracker) (архів — рецепт відродження) · HW.52 | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk — опційний апгрейд | — (self-owned: пошук параметрів — машинна робота; партнера знято ⚖️ 2026-09-26) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) (Біо-хаб — ground truth) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo) на локальній машині — зовнішнього кластера немає; питання compute виникне лише зі зростанням датасету |
-| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | — (наш NDVI-адаптер і наша статистика; ⏸ разом із мікро-сигналом — пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | [`00_07` E.14](00_07_Action_Plan_Tracker) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA |
+| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | — (наш NDVI-адаптер і наша статистика; ⏸ разом із мікро-сигналом — пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | [`00_07` E.14](00_07_Action_Plan_Tracker) (архів) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA |
 | Статистика розподілів `fauna_activity_index` між ділянками | — (наша; ⏸ — даних немає: пʼєзо знято, [`02_01 §6`](02_01_Hardware_Architecture_and_BOM)) | — | ANOVA dawn/dusk peak amplitude між ландшафтами |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
@@ -915,7 +915,7 @@ TRL 6 → 7  (поточний, FW.4 + FW.25):
     (Path A — без DSP; Path B — після інтеграції FFT+Mel; Path C — TFLM frontend op)
   - Верифікувати TENSOR_ARENA + RAM бюджет per chosen path
 
-TRL 7 → 8  (Mongabay pivot, blocked by the soundscape dataset — UNI.13a):
+TRL 7 → 8  (Mongabay pivot, blocked by the soundscape dataset — no carrier: UNI.13a §🗄️, HW.52):
   - Калібрувальний датасет dawn/dusk (Черкаський бір)
   - Re-train модель → 5-class (silence/wind/cavitation/chainsaw/fauna)
     — для fauna class B/C критично кращі за A
