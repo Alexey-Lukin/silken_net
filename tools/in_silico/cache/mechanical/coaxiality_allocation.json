@@ -1,0 +1,900 @@
+{
+  "question": "00_07 HW.34 — what a channel-to-root misalignment costs the bus root once its static bending is a MEAN stress, so that the coaxiality NUMBER can be allocated (⚖️ 2026-10-12 exception to the crown pause)",
+  "model": "Soderberg: 1/SF = σ_a/σ_e + σ_m/σ_y; k_break_even = σ_a / (σ_e·(1/SF_target − σ_m/σ_y))",
+  "inputs": {
+    "script68_cache": "tools/in_silico/cache/mechanical/bus_contact_equilibrium.json",
+    "endurance": "script 55 endurance_MPa, welded branch (WROUGHT_DERATE), ratified ratio",
+    "endurance_over_yield": 0.4,
+    "sf_target": 2.0,
+    "smallest_swept_play_um": 21.17
+  },
+  "by_geometry": {
+    "shipped — the whole lock shank (HW.26 G1)": {
+      "amplitude_MPa": 24.51,
+      "amplitude_zero_interference_MPa": 23.78,
+      "amplitude_is": "upper end of 68's coaxial bracket at the worst swept µ, worst over the six plays (Ti-bore stop)",
+      "mean_is": "68's rigid-wall static root stress, worst over the six plays",
+      "by_alloy": {
+        "Ti-15Zr": {
+          "yield_MPa": 950.0,
+          "endurance_MPa": 380.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 15.504,
+              "k_break_even": 0.129
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 15.504,
+              "k_break_even": 0.129
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 15.504,
+              "k_break_even": 0.129
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 15.504,
+              "k_break_even": 0.129
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 15.014,
+              "k_break_even": 0.1295
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 14.443,
+              "k_break_even": 0.1302
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 13.404,
+              "k_break_even": 0.1317
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 12.504,
+              "k_break_even": 0.1331
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 10.077,
+              "k_break_even": 0.1386
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 8.416,
+              "k_break_even": 0.1447
+            }
+          ]
+        },
+        "beta-Ti-13Nb-13Zr": {
+          "yield_MPa": 900.0,
+          "endurance_MPa": 360.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.688,
+              "k_break_even": 0.1362
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.688,
+              "k_break_even": 0.1362
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.688,
+              "k_break_even": 0.1362
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.688,
+              "k_break_even": 0.1362
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 14.224,
+              "k_break_even": 0.1368
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 13.683,
+              "k_break_even": 0.1375
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 12.698,
+              "k_break_even": 0.1391
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 11.846,
+              "k_break_even": 0.1408
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 9.547,
+              "k_break_even": 0.1469
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 7.973,
+              "k_break_even": 0.1538
+            }
+          ]
+        },
+        "Ti-6Al-4V": {
+          "yield_MPa": 880.0,
+          "endurance_MPa": 352.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.361,
+              "k_break_even": 0.1393
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.361,
+              "k_break_even": 0.1393
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.361,
+              "k_break_even": 0.1393
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 14.361,
+              "k_break_even": 0.1393
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 13.908,
+              "k_break_even": 0.1399
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 13.379,
+              "k_break_even": 0.1407
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 12.416,
+              "k_break_even": 0.1424
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 11.583,
+              "k_break_even": 0.1441
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 9.334,
+              "k_break_even": 0.1506
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 7.796,
+              "k_break_even": 0.1578
+            }
+          ]
+        },
+        "Ti-6Al-7Nb": {
+          "yield_MPa": 850.0,
+          "endurance_MPa": 340.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 13.872,
+              "k_break_even": 0.1442
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 13.872,
+              "k_break_even": 0.1442
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 13.872,
+              "k_break_even": 0.1442
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 13.872,
+              "k_break_even": 0.1442
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 13.433,
+              "k_break_even": 0.1449
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 12.923,
+              "k_break_even": 0.1457
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 11.993,
+              "k_break_even": 0.1475
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 11.188,
+              "k_break_even": 0.1493
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 9.016,
+              "k_break_even": 0.1563
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 7.53,
+              "k_break_even": 0.1641
+            }
+          ]
+        },
+        "CP-Ti-Gr4": {
+          "yield_MPa": 480.0,
+          "endurance_MPa": 192.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.834,
+              "k_break_even": 0.2553
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.834,
+              "k_break_even": 0.2553
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.834,
+              "k_break_even": 0.2553
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.834,
+              "k_break_even": 0.2553
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 7.586,
+              "k_break_even": 0.2575
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 7.298,
+              "k_break_even": 0.2602
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 6.772,
+              "k_break_even": 0.266
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 6.318,
+              "k_break_even": 0.272
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 5.091,
+              "k_break_even": 0.296
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 4.252,
+              "k_break_even": 0.3252
+            }
+          ]
+        },
+        "Ta": {
+          "yield_MPa": 345.0,
+          "endurance_MPa": 138.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 5.63,
+              "k_break_even": 0.3552
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 5.63,
+              "k_break_even": 0.3552
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 5.63,
+              "k_break_even": 0.3552
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 5.63,
+              "k_break_even": 0.3552
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 2.0,
+              "sf_wire": 5.452,
+              "k_break_even": 0.3594
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 4.5,
+              "sf_wire": 5.245,
+              "k_break_even": 0.3647
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 9.6,
+              "sf_wire": 4.868,
+              "k_break_even": 0.3762
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 14.7,
+              "sf_wire": 4.541,
+              "k_break_even": 0.3883
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 33.0,
+              "sf_wire": 3.66,
+              "k_break_even": 0.4392
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 51.6,
+              "sf_wire": 3.056,
+              "k_break_even": 0.5068
+            }
+          ]
+        }
+      }
+    },
+    "lock window, shallow end": {
+      "amplitude_MPa": 19.69,
+      "amplitude_zero_interference_MPa": 19.1,
+      "amplitude_is": "upper end of 68's coaxial bracket at the worst swept µ, worst over the six plays (Ti-bore stop)",
+      "mean_is": "68's rigid-wall static root stress, worst over the six plays",
+      "by_alloy": {
+        "Ti-15Zr": {
+          "yield_MPa": 950.0,
+          "endurance_MPa": 380.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 19.299,
+              "k_break_even": 0.1036
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 19.299,
+              "k_break_even": 0.1036
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 19.299,
+              "k_break_even": 0.1036
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 19.299,
+              "k_break_even": 0.1036
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 18.803,
+              "k_break_even": 0.1039
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 18.191,
+              "k_break_even": 0.1043
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 17.079,
+              "k_break_even": 0.105
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 16.095,
+              "k_break_even": 0.1058
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 13.451,
+              "k_break_even": 0.1085
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 11.387,
+              "k_break_even": 0.1117
+            }
+          ]
+        },
+        "beta-Ti-13Nb-13Zr": {
+          "yield_MPa": 900.0,
+          "endurance_MPa": 360.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 18.283,
+              "k_break_even": 0.1094
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 18.283,
+              "k_break_even": 0.1094
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 18.283,
+              "k_break_even": 0.1094
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 18.283,
+              "k_break_even": 0.1094
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 17.813,
+              "k_break_even": 0.1097
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 17.233,
+              "k_break_even": 0.1101
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 16.18,
+              "k_break_even": 0.111
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 15.248,
+              "k_break_even": 0.1118
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 12.743,
+              "k_break_even": 0.1149
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 10.788,
+              "k_break_even": 0.1184
+            }
+          ]
+        },
+        "Ti-6Al-4V": {
+          "yield_MPa": 880.0,
+          "endurance_MPa": 352.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.877,
+              "k_break_even": 0.1119
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.877,
+              "k_break_even": 0.1119
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.877,
+              "k_break_even": 0.1119
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.877,
+              "k_break_even": 0.1119
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 17.417,
+              "k_break_even": 0.1122
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 16.85,
+              "k_break_even": 0.1126
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 15.82,
+              "k_break_even": 0.1135
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 14.909,
+              "k_break_even": 0.1144
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 12.46,
+              "k_break_even": 0.1176
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 10.548,
+              "k_break_even": 0.1213
+            }
+          ]
+        },
+        "Ti-6Al-7Nb": {
+          "yield_MPa": 850.0,
+          "endurance_MPa": 340.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.268,
+              "k_break_even": 0.1158
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.268,
+              "k_break_even": 0.1158
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.268,
+              "k_break_even": 0.1158
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 17.268,
+              "k_break_even": 0.1158
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 16.823,
+              "k_break_even": 0.1162
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 16.276,
+              "k_break_even": 0.1166
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 15.281,
+              "k_break_even": 0.1176
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 14.401,
+              "k_break_even": 0.1186
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 12.035,
+              "k_break_even": 0.122
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 10.189,
+              "k_break_even": 0.126
+            }
+          ]
+        },
+        "CP-Ti-Gr4": {
+          "yield_MPa": 480.0,
+          "endurance_MPa": 192.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 9.751,
+              "k_break_even": 0.2051
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 9.751,
+              "k_break_even": 0.2051
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 9.751,
+              "k_break_even": 0.2051
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 9.751,
+              "k_break_even": 0.2051
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 9.5,
+              "k_break_even": 0.2062
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 9.191,
+              "k_break_even": 0.2077
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 8.629,
+              "k_break_even": 0.2107
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 8.132,
+              "k_break_even": 0.2138
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 6.796,
+              "k_break_even": 0.2252
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 5.754,
+              "k_break_even": 0.2392
+            }
+          ]
+        },
+        "Ta": {
+          "yield_MPa": 345.0,
+          "endurance_MPa": 138.0,
+          "by_offset": [
+            {
+              "offset_um": 0,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.009,
+              "k_break_even": 0.2854
+            },
+            {
+              "offset_um": 10,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.009,
+              "k_break_even": 0.2854
+            },
+            {
+              "offset_um": 15,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.009,
+              "k_break_even": 0.2854
+            },
+            {
+              "offset_um": 20,
+              "mean_MPa": 0.0,
+              "sf_wire": 7.009,
+              "k_break_even": 0.2854
+            },
+            {
+              "offset_um": 25,
+              "mean_MPa": 1.3,
+              "sf_wire": 6.828,
+              "k_break_even": 0.2875
+            },
+            {
+              "offset_um": 30,
+              "mean_MPa": 3.0,
+              "sf_wire": 6.606,
+              "k_break_even": 0.2904
+            },
+            {
+              "offset_um": 40,
+              "mean_MPa": 6.4,
+              "sf_wire": 6.202,
+              "k_break_even": 0.2964
+            },
+            {
+              "offset_um": 50,
+              "mean_MPa": 9.8,
+              "sf_wire": 5.845,
+              "k_break_even": 0.3026
+            },
+            {
+              "offset_um": 75,
+              "mean_MPa": 21.4,
+              "sf_wire": 4.885,
+              "k_break_even": 0.3258
+            },
+            {
+              "offset_um": 100,
+              "mean_MPa": 34.2,
+              "sf_wire": 4.135,
+              "k_break_even": 0.3559
+            }
+          ]
+        }
+      }
+    }
+  },
+  "branches": {
+    "tight": {
+      "radial_offset_budget_um": 20,
+      "iso1101_coaxiality_zone_mm": 0.04,
+      "by_geometry": {
+        "shipped — the whole lock shank (HW.26 G1)": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 0.0,
+          "sf_wire_binding": 5.63,
+          "k_break_even_binding": 0.3552,
+          "k_break_even_max_over_alloys": 0.3552
+        },
+        "lock window, shallow end": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 0.0,
+          "sf_wire_binding": 7.009,
+          "k_break_even_binding": 0.2854,
+          "k_break_even_max_over_alloys": 0.2854
+        }
+      }
+    },
+    "loose_50": {
+      "radial_offset_budget_um": 50,
+      "iso1101_coaxiality_zone_mm": 0.1,
+      "by_geometry": {
+        "shipped — the whole lock shank (HW.26 G1)": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 14.7,
+          "sf_wire_binding": 4.541,
+          "k_break_even_binding": 0.3883,
+          "k_break_even_max_over_alloys": 0.3883
+        },
+        "lock window, shallow end": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 9.8,
+          "sf_wire_binding": 5.845,
+          "k_break_even_binding": 0.3026,
+          "k_break_even_max_over_alloys": 0.3026
+        }
+      }
+    },
+    "loose_100": {
+      "radial_offset_budget_um": 100,
+      "iso1101_coaxiality_zone_mm": 0.2,
+      "by_geometry": {
+        "shipped — the whole lock shank (HW.26 G1)": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 51.6,
+          "sf_wire_binding": 3.056,
+          "k_break_even_binding": 0.5068,
+          "k_break_even_max_over_alloys": 0.5068
+        },
+        "lock window, shallow end": {
+          "binding_alloy": "Ta",
+          "mean_MPa": 34.2,
+          "sf_wire_binding": 4.135,
+          "k_break_even_binding": 0.3559,
+          "k_break_even_max_over_alloys": 0.3559
+        }
+      }
+    }
+  },
+  "controls": {
+    "zero_mean_sf_equals_script55": {
+      "alloy": "Ta",
+      "sf": 5.803,
+      "script55": 5.8
+    },
+    "monotone_in_offset": true,
+    "no_mean_inside_smallest_play": true
+  },
+  "not_modelled": {
+    "goodman": "no ultimate strength per alloy in the tree, so the yield line (Soderberg) is used — conservative",
+    "weld_residual_tension": "a mean stress this file does not carry; it raises every k_break_even row",
+    "weld_toe_notch_and_bead": "outside, as everywhere in the tree (01_01 §1.4)",
+    "haz_yield": "the seam row divides the mean by the wire's yield; a lower heat-affected-zone yield raises it",
+    "tightening_cost": "machining and inspection cost of a tighter allocation — the other side of the choice",
+    "compliant_mouth": "the mean is a rigid-wall upper bound under an offset"
+  }
+}

@@ -1775,6 +1775,39 @@ def test_bus_contact_equilibrium():
         assert upper55 == side["equilibrium_upper_end_MPa_at_worst_mu"], "scripts 55 and 68 drifted apart on the upper end"
 
 
+def test_coaxiality_allocation():
+    """Script 86 (HW.34, ⚖️ 2026-10-12 exception to the crown pause): a channel offset priced as a Soderberg MEAN.
+
+    CAN catch: the zero-mean SF drifting off script 55's one quantity; a mean appearing inside the smallest play; a row
+    that stops being monotone in the offset (mean up, SF down, break-even k up); a branch whose budget is not the zone's
+    half; a break-even k recomputed by hand that disagrees with the formula on the cached inputs. CANNOT catch: whether
+    Soderberg, the upper-end amplitude or the rigid-wall mean are the right choices — the docstring names each one.
+    """
+    path = MECHANICAL / "coaxiality_allocation.json"
+    if not path.exists():
+        pytest.skip("coaxiality_allocation.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    ctl = d["controls"]["zero_mean_sf_equals_script55"]
+    assert abs(ctl["sf"] - ctl["script55"]) <= 0.01
+    target = d["inputs"]["sf_target"]
+    for geo, g in d["by_geometry"].items():
+        assert g["amplitude_MPa"] >= g["amplitude_zero_interference_MPa"], geo   # the worst play, never a friendlier one
+        for name, a in g["by_alloy"].items():
+            rows = a["by_offset"]
+            for r in rows:
+                if r["offset_um"] < d["inputs"]["smallest_swept_play_um"]:
+                    assert r["mean_MPa"] == 0.0, (geo, name, r)
+                sf = 1.0 / (g["amplitude_MPa"] / a["endurance_MPa"] + r["mean_MPa"] / a["yield_MPa"])
+                assert abs(sf - r["sf_wire"]) <= 0.001, (geo, name, r)
+                room = 1.0 / target - r["mean_MPa"] / a["yield_MPa"]
+                if r["k_break_even"] is not None:
+                    assert abs(g["amplitude_MPa"] / (a["endurance_MPa"] * room) - r["k_break_even"]) <= 1e-4, (geo, name, r)
+            for x, y in zip(rows, rows[1:], strict=False):
+                assert y["mean_MPa"] >= x["mean_MPa"] and y["sf_wire"] <= x["sf_wire"], (geo, name, y)
+    for b in d["branches"].values():
+        assert b["iso1101_coaxiality_zone_mm"] == round(2 * b["radial_offset_budget_um"] / 1000.0, 3)
+
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 

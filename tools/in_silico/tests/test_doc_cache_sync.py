@@ -957,6 +957,15 @@ CHECKS = [
           ("Ta", rf"Ta \(λ57, benchmark\) \*\*{N}\*\*",
            lambda d: next(r for r in d["per_alloy_monolithic_bus"]["rows"] if r["alloy"] == "Ta")["t_anode_C"], 0.005),
       )],
+    # ── HW.34 coaxiality priced as a MEAN stress (script 86, ⚖️ 2026-10-12 exception to the crown pause) ──
+    # ⛔ The three branches ARE the presentation the founder decides on; a branch row that drifted from the cache would
+    #    hand the verdict a price nobody computed.
+    *[(f"coaxiality, {branch} {what} → coaxiality_allocation.json", SUMMARY,
+       rf"\| {re.escape(label)} \|" + "".join(r" [^|]*\|" for _ in range(k)) + rf" \*\*{N}\*\* \|",
+       "mechanical/coaxiality_allocation.json", lambda d, b=branch, key=key: d["branches"][b]["by_geometry"][next(iter(d["by_geometry"]))][key], tol)
+      for branch, label in (("tight", "tight ⌀0.04"), ("loose_50", "loose ⌀0.10"), ("loose_100", "loose ⌀0.20"))
+      for k, (what, key, tol) in enumerate((("mean", "mean_MPa", 0.05), ("wire SF", "sf_wire_binding", 0.005),
+                                           ("seam k", "k_break_even_binding", 0.0005)))],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield
