@@ -92,7 +92,7 @@ description: "Use when working on the silken_net legal / business / academic-par
 | Доступ до ділянки лісу під НДР | `docs/protocols/outreach/forest_access_application.md` — ⚖️ 2026-09-24: заявник — УСТАНОВА (кафедра ЧДТУ, запасний ЧНУ), не ми; ділянку під дослідження дають установі |
 | **Стан, рішення, блокери** | `00_07` (§00b · §02c · ID із шапки артефакту) + шапка `🚦 Critical Path` / `⛓️ Гейт-кластери` |
 
-Суміжне, що виглядає як цей домен, але живе інде: метрологія/ЗВТ → `00_07` STK.5 (у §05) · slashing-бізнес → [`05_05`](../../../docs/05_05_Slashing_and_Risk_Policy.md) · культурний шар → `docs/cultural_layer.md`.
+Суміжне, що виглядає як цей домен, але живе інде: метрологія/ЗВТ → `00_07` STK.5 (у §05) · slashing-бізнес → [`05_05`](../../../docs/05_05_Slashing_and_Risk_Policy.md).
 
 ## Хто на яке питання відповідає
 

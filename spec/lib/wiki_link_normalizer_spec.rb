@@ -14,7 +14,7 @@ RSpec.describe WikiLinkNormalizer do
       docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md
       tools/in_silico/README.md
       .github/labels.yml
-      docs/images/marchuk_trees.png
+      docs/images/fixture.png
     ].to_set
   end
 
@@ -106,9 +106,9 @@ RSpec.describe WikiLinkNormalizer do
 
   describe "images" do
     it "rewrites to images/<basename> and records the source for carry-over" do
-      res = normalizer.call("![Marchuk](images/marchuk_trees.png)")
-      expect(res.body).to eq("![Marchuk](images/marchuk_trees.png)")
-      expect(res.images).to eq(%w[docs/images/marchuk_trees.png])
+      res = normalizer.call("![Coin](images/fixture.png)")
+      expect(res.body).to eq("![Coin](images/fixture.png)")
+      expect(res.images).to eq(%w[docs/images/fixture.png])
     end
 
     it "leaves an image untouched and warns when the file is missing" do
@@ -165,9 +165,9 @@ RSpec.describe WikiLinkNormalizer do
 
   describe "de-duplication" do
     it "reports each carried image and unresolved link once" do
-      md = "![x](images/marchuk_trees.png) ![x](images/marchuk_trees.png) [d](../DEPLOYMENT.md) [d](../DEPLOYMENT.md)"
+      md = "![x](images/fixture.png) ![x](images/fixture.png) [d](../DEPLOYMENT.md) [d](../DEPLOYMENT.md)"
       res = normalizer.call(md)
-      expect(res.images).to eq(%w[docs/images/marchuk_trees.png])
+      expect(res.images).to eq(%w[docs/images/fixture.png])
       expect(res.unresolved).to eq(%w[../DEPLOYMENT.md])
     end
   end
