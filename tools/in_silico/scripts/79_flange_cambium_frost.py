@@ -31,7 +31,8 @@ the canon dead-bark bracket at DBH 38), with an ENERGY BALANCE at its surface in
     and its use are read through Crawford & Duchon 1999, J. Appl. Meteor. 38:474, whose own calculated coefficients
     scatter around «the original B75 leading coefficient (1.24)»; with e in Pa the emissivity would exceed 1, which
     is the only reading `brutsaert_unit_check` excludes) and OVERCAST every hour (a sky radiating as a black body at
-    air temperature — no long-wave deficit at all). Real cloud — ERA5 cloud cover — is not in the tree.
+    air temperature — no long-wave deficit at all). Real cloud — ERA5 cover hour by hour — is a separate block
+    that mixes these ends by two forms (CLOUD_REGIMES, 2026-10-12); the four ends above are unchanged by it.
   • Sun — two ends: none, and ERA5 DIFFUSE on both columns through the same sky view F (no beam: under a crown or on
     a north face). Absorptance: bark ALPHA_BARK (ours — no bark absorptance in the tree), the fin ALPHA_FIN = the
     radome's specified ceiling α ≤ 0.5 (02_01 §5.2), applied to the band as well. Beam on a sunlit trunk face is not
@@ -62,9 +63,10 @@ DIRECTION OF EACH CHOICE, stated per quantity:
 CAN show: the shift of the daily cambium minimum under the flange against bark without it on frost days (calendar-day
 minima, the column has no day/night) over 30 winters — per sky end, sun end, coupling end, wind and bark side; its
 sign; which mechanism carries it; hours below a few isotherms.
-CANNOT show: injury — no frost-hardiness threshold for pine cambium is in the tree, so an isotherm count is not a
-dose (the same ceiling as `58`'s gate); real cloud cover and beam sun (the sign at the site is a mixture of the
-ends); the real radome↔flange coupling (bayonet rim, O-ring and cavity air — not measured); snow or rime; a forecast
+CANNOT show: injury — the regional threshold (canon 01_04 §3.1) is not a dose-response, so an isotherm count is
+not a dose (the same ceiling as `58`'s gate); beam sun (it needs the mounting azimuth) and which long-wave form of
+cloud holds at the site (the real-cloud block weighs the ends by ERA5 cover through two forms that disagree under
+full cover); the real radome↔flange coupling (bayonet rim, O-ring and cavity air — not measured); snow or rime; a forecast
 of absolute minima — a run of weeks of sunless clear sky is the model's lower bound, below any ERA5 air hour; the
 capsule temperature for the EDLC floor of 00_07 HW.37 (this lump is fed by the bark, `71`'s is not).
 
@@ -72,7 +74,9 @@ Run:  python tools/in_silico/scripts/79_flange_cambium_frost.py      # a few min
 """
 from __future__ import annotations
 
+import gzip
 import importlib.util
+import io
 import json
 import math
 import sys
@@ -112,6 +116,34 @@ SENSITIVITY = (("sapwood_190mm", {"sapwood_mm": 190.0}),          # thin bark, s
                ("trunk_height_0.3m", {"trunk_l_m": 0.3}),
                ("capsule_h_c_as_bark", {"cap_hc_as_bark": True}))
 REFERENCE_HOUR = {"t_air_C": -10.0, "t_dew_C": -13.0}   # the mechanism's equilibria are read at one cold clear hour
+# ── Real cloud (2026-10-12, the HW.6 leg's «weights between the ends»): ERA5 total cloud cover hour by hour, through two
+# long-wave forms that bracket how cover turns into sky radiation — neither primary was reachable (AMS blocks the
+# client), so each is named with how it was read:
+#   «linear» — OUR construction: the script's two ends mixed by the cover, T_sky⁴ = c·T_air⁴ + (1 − c)·ε_clear·T_air⁴,
+#     i.e. the covered fraction radiates as the overcast end (a black body at air temperature) and the rest as the
+#     clear end; no primary — Herrero & Polo 2012 (Hydrol. Earth Syst. Sci. 16:3139, doi:10.5194/hess-16-3139-2012,
+#     open) describe Crawford & Duchon 1999's cloudy extension as «a simple linear relation» with a cloud measure taken
+#     from solar irradiance, but CD99's equation was not read here (AMS refused our client on 2026-10-12, though the
+#     Brutsaert coefficient above was read through CD99's open text earlier), so the form is not attributed to it.
+#   «B82» — Brutsaert 1982's factor (the primary is a book, not read) as printed in Herrero & Polo 2012, eq. 8:
+#     ε = ε_clear·(1 + C·N²), «C, an empirical factor dependent on the cloud types, originally set to 0.22», N a cloud
+#     index from 0 (clear) to 1 (overcast). With winter ε_clear (0.62–0.76) it stays short of 1 at full cover; in
+#     warmer, moister hours it can exceed 1, so the sky is clipped at a black body at air temperature.
+#   What the one measurement in hand says (H&P, one mountain station at 2500 m, DAYTIME data): under full cover the
+#     measured emissivity «clearly meet[s] at 1» — CD99's solar-based cloud measure never got there, B82 did only with
+#     C raised to 0.42, which H&P put down to mountains, where cloud's effect is «much more intense than in valley
+#     areas». So it favours any form that reaches 1 under full cover, at a mountain site, by day; at a 111 m valley cell
+#     at night neither form is favoured — they bracket.
+# ERA5's total cover stands in for both cloud measures — a role substitution, declared (data README): it counts thin
+# high cloud as cover, so the linear form treats more hours as a black-body sky than they are — a bias toward «colder».
+COLDER_BAND_K = 0.05           # a day counts as colder/warmer only beyond the timestep gate's shift tolerance
+COLD_DAY_C = -10.0             # «cold days»: bark without the flange below this — the tail an injury threshold sits in
+B82_C = 0.22
+CLOUD_REGIMES = (("cloud_linear_no_sun", "linear", False), ("cloud_linear_diffuse_sun", "linear", True),
+                 ("cloud_b82_no_sun", "b82", False), ("cloud_b82_diffuse_sun", "b82", True))
+SKY_CODE = {"clear": 0, "overcast": 1, "linear": 2, "b82": 3}
+CLOUD_FILE = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/hourly_cloud_1991_2020.csv.gz"
+WINTER_MONTHS = (11, 12, 1, 2, 3)
 
 
 def _load(name: str, file: str):
@@ -252,15 +284,37 @@ def verify_diurnal() -> float:
     return worst
 
 
+def _header(path) -> list:
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        return [fh.readline(), fh.readline()]
+
+
+def load_cloud(times) -> np.ndarray:
+    """ERA5 total cloud cover as a fraction, on the air file's clock (refused otherwise) — the same grid point and UTC
+    offset in the header, and the same hour labels."""
+    if _header(CLOUD_FILE) != _header(S71.DATA_FILE):
+        raise SystemExit("cloud file header (grid point · elevation · UTC offset) differs from the air file's")
+    with gzip.open(CLOUD_FILE, "rt", encoding="utf-8") as fh:
+        body = [ln for ln in fh if ln[:2] in ("ti", "19", "20")]
+    arr = np.genfromtxt(io.StringIO("".join(body[1:])), delimiter=",", dtype=None, encoding="utf-8", names=("time", "c"))
+    if not np.array_equal(arr["time"].astype(str), times):
+        raise SystemExit("cloud file is not on the air file's clock")
+    c = arr["c"].astype(float) / 100.0
+    if c.min() < 0.0 or c.max() > 1.0:
+        raise SystemExit(f"cloud cover outside 0–100 %: {c.min()}…{c.max()}")
+    return c
+
+
 def load_weather() -> dict:
     h = S71.load_hours()
     _, hd, _, _ = S74.load()
     if not np.array_equal(hd["time"], h["time"]):
         raise SystemExit("dew-point and air files are not on the same clock")
-    return {"time": h["time"], "t_air": h["t_air"], "u10": h["u10"], "dif": h["dif"], "t_dew": hd["td"]}
+    return {"time": h["time"], "t_air": h["t_air"], "u10": h["u10"], "dif": h["dif"], "t_dew": hd["td"],
+            "cloud": load_cloud(h["time"])}
 
 
-def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False):
+def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False, cloud=0.0):
     """Every column at once: H (W/m²K per area of bark under the column) and the sink temperature of the balance
     linearised around the current surface temperature t_s."""
     t_film = 0.5 * (t_s + t_air)
@@ -270,7 +324,12 @@ def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK
                                                      S71.h_forced(d_dome, u, t_film))
     h_c = np.where(cols["is_bark"], h_bark, h_cap)
     ts_k, ta_k = t_s + 273.15, t_air + 273.15
-    t_sky4 = np.where(cols["overcast"], ta_k ** 4, t_sky4_clear)
+    sky = cols["sky"]
+    t_sky4 = np.where(sky == SKY_CODE["overcast"], ta_k ** 4,
+                      np.where(sky == SKY_CODE["linear"], cloud * ta_k ** 4 + (1.0 - cloud) * t_sky4_clear,
+                               np.where(sky == SKY_CODE["b82"], np.minimum((1.0 + B82_C * cloud * cloud) * t_sky4_clear,
+                                                                            ta_k ** 4),
+                                        t_sky4_clear)))
     t_env4 = SKY_VIEW * t_sky4 + (1.0 - SKY_VIEW) * ta_k ** 4
     h_r = 4.0 * EPSILON * SIGMA * ts_k ** 3
     q0 = EPSILON * SIGMA * (ts_k ** 4 - t_env4)          # radiative loss at the current surface temperature
@@ -283,16 +342,16 @@ def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK
 def column_table(ar: dict, regimes=REGIMES, winds=WIND_K) -> tuple[dict, list]:
     """The columns of one bark side: per regime and wind — bark, decoupled, tied. Returns the per-column arrays the
     balance needs and the (regime, coupling, wind) label of each column."""
-    labels, is_bark, overcast, alpha, fin = [], [], [], [], []
-    for name, ovc, sun in regimes:
+    labels, is_bark, sky, alpha, fin = [], [], [], [], []
+    for name, kind, sun in regimes:   # `kind` — REGIMES' overcast flag, or CLOUD_REGIMES' sky form
         for k in winds:
             for cp in ("bark", *COUPLINGS):
                 labels.append((name, cp, k))
                 is_bark.append(cp == "bark")
-                overcast.append(ovc)
+                sky.append(SKY_CODE[kind] if isinstance(kind, str) else SKY_CODE["overcast" if kind else "clear"])
                 alpha.append((ALPHA_BARK if cp == "bark" else ALPHA_FIN) if sun else 0.0)
                 fin.append(1.0 if cp == "bark" else ar["fin_ratio"][cp])
-    cols = {"is_bark": np.array(is_bark), "overcast": np.array(overcast), "alpha": np.array(alpha),
+    cols = {"is_bark": np.array(is_bark), "sky": np.array(sky), "alpha": np.array(alpha),
             "fin": np.array(fin), "wind_k": np.array([lab[2] for lab in labels])}
     return cols, labels
 
@@ -313,7 +372,7 @@ def simulate(stack, probe_mm, wx, cols, substeps=SUBSTEPS, trunk_l_m=TRUNK_L_M, 
         for s in range(substeps):
             ta = t0 + (t1 - t0) * (s + 0.5) / substeps
             h_eff, t_sink = coefficients(t[0], ta, t_sky4, cols["wind_k"] * wx["u10"][hr], cols, wx["dif"][hr],
-                                         d_dome, trunk_l_m, cap_hc_as_bark)
+                                         d_dome, trunk_l_m, cap_hc_as_bark, wx["cloud"][hr] if "cloud" in wx else 0.0)
             t = march(ab, keep, gl, gr, z, t, h_eff, t_sink)
         cam[hr], surf[hr] = t[ic], t[0]
     return cam, surf
@@ -470,9 +529,82 @@ def main() -> int:
               f"{sens[name]['tied']['p95']:+.2f} · max {sens[name]['tied']['max']:+.2f} K "
               f"(base {base['shift_K']['median']:+.2f} · {base['shift_K']['p95']:+.2f} · {base['shift_K']['max']:+.2f})")
 
+    c_cols, c_labels = column_table(ar, CLOUD_REGIMES)
+    cloud_runs = []
+    winter_h = np.array([int(s[5:7]) in WINTER_MONTHS for s in times])
+    cloud_climate = {"winter_hours_median": round(float(np.median(wx["cloud"][winter_h])), 3),
+                     "winter_share_above_0.8": round(float(np.mean(wx["cloud"][winter_h] > 0.8)), 3),
+                     "winter_share_below_0.2": round(float(np.mean(wx["cloud"][winter_h] < 0.2)), 3)}
+    for side, b in (("thin", bark["thin_mm"]), ("thick", bark["thick_mm"])):
+        cam, _ = simulate(S78.layers(b), b + S58.T_PHLOEM, wx, c_cols)
+        m = daily_minima(cam, times)
+        month = np.array([int(times[(SPIN_UP_DAYS + d) * 24][5:7]) for d in range(m.shape[0])])
+        for name, _, _ in CLOUD_REGIMES:
+            for k in WIND_K:
+                jb = c_labels.index((name, "bark", k))
+                frost = m[:, jb] < FROST_DAY_C
+                cold = m[:, jb] < COLD_DAY_C
+                for cp in COUPLINGS:
+                    s = m[:, jb] - m[:, c_labels.index((name, cp, k))]
+                    by_month = {str(mo): {"frost_days": int(np.count_nonzero(frost & (month == mo))),
+                                          "median": round(float(np.median(s[frost & (month == mo)])), 2),
+                                          "colder_share": round(float(np.mean(s[frost & (month == mo)] > COLDER_BAND_K)), 3)}
+                                for mo in range(1, 13) if np.any(frost & (month == mo))}   # every month with a frost day
+                    cloud_runs.append({"regime": name, "coupling": cp, "wind_k": k, "bark_side": side, "bark_mm": b,
+                                       "shift_K": shift_stats(m, jb, c_labels.index((name, cp, k))),
+                                       "colder_share": round(float(np.mean(s[frost] > COLDER_BAND_K)), 3),
+                                       "warmer_share": round(float(np.mean(s[frost] < -COLDER_BAND_K)), 3),
+                                       "cold_days": {"days": int(np.count_nonzero(cold)),
+                                                     "median": round(float(np.median(s[cold])), 2) if np.any(cold) else None,
+                                                     "colder_share": round(float(np.mean(s[cold] > COLDER_BAND_K)), 3)
+                                                     if np.any(cold) else None},
+                                       "by_month": by_month})
+        print(f"  {side:<5s} bark {b:5.2f} mm done (real cloud)")
+    cloud_regimes = {name: summarise_regime(cloud_runs, name) for name, _, _ in CLOUD_REGIMES}
+    for name, _, _ in CLOUD_REGIMES:
+        for cp in COUPLINGS:
+            rows = [r for r in cloud_runs if r["regime"] == name and r["coupling"] == cp]
+            sh = [r["colder_share"] for r in rows]
+            cloud_regimes[name][cp]["colder_share_range"] = [min(sh), max(sh)]
+            cd = [r["cold_days"] for r in rows if r["cold_days"]["days"]]
+            cloud_regimes[name][cp]["cold_days"] = {
+                "days_range": [min(c["days"] for c in cd), max(c["days"] for c in cd)],
+                "median_K_range": [min(c["median"] for c in cd), max(c["median"] for c in cd)],
+                "colder_share_range": [min(c["colder_share"] for c in cd), max(c["colder_share"] for c in cd)]} if cd else None
+    print(f"  real cloud (ERA5, winter median cover {cloud_climate['winter_hours_median']:.2f}; "
+          f"> 0.8 in {cloud_climate['winter_share_above_0.8']:.0%} of winter hours, < 0.2 in "
+          f"{cloud_climate['winter_share_below_0.2']:.0%}) — median range · P95 max · max, K · share of frost days colder:")
+    for name, _, _ in CLOUD_REGIMES:
+        r = cloud_regimes[name]
+        print(f"    {name:<25s} " + "  ·  ".join(
+            f"{cp} {r[cp]['median_K_range'][0]:+.2f}…{r[cp]['median_K_range'][1]:+.2f} · {r[cp]['p95_K_max']:+.2f} · "
+            f"{r[cp]['max_K']:+.2f} · {r[cp]['colder_share_range'][0]:.0%}–{r[cp]['colder_share_range'][1]:.0%}"
+            for cp in COUPLINGS))
+        cdt = r["tied"]["cold_days"]
+        if cdt:
+            print(f"      cold days (bark < {COLD_DAY_C:g} °C, {cdt['days_range'][0]}–{cdt['days_range'][1]} d), tied: median "
+                  f"{cdt['median_K_range'][0]:+.2f}…{cdt['median_K_range'][1]:+.2f} K · colder "
+                  f"{cdt['colder_share_range'][0]:.0%}–{cdt['colder_share_range'][1]:.0%}")
+    for name in ("cloud_linear_no_sun", "cloud_b82_diffuse_sun"):
+        row = next(r for r in cloud_runs if (r["regime"], r["coupling"], r["wind_k"], r["bark_side"]) == (name, "tied", 0.0, "thin"))
+        print(f"    by month, {name}, tied, still, thin bark: " + " · ".join(
+            f"{mo}: {v['median']:+.2f} K ({v['colder_share']:.0%} colder, {v['frost_days']} d)" for mo, v in row["by_month"].items()))
+
     def word(lo, hi):
         return "warmer" if hi < 0.0 else ("colder" if lo > 0.0 else "either way")
     meds = {name: regimes[name]["tied"]["median_K_range"] for name, _, _ in REGIMES}
+
+    def share(name):
+        lo, hi = cloud_regimes[name]["tied"]["colder_share_range"]
+        return f"{lo:.0%}–{hi:.0%}"
+
+    def med(name):
+        lo, hi = cloud_regimes[name]["tied"]["median_K_range"]
+        return f"{lo:+.1f}…{hi:+.1f} K"
+
+    def cold(name):
+        c = cloud_regimes[name]["tied"]["cold_days"]
+        return "no cold days" if not c else f"{c['colder_share_range'][0]:.0%}–{c['colder_share_range'][1]:.0%}"
     upper = max((regimes[n]["tied"]["max_K"], n) for n, _, _ in REGIMES)
     text = (f"The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the "
             f"flange: the tied median is {meds['clear_no_sun'][0]:+.1f}…{meds['clear_no_sun'][1]:+.1f} K "
@@ -486,11 +618,19 @@ def main() -> int:
             f"{meds['clear_diffuse_sun'][0]:+.1f}…{meds['clear_diffuse_sun'][1]:+.1f} K, overcast "
             f"{meds['overcast_diffuse_sun'][0]:+.1f}…{meds['overcast_diffuse_sun'][1]:+.1f} K. The worst day of the four ends "
             f"is {upper[0]:+.1f} K colder ({upper[1]}, tied). Decoupled — the flange's band alone, "
-            f"{ar['fin_ratio']['decoupled']:.2f}× the ring — moves the same way with smaller medians. Beam sun on a trunk "
-            f"face, real cloud cover and the real coupling are not in the tree; 1D inflates the shift in both "
-            f"signs. An injury THRESHOLD now is: Shlapak et al. 2011 (Uman, Cherkasy obl.) measured a cambium "
-            f"damage index of 0.1 +/- 0.1 at -25 C and 0.2-0.65 at -35 C on dormant stone-fruit wood, i.e. the "
-            f"threshold sits NEAR this model's floor, not far below it -- canon docs/01_04 section 3.1.")
+            f"{ar['fin_ratio']['decoupled']:.2f}× the ring — moves the same way with smaller medians. Weighed by the "
+            f"site's real cloud (ERA5: winter median cover {cloud_climate['winter_hours_median']:.2f}, above 0.8 in "
+            f"{cloud_climate['winter_share_above_0.8']:.0%} of winter hours), the answer turns on how cover becomes sky "
+            f"radiation, and the one measurement in hand (a mountain station, by day) does not settle it for a valley cell "
+            f"at night: if full cover radiates as a black body at air temperature (the two ends mixed by the cover), the "
+            f"tied flange is colder on {share('cloud_linear_no_sun')} of frost days without sun and "
+            f"{share('cloud_linear_diffuse_sun')} with diffuse sun (median {med('cloud_linear_diffuse_sun')}); with "
+            f"Brutsaert 1982's factor at its original C {B82_C}, which leaves a fully covered winter sky short of a black "
+            f"body, on {share('cloud_b82_no_sun')} and {share('cloud_b82_diffuse_sun')}. On the cold days (bark below "
+            f"{COLD_DAY_C:g} °C), the tail an injury threshold sits in: {cold('cloud_linear_diffuse_sun')} colder under the "
+            f"first, {cold('cloud_b82_no_sun')} under the second without sun. Beam sun on a trunk face and the real "
+            f"coupling are not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its "
+            f"corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it.")
     print(f"\n  → {text}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -522,11 +662,17 @@ def main() -> int:
         "mechanism": mech,
         "runs": runs,
         "regimes": regimes,
+        "real_cloud": {"source": "ERA5 total cloud cover, data/era5_cherkasy/hourly_cloud_1991_2020.csv.gz",
+                       "forms": {"linear": "ours — the two sky ends mixed by the cover",
+                                 "b82": f"Brutsaert 1982 as printed in Herrero & Polo 2012 eq. 8, C = {B82_C}"},
+                       "winter_months": list(WINTER_MONTHS), "climate": cloud_climate,
+                       "regimes": cloud_regimes, "runs": cloud_runs},
         "sensitivity_thin_bark_still_air_clear_no_sun": sens,
         "verdict": {"tied_median_K_range_by_regime": meds, "tied_max_K": upper[0], "tied_max_regime": upper[1],
                     "text": text},
-        "ceilings": ["the sky and the sun are bracketed by their ends — real cloud cover (ERA5) and beam sun on a trunk "
-                     "face are not in the tree, so the sign at the site is a mixture this run does not weigh",
+        "ceilings": ["the sun is bracketed by its ends — beam sun on a trunk face is not computed (it needs the mounting "
+                     "azimuth); real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — "
+                     "which one holds at the site decides the sign, and neither form's primary was read",
                      "1D and zero contact resistance inflate the shift in both signs; the tied end is the upper end of the "
                      "coupling axis only, and the two coupling ends bracket the median, not the tail",
                      "the radome↔flange coupling is not measured — decoupled and tied are its two ends",

@@ -83,7 +83,9 @@ Anchor mechanics (CPU):
   71 → 78 (importlib: the hourly capsule balance, checked against capsule_envelope.json) · 58 → 78 (importlib: layer
      properties + the cambium gate) · tools/cad/cem → 78 (flange Ø at runtime) — a change to 58's or 71's model re-runs 78
   71 · 74 · 78 → 79 (importlib: 71's convection kernels and hourly loader · 74's dew-point loader · 78's column grid and
-     bark bracket) · tools/cad/cem → 79 (flange Ø and thickness, sleeve OD at runtime) — a change to any of them re-runs 79
+     bark bracket) · tools/cad/cem → 79 (flange Ø and thickness, sleeve OD at runtime) · data/era5_cherkasy hourly cloud → 79
+     (the real-cloud block, 2026-10-12) — a change to any of them re-runs 79; ⚠️ 81 loads its weather through
+     `S79.load_weather`, so the cloud file is 81's runtime input too (it does not use the cover)
   71 · 79 → 81 (importlib: 71's lump — geometry, convection kernels, loader · 79's sky emissivity and weather join, which
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·

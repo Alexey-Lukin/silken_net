@@ -2659,6 +2659,43 @@ def test_flange_cambium_frost_invariants():
     assert mech["capsule"]["h_c_W_m2K"] > mech["bark"]["h_c_W_m2K"]
 
 
+def test_flange_cambium_frost_real_cloud_sits_between_the_ends():
+    """79's real-cloud block (2026-10-12): ERA5 cover mixes the clear and overcast ends through two long-wave forms.
+
+    CAN catch: a cloud form that leaves the bracket of the two sky ends it mixes (per cell: clear ≤ B82 ≤ linear ≤
+    overcast medians, at both sun ends — B82 at C 0.22 stays below the linear mix for every clear-sky emissivity the
+    winter carries, 0.62–0.76); a colder-share that is not a share or disagrees with the sign of its median; a month
+    split that loses frost days or months; a summary not the min/max of its own runs; a verdict that stopped quoting
+    the shares. CANNOT catch: which form holds at the site, or whether ERA5 total cover is the right cloud measure
+    for either — the declared role substitution.
+    """
+    d = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))
+    rc, base = d["real_cloud"], {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in d["runs"]}
+    cl = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in rc["runs"]}
+    assert 0.0 <= rc["climate"]["winter_share_below_0.2"] <= 1.0 and 0.0 <= rc["climate"]["winter_share_above_0.8"] <= 1.0
+    for (rg, cp, k, side), r in cl.items():
+        sun = "no_sun" if rg.endswith("no_sun") else "diffuse_sun"
+        meds = [base[(f"clear_{sun}", cp, k, side)]["shift_K"]["median"], cl[(f"cloud_b82_{sun}", cp, k, side)]["shift_K"]["median"],
+                cl[(f"cloud_linear_{sun}", cp, k, side)]["shift_K"]["median"], base[(f"overcast_{sun}", cp, k, side)]["shift_K"]["median"]]
+        assert meds == sorted(meds), ((rg, cp, k, side), meds)
+        assert 0.0 <= r["colder_share"] <= 1.0
+        assert 0.0 <= r["warmer_share"] <= 1.0 - r["colder_share"] + 1e-9, r
+        if r["shift_K"]["median"] > 0.1:     # the dead band (COLDER_BAND_K) separates the share from the median's sign
+            assert r["colder_share"] > 0.5, r
+        if r["shift_K"]["median"] < -0.1:
+            assert r["warmer_share"] > 0.5, r
+        assert sum(m["frost_days"] for m in r["by_month"].values()) == r["shift_K"]["frost_days"]
+        assert set(r["by_month"]) <= {str(m) for m in range(1, 13)}
+    for name, by_cp in rc["regimes"].items():
+        for cp, s in by_cp.items():
+            rows = [r for (rg, c, _, _), r in cl.items() if rg == name and c == cp]
+            assert s["median_K_range"] == [min(r["shift_K"]["median"] for r in rows), max(r["shift_K"]["median"] for r in rows)]
+            assert s["colder_share_range"] == [min(r["colder_share"] for r in rows), max(r["colder_share"] for r in rows)]
+            if cp == "tied":
+                lo, hi = s["colder_share_range"]
+                assert f"{lo:.0%}–{hi:.0%}" in d["verdict"]["text"], name
+
+
 def test_capsule_cold_edge_sky_invariants():
     """81 (HW.37, the cold edge 71 leaves open): controls, physical signs and every verdict clause re-derived.
 

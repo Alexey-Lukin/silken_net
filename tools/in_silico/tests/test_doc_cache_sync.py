@@ -3169,6 +3169,79 @@ CHECKS += [
      FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
 ]
 
+# ── HW.6 frost, real cloud (2026-10-12): ERA5 cover weighs 79's sky ends — canon 01_04 §3.1 ⊕ ──
+_C79 = lambda d, name, cp="tied": d["real_cloud"]["regimes"][name][cp]  # noqa: E731
+
+
+def _c79_month(d, month, key):
+    row = next(r for r in d["real_cloud"]["runs"]
+               if (r["regime"], r["coupling"], r["wind_k"], r["bark_side"]) == ("cloud_b82_diffuse_sun", "tied", 0.0, "thin"))
+    return row["by_month"][month][key]
+
+
+def _share(d, name, end, cp="tied"):
+    return _C79(d, name, cp)["colder_share_range"][end] * 100
+
+
+def _cold(d, name, key, end):
+    return _C79(d, name)["cold_days"][key][end] * (100 if key == "colder_share_range" else 1)
+
+
+CHECKS += [
+    ("HW.6 · real cloud: winter median cover → 79", CODIT, rf"медіана покриву за зимові години \*\*{N}\*\*",
+     FLANGE_FROST, lambda d: d["real_cloud"]["climate"]["winter_hours_median"], 0.006),
+    ("HW.6 · real cloud: winter hours above 0.8 → 79", CODIT, rf"вище 0\.8 — у \*\*{N} %\*\*",
+     FLANGE_FROST, lambda d: d["real_cloud"]["climate"]["winter_share_above_0.8"] * 100, 0.6),
+    ("HW.6 · real cloud: winter hours below 0.2 → 79", CODIT, rf"нижче 0\.2 — у \*\*{N} %\*\*",
+     FLANGE_FROST, lambda d: d["real_cloud"]["climate"]["winter_share_below_0.2"] * 100, 0.6),
+    ("HW.6 · real cloud: linear, no sun, low → 79", CODIT, rf"лінійної суміші — \*\*{N}–[\d.]+ %\*\* без сонця",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_no_sun", 0), 0.6),
+    ("HW.6 · real cloud: linear, no sun, high → 79", CODIT, rf"лінійної суміші — \*\*[\d.]+–{N} %\*\* без сонця",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_no_sun", 1), 0.6),
+    ("HW.6 · real cloud: linear, diffuse sun, low → 79", CODIT, rf"й \*\*{N}–[\d.]+ %\*\* із розсіяним сонцем ERA5",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_diffuse_sun", 0), 0.6),
+    ("HW.6 · real cloud: linear, diffuse sun, high → 79", CODIT, rf"й \*\*[\d.]+–{N} %\*\* із розсіяним сонцем ERA5",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_diffuse_sun", 1), 0.6),
+    ("HW.6 · real cloud: linear, diffuse sun, median low → 79", CODIT, rf"\(медіана \*\*\+{N}…{_NN} K\*\*\); за B82",
+     FLANGE_FROST, lambda d: _C79(d, "cloud_linear_diffuse_sun")["median_K_range"][0], 0.005),
+    ("HW.6 · real cloud: linear, diffuse sun, median high → 79", CODIT, rf"\(медіана \*\*{_NN}…\+{N} K\*\*\); за B82",
+     FLANGE_FROST, lambda d: _C79(d, "cloud_linear_diffuse_sun")["median_K_range"][1], 0.005),
+    ("HW.6 · real cloud: B82, no sun, low → 79", CODIT, rf"за B82 — \*\*{N}–[\d.]+ %\*\* і",
+     FLANGE_FROST, lambda d: _share(d, "cloud_b82_no_sun", 0), 0.6),
+    ("HW.6 · real cloud: B82, no sun, high → 79", CODIT, rf"за B82 — \*\*[\d.]+–{N} %\*\* і",
+     FLANGE_FROST, lambda d: _share(d, "cloud_b82_no_sun", 1), 0.6),
+    ("HW.6 · real cloud: B82, diffuse sun, low → 79", CODIT, rf"%\*\* і \*\*{N}–[\d.]+ %\*\*\. Смуга",
+     FLANGE_FROST, lambda d: _share(d, "cloud_b82_diffuse_sun", 0), 0.6),
+    ("HW.6 · real cloud: B82, diffuse sun, high → 79", CODIT, rf"%\*\* і \*\*[\d.]+–{N} %\*\*\. Смуга",
+     FLANGE_FROST, lambda d: _share(d, "cloud_b82_diffuse_sun", 1), 0.6),
+    ("HW.6 · real cloud: decoupled, linear, diffuse sun, low → 79", CODIT, rf"із розсіяним сонцем — \*\*{N}–[\d.]+ %\*\* за",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_diffuse_sun", 0, "decoupled"), 0.6),
+    ("HW.6 · real cloud: decoupled, linear, diffuse sun, high → 79", CODIT, rf"із розсіяним сонцем — \*\*[\d.]+–{N} %\*\* за",
+     FLANGE_FROST, lambda d: _share(d, "cloud_linear_diffuse_sun", 1, "decoupled"), 0.6),
+    ("HW.6 · real cloud: cold days, linear, diffuse sun, low → 79", CODIT, rf"холодніше в \*\*{N}–[\d.]+ %\*\* із них",
+     FLANGE_FROST, lambda d: _cold(d, "cloud_linear_diffuse_sun", "colder_share_range", 0), 0.6),
+    ("HW.6 · real cloud: cold days, linear, diffuse sun, high → 79", CODIT, rf"холодніше в \*\*[\d.]+–{N} %\*\* із них",
+     FLANGE_FROST, lambda d: _cold(d, "cloud_linear_diffuse_sun", "colder_share_range", 1), 0.6),
+    ("HW.6 · real cloud: cold days, B82, no sun, high → 79", CODIT, rf"у \*\*0–{N} %\*\* \(медіана",
+     FLANGE_FROST, lambda d: _cold(d, "cloud_b82_no_sun", "colder_share_range", 1), 0.6),
+    ("HW.6 · real cloud: cold days, B82, no sun, median low → 79", CODIT, rf"\(медіана \*\*{N}…{_NN} K\*\*\)\. Єдиний",
+     FLANGE_FROST, lambda d: _cold(d, "cloud_b82_no_sun", "median_K_range", 0), 0.005),
+    ("HW.6 · real cloud: cold days, B82, no sun, median high → 79", CODIT, rf"\(медіана \*\*{_NN}…\+{N} K\*\*\)\. Єдиний",
+     FLANGE_FROST, lambda d: _cold(d, "cloud_b82_no_sun", "median_K_range", 1), 0.005),
+    ("HW.6 · real cloud: December median → 79", CODIT, rf"\*\*\+{N} K\*\* медіани у грудні",
+     FLANGE_FROST, lambda d: _c79_month(d, "12", "median"), 0.005),
+    ("HW.6 · real cloud: March median → 79", CODIT, rf"\*\*\+{N} K\*\* у березні",
+     FLANGE_FROST, lambda d: _c79_month(d, "3", "median"), 0.005),
+    ("HW.6 · real cloud: March colder share → 79", CODIT, rf"у березні \(\*\*{N} %\*\* холодніших діб\)",
+     FLANGE_FROST, lambda d: _c79_month(d, "3", "colder_share") * 100, 0.6),
+    ("HW.6 · real cloud: April median → 79", CODIT, rf"\*\*\+{N} K\*\* у квітні",
+     FLANGE_FROST, lambda d: _c79_month(d, "4", "median"), 0.005),
+    ("HW.6 · real cloud: April colder share → 79", CODIT, rf"у квітні \(\*\*{N} %\*\* із",
+     FLANGE_FROST, lambda d: _c79_month(d, "4", "colder_share") * 100, 0.6),
+    ("HW.6 · real cloud: April frost days → 79", CODIT, rf"%\*\* із {N} морозних діб\)",
+     FLANGE_FROST, lambda d: _c79_month(d, "4", "frost_days"), 0.0),
+]
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

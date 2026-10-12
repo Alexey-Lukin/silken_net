@@ -1368,6 +1368,2233 @@
       }
     }
   },
+  "real_cloud": {
+    "source": "ERA5 total cloud cover, data/era5_cherkasy/hourly_cloud_1991_2020.csv.gz",
+    "forms": {
+      "linear": "ours — the two sky ends mixed by the cover",
+      "b82": "Brutsaert 1982 as printed in Herrero & Polo 2012 eq. 8, C = 0.22"
+    },
+    "winter_months": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "climate": {
+      "winter_hours_median": 0.98,
+      "winter_share_above_0.8": 0.723,
+      "winter_share_below_0.2": 0.103
+    },
+    "regimes": {
+      "cloud_linear_no_sun": {
+        "decoupled": {
+          "median_K_range": [
+            -0.77,
+            -0.48
+          ],
+          "p95_K_max": 0.3,
+          "max_K": 1.19,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.017,
+            0.111
+          ],
+          "cold_days": {
+            "days_range": [
+              499,
+              575
+            ],
+            "median_K_range": [
+              -1.39,
+              -0.93
+            ],
+            "colder_share_range": [
+              0.026,
+              0.063
+            ]
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.47,
+            0.41
+          ],
+          "p95_K_max": 1.57,
+          "max_K": 3.82,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.256,
+            0.684
+          ],
+          "cold_days": {
+            "days_range": [
+              499,
+              575
+            ],
+            "median_K_range": [
+              -0.58,
+              0.69
+            ],
+            "colder_share_range": [
+              0.263,
+              0.734
+            ]
+          }
+        }
+      },
+      "cloud_linear_diffuse_sun": {
+        "decoupled": {
+          "median_K_range": [
+            -0.12,
+            0.21
+          ],
+          "p95_K_max": 1.23,
+          "max_K": 2.17,
+          "worst_cell": {
+            "bark_side": "thick",
+            "wind_k": 0.1
+          },
+          "colder_share_range": [
+            0.38,
+            0.573
+          ],
+          "cold_days": {
+            "days_range": [
+              375,
+              455
+            ],
+            "median_K_range": [
+              -0.72,
+              -0.41
+            ],
+            "colder_share_range": [
+              0.201,
+              0.346
+            ]
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            0.51,
+            1.21
+          ],
+          "p95_K_max": 2.68,
+          "max_K": 4.68,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.686,
+            0.889
+          ],
+          "cold_days": {
+            "days_range": [
+              375,
+              455
+            ],
+            "median_K_range": [
+              0.3,
+              1.5
+            ],
+            "colder_share_range": [
+              0.583,
+              0.877
+            ]
+          }
+        }
+      },
+      "cloud_b82_no_sun": {
+        "decoupled": {
+          "median_K_range": [
+            -2.0,
+            -0.85
+          ],
+          "p95_K_max": -0.19,
+          "max_K": 0.74,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.0,
+            0.019
+          ],
+          "cold_days": {
+            "days_range": [
+              821,
+              949
+            ],
+            "median_K_range": [
+              -2.43,
+              -1.21
+            ],
+            "colder_share_range": [
+              0.0,
+              0.005
+            ]
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -1.61,
+            -0.13
+          ],
+          "p95_K_max": 0.87,
+          "max_K": 2.74,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.0,
+            0.365
+          ],
+          "cold_days": {
+            "days_range": [
+              821,
+              949
+            ],
+            "median_K_range": [
+              -1.84,
+              0.01
+            ],
+            "colder_share_range": [
+              0.001,
+              0.482
+            ]
+          }
+        }
+      },
+      "cloud_b82_diffuse_sun": {
+        "decoupled": {
+          "median_K_range": [
+            -1.26,
+            -0.27
+          ],
+          "p95_K_max": 0.5,
+          "max_K": 1.27,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.004,
+            0.234
+          ],
+          "cold_days": {
+            "days_range": [
+              672,
+              778
+            ],
+            "median_K_range": [
+              -1.74,
+              -0.64
+            ],
+            "colder_share_range": [
+              0.0,
+              0.108
+            ]
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.75,
+            0.56
+          ],
+          "p95_K_max": 1.92,
+          "max_K": 4.01,
+          "worst_cell": {
+            "bark_side": "thin",
+            "wind_k": 0.0
+          },
+          "colder_share_range": [
+            0.106,
+            0.758
+          ],
+          "cold_days": {
+            "days_range": [
+              672,
+              778
+            ],
+            "median_K_range": [
+              -0.98,
+              0.75
+            ],
+            "colder_share_range": [
+              0.088,
+              0.758
+            ]
+          }
+        }
+      }
+    },
+    "runs": [
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3281,
+          "median": -0.64,
+          "p95": 0.3,
+          "max": 1.19,
+          "min": -2.85
+        },
+        "colder_share": 0.111,
+        "warmer_share": 0.853,
+        "cold_days": {
+          "days": 575,
+          "median": -1.18,
+          "colder_share": 0.063
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 778,
+            "median": -0.49,
+            "colder_share": 0.143
+          },
+          "2": {
+            "frost_days": 709,
+            "median": -0.57,
+            "colder_share": 0.151
+          },
+          "3": {
+            "frost_days": 538,
+            "median": -0.89,
+            "colder_share": 0.072
+          },
+          "4": {
+            "frost_days": 79,
+            "median": -1.36,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 3,
+            "median": -1.48,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 1,
+            "median": -1.84,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 103,
+            "median": -1.32,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 372,
+            "median": -0.76,
+            "colder_share": 0.054
+          },
+          "12": {
+            "frost_days": 698,
+            "median": -0.46,
+            "colder_share": 0.125
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3281,
+          "median": 0.41,
+          "p95": 1.57,
+          "max": 3.82,
+          "min": -3.36
+        },
+        "colder_share": 0.684,
+        "warmer_share": 0.273,
+        "cold_days": {
+          "days": 575,
+          "median": 0.69,
+          "colder_share": 0.734
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 778,
+            "median": 0.41,
+            "colder_share": 0.681
+          },
+          "2": {
+            "frost_days": 709,
+            "median": 0.36,
+            "colder_share": 0.64
+          },
+          "3": {
+            "frost_days": 538,
+            "median": 0.41,
+            "colder_share": 0.699
+          },
+          "4": {
+            "frost_days": 79,
+            "median": 0.67,
+            "colder_share": 0.835
+          },
+          "5": {
+            "frost_days": 3,
+            "median": 0.62,
+            "colder_share": 1.0
+          },
+          "9": {
+            "frost_days": 1,
+            "median": 1.18,
+            "colder_share": 1.0
+          },
+          "10": {
+            "frost_days": 103,
+            "median": 0.52,
+            "colder_share": 0.786
+          },
+          "11": {
+            "frost_days": 372,
+            "median": 0.39,
+            "colder_share": 0.71
+          },
+          "12": {
+            "frost_days": 698,
+            "median": 0.38,
+            "colder_share": 0.672
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3200,
+          "median": -0.77,
+          "p95": 0.03,
+          "max": 0.28,
+          "min": -3.5
+        },
+        "colder_share": 0.036,
+        "warmer_share": 0.878,
+        "cold_days": {
+          "days": 558,
+          "median": -1.39,
+          "colder_share": 0.052
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 768,
+            "median": -0.46,
+            "colder_share": 0.065
+          },
+          "2": {
+            "frost_days": 695,
+            "median": -0.73,
+            "colder_share": 0.027
+          },
+          "3": {
+            "frost_days": 516,
+            "median": -1.37,
+            "colder_share": 0.027
+          },
+          "4": {
+            "frost_days": 69,
+            "median": -2.0,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 2,
+            "median": -2.4,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 1,
+            "median": -2.05,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 101,
+            "median": -1.82,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 359,
+            "median": -0.94,
+            "colder_share": 0.025
+          },
+          "12": {
+            "frost_days": 689,
+            "median": -0.47,
+            "colder_share": 0.033
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3200,
+          "median": -0.29,
+          "p95": 1.02,
+          "max": 3.02,
+          "min": -3.96
+        },
+        "colder_share": 0.354,
+        "warmer_share": 0.604,
+        "cold_days": {
+          "days": 558,
+          "median": -0.29,
+          "colder_share": 0.389
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 768,
+            "median": -0.14,
+            "colder_share": 0.432
+          },
+          "2": {
+            "frost_days": 695,
+            "median": -0.29,
+            "colder_share": 0.355
+          },
+          "3": {
+            "frost_days": 516,
+            "median": -0.54,
+            "colder_share": 0.242
+          },
+          "4": {
+            "frost_days": 69,
+            "median": -0.7,
+            "colder_share": 0.116
+          },
+          "5": {
+            "frost_days": 2,
+            "median": -0.95,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 1,
+            "median": -0.34,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 101,
+            "median": -0.54,
+            "colder_share": 0.188
+          },
+          "11": {
+            "frost_days": 359,
+            "median": -0.24,
+            "colder_share": 0.354
+          },
+          "12": {
+            "frost_days": 689,
+            "median": -0.18,
+            "colder_share": 0.398
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2674,
+          "median": -0.12,
+          "p95": 0.9,
+          "max": 1.76,
+          "min": -2.29
+        },
+        "colder_share": 0.38,
+        "warmer_share": 0.546,
+        "cold_days": {
+          "days": 447,
+          "median": -0.72,
+          "colder_share": 0.201
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 722,
+            "median": -0.06,
+            "colder_share": 0.396
+          },
+          "2": {
+            "frost_days": 592,
+            "median": 0.04,
+            "colder_share": 0.498
+          },
+          "3": {
+            "frost_days": 351,
+            "median": -0.1,
+            "colder_share": 0.422
+          },
+          "4": {
+            "frost_days": 30,
+            "median": -0.86,
+            "colder_share": 0.033
+          },
+          "10": {
+            "frost_days": 71,
+            "median": -0.97,
+            "colder_share": 0.028
+          },
+          "11": {
+            "frost_days": 282,
+            "median": -0.43,
+            "colder_share": 0.266
+          },
+          "12": {
+            "frost_days": 626,
+            "median": -0.14,
+            "colder_share": 0.332
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2674,
+          "median": 1.21,
+          "p95": 2.68,
+          "max": 4.68,
+          "min": -2.83
+        },
+        "colder_share": 0.889,
+        "warmer_share": 0.094,
+        "cold_days": {
+          "days": 447,
+          "median": 1.5,
+          "colder_share": 0.861
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 722,
+            "median": 1.09,
+            "colder_share": 0.857
+          },
+          "2": {
+            "frost_days": 592,
+            "median": 1.41,
+            "colder_share": 0.899
+          },
+          "3": {
+            "frost_days": 351,
+            "median": 1.85,
+            "colder_share": 0.969
+          },
+          "4": {
+            "frost_days": 30,
+            "median": 1.76,
+            "colder_share": 1.0
+          },
+          "10": {
+            "frost_days": 71,
+            "median": 1.42,
+            "colder_share": 0.972
+          },
+          "11": {
+            "frost_days": 282,
+            "median": 1.1,
+            "colder_share": 0.89
+          },
+          "12": {
+            "frost_days": 626,
+            "median": 0.95,
+            "colder_share": 0.855
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2698,
+          "median": 0.03,
+          "p95": 1.01,
+          "max": 1.91,
+          "min": -2.98
+        },
+        "colder_share": 0.49,
+        "warmer_share": 0.471,
+        "cold_days": {
+          "days": 455,
+          "median": -0.7,
+          "colder_share": 0.321
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 719,
+            "median": 0.15,
+            "colder_share": 0.558
+          },
+          "2": {
+            "frost_days": 597,
+            "median": 0.25,
+            "colder_share": 0.568
+          },
+          "3": {
+            "frost_days": 361,
+            "median": 0.03,
+            "colder_share": 0.496
+          },
+          "4": {
+            "frost_days": 31,
+            "median": -1.04,
+            "colder_share": 0.065
+          },
+          "10": {
+            "frost_days": 71,
+            "median": -1.26,
+            "colder_share": 0.042
+          },
+          "11": {
+            "frost_days": 286,
+            "median": -0.44,
+            "colder_share": 0.353
+          },
+          "12": {
+            "frost_days": 633,
+            "median": -0.02,
+            "colder_share": 0.468
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2698,
+          "median": 0.6,
+          "p95": 2.13,
+          "max": 4.45,
+          "min": -3.46
+        },
+        "colder_share": 0.7,
+        "warmer_share": 0.268,
+        "cold_days": {
+          "days": 455,
+          "median": 0.53,
+          "colder_share": 0.637
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 719,
+            "median": 0.63,
+            "colder_share": 0.698
+          },
+          "2": {
+            "frost_days": 597,
+            "median": 0.82,
+            "colder_share": 0.747
+          },
+          "3": {
+            "frost_days": 361,
+            "median": 0.97,
+            "colder_share": 0.801
+          },
+          "4": {
+            "frost_days": 31,
+            "median": 0.42,
+            "colder_share": 0.613
+          },
+          "10": {
+            "frost_days": 71,
+            "median": 0.32,
+            "colder_share": 0.563
+          },
+          "11": {
+            "frost_days": 286,
+            "median": 0.42,
+            "colder_share": 0.64
+          },
+          "12": {
+            "frost_days": 633,
+            "median": 0.37,
+            "colder_share": 0.646
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 4167,
+          "median": -0.97,
+          "p95": -0.19,
+          "max": 0.74,
+          "min": -3.16
+        },
+        "colder_share": 0.019,
+        "warmer_share": 0.974,
+        "cold_days": {
+          "days": 949,
+          "median": -1.34,
+          "colder_share": 0.005
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 891,
+            "median": -0.92,
+            "colder_share": 0.033
+          },
+          "2": {
+            "frost_days": 821,
+            "median": -0.93,
+            "colder_share": 0.023
+          },
+          "3": {
+            "frost_days": 730,
+            "median": -1.03,
+            "colder_share": 0.005
+          },
+          "4": {
+            "frost_days": 148,
+            "median": -1.26,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 5,
+            "median": -1.48,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 3,
+            "median": -1.43,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 175,
+            "median": -1.27,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 543,
+            "median": -0.95,
+            "colder_share": 0.006
+          },
+          "12": {
+            "frost_days": 851,
+            "median": -0.88,
+            "colder_share": 0.028
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 4167,
+          "median": -0.13,
+          "p95": 0.87,
+          "max": 2.74,
+          "min": -3.46
+        },
+        "colder_share": 0.365,
+        "warmer_share": 0.563,
+        "cold_days": {
+          "days": 949,
+          "median": 0.01,
+          "colder_share": 0.482
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 891,
+            "median": -0.17,
+            "colder_share": 0.339
+          },
+          "2": {
+            "frost_days": 821,
+            "median": -0.19,
+            "colder_share": 0.348
+          },
+          "3": {
+            "frost_days": 730,
+            "median": -0.12,
+            "colder_share": 0.353
+          },
+          "4": {
+            "frost_days": 148,
+            "median": 0.11,
+            "colder_share": 0.554
+          },
+          "5": {
+            "frost_days": 5,
+            "median": 0.27,
+            "colder_share": 0.8
+          },
+          "9": {
+            "frost_days": 3,
+            "median": 0.33,
+            "colder_share": 1.0
+          },
+          "10": {
+            "frost_days": 175,
+            "median": 0.12,
+            "colder_share": 0.577
+          },
+          "11": {
+            "frost_days": 543,
+            "median": -0.09,
+            "colder_share": 0.389
+          },
+          "12": {
+            "frost_days": 851,
+            "median": -0.19,
+            "colder_share": 0.322
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 4020,
+          "median": -2.0,
+          "p95": -1.27,
+          "max": -0.97,
+          "min": -3.62
+        },
+        "colder_share": 0.0,
+        "warmer_share": 1.0,
+        "cold_days": {
+          "days": 894,
+          "median": -2.43,
+          "colder_share": 0.0
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 881,
+            "median": -1.95,
+            "colder_share": 0.0
+          },
+          "2": {
+            "frost_days": 810,
+            "median": -2.05,
+            "colder_share": 0.0
+          },
+          "3": {
+            "frost_days": 688,
+            "median": -2.15,
+            "colder_share": 0.0
+          },
+          "4": {
+            "frost_days": 128,
+            "median": -2.3,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 5,
+            "median": -2.54,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 2,
+            "median": -2.33,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 150,
+            "median": -2.22,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 524,
+            "median": -1.85,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 832,
+            "median": -1.85,
+            "colder_share": 0.0
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 4020,
+          "median": -1.41,
+          "p95": -0.45,
+          "max": 1.03,
+          "min": -4.94
+        },
+        "colder_share": 0.007,
+        "warmer_share": 0.988,
+        "cold_days": {
+          "days": 894,
+          "median": -1.55,
+          "colder_share": 0.015
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 881,
+            "median": -1.4,
+            "colder_share": 0.007
+          },
+          "2": {
+            "frost_days": 810,
+            "median": -1.48,
+            "colder_share": 0.011
+          },
+          "3": {
+            "frost_days": 688,
+            "median": -1.46,
+            "colder_share": 0.007
+          },
+          "4": {
+            "frost_days": 128,
+            "median": -1.35,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 5,
+            "median": -1.3,
+            "colder_share": 0.0
+          },
+          "9": {
+            "frost_days": 2,
+            "median": -0.9,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 150,
+            "median": -1.21,
+            "colder_share": 0.02
+          },
+          "11": {
+            "frost_days": 524,
+            "median": -1.3,
+            "colder_share": 0.002
+          },
+          "12": {
+            "frost_days": 832,
+            "median": -1.42,
+            "colder_share": 0.007
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3655,
+          "median": -0.5,
+          "p95": 0.36,
+          "max": 1.27,
+          "min": -2.65
+        },
+        "colder_share": 0.129,
+        "warmer_share": 0.823,
+        "cold_days": {
+          "days": 778,
+          "median": -0.9,
+          "colder_share": 0.059
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 877,
+            "median": -0.55,
+            "colder_share": 0.105
+          },
+          "2": {
+            "frost_days": 766,
+            "median": -0.33,
+            "colder_share": 0.195
+          },
+          "3": {
+            "frost_days": 547,
+            "median": -0.26,
+            "colder_share": 0.271
+          },
+          "4": {
+            "frost_days": 53,
+            "median": -0.59,
+            "colder_share": 0.057
+          },
+          "10": {
+            "frost_days": 115,
+            "median": -0.89,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 476,
+            "median": -0.59,
+            "colder_share": 0.057
+          },
+          "12": {
+            "frost_days": 821,
+            "median": -0.58,
+            "colder_share": 0.066
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3655,
+          "median": 0.56,
+          "p95": 1.92,
+          "max": 4.01,
+          "min": -2.98
+        },
+        "colder_share": 0.758,
+        "warmer_share": 0.207,
+        "cold_days": {
+          "days": 778,
+          "median": 0.75,
+          "colder_share": 0.758
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 877,
+            "median": 0.38,
+            "colder_share": 0.684
+          },
+          "2": {
+            "frost_days": 766,
+            "median": 0.69,
+            "colder_share": 0.798
+          },
+          "3": {
+            "frost_days": 547,
+            "median": 1.15,
+            "colder_share": 0.936
+          },
+          "4": {
+            "frost_days": 53,
+            "median": 1.57,
+            "colder_share": 1.0
+          },
+          "10": {
+            "frost_days": 115,
+            "median": 0.92,
+            "colder_share": 0.904
+          },
+          "11": {
+            "frost_days": 476,
+            "median": 0.5,
+            "colder_share": 0.763
+          },
+          "12": {
+            "frost_days": 821,
+            "median": 0.28,
+            "colder_share": 0.641
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3568,
+          "median": -1.26,
+          "p95": -0.48,
+          "max": 0.51,
+          "min": -3.2
+        },
+        "colder_share": 0.004,
+        "warmer_share": 0.994,
+        "cold_days": {
+          "days": 736,
+          "median": -1.74,
+          "colder_share": 0.0
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 861,
+            "median": -1.33,
+            "colder_share": 0.0
+          },
+          "2": {
+            "frost_days": 754,
+            "median": -1.12,
+            "colder_share": 0.001
+          },
+          "3": {
+            "frost_days": 525,
+            "median": -0.88,
+            "colder_share": 0.027
+          },
+          "4": {
+            "frost_days": 50,
+            "median": -1.23,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 106,
+            "median": -1.51,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 462,
+            "median": -1.28,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 810,
+            "median": -1.36,
+            "colder_share": 0.0
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3568,
+          "median": -0.62,
+          "p95": 0.6,
+          "max": 2.54,
+          "min": -4.23
+        },
+        "colder_share": 0.188,
+        "warmer_share": 0.774,
+        "cold_days": {
+          "days": 736,
+          "median": -0.78,
+          "colder_share": 0.192
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 861,
+            "median": -0.77,
+            "colder_share": 0.113
+          },
+          "2": {
+            "frost_days": 754,
+            "median": -0.48,
+            "colder_share": 0.259
+          },
+          "3": {
+            "frost_days": 525,
+            "median": -0.04,
+            "colder_share": 0.425
+          },
+          "4": {
+            "frost_days": 50,
+            "median": 0.19,
+            "colder_share": 0.54
+          },
+          "10": {
+            "frost_days": 106,
+            "median": -0.32,
+            "colder_share": 0.264
+          },
+          "11": {
+            "frost_days": 462,
+            "median": -0.68,
+            "colder_share": 0.13
+          },
+          "12": {
+            "frost_days": 810,
+            "median": -0.88,
+            "colder_share": 0.052
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3135,
+          "median": -0.48,
+          "p95": 0.21,
+          "max": 0.8,
+          "min": -2.37
+        },
+        "colder_share": 0.107,
+        "warmer_share": 0.842,
+        "cold_days": {
+          "days": 511,
+          "median": -0.93,
+          "colder_share": 0.051
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 779,
+            "median": -0.39,
+            "colder_share": 0.142
+          },
+          "2": {
+            "frost_days": 699,
+            "median": -0.42,
+            "colder_share": 0.133
+          },
+          "3": {
+            "frost_days": 494,
+            "median": -0.66,
+            "colder_share": 0.065
+          },
+          "4": {
+            "frost_days": 55,
+            "median": -1.14,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 83,
+            "median": -1.16,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 335,
+            "median": -0.59,
+            "colder_share": 0.048
+          },
+          "12": {
+            "frost_days": 690,
+            "median": -0.38,
+            "colder_share": 0.122
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3135,
+          "median": 0.12,
+          "p95": 1.04,
+          "max": 2.58,
+          "min": -2.73
+        },
+        "colder_share": 0.545,
+        "warmer_share": 0.391,
+        "cold_days": {
+          "days": 511,
+          "median": 0.33,
+          "colder_share": 0.628
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 779,
+            "median": 0.15,
+            "colder_share": 0.565
+          },
+          "2": {
+            "frost_days": 699,
+            "median": 0.05,
+            "colder_share": 0.502
+          },
+          "3": {
+            "frost_days": 494,
+            "median": -0.01,
+            "colder_share": 0.472
+          },
+          "4": {
+            "frost_days": 55,
+            "median": 0.11,
+            "colder_share": 0.545
+          },
+          "10": {
+            "frost_days": 83,
+            "median": 0.18,
+            "colder_share": 0.627
+          },
+          "11": {
+            "frost_days": 335,
+            "median": 0.17,
+            "colder_share": 0.615
+          },
+          "12": {
+            "frost_days": 690,
+            "median": 0.17,
+            "colder_share": 0.575
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3042,
+          "median": -0.68,
+          "p95": -0.01,
+          "max": 0.22,
+          "min": -3.34
+        },
+        "colder_share": 0.017,
+        "warmer_share": 0.912,
+        "cold_days": {
+          "days": 499,
+          "median": -1.25,
+          "colder_share": 0.026
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 767,
+            "median": -0.45,
+            "colder_share": 0.029
+          },
+          "2": {
+            "frost_days": 684,
+            "median": -0.69,
+            "colder_share": 0.013
+          },
+          "3": {
+            "frost_days": 468,
+            "median": -1.21,
+            "colder_share": 0.013
+          },
+          "4": {
+            "frost_days": 49,
+            "median": -1.9,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 77,
+            "median": -1.82,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 319,
+            "median": -0.8,
+            "colder_share": 0.013
+          },
+          "12": {
+            "frost_days": 678,
+            "median": -0.48,
+            "colder_share": 0.018
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3042,
+          "median": -0.47,
+          "p95": 0.65,
+          "max": 2.15,
+          "min": -3.91
+        },
+        "colder_share": 0.256,
+        "warmer_share": 0.701,
+        "cold_days": {
+          "days": 499,
+          "median": -0.58,
+          "colder_share": 0.263
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 767,
+            "median": -0.29,
+            "colder_share": 0.34
+          },
+          "2": {
+            "frost_days": 684,
+            "median": -0.49,
+            "colder_share": 0.235
+          },
+          "3": {
+            "frost_days": 468,
+            "median": -0.81,
+            "colder_share": 0.152
+          },
+          "4": {
+            "frost_days": 49,
+            "median": -1.03,
+            "colder_share": 0.02
+          },
+          "10": {
+            "frost_days": 77,
+            "median": -0.93,
+            "colder_share": 0.013
+          },
+          "11": {
+            "frost_days": 319,
+            "median": -0.37,
+            "colder_share": 0.251
+          },
+          "12": {
+            "frost_days": 678,
+            "median": -0.33,
+            "colder_share": 0.301
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2450,
+          "median": 0.12,
+          "p95": 1.0,
+          "max": 1.73,
+          "min": -1.81
+        },
+        "colder_share": 0.557,
+        "warmer_share": 0.37,
+        "cold_days": {
+          "days": 375,
+          "median": -0.41,
+          "colder_share": 0.277
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 703,
+            "median": 0.14,
+            "colder_share": 0.59
+          },
+          "2": {
+            "frost_days": 557,
+            "median": 0.33,
+            "colder_share": 0.666
+          },
+          "3": {
+            "frost_days": 286,
+            "median": 0.39,
+            "colder_share": 0.71
+          },
+          "4": {
+            "frost_days": 15,
+            "median": -0.28,
+            "colder_share": 0.133
+          },
+          "10": {
+            "frost_days": 45,
+            "median": -0.67,
+            "colder_share": 0.067
+          },
+          "11": {
+            "frost_days": 249,
+            "median": -0.15,
+            "colder_share": 0.349
+          },
+          "12": {
+            "frost_days": 595,
+            "median": 0.02,
+            "colder_share": 0.477
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2450,
+          "median": 0.91,
+          "p95": 2.05,
+          "max": 3.51,
+          "min": -2.26
+        },
+        "colder_share": 0.876,
+        "warmer_share": 0.099,
+        "cold_days": {
+          "days": 375,
+          "median": 1.06,
+          "colder_share": 0.877
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 703,
+            "median": 0.84,
+            "colder_share": 0.848
+          },
+          "2": {
+            "frost_days": 557,
+            "median": 1.1,
+            "colder_share": 0.908
+          },
+          "3": {
+            "frost_days": 286,
+            "median": 1.51,
+            "colder_share": 0.969
+          },
+          "4": {
+            "frost_days": 15,
+            "median": 1.46,
+            "colder_share": 1.0
+          },
+          "10": {
+            "frost_days": 45,
+            "median": 0.98,
+            "colder_share": 0.844
+          },
+          "11": {
+            "frost_days": 249,
+            "median": 0.83,
+            "colder_share": 0.871
+          },
+          "12": {
+            "frost_days": 595,
+            "median": 0.73,
+            "colder_share": 0.837
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2452,
+          "median": 0.21,
+          "p95": 1.23,
+          "max": 2.17,
+          "min": -2.68
+        },
+        "colder_share": 0.573,
+        "warmer_share": 0.394,
+        "cold_days": {
+          "days": 381,
+          "median": -0.47,
+          "colder_share": 0.346
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 694,
+            "median": 0.28,
+            "colder_share": 0.618
+          },
+          "2": {
+            "frost_days": 560,
+            "median": 0.41,
+            "colder_share": 0.646
+          },
+          "3": {
+            "frost_days": 291,
+            "median": 0.46,
+            "colder_share": 0.646
+          },
+          "4": {
+            "frost_days": 12,
+            "median": -0.4,
+            "colder_share": 0.167
+          },
+          "10": {
+            "frost_days": 41,
+            "median": -1.25,
+            "colder_share": 0.049
+          },
+          "11": {
+            "frost_days": 255,
+            "median": -0.27,
+            "colder_share": 0.373
+          },
+          "12": {
+            "frost_days": 599,
+            "median": 0.12,
+            "colder_share": 0.544
+          }
+        }
+      },
+      {
+        "regime": "cloud_linear_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2452,
+          "median": 0.51,
+          "p95": 1.85,
+          "max": 3.61,
+          "min": -3.35
+        },
+        "colder_share": 0.686,
+        "warmer_share": 0.27,
+        "cold_days": {
+          "days": 381,
+          "median": 0.3,
+          "colder_share": 0.583
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 694,
+            "median": 0.52,
+            "colder_share": 0.687
+          },
+          "2": {
+            "frost_days": 560,
+            "median": 0.73,
+            "colder_share": 0.725
+          },
+          "3": {
+            "frost_days": 291,
+            "median": 0.94,
+            "colder_share": 0.852
+          },
+          "4": {
+            "frost_days": 12,
+            "median": 0.71,
+            "colder_share": 0.583
+          },
+          "10": {
+            "frost_days": 41,
+            "median": -0.24,
+            "colder_share": 0.317
+          },
+          "11": {
+            "frost_days": 255,
+            "median": 0.32,
+            "colder_share": 0.592
+          },
+          "12": {
+            "frost_days": 599,
+            "median": 0.29,
+            "colder_share": 0.636
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 4050,
+          "median": -0.85,
+          "p95": -0.25,
+          "max": 0.39,
+          "min": -2.75
+        },
+        "colder_share": 0.009,
+        "warmer_share": 0.982,
+        "cold_days": {
+          "days": 887,
+          "median": -1.21,
+          "colder_share": 0.001
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 892,
+            "median": -0.84,
+            "colder_share": 0.018
+          },
+          "2": {
+            "frost_days": 818,
+            "median": -0.82,
+            "colder_share": 0.01
+          },
+          "3": {
+            "frost_days": 702,
+            "median": -0.89,
+            "colder_share": 0.003
+          },
+          "4": {
+            "frost_days": 116,
+            "median": -1.05,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 3,
+            "median": -1.39,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 136,
+            "median": -1.13,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 528,
+            "median": -0.86,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 855,
+            "median": -0.8,
+            "colder_share": 0.014
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 4050,
+          "median": -0.36,
+          "p95": 0.38,
+          "max": 1.63,
+          "min": -2.76
+        },
+        "colder_share": 0.167,
+        "warmer_share": 0.775,
+        "cold_days": {
+          "days": 887,
+          "median": -0.26,
+          "colder_share": 0.3
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 892,
+            "median": -0.38,
+            "colder_share": 0.169
+          },
+          "2": {
+            "frost_days": 818,
+            "median": -0.44,
+            "colder_share": 0.164
+          },
+          "3": {
+            "frost_days": 702,
+            "median": -0.42,
+            "colder_share": 0.121
+          },
+          "4": {
+            "frost_days": 116,
+            "median": -0.28,
+            "colder_share": 0.172
+          },
+          "5": {
+            "frost_days": 3,
+            "median": -0.18,
+            "colder_share": 0.333
+          },
+          "10": {
+            "frost_days": 136,
+            "median": -0.18,
+            "colder_share": 0.309
+          },
+          "11": {
+            "frost_days": 528,
+            "median": -0.27,
+            "colder_share": 0.223
+          },
+          "12": {
+            "frost_days": 855,
+            "median": -0.36,
+            "colder_share": 0.145
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3904,
+          "median": -1.95,
+          "p95": -1.3,
+          "max": -0.98,
+          "min": -3.55
+        },
+        "colder_share": 0.0,
+        "warmer_share": 1.0,
+        "cold_days": {
+          "days": 821,
+          "median": -2.39,
+          "colder_share": 0.0
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 881,
+            "median": -1.92,
+            "colder_share": 0.0
+          },
+          "2": {
+            "frost_days": 810,
+            "median": -2.01,
+            "colder_share": 0.0
+          },
+          "3": {
+            "frost_days": 663,
+            "median": -2.08,
+            "colder_share": 0.0
+          },
+          "4": {
+            "frost_days": 94,
+            "median": -2.24,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 1,
+            "median": -2.79,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 120,
+            "median": -2.19,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 499,
+            "median": -1.82,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 836,
+            "median": -1.82,
+            "colder_share": 0.0
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_no_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3904,
+          "median": -1.61,
+          "p95": -0.83,
+          "max": 0.22,
+          "min": -4.31
+        },
+        "colder_share": 0.0,
+        "warmer_share": 1.0,
+        "cold_days": {
+          "days": 821,
+          "median": -1.84,
+          "colder_share": 0.001
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 881,
+            "median": -1.6,
+            "colder_share": 0.0
+          },
+          "2": {
+            "frost_days": 810,
+            "median": -1.71,
+            "colder_share": 0.001
+          },
+          "3": {
+            "frost_days": 663,
+            "median": -1.71,
+            "colder_share": 0.0
+          },
+          "4": {
+            "frost_days": 94,
+            "median": -1.7,
+            "colder_share": 0.0
+          },
+          "5": {
+            "frost_days": 1,
+            "median": -2.04,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 120,
+            "median": -1.5,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 499,
+            "median": -1.46,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 836,
+            "median": -1.57,
+            "colder_share": 0.0
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3473,
+          "median": -0.27,
+          "p95": 0.5,
+          "max": 1.27,
+          "min": -2.26
+        },
+        "colder_share": 0.234,
+        "warmer_share": 0.695,
+        "cold_days": {
+          "days": 697,
+          "median": -0.64,
+          "colder_share": 0.108
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 871,
+            "median": -0.34,
+            "colder_share": 0.146
+          },
+          "2": {
+            "frost_days": 748,
+            "median": -0.04,
+            "colder_share": 0.4
+          },
+          "3": {
+            "frost_days": 479,
+            "median": 0.11,
+            "colder_share": 0.564
+          },
+          "4": {
+            "frost_days": 31,
+            "median": -0.26,
+            "colder_share": 0.323
+          },
+          "10": {
+            "frost_days": 86,
+            "median": -0.61,
+            "colder_share": 0.023
+          },
+          "11": {
+            "frost_days": 436,
+            "median": -0.38,
+            "colder_share": 0.078
+          },
+          "12": {
+            "frost_days": 822,
+            "median": -0.4,
+            "colder_share": 0.086
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3473,
+          "median": 0.34,
+          "p95": 1.44,
+          "max": 2.91,
+          "min": -2.3
+        },
+        "colder_share": 0.688,
+        "warmer_share": 0.248,
+        "cold_days": {
+          "days": 697,
+          "median": 0.44,
+          "colder_share": 0.726
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 871,
+            "median": 0.19,
+            "colder_share": 0.605
+          },
+          "2": {
+            "frost_days": 748,
+            "median": 0.46,
+            "colder_share": 0.749
+          },
+          "3": {
+            "frost_days": 479,
+            "median": 0.9,
+            "colder_share": 0.939
+          },
+          "4": {
+            "frost_days": 31,
+            "median": 1.28,
+            "colder_share": 0.968
+          },
+          "10": {
+            "frost_days": 86,
+            "median": 0.67,
+            "colder_share": 0.86
+          },
+          "11": {
+            "frost_days": 436,
+            "median": 0.32,
+            "colder_share": 0.704
+          },
+          "12": {
+            "frost_days": 822,
+            "median": 0.1,
+            "colder_share": 0.535
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3360,
+          "median": -1.1,
+          "p95": -0.28,
+          "max": 0.75,
+          "min": -3.0
+        },
+        "colder_share": 0.012,
+        "warmer_share": 0.981,
+        "cold_days": {
+          "days": 672,
+          "median": -1.57,
+          "colder_share": 0.0
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 854,
+            "median": -1.19,
+            "colder_share": 0.0
+          },
+          "2": {
+            "frost_days": 723,
+            "median": -0.92,
+            "colder_share": 0.004
+          },
+          "3": {
+            "frost_days": 464,
+            "median": -0.58,
+            "colder_share": 0.08
+          },
+          "4": {
+            "frost_days": 29,
+            "median": -0.86,
+            "colder_share": 0.0
+          },
+          "10": {
+            "frost_days": 80,
+            "median": -1.35,
+            "colder_share": 0.0
+          },
+          "11": {
+            "frost_days": 414,
+            "median": -1.14,
+            "colder_share": 0.0
+          },
+          "12": {
+            "frost_days": 796,
+            "median": -1.23,
+            "colder_share": 0.0
+          }
+        }
+      },
+      {
+        "regime": "cloud_b82_diffuse_sun",
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3360,
+          "median": -0.75,
+          "p95": 0.31,
+          "max": 1.73,
+          "min": -3.78
+        },
+        "colder_share": 0.106,
+        "warmer_share": 0.854,
+        "cold_days": {
+          "days": 672,
+          "median": -0.98,
+          "colder_share": 0.088
+        },
+        "by_month": {
+          "1": {
+            "frost_days": 854,
+            "median": -0.87,
+            "colder_share": 0.025
+          },
+          "2": {
+            "frost_days": 723,
+            "median": -0.6,
+            "colder_share": 0.166
+          },
+          "3": {
+            "frost_days": 464,
+            "median": -0.18,
+            "colder_share": 0.36
+          },
+          "4": {
+            "frost_days": 29,
+            "median": 0.11,
+            "colder_share": 0.517
+          },
+          "10": {
+            "frost_days": 80,
+            "median": -0.52,
+            "colder_share": 0.113
+          },
+          "11": {
+            "frost_days": 414,
+            "median": -0.75,
+            "colder_share": 0.034
+          },
+          "12": {
+            "frost_days": 796,
+            "median": -0.98,
+            "colder_share": 0.011
+          }
+        }
+      }
+    ]
+  },
   "sensitivity_thin_bark_still_air_clear_no_sun": {
     "sapwood_190mm": {
       "override": {
@@ -1448,10 +3675,10 @@
     },
     "tied_max_K": 4.62,
     "tied_max_regime": "overcast_diffuse_sun",
-    "text": "The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the flange: the tied median is -2.6…-0.5 K (warmer under the flange), because a long-wave deficit depresses flat bark (-6.9 K at its equilibrium) more than the capsule (-5.7 K) — with the capsule's h_c set to bark's the tied median turns +0.4 K. Overcast, no sun: +0.3…+0.6 K (colder) — the fin's conductance to the air (6× bark's) makes the ring follow the air's daily fall. Diffuse sun on both raises it again (bark banks the gain, the fin sheds it): clear -1.7…+0.1 K, overcast +1.1…+1.4 K. The worst day of the four ends is +4.6 K colder (overcast_diffuse_sun, tied). Decoupled — the flange's band alone, 0.54× the ring — moves the same way with smaller medians. Beam sun on a trunk face, real cloud cover and the real coupling are not in the tree; 1D inflates the shift in both signs. An injury THRESHOLD now is: Shlapak et al. 2011 (Uman, Cherkasy obl.) measured a cambium damage index of 0.1 +/- 0.1 at -25 C and 0.2-0.65 at -35 C on dormant stone-fruit wood, i.e. the threshold sits NEAR this model's floor, not far below it -- canon docs/01_04 section 3.1."
+    "text": "The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the flange: the tied median is -2.6…-0.5 K (warmer under the flange), because a long-wave deficit depresses flat bark (-6.9 K at its equilibrium) more than the capsule (-5.7 K) — with the capsule's h_c set to bark's the tied median turns +0.4 K. Overcast, no sun: +0.3…+0.6 K (colder) — the fin's conductance to the air (6× bark's) makes the ring follow the air's daily fall. Diffuse sun on both raises it again (bark banks the gain, the fin sheds it): clear -1.7…+0.1 K, overcast +1.1…+1.4 K. The worst day of the four ends is +4.6 K colder (overcast_diffuse_sun, tied). Decoupled — the flange's band alone, 0.54× the ring — moves the same way with smaller medians. Weighed by the site's real cloud (ERA5: winter median cover 0.98, above 0.8 in 72% of winter hours), the answer turns on how cover becomes sky radiation, and the one measurement in hand (a mountain station, by day) does not settle it for a valley cell at night: if full cover radiates as a black body at air temperature (the two ends mixed by the cover), the tied flange is colder on 26%–68% of frost days without sun and 69%–89% with diffuse sun (median +0.5…+1.2 K); with Brutsaert 1982's factor at its original C 0.22, which leaves a fully covered winter sky short of a black body, on 0%–36% and 11%–76%. On the cold days (bark below -10 °C), the tail an injury threshold sits in: 58%–88% colder under the first, 0%–48% under the second without sun. Beam sun on a trunk face and the real coupling are not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it."
   },
   "ceilings": [
-    "the sky and the sun are bracketed by their ends — real cloud cover (ERA5) and beam sun on a trunk face are not in the tree, so the sign at the site is a mixture this run does not weigh",
+    "the sun is bracketed by its ends — beam sun on a trunk face is not computed (it needs the mounting azimuth); real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — which one holds at the site decides the sign, and neither form's primary was read",
     "1D and zero contact resistance inflate the shift in both signs; the tied end is the upper end of the coupling axis only, and the two coupling ends bracket the median, not the tail",
     "the radome↔flange coupling is not measured — decoupled and tied are its two ends",
     "F 0.5, ε 0.90, α_bark 0.80 and the trunk's convection correlation are ours; α_fin is the radome's specified ceiling and a lighter finish enlarges the shift",

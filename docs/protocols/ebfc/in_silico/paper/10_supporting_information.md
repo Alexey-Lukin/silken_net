@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 283 · 15,570,153 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 284 · 16,534,368 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -112,7 +112,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/76_os_chelate_sensitivity.py` | `2c6fd51d8bf318254c856dccd6edd8f6c79097dbabfbebd4cb75fea3e668aa3c` | Sensitivity of the device osmium couple to closing its bipyridine chelates onto the assumed bond length and bite angle. |
 | `tools/in_silico/scripts/77_anchor_torque_path.py` | `3ca15a15294796eb137e44550b09a0c850ae4d52ecf5ac7d71cafbda234defc3` | Torque path onto the anchor's own axis under stem torsion, and the press-fit friction that carries it (by inversion). |
 | `tools/in_silico/scripts/78_flange_cambium_heat.py` | `8155b75118fc7227d4c05afa318a47fc13fbbb4fe3ccc5e51949313f7608034a` | Cambium temperature under the anchor's titanium flange over thirty years of hourly weather, against bark without it (1D upper bound). |
-| `tools/in_silico/scripts/79_flange_cambium_frost.py` | `486a8ba7918e64794caa9b39c20d9f8d303e400ea7cb9472ed764015b45ea5ee` | Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling (1D). |
+| `tools/in_silico/scripts/79_flange_cambium_frost.py` | `ed0881f2ffce2d3a1f8d765a79bcdc2fa31ec7026d1df28bb6a1313c98b29c39` | Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling (1D). |
 | `tools/in_silico/scripts/80_chem11_a3d_crosscheck.py` | `30443398039f633e98f422c9d19f2469b79c6c08d5221d36ed1890528c327a65` | Aggrescan3D cross-check of the four deglycosylation hotspots of the aglycosylated FAD-GDH. |
 | `tools/in_silico/scripts/81_capsule_cold_edge_sky.py` | `796730c1eca2d7b4b968ce08ab7289ba84aa817e11e80f68070ade27ec9fd8c3` | Cold edge of the sensor capsule's thermal envelope with clear-sky and overcast long-wave exchange, over thirty years of hourly weather, against the operating floor of its supercapacitor. |
 | `tools/in_silico/scripts/82_collar_running_clearance.py` | `72ff1cebfe494be649a75db7afae9d98b97c358bd035acd7fd2c49f64eb33b1f` | Running clearance of the bayonet collar in the radome's socket band across the capsule temperature envelope, as a function of the manufacturing route, and the board ceiling each route leaves. |
@@ -122,8 +122,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `b18117548377a05a8d7a01e36eb9f98584392637d8fbcea498574ce338b3ac12` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `76749564594f230aea5b093187bd46ddb226a6bde65509fe90a91e82a04bf989` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `b69fafaae2aa9486ebd216baf817e71e085f8509871be02c8cd32bbf8bfaa908` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `4150a871e8b4622a2d8e06fd8bdd10fe1ca288f3f79bbe6f0ce23843139563d2` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `9f34899af796452e4aeddca41036efd3774717c5896b32e8ba3ba91539bf1ff8` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -253,7 +253,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 |---|---|---|
 | `tools/in_silico/cache/thermal/capsule_cold_edge_sky.json` | `3e95e09ed99c3780171d1253adc418b86d20d1104329bd571264658585f796b0` | 8,747 |
 | `tools/in_silico/cache/thermal/capsule_envelope.json` | `9beaedb7150d558d44075f0bf835f49d442bc430220fb1b4a9a8b05a1a86e4ef` | 11,609 |
-| `tools/in_silico/cache/thermal/flange_cambium_frost.json` | `d7f673e01a61967aa554a33bdb2fd0e273263319845876ad78b8250c386b227f` | 32,979 |
+| `tools/in_silico/cache/thermal/flange_cambium_frost.json` | `fe86f878fc097a98c41199790620cc3f3aad4bb1327842fe62ac966119b208e3` | 86,575 |
 | `tools/in_silico/cache/thermal/flange_cambium_heat.json` | `b9c91e511129f08a71c16426937ba66c784a24f5360d6e7313299e8be326a2bd` | 20,172 |
 | `tools/in_silico/cache/thermal/site_rain_dew.json` | `d1afa4d846f7a64156c91ba3c859d4a895eb874b8dd82b2dd13744a1dd646db3` | 6,585 |
 
@@ -284,10 +284,11 @@ External records the desk models read at run time (climate reanalysis, wind, hom
 | `tools/in_silico/data/chem11_conservation/homologs_gmc_reviewed.fasta` | `fcf35c221456eb24179218009d9cd2eaa22c4c4b6b9182a13119de539d8fb640` | 23,188 |
 | `tools/in_silico/data/chem11_conservation/homologs_uniref50.fasta` | `896acff438277cc87693737629c11cce82c93d3808768b5337523adfdb2e9710` | 25,788 |
 | `tools/in_silico/data/chem11_conservation/query_G8E4B5.fasta` | `b532026085a116a03aae6185b6a41a4b20c8775fe2a1d06964674a32d08a7405` | 717 |
-| `tools/in_silico/data/era5_cherkasy/README.md` | `f07a4e0802a4263ccdcbf6139deaaa15875c45dc7e014856d8dcff542e4abf51` | 6,127 |
+| `tools/in_silico/data/era5_cherkasy/README.md` | `4fc876fcfafa622a4c959a648e666a68da24f83de14de7601a280a9fdb99d8d7` | 7,510 |
 | `tools/in_silico/data/era5_cherkasy/daily_precip_1991_2020.csv` | `b9497daf7cd8094127acb23f2db020009728d31d996907c99f98dac70b7339b5` | 220,894 |
 | `tools/in_silico/data/era5_cherkasy/daily_t2m_mean_1991_2020.csv` | `a49b03e3c432704c507fc7eab770263c615383c20b24a15c05976c1d243842b1` | 172,244 |
 | `tools/in_silico/data/era5_cherkasy/hourly_1991_2020.csv.gz` | `afe6421be59b8b89644ff81bb993553a73987f913a5ff161129c9df77197c282` | 2,178,023 |
+| `tools/in_silico/data/era5_cherkasy/hourly_cloud_1991_2020.csv.gz` | `9f2465e75d9e69a051d54db43718c291ebbe240ae60f95ef88d78f38035d3165` | 888,714 |
 | `tools/in_silico/data/era5_cherkasy/hourly_dew_rh_soil_1991_2020.csv.gz` | `e093b16dbfca9684b4bd94056fe7a9100c59d4b8b30baaa86200b840b53ac202` | 2,028,981 |
 | `tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json` | `8866640bf57497d38d3ecbfeb8918c78aaca98f163eb39a676d41e9c063216e4` | 58,549 |
 

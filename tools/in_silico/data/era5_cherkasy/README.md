@@ -84,3 +84,26 @@ ERA5's first two layers (0–7 and 7–28 cm): layer means, not depths.
   repeat (2010-03-28T03:00 is present, 2010-10-31 has no doubled hour). So `74`'s night window 20:00–06:59
   is UTC+3 — civil 19:00–05:59 in winter — and every day of these two files is cut at UTC+3 midnight. The
   stamps are used as delivered, not converted.
+
+---
+
+# ERA5 hourly total cloud cover — same grid point, 1991–2020
+
+**What it is for:** `scripts/79_flange_cambium_frost.py` (HW.6, the frost half of «flange → cambium»): the sign
+of the cambium shift under the flange flips between the clear-sky and the overcast end, so the run weighs the two
+ends by the cloud the site actually has, hour by hour.
+
+**Provenance — the query** (fetched 2026-10-12 with `curl`; the file is that CSV response, unchanged, gzipped):
+
+```
+https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&start_date=1991-01-01&end_date=2020-12-31&hourly=cloud_cover&timezone=Europe%2FKyiv&models=era5&format=csv
+```
+
+→ `hourly_cloud_1991_2020.csv.gz` (262 992 hours). Same API, model pin, grid point (returned: 49.5 N, 32.0 E,
+111 m) and fixed UTC+3 clock as the hourly files above; `79` refuses to run if the clocks differ.
+
+**Declared ceiling — what this series is NOT, beyond the bullets above:**
+- **Total cover, not cloud radiative properties.** One fraction for all levels: a thin high veil and a low
+  stratus deck at the same percentage radiate very differently, and the long-wave formulas `79` weighs with it
+  were fitted on their own cloud measures, not on reanalysis cover — the role substitution is declared there.
+- **A cell average.** ERA5 cloud is a model field over ~0.25°, not an observation above one trunk.
