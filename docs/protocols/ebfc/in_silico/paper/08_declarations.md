@@ -43,14 +43,20 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   beside it — ⚖️ 2026-10-03]
 
 > Data Availability — provenance: publish-to-protect, `00_01 §8`.
-> *Snapshot recipe (prepared 2026-10-01; minting the DOI needs the founder's account, and the archive
-> channel — e.g. Zenodo's GitHub-release integration — is his choice):* neither §2.7 nor the SI names a
-> commit or a tag; the SI binds to the tree by the SHA-256 of every file it lists. So (1) re-render the SI
-> LAST (script 72) and commit it; (2) tag THAT commit and cut the release from the tag; (3) archive the
-> release and mint the DOI; (4) on a fresh checkout of the tag, `python -m pytest tools/in_silico/tests -q`
-> must pass — `test_paper_si_matches_its_generator` re-renders the SI and compares it byte for byte, which
-> proves the archived tree is the one the SI describes. A tag cut before the last SI render archives a tree
-> the SI does not describe.
+> *Snapshot recipe (⚖️ founder 2026-10-12 — a manual Zenodo upload with a reserved DOI, no GitHub Release;
+> grounds, price and weakest link in `00_02 §2.1`; the founder's account does steps 1 and 5):* neither §2.7
+> nor the SI names a commit or a tag; the SI binds to the tree by the SHA-256 of every file it lists, and the
+> manuscript is printed from the tagged commit — so the DOI has to be in this file BEFORE the tag. Hence
+> (1) open a new Zenodo upload draft and reserve its DOI («Get a DOI now!»); keep the draft until publication,
+> since deleting it loses the DOI; (2) write that DOI into Data Availability above, answering its
+> `[finalise` marker; (3) re-render the SI LAST (script 72) and commit; (4) tag THAT commit with a plain tag
+> outside `v*` (that namespace is release-please's), and ⛔ cut NO GitHub Release from it — a published
+> release starts Deploy · Production in this repository (`06_07`); (5) upload `git archive` of the tag to
+> the same Zenodo draft and publish it; (6) on a fresh checkout of the tag,
+> `python -m pytest tools/in_silico/tests -q` must pass — `test_paper_si_matches_its_generator` re-renders the
+> SI and compares it byte for byte, which proves the archived tree is the one the SI describes — and the
+> manuscript is printed and checked on that same commit (`scripts/disclosure_pdf.rb … --manuscript`). A tag
+> cut before the last SI render archives a tree the SI does not describe.
 
 - **Competing Interests.** *The author is the founder of the
   SilkenNet project, an open-hardware forest-monitoring platform of which the biofuel cell studied here
