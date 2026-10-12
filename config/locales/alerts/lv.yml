@@ -106,8 +106,8 @@ lv:
         unassigned: Brīdinājumu vēl neviens nav paņēmis
       sop:
         domain:
-          pending: Partnera SOP saturs šim brīdinājuma tipam vēl nav pieejams — domēna rokasgrāmatas pieder ārējam īpašniekam.
-          title: Domēna taktika (partnera SOP)
+          pending: Lietotne nesniedz domēna taktiku šim brīdinājuma tipam.
+          title: Domēna taktika
         steps:
           acknowledge:
             body: Apstipriniet, ka brīdinājums tiek apstrādāts. Atrisināšana ieraksta operatoru un laiku audita žurnālā.

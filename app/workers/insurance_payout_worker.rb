@@ -278,7 +278,7 @@ class InsurancePayoutWorker
     # ⚠️ Наслідок звуження, який треба бачити прямо: `severe_drought`-алерт НЕ МАЄ
     # у дереві жодного писача `:verified`, тож поліс від посухи структурно недосяжний
     # для авто-виплати доти, доки не приземлиться реальне drought-джерело (S3.2 /
-    # UNI.12). Це не регресія — це та сама діра, яку доти ХОВАВ чужий доказ.
+    # INS.1). Це не регресія — це та сама діра, яку доти ХОВАВ чужий доказ.
     return false if peril_alerts.exists?(alert_type: confirming_type, satellite_status: :verified)
 
     Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."

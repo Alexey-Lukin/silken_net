@@ -106,8 +106,8 @@ lt:
         unassigned: Įspėjimo dar niekas nepaėmė
       sop:
         domain:
-          pending: Partnerio SOP turinio šiam įspėjimo tipui dar nėra — srities vadovai priklauso išorės savininkui.
-          title: Srities taktika (partnerio SOP)
+          pending: Programėlė nepateikia šio įspėjimo tipo srities taktikos.
+          title: Srities taktika
         steps:
           acknowledge:
             body: Patvirtinkite, kad įspėjimas apdorojamas. Išsprendimas įrašo operatorių ir laiką audito žurnale.

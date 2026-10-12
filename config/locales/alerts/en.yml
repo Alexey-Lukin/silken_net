@@ -106,8 +106,8 @@ en:
         unassigned: Nobody has taken this alert yet
       sop:
         domain:
-          pending: Partner SOP content for this alert type is not available yet — domain playbooks are owned externally and arrive via the academic channel.
-          title: Domain tactics (partner SOP)
+          pending: The app does not provide domain tactics for this alert type.
+          title: Domain tactics
         steps:
           acknowledge:
             body: Confirm the alert is being handled. Resolving it records the operator and timestamp in the audit trail.

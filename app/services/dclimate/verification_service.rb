@@ -367,7 +367,7 @@ module Dclimate
     # :inconclusive — наявний стан «потрібен людський/DAO-аудит», на якому InsurancePayoutWorker уже
     # HOLD-ить, а повістку для людини несе окремий `EwsAlert(:field_audit)` нижче.
     # ⛔ Дрон-bounty як фізичний fallback — won't-do (E.20); реальний drought-оракул
-    # = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
+    # = North-Star (S3.2 / ДСНС-API — INS.1). Без FIRMS-запиту (нерелевантний).
     def escalate_non_fire_to_field_audit!
       # [I18N.1] Ключ замість укр. прози. Тип перила у фразу НЕ інтерпольовано
       # свідомо: він видно з самого алерту, а сирий enum у перекладеному реченні —
