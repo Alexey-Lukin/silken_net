@@ -47,8 +47,8 @@ Layout choices that are ours, not the vendor's — each one is a knob below, and
     evaluation boards use an 11 mm strip. Ours is the narrowest the footprint allows ON PURPOSE: 02_01 §3.5 leaves the
     booster's clearance uncounted and the RF deck's top side is already over-full, so a product board will not afford
     a wide strip — the board measures the efficiency the product can have. «Narrowest» is not «small»: the segment over
-    the chord is printed per board on every run (a third of the disc for NN02-224, a fifth for NN02-201), and that
-    area is what 02_01 §3.5 does not count. Price: the number comes out MORE pessimistic than a wide clearance would
+    the chord is printed per board on every run (≈ 30–33 % of the disc for NN02-224, ≈ 18–20 % for NN02-201), and
+    that area less the booster's own courtyard is what 02_01 §3.5 does not count. Price: the number comes out MORE pessimistic than a wide clearance would
     give; a wide-clearance variant is a change of GAP_TO_GROUND, not a new board.
   • 2 layers, FR4 1.6 mm (the deck thickness, 02_01 §3.1 pos. 8 — the decks themselves are 4-layer); ground poured on
     both layers and stitched, so the radiator is a single ground disc — the one-deck proxy the sheet names as its weakest
