@@ -8,7 +8,7 @@
 
 ## 0. Front matter
 
-- **Working title (EN):** *"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT."* (base = 00_02 canon title; the **"Mediator Structure–Activity"** clause is **new**, earned by ①'s Hammett LFER — if kept, update 00_02 too.)
+- **Title (EN):** one home — the «Назва (EN)» line under Стаття 1 in [`00_02 §2.1`](../../../../00_02_Academic_Integration_and_IP.md); the SI generator `72` and the manuscript print (`scripts/disclosure_pdf.rb`) read it from there, so it is not restated here. Its «Mediator Structure–Activity» clause was earned by ①'s Hammett LFER.
 - **Type:** purely computational quantum-chemistry paper (no wet experiment yet — Ti-coin = Stage 2). Sells on **mechanistic + methodological** novelty, NOT "validation."
 - **Target:** *J. Phys. Chem. B* (primary) · *PCCP* (fallback) · *Bioelectrochemistry* (applied backup). IMRaD identical across the first two.
 - **Authors / CRediT:** Architect (Silken Net) — Conceptualization, Methodology, Software, Investigation, Writing-original-draft. ⚖️ **No external collaborator** (founder 2026-09-23, `00_02 §2.1`): explicit-water QM/MM stays the named limit of §3.5, not a pre-submission section; closing it is a follow-up. One author, also the corresponding author, affiliation «Independent researcher» (⚖️ founder 2026-10-03, `00_02 §2.1`).

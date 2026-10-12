@@ -134,13 +134,19 @@ def jargon(text: str, ids: set[str]) -> list[str]:
     return found
 
 
-def article_title() -> str:
-    block = PAPER_BLOCK_RE.search(TITLE_DOC.read_text(encoding="utf-8"))
+def title_from(plan: str) -> str | None:
+    """The «Назва (EN)» line inside Стаття 1's own block of the plan, or None — never another paper's title."""
+    block = PAPER_BLOCK_RE.search(plan)
     match = block and TITLE_RE.search(block.group("block"))
-    if not match:
+    return match.group("title") if match else None
+
+
+def article_title() -> str:
+    title = title_from(TITLE_DOC.read_text(encoding="utf-8"))
+    if title is None:
         raise SystemExit(f"72: no «**Назва (EN):** _\"…\"_» line under «#### Стаття 1:» in {TITLE_DOC.relative_to(REPO_ROOT)}"
                          " — the title has no home")
-    return match.group("title")
+    return title
 
 
 def figure_generators(fig_rel: str, scripts: list[str]) -> str:

@@ -3460,6 +3460,23 @@ def test_paper_si_matches_its_generator():
         f"{SI} differs from what 72 renders — re-run 72, never hand-edit the manifest")
 
 
+def test_paper_title_is_stattya_1s_by_address():
+    """72 reads the title from the block under «#### Стаття 1:» of the plan — the manuscript print
+    (`scripts/disclosure_pdf.rb`, `title_from`, its selftest) reads it by the same rule.
+
+    CAN catch: a reader that takes the FIRST «Назва (EN)» of the file (a position, not an address — every
+    paper of the plan carries one) · an anchor that confuses Стаття 1 with Стаття 13 · a block that runs
+    past its own heading into the next paper's title.
+    CANNOT catch: whether the Ruby reader still agrees — its selftest holds the same three cases.
+    """
+    import runpy
+    title_from = runpy.run_path(str(REPO / "tools/in_silico/scripts/72_paper_supporting_information.py"))["title_from"]
+    plan = ('#### Стаття 0: x\n**Назва (EN):** _"Wrong"_\n#### Стаття 13: z\n**Назва (EN):** _"Nor"_\n'
+            '#### Стаття 1: y\ntext\n**Назва (EN):** _"Right"_\n#### Стаття 2: w\n**Назва (EN):** _"Next"_\n')
+    assert title_from(plan) == "Right"
+    assert title_from(plan.replace('**Назва (EN):** _"Right"_\n', "")) is None
+
+
 def test_cathode_rct_reads_the_current_bracket():
     """`31b`'s k_DET scenarios must be the CURRENT corners of `25`'s bracket × turnover.
 

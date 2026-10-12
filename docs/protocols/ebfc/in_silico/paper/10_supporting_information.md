@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 287 · 16,497,510 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 287 · 16,498,914 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -105,7 +105,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `09c2f27cc96e905dfd508c35e7ce62f2fd5272bf83bd56c38a59ee01acb1d779` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/71_capsule_thermal_envelope.py` | `95788659543a9322202c77c2e066f2a21bd65181640da0dd7c4ca6b611ce76a1` | Thermal envelope of the sensor capsule under its PEEK radome, against the operating rating of its EDLC. |
-| `tools/in_silico/scripts/72_paper_supporting_information.py` | `3b0307e2647d77cf6c42dbdc7b7db9abb116faa31a82c8196da26c7ba11dbcec` | Supporting Information manifest, generated from the committed tree (no compute). |
+| `tools/in_silico/scripts/72_paper_supporting_information.py` | `d02848027f2542188f5fc76be39e9aa85e65dda8f19d1d79d7dc9507fc9d174a` | Supporting Information manifest, generated from the committed tree (no compute). |
 | `tools/in_silico/scripts/73_collar_wall_inversion.py` | `4b48830d5a5735abb31d2b498477d10d4b5984d7cc7d70ab1d29aa2969b4b918` | Bayonet-collar wall of the sensor capsule, judged by inversion: the force at which the wall would start to limit (axial retention, lug-root shear, trapped ice) against a generous bound. |
 | `tools/in_silico/scripts/74_site_rain_dew.py` | `49dcef4698dc5db921a504aadeed898e83a1f9ec1b70ae6b3fcd8afcefbad07e` | Site climate of the Cherkasy grid point, 1991–2020, for two open legs that each asked a number of the |
 | `tools/in_silico/scripts/75_pcm_ecp_radius_attribution.py` | `6f503e7289f65122cb4b2092c4671645de811c052915721b479ab9e5b44d5760` | Attribution of the conda-lock gap on metal-in-PCM couples to the PySCF 2.13.0 PCM ECP-radius fix. |
@@ -124,7 +124,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `60464ecbb84ea5b8a29bc48d334fb8346d78f263f739b88c210b695421e20249` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `81bfff258fe5016f675ea73d5ac270e187b9ec8d5582daeac792535e2fe2215d` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `5eef3dc5707e9f6a5f2ba13a20ad5297da74784de5806c0a0e803791c46cc264` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 

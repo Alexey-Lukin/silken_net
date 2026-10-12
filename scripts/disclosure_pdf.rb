@@ -95,7 +95,7 @@ module DisclosurePdf
   # given at print time, never committed: contacts and city are not kept in the repository (⚖️ docs/00_02 §2.1).
   TITLE_DOC = "docs/00_02_Academic_Integration_and_IP.md"
   PAPER_BLOCK = /^#### Стаття 1:[^\n]*\n(.*?)(?=^\#{2,4} |\z)/m
-  TITLE_LINE = /^\*\*Назва \(EN\):\*\* _"([^"]+)"_\s*$/
+  TITLE_LINE = /^\*\*Назва \(EN\):\*\* _"([^"]+)"_[[:space:]]*$/ # [[:space:]], not \s: Python's \s in 72 is Unicode-wide
 
   module_function
 
@@ -317,8 +317,9 @@ module DisclosurePdf
     t.call("a draft note woven into the text is recognised, the paper's own prose is not",
            [ "(publish-to-protect, `00_01 §8`)", "Draft (2026-09-30 — x): *text*", "see `01_03` here" ].all? { |l| l.match?(WORKSHOP_NOTE) } &&
            [ "Methods §2.1", "a draft (of the text)", "`delta_t` and 4,4′-dimethyl" ].none? { |l| l.match?(WORKSHOP_NOTE) })
-    plan = "#### Стаття 0: x\n**Назва (EN):** _\"Wrong\"_\n#### Стаття 13: z\n**Назва (EN):** _\"Nor\"_\n#### Стаття 1: y\ntext\n**Назва (EN):** _\"Right\"_\n"
-    t.call("the title is the one under Стаття 1's heading, not the first in the plan nor Стаття 13's",
+    plan = "#### Стаття 0: x\n**Назва (EN):** _\"Wrong\"_\n#### Стаття 13: z\n**Назва (EN):** _\"Nor\"_\n" \
+           "#### Стаття 1: y\ntext\n**Назва (EN):** _\"Right\"_\n#### Стаття 2: w\n**Назва (EN):** _\"Next\"_\n"
+    t.call("the title is the one under Стаття 1's heading — not the first in the plan, not Стаття 13's, not the next paper's",
            title_from(plan) == "Right" && title_from(plan.sub("**Назва (EN):** _\"Right\"_\n", "")).nil?)
     puts(fails.zero? ? "disclosure_pdf --selftest: OK (14 cases)" : "disclosure_pdf --selftest: #{fails} FAILED")
     exit(fails.zero? ? 0 : 1)
