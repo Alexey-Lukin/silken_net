@@ -90,20 +90,23 @@ Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates
 tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
 away from experiment (every pair by at most 3.6 mV). Relaxing the Os(II) geometry of OMe, Me and H with the same
 protocol, Os(III) vertical on it (Cl not relaxed), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
-substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and moves every pair of ref 8 toward the measured
-(OMe−H from 0.87 to 1.08 times, Me−H from 1.34 to 1.23, OMe−Me from 0.56 to 0.99); Me then falls below the line
-through H and OMe, as it does in the measured series (r² of the three computed donors from 0.9996 to 0.957). Only the
-homoleptic acetonitrile series, compared under the transfer assumptions above, moves away: OMe against H goes from
-0.99 to 1.23 times the measured. The computed pairs change by −9 % (Me−H) to +77 % (OMe−Me) — the three-point donor
-slope by 21 % — so the substituent sensitivity of the vertical protocol rests on the geometry at the level of the
-pairs themselves. The relaxed chelate comes closer to the crystal ranges of §2.3 (Os–N(bpy) 2.05–2.09 Å against the
-programmatic 2.10 Å), while Os–N(L) lengthens to 2.14 Å and Os–Cl to 2.52–2.53 Å, about 0.09 Å over the Os(II)
-range — the same within 0.012 Å at the three points, so largely common to the pairs. Left untested are the Os(III)
-state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
+substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and ref 8's (OMe−Me from 0.56 to 0.99 times), and it
+brings ref 8's two pairs against H closer by about 3 mV per substituent each (OMe−H from 0.87 to 1.08 times, Me−H
+from 1.34 to 1.23; of the three donor pairs two are independent); Me then falls below the line through H and OMe,
+as it does in both measured series that have H (r² of the three computed donors from 0.9996 to 0.957). The
+homoleptic acetonitrile series, compared under the transfer assumptions above, moves the other way: OMe against H
+goes from 0.99 to 1.23 times the measured. The computed donor pairs change by −9 % (Me−H) to +77 % (OMe−Me), up to
+73 meV a complex against the 40–113 meV the points themselves move, so the substituent sensitivity of the vertical
+protocol rests on the geometry at the level of the pairs themselves; the pairs with Cl were not recomputed. The relaxed
+chelate comes closer to the crystal ranges of §2.3 — bite 77.5–78.2° against the programmatic 80.5–80.6°, Os–N(bpy)
+2.05–2.09 Å against 2.10 Å — while Os–N(L) lengthens to 2.14 Å and Os–Cl to 2.52–2.53 Å, 0.08–0.09 Å over the
+Os(II) range and 0.14–0.15 Å over the Os(III) one, on which Os(III) is computed vertically. Left untested are the
+Os(III) state's own relaxation and free energies, and our program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two
-series) our Me effect is too large in both and our OMe effect agrees in one and falls 13 % short in the other, and
+series), on the programmatic geometry, our Me effect is too large in both and our OMe effect agrees in one and falls
+13 % short in the other (relaxed, 23 % and 8 % over), and
 toward the acceptor end our effect is too large in both series that reach Cl.
 A cross-check with the range-separated ωB97X on six of the ten members — the same vertical ΔSCF at
 ωB97X/def2-TZVP on the same geometries (Table 4, last column) — keeps the direction and the donor-resonance

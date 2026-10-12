@@ -61,6 +61,7 @@ from __future__ import annotations
 import importlib.util
 import itertools
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -343,8 +344,9 @@ def aqueous(sigma: dict, b3: dict) -> dict:
 
 
 def _os_donors(atoms: list) -> dict:
-    """Os (atom 0) to its N(bpy) ×4, N(L) and Cl, Å — order-free: a coordinating N with another coordinating N within
-    2.8 Å is a chelate N (bpy bite ≈ 2.6 Å; a cis N(bpy)···N(L) is ≈ 3.0 Å)."""
+    """Os (atom 0) to its N(bpy) ×4, N(L) and Cl, Å, and the two chelate bite angles N–Os–N, ° — order-free: a
+    coordinating N with another coordinating N within 2.8 Å is a chelate N (bpy bite ≈ 2.6 Å; a cis N(bpy)···N(L) is
+    ≈ 3.0 Å), and those two are one chelate."""
     xyz = {i: [float(v) for v in x] for i, (_, x) in enumerate(atoms)}
     dist = lambda a, b: sum((p - q) ** 2 for p, q in zip(xyz[a], xyz[b], strict=True)) ** 0.5   # noqa: E731
     coord = [i for i, (e, _) in enumerate(atoms) if e == "N" and dist(0, i) < 2.4]
@@ -353,8 +355,13 @@ def _os_donors(atoms: list) -> dict:
     cl = [i for i, (e, _) in enumerate(atoms) if e == "Cl" and dist(0, i) < 2.8]
     if len(chelate) != 4 or len(lig) != 1 or len(cl) != 1:
         sys.exit(f"not an [Os(bpy)2(L)Cl] core: {len(chelate)} chelate N, {len(lig)} N(L), {len(cl)} Cl")
+    pairs = {tuple(sorted((i, j))) for i in chelate for j in chelate if i != j and dist(i, j) < 2.8}
+    bite = sorted(round(math.degrees(math.acos((dist(0, i) ** 2 + dist(0, j) ** 2 - dist(i, j) ** 2)
+                                               / (2 * dist(0, i) * dist(0, j)))), 2) for i, j in pairs)
+    if len(pairs) != 2:
+        sys.exit(f"not two chelates: {len(pairs)} N···N pairs within 2.8 Å")
     return {"N_bpy": sorted(round(dist(0, i), 4) for i in chelate), "N_L": round(dist(0, lig[0]), 4),
-            "Cl": round(dist(0, cl[0]), 4)}
+            "Cl": round(dist(0, cl[0]), 4), "bite_deg": bite}
 
 
 def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | None:
@@ -384,6 +391,8 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     pvi_r = {f"{x}-{r}": {t: shift(e, x, r) / ((pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for t, e in src.items()}
              for x, r in pvi_pairs}
     pair_change = {f"{x}-{r}": shift(src["relaxed"], x, r) / shift(src["series"], x, r) - 1 for x, r in pvi_pairs}
+    pvi_gap = {f"{x}-{r}": {t: abs(shift(e, x, r) - (pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) * 1000
+                            for t, e in src.items()} for x, r in pvi_pairs}   # |ours − measured|, mV per substituent
     aq_meas = next(p["measured_mV"] for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")) / 1000
     aq_r = {t: shift(e, "ome", "dmbpy") / aq_meas for t, e in src.items()}
     fits = {t: _slope_r2([sigma[n] for n in pts], [shift(e, n, "bpy") for n in pts]) for t, e in src.items()}
@@ -392,6 +401,7 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     out = {"points": pts, "not_relaxed": "Cl and the acceptor side", "os3": "vertical on the relaxed Os(II) geometry",
            "mecn_ratio_ours_over_measured": mecn, "pvi_ratio_ours_over_measured": pvi_r,
            "aqueous_ome_dmbpy_ratio_ours_over_measured": aq_r, "computed_pair_change": pair_change,
+           "pvi_gap_mV": pvi_gap,
            "donor_slope_per_substituent_V_per_sigma": {t: f[0] for t, f in fits.items()},
            "donor_r2": {t: f[1] for t, f in fits.items()},
            "donor_slope_change": fits["relaxed"][0] / fits["series"][0] - 1,
@@ -416,21 +426,27 @@ def verdict_relaxed(rg: dict) -> str:
         vals = [x for v in don for x in (v[t][k] if isinstance(v[t][k], list) else [v[t][k]])]
         return f"{min(vals):.3f}–{max(vals):.3f}" if max(vals) - min(vals) >= 0.0005 else f"{min(vals):.3f}"
 
-    r2 = rg["donor_r2"]
-    return (f"Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) moves every computed "
-            f"pair of our own core toward the measured — ref 8's films OMe−H ×{pv['ome-bpy']['series']:.2f} → "
-            f"×{pv['ome-bpy']['relaxed']:.2f}, Me−H ×{pv['dmbpy-bpy']['series']:.2f} → ×{pv['dmbpy-bpy']['relaxed']:.2f}, "
-            f"OMe−Me ×{pv['ome-dmbpy']['series']:.2f} → ×{pv['ome-dmbpy']['relaxed']:.2f}, and the aqueous OMe−Me "
-            f"×{aq['series']:.2f} → ×{aq['relaxed']:.2f} — and makes Me weak against the line through H and OMe, as "
-            f"measured (r² of the three donors {r2['series']:.4f} → {r2['relaxed']:.3f}); against the homoleptic MeCN series "
-            f"OMe−H moves away (×{mc['ome']['series']:.2f} → ×{mc['ome']['relaxed']:.2f}) and Me−H toward it "
+    r2, gap = rg["donor_r2"], rg["pvi_gap_mV"]
+    bite = {t: [b for v in don for b in v[t]["bite_deg"]] for t in ("programmatic", "relaxed")}
+    return (f"Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) brings every recomputed "
+            f"donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films "
+            f"OMe−H ×{pv['ome-bpy']['series']:.2f} → ×{pv['ome-bpy']['relaxed']:.2f} and Me−H "
+            f"×{pv['dmbpy-bpy']['series']:.2f} → ×{pv['dmbpy-bpy']['relaxed']:.2f} (|ours − measured| "
+            f"{gap['ome-bpy']['series']:.1f} → {gap['ome-bpy']['relaxed']:.1f} and {gap['dmbpy-bpy']['series']:.1f} → "
+            f"{gap['dmbpy-bpy']['relaxed']:.1f} mV per substituent), OMe−Me ×{pv['ome-dmbpy']['series']:.2f} → "
+            f"×{pv['ome-dmbpy']['relaxed']:.2f} ({gap['ome-dmbpy']['series']:.1f} → {gap['ome-dmbpy']['relaxed']:.1f} mV), "
+            f"and the aqueous OMe−Me ×{aq['series']:.2f} → ×{aq['relaxed']:.2f} — and makes Me weak against the line through "
+            f"H and OMe, as measured (r² of the three donors {r2['series']:.4f} → {r2['relaxed']:.3f}); against the homoleptic "
+            f"MeCN series OMe−H moves away (×{mc['ome']['series']:.2f} → ×{mc['ome']['relaxed']:.2f}) and Me−H closer "
             f"(×{mc['dmbpy']['series']:.2f} → ×{mc['dmbpy']['relaxed']:.2f}). The computed pairs change by "
             f"{ch['dmbpy-bpy'] * 100:+.0f} % (Me−H) to {ch['ome-dmbpy'] * 100:+.0f} % (OMe−Me), the three-point donor slope by "
-            f"{rg['donor_slope_change'] * 100:+.0f} % (OMe−H {ch['ome-bpy'] * 100:+.0f} %). Os–N(bpy) goes from "
-            f"{span('programmatic', 'N_bpy')} to {span('relaxed', 'N_bpy')} Å, Os–N(L) from {span('programmatic', 'N_L')} to "
-            f"{span('relaxed', 'N_L')} Å, Os–Cl from {span('programmatic', 'Cl')} to {span('relaxed', 'Cl')} Å. So the "
-            f"substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, "
-            f"and on our own core the relaxed geometry agrees better with experiment — with Os(III) still vertical on it.")
+            f"{rg['donor_slope_change'] * 100:+.0f} % (OMe−H {ch['ome-bpy'] * 100:+.0f} %). The chelate bite goes from "
+            f"{min(bite['programmatic']):.1f}–{max(bite['programmatic']):.1f}° to {min(bite['relaxed']):.1f}–"
+            f"{max(bite['relaxed']):.1f}°, Os–N(bpy) from {span('programmatic', 'N_bpy')} to {span('relaxed', 'N_bpy')} Å, "
+            f"Os–N(L) from {span('programmatic', 'N_L')} to {span('relaxed', 'N_L')} Å, Os–Cl from {span('programmatic', 'Cl')} "
+            f"to {span('relaxed', 'Cl')} Å. So the substituent sensitivity of the vertical protocol depends on the geometry at "
+            f"the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with "
+            f"Os(III) still vertical on it.")
 
 
 def main() -> int:

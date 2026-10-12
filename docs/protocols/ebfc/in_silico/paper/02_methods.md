@@ -72,9 +72,10 @@ aqua or hydroxo ligands across the two oxidation states (COD 4305719, 4305720, 4
 targets thus sit inside the [Os(bpy)₃]²⁺ ranges, the Cl target at the top of the Os(III) range and below the
 Os(II) one, and the monodentate N and O targets inside the related ranges, while the realised chelate is up to 0.04 Å longer and
 3° wider than in [Os(bpy)₃]²⁺. The same geometry is used for both oxidation states and for every member of the
-substituent and speciation series, so an error in it is largely common to the points of a series; we expected it
-to bear more on absolute redox energies than on within-series trends, and for three donor points §3.3 measures
-both: relaxing the Os(II) geometry moves the points by 40–113 meV and the substituent pairs by −9 to +77 %. Its size on an absolute number was computed
+substituent and speciation series, so we expected an error in it to be largely common to the points of a series
+and to bear more on absolute redox energies than on within-series trends. For three donor points §3.3 measured
+both, and the expectation does not hold there: relaxing the Os(II) geometry moves the points by 40–113 meV and
+the substituent pairs by up to 73 meV a complex. Its size on an absolute number was computed
 for the device couple: closing both chelates onto the targets — each bipyridine re-optimised (MMFF94s) with its
 N···N held at the spacing the two targets imply, which realises Os–N(bpy) 2.060 Å at a 78.0° bite — lowers the
 Os(II) state by 0.069 eV and the Os(III) state by 0.044 eV and so moves the vertical ΔE_red(III→II) by −0.026 eV
