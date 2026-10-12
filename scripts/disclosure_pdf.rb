@@ -17,7 +17,8 @@
 # relative links, and a figure is EMBEDDED from the tree at <sha> as a data: URI — a relative image link would
 # otherwise become a GitHub `blob` page, an HTML document, and the PDF would carry a broken picture. The order to pass
 # for the manuscript (the script prints the comma list as given and checks no order; docs/protocols/ebfc/in_silico/paper/): 05_abstract · 01_introduction · 02_methods · 03_results ·
-# 04_conclusion · 06_tables · 08_declarations · 09_references — printed on the tagged commit of the deposit.
+# 04_conclusion · 06_tables · 08_declarations · 09_references — printed on the commit the deposit tags, BEFORE the tag
+# (snapshot recipe, step 4 — 08_declarations).
 #
 # 🔑 Indexers and patent examiners read the TEXT LAYER, not the page, and which extractor a
 # given index runs is unknown — so `check` asks two independent ones (poppler `pdftotext`;
