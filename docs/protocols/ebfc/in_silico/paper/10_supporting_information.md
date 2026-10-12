@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 287 · 16,499,159 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 288 · 16,561,516 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -174,6 +174,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/dft/os_mediator_series_iefpcm.json` | `2320a7637267f2c4a8fe55edd1475d49212c0ba86b5671ad60d429a4ea51a525` | 6,427 |
 | `tools/in_silico/cache/dft/os_mediator_series_osdef2.json` | `71eb5eaa3aa5988f4acceb40192e8d970cbf547be85dde693bc15c577a4f3d4c` | 6,127 |
 | `tools/in_silico/cache/dft/os_mediator_series_pyaxial.json` | `5771f40690d311a80cfedf63089662dcf511aaa60827f7f2abd41d5591582718` | 6,563 |
+| `tools/in_silico/cache/dft/os_mediator_series_relaxed_os2.json` | `5b0d6032ad258d39807735112b817bac108afe02d3b1eb7ceccae01271d4e8f1` | 62,357 |
 | `tools/in_silico/cache/dft/os_mediator_series_uffcavity.json` | `352cc45bcea6dd1d4975e79adad046d1d4f868d39706c2814b4c8f1e2bbdd4ff` | 6,602 |
 | `tools/in_silico/cache/dft/os_mediator_series_wb97x.json` | `94f3bb3a519f67bfe9430ea77682feb191a2d163478bf98f48b980c03b0f12b8` | 11,327 |
 | `tools/in_silico/cache/dft/os_mediator_series_wb97x_631gd.json` | `8cc9c9d7564963d409a09f14406d2ff4a22748d97e9d0fd299244a4fa609d609` | 2,586 |

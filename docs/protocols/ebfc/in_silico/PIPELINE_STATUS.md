@@ -7,13 +7,11 @@
 
 ## Script Execution Status
 
-> **Running: `21e … b3lyp-relaxed-os2`** (leg (3a) of [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, started
-> 2026-10-12 01:47 in the background; state as of 2026-10-12 20:10 — `dmbpy` and `ome` converged, `bpy` relaxing;
-> whether it still runs is `pgrep -f b3lyp-relaxed-os2`, not this line): the cache
-> `cache/dft/os_mediator_series_relaxed_os2.json` is written at every optimisation step, and re-running the same command
-> resumes (a converged geometry is reused when its convergence thresholds are unchanged, the partial one restarted). `21e` writes
-> its `vs_series` block only after the LAST complex, and `83` reads a variant only once that block exists, so the OMe−Me pair
-> is integrated when `bpy` lands, not before — what then moves, and the trigger-D question a preview raised, are in the leg. Every other script below is complete or closed. Volatile
+> **Done, not yet integrated: `21e … b3lyp-relaxed-os2`** (leg (3a) of [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, run
+> 2026-10-12 01:47–23:28): all three complexes relaxed and converged with no rescue, every Os(III) a clean doublet; the cache
+> `cache/dft/os_mediator_series_relaxed_os2.json` is committed with its `vs_series` block. Integration — `83` `relaxation_check`
+> → SUMMARY §Mediator → paper §3.3 → this table — and the trigger-D question it raises are the next step, judged on the
+> committed cache, not on a preview (leg). Every other script below is complete or closed. Volatile
 > counts live here only (other docs link, not duplicate).
 
 ### ✅ Completed (numeric order — results in cache)
