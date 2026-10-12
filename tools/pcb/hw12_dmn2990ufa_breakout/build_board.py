@@ -161,6 +161,9 @@ def header_footprint(board, nets: dict) -> pcbnew.FOOTPRINT:
 
 
 def build() -> pcbnew.BOARD:
+    # KiCad gives every item a random UUID, so an unchanged board would come out different on every run; a fixed seed keeps
+    # a regeneration's diff down to what actually moved (the gerbers' own timestamps still change — KiCad's header)
+    pcbnew.KIID.SeedGenerator(12)
     board = pcbnew.BOARD()
     board.SetCopperLayerCount(2)
     tb = board.GetTitleBlock()

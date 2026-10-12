@@ -1,0 +1,7 @@
+Designator,Footprint,Part,Fit
+AE1,Ignion NN02-201 (DS_NN02-201 Apr 2024 §2.5),Ignion NN02-201,fit
+J1,U.FL_Hirose_U.FL-R-SMT-1_Vertical,Hirose U.FL-R-SMT-1,fit
+A,L_0603_1608Metric,shunt — value from the VNA,DNP
+B,L_0603_1608Metric,series — value from the VNA,DNP
+C,L_0603_1608Metric,shunt — value from the VNA,DNP
+D,R_0603_1608Metric,0 Ω until a T is needed,fit
