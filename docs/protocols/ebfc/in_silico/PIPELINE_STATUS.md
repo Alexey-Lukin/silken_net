@@ -7,7 +7,11 @@
 
 ## Script Execution Status
 
-> **Nothing running.** All scripts below are complete or closed. Volatile
+> **Running: `21e … b3lyp-relaxed-os2`** (leg (3a) of [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, started
+> 2026-10-12 01:47 in the background): `dmbpy` converged, `ome` relaxing, `bpy` queued; the cache
+> `cache/dft/os_mediator_series_relaxed_os2.json` is written at every optimisation step, and re-running the same command
+> resumes (converged geometries reused, the partial one restarted). The OMe−Me pair is integrated as soon as
+> `ome.dE_red_eV` lands — what then moves is listed in the leg. Every other script below is complete or closed. Volatile
 > counts live here only (other docs link, not duplicate).
 
 ### ✅ Completed (numeric order — results in cache)

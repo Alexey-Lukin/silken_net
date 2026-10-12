@@ -1206,7 +1206,12 @@ Leg → [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS, «оцінка
 half**; the anchor half waits on HW.53, which decides what electrolyte the anchor cathode sees at all. Mechanism →
 [`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), the BOD row: laccase in ZIF inactivates at pH ≥ 6.
 
-**What the letter leaves open.** The Stage-2 letter says «Cathode medium: pH 4.5, air-exposed.» and names no
+⚖️ **Decided since 2026-10-12 — the founder ratified the buffered medium** (sap salts with malic acid at 10 mM, pH 4.5,
+in the cathode's own compartment; convection named by the laboratory; verdict, price and weakest link —
+[`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)), and the letter now names it. The paragraph below is the
+question as this script priced it, kept as the ground of that verdict.
+
+**What the letter left open (until 2026-10-12).** The Stage-2 letter said «Cathode medium: pH 4.5, air-exposed.» and named no
 composition; the ratified sap is 5.75 for the electrode tests and 4.5 only for the uncoated ICP-MS series
 ([`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)). Nor does the letter fix the convection. The laboratory
 chooses, and the script prices three choices: the sap brought to 4.5; the sap at 5.75, which is where the cathode sits in
