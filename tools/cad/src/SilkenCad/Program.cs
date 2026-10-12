@@ -999,7 +999,7 @@ internal static class Program
         {
             MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
             Console.WriteLine($"  Zone-1 insertion={AxialStack.Zone1InsertionMm(cem):F1} mm = the whole shank of {cem.Zone1LockManifest} " +
-                              $"(⚖️ 00_07 HW.26 G1 2026-10-12; what holds that depth is open, HW.26 — no step on a Ø11 anode) · " +
+                              $"(⚖️ 00_07 HW.26 G1 2026-10-12; the press fixture holds that depth, not the part — HW.26) · " +
                               $"lock window {w.MinMm:F1}–{w.MaxMm:F1} mm · gyroid body {cem.Zone1.LengthMm:F1} mm below the sleeve, all of it in the wood · " +
                               $"Ø{lockCem.ShankDiameterMm:F0} shank{(lockCem.BoreDiameterMm > 0f ? $" with a Ø{lockCem.BoreDiameterMm:F2} channel" : ", solid")}");
         }

@@ -87,7 +87,7 @@
 ## 7. Відомі невизначеності — назвати у звіті, не вирішувати
 
 - **G1 — ✅ розсуджено 2026-10-12:** хвостовик 18 мм — фізичний і входить у втулку цілим (одна модель — купон замка; 30-мм варіанти зрізано, [`01_01 §4.3`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) A). FEA рахується на 18 і на межі складання 14.
-- **G3 — перехід гіроїд → хвостовик** не визначено; упору всередині вікна немає (пресування за силою; чим тримати глибину — ⚖️-нога [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26, рекомендовано упор преса, не деталь).
+- **G3 — перехід гіроїд → хвостовик** не визначено; упору на деталі немає — глибину тримає упор оснастки преса (⚖️ [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26 2026-10-12).
 - **G4 — орієнтація друку інтегрованого тіла:** «кінчик донизу» ([`01_02 §1.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) ставить крутий β донизу під 20° від горизонталі, не самопідтримно — форма й шорсткість граней барба as-printed відкриті; FEA — на номінальному профілі.
 - **Поверхня:** хвостовик ТРАВЛЕНИЙ до посадки, і чи переживає травлена поверхня посадку, скільки активація знімає з натягу — відкрито ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.26); тертя й натяг — параметри.
 - **Смуга натягу** переписується з вікна Ламе ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3) — тому матриця параметрична.
@@ -199,7 +199,7 @@
 
 *6. Відомі невизначеності — просимо назвати їх у звіті, вирішувати не потрібно.*
 - Фізична довжина хвостовика — 18 мм, і хвостовик входить у втулку на всю довжину. Розрахунок робимо на діапазоні вставляння 14–18 мм, і на інші довжини без перерахунку ми його не переносимо.
-- Перехід від гіроїдної частини анода до хвостовика не визначено. Упору всередині діапазону вставляння немає, запресовують за силою.
+- Перехід від гіроїдної частини анода до хвостовика не визначено. Упору на самій деталі немає: запресовують за силою до упору оснастки преса.
 - Орієнтацію друку не обрано. В орієнтації, яку ми розглядаємо для анода, крута грань зубця звернена донизу під 20° до горизонталі й сама себе не тримає, тож форма і шорсткість граней після друку поки невідомі. Розрахунок — на номінальному профілі.
 - Поверхню хвостовика травлять перед посадкою. Чи витримує травлена поверхня посадку і скільки травлення знімає з натягу — невідомо, тому тертя й натяг задано параметрами.
 - Сплав титану не обрано — звідси модуль як параметр.
@@ -314,7 +314,7 @@ If the full matrix is too large, please propose one baseline case and price the 
 
 *6. Known uncertainties — please name them in the report; they do not need to be resolved.*
 - The physical shank length is 18 mm, and the shank is pressed into the sleeve along its whole length. The analysis is done on the 14–18 mm insertion range, and we do not transfer it to other lengths without recomputing.
-- The transition from the gyroid part of the anode to the shank is undefined. There is no stop within the insertion range; the part is pressed in by force.
+- The transition from the gyroid part of the anode to the shank is undefined. There is no stop on the part itself: it is pressed in by force against the press fixture's stop.
 - The build orientation is not chosen. In the orientation we are considering for the anode the steep flank of the tooth faces down at 20° to the horizontal and is not self-supporting, so the as-built shape and roughness of the flanks are unknown for now. Analyse the nominal profile.
 - The shank surface is etched before the fit. Whether the etched surface survives the fit and how much the etch takes off the interference is unknown, so friction and interference are given as parameters.
 - The titanium alloy is not chosen — hence the modulus as a parameter.

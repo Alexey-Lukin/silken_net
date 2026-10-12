@@ -221,8 +221,8 @@ The Zone-1 insertion IS its own lock's whole shank (⚖️ founder 2026-10-12, `
 `01_01 §4.3` A): the stack names that lock by file (`zone1_lock_manifest`, never a copy of its numbers), `AxialStack.Load`
 resolves `Zone1ShankLengthMm` from it — the manifest has no insertion field any more, so there is nothing to drift — and
 `MechanicalLock.InsertionWindowMm` derives the window from the shank's free end, PEEK-contact zone end → end of the shank
-(⚖️ 2026-09-18: no ring is fitted as a backup). The shipped insertion is the window's DEEP end; what HOLDS it there is open
-(`00_07` HW.26 — the gyroid-to-shank step is zero on a Ø11 anode); `verify` prints the insertion as the whole shank. Until G1 a typed 30 mm placeholder sat outside
+(⚖️ 2026-09-18: no ring is fitted as a backup). The shipped insertion is the window's DEEP end; the PRESS FIXTURE holds it there,
+not the part (⚖️ `00_07` HW.26 2026-10-12 — the gyroid-to-shank step is zero on a Ø11 anode); `verify` prints the insertion as the whole shank. Until G1 a typed 30 mm placeholder sat outside
 the window and `verify` flagged it.
 An AUDIT table like the capsule-end — render-sanity exit only, findings asserted by `AxialStackTests`. Render uses the
 Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the

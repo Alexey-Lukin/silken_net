@@ -540,8 +540,8 @@ internal sealed record AnchorAxialStackCem
 
     // ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)): the Zone-1 anode is the gyroid body (Zone1.LengthMm, the
     // anchor_zone1 manifest) PLUS the solid shank of its lock — the lock manifest named below is the shank's one home —
-    // and the shank inserts WHOLE, so the insertion is no number of its own (what HOLDS that depth is open, HW.26 — the
-    // gyroid-to-shank step is zero on a Ø11 anode). Resolved at load from that lock (AxialStack.Load), never read from this manifest: a JSON key of this name is
+    // and the shank inserts WHOLE, so the insertion is no number of its own (the press fixture holds that depth, ⚖️ HW.26
+    // 2026-10-12 — the gyroid-to-shank step is zero on a Ø11 anode). Resolved at load from that lock (AxialStack.Load), never read from this manifest: a JSON key of this name is
     // ignored, and an unresolved record throws on first use — loud absence, never a default. Until 2026-10-12 a
     // placeholder `zone1_insertion_mm = 30` lived here: it put 30 mm of the 40 mm Zone-1 envelope inside the PEEK bore
     // and only 10 mm in the sapwood (embedded depth 60 instead of 90) — the three-models conflict G1 resolved.

@@ -104,10 +104,10 @@
 <text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   for you</text>
 <text x='20' y='1193' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is NOT a press-fit surface: canon puts the Zone1&lt;-&gt;Zone2 contact band on the SOLID shank (01_01 4.2,</text>
 <text x='20' y='1207' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one.</text>
-<text x='20' y='1221' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds while Zone 1 enters the sleeve by its shank only - the whole shank (00_07 HW.26 G1, ratified 2026-10-12); what holds the depth</text>
-<text x='20' y='1235' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   there is open (00_07 HW.26): this lattice meets the Ø11 bore with a radial step of (OD - 11)/2, which is zero or negative on five of the</text>
-<text x='20' y='1249' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   seven SKUs, so nothing in the part stops it following the shank in. The diametral band of the envelope is therefore BLANK rather than</text>
-<text x='20' y='1263' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
+<text x='20' y='1221' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds while Zone 1 enters the sleeve by its shank only - the whole shank (00_07 HW.26 G1, ratified 2026-10-12); the depth is held by</text>
+<text x='20' y='1235' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the press fixture's stop, not by this part (00_07 HW.26, ratified 2026-10-12): this lattice meets the Ø11 bore with a radial step of (OD</text>
+<text x='20' y='1249' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   - 11)/2, zero or negative on five of the seven SKUs. The diametral band of the envelope is therefore BLANK rather than absent: canon does</text>
+<text x='20' y='1263' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
 <text x='20' y='1277' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>15. The bus wire's root (its axis at the weld on the top face) must line up with the cathode channel: its offset from this part's</text>
 <text x='20' y='1291' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   outer-diameter axis is a REQUIRED datum of the anchor stack, and its tolerance is NOT SPECIFIED: the insertion depth it waited on is</text>
 <text x='20' y='1305' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   decided (00_07 HW.26 G1, 2026-10-12), so the number is HW.34's open leg</text>
@@ -133,7 +133,7 @@
 <line x1='540' y1='1443' x2='790' y2='1443' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1443' x2='630' y2='1459' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1454' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1454' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>96471d7b3-dirty</text>
+<text x='635' y='1454' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3bbc82d0-dirty</text>
 <line x1='540' y1='1459' x2='790' y2='1459' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1459' x2='630' y2='1475' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1470' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -141,7 +141,7 @@
 <line x1='540' y1='1475' x2='790' y2='1475' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1475' x2='630' y2='1491' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1486' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='1486' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>a0b239573105d717ec… → FOOTER</text>
-<text x='806' y='1507' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 96471d7b3-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
-<text x='806' y='1519' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): a0b239573105d717ec33d7fe32d30ed1022b233014ca0c431a324c127a2a2dfb</text>
+<text x='635' y='1486' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e216de4d3b30361100… → FOOTER</text>
+<text x='806' y='1507' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3bbc82d0-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1519' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): e216de4d3b303611004ce0f077142b108cf8ff31327b14823dbfdef14efd90c6</text>
 </svg>

@@ -78,9 +78,9 @@
 <text x='20' y='771' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: Barb tooth geometry MEASURED against 01_01 4.3: height h and the DERIVED base (a triangle has two free parameters, so alpha/beta</text>
 <text x='20' y='785' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   + h are specified and base is computed, acceptance 0.40-0.60 mm). DIN-471 groove to the real standard dimensions for this shaft diameter,</text>
 <text x='20' y='799' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   CNC after printing. ATTENTION: no ring is fitted as a creep backup (removed 2026-09-18, 00_07 HW.26): under the sleeve's lower end a ring</text>
-<text x='20' y='813' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   would only stop the anode moving DEEPER, never pulling out; what provides that stop is open after G1 (HW.26, 2026-10-12), and so is</text>
-<text x='20' y='827' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   whether this groove stays (G3). Pull-out retention 3-5x over friction and the PEEK 150 C click-fit are FEA (00_07 HW.3.IS) + bench - NOT</text>
-<text x='20' y='841' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   asserted by this generator and NOT a drawing acceptance line</text>
+<text x='20' y='813' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   would only stop the anode moving DEEPER, never pulling out; that stop is the press fixture's (HW.26, 2026-10-12), so this groove holds</text>
+<text x='20' y='827' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   nothing; whether it leaves the geometry is G3's. Pull-out retention 3-5x over friction and the PEEK 150 C click-fit are FEA (00_07</text>
+<text x='20' y='841' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   HW.3.IS) + bench - NOT asserted by this generator and NOT a drawing acceptance line</text>
 <text x='20' y='855' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Self-contained demo shank (Zone-1 Ø11 real, HW.33) — not yet integrated into the gyroid rod (separate session, 00_07 HW.26)</text>
 <text x='20' y='869' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator</text>
 <rect x='540' y='887' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
@@ -102,7 +102,7 @@
 <line x1='540' y1='951' x2='790' y2='951' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='951' x2='630' y2='967' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='962' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='962' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>96471d7b3-dirty</text>
+<text x='635' y='962' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3bbc82d0-dirty</text>
 <line x1='540' y1='967' x2='790' y2='967' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='967' x2='630' y2='983' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='978' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -110,7 +110,7 @@
 <line x1='540' y1='983' x2='790' y2='983' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='983' x2='630' y2='999' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='994' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='994' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0c657d1c9778d8cb82… → FOOTER</text>
-<text x='806' y='1015' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 96471d7b3-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
-<text x='806' y='1027' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 0c657d1c9778d8cb82bca9379112b1cb99859d1857b5ff1bc8e4cca460db49fc</text>
+<text x='635' y='994' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2f772fe5afbdad2474… → FOOTER</text>
+<text x='806' y='1015' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3bbc82d0-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
+<text x='806' y='1027' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 2f772fe5afbdad24740589de9e70abf213805d2be1db3dcab778fb08f1de11f5</text>
 </svg>

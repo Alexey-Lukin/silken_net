@@ -39,8 +39,8 @@ film over the non-catalytic buffer up to the band, and must ENTER the catalyst l
      outside the sleeve: the whole 40 mm — since ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)) only the lock's shank
      enters the sleeve, so the length is the VERDICT, not an input (no insertion number exists any more; the cache records
      the lock's shank beside it) and the pair the corner grid swept collapses to one value; until then the placeholder
-     insertion 30 put 12 mm of this model's lattice in the bore and the short end was 28 mm. ⚠️ What HOLDS the depth is
-     open (00_07 HW.26): on a Ø11 lattice nothing in the part stops it following the shank in. The wood is
+     insertion 30 put 12 mm of this model's lattice in the bore and the short end was 28 mm. The depth is held by the press
+     fixture's stop, not the part (⚖️ 00_07 HW.26, 2026-10-12). The wood is
      taken as ISOTROPIC at the ERT reading; wood conducts better along the grain, so R1 is likely an overestimate.
   2. living inner bark (phloem + cambial zone) — a sheet of thickness t, radial convergence from R_in to the flange
      radius r2: R2 = (ρ/t)·ln(R_in/r2)/(2π), R_in ∈ [d, d + L] — where the rod's current reaches the plane.

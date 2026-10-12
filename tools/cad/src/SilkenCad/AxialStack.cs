@@ -47,8 +47,8 @@ internal static class AxialStack
            ?? throw new InvalidOperationException("axial stack not resolved against its Zone-1 lock (AxialStack.Load)");
 
     // ⚖️ G1 2026-10-12: the shank inserts WHOLE. The window the lock admits (MechanicalLock.InsertionWindowMm) ends at the
-    // shank's end, so the insertion sits on its deep edge by construction. WHAT holds it there is open (00_07 HW.26): the
-    // gyroid-to-shank step is zero on a Ø11 anode, so the junction plane is a datum of this model, not a stop.
+    // shank's end, so the insertion sits on its deep edge by construction. The PRESS FIXTURE holds it there (⚖️ 00_07 HW.26,
+    // 2026-10-12): the gyroid-to-shank step is zero on a Ø11 anode, so the junction plane is a datum of this model, not a stop.
     public static float Zone1InsertionMm(AnchorAxialStackCem cem) => Zone1ShankMm(cem);
 
     // The anode's top face — gyroid body + shank — where the bus is welded.
