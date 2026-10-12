@@ -20,35 +20,47 @@ the numbers below are their transcription, with the page each was read on):
     plane area, «Matching network» drawn in the ground plane area, the pads in the clearance area; tolerance ±0.2.
   · NN02-224 user manual UM_NN02-224 (Last Update December 2025, sha256 4474b6f2…2c13) §2.1 / §3, pp. 12–13: body
     12.0 × 3.0 × 2.4 mm; the two pads are fully symmetrical, either can feed — «the other pad … must NOT be grounded».
-  · NN02-201 datasheet DS_NN02-201 (Last Update April 2024) §2.5 «Antenna footprint», p. 4: pads B 1.65 × C 2.3 mm,
-    inner gap A 3.0 (outer span D 6.3), feed from the right-hand pad into the ground plane area; tolerance ±0.05.
-  · Application note AN_NN02-224_ISM (Last Update March 2021, sha256 5bcc531d…9014) §2.2–2.3, pp. 6–7: the 863–870 MHz
-    evaluation board is 131 × 60 × 1 mm FR4 with a clearance strip 11 × 60 and the booster 8.0 mm from the ground edge;
-    its matching network is an L — 30 nH in series from the booster, 20 nH shunt at the port (Murata LQW18AN30NG00 /
-    LQW18AN20NG00). The vendor states the values move with every ground and every nearby part; ⛔ they are a starting
-    point for tuning on the bench, never ours (bench sheet §5; 02_01 §5.3).
+  · NN02-201 datasheet DS_NN02-201 (Last Update April 2024, sha256 2713aa8a…19a0858d) §2.5 «Antenna footprint», p. 4:
+    pads B 1.65 × C 2.3 mm, inner gap A 3.0 (outer span D 6.3), feed from the right-hand pad into the ground plane area;
+    tolerance ±0.05. User manual UM_NN02-201 (Last Update December 2025, sha256 95db0170…5ed08fda) §2.1, p. 10: body
+    7.0 × 3.0 × 1.0 mm — WIDER than its pads, so the body, not the pads, meets the contour first; §3, p. 11, Fig. 7: the
+    pads are symmetrical, «This pad must NOT be grounded».
+  · Application note AN_NN02-224_ISM (Last Update March 2021, sha256 5bcc531d…9014): THREE evaluation networks in our band,
+    and they differ in topology, not only in values —
+      §2.3, p. 7 — 863–870 MHz on 131 × 60 (clearance 11 × 60, booster 8.0 mm from the ground): an L, 30 nH in series
+                   from the booster and 20 nH shunt at the port (LQW18AN30NG00 / LQW18AN20NG00), efficiency > 85 %;
+      §4.3, p. 15 — 863–928 MHz on 131 × 60: a T, 22 nH series · 8.7 nH shunt · 2.0 pF series;
+      §5.3, p. 19 — 863–870 MHz on CR80, 86 × 54 (clearance 11 × 54) — the ground closest to ours: a T, 30 nH series ·
+                   13 nH shunt · 3 nH series (LQW18AN30NG00 / LQW18AN13NG00 / LQW15AN3N0B80D), efficiency > 60 %.
+    So the bench starts from the CR80 T on sites B · C · D, not from the big board's L. Not one of the three is a π.
+    The vendor states the values move with every ground and every nearby part; ⛔ they are a starting point for tuning
+    on the bench, never ours (bench sheet §5; 02_01 §5.3).
 
 Layout choices that are ours, not the vendor's — each one is a knob below, and each changes the measured number:
   • CLEARANCE = the footprint plus GAP_TO_GROUND 1.0 mm between the pads' inner edge and the ground. The datasheet
     drawings show the pads just inside the clearance area (≈ 1.0–1.5 mm on their scale, not dimensioned); the
-    evaluation boards use an 11 mm strip. Ours is the minimal one ON PURPOSE: 02_01 §3.5 leaves the booster's clearance
-    uncounted and the RF deck's top side is already over-full, so a product board will not afford a wide strip — the
-    board measures the efficiency the product can have. Price: the number comes out MORE pessimistic than a wide
-    clearance would give; a wide-clearance variant is a change of GAP_TO_GROUND, not a new board.
+    evaluation boards use an 11 mm strip. Ours is the narrowest the footprint allows ON PURPOSE: 02_01 §3.5 leaves the
+    booster's clearance uncounted and the RF deck's top side is already over-full, so a product board will not afford
+    a wide strip — the board measures the efficiency the product can have. «Narrowest» is not «small»: the segment over
+    the chord is printed per board on every run (a third of the disc for NN02-224, a sixth for NN02-201), and that
+    area is what 02_01 §3.5 does not count. Price: the number comes out MORE pessimistic than a wide clearance would
+    give; a wide-clearance variant is a change of GAP_TO_GROUND, not a new board.
   • 2 layers, FR4 1.6 mm (the deck thickness, 02_01 §3.1 pos. 8 — the decks themselves are 4-layer); ground poured on
     both layers and stitched, so the radiator is a single ground disc — the one-deck proxy the sheet names as its weakest
     link (§9).
   • The feed is a grounded coplanar line, W 1.2 / gap 0.2 mm ≈ 51 Ω on FR4 εr 4.4 (Wadell's conductor-backed CPW; the
     whole run is ≈ 0.07 λ_g at 868 MHz, so the impedance is secondary and the bench tunes the network anyway).
   • Four 0603 sites in the ground area right after the clearance: A shunt · B series · C shunt · D series, so one board
-    takes the vendor's L (B + C, D = 0 Ω), a π (A B C) or a T (B C D) without a respin; parts are DNP — the values come
+    takes the vendor's T (B C D) or L (B C, D = 0 Ω), or a π (A B C), without a respin; parts are DNP — the values come
     from the VNA (bench sheet §5, step 3).
   • A U.FL (Hirose U.FL-R-SMT-1) at the end of the chain, away from the booster: the feeding cable is the 3-B variant of
     the sheet, and the sheet asks for ferrite chokes on it (§5) — they go on the cable, not on the board.
-  • The booster sits at the board's edge, as far from the ground as the contour allows (02_01 §5.2 «on the upper edge»).
+  • The booster sits at the board's edge, as far from the ground as the contour allows (02_01 §5.2 «on the upper edge»):
+    whichever of its pads and its BODY reaches further meets the circle r − EDGE_MARGIN, the body assumed centred on its
+    pads (the manuals draw it so and do not dimension the offset).
 
-A placement that does not fit the contour inside EDGE_MARGIN raises instead of writing a board, and the build fails on any
-DRC violation or unconnected item before it writes fabrication files.
+A placement whose pads or booster body leave the contour inside EDGE_MARGIN raises instead of writing a board; a board that
+fails DRC (any violation or unconnected item) is deleted together with its project, and no fabrication file is written.
 """
 from __future__ import annotations
 
@@ -68,9 +80,9 @@ KICAD = Path(pcbnew.__file__).resolve().parents[7]
 FP_LIB = KICAD / "SharedSupport/footprints"
 
 BOOSTERS = {
-    # name: (pad width along the body, pad height, centre-to-centre / 2, sign of the feed pad's x, source)
-    "NN02-224": (2.2, 3.2, (7.8 + 2.2) / 2, -1, "DS_NN02-224 Jan 2024 §2.7"),
-    "NN02-201": (1.65, 2.3, (3.0 + 1.65) / 2, +1, "DS_NN02-201 Apr 2024 §2.5"),
+    # name: (pad width along the body, pad height, centre-to-centre / 2, sign of the feed pad's x, source, body L × W)
+    "NN02-224": (2.2, 3.2, (7.8 + 2.2) / 2, -1, "DS_NN02-224 Jan 2024 §2.7", (12.0, 3.0)),
+    "NN02-201": (1.65, 2.3, (3.0 + 1.65) / 2, +1, "DS_NN02-201 Apr 2024 §2.5", (7.0, 3.0)),
 }
 DIAMETERS = (20.37, 19.37)             # sentinel · second board (bench sheet §5, ⚖️ 2026-10-01 / 2026-10-05)
 CHAIN_DIRECTION = {"NN02-224": "across", "NN02-201": "down"}   # the wide booster leaves no vertical room under its feed pad
@@ -178,7 +190,7 @@ def keepout(board, points) -> None:
 
 
 def booster_footprint(board, name: str, at: tuple, net_feed) -> tuple:
-    w, h, half_pitch, feed_sign, source = BOOSTERS[name]
+    w, h, half_pitch, feed_sign, source, (body_l, body_w) = BOOSTERS[name]
     fp = pcbnew.FOOTPRINT(board)
     fp.SetFPID(pcbnew.LIB_ID("SilkenNet", f"Ignion_{name}"))
     fp.SetReference("AE1")
@@ -198,8 +210,8 @@ def booster_footprint(board, name: str, at: tuple, net_feed) -> tuple:
             pad.SetNet(net_feed)                # pad 2 is the mounting pad: no net, never grounded (UM_NN02-224 §3)
             feed_at = (at[0] + sign * half_pitch, at[1])
         fp.Add(pad)
-    span = half_pitch + w / 2
-    for layer, hx, hy, width in ((pcbnew.F_CrtYd, span + 0.25, h / 2 + 0.25, 0.05), (pcbnew.F_Fab, span, h / 2, 0.10)):
+    ex, ey = max(half_pitch + w / 2, body_l / 2), max(h / 2, body_w / 2)     # pads or body, whichever reaches further
+    for layer, hx, hy, width in ((pcbnew.F_CrtYd, ex + 0.25, ey + 0.25, 0.05), (pcbnew.F_Fab, body_l / 2, body_w / 2, 0.10)):
         corners = ((at[0] - hx, at[1] - hy), (at[0] + hx, at[1] - hy), (at[0] + hx, at[1] + hy), (at[0] - hx, at[1] + hy))
         for i in range(4):
             shape = pcbnew.PCB_SHAPE(fp)
@@ -251,7 +263,7 @@ def build(name: str, dia: float) -> tuple:
     # timestamps still change — that is KiCad's header, not the copper)
     pcbnew.KIID.SeedGenerator(int(dia * 100) * 7 + len(name) + sum(map(ord, name)))
     r = dia / 2
-    w, h, half_pitch, feed_sign, _ = BOOSTERS[name]
+    w, h, half_pitch, feed_sign, _, (body_l, body_w) = BOOSTERS[name]
     board = pcbnew.BOARD()
     board.SetCopperLayerCount(2)
     tb = board.GetTitleBlock()
@@ -277,9 +289,10 @@ def build(name: str, dia: float) -> tuple:
     edge.SetWidth(mm(0.1))
     board.Add(edge)
 
-    # The booster as close to the edge as the margin allows: its outer pad corners on the circle r − EDGE_MARGIN.
-    outer_x = half_pitch + w / 2
-    yc = -math.sqrt((r - EDGE_MARGIN) ** 2 - outer_x ** 2) + h / 2
+    # The booster as close to the edge as the margin allows: the outer corners of its pads or of its body — whichever
+    # reaches further — on the circle r − EDGE_MARGIN.
+    ex, ey = max(half_pitch + w / 2, body_l / 2), max(h / 2, body_w / 2)
+    yc = -math.sqrt((r - EDGE_MARGIN) ** 2 - ex ** 2) + ey
     feed, source = booster_footprint(board, name, (0.0, yc), nets["ANT"])
     yg = yc + h / 2 + GAP_TO_GROUND
     # the clearance segment: the arc above y = yg on a circle a little past the outline (so the pour cannot leak round
@@ -302,8 +315,14 @@ def build(name: str, dia: float) -> tuple:
     else:
         d, side = (0.0, 1.0), (-feed_sign, 0.0)            # downwards; shunts go towards the centre
     if CHAIN_DIRECTION[name] == "down":
-        start = (feed[0], yg + 0.6)                         # no corner: the chain continues the drop
-    track(board, feed, start, nets["ANT"])
+        # the drop enters the ground, steps 1 mm towards the centre (the narrow booster sits so close to the edge that a
+        # chain straight under its feed pad pushes the U.FL out of the contour), and the chain continues downwards
+        corner = (feed[0], yg + 0.6)
+        start = (feed[0] - feed_sign * 1.0, yg + 0.6)
+        track(board, feed, corner, nets["ANT"])
+        track(board, corner, start, nets["ANT"])
+    else:
+        track(board, feed, start, nets["ANT"])
 
     def along(s: float) -> tuple:
         return (start[0] + d[0] * s, start[1] + d[1] * s)
@@ -353,6 +372,9 @@ def build(name: str, dia: float) -> tuple:
                                      f"(corner {x:.2f}, {y:.2f} at radius {math.hypot(x, y):.2f} > {r - EDGE_MARGIN:.2f})")
         if fp.GetReference() != "AE1" and pcbnew.ToMM(fp.GetBoundingBox(False).GetTop()) < yg:
             raise SystemExit(f"{name} Ø{dia}: {fp.GetReference()} reaches into the clearance area")
+    for x, y in ((sx * body_l / 2, yc + sy * body_w / 2) for sx in (-1, 1) for sy in (-1, 1)):
+        if math.hypot(x, y) > r - EDGE_MARGIN + 1e-6:
+            raise SystemExit(f"{name} Ø{dia}: the booster body leaves the contour (corner {x:.2f}, {y:.2f})")
 
     # Stitching: a grid of vias over the ground, kept off every part's courtyard (no via in a soldered pad, none under
     # the U.FL's own keepout), off every track, off the label, and off each other.
@@ -377,9 +399,9 @@ def build(name: str, dia: float) -> tuple:
     keep = VIA[0] / 2 + GAP + 0.15
     placed = []
 
-    def clear(x: float, y: float, waive: str = "") -> bool:
+    def clear(x: float, y: float, waive: frozenset = frozenset()) -> bool:
         for o in obstacles:
-            if o[-1] == waive:
+            if o[-1] in waive:
                 continue
             if o[0] == "box":
                 dx = max(o[1] - x, 0, x - o[3])
@@ -395,7 +417,7 @@ def build(name: str, dia: float) -> tuple:
                     return False
         return all(math.dist((x, y), q) >= VIA[0] + 0.3 for q in placed)
 
-    def try_via(x: float, y: float, waive: str = "") -> bool:
+    def try_via(x: float, y: float, waive: frozenset = frozenset()) -> bool:
         if y > yg + 0.8 and math.hypot(x, y) < r - 1.0 and clear(x, y, waive):
             placed.append((x, y))
             return True
@@ -406,8 +428,10 @@ def build(name: str, dia: float) -> tuple:
         for p in fp.Pads():
             if p.GetNetname() == "GND":
                 px, py = xy(p.GetPosition())
-                for ox, oy in ((side[0] * 1.2, side[1] * 1.2), (1.2, 0), (-1.2, 0), (0, 1.2), (0, -1.2)):
-                    if try_via(px + ox, py + oy, waive=fp.GetReference()):
+                offsets = [(side[0] * k, side[1] * k) for k in (1.2, 1.4, 1.6, 1.8, 2.0, 2.2)]
+                offsets += [(dx * k, dy * k) for k in (1.2, 1.4, 1.6, 1.8, 2.0, 2.2) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+                for ox, oy in offsets:
+                    if try_via(px + ox, py + oy, waive=frozenset({fp.GetReference()})):
                         break
     # … then a fence along both sides of the coplanar line …
     fence = TRACK / 2 + GAP + VIA[0] / 2 + 0.15
@@ -420,7 +444,9 @@ def build(name: str, dia: float) -> tuple:
         for m in range(int(length / 1.6) + 1):
             u = min(1.0, (m * 1.6 + 0.4) / length)
             for sgn in (1, -1):
-                try_via(x1 + u * (x2 - x1) + sgn * nx * fence, y1 + u * (y2 - y1) + sgn * ny * fence)
+                # a fence via may stand inside a chain part's courtyard (beside a series part's body), never on a pad
+                try_via(x1 + u * (x2 - x1) + sgn * nx * fence, y1 + u * (y2 - y1) + sgn * ny * fence,
+                        waive=frozenset({"A", "B", "C", "D"}))
     # … then the grid
     n = int(r / VIA_PITCH) + 1
     for i in range(-n, n + 1):
@@ -436,7 +462,10 @@ def build(name: str, dia: float) -> tuple:
         if all(z.GetFilledPolysList(z.GetLayer()).Contains(pt(x, y)) for z in gnd_zones):
             via(board, (x, y), nets["GND"])
     filler.Fill(board.Zones())
+    depth = r + yg                                                  # segment height from the top of the disc
+    segment = r * r * math.acos((r - depth) / r) - (r - depth) * math.sqrt(2 * r * depth - depth * depth)
     return board, {"booster": name, "diameter_mm": dia, "booster_centre_y_mm": round(yc, 3),
+                   "clearance_mm2": round(segment, 1), "clearance_share": round(segment / (math.pi * r * r), 3),
                    "ground_edge_y_mm": round(yg, 3), "footprint_source": source, "chain": CHAIN_DIRECTION[name]}
 
 
@@ -507,10 +536,16 @@ def main() -> int:
             write_project(HERE / f"{stem}.kicad_pro")
             fab = HERE / "fab" / stem
             fab.mkdir(parents=True, exist_ok=True)
-            drc_gate(board_file, fab)
+            try:
+                drc_gate(board_file, fab)
+            except SystemExit:
+                board_file.unlink()                                 # a board that failed DRC is not left in the tree
+                (HERE / f"{stem}.kicad_pro").unlink()
+                raise
             fabrication(board_file, fab, stem, meta)
             print(f"wrote {stem} — booster centre y {meta['booster_centre_y_mm']}, ground edge y "
-                  f"{meta['ground_edge_y_mm']} mm (chain {meta['chain']}; DRC clean)")
+                  f"{meta['ground_edge_y_mm']} mm, clearance segment {meta['clearance_mm2']} mm² = "
+                  f"{meta['clearance_share']:.0%} of the disc (chain {meta['chain']}; DRC clean)")
     return 0
 
 

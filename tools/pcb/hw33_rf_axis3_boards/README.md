@@ -20,18 +20,19 @@ Rebuild (KiCad 10 installed in `~/Applications/KiCad`):
     tools/pcb/hw33_rf_axis3_boards/build_boards.py
 ```
 
-The run refuses a placement that leaves the contour or reaches into the clearance area, and fails on any DRC violation or unconnected item before it writes fabrication files; it also writes `fab/<board>/<board>_gerbers.zip` for the upload (ignored by git — it is rebuilt from the text gerbers).
+The run refuses a placement whose pads or booster body leave the contour, or a part that reaches into the clearance area; a board that fails DRC (any violation or unconnected item) is deleted with its project before any fabrication file is written; it also writes `fab/<board>/<board>_gerbers.zip` for the upload (ignored by git — it is rebuilt from the text gerbers).
 
 ## The boards
 
 - **A disc of the contour, 2 layers, FR4 1.6 mm, ground poured on both layers and stitched.** The disc is the radiator: a booster excites the ground it sits on.
-- **The booster at the top edge, in a clearance segment only 1.0 mm deeper than its pads.** The vendor's evaluation boards give the booster an 11 mm strip; ours is minimal on purpose — the node's board budget has no room for a wide one, so the board measures what the product can have, and the number comes out more pessimistic than a wide clearance would give. Changing that is one constant in the generator, not a new design.
-- **The feed:** a grounded coplanar line ≈ 51 Ω, then four 0603 sites — A shunt · B series · C shunt · D series (D fitted with 0 Ω) — and a U.FL. The evaluation board's L network (30 nH in series from the booster, 20 nH shunt at the port) goes on B + C; a π uses A B C, a T uses B C D. The vendor's values are a starting point for the VNA, never ours.
-- **The mounting pad of the booster is left unconnected** — the vendor's manual says it must not be grounded.
+- **The booster at the top edge, in a clearance segment only 1.0 mm deeper than its pads.** The vendor's evaluation boards give the booster an 11 mm strip; ours is the narrowest the footprint allows, on purpose — the node's board budget has no room for a wide one, so the board measures what the product can have, and the number comes out more pessimistic than a wide clearance would give. Narrowest is not small: the segment over the chord is a third of the disc for `NN02-224` and a fifth for `NN02-201` — every run prints it in mm². Changing the strip is one constant in the generator, not a new design.
+- **The feed:** a grounded coplanar line ≈ 51 Ω, then four 0603 sites — A shunt · B series · C shunt · D series (D fitted with 0 Ω) — and a U.FL. The vendor's application note has three networks in our band, and they differ in topology: on the CR80 board (86 × 54, the ground closest to ours) a T — 30 nH series · 13 nH shunt · 3 nH series — on sites B · C · D, and that is where the VNA starts; on 131 × 60 an L for 863–870 MHz (30 nH series + 20 nH shunt, B + C) and a T for 863–928 MHz. None is a π; site A keeps the board able to take one. The vendor's values are a starting point for the VNA, never ours.
+- **Stitching:** a via 1.2 mm from each shunt's ground pad, one within 1.2–1.8 mm of a ground pad of the U.FL (its other ground pad, against the clearance or the edge, has its nearest via 3–4 mm away on three of the boards), a grid over the ground, and a fence along the line where the parts' pads leave room — at 868 MHz (λ_g ≈ 208 mm) every one of those spacings is far inside λ/20.
+- **The mounting pad of the booster is left unconnected** — both manuals say it must not be grounded. The booster's body is placed as well as its pads: the `NN02-201` body (7.0 × 3.0) is wider than its pads, so it is the body that meets the contour.
 
 ## Ordering notes (👤)
 
 1. **Order the boards bare** — nothing here needs a PCBA house: every matching part is chosen on the VNA, and the booster's two pads hand-solder.
-2. **Parts:** the boosters `NN02-224` and `NN02-201` (from a distributor of Ignion), Hirose `U.FL-R-SMT-1`, a U.FL → SMA cable, and a 0603 kit of high-Q inductors and capacitors in the vendor's family (Murata LQW18 · GJM) around the evaluation-board values.
-3. **Clip ferrite chokes on the feeding cable** — on a ground of ≈ λ/22 the cable becomes part of the radiator, and without chokes the reading is optimistic (bench sheet §5).
+2. **Parts:** the boosters `NN02-224` and `NN02-201` (from a distributor of Ignion), Hirose `U.FL-R-SMT-1`, a U.FL → SMA cable, and a tuning set around the vendor's values in the parts the vendor itself names — Murata LQW18AN (0603) inductors, LQW15AN (0402) for the smallest ones, GJM1555 (0402) capacitors; a 0402 part sits on the 0603 sites by hand.
+3. **Clip ferrite chokes on the feeding cable** — on a ground of ≈ λ/17–18 (Ø20.37 · Ø19.37 against λ ≈ 345 mm at 868 MHz) the cable becomes part of the radiator, and without chokes the reading is optimistic (bench sheet §5).
 4. The instruments of axis 3 — VNA, a Wheeler cap ≥ 55 mm, a step attenuator — are in the bench's instrument list; without them the boards wait.
