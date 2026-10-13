@@ -84,8 +84,9 @@ def load_budget() -> dict:
 SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
                           "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
                           "give the shear stress)")
-SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — the O-ring force (whether "
-                           "the pin slides at all), the board stack's mass and layout, and the stem's strain and "
+SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — the O-ring force (at the "
+                           "end of life, whether the pin slides at all), the board stack's mass and layout, the axial "
+                           "capacity of the Zone 1-2 press-fit and of the liner grip, and the stem's strain and "
                            "acceleration at anchor height on host-size pines (00_07 HW.43)")
 
 

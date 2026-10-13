@@ -13,7 +13,7 @@
     "pin_force_min_N": 0.392,
     "pin_count": 2,
     "working_compression_min_mm": 0.7,
-    "mu_low": 0.2,
+    "mu_rim": 0.1,
     "install_angle_deg": 10.0,
     "capsule_envelope_mm": [
       29.8,
@@ -33,14 +33,15 @@
       "western white": 0.329
     },
     "depth_span_m": {
-      "nominal_centroids_77": 0.045,
+      "nominal_anode_centroid_to_flange_77": 0.07,
       "ceiling_full_depth_77": 0.09
     },
     "dbh_source_tree_m": 0.215,
     "rim_required_initial_clamp_N_from_52": {
       "pogo_pair_only": 3.0,
       "with_generous_o_ring": 156.8
-    }
+    },
+    "rim_relax_fraction_at_service_from_52": 0.65
   },
   "controls": {
     "slope_times_flux_reproduces_12m_tilt": {
@@ -64,12 +65,15 @@
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
         "demand_N_at_ceiling": 1.112,
-        "o_ring_force_N_that_holds_the_rim_at_ceiling": 4.78,
-        "note": "pogo push alone does not hold even the capsule's weight; below this O-ring force the capsule shifts inside the collar clearance and the pins slide (55's regime)"
+        "capacity_N_initial_at_52_requirement": 31.3,
+        "lift_N_needed_at_end_of_life": 11.12,
+        "o_ring_force_N_needed_at_end_of_life": 10.34,
+        "note": "early in life the bayonet clamp holds with margin; at the end of life of 52's requirement the capacity is µ·(pogo + O-ring), and the pogo pair alone does not hold even the weight — below this O-ring force the pins slide (55's regime)"
       },
       "B_inertia_coaxial": {
         "force_ratio_per_gram": 0.00211,
-        "stack_mass_g_for_ratio_10pct": 47.5,
+        "force_ratio_per_gram_is": "the slope at small mass — the static share lowers the mean, so it is not a bound",
+        "stack_mass_g_for_ratio_10pct": 39.4,
         "stack_mass_g_where_weakest_pin_unloads": 155.0,
         "ratio_at_mass_ceiling_over_reduced_mean": 0.463,
         "unloads_at_mass_ceiling": false,
@@ -77,16 +81,17 @@
         "suspension_k_N_per_mm_needed_at_ceiling": 0.243
       },
       "C_centre_pad_poisson": {
+        "is": "a CEILING at the pin, reached only if the Zone 1↔2 press-fit AND the liner grip both slip; zero for an anchor at right angles to the wind",
         "ratio_per_1000_microstrain": {
-          "mu_lr_lo_dx_nominal": 0.018,
+          "mu_lr_lo_dx_nominal": 0.028,
           "mu_lr_hi_dx_ceiling": 0.0504
         },
-        "axial_shift_um_at_source_strain": [
-          11.6,
+        "imposed_shift_um_at_source_strain": [
+          18.0,
           32.4
         ],
         "ratio_at_source_strain": [
-          0.0165,
+          0.0257,
           0.0463
         ]
       }
@@ -105,12 +110,15 @@
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
         "demand_N_at_ceiling": 1.136,
-        "o_ring_force_N_that_holds_the_rim_at_ceiling": 4.89,
-        "note": "pogo push alone does not hold even the capsule's weight; below this O-ring force the capsule shifts inside the collar clearance and the pins slide (55's regime)"
+        "capacity_N_initial_at_52_requirement": 31.3,
+        "lift_N_needed_at_end_of_life": 11.36,
+        "o_ring_force_N_needed_at_end_of_life": 10.57,
+        "note": "early in life the bayonet clamp holds with margin; at the end of life of 52's requirement the capacity is µ·(pogo + O-ring), and the pogo pair alone does not hold even the weight — below this O-ring force the pins slide (55's regime)"
       },
       "B_inertia_coaxial": {
         "force_ratio_per_gram": 0.00421,
-        "stack_mass_g_for_ratio_10pct": 23.7,
+        "force_ratio_per_gram_is": "the slope at small mass — the static share lowers the mean, so it is not a bound",
+        "stack_mass_g_for_ratio_10pct": 21.5,
         "stack_mass_g_where_weakest_pin_unloads": 117.0,
         "ratio_at_mass_ceiling_over_reduced_mean": 0.926,
         "unloads_at_mass_ceiling": false,
@@ -118,27 +126,29 @@
         "suspension_k_N_per_mm_needed_at_ceiling": 0.243
       },
       "C_centre_pad_poisson": {
+        "is": "a CEILING at the pin, reached only if the Zone 1↔2 press-fit AND the liner grip both slip; zero for an anchor at right angles to the wind",
         "ratio_per_1000_microstrain": {
-          "mu_lr_lo_dx_nominal": 0.018,
+          "mu_lr_lo_dx_nominal": 0.028,
           "mu_lr_hi_dx_ceiling": 0.0504
         },
-        "axial_shift_um_at_source_strain": [
-          23.1,
+        "imposed_shift_um_at_source_strain": [
+          36.0,
           64.8
         ],
         "ratio_at_source_strain": [
-          0.0331,
+          0.0514,
           0.0926
         ]
       }
     }
   },
   "missing_data": [
-    "O-ring compression force (52's named missing datum) — decides (A)",
+    "O-ring compression force (52's named missing datum) — decides (A) at the end of life",
+    "axial capacity of the Zone 1↔2 press-fit and of the liner's grip on the wire — decide whether (C) reaches the pin",
     "stack mass, centre-of-mass height and pin spacing — layout HW.9 / a scale reading",
     "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
     "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"
   ],
   "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
-  "verdict": "Sway reaches the pins along four paths. With the rim holding (an O-ring force the canon lacks), two are a fraction of the preload: the stack's inertia (per gram, × a pair factor the layout sets) and a mass-independent centre-pad term in the stem's surface strain; without it, the pins slide (55's regime). The input describes one January day of one smaller tree."
+  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of 52's requirement only with an O-ring force canon lacks — the stack's inertia is a fraction of the preload (× a pair factor the layout sets), and the centre-pad Poisson term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
 }

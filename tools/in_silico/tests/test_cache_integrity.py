@@ -1990,16 +1990,21 @@ def test_pogo_sway_transfer():
     sin_i, cos_i = math.sin(math.radians(inp["install_angle_deg"])), math.cos(math.radians(inp["install_angle_deg"]))
     m, f = inp["mass_ceiling_g"] * 1e-3, inp["pin_force_min_N"]
     mus = inp["mu_lr_pines"].values()
-    per1000 = (min(mus) * 1e-3 * inp["depth_span_m"]["nominal_centroids_77"] * 1e3 / inp["working_compression_min_mm"],
+    per1000 = (min(mus) * 1e-3 * inp["depth_span_m"]["nominal_anode_centroid_to_flange_77"] * 1e3 / inp["working_compression_min_mm"],
                max(mus) * 1e-3 * inp["depth_span_m"]["ceiling_full_depth_77"] * 1e3 / inp["working_compression_min_mm"])
     for name, r in d["by_slope_reading"].items():
         a = r["stem_at_anchor_h_le_2m"]["accel_m_s2"]
         b, c, rim = r["B_inertia_coaxial"], r["C_centre_pad_poisson"], r["A_rim"]
         assert abs(b["stack_mass_g_where_weakest_pin_unloads"] - f / ((a + g * sin_i) * 1e-3)) <= 1.0, name
-        demand = math.hypot(m * g * cos_i, inp["drag_ceiling_N"] + m * a)
-        assert demand > m * g * cos_i, name                            # the weight is in the rim demand
-        need = max(0.0, demand / inp["mu_low"] - inp["pin_count"] * f)
-        assert abs(rim["o_ring_force_N_that_holds_the_rim_at_ceiling"] - need) <= 0.02, name
+        demand = math.hypot(m * g * cos_i, inp["drag_ceiling_N"] + m * a)       # the weight must be in it
+        assert abs(rim["demand_N_at_ceiling"] - demand) <= 0.002, name
+        need = max(0.0, demand / inp["mu_rim"] - inp["pin_count"] * f)            # end of life: capacity µ·L
+        assert abs(rim["o_ring_force_N_needed_at_end_of_life"] - need) <= 0.02, name
+        early = inp["mu_rim"] * (2 * inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"] - inp["pin_count"] * f)
+        assert abs(rim["capacity_N_initial_at_52_requirement"] - early) <= 0.1, name
+        m10 = 0.1 * f / ((a + 0.1 * g * sin_i) * 1e-3)                           # 10 % over the REDUCED mean
+        assert abs(b["stack_mass_g_for_ratio_10pct"] - m10) <= 0.1, name
+        assert b["stack_mass_g_for_ratio_10pct"] < 0.1 / b["force_ratio_per_gram"], name   # the slope is not a bound
         assert abs(c["ratio_per_1000_microstrain"]["mu_lr_lo_dx_nominal"] - per1000[0]) <= 1e-4, name
         assert abs(c["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] - per1000[1]) <= 1e-4, name
         if not b["unloads_at_mass_ceiling"]:
