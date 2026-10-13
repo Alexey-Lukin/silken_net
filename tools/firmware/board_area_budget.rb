@@ -9,8 +9,8 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/board_area_budget.rb                         # сторони · важелі · потрібний Ø
 #   ruby tools/firmware/board_area_budget.rb --booster nn02_224 --edlc fc --diameter 21
-#   ruby tools/firmware/board_area_budget.rb --pos19 verdict   # поз. 19 за присудом ⚖️ 2026-09-30 (⏸ до кореня не застосовано)
-#   ruby tools/firmware/board_area_budget.rb --standoffs m2x8_stop  # стійки між деками без гвинтів — ⚖️ founder 2026-10-05, поз. 25 (⏸ член пакета кореня)
+#   ruby tools/firmware/board_area_budget.rb --pos19 verdict   # поз. 19 за присудом ⚖️ 2026-09-30 (до кореня не застосовано — пакет кореня, `--package`)
+#   ruby tools/firmware/board_area_budget.rb --standoffs m2x8_stop  # стійки між деками без гвинтів — ⚖️ founder 2026-10-05, поз. 25 (член пакета кореня, `--package`)
 #   ruby tools/firmware/board_area_budget.rb --assert     # модель ⟷ канон: два якорі + ціль контуру
 #
 # 🔑 Кортьярд — межа, за яку сусідня деталь не заходить (IPC-7351 nominal). Тож
@@ -29,13 +29,13 @@
 #     (30–33 % і 18–20 % диска Ø20.37 · Ø19.37; генератор плат друкує мм²). Кортьярд бустера ↓ лежить
 #     у ньому цілком, тож неврахованим лишається ≈ 53 і ≈ 32 мм². Чи досить цієї зони, судить вісь 3
 #     RF-макета на однодековому проксі (остаточно — зібраний вузол, HW.9), і провал її лише розширить;
-#     у суму не додано, бо калькулятор рухає ціль, а ціль рухається ⏸-пакетом кореня (`00_07` HW.9);
-#   • стійки між поверхами (`02_01 §5.3`) рахуються лише прочитанням `--standoffs` — член ⏸-пакета кореня,
+#     у суму не додано, бо калькулятор рухає ціль, а ціль рухається пакетом кореня (⚖️ руху, `--package`, `00_07` HW.9);
+#   • стійки між поверхами (`02_01 §5.3`) рахуються лише прочитанням `--standoffs` — член пакета кореня (`--package`),
 #     дефолт без них; UART-пади BFU-лоадера (умовні, `00_07` SEC.24) і тест-точки поза SWD не рахуються;
 #   • поз. 19 (RF-тракт) — до присуду 2026-09-30 клас без P/N (≈ 11 пасивів); за присудом (⚖️ founder,
 #     `02_01 §3.1`: дискретне узгодження AN5457 A.1.7 + SPDT BGS12WN6) рядок рахується поіменно —
 #     `POS19["verdict"]` нижче, — але ДЕФОЛТ лишається класовим: рядок присуду зсуває ціль контуру вище
-#     застосованого кореня Ø29.8, а новий рух кореня стоїть під ⏸ паузою крони (`00_07` HW.9);
+#     застосованого кореня Ø29.8, а новий рух кореня — ⚖️ пакета (`--package`, `00_07` HW.9);
 #     `--assert` пінить ОБИДВІ цілі як дзеркала канону, `--pos19 verdict` друкує другу;
 #   • заповнення 70 / 60 % — наше прочитання щільності ручного розведення, НЕ
 #     вимір; друкується, щоб показати чутливість, і вердикту не несе.
@@ -45,7 +45,7 @@ require "json"
 USABLE_EDGE_MM = 0.3      # відступ міді від краю — `02_01 §3.5`
 # Радіальний ланцюг купола, дзеркало `52` §rim_boss_radial_budget (правити в домі):
 # стеля плати = Ø радома − 2 × 4.715 (стінка + прилив) − 2 × (стінка коміра + зазор ходу). Зазор ходу тут 0, хоча
-# `82` показав, що ненульовий потрібен (02_02 §4.4) — його рух у ціль іде ⏸-пакетом кореня (`00_07` HW.9).
+# `82` показав, що ненульовий потрібен (02_02 §4.4) — його рух у ціль іде пакетом кореня (`--package`, `00_07` HW.9).
 BOSS_BAND_MM   = 4.715
 # 0.2 — канонний SLM-дефолт `slm_min_wall_mm` (01_01 §5.5), керівний із 2026-10-01 на SLM-маршруті:
 # `73_collar_wall_inversion` показав, що міцність стінки не задає (зріз кореня вушка тримає 457 Н уже
@@ -82,9 +82,9 @@ POS19 = {
 # (⚖️ founder 2026-10-05, поз. 25 `02_01 §3.1`; паспорти — `docs/protocols/hardware/deck_standoff_shortlist.md`). Кортьярд = пад або торець + 0.25
 # на бік: верх Power Deck — кільцевий пад (M2 Ø5.3 · M2.5 Ø6.0), низ RF Deck — торець корпусу (Ø4.35 · Ø5.1),
 # верх RF Deck — голова гвинта ISO 7045 (dk 4.0 · 5.0; P/N гвинта не обрано). Отвір під хвостовик іде крізь
-# Power Deck на його низ, якого модель не рахує (там проміжок pogo). Дефолт — без стійок: рух цілі — ⏸ пакетом.
+# Power Deck на його низ, якого модель не рахує (там проміжок pogo). Дефолт — без стійок: рух цілі — пакетом кореня (`--package`).
 STANDOFFS = {
-  "none"   => [ "без стійок (дефолт; член ⏸-пакета кореня, `00_07` HW.9)", {} ],
+  "none"   => [ "без стійок (дефолт; член пакета кореня, `00_07` HW.9)", {} ],
   "m2x8"   => [ "стійки Würth WA-SMSI M2 × 8.0 `9774080243R` × 2 (з гвинтами — відкинуто присудом HW.9 2026-10-05)",
                 { "Power Deck, верх" => 2 * disc(5.80), "RF Deck, низ" => 2 * disc(4.85), "RF Deck, верх" => 2 * disc(4.50) } ],
   "m2x8_stop" => [ "стійки Würth WA-SMSI M2 × 8.0 `9774080243R` × 2 БЕЗ гвинтів — лише упор (⚖️ founder 2026-10-05, HW.9)",
@@ -139,7 +139,7 @@ def parts(booster:, rigid_flex:, edlc: "kr", pos19: "class", standoffs: "none")
     [ "LSE-кварц Abracon ABS06-107-32.768kHz-T (поз. 17, ⚖️ клас 2026-10-05 · P/N 2026-10-06; 2.0 × 1.2, клас 2012) + 0402 × 2", rect(3.00, 2.20) + 2 * C0402 ],
     [ "SMPS MLZ2012M150W 0805 + 470 nF 0603 (поз. 18)", rect(3.50, 1.70) + C0603 ],
     POS19.fetch(pos19),
-    [ BOOSTER.fetch(booster)[0] + " + узгоджувальна ланка 0402 × 3 (поз. 4; П — розкладці треба ≥ 4 місця, ⏸ HW.9)", BOOSTER.fetch(booster)[1] + 3 * C0402 ],
+    [ BOOSTER.fetch(booster)[0] + " + узгоджувальна ланка 0402 × 3 (поз. 4; П — розкладці треба ≥ 4 місця, пакет HW.9)", BOOSTER.fetch(booster)[1] + 3 * C0402 ],
     [ "BME280 LGA-8 2.5 × 2.5 + 0402 × 2 (поз. 20)", rect(2.82, 3.08) + 2 * C0402 ],
     [ "ключ BME280 TPS22860 SOT-23-6 (поз. 21)", SOT23_6 ],
     [ "SE05x DNP (проксі QFN-20 3 × 3) + 0402 × 3 (поз. 13)", rect(4.26, 4.26) + 3 * C0402 ],
@@ -230,8 +230,8 @@ if ARGV == [ "--assert" ]
       radome_for(target.("nn02_224", false)) - DOME_MM <= 0.05,
     format("заповнення трьох сторін на стелі цього купола (Ø%.2f) ≤ 70 %% + округлення купола до 0.1", CEILING_MM) =>
       fill_on_ceiling <= 0.705,
-    # Друге прочитання поз. 19 — дзеркало канону, НЕ якір: ціль за присудом стоїть над куполом навмисно (⏸ пауза крони).
-    "поз. 19 за присудом ⚖️ 2026-09-30 (⏸ HW.9): +17.1 мм², ціль пари B2B Ø20.24, rigid-flex Ø18.82 (`02_01 §3.5`)" =>
+    # Друге прочитання поз. 19 — дзеркало канону, НЕ якір: ціль за присудом стоїть над куполом навмисно (рух кореня — ⚖️ пакета).
+    "поз. 19 за присудом ⚖️ 2026-09-30 (пакет HW.9): +17.1 мм², ціль пари B2B Ø20.24, rigid-flex Ø18.82 (`02_01 §3.5`)" =>
       near.(POS19["verdict"][1] - POS19["class"][1], 17.1) &&
       near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict").max, 20.24) &&
       near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: true, pos19: "verdict").max, 18.82)
@@ -243,51 +243,57 @@ end
 # Пакет кореня (`00_07` HW.9) — ОДИН рух цілі під усі члени, що зсувають її над застосований купол; рух — ⚖️ founder-а,
 # тут лише число, яке він вирішує (⏸ паузу крони знято для вимірів 2026-10-13). Члени понад дефолт:
 #   • поз. 19 за присудом і стійки `m2x8_stop` — рядки вище;
-#   • посадка `NN02-224` ширша за корпус — 12.2 × 3.2 (DS_NN02-224 §2.7), кортьярд 12.7 × 3.7;
 #   • четверте місце узгоджувальної ланки — розкладка вміщає і П, і Т (`02_01 §5.3`);
 #   • clearance-сегмент над хордою — геометрія генератора плат осі 3 (`tools/pcb/hw33_rf_axis3_boards`, найвужча зона,
-#     ⚖️ founder 2026-10-12): бустер на колі r − 0.5, хорда на 1.0 мм за падами. Площа росте з Ø, тож ціль — нерухома
-#     точка. Верх RF Deck — завжди (посадка лежить у сегменті); низ — друге прочитання «наскрізний keep-out»: евал-плати
-#     Ignion двошарові й показують зону без землі, але текст DS/UM шарів не називає;
+#     ⚖️ founder 2026-10-12): бустер на колі r − 0.5, хорда на 1.0 мм за падами. Сегмент — жорсткий keep-out, тож він
+#     ВІДНІМАЄТЬСЯ від корисної площі (його частина всередині корисного кола), а не ділиться на заповнення разом із
+#     кортьярдами; посадка бустера (12.2 × 3.2, DS_NN02-224 §2.7) лежить у ньому й окремо не рахується. Площа росте з Ø,
+#     тож ціль — нерухома точка. Верх RF Deck — завжди; низ — друге прочитання «наскрізний keep-out», за нашим
+#     прочитанням евал-плат (текст DS/UM шарів зони не називає);
 #   • зазор ходу коміра — рядки маршрутів `82` (верхня межа design clearance рядка).
 # Умовні члени дає складальник: пара `R_OC` (+1 × 0402 на верху Power Deck) друкується окремо; keep-out THT-падів EDLC
-# під міні-хвилю розміру не має. ⛔ Стеля: геометричну підлогу низу RF Deck із наскрізним сегментом (EDLC і сокет поза
-# ним) модель не рахує — відповідь лише вгору.
-PKG_LAND = rect(12.70, 3.70)
+# під міні-хвилю розміру не має. ⛔ Стелі: геометричну підлогу низу RF Deck із наскрізним сегментом (EDLC і сокет поза
+# ним) модель не рахує; рівномірне заповнення 70 % — наше прочитання, і сегмент у ньому може «позичати» площу інших сторін.
 CLEARANCE_JSON = File.expand_path("../in_silico/cache/mechanical/collar_running_clearance.json", __dir__)
 
-def booster_segment(d)
+# Сегмент над хордою на колі радіуса rc; хорду ставить бустер на краю плати Ø d, як у генераторі плат.
+def booster_segment(d, edge: 0.0)
   r = d / 2.0
   ex, ey, pad_h = 6.1, 1.6, 3.2   # NN02-224: пади 2.2 × 3.2 на кроці 7.8 + 2.2, корпус 12.0 × 3.0 — як у генераторі
-  yc = -Math.sqrt(((r - 0.5)**2) - (ex**2)) + ey
-  depth = r + yc + (pad_h / 2) + 1.0
-  (r * r * Math.acos((r - depth) / r)) - ((r - depth) * Math.sqrt((2 * r * depth) - (depth * depth)))
+  chord = -Math.sqrt(((r - 0.5)**2) - (ex**2)) + ey + (pad_h / 2) + 1.0
+  rc = r - edge
+  depth = rc + chord
+  (rc * rc * Math.acos((rc - depth) / rc)) - ((rc - depth) * Math.sqrt((2 * rc * depth) - (depth * depth)))
 end
 
+# Кортьярди (без бустера — він у сегменті) ÷ 0.7 + сегмент у корисному колі на одній чи двох сторонах ≤ 3 × корисна.
 def package_target(rigid_flex:, through:, r_oc: false)
   base = sums(parts(booster: "nn02_224", edlc: "kr", rigid_flex:, pos19: "verdict", standoffs: "m2x8_stop")).values.sum
   fixed = base - BOOSTER["nn02_224"][1] + C0402 + (r_oc ? R0402 : 0.0)
   d = 20.0
-  30.times { d = diameter_for((fixed + (booster_segment(d) * (through ? 2 : 1))) / 3 / 0.7) }
-  [ [ d, geometric_floor("kr", socket: !rigid_flex) ].max, booster_segment(d) ]
+  30.times { d = diameter_for(((fixed / 0.7) + (booster_segment(d, edge: USABLE_EDGE_MM) * (through ? 2 : 1))) / 3) }
+  [ [ d, geometric_floor("kr", socket: !rigid_flex) ].max, booster_segment(d, edge: USABLE_EDGE_MM) ]
 end
 
 if ARGV == [ "--package" ]
   routes = JSON.parse(File.read(CLEARANCE_JSON)).fetch("routes")
   dome = ->(d, gap) { d + (2 * BOSS_BAND_MM) + (2 * (COLLAR_WALL_MM + gap)) }
   puts "Пакет кореня (00_07 HW.9) — ціль контуру під усі члени; купол radome.json Ø#{DOME_MM}, рух кореня — ⚖️ founder-а"
-  puts format("  члени понад дефолт: поз. 19 за присудом %+.1f · стійки m2x8_stop %+.1f · посадка бустера %+.1f · четверте місце ланки %+.1f · сегмент — нижче, мм²",
-              POS19["verdict"][1] - POS19["class"][1], STANDOFFS["m2x8_stop"][1].values.sum, PKG_LAND - BOOSTER["nn02_224"][1], C0402)
+  puts format("  члени понад дефолт: поз. 19 за присудом %+.1f · стійки m2x8_stop %+.1f · четверте місце ланки %+.1f мм²; сегмент — keep-out у корисному колі (нижче), кортьярд бустера %.1f лежить у ньому й окремо не рахується",
+              POS19["verdict"][1] - POS19["class"][1], STANDOFFS["m2x8_stop"][1].values.sum, C0402, BOOSTER["nn02_224"][1])
   [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
     [ [ "сегмент лише на верху RF Deck", false ], [ "наскрізний keep-out (верх + низ RF Deck)", true ] ].each do |reading, through|
       d, seg = package_target(rigid_flex: rigid, through:)
       d_oc, = package_target(rigid_flex: rigid, through:, r_oc: true)
       domes = routes.map { |r| format("%s Ø%.2f", r.fetch("route"), dome.(d, r.fetch("design_clearance_bound_mm"))) }
-      puts format("  %-10s %-42s ціль Ø%.2f (сегмент %.1f мм²; з парою R_OC Ø%.2f) → купол: %s",
+      puts format("  %-10s %-42s ціль Ø%.2f (сегмент у корисному колі %.1f мм²; з парою R_OC Ø%.2f) → купол: %s",
                   label, reading, d, seg, d_oc, domes.join(" · "))
     end
   end
-  puts format("  для порівняння — ціль дефолту Ø%.2f під купол Ø%.1f (зазор ходу 0)", target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false).max, DOME_MM)
+  no_seg = target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict", standoffs: "m2x8_stop").max
+  puts format("  без сегмента (поз. 19 і стійки) — ціль Ø%.2f → купол: %s; ціль дефолту Ø%.2f під купол Ø%.1f",
+              no_seg, routes.map { |r| format("Ø%.2f", dome.(no_seg, r.fetch("design_clearance_bound_mm"))) }.join(" · "),
+              target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false).max, DOME_MM)
   exit 0
 end
 
@@ -360,9 +366,9 @@ alt = [ false, true ].map { |rigid| target_for(**variant, rigid_flex: rigid, pos
 over = radome_for(alt[0]) > DOME_MM + 0.05
 puts format("поз. 19 — друге прочитання (--pos19 %s): %+.1f мм² → пара B2B Ø%.2f (радом ≈ Ø%.2f) / rigid-flex Ø%.2f — %s",
             other, POS19.fetch(other)[1] - POS19.fetch(opts[:pos19])[1], alt[0], radome_for(alt[0]), alt[1],
-            over ? "НАД куполом radome.json: рух кореня — ⏸ пауза крони, `00_07` HW.9" : "під куполом radome.json")
+            over ? "НАД куполом radome.json: рух кореня — ⚖️ пакета, `00_07` HW.9" : "під куполом radome.json")
 
-# Стійки — член того самого ⏸-пакета: друкуються окремо й разом із поз. 19 за присудом, бо корінь рухається ОДИН раз.
+# Стійки — член того самого пакета кореня: друкуються окремо й разом із поз. 19 за присудом, бо корінь рухається ОДИН раз.
 STANDOFFS.each_key do |key|
   next if key == "none"
 
@@ -370,5 +376,5 @@ STANDOFFS.each_key do |key|
   both = target_for(booster: opts[:booster], edlc: opts[:edlc], rigid_flex: false, pos19: "verdict", standoffs: key).max
   puts format("стійки --standoffs %s: %+.1f мм² → пара B2B Ø%.2f (радом ≈ Ø%.2f); разом із поз. 19 за присудом Ø%.2f (радом ≈ Ø%.2f) — %s",
               key, STANDOFFS.fetch(key)[1].values.sum, alone, radome_for(alone), both, radome_for(both),
-              radome_for(alone) > DOME_MM + 0.05 ? "НАД куполом radome.json: рух кореня — ⏸ пакетом, `00_07` HW.9" : "під куполом radome.json")
+              radome_for(alone) > DOME_MM + 0.05 ? "НАД куполом radome.json: рух кореня — ⚖️ пакета, `00_07` HW.9" : "під куполом radome.json")
 end

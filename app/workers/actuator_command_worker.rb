@@ -3,8 +3,8 @@
 
 # Не джоба: єдиний дім броадкасту статусу наказу актуатора. Push-доставки CMD немає —
 # Королева вхідного слухача не має, наказ чекає в .pending і їде її poll'ом
-# (Downlink::PendingQueueService, 03_02 §4а); кінець недоставного наказу — сторож
-# ARCH.75 і safety-sweep ARCH.58. Кличуть poll-тракт, Reset і свіпери.
+# (Downlink::PendingQueueService, 03_02 §4а); кінець недоставного наказу — TTL при видачі
+# й сторож ARCH.75. Кличуть poll-тракт, Reset і свіп застарілих шлюзів.
 class ActuatorCommandWorker
   # 📈 Статичний метод для broadcast з денормалізованим organization_id
   # Rescue-ізоляція: викликається і з синхронного poll-тракту coap-демона
