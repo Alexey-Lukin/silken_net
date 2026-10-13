@@ -20,7 +20,8 @@ namespace SilkenCad;
 //    «вхід»: designed to the rim-cavity ceiling now, and the board layout HW.9 takes that ceiling as an INPUT);
 //  • the raised COLLAR that carries the lugs at Assembly.RequiredLugZMm (ratified 2026-09-11, 02_02 §4.4) is NOT
 //    modelled — strength does not size its wall (model 73, 02_02 §4.4: there is still no bayonet load model, but
-//    the force no longer sizes the wall — the process floor does), a placeholder would print on the flange sheet as a
+//    the force no longer sizes the wall — the process floor does; ⊕ 2026-10-13: at the nominal squeeze — at the window
+//    top `88` asks ≥ 0.28 mm, a conditional root-package member, ⚖️ founder 2026-10-13), a placeholder would print on the flange sheet as a
 //    decision, and the non-zero running clearance it needs (model 82, 02_02 §4.4) moves the root (00_07 HW.9: one move, after axis 3 of the RF mock-up — ⚖️ 2026-10-13), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
 //    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
 //    it — socket and collar are the female and male halves of one band;

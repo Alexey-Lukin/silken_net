@@ -33,7 +33,8 @@ MODEL (radial, at the interface diameter D = 2 × the socket band's inner radius
     Ti with a moulded PEEK band (IT7 · IT11) · a coarse moulding (IT8 · IT12); roundness per surface as declared
     in ROUTES.
   • board ceiling: `52`'s chain, design_to − 2·(t + c), at the collar wall's print floor t (`52` / `73`: the
-    wall is set by printability, not strength).
+    wall is set by printability, not strength, at the nominal squeeze — at the window top `88` asks more, a
+    conditional root-package member, ⚖️ founder 2026-10-13).
 
 DIRECTION OF EACH CHOICE, stated per quantity:
   • the requirement −40 °C (not the modelled −33.5 °C) and the gradient bound make the floor LARGER — safe;

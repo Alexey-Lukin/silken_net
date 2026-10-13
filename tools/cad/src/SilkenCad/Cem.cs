@@ -411,7 +411,8 @@ internal sealed record RadomeCem
     // ⚖️ ROOT (founder 2026-09-29, 00_07 HW.9 → HW.33; applied 2026-09-30): the Ø25 freeze is OPENED for the board contour.
     // DERIVED, not chosen: board target Ø19.97 (02_01 §3.5 — 70 % courtyard fill with the vent-pocket gasket counted, envelope
     // booster NN02-224, EDLC KR, B2B pair) + 2 × 0.2 collar (the SLM print-floor default — since 2026-10-01 the ground, not a reading:
-    // model 73, 02_02 §4.4, found strength does not size the wall; the CNC route states no floor) + 2 × 4.715 rim boss
+    // model 73, 02_02 §4.4, found strength does not size the wall at the nominal squeeze — at the window top `88` asks
+    // ≥ 0.28 mm, a conditional root-package member, ⚖️ founder 2026-10-13; the CNC route states no floor) + 2 × 4.715 rim boss
     // (gland fill KEPT at 80 %, ⚖️ delegated 2026-09-30) = 29.80. A thicker collar, or any running clearance for it, re-opens it (HW.33).
     public float DomeDiameterMm { get; init; } = 29.8f;    // = Zone-3 flange Ø (02_02 §1.3), pinned equal by xUnit
     public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)

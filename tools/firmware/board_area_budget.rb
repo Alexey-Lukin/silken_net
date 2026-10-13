@@ -49,7 +49,8 @@ USABLE_EDGE_MM = 0.3      # відступ міді від краю — `02_01 �
 BOSS_BAND_MM   = 4.715
 # 0.2 — канонний SLM-дефолт `slm_min_wall_mm` (01_01 §5.5), керівний із 2026-10-01 на SLM-маршруті:
 # `73_collar_wall_inversion` показав, що міцність стінки не задає (зріз кореня вушка тримає 457 Н уже
-# на цій підлозі). На CNC-маршруті стінку задає цех (не задано), а вендорська підлога перекриває дефолт;
+# на цій підлозі) — ⊕ 2026-10-13: на номіналі стиску; на верху вікна для кільця, що не релаксує, `88` просить більше,
+# і це умовний член пакета кореня (⚖️ founder 2026-10-13, `02_02 §4.4`) — `--package` друкує його окремо. На CNC-маршруті стінку задає цех (не задано), а вендорська підлога перекриває дефолт;
 # будь-яке з двох понад 0.2 — як і ненульовий зазор ходу коміра — знову відкриває купол. ⚠️ Стеля: вимога ДРЕНАЖУ кишень, яку та сама модель
 # зробила обовʼязковою, може зрушити геометрію сокета — тоді й цей рядок (`00_07` HW.33 · `02_02 §4.4`).
 COLLAR_WALL_MM = 0.2
@@ -258,6 +259,7 @@ end
 # вимагає переносу деталей із верху. ⚠️ Окремо й у ДВА боки: самі 70 % — наше прочитання щільності, а не стеля,
 # тож «нижня межа» умовна на ньому.
 CLEARANCE_JSON = File.expand_path("../in_silico/cache/mechanical/collar_running_clearance.json", __dir__)
+ORING_BAND_JSON = File.expand_path("../in_silico/cache/mechanical/oring_reaction_band.json", __dir__)
 
 # Сегмент над хордою на колі радіуса rc; хорду ставить бустер на краю плати Ø d, як у генераторі плат.
 def booster_segment(d, edge: 0.0)
@@ -294,6 +296,9 @@ if ARGV == [ "--package" ]
                   label, reading, d, seg, d_oc, domes.join(" · "))
     end
   end
+  strength_wall = JSON.parse(File.read(ORING_BAND_JSON)).dig("band", "window_top", "collar_wall_strength_asks_mm_ring_never_relaxes")
+  puts format("  умовний член — стінка коміра за міцністю %.2f мм замість %.1f (`88`: верх вікна стиску, кільце без релаксації; ⚖️ founder 2026-10-13, 02_02 §4.4): +%.2f мм до кожного купола вище, доки не прийдуть крива сили й релаксація компаунда",
+              strength_wall, COLLAR_WALL_MM, 2 * (strength_wall - COLLAR_WALL_MM))
   no_seg = target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict", standoffs: "m2x8_stop").max
   puts format("  без сегмента (поз. 19 і стійки) — ціль Ø%.2f → купол: %s; ціль дефолту Ø%.2f під купол Ø%.1f",
               no_seg, routes.map { |r| format("Ø%.2f", dome.(no_seg, r.fetch("design_clearance_bound_mm"))) }.join(" · "),
