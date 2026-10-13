@@ -3,7 +3,8 @@
  * flash_kv.h — [ARCH.28 шлях A] журнальний key-value у Flash STM32WLE5JC.
  *
  * Навіщо: RTC Backup (DR0..DR19) повний — нова persist-фіча йде сюди
- * (FW.54 wall-маркери/EMA при SRAM2-off, FW.20-S2 anti-storm bitmap).
+ * (ключі й споживачі — 03_01 §2.3.1; живий набір FW.54 сюди НЕ їде —
+ * він у RTC, ⚖️ founder 2026-10-13; EMA — теж RTC).
  *
  * Дизайн (AN4894-патерн, адаптований під ECC цього кремнію):
  *   • Елемент = ОДИН doubleword (8 Б) — на WLE5 програмування dw атомарне
