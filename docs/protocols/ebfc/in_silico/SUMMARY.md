@@ -912,8 +912,8 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 (SF 2 inside; no fillet, no lug bending) carries `52`'s requirement at the nominal whatever the ring does, at the top of
 the chain `52` models once the ring has lost about 2 % of its reaction, and at the window top only if it has lost about
 23 % by year 2 and about 28 % already by year 5; a ring that never relaxes binds the lug from 27.1 % (26.8–27.5 % over the transcription — the source cannot tell
-it from the chain's top), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top
-against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found it is the lower bound of a PEEK-dominated loop and a point on a curve of an unmeasured stiffness, and the founder ratified it as such the same day). From below, the ring starts at no less than 58 N at the
+it from the chain's top), and strength, not printability, then sizes the collar wall — at least 0.28 mm at the window top
+against the 0.2 mm print floor (`52`'s form at the assembly temperature with no fit tolerance) — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found it is the lower bound of a PEEK-dominated loop and a point on a curve of an unmeasured stiffness, and the founder ratified it as such the same day). From below, the ring starts at no less than 58 N at the
 floor: (A) holds 5.5× with a clamp at the form `52` prints for the ring's own reaction; a weaker clamp can let the rim
 lift, and (A) is then judged on the ring keeping 18 % of that floor for 20 years (a lift taken as not undone). The margins say whether a bayonet that meets the
 requirement can exist; the lug carries the clamp it actually delivers. NOT modelled: the compound's own curve and its
