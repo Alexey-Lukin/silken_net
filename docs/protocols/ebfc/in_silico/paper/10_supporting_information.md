@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 295 · 16,861,264 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 295 · 16,861,612 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -122,7 +122,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/86_coaxiality_allocation.py` | `fba89766d003cfe1c28e92cbf8c14d16b68c63b9c2257031de4114db3550358b` | What a channel-to-root misalignment costs the bus root with a Soderberg mean-stress correction. |
 | `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `895653fcabf239608bc699e1ac9358a120b7875e16b4fb840ec0fafef04a9e3a` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
 | `tools/in_silico/scripts/88_oring_reaction_band.py` | `e08aa92d1cc67a6ab81754bdae245670e072ed4504ebf648d214e67617b30bf7` | The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for the capsule staying put. |
-| `tools/in_silico/scripts/89_bayonet_thermal_clamp.py` | `5494e779cdef8664ddcdd96008b64032a02d9edc78c9f6d59dabc404a891bc8a` | How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured. |
+| `tools/in_silico/scripts/89_bayonet_thermal_clamp.py` | `3bee70532c0dca7aa96cdee2306f868a51d3f3640f8f73127ca0f9bc195dd04f` | How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
@@ -231,7 +231,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.json` | `dac7658314bf1e37d92beaf31b4146e430617e9f78bb3f94c4365878882b75ea` | 15,304 |
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `50f53691c01e9960a36d2508299b4b3deabf3234f6eb444bf42331a7938d0ba8` | 110,967 |
 | `tools/in_silico/cache/mechanical/anchor_torque_path.json` | `c2752d18386c03bab9edb8256d42841edcb34e48aed038158da65ffcaa7d16b4` | 16,509 |
-| `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `13630251f5a22fe027b5ad720c3dabca838a8d8889e5f3d6063c0e06daeb3cf8` | 69,803 |
+| `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `6d4218e15f1b47c2b20910e811da8cb8a38dfd6413db447863609235a35204d6` | 69,927 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `69cba405183613e4b462f6e5ff7717f7eb49888d34186f7eac7e1dc775a44088` | 72,799 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `68de8e77fc683f471c2816bcf92f32922c97a3294ce61820d317646b7f0ac35c` | 234,387 |
 | `tools/in_silico/cache/mechanical/coaxiality_allocation.json` | `eab64258c6f4e38df440791f62bbef7a90b85479ff56b3d30eecd74ab28d3f5b` | 24,988 |

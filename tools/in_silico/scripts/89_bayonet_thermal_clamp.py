@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """89 — the bayonet clamp over its interference tolerance and temperature: how stiff the clamp loop may be, and what
 the collar wall must then carry (00_07 HW.33, the leg «тепловий затиск байонета»; its consumer is the conditional
-root-package member «стінка коміра за міцністю», ⚖️ founder 2026-10-13, 02_02 §4.4 — a price this raises goes back
-to the founder).
+root-package member «стінка коміра за міцністю», ⚖️ founder 2026-10-13, 02_02 §4.4 — returned the same day and
+ratified as a LOWER bound; this script recomputes the wall once δ and k exist, before the collar is drawn).
 
 QUESTION. The bayonet is deflection-controlled (02_02 §4.3): the clamp C is the elastic squeeze of the loop
 lug → groove ledge → radome → rim → flange face → collar → lug, so C = k·(interference), with k the loop's stiffness.
@@ -243,7 +243,8 @@ def main() -> int:
         f"With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to "
         f"k = {f5['k_max_N_per_um']['print_floor']:.2f} N/µm and at the nominal up to "
         f"{n5['k_max_N_per_um']['print_floor']:.2f}. k, δ and the PEEK's share of the compliance are not computed — the lug "
-        f"geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4).")
+        f"geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound, with a flat lug "
+        f"contact and a numbered interference tolerance required before the collar is drawn (02_02 §4.4, 2026-10-13).")
 
     out = {
         "question": "How the bayonet clamp spreads with its interference tolerance and temperature, and the collar wall "

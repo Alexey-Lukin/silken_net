@@ -911,7 +911,7 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 the chain `52` models once the ring has lost about 2 % of its reaction, and at the window top only if it has lost about
 23 % by year 2 and about 28 % already by year 5; a ring that never relaxes binds the lug from 27.1 % (26.8–27.5 % over the transcription — the source cannot tell
 it from the chain's top), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top
-against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found it is the lower bound of a PEEK-dominated loop and a point on a curve of an unmeasured stiffness, so it went back to the founder). From below, the ring starts at no less than 58 N at the
+against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found it is the lower bound of a PEEK-dominated loop and a point on a curve of an unmeasured stiffness, and the founder ratified it as such the same day). From below, the ring starts at no less than 58 N at the
 floor: (A) holds 5.5× with a clamp at the form `52` prints for the ring's own reaction; a weaker clamp can let the rim
 lift, and (A) is then judged on the ring keeping 18 % of that floor for 20 years (a lift taken as not undone). The margins say whether a bayonet that meets the
 requirement can exist; the lug carries the clamp it actually delivers. NOT modelled: the compound's own curve and its
@@ -924,7 +924,8 @@ the lug's load, and the ring's own contraction takes squeeze in the cold (`89` �
 ## HW.33 — The Bayonet Clamp over Its Fit and Temperature (script 89)
 
 Canon home → [`02_02 §4.4`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (the conditional root-package member
-«collar wall by strength», ⚖️ founder 2026-10-13 — this sends it back); open work → `00_07` HW.33.
+«collar wall by strength», ⚖️ founder 2026-10-13 — returned the same day and ratified as a lower bound, with a flat lug
+contact and a numbered interference tolerance required before the collar is drawn); open work → `00_07` HW.33 · HW.8.
 
 The bayonet is deflection-controlled: the clamp is the elastic squeeze of the loop lug → groove ledge → radome → rim →
 flange face → collar, C = k·(interference). Two displacements move it through the same loop stiffness k: the TOLERANCE
@@ -958,8 +959,8 @@ floor; 320 at the top even under the force-controlled L0) against **167** MPa fo
 (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across
 the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line
 contact is likely the loop's softest member, so removing it raises k. Unequal lugs carry more than the mean. k, δ and the PEEK's share of the compliance are not
-computed — the lug geometry and both Z tolerances are placeholders; the member went back to the founder (`02_02 §4.4`,
-`00_07` HW.33). (`mechanical/bayonet_thermal_clamp.json`)
+computed — the lug geometry and both Z tolerances are placeholders; the founder ratified the member as a lower bound (`02_02 §4.4`,
+`00_07` HW.8.8). (`mechanical/bayonet_thermal_clamp.json`)
 
 ---
 
