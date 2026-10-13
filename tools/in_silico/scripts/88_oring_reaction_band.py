@@ -14,12 +14,18 @@ ring's squeeze is fixed by the groove depth and the rim datum, and its reaction 
 lugs carry with the pogo pair p. Both the clamp and R relax over time: the clamp with the PEEK it compresses
 (f(t) of `52`), R with the elastomer's stress relaxation (not in this source). So `52`'s requirement «the rim stays
 seated» is max over t of (R(t) + p) / f(t), bracketed by R0 + p at assembly (f = 1) and (R0 + p) / f(20 y) if the
-ring never relaxes — the second is the form `52` prints; the ring's own relaxation moves the requirement between
-them, and this script states the share of R0 the ring must LOSE for the lug root to carry the requirement. The lug
-root then carries the DELIVERED clamp, which is at least the requirement: the margin here says whether a bayonet that
-meets the requirement can exist, not that the delivered one is safe. For (A), `87` gives the reaction each clamp
-design needs (initial for a clamp that seated the rim, after 20 years for one that never did); this script compares
-them with the band's LOW end at the window floor.
+ring never relaxes — the second is the form `52` prints. This script states how much of R0 the ring must LOSE by each
+year for the lug root to carry the requirement — f(t) reaches its floor within a few years, so most of that loss is
+due early, not by year 20. The lug root carries the DELIVERED clamp, which is at least the requirement: the margin
+here says whether a bayonet that meets the requirement can exist, not that the delivered one is safe. For (A), `87`
+gives the reaction each clamp design needs: an INITIAL one for a clamp at `52`'s requirement (it never lifts while
+L ≤ L0), the one LEFT after 20 years for any weaker clamp (it lifts once the ring relaxes more slowly than the PEEK,
+and lifting is not undone); this script compares both with the band's LOW end at the window floor. The friction bound
+runs through the lug ledge (the rim's share can be zero), and the rim is the greased seal land.
+⚠️ TEMPERATURE is not in any of 52 · 87 · 88: the clamp is a few µm of PEEK compression, PEEK and Ti contract
+differently, and the ring's reaction moves both ways with temperature (the compound stiffens in the cold while its own
+contraction takes squeeze) — so every margin below holds at the assembly temperature, and «L stays ≤ L0» is a
+condition, not a result.
 
 SOURCE. Parker O-Ring Handbook ORD 5700 (parker.com/content/dam/Parker-com/Literature/O-Ring-Division-Literature/
 ORD-5700.pdf, read 2026-10-13). Figure 2-4 «.070 Cross Section», p. 2-11 (PDF page 23): «Compression Load per Linear
@@ -41,9 +47,10 @@ stretched onto the groove's inner wall (AS568-019 — 02_02 §3.2); the chart's 
 CAN show: the reaction band (N) at the window floor, at both ends of the chain `52` models, at the nominal and at the
 window top; for the lug root, the requirement bracket, the margin at both ends of it, the share of R0 the ring must
 lose for SF 2 to hold, the squeeze at which the band's top binds (with the transcription's ±4 %), and the collar wall
-strength would ask for; for (A), the band's floor against `87`'s three needs.
+strength would ask for; the share of R0 the ring must lose by each year; for (A), the band's floor against `87`'s
+needs.
 CANNOT show: the ring's stress relaxation (a compound datum — ISO 3384-type data from the vendor); our compound's own
-curve; the clamp the bayonet delivers; the cold side, where EPDM stiffens and the reaction rises; lug bending and the
+curve; the clamp the bayonet delivers; anything at another temperature than assembly; lug bending and the
 fillet (`73` is pure shear).
 """
 from __future__ import annotations
@@ -87,6 +94,7 @@ SHORE_A = 70                         # EPDM 70 Shore A — 02_02 §3.2 (⚖️ f
 SHORE_A_TOLERANCE = 5                # Parker §2.4.2: durometer «is generally called out in specifications with a tolerance of ±5»
 RING_ID_MM = 20.35                   # AS568-019 as supplied — 02_02 §3.2 (⚖️ делеговано 2026-10-01); < 25.4 → Table 2-3 upper rows
 TABLE_2_3_BOTTOM = 1.0 / 3.0         # the bottom of the bar's middle third, as a fraction of the bar in log scale
+SCHEDULE_YEARS = (1, 2, 3, 5, 10, 20)  # years at which the share the ring must have lost is printed (≤ 52's service life)
 
 
 def lbf_per_in(x_pt: float) -> float:
@@ -156,6 +164,8 @@ def main() -> int:
 
     rim = z52["rim_datum_creep"]
     p52, f_t = rim["pogo_pair_force_N_upper_bound"], rim["relax_fraction_at_service"]
+    f_of = lambda t: rim["relax_floor"] + (1.0 - rim["relax_floor"]) * math.exp(-t / rim["relax_tau_years"])  # noqa: E731
+    years = [y for y in SCHEDULE_YEARS if y <= rim["service_years"]]
     lug_cap = c73["verdict"]["capacity_at_print_floor_N"]
     sf73 = c73["safety_factor"]
     lug_rows = c73["case_b_lug_root_shear"]["rows"]
@@ -166,7 +176,8 @@ def main() -> int:
         bar_lo, _ = bar_at(pct)
         r_hi = hi * to_n
         need_asm, need_20 = r_hi + p52, (r_hi + p52) / f_t     # requirement bracket: at assembly ⊥ ring never relaxes
-        lose = 1.0 - (lug_cap * f_t - p52) / r_hi               # share of R0 the ring must lose for SF 2 to hold
+        # share of R0 the ring must have LOST by year t for SF 2 to hold then — f(t) floors early, so most is due early
+        lose = {str(y): round(max(1.0 - (lug_cap * f_of(y) - p52) / r_hi, 0.0), 3) for y in years}
         band[name] = {"squeeze_pct": pct,
                       "bar_lbf_per_in": [round(bar_lo, 2), round(hi, 2)],
                       "lbf_per_in": [round(lo, 2), round(hi, 2)],
@@ -175,7 +186,7 @@ def main() -> int:
                                                         "after_20_years_ring_never_relaxes": round(need_20, 1)},
                       "lug_root_margin_x_at_print_floor": {"at_assembly": round(lug_cap / need_asm, 2),
                                                            "after_20_years_ring_never_relaxes": round(lug_cap / need_20, 2)},
-                      "ring_must_lose_share_of_R0_for_sf": round(max(lose, 0.0), 3),
+                      "ring_must_have_lost_share_of_R0_by_year": lose,
                       "collar_wall_strength_asks_mm_ring_never_relaxes": round(wall_for_force(lug_rows, need_20), 3)}
 
     # Inversion (no datum needed): the reaction at which 52's requirement (ring never relaxing) meets 73's capacity.
@@ -189,10 +200,13 @@ def main() -> int:
     a_rows = {k: r["A_rim"] for k, r in s87["by_slope_reading"].items()}
     need = {k: max(a["o_ring_reaction_N_needed"][k] for a in a_rows.values())
             for k in next(iter(a_rows.values()))["o_ring_reaction_N_needed"]}
-    a_margin = {k: round(floor_lo / v, 2) if v > 0 else None for k, v in need.items()}
-    retained = round(need["after_20_years_if_the_rim_is_never_seated"] / floor_lo, 3)
+    # a margin only where the need is an INITIAL reaction; after 20 years the ring's reaction is unknown → a share
+    a_margin = {k: round(floor_lo / v, 2) if v > 0 else None for k, v in need.items() if k.startswith("initial")}
+    retained = round(need["after_20_years_with_a_weaker_clamp"] / floor_lo, 3)
 
     top, chain_hi, nom = band["window_top"], band["chain_high"], band["nominal"]
+    end, early = str(years[-1]), "2"
+    lost = lambda b, y: b["ring_must_have_lost_share_of_R0_by_year"][y] * 100  # noqa: E731
     verdict = (
         f"The «generous» {GENEROUS_ORING_BOUND_N:.0f} N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts "
         f"the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is "
@@ -201,20 +215,21 @@ def main() -> int:
         f"{GENEROUS_ORING_BOUND_N:.0f} N from {sq_generous:.1f} % squeeze. With that top, 52's requirement lies between the "
         f"clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} inside) carries it "
         f"at the nominal at both ends ({nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× "
-        f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring loses "
-        f"{chain_hi['ring_must_lose_share_of_R0_for_sf'] * 100:.0f} % of its reaction "
+        f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost "
+        f"{lost(chain_hi, end):.0f} % of its reaction by year {end} "
         f"({chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does), and at "
-        f"the window top only if it loses {top['ring_must_lose_share_of_R0_for_sf'] * 100:.0f} % "
+        f"the window top only if it has lost {lost(top, early):.0f} % by year {early} and {lost(top, end):.0f} % by year "
+        f"{end} — the PEEK clamp floors within a few years, so the ring's loss is due early "
         f"({top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does, "
         f"{top['lug_root_margin_x_at_print_floor']['at_assembly']:.2f}× at assembly); a ring that does not relax makes the "
         f"lug bind from {sq_bind:.1f} % ({min(sq_bind_reads):.1f}–{max(sq_bind_reads):.1f} % over the transcription's ±4 %), "
         f"and strength, not printability, then sizes the collar wall — up to "
         f"{top['collar_wall_strength_asks_mm_ring_never_relaxes']:.2f} mm at the window top against the 0.2 mm print floor. "
         f"From below, the ring starts at no less than {floor_lo:.0f} N at the {win[0]:.0f} % floor — "
-        f"{a_margin['initial_with_clamp_that_only_seats_the_rim']:.1f}× what 87's (A) needs with a clamp that only seats "
-        f"the rim and {a_margin['initial_with_clamp_at_52_requirement']:.1f}× with a clamp at 52's requirement, whatever the "
-        f"ring retains; only a bayonet that never seats the rim leaves (A) on the ring keeping {retained * 100:.0f} % of it "
-        f"for 20 years.")
+        f"{a_margin['initial_with_clamp_at_52_requirement']:.1f}× what 87's (A) needs with a clamp at 52's requirement, "
+        f"which never lets the rim lift while the lift stays at its initial value; any weaker clamp lets the rim lift once "
+        f"the ring relaxes more slowly than the PEEK, lifting is not undone, and (A) then rests on the ring keeping "
+        f"{retained * 100:.0f} % of that floor for {end} years. Every margin here holds at the assembly temperature.")
 
     out = {
         "question": "The O-ring's compression reaction over the squeeze window — the datum 52 replaced with a "
@@ -252,15 +267,21 @@ def main() -> int:
         "rim_premise_A": {"reaction_N_low_at_window_floor": floor_lo,
                           "needs_87": need,
                           "margin_x": a_margin,
-                          "share_retained_needed_if_the_rim_is_never_seated": retained,
-                          "is": "with a clamp that seated the rim at assembly the end-of-life normal force is at least "
-                                "f·(R0 + p), whatever the ring retains; the retained share matters only for a bayonet "
-                                "that never seats the rim"},
+                          "share_retained_needed_with_a_weaker_clamp": retained,
+                          "is": "a clamp at 52's requirement for the ring's own reaction never lets the rim lift while "
+                                "the lift stays at L0, so the needed reaction is an initial one; any weaker clamp lets the "
+                                "rim lift once the ring relaxes more slowly than the PEEK, lifting is not undone, and the "
+                                "normal force is then what the ring has left; the friction bound runs through the lug "
+                                "ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is "
+                                "greased; temperature is not modelled"},
         "missing_data": ["the compound's own compression-load curve at 15–35 % for CS 1.78 (the band spans compounds)",
                          "its stress relaxation over the service life at the capsule's envelope (ISO 3384-type data) — "
                          "it moves 52's requirement between its two ends",
                          "the clamp the bayonet delivers (lug ramp, interference)",
-                         "the cold-side stiffening of EPDM (raises the reaction)"],
+                         "temperature: the clamp is a few µm of PEEK compression against a PEEK–Ti differential "
+                         "contraction, and the ring's reaction moves with temperature both ways (the compound stiffens "
+                         "in the cold, its own contraction takes squeeze) — every margin here is at the assembly "
+                         "temperature"],
         "verdict": verdict,
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -271,10 +292,10 @@ def main() -> int:
         m = b["lug_root_margin_x_at_print_floor"]
         print(f"  {name:13s} {b['squeeze_pct']:5.1f} %  reaction {b['reaction_N'][0]:6.1f}–{b['reaction_N'][1]:6.1f} N"
               f"  lug {m['at_assembly']:.2f}× (assembly) … {m['after_20_years_ring_never_relaxes']:.2f}× (no ring relaxation)"
-              f"  ring must lose {b['ring_must_lose_share_of_R0_for_sf'] * 100:.0f} %")
+              f"  ring must have lost {b['ring_must_have_lost_share_of_R0_by_year']}")
     print(f"  ring never relaxing: lug binds at {r_bind:.0f} N — band top at {sq_bind:.2f} % "
           f"({min(sq_bind_reads):.2f}–{max(sq_bind_reads):.2f} % over ±4 %)")
-    print(f"  (A): floor {floor_lo:.1f} N vs needs {need} → margins {a_margin}; never-seated rim keeps {retained * 100:.0f} %")
+    print(f"  (A): floor {floor_lo:.1f} N vs needs {need} → margins {a_margin}; a weaker clamp's ring keeps {retained * 100:.0f} %")
     print(f"\n  VERDICT: {verdict}")
     print(f"  → {OUT_JSON.relative_to(HERE.parent.parent.parent)}")
     return 0

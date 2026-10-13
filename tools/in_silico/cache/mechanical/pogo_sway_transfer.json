@@ -58,9 +58,9 @@
         0.05,
         0.2
       ],
-      "the rest — MCU, PMIC, TCXO, inductor, sensors, passives: NOT from datasheets": [
-        0.3,
-        1.0
+      "the rest — MCU, PMIC, TCXO, inductor, sensors, passives, solder, mask and coating, the pocket gasket, an optional desiccant: NOT from datasheets": [
+        0.35,
+        1.3
       ]
     },
     "fr4_boards_g": [
@@ -110,14 +110,13 @@
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
         "demand_N_at_ceiling": 1.112,
-        "capacity_N_initial_at_52_requirement": 31.3,
+        "capacity_N_initial_at_52_requirement": 21.2,
         "normal_force_N_needed_at_end_of_life": 11.12,
         "o_ring_reaction_N_needed": {
           "initial_with_clamp_at_52_requirement": 10.34,
-          "initial_with_clamp_that_only_seats_the_rim": 16.32,
-          "after_20_years_if_the_rim_is_never_seated": 10.34
+          "after_20_years_with_a_weaker_clamp": 10.34
         },
-        "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 (clamp at 52's requirement for the ring's own reaction), f·L0 (clamp that only seats the rim) or L(20) (rim never seated), and the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's"
+        "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 for a clamp at 52's requirement for the ring's own reaction (it never lifts while L ≤ L0), and only L(20) for any weaker clamp (it lifts once the ring relaxes more slowly than the PEEK, and lifting is not undone); the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not modelled"
       },
       "B_inertia_coaxial": {
         "force_ratio_per_gram": 0.00211,
@@ -128,12 +127,12 @@
         "unloads_at_mass_ceiling": false,
         "at_estimated_stack_mass": {
           "stack_mass_g": [
-            5.92,
-            7.46
+            5.97,
+            7.76
           ],
           "ratio_over_reduced_mean": [
-            0.0128,
-            0.0162
+            0.0129,
+            0.0169
           ],
           "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the pair factor the layout sets; a scale reading checks the mass"
         },
@@ -170,14 +169,13 @@
       "A_rim": {
         "capsule_weight_N_at_ceiling": 1.103,
         "demand_N_at_ceiling": 1.136,
-        "capacity_N_initial_at_52_requirement": 31.3,
+        "capacity_N_initial_at_52_requirement": 21.2,
         "normal_force_N_needed_at_end_of_life": 11.36,
         "o_ring_reaction_N_needed": {
           "initial_with_clamp_at_52_requirement": 10.57,
-          "initial_with_clamp_that_only_seats_the_rim": 16.69,
-          "after_20_years_if_the_rim_is_never_seated": 10.57
+          "after_20_years_with_a_weaker_clamp": 10.57
         },
-        "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 (clamp at 52's requirement for the ring's own reaction), f·L0 (clamp that only seats the rim) or L(20) (rim never seated), and the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's"
+        "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is at least L0 for a clamp at 52's requirement for the ring's own reaction (it never lifts while L ≤ L0), and only L(20) for any weaker clamp (it lifts once the ring relaxes more slowly than the PEEK, and lifting is not undone); the pogo pair alone does not hold even the weight — below the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not modelled"
       },
       "B_inertia_coaxial": {
         "force_ratio_per_gram": 0.00421,
@@ -188,12 +186,12 @@
         "unloads_at_mass_ceiling": false,
         "at_estimated_stack_mass": {
           "stack_mass_g": [
-            5.92,
-            7.46
+            5.97,
+            7.76
           ],
           "ratio_over_reduced_mean": [
-            0.0256,
-            0.0325
+            0.0258,
+            0.0338
           ],
           "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the pair factor the layout sets; a scale reading checks the mass"
         },
@@ -225,5 +223,5 @@
     "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"
   ],
   "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
-  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp that seated the rim and an initial O-ring reaction above the figures in A_rim (88 prices the reaction) — the stack's inertia is a fraction of the preload (1.3–3.2 % at the part-by-part mass estimate of 5.9–7.5 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
+  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp at 52's requirement and the initial reaction in A_rim, or with what a weaker clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the stack's inertia is a fraction of the preload (1.3–3.4 % at the part-by-part mass estimate of 6.0–7.8 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
 }

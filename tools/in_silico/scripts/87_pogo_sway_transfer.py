@@ -13,12 +13,16 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       friction (PEEK on Ti) holds the capsule's own WEIGHT (the anchor axis is near-horizontal, so the weight is a
       lateral load on the rim) plus the wind drag on the radome plus its inertia. The bayonet clamp C carries the lugs
       and seats the rim: the normal forces sum to 2C − L while the rim stays seated (L = the lift, pogo pair + O-ring)
-      and to L once it lifts onto the lug ledge, so early in life the capacity is large. Over 20 years the clamp relaxes
-      to f·C0 (f the PEEK floor of `52`) and the ring's own reaction can only fall, so the end-of-life normal force is
-      at least L0 for a clamp sized to `52`'s requirement for the ring's OWN reaction (C0 = L0/f), at least f·L0 for a
-      clamp that only seats the rim at assembly (C0 = L0), and the relaxed L(20) for a bayonet that never seats it
-      (⛔ the first two are INITIAL reactions — never read them as a force the ring must still have after 20 years). Computed: the end-of-life normal force the rim needs, and the O-ring reaction each of the three
-      clamp designs needs — initial for the first two, after 20 years for the third; the reaction itself is `88`'s.
+      and to L once it lifts onto the lug ledge, so early in life the capacity is large. Over the years the clamp
+      relaxes to f·C0 (f the PEEK floor of `52`) and the ring's reaction relaxes too, at its own rate. A clamp sized to
+      `52`'s requirement for the ring's OWN reaction (C0 = L0/f) never lets the rim lift while L stays ≤ L0, so its
+      end-of-life normal force is at least L0 — the needed reaction is an INITIAL one (⛔ never read it as a force the
+      ring must still have after 20 years). Any weaker clamp lifts as soon as the ring relaxes more slowly than the PEEK,
+      and LIFTING IS NOT UNDONE — nothing pushes the radome back — so from then on the normal force is L(t) and the needed
+      reaction is the one left after 20 years. ⚠️ Temperature is not modelled: the clamp is a few µm of PEEK compression,
+      PEEK and Ti contract differently, and the ring's reaction moves with cold and heat — so «L stays ≤ L0» and the
+      clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
+      reaction each clamp design needs; the reaction itself is `88`'s.
       Below it the capsule shifts inside the collar's running clearance and the pins SLIDE over the pads — the regime
       `55`'s per-cycle drag µ·F_pogo describes.
   (B) STACK INERTIA, with the rim holding. Wire stress is linear in spring force (τ = 8·F·D·K_w/(π·d³), 02_02 §2.2), so
@@ -131,7 +135,8 @@ STACK_PARTS_G = {
     "booster NN02-224 — Ignion datasheet, «Weight (approx.)»": (0.19, 0.19),
     "B2B pair — CLP-105-02-L-D 40.6 mg (Mouser unit weight, third-party) + FW header (no source, ≤ 0.2 g)": (0.04, 0.25),
     "2 × pogo 0906 — no published mass; ceiling: solid brass Ø1.27 × 6 mm each": (0.05, 0.2),
-    "the rest — MCU, PMIC, TCXO, inductor, sensors, passives: NOT from datasheets": (0.3, 1.0),
+    "the rest — MCU, PMIC, TCXO, inductor, sensors, passives, solder, mask and coating, the pocket gasket, an "
+    "optional desiccant: NOT from datasheets": (0.35, 1.3),
 }
 FR4_RHO_G_CM3 = (1.96, 2.0)       # Panasonic R-1755V · R-1755M specification sheets (FR-4.0, IPC-4101/126 · /99)
 PCB_T_MM, PCB_BOARDS = 1.6, 2     # 02_01 §3.1 поз. 8: FR4, 4 layers, 1.6 mm; RF Deck + Power Deck
@@ -186,10 +191,10 @@ def main() -> int:
         m = mass_ceiling_g * 1e-3
         demand = math.hypot(m * G * cos_i, drag + m * a)          # weight ⊥ wind + inertia, worst case at right angles
         lift_needed = demand / MU_RIM                              # the normal force the end of life needs
-        f_relax = rim["relax_fraction_at_service"]
+        # a clamp at 52's requirement for the ring's own reaction never lifts (while L ≤ L0): an INITIAL reaction;
+        # any weaker clamp can lift, lifting is not undone, and then the normal force is what the ring has left
         oring_needed = {"initial_with_clamp_at_52_requirement": round(max(0.0, lift_needed - push), 2),
-                        "initial_with_clamp_that_only_seats_the_rim": round(max(0.0, lift_needed / f_relax - push), 2),
-                        "after_20_years_if_the_rim_is_never_seated": round(max(0.0, lift_needed - push), 2)}
+                        "after_20_years_with_a_weaker_clamp": round(max(0.0, lift_needed - push), 2)}
         clamp0 = rim["required_initial_clamp_N"]["with_generous_o_ring"]
         per_g = a * 1e-3 / PIN_FORCE_MIN_N
         mean_at_ceiling = PIN_FORCE_MIN_N - m * G * sin_i
@@ -200,13 +205,17 @@ def main() -> int:
             "stem_at_anchor_h_le_2m": st,
             "A_rim": {"capsule_weight_N_at_ceiling": round(m * G, 3),
                       "demand_N_at_ceiling": round(demand, 3),
-                      "capacity_N_initial_at_52_requirement": round(MU_RIM * (2 * clamp0 - push), 1),
+                      # 2C − L with the lift that clamp was sized for (pogo + the generous ring), not the pogo alone
+                      "capacity_N_initial_at_52_requirement": round(
+                          MU_RIM * (2 * clamp0 - clamp0 * rim["relax_fraction_at_service"]), 1),
                       "normal_force_N_needed_at_end_of_life": round(lift_needed, 2),
                       "o_ring_reaction_N_needed": oring_needed,
                       "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is "
-                              "at least L0 (clamp at 52's requirement for the ring's own reaction), f·L0 (clamp that only "
-                              "seats the rim) or L(20) (rim never seated), and the pogo pair alone does not hold even the "
-                              "weight — below the needed reaction the pins slide (55's regime); the reaction is 88's"},
+                              "at least L0 for a clamp at 52's requirement for the ring's own reaction (it never lifts while "
+                              "L ≤ L0), and only L(20) for any weaker clamp (it lifts once the ring relaxes more slowly than "
+                              "the PEEK, and lifting is not undone); the pogo pair alone does not hold even the weight — below "
+                              "the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not "
+                              "modelled"},
             "B_inertia_coaxial": {
                 "force_ratio_per_gram": round(per_g, 5),
                 "force_ratio_per_gram_is": "the slope at small mass — the static share lowers the mean, so it is not a bound",
@@ -239,8 +248,8 @@ def main() -> int:
         print(f"    (A) rim: early capacity {r['A_rim']['capacity_N_initial_at_52_requirement']} N at 52's clamp; at the end of "
               f"life it holds the copper ceiling with an initial O-ring reaction ≥ "
               f"{r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']} N (clamp at 52's "
-              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_that_only_seats_the_rim']} N "
-              f"(clamp only seats the rim) "
+              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['after_20_years_with_a_weaker_clamp']} N left "
+              f"after 20 years (weaker clamp) "
               f"(weight {m * G:.2f} N, drag {drag:.3f} N, µ {MU_RIM})")
         print(f"    (B) {b['force_ratio_per_gram'] * 100:.2f} %/g · 10 % at {b['stack_mass_g_for_ratio_10pct']} g · weakest pin "
               f"unloads at {b['stack_mass_g_where_weakest_pin_unloads']:.0f} g (static share in) · copper ceiling unloads: "
@@ -288,8 +297,9 @@ def main() -> int:
                          "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"],
         "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
         "verdict": ("Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the "
-                    "end of life with a clamp that seated the rim and an initial O-ring reaction above the figures in "
-                    "A_rim (88 prices the reaction) — the stack's inertia is a fraction of "
+                    "end of life with a clamp at 52's requirement and the initial reaction in A_rim, or with what a weaker "
+                    "clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the "
+                    "stack's inertia is a fraction of "
                     f"the preload ({est_lo * 100:.1f}–{est_hi * 100:.1f} % at the part-by-part mass estimate of "
                     f"{stack_g[0]:.1f}–{stack_g[1]:.1f} g, × a pair factor the layout sets), and the centre-pad Poisson "
                     "term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the "

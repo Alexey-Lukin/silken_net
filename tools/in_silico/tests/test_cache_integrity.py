@@ -2003,9 +2003,10 @@ def test_pogo_sway_transfer():
         push, f_r = inp["pin_count"] * f, inp["rim_relax_fraction_at_service_from_52"]
         needs = rim["o_ring_reaction_N_needed"]
         assert abs(needs["initial_with_clamp_at_52_requirement"] - max(0.0, normal - push)) <= 0.02, name      # N ≥ L0
-        assert abs(needs["initial_with_clamp_that_only_seats_the_rim"] - max(0.0, normal / f_r - push)) <= 0.02, name
-        assert abs(needs["after_20_years_if_the_rim_is_never_seated"] - max(0.0, normal - push)) <= 0.02, name  # N = L(20)
-        early = inp["mu_rim"] * (2 * inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"] - inp["pin_count"] * f)
+        assert abs(needs["after_20_years_with_a_weaker_clamp"] - max(0.0, normal - push)) <= 0.02, name  # lifted: N = L(20)
+        assert set(needs) == {"initial_with_clamp_at_52_requirement", "after_20_years_with_a_weaker_clamp"}, name
+        c0 = inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"]
+        early = inp["mu_rim"] * (2 * c0 - c0 * f_r)                              # 2C − L with the lift C was sized for
         assert abs(rim["capacity_N_initial_at_52_requirement"] - early) <= 0.1, name
         m10 = 0.1 * f / ((a + 0.1 * g * sin_i) * 1e-3)                           # 10 % over the REDUCED mean
         assert abs(b["stack_mass_g_for_ratio_10pct"] - m10) <= 0.1, name
@@ -2041,9 +2042,9 @@ def test_oring_reaction_band():
     seal length drifting off 52's groove; the bar leaving log-load-linear-in-squeeze between the bracketing rows; the
     band leaving Table 2-3's portion for a ring under 1" (the bottom of the bar's middle third, in log scale, to its
     top); the requirement bracket leaving R + p at assembly and (R + p) / f for a ring that never relaxes; the lug
-    margins, the share of R0 the ring must lose and the strength-sized wall leaving 73's linear shear rows; the binding
-    squeeze not reproducing the binding reaction; (A)'s margins and retained share leaving 87's three needs over the
-    floor's low end. CANNOT catch: the transcription itself (the pt table lives in the script, read from the PDF's
+    margins, the share of R0 the ring must have lost by each year (on 52's f(t), not its 20-year value) and the
+    strength-sized wall leaving 73's linear shear rows; the binding squeeze not reproducing the binding reaction; (A)'s
+    margin (initial need only) and retained share leaving 87's two needs over the floor's low end. CANNOT catch: the transcription itself (the pt table lives in the script, read from the PDF's
     vector paths — only the page catches an error made there), nor whether Parker's bar describes our compound.
     """
     path = MECHANICAL / "oring_reaction_band.json"
@@ -2089,7 +2090,13 @@ def test_oring_reaction_band():
         req, mar = b["required_clamp_N_at_band_high"], b["lug_root_margin_x_at_print_floor"]
         assert abs(req["at_assembly"] - asm) <= 0.2 and abs(req["after_20_years_ring_never_relaxes"] - n20) <= 0.2, name
         assert abs(mar["at_assembly"] - cap / asm) <= 0.01 and abs(mar["after_20_years_ring_never_relaxes"] - cap / n20) <= 0.01, name
-        assert abs(b["ring_must_lose_share_of_R0_for_sf"] - max(0.0, 1 - (cap * f_t - p52) / (hi * to_n))) <= 0.002, name
+        lost = b["ring_must_have_lost_share_of_R0_by_year"]
+        for y, share in lost.items():                                       # f(t) of 52, not its 20-year value alone
+            f_y = rim["relax_floor"] + (1 - rim["relax_floor"]) * math.exp(-float(y) / rim["relax_tau_years"])
+            assert abs(share - max(0.0, 1 - (cap * f_y - p52) / (hi * to_n))) <= 0.002, (name, y)
+        shares = [lost[y] for y in sorted(lost, key=float)]
+        assert shares == sorted(shares) and max(float(y) for y in lost) == rim["service_years"], name
+        assert abs(shares[-1] - max(0.0, 1 - (cap * f_t - p52) / (hi * to_n))) <= 0.002, name
         assert abs(b["collar_wall_strength_asks_mm_ring_never_relaxes"] - 0.2 * n20 / cap) <= 0.002, name  # 73: linear shear
     pts = [b["squeeze_pct"] for b in d["band"].values()]
     assert pts == sorted(pts) and pts[0] == inp["window_pct"][0] and pts[-1] == inp["window_pct"][1]
@@ -2106,10 +2113,11 @@ def test_oring_reaction_band():
             needs87[k] = max(needs87.get(k, 0.0), v)
     assert a["needs_87"] == needs87
     floor_lo = d["band"]["window_floor"]["reaction_N"][0]
-    for k, v in needs87.items():
-        assert abs(a["margin_x"][k] - floor_lo / v) <= 0.01, k
-    assert abs(a["share_retained_needed_if_the_rim_is_never_seated"]
-               - needs87["after_20_years_if_the_rim_is_never_seated"] / floor_lo) <= 0.001
+    assert set(a["margin_x"]) == {"initial_with_clamp_at_52_requirement"}    # a margin only on an INITIAL need
+    assert abs(a["margin_x"]["initial_with_clamp_at_52_requirement"]
+               - floor_lo / needs87["initial_with_clamp_at_52_requirement"]) <= 0.01
+    assert abs(a["share_retained_needed_with_a_weaker_clamp"]
+               - needs87["after_20_years_with_a_weaker_clamp"] / floor_lo) <= 0.001
 
 
 def test_sap_recipe_saturation():

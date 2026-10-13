@@ -39,8 +39,7 @@
     "safety_factor_73": 2.0,
     "o_ring_reaction_N_needed_87": {
       "initial_with_clamp_at_52_requirement": 10.57,
-      "initial_with_clamp_that_only_seats_the_rim": 16.69,
-      "after_20_years_if_the_rim_is_never_seated": 10.57
+      "after_20_years_with_a_weaker_clamp": 10.57
     }
   },
   "chart_70_shore_a_lbf_per_in": {
@@ -88,7 +87,14 @@
         "at_assembly": 3.78,
         "after_20_years_ring_never_relaxes": 2.46
       },
-      "ring_must_lose_share_of_R0_for_sf": 0.0,
+      "ring_must_have_lost_share_of_R0_by_year": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.081
     },
     "chain_low": {
@@ -113,7 +119,14 @@
         "at_assembly": 2.85,
         "after_20_years_ring_never_relaxes": 1.85
       },
-      "ring_must_lose_share_of_R0_for_sf": 0.0,
+      "ring_must_have_lost_share_of_R0_by_year": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.108
     },
     "nominal": {
@@ -138,7 +151,14 @@
         "at_assembly": 2.08,
         "after_20_years_ring_never_relaxes": 1.35
       },
-      "ring_must_lose_share_of_R0_for_sf": 0.0,
+      "ring_must_have_lost_share_of_R0_by_year": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.148
     },
     "chain_high": {
@@ -163,7 +183,14 @@
         "at_assembly": 1.51,
         "after_20_years_ring_never_relaxes": 0.98
       },
-      "ring_must_lose_share_of_R0_for_sf": 0.018,
+      "ring_must_have_lost_share_of_R0_by_year": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "5": 0.014,
+        "10": 0.018,
+        "20": 0.018
+      },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.204
     },
     "window_top": {
@@ -188,7 +215,14 @@
         "at_assembly": 1.11,
         "after_20_years_ring_never_relaxes": 0.72
       },
-      "ring_must_lose_share_of_R0_for_sf": 0.278,
+      "ring_must_have_lost_share_of_R0_by_year": {
+        "1": 0.135,
+        "2": 0.226,
+        "3": 0.259,
+        "5": 0.276,
+        "10": 0.278,
+        "20": 0.278
+      },
       "collar_wall_strength_asks_mm_ring_never_relaxes": 0.277
     }
   },
@@ -205,22 +239,19 @@
     "reaction_N_low_at_window_floor": 58.0,
     "needs_87": {
       "initial_with_clamp_at_52_requirement": 10.57,
-      "initial_with_clamp_that_only_seats_the_rim": 16.69,
-      "after_20_years_if_the_rim_is_never_seated": 10.57
+      "after_20_years_with_a_weaker_clamp": 10.57
     },
     "margin_x": {
-      "initial_with_clamp_at_52_requirement": 5.49,
-      "initial_with_clamp_that_only_seats_the_rim": 3.48,
-      "after_20_years_if_the_rim_is_never_seated": 5.49
+      "initial_with_clamp_at_52_requirement": 5.49
     },
-    "share_retained_needed_if_the_rim_is_never_seated": 0.182,
-    "is": "with a clamp that seated the rim at assembly the end-of-life normal force is at least f·(R0 + p), whatever the ring retains; the retained share matters only for a bayonet that never seats the rim"
+    "share_retained_needed_with_a_weaker_clamp": 0.182,
+    "is": "a clamp at 52's requirement for the ring's own reaction never lets the rim lift while the lift stays at L0, so the needed reaction is an initial one; any weaker clamp lets the rim lift once the ring relaxes more slowly than the PEEK, lifting is not undone, and the normal force is then what the ring has left; the friction bound runs through the lug ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is greased; temperature is not modelled"
   },
   "missing_data": [
     "the compound's own compression-load curve at 15–35 % for CS 1.78 (the band spans compounds)",
     "its stress relaxation over the service life at the capsule's envelope (ISO 3384-type data) — it moves 52's requirement between its two ends",
     "the clamp the bayonet delivers (lug ramp, interference)",
-    "the cold-side stiffening of EPDM (raises the reaction)"
+    "temperature: the clamp is a few µm of PEEK compression against a PEEK–Ti differential contraction, and the ring's reaction moves with temperature both ways (the compound stiffens in the cold, its own contraction takes squeeze) — every margin here is at the assembly temperature"
   ],
-  "verdict": "The «generous» 100 N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is 96–218 N at the 24.5 % nominal and 160–409 N at the 30 % window top, and the band's top passes 100 N from 17.1 % squeeze. With that top, 52's requirement lies between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF 2 inside) carries it at the nominal at both ends (1.35× at the worse), at the chain 52 models today (27.3 %) only if the ring loses 2 % of its reaction (0.98× if it never does), and at the window top only if it loses 28 % (0.72× if it never does, 1.11× at assembly); a ring that does not relax makes the lug bind from 27.1 % (26.8–27.5 % over the transcription's ±4 %), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top against the 0.2 mm print floor. From below, the ring starts at no less than 58 N at the 19 % floor — 3.5× what 87's (A) needs with a clamp that only seats the rim and 5.5× with a clamp at 52's requirement, whatever the ring retains; only a bayonet that never seats the rim leaves (A) on the ring keeping 18 % of it for 20 years."
+  "verdict": "The «generous» 100 N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts the 70 Shore A load in the middle or upper third of the Figure 2-4 bar, so the reaction is 96–218 N at the 24.5 % nominal and 160–409 N at the 30 % window top, and the band's top passes 100 N from 17.1 % squeeze. With that top, 52's requirement lies between the clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF 2 inside) carries it at the nominal at both ends (1.35× at the worse), at the chain 52 models today (27.3 %) only if the ring has lost 2 % of its reaction by year 20 (0.98× if it never does), and at the window top only if it has lost 23 % by year 2 and 28 % by year 20 — the PEEK clamp floors within a few years, so the ring's loss is due early (0.72× if it never does, 1.11× at assembly); a ring that does not relax makes the lug bind from 27.1 % (26.8–27.5 % over the transcription's ±4 %), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top against the 0.2 mm print floor. From below, the ring starts at no less than 58 N at the 19 % floor — 5.5× what 87's (A) needs with a clamp at 52's requirement, which never lets the rim lift while the lift stays at its initial value; any weaker clamp lets the rim lift once the ring relaxes more slowly than the PEEK, lifting is not undone, and (A) then rests on the ring keeping 18 % of that floor for 20 years. Every margin here holds at the assembly temperature."
 }
