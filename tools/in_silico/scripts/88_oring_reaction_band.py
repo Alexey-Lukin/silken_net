@@ -18,14 +18,14 @@ ring never relaxes — the second is the form `52` prints. This script states ho
 year for the lug root to carry the requirement — f(t) reaches its floor within a few years, so most of that loss is
 due early, not by year 20. The lug root carries the DELIVERED clamp, which is at least the requirement: the margin
 here says whether a bayonet that meets the requirement can exist, not that the delivered one is safe. For (A), `87`
-gives the reaction each clamp design needs: an INITIAL one for a clamp at `52`'s requirement (it never lifts while
-L ≤ L0), the one LEFT after 20 years for any weaker clamp (it lifts once the ring relaxes more slowly than the PEEK,
-and lifting is not undone); this script compares both with the band's LOW end at the window floor. The friction bound
-runs through the lug ledge (the rim's share can be zero), and the rim is the greased seal land.
-⚠️ TEMPERATURE is not in any of 52 · 87 · 88: the clamp is a few µm of PEEK compression, PEEK and Ti contract
-differently, and the ring's reaction moves both ways with temperature (the compound stiffens in the cold while its own
-contraction takes squeeze) — so every margin below holds at the assembly temperature, and «L stays ≤ L0» is a
-condition, not a result.
+gives the reaction each clamp design needs: an INITIAL one for a clamp at the form `52` prints, (R0 + p) / f(20 y)
+(it never lifts while L ≤ L0), the one LEFT after 20 years for a weaker clamp (it can lift, and a lift is taken as not
+undone — conservative); this script compares both with the band's LOW end at the window floor. The friction bound runs
+through the lug ledge (the rim's share can be zero), with a dry µ while the ring is greased.
+⚠️ TEMPERATURE is not in any of 52 · 87 · 88: in the clamp loop the PEEK is squeezed between two Ti faces over the same
+span, so cold unloads the clamp and HEAT raises it (heat is the lug root's threat), and the ring's own contraction takes
+squeeze in the cold (Parker Table 2-5); the ring's force below room temperature is not in this source. Every margin
+below holds at the assembly temperature, and «L stays ≤ L0» is a condition (resin swell raises L too), not a result.
 
 SOURCE. Parker O-Ring Handbook ORD 5700 (parker.com/content/dam/Parker-com/Literature/O-Ring-Division-Literature/
 ORD-5700.pdf, read 2026-10-13). Figure 2-4 «.070 Cross Section», p. 2-11 (PDF page 23): «Compression Load per Linear
@@ -205,7 +205,7 @@ def main() -> int:
     retained = round(need["after_20_years_with_a_weaker_clamp"] / floor_lo, 3)
 
     top, chain_hi, nom = band["window_top"], band["chain_high"], band["nominal"]
-    end, early = str(years[-1]), "2"
+    end, early, mid = str(years[-1]), "2", "5"
     lost = lambda b, y: b["ring_must_have_lost_share_of_R0_by_year"][y] * 100  # noqa: E731
     verdict = (
         f"The «generous» {GENEROUS_ORING_BOUND_N:.0f} N is not an upper bound: for a ring under 1\" Parker's Table 2-3 puts "
@@ -215,20 +215,22 @@ def main() -> int:
         f"{GENEROUS_ORING_BOUND_N:.0f} N from {sq_generous:.1f} % squeeze. With that top, 52's requirement lies between the "
         f"clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} inside) carries it "
         f"at the nominal at both ends ({nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× "
-        f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost "
+        f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost about "
         f"{lost(chain_hi, end):.0f} % of its reaction by year {end} "
         f"({chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does), and at "
-        f"the window top only if it has lost {lost(top, early):.0f} % by year {early} and {lost(top, end):.0f} % by year "
-        f"{end} — the PEEK clamp floors within a few years, so the ring's loss is due early "
+        f"the window top only if it has lost about {lost(top, early):.0f} % by year {early} and about "
+        f"{lost(top, mid):.0f} % already by year {mid} — the PEEK clamp floors within a few years, so the ring's loss is due "
+        f"early "
         f"({top['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does, "
         f"{top['lug_root_margin_x_at_print_floor']['at_assembly']:.2f}× at assembly); a ring that does not relax makes the "
         f"lug bind from {sq_bind:.1f} % ({min(sq_bind_reads):.1f}–{max(sq_bind_reads):.1f} % over the transcription's ±4 %), "
         f"and strength, not printability, then sizes the collar wall — up to "
         f"{top['collar_wall_strength_asks_mm_ring_never_relaxes']:.2f} mm at the window top against the 0.2 mm print floor. "
         f"From below, the ring starts at no less than {floor_lo:.0f} N at the {win[0]:.0f} % floor — "
-        f"{a_margin['initial_with_clamp_at_52_requirement']:.1f}× what 87's (A) needs with a clamp at 52's requirement, "
-        f"which never lets the rim lift while the lift stays at its initial value; any weaker clamp lets the rim lift once "
-        f"the ring relaxes more slowly than the PEEK, lifting is not undone, and (A) then rests on the ring keeping "
+        f"{a_margin['initial_with_clamp_at_52_requirement']:.1f}× what 87's (A) needs with a clamp at the form 52 prints, "
+        f"(R0 + p) / {f_t:.2f}, which never lets the rim lift while the lift stays at its initial value; a weaker clamp can "
+        f"let the rim lift (whether it does depends on the ring's relaxation, not modelled), a lift is taken as not undone "
+        f"(conservative), and (A) then rests on the ring keeping "
         f"{retained * 100:.0f} % of that floor for {end} years. Every margin here holds at the assembly temperature.")
 
     out = {
@@ -268,9 +270,11 @@ def main() -> int:
                           "needs_87": need,
                           "margin_x": a_margin,
                           "share_retained_needed_with_a_weaker_clamp": retained,
-                          "is": "a clamp at 52's requirement for the ring's own reaction never lets the rim lift while "
-                                "the lift stays at L0, so the needed reaction is an initial one; any weaker clamp lets the "
-                                "rim lift once the ring relaxes more slowly than the PEEK, lifting is not undone, and the "
+                          "is": "a clamp at the form 52 prints for the ring's own reaction, (R0 + p) / f(20 y), never "
+                                "lets the rim lift while the lift stays at L0, so the needed reaction is an initial one; a "
+                                "weaker clamp can let the rim lift (it does if the ring keeps its reaction better than the "
+                                "PEEK keeps the clamp, by more than the clamp's margin over L0), a lift is taken as not "
+                                "undone (conservative: under a lift the ledge PEEK creeps at constant load, 52), and the "
                                 "normal force is then what the ring has left; the friction bound runs through the lug "
                                 "ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is "
                                 "greased; temperature is not modelled"},
@@ -278,10 +282,11 @@ def main() -> int:
                          "its stress relaxation over the service life at the capsule's envelope (ISO 3384-type data) — "
                          "it moves 52's requirement between its two ends",
                          "the clamp the bayonet delivers (lug ramp, interference)",
-                         "temperature: the clamp is a few µm of PEEK compression against a PEEK–Ti differential "
-                         "contraction, and the ring's reaction moves with temperature both ways (the compound stiffens "
-                         "in the cold, its own contraction takes squeeze) — every margin here is at the assembly "
-                         "temperature"],
+                         "temperature: the PEEK in the clamp loop sits between two Ti faces over the same span, so "
+                         "cold unloads the clamp and heat raises it (the loop's compliance sets how fast); the ring's "
+                         "own contraction takes squeeze in the cold, and its force below room temperature is not in "
+                         "the source — every margin here is at the assembly temperature",
+                         "resin swell (02_02 §3.2 accepts up to 15 % by volume) — it raises the reaction"],
         "verdict": verdict,
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)

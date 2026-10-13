@@ -14,14 +14,17 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       lateral load on the rim) plus the wind drag on the radome plus its inertia. The bayonet clamp C carries the lugs
       and seats the rim: the normal forces sum to 2C − L while the rim stays seated (L = the lift, pogo pair + O-ring)
       and to L once it lifts onto the lug ledge, so early in life the capacity is large. Over the years the clamp
-      relaxes to f·C0 (f the PEEK floor of `52`) and the ring's reaction relaxes too, at its own rate. A clamp sized to
-      `52`'s requirement for the ring's OWN reaction (C0 = L0/f) never lets the rim lift while L stays ≤ L0, so its
-      end-of-life normal force is at least L0 — the needed reaction is an INITIAL one (⛔ never read it as a force the
-      ring must still have after 20 years). Any weaker clamp lifts as soon as the ring relaxes more slowly than the PEEK,
-      and LIFTING IS NOT UNDONE — nothing pushes the radome back — so from then on the normal force is L(t) and the needed
-      reaction is the one left after 20 years. ⚠️ Temperature is not modelled: the clamp is a few µm of PEEK compression,
-      PEEK and Ti contract differently, and the ring's reaction moves with cold and heat — so «L stays ≤ L0» and the
-      clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
+      relaxes to f·C0 (f the PEEK floor of `52`) and the ring's reaction relaxes too, at its own rate. A clamp at the
+      form `52` prints for the ring's OWN reaction (C0 = L0/f(20 y), the top of `88`'s bracket) never lets the rim lift
+      while L stays ≤ L0, so its end-of-life normal force is at least L0 — the needed reaction is an INITIAL one (⛔ never
+      read it as a force the ring must still have after 20 years). A weaker clamp CAN lift — it does if the ring keeps
+      its reaction better than the PEEK keeps the clamp, by more than the clamp's own margin over L0, and the ring's
+      relaxation is not modelled — and a lift is TAKEN as not undone (conservative: under a lift the ledge PEEK creeps at
+      constant load, `52`; an elastic lift could reseat), so for a weaker clamp the needed reaction is the one left after
+      20 years. ⚠️ Temperature is not modelled: in the loop lug → ledge → rim → flange the PEEK is squeezed between two
+      Ti faces over the same span, so cold unloads the clamp and heat raises it, and the ring's own contraction takes
+      squeeze in the cold — «L stays ≤ L0» (resin swell, accepted up to 15 % by volume in 02_02 §3.2, raises it too) and
+      the clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
       reaction each clamp design needs; the reaction itself is `88`'s.
       Below it the capsule shifts inside the collar's running clearance and the pins SLIDE over the pads — the regime
       `55`'s per-cycle drag µ·F_pogo describes.
@@ -191,8 +194,8 @@ def main() -> int:
         m = mass_ceiling_g * 1e-3
         demand = math.hypot(m * G * cos_i, drag + m * a)          # weight ⊥ wind + inertia, worst case at right angles
         lift_needed = demand / MU_RIM                              # the normal force the end of life needs
-        # a clamp at 52's requirement for the ring's own reaction never lifts (while L ≤ L0): an INITIAL reaction;
-        # any weaker clamp can lift, lifting is not undone, and then the normal force is what the ring has left
+        # a clamp at 52's printed form for the ring's own reaction never lifts (while L ≤ L0): an INITIAL reaction;
+        # a weaker clamp can lift; a lift is taken as not undone (conservative), and then the normal force is what is left
         oring_needed = {"initial_with_clamp_at_52_requirement": round(max(0.0, lift_needed - push), 2),
                         "after_20_years_with_a_weaker_clamp": round(max(0.0, lift_needed - push), 2)}
         clamp0 = rim["required_initial_clamp_N"]["with_generous_o_ring"]
@@ -211,9 +214,9 @@ def main() -> int:
                       "normal_force_N_needed_at_end_of_life": round(lift_needed, 2),
                       "o_ring_reaction_N_needed": oring_needed,
                       "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is "
-                              "at least L0 for a clamp at 52's requirement for the ring's own reaction (it never lifts while "
-                              "L ≤ L0), and only L(20) for any weaker clamp (it lifts once the ring relaxes more slowly than "
-                              "the PEEK, and lifting is not undone); the pogo pair alone does not hold even the weight — below "
+                              "at least L0 for a clamp at 52's printed form for the ring's own reaction (it never lifts while "
+                              "L ≤ L0), and only L(20) for a weaker clamp (it can lift, and a lift is taken as not undone — "
+                              "conservative); the pogo pair alone does not hold even the weight — below "
                               "the needed reaction the pins slide (55's regime); the reaction is 88's; temperature is not "
                               "modelled"},
             "B_inertia_coaxial": {
@@ -288,8 +291,9 @@ def main() -> int:
         "controls": {"slope_times_flux_reproduces_12m_tilt": {"deg": round(control, 2), "text_deg": NOS7_AT_MAX_DEG,
                                                               "note": "units only — same-interval regression"}},
         "by_slope_reading": rows,
-        "missing_data": ["the clamp the bayonet delivers (does it seat the rim at assembly?) — with the O-ring band of 88 "
-                         "it decides (A) at the end of life",
+        "missing_data": ["the clamp the bayonet delivers, over temperature, against the ring's lift (does it keep the rim "
+                         "from lifting?) — with the O-ring band of 88 it decides (A) at the end of life",
+                         "the ring's stress relaxation — whether a clamp below 52's printed form lets the rim lift",
                          "axial capacity of the Zone 1↔2 press-fit and of the liner's grip on the wire — decide whether (C) reaches the pin",
                          "stack mass by a scale (a part-by-part estimate is computed), centre-of-mass height and pin "
                          "spacing — layout HW.9",
@@ -297,7 +301,7 @@ def main() -> int:
                          "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"],
         "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
         "verdict": ("Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the "
-                    "end of life with a clamp at 52's requirement and the initial reaction in A_rim, or with what a weaker "
+                    "end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker "
                     "clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the "
                     "stack's inertia is a fraction of "
                     f"the preload ({est_lo * 100:.1f}–{est_hi * 100:.1f} % at the part-by-part mass estimate of "
