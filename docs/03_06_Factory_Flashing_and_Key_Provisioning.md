@@ -265,6 +265,9 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      а діру в зачепленому doubleword'і добиває 0xFFFFFFFF → -ob IWDG_SW=1
      IWDG_STOP=0 IWDG_STDBY=0 (SEC.15: пес заморожений у STOP2 — ДО RDP,
      бо L2 робить option bytes read-only) → RDP
+     # ⊕ FW.59: SRAM_RST = 1 (FLASH_OPTR біт 25; 0 стирає SRAM1+2 на кожному системному
+     # скиді разом із маркером HardFault у .noinit) — у тому ж -ob ДО RDP; імʼя поля для CLI
+     # звіряє дамп `-ob displ` на стенді, доти в конвеєр не пишеться (00_07 FW.59)
      # 0x0803E000 = FLASH_KEY_ADDR. Гілка B пише ТОЙ САМИЙ набір тим самим
      # SWD -w32 (⚖️ делеговано 2026-09-27, §1 крок 3); SE-кроки — окремо
 
