@@ -898,13 +898,13 @@ the ring relax, so `52`'s requirement lies between R + p at assembly and (R + p)
 the form `52` prints; the clamp's PEEK reaches its floor within a few years (`52`'s f(t)), so the ring's loss is due early,
 and Parker gives compression set, not stress relaxation, so the share the ring loses is a vendor datum.
 
-| Squeeze | Reaction (N) | Lug root at the print floor: at assembly … ring never relaxes | Ring must have lost (for SF 2): by year 2 … by year 20 |
+| Squeeze | Reaction (N) | Lug root at the print floor: at assembly … ring never relaxes | Ring must have lost (for SF 2) by year 2 · 5 · 20 |
 |---|---|---|---|
-| 19 % — window floor | 58–119 | 3.78× … 2.46× | 0 % … 0 % |
-| 21.7 % — `52`'s chain, low | 74–158 | 2.85× … 1.85× | 0 % … 0 % |
-| 24.5 % — nominal | 96–218 | 2.08× … 1.35× | 0 % … 0 % |
-| 27.3 % — `52`'s chain, high | 125–300 | 1.51× … 0.98× | 0 % … 2 % |
-| 30 % — window top | 160–409 | 1.11× … 0.72× | 23 % … 28 % |
+| 19 % — window floor | 58–119 | 3.78× … 2.46× | 0 · 0 · 0 % |
+| 21.7 % — `52`'s chain, low | 74–158 | 2.85× … 1.85× | 0 · 0 · 0 % |
+| 24.5 % — nominal | 96–218 | 2.08× … 1.35× | 0 · 0 · 0 % |
+| 27.3 % — `52`'s chain, high | 125–300 | 1.51× … 0.98× | 0 · 1 · 2 % |
+| 30 % — window top | 160–409 | 1.11× … 0.72× | 23 · 28 · 28 % |
 
 **Verdict** — the 100 N is not an upper bound: the band's top passes it from 17.1 % squeeze. With that top the lug root
 (SF 2 inside; no fillet, no lug bending) carries `52`'s requirement at the nominal whatever the ring does, at the top of

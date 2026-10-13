@@ -23,7 +23,7 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       and an elastic lift could reseat), so for a weaker clamp the needed reaction is the one left after
       20 years. ⚠️ Temperature is not modelled: in the loop lug → ledge → rim → flange the PEEK is squeezed between two
       Ti faces over the same span, so cold unloads the clamp and heat raises it, and the ring's own contraction takes
-      squeeze in the cold — «L stays ≤ L0» (resin swell raises it too — 02_02 §3.2 can accept up to 25 %) and
+      squeeze in the cold — «L stays ≤ L0» (resin swell raises it too — 02_02 §3.2's swell thresholds are bench limits on free rings) and
       the clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
       reaction each clamp design needs; the reaction itself is `88`'s.
       Below it the capsule shifts inside the collar's running clearance and the pins SLIDE over the pads — the regime
