@@ -495,7 +495,8 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 //   (1) живого набору в RTC (03_01 §2.3.2) разом зі сторожами на wall-мітках (03_02 §5а) — у Standby
 //       гине весь SRAM, тож RAM-only лічильники пробуджень (wakeups_since_*, ota_silent_wakeups) і
 //       soldier_unix_ts щопробудження стартували б з нуля: grace холодного старту не дораховувався б
-//       ніколи, і прохання синхронізації (0x56) замовкло б; OTA-буфер — окремий ⚖️ (03_01 §2.3.1);
+//       ніколи, і прохання синхронізації (0x56) замовкло б; OTA-буфер і ota_silent_wakeups (0x03) —
+//       окремий ⚖️ (03_01 §2.3.1), а в ECB-збірці soldier_unix_ts Standby не переживає (ціна §2.3.2);
 //   (2) пін-мапи ключів навантажень (.ioc, 00_07 FW.46) — без неї Standby_Load_Pulls порожній;
 //   (3) виміряного сну на стенді (RUNBOOK 3.1).
 // #ifndef — щоб compile-lane hal_check_ccm збирав гілку `-DFW54_STANDBY_ENABLED=1` проти WL-HAL.
@@ -504,7 +505,7 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 #endif
 #include "../common/standby_wake.h"
 #if FW54_STANDBY_ENABLED
-static uint8_t soldier_woke_from_standby = 0;   // споживач — відновлення за ⚖️ RAM-стану (умова 1)
+static uint8_t soldier_woke_from_standby = 0;   // споживач — відновлення живого набору з RTC (умова 1)
 // [FW.54 · FW.66 (Б) · S5] Маркер пробудження — власний регістр DR7 (мапа docs/03_01 §2), не DR19
 // стану Лоренца: той пишуть лише за валідного стану, а в CCM-збірці його немає зовсім. Регістр —
 // літералом, не макросом: лічба записів backup-регістрів (tools/firmware/check_sec42_calendar.py)
