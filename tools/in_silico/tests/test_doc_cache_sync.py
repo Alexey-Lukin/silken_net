@@ -1114,7 +1114,7 @@ CHECKS = [
           ("SUMMARY coefficient high", SUMMARY, rf"it moves by \*\*[\d.]+–{N}\*\* µm/K with both together",
            lambda d: d["coefficients_um_per_K"]["gap"]["isothermal_high_stack"], 0.005),
           ("SUMMARY coefficient gradient", SUMMARY, rf"and \*\*{N}\*\* µm/K when the radome leads",
-           lambda d: d["coefficients_um_per_K"]["gap"]["gradient_bound_radome_only"], 0.005),
+           lambda d: d["coefficients_um_per_K"]["gap"]["radome_leads_reading"], 0.005),
           ("SUMMARY cold closing", SUMMARY, rf"closes by up to \*\*{N}\*\* µm in the cold",
            lambda d: -d ["seasonal"]["capsule_requirement"]["isothermal_high_stack"]["gap_um_cold"], 0.5),
           ("SUMMARY hot opening", SUMMARY, rf"opens by \*\*{N}\*\* µm in the heat",
@@ -1126,10 +1126,10 @@ CHECKS = [
           ("SUMMARY daily p95", SUMMARY, rf"95th percentile \*\*{N}\*\* K",
            lambda d: d["daily_capsule_range_K"]["p95"], 0.05),
           ("SUMMARY daily force ratio high", SUMMARY, rf"\*\*[\d.]+–{N}\*\* % of the minimum preload",
-           lambda d: d["daily"]["gradient_bound_radome_only"]["p95"]["force_ratio_over_min_preload"] * 100, 0.05),
+           lambda d: d["daily"]["radome_leads_reading"]["p95"]["force_ratio_over_min_preload"] * 100, 0.05),
           ("SUMMARY slide high", SUMMARY, rf"slides by \*\*[\d.]+–{N}\*\* µm per mm of r",
            lambda d: d["radial_slide_daily_um_per_mm_radius"]["flange_held"]["p95"], 0.005),
-          ("02_02 §3.5 L1 lead", BLIND_MATE, rf"над стеком до ≈ \*\*{N} K\*\*",
+          ("02_02 §3.5 L1 lead", BLIND_MATE, rf"витримує випередження до ≈ \*\*{N} K\*\*",
            lambda d: d["radome_lead_tolerated_by_L1_K"], 0.5))],
     # ── HW.33 the bayonet clamp over its fit and temperature — the ratified member is a lower bound (script 89, 2026-10-13) ──
     # ⛔ These numbers returned a founder verdict; a doc copy drifted off the cache would re-price it silently.

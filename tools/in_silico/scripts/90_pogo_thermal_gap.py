@@ -12,22 +12,33 @@ budget it eats.
 
 PATHS (rule 15 (a)–(b)). Along Z, between the flange face (the pads; also the rim's datum) and the pins' tips: (1) the
 radome PEEK from the rim face to the pocket floor, H = pocket_floor_over_rim (a PLACEHOLDER, 00_07 HW.29) — up with
-heat; (2) the stack hanging from that floor — two FR-4 decks (Z CTE, Panasonic R-1755M/V) and the steel standoffs between
-them (⚖️ 2026-10-05, poz. 25: no screws, WA-SMSI «tinned steel», no grade → mild steel, stainless 302 as the other end)
-— down with heat, so the gap is H·α_PEEK − Σ(L·α); (3) the pocket gasket between the RF deck and the floor (EPDM, its
-compressed height a PLACEHOLDER 0, HW.32) — named, not computed; (4) the pin's own body below the board (brass; no
+heat; PREMISE: the rim stays seated on the flange face (script 89: a stiff clamp loop unloads in the cold, and a lifted
+rim moves the datum to the lug ledge, where `52`'s residual no longer applies); (2) the stack hanging from that floor — two FR-4 decks (Z CTE, Panasonic R-1755M/V) and the steel standoffs between
+them (⚖️ 2026-10-05, poz. 25: no screws, WA-SMSI «tinned steel», no grade → mild steel, stainless 302 as the other end;
+if the B2B pair beside them bottoms out instead — standoff 8.0 against a mated 8.13 mm, 02_01 — its LCP body sets the
+spacing, so the script states the spacer CTE at which L1's margin reaches zero) — down with heat, so the gap is
+H·α_PEEK − Σ(L·α); PREMISE: the stack is SEATED on the floor — in fact it floats on a force balance of the pogo pair
+(≈ 0.8–1.9 N) against the pocket gasket (of the same order), two springs in series that set the working point and shrink
+the thermal stroke; (3) the pocket gasket between the RF deck and the floor (EPDM, its compressed height a PLACEHOLDER 0,
+HW.32) — as a CTE term, named, not computed; (4) the pin's own body below the board (brass; no
 primary in the tree) — pushes the tip down with heat, given per ppm/K; (5) the flange: the pads and the rim seat share its
-face, so its Ti does not enter. Radially: (6) the stack follows the radome (PEEK) while the pads sit on the Ti flange, so
-a pin at radius r slides by (α_PEEK − α_Ti)·r per kelvin — given per mm of radius, the outer pad's radius being the
-layout's (HW.9); the centre pad (the bus-wire end, r = 0) does not slide. (7) The centre pad's own path — the Ti wire
+face, so its Ti does not enter thermally (52's DMLS Ti term is a static tolerance). Radially: (6) what holds the stack in-plane is not modelled: if the radome (PEEK) holds it,
+a pin at radius r slides by (α_PEEK − α_Ti)·r per kelvin (the reading printed, an upper one); if the pins follow the
+board's own in-plane expansion, α_PEEK becomes FR-4's in-plane CTE, which no primary in the tree gives (a distributor lists
+13–15 ppm/K, i.e. a slide of about a fifth); per mm of radius, the outer pad's radius being the layout's (HW.9); the
+centre pad (the bus-wire end, r = 0) does not slide. (7) The centre pad's own path — the Ti wire
 inside the PEEK sleeve between the Zone 1↔2 press-fit and the liner grip — loads the wire or slips a grip; it is HW.34's
-(capacities not in the tree), named only. (8) The B2B pair beside the standoffs strains by their mismatch — not the pins'.
+(capacities not in the tree), named only — so every window statement here is about the OUTER pad: the centre pad's axial
+position rides on that path, and a slipping grip moves it by tens of µm on 20 K (00_07 HW.43). (8) The B2B pair beside the standoffs strains by their mismatch — not the pins'.
 
 READINGS. Temperatures: the capsule requirement (−40…85 °C, `82`) and the models' edges (`81`'s −33.5 °C; `71`'s 55.0 °C
-for the canon finish α ≤ 0.5, a lumped mean), assembly at 20 °C. Isothermal (radome and stack together) and a gradient
-bound (the radome moves, the stack stays — a shell in sun or under a clear night sky leads the inside). The daily cycle:
-`71`'s hourly capsule temperature over 30 ERA5 years (sunlit, α 0.5, the aging wind factor), its daily range — a LOWER
-bound, because `71` has no night-sky cooling (`81` adds it).
+for the canon finish α ≤ 0.5, a lumped mean), assembly at 20 °C. Isothermal (radome and stack together) and a radome-leads
+READING (the radome moves, the stack stays) — not a bound: the floor hangs from the dome top through ~3 mm of chamber wall,
+so a lagging wall can push the lead higher. The daily cycle: `71`'s hourly capsule temperature over 30 ERA5 years
+(sunlit, α 0.5, the aging wind factor), its daily range — a READING whose error has no known sign on the range: `71`
+takes the worst direct-sun gain (the day's peak up) and has no night-sky cooling (the night's minimum up), and as one
+lump with an adiabatic base it cannot give a shell/stack lag. `52`'s second mitigation (the bayonet hard-stop) halves
+the CNC term only when the bayonet sets Z, which branch (а) removed — under the seated-rim premise it does nothing here.
 
 CAN show: the gap's thermal coefficient and seasonal swing, the window check at `52`'s two mitigations with it, the
 daily stroke and its force ratio over the minimum preload (as `87` prices sway), the radial slide per mm of pad radius.
@@ -103,7 +114,7 @@ def main() -> int:
                   "high": 2 * fr4 * ALPHA_FR4_Z_1K[1] * 1e3 + standoff * ALPHA_SS302_1K * 1e3}
     gap_um_k = {"isothermal_low_stack": radome_um_k - stack_um_k["high"],     # the smaller net coefficient
                 "isothermal_high_stack": radome_um_k - stack_um_k["low"],
-                "gradient_bound_radome_only": radome_um_k}
+                "radome_leads_reading": radome_um_k}
     pin_body_mm = gap                                            # the compressed pin spans the gap below the board
     pin_um_k_per_ppm = pin_body_mm * 1e-6 * 1e3                 # µm/K per 1 ppm/K of the pin's CTE
 
@@ -159,31 +170,40 @@ def main() -> int:
     l1 = "L1 spacer only"
     # a radome that LEADS the stack by g kelvin adds stack·g to the gap change, so L1's isothermal margin tolerates
     # g ≤ margin / stack-coefficient (worst isothermal reading, worst stack coefficient)
-    iso_margin = min(min(req[c]["window"][l1]["margin_um"]) for c in ("isothermal_low_stack", "isothermal_high_stack"))
-    lead_tolerated_k = iso_margin / max(stack_um_k.values()) if iso_margin > 0 else None
-    iso_hi, grad = req["isothermal_high_stack"], req["gradient_bound_radome_only"]
+    case_stack = {"isothermal_low_stack": stack_um_k["high"], "isothermal_high_stack": stack_um_k["low"]}
+    leads = [min(req[c]["window"][l1]["margin_um"]) / st for c, st in case_stack.items()
+             if min(req[c]["window"][l1]["margin_um"]) > 0]
+    lead_tolerated_k = min(leads) if leads else None
+    # the spacer CTE at which L1's isothermal margin reaches zero (the B2B body instead of the steel standoff)
+    t_min_r, t_max_r = readings["capsule_requirement"]
+    room_um = ((win[1] - nominal_pct) * travel - mitig[l1]) * 1e3            # to each window edge after the residual
+    coef_allowed = min(room_um / (t_max_r - t_asm), room_um / (t_asm - t_min_r))
+    spacer_alpha_zero = (radome_um_k - 2 * fr4 * ALPHA_FR4_Z_1K[1] * 1e3 - coef_allowed) / (standoff * 1e3)
+    iso_hi, grad = req["isothermal_high_stack"], req["radome_leads_reading"]
     verdict = (
         f"The gap is the radome's PEEK column ({h_floor:.2f} mm to the pocket floor) minus the board stack hanging from it, "
         f"so it moves by {gap_um_k['isothermal_low_stack']:.2f}–{gap_um_k['isothermal_high_stack']:.2f} µm/K with both "
-        f"together and {gap_um_k['gradient_bound_radome_only']:.2f} µm/K when the radome leads: over the capsule "
+        f"together and {gap_um_k['radome_leads_reading']:.2f} µm/K when the radome leads: over the capsule "
         f"requirement it closes by up to {-iso_hi['gap_um_cold']:.0f} µm in the cold and opens by "
         f"{iso_hi['gap_um_hot']:.0f} µm in the heat ({-grad['gap_um_cold']:.0f} / {grad['gap_um_hot']:.0f} µm with the "
-        f"gradient). Against 52's minimal mitigation ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
+        f"radome-leads reading). Against 52's minimal mitigation ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
         f"{(win[1] - nominal_pct) * travel * 1e3 - mitig[l1] * 1e3:.0f} µm to each window edge) the isothermal swing "
         f"{'holds' if iso_hi['window'][l1]['holds_window'] else 'breaks'} the 50–70 % window (margins "
-        f"{iso_hi['window'][l1]['margin_um'][0]:.0f} / {iso_hi['window'][l1]['margin_um'][1]:.0f} µm) and the gradient "
-        f"bound {'holds' if grad['window'][l1]['holds_window'] else 'breaks'} it "
+        f"{iso_hi['window'][l1]['margin_um'][0]:.0f} / {iso_hi['window'][l1]['margin_um'][1]:.0f} µm) and the radome-leads "
+        f"reading {'holds' if grad['window'][l1]['holds_window'] else 'breaks'} it "
         f"({grad['window'][l1]['margin_um'][0]:.0f} / {grad['window'][l1]['margin_um'][1]:.0f} µm) — L1 tolerates a radome "
-        f"leading the stack by about {lead_tolerated_k:.0f} K at the extremes; the bayonet "
-        f"hard-stop mitigation (±{mitig['L2 spacer + bayonet hard-stop']:.3f} mm) "
-        f"{'holds' if grad['window']['L2 spacer + bayonet hard-stop']['holds_window'] else 'breaks'} it even then. "
-        f"Daily, 71's capsule (no night-sky cooling, so a lower bound) swings by a median {stats['median']:.1f} K and a "
-        f"95th percentile {stats['p95']:.1f} K, a pin stroke of "
-        f"{daily['isothermal_high_stack']['median']['stroke_um']:.1f}–{daily['gradient_bound_radome_only']['p95']['stroke_um']:.1f} µm "
-        f"— {daily['isothermal_high_stack']['median']['force_ratio_over_min_preload'] * 100:.1f}–"
-        f"{daily['gradient_bound_radome_only']['p95']['force_ratio_over_min_preload'] * 100:.1f} % of the minimum preload "
-        f"once a day — and a pin at radius r slides by {slide_daily_um_per_mm['isothermal']['p95']:.2f}–"
-        f"{slide_daily_um_per_mm['flange_held']['p95']:.2f} µm per mm of r on a 95th-percentile day. The thermal swing is "
+        f"leading the stack by about {lead_tolerated_k:.0f} K at the extremes, and its isothermal margin reaches zero only "
+        f"for a spacing member of CTE ≈ {spacer_alpha_zero * 1e6:.0f} ppm/K (if the B2B body, not the steel standoff, sets "
+        f"the spacing). This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path "
+        f"(HW.34), and 52's bayonet hard-stop lever is inert under branch (а). "
+        f"Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median "
+        f"{stats['median']:.1f} K and a 95th percentile {stats['p95']:.1f} K, a pin stroke of "
+        f"{min(v['median']['stroke_um'] for v in daily.values()):.1f}–{max(v['p95']['stroke_um'] for v in daily.values()):.1f} µm "
+        f"— {min(v['median']['force_ratio_over_min_preload'] for v in daily.values()) * 100:.1f}–"
+        f"{max(v['p95']['force_ratio_over_min_preload'] for v in daily.values()) * 100:.1f} % of the minimum preload "
+        f"once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by "
+        f"{slide_daily_um_per_mm['isothermal']['p95']:.2f}–{slide_daily_um_per_mm['flange_held']['p95']:.2f} µm per mm of r "
+        f"on a 95th-percentile day (about a fifth of that if the pins follow the board's own expansion). The thermal swing is "
         f"added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and "
         f"the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and "
         f"pushes the stack the other way, the pin body (no primary; {pin_um_k_per_ppm:.4f} µm/K per ppm/K) pushes its tip "
@@ -208,6 +228,11 @@ def main() -> int:
                                   "pin_body_per_ppm": round(pin_um_k_per_ppm, 5)},
         "seasonal": seasonal,
         "radome_lead_tolerated_by_L1_K": round(lead_tolerated_k, 1) if lead_tolerated_k else None,
+        "spacer_alpha_1K_at_zero_L1_margin": round(spacer_alpha_zero, 8),
+        "premises": ["the rim stays seated on the flange face (89: the cold unloads a stiff clamp)",
+                     "the stack is seated on the pocket floor (it floats on the pogo pair against the pocket gasket)",
+                     "the OUTER pad only — the centre pad rides on the wire path (HW.34)",
+                     "52's bayonet hard-stop lever (L2) acts only when the bayonet sets Z — inert under branch (а)"],
         "daily_capsule_range_K": {k: round(v, 2) for k, v in stats.items()},
         "daily_days": len(ranges),
         "daily": daily,

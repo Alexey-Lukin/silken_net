@@ -2259,10 +2259,10 @@ def test_pogo_thermal_gap():
     assert abs(co["radome"] - radome_k) <= 1e-4
     assert abs(co["stack"]["low"] - stack_lo) <= 1e-4 and abs(co["stack"]["high"] - stack_hi) <= 1e-4
     gap = {"isothermal_low_stack": radome_k - stack_hi, "isothermal_high_stack": radome_k - stack_lo,
-           "gradient_bound_radome_only": radome_k}
+           "radome_leads_reading": radome_k}
     for k, v in gap.items():
         assert abs(co["gap"][k] - v) <= 1e-4, k
-    assert gap["isothermal_low_stack"] < gap["isothermal_high_stack"] < gap["gradient_bound_radome_only"]
+    assert gap["isothermal_low_stack"] < gap["isothermal_high_stack"] < gap["radome_leads_reading"]
     t_asm = c82["inputs"]["t_ref_c"]
     travel, win, nom = inp["pogo_travel_mm"], inp["window"], inp["nominal_pct"]
     mitig = {m["label"]: m["residual_pz"] for m in z52["mitigation_escalation"]}
@@ -2288,8 +2288,14 @@ def test_pogo_thermal_gap():
         for st, v in per.items():
             assert abs(v - d["radial_slide_um_per_mm_radius_per_K"][k] * rng[st]) <= 0.002, (k, st)
     req = d["seasonal"]["capsule_requirement"]
-    margin = min(min(req[c]["window"]["L1 spacer only"]["margin_um"]) for c in ("isothermal_low_stack", "isothermal_high_stack"))
-    assert abs(d["radome_lead_tolerated_by_L1_K"] - margin / stack_hi) <= 0.1
+    case_stack = {"isothermal_low_stack": stack_hi, "isothermal_high_stack": stack_lo}   # each case with its own stack
+    lead = min(min(req[c]["window"]["L1 spacer only"]["margin_um"]) / st for c, st in case_stack.items())
+    assert abs(d["radome_lead_tolerated_by_L1_K"] - lead) <= 0.1
+    t_min, t_max = inp["temperature_readings_c"]["capsule_requirement"]
+    room = ((win[1] - nom) * travel - mitig["L1 spacer only"]) * 1e3
+    allowed = min(room / (t_max - t_asm), room / (t_asm - t_min))
+    alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * ALPHA_FR4_Z_1K[1] * 1e3 - allowed) / (inp["standoff_mm_52"] * 1e3)
+    assert abs(d["spacer_alpha_1K_at_zero_L1_margin"] - alpha0) <= 1e-8
 
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
