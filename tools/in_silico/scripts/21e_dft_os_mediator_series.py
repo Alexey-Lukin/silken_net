@@ -140,7 +140,8 @@ RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H f
 # GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico, DFT Gotchas: displacement never met).
 # What bounds the error is the GRADIENT, not the step (run-path adversary, 2026-10-12): at the Os(II) minimum Os(III) is
 # not stationary, so a leftover geometry error δ ≤ gmax/k enters ΔE_red at first order — ≲ 2 meV a complex, ≲ 1 mV per
-# substituent on a pair (an estimate: λ(III) ≈ 0.03 eV, k ≈ 0.1 Ha/Bohr²), an order under the 16 mV asked about.
+# substituent on a pair (an estimate: λ(III) ≈ 0.03 eV, k ≈ 0.1 Ha/Bohr²; leg 3б then measured λ(III) about three
+# times that on Me, which grows the bound by √3), an order under the 16 mV asked about.
 RELAX_CONV = {"convergence_energy": 1e-6, "convergence_grms": 3e-4, "convergence_gmax": 4.5e-4,
               "convergence_drms": 6.7e-3, "convergence_dmax": 1e-2}
 RELAX_MAXSTEPS = 120
