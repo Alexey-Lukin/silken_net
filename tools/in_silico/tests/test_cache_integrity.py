@@ -2013,6 +2013,67 @@ def test_pogo_sway_transfer():
     assert wh["stem_at_anchor_h_le_2m"]["accel_m_s2"] > med["stem_at_anchor_h_le_2m"]["accel_m_s2"]
     assert wh["C_centre_pad_poisson"]["ratio_per_1000_microstrain"] == med["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]
 
+
+def test_oring_reaction_band():
+    """Script 88 (HW.43 · HW.33): the O-ring reaction from Parker Figure 2-4 over 52's squeeze window.
+
+    CAN catch, recomputed from the cache's chart rows and the upstream caches rather than copied from the script: the
+    seal length drifting off 52's groove; a point read off a chart row that is not that row; the interpolation leaving
+    log-load-linear-in-squeeze between the bracketing rows; the requirement leaving 52's lift / f(t); the lug margin or
+    the strength-sized wall leaving 73's linear shear rows; the retained fraction leaving 87's need over the floor's low
+    end; the binding squeeze not reproducing the binding reaction. CANNOT catch: the transcription itself (the pt table
+    lives in the script, read from the PDF's vector paths — only the page catches an error made there), nor whether
+    Parker's bar describes our compound.
+    """
+    path = MECHANICAL / "oring_reaction_band.json"
+    if not path.exists():
+        pytest.skip("oring_reaction_band.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
+    c73 = json.loads((MECHANICAL / "collar_wall_inversion.json").read_text(encoding="utf-8"))
+    s87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
+    inp, lbf_n = d["inputs"], 4.4482216152605
+    length_in = math.pi * (2 * z52["applied_gland"]["flange_groove_r_mm"][0] + z52["springs"]["oring"]["cs_mm"]) / 25.4
+    assert abs(inp["seal_length_in"] - length_in) <= 1e-4
+    chart = {int(k): v for k, v in d["chart_70_shore_a_lbf_per_in"].items()}
+    rows = sorted(chart)
+    for lo_row, hi_row in itertools.pairwise(rows):
+        assert chart[hi_row][0] > chart[lo_row][0] and chart[hi_row][1] > chart[lo_row][1], (lo_row, hi_row)
+    assert all(lo < hi for lo, hi in chart.values())
+
+    def interp(pct, end):
+        a, b = max(r for r in rows if r <= pct), min(r for r in rows if r >= pct)
+        if a == b:
+            return chart[a][end]
+        w = (pct - a) / (b - a)
+        return 10 ** (math.log10(chart[a][end]) + w * (math.log10(chart[b][end]) - math.log10(chart[a][end])))
+
+    rim = z52["rim_datum_creep"]
+    pogo, f_t, cap = rim["pogo_pair_force_N_upper_bound"], rim["relax_fraction_at_service"], c73["verdict"]["capacity_at_print_floor_N"]
+    floor_row = min(r for r in c73["case_b_lug_root_shear"]["rows"] if r["wall_mm"] == 0.2)
+    assert floor_row["breakeven_force_N"] == cap
+    for name, b in d["band"].items():
+        pct = b["squeeze_pct"]
+        for end in (0, 1):
+            # the cache rounds lbf/in to 0.01, so the reaction it derives may sit one rounding step off this one
+            assert abs(b["lbf_per_in"][end] - interp(pct, end)) <= 0.011, (name, end)
+            assert abs(b["reaction_N"][end] - interp(pct, end) * length_in * lbf_n) <= 0.15, (name, end)
+        need = (pogo + interp(pct, 1) * length_in * lbf_n) / f_t                  # 52's lift / f(t), band HIGH end
+        assert abs(b["required_initial_clamp_N_at_band_high"] - need) <= 0.2, name
+        assert abs(b["lug_root_margin_x_at_print_floor"] - cap / need) <= 0.01, name
+        assert abs(b["collar_wall_strength_asks_mm"] - 0.2 * need / cap) <= 0.002, name   # 73's pure shear is linear
+    pts = [b["squeeze_pct"] for b in d["band"].values()]
+    assert pts == sorted(pts) and pts[0] == inp["window_pct"][0] and pts[-1] == inp["window_pct"][1]
+    inv = d["inversion"]
+    r_bind = cap * f_t - pogo
+    assert abs(inv["reaction_N_at_which_lug_binds"] - r_bind) <= 0.1
+    assert abs(interp(inv["squeeze_pct_band_high_binds"], 1) * length_in * lbf_n - r_bind) <= 0.5
+    need87 = max(r["A_rim"]["o_ring_force_N_needed_at_end_of_life"] for r in s87["by_slope_reading"].values())
+    eos = d["end_of_service"]
+    assert eos["o_ring_force_N_needed_87"] == need87
+    assert abs(eos["retained_fraction_needed"] - need87 / d["band"]["window_floor"]["reaction_N"][0]) <= 0.001
+
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 

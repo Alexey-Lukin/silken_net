@@ -1,0 +1,152 @@
+{
+  "question": "The O-ring's compression reaction over the squeeze window — the datum 52 replaced with a generous bound, 73 judged the collar wall against, and 87's (A) needs from below.",
+  "source": {
+    "document": "Parker O-Ring Handbook ORD 5700",
+    "figure": "Figure 2-4: .070 Cross Section, p. 2-11 (PDF page 23)",
+    "url": "parker.com/content/dam/Parker-com/Literature/O-Ring-Division-Literature/ORD-5700.pdf",
+    "read": "2026-10-13, vector coordinates of the PDF page (pdftocairo -svg)",
+    "precision_fraction": 0.04,
+    "temperature": "§3.8: force decreases very little with temperature except the hardest compounds (N0674-70: −10 % from 24 to 126 °C)",
+    "time": "§2.4.11: compression set is the same relaxation (100 % = no force), reported only after 70 h at 100 °C — no field-life figure"
+  },
+  "assumptions": [
+    "log-load linear in squeeze between the chart's rows",
+    "seal length = mean circumference on the groove's inner wall (ring stretched onto it)",
+    "the unconfined bars hold at an 80 % gland fill"
+  ],
+  "inputs": {
+    "shore_a": 70,
+    "shore_a_tolerance": 5,
+    "cs_mm": 1.78,
+    "groove_inner_diameter_mm": 20.971,
+    "seal_length_in": 2.8139,
+    "seal_length_mm": 71.47,
+    "window_pct": [
+      19.0,
+      30.0
+    ],
+    "nominal_pct": 24.5,
+    "chain_pct_as_modelled_by_52": [
+      21.7,
+      27.3
+    ],
+    "pogo_pair_N_upper_bound": 1.92,
+    "relax_fraction_at_service_52": 0.65,
+    "lug_root_capacity_N_at_print_floor_73": 457.0,
+    "safety_factor_73": 2.0,
+    "o_ring_force_N_needed_end_of_life_87": 10.57
+  },
+  "chart_70_shore_a_lbf_per_in": {
+    "5": [
+      0.62,
+      1.59
+    ],
+    "10": [
+      1.42,
+      4.13
+    ],
+    "20": [
+      3.55,
+      10.42
+    ],
+    "30": [
+      8.0,
+      32.68
+    ],
+    "40": [
+      17.65,
+      77.96
+    ]
+  },
+  "band": {
+    "window_floor": {
+      "squeeze_pct": 19.0,
+      "lbf_per_in": [
+        3.24,
+        9.5
+      ],
+      "reaction_N": [
+        40.5,
+        118.9
+      ],
+      "required_initial_clamp_N_at_band_high": 185.8,
+      "lug_root_margin_x_at_print_floor": 2.46,
+      "collar_wall_strength_asks_mm": 0.081
+    },
+    "chain_low": {
+      "squeeze_pct": 21.7,
+      "lbf_per_in": [
+        4.07,
+        12.65
+      ],
+      "reaction_N": [
+        51.0,
+        158.4
+      ],
+      "required_initial_clamp_N_at_band_high": 246.6,
+      "lug_root_margin_x_at_print_floor": 1.85,
+      "collar_wall_strength_asks_mm": 0.108
+    },
+    "nominal": {
+      "squeeze_pct": 24.5,
+      "lbf_per_in": [
+        5.11,
+        17.43
+      ],
+      "reaction_N": [
+        64.0,
+        218.1
+      ],
+      "required_initial_clamp_N_at_band_high": 338.5,
+      "lug_root_margin_x_at_print_floor": 1.35,
+      "collar_wall_strength_asks_mm": 0.148
+    },
+    "chain_high": {
+      "squeeze_pct": 27.3,
+      "lbf_per_in": [
+        6.42,
+        24.0
+      ],
+      "reaction_N": [
+        80.4,
+        300.4
+      ],
+      "required_initial_clamp_N_at_band_high": 465.1,
+      "lug_root_margin_x_at_print_floor": 0.98,
+      "collar_wall_strength_asks_mm": 0.204
+    },
+    "window_top": {
+      "squeeze_pct": 30.0,
+      "lbf_per_in": [
+        8.0,
+        32.68
+      ],
+      "reaction_N": [
+        100.2,
+        409.0
+      ],
+      "required_initial_clamp_N_at_band_high": 632.2,
+      "lug_root_margin_x_at_print_floor": 0.72,
+      "collar_wall_strength_asks_mm": 0.277
+    }
+  },
+  "inversion": {
+    "reaction_N_at_which_lug_binds": 295.1,
+    "squeeze_pct_band_high_binds": 27.14,
+    "squeeze_pct_band_low_binds": null,
+    "squeeze_pct_band_high_exceeds_generous_bound": 17.13,
+    "squeeze_pct_band_low_exceeds_generous_bound": 29.98
+  },
+  "end_of_service": {
+    "initial_reaction_N_low_at_window_floor": 40.5,
+    "o_ring_force_N_needed_87": 10.57,
+    "retained_fraction_needed": 0.261,
+    "is": "a requirement on the compound's stress relaxation over 20 years, not a force this source gives"
+  },
+  "missing_data": [
+    "the compound's own compression-load curve at 19–30 % for CS 1.78 (Parker's bar spans compounds)",
+    "its stress relaxation over the service life at the capsule's envelope (ISO 3384-type data)",
+    "the cold-side stiffening of EPDM (raises the reaction; adverse for the lug, favourable for (A))"
+  ],
+  "verdict": "The «generous» 100 N is not an upper bound: Parker's 70 Shore A bar for the .070 section puts the ring's reaction at 64–218 N at the 24.5 % nominal and up to 409 N at the 30 % window top, and the band's high end passes 100 N already at 17.1 % squeeze. With that high end, 52's requirement (lift / 0.65) asks 338 N at the nominal — the lug root still carries it at the print floor (1.35×, SF 2 inside) — but 632 N at the window top (0.72×): above 27.1 % squeeze a compound at the hard end of the bar makes strength, not printability, size the collar wall — 0.28 mm at the window top against the 0.2 mm print floor; the chain 52 models today ends at 27.3 % (0.98×). From below, the ring starts at no less than 40 N at the 19 % floor, so 87's (A) holds at the end of service only if the ring keeps 26 % of its initial reaction after 20 years — a compound datum Parker does not give."
+}

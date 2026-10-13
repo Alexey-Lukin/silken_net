@@ -82,6 +82,9 @@ Anchor mechanics (CPU):
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep`) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
      `missing_datum` string), never its cache
+  52 (z_stack_tolerance.json: squeeze window, groove, `rim_datum_creep`) · 73 (collar_wall_inversion.json: lug-root rows) · 87
+     (pogo_sway_transfer.json: the end-of-life O-ring need) → 88 (oring_reaction_band.json; the Parker Figure 2-4 transcription
+     lives in the script) — 52 and 73 still read lib `GENEROUS_ORING_BOUND_N` until they re-run with the root package (00_07 HW.9)
   55 → 77 (bus_mechanical.json: the lock insertion window) · tools/cad/cem → 77 (gyroid · sleeve geometry at runtime)
   62 → wind_duty_cycle.json → 55 · 59 (cycle budget; 55 prints NOT COMPUTED without it)
   66 → tools/cad TopologyCrossChecks (a C# consumer: no Python re-run reaches it)

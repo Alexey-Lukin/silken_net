@@ -1097,6 +1097,42 @@ CHECKS = [
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
      lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+    # ── HW.33 · HW.43 the O-ring's own reaction — Parker Figure 2-4 over 52's window (script 88, 2026-10-13) ──
+    # ⛔ These numbers took the «generous» 100 N out of the role of an upper bound; a doc copy drifted off the cache would
+    #    put the lug root's margin, or the share the ring must keep for 87's (A), back on a number nobody computed.
+    *[(f"O-ring reaction band, {label} → oring_reaction_band.json", doc, pattern,
+       "mechanical/oring_reaction_band.json", resolver, tol)
+      for label, doc, pattern, resolver, tol in (
+          ("SUMMARY (A) floor", SUMMARY, rf"no less than \*\*{N}\*\* N at the 19 % window floor",
+           lambda d: d["band"]["window_floor"]["reaction_N"][0], 0.6),
+          ("SUMMARY (A) retained share", SUMMARY, rf"at least \*\*{N} %\*\* of its initial reaction",
+           lambda d: d["end_of_service"]["retained_fraction_needed"] * 100, 0.5),
+          ("SUMMARY nominal band low", SUMMARY, rf"\| 24\.5 % — nominal \| {N}–[\d.]+ \|",
+           lambda d: d["band"]["nominal"]["reaction_N"][0], 0.6),
+          ("SUMMARY nominal band high", SUMMARY, rf"\| 24\.5 % — nominal \| [\d.]+–{N} \|",
+           lambda d: d["band"]["nominal"]["reaction_N"][1], 0.6),
+          ("SUMMARY window-top clamp", SUMMARY, rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| {N} \|",
+           lambda d: d["band"]["window_top"]["required_initial_clamp_N_at_band_high"], 0.6),
+          ("SUMMARY chain-high margin", SUMMARY, rf"\| 27\.3 % — `52`'s chain, high \| [\d.]+–[\d.]+ \| [\d.]+ \| {N}×",
+           lambda d: d["band"]["chain_high"]["lug_root_margin_x_at_print_floor"], 0.005),
+          ("SUMMARY window-top margin", SUMMARY, rf"\| 30 % — window top \| [\d.]+–[\d.]+ \| [\d.]+ \| {N}×",
+           lambda d: d["band"]["window_top"]["lug_root_margin_x_at_print_floor"], 0.005),
+          ("SUMMARY binding squeeze", SUMMARY, rf"stops carrying `52`'s requirement from {N} %",
+           lambda d: d["inversion"]["squeeze_pct_band_high_binds"], 0.05),
+          ("SUMMARY generous crossing", SUMMARY, rf"passes it from {N} % squeeze",
+           lambda d: d["inversion"]["squeeze_pct_band_high_exceeds_generous_bound"], 0.05),
+          ("02_02 §3.2 floor", BLIND_MATE, rf"\*\*{N}–[\d.]+ Н\*\* на підлозі вікна 19 %",
+           lambda d: d["band"]["window_floor"]["reaction_N"][0], 0.6),
+          ("02_02 §3.2 window top", BLIND_MATE, rf"\*\*[\d.]+–{N} Н\*\* на верху 30 %",
+           lambda d: d["band"]["window_top"]["reaction_N"][1], 0.6),
+          ("02_02 §3.5 nominal clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на номіналі 24\.5 %",
+           lambda d: d["band"]["nominal"]["required_initial_clamp_N_at_band_high"], 0.6),
+          ("02_02 §3.5 chain-top clamp", BLIND_MATE, rf"≈ \*\*{N} Н\*\* на верху ланцюга",
+           lambda d: d["band"]["chain_high"]["required_initial_clamp_N_at_band_high"], 0.6),
+          ("02_02 §4.4 nominal margin", BLIND_MATE, rf"на номіналі 24\.5 % \({N}×\)",
+           lambda d: d["band"]["nominal"]["lug_root_margin_x_at_print_floor"], 0.005),
+          ("02_02 §4.4 window-top wall", BLIND_MATE, rf"й {N} мм на верху вікна \(SF 2",
+           lambda d: d["band"]["window_top"]["collar_wall_strength_asks_mm"], 0.005))],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield

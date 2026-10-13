@@ -723,6 +723,8 @@ no FEA, no fabricated numbers where the open literature genuinely does not have 
 
 ⊕ **2026-10-13 — the transfer «stem motion → load through the pins» (script `87`, the machine leg split from the measurement leg when the crown pause was lifted for measurements; revised the same day after an adversarial pass — the first version priced one path as if it were all).** Sway reaches the pins along four paths, and the model computes two of them to a number. **(A) The rim — the premise of the rest.** The capsule rides the flange as one body only while the rim's friction (PEEK on Ti, µ from 0.1) holds the capsule's own weight (the anchor axis is near-horizontal, so the weight loads the rim sideways) plus the drag and inertia. Early in life the bayonet clamp of `52`'s requirement (≥ 157 N) gives ≈ **31.3** N of capacity against ≈ 1.1 N of demand; but that requirement is sized so the rim only just stays seated after 20 years of relaxation, and at that end the capacity falls to µ·(pogo pair + O-ring) — on the pogo pair alone it does not hold even the weight, and with the capsule envelope as solid copper and the canopy-top gust it needs an O-ring force ≥ **10.34** N (median reading) … 10.57 N, a force canon does not have (`52`'s named datum). Below it the capsule shifts inside the collar clearance and the pins SLIDE: `55`'s per-cycle drag premise is that regime, not a ceiling the model escapes. **(B) Stack inertia, rim holding.** Wire stress is linear in force, so for a coaxial clamp the amplitude is m·a over a mean that the static axial share of the weight (10° install angle) lowers — **0.21 % (median) … 0.42 % (whisker) per gram** is the slope at small mass, not a bound; 10 % is reached at **21.5** (whisker) … 39.4 g, and the weakest pin (60 − 20 g at mid-stroke) unloads at **117** (whisker) … 155 g. ⚠️ The clamp is not coaxial (two pins below, an eccentric gasket above), so a force pair m·a·h/s adds to this; h and s are layout quantities, not in the tree. **(C) The centre pad — a ceiling that reaches the pin only through two slips.** Bending's Poisson strain μ_LR·ε_L is a radial strain that varies along a radial anchor in the bending plane (wind along the anchor's azimuth; zero for an anchor at right angles to the wind), imposing up to μ_LR·ε_s·Δx between the wood at the anode and at the flange — **2.80 … 5.04 % of the working compression per 1000 µε** of stem-surface strain at the anchor's azimuth (μ_LR 0.280–0.392, nine pines at ≈ 12 % moisture, Wood Handbook 2021 Table 5–2, no P. sylvestris; Δx 70–90 mm, anode centroid to flange and the whole depth, `77`'s geometry), 2.6–9.3 % on the source day. The anchor resists it: the Zone 1↔2 press-fit with barbs ties the anode to the flange, and the liner's grip and capture tie the bus-wire tip to the flange (`01_01 §1.4`) — so the pin sees it only if both slip; if the press-fit slips and the grip holds, it loads the wire and its seam axially instead (not computed). The worst cases of (A) and (C) need different wind azimuths. **(D) Thermal** cycling of the same contacts is not computed (its own leg). Stem input — Schindler & Kolbe 2020, Figure 9 read at 2.0 m (median 0.03, upper whisker 0.06 °/(m²/s²); a plot reading; a whisker is not the maximum) at the day's strongest flux, > 31 m²/s² (control, units only: that interval's 12 m slope × flux = **11.5°** against the text's 12°, the slope regressed on the same data); tilt grows monotonically with height, so for an anchor at any height ≤ 2.0 m the tilt is ≤ 0.93–1.86° and the non-oscillatory displacement ≤ 31–62 mm; the acceleration, ≈ **0.83** (median) … **1.65** m/s² (whisker), takes that whole swing as oscillating at 0.74 Hz — NOT a proven bound either way: the oscillatory share at 2 m is unpublished, at the base it carries ~40 % of the variance, and higher modes weigh as f². Flux scales as U², so a storm twice as windy multiplies the stem quantities ×4: the numbers describe that one January day of one tree smaller than the canon's hosts. The stem's mean curvature between 0.1 and 2.0 m in that interval, 8.5–17 × 10⁻³ rad/m, is ≈ 920–1840 µε at the source tree's DBH 21.5 cm (our calculation from a plot reading); stem strain at 1.3 m was found in open texts only for broadleaves — not transferred. **What it changes:** the pogo's missing half is now a set of unmeasured quantities — the O-ring force (decides (A) at the end of life), the stack's mass and layout (B), the axial capacity of the Zone 1↔2 press-fit and of the liner grip (whether (C) reaches the pin), the stem strain and acceleration at anchor height on host-size pines (B, C) — not a micro-deflection that only a measurement at the pin could give; that measurement now has a model to be checked against. (`mechanical/pogo_sway_transfer.json`)
 
+⊕ **2026-10-13 — the O-ring force (A) needs now has a band (script `88`, section HW.33 — the O-ring's own reaction).** Parker's 70 Shore A bar puts the ring at no less than **40** N at the 19 % window floor, so (A) holds at the end of service if the ring keeps at least **26 %** of its initial reaction after 20 years — a requirement on the compound's stress relaxation, which Parker reports only after 70 h at 100 °C; the question goes into the O-ring letter. The same band shows that `52`'s requirement — and so the early capacity above — stood on a «generous» 100 N that is not an upper bound; with the band the requirement only grows, so `87`'s early capacity, which reads `52`'s frozen cache, is the conservative side. (`mechanical/oring_reaction_band.json` → `end_of_service`)
+
 **Verdict** — 🟡 Genuinely partial. No part is fully closed, and that is the honest result: each
 gets a named numeric threshold or a named reason the closed-form method does not apply, plus the
 exact missing datum that would close it (for the pogo spring the vendor spring drawing first, ⚖️ 2026-09-22, then a
@@ -876,6 +878,36 @@ that are ours until the vendors answer.
 the vendors'; the root is not moved by this script. NOT modelled: capillary water held in a narrow gap and its ice
 (a tighter gap holds water higher — the drainage requirement governs it), friction and wear of the turning fit,
 creep of the band. (`mechanical/collar_running_clearance.json` → `thermal_closing_mm`, `routes`, `controls`)
+
+---
+
+## HW.33 — The O-ring's Own Reaction: Parker's Band over the Squeeze Window (script 88)
+
+Canon home → [`02_02 §3.2`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (the band); consequences → `02_02 §3.5` (rim
+clamp) and `02_02 §4.4` (collar wall); decision → `00_07` HW.33.
+
+Canon had no O-ring compression force: `52` sized the rim clamp with a «deliberately generous» 100 N, `73` judged the
+collar wall against that bound, and `87`'s premise (A) needs the same force from below at the end of service. Script 88
+reads Parker ORD 5700 Figure 2-4 (.070 section, 70 Shore A) from the vector paths of the PDF page (≈ ±4 % in load from
+the plot's own gridlines), interpolates log-load linearly in squeeze between the chart's rows (our assumption), and
+puts it on the 71.5 mm seal length of the AS568-019 ring on the groove's inner wall.
+
+| Squeeze | Reaction (N) | `52`'s clamp at the band's high end (N) | Lug root at the print floor | Wall strength asks (mm) |
+|---|---|---|---|---|
+| 19 % — window floor | 40–119 | 186 | 2.46× | 0.08 |
+| 21.7 % — `52`'s chain, low | 51–158 | 247 | 1.85× | 0.11 |
+| 24.5 % — nominal | 64–218 | 339 | 1.35× | 0.15 |
+| 27.3 % — `52`'s chain, high | 80–300 | 465 | 0.98× | 0.20 |
+| 30 % — window top | 100–409 | 632 | 0.72× | 0.28 |
+
+**Verdict** — the 100 N is not an upper bound: the band's high end passes it from 17.1 % squeeze, and with that end
+the lug root (SF 2 inside, no fillet concentration modelled) stops carrying `52`'s requirement from 27.1 % — inside the
+chain `52` models today. Above that squeeze strength, not printability, sizes the collar wall: 0.20 mm at the chain's
+top and 0.28 mm at the window top, against the 0.2 mm print floor (⚖️ submitted — `00_07` HW.33). From below, the ring
+starts at no less than 40 N at the floor, so `87`'s (A) needs at least 26 % of it retained after 20 years. Parker's bar
+spans compounds; our compound's own curve and its stress relaxation are vendor data (questions in the O-ring letter).
+NOT modelled: the cold side (EPDM stiffens, the reaction rises), confinement near a full gland, the PEEK ledge under the
+lug, which carries the same load. (`mechanical/oring_reaction_band.json` → `band`, `inversion`, `end_of_service`)
 
 ---
 
