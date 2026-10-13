@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 293 · 16,753,872 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 293 · 16,754,250 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -120,8 +120,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/84_cathode_ionic_path.py` | `e3ce8f2912febe6dd4dc7c2e5213ea64a970a2b9981e7950e387fd8672fac400` | Series ionic resistance of the path from the anode in the sapwood to the cathode on the flange, element by element, against the cold-start budget of the energy harvester for two readings of the electrodes' own internal resistance: the material value each layer would need, with published tree and stemflow readings beside it. |
 | `tools/in_silico/scripts/85_electrode_interfacial_ph.py` | `e0ea54e6e7c0b8575eb5ea59199b766af39104e9b6892d710aade320b5967f68` | How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, the anode as the diffusion-layer thickness its predicted current tolerates. |
 | `tools/in_silico/scripts/86_coaxiality_allocation.py` | `fba89766d003cfe1c28e92cbf8c14d16b68c63b9c2257031de4114db3550358b` | What a channel-to-root misalignment costs the bus root with a Soderberg mean-stress correction. |
-| `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `3e99cba9e3c3ecd583b5ab29ef8da66904e1c67b01b817d04a70d7f5a409a7b6` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
-| `tools/in_silico/scripts/88_oring_reaction_band.py` | `63c5f0b6a1df06b1227c6ceed87dd0528d2ece5bc4fe7c18700851020ca3cd51` | The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for the capsule staying put. |
+| `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `222c75f083cdc6bbccda545308f8c6f8e7d2c761a6b4f2aa4207ac41943105ef` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
+| `tools/in_silico/scripts/88_oring_reaction_band.py` | `e08aa92d1cc67a6ab81754bdae245670e072ed4504ebf648d214e67617b30bf7` | The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for the capsule staying put. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
@@ -237,7 +237,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `0cb6ea63053fb6a149ccc21e26e00ded17decd1aa7d14ca797b72e4ce136d5b9` | 5,541 |
 | `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `c0b24f7422340a6daf2053ad5f7ae837c17c91d6c00ccdcaed18a2591b9f4d7b` | 9,829 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
-| `tools/in_silico/cache/mechanical/oring_reaction_band.json` | `e8d43038bbd3d4c000f522bf7ef60ac16ca87108b760112e2fc374cda2a01204` | 9,504 |
+| `tools/in_silico/cache/mechanical/oring_reaction_band.json` | `8e771d1fc49c5a18fb135f6dd959b02ed38991e4387c89b5826b921048ea2e20` | 9,671 |
 | `tools/in_silico/cache/mechanical/pogo_sway_transfer.json` | `b7ba264d3c6e37299d692f1a412859e859f848e2bbc9d49afb934b6ccfd96a2b` | 9,658 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.json` | `434d4456b3eb5cf79e3af7da4f916419eb34accc094455d36053898485c5c055` | 67,177 |
 | `tools/in_silico/cache/mechanical/teg_across_peek_break.png` | `87e017e898f28f38daedce70804a3954693580a7ed7adc5416b3dca0831aba06` | 151,967 |

@@ -216,7 +216,7 @@ def main() -> int:
         f"clamp at assembly and the 20-year form 52 prints: the lug root at the print floor (SF {sf73:.0f} inside) carries it "
         f"at the nominal at both ends ({nom['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× "
         f"at the worse), at the chain 52 models today ({chain[1]:.1f} %) only if the ring has lost about "
-        f"{lost(chain_hi, end):.0f} % of its reaction by year {end} "
+        f"{lost(chain_hi, '10'):.0f} % of its reaction by year 10 "
         f"({chain_hi['lug_root_margin_x_at_print_floor']['after_20_years_ring_never_relaxes']:.2f}× if it never does), and at "
         f"the window top only if it has lost about {lost(top, early):.0f} % by year {early} and about "
         f"{lost(top, mid):.0f} % already by year {mid} — the PEEK clamp floors within a few years, so the ring's loss is due "
@@ -272,10 +272,10 @@ def main() -> int:
                           "share_retained_needed_with_a_weaker_clamp": retained,
                           "is": "a clamp at the form 52 prints for the ring's own reaction, (R0 + p) / f(20 y), never "
                                 "lets the rim lift while the lift stays at L0, so the needed reaction is an initial one; a "
-                                "weaker clamp can let the rim lift (it does if the ring keeps its reaction better than the "
-                                "PEEK keeps the clamp, by more than the clamp's margin over L0), a lift is taken as not "
-                                "undone (conservative: under a lift the ledge PEEK creeps at constant load, 52), and the "
-                                "normal force is then what the ring has left; the friction bound runs through the lug "
+                                "weaker clamp can let the rim lift (it does when R(t) + p > f(t)·C0), a lift is taken as "
+                                "not undone (conservative for (A): lifted, the normal force is L; reseated, 2C − L ≥ L), "
+                                "and the normal force is then what the ring has left — less than a constant-squeeze "
+                                "relaxation datum says, because the ledge PEEK creeping under a lift takes squeeze (52); the friction bound runs through the lug "
                                 "ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is "
                                 "greased; temperature is not modelled"},
         "missing_data": ["the compound's own compression-load curve at 15–35 % for CS 1.78 (the band spans compounds)",
@@ -286,7 +286,9 @@ def main() -> int:
                          "cold unloads the clamp and heat raises it (the loop's compliance sets how fast); the ring's "
                          "own contraction takes squeeze in the cold, and its force below room temperature is not in "
                          "the source — every margin here is at the assembly temperature",
-                         "resin swell (02_02 §3.2 accepts up to 15 % by volume) — it raises the reaction"],
+                         "resin swell — any swell raises the reaction (02_02 §3.2: up to 15 % keeps EPDM, 15–25 % is the "
+                         "founder's call, above 25 % reopens the material — bench thresholds on free rings, not a "
+                         "service bound)"],
         "verdict": verdict,
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)

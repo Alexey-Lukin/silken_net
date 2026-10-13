@@ -17,13 +17,13 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       relaxes to f·C0 (f the PEEK floor of `52`) and the ring's reaction relaxes too, at its own rate. A clamp at the
       form `52` prints for the ring's OWN reaction (C0 = L0/f(20 y), the top of `88`'s bracket) never lets the rim lift
       while L stays ≤ L0, so its end-of-life normal force is at least L0 — the needed reaction is an INITIAL one (⛔ never
-      read it as a force the ring must still have after 20 years). A weaker clamp CAN lift — it does if the ring keeps
-      its reaction better than the PEEK keeps the clamp, by more than the clamp's own margin over L0, and the ring's
-      relaxation is not modelled — and a lift is TAKEN as not undone (conservative: under a lift the ledge PEEK creeps at
-      constant load, `52`; an elastic lift could reseat), so for a weaker clamp the needed reaction is the one left after
+      read it as a force the ring must still have after 20 years). A weaker clamp CAN lift — it does when R(t) + p > f(t)·C0,
+      and the ring's relaxation R(t) is not modelled — and a lift is TAKEN as not undone (conservative for (A): lifted,
+      the normal force is L; reseated, 2C − L ≥ L; a lift is likely to stay, because the ledge PEEK creeps under it, `52`,
+      and an elastic lift could reseat), so for a weaker clamp the needed reaction is the one left after
       20 years. ⚠️ Temperature is not modelled: in the loop lug → ledge → rim → flange the PEEK is squeezed between two
       Ti faces over the same span, so cold unloads the clamp and heat raises it, and the ring's own contraction takes
-      squeeze in the cold — «L stays ≤ L0» (resin swell, accepted up to 15 % by volume in 02_02 §3.2, raises it too) and
+      squeeze in the cold — «L stays ≤ L0» (resin swell raises it too — 02_02 §3.2 can accept up to 25 %) and
       the clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
       reaction each clamp design needs; the reaction itself is `88`'s.
       Below it the capsule shifts inside the collar's running clearance and the pins SLIDE over the pads — the regime
