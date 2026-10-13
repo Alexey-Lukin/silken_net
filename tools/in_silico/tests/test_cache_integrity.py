@@ -1967,6 +1967,37 @@ def test_coaxiality_allocation():
         assert b["iso1101_coaxiality_zone_mm"] == round(2 * b["radial_offset_budget_um"] / 1000.0, 3)
 
 
+def test_pogo_sway_transfer():
+    """Script 87 (HW.43): trunk sway reaches the pogo pins only as inertia — the force ratio r = m·a/F per gram.
+
+    CAN catch: the Figure-9 slope × the text's flux drifting away from the 12° the text reports at 12 m; a stem bound
+    or a force ratio recomputed by hand that disagrees with the cached inputs; the upper-whisker reading coming out
+    milder than the median. CANNOT catch: whether the plot reading, the copper ceiling or the canopy-top drag are the
+    right inputs — the docstring names each one as a choice.
+    """
+    path = MECHANICAL / "pogo_sway_transfer.json"
+    if not path.exists():
+        pytest.skip("pogo_sway_transfer.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    inp, ctl = d["inputs"], d["controls"]["slope_times_flux_reproduces_12m_tilt"]
+    assert abs(ctl["deg"] - ctl["text_deg"]) <= 1.0
+    span = inp["h2_m"] - inp["h1_m"]
+    for name, r in d["by_slope_reading"].items():
+        st = r["stem_at_anchor_h_le_2m"]
+        theta = math.radians(inp["slope_at_h2_read_from_figure9"][name] * inp["flux_max_m2s2"])
+        assert abs(st["displacement_mm"] - theta * span * 1000) <= 0.1, name
+        a = (2 * math.pi * inp["f0_upper_hz"]) ** 2 * theta * span + 9.80665 * math.sin(theta)
+        assert abs(st["accel_m_s2"] - a) <= 1e-3, name
+        per_g = st["accel_m_s2"] * 1e-3 / inp["pin_force_min_N"]
+        assert abs(r["axial_force_ratio_per_gram"] - per_g) <= 1e-5, name
+        assert abs(r["stack_mass_g_for_ratio_10pct"] - 0.1 / per_g) <= 0.1, name
+        assert r["axial_force_ratio_at_mass_ceiling"] < 1.0, name          # the preload never unloads, even in copper
+        assert r["lateral_cyclic_over_static_gravity"] < 1.0, name
+    med, wh = d["by_slope_reading"]["median"], d["by_slope_reading"]["upper_whisker"]
+    assert wh["stem_at_anchor_h_le_2m"]["accel_m_s2"] > med["stem_at_anchor_h_le_2m"]["accel_m_s2"]
+    assert wh["axial_force_ratio_per_gram"] > med["axial_force_ratio_per_gram"]
+
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 

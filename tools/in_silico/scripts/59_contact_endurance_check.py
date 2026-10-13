@@ -21,8 +21,9 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      ratio is `framing_A_full_stroke_actuation.overrun_x`) — but that framing almost certainly
      does not apply, because canon (01_01 §2) already asserts the spring travel margin absorbs sway
      as micro-motion, not full-stroke cycling. By the physically-relevant low-amplitude
-     stress-fatigue model, real S-N anchor points exist, but the actual working stress at the true
-     sway deflection amplitude is NOT computed anywhere in canon — PARTIAL, names the missing datum.
+     stress-fatigue model, real S-N anchor points exist; the sway amplitude is bounded since 2026-10-13
+     (script 87: inertia only, τ_a/τ_m ≤ m·a/F per gram of board stack), but the working stress itself
+     needs the spring drawing and the stack mass — PARTIAL, names the missing data.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
      creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
      independent sources) but the actual barb contact-stress amplitude is not computed (HW.26 FEA
@@ -83,8 +84,10 @@ def load_budget() -> dict:
 SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
                           "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
                           "give the shear stress)")
-SWAY_DEFLECTION_MISSING = ("actual sway-induced micro-deflection amplitude at the pogo contact (bench/field, not "
-                           "the 1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43)")
+SWAY_DEFLECTION_MISSING = ("the board-stack mass (one scale reading) — script 87 bounds the sway transfer as inertia "
+                           "only, a spring-force amplitude of m*a/F over the preload per gram of stack, so the "
+                           "amplitude is that fraction of the drawing's mean stress, not a micro-deflection measured "
+                           "at the pin (00_07 HW.43)")
 
 
 def pogo_spring_verdict(budget: dict) -> dict:
@@ -123,8 +126,8 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "verdict": ("PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
                         f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
                         f"{budget['ceiling']:.2e}-cycle budget ceiling IF the true working stress stays near or "
-                        "below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip "
-                        f"is not computed anywhere in canon — missing datum: {SPRING_DRAWING_MISSING} + "
+                        "below that. But the stress at the REAL sway amplitude at the pogo tip is not closed to a "
+                        f"number — missing datum: {SPRING_DRAWING_MISSING} + "
                         f"{SWAY_DEFLECTION_MISSING}."),
         },
         "closed": False,

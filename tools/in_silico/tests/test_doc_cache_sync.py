@@ -1050,6 +1050,25 @@ CHECKS = [
       for branch, label in (("tight", "tight ⌀0.04"), ("loose_50", "loose ⌀0.10"), ("loose_100", "loose ⌀0.20"))
       for k, (what, key, tol) in enumerate((("mean", "mean_MPa", 0.05), ("wire SF", "sf_wire_binding", 0.005),
                                            ("seam k", "k_break_even_binding", 0.0005)))],
+    # ── HW.43 stem sway → load through the pogo pins (script 87, 2026-10-13) ──
+    # ⛔ The per-gram ratio is what the spring's amplitude is read from once the drawing and the scale give τ_m and m;
+    #    a SUMMARY figure drifted off the cache would hand framing B of 59 a fraction nobody computed.
+    *[(f"pogo sway transfer, {label} → pogo_sway_transfer.json", SUMMARY, pattern,
+       "mechanical/pogo_sway_transfer.json", resolver, tol)
+      for label, pattern, resolver, tol in (
+          ("12 m control", rf"× the flux = \*\*{N}°\*\*",
+           lambda d: d["controls"]["slope_times_flux_reproduces_12m_tilt"]["deg"], 0.05),
+          ("median accel", rf"acceleration ≤ \*\*{N}\*\* \(median\)",
+           lambda d: d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["accel_m_s2"], 0.005),
+          ("whisker accel", rf"\(median\) … \*\*{N}\*\* m/s² \(whisker\)",
+           lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["accel_m_s2"], 0.005),
+          ("median ratio per gram", rf"τ_a/τ_m ≤ {N} % \(median\)",
+           lambda d: d["by_slope_reading"]["median"]["axial_force_ratio_per_gram"] * 100, 0.005),
+          ("whisker ratio per gram", rf"\(median\) … {N} % \(whisker\) per gram",
+           lambda d: d["by_slope_reading"]["upper_whisker"]["axial_force_ratio_per_gram"] * 100, 0.005),
+          ("copper mass ceiling", rf"solid copper \(\*\*{N}\*\* g\)", lambda d: d["inputs"]["mass_ceiling_g"], 0.5),
+          ("ratio at the ceiling", rf"stays at ≤ \*\*{N}\*\* %",
+           lambda d: d["by_slope_reading"]["upper_whisker"]["axial_force_ratio_at_mass_ceiling"] * 100, 0.5))],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield
