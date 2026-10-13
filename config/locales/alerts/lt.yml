@@ -106,7 +106,7 @@ lt:
         unassigned: Įspėjimo dar niekas nepaėmė
       sop:
         domain:
-          pending: 'Platforma nepateikia šio įspėjimo tipo srities taktikos: ji rengiama pagal galiojančias civilinės saugos gaires, o šio tipo tekstas dar neparašytas.'
+          pending: 'Platforma nepateikia šio įspėjimo tipo srities taktikos: ji bus parengta pagal galiojančias civilinės saugos gaires; šio tipo tekstas dar neparašytas.'
           title: Srities taktika
         steps:
           acknowledge:

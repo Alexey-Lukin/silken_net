@@ -1,12 +1,12 @@
 # Procurement Templates — DMLS-scoring · ESG-screen · CDA/NDA (BIZ.17)
 
-> **Що це:** три операційні procure-шаблони для vendor-відбору та лаб-доступу — DMLS-scoring matrix, ESG-screening checklist і mutual CDA/NDA під ВНЗ-MoU; призначені founder'у/architect'у як робочий інструмент відбору, не як заморожена специфікація.
+> **Що це:** три операційні procure-шаблони для vendor-відбору та лаб-доступу — DMLS-scoring matrix, ESG-screening checklist і mutual CDA/NDA з ВНЗ-контрагентом; призначені founder'у/architect'у як робочий інструмент відбору, не як заморожена специфікація.
 > **Concern-шар** (як [`procurement/`](rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе тут — робоча чернетка й вказівники на канон; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
 > **⏳ Станом на 2026-07-24.** Спирається на зовнішнє право/ринок, що рухається незалежно від нас — перед використанням звіряй актуальність.
 > **⚠️ Не юридична / податкова / фінансова порада.** Робочий вхід у платну консультацію з фахівцем, не її заміна.
 > **Дім стану:** [`00_07`](../../00_07_Action_Plan_Tracker.md) — BIZ.17.
 
-> **Склад:** **(A)** DMLS additive-manufacturing vendor-scoring matrix · **(B)** ESG vendor-screening checklist · **(C)** mutual CDA/NDA для ВНЗ-MoU. ⊕ Dispatch-листи: DMLS-бюро (EN; §A/§B як питання + інженерні питання трекера) · постачальник PEEK-мікротрубки лайнера шини (EN) · опромінювач ГІЛКИ A стерилізації (UA) · постачальник PTFE-мембрани катода (EN). Останні три — per-component, дім тимчасовий (нота над кожним листом).
+> **Склад:** **(A)** DMLS additive-manufacturing vendor-scoring matrix · **(B)** ESG vendor-screening checklist · **(C)** mutual CDA/NDA з ВНЗ-контрагентом. ⊕ Dispatch-листи: DMLS-бюро (EN; §A/§B як питання + інженерні питання трекера) · постачальник PEEK-мікротрубки лайнера шини (EN) · опромінювач ГІЛКИ A стерилізації (UA) · постачальник PTFE-мембрани катода (EN). Останні три — per-component, дім тимчасовий (нота над кожним листом).
 > **Статус:** 🟡 робочий артефакт (**НЕ канон**) — draft-шаблони під заповнення/юр-review, не заморожені специфікації.
 > **Усі числа/пороги — дзеркало канону або явний `PLACEHOLDER`**: сплав/метал-constraint → [`01_02 §1.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §1.7`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · гіроїд-геометрія/поруватість → [`01_01 §5`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_01 §6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · шина (канал Ø1.35 · лайнер · дріт · вхід каналу) → [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md), чиї числа мають власника в `tools/in_silico/cache/mechanical/bus_mechanical.json` і `tools/cad/cem/cathode_flange.json` · стерилізація й мембрана катода → [`01_04 §6`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §5`](../../01_04_CODIT_and_Xylemointegration.md) · procurement-constraint-доми → [`rfq_registry`](rfq_registry.md) §4.B · IP/NDA-постава → [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md). **Правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)).
 > **Розміщення:** артефакт живе в `docs/protocols/procurement/` поряд з [`rfq_registry`](rfq_registry.md) та RFQ-аркушами; canon-ID — relative-links за конвенцією [`rfq_registry §5`](rfq_registry.md).
@@ -193,7 +193,7 @@
 ---
 ---
 
-## C. Mutual CDA / NDA — ВНЗ-MoU (DRAFT)
+## C. Mutual CDA / NDA — ВНЗ-контрагент (DRAFT)
 
 > ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **UA-господарник (TBD, пʼята вакансія; вхід — Аблязов Д.Е., СЄУ)** + профільний IP-юрист — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
 > **Мета:** **mutual** confidentiality для першого документа співпраці з ВНЗ — вимір ЧДТУ (**UNI.10**) чи листи біо-хабу ЧНУ (HW.5 · HW.40); MoU не передумова (⚖️ 2026-10-12, [`00_02 §1`](../../00_02_Academic_Integration_and_IP.md)).

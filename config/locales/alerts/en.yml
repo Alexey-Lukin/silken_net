@@ -106,7 +106,7 @@ en:
         unassigned: Nobody has taken this alert yet
       sop:
         domain:
-          pending: 'The platform does not provide domain tactics for this alert type: they are being derived from current civil-protection guidance, and the text for this type is not written yet.'
+          pending: 'The platform does not provide domain tactics for this alert type: they will be derived from current civil-protection guidance; the text for this type is not written yet.'
           title: Domain tactics
         steps:
           acknowledge:

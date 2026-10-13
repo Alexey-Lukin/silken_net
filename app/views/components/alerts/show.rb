@@ -169,9 +169,8 @@ module Alerts
       )
     end
 
-    # Чесний порожній стан: називає ВІДСУТНІСТЬ джерела, не тимчасовість —
-    # «зачекайте» обіцяло б постачальника, якого немає (прецедент ARCH.103:
-    # порожнеча мусить мати голос і причину).
+    # Чесний порожній стан: тексту для типу ще немає, і названо джерело, з якого
+    # його виведуть (ARCH.31) — порожнеча мусить мати голос і причину (ARCH.103).
     def domain_placeholder
       div(class: "pt-4 border-t border-gaia-border") do
         h4(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { t(".sop.domain.title") }
