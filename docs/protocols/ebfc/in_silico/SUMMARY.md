@@ -938,12 +938,12 @@ down to L0 (force control). Readings: the capsule requirement (−40…85 °C) a
 55.0 °C from `71` for the canon finish α ≤ 0.5 — a lumped capsule mean); L0 at `88`'s band top, the ring never relaxing;
 the span 1.7 mm, a placeholder. The lug is a radial pin R1.5 on the groove's flat ledge — a line contact.
 
-| Squeeze | L0 (N) | Wall (mm), PEEK-dominated: lower bound · k = 1 · 3 · 10 N/µm, ±0.05 mm | Force-controlled wall, zero band (mm) | Line-contact p0 under the PEEK-dominated load (MPa) |
+| Squeeze | L0 (N) | Wall (mm), PEEK-dominated: lower bound · k = 1 · 3 · 10 N/µm, ±0.05 mm | Force-controlled wall, zero band (mm) | Line-contact p0 on the mean lug, PEEK-dominated load (MPa) |
 |---|---|---|---|---|
-| 19 % — window floor | 121 | 0.08 · 0.13 · 0.23 · 0.57 | 0.05 | 174–215 |
-| 24.5 % — nominal | 220 | 0.15 · 0.20 · 0.30 · 0.64 | 0.10 | 234–291 |
-| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.25 · 0.35 · 0.70 | 0.13 | 275–341 |
-| 30 % — window top | 411 | 0.28 · 0.33 · 0.42 · 0.77 | 0.18 | 320–397 |
+| 19 % — window floor | 121 | 0.08 · 0.13 · 0.23 · 0.57 | 0.05 | 215 |
+| 24.5 % — nominal | 220 | 0.15 · 0.20 · 0.30 · 0.64 | 0.10 | 291 |
+| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.25 · 0.35 · 0.70 | 0.13 | 341 |
+| 30 % — window top | 411 | 0.28 · 0.33 · 0.42 · 0.77 | 0.18 | 397 |
 
 **Verdict** — in a PEEK-dominated loop every N/µm adds **0.049** mm of wall at the window top with ±0.05 mm of
 interference (temperature is **11** % of it; with no tolerance **0.0055** mm, 0.0067 with a gradient), so such a loop
@@ -953,10 +953,11 @@ series fades the relaxation and the k-terms, and the load runs continuously down
 nothing. The force-controlled end is not cheap: inside the print floor its spring must be no stiffer than **0.42** N/µm
 with ±0.05 mm and zero force tolerance (≈ **1.0** mm of working deflection; 2.0 mm with ±0.10), its whole force band
 fits ±**5.3** % at the window top, and a soft clamp leaves the rim almost no stiffness against tipping. Separately, the
-radial-pin lug on a flat ledge peaks at **320–397** MPa at the window top (174–215 at the window floor; 258–320 at the
-top even under the force-controlled L0) against **167** MPa for first yield at the PEEK's tensile yield (the compressive
-yield is higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the
-PEEK-dominated load, and at the window top under either clamp. k, δ and the PEEK's share of the compliance are not
+radial-pin lug on a flat ledge (engaged 1.3 mm) peaks on the mean lug at **397** MPa at the window top (215 at the window
+floor; 320 at the top even under the force-controlled L0) against **167** MPa for first yield at the PEEK's tensile yield
+(the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across
+the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line
+contact is likely the loop's softest member, so removing it raises k. Unequal lugs carry more than the mean. k, δ and the PEEK's share of the compliance are not
 computed — the lug geometry and both Z tolerances are placeholders; the member went back to the founder (`02_02 §4.4`,
 `00_07` HW.33). (`mechanical/bayonet_thermal_clamp.json`)
 

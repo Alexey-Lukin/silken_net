@@ -2217,8 +2217,13 @@ def test_bayonet_thermal_clamp():
     assert top["force_controlled_wall_mm_zero_band"] < floor                        # force control fits the floor
     lc = inp["lug_line_contact"]
     assert lc["yield_onset_p0_pa"] == lc["yield_onset_ratio"] * lc["sigma_yield_peek_pa"]
-    assert lc["engaged_length_mm"]["cem_protrusion"] == json.loads(
-        (REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))["lug_protrusion_mm"]
+    ag = z52["applied_gland"]
+    assert abs(lc["engaged_length_mm"]["socket_pocket_minus_clearance"]
+               - (ag["socket_pocket_r_mm"][1] - ag["socket_pocket_r_mm"][0] - radome["slot_clearance_mm"])) <= 1e-3
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, E_PEEK_PA, NU_PEEK
+    ti = ALLOY_PROPERTIES[ALLOY_BASELINE]                                        # E* from lib, not from the cache
+    e_star = 1 / ((1 - NU_PEEK ** 2) / E_PEEK_PA + (1 - ti["nu"] ** 2) / (ti["E_GPa"] * 1e9))
+    assert abs(lc["e_star_pa"] / e_star - 1) <= 1e-3
     tr = top["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]
     assert tr["0.05"]["k_max_N_per_um"]["member_wall"] < tr["0.0"]["k_max_N_per_um"]["member_wall"]   # δ binds harder
     assert tr["0.05"]["thermal_share_of_slope"] < 0.5

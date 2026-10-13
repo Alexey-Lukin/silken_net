@@ -48,8 +48,7 @@
     "lug_line_contact": {
       "lug_radius_mm": 1.5,
       "engaged_length_mm": {
-        "socket_band_minus_clearance": 1.3,
-        "cem_protrusion": 2.0
+        "socket_pocket_minus_clearance": 1.3
       },
       "e_star_pa": 4585000000.0,
       "yield_onset_p0_pa": 167000000.0,
@@ -93,12 +92,10 @@
       },
       "lug_line_contact_p0_MPa": {
         "PEEK_dominated_minimum": {
-          "socket_band_minus_clearance": 215.0,
-          "cem_protrusion": 174.0
+          "socket_pocket_minus_clearance": 215.0
         },
         "force_controlled": {
-          "socket_band_minus_clearance": 174.0,
-          "cem_protrusion": 140.0
+          "socket_pocket_minus_clearance": 174.0
         }
       },
       "by_reading": {
@@ -499,12 +496,10 @@
       },
       "lug_line_contact_p0_MPa": {
         "PEEK_dominated_minimum": {
-          "socket_band_minus_clearance": 248.0,
-          "cem_protrusion": 200.0
+          "socket_pocket_minus_clearance": 248.0
         },
         "force_controlled": {
-          "socket_band_minus_clearance": 200.0,
-          "cem_protrusion": 161.0
+          "socket_pocket_minus_clearance": 200.0
         }
       },
       "by_reading": {
@@ -905,12 +900,10 @@
       },
       "lug_line_contact_p0_MPa": {
         "PEEK_dominated_minimum": {
-          "socket_band_minus_clearance": 291.0,
-          "cem_protrusion": 234.0
+          "socket_pocket_minus_clearance": 291.0
         },
         "force_controlled": {
-          "socket_band_minus_clearance": 234.0,
-          "cem_protrusion": 189.0
+          "socket_pocket_minus_clearance": 234.0
         }
       },
       "by_reading": {
@@ -1311,12 +1304,10 @@
       },
       "lug_line_contact_p0_MPa": {
         "PEEK_dominated_minimum": {
-          "socket_band_minus_clearance": 341.0,
-          "cem_protrusion": 275.0
+          "socket_pocket_minus_clearance": 341.0
         },
         "force_controlled": {
-          "socket_band_minus_clearance": 275.0,
-          "cem_protrusion": 221.0
+          "socket_pocket_minus_clearance": 275.0
         }
       },
       "by_reading": {
@@ -1717,12 +1708,10 @@
       },
       "lug_line_contact_p0_MPa": {
         "PEEK_dominated_minimum": {
-          "socket_band_minus_clearance": 397.0,
-          "cem_protrusion": 320.0
+          "socket_pocket_minus_clearance": 397.0
         },
         "force_controlled": {
-          "socket_band_minus_clearance": 320.0,
-          "cem_protrusion": 258.0
+          "socket_pocket_minus_clearance": 320.0
         }
       },
       "by_reading": {
@@ -2098,6 +2087,7 @@
     }
   },
   "missing_data": [
+    "unequal lug loads: each lug follows its own Z interference, so clamp/3 is the MEAN lug",
     "k: the lug contacts, the ledge, the lug's, collar's, flange disc's and boss ring's bending (FEA or bench; lug geometry placeholder, HW.8)",
     "δ: the tolerances of the lock-groove Z and the lug Z (neither specified)",
     "the ledge's local creep under contact stress above the PEEK yield",
@@ -2105,5 +2095,5 @@
     "the PEEK's share of the loop compliance (it sets how much of f applies)",
     "a compliant element's force tolerance and space, if the clamp is made force-controlled"
   ],
-  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so such a loop needs more than the ratified 0.28 mm for any k, which is its lower bound, not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified number is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure at the window top is 320–397 MPa (174–215 at the window floor; 258–320 at the window top even under the force-controlled L0) against 167 MPa for first yield of the PEEK at its tensile yield (the compressive yield is higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the PEEK-dominated load, and at the window top under either clamp. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4)."
+  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so such a loop needs more than the ratified 0.28 mm for any k, which is its lower bound, not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified number is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure on the mean lug is 397 MPa at the window top (215 at the window floor, 320 at the top even under the force-controlled L0) against 167 MPa for first yield at the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4)."
 }

@@ -1126,10 +1126,11 @@ CHECKS = [
            lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["working_deflection_mm_at_band_centre"], 0.05),
           ("SUMMARY force band", SUMMARY, rf"fits ±\*\*{N}\*\* %",
            lambda d: d ["by_squeeze_point"]["window_top"]["force_band_half_width_to_print_floor"] * 100, 0.05),
-          ("SUMMARY contact p0 low", SUMMARY, rf"peaks at \*\*{N}–[\d.]+\*\* MPa",
-           lambda d: min(d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"].values()), 0.5),
-          ("SUMMARY contact p0 high", SUMMARY, rf"peaks at \*\*[\d.]+–{N}\*\* MPa",
-           lambda d: max(d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"].values()), 0.5),
+          ("SUMMARY contact p0 top", SUMMARY, rf"peaks on the mean lug at \*\*{N}\*\* MPa at the window top",
+           lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5),
+          ("SUMMARY contact p0 floor", SUMMARY, rf"\({N} at the window\nfloor; ",
+           lambda d: d["by_squeeze_point"]["window_floor"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][
+               "socket_pocket_minus_clearance"], 0.5),
           ("SUMMARY yield onset", SUMMARY, rf"against \*\*{N}\*\* MPa for first yield",
            lambda d: d["inputs"]["lug_line_contact"]["yield_onset_p0_pa"] * 1e-6, 0.5),
           ("SUMMARY table floor k=3", SUMMARY, rf"\| 121 \| 0\.08 · 0\.13 · {N} · ",
@@ -1144,8 +1145,8 @@ CHECKS = [
            lambda d: d ["by_squeeze_point"]["window_top"]["force_controlled_wall_mm_zero_band"], 0.005),
           ("02_02 §4.4 spring stiffness", BLIND_MATE, rf"пружині треба k ≤ \*\*{N} Н/мкм\*\*",
            lambda d: d ["by_squeeze_point"]["window_top"]["spring_capsule_requirement"]["0.05"]["k_spring_max_N_per_um_zero_tolerance"], 0.006),
-          ("02_02 §4.4 contact p0 high", BLIND_MATE, rf"дає \*\*[\d.]+–{N} МПа\*\*",
-           lambda d: max(d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"].values()), 0.5))],
+          ("02_02 §4.4 contact p0 top", BLIND_MATE, rf"на верху вікна він дає \*\*{N} МПа\*\*",
+           lambda d: d ["by_squeeze_point"]["window_top"]["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]["socket_pocket_minus_clearance"], 0.5))],
     # ── HW.33 · HW.43 the O-ring's own reaction — Parker Figure 2-4 + Table 2-3 over 52's window (script 88, 2026-10-13) ──
     # ⛔ These numbers took the «generous» 100 N out of the role of an upper bound; a doc copy drifted off the cache would
     #    put the lug root's margin, or (A)'s margin, back on a number nobody computed.

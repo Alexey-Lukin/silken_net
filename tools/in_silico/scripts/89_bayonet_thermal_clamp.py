@@ -20,7 +20,8 @@ half-height lug radius + slot clearance around lock_groove_z, Radome.cs; lock_gr
 flange (02_02 §4.4, Assembly.RequiredLugZMm) — so the mismatch is (α_PEEK·ΔT_PEEK − α_Ti·ΔT_Ti)·L and, at one
 temperature, cold unloads the clamp and heat loads it; (3) the interference itself, whose tolerance δ moves the clamp by
 k·δ — the same k that turns the mismatch into force; (4) the three lug–ledge contacts (line contacts of the R1.5 lugs,
-above the PEEK yield at these loads, so the ledge creeps locally beyond `52`'s f), the lug's bending, the collar wall's
+past the PEEK's first yield at these loads — local creep expected, not computed; lugs sharing unequally), the lug's
+bending, the collar wall's
 bending under three eccentric loads (which also raises its stress beyond `73`'s pure shear), the flange disc's bending
 between the ledge contact and the collar root, and the boss ring's bending between the lugs under the ring's distributed
 lift (the rim can lift locally between lugs before C < L overall) — all in series or alongside, NOT computed; (5) the
@@ -141,11 +142,11 @@ def main() -> int:
         return S88.wall_for_force(rows73, force)
 
     # The lug is a radial pin (CathodeFlange.cs) on the groove's FLAT lower flank → a line contact.
-    flange = json.loads((RADOME_CEM.parent / "cathode_flange.json").read_text(encoding="utf-8"))
     lug_r = radome["lug_radius_mm"]
     band = ag["socket_pocket_r_mm"][1] - ag["socket_pocket_r_mm"][0]
-    engaged = {"socket_band_minus_clearance": round(band - radome["slot_clearance_mm"], 3),
-               "cem_protrusion": flange["lug_protrusion_mm"]}
+    # engaged length: the socket pocket minus one slot clearance — the lug protrudes ≤ 1.3 into the 1.6 pocket (02_02 §4.4);
+    # the flange CEM's 2.0 protrusion is a mid-disc placeholder that does not fit the pocket, so it is no reading
+    engaged = {"socket_pocket_minus_clearance": round(band - radome["slot_clearance_mm"], 3)}
     ti = ALLOY_PROPERTIES[ALLOY_BASELINE]
     e_star = 1.0 / ((1 - NU_PEEK ** 2) / E_PEEK_PA + (1 - ti["nu"] ** 2) / (ti["E_GPa"] * 1e9))     # Pa
     p0_yield = YIELD_ONSET_LINE_CONTACT * SIGMA_YIELD_PEEK_PA
@@ -215,9 +216,10 @@ def main() -> int:
     f5 = flo["by_reading"][key]["by_delta_mm"]["0.05"]
     tg = top["by_reading"]["capsule_requirement|gradient_bound"]["by_delta_mm"]["0.0"]
     sp = top["spring_capsule_requirement"]["0.05"]
-    pc_top = top["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]
-    pc_flo = flo["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]
-    pc_force = top["lug_line_contact_p0_MPa"]["force_controlled"]
+    ek = "socket_pocket_minus_clearance"
+    pc_top = top["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][ek]
+    pc_flo = flo["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"][ek]
+    pc_force = top["lug_line_contact_p0_MPa"]["force_controlled"][ek]
     verdict = (
         f"A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop "
         f"stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) "
@@ -233,11 +235,12 @@ def main() -> int:
         f"±0.05 mm and zero force tolerance (≈ {sp['working_deflection_mm_at_band_centre']:.1f} mm of working deflection), "
         f"its whole force band fits ±{top['force_band_half_width_to_print_floor'] * 100:.1f} %, and a soft clamp gives the "
         f"rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — "
-        f"whose peak pressure at the window top is {min(pc_top.values()):.0f}–{max(pc_top.values()):.0f} MPa "
-        f"({min(pc_flo.values()):.0f}–{max(pc_flo.values()):.0f} at the window floor; "
-        f"{min(pc_force.values()):.0f}–{max(pc_force.values()):.0f} at the window top even under the force-controlled L0) "
-        f"against {p0_yield * 1e-6:.0f} MPa for first yield of the PEEK at its tensile yield (the compressive yield is "
-        f"higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the PEEK-dominated load, and at the window top under either clamp. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to "
+        f"whose peak pressure on the mean lug is {pc_top:.0f} MPa at the window top ({pc_flo:.0f} at the window floor, "
+        f"{pc_force:.0f} at the top even under the force-controlled L0) against {p0_yield * 1e-6:.0f} MPa for first yield at "
+        f"the PEEK's tensile yield (the compressive yield is higher and not in the tree): it exceeds first yield — below "
+        f"the surface, contained — across the window, and local creep beyond `52`'s f is expected, not computed; a flat "
+        f"contact would remove that, but the line contact is likely the loop's softest member, so removing it raises k. "
+        f"With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to "
         f"k = {f5['k_max_N_per_um']['print_floor']:.2f} N/µm and at the nominal up to "
         f"{n5['k_max_N_per_um']['print_floor']:.2f}. k, δ and the PEEK's share of the compliance are not computed — the lug "
         f"geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4).")
@@ -279,7 +282,8 @@ def main() -> int:
                               "sits under the lugs (the load enters through three line contacts), so a ceiling and no "
                               "estimate of k"},
         "by_squeeze_point": points,
-        "missing_data": ["k: the lug contacts, the ledge, the lug's, collar's, flange disc's and boss ring's bending (FEA "
+        "missing_data": ["unequal lug loads: each lug follows its own Z interference, so clamp/3 is the MEAN lug",
+                         "k: the lug contacts, the ledge, the lug's, collar's, flange disc's and boss ring's bending (FEA "
                          "or bench; lug geometry placeholder, HW.8)",
                          "δ: the tolerances of the lock-groove Z and the lug Z (neither specified)",
                          "the ledge's local creep under contact stress above the PEEK yield",
