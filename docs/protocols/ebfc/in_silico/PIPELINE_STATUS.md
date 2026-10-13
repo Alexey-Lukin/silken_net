@@ -7,12 +7,12 @@
 
 ## Script Execution Status
 
-> **Running (since 2026-10-13):** `21e … b3lyp-relaxed-os3` — leg (3б) of [`00_07`](../../../00_07_Action_Plan_Tracker.md)
-> HW.5.IS: each point's Os(III) relaxed from its relaxed Os(II), dmbpy first, then ome and bpy. dmbpy landed 2026-10-13
-> (15 steps, 3.0 h + its single point; λ_III 86 meV) and its number decided trigger D — not a trigger (⚖️ founder
-> 2026-10-13, the dated note under D below); ome and bpy run on. The cache stays out of git until the last point lands.
-> Resumable: if the process dies, the same command skips a finished point and restarts a partial one from its saved
-> geometry. The previous one,
+> **Landed 2026-10-13, integration pending:** `21e … b3lyp-relaxed-os3` — leg (3б) of [`00_07`](../../../00_07_Action_Plan_Tracker.md)
+> HW.5.IS: each point's Os(III) relaxed from its relaxed Os(II) — dmbpy (15 steps; λ_III 86 meV), then ome (λ_III
+> 94 meV) and bpy (47 steps, 6.3 h; λ_III 110 meV); every single point lies within 1e-6 Ha of its last optimiser step,
+> and the cache is in git. dmbpy's number decided trigger D — not a trigger (⚖️ founder 2026-10-13, the dated note
+> under D below); the pairs with ome and bpy are judged by the same letter at the integration (`83` reads the cache's
+> `vs_vertical`; leg HW.5.IS), not in this banner. The previous one,
 > `b3lyp-relaxed-os2` (3a), is integrated (2026-10-12, read across all three measured series 2026-10-13: rows 21e · 83,
 > SUMMARY §Mediator limit (2), paper §2.3 · §3.3). Every other script below is complete or closed. Volatile
 > counts live here only (other docs link, not duplicate).
