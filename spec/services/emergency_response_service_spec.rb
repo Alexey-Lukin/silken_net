@@ -4,10 +4,6 @@
 require "rails_helper"
 
 RSpec.describe EmergencyResponseService do
-  before do
-    allow(ActuatorCommandWorker).to receive(:perform_async)
-  end
-
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
   let(:tree) { create(:tree, cluster: cluster) }
@@ -80,14 +76,13 @@ RSpec.describe EmergencyResponseService do
         .to change(ActuatorCommand, :count).by(6)
     end
 
-    it "does not push-enqueue the superseded worker (FW.60: доставку тягне poll Королеви)" do
+    it "leaves the commands :issued for the Queen's poll (FW.60: push-доставки немає)" do
       2.times { create(:actuator, :water_valve, gateway: gateway, state: :idle) }
 
       described_class.call(alert)
 
-      # Push-ретраї в CGNAT-діру fail!'или б команду ДО першого poll'а;
-      # створені команди (:issued) видимі poll-тракту через scope .pending
-      expect(ActuatorCommandWorker).not_to have_received(:perform_async)
+      # Створені команди (:issued) видимі poll-тракту через scope .pending; що push-джоби
+      # не існує, стереже пін у spec/workers/actuator_command_worker_spec.rb
       expect(ActuatorCommand.pending.count).to eq(4)
     end
   end

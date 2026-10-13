@@ -4,10 +4,6 @@
 require "rails_helper"
 
 RSpec.describe ActuatorCommand, type: :model do
-  before do
-    allow(ActuatorCommandWorker).to receive(:perform_async)
-  end
-
   let(:gateway) { create(:gateway, :online) }
   let(:actuator) { create(:actuator, gateway: gateway) }
 

@@ -86,7 +86,6 @@ class ActuatorCommand < ApplicationRecord
         self.error_message = reason.to_s.truncate(200) if reason.present?
       end
       # :failed → :failed дозволяє оновити error_message при повторному збої
-      # (напр. sidekiq_retries_exhausted після ручного fail з handle_failure)
       transitions from: [ :issued, :sent, :acknowledged, :confirmed, :failed ], to: :failed
     end
   end
@@ -319,7 +318,7 @@ class ActuatorCommand < ApplicationRecord
       record_forced_failure_audit!("actuator_not_ready")
       Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
     end
-    # [FW.60] Push-enqueue (ActuatorCommandWorker) superseded: команда чекає
+    # [FW.60] Push-доставки немає: команда чекає
     # в .pending — Королева забере її власним poll'ом після наступного флашу
     # (Downlink::PendingQueueService, пріоритет CMD найвищий). Push у
     # CGNAT-egress не лише не долітав — його швидкі ретраї fail!'или команду

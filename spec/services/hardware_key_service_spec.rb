@@ -525,14 +525,13 @@ RSpec.describe HardwareKeyService, type: :service do
   # з чужою арністю. Gateway-ротація тепер БД-only (доставка = re-provision).
   describe "key update downlink (post-FW.17)" do
     it "gateway rotation enqueues no downlink at all" do
-      allow(ActuatorCommandWorker).to receive(:perform_async)
       gateway = create(:gateway, :online, cluster: cluster, ip_address: "192.168.1.1")
       HardwareKey.create!(device_uid: gateway.uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
-      new_key = described_class.rotate(gateway.uid)
+      new_key = nil
+      expect { new_key = described_class.rotate(gateway.uid) }.not_to(change { Sidekiq::Queues["downlink"].size })
 
       expect(new_key).to be_present
-      expect(ActuatorCommandWorker).not_to have_received(:perform_async)
     end
   end
 

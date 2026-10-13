@@ -1101,7 +1101,7 @@ class TelemetryUnpackerService < ApplicationService
     # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
     # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.
     # Всередині транзакції EmergencyResponseService.call → ActuatorCommand.insert_all
-    # → ActuatorCommandWorker.perform_async — воркери потрапляли в Redis ДО commit.
+    # — джоби, поставлені звідти, потрапляли в Redis ДО commit.
     # При rollback TelemetryLog актуаторні команди вже в черзі, але записів немає.
     # EwsAlert не має FK до TelemetryLog, тому його створення поза транзакцією безпечне:
     # найгірший випадок — пропущений алерт (acceptable), а не phantom job (небезпечно).
