@@ -90,7 +90,7 @@ if payload_mismatches.positive?
   exit 1
 end
 if max_dz >= EPSILON
-  puts "❌ max|Δz| ≥ ε — ε=0.001 НЕ безпечний, дивись 03_04 §7.1 крок 6 (ARCH.18?)"
+  puts "❌ max|Δz| ≥ ε — ε=0.001 НЕ безпечний, дивись 03_04 §7.1 крок 6"
   exit 1
 end
 puts "✅ Gate L (статистична половина): ε=0.001 тримає; ARM-плече = 0 бітово (FW.55)"

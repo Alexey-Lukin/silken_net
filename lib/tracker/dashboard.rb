@@ -761,7 +761,8 @@ DOC_SECTION_REF   = %r{(\d\d_\d\d)(?:_[A-Za-z][A-Za-z0-9_]*)?(?:\.md)?`?\s*((?:�
     #     lives THERE, so the meta glyph is an honest forward-claim (BIZ.14);
     #   • a residual carrying NO explicit WHO glyph (e.g. a 🌿-led far-horizon line)
     #     — WHO is simply undeclared, so "that half is done" does not follow
-    #     (ARCH.18 / E.31 — both genuinely machine work, just far-horizon).
+    #     (its instances when written — ARCH.18 and E.31, both machine work, just far-horizon —
+    #     are both closed since: E.31 2026-09-29, ARCH.18 2026-10-13).
     # 🔴 CEILING, measured 2026-08-05 and materially WIDER after the three-glyph flip:
     # these exemptions silence 27 of 29 literal hits (they silenced far fewer while the
     # guard read one glyph). That is the honest price of "undetermined backs anything" —

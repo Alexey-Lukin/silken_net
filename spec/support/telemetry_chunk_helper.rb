@@ -5,8 +5,7 @@
 #
 # Auto-included for specs whose path matches `spec/**/*telemetry*` —
 # currently the TelemetryUnpackerService unit spec, the integration
-# pipeline spec, and any future telemetry-adjacent worker / model specs
-# (e.g. FW.45 fixed-point Q-format).
+# pipeline spec, and any future telemetry-adjacent worker / model specs.
 #
 # Why these helpers live in spec/support:
 #
