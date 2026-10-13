@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 295 · 16,852,331 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 295 · 16,860,627 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -122,12 +122,12 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/86_coaxiality_allocation.py` | `fba89766d003cfe1c28e92cbf8c14d16b68c63b9c2257031de4114db3550358b` | What a channel-to-root misalignment costs the bus root with a Soderberg mean-stress correction. |
 | `tools/in_silico/scripts/87_pogo_sway_transfer.py` | `895653fcabf239608bc699e1ac9358a120b7875e16b4fb840ec0fafef04a9e3a` | How trunk sway reaches the spring contact pins of the sensor capsule: a rim-friction condition, the inertia of the board stack and a Poisson term at the centre pad, from published stem-tilt data of a Scots pine. |
 | `tools/in_silico/scripts/88_oring_reaction_band.py` | `e08aa92d1cc67a6ab81754bdae245670e072ed4504ebf648d214e67617b30bf7` | The force an O-ring pushes back with when it is squeezed, from a seal maker's published chart, over the range of squeeze our tolerances allow, and what that force means for the bayonet lock and for the capsule staying put. |
-| `tools/in_silico/scripts/89_bayonet_thermal_clamp.py` | `2b0f8c862ab11d6567d6a9381dbd37fc4a701dab7e71912481731228491146cb` | How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured. |
+| `tools/in_silico/scripts/89_bayonet_thermal_clamp.py` | `e237c6e0fb47a1c8e7ccde5dfae53606e8ec2fedc8c1bc9492e92035857f9e4b` | How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the titanium collar must then be — as a function of how stiff the clamp is, which is still unmeasured. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `f11b84546c6d8797ea23f076925c5e57d53ca8e6364cd2ad01d8a6be5bd57534` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `32b7fe92fa1b5f6191144cef8afa41ca2e1ef662a5a299da055e11451b162898` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + Beratan-Onuchic tunnelling path. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `1fa6956b9acdb5c1fe80da672658f40ee4f07bea7321933abe3b726e8d632b92` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `05dfec549744c5dd0122b1af878734fdfd72efa85a0f4bd43b3a7cce3776d39b` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `b23c4293e7e7b75e66970614df2a62534784491bd6a7be43cd7174fd4bf0b237` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `45f0c6d191513b827947621acb094ae25407c5edbb124d07fdbd407ac3cd5a5c` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -231,7 +231,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.json` | `dac7658314bf1e37d92beaf31b4146e430617e9f78bb3f94c4365878882b75ea` | 15,304 |
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `50f53691c01e9960a36d2508299b4b3deabf3234f6eb444bf42331a7938d0ba8` | 110,967 |
 | `tools/in_silico/cache/mechanical/anchor_torque_path.json` | `c2752d18386c03bab9edb8256d42841edcb34e48aed038158da65ffcaa7d16b4` | 16,509 |
-| `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `9e59bc9801515dfb28ae495117bda5d21477886dc360f3f5dc73d9a003528c74` | 68,024 |
+| `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `59f60e1ae91c1baeab2c002fbb8c85f8b797254cbdeae0bea4cce70b39230e5e` | 69,962 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `69cba405183613e4b462f6e5ff7717f7eb49888d34186f7eac7e1dc775a44088` | 72,799 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `68de8e77fc683f471c2816bcf92f32922c97a3294ce61820d317646b7f0ac35c` | 234,387 |
 | `tools/in_silico/cache/mechanical/coaxiality_allocation.json` | `eab64258c6f4e38df440791f62bbef7a90b85479ff56b3d30eecd74ab28d3f5b` | 24,988 |

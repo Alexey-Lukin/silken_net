@@ -2172,8 +2172,25 @@ def test_bayonet_thermal_clamp():
     for name, p in d["by_squeeze_point"].items():
         l0 = p["lift_L0_N_at_band_top"]
         assert abs(l0 - b88["band"][name]["required_clamp_N_at_band_high"]["at_assembly"]) <= 1e-9, name
-        assert abs(p["force_controlled_lug_load_N"] - l0) <= 0.1 and abs(p["force_controlled_wall_mm"] - wall(l0)) <= 0.002
-        assert abs(p["deflection_controlled_k0_wall_mm"] - wall(l0 / f)) <= 0.002, name
+        assert abs(p["force_controlled_lug_load_N"] - l0) <= 0.1
+        assert abs(p["force_controlled_wall_mm_zero_band"] - wall(l0)) <= 0.002, name
+        assert abs(p["PEEK_dominated_lower_bound_wall_mm"] - wall(l0 / f)) <= 0.002, name
+        if cap > l0:
+            assert abs(p["force_band_half_width_to_print_floor"] - (cap - l0) / (cap + l0)) <= 0.001, name
+        req = p["by_reading"]["capsule_requirement|isothermal"]
+        for dstr, sp in p["spring_capsule_requirement"].items():
+            spread = 2 * float(dstr) * 1e3 + da["isothermal"] * span * 1e3 * (req["dT_cold_K"] + req["dT_hot_K"])
+            assert abs(sp["spread_um"] - spread) <= 0.01, (name, dstr)       # a spring does not relax: no f
+            if cap > l0:
+                ks = (cap - l0) / spread
+                assert abs(sp["k_spring_max_N_per_um_zero_tolerance"] - ks) <= 0.002, (name, dstr)
+                assert abs(sp["working_deflection_mm_at_band_centre"] - (cap + l0) / 2 / ks * 1e-3) <= 0.01
+        lc = inp["lug_line_contact"]
+        for lk, load in (("PEEK_dominated_minimum", l0 / f), ("force_controlled", l0)):
+            for ek, length in lc["engaged_length_mm"].items():
+                fl = load / radome["bayonet_lugs"] / (length * 1e-3)
+                p0 = math.sqrt(fl * lc["e_star_pa"] / (math.pi * lc["lug_radius_mm"] * 1e-3)) * 1e-6
+                assert abs(p["lug_line_contact_p0_MPa"][lk][ek] / p0 - 1) <= 0.005, (name, lk, ek)
         for rkey, r in p["by_reading"].items():
             rname, aname = rkey.split("|")
             dtc, dth = t_asm - temps[rname][0], temps[rname][1] - t_asm
@@ -2196,8 +2213,12 @@ def test_bayonet_thermal_clamp():
                     if got is not None:
                         assert abs(got - want) <= 0.002, (name, rkey, dstr, wkey)
     top = d["by_squeeze_point"]["window_top"]
-    assert abs(top["deflection_controlled_k0_wall_mm"] - member) <= 0.002          # the member is the k = 0 end
-    assert top["force_controlled_wall_mm"] < floor                                  # force control fits the floor
+    assert abs(top["PEEK_dominated_lower_bound_wall_mm"] - member) <= 0.002   # the member is the PEEK-dominated floor
+    assert top["force_controlled_wall_mm_zero_band"] < floor                        # force control fits the floor
+    lc = inp["lug_line_contact"]
+    assert lc["yield_onset_p0_pa"] == lc["yield_onset_ratio"] * lc["sigma_yield_peek_pa"]
+    assert lc["engaged_length_mm"]["cem_protrusion"] == json.loads(
+        (REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))["lug_protrusion_mm"]
     tr = top["by_reading"]["capsule_requirement|isothermal"]["by_delta_mm"]
     assert tr["0.05"]["k_max_N_per_um"]["member_wall"] < tr["0.0"]["k_max_N_per_um"]["member_wall"]   # δ binds harder
     assert tr["0.05"]["thermal_share_of_slope"] < 0.5

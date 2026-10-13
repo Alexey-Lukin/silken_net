@@ -911,7 +911,7 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 the chain `52` models once the ring has lost about 2 % of its reaction, and at the window top only if it has lost about
 23 % by year 2 and about 28 % already by year 5; a ring that never relaxes binds the lug from 27.1 % (26.8–27.5 % over the transcription — the source cannot tell
 it from the chain's top), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top
-against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found that no clamp loop reaches it, so it went back to the founder). From below, the ring starts at no less than 58 N at the
+against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; script 89 ↓ found it is the lower bound of a PEEK-dominated loop and a point on a curve of an unmeasured stiffness, so it went back to the founder). From below, the ring starts at no less than 58 N at the
 floor: (A) holds 5.5× with a clamp at the form `52` prints for the ring's own reaction; a weaker clamp can let the rim
 lift, and (A) is then judged on the ring keeping 18 % of that floor for 20 years (a lift taken as not undone). The margins say whether a bayonet that meets the
 requirement can exist; the lug carries the clamp it actually delivers. NOT modelled: the compound's own curve and its
@@ -929,32 +929,36 @@ Canon home → [`02_02 §4.4`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md) 
 The bayonet is deflection-controlled: the clamp is the elastic squeeze of the loop lug → groove ledge → radome → rim →
 flange face → collar, C = k·(interference). Two displacements move it through the same loop stiffness k: the TOLERANCE
 of the interference (±δ — the lock-groove Z and the lug Z, neither specified; read at 0 · 0.05 — the class the shop is
-asked for the groove depth — · 0.10 mm) and TEMPERATURE (the PEEK sits between two Ti faces over one span, so cold
-unloads the clamp and heat loads the lug; a Ti–PEEK gradient makes it worse). In a PEEK-dominated loop, where the PEEK
-relaxes by `52`'s f and the summer increment relaxes too before the winter, the lug must carry
-L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)], and the wall follows `73`'s linear shear. Readings: the capsule
-requirement (−40…85 °C) and the models' edges (−33.5 °C from `81`; 55.0 °C from `71` for the canon finish α ≤ 0.5 — a
-lumped capsule mean), assembly at 20 °C; L0 at `88`'s band top, the ring never relaxing; the span 1.7 mm, a placeholder.
+asked for a machined groove depth, borrowed for one Z dimension — · 0.10 mm, both summed; the face flatness of `52` is in
+neither) and TEMPERATURE (the PEEK sits between two Ti faces over one span, so cold unloads the clamp and heat loads the
+lug; a Ti–PEEK gradient makes it worse). In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by `52`'s f, the summer
+increment relaxing too before the winter) the lug must carry L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; a
+spring in series makes f_eff = f/(f + φ(1 − f)) with φ the PEEK's share of the compliance, so the load runs continuously
+down to L0 (force control). Readings: the capsule requirement (−40…85 °C) and the models' edges (−33.5 °C from `81`;
+55.0 °C from `71` for the canon finish α ≤ 0.5 — a lumped capsule mean); L0 at `88`'s band top, the ring never relaxing;
+the span 1.7 mm, a placeholder. The lug is a radial pin R1.5 on the groove's flat ledge — a line contact.
 
-| Squeeze | L0 (N) | Wall (mm) at k = 0 · 1 · 3 · 10 N/µm, ±0.05 mm | k the print floor carries, ±0.05 mm | Force-controlled wall (mm) |
+| Squeeze | L0 (N) | Wall (mm), PEEK-dominated: lower bound · k = 1 · 3 · 10 N/µm, ±0.05 mm | Force-controlled wall, zero band (mm) | Line-contact p0 under the PEEK-dominated load (MPa) |
 |---|---|---|---|---|
-| 19 % — window floor | 121 | 0.08 · 0.13 · 0.23 · 0.57 | 2.41 N/µm | 0.05 |
-| 24.5 % — nominal | 220 | 0.15 · 0.20 · 0.30 · 0.64 | 1.05 N/µm | 0.10 |
-| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.25 · 0.35 · 0.70 | none | 0.13 |
-| 30 % — window top | 411 | 0.28 · 0.33 · 0.42 · 0.77 | none | 0.18 |
+| 19 % — window floor | 121 | 0.08 · 0.13 · 0.23 · 0.57 | 0.05 | 174–215 |
+| 24.5 % — nominal | 220 | 0.15 · 0.20 · 0.30 · 0.64 | 0.10 | 234–291 |
+| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.25 · 0.35 · 0.70 | 0.13 | 275–341 |
+| 30 % — window top | 411 | 0.28 · 0.33 · 0.42 · 0.77 | 0.18 | 320–397 |
 
-**Verdict** — with ±0.05 mm of interference every N/µm of loop stiffness adds **0.049** mm of wall at the window top
-(temperature is **11** % of it; with no tolerance **0.0055** mm, 0.0067 with a Ti–PEEK gradient). The ratified 0.28 mm
-is that form's k = 0 end, and that end is no loop: a loop soft enough for the k-terms to vanish is no longer
-PEEK-dominated, so the relaxation stops applying too, and its limit is a FORCE-controlled clamp — a compliant element
-whose stroke absorbs the tolerance, temperature and creep — where the lug carries L0: **411** N at the window top, a
-**0.18** mm wall inside the print floor, if the element's force tolerance stays within **11** %. So no loop reaches the
-ratified number: a PEEK-dominated one stiffer than **6** N/mm (±0.05) or 51 N/mm (temperature alone) needs more, a
-spring-dominated one less — the member goes back to the founder (`02_02 §4.4`, `00_07` HW.33). k, δ and the PEEK's
-share of the compliance are not computed: the lug contacts (line contacts above the PEEK yield, so the ledge creeps
-locally), the lug's, collar's, flange disc's and boss ring's bending, and both Z tolerances are placeholders. NOT
-modelled either: the PEEK at the sunlit base, the ring's force below room temperature, resin swell, ratcheting beyond
-one summer. (`mechanical/bayonet_thermal_clamp.json`)
+**Verdict** — in a PEEK-dominated loop every N/µm adds **0.049** mm of wall at the window top with ±0.05 mm of
+interference (temperature is **11** % of it; with no tolerance **0.0055** mm, 0.0067 with a gradient), so such a loop
+needs more than the ratified 0.28 mm for any k — that number is its lower bound, not an estimate. A compliant element in
+series fades the relaxation and the k-terms, and the load runs continuously down to L0 — **411** N at the window top, a
+**0.18** mm wall with a zero force band — so the ratified number is one point on a curve of an unmeasured k, bounding
+nothing. The force-controlled end is not cheap: inside the print floor its spring must be no stiffer than **0.42** N/µm
+with ±0.05 mm and zero force tolerance (≈ **1.0** mm of working deflection; 2.0 mm with ±0.10), its whole force band
+fits ±**5.3** % at the window top, and a soft clamp leaves the rim almost no stiffness against tipping. Separately, the
+radial-pin lug on a flat ledge peaks at **320–397** MPa at the window top (174–215 at the window floor; 258–320 at the
+top even under the force-controlled L0) against **167** MPa for first yield at the PEEK's tensile yield (the compressive
+yield is higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the
+PEEK-dominated load, and at the window top under either clamp. k, δ and the PEEK's share of the compliance are not
+computed — the lug geometry and both Z tolerances are placeholders; the member went back to the founder (`02_02 §4.4`,
+`00_07` HW.33). (`mechanical/bayonet_thermal_clamp.json`)
 
 ---
 

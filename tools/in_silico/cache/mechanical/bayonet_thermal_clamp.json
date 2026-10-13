@@ -1,6 +1,6 @@
 {
   "question": "How the bayonet clamp spreads with its interference tolerance and temperature, and the collar wall its lug load then needs — the number of the conditional root-package member (02_02 §4.4).",
-  "form": "PEEK-dominated loop: cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; spring-dominated (force-controlled) limit: L0; a real loop lies between, by the PEEK's share of its compliance",
+  "form": "PEEK-dominated loop (k = k_PEEK): cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; a series spring makes f_eff = f/(f + φ(1 − f)), φ = k/k_PEEK, so the load runs continuously to the force-controlled L0 (plus k_s·spread)",
   "assumptions": [
     "the loop at the capsule's temperature — NOT conservative; the gradient-bound reading takes α_PEEK alone",
     "relaxation acts on the mechanical clamp; the summer thermal increment relaxes too before the winter (one summer)",
@@ -44,6 +44,17 @@
       "socket_band_annulus": 126.6,
       "rim_contact": 189.1,
       "boss_section": 358.4
+    },
+    "lug_line_contact": {
+      "lug_radius_mm": 1.5,
+      "engaged_length_mm": {
+        "socket_band_minus_clearance": 1.3,
+        "cem_protrusion": 2.0
+      },
+      "e_star_pa": 4585000000.0,
+      "yield_onset_p0_pa": 167000000.0,
+      "yield_onset_ratio": 1.67,
+      "sigma_yield_peek_pa": 100000000.0
     }
   },
   "peek_column": {
@@ -58,10 +69,38 @@
     "window_floor": {
       "squeeze_pct": 19.0,
       "lift_L0_N_at_band_top": 120.8,
-      "deflection_controlled_k0_lug_load_N": 185.8,
-      "deflection_controlled_k0_wall_mm": 0.081,
+      "PEEK_dominated_lower_bound_lug_load_N": 185.8,
+      "PEEK_dominated_lower_bound_wall_mm": 0.081,
       "force_controlled_lug_load_N": 120.8,
-      "force_controlled_wall_mm": 0.053,
+      "force_controlled_wall_mm_zero_band": 0.053,
+      "force_band_half_width_to_print_floor": 0.582,
+      "spring_capsule_requirement": {
+        "0.0": {
+          "spread_um": 8.16,
+          "k_spring_max_N_per_um_zero_tolerance": 41.201,
+          "working_deflection_mm_at_band_centre": 0.01
+        },
+        "0.05": {
+          "spread_um": 108.16,
+          "k_spring_max_N_per_um_zero_tolerance": 3.108,
+          "working_deflection_mm_at_band_centre": 0.09
+        },
+        "0.1": {
+          "spread_um": 208.16,
+          "k_spring_max_N_per_um_zero_tolerance": 1.615,
+          "working_deflection_mm_at_band_centre": 0.18
+        }
+      },
+      "lug_line_contact_p0_MPa": {
+        "PEEK_dominated_minimum": {
+          "socket_band_minus_clearance": 215.0,
+          "cem_protrusion": 174.0
+        },
+        "force_controlled": {
+          "socket_band_minus_clearance": 174.0,
+          "cem_protrusion": 140.0
+        }
+      },
       "by_reading": {
         "capsule_requirement|isothermal": {
           "dT_cold_K": 60.0,
@@ -73,7 +112,6 @@
               "slope_um": 12.55,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 189.6,
                 "1.0": 198.4,
                 "3.0": 223.5,
@@ -81,7 +119,6 @@
                 "30.0": 562.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.083,
                 "1.0": 0.087,
                 "3.0": 0.098,
@@ -103,7 +140,6 @@
               "slope_um": 112.55,
               "thermal_share_of_slope": 0.112,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 219.6,
                 "1.0": 298.4,
                 "3.0": 523.5,
@@ -111,7 +147,6 @@
                 "30.0": 3562.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.096,
                 "1.0": 0.131,
                 "3.0": 0.229,
@@ -133,7 +168,6 @@
               "slope_um": 212.55,
               "thermal_share_of_slope": 0.059,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 249.6,
                 "1.0": 398.4,
                 "3.0": 823.5,
@@ -141,7 +175,6 @@
                 "30.0": 6562.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.109,
                 "1.0": 0.174,
                 "3.0": 0.36,
@@ -171,7 +204,6 @@
               "slope_um": 15.37,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 190.5,
                 "1.0": 201.2,
                 "3.0": 231.9,
@@ -179,7 +211,6 @@
                 "30.0": 646.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.083,
                 "1.0": 0.088,
                 "3.0": 0.102,
@@ -201,7 +232,6 @@
               "slope_um": 115.37,
               "thermal_share_of_slope": 0.133,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 220.5,
                 "1.0": 301.2,
                 "3.0": 531.9,
@@ -209,7 +239,6 @@
                 "30.0": 3646.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.096,
                 "1.0": 0.132,
                 "3.0": 0.233,
@@ -231,7 +260,6 @@
               "slope_um": 215.37,
               "thermal_share_of_slope": 0.071,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 250.5,
                 "1.0": 401.2,
                 "3.0": 831.9,
@@ -239,7 +267,6 @@
                 "30.0": 6646.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.11,
                 "1.0": 0.176,
                 "3.0": 0.364,
@@ -269,7 +296,6 @@
               "slope_um": 8.89,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 188.5,
                 "1.0": 194.7,
                 "3.0": 212.5,
@@ -277,7 +303,6 @@
                 "30.0": 452.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.083,
                 "1.0": 0.085,
                 "3.0": 0.093,
@@ -299,7 +324,6 @@
               "slope_um": 108.89,
               "thermal_share_of_slope": 0.082,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 218.5,
                 "1.0": 294.7,
                 "3.0": 512.5,
@@ -307,7 +331,6 @@
                 "30.0": 3452.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.096,
                 "1.0": 0.129,
                 "3.0": 0.224,
@@ -329,7 +352,6 @@
               "slope_um": 208.89,
               "thermal_share_of_slope": 0.043,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 248.5,
                 "1.0": 394.7,
                 "3.0": 812.5,
@@ -337,7 +359,6 @@
                 "30.0": 6452.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.109,
                 "1.0": 0.173,
                 "3.0": 0.355,
@@ -367,7 +388,6 @@
               "slope_um": 10.88,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 189.1,
                 "1.0": 196.7,
                 "3.0": 218.5,
@@ -375,7 +395,6 @@
                 "30.0": 512.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.083,
                 "1.0": 0.086,
                 "3.0": 0.096,
@@ -397,7 +416,6 @@
               "slope_um": 110.88,
               "thermal_share_of_slope": 0.098,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 219.1,
                 "1.0": 296.7,
                 "3.0": 518.5,
@@ -405,7 +423,6 @@
                 "30.0": 3512.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.096,
                 "1.0": 0.13,
                 "3.0": 0.227,
@@ -427,7 +444,6 @@
               "slope_um": 210.88,
               "thermal_share_of_slope": 0.052,
               "lug_load_N_by_k": {
-                "0.0": 185.8,
                 "0.3": 249.1,
                 "1.0": 396.7,
                 "3.0": 818.5,
@@ -435,7 +451,6 @@
                 "30.0": 6512.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.081,
                 "0.3": 0.109,
                 "1.0": 0.174,
                 "3.0": 0.358,
@@ -460,10 +475,38 @@
     "chain_low": {
       "squeeze_pct": 21.7,
       "lift_L0_N_at_band_top": 160.3,
-      "deflection_controlled_k0_lug_load_N": 246.6,
-      "deflection_controlled_k0_wall_mm": 0.108,
+      "PEEK_dominated_lower_bound_lug_load_N": 246.6,
+      "PEEK_dominated_lower_bound_wall_mm": 0.108,
       "force_controlled_lug_load_N": 160.3,
-      "force_controlled_wall_mm": 0.07,
+      "force_controlled_wall_mm_zero_band": 0.07,
+      "force_band_half_width_to_print_floor": 0.481,
+      "spring_capsule_requirement": {
+        "0.0": {
+          "spread_um": 8.16,
+          "k_spring_max_N_per_um_zero_tolerance": 36.36,
+          "working_deflection_mm_at_band_centre": 0.01
+        },
+        "0.05": {
+          "spread_um": 108.16,
+          "k_spring_max_N_per_um_zero_tolerance": 2.743,
+          "working_deflection_mm_at_band_centre": 0.11
+        },
+        "0.1": {
+          "spread_um": 208.16,
+          "k_spring_max_N_per_um_zero_tolerance": 1.425,
+          "working_deflection_mm_at_band_centre": 0.22
+        }
+      },
+      "lug_line_contact_p0_MPa": {
+        "PEEK_dominated_minimum": {
+          "socket_band_minus_clearance": 248.0,
+          "cem_protrusion": 200.0
+        },
+        "force_controlled": {
+          "socket_band_minus_clearance": 200.0,
+          "cem_protrusion": 161.0
+        }
+      },
       "by_reading": {
         "capsule_requirement|isothermal": {
           "dT_cold_K": 60.0,
@@ -475,7 +518,6 @@
               "slope_um": 12.55,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 250.4,
                 "1.0": 259.2,
                 "3.0": 284.3,
@@ -483,7 +525,6 @@
                 "30.0": 623.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.11,
                 "1.0": 0.113,
                 "3.0": 0.124,
@@ -505,7 +546,6 @@
               "slope_um": 112.55,
               "thermal_share_of_slope": 0.112,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 280.4,
                 "1.0": 359.2,
                 "3.0": 584.3,
@@ -513,7 +553,6 @@
                 "30.0": 3623.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.123,
                 "1.0": 0.157,
                 "3.0": 0.256,
@@ -535,7 +574,6 @@
               "slope_um": 212.55,
               "thermal_share_of_slope": 0.059,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 310.4,
                 "1.0": 459.2,
                 "3.0": 884.3,
@@ -543,7 +581,6 @@
                 "30.0": 6623.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.136,
                 "1.0": 0.201,
                 "3.0": 0.387,
@@ -573,7 +610,6 @@
               "slope_um": 15.37,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 251.2,
                 "1.0": 262.0,
                 "3.0": 292.7,
@@ -581,7 +617,6 @@
                 "30.0": 707.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.11,
                 "1.0": 0.115,
                 "3.0": 0.128,
@@ -603,7 +638,6 @@
               "slope_um": 115.37,
               "thermal_share_of_slope": 0.133,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 281.2,
                 "1.0": 362.0,
                 "3.0": 592.7,
@@ -611,7 +645,6 @@
                 "30.0": 3707.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.123,
                 "1.0": 0.158,
                 "3.0": 0.259,
@@ -633,7 +666,6 @@
               "slope_um": 215.37,
               "thermal_share_of_slope": 0.071,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 311.2,
                 "1.0": 462.0,
                 "3.0": 892.7,
@@ -641,7 +673,6 @@
                 "30.0": 6707.6
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.136,
                 "1.0": 0.202,
                 "3.0": 0.39,
@@ -671,7 +702,6 @@
               "slope_um": 8.89,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 249.3,
                 "1.0": 255.5,
                 "3.0": 273.3,
@@ -679,7 +709,6 @@
                 "30.0": 513.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.109,
                 "1.0": 0.112,
                 "3.0": 0.12,
@@ -701,7 +730,6 @@
               "slope_um": 108.89,
               "thermal_share_of_slope": 0.082,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 279.3,
                 "1.0": 355.5,
                 "3.0": 573.3,
@@ -709,7 +737,6 @@
                 "30.0": 3513.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.122,
                 "1.0": 0.156,
                 "3.0": 0.251,
@@ -731,7 +758,6 @@
               "slope_um": 208.89,
               "thermal_share_of_slope": 0.043,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 309.3,
                 "1.0": 455.5,
                 "3.0": 873.3,
@@ -739,7 +765,6 @@
                 "30.0": 6513.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.135,
                 "1.0": 0.199,
                 "3.0": 0.382,
@@ -769,7 +794,6 @@
               "slope_um": 10.88,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 249.9,
                 "1.0": 257.5,
                 "3.0": 279.3,
@@ -777,7 +801,6 @@
                 "30.0": 573.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.109,
                 "1.0": 0.113,
                 "3.0": 0.122,
@@ -799,7 +822,6 @@
               "slope_um": 110.88,
               "thermal_share_of_slope": 0.098,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 279.9,
                 "1.0": 357.5,
                 "3.0": 579.3,
@@ -807,7 +829,6 @@
                 "30.0": 3573.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.122,
                 "1.0": 0.156,
                 "3.0": 0.253,
@@ -829,7 +850,6 @@
               "slope_um": 210.88,
               "thermal_share_of_slope": 0.052,
               "lug_load_N_by_k": {
-                "0.0": 246.6,
                 "0.3": 309.9,
                 "1.0": 457.5,
                 "3.0": 879.3,
@@ -837,7 +857,6 @@
                 "30.0": 6573.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.108,
                 "0.3": 0.136,
                 "1.0": 0.2,
                 "3.0": 0.385,
@@ -862,10 +881,38 @@
     "nominal": {
       "squeeze_pct": 24.5,
       "lift_L0_N_at_band_top": 220.0,
-      "deflection_controlled_k0_lug_load_N": 338.5,
-      "deflection_controlled_k0_wall_mm": 0.148,
+      "PEEK_dominated_lower_bound_lug_load_N": 338.5,
+      "PEEK_dominated_lower_bound_wall_mm": 0.148,
       "force_controlled_lug_load_N": 220.0,
-      "force_controlled_wall_mm": 0.096,
+      "force_controlled_wall_mm_zero_band": 0.096,
+      "force_band_half_width_to_print_floor": 0.35,
+      "spring_capsule_requirement": {
+        "0.0": {
+          "spread_um": 8.16,
+          "k_spring_max_N_per_um_zero_tolerance": 29.044,
+          "working_deflection_mm_at_band_centre": 0.01
+        },
+        "0.05": {
+          "spread_um": 108.16,
+          "k_spring_max_N_per_um_zero_tolerance": 2.191,
+          "working_deflection_mm_at_band_centre": 0.15
+        },
+        "0.1": {
+          "spread_um": 208.16,
+          "k_spring_max_N_per_um_zero_tolerance": 1.139,
+          "working_deflection_mm_at_band_centre": 0.3
+        }
+      },
+      "lug_line_contact_p0_MPa": {
+        "PEEK_dominated_minimum": {
+          "socket_band_minus_clearance": 291.0,
+          "cem_protrusion": 234.0
+        },
+        "force_controlled": {
+          "socket_band_minus_clearance": 234.0,
+          "cem_protrusion": 189.0
+        }
+      },
       "by_reading": {
         "capsule_requirement|isothermal": {
           "dT_cold_K": 60.0,
@@ -877,7 +924,6 @@
               "slope_um": 12.55,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 342.2,
                 "1.0": 351.0,
                 "3.0": 376.1,
@@ -885,7 +931,6 @@
                 "30.0": 715.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.15,
                 "1.0": 0.154,
                 "3.0": 0.165,
@@ -907,7 +952,6 @@
               "slope_um": 112.55,
               "thermal_share_of_slope": 0.112,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 372.2,
                 "1.0": 451.0,
                 "3.0": 676.1,
@@ -915,7 +959,6 @@
                 "30.0": 3715.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.163,
                 "1.0": 0.197,
                 "3.0": 0.296,
@@ -937,7 +980,6 @@
               "slope_um": 212.55,
               "thermal_share_of_slope": 0.059,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 402.2,
                 "1.0": 551.0,
                 "3.0": 976.1,
@@ -945,7 +987,6 @@
                 "30.0": 6715.1
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.176,
                 "1.0": 0.241,
                 "3.0": 0.427,
@@ -975,7 +1016,6 @@
               "slope_um": 15.37,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 343.1,
                 "1.0": 353.8,
                 "3.0": 384.6,
@@ -983,7 +1023,6 @@
                 "30.0": 799.4
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.15,
                 "1.0": 0.155,
                 "3.0": 0.168,
@@ -1005,7 +1044,6 @@
               "slope_um": 115.37,
               "thermal_share_of_slope": 0.133,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 373.1,
                 "1.0": 453.8,
                 "3.0": 684.6,
@@ -1013,7 +1051,6 @@
                 "30.0": 3799.4
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.163,
                 "1.0": 0.199,
                 "3.0": 0.299,
@@ -1035,7 +1072,6 @@
               "slope_um": 215.37,
               "thermal_share_of_slope": 0.071,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 403.1,
                 "1.0": 553.8,
                 "3.0": 984.6,
@@ -1043,7 +1079,6 @@
                 "30.0": 6799.4
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.176,
                 "1.0": 0.242,
                 "3.0": 0.431,
@@ -1073,7 +1108,6 @@
               "slope_um": 8.89,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 341.1,
                 "1.0": 347.4,
                 "3.0": 365.1,
@@ -1081,7 +1115,6 @@
                 "30.0": 605.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.149,
                 "1.0": 0.152,
                 "3.0": 0.16,
@@ -1103,7 +1136,6 @@
               "slope_um": 108.89,
               "thermal_share_of_slope": 0.082,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 371.1,
                 "1.0": 447.4,
                 "3.0": 665.1,
@@ -1111,7 +1143,6 @@
                 "30.0": 3605.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.162,
                 "1.0": 0.196,
                 "3.0": 0.291,
@@ -1133,7 +1164,6 @@
               "slope_um": 208.89,
               "thermal_share_of_slope": 0.043,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 401.1,
                 "1.0": 547.4,
                 "3.0": 965.1,
@@ -1141,7 +1171,6 @@
                 "30.0": 6605.2
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.176,
                 "1.0": 0.239,
                 "3.0": 0.422,
@@ -1171,7 +1200,6 @@
               "slope_um": 10.88,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 341.7,
                 "1.0": 349.3,
                 "3.0": 371.1,
@@ -1179,7 +1207,6 @@
                 "30.0": 664.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.15,
                 "1.0": 0.153,
                 "3.0": 0.162,
@@ -1201,7 +1228,6 @@
               "slope_um": 110.88,
               "thermal_share_of_slope": 0.098,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 371.7,
                 "1.0": 449.3,
                 "3.0": 671.1,
@@ -1209,7 +1235,6 @@
                 "30.0": 3664.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.163,
                 "1.0": 0.197,
                 "3.0": 0.293,
@@ -1231,7 +1256,6 @@
               "slope_um": 210.88,
               "thermal_share_of_slope": 0.052,
               "lug_load_N_by_k": {
-                "0.0": 338.5,
                 "0.3": 401.7,
                 "1.0": 549.3,
                 "3.0": 971.1,
@@ -1239,7 +1263,6 @@
                 "30.0": 6664.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.148,
                 "0.3": 0.176,
                 "1.0": 0.24,
                 "3.0": 0.425,
@@ -1264,10 +1287,38 @@
     "chain_high": {
       "squeeze_pct": 27.3,
       "lift_L0_N_at_band_top": 302.3,
-      "deflection_controlled_k0_lug_load_N": 465.1,
-      "deflection_controlled_k0_wall_mm": 0.204,
+      "PEEK_dominated_lower_bound_lug_load_N": 465.1,
+      "PEEK_dominated_lower_bound_wall_mm": 0.204,
       "force_controlled_lug_load_N": 302.3,
-      "force_controlled_wall_mm": 0.132,
+      "force_controlled_wall_mm_zero_band": 0.132,
+      "force_band_half_width_to_print_floor": 0.204,
+      "spring_capsule_requirement": {
+        "0.0": {
+          "spread_um": 8.16,
+          "k_spring_max_N_per_um_zero_tolerance": 18.958,
+          "working_deflection_mm_at_band_centre": 0.02
+        },
+        "0.05": {
+          "spread_um": 108.16,
+          "k_spring_max_N_per_um_zero_tolerance": 1.43,
+          "working_deflection_mm_at_band_centre": 0.27
+        },
+        "0.1": {
+          "spread_um": 208.16,
+          "k_spring_max_N_per_um_zero_tolerance": 0.743,
+          "working_deflection_mm_at_band_centre": 0.51
+        }
+      },
+      "lug_line_contact_p0_MPa": {
+        "PEEK_dominated_minimum": {
+          "socket_band_minus_clearance": 341.0,
+          "cem_protrusion": 275.0
+        },
+        "force_controlled": {
+          "socket_band_minus_clearance": 275.0,
+          "cem_protrusion": 221.0
+        }
+      },
       "by_reading": {
         "capsule_requirement|isothermal": {
           "dT_cold_K": 60.0,
@@ -1279,7 +1330,6 @@
               "slope_um": 12.55,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 468.8,
                 "1.0": 477.6,
                 "3.0": 502.7,
@@ -1287,7 +1337,6 @@
                 "30.0": 841.7
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.205,
                 "1.0": 0.209,
                 "3.0": 0.22,
@@ -1309,7 +1358,6 @@
               "slope_um": 112.55,
               "thermal_share_of_slope": 0.112,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 498.8,
                 "1.0": 577.6,
                 "3.0": 802.7,
@@ -1317,7 +1365,6 @@
                 "30.0": 3841.7
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.218,
                 "1.0": 0.253,
                 "3.0": 0.351,
@@ -1339,7 +1386,6 @@
               "slope_um": 212.55,
               "thermal_share_of_slope": 0.059,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 528.8,
                 "1.0": 677.6,
                 "3.0": 1102.7,
@@ -1347,7 +1393,6 @@
                 "30.0": 6841.7
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.231,
                 "1.0": 0.296,
                 "3.0": 0.482,
@@ -1377,7 +1422,6 @@
               "slope_um": 15.37,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 469.7,
                 "1.0": 480.4,
                 "3.0": 511.2,
@@ -1385,7 +1429,6 @@
                 "30.0": 926.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.206,
                 "1.0": 0.21,
                 "3.0": 0.224,
@@ -1407,7 +1450,6 @@
               "slope_um": 115.37,
               "thermal_share_of_slope": 0.133,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 499.7,
                 "1.0": 580.4,
                 "3.0": 811.2,
@@ -1415,7 +1457,6 @@
                 "30.0": 3926.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.219,
                 "1.0": 0.254,
                 "3.0": 0.355,
@@ -1437,7 +1478,6 @@
               "slope_um": 215.37,
               "thermal_share_of_slope": 0.071,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 529.7,
                 "1.0": 680.4,
                 "3.0": 1111.2,
@@ -1445,7 +1485,6 @@
                 "30.0": 6926.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.232,
                 "1.0": 0.298,
                 "3.0": 0.486,
@@ -1475,7 +1514,6 @@
               "slope_um": 8.89,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 467.7,
                 "1.0": 474.0,
                 "3.0": 491.8,
@@ -1483,7 +1521,6 @@
                 "30.0": 731.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.205,
                 "1.0": 0.207,
                 "3.0": 0.215,
@@ -1505,7 +1542,6 @@
               "slope_um": 108.89,
               "thermal_share_of_slope": 0.082,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 497.7,
                 "1.0": 574.0,
                 "3.0": 791.8,
@@ -1513,7 +1549,6 @@
                 "30.0": 3731.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.218,
                 "1.0": 0.251,
                 "3.0": 0.346,
@@ -1535,7 +1570,6 @@
               "slope_um": 208.89,
               "thermal_share_of_slope": 0.043,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 527.7,
                 "1.0": 674.0,
                 "3.0": 1091.8,
@@ -1543,7 +1577,6 @@
                 "30.0": 6731.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.231,
                 "1.0": 0.295,
                 "3.0": 0.478,
@@ -1573,7 +1606,6 @@
               "slope_um": 10.88,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 468.3,
                 "1.0": 476.0,
                 "3.0": 497.7,
@@ -1581,7 +1613,6 @@
                 "30.0": 791.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.205,
                 "1.0": 0.208,
                 "3.0": 0.218,
@@ -1603,7 +1634,6 @@
               "slope_um": 110.88,
               "thermal_share_of_slope": 0.098,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 498.3,
                 "1.0": 576.0,
                 "3.0": 797.7,
@@ -1611,7 +1641,6 @@
                 "30.0": 3791.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.218,
                 "1.0": 0.252,
                 "3.0": 0.349,
@@ -1633,7 +1662,6 @@
               "slope_um": 210.88,
               "thermal_share_of_slope": 0.052,
               "lug_load_N_by_k": {
-                "0.0": 465.1,
                 "0.3": 528.3,
                 "1.0": 676.0,
                 "3.0": 1097.7,
@@ -1641,7 +1669,6 @@
                 "30.0": 6791.5
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.204,
                 "0.3": 0.231,
                 "1.0": 0.296,
                 "3.0": 0.48,
@@ -1666,10 +1693,38 @@
     "window_top": {
       "squeeze_pct": 30.0,
       "lift_L0_N_at_band_top": 411.0,
-      "deflection_controlled_k0_lug_load_N": 632.3,
-      "deflection_controlled_k0_wall_mm": 0.277,
+      "PEEK_dominated_lower_bound_lug_load_N": 632.3,
+      "PEEK_dominated_lower_bound_wall_mm": 0.277,
       "force_controlled_lug_load_N": 411.0,
-      "force_controlled_wall_mm": 0.18,
+      "force_controlled_wall_mm_zero_band": 0.18,
+      "force_band_half_width_to_print_floor": 0.053,
+      "spring_capsule_requirement": {
+        "0.0": {
+          "spread_um": 8.16,
+          "k_spring_max_N_per_um_zero_tolerance": 5.637,
+          "working_deflection_mm_at_band_centre": 0.08
+        },
+        "0.05": {
+          "spread_um": 108.16,
+          "k_spring_max_N_per_um_zero_tolerance": 0.425,
+          "working_deflection_mm_at_band_centre": 1.02
+        },
+        "0.1": {
+          "spread_um": 208.16,
+          "k_spring_max_N_per_um_zero_tolerance": 0.221,
+          "working_deflection_mm_at_band_centre": 1.96
+        }
+      },
+      "lug_line_contact_p0_MPa": {
+        "PEEK_dominated_minimum": {
+          "socket_band_minus_clearance": 397.0,
+          "cem_protrusion": 320.0
+        },
+        "force_controlled": {
+          "socket_band_minus_clearance": 320.0,
+          "cem_protrusion": 258.0
+        }
+      },
       "by_reading": {
         "capsule_requirement|isothermal": {
           "dT_cold_K": 60.0,
@@ -1681,7 +1736,6 @@
               "slope_um": 12.55,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 636.1,
                 "1.0": 644.9,
                 "3.0": 670.0,
@@ -1689,7 +1743,6 @@
                 "30.0": 1008.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.278,
                 "1.0": 0.282,
                 "3.0": 0.293,
@@ -1711,7 +1764,6 @@
               "slope_um": 112.55,
               "thermal_share_of_slope": 0.112,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 666.1,
                 "1.0": 744.9,
                 "3.0": 970.0,
@@ -1719,7 +1771,6 @@
                 "30.0": 4008.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.291,
                 "1.0": 0.326,
                 "3.0": 0.424,
@@ -1741,7 +1792,6 @@
               "slope_um": 212.55,
               "thermal_share_of_slope": 0.059,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 696.1,
                 "1.0": 844.9,
                 "3.0": 1270.0,
@@ -1749,7 +1799,6 @@
                 "30.0": 7008.9
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.304,
                 "1.0": 0.37,
                 "3.0": 0.556,
@@ -1779,7 +1828,6 @@
               "slope_um": 15.37,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 636.9,
                 "1.0": 647.7,
                 "3.0": 678.4,
@@ -1787,7 +1835,6 @@
                 "30.0": 1093.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.279,
                 "1.0": 0.283,
                 "3.0": 0.297,
@@ -1809,7 +1856,6 @@
               "slope_um": 115.37,
               "thermal_share_of_slope": 0.133,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 666.9,
                 "1.0": 747.7,
                 "3.0": 978.4,
@@ -1817,7 +1863,6 @@
                 "30.0": 4093.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.292,
                 "1.0": 0.327,
                 "3.0": 0.428,
@@ -1839,7 +1884,6 @@
               "slope_um": 215.37,
               "thermal_share_of_slope": 0.071,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 696.9,
                 "1.0": 847.7,
                 "3.0": 1278.4,
@@ -1847,7 +1891,6 @@
                 "30.0": 7093.3
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.305,
                 "1.0": 0.371,
                 "3.0": 0.559,
@@ -1877,7 +1920,6 @@
               "slope_um": 8.89,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 635.0,
                 "1.0": 641.2,
                 "3.0": 659.0,
@@ -1885,7 +1927,6 @@
                 "30.0": 899.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.278,
                 "1.0": 0.28,
                 "3.0": 0.288,
@@ -1907,7 +1948,6 @@
               "slope_um": 108.89,
               "thermal_share_of_slope": 0.082,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 665.0,
                 "1.0": 741.2,
                 "3.0": 959.0,
@@ -1915,7 +1955,6 @@
                 "30.0": 3899.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.291,
                 "1.0": 0.324,
                 "3.0": 0.419,
@@ -1937,7 +1976,6 @@
               "slope_um": 208.89,
               "thermal_share_of_slope": 0.043,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 695.0,
                 "1.0": 841.2,
                 "3.0": 1259.0,
@@ -1945,7 +1983,6 @@
                 "30.0": 6899.0
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.304,
                 "1.0": 0.368,
                 "3.0": 0.551,
@@ -1975,7 +2012,6 @@
               "slope_um": 10.88,
               "thermal_share_of_slope": 1.0,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 635.6,
                 "1.0": 643.2,
                 "3.0": 665.0,
@@ -1983,7 +2019,6 @@
                 "30.0": 958.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.278,
                 "1.0": 0.281,
                 "3.0": 0.291,
@@ -2005,7 +2040,6 @@
               "slope_um": 110.88,
               "thermal_share_of_slope": 0.098,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 665.6,
                 "1.0": 743.2,
                 "3.0": 965.0,
@@ -2013,7 +2047,6 @@
                 "30.0": 3958.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.291,
                 "1.0": 0.325,
                 "3.0": 0.422,
@@ -2035,7 +2068,6 @@
               "slope_um": 210.88,
               "thermal_share_of_slope": 0.052,
               "lug_load_N_by_k": {
-                "0.0": 632.3,
                 "0.3": 695.6,
                 "1.0": 843.2,
                 "3.0": 1265.0,
@@ -2043,7 +2075,6 @@
                 "30.0": 6958.8
               },
               "strength_wall_mm_by_k": {
-                "0.0": 0.277,
                 "0.3": 0.304,
                 "1.0": 0.369,
                 "3.0": 0.553,
@@ -2074,5 +2105,5 @@
     "the PEEK's share of the loop compliance (it sets how much of f applies)",
     "a compliant element's force tolerance and space, if the clamp is made force-controlled"
   ],
-  "verdict": "A deflection-controlled clamp in a PEEK-dominated loop — the form `52` and the member assume, the PEEK relaxing by f — moves with its interference tolerance and with temperature through the loop stiffness k: at the window top every N/µm adds 0.049 mm of wall with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient). The ratified member (0.28 mm) is that form's k = 0 end — but a loop soft enough for the k-terms to vanish is no longer PEEK-dominated, so the relaxation stops applying too: its limit is a FORCE-controlled clamp, a compliant element whose stroke absorbs the tolerance, temperature and creep, and the lug then carries L0 — 411 N at the window top, a 0.18 mm wall, inside the 0.2 mm print floor, if the element's own force tolerance stays within 11 % there. So no loop reaches the ratified number: a PEEK-dominated one stiffer than 6 N/mm (±0.05) or 51 N/mm (temperature alone) needs more, a spring-dominated one less — the member goes back to the founder (02_02 §4.4). With ±0.05 the print floor carries the window floor up to k = 2.41 N/µm and the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders."
+  "verdict": "A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) every N/µm adds 0.049 mm of wall at the window top with a ±0.05 mm interference over the capsule requirement (temperature 11 % of it), 0.0055 mm with no tolerance (0.0067 with a Ti–PEEK gradient) — so such a loop needs more than the ratified 0.28 mm for any k, which is its lower bound, not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs continuously down to L0 — 411 N at the window top, a 0.18 mm wall with a zero force band — so the ratified number is one point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside the print floor its spring must be no stiffer than 0.42 N/µm with ±0.05 mm and zero force tolerance (≈ 1.0 mm of working deflection), its whole force band fits ±5.3 %, and a soft clamp gives the rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — whose peak pressure at the window top is 320–397 MPa (174–215 at the window floor; 258–320 at the window top even under the force-controlled L0) against 167 MPa for first yield of the PEEK at its tensile yield (the compressive yield is higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the PEEK-dominated load, and at the window top under either clamp. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to k = 2.41 N/µm and at the nominal up to 1.05. k, δ and the PEEK's share of the compliance are not computed — the lug geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4)."
 }

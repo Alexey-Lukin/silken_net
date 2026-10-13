@@ -32,11 +32,14 @@ Loads that do not depend on the clamp (weight, wind, inertia — `87`; ice — `
 FORM. The delivered clamp is C0 ± k·δ. Cold, end of life — the summer increment relaxes too (held for months against
 `52`'s τ of a year), so the winter clamp is f·C0 − s·(ΔT_c + (1 − f)·ΔT_h) with s = k·Δα·L, and it must stay ≥ L0. Heat,
 start of life: C0 + k·δ + s·ΔT_h ≤ cap(wall), cap linear in the wall (`73`, pure shear). So the lug must carry
-cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]. ⚠️ The relaxation f applies only as far as the
-PEEK IS the loop's compliance: this form is the PEEK-dominated limit, and its k → 0 end is not a loop that exists — a loop
-soft enough for the k-terms to vanish is no longer PEEK-dominated, so f stops applying too. That limit is the
-FORCE-controlled clamp (a compliant element whose stroke absorbs δ, temperature and creep): the lug carries L0, plus the
-element's own force tolerance (not modelled). A real loop lies between the two, by the PEEK's share of its compliance.
+cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)] — for a PEEK-DOMINATED loop, k = k_PEEK (the
+grid below is that, and k = 0 is not a loop). ⚠️ The relaxation f applies only as far as the PEEK IS the compliance: in a
+series loop of PEEK (k_p, relaxing to f) and a non-relaxing spring (k_s) at fixed interference the clamp keeps
+f·(k_p + k_s)/(k_s + f·k_p) of itself, i.e. f_eff = f/(f + φ·(1 − f)) with φ = k/k_p the PEEK's share of the compliance —
+so the lug load runs continuously from L0 (k_s → 0, FORCE control) to the PEEK-dominated value, and ANY wall between can
+be met by SOME loop; the ratified number is one point on that curve, not a property of the design. A spring-dominated
+clamp still carries k_s·(2δ + Δα·L·(ΔT_c + ΔT_h) + creep stroke), adds its own relaxation and force tolerance, and, being
+soft, gives the rim a near-zero load factor against the tipping loads `87` names. Its limit is printed below.
 
 ASSUMPTIONS (ours, named): the loop at the capsule's temperature — NOT conservative: the PEEK ledge sits at the sunlit
 outer diameter while the Ti collar and flange are tied to the stem, and a gradient increases the mismatch; the
@@ -60,7 +63,15 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, E_PEEK_PA
+from lib.constants import (
+    ALLOY_BASELINE,
+    ALLOY_PROPERTIES,
+    ALPHA_PEEK_1K,
+    CACHE_DIR,
+    E_PEEK_PA,
+    NU_PEEK,
+    SIGMA_YIELD_PEEK_PA,
+)
 from lib.utils import banner
 
 SI_DESCRIPTION = ("How much the bayonet's grip spreads with its fit tolerance and with heat and cold, and how thick the "
@@ -74,9 +85,12 @@ CAPSULE71 = CACHE_DIR / "thermal" / "capsule_envelope.json"
 RADOME_CEM = HERE.parent.parent / "cad" / "cem" / "radome.json"
 OUT_JSON = CACHE_DIR / "mechanical" / "bayonet_thermal_clamp.json"
 
-K_GRID_N_PER_UM = (0.0, 0.3, 1.0, 3.0, 10.0, 30.0)   # loop stiffnesses printed; the real one is unmeasured
-DELTA_MM = (0.0, 0.05, 0.10)   # ±interference tolerance: none · the ±0.05 class the shop is asked for the groove depth
-#                                (`52` DEPTH_TOL_ASKED) on ONE of the two Z dimensions · both at it, worst case
+K_GRID_N_PER_UM = (0.3, 1.0, 3.0, 10.0, 30.0)   # PEEK-dominated loop stiffnesses printed; the real one is unmeasured
+DELTA_MM = (0.0, 0.05, 0.10)   # ±interference tolerance: none · the ±0.05 class the shop is asked for a MACHINED Ti
+#                                groove depth (`52` DEPTH_TOL_ASKED, unanswered — HW.23), borrowed here for one Z dimension ·
+#                                both Z dimensions at it, summed arithmetically (RSS would be ±0.071; `52`'s face flatness,
+#                                ±84 µm, sits in the same loop and is NOT in either reading)
+YIELD_ONSET_LINE_CONTACT = 1.67  # p0 / Y at first yield under a line contact (Tresca; Johnson, Contact Mechanics, §6.2)
 HOT_FINISH_ALPHA = "0.50"      # canon finish α ≤ 0.5 (02_01, ⚖️ delegated 2026-09-27); `71`'s still-air h_c × 0.7 row
 
 
@@ -126,6 +140,20 @@ def main() -> int:
     def wall_for(force: float) -> float:
         return S88.wall_for_force(rows73, force)
 
+    # The lug is a radial pin (CathodeFlange.cs) on the groove's FLAT lower flank → a line contact.
+    flange = json.loads((RADOME_CEM.parent / "cathode_flange.json").read_text(encoding="utf-8"))
+    lug_r = radome["lug_radius_mm"]
+    band = ag["socket_pocket_r_mm"][1] - ag["socket_pocket_r_mm"][0]
+    engaged = {"socket_band_minus_clearance": round(band - radome["slot_clearance_mm"], 3),
+               "cem_protrusion": flange["lug_protrusion_mm"]}
+    ti = ALLOY_PROPERTIES[ALLOY_BASELINE]
+    e_star = 1.0 / ((1 - NU_PEEK ** 2) / E_PEEK_PA + (1 - ti["nu"] ** 2) / (ti["E_GPa"] * 1e9))     # Pa
+    p0_yield = YIELD_ONSET_LINE_CONTACT * SIGMA_YIELD_PEEK_PA
+
+    def p0_mpa(force_per_lug: float, length_mm: float) -> float:
+        fl = force_per_lug / (length_mm * 1e-3)                                    # N/m
+        return math.sqrt(fl * e_star / (math.pi * lug_r * 1e-3)) * 1e-6
+
     points = {}
     for name, b in b88["band"].items():
         l0 = b["required_clamp_N_at_band_high"]["at_assembly"]
@@ -157,11 +185,27 @@ def main() -> int:
                 per[f"{rname}|{aname}"] = {"dT_cold_K": round(dtc, 2), "dT_hot_K": round(dth, 2),
                                            "cold_with_summer_relaxed_K": round(cold_eff, 2),
                                            "thermal_um": round(thermal_um, 2), "by_delta_mm": by_delta}
+        req = per["capsule_requirement|isothermal"]
+        spring = {}
+        for dstr in req["by_delta_mm"]:
+            spread_um = 2.0 * float(dstr) * 1e3 + d_alpha["isothermal"] * span_mm * 1e3 * (
+                req["dT_cold_K"] + req["dT_hot_K"])                      # a spring does not relax: no f, no ratchet
+            ks = (cap_floor - l0) / spread_um if cap_floor > l0 else None
+            spring[dstr] = {"spread_um": round(spread_um, 2),
+                            "k_spring_max_N_per_um_zero_tolerance": round(ks, 3) if ks else None,
+                            "working_deflection_mm_at_band_centre": round((cap_floor + l0) / 2 / ks * 1e-3, 2) if ks else None}
+        loads = {"PEEK_dominated_minimum": l0 / f, "force_controlled": l0}
         points[name] = {"squeeze_pct": b["squeeze_pct"], "lift_L0_N_at_band_top": l0,
-                        "deflection_controlled_k0_lug_load_N": round(l0 / f, 1),
-                        "deflection_controlled_k0_wall_mm": round(wall_for(l0 / f), 3),
+                        "PEEK_dominated_lower_bound_lug_load_N": round(l0 / f, 1),
+                        "PEEK_dominated_lower_bound_wall_mm": round(wall_for(l0 / f), 3),
                         "force_controlled_lug_load_N": round(l0, 1),
-                        "force_controlled_wall_mm": round(wall_for(l0), 3),
+                        "force_controlled_wall_mm_zero_band": round(wall_for(l0), 3),
+                        "force_band_half_width_to_print_floor": round((cap_floor - l0) / (cap_floor + l0), 3)
+                        if cap_floor > l0 else None,
+                        "spring_capsule_requirement": spring,
+                        "lug_line_contact_p0_MPa": {
+                            lk: {ek: round(p0_mpa(v / radome["bayonet_lugs"], ev), 0) for ek, ev in engaged.items()}
+                            for lk, v in loads.items()},
                         "by_reading": per}
 
     top, flo, nom = points["window_top"], points["window_floor"], points["nominal"]
@@ -170,31 +214,40 @@ def main() -> int:
     n5 = nom["by_reading"][key]["by_delta_mm"]["0.05"]
     f5 = flo["by_reading"][key]["by_delta_mm"]["0.05"]
     tg = top["by_reading"]["capsule_requirement|gradient_bound"]["by_delta_mm"]["0.0"]
+    sp = top["spring_capsule_requirement"]["0.05"]
+    pc_top = top["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]
+    pc_flo = flo["lug_line_contact_p0_MPa"]["PEEK_dominated_minimum"]
+    pc_force = top["lug_line_contact_p0_MPa"]["force_controlled"]
     verdict = (
-        f"A deflection-controlled clamp in a PEEK-dominated loop — the form `52` and the member assume, the PEEK relaxing "
-        f"by f — moves with its interference tolerance and with temperature through the loop stiffness k: at the window "
-        f"top every N/µm adds {t5['wall_mm_per_N_per_um']:.3f} mm of wall with a ±0.05 mm interference over the capsule "
-        f"requirement (temperature {t5['thermal_share_of_slope'] * 100:.0f} % of it), {t0['wall_mm_per_N_per_um']:.4f} mm "
-        f"with no tolerance ({tg['wall_mm_per_N_per_um']:.4f} with a Ti–PEEK gradient). The ratified member "
-        f"({member_wall:.2f} mm) is that form's k = 0 end — but a loop soft enough for the k-terms to vanish is no longer "
-        f"PEEK-dominated, so the relaxation stops applying too: its limit is a FORCE-controlled clamp, a compliant element "
-        f"whose stroke absorbs the tolerance, temperature and creep, and the lug then carries L0 — "
-        f"{top['force_controlled_lug_load_N']:.0f} N at the window top, a {top['force_controlled_wall_mm']:.2f} mm wall, "
-        f"inside the {floor_wall:.1f} mm print floor, if the element's own force tolerance stays within "
-        f"{(cap_floor / top['force_controlled_lug_load_N'] - 1) * 100:.0f} % there. So no loop reaches the ratified number: "
-        f"a PEEK-dominated one stiffer than {t5['k_max_N_per_um']['member_wall'] * 1e3:.0f} N/mm (±0.05) or "
-        f"{t0['k_max_N_per_um']['member_wall'] * 1e3:.0f} N/mm (temperature alone) needs more, a spring-dominated one "
-        f"less — the member goes back to the founder (02_02 §4.4). With ±0.05 the print floor carries the window floor up "
-        f"to k = {f5['k_max_N_per_um']['print_floor']:.2f} N/µm and the nominal up to "
+        f"A deflection-controlled clamp moves with its interference tolerance and with temperature through the loop "
+        f"stiffness k. In a PEEK-dominated loop (k = k_PEEK, the PEEK relaxing by f — the form `52` and the member assume) "
+        f"every N/µm adds {t5['wall_mm_per_N_per_um']:.3f} mm of wall at the window top with a ±0.05 mm interference over "
+        f"the capsule requirement (temperature {t5['thermal_share_of_slope'] * 100:.0f} % of it), "
+        f"{t0['wall_mm_per_N_per_um']:.4f} mm with no tolerance ({tg['wall_mm_per_N_per_um']:.4f} with a Ti–PEEK "
+        f"gradient) — so such a loop needs more than the ratified {member_wall:.2f} mm for any k, which is its lower bound, "
+        f"not an estimate. A compliant element in series makes the relaxation and the k-terms fade, and the lug load runs "
+        f"continuously down to L0 — {top['force_controlled_lug_load_N']:.0f} N at the window top, a "
+        f"{top['force_controlled_wall_mm_zero_band']:.2f} mm wall with a zero force band — so the ratified number is one "
+        f"point on a curve of an unmeasured k, bounding nothing. That force-controlled end is not cheap: to stay inside "
+        f"the print floor its spring must be no stiffer than {sp['k_spring_max_N_per_um_zero_tolerance']:.2f} N/µm with "
+        f"±0.05 mm and zero force tolerance (≈ {sp['working_deflection_mm_at_band_centre']:.1f} mm of working deflection), "
+        f"its whole force band fits ±{top['force_band_half_width_to_print_floor'] * 100:.1f} %, and a soft clamp gives the "
+        f"rim almost no stiffness against tipping. Separately, the lug is a radial pin on a flat ledge — a line contact — "
+        f"whose peak pressure at the window top is {min(pc_top.values()):.0f}–{max(pc_top.values()):.0f} MPa "
+        f"({min(pc_flo.values()):.0f}–{max(pc_flo.values()):.0f} at the window floor; "
+        f"{min(pc_force.values()):.0f}–{max(pc_force.values()):.0f} at the window top even under the force-controlled L0) "
+        f"against {p0_yield * 1e-6:.0f} MPa for first yield of the PEEK at its tensile yield (the compressive yield is "
+        f"higher and not in the tree): the ledge yields and creeps beyond `52`'s f across the window under the PEEK-dominated load, and at the window top under either clamp. With ±0.05 the print floor carries a PEEK-dominated loop at the window floor up to "
+        f"k = {f5['k_max_N_per_um']['print_floor']:.2f} N/µm and at the nominal up to "
         f"{n5['k_max_N_per_um']['print_floor']:.2f}. k, δ and the PEEK's share of the compliance are not computed — the lug "
-        f"geometry and both Z tolerances are placeholders.")
+        f"geometry and both Z tolerances are placeholders; the member goes back to the founder (02_02 §4.4).")
 
     out = {
         "question": "How the bayonet clamp spreads with its interference tolerance and temperature, and the collar wall "
                     "its lug load then needs — the number of the conditional root-package member (02_02 §4.4).",
-        "form": "PEEK-dominated loop: cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; "
-                "spring-dominated (force-controlled) limit: L0; a real loop lies between, by the PEEK's share of its "
-                "compliance",
+        "form": "PEEK-dominated loop (k = k_PEEK): cap_needed(k) = L0/f + k·[2δ + Δα·L·((ΔT_c + (1 − f)·ΔT_h)/f + ΔT_h)]; "
+                "a series spring makes f_eff = f/(f + φ(1 − f)), φ = k/k_PEEK, so the load runs continuously to the "
+                "force-controlled L0 (plus k_s·spread)",
         "assumptions": ["the loop at the capsule's temperature — NOT conservative; the gradient-bound reading takes "
                         "α_PEEK alone",
                         "relaxation acts on the mechanical clamp; the summer thermal increment relaxes too before the "
@@ -216,7 +269,11 @@ def main() -> int:
                    "span_mm_placeholder": round(span_mm, 3),
                    "span_from": "radome.json lock_groove_z_mm − (lug_radius_mm + slot_clearance_mm); lock_groove_z "
                                 "is a placeholder (HW.8)",
-                   "peek_sections_mm2": {k: round(v, 1) for k, v in sections.items()}},
+                   "peek_sections_mm2": {k: round(v, 1) for k, v in sections.items()},
+                   "lug_line_contact": {"lug_radius_mm": lug_r, "engaged_length_mm": engaged,
+                                        "e_star_pa": round(e_star, -6), "yield_onset_p0_pa": p0_yield,
+                                        "yield_onset_ratio": YIELD_ONSET_LINE_CONTACT,
+                                        "sigma_yield_peek_pa": SIGMA_YIELD_PEEK_PA}},
         "peek_column": {"k_N_per_um_over_span": {k: round(v, 1) for k, v in k_column.items()},
                         "is": "the loop's stiffness if a PEEK annulus over the span were its ONLY compliance — not what "
                               "sits under the lugs (the load enters through three line contacts), so a ceiling and no "
@@ -237,8 +294,9 @@ def main() -> int:
 
     print(f"  span {span_mm:.2f} mm (placeholder) · Δα {d_alpha} · f {f} · member wall {member_wall} mm")
     for name, p in points.items():
-        print(f"  {name:13s} L0 {p['lift_L0_N_at_band_top']:6.1f} N · k=0 wall {p['deflection_controlled_k0_wall_mm']} · "
-              f"force-controlled wall {p['force_controlled_wall_mm']}")
+        print(f"  {name:13s} L0 {p['lift_L0_N_at_band_top']:6.1f} N · PEEK-dominated lower bound wall "
+              f"{p['PEEK_dominated_lower_bound_wall_mm']} · force-controlled wall {p['force_controlled_wall_mm_zero_band']} · "
+              f"line-contact p0 {p['lug_line_contact_p0_MPa']}")
         r = p["by_reading"][key]["by_delta_mm"]
         for d, v in r.items():
             print(f"      δ ±{d} mm: slope {v['slope_um']} µm (thermal {v['thermal_share_of_slope']}) · "
