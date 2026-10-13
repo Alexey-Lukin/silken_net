@@ -97,6 +97,8 @@ Anchor mechanics (CPU):
      `S79.load_weather`, so the cloud file is 81's runtime input too (it does not use the cover)
   71 · 79 → 81 (importlib: 71's lump — geometry, convection kernels, loader · 79's sky emissivity and weather join, which
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
+  52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` by importlib and the radome CEM's lock-groove span:
+     the bayonet clamp over temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
      81's cold edge; tools/cad/cem → 82, the slot clearance) — a change to any of the four caches re-runs 82
   58 (T_PHLOEM, importlib — never its frozen L_A_INSERT, §When Modifying #37) · 78 (`bark_bracket`, importlib) · 31 · 31b (eis_model.json · cathode_det_rct.json — the

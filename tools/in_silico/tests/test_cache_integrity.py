@@ -2120,6 +2120,83 @@ def test_oring_reaction_band():
                - needs87["after_20_years_with_a_weaker_clamp"] / floor_lo) <= 0.001
 
 
+def test_bayonet_thermal_clamp():
+    """Script 89 (HW.33): the bayonet clamp over temperature — the lug load and collar wall as a function of the loop's
+    thermal sensitivity s.
+
+    CAN catch, recomputed from the upstream caches and the radome CEM rather than copied from the script: the lug load
+    leaving (L0 + s·ΔT_c)/f + s·ΔT_h; L0 leaving 88's band-top requirement at assembly; the temperature readings leaving
+    82's requirement and model edge and 71's hot edge; the wall leaving 73's linear shear; s_max leaving
+    (f·cap − L0)/(ΔT_c + f·ΔT_h) for the print floor and for 88's member wall; k_max leaving s_max/(Δα·L); the span
+    leaving lock_groove_z − (lug radius + slot clearance); the PEEK-column ceiling leaving E·A·Δα; the member wall
+    ceasing to be the window top's s = 0 answer. CANNOT catch: whether the loop is isothermal, whether relaxation and
+    thermal load superpose, or what s the real lug contacts give — the script does not compute it.
+    """
+    path = MECHANICAL / "bayonet_thermal_clamp.json"
+    if not path.exists():
+        pytest.skip("bayonet_thermal_clamp.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
+    c73 = json.loads((MECHANICAL / "collar_wall_inversion.json").read_text(encoding="utf-8"))
+    c82 = json.loads((MECHANICAL / "collar_running_clearance.json").read_text(encoding="utf-8"))
+    b88 = json.loads((MECHANICAL / "oring_reaction_band.json").read_text(encoding="utf-8"))
+    c71 = json.loads((CACHE / "thermal" / "capsule_envelope.json").read_text(encoding="utf-8"))
+    radome = json.loads((REPO / "tools/cad/cem/radome.json").read_text(encoding="utf-8"))
+    inp = d["inputs"]
+    f = z52["rim_datum_creep"]["relax_fraction_at_service"]
+    assert inp["relax_fraction_at_service_52"] == f
+    cap, floor = c73["verdict"]["capacity_at_print_floor_N"], 0.2
+    assert inp["lug_root_capacity_N_at_print_floor_73"] == cap and inp["print_floor_wall_mm_73"] == floor
+    member = b88["band"]["window_top"]["collar_wall_strength_asks_mm_ring_never_relaxes"]
+    assert inp["member_wall_mm_88"] == member
+    cap_m = cap * member / floor
+    temps = inp["temperature_readings_c"]
+    assert temps["capsule_requirement"] == [c82["inputs"]["t_min_requirement_c"], c82["inputs"]["t_max_requirement_c"]]
+    assert temps["model_edges"][0] == c82["inputs"]["t_min_model_edge_c"]
+    assert temps["model_edges"][1] == c71["hot_bound_h_c_sensitivity"]["sunlit_still_air"]["0.95"]["t_cap_max_c"]
+    t_asm = c82["inputs"]["t_ref_c"]
+    span = radome["lock_groove_z_mm"] - (radome["lug_radius_mm"] + radome["slot_clearance_mm"])
+    assert abs(inp["span_mm_placeholder"] - span) <= 1e-3
+    d_alpha = inp["delta_alpha_1K"]["lib"]
+    assert abs(d_alpha - (inp["alpha_peek_1K"] - inp["alpha_ti_1K"])) <= 1e-12
+    for k, a in inp["peek_sections_mm2"].items():
+        assert abs(d["peek_column"]["s_N_per_K"][k] - inp["e_peek_pa"] * a * 1e-6 * d_alpha) <= 0.1, k
+    assert abs(inp["peek_sections_mm2"]["rim_contact"] - z52["applied_gland"]["rim_contact_area_mm2"]) <= 0.05
+    sec = inp["peek_sections_mm2"]
+    assert sec["socket_band_under_the_lugs"] < sec["rim_contact"] < sec["boss_section"]
+
+    def wall(force):                                                     # 73: pure shear, linear in the wall
+        return floor * force / cap
+
+    for name, p in d["by_squeeze_point"].items():
+        l0 = p["lift_L0_N_at_band_top"]
+        assert abs(l0 - b88["band"][name]["required_clamp_N_at_band_high"]["at_assembly"]) <= 1e-9, name
+        for rname, r in p["by_temperature"].items():
+            dtc, dth = t_asm - temps[rname][0], temps[rname][1] - t_asm
+            for s_str, load in r["lug_load_N_by_s"].items():
+                s_ = float(s_str)
+                assert abs(load - ((l0 + s_ * dtc) / f + s_ * dth)) <= 0.1, (name, rname, s_)
+                assert abs(r["strength_wall_mm_by_s"][s_str] - wall(load)) <= 0.002, (name, rname, s_)
+            walls = [r["strength_wall_mm_by_s"][k] for k in sorted(r["strength_wall_mm_by_s"], key=float)]
+            assert walls == sorted(walls), (name, rname)                    # stiffer loop → thicker wall
+            for key, c in (("print_floor", cap), ("member_wall", cap_m)):
+                v = (f * c - l0) / (dtc + f * dth)
+                got = r["s_max_N_per_K"][key]
+                assert (got is None) == (v < 0), (name, rname, key)
+                if got is not None:
+                    assert abs(got - v) <= 0.002, (name, rname, key)
+                    k = v / (d_alpha * span * 1e-3) * 1e-6
+                    assert abs(r["k_max_N_per_um_at_span"][key] - k) <= 0.02
+                    if k > 0:
+                        x = d["peek_column"]["k_N_per_um_over_span"]["socket_band_under_the_lugs"] / k   # from unrounded k
+                        got_x = r["softer_than_peek_under_the_lugs_x"][key]           # rounded to 0.1 in the cache
+                        assert abs(got_x - x) <= max(0.06, 0.005 * x), (name, rname, key)
+    top = d["by_squeeze_point"]["window_top"]["by_temperature"]
+    assert abs(top["capsule_requirement"]["strength_wall_mm_by_s"]["0.0"] - member) <= 0.002   # member = s 0
+    assert top["capsule_requirement"]["s_max_N_per_K"]["member_wall"] <= 0.01
+    req, edge = top["capsule_requirement"], top["model_edges"]
+    assert req["wall_mm_per_N_per_K"] > edge["wall_mm_per_N_per_K"]       # the wider range costs more per N/K
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 

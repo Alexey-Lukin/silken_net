@@ -911,13 +911,49 @@ and Parker gives compression set, not stress relaxation, so the share the ring l
 the chain `52` models once the ring has lost about 2 % of its reaction, and at the window top only if it has lost about
 23 % by year 2 and about 28 % already by year 5; a ring that never relaxes binds the lug from 27.1 % (26.8–27.5 % over the transcription — the source cannot tell
 it from the chain's top), and strength, not printability, then sizes the collar wall — up to 0.28 mm at the window top
-against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; the thermal leg revises the number before the root moves). From below, the ring starts at no less than 58 N at the
+against the 0.2 mm print floor — ratified as a conditional member of the root package (⚖️ founder 2026-10-13, `02_02 §4.4`; a measured loop stiffness that raises its price, or a compliant element, goes back to the founder — script 89 ↓). From below, the ring starts at no less than 58 N at the
 floor: (A) holds 5.5× with a clamp at the form `52` prints for the ring's own reaction; a weaker clamp can let the rim
 lift, and (A) is then judged on the ring keeping 18 % of that floor for 20 years (a lift taken as not undone). The margins say whether a bayonet that meets the
 requirement can exist; the lug carries the clamp it actually delivers. NOT modelled: the compound's own curve and its
 stress relaxation (questions in the O-ring letter); temperature — every margin here holds at the assembly temperature,
 while the PEEK in the clamp loop sits between two Ti faces over the same span, so cold unloads the clamp and heat raises
-the lug's load, and the ring's own contraction takes squeeze in the cold; resin swell, which raises the reaction; confinement near a full gland; the PEEK ledge under the lug, which carries the same load. (`mechanical/oring_reaction_band.json` → `band`, `inversion`, `rim_premise_A`)
+the lug's load, and the ring's own contraction takes squeeze in the cold (`89` ↓); resin swell, which raises the reaction; confinement near a full gland; the PEEK ledge under the lug, which carries the same load. (`mechanical/oring_reaction_band.json` → `band`, `inversion`, `rim_premise_A`)
+
+---
+
+## HW.33 — The Bayonet Clamp over Temperature (script 89)
+
+Canon home → [`02_02 §4.4`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md) (the conditional root-package member
+«collar wall by strength», ⚖️ founder 2026-10-13 — a price this raises goes back to the founder); open work → `00_07` HW.33.
+
+The bayonet is deflection-controlled, so the clamp is the elastic squeeze of the loop lug → groove ledge → radome → rim →
+flange face → collar, and the PEEK in it sits between two Ti faces over the same span (the collar is one Ti body with the
+flange): cold unloads the clamp, heat loads the lug. With s the loop's thermal sensitivity (N/K), the cold at the end of
+life asks f·C0 − s·ΔT_c ≥ L0 and the heat at the start puts C0 + s·ΔT_h on the lug, so the lug carries
+(L0 + s·ΔT_c)/f + s·ΔT_h and the wall follows `73`'s linear shear. Readings: the capsule requirement (−40…85 °C) and the
+models' edges (−33.5 °C from `81`, 68.0 °C from `71` for a dark finish in still air with h_c × 0.7), assembly at 20 °C;
+L0 at `88`'s band top with the ring never relaxing (the member's corner); the loop isothermal at the capsule's
+temperature (conservative both ways — the flange is tied to the stem); the span 1.7 mm from the radome CEM, a
+placeholder.
+
+| Squeeze | L0 (N) | Strength wall (mm) at s = 0 · 1 · 5 N/K | s the print floor carries (N/K) | Loop no stiffer than, at span 1.7 mm |
+|---|---|---|---|---|
+| 19 % — window floor | 121 | 0.08 · 0.15 · 0.43 | 1.72 | 26.4 N/µm — 11× softer than the PEEK under the lugs |
+| 24.5 % — nominal | 220 | 0.15 · 0.22 · 0.49 | 0.75 | 11.5 N/µm — 26× softer |
+| 27.3 % — `52`'s chain, high | 302 | 0.20 · 0.27 · 0.55 | none (the member wall: 1.07) | — |
+| 30 % — window top | 411 | 0.28 · 0.35 · 0.62 | none (the member wall: ≈ 0) | — |
+
+**Verdict** — the ratified member (0.28 mm at the window top) is the s = 0 answer: every N/K of loop sensitivity adds
+**0.069** mm of wall over the capsule requirement (0.057 over the models' edges). If the PEEK under the lugs were the
+loop's only compliance, s would be **19–55** N/K (sections 127–358 mm², from the band under the lugs to the whole boss)
+and the window top would ask **1.6–4.1** mm. The print floor carries the window floor up to 1.72 N/K and the nominal up
+to 0.75 — a loop no stiffer than 26–12 N/µm at the placeholder span, 11–26× softer than the 298 N/µm of the PEEK column
+under the lugs alone. The lug contacts, the ledge and the lug's bending soften the loop in series; how much — and so
+whether the bayonet needs a compliant element, a thicker wall or a relaxing ring — is the next leg (the lug geometry and
+the lock-groove Z are placeholders). The same cold condition reaches `87`'s (A): a clamp at exactly `52`'s printed form,
+(R0 + p)/0.65, lets the rim lift in the cold for any s > 0; holding it asks (L0 + s·ΔT_c)/f. NOT modelled: a Ti–PEEK
+temperature gradient, PEEK relaxing faster in the heat and ratcheting over seasons, the ring's force below room
+temperature, resin swell. (`mechanical/bayonet_thermal_clamp.json`)
 
 ---
 

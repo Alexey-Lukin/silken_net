@@ -1,0 +1,501 @@
+{
+  "question": "How stiff the bayonet clamp loop may be over the capsule's temperature range, and the collar wall its lug load then needs — the number of the conditional root-package member (02_02 §4.4).",
+  "form": "C(T) = C0 + s·(T − T_asm); cold, end of life: f·C0 − s·ΔT_c ≥ L0; heat, start: C0 + s·ΔT_h ≤ cap(wall); cap_needed(s) = (L0 + s·ΔT_c)/f + s·ΔT_h; s_max = (f·cap − L0)/(ΔT_c + f·ΔT_h); k_max = s_max/(Δα·L)",
+  "assumptions": [
+    "the loop isothermal at the capsule's temperature (both bounds conservative for the loop)",
+    "relaxation acts on the mechanical clamp, the thermal part is elastic, and the two superpose",
+    "L0 at the band's top with the ring never relaxing (the ratified member's corner); in the cold the ring's own contraction lowers it, so the cold condition is conservative",
+    "lug-root capacity linear in the wall (73, pure shear)"
+  ],
+  "inputs": {
+    "relax_fraction_at_service_52": 0.65,
+    "assembly_temperature_c_82": 20.0,
+    "temperature_readings_c": {
+      "capsule_requirement": [
+        -40.0,
+        85.0
+      ],
+      "model_edges": [
+        -33.53,
+        68.0
+      ]
+    },
+    "hot_edge_reading": "71: sunlit, still air, h_c × 0.7, absorptance 0.95",
+    "e_peek_pa": 4000000000.0,
+    "alpha_peek_1K": 4.7e-05,
+    "alpha_ti_1K": 8.6e-06,
+    "delta_alpha_1K": {
+      "lib": 3.84e-05,
+      "sensitivity_82": 4.64e-05
+    },
+    "lug_root_capacity_N_at_print_floor_73": 457.0,
+    "print_floor_wall_mm_73": 0.2,
+    "member_wall_mm_88": 0.277,
+    "lug_root_capacity_N_at_member_wall": 632.9,
+    "span_mm_placeholder": 1.7,
+    "span_from": "radome.json lock_groove_z_mm − (lug_radius_mm + slot_clearance_mm); lock_groove_z is a placeholder (HW.8)",
+    "peek_sections_mm2": {
+      "socket_band_under_the_lugs": 126.6,
+      "rim_contact": 189.1,
+      "boss_section": 358.4
+    }
+  },
+  "peek_column": {
+    "s_N_per_K": {
+      "socket_band_under_the_lugs": 19.4,
+      "rim_contact": 29.0,
+      "boss_section": 55.1
+    },
+    "k_N_per_um_over_span": {
+      "socket_band_under_the_lugs": 297.9,
+      "rim_contact": 445.0,
+      "boss_section": 843.4
+    },
+    "is": "the loop's sensitivity if the PEEK under the lug were its ONLY compliance — a ceiling: series compliance (lug contacts, ledge, lug bending) only lowers it"
+  },
+  "by_squeeze_point": {
+    "window_floor": {
+      "squeeze_pct": 19.0,
+      "lift_L0_N_at_band_top": 120.8,
+      "isothermal_lug_load_N": 185.8,
+      "by_temperature": {
+        "capsule_requirement": {
+          "dT_cold_K": 60.0,
+          "dT_hot_K": 65.0,
+          "lug_load_N_by_s": {
+            "0.0": 185.8,
+            "0.5": 264.5,
+            "1.0": 343.2,
+            "2.0": 500.5,
+            "5.0": 972.4,
+            "10.0": 1758.9,
+            "20.0": 3332.0
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.081,
+            "0.5": 0.116,
+            "1.0": 0.15,
+            "2.0": 0.219,
+            "5.0": 0.425,
+            "10.0": 0.769,
+            "20.0": 1.457
+          },
+          "wall_mm_per_N_per_K": 0.0687,
+          "s_max_N_per_K": {
+            "print_floor": 1.724,
+            "member_wall": 2.842
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 26.4,
+            "member_wall": 43.54
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 11.3,
+            "member_wall": 6.8
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.42,
+            "rim_contact": 2.08,
+            "boss_section": 3.87
+          }
+        },
+        "model_edges": {
+          "dT_cold_K": 53.53,
+          "dT_hot_K": 48.0,
+          "lug_load_N_by_s": {
+            "0.0": 185.8,
+            "0.5": 251.0,
+            "1.0": 316.2,
+            "2.0": 446.6,
+            "5.0": 837.6,
+            "10.0": 1489.4,
+            "20.0": 2792.9
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.081,
+            "0.5": 0.11,
+            "1.0": 0.138,
+            "2.0": 0.195,
+            "5.0": 0.366,
+            "10.0": 0.651,
+            "20.0": 1.222
+          },
+          "wall_mm_per_N_per_K": 0.0569,
+          "s_max_N_per_K": {
+            "print_floor": 2.08,
+            "member_wall": 3.43
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 31.86,
+            "member_wall": 52.54
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 9.4,
+            "member_wall": 5.7
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.19,
+            "rim_contact": 1.74,
+            "boss_section": 3.22
+          }
+        }
+      }
+    },
+    "chain_low": {
+      "squeeze_pct": 21.7,
+      "lift_L0_N_at_band_top": 160.3,
+      "isothermal_lug_load_N": 246.6,
+      "by_temperature": {
+        "capsule_requirement": {
+          "dT_cold_K": 60.0,
+          "dT_hot_K": 65.0,
+          "lug_load_N_by_s": {
+            "0.0": 246.6,
+            "0.5": 325.3,
+            "1.0": 403.9,
+            "2.0": 561.2,
+            "5.0": 1033.2,
+            "10.0": 1819.7,
+            "20.0": 3392.8
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.108,
+            "0.5": 0.142,
+            "1.0": 0.177,
+            "2.0": 0.246,
+            "5.0": 0.452,
+            "10.0": 0.796,
+            "20.0": 1.484
+          },
+          "wall_mm_per_N_per_K": 0.0687,
+          "s_max_N_per_K": {
+            "print_floor": 1.337,
+            "member_wall": 2.456
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 20.49,
+            "member_wall": 37.62
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 14.5,
+            "member_wall": 7.9
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.45,
+            "rim_contact": 2.11,
+            "boss_section": 3.9
+          }
+        },
+        "model_edges": {
+          "dT_cold_K": 53.53,
+          "dT_hot_K": 48.0,
+          "lug_load_N_by_s": {
+            "0.0": 246.6,
+            "0.5": 311.8,
+            "1.0": 377.0,
+            "2.0": 507.3,
+            "5.0": 898.4,
+            "10.0": 1550.2,
+            "20.0": 2853.7
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.108,
+            "0.5": 0.136,
+            "1.0": 0.165,
+            "2.0": 0.222,
+            "5.0": 0.393,
+            "10.0": 0.678,
+            "20.0": 1.248
+          },
+          "wall_mm_per_N_per_K": 0.0569,
+          "s_max_N_per_K": {
+            "print_floor": 1.614,
+            "member_wall": 2.964
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 24.72,
+            "member_wall": 45.4
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 12.1,
+            "member_wall": 6.6
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.22,
+            "rim_contact": 1.77,
+            "boss_section": 3.25
+          }
+        }
+      }
+    },
+    "nominal": {
+      "squeeze_pct": 24.5,
+      "lift_L0_N_at_band_top": 220.0,
+      "isothermal_lug_load_N": 338.5,
+      "by_temperature": {
+        "capsule_requirement": {
+          "dT_cold_K": 60.0,
+          "dT_hot_K": 65.0,
+          "lug_load_N_by_s": {
+            "0.0": 338.5,
+            "0.5": 417.1,
+            "1.0": 495.8,
+            "2.0": 653.1,
+            "5.0": 1125.0,
+            "10.0": 1911.5,
+            "20.0": 3484.6
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.148,
+            "0.5": 0.183,
+            "1.0": 0.217,
+            "2.0": 0.286,
+            "5.0": 0.492,
+            "10.0": 0.836,
+            "20.0": 1.524
+          },
+          "wall_mm_per_N_per_K": 0.0687,
+          "s_max_N_per_K": {
+            "print_floor": 0.754,
+            "member_wall": 1.872
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 11.54,
+            "member_wall": 28.68
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 25.8,
+            "member_wall": 10.4
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.49,
+            "rim_contact": 2.15,
+            "boss_section": 3.94
+          }
+        },
+        "model_edges": {
+          "dT_cold_K": 53.53,
+          "dT_hot_K": 48.0,
+          "lug_load_N_by_s": {
+            "0.0": 338.5,
+            "0.5": 403.6,
+            "1.0": 468.8,
+            "2.0": 599.2,
+            "5.0": 990.2,
+            "10.0": 1642.0,
+            "20.0": 2945.5
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.148,
+            "0.5": 0.177,
+            "1.0": 0.205,
+            "2.0": 0.262,
+            "5.0": 0.433,
+            "10.0": 0.718,
+            "20.0": 1.288
+          },
+          "wall_mm_per_N_per_K": 0.0569,
+          "s_max_N_per_K": {
+            "print_floor": 0.909,
+            "member_wall": 2.259
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": 13.93,
+            "member_wall": 34.61
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": 21.4,
+            "member_wall": 8.6
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.26,
+            "rim_contact": 1.81,
+            "boss_section": 3.29
+          }
+        }
+      }
+    },
+    "chain_high": {
+      "squeeze_pct": 27.3,
+      "lift_L0_N_at_band_top": 302.3,
+      "isothermal_lug_load_N": 465.1,
+      "by_temperature": {
+        "capsule_requirement": {
+          "dT_cold_K": 60.0,
+          "dT_hot_K": 65.0,
+          "lug_load_N_by_s": {
+            "0.0": 465.1,
+            "0.5": 543.7,
+            "1.0": 622.4,
+            "2.0": 779.7,
+            "5.0": 1251.6,
+            "10.0": 2038.2,
+            "20.0": 3611.2
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.204,
+            "0.5": 0.238,
+            "1.0": 0.272,
+            "2.0": 0.341,
+            "5.0": 0.547,
+            "10.0": 0.892,
+            "20.0": 1.58
+          },
+          "wall_mm_per_N_per_K": 0.0687,
+          "s_max_N_per_K": {
+            "print_floor": null,
+            "member_wall": 1.067
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": null,
+            "member_wall": 16.35
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": null,
+            "member_wall": 18.2
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.54,
+            "rim_contact": 2.2,
+            "boss_section": 3.99
+          }
+        },
+        "model_edges": {
+          "dT_cold_K": 53.53,
+          "dT_hot_K": 48.0,
+          "lug_load_N_by_s": {
+            "0.0": 465.1,
+            "0.5": 530.3,
+            "1.0": 595.4,
+            "2.0": 725.8,
+            "5.0": 1116.8,
+            "10.0": 1768.6,
+            "20.0": 3072.2
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.204,
+            "0.5": 0.232,
+            "1.0": 0.26,
+            "2.0": 0.317,
+            "5.0": 0.489,
+            "10.0": 0.774,
+            "20.0": 1.344
+          },
+          "wall_mm_per_N_per_K": 0.0569,
+          "s_max_N_per_K": {
+            "print_floor": null,
+            "member_wall": 1.288
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": null,
+            "member_wall": 19.73
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": null,
+            "member_wall": 15.1
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.31,
+            "rim_contact": 1.86,
+            "boss_section": 3.34
+          }
+        }
+      }
+    },
+    "window_top": {
+      "squeeze_pct": 30.0,
+      "lift_L0_N_at_band_top": 411.0,
+      "isothermal_lug_load_N": 632.3,
+      "by_temperature": {
+        "capsule_requirement": {
+          "dT_cold_K": 60.0,
+          "dT_hot_K": 65.0,
+          "lug_load_N_by_s": {
+            "0.0": 632.3,
+            "0.5": 711.0,
+            "1.0": 789.6,
+            "2.0": 946.9,
+            "5.0": 1418.8,
+            "10.0": 2205.4,
+            "20.0": 3778.5
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.277,
+            "0.5": 0.311,
+            "1.0": 0.345,
+            "2.0": 0.414,
+            "5.0": 0.621,
+            "10.0": 0.965,
+            "20.0": 1.654
+          },
+          "wall_mm_per_N_per_K": 0.0687,
+          "s_max_N_per_K": {
+            "print_floor": null,
+            "member_wall": 0.004
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": null,
+            "member_wall": 0.06
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": null,
+            "member_wall": 4800.8
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.62,
+            "rim_contact": 2.28,
+            "boss_section": 4.07
+          }
+        },
+        "model_edges": {
+          "dT_cold_K": 53.53,
+          "dT_hot_K": 48.0,
+          "lug_load_N_by_s": {
+            "0.0": 632.3,
+            "0.5": 697.5,
+            "1.0": 762.7,
+            "2.0": 893.0,
+            "5.0": 1284.1,
+            "10.0": 1935.8,
+            "20.0": 3239.4
+          },
+          "strength_wall_mm_by_s": {
+            "0.0": 0.277,
+            "0.5": 0.305,
+            "1.0": 0.334,
+            "2.0": 0.391,
+            "5.0": 0.562,
+            "10.0": 0.847,
+            "20.0": 1.417
+          },
+          "wall_mm_per_N_per_K": 0.0569,
+          "s_max_N_per_K": {
+            "print_floor": null,
+            "member_wall": 0.005
+          },
+          "k_max_N_per_um_at_span": {
+            "print_floor": null,
+            "member_wall": 0.07
+          },
+          "softer_than_peek_under_the_lugs_x": {
+            "print_floor": null,
+            "member_wall": 3978.2
+          },
+          "wall_mm_if_the_PEEK_column_were_the_loop": {
+            "socket_band_under_the_lugs": 1.39,
+            "rim_contact": 1.93,
+            "boss_section": 3.42
+          }
+        }
+      }
+    }
+  },
+  "missing_data": [
+    "the lug-contact and ledge compliance — they set s (FEA or bench; lug geometry placeholder, HW.8)",
+    "the span: lock_groove_z is a placeholder (02_02 §4.4, HW.8)",
+    "a Ti–PEEK temperature gradient (sun on the radome, shaded flange)",
+    "PEEK relaxation in the heat and its ratcheting over seasons (52's f is temperature-free)",
+    "the ring's force below room temperature and resin swell (88)"
+  ],
+  "verdict": "Temperature moves the clamp by s N/K, and the lug carries (L0 + s·ΔT_c)/f + s·ΔT_h. At the window top the ratified member wall (0.28 mm) is the s = 0 answer: every N/K of loop sensitivity adds 0.069 mm of wall over the capsule requirement (60 K down, 65 K up) and 0.057 mm over the models' edges, so the member holds only for a loop that does not feel temperature at all. The print floor carries the window floor up to s = 1.72 N/K and the nominal up to 0.75 (requirement); at the placeholder span 1.7 mm that asks a loop no stiffer than 26.4 … 11.5 N/µm, against 298 N/µm for the PEEK column under the lugs alone — 11–26× softer. If the PEEK were the loop's only compliance (s = 19–55 N/K), the window top would need a wall of 1.6–4.1 mm. The lug contacts and the ledge are in series and soften the loop; how much — and so whether the bayonet needs a compliant element, or a thicker wall, or a ring that relaxes — is not computed here (the lug geometry is a placeholder)."
+}

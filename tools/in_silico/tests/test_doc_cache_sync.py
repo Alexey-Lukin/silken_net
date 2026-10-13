@@ -1105,6 +1105,46 @@ CHECKS = [
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
      lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+    # ── HW.33 the bayonet clamp over temperature — wall(s) of the ratified member (script 89, 2026-10-13) ──
+    # ⛔ These numbers say the ratified 0.28 mm holds only for a loop that does not feel temperature; a doc copy drifted
+    #    off the cache would quietly re-price a founder verdict.
+    *[(f"bayonet thermal clamp, {label} → bayonet_thermal_clamp.json", doc, pattern,
+       "mechanical/bayonet_thermal_clamp.json", resolver, tol)
+      for label, doc, pattern, resolver, tol in (
+          ("SUMMARY wall per N/K, requirement", SUMMARY, rf"adds\n?\*\*{N}\*\* mm of wall over the capsule requirement",
+           lambda d: d["by_squeeze_point"]["window_top"]["by_temperature"]["capsule_requirement"]["wall_mm_per_N_per_K"], 0.0005),
+          ("SUMMARY wall per N/K, edges", SUMMARY, rf"mm of wall over the capsule requirement \({N} over the models' edges\)",
+           lambda d: d["by_squeeze_point"]["window_top"]["by_temperature"]["model_edges"]["wall_mm_per_N_per_K"], 0.0005),
+          ("SUMMARY PEEK-only s low", SUMMARY, rf"s would be \*\*{N}–[\d.]+\*\* N/K",
+           lambda d: min(d["peek_column"]["s_N_per_K"].values()), 0.5),
+          ("SUMMARY PEEK-only s high", SUMMARY, rf"s would be \*\*[\d.]+–{N}\*\* N/K",
+           lambda d: max(d["peek_column"]["s_N_per_K"].values()), 0.5),
+          ("SUMMARY PEEK-only wall low", SUMMARY, rf"would ask \*\*{N}–[\d.]+\*\* mm",
+           lambda d: min(d["by_squeeze_point"]["window_top"]["by_temperature"]["capsule_requirement"]["wall_mm_if_the_PEEK_column_were_the_loop"].values()), 0.05),
+          ("SUMMARY PEEK-only wall high", SUMMARY, rf"would ask \*\*[\d.]+–{N}\*\* mm",
+           lambda d: max(d["by_squeeze_point"]["window_top"]["by_temperature"]["capsule_requirement"]["wall_mm_if_the_PEEK_column_were_the_loop"].values()), 0.05),
+          ("SUMMARY floor s_max", SUMMARY, rf"carries the window floor up to {N} N/K",
+           lambda d: d["by_squeeze_point"]["window_floor"]["by_temperature"]["capsule_requirement"]["s_max_N_per_K"]["print_floor"], 0.005),
+          ("SUMMARY nominal s_max", SUMMARY, rf"and the nominal up\nto {N} — a loop",
+           lambda d: d["by_squeeze_point"]["nominal"]["by_temperature"]["capsule_requirement"]["s_max_N_per_K"]["print_floor"], 0.005),
+          ("SUMMARY table floor k_max", SUMMARY, rf"\| 1\.72 \| {N} N/µm — ",
+           lambda d: d["by_squeeze_point"]["window_floor"]["by_temperature"]["capsule_requirement"]["k_max_N_per_um_at_span"]["print_floor"], 0.05),
+          ("SUMMARY table floor factor", SUMMARY, rf"26\.4 N/µm — {N}× softer",
+           lambda d: d["by_squeeze_point"]["window_floor"]["by_temperature"]["capsule_requirement"]["softer_than_peek_under_the_lugs_x"]["print_floor"], 0.5),
+          ("SUMMARY table nominal factor", SUMMARY, rf"N/µm — {N}× softer \|",
+           lambda d: d["by_squeeze_point"]["nominal"]["by_temperature"]["capsule_requirement"]["softer_than_peek_under_the_lugs_x"]["print_floor"], 0.5),
+          ("SUMMARY column k", SUMMARY, rf"softer than the {N} N/µm of the PEEK column",
+           lambda d: d["peek_column"]["k_N_per_um_over_span"]["socket_band_under_the_lugs"], 0.5),
+          ("02_02 §4.4 wall per N/K", BLIND_MATE, rf"кожен Н/K теплової чутливості контуру додає \*\*{N} мм\*\*",
+           lambda d: d["by_squeeze_point"]["window_top"]["by_temperature"]["capsule_requirement"]["wall_mm_per_N_per_K"], 0.0005),
+          ("02_02 §4.4 PEEK-only s high", BLIND_MATE, rf"s була б \*\*[\d.]+–{N} Н/K\*\*",
+           lambda d: max(d["peek_column"]["s_N_per_K"].values()), 0.5),
+          ("02_02 §4.4 PEEK-only wall high", BLIND_MATE, rf"просив би \*\*[\d.]+–{N} мм\*\*",
+           lambda d: max(d["by_squeeze_point"]["window_top"]["by_temperature"]["capsule_requirement"]["wall_mm_if_the_PEEK_column_were_the_loop"].values()), 0.05),
+          ("02_02 §4.4 floor s_max", BLIND_MATE, rf"несе підлогу вікна до s = {N} Н/K",
+           lambda d: d["by_squeeze_point"]["window_floor"]["by_temperature"]["capsule_requirement"]["s_max_N_per_K"]["print_floor"], 0.005),
+          ("02_02 §4.4 nominal s_max", BLIND_MATE, rf"і номінал до {N} — це контур",
+           lambda d: d["by_squeeze_point"]["nominal"]["by_temperature"]["capsule_requirement"]["s_max_N_per_K"]["print_floor"], 0.005))],
     # ── HW.33 · HW.43 the O-ring's own reaction — Parker Figure 2-4 + Table 2-3 over 52's window (script 88, 2026-10-13) ──
     # ⛔ These numbers took the «generous» 100 N out of the role of an upper bound; a doc copy drifted off the cache would
     #    put the lug root's margin, or (A)'s margin, back on a number nobody computed.

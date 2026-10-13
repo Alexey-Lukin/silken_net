@@ -235,7 +235,10 @@ if ARGV == [ "--assert" ]
     "поз. 19 за присудом ⚖️ 2026-09-30 (пакет HW.9): +17.1 мм², ціль пари B2B Ø20.24, rigid-flex Ø18.82 (`02_01 §3.5`)" =>
       near.(POS19["verdict"][1] - POS19["class"][1], 17.1) &&
       near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict").max, 20.24) &&
-      near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: true, pos19: "verdict").max, 18.82)
+      near.(target_for(booster: "nn02_224", edlc: "kr", rigid_flex: true, pos19: "verdict").max, 18.82),
+    "умовний член пакета — стінка коміра за міцністю з `88` (⚖️ founder 2026-10-13): поле є й стоїть над друкованою підлогою" =>
+      JSON.parse(File.read(File.expand_path("../in_silico/cache/mechanical/oring_reaction_band.json", __dir__)))
+          .dig("band", "window_top", "collar_wall_strength_asks_mm_ring_never_relaxes").to_f > COLLAR_WALL_MM
   }
   checks.each { |name, ok| puts "#{ok ? 'OK  ' : 'FAIL'} #{name}" }
   exit(checks.values.all? ? 0 : 1)
@@ -297,7 +300,7 @@ if ARGV == [ "--package" ]
     end
   end
   strength_wall = JSON.parse(File.read(ORING_BAND_JSON)).dig("band", "window_top", "collar_wall_strength_asks_mm_ring_never_relaxes")
-  puts format("  умовний член — стінка коміра за міцністю %.2f мм замість %.1f (`88`: верх вікна стиску, кільце без релаксації; ⚖️ founder 2026-10-13, 02_02 §4.4): +%.2f мм до кожного купола вище, доки не прийдуть крива сили й релаксація компаунда",
+  puts format("  умовний член — стінка коміра за міцністю %.3f мм замість %.1f (`88`: верх вікна стиску, кільце без релаксації, контур без теплової чутливості; ⚖️ founder 2026-10-13, 02_02 §4.4): +%.2f мм до кожного купола вище, доки не прийдуть крива сили й релаксація компаунда; з жорсткістю контуру росте (`89`) — ціна понад ≈ 0.16 мм Ø іде назад founder-у",
               strength_wall, COLLAR_WALL_MM, 2 * (strength_wall - COLLAR_WALL_MM))
   no_seg = target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false, pos19: "verdict", standoffs: "m2x8_stop").max
   puts format("  без сегмента (поз. 19 і стійки) — ціль Ø%.2f → купол: %s; ціль дефолту Ø%.2f під купол Ø%.1f",
