@@ -496,7 +496,7 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 //       гине весь SRAM, тож RAM-only лічильники пробуджень (wakeups_since_*, ota_silent_wakeups) і
 //       soldier_unix_ts щопробудження стартували б з нуля: grace холодного старту не дораховувався б
 //       ніколи, і прохання синхронізації (0x56) замовкло б; OTA-буфер і ota_silent_wakeups (0x03) —
-//       окремий ⚖️ (03_01 §2.3.1), а в ECB-збірці soldier_unix_ts Standby не переживає (ціна §2.3.2);
+//       відкладені до bench (founder 2026-06-12, 03_01 §2.3.1), а в ECB-збірці soldier_unix_ts Standby не переживає (ціна §2.3.2);
 //   (2) пін-мапи ключів навантажень (.ioc, 00_07 FW.46) — без неї Standby_Load_Pulls порожній;
 //   (3) виміряного сну на стенді (RUNBOOK 3.1).
 // #ifndef — щоб compile-lane hal_check_ccm збирав гілку `-DFW54_STANDBY_ENABLED=1` проти WL-HAL.

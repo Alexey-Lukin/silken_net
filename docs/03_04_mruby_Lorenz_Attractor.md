@@ -883,7 +883,7 @@ z_{n+1} = z_n + dz/dt · DT
 | Бали (5 біт) | `Metabolic.homeostasis_gp(Δt)` у гомеостазі, сторожа — Лоренц | та сама формула (§4.3) над EMA-входом (індекси 12..13 plaintext, у кадрі — байти 20..21) — без Лоренца |
 | Статус (2 біти) | гомеостаз / стрес / аномалія з `z` · 3 = `vm_error` | валідність циклу, не біологія — коди й стеля резервних (утримують лише бали, рядок пише сирий код) — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) |
 | Стан між циклами | `(x, y, z)` у DR16–DR19, cold start — з `K_seed` | немає: `K_seed` не читається, DR16–DR19 не торкаються ([`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)) |
-| Вбудований байткод | `lorenz_bytecode.h` | `ccm_bytecode.h` (740 Б — під трьома запіненими стелями OTA; стеля RAM-стану збирання під Standby — ⚖️ FW.54; [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) |
+| Вбудований байткод | `lorenz_bytecode.h` | `ccm_bytecode.h` (740 Б — під трьома запіненими стелями OTA; стеля RAM-стану збирання під Standby — OTA-буфер, відкладений до bench, founder 2026-06-12 ([`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)), FW.54; [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning)) |
 
 Метаболічна формула одна для обох ер: `firmware/bio_contracts/metabolic_core.rb` компілюється першим в обидва контракти (pin `metabolic_gp_core`). Валідність кожного поля виміру несе власний сентинел «не виміряно» (перелік — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)), тож біти статусу відповідають лише на питання «чи відпрацював контракт».
 
