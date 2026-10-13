@@ -398,8 +398,8 @@ volatile uint32_t soldier_unix_ts            = 0;
 volatile uint32_t soldier_unix_ts_local_tick = 0;
 
 // [ARCH.26 L2] Кеш TDMA-розкладки з байтів 5..8 маяка. RAM-only derived
-// state (як soldier_unix_ts сьогодні; під Standby CCM-збірки їй зарезервовано DR16 —
-// ⚖️ 2026-10-13, 03_01 §2.3.2): гине з SRAM у RTC-only сні (клас Standby, 00_07 FW.54) / VBAT-loss і
+// state (як soldier_unix_ts сьогодні; під soldier_unix_ts у Standby CCM-збірки
+// зарезервовано DR16 — ⚖️ 2026-10-13, 03_01 §2.3.2): гине з SRAM у RTC-only сні (клас Standby, 00_07 FW.54) / VBAT-loss і
 // відновлюється наступним маяком (≤15 хв) — RTC DR і Flash-KV не потрібні
 // (бюджет DR практично повний, 03_01 §2). Гейт INERT: фліп = bench WUT-армінг
 // (SEC.15/FW.49); математика вікон/слотів — common/tdma_schedule.h.
