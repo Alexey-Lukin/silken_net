@@ -287,6 +287,12 @@ ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
+# Board stack thermal expansion (HW.43, the pogo gap's thermal travel — script 90). FR-4 Z below Tg: Panasonic R-1755M /
+# R-1755V specification sheets (IPC-TM-650 2.4.24, «CTE pre/post Tg» Z row, typical; Tg 150 / 170 °C — the capsule never
+# reaches either). Steels: Parker O-Ring Handbook ORD 5700, Table 2-5 (p. 2-19), given in in/in/°F and converted ×1.8.
+ALPHA_FR4_Z_1K = (40e-6, 43e-6)          # 1/K — R-1755M · R-1755V, Z axis, pre-Tg
+ALPHA_STEEL_MILD_1K = 6.7e-6 * 1.8      # 1/K — Parker Table 2-5, «Steel, Mild»
+ALPHA_SS302_1K = 9.6e-6 * 1.8           # 1/K — Parker Table 2-5, «Stainless Steel, Type 302»
 
 # PEEK 450G stress relaxation under CONSTANT STRAIN (a press-fit, a clamped rim) — NOT creep. Semicrystalline
 # PEEK keeps a relaxed (equilibrium) modulus — its crystalline phase forms a permanent elastic network — so stress

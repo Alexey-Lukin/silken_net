@@ -2228,6 +2228,69 @@ def test_bayonet_thermal_clamp():
     assert tr["0.05"]["k_max_N_per_um"]["member_wall"] < tr["0.0"]["k_max_N_per_um"]["member_wall"]   # δ binds harder
     assert tr["0.05"]["thermal_share_of_slope"] < 0.5
 
+def test_pogo_thermal_gap():
+    """Script 90 (HW.43): the pogo gap's thermal travel — seasonal swing against 52's window, daily stroke, radial slide.
+
+    CAN catch, recomputed from the inputs and the upstream caches rather than copied from the script: the chain no
+    longer closing (gap + 2 decks + standoff = the radome's pocket floor); the coefficients leaving α·L sums with lib's
+    CTEs; the seasonal gap changes leaving coefficient × (T − T_asm) on 82's readings; the window check leaving
+    nominal ± 52's residual + the thermal compression; the daily stroke, force ratio and radial slide leaving
+    coefficient × the daily range; the tolerated radome lead leaving margin / stack coefficient. CANNOT catch: the daily
+    range itself (it needs 71's hourly run — the script checks 71 against its own cache), the gasket and pin-body terms
+    (not computed), or the stack's centring.
+    """
+    path = MECHANICAL / "pogo_thermal_gap.json"
+    if not path.exists():
+        pytest.skip("pogo_thermal_gap.json not computed")
+    from lib.constants import ALPHA_FR4_Z_1K, ALPHA_PEEK_1K, ALPHA_SS302_1K, ALPHA_STEEL_MILD_1K
+    d = json.loads(path.read_text(encoding="utf-8"))
+    z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
+    c82 = json.loads((MECHANICAL / "collar_running_clearance.json").read_text(encoding="utf-8"))
+    radome = json.loads((REPO / "tools/cad/cem/radome.json").read_text(encoding="utf-8"))
+    inp = d["inputs"]
+    h = radome["pocket_floor_over_rim_mm"]
+    assert inp["pocket_floor_over_rim_mm_placeholder"] == h
+    assert abs(inp["gap_mm_52"] + 2 * inp["fr4_deck_mm_52"] + inp["standoff_mm_52"] - h) < 1e-6
+    assert inp["alpha_fr4_z_1K"] == list(ALPHA_FR4_Z_1K) and inp["alpha_peek_1K"] == ALPHA_PEEK_1K
+    co = d["coefficients_um_per_K"]
+    radome_k = ALPHA_PEEK_1K * h * 1e3
+    stack_lo = 2 * inp["fr4_deck_mm_52"] * ALPHA_FR4_Z_1K[0] * 1e3 + inp["standoff_mm_52"] * ALPHA_STEEL_MILD_1K * 1e3
+    stack_hi = 2 * inp["fr4_deck_mm_52"] * ALPHA_FR4_Z_1K[1] * 1e3 + inp["standoff_mm_52"] * ALPHA_SS302_1K * 1e3
+    assert abs(co["radome"] - radome_k) <= 1e-4
+    assert abs(co["stack"]["low"] - stack_lo) <= 1e-4 and abs(co["stack"]["high"] - stack_hi) <= 1e-4
+    gap = {"isothermal_low_stack": radome_k - stack_hi, "isothermal_high_stack": radome_k - stack_lo,
+           "gradient_bound_radome_only": radome_k}
+    for k, v in gap.items():
+        assert abs(co["gap"][k] - v) <= 1e-4, k
+    assert gap["isothermal_low_stack"] < gap["isothermal_high_stack"] < gap["gradient_bound_radome_only"]
+    t_asm = c82["inputs"]["t_ref_c"]
+    travel, win, nom = inp["pogo_travel_mm"], inp["window"], inp["nominal_pct"]
+    mitig = {m["label"]: m["residual_pz"] for m in z52["mitigation_escalation"]}
+    assert inp["mitigation_residual_mm_52"] == mitig
+    for rname, (t_min, t_max) in inp["temperature_readings_c"].items():
+        for cname, v in d["seasonal"][rname].items():
+            cold, hot = -gap[cname] * (t_asm - t_min), gap[cname] * (t_max - t_asm)
+            assert abs(v["gap_um_cold"] - cold) <= 0.06 and abs(v["gap_um_hot"] - hot) <= 0.06, (rname, cname)
+            for label, res in mitig.items():
+                hi = nom + res / travel - cold * 1e-3 / travel                  # the cold closes the gap → more stroke
+                lo = nom - res / travel - hot * 1e-3 / travel
+                w = v["window"][label]
+                assert w["holds_window"] == (win[0] <= lo and hi <= win[1]), (rname, cname, label)
+                assert abs(w["margin_um"][0] - (lo - win[0]) * travel * 1e3) <= 0.06
+                assert abs(w["margin_um"][1] - (win[1] - hi) * travel * 1e3) <= 0.06
+    rng = d["daily_capsule_range_K"]
+    assert 0 < rng["median"] < rng["p95"] < rng["max"] and d["daily_days"] > 10000
+    for cname, per in d["daily"].items():
+        for st, v in per.items():
+            assert abs(v["stroke_um"] - gap[cname] * rng[st]) <= 0.02, (cname, st)
+            assert abs(v["force_ratio_over_min_preload"] - gap[cname] * rng[st] * 1e-3 / inp["x_preload_min_mm"]) <= 1e-4
+    for k, per in d["radial_slide_daily_um_per_mm_radius"].items():
+        for st, v in per.items():
+            assert abs(v - d["radial_slide_um_per_mm_radius_per_K"][k] * rng[st]) <= 0.002, (k, st)
+    req = d["seasonal"]["capsule_requirement"]
+    margin = min(min(req[c]["window"]["L1 spacer only"]["margin_um"]) for c in ("isothermal_low_stack", "isothermal_high_stack"))
+    assert abs(d["radome_lead_tolerated_by_L1_K"] - margin / stack_hi) <= 0.1
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 

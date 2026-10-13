@@ -97,6 +97,8 @@ Anchor mechanics (CPU):
      `S79.load_weather`, so the cloud file is 81's runtime input too (it does not use the cover)
   71 · 79 → 81 (importlib: 71's lump — geometry, convection kernels, loader · 79's sky emissivity and weather join, which
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
+  52 · 71 (importlib: POGO constants · the hourly capsule temperature, checked against 71's cache) · 82 → 90 (the pogo
+     gap's thermal travel; radome CEM pocket floor) — a change to 52's chain, 71's lump or lib's CTEs re-runs 90
   52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` by importlib and the radome CEM's lock-groove span:
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·

@@ -1105,6 +1105,32 @@ CHECKS = [
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
      lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),
+    # ── HW.43 the pogo gap's thermal travel (script 90, 2026-10-13) ──
+    *[(f"pogo thermal gap, {label} → pogo_thermal_gap.json", doc, pattern,
+       "mechanical/pogo_thermal_gap.json", resolver, tol)
+      for label, doc, pattern, resolver, tol in (
+          ("SUMMARY coefficient low", SUMMARY, rf"it moves by \*\*{N}–[\d.]+\*\* µm/K with both together",
+           lambda d: d["coefficients_um_per_K"]["gap"]["isothermal_low_stack"], 0.005),
+          ("SUMMARY coefficient high", SUMMARY, rf"it moves by \*\*[\d.]+–{N}\*\* µm/K with both together",
+           lambda d: d["coefficients_um_per_K"]["gap"]["isothermal_high_stack"], 0.005),
+          ("SUMMARY coefficient gradient", SUMMARY, rf"and \*\*{N}\*\* µm/K when the radome leads",
+           lambda d: d["coefficients_um_per_K"]["gap"]["gradient_bound_radome_only"], 0.005),
+          ("SUMMARY cold closing", SUMMARY, rf"closes by up to \*\*{N}\*\* µm in the cold",
+           lambda d: -d ["seasonal"]["capsule_requirement"]["isothermal_high_stack"]["gap_um_cold"], 0.5),
+          ("SUMMARY hot opening", SUMMARY, rf"opens by \*\*{N}\*\* µm in the heat",
+           lambda d: d ["seasonal"]["capsule_requirement"]["isothermal_high_stack"]["gap_um_hot"], 0.5),
+          ("SUMMARY L1 lead tolerated", SUMMARY, rf"leading the stack by about \*\*{N}\*\* K",
+           lambda d: d["radome_lead_tolerated_by_L1_K"], 0.5),
+          ("SUMMARY daily median", SUMMARY, rf"swings by a median \*\*{N}\*\* K",
+           lambda d: d["daily_capsule_range_K"]["median"], 0.05),
+          ("SUMMARY daily p95", SUMMARY, rf"95th percentile \*\*{N}\*\* K",
+           lambda d: d["daily_capsule_range_K"]["p95"], 0.05),
+          ("SUMMARY daily force ratio high", SUMMARY, rf"\*\*[\d.]+–{N}\*\* % of the minimum preload",
+           lambda d: d["daily"]["gradient_bound_radome_only"]["p95"]["force_ratio_over_min_preload"] * 100, 0.05),
+          ("SUMMARY slide high", SUMMARY, rf"slides by \*\*[\d.]+–{N}\*\* µm per mm of r",
+           lambda d: d["radial_slide_daily_um_per_mm_radius"]["flange_held"]["p95"], 0.005),
+          ("02_02 §3.5 L1 lead", BLIND_MATE, rf"над стеком до ≈ \*\*{N} K\*\*",
+           lambda d: d["radome_lead_tolerated_by_L1_K"], 0.5))],
     # ── HW.33 the bayonet clamp over its fit and temperature — the ratified member is a lower bound (script 89, 2026-10-13) ──
     # ⛔ These numbers returned a founder verdict; a doc copy drifted off the cache would re-price it silently.
     *[(f"bayonet thermal clamp, {label} → bayonet_thermal_clamp.json", doc, pattern,

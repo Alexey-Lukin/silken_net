@@ -3,7 +3,8 @@
 """89 — the bayonet clamp over its interference tolerance and temperature: how stiff the clamp loop may be, and what
 the collar wall must then carry (00_07 HW.33, the leg «тепловий затиск байонета»; its consumer is the conditional
 root-package member «стінка коміра за міцністю», ⚖️ founder 2026-10-13, 02_02 §4.4 — returned the same day and
-ratified as a LOWER bound; this script recomputes the wall once δ and k exist, before the collar is drawn).
+ratified as a LOWER bound; this script recomputes the wall once δ and k exist, before the collar is drawn, and a number
+that raises the price goes back to the founder).
 
 QUESTION. The bayonet is deflection-controlled (02_02 §4.3): the clamp C is the elastic squeeze of the loop
 lug → groove ledge → radome → rim → flange face → collar → lug, so C = k·(interference), with k the loop's stiffness.
@@ -187,6 +188,12 @@ def main() -> int:
                                            "cold_with_summer_relaxed_K": round(cold_eff, 2),
                                            "thermal_um": round(thermal_um, 2), "by_delta_mm": by_delta}
         req = per["capsule_requirement|isothermal"]
+        # the lug load at which a flat face inside the R1.5 envelope reaches the PEEK's tensile yield on its MEAN pressure
+        # (a flat punch peaks at its edges, so this is an upper bound on the load it carries), and the PEEK-dominated k there
+        flat_yield_load = SIGMA_YIELD_PEEK_PA * 1e-6 * 2.0 * lug_r * engaged["socket_pocket_minus_clearance"] \
+            * radome["bayonet_lugs"]
+        flat_k = {dstr: (round((flat_yield_load - l0 / f) / v["slope_um"], 2) if flat_yield_load > l0 / f else None)
+                  for dstr, v in req["by_delta_mm"].items()}
         spring = {}
         for dstr in req["by_delta_mm"]:
             spread_um = 2.0 * float(dstr) * 1e3 + d_alpha["isothermal"] * span_mm * 1e3 * (
@@ -196,6 +203,8 @@ def main() -> int:
                             "k_spring_max_N_per_um_zero_tolerance": round(ks, 3) if ks else None,
                             "working_deflection_mm_at_band_centre": round((cap_floor + l0) / 2 / ks * 1e-3, 2) if ks else None}
         loads = {"PEEK_dominated_minimum": l0 / f, "force_controlled": l0}
+        # a FLAT face inside the same R1.5 envelope (a pin with a flat underside): width ≤ 2R over the engaged length
+        flat_area_mm2 = 2.0 * lug_r * engaged["socket_pocket_minus_clearance"]
         points[name] = {"squeeze_pct": b["squeeze_pct"], "lift_L0_N_at_band_top": l0,
                         "PEEK_dominated_lower_bound_lug_load_N": round(l0 / f, 1),
                         "PEEK_dominated_lower_bound_wall_mm": round(wall_for(l0 / f), 3),
@@ -204,6 +213,10 @@ def main() -> int:
                         "force_band_half_width_to_print_floor": round((cap_floor - l0) / (cap_floor + l0), 3)
                         if cap_floor > l0 else None,
                         "spring_capsule_requirement": spring,
+                        "flat_face_in_envelope_mean_reaches_yield": {"lug_load_N": round(flat_yield_load, 0),
+                                                                     "k_N_per_um_by_delta_mm": flat_k},
+                        "flat_face_in_envelope_mean_pressure_MPa": {
+                            lk: round(v / radome["bayonet_lugs"] / flat_area_mm2, 1) for lk, v in loads.items()},
                         "lug_line_contact_p0_MPa": {
                             lk: {ek: round(p0_mpa(v / radome["bayonet_lugs"], ev), 0) for ek, ev in engaged.items()}
                             for lk, v in loads.items()},
@@ -274,6 +287,7 @@ def main() -> int:
                    "span_from": "radome.json lock_groove_z_mm − (lug_radius_mm + slot_clearance_mm); lock_groove_z "
                                 "is a placeholder (HW.8)",
                    "peek_sections_mm2": {k: round(v, 1) for k, v in sections.items()},
+                   "flat_face_in_envelope_area_mm2": round(2.0 * lug_r * engaged["socket_pocket_minus_clearance"], 2),
                    "lug_line_contact": {"lug_radius_mm": lug_r, "engaged_length_mm": engaged,
                                         "e_star_pa": round(e_star, -6), "yield_onset_p0_pa": p0_yield,
                                         "yield_onset_ratio": YIELD_ONSET_LINE_CONTACT,

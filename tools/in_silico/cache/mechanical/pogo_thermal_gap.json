@@ -1,0 +1,306 @@
+{
+  "question": "How temperature moves the pogo pins' working compression, seasonally and daily, and whether 52's mitigations still hold the 50–70 % window.",
+  "inputs": {
+    "pocket_floor_over_rim_mm_placeholder": 11.85,
+    "gap_mm_52": 0.65,
+    "fr4_deck_mm_52": 1.6,
+    "standoff_mm_52": 8.0,
+    "pogo_travel_mm": 1.4,
+    "window": [
+      0.5,
+      0.7
+    ],
+    "nominal_pct": 0.6,
+    "x_preload_min_mm": 0.7,
+    "alpha_peek_1K": 4.7e-05,
+    "alpha_ti_1K": 8.6e-06,
+    "alpha_fr4_z_1K": [
+      4e-05,
+      4.3e-05
+    ],
+    "alpha_steel_1K": [
+      1.2060000000000001e-05,
+      1.728e-05
+    ],
+    "mitigation_residual_mm_52": {
+      "L1 spacer only": 0.112,
+      "L2 spacer + bayonet hard-stop": 0.071
+    },
+    "assembly_temperature_c": 20.0,
+    "temperature_readings_c": {
+      "capsule_requirement": [
+        -40.0,
+        85.0
+      ],
+      "model_edges": [
+        -33.53,
+        55.0
+      ]
+    },
+    "daily_series": "71: sunlit, α 0.5, wind factor 0.1, ERA5 1991–2020 hourly; no night-sky cooling (a lower bound on the range)",
+    "pin_body_below_board_mm": 0.65
+  },
+  "coefficients_um_per_K": {
+    "radome": 0.5569,
+    "stack": {
+      "low": 0.2245,
+      "high": 0.2758
+    },
+    "gap": {
+      "isothermal_low_stack": 0.2811,
+      "isothermal_high_stack": 0.3325,
+      "gradient_bound_radome_only": 0.5569
+    },
+    "pin_body_per_ppm": 0.00065
+  },
+  "seasonal": {
+    "capsule_requirement": {
+      "isothermal_low_stack": {
+        "gap_um_cold": -16.9,
+        "gap_um_hot": 18.3,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              50.69,
+              69.2
+            ],
+            "holds_window": true,
+            "margin_um": [
+              9.7,
+              11.1
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              53.62,
+              66.28
+            ],
+            "holds_window": true,
+            "margin_um": [
+              50.7,
+              52.1
+            ]
+          }
+        }
+      },
+      "isothermal_high_stack": {
+        "gap_um_cold": -19.9,
+        "gap_um_hot": 21.6,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              50.46,
+              69.42
+            ],
+            "holds_window": true,
+            "margin_um": [
+              6.4,
+              8.1
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              53.38,
+              66.5
+            ],
+            "holds_window": true,
+            "margin_um": [
+              47.4,
+              49.1
+            ]
+          }
+        }
+      },
+      "gradient_bound_radome_only": {
+        "gap_um_cold": -33.4,
+        "gap_um_hot": 36.2,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              49.41,
+              70.39
+            ],
+            "holds_window": false,
+            "margin_um": [
+              -8.2,
+              -5.4
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              52.34,
+              67.46
+            ],
+            "holds_window": true,
+            "margin_um": [
+              32.8,
+              35.6
+            ]
+          }
+        }
+      }
+    },
+    "model_edges": {
+      "isothermal_low_stack": {
+        "gap_um_cold": -15.0,
+        "gap_um_hot": 9.8,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              51.3,
+              69.07
+            ],
+            "holds_window": true,
+            "margin_um": [
+              18.2,
+              13.0
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              54.23,
+              66.15
+            ],
+            "holds_window": true,
+            "margin_um": [
+              59.2,
+              54.0
+            ]
+          }
+        }
+      },
+      "isothermal_high_stack": {
+        "gap_um_cold": -17.8,
+        "gap_um_hot": 11.6,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              51.17,
+              69.27
+            ],
+            "holds_window": true,
+            "margin_um": [
+              16.4,
+              10.2
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              54.1,
+              66.34
+            ],
+            "holds_window": true,
+            "margin_um": [
+              57.4,
+              51.2
+            ]
+          }
+        }
+      },
+      "gradient_bound_radome_only": {
+        "gap_um_cold": -29.8,
+        "gap_um_hot": 19.5,
+        "window": {
+          "L1 spacer only": {
+            "compression_pct_range": [
+              50.61,
+              70.13
+            ],
+            "holds_window": false,
+            "margin_um": [
+              8.5,
+              -1.8
+            ]
+          },
+          "L2 spacer + bayonet hard-stop": {
+            "compression_pct_range": [
+              53.54,
+              67.2
+            ],
+            "holds_window": true,
+            "margin_um": [
+              49.5,
+              39.2
+            ]
+          }
+        }
+      }
+    }
+  },
+  "radome_lead_tolerated_by_L1_K": 23.2,
+  "daily_capsule_range_K": {
+    "median": 14.46,
+    "p95": 24.86,
+    "max": 32.99
+  },
+  "daily_days": 10958,
+  "daily": {
+    "isothermal_low_stack": {
+      "median": {
+        "stroke_um": 4.07,
+        "force_ratio_over_min_preload": 0.0058
+      },
+      "p95": {
+        "stroke_um": 6.99,
+        "force_ratio_over_min_preload": 0.01
+      },
+      "max": {
+        "stroke_um": 9.27,
+        "force_ratio_over_min_preload": 0.0132
+      }
+    },
+    "isothermal_high_stack": {
+      "median": {
+        "stroke_um": 4.81,
+        "force_ratio_over_min_preload": 0.0069
+      },
+      "p95": {
+        "stroke_um": 8.27,
+        "force_ratio_over_min_preload": 0.0118
+      },
+      "max": {
+        "stroke_um": 10.97,
+        "force_ratio_over_min_preload": 0.0157
+      }
+    },
+    "gradient_bound_radome_only": {
+      "median": {
+        "stroke_um": 8.06,
+        "force_ratio_over_min_preload": 0.0115
+      },
+      "p95": {
+        "stroke_um": 13.85,
+        "force_ratio_over_min_preload": 0.0198
+      },
+      "max": {
+        "stroke_um": 18.37,
+        "force_ratio_over_min_preload": 0.0262
+      }
+    }
+  },
+  "radial_slide_um_per_mm_radius_per_K": {
+    "isothermal": 0.0384,
+    "flange_held": 0.047
+  },
+  "radial_slide_daily_um_per_mm_radius": {
+    "isothermal": {
+      "median": 0.555,
+      "p95": 0.955,
+      "max": 1.267
+    },
+    "flange_held": {
+      "median": 0.68,
+      "p95": 1.168,
+      "max": 1.551
+    }
+  },
+  "missing_data": [
+    "the pocket gasket's compressed height (placeholder 0, HW.32) and its EPDM expansion",
+    "the pogo pin body's CTE (brass; no primary in the tree)",
+    "the pocket floor height itself (placeholder, HW.29)",
+    "what centres the stack radially, and the outer pad's radius (layout, HW.9)",
+    "night-sky cooling in the daily range (81 has it, 71 does not)",
+    "the centre pad's wire path inside the PEEK sleeve (HW.34)"
+  ],
+  "verdict": "The gap is the radome's PEEK column (11.85 mm to the pocket floor) minus the board stack hanging from it, so it moves by 0.28–0.33 µm/K with both together and 0.56 µm/K when the radome leads: over the capsule requirement it closes by up to 20 µm in the cold and opens by 22 µm in the heat (33 / 36 µm with the gradient). Against 52's minimal mitigation (L1 spacer only, ±0.112 mm, which leaves 28 µm to each window edge) the isothermal swing holds the 50–70 % window (margins 6 / 8 µm) and the gradient bound breaks it (-8 / -5 µm) — L1 tolerates a radome leading the stack by about 23 K at the extremes; the bayonet hard-stop mitigation (±0.071 mm) holds it even then. Daily, 71's capsule (no night-sky cooling, so a lower bound) swings by a median 14.5 K and a 95th percentile 24.9 K, a pin stroke of 4.8–13.8 µm — 0.7–2.0 % of the minimum preload once a day — and a pin at radius r slides by 0.95–1.17 µm per mm of r on a 95th-percentile day. The thermal swing is added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and pushes the stack the other way, the pin body (no primary; 0.0006 µm/K per ppm/K) pushes its tip against the gap's change — so leaving them out keeps this a bound. Not computed either: the stack's real centring and the centre pad's wire path (HW.34)."
+}

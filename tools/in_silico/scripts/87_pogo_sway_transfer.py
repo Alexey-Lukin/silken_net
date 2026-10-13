@@ -46,7 +46,7 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       holds, it loads the wire and its seam axially instead (not computed — 77 priced the press-fit in torsion only).
       Over the pin's working compression the ceiling is the force ratio Δu/x_min for a spring without barrel preload.
   (D) THERMAL, not sway — the daily expansion mismatch of radome, stack, sleeve and wire moves the same contacts; not
-      computed here (`00_07` HW.43, its own leg).
+      computed here — script `90` prices it (`00_07` HW.43).
 
 STEM INPUT (Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 — one Scots pine, H 16.8 m, DBH 21.5 cm, tilt
 sensors at 0.1…12 m, the windiest interval of one January day, gusts to 15.0 m/s at the canopy top): the root plate
@@ -299,7 +299,7 @@ def main() -> int:
                          "spacing — layout HW.9",
                          "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
                          "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"],
-        "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
+        "not_computed": "(D) thermal cycling of the pogo contacts — script 90 (`00_07` HW.43)",
         "verdict": ("Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the "
                     "end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker "
                     "clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the "
