@@ -1,6 +1,6 @@
 {
   "question": "HW.43 — the transfer «stem motion → load through the pogo pins»",
-  "source": "Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 (one P. sylvestris, H 16.8 m, DBH 21.5 cm; 30 Jan 2019, 3-s gust 15.0 m/s at canopy top)",
+  "source": "Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 (one P. sylvestris, H 16.8 m, DBH 21.5 cm; 30 Jan 2019, 3-s gust 15.0 m/s at canopy top) · μ_LR: Wood Handbook 2021 (FPL-GTR-282) ch. 5 Table 5–2, nine pines at ≈ 12 % moisture",
   "inputs": {
     "h1_m": 0.1,
     "h2_m": 2.0,
@@ -12,7 +12,7 @@
     "f0_upper_hz": 0.74,
     "pin_force_min_N": 0.392,
     "pin_count": 2,
-    "pin_force_full_travel_N": 0.96,
+    "working_compression_min_mm": 0.7,
     "mu_low": 0.2,
     "install_angle_deg": 10.0,
     "capsule_envelope_mm": [
@@ -21,6 +21,22 @@
     ],
     "mass_ceiling_g": 112.5,
     "drag_ceiling_N": 0.145,
+    "mu_lr_pines": {
+      "loblolly": 0.328,
+      "lodgepole": 0.316,
+      "longleaf": 0.332,
+      "pond": 0.28,
+      "ponderosa": 0.337,
+      "red": 0.347,
+      "slash": 0.392,
+      "sugar": 0.356,
+      "western white": 0.329
+    },
+    "depth_span_m": {
+      "nominal_centroids_77": 0.045,
+      "ceiling_full_depth_77": 0.09
+    },
+    "dbh_source_tree_m": 0.215,
     "rim_required_initial_clamp_N_from_52": {
       "pogo_pair_only": 3.0,
       "with_generous_o_ring": 156.8
@@ -29,7 +45,8 @@
   "controls": {
     "slope_times_flux_reproduces_12m_tilt": {
       "deg": 11.47,
-      "text_deg": 12.0
+      "text_deg": 12.0,
+      "note": "units only — same-interval regression"
     }
   },
   "by_slope_reading": {
@@ -37,50 +54,91 @@
       "stem_at_anchor_h_le_2m": {
         "slope_deg_per_m2s2": 0.03,
         "tilt_deg": 0.93,
-        "displacement_mm": 30.8,
+        "nos_displacement_mm": 30.8,
         "accel_m_s2": 0.826,
         "accel_oscillation_m_s2": 0.667,
         "accel_gravity_tilt_m_s2": 0.159,
         "mean_curvature_rad_per_m": 0.00854,
         "surface_strain_microstrain_source_tree": 918.0
       },
-      "axial_force_ratio_per_gram": 0.00211,
-      "stack_mass_g_for_ratio_10pct": 47.5,
-      "stack_mass_g_for_preload_unload": 475.0,
-      "axial_force_ratio_at_mass_ceiling": 0.237,
-      "spring_plus_gasket_k_N_per_mm_needed_at_mass_ceiling": 0.243,
-      "lateral_cyclic_over_static_gravity": 0.086,
-      "rim_demand_over_lug_friction_pogo_only": 1.52,
-      "o_ring_force_N_that_closes_the_rim_check": 0.4,
-      "stack_mass_g_where_inertia_reaches_55_drag": 363.0
+      "A_rim": {
+        "capsule_weight_N_at_ceiling": 1.103,
+        "demand_N_at_ceiling": 1.112,
+        "o_ring_force_N_that_holds_the_rim_at_ceiling": 4.78,
+        "note": "pogo push alone does not hold even the capsule's weight; below this O-ring force the capsule shifts inside the collar clearance and the pins slide (55's regime)"
+      },
+      "B_inertia_coaxial": {
+        "force_ratio_per_gram": 0.00211,
+        "stack_mass_g_for_ratio_10pct": 47.5,
+        "stack_mass_g_where_weakest_pin_unloads": 155.0,
+        "ratio_at_mass_ceiling_over_reduced_mean": 0.463,
+        "unloads_at_mass_ceiling": false,
+        "pair_factor_h_over_s": "NOT COMPUTED — layout (HW.9): pin spacing and the stack's centre-of-mass height",
+        "suspension_k_N_per_mm_needed_at_ceiling": 0.243
+      },
+      "C_centre_pad_poisson": {
+        "ratio_per_1000_microstrain": {
+          "mu_lr_lo_dx_nominal": 0.018,
+          "mu_lr_hi_dx_ceiling": 0.0504
+        },
+        "axial_shift_um_at_source_strain": [
+          11.6,
+          32.4
+        ],
+        "ratio_at_source_strain": [
+          0.0165,
+          0.0463
+        ]
+      }
     },
     "upper_whisker": {
       "stem_at_anchor_h_le_2m": {
         "slope_deg_per_m2s2": 0.06,
         "tilt_deg": 1.86,
-        "displacement_mm": 61.7,
+        "nos_displacement_mm": 61.7,
         "accel_m_s2": 1.652,
         "accel_oscillation_m_s2": 1.333,
         "accel_gravity_tilt_m_s2": 0.318,
         "mean_curvature_rad_per_m": 0.01709,
         "surface_strain_microstrain_source_tree": 1837.0
       },
-      "axial_force_ratio_per_gram": 0.00421,
-      "stack_mass_g_for_ratio_10pct": 23.7,
-      "stack_mass_g_for_preload_unload": 237.0,
-      "axial_force_ratio_at_mass_ceiling": 0.474,
-      "spring_plus_gasket_k_N_per_mm_needed_at_mass_ceiling": 0.243,
-      "lateral_cyclic_over_static_gravity": 0.171,
-      "rim_demand_over_lug_friction_pogo_only": 2.11,
-      "o_ring_force_N_that_closes_the_rim_check": 0.87,
-      "stack_mass_g_where_inertia_reaches_55_drag": 182.0
+      "A_rim": {
+        "capsule_weight_N_at_ceiling": 1.103,
+        "demand_N_at_ceiling": 1.136,
+        "o_ring_force_N_that_holds_the_rim_at_ceiling": 4.89,
+        "note": "pogo push alone does not hold even the capsule's weight; below this O-ring force the capsule shifts inside the collar clearance and the pins slide (55's regime)"
+      },
+      "B_inertia_coaxial": {
+        "force_ratio_per_gram": 0.00421,
+        "stack_mass_g_for_ratio_10pct": 23.7,
+        "stack_mass_g_where_weakest_pin_unloads": 117.0,
+        "ratio_at_mass_ceiling_over_reduced_mean": 0.926,
+        "unloads_at_mass_ceiling": false,
+        "pair_factor_h_over_s": "NOT COMPUTED — layout (HW.9): pin spacing and the stack's centre-of-mass height",
+        "suspension_k_N_per_mm_needed_at_ceiling": 0.243
+      },
+      "C_centre_pad_poisson": {
+        "ratio_per_1000_microstrain": {
+          "mu_lr_lo_dx_nominal": 0.018,
+          "mu_lr_hi_dx_ceiling": 0.0504
+        },
+        "axial_shift_um_at_source_strain": [
+          23.1,
+          64.8
+        ],
+        "ratio_at_source_strain": [
+          0.0331,
+          0.0926
+        ]
+      }
     }
   },
   "missing_data": [
-    "stack mass — one scale reading of the assembled board stack",
-    "spring drawing (node_pogo_rfq п. 1a): τ_m and stiffness",
-    "O-ring compression force (52's named missing datum)"
+    "O-ring compression force (52's named missing datum) — decides (A)",
+    "stack mass, centre-of-mass height and pin spacing — layout HW.9 / a scale reading",
+    "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
+    "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"
   ],
-  "not_computed": "thermal cycling of the pogo gap (radome · stack · flange expansion, daily) — no thermal axis in 52",
-  "verdict": "Stem motion reaches the pins only as inertia: the spring force amplitude over its preload is r = m·a/F, per gram of stack; τ_a = r·τ_m once the drawing gives τ_m. The field number the pogo needs is the stem ACCELERATION at the anchor and the stack MASS, not a micro-deformation measured at the pin."
+  "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
+  "verdict": "Sway reaches the pins along four paths. With the rim holding (an O-ring force the canon lacks), two are a fraction of the preload: the stack's inertia (per gram, × a pair factor the layout sets) and a mass-independent centre-pad term in the stem's surface strain; without it, the pins slide (55's regime). The input describes one January day of one smaller tree."
 }

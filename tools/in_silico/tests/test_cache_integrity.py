@@ -1968,35 +1968,45 @@ def test_coaxiality_allocation():
 
 
 def test_pogo_sway_transfer():
-    """Script 87 (HW.43): trunk sway reaches the pogo pins only as inertia — the force ratio r = m·a/F per gram.
+    """Script 87 (HW.43): how trunk sway reaches the pogo pins — rim condition (A), stack inertia (B), centre pad (C).
 
-    CAN catch: the Figure-9 slope × the text's flux drifting away from the 12° the text reports at 12 m; a stem bound
-    or a force ratio recomputed by hand that disagrees with the cached inputs; the upper-whisker reading coming out
-    milder than the median. CANNOT catch: whether the plot reading, the copper ceiling or the canopy-top drag are the
-    right inputs — the docstring names each one as a choice.
+    CAN catch, each recomputed from the cache's own inputs and the radome CEM rather than copied from the script: the
+    copper ceiling drifting off `radome.json`; the weakest pin's unloading mass losing the static share of the weight
+    (the first version dropped it); the rim demand losing the capsule's weight; the centre-pad ratio per 1000 µε
+    leaving μ_LR·Δx/x_min; a centre-pad term that starts depending on the stem reading per µε. CANNOT catch: whether
+    the Figure-9 reading, the copper ceiling or the canopy-top drag are the right inputs — the docstring names each.
     """
     path = MECHANICAL / "pogo_sway_transfer.json"
     if not path.exists():
         pytest.skip("pogo_sway_transfer.json not computed")
     d = json.loads(path.read_text(encoding="utf-8"))
-    inp, ctl = d["inputs"], d["controls"]["slope_times_flux_reproduces_12m_tilt"]
+    inp, g = d["inputs"], 9.80665
+    cem = json.loads((REPO / "tools/cad/cem/radome.json").read_text(encoding="utf-8"))
+    dia, h = cem["dome_diameter_mm"], cem["cavity_height_mm"] + cem["bell_radius_mm"]
+    assert inp["capsule_envelope_mm"] == [dia, h]
+    assert abs(inp["mass_ceiling_g"] - math.pi * (dia / 2) ** 2 * h * 1e-3 * 8.96) <= 0.1
+    ctl = d["controls"]["slope_times_flux_reproduces_12m_tilt"]
     assert abs(ctl["deg"] - ctl["text_deg"]) <= 1.0
-    span = inp["h2_m"] - inp["h1_m"]
+    sin_i, cos_i = math.sin(math.radians(inp["install_angle_deg"])), math.cos(math.radians(inp["install_angle_deg"]))
+    m, f = inp["mass_ceiling_g"] * 1e-3, inp["pin_force_min_N"]
+    mus = inp["mu_lr_pines"].values()
+    per1000 = (min(mus) * 1e-3 * inp["depth_span_m"]["nominal_centroids_77"] * 1e3 / inp["working_compression_min_mm"],
+               max(mus) * 1e-3 * inp["depth_span_m"]["ceiling_full_depth_77"] * 1e3 / inp["working_compression_min_mm"])
     for name, r in d["by_slope_reading"].items():
-        st = r["stem_at_anchor_h_le_2m"]
-        theta = math.radians(inp["slope_at_h2_read_from_figure9"][name] * inp["flux_max_m2s2"])
-        assert abs(st["displacement_mm"] - theta * span * 1000) <= 0.1, name
-        a = (2 * math.pi * inp["f0_upper_hz"]) ** 2 * theta * span + 9.80665 * math.sin(theta)
-        assert abs(st["accel_m_s2"] - a) <= 1e-3, name
-        per_g = st["accel_m_s2"] * 1e-3 / inp["pin_force_min_N"]
-        assert abs(r["axial_force_ratio_per_gram"] - per_g) <= 1e-5, name
-        assert abs(r["stack_mass_g_for_ratio_10pct"] - 0.1 / per_g) <= 0.1, name
-        assert r["axial_force_ratio_at_mass_ceiling"] < 1.0, name          # the preload never unloads, even in copper
-        assert r["lateral_cyclic_over_static_gravity"] < 1.0, name
+        a = r["stem_at_anchor_h_le_2m"]["accel_m_s2"]
+        b, c, rim = r["B_inertia_coaxial"], r["C_centre_pad_poisson"], r["A_rim"]
+        assert abs(b["stack_mass_g_where_weakest_pin_unloads"] - f / ((a + g * sin_i) * 1e-3)) <= 1.0, name
+        demand = math.hypot(m * g * cos_i, inp["drag_ceiling_N"] + m * a)
+        assert demand > m * g * cos_i, name                            # the weight is in the rim demand
+        need = max(0.0, demand / inp["mu_low"] - inp["pin_count"] * f)
+        assert abs(rim["o_ring_force_N_that_holds_the_rim_at_ceiling"] - need) <= 0.02, name
+        assert abs(c["ratio_per_1000_microstrain"]["mu_lr_lo_dx_nominal"] - per1000[0]) <= 1e-4, name
+        assert abs(c["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] - per1000[1]) <= 1e-4, name
+        if not b["unloads_at_mass_ceiling"]:
+            assert b["ratio_at_mass_ceiling_over_reduced_mean"] < 1.0, name
     med, wh = d["by_slope_reading"]["median"], d["by_slope_reading"]["upper_whisker"]
     assert wh["stem_at_anchor_h_le_2m"]["accel_m_s2"] > med["stem_at_anchor_h_le_2m"]["accel_m_s2"]
-    assert wh["axial_force_ratio_per_gram"] > med["axial_force_ratio_per_gram"]
-
+    assert wh["C_centre_pad_poisson"]["ratio_per_1000_microstrain"] == med["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]
 
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.

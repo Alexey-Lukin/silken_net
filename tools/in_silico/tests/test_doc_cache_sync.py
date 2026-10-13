@@ -1056,19 +1056,24 @@ CHECKS = [
     *[(f"pogo sway transfer, {label} → pogo_sway_transfer.json", SUMMARY, pattern,
        "mechanical/pogo_sway_transfer.json", resolver, tol)
       for label, pattern, resolver, tol in (
-          ("12 m control", rf"× the flux = \*\*{N}°\*\*",
+          ("12 m control", rf"slope × flux = \*\*{N}°\*\*",
            lambda d: d["controls"]["slope_times_flux_reproduces_12m_tilt"]["deg"], 0.05),
-          ("median accel", rf"acceleration ≤ \*\*{N}\*\* \(median\)",
+          ("median accel", rf"acceleration, ≈ \*\*{N}\*\* \(median\)",
            lambda d: d["by_slope_reading"]["median"]["stem_at_anchor_h_le_2m"]["accel_m_s2"], 0.005),
           ("whisker accel", rf"\(median\) … \*\*{N}\*\* m/s² \(whisker\)",
            lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["accel_m_s2"], 0.005),
-          ("median ratio per gram", rf"τ_a/τ_m ≤ {N} % \(median\)",
-           lambda d: d["by_slope_reading"]["median"]["axial_force_ratio_per_gram"] * 100, 0.005),
+          ("median ratio per gram", rf"\*\*{N} % \(median\) … [\d.]+ % \(whisker\) per gram",
+           lambda d: d["by_slope_reading"]["median"]["B_inertia_coaxial"]["force_ratio_per_gram"] * 100, 0.005),
           ("whisker ratio per gram", rf"\(median\) … {N} % \(whisker\) per gram",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["axial_force_ratio_per_gram"] * 100, 0.005),
-          ("copper mass ceiling", rf"solid copper \(\*\*{N}\*\* g\)", lambda d: d["inputs"]["mass_ceiling_g"], 0.5),
-          ("ratio at the ceiling", rf"stays at ≤ \*\*{N}\*\* %",
-           lambda d: d["by_slope_reading"]["upper_whisker"]["axial_force_ratio_at_mass_ceiling"] * 100, 0.5))],
+           lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["force_ratio_per_gram"] * 100, 0.005),
+          ("O-ring force for the rim", rf"O-ring force ≥ \*\*{N}\*\* N \(median reading\)",
+           lambda d: d["by_slope_reading"]["median"]["A_rim"]["o_ring_force_N_that_holds_the_rim_at_ceiling"], 0.005),
+          ("weakest pin unloads", rf"unloads at \*\*{N}\*\* \(whisker\)",
+           lambda d: d["by_slope_reading"]["upper_whisker"]["B_inertia_coaxial"]["stack_mass_g_where_weakest_pin_unloads"], 0.5),
+          ("centre pad per 1000 µε, low", rf"\*\*{N} … [\d.]+ % of the working compression per 1000 µε",
+           lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]["mu_lr_lo_dx_nominal"] * 100, 0.005),
+          ("centre pad per 1000 µε, high", rf"… {N} % of the working compression per 1000 µε",
+           lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] * 100, 0.005))],
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield

@@ -21,9 +21,9 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      ratio is `framing_A_full_stroke_actuation.overrun_x`) — but that framing almost certainly
      does not apply, because canon (01_01 §2) already asserts the spring travel margin absorbs sway
      as micro-motion, not full-stroke cycling. By the physically-relevant low-amplitude
-     stress-fatigue model, real S-N anchor points exist; the sway amplitude is bounded since 2026-10-13
-     (script 87: inertia only, τ_a/τ_m ≤ m·a/F per gram of board stack), but the working stress itself
-     needs the spring drawing and the stack mass — PARTIAL, names the missing data.
+     stress-fatigue model, real S-N anchor points exist; since 2026-10-13 script 87 models how sway reaches
+     the pin — conditional on the rim holding the capsule (an O-ring force canon lacks), and in inputs the
+     tree does not have — so the working stress still needs the drawing and those inputs — PARTIAL.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
      creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
      independent sources) but the actual barb contact-stress amplitude is not computed (HW.26 FEA
@@ -84,10 +84,9 @@ def load_budget() -> dict:
 SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
                           "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
                           "give the shear stress)")
-SWAY_DEFLECTION_MISSING = ("the board-stack mass (one scale reading) — script 87 bounds the sway transfer as inertia "
-                           "only, a spring-force amplitude of m*a/F over the preload per gram of stack, so the "
-                           "amplitude is that fraction of the drawing's mean stress, not a micro-deflection measured "
-                           "at the pin (00_07 HW.43)")
+SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — the O-ring force (whether "
+                           "the pin slides at all), the board stack's mass and layout, and the stem's strain and "
+                           "acceleration at anchor height on host-size pines (00_07 HW.43)")
 
 
 def pogo_spring_verdict(budget: dict) -> dict:
@@ -216,7 +215,7 @@ def main() -> int:
     banner("Verdict")
     print(f"  None of the {len(parts)} parts is fully CLOSED by literature review alone — and that is itself")
     print("  the honest result HW.43 asked for: an ACCEPTANCE UNIT per part, not a rubber-stamped pass.")
-    print("  - Pogo spring: physically-right framing needs one missing datum (real sway micro-deflection).")
+    print("  - Pogo spring: physically-right framing needs the sway amplitude at the pin (script 87's inputs).")
     print("  - PEEK barb: real 30-48 MPa threshold now exists for HW.26's pending FEA to check against.")
     print("  - Genipin matrix: REMOVE from the S-N framing (category mismatch); its axis is chemical, HW.5.")
     print("  bench (🔗) is needed for: pogo spring (if framing-B stress exceeds ~240 MPa) and PEEK barb")
