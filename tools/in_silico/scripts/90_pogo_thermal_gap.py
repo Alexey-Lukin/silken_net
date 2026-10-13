@@ -37,8 +37,9 @@ READING (the radome moves, the stack stays) — not a bound: the floor hangs fro
 so a lagging wall can push the lead higher. The daily cycle: `71`'s hourly capsule temperature over 30 ERA5 years
 (sunlit, α 0.5, the aging wind factor), its daily range — a READING whose error has no known sign on the range: `71`
 takes the worst direct-sun gain (the day's peak up) and has no night-sky cooling (the night's minimum up), and as one
-lump with an adiabatic base it cannot give a shell/stack lag. `52`'s second mitigation (the bayonet hard-stop) halves
-the CNC term only when the bayonet sets Z, which branch (а) removed — under the seated-rim premise it does nothing here.
+lump with an adiabatic base it cannot give a shell/stack lag. Only `52`'s MINIMAL mitigation (the spacer, L1) is judged
+here; whether its second lever (the bayonet hard-stop) still acts under branch (а), where the rim seats the radome, is
+`52`'s question for the root-package re-run (canon keeps it live, 02_02 §3.5), not this script's.
 
 CAN show: the gap's thermal coefficient and seasonal swing, the window check at `52`'s two mitigations with it, the
 daily stroke and its force ratio over the minimum preload (as `87` prices sway), the radial slide per mm of pad radius.
@@ -169,7 +170,7 @@ def main() -> int:
     req = seasonal["capsule_requirement"]
     l1 = "L1 spacer only"
     # a radome that LEADS the stack by g kelvin adds stack·g to the gap change, so L1's isothermal margin tolerates
-    # g ≤ margin / stack-coefficient (worst isothermal reading, worst stack coefficient)
+    # g ≤ margin / stack-coefficient, each isothermal case with its OWN stack coefficient, the smaller of the two
     case_stack = {"isothermal_low_stack": stack_um_k["high"], "isothermal_high_stack": stack_um_k["low"]}
     leads = [min(req[c]["window"][l1]["margin_um"]) / st for c, st in case_stack.items()
              if min(req[c]["window"][l1]["margin_um"]) > 0]
@@ -178,7 +179,8 @@ def main() -> int:
     t_min_r, t_max_r = readings["capsule_requirement"]
     room_um = ((win[1] - nominal_pct) * travel - mitig[l1]) * 1e3            # to each window edge after the residual
     coef_allowed = min(room_um / (t_max_r - t_asm), room_um / (t_asm - t_min_r))
-    spacer_alpha_zero = (radome_um_k - 2 * fr4 * ALPHA_FR4_Z_1K[1] * 1e3 - coef_allowed) / (standoff * 1e3)
+    spacer_alpha_zero = {f"fr4_{int(a * 1e6)}": (radome_um_k - 2 * fr4 * a * 1e3 - coef_allowed) / (standoff * 1e3)
+                         for a in ALPHA_FR4_Z_1K}                       # 52's RSS residual; a linear one leaves no room
     iso_hi, grad = req["isothermal_high_stack"], req["radome_leads_reading"]
     verdict = (
         f"The gap is the radome's PEEK column ({h_floor:.2f} mm to the pocket floor) minus the board stack hanging from it, "
@@ -193,9 +195,10 @@ def main() -> int:
         f"reading {'holds' if grad['window'][l1]['holds_window'] else 'breaks'} it "
         f"({grad['window'][l1]['margin_um'][0]:.0f} / {grad['window'][l1]['margin_um'][1]:.0f} µm) — L1 tolerates a radome "
         f"leading the stack by about {lead_tolerated_k:.0f} K at the extremes, and its isothermal margin reaches zero only "
-        f"for a spacing member of CTE ≈ {spacer_alpha_zero * 1e6:.0f} ppm/K (if the B2B body, not the steel standoff, sets "
-        f"the spacing). This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path "
-        f"(HW.34), and 52's bayonet hard-stop lever is inert under branch (а). "
+        f"for a spacing member of CTE {max(spacer_alpha_zero.values()) * 1e6:.1f}…{min(spacer_alpha_zero.values()) * 1e6:.1f} "
+        f"ppm/K (if the B2B body, not the steel standoff, sets the spacing — its LCP CTE is not in the tree), against 52's "
+        f"RSS residual — a linear sum of the same two terms (±0.15 mm) leaves no room even at the assembly temperature. "
+        f"This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path (HW.34). "
         f"Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median "
         f"{stats['median']:.1f} K and a 95th percentile {stats['p95']:.1f} K, a pin stroke of "
         f"{min(v['median']['stroke_um'] for v in daily.values()):.1f}–{max(v['p95']['stroke_um'] for v in daily.values()):.1f} µm "
@@ -207,7 +210,9 @@ def main() -> int:
         f"added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and "
         f"the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and "
         f"pushes the stack the other way, the pin body (no primary; {pin_um_k_per_ppm:.4f} µm/K per ppm/K) pushes its tip "
-        f"against the gap's change — so leaving them out keeps this a bound. Not computed either: the stack's real "
+        f"against the gap's change — so, for a given temperature field and the seated premises, leaving them out keeps the "
+        f"stroke an upper estimate (the radome-leads reading and 71's daily range are readings, not bounds). Not computed "
+        f"either: the stack's real "
         f"centring and the centre pad's wire path (HW.34).")
 
     out = {
@@ -221,18 +226,19 @@ def main() -> int:
                    "mitigation_residual_mm_52": mitig, "assembly_temperature_c": t_asm,
                    "temperature_readings_c": {k: list(v) for k, v in readings.items()},
                    "daily_series": f"71: {DAILY_CASE}, α {DAILY_ALPHA}, wind factor {k_wind}, ERA5 1991–2020 hourly; "
-                                   f"no night-sky cooling (a lower bound on the range)",
+                                   f"no night-sky cooling — a reading whose error on the range has no known sign",
                    "pin_body_below_board_mm": round(pin_body_mm, 3)},
         "coefficients_um_per_K": {"radome": round(radome_um_k, 4), "stack": {k: round(v, 4) for k, v in stack_um_k.items()},
                                   "gap": {k: round(v, 4) for k, v in gap_um_k.items()},
                                   "pin_body_per_ppm": round(pin_um_k_per_ppm, 5)},
         "seasonal": seasonal,
         "radome_lead_tolerated_by_L1_K": round(lead_tolerated_k, 1) if lead_tolerated_k else None,
-        "spacer_alpha_1K_at_zero_L1_margin": round(spacer_alpha_zero, 8),
+        "spacer_alpha_1K_at_zero_L1_margin": {k: round(v, 8) for k, v in spacer_alpha_zero.items()},
         "premises": ["the rim stays seated on the flange face (89: the cold unloads a stiff clamp)",
                      "the stack is seated on the pocket floor (it floats on the pogo pair against the pocket gasket)",
                      "the OUTER pad only — the centre pad rides on the wire path (HW.34)",
-                     "52's bayonet hard-stop lever (L2) acts only when the bayonet sets Z — inert under branch (а)"],
+                     "only 52's minimal mitigation (L1, the spacer) is judged; whether L2 acts under branch (а) is 52's "
+                     "question (canon keeps it live)"],
         "daily_capsule_range_K": {k: round(v, 2) for k, v in stats.items()},
         "daily_days": len(ranges),
         "daily": daily,

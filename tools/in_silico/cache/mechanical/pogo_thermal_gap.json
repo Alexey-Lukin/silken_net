@@ -37,7 +37,7 @@
         55.0
       ]
     },
-    "daily_series": "71: sunlit, α 0.5, wind factor 0.1, ERA5 1991–2020 hourly; no night-sky cooling (a lower bound on the range)",
+    "daily_series": "71: sunlit, α 0.5, wind factor 0.1, ERA5 1991–2020 hourly; no night-sky cooling — a reading whose error on the range has no known sign",
     "pin_body_below_board_mm": 0.65
   },
   "coefficients_um_per_K": {
@@ -228,12 +228,15 @@
     }
   },
   "radome_lead_tolerated_by_L1_K": 28.5,
-  "spacer_alpha_1K_at_zero_L1_margin": -1.43e-06,
+  "spacer_alpha_1K_at_zero_L1_margin": {
+    "fr4_40": -2.3e-07,
+    "fr4_43": -1.43e-06
+  },
   "premises": [
     "the rim stays seated on the flange face (89: the cold unloads a stiff clamp)",
     "the stack is seated on the pocket floor (it floats on the pogo pair against the pocket gasket)",
     "the OUTER pad only — the centre pad rides on the wire path (HW.34)",
-    "52's bayonet hard-stop lever (L2) acts only when the bayonet sets Z — inert under branch (а)"
+    "only 52's minimal mitigation (L1, the spacer) is judged; whether L2 acts under branch (а) is 52's question (canon keeps it live)"
   ],
   "daily_capsule_range_K": {
     "median": 14.46,
@@ -309,5 +312,5 @@
     "night-sky cooling in the daily range (81 has it, 71 does not)",
     "the centre pad's wire path inside the PEEK sleeve (HW.34)"
   ],
-  "verdict": "The gap is the radome's PEEK column (11.85 mm to the pocket floor) minus the board stack hanging from it, so it moves by 0.28–0.33 µm/K with both together and 0.56 µm/K when the radome leads: over the capsule requirement it closes by up to 20 µm in the cold and opens by 22 µm in the heat (33 / 36 µm with the radome-leads reading). Against 52's minimal mitigation (L1 spacer only, ±0.112 mm, which leaves 28 µm to each window edge) the isothermal swing holds the 50–70 % window (margins 6 / 8 µm) and the radome-leads reading breaks it (-8 / -5 µm) — L1 tolerates a radome leading the stack by about 29 K at the extremes, and its isothermal margin reaches zero only for a spacing member of CTE ≈ -1 ppm/K (if the B2B body, not the steel standoff, sets the spacing). This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path (HW.34), and 52's bayonet hard-stop lever is inert under branch (а). Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median 14.5 K and a 95th percentile 24.9 K, a pin stroke of 4.1–13.8 µm — 0.6–2.0 % of the minimum preload once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by 0.95–1.17 µm per mm of r on a 95th-percentile day (about a fifth of that if the pins follow the board's own expansion). The thermal swing is added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and pushes the stack the other way, the pin body (no primary; 0.0006 µm/K per ppm/K) pushes its tip against the gap's change — so leaving them out keeps this a bound. Not computed either: the stack's real centring and the centre pad's wire path (HW.34)."
+  "verdict": "The gap is the radome's PEEK column (11.85 mm to the pocket floor) minus the board stack hanging from it, so it moves by 0.28–0.33 µm/K with both together and 0.56 µm/K when the radome leads: over the capsule requirement it closes by up to 20 µm in the cold and opens by 22 µm in the heat (33 / 36 µm with the radome-leads reading). Against 52's minimal mitigation (L1 spacer only, ±0.112 mm, which leaves 28 µm to each window edge) the isothermal swing holds the 50–70 % window (margins 6 / 8 µm) and the radome-leads reading breaks it (-8 / -5 µm) — L1 tolerates a radome leading the stack by about 29 K at the extremes, and its isothermal margin reaches zero only for a spacing member of CTE -0.2…-1.4 ppm/K (if the B2B body, not the steel standoff, sets the spacing — its LCP CTE is not in the tree), against 52's RSS residual — a linear sum of the same two terms (±0.15 mm) leaves no room even at the assembly temperature. This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path (HW.34). Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median 14.5 K and a 95th percentile 24.9 K, a pin stroke of 4.1–13.8 µm — 0.6–2.0 % of the minimum preload once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by 0.95–1.17 µm per mm of r on a 95th-percentile day (about a fifth of that if the pins follow the board's own expansion). The thermal swing is added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and pushes the stack the other way, the pin body (no primary; 0.0006 µm/K per ppm/K) pushes its tip against the gap's change — so, for a given temperature field and the seated premises, leaving them out keeps the stroke an upper estimate (the radome-leads reading and 71's daily range are readings, not bounds). Not computed either: the stack's real centring and the centre pad's wire path (HW.34)."
 }

@@ -2294,8 +2294,9 @@ def test_pogo_thermal_gap():
     t_min, t_max = inp["temperature_readings_c"]["capsule_requirement"]
     room = ((win[1] - nom) * travel - mitig["L1 spacer only"]) * 1e3
     allowed = min(room / (t_max - t_asm), room / (t_asm - t_min))
-    alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * ALPHA_FR4_Z_1K[1] * 1e3 - allowed) / (inp["standoff_mm_52"] * 1e3)
-    assert abs(d["spacer_alpha_1K_at_zero_L1_margin"] - alpha0) <= 1e-8
+    for a in ALPHA_FR4_Z_1K:                                                  # both FR-4 ends, not the kinder one
+        alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * a * 1e3 - allowed) / (inp["standoff_mm_52"] * 1e3)
+        assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
