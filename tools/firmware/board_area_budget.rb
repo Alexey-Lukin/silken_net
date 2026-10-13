@@ -240,6 +240,57 @@ if ARGV == [ "--assert" ]
   exit(checks.values.all? ? 0 : 1)
 end
 
+# Пакет кореня (`00_07` HW.9) — ОДИН рух цілі під усі члени, що зсувають її над застосований купол; рух — ⚖️ founder-а,
+# тут лише число, яке він вирішує (⏸ паузу крони знято для вимірів 2026-10-13). Члени понад дефолт:
+#   • поз. 19 за присудом і стійки `m2x8_stop` — рядки вище;
+#   • посадка `NN02-224` ширша за корпус — 12.2 × 3.2 (DS_NN02-224 §2.7), кортьярд 12.7 × 3.7;
+#   • четверте місце узгоджувальної ланки — розкладка вміщає і П, і Т (`02_01 §5.3`);
+#   • clearance-сегмент над хордою — геометрія генератора плат осі 3 (`tools/pcb/hw33_rf_axis3_boards`, найвужча зона,
+#     ⚖️ founder 2026-10-12): бустер на колі r − 0.5, хорда на 1.0 мм за падами. Площа росте з Ø, тож ціль — нерухома
+#     точка. Верх RF Deck — завжди (посадка лежить у сегменті); низ — друге прочитання «наскрізний keep-out»: евал-плати
+#     Ignion двошарові й показують зону без землі, але текст DS/UM шарів не називає;
+#   • зазор ходу коміра — рядки маршрутів `82` (верхня межа design clearance рядка).
+# Умовні члени дає складальник: пара `R_OC` (+1 × 0402 на верху Power Deck) друкується окремо; keep-out THT-падів EDLC
+# під міні-хвилю розміру не має. ⛔ Стеля: геометричну підлогу низу RF Deck із наскрізним сегментом (EDLC і сокет поза
+# ним) модель не рахує — відповідь лише вгору.
+PKG_LAND = rect(12.70, 3.70)
+CLEARANCE_JSON = File.expand_path("../in_silico/cache/mechanical/collar_running_clearance.json", __dir__)
+
+def booster_segment(d)
+  r = d / 2.0
+  ex, ey, pad_h = 6.1, 1.6, 3.2   # NN02-224: пади 2.2 × 3.2 на кроці 7.8 + 2.2, корпус 12.0 × 3.0 — як у генераторі
+  yc = -Math.sqrt(((r - 0.5)**2) - (ex**2)) + ey
+  depth = r + yc + (pad_h / 2) + 1.0
+  (r * r * Math.acos((r - depth) / r)) - ((r - depth) * Math.sqrt((2 * r * depth) - (depth * depth)))
+end
+
+def package_target(rigid_flex:, through:, r_oc: false)
+  base = sums(parts(booster: "nn02_224", edlc: "kr", rigid_flex:, pos19: "verdict", standoffs: "m2x8_stop")).values.sum
+  fixed = base - BOOSTER["nn02_224"][1] + C0402 + (r_oc ? R0402 : 0.0)
+  d = 20.0
+  30.times { d = diameter_for((fixed + (booster_segment(d) * (through ? 2 : 1))) / 3 / 0.7) }
+  [ [ d, geometric_floor("kr", socket: !rigid_flex) ].max, booster_segment(d) ]
+end
+
+if ARGV == [ "--package" ]
+  routes = JSON.parse(File.read(CLEARANCE_JSON)).fetch("routes")
+  dome = ->(d, gap) { d + (2 * BOSS_BAND_MM) + (2 * (COLLAR_WALL_MM + gap)) }
+  puts "Пакет кореня (00_07 HW.9) — ціль контуру під усі члени; купол radome.json Ø#{DOME_MM}, рух кореня — ⚖️ founder-а"
+  puts format("  члени понад дефолт: поз. 19 за присудом %+.1f · стійки m2x8_stop %+.1f · посадка бустера %+.1f · четверте місце ланки %+.1f · сегмент — нижче, мм²",
+              POS19["verdict"][1] - POS19["class"][1], STANDOFFS["m2x8_stop"][1].values.sum, PKG_LAND - BOOSTER["nn02_224"][1], C0402)
+  [ [ "пара B2B", false ], [ "rigid-flex", true ] ].each do |label, rigid|
+    [ [ "сегмент лише на верху RF Deck", false ], [ "наскрізний keep-out (верх + низ RF Deck)", true ] ].each do |reading, through|
+      d, seg = package_target(rigid_flex: rigid, through:)
+      d_oc, = package_target(rigid_flex: rigid, through:, r_oc: true)
+      domes = routes.map { |r| format("%s Ø%.2f", r.fetch("route"), dome.(d, r.fetch("design_clearance_bound_mm"))) }
+      puts format("  %-10s %-42s ціль Ø%.2f (сегмент %.1f мм²; з парою R_OC Ø%.2f) → купол: %s",
+                  label, reading, d, seg, d_oc, domes.join(" · "))
+    end
+  end
+  puts format("  для порівняння — ціль дефолту Ø%.2f під купол Ø%.1f (зазор ходу 0)", target_for(booster: "nn02_224", edlc: "kr", rigid_flex: false).max, DOME_MM)
+  exit 0
+end
+
 opts = { booster: "nn02_224", edlc: "kr", diameter: CEILING_MM, pos19: "class", standoffs: "none" }
 ARGV.each_slice(2) do |flag, value|
   case flag
