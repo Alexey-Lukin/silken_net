@@ -307,10 +307,10 @@ POGO_SPRING_FORCE_N = 0.96      # N per pin at FULL travel (02_02 §2.2) — an 
 POGO_PIN_COUNT = 2              # centre (GND) + outer ring (V+), 02_02 §1.2
 # ⛔ ASSUMED, not measured: canon has NO O-ring compression force (a named missing datum), so a deliberately
 # generous bound stands in wherever a lift force is needed — never quote it as the seal's force.
-# ⚠️ 2026-10-13: it is NOT an upper bound — `88` (Parker ORD 5700 Figure 2-4, 70 Shore A, .070 section) puts the
-# hard end of the band above it already below the nominal squeeze, and even the soft end reaches it at the window
-# top (numbers: oring_reaction_band.json). 52 and 73 keep reading this value until they re-run with the root
-# package (00_07 HW.9 · HW.33); a new consumer reads 88's cache instead.
+# ⚠️ 2026-10-13: canon now HAS the reaction as a band (02_02 §3.2, script `88`: Parker ORD 5700 Figure 2-4 + Table
+# 2-3, 70 Shore A, .070 section), and this value is NOT an upper bound — the band's top passes it below the nominal
+# squeeze, and at the window top even its bottom lies above it (numbers: oring_reaction_band.json). 52 and 73 keep
+# reading this value until they re-run with the root package (00_07 HW.9 · HW.33); a new consumer reads 88's cache.
 GENEROUS_ORING_BOUND_N = 100.0  # N
 
 # The smallest host stem: the 4 % CODIT rule admits the Ø15 wound from DBH 38 cm (01_01 §1, Zone 2 — mirror, edit there).

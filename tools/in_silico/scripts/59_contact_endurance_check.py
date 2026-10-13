@@ -22,7 +22,7 @@ Verdicts by part (see the three functions + `main` for the full reasoning and ca
      does not apply, because canon (01_01 §2) already asserts the spring travel margin absorbs sway
      as micro-motion, not full-stroke cycling. By the physically-relevant low-amplitude
      stress-fatigue model, real S-N anchor points exist; since 2026-10-13 script 87 models how sway reaches
-     the pin — conditional on the rim holding the capsule (an O-ring force canon lacks), and in inputs the
+     the pin — conditional on the rim holding the capsule (the bayonet seating the rim; the O-ring reaction is `88`'s), and in inputs the
      tree does not have — so the working stress still needs the drawing and those inputs — PARTIAL.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
      creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
@@ -84,8 +84,9 @@ def load_budget() -> dict:
 SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil diameter, active coils and rate "
                           "(the chosen series' mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not "
                           "give the shear stress)")
-SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — the O-ring force (at the "
-                           "end of life, whether the pin slides at all), the board stack's mass and layout, the axial "
+SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — whether the bayonet "
+                           "seats the rim (it decides whether the pin slides at all; the O-ring reaction is 88's band), "
+                           "the board stack's layout (its mass is estimated part by part in 87), the axial "
                            "capacity of the Zone 1-2 press-fit and of the liner grip, and the stem's strain and "
                            "acceleration at anchor height on host-size pines (00_07 HW.43)")
 

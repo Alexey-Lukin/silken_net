@@ -79,7 +79,7 @@ Anchor mechanics (CPU):
   55 → 68 (importlib + bus_mechanical.json)      54 → 64 (importlib + anchor_thermal_bridge.json)
   55 (importlib: endurance, SF line) · 68 (bus_contact_equilibrium.json) → 86 (coaxiality priced as a Soderberg mean; 55's cache is its control)
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
-  52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep`) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
+  52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
      `missing_datum` string), never its cache
   52 (z_stack_tolerance.json: squeeze window, groove, `rim_datum_creep`) · 73 (collar_wall_inversion.json: lug-root rows) · 87

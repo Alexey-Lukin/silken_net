@@ -12,12 +12,15 @@ Sway reaches the pins along four paths; this file computes two to a number and s
   (A) RIM — PREMISE of everything below. The capsule is carried as one body with the flange only while the rim's
       friction (PEEK on Ti) holds the capsule's own WEIGHT (the anchor axis is near-horizontal, so the weight is a
       lateral load on the rim) plus the wind drag on the radome plus its inertia. The bayonet clamp C carries the lugs
-      and seats the rim: the normal forces sum to 2C − L (L = the lift, pogo pair + O-ring), so early in life the
-      capacity is large; `52`'s requirement (C ≥ 157 N initially, with a generous O-ring) is sized so the rim only just
-      stays seated after 20 years of relaxation, i.e. at the end of life C → L and the capacity falls to µ·L — and L
-      carries the O-ring force canon does not have (`52`'s named missing datum). Computed: the lift L the rim needs at
-      the end of life, and so the O-ring force. Below it the capsule shifts inside the collar's running clearance and
-      the pins SLIDE over the pads — the regime `55`'s per-cycle drag µ·F_pogo describes.
+      and seats the rim: the normal forces sum to 2C − L while the rim stays seated (L = the lift, pogo pair + O-ring)
+      and to L once it lifts onto the lug ledge, so early in life the capacity is large. Over 20 years the clamp relaxes
+      to f·C0 (f the PEEK floor of `52`) and the ring's own reaction can only fall, so the end-of-life normal force is
+      at least L0 for a clamp sized to `52`'s requirement for the ring's OWN reaction (C0 = L0/f), at least f·L0 for a
+      clamp that only seats the rim at assembly (C0 = L0), and the relaxed L(20) for a bayonet that never seats it
+      (⛔ the first two are INITIAL reactions — never read them as a force the ring must still have after 20 years). Computed: the end-of-life normal force the rim needs, and the O-ring reaction each of the three
+      clamp designs needs — initial for the first two, after 20 years for the third; the reaction itself is `88`'s.
+      Below it the capsule shifts inside the collar's running clearance and the pins SLIDE over the pads — the regime
+      `55`'s per-cycle drag µ·F_pogo describes.
   (B) STACK INERTIA, with the rim holding. Wire stress is linear in spring force (τ = 8·F·D·K_w/(π·d³), 02_02 §2.2), so
       the amplitude over the mean is a force ratio. For a COAXIAL clamp ΔF ≤ m·a (all of it on the weakest pin, none on
       the gasket in parallel), and the static axial share of the weight, m·g·sin(install angle), lowers the MEAN — taken
@@ -49,10 +52,11 @@ the swing measured is mostly non-oscillatory (NOS), but the oscillatory share at
 0.1/4/8/12 m), at the base OS carries ~40 % of the variance, and higher modes weigh as f². Flux scales as U², so a
 storm twice as windy multiplies every stem quantity here roughly ×4: these numbers describe that one day.
 
-CAN show: the end-of-life lift and O-ring force the rim needs (A); the inertial force ratio per gram of stack and the masses at which it
-reaches 10 % and at which the weakest pin unloads, static weight included (B, coaxial clamp); the centre-pad ratio per
+CAN show: the end-of-life normal force the rim needs and the O-ring reaction each clamp design needs (A); the inertial force ratio per gram of stack and the masses at which it
+reaches 10 % and at which the weakest pin unloads, static weight included (B, coaxial clamp), and that ratio at a
+part-by-part estimate of the stack's mass whose every row names its source; the centre-pad ratio per
 1000 µε of stem-surface strain and at the source day's strain (C); the quasi-static stiffness the stack's suspension
-needs. CANNOT show: the stack mass, its centre-of-mass height and the pin spacing (layout, HW.9); the O-ring force; the
+needs. CANNOT show: the stack mass a scale would give, its centre-of-mass height and the pin spacing (layout, HW.9); the O-ring reaction (88) and the clamp the bayonet delivers; the
 spring's τ_m and rate (the drawing, node_pogo_rfq п. 1a); μ_LR of green P. sylvestris (the bracket is nine pines at
 ≈ 12 % moisture, Wood Handbook 2021 Table 5–2); anything about OUR stems (canon hosts are DBH ≥ 38 cm, larger than the
 one source tree); the thermal path (D).
@@ -119,6 +123,19 @@ MU_RIM = min(s55.MU_PEEK_TI_SWEEP)   # the low end of 55's swept PEEK↔Ti frict
 RHO_CU_G_CM3 = 8.96
 RHO_AIR, CD_CEILING, GUST_CANOPY_MS = 1.2, 2.0, 15.0
 DAF_MARGIN = 10.0                 # quasi-static: the stack's own frequency ≥ 10 × f0 (amplification ≤ 1 %)
+# The board stack's mass, part by part, BEFORE a scale can weigh it (00_07 HW.43, 2026-10-13). (low, high) g; each row names
+# its source, and a row without a datasheet mass says so. The two FR-4 boards are computed in main() from the rim cavity.
+STACK_PARTS_G = {
+    "EDLC KR-5R5H474-R — Eaton product page, «Product Weight»": (1.4, 1.4),
+    "2 × standoff 9774080243R — Würth gives no mass; its geometry × steel 7.85 g/cm³ (our calculation)": (1.7, 1.7),
+    "booster NN02-224 — Ignion datasheet, «Weight (approx.)»": (0.19, 0.19),
+    "B2B pair — CLP-105-02-L-D 40.6 mg (Mouser unit weight, third-party) + FW header (no source, ≤ 0.2 g)": (0.04, 0.25),
+    "2 × pogo 0906 — no published mass; ceiling: solid brass Ø1.27 × 6 mm each": (0.05, 0.2),
+    "the rest — MCU, PMIC, TCXO, inductor, sensors, passives: NOT from datasheets": (0.3, 1.0),
+}
+FR4_RHO_G_CM3 = (1.96, 2.0)       # Panasonic R-1755V · R-1755M specification sheets (FR-4.0, IPC-4101/126 · /99)
+PCB_T_MM, PCB_BOARDS = 1.6, 2     # 02_01 §3.1 поз. 8: FR4, 4 layers, 1.6 mm; RF Deck + Power Deck
+CU_LAYERS, CU_T_MM, CU_FILL = 4, 0.035, (0.3, 1.0)   # 1 oz on every layer, as plane cover from sparse to full
 
 
 def stem_at_anchor(slope2: float) -> dict:
@@ -137,8 +154,15 @@ def stem_at_anchor(slope2: float) -> dict:
 def main() -> int:
     banner("HW.43 — trunk sway → load through the pogo pins: rim condition · stack inertia · centre-pad Poisson term")
     cem = json.loads(RADOME_CEM.read_text(encoding="utf-8"))
-    rim = json.loads(ZSTACK52.read_text(encoding="utf-8"))["rim_datum_creep"]
+    z52 = json.loads(ZSTACK52.read_text(encoding="utf-8"))
+    rim = z52["rim_datum_creep"]
     geo77 = json.loads(TORQUE77.read_text(encoding="utf-8"))["geometry"]
+    # two FR-4 discs no larger than the rim cavity (the board ceiling), copper excess over the laminate it replaces
+    cavity_d = z52["applied_gland"]["rim_cavity_mm"]
+    area = math.pi * (cavity_d / 2) ** 2
+    boards_g = [PCB_BOARDS * area * (PCB_T_MM * rho + CU_LAYERS * CU_T_MM * fill * (RHO_CU_G_CM3 - rho)) * 1e-3
+                for rho, fill in zip(FR4_RHO_G_CM3, CU_FILL, strict=True)]
+    stack_g = [sum(v[i] for v in STACK_PARTS_G.values()) + boards_g[i] for i in (0, 1)]
     d, h_cap = cem["dome_diameter_mm"], cem["cavity_height_mm"] + cem["bell_radius_mm"]   # 71's h over bark
     mass_ceiling_g = math.pi * (d / 2) ** 2 * h_cap * 1e-3 * RHO_CU_G_CM3
     drag = 0.5 * RHO_AIR * GUST_CANOPY_MS ** 2 * CD_CEILING * d * h_cap * 1e-6
@@ -161,8 +185,11 @@ def main() -> int:
         eps = st["surface_strain_microstrain_source_tree"] * 1e-6
         m = mass_ceiling_g * 1e-3
         demand = math.hypot(m * G * cos_i, drag + m * a)          # weight ⊥ wind + inertia, worst case at right angles
-        lift_needed = demand / MU_RIM                              # end of life: capacity µ·L
-        oring_needed = max(0.0, lift_needed - push)
+        lift_needed = demand / MU_RIM                              # the normal force the end of life needs
+        f_relax = rim["relax_fraction_at_service"]
+        oring_needed = {"initial_with_clamp_at_52_requirement": round(max(0.0, lift_needed - push), 2),
+                        "initial_with_clamp_that_only_seats_the_rim": round(max(0.0, lift_needed / f_relax - push), 2),
+                        "after_20_years_if_the_rim_is_never_seated": round(max(0.0, lift_needed - push), 2)}
         clamp0 = rim["required_initial_clamp_N"]["with_generous_o_ring"]
         per_g = a * 1e-3 / PIN_FORCE_MIN_N
         mean_at_ceiling = PIN_FORCE_MIN_N - m * G * sin_i
@@ -174,11 +201,12 @@ def main() -> int:
             "A_rim": {"capsule_weight_N_at_ceiling": round(m * G, 3),
                       "demand_N_at_ceiling": round(demand, 3),
                       "capacity_N_initial_at_52_requirement": round(MU_RIM * (2 * clamp0 - push), 1),
-                      "lift_N_needed_at_end_of_life": round(lift_needed, 2),
-                      "o_ring_force_N_needed_at_end_of_life": round(oring_needed, 2),
-                      "note": "early in life the bayonet clamp holds with margin; at the end of life of 52's requirement "
-                              "the capacity is µ·(pogo + O-ring), and the pogo pair alone does not hold even the weight — "
-                              "below this O-ring force the pins slide (55's regime)"},
+                      "normal_force_N_needed_at_end_of_life": round(lift_needed, 2),
+                      "o_ring_reaction_N_needed": oring_needed,
+                      "note": "early in life the bayonet clamp holds with margin; at the end of life the normal force is "
+                              "at least L0 (clamp at 52's requirement for the ring's own reaction), f·L0 (clamp that only "
+                              "seats the rim) or L(20) (rim never seated), and the pogo pair alone does not hold even the "
+                              "weight — below the needed reaction the pins slide (55's regime); the reaction is 88's"},
             "B_inertia_coaxial": {
                 "force_ratio_per_gram": round(per_g, 5),
                 "force_ratio_per_gram_is": "the slope at small mass — the static share lowers the mean, so it is not a bound",
@@ -187,6 +215,12 @@ def main() -> int:
                 "ratio_at_mass_ceiling_over_reduced_mean": (round(m * a / mean_at_ceiling, 3)
                                                             if mean_at_ceiling > 0 else None),
                 "unloads_at_mass_ceiling": m * (a + G * sin_i) >= PIN_FORCE_MIN_N,
+                "at_estimated_stack_mass": {
+                    "stack_mass_g": [round(x, 2) for x in stack_g],
+                    "ratio_over_reduced_mean": [round(x * 1e-3 * a / (PIN_FORCE_MIN_N - x * 1e-3 * G * sin_i), 4)
+                                                for x in stack_g],
+                    "is": "the coaxial ratio at the part-by-part estimate (inputs.stack_parts_g, low … high), before the "
+                          "pair factor the layout sets; a scale reading checks the mass"},
                 "pair_factor_h_over_s": "NOT COMPUTED — layout (HW.9): pin spacing and the stack's centre-of-mass height",
                 "suspension_k_N_per_mm_needed_at_ceiling":
                     round(m * (2 * math.pi * DAF_MARGIN * SWAY_F0_HZ_HIGH_READING) ** 2 / 1000, 3)},
@@ -203,16 +237,24 @@ def main() -> int:
         print(f"\n  [{name}: slope at 2 m {s2}] tilt ≤ {st['tilt_deg']}° · NOS x ≤ {st['nos_displacement_mm']} mm · "
               f"a ≈ {a} m/s² · stem strain {st['surface_strain_microstrain_source_tree']:.0f} µε (source DBH)")
         print(f"    (A) rim: early capacity {r['A_rim']['capacity_N_initial_at_52_requirement']} N at 52's clamp; at the end of "
-              f"life it holds the copper ceiling only with an O-ring force ≥ {r['A_rim']['o_ring_force_N_needed_at_end_of_life']} N "
+              f"life it holds the copper ceiling with an initial O-ring reaction ≥ "
+              f"{r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_at_52_requirement']} N (clamp at 52's "
+              f"requirement) · ≥ {r['A_rim']['o_ring_reaction_N_needed']['initial_with_clamp_that_only_seats_the_rim']} N "
+              f"(clamp only seats the rim) "
               f"(weight {m * G:.2f} N, drag {drag:.3f} N, µ {MU_RIM})")
         print(f"    (B) {b['force_ratio_per_gram'] * 100:.2f} %/g · 10 % at {b['stack_mass_g_for_ratio_10pct']} g · weakest pin "
               f"unloads at {b['stack_mass_g_where_weakest_pin_unloads']:.0f} g (static share in) · copper ceiling unloads: "
               f"{b['unloads_at_mass_ceiling']} · × pair factor h/s NOT computed")
+        est = b["at_estimated_stack_mass"]
+        print(f"        at the estimated stack {est['stack_mass_g'][0]}…{est['stack_mass_g'][1]} g: "
+              f"{est['ratio_over_reduced_mean'][0] * 100:.2f}…{est['ratio_over_reduced_mean'][1] * 100:.2f} % of the reduced mean")
         print(f"    (C) ceiling — imposed Δu {c['imposed_shift_um_at_source_strain'][0]}…{c['imposed_shift_um_at_source_strain'][1]} µm → "
               f"{c['ratio_at_source_strain'][0] * 100:.1f}…{c['ratio_at_source_strain'][1] * 100:.1f} % of the working "
               f"compression; per 1000 µε {c['ratio_per_1000_microstrain']['mu_lr_lo_dx_nominal'] * 100:.2f}…"
               f"{c['ratio_per_1000_microstrain']['mu_lr_hi_dx_ceiling'] * 100:.2f} %")
 
+    est_lo = min(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][0] for r in rows.values())
+    est_hi = max(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] for r in rows.values())
     out = {
         "question": "HW.43 — the transfer «stem motion → load through the pogo pins»",
         "source": "Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 (one P. sylvestris, H 16.8 m, "
@@ -227,22 +269,31 @@ def main() -> int:
                    "mu_lr_pines": MU_LR_PINES, "depth_span_m": {"nominal_anode_centroid_to_flange_77": dx_nominal,
                                                                "ceiling_full_depth_77": dx_ceiling},
                    "dbh_source_tree_m": DBH_SOURCE_TREE_M,
+                   "stack_parts_g": {k: list(v) for k, v in STACK_PARTS_G.items()},
+                   "fr4_boards_g": [round(x, 3) for x in boards_g],
+                   "fr4_board": {"disc_diameter_mm_rim_cavity_52": cavity_d, "thickness_mm": PCB_T_MM, "count": PCB_BOARDS,
+                                 "rho_g_cm3": list(FR4_RHO_G_CM3), "copper_layers": CU_LAYERS,
+                                 "copper_thickness_mm": CU_T_MM, "copper_fill": list(CU_FILL)},
                    "rim_required_initial_clamp_N_from_52": rim["required_initial_clamp_N"],
                    "rim_relax_fraction_at_service_from_52": rim["relax_fraction_at_service"]},
         "controls": {"slope_times_flux_reproduces_12m_tilt": {"deg": round(control, 2), "text_deg": NOS7_AT_MAX_DEG,
                                                               "note": "units only — same-interval regression"}},
         "by_slope_reading": rows,
-        "missing_data": ["O-ring compression force (52's named missing datum) — decides (A) at the end of life",
+        "missing_data": ["the clamp the bayonet delivers (does it seat the rim at assembly?) — with the O-ring band of 88 "
+                         "it decides (A) at the end of life",
                          "axial capacity of the Zone 1↔2 press-fit and of the liner's grip on the wire — decide whether (C) reaches the pin",
-                         "stack mass, centre-of-mass height and pin spacing — layout HW.9 / a scale reading",
+                         "stack mass by a scale (a part-by-part estimate is computed), centre-of-mass height and pin "
+                         "spacing — layout HW.9",
                          "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
                          "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"],
         "not_computed": "(D) thermal cycling of the pogo contacts — `00_07` HW.43, its own leg",
         "verdict": ("Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the "
-                    "end of 52's requirement only with an O-ring force canon lacks — the stack's inertia is a fraction of "
-                    "the preload (× a pair factor the layout sets), and the centre-pad Poisson term is a ceiling that "
-                    "reaches the pin only if two press-fits slip; when the rim does not hold, the pins slide (55's regime). "
-                    "The input describes one January day of one smaller tree."),
+                    "end of life with a clamp that seated the rim and an initial O-ring reaction above the figures in "
+                    "A_rim (88 prices the reaction) — the stack's inertia is a fraction of "
+                    f"the preload ({est_lo * 100:.1f}–{est_hi * 100:.1f} % at the part-by-part mass estimate of "
+                    f"{stack_g[0]:.1f}–{stack_g[1]:.1f} g, × a pair factor the layout sets), and the centre-pad Poisson "
+                    "term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the "
+                    "pins slide (55's regime). The input describes one January day of one smaller tree."),
     }
     OUT_JSON.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     banner(f"Saved {OUT_JSON.relative_to(REPO_ROOT)}")

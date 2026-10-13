@@ -1998,8 +1998,13 @@ def test_pogo_sway_transfer():
         assert abs(b["stack_mass_g_where_weakest_pin_unloads"] - f / ((a + g * sin_i) * 1e-3)) <= 1.0, name
         demand = math.hypot(m * g * cos_i, inp["drag_ceiling_N"] + m * a)       # the weight must be in it
         assert abs(rim["demand_N_at_ceiling"] - demand) <= 0.002, name
-        need = max(0.0, demand / inp["mu_rim"] - inp["pin_count"] * f)            # end of life: capacity µ·L
-        assert abs(rim["o_ring_force_N_needed_at_end_of_life"] - need) <= 0.02, name
+        normal = demand / inp["mu_rim"]                                           # end of life: capacity µ·N
+        assert abs(rim["normal_force_N_needed_at_end_of_life"] - normal) <= 0.01, name
+        push, f_r = inp["pin_count"] * f, inp["rim_relax_fraction_at_service_from_52"]
+        needs = rim["o_ring_reaction_N_needed"]
+        assert abs(needs["initial_with_clamp_at_52_requirement"] - max(0.0, normal - push)) <= 0.02, name      # N ≥ L0
+        assert abs(needs["initial_with_clamp_that_only_seats_the_rim"] - max(0.0, normal / f_r - push)) <= 0.02, name
+        assert abs(needs["after_20_years_if_the_rim_is_never_seated"] - max(0.0, normal - push)) <= 0.02, name  # N = L(20)
         early = inp["mu_rim"] * (2 * inp["rim_required_initial_clamp_N_from_52"]["with_generous_o_ring"] - inp["pin_count"] * f)
         assert abs(rim["capacity_N_initial_at_52_requirement"] - early) <= 0.1, name
         m10 = 0.1 * f / ((a + 0.1 * g * sin_i) * 1e-3)                           # 10 % over the REDUCED mean
@@ -2009,21 +2014,37 @@ def test_pogo_sway_transfer():
         assert abs(c["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] - per1000[1]) <= 1e-4, name
         if not b["unloads_at_mass_ceiling"]:
             assert b["ratio_at_mass_ceiling_over_reduced_mean"] < 1.0, name
+        est = b["at_estimated_stack_mass"]                                        # the part-by-part stack, low … high
+        for k, ms in enumerate(est["stack_mass_g"]):
+            assert abs(est["ratio_over_reduced_mean"][k] - ms * 1e-3 * a / (f - ms * 1e-3 * g * sin_i)) <= 1e-4, name
+    pcb = inp["fr4_board"]
+    area = math.pi * (pcb["disc_diameter_mm_rim_cavity_52"] / 2) ** 2
+    boards = [pcb["count"] * area * (pcb["thickness_mm"] * rho + pcb["copper_layers"] * pcb["copper_thickness_mm"] * fill
+                                     * (8.96 - rho)) * 1e-3
+              for rho, fill in zip(pcb["rho_g_cm3"], pcb["copper_fill"], strict=True)]
+    assert all(abs(x - y) <= 0.001 for x, y in zip(inp["fr4_boards_g"], boards, strict=True))
+    stack = [sum(v[k] for v in inp["stack_parts_g"].values()) + boards[k] for k in (0, 1)]
+    for r in d["by_slope_reading"].values():
+        assert all(abs(x - y) <= 0.01 for x, y in zip(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["stack_mass_g"],
+                                                       stack, strict=True))
+    z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
+    assert pcb["disc_diameter_mm_rim_cavity_52"] == z52["applied_gland"]["rim_cavity_mm"]
     med, wh = d["by_slope_reading"]["median"], d["by_slope_reading"]["upper_whisker"]
     assert wh["stem_at_anchor_h_le_2m"]["accel_m_s2"] > med["stem_at_anchor_h_le_2m"]["accel_m_s2"]
     assert wh["C_centre_pad_poisson"]["ratio_per_1000_microstrain"] == med["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]
 
 
 def test_oring_reaction_band():
-    """Script 88 (HW.43 · HW.33): the O-ring reaction from Parker Figure 2-4 over 52's squeeze window.
+    """Script 88 (HW.43 · HW.33): the O-ring reaction from Parker Figure 2-4 + Table 2-3 over 52's squeeze window.
 
     CAN catch, recomputed from the cache's chart rows and the upstream caches rather than copied from the script: the
-    seal length drifting off 52's groove; a point read off a chart row that is not that row; the interpolation leaving
-    log-load-linear-in-squeeze between the bracketing rows; the requirement leaving 52's lift / f(t); the lug margin or
-    the strength-sized wall leaving 73's linear shear rows; the retained fraction leaving 87's need over the floor's low
-    end; the binding squeeze not reproducing the binding reaction. CANNOT catch: the transcription itself (the pt table
-    lives in the script, read from the PDF's vector paths — only the page catches an error made there), nor whether
-    Parker's bar describes our compound.
+    seal length drifting off 52's groove; the bar leaving log-load-linear-in-squeeze between the bracketing rows; the
+    band leaving Table 2-3's portion for a ring under 1" (the bottom of the bar's middle third, in log scale, to its
+    top); the requirement bracket leaving R + p at assembly and (R + p) / f for a ring that never relaxes; the lug
+    margins, the share of R0 the ring must lose and the strength-sized wall leaving 73's linear shear rows; the binding
+    squeeze not reproducing the binding reaction; (A)'s margins and retained share leaving 87's three needs over the
+    floor's low end. CANNOT catch: the transcription itself (the pt table lives in the script, read from the PDF's
+    vector paths — only the page catches an error made there), nor whether Parker's bar describes our compound.
     """
     path = MECHANICAL / "oring_reaction_band.json"
     if not path.exists():
@@ -2033,45 +2054,62 @@ def test_oring_reaction_band():
     c73 = json.loads((MECHANICAL / "collar_wall_inversion.json").read_text(encoding="utf-8"))
     s87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
     inp, lbf_n = d["inputs"], 4.4482216152605
+    assert inp["ring_id_mm"] < 25.4                                       # Table 2-3's rows for rings under 1"
     length_in = math.pi * (2 * z52["applied_gland"]["flange_groove_r_mm"][0] + z52["springs"]["oring"]["cs_mm"]) / 25.4
     assert abs(inp["seal_length_in"] - length_in) <= 1e-4
+    to_n = length_in * lbf_n
     chart = {int(k): v for k, v in d["chart_70_shore_a_lbf_per_in"].items()}
     rows = sorted(chart)
     for lo_row, hi_row in itertools.pairwise(rows):
         assert chart[hi_row][0] > chart[lo_row][0] and chart[hi_row][1] > chart[lo_row][1], (lo_row, hi_row)
     assert all(lo < hi for lo, hi in chart.values())
 
-    def interp(pct, end):
+    def bar(pct, end):
         a, b = max(r for r in rows if r <= pct), min(r for r in rows if r >= pct)
         if a == b:
             return chart[a][end]
         w = (pct - a) / (b - a)
         return 10 ** (math.log10(chart[a][end]) + w * (math.log10(chart[b][end]) - math.log10(chart[a][end])))
 
+    def band(pct):
+        lo, hi = bar(pct, 0), bar(pct, 1)
+        return lo * (hi / lo) ** (1 / 3), hi
+
     rim = z52["rim_datum_creep"]
-    pogo, f_t, cap = rim["pogo_pair_force_N_upper_bound"], rim["relax_fraction_at_service"], c73["verdict"]["capacity_at_print_floor_N"]
-    floor_row = min(r for r in c73["case_b_lug_root_shear"]["rows"] if r["wall_mm"] == 0.2)
-    assert floor_row["breakeven_force_N"] == cap
+    p52, f_t, cap = rim["pogo_pair_force_N_upper_bound"], rim["relax_fraction_at_service"], c73["verdict"]["capacity_at_print_floor_N"]
+    assert min(r for r in c73["case_b_lug_root_shear"]["rows"] if r["wall_mm"] == 0.2)["breakeven_force_N"] == cap
     for name, b in d["band"].items():
         pct = b["squeeze_pct"]
-        for end in (0, 1):
-            # the cache rounds lbf/in to 0.01, so the reaction it derives may sit one rounding step off this one
-            assert abs(b["lbf_per_in"][end] - interp(pct, end)) <= 0.011, (name, end)
-            assert abs(b["reaction_N"][end] - interp(pct, end) * length_in * lbf_n) <= 0.15, (name, end)
-        need = (pogo + interp(pct, 1) * length_in * lbf_n) / f_t                  # 52's lift / f(t), band HIGH end
-        assert abs(b["required_initial_clamp_N_at_band_high"] - need) <= 0.2, name
-        assert abs(b["lug_root_margin_x_at_print_floor"] - cap / need) <= 0.01, name
-        assert abs(b["collar_wall_strength_asks_mm"] - 0.2 * need / cap) <= 0.002, name   # 73's pure shear is linear
+        lo, hi = band(pct)
+        # the cache rounds lbf/in to 0.01, so the reaction it derives may sit one rounding step off this one
+        assert abs(b["bar_lbf_per_in"][0] - bar(pct, 0)) <= 0.011 and abs(b["lbf_per_in"][1] - hi) <= 0.011, name
+        assert abs(b["lbf_per_in"][0] - lo) <= 0.011, name                     # Table 2-3: no lower third under 1"
+        assert abs(b["reaction_N"][0] - lo * to_n) <= 0.15 and abs(b["reaction_N"][1] - hi * to_n) <= 0.15, name
+        asm, n20 = hi * to_n + p52, (hi * to_n + p52) / f_t
+        req, mar = b["required_clamp_N_at_band_high"], b["lug_root_margin_x_at_print_floor"]
+        assert abs(req["at_assembly"] - asm) <= 0.2 and abs(req["after_20_years_ring_never_relaxes"] - n20) <= 0.2, name
+        assert abs(mar["at_assembly"] - cap / asm) <= 0.01 and abs(mar["after_20_years_ring_never_relaxes"] - cap / n20) <= 0.01, name
+        assert abs(b["ring_must_lose_share_of_R0_for_sf"] - max(0.0, 1 - (cap * f_t - p52) / (hi * to_n))) <= 0.002, name
+        assert abs(b["collar_wall_strength_asks_mm_ring_never_relaxes"] - 0.2 * n20 / cap) <= 0.002, name  # 73: linear shear
     pts = [b["squeeze_pct"] for b in d["band"].values()]
     assert pts == sorted(pts) and pts[0] == inp["window_pct"][0] and pts[-1] == inp["window_pct"][1]
     inv = d["inversion"]
-    r_bind = cap * f_t - pogo
-    assert abs(inv["reaction_N_at_which_lug_binds"] - r_bind) <= 0.1
-    assert abs(interp(inv["squeeze_pct_band_high_binds"], 1) * length_in * lbf_n - r_bind) <= 0.5
-    need87 = max(r["A_rim"]["o_ring_force_N_needed_at_end_of_life"] for r in s87["by_slope_reading"].values())
-    eos = d["end_of_service"]
-    assert eos["o_ring_force_N_needed_87"] == need87
-    assert abs(eos["retained_fraction_needed"] - need87 / d["band"]["window_floor"]["reaction_N"][0]) <= 0.001
+    r_bind = cap * f_t - p52
+    assert abs(inv["reaction_N_at_which_lug_binds_ring_never_relaxes"] - r_bind) <= 0.1
+    assert abs(band(inv["squeeze_pct_band_high_binds"])[1] * to_n - r_bind) <= 0.5
+    lo_b, hi_b = inv["squeeze_pct_band_high_binds_over_transcription"]
+    assert lo_b < inv["squeeze_pct_band_high_binds"] < hi_b                 # +4 % binds earlier, −4 % later
+    a = d["rim_premise_A"]
+    needs87 = {}
+    for r in s87["by_slope_reading"].values():
+        for k, v in r["A_rim"]["o_ring_reaction_N_needed"].items():
+            needs87[k] = max(needs87.get(k, 0.0), v)
+    assert a["needs_87"] == needs87
+    floor_lo = d["band"]["window_floor"]["reaction_N"][0]
+    for k, v in needs87.items():
+        assert abs(a["margin_x"][k] - floor_lo / v) <= 0.01, k
+    assert abs(a["share_retained_needed_if_the_rim_is_never_seated"]
+               - needs87["after_20_years_if_the_rim_is_never_seated"] / floor_lo) <= 0.001
 
 
 def test_sap_recipe_saturation():
