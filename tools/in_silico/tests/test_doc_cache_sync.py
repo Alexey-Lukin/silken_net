@@ -48,6 +48,18 @@ def doc(rel: str) -> str:
     return _DOC[rel]
 
 
+DONORS = ("ome", "dmbpy", "bpy")   # the relaxed donors — pins over the (3а)/(3б) comparisons stay on them, so the
+# acceptor points (⚖️ 2026-10-14) landing in the same caches never move what these pins stand on
+
+
+def _donor_pairs(cmp: dict) -> list:
+    return [p for p in cmp["pairs"] if p["x"] in DONORS and p["ref"] in DONORS]
+
+
+def _donor_points(cmp: dict) -> list:
+    return [s for n, s in cmp["point_shift_eV"].items() if n in DONORS]
+
+
 def named(rows, key, value):
     """First dict in a list whose [key] == value (micro-solvation / xylem / kinetics lists)."""
     for r in rows:
@@ -395,7 +407,7 @@ CHECKS = [
             for geo, pre in (("relaxed", r"bite"), ("programmatic", r"against the programmatic"))
             for end, anchor, f in (("low", rf"{pre} {N}–", min), ("high", rf"{pre} [\d.]+–{N}°", max))],
           ("paper §3.3", PAPER_RESULTS, "pair move per complex", rf"up to\s+{N} meV a complex against",
-           lambda d: max(abs(p["change_mV"]) for p in C("dft/os_mediator_series_relaxed_os2.json")["vs_series"]["pairs"]) * 4,
+           lambda d: max(abs(p["change_mV"]) for p in _donor_pairs(C("dft/os_mediator_series_relaxed_os2.json")["vs_series"])) * 4,
            0.5),
           ("paper §3.3", PAPER_RESULTS, "Os–N(bpy) low", rf"Os–N\(bpy\)\s+{N}–",
            lambda d: min(min(v["relaxed"]["N_bpy"]) for v in d["relaxed_geometry_check"]["os_donors_A"].values()), 0.005),
@@ -431,12 +443,12 @@ CHECKS = [
                             ("01_introduction.md", rf"its donor pairs by up to {N} mV per substituent between"))],
     ("paper §2.3 pair move per complex → relaxed_os2", "docs/protocols/ebfc/in_silico/paper/02_methods.md",
      rf"pairs by up to {N} meV a complex", "dft/os_mediator_series_relaxed_os2.json",
-     lambda d: max(abs(p["change_mV"]) for p in d["vs_series"]["pairs"]) * 4, 0.5),
+     lambda d: max(abs(p["change_mV"]) for p in _donor_pairs(d["vs_series"])) * 4, 0.5),
     *[(f"paper §2.3 relaxed points {end} → relaxed_os2", "docs/protocols/ebfc/in_silico/paper/02_methods.md", anchor,
        "dft/os_mediator_series_relaxed_os2.json", fn, 0.5)
       for end, anchor, fn in (
-          ("low", rf"moves the points by {N}–", lambda d: -max(d["vs_series"]["point_shift_eV"].values()) * 1000),
-          ("high", rf"moves the points by [\d.]+–{N} meV", lambda d: -min(d["vs_series"]["point_shift_eV"].values()) * 1000))],
+          ("low", rf"moves the points by {N}–", lambda d: -max(_donor_points(d["vs_series"])) * 1000),
+          ("high", rf"moves the points by [\d.]+–{N} meV", lambda d: -min(_donor_points(d["vs_series"])) * 1000))],
     ("SUMMARY UFF point shift low → uffcavity", SUMMARY, rf"every absolute point, by {N}…",
      "dft/os_mediator_series_uffcavity.json", lambda d: max(d["vs_series"]["point_shift_eV"].values()) * 1000, 0.5),
     ("SUMMARY UFF point shift high → uffcavity", SUMMARY, rf"every absolute point, by [^…]+…{N} meV",
@@ -3637,7 +3649,7 @@ CHECKS += [
      lambda d: _koop(d, "dmbpy", "os3_on_os2_minimum"), 0.0005),
     # paper §2.3
     ("paper §2.3 (3б) points within → relaxed_os3", METHODS, rf"leaves the points within {N} meV", OS3,
-     lambda d: max(abs(s) for s in d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: max(abs(s) for s in _donor_points(d["vs_vertical"])) * 1000, 0.6),
     ("paper §2.3 (3б) pairs per complex → 83 adiabatic", METHODS, rf"while the pairs move by up to {N} meV a complex", V83,
      lambda d: _ad_max_pair(d) * 4, 0.5),
     # SUMMARY §Mediator, limits (2) and (4)
@@ -3664,9 +3676,9 @@ CHECKS += [
     ("SUMMARY (3б) pair move per complex → 83", SUMMARY, rf"\(OMe−Me, {N} meV a complex\) and the points", V83,
      lambda d: _ad_max_pair(d) * 4, 0.5),
     ("SUMMARY (3б) points low → relaxed_os3", SUMMARY, rf"and the points by {N}…", OS3,
-     lambda d: min(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: min(_donor_points(d["vs_vertical"])) * 1000, 0.6),
     ("SUMMARY (3б) points high → relaxed_os3", SUMMARY, rf"and the points by [{_DASHES}\-]?[\d.]+…\+{N} meV", OS3,
-     lambda d: max(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: max(_donor_points(d["vs_vertical"])) * 1000, 0.6),
     ("SUMMARY (3б) Os–Cl low → 83", SUMMARY, rf"Os\(III\) takes Os–Cl back to {N}–", V83, lambda d: _ad_cl(d, min), 0.005),
     ("SUMMARY (3б) Os–Cl high → 83", SUMMARY, rf"Os\(III\) takes Os–Cl back to [\d.]+–{N} Å", V83, lambda d: _ad_cl(d, max), 0.005),
     ("SUMMARY (4) Koopmans own minimum Me → 83", SUMMARY, rf"and by {N} eV on Os\(III\)'s own minimum \(paper", V83,
@@ -3676,7 +3688,7 @@ CHECKS += [
     ("SUMMARY (4) ome·bpy pairs per complex → 83", SUMMARY, rf"substituent pairs \(≤ {N} meV a complex\) and points", V83,
      lambda d: _ad_max_pair(d) * 4, 0.5),
     ("SUMMARY (4) ome·bpy points → relaxed_os3", SUMMARY, rf"and points \(≤ {N} meV\) stay under it", OS3,
-     lambda d: max(abs(s) for s in d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: max(abs(s) for s in _donor_points(d["vs_vertical"])) * 1000, 0.6),
     *[(f"SUMMARY (4) Koopmans own minimum {n} → 83", SUMMARY, anchor, V83,
        lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
       for n, anchor in (("ome", rf"cascade Δ of OMe moves\s+by {N} eV with Os\(III\) on its own"),
@@ -3690,7 +3702,7 @@ CHECKS += [
       for n, anchor in (("dmbpy", rf"dmbpy \({N} steps; λ_III"), ("ome", rf"ome \({N} steps; [\d.]+ meV\)"),
                         ("bpy", rf"bpy \({N} steps; [\d.]+ meV\)"))],
     ("PIPELINE banner optimisation hours → relaxed_os3", PIPELINE, rf"\), {N} h of optimisation the three", OS3,
-     lambda d: sum(c["geometry_os3_relaxed"]["info"]["wall_seconds"] for c in d["complexes"].values()) / 3600, 0.06),
+     lambda d: sum(c["geometry_os3_relaxed"]["info"]["wall_seconds"] for n, c in d["complexes"].items() if n in DONORS) / 3600, 0.06),
     ("PIPELINE row 83 (d) ref 8 within → 83", PIPELINE, rf"ref 8's three within {N} mV per substituent, MeCN", V83,
      lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
     ("PIPELINE row 83 (d) Koopmans OMe → 83", PIPELINE, rf"cascade Δ of OMe {N} eV; the slope ①", V83,
@@ -3711,9 +3723,9 @@ CHECKS += [
        lambda d, k=k: abs(_ad(d)["pair_move_from_series_mV"][k]) * 4, 0.5)
       for k, anchor in (("dmbpy-bpy", rf"\(OMe−Me; Me−H {N}, OMe−H"), ("ome-bpy", rf"Me−H [\d.]+, OMe−H {N}\), абсолютні"))],
     ("PIPELINE D 10-14 points low → relaxed_os3", PIPELINE, rf"абсолютні точки — на {N}…", OS3,
-     lambda d: min(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: min(_donor_points(d["vs_vertical"])) * 1000, 0.6),
     ("PIPELINE D 10-14 points high → relaxed_os3", PIPELINE, rf"абсолютні точки — на [{_DASHES}\-]?[\d.]+…\+{N} меВ", OS3,
-     lambda d: max(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+     lambda d: max(_donor_points(d["vs_vertical"])) * 1000, 0.6),
     *[(f"PIPELINE D 10-14 Koopmans own {n} → 83", PIPELINE, anchor, V83, lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
       for n, anchor in (("dmbpy", rf"мінімумі Me {N} еВ \(застосування 2026-10-13\)"), ("bpy", rf"\(застосування 2026-10-13\), H {N}, \*\*OMe"),
                         ("ome", rf"\*\*OMe {N} еВ\*\*"))],

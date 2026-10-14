@@ -156,12 +156,16 @@ SOLVATION_VARIANTS = (("iefpcm", "os_mediator_series_iefpcm.json", "IEF-PCM for 
                       ("gas", "os_mediator_series_gas.json", "no continuum"))   # 21e's one-knob variants (00_07 HW.5.IS)
 AXIAL_VARIANT = ("pyaxial", "os_mediator_series_pyaxial.json")   # 21e `b3lyp-pyaxial`: pyridine for 1-MeIm — the A1′ knob
 RELAX_VARIANT = ("relaxed", "os_mediator_series_relaxed_os2.json")   # 21e `b3lyp-relaxed-os2`: each point's Os(II) geometry
-# relaxed with the series protocol, Os(III) vertical on it — the geometry knob; it computes OMe, Me and H only (21e
-# RELAX_POINTS), so of the aqueous pairs it reaches OMe−Me alone
+# relaxed with the series protocol, Os(III) vertical on it — the geometry knob; its donors OMe, Me and H (21e
+# RELAX_POINTS) reach OMe−Me of the aqueous pairs, and the acceptors relaxed on request (⚖️ 2026-10-14) the pairs with Cl
 DONORS = ("ome", "dmbpy", "bpy")   # (3а)/(3б)'s donor set: the donor readings stay on it whatever else the relaxation
 # adds, so an acceptor landing in the same caches never moves them (⚖️ 2026-10-14, the acceptor measurement)
 ADIABATIC_VARIANT = ("adiabatic", "os_mediator_series_relaxed_os3.json")   # 21e `b3lyp-relaxed-os3`: each point's Os(III)
-# relaxed from its relaxed Os(II) — the adiabatic ΔSCF and λ_III; read only when every relaxed point has its adiabatic row
+# relaxed from its relaxed Os(II) — the adiabatic ΔSCF and λ_III; the donor reading needs every donor's adiabatic row,
+# a point beyond the donors is read once both its rows exist (`acceptor_reading`)
+CLOSE_NEIGHBOUR_MEV = 100.0   # OURS (declared before the acceptor data, 2026-10-14): an adjacent Table 4 pair whose
+# programmatic Koopmans gap is under D's 0.1 eV can flip under moves each below the threshold — while one member of such a
+# pair is unrelaxed, the verdict's condition is NOT DECIDABLE, never «not met»
 D_FIRST_TRIGGER_EV = 0.1   # PIPELINE_STATUS «D», first trigger: a difference that carries a conclusion moved by ≥ 0.1 eV
 # by a computation that corrects the geometry or the cavity (its letter as narrowed 2026-10-08) — the block reports which
 # printed differences reach it; judging them is D's, never this script's
@@ -350,10 +354,11 @@ def aqueous(sigma: dict, b3: dict) -> dict:
     if (v := finished(RELAX_VARIANT[1])) and any((p["x"], p["ref"]) == ("ome", "dmbpy") for p in v["pairs"]):
         by = {(p["x"], p["ref"]): p for p in v["pairs"]}   # 21e `b3lyp-relaxed-os2` — the geometry knob, OMe−Me reached
         aq["relaxation_check"] = {"ome_dmbpy_change_mV": by[("ome", "dmbpy")]["change_mV"],
-                                  "pairs_change_mV": {f"{x}-{r}": q["change_mV"] for (x, r), q in by.items()},
-                                  "point_shift_meV": {n: s * 1000 for n, s in v["point_shift_eV"].items()},
-                                  "rescued_rows": v["rescued_rows"],
-                                  "series_os3_s2_not_recorded": v["series_os3_s2_not_recorded"]}
+                                  "pairs_change_mV": {f"{x}-{r}": q["change_mV"] for (x, r), q in by.items()
+                                                      if x in DONORS and r in DONORS},
+                                  "point_shift_meV": {n: s * 1000 for n, s in v["point_shift_eV"].items() if n in DONORS},
+                                  "rescued_rows": [n for n in v["rescued_rows"] if n in DONORS],   # the pair's own points
+                                  "series_os3_s2_not_recorded": [n for n in v["series_os3_s2_not_recorded"] if n in DONORS]}
     if "relaxation_check" in aq and (o3 := _adiabatic()):   # 21e `b3lyp-relaxed-os3` — Os(III) relaxed as well
         p3 = next(p for p in o3["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
         aq["os3_relaxation_check"] = {"ome_dmbpy_change_mV": p3["change_mV"], "ome_dmbpy_relaxed_os2_mV": p3["relaxed_os2_mV"],
@@ -418,7 +423,7 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     src = {"series": {n: b3[n]["dE_red_eV"] for n in pts}, "relaxed": rx}
     o3 = _adiabatic()
     acc = sorted((n for n, c in (o3["complexes"] if o3 else {}).items()
-                  if sigma[n] > 0 and "dE_red_adiabatic_eV" in c and n in rx), key=lambda n: sigma[n])
+                  if n not in DONORS and "dE_red_adiabatic_eV" in c and n in rx), key=lambda n: sigma[n])
     relaxed_all = {*DONORS, *acc}   # what «not relaxed» means is computed, never typed: it changes as acceptors land
     not_relaxed = sorted((n for n in b3 if n not in relaxed_all), key=lambda n: b3[n]["sigma_para"])
     if o3:   # (3б): every column below gains the adiabatic one — Os(III) relaxed from each relaxed Os(II)
@@ -471,20 +476,21 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
 
 
 def acceptor_reading(acc: list, sigma: dict, b3: dict, rx: dict, o3: dict, fit: list, shift) -> dict:
-    """The acceptor points (⚖️ founder 2026-10-14: Cl, then NO₂, SO₂CF₃ on the founder's word), each read once BOTH of
-    its states are relaxed — the reading declared before the data (in-silico §When Modifying #36).
+    """The points beyond the donors (⚖️ founder 2026-10-14: Cl, then NO₂, SO₂CF₃ on the founder's word), each read once
+    BOTH of its states are relaxed — the reading declared before the data (in-silico §When Modifying #36; adversary of
+    the declaration, 2026-10-14).
 
-    Read: (1) every measured pair with an acceptor whose both members are relaxed — ref 8 (Cl−H, Cl−Me, Cl−OMe) and the
-    aqueous series (Cl−Me, Cl−OMe); the MeCN series has no acceptor — in three columns, per computed pair, both
-    directions; (2) the Koopmans cascade Δ of every relaxed member in the three geometries, its monotonicity in σ over
-    them, and the order of every Table 4 neighbour pair whose both members are relaxed; (3) the slope ① over the relaxed
-    members of the LFER fit set — a computation, flagged incomplete until the whole fit set is relaxed; (4) the
-    CONDITION of the 2026-10-14 verdict «так, так»: a Table 4 neighbour pair whose order flips, or a printed difference
-    moved by ≥ 0.1 eV (acceptor pairs per complex, acceptor Koopmans cascade over both Os(III) geometries, the slope over
-    the relaxed fit members; the absolute points are reported but are not differences — D's application 2026-10-12). A
-    flip is read on EVERY adjacent Table 4 pair whose both members are relaxed, not only the three closest: the basis (а)
-    stands on the column's monotonicity, which any adjacent flip breaks. The block reports the condition and the verdict
-    says it re-submits (а)/(б) to the founder; judging them is the founder's. CANNOT show: free energies, members not relaxed."""
+    Read: (1) every measured pair with such a point whose both members are relaxed — ref 8 (Cl−H, Cl−Me, Cl−OMe) and the
+    aqueous series (Cl−Me, Cl−OMe); the MeCN series has none — in three columns, per computed pair, both directions;
+    (2) each point's own Koopmans cascade move, and every ADJACENT Table 4 pair with at least one relaxed member: with
+    both relaxed, its Koopmans and ΔE_red gaps in the three geometries and whether either order flips; with one relaxed,
+    the relaxed member's move against the programmatic gap — order NOT DECIDABLE; (3) the slopes the paper prints, once
+    their members are relaxed: ① over the relaxed fit members (only when they reach beyond the donors) and the Me·H·NO₂
+    slope of §3.3; (4) the CONDITION of the verdict «так, так»: MET by a flipped pair or a printed difference moved by
+    ≥ 0.1 eV (acceptor pairs per complex, the points' Koopmans cascade over both Os(III) geometries, the neighbour-gap
+    moves, the slopes); NOT DECIDABLE while a close pair (programmatic Koopmans gap < CLOSE_NEIGHBOUR_MEV) has one
+    member unrelaxed; otherwise not met. The absolute points are reported, never counted (D's application 2026-10-12).
+    Judging (а)/(б) again is the founder's. CANNOT show: free energies, members not relaxed."""
     members = sorted([*DONORS, *acc], key=lambda n: sigma[n])
     e = {"series": {n: b3[n]["dE_red_eV"] for n in members}, "relaxed": {n: rx[n]["dE_red_eV"] for n in members},
          "adiabatic": {n: o3["complexes"][n]["dE_red_adiabatic_eV"] for n in members}}
@@ -512,42 +518,65 @@ def acceptor_reading(acc: list, sigma: dict, b3: dict, rx: dict, o3: dict, fit: 
     geoms = ("programmatic", "os3_on_os2_minimum", "os3_on_own_minimum")
     cascade = {n: dict(zip(geoms, (homo - b3[n]["os3"]["LUMO_eV"], homo - rx[n]["os3"]["LUMO_eV"],
                                    homo - o3["complexes"][n]["os3"]["LUMO_eV"]), strict=True)) for n in members}
+    own_move = {n: {g: cascade[n][g] - cascade[n]["programmatic"] for g in geoms[1:]} for n in acc}
+    dred = {n: dict(zip(geoms, (e["series"][n], e["relaxed"][n], e["adiabatic"][n]), strict=True)) for n in members}
     every = sorted(b3, key=lambda n: b3[n]["sigma_para"])   # Table 4's order
-    neighbours = {}
+    both, half = {}, {}
     for a, b in itertools.pairwise(every):
+        k = f"{a}-{b}"
+        prog = (b3[a]["os3"]["LUMO_eV"] - b3[b]["os3"]["LUMO_eV"]) * 1000   # Koopmans gap, programmatic, meV
         if a in members and b in members:
-            gap = {g: (cascade[b][g] - cascade[a][g]) * 1000 for g in geoms}
-            neighbours[f"{a}-{b}"] = {**{f"{g}_meV": v for g, v in gap.items()},
-                                      "order_kept": all((v > 0) == (gap["programmatic"] > 0) for v in gap.values())}
+            kg = {g: (cascade[b][g] - cascade[a][g]) * 1000 for g in geoms}
+            dg = {g: (dred[b][g] - dred[a][g]) * 1000 for g in geoms}
+            both[k] = {"koopmans_gap_meV": kg, "dE_red_gap_meV": dg,
+                       "koopmans_order_kept": all((v > 0) == (kg["programmatic"] > 0) for v in kg.values()),
+                       "dE_red_order_kept": all((v > 0) == (dg["programmatic"] > 0) for v in dg.values()),
+                       "gap_move_meV": max(abs(v - kg["programmatic"]) for v in kg.values()),
+                       "touches_beyond_donors": a in acc or b in acc}
+        elif a in members or b in members:
+            m = a if a in members else b
+            half[k] = {"relaxed_member": m, "programmatic_koopmans_gap_meV": prog,
+                       "relaxed_member_cascade_move_meV": {g: (cascade[m][g] - cascade[m]["programmatic"]) * 1000 for g in geoms[1:]},
+                       "close": abs(prog) < CLOSE_NEIGHBOUR_MEV, "order": "not decidable — one member relaxed"}
+
+    def slope(names: list, col: str) -> float:   # eV per σ, a complex
+        return _slope_r2([sigma[n] for n in names], [e[col][n] for n in names])[0]
+
+    slopes = {}
     rfit = [n for n in fit if n in members]
-    def slope(col: str) -> float:   # eV per σ, a complex
-        return _slope_r2([sigma[n] for n in rfit], [e[col][n] for n in rfit])[0]
-    span = max(sigma[n] for n in rfit) - min(sigma[n] for n in rfit)
-    slope_rd = {"members": rfit, "complete": set(rfit) == set(fit), "series_eV_per_sigma": slope("series"),
-                "adiabatic_eV_per_sigma": slope("adiabatic"), "sigma_span": span}
-    slope_rd["move_over_span_eV"] = abs(slope_rd["adiabatic_eV_per_sigma"] - slope_rd["series_eV_per_sigma"]) * span
+    if any(n in acc for n in rfit):   # with the donors alone it is the donor slope — already judged (the note under D)
+        slopes["slope_1_relaxed_fit_members"] = {"members": rfit, "complete": set(rfit) == set(fit)}
+    if all(n in members for n in ("dmbpy", "bpy", "no2")):   # §3.3 prints the slope over Me · H · NO₂
+        slopes["slope_me_h_no2"] = {"members": ["dmbpy", "bpy", "no2"], "complete": True}
+    for v in slopes.values():
+        span = max(sigma[n] for n in v["members"]) - min(sigma[n] for n in v["members"])
+        v.update(series_eV_per_sigma=slope(v["members"], "series"), adiabatic_eV_per_sigma=slope(v["members"], "adiabatic"),
+                 sigma_span=span)
+        v["move_over_span_eV"] = abs(v["adiabatic_eV_per_sigma"] - v["series_eV_per_sigma"]) * span
     move = {k: v["move_from_series_mV"] for k, v in by_pair.items()}
-    reach = {"acceptor_pairs_per_complex": max((abs(v) for v in move.values()), default=0.0) * N_SUBST_COMPUTED / 1000,
-             "acceptor_koopmans_cascade_delta": max(abs(cascade[n][g] - cascade[n]["programmatic"])
-                                                    for n in acc for g in geoms[1:]),
-             "slope_1_over_relaxed_fit_members": slope_rd["move_over_span_eV"]}
-    points = {n: e["adiabatic"][n] - e["series"][n] for n in acc}   # absolute: reported, never a difference (D, 2026-10-12)
-    flipped = sorted(k for k, v in neighbours.items() if not v["order_kept"])
-    at = sorted(k for k, v in reach.items() if v >= D_FIRST_TRIGGER_EV)
+    reach = {"acceptor_pairs_per_complex": (max(abs(v) for v in move.values()) * N_SUBST_COMPUTED / 1000) if move else None,
+             "acceptor_koopmans_cascade_delta": max(abs(v) for c in own_move.values() for v in c.values()),
+             "neighbour_gap_moves": max((v["gap_move_meV"] / 1000 for v in both.values() if v["touches_beyond_donors"]), default=None),
+             **{k: v["move_over_span_eV"] for k, v in slopes.items()}}
+    flipped = sorted(k for k, v in both.items() if not (v["koopmans_order_kept"] and v["dE_red_order_kept"]))
+    at = sorted(k for k, v in reach.items() if v is not None and v >= D_FIRST_TRIGGER_EV)
+    undecidable = sorted(k for k, v in half.items() if v["close"])
+    state = "met" if (at or flipped) else ("not decidable" if undecidable else "not met")
     rd = {"acceptors": acc, "members": members, "pairs_vs_measured": pairs, "computed_pairs": by_pair,
-          "koopmans_cascade_delta_eV": cascade, "koopmans_monotonic_in_sigma": {
-              g: all(cascade[b][g] > cascade[a][g] for a, b in itertools.pairwise(members)) for g in geoms},
-          "table4_neighbours": neighbours, "slope_1": slope_rd, "acceptor_point_shift_eV": points,
-          "verdict_condition": {"threshold_eV": D_FIRST_TRIGGER_EV, "largest_move_eV": reach, "at_or_above": at,
-                                "neighbour_order_flipped": flipped, "met": bool(at or flipped),
-                                "rule": "⚖️ founder 2026-10-14: a flipped Table 4 neighbour pair or a printed difference moved "
-                                        "by ≥ 0.1 eV re-submits (а) and (б) to the founder"}}
+          "koopmans_cascade_delta_eV": cascade, "koopmans_own_move_eV": own_move,
+          "table4_neighbours_both_relaxed": both, "table4_neighbours_half_relaxed": half, "slopes": slopes,
+          "acceptor_point_shift_eV": {n: e["adiabatic"][n] - e["series"][n] for n in acc},
+          "verdict_condition": {"threshold_eV": D_FIRST_TRIGGER_EV, "close_neighbour_meV": CLOSE_NEIGHBOUR_MEV,
+                                "largest_move_eV": reach, "at_or_above": at, "neighbour_order_flipped": flipped,
+                                "not_decidable_pairs": undecidable, "state": state,
+                                "rule": "⚖️ founder 2026-10-14: a measurement that reorders Table 4 neighbours or moves a "
+                                        "printed difference by ≥ 0.1 eV re-submits (а) and (б) to the founder"}}
     rd["verdict"] = verdict_acceptors(rd)
     return rd
 
 
 def verdict_acceptors(rd: dict) -> str:
-    """The acceptor reading — built from the block alone (pinned whole, like `verdict`)."""
+    """The reading of the points beyond the donors — built from the block alone (pinned whole, like `verdict`)."""
     lab = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H", "cl": "Cl", "dcbpy": "COOH",
            "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
 
@@ -561,32 +590,42 @@ def verdict_acceptors(rd: dict) -> str:
             side = [f"closer in {', '.join(v[f'closer_than_{base}'])}" if v[f"closer_than_{base}"] else "",
                     f"away in {', '.join(v[f'away_than_{base}'])}" if v[f"away_than_{base}"] else ""]
             out.append(f"{name(k)} {v[f'move_from_{base}_mV']:+.1f} mV ({'; '.join(s for s in side if s)})")
-        return ", ".join(out) if out else "no measured pair yet"
+        return ", ".join(out)
 
-    rows = "; ".join(f"{p['series_name']} {name(p['pair'])} ×{p['series_mV'] / p['measured_mV']:.2f} → "
-                     f"×{p['relaxed_mV'] / p['measured_mV']:.2f} → ×{p['adiabatic_mV'] / p['measured_mV']:.2f}"
-                     for p in rd["pairs_vs_measured"])
-    nb = rd["table4_neighbours"]
-    nbt = "; ".join(f"{name(k, '→')} {v['programmatic_meV']:+.0f} → {v['os3_on_own_minimum_meV']:+.0f} meV"
-                    + ("" if v["order_kept"] else " — ORDER FLIPS") for k, v in nb.items())
-    sl = rd["slope_1"]
     vc = rd["verdict_condition"]
-    mono = rd["koopmans_monotonic_in_sigma"]
-    acc = ", ".join(lab[n] for n in rd["acceptors"])
-    cond = (f"The condition of the 2026-10-14 verdict is MET ({', '.join([*vc['at_or_above'], *vc['neighbour_order_flipped']]).replace('_', ' ')}"
-            f"): (а) and (б) go back to the founder with these numbers." if vc["met"] else
-            "The condition of the 2026-10-14 verdict is not met: no Table 4 neighbour pair flips and no printed difference "
-            f"moves by {vc['threshold_eV']:.1f} eV.")
-    return (f"Acceptors relaxed in both states: {acc}. Against Os(III) kept vertical: {moved('relaxed')}; against the "
-            f"programmatic geometry: {moved('series')}. Per pair ({'programmatic → Os(II) relaxed → both relaxed'}): "
-            f"{rows or 'none'}. The Koopmans cascade Δ over {', '.join(lab[n] for n in rd['members'])} is "
-            f"{'monotonic' if mono['os3_on_own_minimum'] else 'NOT monotonic'} in σ with Os(III) on its own minimum "
-            f"({'and' if mono['os3_on_os2_minimum'] else 'but not'} on the Os(II) minimum); Table 4 neighbours with both "
-            f"members relaxed: {nbt or 'none'}. The slope ① over the relaxed fit members ({', '.join(lab[n] for n in sl['members'])}"
-            f"{'' if sl['complete'] else ' — not the whole fit set'}) goes from {sl['series_eV_per_sigma']:.3f} to "
-            f"{sl['adiabatic_eV_per_sigma']:.3f} eV/σ, {sl['move_over_span_eV']:.3f} eV over their σ span. "
-            f"Largest moves: " + ", ".join(f"{k.replace('_', ' ')} {v:.3f} eV" for k, v in vc["largest_move_eV"].items())
-            + "; absolute points (not differences): " + ", ".join(f"{lab[n]} {v * 1000:+.0f} meV" for n, v in rd["acceptor_point_shift_eV"].items())
+    pts = ", ".join(lab[n] for n in rd["acceptors"])
+    meas = (f"Against Os(III) kept vertical: {moved('relaxed')}; against the programmatic geometry: {moved('series')}. "
+            "Per pair (programmatic → Os(II) relaxed → both relaxed): "
+            + "; ".join(f"{p['series_name']} {name(p['pair'])} ×{p['series_mV'] / p['measured_mV']:.2f} → "
+                        f"×{p['relaxed_mV'] / p['measured_mV']:.2f} → ×{p['adiabatic_mV'] / p['measured_mV']:.2f}"
+                        for p in rd["pairs_vs_measured"]) + ". "
+            if rd["pairs_vs_measured"] else "No measured series has a pair with these points. ")
+    own = "; ".join(f"{lab[n]} {m['os3_on_own_minimum']:+.3f} eV on its own minimum, {m['os3_on_os2_minimum']:+.3f} on the "
+                    f"Os(II) one" for n, m in rd["koopmans_own_move_eV"].items())
+    both = "; ".join(f"{name(k, '→')} {v['koopmans_gap_meV']['programmatic']:+.0f} → {v['koopmans_gap_meV']['os3_on_own_minimum']:+.0f} meV"
+                     + ("" if v["koopmans_order_kept"] and v["dE_red_order_kept"] else " — ORDER FLIPS")
+                     for k, v in rd["table4_neighbours_both_relaxed"].items() if v["touches_beyond_donors"])
+    half = "; ".join(f"{name(k, '→')} {v['programmatic_koopmans_gap_meV']:+.1f} meV with only {lab[v['relaxed_member']]} relaxed "
+                     f"(it moves {v['relaxed_member_cascade_move_meV']['os3_on_own_minimum']:+.0f} meV)"
+                     for k, v in rd["table4_neighbours_half_relaxed"].items() if v["close"])
+    sl = "; ".join(f"{k.replace('_', ' ')} over {', '.join(lab[n] for n in v['members'])}"
+                   f"{'' if v['complete'] else ' (not the whole fit set)'}: {v['series_eV_per_sigma']:.3f} → "
+                   f"{v['adiabatic_eV_per_sigma']:.3f} eV/σ, {v['move_over_span_eV']:.3f} eV over the span"
+                   for k, v in rd["slopes"].items())
+    reach = ", ".join(f"{k.replace('_', ' ')} {'none' if v is None else f'{v:.3f} eV'}" for k, v in vc["largest_move_eV"].items())
+    cond = {"met": f"The condition of the 2026-10-14 verdict is MET ({', '.join([*vc['at_or_above'], *vc['neighbour_order_flipped']]).replace('_', ' ')}): "
+                   "(а) and (б) go back to the founder with these numbers.",
+            "not decidable": f"The condition of the 2026-10-14 verdict is NOT DECIDABLE: the close pair "
+                             f"{', '.join(name(k, '→') for k in vc['not_decidable_pairs'])} has one member unrelaxed; nothing "
+                             f"flips and no printed difference moves by {vc['threshold_eV']:.1f} eV among what is relaxed.",
+            "not met": f"The condition of the 2026-10-14 verdict is not met: no adjacent Table 4 pair flips, no close pair "
+                       f"is half-relaxed, and no printed difference moves by {vc['threshold_eV']:.1f} eV."}[vc["state"]]
+    return (f"Relaxed in both states beyond the donors: {pts}. {meas}The points' own Koopmans cascade moves: {own}. "
+            f"Adjacent Table 4 pairs with both members relaxed: {both or 'none beyond the donors'}"
+            f"{'; close pairs half-relaxed: ' + half if half else ''}. "
+            f"{'Slopes: ' + sl + '. ' if sl else 'No printed slope reaches beyond the donors yet. '}"
+            f"Largest moves: {reach}; absolute points (not differences): "
+            + ", ".join(f"{lab[n]} {v * 1000:+.0f} meV" for n, v in rd["acceptor_point_shift_eV"].items())
             + f". {cond}")
 
 
@@ -634,11 +673,12 @@ def adiabatic_reading(rows: list, src: dict, o3: dict, b3: dict, rx: dict, shift
     unrelaxed_gaps = {f"{a}-{b}": (b3[a]["os3"]["LUMO_eV"] - b3[b]["os3"]["LUMO_eV"]) * 1000
                       for a, b in itertools.pairwise(every) if not (a in relaxed_all and b in relaxed_all)}
     reach = {"substituent_pairs_per_complex": max(abs(v["move_from_series_mV"]) for v in by_pair.values()) * N_SUBST_COMPUTED / 1000,
-             "points": max(abs(s) for s in o3["point_shift_eV"].values()),
+             "points": max(abs(o3["point_shift_eV"][n]) for n in pts),
              "koopmans_cascade_delta": max(abs(v) for c in cascade_move.values() for v in c.values())}
     extrapolated = {"slope_1_over_lfer_span": abs(slope_change) * lfer_span_eV}
     rd = {"os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
-          "lambda_os3_meV": o3["lambda_os3_meV"], "point_shift_from_series_meV": {n: s * 1000 for n, s in o3["point_shift_eV"].items()},
+          "lambda_os3_meV": {n: o3["lambda_os3_meV"][n] for n in pts},
+          "point_shift_from_series_meV": {n: o3["point_shift_eV"][n] * 1000 for n in pts},
           "pairs_vs_measured": pairs, "computed_pairs": by_pair,
           "independence": "the rows rest on three computed pairs, two independent: OMe−Me = OMe−H − Me−H",
           "closer_than_series": sum(p["adiabatic_gap_mV"] < p["series_gap_mV"] for p in pairs),

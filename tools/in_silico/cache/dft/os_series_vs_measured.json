@@ -687,13 +687,13 @@
     "adiabatic": {
       "os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
       "lambda_os3_meV": {
-        "dmbpy": 86.15504374407143,
         "ome": 93.63136751856096,
+        "dmbpy": 86.15504374407143,
         "bpy": 110.42867561563108
       },
       "point_shift_from_series_meV": {
-        "dmbpy": -26.464709130893382,
         "ome": 53.92453783446172,
+        "dmbpy": -26.464709130893382,
         "bpy": 10.593834200761876
       },
       "pairs_vs_measured": [
