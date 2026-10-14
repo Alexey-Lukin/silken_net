@@ -112,9 +112,9 @@ vertical); Me then lies further below the line through H and OMe (r² 0.926). Fr
 pairs move by up to 20.1 mV per substituent (80 meV a complex), and on its own minimum Os(III) takes Os–Cl back to
 2.42–2.43 Å, 0.04–0.05 Å over its crystal range. With Os(III) on its own minimum the Koopmans cascade Δ of Table 4
 moves by −0.142 eV for OMe, −0.070 eV for Me and −0.091 eV for H and stays monotonic in σ_para over the three, while
-their donor slope steepens by 13 %, which carried over the σ span of the fit would amount to ≈0.13 eV — an
-extrapolation, the acceptors not being relaxed; so the order of the closest neighbours of Table 4 (NMe₂ and NH₂,
-1.5 meV apart; NO₂ and SO₂CF₃, 5.0 meV) is not tested against the geometry. Left untested are free energies and our
+the ΔE_red slope over the three donors steepens by 13 %, which carried over the σ span of the fit would amount to
+≈0.13 eV — an extrapolation, only OMe, Me and H being relaxed; so the order of the closest neighbours of Table 4 (NMe₂
+and NH₂, 1.5 meV apart; NO₂ and SO₂CF₃, 5.0 meV) is not tested against the geometry. Left untested are free energies and our
 program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;

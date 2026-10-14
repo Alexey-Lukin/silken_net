@@ -135,7 +135,8 @@ OUT_GAS = DFT_CACHE / "os_mediator_series_gas.json"            # no continuum �
 OUT_PYAXIAL = DFT_CACHE / "os_mediator_series_pyaxial.json"    # pyridine for 1-MeIm — the axial N-donor of the aqueous series
 OUT_RELAXED = DFT_CACHE / "os_mediator_series_relaxed_os2.json"   # each point at its own relaxed Os(II) geometry
 OUT_RELAXED3 = DFT_CACHE / "os_mediator_series_relaxed_os3.json"  # (3б): Os(III) relaxed from each relaxed Os(II)
-RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H for Me−H; Cl only on request (~5–8 h a point)
+RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H for Me−H; acceptors only on request
+# (estimate for both states: the donors' optimisation ⊥ single-point time ratio × the acceptor's single point — 00_07 HW.5.IS)
 # Declared before the first run (00_07 HW.5.IS leg 3a): energy and gradient at Gaussian's default thresholds (geomeTRIC's
 # GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico, DFT Gotchas: displacement never met).
 # What bounds the error is the GRADIENT, not the step (run-path adversary, 2026-10-12): at the Os(II) minimum Os(III) is

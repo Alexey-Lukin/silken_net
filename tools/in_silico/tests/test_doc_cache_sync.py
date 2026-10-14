@@ -3782,13 +3782,22 @@ CHECKS += [
        lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
       for n, anchor in (("ome", rf"moves by {N} eV for OMe, "), ("dmbpy", rf"eV for OMe, {N} eV for Me and"),
                         ("bpy", rf"eV for Me and {N} eV for H and stays"))],
-    ("paper §3.3 donor slope steepens → 83", PAPER_RESULTS, rf"their donor slope steepens by {N} %", V83,
+    ("paper §3.3 donor slope steepens → 83", PAPER_RESULTS, rf"slope over the three donors steepens by {N} %", V83,
      lambda d: _ad(d)["donor_slope_change"] * 100, 0.6),
-    ("paper §3.3 slope ① extrapolated → 83", PAPER_RESULTS, rf"would amount to ≈{N} eV — an", V83,
+    ("paper §3.3 slope ① extrapolated → 83", PAPER_RESULTS, rf"would amount to\s+≈{N} eV — an", V83,
      lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
     *[(f"paper §3.3 untested neighbour {k} → 83", PAPER_RESULTS, anchor, V83,
        lambda d, k=k: abs(_ad(d)["unrelaxed_neighbour_gap_meV"][k]), 0.06)
-      for k, anchor in (("nme2-nh2", rf"\(NMe₂ and NH₂,\s+{N} meV apart"), ("no2-so2cf3", rf"NO₂ and SO₂CF₃, {N} meV\)"))],
+      for k, anchor in (("nme2-nh2", rf"\(NMe₂\s+and NH₂, {N} meV apart"), ("no2-so2cf3", rf"NO₂ and SO₂CF₃, {N} meV\)"))],
+    # the verdict «так, так» under D (2026-10-14): the numbers its migrated form carries
+    *[(f"PIPELINE D verdict programmatic gap {k} → 83", PIPELINE, anchor, V83,
+       lambda d, k=k: _ad(d)["koopmans_neighbour_gap_eV"]["programmatic"][k] * 1000, 0.6)
+      for k, anchor in (("ome-dmbpy", rf"найбільших запасах \({N} і"), ("dmbpy-bpy", rf"найбільших запасах \([\d.]+ і {N} меВ\)"))],
+    ("PIPELINE D verdict neighbour-gap move → 83", PIPELINE, rf"нерівномірний — до {N} меВ, тож", V83,
+     lambda d: 1000 * max(abs(_ad(d)["koopmans_neighbour_gap_eV"][g][k] - _ad(d)["koopmans_neighbour_gap_eV"]["programmatic"][k])
+                          for g in ("os3_on_os2_minimum", "os3_on_own_minimum") for k in _ad(d)["koopmans_neighbour_gap_eV"][g]), 0.6),
+    ("PIPELINE D verdict slope ① extrapolated → 83", PIPELINE, rf"точки Me — {N} еВ тієї самої природи", V83,
+     lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
     # the D note 2026-10-13 and SUMMARY (4): the two numbers the first pass left unpinned (adversary 2026-10-14)
     ("PIPELINE D 10-13 series ΔE_red Me → os_mediator_series", PIPELINE, rf"еВ проти {N} серії — зсув", "dft/os_mediator_series.json",
      lambda d: next(c for c in d["complexes"] if c["name"] == "dmbpy")["dE_red_eV"], 0.0005),
