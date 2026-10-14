@@ -541,6 +541,101 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
             "a difference at D's threshold is reported as the script's judgement, or the extrapolation as a computation"
 
 
+def test_83_acceptor_reading_is_declared_before_the_data(tmp_path, monkeypatch):
+    """`83` on caches that hold relaxed ACCEPTOR points (⚖️ 2026-10-14: Cl, then NO₂) — synthetic Cl and NO₂ rows in a
+    copy of the DFT cache, `83` run end to end. The reading is declared before Cl's real numbers land.
+    CAN catch: a donor reading that moves when an acceptor lands (the pins stand on it); a crash on the MeCN series,
+    which has no acceptor; an acceptor read with one state only; a pair, a cascade, a neighbour order or a slope not
+    rebuilt from the caches; a verdict that is not the one its block builds; a condition of the 2026-10-14 verdict that
+    fails to fire on a flipped neighbour or a move ≥ 0.1 eV, or fires without one. CANNOT catch: what the real
+    relaxation returns."""
+    pytest.importorskip("rdkit")
+    import importlib.util
+    import shutil
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV
+    spec = importlib.util.spec_from_file_location("s83", Path(__file__).parents[1] / "scripts" / "83_os_series_vs_measured.py")
+    s83 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s83)
+    real = json.loads((DFT / "os_series_vs_measured.json").read_text())
+    b3 = {c["name"]: c for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
+
+    def run(cl_lumo_up=0.05, os3_rows=("cl", "no2"), points=None):
+        d = tmp_path / "dft"
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.copytree(DFT, d)
+        r2 = json.loads((d / "os_mediator_series_relaxed_os2.json").read_text())
+        r3 = json.loads((d / "os_mediator_series_relaxed_os3.json").read_text())
+        for n, (d2, dv, d3, up) in (points or {"cl": (-2e-3, -1e-3, -3e-3, cl_lumo_up),
+                                                "no2": (-3e-3, -2e-3, -5e-3, 0.03)}).items():
+            e2, e3 = b3[n]["os2"]["E_total_Ha"] + d2, b3[n]["os3"]["E_total_Ha"] + dv
+            r2["complexes"][n] = {"sigma_para": b3[n]["sigma_para"], "os2": {"E_total_Ha": e2},
+                                  "os3": {"E_total_Ha": e3, "LUMO_eV": b3[n]["os3"]["LUMO_eV"] + 0.02},
+                                  "dE_red_eV": (e2 - e3) * HARTREE_TO_EV}
+            if n in os3_rows:
+                own = e3 + d3
+                r3["complexes"][n] = {"sigma_para": b3[n]["sigma_para"], "os3": {"E_total_Ha": own, "LUMO_eV": b3[n]["os3"]["LUMO_eV"] + up},
+                                      "dE_red_adiabatic_eV": (e2 - own) * HARTREE_TO_EV}
+        (d / "os_mediator_series_relaxed_os2.json").write_text(json.dumps(r2))
+        (d / "os_mediator_series_relaxed_os3.json").write_text(json.dumps(r3))
+        monkeypatch.setattr(s83, "DFT_CACHE", d)
+        monkeypatch.setattr(s83, "OUT", d / "os_series_vs_measured.json")
+        s83.main()
+        return json.loads((d / "os_series_vs_measured.json").read_text()), r2, r3
+
+    v, r2, r3 = run()
+    rg = v["relaxed_geometry_check"]
+    prose = {"acceptors", "acceptors_relaxed", "not_relaxed", "verdict", "adiabatic"}   # what MUST change, rebuilt below
+    for k in [k for k in real["relaxed_geometry_check"] if k not in prose]:
+        assert rg[k] == real["relaxed_geometry_check"][k], f"the donor reading moved when acceptors landed: {k}"
+    for k in [k for k in real["relaxed_geometry_check"]["adiabatic"] if k not in {"verdict", "not_relaxed", "unrelaxed_neighbour_gap_meV"}]:
+        assert rg["adiabatic"][k] == real["relaxed_geometry_check"]["adiabatic"][k], f"the (3б) donor reading moved: {k}"
+    assert rg["acceptors_relaxed"] == ["cl", "no2"] and "cl" not in rg["not_relaxed"] and "no2" not in rg["not_relaxed"]
+    assert "bpy-cl" not in rg["adiabatic"]["unrelaxed_neighbour_gap_meV"], "a relaxed pair still called unrelaxed"
+    assert rg["verdict"] == s83.verdict_relaxed(rg) and "the acceptor block" in rg["verdict"]
+    assert rg["adiabatic"]["verdict"] == s83.verdict_adiabatic(rg["adiabatic"]) and "Cl," not in rg["adiabatic"]["verdict"].split("Not relaxed")[-1]
+    assert v["verdict"] == real["verdict"] and v["pvi_series"] == real["pvi_series"]
+    ac = rg["acceptors"]
+    assert ac["acceptors"] == ["cl", "no2"] and ac["members"] == ["ome", "dmbpy", "bpy", "cl", "no2"]
+    assert [(p["series_name"], p["pair"]) for p in ac["pairs_vs_measured"]] == [
+        ("ref 8", "cl-bpy"), ("ref 8", "cl-dmbpy"), ("ref 8", "cl-ome"), ("aqueous", "cl-dmbpy"), ("aqueous", "cl-ome")]
+    e = {"series": {n: b3[n]["dE_red_eV"] for n in ac["members"]},
+         "relaxed": {n: r2["complexes"][n]["dE_red_eV"] for n in ac["members"]},
+         "adiabatic": {n: r3["complexes"][n]["dE_red_adiabatic_eV"] for n in ac["members"]}}
+    for p in ac["pairs_vs_measured"]:
+        x, r_ = p["pair"].split("-")
+        for col in ("series", "relaxed", "adiabatic"):
+            assert p[f"{col}_mV"] == -(e[col][x] - e[col][r_]) / 4 * 1000, (p, col)
+    homo = json.loads((DFT / "lumiflavin.json").read_text())["red"]["HOMO_eV"]
+    for n, c in ac["koopmans_cascade_delta_eV"].items():
+        assert c["os3_on_own_minimum"] == homo - r3["complexes"][n]["os3"]["LUMO_eV"], n
+    assert set(ac["table4_neighbours"]) == {"ome-dmbpy", "dmbpy-bpy", "bpy-cl"}, "neighbours: only pairs with both relaxed"
+    sl = ac["slope_1"]
+    assert sl["members"] == ["ome", "dmbpy", "bpy", "no2"] and not sl["complete"], "COOH is in the fit set, not relaxed"
+    vc = ac["verdict_condition"]
+    assert vc["met"] == bool(vc["at_or_above"] or vc["neighbour_order_flipped"])
+    assert set(vc["largest_move_eV"]) == {"acceptor_pairs_per_complex", "acceptor_koopmans_cascade_delta",
+                                          "slope_1_over_relaxed_fit_members"}, "an absolute point counted as a difference"
+    assert ac["acceptor_point_shift_eV"] == {n: e["adiabatic"][n] - e["series"][n] for n in ("cl", "no2")}
+    assert ac["verdict"] == s83.verdict_acceptors(ac), "the acceptor verdict is not the one its block builds"
+    # a flipped neighbour (Cl's own-minimum LUMO raised past H's cascade) fires the condition by itself
+    v, _, _ = run(cl_lumo_up=0.4)
+    vc = v["relaxed_geometry_check"]["acceptors"]["verdict_condition"]
+    assert "bpy-cl" in vc["neighbour_order_flipped"] and vc["met"] and "MET" in v["relaxed_geometry_check"]["acceptors"]["verdict"]
+    # the 5 meV neighbours NO₂/SO₂CF₃ flipped by SMALL moves: the condition fires on the order alone (a flip of the
+    # 158 meV H/Cl gap needs a ≥ 0.1 eV move anyway, so only a close pair isolates this branch)
+    small = {"no2": (-2e-4, -1e-4, -2e-4, 0.0), "so2cf3": (-2e-4, -1e-4, -2e-4, 0.02)}
+    v, _, _ = run(points=small, os3_rows=("no2", "so2cf3"))
+    vc = v["relaxed_geometry_check"]["acceptors"]["verdict_condition"]
+    assert vc["at_or_above"] == [] and vc["neighbour_order_flipped"] == ["no2-so2cf3"] and vc["met"], vc
+    v, _, _ = run(points={k: (*p[:3], 0.0) for k, p in small.items()}, os3_rows=("no2", "so2cf3"))
+    vc = v["relaxed_geometry_check"]["acceptors"]["verdict_condition"]
+    assert not vc["met"] and "not met" in v["relaxed_geometry_check"]["acceptors"]["verdict"], vc
+    # an acceptor with its Os(II) row only is not read: no half-relaxed point
+    v, _, _ = run(os3_rows=("cl",))
+    assert v["relaxed_geometry_check"]["acceptors"]["acceptors"] == ["cl"]
+
+
 def test_os_mediator_series_relaxed_os3_is_derived_from_its_rows():
     """21e `b3lyp-relaxed-os3` (leg (3б), landed 2026-10-13): each point's Os(III) accepted at its own minimum, its Os(II)
     side and vertical Os(III) the (3а) cache's own rows, and every derived number from those energies.

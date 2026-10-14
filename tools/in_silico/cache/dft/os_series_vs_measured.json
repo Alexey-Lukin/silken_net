@@ -454,7 +454,16 @@
       "dmbpy",
       "bpy"
     ],
-    "not_relaxed": "Cl and the acceptor side",
+    "not_relaxed": [
+      "nme2",
+      "nh2",
+      "cl",
+      "dcbpy",
+      "cf3",
+      "no2",
+      "so2cf3"
+    ],
+    "acceptors_relaxed": [],
     "os3": "vertical on the relaxed Os(II) geometry",
     "mecn_ratio_ours_over_measured": {
       "ome": {
@@ -674,7 +683,7 @@
         "relaxed_os3": 2.4164
       }
     },
-    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) kept vertical on it.",
+    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) kept vertical on it.",
     "adiabatic": {
       "os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
       "lambda_os3_meV": {
@@ -887,6 +896,15 @@
         ],
         "baselines": "pairs and points: adiabatic − programmatic; Koopmans: over both Os(III) geometries"
       },
+      "not_relaxed": [
+        "nme2",
+        "nh2",
+        "cl",
+        "dcbpy",
+        "cf3",
+        "no2",
+        "so2cf3"
+      ],
       "os_cl_A": {
         "dmbpy": {
           "relaxed": 2.527,
@@ -901,7 +919,7 @@
           "relaxed_os3": 2.4164
         }
       },
-      "verdict": "Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III 86–110 meV; no free energies). The 6 donor rows the three measured series share with it rest on three computed pairs, two of them independent (OMe−Me = OMe−H − Me−H). Against Os(III) kept vertical: Me−H +6.1 mV (closer in ref 8, MeCN), OMe−H +4.2 mV (closer in ref 8, MeCN), OMe−Me -1.9 mV (away in ref 8, aqueous); against the programmatic geometry: Me−H +9.3 mV (closer in ref 8, MeCN), OMe−H -10.8 mV (closer in ref 8; away in MeCN), OMe−Me -20.1 mV (closer in ref 8, aqueous). Ref 8's films — our core and N-donor — OMe−H ×0.87 → ×1.08 → ×1.02; Me−H ×1.34 → ×1.23 → ×1.01; OMe−Me ×0.56 → ×0.99 → ×1.04 (|ours − measured| at most 1.7 mV per substituent with both states relaxed); the aqueous OMe−Me ×0.59 → ×1.05 → ×1.10; the homoleptic MeCN OMe−H ×0.99 → ×1.23 → ×1.16, Me−H ×2.48 → ×2.27 → ×1.86. From the programmatic geometry the donor pairs move by up to 20.1 mV per substituent (OMe−Me, 80 meV a complex) and the points by -26 to +54 meV; the Koopmans cascade Δ of each relaxed member moves by -0.142 eV (OMe), -0.070 eV (Me), -0.091 eV (H) with Os(III) on its own minimum (up to 0.142 eV over both Os(III) geometries), and stays monotonic in σ over the relaxed donors on both Os(III) geometries — where the programmatic gaps are 84 meV or more; the closest neighbours of Table 4 are unrelaxed (NMe₂→NH₂ 1.5 meV, NO₂→SO₂CF₃ 5.0 meV, COOH→CF₃ 40.0 meV). On its own minimum Os(III) takes Os–Cl back from 2.522–2.533 to 2.416–2.428 Å. By the letter of D's first trigger (0.1 eV), the Koopmans cascade Δ of OMe reaches it; the slope ①, extrapolated from the donors' +13 % over the LFER fit set's span (0.97 eV), moves by ≈0.13 eV — an extrapolation, not a computation. Whether a difference at the threshold carries a conclusion is D's to judge. Cl and the acceptor side are not relaxed."
+      "verdict": "Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III 86–110 meV; no free energies). The 6 donor rows the three measured series share with it rest on three computed pairs, two of them independent (OMe−Me = OMe−H − Me−H). Against Os(III) kept vertical: Me−H +6.1 mV (closer in ref 8, MeCN), OMe−H +4.2 mV (closer in ref 8, MeCN), OMe−Me -1.9 mV (away in ref 8, aqueous); against the programmatic geometry: Me−H +9.3 mV (closer in ref 8, MeCN), OMe−H -10.8 mV (closer in ref 8; away in MeCN), OMe−Me -20.1 mV (closer in ref 8, aqueous). Ref 8's films — our core and N-donor — OMe−H ×0.87 → ×1.08 → ×1.02; Me−H ×1.34 → ×1.23 → ×1.01; OMe−Me ×0.56 → ×0.99 → ×1.04 (|ours − measured| at most 1.7 mV per substituent with both states relaxed); the aqueous OMe−Me ×0.59 → ×1.05 → ×1.10; the homoleptic MeCN OMe−H ×0.99 → ×1.23 → ×1.16, Me−H ×2.48 → ×2.27 → ×1.86. From the programmatic geometry the donor pairs move by up to 20.1 mV per substituent (OMe−Me, 80 meV a complex) and the points by -26 to +54 meV; the Koopmans cascade Δ of each relaxed member moves by -0.142 eV (OMe), -0.070 eV (Me), -0.091 eV (H) with Os(III) on its own minimum (up to 0.142 eV over both Os(III) geometries), and stays monotonic in σ over the relaxed donors on both Os(III) geometries — where the programmatic gaps are 84 meV or more; the closest neighbours of Table 4 are unrelaxed (NMe₂→NH₂ 1.5 meV, NO₂→SO₂CF₃ 5.0 meV, COOH→CF₃ 40.0 meV). On its own minimum Os(III) takes Os–Cl back from 2.522–2.533 to 2.416–2.428 Å. By the letter of D's first trigger (0.1 eV), the Koopmans cascade Δ of OMe reaches it; the slope ①, extrapolated from the donors' +13 % over the LFER fit set's span (0.97 eV), moves by ≈0.13 eV — an extrapolation, not a computation. Whether a difference at the threshold carries a conclusion is D's to judge. Not relaxed in both states: NMe₂, NH₂, Cl, COOH, CF₃, NO₂, SO₂CF₃."
     }
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
