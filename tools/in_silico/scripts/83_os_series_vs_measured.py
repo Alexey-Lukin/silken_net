@@ -448,53 +448,87 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
         rows = [("ref 8", x, r, (pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for x, r in pvi_pairs]
         rows += [("aqueous", "ome", "dmbpy", aq_meas)]
         rows += [("MeCN", n, "bpy", measured[n]["shift_per_substituent_V"]) for n in pts if n != "bpy"]
-        out["adiabatic"] = adiabatic_reading(rows, src, o3, b3, d["complexes"], shift)
+        fit = json.loads((DFT_CACHE / "os_mediator_series.json").read_text(encoding="utf-8"))["lfer"]["fit_set"]
+        lslope = _slope_r2([b3[n]["sigma_para"] for n in fit], [b3[n]["dE_red_eV"] for n in fit])[0]   # eV per σ, a complex
+        span = abs(lslope) * (max(b3[n]["sigma_para"] for n in fit) - min(b3[n]["sigma_para"] for n in fit))
+        out["adiabatic"] = adiabatic_reading(rows, src, o3, b3, d["complexes"], shift,
+                                             fits["adiabatic"][0] / fits["series"][0] - 1, span)
         out["adiabatic"]["os_cl_A"] = {n: {t: v[t]["Cl"] for t in ("relaxed", "relaxed_os3")} for n, v in donors.items()}
         out["adiabatic"]["verdict"] = verdict_adiabatic(out["adiabatic"])
     return out
 
 
-def adiabatic_reading(rows: list, src: dict, o3: dict, b3: dict, rx: dict, shift) -> dict:
+def adiabatic_reading(rows: list, src: dict, o3: dict, b3: dict, rx: dict, shift, slope_change: float,
+                      lfer_span_eV: float) -> dict:
     """(3б) — Os(III) relaxed from each relaxed Os(II), read against every measured pair the three series share with it.
 
-    Each pair is read in three columns (programmatic vertical · Os(II) relaxed, Os(III) vertical · both relaxed) and the
-    closer/away counts against BOTH earlier columns are printed, never one alone (in-silico §When Modifying #35 (6)). It
-    also reports what the relaxation does to the printed differences D's first trigger reads: the substituent pairs (per
-    complex), the absolute points, and the Koopmans cascade Δ = HOMO(FADH₂) − LUMO(Os III) of each relaxed member, with
-    Os(III) on the Os(II) minimum and on its own (the flavin side does not depend on the Os geometry, so the cascade
-    inherits the LUMO's move whole). CAN show: which of those reach 0.1 eV. CANNOT show: free energies, the acceptor side
-    (not relaxed), or whether a difference that reaches 0.1 eV carries a conclusion — that is D's to judge."""
+    The six rows rest on three COMPUTED pairs, two of them independent (OMe−Me = OMe−H − Me−H), so the reading is per
+    computed pair: its move against BOTH earlier columns (programmatic vertical · Os(II) relaxed, Os(III) vertical) and,
+    for each, the series it comes closer to and the series it moves away from — never a count alone (in-silico §When
+    Modifying #35 (6); adversary 2026-10-14). It also reports what the relaxation does to the printed differences D's
+    first trigger reads: the substituent pairs (per complex) and the points, both adiabatic − programmatic (both states
+    relaxed — the geometry the 2026-10-13 rule judges); the Koopmans cascade Δ = HOMO(FADH₂) − LUMO(Os III) of each
+    relaxed member over BOTH Os(III) geometries (as the 2026-10-13 application read it; the flavin side does not depend on
+    the Os geometry, so the cascade inherits the LUMO's move whole); and, labelled as such, the slope ① EXTRAPOLATED —
+    the donor slope's relative change carried over the σ span of the LFER fit set, the way the 2026-10-13 submission
+    priced (3а). CAN show: which of those reach 0.1 eV, and how close the unrelaxed neighbours of Table 4 sit. CANNOT show:
+    free energies, the acceptor side (not relaxed), or whether a difference that reaches 0.1 eV carries a conclusion —
+    that is D's to judge."""
     cols = ("series", "relaxed", "adiabatic")
     pairs = [{"series_name": s, "pair": f"{x}-{r}", "measured_mV": m * 1000, **{f"{t}_mV": shift(src[t], x, r) * 1000 for t in cols}}
              for s, x, r, m in rows]
     for p in pairs:
         for t in cols:
             p[f"{t}_gap_mV"] = abs(p[f"{t}_mV"] - p["measured_mV"])
-    moves = {f"{x}-{r}": shift(src["adiabatic"], x, r) - shift(src["series"], x, r)   # V per substituent
-             for x, r in sorted({(x, r) for _, x, r, _ in rows})}
-    pts = list(src["adiabatic"])
+    by_pair = {}
+    for x, r in sorted({(x, r) for _, x, r, _ in rows}):
+        mine = [p for p in pairs if p["pair"] == f"{x}-{r}"]
+        by_pair[f"{x}-{r}"] = {
+            "move_from_series_mV": (shift(src["adiabatic"], x, r) - shift(src["series"], x, r)) * 1000,
+            "move_from_relaxed_mV": (shift(src["adiabatic"], x, r) - shift(src["relaxed"], x, r)) * 1000,
+            **{f"{w}_than_{t}": [p["series_name"] for p in mine if (p["adiabatic_gap_mV"] < p[f"{t}_gap_mV"]) == (w == "closer")]
+               for t in ("series", "relaxed") for w in ("closer", "away")}}
+    homo = json.loads((DFT_CACHE / "lumiflavin.json").read_text(encoding="utf-8"))["red"]["HOMO_eV"]   # 21e's own source
+    pts = sorted(src["adiabatic"], key=lambda n: b3[n]["sigma_para"])
     lumo = {n: {"series": b3[n]["os3"]["LUMO_eV"], "relaxed": rx[n]["os3"]["LUMO_eV"],
                 "adiabatic": o3["complexes"][n]["os3"]["LUMO_eV"]} for n in pts}
-    cascade_move = {n: {"os3_on_os2_minimum": -(v["relaxed"] - v["series"]), "os3_on_own_minimum": -(v["adiabatic"] - v["series"])}
-                    for n, v in lumo.items()}   # eV — the cascade Δ falls as the Os(III) LUMO rises
-    reach = {"substituent_pairs_per_complex": max(abs(m) for m in moves.values()) * N_SUBST_COMPUTED,
+    cascade = {n: {"programmatic": homo - v["series"], "os3_on_os2_minimum": homo - v["relaxed"],
+                   "os3_on_own_minimum": homo - v["adiabatic"]} for n, v in lumo.items()}   # eV, Table 4's column
+    cascade_move = {n: {k: c[k] - c["programmatic"] for k in ("os3_on_os2_minimum", "os3_on_own_minimum")}
+                    for n, c in cascade.items()}
+    geoms = ("programmatic", "os3_on_os2_minimum", "os3_on_own_minimum")
+    gaps = {g: {f"{a}-{b}": cascade[b][g] - cascade[a][g] for a, b in itertools.pairwise(pts)} for g in geoms}
+    every = sorted(b3, key=lambda n: b3[n]["sigma_para"])   # Table 4's members, all on the programmatic geometry
+    unrelaxed_gaps = {f"{a}-{b}": (b3[a]["os3"]["LUMO_eV"] - b3[b]["os3"]["LUMO_eV"]) * 1000
+                      for a, b in itertools.pairwise(every) if not (a in pts and b in pts)}
+    reach = {"substituent_pairs_per_complex": max(abs(v["move_from_series_mV"]) for v in by_pair.values()) * N_SUBST_COMPUTED / 1000,
              "points": max(abs(s) for s in o3["point_shift_eV"].values()),
              "koopmans_cascade_delta": max(abs(v) for c in cascade_move.values() for v in c.values())}
+    extrapolated = {"slope_1_over_lfer_span": abs(slope_change) * lfer_span_eV}
     rd = {"os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
           "lambda_os3_meV": o3["lambda_os3_meV"], "point_shift_from_series_meV": {n: s * 1000 for n, s in o3["point_shift_eV"].items()},
-          "pairs_vs_measured": pairs,
+          "pairs_vs_measured": pairs, "computed_pairs": by_pair,
+          "independence": "the rows rest on three computed pairs, two independent: OMe−Me = OMe−H − Me−H",
           "closer_than_series": sum(p["adiabatic_gap_mV"] < p["series_gap_mV"] for p in pairs),
           "closer_than_relaxed": sum(p["adiabatic_gap_mV"] < p["relaxed_gap_mV"] for p in pairs),
-          "pair_move_from_series_mV": {k: v * 1000 for k, v in moves.items()},
-          "koopmans_cascade_delta_move_eV": cascade_move,
+          "pair_move_from_series_mV": {k: v["move_from_series_mV"] for k, v in by_pair.items()},
+          "koopmans_cascade_delta_eV": cascade, "koopmans_cascade_delta_move_eV": cascade_move,
+          "koopmans_neighbour_gap_eV": gaps,
+          "koopmans_monotonic_in_sigma": {g: all(v > 0 for v in gaps[g].values()) for g in geoms},
+          "unrelaxed_neighbour_gap_meV": unrelaxed_gaps,
+          "donor_slope_change": slope_change, "lfer_span_eV": lfer_span_eV,
           "d_first_trigger": {"threshold_eV": D_FIRST_TRIGGER_EV, "largest_move_eV": reach,
-                              "at_or_above": sorted(k for k, v in reach.items() if v >= D_FIRST_TRIGGER_EV)}}
+                              "at_or_above": sorted(k for k, v in reach.items() if v >= D_FIRST_TRIGGER_EV),
+                              "extrapolated_eV": extrapolated,
+                              "extrapolated_at_or_above": sorted(k for k, v in extrapolated.items() if v >= D_FIRST_TRIGGER_EV),
+                              "baselines": "pairs and points: adiabatic − programmatic; Koopmans: over both Os(III) geometries"}}
     return rd   # the caller adds the Os–Cl distances and then the verdict
 
 
 def verdict_adiabatic(rd: dict) -> str:
     """The (3б) reading — built from the block alone (pinned whole, like `verdict`)."""
-    lab = {"ome": "OMe", "dmbpy": "Me", "bpy": "H"}
+    lab = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H", "cl": "Cl", "dcbpy": "COOH",
+           "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
     by = {(p["series_name"], p["pair"]): p for p in rd["pairs_vs_measured"]}
 
     def ratio(s: str, k: str, t: str) -> str:
@@ -505,30 +539,39 @@ def verdict_adiabatic(rd: dict) -> str:
         x, r = k.split("-")
         return f"{lab[x]}−{lab[r]}"
 
-    n = len(rd["pairs_vs_measured"])
+    def moved(base: str) -> str:
+        out = []
+        for k, v in rd["computed_pairs"].items():
+            side = [f"closer in {', '.join(v[f'closer_than_{base}'])}" if v[f"closer_than_{base}"] else "",
+                    f"away in {', '.join(v[f'away_than_{base}'])}" if v[f"away_than_{base}"] else ""]
+            out.append(f"{name(k)} {v[f'move_from_{base}_mV']:+.1f} mV ({'; '.join(s for s in side if s)})")
+        return ", ".join(out)
+
     r8 = [k for s, k in by if s == "ref 8"]
     cl = {t: [v[t] for v in rd["os_cl_A"].values()] for t in ("relaxed", "relaxed_os3")}
     lam = rd["lambda_os3_meV"].values()
     mv = rd["pair_move_from_series_mV"]
     big = max(mv, key=lambda k: abs(mv[k]))
     pt = rd["point_shift_from_series_meV"].values()
-    km = {k: max(c.values(), key=abs) for k, c in rd["koopmans_cascade_delta_move_eV"].items()}
     own = {k: c["os3_on_own_minimum"] for k, c in rd["koopmans_cascade_delta_move_eV"].items()}
+    km = {k: max(c.values(), key=abs) for k, c in rd["koopmans_cascade_delta_move_eV"].items()}
+    mono = rd["koopmans_monotonic_in_sigma"]
+    ug = rd["unrelaxed_neighbour_gap_meV"]
+    close = sorted(ug, key=lambda k: abs(ug[k]))[:3]
     dt = rd["d_first_trigger"]
     thr = dt["threshold_eV"]
     what = {"substituent_pairs_per_complex": "the substituent pairs", "points": "the absolute points",
-            "koopmans_cascade_delta": "the Koopmans cascade Δ of " + " and ".join(
-                lab[k] for k, v in km.items() if abs(v) >= thr)}
+            "koopmans_cascade_delta": "the Koopmans cascade Δ of " + " and ".join(lab[k] for k, v in km.items() if abs(v) >= thr)}
     at = [what[k] for k in dt["at_or_above"]]
-    trig = (f"By the letter of D's first trigger ({thr:.1f} eV), {' and '.join(at)} reach{'es' if len(at) == 1 else ''} "
-            f"it — whether that difference carries a conclusion is D's to judge" if at else
-            f"By the letter of D's first trigger ({thr:.1f} eV), none of these reaches it")
+    trig = (f"By the letter of D's first trigger ({thr:.1f} eV), {' and '.join(at)} reach{'es' if len(at) == 1 else ''} it"
+            if at else f"By the letter of D's first trigger ({thr:.1f} eV), no computed difference reaches it")
+    ex = dt["extrapolated_eV"]["slope_1_over_lfer_span"]
     return (f"Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III {min(lam):.0f}–{max(lam):.0f} "
-            f"meV; no free energies): of the {n} donor pairs the three measured series share with it, "
-            f"{rd['closer_than_series']} come closer to the measured than on the programmatic geometry and "
-            f"{rd['closer_than_relaxed']} than with Os(III) vertical on the relaxed Os(II). Ref 8's films — our core and "
-            f"N-donor — " + "; ".join(f"{name(k)} {ratio('ref 8', k, 'series')} → {ratio('ref 8', k, 'relaxed')} → "
-                                       f"{ratio('ref 8', k, 'adiabatic')}" for k in r8)
+            f"meV; no free energies). The {len(rd['pairs_vs_measured'])} donor rows the three measured series share with it "
+            f"rest on three computed pairs, two of them independent (OMe−Me = OMe−H − Me−H). Against Os(III) kept vertical: "
+            f"{moved('relaxed')}; against the programmatic geometry: {moved('series')}. Ref 8's films — our core and N-donor — "
+            + "; ".join(f"{name(k)} {ratio('ref 8', k, 'series')} → {ratio('ref 8', k, 'relaxed')} → {ratio('ref 8', k, 'adiabatic')}"
+                        for k in r8)
             + f" (|ours − measured| at most {max(by[('ref 8', k)]['adiabatic_gap_mV'] for k in r8):.1f} mV per substituent "
             f"with both states relaxed); the aqueous OMe−Me {ratio('aqueous', 'ome-dmbpy', 'series')} → "
             f"{ratio('aqueous', 'ome-dmbpy', 'relaxed')} → {ratio('aqueous', 'ome-dmbpy', 'adiabatic')}; the homoleptic "
@@ -539,9 +582,15 @@ def verdict_adiabatic(rd: dict) -> str:
             f"{max(pt):+.0f} meV; the Koopmans cascade Δ of each relaxed member moves by "
             + ", ".join(f"{own[k]:+.3f} eV ({lab[k]})" for k in own)
             + f" with Os(III) on its own minimum (up to {max(abs(v) for v in km.values()):.3f} eV over both Os(III) "
-            f"geometries). On its own minimum Os(III) takes Os–Cl back from {min(cl['relaxed']):.3f}–"
-            f"{max(cl['relaxed']):.3f} to {min(cl['relaxed_os3']):.3f}–{max(cl['relaxed_os3']):.3f} Å. {trig}. Cl and "
-            f"the acceptor side are not relaxed.")
+            f"geometries), and stays monotonic in σ over the relaxed donors on "
+            f"{'both' if all(mono.values()) else 'not all'} Os(III) geometries — where the programmatic gaps are "
+            f"{min(abs(v) for v in rd['koopmans_neighbour_gap_eV']['programmatic'].values()) * 1000:.0f} meV or more; the "
+            f"closest neighbours of Table 4 are unrelaxed (" + ", ".join(f"{name(k).replace('−', '→')} {abs(ug[k]):.1f} meV" for k in close)
+            + f"). On its own minimum Os(III) takes Os–Cl back from {min(cl['relaxed']):.3f}–{max(cl['relaxed']):.3f} to "
+            f"{min(cl['relaxed_os3']):.3f}–{max(cl['relaxed_os3']):.3f} Å. {trig}; the slope ①, extrapolated from the "
+            f"donors' {rd['donor_slope_change'] * 100:+.0f} % over the LFER fit set's span ({rd['lfer_span_eV']:.2f} eV), moves "
+            f"by ≈{ex:.2f} eV — an extrapolation, not a computation. Whether a difference at the threshold carries a conclusion "
+            f"is D's to judge. Cl and the acceptor side are not relaxed.")
 
 
 def _xyz_atoms(path: Path) -> list:
@@ -579,7 +628,7 @@ def verdict_relaxed(rg: dict) -> str:
             f"Os–N(L) from {span('programmatic', 'N_L')} to {span('relaxed', 'N_L')} Å, Os–Cl from {span('programmatic', 'Cl')} "
             f"to {span('relaxed', 'Cl')} Å. So the substituent sensitivity of the vertical protocol depends on the geometry at "
             f"the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with "
-            f"Os(III) still vertical on it.")
+            f"Os(III) kept vertical on it.")
 
 
 def main() -> int:

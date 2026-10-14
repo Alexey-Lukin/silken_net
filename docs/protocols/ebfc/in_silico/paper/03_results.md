@@ -101,14 +101,17 @@ protocol rests on the geometry at the level of the pairs themselves; the pairs w
 chelate comes closer to the crystal ranges of §2.3 — bite 77.5–78.2° against the programmatic 80.5–80.6°, Os–N(bpy)
 2.05–2.09 Å against 2.10 Å — while Os–N(L) lengthens to 2.14 Å and Os–Cl to 2.52–2.53 Å, 0.08–0.09 Å over the
 Os(II) range and 0.14–0.15 Å over the Os(III) one, on which Os(III) is computed vertically. Relaxing Os(III) as well,
-from each relaxed Os(II) geometry (an adiabatic ΔSCF, with reorganisation energies λ_III of 86–110 meV), brings 5 of
-the 6 donor pairs the three series share closer to experiment than the programmatic geometry does and 4 closer than
-Os(III) kept vertical: ref 8's three donor pairs come within 1.7 mV per substituent of the measured (OMe−H 1.02,
-Me−H 1.01, OMe−Me 1.04 times), the acetonitrile OMe−H and Me−H move to 1.16 and 1.86 times, and the aqueous OMe−Me
-moves slightly away, from 1.05 to 1.10 times; Me then lies further below the line through H and OMe (r² 0.926). From
-the programmatic geometry the donor pairs then move by up to 20.1 mV per substituent (80 meV a complex), and on its
-own minimum Os(III) takes Os–Cl back to 2.42–2.43 Å, 0.04–0.05 Å over its crystal range. Left untested are free
-energies and our program's own discretisation of the cavity. On its one
+from each relaxed Os(II) geometry (an adiabatic ΔSCF, with reorganisation energies λ_III of 86–110 meV), moves the two
+independent donor pairs toward experiment in both series that have H — OMe−H by +4.2 and Me−H by +6.1 mV per
+substituent against Os(III) kept vertical — and their difference, OMe−Me, by −1.9 mV, away from experiment in both
+series that measure it. Against the programmatic geometry, Me−H and OMe−Me move toward experiment in every series that
+has them, and OMe−H toward ref 8's value and away from the acetonitrile one (from 0.99 to 1.16 times). Ref 8's three
+donor pairs then lie within 1.7 mV per substituent of the measured (OMe−H 1.02, Me−H 1.01, OMe−Me 1.04 times), the
+acetonitrile Me−H stays 1.86 times the measured, and the aqueous OMe−Me ends at 1.10 times (1.05 with Os(III)
+vertical); Me then lies further below the line through H and OMe (r² 0.926). From the programmatic geometry the donor
+pairs move by up to 20.1 mV per substituent (80 meV a complex), and on its own minimum Os(III) takes Os–Cl back to
+2.42–2.43 Å, 0.04–0.05 Å over its crystal range. Left untested are free energies and our program's own
+discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
 the measured shifts are not linear in σ_para, so no slope is read from these three points — where H is measured (two
@@ -227,8 +230,8 @@ energy are distinct quantities, so their signs are not directly comparable; both
 against experiment.) Both stand on the programmatic osmium geometry (§2.3): relaxing both oxidation states of the
 dimethyl mediator at B3LYP (§3.3) moves its ΔE_red(III→II) by −0.026 eV (by coincidence the size of closing its
 chelates onto the target distances, §2.3) and its Koopmans offset by −0.070 eV (+0.098 eV with Os(III) kept vertical on
-the relaxed Os(II)), so neither sign rests on that geometry; how much of this reaches the ωB97X/def2-TZVP osmium side
-of the ΔSCF cascade was not computed. The discrepancy between the ΔSCF free energy and the verified value is the paper's
+the relaxed Os(II)), so at B3LYP neither sign turns (moves under 0.1 eV against offsets of about 1 eV); whether this
+holds for the ωB97X/def2-TZVP osmium side of the ΔSCF cascade was not computed. The discrepancy between the ΔSCF free energy and the verified value is the paper's
 methodological core, and we decompose rather than excuse it.
 
 The real mediator is the **chloro** complex [Os(4,4′-dimethyl-bpy)₂(PVI)Cl]⁺,<sup>8</sup> so the DFT chloro model is

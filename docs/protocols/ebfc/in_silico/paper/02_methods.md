@@ -57,7 +57,7 @@ single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cr
 geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the six osmium optimisations
 in this work — the Os(II) points of OMe, Me and H in the substituent check of §3.3 and their Os(III) points relaxed
 from them, converged at the default energy and gradient thresholds and the loose displacement threshold the flat Os–Cl
-mode needs — do not enter the cascade, which reports their computed sensitivity instead (§3.5). The
+mode needs — do not enter the cascade; §3.5 reports what they do to the device couple's cascade numbers. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary

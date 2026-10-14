@@ -498,10 +498,35 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
         for k, mv in ad["pair_move_from_series_mV"].items():
             x, r_ = k.split("-")
             assert mv == (-(e["adiabatic"][x] - e["adiabatic"][r_]) / 4 + (e["series"][x] - e["series"][r_]) / 4) * 1000, k
-        for n, c in ad["koopmans_cascade_delta_move_eV"].items():   # the cascade falls as the Os(III) LUMO rises
-            s3 = b3[n]["os3"]["LUMO_eV"]
-            assert c == {"os3_on_os2_minimum": -(rx[n]["os3"]["LUMO_eV"] - s3),
-                         "os3_on_own_minimum": -(o3["complexes"][n]["os3"]["LUMO_eV"] - s3)}, n
+        homo = json.loads((DFT / "lumiflavin.json").read_text())["red"]["HOMO_eV"]   # 21e's cascade source
+        for n, c in ad["koopmans_cascade_delta_eV"].items():   # Δ = HOMO(FADH₂) − LUMO(Os III), from unrounded LUMOs
+            assert c == {"programmatic": homo - b3[n]["os3"]["LUMO_eV"], "os3_on_os2_minimum": homo - rx[n]["os3"]["LUMO_eV"],
+                         "os3_on_own_minimum": homo - o3["complexes"][n]["os3"]["LUMO_eV"]}, n
+            assert math.isclose(c["programmatic"], b3[n]["cascade_delta_eV"], abs_tol=5e-5), (n, "≠ Table 4's rounded column")
+            assert ad["koopmans_cascade_delta_move_eV"][n] == {k: c[k] - c["programmatic"]
+                                                               for k in ("os3_on_os2_minimum", "os3_on_own_minimum")}, n
+        pts = sorted(ad["koopmans_cascade_delta_eV"], key=lambda n: b3[n]["sigma_para"])
+        for g, gp in ad["koopmans_neighbour_gap_eV"].items():
+            cc = {n: ad["koopmans_cascade_delta_eV"][n][g] for n in pts}
+            assert gp == {f"{a}-{b}": cc[b] - cc[a] for a, b in itertools.pairwise(pts)}, g
+            assert ad["koopmans_monotonic_in_sigma"][g] == all(v > 0 for v in gp.values()), g
+        every = sorted(b3, key=lambda n: b3[n]["sigma_para"])
+        assert ad["unrelaxed_neighbour_gap_meV"] == {f"{a}-{b}": (b3[a]["os3"]["LUMO_eV"] - b3[b]["os3"]["LUMO_eV"]) * 1000
+                                                     for a, b in itertools.pairwise(every) if not (a in pts and b in pts)}
+        for k, cp in ad["computed_pairs"].items():   # each computed pair: its two moves and the series it nears or leaves
+            x, r_ = k.split("-")
+            rows = [p for p in ad["pairs_vs_measured"] if p["pair"] == k]
+            for base in ("series", "relaxed"):
+                assert cp[f"move_from_{base}_mV"] == (-(e["adiabatic"][x] - e["adiabatic"][r_]) / 4
+                                                      + (e[base][x] - e[base][r_]) / 4) * 1000, (k, base)
+                assert cp[f"closer_than_{base}"] == [p["series_name"] for p in rows if p["adiabatic_gap_mV"] < p[f"{base}_gap_mV"]]
+                assert cp[f"away_than_{base}"] == [p["series_name"] for p in rows if not p["adiabatic_gap_mV"] < p[f"{base}_gap_mV"]]
+        assert set(ad["computed_pairs"]) == {p["pair"] for p in ad["pairs_vs_measured"]}
+        fit = series["lfer"]["fit_set"]
+        ls, _ = s83._slope_r2([b3[n]["sigma_para"] for n in fit], [b3[n]["dE_red_eV"] for n in fit])
+        assert ad["lfer_span_eV"] == abs(ls) * (max(b3[n]["sigma_para"] for n in fit) - min(b3[n]["sigma_para"] for n in fit))
+        dsl = rg["donor_slope_per_substituent_V_per_sigma"]
+        assert ad["donor_slope_change"] == dsl["adiabatic"] / dsl["series"] - 1
         dt = ad["d_first_trigger"]
         reach = {"substituent_pairs_per_complex": max(abs(mv) for mv in ad["pair_move_from_series_mV"].values()) * 4 / 1000,
                  "points": max(abs(s) for s in o3["point_shift_eV"].values()),
@@ -510,8 +535,10 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
         assert all(math.isclose(dt["largest_move_eV"][k], val, rel_tol=1e-12) for k, val in reach.items())
         assert set(dt["largest_move_eV"]) == set(reach)
         assert dt["at_or_above"] == sorted(k for k, val in dt["largest_move_eV"].items() if val >= 0.1)
-        assert "whether that difference carries a conclusion is D's to judge" in ad["verdict"] or not dt["at_or_above"], \
-            "a difference at D's threshold is reported as the script's judgement"
+        assert dt["extrapolated_eV"] == {"slope_1_over_lfer_span": abs(ad["donor_slope_change"]) * ad["lfer_span_eV"]}
+        assert dt["extrapolated_at_or_above"] == sorted(k for k, val in dt["extrapolated_eV"].items() if val >= 0.1)
+        assert "is D's to judge" in ad["verdict"] and "an extrapolation, not a computation" in ad["verdict"], \
+            "a difference at D's threshold is reported as the script's judgement, or the extrapolation as a computation"
 
 
 def test_os_mediator_series_relaxed_os3_is_derived_from_its_rows():

@@ -12,7 +12,7 @@ biofuel-cell chain, with an honest assessment of where affordable implicit-solva
 limit. A thermodynamic proton reference reproduces the
 proton-coupled FAD redox potential to within 62 mV of experiment; a Hammett structure–activity
 relationship for the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈15 % shallower at ωB97X/def2-TZVP
-over the shared points; its donor pairs move by up to 20 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction
+over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction
 and rationalises the empirical potential optimum; and charge-localised ΔSCF with first-principles
 reorganisation energies places the bimetallic-ZIF cathode direct electron transfer — for an oriented
 enzyme–framework contact — at a margin that is borderline at zero driving force and falls below enzymatic
