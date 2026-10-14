@@ -158,6 +158,11 @@ AXIAL_VARIANT = ("pyaxial", "os_mediator_series_pyaxial.json")   # 21e `b3lyp-py
 RELAX_VARIANT = ("relaxed", "os_mediator_series_relaxed_os2.json")   # 21e `b3lyp-relaxed-os2`: each point's Os(II) geometry
 # relaxed with the series protocol, Os(III) vertical on it — the geometry knob; it computes OMe, Me and H only (21e
 # RELAX_POINTS), so of the aqueous pairs it reaches OMe−Me alone
+ADIABATIC_VARIANT = ("adiabatic", "os_mediator_series_relaxed_os3.json")   # 21e `b3lyp-relaxed-os3`: each point's Os(III)
+# relaxed from its relaxed Os(II) — the adiabatic ΔSCF and λ_III; read only when every relaxed point has its adiabatic row
+D_FIRST_TRIGGER_EV = 0.1   # PIPELINE_STATUS «D», first trigger: a difference that carries a conclusion moved by ≥ 0.1 eV
+# by a computation that corrects the geometry or the cavity (its letter as narrowed 2026-10-08) — the block reports which
+# printed differences reach it; judging them is D's, never this script's
 
 
 def _solvation_clause(aq: dict) -> str:
@@ -207,6 +212,14 @@ def _solvation_clause(aq: dict) -> str:
             head += (f"Nor the Os(II) geometry: relaxing it with the same protocol, Os(III) vertical on it, moves the pair "
                      f"by {mv:+.1f} mV. ")
         geometry = "the Os(III) state's own relaxation and free energies"
+        r3 = aq.get("os3_relaxation_check")
+        if r3:   # judged against where the pair stood with Os(III) vertical — the excess above was the programmatic one's
+            meas = next(p["measured_mV"] for p in aq["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+            closer = abs(r3["ome_dmbpy_adiabatic_mV"] - meas) < abs(r3["ome_dmbpy_relaxed_os2_mV"] - meas)
+            head += (f"Relaxing the Os(III) state from it as well moves the pair by a further "
+                     f"{r3['ome_dmbpy_change_mV']:+.1f} mV, to {r3['ome_dmbpy_adiabatic_mV']:.1f} against {meas:.1f} mV — "
+                     f"{'toward' if closer else 'away from'} the measured. ")
+            geometry = "free energies"
     return head + (f"Left untested (under {under}): {geometry}, the program's own cavity discretisation and, on this pair, "
                    f"the ligand basis. ")
 
@@ -339,8 +352,25 @@ def aqueous(sigma: dict, b3: dict) -> dict:
                                   "point_shift_meV": {n: s * 1000 for n, s in v["point_shift_eV"].items()},
                                   "rescued_rows": v["rescued_rows"],
                                   "series_os3_s2_not_recorded": v["series_os3_s2_not_recorded"]}
+    if "relaxation_check" in aq and (o3 := _adiabatic()):   # 21e `b3lyp-relaxed-os3` — Os(III) relaxed as well
+        p3 = next(p for p in o3["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        aq["os3_relaxation_check"] = {"ome_dmbpy_change_mV": p3["change_mV"], "ome_dmbpy_relaxed_os2_mV": p3["relaxed_os2_mV"],
+                                      "ome_dmbpy_adiabatic_mV": p3["adiabatic_mV"]}
     aq["verdict"] = verdict_aqueous(aq)
     return aq
+
+
+def _adiabatic() -> dict | None:
+    """The (3б) cache's `vs_vertical`, or None — None unless every point the Os(II) relaxation computed has its adiabatic
+    row, so a half-written cache is never read as the relaxation of the whole donor set."""
+    path, rx = DFT_CACHE / ADIABATIC_VARIANT[1], DFT_CACHE / RELAX_VARIANT[1]
+    if not (path.exists() and rx.exists()):
+        return None
+    d = json.loads(path.read_text(encoding="utf-8"))
+    done = {n for n, c in d.get("complexes", {}).items() if "dE_red_adiabatic_eV" in c}
+    if "vs_vertical" not in d or done != set(json.loads(rx.read_text(encoding="utf-8"))["complexes"]):
+        return None
+    return d["vs_vertical"] | {"complexes": d["complexes"]}
 
 
 def _os_donors(atoms: list) -> dict:
@@ -370,7 +400,8 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     It relaxes OMe, Me and H only (Cl and the acceptor side are not relaxed), Os(III) vertical on each relaxed geometry,
     so it reaches: the MeCN homoleptic donors (OMe, Me against H), ref 8's films (OMe−H, Me−H, OMe−Me) and the aqueous
     OMe−Me — reading one pair of one series alone overstated what the geometry explains, and reading the one series it
-    worsens alone understated it (adversaries, 2026-10-13)."""
+    worsens alone understated it (adversaries, 2026-10-13). Once 21e `b3lyp-relaxed-os3` holds every point, each column
+    gains the adiabatic one and the block its own reading, `adiabatic` (leg (3б)); `verdict` stays the (3а) reading."""
     path = DFT_CACHE / RELAX_VARIANT[1]
     if not path.exists():
         return None
@@ -380,6 +411,9 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     rx = {n: c["dE_red_eV"] for n, c in d["complexes"].items()}
     pts = sorted(rx, key=lambda n: sigma[n])
     src = {"series": {n: b3[n]["dE_red_eV"] for n in pts}, "relaxed": rx}
+    o3 = _adiabatic()
+    if o3:   # (3б): every column below gains the adiabatic one — Os(III) relaxed from each relaxed Os(II)
+        src["adiabatic"] = {n: o3["complexes"][n]["dE_red_adiabatic_eV"] for n in pts}
 
     def shift(e: dict, x: str, ref: str) -> float:   # per substituent, V: E° up to a constant is −ΔE_red
         return -(e[x] - e[ref]) / N_SUBST_COMPUTED
@@ -397,7 +431,9 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
     aq_r = {t: shift(e, "ome", "dmbpy") / aq_meas for t, e in src.items()}
     fits = {t: _slope_r2([sigma[n] for n in pts], [shift(e, n, "bpy") for n in pts]) for t, e in src.items()}
     donors = {n: {"programmatic": _os_donors(_xyz_atoms(LIGANDS_DIR / f"os_{n}_meim_cl.xyz")),
-                  "relaxed": _os_donors(c["geometry_os2_relaxed"]["atoms"])} for n, c in d["complexes"].items()}
+                  "relaxed": _os_donors(c["geometry_os2_relaxed"]["atoms"]),
+                  **({"relaxed_os3": _os_donors(o3["complexes"][n]["geometry_os3_relaxed"]["atoms"])} if o3 else {})}
+              for n, c in d["complexes"].items()}
     out = {"points": pts, "not_relaxed": "Cl and the acceptor side", "os3": "vertical on the relaxed Os(II) geometry",
            "mecn_ratio_ours_over_measured": mecn, "pvi_ratio_ours_over_measured": pvi_r,
            "aqueous_ome_dmbpy_ratio_ours_over_measured": aq_r, "computed_pair_change": pair_change,
@@ -408,7 +444,104 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
            "os_donors_A": donors,
            "os_cl_A": {n: {t: v[t]["Cl"] for t in v} for n, v in donors.items()}}
     out["verdict"] = verdict_relaxed(out)
+    if o3:
+        rows = [("ref 8", x, r, (pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for x, r in pvi_pairs]
+        rows += [("aqueous", "ome", "dmbpy", aq_meas)]
+        rows += [("MeCN", n, "bpy", measured[n]["shift_per_substituent_V"]) for n in pts if n != "bpy"]
+        out["adiabatic"] = adiabatic_reading(rows, src, o3, b3, d["complexes"], shift)
+        out["adiabatic"]["os_cl_A"] = {n: {t: v[t]["Cl"] for t in ("relaxed", "relaxed_os3")} for n, v in donors.items()}
+        out["adiabatic"]["verdict"] = verdict_adiabatic(out["adiabatic"])
     return out
+
+
+def adiabatic_reading(rows: list, src: dict, o3: dict, b3: dict, rx: dict, shift) -> dict:
+    """(3б) — Os(III) relaxed from each relaxed Os(II), read against every measured pair the three series share with it.
+
+    Each pair is read in three columns (programmatic vertical · Os(II) relaxed, Os(III) vertical · both relaxed) and the
+    closer/away counts against BOTH earlier columns are printed, never one alone (in-silico §When Modifying #35 (6)). It
+    also reports what the relaxation does to the printed differences D's first trigger reads: the substituent pairs (per
+    complex), the absolute points, and the Koopmans cascade Δ = HOMO(FADH₂) − LUMO(Os III) of each relaxed member, with
+    Os(III) on the Os(II) minimum and on its own (the flavin side does not depend on the Os geometry, so the cascade
+    inherits the LUMO's move whole). CAN show: which of those reach 0.1 eV. CANNOT show: free energies, the acceptor side
+    (not relaxed), or whether a difference that reaches 0.1 eV carries a conclusion — that is D's to judge."""
+    cols = ("series", "relaxed", "adiabatic")
+    pairs = [{"series_name": s, "pair": f"{x}-{r}", "measured_mV": m * 1000, **{f"{t}_mV": shift(src[t], x, r) * 1000 for t in cols}}
+             for s, x, r, m in rows]
+    for p in pairs:
+        for t in cols:
+            p[f"{t}_gap_mV"] = abs(p[f"{t}_mV"] - p["measured_mV"])
+    moves = {f"{x}-{r}": shift(src["adiabatic"], x, r) - shift(src["series"], x, r)   # V per substituent
+             for x, r in sorted({(x, r) for _, x, r, _ in rows})}
+    pts = list(src["adiabatic"])
+    lumo = {n: {"series": b3[n]["os3"]["LUMO_eV"], "relaxed": rx[n]["os3"]["LUMO_eV"],
+                "adiabatic": o3["complexes"][n]["os3"]["LUMO_eV"]} for n in pts}
+    cascade_move = {n: {"os3_on_os2_minimum": -(v["relaxed"] - v["series"]), "os3_on_own_minimum": -(v["adiabatic"] - v["series"])}
+                    for n, v in lumo.items()}   # eV — the cascade Δ falls as the Os(III) LUMO rises
+    reach = {"substituent_pairs_per_complex": max(abs(m) for m in moves.values()) * N_SUBST_COMPUTED,
+             "points": max(abs(s) for s in o3["point_shift_eV"].values()),
+             "koopmans_cascade_delta": max(abs(v) for c in cascade_move.values() for v in c.values())}
+    rd = {"os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
+          "lambda_os3_meV": o3["lambda_os3_meV"], "point_shift_from_series_meV": {n: s * 1000 for n, s in o3["point_shift_eV"].items()},
+          "pairs_vs_measured": pairs,
+          "closer_than_series": sum(p["adiabatic_gap_mV"] < p["series_gap_mV"] for p in pairs),
+          "closer_than_relaxed": sum(p["adiabatic_gap_mV"] < p["relaxed_gap_mV"] for p in pairs),
+          "pair_move_from_series_mV": {k: v * 1000 for k, v in moves.items()},
+          "koopmans_cascade_delta_move_eV": cascade_move,
+          "d_first_trigger": {"threshold_eV": D_FIRST_TRIGGER_EV, "largest_move_eV": reach,
+                              "at_or_above": sorted(k for k, v in reach.items() if v >= D_FIRST_TRIGGER_EV)}}
+    return rd   # the caller adds the Os–Cl distances and then the verdict
+
+
+def verdict_adiabatic(rd: dict) -> str:
+    """The (3б) reading — built from the block alone (pinned whole, like `verdict`)."""
+    lab = {"ome": "OMe", "dmbpy": "Me", "bpy": "H"}
+    by = {(p["series_name"], p["pair"]): p for p in rd["pairs_vs_measured"]}
+
+    def ratio(s: str, k: str, t: str) -> str:
+        p = by[(s, k)]
+        return f"×{p[f'{t}_mV'] / p['measured_mV']:.2f}"
+
+    def name(k: str) -> str:
+        x, r = k.split("-")
+        return f"{lab[x]}−{lab[r]}"
+
+    n = len(rd["pairs_vs_measured"])
+    r8 = [k for s, k in by if s == "ref 8"]
+    cl = {t: [v[t] for v in rd["os_cl_A"].values()] for t in ("relaxed", "relaxed_os3")}
+    lam = rd["lambda_os3_meV"].values()
+    mv = rd["pair_move_from_series_mV"]
+    big = max(mv, key=lambda k: abs(mv[k]))
+    pt = rd["point_shift_from_series_meV"].values()
+    km = {k: max(c.values(), key=abs) for k, c in rd["koopmans_cascade_delta_move_eV"].items()}
+    own = {k: c["os3_on_own_minimum"] for k, c in rd["koopmans_cascade_delta_move_eV"].items()}
+    dt = rd["d_first_trigger"]
+    thr = dt["threshold_eV"]
+    what = {"substituent_pairs_per_complex": "the substituent pairs", "points": "the absolute points",
+            "koopmans_cascade_delta": "the Koopmans cascade Δ of " + " and ".join(
+                lab[k] for k, v in km.items() if abs(v) >= thr)}
+    at = [what[k] for k in dt["at_or_above"]]
+    trig = (f"By the letter of D's first trigger ({thr:.1f} eV), {' and '.join(at)} reach{'es' if len(at) == 1 else ''} "
+            f"it — whether that difference carries a conclusion is D's to judge" if at else
+            f"By the letter of D's first trigger ({thr:.1f} eV), none of these reaches it")
+    return (f"Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III {min(lam):.0f}–{max(lam):.0f} "
+            f"meV; no free energies): of the {n} donor pairs the three measured series share with it, "
+            f"{rd['closer_than_series']} come closer to the measured than on the programmatic geometry and "
+            f"{rd['closer_than_relaxed']} than with Os(III) vertical on the relaxed Os(II). Ref 8's films — our core and "
+            f"N-donor — " + "; ".join(f"{name(k)} {ratio('ref 8', k, 'series')} → {ratio('ref 8', k, 'relaxed')} → "
+                                       f"{ratio('ref 8', k, 'adiabatic')}" for k in r8)
+            + f" (|ours − measured| at most {max(by[('ref 8', k)]['adiabatic_gap_mV'] for k in r8):.1f} mV per substituent "
+            f"with both states relaxed); the aqueous OMe−Me {ratio('aqueous', 'ome-dmbpy', 'series')} → "
+            f"{ratio('aqueous', 'ome-dmbpy', 'relaxed')} → {ratio('aqueous', 'ome-dmbpy', 'adiabatic')}; the homoleptic "
+            f"MeCN " + ", ".join(f"{name(k)} {ratio('MeCN', k, 'series')} → {ratio('MeCN', k, 'relaxed')} → "
+                                 f"{ratio('MeCN', k, 'adiabatic')}" for s, k in by if s == "MeCN")
+            + f". From the programmatic geometry the donor pairs move by up to {abs(mv[big]):.1f} mV per substituent "
+            f"({name(big)}, {abs(mv[big]) * N_SUBST_COMPUTED:.0f} meV a complex) and the points by {min(pt):+.0f} to "
+            f"{max(pt):+.0f} meV; the Koopmans cascade Δ of each relaxed member moves by "
+            + ", ".join(f"{own[k]:+.3f} eV ({lab[k]})" for k in own)
+            + f" with Os(III) on its own minimum (up to {max(abs(v) for v in km.values()):.3f} eV over both Os(III) "
+            f"geometries). On its own minimum Os(III) takes Os–Cl back from {min(cl['relaxed']):.3f}–"
+            f"{max(cl['relaxed']):.3f} to {min(cl['relaxed_os3']):.3f}–{max(cl['relaxed_os3']):.3f} Å. {trig}. Cl and "
+            f"the acceptor side are not relaxed.")
 
 
 def _xyz_atoms(path: Path) -> list:
@@ -518,6 +651,8 @@ def main() -> int:
     print(rec["pvi_series"]["verdict"])
     if "relaxed_geometry_check" in rec:
         print(rec["relaxed_geometry_check"]["verdict"])
+        if "adiabatic" in rec["relaxed_geometry_check"]:
+            print(rec["relaxed_geometry_check"]["adiabatic"]["verdict"])
     print(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

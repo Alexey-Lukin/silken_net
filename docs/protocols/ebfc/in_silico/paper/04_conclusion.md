@@ -9,8 +9,8 @@ their own. The **PCET potential of the FAD cofactor** is recovered to within 62 
 the proton is treated thermodynamically, and the anode reorganisation energy is obtained from the
 physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
 rule** for the osmium mediator gives a design handle that is predictive in direction — a ωB97X/def2-TZVP
-cross-check keeps its donor plateau and makes its slope ≈15 % shallower, and relaxing the osmium(II) geometry moves
-its donor pairs by up to 18 mV per substituent, so the magnitude of its donor part rests on the geometry as well as
+cross-check keeps its donor plateau and makes its slope ≈15 % shallower, and relaxing both osmium oxidation states moves
+its donor pairs by up to 20 mV per substituent, so the magnitude of its donor part rests on the geometry as well as
 the functional — and rationalises the
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a

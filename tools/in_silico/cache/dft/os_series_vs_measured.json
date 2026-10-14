@@ -336,7 +336,12 @@
         "ome"
       ]
     },
-    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. The Os(II) geometry does, on this pair: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by -18.2 mV toward the measured; what it does to the other series sharing these points is the block relaxed_geometry_check. Left untested (under A2′): the Os(III) state's own relaxation and free energies, the program's own cavity discretisation and, on this pair, the ligand basis. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
+    "os3_relaxation_check": {
+      "ome_dmbpy_change_mV": -1.869080943622592,
+      "ome_dmbpy_relaxed_os2_mV": -41.86733900515005,
+      "ome_dmbpy_adiabatic_mV": -43.73641994877264
+    },
+    "verdict": "Against the aqueous series of our own bis-bpy chloro core (monodentate pyridine for our 1-MeIm, PBS pH 7.4), per 4,4'-substituent: OMe−Me -23.6 ours against -39.8 measured (×0.59; theirs ×1.01); Cl−Me +79.1 ours against +36.3 measured (×2.18; theirs ×1.45); Cl−OMe +102.8 ours against +76.0 measured (×1.35; theirs ×1.22). The two pairs taken to Me share our Me point, so they are not independent; the source's relaxed B3LYP — our functional — reproduces OMe−Me, so that gap sits in our protocol, not in the functional; of the protocol, not the osmium basis/ECP (def2-TZVP moves every pair by at most 0.8 mV), nor the continuum's formulation or its radii: on OMe−Me, whose computed excess over the measured is +16.1 mV, IEF-PCM moves the pair by +0.1 mV and the UFF ×1.1 radii by -1.1 mV; removing the continuum moves it by -29.0 mV, so the continuum attenuates the pair by 29.0 mV, but neither variant moves it toward the measured by half the excess. Nor the axial N-donor: pyridine for 1-MeIm moves the pair by +0.9 mV, so A1′ holds for it. The Os(II) geometry does, on this pair: relaxing it with the same protocol, Os(III) vertical on it, moves the pair by -18.2 mV toward the measured; what it does to the other series sharing these points is the block relaxed_geometry_check. Relaxing the Os(III) state from it as well moves the pair by a further -1.9 mV, to -43.7 against -39.8 mV — away from the measured. Left untested (under A2′): free energies, the program's own cavity discretisation and, on this pair, the ligand basis. Its one acceptor point, Cl, comes out larger than measured in both computations. The measured shifts are not linear in σp (pairwise slopes 0.397 and 0.091 V/σ per substituent), so no slope is read from three points."
   },
   "pvi_series": {
     "source": {
@@ -454,30 +459,36 @@
     "mecn_ratio_ours_over_measured": {
       "ome": {
         "series": 0.9868071560577607,
-        "relaxed": 1.2305693657770944
+        "relaxed": 1.2305693657770944,
+        "adiabatic": 1.1624721707889762
       },
       "dmbpy": {
         "series": 2.480933316630758,
-        "relaxed": 2.2678514589624954
+        "relaxed": 2.2678514589624954,
+        "adiabatic": 1.863290927769837
       }
     },
     "pvi_ratio_ours_over_measured": {
       "ome-bpy": {
         "series": 0.8693301136699322,
-        "relaxed": 1.0840730127083928
+        "relaxed": 1.0840730127083928,
+        "adiabatic": 1.0240826266474317
       },
       "dmbpy-bpy": {
         "series": 1.3410450360166264,
-        "relaxed": 1.2258656534932413
+        "relaxed": 1.2258656534932413,
+        "adiabatic": 1.0071842852809934
       },
       "ome-dmbpy": {
         "series": 0.5595055197025768,
-        "relaxed": 0.9909429350331374
+        "relaxed": 0.9909429350331374,
+        "adiabatic": 1.0351815372490567
       }
     },
     "aqueous_ome_dmbpy_ratio_ours_over_measured": {
       "series": 0.5946945460989652,
-      "relaxed": 1.053266390066668
+      "relaxed": 1.053266390066668,
+      "adiabatic": 1.1002872943087456
     },
     "computed_pair_change": {
       "ome-bpy": 0.24702112081670546,
@@ -487,24 +498,29 @@
     "pvi_gap_mV": {
       "ome-bpy": {
         "series": 9.146892043104746,
-        "relaxed": 5.8851108895875
+        "relaxed": 5.8851108895875,
+        "adiabatic": 1.6857838653202144
       },
       "dmbpy-bpy": {
         "series": 9.463999749461383,
-        "relaxed": 6.267771884437446
+        "relaxed": 6.267771884437446,
+        "adiabatic": 0.19936391654756802
       },
       "ome-dmbpy": {
         "series": 18.61089179256613,
-        "relaxed": 0.3826609948499454
+        "relaxed": 0.3826609948499454,
+        "adiabatic": 1.4864199487726464
       }
     },
     "donor_slope_per_substituent_V_per_sigma": {
       "series": 0.22469257537131965,
-      "relaxed": 0.27243949070713763
+      "relaxed": 0.27243949070713763,
+      "adiabatic": 0.25474235692600006
     },
     "donor_r2": {
       "series": 0.9995801279865335,
-      "relaxed": 0.9572630806636105
+      "relaxed": 0.9572630806636105,
+      "adiabatic": 0.926236595530193
     },
     "donor_slope_change": 0.21249885652391054,
     "os_donors_A": {
@@ -536,6 +552,20 @@
             77.68,
             77.94
           ]
+        },
+        "relaxed_os3": {
+          "N_bpy": [
+            2.0699,
+            2.0824,
+            2.0892,
+            2.1127
+          ],
+          "N_L": 2.1349,
+          "Cl": 2.4214,
+          "bite_deg": [
+            77.65,
+            77.65
+          ]
         }
       },
       "ome": {
@@ -565,6 +595,20 @@
           "bite_deg": [
             77.48,
             77.78
+          ]
+        },
+        "relaxed_os3": {
+          "N_bpy": [
+            2.0657,
+            2.0797,
+            2.0938,
+            2.1154
+          ],
+          "N_L": 2.1346,
+          "Cl": 2.4282,
+          "bite_deg": [
+            77.61,
+            77.7
           ]
         }
       },
@@ -596,24 +640,169 @@
             77.92,
             78.15
           ]
+        },
+        "relaxed_os3": {
+          "N_bpy": [
+            2.0733,
+            2.086,
+            2.0891,
+            2.1136
+          ],
+          "N_L": 2.1348,
+          "Cl": 2.4164,
+          "bite_deg": [
+            77.71,
+            77.76
+          ]
         }
       }
     },
     "os_cl_A": {
       "dmbpy": {
         "programmatic": 2.38,
-        "relaxed": 2.527
+        "relaxed": 2.527,
+        "relaxed_os3": 2.4214
       },
       "ome": {
         "programmatic": 2.38,
-        "relaxed": 2.533
+        "relaxed": 2.533,
+        "relaxed_os3": 2.4282
       },
       "bpy": {
         "programmatic": 2.38,
-        "relaxed": 2.5215
+        "relaxed": 2.5215,
+        "relaxed_os3": 2.4164
       }
     },
-    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) still vertical on it."
+    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Cl not relaxed; Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) still vertical on it.",
+    "adiabatic": {
+      "os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
+      "lambda_os3_meV": {
+        "dmbpy": 86.15504374407143,
+        "ome": 93.63136751856096,
+        "bpy": 110.42867561563108
+      },
+      "point_shift_from_series_meV": {
+        "dmbpy": -26.464709130893382,
+        "ome": 53.92453783446172,
+        "bpy": 10.593834200761876
+      },
+      "pairs_vs_measured": [
+        {
+          "series_name": "ref 8",
+          "pair": "ome-bpy",
+          "measured_mV": -69.99999999999999,
+          "series_mV": -60.85310795689524,
+          "relaxed_mV": -75.8851108895875,
+          "adiabatic_mV": -71.6857838653202,
+          "series_gap_mV": 9.146892043104742,
+          "relaxed_gap_mV": 5.885110889587509,
+          "adiabatic_gap_mV": 1.685783865320218
+        },
+        {
+          "series_name": "ref 8",
+          "pair": "dmbpy-bpy",
+          "measured_mV": -27.749999999999996,
+          "series_mV": -37.21399974946138,
+          "relaxed_mV": -34.017771884437444,
+          "adiabatic_mV": -27.949363916547565,
+          "series_gap_mV": 9.463999749461383,
+          "relaxed_gap_mV": 6.2677718844374475,
+          "adiabatic_gap_mV": 0.19936391654756846
+        },
+        {
+          "series_name": "ref 8",
+          "pair": "ome-dmbpy",
+          "measured_mV": -42.24999999999999,
+          "series_mV": -23.639108207433868,
+          "relaxed_mV": -41.86733900515005,
+          "adiabatic_mV": -43.73641994877264,
+          "series_gap_mV": 18.610891792566125,
+          "relaxed_gap_mV": 0.3826609948499424,
+          "adiabatic_gap_mV": 1.4864199487726495
+        },
+        {
+          "series_name": "aqueous",
+          "pair": "ome-dmbpy",
+          "measured_mV": -39.75,
+          "series_mV": -23.639108207433868,
+          "relaxed_mV": -41.86733900515005,
+          "adiabatic_mV": -43.73641994877264,
+          "series_gap_mV": 16.110891792566132,
+          "relaxed_gap_mV": 2.1173390051500505,
+          "adiabatic_gap_mV": 3.9864199487726424
+        },
+        {
+          "series_name": "MeCN",
+          "pair": "ome-bpy",
+          "measured_mV": -61.66666666666667,
+          "series_mV": -60.85310795689524,
+          "relaxed_mV": -75.8851108895875,
+          "adiabatic_mV": -71.6857838653202,
+          "series_gap_mV": 0.8135587097714279,
+          "relaxed_gap_mV": 14.218444222920823,
+          "adiabatic_gap_mV": 10.019117198653532
+        },
+        {
+          "series_name": "MeCN",
+          "pair": "dmbpy-bpy",
+          "measured_mV": -15.000000000000005,
+          "series_mV": -37.21399974946138,
+          "relaxed_mV": -34.017771884437444,
+          "adiabatic_mV": -27.949363916547565,
+          "series_gap_mV": 22.213999749461372,
+          "relaxed_gap_mV": 19.017771884437437,
+          "adiabatic_gap_mV": 12.94936391654756
+        }
+      ],
+      "closer_than_series": 5,
+      "closer_than_relaxed": 4,
+      "pair_move_from_series_mV": {
+        "dmbpy-bpy": 9.264635832913815,
+        "ome-bpy": -10.83267590842496,
+        "ome-dmbpy": -20.097311741338775
+      },
+      "koopmans_cascade_delta_move_eV": {
+        "ome": {
+          "os3_on_os2_minimum": 0.03356287210212017,
+          "os3_on_own_minimum": -0.14230242951047822
+        },
+        "dmbpy": {
+          "os3_on_os2_minimum": 0.09814175998780961,
+          "os3_on_own_minimum": -0.07012750558453451
+        },
+        "bpy": {
+          "os3_on_os2_minimum": 0.08966439501862311,
+          "os3_on_own_minimum": -0.09104624299823438
+        }
+      },
+      "d_first_trigger": {
+        "threshold_eV": 0.1,
+        "largest_move_eV": {
+          "substituent_pairs_per_complex": 0.0803892469653551,
+          "points": 0.05392453783446172,
+          "koopmans_cascade_delta": 0.14230242951047822
+        },
+        "at_or_above": [
+          "koopmans_cascade_delta"
+        ]
+      },
+      "os_cl_A": {
+        "dmbpy": {
+          "relaxed": 2.527,
+          "relaxed_os3": 2.4214
+        },
+        "ome": {
+          "relaxed": 2.533,
+          "relaxed_os3": 2.4282
+        },
+        "bpy": {
+          "relaxed": 2.5215,
+          "relaxed_os3": 2.4164
+        }
+      },
+      "verdict": "Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III 86–110 meV; no free energies): of the 6 donor pairs the three measured series share with it, 5 come closer to the measured than on the programmatic geometry and 4 than with Os(III) vertical on the relaxed Os(II). Ref 8's films — our core and N-donor — OMe−H ×0.87 → ×1.08 → ×1.02; Me−H ×1.34 → ×1.23 → ×1.01; OMe−Me ×0.56 → ×0.99 → ×1.04 (|ours − measured| at most 1.7 mV per substituent with both states relaxed); the aqueous OMe−Me ×0.59 → ×1.05 → ×1.10; the homoleptic MeCN OMe−H ×0.99 → ×1.23 → ×1.16, Me−H ×2.48 → ×2.27 → ×1.86. From the programmatic geometry the donor pairs move by up to 20.1 mV per substituent (OMe−Me, 80 meV a complex) and the points by -26 to +54 meV; the Koopmans cascade Δ of each relaxed member moves by -0.142 eV (OMe), -0.070 eV (Me), -0.091 eV (H) with Os(III) on its own minimum (up to 0.142 eV over both Os(III) geometries). On its own minimum Os(III) takes Os–Cl back from 2.522–2.533 to 2.416–2.428 Å. By the letter of D's first trigger (0.1 eV), the Koopmans cascade Δ of OMe reaches it — whether that difference carries a conclusion is D's to judge. Cl and the acceptor side are not relaxed."
+    }
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }

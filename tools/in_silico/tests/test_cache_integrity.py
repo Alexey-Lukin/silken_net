@@ -310,6 +310,19 @@ def test_83_solvation_clause_branches_follow_the_numbers():
     away = aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": +9.0}}
     assert "Nor the Os(II) geometry" in s83._solvation_clause(away), "a move AWAY counted as the geometry closing the gap"
     assert "programmatic geometry against optimised" in txt, "without a relaxation the geometry must stay untested"
+    # (3б): the Os(III) step is judged against where the pair stood with Os(III) vertical, not against the old excess
+    base = aq(16.1, 0.1, -1.1, -29.0) | held_ax | {"relaxation_check": {"ome_dmbpy_change_mV": -18.2}}
+    base["pairs"][0]["measured_mV"] = -39.8
+
+    def os3(rel, adi):
+        return base | {"os3_relaxation_check": {"ome_dmbpy_change_mV": adi - rel, "ome_dmbpy_relaxed_os2_mV": rel,
+                                                "ome_dmbpy_adiabatic_mV": adi}}
+
+    away3 = s83._solvation_clause(os3(-41.9, -43.7))
+    assert "— away from the measured" in away3 and "Left untested (under A2′): free energies," in away3
+    assert "the Os(III) state's own relaxation" not in away3, "a relaxed Os(III) still listed as untested"
+    assert "— toward the measured" in s83._solvation_clause(os3(-41.9, -40.5)), "a move toward the measured read as away"
+    assert "— toward the measured" in s83._solvation_clause(os3(-36.0, -38.0)), "toward from the other side read as away"
 
 
 def test_os_series_vs_measured_is_derived_from_its_sources():
@@ -451,6 +464,98 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
     assert lc["shift_mV"] == (lc["loading_1_11_V"] - lc["loading_1_9_V"]) * 1000 and lc["loading_1_9_V"] == pm["dmbpy"]
     assert lc["shift_mV"] > abs(pm["bpy"] - pm["dmbpy"]) * 1000, "the prose says the loading effect exceeds all four Me → H"
     assert pv["verdict"] == s83.verdict_pvi(pv), "the PVI verdict is not the one its fields build"
+    # the geometry relaxation across the series (21e `b3lyp-relaxed-os2`, and `b3lyp-relaxed-os3` once every point has landed)
+    o3 = s83._adiabatic()
+    assert ("os3_relaxation_check" in aq) == bool(o3 and "relaxation_check" in aq), "the Os(III) check is in the block iff (3б) is whole"
+    if "os3_relaxation_check" in aq:
+        p3 = next(p for p in o3["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy"))
+        assert aq["os3_relaxation_check"] == {"ome_dmbpy_change_mV": p3["change_mV"], "ome_dmbpy_relaxed_os2_mV": p3["relaxed_os2_mV"],
+                                              "ome_dmbpy_adiabatic_mV": p3["adiabatic_mV"]}
+    rg = v.get("relaxed_geometry_check")
+    if rg:
+        assert rg["verdict"] == s83.verdict_relaxed(rg), "the (3а) verdict is not the one its fields build"
+        assert ("adiabatic" in rg) == bool(o3), "the (3б) reading is in the block iff (3б) is whole"
+    if rg and o3:
+        ad = rg["adiabatic"]
+        assert ad["verdict"] == s83.verdict_adiabatic(ad), "the (3б) verdict is not the one its fields build"
+        rx = json.loads((DFT / s83.RELAX_VARIANT[1]).read_text())["complexes"]
+        e = {"series": {n: b3[n]["dE_red_eV"] for n in rx}, "relaxed": {n: c["dE_red_eV"] for n, c in rx.items()},
+             "adiabatic": {n: o3["complexes"][n]["dE_red_adiabatic_eV"] for n in rx}}
+        meas = {"ref 8": lambda x, r_: (pm[x] - pm[r_]) / 4, "MeCN": lambda x, r_: m[x]["shift_per_substituent_V"],
+                "aqueous": lambda x, r_: (am[x]["E12_V"] - am[r_]["E12_V"]) / 4}
+        assert [(p["series_name"], p["pair"]) for p in ad["pairs_vs_measured"]] == [
+            ("ref 8", "ome-bpy"), ("ref 8", "dmbpy-bpy"), ("ref 8", "ome-dmbpy"), ("aqueous", "ome-dmbpy"),
+            ("MeCN", "ome-bpy"), ("MeCN", "dmbpy-bpy")], "the shared donor pairs are not the six the series share"
+        for p in ad["pairs_vs_measured"]:
+            x, r_ = p["pair"].split("-")
+            assert p["measured_mV"] == meas[p["series_name"]](x, r_) * 1000, p
+            for t in ("series", "relaxed", "adiabatic"):
+                assert p[f"{t}_mV"] == -(e[t][x] - e[t][r_]) / 4 * 1000 and p[f"{t}_gap_mV"] == abs(p[f"{t}_mV"] - p["measured_mV"]), (p, t)
+        for t in ("series", "relaxed"):
+            assert ad[f"closer_than_{t}"] == sum(p["adiabatic_gap_mV"] < p[f"{t}_gap_mV"] for p in ad["pairs_vs_measured"]), t
+        assert ad["lambda_os3_meV"] == o3["lambda_os3_meV"]
+        assert ad["point_shift_from_series_meV"] == {n: s * 1000 for n, s in o3["point_shift_eV"].items()}
+        for k, mv in ad["pair_move_from_series_mV"].items():
+            x, r_ = k.split("-")
+            assert mv == (-(e["adiabatic"][x] - e["adiabatic"][r_]) / 4 + (e["series"][x] - e["series"][r_]) / 4) * 1000, k
+        for n, c in ad["koopmans_cascade_delta_move_eV"].items():   # the cascade falls as the Os(III) LUMO rises
+            s3 = b3[n]["os3"]["LUMO_eV"]
+            assert c == {"os3_on_os2_minimum": -(rx[n]["os3"]["LUMO_eV"] - s3),
+                         "os3_on_own_minimum": -(o3["complexes"][n]["os3"]["LUMO_eV"] - s3)}, n
+        dt = ad["d_first_trigger"]
+        reach = {"substituent_pairs_per_complex": max(abs(mv) for mv in ad["pair_move_from_series_mV"].values()) * 4 / 1000,
+                 "points": max(abs(s) for s in o3["point_shift_eV"].values()),
+                 "koopmans_cascade_delta": max(abs(x) for c in ad["koopmans_cascade_delta_move_eV"].values() for x in c.values())}
+        assert dt["threshold_eV"] == s83.D_FIRST_TRIGGER_EV == 0.1, "D's first trigger is 0.1 eV (PIPELINE_STATUS «D»)"
+        assert all(math.isclose(dt["largest_move_eV"][k], val, rel_tol=1e-12) for k, val in reach.items())
+        assert set(dt["largest_move_eV"]) == set(reach)
+        assert dt["at_or_above"] == sorted(k for k, val in dt["largest_move_eV"].items() if val >= 0.1)
+        assert "whether that difference carries a conclusion is D's to judge" in ad["verdict"] or not dt["at_or_above"], \
+            "a difference at D's threshold is reported as the script's judgement"
+
+
+def test_os_mediator_series_relaxed_os3_is_derived_from_its_rows():
+    """21e `b3lyp-relaxed-os3` (leg (3б), landed 2026-10-13): each point's Os(III) accepted at its own minimum, its Os(II)
+    side and vertical Os(III) the (3а) cache's own rows, and every derived number from those energies.
+    CAN catch: a row whose Os(II) or vertical Os(III) is not the (3а) record it claims (the start moved and the record was
+    not discarded), a spin-contaminated, rescued or non-aufbau Os(III), a single point off the optimiser's last step, a
+    λ_III or adiabatic ΔE_red not from the rows, and a stale `vs_vertical`. CANNOT catch: what geomeTRIC or a real UKS
+    would return, nor which geometry is nearer the real complex (that is `83`)."""
+    path = DFT / "os_mediator_series_relaxed_os3.json"
+    if not path.exists():
+        pytest.skip("21e b3lyp-relaxed-os3 not run")
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import HARTREE_TO_EV, S2_MAX_DOUBLET
+    rec = json.loads(path.read_text())
+    os2 = json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text())["complexes"]
+    base = {c["name"]: c["dE_red_eV"] for c in json.loads((DFT / "os_mediator_series.json").read_text())["complexes"]}
+    ad = {}
+    for n, c in rec["complexes"].items():
+        if "dE_red_adiabatic_eV" not in c:
+            continue
+        o3 = c["os3"]
+        assert o3["converged"] and o3.get("aufbau") and not o3.get("rescued") and o3["s2"] <= S2_MAX_DOUBLET, n
+        assert c["geometry_os3_relaxed"]["info"]["converged"], n
+        assert c["os2_E_Ha"] == os2[n]["os2"]["E_total_Ha"] and c["os3_vertical_E_Ha"] == os2[n]["os3"]["E_total_Ha"], n
+        assert c["dE_red_vertical_eV"] == os2[n]["dE_red_eV"] and c["sigma_para"] == os2[n]["sigma_para"], n
+        assert abs(c["os3_minus_last_step_Ha"]) <= 1e-5, n   # 21e RELAX_ENERGY_TOL_HA
+        assert c["os3_minus_last_step_Ha"] == o3["E_total_Ha"] - c["geometry_os3_relaxed"]["info"]["trajectory"][-1]["E_Ha"], n
+        assert c["dE_red_adiabatic_eV"] == (c["os2_E_Ha"] - o3["E_total_Ha"]) * HARTREE_TO_EV, n
+        assert c["lambda_os3_meV"] == (c["os3_vertical_E_Ha"] - o3["E_total_Ha"]) * HARTREE_TO_EV * 1000 and c["lambda_os3_meV"] > 0, n
+        ad[n] = c
+    v = rec["vs_vertical"]
+    assert v["point_shift_eV"] == {n: c["dE_red_adiabatic_eV"] - base[n] for n, c in ad.items()}
+    assert v["lambda_os3_meV"] == {n: c["lambda_os3_meV"] for n, c in ad.items()}
+    cols = {"series_mV": base, "relaxed_os2_mV": {n: c["dE_red_vertical_eV"] for n, c in ad.items()},
+            "adiabatic_mV": {n: c["dE_red_adiabatic_eV"] for n, c in ad.items()}}
+    assert [(p["x"], p["ref"]) for p in v["pairs"]] == [(x, r) for x, r in (("dmbpy", "bpy"), ("ome", "bpy"), ("cl", "bpy"),
+                                                                             ("ome", "dmbpy"), ("cl", "dmbpy"), ("cl", "ome"))
+                                                        if x in ad and r in ad]
+    for p in v["pairs"]:
+        x, r = p["x"], p["ref"]
+        for k, e in cols.items():
+            assert p[k] == -(e[x] - e[r]) / 4 * 1000, (x, r, k)
+        assert p["change_mV"] == p["adiabatic_mV"] - p["relaxed_os2_mV"], (x, r)
 
 
 def test_os_mediator_series_osdef2_is_derived_from_both_caches():

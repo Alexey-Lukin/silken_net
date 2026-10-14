@@ -43,9 +43,10 @@ L3 DFT anode (CPU):
      `b3lyp-uffcavity` · `b3lyp-gas` (one knob each — the continuum's formulation · its radii · none; own caches, `vs_series`)
      · `b3lyp-pyaxial` (the axial N-donor) · `b3lyp-relaxed-os2` (the geometry: lib/dft_utils.dft_optimize, geomeTRIC)
   21e `b3lyp-relaxed-os2` (os_mediator_series_relaxed_os2.json — its accepted Os(II) point and geometry) → 21e `b3lyp-relaxed-os3`
-     (Os(III) relaxed from it; own cache, `vs_vertical`; a moved Os(II) energy discards the record) — 83 does not read it yet (00_07 HW.5.IS)
+     (Os(III) relaxed from it; own cache, `vs_vertical`; a moved Os(II) energy discards the record)
   21e (SERIES σ table, importlib · os_mediator_series.json) · 21f · 21d (the ωB97X centre caches) · 21e `b3lyp-osdef2`, the three
-     continuum variants, `b3lyp-pyaxial` and `b3lyp-relaxed-os2` (read when each exists and holds its comparison) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
+     continuum variants, `b3lyp-pyaxial`, `b3lyp-relaxed-os2` and `b3lyp-relaxed-os3` (read when each exists and holds its comparison; os3 only
+     when every relaxed point has its adiabatic row) → 83 (computed ⊥ three measured series — ref 8's PVI polymers · MeCN · aqueous; writes os_series_vs_measured.json)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check) · 75 · 76 (`close_chelate=True` — the only caller)
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)

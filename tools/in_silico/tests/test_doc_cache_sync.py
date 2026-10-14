@@ -422,9 +422,9 @@ CHECKS = [
           ("SUMMARY", SUMMARY, "Koopmans offset move", rf"Koopmans offset \(−1\.05 eV\) moves by \+{N} eV",
            lambda d: (next(c["os3"]["LUMO_eV"] for c in C("dft/os_mediator_series.json")["complexes"] if c["name"] == "dmbpy")
                       - C("dft/os_mediator_series_relaxed_os2.json")["complexes"]["dmbpy"]["os3"]["LUMO_eV"]), 0.0005))],
-    *[(f"«up to 18 mV» donor pairs on relaxed geometries in {where} → relaxed_os2",
-       f"docs/protocols/ebfc/in_silico/paper/{where}", anchor, "dft/os_mediator_series_relaxed_os2.json",
-       lambda d: max(abs(p["change_mV"]) for p in d["vs_series"]["pairs"]), 0.5)
+    *[(f"«up to 20 mV» donor pairs with both Os states relaxed in {where} → 83 adiabatic",
+       f"docs/protocols/ebfc/in_silico/paper/{where}", anchor, "dft/os_series_vs_measured.json",
+       lambda d: max(abs(v) for v in d["relaxed_geometry_check"]["adiabatic"]["pair_move_from_series_mV"].values()), 0.5)
       for where, anchor in (("05_abstract.md", rf"donor pairs move by up to {N} mV per substituent"),
                             ("07_cover_letter.md", rf"donor pairs move by up to {N} mV per substituent"),
                             ("04_conclusion.md", rf"its donor pairs by up to {N} mV per substituent, so"),
@@ -3561,6 +3561,182 @@ CHECKS += [
      FLANGE_FROST, lambda d: _c79_month(d, "4", "colder_share") * 100, 0.6),
     ("HW.6 · real cloud: April frost days → 79", CODIT, rf"%\*\* із {N} морозних діб\)",
      FLANGE_FROST, lambda d: _c79_month(d, "4", "frost_days"), 0.0),
+]
+
+# leg (3б): Os(III) relaxed from each relaxed Os(II) (21e `b3lyp-relaxed-os3`), read by 83 as `relaxed_geometry_check.adiabatic`
+PIPELINE = "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md"
+METHODS = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
+V83 = "dft/os_series_vs_measured.json"
+OS3 = "dft/os_mediator_series_relaxed_os3.json"
+
+
+def _ad(d):
+    return d["relaxed_geometry_check"]["adiabatic"]
+
+
+def _ad_ratio(d, series, pair, col="adiabatic"):
+    p = next(p for p in _ad(d)["pairs_vs_measured"] if (p["series_name"], p["pair"]) == (series, pair))
+    return p[f"{col}_mV"] / p["measured_mV"]
+
+
+def _koop(d, n, where):   # the Koopmans cascade Δ's move, eV — `os3_on_own_minimum` · `os3_on_os2_minimum`
+    return _ad(d)["koopmans_cascade_delta_move_eV"][n][where]
+
+
+def _ad_cl(d, f):
+    return f(v["relaxed_os3"] for v in _ad(d)["os_cl_A"].values())
+
+
+def _ad_max_pair(d):   # mV per substituent, from the programmatic geometry
+    return max(abs(v) for v in _ad(d)["pair_move_from_series_mV"].values())
+
+
+CHECKS += [
+    # paper §3.3 — the (3б) reading across the three series
+    ("paper §3.3 (3б) λ_III low → 83 adiabatic", PAPER_RESULTS, rf"reorganisation energies λ_III of {N}–", V83,
+     lambda d: min(_ad(d)["lambda_os3_meV"].values()), 0.6),
+    ("paper §3.3 (3б) λ_III high → 83 adiabatic", PAPER_RESULTS, rf"λ_III of [\d.]+–{N} meV\)", V83,
+     lambda d: max(_ad(d)["lambda_os3_meV"].values()), 0.6),
+    ("paper §3.3 (3б) closer than programmatic → 83 adiabatic", PAPER_RESULTS, rf"brings {N} of\s+the \d+ donor pairs", V83,
+     lambda d: _ad(d)["closer_than_series"], 0),
+    ("paper §3.3 (3б) shared pairs → 83 adiabatic", PAPER_RESULTS, rf"brings \d+ of\s+the {N} donor pairs", V83,
+     lambda d: len(_ad(d)["pairs_vs_measured"]), 0),
+    ("paper §3.3 (3б) closer than vertical → 83 adiabatic", PAPER_RESULTS, rf"geometry does and {N} closer than", V83,
+     lambda d: _ad(d)["closer_than_relaxed"], 0),
+    ("paper §3.3 (3б) ref 8 within → 83 adiabatic", PAPER_RESULTS, rf"come within {N} mV per substituent of the measured", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    ("paper §3.3 (3б) ref 8 OMe−H → 83 adiabatic", PAPER_RESULTS, rf"measured \(OMe−H {N},\s+Me−H", V83,
+     lambda d: _ad_ratio(d, "ref 8", "ome-bpy"), 0.005),
+    ("paper §3.3 (3б) ref 8 Me−H → 83 adiabatic", PAPER_RESULTS, rf"OMe−H [\d.]+,\s+Me−H {N}, OMe−Me", V83,
+     lambda d: _ad_ratio(d, "ref 8", "dmbpy-bpy"), 0.005),
+    ("paper §3.3 (3б) ref 8 OMe−Me → 83 adiabatic", PAPER_RESULTS, rf"Me−H [\d.]+, OMe−Me {N} times\)", V83,
+     lambda d: _ad_ratio(d, "ref 8", "ome-dmbpy"), 0.005),
+    ("paper §3.3 (3б) MeCN OMe−H → 83 adiabatic", PAPER_RESULTS, rf"OMe−H and Me−H move to {N} and", V83,
+     lambda d: _ad_ratio(d, "MeCN", "ome-bpy"), 0.005),
+    ("paper §3.3 (3б) MeCN Me−H → 83 adiabatic", PAPER_RESULTS, rf"move to [\d.]+ and {N} times", V83,
+     lambda d: _ad_ratio(d, "MeCN", "dmbpy-bpy"), 0.005),
+    ("paper §3.3 (3б) aqueous OMe−Me before → 83 adiabatic", PAPER_RESULTS, rf"moves slightly away, from {N} to", V83,
+     lambda d: _ad_ratio(d, "aqueous", "ome-dmbpy", "relaxed"), 0.005),
+    ("paper §3.3 (3б) aqueous OMe−Me after → 83 adiabatic", PAPER_RESULTS, rf"slightly away, from [\d.]+ to {N} times", V83,
+     lambda d: _ad_ratio(d, "aqueous", "ome-dmbpy"), 0.005),
+    ("paper §3.3 (3б) donor r² → 83", PAPER_RESULTS, rf"line through H and OMe \(r² {N}\)", V83,
+     lambda d: d["relaxed_geometry_check"]["donor_r2"]["adiabatic"], 0.0005),
+    ("paper §3.3 (3б) pair move mV → 83 adiabatic", PAPER_RESULTS, rf"donor pairs then move by up to {N} mV per substituent", V83,
+     _ad_max_pair, 0.05),
+    ("paper §3.3 (3б) pair move per complex → 83 adiabatic", PAPER_RESULTS, rf"per substituent \({N} meV a complex\), and on its", V83,
+     lambda d: _ad_max_pair(d) * 4, 0.5),
+    ("paper §3.3 (3б) Os–Cl low → 83 adiabatic", PAPER_RESULTS, rf"takes Os–Cl back to {N}–", V83, lambda d: _ad_cl(d, min), 0.005),
+    ("paper §3.3 (3б) Os–Cl high → 83 adiabatic", PAPER_RESULTS, rf"takes Os–Cl back to [\d.]+–{N} Å", V83, lambda d: _ad_cl(d, max), 0.005),
+    ("paper §3.3 (3б) OMe over, MeCN → 83 adiabatic", PAPER_RESULTS, rf"both states relaxed, {N} % and", V83,
+     lambda d: (_ad_ratio(d, "MeCN", "ome-bpy") - 1) * 100, 0.6),
+    ("paper §3.3 (3б) OMe over, ref 8 → 83 adiabatic", PAPER_RESULTS, rf"relaxed, [\d.]+ % and {N} % over, with our Me", V83,
+     lambda d: (_ad_ratio(d, "ref 8", "ome-bpy") - 1) * 100, 0.6),
+    ("paper §3.3 (3б) Me, MeCN → 83 adiabatic", PAPER_RESULTS, rf"effect then {N} and [\d.]+ times the measured\)", V83,
+     lambda d: _ad_ratio(d, "MeCN", "dmbpy-bpy"), 0.005),
+    ("paper §3.3 (3б) Me, ref 8 → 83 adiabatic", PAPER_RESULTS, rf"effect then [\d.]+ and {N} times the measured\)", V83,
+     lambda d: _ad_ratio(d, "ref 8", "dmbpy-bpy"), 0.005),
+    ("paper §3.3 robust Me, ref 8 → 83 adiabatic", PAPER_RESULTS, rf"geometry and {N} to [\d.]+ times with both osmium states", V83,
+     lambda d: _ad_ratio(d, "ref 8", "dmbpy-bpy"), 0.05),
+    ("paper §3.3 robust Me, MeCN → 83 adiabatic", PAPER_RESULTS, rf"geometry and [\d.]+ to {N} times with both osmium states", V83,
+     lambda d: _ad_ratio(d, "MeCN", "dmbpy-bpy"), 0.05),
+    # paper §3.5 — the cascade's geometric limit (the rule ⚖️ 2026-10-13: under 0.1 eV, the paper prints the bound)
+    ("paper §3.5 Me point adiabatic shift → relaxed_os3", PAPER_RESULTS, rf"moves its ΔE_red\(III→II\) by {N} eV \(by coincidence", OS3,
+     lambda d: d["vs_vertical"]["point_shift_eV"]["dmbpy"], 0.0005),
+    ("paper §3.5 «by coincidence» C-min shift → os_chelate_sensitivity", PAPER_RESULTS,
+     rf"moves its ΔE_red\(III→II\) by {N} eV \(by coincidence", "reproduction/os_chelate_sensitivity.json",
+     lambda d: d["sensitivity"]["dE_red_shift_eV"], 0.0005),
+    ("paper §3.5 Koopmans offset, own minimum → 83 adiabatic", PAPER_RESULTS, rf"its Koopmans offset by {N} eV \(", V83,
+     lambda d: _koop(d, "dmbpy", "os3_on_own_minimum"), 0.0005),
+    ("paper §3.5 Koopmans offset, vertical → 83 adiabatic", PAPER_RESULTS, rf"eV \(\+{N} eV with Os\(III\) kept vertical", V83,
+     lambda d: _koop(d, "dmbpy", "os3_on_os2_minimum"), 0.0005),
+    # paper §2.3
+    ("paper §2.3 (3б) points within → relaxed_os3", METHODS, rf"leaves the points within {N} meV", OS3,
+     lambda d: max(abs(s) for s in d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    ("paper §2.3 (3б) pairs per complex → 83 adiabatic", METHODS, rf"while the pairs move by up to {N} meV a complex", V83,
+     lambda d: _ad_max_pair(d) * 4, 0.5),
+    # SUMMARY §Mediator, limits (2) and (4)
+    *[(f"SUMMARY (3б) λ_III {n} → relaxed_os3", SUMMARY, anchor, OS3, lambda d, n=n: d["vs_vertical"]["lambda_os3_meV"][n], 0.6)
+      for n, anchor in (("dmbpy", rf"λ_III {N} · [\d.]+ · [\d.]+ meV for Me · OMe · H"),
+                        ("ome", rf"λ_III [\d.]+ · {N} · [\d.]+ meV for Me"), ("bpy", rf"λ_III [\d.]+ · [\d.]+ · {N} meV for Me"))],
+    ("SUMMARY (3б) closer than programmatic → 83", SUMMARY, rf"brings {N} of the \d+ shared donor pairs", V83,
+     lambda d: _ad(d)["closer_than_series"], 0),
+    ("SUMMARY (3б) closer than vertical → 83", SUMMARY, rf"programmatic geometry and {N} than Os\(III\) vertical", V83,
+     lambda d: _ad(d)["closer_than_relaxed"], 0),
+    ("SUMMARY (3б) ref 8 within → 83", SUMMARY, rf"ref 8's three within {N} mV per", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    *[(f"SUMMARY (3б) {lab} → 83", SUMMARY, anchor, V83, fn, 0.005) for lab, anchor, fn in (
+        ("ref 8 OMe−H", rf"substituent \(OMe−H ×{N}, Me−H", lambda d: _ad_ratio(d, "ref 8", "ome-bpy")),
+        ("ref 8 Me−H", rf"OMe−H ×[\d.]+, Me−H ×{N}, OMe−Me ×", lambda d: _ad_ratio(d, "ref 8", "dmbpy-bpy")),
+        ("ref 8 OMe−Me", rf"Me−H ×[\d.]+, OMe−Me ×{N}\), MeCN", lambda d: _ad_ratio(d, "ref 8", "ome-dmbpy")),
+        ("MeCN OMe−H", rf"MeCN OMe−H ×{N} and Me−H", lambda d: _ad_ratio(d, "MeCN", "ome-bpy")),
+        ("MeCN Me−H", rf"MeCN OMe−H ×[\d.]+ and Me−H ×{N}, the aqueous", lambda d: _ad_ratio(d, "MeCN", "dmbpy-bpy")),
+        ("aqueous before", rf"slightly away \(×{N} → ×", lambda d: _ad_ratio(d, "aqueous", "ome-dmbpy", "relaxed")),
+        ("aqueous after", rf"slightly away \(×[\d.]+ → ×{N}\)", lambda d: _ad_ratio(d, "aqueous", "ome-dmbpy")))],
+    ("SUMMARY (3б) donor r² → 83", SUMMARY, rf"r² of the three donors → {N}, the donor slope", V83,
+     lambda d: d["relaxed_geometry_check"]["donor_r2"]["adiabatic"], 0.0005),
+    ("SUMMARY (3б) donor slope → 83", SUMMARY, rf"the donor slope \+{N} % against the programmatic", V83,
+     lambda d: (d["relaxed_geometry_check"]["donor_slope_per_substituent_V_per_sigma"]["adiabatic"]
+                / d["relaxed_geometry_check"]["donor_slope_per_substituent_V_per_sigma"]["series"] - 1) * 100, 0.6),
+    ("SUMMARY (3б) pair move mV → 83", SUMMARY, rf"the pairs move by up to {N} mV per substituent \(OMe−Me", V83, _ad_max_pair, 0.05),
+    ("SUMMARY (3б) pair move per complex → 83", SUMMARY, rf"\(OMe−Me, {N} meV a complex\) and the points", V83,
+     lambda d: _ad_max_pair(d) * 4, 0.5),
+    ("SUMMARY (3б) points low → relaxed_os3", SUMMARY, rf"and the points by {N}…", OS3,
+     lambda d: min(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    ("SUMMARY (3б) points high → relaxed_os3", SUMMARY, rf"and the points by [{_DASHES}\-]?[\d.]+…\+{N} meV", OS3,
+     lambda d: max(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    ("SUMMARY (3б) Os–Cl low → 83", SUMMARY, rf"Os\(III\) takes Os–Cl back to {N}–", V83, lambda d: _ad_cl(d, min), 0.005),
+    ("SUMMARY (3б) Os–Cl high → 83", SUMMARY, rf"Os\(III\) takes Os–Cl back to [\d.]+–{N} Å", V83, lambda d: _ad_cl(d, max), 0.005),
+    ("SUMMARY (4) Koopmans own minimum Me → 83", SUMMARY, rf"and by {N} eV on Os\(III\)'s own minimum \(paper", V83,
+     lambda d: _koop(d, "dmbpy", "os3_on_own_minimum"), 0.0005),
+    ("SUMMARY (4) Me point adiabatic → relaxed_os3", SUMMARY, rf"vertical, {N} eV adiabatic\) is its nearest proxy", OS3,
+     lambda d: d["vs_vertical"]["point_shift_eV"]["dmbpy"], 0.0005),
+    ("SUMMARY (4) ome·bpy pairs per complex → 83", SUMMARY, rf"substituent pairs \(≤ {N} meV a complex\) and points", V83,
+     lambda d: _ad_max_pair(d) * 4, 0.5),
+    ("SUMMARY (4) ome·bpy points → relaxed_os3", SUMMARY, rf"and points \(≤ {N} meV\) stay under it", OS3,
+     lambda d: max(abs(s) for s in d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    *[(f"SUMMARY (4) Koopmans own minimum {n} → 83", SUMMARY, anchor, V83,
+       lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
+      for n, anchor in (("ome", rf"cascade Δ of OMe moves\s+by {N} eV with Os\(III\) on its own"),
+                        ("bpy", rf"own minimum \(H {N}, Me"), ("dmbpy", rf"own minimum \(H [{_DASHES}\-]?[\d.]+, Me {N} eV\)"))],
+    # PIPELINE_STATUS — the banner, row 83 (d) and the dated notes under D (2026-10-13 · 2026-10-14)
+    *[(f"PIPELINE banner λ_III {n} → relaxed_os3", PIPELINE, anchor, OS3, lambda d, n=n: d["vs_vertical"]["lambda_os3_meV"][n], 0.6)
+      for n, anchor in (("dmbpy", rf"dmbpy \(15 steps; λ_III {N} meV\)"), ("ome", rf"ome \(31 steps; {N} meV\)"),
+                        ("bpy", rf"bpy \(47 steps; {N} meV\)"))],
+    *[(f"PIPELINE banner steps {n} → relaxed_os3", PIPELINE, anchor, OS3,
+       lambda d, n=n: d["complexes"][n]["geometry_os3_relaxed"]["info"]["steps"], 0)
+      for n, anchor in (("dmbpy", rf"dmbpy \({N} steps; λ_III"), ("ome", rf"ome \({N} steps; [\d.]+ meV\)"),
+                        ("bpy", rf"bpy \({N} steps; [\d.]+ meV\)"))],
+    ("PIPELINE banner optimisation hours → relaxed_os3", PIPELINE, rf"\), {N} h of optimisation the three", OS3,
+     lambda d: sum(c["geometry_os3_relaxed"]["info"]["wall_seconds"] for c in d["complexes"].values()) / 3600, 0.06),
+    ("PIPELINE row 83 (d) ref 8 within → 83", PIPELINE, rf"ref 8's three within {N} mV per substituent, the aqueous", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    ("PIPELINE row 83 (d) Koopmans OMe → 83", PIPELINE, rf"cascade Δ of OMe {N} eV — the note under D", V83,
+     lambda d: _koop(d, "ome", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-13 λ_III → relaxed_os3", PIPELINE, rf"λ_III = {N} меВ \(оцінка до прогону", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["dmbpy"], 0.6),
+    ("PIPELINE D 10-13 adiabatic ΔE_red → relaxed_os3", PIPELINE, rf"адіабатичний ΔE_red {N} еВ проти", OS3,
+     lambda d: d["complexes"]["dmbpy"]["dE_red_adiabatic_eV"], 0.0005),
+    ("PIPELINE D 10-13 Me point shift → relaxed_os3", PIPELINE, rf"серії — зсув {N} еВ \(вертикальний", OS3,
+     lambda d: d["vs_vertical"]["point_shift_eV"]["dmbpy"], 0.0005),
+    ("PIPELINE D 10-13 Koopmans vertical → 83", PIPELINE, rf"\(−1\.05 еВ\) рухається на \+{N} еВ з Os\(III\)", V83,
+     lambda d: _koop(d, "dmbpy", "os3_on_os2_minimum"), 0.0005),
+    ("PIPELINE D 10-13 Koopmans own → 83", PIPELINE, rf"і на {N} еВ з Os\(III\) на власному мінімумі — обидва", V83,
+     lambda d: _koop(d, "dmbpy", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-14 pairs per complex → 83", PIPELINE, rf"щонайбільше на {N} меВ на комплекс \(OMe−Me", V83,
+     lambda d: _ad_max_pair(d) * 4, 0.5),
+    *[(f"PIPELINE D 10-14 pair {k} per complex → 83", PIPELINE, anchor, V83,
+       lambda d, k=k: abs(_ad(d)["pair_move_from_series_mV"][k]) * 4, 0.5)
+      for k, anchor in (("dmbpy-bpy", rf"\(OMe−Me; Me−H {N}, OMe−H"), ("ome-bpy", rf"Me−H [\d.]+, OMe−H {N}\), абсолютні"))],
+    ("PIPELINE D 10-14 points low → relaxed_os3", PIPELINE, rf"абсолютні точки — на {N}…", OS3,
+     lambda d: min(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    ("PIPELINE D 10-14 points high → relaxed_os3", PIPELINE, rf"абсолютні точки — на [{_DASHES}\-]?[\d.]+…\+{N} меВ", OS3,
+     lambda d: max(d["vs_vertical"]["point_shift_eV"].values()) * 1000, 0.6),
+    *[(f"PIPELINE D 10-14 Koopmans own {n} → 83", PIPELINE, anchor, V83, lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
+      for n, anchor in (("dmbpy", rf"мінімумі Me {N} еВ \(ратифіковане число\)"), ("bpy", rf"\(ратифіковане число\), H {N}, \*\*OMe"),
+                        ("ome", rf"\*\*OMe {N} еВ\*\*"))],
+    *[(f"PIPELINE D 10-14 Koopmans vertical {n} → 83", PIPELINE, anchor, V83, lambda d, n=n: _koop(d, n, "os3_on_os2_minimum"), 0.0005)
+      for n, anchor in (("dmbpy", rf"мінімумі Os\(II\): \+{N} · "), ("bpy", rf"мінімумі Os\(II\): \+[\d.]+ · \+{N} · "),
+                        ("ome", rf"мінімумі Os\(II\): \+[\d.]+ · \+[\d.]+ · \+{N}\)"))],
 ]
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
