@@ -1003,6 +1003,38 @@ def test_21e_relaxed_os3_mode_relaxes_only_os3(tmp_path, monkeypatch):
     assert len(opt) == 1, "an Os(III) geometry relaxed from another Os(II) start was reused"
     assert {k: v.read_text() for k, v in guarded.items() if k not in ("OUT_RELAXED3", "OUT_RELAXED")} == {
         k: v for k, v in before.items() if k != "OUT_RELAXED"}
+    # the acceptor run's run-path adversary (2026-10-14): a rescued or ligand-held vertical Os(III) is no step-0
+    # reference; a rescued final single point is refused like an off-step one; a saved trajectory with no converged
+    # step restarts afresh instead of crashing on min() of nothing
+    guarded["OUT_RELAXED"].write_text(json.dumps(src))
+    for patch, match in (({"rescued": True}, "Newton rescue"), ({"os_spin_mulliken": 0.55}, "not on the metal")):
+        bad = json.loads(json.dumps(src))
+        bad["complexes"]["dmbpy"]["os3"].update(patch)
+        guarded["OUT_RELAXED"].write_text(json.dumps(bad))
+        opt.clear()
+        with pytest.raises(SystemExit, match=match):
+            m.main_relaxed_os3(["dmbpy"])
+        assert opt == [], f"{match}: reached the optimiser"
+    guarded["OUT_RELAXED"].write_text(json.dumps(src))
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    rec["complexes"].pop("dmbpy", None)
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    monkeypatch.setattr(m, "dft_singlepoint", lambda atoms, **kw: {**fake_sp(atoms, **kw), "rescued": True})
+    m.main_relaxed_os3(["dmbpy", "bpy"])
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    assert "Newton rescue" in rec["complexes"]["dmbpy"]["os3_refused"] and "os3" not in rec["complexes"]["dmbpy"]
+    assert "os3_refused" in rec["complexes"]["bpy"], "the rescue refusal stopped the next point"
+    monkeypatch.setattr(m, "dft_singlepoint", fake_sp)
+    rec = json.loads(guarded["OUT_RELAXED3"].read_text())
+    g = rec["complexes"]["dmbpy"]["geometry_os3_relaxed"]
+    g["info"]["converged"] = False
+    for step in g["info"]["trajectory"]:
+        step["scf_converged"] = False
+    rec["complexes"]["dmbpy"].pop("geometry_os3_partial", None)
+    guarded["OUT_RELAXED3"].write_text(json.dumps(rec))
+    opt.clear()
+    m.main_relaxed_os3(["dmbpy"])
+    assert len(opt) == 1 and abs(opt[0]["start_x"] - starts["dmbpy"]) < 1e-12, "no converged step: not a fresh start"
 
 
 def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):

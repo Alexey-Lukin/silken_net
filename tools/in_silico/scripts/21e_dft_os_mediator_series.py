@@ -150,6 +150,8 @@ RELAX_MAXSTEPS = 120
 RELAX_SCF_CONV_TOL = 1e-8   # the steps' SCF; at the series' 1e-6 a warm-started gradient is off by up to 7e-5 Ha/Bohr
 #                             (≈ 15 % of gmax), at 1e-8 by ≤ 6e-6 (OsO₄, 2026-10-12); the single points stay at 1e-6
 RELAX_ENERGY_TOL_HA = 1e-5  # step 0 ⊥ the series row, and the relaxed single point ⊥ the optimiser's last step
+OS3_MIN_OS_SPIN = 0.8   # OURS: the relaxed donors' Os(III) carries 0.91–0.93 of its spin on Os (Mulliken); a hole that
+# moved onto a ligand (a nitro-bpy can hold one) is not the Os(III/II) couple the series compares — refused before (3б)
 RELAX_MAX_DONOR_SHIFT_A = 0.3   # an Os–donor distance moving this far is a units slip, not chemistry — refused at the step
 VARIANT_POINTS = ["bpy", "dmbpy", "ome", "cl"]
 N_SUBST = 4   # two 4,4'-X2-bpy per complex
@@ -704,6 +706,8 @@ def _relaxed_os2(out: Path, rec: dict, c: dict, name: str, atoms: list, state: s
         banner(f"① b3lyp-relaxed-{state} {name} — relaxed {label} geometry reused from {out.name}")
         return [(e, np.asarray(x, float)) for e, x in g["atoms"]]
     resume = c.get(part) or g
+    if resume is g and g and not any(t.get("scf_converged", True) for t in g["info"]["trajectory"]):
+        resume = None   # step 0's own SCF failed: no converged energy to check a restart against — start afresh
     start = [(e, np.asarray(x, float)) for e, x in resume["atoms"]] if resume else atoms
     restarted_from = None if not resume else ("partial" if part in c else
                                               g["info"]["returned"] if not g["info"]["converged"] else "other thresholds")
@@ -872,6 +876,12 @@ def main_relaxed_os3(names: list[str]) -> int:
         if not (g2 and g2["info"]["converged"] and "dE_red_eV" in s
                 and all(_acceptance(s.get(k, {}), k == "os3") == "accepted" for k in ("os2", "os3"))):
             sys.exit(f"{name}: no accepted relaxed Os(II) point in {OUT_RELAXED.name} — run b3lyp-relaxed-os2 first")
+        if s["os3"].get("rescued"):   # its energy is step 0's reference, and the optimiser has no rescue path
+            sys.exit(f"{name}: the vertical Os(III) in {OUT_RELAXED.name} needed the Newton rescue — no reference step 0 "
+                     f"can reach (in-silico §Critical Rules #14), refused")
+        if s["os3"].get("os_spin_mulliken", 1.0) < OS3_MIN_OS_SPIN:
+            sys.exit(f"{name}: the vertical Os(III) holds {s['os3']['os_spin_mulliken']:.2f} of its spin on Os — the hole "
+                     f"is not on the metal, so this is not the Os(III/II) couple; refused")
         c = rec["complexes"].setdefault(name, {"sigma_para": s["sigma_para"]})
         if "os2_E_Ha" in c and c["os2_E_Ha"] != s["os2"]["E_total_Ha"]:   # the Os(II) start moved: nothing here is its
             print(f"  {name}: the relaxed Os(II) point changed in {OUT_RELAXED.name} — its Os(III) record is discarded")
@@ -893,6 +903,12 @@ def main_relaxed_os3(names: list[str]) -> int:
         verdict = _acceptance(c["os3"], True)
         print(f"  E={c['os3']['E_total_Ha']:.8f} Ha ({c['os3']['wall_seconds']}s, {verdict}, <S²> {c['os3'].get('s2')})")
         if verdict != "accepted":
+            continue
+        if c["os3"].get("rescued"):   # <S²> passes, but a rescue starts from the failed orbitals (§Critical Rules #14):
+            c["os3_refused"] = "the single point needed the Newton rescue — its state is not certified"   # recorded
+            c.pop("os3")
+            _save(out, rec)
+            print(f"  {name}: refused — {c['os3_refused']}")
             continue
         off = c["os3"]["E_total_Ha"] - c["geometry_os3_relaxed"]["info"]["trajectory"][-1]["E_Ha"]
         if abs(off) > RELAX_ENERGY_TOL_HA:   # not dropped silently, not kept: the next point still runs
