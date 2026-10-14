@@ -3762,15 +3762,33 @@ CHECKS += [
     *[(f"PIPELINE D 10-14 programmatic gap {k} → 83", PIPELINE, anchor, V83,
        lambda d, k=k: _ad(d)["koopmans_neighbour_gap_eV"]["programmatic"][k] * 1000, 0.6)
       for k, anchor in (("ome-dmbpy", rf"найбільший \({N} і"), ("dmbpy-bpy", rf"найбільший \([\d.]+ і {N} меВ\)"))],
-    *[(f"PIPELINE D 10-14 unrelaxed gap {k} → 83", PIPELINE, anchor, V83,
+    *[(f"PIPELINE D 10-14 {note} unrelaxed gap {k} → 83", PIPELINE, anchor, V83,
        lambda d, k=k: abs(_ad(d)["unrelaxed_neighbour_gap_meV"][k]), 0.06)
-      for k, anchor in (("nme2-nh2", rf"NMe₂→NH₂ {N} меВ"), ("no2-so2cf3", rf"NO₂→SO₂CF₃ {N}, COOH"),
-                        ("dcbpy-cf3", rf"COOH→CF₃ {N}\. Другий"))],
+      for note, k, anchor in (
+          ("note", "nme2-nh2", rf"не релаксовані: NMe₂→NH₂ {N} меВ"),
+          ("note", "no2-so2cf3", rf"NO₂→SO₂CF₃ {N}, COOH→CF₃ [\d.]+\. Другий"),
+          ("note", "dcbpy-cf3", rf"COOH→CF₃ {N}\. Другий"),
+          ("verdict", "nme2-nh2", rf"не релаксовані — NMe₂→NH₂ {N} меВ"),
+          ("verdict", "no2-so2cf3", rf"NO₂→SO₂CF₃ {N}, COOH→CF₃ [\d.]+; перестановка"),
+          ("verdict", "dcbpy-cf3", rf"COOH→CF₃ {N}; перестановка"))],
     ("PIPELINE D 10-14 donor slope change → 83", PIPELINE, rf"релаксація зсуває на \+{N} %", V83,
      lambda d: _ad(d)["donor_slope_change"] * 100, 0.6),
     ("PIPELINE D 10-14 LFER span → 83", PIPELINE, rf"розмах fit-set \({N} еВ\)", V83, lambda d: _ad(d)["lfer_span_eV"], 0.006),
     ("PIPELINE D 10-14 slope ① extrapolated → 83", PIPELINE, rf"це ≈ {N} еВ — екстраполяція", V83,
      lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
+    # paper §3.3 — what the verdict «так, так» (2026-10-14) had the paper print: the members' Koopmans sensitivity and the
+    # extrapolated slope ①, with the untested neighbours
+    *[(f"paper §3.3 Koopmans own minimum {n} → 83", PAPER_RESULTS, anchor, V83,
+       lambda d, n=n: _koop(d, n, "os3_on_own_minimum"), 0.0005)
+      for n, anchor in (("ome", rf"moves by {N} eV for OMe, "), ("dmbpy", rf"eV for OMe, {N} eV for Me and"),
+                        ("bpy", rf"eV for Me and {N} eV for H and stays"))],
+    ("paper §3.3 donor slope steepens → 83", PAPER_RESULTS, rf"their donor slope steepens by {N} %", V83,
+     lambda d: _ad(d)["donor_slope_change"] * 100, 0.6),
+    ("paper §3.3 slope ① extrapolated → 83", PAPER_RESULTS, rf"would amount to ≈{N} eV — an", V83,
+     lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
+    *[(f"paper §3.3 untested neighbour {k} → 83", PAPER_RESULTS, anchor, V83,
+       lambda d, k=k: abs(_ad(d)["unrelaxed_neighbour_gap_meV"][k]), 0.06)
+      for k, anchor in (("nme2-nh2", rf"\(NMe₂ and NH₂,\s+{N} meV apart"), ("no2-so2cf3", rf"NO₂ and SO₂CF₃, {N} meV\)"))],
     # the D note 2026-10-13 and SUMMARY (4): the two numbers the first pass left unpinned (adversary 2026-10-14)
     ("PIPELINE D 10-13 series ΔE_red Me → os_mediator_series", PIPELINE, rf"еВ проти {N} серії — зсув", "dft/os_mediator_series.json",
      lambda d: next(c for c in d["complexes"] if c["name"] == "dmbpy")["dE_red_eV"], 0.0005),
