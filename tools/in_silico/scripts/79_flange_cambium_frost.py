@@ -11,6 +11,20 @@ on, if the capsule is tied to it) and bark's is weak (a large flat surface, fed 
 heat). Which way that pulls the ring depends on what the air and the sky are doing — so the sky and the sun are
 AXES of this model, not settings.
 
+BEAM — a vertical trunk face whose outward normal points at azimuth A (swept, AZIMUTHS_DEG) receives ERA5 direct-
+normal irradiance times cos γ, γ the angle between the sun and that normal; behind the face (cos γ ≤ 0) the stem
+shades it. The sun's position is NOAA GML's «General Solar Position Calculations» (Spencer's Fourier series for the
+declination and the equation of time; read 2026-10-14), on the clock the data header declares, averaged over the
+hour each radiation value averages — the hour BEFORE its label (Open-Meteo). Under the flange the silhouette is the
+lump's: the crown disc face-on (cos γ) plus the capsule's and the band's sides edge-on (sin γ) — 71's
+worst-orientation projection is its maximum over γ; the band alone is a short cylinder on the face normal. Mutual
+shading of capsule and band is ignored. Two runtime gates: the clock against the data (`verify_sun_clock`: DNI
+energy in hours the computed sun never clears the horizon is zero at the declared convention and not under a shift
+of ½ or 1 h) and the geometry against the obliquity, the equation-of-time extremes and the June noon altitude
+(`verify_sun_geometry`); the substep count is checked again where the beam drives hardest (`verify_timestep_beam`).
+What it counts besides the frost shift: winter hours with the cambium above DEHARDEN_C, bark against the flange —
+the exposure Sakai 1968 names as the CAUSE of winter dehardening (canon 01_04 §3.1), never a dose.
+
 MODEL — the 1D column of `78` (dead bark → phloem → sapwood, properties from `58`, adiabatic at SAPWOOD_DEPTH_MM,
 the canon dead-bark bracket at DBH 38), with an ENERGY BALANCE at its surface in place of an imposed temperature
 (x inward from the surface):
@@ -35,8 +49,9 @@ the canon dead-bark bracket at DBH 38), with an ENERGY BALANCE at its surface in
     that mixes these ends by two forms (CLOUD_REGIMES, 2026-10-12); the four ends above are unchanged by it.
   • Sun — two ends: none, and ERA5 DIFFUSE on both columns through the same sky view F (no beam: under a crown or on
     a north face). Absorptance: bark ALPHA_BARK (ours — no bark absorptance in the tree), the fin ALPHA_FIN = the
-    radome's specified ceiling α ≤ 0.5 (02_01 §5.2), applied to the band as well. Beam on a sunlit trunk face is not
-    computed: it depends on the azimuth.
+    radome's specified ceiling α ≤ 0.5 (02_01 §5.2), applied to the band as well. Beam on a sunlit trunk face is a
+    separate block (2026-10-14, BEAM below): the canon sets no mounting azimuth, so the face's azimuth is SWEPT, and
+    the beam rides only on the real-cloud sky forms (ERA5 DNI is real-sky); the four ends here carry none.
   • F = 0.5 and ε = 0.90 for bark and capsule alike (`71`'s, both ours).
 Radiation is linearised around each column's previous surface temperature and h_c lagged one substep. Only the
 surface's diagonal entry differs between columns and substeps, so one banded factor per bark side serves every
@@ -64,13 +79,15 @@ CAN show: the shift of the daily cambium minimum under the flange against bark w
 minima, the column has no day/night) over 30 winters — per sky end, sun end, coupling end, wind and bark side; its
 sign; which mechanism carries it; hours below a few isotherms.
 CANNOT show: injury — the regional threshold (canon 01_04 §3.1) is not a dose-response, so an isotherm count is
-not a dose (the same ceiling as `58`'s gate); beam sun (it needs the mounting azimuth) and which long-wave form of
+not a dose (the same ceiling as `58`'s gate), and neither is a count of hours above the ≈ 13 °C that dehardens;
+beam under a crown, a neighbour trunk or the terrain (the beam block takes open-field DNI — the upper end of beam)
+and the mounting azimuth itself (a decision, 00_07 HW.6 — the block sweeps it); which long-wave form of
 cloud holds at the site (the real-cloud block weighs the ends by ERA5 cover through two forms that disagree under
 full cover); the real radome↔flange coupling (bayonet rim, O-ring and cavity air — not measured); snow or rime; a forecast
 of absolute minima — a run of weeks of sunless clear sky is the model's lower bound, below any ERA5 air hour; the
 capsule temperature for the EDLC floor of 00_07 HW.37 (this lump is fed by the bark, `71`'s is not).
 
-Run:  python tools/in_silico/scripts/79_flange_cambium_frost.py      # a few minutes (30 years hourly, 48 columns)
+Run:  python tools/in_silico/scripts/79_flange_cambium_frost.py      # ≈ 32 min (30 years hourly, 48 + 96 columns)
 """
 from __future__ import annotations
 
@@ -91,7 +108,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, DBH_MIN_CM, REPO_ROOT
 from lib.utils import banner
 
-SI_DESCRIPTION = "Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling (1D)."  # its row in the paper SI (72): English, no repo jargon
+SI_DESCRIPTION = "Cambium temperature under the anchor's titanium flange on winter days, against bark without it, over thirty years of hourly weather, bracketed by sky, sun and coupling, with direct sun swept over the trunk face's azimuth (1D)."  # its row in the paper SI (72): English, no repo jargon
 
 OUT_DIR = CACHE_DIR / "thermal"
 OUT = OUT_DIR / "flange_cambium_frost.json"
@@ -144,6 +161,15 @@ CLOUD_REGIMES = (("cloud_linear_no_sun", "linear", False), ("cloud_linear_diffus
 SKY_CODE = {"clear": 0, "overcast": 1, "linear": 2, "b82": 3}
 CLOUD_FILE = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/hourly_cloud_1991_2020.csv.gz"
 WINTER_MONTHS = (11, 12, 1, 2, 3)
+# ── Beam sun by azimuth (2026-10-14, the HW.6 leg «пряме сонце за азимутом»): the method — docstring BEAM. Open-field
+# DNI, no crown, neighbour trunk, horizon or ground-reflected light: the UPPER end of beam (a stand edge facing the
+# sun); the diffuse-only real-cloud block above is its lower end (a closed stand).
+AZIMUTHS_DEG = (0, 45, 90, 135, 180, 225, 270, 315)   # the face's outward normal, clockwise from north
+BEAM_FORMS = ("linear", "b82")                          # beam is real-sky: only the real-cloud forms carry it
+SUN_SUBSAMPLES = 12                                     # points per averaged hour
+CLOCK_SHIFTS_H = (-1.0, -0.5, 0.0, 0.5, 1.0)
+REFLECT_ALBEDO_ENDS = (0.2, 0.7)   # bare ground ⊥ snow — OURS, illustrative ends for the size of the omitted term only
+DEHARDEN_C = 13.0   # Sakai 1968 «higher than 13 °C or thereabouts», read in canon 01_04 §3.1 — a CAUSE, not a dose
 
 
 def _load(name: str, file: str):
@@ -310,11 +336,12 @@ def load_weather() -> dict:
     _, hd, _, _ = S74.load()
     if not np.array_equal(hd["time"], h["time"]):
         raise SystemExit("dew-point and air files are not on the same clock")
-    return {"time": h["time"], "t_air": h["t_air"], "u10": h["u10"], "dif": h["dif"], "t_dew": hd["td"],
+    return {"time": h["time"], "t_air": h["t_air"], "u10": h["u10"], "dif": h["dif"], "dni": h["dni"], "t_dew": hd["td"],
             "cloud": load_cloud(h["time"])}
 
 
-def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False, cloud=0.0):
+def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False, cloud=0.0,
+                 beam=0.0):
     """Every column at once: H (W/m²K per area of bark under the column) and the sink temperature of the balance
     linearised around the current surface temperature t_s."""
     t_film = 0.5 * (t_s + t_air)
@@ -333,7 +360,7 @@ def coefficients(t_s, t_air, t_sky4_clear, u, cols, dif, d_dome, trunk_l_m=TRUNK
     t_env4 = SKY_VIEW * t_sky4 + (1.0 - SKY_VIEW) * ta_k ** 4
     h_r = 4.0 * EPSILON * SIGMA * ts_k ** 3
     q0 = EPSILON * SIGMA * (ts_k ** 4 - t_env4)          # radiative loss at the current surface temperature
-    q_sun = cols["alpha"] * SKY_VIEW * dif               # absorbed diffuse, W per m² of exposed surface
+    q_sun = cols["alpha"] * SKY_VIEW * dif + cols["alpha"] * beam   # absorbed diffuse and beam, W per m² of exposed surface
     h_tot = h_c + h_r
     t_sink = (h_c * t_air + h_r * t_s - q0 + q_sun) / h_tot
     return cols["fin"] * h_tot, t_sink
@@ -356,8 +383,9 @@ def column_table(ar: dict, regimes=REGIMES, winds=WIND_K) -> tuple[dict, list]:
     return cols, labels
 
 
-def simulate(stack, probe_mm, wx, cols, substeps=SUBSTEPS, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False):
-    """Every column of one bark side marches together; returns the cambium series (hours × columns) and the surface."""
+def simulate(stack, probe_mm, wx, cols, substeps=SUBSTEPS, trunk_l_m=TRUNK_L_M, cap_hc_as_bark=False, geom=None):
+    """Every column of one bark side marches together; returns the cambium series (hours × columns) and the surface.
+    `geom` — `face_factors` for a beam table (its columns carry `az`, `c_face`, `c_side`); None — no beam."""
     ab, keep, gl, gr, z, ic = base_system(stack, probe_mm, substeps)
     d_dome = S71.geometry()["dome_diameter_mm"] * 1e-3
     n_h, n_c = len(wx["t_air"]), len(cols["fin"])
@@ -369,10 +397,13 @@ def simulate(stack, probe_mm, wx, cols, substeps=SUBSTEPS, trunk_l_m=TRUNK_L_M, 
     for hr in range(1, n_h):
         t0, t1 = wx["t_air"][hr - 1], wx["t_air"][hr]
         t_sky4 = eps_sky[hr] * (t1 + 273.15) ** 4
+        beam = 0.0 if geom is None else wx["dni"][hr] * (cols["c_face"] * geom[0][cols["az"], hr]
+                                                         + cols["c_side"] * geom[1][cols["az"], hr])
         for s in range(substeps):
             ta = t0 + (t1 - t0) * (s + 0.5) / substeps
             h_eff, t_sink = coefficients(t[0], ta, t_sky4, cols["wind_k"] * wx["u10"][hr], cols, wx["dif"][hr],
-                                         d_dome, trunk_l_m, cap_hc_as_bark, wx["cloud"][hr] if "cloud" in wx else 0.0)
+                                         d_dome, trunk_l_m, cap_hc_as_bark, wx["cloud"][hr] if "cloud" in wx else 0.0,
+                                         beam)
             t = march(ab, keep, gl, gr, z, t, h_eff, t_sink)
         cam[hr], surf[hr] = t[ic], t[0]
     return cam, surf
@@ -416,6 +447,150 @@ def verify_timestep(wx, ar) -> dict:
     a, r = mins
     return {"window_start": str(w["time"][0]), "daily_min_err_K": round(float(np.abs(a - r).max()), 4),
             "shift_err_K": round(float(max(np.abs((a[:, 0] - a[:, j]) - (r[:, 0] - r[:, j])).max() for j in (1, 2))), 4)}
+
+
+def site() -> dict:
+    """The grid point and the clock the ERA5 files declare in their header — never typed."""
+    names, vals = (line.strip().split(",") for line in _header(S71.DATA_FILE))
+    row = dict(zip(names, vals, strict=True))
+    return {"lat_deg": float(row["latitude"]), "lon_deg": float(row["longitude"]),
+            "utc_offset_h": int(row["utc_offset_seconds"]) / 3600.0}
+
+
+def _spencer(g):
+    """Equation of time (min) and declination (rad) at fractional year g (rad) — NOAA GML's series."""
+    eqt = 229.18 * (0.000075 + 0.001868 * np.cos(g) - 0.032077 * np.sin(g) - 0.014615 * np.cos(2 * g)
+                    - 0.040849 * np.sin(2 * g))
+    dec = (0.006918 - 0.399912 * np.cos(g) + 0.070257 * np.sin(g) - 0.006758 * np.cos(2 * g) + 0.000907 * np.sin(2 * g)
+           - 0.002697 * np.cos(3 * g) + 0.00148 * np.sin(3 * g))
+    return eqt, dec
+
+
+def sun_enu(times, st: dict, shift_h: float = 0.0, n: int = SUN_SUBSAMPLES) -> np.ndarray:
+    """Unit vector to the sun (east, north, up) at the mid-points of n slices of the hour each radiation value
+    averages — the hour BEFORE its label — moved by `shift_h` for the clock check only. Shape (3, hours, n)."""
+    t = np.asarray(times).astype("datetime64[s]") - np.timedelta64(round(st["utc_offset_h"] * 3600), "s")
+    sub = np.array([round((-1.0 + (k + 0.5) / n + shift_h) * 3600.0) for k in range(n)]).astype("timedelta64[s]")
+    tu = t[:, None] + sub[None, :]
+    y0 = tu.astype("datetime64[Y]")
+    d0 = tu.astype("datetime64[D]")
+    days = ((y0 + np.timedelta64(1, "Y")).astype("datetime64[D]") - y0.astype("datetime64[D]")).astype(float)
+    doy = (d0 - y0.astype("datetime64[D]")).astype(float) + 1.0
+    minutes = (tu - d0).astype(float) / 60.0
+    eqt, dec = _spencer(2.0 * math.pi / days * (doy - 1.0 + (minutes / 60.0 - 12.0) / 24.0))
+    ha = np.radians((minutes + eqt + 4.0 * st["lon_deg"]) / 4.0 - 180.0)
+    p = math.radians(st["lat_deg"])
+    return np.stack((-np.cos(dec) * np.sin(ha),
+                     np.sin(dec) * math.cos(p) - np.cos(dec) * np.cos(ha) * math.sin(p),
+                     np.sin(dec) * math.sin(p) + np.cos(dec) * np.cos(ha) * math.cos(p)))
+
+
+def verify_sun_geometry(st: dict, times) -> dict:
+    """The series against what it must give: declination extremes at the obliquity (23.44°), equation-of-time extremes
+    −14.2 / +16.4 min, and the June noon altitude 90° − φ + 23.44° on the data's own hours — catches a wrong
+    coefficient, a sign or a wrong hour angle; blind to the clock (that is `verify_sun_clock`'s)."""
+    eqt, dec = _spencer(np.linspace(0.0, 2.0 * math.pi, 3651))
+    june = np.array([str(x)[5:7] == "06" for x in times[:24 * 366]])
+    alt = math.degrees(math.asin(float(sun_enu(np.asarray(times[:24 * 366])[june], st)[2].max())))
+    out = {"declination_deg": [round(math.degrees(float(dec.min())), 3), round(math.degrees(float(dec.max())), 3)],
+           "equation_of_time_min": [round(float(eqt.min()), 2), round(float(eqt.max()), 2)],
+           "june_noon_altitude_deg": round(alt, 3), "june_noon_altitude_expected_deg": round(90.0 - st["lat_deg"] + 23.44, 3)}
+    if (max(abs(abs(x) - 23.44) for x in out["declination_deg"]) > 0.1
+            or abs(out["equation_of_time_min"][0] + 14.2) > 0.3 or abs(out["equation_of_time_min"][1] - 16.4) > 0.3
+            or abs(alt - out["june_noon_altitude_expected_deg"]) > 0.1):
+        raise SystemExit(f"sun geometry check failed: {out}")
+    return out
+
+
+def verify_sun_clock(times, dni, st: dict) -> dict:
+    """Is the computed sun on the data's clock? The share of all DNI energy that falls in hours whose sun never clears
+    the horizon, at the declared convention and with the geometry moved by ½ and 1 h either way: the declared one
+    must hold none of it and every shift some — catches a wrong UTC offset or the preceding-hour convention read
+    backwards; blind to an error well inside an hour."""
+    out = {}
+    for sh in CLOCK_SHIFTS_H:
+        up = np.maximum(sun_enu(times, st, sh)[2], 0.0).mean(axis=1)
+        out[f"{sh:+.1f}"] = float(dni[up == 0.0].sum() / dni.sum())
+    if out["+0.0"] > 1e-5 or min(v for k, v in out.items() if k != "+0.0") < 1e-4:
+        raise SystemExit(f"sun clock check failed: DNI share in sun-down hours {out}")
+    return {k: float(f"{v:.3g}") for k, v in out.items()}
+
+
+def face_factors(sun: np.ndarray) -> tuple:
+    """Per azimuth and hour, the hour-means of cos γ and sin γ over the moments the sun is above the horizon AND in
+    front of the face (γ — between the sun and the face's outward normal; behind it the stem shades the face).
+    Two arrays of shape (len(AZIMUTHS_DEG), hours)."""
+    e, n, u = sun
+    gc, gs = [], []
+    for a in AZIMUTHS_DEG:
+        c = e * math.sin(math.radians(a)) + n * math.cos(math.radians(a))
+        lit = (u > 0.0) & (c > 0.0)
+        gc.append(np.where(lit, c, 0.0).mean(axis=1))
+        gs.append(np.where(lit, np.sqrt(np.clip(1.0 - c * c, 0.0, None)), 0.0).mean(axis=1))
+    return np.array(gc), np.array(gs)
+
+
+def beam_projection(ar: dict) -> dict:
+    """Each column's sunlit silhouette per unit of its fin area, as c_face·cos γ + c_side·sin γ: bark — its own face;
+    the band — a short cylinder on the face normal (d·t·sin γ over π·d·t); band and capsule — the crown disc face-on
+    plus the capsule's and the band's sides edge-on. The capsule part's maximum over γ must be 71's worst-orientation
+    projection — the same lump, checked."""
+    g = S71.geometry()
+    d, h = g["dome_diameter_mm"], g["h_over_bark_mm"]
+    a_crown, side_cap = math.pi * d * d / 4.0, d * h
+    side_band = ar["flange_diameter_mm"] * ar["flange_thickness_mm"]
+    a_tied = ar["flange_band_mm2"] + ar["capsule_exposed_mm2"]
+    if abs(math.hypot(a_crown, side_cap) - g["a_proj_max_mm2"]) > 1e-3 * g["a_proj_max_mm2"]:
+        raise SystemExit("beam silhouette of the capsule is not 71's lump")
+    return {"bark": (1.0, 0.0), "decoupled": (0.0, round(side_band / ar["flange_band_mm2"], 6)),
+            "tied": (round(a_crown / a_tied, 6), round((side_cap + side_band) / a_tied, 6))}
+
+
+def beam_column_table(ar: dict, form: str, proj: dict, azimuths=AZIMUTHS_DEG, winds=WIND_K) -> tuple[dict, list]:
+    """The columns of one bark side for one real-cloud form with diffuse sun and beam: per azimuth and wind — bark,
+    decoupled, tied — each with its azimuth's index into `face_factors` and its silhouette coefficients."""
+    parts, labels = [], []
+    for a in azimuths:
+        cols, lab = column_table(ar, ((form, form, True),), winds)
+        cols["az"] = np.full(len(lab), AZIMUTHS_DEG.index(a))
+        cols["c_face"] = np.array([proj[cp][0] for _, cp, _ in lab])
+        cols["c_side"] = np.array([proj[cp][1] for _, cp, _ in lab])
+        parts.append(cols)
+        labels += [(a, cp, k) for _, cp, k in lab]
+    return {key: np.concatenate([c[key] for c in parts]) for key in parts[0]}, labels
+
+
+def verify_timestep_beam(wx, ar, geom, proj) -> dict:
+    """SUBSTEPS against six times as many on two 40-day windows (thin bark, still air, the linear cloud form, north and
+    south faces): around the winter hour of the largest beam on the south face, where the beam drives hardest, and
+    around the warmest winter hour, where the spot under the flange also crosses DEHARDEN_C — a window without such
+    hours under the flange would gate its hour count vacuously (adversarial review 2026-10-14). The largest error of
+    the daily cambium minimum and maximum and of the shift, and every column's hours above DEHARDEN_C."""
+    winter = np.array([int(x[5:7]) in WINTER_MONTHS for x in wx["time"]])
+    picks = {"largest_south_beam": int(np.argmax(np.where(winter, wx["dni"] * geom[0][AZIMUTHS_DEG.index(180)], -1.0))),
+             "warmest_winter_hour": int(np.argmax(np.where(winter, wx["t_air"], -99.0)))}
+    cols, labels = beam_column_table(ar, "linear", proj, (0, 180), WIND_K[:1])
+    b = S78.bark_bracket()["thin_mm"]
+    out = {}
+    for name, i in picks.items():
+        d0 = max(0, (i // 24 - 20) * 24)
+        w = {k: v[d0:d0 + 24 * 40] for k, v in wx.items()}
+        g = (geom[0][:, d0:d0 + 24 * 40], geom[1][:, d0:d0 + 24 * 40])
+        res = []
+        for sub in (SUBSTEPS, 6 * SUBSTEPS):
+            cam, _ = simulate(S78.layers(b), b + S58.T_PHLOEM, w, cols, sub, geom=g)
+            c = cam[5 * 24:]
+            res.append((c.reshape(-1, 24, c.shape[1]).min(axis=1), c.reshape(-1, 24, c.shape[1]).max(axis=1),
+                        (c > DEHARDEN_C).sum(axis=0)))
+        (mn_a, mx_a, h_a), (mn_r, mx_r, h_r) = res
+        pairs = [(labels.index((a, "bark", WIND_K[0])), labels.index((a, cp, WIND_K[0]))) for a in (0, 180) for cp in COUPLINGS]
+        out[name] = {"window_start": str(w["time"][0]), "daily_min_err_K": round(float(np.abs(mn_a - mn_r).max()), 4),
+                     "daily_max_err_K": round(float(np.abs(mx_a - mx_r).max()), 4),
+                     "shift_err_K": round(float(max(np.abs((mn_a[:, jb] - mn_a[:, jf]) - (mn_r[:, jb] - mn_r[:, jf])).max()
+                                                    for jb, jf in pairs)), 4),
+                     "hours_above_deharden": {f"{a}/{cp}": int(h_a[j]) for j, (a, cp, _) in enumerate(labels)},
+                     "hours_above_deharden_reference": {f"{a}/{cp}": int(h_r[j]) for j, (a, cp, _) in enumerate(labels)}}
+    return out
 
 
 def mechanism(ar: dict) -> dict:
@@ -590,6 +765,119 @@ def main() -> int:
         print(f"    by month, {name}, tied, still, thin bark: " + " · ".join(
             f"{mo}: {v['median']:+.2f} K ({v['colder_share']:.0%} colder, {v['frost_days']} d)" for mo, v in row["by_month"].items()))
 
+    st = site()
+    sun_geo = verify_sun_geometry(st, times)
+    clock = verify_sun_clock(times, wx["dni"], st)
+    sun = sun_enu(times, st)
+    geom = face_factors(sun)
+    ghi = wx["dni"] * np.maximum(sun[2], 0.0).mean(axis=1) + wx["dif"]
+    del sun
+    win_all = np.array([int(x[5:7]) in WINTER_MONTHS for x in times])
+    ghi_ratio = float(ghi[win_all].sum() / wx["dif"][win_all].sum())
+    reflected = {"winter_ghi_over_diffuse": round(ghi_ratio, 3),
+                 "albedo_ends_ours": list(REFLECT_ALBEDO_ENDS),
+                 "reflected_on_vertical_over_model_diffuse": {f"{a:g}": round((1.0 - SKY_VIEW) * a * ghi_ratio / SKY_VIEW, 2)
+                                                              for a in REFLECT_ALBEDO_ENDS},
+                 "south_beam_over_model_diffuse": round(float((wx["dni"] * geom[0][AZIMUTHS_DEG.index(180)])[win_all].sum()
+                                                              / (SKY_VIEW * wx["dif"][win_all].sum())), 2)}
+    proj = beam_projection(ar)
+    ts_beam = verify_timestep_beam(wx, ar, geom, proj)
+    for tsw in ts_beam.values():
+        if (tsw["daily_min_err_K"] > 0.15 or tsw["shift_err_K"] > 0.05 or tsw["daily_max_err_K"] > 0.2
+                or any(abs(tsw["hours_above_deharden"][c] - r) > max(2, 0.02 * r) for c, r in tsw["hours_above_deharden_reference"].items())):
+            raise SystemExit(f"beam timestep check failed: {ts_beam}")
+    if not any(v for c, v in ts_beam["warmest_winter_hour"]["hours_above_deharden"].items() if not c.endswith("/bark")):
+        raise SystemExit("the warm window put no flange hour above DEHARDEN_C — its hour gate would be vacuous")
+    print(f"  sun: NOAA GML series — declination {sun_geo['declination_deg'][0]:+.2f}…{sun_geo['declination_deg'][1]:+.2f}°, "
+          f"equation of time {sun_geo['equation_of_time_min'][0]:+.2f}…{sun_geo['equation_of_time_min'][1]:+.2f} min, June noon "
+          f"{sun_geo['june_noon_altitude_deg']:.2f}° (expected {sun_geo['june_noon_altitude_expected_deg']:.2f}°)")
+    print("  sun clock: DNI share in hours the sun never clears the horizon — " + " · ".join(
+        f"{k} h {v:.3%}" for k, v in clock.items()))
+    print(f"  ground-reflected light (NOT modelled): winter GHI/diffuse {reflected['winter_ghi_over_diffuse']:.2f} → on a vertical face "
+          + " · ".join(f"ρ {k}: {v:.2f}× the model's diffuse" for k, v in reflected["reflected_on_vertical_over_model_diffuse"].items())
+          + f" (south-face beam {reflected['south_beam_over_model_diffuse']:.2f}×)")
+    for name, tsw in ts_beam.items():
+        print(f"  beam timestep check, {name} ({tsw['window_start'][:10]}, north and south faces): daily minimum within "
+              f"{tsw['daily_min_err_K']:.3f} K, maximum {tsw['daily_max_err_K']:.3f} K, shift {tsw['shift_err_K']:.3f} K; "
+              f"hours above {DEHARDEN_C:g} °C {tsw['hours_above_deharden']} vs {tsw['hours_above_deharden_reference']}")
+    tables = [beam_column_table(ar, form, proj) for form in BEAM_FORMS]
+    b_cols = {key: np.concatenate([t[0][key] for t in tables]) for key in tables[0][0]}
+    b_labels = [(form, *lab) for form, t in zip(BEAM_FORMS, tables, strict=True) for lab in t[1]]
+    month_h = np.array([int(x[5:7]) for x in times])
+    win_h = np.isin(month_h, WINTER_MONTHS) & cut
+    mo_w = month_h[win_h]
+    n_years = len({x[:4] for x in times})
+    beam_runs = []
+    for side, b in (("thin", bark["thin_mm"]), ("thick", bark["thick_mm"])):
+        cam, _ = simulate(S78.layers(b), b + S58.T_PHLOEM, wx, b_cols, geom=geom)
+        m = daily_minima(cam, times)
+        cw = cam[win_h]
+        for form in BEAM_FORMS:
+            for a in AZIMUTHS_DEG:
+                for k in WIND_K:
+                    jb = b_labels.index((form, a, "bark", k))
+                    frost, cold = m[:, jb] < FROST_DAY_C, m[:, jb] < COLD_DAY_C
+                    warm_b = cw[:, jb] > DEHARDEN_C
+                    for cp in COUPLINGS:
+                        jf = b_labels.index((form, a, cp, k))
+                        s = m[:, jb] - m[:, jf]
+                        warm_f = cw[:, jf] > DEHARDEN_C
+                        beam_runs.append({
+                            "form": form, "azimuth_deg": a, "coupling": cp, "wind_k": k, "bark_side": side, "bark_mm": b,
+                            "shift_K": shift_stats(m, jb, jf),
+                            "colder_share": round(float(np.mean(s[frost] > COLDER_BAND_K)), 3),
+                            "warmer_share": round(float(np.mean(s[frost] < -COLDER_BAND_K)), 3),
+                            "cold_days": {"days": int(np.count_nonzero(cold)),
+                                          "median": round(float(np.median(s[cold])), 2) if np.any(cold) else None,
+                                          "colder_share": round(float(np.mean(s[cold] > COLDER_BAND_K)), 3)
+                                          if np.any(cold) else None},
+                            "cambium_min_C": {"no_flange": round(float(cam[cut, jb].min()), 2),
+                                              "flange": round(float(cam[cut, jf].min()), 2)},
+                            "winter_hours_above_deharden": {"no_flange": int(warm_b.sum()), "flange": int(warm_f.sum())},
+                            "winter_hours_above_deharden_by_month": {
+                                str(mo): {"no_flange": int((warm_b & (mo_w == mo)).sum()), "flange": int((warm_f & (mo_w == mo)).sum())}
+                                for mo in WINTER_MONTHS},
+                            "winter_cambium_max_C": {"no_flange": round(float(cw[:, jb].max()), 2),
+                                                     "flange": round(float(cw[:, jf].max()), 2)},
+                        })
+        del cam, cw
+        print(f"  {side:<5s} bark {b:5.2f} mm done (beam by azimuth)")
+    beam = {}
+    for a in AZIMUTHS_DEG:
+        beam[str(a)] = {}
+        for cp in COUPLINGS:
+            rows = [r for r in beam_runs if r["azimuth_deg"] == a and r["coupling"] == cp]
+            med, sh = [r["shift_K"]["median"] for r in rows], [r["colder_share"] for r in rows]
+            cd = [r["cold_days"]["colder_share"] for r in rows if r["cold_days"]["days"]]
+            hb = [r["winter_hours_above_deharden"]["no_flange"] / n_years for r in rows]
+            hf = [r["winter_hours_above_deharden"]["flange"] / n_years for r in rows]
+            beam[str(a)][cp] = {
+                "median_K_range": [min(med), max(med)], "p95_K_max": max(r["shift_K"]["p95"] for r in rows),
+                "max_K": max(r["shift_K"]["max"] for r in rows), "colder_share_range": [min(sh), max(sh)],
+                "cold_days_colder_share_range": [min(cd), max(cd)] if cd else None,
+                "winter_hours_above_deharden_per_year": {"no_flange": [round(min(hb), 1), round(max(hb), 1)],
+                                                         "flange": [round(min(hf), 1), round(max(hf), 1)]},
+                "winter_cambium_max_C": {"no_flange": max(r["winter_cambium_max_C"]["no_flange"] for r in rows),
+                                         "flange": max(r["winter_cambium_max_C"]["flange"] for r in rows)}}
+    floor_sn = {}
+    for cp in COUPLINGS:
+        dd = [cell["cambium_min_C"]["flange"] - next(r for r in beam_runs if r["azimuth_deg"] == 0 and
+              (r["form"], r["coupling"], r["wind_k"], r["bark_side"]) == (cell["form"], cp, cell["wind_k"], cell["bark_side"]))["cambium_min_C"]["flange"]
+              for cell in beam_runs if cell["azimuth_deg"] == 180 and cell["coupling"] == cp]
+        floor_sn[cp] = [round(min(dd), 2), round(max(dd), 2)]
+    month_exceptions = [{"form": r["form"], "azimuth_deg": r["azimuth_deg"], "coupling": r["coupling"], "wind_k": r["wind_k"],
+                         "bark_side": r["bark_side"], "month": mo, **v}
+                        for r in beam_runs for mo, v in r["winter_hours_above_deharden_by_month"].items() if v["flange"] > v["no_flange"]]
+    print(f"  beam by azimuth (open-field DNI, both cloud forms with diffuse): tied median range · colder share · hours above "
+          f"{DEHARDEN_C:g} °C per winter, bark | tied | decoupled · warmest winter cambium, bark | tied")
+    for a in AZIMUTHS_DEG:
+        t_, d_ = beam[str(a)]["tied"], beam[str(a)]["decoupled"]
+        hb, ht, hd = (t_["winter_hours_above_deharden_per_year"]["no_flange"], t_["winter_hours_above_deharden_per_year"]["flange"],
+                      d_["winter_hours_above_deharden_per_year"]["flange"])
+        print(f"    {a:3d}°  {t_['median_K_range'][0]:+.2f}…{t_['median_K_range'][1]:+.2f} K · "
+              f"{t_['colder_share_range'][0]:.0%}–{t_['colder_share_range'][1]:.0%} · {hb[0]:.0f}–{hb[1]:.0f} | {ht[0]:.0f}–{ht[1]:.0f} | "
+              f"{hd[0]:.0f}–{hd[1]:.0f} h · {t_['winter_cambium_max_C']['no_flange']:.1f} | {t_['winter_cambium_max_C']['flange']:.1f} °C")
+
     def word(lo, hi):
         return "warmer" if hi < 0.0 else ("colder" if lo > 0.0 else "either way")
     meds = {name: regimes[name]["tied"]["median_K_range"] for name, _, _ in REGIMES}
@@ -606,6 +894,33 @@ def main() -> int:
         c = cloud_regimes[name]["tied"]["cold_days"]
         return "no cold days" if not c else f"{c['colder_share_range'][0]:.0%}–{c['colder_share_range'][1]:.0%}"
     upper = max((regimes[n]["tied"]["max_K"], n) for n, _, _ in REGIMES)
+    diffuse = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r["shift_K"]["median"] for r in cloud_runs}
+    beam_vs_diffuse = [r["shift_K"]["median"] - diffuse[(f"cloud_{r['form']}_diffuse_sun", r["coupling"], r["wind_k"], r["bark_side"])]
+                       for r in beam_runs]
+    fin_sheds = all(r["winter_hours_above_deharden"]["flange"] <= r["winter_hours_above_deharden"]["no_flange"] for r in beam_runs)
+    exc_az = sorted({x["azimuth_deg"] for x in month_exceptions})
+    exc_mo = sorted({int(x["month"]) for x in month_exceptions})
+    bn, bs = beam["0"]["tied"], beam["180"]["tied"]
+    hn, hs = bn["winter_hours_above_deharden_per_year"], bs["winter_hours_above_deharden_per_year"]
+    beam_text = (
+        f"Beam sun on the trunk face — swept over its azimuth with open-field ERA5 DNI, the upper end of beam — "
+        f"{'only deepens' if min(beam_vs_diffuse) >= -0.005 else 'moves'} the shift against the diffuse-only weighing "
+        f"(the median by {min(beam_vs_diffuse):+.2f}…{max(beam_vs_diffuse):+.2f} K): tied "
+        f"{bn['median_K_range'][0]:+.1f}…{bn['median_K_range'][1]:+.1f} K on a north face, "
+        f"{bs['median_K_range'][0]:+.1f}…{bs['median_K_range'][1]:+.1f} K on a south one, colder there on "
+        f"{bs['colder_share_range'][0]:.0%}–{bs['colder_share_range'][1]:.0%} of frost days — the bark banks the beam the "
+        f"fin sheds. In absolute terms the beam still warms the spot: its coldest hour is "
+        f"{'warmer on a south face than on a north one in every cell' if floor_sn['tied'][0] > 0 else 'not warmer on a south face in every cell'}"
+        f" (tied {floor_sn['tied'][0]:+.1f}…{floor_sn['tied'][1]:+.1f} K). The same beam lifts the cambium above ≈ {DEHARDEN_C:g} °C, "
+        f"the exposure Sakai names as what dehardens, "
+        f"{'under bark more often than under the flange in every winter total' if fin_sheds else 'under the flange more often than under bark in some winter totals'}"
+        + (f" (not in every month: in month(s) {exc_mo} of faces {exc_az} the flange has a few more)" if month_exceptions else "")
+        + f": on a south face {hs['no_flange'][0]:.0f}–{hs['no_flange'][1]:.0f} hours a winter without it against "
+        f"{hs['flange'][0]:.0f}–{hs['flange'][1]:.0f} under the tied flange (north {hn['no_flange'][0]:.0f}–{hn['no_flange'][1]:.0f} "
+        f"against {hn['flange'][0]:.0f}–{hn['flange'][1]:.0f}). So this axis does not choose an azimuth by itself: the absolute "
+        f"frost floor under the flange favours the south, its hours of dehardening the north, and only a measure of how much "
+        f"the node perturbs the cambium points one way; weighing them needs a dose-response no primary gives. Ground-"
+        f"reflected light is not in either sun term — the same on every face, it can match the diffuse term over snow. ")
     text = (f"The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the "
             f"flange: the tied median is {meds['clear_no_sun'][0]:+.1f}…{meds['clear_no_sun'][1]:+.1f} K "
             f"({word(*meds['clear_no_sun'])} under the flange), because a long-wave deficit depresses flat bark "
@@ -628,9 +943,9 @@ def main() -> int:
             f"Brutsaert 1982's factor at its original C {B82_C}, which leaves a fully covered winter sky short of a black "
             f"body, on {share('cloud_b82_no_sun')} and {share('cloud_b82_diffuse_sun')}. On the cold days (bark below "
             f"{COLD_DAY_C:g} °C), the tail an injury threshold sits in: {cold('cloud_linear_diffuse_sun')} colder under the "
-            f"first, {cold('cloud_b82_no_sun')} under the second without sun. Beam sun on a trunk face and the real "
-            f"coupling are not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its "
-            f"corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it.")
+            f"first, {cold('cloud_b82_no_sun')} under the second without sun. " + beam_text + "The real "
+            "coupling is not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its "
+            "corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it.")
     print(f"\n  → {text}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -667,11 +982,33 @@ def main() -> int:
                                  "b82": f"Brutsaert 1982 as printed in Herrero & Polo 2012 eq. 8, C = {B82_C}"},
                        "winter_months": list(WINTER_MONTHS), "climate": cloud_climate,
                        "regimes": cloud_regimes, "runs": cloud_runs},
+        "beam_sun": {"method": "ERA5 DNI on a vertical trunk face at each azimuth (outward normal, clockwise from north) through "
+                               "the sun's position by NOAA GML's General Solar Position Calculations, averaged over the hour "
+                               "each radiation value averages; the stem shades the face when the sun is behind it; open "
+                               "field — no crown, neighbour trunk, horizon or ground-reflected light; with each real-cloud "
+                               "form and its diffuse",
+                     "site": st, "azimuths_deg": list(AZIMUTHS_DEG), "forms": list(BEAM_FORMS),
+                     "sun_subsamples_per_hour": SUN_SUBSAMPLES, "silhouette_per_fin_area_cos_sin": proj,
+                     "sun_geometry_check": sun_geo, "sun_clock_check_dni_share_in_sun_down_hours": clock,
+                     "timestep_check": ts_beam, "deharden_C": DEHARDEN_C,
+                     "ground_reflected_not_modelled_scale": reflected,
+                     "deharden_reading": "Sakai 1968, Contr. Inst. Low Temp. Sci. B15:1, via canon 01_04 §3.1 — exposure "
+                                         "above it is the CAUSE of winter dehardening; hours above it are counted, never "
+                                         "priced as a dose",
+                     "winter_months": list(WINTER_MONTHS), "years": n_years,
+                     "median_shift_minus_diffuse_only_K": [round(min(beam_vs_diffuse), 2), round(max(beam_vs_diffuse), 2)],
+                     "flange_never_above_bark_in_hours": fin_sheds,
+                     "coldest_hour_under_flange_south_minus_north_K": floor_sn,
+                     "month_cells_flange_above_bark": month_exceptions,
+                     "by_azimuth": beam, "runs": beam_runs},
         "sensitivity_thin_bark_still_air_clear_no_sun": sens,
         "verdict": {"tied_median_K_range_by_regime": meds, "tied_max_K": upper[0], "tied_max_regime": upper[1],
                     "text": text},
-        "ceilings": ["the sun is bracketed by its ends — beam sun on a trunk face is not computed (it needs the mounting "
-                     "azimuth); real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — "
+        "ceilings": ["beam sun is swept over the face's azimuth with open-field DNI — the upper end of BEAM (no crown, "
+                     "neighbour trunk or horizon; the mounting azimuth is a decision, 00_07 HW.6); ground-reflected light is "
+                     "in neither sun term, so the short-wave balance of every face is a LOWER end; frost days are defined "
+                     "by the bark of the same face, so nights the spot freezes and the sunlit bark does not are left out; "
+                     "real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — "
                      "which one holds at the site decides the sign, and neither form's primary was read",
                      "1D and zero contact resistance inflate the shift in both signs; the tied end is the upper end of the "
                      "coupling axis only, and the two coupling ends bracket the median, not the tail",

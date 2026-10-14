@@ -3691,6 +3691,80 @@ CHECKS += [
      FLANGE_FROST, lambda d: _c79_month(d, "4", "frost_days"), 0.0),
 ]
 
+# ── HW.6 frost, beam sun by azimuth (2026-10-14): 79's `beam_sun` block — canon 01_04 §3.1 ⊕ ──
+# ⛔ The paragraph's message is a PAIR per face — the shift against the bark beside the flange ⊥ the coldest hour under
+# the flange itself (south minus north) — so both halves are pinned: the first draft quoted only the cold ends of the
+# floor ranges and read «the same floor» where the floor is warmer on the south in EVERY cell (adversarial review
+# 2026-10-14); a doc that kept the shift and let the floor rot would make the same mistake again.
+_B79 = lambda d, az, cp="tied": d["beam_sun"]["by_azimuth"][str(az)][cp]  # noqa: E731
+
+
+def _b79_hours(d, az, key, end, cp="tied"):
+    return _B79(d, az, cp)["winter_hours_above_deharden_per_year"][key][end]
+
+
+CHECKS += [
+    ("HW.6 · beam: DNI share in sun-down hours at the declared clock → 79", CODIT, rf"припадає \*\*{N}\*\* енергії DNI",
+     FLANGE_FROST, lambda d: d["beam_sun"]["sun_clock_check_dni_share_in_sun_down_hours"]["+0.0"], 0.0),
+    ("HW.6 · beam: smallest DNI share under a clock shift → 79", CODIT, rf"дає вже ≥ \*\*{N} %\*\*",
+     FLANGE_FROST, lambda d: 100 * min(v for k, v in d["beam_sun"]["sun_clock_check_dni_share_in_sun_down_hours"].items()
+                                       if k != "+0.0"), 0.0005),
+    ("HW.6 · beam: north tied median, low → 79", CODIT, rf"повного звʼязку — \*\*{N}…{_NN} K\*\*; південна",
+     FLANGE_FROST, lambda d: _B79(d, 0)["median_K_range"][0], 0.005),
+    ("HW.6 · beam: north tied median, high → 79", CODIT, rf"повного звʼязку — \*\*{_NN}…\+{N} K\*\*; південна",
+     FLANGE_FROST, lambda d: _B79(d, 0)["median_K_range"][1], 0.005),
+    ("HW.6 · beam: south tied median, low → 79", CODIT, rf"південна — \*\*\+{N}…{_NN} K\*\*",
+     FLANGE_FROST, lambda d: _B79(d, 180)["median_K_range"][0], 0.005),
+    ("HW.6 · beam: south tied median, high → 79", CODIT, rf"південна — \*\*{_NN}…\+{N} K\*\*",
+     FLANGE_FROST, lambda d: _B79(d, 180)["median_K_range"][1], 0.005),
+    ("HW.6 · beam: south colder share, low → 79", CODIT, rf"холодніше в \*\*{N}–[\d.]+ %\*\* морозних діб: кора",
+     FLANGE_FROST, lambda d: _B79(d, 180)["colder_share_range"][0] * 100, 0.6),
+    ("HW.6 · beam: south colder share, high → 79", CODIT, rf"холодніше в \*\*[\d.]+–{N} %\*\* морозних діб: кора",
+     FLANGE_FROST, lambda d: _B79(d, 180)["colder_share_range"][1] * 100, 0.6),
+    ("HW.6 · beam: winter GHI over diffuse (reflected light, not modelled) → 79", CODIT, rf"сумарна радіація в \*\*{N}\*\* раза",
+     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["winter_ghi_over_diffuse"], 0.005),
+    ("HW.6 · beam: reflected over the model's diffuse, bare ground → 79", CODIT, rf"сягає \*\*{N}\*\*× розсіяного члена",
+     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["reflected_on_vertical_over_model_diffuse"]["0.2"], 0.005),
+    ("HW.6 · beam: reflected over the model's diffuse, snow → 79", CODIT, rf"ґрунтом і \*\*{N}\*\*× над снігом",
+     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["reflected_on_vertical_over_model_diffuse"]["0.7"], 0.05),
+    ("HW.6 · beam: coldest hour under the tied flange, south minus north, low → 79", CODIT,
+     rf"на \*\*\+{N}…{_NN} K\*\* на краю повного звʼязку й", FLANGE_FROST,
+     lambda d: d["beam_sun"]["coldest_hour_under_flange_south_minus_north_K"]["tied"][0], 0.005),
+    ("HW.6 · beam: coldest hour under the tied flange, south minus north, high → 79", CODIT,
+     rf"на \*\*{_NN}…\+{N} K\*\* на краю повного звʼязку й", FLANGE_FROST,
+     lambda d: d["beam_sun"]["coldest_hour_under_flange_south_minus_north_K"]["tied"][1], 0.005),
+    ("HW.6 · beam: coldest hour under the band alone, south minus north, low → 79", CODIT,
+     rf"й на \*\*\+{N}…{_NN} K\*\* під смугою самою", FLANGE_FROST,
+     lambda d: d["beam_sun"]["coldest_hour_under_flange_south_minus_north_K"]["decoupled"][0], 0.005),
+    ("HW.6 · beam: coldest hour under the band alone, south minus north, high → 79", CODIT,
+     rf"й на \*\*{_NN}…\+{N} K\*\* під смугою самою", FLANGE_FROST,
+     lambda d: d["beam_sun"]["coldest_hour_under_flange_south_minus_north_K"]["decoupled"][1], 0.005),
+    ("HW.6 · beam: south hours above 13 °C under bark, low → 79", CODIT, rf"під корою — \*\*{N}–[\d.]+\*\*, під фланцем",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "no_flange", 0), 0.6),
+    ("HW.6 · beam: south hours above 13 °C under bark, high → 79", CODIT, rf"під корою — \*\*[\d.]+–{N}\*\*, під фланцем",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "no_flange", 1), 0.6),
+    ("HW.6 · beam: south hours above 13 °C under the tied flange, low → 79", CODIT, rf"на повному звʼязку — \*\*{N}–[\d.]+\*\*, під смугою",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "flange", 0), 0.6),
+    ("HW.6 · beam: south hours above 13 °C under the tied flange, high → 79", CODIT, rf"на повному звʼязку — \*\*[\d.]+–{N}\*\*, під смугою",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "flange", 1), 0.6),
+    ("HW.6 · beam: south hours above 13 °C under the band alone, low → 79", CODIT, rf"під смугою самою — \*\*{N}–[\d.]+\*\*",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "flange", 0, "decoupled"), 0.6),
+    ("HW.6 · beam: south hours above 13 °C under the band alone, high → 79", CODIT, rf"під смугою самою — \*\*[\d.]+–{N}\*\*",
+     FLANGE_FROST, lambda d: _b79_hours(d, 180, "flange", 1, "decoupled"), 0.6),
+    ("HW.6 · beam: north hours above 13 °C under bark, low → 79", CODIT, rf"на північній — \*\*{N}–[\d.]+\*\* під корою",
+     FLANGE_FROST, lambda d: _b79_hours(d, 0, "no_flange", 0), 0.6),
+    ("HW.6 · beam: north hours above 13 °C under bark, high → 79", CODIT, rf"на північній — \*\*[\d.]+–{N}\*\* під корою",
+     FLANGE_FROST, lambda d: _b79_hours(d, 0, "no_flange", 1), 0.6),
+    ("HW.6 · beam: north hours above 13 °C under the tied flange, low → 79", CODIT, rf"під корою й \*\*{N}–[\d.]+\*\* під фланцем",
+     FLANGE_FROST, lambda d: _b79_hours(d, 0, "flange", 0), 0.6),
+    ("HW.6 · beam: north hours above 13 °C under the tied flange, high → 79", CODIT, rf"під корою й \*\*[\d.]+–{N}\*\* під фланцем",
+     FLANGE_FROST, lambda d: _b79_hours(d, 0, "flange", 1), 0.6),
+    ("HW.6 · beam: warmest winter cambium under bark, south → 79", CODIT, rf"південної грані — \*\*{N}\*\* °C під корою",
+     FLANGE_FROST, lambda d: _B79(d, 180)["winter_cambium_max_C"]["no_flange"], 0.05),
+    ("HW.6 · beam: warmest winter cambium under the tied flange, south → 79", CODIT, rf"°C під корою й \*\*{N}\*\* °C під фланцем",
+     FLANGE_FROST, lambda d: _B79(d, 180)["winter_cambium_max_C"]["flange"], 0.05),
+]
+
 # leg (3б): Os(III) relaxed from each relaxed Os(II) (21e `b3lyp-relaxed-os3`), read by 83 as `relaxed_geometry_check.adiabatic`
 PIPELINE = "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md"
 METHODS = "docs/protocols/ebfc/in_silico/paper/02_methods.md"

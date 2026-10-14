@@ -3595,6 +3595,7905 @@
       }
     ]
   },
+  "beam_sun": {
+    "method": "ERA5 DNI on a vertical trunk face at each azimuth (outward normal, clockwise from north) through the sun's position by NOAA GML's General Solar Position Calculations, averaged over the hour each radiation value averages; the stem shades the face when the sun is behind it; open field — no crown, neighbour trunk, horizon or ground-reflected light; with each real-cloud form and its diffuse",
+    "site": {
+      "lat_deg": 49.5,
+      "lon_deg": 32.0,
+      "utc_offset_h": 3.0
+    },
+    "azimuths_deg": [
+      0,
+      45,
+      90,
+      135,
+      180,
+      225,
+      270,
+      315
+    ],
+    "forms": [
+      "linear",
+      "b82"
+    ],
+    "sun_subsamples_per_hour": 12,
+    "silhouette_per_fin_area_cos_sin": {
+      "bark": [
+        1.0,
+        0.0
+      ],
+      "decoupled": [
+        0.0,
+        0.318308
+      ],
+      "tied": [
+        0.261862,
+        0.234956
+      ]
+    },
+    "sun_geometry_check": {
+      "declination_deg": [
+        -23.426,
+        23.456
+      ],
+      "equation_of_time_min": [
+        -14.26,
+        16.38
+      ],
+      "june_noon_altitude_deg": 63.955,
+      "june_noon_altitude_expected_deg": 63.94
+    },
+    "sun_clock_check_dni_share_in_sun_down_hours": {
+      "-1.0": 0.00813,
+      "-0.5": 0.000633,
+      "+0.0": 0.0,
+      "+0.5": 0.00056,
+      "+1.0": 0.01
+    },
+    "timestep_check": {
+      "largest_south_beam": {
+        "window_start": "2014-01-10T00:00",
+        "daily_min_err_K": 0.0584,
+        "daily_max_err_K": 0.133,
+        "shift_err_K": 0.0468,
+        "hours_above_deharden": {
+          "0/bark": 0,
+          "0/decoupled": 0,
+          "0/tied": 0,
+          "180/bark": 45,
+          "180/decoupled": 0,
+          "180/tied": 0
+        },
+        "hours_above_deharden_reference": {
+          "0/bark": 0,
+          "0/decoupled": 0,
+          "0/tied": 0,
+          "180/bark": 45,
+          "180/decoupled": 0,
+          "180/tied": 0
+        }
+      },
+      "warmest_winter_hour": {
+        "window_start": "2019-10-17T00:00",
+        "daily_min_err_K": 0.0772,
+        "daily_max_err_K": 0.1966,
+        "shift_err_K": 0.0449,
+        "hours_above_deharden": {
+          "0/bark": 90,
+          "0/decoupled": 19,
+          "0/tied": 66,
+          "180/bark": 371,
+          "180/decoupled": 61,
+          "180/tied": 129
+        },
+        "hours_above_deharden_reference": {
+          "0/bark": 91,
+          "0/decoupled": 19,
+          "0/tied": 66,
+          "180/bark": 371,
+          "180/decoupled": 61,
+          "180/tied": 130
+        }
+      }
+    },
+    "deharden_C": 13.0,
+    "ground_reflected_not_modelled_scale": {
+      "winter_ghi_over_diffuse": 1.711,
+      "albedo_ends_ours": [
+        0.2,
+        0.7
+      ],
+      "reflected_on_vertical_over_model_diffuse": {
+        "0.2": 0.34,
+        "0.7": 1.2
+      },
+      "south_beam_over_model_diffuse": 2.78
+    },
+    "deharden_reading": "Sakai 1968, Contr. Inst. Low Temp. Sci. B15:1, via canon 01_04 §3.1 — exposure above it is the CAUSE of winter dehardening; hours above it are counted, never priced as a dose",
+    "winter_months": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "years": 30,
+    "median_shift_minus_diffuse_only_K": [
+      -0.01,
+      2.06
+    ],
+    "flange_never_above_bark_in_hours": true,
+    "coldest_hour_under_flange_south_minus_north_K": {
+      "decoupled": [
+        0.42,
+        1.16
+      ],
+      "tied": [
+        0.32,
+        1.7
+      ]
+    },
+    "month_cells_flange_above_bark": [
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 165,
+        "flange": 175
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 189,
+        "flange": 203
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 178,
+        "flange": 183
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 196,
+        "flange": 209
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 179,
+        "flange": 184
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "month": "11",
+        "no_flange": 199,
+        "flange": 213
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "month": "11",
+        "no_flange": 131,
+        "flange": 142
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "month": "11",
+        "no_flange": 137,
+        "flange": 144
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "month": "11",
+        "no_flange": 138,
+        "flange": 147
+      }
+    ],
+    "by_azimuth": {
+      "0": {
+        "decoupled": {
+          "median_K_range": [
+            -1.26,
+            0.21
+          ],
+          "p95_K_max": 1.23,
+          "max_K": 2.17,
+          "colder_share_range": [
+            0.004,
+            0.572
+          ],
+          "cold_days_colder_share_range": [
+            0.0,
+            0.346
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              5.7,
+              27.7
+            ],
+            "flange": [
+              1.0,
+              9.6
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 20.82,
+            "flange": 16.94
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.75,
+            1.21
+          ],
+          "p95_K_max": 2.68,
+          "max_K": 4.68,
+          "colder_share_range": [
+            0.105,
+            0.888
+          ],
+          "cold_days_colder_share_range": [
+            0.088,
+            0.877
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              5.7,
+              27.7
+            ],
+            "flange": [
+              4.6,
+              20.8
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 20.82,
+            "flange": 19.85
+          }
+        }
+      },
+      "45": {
+        "decoupled": {
+          "median_K_range": [
+            -1.22,
+            0.25
+          ],
+          "p95_K_max": 1.3,
+          "max_K": 2.25,
+          "colder_share_range": [
+            0.008,
+            0.592
+          ],
+          "cold_days_colder_share_range": [
+            0.0,
+            0.356
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              9.0,
+              42.3
+            ],
+            "flange": [
+              1.3,
+              10.8
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 21.93,
+            "flange": 17.37
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.72,
+            1.25
+          ],
+          "p95_K_max": 2.78,
+          "max_K": 4.7,
+          "colder_share_range": [
+            0.132,
+            0.892
+          ],
+          "cold_days_colder_share_range": [
+            0.085,
+            0.878
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              9.0,
+              42.3
+            ],
+            "flange": [
+              5.2,
+              25.4
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 21.93,
+            "flange": 20.24
+          }
+        }
+      },
+      "90": {
+        "decoupled": {
+          "median_K_range": [
+            -0.91,
+            0.62
+          ],
+          "p95_K_max": 2.03,
+          "max_K": 3.78,
+          "colder_share_range": [
+            0.094,
+            0.807
+          ],
+          "cold_days_colder_share_range": [
+            0.027,
+            0.634
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              70.8,
+              167.2
+            ],
+            "flange": [
+              3.5,
+              17.5
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 31.09,
+            "flange": 18.02
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.32,
+            1.67
+          ],
+          "p95_K_max": 3.61,
+          "max_K": 5.9,
+          "colder_share_range": [
+            0.33,
+            0.952
+          ],
+          "cold_days_colder_share_range": [
+            0.309,
+            0.983
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              70.8,
+              167.2
+            ],
+            "flange": [
+              9.2,
+              46.4
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 31.09,
+            "flange": 22.38
+          }
+        }
+      },
+      "135": {
+        "decoupled": {
+          "median_K_range": [
+            -0.25,
+            1.61
+          ],
+          "p95_K_max": 3.93,
+          "max_K": 6.54,
+          "colder_share_range": [
+            0.387,
+            0.975
+          ],
+          "cold_days_colder_share_range": [
+            0.406,
+            0.981
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              199.4,
+              361.0
+            ],
+            "flange": [
+              6.6,
+              27.3
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 38.2,
+            "flange": 19.65
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            0.47,
+            2.55
+          ],
+          "p95_K_max": 5.23,
+          "max_K": 7.69,
+          "colder_share_range": [
+            0.643,
+            0.992
+          ],
+          "cold_days_colder_share_range": [
+            0.763,
+            1.0
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              199.4,
+              361.0
+            ],
+            "flange": [
+              16.0,
+              79.0
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 38.2,
+            "flange": 24.94
+          }
+        }
+      },
+      "180": {
+        "decoupled": {
+          "median_K_range": [
+            0.15,
+            2.22
+          ],
+          "p95_K_max": 5.77,
+          "max_K": 8.57,
+          "colder_share_range": [
+            0.537,
+            0.989
+          ],
+          "cold_days_colder_share_range": [
+            0.57,
+            1.0
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              293.7,
+              475.2
+            ],
+            "flange": [
+              8.5,
+              35.6
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 40.31,
+            "flange": 20.43
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            0.85,
+            3.02
+          ],
+          "p95_K_max": 6.6,
+          "max_K": 9.97,
+          "colder_share_range": [
+            0.732,
+            0.999
+          ],
+          "cold_days_colder_share_range": [
+            0.864,
+            1.0
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              293.7,
+              475.2
+            ],
+            "flange": [
+              21.9,
+              102.1
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 40.31,
+            "flange": 26.32
+          }
+        }
+      },
+      "225": {
+        "decoupled": {
+          "median_K_range": [
+            -0.13,
+            1.74
+          ],
+          "p95_K_max": 4.25,
+          "max_K": 7.67,
+          "colder_share_range": [
+            0.438,
+            0.977
+          ],
+          "cold_days_colder_share_range": [
+            0.496,
+            0.99
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              198.9,
+              350.2
+            ],
+            "flange": [
+              6.2,
+              27.0
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 39.7,
+            "flange": 19.38
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            0.58,
+            2.67
+          ],
+          "p95_K_max": 5.72,
+          "max_K": 9.47,
+          "colder_share_range": [
+            0.67,
+            0.994
+          ],
+          "cold_days_colder_share_range": [
+            0.809,
+            1.0
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              198.9,
+              350.2
+            ],
+            "flange": [
+              17.5,
+              84.6
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 39.7,
+            "flange": 25.74
+          }
+        }
+      },
+      "270": {
+        "decoupled": {
+          "median_K_range": [
+            -0.8,
+            0.74
+          ],
+          "p95_K_max": 2.26,
+          "max_K": 4.2,
+          "colder_share_range": [
+            0.136,
+            0.866
+          ],
+          "cold_days_colder_share_range": [
+            0.066,
+            0.743
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              71.1,
+              164.8
+            ],
+            "flange": [
+              4.3,
+              20.0
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 34.33,
+            "flange": 18.96
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.2,
+            1.8
+          ],
+          "p95_K_max": 3.97,
+          "max_K": 6.89,
+          "colder_share_range": [
+            0.374,
+            0.963
+          ],
+          "cold_days_colder_share_range": [
+            0.396,
+            0.986
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              71.1,
+              164.8
+            ],
+            "flange": [
+              11.9,
+              56.5
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 34.33,
+            "flange": 24.43
+          }
+        }
+      },
+      "315": {
+        "decoupled": {
+          "median_K_range": [
+            -1.21,
+            0.26
+          ],
+          "p95_K_max": 1.33,
+          "max_K": 2.31,
+          "colder_share_range": [
+            0.011,
+            0.603
+          ],
+          "cold_days_colder_share_range": [
+            0.0,
+            0.365
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              11.5,
+              48.7
+            ],
+            "flange": [
+              1.7,
+              12.3
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 23.72,
+            "flange": 17.87
+          }
+        },
+        "tied": {
+          "median_K_range": [
+            -0.72,
+            1.26
+          ],
+          "p95_K_max": 2.87,
+          "max_K": 4.79,
+          "colder_share_range": [
+            0.144,
+            0.891
+          ],
+          "cold_days_colder_share_range": [
+            0.088,
+            0.88
+          ],
+          "winter_hours_above_deharden_per_year": {
+            "no_flange": [
+              11.5,
+              48.7
+            ],
+            "flange": [
+              6.2,
+              31.0
+            ]
+          },
+          "winter_cambium_max_C": {
+            "no_flange": 23.72,
+            "flange": 21.88
+          }
+        }
+      }
+    },
+    "runs": [
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2671,
+          "median": -0.12,
+          "p95": 0.9,
+          "max": 1.76,
+          "min": -2.29
+        },
+        "colder_share": 0.38,
+        "warmer_share": 0.546,
+        "cold_days": {
+          "days": 447,
+          "median": -0.72,
+          "colder_share": 0.201
+        },
+        "cambium_min_C": {
+          "no_flange": -27.74,
+          "flange": -26.31
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 832,
+          "flange": 243
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 317,
+            "flange": 157
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 513,
+            "flange": 86
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.82,
+          "flange": 16.59
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2671,
+          "median": 1.21,
+          "p95": 2.68,
+          "max": 4.68,
+          "min": -2.83
+        },
+        "colder_share": 0.888,
+        "warmer_share": 0.094,
+        "cold_days": {
+          "days": 447,
+          "median": 1.5,
+          "colder_share": 0.861
+        },
+        "cambium_min_C": {
+          "no_flange": -27.74,
+          "flange": -29.53
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 832,
+          "flange": 625
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 317,
+            "flange": 282
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 513,
+            "flange": 343
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.82,
+          "flange": 19.85
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2694,
+          "median": 0.03,
+          "p95": 1.01,
+          "max": 1.91,
+          "min": -2.98
+        },
+        "colder_share": 0.49,
+        "warmer_share": 0.47,
+        "cold_days": {
+          "days": 455,
+          "median": -0.7,
+          "colder_share": 0.321
+        },
+        "cambium_min_C": {
+          "no_flange": -27.49,
+          "flange": -26.06
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 756,
+          "flange": 288
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 317,
+            "flange": 191
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 439,
+            "flange": 97
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.66,
+          "flange": 16.94
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2694,
+          "median": 0.6,
+          "p95": 2.12,
+          "max": 4.45,
+          "min": -3.46
+        },
+        "colder_share": 0.7,
+        "warmer_share": 0.268,
+        "cold_days": {
+          "days": 455,
+          "median": 0.53,
+          "colder_share": 0.637
+        },
+        "cambium_min_C": {
+          "no_flange": -27.49,
+          "flange": -27.8
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 756,
+          "flange": 503
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 317,
+            "flange": 253
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 439,
+            "flange": 250
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.66,
+          "flange": 18.4
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2613,
+          "median": -0.12,
+          "p95": 0.9,
+          "max": 1.76,
+          "min": -2.32
+        },
+        "colder_share": 0.378,
+        "warmer_share": 0.546,
+        "cold_days": {
+          "days": 445,
+          "median": -0.75,
+          "colder_share": 0.184
+        },
+        "cambium_min_C": {
+          "no_flange": -27.65,
+          "flange": -26.18
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1270,
+          "flange": 319
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 337,
+            "flange": 170
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 930,
+            "flange": 149
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.93,
+          "flange": 17.37
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2613,
+          "median": 1.25,
+          "p95": 2.78,
+          "max": 4.7,
+          "min": -2.84
+        },
+        "colder_share": 0.892,
+        "warmer_share": 0.092,
+        "cold_days": {
+          "days": 445,
+          "median": 1.49,
+          "colder_share": 0.865
+        },
+        "cambium_min_C": {
+          "no_flange": -27.65,
+          "flange": -29.51
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1270,
+          "flange": 761
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 337,
+            "flange": 300
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 930,
+            "flange": 461
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.93,
+          "flange": 20.24
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2641,
+          "median": 0.06,
+          "p95": 1.07,
+          "max": 1.91,
+          "min": -3.0
+        },
+        "colder_share": 0.501,
+        "warmer_share": 0.456,
+        "cold_days": {
+          "days": 450,
+          "median": -0.68,
+          "colder_share": 0.318
+        },
+        "cambium_min_C": {
+          "no_flange": -27.42,
+          "flange": -26.01
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1133,
+          "flange": 325
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 330,
+            "flange": 196
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 801,
+            "flange": 129
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.77,
+          "flange": 17.0
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2641,
+          "median": 0.65,
+          "p95": 2.2,
+          "max": 4.47,
+          "min": -3.46
+        },
+        "colder_share": 0.724,
+        "warmer_share": 0.25,
+        "cold_days": {
+          "days": 450,
+          "median": 0.54,
+          "colder_share": 0.644
+        },
+        "cambium_min_C": {
+          "no_flange": -27.42,
+          "flange": -27.8
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1133,
+          "flange": 559
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 330,
+            "flange": 266
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 801,
+            "flange": 293
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.77,
+          "flange": 18.64
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2365,
+          "median": 0.18,
+          "p95": 1.5,
+          "max": 3.28,
+          "min": -2.08
+        },
+        "colder_share": 0.595,
+        "warmer_share": 0.34,
+        "cold_days": {
+          "days": 382,
+          "median": -0.25,
+          "colder_share": 0.372
+        },
+        "cambium_min_C": {
+          "no_flange": -26.01,
+          "flange": -25.46
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5015,
+          "flange": 526
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 818,
+            "flange": 247
+          },
+          "12": {
+            "no_flange": 11,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 206,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 3976,
+            "flange": 279
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.09,
+          "flange": 18.02
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2365,
+          "median": 1.67,
+          "p95": 3.61,
+          "max": 5.9,
+          "min": -2.16
+        },
+        "colder_share": 0.952,
+        "warmer_share": 0.042,
+        "cold_days": {
+          "days": 382,
+          "median": 2.23,
+          "colder_share": 0.982
+        },
+        "cambium_min_C": {
+          "no_flange": -26.01,
+          "flange": -29.23
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5015,
+          "flange": 1391
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 818,
+            "flange": 430
+          },
+          "12": {
+            "no_flange": 11,
+            "flange": 7
+          },
+          "1": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 206,
+            "flange": 12
+          },
+          "3": {
+            "no_flange": 3976,
+            "flange": 942
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.09,
+          "flange": 22.38
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2401,
+          "median": 0.44,
+          "p95": 1.67,
+          "max": 3.17,
+          "min": -1.95
+        },
+        "colder_share": 0.695,
+        "warmer_share": 0.277,
+        "cold_days": {
+          "days": 391,
+          "median": 0.09,
+          "colder_share": 0.506
+        },
+        "cambium_min_C": {
+          "no_flange": -26.08,
+          "flange": -25.73
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4635,
+          "flange": 443
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 753,
+            "flange": 240
+          },
+          "12": {
+            "no_flange": 9,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 182,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 3689,
+            "flange": 203
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 30.97,
+          "flange": 17.58
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2401,
+          "median": 1.1,
+          "p95": 2.87,
+          "max": 4.91,
+          "min": -2.27
+        },
+        "colder_share": 0.868,
+        "warmer_share": 0.112,
+        "cold_days": {
+          "days": 391,
+          "median": 1.25,
+          "colder_share": 0.824
+        },
+        "cambium_min_C": {
+          "no_flange": -26.08,
+          "flange": -27.67
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4635,
+          "flange": 871
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 753,
+            "flange": 343
+          },
+          "12": {
+            "no_flange": 9,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 2,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 182,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 3689,
+            "flange": 528
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 30.97,
+          "flange": 19.41
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2020,
+          "median": 0.9,
+          "p95": 3.24,
+          "max": 6.29,
+          "min": -1.46
+        },
+        "colder_share": 0.871,
+        "warmer_share": 0.102,
+        "cold_days": {
+          "days": 287,
+          "median": 0.99,
+          "colder_share": 0.801
+        },
+        "cambium_min_C": {
+          "no_flange": -23.57,
+          "flange": -25.01
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10830,
+          "flange": 819
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2199,
+            "flange": 312
+          },
+          "12": {
+            "no_flange": 324,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 366,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1374,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 6567,
+            "flange": 507
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.2,
+          "flange": 19.65
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2020,
+          "median": 2.55,
+          "p95": 5.23,
+          "max": 7.69,
+          "min": -0.99
+        },
+        "colder_share": 0.981,
+        "warmer_share": 0.015,
+        "cold_days": {
+          "days": 287,
+          "median": 3.61,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -23.57,
+          "flange": -28.86
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10830,
+          "flange": 2371
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2199,
+            "flange": 615
+          },
+          "12": {
+            "no_flange": 324,
+            "flange": 19
+          },
+          "1": {
+            "no_flange": 366,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1374,
+            "flange": 70
+          },
+          "3": {
+            "no_flange": 6567,
+            "flange": 1667
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.2,
+          "flange": 24.94
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2095,
+          "median": 1.14,
+          "p95": 3.2,
+          "max": 6.16,
+          "min": -1.21
+        },
+        "colder_share": 0.921,
+        "warmer_share": 0.071,
+        "cold_days": {
+          "days": 298,
+          "median": 1.29,
+          "colder_share": 0.889
+        },
+        "cambium_min_C": {
+          "no_flange": -23.87,
+          "flange": -25.54
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10220,
+          "flange": 611
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2067,
+            "flange": 286
+          },
+          "12": {
+            "no_flange": 305,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 327,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1284,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 6237,
+            "flange": 325
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.05,
+          "flange": 18.87
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2095,
+          "median": 1.96,
+          "p95": 4.22,
+          "max": 6.52,
+          "min": -1.12
+        },
+        "colder_share": 0.964,
+        "warmer_share": 0.028,
+        "cold_days": {
+          "days": 298,
+          "median": 2.49,
+          "colder_share": 0.997
+        },
+        "cambium_min_C": {
+          "no_flange": -23.87,
+          "flange": -27.5
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10220,
+          "flange": 1298
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2067,
+            "flange": 432
+          },
+          "12": {
+            "no_flange": 305,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 327,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1284,
+            "flange": 9
+          },
+          "3": {
+            "no_flange": 6237,
+            "flange": 853
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.05,
+          "flange": 21.52
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1819,
+          "median": 1.39,
+          "p95": 4.71,
+          "max": 7.8,
+          "min": -1.41
+        },
+        "colder_share": 0.928,
+        "warmer_share": 0.055,
+        "cold_days": {
+          "days": 214,
+          "median": 1.64,
+          "colder_share": 0.883
+        },
+        "cambium_min_C": {
+          "no_flange": -22.13,
+          "flange": -25.22
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 14255,
+          "flange": 1067
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 3144,
+            "flange": 297
+          },
+          "12": {
+            "no_flange": 697,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 773,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2156,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 7485,
+            "flange": 770
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 40.31,
+          "flange": 20.43
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1819,
+          "median": 3.02,
+          "p95": 6.6,
+          "max": 9.97,
+          "min": -0.71
+        },
+        "colder_share": 0.992,
+        "warmer_share": 0.005,
+        "cold_days": {
+          "days": 214,
+          "median": 4.46,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -22.13,
+          "flange": -28.8
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 14255,
+          "flange": 3064
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 3144,
+            "flange": 703
+          },
+          "12": {
+            "no_flange": 697,
+            "flange": 21
+          },
+          "1": {
+            "no_flange": 773,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2156,
+            "flange": 116
+          },
+          "3": {
+            "no_flange": 7485,
+            "flange": 2224
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 40.31,
+          "flange": 26.32
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1889,
+          "median": 1.62,
+          "p95": 4.57,
+          "max": 7.75,
+          "min": -1.14
+        },
+        "colder_share": 0.954,
+        "warmer_share": 0.038,
+        "cold_days": {
+          "days": 233,
+          "median": 2.17,
+          "colder_share": 0.936
+        },
+        "cambium_min_C": {
+          "no_flange": -22.48,
+          "flange": -25.64
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 13552,
+          "flange": 713
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2975,
+            "flange": 276
+          },
+          "12": {
+            "no_flange": 664,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 707,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2066,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 7140,
+            "flange": 437
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 40.17,
+          "flange": 18.62
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1889,
+          "median": 2.44,
+          "p95": 5.41,
+          "max": 9.04,
+          "min": -0.72
+        },
+        "colder_share": 0.98,
+        "warmer_share": 0.013,
+        "cold_days": {
+          "days": 233,
+          "median": 3.32,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -22.48,
+          "flange": -27.47
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 13552,
+          "flange": 1607
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2975,
+            "flange": 463
+          },
+          "12": {
+            "no_flange": 664,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 707,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 2066,
+            "flange": 17
+          },
+          "3": {
+            "no_flange": 7140,
+            "flange": 1123
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 40.17,
+          "flange": 22.18
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1949,
+          "median": 1.07,
+          "p95": 3.7,
+          "max": 7.67,
+          "min": -1.53
+        },
+        "colder_share": 0.891,
+        "warmer_share": 0.082,
+        "cold_days": {
+          "days": 263,
+          "median": 1.26,
+          "colder_share": 0.825
+        },
+        "cambium_min_C": {
+          "no_flange": -23.2,
+          "flange": -25.08
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10505,
+          "flange": 809
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2293,
+            "flange": 302
+          },
+          "12": {
+            "no_flange": 357,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 411,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1412,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 6032,
+            "flange": 507
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.7,
+          "flange": 19.38
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 1949,
+          "median": 2.67,
+          "p95": 5.72,
+          "max": 9.47,
+          "min": -0.99
+        },
+        "colder_share": 0.986,
+        "warmer_share": 0.012,
+        "cold_days": {
+          "days": 263,
+          "median": 3.81,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -23.2,
+          "flange": -28.85
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10505,
+          "flange": 2539
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2293,
+            "flange": 644
+          },
+          "12": {
+            "no_flange": 357,
+            "flange": 19
+          },
+          "1": {
+            "no_flange": 411,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1412,
+            "flange": 81
+          },
+          "3": {
+            "no_flange": 6032,
+            "flange": 1795
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.7,
+          "flange": 25.74
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2013,
+          "median": 1.3,
+          "p95": 3.65,
+          "max": 7.43,
+          "min": -1.29
+        },
+        "colder_share": 0.925,
+        "warmer_share": 0.065,
+        "cold_days": {
+          "days": 281,
+          "median": 1.53,
+          "colder_share": 0.925
+        },
+        "cambium_min_C": {
+          "no_flange": -23.53,
+          "flange": -25.58
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 9895,
+          "flange": 609
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2138,
+            "flange": 284
+          },
+          "12": {
+            "no_flange": 344,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 372,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1332,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5709,
+            "flange": 325
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.65,
+          "flange": 18.28
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2013,
+          "median": 2.1,
+          "p95": 4.71,
+          "max": 8.46,
+          "min": -1.14
+        },
+        "colder_share": 0.97,
+        "warmer_share": 0.025,
+        "cold_days": {
+          "days": 281,
+          "median": 2.86,
+          "colder_share": 0.996
+        },
+        "cambium_min_C": {
+          "no_flange": -23.53,
+          "flange": -27.49
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 9895,
+          "flange": 1410
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2138,
+            "flange": 437
+          },
+          "12": {
+            "no_flange": 344,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 372,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1332,
+            "flange": 10
+          },
+          "3": {
+            "no_flange": 5709,
+            "flange": 959
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.65,
+          "flange": 21.53
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2275,
+          "median": 0.31,
+          "p95": 1.74,
+          "max": 4.2,
+          "min": -1.82
+        },
+        "colder_share": 0.674,
+        "warmer_share": 0.263,
+        "cold_days": {
+          "days": 356,
+          "median": 0.0,
+          "colder_share": 0.483
+        },
+        "cambium_min_C": {
+          "no_flange": -25.66,
+          "flange": -25.36
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4945,
+          "flange": 601
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 946,
+            "flange": 270
+          },
+          "12": {
+            "no_flange": 17,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 9,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 355,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 3618,
+            "flange": 331
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.33,
+          "flange": 18.96
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2275,
+          "median": 1.8,
+          "p95": 3.97,
+          "max": 6.89,
+          "min": -2.04
+        },
+        "colder_share": 0.956,
+        "warmer_share": 0.038,
+        "cold_days": {
+          "days": 356,
+          "median": 2.43,
+          "colder_share": 0.983
+        },
+        "cambium_min_C": {
+          "no_flange": -25.66,
+          "flange": -29.14
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4945,
+          "flange": 1694
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 946,
+            "flange": 467
+          },
+          "12": {
+            "no_flange": 17,
+            "flange": 8
+          },
+          "1": {
+            "no_flange": 9,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 355,
+            "flange": 36
+          },
+          "3": {
+            "no_flange": 3618,
+            "flange": 1183
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.33,
+          "flange": 24.43
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2320,
+          "median": 0.55,
+          "p95": 1.97,
+          "max": 3.89,
+          "min": -1.76
+        },
+        "colder_share": 0.762,
+        "warmer_share": 0.209,
+        "cold_days": {
+          "days": 364,
+          "median": 0.29,
+          "colder_share": 0.602
+        },
+        "cambium_min_C": {
+          "no_flange": -25.82,
+          "flange": -25.68
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4573,
+          "flange": 525
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 869,
+            "flange": 269
+          },
+          "12": {
+            "no_flange": 15,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 6,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 332,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 3351,
+            "flange": 256
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.27,
+          "flange": 18.55
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2320,
+          "median": 1.25,
+          "p95": 3.17,
+          "max": 5.77,
+          "min": -2.37
+        },
+        "colder_share": 0.897,
+        "warmer_share": 0.085,
+        "cold_days": {
+          "days": 364,
+          "median": 1.46,
+          "colder_share": 0.887
+        },
+        "cambium_min_C": {
+          "no_flange": -25.82,
+          "flange": -27.63
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 4573,
+          "flange": 1051
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 869,
+            "flange": 360
+          },
+          "12": {
+            "no_flange": 15,
+            "flange": 3
+          },
+          "1": {
+            "no_flange": 6,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 332,
+            "flange": 3
+          },
+          "3": {
+            "no_flange": 3351,
+            "flange": 685
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.27,
+          "flange": 20.86
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2588,
+          "median": -0.1,
+          "p95": 0.94,
+          "max": 1.77,
+          "min": -2.31
+        },
+        "colder_share": 0.387,
+        "warmer_share": 0.537,
+        "cold_days": {
+          "days": 443,
+          "median": -0.76,
+          "colder_share": 0.185
+        },
+        "cambium_min_C": {
+          "no_flange": -27.66,
+          "flange": -26.16
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1460,
+          "flange": 343
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 339,
+            "flange": 173
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1118,
+            "flange": 170
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 23.72,
+          "flange": 17.87
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2588,
+          "median": 1.26,
+          "p95": 2.87,
+          "max": 4.79,
+          "min": -2.84
+        },
+        "colder_share": 0.891,
+        "warmer_share": 0.093,
+        "cold_days": {
+          "days": 443,
+          "median": 1.53,
+          "colder_share": 0.865
+        },
+        "cambium_min_C": {
+          "no_flange": -27.66,
+          "flange": -29.51
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1460,
+          "flange": 929
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 339,
+            "flange": 310
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1118,
+            "flange": 619
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 23.72,
+          "flange": 21.88
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2608,
+          "median": 0.1,
+          "p95": 1.08,
+          "max": 1.98,
+          "min": -2.99
+        },
+        "colder_share": 0.518,
+        "warmer_share": 0.442,
+        "cold_days": {
+          "days": 449,
+          "median": -0.66,
+          "colder_share": 0.33
+        },
+        "cambium_min_C": {
+          "no_flange": -27.44,
+          "flange": -26.0
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1315,
+          "flange": 369
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 330,
+            "flange": 199
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 984,
+            "flange": 170
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 23.16,
+          "flange": 17.34
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2608,
+          "median": 0.68,
+          "p95": 2.23,
+          "max": 4.5,
+          "min": -3.46
+        },
+        "colder_share": 0.727,
+        "warmer_share": 0.243,
+        "cold_days": {
+          "days": 449,
+          "median": 0.57,
+          "colder_share": 0.648
+        },
+        "cambium_min_C": {
+          "no_flange": -27.44,
+          "flange": -27.79
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 1315,
+          "flange": 676
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 330,
+            "flange": 267
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 984,
+            "flange": 409
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 23.16,
+          "flange": 19.33
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3651,
+          "median": -0.51,
+          "p95": 0.36,
+          "max": 1.27,
+          "min": -2.65
+        },
+        "colder_share": 0.13,
+        "warmer_share": 0.824,
+        "cold_days": {
+          "days": 778,
+          "median": -0.9,
+          "colder_share": 0.059
+        },
+        "cambium_min_C": {
+          "no_flange": -30.35,
+          "flange": -28.78
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 330,
+          "flange": 88
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 165,
+            "flange": 71
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 165,
+            "flange": 17
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.79,
+          "flange": 15.38
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3651,
+          "median": 0.55,
+          "p95": 1.91,
+          "max": 4.01,
+          "min": -2.98
+        },
+        "colder_share": 0.757,
+        "warmer_share": 0.207,
+        "cold_days": {
+          "days": 778,
+          "median": 0.75,
+          "colder_share": 0.758
+        },
+        "cambium_min_C": {
+          "no_flange": -30.35,
+          "flange": -31.13
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 330,
+          "flange": 316
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 165,
+            "flange": 175
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 165,
+            "flange": 141
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.79,
+          "flange": 18.06
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3563,
+          "median": -1.26,
+          "p95": -0.48,
+          "max": 0.51,
+          "min": -3.2
+        },
+        "colder_share": 0.004,
+        "warmer_share": 0.994,
+        "cold_days": {
+          "days": 736,
+          "median": -1.74,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -29.84,
+          "flange": -27.08
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 354,
+          "flange": 209
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 189,
+            "flange": 155
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 165,
+            "flange": 54
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.71,
+          "flange": 16.55
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3563,
+          "median": -0.62,
+          "p95": 0.59,
+          "max": 2.54,
+          "min": -4.23
+        },
+        "colder_share": 0.188,
+        "warmer_share": 0.774,
+        "cold_days": {
+          "days": 736,
+          "median": -0.78,
+          "colder_share": 0.192
+        },
+        "cambium_min_C": {
+          "no_flange": -29.84,
+          "flange": -28.91
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 354,
+          "flange": 347
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 189,
+            "flange": 203
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 165,
+            "flange": 144
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.71,
+          "flange": 17.53
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3582,
+          "median": -0.5,
+          "p95": 0.37,
+          "max": 1.27,
+          "min": -2.72
+        },
+        "colder_share": 0.134,
+        "warmer_share": 0.818,
+        "cold_days": {
+          "days": 766,
+          "median": -0.93,
+          "colder_share": 0.057
+        },
+        "cambium_min_C": {
+          "no_flange": -30.28,
+          "flange": -28.67
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 534,
+          "flange": 122
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 178,
+            "flange": 80
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 356,
+            "flange": 42
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.99,
+          "flange": 15.57
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3582,
+          "median": 0.58,
+          "p95": 2.04,
+          "max": 4.03,
+          "min": -2.98
+        },
+        "colder_share": 0.763,
+        "warmer_share": 0.203,
+        "cold_days": {
+          "days": 766,
+          "median": 0.74,
+          "colder_share": 0.762
+        },
+        "cambium_min_C": {
+          "no_flange": -30.28,
+          "flange": -31.12
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 534,
+          "flange": 383
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 178,
+            "flange": 183
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 356,
+            "flange": 200
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.99,
+          "flange": 18.47
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3511,
+          "median": -1.22,
+          "p95": -0.38,
+          "max": 0.58,
+          "min": -3.26
+        },
+        "colder_share": 0.008,
+        "warmer_share": 0.988,
+        "cold_days": {
+          "days": 726,
+          "median": -1.73,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -29.77,
+          "flange": -27.03
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 530,
+          "flange": 224
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 196,
+            "flange": 160
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 334,
+            "flange": 64
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.85,
+          "flange": 16.62
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3511,
+          "median": -0.58,
+          "p95": 0.71,
+          "max": 2.56,
+          "min": -4.23
+        },
+        "colder_share": 0.211,
+        "warmer_share": 0.752,
+        "cold_days": {
+          "days": 726,
+          "median": -0.78,
+          "colder_share": 0.198
+        },
+        "cambium_min_C": {
+          "no_flange": -29.77,
+          "flange": -28.9
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 530,
+          "flange": 390
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 196,
+            "flange": 209
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 334,
+            "flange": 181
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.85,
+          "flange": 17.57
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3331,
+          "median": -0.2,
+          "p95": 1.1,
+          "max": 3.09,
+          "min": -2.3
+        },
+        "colder_share": 0.329,
+        "warmer_share": 0.613,
+        "cold_days": {
+          "days": 695,
+          "median": -0.55,
+          "colder_share": 0.199
+        },
+        "cambium_min_C": {
+          "no_flange": -28.66,
+          "flange": -27.99
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3272,
+          "flange": 234
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 487,
+            "flange": 145
+          },
+          "12": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 97,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2684,
+            "flange": 89
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 29.94,
+          "flange": 16.97
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3331,
+          "median": 0.93,
+          "p95": 2.88,
+          "max": 5.08,
+          "min": -2.49
+        },
+        "colder_share": 0.863,
+        "warmer_share": 0.114,
+        "cold_days": {
+          "days": 695,
+          "median": 1.28,
+          "colder_share": 0.904
+        },
+        "cambium_min_C": {
+          "no_flange": -28.66,
+          "flange": -30.84
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3272,
+          "flange": 837
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 487,
+            "flange": 283
+          },
+          "12": {
+            "no_flange": 3,
+            "flange": 1
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 97,
+            "flange": 1
+          },
+          "3": {
+            "no_flange": 2684,
+            "flange": 552
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 29.94,
+          "flange": 21.06
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3256,
+          "median": -0.91,
+          "p95": 0.39,
+          "max": 1.89,
+          "min": -2.4
+        },
+        "colder_share": 0.094,
+        "warmer_share": 0.885,
+        "cold_days": {
+          "days": 665,
+          "median": -1.23,
+          "colder_share": 0.027
+        },
+        "cambium_min_C": {
+          "no_flange": -28.43,
+          "flange": -26.75
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3150,
+          "flange": 291
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 480,
+            "flange": 192
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 93,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2572,
+            "flange": 99
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 29.89,
+          "flange": 17.21
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3256,
+          "median": -0.23,
+          "p95": 1.49,
+          "max": 3.53,
+          "min": -3.55
+        },
+        "colder_share": 0.375,
+        "warmer_share": 0.582,
+        "cold_days": {
+          "days": 665,
+          "median": -0.2,
+          "colder_share": 0.37
+        },
+        "cambium_min_C": {
+          "no_flange": -28.43,
+          "flange": -28.78
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3150,
+          "flange": 624
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 480,
+            "flange": 265
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 93,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2572,
+            "flange": 359
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 29.89,
+          "flange": 18.55
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3003,
+          "median": 0.43,
+          "p95": 2.77,
+          "max": 5.86,
+          "min": -2.16
+        },
+        "colder_share": 0.675,
+        "warmer_share": 0.274,
+        "cold_days": {
+          "days": 564,
+          "median": 0.36,
+          "colder_share": 0.629
+        },
+        "cambium_min_C": {
+          "no_flange": -26.35,
+          "flange": -27.54
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8080,
+          "flange": 391
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1566,
+            "flange": 182
+          },
+          "12": {
+            "no_flange": 206,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 212,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 946,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5150,
+            "flange": 209
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 37.05,
+          "flange": 18.38
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3003,
+          "median": 1.64,
+          "p95": 4.32,
+          "max": 6.99,
+          "min": -1.75
+        },
+        "colder_share": 0.935,
+        "warmer_share": 0.051,
+        "cold_days": {
+          "days": 564,
+          "median": 2.31,
+          "colder_share": 0.979
+        },
+        "cambium_min_C": {
+          "no_flange": -26.35,
+          "flange": -30.48
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8080,
+          "flange": 1558
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1566,
+            "flange": 414
+          },
+          "12": {
+            "no_flange": 206,
+            "flange": 7
+          },
+          "1": {
+            "no_flange": 212,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 946,
+            "flange": 36
+          },
+          "3": {
+            "no_flange": 5150,
+            "flange": 1101
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 37.05,
+          "flange": 23.57
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2948,
+          "median": -0.25,
+          "p95": 1.93,
+          "max": 5.01,
+          "min": -2.02
+        },
+        "colder_share": 0.387,
+        "warmer_share": 0.575,
+        "cold_days": {
+          "days": 545,
+          "median": -0.21,
+          "colder_share": 0.406
+        },
+        "cambium_min_C": {
+          "no_flange": -26.23,
+          "flange": -26.56
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7796,
+          "flange": 424
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1524,
+            "flange": 224
+          },
+          "12": {
+            "no_flange": 205,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 205,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 918,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4944,
+            "flange": 200
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 36.92,
+          "flange": 18.46
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2948,
+          "median": 0.47,
+          "p95": 2.85,
+          "max": 5.32,
+          "min": -2.66
+        },
+        "colder_share": 0.643,
+        "warmer_share": 0.321,
+        "cold_days": {
+          "days": 545,
+          "median": 0.92,
+          "colder_share": 0.763
+        },
+        "cambium_min_C": {
+          "no_flange": -26.23,
+          "flange": -28.62
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7796,
+          "flange": 988
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1524,
+            "flange": 342
+          },
+          "12": {
+            "no_flange": 205,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 205,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 918,
+            "flange": 3
+          },
+          "3": {
+            "no_flange": 4944,
+            "flange": 639
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 36.92,
+          "flange": 20.52
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2781,
+          "median": 0.88,
+          "p95": 4.1,
+          "max": 8.43,
+          "min": -1.6
+        },
+        "colder_share": 0.797,
+        "warmer_share": 0.167,
+        "cold_days": {
+          "days": 493,
+          "median": 1.04,
+          "colder_share": 0.759
+        },
+        "cambium_min_C": {
+          "no_flange": -24.88,
+          "flange": -27.76
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 11159,
+          "flange": 535
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2339,
+            "flange": 164
+          },
+          "12": {
+            "no_flange": 490,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 539,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1670,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 6121,
+            "flange": 371
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.59,
+          "flange": 18.84
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2781,
+          "median": 2.03,
+          "p95": 5.57,
+          "max": 8.67,
+          "min": -1.45
+        },
+        "colder_share": 0.956,
+        "warmer_share": 0.036,
+        "cold_days": {
+          "days": 493,
+          "median": 2.89,
+          "colder_share": 0.984
+        },
+        "cambium_min_C": {
+          "no_flange": -24.88,
+          "flange": -30.43
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 11159,
+          "flange": 2093
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2339,
+            "flange": 482
+          },
+          "12": {
+            "no_flange": 490,
+            "flange": 8
+          },
+          "1": {
+            "no_flange": 539,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1670,
+            "flange": 61
+          },
+          "3": {
+            "no_flange": 6121,
+            "flange": 1542
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.59,
+          "flange": 25.02
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2750,
+          "median": 0.15,
+          "p95": 3.25,
+          "max": 7.62,
+          "min": -2.0
+        },
+        "colder_share": 0.537,
+        "warmer_share": 0.428,
+        "cold_days": {
+          "days": 486,
+          "median": 0.39,
+          "colder_share": 0.57
+        },
+        "cambium_min_C": {
+          "no_flange": -24.86,
+          "flange": -26.65
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10758,
+          "flange": 501
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2261,
+            "flange": 215
+          },
+          "12": {
+            "no_flange": 478,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 519,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1611,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5889,
+            "flange": 286
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.54,
+          "flange": 17.96
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2750,
+          "median": 0.85,
+          "p95": 4.02,
+          "max": 7.22,
+          "min": -2.38
+        },
+        "colder_share": 0.732,
+        "warmer_share": 0.239,
+        "cold_days": {
+          "days": 486,
+          "median": 1.49,
+          "colder_share": 0.864
+        },
+        "cambium_min_C": {
+          "no_flange": -24.86,
+          "flange": -28.59
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 10758,
+          "flange": 1278
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2261,
+            "flange": 380
+          },
+          "12": {
+            "no_flange": 478,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 519,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1611,
+            "flange": 10
+          },
+          "3": {
+            "no_flange": 5889,
+            "flange": 884
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 39.54,
+          "flange": 21.18
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2928,
+          "median": 0.57,
+          "p95": 3.2,
+          "max": 6.98,
+          "min": -1.66
+        },
+        "colder_share": 0.714,
+        "warmer_share": 0.242,
+        "cold_days": {
+          "days": 543,
+          "median": 0.66,
+          "colder_share": 0.678
+        },
+        "cambium_min_C": {
+          "no_flange": -25.97,
+          "flange": -27.62
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7971,
+          "flange": 378
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1650,
+            "flange": 177
+          },
+          "12": {
+            "no_flange": 226,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 260,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1028,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4807,
+            "flange": 201
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.66,
+          "flange": 17.72
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2928,
+          "median": 1.74,
+          "p95": 4.75,
+          "max": 8.17,
+          "min": -1.75
+        },
+        "colder_share": 0.94,
+        "warmer_share": 0.048,
+        "cold_days": {
+          "days": 543,
+          "median": 2.56,
+          "colder_share": 0.978
+        },
+        "cambium_min_C": {
+          "no_flange": -25.97,
+          "flange": -30.48
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7971,
+          "flange": 1724
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1650,
+            "flange": 431
+          },
+          "12": {
+            "no_flange": 226,
+            "flange": 7
+          },
+          "1": {
+            "no_flange": 260,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1028,
+            "flange": 43
+          },
+          "3": {
+            "no_flange": 4807,
+            "flange": 1243
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.66,
+          "flange": 24.42
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2879,
+          "median": -0.13,
+          "p95": 2.31,
+          "max": 6.16,
+          "min": -2.08
+        },
+        "colder_share": 0.438,
+        "warmer_share": 0.527,
+        "cold_days": {
+          "days": 528,
+          "median": 0.03,
+          "colder_share": 0.496
+        },
+        "cambium_min_C": {
+          "no_flange": -25.91,
+          "flange": -26.6
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7651,
+          "flange": 427
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1606,
+            "flange": 219
+          },
+          "12": {
+            "no_flange": 227,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 243,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 997,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4578,
+            "flange": 208
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.46,
+          "flange": 17.87
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 2879,
+          "median": 0.58,
+          "p95": 3.31,
+          "max": 6.45,
+          "min": -2.66
+        },
+        "colder_share": 0.67,
+        "warmer_share": 0.296,
+        "cold_days": {
+          "days": 528,
+          "median": 1.08,
+          "colder_share": 0.809
+        },
+        "cambium_min_C": {
+          "no_flange": -25.91,
+          "flange": -28.61
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 7651,
+          "flange": 1116
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1606,
+            "flange": 356
+          },
+          "12": {
+            "no_flange": 227,
+            "flange": 4
+          },
+          "1": {
+            "no_flange": 243,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 997,
+            "flange": 7
+          },
+          "3": {
+            "no_flange": 4578,
+            "flange": 749
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 38.46,
+          "flange": 20.65
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3248,
+          "median": -0.1,
+          "p95": 1.35,
+          "max": 3.99,
+          "min": -2.05
+        },
+        "colder_share": 0.409,
+        "warmer_share": 0.531,
+        "cold_days": {
+          "days": 676,
+          "median": -0.36,
+          "colder_share": 0.297
+        },
+        "cambium_min_C": {
+          "no_flange": -28.28,
+          "flange": -27.87
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3362,
+          "flange": 270
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 576,
+            "flange": 151
+          },
+          "12": {
+            "no_flange": 6,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 216,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2563,
+            "flange": 119
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.4,
+          "flange": 17.74
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3248,
+          "median": 1.03,
+          "p95": 3.18,
+          "max": 6.11,
+          "min": -2.44
+        },
+        "colder_share": 0.873,
+        "warmer_share": 0.106,
+        "cold_days": {
+          "days": 676,
+          "median": 1.44,
+          "colder_share": 0.908
+        },
+        "cambium_min_C": {
+          "no_flange": -28.28,
+          "flange": -30.76
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3362,
+          "flange": 1110
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 576,
+            "flange": 313
+          },
+          "12": {
+            "no_flange": 6,
+            "flange": 3
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 216,
+            "flange": 12
+          },
+          "3": {
+            "no_flange": 2563,
+            "flange": 782
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.4,
+          "flange": 23.05
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3186,
+          "median": -0.8,
+          "p95": 0.7,
+          "max": 3.04,
+          "min": -2.26
+        },
+        "colder_share": 0.136,
+        "warmer_share": 0.842,
+        "cold_days": {
+          "days": 640,
+          "median": -1.06,
+          "colder_share": 0.066
+        },
+        "cambium_min_C": {
+          "no_flange": -28.17,
+          "flange": -26.69
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3232,
+          "flange": 370
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 569,
+            "flange": 207
+          },
+          "12": {
+            "no_flange": 7,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 211,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2444,
+            "flange": 163
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.38,
+          "flange": 18.14
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3186,
+          "median": -0.1,
+          "p95": 1.84,
+          "max": 4.5,
+          "min": -3.65
+        },
+        "colder_share": 0.434,
+        "warmer_share": 0.526,
+        "cold_days": {
+          "days": 640,
+          "median": -0.02,
+          "colder_share": 0.469
+        },
+        "cambium_min_C": {
+          "no_flange": -28.17,
+          "flange": -28.74
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3232,
+          "flange": 824
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 569,
+            "flange": 290
+          },
+          "12": {
+            "no_flange": 7,
+            "flange": 2
+          },
+          "1": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 211,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2444,
+            "flange": 532
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.38,
+          "flange": 20.0
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3562,
+          "median": -0.48,
+          "p95": 0.42,
+          "max": 1.34,
+          "min": -2.67
+        },
+        "colder_share": 0.148,
+        "warmer_share": 0.804,
+        "cold_days": {
+          "days": 764,
+          "median": -0.93,
+          "colder_share": 0.058
+        },
+        "cambium_min_C": {
+          "no_flange": -30.29,
+          "flange": -28.65
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 697,
+          "flange": 132
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 179,
+            "flange": 85
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 518,
+            "flange": 47
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 22.02,
+          "flange": 16.06
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3562,
+          "median": 0.59,
+          "p95": 2.11,
+          "max": 4.01,
+          "min": -2.98
+        },
+        "colder_share": 0.763,
+        "warmer_share": 0.204,
+        "cold_days": {
+          "days": 764,
+          "median": 0.74,
+          "colder_share": 0.759
+        },
+        "cambium_min_C": {
+          "no_flange": -30.29,
+          "flange": -31.12
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 697,
+          "flange": 524
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 179,
+            "flange": 184
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 518,
+            "flange": 340
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 22.02,
+          "flange": 20.34
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3484,
+          "median": -1.21,
+          "p95": -0.36,
+          "max": 0.65,
+          "min": -3.2
+        },
+        "colder_share": 0.011,
+        "warmer_share": 0.985,
+        "cold_days": {
+          "days": 724,
+          "median": -1.72,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -29.78,
+          "flange": -27.02
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 695,
+          "flange": 255
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 199,
+            "flange": 161
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 496,
+            "flange": 94
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.32,
+          "flange": 16.9
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thin",
+        "bark_mm": 8.325,
+        "shift_K": {
+          "frost_days": 3484,
+          "median": -0.56,
+          "p95": 0.79,
+          "max": 2.6,
+          "min": -4.22
+        },
+        "colder_share": 0.224,
+        "warmer_share": 0.738,
+        "cold_days": {
+          "days": 724,
+          "median": -0.76,
+          "colder_share": 0.203
+        },
+        "cambium_min_C": {
+          "no_flange": -29.78,
+          "flange": -28.9
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 695,
+          "flange": 481
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 199,
+            "flange": 213
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 496,
+            "flange": 268
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 21.32,
+          "flange": 18.49
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2448,
+          "median": 0.12,
+          "p95": 1.0,
+          "max": 1.73,
+          "min": -1.81
+        },
+        "colder_share": 0.557,
+        "warmer_share": 0.371,
+        "cold_days": {
+          "days": 375,
+          "median": -0.41,
+          "colder_share": 0.277
+        },
+        "cambium_min_C": {
+          "no_flange": -25.94,
+          "flange": -24.85
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 470,
+          "flange": 142
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 235,
+            "flange": 109
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 235,
+            "flange": 33
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.33,
+          "flange": 15.54
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2448,
+          "median": 0.91,
+          "p95": 2.05,
+          "max": 3.51,
+          "min": -2.26
+        },
+        "colder_share": 0.876,
+        "warmer_share": 0.099,
+        "cold_days": {
+          "days": 375,
+          "median": 1.06,
+          "colder_share": 0.877
+        },
+        "cambium_min_C": {
+          "no_flange": -25.94,
+          "flange": -27.39
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 470,
+          "flange": 304
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 235,
+            "flange": 180
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 235,
+            "flange": 124
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.33,
+          "flange": 17.23
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2451,
+          "median": 0.21,
+          "p95": 1.23,
+          "max": 2.17,
+          "min": -2.68
+        },
+        "colder_share": 0.572,
+        "warmer_share": 0.394,
+        "cold_days": {
+          "days": 381,
+          "median": -0.47,
+          "colder_share": 0.346
+        },
+        "cambium_min_C": {
+          "no_flange": -25.84,
+          "flange": -24.9
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 429,
+          "flange": 182
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 235,
+            "flange": 145
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 194,
+            "flange": 37
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.24,
+          "flange": 15.9
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2451,
+          "median": 0.51,
+          "p95": 1.85,
+          "max": 3.61,
+          "min": -3.35
+        },
+        "colder_share": 0.686,
+        "warmer_share": 0.271,
+        "cold_days": {
+          "days": 381,
+          "median": 0.3,
+          "colder_share": 0.583
+        },
+        "cambium_min_C": {
+          "no_flange": -25.84,
+          "flange": -25.83
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 429,
+          "flange": 250
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 235,
+            "flange": 177
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 194,
+            "flange": 73
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.24,
+          "flange": 16.54
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2390,
+          "median": 0.13,
+          "p95": 1.03,
+          "max": 1.73,
+          "min": -1.87
+        },
+        "colder_share": 0.557,
+        "warmer_share": 0.375,
+        "cold_days": {
+          "days": 369,
+          "median": -0.45,
+          "colder_share": 0.268
+        },
+        "cambium_min_C": {
+          "no_flange": -25.86,
+          "flange": -24.66
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 753,
+          "flange": 192
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 256,
+            "flange": 120
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 497,
+            "flange": 72
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.76,
+          "flange": 15.93
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2390,
+          "median": 0.93,
+          "p95": 2.15,
+          "max": 3.36,
+          "min": -2.27
+        },
+        "colder_share": 0.878,
+        "warmer_share": 0.097,
+        "cold_days": {
+          "days": 369,
+          "median": 1.06,
+          "colder_share": 0.878
+        },
+        "cambium_min_C": {
+          "no_flange": -25.86,
+          "flange": -27.3
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 753,
+          "flange": 370
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 256,
+            "flange": 189
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 497,
+            "flange": 181
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.76,
+          "flange": 17.86
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2404,
+          "median": 0.25,
+          "p95": 1.3,
+          "max": 2.25,
+          "min": -2.7
+        },
+        "colder_share": 0.592,
+        "warmer_share": 0.372,
+        "cold_days": {
+          "days": 374,
+          "median": -0.46,
+          "colder_share": 0.356
+        },
+        "cambium_min_C": {
+          "no_flange": -25.78,
+          "flange": -24.79
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 669,
+          "flange": 206
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 252,
+            "flange": 150
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 417,
+            "flange": 56
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.65,
+          "flange": 15.97
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2404,
+          "median": 0.56,
+          "p95": 1.92,
+          "max": 3.63,
+          "min": -3.36
+        },
+        "colder_share": 0.705,
+        "warmer_share": 0.256,
+        "cold_days": {
+          "days": 374,
+          "median": 0.31,
+          "colder_share": 0.591
+        },
+        "cambium_min_C": {
+          "no_flange": -25.78,
+          "flange": -25.78
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 669,
+          "flange": 283
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 252,
+            "flange": 181
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 417,
+            "flange": 102
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 19.65,
+          "flange": 16.61
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2123,
+          "median": 0.46,
+          "p95": 1.79,
+          "max": 3.27,
+          "min": -1.31
+        },
+        "colder_share": 0.791,
+        "warmer_share": 0.155,
+        "cold_days": {
+          "days": 301,
+          "median": 0.23,
+          "colder_share": 0.595
+        },
+        "cambium_min_C": {
+          "no_flange": -24.04,
+          "flange": -23.91
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3654,
+          "flange": 332
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 617,
+            "flange": 196
+          },
+          "12": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 53,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2981,
+            "flange": 136
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.37,
+          "flange": 16.58
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2123,
+          "median": 1.38,
+          "p95": 3.07,
+          "max": 5.05,
+          "min": -1.57
+        },
+        "colder_share": 0.952,
+        "warmer_share": 0.036,
+        "cold_days": {
+          "days": 301,
+          "median": 1.82,
+          "colder_share": 0.983
+        },
+        "cambium_min_C": {
+          "no_flange": -24.04,
+          "flange": -26.72
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3654,
+          "flange": 693
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 617,
+            "flange": 288
+          },
+          "12": {
+            "no_flange": 3,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 53,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2981,
+            "flange": 405
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.37,
+          "flange": 18.71
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2158,
+          "median": 0.62,
+          "p95": 2.03,
+          "max": 3.78,
+          "min": -1.49
+        },
+        "colder_share": 0.807,
+        "warmer_share": 0.169,
+        "cold_days": {
+          "days": 306,
+          "median": 0.42,
+          "colder_share": 0.634
+        },
+        "cambium_min_C": {
+          "no_flange": -24.05,
+          "flange": -24.43
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3392,
+          "flange": 277
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 581,
+            "flange": 193
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 45,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2765,
+            "flange": 84
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.22,
+          "flange": 16.35
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2158,
+          "median": 1.05,
+          "p95": 2.64,
+          "max": 4.34,
+          "min": -2.01
+        },
+        "colder_share": 0.89,
+        "warmer_share": 0.09,
+        "cold_days": {
+          "days": 306,
+          "median": 1.12,
+          "colder_share": 0.843
+        },
+        "cambium_min_C": {
+          "no_flange": -24.05,
+          "flange": -25.45
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3392,
+          "flange": 413
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 581,
+            "flange": 230
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 45,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2765,
+            "flange": 183
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.22,
+          "flange": 17.13
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1750,
+          "median": 1.36,
+          "p95": 3.87,
+          "max": 6.54,
+          "min": -0.86
+        },
+        "colder_share": 0.966,
+        "warmer_share": 0.023,
+        "cold_days": {
+          "days": 197,
+          "median": 1.62,
+          "colder_share": 0.939
+        },
+        "cambium_min_C": {
+          "no_flange": -20.65,
+          "flange": -23.47
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8830,
+          "flange": 515
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1784,
+            "flange": 238
+          },
+          "12": {
+            "no_flange": 97,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 102,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 753,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 6094,
+            "flange": 277
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.18,
+          "flange": 17.78
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1750,
+          "median": 2.29,
+          "p95": 4.81,
+          "max": 7.19,
+          "min": -0.34
+        },
+        "colder_share": 0.992,
+        "warmer_share": 0.005,
+        "cold_days": {
+          "days": 197,
+          "median": 3.49,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -20.65,
+          "flange": -26.01
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8830,
+          "flange": 1255
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1784,
+            "flange": 415
+          },
+          "12": {
+            "no_flange": 97,
+            "flange": 3
+          },
+          "1": {
+            "no_flange": 102,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 753,
+            "flange": 3
+          },
+          "3": {
+            "no_flange": 6094,
+            "flange": 834
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.18,
+          "flange": 20.66
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1805,
+          "median": 1.61,
+          "p95": 3.93,
+          "max": 6.49,
+          "min": -0.76
+        },
+        "colder_share": 0.975,
+        "warmer_share": 0.018,
+        "cold_days": {
+          "days": 209,
+          "median": 1.93,
+          "colder_share": 0.981
+        },
+        "cambium_min_C": {
+          "no_flange": -20.9,
+          "flange": -24.21
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8350,
+          "flange": 360
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1686,
+            "flange": 225
+          },
+          "12": {
+            "no_flange": 95,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 81,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 699,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5789,
+            "flange": 135
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.07,
+          "flange": 17.25
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1805,
+          "median": 2.0,
+          "p95": 4.36,
+          "max": 6.42,
+          "min": -0.68
+        },
+        "colder_share": 0.983,
+        "warmer_share": 0.009,
+        "cold_days": {
+          "days": 209,
+          "median": 2.7,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -20.9,
+          "flange": -25.03
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8350,
+          "flange": 680
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1686,
+            "flange": 311
+          },
+          "12": {
+            "no_flange": 95,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 81,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 699,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5789,
+            "flange": 369
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 32.07,
+          "flange": 18.62
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1549,
+          "median": 1.98,
+          "p95": 5.77,
+          "max": 8.46,
+          "min": -0.74
+        },
+        "colder_share": 0.989,
+        "warmer_share": 0.008,
+        "cold_days": {
+          "days": 145,
+          "median": 2.34,
+          "colder_share": 0.966
+        },
+        "cambium_min_C": {
+          "no_flange": -19.21,
+          "flange": -23.69
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 12385,
+          "flange": 697
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2767,
+            "flange": 236
+          },
+          "12": {
+            "no_flange": 331,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 358,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1489,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 7440,
+            "flange": 461
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.39,
+          "flange": 18.71
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1549,
+          "median": 2.84,
+          "p95": 6.41,
+          "max": 8.88,
+          "min": -0.03
+        },
+        "colder_share": 0.999,
+        "warmer_share": 0.0,
+        "cold_days": {
+          "days": 145,
+          "median": 4.48,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -19.21,
+          "flange": -25.8
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 12385,
+          "flange": 1714
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2767,
+            "flange": 464
+          },
+          "12": {
+            "no_flange": 331,
+            "flange": 3
+          },
+          "1": {
+            "no_flange": 358,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1489,
+            "flange": 12
+          },
+          "3": {
+            "no_flange": 7440,
+            "flange": 1235
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.39,
+          "flange": 21.85
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1607,
+          "median": 2.22,
+          "p95": 5.61,
+          "max": 8.57,
+          "min": -0.57
+        },
+        "colder_share": 0.989,
+        "warmer_share": 0.007,
+        "cold_days": {
+          "days": 158,
+          "median": 2.72,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -19.54,
+          "flange": -24.33
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 11751,
+          "flange": 418
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2621,
+            "flange": 216
+          },
+          "12": {
+            "no_flange": 319,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 320,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1390,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 7101,
+            "flange": 202
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.25,
+          "flange": 17.13
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1607,
+          "median": 2.57,
+          "p95": 5.82,
+          "max": 8.44,
+          "min": -0.55
+        },
+        "colder_share": 0.994,
+        "warmer_share": 0.001,
+        "cold_days": {
+          "days": 158,
+          "median": 3.53,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -19.54,
+          "flange": -24.91
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 11751,
+          "flange": 920
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 2621,
+            "flange": 347
+          },
+          "12": {
+            "no_flange": 319,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 320,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 1390,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 7101,
+            "flange": 573
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 34.25,
+          "flange": 18.99
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1690,
+          "median": 1.52,
+          "p95": 4.25,
+          "max": 7.42,
+          "min": -0.99
+        },
+        "colder_share": 0.974,
+        "warmer_share": 0.019,
+        "cold_days": {
+          "days": 184,
+          "median": 1.84,
+          "colder_share": 0.957
+        },
+        "cambium_min_C": {
+          "no_flange": -20.32,
+          "flange": -23.54
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8742,
+          "flange": 503
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1933,
+            "flange": 241
+          },
+          "12": {
+            "no_flange": 126,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 119,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 831,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5733,
+            "flange": 262
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.08,
+          "flange": 17.68
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1690,
+          "median": 2.4,
+          "p95": 5.29,
+          "max": 7.78,
+          "min": -0.2
+        },
+        "colder_share": 0.994,
+        "warmer_share": 0.004,
+        "cold_days": {
+          "days": 184,
+          "median": 3.67,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -20.32,
+          "flange": -25.97
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8742,
+          "flange": 1324
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1933,
+            "flange": 417
+          },
+          "12": {
+            "no_flange": 126,
+            "flange": 3
+          },
+          "1": {
+            "no_flange": 119,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 831,
+            "flange": 4
+          },
+          "3": {
+            "no_flange": 5733,
+            "flange": 900
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.08,
+          "flange": 21.12
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1759,
+          "median": 1.74,
+          "p95": 4.19,
+          "max": 7.28,
+          "min": -0.76
+        },
+        "colder_share": 0.977,
+        "warmer_share": 0.019,
+        "cold_days": {
+          "days": 195,
+          "median": 2.08,
+          "colder_share": 0.99
+        },
+        "cambium_min_C": {
+          "no_flange": -20.6,
+          "flange": -24.24
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8232,
+          "flange": 357
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1817,
+            "flange": 224
+          },
+          "12": {
+            "no_flange": 115,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 107,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 779,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5414,
+            "flange": 133
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.0,
+          "flange": 16.91
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 1759,
+          "median": 2.15,
+          "p95": 4.66,
+          "max": 7.55,
+          "min": -0.61
+        },
+        "colder_share": 0.987,
+        "warmer_share": 0.007,
+        "cold_days": {
+          "days": 195,
+          "median": 2.83,
+          "colder_share": 1.0
+        },
+        "cambium_min_C": {
+          "no_flange": -20.6,
+          "flange": -25.01
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8232,
+          "flange": 745
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1817,
+            "flange": 317
+          },
+          "12": {
+            "no_flange": 115,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 107,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 779,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5414,
+            "flange": 428
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.0,
+          "flange": 18.69
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2072,
+          "median": 0.59,
+          "p95": 1.96,
+          "max": 4.17,
+          "min": -1.07
+        },
+        "colder_share": 0.855,
+        "warmer_share": 0.107,
+        "cold_days": {
+          "days": 283,
+          "median": 0.45,
+          "colder_share": 0.707
+        },
+        "cambium_min_C": {
+          "no_flange": -23.67,
+          "flange": -23.91
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3642,
+          "flange": 360
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 687,
+            "flange": 203
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 106,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2845,
+            "flange": 157
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 28.42,
+          "flange": 17.28
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2072,
+          "median": 1.5,
+          "p95": 3.26,
+          "max": 5.74,
+          "min": -1.51
+        },
+        "colder_share": 0.963,
+        "warmer_share": 0.031,
+        "cold_days": {
+          "days": 283,
+          "median": 1.98,
+          "colder_share": 0.986
+        },
+        "cambium_min_C": {
+          "no_flange": -23.67,
+          "flange": -26.58
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3642,
+          "flange": 859
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 687,
+            "flange": 315
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 106,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2845,
+            "flange": 544
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 28.42,
+          "flange": 19.94
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2105,
+          "median": 0.74,
+          "p95": 2.26,
+          "max": 4.18,
+          "min": -1.29
+        },
+        "colder_share": 0.866,
+        "warmer_share": 0.119,
+        "cold_days": {
+          "days": 292,
+          "median": 0.61,
+          "colder_share": 0.743
+        },
+        "cambium_min_C": {
+          "no_flange": -23.68,
+          "flange": -24.44
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3383,
+          "flange": 294
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 644,
+            "flange": 199
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 95,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2640,
+            "flange": 95
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 28.34,
+          "flange": 17.08
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2105,
+          "median": 1.16,
+          "p95": 2.92,
+          "max": 5.2,
+          "min": -2.03
+        },
+        "colder_share": 0.918,
+        "warmer_share": 0.067,
+        "cold_days": {
+          "days": 292,
+          "median": 1.34,
+          "colder_share": 0.932
+        },
+        "cambium_min_C": {
+          "no_flange": -23.68,
+          "flange": -25.4
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 3383,
+          "flange": 506
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 644,
+            "flange": 250
+          },
+          "12": {
+            "no_flange": 4,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 95,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 2640,
+            "flange": 256
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 28.34,
+          "flange": 18.24
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2374,
+          "median": 0.13,
+          "p95": 1.04,
+          "max": 1.88,
+          "min": -1.83
+        },
+        "colder_share": 0.561,
+        "warmer_share": 0.369,
+        "cold_days": {
+          "days": 367,
+          "median": -0.44,
+          "colder_share": 0.278
+        },
+        "cambium_min_C": {
+          "no_flange": -25.86,
+          "flange": -24.71
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 857,
+          "flange": 194
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 254,
+            "flange": 119
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 603,
+            "flange": 75
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.42,
+          "flange": 16.27
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2374,
+          "median": 0.93,
+          "p95": 2.23,
+          "max": 3.59,
+          "min": -2.26
+        },
+        "colder_share": 0.878,
+        "warmer_share": 0.096,
+        "cold_days": {
+          "days": 367,
+          "median": 1.08,
+          "colder_share": 0.88
+        },
+        "cambium_min_C": {
+          "no_flange": -25.86,
+          "flange": -27.28
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 857,
+          "flange": 421
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 254,
+            "flange": 192
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 603,
+            "flange": 229
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.42,
+          "flange": 18.38
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2383,
+          "median": 0.26,
+          "p95": 1.33,
+          "max": 2.31,
+          "min": -2.69
+        },
+        "colder_share": 0.603,
+        "warmer_share": 0.364,
+        "cold_days": {
+          "days": 370,
+          "median": -0.41,
+          "colder_share": 0.365
+        },
+        "cambium_min_C": {
+          "no_flange": -25.77,
+          "flange": -24.83
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 758,
+          "flange": 215
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 252,
+            "flange": 155
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 506,
+            "flange": 60
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.33,
+          "flange": 16.15
+        }
+      },
+      {
+        "form": "linear",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2383,
+          "median": 0.58,
+          "p95": 1.96,
+          "max": 3.65,
+          "min": -3.35
+        },
+        "colder_share": 0.708,
+        "warmer_share": 0.252,
+        "cold_days": {
+          "days": 370,
+          "median": 0.34,
+          "colder_share": 0.595
+        },
+        "cambium_min_C": {
+          "no_flange": -25.77,
+          "flange": -25.78
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 758,
+          "flange": 310
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 252,
+            "flange": 181
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 506,
+            "flange": 129
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 20.33,
+          "flange": 17.08
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3472,
+          "median": -0.27,
+          "p95": 0.5,
+          "max": 1.27,
+          "min": -2.26
+        },
+        "colder_share": 0.234,
+        "warmer_share": 0.696,
+        "cold_days": {
+          "days": 697,
+          "median": -0.64,
+          "colder_share": 0.108
+        },
+        "cambium_min_C": {
+          "no_flange": -29.02,
+          "flange": -27.57
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 172,
+          "flange": 30
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 103,
+            "flange": 25
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 69,
+            "flange": 5
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 16.44,
+          "flange": 14.66
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3472,
+          "median": 0.34,
+          "p95": 1.42,
+          "max": 2.91,
+          "min": -2.3
+        },
+        "colder_share": 0.688,
+        "warmer_share": 0.248,
+        "cold_days": {
+          "days": 697,
+          "median": 0.44,
+          "colder_share": 0.726
+        },
+        "cambium_min_C": {
+          "no_flange": -29.02,
+          "flange": -29.47
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 172,
+          "flange": 138
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 103,
+            "flange": 98
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 69,
+            "flange": 40
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 16.44,
+          "flange": 15.73
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3358,
+          "median": -1.1,
+          "p95": -0.28,
+          "max": 0.75,
+          "min": -3.0
+        },
+        "colder_share": 0.012,
+        "warmer_share": 0.981,
+        "cold_days": {
+          "days": 672,
+          "median": -1.57,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -28.56,
+          "flange": -26.09
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 200,
+          "flange": 125
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 131,
+            "flange": 111
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 69,
+            "flange": 14
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 16.58,
+          "flange": 15.5
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 0,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3358,
+          "median": -0.75,
+          "p95": 0.31,
+          "max": 1.73,
+          "min": -3.78
+        },
+        "colder_share": 0.105,
+        "warmer_share": 0.854,
+        "cold_days": {
+          "days": 672,
+          "median": -0.98,
+          "colder_share": 0.088
+        },
+        "cambium_min_C": {
+          "no_flange": -28.56,
+          "flange": -26.9
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 200,
+          "flange": 177
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 131,
+            "flange": 142
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 69,
+            "flange": 35
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 16.58,
+          "flange": 16.15
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3386,
+          "median": -0.27,
+          "p95": 0.58,
+          "max": 1.45,
+          "min": -2.29
+        },
+        "colder_share": 0.25,
+        "warmer_share": 0.689,
+        "cold_days": {
+          "days": 687,
+          "median": -0.66,
+          "colder_share": 0.106
+        },
+        "cambium_min_C": {
+          "no_flange": -28.95,
+          "flange": -27.44
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 269,
+          "flange": 38
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 115,
+            "flange": 28
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 154,
+            "flange": 10
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 17.91,
+          "flange": 14.78
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3386,
+          "median": 0.34,
+          "p95": 1.52,
+          "max": 2.95,
+          "min": -2.31
+        },
+        "colder_share": 0.688,
+        "warmer_share": 0.248,
+        "cold_days": {
+          "days": 687,
+          "median": 0.45,
+          "colder_share": 0.722
+        },
+        "cambium_min_C": {
+          "no_flange": -28.95,
+          "flange": -29.4
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 269,
+          "flange": 157
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 115,
+            "flange": 103
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 154,
+            "flange": 54
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 17.91,
+          "flange": 16.2
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3284,
+          "median": -1.08,
+          "p95": -0.15,
+          "max": 0.82,
+          "min": -3.03
+        },
+        "colder_share": 0.025,
+        "warmer_share": 0.963,
+        "cold_days": {
+          "days": 662,
+          "median": -1.58,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -28.5,
+          "flange": -26.01
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 286,
+          "flange": 138
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 137,
+            "flange": 115
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 149,
+            "flange": 23
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 17.88,
+          "flange": 15.57
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 45,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3284,
+          "median": -0.72,
+          "p95": 0.45,
+          "max": 1.75,
+          "min": -3.79
+        },
+        "colder_share": 0.132,
+        "warmer_share": 0.831,
+        "cold_days": {
+          "days": 662,
+          "median": -0.98,
+          "colder_share": 0.085
+        },
+        "cambium_min_C": {
+          "no_flange": -28.5,
+          "flange": -26.86
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 286,
+          "flange": 197
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 137,
+            "flange": 144
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 149,
+            "flange": 53
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 17.88,
+          "flange": 16.21
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3100,
+          "median": 0.05,
+          "p95": 1.47,
+          "max": 3.75,
+          "min": -1.8
+        },
+        "colder_share": 0.503,
+        "warmer_share": 0.421,
+        "cold_days": {
+          "days": 601,
+          "median": -0.19,
+          "colder_share": 0.346
+        },
+        "cambium_min_C": {
+          "no_flange": -27.08,
+          "flange": -26.68
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2166,
+          "flange": 106
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 372,
+            "flange": 72
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 17,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1777,
+            "flange": 34
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 25.26,
+          "flange": 15.55
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3100,
+          "median": 0.71,
+          "p95": 2.43,
+          "max": 4.54,
+          "min": -1.77
+        },
+        "colder_share": 0.845,
+        "warmer_share": 0.119,
+        "cold_days": {
+          "days": 601,
+          "median": 1.02,
+          "colder_share": 0.902
+        },
+        "cambium_min_C": {
+          "no_flange": -27.08,
+          "flange": -28.75
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2166,
+          "flange": 329
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 372,
+            "flange": 169
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 17,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1777,
+            "flange": 160
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 25.26,
+          "flange": 17.54
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3023,
+          "median": -0.72,
+          "p95": 0.78,
+          "max": 2.83,
+          "min": -2.14
+        },
+        "colder_share": 0.158,
+        "warmer_share": 0.814,
+        "cold_days": {
+          "days": 572,
+          "median": -1.01,
+          "colder_share": 0.072
+        },
+        "cambium_min_C": {
+          "no_flange": -26.71,
+          "flange": -25.65
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2123,
+          "flange": 176
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 380,
+            "flange": 139
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 17,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1726,
+            "flange": 37
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 25.24,
+          "flange": 15.95
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 90,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3023,
+          "median": -0.32,
+          "p95": 1.36,
+          "max": 3.48,
+          "min": -2.69
+        },
+        "colder_share": 0.33,
+        "warmer_share": 0.626,
+        "cold_days": {
+          "days": 572,
+          "median": -0.33,
+          "colder_share": 0.309
+        },
+        "cambium_min_C": {
+          "no_flange": -26.71,
+          "flange": -26.52
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2123,
+          "flange": 275
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 380,
+            "flange": 178
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 17,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1726,
+            "flange": 97
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 25.24,
+          "flange": 16.66
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2713,
+          "median": 0.84,
+          "p95": 3.38,
+          "max": 5.97,
+          "min": -1.52
+        },
+        "colder_share": 0.841,
+        "warmer_share": 0.119,
+        "cold_days": {
+          "days": 462,
+          "median": 0.93,
+          "colder_share": 0.81
+        },
+        "cambium_min_C": {
+          "no_flange": -23.56,
+          "flange": -26.21
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 6117,
+          "flange": 198
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1187,
+            "flange": 116
+          },
+          "12": {
+            "no_flange": 51,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 35,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 443,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4401,
+            "flange": 82
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.06,
+          "flange": 16.77
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2713,
+          "median": 1.49,
+          "p95": 4.06,
+          "max": 6.36,
+          "min": -0.98
+        },
+        "colder_share": 0.949,
+        "warmer_share": 0.038,
+        "cold_days": {
+          "days": 462,
+          "median": 2.08,
+          "colder_share": 0.983
+        },
+        "cambium_min_C": {
+          "no_flange": -23.56,
+          "flange": -28.0
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 6117,
+          "flange": 743
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1187,
+            "flange": 280
+          },
+          "12": {
+            "no_flange": 51,
+            "flange": 1
+          },
+          "1": {
+            "no_flange": 35,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 443,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4401,
+            "flange": 462
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.06,
+          "flange": 19.81
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2647,
+          "median": 0.13,
+          "p95": 2.62,
+          "max": 5.37,
+          "min": -1.77
+        },
+        "colder_share": 0.534,
+        "warmer_share": 0.428,
+        "cold_days": {
+          "days": 442,
+          "median": 0.24,
+          "colder_share": 0.577
+        },
+        "cambium_min_C": {
+          "no_flange": -23.36,
+          "flange": -25.42
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5982,
+          "flange": 230
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1163,
+            "flange": 159
+          },
+          "12": {
+            "no_flange": 53,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 35,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 434,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4297,
+            "flange": 71
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.03,
+          "flange": 16.85
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 135,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2647,
+          "median": 0.48,
+          "p95": 3.03,
+          "max": 5.37,
+          "min": -1.86
+        },
+        "colder_share": 0.659,
+        "warmer_share": 0.303,
+        "cold_days": {
+          "days": 442,
+          "median": 0.85,
+          "colder_share": 0.776
+        },
+        "cambium_min_C": {
+          "no_flange": -23.36,
+          "flange": -26.1
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5982,
+          "flange": 480
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1163,
+            "flange": 248
+          },
+          "12": {
+            "no_flange": 53,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 35,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 434,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4297,
+            "flange": 232
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.03,
+          "flange": 18.21
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2494,
+          "median": 1.38,
+          "p95": 4.99,
+          "max": 8.46,
+          "min": -1.02
+        },
+        "colder_share": 0.915,
+        "warmer_share": 0.06,
+        "cold_days": {
+          "days": 377,
+          "median": 1.66,
+          "colder_share": 0.902
+        },
+        "cambium_min_C": {
+          "no_flange": -22.13,
+          "flange": -26.43
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 9038,
+          "flange": 268
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1974,
+            "flange": 102
+          },
+          "12": {
+            "no_flange": 186,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 186,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 961,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5731,
+            "flange": 166
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.19,
+          "flange": 17.2
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2494,
+          "median": 1.95,
+          "p95": 5.38,
+          "max": 8.01,
+          "min": -0.88
+        },
+        "colder_share": 0.973,
+        "warmer_share": 0.018,
+        "cold_days": {
+          "days": 377,
+          "median": 2.73,
+          "colder_share": 0.989
+        },
+        "cambium_min_C": {
+          "no_flange": -22.13,
+          "flange": -27.77
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 9038,
+          "flange": 1085
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1974,
+            "flange": 320
+          },
+          "12": {
+            "no_flange": 186,
+            "flange": 2
+          },
+          "1": {
+            "no_flange": 186,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 961,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5731,
+            "flange": 763
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.19,
+          "flange": 20.53
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2438,
+          "median": 0.62,
+          "p95": 4.13,
+          "max": 7.92,
+          "min": -1.73
+        },
+        "colder_share": 0.679,
+        "warmer_share": 0.281,
+        "cold_days": {
+          "days": 361,
+          "median": 0.94,
+          "colder_share": 0.72
+        },
+        "cambium_min_C": {
+          "no_flange": -21.98,
+          "flange": -25.54
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8810,
+          "flange": 256
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1943,
+            "flange": 151
+          },
+          "12": {
+            "no_flange": 191,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 184,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 937,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5555,
+            "flange": 105
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.09,
+          "flange": 16.6
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 180,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2438,
+          "median": 0.96,
+          "p95": 4.29,
+          "max": 7.13,
+          "min": -1.8
+        },
+        "colder_share": 0.76,
+        "warmer_share": 0.21,
+        "cold_days": {
+          "days": 361,
+          "median": 1.63,
+          "colder_share": 0.889
+        },
+        "cambium_min_C": {
+          "no_flange": -21.98,
+          "flange": -25.98
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 8810,
+          "flange": 656
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1943,
+            "flange": 274
+          },
+          "12": {
+            "no_flange": 191,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 184,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 937,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 5555,
+            "flange": 382
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 33.09,
+          "flange": 18.51
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2680,
+          "median": 0.99,
+          "p95": 3.63,
+          "max": 6.8,
+          "min": -1.23
+        },
+        "colder_share": 0.857,
+        "warmer_share": 0.103,
+        "cold_days": {
+          "days": 440,
+          "median": 1.21,
+          "colder_share": 0.839
+        },
+        "cambium_min_C": {
+          "no_flange": -23.23,
+          "flange": -26.28
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 6119,
+          "flange": 187
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1316,
+            "flange": 108
+          },
+          "12": {
+            "no_flange": 64,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 47,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 528,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4164,
+            "flange": 79
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.43,
+          "flange": 16.26
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2680,
+          "median": 1.61,
+          "p95": 4.35,
+          "max": 6.97,
+          "min": -0.96
+        },
+        "colder_share": 0.952,
+        "warmer_share": 0.035,
+        "cold_days": {
+          "days": 440,
+          "median": 2.35,
+          "colder_share": 0.989
+        },
+        "cambium_min_C": {
+          "no_flange": -23.23,
+          "flange": -27.96
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 6119,
+          "flange": 843
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1316,
+            "flange": 291
+          },
+          "12": {
+            "no_flange": 64,
+            "flange": 1
+          },
+          "1": {
+            "no_flange": 47,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 528,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4164,
+            "flange": 551
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.43,
+          "flange": 19.87
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2601,
+          "median": 0.24,
+          "p95": 2.87,
+          "max": 6.14,
+          "min": -1.86
+        },
+        "colder_share": 0.572,
+        "warmer_share": 0.384,
+        "cold_days": {
+          "days": 420,
+          "median": 0.5,
+          "colder_share": 0.617
+        },
+        "cambium_min_C": {
+          "no_flange": -23.07,
+          "flange": -25.46
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5968,
+          "flange": 228
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1298,
+            "flange": 156
+          },
+          "12": {
+            "no_flange": 67,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 44,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 517,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4042,
+            "flange": 72
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.34,
+          "flange": 16.49
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 225,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2601,
+          "median": 0.61,
+          "p95": 3.26,
+          "max": 6.15,
+          "min": -1.96
+        },
+        "colder_share": 0.692,
+        "warmer_share": 0.273,
+        "cold_days": {
+          "days": 420,
+          "median": 1.13,
+          "colder_share": 0.817
+        },
+        "cambium_min_C": {
+          "no_flange": -23.07,
+          "flange": -26.08
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 5968,
+          "flange": 525
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 1298,
+            "flange": 252
+          },
+          "12": {
+            "no_flange": 67,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 44,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 517,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 4042,
+            "flange": 273
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 31.34,
+          "flange": 18.3
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3033,
+          "median": 0.15,
+          "p95": 1.65,
+          "max": 4.08,
+          "min": -1.61
+        },
+        "colder_share": 0.569,
+        "warmer_share": 0.359,
+        "cold_days": {
+          "days": 582,
+          "median": -0.01,
+          "colder_share": 0.466
+        },
+        "cambium_min_C": {
+          "no_flange": -26.68,
+          "flange": -26.61
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2204,
+          "flange": 130
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 407,
+            "flange": 89
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 50,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1746,
+            "flange": 41
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.52,
+          "flange": 16.33
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3033,
+          "median": 0.81,
+          "p95": 2.59,
+          "max": 5.37,
+          "min": -1.7
+        },
+        "colder_share": 0.853,
+        "warmer_share": 0.114,
+        "cold_days": {
+          "days": 582,
+          "median": 1.16,
+          "colder_share": 0.9
+        },
+        "cambium_min_C": {
+          "no_flange": -26.68,
+          "flange": -28.61
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2204,
+          "flange": 473
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 407,
+            "flange": 200
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 50,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1746,
+            "flange": 273
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.52,
+          "flange": 18.83
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2954,
+          "median": -0.62,
+          "p95": 1.02,
+          "max": 3.56,
+          "min": -1.98
+        },
+        "colder_share": 0.2,
+        "warmer_share": 0.77,
+        "cold_days": {
+          "days": 550,
+          "median": -0.83,
+          "colder_share": 0.124
+        },
+        "cambium_min_C": {
+          "no_flange": -26.31,
+          "flange": -25.63
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2134,
+          "flange": 188
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 406,
+            "flange": 143
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 50,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1677,
+            "flange": 45
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.07,
+          "flange": 16.68
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 270,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 2954,
+          "median": -0.2,
+          "p95": 1.55,
+          "max": 4.25,
+          "min": -2.62
+        },
+        "colder_share": 0.374,
+        "warmer_share": 0.581,
+        "cold_days": {
+          "days": 550,
+          "median": -0.14,
+          "colder_share": 0.396
+        },
+        "cambium_min_C": {
+          "no_flange": -26.31,
+          "flange": -26.44
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 2134,
+          "flange": 358
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 406,
+            "flange": 197
+          },
+          "12": {
+            "no_flange": 1,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 50,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 1677,
+            "flange": 161
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 26.07,
+          "flange": 17.85
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3370,
+          "median": -0.26,
+          "p95": 0.62,
+          "max": 1.36,
+          "min": -2.29
+        },
+        "colder_share": 0.253,
+        "warmer_share": 0.684,
+        "cold_days": {
+          "days": 689,
+          "median": -0.66,
+          "colder_share": 0.103
+        },
+        "cambium_min_C": {
+          "no_flange": -28.95,
+          "flange": -27.44
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 346,
+          "flange": 50
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 114,
+            "flange": 33
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 232,
+            "flange": 17
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.63,
+          "flange": 14.83
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.0,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3370,
+          "median": 0.34,
+          "p95": 1.56,
+          "max": 3.29,
+          "min": -2.31
+        },
+        "colder_share": 0.686,
+        "warmer_share": 0.25,
+        "cold_days": {
+          "days": 689,
+          "median": 0.44,
+          "colder_share": 0.718
+        },
+        "cambium_min_C": {
+          "no_flange": -28.95,
+          "flange": -29.38
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 346,
+          "flange": 185
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 114,
+            "flange": 110
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 232,
+            "flange": 75
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.63,
+          "flange": 16.72
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "decoupled",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3264,
+          "median": -1.07,
+          "p95": -0.09,
+          "max": 0.83,
+          "min": -3.01
+        },
+        "colder_share": 0.029,
+        "warmer_share": 0.955,
+        "cold_days": {
+          "days": 661,
+          "median": -1.56,
+          "colder_share": 0.0
+        },
+        "cambium_min_C": {
+          "no_flange": -28.5,
+          "flange": -26.02
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 353,
+          "flange": 140
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 138,
+            "flange": 116
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 215,
+            "flange": 24
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.6,
+          "flange": 15.8
+        }
+      },
+      {
+        "form": "b82",
+        "azimuth_deg": 315,
+        "coupling": "tied",
+        "wind_k": 0.1,
+        "bark_side": "thick",
+        "bark_mm": 21.0,
+        "shift_K": {
+          "frost_days": 3264,
+          "median": -0.72,
+          "p95": 0.53,
+          "max": 2.17,
+          "min": -3.78
+        },
+        "colder_share": 0.144,
+        "warmer_share": 0.82,
+        "cold_days": {
+          "days": 661,
+          "median": -0.95,
+          "colder_share": 0.088
+        },
+        "cambium_min_C": {
+          "no_flange": -28.5,
+          "flange": -26.85
+        },
+        "winter_hours_above_deharden": {
+          "no_flange": 353,
+          "flange": 217
+        },
+        "winter_hours_above_deharden_by_month": {
+          "11": {
+            "no_flange": 138,
+            "flange": 147
+          },
+          "12": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "1": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "2": {
+            "no_flange": 0,
+            "flange": 0
+          },
+          "3": {
+            "no_flange": 215,
+            "flange": 70
+          }
+        },
+        "winter_cambium_max_C": {
+          "no_flange": 18.6,
+          "flange": 16.39
+        }
+      }
+    ]
+  },
   "sensitivity_thin_bark_still_air_clear_no_sun": {
     "sapwood_190mm": {
       "override": {
@@ -3675,10 +11574,10 @@
     },
     "tied_max_K": 4.62,
     "tied_max_regime": "overcast_diffuse_sun",
-    "text": "The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the flange: the tied median is -2.6…-0.5 K (warmer under the flange), because a long-wave deficit depresses flat bark (-6.9 K at its equilibrium) more than the capsule (-5.7 K) — with the capsule's h_c set to bark's the tied median turns +0.4 K. Overcast, no sun: +0.3…+0.6 K (colder) — the fin's conductance to the air (6× bark's) makes the ring follow the air's daily fall. Diffuse sun on both raises it again (bark banks the gain, the fin sheds it): clear -1.7…+0.1 K, overcast +1.1…+1.4 K. The worst day of the four ends is +4.6 K colder (overcast_diffuse_sun, tied). Decoupled — the flange's band alone, 0.54× the ring — moves the same way with smaller medians. Weighed by the site's real cloud (ERA5: winter median cover 0.98, above 0.8 in 72% of winter hours), the answer turns on how cover becomes sky radiation, and the one measurement in hand (a mountain station, by day) does not settle it for a valley cell at night: if full cover radiates as a black body at air temperature (the two ends mixed by the cover), the tied flange is colder on 26%–68% of frost days without sun and 69%–89% with diffuse sun (median +0.5…+1.2 K); with Brutsaert 1982's factor at its original C 0.22, which leaves a fully covered winter sky short of a black body, on 0%–36% and 11%–76%. On the cold days (bark below -10 °C), the tail an injury threshold sits in: 58%–88% colder under the first, 0%–48% under the second without sun. Beam sun on a trunk face and the real coupling are not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it."
+    "text": "The sign of the shift depends on the sky and the sun. Clear sky, no sun — the end most favourable to the flange: the tied median is -2.6…-0.5 K (warmer under the flange), because a long-wave deficit depresses flat bark (-6.9 K at its equilibrium) more than the capsule (-5.7 K) — with the capsule's h_c set to bark's the tied median turns +0.4 K. Overcast, no sun: +0.3…+0.6 K (colder) — the fin's conductance to the air (6× bark's) makes the ring follow the air's daily fall. Diffuse sun on both raises it again (bark banks the gain, the fin sheds it): clear -1.7…+0.1 K, overcast +1.1…+1.4 K. The worst day of the four ends is +4.6 K colder (overcast_diffuse_sun, tied). Decoupled — the flange's band alone, 0.54× the ring — moves the same way with smaller medians. Weighed by the site's real cloud (ERA5: winter median cover 0.98, above 0.8 in 72% of winter hours), the answer turns on how cover becomes sky radiation, and the one measurement in hand (a mountain station, by day) does not settle it for a valley cell at night: if full cover radiates as a black body at air temperature (the two ends mixed by the cover), the tied flange is colder on 26%–68% of frost days without sun and 69%–89% with diffuse sun (median +0.5…+1.2 K); with Brutsaert 1982's factor at its original C 0.22, which leaves a fully covered winter sky short of a black body, on 0%–36% and 11%–76%. On the cold days (bark below -10 °C), the tail an injury threshold sits in: 58%–88% colder under the first, 0%–48% under the second without sun. Beam sun on the trunk face — swept over its azimuth with open-field ERA5 DNI, the upper end of beam — moves the shift against the diffuse-only weighing (the median by -0.01…+2.06 K): tied -0.8…+1.2 K on a north face, +0.8…+3.0 K on a south one, colder there on 73%–100% of frost days — the bark banks the beam the fin sheds. In absolute terms the beam still warms the spot: its coldest hour is warmer on a south face than on a north one in every cell (tied +0.3…+1.7 K). The same beam lifts the cambium above ≈ 13 °C, the exposure Sakai names as what dehardens, under bark more often than under the flange in every winter total (not in every month: in month(s) [11] of faces [0, 45, 315] the flange has a few more): on a south face 294–475 hours a winter without it against 22–102 under the tied flange (north 6–28 against 5–21). So this axis does not choose an azimuth by itself: the absolute frost floor under the flange favours the south, its hours of dehardening the north, and only a measure of how much the node perturbs the cambium points one way; weighing them needs a dose-response no primary gives. Ground-reflected light is not in either sun term — the same on every face, it can match the diffuse term over snow. The real coupling is not in the tree; 1D inflates the shift in both signs. The regional injury threshold and its corrections live in canon (docs/01_04 §3.1): it sits NEAR this model's floor, not far below it."
   },
   "ceilings": [
-    "the sun is bracketed by its ends — beam sun on a trunk face is not computed (it needs the mounting azimuth); real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — which one holds at the site decides the sign, and neither form's primary was read",
+    "beam sun is swept over the face's azimuth with open-field DNI — the upper end of BEAM (no crown, neighbour trunk or horizon; the mounting azimuth is a decision, 00_07 HW.6); ground-reflected light is in neither sun term, so the short-wave balance of every face is a LOWER end; frost days are defined by the bark of the same face, so nights the spot freezes and the sunlit bark does not are left out; real cloud (ERA5) is weighed, through two long-wave forms that disagree under full cover — which one holds at the site decides the sign, and neither form's primary was read",
     "1D and zero contact resistance inflate the shift in both signs; the tied end is the upper end of the coupling axis only, and the two coupling ends bracket the median, not the tail",
     "the radome↔flange coupling is not measured — decoupled and tied are its two ends",
     "F 0.5, ε 0.90, α_bark 0.80 and the trunk's convection correlation are ours; α_fin is the radome's specified ceiling and a lighter finish enlarges the shift",

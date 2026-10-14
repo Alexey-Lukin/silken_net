@@ -3582,6 +3582,91 @@ def test_flange_cambium_frost_real_cloud_sits_between_the_ends():
                 assert f"{lo:.0%}–{hi:.0%}" in d["verdict"]["text"], name
 
 
+def test_flange_cambium_frost_beam_by_azimuth():
+    """79's beam block (2026-10-14): open-field ERA5 DNI on a trunk face swept over the face's azimuth.
+
+    CAN catch: the sun off the data's clock (at the declared convention no DNI energy may fall in hours the sun never
+    clears the horizon, and every ½- or 1-hour shift must hold some — mutation: the UTC offset's sign flipped moves
+    sunrise DNI into the dark and reds here); a solar series off the obliquity, the equation-of-time extremes or the
+    June noon; silhouette coefficients not re-derivable from the flange CEM and 71's capsule geometry; the beam
+    timestep check past its gates on either window, or a warm window in which no flange hour crosses DEHARDEN_C (its
+    hour gate would be vacuous); a north face that does not reproduce the diffuse-only cell it rides on (the winter
+    beam barely reaches it); the declared directions failing in any cell — the shift and the bark's hours above
+    DEHARDEN_C not rising from north through east and west to south, a winter total with the flange spot above it
+    more often than the bark beside it, the coldest hour under the flange not warmer on the south face than on the
+    north; a south-minus-north floor or a list of month exceptions that is not re-derivable from the runs; a
+    reflected-light scale off its own formula; a month split that loses hours; a summary not the min/max of its
+    runs; a verdict that stopped quoting the north and south medians and the south hours, or that stopped saying the
+    axis does not choose an azimuth by itself.
+    CANNOT catch: crown, neighbour or horizon shading (open-field DNI is the upper end of beam), ground-reflected
+    light, whether ERA5 DNI holds at trunk height, the real coupling, or a dose behind the hour counts.
+    """
+    d = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))
+    bs = d["beam_sun"]
+    clock = bs["sun_clock_check_dni_share_in_sun_down_hours"]
+    assert clock["+0.0"] == 0.0 and all(v > 1e-4 for k, v in clock.items() if k != "+0.0"), clock
+    g = bs["sun_geometry_check"]
+    assert all(abs(abs(x) - 23.44) < 0.1 for x in g["declination_deg"])
+    assert abs(g["equation_of_time_min"][0] + 14.2) < 0.3 and abs(g["equation_of_time_min"][1] - 16.4) < 0.3
+    assert abs(g["june_noon_altitude_deg"] - (90.0 - bs["site"]["lat_deg"] + 23.44)) < 0.1
+    fl = json.loads((REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))
+    g71 = json.loads((THERMAL / "capsule_envelope.json").read_text(encoding="utf-8"))["geometry"]
+    side_band = fl["flange_diameter_mm"] * fl["flange_thickness_mm"]
+    a_tied = math.pi * side_band + g71["a_exp_mm2"]
+    proj = bs["silhouette_per_fin_area_cos_sin"]
+    assert proj["bark"] == [1.0, 0.0] and proj["decoupled"][0] == 0.0 and abs(proj["decoupled"][1] - 1.0 / math.pi) < 1e-5
+    assert abs(proj["tied"][0] - math.pi * g71["dome_diameter_mm"] ** 2 / 4.0 / a_tied) < 1e-4
+    assert abs(proj["tied"][1] - (g71["dome_diameter_mm"] * g71["h_over_bark_mm"] + side_band) / a_tied) < 1e-4
+    for ts in bs["timestep_check"].values():
+        assert ts["daily_min_err_K"] <= 0.15 and ts["shift_err_K"] <= 0.05 and ts["daily_max_err_K"] <= 0.2
+        for c, ref in ts["hours_above_deharden_reference"].items():
+            assert abs(ts["hours_above_deharden"][c] - ref) <= max(2, 0.02 * ref), (c, ts)
+    warm = bs["timestep_check"]["warmest_winter_hour"]["hours_above_deharden"]
+    assert any(v for c, v in warm.items() if not c.endswith("/bark")), warm
+    refl = bs["ground_reflected_not_modelled_scale"]
+    sky = d["inputs"]["sky_view"]
+    assert refl["winter_ghi_over_diffuse"] > 1.0
+    for a, v in refl["reflected_on_vertical_over_model_diffuse"].items():
+        assert abs(v - (1.0 - sky) * float(a) * refl["winter_ghi_over_diffuse"] / sky) <= 0.006, (a, v)
+    cell = {(r["form"], r["azimuth_deg"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in bs["runs"]}
+    diffuse = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r["shift_K"]["median"] for r in d["real_cloud"]["runs"]}
+    for (form, a, cp, k, side), r in cell.items():
+        h = r["winter_hours_above_deharden"]
+        assert h["flange"] <= h["no_flange"], r
+        for key in ("no_flange", "flange"):
+            assert sum(m[key] for m in r["winter_hours_above_deharden_by_month"].values()) == h[key]
+        if a == 0:
+            assert abs(r["shift_K"]["median"] - diffuse[(f"cloud_{form}_diffuse_sun", cp, k, side)]) <= 0.02, r
+            run = [cell[(form, az, cp, k, side)] for az in (0, 90, 180)], [cell[(form, az, cp, k, side)] for az in (0, 270, 180)]
+            for path in run:
+                for key in (lambda x: x["shift_K"]["median"], lambda x: x["winter_hours_above_deharden"]["no_flange"]):
+                    vals = [key(x) for x in path]
+                    assert vals == sorted(vals), (form, cp, k, side, vals)
+    for cp in ("decoupled", "tied"):
+        dd = [cell[(f, 180, cp, k, sd)]["cambium_min_C"]["flange"] - cell[(f, 0, cp, k, sd)]["cambium_min_C"]["flange"]
+              for (f, a, c, k, sd) in cell if a == 0 and c == cp]
+        assert bs["coldest_hour_under_flange_south_minus_north_K"][cp] == [round(min(dd), 2), round(max(dd), 2)]
+        assert min(dd) > 0.0, cp          # in absolute terms the beam warms the spot — the declared reading
+    exceptions = [(r["form"], r["azimuth_deg"], r["coupling"], r["wind_k"], r["bark_side"], mo)
+                  for r in bs["runs"] for mo, v in r["winter_hours_above_deharden_by_month"].items() if v["flange"] > v["no_flange"]]
+    assert exceptions == [(x["form"], x["azimuth_deg"], x["coupling"], x["wind_k"], x["bark_side"], x["month"])
+                          for x in bs["month_cells_flange_above_bark"]]
+    assert "does not choose an azimuth by itself" in d["verdict"]["text"]
+    years = bs["years"]
+    for a, by_cp in bs["by_azimuth"].items():
+        for cp, s in by_cp.items():
+            rows = [r for (_, az, c, _, _), r in cell.items() if az == int(a) and c == cp]
+            med = [r["shift_K"]["median"] for r in rows]
+            assert s["median_K_range"] == [min(med), max(med)]
+            hb = [r["winter_hours_above_deharden"]["no_flange"] / years for r in rows]
+            assert s["winter_hours_above_deharden_per_year"]["no_flange"] == [round(min(hb), 1), round(max(hb), 1)]
+    n, so = bs["by_azimuth"]["0"]["tied"], bs["by_azimuth"]["180"]["tied"]
+    for s, face in ((n, "north face"), (so, "south one")):
+        assert f"{s['median_K_range'][0]:+.1f}…{s['median_K_range'][1]:+.1f} K on a {face}" in d["verdict"]["text"]
+    hs = so["winter_hours_above_deharden_per_year"]
+    assert f"on a south face {hs['no_flange'][0]:.0f}–{hs['no_flange'][1]:.0f} hours a winter" in d["verdict"]["text"]
+
+
 def test_capsule_cold_edge_sky_invariants():
     """81 (HW.37, the cold edge 71 leaves open): controls, physical signs and every verdict clause re-derived.
 
