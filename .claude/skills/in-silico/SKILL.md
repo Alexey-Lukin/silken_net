@@ -79,6 +79,9 @@ Anchor mechanics (CPU):
      number instead of each typing it) · 54 · 55 (spans read at runtime)
   55 → 68 (importlib + bus_mechanical.json)      54 → 64 (importlib + anchor_thermal_bridge.json)
   55 (importlib: endurance, SF line) · 68 (bus_contact_equilibrium.json) → 86 (coaxiality priced as a Soderberg mean; 55's cache is its control)
+  55 (importlib: geometry, member EI, pogo force, µ sweep; bus_mechanical.json: the wear rows) · 68 (bus_contact_equilibrium.json:
+     the coaxial bracket and the plays) → 91 (liner_exit_contact.json — the exit contact as an elastic layer; a change to 55's
+     member or to either cache re-runs 91, and its cache test reads both CURRENT caches)
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

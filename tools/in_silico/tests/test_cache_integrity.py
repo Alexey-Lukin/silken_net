@@ -2140,6 +2140,87 @@ def test_bus_mechanical_wear_budget():
     assert (w["binding"]["geometry"], w["binding"]["mu"]) == (expected["geometry"], expected["mu"])
 
 
+def test_liner_exit_contact():
+    """Script 91 (HW.34 / HW.23): the liner's exit contact as an elastic-layer problem coupled to the rod, read over
+    the drag CYCLE (touchdown → µ·F), each figure beside a rigid wall at the SAME edge.
+
+    CAN catch: a bracket or a pad-couple row read against a stale 68 (both read from 68's CURRENT cache); a cycle row
+    whose peak is not the maximum of its own path, falls below the rigid touchdown value at the same edge or rises
+    above it by more than a sliver (the reaction is near zero there), or sits below its own full-drag point; a compliance that RAISED the full-drag root against the
+    rigid wall at the same edge, or a sub-cycle shallower than the rigid one (the two claims the summary makes); a
+    give no longer a sliver of the wall; a compliance share of the sliding outside [0, 1]; a wear path whose
+    saturation reaches 68's upper end or does not sit at the mouth's engagement; a pad couple that changes the
+    reversing cycle's amplitude by more than a few per cent, or whose mean does not grow with the eccentricity; a
+    countersink row whose tip is not past the bore line at touchdown (then the «ring is the first contact» caveat
+    would be stale); a sharp in-layer edge that stopped growing as ρ^(-1/2); a wear reading below 55's CURRENT flow
+    bound or above 55's CURRENT upper sliding.
+    CANNOT catch: whether a flat elastic layer is the right model of a 0.15 mm tube on a Ø1.0 wire (curvature, its
+    free end, plasticity, the landing, the ring and the lumped friction are declared ceilings), whether PEEK's
+    modulus is the tube grade's, or anything about the mouth, which 91 does not compute.
+    """
+    path = MECHANICAL / "liner_exit_contact.json"
+    if not path.exists():
+        pytest.skip("liner_exit_contact.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    d68 = json.loads((MECHANICAL / "bus_contact_equilibrium.json").read_text(encoding="utf-8"))
+    d55 = json.loads((MECHANICAL / "bus_mechanical.json").read_text(encoding="utf-8"))
+    inp, ctl = d["inputs"], d["controls"]
+    geo = inp["geometry"]
+    assert inp["radial_play_um"] == d68["inputs"]["radial_plays_um"]["zero interference"]
+    liner68 = next(r for r in d68["drag_coaxial"] if r["geometry"] == geo and r["branch"].startswith("PEEK liner")
+                   and r["play"] == "zero interference")
+    mu_max = str(max(float(m) for m in liner68["by_mu"]))
+    ref = liner68["by_mu"][mu_max]
+    assert inp["rigid_end_68_MPa"] == ref["sigma_root_MPa_bonded"], "91's bracket is not 68's CURRENT one — re-run 91"
+    assert inp["upper_end_68_MPa"] == ref["sigma_root_MPa_upper_end"], "91's bracket is not 68's CURRENT one — re-run 91"
+    rl = ctl["rigid_limit_vs_68"]
+    assert abs(rl["R_N"] + ref["contacts_bonded"][0]["force_N"]) <= 0.005 * rl["R_N"], "rigid limit ≠ 68's exit reaction"
+    assert abs(rl["sigma_root_MPa"] / ref["sigma_root_MPa_bonded"] - 1) < 0.01, "rigid limit ≠ 68's root stress"
+    pad68 = {str(round(p["eccentricity_mm"], 3)): p["sigma_root_MPa"] for p in d68["pad_moment_at_rod_radius"] if p["geometry"] == geo}
+    assert set(ctl["pad_couple_vs_68"]) == set(pad68), "the pad-couple control no longer covers 68's rows"
+    for e, (mine, theirs) in ctl["pad_couple_vs_68"].items():
+        assert theirs == pad68[e] and abs(mine / theirs - 1) < 0.01, f"pad couple ≠ 68 (d) at e {e}"
+    assert all(1.3 < g < 1.55 for g in ctl["sharp_edge_inside_the_layer"]["growth_per_halving"])
+    pk = ctl["edge_peak_smallest_radius_two_steps"]["p_max_MPa"]
+    assert abs(pk[1] / pk[0] - 1) < 0.02
+    lo, hi = inp["rigid_end_68_MPa"], inp["upper_end_68_MPa"]
+    for row in d["cycle"] + d["countersink"] + d["sensitivity"]:
+        tag = f"{row.get('r_edge_mm')}/{row.get('base', row.get('case', row.get('overhang_mm')))}/{row.get('modulus', '')}"
+        sig = row["sigma_root_signed_MPa"]
+        assert row["peak_sigma_MPa"] == max(sig), tag
+        assert -1e-3 <= row["peak_lift_by_compliance_MPa"] <= 0.005 * abs(row["peak_rigid_touchdown_same_edge_MPa"]), tag
+        assert row["peak_sigma_MPa"] >= row["sigma_at_mu_MPa"][mu_max], tag
+        assert abs(row["subcycle_range_MPa"] - (row["peak_sigma_MPa"] - row["sigma_at_mu_MPa"][mu_max])) <= 2e-3, tag
+        assert row["full_drag_shift_by_compliance_MPa"] <= 0.0, f"{tag}: the compliance raised the full-drag root"
+        assert row["subcycle_range_MPa"] >= row["subcycle_rigid_same_edge_MPa"] - 2e-3, tag
+        assert row["delta_c_um_at_mu_max"] < 0.05 * inp["liner_wall_mm"] * 1e3, tag
+    for row in d["cycle"] + d["countersink"]:
+        assert abs(row["peak_position_in_68_bracket"] - (row["peak_sigma_MPa"] - lo) / (hi - lo)) < 1e-3, row
+    for row in d["countersink"]:
+        assert row["tip_past_bore_line_um_at_touchdown"] > 0, "the tip no longer passes the bore line at touchdown"
+        assert row["peak_over_68_rigid_end"] >= 1.0
+    assert 0.0 < d["countersink_full_drag_reversal_overhang_mm"] < max(inp["overhang_sweep_mm"])
+    for s_ in d["sliding"]:
+        assert 0.0 <= s_["compliance_share"] <= 1.0 and s_["slide_um_rigid_same_edge"] <= s_["slide_um_model"], s_
+    for w in d["wear_path"]:
+        assert w["slope_MPa_per_um_of_exit_wear_conformal_bound"] > 0 and w["mouth_engages_at_exit_wear_um"] > 0
+        assert w["peak_saturates_at_MPa"] < hi, "the exit-wear path reached 68's upper end without the mouth wearing"
+        assert abs(w["peak_sigma_MPa_unworn_rigid"] + w["slope_MPa_per_um_of_exit_wear_conformal_bound"]
+                   * w["mouth_engages_at_exit_wear_um"] - w["peak_saturates_at_MPa"]) < 0.02
+    amp0 = d["pad_on_axis_amplitude_MPa"]
+    means = [abs(p["cycle_mean_MPa"]) for p in sorted(d["pad_couple"], key=lambda p: p["eccentricity_mm"])]
+    assert means == sorted(means) and means[0] > 0, "the couple's mean does not grow with the eccentricity"
+    assert all(abs(p["cycle_amplitude_MPa"] / amp0 - 1) < 0.05 for p in d["pad_couple"]), "the couple moved the amplitude"
+    wr = d["wear_readings"]
+    w55 = next(r for r in d55["wear_budget"]["rows"] if r["geometry"] == geo and r["branch"].startswith("PEEK liner")
+               and r["regime"] == "coaxial" and r["mu"] == float(mu_max))
+    assert wr["area_mm2_55_flow_bound"] == w55["area_material_bound_mm2"], "55's flow bound moved — re-run 91"
+    assert wr["area_over_flow_bound_flush"][0] > 1.0
+    upper = next(b for b in d55["clearance_regime"]["branches"] if b["geometry"] == geo and b["branch"].startswith("PEEK liner"))
+    assert wr["slide_per_cycle_um_55_upper"] == upper["by_mu"][mu_max]["in_contact_rotation_path_per_cycle_um_upper"]
+    assert wr["slide_per_cycle_um_countersink"][1] < wr["slide_per_cycle_um_55_upper"]
+
+
 def test_bus_contact_equilibrium():
     """Script 68 (HW.34 / HW.23): the bus rod in the cathode channel as a contact problem.
 
@@ -3276,6 +3357,7 @@ EXPECTED_SCRIPTS = [
     "71_capsule_thermal_envelope.py",
     "74_site_rain_dew.py",
     "85_electrode_interfacial_ph.py",
+    "91_liner_exit_contact.py",
 ]
 
 

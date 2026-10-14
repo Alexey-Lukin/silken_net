@@ -2158,6 +2158,122 @@ CHECKS += [
     for k, (col, tol, fn) in enumerate(_BUS68_COLUMNS)
 ]
 
+# ── HW.34 / HW.23: script 91 — the exit contact as an elastic layer over the drag CYCLE, SUMMARY §HW.34 ──
+# ⛔ Every cell is pinned because the PAIRS are the message: each elastic figure stands beside a rigid wall at the SAME
+# edge, and the reading «the compliance lowers the loaded part and deepens the sub-cycle» lives in the difference of two
+# columns. A doc that kept one column of a pair current and let the other rot would invert the reading silently.
+_LEC = "mechanical/liner_exit_contact.json"
+_LEC_ROWS = ("0.05", "0.1", "0.2", "0.3", "0.5")
+
+
+def _lec_cell(k: int) -> str:
+    return r" \|" + r"(?: \*\*-?[\d.]+(?: %)?\*\* \|)" + "{" + str(k) + "}" + r" \*\*" + N + r"(?: %)?\*\* \|"
+
+
+def _lec_row(d: dict, i: int) -> dict:
+    r = float(_LEC_ROWS[i])
+    return next(c for c in d["cycle"] if c["r_edge_mm"] == r and c["base"] == "bonded" and c["modulus"] == "short-term")
+
+
+def _lec_slide(d: dict, i: int) -> dict:
+    return next(x for x in d["sliding"] if x["r_edge_mm"] == float(_LEC_ROWS[i]))
+
+
+_LEC_COLUMNS = (
+    ("cycle peak", 0.0005, lambda d, i: _lec_row(d, i)["peak_sigma_MPa"]),
+    ("rigid wall at the same edge, touchdown", 0.0005, lambda d, i: _lec_row(d, i)["peak_rigid_touchdown_same_edge_MPa"]),
+    ("root at µ 0.5", 0.0005, lambda d, i: _lec_row(d, i)["sigma_at_mu_MPa"]["0.5"]),
+    ("rigid wall at µ 0.5", 0.0005, lambda d, i: _lec_row(d, i)["full_drag_rigid_same_edge_MPa"]),
+    ("sub-cycle", 0.0005, lambda d, i: _lec_row(d, i)["subcycle_range_MPa"]),
+    ("rigid sub-cycle", 0.0005, lambda d, i: _lec_row(d, i)["subcycle_rigid_same_edge_MPa"]),
+    ("sliding at µ 0.5", 0.005, lambda d, i: _lec_row(d, i)["slide_per_cycle_um_at_mu_max"]),
+    ("the compliance's share of the sliding", 0.05, lambda d, i: 100.0 * _lec_slide(d, i)["compliance_share"]),
+    ("edge peak, worst row", 0.05, lambda d, i: max(p["p_max_MPa"] for p in d["patch"] if p["r_edge_mm"] == float(_LEC_ROWS[i]))),
+)
+
+
+def _lec(d: dict, block: str, key: str) -> list:
+    return [r[key] for r in d[block]]
+
+
+def _lec_pad(d: dict) -> dict:
+    return max(d["pad_couple"], key=lambda p: p["eccentricity_mm"])
+
+
+def _lec_fric(d: dict) -> dict:
+    return _lec_row(d, 0)["friction_mu_c_max"]
+
+
+CHECKS += [
+    (f"liner exit contact, {col} at r {row} mm → liner_exit_contact.json", SUMMARY,
+     r"\| " + re.escape(row) + _lec_cell(k), _LEC, lambda d, i=i, fn=fn: fn(d, i), tol)
+    for i, row in enumerate(_LEC_ROWS)
+    for k, (col, tol, fn) in enumerate(_LEC_COLUMNS)
+] + [
+    ("liner exit contact, (A) give — low", SUMMARY, rf"The liner gives \*\*{N}–[\d.]+ µm\*\* at full drag", _LEC,
+     lambda d: min(_lec(d, "cycle", "delta_c_um_at_mu_max")), 0.005),
+    ("liner exit contact, (A) give — high", SUMMARY, rf"The liner gives \*\*[\d.]+–{N} µm\*\* at full drag", _LEC,
+     lambda d: max(_lec(d, "cycle", "delta_c_um_at_mu_max")), 0.005),
+    ("liner exit contact, (B) peak — low", SUMMARY, rf"sits at or just after touchdown\*\*: \*\*{N}–[\d.]+\*\* MPa", _LEC,
+     lambda d: min(_lec(d, "cycle", "peak_sigma_MPa")), 0.0005),
+    ("liner exit contact, (B) peak — high", SUMMARY, rf"sits at or just after touchdown\*\*: \*\*[\d.]+–{N}\*\* MPa", _LEC,
+     lambda d: max(_lec(d, "cycle", "peak_sigma_MPa")), 0.0005),
+    ("liner exit contact, (B) peak over 68 — low", SUMMARY, rf"MPa, ×\*\*{N}–[\d.]+\*\* of `68`'s figure\. On a rigid", _LEC,
+     lambda d: min(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.001),
+    ("liner exit contact, (B) peak over 68 — high", SUMMARY, rf"MPa, ×\*\*[\d.]+–{N}\*\* of `68`'s figure\. On a rigid", _LEC,
+     lambda d: max(_lec(d, "cycle", "peak_over_68_rigid_end")), 0.001),
+    ("liner exit contact, (B) the radius's lift", SUMMARY, rf"the edge radius lifts it by ≤ \*\*{N}\*\* MPa", _LEC,
+     lambda d: max(_lec(d, "cycle", "peak_lift_by_radius_over_flush_MPa")), 0.0005),
+    ("liner exit contact, (B) the give's lift", SUMMARY, rf"the give lifts it by ≤ \*\*{N}\*\* MPa more", _LEC,
+     lambda d: max(_lec(d, "cycle", "peak_lift_by_compliance_MPa")), 0.0005),
+    ("liner exit contact, (C) full-drag shift — smallest", SUMMARY, rf"LOWERS the root by \*\*{N}–[\d.]+\*\* MPa", _LEC,
+     lambda d: -max(_lec(d, "cycle", "full_drag_shift_by_compliance_MPa")), 0.005),
+    ("liner exit contact, (C) full-drag shift — largest", SUMMARY, rf"LOWERS the root by \*\*[\d.]+–{N}\*\* MPa", _LEC,
+     lambda d: -min(_lec(d, "cycle", "full_drag_shift_by_compliance_MPa")), 0.005),
+    ("liner exit contact, (C) sub-cycle ratio", SUMMARY, rf"up to ×\*\*{N}\*\* of the rigid one", _LEC,
+     lambda d: max(r["subcycle_range_MPa"] / r["subcycle_rigid_same_edge_MPa"] for r in d["cycle"]), 0.05),
+    ("liner exit contact, (D) exit-wear slope", SUMMARY, rf"the peak climbs ≤ \*\*{N}\*\* MPa per µm of exit wear", _LEC,
+     lambda d: d["wear_path"][0]["slope_MPa_per_um_of_exit_wear_conformal_bound"], 0.0005),
+    ("liner exit contact, (D) the mouth engages", SUMMARY, rf"until the mouth engages after \*\*{N}\*\* µm", _LEC,
+     lambda d: d["wear_path"][0]["mouth_engages_at_exit_wear_um"], 0.5),
+    ("liner exit contact, (D) saturation", SUMMARY, rf"the peak SATURATES at \*\*{N}\*\* MPa", _LEC,
+     lambda d: d["wear_path"][0]["peak_saturates_at_MPa"], 0.005),
+    ("liner exit contact, (D) mouth wear to the upper end", SUMMARY, rf"needs \*\*{N}\*\* µm of MOUTH wear", _LEC,
+     lambda d: d["wear_path"][0]["mouth_wear_to_reach_68_upper_end_um"], 0.5),
+    ("liner exit contact, (E) area over 55's flow bound — low", SUMMARY, rf"elastic patch is ×\*\*{N}–[\d]+\*\*", _LEC,
+     lambda d: d["wear_readings"]["area_over_flow_bound_flush"][0], 0.5),
+    ("liner exit contact, (E) area over 55's flow bound — high", SUMMARY, rf"elastic patch is ×\*\*[\d]+–{N}\*\*", _LEC,
+     lambda d: d["wear_readings"]["area_over_flow_bound_flush"][1], 0.5),
+    ("liner exit contact, (F) sliding vs 55's upper end", SUMMARY, rf"is at most \*\*1/{N}\*\* of `55`'s upper end", _LEC,
+     lambda d: d["wear_readings"]["upper_over_slide_flush_min"], 0.5),
+    ("liner exit contact, (F) the compliance's share — low", SUMMARY, rf"the compliance carries \*\*{N}–[\d.]+\*\* %", _LEC,
+     lambda d: 100.0 * min(_lec(d, "sliding", "compliance_share")), 0.05),
+    ("liner exit contact, (F) the compliance's share — high", SUMMARY, rf"the compliance carries \*\*[\d.]+–{N}\*\* %", _LEC,
+     lambda d: 100.0 * max(_lec(d, "sliding", "compliance_share")), 0.05),
+    ("liner exit contact, (G) pad amplitude", SUMMARY, rf"amplitude \*\*{N}\*\* MPa, exactly the on-axis one", _LEC,
+     lambda d: _lec_pad(d)["cycle_amplitude_MPa"], 0.0005),
+    ("liner exit contact, (G) pad mean shift", SUMMARY, rf"mean shifted by \*\*{N}\*\* MPa", _LEC,
+     lambda d: abs(_lec_pad(d)["cycle_mean_MPa"]), 0.005),
+    ("liner exit contact, (G) the exit section", SUMMARY, rf"carries ≈ the couple itself, \*\*{N}\*\* MPa nominal", _LEC,
+     lambda d: _lec_pad(d)["exit_section_sigma_from_the_couple_MPa"], 0.05),
+    ("liner exit contact, (H) friction loop at r 0.05", SUMMARY, rf"at r 0\.05 mm, \*\*{N}\*\* MPa against", _LEC,
+     lambda d: _lec_fric(d)["loop_range_MPa"], 0.005),
+    ("liner exit contact, (I) tip at touchdown — low", SUMMARY, rf"already at touchdown \(\*\*{N}–[\d.]+\*\* µm", _LEC,
+     lambda d: min(_lec(d, "countersink", "tip_past_bore_line_um_at_touchdown")), 0.05),
+    ("liner exit contact, (I) tip at touchdown — high", SUMMARY, rf"already at touchdown \(\*\*[\d.]+–{N}\*\* µm", _LEC,
+     lambda d: max(_lec(d, "countersink", "tip_past_bore_line_um_at_touchdown")), 0.05),
+    ("liner exit contact, (I) countersink peak — low", SUMMARY, rf"the cycle peak ×\*\*{N}–[\d.]+\*\* of `68`'s figure, the full-drag", _LEC,
+     lambda d: min(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.001),
+    ("liner exit contact, (I) countersink peak — high", SUMMARY, rf"the cycle peak ×\*\*[\d.]+–{N}\*\* of `68`'s figure, the full-drag", _LEC,
+     lambda d: max(_lec(d, "countersink", "peak_over_68_rigid_end")), 0.001),
+    ("liner exit contact, (I) reversal depth", SUMMARY, rf"reversing beyond e ≈ \*\*{N}\*\* mm", _LEC,
+     lambda d: d["countersink_full_drag_reversal_overhang_mm"], 0.005),
+    ("liner exit contact, (I) countersink sub-cycle", SUMMARY, rf"the sub-cycle up to \*\*{N}\*\* MPa", _LEC,
+     lambda d: max(_lec(d, "countersink", "subcycle_range_MPa")), 0.005),
+    ("liner exit contact, (J) in-layer sharp edge growth", SUMMARY, rf"its peak grows ×\*\*{N}\*\* per halving of the step", _LEC,
+     lambda d: d["controls"]["sharp_edge_inside_the_layer"]["growth_per_halving"][0], 0.005),
+]
+
 # ── CHEM.11 conservation: every cell of the SUMMARY table, row by row ──
 # The control rows are pinned exactly like the studied ones ON PURPOSE: the control is what licenses
 # the whole table, so a control cell that rots unnoticed would leave the instrument's credibility

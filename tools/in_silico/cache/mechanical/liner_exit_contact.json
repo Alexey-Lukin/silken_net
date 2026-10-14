@@ -1,0 +1,2724 @@
+{
+ "question": "Where does the root of the bus rod sit inside 68's coaxial bracket over the drag CYCLE once the liner's contact with the Ti channel at the exit is an elastic-layer contact — and what are its patch, its edge pressure, its in-contact sliding and the terms that move the root besides the contact's give (00_07 HW.34 / HW.23)",
+ "inputs": {
+  "source": "geometry, member EI, pogo force, µ and µ_c sweeps, constraint factors imported from 55_bus_mechanical.py; the coaxial bracket, the plays and the pad-couple rows loaded from 68's cache; 55's wear rows loaded from its cache",
+  "geometry": "shipped — the whole lock shank (HW.26 G1)",
+  "pad_mm": 35.0,
+  "gap_mm": 18.0,
+  "liner_from_mm": 17.0,
+  "liner_wall_mm": 0.15,
+  "liner_od_mm": 1.3,
+  "E_PEEK_MPa": 4000.0,
+  "nu_PEEK": 0.4,
+  "relaxed_modulus_fraction": 0.65,
+  "counterface_alloy": "Ti-6Al-4V",
+  "sigma_yield_PEEK_MPa_tensile_23C": 100.0,
+  "flow_pressures_MPa_55": {
+   "1.0": 100.0,
+   "3.0": 300.0
+  },
+  "mu_c_sweep_55": [
+   0.1,
+   0.4
+  ],
+  "r_edge_sweep_mm": [
+   0.05,
+   0.1,
+   0.2,
+   0.3,
+   0.5
+  ],
+  "overhang_sweep_mm": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "pad_eccentricity_mm": [
+   -0.5,
+   -0.1,
+   0.1,
+   0.5
+  ],
+  "r_edge_reference_mm": 0.2,
+  "grid_mm": {
+   "ds_path": 0.002,
+   "ds_peak": 0.001,
+   "dy": 0.005
+  },
+  "radial_play_um": 25.0,
+  "rigid_end_68_MPa": 3.4,
+  "upper_end_68_MPa": 23.78,
+  "rigid_flush_touchdown_MPa_unrounded": 3.3966
+ },
+ "controls": {
+  "phi_bonded": {
+   "small_kh_over_column": 1.0000007,
+   "table_max_rel_error": 2.07e-06
+  },
+  "phi_frictionless": {
+   "small_kh_over_column": 1.0,
+   "table_max_rel_error": 1.93e-06
+  },
+  "layer_influence_padding": {
+   "pads": [
+    4,
+    8
+   ],
+   "max_rel_difference": 1.32e-06
+  },
+  "hertz_halfspace": {
+   "p0_ratio": 0.9991,
+   "approach_ratio": 0.9998
+  },
+  "thin_layer_winkler": {
+   "a_over_h": 60.0,
+   "approach_ratio": 1.0003
+  },
+  "mohr_vs_fe_touchdown": {
+   "mohr_N": 0.009527,
+   "fe_N": 0.009527
+  },
+  "rigid_limit_vs_68": {
+   "R_N": 0.4905,
+   "R_N_68": 0.4905,
+   "sigma_root_MPa": 3.394,
+   "sigma_root_MPa_68": 3.4
+  },
+  "rigid_point_vs_lcp_rounded_edge": {
+   "r_edge_mm": 0.2,
+   "mu": 0.2,
+   "sigma_root_MPa": [
+    3.236,
+    3.236
+   ],
+   "R_N": [
+    0.192,
+    0.192
+   ]
+  },
+  "edge_peak_smallest_radius_two_steps": {
+   "r_edge_mm": 0.05,
+   "ds_mm": [
+    0.001,
+    0.0005
+   ],
+   "p_max_MPa": [
+    90.37,
+    91.24
+   ]
+  },
+  "sharp_edge_inside_the_layer": {
+   "overhang_mm": 1.0,
+   "ds_mm": [
+    0.002,
+    0.001,
+    0.0005
+   ],
+   "p_max_MPa": [
+    143.3,
+    202.3,
+    285.8
+   ],
+   "growth_per_halving": [
+    1.411,
+    1.413
+   ],
+   "sigma_root_MPa": [
+    1.018,
+    1.019,
+    1.019
+   ]
+  },
+  "pad_couple_vs_68": {
+   "0.5": [
+    0.913,
+    0.91
+   ],
+   "-0.5": [
+    5.88,
+    5.88
+   ]
+  }
+ },
+ "cycle": [
+  {
+   "r_edge_mm": 0.05,
+   "base": "bonded",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0143,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.404,
+    3.405,
+    3.408,
+    3.409,
+    3.407,
+    3.39,
+    3.339,
+    3.273,
+    3.199,
+    3.118
+   ],
+   "peak_sigma_MPa": 3.409,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4038,
+   "peak_lift_by_compliance_MPa": 0.0056,
+   "peak_position_in_68_bracket": 0.0005,
+   "peak_over_68_rigid_end": 1.0028,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.339,
+    "0.3": 3.273,
+    "0.4": 3.199,
+    "0.5": 3.118
+   },
+   "full_drag_rigid_same_edge_MPa": 3.282,
+   "full_drag_shift_by_compliance_MPa": -0.164,
+   "subcycle_range_MPa": 0.292,
+   "subcycle_rigid_same_edge_MPa": 0.122,
+   "R_N_at_mu": {
+    "0.2": 0.1912,
+    "0.3": 0.2918,
+    "0.4": 0.3925,
+    "0.5": 0.4932
+   },
+   "delta_c_um_at_mu_max": 0.27,
+   "k_eff_N_per_um_at_mu_max": 1.828,
+   "slide_per_cycle_um_at_mu_max": 0.30959,
+   "tip_past_bore_line_um_at_touchdown": 0.055,
+   "tip_past_bore_line_um_at_mu_max": 0.491,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.42,
+    "unloading_min_sigma_MPa": 3.106,
+    "loop_range_MPa": 0.313,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.506,
+    "unloading_min_sigma_MPa": 3.092,
+    "loop_range_MPa": 0.414,
+    "peak_moves_to_full_drag": true
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0072
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0143,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.404,
+    3.406,
+    3.41,
+    3.411,
+    3.409,
+    3.391,
+    3.333,
+    3.258,
+    3.173,
+    3.081
+   ],
+   "peak_sigma_MPa": 3.411,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4038,
+   "peak_lift_by_compliance_MPa": 0.0076,
+   "peak_position_in_68_bracket": 0.0006,
+   "peak_over_68_rigid_end": 1.0033,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.333,
+    "0.3": 3.258,
+    "0.4": 3.173,
+    "0.5": 3.081
+   },
+   "full_drag_rigid_same_edge_MPa": 3.282,
+   "full_drag_shift_by_compliance_MPa": -0.2,
+   "subcycle_range_MPa": 0.33,
+   "subcycle_rigid_same_edge_MPa": 0.122,
+   "R_N_at_mu": {
+    "0.2": 0.1913,
+    "0.3": 0.292,
+    "0.4": 0.3928,
+    "0.5": 0.4936
+   },
+   "delta_c_um_at_mu_max": 0.318,
+   "k_eff_N_per_um_at_mu_max": 1.554,
+   "slide_per_cycle_um_at_mu_max": 0.35368,
+   "tip_past_bore_line_um_at_touchdown": 0.056,
+   "tip_past_bore_line_um_at_mu_max": 0.578,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.422,
+    "unloading_min_sigma_MPa": 3.068,
+    "loop_range_MPa": 0.354,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.525,
+    "unloading_min_sigma_MPa": 3.053,
+    "loop_range_MPa": 0.472,
+    "peak_moves_to_full_drag": true
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0072
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0143,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.404,
+    3.405,
+    3.408,
+    3.41,
+    3.407,
+    3.391,
+    3.339,
+    3.272,
+    3.195,
+    3.111
+   ],
+   "peak_sigma_MPa": 3.41,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4038,
+   "peak_lift_by_compliance_MPa": 0.0058,
+   "peak_position_in_68_bracket": 0.0005,
+   "peak_over_68_rigid_end": 1.0028,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.339,
+    "0.3": 3.272,
+    "0.4": 3.195,
+    "0.5": 3.111
+   },
+   "full_drag_rigid_same_edge_MPa": 3.282,
+   "full_drag_shift_by_compliance_MPa": -0.171,
+   "subcycle_range_MPa": 0.299,
+   "subcycle_rigid_same_edge_MPa": 0.122,
+   "R_N_at_mu": {
+    "0.2": 0.1912,
+    "0.3": 0.2919,
+    "0.4": 0.3926,
+    "0.5": 0.4933
+   },
+   "delta_c_um_at_mu_max": 0.302,
+   "k_eff_N_per_um_at_mu_max": 1.632,
+   "slide_per_cycle_um_at_mu_max": 0.32305,
+   "tip_past_bore_line_um_at_touchdown": 0.055,
+   "tip_past_bore_line_um_at_mu_max": 0.531,
+   "peak_lift_by_radius_over_flush_MPa": 0.0072
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0143,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.404,
+    3.406,
+    3.41,
+    3.412,
+    3.41,
+    3.393,
+    3.333,
+    3.256,
+    3.167,
+    3.07
+   ],
+   "peak_sigma_MPa": 3.412,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4038,
+   "peak_lift_by_compliance_MPa": 0.0079,
+   "peak_position_in_68_bracket": 0.0006,
+   "peak_over_68_rigid_end": 1.0034,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.333,
+    "0.3": 3.256,
+    "0.4": 3.167,
+    "0.5": 3.07
+   },
+   "full_drag_rigid_same_edge_MPa": 3.282,
+   "full_drag_shift_by_compliance_MPa": -0.211,
+   "subcycle_range_MPa": 0.341,
+   "subcycle_rigid_same_edge_MPa": 0.122,
+   "R_N_at_mu": {
+    "0.2": 0.1913,
+    "0.3": 0.2921,
+    "0.4": 0.3929,
+    "0.5": 0.4938
+   },
+   "delta_c_um_at_mu_max": 0.36,
+   "k_eff_N_per_um_at_mu_max": 1.37,
+   "slide_per_cycle_um_at_mu_max": 0.37271,
+   "tip_past_bore_line_um_at_touchdown": 0.056,
+   "tip_past_bore_line_um_at_mu_max": 0.631,
+   "peak_lift_by_radius_over_flush_MPa": 0.0072
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "bonded",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.411,
+    3.412,
+    3.414,
+    3.414,
+    3.404,
+    3.375,
+    3.3,
+    3.211,
+    3.114,
+    3.01
+   ],
+   "peak_sigma_MPa": 3.414,
+   "peak_at_drag_N": 0.0144,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4111,
+   "peak_lift_by_compliance_MPa": 0.0031,
+   "peak_position_in_68_bracket": 0.0007,
+   "peak_over_68_rigid_end": 1.0042,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.3,
+    "0.3": 3.211,
+    "0.4": 3.114,
+    "0.5": 3.01
+   },
+   "full_drag_rigid_same_edge_MPa": 3.167,
+   "full_drag_shift_by_compliance_MPa": -0.157,
+   "subcycle_range_MPa": 0.404,
+   "subcycle_rigid_same_edge_MPa": 0.244,
+   "R_N_at_mu": {
+    "0.2": 0.1916,
+    "0.3": 0.2924,
+    "0.4": 0.3933,
+    "0.5": 0.4942
+   },
+   "delta_c_um_at_mu_max": 0.273,
+   "k_eff_N_per_um_at_mu_max": 1.812,
+   "slide_per_cycle_um_at_mu_max": 0.40134,
+   "tip_past_bore_line_um_at_touchdown": 0.109,
+   "tip_past_bore_line_um_at_mu_max": 0.559,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.417,
+    "unloading_min_sigma_MPa": 2.999,
+    "loop_range_MPa": 0.419,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.514,
+    "unloading_min_sigma_MPa": 2.986,
+    "loop_range_MPa": 0.528,
+    "peak_moves_to_full_drag": true
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0145
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.411,
+    3.413,
+    3.416,
+    3.416,
+    3.407,
+    3.376,
+    3.294,
+    3.196,
+    3.089,
+    2.975
+   ],
+   "peak_sigma_MPa": 3.416,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4111,
+   "peak_lift_by_compliance_MPa": 0.005,
+   "peak_position_in_68_bracket": 0.0008,
+   "peak_over_68_rigid_end": 1.0047,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.294,
+    "0.3": 3.196,
+    "0.4": 3.089,
+    "0.5": 2.975
+   },
+   "full_drag_rigid_same_edge_MPa": 3.167,
+   "full_drag_shift_by_compliance_MPa": -0.192,
+   "subcycle_range_MPa": 0.441,
+   "subcycle_rigid_same_edge_MPa": 0.244,
+   "R_N_at_mu": {
+    "0.2": 0.1917,
+    "0.3": 0.2926,
+    "0.4": 0.3936,
+    "0.5": 0.4946
+   },
+   "delta_c_um_at_mu_max": 0.321,
+   "k_eff_N_per_um_at_mu_max": 1.539,
+   "slide_per_cycle_um_at_mu_max": 0.44467,
+   "tip_past_bore_line_um_at_touchdown": 0.109,
+   "tip_past_bore_line_um_at_mu_max": 0.647,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.42,
+    "unloading_min_sigma_MPa": 2.962,
+    "loop_range_MPa": 0.458,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.534,
+    "unloading_min_sigma_MPa": 2.946,
+    "loop_range_MPa": 0.587,
+    "peak_moves_to_full_drag": true
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0145
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.411,
+    3.412,
+    3.414,
+    3.414,
+    3.405,
+    3.377,
+    3.301,
+    3.21,
+    3.11,
+    3.004
+   ],
+   "peak_sigma_MPa": 3.414,
+   "peak_at_drag_N": 0.0144,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4111,
+   "peak_lift_by_compliance_MPa": 0.0032,
+   "peak_position_in_68_bracket": 0.0007,
+   "peak_over_68_rigid_end": 1.0042,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.301,
+    "0.3": 3.21,
+    "0.4": 3.11,
+    "0.5": 3.004
+   },
+   "full_drag_rigid_same_edge_MPa": 3.167,
+   "full_drag_shift_by_compliance_MPa": -0.164,
+   "subcycle_range_MPa": 0.411,
+   "subcycle_rigid_same_edge_MPa": 0.244,
+   "R_N_at_mu": {
+    "0.2": 0.1916,
+    "0.3": 0.2924,
+    "0.4": 0.3933,
+    "0.5": 0.4943
+   },
+   "delta_c_um_at_mu_max": 0.306,
+   "k_eff_N_per_um_at_mu_max": 1.617,
+   "slide_per_cycle_um_at_mu_max": 0.4145,
+   "tip_past_bore_line_um_at_touchdown": 0.109,
+   "tip_past_bore_line_um_at_mu_max": 0.6,
+   "peak_lift_by_radius_over_flush_MPa": 0.0145
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.01,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.411,
+    3.413,
+    3.416,
+    3.416,
+    3.408,
+    3.378,
+    3.295,
+    3.194,
+    3.083,
+    2.965
+   ],
+   "peak_sigma_MPa": 3.416,
+   "peak_at_drag_N": 0.02,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4111,
+   "peak_lift_by_compliance_MPa": 0.0053,
+   "peak_position_in_68_bracket": 0.0008,
+   "peak_over_68_rigid_end": 1.0048,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.295,
+    "0.3": 3.194,
+    "0.4": 3.083,
+    "0.5": 2.965
+   },
+   "full_drag_rigid_same_edge_MPa": 3.167,
+   "full_drag_shift_by_compliance_MPa": -0.203,
+   "subcycle_range_MPa": 0.452,
+   "subcycle_rigid_same_edge_MPa": 0.244,
+   "R_N_at_mu": {
+    "0.2": 0.1917,
+    "0.3": 0.2926,
+    "0.4": 0.3936,
+    "0.5": 0.4947
+   },
+   "delta_c_um_at_mu_max": 0.364,
+   "k_eff_N_per_um_at_mu_max": 1.358,
+   "slide_per_cycle_um_at_mu_max": 0.46334,
+   "tip_past_bore_line_um_at_touchdown": 0.109,
+   "tip_past_bore_line_um_at_mu_max": 0.702,
+   "peak_lift_by_radius_over_flush_MPa": 0.0145
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "bonded",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.426,
+    3.424,
+    3.399,
+    3.346,
+    3.222,
+    3.086,
+    2.943,
+    2.794
+   ],
+   "peak_sigma_MPa": 3.427,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.0009,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0078,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.222,
+    "0.3": 3.086,
+    "0.4": 2.943,
+    "0.5": 2.794
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.144,
+   "subcycle_range_MPa": 0.632,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1924,
+    "0.3": 0.2936,
+    "0.4": 0.3949,
+    "0.5": 0.4962
+   },
+   "delta_c_um_at_mu_max": 0.279,
+   "k_eff_N_per_um_at_mu_max": 1.777,
+   "slide_per_cycle_um_at_mu_max": 0.58531,
+   "tip_past_bore_line_um_at_touchdown": 0.216,
+   "tip_past_bore_line_um_at_mu_max": 0.706,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.428,
+    "unloading_min_sigma_MPa": 2.794,
+    "loop_range_MPa": 0.634,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.471,
+    "unloading_min_sigma_MPa": 2.769,
+    "loop_range_MPa": 0.702,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0291
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.428,
+    3.426,
+    3.401,
+    3.347,
+    3.217,
+    3.072,
+    2.92,
+    2.761
+   ],
+   "peak_sigma_MPa": 3.428,
+   "peak_at_drag_N": 0.0144,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.0021,
+   "peak_position_in_68_bracket": 0.0014,
+   "peak_over_68_rigid_end": 1.0082,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.217,
+    "0.3": 3.072,
+    "0.4": 2.92,
+    "0.5": 2.761
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.177,
+   "subcycle_range_MPa": 0.667,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1925,
+    "0.3": 0.2938,
+    "0.4": 0.3951,
+    "0.5": 0.4965
+   },
+   "delta_c_um_at_mu_max": 0.329,
+   "k_eff_N_per_um_at_mu_max": 1.511,
+   "slide_per_cycle_um_at_mu_max": 0.62724,
+   "tip_past_bore_line_um_at_touchdown": 0.217,
+   "tip_past_bore_line_um_at_mu_max": 0.797,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.429,
+    "unloading_min_sigma_MPa": 2.761,
+    "loop_range_MPa": 0.668,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.465,
+    "unloading_min_sigma_MPa": 2.731,
+    "loop_range_MPa": 0.734,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0291
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.426,
+    3.424,
+    3.4,
+    3.347,
+    3.223,
+    3.086,
+    2.94,
+    2.788
+   ],
+   "peak_sigma_MPa": 3.427,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.001,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0078,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.223,
+    "0.3": 3.086,
+    "0.4": 2.94,
+    "0.5": 2.788
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.15,
+   "subcycle_range_MPa": 0.638,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1924,
+    "0.3": 0.2936,
+    "0.4": 0.3949,
+    "0.5": 0.4963
+   },
+   "delta_c_um_at_mu_max": 0.313,
+   "k_eff_N_per_um_at_mu_max": 1.586,
+   "slide_per_cycle_um_at_mu_max": 0.59793,
+   "tip_past_bore_line_um_at_touchdown": 0.216,
+   "tip_past_bore_line_um_at_mu_max": 0.748,
+   "peak_lift_by_radius_over_flush_MPa": 0.0291
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.428,
+    3.426,
+    3.403,
+    3.348,
+    3.218,
+    3.071,
+    2.914,
+    2.752
+   ],
+   "peak_sigma_MPa": 3.428,
+   "peak_at_drag_N": 0.0144,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.0023,
+   "peak_position_in_68_bracket": 0.0014,
+   "peak_over_68_rigid_end": 1.0082,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.218,
+    "0.3": 3.071,
+    "0.4": 2.914,
+    "0.5": 2.752
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.187,
+   "subcycle_range_MPa": 0.676,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1925,
+    "0.3": 0.2938,
+    "0.4": 0.3952,
+    "0.5": 0.4967
+   },
+   "delta_c_um_at_mu_max": 0.373,
+   "k_eff_N_per_um_at_mu_max": 1.333,
+   "slide_per_cycle_um_at_mu_max": 0.64521,
+   "tip_past_bore_line_um_at_touchdown": 0.217,
+   "tip_past_bore_line_um_at_mu_max": 0.854,
+   "peak_lift_by_radius_over_flush_MPa": 0.0291
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "bonded",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0097,
+    0.0101,
+    0.0145,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.441,
+    3.441,
+    3.439,
+    3.433,
+    3.394,
+    3.316,
+    3.145,
+    2.961,
+    2.772,
+    2.577
+   ],
+   "peak_sigma_MPa": 3.441,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4404,
+   "peak_lift_by_compliance_MPa": 0.0007,
+   "peak_position_in_68_bracket": 0.002,
+   "peak_over_68_rigid_end": 1.0121,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.145,
+    "0.3": 2.961,
+    "0.4": 2.772,
+    "0.5": 2.577
+   },
+   "full_drag_rigid_same_edge_MPa": 2.709,
+   "full_drag_shift_by_compliance_MPa": -0.132,
+   "subcycle_range_MPa": 0.864,
+   "subcycle_rigid_same_edge_MPa": 0.731,
+   "R_N_at_mu": {
+    "0.2": 0.1931,
+    "0.3": 0.2948,
+    "0.4": 0.3964,
+    "0.5": 0.4982
+   },
+   "delta_c_um_at_mu_max": 0.285,
+   "k_eff_N_per_um_at_mu_max": 1.746,
+   "slide_per_cycle_um_at_mu_max": 0.76912,
+   "tip_past_bore_line_um_at_touchdown": 0.324,
+   "tip_past_bore_line_um_at_mu_max": 0.868,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.441,
+    "unloading_min_sigma_MPa": 2.577,
+    "loop_range_MPa": 0.864,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.447,
+    "unloading_min_sigma_MPa": 2.565,
+    "loop_range_MPa": 0.882,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0438
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0097,
+    0.0101,
+    0.0145,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.441,
+    3.442,
+    3.44,
+    3.435,
+    3.397,
+    3.318,
+    3.14,
+    2.948,
+    2.749,
+    2.546
+   ],
+   "peak_sigma_MPa": 3.442,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4404,
+   "peak_lift_by_compliance_MPa": 0.0011,
+   "peak_position_in_68_bracket": 0.002,
+   "peak_over_68_rigid_end": 1.0122,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.14,
+    "0.3": 2.948,
+    "0.4": 2.749,
+    "0.5": 2.546
+   },
+   "full_drag_rigid_same_edge_MPa": 2.709,
+   "full_drag_shift_by_compliance_MPa": -0.164,
+   "subcycle_range_MPa": 0.896,
+   "subcycle_rigid_same_edge_MPa": 0.731,
+   "R_N_at_mu": {
+    "0.2": 0.1932,
+    "0.3": 0.2949,
+    "0.4": 0.3967,
+    "0.5": 0.4985
+   },
+   "delta_c_um_at_mu_max": 0.336,
+   "k_eff_N_per_um_at_mu_max": 1.485,
+   "slide_per_cycle_um_at_mu_max": 0.80981,
+   "tip_past_bore_line_um_at_touchdown": 0.325,
+   "tip_past_bore_line_um_at_mu_max": 0.963,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.442,
+    "unloading_min_sigma_MPa": 2.546,
+    "loop_range_MPa": 0.896,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.449,
+    "unloading_min_sigma_MPa": 2.532,
+    "loop_range_MPa": 0.918,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0438
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0097,
+    0.0101,
+    0.0145,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.441,
+    3.441,
+    3.439,
+    3.433,
+    3.395,
+    3.318,
+    3.146,
+    2.961,
+    2.769,
+    2.572
+   ],
+   "peak_sigma_MPa": 3.441,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4404,
+   "peak_lift_by_compliance_MPa": 0.0007,
+   "peak_position_in_68_bracket": 0.002,
+   "peak_over_68_rigid_end": 1.0121,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.146,
+    "0.3": 2.961,
+    "0.4": 2.769,
+    "0.5": 2.572
+   },
+   "full_drag_rigid_same_edge_MPa": 2.709,
+   "full_drag_shift_by_compliance_MPa": -0.137,
+   "subcycle_range_MPa": 0.869,
+   "subcycle_rigid_same_edge_MPa": 0.731,
+   "R_N_at_mu": {
+    "0.2": 0.1931,
+    "0.3": 0.2948,
+    "0.4": 0.3965,
+    "0.5": 0.4982
+   },
+   "delta_c_um_at_mu_max": 0.32,
+   "k_eff_N_per_um_at_mu_max": 1.558,
+   "slide_per_cycle_um_at_mu_max": 0.78124,
+   "tip_past_bore_line_um_at_touchdown": 0.324,
+   "tip_past_bore_line_um_at_mu_max": 0.911,
+   "peak_lift_by_radius_over_flush_MPa": 0.0438
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0097,
+    0.0101,
+    0.0145,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.441,
+    3.442,
+    3.44,
+    3.436,
+    3.398,
+    3.319,
+    3.141,
+    2.947,
+    2.745,
+    2.537
+   ],
+   "peak_sigma_MPa": 3.442,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4404,
+   "peak_lift_by_compliance_MPa": 0.0011,
+   "peak_position_in_68_bracket": 0.002,
+   "peak_over_68_rigid_end": 1.0122,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.141,
+    "0.3": 2.947,
+    "0.4": 2.745,
+    "0.5": 2.537
+   },
+   "full_drag_rigid_same_edge_MPa": 2.709,
+   "full_drag_shift_by_compliance_MPa": -0.172,
+   "subcycle_range_MPa": 0.904,
+   "subcycle_rigid_same_edge_MPa": 0.731,
+   "R_N_at_mu": {
+    "0.2": 0.1932,
+    "0.3": 0.295,
+    "0.4": 0.3968,
+    "0.5": 0.4986
+   },
+   "delta_c_um_at_mu_max": 0.381,
+   "k_eff_N_per_um_at_mu_max": 1.31,
+   "slide_per_cycle_um_at_mu_max": 0.82715,
+   "tip_past_bore_line_um_at_touchdown": 0.325,
+   "tip_past_bore_line_um_at_mu_max": 1.021,
+   "peak_lift_by_radius_over_flush_MPa": 0.0438
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "bonded",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0098,
+    0.0102,
+    0.0146,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.47,
+    3.47,
+    3.464,
+    3.453,
+    3.384,
+    3.258,
+    2.99,
+    2.711,
+    2.428,
+    2.141
+   ],
+   "peak_sigma_MPa": 3.47,
+   "peak_at_drag_N": 0.0102,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4703,
+   "peak_lift_by_compliance_MPa": 0.0002,
+   "peak_position_in_68_bracket": 0.0035,
+   "peak_over_68_rigid_end": 1.0207,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.99,
+    "0.3": 2.711,
+    "0.4": 2.428,
+    "0.5": 2.141
+   },
+   "full_drag_rigid_same_edge_MPa": 2.252,
+   "full_drag_shift_by_compliance_MPa": -0.111,
+   "subcycle_range_MPa": 1.329,
+   "subcycle_rigid_same_edge_MPa": 1.218,
+   "R_N_at_mu": {
+    "0.2": 0.1947,
+    "0.3": 0.2971,
+    "0.4": 0.3997,
+    "0.5": 0.5022
+   },
+   "delta_c_um_at_mu_max": 0.297,
+   "k_eff_N_per_um_at_mu_max": 1.691,
+   "slide_per_cycle_um_at_mu_max": 1.1355,
+   "tip_past_bore_line_um_at_touchdown": 0.544,
+   "tip_past_bore_line_um_at_mu_max": 1.238,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.471,
+    "unloading_min_sigma_MPa": 2.141,
+    "loop_range_MPa": 1.329,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.471,
+    "unloading_min_sigma_MPa": 2.128,
+    "loop_range_MPa": 1.343,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0737
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0098,
+    0.0102,
+    0.0146,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.47,
+    3.471,
+    3.465,
+    3.455,
+    3.387,
+    3.259,
+    2.985,
+    2.7,
+    2.408,
+    2.113
+   ],
+   "peak_sigma_MPa": 3.471,
+   "peak_at_drag_N": 0.0102,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4703,
+   "peak_lift_by_compliance_MPa": 0.0006,
+   "peak_position_in_68_bracket": 0.0035,
+   "peak_over_68_rigid_end": 1.0209,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.985,
+    "0.3": 2.7,
+    "0.4": 2.408,
+    "0.5": 2.113
+   },
+   "full_drag_rigid_same_edge_MPa": 2.252,
+   "full_drag_shift_by_compliance_MPa": -0.139,
+   "subcycle_range_MPa": 1.358,
+   "subcycle_rigid_same_edge_MPa": 1.218,
+   "R_N_at_mu": {
+    "0.2": 0.1948,
+    "0.3": 0.2973,
+    "0.4": 0.3999,
+    "0.5": 0.5025
+   },
+   "delta_c_um_at_mu_max": 0.349,
+   "k_eff_N_per_um_at_mu_max": 1.439,
+   "slide_per_cycle_um_at_mu_max": 1.17407,
+   "tip_past_bore_line_um_at_touchdown": 0.544,
+   "tip_past_bore_line_um_at_mu_max": 1.339,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.471,
+    "unloading_min_sigma_MPa": 2.113,
+    "loop_range_MPa": 1.358,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.472,
+    "unloading_min_sigma_MPa": 2.098,
+    "loop_range_MPa": 1.374,
+    "peak_moves_to_full_drag": false
+   },
+   "peak_lift_by_radius_over_flush_MPa": 0.0737
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "drag_N": [
+    0.0098,
+    0.0102,
+    0.0146,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.47,
+    3.47,
+    3.464,
+    3.453,
+    3.385,
+    3.259,
+    2.991,
+    2.712,
+    2.426,
+    2.138
+   ],
+   "peak_sigma_MPa": 3.47,
+   "peak_at_drag_N": 0.0102,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4703,
+   "peak_lift_by_compliance_MPa": 0.0002,
+   "peak_position_in_68_bracket": 0.0035,
+   "peak_over_68_rigid_end": 1.0207,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.991,
+    "0.3": 2.712,
+    "0.4": 2.426,
+    "0.5": 2.138
+   },
+   "full_drag_rigid_same_edge_MPa": 2.252,
+   "full_drag_shift_by_compliance_MPa": -0.114,
+   "subcycle_range_MPa": 1.333,
+   "subcycle_rigid_same_edge_MPa": 1.218,
+   "R_N_at_mu": {
+    "0.2": 0.1947,
+    "0.3": 0.2972,
+    "0.4": 0.3997,
+    "0.5": 0.5022
+   },
+   "delta_c_um_at_mu_max": 0.333,
+   "k_eff_N_per_um_at_mu_max": 1.508,
+   "slide_per_cycle_um_at_mu_max": 1.14676,
+   "tip_past_bore_line_um_at_touchdown": 0.544,
+   "tip_past_bore_line_um_at_mu_max": 1.283,
+   "peak_lift_by_radius_over_flush_MPa": 0.0737
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "drag_N": [
+    0.0098,
+    0.0102,
+    0.0146,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.47,
+    3.471,
+    3.465,
+    3.455,
+    3.388,
+    3.261,
+    2.987,
+    2.699,
+    2.405,
+    2.106
+   ],
+   "peak_sigma_MPa": 3.471,
+   "peak_at_drag_N": 0.0102,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4703,
+   "peak_lift_by_compliance_MPa": 0.0006,
+   "peak_position_in_68_bracket": 0.0035,
+   "peak_over_68_rigid_end": 1.0209,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.987,
+    "0.3": 2.699,
+    "0.4": 2.405,
+    "0.5": 2.106
+   },
+   "full_drag_rigid_same_edge_MPa": 2.252,
+   "full_drag_shift_by_compliance_MPa": -0.146,
+   "subcycle_range_MPa": 1.365,
+   "subcycle_rigid_same_edge_MPa": 1.218,
+   "R_N_at_mu": {
+    "0.2": 0.1948,
+    "0.3": 0.2973,
+    "0.4": 0.4,
+    "0.5": 0.5026
+   },
+   "delta_c_um_at_mu_max": 0.396,
+   "k_eff_N_per_um_at_mu_max": 1.269,
+   "slide_per_cycle_um_at_mu_max": 1.19032,
+   "tip_past_bore_line_um_at_touchdown": 0.544,
+   "tip_past_bore_line_um_at_mu_max": 1.4,
+   "peak_lift_by_radius_over_flush_MPa": 0.0737
+  }
+ ],
+ "patch": [
+  {
+   "r_edge_mm": 0.05,
+   "base": "bonded",
+   "modulus": "short-term",
+   "R_N": 0.4932,
+   "p_max_MPa": 90.4,
+   "p_mean_MPa": 10.95,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.904,
+    "3.0": 0.301
+   },
+   "area_mm2": 0.04504,
+   "patch_s_mm": [
+    0.047,
+    0.399
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4936,
+   "p_max_MPa": 66.7,
+   "p_mean_MPa": 8.24,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.667,
+    "3.0": 0.222
+   },
+   "area_mm2": 0.05993,
+   "patch_s_mm": [
+    0.047,
+    0.466
+   ],
+   "patch_half_width_mm": 0.12,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "R_N": 0.4933,
+   "p_max_MPa": 89.8,
+   "p_mean_MPa": 10.37,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.898,
+    "3.0": 0.299
+   },
+   "area_mm2": 0.04759,
+   "patch_s_mm": [
+    0.047,
+    0.423
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.05,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4938,
+   "p_max_MPa": 66.2,
+   "p_mean_MPa": 7.71,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.662,
+    "3.0": 0.221
+   },
+   "area_mm2": 0.06408,
+   "patch_s_mm": [
+    0.047,
+    0.499
+   ],
+   "patch_half_width_mm": 0.12,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "bonded",
+   "modulus": "short-term",
+   "R_N": 0.4942,
+   "p_max_MPa": 73.5,
+   "p_mean_MPa": 11.09,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.735,
+    "3.0": 0.245
+   },
+   "area_mm2": 0.04457,
+   "patch_s_mm": [
+    0.096,
+    0.441
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4946,
+   "p_max_MPa": 54.6,
+   "p_mean_MPa": 8.32,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.546,
+    "3.0": 0.182
+   },
+   "area_mm2": 0.05941,
+   "patch_s_mm": [
+    0.095,
+    0.507
+   ],
+   "patch_half_width_mm": 0.12,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "R_N": 0.4943,
+   "p_max_MPa": 72.9,
+   "p_mean_MPa": 10.48,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.729,
+    "3.0": 0.243
+   },
+   "area_mm2": 0.04715,
+   "patch_s_mm": [
+    0.096,
+    0.465
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.1,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4947,
+   "p_max_MPa": 54.2,
+   "p_mean_MPa": 7.79,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.542,
+    "3.0": 0.181
+   },
+   "area_mm2": 0.06354,
+   "patch_s_mm": [
+    0.095,
+    0.54
+   ],
+   "patch_half_width_mm": 0.125,
+   "free_end_within_t_of_patch": true
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "bonded",
+   "modulus": "short-term",
+   "R_N": 0.4962,
+   "p_max_MPa": 59.6,
+   "p_mean_MPa": 11.33,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.596,
+    "3.0": 0.199
+   },
+   "area_mm2": 0.04378,
+   "patch_s_mm": [
+    0.193,
+    0.528
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4965,
+   "p_max_MPa": 44.4,
+   "p_mean_MPa": 8.51,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.444,
+    "3.0": 0.148
+   },
+   "area_mm2": 0.05838,
+   "patch_s_mm": [
+    0.192,
+    0.592
+   ],
+   "patch_half_width_mm": 0.12,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "R_N": 0.4963,
+   "p_max_MPa": 59.1,
+   "p_mean_MPa": 10.72,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.591,
+    "3.0": 0.197
+   },
+   "area_mm2": 0.04631,
+   "patch_s_mm": [
+    0.193,
+    0.551
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.2,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4967,
+   "p_max_MPa": 44.0,
+   "p_mean_MPa": 7.96,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.44,
+    "3.0": 0.147
+   },
+   "area_mm2": 0.06241,
+   "patch_s_mm": [
+    0.192,
+    0.623
+   ],
+   "patch_half_width_mm": 0.125,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "bonded",
+   "modulus": "short-term",
+   "R_N": 0.4982,
+   "p_max_MPa": 53.6,
+   "p_mean_MPa": 11.58,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.536,
+    "3.0": 0.179
+   },
+   "area_mm2": 0.04303,
+   "patch_s_mm": [
+    0.291,
+    0.615
+   ],
+   "patch_half_width_mm": 0.11,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4985,
+   "p_max_MPa": 39.6,
+   "p_mean_MPa": 8.68,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.396,
+    "3.0": 0.132
+   },
+   "area_mm2": 0.05746,
+   "patch_s_mm": [
+    0.29,
+    0.677
+   ],
+   "patch_half_width_mm": 0.125,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "R_N": 0.4982,
+   "p_max_MPa": 53.1,
+   "p_mean_MPa": 10.96,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.531,
+    "3.0": 0.177
+   },
+   "area_mm2": 0.04548,
+   "patch_s_mm": [
+    0.291,
+    0.637
+   ],
+   "patch_half_width_mm": 0.115,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.3,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.4986,
+   "p_max_MPa": 39.1,
+   "p_mean_MPa": 8.12,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.391,
+    "3.0": 0.13
+   },
+   "area_mm2": 0.06142,
+   "patch_s_mm": [
+    0.29,
+    0.708
+   ],
+   "patch_half_width_mm": 0.125,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "bonded",
+   "modulus": "short-term",
+   "R_N": 0.5022,
+   "p_max_MPa": 47.0,
+   "p_mean_MPa": 12.04,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.47,
+    "3.0": 0.157
+   },
+   "area_mm2": 0.04171,
+   "patch_s_mm": [
+    0.487,
+    0.793
+   ],
+   "patch_half_width_mm": 0.115,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "bonded",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.5025,
+   "p_max_MPa": 34.8,
+   "p_mean_MPa": 9.01,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.348,
+    "3.0": 0.116
+   },
+   "area_mm2": 0.05575,
+   "patch_s_mm": [
+    0.486,
+    0.852
+   ],
+   "patch_half_width_mm": 0.125,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "frictionless",
+   "modulus": "short-term",
+   "R_N": 0.5022,
+   "p_max_MPa": 46.5,
+   "p_mean_MPa": 11.4,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.465,
+    "3.0": 0.155
+   },
+   "area_mm2": 0.04406,
+   "patch_s_mm": [
+    0.487,
+    0.814
+   ],
+   "patch_half_width_mm": 0.115,
+   "free_end_within_t_of_patch": false
+  },
+  {
+   "r_edge_mm": 0.5,
+   "base": "frictionless",
+   "modulus": "20-yr relaxed",
+   "R_N": 0.5026,
+   "p_max_MPa": 34.3,
+   "p_mean_MPa": 8.44,
+   "p_max_over_flow_pressure": {
+    "1.0": 0.343,
+    "3.0": 0.114
+   },
+   "area_mm2": 0.05957,
+   "patch_s_mm": [
+    0.486,
+    0.881
+   ],
+   "patch_half_width_mm": 0.13,
+   "free_end_within_t_of_patch": false
+  }
+ ],
+ "sliding": [
+  {
+   "r_edge_mm": 0.05,
+   "slide_um_model": 0.30959,
+   "slide_um_rigid_same_edge": 0.09742,
+   "compliance_share": 0.685
+  },
+  {
+   "r_edge_mm": 0.1,
+   "slide_um_model": 0.40134,
+   "slide_um_rigid_same_edge": 0.19456,
+   "compliance_share": 0.515
+  },
+  {
+   "r_edge_mm": 0.2,
+   "slide_um_model": 0.58531,
+   "slide_um_rigid_same_edge": 0.38799,
+   "compliance_share": 0.337
+  },
+  {
+   "r_edge_mm": 0.3,
+   "slide_um_model": 0.76912,
+   "slide_um_rigid_same_edge": 0.58027,
+   "compliance_share": 0.246
+  },
+  {
+   "r_edge_mm": 0.5,
+   "slide_um_model": 1.1355,
+   "slide_um_rigid_same_edge": 0.96142,
+   "compliance_share": 0.153
+  }
+ ],
+ "wear_path": [
+  {
+   "r_edge_mm": 0.0,
+   "peak_sigma_MPa_unworn_rigid": 3.397,
+   "slope_MPa_per_um_of_exit_wear_conformal_bound": 0.1359,
+   "mouth_engages_at_exit_wear_um": 50.4,
+   "peak_saturates_at_MPa": 10.24,
+   "slope_MPa_per_um_of_mouth_wear": 0.4098,
+   "mouth_wear_to_reach_68_upper_end_um": 33.0,
+   "reading": "the cycle peak (touchdown) on a rigid wall receded by w at the exit; the slope assumes the receded wall follows the rod's touchdown shape back to the mouth (a conformal flare) — a short scar moves the touchdown to its rim and climbs less, so it is an UPPER bound; past the mouth's engagement the touchdown is at the mouth and the peak stops rising, and 68's upper end needs the MOUTH to wear as well"
+  },
+  {
+   "r_edge_mm": 0.2,
+   "peak_sigma_MPa_unworn_rigid": 3.426,
+   "slope_MPa_per_um_of_exit_wear_conformal_bound": 0.137,
+   "mouth_engages_at_exit_wear_um": 49.8,
+   "peak_saturates_at_MPa": 10.24,
+   "slope_MPa_per_um_of_mouth_wear": 0.4098,
+   "mouth_wear_to_reach_68_upper_end_um": 33.0,
+   "reading": "the cycle peak (touchdown) on a rigid wall receded by w at the exit; the slope assumes the receded wall follows the rod's touchdown shape back to the mouth (a conformal flare) — a short scar moves the touchdown to its rim and climbs less, so it is an UPPER bound; past the mouth's engagement the touchdown is at the mouth and the peak stops rising, and 68's upper end needs the MOUTH to wear as well"
+  }
+ ],
+ "pad_couple": [
+  {
+   "eccentricity_mm": 0.1,
+   "touchdown_sigma_MPa_plus_e": 2.933,
+   "touchdown_sigma_MPa_minus_e": 3.918,
+   "cycle_amplitude_MPa": 3.426,
+   "cycle_mean_MPa": -0.493,
+   "exit_section_sigma_from_the_couple_MPa": 1.019
+  },
+  {
+   "eccentricity_mm": 0.5,
+   "touchdown_sigma_MPa_plus_e": 0.963,
+   "touchdown_sigma_MPa_minus_e": 5.889,
+   "cycle_amplitude_MPa": 3.426,
+   "cycle_mean_MPa": -2.463,
+   "exit_section_sigma_from_the_couple_MPa": 5.093
+  }
+ ],
+ "pad_on_axis_amplitude_MPa": 3.426,
+ "sensitivity": [
+  {
+   "kind": "play",
+   "case": "interference window floor",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 25.05,
+   "rigid_end_68_MPa": 3.4,
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.433,
+    3.433,
+    3.433,
+    3.43,
+    3.406,
+    3.353,
+    3.229,
+    3.093,
+    2.95,
+    2.801
+   ],
+   "peak_sigma_MPa": 3.433,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4325,
+   "peak_lift_by_compliance_MPa": 0.0009,
+   "peak_position_in_68_bracket": 0.0016,
+   "peak_over_68_rigid_end": 1.0098,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.229,
+    "0.3": 3.093,
+    "0.4": 2.95,
+    "0.5": 2.801
+   },
+   "full_drag_rigid_same_edge_MPa": 2.945,
+   "full_drag_shift_by_compliance_MPa": -0.144,
+   "subcycle_range_MPa": 0.632,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1923,
+    "0.3": 0.2936,
+    "0.4": 0.3948,
+    "0.5": 0.4962
+   },
+   "delta_c_um_at_mu_max": 0.279,
+   "k_eff_N_per_um_at_mu_max": 1.775,
+   "slide_per_cycle_um_at_mu_max": 0.5852,
+   "tip_past_bore_line_um_at_touchdown": 0.217,
+   "tip_past_bore_line_um_at_mu_max": 0.707
+  },
+  {
+   "kind": "play",
+   "case": "interference window mid-window",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 25.7,
+   "rigid_end_68_MPa": 3.49,
+   "drag_N": [
+    0.0099,
+    0.0104,
+    0.0148,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.522,
+    3.523,
+    3.522,
+    3.52,
+    3.495,
+    3.443,
+    3.32,
+    3.185,
+    3.042,
+    2.894
+   ],
+   "peak_sigma_MPa": 3.523,
+   "peak_at_drag_N": 0.0104,
+   "peak_rigid_touchdown_same_edge_MPa": 3.5216,
+   "peak_lift_by_compliance_MPa": 0.001,
+   "peak_position_in_68_bracket": 0.0016,
+   "peak_over_68_rigid_end": 1.0093,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.32,
+    "0.3": 3.185,
+    "0.4": 3.042,
+    "0.5": 2.894
+   },
+   "full_drag_rigid_same_edge_MPa": 3.035,
+   "full_drag_shift_by_compliance_MPa": -0.141,
+   "subcycle_range_MPa": 0.629,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1921,
+    "0.3": 0.2933,
+    "0.4": 0.3946,
+    "0.5": 0.4959
+   },
+   "delta_c_um_at_mu_max": 0.283,
+   "k_eff_N_per_um_at_mu_max": 1.752,
+   "slide_per_cycle_um_at_mu_max": 0.58375,
+   "tip_past_bore_line_um_at_touchdown": 0.222,
+   "tip_past_bore_line_um_at_mu_max": 0.718
+  },
+  {
+   "kind": "play",
+   "case": "interference window ceiling",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 26.36,
+   "rigid_end_68_MPa": 3.58,
+   "drag_N": [
+    0.0102,
+    0.0106,
+    0.0152,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.612,
+    3.613,
+    3.613,
+    3.61,
+    3.586,
+    3.534,
+    3.412,
+    3.277,
+    3.135,
+    2.987
+   ],
+   "peak_sigma_MPa": 3.613,
+   "peak_at_drag_N": 0.0106,
+   "peak_rigid_touchdown_same_edge_MPa": 3.612,
+   "peak_lift_by_compliance_MPa": 0.001,
+   "peak_position_in_68_bracket": 0.0016,
+   "peak_over_68_rigid_end": 1.0092,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.412,
+    "0.3": 3.277,
+    "0.4": 3.135,
+    "0.5": 2.987
+   },
+   "full_drag_rigid_same_edge_MPa": 3.125,
+   "full_drag_shift_by_compliance_MPa": -0.138,
+   "subcycle_range_MPa": 0.626,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1918,
+    "0.3": 0.293,
+    "0.4": 0.3943,
+    "0.5": 0.4956
+   },
+   "delta_c_um_at_mu_max": 0.287,
+   "k_eff_N_per_um_at_mu_max": 1.728,
+   "slide_per_cycle_um_at_mu_max": 0.58232,
+   "tip_past_bore_line_um_at_touchdown": 0.228,
+   "tip_past_bore_line_um_at_mu_max": 0.729
+  },
+  {
+   "kind": "play",
+   "case": "interference window floor (wire carries)",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 30.37,
+   "rigid_end_68_MPa": 4.13,
+   "drag_N": [
+    0.0117,
+    0.0123,
+    0.0175,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    4.162,
+    4.163,
+    4.162,
+    4.161,
+    4.139,
+    4.089,
+    3.97,
+    3.839,
+    3.7,
+    3.555
+   ],
+   "peak_sigma_MPa": 4.163,
+   "peak_at_drag_N": 0.0123,
+   "peak_rigid_touchdown_same_edge_MPa": 4.1615,
+   "peak_lift_by_compliance_MPa": 0.0011,
+   "peak_position_in_68_bracket": 0.0016,
+   "peak_over_68_rigid_end": 1.0079,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.97,
+    "0.3": 3.839,
+    "0.4": 3.7,
+    "0.5": 3.555
+   },
+   "full_drag_rigid_same_edge_MPa": 3.676,
+   "full_drag_shift_by_compliance_MPa": -0.121,
+   "subcycle_range_MPa": 0.607,
+   "subcycle_rigid_same_edge_MPa": 0.485,
+   "R_N_at_mu": {
+    "0.2": 0.1902,
+    "0.3": 0.2914,
+    "0.4": 0.3926,
+    "0.5": 0.4939
+   },
+   "delta_c_um_at_mu_max": 0.308,
+   "k_eff_N_per_um_at_mu_max": 1.603,
+   "slide_per_cycle_um_at_mu_max": 0.57425,
+   "tip_past_bore_line_um_at_touchdown": 0.263,
+   "tip_past_bore_line_um_at_mu_max": 0.794
+  },
+  {
+   "kind": "play",
+   "case": "interference window ceiling (wire carries)",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 21.17,
+   "rigid_end_68_MPa": 2.88,
+   "drag_N": [
+    0.0082,
+    0.0085,
+    0.0122,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    2.901,
+    2.902,
+    2.901,
+    2.897,
+    2.871,
+    2.815,
+    2.688,
+    2.548,
+    2.401,
+    2.249
+   ],
+   "peak_sigma_MPa": 2.902,
+   "peak_at_drag_N": 0.0085,
+   "peak_rigid_touchdown_same_edge_MPa": 2.9009,
+   "peak_lift_by_compliance_MPa": 0.0008,
+   "peak_position_in_68_bracket": 0.0011,
+   "peak_over_68_rigid_end": 1.0075,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.688,
+    "0.3": 2.548,
+    "0.4": 2.401,
+    "0.5": 2.249
+   },
+   "full_drag_rigid_same_edge_MPa": 2.412,
+   "full_drag_shift_by_compliance_MPa": -0.163,
+   "subcycle_range_MPa": 0.653,
+   "subcycle_rigid_same_edge_MPa": 0.489,
+   "R_N_at_mu": {
+    "0.2": 0.1939,
+    "0.3": 0.2952,
+    "0.4": 0.3965,
+    "0.5": 0.4978
+   },
+   "delta_c_um_at_mu_max": 0.257,
+   "k_eff_N_per_um_at_mu_max": 1.938,
+   "slide_per_cycle_um_at_mu_max": 0.59466,
+   "tip_past_bore_line_um_at_touchdown": 0.183,
+   "tip_past_bore_line_um_at_mu_max": 0.64
+  },
+  {
+   "kind": "geometry",
+   "case": "lock window, shallow end",
+   "geometry": "lock window, shallow end",
+   "radial_play_um": 25.0,
+   "rigid_end_68_MPa": 2.73,
+   "drag_N": [
+    0.0069,
+    0.0073,
+    0.0104,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    2.75,
+    2.751,
+    2.75,
+    2.744,
+    2.716,
+    2.659,
+    2.529,
+    2.388,
+    2.241,
+    2.088
+   ],
+   "peak_sigma_MPa": 2.751,
+   "peak_at_drag_N": 0.0073,
+   "peak_rigid_touchdown_same_edge_MPa": 2.75,
+   "peak_lift_by_compliance_MPa": 0.0006,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0075,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.529,
+    "0.3": 2.388,
+    "0.4": 2.241,
+    "0.5": 2.088
+   },
+   "full_drag_rigid_same_edge_MPa": 2.259,
+   "full_drag_shift_by_compliance_MPa": -0.17,
+   "subcycle_range_MPa": 0.662,
+   "subcycle_rigid_same_edge_MPa": 0.491,
+   "R_N_at_mu": {
+    "0.2": 0.1949,
+    "0.3": 0.2961,
+    "0.4": 0.3972,
+    "0.5": 0.4984
+   },
+   "delta_c_um_at_mu_max": 0.272,
+   "k_eff_N_per_um_at_mu_max": 1.83,
+   "slide_per_cycle_um_at_mu_max": 0.6577,
+   "tip_past_bore_line_um_at_touchdown": 0.194,
+   "tip_past_bore_line_um_at_mu_max": 0.68
+  },
+  {
+   "kind": "counterface",
+   "case": "beta-Ti-13Nb-13Zr (E 80 GPa)",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 25.0,
+   "rigid_end_68_MPa": 3.4,
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.426,
+    3.424,
+    3.399,
+    3.346,
+    3.222,
+    3.086,
+    2.942,
+    2.793
+   ],
+   "peak_sigma_MPa": 3.427,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.001,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0078,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.222,
+    "0.3": 3.086,
+    "0.4": 2.942,
+    "0.5": 2.793
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.145,
+   "subcycle_range_MPa": 0.633,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1924,
+    "0.3": 0.2936,
+    "0.4": 0.3949,
+    "0.5": 0.4962
+   },
+   "delta_c_um_at_mu_max": 0.284,
+   "k_eff_N_per_um_at_mu_max": 1.747,
+   "slide_per_cycle_um_at_mu_max": 0.58734,
+   "tip_past_bore_line_um_at_touchdown": 0.216,
+   "tip_past_bore_line_um_at_mu_max": 0.712
+  },
+  {
+   "kind": "counterface",
+   "case": "Ta (E 186 GPa)",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 25.0,
+   "rigid_end_68_MPa": 3.4,
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.426,
+    3.423,
+    3.399,
+    3.346,
+    3.222,
+    3.087,
+    2.943,
+    2.795
+   ],
+   "peak_sigma_MPa": 3.427,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.0009,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0078,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.222,
+    "0.3": 3.087,
+    "0.4": 2.943,
+    "0.5": 2.795
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.143,
+   "subcycle_range_MPa": 0.631,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1924,
+    "0.3": 0.2936,
+    "0.4": 0.3949,
+    "0.5": 0.4962
+   },
+   "delta_c_um_at_mu_max": 0.274,
+   "k_eff_N_per_um_at_mu_max": 1.812,
+   "slide_per_cycle_um_at_mu_max": 0.58307,
+   "tip_past_bore_line_um_at_touchdown": 0.216,
+   "tip_past_bore_line_um_at_mu_max": 0.699
+  },
+  {
+   "kind": "counterface",
+   "case": "rigid Ti",
+   "geometry": "shipped — the whole lock shank (HW.26 G1)",
+   "radial_play_um": 25.0,
+   "rigid_end_68_MPa": 3.4,
+   "drag_N": [
+    0.0096,
+    0.0101,
+    0.0144,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.426,
+    3.427,
+    3.426,
+    3.423,
+    3.398,
+    3.346,
+    3.222,
+    3.087,
+    2.944,
+    2.797
+   ],
+   "peak_sigma_MPa": 3.427,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.4257,
+   "peak_lift_by_compliance_MPa": 0.0009,
+   "peak_position_in_68_bracket": 0.0013,
+   "peak_over_68_rigid_end": 1.0078,
+   "sigma_at_mu_MPa": {
+    "0.2": 3.222,
+    "0.3": 3.087,
+    "0.4": 2.944,
+    "0.5": 2.797
+   },
+   "full_drag_rigid_same_edge_MPa": 2.938,
+   "full_drag_shift_by_compliance_MPa": -0.141,
+   "subcycle_range_MPa": 0.63,
+   "subcycle_rigid_same_edge_MPa": 0.487,
+   "R_N_at_mu": {
+    "0.2": 0.1924,
+    "0.3": 0.2936,
+    "0.4": 0.3948,
+    "0.5": 0.4961
+   },
+   "delta_c_um_at_mu_max": 0.266,
+   "k_eff_N_per_um_at_mu_max": 1.864,
+   "slide_per_cycle_um_at_mu_max": 0.57987,
+   "tip_past_bore_line_um_at_touchdown": 0.216,
+   "tip_past_bore_line_um_at_mu_max": 0.689
+  }
+ ],
+ "countersink": [
+  {
+   "overhang_mm": 0.5,
+   "drag_N": [
+    0.0098,
+    0.0103,
+    0.0147,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.501,
+    3.501,
+    3.489,
+    3.474,
+    3.375,
+    3.199,
+    2.832,
+    2.456,
+    2.076,
+    1.693
+   ],
+   "peak_sigma_MPa": 3.501,
+   "peak_at_drag_N": 0.0098,
+   "peak_rigid_touchdown_same_edge_MPa": 3.5007,
+   "peak_lift_by_compliance_MPa": 0.0002,
+   "peak_position_in_68_bracket": 0.005,
+   "peak_over_68_rigid_end": 1.0297,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.832,
+    "0.3": 2.456,
+    "0.4": 2.076,
+    "0.5": 1.693
+   },
+   "full_drag_rigid_same_edge_MPa": 1.795,
+   "full_drag_shift_by_compliance_MPa": -0.103,
+   "subcycle_range_MPa": 1.808,
+   "subcycle_rigid_same_edge_MPa": 1.705,
+   "R_N_at_mu": {
+    "0.2": 0.1963,
+    "0.3": 0.2996,
+    "0.4": 0.403,
+    "0.5": 0.5064
+   },
+   "delta_c_um_at_mu_max": 0.311,
+   "k_eff_N_per_um_at_mu_max": 1.626,
+   "slide_per_cycle_um_at_mu_max": 1.50834,
+   "tip_past_bore_line_um_at_touchdown": 0.769,
+   "tip_past_bore_line_um_at_mu_max": 1.681,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.501,
+    "unloading_min_sigma_MPa": 1.693,
+    "loop_range_MPa": 1.808,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.501,
+    "unloading_min_sigma_MPa": 1.679,
+    "loop_range_MPa": 1.822,
+    "peak_moves_to_full_drag": false
+   },
+   "root_moment_reverses_on_the_path": false,
+   "ring_bore_must_clear_the_channel_by_um": 1.68
+  },
+  {
+   "overhang_mm": 1.0,
+   "drag_N": [
+    0.0101,
+    0.0105,
+    0.0151,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.579,
+    3.578,
+    3.555,
+    3.528,
+    3.356,
+    3.057,
+    2.446,
+    1.827,
+    1.206,
+    0.583
+   ],
+   "peak_sigma_MPa": 3.579,
+   "peak_at_drag_N": 0.0101,
+   "peak_rigid_touchdown_same_edge_MPa": 3.579,
+   "peak_lift_by_compliance_MPa": 0.0002,
+   "peak_position_in_68_bracket": 0.0088,
+   "peak_over_68_rigid_end": 1.0527,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.446,
+    "0.3": 1.827,
+    "0.4": 1.206,
+    "0.5": 0.583
+   },
+   "full_drag_rigid_same_edge_MPa": 0.656,
+   "full_drag_shift_by_compliance_MPa": -0.072,
+   "subcycle_range_MPa": 2.996,
+   "subcycle_rigid_same_edge_MPa": 2.923,
+   "R_N_at_mu": {
+    "0.2": 0.2003,
+    "0.3": 0.3058,
+    "0.4": 0.4114,
+    "0.5": 0.5169
+   },
+   "delta_c_um_at_mu_max": 0.34,
+   "k_eff_N_per_um_at_mu_max": 1.521,
+   "slide_per_cycle_um_at_mu_max": 2.41256,
+   "tip_past_bore_line_um_at_touchdown": 1.345,
+   "tip_past_bore_line_um_at_mu_max": 3.05,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.579,
+    "unloading_min_sigma_MPa": 0.583,
+    "loop_range_MPa": 2.996,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.579,
+    "unloading_min_sigma_MPa": 0.583,
+    "loop_range_MPa": 2.996,
+    "peak_moves_to_full_drag": false
+   },
+   "root_moment_reverses_on_the_path": false,
+   "ring_bore_must_clear_the_channel_by_um": 3.05
+  },
+  {
+   "overhang_mm": 1.5,
+   "drag_N": [
+    0.0103,
+    0.0108,
+    0.0154,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.661,
+    3.658,
+    3.624,
+    3.588,
+    3.341,
+    2.919,
+    2.063,
+    1.2,
+    0.336,
+    -0.528
+   ],
+   "peak_sigma_MPa": 3.661,
+   "peak_at_drag_N": 0.0103,
+   "peak_rigid_touchdown_same_edge_MPa": 3.6609,
+   "peak_lift_by_compliance_MPa": 0.0001,
+   "peak_position_in_68_bracket": 0.0128,
+   "peak_over_68_rigid_end": 1.0768,
+   "sigma_at_mu_MPa": {
+    "0.2": 2.063,
+    "0.3": 1.2,
+    "0.4": 0.336,
+    "0.5": -0.528
+   },
+   "full_drag_rigid_same_edge_MPa": -0.48,
+   "full_drag_shift_by_compliance_MPa": -0.048,
+   "subcycle_range_MPa": 4.19,
+   "subcycle_rigid_same_edge_MPa": 4.141,
+   "R_N_at_mu": {
+    "0.2": 0.2044,
+    "0.3": 0.3122,
+    "0.4": 0.4201,
+    "0.5": 0.5279
+   },
+   "delta_c_um_at_mu_max": 0.365,
+   "k_eff_N_per_um_at_mu_max": 1.445,
+   "slide_per_cycle_um_at_mu_max": 3.29399,
+   "tip_past_bore_line_um_at_touchdown": 1.948,
+   "tip_past_bore_line_um_at_mu_max": 4.826,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.661,
+    "unloading_min_sigma_MPa": -0.528,
+    "loop_range_MPa": 4.19,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.661,
+    "unloading_min_sigma_MPa": -0.528,
+    "loop_range_MPa": 4.19,
+    "peak_moves_to_full_drag": false
+   },
+   "root_moment_reverses_on_the_path": true,
+   "ring_bore_must_clear_the_channel_by_um": 4.83
+  },
+  {
+   "overhang_mm": 2.0,
+   "drag_N": [
+    0.0105,
+    0.011,
+    0.0158,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+   ],
+   "sigma_root_signed_MPa": [
+    3.747,
+    3.743,
+    3.696,
+    3.652,
+    3.332,
+    2.786,
+    1.684,
+    0.577,
+    -0.532,
+    -1.641
+   ],
+   "peak_sigma_MPa": 3.747,
+   "peak_at_drag_N": 0.0105,
+   "peak_rigid_touchdown_same_edge_MPa": 3.7465,
+   "peak_lift_by_compliance_MPa": 0.0001,
+   "peak_position_in_68_bracket": 0.017,
+   "peak_over_68_rigid_end": 1.1019,
+   "sigma_at_mu_MPa": {
+    "0.2": 1.684,
+    "0.3": 0.577,
+    "0.4": -0.532,
+    "0.5": -1.641
+   },
+   "full_drag_rigid_same_edge_MPa": -1.612,
+   "full_drag_shift_by_compliance_MPa": -0.029,
+   "subcycle_range_MPa": 5.387,
+   "subcycle_rigid_same_edge_MPa": 5.359,
+   "R_N_at_mu": {
+    "0.2": 0.2086,
+    "0.3": 0.3188,
+    "0.4": 0.429,
+    "0.5": 0.5392
+   },
+   "delta_c_um_at_mu_max": 0.389,
+   "k_eff_N_per_um_at_mu_max": 1.387,
+   "slide_per_cycle_um_at_mu_max": 4.15063,
+   "tip_past_bore_line_um_at_touchdown": 2.578,
+   "tip_past_bore_line_um_at_mu_max": 7.016,
+   "friction_mu_c_min": {
+    "mu_c": 0.1,
+    "loading_peak_sigma_MPa": 3.747,
+    "unloading_min_sigma_MPa": -1.641,
+    "loop_range_MPa": 5.387,
+    "peak_moves_to_full_drag": false
+   },
+   "friction_mu_c_max": {
+    "mu_c": 0.4,
+    "loading_peak_sigma_MPa": 3.747,
+    "unloading_min_sigma_MPa": -1.641,
+    "loop_range_MPa": 5.387,
+    "peak_moves_to_full_drag": false
+   },
+   "root_moment_reverses_on_the_path": true,
+   "ring_bore_must_clear_the_channel_by_um": 7.02
+  }
+ ],
+ "countersink_full_drag_reversal_overhang_mm": 1.288,
+ "wear_readings": {
+  "mu": 0.5,
+  "area_mm2_55_flow_bound": 0.00163,
+  "area_mm2_55_projected_run": 22.1,
+  "area_over_flow_bound_flush": [
+   25.6,
+   39.3
+  ],
+  "slide_per_cycle_um_55_upper": 16.577,
+  "slide_per_cycle_um_flush": [
+   0.3096,
+   1.1903
+  ],
+  "slide_per_cycle_um_countersink": [
+   1.5083,
+   4.1506
+  ],
+  "upper_over_slide_flush_min": 13.9,
+  "upper_over_slide_countersink_min": 4.0,
+  "reading": "frictionless kinematic sliding (a ceiling), on an unworn wall; the landing at each reversal of the drag (impact / partial-slip fretting) is not modelled"
+ },
+ "summary": "Coaxial pogo drag, unworn wall, flush exit with a rounding. (A) The liner gives 0.27–0.40 µm at full drag against a 150 µm wall. (B) The cycle PEAK sits at or just after touchdown: 3.409–3.471 MPa, ×1.003–1.021 of 68's 3.4 MPa — on a rigid wall at the same edge it is F_td·L, the edge radius lifting it by ≤ 0.074 MPa over the flush value, and while the patch is tiny the give lifts it by ≤ 0.008 MPa more (68's sign). (C) On the LOADED part the sign turns: at full drag the compliance lowers the root by 0.11–0.21 MPa against a rigid wall at the same edge — the opposite sign to 68's 3EI·(R/k)/L², because the patch spreads inside the bore — and deepens the sub-cycle (touchdown → full drag) up to ×2.8 of the rigid one. (D) The bracket's upper end is not an elastic state: the peak climbs ≤ 0.136 MPa per µm of exit wear (a conformal-flare bound), the mouth engages after 50 µm and the peak saturates at 10.24 MPa; 68's 23.78 MPa needs 33 µm of MOUTH wear on top. (E) Edge peak at µ 0.5, 0.001 mm step, worst row: r 0.05 mm → 90 MPa · r 0.1 mm → 74 MPa · r 0.2 mm → 60 MPa · r 0.3 mm → 54 MPa · r 0.5 mm → 47 MPa; below 1·σ_y (23 °C tensile) at every swept radius; the elastic patch is ×26–39 55's flow bound. (F) The frictionless sliding — a kinematic ceiling — is at most 1/14 of 55's upper end, and the compliance carries 15%–68% of it against a rigid wall at the same edge (more at a tighter edge). (G) A pogo contact off the rod axis by ±0.5 mm moves the MEAN of a reversing cycle by -2.46 MPa and leaves its amplitude at 3.43 MPa (on axis 3.43); the exit section then carries ≈ the couple, 5.1 MPa nominal. (H) Lumped full-stick friction (an upper estimate) widens the loading/unloading loop to ≤ 1.37 MPa and moves the peak to full drag at r 0.05, 0.1 mm. (I) The ratified countersink is CONDITIONAL: the tip is past the bore line already at touchdown (0.8–2.6 µm), so a ring whose bore equals the channel's is the FIRST contact, which no model here has; only for a ring that clears it do the rows hold — peak ×1.030–1.102 of 68's figure, the full-drag moment reversing beyond e ≈ 1.29 mm, the sub-cycle up to 5.39 MPa, the sliding up to 1/4 of 55's upper end. (J) A sharp Ti edge INSIDE the layer (the countersink's, the mouth's) is a punch edge — peak ×1.41 per halving of the step; the flush sharp corner of the shipped CAD is outside the kernel, bounded only for a frictionless contact. MODELLED, not measured; no radius is proposed — the trade it names is weighed by a measured wear rate and slip regime, not by this model.",
+ "not_modelled": {
+  "plasticity": "linear elastic; a peak above the flow pressure is flagged, never redistributed",
+  "layer_shape": "flat, uniform layer: the tube's curvature (a cylindrical confined column is ≈ 1.14× more compliant — δ_c may be ~14 % low) and its free end at the pad plane are not modelled; rows with r < t sit nearest that end and their peak is biased high",
+  "flush_sharp_corner": "outside the kernel (it continues the layer past the pad plane); for coplanar free faces on a FRICTIONLESS counterface the corner stress is bounded (the reflected wedge is 180° with both faces free); under stick the corner is a clamped–free 90° wedge, weakly singular (≈ ρ^−0.35 at ν 0.4)",
+  "base": "the hot-mounted tube grips the wire by interference — neither bonded nor frictionless; both are reported as a bracket",
+  "creep": "the 20-yr relaxed modulus (lib PEEK_RELAX_FLOOR, a constant-strain figure) is used for a constant-load contact by linear-viscoelastic correspondence; it LOWERS the edge peak, so for the peak it is the anti-conservative end",
+  "friction": "not in the solve; a lumped couple at the patch centroid, rigid in shear, from zero to full stick capped at µ_c·R·r_OD (µ_c from 55's PEEK–Ti sweep) — an upper estimate; the sliding figures are frictionless kinematic ceilings",
+  "thermal_axial_pdelta": "no thermal term (the cold liner's ≈ 1 µm radial pull-back per 40 K moves 68's lower end by ≈ 0.13 MPa), no P-δ of the 1 N axial pogo force",
+  "wear": "no wear in the contact solve; block wear_path is a rigid wall receded at the exit as a conformal flare (an upper bound of the slope — a short scar climbs less), and past the mouth's engagement it reports the saturation, not a two-station solve",
+  "ring_and_closure": "the countersink's PEEK ring and the ratified exit closure element are not modelled; the tip is past the bore line already at touchdown, so a ring whose bore equals the channel's is the FIRST contact and every countersink row holds only for a ring that clears it",
+  "pad_couple": "the reversing cycle's extremes are taken at touchdown on each wall (closed form, elastic = rigid there); the path between, with the − wall in play, is not solved",
+  "mouth": "the mouth (the station under a channel offset) is not computed here",
+  "landing": "each reversal of the drag lands the tube on the opposite wall; the impact / partial-slip fretting of that landing is not modelled"
+ }
+}
