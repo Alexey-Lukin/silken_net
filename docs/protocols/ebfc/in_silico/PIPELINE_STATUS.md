@@ -7,7 +7,17 @@
 
 ## Script Execution Status
 
-> **Nothing running.** The last run, `21e … b3lyp-relaxed-os3` — leg (3б) of [`00_07`](../../../00_07_Action_Plan_Tracker.md)
+> **Running since 2026-10-14 10:59 — the acceptors (⚖️ founder 2026-10-14, the note under D):** `21e b3lyp-relaxed-os2`
+> then `b3lyp-relaxed-os3` on Cl, then on NO₂ (SO₂CF₃ only on the founder's word after NO₂), estimate 17–37 h. It runs
+> in the git worktree `/Users/oleksiilukin/silken_net-acceptors` (detached at `6e5315d70`), on that tree's own copies of
+> the (3а)/(3б) caches, so the main tree's caches stay committed and green; log `tools/in_silico/21e_relaxed_acceptors_2026-10-14.log`
+> there; after each point the chain snapshots both caches to `tools/in_silico/cache/runs/acceptors/after_{cl,no2}/`.
+> **Copy back only from a snapshot**, and only when both `vs_series` and `vs_vertical` are present, no `*_partial` key is
+> left, and every Os(II) complex has its `dE_red_eV` and an adiabatic row; and only after `git diff --quiet 6e5315d70 HEAD --`
+> on the three caches, `21e`, `lib/dft_utils.py` and `lib/constants.py`. Exit codes do not mean success — judge each
+> point by its cache content. Copying a cache in breaks `83` until it handles the acceptors (leg HW.5.IS), so the
+> caches, the `83` change and the docs land in one commit.
+> The previous run, `21e … b3lyp-relaxed-os3` — leg (3б) of [`00_07`](../../../00_07_Action_Plan_Tracker.md)
 > HW.5.IS, each point's Os(III) relaxed from its relaxed Os(II): dmbpy (15 steps; λ_III 86 meV), ome (31 steps; 94 meV),
 > bpy (47 steps; 110 meV), 16.1 h of optimisation the three, every single point within 1e-6 Ha of its last step — is
 > integrated 2026-10-14: `83` reads it as the block `adiabatic` of `relaxed_geometry_check` (rows 21e · 83, SUMMARY
