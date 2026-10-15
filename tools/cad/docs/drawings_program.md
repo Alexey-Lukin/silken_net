@@ -202,6 +202,10 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    blind to exactly that — an attachment must not undo it. **Price:** one machine session (code + a test that no
    marker survives) before the letter goes. **Weakest link:** dropping a reference by editing note text can cut
    meaning out of a sentence, so every changed note goes to the founder beside the diff before sending.
+   ⊕ The question put (`00_07` HW.24, 2026-10-15: «креслення купонів — у вендорській формі чи як є») named the
+   coupon drawings only, and on a part sheet `notes.extra` is shop instruction, not rationale (`anchor_zone1.pine`:
+   «printed WITHOUT a core»), so whether a part-RFQ sheet (`00_07` HW.1) goes in this form is not yet answered —
+   put it to the founder before the first one leaves.
 
 ## 9. References
 
