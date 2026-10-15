@@ -291,9 +291,8 @@ to His/Glu protonation, is reserved for the explicit-solvent QM/MM capstone.
 
 ## 3.7 Thermal robustness (brief)
 
-Across a molecular-dynamics ensemble the FAD frontier orbital is thermally stable (HOMO −5.59 ± 0.06 eV,
-σ ≪ 0.3 eV), so the single-geometry flavin energetics above are representative of the room-temperature
-ensemble rather than of one fortuitous snapshot. The ensemble covers the flavin only: the osmium mediator
+The flavin energetics above are single-geometry, and their thermal robustness is not established here: the fragment script 27 cuts from the trajectory is not the closed isoalloxazine ring — its HOMO–LUMO gaps of 0.14–0.24 eV, against ≈ 3.4 eV for lumiflavin at B3LYP/6-31G(d) in C-PCM (script 20; the fragments were computed in the gas phase), are those of broken bonds — and three of its five snapshots are the same frame (4.9 ns; the 6, 8 and 10 ns targets lie beyond the trajectory).
+No frontier-orbital spread over a molecular-dynamics ensemble is therefore reported. The osmium mediator
 has no molecular-dynamics treatment here (the force field does not parameterise the metal centre), so its
 single fixed geometry (§2.3) is not tested this way.
 

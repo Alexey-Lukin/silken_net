@@ -140,9 +140,8 @@ trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</s
 the protein, GAFF2 parameters<sup>51</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>52</sup>
 (scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>53</sup> so that the
 protein is whole and the non-covalently bound FAD lies in the same image, and the route heuristic was replayed
-on 15 frames to see whether the route persists (Fig S1); no rate or gating factor is derived from it. For the flavin
-frontier orbital, the hydrogen-capped isoalloxazine ring was cut
-from MD snapshots and evaluated by gas-phase B3LYP/6-31G(d) single points.
+on 15 frames to see whether the route persists (Fig S1); no rate or gating factor is derived from it. (A flavin
+frontier-orbital ensemble was attempted on fragments cut from the same trajectory and is not reported — §3.7.)
 
 ## 2.6 Cluster-continuum micro-solvation
 
