@@ -606,13 +606,16 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
     root_b = [b["by_drag"]["+0"]["sigma_signed_MPa"] for b in brackets]
     sh = sorted(shank, key=lambda z: z["shank_mm"])
 
-    def k_needed(mean, amp):   # 86's break-even seam k for ONE cycle — its formula, SF target and alloys, binding over the six
+    def k_needed(mean, amp):   # 86's break-even seam k for ONE cycle — its formula, SF target and alloys; max over the six
         sf = d86["inputs"]["sf_target"]
-        return max(amp / (a["endurance_MPa"] * (1.0 / sf - mean / a["yield_MPa"])) for a in g86["by_alloy"].values())
+        rooms = [(a, 1.0 / sf - mean / a["yield_MPa"]) for a in g86["by_alloy"].values()]
+        assert all(room > 0 for _, room in rooms), "no seam k exists for this cycle on some alloy (86 returns None there)"
+        return max(amp / (a["endurance_MPa"] * room) for a, room in rooms)
+    assert b86["k_break_even_binding"] == b86["k_break_even_max_over_alloys"], "86's binding k is not its max over alloys"
     k_ship = k_needed(r50["mean_MPa"], r50["amplitude_MPa"])
     k_by_shank = {z["shank_mm"]: k_needed(*z["root_mean_amplitude_MPa"]) for z in sh}
     assert max(k_by_shank.values()) < b86["k_break_even_binding"], "a cycle at the tolerance limit needs more seam k than 86's threshold"
-    mean_beyond = [z for z in sh if z["root_mean_amplitude_MPa"][0] > b86["mean_MPa"]]
+    mean_beyond = [z for z in sh if z["root_mean_amplitude_MPa"][0] > b86["mean_MPa"]]   # the cycle MIDPOINT against 86's STATIC mean
     sh_static = [z["static_sigma_MPa"] for z in sh]
     assert sh_static == sorted(sh_static), "a mouth nearer the root did not make the offset dearer"
     not_solved = (sum(c["points_not_solved"] for c in cyc + exits) + sum(len(r["not_solved"]) for r in reversing)
@@ -625,7 +628,8 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
             f"{min(R_IN_SWEEP_MM):g} → {max(R_IN_SWEEP_MM):g} mm: the root's by {100 * min(rad_root):+.0f}…{100 * max(rad_root):+.0f} % "
             f"over {', '.join(str(e) for e in SWING_RADIUS_OFFSETS_UM)} µm). "
             f"(C) The drag raises the mouth-edge peak above the static one on every shipped-shank row (by {100 * max(0.0, min(lift)):.0f}–"
-            f"{100 * max(lift):.0f} %). WITHIN the ratified ⌀0.10 (offsets up to {TOLERANCE_OFFSET_UM} µm) the cycle peak "
+            f"{100 * max(lift):.0f} %). WITHIN the ratified ⌀0.10 (offsets up to {TOLERANCE_OFFSET_UM} µm) and at zero interference the "
+            "cycle peak "
             + ("stays below 1·σ_y (23 °C tensile) on every swept shank and entry radius — the worst ×"
                + f"{max(v['worst_over_flow_1'] for v in tol.values()):.2f}" if not within_above else
                "passes 1·σ_y on " + ", ".join(f"{c['geometry']} r_in {c['r_in_mm']:g}" for c in within_above))
@@ -651,8 +655,9 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
             f"{min(k_by_shank.values()):.3f}–{max(k_by_shank.values()):.3f} over the swept shanks — the threshold covers these cycles "
             "through its AMPLITUDE, not its "
             "mean" + ("" if not mean_beyond else ": on the " + " · ".join(f"{z['shank_mm']:g} mm" for z in mean_beyond)
-                      + " shank the mean, " + " · ".join(f"{z['root_mean_amplitude_MPa'][0]:.2f}" for z in mean_beyond)
-                      + f" MPa, lies beyond 86's {b86['mean_MPa']:g}")
+                      + " shank the cycle midpoint, " + " · ".join(f"{z['root_mean_amplitude_MPa'][0]:.2f} MPa (static "
+                                                                  f"{z['static_sigma_MPa']:.2f})" for z in mean_beyond)
+                      + f", lies beyond 86's static mean {b86['mean_MPa']:g}")
             + ". The cycle at the worst play and a pogo-pad couple on top of the offset are computed by no model. "
             f"(E) The wire under the MOUTH edge swings ±"
             f"{min(mo_abs):.2f}–{max(mo_abs):.2f} MPa from 50 µm on, against the root's ±{min(root_abs):.2f}–{max(root_abs):.2f} MPa "
