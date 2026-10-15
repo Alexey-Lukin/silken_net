@@ -602,10 +602,17 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
     r50 = next(r for r in reversing if r["offset_um"] == TOLERANCE_OFFSET_UM)
     g86 = d86["by_geometry"][ship]
     b86 = d86["branches"]["loose_50"]["by_geometry"][ship]
-    assert r50["amplitude_MPa"] < g86["amplitude_MPa"] and r50["mean_MPa"] < b86["mean_MPa"], "the 50 µm cycle leaves 86's threshold inputs"
     pk_b = {(b["base"], b["modulus"]): b["mouth_p_max_MPa"] for b in brackets}
     root_b = [b["by_drag"]["+0"]["sigma_signed_MPa"] for b in brackets]
     sh = sorted(shank, key=lambda z: z["shank_mm"])
+
+    def k_needed(mean, amp):   # 86's break-even seam k for ONE cycle — its formula, SF target and alloys, binding over the six
+        sf = d86["inputs"]["sf_target"]
+        return max(amp / (a["endurance_MPa"] * (1.0 / sf - mean / a["yield_MPa"])) for a in g86["by_alloy"].values())
+    k_ship = k_needed(r50["mean_MPa"], r50["amplitude_MPa"])
+    k_by_shank = {z["shank_mm"]: k_needed(*z["root_mean_amplitude_MPa"]) for z in sh}
+    assert max(k_by_shank.values()) < b86["k_break_even_binding"], "a cycle at the tolerance limit needs more seam k than 86's threshold"
+    mean_beyond = [z for z in sh if z["root_mean_amplitude_MPa"][0] > b86["mean_MPa"]]
     sh_static = [z["static_sigma_MPa"] for z in sh]
     assert sh_static == sorted(sh_static), "a mouth nearer the root did not make the offset dearer"
     not_solved = (sum(c["points_not_solved"] for c in cyc + exits) + sum(len(r["not_solved"]) for r in reversing)
@@ -628,18 +635,26 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
                 f"{safe[f'{g} / 100 µm']['smallest_r_in_below_1_sigma_y_mm']} mm with the mouth at {safe[f'{g} / 100 µm']['mouth_station_mm']:g} mm"
                 for g in geos)
             + f"; below 3·σ_y everywhere. (C′) The EXIT edge is the more loaded one under an offset: coaxially its cycle peak is 91's "
-            f"(within {100 * ctl['exit_coaxial_vs_91']['max_rel_diff']:.1f} %), and at {TOLERANCE_OFFSET_UM} µm it is ×"
+            f"(within {100 * ctl['exit_coaxial_vs_91']['max_rel_diff']:.1f} %), and at {TOLERANCE_OFFSET_UM} µm — on the shipped shank "
+            f"with entry radius {R_IN_REFERENCE_MM:g} mm, the flush exit (no countersink) and zero interference — it is ×"
             f"{min(ex_rise.values()):.2f}–{max(ex_rise.values()):.2f} that, "
             + (("above 1·σ_y at r_exit " + ", ".join(f"{x['r_exit_mm']:g} mm (×{x['peak_over_flow']['1.0']:.2f})" for x in ex_above)
-                + f" — the smallest exit radius that holds at {TOLERANCE_OFFSET_UM} µm is "
+                + " — the smallest swept exit radius that holds there is "
                 + f"{safe_r(list(ex50.values()), 'r_exit_mm')} mm") if ex_above else "below 1·σ_y at every swept exit radius")
             + f". (D) Along the path with its contact kinks the root's swing is larger than its two ends give where the edges are "
             f"rounded: the ends alone catch as little as {100 * (1 - ends_short[worst_ends]):.0f} % of it (at {worst_ends} µm, where the "
             f"swing itself is smallest); at the offsets 68 tabulates, its sharp-edge rows sit within "
             f"{100 * max(abs(v) for v in v68.values()):.0f} % of this path's swing. Against 86's threshold k ≥ "
             f"{b86['k_break_even_binding']:g} (amplitude {g86['amplitude_MPa']:g} MPa, the Ti-bore stop; mean {b86['mean_MPa']:g} MPa, "
-            f"the worst play): the {TOLERANCE_OFFSET_UM} µm cycle runs at {r50['mean_MPa']:.2f} ± {r50['amplitude_MPa']:.2f} MPa — inside "
-            f"both; a pogo-pad couple on top of the offset is computed by no model. (E) The wire under the MOUTH edge swings ±"
+            f"the worst play): at {TOLERANCE_OFFSET_UM} µm and zero interference the root cycle runs at {r50['mean_MPa']:.2f} ± "
+            f"{r50['amplitude_MPa']:.2f} MPa on the shipped shank and needs k ≥ {k_ship:.3f} (86's formula, binding over its six alloys), "
+            f"{min(k_by_shank.values()):.3f}–{max(k_by_shank.values()):.3f} over the swept shanks — the threshold covers these cycles "
+            "through its AMPLITUDE, not its "
+            "mean" + ("" if not mean_beyond else ": on the " + " · ".join(f"{z['shank_mm']:g} mm" for z in mean_beyond)
+                      + " shank the mean, " + " · ".join(f"{z['root_mean_amplitude_MPa'][0]:.2f}" for z in mean_beyond)
+                      + f" MPa, lies beyond 86's {b86['mean_MPa']:g}")
+            + ". The cycle at the worst play and a pogo-pad couple on top of the offset are computed by no model. "
+            f"(E) The wire under the MOUTH edge swings ±"
             f"{min(mo_abs):.2f}–{max(mo_abs):.2f} MPa from 50 µm on, against the root's ±{min(root_abs):.2f}–{max(root_abs):.2f} MPa "
             f"(×{ratio[100]:.2f}), around a mean of the opposite sign; the ratio crosses 1 at {above_from} µm (below it coaxially, ×"
             f"{ratio[0]:.2f}, and just past the play, " + ", ".join(f"×{ratio[e]:.2f} at {e} µm" for e in below_near)
@@ -675,7 +690,10 @@ def summarise(static, cyc, swings, reversing, brackets, shank, ctl, exits, swing
             "entry_radius_raises_root_swing": [round(min(rad_root), 4), round(max(rad_root), 4)],
             "elastic_over_rigid_swing_by_offset": {str(e): [round(c[0], 4), round(c[1], 4)] for e, c in corr.items()},
             "versus_86_threshold": {"k_break_even_binding": b86["k_break_even_binding"], "amplitude_MPa_86": g86["amplitude_MPa"],
-                                    "mean_MPa_86": b86["mean_MPa"], "cycle_mean_MPa": r50["mean_MPa"], "cycle_amplitude_MPa": r50["amplitude_MPa"]},
+                                    "mean_MPa_86": b86["mean_MPa"], "cycle_mean_MPa": r50["mean_MPa"], "cycle_amplitude_MPa": r50["amplitude_MPa"],
+                                    "k_needed_shipped": round(k_ship, 4),
+                                    "k_needed_by_shank": {f"{s:g}": round(k, 4) for s, k in k_by_shank.items()},
+                                    "shanks_with_mean_beyond_86": [z["shank_mm"] for z in mean_beyond]},
             "static_root_by_shank_MPa": {f"{z['shank_mm']:g}": z["static_sigma_MPa"] for z in sh},
             "elastic_points_not_solved": not_solved, "elastic_points": all_points,
             "text": text}

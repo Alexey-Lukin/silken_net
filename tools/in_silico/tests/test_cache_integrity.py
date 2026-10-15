@@ -2234,7 +2234,20 @@ def test_liner_mouth_contact():
     for e, v in summ["mouth_over_root_amplitude_by_offset"].items():
         assert ratio[int(e)] == v
     assert f"peaks at ×{ratio[summ['ratio_peak_at_um']]:.2f} near {summ['ratio_peak_at_um']} µm" in summ["text"]
-    assert f"the smallest exit radius that holds at {summ['tolerance_offset_um']} µm is" in summ["text"] or not summ["exit_rows_at_or_above_1_sigma_y"]
+    assert "the smallest swept exit radius that holds there is" in summ["text"] or not summ["exit_rows_at_or_above_1_sigma_y"]
+    # 86's threshold against the cycles at the tolerance limit, re-derived from the rows and the CURRENT 86 cache: the
+    # verdict «covered through the amplitude, not the mean» must be what the numbers give, on every swept shank
+    d86 = json.loads((MECHANICAL / "coaxiality_allocation.json").read_text())
+    g86 = d86["by_geometry"][next(iter(d86["by_geometry"]))]
+    v86 = summ["versus_86_threshold"]
+    def k_needed(mean, amp):
+        return max(amp / (a["endurance_MPa"] * (1.0 / d86["inputs"]["sf_target"] - mean / a["yield_MPa"])) for a in g86["by_alloy"].values())
+    for z in d["shank"]:
+        k = k_needed(*z["root_mean_amplitude_MPa"])
+        assert abs(v86["k_needed_by_shank"][f"{z['shank_mm']:g}"] - k) < 6e-5 and k < v86["k_break_even_binding"]
+    assert v86["shanks_with_mean_beyond_86"] == [z["shank_mm"] for z in sorted(d["shank"], key=lambda z: z["shank_mm"])
+                                                 if z["root_mean_amplitude_MPa"][0] > v86["mean_MPa_86"]]
+    assert "through its AMPLITUDE, not its mean" in summ["text"]
 
 
 def test_liner_exit_contact():
