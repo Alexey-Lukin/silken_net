@@ -64,12 +64,16 @@ cd tools/cad
 dotnet build SilkenCad.sln                                                  # 0W/0E
 dotnet run --project src/SilkenCad -- smoke                                 # foundation self-test
 dotnet run --project src/SilkenCad -- build  cem/anchor_zone1.pine.json     # → out/*.stl
+for f in cem/*.json; do case $f in *golden*|*_provenance*) continue;; esac; \
+  dotnet run --project src/SilkenCad -c Release -- build $f; done       # the WHOLE set → out/*.stl (seconds per part)
 dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # → out/*.metrics.json (exit 0/1)
 dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # → out/*.wallscan.json (wallParam working window)
 dotnet run --project src/SilkenCad -- draw   cem/ti_coin.json               # → out/*.svg + *.dxf (engineering drawing, pure-managed)
 dotnet run --project src/SilkenCad -- fea    cem/anchor_zone1.pine.json --sweep   # → cache/fea/*.json (apparent stiffness; COMMITTED output, pure-managed)
 dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # → out/*.png (PicoGK viewer; needs a display — macOS desktop, not headless CI)
 ```
+
+`out/` is gitignored, so an STL there is as old as the last time someone built it, and no gate sees it go stale — a manifest or a generator can move on while the file stays. Rebuild the whole set (above) before looking at the parts or attaching them to a letter; the full anchor along its axis is `anchor_axial_stack.stl`, the capsule end `anchor_assembly.stl`.
 
 ## Gotchas (hard-won — read before touching the generators)
 
