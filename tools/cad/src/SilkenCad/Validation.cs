@@ -172,7 +172,8 @@ internal static class Validation
 
     public static GeometryMetrics MeasureCoin(TiCoinCem cem, Voxels voxCoin)
         => Measure(cem.Name, cem.VoxelSizeMm, voxCoin, null)
-            with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem), Material = cem.Notes?.Material };
+            with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem),
+                   Material = cem.Notes?.Material is { } m ? Drawing.NoteText(m, Drawing.SheetForm.Full) : null };   // never the raw `[[…]]` markup
 
     // The per-shell radii, core→rim: nShells + 1 boundaries from Zone1Anode.InnerRadiusMm (the surface
     // `build` cuts) to the outer wall. Pure on purpose — MeasureAnchor needs voxels, so this is the only

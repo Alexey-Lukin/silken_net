@@ -27,6 +27,27 @@ public class VendorSheetTests
         ("letter section", new Regex(@"\bRFQ \d")),
         ("code constant", new Regex(@"\bALLOY_PROPERTIES\b")),
         ("markup", new Regex(@"\[\[|\]\]|\|\|")),
+        // ⊕ adversary on 3c5824590 (2026-10-15): the forms the first list missed — status words, our generation label, the
+        // acronyms the letter never uses, Cyrillic in either reader, and `§` as the DXF writes it («sec.»).
+        ("status word", new Regex(@"\b(?:OPEN|TBD|PLACEHOLDER)\b")),
+        ("generation label", new Regex(@"\bGen \d\.\d\b|\bEBFC\b")),
+        ("in silico", new Regex(@"\bin[ _]silico\b", RegexOptions.IgnoreCase)),
+        ("our acronym", new Regex(@"\b(?:DET|MET)\b")),
+        ("Cyrillic", new Regex(@"[\u0400-\u04FF]|\\U\+04[0-9A-F]{2}")),
+        ("DXF section sign", new Regex(@"\bsec\. ?\d")),
+    ];
+
+    // 🔴 The other half the first pins lacked: a vendor projection may LOSE an instruction and stay clean of markers.
+    // Each phrase that orders or forbids something, present in OUR text of a field, must reach the vendor's text of it.
+    private static readonly string[] Instructions =
+        ["FORBIDDEN", "MANDATORY", "x5,000", "x50,000", "H<100 ppm", "250C", "within 2h", "DECLARE", "NOT APPLIED",
+         "NOT a structural", "do not substitute", "attach", "repeated", "pinhole-free", "BEFORE shipment", "BEFORE plating"];
+
+    // Named exemptions, each with its ground — a phrase that leaves one field on purpose because the ORDER lives in another.
+    private static readonly (string File, string Field, string Phrase, string Why)[] InstructionExemptions =
+    [
+        ("ti_coin.au.json", "inspection", "DECLARE",
+         "the sentence is the laboratory's ICP-MS reading of the underlayers; the order to declare them is `process` («vendor DECLARES the process and EVERY layer thickness»), which the vendor form keeps"),
     ];
 
     // The manifest path is provenance the drawing standard asks for (drawings_program.md §8 item 4 — the SSOT pointer
@@ -74,6 +95,12 @@ public class VendorSheetTests
                 problems.Add($"{field}: seam «{m.Value}» at {m.Index}");
         }
         Assert.True(problems.Count == 0, $"cem/{strFile}, vendor form: {string.Join(" · ", problems)}");
+        var lost = CoreNotes(ShippedNotes(strFile)).Where(f => f.Text is not null)
+            .SelectMany(f => Instructions.Where(i => Drawing.NoteText(f.Text!, Drawing.SheetForm.Full).Contains(i, StringComparison.Ordinal)
+                                                  && !Drawing.NoteText(f.Text!, Drawing.SheetForm.Vendor).Contains(i, StringComparison.Ordinal)
+                                                  && !InstructionExemptions.Any(x => x.File == strFile && x.Field == f.Field && x.Phrase == i))
+                                         .Select(i => $"{f.Field}: «{i}»")).ToArray();
+        Assert.True(lost.Length == 0, $"cem/{strFile}: the vendor form LOST an instruction ours carries — {string.Join(" · ", lost)}");
         // Counter-lamp: the same detector on the FULL form must fire — otherwise it measures nothing on these notes.
         Assert.True(iFullHits > 0, $"cem/{strFile}: the marker list finds nothing even in the full form — it has gone blind");
     }
@@ -108,10 +135,15 @@ public class VendorSheetTests
                 }
             }
 
-            // Counter-lamp: the full sheet of the same manifest DOES carry markers and `extra`.
+            // The copy names its own form in both readers — `out/` and `out/vendor/` hold files of one name.
+            Assert.Contains("VENDOR COPY", svg);
+            Assert.Contains("VENDOR COPY", dxf);
+
+            // Counter-lamp: the full sheet of the same manifest DOES carry markers and `extra`, and no form tag.
             Assert.Equal(0, Program.Draw(strCem, strOut));
             string full = Flatten(File.ReadAllText(Directory.GetFiles(strOut, "*.drawing.svg").Single()));
             Assert.NotEmpty(Hits(full, InternalMarkers));
+            Assert.DoesNotContain("VENDOR COPY", full);
             Assert.Contains(Regex.Replace(extra[0], @"\s+", " ")[..Math.Min(40, extra[0].Length)], full);
         }
         finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
@@ -131,6 +163,40 @@ public class VendorSheetTests
         {
             Assert.Equal(2, Program.Draw(Path.Combine(CemFixtures.Dir(), strFile), strOut, bVendor: true));
             Assert.False(Directory.Exists(strOut) && Directory.EnumerateFileSystemEntries(strOut, "*", SearchOption.AllDirectories).Any());
+        }
+        finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
+    }
+
+    // The founder's read before dispatch is this report (the verdict's weakest link): it must name every changed note
+    // with BOTH texts and every dropped `extra` line — a report that skipped a field would hide the cut it exists to show.
+    [Theory]
+    [MemberData(nameof(DrawingTests.ShippedCoinCems), MemberType = typeof(DrawingTests))]
+    public void The_Changed_Notes_Report_Names_Every_Cut_Field_And_Every_Dropped_Extra_Line(string strFile)
+    {
+        NotesSpec n = ShippedNotes(strFile);
+        string[] report = [.. Drawing.VendorChanges(n)];
+        foreach (var (field, text) in CoreNotes(n))
+        {
+            if (text is null || Drawing.NoteText(text, Drawing.SheetForm.Full) == Drawing.NoteText(text, Drawing.SheetForm.Vendor)) continue;
+            string label = Array.Find(report, l => l.EndsWith(':') && report.Contains($"  ours:   {Drawing.NoteText(text, Drawing.SheetForm.Full)}")) ?? "";
+            Assert.True(label.Length > 0, $"cem/{strFile}: {field} changed but the report does not carry it");
+            Assert.Contains($"  vendor: {Drawing.NoteText(text, Drawing.SheetForm.Vendor)}", report);
+        }
+        Assert.Equal((n.Extra ?? []).Length, report.Count(l => l.StartsWith("extra (dropped): ", StringComparison.Ordinal)));
+    }
+
+    // A mistyped flag drew the FULL form silently — the one mistake whose product is the copy that leaves the building.
+    [Theory]
+    [InlineData("--vendr")]
+    [InlineData("--Vendor")]
+    [InlineData("vendor")]
+    public void Draw_Refuses_An_Unknown_Argument_Rather_Than_Drawing_The_Full_Form(string strArg)
+    {
+        string strOut = Path.Combine(Path.GetTempPath(), $"draw_badflag_{Guid.NewGuid():N}");
+        try
+        {
+            Assert.Equal(2, Program.DrawCli(["draw", Path.Combine(CemFixtures.Dir(), "ti_coin.json"), strArg], strOut));
+            Assert.False(Directory.Exists(strOut));
         }
         finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
     }

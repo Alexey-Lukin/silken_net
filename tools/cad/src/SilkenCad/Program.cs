@@ -27,7 +27,9 @@ internal static class Program
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "converge" => args.Length >= 2 ? Converge(args) : Fail("usage: converge <cem.json> [--divisors 24,32]"),
-                "draw" => args.Length >= 2 ? Draw(args[1], bVendor: args.Contains("--vendor")) : Fail("usage: draw <cem.json> [--vendor]"),
+                // An unknown flag REFUSES: `args.Contains` alone let a mistyped `--vendr` draw the FULL form silently — the one
+                // mistake whose product is the copy that leaves the building (adversary on 3c5824590, 2026-10-15).
+                "draw" => DrawCli(args),
                 // Build-record of ONE batch (BuildRecord.cs, 00_07 HW.51) — pure-managed. STDOUT on purpose: `out/`
                 // is gitignored and outside every gate (picogk gotcha #17), the very place a record meant to live
                 // 20–25 years would rot unseen; the operator names where the filled record is committed.
@@ -442,6 +444,11 @@ internal static class Program
     // next kind added, and this one already did. Remaining kinds + phasing → roadmap §7.
     // `strOutDir` exists for one caller besides `Main`: the pin that runs THIS method over every shipped
     // manifest, because a hash wired wrong inside one `case` is invisible to any test that calls `Drawing.X` directly.
+    internal static int DrawCli(string[] args, string strOutDir = "out")
+        => args.Length < 2 ? Fail("usage: draw <cem.json> [--vendor]")
+         : args[2..].FirstOrDefault(a => a != "--vendor") is { } strBad ? Fail($"draw: unknown argument '{strBad}' (usage: draw <cem.json> [--vendor])")
+         : Draw(args[1], strOutDir, bVendor: args.Contains("--vendor"));
+
     internal static int Draw(string strCemPath, string strOutDir = "out", bool bVendor = false)
     {
         // ONE read serves both the parse and the hash, so the sheet names the very bytes it was drawn from.
@@ -467,6 +474,7 @@ internal static class Program
         // deliverable) computed from the CEM numbers — never the mesh. Add a kind = add a Drawing.X pair,
         // and pass `cemSha256` to BOTH halves (the parameter is optional, so the compiler will not ask).
         string strName; string strSvg; Func<string, bool> fnDxf;
+        NotesSpec? vendorNotes = null;   // the coupon's notes, for the changed-notes report a vendor copy prints
         switch (strKind)
         {
             case "ti_coin":
@@ -477,6 +485,7 @@ internal static class Program
                 // 2026-09-09: the base ti_coin.json coincidentally matched, so it went unnoticed).
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
+                vendorNotes = cem.Notes;
                 strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile, cemSha256: strCemSha256, form: form); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p, cemSha256: strCemSha256, form: form);
                 break;
             }
@@ -529,7 +538,13 @@ internal static class Program
         string strDxfPath = Path.Combine(strOutDir, $"{strName}.drawing.dxf");
         File.WriteAllText(strSvgPath, strSvg);
         bool bDxf = fnDxf(strDxfPath);
-        if (bVendor) Console.WriteLine("form → VENDOR (notes without our references and without notes.extra — drawings_program.md §8 item 5)");
+        if (bVendor)
+        {
+            Console.WriteLine("form → VENDOR (notes without our references and without notes.extra — drawings_program.md §8 item 5)");
+            // The founder reads THIS before dispatch — the rendered projection, not the raw markup (the weakest link's gate).
+            Console.WriteLine("changed notes, ours → vendor:");
+            foreach (string strLine in Drawing.VendorChanges(vendorNotes)) Console.WriteLine($"  {strLine}");
+        }
         Console.WriteLine($"drawing → {strSvgPath}  (CEM-native SVG — human / publication / self-review)");
         Console.WriteLine($"drawing → {strDxfPath}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");
         return bDxf ? 0 : 1;

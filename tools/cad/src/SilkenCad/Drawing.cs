@@ -248,7 +248,8 @@ internal static class Drawing
     // footer really holds the full value — the same discipline REV already follows. So the untruncated
     // path lives here, on the one line that is not inside a fixed-width grid, and the two readers agree
     // (the DXF has carried `SSOT cem/<file>` on its own last line all along).
-    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std, string strSsot, string? cemSha256)
+    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std, string strSsot, string? cemSha256,
+                                 string? strFormTag = null)
     {
         h += FooterLineH;   // Frame owns the footer, so it owns the height of its second line (manifest identity)
         var sb = new StringBuilder();
@@ -256,7 +257,7 @@ internal static class Drawing
         sb.AppendLine($"<rect x='0' y='0' width='{N(w)}' height='{N(h)}' fill='white'/>");
         sb.AppendLine(Rect(8, 8, w - 16, h - 16, Stroke, 1.2));            // drawing border
         sb.Append(body);
-        sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, $"SilkenNet · CEM-native drawing{FormTag(strFormTag)} · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
         sb.AppendLine(Text(w - 14, h - 14, CemIdentityLine(cemSha256), 8, "end", "#888"));
         sb.AppendLine("</svg>");
         return sb.ToString();
@@ -286,17 +287,35 @@ internal static class Drawing
                 throw new FormatException($"note markup: the {form} form of '{label}' is empty — the sheet would claim the CEM never specified it");
             lines.Add($"{label}: {p}");
         }
-        Add("Material", n?.Material);
-        Add("Process", n?.Process);
-        Add("Surface", n?.SurfaceFinish);
-        Add("Post-process", n?.PostProcess);
-        Add("Coating", n?.CoatingRestriction);
-        Add("Lattice", n?.LatticeSpec);
-        Add("Inspect", n?.Inspection);
+        foreach (var (label, v) in NoteFields(n)) Add(label, v);
         // The vendor form drops `extra` WHOLE (drawings_program.md §8 item 5): on the coupon sheets it is the bake-off
         // rationale. ⛔ On a part sheet `extra` is shop instruction — which is why `draw --vendor` refuses other kinds.
         if (form == SheetForm.Full && n?.Extra is { } extra) lines.AddRange(extra.Select(e => NoteText(e, form)));
         return lines;
+    }
+
+    // The FIXED field set, in sheet order — one list for the notes block and for the vendor-change report below.
+    private static (string Label, string? Text)[] NoteFields(NotesSpec? n) =>
+    [
+        ("Material", n?.Material), ("Process", n?.Process), ("Surface", n?.SurfaceFinish), ("Post-process", n?.PostProcess),
+        ("Coating", n?.CoatingRestriction), ("Lattice", n?.LatticeSpec), ("Inspect", n?.Inspection),
+    ];
+
+    // 🔑 The CARRIER of the vendor form's weakest link (drawings_program.md §8 item 5): every note whose vendor text
+    // differs from ours, both texts side by side, plus what `extra` drops — the list the founder reads beside the diff
+    // before dispatch. Printed by `draw --vendor`, so the review reads the RENDERED projection, never the raw markup.
+    internal static IEnumerable<string> VendorChanges(NotesSpec? n)
+    {
+        foreach (var (label, v) in NoteFields(n))
+        {
+            if (v is null) continue;
+            string ours = NoteText(v, SheetForm.Full), theirs = NoteText(v, SheetForm.Vendor);
+            if (ours == theirs) continue;
+            yield return $"{label}:";
+            yield return $"  ours:   {ours}";
+            yield return $"  vendor: {theirs}";
+        }
+        foreach (string e in n?.Extra ?? []) yield return $"extra (dropped): {NoteText(e, SheetForm.Full)}";
     }
 
     // A title-block cell drawn from a note: projected like the notes block, absent → the loud marker.
@@ -364,6 +383,10 @@ internal static class Drawing
     // The coin sheet's own words in each form. The full form keeps our stage label and canon pointers; the vendor
     // form carries neither (the letter names no stage and no canon), and it is in English like the letter itself.
     private static string CoinTitle(SheetForm form) => form == SheetForm.Full ? "Ti-COIN  (Stage-2 in-vitro coupon)" : "Ti-COIN  (in-vitro test coupon)";
+    // The sheet names its own form, because `out/` and `out/vendor/` hold files of one name and a DXF has no title line:
+    // the copy that is about to leave says which one it is (adversary on 3c5824590, 2026-10-15).
+    private static string? CoinFormTag(SheetForm form) => form == SheetForm.Vendor ? "VENDOR COPY" : null;
+    private static string FormTag(string? tag) => tag is null ? "" : $" · {tag}";
     private static string CoinSubtitle(SheetForm form) => form == SheetForm.Full ? "Деталь — EBFC test electrode · 01_01 §6.1" : "Flat test-electrode coupon";
 
     public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
@@ -442,7 +465,7 @@ internal static class Drawing
         // moment a CEM note grows; a computed height cannot fall behind the notes it has to contain.
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256, CoinFormTag(form));
     }
 
     // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
@@ -485,7 +508,7 @@ internal static class Drawing
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
-        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add($"SilkenNet Ti-coin{FormTag(CoinFormTag(form)).Replace(" · ", " | ")} | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
         lines.Add(CemIdentityLine(cemSha256));
         double yy = cy - rr - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rr, yy), 1.6) { Layer = nte }); yy -= 3.2; }
