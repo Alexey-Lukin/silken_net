@@ -4389,7 +4389,9 @@ CHECKS += [
      lambda d: _no2_koop_ratio(d, max), 0.6),
     ("paper §3.3 NO₂ move/gap, the gap → 83 acceptors", PAPER_RESULTS, rf"times the {N} meV that", V83,
      lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
-    # paper §3.3 — the realistic-optimum sentence scoped to the programmatic geometry, both signs of NO₂'s own move
+    # paper §3.3 — the SO₂CF₃ sentence (⚖️ 2026-10-15: a candidate, not an optimum): its gap above NO₂, both signs of NO₂'s own move
+    ("paper §3.3 SO₂CF₃ gap above NO₂ → 83 half-relaxed", PAPER_RESULTS, rf"the cascade Δ of \*\*SO₂CF₃\*\* lies {N} meV above NO₂'s", V83,
+     lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.5),
     ("paper §3.3 SO₂CF₃ clause: NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves\s+its own cascade Δ by \+{N} eV with Os\(III\) vertical", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
     ("paper §3.3 SO₂CF₃ clause: NO₂ move, own minimum → 83 acceptors", PAPER_RESULTS, rf"vertical and by {N} eV on its own", V83,

@@ -14,7 +14,7 @@
   "notes": {
     "material": "Ti-6Al-4V Grade 5 per ASTM F2924 (Additive Manufacturing, powder bed fusion) - the ONE alloy of this [[bake-off||order]] for which we cite an AM material spec. NOT F136: that is the wrought ELI (Grade 23) spec and this coupon is the Grade-5 print reference",
     "process": "SLM/DMLS + HIP + dehydrogenation bake[[ (01_02 1.3); flat coupon — minutes/pennies to print]]",
-    "post_process": "dehydrogenation bake 250C/10-3 mbar/3h, within 2h of rinse[[ (01_02 1.3 Step 5b)]] - MANDATORY after EAAE",
+    "post_process": "dehydrogenation bake 250C/10-3 mbar/3h, starting within 2h of rinse[[ (01_02 1.3 Step 5b)]] - MANDATORY after EAAE",
     "surface_finish": "[[EAAE dual-scale||EAAE (dual-scale activation etch)]] on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm[[ (01_02 1.2) — raises ECSA for enzyme immobilisation]]",
     "lattice_spec": "Not applicable - flat disc coupon, no lattice.[[ (The lattice lives in the Zone-1 anode this coupon stands in for, cem/anchor_zone1.*.json)]]",
     "coating_restriction": "Active face[[ (EBFC Gen 2.0 stack)]]: ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare metal only, any dielectric blocks [[DET||electron transfer]][[ (01_02 3.6; RFQ 4.B)]]",

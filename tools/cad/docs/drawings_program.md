@@ -246,13 +246,13 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    rewritten). **(i) The core-field widening is not a delegated verdict:** it changes the CONTENT of the founder's
    verdict, which is a ground NOT to delegate (the memory corpus, verdict lifecycle, rule 28) — so it is a ⚖️ put to the
    founder at the sending review, beside the changed-notes list (`00_07` HW.24); recommendation: yes. The markup stays
-   meanwhile, because without it the vendor sheet would undo the letter; at «no», the class-(Б) spans are unmarked.
+   meanwhile, because without it the vendor sheet would undo the letter; at «no», the spans that carry the rationale and our-side tests are unmarked.
    **(ii) «Those spans are marked too» overclaimed:** a status word («route is OPEN»), the Ta₂O₅ tunnelling rationale,
    «raises ECSA for enzyme immobilisation» and the «EBFC Gen 2.0» label still printed, and two sentences contradicted
    the letter — the 4V material note («the ONE alloy … that has an AM material spec», while the letter says «we are
    NOT claiming that no AM standard covers rows 2–5»; corrected in BOTH forms to «for which we cite») and the Ta process
    note (cutting «in canon» turned a remark into «atmosphere — NOT SPECIFIED, vendor declares», against the letter's
-   argon and O₂ < 0.1 %). Fixed in the next commit. **(iii) Carriers added there:** `draw --vendor` prints every changed
+   argon and O₂ < 0.1 %). Fixed in the same commit (`2d223f869`). **(iii) Carriers added in it:** `draw --vendor` prints every changed
    note as ours → vendor plus every dropped `extra` line — the list the weakest link names, read rendered, never as raw
    markup; the sheet says VENDOR COPY in both readers; an unknown argument refuses (a mistyped flag drew the full form);
    a positive pin keeps every ordering phrase a field carries, with named exemptions and their grounds.

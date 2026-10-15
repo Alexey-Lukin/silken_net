@@ -144,6 +144,7 @@ public class VendorSheetTests
             string full = Flatten(File.ReadAllText(Directory.GetFiles(strOut, "*.drawing.svg").Single()));
             Assert.NotEmpty(Hits(full, InternalMarkers));
             Assert.DoesNotContain("VENDOR COPY", full);
+            Assert.Contains("INTERNAL COPY", full);   // the full sheet says it must not leave — a missing tag is not a mark
             Assert.Contains(Regex.Replace(extra[0], @"\s+", " ")[..Math.Min(40, extra[0].Length)], full);
         }
         finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
@@ -165,6 +166,33 @@ public class VendorSheetTests
             Assert.False(Directory.Exists(strOut) && Directory.EnumerateFileSystemEntries(strOut, "*", SearchOption.AllDirectories).Any());
         }
         finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
+    }
+
+    // 🔴 A vendor half may RENAME, never ORDER: an order the full half does not carry is a requirement with no home but the
+    // drawing (adversary on 2d223f869: a vendor-only «quote a Ta-coated Ti coupon as an alternative» sat on a sheet that
+    // says «HIP: NOT APPLIED» — against the letter, which routes that alternative through the full Ti route).
+    private static readonly string[] OrderWords =
+        ["quote", "declare", "report", "must", "shall", "required", "forbidden", "mandatory", "do not", "apply", "attach",
+         "repeat", "alternative", "provide", "send"];
+
+    [Theory]
+    [MemberData(nameof(DrawingTests.ShippedCoinCems), MemberType = typeof(DrawingTests))]
+    public void A_Vendor_Half_Introduces_No_Order_Its_Full_Half_Does_Not_Carry(string strFile)
+    {
+        var problems = new List<string>();
+        int iSwaps = 0;
+        foreach (var (field, text) in CoreNotes(ShippedNotes(strFile)).Concat(ShippedNotes(strFile).Extra?.Select(e => ("extra", (string?)e)) ?? []))
+        {
+            if (text is null) continue;
+            foreach (Match mm in Regex.Matches(text, @"\[\[(.*?)\|\|(.*?)\]\]"))
+            {
+                iSwaps++;
+                string full = mm.Groups[1].Value.ToLowerInvariant(), vendor = mm.Groups[2].Value.ToLowerInvariant();
+                problems.AddRange(OrderWords.Where(w => vendor.Contains(w) && !full.Contains(w)).Select(w => $"{field}: «{w}» in «{mm.Groups[2].Value}»"));
+            }
+        }
+        Assert.True(problems.Count == 0, $"cem/{strFile}: a vendor half adds an order — {string.Join(" · ", problems)}");
+        Assert.True(iSwaps > 0, $"cem/{strFile}: no `[[full||vendor]]` swap found — the pin would be vacuous on this manifest");
     }
 
     // The founder's read before dispatch is this report (the verdict's weakest link): it must name every changed note

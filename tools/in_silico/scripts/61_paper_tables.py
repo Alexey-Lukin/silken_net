@@ -199,18 +199,25 @@ def build() -> str:
             if es else "at the ends the two are not separated")
     by_sigma = sorted(series["complexes"], key=lambda x: x["sigma_para"])
     ends_casc = (by_sigma[0], by_sigma[-1])
+    # A half-relaxed pair is OPEN when its relaxed member moved by at least the gap — then relaxing the other could
+    # reverse it; the cache's own `close` flag (gap < 100 meV) is a different gate and would hide a far pair a big move
+    # reaches. A pair the cache already found reversed is printed as reversed (adversary on d11c3b0ec, 2026-10-15).
     open_pairs = [(k, v) for k, v in acceptors["table4_neighbours_half_relaxed"].items()
-                  if v["close"] and v["order"].startswith("not decidable")]
+                  if max(abs(x) for x in v["relaxed_member_cascade_move_meV"].values())
+                  >= abs(v["programmatic_koopmans_gap_meV"])]
+    flipped = acceptors["verdict_condition"]["neighbour_order_flipped"]
     def pair_clause(k: str, v: dict) -> str:
         lo, hi = k.split("-")
         mv = v["relaxed_member_cascade_move_meV"]
-        other = hi if v["relaxed_member"] == lo else lo
-        return (f"{lbl[lo]}→{lbl[hi]} ({v['programmatic_koopmans_gap_meV']:+.1f} meV), where relaxing "
-                f"{lbl[v['relaxed_member']]} alone moves it by {m(mv['os3_on_own_minimum'], '+.0f')} meV with Os(III) "
-                f"on its own minimum and {m(mv['os3_on_os2_minimum'], '+.0f')} meV with Os(III) vertical, and "
-                f"{lbl[other]} was not relaxed")
-    undecided = ("; the order of " + "; of ".join(pair_clause(k, v) for k, v in open_pairs)
-                 + ", is not decided" if open_pairs else "")
+        rel = v["relaxed_member"]
+        other = hi if rel == lo else lo
+        return (f"the order of {lbl[lo]}→{lbl[hi]} ({m(v['programmatic_koopmans_gap_meV'], '+.1f')} meV) is not "
+                f"decided — relaxing {lbl[rel]} alone moves {lbl[rel]}'s own cascade Δ by "
+                f"{m(mv['os3_on_own_minimum'], '+.0f')} meV with Os(III) on its own minimum and "
+                f"{m(mv['os3_on_os2_minimum'], '+.0f')} meV with Os(III) vertical, and {lbl[other]} was not relaxed")
+    undecided = "".join("; " + pair_clause(k, v) for k, v in open_pairs)
+    if flipped:
+        undecided += ("; relaxing both members reverses " + ", ".join("→".join(lbl[x] for x in f.split("-")) for f in flipped))
     md.append(f"\n*Design rule: cascade Δ rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '.2f')} "
               f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "

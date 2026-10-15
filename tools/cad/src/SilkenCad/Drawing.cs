@@ -384,8 +384,9 @@ internal static class Drawing
     // form carries neither (the letter names no stage and no canon), and it is in English like the letter itself.
     private static string CoinTitle(SheetForm form) => form == SheetForm.Full ? "Ti-COIN  (Stage-2 in-vitro coupon)" : "Ti-COIN  (in-vitro test coupon)";
     // The sheet names its own form, because `out/` and `out/vendor/` hold files of one name and a DXF has no title line:
-    // the copy that is about to leave says which one it is (adversary on 3c5824590, 2026-10-15).
-    private static string? CoinFormTag(SheetForm form) => form == SheetForm.Vendor ? "VENDOR COPY" : null;
+    // the copy that is about to leave says which one it is (adversary on 3c5824590, 2026-10-15) — and the full one says it must
+    // not leave, because a missing tag is not a mark (adversary on 2d223f869, the same evening).
+    private static string CoinFormTag(SheetForm form) => form == SheetForm.Vendor ? "VENDOR COPY" : "INTERNAL COPY";
     private static string FormTag(string? tag) => tag is null ? "" : $" · {tag}";
     private static string CoinSubtitle(SheetForm form) => form == SheetForm.Full ? "Деталь — EBFC test electrode · 01_01 §6.1" : "Flat test-electrode coupon";
 

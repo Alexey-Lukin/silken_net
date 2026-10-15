@@ -42,7 +42,7 @@
 <text x='20' y='344' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   an AM material spec. NOT F136: that is the wrought ELI (Grade 23) spec and this coupon is the Grade-5 print reference</text>
 <text x='20' y='358' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: SLM/DMLS + HIP + dehydrogenation bake (01_02 1.3); flat coupon — minutes/pennies to print</text>
 <text x='20' y='372' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2) — raises ECSA for enzyme immobilisation</text>
-<text x='20' y='386' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: dehydrogenation bake 250C/10-3 mbar/3h, within 2h of rinse (01_02 1.3 Step 5b) - MANDATORY after EAAE</text>
+<text x='20' y='386' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: dehydrogenation bake 250C/10-3 mbar/3h, starting within 2h of rinse (01_02 1.3 Step 5b) - MANDATORY after EAAE</text>
 <text x='20' y='400' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: Active face (EBFC Gen 2.0 stack): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare metal only,</text>
 <text x='20' y='414' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   any dielectric blocks DET (01_02 3.6; RFQ 4.B)</text>
 <text x='20' y='428' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - flat disc coupon, no lattice. (The lattice lives in the Zone-1 anode this coupon stands in for,</text>
@@ -83,7 +83,7 @@
 <line x1='540' y1='776' x2='790' y2='776' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='776' x2='630' y2='792' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>d11c3b0ec-dirty</text>
+<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>fe041ad58-dirty</text>
 <line x1='540' y1='792' x2='790' y2='792' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='792' x2='630' y2='808' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='803' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -91,7 +91,7 @@
 <line x1='540' y1='808' x2='790' y2='808' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='808' x2='630' y2='824' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>a8e3fac106d017ef53… → FOOTER</text>
-<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev d11c3b0ec-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
-<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): a8e3fac106d017ef5318dcef241a40e7b8a929752f7e92df3bb373d6a8e8735e</text>
+<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>450dafdb8b64f0d340… → FOOTER</text>
+<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · INTERNAL COPY · rev fe041ad58-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
+<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 450dafdb8b64f0d34007d9006895cedbdc234cc032ed71603ebf874a5ee1ab39</text>
 </svg>
