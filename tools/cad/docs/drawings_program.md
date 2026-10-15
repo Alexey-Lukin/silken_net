@@ -259,6 +259,11 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    **(iv) The part-RFQ verdict above was born and delegated in ONE commit** (`3c5824590`): the mandate is the founder's
    word at the start of that session, «делегована ратифікація ще відкритих присудів по рекомендації», for sections
    00b · 01a · 01b; no code was touched for it, so overturning it costs nothing.
+   ⊕ ⚖️ **The core-field widening — RATIFIED by the founder, 2026-10-15 evening, on the recommendation** (`00_07`
+   HW.24; the record (i) above is NOT rewritten): the vendor form drops the bake-off rationale and our-side tests from
+   `material` / `process` / `inspection` too, by the same author markup. Ground, price and weakest link as stated in (i)
+   and in the widening paragraph above; the gate of the weakest link is unchanged — the founder reads the changed-notes
+   list `draw --vendor` prints before the coupon letter leaves.
 
 ## 9. References
 
