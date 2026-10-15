@@ -3,6 +3,11 @@
 """
 L3 / CHEM.16 — dynamic electron-tunnelling over the MD ensemble.
 
+⚠️ Withdrawn as a result (self-review round 1 of Стаття 1, cluster 6, 2026-10-15): this is not script 28's search
+replayed — its sources are the GAFF-name prefixes borrowed from script 27, which do not map onto the isoalloxazine
+(cluster 7: that fragment's HOMO–LUMO gaps are 0.14–0.24 eV), and it records no path, so its cost is not comparable
+to 28's and no «gating» follows from it. The text below is the original design, kept as the record.
+
 Script 28 computes the Beratan-Onuchic FAD→surface coupling on ONE (AF3) snapshot.
 Thermal motion modulates the through-space gaps in that path, so the *rate* is a
 Boltzmann-weighted ensemble average, not a single-geometry number — "conformational

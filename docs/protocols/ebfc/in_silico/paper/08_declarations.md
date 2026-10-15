@@ -16,13 +16,14 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   predicted geometries were assessed by pLDDT and a molecular-dynamics ensemble before use.
 - **Computational pipeline & analysis.** The DFT/MD pipeline was implemented with the assistance of an
   LLM coding agent — **Claude (Anthropic), used through Claude Code**; the model behind a change is recorded in the
-  `Co-Authored-By` trailer of nearly every commit in the repository. Every calculation is scripted and was run in one
-  recorded version-exact environment; the molecular dynamics are stochastic, and §2.7 states what a re-run under a newer
-  PySCF reproduces and what it moves. Every number in the text is checked against the committed result caches by the
-  repository's tests.
+  `Co-Authored-By` trailer of nearly every commit in the repository. The reported calculations are scripted and were run
+  in one recorded version-exact environment (§2.7; the re-runs under the later conda-lock reported there are
+  reproduction checks); the molecular dynamics are not seeded and are stochastic. Many of the computed numbers in the
+  text are pinned to the committed result caches by tests in the repository; not every number has such a pin.
 - **Literature search and citations.** The literature search, the collection of references and the check of every
-  DOI against its Crossref record were carried out with the same agent (Claude, through Claude Code); a value is cited
-  only after it was read in the cited source.
+  DOI against its registry record (Crossref; DataCite for the repository deposit) were carried out with the same agent
+  (Claude, through Claude Code). [finalise — the author confirms that he checked the citations, and names any value
+  taken from an abstract rather than a full text]
 - **Manuscript preparation.** Claude (Anthropic, through Claude Code) assisted with drafting and editing.
 - **Other tools.** Google Gemini may also have been used outside the repository over the project's development;
   that use is not recorded. [finalise — the author confirms this sentence and states the method of use at deposit:
@@ -31,8 +32,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 
 **All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
-  author.** Apart from the AlphaFold 3 structure model declared above, AI tools did not generate data or results, and
-  every reference was checked against its DOI record.
+  author.** Apart from the AlphaFold 3 structure model declared above, AI tools did not generate data or results.
 
 ## Other required declarations
 

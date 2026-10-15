@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-L3 — Beratan-Onuchic electron tunneling pathway analysis.
+L3 — contact-graph shortest path from FAD to the protein surface (NOT a Beratan–Onuchic pathway analysis).
+
+⚠️ Self-review round 1 of Стаття 1, cluster 6 (2026-10-15): the weights below are summed (Beratan–Onuchic multiplies
+decay factors), an «hbond» step is any N/O/S-containing pair within 1.8–3.5 Å, and the sources are the first FAD
+atoms of the file (the phosphate/ribose end), not the isoalloxazine N5 — so the route found measures no coupling and
+the paper does not report it. Kept as the record of what was computed.
 
 Maps the optimal electron transfer route from FAD cofactor to
 protein surface through the dgrGcGDH structure. Uses a graph-based

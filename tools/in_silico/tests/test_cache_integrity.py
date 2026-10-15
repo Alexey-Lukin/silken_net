@@ -3150,7 +3150,8 @@ def test_b4_speciation_dmbpy_bracket():
 
 
 def test_tunneling_pathway():
-    """Tunneling pathway should find a route with β·d < 5."""
+    """Script 28 found a route (cache sanity only). ⛔ Not a feasibility check: script 28 is a contact-graph search,
+    not a Beratan–Onuchic pathway, and the paper reports no pathway (self-review round 1, cluster 6, 2026-10-15)."""
     path = DFT / "tunneling_pathway.json"
     if not path.exists():
         pytest.skip("tunneling pathway not computed")

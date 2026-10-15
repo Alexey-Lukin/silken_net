@@ -52,8 +52,8 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 24d | `24d_fodft_cu_ru.py` | L3b CHEM.32: Cu-Ru FO-DFT diabatisation → t_ij NON-PHYSICAL (frontier all-Ru, no Cu-d partner); coupling-boost CDFT-pending | ~15 min |
 | 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest DET margin bracket — gap sign × λ(Cu) reading (reads 24 t_ij + 35 λ) | ~1 s |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
-| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling pathway, single snapshot | < 1 s |
-| 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): Beratan-Onuchic over the MD ensemble → β·d distribution + conformational gating (image_molecules PBC unwrap) | ~few min |
+| 28 | `28_electron_tunneling_pathway.py` | L3: contact-graph shortest path from the first FAD atoms (NOT a Beratan–Onuchic pathway — self-review cluster 6), single snapshot | < 1 s |
+| 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): a contact-graph cost over MD frames from script 27's GAFF-prefix sources (not 28's start; no path recorded — cluster 6; image_molecules PBC unwrap) | ~few min |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM (superseded by 29b) | ~1-2 h |
 | 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.39 eV) | ~1-2 h |
 | 29c | `29c_outer_sphere_lambda.py` | L3: outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ; radius/ε-dominated → INDICATIVE | ~1 s |
@@ -207,8 +207,9 @@ Current result: **`d_FAD = 15.998 Å`** (FAD N5 → Tyr90 OH), confirmed in UCSF
 ChimeraX — a BURIAL DEPTH, i.e. a lower bound on the donor–acceptor separation,
 against the ≈20 Å centre-to-centre ceiling for single-step tunnelling through
 protein (Gray & Winkler, PNAS 2005; the former «18–20 Å» had no source). The
-distance does not exclude MET and does not prove it — the through-bond path
-β·d = 2.05 (script 28) carries that. See
+distance does not exclude MET and does not prove it, and the flavin→mediator
+coupling that would carry it is not computed (script 28 is a contact-graph search,
+not a pathway analysis — self-review cluster 6). See
 [`L1_protein_architecture.md`](../../docs/protocols/ebfc/in_silico/L1_protein_architecture.md)
 and `01_03 §3.4` for validation.
 

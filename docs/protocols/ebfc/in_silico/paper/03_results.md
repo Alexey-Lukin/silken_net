@@ -15,12 +15,10 @@ The AlphaFold 3 model places the FAD N5 atom **16.0 Å** below the protein surfa
 nearest exit). Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
 redox enzyme needs only up to a centre-to-centre distance of ≈20 Å;<sup>48</sup> 16.0 Å is the burial
 depth, not the distance to a docked osmium centre, so it bounds the donor–acceptor separation from below
-and distance alone does not settle feasibility. A shortest-path search over the protein's contact graph (§2.5)
-finds a connected through-bond route from the ribose/adenine half of FAD to the surface by Ala261, Thr260 and Thr288
-(PDB residue numbering; Fig 2), and the route persists over a 15-frame molecular-dynamics ensemble (Fig S1). It starts
-away from the isoalloxazine N5 and sums constant step weights instead of multiplying Beratan–Onuchic decay factors, so
-it shows that such a route exists, not how strongly the flavin couples to a docked mediator; we draw no feasibility
-from it. The residues of that route are well-ordered in the prediction (pLDDT ≫ 80). The deglycosylated variant modelled here (eleven N→Q
+and distance alone does not settle feasibility. The electronic coupling from the flavin to a docked mediator is not
+computed here: the contact-graph search we ran (§2.5) neither starts at the isoalloxazine nor weighs its steps as
+Beratan–Onuchic decay factors, so no tunnelling pathway is reported; a Beratan–Onuchic analysis from the flavin N5 is
+left to follow-up work. The nearest exit, Tyr90, is well-ordered in the prediction (pLDDT ≫ 80). The deglycosylated variant modelled here (eleven N→Q
 substitutions) preserves this geometry.
 
 ## 3.2 Anode PCET: the FAD redox potential
@@ -315,11 +313,10 @@ single fixed geometry (§2.3) is not tested this way.
 
 ![Figure 2 (DRAFT)](figures/fig2_structure_path.png)
 
-**Figure 2 (DRAFT). AF3 architecture and the tunnelling pathway.** 2D PCA projection of the 600-Cα
-envelope (grey) with the FAD cofactor (orange) and the shortest-path route of §2.5 from the ribose end of FAD
-(C5B) → Ala261 → Thr260 → Thr283 → Thr288 (red; a connectivity heuristic, not a Beratan–Onuchic coupling);
-Tyr90 OH marks the nearest surface exit. The flavin N5 sits **16.0 Å** below the surface — a lower bound on the
-separation from a docked mediator, against a ≈20 Å single-step ceiling<sup>48</sup>; the route is 23.7 Å long. *A 2D projection flattens the burial depth; the publication-grade cartoon
+**Figure 2 (DRAFT). AF3 architecture and the burial depth of the flavin.** 2D PCA projection of the 600-Cα
+envelope (grey) with the FAD cofactor (orange); Tyr90 OH marks the nearest surface exit, and the dotted line the
+**16.0 Å** burial depth of N5 — a lower bound on the separation from a docked mediator, against a ≈20 Å single-step
+ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D projection flattens the burial depth; the publication-grade cartoon
 (PyMOL) is the companion to this draft.*
 
 ![Figure 3](figures/fig3_cascade_lfer.png)
@@ -361,10 +358,3 @@ upper bracket** (+0.55 eV vs chloro at B3LYP, +0.27 eV at ωB97X). Both +2/+3 fo
 methodological benchmark) lie above chloro at **both** functionals — the chloro↔+2/+3 bracket is functional-robust;
 only the internal aqua↔bis-Im order is functional-sensitive (B3LYP bis-Im > aqua, ωB97X aqua > bis-Im, ≤0.15 eV). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale — the second-shell shift
 of **+0.98 eV** reproduces the known ~1 V group-8 implicit-solvation error.<sup>19</sup>
-
-![Figure S1](figures/figS1_betad_ensemble.png)
-
-**Figure S1. The route heuristic over the thermal ensemble.** The logarithm of the summed step weight of the §2.5
-route heuristic — not a Beratan–Onuchic decay — on the single AlphaFold-3 snapshot (2.05) and over the
-molecular-dynamics ensemble (2.02 ± 0.13, n = 15 frames): the connected route persists across the ensemble; no coupling
-or gating factor is derived from it (supports §3.1; the Fig 2 structural render is the companion).

@@ -69,8 +69,8 @@ The osmium mediator at the centre of this device is precisely such a couple.
 Rather than treat this as a nuisance to be absorbed into an empirical correction, we make it part of the
 result — quantifying the error on a clean benchmark and decomposing the device-level discrepancy into its
 physical contributions. Reproducibility is treated with the same seriousness: every calculation is
-scripted, seeded, and run from a recorded, version-exact environment, in line with current best-practice DFT
-reporting.<sup>20,21</sup>
+scripted and run from a recorded, version-exact environment, in line with current best-practice DFT
+reporting;<sup>20,21</sup> the electronic-structure scripts use fixed seeds, and the molecular dynamics are stochastic.
 
 ## Contribution
 

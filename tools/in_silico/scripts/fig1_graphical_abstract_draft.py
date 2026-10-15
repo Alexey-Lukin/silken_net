@@ -72,7 +72,7 @@ def main() -> int:
         arrow(ax, x1, yc + 0.4, x2, yc + 0.4, C["elec"], 2.5)
     ax.text(6.7, yc + 1.05, "cascade  +574 mV / −0.574 eV (downhill, verified E°s)",
             ha="center", fontsize=8, color="#a40", weight="bold")
-    ax.text(6.7, yc - 0.3, "e⁻  (Beratan–Onuchic tunnelling β·d = 2.05)",
+    ax.text(6.7, yc - 0.3, "e⁻  (FAD → Os mediator)",
             ha="center", fontsize=7.5, style="italic")
 
     # ── RIGHT-LOWER: power + sensor synergy (A) ──

@@ -12,7 +12,7 @@ data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
                               vs reorganization-energy scenario (③, honest borderline)
   * fig5_solvation_pcm.png  — (a) explicit Cl⁻-water series; (b) speciation shift
                               (B3LYP↔ωB97X) + group-8 [Os(H₂O)₆] PCM benchmark (②)
-  * figS1_betad_ensemble.png — the script-28 route heuristic (ln Σw) over the MD ensemble vs the single snapshot (SI)
+  * figS1_betad_ensemble.png — WITHDRAWN 2026-10-15 (cluster 6): no longer generated, `figS1()` kept as the record
 
 Every headline number is cross-checked against the SUMMARY.md canon with an
 assert — if a cache drifts (someone re-runs a DFT script), the figure build
@@ -357,19 +357,18 @@ def fig5() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 2 — AF3 structure + the script-28 route heuristic (DRAFT: 2D PCA projection; NOT a Beratan–Onuchic path —
-# the route starts at the ribose end of FAD, C5B, as SUMMARY §Electron Tunneling Route records; self-review cluster 6)
+# Fig 2 — AF3 structure + the burial depth of the flavin (DRAFT: 2D PCA projection). No tunnelling route is drawn:
+# script 28 is a contact-graph search from the phosphate/ribose end of FAD, not a pathway (self-review cluster 6)
 # ─────────────────────────────────────────────────────────────────────────────
 def fig2() -> None:
     """DRAFT structure figure from the AF3 PDB (mdtraj) — a 2D PCA projection of the
-    Cα envelope with the FAD cofactor and the through-bond tunnelling path. NOT a
+    Cα envelope with the FAD cofactor and the N5 → Tyr90 OH burial depth (no tunnelling path — §3.1). NOT a
     publication cartoon (that needs PyMOL/ChimeraX on `dgrGcGDH_AF3.pdb`); this
     conveys the §3.1 architecture (buried FAD, exit path, depth) from the real coords."""
     import mdtraj as md  # local import — only Fig 2 needs it
 
     from lib.constants import AF3_PDB
 
-    tun = json.loads((DFT_CACHE / "tunneling_pathway.json").read_text())
     t = md.load(str(AF3_PDB))
     top = t.topology
     xyz = t.xyz[0] * 10.0  # nm → Å
@@ -390,41 +389,24 @@ def fig2() -> None:
     if d_fad:
         _close(d_fad, 16.0, 0.5, "Fig2 d_FAD (N5→Tyr90 OH)")
 
-    # the route the heuristic found: FAD C5B (ribose) → Ala261 → Thr260 → Thr283 → Thr288 — ⛔ never drawn from N5:
-    # the search did not start there (it starts at the first FAD atoms of the file), and drawing it so fabricated its origin
-    path_res = [(261, "Ala261"), (260, "Thr260"), (283, "Thr283"), (288, "Thr288")]
-    c5b = top.select("resname FAD and name C5B")
-    path_pts, path_lbl = ([xyz[c5b[0]]], ["FAD C5B (ribose)"]) if len(c5b) else ([], [])
-    for rs, lab in path_res:
-        sel = top.select(f"name CA and resSeq {rs}")
-        if len(sel):
-            path_pts.append(xyz[sel[0]])
-            path_lbl.append(lab)
-
     fig, ax = plt.subplots(figsize=(6.6, 5.8))
     pc = proj(ca_xyz)
     ax.scatter(pc[:, 0], pc[:, 1], s=4, color="#cfcfcf", alpha=0.5, label="protein Cα", zorder=1)
     pf = proj(xyz[fad_heavy])
     ax.scatter(pf[:, 0], pf[:, 1], s=14, color=C["orange"], label="FAD cofactor", zorder=3)
-    pp = proj(np.array(path_pts))
-    ax.plot(pp[:, 0], pp[:, 1], "-o", color=C["red"], ms=5, lw=1.6, label="route heuristic (not a coupling)", zorder=4)
-    for i, (lab, p) in enumerate(zip(path_lbl, pp, strict=False)):   # label only the endpoints (intermediates cluster)
-        if i in (0, len(pp) - 1):
-            ax.annotate(lab, p, textcoords="offset points", xytext=(6, 5), fontsize=7,
-                        color=C["red"], fontweight="bold")
     if len(tyr_oh):
         pe = proj(xyz[tyr_oh[0]])[0]
         ax.scatter([pe[0]], [pe[1]], s=70, marker="*", color=C["green"], zorder=5, label="Tyr90 OH (surface)")
         if len(n5):
             pn = proj(xyz[n5[0]])[0]
-            ax.plot([pn[0], pe[0]], [pn[1], pe[1]], ":", color="k", lw=1.0, zorder=2)
+            ax.plot([pn[0], pe[0]], [pn[1], pe[1]], ":", color="k", lw=1.0, zorder=2, label="N5 → Tyr90 OH (burial depth)")
     txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (burial depth; single-step ceiling ≈20 Å)\n"
-           f"route heuristic {tun['through_bond_path_A']:.1f} Å from the ribose end of FAD — not a coupling (§2.5)")
+           "no tunnelling pathway drawn — §3.1")
     ax.text(0.02, 0.02, txt, transform=ax.transAxes, fontsize=7, va="bottom",
             bbox={"boxstyle": "round,pad=0.4", "fc": "#f5f5f5", "ec": "#888888", "alpha": 0.95})
     ax.set_xlabel("PC1 (Å)")
     ax.set_ylabel("PC2 (Å)")
-    ax.set_title("(DRAFT) AF3 structure + shortest-path route (heuristic)\n2D PCA projection — publication cartoon → PyMOL")
+    ax.set_title("(DRAFT) AF3 structure + FAD burial depth\n2D PCA projection — publication cartoon → PyMOL")
     ax.legend(loc="upper right", fontsize=6.5, frameon=True, framealpha=0.9)
     ax.set_aspect("equal")
     fig.tight_layout()
@@ -468,7 +450,8 @@ def main() -> int:
     fig3()
     fig4()
     fig5()
-    figS1()
+    # figS1() — withdrawn 2026-10-15 (self-review round 1, cluster 6): 28 and 28b start from different atoms and
+    # measure no coupling, so the figure compared nothing; the function stays as the record of what it drew.
     print("Done — all canon cross-checks passed.")
     return 0
 

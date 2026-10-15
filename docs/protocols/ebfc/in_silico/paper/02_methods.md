@@ -98,13 +98,10 @@ cascade thermodynamics.
 
 ## 2.5 Electron-transfer kinetics
 
-**Anode tunnelling route (heuristic).** A shortest path was searched over a contact graph of the AF3 structure —
-covalent and hydrogen-bond steps with constant weights, through-space steps weighted e^{βR} (β = 1.1 Å⁻¹) — with the
-weights summed along the path (Dijkstra). This is a connectivity heuristic in the spirit of the Beratan–Onuchic pathway
-model<sup>14</sup>, not that model: the model multiplies per-step decay factors, and its decay is not the logarithm of a
-summed weight. The search started from the first FAD atoms of the structure file, which lie in the ribose/adenine half of
-the cofactor, not at the isoalloxazine N5; it therefore locates a connected route to the surface and measures no
-coupling, and no decay value from it is used below.
+**Anode tunnelling.** No pathway analysis is reported (§3.1). A contact-graph shortest-path search (script 28,
+Supporting Information) was run on the AF3 structure, but it measures no coupling: its steps carry constant weights
+for close contacts — any pair within 3.5 Å that includes N, O or S counts as a hydrogen-bond step — or a
+distance-only weight, summed along the path, and it starts at atoms outside the isoalloxazine ring.
 
 **Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the bimetallic
 Cu–Co–Ce ZIF nanozyme were obtained from **charge-localised ΔSCF-UKS** energy splittings on
@@ -139,9 +136,9 @@ a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds
 trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for
 the protein, GAFF2 parameters<sup>51</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>52</sup>
 (scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>53</sup> so that the
-protein is whole and the non-covalently bound FAD lies in the same image, and the route heuristic was replayed
-on 15 frames to see whether the route persists (Fig S1); no rate or gating factor is derived from it. (A flavin
-frontier-orbital ensemble was attempted on fragments cut from the same trajectory and is not reported — §3.7.)
+protein is whole and the non-covalently bound FAD lies in the same image, and the analyses attempted
+on its frames — the contact-graph search above and a flavin frontier-orbital ensemble — are not reported (§3.1,
+§3.7).
 
 ## 2.6 Cluster-continuum micro-solvation
 

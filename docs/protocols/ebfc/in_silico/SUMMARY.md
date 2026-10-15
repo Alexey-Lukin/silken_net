@@ -13,7 +13,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 | Level | Question | Method | Verdict |
 |-------|----------|--------|---------|
-| **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å burial depth — below the ≈20 Å single-step ceiling (a lower bound on the D–A separation; MET rests on the β·d path) |
+| **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å burial depth — below the ≈20 Å single-step ceiling (a lower bound on the D–A separation; the flavin→mediator coupling is not computed — §Electron Tunneling Route) |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline at ΔG = 0 (×1–30), 🔴 **below turnover on the adverse reading** (lit-λ bracket ×0.0045…×40 over the gap sign × the λ(Cu) reading) — NOT the old ×10⁵ (see §Cathode) |
@@ -36,7 +36,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **FAD N5 → surface (Tyr90 OH)** | **15.998 Å** |
 | Single-step tunnelling ceiling through protein, centre-to-centre (Gray & Winkler 2005, PMC553296) | ≈20 Å |
 
-**Conclusion:** d_FAD is a burial depth — a lower bound on the donor–acceptor separation, below the ≈20 Å single-step ceiling — so the distance does not exclude MET and does not prove it; the MET evidence is the through-bond path β·d = 2.05 (script 28, §Electron Tunneling Pathway).
+**Conclusion:** d_FAD is a burial depth — a lower bound on the donor–acceptor separation, below the ≈20 Å single-step ceiling — so the distance does not exclude MET and does not prove it; the flavin→mediator coupling that would carry the MET argument is not computed — script 28 is a contact-graph search, not a pathway analysis (§Electron Tunneling Route).
 
 ---
 
@@ -291,12 +291,12 @@ to bis-Im > aqua (the two within <0.15 eV). Since aqua is only a methodological 
 the operando **chloro↔bis-Im bracket holds at both functionals**. Cache
 `wb97x_speciation_dmbpy.json` (3/3 forms converged via Newton, ⟨S²⟩≈0.754).
 
-### Electron Tunneling Route (script 28 — a shortest-path heuristic, NOT the Beratan–Onuchic model)
+### Electron Tunneling Route (script 28 — a contact-graph shortest path, NOT a pathway analysis)
 
-FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface) — the route starts in the ribose/adenine half of FAD, not at the isoalloxazine N5
-- 10 atoms, through-bond route 23.7 Å; its «β·d» 2.05 is ln Σw of CONSTANT step weights (0.6 covalent · 0.9 H-bond · e^{1.1R} through space), not a Beratan–Onuchic decay, which multiplies per-step factors — withdrawn as a coupling (self-review round 1, cluster 6, 2026-10-15); the committed caches keep the old `method` label
-- it shows that a connected covalent/H-bond route reaches the surface; it does not show the flavin's coupling to a docked mediator
-- **MD-ensemble (script 28b, CHEM.16):** the same heuristic over 15 trajectory frames, ln Σw = **2.02 ± 0.13** against the single-snapshot 2.05 — the route persists; the «gating factor» 1.03× is built from the heuristic and is not a gating factor either. PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
+FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface) — found from the first FAD atoms of the structure file (PA · O1A · O2A · O5B · C5B: the phosphate/ribose end), not from the isoalloxazine N5
+- 10 atoms, 9 steps, 23.7 Å; cost 7.8 = one covalent step (0.6) + eight «hbond» steps (0.9) — in the code an «hbond» step is ANY pair within 1.8–3.5 Å that includes N, O or S (a through-space step would cost ≥ e^{1.1·1.8} ≈ 7.2 alone), so the route is a chain of contacts, not of bonds; its «β·d» 2.05 = ln 7.8 is not a Beratan–Onuchic decay. Withdrawn from the paper (self-review round 1, cluster 6, 2026-10-15; corrected the same evening by the adversary on `079b81cec`); the committed caches keep the old `method` label
+- **28b (CHEM.16) is NOT the same search:** its sources are atoms picked by GAFF-name prefixes borrowed from script 27, which do not map onto the isoalloxazine (cluster 7), and it records no path — its ln Σw = **2.02 ± 0.13** is the cost from a different start, so it says nothing about the route above either
+- the paper reports no tunnelling pathway; a Beratan–Onuchic analysis from N5 is a follow-up PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
 
 Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
