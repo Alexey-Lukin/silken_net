@@ -20,13 +20,20 @@ script 21b. If HOMO(FADH₂) and LUMO(Os(III)) are recalculated with this
 functional, the raw Koopmans verdict may flip to DOWNHILL without bias
 correction — which is the publication-grade result.
 
-NOTE: def2-TZVP is a triple-zeta basis — ~3-5× more expensive than 6-31G(d).
-Expected wall time ~1-3 hours per single-point on 54 atoms.
+NOTE: def2-TZVP is a triple-zeta basis — ~3-5× more expensive than 6-31G(d). Measured in the committed cache, not
+estimated: Os(II) 7 195 s, Os(III) 33 900 s (UKS, level-shifted), FADH₂ 470 s — ≈ 11.5 h for a full run.
+
+`--flavin-only` (2026-10-15, the 1,5-dihydro recompute — in-silico §Critical Rules #16): the two Os states do not
+depend on the flavin, so they are kept VERBATIM from the committed cache and only `fadh2_red` and `cascade` are
+recomputed (≈ 8 min). The hand-added fields no script writes (`fad_ox` · `fadh2_cation` · `delta_scf_correct`, commit
+3dbd5bcdf) stood on the 4a,5-dihydro tautomer and are read by nothing; they move under `superseded_4a5_dihydro`
+with that reason instead of vanishing.
 
 Run
 ---
     conda activate silken_md
-    python tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py
+    python tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py                  # full (≈ 11.5 h)
+    python tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py --flavin-only    # FADH₂ + cascade, Os kept
 """
 from __future__ import annotations
 
@@ -47,6 +54,7 @@ from lib.constants import (
     REPO_ROOT,
     SOLVENT_EPS_WATER,
 )
+from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro
 from lib.utils import banner
 
 INPUT_XYZ = LIGANDS_DIR / "os_bpy_im_cl.xyz"
@@ -123,32 +131,46 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str) -> dict:
     }
 
 
-def main() -> int:
-    if not INPUT_XYZ.exists():
-        sys.exit(f"Missing {INPUT_XYZ}. Run script 21b first.")
-
-    atoms = read_xyz(INPUT_XYZ)
-    banner(f"Publication-grade DFT: {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}")
-    print(f"  Loaded {len(atoms)} atoms from {INPUT_XYZ.name}")
-    print("  This is ~3-5× slower than B3LYP/6-31G(d)")
-
-    results = {
-        "method": f"{XC_FUNCTIONAL.upper()}/{BASIS_OS}(Os)+{BASIS_LIGHT}(others)+PCM(water,C-PCM)",
-        "model_note": "Publication-grade: range-separated hybrid + dispersion + triple-zeta basis.",
-        "os2_plus": dft_singlepoint(atoms, charge=1, spin=0,
-                                     label="Os(II) [Os(bpy)2(1-MeIm)Cl]+ (ωB97X-D)"),
-        "os3_plus": dft_singlepoint(atoms, charge=2, spin=1,
-                                     label="Os(III) [Os(bpy)2(1-MeIm)Cl]2+ (ωB97X-D)"),
-    }
-
-    # Also recompute FAD at same level
-    banner("Recomputing FADH₂ at ωB97X-D/def2-TZVP for consistent comparison")
+def main(argv) -> int:
     from rdkit import Chem
     from rdkit.Chem import AllChem
 
-    red_smiles = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
-    mol_rd = Chem.MolFromSmiles(red_smiles)
-    mol_rd = Chem.AddHs(mol_rd)
+    # The tautomer check runs FIRST — before an Os state or the flavin costs a single SCF cycle.
+    mol_rd = Chem.AddHs(Chem.MolFromSmiles(LUMIFLAVIN_RED_SMILES))
+    tautomer = check_15_dihydro(mol_rd)
+    flavin_only = "--flavin-only" in argv
+
+    if flavin_only:
+        if not OUTPUT_JSON.exists():
+            sys.exit(f"--flavin-only reuses the Os states of {OUTPUT_JSON.name}, which is missing — run the full script")
+        old = json.loads(OUTPUT_JSON.read_text(encoding="utf-8"))
+        if not (old["os2_plus"]["converged"] and old["os3_plus"]["converged"]):
+            sys.exit("--flavin-only: the cached Os states are not both converged — nothing to keep")
+        banner("--flavin-only: Os(II)/Os(III) kept verbatim from the committed cache")
+        results = {k: old[k] for k in ("method", "model_note", "os2_plus", "os3_plus")}
+        orphans = {k: old[k] for k in ("fad_ox", "fadh2_cation", "delta_scf_correct") if k in old}
+        if orphans:
+            results["superseded_4a5_dihydro"] = {
+                "reason": "hand-added (commit 3dbd5bcdf), written by no script, read by nothing; computed on the "
+                          "4a,5-dihydro tautomer the chain carried under the 1,5 label until 2026-10-15",
+                **orphans}
+    else:
+        if not INPUT_XYZ.exists():
+            sys.exit(f"Missing {INPUT_XYZ}. Run script 21b first.")
+        atoms = read_xyz(INPUT_XYZ)
+        banner(f"Publication-grade DFT: {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}")
+        print(f"  Loaded {len(atoms)} atoms from {INPUT_XYZ.name}")
+        results = {
+            "method": f"{XC_FUNCTIONAL.upper()}/{BASIS_OS}(Os)+{BASIS_LIGHT}(others)+PCM(water,C-PCM)",
+            "model_note": "Publication-grade: range-separated hybrid + dispersion + triple-zeta basis.",
+            "os2_plus": dft_singlepoint(atoms, charge=1, spin=0,
+                                         label="Os(II) [Os(bpy)2(1-MeIm)Cl]+ (ωB97X-D)"),
+            "os3_plus": dft_singlepoint(atoms, charge=2, spin=1,
+                                         label="Os(III) [Os(bpy)2(1-MeIm)Cl]2+ (ωB97X-D)"),
+        }
+
+    # FADH₂ at the same level — 1,5-dihydrolumiflavin (lib/flavin.py)
+    banner("Recomputing FADH₂ (1,5-dihydro) at ωB97X/def2-TZVP for consistent comparison")
     AllChem.EmbedMolecule(mol_rd, randomSeed=42)
     AllChem.MMFFOptimizeMolecule(mol_rd, maxIters=2000, mmffVariant="MMFF94s")
     conf = mol_rd.GetConformer()
@@ -159,6 +181,7 @@ def main() -> int:
     fadh2_result = dft_singlepoint(fadh2_atoms, charge=0, spin=0,
                                     label="FADH₂ lumiflavin (ωB97X-D)")
     results["fadh2_red"] = fadh2_result
+    results["fadh2_tautomer"] = {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES, **tautomer}
 
     # Cascade verdict
     banner("Marcus cascade verdict (ωB97X-D)")
@@ -195,4 +218,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv))

@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.utils import banner
 
-LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
+LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"   # ⛔ the 4a,5-dihydro tautomer (Critical Rules #16): this TERMINATED record ran on it; 29b, its rescue, computes on lib/flavin.py — never re-run this one
 OUT_JSON = DFT_CACHE / "reorganization_energy.json"
 
 

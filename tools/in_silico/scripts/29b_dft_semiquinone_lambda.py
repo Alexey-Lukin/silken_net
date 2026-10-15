@@ -40,22 +40,22 @@ import time
 from pathlib import Path
 
 from pyscf import dft, gto, solvent
-from pyscf.geomopt import geometric_solver
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
+from lib.dft_utils import dft_optimize
+from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro, locants
 from lib.utils import banner
 
-LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
 LIT_LAMBDA_TOTAL_EV = 0.7        # comparison constant — TOTAL λ of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate
 OUT_JSON = DFT_CACHE / "semiquinone_lambda.json"
 
 
 def build_fadh2():
-    m = Chem.MolFromSmiles(LUMIFLAVIN_RED)
-    m = Chem.AddHs(m)
+    m = Chem.AddHs(Chem.MolFromSmiles(LUMIFLAVIN_RED_SMILES))
+    check_15_dihydro(m)   # before any SCF (in-silico §Critical Rules #16; 2026-10-15 the 4a,5 tautomer stood here)
     AllChem.EmbedMolecule(m, randomSeed=42)
     AllChem.MMFFOptimizeMolecule(m, maxIters=2000, mmffVariant="MMFF94s")
     return m
@@ -112,10 +112,15 @@ def run_sp(mol, xc="b3lyp", level_shift=0.0, dm0=None):
     return mf, float(e)
 
 
-def opt_atoms(mol_opt):
-    syms = [mol_opt.atom_symbol(i) for i in range(mol_opt.natm)]
-    coords = mol_opt.atom_coords(unit="Angstrom")
-    return [(s, tuple(c)) for s, c in zip(syms, coords, strict=False)]
+def run_opt(atoms, charge, spin, label, level_shift=0.0):
+    """Geom-opt at B3LYP/def2-SVP+PCM through `dft_optimize` (grid response; its convergence flag is geomeTRIC's own —
+    the `geometric_solver.optimize` it replaced drops that flag) → (atoms, summary)."""
+    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light="def2-svp",
+                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
+    last = info["trajectory"][-1] if info["trajectory"] else {}
+    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
+    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
+    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
 
 
 def main() -> int:
@@ -125,37 +130,43 @@ def main() -> int:
     fadh2 = build_fadh2()
     atoms_red = atoms_from_rdkit(fadh2)
     nh = nh_hydrogens(fadh2)
-    print(f"  FADH₂: {len(atoms_red)} atoms; candidate N-H sites: {[n for _, n in nh]}")
+    loc = locants(fadh2)
+    print(f"  FADH₂: {len(atoms_red)} atoms; candidate N-H sites: {[loc[n] for _, n in nh]}")
 
     # --- screen the deprotonation site → most stable neutral semiquinone FADH• ---
     banner("Screen semiquinone site (B3LYP/6-31g(d)+PCM, UKS doublet)")
     best = None
     for h_idx, n_idx in nh:
         rad_atoms = [a for i, a in enumerate(atoms_red) if i != h_idx]
-        _, e = run_sp(pyscf_mol(rad_atoms, 0, 1, basis="6-31g(d)"), "b3lyp", level_shift=0.2)
-        print(f"    remove H@N{n_idx}: E = {e:.6f} Ha")
-        if best is None or e < best[1]:
+        mf_s, e = run_sp(pyscf_mol(rad_atoms, 0, 1, basis="6-31g(d)"), "b3lyp", level_shift=0.2)
+        print(f"    remove H@{loc[n_idx]}: E = {e:.6f} Ha  conv={mf_s.converged}")
+        if mf_s.converged and (best is None or e < best[1]):   # an unconverged site never wins the screen
             best = (h_idx, e, n_idx, rad_atoms)
+    if best is None:
+        sys.exit("No converged semiquinone radical")
     h_idx, _, n_idx, rad_atoms = best
-    print(f"  → most stable semiquinone: H removed from N{n_idx} ({len(rad_atoms)} atoms)")
+    site = loc[n_idx]
+    print(f"  → most stable semiquinone: H removed from {site} ({len(rad_atoms)} atoms)" + ("" if site == "N1" else
+          "  ⚠️ NOT N1: FADH⁻ is the N1-deprotonated anion and FADH• carries H on N5 — read before integrating"))
     # rad_atoms = the shared 'FADH' nuclei for BOTH couple members (same nuclei →
     # Nelsen applies). FADH• = (0, doublet); FADH⁻ = (−1, singlet).
 
     # --- geom-opt both members at their own charge/spin (B3LYP/def2-SVP+PCM) ---
     banner("Step 1: geom-opt FADH• (neutral doublet) at B3LYP/def2-SVP")
     t = time.time()
-    mf_rad, _ = run_sp(pyscf_mol(rad_atoms, 0, 1), "b3lyp", level_shift=0.2)
-    mol_rad_opt = geometric_solver.optimize(mf_rad, maxsteps=50)
-    print(f"  FADH• opt done ({time.time()-t:.0f}s)")
+    R_rad, opt_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
+    print(f"  FADH• opt done ({time.time()-t:.0f}s) conv={opt_rad['converged']} steps={opt_rad['steps']}")
 
     banner("Step 2: geom-opt FADH⁻ (anion singlet) at B3LYP/def2-SVP")
     t = time.time()
-    mf_anion, _ = run_sp(pyscf_mol(rad_atoms, -1, 0), "b3lyp")
-    mol_anion_opt = geometric_solver.optimize(mf_anion, maxsteps=50)
-    print(f"  FADH⁻ opt done ({time.time()-t:.0f}s)")
-
-    R_rad = opt_atoms(mol_rad_opt)
-    R_anion = opt_atoms(mol_anion_opt)
+    R_anion, opt_an = run_opt(rad_atoms, -1, 0, "FADH_anion")
+    print(f"  FADH⁻ opt done ({time.time()-t:.0f}s) conv={opt_an['converged']} steps={opt_an['steps']}")
+    if not (opt_rad["converged"] and opt_an["converged"]):
+        side = OUT_JSON.with_suffix(".unconverged.json")
+        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH_radical": opt_rad, "FADH_anion": opt_an}},
+                                   indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT_JSON.name} untouched")
+        return 1
 
     # --- diagonal SPs (each member at its own optimized geometry) ---
     banner("Step 3: diagonal SPs")
@@ -190,7 +201,11 @@ def main() -> int:
         "method": "Nelsen 4-point at B3LYP/def2-SVP + C-PCM, FADH•/FADH⁻ couple "
                   "(seeded cross-SPs); rescues script 29 (FADH₂•⁺ radical-cation pathology)",
         "couple": "FADH•(neutral,doublet) / FADH⁻(anion,singlet)",
-        "semiquinone_site": f"N{n_idx}",
+        "semiquinone_site": site,
+        "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen of FADH₂",
+        "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
+        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+                     "FADH_radical": opt_rad, "FADH_anion": opt_an},
         "physically_reasonable": bool(physical),
         "E_rad_at_Rrad_Ha": E_rad_at_Rrad,
         "E_an_at_Ran_Ha": E_an_at_Ran,

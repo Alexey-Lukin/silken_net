@@ -25,7 +25,11 @@ the gap to the verified downhill driving force is the decomposed implicit-solvat
 limit (②). This script supplies the DFT mechanism number, not the verdict.
 
 Discipline: no density_fit; level_shift on the FADH₂⁺ doublet + SOSCF fallback; DFT
-jobs sequential. ~2-3 h (two geom-opts + three SP).
+jobs sequential. ~1.5-3 h (two geom-opts + three SP; the cache's `wall_seconds` is the measured figure).
+Geometry through the house optimizer `lib/dft_utils.dft_optimize` (2026-10-15): the `geometric_solver.optimize` it
+replaced returns only the molecule and drops geomeTRIC's convergence flag, so the `geom_opt_converged` this cache
+carried could not be False. An optimisation that does not converge now writes `<cache>.unconverged.json` and leaves
+the committed cache untouched.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/21g_adiabatic_dscf.py          # dimethyl (B1 cache)
       mamba run -n silken_md python tools/in_silico/scripts/21g_adiabatic_dscf.py --plain   # plain-bpy reference
@@ -38,17 +42,17 @@ import time
 from pathlib import Path
 
 from pyscf import dft, gto, solvent
-from pyscf.geomopt import geometric_solver
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
+from lib.dft_utils import dft_optimize
+from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro
 from lib.utils import banner
 
 SI_DESCRIPTION = "L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade."  # its row in the paper SI (72): English, no repo jargon
 
-LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"   # FADH₂ (1,5-dihydro), matches 33
 OUT = DFT_CACHE / "delta_scf_corrections.json"
 GEOMOPT_BASIS = "def2-svp"     # geometry optimization tier (composite ωB97X//B3LYP)
 SP_BASIS = "def2-tzvp"         # single-point tier
@@ -62,7 +66,8 @@ def _atoms(mol_rd):
 
 
 def _build_fadh2():
-    m = Chem.AddHs(Chem.MolFromSmiles(LUMIFLAVIN_RED))
+    m = Chem.AddHs(Chem.MolFromSmiles(LUMIFLAVIN_RED_SMILES))
+    check_15_dihydro(m)   # before any SCF (in-silico §Critical Rules #16)
     AllChem.EmbedMolecule(m, randomSeed=42)
     AllChem.MMFFOptimizeMolecule(m, maxIters=2000, mmffVariant="MMFF94s")
     return _atoms(m)
@@ -103,14 +108,15 @@ def _sp(atoms, charge, spin, xc, basis, level_shift=0.0) -> tuple[float, bool]:
     return float(e), bool(mf.converged)
 
 
-def _opt(atoms, charge, spin, level_shift=0.0):
-    """Geom-opt at B3LYP/def2-SVP+PCM → optimized atom list + converged flag."""
-    mf = _mf(_mol(atoms, charge, spin, GEOMOPT_BASIS), "b3lyp", level_shift)
-    mol_opt = geometric_solver.optimize(mf, maxsteps=50)
-    syms = [mol_opt.atom_symbol(i) for i in range(mol_opt.natm)]
-    coords = mol_opt.atom_coords(unit="Angstrom")
-    converged = mol_opt.converged if hasattr(mol_opt, "converged") else True
-    return [(s, tuple(c)) for s, c in zip(syms, coords, strict=False)], bool(converged)
+def _opt(atoms, charge, spin, label, level_shift=0.0):
+    """Geom-opt at B3LYP/def2-SVP+PCM through `dft_optimize` → (atoms, summary). The summary carries geomeTRIC's own
+    verdict (`converged`), never a default; on non-convergence the atoms are the lowest-energy step, for diagnosis only."""
+    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light=GEOMOPT_BASIS,
+                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
+    last = info["trajectory"][-1] if info["trajectory"] else {}
+    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
+    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
+    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
 
 
 def _load_ea_os3(plain: bool) -> tuple[float, str]:
@@ -138,12 +144,19 @@ def main(argv) -> int:
     # FAD side: geom-opt both states at B3LYP/def2-SVP, SP at ωB97X/def2-TZVP
     banner("FADH₂ geom-opt (B3LYP/def2-SVP+PCM)")
     t = time.time()
-    red_opt, c_red = _opt(fadh2, 0, 0)
-    print(f"  done {time.time()-t:.0f}s conv={c_red}")
+    red_opt, opt_red = _opt(fadh2, 0, 0, "FADH2")
+    c_red = opt_red["converged"]
+    print(f"  done {time.time()-t:.0f}s conv={c_red} steps={opt_red['steps']}")
     banner("FADH₂⁺ geom-opt (B3LYP/def2-SVP+PCM, doublet, level_shift=0.2)")
     t = time.time()
-    cat_opt, c_cat = _opt(fadh2, 1, 1, level_shift=0.2)
-    print(f"  done {time.time()-t:.0f}s conv={c_cat}")
+    cat_opt, opt_cat = _opt(fadh2, 1, 1, "FADH2_cation", level_shift=0.2)
+    c_cat = opt_cat["converged"]
+    print(f"  done {time.time()-t:.0f}s conv={c_cat} steps={opt_cat['steps']}")
+    if not (c_red and c_cat):
+        side = OUT.with_suffix(".unconverged.json")
+        side.write_text(json.dumps({"geom_opt": {"FADH2": opt_red, "FADH2_cation": opt_cat}}, indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT.name} untouched")
+        return 1
 
     banner("ωB97X/def2-TZVP single-points")
     e_red, cr = _sp(red_opt, 0, 0, "wb97x", SP_BASIS)
@@ -183,6 +196,9 @@ def main(argv) -> int:
         "dG_vertical_eV": round(dG_vertical, 4),
         "dG_adiabatic_eV": round(dG_adiabatic, 4),
         "geom_opt_converged": {"FADH2": c_red, "FADH2_cation": c_cat},
+        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+                     "FADH2": opt_red, "FADH2_cation": opt_cat},
+        "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
         "sp_converged": {"FADH2": cr, "cation_adiabatic": ca, "cation_vertical": cv},
         "wall_seconds": round(time.time() - t0, 1),
     }

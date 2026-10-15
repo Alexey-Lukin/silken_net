@@ -69,16 +69,12 @@ from lib.constants import (
     REPO_ROOT,
     SOLVENT_EPS_WATER,
 )
+from lib.flavin import LUMIFLAVIN_OX_SMILES, LUMIFLAVIN_RED_SMILES, check_15_dihydro
 from lib.utils import banner
 
-# Lumiflavin (7,8,10-trimethylisoalloxazine), neutral oxidized form.
-# PubChem CID 1549108. The N1 and N5 positions are sp2 and unprotonated.
-LUMIFLAVIN_OX_SMILES = "Cc1cc2nc3c(=O)[nH]c(=O)nc3n(C)c2cc1C"
-
-# 1,5-dihydrolumiflavin — the accepted reduced (FADH₂-like) form. N1 and N5
-# are now sp3 with explicit H; the ring buckles (non-planar) and RDKit's
-# MMFF94s embed produces the expected envelope conformation.
-LUMIFLAVIN_RED_SMILES = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
+# Lumiflavin (7,8,10-trimethylisoalloxazine): oxidized (PubChem CID 1549108; N1 and N5 bare) and 1,5-dihydro
+# (the FADH₂ model; H on N1 · N3 · N5). Both SMILES live in lib/flavin.py — until 2026-10-15 this file carried the
+# 4a,5-dihydro tautomer under the 1,5 label (in-silico §Critical Rules #16), and the check below now refuses it.
 
 XC_FUNCTIONAL = "b3lyp"
 MMFF_ITER = 2000
@@ -175,6 +171,8 @@ def main() -> int:
 
     banner("Building lumiflavin reduced (1,5-dihydro, FADH₂-like, closed shell, S=0)")
     red_mol = build_mol_from_smiles(LUMIFLAVIN_RED_SMILES, "red")
+    tautomer = check_15_dihydro(red_mol)   # before any SCF: raises on any other tautomer
+    print(f"  tautomer: 1,5-dihydro — H per ring N {tautomer['H_on_ring_N']}")
     red_atoms = mol_to_pyscf_atoms(red_mol)
     write_xyz(red_atoms, LIGANDS_DIR / "lumiflavin_red.xyz", "1,5-dihydrolumiflavin — MMFF94s")
     print(f"  Atoms: {len(red_atoms)}")
@@ -183,6 +181,7 @@ def main() -> int:
         "method": f"{XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}+PCM(water,C-PCM)",
         "ox":  dft_singlepoint(ox_atoms,  charge=0, spin=0, label="lumiflavin_ox"),
         "red": dft_singlepoint(red_atoms, charge=0, spin=0, label="lumiflavin_red"),
+        "red_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES, **tautomer},
     }
 
     # Apparent reduction free energy (very rough — no ZPE, no thermal, no 2H+

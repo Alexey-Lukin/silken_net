@@ -25,6 +25,13 @@ E°(Os +309) − E°(FAD-GDH −265 mV SHE).)
 
 Levels: radical site screened at B3LYP/6-31G(d)+PCM (cheap), final energies
 at ωB97X/def2-TZVP+PCM (consistent with the cached cascade pieces).
+
+2026-10-15 (the 1,5-dihydro recompute, in-silico §Critical Rules #16): the flavin SMILES comes from lib/flavin.py and
+is checked before any SCF; the semiquinone site is recorded by LOCANT (an RDKit index is not one — N1 of the new
+SMILES and N5 of the retired one are both index 18); geometry goes through `lib/dft_utils.dft_optimize`, whose
+convergence flag is real; and the bare-IP comparison is LOADED from 21g's cache (`IP_vertical_eV`, `dG_vertical_eV` —
+the same ωB97X/def2-TZVP+PCM tier on the optimised neutral) instead of the typed 5.391 / 0.998, which were hand-added
+numbers on the 4a,5 tautomer. Run AFTER 21g.
 """
 from __future__ import annotations
 
@@ -34,19 +41,17 @@ import time
 from pathlib import Path
 
 from pyscf import dft, gto, solvent
-from pyscf.geomopt import geometric_solver
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
+from lib.dft_utils import dft_optimize
+from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro, locants
 from lib.utils import banner
-
-LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
 
 # Thermodynamic proton reference (same constant as script 32, Isse-Gennaro 2010)
 G_STAR_H_AQ_EV = -11.72          # G*(H⁺,aq,1M); reviewer's no-1M-corr value = -11.80
-BARE_IP_EV = 5.391               # FADH₂ → FADH₂•⁺ + e⁻ (vertical FAD IP — unchanged by the mediator)
 EXP_CASCADE_EV = -0.574          # verified downhill: E°(Os +309) − E°(FAD-GDH −265 mV SHE); was −0.14 (Cosnier, withdrawn)
 
 OUT_JSON = DFT_CACHE / "pcet_cascade.json"
@@ -64,6 +69,16 @@ def _os_reduction_ev() -> float:
     return -4.392
 
 
+def _bare_cation_route() -> tuple[float, float, str]:
+    """(IP_vertical, ΔG_vertical) of the bare FADH₂ → FADH₂•⁺ route from 21g's cache — the comparison this script's
+    PCET route is set against. Loaded, never typed (in-silico §When Modifying #4)."""
+    p = DFT_CACHE / "delta_scf_corrections.json"
+    if not p.exists():
+        sys.exit(f"missing {p.name} — run 21g first (the bare-IP comparison is read from it)")
+    d = json.loads(p.read_text(encoding="utf-8"))
+    return d["IP_vertical_eV"], d["dG_vertical_eV"], p.name
+
+
 def atoms_from_rdkit(mol_rd):
     conf = mol_rd.GetConformer()
     return [(mol_rd.GetAtomWithIdx(i).GetSymbol(),
@@ -72,8 +87,8 @@ def atoms_from_rdkit(mol_rd):
 
 
 def build_fadh2():
-    m = Chem.MolFromSmiles(LUMIFLAVIN_RED)
-    m = Chem.AddHs(m)
+    m = Chem.AddHs(Chem.MolFromSmiles(LUMIFLAVIN_RED_SMILES))
+    check_15_dihydro(m)   # before any SCF (in-silico §Critical Rules #16)
     AllChem.EmbedMolecule(m, randomSeed=42)
     AllChem.MMFFOptimizeMolecule(m, maxIters=2000, mmffVariant="MMFF94s")
     return m
@@ -125,11 +140,14 @@ def run_sp(mol, xc, level_shift=0.0):
     return float(e), bool(mf.converged)
 
 
-def run_opt(mol, xc, level_shift=0.0):
-    """Geometry-optimize (well-behaved neutral species only) → optimized Mole."""
-    mf = _mf(mol, xc, level_shift)
-    mol_opt = geometric_solver.optimize(mf, maxsteps=50)
-    return mol_opt
+def run_opt(atoms, charge, spin, label, level_shift=0.0):
+    """Geometry-optimize at B3LYP/6-31G(d)+PCM through `dft_optimize` → (atoms, summary with the REAL flag)."""
+    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light="6-31g(d)",
+                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
+    last = info["trajectory"][-1] if info["trajectory"] else {}
+    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
+    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
+    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
 
 
 def main() -> int:
@@ -139,7 +157,8 @@ def main() -> int:
     fadh2 = build_fadh2()
     atoms_red = atoms_from_rdkit(fadh2)
     nh = nh_hydrogens(fadh2)
-    print(f"  FADH₂: {len(atoms_red)} atoms; candidate N-H sites: {[n for _, n in nh]}")
+    loc = locants(fadh2)
+    print(f"  FADH₂: {len(atoms_red)} atoms; candidate N-H sites: {[loc[n] for _, n in nh]}")
 
     # --- screen radical sites at B3LYP/6-31G(d) (cheap) ---
     banner("Screen semiquinone sites (B3LYP/6-31G(d)+PCM, UKS doublet)")
@@ -148,13 +167,15 @@ def main() -> int:
         rad_atoms = [a for i, a in enumerate(atoms_red) if i != h_idx]
         mol = pyscf_mol(rad_atoms, charge=0, spin=1, basis="6-31g(d)")
         e, conv = run_sp(mol, "b3lyp", level_shift=0.2)
-        print(f"    remove H@N{n_idx}: E = {e:.6f} Ha  conv={conv}")
+        print(f"    remove H@{loc[n_idx]}: E = {e:.6f} Ha  conv={conv}")
         if conv and (best is None or e < best[1]):
             best = (h_idx, e, n_idx, rad_atoms)
     if best is None:
         sys.exit("No converged semiquinone radical")
     h_idx, _, n_idx, rad_atoms = best
-    print(f"  → most stable semiquinone: H removed from N{n_idx}")
+    site = loc[n_idx]
+    print(f"  → most stable semiquinone: H removed from {site}" + ("" if site == "N1" else
+          "  ⚠️ NOT N1: the physiological neutral semiquinone carries H on N5 (H removed from N1) — read before integrating"))
 
     # --- geometry-optimize BOTH neutral species (B3LYP/6-31G(d)+PCM) ---
     # Both are well-behaved closed-shell/doublet neutrals — no cation-radical
@@ -162,19 +183,17 @@ def main() -> int:
     # is essential: an unrelaxed semiquinone is artificially strained.
     banner("Geometry optimization (B3LYP/6-31G(d)+PCM)")
     t = time.time()
-    mol_red_opt = run_opt(pyscf_mol(atoms_red, 0, 0, "6-31g(d)"), "b3lyp")
-    print(f"  FADH₂ opt done ({time.time()-t:.0f}s)")
+    red_opt_atoms, opt_red = run_opt(atoms_red, 0, 0, "FADH2")
+    print(f"  FADH₂ opt done ({time.time()-t:.0f}s) conv={opt_red['converged']} steps={opt_red['steps']}")
     t = time.time()
-    mol_rad_opt = run_opt(pyscf_mol(rad_atoms, 0, 1, "6-31g(d)"), "b3lyp", level_shift=0.2)
-    print(f"  FADH• opt done ({time.time()-t:.0f}s)")
-
-    def opt_atoms(mol_opt):
-        syms = [mol_opt.atom_symbol(i) for i in range(mol_opt.natm)]
-        coords = mol_opt.atom_coords(unit="Angstrom")
-        return [(s, tuple(c)) for s, c in zip(syms, coords, strict=False)]
-
-    red_opt_atoms = opt_atoms(mol_red_opt)
-    rad_opt_atoms = opt_atoms(mol_rad_opt)
+    rad_opt_atoms, opt_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
+    print(f"  FADH• opt done ({time.time()-t:.0f}s) conv={opt_rad['converged']} steps={opt_rad['steps']}")
+    if not (opt_red["converged"] and opt_rad["converged"]):
+        side = OUT_JSON.with_suffix(".unconverged.json")
+        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH2": opt_red, "FADH_radical": opt_rad}},
+                                   indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT_JSON.name} untouched")
+        return 1
 
     # --- final energies at ωB97X/def2-TZVP+PCM (on optimized geometries) ---
     banner("Final energies (ωB97X/def2-TZVP+PCM, geom-optimized)")
@@ -190,28 +209,34 @@ def main() -> int:
     cost_pcet = (e_fadhrad - e_fadh2) * HARTREE_TO_EV + G_STAR_H_AQ_EV
     os_reduction = _os_reduction_ev()
     cascade_pcet = cost_pcet + os_reduction
-    print(f"  Bare cation-radical IP (old):   FADH₂→FADH₂•⁺      = +{BARE_IP_EV:.3f} eV")
-    print(f"  PCET oxidation cost (new):      FADH₂→FADH•+H⁺+e⁻ = {cost_pcet:+.3f} eV")
-    print(f"  Drop vs bare IP:                {cost_pcet - BARE_IP_EV:+.3f} eV")
+    bare_ip, cascade_bare, bare_src = _bare_cation_route()
+    print(f"  Bare cation-radical IP:         FADH₂→FADH₂•⁺      = {bare_ip:+.3f} eV ({bare_src})")
+    print(f"  PCET oxidation cost:            FADH₂→FADH•+H⁺+e⁻ = {cost_pcet:+.3f} eV")
+    print(f"  Drop vs bare IP:                {cost_pcet - bare_ip:+.3f} eV")
     print(f"  + Os(III)→Os(II) reduction:     {os_reduction:+.3f} eV (Os ωB97X cache, drift-safe)")
     print(f"  → ΔG_cascade(PCET):             {cascade_pcet:+.3f} eV")
-    print(f"  (old bare cascade = +0.998 eV uphill; experiment = {EXP_CASCADE_EV:+.2f} eV)")
+    print(f"  (bare cascade = {cascade_bare:+.3f} eV; experiment = {EXP_CASCADE_EV:+.2f} eV)")
     downhill = cascade_pcet < 0
     print(f"  Verdict: {'✅ DOWNHILL — matches experiment' if downhill else '⚠️ still uphill'}")
 
     output = {
         "method": "PCET semiquinone: ωB97X/def2-TZVP+PCM // B3LYP/6-31G(d)+PCM "
                   "geom-opt; thermodynamic proton reference (G*(H+,aq)=-11.72 eV)",
-        "semiquinone_site": f"N{n_idx}",
+        "semiquinone_site": site,
+        "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen",
+        "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
+        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+                     "FADH2": opt_red, "FADH_radical": opt_rad},
         "E_FADH2_Ha": e_fadh2,
         "E_FADH_radical_Ha": e_fadhrad,
         "G_star_H_aq_eV": G_STAR_H_AQ_EV,
-        "bare_IP_eV": BARE_IP_EV,
+        "bare_IP_eV": round(bare_ip, 4),
+        "bare_route_source": f"{bare_src} (IP_vertical_eV · dG_vertical_eV, 21g)",
         "pcet_oxidation_cost_eV": round(cost_pcet, 3),
-        "drop_vs_bare_eV": round(cost_pcet - BARE_IP_EV, 3),
+        "drop_vs_bare_eV": round(cost_pcet - bare_ip, 3),
         "os_reduction_eV": round(os_reduction, 4),
         "cascade_pcet_eV": round(cascade_pcet, 3),
-        "cascade_bare_eV": 0.998,
+        "cascade_bare_eV": round(cascade_bare, 4),
         "exp_cascade_eV": EXP_CASCADE_EV,
         "downhill": bool(downhill),
         "converged": {"FADH2": c1, "FADH_radical": c2},
