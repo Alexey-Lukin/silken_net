@@ -155,7 +155,7 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # 325 mV = 0.65 × 500 mV (MPPT fraction × the retired «V_OC ≥ 500» claim) and 15 µW has
 # no traceable source (born with the rest of 02_03 §9 in the initial commit; equals
 # P_IN(CS) TYP). V_OP above (0.5 V) is the OTHER model's guess (≈0.65 × 0.77 V OCV).
-# Both wait for the HW.13 bench P-V curve — do not reconcile them by editing either.
+# Both wait for the HW.13 lab P-V curve (Stage-2 coin, not the bench) — do not reconcile them by editing either.
 # ── BQ25570 cold-start thresholds — MIRRORS of 02_03 §1.1 (SLUSBH2G §6.5); edit there, not here.
 # They are the Stage-2 coin ACCEPTANCE gates (01_03 §3.5), consumed by script 40; the R_int ceiling
 # R_int ≤ (V_OC − VIN(CS)) × VIN(CS) / PIN(CS) is derived in 02_03 §1.5. VIN(CS) has no MIN column,
