@@ -295,8 +295,9 @@ the operando **chloro↔bis-Im bracket holds at both functionals**. Cache
 
 FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface) — found from the first FAD atoms of the structure file (PA · O1A · O2A · O5B · C5B: the phosphate/ribose end), not from the isoalloxazine N5
 - 10 atoms, 9 steps, 23.7 Å; cost 7.8 = one covalent step (0.6) + eight «hbond» steps (0.9) — in the code an «hbond» step is ANY pair within 1.8–3.5 Å that includes N, O or S (a through-space step would cost ≥ e^{1.1·1.8} ≈ 7.2 alone), so the route is a chain of contacts, not of bonds; its «β·d» 2.05 = ln 7.8 is not a Beratan–Onuchic decay. Withdrawn from the paper (self-review round 1, cluster 6, 2026-10-15; corrected the same evening by the adversary on `079b81cec`); the committed caches keep the old `method` label
-- **28b (CHEM.16) is NOT the same search:** its sources are atoms picked by GAFF-name prefixes borrowed from script 27, which do not map onto the isoalloxazine (cluster 7), and it records no path — its ln Σw = **2.02 ± 0.13** is the cost from a different start, so it says nothing about the route above either
-- the paper reports no tunnelling pathway; a Beratan–Onuchic analysis from N5 is a follow-up PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
+- **28b (CHEM.16) is NOT the same search:** its sources are the first atoms matching script 27's GAFF-name prefixes — by the adversary's mapping of 2026-10-15 on the MD structure, adenine C2/N3/C4 and flavin N1/C2, not N5, so they even overlap 28's route at FAD:C4A, and it records no path — its ln Σw = **2.02 ± 0.13** is the cost from a different start, so it says nothing about the route above either
+- the paper reports no tunnelling pathway; a Beratan–Onuchic analysis from N5 is a follow-up.
+- PBC for 28b's MD frames: mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
 
 Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
@@ -316,7 +317,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 🔴 **Since 2026-10-15 (Стаття 1 self-review round 1, clusters 1 · 8) the table runs on the FO-DFT coupling, and the
 verdict is conditional on λ(Co).** The crude t(Cu–Co) above is half the difference of two UNCONSTRAINED SCF solutions of
-one cluster from one start (script 24: state B differs only by its level shift) — not charge-localised states, and the
+one cluster from one start (script 24: state B differs only in SCF settings — level shift, DIIS space, cycle cap) — not charge-localised states, and the
 difference is 9.4× the SCF tolerance both were converged to (`dscf_coupling_resolution`), so it resolves no coupling; its
 table survives as `scenarios_crude_dscf` (the pre-2026-10-15 published numbers: lit-λ ×0.0045…×40, ×1.4 at ΔG = 0).
 λ(Co) carries the verdict: turnover needs λ(Co) ≲ 2.0 eV at ΔG = 0 on the 2.0 eV λ(Cu) reading and ≲ 0.9 eV at the

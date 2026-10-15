@@ -142,7 +142,7 @@ def main() -> int:
     # so the sign stays unmeasured and both ends are carried (§When Modifying #11).
     GAP_EV = {"Cu-Co": float(fo["site_energy_gap_eV"])}
     # ⛔ Self-review round 1, cluster 8 (2026-10-15): the crude t(Cu–Co) of script 24 is half the difference of two UNCONSTRAINED
-    # SCF solutions of one cluster from one start (state B differs only by its level shift) — not charge-localised states, and
+    # SCF solutions of one cluster from one start (state B differs only in SCF settings: level shift, DIIS space, cycle cap) — not charge-localised states, and
     # the difference is a single-digit multiple of the tolerance both were converged to (`dscf_coupling_resolution`). So the
     # table runs on the two-state diabatisation (24b) for the bottleneck pair; the other hops keep 24's value (resolved against
     # tolerance, but not a diabatic coupling either), and the crude-t table stays as `scenarios_crude_dscf` so the numbers

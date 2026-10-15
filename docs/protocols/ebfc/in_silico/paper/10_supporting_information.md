@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 303 · 18,043,633 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 303 · 18,044,200 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -63,14 +63,14 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `66e77316eada8da66e489acb07b6adcb27fa3bd76c457eeef67e66e62d50b09a` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | `a702d36b58a99b4cd0fcf9217ee98bce1c3aabb06a719ccadf571d9c6ba50d0e` | L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations. |
-| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `6d9c87ce9f6e56871a7c7d968e501923702bf68646aa2c3cf9fa5fb3918b5ad3` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
+| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `dd7fb931b0bf0df99f84954aeebea70d7856a45a46b6ac1131245a8a4a4f1f85` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `219e51b97145f8efdc29f95aa871d910a338da4f52ebc263dd9f5a50f9aa653e` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `eb68eeed348a769a8fb516382d09e3f844cda32baaf792f2a79683cdb2f3fa1c` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
 | `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `0fafade3ceca12a44a243a96a3f4e69c3542bdaa7ac8368d7675ce5844bd3c27` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
-| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `935845dd713d475be9e9e954255454149c0bf8a1e0fad6372a68d49d73d7f1f8` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
+| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `4605187349754c5fd12f1c88b51edd85d09b9636a1396e113416eb3348cc0543` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `5270de21c04d8d394fc9662d54443f5bd963c2c6f8e2c7d6e1945601f89e772a` | L3/L2 bridge — MD→DFT ensemble averaging. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `3e262532435d44044f24a7a434b46b78abb8eca464988fc147db1da53e811fce` | L3 — contact-graph shortest path from FAD to the protein surface (NOT a Beratan–Onuchic pathway analysis). |
-| `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `f25269a92a52d881e668babba954eb6c50cea3121b2b9127f2569a0f68b1feea` | L3 — The script-28 route heuristic (a shortest path over a contact graph, not the Beratan–Onuchic model) replayed over the MD ensemble. |
+| `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `506a7f28954cbf681363be110094b74073653bff30cf6d663df662ca42aad188` | L3 — A contact-graph cost over the MD ensemble from source atoms other than the single-structure search's; it records no path and is not reported (not a Beratan–Onuchic analysis). |
 | `tools/in_silico/scripts/29_dft_reorganization_energy.py` | `e819a53147a5486f38f72e5aa6ac2a8b224c5e245215c76023217604a68deb0f` | L3 — Nelsen 4-point reorganization energy λ for FADH₂/FADH₂⁺. |
 | `tools/in_silico/scripts/29b_dft_semiquinone_lambda.py` | `6bc6b8c65dc786df156fe3228ecbf2ce00dd5fa5b892537c03c21635f2718af3` | L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode couple. |
 | `tools/in_silico/scripts/29c_outer_sphere_lambda.py` | `d34c4871d919cab82e8b5ca9cb23d214574c11b683bbd9c2377df8469696b7a4` | 29c — outer-sphere (solvent) reorganization energy λ_o for the anode FAD→Os ET. |
@@ -131,8 +131,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `dd4f7b772f18226d59496286e8cd69740296f17729593191d259ba01fdd51b83` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `1c982adab890f98a2fb44bb42b2bfb086e099b9517ce1ff8aee2ce77d30e7f06` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `6f4111f5903129ef0d56a5b5dd58f25bb645a9cf266a3b8d0d21866a80cb2d7c` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `e249d158a4d11126b2d895e7a2dde08675321f62f662f1fdb19375463376136c` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 

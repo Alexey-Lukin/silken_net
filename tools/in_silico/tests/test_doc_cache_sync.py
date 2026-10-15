@@ -2653,7 +2653,7 @@ CHECKS += [
     ),
     (
         "L3b k_DET · paper §3.4 computed-λ(Co) at ΔG = 0 → cathode_ket_lambda",
-        PAPER_RESULTS, rf"turnover \(×{N} at zero driving force\): rate-limiting by orders",
+        PAPER_RESULTS, rf"turnover \(×{N} at zero driving force\): below turnover at every corner",
         KET, lambda d: d["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_at_dG0"], 0.0002,
     ),
     (

@@ -8,9 +8,11 @@ nCoCuCeZIF cathode scaffold using the ΔSCF energy-splitting method:
 
     MWCNT ←t₃→ Ce ←t₂→ Co ←t₁→ Cu (T1 laccase proxy)
 
-Method: For each bimetallic pair, run UKS with initial guess biased toward
-electron localization on each metal center. The energy splitting between
-the two charge-localized SCF solutions approximates 2|t_ij|.
+Method (as designed): for each bimetallic pair, two UKS solutions whose energy splitting approximates 2|t_ij|.
+⚠️ As built (Стаття 1 self-review round 1, cluster 8, 2026-10-15): NO guess is biased toward either metal — both runs
+start from the same default guess and differ only in SCF settings (level shift 0.3 ⊥ 0.5, DIIS space, cycle cap), so
+the two solutions are not charge-localised states, and for Cu–Co their difference is ≈ 9× the 1e-5 Ha tolerance.
+The margins therefore use 24b's two-state diabatisation for Cu–Co (script 25, `dscf_coupling_resolution`).
 
 Then compute Marcus electron transfer rates:
     k_ET = (2π/ℏ)|t_ij|² / √(4πλk_BT) × exp(-(ΔG+λ)²/4λk_BT)

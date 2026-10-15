@@ -40,8 +40,8 @@ couplings and the molecular-dynamics snapshot orbitals (§2.5) were computed in 
 SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair, 10⁻⁵ E_h for the
 two-solution ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
 oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
-reorganisation and ZIF-cluster calculations (0.5 E_h to reach the second charge-localised state of a cluster
-pair), 0.2 E_h on the open-shell flavin species — and wherever it was applied, every energy difference was
+reorganisation and ZIF-cluster calculations (0.5 E_h for the second SCF solution of each
+cluster), 0.2 E_h on the open-shell flavin species — and wherever it was applied, every energy difference was
 taken from total energies; the shift only steers convergence, since the orbital energies of a converged run are
 re-diagonalised without it. The B3LYP osmium couples whose
 Os(III) LUMO is reported (the device mediator and the Hammett series) were converged without a shift, a
@@ -107,7 +107,7 @@ distance-only weight, summed along the path, and it starts at atoms outside the 
 Cu–Co–Ce ZIF nanozyme were first estimated as half the energy difference of two UKS solutions of each cluster on
 clash-free cluster geometries (a bridging imidazole N–H that collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). The two solutions are not charge-localised
-states: they start from the same guess and differ only in their level shift (0.3 and 0.5 E_h), so the estimate is
+states: they start from the same guess and differ only in their SCF settings (level shift 0.3 ⊥ 0.5 E_h, DIIS space, cycle cap), so the estimate is
 read against the SCF tolerance — for Cu–Co the difference is 9.4 times it, which resolves no coupling (Table 3). For
 the rate-limiting Cu–Co hop the coupling the margins use is therefore a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
 SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
@@ -139,7 +139,7 @@ trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</s
 the protein, GAFF2 parameters<sup>51</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>52</sup>
 (scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>53</sup> so that the
 protein is whole and the non-covalently bound FAD lies in the same image, and the analyses attempted
-on its frames — the contact-graph search above and a flavin frontier-orbital ensemble — are not reported (§3.1,
+on its frames — a contact-graph search from source atoms other than those of the search above, and a flavin frontier-orbital ensemble — are not reported (§3.1,
 §3.7).
 
 ## 2.6 Cluster-continuum micro-solvation

@@ -97,5 +97,6 @@ electron-transfer energetics — protein architecture and tunnelling distance, t
 reorganization energetics, the cathode direct-electron-transfer kinetics, the mediator structure–activity
 series, and the solvation methodology; long-timescale matrix stability and the device-level
 delta-t/impedance behaviour are deferred to companion work and enter here only as experimental-closure
-predictions for the forthcoming titanium-coin measurements. All calculations are scripted and were run in one
-recorded environment; §2.7 states what a re-run under a newer PySCF reproduces and what it moves.
+predictions for the forthcoming titanium-coin measurements. All calculations are scripted; every result cache
+outside the reproduction records was computed in one recorded environment, and §2.7 states what a re-run under a newer
+PySCF reproduces and what it moves.

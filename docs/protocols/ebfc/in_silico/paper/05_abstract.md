@@ -15,8 +15,8 @@ relationship for the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction
 and rationalises the empirical potential optimum; and a two-state diabatised coupling with first-principles
 reorganisation energies shows the bimetallic-ZIF cathode direct electron transfer — for an oriented
-enzyme–framework contact — to be conditional on the Co reorganisation energy: rate-limiting by orders of magnitude at
-the computed λ(Co), straddling enzymatic turnover only at an assumed literature value, with explicit low-λ
+enzyme–framework contact — to be conditional on the Co reorganisation energy: below enzymatic turnover at every corner of its bracket at
+the computed λ(Co), straddling turnover only at an assumed literature value, with explicit low-λ
 mitigation. The apparently uphill
 anode→mediator cascade is shown to be a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a

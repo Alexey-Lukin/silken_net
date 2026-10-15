@@ -9,9 +9,9 @@
 We follow the electron from the buried flavin to the external circuit — anode → mediator → cathode —
 treating each step as a link whose energetics we can compute and test against experiment.
 
-## 3.1 Architecture and the tunnelling pathway
+## 3.1 Architecture and the burial depth of the flavin
 
-The AlphaFold 3 model places the FAD N5 atom **16.0 Å** below the protein surface (Tyr90 OH as the
+The AlphaFold 3 model places the FAD N5 atom **16.0 Å** below the protein surface (Fig 2; Tyr90 OH as the
 nearest exit). Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
 redox enzyme needs only up to a centre-to-centre distance of ≈20 Å;<sup>48</sup> 16.0 Å is the burial
 depth, not the distance to a docked osmium centre, so it bounds the donor–acceptor separation from below
@@ -181,21 +181,22 @@ optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
 Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were computed on clash-free cluster geometries (a
 bridging imidazole that had collided with the second metal was deprotonated to the imidazolate, restoring physical
-coordination). For the Cu–Co hop — the bottleneck in every live scenario below — the coupling is a two-state orbital
+coordination). For the Cu–Co hop — the bottleneck in every live scenario below (Cu–Ru in the Ru swap) — the coupling is a two-state orbital
 diabatisation (the FO-DFT label of Methods §2.5; no specific published implementation is claimed):
 **t_ij(Cu–Co) = 0.0055 eV**, with a **0.183 eV** site-energy gap. A cruder estimate, half the energy difference of two
 SCF solutions of the same cluster (0.0013 eV), is not used: the two solutions were unconstrained, started from the
-same guess and differ only in their level shift, and their difference is 9.4 times the tolerance both were converged
+same guess and differ only in their SCF settings, and their difference is 9.4 times the tolerance both were converged
 to, so it does not resolve a coupling (Table 3 prints it beside that ratio). The other two hops carry that crude
-estimate — resolved against the tolerance (×50 and ×830) but not a diabatic coupling either; with their smaller
-reorganisation energies they are not rate-limiting in any live scenario (Table 3).
+estimate — their differences lie 50 and 830 times above the tolerance, but they are not charge-localised states or a
+diabatic coupling either; on those couplings and at zero driving force on those hops (no gap was computed for them)
+they are not rate-limiting in any live scenario.
 
 Reorganisation energies come from the two-sphere Nelsen construction — computed for Co, Ce and Ru, while λ(Cu) is a
 bracket of two literature readings (2.0 and 2.4 eV, §2.5), a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so
 λ_hop(Cu–Co) is half computed and half cited. Every margin is a bracket over two axes — the sign of the computed gap,
 which the diabatisation does not fix, and the λ(Cu) reading — and we quote its adverse corner. **The cathode verdict
 is conditional on λ(Co).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×1.9×10⁻⁵ to ×0.17** of
-enzymatic turnover (×0.0054 at zero driving force): rate-limiting by orders of magnitude at every corner. At the
+enzymatic turnover (×0.0054 at zero driving force): below turnover at every corner — ×0.17 at the kindest, ×1.9×10⁻⁵ at the adverse. At the
 literature λ(Co) = 1.4 eV — an assumption, with no primary source in our tree — the bracket is **×0.081 to ×730**
 (×25 at zero driving force): rate-limiting at its adverse corner, above turnover at its favourable one. Reaching
 turnover at zero driving force needs **λ(Co) ≲ 2.0 eV** (on the 2.0 eV λ(Cu) reading), and at the adverse corner

@@ -3156,8 +3156,7 @@ def test_tunneling_pathway():
     if not path.exists():
         pytest.skip("tunneling pathway not computed")
     data = json.loads(path.read_text())
-    assert data["path_atoms"] > 0
-    assert data["effective_beta_d"] < 5.0
+    assert data["path_atoms"] > 0   # the withdrawn «β·d < 5» feasibility bound is no longer asserted (cluster 6)
 
 
 def test_zif_hopping_all_pairs():
