@@ -230,6 +230,61 @@ public class AxialStackTests
             AxialStack.Zone1Lock(new AnchorAxialStackCem { Zone1LockManifest = "anchor_zone1.pine.json" }, strStack));
     }
 
+    // ── `build --parts` (2026-10-15): the stack as separate bodies in the stack frame (z = 0 at the anode bottom) ──
+    // The rows ARE what the CLI writes and measures each written mesh against (Program.ExportParts), so these pins hold
+    // the files' names and places. MUTATION: drop the capsule lift from the halves · lift the radome by the capsule lift
+    // alone · rename a body · build the liner under the wire's condition ⇒ a row reds.
+    [Fact]
+    public void Build_Parts_Writes_Every_Body_The_Shipped_Stack_Holds_Each_In_The_Stack_Frame()
+    {
+        AnchorAxialStackCem cem = AxialStack.Load(Path.Combine(CemFixtures.Dir(), "anchor_axial_stack.json"));
+        IReadOnlyList<AssemblyPart<AxialStackVoxels>> aParts = AxialStack.Parts(cem);
+        Assert.Equal(["zone1", "zone2_sleeve", "flange", "radome", "bus_wire", "liner"], aParts.Select(p => p.Name));
+
+        // The layout Z_Layout_Stacks_From_The_Tree_Side_Up pins (58 · 40/90 · 76 · 93), now body by body.
+        AssertSpan(aParts, "zone1", 0f, 58f);          // gyroid body 40 + lock shank 18 — as ONE solid envelope
+        AssertSpan(aParts, "zone2_sleeve", 40f, 90f);  // mouth on the gyroid-to-shank junction
+        AssertSpan(aParts, "flange", 76f, 93f);        // shank end 90 − 14 → pogo face
+        AssertSpan(aParts, "radome", 88f, 106f);       // rim on the bayonet datum (76 + 12) → crown (+18)
+        AssertSpan(aParts, "bus_wire", 58f, 93f);      // weld seam on the anode top → pogo face
+        AssertSpan(aParts, "liner", 75f, 93f);         // 1.0 below the shank face → pogo face
+
+        // The capsule halves are the capsule's OWN rows, carried up by the lift Build gives the merged capsule.
+        float fLift = AxialStack.CapsuleLiftZMm(cem);
+        foreach (AssemblyPart<AssemblyVoxels> p in Assembly.Parts(cem.Capsule))
+            AssertSpan(aParts, p.Name, p.ZBottomMm + fLift, p.ZTopMm + fLift);
+
+        // Inside the stack: nothing below the anode bottom (the datum), nothing above the radome crown (its top).
+        float fTop = aParts.Single(p => p.Name == "radome").ZTopMm;
+        Assert.All(aParts, p => Assert.InRange(p.ZBottomMm, 0f, p.ZTopMm));
+        Assert.All(aParts, p => Assert.True(p.ZTopMm <= fTop, $"{p.Name} rises above the crown"));
+
+        // ⛔ The overlap the view shows on purpose: the collar is not modelled, so the radome rim sits the bayonet-Z
+        //    deficit below the flange face (and the Zone-3 shank floats in the bore — F1, pinned above).
+        Assert.Equal(Assembly.BayonetZMismatchMm(cem.Capsule),
+                     aParts.Single(p => p.Name == "flange").ZTopMm - aParts.Single(p => p.Name == "radome").ZBottomMm, 3);
+    }
+
+    // A body the stack does not hold gets no file — never an empty or default one. The predicates are the ones Build reads.
+    [Fact]
+    public void Build_Parts_Writes_No_Wire_Or_Liner_The_Stack_Does_Not_Hold()
+    {
+        string[] aNoRod = [.. AxialStack.Parts(R(new())).Select(p => p.Name)];
+        Assert.DoesNotContain("bus_wire", aNoRod);
+        Assert.DoesNotContain("liner", aNoRod);
+
+        string[] aNoLiner = [.. AxialStack.Parts(Fix(linerMm: 0f)).Select(p => p.Name)];
+        Assert.Contains("bus_wire", aNoLiner);
+        Assert.DoesNotContain("liner", aNoLiner);
+    }
+
+    private static void AssertSpan(IReadOnlyList<AssemblyPart<AxialStackVoxels>> aParts, string strName, float fBottom, float fTop)
+    {
+        AssemblyPart<AxialStackVoxels> p = aParts.Single(x => x.Name == strName);
+        Assert.Equal(fBottom, p.ZBottomMm, 3);
+        Assert.Equal(fTop, p.ZTopMm, 3);
+    }
+
     [Fact]
     public void Monolithic_Bus_Rod_Pinched__Rod_Plus_Liner_Exceeds_Channel()
     {

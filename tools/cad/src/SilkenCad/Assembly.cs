@@ -27,10 +27,20 @@ internal static class Assembly
     public static float FlangeTopZMm(AnchorAssemblyCem cem)
         => cem.Flange.ShankLengthMm + cem.Flange.FlangeThicknessMm;
 
-    // Lug-tip radius (CathodeFlange.cs: base at flangeR−overlap, length protrusion+overlap, overlap 1.0
-    // ⇒ tip = flangeR + protrusion). The Ø that the radome socket must clear.
+    // The flange as Build renders it — ONE home for the inboard clamp (MATE-Ø candidate B: protrusion → 0, the lug tips
+    // flush with the flange Ø; ratified 2026-09-10, 00_07 HW.33). Build renders this record and LugTipRadiusMm measures
+    // it, so the metric cannot report lugs the render clipped — until 2026-10-15 it read the raw manifest flange, and
+    // `verify anchor_assembly.inboard` printed Ø33.8 lugs over a render that carried Ø29.8 ones.
+    public static CathodeFlangeCem BuiltFlange(AnchorAssemblyCem cem)
+        => cem.MateStrategy == "inboard" ? cem.Flange with { LugProtrusionMm = 0f } : cem.Flange;
+
+    // Lug-tip radius of the flange AS BUILT (CathodeFlange.cs: base at flangeR−overlap, length protrusion+overlap,
+    // overlap 1.0 ⇒ tip = flangeR + protrusion). The Ø that the radome socket must clear.
     public static float LugTipRadiusMm(AnchorAssemblyCem cem)
-        => (cem.Flange.FlangeDiameterMm / 2f) + cem.Flange.LugProtrusionMm;
+    {
+        CathodeFlangeCem flange = BuiltFlange(cem);
+        return (flange.FlangeDiameterMm / 2f) + flange.LugProtrusionMm;
+    }
 
     // Radome lift in the flange frame so the radome lock-groove sits at the flange lugs (bayonet datum).
     public static float RadomeLiftZMm(AnchorAssemblyCem cem)
@@ -110,12 +120,9 @@ internal static class Assembly
     // ── Render: bring both parts into the flange frame for STL + interference measurement ──
     public static AssemblyVoxels Build(AnchorAssemblyCem cem)
     {
-        // inboard candidate (MATE-Ø): clamp the lug protrusion so the tips stay within the flange Ø (flush lugs).
+        // inboard candidate (MATE-Ø): the lug tips stay within the flange Ø (flush lugs) — the clamp lives in BuiltFlange.
         // Loses radial bayonet grip — the trade-off the metrics expose; ratified 2026-09-10 (00_07 HW.33).
-        CathodeFlangeCem flangeCem = cem.MateStrategy == "inboard"
-            ? cem.Flange with { LugProtrusionMm = 0f }
-            : cem.Flange;
-        Voxels voxFlange = CathodeFlange.Build(flangeCem);
+        Voxels voxFlange = CathodeFlange.Build(BuiltFlange(cem));
 
         // Lift the radome (whole) onto the bayonet datum — vertex-translate, so Radome.Build stays untouched.
         // ⚠ At the frozen dims this seats the rim 5.0 mm BELOW the flange top face (the bayonet-Z deficit the
@@ -132,6 +139,17 @@ internal static class Assembly
         voxMerged.BoolAdd(voxRadome);
         return new AssemblyVoxels(voxMerged, voxFlange, voxRadome);
     }
+
+    // ── `build --parts` (2026-10-15): the capsule as two SEPARATE bodies, each where Build puts it ──
+    // Flange frame: z = 0 at the shank's deep end. The radome row carries the bayonet-datum lift Build gave its body, and
+    // a skirt (withdrawn branch) rides inside the radome body, so every strategy shares these two rows.
+    // ⛔ A row is a body the CEM BUILDS, never one it should: the raised collar is not modelled (RequiredLugZMm), so the
+    //    radome rim sits BayonetZMismatchMm below the flange face and the two bodies OVERLAP — the view shows that gap.
+    public static IReadOnlyList<AssemblyPart<AssemblyVoxels>> Parts(AnchorAssemblyCem cem) =>
+    [
+        new("flange", 0f, FlangeTopZMm(cem), av => av.Flange),
+        new("radome", RadomeLiftZMm(cem), RadomeLiftZMm(cem) + Radome.TopZMm(cem.Radome), av => av.Radome),
+    ];
 
     // skirt candidate (MATE-Ø): open the radome's lower cavity to admit the flange disc, wrap it with a
     // structural ring out to Ø(lug-tip + clearance), and cut a proper L-slot bayonet socket in that ring —
@@ -175,3 +193,8 @@ internal static class Assembly
 
 // The assembled voxels + the two transformed parts (kept apart for the interference measurement).
 internal sealed record AssemblyVoxels(Voxels Merged, Voxels Flange, Voxels Radome);
+
+// One body of an assembly as `build --parts` writes it: the file suffix, the Z span the CEM gives it in the assembly's
+// frame (pure — the xUnit pins names and offsets with no render, gotcha #3) and where Build left its voxels (render
+// side, inside Library.Go). `build --parts` measures every written body against its row, so the row holds the file.
+internal sealed record AssemblyPart<TVoxels>(string Name, float ZBottomMm, float ZTopMm, Func<TVoxels, Voxels> Body);

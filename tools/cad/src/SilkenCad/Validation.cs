@@ -105,7 +105,7 @@ internal sealed record GeometryMetrics
     // antenna: raising cavity height moves this number without moving a board. [00_07 HW.33, 2026-09-11]
     public double? RfClearanceMm { get; init; }
     public double? MateInterferenceMm3 { get; init; }       // flange ∩ radome solid overlap (render) — large = parts foul, ~0 = clean mate
-    public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (flange Ø + 2·protrusion, past the dome)
+    public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (flange Ø + 2·protrusion AS BUILT — inboard clamps it to 0)
 
     // Full axial-stack press-fit mate-audit (Zone 1↔2↔3, 01_01 §1+§3, null for non-stack). See MeasureAxialStack.
     public double? Zone1SleeveInterferenceMm { get; init; } // (shaft−bore)/2 at Zone-1↔Zone-2; >0 press-fit, ~0 line-to-line, <0 clearance

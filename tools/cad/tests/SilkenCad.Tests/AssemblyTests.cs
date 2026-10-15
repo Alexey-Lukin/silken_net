@@ -129,4 +129,54 @@ public class AssemblyTests
         AnchorAssemblyCem cem = new() { Flange = new CathodeFlangeCem { LugProtrusionMm = 0f } };
         Assert.Equal(14.9f, Assembly.LugTipRadiusMm(cem));    // Ø29.8 — within the dome OD
     }
+
+    // The pin above hands the arithmetic a clamped flange of its OWN making, so it proves the arithmetic and never the
+    // strategy's wiring — and the wiring was broken: until 2026-10-15 the metric read the raw manifest flange, so
+    // `verify anchor_assembly.inboard` reported Ø33.8 lugs over a render that carried Ø29.8 ones. The clamp has one home
+    // now (Assembly.BuiltFlange — Build renders it, LugTipRadiusMm measures it). MUTATION: read `cem.Flange` in
+    // LugTipRadiusMm, or move the clamp back inline into Build ⇒ the inboard row reds.
+    [Fact]
+    public void The_Inboard_Strategy_Measures_The_Lugs_Its_Render_Builds()
+    {
+        AnchorAssemblyCem inboard = Shipped("anchor_assembly.inboard.json");
+        Assert.Equal("inboard", inboard.MateStrategy);
+        Assert.Equal(0f, Assembly.BuiltFlange(inboard).LugProtrusionMm);
+        Assert.Equal(14.9f, Assembly.LugTipRadiusMm(inboard), 3);                                // Ø29.8 — flush with the flange
+        Assert.Equal(16.9f, Assembly.LugTipRadiusMm(Shipped("anchor_assembly.json")), 3);        // asis keeps its Ø33.8
+        Assert.Equal(16.9f, Assembly.LugTipRadiusMm(Shipped("anchor_assembly.skirt.json")), 3);  // the skirt encloses full lugs
+    }
+
+    // ── `build --parts` (2026-10-15): the capsule as two bodies in the flange frame ──
+    // These rows ARE what the CLI writes and measures each written mesh against (Program.ExportParts), so they hold the
+    // files' names and places. Every shipped capsule manifest is enumerated — a new strategy is pinned by existing.
+    // MUTATION: drop the bayonet lift from the radome row · rename a body · add a collar-sized offset to hide the overlap ⇒ reds.
+    [Fact]
+    public void Build_Parts_Writes_The_Flange_And_The_Radome_Where_The_Bayonet_Datum_Puts_Them__Overlap_And_All()
+    {
+        string[] aFiles = Cem.ManifestFiles(CemFixtures.Dir(), "anchor_assembly*.json");
+        Assert.NotEmpty(aFiles);
+        foreach (string strFile in aFiles)
+        {
+            AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(File.ReadAllText(strFile));
+            IReadOnlyList<AssemblyPart<AssemblyVoxels>> aParts = Assembly.Parts(cem);
+            Assert.Equal(["flange", "radome"], aParts.Select(p => p.Name));
+
+            AssemblyPart<AssemblyVoxels> flange = aParts[0], radome = aParts[1];
+            Assert.Equal(0f, flange.ZBottomMm, 3);     // the shank's deep end — the datum of the flange frame
+            Assert.Equal(17f, flange.ZTopMm, 3);       // the sealing face: shank 14 + disc 3
+            Assert.Equal(12f, radome.ZBottomMm, 3);    // the rim, on the bayonet datum (lug Z 15.5 − lock groove 3.5)
+            Assert.Equal(30f, radome.ZTopMm, 3);       // + the 18.0 body: cavity 13 + crown round 5
+            // Inside the assembly: nothing below the flange's datum, nothing above the radome's crown.
+            Assert.All(aParts, p => Assert.InRange(p.ZBottomMm, flange.ZBottomMm, p.ZTopMm));
+            Assert.All(aParts, p => Assert.True(p.ZTopMm <= radome.ZTopMm, $"{p.Name} rises above the crown"));
+
+            // ⛔ The gap the view SHOWS rather than closes: no collar is modelled, so the rim sits the bayonet-Z deficit
+            //    below the sealing face and the two bodies overlap by exactly that much.
+            Assert.Equal(Assembly.BayonetZMismatchMm(cem), flange.ZTopMm - radome.ZBottomMm, 3);
+            Assert.Equal(5.0f, flange.ZTopMm - radome.ZBottomMm, 3);
+        }
+    }
+
+    private static AnchorAssemblyCem Shipped(string strFile)
+        => Cem.Parse<AnchorAssemblyCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), strFile)));
 }

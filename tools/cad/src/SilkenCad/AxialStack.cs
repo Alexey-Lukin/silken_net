@@ -172,6 +172,37 @@ internal static class AxialStack
         => cem.Zone1.BusRodDiameterMm > 0f
             && cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) < cem.Capsule.Flange.BoreDiameterMm;
 
+    // Whether the stack HOLDS the wire and the liner as bodies — one predicate each, read by Build and by Parts, so
+    // `build --parts` can never name a body Build did not make (nor skip one it did).
+    public static bool HasBusWire(AnchorAxialStackCem cem) => cem.Zone1.BusRodDiameterMm > 0f;
+    public static bool HasLiner(AnchorAxialStackCem cem) => HasBusWire(cem) && cem.Capsule.Flange.BusLinerThicknessMm > 0f;
+
+    // ── `build --parts` (2026-10-15): the stack as SEPARATE bodies, each in the stack frame (z = 0 at the anode bottom) ──
+    // Rows as Assembly.Parts. The capsule halves ARE the capsule's own rows, carried up by CapsuleLiftZMm — the lift Build
+    // gives the merged capsule — so each lands where the merge put it; every other row spans what Build constructs.
+    // ⛔ Not the ratified anchor, and Program prints this beside the files: Zone 1 is the solid ENVELOPE (gyroid body +
+    //    lock shank as one plain cylinder — the lattice is anchor_zone1's own build), the Zone-3 shank is the HW.8.9 Ø
+    //    placeholder floating in the bore (F1), and the capsule carries the collar gap of Assembly.Parts.
+    public static IReadOnlyList<AssemblyPart<AxialStackVoxels>> Parts(AnchorAxialStackCem cem)
+    {
+        float fLift = CapsuleLiftZMm(cem);
+        List<AssemblyPart<AxialStackVoxels>> aParts =
+        [
+            new("zone1", 0f, Zone1TopZMm(cem), sv => sv.Zone1),
+            new("zone2_sleeve", SleeveBottomZMm(cem), SleeveBottomZMm(cem) + cem.Zone2.LengthMm, sv => sv.Zone2),
+            .. Assembly.Parts(cem.Capsule).Select(p => new AssemblyPart<AxialStackVoxels>(
+                p.Name, fLift + p.ZBottomMm, fLift + p.ZTopMm,
+                sv => MeshUtility.voxApplyTransformation(p.Body(sv.CapsuleUnlifted), v => v + new Vector3(0f, 0f, fLift)))),
+        ];
+        if (HasBusWire(cem))
+            aParts.Add(new("bus_wire", BusWireBottomZMm(cem), BusWireBottomZMm(cem) + BusWireLengthMm(cem),
+                           sv => sv.Bus ?? throw new InvalidOperationException("HasBusWire, yet Build made no bus wire")));
+        if (HasLiner(cem))
+            aParts.Add(new("liner", LinerBottomZMm(cem), LinerBottomZMm(cem) + LinerLengthMm(cem),
+                           sv => sv.Liner ?? throw new InvalidOperationException("HasLiner, yet Build made no liner")));
+        return aParts;
+    }
+
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)
     {
@@ -188,9 +219,11 @@ internal static class AxialStack
 
         // Zone-3 + Zone-4 capsule (reuse the capsule-end assembly) lifted so the flange shank inserts
         // into the sleeve's top end. The per-part Build stays untouched — vertex-translate, as Assembly.
+        // The halves stay in the capsule frame for `build --parts` (Parts lifts them by the same CapsuleLiftZMm).
         float fCapsuleLift = CapsuleLiftZMm(cem);
+        AssemblyVoxels avCapsule = Assembly.Build(cem.Capsule);
         Voxels voxCapsule = MeshUtility.voxApplyTransformation(
-            Assembly.Build(cem.Capsule).Merged, v => v + new Vector3(0f, 0f, fCapsuleLift));
+            avCapsule.Merged, v => v + new Vector3(0f, 0f, fCapsuleLift));
 
         Voxels voxMerged = new(voxZone1);
         voxMerged.BoolAdd(voxZone2);
@@ -203,7 +236,7 @@ internal static class AxialStack
         // that was the printed-core branch, removed ⚖️ 2026-09-10 and taken out of the CAD 2026-09-18.
         // voxConstruct (gotcha #9). Kept apart for the section colour.
         Voxels? voxBus = null;
-        if (cem.Zone1.BusRodDiameterMm > 0f)
+        if (HasBusWire(cem))
         {
             voxBus = MeshUtility.voxApplyTransformation(
                 new BaseCylinder(new LocalFrame(), BusWireLengthMm(cem), cem.Zone1.BusRodDiameterMm / 2f).voxConstruct(),
@@ -216,7 +249,7 @@ internal static class AxialStack
         // exactly like the bus, and BoolAdd'ed so the merged volume carries it.
         Voxels? voxLiner = null;
         double dLinerAdds = 0.0;
-        if (cem.Zone1.BusRodDiameterMm > 0f && cem.Capsule.Flange.BusLinerThicknessMm > 0f)
+        if (HasLiner(cem))
         {
             float fInnerR = cem.Zone1.BusRodDiameterMm / 2f;
             voxLiner = MeshUtility.voxApplyTransformation(
@@ -234,7 +267,7 @@ internal static class AxialStack
             voxMerged.CalculateProperties(out float fAfter, out _);
             dLinerAdds = fAfter - fBefore;
         }
-        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule, voxBus, voxLiner, dLinerAdds);
+        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule, avCapsule, voxBus, voxLiner, dLinerAdds);
     }
 }
 
@@ -243,4 +276,6 @@ internal static class AxialStack
 // = 0 (anode Ø11 and bore Ø11 are line-to-line → surfaces TOUCH but volumes don't overlap; real press-fit
 // is +interference on the bench); sleeve∩capsule ≈ a thin shell = the flange SHOULDER (the flange disc) resting
 // on the sleeve TOP face (Ø15), NOT the shank — the shank Ø9 floats free in the bore Ø11 (the F1 clearance).
-internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, Voxels? Bus = null, Voxels? Liner = null, double LinerAddsMm3 = 0.0);
+// CapsuleUnlifted = the capsule's own build, still in the CAPSULE frame — `Capsule` is its merge lifted into the stack.
+internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, AssemblyVoxels CapsuleUnlifted,
+                                        Voxels? Bus = null, Voxels? Liner = null, double LinerAddsMm3 = 0.0);

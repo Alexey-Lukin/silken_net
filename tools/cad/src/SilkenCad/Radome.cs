@@ -145,6 +145,7 @@ internal static class Radome
     public static float BridgePassageZMm(RadomeCem cem) => BridgeFloorZMm(cem) + cem.PocketWallMm;
     public static float BridgePassageHeightMm(RadomeCem cem) => PocketTopZMm(cem) - BridgePassageZMm(cem);
     public static float InnerTopZMm(RadomeCem cem) => cem.CavityHeightMm + cem.BellRadiusMm - cem.WallThicknessMm;   // flat inner top under the crown
+    public static float TopZMm(RadomeCem cem) => cem.CavityHeightMm + cem.BellRadiusMm;   // the flat crown's outer top (Build step 1) — the body's highest point
     // Analytic pocket air volume — the three cavity boxes; the passage is counted between the two cavity faces it joins.
     public static float PocketVolumeMm3(RadomeCem cem)
     {

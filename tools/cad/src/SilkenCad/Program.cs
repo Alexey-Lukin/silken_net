@@ -20,7 +20,7 @@ internal static class Program
             return (args.Length == 0 ? "help" : args[0]) switch
             {
                 "smoke" => RunHeadless(0.5f, Smoke),
-                "build" => args.Length >= 2 ? Build(args[1]) : Fail("usage: build <cem.json>"),
+                "build" => args.Length >= 2 ? Build(args[1], args.Contains("--parts")) : Fail("usage: build <cem.json> [--parts]"),
                 "verify" => args.Length >= 2
                     ? Verify(args[1], args.Contains("--write-golden"))
                     : Fail("usage: verify <cem.json> [--write-golden]"),
@@ -88,10 +88,14 @@ internal static class Program
         return 0;
     }
 
-    private static int Build(string strCemPath)
+    private static int Build(string strCemPath, bool bParts = false)
     {
         string strJson = File.ReadAllText(strCemPath);
-        switch (Cem.Kind(strJson))
+        string strKind = Cem.Kind(strJson);
+        // --parts splits an ASSEMBLY into its bodies; any other manifest already is one body, so the flag is refused, not ignored.
+        if (bParts && strKind is not ("anchor_assembly" or "anchor_axial_stack"))
+            return Fail($"build --parts splits anchor_assembly and anchor_axial_stack only — this manifest is a '{strKind}'");
+        switch (strKind)
         {
             case "ti_coin":
             {
@@ -121,7 +125,13 @@ internal static class Program
             case "anchor_assembly":
             {
                 AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
-                return RunHeadless(cem.VoxelSizeMm, () => Export(Assembly.Build(cem).Merged, cem.Name));
+                return RunHeadless(cem.VoxelSizeMm, () =>
+                {
+                    AssemblyVoxels av = Assembly.Build(cem);
+                    return bParts
+                        ? ExportParts(av, av.Merged, cem.Name, cem.VoxelSizeMm, Assembly.Parts(cem), CapsuleNotModelled(cem))
+                        : Export(av.Merged, cem.Name);
+                });
             }
             case "zone2_sleeve":
             {
@@ -131,12 +141,69 @@ internal static class Program
             case "anchor_axial_stack":
             {
                 AnchorAxialStackCem cem = AxialStack.Load(strCemPath);
-                return RunHeadless(cem.VoxelSizeMm, () => Export(AxialStack.Build(cem).Merged, cem.Name));
+                return RunHeadless(cem.VoxelSizeMm, () =>
+                {
+                    AxialStackVoxels sv = AxialStack.Build(cem);
+                    return bParts
+                        ? ExportParts(sv, sv.Merged, cem.Name, cem.VoxelSizeMm, AxialStack.Parts(cem), StackNotModelled(cem))
+                        : Export(sv.Merged, cem.Name);
+                });
             }
             default:
-                return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
+                return Fail($"unknown CEM kind: {strKind}");
         }
     }
+
+    // `build --parts` (2026-10-15): the merged STL exactly as plain `build` writes it, then ONE STL per body, each left in
+    // the assembly frame so the files open together in a viewer and line up. Every body is MEASURED on the mesh it wrote —
+    // its Z span against the CEM row the xUnit pins (AssemblyPart), its bbox against the merged one — so a body written in
+    // its own frame, or under another body's name, fails HERE: in a viewer it would look as plausible as the overlap the
+    // missing collar leaves on purpose. The ⛔ lines after the bodies name what the CEM does not model.
+    private static int ExportParts<TVoxels>(TVoxels voxels, Voxels voxMerged, string strName, float fVoxelMm,
+                                            IReadOnlyList<AssemblyPart<TVoxels>> aParts, IEnumerable<string> aNotModelled)
+    {
+        BBox3 bbMerged = ExportMesh(voxMerged, strName).oBoundingBox();
+        float fTol = 3f * fVoxelMm;                                   // the length tolerance verify's part gates use
+        bool bAllOk = true;
+        foreach (AssemblyPart<TVoxels> p in aParts)
+        {
+            BBox3 bb = ExportMesh(p.Body(voxels), $"{strName}.{p.Name}").oBoundingBox();
+            bool bSpan = MathF.Abs(bb.vecMin.Z - p.ZBottomMm) <= fTol && MathF.Abs(bb.vecMax.Z - p.ZTopMm) <= fTol;
+            bool bInside = BoxInside(bb, bbMerged, fTol);
+            bAllOk &= bSpan && bInside;
+            Console.WriteLine($"  {p.Name}: z {bb.vecMin.Z:F2}…{bb.vecMax.Z:F2} mm (CEM row {p.ZBottomMm:F2}…{p.ZTopMm:F2})"
+                              + (bSpan ? "" : " ⚠ NOT where the assembly puts it")
+                              + (bInside ? " · inside the merged bbox" : " · ⚠ OUTSIDE the merged bbox"));
+        }
+        foreach (string strLine in aNotModelled)
+            Console.WriteLine($"  ⛔ not modelled: {strLine}");
+        Console.WriteLine(bAllOk
+            ? $"PARTS OK — {aParts.Count} bodies, each in the frame of out/{strName}.stl"
+            : "PARTS FAILED — a body is not where the assembly puts it (written in its own frame, or under another name)");
+        return bAllOk ? 0 : 1;
+    }
+
+    private static bool BoxInside(BBox3 a, BBox3 b, float fTol)
+        => a.vecMin.X >= b.vecMin.X - fTol && a.vecMin.Y >= b.vecMin.Y - fTol && a.vecMin.Z >= b.vecMin.Z - fTol
+           && a.vecMax.X <= b.vecMax.X + fTol && a.vecMax.Y <= b.vecMax.Y + fTol && a.vecMax.Z <= b.vecMax.Z + fTol;
+
+    // What `build --parts` prints beside the bodies, so the view is not read as the ratified anchor. Every number comes
+    // from the mate maths, never typed — it moves when the geometry does. Frame-free on purpose: the same line serves the
+    // capsule (flange frame) and the stack (stack frame), and a Z quoted in one frame misleads in the other (gotcha #15).
+    private static IEnumerable<string> CapsuleNotModelled(AnchorAssemblyCem cem) =>
+    [
+        $"the raised bayonet COLLAR (02_02 §4.4) — the lugs sit at mid-disc, so the radome rim lands {Assembly.BayonetZMismatchMm(cem):F1} mm " +
+        "BELOW the flange face and the two bodies OVERLAP by that much (00_07 HW.33)",
+    ];
+
+    private static IEnumerable<string> StackNotModelled(AnchorAxialStackCem cem) =>
+    [
+        $"the Zone-1 LATTICE — `zone1` is the solid Ø{cem.Zone1.OuterDiameterMm:F0} envelope (gyroid body + lock shank as one cylinder); " +
+        "the gyroid is `build cem/anchor_zone1.<sku>.json`",
+        $"the Zone-3 shank Ø — the Ø{cem.Capsule.Flange.ShankDiameterMm:F0} PLACEHOLDER floats in the Ø{cem.Zone2.BoreDiameterMm:F0} bore, " +
+        "no press-fit (F1, 00_07 HW.8.9)",
+        .. CapsuleNotModelled(cem.Capsule),
+    ];
 
     private static int Verify(string strCemPath, bool bWriteGolden = false)
     {
@@ -1058,11 +1125,19 @@ internal static class Program
 
     private static int Export(Voxels vox, string strName)
     {
+        _ = ExportMesh(vox, strName);
+        return 0;
+    }
+
+    // Writes out/<name>.stl and hands back the mesh it wrote, so a caller measures the very triangles on disk.
+    private static Mesh ExportMesh(Voxels vox, string strName)
+    {
         Directory.CreateDirectory("out");
         string strPath = Path.Combine("out", $"{strName}.stl");
-        vox.mshAsMesh().SaveToStlFile(strPath);
+        Mesh msh = vox.mshAsMesh();
+        msh.SaveToStlFile(strPath);
         Console.WriteLine($"wrote {strPath}");
-        return 0;
+        return msh;
     }
 
     private static int Help()
@@ -1071,6 +1146,7 @@ internal static class Program
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
+            "  build <cem.json> --parts   anchor_assembly | anchor_axial_stack: also one STL per body → out/<name>.<part>.stl, all in the assembly frame\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
