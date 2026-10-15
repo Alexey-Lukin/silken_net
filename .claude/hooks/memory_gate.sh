@@ -235,7 +235,11 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   (важіль hub-inline), а не окремим рядком: окремий коштував +111. Залишок — ціна однієї адреси.
 # ⊕ 26767 → 26715 (−52) — прохід памʼяті §02/§03 (2026-09-26): стаб `reference_ml_skill` знято з рядка-хаба
 #   стабів, гачки роутерів FW.60 · Sim/IaC · Baseline · SE · SEC-кластер переписано без надгробків. До факту.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26715}
+# ⊕ 26715 → 26806 (+91) — носій рецидиву правила #48 `feedback_subagent_discipline` («бриф веб-агента: email
+#   founder-а в сторонні API не класти»): 2026-10-15 агент знову підставив email у `email=` Unpaywall, бо правило жило
+#   лише у файлі, а мить дії — написання брифу; піднято ХАБ-ІНЛАЙНОМ у рядок Subagent discipline (окремий рядок коштував би
+#   більше). Еvict-прохід цього разу не робився — бамп оплачує наступний прохід памʼяті.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26806}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 # 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
