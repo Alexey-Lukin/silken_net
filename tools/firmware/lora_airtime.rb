@@ -123,7 +123,7 @@ KEY_FRAMES = {
   21 => "Rails-розпаковка (`N n c C n C C a4`)",
   24 => "CCM air rev1 (історичний)",
   28 => "CCM air rev2 (історичний)",
-  30 => "CCM air rev2.1 (заморожений формат)",
+  30 => "CCM air rev2.2 (заморожений формат; довжина з rev2.1)",
   31 => "rev2.1 + 1 байт headroom"
 }.freeze
 
