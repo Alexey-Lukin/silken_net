@@ -235,5 +235,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 36. Eliminating a cause with one-knob variants: declare the threshold before the data and count a move only TOWARD the measured; add a BOUND run that says whether the knob's whole family could carry the effect at all; and name the assumption under which «what remains» is what remains
 37. A cache kept frozen ON PURPOSE stays frozen when one of its inputs moves — measure the sign once, write it beside the record, and repoint every LIVE reader of that input away from the record's module
 38. A resolution control run on the LARGEST contact patch is blind to the smallest — the edge transition narrows with the load, so check the peak at BOTH ends of the load sweep; and where the number scatters with the grid for a reason you can name, gate the VERDICT it feeds, not the number
+39. Judging your rows against ANOTHER script's threshold: compute its quantity for YOUR rows with ITS formula, inputs and pick — «my mean and my amplitude are each below its inputs» is not the threshold, and its inputs may sit at another play, geometry or definition of «mean»
 
 <!-- /INSILICO-MODIFYING-INDEX -->
