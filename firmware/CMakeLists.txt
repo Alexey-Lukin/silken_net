@@ -154,6 +154,19 @@ if(CMAKE_CROSSCOMPILING)
     # standby_wake.h, HAL_PWR_EnterSTANDBYMode / HAL_PWREx_DisableSRAMRetention / PWR_FLAG_SB —
     # проти справжнього WL-HAL: імена SRAM2-функцій у WL інші, ніж у L4, і саме цей клас («API не
     # існує у WL») ловить лише компілятор.
+    # Гейтований набір — ОДИН список для двох споживачів: hal_check_ccm (компілює, тут) і
+    # soldier_lora_e5_gated (лінкує, нижче), тож розійтись вони не можуть.
+    set(SILKEN_GATED_DEFS
+      FW2_CCM_ENABLED=1
+      ARCH34_HELIUM_ENABLED=1
+      ARCH35_RING_ENABLED=1
+      SEC21_MPU_ENABLED=1
+      ARCH26_CAD_ENABLED=1
+      ARCH26_TDMA_ENABLED=1
+      FW17_RATCHET_ENABLED=1
+      FW20_MESH_RELAY_ENABLED=1
+      FW20_Q2_CMD_RELAY_ENABLED=1
+      FW54_STANDBY_ENABLED=1)
     add_library(hal_check_ccm OBJECT
       hal_glue/soldier_hal_check.c
       hal_glue/queen_hal_check.c)
@@ -170,16 +183,7 @@ if(CMAKE_CROSSCOMPILING)
     target_compile_definitions(hal_check_ccm PRIVATE
       STM32WLE5xx USE_HAL_DRIVER
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-      FW2_CCM_ENABLED=1
-      ARCH34_HELIUM_ENABLED=1
-      ARCH35_RING_ENABLED=1
-      SEC21_MPU_ENABLED=1
-      ARCH26_CAD_ENABLED=1
-      ARCH26_TDMA_ENABLED=1
-      FW17_RATCHET_ENABLED=1
-      FW20_MESH_RELAY_ENABLED=1
-      FW20_Q2_CMD_RELAY_ENABLED=1
-      FW54_STANDBY_ENABLED=1)
+      ${SILKEN_GATED_DEFS})
     target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
 
     # [ARCH.34] LoRaMac-node compile-lane: vendored MAC (EU868/ClassA профіль
@@ -245,7 +249,7 @@ if(CMAKE_CROSSCOMPILING)
     endif()
     set(WL_HAL_SRC ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Src)
     set(LORA_E5_DIR ${CMAKE_CURRENT_SOURCE_DIR}/hal_glue/boards/lora_e5)
-    add_executable(soldier_lora_e5
+    set(SOLDIER_LORA_E5_SRC
       ${LORA_E5_DIR}/soldier_lora_e5.c
       common/flash_kv.c          # база Flash-KV — її тримає анти-відкат SEC.20 (гоча firmware #18)
       common/flash_ota.c         # Flash_Write_Contract — запис контракту OTA (FW.52-г)
@@ -268,37 +272,45 @@ if(CMAKE_CROSSCOMPILING)
       ${WL_HAL_SRC}/stm32wlxx_hal_flash.c
       ${WL_HAL_SRC}/stm32wlxx_hal_flash_ex.c
       ${WL_HAL_SRC}/stm32wlxx_hal_dma.c)
-    target_include_directories(soldier_lora_e5 PRIVATE
-      hal_glue common
-      ${SILKEN_EXTERN}/subghz-phy/radio_driver
-      ${SILKEN_EXTERN}/cmsis-device-wl/Include
-      ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
-      ${CMSISCORE}/Include
-      ${SILKEN_EXTERN}/mruby/include
-      ${SILKEN_MRUBY_ARM_INC}
-      ${SILKEN_EXTERN}/monocypher/src
-      ${SILKEN_EXTERN}/monocypher/src/optional)
-    target_compile_definitions(soldier_lora_e5 PRIVATE
-      STM32WLE5xx USE_HAL_DRIVER
-      MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
-      CCM_SELFTEST)
-    target_compile_options(soldier_lora_e5 PRIVATE -Os
-      $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
+    # Близнюк soldier_lora_e5_gated — той самий образ із набором SILKEN_GATED_DEFS: hal_check_ccm
+    # гейтовані гілки лише КОМПІЛЮЄ, а посилання без дефініції (ARCH.26) бачить тільки лінк, тож
+    # кожна гілка, яку відкриє фліп (CCM, Standby, MPU, CAD/TDMA, ratchet, mesh), лінкується вже
+    # сьогодні. Це доказ лінку, не образ для прошивки: радіо — та сама заглушка, що й у базі.
+    foreach(_img soldier_lora_e5 soldier_lora_e5_gated)
+      add_executable(${_img} ${SOLDIER_LORA_E5_SRC})
+      target_include_directories(${_img} PRIVATE
+        hal_glue common
+        ${SILKEN_EXTERN}/subghz-phy/radio_driver
+        ${SILKEN_EXTERN}/cmsis-device-wl/Include
+        ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
+        ${CMSISCORE}/Include
+        ${SILKEN_EXTERN}/mruby/include
+        ${SILKEN_MRUBY_ARM_INC}
+        ${SILKEN_EXTERN}/monocypher/src
+        ${SILKEN_EXTERN}/monocypher/src/optional)
+      target_compile_definitions(${_img} PRIVATE
+        STM32WLE5xx USE_HAL_DRIVER
+        MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
+        CCM_SELFTEST)
+      target_compile_options(${_img} PRIVATE -Os
+        $<$<COMPILE_LANGUAGE:C>:-Wall -Wextra>)
+      target_link_libraries(${_img} PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)
+      target_link_options(${_img} PRIVATE
+        "-T${LORA_E5_DIR}/stm32wle5jc_soldier.ld"
+        --specs=nano.specs --specs=nosys.specs
+        "-Wl,-Map=$<TARGET_FILE_DIR:${_img}>/${_img}.map"
+        -Wl,--print-memory-usage)
+      set_target_properties(${_img} PROPERTIES
+        SUFFIX ".elf"
+        LINK_DEPENDS "${LORA_E5_DIR}/stm32wle5jc_soldier.ld")
+    endforeach()
+    target_compile_definitions(soldier_lora_e5_gated PRIVATE ${SILKEN_GATED_DEFS})
     # Вендорні TU (HAL, startup, system) — не наш код: їхні попередження не чистимо.
     set_source_files_properties(
       ${SILKEN_EXTERN}/cmsis-device-wl/Source/Templates/system_stm32wlxx.c
       PROPERTIES COMPILE_OPTIONS "-w")
     file(GLOB _wl_hal_used ${WL_HAL_SRC}/stm32wlxx_hal*.c)
     set_source_files_properties(${_wl_hal_used} PROPERTIES COMPILE_OPTIONS "-w")
-    target_link_libraries(soldier_lora_e5 PRIVATE silken_attest ${SILKEN_MRUBY_ARM_LIB} m)
-    target_link_options(soldier_lora_e5 PRIVATE
-      "-T${LORA_E5_DIR}/stm32wle5jc_soldier.ld"
-      --specs=nano.specs --specs=nosys.specs
-      "-Wl,-Map=$<TARGET_FILE_DIR:soldier_lora_e5>/soldier_lora_e5.map"
-      -Wl,--print-memory-usage)
-    set_target_properties(soldier_lora_e5 PROPERTIES
-      SUFFIX ".elf"
-      LINK_DEPENDS "${LORA_E5_DIR}/stm32wle5jc_soldier.ld")
   endif()
 else()
   # Host build: FFT packing-parity harness (Phase 4) — proves the CMSIS RFFT

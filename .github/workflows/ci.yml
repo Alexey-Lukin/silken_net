@@ -319,15 +319,17 @@ jobs:
         # lorawan_mac_check = LoRaMac-node + glue Королеви (ARCH.34): доти його не
         # будував жоден крок, і він не збирався (без hal_glue у include-шляхах —
         # stm32wlxx_hal_conf.h not found) при зелених двох сусідах (FW.65, 2026-09-27).
-        # soldier_lora_e5 = образ Солдата для LoRa-E5 mini — ЄДИНИЙ таргет, що ЛІНКУЄ
-        # (OBJECT-лейни лише компілюють): посилання без дефініції, лінкер-карта під сторінкою
-        # 122 і стек-резерв судить саме він (FW.46, ⚖️ 2026-10-06).
+        # soldier_lora_e5 = образ Солдата для LoRa-E5 mini — ЛІНКУЄ (OBJECT-лейни лише
+        # компілюють): посилання без дефініції, лінкер-карта під сторінкою 122 і стек-резерв
+        # судить саме він (FW.46, ⚖️ 2026-10-06). soldier_lora_e5_gated — той самий образ із
+        # гейтованим набором hal_check_ccm (один список SILKEN_GATED_DEFS у CMake): гейтовані
+        # гілки не лише компілюються, а й лінкуються — лінк-бомба (ARCH.26) не чекає дня фліпу.
         run: |
           cmake -B firmware/build -S firmware -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake" \
             -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core" \
             -DSILKEN_WITH_HAL=ON
-          cmake --build firmware/build --target hal_check hal_check_ccm lorawan_mac_check soldier_lora_e5
+          cmake --build firmware/build --target hal_check hal_check_ccm lorawan_mac_check soldier_lora_e5 soldier_lora_e5_gated
 
       - name: '[SEC.21] Stack-canary flag gate — -fstack-protector-strong у ARM build-config'
         # Прапор мусить бути реально переданий крос-компілятору (attacker-reachable
@@ -372,6 +374,9 @@ jobs:
           test -f firmware/build/soldier_lora_e5.elf \
             || { echo "❌ FW.46: soldier_lora_e5.elf немає — HAL compile-lane мав його злінкувати"; exit 1; }
           firmware/scripts/check_ram_budget.sh firmware/build/soldier_lora_e5.elf
+          test -f firmware/build/soldier_lora_e5_gated.elf \
+            || { echo "❌ FW.46: soldier_lora_e5_gated.elf немає — HAL compile-lane мав його злінкувати"; exit 1; }
+          firmware/scripts/check_ram_budget.sh firmware/build/soldier_lora_e5_gated.elf
           home=$(grep -o '__stack_reserve__ = [0-9]*' firmware/sim/wle5_bench/stm32wle5.ld)
           mirror=$(grep -o '__stack_reserve__ = [0-9]*' firmware/hal_glue/boards/lora_e5/stm32wle5jc_soldier.ld)
           if [ -z "$home" ] || [ "$home" != "$mirror" ]; then
