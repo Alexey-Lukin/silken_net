@@ -12,7 +12,7 @@ data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
                               vs reorganization-energy scenario (③, honest borderline)
   * fig5_solvation_pcm.png  — (a) explicit Cl⁻-water series; (b) speciation shift
                               (B3LYP↔ωB97X) + group-8 [Os(H₂O)₆] PCM benchmark (②)
-  * figS1_betad_ensemble.png — MD-ensemble vs single-snapshot tunneling β·d (SI)
+  * figS1_betad_ensemble.png — the script-28 route heuristic (ln Σw) over the MD ensemble vs the single snapshot (SI)
 
 Every headline number is cross-checked against the SUMMARY.md canon with an
 assert — if a cache drifts (someone re-runs a DFT script), the figure build
@@ -357,7 +357,8 @@ def fig5() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fig 2 — AF3 structure + Beratan–Onuchic tunnelling path (DRAFT: 2D PCA projection)
+# Fig 2 — AF3 structure + the script-28 route heuristic (DRAFT: 2D PCA projection; NOT a Beratan–Onuchic path —
+# the route starts at the ribose end of FAD, C5B, as SUMMARY §Electron Tunneling Route records; self-review cluster 6)
 # ─────────────────────────────────────────────────────────────────────────────
 def fig2() -> None:
     """DRAFT structure figure from the AF3 PDB (mdtraj) — a 2D PCA projection of the
@@ -389,9 +390,11 @@ def fig2() -> None:
     if d_fad:
         _close(d_fad, 16.0, 0.5, "Fig2 d_FAD (N5→Tyr90 OH)")
 
-    # tunnelling path: FAD N5 → Ala261 → Thr260 → Thr283 → Thr288
+    # the route the heuristic found: FAD C5B (ribose) → Ala261 → Thr260 → Thr283 → Thr288 — ⛔ never drawn from N5:
+    # the search did not start there (it starts at the first FAD atoms of the file), and drawing it so fabricated its origin
     path_res = [(261, "Ala261"), (260, "Thr260"), (283, "Thr283"), (288, "Thr288")]
-    path_pts, path_lbl = ([xyz[n5[0]]], ["FAD N5"]) if len(n5) else ([], [])
+    c5b = top.select("resname FAD and name C5B")
+    path_pts, path_lbl = ([xyz[c5b[0]]], ["FAD C5B (ribose)"]) if len(c5b) else ([], [])
     for rs, lab in path_res:
         sel = top.select(f"name CA and resSeq {rs}")
         if len(sel):
@@ -404,7 +407,7 @@ def fig2() -> None:
     pf = proj(xyz[fad_heavy])
     ax.scatter(pf[:, 0], pf[:, 1], s=14, color=C["orange"], label="FAD cofactor", zorder=3)
     pp = proj(np.array(path_pts))
-    ax.plot(pp[:, 0], pp[:, 1], "-o", color=C["red"], ms=5, lw=1.6, label="through-bond path", zorder=4)
+    ax.plot(pp[:, 0], pp[:, 1], "-o", color=C["red"], ms=5, lw=1.6, label="route heuristic (not a coupling)", zorder=4)
     for i, (lab, p) in enumerate(zip(path_lbl, pp, strict=False)):   # label only the endpoints (intermediates cluster)
         if i in (0, len(pp) - 1):
             ax.annotate(lab, p, textcoords="offset points", xytext=(6, 5), fontsize=7,
@@ -416,12 +419,12 @@ def fig2() -> None:
             pn = proj(xyz[n5[0]])[0]
             ax.plot([pn[0], pe[0]], [pn[1], pe[1]], ":", color="k", lw=1.0, zorder=2)
     txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (burial depth; single-step ceiling ≈20 Å)\n"
-           f"through-bond path {tun['through_bond_path_A']:.1f} Å · β·d = {tun['effective_beta_d']:.2f}")
+           f"route heuristic {tun['through_bond_path_A']:.1f} Å from the ribose end of FAD — not a coupling (§2.5)")
     ax.text(0.02, 0.02, txt, transform=ax.transAxes, fontsize=7, va="bottom",
             bbox={"boxstyle": "round,pad=0.4", "fc": "#f5f5f5", "ec": "#888888", "alpha": 0.95})
     ax.set_xlabel("PC1 (Å)")
     ax.set_ylabel("PC2 (Å)")
-    ax.set_title("(DRAFT) AF3 structure + Beratan–Onuchic tunnelling path\n2D PCA projection — publication cartoon → PyMOL")
+    ax.set_title("(DRAFT) AF3 structure + shortest-path route (heuristic)\n2D PCA projection — publication cartoon → PyMOL")
     ax.legend(loc="upper right", fontsize=6.5, frameon=True, framealpha=0.9)
     ax.set_aspect("equal")
     fig.tight_layout()
@@ -438,7 +441,6 @@ def figS1() -> None:
     te = _load("tunneling_ensemble.json")
     mean, std = te["beta_d_mean"], te["beta_d_std"]
     single = te["beta_d_single_snapshot_AF3"]
-    gating = te["conformational_gating_factor"]
     nfr = te["n_valid_frames"]
 
     fig, ax = plt.subplots(figsize=(5.2, 4.0))
@@ -449,8 +451,8 @@ def figS1() -> None:
     ax.set_xlim(-0.6, 1.6)
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["static\n(AF3)", "dynamic\n(MD)"])
-    ax.set_ylabel("tunneling decay β·d (Beratan–Onuchic)")
-    ax.set_title(f"Tunneling path is thermally robust\nconformational gating ×{gating:.2f} (modest)")
+    ax.set_ylabel("ln Σw of the route heuristic (not a Beratan–Onuchic decay)")
+    ax.set_title("The script-28 route persists over the MD ensemble\n(a connectivity heuristic — no coupling or gating derived)")
     ax.legend(loc="upper right", frameon=False, fontsize=7)
     fig.tight_layout()
     out = PAPER_FIG_DIR / "figS1_betad_ensemble.png"

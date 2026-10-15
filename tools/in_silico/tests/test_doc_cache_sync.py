@@ -599,7 +599,7 @@ CHECKS = [
     # ── Tunneling ──
     (
         "β·d ensemble → tunneling_ensemble.json",
-        SUMMARY, r"β·d = \*\*([\d.]+) ± 0\.13",
+        SUMMARY, r"ln Σw = \*\*([\d.]+) ± 0\.13",
         "dft/tunneling_ensemble.json", lambda d: d["beta_d_mean"], 0.005,
     ),
     # ── Cathode DET (all three ZIF hops) ──
@@ -1810,7 +1810,7 @@ CHECKS = [
     ),
     (
         "CHEM.11 Gln258 distance to the electron path → chem11 (the MET-face refusal)",
-        SUMMARY, rf"\*\*{N} Å from the Beratan-Onuchic tunnelling path\*\*",
+        SUMMARY, rf"\*\*{N} Å from the script-28 tunnelling route\*\*",
         CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_electron_path_A"], 0.06,
     ),
     (

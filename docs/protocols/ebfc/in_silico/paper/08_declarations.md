@@ -16,9 +16,13 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   predicted geometries were assessed by pLDDT and a molecular-dynamics ensemble before use.
 - **Computational pipeline & analysis.** The DFT/MD pipeline was implemented with the assistance of an
   LLM coding agent — **Claude (Anthropic), used through Claude Code**; the model behind a change is recorded in the
-  `Co-Authored-By` trailer of nearly every commit in the repository; every calculation is deterministic, run in a recorded version-exact environment, scripted, and
-  reproducible from the Supporting Information, and all numerical results were verified against committed
-  result caches.
+  `Co-Authored-By` trailer of nearly every commit in the repository. Every calculation is scripted and was run in one
+  recorded version-exact environment; the molecular dynamics are stochastic, and §2.7 states what a re-run under a newer
+  PySCF reproduces and what it moves. Every number in the text is checked against the committed result caches by the
+  repository's tests.
+- **Literature search and citations.** The literature search, the collection of references and the check of every
+  DOI against its Crossref record were carried out with the same agent (Claude, through Claude Code); a value is cited
+  only after it was read in the cited source.
 - **Manuscript preparation.** Claude (Anthropic, through Claude Code) assisted with drafting and editing.
 - **Other tools.** Google Gemini may also have been used outside the repository over the project's development;
   that use is not recorded. [finalise — the author confirms this sentence and states the method of use at deposit:
@@ -27,7 +31,8 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 
 **All scientific content,
   interpretations, claims, and citations were reviewed, verified, and are the sole responsibility of the
-  author.** AI tools were not used to generate or fabricate data, results, or references.
+  author.** Apart from the AlphaFold 3 structure model declared above, AI tools did not generate data or results, and
+  every reference was checked against its DOI record.
 
 ## Other required declarations
 

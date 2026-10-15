@@ -15,13 +15,12 @@ The AlphaFold 3 model places the FAD N5 atom **16.0 Å** below the protein surfa
 nearest exit). Single-step tunnelling through protein keeps the micro-to-millisecond transfer times a
 redox enzyme needs only up to a centre-to-centre distance of ≈20 Å;<sup>48</sup> 16.0 Å is the burial
 depth, not the distance to a docked osmium centre, so it bounds the donor–acceptor separation from below
-and distance alone does not settle feasibility. A Beratan–Onuchic pathway analysis identifies a dominant through-bond route, FAD → Ala261 → Thr260 →
-Thr288 (PDB residue numbering), with an effective decay **β·d = 2.05** (Fig 2) — feasible for the mediated
-transfer the architecture requires. The exit residues are well-ordered in the prediction (pLDDT ≫ 80),
-so the path is a structural feature, not a disordered artefact. Replayed over a 15-frame
-molecular-dynamics ensemble the decay is essentially unchanged (β·d = 2.02 ± 0.13; conformational-gating
-factor 1.03×), confirming that the single-structure pathway is representative of the thermal ensemble
-rather than a fortuitous static geometry (Fig S1). The deglycosylated variant modelled here (eleven N→Q
+and distance alone does not settle feasibility. A shortest-path search over the protein's contact graph (§2.5)
+finds a connected through-bond route from the ribose/adenine half of FAD to the surface by Ala261, Thr260 and Thr288
+(PDB residue numbering; Fig 2), and the route persists over a 15-frame molecular-dynamics ensemble (Fig S1). It starts
+away from the isoalloxazine N5 and sums constant step weights instead of multiplying Beratan–Onuchic decay factors, so
+it shows that such a route exists, not how strongly the flavin couples to a docked mediator; we draw no feasibility
+from it. The residues of that route are well-ordered in the prediction (pLDDT ≫ 80). The deglycosylated variant modelled here (eleven N→Q
 substitutions) preserves this geometry.
 
 ## 3.2 Anode PCET: the FAD redox potential
@@ -318,11 +317,10 @@ single fixed geometry (§2.3) is not tested this way.
 ![Figure 2 (DRAFT)](figures/fig2_structure_path.png)
 
 **Figure 2 (DRAFT). AF3 architecture and the tunnelling pathway.** 2D PCA projection of the 600-Cα
-envelope (grey) with the FAD cofactor (orange) and the Beratan–Onuchic through-bond route
-FAD N5 → Ala261 → Thr260 → Thr283 → Thr288 (red); Tyr90 OH marks the nearest surface exit. The flavin
-N5 sits **16.0 Å** below the surface — a lower bound on the separation from a docked mediator, against a
-≈20 Å single-step ceiling<sup>48</sup> — and the through-bond path
-(23.7 Å) gives β·d = 2.05. *A 2D projection flattens the burial depth; the publication-grade cartoon
+envelope (grey) with the FAD cofactor (orange) and the shortest-path route of §2.5 from the ribose end of FAD
+(C5B) → Ala261 → Thr260 → Thr283 → Thr288 (red; a connectivity heuristic, not a Beratan–Onuchic coupling);
+Tyr90 OH marks the nearest surface exit. The flavin N5 sits **16.0 Å** below the surface — a lower bound on the
+separation from a docked mediator, against a ≈20 Å single-step ceiling<sup>48</sup>; the route is 23.7 Å long. *A 2D projection flattens the burial depth; the publication-grade cartoon
 (PyMOL) is the companion to this draft.*
 
 ![Figure 3](figures/fig3_cascade_lfer.png)
@@ -367,7 +365,7 @@ of **+0.98 eV** reproduces the known ~1 V group-8 implicit-solvation error.<sup>
 
 ![Figure S1](figures/figS1_betad_ensemble.png)
 
-**Figure S1. Thermal robustness of the tunnelling pathway.** The Beratan–Onuchic decay β·d from the
-single AlphaFold-3 snapshot (2.05) agrees with the molecular-dynamics ensemble mean (2.02 ± 0.13, n = 15
-frames); the conformational-gating factor is a modest ×1.03, so the static-structure pathway is
-representative of the thermal ensemble (supports §3.1; the Fig 2 structural render is the companion).
+**Figure S1. The route heuristic over the thermal ensemble.** The logarithm of the summed step weight of the §2.5
+route heuristic — not a Beratan–Onuchic decay — on the single AlphaFold-3 snapshot (2.05) and over the
+molecular-dynamics ensemble (2.02 ± 0.13, n = 15 frames): the connected route persists across the ensemble; no coupling
+or gating factor is derived from it (supports §3.1; the Fig 2 structural render is the companion).

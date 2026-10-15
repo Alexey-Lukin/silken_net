@@ -228,7 +228,7 @@ NHE), not the plain-bpy model. B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; 
 `dft/microsolvation_dmbpy.json`.
 
 **(a) Group-8 PCM benchmark — [Os(H₂O)₆]³⁺/²⁺** (ligand-independent — validates the
-protocol against the known ~1 V error for Fe/Ru/Os octahedra, JPCC 10.1021/jp406772u):
+protocol against the ~1 V error Rulíšek 2013 (JPCC 10.1021/jp406772u) reports for [Ru(H₂O)₆]²⁺ under PCM-type models — a COSMO-RS treatment largely removes it there, and Os carries a further ~0.3 V spin–orbit term; ⚠️ a single Ru couple, not a measured group-wide constant):
 
 | shell | ΔE_red (eV) |
 |---|---|
@@ -239,7 +239,7 @@ protocol against the known ~1 V error for Fe/Ru/Os octahedra, JPCC 10.1021/jp406
 reads −4.943 eV — the same environment, Os(II) equal within 2e-8 Ha, the open-shell Os(III) in a different SCF
 solution 2.4 meV away; paper §2.7.)
 
-2nd-shell shift = **+0.982 eV ≈ the literature ~1 V group-8 PCM error** for this **+2/+3**
+2nd-shell shift = **+0.982 eV ≈ the ~1 V reported for [Ru(H₂O)₆]²⁺ under PCM-type models** for this **+2/+3**
 couple (2nd-shell H-bond directionality a continuum cannot model). The **shift** is the
 robust result (absolute E° is electronic-E proxy, ±0.15 V).
 
@@ -291,12 +291,12 @@ to bis-Im > aqua (the two within <0.15 eV). Since aqua is only a methodological 
 the operando **chloro↔bis-Im bracket holds at both functionals**. Cache
 `wb97x_speciation_dmbpy.json` (3/3 forms converged via Newton, ⟨S²⟩≈0.754).
 
-### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
+### Electron Tunneling Route (script 28 — a shortest-path heuristic, NOT the Beratan–Onuchic model)
 
-FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface)
-- 10 atoms, through-bond path 23.7 Å, β·d = 2.05
-- Os mediator at surface can reach FAD via this covalent/H-bond pathway
-- **MD-ensemble (script 28b, CHEM.16):** β·d = **2.02 ± 0.13** over 15 trajectory frames ≈ the single-snapshot 2.05; conformational-gating factor **1.03×** → the path is **thermally robust** (the static structure is ensemble-representative; no significant thermal gating). PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
+FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface) — the route starts in the ribose/adenine half of FAD, not at the isoalloxazine N5
+- 10 atoms, through-bond route 23.7 Å; its «β·d» 2.05 is ln Σw of CONSTANT step weights (0.6 covalent · 0.9 H-bond · e^{1.1R} through space), not a Beratan–Onuchic decay, which multiplies per-step factors — withdrawn as a coupling (self-review round 1, cluster 6, 2026-10-15); the committed caches keep the old `method` label
+- it shows that a connected covalent/H-bond route reaches the surface; it does not show the flavin's coupling to a docked mediator
+- **MD-ensemble (script 28b, CHEM.16):** the same heuristic over 15 trajectory frames, ln Σw = **2.02 ± 0.13** against the single-snapshot 2.05 — the route persists; the «gating factor» 1.03× is built from the heuristic and is not a gating factor either. PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
 
 Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
@@ -1516,7 +1516,7 @@ under-estimating its own spread.
   script `70` and its cache (`chem11_site_conservation.json`); the design verdict lives in `L1 §2`. Asp is refused there by the declared
   secondary-structure heuristic; Ser is not.
 - ⛔ **Gln258 — do not touch.** Its entire apolar neighbourhood lies inside the FAD-pocket and electron-exit
-  shells, and the site itself sits **8.0 Å from the Beratan-Onuchic tunnelling path** (loaded from script 28's
+  shells, and the site itself sits **8.0 Å from the script-28 tunnelling route** (a shortest-path heuristic, not a Beratan–Onuchic path; loaded from script 28's
   cache, not mirrored) **and 11.0 Å from FAD**. Aggregation margin there is bought with the MET architecture
   of §5 — the whole cell.
 - ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **48 %** of that

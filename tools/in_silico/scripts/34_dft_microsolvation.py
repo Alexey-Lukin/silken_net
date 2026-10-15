@@ -11,7 +11,7 @@ GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not a
 the charge-changing **Os(III)²⁺/Os(II)⁺** couple. This is the textbook failure of
 implicit (PCM) solvation for group-8 octahedral M(III/II): the ~1 V error is
 pinned on the *directionality of 2nd-shell H-bonds* that a continuum cannot model
-(Jaque/Truhlar JPCC 10.1021/jp406772u; Ru(H₂O)₆ ~1 V PCM error). The fix is
+(Rulíšek 2013, JPCC 10.1021/jp406772u: ~1 V for [Ru(H₂O)₆]²⁺ with PCM-type models, which COSMO-RS largely removes — one Ru couple, not a group-wide constant). The fix is
 cluster-continuum — explicit waters on the worst-solvated sites + C-PCM outside.
 
 This script tests whether explicit micro-solvation moves the Os energetics in the

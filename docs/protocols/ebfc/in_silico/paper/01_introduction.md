@@ -62,8 +62,9 @@ not for the FAD-GDH/Os/ZIF system.
 
 A complete electronic-structure account of this chain must cross a known hazard: implicit-solvation DFT
 systematically misestimates the reduction potentials of small, highly charged transition-metal complexes,
-with errors approaching ~1 V for group-8 (Fe/Ru/Os) octahedra because a continuum cannot reproduce the
-directional second-shell hydrogen bonding around a +2/+3 couple.<sup>17,19</sup>
+with errors of ~1 V reported for [Ru(H₂O)₆]²⁺ under PCM-type models, because a continuum cannot reproduce the
+directional second-shell hydrogen bonding around a +2/+3 couple (a COSMO-RS treatment largely removes that
+error).<sup>17,19</sup>
 The osmium mediator at the centre of this device is precisely such a couple.
 Rather than treat this as a nuisance to be absorbed into an empirical correction, we make it part of the
 result — quantifying the error on a clean benchmark and decomposing the device-level discrepancy into its
@@ -95,5 +96,5 @@ electron-transfer energetics — protein architecture and tunnelling distance, t
 reorganization energetics, the cathode direct-electron-transfer kinetics, the mediator structure–activity
 series, and the solvation methodology; long-timescale matrix stability and the device-level
 delta-t/impedance behaviour are deferred to companion work and enter here only as experimental-closure
-predictions for the forthcoming titanium-coin measurements. All calculations are reproducible from the
-accompanying scripts and their recorded environment.
+predictions for the forthcoming titanium-coin measurements. All calculations are scripted and were run in one
+recorded environment; §2.7 states what a re-run under a newer PySCF reproduces and what it moves.

@@ -98,9 +98,13 @@ cascade thermodynamics.
 
 ## 2.5 Electron-transfer kinetics
 
-**Anode tunnelling pathway.** The through-bond donor→acceptor coupling decay was evaluated with the
-**Beratan–Onuchic** pathway model<sup>14</sup> over the AF3 structure (per-step σ/H-bond/through-space decay
-factors), reporting the dominant path and its β·d.
+**Anode tunnelling route (heuristic).** A shortest path was searched over a contact graph of the AF3 structure —
+covalent and hydrogen-bond steps with constant weights, through-space steps weighted e^{βR} (β = 1.1 Å⁻¹) — with the
+weights summed along the path (Dijkstra). This is a connectivity heuristic in the spirit of the Beratan–Onuchic pathway
+model<sup>14</sup>, not that model: the model multiplies per-step decay factors, and its decay is not the logarithm of a
+summed weight. The search started from the first FAD atoms of the structure file, which lie in the ribose/adenine half of
+the cofactor, not at the isoalloxazine N5; it therefore locates a connected route to the surface and measures no
+coupling, and no decay value from it is used below.
 
 **Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the bimetallic
 Cu–Co–Ce ZIF nanozyme were obtained from **charge-localised ΔSCF-UKS** energy splittings on
@@ -135,9 +139,9 @@ a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds
 trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for
 the protein, GAFF2 parameters<sup>51</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>52</sup>
 (scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>53</sup> so that the
-protein is whole and the non-covalently bound FAD lies in the same image, and the Beratan–Onuchic analysis
-was replayed on 15 frames; the ensemble rate enters through the conformational-gating factor
-⟨exp(−2β·d)⟩/exp(−2⟨β·d⟩). For the flavin frontier orbital, the hydrogen-capped isoalloxazine ring was cut
+protein is whole and the non-covalently bound FAD lies in the same image, and the route heuristic was replayed
+on 15 frames to see whether the route persists (Fig S1); no rate or gating factor is derived from it. For the flavin
+frontier orbital, the hydrogen-capped isoalloxazine ring was cut
 from MD snapshots and evaluated by gas-phase B3LYP/6-31G(d) single points.
 
 ## 2.6 Cluster-continuum micro-solvation
@@ -145,7 +149,7 @@ from MD snapshots and evaluated by gas-phase B3LYP/6-31G(d) single points.
 To probe the implicit-solvation limit on the charge-changing octahedral couples, explicit
 first/second-shell waters were added around the redox centre and the chloride ligand and the ΔSCF
 redox energy re-evaluated as a function of shell size,<sup>17,54</sup> benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
-(the literature group-8 ~1 V PCM error<sup>19</sup>). The residual cascade gap was decomposed into a
+(the ~1 V error reported for [Ru(H₂O)₆]²⁺ with PCM-type models<sup>19</sup>). The residual cascade gap was decomposed into a
 chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term.
 
 ## 2.7 Reproducibility

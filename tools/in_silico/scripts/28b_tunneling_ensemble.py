@@ -46,7 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, REPO_ROOT, RUNS_DIR
 from lib.utils import banner
 
-SI_DESCRIPTION = "L3 — Dynamic electron tunnelling: Beratan–Onuchic pathway coupling averaged over the MD ensemble."  # its row in the paper SI (72): English, no repo jargon
+SI_DESCRIPTION = "L3 — The script-28 route heuristic (a shortest path over a contact graph, not the Beratan–Onuchic model) replayed over the MD ensemble."  # its row in the paper SI (72): English, no repo jargon
 
 OUT = DFT_CACHE / "tunneling_ensemble.json"
 
@@ -187,7 +187,7 @@ def main() -> int:
     print(f"  → {verdict}")
 
     OUT.write_text(json.dumps({
-        "method": "Beratan-Onuchic (script 28) replayed over MD-ensemble frames; KD-tree contact graph, "
+        "method": "script-28 shortest-path route heuristic (summed constant step weights — NOT the Beratan-Onuchic product of decay factors) replayed over MD-ensemble frames; KD-tree contact graph, "
                   "Dijkstra FAD-ring→surface; k_ET ∝ exp(−2·β·d)",
         "run": run.name,
         "n_valid_frames": n_valid,

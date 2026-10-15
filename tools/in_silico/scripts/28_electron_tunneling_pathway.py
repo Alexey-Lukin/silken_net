@@ -188,7 +188,7 @@ def main() -> int:
     unique_residues = list(dict.fromkeys(residues_in_path))
 
     result = {
-        "method": "Beratan-Onuchic (Dijkstra shortest path)",
+        "method": "shortest-path route heuristic (Dijkstra over summed constant step weights — NOT the Beratan-Onuchic product of decay factors; source = the first FAD atoms of the file, the ribose/adenine end)",
         "beta_through_space": BETA_THROUGH_SPACE,
         "path_atoms": len(best_path),
         "euclidean_distance_A": round(float(euclidean), 2),
