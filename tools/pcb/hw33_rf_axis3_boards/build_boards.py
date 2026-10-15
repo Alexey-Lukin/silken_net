@@ -2,9 +2,10 @@
 """
 HW.33 — the test boards of axis 3 of the RF mock-up: the efficiency of an antenna booster on a ground of OUR contour, the
 number the ruling «for the small ground we pay in efficiency» (02_01 §5.3, ⚖️ 2026-09-23) stands on and which no evaluation
-board measures by construction (docs/protocols/hardware/rf_mockup_bench_sheet.md §0 п.1, §5). Two diameters were ratified —
-the sentinel Ø20.37 and Ø19.37 (⚖️ 2026-10-01, re-ratified 2026-10-05; bench sheet §5) — and the sheet asks for both
-boosters that fit the contour «where possible» (02_01 §5.2): four boards, one per (booster × diameter).
+board measures by construction (docs/protocols/hardware/rf_mockup_bench_sheet.md §0 п.1, §5). Two diameters are ratified —
+the sentinel Ø20.37 and Ø21.87 (⚖️ 2026-10-15, in place of Ø19.37 of 2026-10-01 / 2026-10-05: the root package of 02_01 §3.5
+puts every board target with the clearance segment as a keep-out at or above Ø20.57; bench sheet §5) — and the sheet asks for both boosters that fit the contour
+«where possible» (02_01 §5.2): four boards, one per (booster × diameter).
 
 The generator is the source; the boards, the projects and the fabrication outputs next to it are its output (hardware
 design — CERN-OHL-S-2.0 by the zone map in /NOTICE; KiCad's S-expressions carry no comments). Run it with the Python that
@@ -47,7 +48,7 @@ Layout choices that are ours, not the vendor's — each one is a knob below, and
     evaluation boards use an 11 mm strip. Ours is the narrowest the footprint allows ON PURPOSE: 02_01 §3.5 leaves the
     booster's clearance uncounted and the RF deck's top side is already over-full, so a product board will not afford
     a wide strip — the board measures the efficiency the product can have. «Narrowest» is not «small»: the segment over
-    the chord is printed per board on every run (≈ 30–33 % of the disc for NN02-224, ≈ 18–20 % for NN02-201), and
+    the chord is printed per board on every run (≈ 26–30 % of the disc for NN02-224, ≈ 16–18 % for NN02-201), and
     that area less the booster's own courtyard is what 02_01 §3.5 does not count. Price: the number comes out MORE pessimistic than a wide clearance would
     give; a wide-clearance variant is a change of GAP_TO_GROUND, not a new board.
   • 2 layers, FR4 1.6 mm (the deck thickness, 02_01 §3.1 pos. 8 — the decks themselves are 4-layer); ground poured on
@@ -89,7 +90,7 @@ BOOSTERS = {
     "NN02-224": (2.2, 3.2, (7.8 + 2.2) / 2, -1, "DS_NN02-224 Jan 2024 §2.7", (12.0, 3.0)),
     "NN02-201": (1.65, 2.3, (3.0 + 1.65) / 2, +1, "DS_NN02-201 Apr 2024 §2.5", (7.0, 3.0)),
 }
-DIAMETERS = (20.37, 19.37)             # sentinel · second board (bench sheet §5, ⚖️ 2026-10-01 / 2026-10-05)
+DIAMETERS = (20.37, 21.87)             # sentinel · second board (bench sheet §5, ⚖️ 2026-10-15)
 CHAIN_DIRECTION = {"NN02-224": "across", "NN02-201": "down"}   # the wide booster leaves no vertical room under its feed pad
 
 EDGE_MARGIN = 0.5                       # copper ↔ board edge, placement margin (the DRC rule below is 0.3)
@@ -275,7 +276,7 @@ def build(name: str, dia: float) -> tuple:
     tb.SetTitle(f"HW.33 RF mock-up axis 3 — {name} on a Ø{dia} ground")
     tb.SetCompany("SilkenNet")
     tb.SetRevision("1")
-    tb.SetDate("2026-10-12")
+    tb.SetDate({20.37: "2026-10-12", 21.87: "2026-10-15"}[dia])
     ds = board.GetDesignSettings()
     ds.m_MinClearance = mm(CLEARANCE)
     ds.m_TrackMinWidth = mm(0.2)

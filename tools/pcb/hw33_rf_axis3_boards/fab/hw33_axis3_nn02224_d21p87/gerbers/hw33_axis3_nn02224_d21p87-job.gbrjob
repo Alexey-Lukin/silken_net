@@ -5,17 +5,17 @@
       "Application": "Pcbnew",
       "Version": "10.0.6"
     },
-    "CreationDate": "2026-10-12T19:48:29+03:00"
+    "CreationDate": "2026-10-15T13:26:24+03:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
-      "Name": "hw33_axis3_nn02224_d19p37",
+      "Name": "hw33_axis3_nn02224_d21p87",
       "GUID": "68773333-5f61-4786-9973-335f6e6e3032",
       "Revision": "1"
     },
     "Size": {
-      "X": 19.47,
-      "Y": 19.47
+      "X": 21.97,
+      "Y": 21.97
     },
     "LayerNumber": 2,
     "BoardThickness": 1.6,
@@ -34,42 +34,42 @@
   ],
   "FilesAttributes": [
     {
-      "Path": "hw33_axis3_nn02224_d19p37-F_Cu.gtl",
+      "Path": "hw33_axis3_nn02224_d21p87-F_Cu.gtl",
       "FileFunction": "Copper,L1,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-B_Cu.gbl",
+      "Path": "hw33_axis3_nn02224_d21p87-B_Cu.gbl",
       "FileFunction": "Copper,L2,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-F_Paste.gtp",
+      "Path": "hw33_axis3_nn02224_d21p87-F_Paste.gtp",
       "FileFunction": "SolderPaste,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-F_Silkscreen.gto",
+      "Path": "hw33_axis3_nn02224_d21p87-F_Silkscreen.gto",
       "FileFunction": "Legend,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-B_Silkscreen.gbo",
+      "Path": "hw33_axis3_nn02224_d21p87-B_Silkscreen.gbo",
       "FileFunction": "Legend,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-F_Mask.gts",
+      "Path": "hw33_axis3_nn02224_d21p87-F_Mask.gts",
       "FileFunction": "SolderMask,Top",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-B_Mask.gbs",
+      "Path": "hw33_axis3_nn02224_d21p87-B_Mask.gbs",
       "FileFunction": "SolderMask,Bot",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "hw33_axis3_nn02224_d19p37-Edge_Cuts.gm1",
+      "Path": "hw33_axis3_nn02224_d21p87-Edge_Cuts.gm1",
       "FileFunction": "Profile",
       "FilePolarity": "Positive"
     }
