@@ -2274,6 +2274,150 @@ CHECKS += [
      lambda d: d["controls"]["sharp_edge_inside_the_layer"]["growth_per_halving"][0], 0.005),
 ]
 
+# ── HW.34 / HW.23: script 92 — the mouth under an axis offset, two elastic patches, SUMMARY §HW.34 + 01_01 §1.4 ──
+# ⛔ Four tables, four readings a decision stands on: the static peak (what the first draft read), the mouth peak over the
+# CYCLE on three shanks framed by the ratified ⌀0.10 (what the entry-radius decision reads), the EXIT peak under the
+# offset (what makes the exit radius a floor), and the swing of the root against the wire under the mouth edge (where the
+# critical section may move). Every cell of all four is pinned: each draft so far went wrong in exactly one of them.
+_LMC = "mechanical/liner_mouth_contact.json"
+_LMC_PEAK = r"(?:\*\*[\d.]+\*\* \(×[\d.]+\) \| )"
+_LMC_NUM = r"(?:\*\*[−–\-]?[\d.]+\*\* \| )"
+_LMC_RADII = (0.05, 0.1, 0.2, 0.3, 0.5)
+_LMC_SHIPPED = "shipped — the whole lock shank (HW.26 G1)"
+
+
+def _lmc_static(d, e, r):
+    return next(x for x in d["static"] if x["offset_um"] == e and x["r_in_mm"] == r)
+
+
+def _lmc_cyc(d, g, e, r):
+    return next(x for x in d["cycle_peak"] if x["geometry"] == g and x["offset_um"] == e and x["r_in_mm"] == r)
+
+
+def _lmc_exit(d, e, r):
+    return next(x for x in d["exit_cycle_peak"] if x["offset_um"] == e and x["r_exit_mm"] == r)
+
+
+def _lmc_sw(d, e):
+    return next(w for w in d["rigid_swing"] if w["offset_um"] == e)
+
+
+_LMC_CYC_ROWS = tuple((lab + rf" \({st} mm\), {e} µm", g, e)
+                      for lab, st, g in (("10 mm", 22, "shank 10 mm"), ("14 mm shipped", 18, _LMC_SHIPPED), ("18 mm", 14, "shank 18 mm"))
+                      for e in (50, 75, 100))
+_LMC_SUM = lambda d: d["summary"]  # noqa: E731
+CHECKS += [
+    (f"liner mouth contact, static edge peak at {e} µm, r_in {r}", SUMMARY,
+     rf"(?m)^\| {e} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*{N}\*\* \(×[\d.]+\) \|" + r"(?: \*\*[\d.]+\*\* \(×[\d.]+\) \|)"
+     + "{" + str(4 - k) + r"} \*\*[−–\-]?[\d.]+\*\* \|", _LMC,
+     lambda d, e=e, r=r: _lmc_static(d, e, r)["mouth"]["p_max_MPa"], 0.051)
+    for e in (30, 40, 50, 75, 100) for k, r in enumerate(_LMC_RADII)
+] + [
+    (f"liner mouth contact, static root {col} at {e} µm", SUMMARY,
+     rf"(?m)^\| {e} \| " + _LMC_PEAK + "{5}" + _LMC_NUM + "{" + str(k) + "}" + rf"\*\*{N}\*\* \|", _LMC,
+     lambda d, e=e, fn=fn: fn(d, e), tol)
+    for e in (30, 40, 50, 75, 100)
+    for k, (col, tol, fn) in enumerate((
+        ("elastic", 0.0051, lambda d, e: _lmc_static(d, e, 0.2)["sigma_signed_MPa"]),
+        ("rigid same edges", 0.0051, lambda d, e: _lmc_static(d, e, 0.2)["rigid_same_edges_sigma_signed_MPa"]),
+        ("68 rigid sharp", 0.0, lambda d, e: _lmc_static(d, e, 0.2)["sigma_68_rigid_sharp_MPa"])))
+] + [
+    (f"liner mouth contact, cycle peak {lab} r_in {r}", SUMMARY,
+     rf"(?m)^\| {lab} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*{N}\*\* \(×", _LMC,
+     lambda d, g=g, e=e, r=r: _lmc_cyc(d, g, e, r)["peak_MPa"], 0.051)
+    for lab, g, e in _LMC_CYC_ROWS for k, r in enumerate(_LMC_RADII)
+] + [
+    (f"liner mouth contact, cycle peak over 1·σ_y {lab} r_in {r}", SUMMARY,
+     rf"(?m)^\| {lab} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*[\d.]+\*\* \(×{N}\)", _LMC,
+     lambda d, g=g, e=e, r=r: _lmc_cyc(d, g, e, r)["peak_over_flow"]["1.0"], 0.0051)
+    for lab, g, e in _LMC_CYC_ROWS for k, r in enumerate(_LMC_RADII)
+] + [
+    (f"liner mouth contact, smallest safe r_in {lab}", SUMMARY, rf"(?m)^\| {lab} \| " + _LMC_PEAK + r"{5}\*\*" + N + r"\*\* mm \|$",
+     _LMC, lambda d, g=g, e=e: d["summary"]["smallest_r_in_below_1_sigma_y"][f"{g} / {e} µm"]["smallest_r_in_below_1_sigma_y_mm"], 0.0)
+    for lab, g, e in _LMC_CYC_ROWS
+] + [
+    (f"liner mouth contact, exit cycle peak at {e} µm, r_exit {r}", SUMMARY,
+     rf"(?m)^\| {e} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*{N}\*\* \(×[\d.]+\) \|" + r"(?: \*\*[\d.]+\*\* \(×[\d.]+\) \|)" + "{" + str(4 - k) + "}$",
+     _LMC, lambda d, e=e, r=r: _lmc_exit(d, e, r)["peak_MPa"], 0.051)
+    for e in (0, 50) for k, r in enumerate(_LMC_RADII)
+] + [
+    (f"liner mouth contact, exit over 1·σ_y at {e} µm, r_exit {r}", SUMMARY,
+     rf"(?m)^\| {e} \| " + _LMC_PEAK + "{" + str(k) + "}" + rf"\*\*[\d.]+\*\* \(×{N}\) \|" + r"(?: \*\*[\d.]+\*\* \(×[\d.]+\) \|)" + "{" + str(4 - k) + "}$",
+     _LMC, lambda d, e=e, r=r: _lmc_exit(d, e, r)["peak_over_flow"]["1.0"], 0.0051)
+    for e in (0, 50) for k, r in enumerate(_LMC_RADII)
+] + [
+    (f"liner mouth contact, swing {col} at {e} µm", SUMMARY,
+     rf"(?m)^\| {e} \| " + _LMC_NUM + "{" + str(k) + "}" + rf"\*\*{N}\*\* \|" + r"(?: \*\*[−–\-]?[\d.]+\*\* \|)" + "{" + str(4 - k) + r"} ×\*\*[\d.]+\*\* \|$",
+     _LMC, lambda d, e=e, fn=fn: fn(d, e), 0.0051)
+    for e in (0, 10, 26, 28, 30, 35, 40, 45, 50, 60, 75, 100)
+    for k, (col, fn) in enumerate((
+        ("root mean", lambda d, e: _lmc_sw(d, e)["root_mean_amplitude_MPa"][0]),
+        ("root swing", lambda d, e: _lmc_sw(d, e)["root_mean_amplitude_MPa"][1]),
+        ("ends only", lambda d, e: _lmc_sw(d, e)["ends_only_amplitude_MPa"]),
+        ("mouth-section mean", lambda d, e: _lmc_sw(d, e)["mouth_section_mean_amplitude_MPa"][0]),
+        ("mouth-section swing", lambda d, e: _lmc_sw(d, e)["mouth_section_mean_amplitude_MPa"][1])))
+] + [
+    (f"liner mouth contact, swing ratio at {e} µm", SUMMARY, rf"(?m)^\| {e} \| " + _LMC_NUM + r"{5}×\*\*" + N + r"\*\* \|$", _LMC,
+     lambda d, e=e: _lmc_sw(d, e)["mouth_over_root_amplitude"], 0.0051)
+    for e in (0, 10, 26, 28, 30, 35, 40, 45, 50, 60, 75, 100)
+] + [
+    (f"liner mouth contact, {lab}", SUMMARY, pat, _LMC, fn, tol)
+    for lab, pat, fn, tol in (
+        ("no offset = 91 (elastic)", rf"exit row exactly \(\*\*{N}\*\* /", lambda d: d["controls"]["no_offset_vs_91_exit"]["sigma_signed_MPa"][0], 0.0005),
+        ("no offset = 91 (rigid)", rf"exactly \(\*\*[\d.]+\*\* / \*\*{N}\*\* MPa", lambda d: d["controls"]["no_offset_vs_91_exit"]["rigid_same_edge_MPa"][0], 0.0005),
+        ("exit = 91's edge peaks", rf"at every exit radius \(within \*\*{N}\*\* %\)", lambda d: 100 * d["controls"]["exit_coaxial_vs_91"]["max_rel_diff"], 0.05),
+        ("rigid limit", rf"rigid same-edge model to ≤ \*\*{N}\*\* %", lambda d: 100 * d["controls"]["rigid_limit"]["max_rel_diff"], 0.005),
+        ("unsolved points", rf"\*\*{N}\*\* of \*\*[\d]+\*\* elastic path points", lambda d: d["summary"]["elastic_points_not_solved"], 0.0),
+        ("all points", rf"\*\*[\d]+\*\* of \*\*{N}\*\* elastic path points", lambda d: d["summary"]["elastic_points"], 0.0),
+        ("(A) give — low", rf"same edges by \*\*{N}–[\d.]+\*\* % on every row", lambda d: 100 * d["summary"]["give_lowers_root_fraction"][0], 0.05),
+        ("(A) give — high", rf"same edges by \*\*[\d.]+–{N}\*\* % on every row", lambda d: 100 * d["summary"]["give_lowers_root_fraction"][1], 0.05),
+        ("(B) radius on swing — low", rf"moves by only \*\*{N}…", lambda d: 100 * d["summary"]["entry_radius_raises_root_swing"][0], 0.5),
+        ("(B) radius on swing — high", rf"moves by only \*\*[−\-]?[\d.]+…\+{N}\*\* %", lambda d: 100 * d["summary"]["entry_radius_raises_root_swing"][1], 0.5),
+        ("(C) cycle over static — low", rf"shipped-shank row \(by \*\*{N}–[\d.]+\*\* %\)", lambda d: 100 * d["summary"]["cycle_over_static_shipped"][0], 0.5),
+        ("(C) cycle over static — high", rf"shipped-shank row \(by \*\*[\d.]+–{N}\*\* %\)", lambda d: 100 * d["summary"]["cycle_over_static_shipped"][1], 0.5),
+        ("(C) within the tolerance — worst", rf"the worst ×{N}\*\* \(shank 18", lambda d: max(v["worst_over_flow_1"] for k, v in d["summary"]["smallest_r_in_below_1_sigma_y"].items() if k.endswith("/ 50 µm")), 0.0051),
+        ("(C) beyond — rows", rf"it passes 1·σ_y on \*\*{N}\*\* rows", lambda d: len(d["summary"]["beyond_tolerance_rows_at_or_above_1_sigma_y"]), 0.0),
+        ("(C) beyond — largest", rf"\(the largest ×\*\*{N}\*\*\)", lambda d: d["summary"]["worst_cycle_row"]["peak_over_flow_1"], 0.005),
+        ("(C′) exit rise — low", rf"cycle peak is ×\*\*{N}–[\d.]+\*\* the coaxial", lambda d: min(d["summary"]["exit_rise_at_tolerance"].values()), 0.005),
+        ("(C′) exit rise — high", rf"cycle peak is ×\*\*[\d.]+–{N}\*\* the coaxial", lambda d: max(d["summary"]["exit_rise_at_tolerance"].values()), 0.005),
+        ("(C′) exit at r 0.05", rf"r_exit 0\.05 mm \(×\*\*{N}\*\*\)", lambda d: _lmc_exit(d, 50, 0.05)["peak_over_flow"]["1.0"], 0.005),
+        ("(C′) exit floor", rf"holds at the tolerance limit is \*\*{N}\*\* mm", lambda d: d["summary"]["smallest_r_exit_below_1_sigma_y_at_tolerance_mm"], 0.0),
+        ("(D) ends catch", rf"the ends alone catch as little as \*\*{N}\*\* %", lambda d: 100 * (1 - max(d["summary"]["ends_only_understate_amplitude_by"].values())), 0.5),
+        ("(D) 68 within", rf"sharp-edge rows sit within \*\*{N}\*\* %", lambda d: 100 * max(abs(v) for v in d["summary"]["sharp_68_over_path_swing"].values()), 0.5),
+        ("(D) 86 k", rf"threshold k ≥ \*\*{N}\*\*", lambda d: d["summary"]["versus_86_threshold"]["k_break_even_binding"], 0.00005),
+        ("(D) 86 amplitude", rf"\(amplitude \*\*{N}\*\* MPa, the Ti-bore", lambda d: d["summary"]["versus_86_threshold"]["amplitude_MPa_86"], 0.005),
+        ("(D) 86 mean", rf"mean \*\*{N}\*\* MPa, the worst play", lambda d: d["summary"]["versus_86_threshold"]["mean_MPa_86"], 0.005),
+        ("(D) cycle mean", rf"runs at \*\*{N}\*\* ± ", lambda d: d["summary"]["versus_86_threshold"]["cycle_mean_MPa"], 0.005),
+        ("(D) cycle amplitude", rf"runs at \*\*[\d.]+\*\* ± \*\*{N}\*\* MPa", lambda d: d["summary"]["versus_86_threshold"]["cycle_amplitude_MPa"], 0.005),
+        ("(E) mouth swing — low", rf"swings ±\*\*{N}–[\d.]+\*\* MPa against", lambda d: d["summary"]["mouth_section_swing_from_50um_MPa"][0], 0.005),
+        ("(E) mouth swing — high", rf"swings ±\*\*[\d.]+–{N}\*\* MPa against", lambda d: d["summary"]["mouth_section_swing_from_50um_MPa"][1], 0.005),
+        ("(E) root swing — low", rf"against the root's ±\*\*{N}–[\d.]+\*\*", lambda d: d["summary"]["root_swing_from_50um_MPa"][0], 0.005),
+        ("(E) root swing — high", rf"against the root's ±\*\*[\d.]+–{N}\*\*", lambda d: d["summary"]["root_swing_from_50um_MPa"][1], 0.005),
+        ("(E) crossing", rf"the ratio crosses 1 at \*\*{N}\*\* µm", lambda d: d["summary"]["ratio_above_one_from_um"], 0.0),
+        ("(E) peak ratio", rf"peaks at ×\*\*{N}\*\* near 40", lambda d: d["summary"]["mouth_over_root_amplitude_by_offset"][str(d["summary"]["ratio_peak_at_um"])], 0.005),
+        ("(E) root dip", rf"the root's swing dips there \(±\*\*{N}\*\*\)", lambda d: _lmc_sw(d, d["summary"]["ratio_peak_at_um"])["root_mean_amplitude_MPa"][1], 0.005),
+        ("(F) peak short-term", rf"mouth peak at the drag's ends from \*\*{N}\*\* to", lambda d: next(b for b in d["brackets"] if (b["base"], b["modulus"]) == ("bonded", "short-term"))["mouth_p_max_MPa"], 0.5),
+        ("(F) peak relaxed", rf"drag's ends from \*\*[\d.]+\*\* to \*\*{N}\*\* MPa", lambda d: next(b for b in d["brackets"] if (b["base"], b["modulus"]) == ("bonded", "20-yr relaxed"))["mouth_p_max_MPa"], 0.5),
+    )
+] + [
+    (f"liner mouth contact, (G) static root at shank {sh:g} mm", SUMMARY,
+     r"the static root at 50 µm is " + r"(?:\*\*[\d.]+\*\* · ){" + str(k) + r"}\*\*" + N + r"\*\*", _LMC,
+     lambda d, sh=sh: d["summary"]["static_root_by_shank_MPa"][f"{sh:g}"], 0.005)
+    for k, sh in enumerate((10.0, 14.0, 18.0))
+] + [
+    (f"01_01 · mouth: {lab} → 92", COAXIAL, pat, _LMC, fn, tol)
+    for lab, pat, fn, tol in (
+        ("give — low", rf"тих самих кромках лише на {N}–[\d.]+ %", lambda d: 100 * d["summary"]["give_lowers_root_fraction"][0], 0.05),
+        ("coaxial ratio", rf"хитається менше за корінь \(×{N};", lambda d: d["summary"]["mouth_over_root_amplitude_by_offset"]["0"], 0.005),
+        ("saturated ratio", rf"\(×{N}\), навколо середнього протилежного", lambda d: d["summary"]["mouth_over_root_amplitude_by_offset"]["100"], 0.005),
+        ("within the tolerance — worst", rf"\(найгірше ×{N}\)\*\*", lambda d: max(v["worst_over_flow_1"] for k, v in d["summary"]["smallest_r_in_below_1_sigma_y"].items() if k.endswith("/ 50 µm")), 0.0051),
+        ("86 cycle mean", rf"цикл на 50 мкм іде при {N} ±", lambda d: d["summary"]["versus_86_threshold"]["cycle_mean_MPa"], 0.005),
+        ("exit rise — high", rf"у ×[\d.]+–{N} вищий за співвісний", lambda d: max(d["summary"]["exit_rise_at_tolerance"].values()), 0.005),
+        ("exit at r 0.05", rf"за r 0\.05 мм \(×{N}\)", lambda d: _lmc_exit(d, 50, 0.05)["peak_over_flow"]["1.0"], 0.005),
+        ("exit floor", rf"— {N} мм тримає \(×", lambda d: d["summary"]["smallest_r_exit_below_1_sigma_y_at_tolerance_mm"], 0.0),
+    )
+]
+
 # ── CHEM.11 conservation: every cell of the SUMMARY table, row by row ──
 # The control rows are pinned exactly like the studied ones ON PURPOSE: the control is what licenses
 # the whole table, so a control cell that rots unnoticed would leave the instrument's credibility

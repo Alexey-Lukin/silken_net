@@ -1,0 +1,6444 @@
+{
+  "question": "under a channel-axis offset past the radial play, what does the mouth edge do to the PEEK liner and to the root of the bus rod, with the layer's give and a reversing drag?",
+  "inputs": {
+    "geometry": "shipped — the whole lock shank (HW.26 G1)",
+    "gap_mm": 18.0,
+    "pad_mm": 35.0,
+    "liner_from_mm": 17.0,
+    "radial_play_um": 25.0,
+    "drag_N": 0.5,
+    "mu": 0.5,
+    "offsets_static_um": [
+      30,
+      40,
+      50,
+      75,
+      100
+    ],
+    "offsets_rigid_swing_um": [
+      0,
+      10,
+      26,
+      28,
+      30,
+      35,
+      40,
+      45,
+      50,
+      60,
+      75,
+      100
+    ],
+    "offsets_elastic_swing_um": [
+      0,
+      10,
+      50,
+      75,
+      100
+    ],
+    "offsets_cycle_um": [
+      50,
+      75,
+      100
+    ],
+    "cycle_shank_offsets_um": [
+      50,
+      75,
+      100
+    ],
+    "path_scan": 801,
+    "transition_side": 0.004,
+    "r_in_sweep_mm": [
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.5
+    ],
+    "r_in_reference_mm": 0.2,
+    "r_exit_mm": 0.2,
+    "drag_path_fraction": [
+      -1.0,
+      -0.5,
+      -0.2,
+      -0.1,
+      0.0,
+      0.1,
+      0.2,
+      0.5,
+      1.0
+    ],
+    "shank_sweep_mm": [
+      10.0,
+      14.0,
+      18.0
+    ],
+    "sigma_yield_PEEK_MPa_tensile_23C": 100.0,
+    "flow_constraint_factors_55": [
+      1.0,
+      3.0
+    ],
+    "kernels": "91 (layer Φ(kh), Love half-space, DC-FFT); rod: 91's Mohr flexibility of 55's EI"
+  },
+  "controls": {
+    "rigid_sharp_vs_68_offset_table": {
+      "max_abs_diff_MPa": 0.0463,
+      "rows": 10
+    },
+    "rigid_sharp_vs_68_reversing_table": {
+      "max_abs_diff_MPa": 0.0048,
+      "rows": 5
+    },
+    "no_offset_vs_91_exit": {
+      "sigma_signed_MPa": [
+        2.794,
+        2.794
+      ],
+      "rigid_same_edge_MPa": [
+        2.938,
+        2.938
+      ]
+    },
+    "rigid_limit": {
+      "scale": 0.01,
+      "offset_um": 50,
+      "max_rel_diff": 0.00131
+    },
+    "mouth_peak_two_grids": {
+      "square_cells_mm": [
+        0.001,
+        0.0005
+      ],
+      "max_spread_allowed": 0.3,
+      "worst_spread": 0.171,
+      "worst_row": {
+        "offset_um": 40,
+        "r_in_mm": 0.05,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 56.57,
+          "0.0005": 48.3
+        }
+      }
+    },
+    "exit_coaxial_vs_91": {
+      "max_rel_diff": 0.0094,
+      "by_r_exit_mm": {
+        "0.05": [
+          91.25,
+          90.4
+        ],
+        "0.1": [
+          73.66,
+          73.5
+        ],
+        "0.2": [
+          59.86,
+          59.6
+        ],
+        "0.3": [
+          53.59,
+          53.6
+        ],
+        "0.5": [
+          47.02,
+          47.0
+        ]
+      }
+    }
+  },
+  "static": [
+    {
+      "offset_um": 30,
+      "r_in_mm": 0.05,
+      "sigma_signed_MPa": 2.503,
+      "rigid_same_edges_sigma_signed_MPa": 2.532,
+      "R_N": [
+        0.01359,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.001,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 30.77,
+        "p_max_working_grid_MPa": 17.14,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 20.78,
+          "0.0005": 30.77,
+          "0.00025": 27.86
+        },
+        "resolution_spread": 0.105,
+        "p_max_over_flow": {
+          "1.0": 0.308,
+          "3.0": 0.103
+        },
+        "area_mm2": 0.00466,
+        "patch_s_mm": [
+          0.048,
+          0.168
+        ],
+        "give_um": 0.037,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 2.5
+    },
+    {
+      "offset_um": 30,
+      "r_in_mm": 0.1,
+      "sigma_signed_MPa": 2.489,
+      "rigid_same_edges_sigma_signed_MPa": 2.518,
+      "R_N": [
+        0.01348,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.001,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 24.39,
+        "p_max_working_grid_MPa": 12.32,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 24.39,
+          "0.0005": 22.04
+        },
+        "resolution_spread": 0.107,
+        "p_max_over_flow": {
+          "1.0": 0.244,
+          "3.0": 0.081
+        },
+        "area_mm2": 0.00462,
+        "patch_s_mm": [
+          0.098,
+          0.218
+        ],
+        "give_um": 0.036,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 2.5
+    },
+    {
+      "offset_um": 30,
+      "r_in_mm": 0.2,
+      "sigma_signed_MPa": 2.462,
+      "rigid_same_edges_sigma_signed_MPa": 2.491,
+      "R_N": [
+        0.01326,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.001,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 18.15,
+        "p_max_working_grid_MPa": 15.98,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 18.15,
+          "0.0005": 17.52
+        },
+        "resolution_spread": 0.036,
+        "p_max_over_flow": {
+          "1.0": 0.182,
+          "3.0": 0.061
+        },
+        "area_mm2": 0.00456,
+        "patch_s_mm": [
+          0.198,
+          0.316
+        ],
+        "give_um": 0.036,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 2.5
+    },
+    {
+      "offset_um": 30,
+      "r_in_mm": 0.3,
+      "sigma_signed_MPa": 2.436,
+      "rigid_same_edges_sigma_signed_MPa": 2.464,
+      "R_N": [
+        0.01305,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.001,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 15.42,
+        "p_max_working_grid_MPa": 17.09,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 15.29,
+          "0.0005": 15.42
+        },
+        "resolution_spread": 0.008,
+        "p_max_over_flow": {
+          "1.0": 0.154,
+          "3.0": 0.051
+        },
+        "area_mm2": 0.0045,
+        "patch_s_mm": [
+          0.298,
+          0.416
+        ],
+        "give_um": 0.036,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 2.5
+    },
+    {
+      "offset_um": 30,
+      "r_in_mm": 0.5,
+      "sigma_signed_MPa": 2.384,
+      "rigid_same_edges_sigma_signed_MPa": 2.411,
+      "R_N": [
+        0.01263,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.001,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 13.0,
+        "p_max_working_grid_MPa": 13.67,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 12.84,
+          "0.0005": 13.0
+        },
+        "resolution_spread": 0.013,
+        "p_max_over_flow": {
+          "1.0": 0.13,
+          "3.0": 0.043
+        },
+        "area_mm2": 0.00446,
+        "patch_s_mm": [
+          0.496,
+          0.614
+        ],
+        "give_um": 0.035,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 2.5
+    },
+    {
+      "offset_um": 40,
+      "r_in_mm": 0.05,
+      "sigma_signed_MPa": 7.524,
+      "rigid_same_edges_sigma_signed_MPa": 7.597,
+      "R_N": [
+        0.04088,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.003,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 56.57,
+        "p_max_working_grid_MPa": 31.03,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 56.57,
+          "0.0005": 48.3
+        },
+        "resolution_spread": 0.171,
+        "p_max_over_flow": {
+          "1.0": 0.566,
+          "3.0": 0.189
+        },
+        "area_mm2": 0.00646,
+        "patch_s_mm": [
+          0.048,
+          0.144
+        ],
+        "give_um": 0.093,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 7.6
+    },
+    {
+      "offset_um": 40,
+      "r_in_mm": 0.1,
+      "sigma_signed_MPa": 7.483,
+      "rigid_same_edges_sigma_signed_MPa": 7.555,
+      "R_N": [
+        0.04054,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.003,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 39.25,
+        "p_max_working_grid_MPa": 38.42,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 38.99,
+          "0.0005": 39.25
+        },
+        "resolution_spread": 0.007,
+        "p_max_over_flow": {
+          "1.0": 0.393,
+          "3.0": 0.131
+        },
+        "area_mm2": 0.0064,
+        "patch_s_mm": [
+          0.098,
+          0.192
+        ],
+        "give_um": 0.093,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 7.6
+    },
+    {
+      "offset_um": 40,
+      "r_in_mm": 0.2,
+      "sigma_signed_MPa": 7.402,
+      "rigid_same_edges_sigma_signed_MPa": 7.472,
+      "R_N": [
+        0.03989,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.003,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 30.75,
+        "p_max_working_grid_MPa": 32.77,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 30.52,
+          "0.0005": 30.75
+        },
+        "resolution_spread": 0.007,
+        "p_max_over_flow": {
+          "1.0": 0.308,
+          "3.0": 0.103
+        },
+        "area_mm2": 0.00642,
+        "patch_s_mm": [
+          0.196,
+          0.292
+        ],
+        "give_um": 0.092,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 7.6
+    },
+    {
+      "offset_um": 40,
+      "r_in_mm": 0.3,
+      "sigma_signed_MPa": 7.323,
+      "rigid_same_edges_sigma_signed_MPa": 7.391,
+      "R_N": [
+        0.03924,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.003,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 27.07,
+        "p_max_working_grid_MPa": 26.8,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 27.07,
+          "0.0005": 26.91
+        },
+        "resolution_spread": 0.006,
+        "p_max_over_flow": {
+          "1.0": 0.271,
+          "3.0": 0.09
+        },
+        "area_mm2": 0.00632,
+        "patch_s_mm": [
+          0.296,
+          0.39
+        ],
+        "give_um": 0.091,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 7.6
+    },
+    {
+      "offset_um": 40,
+      "r_in_mm": 0.5,
+      "sigma_signed_MPa": 7.167,
+      "rigid_same_edges_sigma_signed_MPa": 7.232,
+      "R_N": [
+        0.038,
+        0.0
+      ],
+      "exit_side": -1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.003,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 22.56,
+        "p_max_working_grid_MPa": 22.36,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 22.53,
+          "0.0005": 22.56
+        },
+        "resolution_spread": 0.001,
+        "p_max_over_flow": {
+          "1.0": 0.226,
+          "3.0": 0.075
+        },
+        "area_mm2": 0.00626,
+        "patch_s_mm": [
+          0.494,
+          0.588
+        ],
+        "give_um": 0.089,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 7.6
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.05,
+      "sigma_signed_MPa": 12.552,
+      "rigid_same_edges_sigma_signed_MPa": 12.661,
+      "R_N": [
+        0.06821,
+        0.0
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.005,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 66.82,
+        "p_max_working_grid_MPa": 53.28,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 66.82,
+          "0.0005": 62.41
+        },
+        "resolution_spread": 0.071,
+        "p_max_over_flow": {
+          "1.0": 0.668,
+          "3.0": 0.223
+        },
+        "area_mm2": 0.00728,
+        "patch_s_mm": [
+          0.048,
+          0.13
+        ],
+        "give_um": 0.142,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 12.7
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.1,
+      "sigma_signed_MPa": 12.483,
+      "rigid_same_edges_sigma_signed_MPa": 12.591,
+      "R_N": [
+        0.06765,
+        0.0
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.005,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 50.25,
+        "p_max_working_grid_MPa": 57.53,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 49.82,
+          "0.0005": 50.25
+        },
+        "resolution_spread": 0.009,
+        "p_max_over_flow": {
+          "1.0": 0.503,
+          "3.0": 0.168
+        },
+        "area_mm2": 0.00728,
+        "patch_s_mm": [
+          0.096,
+          0.18
+        ],
+        "give_um": 0.142,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 12.7
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.2,
+      "sigma_signed_MPa": 12.349,
+      "rigid_same_edges_sigma_signed_MPa": 12.453,
+      "R_N": [
+        0.06656,
+        0.0
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.005,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 40.25,
+        "p_max_working_grid_MPa": 39.84,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 40.25,
+          "0.0005": 39.99
+        },
+        "resolution_spread": 0.007,
+        "p_max_over_flow": {
+          "1.0": 0.402,
+          "3.0": 0.134
+        },
+        "area_mm2": 0.00724,
+        "patch_s_mm": [
+          0.196,
+          0.28
+        ],
+        "give_um": 0.14,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 12.7
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.3,
+      "sigma_signed_MPa": 12.216,
+      "rigid_same_edges_sigma_signed_MPa": 12.318,
+      "R_N": [
+        0.06549,
+        0.0
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.005,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 34.79,
+        "p_max_working_grid_MPa": 34.35,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 34.67,
+          "0.0005": 34.79
+        },
+        "resolution_spread": 0.003,
+        "p_max_over_flow": {
+          "1.0": 0.348,
+          "3.0": 0.116
+        },
+        "area_mm2": 0.00724,
+        "patch_s_mm": [
+          0.294,
+          0.378
+        ],
+        "give_um": 0.138,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 12.7
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.5,
+      "sigma_signed_MPa": 11.957,
+      "rigid_same_edges_sigma_signed_MPa": 12.053,
+      "R_N": [
+        0.06341,
+        0.0
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": 0.004,
+        "exit": 0.0
+      },
+      "mouth": {
+        "p_max_MPa": 29.19,
+        "p_max_working_grid_MPa": 29.07,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 29.19,
+          "0.0005": 29.14
+        },
+        "resolution_spread": 0.002,
+        "p_max_over_flow": {
+          "1.0": 0.292,
+          "3.0": 0.097
+        },
+        "area_mm2": 0.0072,
+        "patch_s_mm": [
+          0.492,
+          0.576
+        ],
+        "give_um": 0.134,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": null,
+      "sigma_68_rigid_sharp_MPa": 12.7
+    },
+    {
+      "offset_um": 75,
+      "r_in_mm": 0.05,
+      "sigma_signed_MPa": 28.202,
+      "rigid_same_edges_sigma_signed_MPa": 28.641,
+      "R_N": [
+        0.22384,
+        0.03668
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -5.833,
+        "exit": -0.001
+      },
+      "mouth": {
+        "p_max_MPa": 99.22,
+        "p_max_working_grid_MPa": 114.22,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 98.33,
+          "0.0005": 99.22
+        },
+        "resolution_spread": 0.009,
+        "p_max_over_flow": {
+          "1.0": 0.992,
+          "3.0": 0.331
+        },
+        "area_mm2": 0.01392,
+        "patch_s_mm": [
+          0.046,
+          0.152
+        ],
+        "give_um": 0.299,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 37.23,
+        "p_max_working_grid_MPa": 37.23,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.372,
+          "3.0": 0.124
+        },
+        "area_mm2": 0.0035,
+        "patch_s_mm": [
+          0.196,
+          0.24
+        ],
+        "give_um": 0.113
+      },
+      "sigma_68_rigid_sharp_MPa": 28.9
+    },
+    {
+      "offset_um": 75,
+      "r_in_mm": 0.1,
+      "sigma_signed_MPa": 28.014,
+      "rigid_same_edges_sigma_signed_MPa": 28.445,
+      "R_N": [
+        0.2212,
+        0.03615
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -5.732,
+        "exit": -0.001
+      },
+      "mouth": {
+        "p_max_MPa": 79.63,
+        "p_max_working_grid_MPa": 78.9,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 79.63,
+          "0.0005": 79.02
+        },
+        "resolution_spread": 0.008,
+        "p_max_over_flow": {
+          "1.0": 0.796,
+          "3.0": 0.265
+        },
+        "area_mm2": 0.01386,
+        "patch_s_mm": [
+          0.096,
+          0.2
+        ],
+        "give_um": 0.296,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 37.16,
+        "p_max_working_grid_MPa": 37.16,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.372,
+          "3.0": 0.124
+        },
+        "area_mm2": 0.00342,
+        "patch_s_mm": [
+          0.196,
+          0.24
+        ],
+        "give_um": 0.112
+      },
+      "sigma_68_rigid_sharp_MPa": 28.9
+    },
+    {
+      "offset_um": 75,
+      "r_in_mm": 0.2,
+      "sigma_signed_MPa": 27.638,
+      "rigid_same_edges_sigma_signed_MPa": 28.056,
+      "R_N": [
+        0.21592,
+        0.03507
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -5.528,
+        "exit": -0.001
+      },
+      "mouth": {
+        "p_max_MPa": 62.46,
+        "p_max_working_grid_MPa": 61.53,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 62.46,
+          "0.0005": 62.45
+        },
+        "resolution_spread": 0.0,
+        "p_max_over_flow": {
+          "1.0": 0.625,
+          "3.0": 0.208
+        },
+        "area_mm2": 0.01384,
+        "patch_s_mm": [
+          0.192,
+          0.296
+        ],
+        "give_um": 0.29,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 37.01,
+        "p_max_working_grid_MPa": 37.01,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.37,
+          "3.0": 0.123
+        },
+        "area_mm2": 0.00336,
+        "patch_s_mm": [
+          0.196,
+          0.238
+        ],
+        "give_um": 0.111
+      },
+      "sigma_68_rigid_sharp_MPa": 28.9
+    },
+    {
+      "offset_um": 75,
+      "r_in_mm": 0.3,
+      "sigma_signed_MPa": 27.265,
+      "rigid_same_edges_sigma_signed_MPa": 27.672,
+      "R_N": [
+        0.21068,
+        0.03397
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -5.324,
+        "exit": -0.001
+      },
+      "mouth": {
+        "p_max_MPa": 54.38,
+        "p_max_working_grid_MPa": 54.58,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 54.38,
+          "0.0005": 54.32
+        },
+        "resolution_spread": 0.001,
+        "p_max_over_flow": {
+          "1.0": 0.544,
+          "3.0": 0.181
+        },
+        "area_mm2": 0.01372,
+        "patch_s_mm": [
+          0.29,
+          0.394
+        ],
+        "give_um": 0.285,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 36.84,
+        "p_max_working_grid_MPa": 36.84,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.368,
+          "3.0": 0.123
+        },
+        "area_mm2": 0.00324,
+        "patch_s_mm": [
+          0.196,
+          0.236
+        ],
+        "give_um": 0.109
+      },
+      "sigma_68_rigid_sharp_MPa": 28.9
+    },
+    {
+      "offset_um": 75,
+      "r_in_mm": 0.5,
+      "sigma_signed_MPa": 26.531,
+      "rigid_same_edges_sigma_signed_MPa": 26.915,
+      "R_N": [
+        0.20032,
+        0.03173
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -4.912,
+        "exit": -0.001
+      },
+      "mouth": {
+        "p_max_MPa": 45.33,
+        "p_max_working_grid_MPa": 45.19,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 45.29,
+          "0.0005": 45.33
+        },
+        "resolution_spread": 0.001,
+        "p_max_over_flow": {
+          "1.0": 0.453,
+          "3.0": 0.151
+        },
+        "area_mm2": 0.01336,
+        "patch_s_mm": [
+          0.486,
+          0.59
+        ],
+        "give_um": 0.276,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 36.48,
+        "p_max_working_grid_MPa": 36.48,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.365,
+          "3.0": 0.122
+        },
+        "area_mm2": 0.003,
+        "patch_s_mm": [
+          0.196,
+          0.234
+        ],
+        "give_um": 0.106
+      },
+      "sigma_68_rigid_sharp_MPa": 28.9
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "sigma_signed_MPa": 46.515,
+      "rigid_same_edges_sigma_signed_MPa": 47.199,
+      "R_N": [
+        0.45442,
+        0.10486
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -16.666,
+        "exit": -0.009
+      },
+      "mouth": {
+        "p_max_MPa": 128.98,
+        "p_max_working_grid_MPa": 134.71,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 125.99,
+          "0.0005": 128.98
+        },
+        "resolution_spread": 0.024,
+        "p_max_over_flow": {
+          "1.0": 1.29,
+          "3.0": 0.43
+        },
+        "area_mm2": 0.02122,
+        "patch_s_mm": [
+          0.046,
+          0.172
+        ],
+        "give_um": 0.448,
+        "flow_verdict": {
+          "1.0": "above",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 45.1,
+        "p_max_working_grid_MPa": 45.1,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.451,
+          "3.0": 0.15
+        },
+        "area_mm2": 0.01026,
+        "patch_s_mm": [
+          0.194,
+          0.298
+        ],
+        "give_um": 0.177
+      },
+      "sigma_68_rigid_sharp_MPa": 47.5
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.1,
+      "sigma_signed_MPa": 46.247,
+      "rigid_same_edges_sigma_signed_MPa": 46.92,
+      "R_N": [
+        0.45082,
+        0.10438
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -16.541,
+        "exit": -0.009
+      },
+      "mouth": {
+        "p_max_MPa": 101.96,
+        "p_max_working_grid_MPa": 100.67,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 101.58,
+          "0.0005": 101.96
+        },
+        "resolution_spread": 0.004,
+        "p_max_over_flow": {
+          "1.0": 1.02,
+          "3.0": 0.34
+        },
+        "area_mm2": 0.02128,
+        "patch_s_mm": [
+          0.094,
+          0.22
+        ],
+        "give_um": 0.444,
+        "flow_verdict": {
+          "1.0": "above",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 45.14,
+        "p_max_working_grid_MPa": 45.14,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.451,
+          "3.0": 0.15
+        },
+        "area_mm2": 0.01016,
+        "patch_s_mm": [
+          0.194,
+          0.298
+        ],
+        "give_um": 0.177
+      },
+      "sigma_68_rigid_sharp_MPa": 47.5
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.2,
+      "sigma_signed_MPa": 45.713,
+      "rigid_same_edges_sigma_signed_MPa": 46.367,
+      "R_N": [
+        0.44365,
+        0.1034
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -16.29,
+        "exit": -0.009
+      },
+      "mouth": {
+        "p_max_MPa": 80.94,
+        "p_max_working_grid_MPa": 81.34,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 80.94,
+          "0.0005": 80.87
+        },
+        "resolution_spread": 0.001,
+        "p_max_over_flow": {
+          "1.0": 0.809,
+          "3.0": 0.27
+        },
+        "area_mm2": 0.0213,
+        "patch_s_mm": [
+          0.19,
+          0.318
+        ],
+        "give_um": 0.437,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 45.21,
+        "p_max_working_grid_MPa": 45.21,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.452,
+          "3.0": 0.151
+        },
+        "area_mm2": 0.00998,
+        "patch_s_mm": [
+          0.194,
+          0.296
+        ],
+        "give_um": 0.177
+      },
+      "sigma_68_rigid_sharp_MPa": 47.5
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.3,
+      "sigma_signed_MPa": 45.183,
+      "rigid_same_edges_sigma_signed_MPa": 45.82,
+      "R_N": [
+        0.43655,
+        0.10241
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -16.039,
+        "exit": -0.009
+      },
+      "mouth": {
+        "p_max_MPa": 70.47,
+        "p_max_working_grid_MPa": 70.19,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 70.47,
+          "0.0005": 70.46
+        },
+        "resolution_spread": 0.0,
+        "p_max_over_flow": {
+          "1.0": 0.705,
+          "3.0": 0.235
+        },
+        "area_mm2": 0.02126,
+        "patch_s_mm": [
+          0.288,
+          0.416
+        ],
+        "give_um": 0.431,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 45.27,
+        "p_max_working_grid_MPa": 45.27,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.453,
+          "3.0": 0.151
+        },
+        "area_mm2": 0.0098,
+        "patch_s_mm": [
+          0.194,
+          0.294
+        ],
+        "give_um": 0.177
+      },
+      "sigma_68_rigid_sharp_MPa": 47.5
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.5,
+      "sigma_signed_MPa": 44.14,
+      "rigid_same_edges_sigma_signed_MPa": 44.747,
+      "R_N": [
+        0.42257,
+        0.10038
+      ],
+      "exit_side": 1,
+      "section_sigma_signed_MPa": {
+        "mouth": -15.534,
+        "exit": -0.008
+      },
+      "mouth": {
+        "p_max_MPa": 59.12,
+        "p_max_working_grid_MPa": 59.14,
+        "p_max_by_square_cell_MPa": {
+          "0.001": 59.09,
+          "0.0005": 59.12
+        },
+        "resolution_spread": 0.001,
+        "p_max_over_flow": {
+          "1.0": 0.591,
+          "3.0": 0.197
+        },
+        "area_mm2": 0.02116,
+        "patch_s_mm": [
+          0.484,
+          0.612
+        ],
+        "give_um": 0.419,
+        "flow_verdict": {
+          "1.0": "below",
+          "3.0": "below"
+        }
+      },
+      "exit": {
+        "p_max_MPa": 45.38,
+        "p_max_working_grid_MPa": 45.38,
+        "p_max_by_square_cell_MPa": null,
+        "resolution_spread": null,
+        "p_max_over_flow": {
+          "1.0": 0.454,
+          "3.0": 0.151
+        },
+        "area_mm2": 0.00944,
+        "patch_s_mm": [
+          0.194,
+          0.29
+        ],
+        "give_um": 0.177
+      },
+      "sigma_68_rigid_sharp_MPa": 47.5
+    }
+  ],
+  "cycle_peak": [
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 50,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 66.25,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 66.25,
+        "0.0005": 61.79
+      },
+      "resolution_spread": 0.072,
+      "static_working_grid_MPa": 35.5,
+      "peak_over_flow": {
+        "1.0": 0.663,
+        "3.0": 0.221
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 50,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 49.69,
+      "points": 9,
+      "points_not_solved": 1,
+      "peak_by_square_cell_MPa": {
+        "0.001": 49.28,
+        "0.0005": 49.69
+      },
+      "resolution_spread": 0.008,
+      "static_working_grid_MPa": 42.88,
+      "peak_over_flow": {
+        "1.0": 0.497,
+        "3.0": 0.166
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 50,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 40.08,
+      "points": 9,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 40.08,
+        "0.0005": 39.75
+      },
+      "resolution_spread": 0.008,
+      "static_working_grid_MPa": 34.1,
+      "peak_over_flow": {
+        "1.0": 0.401,
+        "3.0": 0.134
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 50,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 34.76,
+      "points": 9,
+      "points_not_solved": 1,
+      "peak_by_square_cell_MPa": {
+        "0.001": 34.66,
+        "0.0005": 34.76
+      },
+      "resolution_spread": 0.003,
+      "static_working_grid_MPa": 28.21,
+      "peak_over_flow": {
+        "1.0": 0.348,
+        "3.0": 0.116
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 50,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 29.44,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 29.44,
+        "0.0005": 29.41
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 23.79,
+      "peak_over_flow": {
+        "1.0": 0.294,
+        "3.0": 0.098
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 75,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.1,
+      "peak_MPa": 89.52,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 88.63,
+        "0.0005": 89.52
+      },
+      "resolution_spread": 0.01,
+      "static_working_grid_MPa": 71.45,
+      "peak_over_flow": {
+        "1.0": 0.895,
+        "3.0": 0.298
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 75,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.1,
+      "peak_MPa": 71.39,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 70.88,
+        "0.0005": 71.39
+      },
+      "resolution_spread": 0.007,
+      "static_working_grid_MPa": 63.18,
+      "peak_over_flow": {
+        "1.0": 0.714,
+        "3.0": 0.238
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 75,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.1,
+      "peak_MPa": 56.73,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 56.7,
+        "0.0005": 56.73
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 45.79,
+      "peak_over_flow": {
+        "1.0": 0.567,
+        "3.0": 0.189
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 75,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.1,
+      "peak_MPa": 49.72,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 49.72,
+        "0.0005": 49.64
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 39.85,
+      "peak_over_flow": {
+        "1.0": 0.497,
+        "3.0": 0.166
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 75,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.1,
+      "peak_MPa": 41.98,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 41.98,
+        "0.0005": 41.98
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 33.79,
+      "peak_over_flow": {
+        "1.0": 0.42,
+        "3.0": 0.14
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.224781,
+      "peak_MPa": 108.52,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 107.76,
+        "0.0005": 108.52
+      },
+      "resolution_spread": 0.007,
+      "static_working_grid_MPa": 116.24,
+      "peak_over_flow": {
+        "1.0": 1.085,
+        "3.0": 0.362
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 100,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.223278,
+      "peak_MPa": 86.74,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 86.74,
+        "0.0005": 86.59
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 80.82,
+      "peak_over_flow": {
+        "1.0": 0.867,
+        "3.0": 0.289
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 100,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.224288,
+      "peak_MPa": 69.19,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 69.19,
+        "0.0005": 69.09
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 62.81,
+      "peak_over_flow": {
+        "1.0": 0.692,
+        "3.0": 0.231
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 100,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.229319,
+      "peak_MPa": 60.43,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 60.37,
+        "0.0005": 60.43
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 55.85,
+      "peak_over_flow": {
+        "1.0": 0.604,
+        "3.0": 0.201
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 10 mm",
+      "mouth_station_mm": 22.0,
+      "offset_um": 100,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.227446,
+      "peak_MPa": 51.16,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 51.14,
+        "0.0005": 51.16
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 46.1,
+      "peak_over_flow": {
+        "1.0": 0.512,
+        "3.0": 0.171
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 50,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.05,
+      "peak_MPa": 74.74,
+      "points": 13,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 74.74,
+        "0.0005": 73.77
+      },
+      "resolution_spread": 0.013,
+      "static_working_grid_MPa": 53.28,
+      "peak_over_flow": {
+        "1.0": 0.747,
+        "3.0": 0.249
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 50,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.066178,
+      "peak_MPa": 58.36,
+      "points": 13,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 58.36,
+        "0.0005": 58.36
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 57.53,
+      "peak_over_flow": {
+        "1.0": 0.584,
+        "3.0": 0.195
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 50,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.066284,
+      "peak_MPa": 46.65,
+      "points": 14,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 46.55,
+        "0.0005": 46.65
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 39.84,
+      "peak_over_flow": {
+        "1.0": 0.467,
+        "3.0": 0.156
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 50,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.066395,
+      "peak_MPa": 40.79,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 40.6,
+        "0.0005": 40.79
+      },
+      "resolution_spread": 0.005,
+      "static_working_grid_MPa": 34.35,
+      "peak_over_flow": {
+        "1.0": 0.408,
+        "3.0": 0.136
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 50,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.06663,
+      "peak_MPa": 34.52,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 34.52,
+        "0.0005": 34.45
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 29.07,
+      "peak_over_flow": {
+        "1.0": 0.345,
+        "3.0": 0.115
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 75,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.138251,
+      "peak_MPa": 105.35,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 104.56,
+        "0.0005": 105.35
+      },
+      "resolution_spread": 0.008,
+      "static_working_grid_MPa": 114.22,
+      "peak_over_flow": {
+        "1.0": 1.054,
+        "3.0": 0.351
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 75,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.134355,
+      "peak_MPa": 84.38,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.38,
+        "0.0005": 84.21
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 78.9,
+      "peak_over_flow": {
+        "1.0": 0.844,
+        "3.0": 0.281
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 75,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.138569,
+      "peak_MPa": 67.14,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 67.14,
+        "0.0005": 66.93
+      },
+      "resolution_spread": 0.003,
+      "static_working_grid_MPa": 61.53,
+      "peak_over_flow": {
+        "1.0": 0.671,
+        "3.0": 0.224
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 75,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.138791,
+      "peak_MPa": 58.53,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 58.53,
+        "0.0005": 58.51
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 54.58,
+      "peak_over_flow": {
+        "1.0": 0.585,
+        "3.0": 0.195
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 75,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.135259,
+      "peak_MPa": 49.38,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 49.37,
+        "0.0005": 49.38
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 45.19,
+      "peak_over_flow": {
+        "1.0": 0.494,
+        "3.0": 0.165
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.202377,
+      "peak_MPa": 131.52,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 128.22,
+        "0.0005": 131.52
+      },
+      "resolution_spread": 0.026,
+      "static_working_grid_MPa": 134.71,
+      "peak_over_flow": {
+        "1.0": 1.315,
+        "3.0": 0.438
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 100,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.206533,
+      "peak_MPa": 104.13,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 103.78,
+        "0.0005": 104.13
+      },
+      "resolution_spread": 0.003,
+      "static_working_grid_MPa": 100.67,
+      "peak_over_flow": {
+        "1.0": 1.041,
+        "3.0": 0.347
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 100,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.206853,
+      "peak_MPa": 83.02,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 83.02,
+        "0.0005": 82.9
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 81.34,
+      "peak_over_flow": {
+        "1.0": 0.83,
+        "3.0": 0.277
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 100,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.207186,
+      "peak_MPa": 72.5,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 72.5,
+        "0.0005": 72.47
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 70.19,
+      "peak_over_flow": {
+        "1.0": 0.725,
+        "3.0": 0.242
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shipped — the whole lock shank (HW.26 G1)",
+      "mouth_station_mm": 18.0,
+      "offset_um": 100,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.207889,
+      "peak_MPa": 61.17,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 61.15,
+        "0.0005": 61.17
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 59.14,
+      "peak_over_flow": {
+        "1.0": 0.612,
+        "3.0": 0.204
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 50,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.06902,
+      "peak_MPa": 92.46,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 91.58,
+        "0.0005": 92.46
+      },
+      "resolution_spread": 0.01,
+      "static_working_grid_MPa": 87.95,
+      "peak_over_flow": {
+        "1.0": 0.925,
+        "3.0": 0.308
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 50,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.070977,
+      "peak_MPa": 73.75,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.66,
+        "0.0005": 73.75
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 68.88,
+      "peak_over_flow": {
+        "1.0": 0.737,
+        "3.0": 0.246
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 50,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.070894,
+      "peak_MPa": 58.47,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 58.36,
+        "0.0005": 58.47
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 51.65,
+      "peak_over_flow": {
+        "1.0": 0.585,
+        "3.0": 0.195
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 50,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.070815,
+      "peak_MPa": 51.18,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 51.18,
+        "0.0005": 51.09
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 44.68,
+      "peak_over_flow": {
+        "1.0": 0.512,
+        "3.0": 0.171
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 50,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.07067,
+      "peak_MPa": 43.03,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 43.02,
+        "0.0005": 43.03
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 37.55,
+      "peak_over_flow": {
+        "1.0": 0.43,
+        "3.0": 0.143
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 75,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.140041,
+      "peak_MPa": 134.05,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 131.26,
+        "0.0005": 134.05
+      },
+      "resolution_spread": 0.021,
+      "static_working_grid_MPa": 135.89,
+      "peak_over_flow": {
+        "1.0": 1.34,
+        "3.0": 0.447
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 75,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.139954,
+      "peak_MPa": 106.18,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 105.84,
+        "0.0005": 106.18
+      },
+      "resolution_spread": 0.003,
+      "static_working_grid_MPa": 101.87,
+      "peak_over_flow": {
+        "1.0": 1.062,
+        "3.0": 0.354
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 75,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.139788,
+      "peak_MPa": 84.52,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 84.52,
+        "0.0005": 84.36
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 82.17,
+      "peak_over_flow": {
+        "1.0": 0.845,
+        "3.0": 0.282
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 75,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.13963,
+      "peak_MPa": 73.72,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.72,
+        "0.0005": 73.68
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 70.93,
+      "peak_over_flow": {
+        "1.0": 0.737,
+        "3.0": 0.246
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 75,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.13934,
+      "peak_MPa": 61.98,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 61.96,
+        "0.0005": 61.98
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 59.64,
+      "peak_over_flow": {
+        "1.0": 0.62,
+        "3.0": 0.207
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "drag_at_peak_N": -0.209061,
+      "peak_MPa": 166.65,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 166.65,
+        "0.0005": 166.23
+      },
+      "resolution_spread": 0.002,
+      "static_working_grid_MPa": 162.67,
+      "peak_over_flow": {
+        "1.0": 1.666,
+        "3.0": 0.555
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 100,
+      "r_in_mm": 0.1,
+      "drag_at_peak_N": -0.208931,
+      "peak_MPa": 132.41,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 132.41,
+        "0.0005": 131.91
+      },
+      "resolution_spread": 0.004,
+      "static_working_grid_MPa": 127.24,
+      "peak_over_flow": {
+        "1.0": 1.324,
+        "3.0": 0.441
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 100,
+      "r_in_mm": 0.2,
+      "drag_at_peak_N": -0.208682,
+      "peak_MPa": 104.73,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 104.72,
+        "0.0005": 104.73
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 102.5,
+      "peak_over_flow": {
+        "1.0": 1.047,
+        "3.0": 0.349
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 100,
+      "r_in_mm": 0.3,
+      "drag_at_peak_N": -0.208445,
+      "peak_MPa": 91.54,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 91.54,
+        "0.0005": 91.46
+      },
+      "resolution_spread": 0.001,
+      "static_working_grid_MPa": 89.97,
+      "peak_over_flow": {
+        "1.0": 0.915,
+        "3.0": 0.305
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "geometry": "shank 18 mm",
+      "mouth_station_mm": 14.0,
+      "offset_um": 100,
+      "r_in_mm": 0.5,
+      "drag_at_peak_N": -0.208009,
+      "peak_MPa": 76.95,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_by_square_cell_MPa": {
+        "0.001": 76.95,
+        "0.0005": 76.94
+      },
+      "resolution_spread": 0.0,
+      "static_working_grid_MPa": 75.18,
+      "peak_over_flow": {
+        "1.0": 0.769,
+        "3.0": 0.256
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    }
+  ],
+  "exit_cycle_peak": [
+    {
+      "offset_um": 0,
+      "r_exit_mm": 0.05,
+      "drag_at_peak_N": -0.5,
+      "peak_MPa": 91.25,
+      "peak_by_square_cell_MPa": {
+        "0.001": 90.39,
+        "0.0005": 91.25
+      },
+      "resolution_spread": 0.01,
+      "points": 10,
+      "points_not_solved": 2,
+      "peak_over_flow": {
+        "1.0": 0.913,
+        "3.0": 0.304
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 0,
+      "r_exit_mm": 0.1,
+      "drag_at_peak_N": -0.5,
+      "peak_MPa": 73.66,
+      "peak_by_square_cell_MPa": {
+        "0.001": 73.49,
+        "0.0005": 73.66
+      },
+      "resolution_spread": 0.002,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.737,
+        "3.0": 0.246
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 0,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": -0.5,
+      "peak_MPa": 59.86,
+      "peak_by_square_cell_MPa": {
+        "0.001": 59.64,
+        "0.0005": 59.86
+      },
+      "resolution_spread": 0.004,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.599,
+        "3.0": 0.2
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 0,
+      "r_exit_mm": 0.3,
+      "drag_at_peak_N": -0.5,
+      "peak_MPa": 53.59,
+      "peak_by_square_cell_MPa": {
+        "0.001": 53.59,
+        "0.0005": 53.51
+      },
+      "resolution_spread": 0.002,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.536,
+        "3.0": 0.179
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 0,
+      "r_exit_mm": 0.5,
+      "drag_at_peak_N": -0.5,
+      "peak_MPa": 47.02,
+      "peak_by_square_cell_MPa": {
+        "0.001": 47.02,
+        "0.0005": 47.02
+      },
+      "resolution_spread": 0.0,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.47,
+        "3.0": 0.157
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 50,
+      "r_exit_mm": 0.05,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 117.47,
+      "peak_by_square_cell_MPa": {
+        "0.001": 117.47,
+        "0.0005": 117.35
+      },
+      "resolution_spread": 0.001,
+      "points": 9,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 1.175,
+        "3.0": 0.392
+      },
+      "flow_verdict": {
+        "1.0": "above",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 50,
+      "r_exit_mm": 0.1,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 94.34,
+      "peak_by_square_cell_MPa": {
+        "0.001": 94.07,
+        "0.0005": 94.34
+      },
+      "resolution_spread": 0.003,
+      "points": 10,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.943,
+        "3.0": 0.314
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 50,
+      "r_exit_mm": 0.2,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 75.97,
+      "peak_by_square_cell_MPa": {
+        "0.001": 75.97,
+        "0.0005": 75.85
+      },
+      "resolution_spread": 0.002,
+      "points": 13,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.76,
+        "3.0": 0.253
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 50,
+      "r_exit_mm": 0.3,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 67.06,
+      "peak_by_square_cell_MPa": {
+        "0.001": 67.03,
+        "0.0005": 67.06
+      },
+      "resolution_spread": 0.0,
+      "points": 14,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.671,
+        "3.0": 0.224
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    },
+    {
+      "offset_um": 50,
+      "r_exit_mm": 0.5,
+      "drag_at_peak_N": 0.5,
+      "peak_MPa": 57.72,
+      "peak_by_square_cell_MPa": {
+        "0.001": 57.72,
+        "0.0005": 57.72
+      },
+      "resolution_spread": 0.0,
+      "points": 15,
+      "points_not_solved": 0,
+      "peak_over_flow": {
+        "1.0": 0.577,
+        "3.0": 0.192
+      },
+      "flow_verdict": {
+        "1.0": "below",
+        "3.0": "below"
+      }
+    }
+  ],
+  "rigid_swing": [
+    {
+      "offset_um": 0,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        0.0,
+        3.426
+      ],
+      "ends_only_amplitude_MPa": 2.938,
+      "mouth_section_mean_amplitude_MPa": [
+        0.0,
+        1.812
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 0.529,
+      "amplitude_68_rigid_sharp_ends_MPa": 3.4
+    },
+    {
+      "offset_um": 10,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        1.37,
+        3.426
+      ],
+      "ends_only_amplitude_MPa": 2.938,
+      "mouth_section_mean_amplitude_MPa": [
+        0.614,
+        1.812
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 0.529,
+      "amplitude_68_rigid_sharp_ends_MPa": 3.4
+    },
+    {
+      "offset_um": 26,
+      "points": 21,
+      "root_mean_amplitude_MPa": [
+        3.695,
+        3.293
+      ],
+      "ends_only_amplitude_MPa": 2.938,
+      "mouth_section_mean_amplitude_MPa": [
+        1.485,
+        1.923
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 0.584,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 28,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        4.234,
+        3.029
+      ],
+      "ends_only_amplitude_MPa": 2.363,
+      "mouth_section_mean_amplitude_MPa": [
+        1.109,
+        2.422
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 0.8,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 30,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        4.773,
+        2.764
+      ],
+      "ends_only_amplitude_MPa": 1.768,
+      "mouth_section_mean_amplitude_MPa": [
+        0.732,
+        2.922
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.057,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 35,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        6.12,
+        2.102
+      ],
+      "ends_only_amplitude_MPa": 0.28,
+      "mouth_section_mean_amplitude_MPa": [
+        -0.209,
+        4.17
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.984,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 40,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        8.501,
+        2.474
+      ],
+      "ends_only_amplitude_MPa": 1.207,
+      "mouth_section_mean_amplitude_MPa": [
+        -1.15,
+        5.418
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 2.19,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 45,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        11.334,
+        3.299
+      ],
+      "ends_only_amplitude_MPa": 2.695,
+      "mouth_section_mean_amplitude_MPa": [
+        -2.091,
+        6.666
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 2.021,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 50,
+      "points": 21,
+      "root_mean_amplitude_MPa": [
+        14.079,
+        4.212
+      ],
+      "ends_only_amplitude_MPa": 4.145,
+      "mouth_section_mean_amplitude_MPa": [
+        -3.048,
+        7.898
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875,
+      "amplitude_68_rigid_sharp_ends_MPa": 4.15
+    },
+    {
+      "offset_um": 60,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        21.34,
+        4.268
+      ],
+      "ends_only_amplitude_MPa": 4.145,
+      "mouth_section_mean_amplitude_MPa": [
+        -7.322,
+        8.003
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 75,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        32.315,
+        4.268
+      ],
+      "ends_only_amplitude_MPa": 4.145,
+      "mouth_section_mean_amplitude_MPa": [
+        -13.89,
+        8.003
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875,
+      "amplitude_68_rigid_sharp_ends_MPa": null
+    },
+    {
+      "offset_um": 100,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        50.606,
+        4.268
+      ],
+      "ends_only_amplitude_MPa": 4.145,
+      "mouth_section_mean_amplitude_MPa": [
+        -24.836,
+        8.003
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875,
+      "amplitude_68_rigid_sharp_ends_MPa": 4.15
+    }
+  ],
+  "swing_by_entry_radius": [
+    {
+      "offset_um": 35,
+      "r_in_mm": 0.05,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        6.15,
+        2.072
+      ],
+      "ends_only_amplitude_MPa": 0.231,
+      "mouth_section_mean_amplitude_MPa": [
+        -0.21,
+        4.198
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 2.026
+    },
+    {
+      "offset_um": 35,
+      "r_in_mm": 0.5,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        6.062,
+        2.16
+      ],
+      "ends_only_amplitude_MPa": 0.375,
+      "mouth_section_mean_amplitude_MPa": [
+        -0.208,
+        4.114
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.905
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.05,
+      "points": 21,
+      "root_mean_amplitude_MPa": [
+        14.335,
+        4.203
+      ],
+      "ends_only_amplitude_MPa": 4.099,
+      "mouth_section_mean_amplitude_MPa": [
+        -3.138,
+        7.88
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875
+    },
+    {
+      "offset_um": 50,
+      "r_in_mm": 0.5,
+      "points": 18,
+      "root_mean_amplitude_MPa": [
+        13.785,
+        4.029
+      ],
+      "ends_only_amplitude_MPa": 3.944,
+      "mouth_section_mean_amplitude_MPa": [
+        -2.997,
+        7.808
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.938
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        51.393,
+        4.223
+      ],
+      "ends_only_amplitude_MPa": 4.099,
+      "mouth_section_mean_amplitude_MPa": [
+        -25.138,
+        7.917
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.875
+    },
+    {
+      "offset_um": 100,
+      "r_in_mm": 0.5,
+      "points": 15,
+      "root_mean_amplitude_MPa": [
+        49.08,
+        4.36
+      ],
+      "ends_only_amplitude_MPa": 4.24,
+      "mouth_section_mean_amplitude_MPa": [
+        -24.237,
+        8.179
+      ],
+      "exit_section_mean_amplitude_MPa": [
+        0.0,
+        0.954
+      ],
+      "mouth_over_root_amplitude": 1.876
+    }
+  ],
+  "reversing": [
+    {
+      "offset_um": 0,
+      "path": [
+        {
+          "drag_N": -0.5,
+          "sigma_signed_MPa": -2.794,
+          "rigid_same_edges_sigma_signed_MPa": -2.938,
+          "R_N": [
+            0.0,
+            0.49618
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.954,
+            "exit": -1.199
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 59.74,
+            "p_max_working_grid_MPa": 59.74,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.597,
+              "3.0": 0.199
+            },
+            "area_mm2": 0.04378,
+            "patch_s_mm": [
+              0.194,
+              0.528
+            ],
+            "give_um": 0.279
+          }
+        },
+        {
+          "drag_N": -0.25,
+          "sigma_signed_MPa": -3.155,
+          "rigid_same_edges_sigma_signed_MPa": -3.187,
+          "R_N": [
+            0.0,
+            0.24296
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.734,
+            "exit": -0.567
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 47.88,
+            "p_max_working_grid_MPa": 47.88,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.479,
+              "3.0": 0.16
+            },
+            "area_mm2": 0.02716,
+            "patch_s_mm": [
+              0.194,
+              0.45
+            ],
+            "give_um": 0.2
+          }
+        },
+        {
+          "drag_N": -0.1,
+          "sigma_signed_MPa": -3.346,
+          "rigid_same_edges_sigma_signed_MPa": -3.336,
+          "R_N": [
+            0.0,
+            0.09123
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.612,
+            "exit": -0.212
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 37.62,
+            "p_max_working_grid_MPa": 37.62,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.376,
+              "3.0": 0.125
+            },
+            "area_mm2": 0.01312,
+            "patch_s_mm": [
+              0.196,
+              0.358
+            ],
+            "give_um": 0.129
+          }
+        },
+        {
+          "drag_N": -0.05,
+          "sigma_signed_MPa": -3.399,
+          "rigid_same_edges_sigma_signed_MPa": -3.386,
+          "R_N": [
+            0.0,
+            0.04072
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.573,
+            "exit": -0.102
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 32.24,
+            "p_max_working_grid_MPa": 32.24,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.322,
+              "3.0": 0.107
+            },
+            "area_mm2": 0.00694,
+            "patch_s_mm": [
+              0.196,
+              0.302
+            ],
+            "give_um": 0.089
+          }
+        },
+        {
+          "drag_N": -0.011609,
+          "sigma_signed_MPa": -3.427,
+          "rigid_same_edges_sigma_signed_MPa": -3.424,
+          "R_N": [
+            0.0,
+            0.00201
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.543,
+            "exit": -0.022
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 10.6,
+            "p_max_working_grid_MPa": 10.6,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.106,
+              "3.0": 0.035
+            },
+            "area_mm2": 0.00054,
+            "patch_s_mm": [
+              0.198,
+              0.214
+            ],
+            "give_um": 0.018
+          }
+        },
+        {
+          "drag_N": -0.009609,
+          "sigma_signed_MPa": -3.426,
+          "rigid_same_edges_sigma_signed_MPa": -3.426,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": -1
+        },
+        {
+          "drag_N": -0.007609,
+          "sigma_signed_MPa": -2.713,
+          "rigid_same_edges_sigma_signed_MPa": -2.713,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": -1
+        },
+        {
+          "drag_N": 0.0,
+          "sigma_signed_MPa": 0.0,
+          "rigid_same_edges_sigma_signed_MPa": 0.0,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1
+        },
+        {
+          "drag_N": 0.007609,
+          "sigma_signed_MPa": 2.713,
+          "rigid_same_edges_sigma_signed_MPa": 2.713,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1
+        },
+        {
+          "drag_N": 0.009609,
+          "sigma_signed_MPa": 3.426,
+          "rigid_same_edges_sigma_signed_MPa": 3.426,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1
+        },
+        {
+          "drag_N": 0.011609,
+          "sigma_signed_MPa": 3.427,
+          "rigid_same_edges_sigma_signed_MPa": 3.424,
+          "R_N": [
+            0.0,
+            0.00201
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 1.543,
+            "exit": 0.022
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 10.6,
+            "p_max_working_grid_MPa": 10.6,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.106,
+              "3.0": 0.035
+            },
+            "area_mm2": 0.00054,
+            "patch_s_mm": [
+              0.198,
+              0.214
+            ],
+            "give_um": 0.018
+          }
+        },
+        {
+          "drag_N": 0.05,
+          "sigma_signed_MPa": 3.399,
+          "rigid_same_edges_sigma_signed_MPa": 3.386,
+          "R_N": [
+            0.0,
+            0.04072
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 1.573,
+            "exit": 0.102
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 32.24,
+            "p_max_working_grid_MPa": 32.24,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.322,
+              "3.0": 0.107
+            },
+            "area_mm2": 0.00694,
+            "patch_s_mm": [
+              0.196,
+              0.302
+            ],
+            "give_um": 0.089
+          }
+        },
+        {
+          "drag_N": 0.1,
+          "sigma_signed_MPa": 3.346,
+          "rigid_same_edges_sigma_signed_MPa": 3.336,
+          "R_N": [
+            0.0,
+            0.09123
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 1.612,
+            "exit": 0.212
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 37.62,
+            "p_max_working_grid_MPa": 37.62,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.376,
+              "3.0": 0.125
+            },
+            "area_mm2": 0.01312,
+            "patch_s_mm": [
+              0.196,
+              0.358
+            ],
+            "give_um": 0.129
+          }
+        },
+        {
+          "drag_N": 0.25,
+          "sigma_signed_MPa": 3.155,
+          "rigid_same_edges_sigma_signed_MPa": 3.187,
+          "R_N": [
+            0.0,
+            0.24296
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 1.734,
+            "exit": 0.567
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 47.88,
+            "p_max_working_grid_MPa": 47.88,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.479,
+              "3.0": 0.16
+            },
+            "area_mm2": 0.02716,
+            "patch_s_mm": [
+              0.194,
+              0.45
+            ],
+            "give_um": 0.2
+          }
+        },
+        {
+          "drag_N": 0.5,
+          "sigma_signed_MPa": 2.794,
+          "rigid_same_edges_sigma_signed_MPa": 2.938,
+          "R_N": [
+            0.0,
+            0.49618
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 1.954,
+            "exit": 1.199
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 59.74,
+            "p_max_working_grid_MPa": 59.74,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.597,
+              "3.0": 0.199
+            },
+            "area_mm2": 0.04378,
+            "patch_s_mm": [
+              0.194,
+              0.528
+            ],
+            "give_um": 0.279
+          }
+        }
+      ],
+      "points": 15,
+      "not_solved": [],
+      "sigma_max_MPa": 3.427,
+      "sigma_min_MPa": -3.427,
+      "mean_MPa": 0.0,
+      "amplitude_MPa": 3.427,
+      "rigid_same_edges_amplitude_MPa": 3.426,
+      "mouth_section_mean_amplitude_MPa": [
+        0.0,
+        1.954
+      ],
+      "rigid_mouth_section_amplitude_MPa": 1.812
+    },
+    {
+      "offset_um": 10,
+      "path": [
+        {
+          "drag_N": -0.5,
+          "sigma_signed_MPa": -1.34,
+          "rigid_same_edges_sigma_signed_MPa": -1.564,
+          "R_N": [
+            0.0,
+            0.5007
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.377,
+            "exit": -1.29
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 53.98,
+            "p_max_working_grid_MPa": 53.98,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.54,
+              "3.0": 0.18
+            },
+            "area_mm2": 0.05136,
+            "patch_s_mm": [
+              0.194,
+              0.622
+            ],
+            "give_um": 0.241
+          }
+        },
+        {
+          "drag_N": -0.25,
+          "sigma_signed_MPa": -1.741,
+          "rigid_same_edges_sigma_signed_MPa": -1.813,
+          "R_N": [
+            0.0,
+            0.24715
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.136,
+            "exit": -0.609
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 43.12,
+            "p_max_working_grid_MPa": 43.12,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.431,
+              "3.0": 0.144
+            },
+            "area_mm2": 0.03298,
+            "patch_s_mm": [
+              0.194,
+              0.538
+            ],
+            "give_um": 0.169
+          }
+        },
+        {
+          "drag_N": -0.1,
+          "sigma_signed_MPa": -1.957,
+          "rigid_same_edges_sigma_signed_MPa": -1.962,
+          "R_N": [
+            0.0,
+            0.09521
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -1.002,
+            "exit": -0.225
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 34.61,
+            "p_max_working_grid_MPa": 34.61,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.346,
+              "3.0": 0.115
+            },
+            "area_mm2": 0.01694,
+            "patch_s_mm": [
+              0.196,
+              0.428
+            ],
+            "give_um": 0.108
+          }
+        },
+        {
+          "drag_N": -0.05,
+          "sigma_signed_MPa": -2.019,
+          "rigid_same_edges_sigma_signed_MPa": -2.011,
+          "R_N": [
+            0.0,
+            0.04464
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -0.96,
+            "exit": -0.107
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 30.21,
+            "p_max_working_grid_MPa": 30.21,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.302,
+              "3.0": 0.101
+            },
+            "area_mm2": 0.0096,
+            "patch_s_mm": [
+              0.196,
+              0.358
+            ],
+            "give_um": 0.077
+          }
+        },
+        {
+          "drag_N": -0.007765,
+          "sigma_signed_MPa": -2.056,
+          "rigid_same_edges_sigma_signed_MPa": -2.053,
+          "R_N": [
+            0.0,
+            0.00201
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -0.927,
+            "exit": -0.015
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 7.96,
+            "p_max_working_grid_MPa": 7.96,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.08,
+              "3.0": 0.027
+            },
+            "area_mm2": 0.00072,
+            "patch_s_mm": [
+              0.198,
+              0.224
+            ],
+            "give_um": 0.016
+          }
+        },
+        {
+          "drag_N": -0.005765,
+          "sigma_signed_MPa": -2.055,
+          "rigid_same_edges_sigma_signed_MPa": -2.055,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": -1
+        },
+        {
+          "drag_N": -0.003765,
+          "sigma_signed_MPa": -1.342,
+          "rigid_same_edges_sigma_signed_MPa": -1.342,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": -1
+        },
+        {
+          "drag_N": 0.0,
+          "sigma_signed_MPa": 0.0,
+          "rigid_same_edges_sigma_signed_MPa": 0.0,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": -1
+        },
+        {
+          "drag_N": 0.011453,
+          "sigma_signed_MPa": 4.083,
+          "rigid_same_edges_sigma_signed_MPa": 4.083,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1
+        },
+        {
+          "drag_N": 0.015453,
+          "sigma_signed_MPa": 4.797,
+          "rigid_same_edges_sigma_signed_MPa": 4.794,
+          "R_N": [
+            0.0,
+            0.00201
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 2.159,
+            "exit": 0.03
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 12.67,
+            "p_max_working_grid_MPa": 12.67,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.127,
+              "3.0": 0.042
+            },
+            "area_mm2": 0.0004,
+            "patch_s_mm": [
+              0.198,
+              0.21
+            ],
+            "give_um": 0.02
+          }
+        },
+        {
+          "drag_N": 0.05,
+          "sigma_signed_MPa": 4.776,
+          "rigid_same_edges_sigma_signed_MPa": 4.76,
+          "R_N": [
+            0.0,
+            0.03683
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 2.186,
+            "exit": 0.1
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 33.51,
+            "p_max_working_grid_MPa": 33.51,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.335,
+              "3.0": 0.112
+            },
+            "area_mm2": 0.0053,
+            "patch_s_mm": [
+              0.196,
+              0.272
+            ],
+            "give_um": 0.095
+          }
+        },
+        {
+          "drag_N": 0.1,
+          "sigma_signed_MPa": 4.728,
+          "rigid_same_edges_sigma_signed_MPa": 4.71,
+          "R_N": [
+            0.0,
+            0.0873
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 2.224,
+            "exit": 0.206
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 39.8,
+            "p_max_working_grid_MPa": 39.8,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.398,
+              "3.0": 0.133
+            },
+            "area_mm2": 0.01072,
+            "patch_s_mm": [
+              0.196,
+              0.32
+            ],
+            "give_um": 0.143
+          }
+        },
+        {
+          "drag_N": 0.25,
+          "sigma_signed_MPa": 4.553,
+          "rigid_same_edges_sigma_signed_MPa": 4.561,
+          "R_N": [
+            0.0,
+            0.23891
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 2.339,
+            "exit": 0.543
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 51.59,
+            "p_max_working_grid_MPa": 51.59,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.516,
+              "3.0": 0.172
+            },
+            "area_mm2": 0.02338,
+            "patch_s_mm": [
+              0.194,
+              0.4
+            ],
+            "give_um": 0.224
+          }
+        },
+        {
+          "drag_N": 0.5,
+          "sigma_signed_MPa": 4.218,
+          "rigid_same_edges_sigma_signed_MPa": 4.312,
+          "R_N": [
+            0.0,
+            0.49191
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 2.546,
+            "exit": 1.144
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 63.42,
+            "p_max_working_grid_MPa": 63.42,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.634,
+              "3.0": 0.211
+            },
+            "area_mm2": 0.03874,
+            "patch_s_mm": [
+              0.192,
+              0.47
+            ],
+            "give_um": 0.311
+          }
+        }
+      ],
+      "points": 14,
+      "not_solved": [
+        {
+          "drag_N": 0.013453,
+          "not_solved": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+        }
+      ],
+      "sigma_max_MPa": 4.797,
+      "sigma_min_MPa": -2.056,
+      "mean_MPa": 1.37,
+      "amplitude_MPa": 3.426,
+      "rigid_same_edges_amplitude_MPa": 3.426,
+      "mouth_section_mean_amplitude_MPa": [
+        0.584,
+        1.962
+      ],
+      "rigid_mouth_section_amplitude_MPa": 1.812
+    },
+    {
+      "offset_um": 50,
+      "path": [
+        {
+          "drag_N": -0.5,
+          "sigma_signed_MPa": 17.858,
+          "rigid_same_edges_sigma_signed_MPa": 18.174,
+          "R_N": [
+            0.21323,
+            0.443
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.443,
+            "exit": -1.37
+          },
+          "mouth": {
+            "p_max_MPa": 45.7,
+            "p_max_working_grid_MPa": 45.7,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.457,
+              "3.0": 0.152
+            },
+            "area_mm2": 0.02538,
+            "patch_s_mm": [
+              0.194,
+              0.446
+            ],
+            "give_um": 0.185
+          },
+          "exit": {
+            "p_max_MPa": 48.6,
+            "p_max_working_grid_MPa": 48.6,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.486,
+              "3.0": 0.162
+            },
+            "area_mm2": 0.05234,
+            "patch_s_mm": [
+              0.194,
+              0.676
+            ],
+            "give_um": 0.205
+          }
+        },
+        {
+          "drag_N": -0.25,
+          "sigma_signed_MPa": 17.955,
+          "rigid_same_edges_sigma_signed_MPa": 18.242,
+          "R_N": [
+            0.22144,
+            0.18637
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.628,
+            "exit": -0.635
+          },
+          "mouth": {
+            "p_max_MPa": 45.97,
+            "p_max_working_grid_MPa": 45.97,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.46,
+              "3.0": 0.153
+            },
+            "area_mm2": 0.02626,
+            "patch_s_mm": [
+              0.194,
+              0.454
+            ],
+            "give_um": 0.187
+          },
+          "exit": {
+            "p_max_MPa": 38.44,
+            "p_max_working_grid_MPa": 38.44,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.384,
+              "3.0": 0.128
+            },
+            "area_mm2": 0.02946,
+            "patch_s_mm": [
+              0.196,
+              0.546
+            ],
+            "give_um": 0.136
+          }
+        },
+        {
+          "drag_N": -0.1,
+          "sigma_signed_MPa": 17.994,
+          "rigid_same_edges_sigma_signed_MPa": 18.283,
+          "R_N": [
+            0.22534,
+            0.03311
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.703,
+            "exit": -0.222
+          },
+          "mouth": {
+            "p_max_MPa": 46.1,
+            "p_max_working_grid_MPa": 46.1,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.461,
+              "3.0": 0.154
+            },
+            "area_mm2": 0.02664,
+            "patch_s_mm": [
+              0.194,
+              0.456
+            ],
+            "give_um": 0.188
+          },
+          "exit": {
+            "p_max_MPa": 27.45,
+            "p_max_working_grid_MPa": 27.45,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.274,
+              "3.0": 0.091
+            },
+            "area_mm2": 0.00818,
+            "patch_s_mm": [
+              0.198,
+              0.354
+            ],
+            "give_um": 0.062
+          }
+        },
+        {
+          "drag_N": -0.070284,
+          "sigma_signed_MPa": 17.992,
+          "rigid_same_edges_sigma_signed_MPa": 18.291,
+          "R_N": [
+            0.22572,
+            0.00298
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.7,
+            "exit": -0.139
+          },
+          "mouth": {
+            "p_max_MPa": 46.12,
+            "p_max_working_grid_MPa": 46.12,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.461,
+              "3.0": 0.154
+            },
+            "area_mm2": 0.02668,
+            "patch_s_mm": [
+              0.194,
+              0.456
+            ],
+            "give_um": 0.188
+          },
+          "exit": {
+            "p_max_MPa": 8.88,
+            "p_max_working_grid_MPa": 8.88,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.089,
+              "3.0": 0.03
+            },
+            "area_mm2": 0.00114,
+            "patch_s_mm": [
+              0.198,
+              0.238
+            ],
+            "give_um": 0.019
+          }
+        },
+        {
+          "drag_N": -0.068284,
+          "sigma_signed_MPa": 17.99,
+          "rigid_same_edges_sigma_signed_MPa": 18.291,
+          "R_N": [
+            0.22571,
+            0.00098
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.697,
+            "exit": -0.133
+          },
+          "mouth": {
+            "p_max_MPa": 46.12,
+            "p_max_working_grid_MPa": 46.12,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.461,
+              "3.0": 0.154
+            },
+            "area_mm2": 0.02666,
+            "patch_s_mm": [
+              0.194,
+              0.456
+            ],
+            "give_um": 0.188
+          },
+          "exit": {
+            "p_max_MPa": 5.35,
+            "p_max_working_grid_MPa": 5.35,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.054,
+              "3.0": 0.018
+            },
+            "area_mm2": 0.00046,
+            "patch_s_mm": [
+              0.198,
+              0.218
+            ],
+            "give_um": 0.01
+          }
+        },
+        {
+          "drag_N": -0.066284,
+          "sigma_signed_MPa": 17.904,
+          "rigid_same_edges_sigma_signed_MPa": 18.12,
+          "R_N": [
+            0.22328,
+            0.0
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.533,
+            "exit": -0.126
+          },
+          "mouth": {
+            "p_max_MPa": 46.15,
+            "p_max_working_grid_MPa": 46.15,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.461,
+              "3.0": 0.154
+            },
+            "area_mm2": 0.0263,
+            "patch_s_mm": [
+              0.194,
+              0.452
+            ],
+            "give_um": 0.188
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.05,
+          "sigma_signed_MPa": 16.54,
+          "rigid_same_edges_sigma_signed_MPa": 16.728,
+          "R_N": [
+            0.1849,
+            0.0
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -7.958,
+            "exit": -0.095
+          },
+          "mouth": {
+            "p_max_MPa": 46.08,
+            "p_max_working_grid_MPa": 46.08,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.461,
+              "3.0": 0.154
+            },
+            "area_mm2": 0.0209,
+            "patch_s_mm": [
+              0.194,
+              0.4
+            ],
+            "give_um": 0.187
+          },
+          "exit": null
+        },
+        {
+          "drag_N": 0.0,
+          "sigma_signed_MPa": 12.349,
+          "rigid_same_edges_sigma_signed_MPa": 12.453,
+          "R_N": [
+            0.06656,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 0.005,
+            "exit": 0.0
+          },
+          "mouth": {
+            "p_max_MPa": 39.84,
+            "p_max_working_grid_MPa": 39.84,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.398,
+              "3.0": 0.133
+            },
+            "area_mm2": 0.00724,
+            "patch_s_mm": [
+              0.196,
+              0.28
+            ],
+            "give_um": 0.14
+          },
+          "exit": null
+        },
+        {
+          "drag_N": 0.026175,
+          "sigma_signed_MPa": 10.193,
+          "rigid_same_edges_sigma_signed_MPa": 10.216,
+          "R_N": [
+            0.00465,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.196,
+            "exit": 0.05
+          },
+          "mouth": {
+            "p_max_MPa": 23.29,
+            "p_max_working_grid_MPa": 23.29,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.233,
+              "3.0": 0.078
+            },
+            "area_mm2": 0.00054,
+            "patch_s_mm": [
+              0.198,
+              0.21
+            ],
+            "give_um": 0.036
+          },
+          "exit": null
+        },
+        {
+          "drag_N": 0.026827,
+          "sigma_signed_MPa": 10.142,
+          "rigid_same_edges_sigma_signed_MPa": 10.16,
+          "R_N": [
+            0.00312,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.3,
+            "exit": 0.051
+          },
+          "mouth": {
+            "p_max_MPa": 19.66,
+            "p_max_working_grid_MPa": 19.66,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.197,
+              "3.0": 0.066
+            },
+            "area_mm2": 0.00038,
+            "patch_s_mm": [
+              0.198,
+              0.208
+            ],
+            "give_um": 0.028
+          },
+          "exit": null
+        },
+        {
+          "drag_N": 0.028175,
+          "sigma_signed_MPa": 10.045,
+          "rigid_same_edges_sigma_signed_MPa": 10.045,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1
+        },
+        {
+          "drag_N": 0.028827,
+          "sigma_signed_MPa": 10.277,
+          "rigid_same_edges_sigma_signed_MPa": 10.277,
+          "R_N": [
+            0.0,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.621,
+            "exit": 0.055
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 0.01,
+            "p_max_working_grid_MPa": 0.01,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.0,
+              "3.0": 0.0
+            },
+            "area_mm2": 2e-05,
+            "patch_s_mm": [
+              0.198,
+              0.2
+            ],
+            "give_um": 0.0
+          }
+        },
+        {
+          "drag_N": 0.030175,
+          "sigma_signed_MPa": 10.279,
+          "rigid_same_edges_sigma_signed_MPa": 10.276,
+          "R_N": [
+            0.0,
+            0.00135
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.623,
+            "exit": 0.057
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 15.5,
+            "p_max_working_grid_MPa": 15.5,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.155,
+              "3.0": 0.052
+            },
+            "area_mm2": 0.00016,
+            "patch_s_mm": [
+              0.198,
+              0.202
+            ],
+            "give_um": 0.017
+          }
+        },
+        {
+          "drag_N": 0.030827,
+          "sigma_signed_MPa": 10.279,
+          "rigid_same_edges_sigma_signed_MPa": 10.275,
+          "R_N": [
+            0.0,
+            0.00201
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.624,
+            "exit": 0.059
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 18.53,
+            "p_max_working_grid_MPa": 18.53,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.185,
+              "3.0": 0.062
+            },
+            "area_mm2": 0.00022,
+            "patch_s_mm": [
+              0.198,
+              0.204
+            ],
+            "give_um": 0.023
+          }
+        },
+        {
+          "drag_N": 0.05,
+          "sigma_signed_MPa": 10.272,
+          "rigid_same_edges_sigma_signed_MPa": 10.256,
+          "R_N": [
+            0.0,
+            0.02131
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.64,
+            "exit": 0.096
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 34.44,
+            "p_max_working_grid_MPa": 34.44,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.344,
+              "3.0": 0.115
+            },
+            "area_mm2": 0.00194,
+            "patch_s_mm": [
+              0.196,
+              0.222
+            ],
+            "give_um": 0.088
+          }
+        },
+        {
+          "drag_N": 0.1,
+          "sigma_signed_MPa": 10.235,
+          "rigid_same_edges_sigma_signed_MPa": 10.206,
+          "R_N": [
+            0.0,
+            0.07172
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.677,
+            "exit": 0.196
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 45.11,
+            "p_max_working_grid_MPa": 45.11,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.451,
+              "3.0": 0.15
+            },
+            "area_mm2": 0.00568,
+            "patch_s_mm": [
+              0.194,
+              0.252
+            ],
+            "give_um": 0.167
+          }
+        },
+        {
+          "drag_N": 0.25,
+          "sigma_signed_MPa": 10.092,
+          "rigid_same_edges_sigma_signed_MPa": 10.057,
+          "R_N": [
+            0.0,
+            0.2231
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.782,
+            "exit": 0.505
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 60.94,
+            "p_max_working_grid_MPa": 60.94,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.609,
+              "3.0": 0.203
+            },
+            "area_mm2": 0.01496,
+            "patch_s_mm": [
+              0.192,
+              0.306
+            ],
+            "give_um": 0.286
+          }
+        },
+        {
+          "drag_N": 0.439602,
+          "sigma_signed_MPa": 9.883,
+          "rigid_same_edges_sigma_signed_MPa": 9.869,
+          "R_N": [
+            0.0,
+            0.41462
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.919,
+            "exit": 0.912
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 72.83,
+            "p_max_working_grid_MPa": 72.83,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.728,
+              "3.0": 0.243
+            },
+            "area_mm2": 0.02432,
+            "patch_s_mm": [
+              0.192,
+              0.35
+            ],
+            "give_um": 0.377
+          }
+        },
+        {
+          "drag_N": 0.441602,
+          "sigma_signed_MPa": 9.881,
+          "rigid_same_edges_sigma_signed_MPa": 9.867,
+          "R_N": [
+            0.0,
+            0.41664
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.921,
+            "exit": 0.916
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 72.95,
+            "p_max_working_grid_MPa": 72.95,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.73,
+              "3.0": 0.243
+            },
+            "area_mm2": 0.02446,
+            "patch_s_mm": [
+              0.192,
+              0.35
+            ],
+            "give_um": 0.378
+          }
+        },
+        {
+          "drag_N": 0.443602,
+          "sigma_signed_MPa": 9.879,
+          "rigid_same_edges_sigma_signed_MPa": 9.867,
+          "R_N": [
+            0.0,
+            0.41866
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.922,
+            "exit": 0.921
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 73.07,
+            "p_max_working_grid_MPa": 73.07,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.731,
+              "3.0": 0.244
+            },
+            "area_mm2": 0.0246,
+            "patch_s_mm": [
+              0.192,
+              0.35
+            ],
+            "give_um": 0.378
+          }
+        },
+        {
+          "drag_N": 0.5,
+          "sigma_signed_MPa": 9.813,
+          "rigid_same_edges_sigma_signed_MPa": 9.883,
+          "R_N": [
+            0.0,
+            0.47565
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.964,
+            "exit": 1.045
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 76.28,
+            "p_max_working_grid_MPa": 76.28,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.763,
+              "3.0": 0.254
+            },
+            "area_mm2": 0.027,
+            "patch_s_mm": [
+              0.192,
+              0.36
+            ],
+            "give_um": 0.4
+          }
+        }
+      ],
+      "points": 21,
+      "not_solved": [],
+      "sigma_max_MPa": 17.994,
+      "sigma_min_MPa": 9.813,
+      "mean_MPa": 13.904,
+      "amplitude_MPa": 4.09,
+      "rigid_same_edges_amplitude_MPa": 4.212,
+      "mouth_section_mean_amplitude_MPa": [
+        -2.869,
+        7.833
+      ],
+      "rigid_mouth_section_amplitude_MPa": 7.898
+    },
+    {
+      "offset_um": 75,
+      "path": [
+        {
+          "drag_N": -0.5,
+          "sigma_signed_MPa": 35.987,
+          "rigid_same_edges_sigma_signed_MPa": 36.484,
+          "R_N": [
+            0.44429,
+            0.37222
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -21.315,
+            "exit": -1.214
+          },
+          "mouth": {
+            "p_max_MPa": 65.35,
+            "p_max_working_grid_MPa": 65.35,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.653,
+              "3.0": 0.218
+            },
+            "area_mm2": 0.03216,
+            "patch_s_mm": [
+              0.192,
+              0.418
+            ],
+            "give_um": 0.328
+          },
+          "exit": {
+            "p_max_MPa": 53.81,
+            "p_max_working_grid_MPa": 53.81,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.538,
+              "3.0": 0.179
+            },
+            "area_mm2": 0.03692,
+            "patch_s_mm": [
+              0.194,
+              0.504
+            ],
+            "give_um": 0.24
+          }
+        },
+        {
+          "drag_N": -0.25,
+          "sigma_signed_MPa": 36.056,
+          "rigid_same_edges_sigma_signed_MPa": 36.552,
+          "R_N": [
+            0.45072,
+            0.11692
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -21.447,
+            "exit": -0.558
+          },
+          "mouth": {
+            "p_max_MPa": 65.49,
+            "p_max_working_grid_MPa": 65.49,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.655,
+              "3.0": 0.218
+            },
+            "area_mm2": 0.03262,
+            "patch_s_mm": [
+              0.192,
+              0.42
+            ],
+            "give_um": 0.329
+          },
+          "exit": {
+            "p_max_MPa": 39.67,
+            "p_max_working_grid_MPa": 39.67,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.397,
+              "3.0": 0.132
+            },
+            "area_mm2": 0.01588,
+            "patch_s_mm": [
+              0.196,
+              0.38
+            ],
+            "give_um": 0.144
+          }
+        },
+        {
+          "drag_N": -0.138569,
+          "sigma_signed_MPa": 36.061,
+          "rigid_same_edges_sigma_signed_MPa": 36.582,
+          "R_N": [
+            0.45251,
+            0.00378
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -21.456,
+            "exit": -0.269
+          },
+          "mouth": {
+            "p_max_MPa": 65.55,
+            "p_max_working_grid_MPa": 65.55,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.655,
+              "3.0": 0.218
+            },
+            "area_mm2": 0.03274,
+            "patch_s_mm": [
+              0.192,
+              0.42
+            ],
+            "give_um": 0.33
+          },
+          "exit": {
+            "p_max_MPa": 14.41,
+            "p_max_working_grid_MPa": 14.41,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.144,
+              "3.0": 0.048
+            },
+            "area_mm2": 0.0009,
+            "patch_s_mm": [
+              0.198,
+              0.222
+            ],
+            "give_um": 0.026
+          }
+        },
+        {
+          "drag_N": -0.136569,
+          "sigma_signed_MPa": 36.059,
+          "rigid_same_edges_sigma_signed_MPa": 36.583,
+          "R_N": [
+            0.45249,
+            0.00177
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -21.453,
+            "exit": -0.263
+          },
+          "mouth": {
+            "p_max_MPa": 65.55,
+            "p_max_working_grid_MPa": 65.55,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.655,
+              "3.0": 0.218
+            },
+            "area_mm2": 0.03274,
+            "patch_s_mm": [
+              0.192,
+              0.42
+            ],
+            "give_um": 0.33
+          },
+          "exit": {
+            "p_max_MPa": 10.05,
+            "p_max_working_grid_MPa": 10.05,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.1,
+              "3.0": 0.033
+            },
+            "area_mm2": 0.00046,
+            "patch_s_mm": [
+              0.198,
+              0.212
+            ],
+            "give_um": 0.017
+          }
+        },
+        {
+          "drag_N": -0.134569,
+          "sigma_signed_MPa": 36.039,
+          "rigid_same_edges_sigma_signed_MPa": 36.412,
+          "R_N": [
+            0.45192,
+            0.0
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -21.414,
+            "exit": -0.257
+          },
+          "mouth": {
+            "p_max_MPa": 65.55,
+            "p_max_working_grid_MPa": 65.55,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.656,
+              "3.0": 0.219
+            },
+            "area_mm2": 0.03266,
+            "patch_s_mm": [
+              0.192,
+              0.42
+            ],
+            "give_um": 0.33
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.1,
+          "sigma_signed_MPa": 33.137,
+          "rigid_same_edges_sigma_signed_MPa": 33.456,
+          "R_N": [
+            0.3703,
+            0.0
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -15.937,
+            "exit": -0.191
+          },
+          "mouth": {
+            "p_max_MPa": 65.47,
+            "p_max_working_grid_MPa": 65.47,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.655,
+              "3.0": 0.218
+            },
+            "area_mm2": 0.02544,
+            "patch_s_mm": [
+              0.192,
+              0.37
+            ],
+            "give_um": 0.329
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.05,
+          "sigma_signed_MPa": 28.93,
+          "rigid_same_edges_sigma_signed_MPa": 29.182,
+          "R_N": [
+            0.25191,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -7.979,
+            "exit": -0.095
+          },
+          "mouth": {
+            "p_max_MPa": 62.86,
+            "p_max_working_grid_MPa": 62.86,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.629,
+              "3.0": 0.21
+            },
+            "area_mm2": 0.0163,
+            "patch_s_mm": [
+              0.192,
+              0.312
+            ],
+            "give_um": 0.304
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.038722,
+          "sigma_signed_MPa": 27.982,
+          "rigid_same_edges_sigma_signed_MPa": 28.217,
+          "R_N": [
+            0.22517,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -6.18,
+            "exit": -0.074
+          },
+          "mouth": {
+            "p_max_MPa": 61.9,
+            "p_max_working_grid_MPa": 61.9,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.619,
+              "3.0": 0.206
+            },
+            "area_mm2": 0.01444,
+            "patch_s_mm": [
+              0.192,
+              0.3
+            ],
+            "give_um": 0.294
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.036722,
+          "sigma_signed_MPa": 27.813,
+          "rigid_same_edges_sigma_signed_MPa": 28.046,
+          "R_N": [
+            0.22043,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.861,
+            "exit": -0.07
+          },
+          "mouth": {
+            "p_max_MPa": 61.71,
+            "p_max_working_grid_MPa": 61.71,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.617,
+              "3.0": 0.206
+            },
+            "area_mm2": 0.01412,
+            "patch_s_mm": [
+              0.192,
+              0.298
+            ],
+            "give_um": 0.292
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.034722,
+          "sigma_signed_MPa": 27.654,
+          "rigid_same_edges_sigma_signed_MPa": 28.047,
+          "R_N": [
+            0.21593,
+            0.0001
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.558,
+            "exit": -0.066
+          },
+          "mouth": {
+            "p_max_MPa": 61.52,
+            "p_max_working_grid_MPa": 61.52,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.615,
+              "3.0": 0.205
+            },
+            "area_mm2": 0.01384,
+            "patch_s_mm": [
+              0.192,
+              0.296
+            ],
+            "give_um": 0.29
+          },
+          "exit": {
+            "p_max_MPa": 3.74,
+            "p_max_working_grid_MPa": 3.74,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.037,
+              "3.0": 0.012
+            },
+            "area_mm2": 4e-05,
+            "patch_s_mm": [
+              0.198,
+              0.2
+            ],
+            "give_um": 0.003
+          }
+        },
+        {
+          "drag_N": 0.0,
+          "sigma_signed_MPa": 27.638,
+          "rigid_same_edges_sigma_signed_MPa": 28.056,
+          "R_N": [
+            0.21592,
+            0.03507
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.528,
+            "exit": -0.001
+          },
+          "mouth": {
+            "p_max_MPa": 61.53,
+            "p_max_working_grid_MPa": 61.53,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.615,
+              "3.0": 0.205
+            },
+            "area_mm2": 0.01384,
+            "patch_s_mm": [
+              0.192,
+              0.296
+            ],
+            "give_um": 0.29
+          },
+          "exit": {
+            "p_max_MPa": 37.01,
+            "p_max_working_grid_MPa": 37.01,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.37,
+              "3.0": 0.123
+            },
+            "area_mm2": 0.00336,
+            "patch_s_mm": [
+              0.196,
+              0.238
+            ],
+            "give_um": 0.111
+          }
+        },
+        {
+          "drag_N": 0.05,
+          "sigma_signed_MPa": 27.636,
+          "rigid_same_edges_sigma_signed_MPa": 28.07,
+          "R_N": [
+            0.21652,
+            0.08571
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.525,
+            "exit": 0.096
+          },
+          "mouth": {
+            "p_max_MPa": 61.57,
+            "p_max_working_grid_MPa": 61.57,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.616,
+              "3.0": 0.205
+            },
+            "area_mm2": 0.0139,
+            "patch_s_mm": [
+              0.192,
+              0.298
+            ],
+            "give_um": 0.291
+          },
+          "exit": {
+            "p_max_MPa": 45.45,
+            "p_max_working_grid_MPa": 45.45,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.455,
+              "3.0": 0.152
+            },
+            "area_mm2": 0.00738,
+            "patch_s_mm": [
+              0.194,
+              0.27
+            ],
+            "give_um": 0.174
+          }
+        },
+        {
+          "drag_N": 0.1,
+          "sigma_signed_MPa": 27.639,
+          "rigid_same_edges_sigma_signed_MPa": 28.084,
+          "R_N": [
+            0.21731,
+            0.13643
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.532,
+            "exit": 0.196
+          },
+          "mouth": {
+            "p_max_MPa": 61.61,
+            "p_max_working_grid_MPa": 61.61,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.616,
+              "3.0": 0.205
+            },
+            "area_mm2": 0.01394,
+            "patch_s_mm": [
+              0.192,
+              0.298
+            ],
+            "give_um": 0.291
+          },
+          "exit": {
+            "p_max_MPa": 51.32,
+            "p_max_working_grid_MPa": 51.32,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.513,
+              "3.0": 0.171
+            },
+            "area_mm2": 0.01104,
+            "patch_s_mm": [
+              0.194,
+              0.292
+            ],
+            "give_um": 0.216
+          }
+        },
+        {
+          "drag_N": 0.25,
+          "sigma_signed_MPa": 27.662,
+          "rigid_same_edges_sigma_signed_MPa": 28.125,
+          "R_N": [
+            0.22015,
+            0.2889
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.576,
+            "exit": 0.51
+          },
+          "mouth": {
+            "p_max_MPa": 61.78,
+            "p_max_working_grid_MPa": 61.78,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.618,
+              "3.0": 0.206
+            },
+            "area_mm2": 0.01406,
+            "patch_s_mm": [
+              0.192,
+              0.298
+            ],
+            "give_um": 0.293
+          },
+          "exit": {
+            "p_max_MPa": 62.53,
+            "p_max_working_grid_MPa": 62.53,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.625,
+              "3.0": 0.208
+            },
+            "area_mm2": 0.0202,
+            "patch_s_mm": [
+              0.192,
+              0.342
+            ],
+            "give_um": 0.303
+          }
+        },
+        {
+          "drag_N": 0.5,
+          "sigma_signed_MPa": 27.718,
+          "rigid_same_edges_sigma_signed_MPa": 28.193,
+          "R_N": [
+            0.22571,
+            0.54352
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -5.686,
+            "exit": 1.062
+          },
+          "mouth": {
+            "p_max_MPa": 62.08,
+            "p_max_working_grid_MPa": 62.08,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.621,
+              "3.0": 0.207
+            },
+            "area_mm2": 0.0144,
+            "patch_s_mm": [
+              0.192,
+              0.3
+            ],
+            "give_um": 0.296
+          },
+          "exit": {
+            "p_max_MPa": 75.75,
+            "p_max_working_grid_MPa": 75.75,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.757,
+              "3.0": 0.252
+            },
+            "area_mm2": 0.03246,
+            "patch_s_mm": [
+              0.192,
+              0.394
+            ],
+            "give_um": 0.398
+          }
+        }
+      ],
+      "points": 15,
+      "not_solved": [],
+      "sigma_max_MPa": 36.061,
+      "sigma_min_MPa": 27.636,
+      "mean_MPa": 31.849,
+      "amplitude_MPa": 4.213,
+      "rigid_same_edges_amplitude_MPa": 4.268,
+      "mouth_section_mean_amplitude_MPa": [
+        -13.491,
+        7.965
+      ],
+      "rigid_mouth_section_amplitude_MPa": 8.003
+    },
+    {
+      "offset_um": 100,
+      "path": [
+        {
+          "drag_N": -0.5,
+          "sigma_signed_MPa": 54.121,
+          "rigid_same_edges_sigma_signed_MPa": 54.794,
+          "R_N": [
+            0.67412,
+            0.30258
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -32.161,
+            "exit": -1.133
+          },
+          "mouth": {
+            "p_max_MPa": 83.17,
+            "p_max_working_grid_MPa": 83.17,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.832,
+              "3.0": 0.277
+            },
+            "area_mm2": 0.03606,
+            "patch_s_mm": [
+              0.19,
+              0.398
+            ],
+            "give_um": 0.456
+          },
+          "exit": {
+            "p_max_MPa": 56.07,
+            "p_max_working_grid_MPa": 56.07,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.561,
+              "3.0": 0.187
+            },
+            "area_mm2": 0.02698,
+            "patch_s_mm": [
+              0.194,
+              0.414
+            ],
+            "give_um": 0.254
+          }
+        },
+        {
+          "drag_N": -0.25,
+          "sigma_signed_MPa": 54.165,
+          "rigid_same_edges_sigma_signed_MPa": 54.862,
+          "R_N": [
+            0.67931,
+            0.04813
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -32.247,
+            "exit": -0.511
+          },
+          "mouth": {
+            "p_max_MPa": 83.28,
+            "p_max_working_grid_MPa": 83.28,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.833,
+              "3.0": 0.278
+            },
+            "area_mm2": 0.03638,
+            "patch_s_mm": [
+              0.19,
+              0.4
+            ],
+            "give_um": 0.457
+          },
+          "exit": {
+            "p_max_MPa": 35.75,
+            "p_max_working_grid_MPa": 35.75,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.358,
+              "3.0": 0.119
+            },
+            "area_mm2": 0.0063,
+            "patch_s_mm": [
+              0.196,
+              0.278
+            ],
+            "give_um": 0.111
+          }
+        },
+        {
+          "drag_N": -0.206853,
+          "sigma_signed_MPa": 54.158,
+          "rigid_same_edges_sigma_signed_MPa": 54.874,
+          "R_N": [
+            0.67967,
+            0.00451
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -32.233,
+            "exit": -0.399
+          },
+          "mouth": {
+            "p_max_MPa": 83.3,
+            "p_max_working_grid_MPa": 83.3,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.833,
+              "3.0": 0.278
+            },
+            "area_mm2": 0.03638,
+            "patch_s_mm": [
+              0.19,
+              0.4
+            ],
+            "give_um": 0.457
+          },
+          "exit": {
+            "p_max_MPa": 19.08,
+            "p_max_working_grid_MPa": 19.08,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.191,
+              "3.0": 0.064
+            },
+            "area_mm2": 0.00074,
+            "patch_s_mm": [
+              0.198,
+              0.216
+            ],
+            "give_um": 0.032
+          }
+        },
+        {
+          "drag_N": -0.204853,
+          "sigma_signed_MPa": 54.156,
+          "rigid_same_edges_sigma_signed_MPa": 54.874,
+          "R_N": [
+            0.67965,
+            0.0025
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -32.23,
+            "exit": -0.393
+          },
+          "mouth": {
+            "p_max_MPa": 83.3,
+            "p_max_working_grid_MPa": 83.3,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.833,
+              "3.0": 0.278
+            },
+            "area_mm2": 0.03638,
+            "patch_s_mm": [
+              0.19,
+              0.4
+            ],
+            "give_um": 0.457
+          },
+          "exit": {
+            "p_max_MPa": 14.67,
+            "p_max_working_grid_MPa": 14.67,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.147,
+              "3.0": 0.049
+            },
+            "area_mm2": 0.00046,
+            "patch_s_mm": [
+              0.198,
+              0.21
+            ],
+            "give_um": 0.023
+          }
+        },
+        {
+          "drag_N": -0.202853,
+          "sigma_signed_MPa": 54.154,
+          "rigid_same_edges_sigma_signed_MPa": 54.703,
+          "R_N": [
+            0.6796,
+            0.00051
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -32.225,
+            "exit": -0.387
+          },
+          "mouth": {
+            "p_max_MPa": 83.3,
+            "p_max_working_grid_MPa": 83.3,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.833,
+              "3.0": 0.278
+            },
+            "area_mm2": 0.03636,
+            "patch_s_mm": [
+              0.19,
+              0.4
+            ],
+            "give_um": 0.457
+          },
+          "exit": {
+            "p_max_MPa": 6.66,
+            "p_max_working_grid_MPa": 6.66,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.067,
+              "3.0": 0.022
+            },
+            "area_mm2": 0.00014,
+            "patch_s_mm": [
+              0.198,
+              0.204
+            ],
+            "give_um": 0.008
+          }
+        },
+        {
+          "drag_N": -0.107006,
+          "sigma_signed_MPa": 46.131,
+          "rigid_same_edges_sigma_signed_MPa": 46.509,
+          "R_N": [
+            0.45405,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -17.08,
+            "exit": -0.204
+          },
+          "mouth": {
+            "p_max_MPa": 81.53,
+            "p_max_working_grid_MPa": 81.53,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.815,
+              "3.0": 0.272
+            },
+            "area_mm2": 0.0219,
+            "patch_s_mm": [
+              0.19,
+              0.32
+            ],
+            "give_um": 0.439
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.105006,
+          "sigma_signed_MPa": 45.962,
+          "rigid_same_edges_sigma_signed_MPa": 46.338,
+          "R_N": [
+            0.44931,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.761,
+            "exit": -0.2
+          },
+          "mouth": {
+            "p_max_MPa": 81.43,
+            "p_max_working_grid_MPa": 81.43,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.814,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.02162,
+            "patch_s_mm": [
+              0.19,
+              0.32
+            ],
+            "give_um": 0.438
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.103006,
+          "sigma_signed_MPa": 45.793,
+          "rigid_same_edges_sigma_signed_MPa": 46.338,
+          "R_N": [
+            0.44456,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.443,
+            "exit": -0.197
+          },
+          "mouth": {
+            "p_max_MPa": 81.33,
+            "p_max_working_grid_MPa": 81.33,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.813,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.0214,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.437
+          },
+          "exit": null
+        },
+        {
+          "drag_N": -0.1,
+          "sigma_signed_MPa": 45.722,
+          "rigid_same_edges_sigma_signed_MPa": 46.339,
+          "R_N": [
+            0.4426,
+            0.00219
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.308,
+            "exit": -0.191
+          },
+          "mouth": {
+            "p_max_MPa": 81.29,
+            "p_max_working_grid_MPa": 81.29,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.813,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.02128,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.437
+          },
+          "exit": {
+            "p_max_MPa": 16.09,
+            "p_max_working_grid_MPa": 16.09,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.161,
+              "3.0": 0.054
+            },
+            "area_mm2": 0.00032,
+            "patch_s_mm": [
+              0.198,
+              0.206
+            ],
+            "give_um": 0.022
+          }
+        },
+        {
+          "drag_N": -0.05,
+          "sigma_signed_MPa": 45.711,
+          "rigid_same_edges_sigma_signed_MPa": 46.353,
+          "R_N": [
+            0.4429,
+            0.05269
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.286,
+            "exit": -0.104
+          },
+          "mouth": {
+            "p_max_MPa": 81.31,
+            "p_max_working_grid_MPa": 81.31,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.813,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.0213,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.437
+          },
+          "exit": {
+            "p_max_MPa": 38.59,
+            "p_max_working_grid_MPa": 38.59,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.386,
+              "3.0": 0.129
+            },
+            "area_mm2": 0.0056,
+            "patch_s_mm": [
+              0.196,
+              0.262
+            ],
+            "give_um": 0.128
+          }
+        },
+        {
+          "drag_N": 0.0,
+          "sigma_signed_MPa": 45.713,
+          "rigid_same_edges_sigma_signed_MPa": 46.367,
+          "R_N": [
+            0.44365,
+            0.1034
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.29,
+            "exit": -0.009
+          },
+          "mouth": {
+            "p_max_MPa": 81.34,
+            "p_max_working_grid_MPa": 81.34,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.813,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.0213,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.437
+          },
+          "exit": {
+            "p_max_MPa": 45.21,
+            "p_max_working_grid_MPa": 45.21,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.452,
+              "3.0": 0.151
+            },
+            "area_mm2": 0.00998,
+            "patch_s_mm": [
+              0.194,
+              0.296
+            ],
+            "give_um": 0.177
+          }
+        },
+        {
+          "drag_N": 0.05,
+          "sigma_signed_MPa": 45.718,
+          "rigid_same_edges_sigma_signed_MPa": 46.38,
+          "R_N": [
+            0.44454,
+            0.15419
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.302,
+            "exit": 0.09
+          },
+          "mouth": {
+            "p_max_MPa": 81.37,
+            "p_max_working_grid_MPa": 81.37,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.814,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.02138,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.438
+          },
+          "exit": {
+            "p_max_MPa": 50.18,
+            "p_max_working_grid_MPa": 50.18,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.502,
+              "3.0": 0.167
+            },
+            "area_mm2": 0.0138,
+            "patch_s_mm": [
+              0.194,
+              0.32
+            ],
+            "give_um": 0.212
+          }
+        },
+        {
+          "drag_N": 0.1,
+          "sigma_signed_MPa": 45.726,
+          "rigid_same_edges_sigma_signed_MPa": 46.394,
+          "R_N": [
+            0.44551,
+            0.20503
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.318,
+            "exit": 0.193
+          },
+          "mouth": {
+            "p_max_MPa": 81.41,
+            "p_max_working_grid_MPa": 81.41,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.814,
+              "3.0": 0.271
+            },
+            "area_mm2": 0.02144,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.438
+          },
+          "exit": {
+            "p_max_MPa": 54.26,
+            "p_max_working_grid_MPa": 54.26,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.543,
+              "3.0": 0.181
+            },
+            "area_mm2": 0.01732,
+            "patch_s_mm": [
+              0.194,
+              0.34
+            ],
+            "give_um": 0.241
+          }
+        },
+        {
+          "drag_N": 0.25,
+          "sigma_signed_MPa": 45.758,
+          "rigid_same_edges_sigma_signed_MPa": 46.435,
+          "R_N": [
+            0.44878,
+            0.35777
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.379,
+            "exit": 0.515
+          },
+          "mouth": {
+            "p_max_MPa": 81.54,
+            "p_max_working_grid_MPa": 81.54,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.815,
+              "3.0": 0.272
+            },
+            "area_mm2": 0.02154,
+            "patch_s_mm": [
+              0.19,
+              0.318
+            ],
+            "give_um": 0.439
+          },
+          "exit": {
+            "p_max_MPa": 62.87,
+            "p_max_working_grid_MPa": 62.87,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.629,
+              "3.0": 0.21
+            },
+            "area_mm2": 0.02662,
+            "patch_s_mm": [
+              0.192,
+              0.386
+            ],
+            "give_um": 0.307
+          }
+        },
+        {
+          "drag_N": 0.5,
+          "sigma_signed_MPa": 45.825,
+          "rigid_same_edges_sigma_signed_MPa": 46.503,
+          "R_N": [
+            0.4549,
+            0.61279
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": -16.509,
+            "exit": 1.085
+          },
+          "mouth": {
+            "p_max_MPa": 81.76,
+            "p_max_working_grid_MPa": 81.76,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.818,
+              "3.0": 0.273
+            },
+            "area_mm2": 0.02184,
+            "patch_s_mm": [
+              0.19,
+              0.32
+            ],
+            "give_um": 0.441
+          },
+          "exit": {
+            "p_max_MPa": 73.97,
+            "p_max_working_grid_MPa": 73.97,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.74,
+              "3.0": 0.247
+            },
+            "area_mm2": 0.03914,
+            "patch_s_mm": [
+              0.192,
+              0.438
+            ],
+            "give_um": 0.387
+          }
+        }
+      ],
+      "points": 15,
+      "not_solved": [],
+      "sigma_max_MPa": 54.165,
+      "sigma_min_MPa": 45.711,
+      "mean_MPa": 49.938,
+      "amplitude_MPa": 4.227,
+      "rigid_same_edges_amplitude_MPa": 4.268,
+      "mouth_section_mean_amplitude_MPa": [
+        -24.267,
+        7.98
+      ],
+      "rigid_mouth_section_amplitude_MPa": 8.003
+    }
+  ],
+  "brackets": [
+    {
+      "base": "bonded",
+      "modulus": "short-term",
+      "by_drag": {
+        "-1": {
+          "sigma_signed_MPa": 17.858,
+          "rigid_same_edges_sigma_signed_MPa": 18.174,
+          "R_N": [
+            0.21323,
+            0.443
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.443,
+            "exit": -1.37
+          },
+          "mouth": {
+            "p_max_MPa": 45.7,
+            "p_max_working_grid_MPa": 45.7,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.457,
+              "3.0": 0.152
+            },
+            "area_mm2": 0.02538,
+            "patch_s_mm": [
+              0.194,
+              0.446
+            ],
+            "give_um": 0.185
+          },
+          "exit": {
+            "p_max_MPa": 48.6,
+            "p_max_working_grid_MPa": 48.6,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.486,
+              "3.0": 0.162
+            },
+            "area_mm2": 0.05234,
+            "patch_s_mm": [
+              0.194,
+              0.676
+            ],
+            "give_um": 0.205
+          }
+        },
+        "+0": {
+          "sigma_signed_MPa": 12.349,
+          "rigid_same_edges_sigma_signed_MPa": 12.453,
+          "R_N": [
+            0.06656,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 0.005,
+            "exit": 0.0
+          },
+          "mouth": {
+            "p_max_MPa": 39.84,
+            "p_max_working_grid_MPa": 39.84,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.398,
+              "3.0": 0.133
+            },
+            "area_mm2": 0.00724,
+            "patch_s_mm": [
+              0.196,
+              0.28
+            ],
+            "give_um": 0.14
+          },
+          "exit": null
+        },
+        "+1": {
+          "sigma_signed_MPa": 9.813,
+          "rigid_same_edges_sigma_signed_MPa": 9.883,
+          "R_N": [
+            0.0,
+            0.47565
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.964,
+            "exit": 1.045
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 76.28,
+            "p_max_working_grid_MPa": 76.28,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.763,
+              "3.0": 0.254
+            },
+            "area_mm2": 0.027,
+            "patch_s_mm": [
+              0.192,
+              0.36
+            ],
+            "give_um": 0.4
+          }
+        }
+      },
+      "amplitude_ends_MPa": 4.022,
+      "mouth_p_max_MPa": 45.7
+    },
+    {
+      "base": "bonded",
+      "modulus": "20-yr relaxed",
+      "by_drag": {
+        "-1": {
+          "sigma_signed_MPa": 17.794,
+          "rigid_same_edges_sigma_signed_MPa": 18.174,
+          "R_N": [
+            0.21156,
+            0.44394
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.387,
+            "exit": -1.459
+          },
+          "mouth": {
+            "p_max_MPa": 33.48,
+            "p_max_working_grid_MPa": 33.48,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.335,
+              "3.0": 0.112
+            },
+            "area_mm2": 0.03426,
+            "patch_s_mm": [
+              0.194,
+              0.498
+            ],
+            "give_um": 0.217
+          },
+          "exit": {
+            "p_max_MPa": 35.98,
+            "p_max_working_grid_MPa": 35.98,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.36,
+              "3.0": 0.12
+            },
+            "area_mm2": 0.06962,
+            "patch_s_mm": [
+              0.194,
+              0.766
+            ],
+            "give_um": 0.242
+          }
+        },
+        "+0": {
+          "sigma_signed_MPa": 12.324,
+          "rigid_same_edges_sigma_signed_MPa": 12.453,
+          "R_N": [
+            0.0664,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 0.006,
+            "exit": 0.0
+          },
+          "mouth": {
+            "p_max_MPa": 28.9,
+            "p_max_working_grid_MPa": 28.9,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.289,
+              "3.0": 0.096
+            },
+            "area_mm2": 0.0103,
+            "patch_s_mm": [
+              0.194,
+              0.302
+            ],
+            "give_um": 0.168
+          },
+          "exit": null
+        },
+        "+1": {
+          "sigma_signed_MPa": 9.806,
+          "rigid_same_edges_sigma_signed_MPa": 9.883,
+          "R_N": [
+            0.0,
+            0.47581
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.985,
+            "exit": 1.075
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 56.22,
+            "p_max_working_grid_MPa": 56.22,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.562,
+              "3.0": 0.187
+            },
+            "area_mm2": 0.03706,
+            "patch_s_mm": [
+              0.19,
+              0.398
+            ],
+            "give_um": 0.472
+          }
+        }
+      },
+      "amplitude_ends_MPa": 3.994,
+      "mouth_p_max_MPa": 33.48
+    },
+    {
+      "base": "frictionless",
+      "modulus": "short-term",
+      "by_drag": {
+        "-1": {
+          "sigma_signed_MPa": 17.838,
+          "rigid_same_edges_sigma_signed_MPa": 18.174,
+          "R_N": [
+            0.21269,
+            0.44332
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.425,
+            "exit": -1.395
+          },
+          "mouth": {
+            "p_max_MPa": 45.42,
+            "p_max_working_grid_MPa": 45.42,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.454,
+              "3.0": 0.151
+            },
+            "area_mm2": 0.0263,
+            "patch_s_mm": [
+              0.194,
+              0.458
+            ],
+            "give_um": 0.203
+          },
+          "exit": {
+            "p_max_MPa": 48.3,
+            "p_max_working_grid_MPa": 48.3,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.483,
+              "3.0": 0.161
+            },
+            "area_mm2": 0.05536,
+            "patch_s_mm": [
+              0.194,
+              0.712
+            ],
+            "give_um": 0.229
+          }
+        },
+        "+0": {
+          "sigma_signed_MPa": 12.344,
+          "rigid_same_edges_sigma_signed_MPa": 12.453,
+          "R_N": [
+            0.06653,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 0.005,
+            "exit": 0.0
+          },
+          "mouth": {
+            "p_max_MPa": 39.75,
+            "p_max_working_grid_MPa": 39.75,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.397,
+              "3.0": 0.132
+            },
+            "area_mm2": 0.00728,
+            "patch_s_mm": [
+              0.196,
+              0.28
+            ],
+            "give_um": 0.148
+          },
+          "exit": null
+        },
+        "+1": {
+          "sigma_signed_MPa": 9.818,
+          "rigid_same_edges_sigma_signed_MPa": 9.883,
+          "R_N": [
+            0.0,
+            0.47565
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.968,
+            "exit": 1.046
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 75.45,
+            "p_max_working_grid_MPa": 75.45,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.755,
+              "3.0": 0.252
+            },
+            "area_mm2": 0.02804,
+            "patch_s_mm": [
+              0.192,
+              0.366
+            ],
+            "give_um": 0.444
+          }
+        }
+      },
+      "amplitude_ends_MPa": 4.01,
+      "mouth_p_max_MPa": 45.42
+    },
+    {
+      "base": "frictionless",
+      "modulus": "20-yr relaxed",
+      "by_drag": {
+        "-1": {
+          "sigma_signed_MPa": 17.766,
+          "rigid_same_edges_sigma_signed_MPa": 18.174,
+          "R_N": [
+            0.2108,
+            0.44439
+          ],
+          "exit_side": -1,
+          "section_sigma_signed_MPa": {
+            "mouth": -10.363,
+            "exit": -1.495
+          },
+          "mouth": {
+            "p_max_MPa": 33.2,
+            "p_max_working_grid_MPa": 33.2,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.332,
+              "3.0": 0.111
+            },
+            "area_mm2": 0.03586,
+            "patch_s_mm": [
+              0.194,
+              0.518
+            ],
+            "give_um": 0.241
+          },
+          "exit": {
+            "p_max_MPa": 35.69,
+            "p_max_working_grid_MPa": 35.69,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.357,
+              "3.0": 0.119
+            },
+            "area_mm2": 0.07444,
+            "patch_s_mm": [
+              0.194,
+              0.816
+            ],
+            "give_um": 0.273
+          }
+        },
+        "+0": {
+          "sigma_signed_MPa": 12.318,
+          "rigid_same_edges_sigma_signed_MPa": 12.453,
+          "R_N": [
+            0.06637,
+            0.0
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 0.006,
+            "exit": 0.0
+          },
+          "mouth": {
+            "p_max_MPa": 28.8,
+            "p_max_working_grid_MPa": 28.8,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.288,
+              "3.0": 0.096
+            },
+            "area_mm2": 0.01048,
+            "patch_s_mm": [
+              0.194,
+              0.304
+            ],
+            "give_um": 0.181
+          },
+          "exit": null
+        },
+        "+1": {
+          "sigma_signed_MPa": 9.812,
+          "rigid_same_edges_sigma_signed_MPa": 9.883,
+          "R_N": [
+            0.0,
+            0.47581
+          ],
+          "exit_side": 1,
+          "section_sigma_signed_MPa": {
+            "mouth": 4.991,
+            "exit": 1.078
+          },
+          "mouth": null,
+          "exit": {
+            "p_max_MPa": 55.55,
+            "p_max_working_grid_MPa": 55.55,
+            "p_max_by_square_cell_MPa": null,
+            "resolution_spread": null,
+            "p_max_over_flow": {
+              "1.0": 0.555,
+              "3.0": 0.185
+            },
+            "area_mm2": 0.0391,
+            "patch_s_mm": [
+              0.19,
+              0.41
+            ],
+            "give_um": 0.53
+          }
+        }
+      },
+      "amplitude_ends_MPa": 3.977,
+      "mouth_p_max_MPa": 33.2
+    }
+  ],
+  "shank": [
+    {
+      "shank_mm": 10.0,
+      "mouth_station_mm": 22.0,
+      "static_sigma_MPa": 8.321,
+      "root_mean_amplitude_MPa": [
+        10.087,
+        3.01
+      ],
+      "mouth_section_mean_amplitude_MPa": [
+        -2.503,
+        6.521
+      ],
+      "points": 18,
+      "not_solved": []
+    },
+    {
+      "shank_mm": 14.0,
+      "mouth_station_mm": 18.0,
+      "static_sigma_MPa": 12.349,
+      "root_mean_amplitude_MPa": [
+        13.904,
+        4.09
+      ],
+      "mouth_section_mean_amplitude_MPa": [
+        -2.869,
+        7.833
+      ],
+      "points": 21,
+      "not_solved": []
+    },
+    {
+      "shank_mm": 18.0,
+      "mouth_station_mm": 14.0,
+      "static_sigma_MPa": 20.628,
+      "root_mean_amplitude_MPa": [
+        23.895,
+        3.27
+      ],
+      "mouth_section_mean_amplitude_MPa": [
+        -7.062,
+        6.236
+      ],
+      "points": 15,
+      "not_solved": []
+    }
+  ],
+  "summary": {
+    "give_lowers_root_fraction": [
+      0.008,
+      0.0153
+    ],
+    "tolerance_offset_um": 50,
+    "within_tolerance_rows_at_or_above_1_sigma_y": [],
+    "beyond_tolerance_rows_at_or_above_1_sigma_y": [
+      {
+        "geometry": "shank 10 mm",
+        "offset_um": 100,
+        "r_in_mm": 0.05,
+        "peak_over_flow_1": 1.085
+      },
+      {
+        "geometry": "shipped — the whole lock shank (HW.26 G1)",
+        "offset_um": 75,
+        "r_in_mm": 0.05,
+        "peak_over_flow_1": 1.054
+      },
+      {
+        "geometry": "shipped — the whole lock shank (HW.26 G1)",
+        "offset_um": 100,
+        "r_in_mm": 0.05,
+        "peak_over_flow_1": 1.315
+      },
+      {
+        "geometry": "shipped — the whole lock shank (HW.26 G1)",
+        "offset_um": 100,
+        "r_in_mm": 0.1,
+        "peak_over_flow_1": 1.041
+      },
+      {
+        "geometry": "shank 18 mm",
+        "offset_um": 75,
+        "r_in_mm": 0.05,
+        "peak_over_flow_1": 1.34
+      },
+      {
+        "geometry": "shank 18 mm",
+        "offset_um": 75,
+        "r_in_mm": 0.1,
+        "peak_over_flow_1": 1.062
+      },
+      {
+        "geometry": "shank 18 mm",
+        "offset_um": 100,
+        "r_in_mm": 0.05,
+        "peak_over_flow_1": 1.666
+      },
+      {
+        "geometry": "shank 18 mm",
+        "offset_um": 100,
+        "r_in_mm": 0.1,
+        "peak_over_flow_1": 1.324
+      },
+      {
+        "geometry": "shank 18 mm",
+        "offset_um": 100,
+        "r_in_mm": 0.2,
+        "peak_over_flow_1": 1.047
+      }
+    ],
+    "worst_cycle_row": {
+      "geometry": "shank 18 mm",
+      "offset_um": 100,
+      "r_in_mm": 0.05,
+      "peak_MPa": 166.65,
+      "peak_over_flow_1": 1.666
+    },
+    "smallest_r_in_below_1_sigma_y": {
+      "shank 10 mm / 50 µm": {
+        "mouth_station_mm": 22.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.05,
+        "worst_over_flow_1": 0.663
+      },
+      "shank 10 mm / 75 µm": {
+        "mouth_station_mm": 22.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.05,
+        "worst_over_flow_1": 0.895
+      },
+      "shank 10 mm / 100 µm": {
+        "mouth_station_mm": 22.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.1,
+        "worst_over_flow_1": 1.085
+      },
+      "shipped — the whole lock shank (HW.26 G1) / 50 µm": {
+        "mouth_station_mm": 18.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.05,
+        "worst_over_flow_1": 0.747
+      },
+      "shipped — the whole lock shank (HW.26 G1) / 75 µm": {
+        "mouth_station_mm": 18.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.1,
+        "worst_over_flow_1": 1.054
+      },
+      "shipped — the whole lock shank (HW.26 G1) / 100 µm": {
+        "mouth_station_mm": 18.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.2,
+        "worst_over_flow_1": 1.315
+      },
+      "shank 18 mm / 50 µm": {
+        "mouth_station_mm": 14.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.05,
+        "worst_over_flow_1": 0.925
+      },
+      "shank 18 mm / 75 µm": {
+        "mouth_station_mm": 14.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.2,
+        "worst_over_flow_1": 1.34
+      },
+      "shank 18 mm / 100 µm": {
+        "mouth_station_mm": 14.0,
+        "smallest_r_in_below_1_sigma_y_mm": 0.3,
+        "worst_over_flow_1": 1.666
+      }
+    },
+    "exit_rise_at_tolerance": {
+      "0.05": 1.287,
+      "0.1": 1.281,
+      "0.2": 1.269,
+      "0.3": 1.251,
+      "0.5": 1.228
+    },
+    "exit_rows_at_or_above_1_sigma_y": [
+      {
+        "offset_um": 50,
+        "r_exit_mm": 0.05,
+        "peak_over_flow_1": 1.175
+      }
+    ],
+    "smallest_r_exit_below_1_sigma_y_at_tolerance_mm": 0.1,
+    "cycle_over_static_shipped": [
+      0.0197,
+      0.1826
+    ],
+    "mouth_over_root_amplitude_by_offset": {
+      "0": 0.529,
+      "10": 0.529,
+      "26": 0.584,
+      "28": 0.8,
+      "30": 1.057,
+      "35": 1.984,
+      "40": 2.19,
+      "45": 2.021,
+      "50": 1.875,
+      "60": 1.875,
+      "75": 1.875,
+      "100": 1.875
+    },
+    "ratio_below_one_past_play_um": [
+      26,
+      28
+    ],
+    "ratio_above_one_from_um": 30,
+    "ratio_peak_at_um": 40,
+    "mouth_section_swing_from_50um_MPa": [
+      7.898,
+      8.003
+    ],
+    "root_swing_from_50um_MPa": [
+      4.212,
+      4.268
+    ],
+    "ends_only_understate_amplitude_by": {
+      "0": 0.1424,
+      "10": 0.1424,
+      "26": 0.1078,
+      "28": 0.2199,
+      "30": 0.3603,
+      "35": 0.8668,
+      "40": 0.5121,
+      "45": 0.1831,
+      "50": 0.0159,
+      "60": 0.0288,
+      "75": 0.0288,
+      "100": 0.0288
+    },
+    "sharp_68_over_path_swing": {
+      "0": -0.0076,
+      "10": -0.0076,
+      "50": -0.0147,
+      "100": -0.0276
+    },
+    "entry_radius_raises_root_swing": [
+      -0.0414,
+      0.0425
+    ],
+    "elastic_over_rigid_swing_by_offset": {
+      "0": [
+        0.0003,
+        0.0784
+      ],
+      "10": [
+        0.0,
+        0.0828
+      ],
+      "50": [
+        -0.029,
+        -0.0082
+      ],
+      "75": [
+        -0.0129,
+        -0.0047
+      ],
+      "100": [
+        -0.0096,
+        -0.0029
+      ]
+    },
+    "versus_86_threshold": {
+      "k_break_even_binding": 0.3883,
+      "amplitude_MPa_86": 24.51,
+      "mean_MPa_86": 14.7,
+      "cycle_mean_MPa": 13.904,
+      "cycle_amplitude_MPa": 4.09
+    },
+    "static_root_by_shank_MPa": {
+      "10": 8.321,
+      "14": 12.349,
+      "18": 20.628
+    },
+    "elastic_points_not_solved": 5,
+    "elastic_points": 882,
+    "text": "(A) The layer's give lowers the static root against a rigid wall at the same edges by 0.8–1.5 % on every row — 68's secant stands. (B) A larger entry radius lowers the static root and the static mouth-edge peak on every offset row; the beam's swing it moves only a little and not one way (rigid, r_in 0.05 → 0.5 mm: the root's by -4…+4 % over 35, 50, 100 µm). (C) The drag raises the mouth-edge peak above the static one on every shipped-shank row (by 2–18 %). WITHIN the ratified ⌀0.10 (offsets up to 50 µm) the cycle peak stays below 1·σ_y (23 °C tensile) on every swept shank and entry radius — the worst ×0.93; BEYOND it, at 75–100 µm, it passes 1·σ_y on 9 rows, the largest ×1.67 (shank 18 mm, 100 µm, r_in 0.05 mm), and at 100 µm the smallest swept radius that holds is 0.1 mm with the mouth at 22 mm · 0.2 mm with the mouth at 18 mm · 0.3 mm with the mouth at 14 mm; below 3·σ_y everywhere. (C′) The EXIT edge is the more loaded one under an offset: coaxially its cycle peak is 91's (within 0.9 %), and at 50 µm it is ×1.23–1.29 that, above 1·σ_y at r_exit 0.05 mm (×1.18) — the smallest exit radius that holds at 50 µm is 0.1 mm. (D) Along the path with its contact kinks the root's swing is larger than its two ends give where the edges are rounded: the ends alone catch as little as 13 % of it (at 35 µm, where the swing itself is smallest); at the offsets 68 tabulates, its sharp-edge rows sit within 3 % of this path's swing. Against 86's threshold k ≥ 0.3883 (amplitude 24.51 MPa, the Ti-bore stop; mean 14.7 MPa, the worst play): the 50 µm cycle runs at 13.90 ± 4.09 MPa — inside both; a pogo-pad couple on top of the offset is computed by no model. (E) The wire under the MOUTH edge swings ±7.90–8.00 MPa from 50 µm on, against the root's ±4.21–4.27 MPa (×1.88), around a mean of the opposite sign; the ratio crosses 1 at 30 µm (below it coaxially, ×0.53, and just past the play, ×0.58 at 26 µm, ×0.80 at 28 µm) and peaks at ×2.19 near 40 µm because the root's swing dips there (±2.47), not because the mouth section's grows. No notch factor under that edge is computed. The swings are on the rigid same-edge model; the give moves them by 0 µm +0.0 / +7.8 % · 10 µm +0.0 / +8.3 % · 50 µm -2.9 / -0.8 % · 75 µm -1.3 / -0.5 % · 100 µm -1.0 / -0.3 % (root / mouth section). (F) Bonded ⊥ frictionless base and the 20-year modulus move the static root by ≤ 0.03 MPa; the relaxed modulus lowers the mouth peak at the drag's ends from 46 to 33 MPa. (G) A mouth nearer the root makes the same offset dearer: the static root at 50 µm is 8.32 · 12.35 · 20.63 MPa for a shank of 10 · 14 · 18 mm. 5 of 882 elastic path points could not be represented by two end windows (the rod along the wall) and are excluded, not replaced."
+  },
+  "not_modelled": {
+    "plasticity": "linear elastic; a peak above the flow pressure is flagged, never redistributed",
+    "friction_pad_couple_wear": "no friction at either patch, no pad couple, no wear",
+    "play": "zero-interference play only",
+    "wire": "rigid in the contact kernel — the wire's notch factor under either edge is not computed; the nominal fibre stress at both edge sections is reported",
+    "near_the_play": "within a few µm of the play, under the drag toward the wall the offset brings in, the rod nears a line contact along the channel that two end windows cannot represent; there the beam's swing is read on the rigid same-edge model and the elastic edge peak only statically",
+    "offset": "swept, never measured"
+  }
+}

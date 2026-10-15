@@ -82,6 +82,9 @@ Anchor mechanics (CPU):
   55 (importlib: geometry, member EI, pogo force, µ sweep; bus_mechanical.json: the wear rows) · 68 (bus_contact_equilibrium.json:
      the coaxial bracket and the plays) → 91 (liner_exit_contact.json — the exit contact as an elastic layer; a change to 55's
      member or to either cache re-runs 91, and its cache test reads both CURRENT caches)
+  91 (importlib: its kernels, rod and sweeps; liner_exit_contact.json — the no-offset control) · 55 (importlib: geometry, offsets,
+     the flow-constraint sweep) · 68 (bus_contact_equilibrium.json — the offset and reversing tables its rigid control reproduces)
+     → 92 (liner_mouth_contact.json — the mouth under an axis offset, two patches; a change to 91's kernels re-runs 92 too)
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
@@ -231,5 +234,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 35. Comparing a computed series with a measured one: on the SAME points, pair by pair first — a slope over several points restates the pair with the most leverage, and a «bracket» built on a point the other series lacks is not a comparison
 36. Eliminating a cause with one-knob variants: declare the threshold before the data and count a move only TOWARD the measured; add a BOUND run that says whether the knob's whole family could carry the effect at all; and name the assumption under which «what remains» is what remains
 37. A cache kept frozen ON PURPOSE stays frozen when one of its inputs moves — measure the sign once, write it beside the record, and repoint every LIVE reader of that input away from the record's module
+38. A resolution control run on the LARGEST contact patch is blind to the smallest — the edge transition narrows with the load, so check the peak at BOTH ends of the load sweep; and where the number scatters with the grid for a reason you can name, gate the VERDICT it feeds, not the number
 
 <!-- /INSILICO-MODIFYING-INDEX -->

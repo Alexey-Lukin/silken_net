@@ -15,7 +15,7 @@
 
 2. **A SMILES fix cascades — fixing one in 02-08 means rerunning ALL downstream MD that uses that ligand** (check the GAFF cache too; the ligand → MD edges are the graph in `SKILL.md`).
 
-3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower (observed: a 92-min solo job took 190+ min alongside another). Small molecules (H₂O, lumiflavin) OK to parallelize; MD-on-GPU alongside a CPU DFT job is fine (different hardware) — the hazard is two CPU-bound DFT jobs sharing cache.
+3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower (observed: a 92-min solo job took 190+ min alongside another). Small molecules (H₂O, lumiflavin) OK to parallelize; MD-on-GPU alongside a CPU DFT job is fine (different hardware) — the hazard is two CPU-bound DFT jobs sharing cache. ⊕ **A parallel pool of ANY CPU-bound job counts as the second heavy job** [`92`, 2026-10-14]: a 5-worker pool of contact solves (10 BLAS threads) was launched beside a running `21e` geometry optimisation in the `silken_net-acceptors` worktree (≈ 9 cores) and took the machine — caught only by reading `ps` after the launch. 🔑 Before launching a pool or a long run, `ps -A -o pid,%cpu,etime,command | grep python` first; with a DFT running, keep the new job to the cores it leaves (here 2 workers × 2 threads), and never kill by a pattern that could match the other job's processes.
 
 4. **No density_fit() for Os/Ce — the auto-generated aux basis for heavy metals is 3× SLOWER than standard integrals.**
 

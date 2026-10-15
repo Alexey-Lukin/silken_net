@@ -2140,6 +2140,103 @@ def test_bus_mechanical_wear_budget():
     assert (w["binding"]["geometry"], w["binding"]["mu"]) == (expected["geometry"], expected["mu"])
 
 
+def test_liner_mouth_contact():
+    """92 (HW.34 / HW.23): the liner at the channel MOUTH under an axis offset — two elastic patches on the rod.
+
+    CAN catch: the rigid point model drifting from 68's offset or reversing tables, or the no-offset solve leaving
+    91's exit row (both re-read from the CURRENT caches); the rigid-limit control past its gate; a static row whose
+    give raises the root, whose root or edge peak is not monotone in the entry radius, whose flow ratio is not its
+    peak over 55's flow pressures, or whose verdict disagrees with its own grids; a cycle peak below its own static
+    value, unresolved beyond the allowed spread, or with a verdict its grids do not give; a «smallest safe radius»
+    that is not what its rows say; a rigid swing whose ratio is not its two amplitudes or whose path ends out-swing
+    the path; the exit edge's cycle peak drifting from 91's coaxially (re-read from the CURRENT 91 cache), or not rising
+    under the offset, or a «smallest safe exit radius» its rows do not give; a within-tolerance list that is not its rows;
+    the declared directions failing — the mouth section swinging less than the root coaxially, a mouth nearer the root
+    making the offset cheaper; a summary text that stopped quoting its numbers.
+    CANNOT catch: plasticity past the flagged peaks, friction, wear, the pad couple, an interference play, the notch
+    factor of the wire under either edge, the elastic edge peak over the cycle nearer the play than the cycle block
+    reaches, or which offset the stack delivers — the declared ceilings.
+    """
+    d = json.loads((MECHANICAL / "liner_mouth_contact.json").read_text(encoding="utf-8"))
+    d68 = json.loads((MECHANICAL / "bus_contact_equilibrium.json").read_text(encoding="utf-8"))
+    d91 = json.loads((MECHANICAL / "liner_exit_contact.json").read_text(encoding="utf-8"))
+    ctl, inp, summ = d["controls"], d["inputs"], d["summary"]
+    assert ctl["rigid_sharp_vs_68_offset_table"]["max_abs_diff_MPa"] <= 0.051
+    assert ctl["rigid_sharp_vs_68_reversing_table"]["max_abs_diff_MPa"] <= 0.051
+    c91 = next(c for c in d91["cycle"] if c["r_edge_mm"] == inp["r_exit_mm"] and c["base"] == "bonded" and c["modulus"] == "short-term")
+    co = ctl["no_offset_vs_91_exit"]
+    assert co["sigma_signed_MPa"][1] == c91["sigma_at_mu_MPa"][f"{inp['mu']:g}"] and abs(co["sigma_signed_MPa"][0] - co["sigma_signed_MPa"][1]) <= 0.002
+    assert co["rigid_same_edge_MPa"][1] == c91["full_drag_rigid_same_edge_MPa"]
+    assert ctl["rigid_limit"]["max_rel_diff"] <= 2e-3
+    row68 = next(r for r in d68["offset_static_shipped_branch"] if r["geometry"] == inp["geometry"] and r["play"] == "zero interference")
+    sy = inp["sigma_yield_PEEK_MPa_tensile_23C"]
+
+    def verdict(vals, c):
+        return "above" if min(vals) > c * sy else "below" if max(vals) < c * sy else "at, within the grids"
+    for r in d["static"]:
+        assert r["sigma_signed_MPa"] < r["rigid_same_edges_sigma_signed_MPa"], r
+        assert r["sigma_68_rigid_sharp_MPa"] == next(x["sigma_root_MPa"] for x in row68["by_offset"] if x["offset_um"] == r["offset_um"])
+        mo = r["mouth"]
+        grids = mo["p_max_by_square_cell_MPa"]
+        assert mo["p_max_MPa"] == round(max(grids.values()), 2)
+        for c in inp["flow_constraint_factors_55"]:
+            assert abs(mo["p_max_over_flow"][f"{c:.1f}"] - mo["p_max_MPa"] / (c * sy)) <= 2e-3
+            assert mo["flow_verdict"][f"{c:.1f}"] == verdict(list(grids.values()), c), r
+    for e in {r["offset_um"] for r in d["static"]}:
+        rows = sorted((r for r in d["static"] if r["offset_um"] == e), key=lambda r: r["r_in_mm"])
+        assert [r["sigma_signed_MPa"] for r in rows] == sorted((r["sigma_signed_MPa"] for r in rows), reverse=True)
+        assert [r["mouth"]["p_max_MPa"] for r in rows] == sorted((r["mouth"]["p_max_MPa"] for r in rows), reverse=True)
+    for c in d["cycle_peak"]:
+        vals = list(c["peak_by_square_cell_MPa"].values())
+        assert c["peak_MPa"] == round(max(vals), 2) and c["resolution_spread"] <= 0.30
+        st = next((r for r in d["static"] if c["geometry"] == inp["geometry"] and r["offset_um"] == c["offset_um"]
+                   and r["r_in_mm"] == c["r_in_mm"]), None)
+        if st:                                                           # the cycle never hides below the refined static peak
+            assert c["peak_MPa"] >= st["mouth"]["p_max_MPa"] * 0.99, c
+        for f in inp["flow_constraint_factors_55"]:
+            assert c["flow_verdict"][f"{f:.1f}"] == verdict(vals, f), c
+    for key, v in summ["smallest_r_in_below_1_sigma_y"].items():
+        g, e = key.rsplit(" / ", 1)
+        rows = sorted((c for c in d["cycle_peak"] if c["geometry"] == g and f"{c['offset_um']} µm" == e), key=lambda c: c["r_in_mm"])
+        ok = [c["r_in_mm"] for i, c in enumerate(rows) if all(x["flow_verdict"]["1.0"] == "below" for x in rows[i:])]
+        assert v["smallest_r_in_below_1_sigma_y_mm"] == (min(ok) if ok else None), key
+    ex91 = ctl["exit_coaxial_vs_91"]
+    assert ex91["max_rel_diff"] <= 0.05
+    for r, (ours, theirs) in ex91["by_r_exit_mm"].items():                # 91's own patch row, re-read from the CURRENT cache
+        assert abs(ours / theirs - 1.0) <= 0.05
+        assert theirs == next(p["p_max_MPa"] for p in d91["patch"] if p["r_edge_mm"] == float(r) and p["base"] == "bonded"
+                              and p["modulus"] == "short-term")
+    for x in d["exit_cycle_peak"]:
+        vals = list(x["peak_by_square_cell_MPa"].values())
+        assert x["peak_MPa"] == round(max(vals), 2) and x["resolution_spread"] <= 0.30
+        for f in inp["flow_constraint_factors_55"]:
+            assert x["flow_verdict"][f"{f:.1f}"] == verdict(vals, f), x
+    at_tol = sorted((x for x in d["exit_cycle_peak"] if x["offset_um"] == summ["tolerance_offset_um"]), key=lambda x: x["r_exit_mm"])
+    coax = {x["r_exit_mm"]: x["peak_MPa"] for x in d["exit_cycle_peak"] if x["offset_um"] == 0}
+    assert all(x["peak_MPa"] > coax[x["r_exit_mm"]] for x in at_tol)       # the offset loads the exit edge more than the coaxial drag
+    ok = [x["r_exit_mm"] for i, x in enumerate(at_tol) if all(y["flow_verdict"]["1.0"] == "below" for y in at_tol[i:])]
+    assert summ["smallest_r_exit_below_1_sigma_y_at_tolerance_mm"] == (min(ok) if ok else None)
+    within = [c for c in d["cycle_peak"] if c["offset_um"] <= summ["tolerance_offset_um"] and c["flow_verdict"]["1.0"] != "below"]
+    assert [(c["geometry"], c["r_in_mm"]) for c in within] == [(w["geometry"], w["r_in_mm"]) for w in summ["within_tolerance_rows_at_or_above_1_sigma_y"]]
+    for w in d["rigid_swing"]:
+        assert abs(w["mouth_over_root_amplitude"] - w["mouth_section_mean_amplitude_MPa"][1] / w["root_mean_amplitude_MPa"][1]) <= 2e-3
+        assert w["ends_only_amplitude_MPa"] <= w["root_mean_amplitude_MPa"][1] + 1e-9
+    ratio = {w["offset_um"]: w["mouth_over_root_amplitude"] for w in d["rigid_swing"]}
+    assert ratio[0] < 1.0 and ratio[10] < 1.0                       # coaxially the root out-swings the mouth section
+    for rv in d["reversing"]:
+        sig = [p["sigma_signed_MPa"] for p in rv["path"]]
+        assert rv["sigma_max_MPa"] == max(sig) and rv["sigma_min_MPa"] == min(sig)
+        assert abs(rv["amplitude_MPa"] - (max(sig) - min(sig)) / 2.0) <= 1e-3
+        w = next(x for x in d["rigid_swing"] if x["offset_um"] == rv["offset_um"])
+        assert rv["rigid_same_edges_amplitude_MPa"] == w["root_mean_amplitude_MPa"][1]
+    st = [z["static_sigma_MPa"] for z in sorted(d["shank"], key=lambda z: z["shank_mm"])]
+    assert st == sorted(st), st                                          # a mouth nearer the root makes the offset dearer
+    for e, v in summ["mouth_over_root_amplitude_by_offset"].items():
+        assert ratio[int(e)] == v
+    assert f"peaks at ×{ratio[summ['ratio_peak_at_um']]:.2f} near {summ['ratio_peak_at_um']} µm" in summ["text"]
+    assert f"the smallest exit radius that holds at {summ['tolerance_offset_um']} µm is" in summ["text"] or not summ["exit_rows_at_or_above_1_sigma_y"]
+
+
 def test_liner_exit_contact():
     """Script 91 (HW.34 / HW.23): the liner's exit contact as an elastic-layer problem coupled to the rod, read over
     the drag CYCLE (touchdown → µ·F), each figure beside a rigid wall at the SAME edge.
@@ -3358,6 +3455,7 @@ EXPECTED_SCRIPTS = [
     "74_site_rain_dew.py",
     "85_electrode_interfacial_ph.py",
     "91_liner_exit_contact.py",
+    "92_liner_mouth_contact.py",
 ]
 
 
