@@ -265,8 +265,9 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    and in the widening paragraph above; the gate of the weakest link is unchanged — the founder reads the changed-notes
    list `draw --vendor` prints before the coupon letter leaves.
    ⊕ ⚖️ **The part-RFQ sheets verdict — RATIFIED by the founder, 2026-10-15 late evening** (the delegated record above is
-   NOT rewritten; (iv) stands as its provenance). The founder's words covered the open verdicts-with-recommendation of
-   `00_07` §01a/§01b as a set («ратифікуємо їх»), and this one was named in the session's list. Ground, price and weakest
+   NOT rewritten; (iv) stands as its provenance). The founder's words covered, as a set («ратифікуємо їх»), the verdicts of
+   `00_07` §01a/§01b that stood delegated-on-a-recommendation and still awaited his word; the machine had named this
+   one in the candidate list it put to him. Ground, price and weakest
    link — the delegated paragraph; what changes is only the authority of the record: founder's, not the machine's.
    Applied at the event, as before — no part-RFQ text exists.
 
