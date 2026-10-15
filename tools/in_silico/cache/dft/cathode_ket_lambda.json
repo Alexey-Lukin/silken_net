@@ -528,6 +528,16 @@
   },
   "coupling_gain_to_reach_turnover": {
     "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic turnover at the consumer-rule (adverse) end; k_ET \u221d |t_ij|\u00b2, so 1/\u221amargin. A COUPLING lever only.",
+    "by_lambda_co": {
+      "literature_assumed": {
+        "lambda_co_eV": 1.4,
+        "gain_fodft_t": 3.506
+      },
+      "computed": {
+        "lambda_co_eV": 3.094,
+        "gain_fodft_t": 230.698
+      }
+    },
     "at_literature_lambda_crude_t": 14.948,
     "at_literature_lambda_fodft_t": 3.506,
     "at_corner": "the adverse corner of BOTH axes (gap sign \u00d7 \u03bb(Cu) reading) \u2014 `adverse_corner` of the literature scenario and of `fodft_cuco_rigor`",

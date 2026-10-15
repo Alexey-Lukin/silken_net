@@ -31,7 +31,8 @@ something already known. Frame everything around the *insight*, never around "we
 ## 2. Our contribution framing (the most important decision)
 
 Our honest finding is that the raw DFT cascade is uphill in every method, the cathode DET margin is
-borderline, and the gap is a quantified limit of implicit solvation. A first-timer's instinct is to
+conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one — and the gap
+is a quantified limit of implicit solvation. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real
 insights to sell (all are "new physical insight"):
 
@@ -43,7 +44,7 @@ insights to sell (all are "new physical insight"):
    rule gives a *predictive handle* and rationalizes the known experimental optimum — predictive value
    (in DIRECTION: a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its magnitude is method-dependent)
    is "especially welcome" at JPCB.
-3. **An honest, mechanistic cathode finding.** The borderline λ-limited DET (a *finding*, corrected from
+3. **An honest, mechanistic cathode finding.** The λ(Co)-conditional DET (a *finding*, corrected from
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.
 
 > **Rule of thumb:** every claim is one of {*positive result*, *quantified limitation*, *design rule*,

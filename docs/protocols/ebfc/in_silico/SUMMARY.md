@@ -385,7 +385,7 @@ reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 
 🔑 **Three things follow, and the third closes CHEM.35.** (1) The lever's canon caveat — «a bigger ligand pushes the metals apart» — is **false on the bridge axis**: a ring fused at C4–C5 grows the ligand footprint by 0.9 Å without touching the N–C–N span that sets M···M. (2) The canon recipe «swap the linker in `23`, re-run `24`» builds a cluster with **no bridge at all** (the second N lands 3.217 Å from its metal, the N–H survives the clash filter, the charge is off by one) — `24` would still have returned a coupling. (3) A correctly-bridged ring **does not fit this model**: hold the metals in-plane and the bridge collides with the coplanar terminals (0.254 Å methylimidazolate, 0.358 Å benzimidazolate); hold the sterics and the metals leave the plane, which is the ×24 artifact above. **So the shipped geometry is the best the 2D minimal cluster can do, and CHEM.35 is unanswerable here — it needs a 3D cluster with tetrahedral terminals, an instrument change that moves every number in this section** — ⚖️ ratified (delegated) 2026-09-22: **not built now**; the return trigger is the measured cathode EIS of coin Stage 2 (verdict, price and weakest link — [`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
-⊕ **Acceptance threshold for any COUPLING lever** (`dft/cathode_ket_lambda.json` → `coupling_gain_to_reach_turnover`): since `k_ET ∝ |t_ij|²`, lifting the consumer-rule (adverse) reading to enzymatic turnover needs **×3.506** on the FO-DFT t_ij, or ×14.9 on the crude ΔSCF one — both at the adverse CORNER (uphill gap × higher λ(Cu)). ⛔ It does NOT apply to a λ lever (Co→Ru): λ sits in the Marcus exponent, not the prefactor.
+⊕ **Acceptance threshold for any COUPLING lever** (`dft/cathode_ket_lambda.json` → `coupling_gain_to_reach_turnover`): since `k_ET ∝ |t_ij|²`, lifting the consumer-rule (adverse) reading to enzymatic turnover needs **×3.5** on the diabatised t_ij at the ASSUMED literature λ(Co) 1.4 eV and **×231** at the computed 3.09 eV (`by_lambda_co`), or ×14.9 on the crude ΔSCF one — all at the adverse CORNER (uphill gap × higher λ(Cu)). ⚠️ The threshold is conditional on λ(Co) exactly as the verdict is; a single number here is a λ(Co) pick in disguise. ⛔ It does NOT apply to a λ lever (Co→Ru): λ sits in the Marcus exponent, not the prefactor.
 
 ---
 
@@ -475,10 +475,11 @@ end the transport no longer just shifts the band, it opens the «never» tail ab
 
 The 72.9 Ω Rct above is the **anode** charge-transfer (enzyme→Os, from j_max; script 31). The
 **cathode** DET Rct is *not* a single value — script 31b (Laviron, surface-confined) gives a band
-**~0.002–3×10⁴ Ω** across the k_DET bracket (gap sign × λ(Cu) reading × coupling method) × the unknown
-site coverage Γ (~×10⁷ spread): the cathode arc can be negligible (fast/dense) or **exceed the anode arc
-up to ~×400** (adverse corner, sparse coverage), so it **cannot be predicted a priori** — the robust statement stays the **kinetic competition**
-k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive test. INDICATIVE
+**~0.002 Ω–7×10⁶ Ω** across the k_DET bracket (gap sign × λ(Cu) reading × λ(Co) value) × the unknown
+site coverage Γ: the cathode arc can be negligible (fast/dense) or **exceed the anode arc
+up to ~×10⁵** (adverse corner, sparse coverage; the high end moved from 3×10⁴ Ω / ×400 on 2026-10-15 with the λ(Co)
+axis — the low end did not), so it **cannot be predicted a priori** — the robust statement stays the **kinetic competition**
+k_DET against turnover — itself conditional on λ(Co) (§Cathode) — with the measured Ti-coin cathode EIS the decisive test. INDICATIVE
 (`kinetics/cathode_det_rct.json`).
 
 ---

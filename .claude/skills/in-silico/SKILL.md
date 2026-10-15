@@ -142,6 +142,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 14. A converged SCF certifies a STATIONARY POINT, not the ground state — the Newton rescue in `dft_singlepoint` converges from wherever the failed SCF stopped, and on an open shell that can be a spin-contaminated state the cache records as `converged: true`
 15. A model of how a load TRAVELS between two parts is a list of paths before it is a number — inventory every coupling canon already defines between the two ends, and every load that does not depend on the one you set out to price, before computing any of them
 16. A reduced-cofactor SMILES is a TAUTOMER claim, and the formula cannot check it — before a cascade runs on it, verify WHERE the hydrogens sit against the species the text names
+17. A coupling taken as half the difference of two SCF solutions is a coupling only if the two states are CHARGE-LOCALISED and their difference clears the SCF tolerance — both halves fail silently, and the rate they feed is squared in the first and meaningless in the second
 
 <!-- /INSILICO-RULES-INDEX -->
 
@@ -237,5 +238,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 37. A cache kept frozen ON PURPOSE stays frozen when one of its inputs moves — measure the sign once, write it beside the record, and repoint every LIVE reader of that input away from the record's module
 38. A resolution control run on the LARGEST contact patch is blind to the smallest — the edge transition narrows with the load, so check the peak at BOTH ends of the load sweep; and where the number scatters with the grid for a reason you can name, gate the VERDICT it feeds, not the number
 39. Judging your rows against ANOTHER script's threshold: compute its quantity for YOUR rows with ITS formula, inputs and pick — «my mean and my amplitude are each below its inputs» is not the threshold, and its inputs may sit at another play, geometry or definition of «mean»
+40. When a quantity your verdict stands on has a COMPUTED and an ASSUMED value that disagree, the verdict is CONDITIONAL on it — publish the threshold at which it flips, per named reading, instead of picking the kind value and calling the other one an artefact
 
 <!-- /INSILICO-MODIFYING-INDEX -->

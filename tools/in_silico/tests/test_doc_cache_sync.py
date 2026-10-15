@@ -651,10 +651,16 @@ CHECKS = [
         lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"], 1.0,
     ),
     (
-        "coupling gain to reach turnover (FO-DFT scale) → cathode_ket_lambda.json",
-        SUMMARY, r"needs \*\*×([\d.]+)\*\* on the FO-DFT t_ij",
+        "coupling gain to reach turnover (FO-DFT scale, assumed λ(Co)) → cathode_ket_lambda.json",
+        SUMMARY, r"needs \*\*×([\d.]+)\*\* on the diabatised t_ij at the ASSUMED",
         "dft/cathode_ket_lambda.json",
-        lambda d: d["coupling_gain_to_reach_turnover"]["at_literature_lambda_fodft_t"], 5e-4,
+        lambda d: d["coupling_gain_to_reach_turnover"]["at_literature_lambda_fodft_t"], 0.05,
+    ),
+    (
+        "coupling gain at the COMPUTED λ(Co) → cathode_ket_lambda.json (the threshold is conditional too)",
+        SUMMARY, r"and \*\*×([\d.]+)\*\* at the computed 3.09 eV",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["coupling_gain_to_reach_turnover"]["by_lambda_co"]["computed"]["gain_fodft_t"], 1.0,
     ),
     # ── L4 kinetics + EIS ──
     (

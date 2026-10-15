@@ -9,7 +9,7 @@ data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
   * fig3_cascade_lfer.png   — (a) FADH₂→Os Marcus/MO cascade + PCET anchor (④)
                               (b) mediator Hammett LFER design rule (①)
   * fig4_cathode_det.png    — (a) ZIF Cu-Co-Ce coupling ladder; (b) k_DET margin
-                              vs reorganization-energy scenario (③, honest borderline)
+                              vs reorganization-energy scenario (③, conditional on λ(Co))
   * fig5_solvation_pcm.png  — (a) explicit Cl⁻-water series; (b) speciation shift
                               (B3LYP↔ωB97X) + group-8 [Os(H₂O)₆] PCM benchmark (②)
   * figS1_betad_ensemble.png — WITHDRAWN 2026-10-15 (cluster 6): no longer generated, `figS1()` kept as the record

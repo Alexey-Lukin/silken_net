@@ -5,8 +5,10 @@
 WHY. Script 24's Marcus rates used a blanket λ = 0.7 eV — too small for first-row /
 redox-active metals whose coordination sphere relaxes a lot on electron transfer.
 This computes λ from first principles per metal couple and feeds it back into 24,
-replacing the guess. (The cathode-not-rate-limiting verdict is robust regardless;
-this makes it quantitative.)
+replacing the guess. ⚠️ The parenthesis here read «the cathode-not-rate-limiting verdict is robust
+regardless» until 2026-10-15: that is false and was the opposite of what this script found — the
+computed λ(Co) 3.09 eV puts the Cu–Co hop BELOW turnover at every corner, and the whole cathode verdict
+is now stated as conditional on λ(Co) (`25` → `cobalt_lambda_condition`, Стаття 1 self-review cluster 1).
 
 METHOD — Nelsen 4-point on a single-metal aquo model [M(H₂O)₆]^q (two-sphere Marcus
 for a hop: λ_hop(M1-M2) = (λ_M1 + λ_M2)/2). Aquo is a robust, well-behaved proxy for
@@ -99,10 +101,13 @@ def build_hexammine(sym, d):
     is a textbook self-exchange couple (literature λ for validation). Used as the
     N-field test vs aquo: imidazole-ring placement is build-fiddly (recurring
     N–H-into-metal clashes — same class as the ZIF bug), whereas ammine builds
-    cleanly (NH₃ H's point away from the metal by construction). Robustly answers
-    "does an N-donor field cut λ vs the O-field?"; the conclusion transfers to the
-    weaker-field ZIF imidazolate (if a *strong* ammine field doesn't force Co²⁺
-    low-spin, the imidazolate won't either)."""
+    cleanly (NH₃ H's point away from the metal by construction). ⛔ It answers
+    "does an N-donor field CHANGE λ vs the O-field at the SAME imposed spin pair?" and
+    nothing more: the LS-Co(III)/HS-Co(II) pair is an INPUT here (see the `co_nh3` row),
+    so this run cannot discover a spin state and can neither confirm nor refute a
+    spin-crossover artefact in B3LYP's λ(Co) — a claim it was cited for until 2026-10-15
+    (Стаття 1 self-review cluster 1). What transfers to the weaker-field ZIF imidazolate
+    is the comparison, not a verdict about the true spin state."""
     atoms = [(sym, np.zeros(3))]
     NH, theta = 1.015, np.radians(70.0)              # M–N–H ≈ 110° → H's splay away from metal
     for dd in (np.array([1.0, 0, 0]), np.array([-1.0, 0, 0]), np.array([0, 1.0, 0]),

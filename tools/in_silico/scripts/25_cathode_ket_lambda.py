@@ -9,9 +9,10 @@ energies λ (script 35, Nelsen 4-point) under the two-sphere Marcus approximatio
 survives a realistic λ. It does NOT: that margin was a double artifact of
 (a) a broken bridging geometry (script 23 imidazole N–H clashing into the 2nd
 metal at 0.97 Å — since deprotonated to an imidazolate bridge) and (b) an
-assumed λ = 0.7 eV. With literature/computed λ the Cu–Co hop (the new bottleneck
-after the geometry fix shrank its t_ij 0.033 → 0.0013 eV) falls to ~turnover;
-a Co→Ru swap (computed λ_Ru = 0.78) restores only a modest margin because
+assumed λ = 0.7 eV. ⊕ 2026-10-15: the table runs on 24b's diabatised coupling, and the verdict is
+CONDITIONAL on λ(Co) — below turnover at every corner on the COMPUTED λ(Co) 3.09 eV, straddling it only
+on the ASSUMED literature 1.4 eV, which has no primary (`cobalt_lambda_condition`);
+a Co→Ru swap (computed λ_Ru = 0.78) restores a margin that is indicative only, because
 Cu(II/I) keeps a large λ — itself a bracket of two named readings, never a pick.
 Compute-light: reads cached JSON, runs no DFT.
 
@@ -382,8 +383,17 @@ def main() -> int:
         "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic "
                       "turnover at the consumer-rule (adverse) end; k_ET ∝ |t_ij|², so 1/√margin. "
                       "A COUPLING lever only.",
+        # ⊕ 2026-10-15 (cluster 1): the gain is CONDITIONAL on λ(Co) like the verdict it serves — the fields above
+        # are at the ASSUMED literature λ(Co), the computed one needs the multiplier below. Quoting one without
+        # naming its λ(Co) is how the single pre-conditional number got carried for weeks.
+        "by_lambda_co": {
+            "literature_assumed": {"lambda_co_eV": LAMBDA_LIT["Co"],
+                                   "gain_fodft_t": round(lit["margin_vs_turnover_adverse"] ** -0.5, 3)},
+            "computed": {"lambda_co_eV": lam_c["Co"],
+                         "gain_fodft_t": round(out["scenarios"]["computed λ (B3LYP)"][
+                             "margin_vs_turnover_adverse"] ** -0.5, 3)}},
         "at_literature_lambda_crude_t": round(out["scenarios_crude_dscf"]["literature λ"]["margin_vs_turnover_adverse"] ** -0.5, 3),
-        "at_literature_lambda_fodft_t": round(fo_worst[2] ** -0.5, 3),
+        "at_literature_lambda_fodft_t": round(lit["margin_vs_turnover_adverse"] ** -0.5, 3),
         "at_corner": "the adverse corner of BOTH axes (gap sign × λ(Cu) reading) — "
                      "`adverse_corner` of the literature scenario and of `fodft_cuco_rigor`",
         "judge_against": "at_literature_lambda_fodft_t — the rigorous coupling, and the scale the "

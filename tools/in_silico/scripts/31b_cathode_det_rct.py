@@ -3,8 +3,8 @@
 """31b — cathode DET charge-transfer resistance band (③, INDICATIVE).
 
 Script 31 models the ANODE EIS (Rct from enzyme j_max). The cathode story is
-different: the Cu–Co DET hop is a BRACKET that straddles enzymatic turnover
-(gap sign × λ(Cu) reading — see SUMMARY §Cathode). One might want a single cathode
+different: the Cu–Co DET hop is a BRACKET whose position against enzymatic turnover is conditional
+on λ(Co) (gap sign × λ(Cu) reading × λ(Co) value — see SUMMARY §Cathode). One might want a single cathode
 "Rct" for the Nyquist prediction, but (00_07, verified 2026-06-06) the cathode
 is a **kinetic competition** (k_DET vs turnover), NOT a fixed Rct — and a
 surface Rct also scales with the unknown site coverage Γ. So we report a BAND, and
@@ -105,7 +105,7 @@ def main() -> int:
         "§Cathode). The decisive test is the measured Ti-coin cathode EIS."
         if anode_rct else
         f"cathode DET R_ct spans {lo:.2g}–{hi:.2g} Ω — k_DET bracket × unknown-Γ → indicative only; "
-        "the robust statement is the kinetic competition k_DET ~ turnover."
+        "the robust statement is the kinetic competition k_DET against turnover, itself conditional on λ(Co)."
     )
     print(f"\n  ⚠️ INDICATIVE — {verdict}")
 
