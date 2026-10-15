@@ -141,6 +141,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 13. A THIRD-PARTY instrument writes "I did not measure this" with the SAME value it writes measurements — and nothing in our tree can see it, because the sentinel lives in that tool's code
 14. A converged SCF certifies a STATIONARY POINT, not the ground state — the Newton rescue in `dft_singlepoint` converges from wherever the failed SCF stopped, and on an open shell that can be a spin-contaminated state the cache records as `converged: true`
 15. A model of how a load TRAVELS between two parts is a list of paths before it is a number — inventory every coupling canon already defines between the two ends, and every load that does not depend on the one you set out to price, before computing any of them
+16. A reduced-cofactor SMILES is a TAUTOMER claim, and the formula cannot check it — before a cascade runs on it, verify WHERE the hydrogens sit against the species the text names
 
 <!-- /INSILICO-RULES-INDEX -->
 
