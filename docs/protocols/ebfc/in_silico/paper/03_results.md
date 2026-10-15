@@ -89,7 +89,7 @@ by 1.1, with a sphere on every hydrogen; the source states none — by −1.1 mV
 Removing the continuum moves the pair by −29.0 mV, so the continuum attenuates it, and neither variant moves it by a
 tenth of the gap. Nor is it the axial N-donor: pyridine in place of our 1-methylimidazole moves the pair by +0.9 mV,
 away from experiment (every pair by at most 3.6 mV). Relaxing the Os(II) geometry of OMe, Me and H with the same
-protocol, Os(III) vertical on it (Cl not relaxed), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
+protocol, Os(III) vertical on it (Cl is read below), closes this pair (−18.2 mV, to −41.9 against −39.8 mV per
 substituent, 1.05 times; the source's optimised B3LYP gives 1.01) and ref 8's (OMe−Me from 0.56 to 0.99 times), and it
 brings ref 8's two pairs against H closer by about 3 mV per substituent each (OMe−H from 0.87 to 1.08 times, Me−H
 from 1.34 to 1.23; of the three donor pairs two are independent); Me then falls below the line through H and OMe,
@@ -97,7 +97,7 @@ as it does in both measured series that have H (r² of the three computed donors
 homoleptic acetonitrile series, compared under the transfer assumptions above, moves the other way: OMe against H
 goes from 0.99 to 1.23 times the measured. The computed donor pairs change by −9 % (Me−H) to +77 % (OMe−Me), up to
 73 meV a complex against the 40–113 meV the points themselves move, so the substituent sensitivity of the vertical
-protocol rests on the geometry at the level of the pairs themselves; the pairs with Cl were not recomputed. The relaxed
+protocol rests on the geometry at the level of the pairs themselves (the pairs with Cl — below). The relaxed
 chelate comes closer to the crystal ranges of §2.3 — bite 77.5–78.2° against the programmatic 80.5–80.6°, Os–N(bpy)
 2.05–2.09 Å against 2.10 Å — while Os–N(L) lengthens to 2.14 Å and Os–Cl to 2.52–2.53 Å, 0.08–0.09 Å over the
 Os(II) range and 0.14–0.15 Å over the Os(III) one, on which Os(III) is computed vertically. Relaxing Os(III) as well,
@@ -113,8 +113,22 @@ pairs move by up to 20.1 mV per substituent (80 meV a complex), and on its own m
 2.42–2.43 Å, 0.04–0.05 Å over its crystal range. With Os(III) on its own minimum the Koopmans cascade Δ of Table 4
 moves by −0.142 eV for OMe, −0.070 eV for Me and −0.091 eV for H and stays monotonic in σ_para over the three, while
 the ΔE_red slope over the three donors steepens by 13 %, which carried over the σ span of the fit would amount to
-≈0.13 eV — an extrapolation, only OMe, Me and H being relaxed; so the order of the closest neighbours of Table 4 (NMe₂
-and NH₂, 1.5 meV apart; NO₂ and SO₂CF₃, 5.0 meV) is not tested against the geometry. Left untested are free energies and our
+≈0.13 eV — an extrapolation, only OMe, Me and H of the fit set being relaxed; so the order of the closest neighbours of Table 4 (NMe₂
+and NH₂, 1.5 meV apart; NO₂ and SO₂CF₃, 5.0 meV) is not tested against the geometry. Cl, relaxed in both states with
+the same protocol (λ_III 94 meV; Os–Cl 2.51 Å on its Os(II) minimum and 2.41 Å on Os(III)'s own, 0.07 and 0.03 Å over
+the crystal ranges of §2.3), does not come closer: against the programmatic geometry each of its pairs moves away
+from experiment in every series that has it — ref 8's Cl−H from 2.43 to 3.04 times the measured (2.81 with Os(III)
+vertical), Cl−Me from 1.76 to 1.79 and Cl−OMe from 1.18 to 1.42 times, the aqueous Cl−Me from 2.18 to 2.22 and Cl−OMe
+from 1.35 to 1.63 times (five rows on three computed pairs, which over the donors add one point) — and relaxing Os(III)
+after Os(II) brings Cl−Me and Cl−OMe back by only 2.0 and 0.2 mV per substituent. The geometry carries these pairs too
+(Cl−OMe moves by 21.4 mV per substituent), but away from experiment and, on the aqueous pairs, away from the source's
+own optimised B3LYP (1.45 and 1.22 times the measured), which our relaxation approached on OMe−Me. So where ref 8's
+donor pairs come within 1.7 mV per substituent of experiment, the excess on the acceptor side is not an artefact of the
+programmatic geometry — our relaxation enlarges it — and what the source's computation has and ours lacks, free
+energies among it, is untested on it. Cl's Koopmans cascade Δ moves by −0.066 eV with Os(III) on its own minimum and
+by +0.118 eV with Os(III) vertical on the relaxed Os(II), and over the four relaxed members the column stays monotonic
+in σ_para on the programmatic geometry and on both relaxed ones (H to Cl 158 meV on the programmatic, 182 meV with both
+states relaxed). Left untested are free energies and our
 program's own discretisation of the cavity. On its one
 acceptor point both computations put the effect above experiment. Its measured shifts fall from the donor to the acceptor side
 as ref 8's do (0.397 and 0.091 V per σ unit and substituent), and beyond Cl the acceptor side, most of the σ range of the fit, has no measured counterpart;
@@ -140,7 +154,8 @@ point. The robust content of the rule is
 therefore its direction; its slope is method-dependent, the measured Me shift is 1.3 (ref 8) to 2.5 times (acetonitrile,
 at both tiers) smaller than ours on the programmatic geometry and 1.0 to 1.9 times with both osmium states relaxed (at
 B3LYP), and on the acceptor side, where the realistic optimum lies, our Cl pairs exceed the
-measured ones 1.2 to 2.4 times across the two series that reach Cl, with no measured point beyond Cl.
+measured ones 1.2 to 2.4 times across the two series that reach Cl on the programmatic geometry and 1.4 to 3.0 times
+with both osmium states relaxed, with no measured point beyond Cl.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation. E° is not the whole of it: with naphthoquinone mediators
 and glucose oxidase or diaphorase immobilised in modified linear-polyethylenimine films, catalytic activity and reversibility differed

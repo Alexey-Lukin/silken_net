@@ -479,8 +479,14 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
         ad = rg["adiabatic"]
         assert ad["verdict"] == s83.verdict_adiabatic(ad), "the (3б) verdict is not the one its fields build"
         rx = json.loads((DFT / s83.RELAX_VARIANT[1]).read_text())["complexes"]
-        e = {"series": {n: b3[n]["dE_red_eV"] for n in rx}, "relaxed": {n: c["dE_red_eV"] for n, c in rx.items()},
-             "adiabatic": {n: o3["complexes"][n]["dE_red_adiabatic_eV"] for n in rx}}
+        both = [n for n in rx if "dE_red_eV" in rx[n] and "dE_red_adiabatic_eV" in o3["complexes"].get(n, {})]   # one state: skipped
+        e = {"series": {n: b3[n]["dE_red_eV"] for n in both}, "relaxed": {n: rx[n]["dE_red_eV"] for n in both},
+             "adiabatic": {n: o3["complexes"][n]["dE_red_adiabatic_eV"] for n in both}}
+        landed = sorted((n for n in both if n not in ("ome", "dmbpy", "bpy")), key=lambda n: b3[n]["sigma_para"])
+        assert rg["acceptors_relaxed"] == landed, "83 not re-run since a point beyond the donors landed in both 21e caches"
+        assert ("acceptors" in rg) == bool(landed), "the acceptor block is in 83 iff a point beyond the donors has both rows"
+        assert rg["not_relaxed"] == ad["not_relaxed"] == sorted((n for n in b3 if n not in {"ome", "dmbpy", "bpy", *landed}),
+                                                                key=lambda n: b3[n]["sigma_para"])
         meas = {"ref 8": lambda x, r_: (pm[x] - pm[r_]) / 4, "MeCN": lambda x, r_: m[x]["shift_per_substituent_V"],
                 "aqueous": lambda x, r_: (am[x]["E12_V"] - am[r_]["E12_V"]) / 4}
         assert [(p["series_name"], p["pair"]) for p in ad["pairs_vs_measured"]] == [
@@ -493,8 +499,10 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
                 assert p[f"{t}_mV"] == -(e[t][x] - e[t][r_]) / 4 * 1000 and p[f"{t}_gap_mV"] == abs(p[f"{t}_mV"] - p["measured_mV"]), (p, t)
         for t in ("series", "relaxed"):
             assert ad[f"closer_than_{t}"] == sum(p["adiabatic_gap_mV"] < p[f"{t}_gap_mV"] for p in ad["pairs_vs_measured"]), t
-        assert ad["lambda_os3_meV"] == o3["lambda_os3_meV"]
-        assert ad["point_shift_from_series_meV"] == {n: s * 1000 for n, s in o3["point_shift_eV"].items()}
+        donors = sorted(s83.DONORS, key=lambda n: b3[n]["sigma_para"])   # the (3б) block stays on the donor set as acceptors land
+        assert sorted(ad["koopmans_cascade_delta_eV"], key=lambda n: b3[n]["sigma_para"]) == donors, "the (3б) block is not the donor set"
+        assert ad["point_shift_from_series_meV"] == {n: o3["point_shift_eV"][n] * 1000 for n in donors}, \
+            "an acceptor's point entered the donor block"
         for k, mv in ad["pair_move_from_series_mV"].items():
             x, r_ = k.split("-")
             assert mv == (-(e["adiabatic"][x] - e["adiabatic"][r_]) / 4 + (e["series"][x] - e["series"][r_]) / 4) * 1000, k
@@ -531,7 +539,7 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
         assert ad["donor_slope_change"] == dsl["adiabatic"] / dsl["series"] - 1
         dt = ad["d_first_trigger"]
         reach = {"substituent_pairs_per_complex": max(abs(mv) for mv in ad["pair_move_from_series_mV"].values()) * 4 / 1000,
-                 "points": max(abs(s) for s in o3["point_shift_eV"].values()),
+                 "points": max(abs(o3["point_shift_eV"][n]) for n in pts),
                  "koopmans_cascade_delta": max(abs(x) for c in ad["koopmans_cascade_delta_move_eV"].values() for x in c.values())}
         assert dt["threshold_eV"] == s83.D_FIRST_TRIGGER_EV == 0.1, "D's first trigger is 0.1 eV (PIPELINE_STATUS «D»)"
         assert all(math.isclose(dt["largest_move_eV"][k], val, rel_tol=1e-12) for k, val in reach.items())
@@ -544,6 +552,8 @@ def test_os_series_vs_measured_is_derived_from_its_sources():
             ac = s83.acceptor_reading(rg["acceptors_relaxed"], {n: c["sigma_para"] for n, c in b3.items()}, b3, rx, o3, fit,
                                       lambda e_, x, r_: -(e_[x] - e_[r_]) / 4)
             assert ac == rg["acceptors"], "the acceptor block is not the one the caches build"
+            for n, c in rg["acceptors"]["koopmans_cascade_delta_eV"].items():
+                assert math.isclose(c["programmatic"], b3[n]["cascade_delta_eV"], abs_tol=5e-5), (n, "≠ Table 4's rounded column")
         assert "is D's to judge" in ad["verdict"] and "an extrapolation, not a computation" in ad["verdict"], \
             "a difference at D's threshold is reported as the script's judgement, or the extrapolation as a computation"
 
@@ -576,14 +586,21 @@ def test_83_acceptor_reading_is_declared_before_the_data(tmp_path, monkeypatch):
         shutil.copytree(DFT, d)
         r2 = json.loads((d / "os_mediator_series_relaxed_os2.json").read_text())
         r3 = json.loads((d / "os_mediator_series_relaxed_os3.json").read_text())
-        for n, (d2, dv, d3, up) in points.items():
+        g2 = r2["complexes"].get("cl", r2["complexes"]["bpy"])["geometry_os2_relaxed"]   # the producer writes a geometry per point;
+        g3 = r3["complexes"].get("cl", r3["complexes"]["bpy"])["geometry_os3_relaxed"]   # 83 reads its Os–Cl
+        for r in (r2, r3):   # each case starts from the donor set alone: an acceptor already landed in the caches must not join it
+            r["complexes"] = {n: c for n, c in r["complexes"].items() if n in s83.DONORS}
+        for n, (d2, dv, d3, up) in points.items():   # d3 None — the point has only its Os(II) row, as mid-run
             e2, e3 = b3[n]["os2"]["E_total_Ha"] + d2, b3[n]["os3"]["E_total_Ha"] + dv
-            r2["complexes"][n] = {"sigma_para": b3[n]["sigma_para"], "os2": {"E_total_Ha": e2},
+            r2["complexes"][n] = {"sigma_para": b3[n]["sigma_para"], "os2": {"E_total_Ha": e2}, "geometry_os2_relaxed": g2,
                                   "os3": {"E_total_Ha": e3, "LUMO_eV": b3[n]["os3"]["LUMO_eV"] - up / 2},   # the donors' pattern:
                                   # the cascade rises with Os(III) vertical on the Os(II) minimum, falls on its own
                                   "dE_red_eV": (e2 - e3) * HARTREE_TO_EV}
+            if d3 is None:
+                continue
             own = e3 + d3
             r3["complexes"][n] = {"sigma_para": b3[n]["sigma_para"], "os2_E_Ha": e2, "os3_vertical_E_Ha": e3,
+                                  "geometry_os3_relaxed": g3,
                                   "dE_red_vertical_eV": (e2 - e3) * HARTREE_TO_EV,
                                   "os3": {"E_total_Ha": own, "LUMO_eV": b3[n]["os3"]["LUMO_eV"] + up},
                                   "dE_red_adiabatic_eV": (e2 - own) * HARTREE_TO_EV,
@@ -655,6 +672,8 @@ def test_83_acceptor_reading_is_declared_before_the_data(tmp_path, monkeypatch):
     v, rg, *_ = run({"no2": (*small, 0.0)})                               # the 5 meV pair half-relaxed: never «not met»
     vc = rg["acceptors"]["verdict_condition"]
     assert vc["state"] == "not decidable" and "NOT DECIDABLE" in rg["acceptors"]["verdict"], vc
+    v, rg, *_ = run({"cl": (*small, 0.0), "no2": (-3e-3, -2e-3, None, 0.03)})   # NO₂ with its Os(II) row only, as mid-run
+    assert rg["acceptors_relaxed"] == ["cl"] and "no2" in rg["not_relaxed"] and "no2" not in rg["acceptors"]["members"], rg
 
 
 def test_os_mediator_series_relaxed_os3_is_derived_from_its_rows():
@@ -728,9 +747,10 @@ def test_os_mediator_series_osdef2_is_derived_from_both_caches():
         assert p["change_mV"] == p["def2tzvp_mV"] - p["lanl2dz_mV"], (x, r)
 
 
-@pytest.mark.parametrize("name", ["iefpcm", "uffcavity", "gas"])
+@pytest.mark.parametrize("name", ["iefpcm", "uffcavity", "gas", "relaxed_os2"])
 def test_os_mediator_series_continuum_variant_is_derived_from_both_caches(name):
-    """21e's continuum variants (2026-10-11, 00_07 HW.5.IS leg 2): each point accepted (converged, aufbau, <S²> ≤
+    """21e's one-knob variants — the continuum ones (2026-10-11, 00_07 HW.5.IS leg 2) and the Os(II) geometry
+    (`relaxed_os2`, 2026-10-12, acceptors since 2026-10-15): each point accepted (converged, aufbau, <S²> ≤
     S2_MAX_DOUBLET), none rescued, its ΔE from its own rows, and `vs_series` from the two caches — E° shift = −ΔΔE_red per
     4 substituents, in mV; the series rows that stand on `converged` alone are named.
     CAN catch: a stale or hand-edited comparison, an unaccepted row counted, a sign or unit slip. CANNOT catch: which

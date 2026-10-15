@@ -457,7 +457,6 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
            "donor_slope_change": fits["relaxed"][0] / fits["series"][0] - 1,
            "os_donors_A": donors,
            "os_cl_A": {n: {t: v[t]["Cl"] for t in v} for n, v in donors.items()}}
-    out["verdict"] = verdict_relaxed(out)
     if o3:
         rows = [("ref 8", x, r, (pv_meas[x] - pv_meas[r]) / N_SUBST_COMPUTED) for x, r in pvi_pairs]
         rows += [("aqueous", "ome", "dmbpy", aq_meas)]
@@ -472,6 +471,7 @@ def relaxed_geometry(sigma: dict, b3: dict, measured: dict, aq: dict) -> dict | 
         out["adiabatic"]["verdict"] = verdict_adiabatic(out["adiabatic"])
         if acc:
             out["acceptors"] = acceptor_reading(acc, sigma, b3, d["complexes"], o3, fit, shift)
+    out["verdict"] = verdict_relaxed(out)   # last: its acceptor clause reads the acceptor block
     return out
 
 
@@ -566,6 +566,9 @@ def acceptor_reading(acc: list, sigma: dict, b3: dict, rx: dict, o3: dict, fit: 
           "koopmans_cascade_delta_eV": cascade, "koopmans_own_move_eV": own_move,
           "table4_neighbours_both_relaxed": both, "table4_neighbours_half_relaxed": half, "slopes": slopes,
           "acceptor_point_shift_eV": {n: e["adiabatic"][n] - e["series"][n] for n in acc},
+          "os_cl_A": {n: {"relaxed": _os_donors(rx[n]["geometry_os2_relaxed"]["atoms"])["Cl"],   # read against the §2.3 crystal
+                          "relaxed_os3": _os_donors(o3["complexes"][n]["geometry_os3_relaxed"]["atoms"])["Cl"]}   # ranges, as the donors'
+                      for n in acc},
           "verdict_condition": {"threshold_eV": D_FIRST_TRIGGER_EV, "close_neighbour_meV": CLOSE_NEIGHBOUR_MEV,
                                 "largest_move_eV": reach, "at_or_above": at, "neighbour_order_flipped": flipped,
                                 "not_decidable_pairs": undecidable, "state": state,
@@ -643,7 +646,7 @@ def adiabatic_reading(rows: list, src: dict, o3: dict, b3: dict, rx: dict, shift
     the Os geometry, so the cascade inherits the LUMO's move whole); and, labelled as such, the slope ① EXTRAPOLATED —
     the donor slope's relative change carried over the σ span of the LFER fit set, the way the 2026-10-13 submission
     priced (3а). CAN show: which of those reach 0.1 eV, and how close the unrelaxed neighbours of Table 4 sit. CANNOT show:
-    free energies, the acceptor side (not relaxed), or whether a difference that reaches 0.1 eV carries a conclusion —
+    free energies, the acceptor side (its own block, `acceptors`), or whether a difference that reaches 0.1 eV carries a conclusion —
     that is D's to judge."""
     cols = ("series", "relaxed", "adiabatic")
     pairs = [{"series_name": s, "pair": f"{x}-{r}", "measured_mV": m * 1000, **{f"{t}_mV": shift(src[t], x, r) * 1000 for t in cols}}
@@ -783,6 +786,10 @@ def verdict_relaxed(rg: dict) -> str:
     r2, gap = rg["donor_r2"], rg["pvi_gap_mV"]
     bite = {t: [b for v in don for b in v[t]["bite_deg"]] for t in ("programmatic", "relaxed")}
     cl = "the pairs with Cl — the acceptor block" if "cl" in rg.get("acceptors_relaxed", []) else "the pairs with Cl are not recomputed"
+    ac_rows = rg.get("acceptors", {}).get("pairs_vs_measured", [])   # the same geometry step read on the acceptor rows
+    core = "the donor pairs of our own core" if ac_rows else "our own core"
+    acc_tail = (f"; on its acceptor rows it does not ({sum(p['relaxed_gap_mV'] < p['series_gap_mV'] for p in ac_rows)} of "
+                f"{len(ac_rows)} closer — the acceptor block)") if ac_rows else ""
     return (f"Relaxing the Os(II) geometry of OMe, Me and H (Os(III) vertical on it) brings every recomputed "
             f"donor pair of our own core closer to the measured ({cl}) — ref 8's films "
             f"OMe−H ×{pv['ome-bpy']['series']:.2f} → ×{pv['ome-bpy']['relaxed']:.2f} and Me−H "
@@ -800,8 +807,8 @@ def verdict_relaxed(rg: dict) -> str:
             f"{max(bite['relaxed']):.1f}°, Os–N(bpy) from {span('programmatic', 'N_bpy')} to {span('relaxed', 'N_bpy')} Å, "
             f"Os–N(L) from {span('programmatic', 'N_L')} to {span('relaxed', 'N_L')} Å, Os–Cl from {span('programmatic', 'Cl')} "
             f"to {span('relaxed', 'Cl')} Å. So the substituent sensitivity of the vertical protocol depends on the geometry at "
-            f"the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with "
-            f"Os(III) kept vertical on it.")
+            f"the level of the pairs themselves, and on {core} the relaxed geometry agrees better with experiment — with "
+            f"Os(III) kept vertical on it{acc_tail}.")
 
 
 def main() -> int:

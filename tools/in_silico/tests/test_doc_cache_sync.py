@@ -19,6 +19,7 @@ Add a row to CHECKS when you add a headline number with a clean single cache-own
 Tolerance rule: ~1 unit in the doc's last displayed digit (honours "within display rounding").
 """
 import fnmatch
+import itertools
 import json
 import math
 import re
@@ -369,8 +370,8 @@ CHECKS = [
     *[(f"{doc_name} relaxed OMe−Me move → relaxation_check", doc, anchor, "dft/os_series_vs_measured.json",
        lambda d: d["aqueous_series"]["relaxation_check"]["ome_dmbpy_change_mV"], 0.05)
       for doc_name, doc, anchor in (
-          ("paper §3.3", PAPER_RESULTS, rf"\(Cl not relaxed\), closes this pair \({N} mV"),
-          ("SUMMARY", SUMMARY, rf"not recomputed — OMe−Me moves by {N} mV"))],
+          ("paper §3.3", PAPER_RESULTS, rf"\(Cl is read below\), closes this pair \({N} mV"),
+          ("SUMMARY", SUMMARY, rf"relaxed with the acceptors, below\) — OMe−Me moves by {N} mV"))],
     *[(f"{doc_name} relaxed OMe−Me value → relaxed_os2", doc, anchor, "dft/os_mediator_series_relaxed_os2.json",
        lambda d: next(p["variant_mV"] for p in d["vs_series"]["pairs"] if (p["x"], p["ref"]) == ("ome", "dmbpy")), 0.05)
       for doc_name, doc, anchor in (
@@ -4159,6 +4160,225 @@ CHECKS += [
     ("SUMMARY (4) vertical Me shift → relaxed_os2", SUMMARY, rf"of the Me point \({N} eV vertical,", "dft/os_mediator_series_relaxed_os2.json",
      lambda d: d["vs_series"]["point_shift_eV"]["dmbpy"], 0.0005),
 ]
+
+
+# the acceptors (21e `b3lyp-relaxed-os2` · `b3lyp-relaxed-os3` on Cl, then NO₂), read by 83 as `relaxed_geometry_check.acceptors`
+OS2 = "dft/os_mediator_series_relaxed_os2.json"
+OUTLINE = "docs/protocols/ebfc/in_silico/paper/00_OUTLINE.md"
+_OS_CL_CRYSTAL_MAX_A = {"relaxed": 2.44, "relaxed_os3": 2.38}   # paper §2.3 (COD): Os(II)–Cl 2.40–2.44, Os(III)–Cl 2.36–2.38 Å
+
+
+def _ac(d):
+    return d["relaxed_geometry_check"]["acceptors"]
+
+
+def _ac_ratio(d, series, pair, col="adiabatic"):
+    p = next(p for p in _ac(d)["pairs_vs_measured"] if (p["series_name"], p["pair"]) == (series, pair))
+    return p[f"{col}_mV"] / p["measured_mV"]
+
+
+def _ac_pair_move_max(d):   # meV a complex, the largest Cl pair move from the programmatic geometry over both relaxed geometries
+    rows = _ac(d)["pairs_vs_measured"]
+    return 4 * max(max(abs(p["relaxed_mV"] - p["series_mV"]), abs(p["adiabatic_mV"] - p["series_mV"])) for p in rows)
+
+
+def _ac_koop(d, n, where):   # eV — `os3_on_os2_minimum` · `os3_on_own_minimum`
+    return _ac(d)["koopmans_own_move_eV"][n][where]
+
+
+def _ac_gap(d, k, where):   # meV — a Table 4 neighbour pair with both members relaxed
+    return _ac(d)["table4_neighbours_both_relaxed"][k]["koopmans_gap_meV"][where]
+
+
+def _ac_os_cl(d, where, over=False):   # Å — Cl's Os–Cl on a relaxed geometry, or its overshoot of the §2.3 crystal range
+    v = _ac(d)["os_cl_A"]["cl"][where]
+    return v - _OS_CL_CRYSTAL_MAX_A[where] if over else v
+
+
+def _aq_source(d, x, r):   # the aqueous source's own optimised B3LYP, ratio to the measured
+    return next(p for p in d["aqueous_series"]["pairs"] if (p["x"], p["ref"]) == (x, r))["source_dft_over_measured"]
+
+
+_CL_ROWS = (("ref 8", "cl-bpy", "Cl−H"), ("ref 8", "cl-dmbpy", "Cl−Me"), ("ref 8", "cl-ome", "Cl−OMe"),
+            ("aqueous", "cl-dmbpy", "Cl−Me"), ("aqueous", "cl-ome", "Cl−OMe"))
+_CL_COLS = ("series", "relaxed", "adiabatic")
+
+
+def _summary_cl_anchor(i, j):   # SUMMARY (2): «ref 8 Cl−H ×a → ×b → ×c, … aqueous … Cl−OMe ×a → ×b → ×c» — slot (i, j) captured
+    parts = []
+    for k, (series, _, lab) in enumerate(_CL_ROWS):
+        slots = " → ".join("×" + (N if (k, m) == (i, j) else r"[\d.]+") for m in range(3))
+        head = "ref 8 " if k == 0 else ("aqueous " if series == "aqueous" and _CL_ROWS[k - 1][0] != "aqueous" else "")
+        parts.append(f"{head}{lab} {slots}")
+    return ", ".join(parts) + r" \(programmatic → Os\(II\) relaxed → both relaxed\)"
+
+
+CHECKS += [
+    # paper §3.3 — Cl relaxed in both states (every anchor within one line of the paragraph, #16)
+    ("paper §3.3 Cl λ_III → relaxed_os3", PAPER_RESULTS, rf"the same protocol \(λ_III {N} meV; Os–Cl", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["cl"], 0.6),
+    ("paper §3.3 Cl Os–Cl, Os(II) minimum → 83 acceptors", PAPER_RESULTS, rf"Os–Cl {N} Å on its Os\(II\) minimum and", V83,
+     lambda d: _ac_os_cl(d, "relaxed"), 0.005),
+    ("paper §3.3 Cl Os–Cl, Os(III) minimum → 83 acceptors", PAPER_RESULTS, rf"minimum and {N} Å on Os\(III\)'s own, ", V83,
+     lambda d: _ac_os_cl(d, "relaxed_os3"), 0.005),
+    ("paper §3.3 Cl Os–Cl over Os(II) range → 83 acceptors", PAPER_RESULTS, rf"Os\(III\)'s own, {N} and [\d.]+ Å over", V83,
+     lambda d: _ac_os_cl(d, "relaxed", over=True), 0.005),
+    ("paper §3.3 Cl Os–Cl over Os(III) range → 83 acceptors", PAPER_RESULTS, rf"Os\(III\)'s own, [\d.]+ and {N} Å over", V83,
+     lambda d: _ac_os_cl(d, "relaxed_os3", over=True), 0.005),
+    *[(f"paper §3.3 Cl {series} {lab} {col} → 83 acceptors", PAPER_RESULTS, anchor, V83,
+       lambda d, s=series, p=pair, c=col: _ac_ratio(d, s, p, c), 0.005)
+      for series, pair, lab, col, anchor in (
+          ("ref 8", "cl-bpy", "Cl−H", "series", rf"ref 8's Cl−H from {N} to"),
+          ("ref 8", "cl-bpy", "Cl−H", "adiabatic", rf"Cl−H from [\d.]+ to {N} times the measured \("),
+          ("ref 8", "cl-bpy", "Cl−H", "relaxed", rf"times the measured \({N} with Os\(III\)"),
+          ("ref 8", "cl-dmbpy", "Cl−Me", "series", rf"vertical\), Cl−Me from {N} to"),
+          ("ref 8", "cl-dmbpy", "Cl−Me", "adiabatic", rf"vertical\), Cl−Me from [\d.]+ to {N} and Cl−OMe"),
+          ("ref 8", "cl-ome", "Cl−OMe", "series", rf"and Cl−OMe from {N} to [\d.]+ times, the aqueous"),
+          ("ref 8", "cl-ome", "Cl−OMe", "adiabatic", rf"and Cl−OMe from [\d.]+ to {N} times, the aqueous"),
+          ("aqueous", "cl-dmbpy", "Cl−Me", "series", rf"the aqueous Cl−Me from {N} to"),
+          ("aqueous", "cl-dmbpy", "Cl−Me", "adiabatic", rf"the aqueous Cl−Me from [\d.]+ to {N} and Cl−OMe"),
+          ("aqueous", "cl-ome", "Cl−OMe", "series", rf"from {N} to [\d.]+ times \(five rows"),
+          ("aqueous", "cl-ome", "Cl−OMe", "adiabatic", rf"from [\d.]+ to {N} times \(five rows"))],
+    ("paper §3.3 Cl Os(III) step, Cl−Me back → 83 acceptors", PAPER_RESULTS, rf"back by only {N} and [\d.]+ mV per substituent", V83,
+     lambda d: -_ac(d)["computed_pairs"]["cl-dmbpy"]["move_from_relaxed_mV"], 0.05),
+    ("paper §3.3 Cl Os(III) step, Cl−OMe back → 83 acceptors", PAPER_RESULTS, rf"back by only [\d.]+ and {N} mV per substituent", V83,
+     lambda d: -_ac(d)["computed_pairs"]["cl-ome"]["move_from_relaxed_mV"], 0.05),
+    ("paper §3.3 Cl−OMe geometry move → 83 acceptors", PAPER_RESULTS, rf"\(Cl−OMe moves by {N} mV per substituent\), but away", V83,
+     lambda d: _ac(d)["computed_pairs"]["cl-ome"]["move_from_series_mV"], 0.05),
+    ("paper §3.3 aqueous source Cl−Me → 83 aqueous", PAPER_RESULTS, rf"own optimised B3LYP \({N} and [\d.]+ times the measured\)", V83,
+     lambda d: _aq_source(d, "cl", "dmbpy"), 0.005),
+    ("paper §3.3 aqueous source Cl−OMe → 83 aqueous", PAPER_RESULTS, rf"own optimised B3LYP \([\d.]+ and {N} times the measured\)", V83,
+     lambda d: _aq_source(d, "cl", "ome"), 0.005),
+    ("paper §3.3 Cl ref 8 donors within → 83 adiabatic", PAPER_RESULTS, rf"donor pairs come within {N} mV per substituent of experiment", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    ("paper §3.3 Cl Koopmans own minimum → 83 acceptors", PAPER_RESULTS, rf"Cl's Koopmans cascade Δ moves by {N} eV with Os\(III\) on its", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
+    ("paper §3.3 Cl Koopmans vertical → 83 acceptors", PAPER_RESULTS, rf"by \+{N} eV with Os\(III\) vertical on the relaxed Os\(II\)", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
+    ("paper §3.3 Cl H→Cl gap programmatic → 83 acceptors", PAPER_RESULTS, rf"\(H to Cl {N} meV on the programmatic", V83,
+     lambda d: _ac_gap(d, "bpy-cl", "programmatic"), 0.6),
+    ("paper §3.3 Cl H→Cl gap both relaxed → 83 acceptors", PAPER_RESULTS, rf"on the programmatic, {N} meV with both", V83,
+     lambda d: _ac_gap(d, "bpy-cl", "os3_on_own_minimum"), 0.6),
+    ("paper §3.3 robust Cl low, both relaxed → 83 acceptors", PAPER_RESULTS, rf"reach Cl on the programmatic geometry and {N} to", V83,
+     lambda d: min(_ac_ratio(d, s, p) for s, p, _ in _CL_ROWS), 0.05),
+    ("paper §3.3 robust Cl high, both relaxed → 83 acceptors", PAPER_RESULTS, rf"reach Cl on the programmatic geometry and [\d.]+ to {N} times", V83,
+     lambda d: max(_ac_ratio(d, s, p) for s, p, _ in _CL_ROWS), 0.05),
+    # paper §2.3 — the acceptor point beside the donors
+    ("paper §2.3 Cl point, Os(II) relaxed → relaxed_os2", METHODS, rf"Os\(II\) moves the point by {N} meV, and relaxing", OS2,
+     lambda d: abs(d["vs_series"]["point_shift_eV"]["cl"]) * 1000, 0.6),
+    ("paper §2.3 Cl point, both relaxed → 83 acceptors", METHODS, rf"leaves it within {N} meV, while its pairs", V83,
+     lambda d: abs(_ac(d)["acceptor_point_shift_eV"]["cl"]) * 1000, 0.6),
+    ("paper §2.3 Cl pairs per complex → 83 acceptors", METHODS, rf"{N} meV a complex on either geometry", V83, _ac_pair_move_max, 0.5),
+    # SUMMARY §Mediator, limits (2) and (4) — one physical line, so no wrap to cross
+    ("SUMMARY (2) Cl λ_III → relaxed_os3", SUMMARY, rf"acceptors run of 2026-10-14; λ_III {N} meV\)", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["cl"], 0.6),
+    *[(f"SUMMARY (2) Cl {s} {lab} {c} → 83 acceptors", SUMMARY, _summary_cl_anchor(i, j), V83,
+       lambda d, s=s, p=p, c=c: _ac_ratio(d, s, p, c), 0.005)
+      for i, (s, p, lab) in enumerate(_CL_ROWS) for j, c in enumerate(_CL_COLS)],
+    *[(f"SUMMARY (2) Cl Os(III) step {k} → 83 acceptors", SUMMARY, anchor, V83,
+       lambda d, k=k, sign=sign: sign * _ac(d)["computed_pairs"][k]["move_from_relaxed_mV"], 0.05)
+      for k, sign, anchor in (("cl-dmbpy", -1, rf"brings Cl−Me and Cl−OMe back by {N} and"),
+                              ("cl-ome", -1, rf"back by [\d.]+ and {N} mV per substituent and takes"),
+                              ("cl-bpy", 1, rf"takes Cl−H {N} mV further"))],
+    *[(f"SUMMARY (2) Cl Os–Cl {lab} → 83 acceptors", SUMMARY, anchor, V83, fn, 0.005) for lab, anchor, fn in (
+        ("Os(II)", rf"its Os–Cl is {N} Å on the Os\(II\) minimum", lambda d: _ac_os_cl(d, "relaxed")),
+        ("Os(III)", rf"Os\(II\) minimum and {N} Å on Os\(III\)'s own, ", lambda d: _ac_os_cl(d, "relaxed_os3")),
+        ("over Os(II)", rf"Os\(III\)'s own, {N} and [\d.]+ Å over the two crystal ranges", lambda d: _ac_os_cl(d, "relaxed", over=True)),
+        ("over Os(III)", rf"Os\(III\)'s own, [\d.]+ and {N} Å over the two crystal ranges", lambda d: _ac_os_cl(d, "relaxed_os3", over=True)),
+        ("over Os(III), limit (4)", rf"the three donors; Cl {N} Å\)", lambda d: _ac_os_cl(d, "relaxed_os3", over=True)))],
+    ("SUMMARY (2) Cl−OMe geometry move → 83 acceptors", SUMMARY, rf"carries these pairs too \(Cl−OMe moves by {N} mV", V83,
+     lambda d: _ac(d)["computed_pairs"]["cl-ome"]["move_from_series_mV"], 0.05),
+    ("SUMMARY (2) aqueous source Cl−Me → 83 aqueous", SUMMARY, rf"own optimised B3LYP \(×{N}, ×[\d.]+\), so the acceptor", V83,
+     lambda d: _aq_source(d, "cl", "dmbpy"), 0.005),
+    ("SUMMARY (2) aqueous source Cl−OMe → 83 aqueous", SUMMARY, rf"own optimised B3LYP \(×[\d.]+, ×{N}\), so the acceptor", V83,
+     lambda d: _aq_source(d, "cl", "ome"), 0.005),
+    ("SUMMARY (4) Cl Koopmans vertical → 83 acceptors", SUMMARY, rf"Koopmans cascade Δ moves by \+{N} eV with Os\(III\) vertical on the relaxed", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
+    ("SUMMARY (4) Cl Koopmans own → 83 acceptors", SUMMARY, rf"\({N} eV on its own minimum\), the column staying", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
+    # PIPELINE_STATUS — rows 21e · 83, the note under D, §Future ΔG
+    ("PIPELINE 21e Cl point vertical → relaxed_os2", PIPELINE, rf"Cl integrated 2026-10-15 \(its point {N} meV", OS2,
+     lambda d: d["vs_series"]["point_shift_eV"]["cl"] * 1000, 0.6),
+    ("PIPELINE 21e Cl point both → 83 acceptors", PIPELINE, rf"relaxed Os\(II\), {N} meV with both relaxed; λ_III", V83,
+     lambda d: _ac(d)["acceptor_point_shift_eV"]["cl"] * 1000, 0.6),
+    ("PIPELINE 21e Cl λ_III → relaxed_os3", PIPELINE, rf"with both relaxed; λ_III {N} meV\) — row 83", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["cl"], 0.6),
+    ("PIPELINE 83 (e) Cl−H programmatic → 83 acceptors", PIPELINE, rf"\(ref 8 Cl−H ×{N} → ×[\d.]+ with both states relaxed\)", V83,
+     lambda d: _ac_ratio(d, "ref 8", "cl-bpy", "series"), 0.005),
+    ("PIPELINE 83 (e) Cl−H both → 83 acceptors", PIPELINE, rf"\(ref 8 Cl−H ×[\d.]+ → ×{N} with both states relaxed\)", V83,
+     lambda d: _ac_ratio(d, "ref 8", "cl-bpy"), 0.005),
+    ("PIPELINE 83 (e) donors within → 83 adiabatic", PIPELINE, rf"while ref 8's donors come within {N} mV per substituent", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    ("PIPELINE 83 (e) Koopmans vertical → 83 acceptors", PIPELINE, rf"its own Koopmans cascade moves \+{N} eV with Os\(III\)", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
+    ("PIPELINE 83 (e) Koopmans own → 83 acceptors", PIPELINE, rf"\({N} eV on its own minimum\), so the condition is MET", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-15 Cl Table 4 cascade → os_mediator_series", PIPELINE, rf"\(Table 4: {N} еВ на програмній геометрії\)",
+     "dft/os_mediator_series.json", lambda d: next(c for c in d["complexes"] if c["name"] == "cl")["cascade_delta_eV"], 0.00005),
+    ("PIPELINE D 10-15 Cl Koopmans vertical → 83 acceptors", PIPELINE, rf"Os\(II\), рухається на \+{N} еВ, а з", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
+    ("PIPELINE D 10-15 Cl Koopmans own → 83 acceptors", PIPELINE, rf"на власному мінімумі — на {N} еВ; пару", V83,
+     lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-15 H→Cl programmatic → 83 acceptors", PIPELINE, rf"\(H→Cl {N} → [\d.]+ меВ\)", V83,
+     lambda d: _ac_gap(d, "bpy-cl", "programmatic"), 0.6),
+    ("PIPELINE D 10-15 H→Cl both → 83 acceptors", PIPELINE, rf"\(H→Cl [\d.]+ → {N} меВ\)", V83,
+     lambda d: _ac_gap(d, "bpy-cl", "os3_on_own_minimum"), 0.6),
+    ("PIPELINE D 10-15 Cl→COOH half-relaxed → 83 acceptors", PIPELINE, rf"Cl→COOH \({N} меВ, релаксовано один член\)", V83,
+     lambda d: _ac(d)["table4_neighbours_half_relaxed"]["cl-dcbpy"]["programmatic_koopmans_gap_meV"], 0.6),
+    ("PIPELINE D 10-15 Cl pairs per complex → 83 acceptors", PIPELINE, rf"пари Cl зсуваються до {N} меВ на комплекс", V83,
+     _ac_pair_move_max, 0.5),
+    ("PIPELINE D 10-15 Cl point → 83 acceptors", PIPELINE, rf"абсолютна точка — на {N} меВ \(не різниця\)", V83,
+     lambda d: _ac(d)["acceptor_point_shift_eV"]["cl"] * 1000, 0.6),
+    *[(f"PIPELINE D 10-15 ref 8 Cl−H {c} → 83 acceptors", PIPELINE, anchor, V83,
+       lambda d, c=c: _ac_ratio(d, "ref 8", "cl-bpy", c), 0.005)
+      for c, anchor in (("series", rf"\(ref 8 Cl−H ×{N} → ×[\d.]+ → ×[\d.]+; від"),
+                        ("relaxed", rf"\(ref 8 Cl−H ×[\d.]+ → ×{N} → ×[\d.]+; від"),
+                        ("adiabatic", rf"\(ref 8 Cl−H ×[\d.]+ → ×[\d.]+ → ×{N}; від"))],
+    ("PIPELINE D 10-15 donors within → 83 adiabatic", PIPELINE, rf"донори ref 8 сходяться до {N} мВ на замісник", V83,
+     lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
+    *[(f"PIPELINE §Future ΔG ref 8 Cl−H {c} → 83 acceptors", PIPELINE, anchor, V83,
+       lambda d, c=c: _ac_ratio(d, "ref 8", "cl-bpy", c), 0.005)
+      for c, anchor in (("series", rf"\(ref 8 Cl−H ×{N} → ×[\d.]+; `83` `acceptors`\)"),
+                        ("adiabatic", rf"\(ref 8 Cl−H ×[\d.]+ → ×{N}; `83` `acceptors`\)"))],
+    # paper/00_OUTLINE §3.3 and L3 caveat 2
+    *[(f"OUTLINE §3.3 ref 8 Cl−H {c} → 83 acceptors", OUTLINE, anchor, V83,
+       lambda d, c=c: _ac_ratio(d, "ref 8", "cl-bpy", c), 0.005)
+      for c, anchor in (("series", rf"ref 8 Cl−H ×{N} → ×[\d.]+, so the acceptor-side"),
+                        ("adiabatic", rf"ref 8 Cl−H ×[\d.]+ → ×{N}, so the acceptor-side"))],
+    ("L3 caveat 2 Cl Os–Cl, Os(II) → 83 acceptors", L3, rf"the acceptors run\) — Os–Cl {N} Å on its Os\(II\)", V83,
+     lambda d: _ac_os_cl(d, "relaxed"), 0.005),
+    ("L3 caveat 2 Cl Os–Cl, Os(III) → 83 acceptors", L3, rf"Os\(II\) minimum and {N} Å on Os\(III\)'s own; its pairs", V83,
+     lambda d: _ac_os_cl(d, "relaxed_os3"), 0.005),
+]
+
+_COUNT_WORDS = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+
+
+def test_paper_33_acceptor_column_claim_holds():
+    """Paper §3.3 and §2.3 name WHICH points are relaxed — four sentences an acceptor landing makes false. Each is held
+    to the 21e caches themselves (a point counts once both its rows exist), not to 83's record, so a stale 83 reds too.
+
+    CAN catch: the word «four» drifting from the relaxed members; a sentence naming the relaxed set after a point lands
+    (or before it lands); 83 not re-run since a point landed in both 21e caches; the column losing its order on any of
+    the three geometries. CANNOT catch: whether the paper should say it at all."""
+    ac = C(V83)["relaxed_geometry_check"]["acceptors"]
+    o2, o3 = C(OS2)["complexes"], C(OS3)["complexes"]
+    sigma = {n: c["sigma_para"] for n, c in o2.items()}
+    both = sorted((n for n, c in o3.items() if "dE_red_adiabatic_eV" in c and "dE_red_eV" in o2.get(n, {})), key=lambda n: sigma[n])
+    members = sorted(ac["members"], key=lambda n: sigma[n])
+    assert members == both, "83 is stale against the 21e caches — re-run 83 after a point lands in both"
+    assert len(members) in _COUNT_WORDS, f"{len(members)} relaxed members — extend _COUNT_WORDS"
+    paper, methods = doc(PAPER_RESULTS), doc(METHODS)
+    assert f"over the {_COUNT_WORDS[len(members)]} relaxed members the column stays monotonic" in paper, \
+        "paper §3.3 names a different number of relaxed members than the 21e caches hold"
+    fit = C("dft/os_mediator_series.json")["lfer"]["fit_set"]
+    assert ("only OMe, Me and H of the fit set being relaxed" in paper) == (sorted(n for n in fit if n in both) == ["bpy", "dmbpy", "ome"])
+    assert ("on the one acceptor point, Cl," in methods) == (ac["acceptors"] == ["cl"])
+    assert ("the Os(II) points of OMe, Me, H and Cl " in methods) == (members == ["ome", "dmbpy", "bpy", "cl"])
+    for g in ("programmatic", "os3_on_os2_minimum", "os3_on_own_minimum"):
+        seq = [ac["koopmans_cascade_delta_eV"][n][g] for n in members]
+        assert all(a < b for a, b in itertools.pairwise(seq)), f"the column is not monotonic on {g}, yet the paper says it is"
+
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])

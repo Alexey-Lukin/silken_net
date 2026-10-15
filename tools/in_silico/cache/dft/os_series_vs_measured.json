@@ -457,13 +457,14 @@
     "not_relaxed": [
       "nme2",
       "nh2",
-      "cl",
       "dcbpy",
       "cf3",
       "no2",
       "so2cf3"
     ],
-    "acceptors_relaxed": [],
+    "acceptors_relaxed": [
+      "cl"
+    ],
     "os3": "vertical on the relaxed Os(II) geometry",
     "mecn_ratio_ours_over_measured": {
       "ome": {
@@ -683,7 +684,6 @@
         "relaxed_os3": 2.4164
       }
     },
-    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl are not recomputed) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on our own core the relaxed geometry agrees better with experiment — with Os(III) kept vertical on it.",
     "adiabatic": {
       "os3": "relaxed from each relaxed Os(II) geometry — adiabatic ΔSCF, no free energies",
       "lambda_os3_meV": {
@@ -870,7 +870,6 @@
       "unrelaxed_neighbour_gap_meV": {
         "nme2-nh2": 1.5461343977984932,
         "nh2-ome": 364.2816517801437,
-        "bpy-cl": 157.70298747349722,
         "cl-dcbpy": 209.21735383323804,
         "dcbpy-cf3": 40.03797819030197,
         "cf3-no2": 270.4728930529452,
@@ -899,7 +898,6 @@
       "not_relaxed": [
         "nme2",
         "nh2",
-        "cl",
         "dcbpy",
         "cf3",
         "no2",
@@ -919,8 +917,246 @@
           "relaxed_os3": 2.4164
         }
       },
-      "verdict": "Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III 86–110 meV; no free energies). The 6 donor rows the three measured series share with it rest on three computed pairs, two of them independent (OMe−Me = OMe−H − Me−H). Against Os(III) kept vertical: Me−H +6.1 mV (closer in ref 8, MeCN), OMe−H +4.2 mV (closer in ref 8, MeCN), OMe−Me -1.9 mV (away in ref 8, aqueous); against the programmatic geometry: Me−H +9.3 mV (closer in ref 8, MeCN), OMe−H -10.8 mV (closer in ref 8; away in MeCN), OMe−Me -20.1 mV (closer in ref 8, aqueous). Ref 8's films — our core and N-donor — OMe−H ×0.87 → ×1.08 → ×1.02; Me−H ×1.34 → ×1.23 → ×1.01; OMe−Me ×0.56 → ×0.99 → ×1.04 (|ours − measured| at most 1.7 mV per substituent with both states relaxed); the aqueous OMe−Me ×0.59 → ×1.05 → ×1.10; the homoleptic MeCN OMe−H ×0.99 → ×1.23 → ×1.16, Me−H ×2.48 → ×2.27 → ×1.86. From the programmatic geometry the donor pairs move by up to 20.1 mV per substituent (OMe−Me, 80 meV a complex) and the points by -26 to +54 meV; the Koopmans cascade Δ of each relaxed member moves by -0.142 eV (OMe), -0.070 eV (Me), -0.091 eV (H) with Os(III) on its own minimum (up to 0.142 eV over both Os(III) geometries), and stays monotonic in σ over the relaxed donors on both Os(III) geometries — where the programmatic gaps are 84 meV or more; the closest neighbours of Table 4 are unrelaxed (NMe₂→NH₂ 1.5 meV, NO₂→SO₂CF₃ 5.0 meV, COOH→CF₃ 40.0 meV). On its own minimum Os(III) takes Os–Cl back from 2.522–2.533 to 2.416–2.428 Å. By the letter of D's first trigger (0.1 eV), the Koopmans cascade Δ of OMe reaches it; the slope ①, extrapolated from the donors' +13 % over the LFER fit set's span (0.97 eV), moves by ≈0.13 eV — an extrapolation, not a computation. Whether a difference at the threshold carries a conclusion is D's to judge. Not relaxed in both states: NMe₂, NH₂, Cl, COOH, CF₃, NO₂, SO₂CF₃."
-    }
+      "verdict": "Relaxing Os(III) as well, from each relaxed Os(II) geometry (adiabatic ΔSCF, λ_III 86–110 meV; no free energies). The 6 donor rows the three measured series share with it rest on three computed pairs, two of them independent (OMe−Me = OMe−H − Me−H). Against Os(III) kept vertical: Me−H +6.1 mV (closer in ref 8, MeCN), OMe−H +4.2 mV (closer in ref 8, MeCN), OMe−Me -1.9 mV (away in ref 8, aqueous); against the programmatic geometry: Me−H +9.3 mV (closer in ref 8, MeCN), OMe−H -10.8 mV (closer in ref 8; away in MeCN), OMe−Me -20.1 mV (closer in ref 8, aqueous). Ref 8's films — our core and N-donor — OMe−H ×0.87 → ×1.08 → ×1.02; Me−H ×1.34 → ×1.23 → ×1.01; OMe−Me ×0.56 → ×0.99 → ×1.04 (|ours − measured| at most 1.7 mV per substituent with both states relaxed); the aqueous OMe−Me ×0.59 → ×1.05 → ×1.10; the homoleptic MeCN OMe−H ×0.99 → ×1.23 → ×1.16, Me−H ×2.48 → ×2.27 → ×1.86. From the programmatic geometry the donor pairs move by up to 20.1 mV per substituent (OMe−Me, 80 meV a complex) and the points by -26 to +54 meV; the Koopmans cascade Δ of each relaxed member moves by -0.142 eV (OMe), -0.070 eV (Me), -0.091 eV (H) with Os(III) on its own minimum (up to 0.142 eV over both Os(III) geometries), and stays monotonic in σ over the relaxed donors on both Os(III) geometries — where the programmatic gaps are 84 meV or more; the closest neighbours of Table 4 are unrelaxed (NMe₂→NH₂ 1.5 meV, NO₂→SO₂CF₃ 5.0 meV, COOH→CF₃ 40.0 meV). On its own minimum Os(III) takes Os–Cl back from 2.522–2.533 to 2.416–2.428 Å. By the letter of D's first trigger (0.1 eV), the Koopmans cascade Δ of OMe reaches it; the slope ①, extrapolated from the donors' +13 % over the LFER fit set's span (0.97 eV), moves by ≈0.13 eV — an extrapolation, not a computation. Whether a difference at the threshold carries a conclusion is D's to judge. Not relaxed in both states: NMe₂, NH₂, COOH, CF₃, NO₂, SO₂CF₃."
+    },
+    "acceptors": {
+      "acceptors": [
+        "cl"
+      ],
+      "members": [
+        "ome",
+        "dmbpy",
+        "bpy",
+        "cl"
+      ],
+      "pairs_vs_measured": [
+        {
+          "series_name": "ref 8",
+          "pair": "cl-bpy",
+          "measured_mV": 17.25,
+          "series_mV": 41.89737365416279,
+          "relaxed_mV": 48.40707896345897,
+          "adiabatic_mV": 52.45314832319647,
+          "series_gap_mV": 24.64737365416279,
+          "relaxed_gap_mV": 31.15707896345897,
+          "adiabatic_gap_mV": 35.20314832319647
+        },
+        {
+          "series_name": "ref 8",
+          "pair": "cl-dmbpy",
+          "measured_mV": 45.0,
+          "series_mV": 79.11137340362417,
+          "relaxed_mV": 82.42485084789641,
+          "adiabatic_mV": 80.40251223974404,
+          "series_gap_mV": 34.11137340362417,
+          "relaxed_gap_mV": 37.42485084789641,
+          "adiabatic_gap_mV": 35.40251223974404
+        },
+        {
+          "series_name": "ref 8",
+          "pair": "cl-ome",
+          "measured_mV": 87.25,
+          "series_mV": 102.75048161105804,
+          "relaxed_mV": 124.29218985304647,
+          "adiabatic_mV": 124.13893218851668,
+          "series_gap_mV": 15.500481611058035,
+          "relaxed_gap_mV": 37.042189853046466,
+          "adiabatic_gap_mV": 36.88893218851668
+        },
+        {
+          "series_name": "aqueous",
+          "pair": "cl-dmbpy",
+          "measured_mV": 36.25000000000001,
+          "series_mV": 79.11137340362417,
+          "relaxed_mV": 82.42485084789641,
+          "adiabatic_mV": 80.40251223974404,
+          "series_gap_mV": 42.861373403624164,
+          "relaxed_gap_mV": 46.1748508478964,
+          "adiabatic_gap_mV": 44.152512239744034
+        },
+        {
+          "series_name": "aqueous",
+          "pair": "cl-ome",
+          "measured_mV": 76.00000000000001,
+          "series_mV": 102.75048161105804,
+          "relaxed_mV": 124.29218985304647,
+          "adiabatic_mV": 124.13893218851668,
+          "series_gap_mV": 26.75048161105802,
+          "relaxed_gap_mV": 48.29218985304645,
+          "adiabatic_gap_mV": 48.13893218851666
+        }
+      ],
+      "computed_pairs": {
+        "cl-bpy": {
+          "move_from_series_mV": 10.55577466903368,
+          "move_from_relaxed_mV": 4.046069359737503,
+          "closer_than_series": [],
+          "away_than_series": [
+            "ref 8"
+          ],
+          "closer_than_relaxed": [],
+          "away_than_relaxed": [
+            "ref 8"
+          ]
+        },
+        "cl-dmbpy": {
+          "move_from_series_mV": 1.291138836119865,
+          "move_from_relaxed_mV": -2.022338608152374,
+          "closer_than_series": [],
+          "away_than_series": [
+            "ref 8",
+            "aqueous"
+          ],
+          "closer_than_relaxed": [
+            "ref 8",
+            "aqueous"
+          ],
+          "away_than_relaxed": []
+        },
+        "cl-ome": {
+          "move_from_series_mV": 21.38845057745864,
+          "move_from_relaxed_mV": -0.1532576645297823,
+          "closer_than_series": [],
+          "away_than_series": [
+            "ref 8",
+            "aqueous"
+          ],
+          "closer_than_relaxed": [
+            "ref 8",
+            "aqueous"
+          ],
+          "away_than_relaxed": []
+        }
+      },
+      "koopmans_cascade_delta_eV": {
+        "ome": {
+          "programmatic": -1.1354641273210495,
+          "os3_on_os2_minimum": -1.1019012552189293,
+          "os3_on_own_minimum": -1.2777665568315277
+        },
+        "dmbpy": {
+          "programmatic": -1.0514490468717659,
+          "os3_on_os2_minimum": -0.9533072868839563,
+          "os3_on_own_minimum": -1.1215765524563004
+        },
+        "bpy": {
+          "programmatic": -0.909290117432831,
+          "os3_on_os2_minimum": -0.8196257224142078,
+          "os3_on_own_minimum": -1.0003363604310653
+        },
+        "cl": {
+          "programmatic": -0.7515871299593337,
+          "os3_on_os2_minimum": -0.6332186501713783,
+          "os3_on_own_minimum": -0.8180333758534664
+        }
+      },
+      "koopmans_own_move_eV": {
+        "cl": {
+          "os3_on_os2_minimum": 0.1183684797879554,
+          "os3_on_own_minimum": -0.06644624589413262
+        }
+      },
+      "table4_neighbours_both_relaxed": {
+        "ome-dmbpy": {
+          "koopmans_gap_meV": {
+            "programmatic": 84.01508044928363,
+            "os3_on_os2_minimum": 148.59396833497306,
+            "os3_on_own_minimum": 156.19000437522735
+          },
+          "dE_red_gap_meV": {
+            "programmatic": -94.55643282973547,
+            "os3_on_os2_minimum": -167.4693560206002,
+            "os3_on_own_minimum": -174.94567979509057
+          },
+          "koopmans_order_kept": true,
+          "dE_red_order_kept": true,
+          "gap_move_meV": 72.17492392594372,
+          "touches_beyond_donors": false
+        },
+        "dmbpy-bpy": {
+          "koopmans_gap_meV": {
+            "programmatic": 142.15892943893493,
+            "os3_on_os2_minimum": 133.68156446974842,
+            "os3_on_own_minimum": 121.24019202523506
+          },
+          "dE_red_gap_meV": {
+            "programmatic": -148.85599899784552,
+            "os3_on_os2_minimum": -136.07108753774978,
+            "os3_on_own_minimum": -111.79745566619026
+          },
+          "koopmans_order_kept": true,
+          "dE_red_order_kept": true,
+          "gap_move_meV": 20.918737413699873,
+          "touches_beyond_donors": false
+        },
+        "bpy-cl": {
+          "koopmans_gap_meV": {
+            "programmatic": 157.70298747349722,
+            "os3_on_os2_minimum": 186.40707224282949,
+            "os3_on_own_minimum": 182.30298457759898
+          },
+          "dE_red_gap_meV": {
+            "programmatic": -167.58949461665117,
+            "os3_on_os2_minimum": -193.6283158538359,
+            "os3_on_own_minimum": -209.8125932927859
+          },
+          "koopmans_order_kept": true,
+          "dE_red_order_kept": true,
+          "gap_move_meV": 28.70408476933227,
+          "touches_beyond_donors": true
+        }
+      },
+      "table4_neighbours_half_relaxed": {
+        "nh2-ome": {
+          "relaxed_member": "ome",
+          "programmatic_koopmans_gap_meV": 364.2816517801437,
+          "relaxed_member_cascade_move_meV": {
+            "os3_on_os2_minimum": 33.56287210212017,
+            "os3_on_own_minimum": -142.30242951047822
+          },
+          "close": false,
+          "order": "not decidable — one member relaxed"
+        },
+        "cl-dcbpy": {
+          "relaxed_member": "cl",
+          "programmatic_koopmans_gap_meV": 209.21735383323804,
+          "relaxed_member_cascade_move_meV": {
+            "os3_on_os2_minimum": 118.3684797879554,
+            "os3_on_own_minimum": -66.44624589413262
+          },
+          "close": false,
+          "order": "not decidable — one member relaxed"
+        }
+      },
+      "slopes": {},
+      "acceptor_point_shift_eV": {
+        "cl": -0.03162926447537284
+      },
+      "os_cl_A": {
+        "cl": {
+          "relaxed": 2.5095,
+          "relaxed_os3": 2.4082
+        }
+      },
+      "verdict_condition": {
+        "threshold_eV": 0.1,
+        "close_neighbour_meV": 100.0,
+        "largest_move_eV": {
+          "acceptor_pairs_per_complex": 0.08555380230983457,
+          "acceptor_koopmans_cascade_delta": 0.1183684797879554,
+          "neighbour_gap_moves": 0.02870408476933227
+        },
+        "at_or_above": [
+          "acceptor_koopmans_cascade_delta"
+        ],
+        "neighbour_order_flipped": [],
+        "not_decidable_pairs": [],
+        "state": "met",
+        "rule": "⚖️ founder 2026-10-14: a measurement that reorders Table 4 neighbours or moves a printed difference by ≥ 0.1 eV re-submits (а) and (б) to the founder"
+      },
+      "verdict": "Relaxed in both states beyond the donors: Cl. Against Os(III) kept vertical: Cl−H +4.0 mV (away in ref 8), Cl−Me -2.0 mV (closer in ref 8, aqueous), Cl−OMe -0.2 mV (closer in ref 8, aqueous); against the programmatic geometry: Cl−H +10.6 mV (away in ref 8), Cl−Me +1.3 mV (away in ref 8, aqueous), Cl−OMe +21.4 mV (away in ref 8, aqueous). Per pair (programmatic → Os(II) relaxed → both relaxed): ref 8 Cl−H ×2.43 → ×2.81 → ×3.04; ref 8 Cl−Me ×1.76 → ×1.83 → ×1.79; ref 8 Cl−OMe ×1.18 → ×1.42 → ×1.42; aqueous Cl−Me ×2.18 → ×2.27 → ×2.22; aqueous Cl−OMe ×1.35 → ×1.64 → ×1.63. The points' own Koopmans cascade moves: Cl -0.066 eV on its own minimum, +0.118 on the Os(II) one. Adjacent Table 4 pairs with both members relaxed: H→Cl +158 → +182 meV. No printed slope reaches beyond the donors yet. Largest moves: acceptor pairs per complex 0.086 eV, acceptor koopmans cascade delta 0.118 eV, neighbour gap moves 0.029 eV; absolute points (not differences): Cl -32 meV. The condition of the 2026-10-14 verdict is MET (acceptor koopmans cascade delta): (а) and (б) go back to the founder with these numbers."
+    },
+    "verdict": "Relaxing the Os(II) geometry of OMe, Me and H (Os(III) vertical on it) brings every recomputed donor pair of our own core closer to the measured (the pairs with Cl — the acceptor block) — ref 8's films OMe−H ×0.87 → ×1.08 and Me−H ×1.34 → ×1.23 (|ours − measured| 9.1 → 5.9 and 9.5 → 6.3 mV per substituent), OMe−Me ×0.56 → ×0.99 (18.6 → 0.4 mV), and the aqueous OMe−Me ×0.59 → ×1.05 — and makes Me weak against the line through H and OMe, as measured (r² of the three donors 0.9996 → 0.957); against the homoleptic MeCN series OMe−H moves away (×0.99 → ×1.23) and Me−H closer (×2.48 → ×2.27). The computed pairs change by -9 % (Me−H) to +77 % (OMe−Me), the three-point donor slope by +21 % (OMe−H +25 %). The chelate bite goes from 80.5–80.6° to 77.5–78.2°, Os–N(bpy) from 2.097–2.099 to 2.047–2.093 Å, Os–N(L) from 2.100 to 2.141–2.143 Å, Os–Cl from 2.380 to 2.522–2.533 Å. So the substituent sensitivity of the vertical protocol depends on the geometry at the level of the pairs themselves, and on the donor pairs of our own core the relaxed geometry agrees better with experiment — with Os(III) kept vertical on it; on its acceptor rows it does not (0 of 5 closer — the acceptor block)."
   },
   "verdict": "Of the two donor pairs both series have, per 4,4'-substituent against H: OMe agrees — -60.9 mV computed (B3LYP) against -61.7 measured (×0.99); Me does not — -37.2 (B3LYP) and -37.3 mV (ωB97X) against -15.0 measured (×2.48 and ×2.49). The computed donors lie on one σp line (r² 1.00 over bpy, dmbpy, ome), the measured do not (r² 0.82): the measured Me is weak against the line through H and OMe. A three-point slope over the same donors comes out ×1.05 (0.225 against 0.213 V/σ per substituent), but Me's leverage in it is small, so it restates the OMe pair rather than adding a second agreement. The measured alkyl-only line (H · Me · tBu) gives 0.096 V/σ per substituent (r² 0.99; no computed tBu); the computed LFER over ome, dmbpy, bpy, dcbpy, no2 gives 0.231. Donor side only, one homoleptic series in MeCN, under assumptions A1–A4; the acceptor side — most of the σ range of the LFER fit — has no measured counterpart here."
 }

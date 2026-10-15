@@ -54,8 +54,8 @@ The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
 single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
-geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the six osmium optimisations
-in this work — the Os(II) points of OMe, Me and H in the substituent check of §3.3 and their Os(III) points relaxed
+geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the osmium optimisations
+in this work — the Os(II) points of OMe, Me, H and Cl in the substituent check of §3.3 and their Os(III) points relaxed
 from them, converged at the default energy and gradient thresholds and the loose displacement threshold the flat Os–Cl
 mode needs — do not enter the cascade; §3.5 reports what they do to the device couple's cascade numbers. The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
@@ -77,7 +77,9 @@ substituent and speciation series, so we expected an error in it to be largely c
 and to bear more on absolute redox energies than on within-series trends. For three donor points §3.3 measured
 both, and the expectation does not hold there: relaxing the Os(II) geometry moves the points by 40–113 meV and
 the substituent pairs by up to 73 meV a complex, and relaxing Os(III) from it as well leaves the points within 54 meV
-of their programmatic values while the pairs move by up to 80 meV a complex. Its size on an absolute number was computed
+of their programmatic values while the pairs move by up to 80 meV a complex; on the one acceptor point, Cl, relaxing
+Os(II) moves the point by 126 meV, and relaxing Os(III) as well leaves it within 32 meV, while its pairs move by up to
+86 meV a complex on either geometry. Its size on an absolute number was computed
 for the device couple: closing both chelates onto the targets — each bipyridine re-optimised (MMFF94s) with its
 N···N held at the spacing the two targets imply, which realises Os–N(bpy) 2.060 Å at a 78.0° bite — lowers the
 Os(II) state by 0.069 eV and the Os(III) state by 0.044 eV and so moves the vertical ΔE_red(III→II) by −0.026 eV
