@@ -206,6 +206,42 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    coupon drawings only, and on a part sheet `notes.extra` is shop instruction, not rationale (`anchor_zone1.pine`:
    «printed WITHOUT a core»), so whether a part-RFQ sheet (`00_07` HW.1) goes in this form is not yet answered —
    put it to the founder before the first one leaves.
+   ⊕ **Applied 2026-10-15** (the text above is NOT rewritten). **Mechanism — the AUTHOR marks, no pattern guesses:**
+   inside a note, `[[span]]` prints on our sheets only and `[[full||vendor]]` swaps a phrase whose cut would break the
+   sentence (`Drawing.NoteText`); the full sheet is the same text with the brackets removed, so one note keeps one
+   home. A regex projector was the alternative and is refused: in our notes a reference is sometimes the subject of
+   its sentence («01_02 1.5 also names x500 …»), and the rationale shares no token with the instruction beside it.
+   `draw <cem> --vendor` writes to `out/vendor/` (never over a full sheet of the same name) and REFUSES every kind
+   but `ti_coin`, naming `00_07` HW.1 — the open part-RFQ question is not answered by a flag. Fail-closed: malformed
+   markup, or a field marked internal end to end, draws nothing. Pins — `VendorSheetTests` (a marker list over every
+   shipped coupon note and over both rendered readers, with the full sheet as its counter-lamp; mutation-verified).
+   ⚖️ **Widened by DELEGATION the same day — the ground applied to the CORE fields:** the verdict located the
+   rationale in `extra`, but the bake-off rationale (alloy-axis labels «V-free» · «low-E» · «bioinert benchmark» ·
+   «DET-electrical ceiling») and OUR side's tests (CV/EIS · ion-release ICP-MS in sap · nano-indentation) also
+   lived in `material` / `process` / `inspection`, where dropping `extra` does not reach — and under «Inspect:» a
+   vendor reads our tests as its own deliverables, against the letter's «Acceptance is exclusively the QC
+   deliverables listed above» (`anchor_alloy_rfq` dispatch block). So those spans are marked too. **Ground:** the
+   verdict's own — the letter is blind to the bake-off rationale and routes electrochemistry to a separate request.
+   **Price:** the vendor sheet says less than ours by the author's judgement, sentence by sentence. **Weakest link:**
+   that judgement — a rationale phrase left unmarked passes every pin; the founder's read of the changed-notes list
+   before sending stays the gate, as the verdict set it.
+   ⊕ **Found by reading the first vendor sheet, and present on every coupon sheet in BOTH forms, gallery
+   included:** the tolerance printed `disc_dia: +0.1 / --0.1 mm` — the manifests store a SIGNED lower deviation
+   (`minus_mm: -0.1`, ISO 286) and the emitter prefixed its own minus. The emitter now prints the value's sign at
+   micrometre resolution (`DrawingTests.Deviations_Print_With_Their_Own_Sign_And_Never_A_Doubled_Minus`).
+   ⚖️ **Part-RFQ sheets (`00_07` HW.1) — answered by DELEGATION 2026-10-15, on the machine's recommendation (founder
+   delegated open verdicts that day): they go in the VENDOR form too, but on a part kind `notes.extra` is NOT dropped
+   whole — it is projected span by span like every other note, because there it carries shop instruction.**
+   **Ground:** the same as the coupons' — the DMLS letter is deliberately blind to tracker IDs, canon refs and status
+   markers (`vendor_templates` dispatch block, «Немає свідомо»), and the part manifests' notes carry exactly those;
+   the markup removes the dichotomy the open question was posed in («vendor form would cut shop instructions» was
+   true of the blanket `extra` drop, not of the form). **Price:** at the part-RFQ text, every part manifest's notes are
+   marked (the `anchor_zone1.*` SKUs · flange · both locks · sleeve), `--vendor` opens to those kinds with the
+   per-span `extra` policy, and `VendorSheetTests` widens to them; the anchor sheet's coating zone-map refusal
+   (load-bearing content, gotcha #11) must survive the projection. **Weakest link:** on a part sheet an instruction
+   and its rationale often share ONE sentence (the coating zone-map, the welded wire), so the author's cut there is
+   riskier than on a coupon; the founder's read of the changed notes beside the diff stays the gate. **Applied at the
+   event, not now:** no part-RFQ text exists, and marking now would mark notes that will still move before it.
 
 ## 9. References
 

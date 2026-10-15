@@ -33,6 +33,46 @@ internal static class Drawing
     // Deliberately verbose and ALL-CAPS: it must survive a glance at a printed A3.
     internal const string NotSpecified = "NOT SPECIFIED IN CEM";
 
+    // 🔑 WHICH READER a sheet is for (⚖️ founder 2026-10-15, tools/cad/docs/drawings_program.md §8 item 5): a sheet
+    // that leaves for a vendor prints the notes without our references and without `notes.extra`, because the
+    // letter it rides with is deliberately blind to them and an attachment must not undo that; the default sheet
+    // and the gallery keep the full traceability.
+    internal enum SheetForm { Full, Vendor }
+
+    // Markup inside a CEM note: `[[span]]` is for OUR readers only — the full sheet prints the span, the vendor
+    // sheet drops it — and `[[full||vendor]]` prints `full` on ours and `vendor` on the vendor's, the form for a cut
+    // that would otherwise break the sentence (a capital letter, «NOT SPECIFIED in canon»). The AUTHOR marks what is
+    // internal, because no pattern can: a reference is sometimes the subject of its sentence, and the bake-off
+    // rationale shares no token with the instruction beside it.
+    // 🔴 Fail-closed: an unbalanced, nested or doubly-split span throws, so a malformed manifest draws NOTHING rather
+    // than a half-projected sheet. ⛔ Declared ceiling: the markup judges nothing — an internal phrase the author left
+    // unmarked reaches the vendor; the net under it is the marker scan in VendorSheetTests, itself a list of forms.
+    internal static string NoteText(string text, SheetForm form)
+    {
+        var sb = new StringBuilder(text.Length);
+        int i = 0;
+        while (i < text.Length)
+        {
+            int open = text.IndexOf("[[", i, StringComparison.Ordinal);
+            int stray = text.IndexOf("]]", i, StringComparison.Ordinal);
+            if (stray >= 0 && (open < 0 || stray < open))
+                throw new FormatException($"note markup: ']]' with no '[[' before it, in «{text}»");
+            if (open < 0) { sb.Append(text, i, text.Length - i); break; }
+            int close = text.IndexOf("]]", open + 2, StringComparison.Ordinal);
+            if (close < 0) throw new FormatException($"note markup: '[[' never closed, in «{text}»");
+            string span = text.Substring(open + 2, close - open - 2);
+            if (span.Contains("[[", StringComparison.Ordinal)) throw new FormatException($"note markup: nested '[[', in «{text}»");
+            int split = span.IndexOf("||", StringComparison.Ordinal);
+            if (split >= 0 && span.IndexOf("||", split + 2, StringComparison.Ordinal) >= 0)
+                throw new FormatException($"note markup: two '||' in one span, in «{text}»");
+            string full = split < 0 ? span : span[..split];
+            string vendor = split < 0 ? "" : span[(split + 2)..];
+            sb.Append(text, i, open - i).Append(form == SheetForm.Full ? full : vendor);
+            i = close + 2;
+        }
+        return sb.ToString();
+    }
+
     // 🔑 Manifest IDENTITY on the sheet (00_07 HW.51 — the ratified cheap alternative to signing a deliverable).
     // `rev` names a COMMIT, and that link breaks exactly where a sheet is used: printed, e-mailed to a vendor,
     // drawn from a dirty tree. The SHA-256 of the manifest's raw bytes travels WITH the sheet, so anyone holding
@@ -57,6 +97,8 @@ internal static class Drawing
         : "third-angle (ASME Y14.3 · GD&T Y14.5)";
 
     private static string N(double d) => d.ToString("0.##", CultureInfo.InvariantCulture);
+    // A deviation keeps micrometre resolution: `N`'s two decimals would print an ISO-286 band of +0.034 as «+0.03».
+    private static string Signed(double d) => d.ToString("+0.###;-0.###;0", CultureInfo.InvariantCulture);
 
     // ── SVG primitives ──
     private static string Line(double x1, double y1, double x2, double y2, string col, double w = 1, string dash = "")
@@ -230,11 +272,20 @@ internal static class Drawing
     //     with no `Post-process: ___` line for the shop to query. A missing line is unaskable; a line
     //     reading NOT SPECIFIED IN CEM is a question the shop WILL ask before cutting metal.
     // Both are cured the same way: the field set is FIXED, and absence is printed, not skipped.
-    private static List<string> NotesLines(NotesSpec? n, string? lead = null)
+    private static List<string> NotesLines(NotesSpec? n, string? lead = null, SheetForm form = SheetForm.Full)
     {
         var lines = new List<string>();
         if (lead is not null) lines.Add(lead);
-        void Add(string label, string? v) => lines.Add($"{label}: {(string.IsNullOrWhiteSpace(v) ? NotSpecified : v)}");
+        void Add(string label, string? v)
+        {
+            if (string.IsNullOrWhiteSpace(v)) { lines.Add($"{label}: {NotSpecified}"); return; }
+            string p = NoteText(v, form);
+            // 🔴 A field marked internal END TO END would print NOT SPECIFIED IN CEM on the vendor sheet — a false
+            // statement, since the CEM did specify it, only for us. Refuse; give the span a `||vendor` half instead.
+            if (string.IsNullOrWhiteSpace(p))
+                throw new FormatException($"note markup: the {form} form of '{label}' is empty — the sheet would claim the CEM never specified it");
+            lines.Add($"{label}: {p}");
+        }
         Add("Material", n?.Material);
         Add("Process", n?.Process);
         Add("Surface", n?.SurfaceFinish);
@@ -242,9 +293,14 @@ internal static class Drawing
         Add("Coating", n?.CoatingRestriction);
         Add("Lattice", n?.LatticeSpec);
         Add("Inspect", n?.Inspection);
-        if (n?.Extra is { } extra) lines.AddRange(extra);
+        // The vendor form drops `extra` WHOLE (drawings_program.md §8 item 5): on the coupon sheets it is the bake-off
+        // rationale. ⛔ On a part sheet `extra` is shop instruction — which is why `draw --vendor` refuses other kinds.
+        if (form == SheetForm.Full && n?.Extra is { } extra) lines.AddRange(extra.Select(e => NoteText(e, form)));
         return lines;
     }
+
+    // A title-block cell drawn from a note: projected like the notes block, absent → the loud marker.
+    private static string NoteCell(string? v, SheetForm form) => v is null ? NotSpecified : NoteText(v, form);
 
     // Tolerance-block lines — consume the CEM ToleranceSpec (fits as a µm band / GD&T datums). Null ⇒ empty
     // (a part with no ToleranceSpec at all declares no PMI; that is a different statement from a part
@@ -285,8 +341,12 @@ internal static class Drawing
         foreach (var lf in t.Features ?? Array.Empty<LinearToleranceSpec>())
         {
             if (lf.Feature is not { } f) continue;
-            string plus = lf.PlusMm is { } p ? $"+{N(p)}" : NotSpecified;
-            string minus = lf.MinusMm is { } m ? $"-{N(m)}" : NotSpecified;
+            // 🔴 Deviations are SIGNED (ISO 286 upper/lower deviation — `LinearToleranceSpec`), so the sign printed is the
+            // value's own. A hard-coded `-` in front of a stored `-0.1` put «--0.1» on every coupon sheet, the vendor's
+            // included (found 2026-10-15 reading the first vendor-form sheet); and a positive LOWER deviation — an
+            // interference shaft — is legal ISO, which a magnitude convention could not even express.
+            string plus = lf.PlusMm is { } p ? Signed(p) : NotSpecified;
+            string minus = lf.MinusMm is { } m ? Signed(m) : NotSpecified;
             lines.Add($"{f}: {plus} / {minus} mm");
         }
         if (t.PrimaryDatum is { } d) lines.Add($"Datum A: {d}");
@@ -301,7 +361,13 @@ internal static class Drawing
     // `NotComputed`, which is the truth for a CEM built in memory. What keeps the CLI from ever relying on it
     // is `DrawingTests.Every_Drawn_Sheet_Names_The_Sha256_Of_The_Manifest_Bytes_It_Was_Drawn_From`, which runs
     // `Program.Draw` itself over every shipped manifest.
-    public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    // The coin sheet's own words in each form. The full form keeps our stage label and canon pointers; the vendor
+    // form carries neither (the letter names no stage and no canon), and it is in English like the letter itself.
+    private static string CoinTitle(SheetForm form) => form == SheetForm.Full ? "Ti-COIN  (Stage-2 in-vitro coupon)" : "Ti-COIN  (in-vitro test coupon)";
+    private static string CoinSubtitle(SheetForm form) => form == SheetForm.Full ? "Деталь — EBFC test electrode · 01_01 §6.1" : "Flat test-electrode coupon";
+
+    public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
+                                SheetForm form = SheetForm.Full)
     {
         double r = cem.DiscDiameterMm / 2.0 * Px;
         double t = cem.DiscThicknessMm * Px;
@@ -310,8 +376,8 @@ internal static class Drawing
         var b = new StringBuilder();
 
         // Title + part label
-        b.AppendLine(Text(20, 30, "Ti-COIN  (Stage-2 in-vitro coupon)", 15, "start", Stroke, "bold"));
-        b.AppendLine(Text(20, 46, "Деталь — EBFC test electrode · 01_01 §6.1", 10, "start", "#555"));
+        b.AppendLine(Text(20, 30, CoinTitle(form), 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, CoinSubtitle(form), 10, "start", "#555"));
 
         // FRONT VIEW — disc circle + centre + eyelet + (optional) active-area window
         b.AppendLine(Circle(frontCx, cy, r, Stroke, 1.2));
@@ -339,11 +405,12 @@ internal static class Drawing
 
         // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean; no hard-coded engineering text).
         double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
-        string lead = $"Active electrode area ≈ {N(a)} cm² (1 face; j = I/A projected, 01_03 §3.5)"
+        string lead = (form == SheetForm.Full ? $"Active electrode area ≈ {N(a)} cm² (1 face; j = I/A projected, 01_03 §3.5)"
+                                              : $"Active electrode area ≈ {N(a)} cm² (1 face, projected)")
             + (cem.ActiveWindowDiameterMm > 0f ? $"; defined-area window Ø{N(cem.ActiveWindowDiameterMm)} (dashed)" : "");
         const double w = 820;
         double bottom = NotesAndTolerances(b, 20, 300, (int)((w - 40) / Glyph9),
-                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
+                                           NotesLines(cem.Notes, lead, form), ToleranceLines(cem.Tolerances));
 
         // TITLE BLOCK — material/process/SSOT come from the CEM (the alloy-bake-off SKU), not hard-coded:
         // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5).
@@ -354,8 +421,8 @@ internal static class Drawing
         var rows = new[]
         {
             ("PART", "Ti-coin"),
-            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
-            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
+            ("MATERIAL", Cell(NoteCell(cem.Notes?.Material, form))),
+            ("PROCESS", Cell(NoteCell(cem.Notes?.Process, form))),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
             // 🔴 strCemFile (not cem.Name) — same reasoning as Drawing.MechanicalLock below: every
@@ -382,7 +449,8 @@ internal static class Drawing
     // writes a file the shop opens in AutoCAD/Fusion. Dimension geometry is laid out manually (witness +
     // arrow Lines + a value Text) so the API surface stays Circle/Line/Text/Layer — robust, every CAD
     // reads it. `%%c` is the DXF single-line code for Ø; DxfSafe maps the few Unicode glyphs to ASCII. ──
-    public static bool TiCoinDxf(TiCoinCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
+    public static bool TiCoinDxf(TiCoinCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null,
+                                 SheetForm form = SheetForm.Full)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -412,7 +480,8 @@ internal static class Drawing
         double winMm = cem.ActiveWindowDiameterMm > 0f ? cem.ActiveWindowDiameterMm : cem.DiscDiameterMm;
         double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
         var lines = new List<string> { "NOTES:" };
-        var nl = NotesLines(cem.Notes, $"Active electrode area ~{N(a)} cm2 (1 face, projected; 01_03 3.5)");
+        var nl = NotesLines(cem.Notes, form == SheetForm.Full ? $"Active electrode area ~{N(a)} cm2 (1 face, projected; 01_03 3.5)"
+                                                              : $"Active electrode area ~{N(a)} cm2 (1 face, projected)", form);
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }

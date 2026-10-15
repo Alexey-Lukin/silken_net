@@ -136,6 +136,10 @@
   built); ⚠️ read gotcha #11 BEFORE touching notes/tolerances — pure-managed, no Library.Go,
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits, GD&T datums, post-process + coating-restriction notes, lattice-spec.
+  ⊕ **A sheet that LEAVES for a vendor: `draw <cem> --vendor`** (→ `out/vendor/`; `ti_coin` only — every other kind
+  refuses, its form is open in `00_07` HW.1). Writing or editing a coupon note, mark what is ours — refs, verdict
+  provenance, status, bake-off rationale, our-side tests — as `[[span]]`, or `[[full||vendor]]` where the cut would
+  break the sentence; then READ the rendered vendor sheet whole, not the field you edited (gotcha #17, #11 ⊕).
   ⚠️ **«Lamé-µm, NOT a blind ISO-286 lookup» is the canon REQUIREMENT (`01_01 §4.2`), and the shipped band
   does not meet it yet** — `zone2_sleeve.json`'s 5–34 µm is an ISO 286 H7/r6 read (`tools/in_silico/lib/constants.py`),
   which Lamé merely consumes to get a contact pressure. The verdict is taken — no table class, the band is

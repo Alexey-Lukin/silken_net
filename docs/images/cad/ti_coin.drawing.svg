@@ -63,7 +63,7 @@
 <text x='20' y='638' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. Disc not square: RDE-ready, uniform radial j, no corner edge-effects</text>
 <text x='20' y='652' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. Optional O-ring / lacquer window fixes exactly 2 cm2 inside the coupon</text>
 <text x='20' y='678' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='694' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>disc_dia: +0.1 / --0.1 mm</text>
+<text x='20' y='694' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>disc_dia: +0.1 / -0.1 mm</text>
 <rect x='540' y='712' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
 <line x1='630' y1='712' x2='630' y2='728' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
@@ -83,7 +83,7 @@
 <line x1='540' y1='776' x2='790' y2='776' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='776' x2='630' y2='792' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>d7e0fbe24-dirty</text>
+<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>4d114c708-dirty</text>
 <line x1='540' y1='792' x2='790' y2='792' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='792' x2='630' y2='808' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='803' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -91,7 +91,7 @@
 <line x1='540' y1='808' x2='790' y2='808' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='808' x2='630' y2='824' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>4646c097581807a009… → FOOTER</text>
-<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev d7e0fbe24-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
-<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 4646c097581807a0099bf3be9598780ded9a71a25ecec01017bab3a2e734967c</text>
+<text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e4d29eb77ab89c4082… → FOOTER</text>
+<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 4d114c708-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
+<text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): e4d29eb77ab89c4082639f22f9a0910bc5b7e1d61d0a3d74b25d230a924dd3f9</text>
 </svg>

@@ -27,7 +27,7 @@ internal static class Program
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "converge" => args.Length >= 2 ? Converge(args) : Fail("usage: converge <cem.json> [--divisors 24,32]"),
-                "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
+                "draw" => args.Length >= 2 ? Draw(args[1], bVendor: args.Contains("--vendor")) : Fail("usage: draw <cem.json> [--vendor]"),
                 // Build-record of ONE batch (BuildRecord.cs, 00_07 HW.51) — pure-managed. STDOUT on purpose: `out/`
                 // is gitignored and outside every gate (picogk gotcha #17), the very place a record meant to live
                 // 20–25 years would rot unseen; the operator names where the filled record is committed.
@@ -442,11 +442,20 @@ internal static class Program
     // next kind added, and this one already did. Remaining kinds + phasing → roadmap §7.
     // `strOutDir` exists for one caller besides `Main`: the pin that runs THIS method over every shipped
     // manifest, because a hash wired wrong inside one `case` is invisible to any test that calls `Drawing.X` directly.
-    internal static int Draw(string strCemPath, string strOutDir = "out")
+    internal static int Draw(string strCemPath, string strOutDir = "out", bool bVendor = false)
     {
         // ONE read serves both the parse and the hash, so the sheet names the very bytes it was drawn from.
         (string strJson, string strCemSha256) = Cem.ReadWithSha256(strCemPath);
         string strKind = Cem.Kind(strJson);
+        // ⚖️ The vendor form is ratified for the COUPON sheets only (tools/cad/docs/drawings_program.md §8 item 5): the
+        // question put named them alone, and on a part sheet `notes.extra` is shop instruction, not rationale
+        // (anchor_zone1.pine: «printed WITHOUT a core»), so dropping it would cut an order out of the sheet. Whether
+        // a part-RFQ sheet goes in this form is open (00_07 HW.1) — refused out loud rather than answered by a flag.
+        if (bVendor && strKind != "ti_coin")
+            return Fail($"draw --vendor: the vendor form is ratified for ti_coin sheets only (tools/cad/docs/drawings_program.md §8 item 5); a '{strKind}' sheet's form is open (00_07 HW.1)");
+        Drawing.SheetForm form = bVendor ? Drawing.SheetForm.Vendor : Drawing.SheetForm.Full;
+        // Its own directory, so a vendor copy never overwrites — or is mistaken for — the full sheet of the same name.
+        if (bVendor) strOutDir = Path.Combine(strOutDir, "vendor");
         // 🔴 Was `?? "local"`, and "rev local" on a factory drawing is worse than no rev at all: it LOOKS
         // like a revision, so nobody asks which commit the geometry came from — while a drawing that
         // cannot be traced back to a manifest revision cannot be re-issued, compared, or blamed after a
@@ -468,7 +477,7 @@ internal static class Program
                 // 2026-09-09: the base ti_coin.json coincidentally matched, so it went unnoticed).
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
-                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
+                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile, cemSha256: strCemSha256, form: form); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p, cemSha256: strCemSha256, form: form);
                 break;
             }
             case "cathode_flange":
@@ -520,6 +529,7 @@ internal static class Program
         string strDxfPath = Path.Combine(strOutDir, $"{strName}.drawing.dxf");
         File.WriteAllText(strSvgPath, strSvg);
         bool bDxf = fnDxf(strDxfPath);
+        if (bVendor) Console.WriteLine("form → VENDOR (notes without our references and without notes.extra — drawings_program.md §8 item 5)");
         Console.WriteLine($"drawing → {strSvgPath}  (CEM-native SVG — human / publication / self-review)");
         Console.WriteLine($"drawing → {strDxfPath}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");
         return bDxf ? 0 : 1;

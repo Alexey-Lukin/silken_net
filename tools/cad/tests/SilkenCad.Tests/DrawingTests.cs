@@ -62,6 +62,21 @@ public class DrawingTests
 
     // A NAMED feature with no limits at all used to vanish from BOTH svg and dxf — the live instance is
     // `cathode_flange.json:shank_dia` (Ø9, itself an HW.8.9 placeholder). Naming it is the point.
+    // 🔴 Deviations are SIGNED (ISO 286): the emitter prints the value's own sign. A hard-coded `-` before a stored
+    // `-0.1` put «--0.1» on every coupon sheet for months, gallery included; and a positive LOWER deviation (an
+    // interference shaft) must stay positive, at micrometre resolution — two decimals would print +0.034 as +0.03.
+    [Theory]
+    [InlineData(0.1f, -0.1f, "disc_dia: +0.1 / -0.1 mm")]
+    [InlineData(0.034f, 0.023f, "disc_dia: +0.034 / +0.023 mm")]
+    [InlineData(0.018f, 0f, "disc_dia: +0.018 / 0 mm")]
+    public void Deviations_Print_With_Their_Own_Sign_And_Never_A_Doubled_Minus(float fPlus, float fMinus, string strLine)
+    {
+        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Features = [new LinearToleranceSpec { Feature = "disc_dia", PlusMm = fPlus, MinusMm = fMinus }] } };
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
+        Assert.Contains(strLine, svg);
+        Assert.DoesNotContain("--", svg);
+    }
+
     [Fact]
     public void Named_Feature_Without_Limits_Still_Reaches_The_Drawing()
     {
@@ -179,7 +194,8 @@ public class DrawingTests
                          .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
             Assert.NotEmpty(fields);
 
-            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+            // The full sheet prints the note with only its `[[…]]` markup brackets removed (VendorSheetTests owns the other form).
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(Drawing.NoteText(v!, Drawing.SheetForm.Full)), dxf);
 
             // Той самий маніфест не сміє нести й вигаданого: якщо поле є, маркер відсутності не
             // з'являється замість нього (і навпаки — це ловить попередній цикл).
@@ -780,7 +796,7 @@ public class DrawingTests
 
         string flat = FlattenSvgText(svg);
         foreach (string? v in fields)
-            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+            Assert.Contains(Regex.Replace(Drawing.NoteText(v!, Drawing.SheetForm.Full), @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
         AssertGalleryNamesTheShippedManifest(svg, $"{strPart}.json");

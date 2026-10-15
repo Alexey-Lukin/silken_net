@@ -110,7 +110,9 @@ internal sealed record ToleranceSpec
 // One toleranced linear size. Both limits are optional ON PURPOSE: a feature the shop must hold but
 // whose band we have not bought yet prints each missing side as NOT SPECIFIED IN CEM rather than as a
 // plausible number — the `?? 0` that once rendered a zero minus-limit (the TIGHTEST possible) is the
-// defect this shape exists to prevent.
+// defect this shape exists to prevent. Both limits are SIGNED deviations from the nominal (ISO 286 upper/lower
+// deviation: a hole's lower deviation is often 0, an interference shaft's lower one is positive) — `minus_mm: -0.1`
+// is the lower deviation itself, never a magnitude the emitter negates.
 internal sealed record LinearToleranceSpec
 {
     public string? Feature { get; init; }
