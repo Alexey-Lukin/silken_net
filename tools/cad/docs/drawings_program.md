@@ -194,6 +194,14 @@ unverified / EU backup hubs — `02_06 §8.1`) + web-grounding (sources below).
    not on a one-off drawing — the drawing/DXF renders them.
 4. **Title-block fields** — git-SHA as revision (provenance) + the SSOT pointer (`cem/<x>.json`); add a
    human rev-letter when a shop needs one.
+5. **A sheet that goes to a vendor is printed in the VENDOR form** (⚖️ founder 2026-10-15, closed list, on the
+   recommendation; first instance — the coupon letter, `00_07` HW.24): `draw --vendor` prints the notes without
+   canon/tracker references and without `notes.extra`, while the default `draw` and the gallery keep the full
+   traceability. **Grounds:** the manifests' notes are internal engineering notes (canon refs, tracker IDs,
+   «NOT SPECIFIED in canon», and in `extra` the bake-off rationale), and a letter's copy region is deliberately
+   blind to exactly that — an attachment must not undo it. **Price:** one machine session (code + a test that no
+   marker survives) before the letter goes. **Weakest link:** dropping a reference by editing note text can cut
+   meaning out of a sentence, so every changed note goes to the founder beside the diff before sending.
 
 ## 9. References
 
