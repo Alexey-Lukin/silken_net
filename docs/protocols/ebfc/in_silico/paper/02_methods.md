@@ -38,7 +38,7 @@ points per atomic sphere, and a 2.0 Å placeholder radius for Os, Co, Ru and Ce,
 the recorded version switches the surface of an atom that carries an ECP is stated in §2.7); the ZIF-cluster
 couplings and the molecular-dynamics snapshot orbitals (§2.5) were computed in the gas phase, without a continuum.
 SCF energies were converged to 10⁻⁶ E_h (10⁻⁷ E_h for the lumiflavin redox pair, 10⁻⁵ E_h for the
-charge-localised ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
+two-solution ΔSCF couplings of the ZIF clusters). A level shift stabilised the open-shell UKS SCF where it
 oscillated — 0.3 E_h on the Os(III) states of the speciation series and of the ωB97X tier and in the Co/Ce/Ru
 reorganisation and ZIF-cluster calculations (0.5 E_h to reach the second charge-localised state of a cluster
 pair), 0.2 E_h on the open-shell flavin species — and wherever it was applied, every energy difference was
@@ -104,18 +104,20 @@ for close contacts — any pair within 3.5 Å that includes N, O or S counts as 
 distance-only weight, summed along the path, and it starts at atoms outside the isoalloxazine ring.
 
 **Cathode direct electron transfer (DET).** Inter-metal electronic couplings t_ij in the bimetallic
-Cu–Co–Ce ZIF nanozyme were obtained from **charge-localised ΔSCF-UKS** energy splittings on
+Cu–Co–Ce ZIF nanozyme were first estimated as half the energy difference of two UKS solutions of each cluster on
 clash-free cluster geometries (a bridging imidazole N–H that collided with the second metal was
-deprotonated to the imidazolate, restoring physical coordination). For the rate-limiting Cu–Co hop the
-coupling was recomputed by a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
+deprotonated to the imidazolate, restoring physical coordination). The two solutions are not charge-localised
+states: they start from the same guess and differ only in their level shift (0.3 and 0.5 E_h), so the estimate is
+read against the SCF tolerance — for Cu–Co the difference is 9.4 times it, which resolves no coupling (Table 3). For
+the rate-limiting Cu–Co hop the coupling the margins use is therefore a two-state orbital diabatisation, labelled FO-DFT in the tables and figures (it is neither the fragment-orbital basis of textbook FO-DFT nor the dipole-based generalised Mulliken–Hush scheme, and no specific published implementation is claimed for it): from one UKS
 SCF of the Cu–Co cluster, the two frontier orbitals with the largest combined Cu-d + Co-d character were
 rotated into the basis that diagonalises their Cu-projected Mulliken population (a population-based
 localisation), leaving one orbital on each metal; t_ij is the off-diagonal Fock element in that
 basis, and the difference of the two diagonal elements is the site-energy gap carried as the hop's driving
 force. A physicality check — the two localised orbitals on distinct metals, t_ij inside a physical band —
 flags a non-physical pair instead of reporting it. Hopping rates followed the
-**Marcus** expression<sup>13</sup> with the reorganisation energy computed (below), not assumed; the total DET
-rate is the series combination of the three hops.
+**Marcus** expression<sup>13</sup> with the reorganisation energy computed (below), not assumed; the margin is
+that of the slowest hop.
 
 **Reorganisation energies (Nelsen 4-point).** Inner-sphere λ was computed by the four-point method<sup>15</sup>
 (two relaxed geometries + two cross single-points seeded from the diagonal density). For the

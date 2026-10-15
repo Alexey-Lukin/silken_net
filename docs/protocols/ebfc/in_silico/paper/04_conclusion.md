@@ -15,9 +15,9 @@ the functional — and rationalises the
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a
 clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with the enzyme's T1 site oriented
-toward the framework node, a *borderline* process at zero driving force and a *rate-limiting* one at the
-adverse ends of the computed site-energy gap and of the cited Cu reorganisation energy — limited by reorganisation energy and by driving force
-together, a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy
+toward the framework node, a process whose verdict is conditional on the Co reorganisation energy:
+*rate-limiting* by orders of magnitude at the computed λ(Co), straddling turnover only at an assumed literature value
+(turnover needs λ(Co) ≲ 2.0 eV at zero driving force) — a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy
 metal, conductive-MOF band transport, or an acid-stable enzyme-free catalyst.
 
 The paper's methodological core is the honest treatment of the cascade. The raw computed driving force

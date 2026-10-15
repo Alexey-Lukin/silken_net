@@ -29,23 +29,23 @@
 
 ## Table 3. Cathode DET hops, couplings and reorganisation energies
 
-| Hop | t_ij ΔSCF (eV) | t_ij FO-DFT (eV) | λ_hop lit (eV) | λ_hop computed (eV) |
-|---|---|---|---|---|
-| **Cu–Co** (T1↔node, bottleneck) | 0.00128 | 0.00546 | 1.70–1.90 | 2.55–2.75 |
-| Co–Ce (node↔vacancy) | 0.00687 | — | 1.20 | 1.98 |
-| Ce–graphene (vacancy↔MWCNT) | 0.11294 | — | — | — |
+| Hop | t_ij used (eV) | crude ΔSCF t_ij (eV) | crude ΔE ÷ SCF tolerance | λ_hop lit (eV) | λ_hop computed (eV) |
+|---|---|---|---|---|---|
+| **Cu–Co** (T1↔node, bottleneck) | **0.00546** (FO-DFT) | 0.00128 | 9.4 | 1.70–1.90 | 2.55–2.75 |
+| Co–Ce (node↔vacancy) | 0.00687 (crude) | 0.00687 | 50 | 1.20 | 1.98 |
+| Ce–graphene (vacancy↔MWCNT) | 0.11294 (crude) | 0.11294 | 830 | — | — |
 
-**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario** — each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer reading is the ADVERSE corner:
+**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario, on the FO-DFT coupling** — each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer reading is the ADVERSE corner:
 
 | λ scenario | adverse corner | ΔG = 0 (default, not a measurement) | favourable corner |
 |---|---|---|---|
-| canon λ=0.7 (old, withdrawn) | ×6.5e+02 | ×3.6e+04 | ×8e+05 |
-| **literature λ** (Cu 2.0–2.4 / Co 1.4 / Ce 1.0) | **×0.0045** | ×1.4 | ×40 |
-| computed λ (B3LYP, Co over-est; Cu literature) | ×1e-06 | ×0.0003 | ×0.0092 |
-| Ru-swap (Co→Ru, computed λ 0.78) — *spread is λ(Cu) only: the Cu–Ru site gap is not obtainable from the minimal cluster, so every column is ΔG = 0* | ×4.2 | ×31 | ×31 |
-| FO-DFT rigorous coupling (literature λ) | ×0.081 | ×25 | ×732 |
+| canon λ=0.7 (old, withdrawn) | ×1.2e+04 | ×6.6e+05 | ×1e+06 |
+| **literature λ** (Cu 2.0–2.4 / Co 1.4, assumed / Ce 1.0) | **×0.081** | ×25 | ×7.3e+02 |
+| **computed λ** (B3LYP: Co 3.09; Cu literature) | **×1.9e-05** | ×0.0054 | ×0.17 |
+| Ru-swap (Co→Ru, computed λ 0.78) — *indicative: λ(Ru) sums Nelsen halves -0.26 and +1.04 eV; the Cu–Ru coupling and gap are not obtainable from the minimal cluster, so it borrows the Cu–Co coupling and every column is ΔG = 0* | ×76 | ×5.7e+02 | ×5.7e+02 |
+| crude ΔSCF coupling, literature λ — *superseded record* | ×0.0045 | ×1.4 | ×40 |
 
-*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35) for Co, Ce and Ru; λ(Cu) is a literature bracket of two solution readings — 2.0 eV (textbook value, source not found) and 2.4 eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in azurin, same source), so the favourable corner is no floor. B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. The adverse corner is the uphill gap sign at the higher λ(Cu). Cathode: rate-limiting at the adverse corner, above turnover at the favourable one — the bracket straddles turnover.*
+*Inner-sphere λ via Nelsen 4-point (35) on [Co(NH₃)₆] for Co and on [M(H₂O)₆] for Ce and Ru; λ(Cu) is a literature bracket of two solution readings — 2.0 eV (textbook value, source not found) and 2.4 eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in azurin, same source), so the favourable corner is no floor. The adverse corner is the uphill gap sign at the higher λ(Cu). The crude ΔSCF couplings are half the energy difference of two unconstrained SCF solutions from one start; for Cu–Co that difference is a single-digit multiple of the SCF tolerance, so the margins use the two-state diabatisation (FO-DFT label, Methods §2.5). The verdict is conditional on λ(Co): turnover needs λ(Co) ≲ 2.0 eV at ΔG = 0 on the 2.0 eV λ(Cu) reading and ≲ 0.9 eV at the adverse corner; the computed 3.09 eV puts the cathode below turnover at every corner, the assumed 1.4 eV (no primary) across it.*
 
 ## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)
 

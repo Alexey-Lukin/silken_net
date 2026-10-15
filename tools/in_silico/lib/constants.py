@@ -31,6 +31,10 @@ WATER_MODEL_LABEL = "TIP3P-FB"
 F_CONST = 96485.33289        # C/mol — Faraday constant
 R_GAS = 8.31446261815324     # J/(mol·K) — gas constant
 HARTREE_TO_EV = 27.211386245988
+# SCF energy tolerance of the two-solution ΔSCF couplings of the ZIF clusters (script 24 `mf.conv_tol`; paper §2.2
+# «10⁻⁵ E_h»). Script 24 still types it locally; 25 reads it from here to judge whether a coupling — HALF the energy
+# difference of two SCF solutions — stands clear of the tolerance both were converged to (self-review cluster 8).
+ZIF_DSCF_CONV_TOL_HA = 1e-5
 BOHR_TO_ANG = 0.529177249
 
 # ── MD water box (01_03 §3.4) ──

@@ -82,7 +82,8 @@ proton reference, isolating the cascade discrepancy to the mediator rather than 
 establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive in direction —
 its slope moves by ≈15 % between two method tiers and its donor pairs by up to 20.1 mV per substituent between the programmatic and the relaxed osmium geometries — and rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
 bimetallic-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
-finding a λ- and driving-force-limited margin that straddles enzymatic turnover — a corrected finding, not the orders-of-magnitude artefact an
+finding a margin conditional on the Co reorganisation energy — below enzymatic turnover at the computed λ(Co),
+straddling it only at an assumed literature value; a corrected finding, not the orders-of-magnitude artefact an
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,
 conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) show
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged

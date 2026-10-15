@@ -605,7 +605,7 @@ CHECKS = [
     # ── Cathode DET (all three ZIF hops) ──
     (
         "Cu-Co t_ij (crude) → zif_hopping.json pairs[0]",
-        SUMMARY, r"Cu↔Co \(T1↔ZIF node\) \| \*\*([\d.]+)\*\* ←",
+        SUMMARY, r"Cu↔Co \(T1↔ZIF node\) \| ([\d.]+) crude",
         "dft/zif_hopping.json", lambda d: d["pairs"][0]["t_ij_eV"], 2e-5,
     ),
     (
@@ -2591,7 +2591,7 @@ _KET_ROWS = (
     # (row label as SUMMARY prints it, scenario key in the cache)
     (r"canon λ=0\.7 \(old assumption\)", "canon λ=0.7 (old assumption)"),
     (r"\*\*literature λ\*\* \(Cu 2\.0–2\.4 / Co 1\.4 / Ce 1\.0\)", "literature λ"),
-    (r"computed λ \(B3LYP, Co spin-crossover ~2× over-est\)", "computed λ (B3LYP, Co over-est)"),
+    (r"computed λ \(B3LYP, Co\b[^|]*\)", "computed λ (B3LYP)"),
     (r"Co→Ru swap \(computed λ_Ru = 0\.78\)", "Ru-swap (Co→Ru, computed)"),
 )
 _KET_COLS = (
@@ -2629,15 +2629,47 @@ CHECKS += [
         SUMMARY, rf"script 24d returns {N} eV and \*self-flags it non-physical\*",
         KET, lambda d: d["driving_force"]["ru_node_gap_refused"]["gap_eV_reported"], 0.0006,
     ),
+    # 2026-10-15 (Стаття 1 self-review round 1, clusters 1 · 8): §3.4 runs on the FO-DFT coupling and the verdict is
+    # conditional on λ(Co) — both brackets, both thresholds and the crude coupling's resolution are the paragraph's claims.
     (
-        "L3b k_DET · paper §3.4 adverse end → cathode_ket_lambda (the figure the paper now quotes)",
-        PAPER_RESULTS, rf"turns the literature-λ figure into a bracket of \*\*×{N} to",
-        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.00006,
+        "L3b k_DET · paper §3.4 lit-λ(Co) adverse end → cathode_ket_lambda (the figure the paper now quotes)",
+        PAPER_RESULTS, rf"the bracket is \*\*×{N} to",
+        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.002,
     ),
     (
-        "L3b k_DET · paper §3.4 favourable end → cathode_ket_lambda",
-        PAPER_RESULTS, rf"bracket of \*\*×[\d.]+ to ×{N}\*\*",
-        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_favourable"], 0.6,
+        "L3b k_DET · paper §3.4 lit-λ(Co) favourable end → cathode_ket_lambda",
+        PAPER_RESULTS, rf"the bracket is \*\*×[\d.]+ to ×{N}\*\*",
+        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_favourable"], 5.0,
+    ),
+    (
+        "L3b k_DET · paper §3.4 computed-λ(Co) adverse end → cathode_ket_lambda",
+        PAPER_RESULTS, rf"hop runs at \*\*×{NSCI} to",
+        KET, lambda d: d["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_adverse"], 1e-6,
+    ),
+    (
+        "L3b k_DET · paper §3.4 computed-λ(Co) favourable end → cathode_ket_lambda",
+        PAPER_RESULTS, rf"hop runs at \*\*×\S+ to ×{N}\*\*",
+        KET, lambda d: d["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_favourable"], 0.006,
+    ),
+    (
+        "L3b k_DET · paper §3.4 computed-λ(Co) at ΔG = 0 → cathode_ket_lambda",
+        PAPER_RESULTS, rf"turnover \(×{N} at zero driving force\): rate-limiting by orders",
+        KET, lambda d: d["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_at_dG0"], 0.0002,
+    ),
+    (
+        "L3b k_DET · paper §3.4 λ(Co) threshold at ΔG = 0 → cathode_ket_lambda (the verdict's condition)",
+        PAPER_RESULTS, rf"needs \*\*λ\(Co\) ≲ {N} eV\*\*",
+        KET, lambda d: d["cobalt_lambda_condition"]["lambda_co_at_turnover_eV"]["fodft|unsourced|dG=0"], 0.05,
+    ),
+    (
+        "L3b k_DET · paper §3.4 λ(Co) threshold at the adverse corner → cathode_ket_lambda",
+        PAPER_RESULTS, rf"at the adverse corner\s+\*\*λ\(Co\) ≲ {N} eV\*\*",
+        KET, lambda d: d["cobalt_lambda_condition"]["lambda_co_at_turnover_adverse_corner_eV"], 0.05,
+    ),
+    (
+        "L3b k_DET · paper §3.4 crude ΔSCF resolution → cathode_ket_lambda (why the crude t is not used)",
+        PAPER_RESULTS, rf"their difference is {N} times the tolerance",
+        KET, lambda d: d["dscf_coupling_resolution"]["pairs"]["Cu-Co (T1↔ZIF node)"]["delta_E_over_scf_tol"], 0.05,
     ),
     (
         # 2026-09-24: λ(Cu) became the bracket's SECOND axis — the reading that sets the adverse
@@ -2653,7 +2685,7 @@ CHECKS += [
     ),
     (
         "L3b k_DET · paper §3.4 site-energy gap → cathode_ket_lambda",
-        PAPER_RESULTS, rf"the computed \*\*{N} eV\*\* Cu–Co\nsite-energy gap",
+        PAPER_RESULTS, rf"with a \*\*{N} eV\*\* site-energy gap",
         KET, lambda d: d["driving_force"]["measured_magnitude_eV"]["Cu-Co"], 0.0006,
     ),
 ]
@@ -3610,10 +3642,10 @@ CHECKS += [
      R_OMEGA, lambda d: _budget(d, "800/max", "models_31_31b"), 0.005),
     ("R_Ω budget 800/typ at the prose estimate's low end → 84", BENCH_R_OMEGA, rf"на нижньому кінці оцінки — в одній \(\*\*\+{N} кΩ\*\*\)",
      R_OMEGA, lambda d: _budget(d, "800/typ", "prose_estimate_02_03"), 0.005),
-    ("R_Ω model R_int low end → 31/31b via 84", BENCH_R_OMEGA, rf"дають ≈ {N} … 30 кΩ, а оцінка",
+    ("R_Ω model R_int low end → 31/31b via 84", BENCH_R_OMEGA, rf"дають ≈ {N} … [\d.]+ кΩ, а оцінка",
      R_OMEGA, lambda d: d["electrode_r_int_readings"]["models_31_31b_kohm"][0], 0.005),
     ("R_Ω model R_int high end → 31/31b via 84", BENCH_R_OMEGA, rf"дають ≈ [\d.]+ … {N} кΩ, а оцінка",
-     R_OMEGA, lambda d: d["electrode_r_int_readings"]["models_31_31b_kohm"][1], 0.5),
+     R_OMEGA, lambda d: d["electrode_r_int_readings"]["models_31_31b_kohm"][1], 50.0),   # two significant figures
     ("R_Ω anode depth below the cambium (low) → 84", BENCH_R_OMEGA, rf"\| {N}–[\d.]+ мм = втулка 50 мм",
      R_OMEGA, lambda d: 1e3 * min(d["factors"]["1_sapwood_per_m"]["depth_below_cambium_m"]), 0.05),
     ("R_Ω anode depth below the cambium (high) → 84", BENCH_R_OMEGA, rf"\| [\d.]+–{N} мм = втулка 50 мм",
@@ -4701,11 +4733,9 @@ def test_cathode_rct_reads_the_current_bracket():
     CANNOT catch: whether `31b`'s Laviron grid is the right physics — a coherence pin only.
     """
     ket, rct = C("dft/cathode_ket_lambda.json"), C("kinetics/cathode_det_rct.json")
-    lit, fo, t = ket["scenarios"]["literature λ"], ket["fodft_cuco_rigor"], ket["turnover_s"]
-    expected = sorted([
-        lit["margin_vs_turnover_adverse"], lit["margin_vs_turnover_at_dG0"],
-        lit["margin_vs_turnover_favourable"], fo["margin_adverse_corner"],
-        fo["margin_vs_turnover_by_dG_sign"]["dG=0"], fo["margin_favourable_corner"]])
+    sc, t = ket["scenarios"], ket["turnover_s"]
+    expected = sorted(sc[k][f] for k in ("literature λ", "computed λ (B3LYP)") for f in (
+        "margin_vs_turnover_adverse", "margin_vs_turnover_at_dG0", "margin_vs_turnover_favourable"))
     got = sorted(k / t for k in rct["k_scenarios_s"].values())
     assert len(got) == len(expected) and all(
         math.isclose(a, b, rel_tol=1e-9) for a, b in zip(got, expected, strict=True)), (

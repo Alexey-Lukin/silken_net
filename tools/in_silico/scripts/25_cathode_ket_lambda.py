@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE as CACHE
+from lib.constants import ZIF_DSCF_CONV_TOL_HA
 from lib.dft_utils import marcus_rate
 
 TURNOVER_S = 1.0e3  # enzymatic turnover ~10³ s⁻¹ (the rate the cathode must beat)
@@ -140,6 +141,16 @@ def main() -> int:
     # which of them is the donor on the cathode's electron path is NOT fixed by that calculation,
     # so the sign stays unmeasured and both ends are carried (§When Modifying #11).
     GAP_EV = {"Cu-Co": float(fo["site_energy_gap_eV"])}
+    # ⛔ Self-review round 1, cluster 8 (2026-10-15): the crude t(Cu–Co) of script 24 is half the difference of two UNCONSTRAINED
+    # SCF solutions of one cluster from one start (state B differs only by its level shift) — not charge-localised states, and
+    # the difference is a single-digit multiple of the tolerance both were converged to (`dscf_coupling_resolution`). So the
+    # table runs on the two-state diabatisation (24b) for the bottleneck pair; the other hops keep 24's value (resolved against
+    # tolerance, but not a diabatic coupling either), and the crude-t table stays as `scenarios_crude_dscf` so the numbers
+    # published before this date remain traceable. ⚠️ The Ru-swap borrows the Cu–Co coupling for its Cu–Ru node (24d's own is
+    # self-flagged non-physical), so its lever is λ alone — as before, now on the diabatised t.
+    tij_crude = dict(tij)
+    tij["Cu-Co"] = float(fo["t_ij_eV"])
+    T_SOURCE = {h: ("24b two-state diabatisation (FO-DFT label)" if h == "Cu-Co" else "24 crude ΔSCF") for h in tij}
     GAP_SOURCE = {"Cu-Co": "fodft_coupling.json (24b) · site_energy_gap_eV"}
     # ⛔ The Ru node's gap is NOT unmeasured-yet, it is unmeasurable at this cluster level: 24d
     # returns a number AND self-flags it non-physical (both diabatic orbitals sit on Ru, pop(Cu)=0)
@@ -167,7 +178,7 @@ def main() -> int:
                 "Cu-Co": _two_sphere(lit["Cu"], lit["Co"]),
                 "Co-Ce": _two_sphere(lit["Co"], lit["Ce"]),
                 "Ce-C": lit["Ce"]},
-            "computed λ (B3LYP, Co over-est)": {
+            "computed λ (B3LYP)": {
                 "Cu-Co": _two_sphere(comp["Cu"], comp["Co"]),
                 "Co-Ce": _two_sphere(comp["Co"], comp["Ce"]),
                 "Ce-C": comp["Ce"]},
@@ -201,7 +212,8 @@ def main() -> int:
     BRANCHES = ("adverse (+gap, uphill)", "dG=0 (ASSUMPTION)", "favourable (−gap, downhill)")
     _BRANCH_KEY = {BRANCHES[0]: "adverse", BRANCHES[1]: "zero", BRANCHES[2]: "favourable"}
 
-    out = {"t_ij_eV": tij, "lambda_computed_eV": lam_c,
+    out = {"t_ij_eV": tij, "t_ij_source": T_SOURCE, "t_ij_crude_dscf_eV": tij_crude,
+           "lambda_computed_eV": lam_c,
            "lambda_computed_provenance": lam_prov,
            "lambda_lit_eV": LAMBDA_LIT, "turnover_s": TURNOVER_S,
            "driving_force": {
@@ -234,11 +246,11 @@ def main() -> int:
                                        "end is no floor",
            "scenarios": {}}
 
-    def _branches(name: str, lam: dict[str, float]) -> dict[str, dict]:
+    def _branches(name: str, lam: dict[str, float], t_map: dict[str, float] | None = None) -> dict[str, dict]:
         per_branch, ident = {}, NODE_IDENTITY.get(name, {})
         for label in BRANCHES:
             dg = _dg(name, _BRANCH_KEY[label])
-            ks = {h: marcus_rate(t, lam[h], dg[h]) for h, t in tij.items()}
+            ks = {h: marcus_rate(t, lam[h], dg[h]) for h, t in (t_map or tij).items()}
             hop = min(ks, key=ks.get)
             per_branch[label] = {
                 "dG_eV": dg, "k_ET_per_s": ks, "bottleneck_hop": ident.get(hop, hop),
@@ -283,8 +295,19 @@ def main() -> int:
               f" {'×' + format(zero['margin_vs_turnover'], '.2g'):>11}"
               f" {'×' + format(kind[2], '.2g'):>11}{flag}")
 
+    # The pre-2026-10-15 table on the crude coupling — a RECORD of what was published, never a consumer reading.
+    out["scenarios_crude_dscf"] = {}
+    for name in scenarios:
+        g = {(r, b): v["margin_vs_turnover"] for r in LAMBDA_CU_READINGS
+             for b, v in _branches(name, scen_by_cu[r][name], tij_crude).items()}
+        out["scenarios_crude_dscf"][name] = {
+            "margin_vs_turnover_adverse": min(g.values()),
+            "margin_vs_turnover_at_dG0": g[(LAMBDA_CU_BASE, BRANCHES[1])],
+            "margin_vs_turnover_favourable": max(g.values())}
+
     # FO-DFT rigor (script 24b): the same bottleneck with the two-state coupling instead of the
-    # crude ΔSCF one. Kept as its own block because it answers a DIFFERENT question — whether the
+    # crude ΔSCF one. ⊕ 2026-10-15: the scenario table above now runs on this coupling, so this block equals its
+    # literature row; it is kept because 60 · 61 · 31b read its per-λ(Cu) shape. Kept as its own block because it answers a DIFFERENT question — whether the
     # verdict survives the coupling METHOD — while the table above answers it across λ.
     t_fo, dg_fo = fo["t_ij_eV"], fo["site_energy_gap_eV"]
     lam_lit = _two_sphere(LAMBDA_LIT["Cu"], LAMBDA_LIT["Co"])
@@ -359,7 +382,7 @@ def main() -> int:
         "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic "
                       "turnover at the consumer-rule (adverse) end; k_ET ∝ |t_ij|², so 1/√margin. "
                       "A COUPLING lever only.",
-        "at_literature_lambda_crude_t": round(lit["margin_vs_turnover_adverse"] ** -0.5, 3),
+        "at_literature_lambda_crude_t": round(out["scenarios_crude_dscf"]["literature λ"]["margin_vs_turnover_adverse"] ** -0.5, 3),
         "at_literature_lambda_fodft_t": round(fo_worst[2] ** -0.5, 3),
         "at_corner": "the adverse corner of BOTH axes (gap sign × λ(Cu) reading) — "
                      "`adverse_corner` of the literature scenario and of `fodft_cuco_rigor`",
@@ -371,37 +394,99 @@ def main() -> int:
     for k in ("at_literature_lambda_crude_t", "at_literature_lambda_fodft_t"):
         print(f"    {k:32s} ×{out['coupling_gain_to_reach_turnover'][k]}")
 
+    # ── Self-review round 1 of Стаття 1, clusters 1 and 8 (2026-10-15) ──────────────────────────────────────────────
+    # (8) Is the crude ΔSCF coupling RESOLVED? It is half the energy difference of two SCF solutions of one cluster,
+    # so the difference is read against the tolerance both were converged to.
+    zif = json.loads((CACHE / "zif_hopping.json").read_text())
+    out["dscf_coupling_resolution"] = {
+        "scf_tol_Ha": ZIF_DSCF_CONV_TOL_HA,
+        "pairs": {p["label"]: {"delta_E_Ha": round(abs(p["E_state_A_Ha"] - p["E_state_B_Ha"]), 8),
+                              "delta_E_over_scf_tol": round(abs(p["E_state_A_Ha"] - p["E_state_B_Ha"])
+                                                            / ZIF_DSCF_CONV_TOL_HA, 1),
+                              "t_ij_eV": p["t_ij_eV"]} for p in zif["pairs"]},
+        "reading": "t = ΔE/2 of two SCF solutions; for the bottleneck pair ΔE is a single-digit multiple of the "
+                   "SCF tolerance, so the paper takes the two-state diabatisation (FO-DFT label, 24b) as the coupling",
+    }
+    # (1) What the cathode needs from λ(Co): the λ(Co) at which the Cu–Co hop reaches turnover, per coupling, per λ(Cu)
+    # reading and per ΔG branch. k is monotone in λ_hop over the bracket searched, which is asserted, not assumed.
+    def _lambda_hop_at_turnover(t: float, dg: float) -> float | None:
+        lo, hi = 0.05, 8.0
+        grid = [lo + i * (hi - lo) / 400 for i in range(401)]
+        ks = [marcus_rate(t, x, dg) for x in grid]
+        peak = max(range(len(ks)), key=ks.__getitem__)
+        if ks[peak] < TURNOVER_S:
+            return None                               # unreachable at ANY λ — the coupling is too small
+        a, b = grid[peak], hi
+        if marcus_rate(t, b, dg) > TURNOVER_S:
+            return b
+        assert all(ks[i] >= ks[i + 1] for i in range(peak, len(ks) - 1)), "k(λ) not monotone past its peak"
+        for _ in range(80):
+            m = (a + b) / 2
+            a, b = (m, b) if marcus_rate(t, m, dg) > TURNOVER_S else (a, m)
+        return (a + b) / 2
+    co_need = {}
+    for t_name, t_val in (("fodft", t_fo), ("crude_dscf", tij_crude["Cu-Co"])):
+        for r, lam_cu in LAMBDA_CU_READINGS.items():
+            for tag, dg in (("dG=0", 0.0), ("dG=+gap", dg_fo)):
+                lh = _lambda_hop_at_turnover(t_val, dg)
+                co_need[f"{t_name}|{r}|{tag}"] = None if lh is None else round(2 * lh - lam_cu, 3)
+    out["cobalt_lambda_condition"] = {
+        "lambda_co_computed_eV": lam_c["Co"],
+        "lambda_co_computed_provenance": lam_prov["Co"],
+        "lambda_co_assumed_eV": LAMBDA_LIT["Co"],
+        "lambda_co_assumed_source": "literature value with no primary in the tree (paper Methods names it an assumption)",
+        "lambda_co_at_turnover_eV": co_need,
+        "lambda_co_at_turnover_adverse_corner_eV": min(v for k, v in co_need.items() if k.startswith("fodft|") and v is not None),
+        "lambda_co_at_turnover_key": "<coupling>|<λ(Cu) reading>|<ΔG branch>; the λ(Co) at which the Cu–Co hop reaches "
+                                     "turnover (two-sphere λ_hop); null = unreachable at any λ",
+    }
+    ru35 = next(r for r in json.loads((CACHE / "metal_reorganization.json").read_text())["results"] if r["name"] == "ru")
+    out["ru_lambda_nelsen_halves"] = {
+        "lambda_1_eV": ru35["lambda_1_eV"], "lambda_2_eV": ru35["lambda_2_eV"],
+        "negative_half": bool(min(ru35["lambda_1_eV"], ru35["lambda_2_eV"]) < 0),
+        "reading": "a negative Nelsen half means one state's energy at the OTHER state's geometry lies below its own "
+                   "optimised one — the optimisation did not find that minimum — so λ(Ru) is indicative, not computed",
+    }
+    cc = out["cobalt_lambda_condition"]
+
     # ⛔ Built from the numbers above, never typed: this string is what the docs quote, and the
     # sentence it replaced ("borderline ×1–30") was true only of the ΔG = 0 column.
     ru = out["scenarios"]["Ru-swap (Co→Ru, computed)"]
-    invariant = all(sc["bottleneck_hop_is_branch_invariant"] for sc in out["scenarios"].values())
+    WITHDRAWN = "canon λ=0.7 (old assumption)"
+    invariant = all(sc["bottleneck_hop_is_branch_invariant"] for k, sc in out["scenarios"].items() if k != WITHDRAWN)
+    flips = [f"{b} → {v['bottleneck_hop']}" for b, v in out["scenarios"][WITHDRAWN]["by_dG"].items()
+             if v["bottleneck_hop"] != lit["by_dG"][BRANCHES[1]]["bottleneck_hop"]]
+    comp = out["scenarios"]["computed λ (B3LYP)"]
+    co_lbl = zif["pairs"][0]["label"]
     verdict = (
-        f"The bottleneck is {lit['by_dG'][BRANCHES[1]]['bottleneck_hop']} (smallest t_ij after the "
-        f"geometry fix)"
-        + (", and it stays the bottleneck in every ΔG branch of every scenario"
-           if invariant else ", but which hop limits DEPENDS on the ΔG branch — read per row")
-        + f". At literature λ the margin is a BRACKET over two axes — the sign of the measured "
-        f"{GAP_EV['Cu-Co']} eV site-energy gap and the λ(Cu) reading "
-        f"({' ⊥ '.join(f'{r} {v}' for r, v in LAMBDA_CU_READINGS.items())} eV): "
-        f"×{lit['margin_vs_turnover_adverse']:.2g} (adverse corner: "
-        f"{lit['adverse_corner']['lambda_cu_reading']}, {lit['adverse_corner']['dG_branch']}) … "
-        f"×{lit['margin_vs_turnover_favourable']:.2g} (favourable corner: "
-        f"{lit['favourable_corner']['lambda_cu_reading']}, {lit['favourable_corner']['dG_branch']}), "
-        f"with ×{lit['margin_vs_turnover_at_dG0']:.2g} at ΔG = 0 on the {LAMBDA_CU_BASE} reading — "
-        "and ΔG = 0 is the function's DEFAULT, not a measurement, which is how it came to be "
-        "published as the margin. "
-        + ("⚠️ The adverse corner puts the cathode BELOW enzymatic turnover rather than above it — "
-           "rate-limiting, not borderline; "
-           if lit["margin_vs_turnover_adverse"] < 1.0 else "The adverse corner stays above turnover; ")
-        + f"it is quoted as a margin (×{lit['margin_vs_turnover_adverse']:.2g}) and never as its "
-        "reciprocal, because the reciprocal collides numerically with the Ru-swap margin below and "
-        "means the opposite. The λ(Cu) bracket bounds the READINGS, not the site: both are "
-        "unconstrained solution couples, and a framework-held Cu–N4 node can sit below both. "
-        f"The Ru-swap mitigation reads ×{ru['margin_vs_turnover_adverse']:.2g} … "
-        f"×{ru['margin_vs_turnover_favourable']:.2g} — across the λ(Cu) reading only, the gap "
-        "columns being alike, because no usable gap exists for the "
-        f"{RU_GAP_REFUSED['pair']} node: {RU_GAP_REFUSED['reason']}. So the Ru lever's driving "
-        "force is unmeasured by construction, and its margin is a ΔG = 0 reading."
+        f"The bottleneck is {lit['by_dG'][BRANCHES[1]]['bottleneck_hop']}"
+        + (", in every ΔG branch of every live scenario" if invariant else
+           ", but which hop limits DEPENDS on the ΔG branch — read per row")
+        + (f" (the withdrawn λ = 0.7 row differs: {'; '.join(flips)})" if flips else "")
+        + f". Its coupling is the two-state diabatisation (24b, t = {t_fo:.4f} eV): the crude ΔSCF value "
+        f"({tij_crude['Cu-Co']:.4f} eV) is half an energy difference of "
+        f"{out['dscf_coupling_resolution']['pairs'][co_lbl]['delta_E_over_scf_tol']}× the SCF tolerance between two "
+        "unconstrained solutions from one start, so it is not used (its table is kept as `scenarios_crude_dscf`). "
+        f"Every margin is a BRACKET over the sign of the measured {GAP_EV['Cu-Co']} eV site-energy gap and the λ(Cu) "
+        f"reading ({' ⊥ '.join(f'{r} {v}' for r, v in LAMBDA_CU_READINGS.items())} eV); ΔG = 0 is the function's "
+        "DEFAULT, not a measurement. The verdict is CONDITIONAL ON λ(Co). At the assumed literature λ(Co) "
+        f"{LAMBDA_LIT['Co']} eV (no primary): ×{lit['margin_vs_turnover_adverse']:.2g} … "
+        f"×{lit['margin_vs_turnover_favourable']:.3g} (×{lit['margin_vs_turnover_at_dG0']:.2g} at ΔG = 0 on the "
+        f"{LAMBDA_CU_BASE} reading). At the computed λ(Co) {lam_c['Co']} eV ({lam_prov['Co']}): "
+        f"×{comp['margin_vs_turnover_adverse']:.2g} … ×{comp['margin_vs_turnover_favourable']:.2g} "
+        f"(×{comp['margin_vs_turnover_at_dG0']:.2g} at ΔG = 0). Turnover needs λ(Co) ≲ "
+        f"{co_need[f'fodft|{LAMBDA_CU_BASE}|dG=0']} eV at ΔG = 0 on the {LAMBDA_CU_BASE} reading and ≲ "
+        f"{cc['lambda_co_at_turnover_adverse_corner_eV']} eV at the adverse corner. "
+        + ("⚠️ The adverse corner is below turnover on BOTH λ(Co) values — rate-limiting, not borderline. "
+           if max(lit["margin_vs_turnover_adverse"], comp["margin_vs_turnover_adverse"]) < 1.0 else "")
+        + "The λ(Cu) bracket bounds the READINGS, not the site: both are unconstrained solution couples, and a "
+        "framework-held Cu–N4 node can sit below both. "
+        f"The Ru-swap reads ×{ru['margin_vs_turnover_adverse']:.2g} … ×{ru['margin_vs_turnover_favourable']:.2g} — "
+        "across the λ(Cu) reading only, on the borrowed Cu–Co coupling, because no usable gap or coupling exists for the "
+        f"{RU_GAP_REFUSED['pair']} node: {RU_GAP_REFUSED['reason']}; and its λ(Ru) is a sum of Nelsen halves "
+        f"{ru35['lambda_1_eV']:.3f} and {ru35['lambda_2_eV']:.3f} eV"
+        + (" — one negative — so that margin is indicative only." if out["ru_lambda_nelsen_halves"]["negative_half"]
+           else ".")
     )
     out["verdict"] = verdict
     (CACHE / "cathode_ket_lambda.json").write_text(json.dumps(out, indent=2))

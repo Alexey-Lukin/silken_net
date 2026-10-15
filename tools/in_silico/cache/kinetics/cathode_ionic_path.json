@@ -119,8 +119,8 @@
   },
   "electrode_r_int_readings": {
     "models_31_31b_kohm": [
-      0.08600182010371658,
-      30.09600061663106
+      0.08600182010428258,
+      7086.37863988362
     ],
     "anode_31_ranges_ohm": {
       "Rs": [
@@ -143,7 +143,7 @@
       "VIN_CS": "typ",
       "ceiling_kohm": 4.0,
       "budget_kohm": {
-        "models_31_31b": 3.9139981798962835,
+        "models_31_31b": 3.9139981798957173,
         "prose_estimate_02_03": -1.0
       }
     },
@@ -152,7 +152,7 @@
       "VIN_CS": "max",
       "ceiling_kohm": 0.0,
       "budget_kohm": {
-        "models_31_31b": -0.08600182010371658,
+        "models_31_31b": -0.08600182010428258,
         "prose_estimate_02_03": -5.0
       }
     },
@@ -161,7 +161,7 @@
       "VIN_CS": "typ",
       "ceiling_kohm": 8.0,
       "budget_kohm": {
-        "models_31_31b": 7.913998179896283,
+        "models_31_31b": 7.913998179895717,
         "prose_estimate_02_03": 3.0
       }
     },
@@ -170,27 +170,27 @@
       "VIN_CS": "max",
       "ceiling_kohm": 4.666666666666667,
       "budget_kohm": {
-        "models_31_31b": 4.58066484656295,
+        "models_31_31b": 4.580664846562384,
         "prose_estimate_02_03": -0.33333333333333304
       }
     }
   ],
   "requirements_alone_at_lenient_geometry": {
     "700/typ · models_31_31b": {
-      "budget_ohm": 3913.9981798962835,
-      "1_sapwood_rho_max_ohm_m": 744.8022221256836,
-      "2_inner_bark_sheet_max_ohm_sq": 44172.47253559287,
-      "3_dead_bark_rho_max_ohm_m": 692.1387560431804,
-      "4_film_sheet_max_ohm_sq": 732852.8005163088,
-      "5_layer_sheet_x_band_height_max_ohm": 366.42640025815433
+      "budget_ohm": 3913.9981798957174,
+      "1_sapwood_rho_max_ohm_m": 744.8022221255758,
+      "2_inner_bark_sheet_max_ohm_sq": 44172.47253558647,
+      "3_dead_bark_rho_max_ohm_m": 692.1387560430803,
+      "4_film_sheet_max_ohm_sq": 732852.8005162027,
+      "5_layer_sheet_x_band_height_max_ohm": 366.42640025810135
     },
     "800/typ · models_31_31b": {
-      "budget_ohm": 7913.998179896283,
-      "1_sapwood_rho_max_ohm_m": 1505.9698955816991,
-      "2_inner_bark_sheet_max_ohm_sq": 89315.5415972789,
-      "3_dead_bark_rho_max_ohm_m": 1399.485795291442,
-      "4_film_sheet_max_ohm_sq": 1481808.4891321152,
-      "5_layer_sheet_x_band_height_max_ohm": 740.9042445660575
+      "budget_ohm": 7913.998179895717,
+      "1_sapwood_rho_max_ohm_m": 1505.9698955815913,
+      "2_inner_bark_sheet_max_ohm_sq": 89315.54159727253,
+      "3_dead_bark_rho_max_ohm_m": 1399.485795291342,
+      "4_film_sheet_max_ohm_sq": 1481808.4891320092,
+      "5_layer_sheet_x_band_height_max_ohm": 740.9042445660045
     },
     "800/typ · prose_estimate_02_03": {
       "budget_ohm": 3000.0,
@@ -201,12 +201,12 @@
       "5_layer_sheet_x_band_height_max_ohm": 280.8583832309275
     },
     "800/max · models_31_31b": {
-      "budget_ohm": 4580.66484656295,
-      "1_sapwood_rho_max_ohm_m": 871.6635010350194,
-      "2_inner_bark_sheet_max_ohm_sq": 51696.3173792072,
-      "3_dead_bark_rho_max_ohm_m": 810.029929251224,
-      "4_film_sheet_max_ohm_sq": 857678.748618943,
-      "5_layer_sheet_x_band_height_max_ohm": 428.8393743094715
+      "budget_ohm": 4580.664846562384,
+      "1_sapwood_rho_max_ohm_m": 871.6635010349117,
+      "2_inner_bark_sheet_max_ohm_sq": 51696.31737920082,
+      "3_dead_bark_rho_max_ohm_m": 810.0299292511239,
+      "4_film_sheet_max_ohm_sq": 857678.7486188371,
+      "5_layer_sheet_x_band_height_max_ohm": 428.83937430941853
     }
   },
   "requirements_per_kohm_of_budget": {

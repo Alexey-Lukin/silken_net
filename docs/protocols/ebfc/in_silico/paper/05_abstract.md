@@ -13,10 +13,10 @@ limit. A thermodynamic proton reference reproduces the
 proton-coupled FAD redox potential to within 62 mV of experiment; a Hammett structure–activity
 relationship for the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈15 % shallower at ωB97X/def2-TZVP
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction
-and rationalises the empirical potential optimum; and charge-localised ΔSCF with first-principles
-reorganisation energies places the bimetallic-ZIF cathode direct electron transfer — for an oriented
-enzyme–framework contact — at a margin that is borderline at zero driving force and falls below enzymatic
-turnover once the computed site-energy gap and the cited Cu reorganisation energy are carried at their adverse ends, with explicit low-λ
+and rationalises the empirical potential optimum; and a two-state diabatised coupling with first-principles
+reorganisation energies shows the bimetallic-ZIF cathode direct electron transfer — for an oriented
+enzyme–framework contact — to be conditional on the Co reorganisation energy: rate-limiting by orders of magnitude at
+the computed λ(Co), straddling enzymatic turnover only at an assumed literature value, with explicit low-λ
 mitigation. The apparently uphill
 anode→mediator cascade is shown to be a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a

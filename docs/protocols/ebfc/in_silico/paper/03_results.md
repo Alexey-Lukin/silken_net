@@ -179,42 +179,47 @@ optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
 ## 3.4 Direct electron transfer through the ZIF cathode
 
-Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were obtained from charge-localised ΔSCF on
-clash-free cluster geometries (a bridging imidazole that had collided with the second metal was
-deprotonated to the imidazolate, restoring physical coordination). With reorganisation energies
-from the two-sphere Nelsen construction rather than assumed — computed for Co, Ce and Ru, while λ(Cu) is
-a bracket of two literature readings (2.0 and 2.4 eV, §2.5), a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so that λ_hop(Cu–Co) is half
-computed and half cited — the **Cu–Co hop is the bottleneck** (Fig 4a; Table 3), and
-its rate sits at **~enzymatic turnover** — a margin of order ×1–30 *at zero driving force*, not the orders
-of magnitude an earlier (geometry- and λ-) artefact had suggested. That qualifier is load-bearing: the
-Marcus rate is exponentially sensitive to ΔG as well as to λ, and the computed **0.183 eV** Cu–Co
-site-energy gap (below), carried together with the two λ(Cu) readings, turns the literature-λ figure into a bracket of **×0.0045 to ×40** across the gap's
-sign and the readings. At its adverse corner — the uphill gap at the higher λ(Cu) — the cathode is therefore not borderline but rate-limiting, and we quote the
-adverse corner throughout. Both λ(Cu) readings are for unconstrained solution couples; a framework-held Cu–N₄
-site can lie below both (0.7 eV in azurin<sup>48</sup>), so the bracket bounds the readings, not the site.
+Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were computed on clash-free cluster geometries (a
+bridging imidazole that had collided with the second metal was deprotonated to the imidazolate, restoring physical
+coordination). For the Cu–Co hop — the bottleneck in every live scenario below — the coupling is a two-state orbital
+diabatisation (the FO-DFT label of Methods §2.5; no specific published implementation is claimed):
+**t_ij(Cu–Co) = 0.0055 eV**, with a **0.183 eV** site-energy gap. A cruder estimate, half the energy difference of two
+SCF solutions of the same cluster (0.0013 eV), is not used: the two solutions were unconstrained, started from the
+same guess and differ only in their level shift, and their difference is 9.4 times the tolerance both were converged
+to, so it does not resolve a coupling (Table 3 prints it beside that ratio). The other two hops carry that crude
+estimate — resolved against the tolerance (×50 and ×830) but not a diabatic coupling either; with their smaller
+reorganisation energies they are not rate-limiting in any live scenario (Table 3).
 
-A two-state orbital diabatisation of the metal-d frontier pair (the FO-DFT label of Methods §2.5; no specific published implementation is claimed) confirms the
-bottleneck is robust to the coupling method, not an artefact of the crude state-energy ΔSCF: it returns
-t_ij(Cu–Co) = 0.0055 eV — within a factor of four of the ΔSCF value, still in the meV regime — together
-with a 0.18 eV site-energy gap the crude treatment had assumed away. The resulting margin
-straddles turnover in the same way (×0.08 at the adverse corner to ×730 at the favourable one, ×25 at zero
-driving force on the 2.0 eV reading), firmly excluding the earlier orders-of-magnitude margin.
+Reorganisation energies come from the two-sphere Nelsen construction — computed for Co, Ce and Ru, while λ(Cu) is a
+bracket of two literature readings (2.0 and 2.4 eV, §2.5), a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so
+λ_hop(Cu–Co) is half computed and half cited. Every margin is a bracket over two axes — the sign of the computed gap,
+which the diabatisation does not fix, and the λ(Cu) reading — and we quote its adverse corner. **The cathode verdict
+is conditional on λ(Co).** At the computed λ(Co) = 3.09 eV the Cu–Co hop runs at **×1.9×10⁻⁵ to ×0.17** of
+enzymatic turnover (×0.0054 at zero driving force): rate-limiting by orders of magnitude at every corner. At the
+literature λ(Co) = 1.4 eV — an assumption, with no primary source in our tree — the bracket is **×0.081 to ×730**
+(×25 at zero driving force): rate-limiting at its adverse corner, above turnover at its favourable one. Reaching
+turnover at zero driving force needs **λ(Co) ≲ 2.0 eV** (on the 2.0 eV λ(Cu) reading), and at the adverse corner
+**λ(Co) ≲ 0.9 eV**. We have no benchmark that places the computed value above or below the true one: it is the
+[Co(NH₃)₆]³⁺/²⁺ couple — an N-donor field, the closer analogue of the ZIF node — with the low-spin Co(III) /
+high-spin Co(II) pair imposed, and a spin-state change of that kind carries a large inner-sphere λ. Both λ(Cu)
+readings are for unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in
+azurin<sup>48</sup>), so the bracket bounds the readings, not the site. The ×10⁵ margin that an earlier geometry
+and an assumed λ = 0.7 eV had implied is withdrawn (Table 3).
 
-This is a finding, not a failure, and we present it with its sensitivity. The rate depends
-exponentially on λ: at the assumed first-row literature values (§2.5) and zero driving force the Cu–Co hop sits at
-≈ ×1.4 over turnover (Fig 4b); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
-which would push it lower; and a low-λ metal removes the limitation entirely — replacing Co by **Ru**
-(computed λ 0.78 eV vs Co ≈ 3 eV) restores a ×4–31 margin (across the λ(Cu) readings) from the reorganisation energy alone — a
-zero-driving-force figure, because the minimal cluster yields no physical Cu–Ru diabatic pair and hence
-no site-energy gap for that node. (We also
+This is a finding, not a failure, and we present it with its sensitivity. A low-λ metal removes the dependence on
+λ(Co): replacing Co by **Ru** (computed λ 0.78 eV) gives ×76 to ×570 across the λ(Cu) readings — an indicative
+figure on three counts: it is a zero-driving-force reading, because the minimal cluster yields no physical Cu–Ru
+diabatic pair and hence no site-energy gap for that node; for the same reason it borrows the Cu–Co coupling; and
+λ(Ru) sums two Nelsen halves of which one is negative (−0.26 and +1.04 eV), so one of the two optimised geometries is
+not the minimum of the state evaluated on it. (We also
 probed whether Ru's diffuse 4d orbitals additionally raise the coupling: at the fixed cluster geometry
 both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed their physicality check —
 the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
 a clean Cu↔Ru diabatic pair; that coupling advantage is therefore a hypothesis for constrained-DFT, not a
-result, and the Ru lever is justified here by λ alone.) The honest reading is a cathode that
-straddles turnover — rate-limiting at its adverse corner — and whose three design levers — a low-λ metal, conductive-MOF band transport,
-or an acid-stable enzyme-free single-atom catalyst — are set out and ranked by their viability at the
-acidic Zone 3 (pH ≈ 4.5).
+result, and the Ru lever is justified here by λ alone.) The honest reading is a
+cathode whose kinetics are set by λ(Co) — rate-limiting at the computed value, straddling turnover only at the assumed
+one — and whose three design levers — a low-λ metal, conductive-MOF band transport, or an acid-stable enzyme-free
+single-atom catalyst — are set out and ranked by their viability at the acidic Zone 3 (pH ≈ 4.5).
 
 Three model caveats frame this. First, the calculation places the enzyme's electron-entry site
 adjacent to the framework node. That adjacency is what an *oriented* immobilisation would deliver — a
@@ -230,7 +235,7 @@ did at the default displacement threshold), so t_ij is geometry-bounded — and 
 roll about its own N···N axis is a degree of freedom the cluster construction does not fix by energy;
 rolling it out of the metals' coordination plane (Cu 0.70 Å, Co 1.37 Å off-plane, everything else held)
 raises t_ij 24-fold *and* shrinks the site-energy gap to 0.026 eV, moving the adverse margin from ×0.59
-to ×8.9×10³ on the 2.0 eV λ(Cu) reading — i.e. across enzymatic turnover. That configuration is rejected on chemical grounds, since
+to ×8.9×10³ on the 2.0 eV λ(Cu) reading at the literature λ(Co) — i.e. across enzymatic turnover. That configuration is rejected on chemical grounds, since
 a coordinating nitrogen binds through a lone pair lying **in** the ring plane and our cluster places the
 metals 0.000 Å from it; we report the number because it shows the cathode verdict rests on that single
 geometric criterion rather than on a tolerance band, and because the residual spread *within* the
@@ -240,8 +245,8 @@ conduction, if present, would only add to the hopping we model — so charge tra
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
 transport would require a conductive MOF (one of the levers above). A predicted cathode
 charge-transfer resistance is correspondingly uncertain: with the DET-rate bracket and the unknown
-nanozyme site coverage, a surface-confined (Laviron<sup>61</sup>) estimate spans ~0.002 Ω to ~30 kΩ — the cathode arc could
-be negligible or exceed the anode's by more than two orders of magnitude, so it cannot be fixed a priori, and the kinetic competition
+nanozyme site coverage, a surface-confined (Laviron<sup>61</sup>) estimate spans ~0.002 Ω to ~7 MΩ — the cathode arc could
+be negligible or exceed the anode's by up to five orders of magnitude, so it cannot be fixed a priori, and the kinetic competition
 (rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
 experiment is the decisive empirical test.
 
@@ -336,16 +341,15 @@ geometry) keeps that order on relaxation is not resolved — SO₂CF₃ was not 
 ![Figure 4](figures/fig4_cathode_det.png)
 
 **Figure 4. Direct electron transfer through the bimetallic Cu–Co–Ce ZIF cathode.** *(a)* Inter-metal
-electronic couplings |t_ij| (log scale) from charge-localised ΔSCF on clash-free cluster geometries; the
-Cu–Co hop is the bottleneck, confirmed by the two-state orbital diabatisation (FO-DFT label, Methods §2.5; 0.0055 eV,
-~4× the crude ΔSCF value). *(b)* Marcus k_DET margin of the Cu–Co bottleneck relative to enzymatic
-turnover (10³ s⁻¹, dashed) across reorganisation-energy scenarios: bars at ΔG = 0 on the 2.0 eV λ(Cu)
-reading (×1.4 at literature λ), whiskers spanning each scenario's adverse and favourable corners over the
-sign of the computed site-energy gap and the two λ(Cu) readings — ×0.0045 to ×40 at literature λ — and the
-FO-DFT coupling (diamond; ×0.081–732, ×25 at ΔG = 0) brackets the rigorous-coupling result the same way; the earlier ×10⁵ margin (broken geometry
-+ assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A low-λ metal (Co→Ru, computed λ 0.78 eV) restores a
-×4.2–31 margin — a ΔG = 0 figure across the λ(Cu) readings, since the minimal cluster does not yield a physical Cu–Ru diabatic pair and
-hence no site-energy gap for that node (§3.4).
+electronic couplings |t_ij| (log scale) on clash-free cluster geometries: for Cu–Co, the two-state orbital
+diabatisation the margins use (FO-DFT label, Methods §2.5; 0.0055 eV) beside the crude two-solution ΔSCF estimate
+(0.0013 eV), which its SCF tolerance does not resolve; the other two hops carry the crude estimate. *(b)* Marcus k_DET
+margin of the Cu–Co bottleneck relative to enzymatic turnover (10³ s⁻¹, dashed) on the diabatised coupling, across
+reorganisation-energy scenarios: bars at ΔG = 0 on the 2.0 eV λ(Cu) reading, whiskers spanning each scenario's adverse
+and favourable corners over the sign of the computed site-energy gap and the two λ(Cu) readings — ×0.081 to ×730 at
+the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the computed λ(Co) of 3.09 eV. The earlier ×10⁵ margin
+(broken geometry + assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A low-λ metal (Co→Ru, computed λ 0.78 eV) reads
+×76–570 — indicative: a ΔG = 0 figure on the borrowed Cu–Co coupling, with one negative Nelsen half in its λ (§3.4).
 
 ![Figure 5](figures/fig5_solvation_pcm.png)
 

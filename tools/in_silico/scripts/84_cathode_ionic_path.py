@@ -17,8 +17,8 @@ THE ELECTRODES' OWN R_int — no instrument in the tree has measured it, and can
   • the prose estimate «5–20 kΩ» (02_03 §1.5) — born 2026-05-15 (a27783ef6) as an assumption in the cold-start
     voltage-drop arithmetic, no primary (lib.constants R_INT_EBFC_EST_KOHM);
   • the models: script 31's EIS model of the ANODE, read through its OWN ranges for the coin (Rs 50–200 Ω — ASSUMED —
-    and Rct 36–146 Ω, ×0.5…×2 its 72.9 Ω, 2 cm²) and 31b's INDICATIVE cathode band (Rct ≈ 0.002 Ω … 29.8 kΩ, 2 cm²) —
-    so Rs + Rct(anode) + Rct(cathode) runs ≈ 0.09 … 30 kΩ (the 31b corner near 0.002 Ω implies an exchange current of
+    and Rct 36–146 Ω, ×0.5…×2 its 72.9 Ω, 2 cm²) and 31b's INDICATIVE cathode band (Rct ≈ 0.002 Ω … 7.1 MΩ, 2 cm²; 29.8 kΩ until 2026-10-15) —
+    so Rs + Rct(anode) + Rct(cathode) runs ≈ 0.09 kΩ … 7.1 MΩ (the 31b corner near 0.002 Ω implies an exchange current of
     order 1 A/cm² — the band's own verdict calls it «NOT a single value»).
   The budget is therefore printed for two readings — the models' low end (≈ 0.09 kΩ) and the prose estimate's low end
   (5 kΩ); the coin EIS of Stage 2 (00_07 HW.24) is the arbiter. A coin measured «in synthetic sap» includes its own

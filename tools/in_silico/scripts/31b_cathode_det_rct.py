@@ -14,8 +14,8 @@ magnitude, so EIS cannot pin it a priori.
     Laviron surface-confined ET:  R_ct = RT / (n²F²·A·k_DET·Γ)
 
 over a grid of (k_DET scenario × Γ coverage). k_DET scenarios are loaded from the
-canon cache (drift-proof): the corners and ΔG = 0 reading of the literature-λ and
-the FO-DFT brackets. Compared against the canon anode Rct (read at run time from script 31's cache) for context.
+canon cache (drift-proof): the corners and ΔG = 0 reading of the literature-λ(Co) and
+the computed-λ(Co) brackets, both on the FO-DFT coupling. Compared against the canon anode Rct (read at run time from script 31's cache) for context.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/31b_cathode_det_rct.py
 Cost: ~instant (analytical).
@@ -46,18 +46,21 @@ def main() -> int:
     klam = json.loads((DFT_CACHE / "cathode_ket_lambda.json").read_text())
     turnover = klam["turnover_s"]
     lit = klam["scenarios"]["literature λ"]
-    fo = klam["fodft_cuco_rigor"]
+    comp = klam["scenarios"]["computed λ (B3LYP)"]
     # k_DET scenarios (s⁻¹) from canon margins × turnover (drift-proof). Each is a CORNER of the
     # bracket 25 publishes (gap sign × λ(Cu) reading) or its ΔG = 0 reading — which 25 names a
     # default, not a measurement, so it rides here as a label, never as «the» value. Labels are
     # built from the cache: typed «(×1.4)» labels outlived the number they named once already.
+    # ⊕ 2026-10-15 (self-review clusters 1 · 8): 25's table runs on the FO-DFT coupling, so the second axis here is no
+    # longer the coupling method but λ(Co) — the assumed literature value ⊥ the computed one, which the verdict is
+    # conditional on.
     margins = {
-        "lit-λ adverse corner": lit["margin_vs_turnover_adverse"],
-        "lit-λ ΔG=0 (default)": lit["margin_vs_turnover_at_dG0"],
-        "lit-λ favourable corner": lit["margin_vs_turnover_favourable"],
-        "FO-DFT adverse corner": fo["margin_adverse_corner"],
-        "FO-DFT ΔG=0 (default)": fo["margin_vs_turnover_by_dG_sign"]["dG=0"],
-        "FO-DFT favourable corner": fo["margin_favourable_corner"],
+        "lit-λ(Co) adverse corner": lit["margin_vs_turnover_adverse"],
+        "lit-λ(Co) ΔG=0 (default)": lit["margin_vs_turnover_at_dG0"],
+        "lit-λ(Co) favourable corner": lit["margin_vs_turnover_favourable"],
+        "computed-λ(Co) adverse corner": comp["margin_vs_turnover_adverse"],
+        "computed-λ(Co) ΔG=0 (default)": comp["margin_vs_turnover_at_dG0"],
+        "computed-λ(Co) favourable corner": comp["margin_vs_turnover_favourable"],
     }
     k_scenarios = {f"{name} (×{m:.2g})": m * turnover for name, m in margins.items()}
     # Canon anode Rct for context (from script 31's eis_model, if present).
@@ -96,7 +99,7 @@ def main() -> int:
                     f"is comparable to the anode arc (~{anode_rct:.0f} Ω, slow/sparse)")
     verdict = (
         f"the cathode DET R_ct is NOT a single value — it spans {lo:.2g}–{hi:.2g} Ω across the k_DET "
-        f"bracket (gap sign × λ(Cu) reading × coupling method) AND the unknown coverage Γ. It can be "
+        f"bracket (gap sign × λ(Cu) reading × λ(Co) value) AND the unknown coverage Γ. It can be "
         f"negligible (fast/dense) or it {slow_end}. → an EIS cathode arc cannot be "
         "predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET vs turnover (SUMMARY "
         "§Cathode). The decisive test is the measured Ti-coin cathode EIS."
@@ -108,7 +111,7 @@ def main() -> int:
 
     out = {
         "method": "Laviron surface-confined R_ct = RT/(n²F²·A·k_DET·Γ); k_DET = the corners of the 25 bracket; INDICATIVE",
-        "caveat": "k_DET bracket (gap sign × λ(Cu) reading × coupling method) × unknown Γ → a BAND, not a fixed Rct (00_07): the cathode is a kinetic competition, not a clean Rct",
+        "caveat": "k_DET bracket (gap sign × λ(Cu) reading × λ(Co) value) × unknown Γ → a BAND, not a fixed Rct (00_07): the cathode is a kinetic competition, not a clean Rct",
         "n_electrons": N_E, "A_cm2": A_ELECTRODE, "turnover_s": turnover,
         "k_scenarios_s": k_scenarios, "gamma_grid_mol_cm2": GAMMA_GRID,
         "anode_rct_ohm_context": anode_rct,
