@@ -72,7 +72,7 @@
 > *Ціна:* зріла маса тоді не є нашою константою (584 aa при нативному 1-16; інший лідер — інша), тож
 > приймальна смуга оголошена ДІАПАЗОНОМ, а не числом. ⛔ **Отже freeze НЕ покриває ні лідер, ні зрілу довжину:**
 > лист дозволяє CRO власний секреторний лідер за умови, що оголошено очікуваний N-кінець зрілої форми
-> (EN-блок Spec A · UA-ТЗ ІБК). У cover-note: «sequence to be finalized; quote against capability & timeline».
+> (EN-блок Spec A · UA-ТЗ ІБК). У cover-note: «quote against capability, scale and timeline» — набір замін зафіксований з нашого боку, кодуюча послідовність їде при розміщенні замовлення, а зріла довжина залежить від лідера, якого обирає CRO; пре-freeze формулювання «sequence to be finalized» знято 2026-10-15.
 
 ---
 
@@ -189,7 +189,7 @@
 
 - [ ] 👤 **CDA — на комерційній стадії, не перед запитом:** стандартний взаємний CDA вендора на комерц-умови (§IP; [`rfq_registry`](rfq_registry.md) §3).
 - [ ] 👤 **Адресати — [`ua_vendor_map §3`](ua_vendor_map.md)** (Spec A: ІБК НАН Львів ⊥ Bienta/Enamine — питання №1 «Pichia, не E. coli»; Os-полімер — **дві адреси є** (ІЗНХ ім. Вернадського ⊥ Enamine на полімерну половину), вузьке місце — не сировина й не лист, а те, чи ХТОСЬ береться: питання №1 §5a; приймання ZIF — ЦККНО Львівської політехніки). ⚠️ ІБК НАН — інститут НАН: лист туди йде проєктом ТЗ українською під договір НДР ⊥ послугу (прецедент — [`anchor_hip_rfq`](anchor_hip_rfq.md)), не EN-аркушем. ✅ **ТЗ українською складено для пʼяти установ НАН (ІБК · ІФХ · ІЗНХ · ІХП · ІХВС) і двох університетів** (ЦККНО Львівської політехніки — приймальний вимір Spec B; ЧНУ — два питання по Spec B) — UA-блоки нижче, згруповані по адресатах (§0 п.0); founder тексту ще не бачив, тож ⛔ до його «так» не надсилати.
-- [ ] 👤 **Spec A (dgrFAD-GDH)** — RFQ на квоту/строки **зараз** (🔴 4–8 тиж тримає весь Stage 2). ✅ Sequence freeze — ⚖️ founder 2026-10-04, після прогону Aggrescan3D (CHEM.10 ✅; CHEM.11 ✅ обома половинами, три компенсації вже у Spec A). ⛔ Лідер N-кінця не заморожено — лист дозволяє CRO свій секреторний лідер із оголошеним зрілим N-кінцем.
+- [ ] 👤 **Spec A (dgrFAD-GDH)** — RFQ на квоту/строки **зараз** (🔴 4–8 тиж тримає весь Stage 2). ✅ Sequence freeze — ⚖️ founder 2026-10-04, після прогону Aggrescan3D (CHEM.10 ✅; CHEM.11 ✅ обома половинами, три компенсації вже у Spec A). ⛔ Лідер N-кінця не заморожено — лист дозволяє CRO свій секреторний лідер із оголошеним зрілим N-кінцем. ⚠️ **Правка після схвалення — НОВА ВЕРСІЯ 2026-10-15, змінені пункти:** рядок «Sequence» EN-блоку і п. 4 ТЗ ІБК приведено до freeze (зріла послідовність зафіксована з нашого боку · кодуюча їде при розміщенні замовлення · лідер лишається вибором CRO) · зі спільної секції «Attachments» знято обіцянку протоколу вхідного тесту, якого в дереві немає (приймання = QC-перелік кожної позиції). Перелік дат не вести — діф перед відправкою за все вікно: `git log -p --since=2026-09-17 -- docs/protocols/procurement/ebfc_chem_rfq.md`.
 - [ ] 👤 **Spec F (Os-полімер)** — RFQ кастомного синтезу **разом зі Spec A**: без медіатора анод не працює, а строк синтезу невідомий.
 - [ ] 👤 **Spec C (геніпін)** — закупка паралельно (найшвидше).
 - [ ] 👤 **Spec B (ZIF)** — RFQ або лист біо-хабу ЧНУ ([`00_02 §1`](../../00_02_Academic_Integration_and_IP.md)) паралельно. ЧНУ — ⚖️ 2026-09-23: два питання (синтез · чим підтвердить 40–80 нм і фазу), текст — UA-блок нижче; канал пасивний — один лист, без нагадувань. Приймальний вимір партії — окремий адресат (ЦККНО Львівської політехніки), UA-блок нижче.
@@ -208,7 +208,7 @@
 > Ready-to-send English text. Working body above stays Ukrainian. Anything our side
 > must NOT disclose is deliberately absent — **немає:** приклад-ціни й наших lead-time-оцінок
 > (§3/§1/§4 — price/time anchor проти нас), імен постачальників і академ-каналу (кожен адресат
-> сліпий щодо решти), позицій 11 N→Q і gate-контексту §1 (послідовність ще не заморожена),
+> сліпий щодо решти), позицій 11 N→Q і трьох компенсаційних замін разом з in-silico підставою §1 (ген ЗАМОРОЖЕНО ⚖️ founder 2026-10-04 — лист несе лічбу лише замін N→Q, а трьох компенсаційних не називає ні числом, ні позиціями; кодуюча послідовність їде при розміщенні замовлення),
 > трекер-ID/канон-рефів, статус-маркерів. **Цільові показники §2/§4 стоять окремою
 > informational-рамкою, НЕ як acceptance.**
 > **Один item = один лист** — беремо потрібний sub-блок §Item specification + спільні секції.
@@ -240,7 +240,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 - Source organism: *Glomerella cingulata*, UniProt **G8E4B5** as the baseline; an *Aspergillus* homologue is an acceptable alternative if you have an established construct.
 - Expression host: ***Pichia pastoris*, secretory. *E. coli* is not acceptable** for this target (inclusion bodies).
 - Deglycosylation, preferred route: a **synthetic gene carrying 11 N→Q substitutions**, so the host does not glycosylate the protein and no PNGase F step is needed. Fallback route: enzymatic deglycosylation (PNGase F / Endo-H) under **native conditions only** — no SDS, no DTT.
-- Sequence: **sequence to be finalized; quote against capability & timeline.** The final coding sequence is supplied at order placement.
+- Sequence: **the substitution set is fixed on our side** — it is settled and is not part of this request. The final coding sequence, including the substitution positions, is supplied at order placement, so please quote against capability, scale and timeline rather than against the gene text. The **secretion leader is your choice** — and with it the mature N-terminus, which is why we ask you to declare it (QC below).
 - Cofactor: FAD, native — flavinylation by the expression host.
 - Not acceptable as a substitute: glucose **oxidase** (generates H₂O₂, incompatible with our application).
 - Quantity: milligram scale for a pilot round — please quote the mg tiers you normally offer so we can size the order.
@@ -347,7 +347,7 @@ Please reply with:
 
 ### Attachments
 
-Nothing is required from us for an initial quotation. On request we supply the incoming-test protocol we use for acceptance; for item A, the final coding sequence is provided at order placement.
+Nothing is required from us for an initial quotation. Our acceptance is exactly the QC list stated under each item above — there is no separate protocol document behind it; for item A, the final coding sequence is provided at order placement.
 
 ---
 
@@ -378,7 +378,7 @@ Nothing is required from us for an initial quotation. On request we supply the i
 
 ## 📤 Dispatch block (UA) — ТЗ для ІБК: рекомбінантний фермент (Spec A) і лаказа (Spec G)
 
-> **Репо-нота (у лист НЕ йде).** Український маршрут Spec A + Spec G ↑ для установи НАН: форма — проєкт ТЗ під договір НДР ⊥ послугу, як [`anchor_hip_rfq`](anchor_hip_rfq.md) і ТЗ 1/2 [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md); правило «власникові установки/інституту НАН — ТЗ українською» сам цей аркуш записав у §6. Адресат #1 обох позицій — ІБК НАН, Львів ([`ua_vendor_map §3`](ua_vendor_map.md)); комерційна гілка (Bienta/Enamine) лишається EN-блоком ↑ і в цьому тексті не згадується. **Дзеркало, не новий зміст:** кожне число — з §1 і §5b, доми — [`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md). **Додано третім блоком питання про нанозим** — той самий предмет, що ТЗ для ІФХ ↓: карта тримає цю групу другою адресою по Co/Cu/Ce лаказо-міміках, і ⚖️ 2026-09-23 велить тримати альтернативи ПАРАЛЕЛЬНО, не замість ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5); вимоги приймання там ті самі, тому блок короткий. **Немає свідомо:** позицій 11 N→Q і gate-контексту §1 (послідовність не заморожена) · наших lead-time-оцінок і прикладів цін · імен інших адресатів і комерційної гілки · трекер-ID, канон-рефів, статус-маркерів · нанесення стеку на купони (його купує лист лабораторії [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md), і дублювати предмет між двома листами не можна). ⚠️ **Написано 2026-09-23, founder тексту ще не бачив** — ⛔ до його «так» не надсилати.
+> **Репо-нота (у лист НЕ йде).** Український маршрут Spec A + Spec G ↑ для установи НАН: форма — проєкт ТЗ під договір НДР ⊥ послугу, як [`anchor_hip_rfq`](anchor_hip_rfq.md) і ТЗ 1/2 [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md); правило «власникові установки/інституту НАН — ТЗ українською» сам цей аркуш записав у §6. Адресат #1 обох позицій — ІБК НАН, Львів ([`ua_vendor_map §3`](ua_vendor_map.md)); комерційна гілка (Bienta/Enamine) лишається EN-блоком ↑ і в цьому тексті не згадується. **Дзеркало, не новий зміст:** кожне число — з §1 і §5b, доми — [`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md). **Додано третім блоком питання про нанозим** — той самий предмет, що ТЗ для ІФХ ↓: карта тримає цю групу другою адресою по Co/Cu/Ce лаказо-міміках, і ⚖️ 2026-09-23 велить тримати альтернативи ПАРАЛЕЛЬНО, не замість ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5); вимоги приймання там ті самі, тому блок короткий. **Немає свідомо:** позицій 11 N→Q і трьох компенсаційних замін разом з in-silico підставою §1 (ген ЗАМОРОЖЕНО ⚖️ founder 2026-10-04 — ТЗ несе лічбу лише замін N→Q, а трьох компенсаційних не називає ні числом, ні позиціями; кодуюча послідовність їде при розміщенні замовлення) · наших lead-time-оцінок і прикладів цін · імен інших адресатів і комерційної гілки · трекер-ID, канон-рефів, статус-маркерів · нанесення стеку на купони (його купує лист лабораторії [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md), і дублювати предмет між двома листами не можна). ⚠️ **Написано 2026-09-23, founder тексту ще не бачив** — ⛔ до його «так» не надсилати.
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-шар, у лист він НЕ йде.
 
@@ -397,7 +397,7 @@ Nothing is required from us for an initial quotation. On request we supply the i
 1. **Продукт:** рекомбінантна ФАД-залежна глюкозодегідрогеназа, приблизно 600 амінокислотних залишків, у деглікозильованій формі. Базовий білок — фермент *Glomerella cingulata*, запис UniProt **G8E4B5**; гомолог *Aspergillus* прийнятний як альтернатива, якщо у вас уже є налагоджена конструкція.
 2. **Хост експресії:** ***Pichia pastoris* (секреторна експресія).** *E. coli* для цієї мішені **неприйнятна** — білок такого розміру йде в тільця включення.
 3. **Деглікозилювання, бажаний маршрут:** синтетичний ген із **11 замінами N→Q**, тож хост фізично не глікозилює білок і ферментативний етап не потрібен. **Запасний маршрут:** ферментативне деглікозилювання (PNGase F або ендо-H) **лише в нативних умовах** — без додецилсульфату натрію й без дитіотреїтолу, бо розгортання білка тут неприпустиме.
-4. **Послідовність:** остаточну кодуючу послідовність ми передамо при розміщенні замовлення. Пропозицію просимо складати **під спроможність і строк**, а не під конкретний текст гена. Скажіть, чи замовляєте синтез гена самі й чи входить він у ціну окремим рядком.
+4. **Послідовність:** набір замін з нашого боку **зафіксований** — він остаточний і не є предметом цього запиту. Остаточну кодуючу послідовність разом із позиціями замін ми передамо при розміщенні замовлення, тож пропозицію просимо складати **під спроможність, масштаб і строк**, а не під текст гена. Секреторний лідер — ваш вибір, а з ним і N-кінець зрілої форми, тому його просимо оголосити (п. 9). Скажіть, чи замовляєте синтез гена самі й чи входить він у ціну окремим рядком.
 5. **Кофактор:** ФАД, нативний — флавінілювання забезпечує хост.
 6. **Неприйнятна заміна:** глюкозооксидаза. Вона виробляє пероксид водню, несумісний із нашим застосуванням; нам потрібна саме дегідрогеназа.
 7. **Кількість:** міліграмовий масштаб на пілотний раунд. Назвіть градації за масою, у яких ви зазвичай працюєте, щоб ми визначили обсяг замовлення.
