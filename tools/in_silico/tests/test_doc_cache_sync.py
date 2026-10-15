@@ -4545,6 +4545,21 @@ def test_paper_33_acceptor_column_claim_holds():
         assert all(a < b for a, b in itertools.pairwise(seq)), f"the column is not monotonic on {g}, yet the paper says it is"
 
 
+# ── HW.5.IS malate chelation (93, 2026-10-15) ⟷ the ⊕ under the cathode medium's weakest link (01_03 §3.5) + SUMMARY ──
+MALATE_CHEL = "chemistry/malate_metal_chelation.json"
+CANON_0103 = "docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"
+CHECKS += [
+    ("malate α Co upper → 93", CANON_0103, rf"Co\(II\): \*\*α ≈ [\d.]+–{N}\*\*",
+     MALATE_CHEL, lambda d: d["by_metal"]["Co"]["alpha_max_ADVERSE"], 0.5),
+    ("malate α Cu upper → 93", CANON_0103, rf"Cu\(II\): \*\*α ≈ [\d.]+–{N}\*\*",
+     MALATE_CHEL, lambda d: d["by_metal"]["Cu"]["alpha_max_ADVERSE"], 5.0),
+    ("malate α Ce (Buzko) upper → 93", CANON_0103, rf"Ce\(III\): \*\*α ≈ [\d.]+–{N}\*\* за єдиним",
+     MALATE_CHEL, lambda d: max(x["alpha"] for x in d["readings"]["ce_buzko"]["rows"].values()), 5.0),
+    ("malate α Ce adverse (secondary) → 93", SUMMARY, rf"\| Ce\(III\) \| \*\*[\d.]+ – {N}\*\* \|",
+     MALATE_CHEL, lambda d: d["by_metal"]["Ce"]["alpha_max_ADVERSE"], 50.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

@@ -276,9 +276,11 @@ GLUSHINSKITE = Solid("glushinskite MgC2O4·2H2O", (("Mg", 1), ("Ox", 1)), LogK(-
                      f"{NEA9}, §VI p.163 — −6.4 ± 0.2 'for scoping calculations'; 'no value is recommended'",
                      selected=False)
 
-# Calcium and magnesium malate. NOT FOUND at I = 0. The only measured values: APPARENT dissociation constants in a
-# Na+ medium, pHa 7.4, room temperature, each at the ionic strength beside it. Used only as READINGS — never by the
-# hard bound, and so never by the window.
+# Calcium and magnesium malate. Read here: Günzel's APPARENT dissociation constants in a Na+ medium, pHa 7.4, room
+# temperature, each at the ionic strength beside it. Used only as READINGS — never by the hard bound, and so never by the
+# window. ⊕ 2026-10-15: «NOT FOUND at I = 0» (this comment until then) was wrong for Ca — NIST SRD 46 critically selects
+# CaL 2.72 ± 0.06 and CaHL 1.39 at I = 0, 25 °C (rows 154752 · 154756; Mg only at I = 0.1 and 1.0). Not added as a
+# reading: it lies INSIDE the bracket the readings already span (no calcium malate ⊥ Günzel at I = 0, log K ≈ 2.90).
 GUENZEL = ("Günzel, McGuigan & Schlue (2005) Front. Biosci. 10:905, doi:10.2741/1585 — Table 2 p.914 "
            "(apparent Kapp, Na+ medium, pHa 7.4, room temperature)")
 GUENZEL_KAPP = {"Ca": (10.32, 0.1240), "Mg": (15.85, 0.1040)}   # (Kapp mmol/L, ionic strength mol/L)

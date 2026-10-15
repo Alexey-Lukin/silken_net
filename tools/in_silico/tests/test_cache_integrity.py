@@ -3490,6 +3490,7 @@ EXPECTED_SCRIPTS = [
     "85_electrode_interfacial_ph.py",
     "91_liner_exit_contact.py",
     "92_liner_mouth_contact.py",
+    "93_malate_metal_chelation.py",
 ]
 
 
@@ -3978,6 +3979,47 @@ def test_cathode_ionic_path_is_derived_from_its_inputs():
     vp = d["vplus_share_of_layer_1_left_out"]
     assert len(vp) == n_corners and all(row["0mm"] < 1e-9 and list(row.values()) == sorted(row.values()) for row in vp.values())
     assert d["element_5_in_canon"]["electrolyte_path_described"] is False
+
+
+def test_malate_metal_chelation_invariants():
+    """93 (00_07 HW.5.IS → `01_03 §3.5` weakest link, 2026-10-15): the claims the canon ⊕ makes, as invariants.
+
+    CAN catch: an α that is not 1 + Σ of its own terms; a summary range that is not the min/max of its rows; the medium
+    drifting from 85's; the Davies step breaking (it is re-checked on NIST's own I = 0 rows); and each ordering the ⊕
+    states — Co weakest in every reading · Ce (Buzko) above Cu (NIST) in every reading · Cu (Zabiszak) above Ce
+    (Buzko, no β₂) in every reading, i.e. the overlap. CANNOT catch: a constant mis-read from its source (the source
+    and row id sit beside each one in the script), the missing temperature correction, or anything about leaching RATE.
+    """
+    d = json.loads((CHEMISTRY / "malate_metal_chelation.json").read_text(encoding="utf-8"))
+    k85 = json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(encoding="utf-8"))
+    assert abs(d["medium"]["ionic_strength_selected"] - k85["cathode"]["media"]["buffered_pH4.5"]["ionic_strength_25C"]) < 1e-4
+    assert all(abs(c["diff"]) < 0.1 for c in d["davies_check"])
+    r = d["readings"]
+    for key, v in r.items():
+        for tag, row in v["rows"].items():
+            assert row["alpha"] >= 1.0 and math.isclose(row["alpha"], 1.0 + sum(x["contribution"] for x in row["terms"]),
+                                                         rel_tol=1e-12), (key, tag)
+    for m, b in d["by_metal"].items():
+        vals = [row["alpha"] for v in r.values() if v["metal"] == m for row in v["rows"].values()]
+        assert b["alpha_min"] == min(vals) and b["alpha_max_ADVERSE"] == max(vals), m
+    tags = {t for v in r.values() for t in v["rows"]}
+    def sets(metal):
+        return [k for k, v in r.items() if v["metal"] == metal]
+
+    def at(tag, keys):
+        return [r[k]["rows"][tag]["alpha"] for k in keys if tag in r[k]["rows"]]
+
+    for tag in tags:
+        a = lambda ks, tag=tag: at(tag, ks)  # noqa: E731
+        co, cu = a(sets("Co")), a(sets("Cu"))
+        if co and cu:
+            assert max(co) < min(cu), f"Co is not the weakest at {tag}"
+        ce_b, cu_n, cu_z = a(["ce_buzko"]), a(["cu_nist_25", "cu_nist_20"]), a(["cu_zab21"])
+        if ce_b and cu_n:
+            assert ce_b[0] > max(cu_n), f"Ce (Buzko) not above Cu (NIST) at {tag}"
+        if ce_b and cu_z:
+            assert cu_z[0] > ce_b[0], f"Cu (Zabiszak) not above Ce (Buzko) at {tag} — the brackets no longer overlap"
+    assert abs(d["competition"]["free_L_spread_vs_selected"]) < 0.1
 
 
 def test_electrode_interfacial_ph_invariants():

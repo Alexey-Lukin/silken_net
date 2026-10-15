@@ -1448,6 +1448,34 @@ cathode medium, the convection and a day-0 diagnostic CV of the anode (⚖️ fo
 
 ---
 
+## HW.5.IS — How Hard Does the Cathode Medium's Malate Pull on the Nanozyme's Metals? (script 93)
+
+The buffered cathode medium (malic acid 10 mM in the sap's salts, pH 4.5 — ⚖️ founder 2026-10-12, `01_03 §3.5`) carried
+a weakest link with no number: malate chelates the ZIF's metals. `93` computes the **side-reaction coefficient α** of a
+trace metal in that medium — how many times the malate raises the dissolved metal over a non-complexing buffer at the
+same pH and ionic strength — from every constant set read in its source (NIST SRD 46 critically selected values ·
+Zabiszak 2021 · Buzko 2004, plus the questionable β₂ of Ce's La/Pr neighbours and the secondary Ce values Buzko cites),
+with pH 4.5 read three ways (p[H] and activity at the source's I, activity in the medium itself from `67`'s speciation of
+`85`'s medium) and over every documented Ca/Mg–malate reading.
+
+| metal | α (all readings) | of which |
+|---|---|---|
+| Co(II) | **3.6 – 14** | weakest in every reading |
+| Cu(II) | **10 – 250** | NIST 46 critical: 10 – 28; the top is Zabiszak 2021's model (no CuL) |
+| Ce(III) | **60 – 2600** | the one read measurement (Buzko, no β₂): 60 – 190; with the neighbours' questionable β₂ to ≈ 2200; the secondary 5.23 to ≈ 2600 |
+
+So malate pulls hardest on **Ce**, the metal the verdict's weakest link did not name; the Cu and Ce brackets overlap.
+Competition barely moves it: the Ca/Mg–malate readings shift free malate by ≤ 6 %, K–malate (not in `67`) by ≈ 2 %. The
+Davies step to the medium's I is derived and checked on NIST's own I = 0 rows (worst miss 0.08 over 0.1 → 0; the medium
+step is 0.41 of that).
+
+⚠️ **Bounds.** α is an equilibrium, not a leaching rate: the framework's solubility, its proton-driven breakdown and
+the imidazole it releases are outside it. It is the trace-metal limit — the Cu dimer (NIST 46) reaches 10 % of CuL at
+≈ 13 µM free Cu (≈ 15 mg/L dissolved). Constants keep their source's temperature (no ΔH). Cache:
+`chemistry/malate_metal_chelation.json`.
+
+---
+
 ## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)
 
 Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2 (also the home of the freeze verdict, ⚖️ 2026-10-04); open legs → `00_07` HW.5.IS / CHEM.11.

@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 301 · 17,958,442 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 303 · 18,043,633 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -67,7 +67,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/24b_fodft_coupling.py` | `219e51b97145f8efdc29f95aa871d910a338da4f52ebc263dd9f5a50f9aa653e` | L3b — fragment-orbital (FO-DFT-style) electronic coupling t_ij for the Cu-Co ZIF hop. |
 | `tools/in_silico/scripts/24c_cu_ru_coupling.py` | `eb68eeed348a769a8fb516382d09e3f844cda32baaf792f2a79683cdb2f3fa1c` | 24c — Cu–Ru direct-electron-transfer coupling: does a Ru node also raise the Cu–node coupling? (energy-splitting estimate) |
 | `tools/in_silico/scripts/24d_fodft_cu_ru.py` | `0fafade3ceca12a44a243a96a3f4e69c3542bdaa7ac8368d7675ce5844bd3c27` | 24d — FO-DFT coupling t_ij for the Cu–Ru ZIF hop (rigour check of 24c). |
-| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `7e0473e19c99521dd8d3963cdeb684bac737279a0142fce0cc86b299e8cf7bf1` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
+| `tools/in_silico/scripts/25_cathode_ket_lambda.py` | `935845dd713d475be9e9e954255454149c0bf8a1e0fad6372a68d49d73d7f1f8` | ③ Cathode DET k_ET vs reorganization energy λ — honest margin analysis. |
 | `tools/in_silico/scripts/27_md_dft_ensemble.py` | `5270de21c04d8d394fc9662d54443f5bd963c2c6f8e2c7d6e1945601f89e772a` | L3/L2 bridge — MD→DFT ensemble averaging. |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | `3e262532435d44044f24a7a434b46b78abb8eca464988fc147db1da53e811fce` | L3 — contact-graph shortest path from FAD to the protein surface (NOT a Beratan–Onuchic pathway analysis). |
 | `tools/in_silico/scripts/28b_tunneling_ensemble.py` | `f25269a92a52d881e668babba954eb6c50cea3121b2b9127f2569a0f68b1feea` | L3 — The script-28 route heuristic (a shortest path over a contact graph, not the Beratan–Onuchic model) replayed over the MD ensemble. |
@@ -94,14 +94,14 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `14d42f6d54b3cc0107f716e9ba4a32dd65b9c465e280a39cbe38ddc88b3b95ee` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
-| `tools/in_silico/scripts/60_paper_figures.py` | `f6612f9bf52728fa02df0527e735c0b0bb0a9a0aabd45c811c8f0d95851c2a94` | Publication figures, rendered entirely from the cached DFT results. |
+| `tools/in_silico/scripts/60_paper_figures.py` | `0c3af6318f49f2c517b1657b58378390211eeb4c9f6536270eef0a6fd007495e` | Publication figures, rendered entirely from the cached DFT results. |
 | `tools/in_silico/scripts/61_paper_tables.py` | `cca82ff40e830c6e7416cb43582b6ea75b81582dc3c1f0b413771d4e419675d3` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
 | `tools/in_silico/scripts/65_zif_radiosensitization.py` | `1893e0838191293f9f2ecfc0c248bed1d136ff5f94b5141828975e3502bae755` | Does the ZIF nanozyme radiosensitise the enzyme stack under Co-60 gamma sterilisation? A desk verdict. |
 | `tools/in_silico/scripts/66_gyroid_ligament_thickness.py` | `ff178d89d69f927e64dda03acef57aff480dec8bbb163d053727623022743abc` | The thinnest printed feature of a gyroid lattice, per topology, at fixed porosity. |
-| `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `f741ba034c1870e799a6d69bcddc46a4465313a54c6c67ac8edd476a61282a75` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
+| `tools/in_silico/scripts/67_sap_recipe_saturation.py` | `08e2743fd872523a1f733dd26caa48e179306630675cbf72ca11e7e7e2297250` | Does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible recipe window. |
 | `tools/in_silico/scripts/68_bus_contact_equilibrium.py` | `00545e0d358b802b9be31d7e041cd4642fb8c13c7805ac3bb003d621bd5278e6` | Where the bus rod meets the cathode channel, solved as a unilateral contact problem. |
 | `tools/in_silico/scripts/69_chem11_aggregation_compensation.py` | `09c2f27cc96e905dfd508c35e7ce62f2fd5272bf83bd56c38a59ee01acb1d779` | Compensating surface-polar mutations for the aglycosylated dgrFAD-GDH. |
 | `tools/in_silico/scripts/70_chem11_site_conservation.py` | `52ae6cba0c7f388d165dd9c0e0bf0f9c09ee0359648fb2302c55b7bb19760e71` | Residue conservation at the freeze positions of the aglycosylated dgrFAD-GDH. |
@@ -127,11 +127,12 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/90_pogo_thermal_gap.py` | `0adb069e28dc2237b2a3870a6ff4ed26676879516ef2e1348629c7eb30ca3541` | How heat and cold change how hard the spring contacts press on the anchor — over a season and over a day — and whether the assembly's tolerance budget still leaves room for it. |
 | `tools/in_silico/scripts/91_liner_exit_contact.py` | `8e8e3dbe48f765106feceebf80b4984cf8e59cd900130bd284a486cc3559be19` | Contact of the bus rod's PEEK liner with the Ti channel at its exit, as an elastic-layer contact problem coupled to the rod's bending. |
 | `tools/in_silico/scripts/92_liner_mouth_contact.py` | `283c4be89ecb33e37e812f1109466fa585b2eb138b9bd6a222bf013ebf650130` | Contact of the bus rod's PEEK liner with the Ti channel at its mouth under an offset of the channel axis, two patches coupled through the rod's bending. |
+| `tools/in_silico/scripts/93_malate_metal_chelation.py` | `d0113672603db590c2bc0c61f1ddee94c962194e66309a3f698e010c2539587d` | How strongly the cathode medium's malate (10 mM, pH 4.5) pulls the nanozyme's copper, cobalt and cerium into solution at equilibrium: the side-reaction coefficient of each trace metal over every stability-constant set read in its source. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `25b9555cda5a4e310860f05246e0393099b1897b9bae4920896be9eb0e421233` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `d72d2ddc243cb6ac7b33649b72c37f8a86ed0e0a354753fcf4a0e2dc9f78e4ab` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `dd4f7b772f18226d59496286e8cd69740296f17729593191d259ba01fdd51b83` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `1c982adab890f98a2fb44bb42b2bfb086e099b9517ce1ff8aee2ce77d30e7f06` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -153,6 +154,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/chemistry/chem11_aggregation_compensation.json` | `c9411ace5e684a8e7c0afb4af0f8f29d02cb8945da93d9e874f51ad87a64f173` | 87,450 |
 | `tools/in_silico/cache/chemistry/chem11_ratified_gene.json` | `52f0a412f89c13d2395f849cf96e1d181290d11d97b3775dd37390e4058d7b40` | 8,128 |
 | `tools/in_silico/cache/chemistry/chem11_site_conservation.json` | `e0f4e5fedf4304374d698902740de691bf1c04feb3dd45989ddd5e0e0da50bbd` | 45,931 |
+| `tools/in_silico/cache/chemistry/malate_metal_chelation.json` | `57ed42d4e0559c6d25b627e0e948149f034ad954cdaca6de8fcfdd5eeccea865` | 62,540 |
 | `tools/in_silico/cache/chemistry/sap_recipe_saturation.json` | `dec1e4d46e5db492c06e870de393cdc27a0024b6604b4f2658c76fb16bc232ef` | 74,878 |
 | `tools/in_silico/cache/chemistry/sap_recipe_saturation.png` | `fe988357c76cf4b3cc73083423110be394312d6b18f2a4c5f5678889bb4e1daa` | 101,307 |
 
