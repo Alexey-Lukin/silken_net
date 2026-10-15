@@ -200,7 +200,7 @@ CHECKS = [
                           ("NO₂", "no2"), ("SO₂CF₃", "so2cf3"))
       for col, key in (("B3LYP", "b3lyp_dE_red_eV"), ("ωB97X", "wb97x_dE_red_eV"))],
     ("Limit (3): SO₂CF₃ ΔE_red more negative than NO₂ at ωB97X (meV) → vs_b3lyp acceptor gap", SUMMARY,
-     rf"at ωB97X the realistic optimum's ΔE_red is {N} meV more negative",
+     rf"at ωB97X SO₂CF₃'s ΔE_red is {N} meV more negative",
      "dft/os_mediator_series_wb97x.json", lambda d: -d["vs_b3lyp"]["acceptor_gap_so2cf3_minus_no2_eV"]["wb97x"] * 1000, 0.5),
     ("ends: functional ratio → vs_b3lyp ends_decomposition", SUMMARY, rf"the change is the functional's \(×{N}\)",
      "dft/os_mediator_series_wb97x.json",
@@ -4390,9 +4390,9 @@ CHECKS += [
     ("paper §3.3 NO₂ move/gap, the gap → 83 acceptors", PAPER_RESULTS, rf"times the {N} meV that", V83,
      lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
     # paper §3.3 — the realistic-optimum sentence scoped to the programmatic geometry, both signs of NO₂'s own move
-    ("paper §3.3 optimum NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves by \+{N} eV with Os\(III\) vertical", V83,
+    ("paper §3.3 SO₂CF₃ clause: NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves\s+its own cascade Δ by \+{N} eV with Os\(III\) vertical", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
-    ("paper §3.3 optimum NO₂ move, own minimum → 83 acceptors", PAPER_RESULTS, rf"vertical and by {N} eV on its own", V83,
+    ("paper §3.3 SO₂CF₃ clause: NO₂ move, own minimum → 83 acceptors", PAPER_RESULTS, rf"vertical and by {N} eV on its own", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.005),
     # the slope §3.3 sets against ωB97X — Me · H · NO₂, complete once NO₂ relaxed (83 `slope_me_h_no2`)
     *[(f"{lab} slope Me·H·NO₂ {col} → 83 acceptors", where, anchor, V83,

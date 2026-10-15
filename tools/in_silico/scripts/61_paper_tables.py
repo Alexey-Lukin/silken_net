@@ -46,6 +46,8 @@ def build() -> str:
     lay broken three days after a cache-schema change, and the table was hand-edited)."""
     series = _load("os_mediator_series.json")
     series_wb = _load("os_mediator_series_wb97x.json")   # 21e `wb97x` — the ω−B3 column of Table 4
+    # 83 — which Table 4 neighbours relaxation leaves undecided (the SO₂CF₃ clause, ⚖️ founder 2026-10-15)
+    acceptors = _load("os_series_vs_measured.json")["relaxed_geometry_check"]["acceptors"]
     zif = _load("zif_hopping.json")
     fodft = _load("fodft_coupling.json")
     ket = _load("cathode_ket_lambda.json")
@@ -165,8 +167,9 @@ def build() -> str:
     md.append("|---|---|---|---|---|---|---|")
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
            "cl": "Cl", "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
+    # ⚖️ founder 2026-10-15: SO₂CF₃ is not relaxed, so it is not printed as the optimum (PIPELINE_STATUS, note under D)
     note = {"nme2": "donor saturation", "bpy": "reference", "cf3": "inert option",
-            "no2": "unstable on cycling", "so2cf3": "realistic optimum (inert)"}
+            "no2": "unstable on cycling", "so2cf3": "inert; order vs NO₂ open"}
     vs = series_wb["vs_b3lyp"]
     omega = {p["name"]: p["omega_minus_b3_eV"] for p in vs["points"]}
     for c in sorted(series["complexes"], key=lambda x: x["sigma_para"]):
@@ -194,7 +197,23 @@ def build() -> str:
             f"{m(es['wb97x_631gd'], '.3f')} → {m(es['wb97x_def2tzvp'], '.3f')} eV/σ — functional ×"
             f"{es['wb97x_631gd'] / es['b3lyp_631gd']:.2f}, basis ×{es['wb97x_def2tzvp'] / es['wb97x_631gd']:.2f}"
             if es else "at the ends the two are not separated")
-    md.append(f"\n*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red "
+    by_sigma = sorted(series["complexes"], key=lambda x: x["sigma_para"])
+    ends_casc = (by_sigma[0], by_sigma[-1])
+    open_pairs = [(k, v) for k, v in acceptors["table4_neighbours_half_relaxed"].items()
+                  if v["close"] and v["order"].startswith("not decidable")]
+    def pair_clause(k: str, v: dict) -> str:
+        lo, hi = k.split("-")
+        mv = v["relaxed_member_cascade_move_meV"]
+        other = hi if v["relaxed_member"] == lo else lo
+        return (f"{lbl[lo]}→{lbl[hi]} ({v['programmatic_koopmans_gap_meV']:+.1f} meV), where relaxing "
+                f"{lbl[v['relaxed_member']]} alone moves it by {m(mv['os3_on_own_minimum'], '+.0f')} meV with Os(III) "
+                f"on its own minimum and {m(mv['os3_on_os2_minimum'], '+.0f')} meV with Os(III) vertical, and "
+                f"{lbl[other]} was not relaxed")
+    undecided = ("; the order of " + "; of ".join(pair_clause(k, v) for k, v in open_pairs)
+                 + ", is not decided" if open_pairs else "")
+    md.append(f"\n*Design rule: cascade Δ rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '.2f')} "
+              f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '.2f')} "
+              f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "
               f"over {sub} the slope is {m(vs['slope_wb97x_eV_per_sigma'], '.2f')} against "

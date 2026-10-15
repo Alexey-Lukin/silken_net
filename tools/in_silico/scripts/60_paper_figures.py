@@ -172,7 +172,7 @@ def fig3() -> None:
         "nme2": ("donor saturation", (2, 8)),
         "bpy": ("H (ref)", (5, -11)),
         "cf3": ("CF₃ inert", (6, -14)),
-        "so2cf3": ("SO₂CF₃ optimum (inert)", (-6, -44)),   # below the CF₃ label, clear of the squares
+        "so2cf3": ("SO₂CF₃ inert", (-6, -44)),   # below the CF₃ label, clear of the squares; not «optimum» — its order vs NO₂ is open (⚖️ 2026-10-15)
         "no2": ("NO₂ unstable", (-4, 9)),
     }
     for n, (txt, off) in ann.items():

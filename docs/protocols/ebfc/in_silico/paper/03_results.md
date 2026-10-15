@@ -161,7 +161,7 @@ eV per σ unit (def2-TZVP), so the shallower slope there is the functional's —
 point. The robust content of the rule is
 therefore its direction; its slope is method-dependent, the measured Me shift is 1.3 (ref 8) to 2.5 times (acetonitrile,
 at both tiers) smaller than ours on the programmatic geometry and 1.0 to 1.9 times with both osmium states relaxed (at
-B3LYP), and on the acceptor side, where the realistic optimum lies, our Cl pairs exceed the
+B3LYP), and on the acceptor side, where the rule points, our Cl pairs exceed the
 measured ones 1.2 to 2.4 times across the two series that reach Cl on the programmatic geometry and 1.4 to 3.0 times
 with both osmium states relaxed, with no measured point beyond Cl.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
@@ -172,11 +172,11 @@ force but does not by itself set the current.
 
 The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
-pH (it reduces to the amine on cycling,<sup>60</sup> collapsing the cascade to its worst case). The realistic
-optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP on the
-programmatic geometry — a value that relaxing NO₂ alone moves by +0.10 eV with Os(III) vertical and by −0.20 eV on its own
-minimum (above) — but without the degradation), with CF₃
-a milder inert alternative. Crucially, the cascade-thermodynamic
+pH (it reduces to the amine on cycling,<sup>60</sup> collapsing the cascade to its worst case). Among the inert
+high-σ substituents, **SO₂CF₃** comes within 5 meV of NO₂'s cascade Δ at B3LYP on the programmatic geometry, without the
+degradation, and CF₃ is a milder inert alternative. Whether SO₂CF₃ reaches NO₂ is not resolved: relaxing NO₂ alone moves
+its own cascade Δ by +0.10 eV with Os(III) vertical and by −0.20 eV on its own minimum (above), twenty to forty times
+that gap, and SO₂CF₃ was not relaxed — so it is the strongest inert candidate we computed, not a computed optimum. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
 optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 
@@ -336,8 +336,8 @@ proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7,
 experiment (free flavin −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (B3LYP slope −0.92 eV/σ, r² = 1.00; fit over the
 OMe→NO₂ regime; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
-cascade driving force; the realistic optimum is the electrochemically inert SO₂CF₃ (NO₂ degrades on
-cycling).
+cascade driving force; NO₂ degrades on cycling, and whether the inert SO₂CF₃ matches it is not resolved
+(5 meV apart on the programmatic geometry; SO₂CF₃ not relaxed).
 
 ![Figure 4](figures/fig4_cathode_det.png)
 
