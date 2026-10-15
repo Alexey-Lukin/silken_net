@@ -42,9 +42,10 @@
 > Stuttgart RSC, def2, C-PCM, PySCF, MMFF94s, RDKit, ChimeraX, AlphaFold 3, Beratan–Onuchic, Marcus,
 > Nelsen, Hammett, cluster-continuum), and 2026-09-24 (second pass) for the VWN term of the PySCF B3LYP and
 > the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 60 (55 until the renumberings of 2026-10-11 and 2026-10-12) is the one
-> `[CITATION NEEDED]` closed from an open-access full text (§2.1 of that paper: aryl-NO₂ films are reduced to
-> aryl-NH₂ and aryl-NHOH under acidic electrochemical conditions — grafted films on gold, not the
-> 4,4′-nitro-bpy ligand, so it supports the chemistry, not the device).
+> `[CITATION NEEDED]` closed from an open-access full text (its §2.1 and §3: grafted Ar–NO₂ films on gold reduced to Ar–NH₂ and
+> Ar–NHOH in Britton–Robinson buffer at pH 11; «under acidic conditions» appears there only as a summary of other
+> works (its refs 12, 28, 32), not as its own measurement — grafted films, not the 4,4′-nitro-bpy ligand and not the operating pH, so it supports the chemistry,
+> not the device; re-read 2026-10-15).
 
 ## Claims still without a source (`[CITATION NEEDED]` in the text)
 

@@ -4138,11 +4138,11 @@ CHECKS += [
                         ("bpy", rf"eV for Me and {N} eV for H and stays"))],
     ("paper §3.3 donor slope steepens → 83", PAPER_RESULTS, rf"slope over the three donors steepens by {N} %", V83,
      lambda d: _ad(d)["donor_slope_change"] * 100, 0.6),
-    ("paper §3.3 slope ① extrapolated → 83", PAPER_RESULTS, rf"would amount to\s+≈{N} eV — an", V83,
+    ("paper §3.3 slope ① extrapolated → 83", PAPER_RESULTS, rf"would amount to\s+≈{N} eV\. The acceptor", V83,
      lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
     *[(f"paper §3.3 untested neighbour {k} → 83", PAPER_RESULTS, anchor, V83,
        lambda d, k=k: abs(_ad(d)["unrelaxed_neighbour_gap_meV"][k]), 0.06)
-      for k, anchor in (("nme2-nh2", rf"\(NMe₂\s+and NH₂, {N} meV apart"), ("no2-so2cf3", rf"NO₂ and SO₂CF₃, {N} meV\)"))],
+      for k, anchor in (("nme2-nh2", rf"NMe₂ and NH₂ \({N} meV apart\)"), ("no2-so2cf3", rf"of NO₂ and SO₂CF₃ \({N} meV\) only NO₂ is"))],
     # the verdict «так, так» under D (2026-10-14): the numbers its migrated form carries
     *[(f"PIPELINE D verdict programmatic gap {k} → 83", PIPELINE, anchor, V83,
        lambda d, k=k: _ad(d)["koopmans_neighbour_gap_eV"]["programmatic"][k] * 1000, 0.6)
@@ -4190,8 +4190,8 @@ def _ac_gap(d, k, where):   # meV — a Table 4 neighbour pair with both members
     return _ac(d)["table4_neighbours_both_relaxed"][k]["koopmans_gap_meV"][where]
 
 
-def _ac_os_cl(d, where, over=False):   # Å — Cl's Os–Cl on a relaxed geometry, or its overshoot of the §2.3 crystal range
-    v = _ac(d)["os_cl_A"]["cl"][where]
+def _ac_os_cl(d, where, over=False, n="cl"):   # Å — an acceptor's Os–Cl on a relaxed geometry, or its overshoot of the §2.3 crystal range
+    v = _ac(d)["os_cl_A"][n][where]
     return v - _OS_CL_CRYSTAL_MAX_A[where] if over else v
 
 
@@ -4264,10 +4264,14 @@ CHECKS += [
     ("paper §3.3 robust Cl high, both relaxed → 83 acceptors", PAPER_RESULTS, rf"reach Cl on the programmatic geometry and [\d.]+ to {N} times", V83,
      lambda d: max(_ac_ratio(d, s, p) for s, p, _ in _CL_ROWS), 0.05),
     # paper §2.3 — the acceptor point beside the donors
-    ("paper §2.3 Cl point, Os(II) relaxed → relaxed_os2", METHODS, rf"Os\(II\) moves the point by {N} meV, and relaxing", OS2,
+    ("paper §2.3 Cl point, Os(II) relaxed → relaxed_os2", METHODS, rf"Os\(II\) moves Cl by {N} meV and NO₂ by", OS2,
      lambda d: abs(d["vs_series"]["point_shift_eV"]["cl"]) * 1000, 0.6),
-    ("paper §2.3 Cl point, both relaxed → 83 acceptors", METHODS, rf"leaves it within {N} meV, while its pairs", V83,
+    ("paper §2.3 NO₂ point, Os(II) relaxed → relaxed_os2", METHODS, rf"and NO₂ by {N} meV, and relaxing", OS2,
+     lambda d: abs(d["vs_series"]["point_shift_eV"]["no2"]) * 1000, 0.6),
+    ("paper §2.3 Cl point, both relaxed → 83 acceptors", METHODS, rf"leaves them within {N} and [\d.]+ meV, while the", V83,
      lambda d: abs(_ac(d)["acceptor_point_shift_eV"]["cl"]) * 1000, 0.6),
+    ("paper §2.3 NO₂ point, both relaxed → 83 acceptors", METHODS, rf"leaves them within [\d.]+ and {N} meV, while the", V83,
+     lambda d: abs(_ac(d)["acceptor_point_shift_eV"]["no2"]) * 1000, 0.6),
     ("paper §2.3 Cl pairs per complex → 83 acceptors", METHODS, rf"{N} meV a complex on either geometry", V83, _ac_pair_move_max, 0.5),
     # SUMMARY §Mediator, limits (2) and (4) — one physical line, so no wrap to cross
     ("SUMMARY (2) Cl λ_III → relaxed_os3", SUMMARY, rf"acceptors run of 2026-10-14; λ_III {N} meV\)", OS3,
@@ -4285,7 +4289,7 @@ CHECKS += [
         ("Os(III)", rf"Os\(II\) minimum and {N} Å on Os\(III\)'s own, ", lambda d: _ac_os_cl(d, "relaxed_os3")),
         ("over Os(II)", rf"Os\(III\)'s own, {N} and [\d.]+ Å over the two crystal ranges", lambda d: _ac_os_cl(d, "relaxed", over=True)),
         ("over Os(III)", rf"Os\(III\)'s own, [\d.]+ and {N} Å over the two crystal ranges", lambda d: _ac_os_cl(d, "relaxed_os3", over=True)),
-        ("over Os(III), limit (4)", rf"the three donors; Cl {N} Å\)", lambda d: _ac_os_cl(d, "relaxed_os3", over=True)))],
+        ("over Os(III), limit (4)", rf"; NO₂ [\d.]+ Å; Cl {N} Å\)", lambda d: _ac_os_cl(d, "relaxed_os3", over=True)))],
     ("SUMMARY (2) Cl−OMe geometry move → 83 acceptors", SUMMARY, rf"carries these pairs too \(Cl−OMe moves by {N} mV", V83,
      lambda d: _ac(d)["computed_pairs"]["cl-ome"]["move_from_series_mV"], 0.05),
     ("SUMMARY (2) aqueous source Cl−Me → 83 aqueous", SUMMARY, rf"own optimised B3LYP \(×{N}, ×[\d.]+\), so the acceptor", V83,
@@ -4351,14 +4355,129 @@ CHECKS += [
      lambda d: _ac_os_cl(d, "relaxed_os3"), 0.005),
 ]
 
+
+def _ac_slope(d, k, col):   # eV/σ, or eV over the span — a printed slope once its members are relaxed
+    return _ac(d)["slopes"][k][col]
+
+
+def _no2_koop_ratio(d, f):   # how many times NO₂'s own cascade move exceeds its 5-meV Table 4 gap to SO₂CF₃
+    moves = (abs(_ac_koop(d, "no2", w)) for w in ("os3_on_os2_minimum", "os3_on_own_minimum"))
+    return f(moves) / _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"] * 1000
+
+CHECKS += [
+    # paper §3.3 — NO₂, the acceptor end of the fit set, relaxed in both states (anchors within one line, #16)
+    ("paper §3.3 slope ① programmatic, 4 fit members → 83 acceptors", PAPER_RESULTS, rf"H and NO₂ moves from {N} to", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "series_eV_per_sigma"), 0.0005),
+    ("paper §3.3 slope ① both relaxed, 4 fit members → 83 acceptors", PAPER_RESULTS, rf"moves from [{_DASHES}\-]?[\d.]+ to {N} eV per σ unit — shallower", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
+    ("paper §3.3 slope ① move over span → 83 acceptors", PAPER_RESULTS, rf"shallower, {N} eV over their", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "move_over_span_eV"), 0.0005),
+    ("paper §3.3 NO₂ λ_III → relaxed_os3", PAPER_RESULTS, rf"NO₂, relaxed the same way \(λ_III {N} meV, the largest", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["no2"], 0.6),
+    *[(f"paper §3.3 NO₂ Os–Cl {lab} → 83 acceptors", PAPER_RESULTS, anchor, V83, fn, 0.005) for lab, anchor, fn in (
+        ("Os(II)", rf"the five; Os–Cl {N} and [\d.]+ Å on the Os\(II\) and Os\(III\) minima", lambda d: _ac_os_cl(d, "relaxed", n="no2")),
+        ("Os(III)", rf"the five; Os–Cl [\d.]+ and {N} Å on the Os\(II\) and Os\(III\) minima", lambda d: _ac_os_cl(d, "relaxed_os3", n="no2")),
+        ("over Os(II)", rf"minima, {N} and [\d.]+ Å over the same ranges", lambda d: _ac_os_cl(d, "relaxed", over=True, n="no2")),
+        ("over Os(III)", rf"minima, [\d.]+ and {N} Å over the same ranges", lambda d: _ac_os_cl(d, "relaxed_os3", over=True, n="no2")))],
+    ("paper §3.3 NO₂ Koopmans own minimum → 83 acceptors", PAPER_RESULTS, rf"{N} eV with Os\(III\) on its own minimum and by \+[\d.]+ eV with Os\(III\) vertical, ", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.0005),
+    ("paper §3.3 NO₂ Koopmans vertical → 83 acceptors", PAPER_RESULTS, rf"and by \+{N} eV with Os\(III\) vertical, ", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.0005),
+    ("paper §3.3 NO₂ move/gap low → 83 acceptors", PAPER_RESULTS, rf"vertical, {N} to [\d.]+ times the [\d.]+ meV that", V83,
+     lambda d: _no2_koop_ratio(d, min), 0.6),
+    ("paper §3.3 NO₂ move/gap high → 83 acceptors", PAPER_RESULTS, rf"vertical, [\d.]+ to {N} times the [\d.]+ meV that", V83,
+     lambda d: _no2_koop_ratio(d, max), 0.6),
+    ("paper §3.3 NO₂ move/gap, the gap → 83 acceptors", PAPER_RESULTS, rf"times the {N} meV that", V83,
+     lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
+    # paper §3.3 — the realistic-optimum sentence scoped to the programmatic geometry, both signs of NO₂'s own move
+    ("paper §3.3 optimum NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves by \+{N} eV with Os\(III\) vertical", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
+    ("paper §3.3 optimum NO₂ move, own minimum → 83 acceptors", PAPER_RESULTS, rf"vertical and by {N} eV on its own", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.005),
+    # the slope §3.3 sets against ωB97X — Me · H · NO₂, complete once NO₂ relaxed (83 `slope_me_h_no2`)
+    *[(f"{lab} slope Me·H·NO₂ {col} → 83 acceptors", where, anchor, V83,
+       lambda d, c=col: _ac_slope(d, "slope_me_h_no2", c), 0.0005)
+      for lab, where, col, anchor in (
+          ("paper §3.3", PAPER_RESULTS, "series_eV_per_sigma", rf"all three relaxed — moves from {N} to"),
+          ("paper §3.3", PAPER_RESULTS, "adiabatic_eV_per_sigma", rf"all three relaxed — moves from [{_DASHES}\-]?[\d.]+ to {N} eV per σ unit"),
+          ("paper §3.3", PAPER_RESULTS, "move_over_span_eV", rf"eV per σ unit, {N} eV over their σ span;"),
+          ("SUMMARY (4)", SUMMARY, "series_eV_per_sigma", rf"all three relaxed — moves {N} → "),
+          ("SUMMARY (4)", SUMMARY, "adiabatic_eV_per_sigma", rf"all three relaxed — moves [{_DASHES}\-]?[\d.]+ → {N} eV/σ"),
+          ("SUMMARY (4)", SUMMARY, "move_over_span_eV", rf"eV/σ, {N} eV over its span, about 1.5"),
+          ("PIPELINE D 10-15", PIPELINE, "series_eV_per_sigma", rf"усі три релаксовано, — рухається {N} → "),
+          ("PIPELINE D 10-15", PIPELINE, "adiabatic_eV_per_sigma", rf"усі три релаксовано, — рухається [{_DASHES}\-]?[\d.]+ → {N} еВ/σ"),
+          ("PIPELINE D 10-15", PIPELINE, "move_over_span_eV", rf"еВ/σ, {N} еВ на розмах, лише в"))],
+    # paper/00_OUTLINE §3.3 — the NO₂ clause
+    ("OUTLINE §3.3 slope ① programmatic → 83 acceptors", OUTLINE, rf"into a computation, {N} → ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "series_eV_per_sigma"), 0.0005),
+    ("OUTLINE §3.3 slope ① both relaxed → 83 acceptors", OUTLINE, rf"into a computation, [{_DASHES}\-]?[\d.]+ → {N} eV/σ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
+    ("OUTLINE §3.3 NO₂/SO₂CF₃ gap → 83 acceptors", OUTLINE, rf"NO₂/SO₂CF₃ \({N} meV\) undecided", V83,
+     lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
+    ("OUTLINE §3.3 NO₂ move vertical → 83 acceptors", OUTLINE, rf"Koopmans cascade Δ moving \+{N} / ", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
+    ("OUTLINE §3.3 NO₂ move own → 83 acceptors", OUTLINE, rf"Koopmans cascade Δ moving \+[\d.]+ / {N} eV\)", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.005),
+    # SUMMARY §Mediator, limits (2)–(4)
+    ("SUMMARY (2) NO₂ λ_III → relaxed_os3", SUMMARY, rf"\*\*NO₂, relaxed the same way\*\* \(λ_III {N} meV", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["no2"], 0.6),
+    *[(f"SUMMARY (2) NO₂ Os–Cl {lab} → 83 acceptors", SUMMARY, anchor, V83, fn, 0.005) for lab, anchor, fn in (
+        ("Os(II)", rf"relaxed points; Os–Cl {N} and [\d.]+ Å on the two minima", lambda d: _ac_os_cl(d, "relaxed", n="no2")),
+        ("Os(III)", rf"relaxed points; Os–Cl [\d.]+ and {N} Å on the two minima", lambda d: _ac_os_cl(d, "relaxed_os3", n="no2")),
+        ("over Os(II)", rf"two minima, {N} and [\d.]+ Å over the crystal ranges\), has no measured", lambda d: _ac_os_cl(d, "relaxed", over=True, n="no2")),
+        ("over Os(III)", rf"two minima, [\d.]+ and {N} Å over the crystal ranges\), has no measured", lambda d: _ac_os_cl(d, "relaxed_os3", over=True, n="no2")),
+        ("over Os(III), limit (4)", rf"the three donors; NO₂ {N} Å; Cl", lambda d: _ac_os_cl(d, "relaxed_os3", over=True, n="no2")))],
+    ("SUMMARY (3) NO₂ Koopmans own → 83 acceptors", SUMMARY, rf"moves its own Koopmans cascade Δ by {N} eV \(\+", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.0005),
+    ("SUMMARY (3) NO₂ Koopmans vertical → 83 acceptors", SUMMARY, rf"cascade Δ by [{_DASHES}\-]?[\d.]+ eV \(\+{N} with Os\(III\) vertical\), 20", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.0005),
+    ("SUMMARY (4) slope ① programmatic → 83 acceptors", SUMMARY, rf"the slope moves {N} → [{_DASHES}\-]?[\d.]+ eV/σ, [\d.]+ eV over the span, shallower", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "series_eV_per_sigma"), 0.0005),
+    ("SUMMARY (4) slope ① both relaxed → 83 acceptors", SUMMARY, rf"the slope moves [{_DASHES}\-]?[\d.]+ → {N} eV/σ, [\d.]+ eV over the span, shallower", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
+    ("SUMMARY (4) slope ① over span → 83 acceptors", SUMMARY, rf"eV/σ, {N} eV over the span, shallower", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "move_over_span_eV"), 0.0005),
+    ("SUMMARY (4) NO₂ Koopmans own → 83 acceptors", SUMMARY, rf"its own Koopmans cascade Δ moves by {N} eV on its own minimum \(\+", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.0005),
+    # PIPELINE_STATUS — banner, rows 21e · 83 (e), the note under D
+    ("PIPELINE 21e NO₂ point vertical → relaxed_os2", PIPELINE, rf"NO₂ integrated the same day \(point {N} meV", OS2,
+     lambda d: d["vs_series"]["point_shift_eV"]["no2"] * 1000, 0.6),
+    ("PIPELINE 21e NO₂ point both → 83 acceptors", PIPELINE, rf"meV / \+{N} meV on the two geometries", V83,
+     lambda d: _ac(d)["acceptor_point_shift_eV"]["no2"] * 1000, 0.6),
+    ("PIPELINE 21e NO₂ λ_III → relaxed_os3", PIPELINE, rf"on the two geometries, λ_III {N} meV, the largest", OS3,
+     lambda d: d["vs_vertical"]["lambda_os3_meV"]["no2"], 0.6),
+    ("PIPELINE 83 (e) NO₂ slope programmatic → 83 acceptors", PIPELINE, rf"\(four of the five\) {N} → ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "series_eV_per_sigma"), 0.0005),
+    ("PIPELINE 83 (e) NO₂ slope both relaxed → 83 acceptors", PIPELINE, rf"\(four of the five\) [{_DASHES}\-]?[\d.]+ → {N} eV/σ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
+    ("PIPELINE 83 (e) NO₂ Koopmans own → 83 acceptors", PIPELINE, rf"its own cascade moving {N} eV \(\+", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-15 NO₂ slope programmatic → 83 acceptors", PIPELINE, rf"COOH не релаксовано\) рухається {N} → [{_DASHES}\-]?[\d.]+ еВ/σ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "series_eV_per_sigma"), 0.0005),
+    ("PIPELINE D 10-15 NO₂ slope both relaxed → 83 acceptors", PIPELINE, rf"COOH не релаксовано\) рухається [{_DASHES}\-]?[\d.]+ → {N} еВ/σ", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
+    ("PIPELINE D 10-15 NO₂ slope over span → 83 acceptors", PIPELINE, rf"еВ/σ, {N} еВ на розмах, тобто пологіший", V83,
+     lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "move_over_span_eV"), 0.0005),
+    ("PIPELINE D 10-15 NO₂ Koopmans own → 83 acceptors", PIPELINE, rf"Δ NO₂ рухається на {N} еВ з Os", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.0005),
+    ("PIPELINE D 10-15 NO₂ Koopmans vertical → 83 acceptors", PIPELINE, rf"мінімумі й на \+{N} еВ з вертикальним", V83,
+     lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.0005),
+    ("PIPELINE D 10-15 NO₂/SO₂CF₃ gap → 83 acceptors", PIPELINE, rf"пару NO₂→SO₂CF₃ \({N} меВ\) за нерелаксованого", V83,
+     lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
+    # L3 caveat 2
+    *[(f"L3 caveat 2 NO₂ Os–Cl {lab} → 83 acceptors", L3, anchor, V83, fn, 0.005) for lab, anchor, fn in (
+        ("Os(II)", rf"NO₂ the same day — Os–Cl {N} and", lambda d: _ac_os_cl(d, "relaxed", n="no2")),
+        ("Os(III)", rf"Os–Cl [\d.]+ and {N} Å on the two minima, no measured pair", lambda d: _ac_os_cl(d, "relaxed_os3", n="no2")))],
+]
+
 _COUNT_WORDS = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 
 
 def test_paper_33_acceptor_column_claim_holds():
-    """Paper §3.3 and §2.3 name WHICH points are relaxed — four sentences an acceptor landing makes false. Each is held
+    """Paper §3.3 and §2.3 name WHICH points are relaxed — the sentences an acceptor landing makes false. Each is held
     to the 21e caches themselves (a point counts once both its rows exist), not to 83's record, so a stale 83 reds too.
 
-    CAN catch: the word «four» drifting from the relaxed members; a sentence naming the relaxed set after a point lands
+    CAN catch: the count word («five» since NO₂) drifting from the relaxed members; a sentence naming the relaxed set after a point lands
     (or before it lands); 83 not re-run since a point landed in both 21e caches; the column losing its order on any of
     the three geometries. CANNOT catch: whether the paper should say it at all."""
     ac = C(V83)["relaxed_geometry_check"]["acceptors"]
@@ -4375,6 +4494,18 @@ def test_paper_33_acceptor_column_claim_holds():
     assert ("only OMe, Me and H of the fit set being relaxed" in paper) == (sorted(n for n in fit if n in both) == ["bpy", "dmbpy", "ome"])
     assert ("on the one acceptor point, Cl," in methods) == (ac["acceptors"] == ["cl"])
     assert ("the Os(II) points of OMe, Me, H and Cl " in methods) == (members == ["ome", "dmbpy", "bpy", "cl"])
+    relaxed_fit = sorted(n for n in fit if n in both)
+    assert ("on the two acceptor points, " in methods) == (ac["acceptors"] == ["cl", "no2"])
+    assert ("the Os(II) points of OMe, Me, H, Cl and NO₂ " in methods) == (members == ["ome", "dmbpy", "bpy", "cl", "no2"])
+    assert ("four of the five fit-set members relaxed (COOH is not)" in paper) == \
+        (len(fit) == 5 and set(fit) - set(relaxed_fit) == {"dcbpy"})
+    assert ("of NO₂ and SO₂CF₃ (5.0 meV) only NO₂ is (below)" in paper) == ("no2" in both and "so2cf3" not in both)
+    lam = C(OS3)["vs_vertical"]["lambda_os3_meV"]
+    assert ("(λ_III 150 meV, the largest of\nthe five;" in paper) == (len(members) == 5 and max(members, key=lambda n: lam[n]) == "no2")
+    s1 = ac["slopes"].get("slope_1_relaxed_fit_members", {})
+    assert ("per σ unit — shallower," in paper) == (bool(s1) and abs(s1["adiabatic_eV_per_sigma"]) < abs(s1["series_eV_per_sigma"]))
+    assert ("no measured counterpart in any of the three series, so it adds no pair against experiment" in paper) == \
+        ("no2" in ac["acceptors"] and not any("no2" in p["pair"] for p in ac["pairs_vs_measured"]))
     for g in ("programmatic", "os3_on_os2_minimum", "os3_on_own_minimum"):
         seq = [ac["koopmans_cascade_delta_eV"][n][g] for n in members]
         assert all(a < b for a, b in itertools.pairwise(seq)), f"the column is not monotonic on {g}, yet the paper says it is"

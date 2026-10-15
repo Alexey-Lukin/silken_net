@@ -113,8 +113,12 @@ pairs move by up to 20.1 mV per substituent (80 meV a complex), and on its own m
 2.42–2.43 Å, 0.04–0.05 Å over its crystal range. With Os(III) on its own minimum the Koopmans cascade Δ of Table 4
 moves by −0.142 eV for OMe, −0.070 eV for Me and −0.091 eV for H and stays monotonic in σ_para over the three, while
 the ΔE_red slope over the three donors steepens by 13 %, which carried over the σ span of the fit would amount to
-≈0.13 eV — an extrapolation, only OMe, Me and H of the fit set being relaxed; so the order of the closest neighbours of Table 4 (NMe₂
-and NH₂, 1.5 meV apart; NO₂ and SO₂CF₃, 5.0 meV) is not tested against the geometry. Cl, relaxed in both states with
+≈0.13 eV. The acceptor end of the fit set does not bear that extrapolation out: with NO₂ relaxed in both states as
+well, the slope over OMe, Me, H and NO₂ moves from −0.930 to −0.897 eV per σ unit — shallower, 0.034 eV over their
+σ span, four of the five fit-set members relaxed (COOH is not). The slope this section sets against ωB97X below,
+over Me, H and NO₂ — all three relaxed — moves from −0.931 to −0.859 eV per σ unit, 0.069 eV over their σ span;
+ωB97X has no relaxed point, so the ratio of the two slopes below stays one of the programmatic geometry. The closest neighbours of Table 4 are not tested
+against the geometry: NMe₂ and NH₂ (1.5 meV apart) are not relaxed, and of NO₂ and SO₂CF₃ (5.0 meV) only NO₂ is (below). Cl, relaxed in both states with
 the same protocol (λ_III 94 meV; Os–Cl 2.51 Å on its Os(II) minimum and 2.41 Å on Os(III)'s own, 0.07 and 0.03 Å over
 the crystal ranges of §2.3), does not come closer: against the programmatic geometry each of its pairs moves away
 from experiment in every series that has it — ref 8's Cl−H from 2.43 to 3.04 times the measured (2.81 with Os(III)
@@ -126,7 +130,11 @@ own optimised B3LYP (1.45 and 1.22 times the measured), which our relaxation app
 donor pairs come within 1.7 mV per substituent of experiment, the excess on the acceptor side is not an artefact of the
 programmatic geometry — our relaxation enlarges it — and what the source's computation has and ours lacks, free
 energies among it, is untested on it. Cl's Koopmans cascade Δ moves by −0.066 eV with Os(III) on its own minimum and
-by +0.118 eV with Os(III) vertical on the relaxed Os(II), and over the four relaxed members the column stays monotonic
+by +0.118 eV with Os(III) vertical on the relaxed Os(II). NO₂, relaxed the same way (λ_III 150 meV, the largest of
+the five; Os–Cl 2.49 and 2.41 Å on the Os(II) and Os(III) minima, 0.05 and 0.03 Å over the same ranges), has
+no measured counterpart in any of the three series, so it adds no pair against experiment and the acceptor-side excess above rests on Cl alone; its cascade Δ moves by
+−0.198 eV with Os(III) on its own minimum and by +0.102 eV with Os(III) vertical, 20 to 40 times the 5.0 meV that
+separate it from SO₂CF₃ in Table 4, so with SO₂CF₃ not relaxed their order is not decided here, and over the five relaxed members the column stays monotonic
 in σ_para on the programmatic geometry and on both relaxed ones (H to Cl 158 meV on the programmatic, 182 meV with both
 states relaxed). Left untested are free energies and our
 program's own discretisation of the cavity. On its one
@@ -165,8 +173,10 @@ force but does not by itself set the current.
 The rule also exposes a practical subtlety. The maximal cascade driving force is reached by strongly
 electron-withdrawing groups, but the strongest (NO₂) is electrochemically **unstable** at the operating
 pH (it reduces to the amine on cycling,<sup>60</sup> collapsing the cascade to its worst case). The realistic
-optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP,
-but without the degradation), with CF₃ a milder inert alternative. Crucially, the cascade-thermodynamic
+optimum is therefore the inert high-σ **SO₂CF₃** (cascade −0.227 eV, matching NO₂'s −0.232 eV at B3LYP on the
+programmatic geometry — a value that relaxing NO₂ alone moves by +0.10 eV with Os(III) vertical and by −0.20 eV on its own
+minimum (above) — but without the degradation), with CF₃
+a milder inert alternative. Crucially, the cascade-thermodynamic
 optimum is *not* the cell optimum: a higher E°(Os) lowers the open-circuit voltage, so the experimental
 optimum (~+309 mV)<sup>8</sup> balances driving force against overpotential.
 

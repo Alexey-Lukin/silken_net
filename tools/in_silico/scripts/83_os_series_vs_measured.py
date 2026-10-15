@@ -760,7 +760,7 @@ def verdict_adiabatic(rd: dict) -> str:
             f"geometries), and stays monotonic in σ over the relaxed donors on "
             f"{'both' if all(mono.values()) else 'not all'} Os(III) geometries — where the programmatic gaps are "
             f"{min(abs(v) for v in rd['koopmans_neighbour_gap_eV']['programmatic'].values()) * 1000:.0f} meV or more; the "
-            f"closest neighbours of Table 4 are unrelaxed (" + ", ".join(f"{name(k).replace('−', '→')} {abs(ug[k]):.1f} meV" for k in close)
+            f"closest neighbours of Table 4 are not relaxed in both members (" + ", ".join(f"{name(k).replace('−', '→')} {abs(ug[k]):.1f} meV" for k in close)
             + f"). On its own minimum Os(III) takes Os–Cl back from {min(cl['relaxed']):.3f}–{max(cl['relaxed']):.3f} to "
             f"{min(cl['relaxed_os3']):.3f}–{max(cl['relaxed_os3']):.3f} Å. {trig}; the slope ①, extrapolated from the "
             f"donors' {rd['donor_slope_change'] * 100:+.0f} % over the LFER fit set's span ({rd['lfer_span_eV']:.2f} eV), moves "
