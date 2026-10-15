@@ -9,7 +9,7 @@ PARITY-COMPLETE → heap/stack звіт) — скрипт чіпляється �
 тож порядок із reset'ом плати неважливий.
 
     05_parity_dump.py --plan                       # кроки
-    05_parity_dump.py --port /dev/tty.usbmodemXXX  # дамп + вердикт
+    05_parity_dump.py --port /dev/cu.usbserial-XXX # дамп + вердикт (FT232RL на J1-13 mini)
 
 Голден: firmware/build-sim/host.txt (народжує qemu_parity.sh — host-нога
 працює і без локального qemu). byte-exact → FW.7/FW.19/FW.55 остаточно.
@@ -30,7 +30,8 @@ PLAN = """\
 1. firmware/scripts/qemu_parity.sh — host-голден (build-sim/host.txt) +
    parity_wle5.elf; працює і без локального qemu.
 2. firmware/scripts/bench/00_flash.sh --elf firmware/build-sim/parity_wle5.elf --execute
-3. 05_parity_dump.py --port /dev/tty.usbmodem*  (ST-LINK VCP NUCLEO-WL55JC, 115200)
+3. 05_parity_dump.py --port /dev/cu.usbserial-*  (FT232RL: RX ← J1-13 = PA2 LoRa-E5 mini,
+   115200 8N1; на NUCLEO-WL55JC — ST-LINK VCP /dev/tty.usbmodem*)
 4. byte-exact → ✅ silicon-confirm у 00_07 FW.55 (FW.7/FW.19 остаточно);
    плату перешити бойовим образом (00_flash.sh) — parity-runner займає flash.
 """
