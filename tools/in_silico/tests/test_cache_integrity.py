@@ -2357,6 +2357,106 @@ def test_liner_mouth_contact():
     assert "through its AMPLITUDE, not its mean" in summ["text"]
 
 
+def test_wire_under_liner_edges():
+    """97 (HW.34): the bus wire under the liner's mouth and exit edges — the contact pressure carried through the PEEK
+    layer onto the Ti surface, added to the nominal bending, on 86's Soderberg line against the welded root.
+
+    CAN catch: a kernel control past its bound; a station whose field moves with the padding, whose nominal at the
+    centroid is not 92's section stress, whose exported window side disagrees with 92's own rod, or whose moment is not
+    92's pose; a root that is not 92's own shank row at the tolerance offset (re-read from the CURRENT 92 cache); an SF, a
+    k_x or a worst face its own amplitudes and means do not give; a summary whose lowest k_x (value and place, inside and
+    beyond ⌀0.10), root SF, liner-end factor, contact tension (per base) or contact weight is not what the rows say, or whose text
+    stopped quoting them (thresholds rounded DOWN). It does NOT test this script's face assembly (checked by hand,
+    2026-10-16) — the window-side check is 92's sign.
+    CANNOT catch: the wire's own curvature under the layer (a half-space), plasticity, friction at the layer's base
+    beyond the two bounding bases, the liner end's corner (open — only the factor it would need), the seam's k.
+    """
+    path = MECHANICAL / "wire_under_liner_edges.json"
+    if not path.exists():
+        pytest.skip("97 not run")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    d92 = json.loads((MECHANICAL / "liner_mouth_contact.json").read_text(encoding="utf-8"))
+    kc, inp = d["kernel_controls"], d["inputs"]
+    assert kc["kh_to_zero_max_abs"] < 1e-6 and kc["frictionless_kk_equals_zz_max_abs"] < 1e-12
+    assert kc["homogeneous_closed_form_max_abs"] < 1e-10 and kc["rigid_substrate_vs_91_phi_max_rel"] < 1e-4 and kc["tail_at_kh_max"] < 1e-4
+    se, sy = inp["endurance_drawn_wire_MPa"], inp["yield_Ti_MPa"]
+
+    def sf(amp, mean, k=1.0):
+        return 1.0 / (amp / (k * se) + max(mean, 0.0) / sy)
+    assert sorted({r["base"] for r in d["rows"]}) == sorted(d["summary"]["by_base"])
+    for r in d["rows"]:
+        tag = f"{r['base']} {r['offset_um']} µm"
+        ra, rm = r["root"]["amplitude_MPa"], r["root"]["mean_abs_MPa"]
+        for k, v in r["root"]["sf_at_k"].items():
+            assert abs(v - sf(ra, rm, float(k))) < 1e-9, tag
+        for name in ("mouth", "exit"):
+            st, c = r[name], r[name]["controls"]
+            assert c["max_padding_diff_MPa"] < 0.05 and c["max_centroid_nominal_diff_MPa"] < 1e-6, tag
+            assert not math.isfinite(c["min_rod_toward_wall_over_play"]) or c["min_rod_toward_wall_over_play"] > 0.5, \
+                f"{tag} {name}: contact on the wrong face"
+            assert c["internal_92_Ecv2_minus_sigma_MPa"] <= 0.01 * c["internal_92_scale_MPa"] + 0.01, tag
+            for fn, f in st["faces"].items():
+                assert abs(f["sf_drawn_wire"] - sf(f["amplitude_MPa"], f["mean_MPa"])) < 1e-6 * f["sf_drawn_wire"], (tag, name, fn)
+                dd = f["amplitude_MPa"] + (max(f["mean_MPa"], 0.0) - rm) * se / sy
+                assert f["k_crossover"] == (pytest.approx(ra / dd, rel=1e-9) if dd > 0 else None), (tag, name, fn)
+            assert st["worst_face"] == min(st["faces"], key=lambda k: st["faces"][k]["sf_drawn_wire"]), tag
+    # the root is 92's own: the same solves on the same drag path — 92's shipped-shank row at its tolerance offset
+    tol = d["summary"]["tolerance_offset_um"]
+    assert tol == d92["summary"]["tolerance_offset_um"]
+    (shank,) = [z for z in d92["shank"] if z["mouth_station_mm"] == round(d92["inputs"]["gap_mm"], 3)]  # the shipped one
+    r97 = next(r for r in d["rows"] if r["base"] == "bonded" and r["offset_um"] == tol)
+    # 92 rounds each point's σ to 3 decimals and then its swing again (`row` · `swing`): two half-units, 1e-3 MPa
+    assert abs(r97["root"]["mean_abs_MPa"] - shank["root_mean_amplitude_MPa"][0]) <= 1e-3 + 1e-9, "97's root is not 92's — re-run 97"
+    assert abs(r97["root"]["amplitude_MPa"] - shank["root_mean_amplitude_MPa"][1]) <= 1e-3 + 1e-9, "97's root is not 92's — re-run 97"
+    assert r97["path_points"] == shank["points"], "97 walked another drag path than 92"
+    down = lambda x: math.floor(x * 100) / 100  # noqa: E731
+    text = d["summary"]["text"]
+    for base, b in d["summary"]["by_base"].items():
+        rs = [r for r in d["rows"] if r["base"] == base]
+        cands = [(f["k_crossover"], r["offset_um"], n, fn) for r in rs for n in ("mouth", "exit") for fn, f in r[n]["faces"].items()
+                 if f["k_crossover"] is not None]
+        for key, pool in (("lowest_k_crossover_within_tolerance", [c for c in cands if c[1] <= tol]),
+                          ("lowest_k_crossover_beyond", [c for c in cands if c[1] > tol])):
+            got, want = b[key], min(pool, default=None)
+            assert (got is None) == (want is None), (base, key)
+            if want:
+                assert (got["k_crossover"], got["offset_um"], got["station"], got["face"]) == want, (base, key)
+        inside = b["lowest_k_crossover_within_tolerance"]
+        if inside:
+            assert f"«{base}»: inside ⌀0.10 the welded root stays the critical section for every seam knock-down k < {down(inside['k_crossover']):.2f}" in text
+            # the arc ceiling's bracket: ×1.3 on the contact's share, the nominal share bounded by σ_e/SF_nominal over the face
+            assert ("k_crossover_contact_x1_3" in inside) == (inside["mean_MPa"] < 0), base
+            if inside["mean_MPa"] < 0:
+                r = next(r for r in rs if r["offset_um"] == inside["offset_um"])
+                f, arc = r[inside["station"]]["faces"][inside["face"]], 0.65 / 0.5
+                a, an = f["amplitude_MPa"], se / f["sf_nominal_only"]
+                want = sorted(r["root"]["amplitude_MPa"] / (x - r["root"]["mean_abs_MPa"] * se / sy) for x in (arc * a, an + arc * (a - an)))
+                assert inside["k_crossover_contact_x1_3"] == pytest.approx(want, rel=1e-9), base
+        assert b["root_sf_at_k_at_tolerance"] == next(r for r in rs if r["offset_um"] == tol)["root"]["sf_at_k"], base
+        for k, v in b["liner_end_corner_factor_to_out_rank_within_tolerance"].items():   # against the governing section at k
+            want = min((min(x["sf_nominal_only"] for x in r["liner_end"].values() if isinstance(x, dict))
+                        / min(r["root"]["sf_at_k"][k], *(f["sf_drawn_wire"] for st in ("mouth", "exit") for f in r[st]["faces"].values())),
+                        r["offset_um"]) for r in rs if r["offset_um"] <= tol)
+            assert (v["factor"], v["offset_um"]) == want, (base, k)
+            assert f"×{down(v['factor']):.2f} (k {k}, {v['offset_um']} µm)" in text, (base, k)
+        assert b["not_solved"] == [{"offset_um": r["offset_um"], **ns} for r in rs for ns in r["not_solved"]], base
+    assert ("path point(s) refused by 92" in text) == any(x["not_solved"] for x in d["summary"]["by_base"].values()), \
+        "a refused path point shrinks the cycle (both amplitudes lower bounds) and the summary must say so"
+    faces = [(f, r["base"], r["offset_um"], st, fn) for r in d["rows"] for st in ("mouth", "exit") for fn, f in r[st]["faces"].items()]
+    # the contact's own tension, per base — no sign asserted: a face whose every path point touches has no zero sample
+    for base, b in d["summary"]["by_base"].items():
+        ct = max((f["max_contact_tension_MPa"], off, st, fn) for f, bb, off, st, fn in faces if bb == base)
+        s = b["contact_tension_max"]
+        assert (s["MPa"], s["offset_um"], s["station"], s["face"]) == ct, base
+        assert f"{base} {s['MPa']:+.3f} MPa ({s['offset_um']} µm, {s['station']} {s['face']})" in text, base
+    cw = max(faces, key=lambda x: x[0]["contact_factor_on_1_over_sf"])
+    s = d["summary"]["contact_factor_on_1_over_sf_max"]
+    assert (s["factor"], s["base"], s["offset_um"], s["station"], s["face"]) == (cw[0]["contact_factor_on_1_over_sf"], *cw[1:])
+    assert ("where the governing cycle's mean is compressive" in text) == (s["mean_MPa"] < 0)
+    tens = max((x for x in faces if x[0]["mean_MPa"] >= 0), key=lambda x: x[0]["contact_factor_on_1_over_sf"])
+    assert d["summary"]["contact_factor_at_tensile_mean_max"]["factor"] == tens[0]["contact_factor_on_1_over_sf"]
+
+
 def test_liner_exit_contact():
     """Script 91 (HW.34 / HW.23): the liner's exit contact as an elastic-layer problem coupled to the rod, read over
     the drag CYCLE (touchdown → µ·F), each figure beside a rigid wall at the SAME edge.

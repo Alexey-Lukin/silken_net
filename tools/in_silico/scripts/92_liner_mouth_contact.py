@@ -214,8 +214,11 @@ def rigid_points(rod, play: float, off: float, drag: float, x_m: float, x_x: flo
 def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: float, *, r_ex: float = R_EX_MM,
           base: str = "bonded", e_peek_mpa: float = m91.E_PEEK_MPA, scale: float = 1.0, ds: float = m91.DS_MM,
           dy: float = m91.DY_MM, tables: dict | None = None, s_len: float = m91.WINDOW_S_MM,
-          y_half: float = m91.WINDOW_Y_MM, refine: tuple = (), refine_windows: tuple = ("mouth",)) -> dict:
-    """One equilibrium: mouth window on −, exit window on the side the rigid same-edge solution approaches first."""
+          y_half: float = m91.WINDOW_Y_MM, refine: tuple = (), refine_windows: tuple = ("mouth",),
+          with_field: bool = False) -> dict:
+    """One equilibrium: mouth window on −, exit window on the side the rigid same-edge solution approaches first.
+    `with_field` (97 reads it, no cache of this script does): each active window also returns its pressure field on its
+    grid and the wire's nominal fibre stress and pose along it — nothing else in the result changes."""
     rod = m91.Rod(geo, liner_row)
     x_m0 = geo.gap_mm
     rig = rigid_points(rod, play, off, drag, x_m0 + r_in, rod.L - r_ex)
@@ -363,6 +366,16 @@ def solve(geo, liner_row: dict, play: float, off: float, drag: float, r_in: floa
         xs = float(q[k] @ windows[k][1] / react[k]) if act[k] else x_ref[k]
         m_sec = drag * (rod.L - xs) - sum(windows[j][0] * float(q[j] @ np.maximum(windows[j][1] - xs, 0.0)) for j in range(2))
         out["section_sigma_signed_MPa"][name] = wire_sigma(geo, liner_row, xs, m_sec)
+    if with_field:   # the same moment as the section stress above, at every x of BOTH windows (a lifted patch: p = 0)
+        out["fields"] = {}
+        for k, name in enumerate(("mouth", "exit")):
+            xw = windows[k][1]
+            m_x = drag * (rod.L - xw) - sum(windows[j][0] * (np.maximum(windows[j][1][None, :] - xw[:, None], 0.0) @ q[j])
+                                            for j in range(2))
+            out["fields"][name] = {"p_MPa": pres[k] if act[k] else np.zeros((ns, ny)), "s_mm": s_m if k == 0 else s_x,
+                                   "y_mm": y, "x_mm": xw, "ds_mm": ds, "dy_mm": dy, "window_sign": windows[k][0],
+                                   "pose_mm": pose(xw), "sigma_nominal_signed_MPa": np.array(
+                                       [wire_sigma(geo, liner_row, float(a), float(b)) for a, b in zip(xw, m_x, strict=True)])}
     return out
 
 

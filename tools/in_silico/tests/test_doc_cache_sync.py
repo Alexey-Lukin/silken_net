@@ -119,6 +119,12 @@ CONSERVATION = "chemistry/chem11_site_conservation.json"  # §2 conservation blo
 # Number class allows an optional leading sign: a dash of any flavour, or an explicit plus — a cascade
 # that changes sign is written «+0.068», and a class without «+» reads that cell as absent, not as drift.
 N = rf"([+{_DASHES}\-]?[\d.]+)"
+
+
+def _sf97_floor(d: dict) -> float:
+    """97's lowest drawn-wire SF under either edge inside ⌀0.10, rounded DOWN to the doc's one decimal — «не нижче» / «is» a floor."""
+    return math.floor(min(f["sf_drawn_wire"] for r in d["rows"] if r["offset_um"] <= d["summary"]["tolerance_offset_um"]
+                          for st in ("mouth", "exit") for f in r[st]["faces"].values()) * 10) / 10
 NSCI = rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
@@ -196,6 +202,44 @@ CHECKS = [
         SUMMARY, rf"lands \*\*{N} mV\*\* from the free-flavin",
         "dft/pcet_redox_potential.json", lambda d: d["delta_vs_exp_pH7_mV"][0], 1.0,
     ),
+    # 97 — the wire under the liner's edges (HW.34, 2026-10-16): the table's SF cells and the four claims under it
+    ("97 canon k_x bonded → wire_under_liner_edges", COAXIAL, rf"для кожного шва з `k` < \*\*{N}\*\*\s+на зчепленій основі",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["bonded"]["lowest_k_crossover_within_tolerance"]["k_crossover"] * 100) / 100, 1e-9),
+    ("97 canon k_x frictionless → wire_under_liner_edges", COAXIAL, rf"і `k` < \*\*{N}\*\* на вільній",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["frictionless"]["lowest_k_crossover_within_tolerance"]["k_crossover"] * 100) / 100, 1e-9),
+    ("97 canon liner-end factor → wire_under_liner_edges", COAXIAL, rf"номінал голого боку менш ніж у ×\*\*{N}\*\* за ідеального шва",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["bonded"]["liner_end_corner_factor_to_out_rank_within_tolerance"]["1"]["factor"] * 100) / 100, 1e-9),
+    ("97 canon liner-end factor k=0.388 → wire_under_liner_edges", COAXIAL, rf"\(×\*\*{N}\*\* за `k` 0\.388\)",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["bonded"]["liner_end_corner_factor_to_out_rank_within_tolerance"]["0.388"]["factor"] * 100) / 100, 1e-9),
+    *[(f"97 canon frictionless k_x arc bracket {end} → wire_under_liner_edges", COAXIAL, anchor, "mechanical/wire_under_liner_edges.json",
+       (lambda d, i=i: math.floor(d["summary"]["by_base"]["frictionless"]["lowest_k_crossover_within_tolerance"]["k_crossover_contact_x1_3"][i] * 100) / 100), 1e-9)
+      for end, i, anchor in (("low", 0, rf"опустила б поріг до \*\*{N}–"), ("high", 1, rf"опустила б поріг до \*\*[\d.]+–{N}\*\*"))],
+    ("97 canon lowest drawn-wire SF → wire_under_liner_edges", COAXIAL, rf"під обома кромками не нижче {N}\.",
+     "mechanical/wire_under_liner_edges.json", lambda d: _sf97_floor(d), 1e-9),
+    ("97 k_x bonded → wire_under_liner_edges", SUMMARY, rf"for every seam with `k` < {N} on the bonded base",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["bonded"]["lowest_k_crossover_within_tolerance"]["k_crossover"] * 100) / 100, 1e-9),
+    ("97 k_x frictionless → wire_under_liner_edges", SUMMARY, rf"\*\*and `k` < {N} on the frictionless base",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.floor(d["summary"]["by_base"]["frictionless"]["lowest_k_crossover_within_tolerance"]["k_crossover"] * 100) / 100, 1e-9),
+    ("97 lowest drawn-wire SF inside ⌀0.10 → wire_under_liner_edges", SUMMARY, rf"under either edge inside ⌀0.10 is \*\*{N}\*\*",
+     "mechanical/wire_under_liner_edges.json", lambda d: _sf97_floor(d), 1e-9),
+    # (A): the contact's own tension per base (a reading; the bonded one quoted as a bound, so rounded UP) and its weight on 1/SF
+    ("97 contact tension frictionless → wire_under_liner_edges", SUMMARY, rf"beside a patch is \*\*{N}\*\* MPa on the frictionless base",
+     "mechanical/wire_under_liner_edges.json", lambda d: d["summary"]["by_base"]["frictionless"]["contact_tension_max"]["MPa"], 0.005),
+    ("97 contact tension bonded (bound) → wire_under_liner_edges", SUMMARY, rf"and under\s+\*\*{N}\*\* MPa on the bonded one",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.ceil(d["summary"]["by_base"]["bonded"]["contact_tension_max"]["MPa"] * 1000) / 1000, 1e-9),
+    ("97 contact weight on 1/SF max → wire_under_liner_edges", SUMMARY, rf"is largest — ×\*\*{N}\*\* — where the governing",
+     "mechanical/wire_under_liner_edges.json", lambda d: d["summary"]["contact_factor_on_1_over_sf_max"]["factor"], 0.005),
+    ("97 contact weight at a tensile mean (bound) → wire_under_liner_edges", SUMMARY, rf"by at most ×\*\*{N}\*\*\s+\(frictionless, 30 µm",
+     "mechanical/wire_under_liner_edges.json", lambda d: math.ceil(d["summary"]["contact_factor_at_tensile_mean_max"]["factor"] * 100) / 100, 1e-9),
+    *[(f"97 frictionless k_x arc bracket {end} → wire_under_liner_edges", SUMMARY, anchor, "mechanical/wire_under_liner_edges.json",
+       (lambda d, i=i: math.floor(d["summary"]["by_base"]["frictionless"]["lowest_k_crossover_within_tolerance"]["k_crossover_contact_x1_3"][i] * 100) / 100), 1e-9)
+      for end, i, anchor in (("low", 0, rf"would put it at \*\*{N}–"), ("high", 1, rf"would put it at \*\*[\d.]+–{N}\*\*"))],
+    *[(f"97 liner-end factor {label} → wire_under_liner_edges", SUMMARY, anchor, "mechanical/wire_under_liner_edges.json",
+       (lambda d, base=base, k=k: math.floor(d["summary"]["by_base"][base]["liner_end_corner_factor_to_out_rank_within_tolerance"][k]["factor"] * 100) / 100), 1e-9)
+      for label, anchor, base, k in (
+          ("bonded k=1", rf"less than ×\*\*{N}\*\* \(bonded, perfect seam", "bonded", "1"),
+          ("frictionless k=1", rf"/ ×\*\*{N}\*\* \(frictionless, 50 µm\)", "frictionless", "1"),
+          ("k=0.388", rf"or ×\*\*{N}\*\* with `k` 0.388", "bonded", "0.388"))],
     # The like-for-like block (32b's four donor levels · 95's table, 2026-10-16) — every table cell, so the thesis «direction +
     # table» of revision step 3 cannot quote a cascade its caches no longer give.
     *[(f"like-for-like flavin {key} → pcet_redox_potential_thermo", SUMMARY, anchor, "dft/pcet_redox_potential_thermo.json",
@@ -4729,6 +4773,29 @@ def test_every_doc_target_triggers_this_guard():
 # any of them — and the paper's Table 3 was hand-edited around the break, so it kept printing a
 # single ΔG = 0 margin the cache had already turned into a bracket.
 TABLES = "docs/protocols/ebfc/in_silico/paper/06_tables.md"
+
+
+def table_97(cache: dict) -> list[str]:
+    """SUMMARY §HW.34's 97 table, row by row, from its cache — the doc's table is this output verbatim."""
+    rows = []
+    for r in cache["rows"]:
+        cells = []
+        for st in ("mouth", "exit"):
+            w = r[st]["worst_face"]
+            kx = min((x["k_crossover"] for x in r[st]["faces"].values() if x["k_crossover"] is not None), default=None)
+            # k_x is a threshold («every k below it»): rounded DOWN, as the prose quotes it (in-silico §When Modifying #43)
+            cells.append(f"{r[st]['faces'][w]['sf_drawn_wire']:.1f} ({w}) · " + (f"{math.floor(kx * 100) / 100:.2f}" if kx is not None else "—"))
+        end = min(v["sf_nominal_only"] for v in r["liner_end"].values() if isinstance(v, dict))
+        rows.append(f"| {r['base']} | {r['offset_um']} | {r['root']['sf_at_k']['1']:.1f} · {r['root']['sf_at_k']['0.388']:.1f} | "
+                    f"{cells[0]} | {cells[1]} | {end:.1f} |")
+    return rows
+
+
+def test_97_table_is_its_cache():
+    """Every row of the 97 table in SUMMARY §HW.34 — SF, face label, lowest k_x or «—» — is its cache's row verbatim."""
+    text = doc(SUMMARY)
+    missing = [row for row in table_97(C("mechanical/wire_under_liner_edges.json")) if row not in text]
+    assert not missing, f"the 97 table drifted from its cache — regenerate it from table_97(): {missing[:2]}"
 
 
 def test_paper_tables_match_their_generator():

@@ -35,7 +35,13 @@ sides carry them. CANNOT: (1) a minimum of the skeleton beyond what the Hessian 
 DISPLACEMENT thresholds (the Os–Cl surface is flat) and computed no Hessian (§Critical Rules #18); (2) the other Os forms
 of 95 — this corrects one form, and carrying its increment over to the others is an assumption 95 does not make silently;
 (3) PySCF marks the PCM Hessian experimental, and its Hessian carries no DFT grid response (32b CANNOT 4); the UKS + ECP +
-C-PCM Hessian path is checked against central differences only on a small Os doublet, not on this complex; (4) the
+C-PCM Hessian path is checked against central differences only on a small Os doublet, not on this complex — [OsO₄]⁻
+(d¹, metal-centred like Os(III)'s hole; LANL2DZ/6-31G(d), B3LYP, a distorted Td so the e-level cannot swap between
+displacements), h = 2e-3 bohr on the analytic gradient without grid response, gas and C-PCM alike (2026-10-16): the
+analytic Hessian departs by ≤ 8.9e-3 Ha/bohr² in C-PCM and ≤ 6.8e-3 in gas, the size of the finite difference's own
+noise (its asymmetry 6.8e-3 / 5.3e-3, a moving grid); the C-PCM CONTRIBUTION (analytic minus gas, ≤ 0.052) is
+reproduced to 2.1e-3, under its own finite-difference noise (3.7e-3), slope 0.990 — a missing or wrong PCM term would
+hide in the 1 % agreement of either phase alone, not in their difference; (4) the
 ECP-sphere switching of PySCF ≤ 2.12 PCM (paper §2.7) — the recorded convention of every metal-in-PCM cache, so this is the
 Hamiltonian of the energies it corrects, not a better one; (5) anharmonicity — methyl rotors in particular; the ZPE level
 is the reading robust to them; (6) explicit solvation, the polymer film.

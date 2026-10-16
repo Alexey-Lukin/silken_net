@@ -95,6 +95,9 @@ Anchor mechanics (CPU):
   91 (importlib: its kernels, rod and sweeps; liner_exit_contact.json — the no-offset control) · 55 (importlib: geometry, offsets,
      the flow-constraint sweep) · 68 (bus_contact_equilibrium.json — the offset and reversing tables its rigid control reproduces)
      → 92 (liner_mouth_contact.json — the mouth under an axis offset, two patches; a change to 91's kernels re-runs 92 too)
+  92 (importlib: `solve(with_field=True)`, `drag_path`, TOLERANCE_OFFSET_UM — through it 91's kernels and rod, 55's geometry) · 86 (its
+     Soderberg line, the form) → 97 (wire_under_liner_edges.json — the wire under the edges as an elastic half-space under the layer; a
+     change to 92's solve or path re-runs 97, and its cache test re-reads 92's shipped-shank row)
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
@@ -252,5 +255,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 40. When a quantity your verdict stands on has a COMPUTED and an ASSUMED value that disagree, the verdict is CONDITIONAL on it — publish the threshold at which it flips, per named reading, instead of picking the kind value and calling the other one an artefact
 41. Before you apply a closed form to numbers taken from ANOTHER script's cache, name the two BODIES of that script's contact (or of whatever pair the formula is about) from ITS OWN `MODEL` section — never from the wording of the leg you are closing, and never from your mental picture of the part
 42. A new script in this package must declare an English `SI_DESCRIPTION`, or the paper-SI generator refuses to render and the doc↔cache pin reds with it
+43. A threshold quoted in a one-sided sentence is rounded toward the side that keeps the sentence TRUE, and the sentence is written so that side is the conservative one; and the statistic behind a physical «never» is checked for what it can SEE before it becomes the claim
 
 <!-- /INSILICO-MODIFYING-INDEX -->

@@ -1,0 +1,1864 @@
+{
+  "question": "does a section of the bus wire under the liner's mouth or exit edge out-rank the welded root once the contact pressure carried through the PEEK layer is added to the nominal bending — on 86's Soderberg line?",
+  "inputs": {
+    "h_mm": 0.15,
+    "E_PEEK_MPa": 4000.0,
+    "nu_PEEK": 0.4,
+    "alloy": "Ti-6Al-4V",
+    "E_Ti_MPa": 110000.0,
+    "nu_Ti": 0.33,
+    "yield_Ti_MPa": 880.0,
+    "endurance_drawn_wire_MPa": 352.0,
+    "k_readings": [
+      0.388,
+      1.0
+    ],
+    "kh_max": 15.0,
+    "pads_mm": [
+      1.0,
+      2.0
+    ],
+    "offsets_um": [
+      0,
+      30,
+      35,
+      40,
+      45,
+      50,
+      75,
+      100
+    ],
+    "drag_N": 0.5,
+    "r_in_mm": 0.2,
+    "r_ex_mm": 0.2,
+    "geometry": "shipped — the whole lock shank (HW.26 G1)",
+    "play_um": 25.0,
+    "convention": "86: 1/SF = σ_a/(k·σ_e) + σ_m⁺/σ_y; the root carries k, a section under an edge is drawn wire"
+  },
+  "kernel_controls": {
+    "kh_to_zero_max_abs": 1.37e-07,
+    "frictionless_kk_equals_zz_max_abs": 2.22e-16,
+    "homogeneous_closed_form_max_abs": 6.8e-14,
+    "rigid_substrate_vs_91_phi_max_rel": 7.49e-06,
+    "tail_at_kh_max": 9.4e-06
+  },
+  "rows": [
+    {
+      "offset_um": 0,
+      "base": "bonded",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 3.427029744870588,
+        "mean_abs_MPa": 3.2131583038719214e-07,
+        "sf_at_k": {
+          "0.388": 39.85258611106102,
+          "1": 102.71284844421058
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.13899999999999998,
+          0.46099999999999997
+        ],
+        "contact_points": 0,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 179.02466588235728,
+            "amplitude_MPa": 1.9662095067464627,
+            "mean_MPa": -2.4185874081261716e-08,
+            "sf_nominal_only": 179.02466588235728,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 1.9662094825605885,
+            "max_tension_nominal_only_MPa": 1.9662094825605885,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.7429627703092507
+          },
+          "plus": {
+            "sf_drawn_wire": 179.0246650015014,
+            "amplitude_MPa": 1.9662095067464627,
+            "mean_MPa": 2.4185874081261716e-08,
+            "sf_nominal_only": 179.0246650015014,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 1.9662095309323366,
+            "max_tension_nominal_only_MPa": 1.9662095309323366,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.7429627617333425
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0,
+          "max_centroid_nominal_diff_MPa": 0.0,
+          "min_rod_toward_wall_over_play": Infinity,
+          "internal_92_Ecv2_minus_sigma_MPa": 3.5267497600077746e-06,
+          "internal_92_scale_MPa": 1.9552833786077553
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.827
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 172.4819473357079,
+            "amplitude_MPa": 2.040793285542455,
+            "mean_MPa": -0.716162215860822,
+            "sf_nominal_only": 256.69842210264216,
+            "contact_factor_on_1_over_sf": 1.488262546126179,
+            "max_tension_MPa": 1.3712589151641092,
+            "max_tension_nominal_only_MPa": 1.3712589151641092,
+            "max_contact_tension_MPa": 6.342328326437011e-05,
+            "k_crossover": 1.6792636397709726
+          },
+          "plus": {
+            "sf_drawn_wire": 172.48194730250162,
+            "amplitude_MPa": 2.040793285935349,
+            "mean_MPa": -0.7161622160417589,
+            "sf_nominal_only": 256.69842204920445,
+            "contact_factor_on_1_over_sf": 1.4882625461028836,
+            "max_tension_MPa": 1.371258916591405,
+            "max_tension_nominal_only_MPa": 1.371258916591405,
+            "max_contact_tension_MPa": 6.342323406576885e-05,
+            "k_crossover": 1.67926363944768
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.011670231448718218,
+          "max_centroid_nominal_diff_MPa": 1.4210854715202004e-14,
+          "min_rod_toward_wall_over_play": 1.0008890407194215,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0001581219346027396,
+          "internal_92_scale_MPa": 1.3761559030389476
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 2.1324525576770803,
+          "mean_MPa": -2.7144617442687036e-08,
+          "sf_nominal_only": 165.06815062907663
+        },
+        "plus": {
+          "amplitude_MPa": 2.1324525576770803,
+          "mean_MPa": 2.7144617442687036e-08,
+          "sf_nominal_only": 165.06814978859617
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 0.9220413834440736
+      }
+    },
+    {
+      "offset_um": 30,
+      "base": "bonded",
+      "path_points": 18,
+      "not_solved": [
+        {
+          "drag_N": -0.011657,
+          "reason": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+        }
+      ],
+      "root": {
+        "amplitude_MPa": 2.764648742870377,
+        "mean_abs_MPa": 4.773566096553517,
+        "sf_at_k": {
+          "0.388": 38.96042173848614,
+          "1": 75.30901543771385
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10099999999999998,
+          0.835
+        ],
+        "contact_points": 8,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 106.53301057014157,
+            "amplitude_MPa": 2.9996065843543143,
+            "mean_MPa": 0.761333972190599,
+            "sf_nominal_only": 107.82208600548148,
+            "contact_factor_on_1_over_sf": 1.012100244125657,
+            "max_tension_MPa": 3.796130000070895,
+            "max_tension_nominal_only_MPa": 3.796130000070895,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.982233826388136
+          },
+          "plus": {
+            "sf_drawn_wire": 120.01680750161248,
+            "amplitude_MPa": 2.9329225408305475,
+            "mean_MPa": -0.8105789994540649,
+            "sf_nominal_only": 120.01680750161248,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 2.1288031961074174,
+            "max_tension_nominal_only_MPa": 2.1288031961074174,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 2.701181506117206
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.00016336927250967055,
+          "max_centroid_nominal_diff_MPa": 2.2426505097428162e-14,
+          "min_rod_toward_wall_over_play": 1.001052300048584,
+          "internal_92_Ecv2_minus_sigma_MPa": 1.6188823486640302e-05,
+          "internal_92_scale_MPa": 3.7556743480879584
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.351
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 168.20308974513352,
+            "amplitude_MPa": 2.0927082881376387,
+            "mean_MPa": -0.8803553936075583,
+            "sf_nominal_only": 205.9982708172713,
+            "contact_factor_on_1_over_sf": 1.2246996837537656,
+            "max_tension_MPa": 1.3440797494950416,
+            "max_tension_nominal_only_MPa": 1.3440797494950416,
+            "max_contact_tension_MPa": 6.497153799624567e-06,
+            "k_crossover": 15.08413817389774
+          },
+          "plus": {
+            "sf_drawn_wire": 164.15539504835064,
+            "amplitude_MPa": 2.1443096640005117,
+            "mean_MPa": -0.5475916710928227,
+            "sf_nominal_only": 189.7961706492839,
+            "contact_factor_on_1_over_sf": 1.1561981900953116,
+            "max_tension_MPa": 2.0825775500781925,
+            "max_tension_nominal_only_MPa": 2.0825775500781925,
+            "max_contact_tension_MPa": 0.00043398652986496834,
+            "k_crossover": 11.770311559747155
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.001776964505710916,
+          "max_centroid_nominal_diff_MPa": 1.4654943925052066e-14,
+          "min_rod_toward_wall_over_play": 1.0001074743954133,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00021220406913413647,
+          "internal_92_scale_MPa": 2.082592953853241
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 3.0371343849176275,
+          "mean_MPa": 1.1650042766257167,
+          "sf_nominal_only": 100.48139449830173
+        },
+        "plus": {
+          "amplitude_MPa": 3.0371343849176275,
+          "mean_MPa": -1.1650042766257167,
+          "sf_nominal_only": 115.89872405647498
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 0.9431949210910974
+      }
+    },
+    {
+      "offset_um": 35,
+      "base": "bonded",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 2.102770983251087,
+        "mean_abs_MPa": 6.120605690617365,
+        "sf_at_k": {
+          "0.388": 44.73957242512968,
+          "1": 77.34541297267607
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.8029999999999999
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 82.06303743916783,
+            "amplitude_MPa": 4.289385464935204,
+            "mean_MPa": -0.2629635228822438,
+            "sf_nominal_only": 84.7723577555513,
+            "contact_factor_on_1_over_sf": 1.0330151113208774,
+            "max_tension_MPa": 4.105162258811459,
+            "max_tension_nominal_only_MPa": 4.105162258811459,
+            "max_contact_tension_MPa": 0.0001154320489080145,
+            "k_crossover": 1.1421007318552059
+          },
+          "plus": {
+            "sf_drawn_wire": 83.86034683804687,
+            "amplitude_MPa": 4.1515877694000345,
+            "mean_MPa": 0.11466711844598043,
+            "sf_nominal_only": 83.86034683804687,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 4.267122373656968,
+            "max_tension_nominal_only_MPa": 4.267122373656968,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.202124484562109
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.000797687177473808,
+          "max_centroid_nominal_diff_MPa": 3.552713678800501e-15,
+          "min_rod_toward_wall_over_play": 1.0013550026546656,
+          "internal_92_Ecv2_minus_sigma_MPa": 3.8979486474133296e-05,
+          "internal_92_scale_MPa": 4.267153935407523
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.209
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 170.84123617041152,
+            "amplitude_MPa": 2.0603924900712225,
+            "mean_MPa": -0.8672221234621712,
+            "sf_nominal_only": 211.92193224240194,
+            "contact_factor_on_1_over_sf": 1.240461243390987,
+            "max_tension_MPa": 1.324404227872878,
+            "max_tension_nominal_only_MPa": 1.324404227872878,
+            "max_contact_tension_MPa": 1.2521678412328392e-05,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 165.41123097950904,
+            "amplitude_MPa": 2.128029626014967,
+            "mean_MPa": -0.5771619631179435,
+            "sf_nominal_only": 196.03224935520655,
+            "contact_factor_on_1_over_sf": 1.1851205519381618,
+            "max_tension_MPa": 1.9975737880445399,
+            "max_tension_nominal_only_MPa": 1.9975737880445399,
+            "max_contact_tension_MPa": 0.00044819018179441747,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.004453609105798272,
+          "max_centroid_nominal_diff_MPa": 7.993605777301127e-15,
+          "min_rod_toward_wall_over_play": 1.0001079173006306,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002164233016027639,
+          "internal_92_scale_MPa": 2.064834962748553
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 4.1538950471173495,
+          "mean_MPa": 0.3962998563354485,
+          "sf_nominal_only": 81.62479743825487
+        },
+        "plus": {
+          "amplitude_MPa": 4.1538950471173495,
+          "mean_MPa": -0.3962998563354485,
+          "sf_nominal_only": 84.73974330292121
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 0.9946597150850306
+      }
+    },
+    {
+      "offset_um": 40,
+      "base": "bonded",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 2.376292556754926,
+        "mean_abs_MPa": 8.403044617804342,
+        "sf_at_k": {
+          "0.388": 37.10855534533121,
+          "1": 61.350651279370965
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.7809999999999999
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 63.06637459216831,
+            "amplitude_MPa": 5.581421197528484,
+            "mean_MPa": -1.2548174690458005,
+            "sf_nominal_only": 65.47627746839369,
+            "contact_factor_on_1_over_sf": 1.0382121676061058,
+            "max_tension_MPa": 4.41436554967172,
+            "max_tension_nominal_only_MPa": 4.41436554967172,
+            "max_contact_tension_MPa": 0.0001555437596439456,
+            "k_crossover": 1.0703040135128086
+          },
+          "plus": {
+            "sf_drawn_wire": 60.79570137158053,
+            "amplitude_MPa": 5.375464598949809,
+            "mean_MPa": 1.036046091266992,
+            "sf_nominal_only": 60.79570137158053,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 6.412264612024608,
+            "max_tension_nominal_only_MPa": 6.412264612024608,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 0.9784356312959506
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0011984384426173772,
+          "max_centroid_nominal_diff_MPa": 2.6645352591003757e-15,
+          "min_rod_toward_wall_over_play": 1.001533758149704,
+          "internal_92_Ecv2_minus_sigma_MPa": 5.900970615257961e-05,
+          "internal_92_scale_MPa": 6.412312040309635
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.109
+        ],
+        "contact_points": 11,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 173.4582318675188,
+            "amplitude_MPa": 2.029306976153458,
+            "mean_MPa": -0.8512556644782586,
+            "sf_nominal_only": 215.81610921875074,
+            "contact_factor_on_1_over_sf": 1.2441964091020101,
+            "max_tension_MPa": 1.3093057168159443,
+            "max_tension_nominal_only_MPa": 1.3093057168159443,
+            "max_contact_tension_MPa": 1.97465827468345e-05,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 166.54002414287694,
+            "amplitude_MPa": 2.113606034414973,
+            "mean_MPa": -0.601963883434646,
+            "sf_nominal_only": 200.03373519263323,
+            "contact_factor_on_1_over_sf": 1.2011150846298762,
+            "max_tension_MPa": 1.9527306647519729,
+            "max_tension_nominal_only_MPa": 1.9527306647519729,
+            "max_contact_tension_MPa": 0.0005216180411129441,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.004282748876005884,
+          "max_centroid_nominal_diff_MPa": 1.5765166949677223e-14,
+          "min_rod_toward_wall_over_play": 1.0003253083878096,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00022410842995490565,
+          "internal_92_scale_MPa": 2.1253757912232913
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 5.274951032261079,
+          "mean_MPa": -0.3762694641316866,
+          "sf_nominal_only": 66.73047727783685
+        },
+        "plus": {
+          "amplitude_MPa": 5.274951032261079,
+          "mean_MPa": 0.3762694641316866,
+          "sf_nominal_only": 64.87930547694292
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.0671692901510188
+      }
+    },
+    {
+      "offset_um": 45,
+      "base": "bonded",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 3.173839962233605,
+        "mean_abs_MPa": 11.209509376966164,
+        "sf_at_k": {
+          "0.388": 27.795756285600152,
+          "1": 45.96714252995403
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.7669999999999999
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 51.223422131061334,
+            "amplitude_MPa": 6.871856376549097,
+            "mean_MPa": -2.244706485761704,
+            "sf_nominal_only": 53.34224675609079,
+            "contact_factor_on_1_over_sf": 1.0413643707678917,
+            "max_tension_MPa": 4.723975989771314,
+            "max_tension_nominal_only_MPa": 4.723975989771314,
+            "max_contact_tension_MPa": 0.00014830797332727392,
+            "k_crossover": 1.3290494221081202
+          },
+          "plus": {
+            "sf_drawn_wire": 47.69112922462327,
+            "amplitude_MPa": 6.598449834844668,
+            "mean_MPa": 1.9559442631610091,
+            "sf_nominal_only": 47.69112922462327,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 8.555082955380517,
+            "max_tension_nominal_only_MPa": 8.555082955380517,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.0955519157044016
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.004212761787685029,
+          "max_centroid_nominal_diff_MPa": 1.2434497875801753e-14,
+          "min_rod_toward_wall_over_play": 1.001656737098024,
+          "internal_92_Ecv2_minus_sigma_MPa": 7.904261538715929e-05,
+          "internal_92_scale_MPa": 8.555146233011335
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.0330000000000001
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 176.09229439504728,
+            "amplitude_MPa": 1.998951749758678,
+            "mean_MPa": -0.8332282610037443,
+            "sf_nominal_only": 218.29400944435474,
+            "contact_factor_on_1_over_sf": 1.2396567958540632,
+            "max_tension_MPa": 1.297099869756302,
+            "max_tension_nominal_only_MPa": 1.297099869756302,
+            "max_contact_tension_MPa": 2.260198711578322e-05,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 167.40472227051904,
+            "amplitude_MPa": 2.102688593402895,
+            "mean_MPa": -0.6205338530660716,
+            "sf_nominal_only": 202.4540785400703,
+            "contact_factor_on_1_over_sf": 1.2093689819150557,
+            "max_tension_MPa": 1.9279084655249117,
+            "max_tension_nominal_only_MPa": 1.9279084655249117,
+            "max_contact_tension_MPa": 0.0004615523669069964,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.011133841110241115,
+          "max_centroid_nominal_diff_MPa": 9.2148511043888e-15,
+          "min_rod_toward_wall_over_play": 1.0004102704633073,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002310824193119121,
+          "internal_92_scale_MPa": 1.897894552871262
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 6.3955607743167935,
+          "mean_MPa": -1.1480297074816104,
+          "sf_nominal_only": 55.0381760757488
+        },
+        "plus": {
+          "amplitude_MPa": 6.3955607743167935,
+          "mean_MPa": 1.1480297074816104,
+          "sf_nominal_only": 51.35108304790422
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.0767428635636351
+      }
+    },
+    {
+      "offset_um": 50,
+      "base": "bonded",
+      "path_points": 21,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.090457890251017,
+        "mean_abs_MPa": 13.903166245166766,
+        "sf_at_k": {
+          "0.388": 21.85835276336231,
+          "1": 36.4701669709979
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10499999999999998,
+          0.7549999999999999
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 43.11209038565728,
+            "amplitude_MPa": 8.164762989945505,
+            "mean_MPa": -3.236768307994552,
+            "sf_nominal_only": 44.977552424443054,
+            "contact_factor_on_1_over_sf": 1.043270043788143,
+            "max_tension_MPa": 5.034396826447934,
+            "max_tension_nominal_only_MPa": 5.034396826447934,
+            "max_contact_tension_MPa": 0.00015644775022592532,
+            "k_crossover": 1.5711401582489402
+          },
+          "plus": {
+            "sf_drawn_wire": 39.208561552706904,
+            "amplitude_MPa": 7.8256367377548495,
+            "mean_MPa": 2.879985804751885,
+            "sf_nominal_only": 39.208561552706904,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 10.706141756022843,
+            "max_tension_nominal_only_MPa": 10.706141756022843,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.1973130550062283
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.005267376549118713,
+          "max_centroid_nominal_diff_MPa": 3.552713678800501e-15,
+          "min_rod_toward_wall_over_play": 1.0013971255143848,
+          "internal_92_Ecv2_minus_sigma_MPa": 9.8178604410748e-05,
+          "internal_92_scale_MPa": 10.706220943949958
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.9750000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 178.93931063963782,
+            "amplitude_MPa": 1.9671474017740322,
+            "mean_MPa": -0.8115501485418541,
+            "sf_nominal_only": 219.6598299645926,
+            "contact_factor_on_1_over_sf": 1.2275660903095853,
+            "max_tension_MPa": 1.2875544979367186,
+            "max_tension_nominal_only_MPa": 1.2875544979367186,
+            "max_contact_tension_MPa": 3.535623136536497e-05,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 168.22024224997787,
+            "amplitude_MPa": 2.0924949060346885,
+            "mean_MPa": -0.635340259069119,
+            "sf_nominal_only": 203.65100971141928,
+            "contact_factor_on_1_over_sf": 1.2106213080396755,
+            "max_tension_MPa": 1.9174010923206308,
+            "max_tension_nominal_only_MPa": 1.9174010923206308,
+            "max_contact_tension_MPa": 0.0004893236752035467,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.011072432013537279,
+          "max_centroid_nominal_diff_MPa": 1.6431300764452317e-14,
+          "min_rod_toward_wall_over_play": 1.0001076643830635,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002368298562763771,
+          "internal_92_scale_MPa": 1.9087126974902027
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.520549793499509,
+          "mean_MPa": -1.9238618162164776,
+          "sf_nominal_only": 46.80508867905589
+        },
+        "plus": {
+          "amplitude_MPa": 7.520549793499509,
+          "mean_MPa": 1.9238618162164776,
+          "sf_nominal_only": 42.460312020735586
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.0829347045455227
+      }
+    },
+    {
+      "offset_um": 75,
+      "base": "bonded",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.212478138865109,
+        "mean_abs_MPa": 31.84849954719411,
+        "sf_at_k": {
+          "0.388": 14.917591597198967,
+          "1": 20.764661052743385
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10699999999999998,
+          0.7190000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 42.39569441290185,
+            "amplitude_MPa": 8.302729908650333,
+            "mean_MPa": -14.374851680917159,
+            "sf_nominal_only": 44.16926135314522,
+            "contact_factor_on_1_over_sf": 1.0418336570447502,
+            "max_tension_MPa": -0.039763486815036914,
+            "max_tension_nominal_only_MPa": -0.026984773018715564,
+            "max_contact_tension_MPa": -0.01065511692136879,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 26.336780457034493,
+            "amplitude_MPa": 7.9687153552144565,
+            "mean_MPa": 13.4915592090865,
+            "sf_nominal_only": 26.336780457034493,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 21.460637808542966,
+            "max_tension_nominal_only_MPa": 21.460637808542966,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 6.729851724353522
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.010556102112752385,
+          "max_centroid_nominal_diff_MPa": 7.105427357601002e-15,
+          "min_rod_toward_wall_over_play": 1.0143063785499058,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0001921609109132305,
+          "internal_92_scale_MPa": 21.460796542049522
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.8029999999999999
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 193.37908133666852,
+            "amplitude_MPa": 1.8202589316637416,
+            "mean_MPa": -0.718076891863409,
+            "sf_nominal_only": 243.68590893117457,
+            "contact_factor_on_1_over_sf": 1.2601461711720672,
+            "max_tension_MPa": 1.118383234273203,
+            "max_tension_nominal_only_MPa": 1.118383234273203,
+            "max_contact_tension_MPa": 9.85184254412813e-05,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 166.17350925096505,
+            "amplitude_MPa": 2.118267836953415,
+            "mean_MPa": -0.696075840365937,
+            "sf_nominal_only": 213.26925673449765,
+            "contact_factor_on_1_over_sf": 1.2834130884989967,
+            "max_tension_MPa": 1.9595157938586283,
+            "max_tension_nominal_only_MPa": 1.9595157938586283,
+            "max_contact_tension_MPa": 0.00023663881358012792,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.012674416870346459,
+          "max_centroid_nominal_diff_MPa": 1.2212453270876722e-14,
+          "min_rod_toward_wall_over_play": 1.0002403734020449,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00023614432866869706,
+          "internal_92_scale_MPa": 2.152170695739122
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.640245291092787,
+          "mean_MPa": -11.31478089303854,
+          "sf_nominal_only": 46.07181923993612
+        },
+        "plus": {
+          "amplitude_MPa": 7.640245291092787,
+          "mean_MPa": 11.31478089303854,
+          "sf_nominal_only": 28.932717311036022
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.0985669777760614
+      }
+    },
+    {
+      "offset_um": 100,
+      "base": "bonded",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.2274549879300025,
+        "mean_abs_MPa": 49.938038553515945,
+        "sf_at_k": {
+          "0.388": 11.402391106330452,
+          "1": 14.543849668101629
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10899999999999999,
+          0.6990000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 42.299681724134196,
+            "amplitude_MPa": 8.321575615997258,
+            "mean_MPa": -25.592878786768562,
+            "sf_nominal_only": 44.06102641288138,
+            "contact_factor_on_1_over_sf": 1.0416396676512638,
+            "max_tension_MPa": -0.10841230932692798,
+            "max_tension_nominal_only_MPa": -0.08261138190009712,
+            "max_contact_tension_MPa": -0.022532520531636537,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 19.895428167751085,
+            "amplitude_MPa": 7.986241620366593,
+            "mean_MPa": 24.265663181945108,
+            "sf_nominal_only": 19.895428167751085,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 32.25326163986749,
+            "max_tension_nominal_only_MPa": 32.25326163986749,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.015869622605657524,
+          "max_centroid_nominal_diff_MPa": 7.105427357601002e-15,
+          "min_rod_toward_wall_over_play": 1.0217513182761084,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00028285601212729716,
+          "internal_92_scale_MPa": 32.253500200965426
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.7370000000000001
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 201.0277029277995,
+            "amplitude_MPa": 1.751002448286559,
+            "mean_MPa": -0.669011114386689,
+            "sf_nominal_only": 250.09544117627368,
+            "contact_factor_on_1_over_sf": 1.2440844596731884,
+            "max_tension_MPa": 1.1182651241775026,
+            "max_tension_nominal_only_MPa": 1.1182651241775026,
+            "max_contact_tension_MPa": 0.00013598806767367938,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 162.77735865858378,
+            "amplitude_MPa": 2.162462905779789,
+            "mean_MPa": -0.723016324004672,
+            "sf_nominal_only": 208.44818592424264,
+            "contact_factor_on_1_over_sf": 1.2805723574950667,
+            "max_tension_MPa": 2.11047860317637,
+            "max_tension_nominal_only_MPa": 2.11047860317637,
+            "max_contact_tension_MPa": 7.7228873508881e-05,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.014326930091979431,
+          "max_centroid_nominal_diff_MPa": 1.3877787807814457e-14,
+          "min_rod_toward_wall_over_play": 1.0004563755369544,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002271037620621419,
+          "internal_92_scale_MPa": 2.5286881136779806
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.653599913780703,
+          "mean_MPa": -20.854704406089372,
+          "sf_nominal_only": 45.991429388176634
+        },
+        "plus": {
+          "amplitude_MPa": 7.653599913780703,
+          "mean_MPa": 20.854704406089372,
+          "sf_nominal_only": 22.00621445013349
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.1060940365085394
+      }
+    },
+    {
+      "offset_um": 0,
+      "base": "frictionless",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 3.4270727947968336,
+        "mean_abs_MPa": 9.956185853532418e-08,
+        "sf_at_k": {
+          "0.388": 39.85208589428348,
+          "1": 102.71156085273817
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.13899999999999998,
+          0.46099999999999997
+        ],
+        "contact_points": 0,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 178.24494949598233,
+            "amplitude_MPa": 1.9748105121370305,
+            "mean_MPa": -8.30745234825514e-08,
+            "sf_nominal_only": 178.24494949598233,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 1.974810429062507,
+            "max_tension_nominal_only_MPa": 1.974810429062507,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.7353932657568432
+          },
+          "plus": {
+            "sf_drawn_wire": 178.24494649668412,
+            "amplitude_MPa": 1.9748105121370305,
+            "mean_MPa": 8.30745234825514e-08,
+            "sf_nominal_only": 178.24494649668412,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 1.974810595211554,
+            "max_tension_nominal_only_MPa": 1.974810595211554,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.735393236555668
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0,
+          "max_centroid_nominal_diff_MPa": 0.0,
+          "min_rod_toward_wall_over_play": Infinity,
+          "internal_92_Ecv2_minus_sigma_MPa": 3.1552326094086425e-06,
+          "internal_92_scale_MPa": 1.9641200938345835
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.849
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 71.66565822157992,
+            "amplitude_MPa": 4.911697021070631,
+            "mean_MPa": -3.7669112654298647,
+            "sf_nominal_only": 252.60931101016817,
+            "contact_factor_on_1_over_sf": 3.5248306829072367,
+            "max_tension_MPa": 1.3934561555156904,
+            "max_tension_nominal_only_MPa": 1.3934561555156904,
+            "max_contact_tension_MPa": 0.34534502794941374,
+            "k_crossover": 0.6977370159198079
+          },
+          "plus": {
+            "sf_drawn_wire": 71.66565814895515,
+            "amplitude_MPa": 4.911697026048062,
+            "mean_MPa": -3.7669112702897487,
+            "sf_nominal_only": 252.60931082866156,
+            "contact_factor_on_1_over_sf": 3.524830683946555,
+            "max_tension_MPa": 1.3934561605218696,
+            "max_tension_nominal_only_MPa": 1.3934561605218696,
+            "max_contact_tension_MPa": 0.34534502854555754,
+            "k_crossover": 0.6977370152127329
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0024040778233190285,
+          "max_centroid_nominal_diff_MPa": 2.864375403532904e-14,
+          "min_rod_toward_wall_over_play": 1.0009016532903252,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00015719065129282672,
+          "internal_92_scale_MPa": 1.3974630408869864
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 2.1409123776009755,
+          "mean_MPa": -9.323134553262946e-08,
+          "sf_nominal_only": 164.41588347227818
+        },
+        "plus": {
+          "amplitude_MPa": 2.1409123776009755,
+          "mean_MPa": 9.323134553262946e-08,
+          "sf_nominal_only": 164.41588060831907
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 0.92241538309967
+      }
+    },
+    {
+      "offset_um": 30,
+      "base": "frictionless",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 2.764671212956822,
+        "mean_abs_MPa": 4.773588566639962,
+        "sf_at_k": {
+          "0.388": 38.96013324791913,
+          "1": 75.3085085857517
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10099999999999998,
+          0.851
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 100.74318225213928,
+            "amplitude_MPa": 3.3261001295124606,
+            "mean_MPa": 0.41983209398030663,
+            "sf_nominal_only": 107.74477987322193,
+            "contact_factor_on_1_over_sf": 1.069499468495636,
+            "max_tension_MPa": 3.801009816895078,
+            "max_tension_nominal_only_MPa": 3.801009816895078,
+            "max_contact_tension_MPa": 0.033737060689291,
+            "k_crossover": 1.7447150726828373
+          },
+          "plus": {
+            "sf_drawn_wire": 119.9916849097579,
+            "amplitude_MPa": 2.933536605180005,
+            "mean_MPa": -0.8148850010653854,
+            "sf_nominal_only": 119.9916849097579,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 2.1254510817887273,
+            "max_tension_nominal_only_MPa": 2.1254510817887273,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 2.699607490874474
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.00016786029994667745,
+          "max_centroid_nominal_diff_MPa": 4.884981308350689e-15,
+          "min_rod_toward_wall_over_play": 1.0010800355285054,
+          "internal_92_Ecv2_minus_sigma_MPa": 1.6275514288510706e-05,
+          "internal_92_scale_MPa": 3.7605851621091184
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.411
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 105.41411980339682,
+            "amplitude_MPa": 3.339211110015428,
+            "mean_MPa": -2.1812059509421995,
+            "sf_nominal_only": 200.7780773168542,
+            "contact_factor_on_1_over_sf": 1.9046601887044778,
+            "max_tension_MPa": 1.3601700279546647,
+            "max_tension_nominal_only_MPa": 1.3601700279546647,
+            "max_contact_tension_MPa": 0.23307743584165078,
+            "k_crossover": 1.9336398325511233
+          },
+          "plus": {
+            "sf_drawn_wire": 63.38292785462985,
+            "amplitude_MPa": 5.553545913930007,
+            "mean_MPa": -4.426295073461832,
+            "sf_nominal_only": 184.2562243305546,
+            "contact_factor_on_1_over_sf": 2.9070323913270517,
+            "max_tension_MPa": 2.157645294069243,
+            "max_tension_nominal_only_MPa": 2.157645294069243,
+            "max_contact_tension_MPa": 0.358831138887438,
+            "k_crossover": 0.7586683286940992
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0018350564679583403,
+          "max_centroid_nominal_diff_MPa": 2.864375403532904e-14,
+          "min_rod_toward_wall_over_play": 1.0001074746914347,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00021362774952549124,
+          "internal_92_scale_MPa": 2.157661253082507
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 3.037968880686422,
+          "mean_MPa": 1.1692644634647582,
+          "sf_nominal_only": 100.40863272528722
+        },
+        "plus": {
+          "amplitude_MPa": 3.037968880686422,
+          "mean_MPa": -1.1692644634647582,
+          "sf_nominal_only": 115.86688798486522
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 0.9966791844433229
+      }
+    },
+    {
+      "offset_um": 35,
+      "base": "frictionless",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 2.1027940302783468,
+        "mean_abs_MPa": 6.120628737644626,
+        "sf_at_k": {
+          "0.388": 44.739182233833574,
+          "1": 77.3448646119612
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.817
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 70.83973543650434,
+            "amplitude_MPa": 4.968962656777672,
+            "mean_MPa": -0.9211372942003444,
+            "sf_nominal_only": 84.80249262308311,
+            "contact_factor_on_1_over_sf": 1.197103463198193,
+            "max_tension_MPa": 4.109744404970007,
+            "max_tension_nominal_only_MPa": 4.109744404970007,
+            "max_contact_tension_MPa": 0.06994049960470834,
+            "k_crossover": 0.8342066565229396
+          },
+          "plus": {
+            "sf_drawn_wire": 83.9355002723009,
+            "amplitude_MPa": 4.1501198648948385,
+            "mean_MPa": 0.1089411791843733,
+            "sf_nominal_only": 83.9355002723009,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 4.260048213130784,
+            "max_tension_nominal_only_MPa": 4.260048213130784,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.20473244428527
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0004801982501791008,
+          "max_centroid_nominal_diff_MPa": 1.4654943925052066e-14,
+          "min_rod_toward_wall_over_play": 1.0013827534218929,
+          "internal_92_Ecv2_minus_sigma_MPa": 3.8950204173993086e-05,
+          "internal_92_scale_MPa": 4.260079722557345
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.2610000000000001
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 99.67841540937614,
+            "amplitude_MPa": 3.5313562976934074,
+            "mean_MPa": -2.391958821972638,
+            "sf_nominal_only": 206.74684364609737,
+            "contact_factor_on_1_over_sf": 2.074138546414432,
+            "max_tension_MPa": 1.3391296267797481,
+            "max_tension_nominal_only_MPa": 1.3391296267797481,
+            "max_contact_tension_MPa": 0.2491161409433113,
+            "k_crossover": 1.9414501949964071
+          },
+          "plus": {
+            "sf_drawn_wire": 62.830483042132876,
+            "amplitude_MPa": 5.602376154962167,
+            "mean_MPa": -4.486074503010384,
+            "sf_nominal_only": 190.48242067562208,
+            "contact_factor_on_1_over_sf": 3.0316879873084592,
+            "max_tension_MPa": 2.066000955068866,
+            "max_tension_nominal_only_MPa": 2.066000955068866,
+            "max_contact_tension_MPa": 0.35702807660327984,
+            "k_crossover": 0.6666806981377005
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0026335306010517034,
+          "max_centroid_nominal_diff_MPa": 1.4210854715202004e-14,
+          "min_rod_toward_wall_over_play": 1.0001079193097286,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00021931573420908013,
+          "internal_92_scale_MPa": 2.124455722860829
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 4.152754103824743,
+          "mean_MPa": 0.4022689773762085,
+          "sf_nominal_only": 81.60120679522639
+        },
+        "plus": {
+          "amplitude_MPa": 4.152754103824743,
+          "mean_MPa": -0.4022689773762085,
+          "sf_nominal_only": 84.7630250189394
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.1519129241860009
+      }
+    },
+    {
+      "offset_um": 40,
+      "base": "frictionless",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 2.370036253232466,
+        "mean_abs_MPa": 8.396788314281881,
+        "sf_at_k": {
+          "0.388": 37.18156870919483,
+          "1": 61.44445175345001
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.7969999999999999
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 53.17831010385324,
+            "amplitude_MPa": 6.61924004942185,
+            "mean_MPa": -2.2684777975873507,
+            "sf_nominal_only": 65.51742332847483,
+            "contact_factor_on_1_over_sf": 1.2320328194055854,
+            "max_tension_MPa": 4.418711331234306,
+            "max_tension_nominal_only_MPa": 4.418711331234306,
+            "max_contact_tension_MPa": 0.10696945940171784,
+            "k_crossover": 0.7268879870772357
+          },
+          "plus": {
+            "sf_drawn_wire": 60.861784034755566,
+            "amplitude_MPa": 5.3719965275600075,
+            "mean_MPa": 1.0289998847996569,
+            "sf_nominal_only": 60.861784034755566,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 6.401704274478189,
+            "max_tension_nominal_only_MPa": 6.401704274478189,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 0.9773824369065619
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0007244172991129477,
+          "max_centroid_nominal_diff_MPa": 6.217248937900877e-15,
+          "min_rod_toward_wall_over_play": 1.001561890499938,
+          "internal_92_Ecv2_minus_sigma_MPa": 5.908214336169948e-05,
+          "internal_92_scale_MPa": 6.401751624653729
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.155
+        ],
+        "contact_points": 11,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 95.32351325610999,
+            "amplitude_MPa": 3.692688067992896,
+            "mean_MPa": -2.5668698497733153,
+            "sf_nominal_only": 210.82845003116032,
+            "contact_factor_on_1_over_sf": 2.211715061998586,
+            "max_tension_MPa": 1.3229512738235547,
+            "max_tension_nominal_only_MPa": 1.3229512738235547,
+            "max_contact_tension_MPa": 0.2608374657059544,
+            "k_crossover": 7.096496070462023
+          },
+          "plus": {
+            "sf_drawn_wire": 62.39196463845173,
+            "amplitude_MPa": 5.641752139714877,
+            "mean_MPa": -4.535817817451977,
+            "sf_nominal_only": 194.6617408110455,
+            "contact_factor_on_1_over_sf": 3.1199809452878937,
+            "max_tension_MPa": 2.016256503380846,
+            "max_tension_nominal_only_MPa": 2.016256503380846,
+            "max_contact_tension_MPa": 0.35919687801562405,
+            "k_crossover": 1.0381068928441117
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0026274409837309665,
+          "max_centroid_nominal_diff_MPa": 1.4210854715202004e-14,
+          "min_rod_toward_wall_over_play": 1.0003428598561244,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00022703616758423806,
+          "internal_92_scale_MPa": 2.174176914229693
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 5.272012411086246,
+          "mean_MPa": -0.36871387383144594,
+          "sf_nominal_only": 66.76767286431215
+        },
+        "plus": {
+          "amplitude_MPa": 5.272012411086246,
+          "mean_MPa": 0.36871387383144594,
+          "sf_nominal_only": 64.95066564427805
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.2213751342875372
+      }
+    },
+    {
+      "offset_um": 45,
+      "base": "frictionless",
+      "path_points": 18,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 3.1653756236531843,
+        "mean_abs_MPa": 11.201045038385743,
+        "sf_at_k": {
+          "0.388": 27.85118029224882,
+          "1": 46.03838615315989
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10299999999999998,
+          0.7809999999999999
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 42.58084538508091,
+            "amplitude_MPa": 8.2666277951196,
+            "mean_MPa": -3.6127197065449748,
+            "sf_nominal_only": 53.38659616239746,
+            "contact_factor_on_1_over_sf": 1.253770226485512,
+            "max_tension_MPa": 4.728131298116823,
+            "max_tension_nominal_only_MPa": 4.728131298116823,
+            "max_contact_tension_MPa": 0.1444680992771044,
+            "k_crossover": 0.8360275335428978
+          },
+          "plus": {
+            "sf_drawn_wire": 47.75023419610703,
+            "amplitude_MPa": 6.592866353862208,
+            "mean_MPa": 1.9470630985134143,
+            "sf_nominal_only": 47.75023419610703,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 8.540544846323694,
+            "max_tension_nominal_only_MPa": 8.540544846323694,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.0948032202257858
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0008949970568146726,
+          "max_centroid_nominal_diff_MPa": 5.329070518200751e-15,
+          "min_rod_toward_wall_over_play": 1.001684804430441,
+          "internal_92_Ecv2_minus_sigma_MPa": 7.925049631563041e-05,
+          "internal_92_scale_MPa": 8.540608016423459
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.075
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 92.04176616915835,
+            "amplitude_MPa": 3.824350777375123,
+            "mean_MPa": -2.711220938294344,
+            "sf_nominal_only": 213.5013385610887,
+            "contact_factor_on_1_over_sf": 2.319613665047525,
+            "max_tension_MPa": 1.3100245276656037,
+            "max_tension_nominal_only_MPa": 1.3100245276656037,
+            "max_contact_tension_MPa": 0.2692988277613113,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 62.04570595380174,
+            "amplitude_MPa": 5.673237085288282,
+            "mean_MPa": -4.5771126382212,
+            "sf_nominal_only": 197.29034724185178,
+            "contact_factor_on_1_over_sf": 3.179758279948512,
+            "max_tension_MPa": 1.987378686500035,
+            "max_tension_nominal_only_MPa": 1.987378686500035,
+            "max_contact_tension_MPa": 0.3666588910552751,
+            "k_crossover": 2.6536930062900237
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.002481719553279693,
+          "max_centroid_nominal_diff_MPa": 1.6431300764452317e-14,
+          "min_rod_toward_wall_over_play": 1.0004328387108266,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00023331779026025679,
+          "internal_92_scale_MPa": 1.9407357312255027
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 6.390640397547331,
+          "mean_MPa": -1.13866226306172,
+          "sf_nominal_only": 55.08055188570684
+        },
+        "plus": {
+          "amplitude_MPa": 6.390640397547331,
+          "mean_MPa": 1.13866226306172,
+          "sf_nominal_only": 51.416094908366894
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.2074935206989008
+      }
+    },
+    {
+      "offset_um": 50,
+      "base": "frictionless",
+      "path_points": 21,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.077646639349409,
+        "mean_abs_MPa": 13.895434943061383,
+        "sf_at_k": {
+          "0.388": 21.907478512607305,
+          "1": 36.53036041315954
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10499999999999998,
+          0.7709999999999999
+        ],
+        "contact_points": 10,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 35.51658719228934,
+            "amplitude_MPa": 9.910862158411978,
+            "mean_MPa": -4.953354021061031,
+            "sf_nominal_only": 45.01714938661557,
+            "contact_factor_on_1_over_sf": 1.2674964839073504,
+            "max_tension_MPa": 5.038370447638736,
+            "max_tension_nominal_only_MPa": 5.038370447638736,
+            "max_contact_tension_MPa": 0.18201665341424259,
+            "k_crossover": 0.936811108356725
+          },
+          "plus": {
+            "sf_drawn_wire": 39.25671305454196,
+            "amplitude_MPa": 7.818768931880275,
+            "mean_MPa": 2.869625861110844,
+            "sf_nominal_only": 39.25671305454196,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 10.689019524705172,
+            "max_tension_nominal_only_MPa": 10.689019524705172,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 1.1963362417539871
+          }
+        },
+        "worst_face": "minus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0011258338145469227,
+          "max_centroid_nominal_diff_MPa": 8.881784197001252e-15,
+          "min_rod_toward_wall_over_play": 1.0014159438088117,
+          "internal_92_Ecv2_minus_sigma_MPa": 9.864107250834309e-05,
+          "internal_92_scale_MPa": 10.689098585987784
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          1.0110000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 89.5812364246084,
+            "amplitude_MPa": 3.929394302301725,
+            "mean_MPa": -2.826176441447229,
+            "sf_nominal_only": 215.21030707941964,
+            "contact_factor_on_1_over_sf": 2.402403847825216,
+            "max_tension_MPa": 1.2991856856986277,
+            "max_tension_nominal_only_MPa": 1.2991856856986277,
+            "max_contact_tension_MPa": 0.27413154520352007,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 61.78301317071882,
+            "amplitude_MPa": 5.697358900695789,
+            "mean_MPa": -4.610567690482668,
+            "sf_nominal_only": 198.84996055387612,
+            "contact_factor_on_1_over_sf": 3.2185215700699787,
+            "max_tension_MPa": 1.9720331028150704,
+            "max_tension_nominal_only_MPa": 1.9720331028150704,
+            "max_contact_tension_MPa": 0.3726223188727222,
+            "k_crossover": 29.296611570089382
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0024809245246731892,
+          "max_centroid_nominal_diff_MPa": 2.5424107263916085e-14,
+          "min_rod_toward_wall_over_play": 1.00010766541397,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00023948443188315238,
+          "internal_92_scale_MPa": 1.9439263830787057
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.514329286416455,
+          "mean_MPa": -1.9133574532041635,
+          "sf_nominal_only": 46.84383483650434
+        },
+        "plus": {
+          "amplitude_MPa": 7.514329286416455,
+          "mean_MPa": 1.9133574532041635,
+          "sf_nominal_only": 42.5137600401497
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.1970114079367244
+      }
+    },
+    {
+      "offset_um": 75,
+      "base": "frictionless",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.204703428310507,
+        "mean_abs_MPa": 31.81543066824794,
+        "sf_at_k": {
+          "0.388": 14.938651727588347,
+          "1": 20.790419014846144
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10699999999999998,
+          0.7330000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 35.14487441674644,
+            "amplitude_MPa": 10.015685241210392,
+            "mean_MPa": -18.318284389329442,
+            "sf_nominal_only": 44.200560662151155,
+            "contact_factor_on_1_over_sf": 1.2576673382873067,
+            "max_tension_MPa": -0.036359569817839305,
+            "max_tension_nominal_only_MPa": -0.026862776550230248,
+            "max_contact_tension_MPa": 0.3686350293418813,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 26.371494600534795,
+            "amplitude_MPa": 7.963131825522245,
+            "mean_MPa": 13.461534339526365,
+            "sf_nominal_only": 26.371494600534795,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 21.425219077957713,
+            "max_tension_nominal_only_MPa": 21.425219077957713,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": 6.764614034532682
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.002304917388447014,
+          "max_centroid_nominal_diff_MPa": 2.5757174171303632e-14,
+          "min_rod_toward_wall_over_play": 1.0153302043895533,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00019308127221862037,
+          "internal_92_scale_MPa": 21.425377549489795
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.823
+        ],
+        "contact_points": 9,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 84.75583523823053,
+            "amplitude_MPa": 4.153106379172635,
+            "mean_MPa": -3.070587621889573,
+            "sf_nominal_only": 240.59962332047814,
+            "contact_factor_on_1_over_sf": 2.838738154655713,
+            "max_tension_MPa": 1.1222674126594132,
+            "max_tension_nominal_only_MPa": 1.1222674126594132,
+            "max_contact_tension_MPa": 0.26719293489119583,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 58.23572118662342,
+            "amplitude_MPa": 6.04440011778979,
+            "mean_MPa": -4.943520354207395,
+            "sf_nominal_only": 209.93287772251242,
+            "contact_factor_on_1_over_sf": 3.6048815648690447,
+            "max_tension_MPa": 1.9972988687695827,
+            "max_tension_nominal_only_MPa": 1.9972988687695827,
+            "max_contact_tension_MPa": 0.39966675514896915,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.0028009966218456306,
+          "max_centroid_nominal_diff_MPa": 1.9317880628477724e-14,
+          "min_rod_toward_wall_over_play": 1.0008893655733127,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.00023715200166307682,
+          "internal_92_scale_MPa": 2.165261862584631
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.63421458628957,
+          "mean_MPa": -11.287154123188252,
+          "sf_nominal_only": 46.10821401747908
+        },
+        "plus": {
+          "amplitude_MPa": 7.63421458628957,
+          "mean_MPa": 11.287154123188252,
+          "sf_nominal_only": 28.973396262801028
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.098663412964598
+      }
+    },
+    {
+      "offset_um": 100,
+      "base": "frictionless",
+      "path_points": 15,
+      "not_solved": [],
+      "root": {
+        "amplitude_MPa": 4.220611002543791,
+        "mean_abs_MPa": 49.88688762553966,
+        "sf_at_k": {
+          "0.388": 11.416480908683516,
+          "1": 14.560275911926418
+        }
+      },
+      "mouth": {
+        "station_s_mm": [
+          -0.10899999999999999,
+          0.7110000000000001
+        ],
+        "contact_points": 15,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 35.17560895607209,
+            "amplitude_MPa": 10.006934078656142,
+            "mean_MPa": -31.003580996831047,
+            "sf_nominal_only": 44.08587125032329,
+            "contact_factor_on_1_over_sf": 1.253307975574168,
+            "max_tension_MPa": -0.10054314725812971,
+            "max_tension_nominal_only_MPa": -0.0824093140197004,
+            "max_contact_tension_MPa": 0.5503489907807728,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 19.921029471026728,
+            "amplitude_MPa": 7.981377700944265,
+            "mean_MPa": 24.220979628688134,
+            "sf_nominal_only": 19.921029471026728,
+            "contact_factor_on_1_over_sf": 1.0,
+            "max_tension_MPa": 32.20375049555847,
+            "max_tension_nominal_only_MPa": 32.20375049555847,
+            "max_contact_tension_MPa": 0.0,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.003713694638519116,
+          "max_centroid_nominal_diff_MPa": 1.7763568394002505e-14,
+          "min_rod_toward_wall_over_play": 1.023618877446976,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002856210612165455,
+          "internal_92_scale_MPa": 32.20398869044745
+        }
+      },
+      "exit": {
+        "station_s_mm": [
+          -3.7672642783093124e-13,
+          0.7529999999999999
+        ],
+        "contact_points": 12,
+        "faces": {
+          "minus": {
+            "sf_drawn_wire": 87.93724890613053,
+            "amplitude_MPa": 4.002854357835845,
+            "mean_MPa": -2.9348072829776166,
+            "sf_nominal_only": 247.4964373602409,
+            "contact_factor_on_1_over_sf": 2.8144664569212683,
+            "max_tension_MPa": 1.1224778610126145,
+            "max_tension_nominal_only_MPa": 1.1224778610126145,
+            "max_contact_tension_MPa": 0.23024938002459325,
+            "k_crossover": null
+          },
+          "plus": {
+            "sf_drawn_wire": 56.251561703686654,
+            "amplitude_MPa": 6.25760404403013,
+            "mean_MPa": -5.140468853915189,
+            "sf_nominal_only": 205.87704946605473,
+            "contact_factor_on_1_over_sf": 3.6599348219084527,
+            "max_tension_MPa": 2.141031779544209,
+            "max_tension_nominal_only_MPa": 2.141031779544209,
+            "max_contact_tension_MPa": 0.44310663691287105,
+            "k_crossover": null
+          }
+        },
+        "worst_face": "plus",
+        "controls": {
+          "max_padding_diff_MPa": 0.00332853112406567,
+          "max_centroid_nominal_diff_MPa": 2.1760371282653068e-14,
+          "min_rod_toward_wall_over_play": 1.000580218307272,
+          "internal_92_Ecv2_minus_sigma_MPa": 0.0002316449257032671,
+          "internal_92_scale_MPa": 3.393209089338296
+        }
+      },
+      "liner_end": {
+        "minus": {
+          "amplitude_MPa": 7.648266854912065,
+          "mean_MPa": -20.81371253048588,
+          "sf_nominal_only": 46.02349874519998
+        },
+        "plus": {
+          "amplitude_MPa": 7.648266854912065,
+          "mean_MPa": 20.81371253048588,
+          "sf_nominal_only": 22.036150487904344
+        },
+        "ei_jump_composite_over_bare": 1.0674945454545453,
+        "corner_factor_to_tie_mouth": 1.1061752867718941
+      }
+    }
+  ],
+  "summary": {
+    "tolerance_offset_um": 50,
+    "by_base": {
+      "bonded": {
+        "lowest_k_crossover_within_tolerance": {
+          "k_crossover": 0.9784356312959506,
+          "offset_um": 40,
+          "station": "mouth",
+          "face": "plus",
+          "sf_drawn_wire": 60.79570137158053,
+          "contact_factor_on_1_over_sf": 1.0,
+          "mean_MPa": 1.036046091266992
+        },
+        "lowest_k_crossover_beyond": {
+          "k_crossover": 6.729851724353522,
+          "offset_um": 75,
+          "station": "mouth",
+          "face": "plus",
+          "sf_drawn_wire": 26.336780457034493,
+          "contact_factor_on_1_over_sf": 1.0,
+          "mean_MPa": 13.4915592090865
+        },
+        "root_sf_at_k_at_tolerance": {
+          "0.388": 21.85835276336231,
+          "1": 36.4701669709979
+        },
+        "liner_end_corner_factor_to_out_rank_within_tolerance": {
+          "0.388": {
+            "factor": 1.7483651646683052,
+            "offset_um": 40
+          },
+          "1": {
+            "factor": 1.0553282256969858,
+            "offset_um": 35
+          }
+        },
+        "liner_ei_jump": 1.0674945454545453,
+        "contact_tension_max": {
+          "MPa": 0.0005216180411129441,
+          "offset_um": 40,
+          "station": "exit",
+          "face": "plus"
+        },
+        "not_solved": [
+          {
+            "offset_um": 30,
+            "drag_N": -0.011657,
+            "reason": "a contact patch outgrew every window (or the rod lies along the wall between them) — a line contact two end windows cannot represent; refusing"
+          }
+        ]
+      },
+      "frictionless": {
+        "lowest_k_crossover_within_tolerance": {
+          "k_crossover": 0.6666806981377005,
+          "offset_um": 35,
+          "station": "exit",
+          "face": "plus",
+          "sf_drawn_wire": 62.830483042132876,
+          "contact_factor_on_1_over_sf": 3.0316879873084592,
+          "mean_MPa": -4.486074503010384,
+          "k_crossover_contact_x1_3": [
+            0.43492548146610566,
+            0.49125471851966124
+          ]
+        },
+        "lowest_k_crossover_beyond": {
+          "k_crossover": 6.764614034532682,
+          "offset_um": 75,
+          "station": "mouth",
+          "face": "plus",
+          "sf_drawn_wire": 26.371494600534795,
+          "contact_factor_on_1_over_sf": 1.0,
+          "mean_MPa": 13.461534339526365
+        },
+        "root_sf_at_k_at_tolerance": {
+          "0.388": 21.907478512607305,
+          "1": 36.53036041315954
+        },
+        "liner_end_corner_factor_to_out_rank_within_tolerance": {
+          "0.388": {
+            "factor": 1.7468511388605303,
+            "offset_um": 40
+          },
+          "1": {
+            "factor": 1.1970114079367244,
+            "offset_um": 50
+          }
+        },
+        "liner_ei_jump": 1.0674945454545453,
+        "contact_tension_max": {
+          "MPa": 0.5503489907807728,
+          "offset_um": 100,
+          "station": "mouth",
+          "face": "minus"
+        },
+        "not_solved": []
+      }
+    },
+    "contact_factor_on_1_over_sf_max": {
+      "factor": 3.6599348219084527,
+      "mean_MPa": -5.140468853915189,
+      "base": "frictionless",
+      "offset_um": 100,
+      "station": "exit",
+      "face": "plus"
+    },
+    "contact_factor_at_tensile_mean_max": {
+      "factor": 1.069499468495636,
+      "base": "frictionless",
+      "offset_um": 30,
+      "station": "mouth",
+      "face": "minus",
+      "sf_drawn_wire": 100.74318225213928
+    },
+    "text": "«bonded»: inside ⌀0.10 the welded root stays the critical section for every seam knock-down k < 0.97 (lowest at the mouth plus face, 40 µm: drawn-wire SF 60.8, contact ×1.00 on 1/SF — nominal bending, the mouth section out-swinging the root as in 92; root SF 36.5 at k = 1 at 50 µm), beyond it the lowest is 6.72 (mouth plus, 75 µm); the liner end's unmodelled corner stays below every modelled section while it concentrates its bare-side nominal by less than ×1.74 (k 0.388, 40 µm) / ×1.05 (k 1, 35 µm) — of the order of the liner's own stiffening of the wire (×1.067), so not bounded here — 1 path point(s) refused by 92 (at 30 µm, drag -0.0117 N of ±0.500 N): that cycle omits them, so its root and station amplitudes are both lower bounds and the k_x there has no known direction; «frictionless»: inside ⌀0.10 the welded root stays the critical section for every seam knock-down k < 0.66 (lowest at the exit plus face, 35 µm: drawn-wire SF 62.8, contact ×3.03 on 1/SF — the contact's swing about a compressive mean, counted by 86's line; with the arc ceiling's ×1.3 on the contact's share it would be 0.43–0.49, so an estimate, not a bound; root SF 36.5 at k = 1 at 50 µm), beyond it the lowest is 6.76 (mouth plus, 75 µm); the liner end's unmodelled corner stays below every modelled section while it concentrates its bare-side nominal by less than ×1.74 (k 0.388, 40 µm) / ×1.19 (k 1, 50 µm) — of the order of the liner's own stiffening of the wire (×1.067), so not bounded here. The largest tension the contact through the layer puts on the wire, pointwise: bonded +0.001 MPa (40 µm, exit plus) · frictionless +0.550 MPa (100 µm, mouth minus); its weight on a station's worst 1/SF is largest (×3.66, frictionless 100 µm exit plus) where the governing cycle's mean is compressive — 86's line counting a compressive swing as amplitude without crediting the mean, the conservative reading; where the governing cycle's mean is tensile it raises the station's worst 1/SF by at most ×1.07 (frictionless, 30 µm, mouth minus, SF 100.7)."
+  }
+}
