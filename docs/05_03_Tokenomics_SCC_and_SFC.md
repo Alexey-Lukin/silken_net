@@ -63,7 +63,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.36` (locked) | `0.8.36` (locked) |
+| **Pragma** | `0.8.37` (locked) | `0.8.37` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` — [CONTRACT.1] деривація: 10k GP=1 SCC · 2k SCC=1 tCO2 → ≈500k tCO2 ≈ 20M дерево-років (≈2M дерев × 10 р.) = свідомо-скромна launch-стеля pilot-горизонту; планетарний масштаб = новий деплой/L2, не підняття константи. 🏠 **Деривацію ПЕРЕВІРЯЄ модель — `tools/tokenomics/supply_stress.rb` [E.67]** (pure Ruby, `--assert` = HARD-гейт `docs.yml`): вона відтворює цей самий ланцюг чисельно й червоніє, коли `MAX_SUPPLY` чи `emission_threshold` розійдуться з ним — доти ланцюг жив прозою в цьому рядку й не був перерахований ніде. Канон посилається сюди, не restate'ить magnitude. ⊕ Вихід моделі — **діапазон, не число**: горизонт стелі при канон-арбітрі 50 SCC/дерево/рік ≈ 10 р., при realistic Variant C (7.92) ≈ 63 р., при фізичній стелі Δt=600s (326) ≈ 1.6 р.; розкид успадкований від `scc_per_tree_year`, який calibration-pending [E.63]. ⚠️ **Єдиний механізм звільнення cap — `slash` (справжній `_burn`); ESG-ретайрмент `totalSupply` НЕ зменшує** (`retire()` — чужий ABI KlimaDAO після `approve`, не `_burn` нашого контракту), а в відвантаженому стані baseline burn ≈ 0 за конструкцією ([SLASH-1] A-сет порожній, uplift інертний) — тобто «дихаючий» cap сьогодні не дихає. **NB:** «2k SCC=1 tCO₂» = внутрішня облікова конвенція Proof-of-Growth/Condition-токена, НЕ registry-визнаний offset (продаваний кредит лише через незалежну методологію → [`00_04 §3`](00_04_Nature_as_a_Service_Contracts), [`00_07`](00_07_Action_Plan_Tracker) BIZ.9) | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -791,7 +791,7 @@ contracts/test/
 ├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
 └── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
 
-contracts/foundry.toml               # ✅ Foundry config: solc 0.8.36, EVM cancun, profiles (default/production)
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.37, EVM cancun, profiles (default/production)
 ```
 
 ---
@@ -813,7 +813,7 @@ On-chain governance (SFC-голосування за протокольні па
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
 
-> **Mythril знято** (раніше планований symbolic-tool, 1b): занедбаний (остання версія v0.24.8 / 2024, без EVM cancun, зависає на OZ-важких контрактах) → замінений на **Halmos** (foundry-native, читає наш `foundry.toml` solc 0.8.36 / cancun). 2025-26 enterprise-стек = static (Slither + Aderyn) → property-fuzz (Foundry + Medusa) → symbolic (Halmos) → manual audit (Hacken) → runtime (CertiK).
+> **Mythril знято** (раніше планований symbolic-tool, 1b): занедбаний (остання версія v0.24.8 / 2024, без EVM cancun, зависає на OZ-важких контрактах) → замінений на **Halmos** (foundry-native, читає наш `foundry.toml` solc 0.8.37 / cancun). 2025-26 enterprise-стек = static (Slither + Aderyn) → property-fuzz (Foundry + Medusa) → symbolic (Halmos) → manual audit (Hacken) → runtime (CertiK).
 
 **Scope аудиту (6 контрактів):**
 1. `SilkenCarbonCoin.sol` — mint/burn/batchMint, MINTER/SLASHER roles
@@ -827,7 +827,7 @@ On-chain governance (SFC-голосування за протокольні па
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ (або в самому workflow) на PR/push to main; + workflow_dispatch
-# Компілюємо самі: forge build --build-info (solc 0.8.36 з foundry.toml), далі
+# Компілюємо самі: forge build --build-info (solc 0.8.37 з foundry.toml), далі
 # crytic/slither-action@v0.4.2 з ignore-compile: true (читає build-info; forge install не потрібен — deps npm)
 # slither-version запінено: SHA-пін екшена НЕ тримає його начинку (образ тягне
 # slither-analyzer з PyPI свіжим щоразу) → 06_07 §1a; вахта за апстрімом — 00_07 OPS.22 📊 WATCH (OPS.21 заархівовано 2026-09-07)
