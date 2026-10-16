@@ -478,6 +478,55 @@ if printf '%s\n' "$_changed" | grep -qE '\.py$|^ruff\.toml$'; then
   fi
 fi
 
+# [OPS.28 ⊕] SI-маніфест статті ⇄ його генератор `72` — сьомий блок, куплений ДВОМА різними
+# механізмами з тим самим симптомом: 2026-10-15 — правка двох скриптів ПІСЛЯ рендеру `72`;
+# 2026-10-16 — `96214a7d3` змінив `lib` і чотири скрипти, а прогнали вибрані тести замість
+# повної сюїти (дім правила — скіл `in-silico` modifying #29). Обидва рази ловила лише CI-джоба
+# `cache_doc_sync` ПІСЛЯ пушу, і другий раз `main` стояв червоним.
+# 🔴 Форма — тимчасовий worktree ПУШЕНОГО коміту, а не пін у робочому дереві, і це несуче:
+# `72` хешує байти РОБОЧОГО дерева, тож у спільному дереві чужа незакомічена правка будь-якого
+# трекованого in-silico файлу дала б хибне червоне при чистому коміті (так і пише сам пін:
+# «a dirty checkout reds») — а хибне червоне привчає до `--no-verify`. Worktree і Є закомічені
+# байти: без WIP і без теплих untracked-кешів обчислень. Пін — той самий, що в CI, дослівно;
+# у `72` не змінено жодного рядка (другий шлях читання поруч із дисковим розходився б тихо).
+# ЦІНА виміряна 2026-10-16 на цьому дереві: 1.8 с (worktree add + пін + remove), лише коли пуш
+# зачіпає периметр нижче. Дискримінує: HEAD — 1 passed, `96214a7d3` — 1 failed.
+# ⚠️ Стеля: судить HEAD (як і `_changed` вище); периметр — дерево in-silico, канон in-silico і
+# `00_02` (назва статті), а `00_07` свідомо ні — `72` читає трекер лише для жаргон-гейта описів,
+# і правка трекера, що його зачепить, лишається на CI. NOT-RUN ⊥ FAILED: pytest exit 1 — вердикт,
+# будь-який інший (нема pytest · не зібрався тест · worktree не створився) — гучна нота й пропуск.
+if printf '%s\n' "$_changed" | grep -qE '^tools/in_silico/|^docs/protocols/ebfc/in_silico/|^docs/00_02_'; then
+  if python3 -m pytest --version >/dev/null 2>&1; then
+    _si_dir=$(mktemp -d)
+    trap 'rm -f "$_i18n_log"; git -C "$root" worktree remove --force "$_si_dir/wt" >/dev/null 2>&1; rm -rf "$_si_dir"' EXIT INT TERM
+    if git -C "$root" worktree add -q --detach "$_si_dir/wt" HEAD >/dev/null 2>&1; then
+      python3 -m pytest -q -p no:cacheprovider \
+        "$_si_dir/wt/tools/in_silico/tests/test_doc_cache_sync.py::test_paper_si_matches_its_generator" \
+        >"$_si_dir/log" 2>&1
+      _si_rc=$?
+      git -C "$root" worktree remove --force "$_si_dir/wt" >/dev/null 2>&1
+      if [ "$_si_rc" -eq 1 ]; then
+        cat "$_si_dir/log"
+        echo
+        echo "pre-push BLOCKED — the pushed commit's SI manifest is not what \`72\` renders from it."
+        echo "Fix:  python3 tools/in_silico/scripts/72_paper_supporting_information.py   # on a CLEAN tree"
+        echo "      then commit docs/protocols/ebfc/in_silico/paper/10_supporting_information.md"
+        echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+        exit 1
+      elif [ "$_si_rc" -ne 0 ]; then
+        echo "pre-push NOTE — the SI-manifest pin could not RUN (pytest exit $_si_rc)."
+        echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
+      fi
+    else
+      echo "pre-push NOTE — SI-manifest pin skipped: a temporary worktree of HEAD could not be created."
+      echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
+    fi
+  else
+    echo "pre-push NOTE — in-silico changed but python3 has no pytest here."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`cache_doc_sync\`)."
+  fi
+fi
+
 # Success line names NO block roster on purpose: the hook grows, a list rots
 # (this line said "DCO + i18n parity OK." while five blocks ran — 00_06 §3 class).
 echo "pre-push: OK — every block that ran passed (roster = this file's blocks)."
