@@ -38,8 +38,8 @@ An unconverged optimisation or a mode beyond IMAG_TOL_CM writes `<cache>.unconve
 
 Run (in-silico §When Modifying #21a · #34 — sequential, nothing heavy alongside):
   cd /Users/oleksiilukin/silken_net || exit 1
-  setsid caffeinate -ims ~/miniforge3/envs/silken_md/bin/python -u tools/in_silico/scripts/32b_pcet_redox_thermo.py \\
-      > tools/in_silico/cache/runs/32b/run.log 2>&1 &
+  nohup caffeinate -ims ~/miniforge3/envs/silken_md/bin/python -u tools/in_silico/scripts/32b_pcet_redox_thermo.py \\
+      > tools/in_silico/cache/runs/32b/run.log 2>&1 &          # macOS has no setsid; nohup detaches from the shell
   python tools/in_silico/scripts/32b_pcet_redox_thermo.py --rehearse <dir>     # STO-3G, writes only into <dir>
 """
 from __future__ import annotations
