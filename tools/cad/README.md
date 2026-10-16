@@ -132,7 +132,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   cheap fast Linux runner as the **HARD** regression gate.
 - **`render` (macos-15)** — `dotnet build` (hard, both OSes) + `verify` metrics (best-effort:
   `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
-  CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
+  CI-confirmed 2026-06-20 on macos-14, re-confirmed 2026-10-16 on macos-15) + a CycloneDX SBOM + metrics artifacts.
 
 **Local `dotnet run -- verify` stays the PRIMARY metrics gate, and THIS LINE IS ITS HOME.**
 A self-hosted macOS-with-display runner would re-arm render-verify as a hard gate; until

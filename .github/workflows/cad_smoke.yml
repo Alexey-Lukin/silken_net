@@ -140,6 +140,9 @@ jobs:
         # + `Build` above (LEAP source vs PicoGK 2.2 on both OSes). Local `dotnet run -- verify` is the
         # primary metrics gate (home of that policy: tools/cad/README.md); a self-hosted
         # macOS-with-display runner would re-arm it.
+        # ⊕ Re-measured 2026-10-16 on macos-15 (run 38967423445): the same exit 139 here, and the build
+        # the same 23 warnings / 0 errors as the last macos-14 run — the cause is the missing window
+        # server, not the OS version.
         continue-on-error: true
         working-directory: tools/cad
         run: |
