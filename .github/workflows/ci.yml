@@ -557,7 +557,7 @@ jobs:
       - name: Lint Python tooling (tools/**)
         uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
         with:
-          version: "0.15.16"
+          version: "0.17.0"
           args: "check --output-format=github"
 
   workflow_lint:
@@ -846,7 +846,7 @@ jobs:
 # 🔒 [OPS.21] Digest поруч із тегом — той самий мутабельно-тегний клас, що й у
 # postgis вище; `:8` до того ж плаває через УСІ мінори 8.x. Бампера немає (див.
 # там же), тож підняття — ручний крок рецепту `dependency-update`.
-        image: valkey/valkey:8@sha256:f0ba225266310efba5fb33383e21c64fbd07907304224786c780606e7ebd7327
+        image: valkey/valkey:8@sha256:640c5e62cea04b6d6f2084232651d0cc70362d31f4f805e7be94dbed6855e8f2
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -953,7 +953,7 @@ jobs:
 
       redis:
         # 🔒 [OPS.21] digest — підстава при першому вжитку в цьому файлі; бамп ручний
-        image: valkey/valkey:8@sha256:f0ba225266310efba5fb33383e21c64fbd07907304224786c780606e7ebd7327
+        image: valkey/valkey:8@sha256:640c5e62cea04b6d6f2084232651d0cc70362d31f4f805e7be94dbed6855e8f2
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
