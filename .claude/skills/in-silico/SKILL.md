@@ -54,7 +54,10 @@ L3 DFT anode (CPU):
   32 (E°(FAD) · SHE_abs · the measured free flavin) · 21f · 34 · 21e relaxed (the dmbpy ΔE_red of each Os form) → 95
      (cascade_like_for_like.json — the cascade like-for-like, no SCF; a change to any of them re-runs 95)
   20 (importlib: the RDKit/MMFF builder, checked against ligands/lumiflavin_{ox,red}.xyz) · 32 (importlib: the proton
-     reference and SHE) → 32b (pcet_redox_potential_thermo.json + ligands/lumiflavin_*_opt.xyz); 32b → 95 is wired in step 3
+     reference and SHE) → 32b (pcet_redox_potential_thermo.json + ligands/lumiflavin_*_opt.xyz); 32b → 95 (the donor at its four levels; 95 refuses when 32b's MMFF level is not 32's)
+  21e relaxed (os_mediator_series_relaxed_os2/os3.json — the dmbpy geometries, energies and acceptance) · 21e (importlib:
+     _acceptance, OS3_MIN_OS_SPIN, VARIANT_MAX_CYCLE) · 32 (importlib: SHE) → 96 (os_couple_thermo.json — the Os couple
+     at electronic · + ZPE · RRHO); 96 → 95 (`both_sided`, read when 96's cache exists) — a re-run of 21e relaxed re-runs 96, then 95
   28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)
   11 (DCD) → 27 · 28b
   69 → `69 --ratified` (own out-path, own reference sample; reads 69's OWN cache for the

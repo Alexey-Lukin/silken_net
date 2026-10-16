@@ -196,6 +196,34 @@ CHECKS = [
         SUMMARY, rf"lands \*\*{N} mV\*\* from the free-flavin",
         "dft/pcet_redox_potential.json", lambda d: d["delta_vs_exp_pH7_mV"][0], 1.0,
     ),
+    # The like-for-like block (32b's four donor levels · 95's table, 2026-10-16) — every table cell, so the thesis «direction +
+    # table» of revision step 3 cannot quote a cascade its caches no longer give.
+    *[(f"like-for-like flavin {key} → pcet_redox_potential_thermo", SUMMARY, anchor, "dft/pcet_redox_potential_thermo.json",
+       lambda d, key=key: d["E_vs_SHE_mV"][key]["pH_7.0"], 0.05)
+      for key, anchor in (("mmff_electronic", rf"\*\*{N}\*\* mV on the MMFF geometries \(32's protocol"),
+                          ("relaxed_electronic", rf"· \*\*{N}\*\* mV relaxed ·"),
+                          ("relaxed_plus_zpe", rf"· \*\*{N}\*\* mV \+ ZPE ·"),
+                          ("relaxed_rrho_free_energy", rf"· \*\*{N}\*\* mV \+ RRHO free energy, against"))],
+    ("like-for-like saddle height → pcet_redox_potential_thermo", SUMMARY, rf"\*\*{N}\*\* meV above it",
+     "dft/pcet_redox_potential_thermo.json", lambda d: d["saddle_above_minimum_meV"]["red"][0], 0.05),
+    *[(f"like-for-like table «{form}» column {j} → cascade_like_for_like", SUMMARY,
+       rf"\| {re.escape(form)} \| " + r"[^|\n]* \| " * j + rf"{N} \|", "dft/cascade_like_for_like.json",
+       lambda d, form=form, j=j: 1000 * (lambda r: [r["E_os_vs_SHE_V"], r["acceptor_side_V"],
+                                                    *(c["cascade_V"] for c in r["by_donor_level"].values())][j])(
+           next(r for r in d["forms"] if r["form"] == form)), 0.05)
+      for form in ("chloro (device, programmatic)", *(f"chloro + {k} H₂O on Cl⁻" for k in (1, 2, 3)),
+                   "chloro, Os(II) relaxed, Os(III) vertical", "chloro, both states relaxed (adiabatic)",
+                   "aqua (benchmark form)", "bis-imidazole (operando upper form)")
+      for j in range(6)],
+    ("like-for-like measured same couples → cascade_like_for_like", SUMMARY, rf"same free couples: \*\*{N}\*\* mV",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["measured"]["cascade_same_couples_V"], 0.5),
+    ("like-for-like smallest cascade → cascade_like_for_like", SUMMARY, rf"smallest: \*\*{N}\*\* mV",
+     "dft/cascade_like_for_like.json",
+     lambda d: 1000 * min(c["cascade_V"] for r in d["forms"] for c in r["by_donor_level"].values()), 0.05),
+    ("like-for-like device cancellation at ZPE → cascade_like_for_like", SUMMARY, rf"lands \*\*{N}\*\* mV from the measured \+529",
+     "dft/cascade_like_for_like.json",
+     lambda d: 1000 * abs(next(c["gap_V"] for c in d["cancellations"]["rows"]
+                               if c["form"] == "chloro (device, programmatic)" and c["level"] == "relaxed_plus_zpe")), 0.05),
     # ── Hammett LFER ──
     (
         "LFER slope → os_mediator_series.json",

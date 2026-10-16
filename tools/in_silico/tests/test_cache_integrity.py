@@ -3237,16 +3237,25 @@ def test_pcet_redox_potential_valid():
 
 
 def test_cascade_like_for_like_is_its_inputs():
-    """95 is a pure function of five caches (32 · 21f · 34 · 21e relaxed ×2): every form's E°(Os) and cascade must be
-    what those caches give TODAY, and each gap must be its two sides. CAN catch: an upstream re-run (a new Os form,
-    a recomputed flavin) that left 95's cache stale · a sign flip in the side split. CANNOT catch: whether the
-    like-for-like reading itself is right — that is the script's docstring and revision step 3."""
+    """95 is a pure function of six caches (32 · 32b · 21f · 34 · 21e relaxed ×2): every form's E°(Os) and its cascade
+    at each of 32b's donor levels must be what those caches give TODAY, and each gap must be its two sides. CAN catch: an
+    upstream re-run (a new Os form, a recomputed flavin at any level) that left 95's cache stale · a sign flip in the
+    side split · 32b's MMFF level drifting from 32's protocol. CANNOT catch: whether the like-for-like reading itself is
+    right, nor that the ZPE and RRHO levels correct one side only — that is the script's docstring and revision step 3."""
     path = DFT / "cascade_like_for_like.json"
     if not path.exists():
         pytest.skip("95 not run")
     d = json.loads(path.read_text())
     pcet = json.loads((DFT / "pcet_redox_potential.json").read_text())
-    she, e_fad = pcet["SHE_abs_V"], pcet["E_vs_SHE_mV"]["pH_7.0"] / 1000
+    steps = json.loads((DFT / "pcet_redox_potential_thermo.json").read_text())["E_vs_SHE_mV"]
+    she, meas = pcet["SHE_abs_V"], pcet["exp_free_flavin_pH7_mV"][0] / 1000
+    assert abs(steps["mmff_electronic"]["pH_7.0"] - pcet["E_vs_SHE_mV"]["pH_7.0"]) <= 0.1 + 1e-9, \
+        "32b's MMFF level is not 32's potential — the two flavin caches describe different protocols"
+    e_fad = {k: v["pH_7.0"] / 1000 for k, v in steps.items()}
+    assert list(d["flavin"]["levels"]) == list(e_fad), "95 reads other donor levels than 32b holds — re-run 95"
+    for k, lv in d["flavin"]["levels"].items():
+        assert lv["E_pH7_computed_V"] == round(e_fad[k], 4), f"95 stands on another E°(FAD) at {k} than 32b's — re-run 95"
+        assert abs(lv["donor_side_V"] - (e_fad[k] - meas)) < 6e-5, k
     micro = {r["name"]: r["dE_red_eV"] for r in json.loads((DFT / "microsolvation_dmbpy.json").read_text())["results"]}
     src = {"chloro (device, programmatic)": json.loads((DFT / "os_complex.json").read_text())["dE_red_III_to_II_eV"],
            **{f"chloro + {k} H₂O on Cl⁻": micro[f"mediator_k{k}_clwaters"] for k in (1, 2, 3)},
@@ -3256,13 +3265,35 @@ def test_cascade_like_for_like_is_its_inputs():
                json.loads((DFT / "os_mediator_series_relaxed_os3.json").read_text())["complexes"]["dmbpy"]["dE_red_adiabatic_eV"],
            "aqua (benchmark form)": micro["aqua_meim_h2o"], "bis-imidazole (operando upper form)": micro["bisim_meim2"]}
     assert [r["form"] for r in d["forms"]] == list(src), "95's forms are not the forms its inputs hold — re-run 95"
-    assert d["flavin"]["E_pH7_computed_V"] == round(e_fad, 4), "95 stands on another E°(FAD) than 32's — re-run 95"
     for r in d["forms"]:
         assert r["dE_red_III_to_II_eV"] == src[r["form"]], f"{r['form']}: 95 holds a stale ΔE_red — re-run 95"
         assert abs(r["E_os_vs_SHE_V"] - (-src[r["form"]] - she)) < 6e-5, r["form"]
-        assert abs(r["cascade_V"] - (r["E_os_vs_SHE_V"] - e_fad)) < 1e-4, r["form"]
-        assert abs(r["gap_to_measured_same_couples_V"] - (r["acceptor_side_V"] + r["donor_side_V"])) < 2e-4, r["form"]
-        assert r["direction"] == ("downhill" if r["cascade_V"] > 0 else "uphill"), r["form"]
+        assert list(r["by_donor_level"]) == list(e_fad), r["form"]
+        for k, c in r["by_donor_level"].items():
+            assert abs(c["cascade_V"] - (r["E_os_vs_SHE_V"] - e_fad[k])) < 1e-4, (r["form"], k)
+            assert abs(c["gap_to_measured_same_couples_V"] - (r["acceptor_side_V"] + c["donor_side_V"])) < 2e-4, (r["form"], k)
+            assert c["direction"] == ("downhill" if c["cascade_V"] > 0 else "uphill"), (r["form"], k)
+    # the both-sided row: computed from 96 exactly when 96's cache exists (the 7th input), never invented without it
+    bs, os96 = d["both_sided"], DFT / "os_couple_thermo.json"
+    assert bs["computed"] == os96.exists(), "95's both-sided row disagrees with whether 96 has run — re-run 95"
+    if bs["computed"]:
+        th = json.loads(os96.read_text())
+        pairs = {"relaxed_electronic": "electronic", "relaxed_plus_zpe": "plus_zpe", "relaxed_rrho_free_energy": "rrho_free_energy"}
+        for k, os_k in pairs.items():
+            lv = bs["levels"][k]
+            if os_k == "rrho_free_energy" and not th["rrho_comparable"]:
+                assert "skipped" in lv and "cascade_V" not in lv, "an RRHO row 96 marks not comparable entered 95"
+                continue
+            assert abs(lv["cascade_V"] - (-th["dG_red_eV"][os_k] - she - e_fad[k])) < 1e-4, k
+    # every agreement by cancellation is NAMED: recomputed from the rows at the cache's own thresholds, none dropped
+    can = d["cancellations"]
+    hit = lambda gap, dn, ac: abs(gap) <= can["gap_max_V"] and min(abs(dn), abs(ac)) >= can["each_side_min_V"]  # noqa: E731
+    want = {(r["form"], k) for r in d["forms"] for k, c in r["by_donor_level"].items()
+            if hit(c["gap_to_measured_same_couples_V"], c["donor_side_V"], r["acceptor_side_V"])}
+    want |= {(bs["form"] + " (96 both-sided)", k) for k, v in bs.get("levels", {}).items()
+             if "cascade_V" in v and hit(v["gap_to_measured_same_couples_V"], v["donor_side_V"], v["acceptor_side_V"])}
+    assert {(c["form"], c["level"]) for c in can["rows"]} == want, "95 names other cancellations than its rows hold — re-run 95"
+    assert all(c["form"] in d["verdict"] for c in can["rows"]), "a cancellation is in the record but not in the verdict"
 
 
 def test_pcet_cascade_converged():
