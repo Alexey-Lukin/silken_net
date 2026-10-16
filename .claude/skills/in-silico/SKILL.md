@@ -51,6 +51,10 @@ L3 DFT anode (CPU):
   21f (importlib TIERS + os_complex.json) · 34 (ligands/os_hexaaqua.xyz) → 75 (lock-gap attribution; + reproduction/lock_rerun_2026-10-01.json)
   21f (importlib TIERS) · reproduction/lock_rerun_2026-10-01.json (the base) → 76 (C-min; writes reproduction/, runs ONLY in silken_lock)
   29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
+  32 (E°(FAD) · SHE_abs · the measured free flavin) · 21f · 34 · 21e relaxed (the dmbpy ΔE_red of each Os form) → 95
+     (cascade_like_for_like.json — the cascade like-for-like, no SCF; a change to any of them re-runs 95)
+  20 (importlib: the RDKit/MMFF builder, checked against ligands/lumiflavin_{ox,red}.xyz) · 32 (importlib: the proton
+     reference and SHE) → 32b (pcet_redox_potential_thermo.json + ligands/lumiflavin_*_opt.xyz); 32b → 95 is wired in step 3
   28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)
   11 (DCD) → 27 · 28b
   69 → `69 --ratified` (own out-path, own reference sample; reads 69's OWN cache for the

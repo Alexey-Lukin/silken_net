@@ -1,0 +1,119 @@
+{
+  "method": "B3LYP/6-31G(d)+C-PCM(water), LANL2DZ on Os; electronic energies (no ZPE/thermal); one absolute-SHE convention (32: Isse & Gennaro 2010)",
+  "conventions": {
+    "SHE_abs_V": 4.281,
+    "E_os": "−ΔE_red(III→II) − |SHE_abs|",
+    "cascade": "E°(Os) − E°(FAD/FADH₂, pH 7), > 0 = downhill",
+    "sides": "donor = computed − measured free FAD; acceptor = measured − computed Os; gap = their sum"
+  },
+  "flavin": {
+    "E_pH7_computed_V": -0.1554,
+    "E_pH7_measured_free_V": -0.22,
+    "donor_side_V": 0.0646,
+    "source": "32 pcet_redox_potential.json"
+  },
+  "measured": {
+    "E_os_V": 0.309,
+    "E_fad_gdh_bound_V": -0.265,
+    "cascade_same_couples_V": 0.529,
+    "cascade_device_V": 0.574,
+    "protein_shift_V": -0.045
+  },
+  "forms": [
+    {
+      "form": "chloro (device, programmatic)",
+      "source": "21f os_complex.json",
+      "dE_red_III_to_II_eV": -4.3808,
+      "E_os_vs_SHE_V": 0.0998,
+      "cascade_V": 0.2552,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.2738,
+      "acceptor_side_V": 0.2092,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "chloro + 1 H₂O on Cl⁻",
+      "source": "34 microsolvation_dmbpy.json",
+      "dE_red_III_to_II_eV": -4.4442,
+      "E_os_vs_SHE_V": 0.1632,
+      "cascade_V": 0.3186,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.2104,
+      "acceptor_side_V": 0.1458,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "chloro + 2 H₂O on Cl⁻",
+      "source": "34 microsolvation_dmbpy.json",
+      "dE_red_III_to_II_eV": -4.5164,
+      "E_os_vs_SHE_V": 0.2354,
+      "cascade_V": 0.3908,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.1382,
+      "acceptor_side_V": 0.0736,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "chloro + 3 H₂O on Cl⁻",
+      "source": "34 microsolvation_dmbpy.json",
+      "dE_red_III_to_II_eV": -4.583,
+      "E_os_vs_SHE_V": 0.302,
+      "cascade_V": 0.4574,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.0716,
+      "acceptor_side_V": 0.007,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "chloro, Os(II) relaxed, Os(III) vertical",
+      "source": "21e os_mediator_series_relaxed_os2.json",
+      "dE_red_III_to_II_eV": -4.493419119488213,
+      "E_os_vs_SHE_V": 0.2124,
+      "cascade_V": 0.3678,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.1612,
+      "acceptor_side_V": 0.0966,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "chloro, both states relaxed (adiabatic)",
+      "source": "21e os_mediator_series_relaxed_os3.json",
+      "dE_red_III_to_II_eV": -4.407264075744142,
+      "E_os_vs_SHE_V": 0.1263,
+      "cascade_V": 0.2817,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": 0.2473,
+      "acceptor_side_V": 0.1827,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "aqua (benchmark form)",
+      "source": "34 microsolvation_dmbpy.json",
+      "dE_red_III_to_II_eV": -4.8201,
+      "E_os_vs_SHE_V": 0.5391,
+      "cascade_V": 0.6945,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": -0.1655,
+      "acceptor_side_V": -0.2301,
+      "donor_side_V": 0.0646
+    },
+    {
+      "form": "bis-imidazole (operando upper form)",
+      "source": "34 microsolvation_dmbpy.json",
+      "dE_red_III_to_II_eV": -4.9136,
+      "E_os_vs_SHE_V": 0.6326,
+      "cascade_V": 0.788,
+      "direction": "downhill",
+      "gap_to_measured_same_couples_V": -0.259,
+      "acceptor_side_V": -0.3236,
+      "donor_side_V": 0.0646
+    }
+  ],
+  "not_computed": [
+    "ZPE and thermal terms (both sides; larger on the PCET side)",
+    "protein shift of the bound cofactor (measured, carried)",
+    "polymer film of the measured mediator vs one 1-MeIm molecule",
+    "any ωB97X reading (no ωB97X PCET potential of the flavin)"
+  ],
+  "verdict": "On one SHE scale at B3LYP/C-PCM the device chloro couple gives a downhill cascade of +255 mV against +529 mV measured for the same free couples; of the 274 mV between them 209 mV lie on the acceptor side and 65 mV on the donor side. Every form is downhill; the acceptor side is smallest for «chloro + 3 H₂O on Cl⁻» (+7 mV), and «aqua (benchmark form)», «bis-imidazole (operando upper form)» overshoot the measured mediator. The device cascade (+574 mV) adds the measured protein shift (-45 mV on the donor), which is not computed here. Electronic energies on both sides — the ZPE and thermal terms, larger on the PCET side, are not in these numbers."
+}

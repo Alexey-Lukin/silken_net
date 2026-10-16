@@ -3236,6 +3236,35 @@ def test_pcet_redox_potential_valid():
     assert data["couple"].startswith("FAD")
 
 
+def test_cascade_like_for_like_is_its_inputs():
+    """95 is a pure function of five caches (32 · 21f · 34 · 21e relaxed ×2): every form's E°(Os) and cascade must be
+    what those caches give TODAY, and each gap must be its two sides. CAN catch: an upstream re-run (a new Os form,
+    a recomputed flavin) that left 95's cache stale · a sign flip in the side split. CANNOT catch: whether the
+    like-for-like reading itself is right — that is the script's docstring and revision step 3."""
+    path = DFT / "cascade_like_for_like.json"
+    if not path.exists():
+        pytest.skip("95 not run")
+    d = json.loads(path.read_text())
+    pcet = json.loads((DFT / "pcet_redox_potential.json").read_text())
+    she, e_fad = pcet["SHE_abs_V"], pcet["E_vs_SHE_mV"]["pH_7.0"] / 1000
+    micro = {r["name"]: r["dE_red_eV"] for r in json.loads((DFT / "microsolvation_dmbpy.json").read_text())["results"]}
+    src = {"chloro (device, programmatic)": json.loads((DFT / "os_complex.json").read_text())["dE_red_III_to_II_eV"],
+           **{f"chloro + {k} H₂O on Cl⁻": micro[f"mediator_k{k}_clwaters"] for k in (1, 2, 3)},
+           "chloro, Os(II) relaxed, Os(III) vertical":
+               json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text())["complexes"]["dmbpy"]["dE_red_eV"],
+           "chloro, both states relaxed (adiabatic)":
+               json.loads((DFT / "os_mediator_series_relaxed_os3.json").read_text())["complexes"]["dmbpy"]["dE_red_adiabatic_eV"],
+           "aqua (benchmark form)": micro["aqua_meim_h2o"], "bis-imidazole (operando upper form)": micro["bisim_meim2"]}
+    assert [r["form"] for r in d["forms"]] == list(src), "95's forms are not the forms its inputs hold — re-run 95"
+    assert d["flavin"]["E_pH7_computed_V"] == round(e_fad, 4), "95 stands on another E°(FAD) than 32's — re-run 95"
+    for r in d["forms"]:
+        assert r["dE_red_III_to_II_eV"] == src[r["form"]], f"{r['form']}: 95 holds a stale ΔE_red — re-run 95"
+        assert abs(r["E_os_vs_SHE_V"] - (-src[r["form"]] - she)) < 6e-5, r["form"]
+        assert abs(r["cascade_V"] - (r["E_os_vs_SHE_V"] - e_fad)) < 1e-4, r["form"]
+        assert abs(r["gap_to_measured_same_couples_V"] - (r["acceptor_side_V"] + r["donor_side_V"])) < 2e-4, r["form"]
+        assert r["direction"] == ("downhill" if r["cascade_V"] > 0 else "uphill"), r["form"]
+
+
 def test_pcet_cascade_converged():
     """PCET cascade run must have both SCFs converged (result itself is a
     documented does-not-flip negative; we guard convergence + plausible cost)."""
