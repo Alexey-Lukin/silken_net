@@ -1227,6 +1227,93 @@ def test_dft_optimize_wraps_geomeTRIC_as_declared(monkeypatch):
     assert info["returned"] == "lowest-energy step 3", "an unconverged step became the restart point"
 
 
+def test_relax_to_minimum_runs_the_real_stack(monkeypatch, tmp_path):
+    """lib's escape loop (`relax_to_minimum` · `relax_checked`) with geomeTRIC and the SCF's kernel / Hessian / <S²> stubbed —
+    the real `_scf_object`, the keyword plumbing through `dft_optimize` and `harmonic`, PySCF's `harmonic_analysis` and
+    `thermo` all run. The run-path adversary (2026-10-16) found 32b's T/P keywords falling into the SCF protocol (a
+    TypeError at the first optimisation) behind an equivalence harness that stubbed `dft_optimize` itself.
+    CAN catch: a keyword some layer rejects; a saddle not escaped or its Hessian not kept; the state tie (energy, a
+    doublet's <S²>) not enforced; a failed Hessian SCF, another state or a stretched X–H crashing `relax_checked` instead
+    of a refusal with its reason. CANNOT catch: PySCF's SCF and Hessian, geomeTRIC's steps."""
+    pytest.importorskip("pyscf")
+    import pyscf.geomopt.geometric_solver as gs
+    from pyscf.hessian import thermo
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib import dft_utils
+    water = [("O", np.array([0.0, 0.0, 0.0])), ("H", np.array([0.0, 0.757, 0.587])), ("H", np.array([0.0, -0.757, 0.587]))]
+    st = {}
+
+    def key(mol):
+        return tuple(np.round(mol.atom_coords(), 5).ravel())
+
+    def fake_kernel(method, assert_convergence=True, callback=None, maxsteps=100, **kw):
+        mol = method.mol.copy()
+        if st.get("stretch"):
+            xyz = mol.atom_coords(unit="Angstrom")
+            xyz[1] = xyz[0] + 1.5 * (xyz[1] - xyz[0]) / np.linalg.norm(xyz[1] - xyz[0])
+            mol.set_geom_(xyz, unit="Angstrom")
+        e = -76.0 - 0.005 * st["opt"]                  # every escape lands lower
+        st["opt"] += 1
+        st["E"][key(mol)] = e
+        callback({"mol": mol, "energy": e, "gradients": np.full((3, 3), 1e-5), "g_scanner": method})
+        return True, mol
+
+    def hessian(mol):
+        st["hess"] += 1
+        h = 0.5 * np.eye(9)
+        if st["hess"] in st["saddle_at"]:            # one negative curvature along a vibration
+            v = thermo.harmonic_analysis(mol, (0.5 * np.eye(9)).reshape(3, 3, 3, 3).transpose(0, 2, 1, 3))["norm_mode"][0].ravel()
+            h = h - 2.0 * np.outer(v, v) / (v @ v)
+        return h.reshape(3, 3, 3, 3).transpose(0, 2, 1, 3)
+    real = dft_utils._scf_object
+
+    def scf_object(atoms, charge, spin, **protocol):
+        mol, mf = real(atoms, charge, spin, **protocol)           # the real keyword check
+        s2 = st["s2"].pop(0) if st["s2"] else 0.754
+
+        def kernel(*a, **k):
+            mf.converged = st["scf_ok"].pop(0) if st["scf_ok"] else True
+            mf.e_tot = st["E"].get(key(mol), -76.0) + st["offset"]
+            return mf.e_tot
+        mf.kernel, mf.spin_square = kernel, (lambda *a, s2=s2: (s2, 2.0))
+        mf.Hessian = lambda: types.SimpleNamespace(kernel=lambda: hessian(mol))
+        return mol, mf
+    monkeypatch.setattr(gs, "kernel", fake_kernel)
+    monkeypatch.setattr(dft_utils, "_scf_object", scf_object)
+
+    def reset(**kw):
+        st.clear()
+        st.update({"opt": 0, "hess": 0, "E": {}, "s2": [], "scf_ok": [], "offset": 0.0, "saddle_at": {1}, **kw})
+
+    def runs_dir(name):
+        d = tmp_path / name
+        d.mkdir()
+        return d
+
+    # 32b's call: T and P as keywords (the TypeError), a closed shell met at a saddle, escaped once
+    reset()
+    runs = runs_dir("a")
+    _, th, info = dft_utils.relax_to_minimum(water, 0, 0, label="w", tag="w", runs=runs, imag_tol_cm=20.0, max_escapes=2,
+                                               step_a=0.1, temperature_K=298.15, pressure_Pa=101325.0, conv_tol=1e-8)
+    assert not th["_escape_modes"] and info["label"] == "w_escape1" and info["conv_params"] == dft_utils.ESCAPE_CONV
+    assert (runs / "hessian_w_saddle0.npy").exists() and (runs / "hessian_w.npy").exists()
+    # relax_checked on a doublet: minimum, its height, its checkpoint
+    reset()
+    runs = runs_dir("b")
+    _, summ, chk = dft_utils.relax_checked(water, 1, 1, label="cat", runs=runs, level_shift_open=0.2, conv_tol=1e-8, max_cycle=300)
+    assert summ["minimum"] and chk["saddle_above_minimum_meV"] == [round(0.005 * 27.211386245988 * 1000, 2)] and chk["harmonic"]["s2"] == 0.754
+    assert (runs / "opt_cat.checkpoint.xyz").exists()
+    # refusals, each with its reason, none a crash
+    for case, kw, needle in (("<S²> of another state", {"s2": [0.754, 0.95], "saddle_at": set()}, "<S²>"),
+                             ("Hessian SCF not converged", {"scf_ok": [False], "saddle_at": set()}, "did not converge"),
+                             ("energy of another state", {"offset": 1e-5, "saddle_at": set()}, "another electronic state"),
+                             ("stretched X–H", {"stretch": True, "saddle_at": set()}, "long X–H")):
+        reset(**kw)
+        runs = runs_dir(case.replace(" ", "_"))
+        _, summ, chk = dft_utils.relax_checked(water, 1, 1, label="cat", runs=runs, level_shift_open=0.2, conv_tol=1e-8)
+        assert not summ["minimum"] and needle in (summ["error"] or ""), (case, summ["error"])
+
+
 def test_21e_relax_conv_keys_reach_geomeTRIC():
     """geomeTRIC reads its thresholds with `kwargs.get`, so a misspelt key is silently the default — read them back
     through geomeTRIC's own parameter object. No compute."""

@@ -25,7 +25,8 @@ the vertical uphill; what the gap to the verified −0.574 eV is made of is revi
 This script supplies the DFT mechanism number, not the verdict.
 
 Discipline: no density_fit; level_shift on the FADH₂⁺ doublet + SOSCF fallback; DFT
-jobs sequential. ~1.5-3 h (two geom-opts + three SP; the cache's `wall_seconds` is the measured figure).
+jobs sequential. Hours: two geom-opts with a Hessian each (and an escape off any saddle) + three SP; the cache's
+`wall_seconds` is the measured figure.
 Geometry through the house optimizer `lib/dft_utils.dft_optimize` (2026-10-15): the `geometric_solver.optimize` it
 replaced returns only the molecule and drops geomeTRIC's convergence flag, so the `geom_opt_converged` this cache
 carried could not be False. An optimisation that does not converge now writes `<cache>.unconverged.json` and leaves
@@ -46,14 +47,15 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
-from lib.dft_utils import dft_optimize
+from lib.constants import CACHE_DIR, DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
+from lib.dft_utils import relax_checked
 from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro
 from lib.utils import banner
 
 SI_DESCRIPTION = "L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade."  # its row in the paper SI (72): English, no repo jargon
 
 OUT = DFT_CACHE / "delta_scf_corrections.json"
+RUNS = CACHE_DIR / "runs" / "21g"     # Hessians and optimisation checkpoints (gitignored)
 GEOMOPT_BASIS = "def2-svp"     # geometry optimization tier (composite ωB97X//B3LYP)
 SP_BASIS = "def2-tzvp"         # single-point tier
 
@@ -109,14 +111,12 @@ def _sp(atoms, charge, spin, xc, basis, level_shift=0.0) -> tuple[float, bool]:
 
 
 def _opt(atoms, charge, spin, label, level_shift=0.0):
-    """Geom-opt at B3LYP/def2-SVP+PCM through `dft_optimize` → (atoms, summary). The summary carries geomeTRIC's own
-    verdict (`converged`), never a default; on non-convergence the atoms are the lowest-energy step, for diagnosis only."""
-    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light=GEOMOPT_BASIS,
-                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
-    last = info["trajectory"][-1] if info["trajectory"] else {}
-    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
-    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
-    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
+    """Geom-opt at B3LYP/def2-SVP+PCM through lib `relax_checked` → (atoms, summary, minimum_check): `dft_optimize`, then
+    an analytic Hessian, and a saddle sends it off along its imaginary modes (§Critical Rules #18 — the planar RDKit/MMFF
+    start of the 1,5-dihydro flavin converged to the butterfly's planar saddle in 32b). The summary carries geomeTRIC's
+    own verdict (`converged`) and whether the point is a minimum (`minimum`); the caller gates on both."""
+    return relax_checked(atoms, charge, spin, label=label, runs=RUNS, xc="b3lyp", basis_light=GEOMOPT_BASIS,
+                         level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
 
 
 def _load_ea_os3(plain: bool) -> tuple[float, str]:
@@ -137,6 +137,7 @@ def main(argv) -> int:
     plain = "--plain" in argv
     banner(f"Adiabatic ΔSCF generator — {'plain-bpy reference' if plain else 'dimethyl mediator'}")
     t0 = time.time()
+    RUNS.mkdir(parents=True, exist_ok=True)
 
     fadh2 = _build_fadh2()
     print(f"  FADH₂ lumiflavin: {len(fadh2)} atoms")
@@ -144,18 +145,19 @@ def main(argv) -> int:
     # FAD side: geom-opt both states at B3LYP/def2-SVP, SP at ωB97X/def2-TZVP
     banner("FADH₂ geom-opt (B3LYP/def2-SVP+PCM)")
     t = time.time()
-    red_opt, opt_red = _opt(fadh2, 0, 0, "FADH2")
+    red_opt, opt_red, chk_red = _opt(fadh2, 0, 0, "FADH2")
     c_red = opt_red["converged"]
     print(f"  done {time.time()-t:.0f}s conv={c_red} steps={opt_red['steps']}")
     banner("FADH₂⁺ geom-opt (B3LYP/def2-SVP+PCM, doublet, level_shift=0.2)")
     t = time.time()
-    cat_opt, opt_cat = _opt(fadh2, 1, 1, "FADH2_cation", level_shift=0.2)
+    cat_opt, opt_cat, chk_cat = _opt(fadh2, 1, 1, "FADH2_cation", level_shift=0.2)
     c_cat = opt_cat["converged"]
     print(f"  done {time.time()-t:.0f}s conv={c_cat} steps={opt_cat['steps']}")
-    if not (c_red and c_cat):
+    if not (c_red and c_cat and opt_red["minimum"] and opt_cat["minimum"]):
         side = OUT.with_suffix(".unconverged.json")
-        side.write_text(json.dumps({"geom_opt": {"FADH2": opt_red, "FADH2_cation": opt_cat}}, indent=2), encoding="utf-8")
-        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT.name} untouched")
+        side.write_text(json.dumps({"geom_opt": {"FADH2": opt_red, "FADH2_cation": opt_cat},
+                                    "minimum_check": {"FADH2": chk_red, "FADH2_cation": chk_cat}}, indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged, or not a minimum — {side.name} written, {OUT.name} untouched")
         return 1
 
     banner("ωB97X/def2-TZVP single-points")
@@ -196,8 +198,9 @@ def main(argv) -> int:
         "dG_vertical_eV": round(dG_vertical, 4),
         "dG_adiabatic_eV": round(dG_adiabatic, 4),
         "geom_opt_converged": {"FADH2": c_red, "FADH2_cation": c_cat},
-        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+        "geom_opt": {"optimizer": "lib/dft_utils.relax_checked: dft_optimize (grid response, conv_tol 1e-8), analytic C-PCM Hessian, saddle escape",
                      "FADH2": opt_red, "FADH2_cation": opt_cat},
+        "minimum_check": {"FADH2": chk_red, "FADH2_cation": chk_cat},
         "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
         "sp_converged": {"FADH2": cr, "cation_adiabatic": ca, "cation_vertical": cv},
         "wall_seconds": round(time.time() - t0, 1),

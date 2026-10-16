@@ -55,11 +55,11 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 28 | `28_electron_tunneling_pathway.py` | L3: contact-graph shortest path from the first FAD atoms (NOT a Beratan–Onuchic pathway — self-review cluster 6), single snapshot | < 1 s |
 | 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): a contact-graph cost over MD frames from script 27's GAFF-prefix sources (not 28's start; no path recorded — cluster 6; image_molecules PBC unwrap) | ~few min |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM (superseded by 29b) | ~1-2 h |
-| 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.46 eV) | ~1-2 h |
+| 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.46 eV); geometries through lib `relax_checked` (Hessian per species, saddle escape) | hours (CPU) |
 | 29c | `29c_outer_sphere_lambda.py` | L3: outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ; radius/ε-dominated → INDICATIVE | ~1 s |
 | 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference | < 1 s |
 | 32b | `32b_pcet_redox_thermo.py` | L3 (HW.5.IS, revision step 3): E°(FAD/FADH₂) with B3LYP/6-31G(d)+C-PCM relaxed geometries and harmonic thermochemistry (analytic C-PCM Hessian), one knob at a time — geometry · ZPE · RRHO free energy; the shared protocol is first checked against 20's cache; a saddle met on the way is escaped along its imaginary modes and kept in the record with its height over the minimum; `--rehearse <dir>` runs the whole path at STO-3G writing only into `<dir>`. Writes `cache/dft/pcet_redox_potential_thermo.json` and `ligands/lumiflavin_{ox,red}_opt.xyz` | hours (CPU, sequential) |
-| 33 | `33_pcet_cascade_semiquinone.py` | L3: PCET-corrected cascade via neutral semiquinone (does not flip downhill (what the gap is made of — revision step 3, `00_07` HW.5.IS)) | < 1 s |
+| 33 | `33_pcet_cascade_semiquinone.py` | L3: PCET-corrected cascade via neutral semiquinone (does not flip downhill (what the gap is made of — revision step 3, `00_07` HW.5.IS)); geometries through lib `relax_checked` (Hessian per species, saddle escape) | hours (CPU) |
 | 34 | `34_dft_microsolvation.py` | L3 ②: cluster-continuum micro-solvation + speciation (chloro/aqua/bis-Im + [Os(H₂O)₆] benchmark) → decompose the PCM cascade gap | ~hours |
 | 34b | `34b_wb97x_speciation.py` | L3: ωB97X ΔSCF cross-check of the ② speciation trend (functional-robustness) | ~hours |
 | 35 | `35_dft_metal_reorganization.py` | L3b ③: computed inner-sphere λ for the ZIF metal hops (Nelsen 4-point on [M(H₂O)₆]) | ~hours |

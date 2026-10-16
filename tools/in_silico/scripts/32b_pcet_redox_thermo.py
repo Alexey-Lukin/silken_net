@@ -12,7 +12,7 @@ One knob at a time (in-silico §When Modifying #36), each a separate E°:
       single point on the committed MMFF geometries must reproduce 20's energies (≤ 1e-6 Ha), else the run stops: a
       protocol drift would otherwise read as a geometry or thermal effect;
   (i)   relaxed geometry, electronic energy (lib/dft_utils.dft_optimize, grid response, conv_tol 1e-8); a Hessian that
-        finds a mode beyond IMAG_TOL_CM sends the optimisation off that saddle along it (`escape_geometry`, at most
+        finds a mode beyond IMAG_TOL_CM sends the optimisation off that saddle along it (lib `relax_to_minimum`, at most
         SADDLE_ESCAPES times) — the planar MMFF start of the reduced flavin converges to the butterfly's planar saddle
         otherwise (measured 2026-10-16); each saddle's energy, frequencies, geometry and Hessian stay in the record, and
         its height over the minimum is `saddle_above_minimum_meV`;
@@ -56,14 +56,13 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
-from lib.dft_utils import _scf_object, dft_optimize
+from lib.dft_utils import ESCAPE_CONV, ESCAPE_CONV_TOL, _scf_object, relax_to_minimum, tautomer_change
 from lib.flavin import LUMIFLAVIN_OX_SMILES, LUMIFLAVIN_RED_SMILES, check_15_dihydro
 from lib.utils import banner
 
@@ -79,13 +78,8 @@ IMAG_TOL_CM = 20.0       # DECLARED tolerance for a slightly imaginary soft mode
 XH_MAX_A = 1.2
 SADDLE_ESCAPES = 2       # displace-and-reoptimise attempts after a Hessian finds a mode beyond IMAG_TOL_CM
 ESCAPE_STEP_A = 0.1      # largest atomic displacement of the summed step off the saddle (Å) — breaks a planar start's symmetry
-# An escape converges on geomeTRIC's TIGHT gradients with its DEFAULT displacement criteria: next to the saddle the surface
-# is flat along N5–H (a rigid cut of the run-1 saddle's 255i mode: −1.05 meV at 0.1 Å, +10.6 at 0.2 Å — local only; the
-# relaxed fold went 117.5 meV down, run 2), so the default gmax 4.5e-4 Ha/bohr can be met within a step of the saddle; TIGHT's own dmax 6e-5 Å would hold three methyl
-# rotors to a trust radius of 4e-6 Å (geomeTRIC tmin = 0.1·drms) at the gradient noise floor. The escape's SCF runs at
-# conv_tol 1e-10, so the TIGHT grms 1e-5 sits above the gradient error, which falls with conv_tol (lib/dft_utils.dft_optimize).
-ESCAPE_CONV = {"convergence_set": "GAU_TIGHT", "convergence_drms": 1.2e-3, "convergence_dmax": 1.8e-3}
-ESCAPE_CONV_TOL = 1e-10
+# the escape's convergence criteria (ESCAPE_CONV, ESCAPE_CONV_TOL) and their reasons live in lib/dft_utils — one home for
+# every flavin optimisation from a planar start (21g · 33 · 29b · this script)
 
 
 def _module(fname: str):
@@ -124,23 +118,9 @@ def geometry_check(s20) -> dict:
     return out
 
 
-def h_owners(atoms) -> list[tuple[int, float]]:
-    """For each H: (index of its nearest heavy atom, distance Å) — the hydrogen POSITIONS that tell a tautomer."""
-    xyz = np.array([p for _, p in atoms])
-    heavy = [i for i, (s, _) in enumerate(atoms) if s != "H"]
-    out = []
-    for s, p in atoms:
-        if s == "H":
-            d = np.linalg.norm(xyz[heavy] - p, axis=1)
-            out.append((heavy[int(np.argmin(d))], float(d.min())))
-    return out
-
-
 def same_tautomer(start, relaxed) -> None:
     """Before the Hessian: no proton moved to another heavy atom during the optimisation (§Critical Rules #16)."""
-    a, b = h_owners(start), h_owners(relaxed)
-    moved = [(i, x[0], y[0]) for i, (x, y) in enumerate(zip(a, b, strict=True)) if x[0] != y[0]]
-    long = [(i, round(y[1], 3)) for i, y in enumerate(b) if y[1] > XH_MAX_A]
+    moved, long = tautomer_change(start, relaxed, XH_MAX_A)
     if moved or long:
         raise SystemExit(f"the relaxed geometry is not the input's tautomer — moved H {moved}, long X–H {long}")
 
@@ -151,38 +131,6 @@ def single_point(atoms, protocol: dict, label: str) -> tuple:
     if not mf.converged:
         raise SystemExit(f"{label}: the SCF did not converge — no number is written")
     return mol, mf, e
-
-
-def thermochemistry(atoms, protocol: dict, tag: str, runs: Path) -> dict:
-    from pyscf.hessian import thermo
-    mol, mf, e = single_point(atoms, {**protocol, "conv_tol": 1e-9}, f"{tag} Hessian single point")
-    t0 = time.time()
-    hess = mf.Hessian().kernel()
-    np.save(runs / f"hessian_{tag}.npy", hess)
-    freq = thermo.harmonic_analysis(mol, hess)
-    nu = np.asarray(freq["freq_wavenumber"], dtype=complex)    # imaginary modes come back complex (scimath.sqrt)
-    imag = sorted((float(abs(v.imag)) for v in nu if abs(v.imag) > 0), reverse=True)
-    real = np.sort(nu.real[np.abs(nu.imag) == 0])
-    t = thermo.thermo(mf, freq["freq_au"], T_K, P_PA)
-    return {"E_Ha": e, "ZPE_Ha": float(t["ZPE"][0]), "G_tot_Ha": float(t["G_tot"][0]), "H_tot_Ha": float(t["H_tot"][0]),
-            "imaginary_cm": imag, "real_cm": [round(float(x), 2) for x in real],
-            "n_imag_tolerated": sum(v <= IMAG_TOL_CM for v in imag), "n_imag_beyond_tolerance": sum(v > IMAG_TOL_CM for v in imag),
-            "n_modes_below_100cm": int(np.sum(real < 100.0)), "hessian_wall_s": round(time.time() - t0, 1),
-            "hessian_file": str(runs / f"hessian_{tag}.npy"),
-            "_escape_modes": [np.asarray(freq["norm_mode"][i]) for i, v in enumerate(nu) if abs(v.imag) > IMAG_TOL_CM]}
-
-
-def escape_geometry(atoms, modes) -> list:
-    """A stationary point with a mode beyond IMAG_TOL_CM is a saddle; step off it along the sum of every such mode (each
-    normalised to a unit largest atomic displacement), the SUM scaled so its largest atomic displacement is ESCAPE_STEP_A —
-    scaled one by one, two modes sharing an atom move it further (0.134 Å on the run-1 saddle). Measured 2026-10-16: the
-    MMFF94s start of 1,5-dihydrolumiflavin is exactly planar (heavy atoms 0.000 Å out of plane), a planar start has no
-    out-of-plane gradient, and the optimiser converged to the planar saddle of the butterfly — 255i cm⁻¹ on N5–H out of
-    plane, 66i on the N10 methyl rotor. The sign of each mode is arbitrary: the two butterfly folds are mirror images."""
-    xyz = np.array([p for _, p in atoms], dtype=float)
-    step = sum(v / np.linalg.norm(v, axis=1).max() for v in modes)
-    xyz = xyz + ESCAPE_STEP_A * step / np.linalg.norm(step, axis=1).max()
-    return [(s, xyz[i]) for i, (s, _) in enumerate(atoms)]
 
 
 def potential(g_red_ha: float, g_ox_ha: float, s32) -> dict:
@@ -238,17 +186,7 @@ def main(argv) -> int:
         dump(partial)
 
         for tag in ("ox", "red"):
-            start = geo[tag]["atoms"]
-            for attempt in range(SADDLE_ESCAPES + 1):
-                suffix = f"_escape{attempt}" if attempt else ""
-                banner(f"(i) relax {tag}" + (f" — saddle escape {attempt}" if attempt else ""))
-                ck = runs / f"opt_{tag}{suffix}.checkpoint.xyz"
-                relaxed, info = dft_optimize(start, 0, 0, label=f"lumiflavin_{tag}{suffix}",
-                                             conv_params=ESCAPE_CONV if attempt else None,
-                                             on_step=lambda g, tr, ck=ck: _write_xyz(g, ck, f"lowest-energy step of {len(tr)}"),
-                                             **({**protocol, "conv_tol": ESCAPE_CONV_TOL} if attempt else protocol))
-                traj = info.pop("trajectory", [])
-                info["final_step"] = traj[-1] if traj else None
+            def on_relaxed(relaxed, info, tag=tag):
                 record["species"][tag]["geom_opt"] = info
                 if not info["converged"]:
                     record["species"][tag]["restart_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
@@ -260,20 +198,15 @@ def main(argv) -> int:
                     record["species"][tag]["rejected_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
                     dump(Path(f"{out_cache}.unconverged.json"))
                     raise
-                banner(f"(ii)/(iii) Hessian {tag}" + (f" — saddle escape {attempt}" if attempt else ""))
-                th = thermochemistry(relaxed, protocol, tag, runs)
-                modes = th.pop("_escape_modes")
-                if not modes or attempt == SADDLE_ESCAPES:
-                    break
-                saddle_hess = runs / f"hessian_{tag}_saddle{attempt}.npy"
-                Path(th["hessian_file"]).replace(saddle_hess)
-                record["species"][tag].setdefault("saddles", []).append(
-                    {**{k: th[k] for k in ("E_Ha", "ZPE_Ha", "G_tot_Ha", "imaginary_cm", "real_cm")}, "geom_opt": info,
-                     "hessian_file": str(saddle_hess), "geometry": [(s, [float(x) for x in p]) for s, p in relaxed]})
+
+            def on_saddle(saddle, tag=tag):
+                record["species"][tag].setdefault("saddles", []).append(saddle)
                 dump(partial)
-                print(f"  {tag}: saddle (imaginary {[round(v, 1) for v in th['imaginary_cm']]} cm⁻¹) — stepping "
-                      f"{ESCAPE_STEP_A} Å along each mode beyond {IMAG_TOL_CM} cm⁻¹ and re-optimising", flush=True)
-                start = escape_geometry(relaxed, modes)
+            relaxed, th, _ = relax_to_minimum(geo[tag]["atoms"], 0, 0, label=f"lumiflavin_{tag}", tag=tag, runs=runs,
+                                              imag_tol_cm=IMAG_TOL_CM, max_escapes=SADDLE_ESCAPES, step_a=ESCAPE_STEP_A,
+                                              on_relaxed=on_relaxed, on_saddle=on_saddle, write_xyz=_write_xyz,
+                                              temperature_K=T_K, pressure_Pa=P_PA, **protocol)
+            th.pop("_escape_modes")
             record["species"][tag].update(th)
             record["species"][tag]["relaxed_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
             dump(partial)

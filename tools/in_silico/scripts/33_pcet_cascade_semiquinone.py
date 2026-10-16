@@ -45,8 +45,8 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
-from lib.dft_utils import dft_optimize
+from lib.constants import CACHE_DIR, DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
+from lib.dft_utils import relax_checked
 from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro, locants
 from lib.utils import banner
 
@@ -55,6 +55,9 @@ G_STAR_H_AQ_EV = -11.72          # G*(H⁺,aq,1M); reviewer's no-1M-corr value =
 EXP_CASCADE_EV = -0.574          # verified downhill: E°(Os +309) − E°(FAD-GDH −265 mV SHE); was −0.14 (Cosnier, withdrawn)
 
 OUT_JSON = DFT_CACHE / "pcet_cascade.json"
+RUNS = CACHE_DIR / "runs" / "33"   # Hessians and optimisation checkpoints (gitignored)
+# 33's FADH₂ repeats 32b's reduced flavin — same builder, protocol and escape — so its minimum is 32b's (a free control)
+THERMO_32B = DFT_CACHE / "pcet_redox_potential_thermo.json"
 
 
 def _os_reduction_ev() -> float:
@@ -141,17 +144,18 @@ def run_sp(mol, xc, level_shift=0.0):
 
 
 def run_opt(atoms, charge, spin, label, level_shift=0.0):
-    """Geometry-optimize at B3LYP/6-31G(d)+PCM through `dft_optimize` → (atoms, summary with the REAL flag)."""
-    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light="6-31g(d)",
-                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
-    last = info["trajectory"][-1] if info["trajectory"] else {}
-    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
-    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
-    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
+    """Geom-opt at B3LYP/6-31G(d)+PCM through lib `relax_checked` → (atoms, summary, minimum_check): `dft_optimize`, then
+    an analytic Hessian, and a saddle sends it off along its imaginary modes (§Critical Rules #18 — the planar RDKit/MMFF
+    start of the 1,5-dihydro flavin converged to the butterfly's planar saddle in 32b). The summary carries geomeTRIC's
+    own verdict (`converged`) and whether the point is a minimum (`minimum`); the caller gates on both."""
+    return relax_checked(atoms, charge, spin, label=label, runs=RUNS, xc="b3lyp", basis_light="6-31g(d)",
+                         level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
 
 
 def main() -> int:
     banner("PCET cascade via neutral semiquinone FADH• (anode oxidation)")
+    RUNS.mkdir(parents=True, exist_ok=True)
+    e_red_32b = json.loads(THERMO_32B.read_text())["species"]["red"]["E_Ha"]   # read first: a missing cache stops here
     t0 = time.time()
 
     fadh2 = build_fadh2()
@@ -183,16 +187,16 @@ def main() -> int:
     # is essential: an unrelaxed semiquinone is artificially strained.
     banner("Geometry optimization (B3LYP/6-31G(d)+PCM)")
     t = time.time()
-    red_opt_atoms, opt_red = run_opt(atoms_red, 0, 0, "FADH2")
+    red_opt_atoms, opt_red, chk_red = run_opt(atoms_red, 0, 0, "FADH2")
     print(f"  FADH₂ opt done ({time.time()-t:.0f}s) conv={opt_red['converged']} steps={opt_red['steps']}")
     t = time.time()
-    rad_opt_atoms, opt_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
+    rad_opt_atoms, opt_rad, chk_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
     print(f"  FADH• opt done ({time.time()-t:.0f}s) conv={opt_rad['converged']} steps={opt_rad['steps']}")
-    if not (opt_red["converged"] and opt_rad["converged"]):
+    if not all(o["converged"] and o["minimum"] for o in (opt_red, opt_rad)):
         side = OUT_JSON.with_suffix(".unconverged.json")
-        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH2": opt_red, "FADH_radical": opt_rad}},
-                                   indent=2), encoding="utf-8")
-        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT_JSON.name} untouched")
+        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH2": opt_red, "FADH_radical": opt_rad},
+                                    "minimum_check": {"FADH2": chk_red, "FADH_radical": chk_rad}}, indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged, or not a minimum — {side.name} written, {OUT_JSON.name} untouched")
         return 1
 
     # --- final energies at ωB97X/def2-TZVP+PCM (on optimized geometries) ---
@@ -225,8 +229,10 @@ def main() -> int:
         "semiquinone_site": site,
         "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen",
         "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
-        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+        "geom_opt": {"optimizer": "lib/dft_utils.relax_checked: dft_optimize (grid response, conv_tol 1e-8), analytic C-PCM Hessian, saddle escape",
                      "FADH2": opt_red, "FADH_radical": opt_rad},
+        "minimum_check": {"FADH2": chk_red, "FADH_radical": chk_rad},
+        "control_FADH2_minimum_vs_32b_Ha": chk_red["harmonic"]["E_Ha"] - e_red_32b,
         "E_FADH2_Ha": e_fadh2,
         "E_FADH_radical_Ha": e_fadhrad,
         "G_star_H_aq_eV": G_STAR_H_AQ_EV,

@@ -44,13 +44,14 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
-from lib.dft_utils import dft_optimize
+from lib.constants import CACHE_DIR, DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
+from lib.dft_utils import relax_checked
 from lib.flavin import LUMIFLAVIN_RED_SMILES, check_15_dihydro, locants
 from lib.utils import banner
 
 LIT_LAMBDA_TOTAL_EV = 0.7        # comparison constant — TOTAL λ of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate
 OUT_JSON = DFT_CACHE / "semiquinone_lambda.json"
+RUNS = CACHE_DIR / "runs" / "29b"   # Hessians and optimisation checkpoints (gitignored)
 
 
 def build_fadh2():
@@ -113,18 +114,17 @@ def run_sp(mol, xc="b3lyp", level_shift=0.0, dm0=None):
 
 
 def run_opt(atoms, charge, spin, label, level_shift=0.0):
-    """Geom-opt at B3LYP/def2-SVP+PCM through `dft_optimize` (grid response; its convergence flag is geomeTRIC's own —
-    the `geometric_solver.optimize` it replaced drops that flag) → (atoms, summary)."""
-    out, info = dft_optimize(atoms, charge, spin, label=label, maxsteps=100, xc="b3lyp", basis_light="def2-svp",
-                             level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
-    last = info["trajectory"][-1] if info["trajectory"] else {}
-    summary = {k: info[k] for k in ("converged", "steps", "returned", "error", "wall_seconds", "maxsteps")}
-    summary["final_grad_max_Ha_bohr"] = last.get("grad_max_Ha_bohr")
-    return [(s, tuple(float(x) for x in c)) for s, c in out], summary
+    """Geom-opt at B3LYP/def2-SVP+PCM through lib `relax_checked` → (atoms, summary, minimum_check): `dft_optimize`, then
+    an analytic Hessian, and a saddle sends it off along its imaginary modes (§Critical Rules #18 — the planar RDKit/MMFF
+    start of the 1,5-dihydro flavin converged to the butterfly's planar saddle in 32b). The summary carries geomeTRIC's
+    own verdict (`converged`) and whether the point is a minimum (`minimum`); the caller gates on both."""
+    return relax_checked(atoms, charge, spin, label=label, runs=RUNS, xc="b3lyp", basis_light="def2-svp",
+                         level_shift_open=level_shift, conv_tol=1e-8, max_cycle=300)
 
 
 def main() -> int:
     banner("Nelsen 4-point λ — FADH•/FADH⁻ anode couple (rescues script 29)")
+    RUNS.mkdir(parents=True, exist_ok=True)
     t_total = time.time()
 
     fadh2 = build_fadh2()
@@ -154,18 +154,18 @@ def main() -> int:
     # --- geom-opt both members at their own charge/spin (B3LYP/def2-SVP+PCM) ---
     banner("Step 1: geom-opt FADH• (neutral doublet) at B3LYP/def2-SVP")
     t = time.time()
-    R_rad, opt_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
+    R_rad, opt_rad, chk_rad = run_opt(rad_atoms, 0, 1, "FADH_radical", level_shift=0.2)
     print(f"  FADH• opt done ({time.time()-t:.0f}s) conv={opt_rad['converged']} steps={opt_rad['steps']}")
 
     banner("Step 2: geom-opt FADH⁻ (anion singlet) at B3LYP/def2-SVP")
     t = time.time()
-    R_anion, opt_an = run_opt(rad_atoms, -1, 0, "FADH_anion")
+    R_anion, opt_an, chk_an = run_opt(rad_atoms, -1, 0, "FADH_anion")
     print(f"  FADH⁻ opt done ({time.time()-t:.0f}s) conv={opt_an['converged']} steps={opt_an['steps']}")
-    if not (opt_rad["converged"] and opt_an["converged"]):
+    if not all(o["converged"] and o["minimum"] for o in (opt_rad, opt_an)):
         side = OUT_JSON.with_suffix(".unconverged.json")
-        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH_radical": opt_rad, "FADH_anion": opt_an}},
-                                   indent=2), encoding="utf-8")
-        banner(f"⛔ geometry optimisation not converged — {side.name} written, {OUT_JSON.name} untouched")
+        side.write_text(json.dumps({"semiquinone_site": site, "geom_opt": {"FADH_radical": opt_rad, "FADH_anion": opt_an},
+                                    "minimum_check": {"FADH_radical": chk_rad, "FADH_anion": chk_an}}, indent=2), encoding="utf-8")
+        banner(f"⛔ geometry optimisation not converged, or not a minimum — {side.name} written, {OUT_JSON.name} untouched")
         return 1
 
     # --- diagonal SPs (each member at its own optimized geometry) ---
@@ -204,8 +204,9 @@ def main() -> int:
         "semiquinone_site": site,
         "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen of FADH₂",
         "fadh2_tautomer": {"name": "1,5-dihydrolumiflavin", "smiles": LUMIFLAVIN_RED_SMILES},
-        "geom_opt": {"optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+        "geom_opt": {"optimizer": "lib/dft_utils.relax_checked: dft_optimize (grid response, conv_tol 1e-8), analytic C-PCM Hessian, saddle escape",
                      "FADH_radical": opt_rad, "FADH_anion": opt_an},
+        "minimum_check": {"FADH_radical": chk_rad, "FADH_anion": chk_an},
         "physically_reasonable": bool(physical),
         "E_rad_at_Rrad_Ha": E_rad_at_Rrad,
         "E_an_at_Ran_Ha": E_an_at_Ran,
