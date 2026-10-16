@@ -239,5 +239,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 38. A resolution control run on the LARGEST contact patch is blind to the smallest — the edge transition narrows with the load, so check the peak at BOTH ends of the load sweep; and where the number scatters with the grid for a reason you can name, gate the VERDICT it feeds, not the number
 39. Judging your rows against ANOTHER script's threshold: compute its quantity for YOUR rows with ITS formula, inputs and pick — «my mean and my amplitude are each below its inputs» is not the threshold, and its inputs may sit at another play, geometry or definition of «mean»
 40. When a quantity your verdict stands on has a COMPUTED and an ASSUMED value that disagree, the verdict is CONDITIONAL on it — publish the threshold at which it flips, per named reading, instead of picking the kind value and calling the other one an artefact
+41. Before you apply a closed form to numbers taken from ANOTHER script's cache, name the two BODIES of that script's contact (or of whatever pair the formula is about) from ITS OWN `MODEL` section — never from the wording of the leg you are closing, and never from your mental picture of the part
+42. A new script in this package must declare an English `SI_DESCRIPTION`, or the paper-SI generator refuses to render and the doc↔cache pin reds with it
 
 <!-- /INSILICO-MODIFYING-INDEX -->
