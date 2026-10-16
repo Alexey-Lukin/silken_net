@@ -1559,8 +1559,12 @@ under-estimating its own spread.
   secondary-structure heuristic; Ser is not.
 - ⛔ **Gln258 — do not touch.** Its entire apolar neighbourhood lies inside the FAD-pocket and electron-exit
   shells, and the site itself sits **8.0 Å from the script-28 tunnelling route** (a shortest-path heuristic, not a Beratan–Onuchic path; loaded from script 28's
-  cache, not mirrored) **and 11.0 Å from FAD**. Aggregation margin there is bought with the MET architecture
-  of §5 — the whole cell.
+  cache, not mirrored) **and 11.0 Å from FAD**. ⚖️ **2026-10-15 — the refusal stands on the FAD shell ALONE**
+  (11.0 against the declared 12.0 Å; founder, on the recommendation): the route is script 28's heuristic, so
+  «aggregation margin there is bought with the MET architecture of §5» is WITHDRAWN as a physical argument and
+  the `d(e⁻ path)` column above is keep-out bookkeeping, not a coupling axis (`L1 §2`; script `69`'s header
+  carries the same caveat, and its committed cache prose still reads the old label by design — re-running a
+  stochastic script to re-word prose would be a new sample over a ratified freeze).
 - ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **48 %** of that
   patch and is refused by a burial of 0.770 against our declared ceiling of 0.75 — a margin of **0.020**, and
   it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 30 % and is genuinely buried

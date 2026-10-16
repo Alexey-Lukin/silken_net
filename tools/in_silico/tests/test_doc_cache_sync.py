@@ -1876,13 +1876,13 @@ CHECKS = [
     # doc target this guard did not read before — the workflow's path lists already cover the
     # whole in_silico protocols subtree, so `test_every_doc_target_triggers_this_guard` stays green.
     (
-        "CHEM.11 Gln258 d(e⁻ path) → chem11 (L1 §2 — why Gln258 is untouchable)",
-        L1, rf"\*\*{N} Å from the tunnelling path",
+        "CHEM.11 Gln258 d(e⁻ path) → chem11 (L1 §2 — the keep-out axis, re-labelled 2026-10-15)",
+        L1, rf"\*\*{N} Å from the script-28 route",
         CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_electron_path_A"], 0.06,
     ),
     (
         "CHEM.11 Gln258 d(FAD) → chem11 (L1 §2)",
-        L1, rf"tunnelling path and {N} Å from FAD\*\*",
+        L1, rf"script-28 route and {N} Å from FAD\*\*",
         CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_cofactor_A"], 0.06,
     ),
     (

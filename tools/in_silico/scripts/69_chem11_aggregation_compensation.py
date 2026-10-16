@@ -152,9 +152,19 @@ FAD_POCKET_EXCL_A = 12.0
 FAD_POCKET_EXCL_SENSITIVITY_A = 8.0
 EPATH_EXCL_A = 8.0
 
-# Electron-exit guard residues: the Beratan-Onuchic path is LOADED from script 28's cache
-# (drift-proof — never mirrored here), plus Tyr90 (the d_FAD exit reference, L1 §4) and
-# Lys109/Lys262 (CHEM.10 genipin shield, L1 §2).
+# Route keep-out residues: script 28's route is LOADED from its cache (drift-proof — never
+# mirrored here), plus Tyr90 (the d_FAD exit reference, L1 §4) and Lys109/Lys262 (CHEM.10
+# genipin shield, L1 §2).
+# ⚠️ 2026-10-15 — this comment said «the Beratan-Onuchic path», and that label was FALSE: script
+# 28 is a contact-graph shortest path from FAD's phosphate/ribose end, not a Beratan-Onuchic
+# analysis from the isoalloxazine N5 (self-review round 1 of Стаття 1, cluster 6). The threshold
+# above and the `d_electron_path_A` field it writes STAY — the measurement is reproducible and
+# the keep-out is deliberately conservative — but they bookkeep a distance to a HEURISTIC route,
+# not a coupling. Gln258's refusal does not rest on them: its FAD shell (11.0 < 12.0 Å) stands
+# alone (⚖️ founder 2026-10-15, home L1 §2). ⛔ The generated `verdict` prose in the COMMITTED
+# cache still reads «the electron-exit shell … from the path»: this script is stochastic (four
+# reference replicates behind the noise floor), so re-running it to re-word prose would be a NEW
+# SAMPLE over a ratified freeze — it is re-worded at the next run that has its own reason.
 EPATH_EXTRA = (90, 109, 262)
 
 # Secondary structure in which an introduced Asp is treated as risky (DSSP letters).
