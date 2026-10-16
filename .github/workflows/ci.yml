@@ -898,7 +898,7 @@ jobs:
       # тільки сирий лог на 90 днів; json несе example+seed+message —
       # `--only-failures --seed <n>` = one-command repro.
       - name: Upload RSpec failure details
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
           name: rspec-failure-details
@@ -909,7 +909,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload SimpleCov coverage report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: simplecov-coverage
@@ -991,7 +991,7 @@ jobs:
         run: bin/rails db:test:prepare && bundle exec rspec spec/features
 
       - name: Keep screenshots from failed feature tests
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
           name: screenshots
