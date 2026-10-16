@@ -11,7 +11,11 @@ One knob at a time (in-silico §When Modifying #36), each a separate E°:
   (0) control — at start, 32's formula on 20's cached energies must give 32's cached potentials; then the shared-library
       single point on the committed MMFF geometries must reproduce 20's energies (≤ 1e-6 Ha), else the run stops: a
       protocol drift would otherwise read as a geometry or thermal effect;
-  (i)   relaxed geometry, electronic energy (lib/dft_utils.dft_optimize, grid response, conv_tol 1e-8);
+  (i)   relaxed geometry, electronic energy (lib/dft_utils.dft_optimize, grid response, conv_tol 1e-8); a Hessian that
+        finds a mode beyond IMAG_TOL_CM sends the optimisation off that saddle along it (`escape_geometry`, at most
+        SADDLE_ESCAPES times) — the planar MMFF start of the reduced flavin converges to the butterfly's planar saddle
+        otherwise (measured 2026-10-16); each saddle's energy, frequencies, geometry and Hessian stay in the record, and
+        its height over the minimum is `saddle_above_minimum_meV`;
   (ii)  (i) + zero-point energy (harmonic, analytic C-PCM Hessian);
   (iii) (i) + the full thermal free energy at 298.15 K (rigid-rotor harmonic oscillator).
 The proton and the SHE are 32's constants (Isse & Gennaro 2010), loaded from 32, never retyped. The ideal-gas standard
@@ -22,7 +26,10 @@ CAN: say how far relaxing the geometry, then the ZPE, then the thermal terms mov
 CANNOT: (1) the Os side — no Hessian of the 66-atom ECP complex is computed, so a cascade built on (ii)/(iii) is corrected
 on the donor side only (95 says so); (2) anharmonicity, and the low modes (< 100 cm⁻¹) that RRHO turns into too much
 entropy — (ii) is the reading robust to them, and every frequency is kept in the cache so a quasi-RRHO treatment needs
-no recompute; (3) explicit solvation; (4) PySCF marks the PCM Hessian experimental, and its Hessian carries no DFT grid
+no recompute; and the reduced flavin's butterfly is a double well whose barrier (`saddle_above_minimum_meV`, ~meV) lies far
+below the zero-point level of its N5–H wag, so the vibrationally averaged structure is planar and the bend of
+`lumiflavin_red_opt.xyz` carries no structural meaning — counting the wag as a harmonic mode at the minimum (as here) and
+dropping it at the planar saddle bracket its anharmonic zero point; (3) explicit solvation; (4) PySCF marks the PCM Hessian experimental, and its Hessian carries no DFT grid
 response while the geometry was minimised with it — soft modes can come out slightly imaginary; a mode under
 IMAG_TOL_CM is a DECLARED tolerance (not measured), it is dropped from (ii)/(iii) by PySCF and counted in the verdict;
 the path's checks are the water control (ZPE 0.571 eV, modes 1683 · 3716 · 3817 cm⁻¹, 2026-10-16) and the analytic
@@ -33,8 +40,9 @@ the proton with 0 K + ZPE flavins.
 
 Writes `cache/dft/pcet_redox_potential_thermo.json` (its own cache — 32's is never touched), the relaxed geometries
 `ligands/lumiflavin_ox_opt.xyz` · `ligands/lumiflavin_red_opt.xyz` (after their checks), a `<cache>.partial.json` after
-each species and on any failure, the Hessians and optimisation checkpoints under the gitignored `cache/runs/32b/`.
-An unconverged optimisation or a mode beyond IMAG_TOL_CM writes `<cache>.unconverged.json` and no cache.
+each species and on any failure, the Hessians (a saddle's as `hessian_<tag>_saddle<n>.npy`) and optimisation
+checkpoints under the gitignored `cache/runs/32b/`. An unconverged optimisation, a mode beyond IMAG_TOL_CM left after
+SADDLE_ESCAPES escapes, or an escape that did not descend writes `<cache>.unconverged.json` and no cache.
 
 Run (in-silico §When Modifying #21a · #34 — sequential, nothing heavy alongside):
   cd /Users/oleksiilukin/silken_net || exit 1
@@ -68,6 +76,15 @@ T_K, P_PA = 298.15, 101325.0
 CONTROL_TOL_HA = 1e-6
 IMAG_TOL_CM = 20.0       # DECLARED tolerance for a slightly imaginary soft mode (CANNOT 4) — not a measured noise floor
 XH_MAX_A = 1.2
+SADDLE_ESCAPES = 2       # displace-and-reoptimise attempts after a Hessian finds a mode beyond IMAG_TOL_CM
+ESCAPE_STEP_A = 0.1      # largest atomic displacement of the summed step off the saddle (Å) — breaks a planar start's symmetry
+# An escape converges on geomeTRIC's TIGHT gradients with its DEFAULT displacement criteria: the reduced flavin's well is
+# ~1 meV deep along N5–H (a rigid cut of the saddle's 255i mode, 2026-10-16: −1.05 meV at 0.1 Å, +10.6 at 0.2 Å), where
+# the default gmax 4.5e-4 Ha/bohr is met within a step of the saddle; TIGHT's own dmax 6e-5 Å would hold three methyl
+# rotors to a trust radius of 4e-6 Å (geomeTRIC tmin = 0.1·drms) at the gradient noise floor. The escape's SCF runs at
+# conv_tol 1e-10, so the TIGHT grms 1e-5 sits above the gradient error, which falls with conv_tol (lib/dft_utils.dft_optimize).
+ESCAPE_CONV = {"convergence_set": "GAU_TIGHT", "convergence_drms": 1.2e-3, "convergence_dmax": 1.8e-3}
+ESCAPE_CONV_TOL = 1e-10
 
 
 def _module(fname: str):
@@ -150,7 +167,21 @@ def thermochemistry(atoms, protocol: dict, tag: str, runs: Path) -> dict:
             "imaginary_cm": imag, "real_cm": [round(float(x), 2) for x in real],
             "n_imag_tolerated": sum(v <= IMAG_TOL_CM for v in imag), "n_imag_beyond_tolerance": sum(v > IMAG_TOL_CM for v in imag),
             "n_modes_below_100cm": int(np.sum(real < 100.0)), "hessian_wall_s": round(time.time() - t0, 1),
-            "hessian_file": str(runs / f"hessian_{tag}.npy")}
+            "hessian_file": str(runs / f"hessian_{tag}.npy"),
+            "_escape_modes": [np.asarray(freq["norm_mode"][i]) for i, v in enumerate(nu) if abs(v.imag) > IMAG_TOL_CM]}
+
+
+def escape_geometry(atoms, modes) -> list:
+    """A stationary point with a mode beyond IMAG_TOL_CM is a saddle; step off it along the sum of every such mode (each
+    normalised to a unit largest atomic displacement), the SUM scaled so its largest atomic displacement is ESCAPE_STEP_A —
+    scaled one by one, two modes sharing an atom move it further (0.134 Å on the run-1 saddle). Measured 2026-10-16: the
+    MMFF94s start of 1,5-dihydrolumiflavin is exactly planar (heavy atoms 0.000 Å out of plane), a planar start has no
+    out-of-plane gradient, and the optimiser converged to the planar saddle of the butterfly — 255i cm⁻¹ on N5–H out of
+    plane, 66i on the N10 methyl rotor. The sign of each mode is arbitrary: the two butterfly folds are mirror images."""
+    xyz = np.array([p for _, p in atoms], dtype=float)
+    step = sum(v / np.linalg.norm(v, axis=1).max() for v in modes)
+    xyz = xyz + ESCAPE_STEP_A * step / np.linalg.norm(step, axis=1).max()
+    return [(s, xyz[i]) for i, (s, _) in enumerate(atoms)]
 
 
 def potential(g_red_ha: float, g_ox_ha: float, s32) -> dict:
@@ -182,7 +213,12 @@ def main(argv) -> int:
     record = {"method": f"{tier}; geomeTRIC via lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8); analytic C-PCM "
                         "Hessian (no grid response); RRHO thermochemistry at 298.15 K, 1 atm",
               "rehearsal": bool(rehearse), "pyscf": pyscf.__version__, "protocol": protocol,
-              "imag_tolerance_cm": IMAG_TOL_CM, "red_tautomer": geo["red_tautomer"], "species": {}}
+              "imag_tolerance_cm": IMAG_TOL_CM,
+              "saddle_escape": {"max_attempts": SADDLE_ESCAPES, "step_A": ESCAPE_STEP_A, "conv_params": ESCAPE_CONV,
+                                "conv_tol": ESCAPE_CONV_TOL,
+                                "note": "attempt 0 converges on geomeTRIC's default (GAU) set at the protocol's conv_tol; "
+                                        "an escape on these criteria"},
+              "red_tautomer": geo["red_tautomer"], "species": {}}
     partial = Path(f"{out_cache}.partial.json")
 
     def dump(path: Path) -> None:
@@ -201,21 +237,42 @@ def main(argv) -> int:
         dump(partial)
 
         for tag in ("ox", "red"):
-            banner(f"(i) relax {tag}")
-            ck = runs / f"opt_{tag}.checkpoint.xyz"
-            relaxed, info = dft_optimize(geo[tag]["atoms"], 0, 0, label=f"lumiflavin_{tag}",
-                                         on_step=lambda g, tr, ck=ck: _write_xyz(g, ck, f"lowest-energy step of {len(tr)}"),
-                                         **protocol)
-            traj = info.pop("trajectory", [])
-            info["final_step"] = traj[-1] if traj else None
-            record["species"][tag]["geom_opt"] = info
-            if not info["converged"]:
-                record["species"][tag]["restart_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
-                dump(Path(f"{out_cache}.unconverged.json"))
-                raise SystemExit(f"{tag}: optimisation not converged ({info['returned']}) — no cache written")
-            same_tautomer(geo[tag]["atoms"], relaxed)
-            banner(f"(ii)/(iii) Hessian {tag}")
-            th = thermochemistry(relaxed, protocol, tag, runs)
+            start = geo[tag]["atoms"]
+            for attempt in range(SADDLE_ESCAPES + 1):
+                suffix = f"_escape{attempt}" if attempt else ""
+                banner(f"(i) relax {tag}" + (f" — saddle escape {attempt}" if attempt else ""))
+                ck = runs / f"opt_{tag}{suffix}.checkpoint.xyz"
+                relaxed, info = dft_optimize(start, 0, 0, label=f"lumiflavin_{tag}{suffix}",
+                                             conv_params=ESCAPE_CONV if attempt else None,
+                                             on_step=lambda g, tr, ck=ck: _write_xyz(g, ck, f"lowest-energy step of {len(tr)}"),
+                                             **({**protocol, "conv_tol": ESCAPE_CONV_TOL} if attempt else protocol))
+                traj = info.pop("trajectory", [])
+                info["final_step"] = traj[-1] if traj else None
+                record["species"][tag]["geom_opt"] = info
+                if not info["converged"]:
+                    record["species"][tag]["restart_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
+                    dump(Path(f"{out_cache}.unconverged.json"))
+                    raise SystemExit(f"{tag}: optimisation not converged ({info['returned']}) — no cache written")
+                try:
+                    same_tautomer(geo[tag]["atoms"], relaxed)
+                except SystemExit:
+                    record["species"][tag]["rejected_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
+                    dump(Path(f"{out_cache}.unconverged.json"))
+                    raise
+                banner(f"(ii)/(iii) Hessian {tag}" + (f" — saddle escape {attempt}" if attempt else ""))
+                th = thermochemistry(relaxed, protocol, tag, runs)
+                modes = th.pop("_escape_modes")
+                if not modes or attempt == SADDLE_ESCAPES:
+                    break
+                saddle_hess = runs / f"hessian_{tag}_saddle{attempt}.npy"
+                Path(th["hessian_file"]).replace(saddle_hess)
+                record["species"][tag].setdefault("saddles", []).append(
+                    {**{k: th[k] for k in ("E_Ha", "ZPE_Ha", "G_tot_Ha", "imaginary_cm", "real_cm")}, "geom_opt": info,
+                     "hessian_file": str(saddle_hess), "geometry": [(s, [float(x) for x in p]) for s, p in relaxed]})
+                dump(partial)
+                print(f"  {tag}: saddle (imaginary {[round(v, 1) for v in th['imaginary_cm']]} cm⁻¹) — stepping "
+                      f"{ESCAPE_STEP_A} Å along each mode beyond {IMAG_TOL_CM} cm⁻¹ and re-optimising", flush=True)
+                start = escape_geometry(relaxed, modes)
             record["species"][tag].update(th)
             record["species"][tag]["relaxed_geometry"] = [(s, [float(x) for x in p]) for s, p in relaxed]
             dump(partial)
@@ -229,6 +286,15 @@ def main(argv) -> int:
     if any(beyond.values()):
         dump(Path(f"{out_cache}.unconverged.json"))
         raise SystemExit(f"imaginary mode(s) beyond {IMAG_TOL_CM} cm⁻¹ — a saddle, not a minimum ({beyond}); no cache written")
+    # the electronic height of each saddle over the minimum reached from it — for the reduced flavin, the butterfly's
+    # inversion barrier at this tier, which every flavin geometry optimised from the planar MMFF start carries as excess
+    heights = {t: [(s["E_Ha"] - record["species"][t]["E_Ha"]) * HARTREE_TO_EV * 1000 for s in record["species"][t]["saddles"]]
+               for t in ("ox", "red") if record["species"][t].get("saddles")}
+    record["saddle_above_minimum_meV"] = {t: [round(h, 2) for h in hs] for t, hs in heights.items()}
+    if any(h <= 0 for hs in heights.values() for h in hs):
+        dump(Path(f"{out_cache}.unconverged.json"))
+        raise SystemExit(f"a minimum reached by a saddle escape lies at or above its saddle ({record['saddle_above_minimum_meV']}) "
+                         "— the step did not descend from it; no cache written")
     for tag in ("ox", "red"):
         _write_xyz([(s, np.array(p)) for s, p in record["species"][tag]["relaxed_geometry"]], out_lig / f"lumiflavin_{tag}_opt.xyz",
                    f"lumiflavin {tag} — {tier} relaxed (32b)")
@@ -249,7 +315,12 @@ def main(argv) -> int:
         f"ZPE, {steps['relaxed_rrho_free_energy']['pH_7.0']:+.1f} with the RRHO free energy — against {meas:+.0f} mV measured "
         f"for the free flavin ({record['vs_measured_free_flavin_pH7_mV']['relaxed_plus_zpe']:+.1f} mV with the ZPE). Modes below "
         f"100 cm⁻¹ / tolerated imaginary (excluded by PySCF): ox {soft['ox'][0]}/{soft['ox'][1]}, red {soft['red'][0]}/"
-        f"{soft['red'][1]} — the RRHO reading leans on them, the ZPE one barely. The Os side carries no thermochemistry (CANNOT 1).")
+        f"{soft['red'][1]} — the RRHO reading leans on them, the ZPE one barely. The Os side carries no thermochemistry (CANNOT 1)."
+        + "".join(f" {t}: the optimisation met {len(hs)} saddle(s) on the way "
+                  f"({'; '.join(str([round(v) for v in s['imaginary_cm']]) for s in record['species'][t]['saddles'])} cm⁻¹ "
+                  f"imaginary), lying {', '.join(f'{h:.2f}' for h in hs)} meV above the minimum it reached by stepping off "
+                  f"(attempt 0 on geomeTRIC's default criteria, escapes on TIGHT gradients)."
+                  for t, hs in record["saddle_above_minimum_meV"].items()))
     dump(out_cache)
     for stale in (partial, Path(f"{out_cache}.unconverged.json")):
         stale.unlink(missing_ok=True)

@@ -147,6 +147,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 15. A model of how a load TRAVELS between two parts is a list of paths before it is a number — inventory every coupling canon already defines between the two ends, and every load that does not depend on the one you set out to price, before computing any of them
 16. A reduced-cofactor SMILES is a TAUTOMER claim, and the formula cannot check it — before a cascade runs on it, verify WHERE the hydrogens sit against the species the text names
 17. A coupling taken as half the difference of two SCF solutions is a coupling only if the two states are CHARGE-LOCALISED and their difference clears the SCF tolerance — both halves fail silently, and the rate they feed is squared in the first and meaningless in the second
+18. A converged GEOMETRY certifies a STATIONARY POINT, not a minimum — and a symmetric start has no gradient out of its symmetry plane, so it converges to the symmetric stationary point, which only a Hessian classifies
 
 <!-- /INSILICO-RULES-INDEX -->
 

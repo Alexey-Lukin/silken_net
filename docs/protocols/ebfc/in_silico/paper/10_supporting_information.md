@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 308 · 18,103,687 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 308 · 18,110,209 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -79,7 +79,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
 | `tools/in_silico/scripts/31b_cathode_det_rct.py` | `fd3424f32c82d3a68c76061baf619de8e59007978f1239de09cfc18142769bb7` | 31b — cathode DET charge-transfer resistance band (③, INDICATIVE). |
 | `tools/in_silico/scripts/32_pcet_redox_potential.py` | `4e5830f8ccd490dcd13eb6d1abcb08b358d8d9503fb812c31655bae8633f158e` | L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference. |
-| `tools/in_silico/scripts/32b_pcet_redox_thermo.py` | `f13d8041a620a8e1d72e10470104d82d72190e743ede04709357f2996b4c1b90` | L3 FAD/FADH₂ PCET potential with B3LYP/6-31G(d)+C-PCM relaxed geometries and harmonic thermochemistry (analytic C-PCM Hessian): E° read at one knob at a time — geometry, then ZPE, then RRHO thermal free energy |
+| `tools/in_silico/scripts/32b_pcet_redox_thermo.py` | `f8eb38546d9c130cc1b4c6f4fb657bc12150aaa74a5685153a9e07807ae0dddc` | L3 FAD/FADH₂ PCET potential with B3LYP/6-31G(d)+C-PCM relaxed geometries and harmonic thermochemistry (analytic C-PCM Hessian): E° read at one knob at a time — geometry, then ZPE, then RRHO thermal free energy |
 | `tools/in_silico/scripts/33_pcet_cascade_semiquinone.py` | `909d4224011e454abb9eb975fa672ebaac213cbf0496853405e331ddbd7e6a27` | L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•). |
 | `tools/in_silico/scripts/34_dft_microsolvation.py` | `39013ff98d3cc74a006066aacda5839e38927e4fa1f72ebecb38005457b6f025` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |
