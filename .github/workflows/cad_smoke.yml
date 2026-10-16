@@ -100,7 +100,11 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.cad == 'true' }}
     name: render
-    runs-on: macos-14
+    # macos-15 (arm64): образ macos-14 GitHub знімає до 2026-11-02. Обрано 15, а не
+    # `macos-latest` (= 26): ця нога існує, щоб ловити розбіжність збірки PicoGK з
+    # дев-машиною засновника, а та — macOS 15; і явна версія замість плаваючого лейбла,
+    # як скрізь у репо. ⏳ Наступний перегляд — депрекація macos-15 або апгрейд дев-машини.
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - name: Checkout (with LEAP submodules)

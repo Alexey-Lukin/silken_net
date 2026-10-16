@@ -130,7 +130,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 - **`logic` (ubuntu)** — `dotnet build` + the full xUnit suite. The suite is PicoGK-runtime-free
   (CEM parse, gyroid/mate SDF math, connectivity flood-fill — no `Library.Go`), so it runs on a
   cheap fast Linux runner as the **HARD** regression gate.
-- **`render` (macos-14)** — `dotnet build` (hard, both OSes) + `verify` metrics (best-effort:
+- **`render` (macos-15)** — `dotnet build` (hard, both OSes) + `verify` metrics (best-effort:
   `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
   CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
 
