@@ -37,13 +37,13 @@ problem. The contribution is therefore **mechanistic and methodological — not 
 experimentally known device.
 
 Four results stand on their own: (1) a thermodynamic proton reference reproduces the proton-coupled
-FAD redox potential to within 62 mV of experiment; (2) a Hammett structure–activity relationship for
+FAD redox potential to within 65 mV of experiment; (2) a Hammett structure–activity relationship for
 the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈15 % shallower at ωB97X/def2-TZVP
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction and
 rationalises the empirical potential optimum; (3) a two-state diabatised coupling with first-principles
 reorganisation energies shows the bimetallic-ZIF cathode direct electron transfer to be *rate-limiting* at the
 computed Co reorganisation energy and to straddle enzymatic turnover only at an assumed literature value — a verdict
-conditional on λ(Co) — with an explicit low-λ mitigation path; and (4) the apparently
+conditional on λ(Co) — with an explicit low-λ mitigation path; and (4) [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] the apparently
 uphill anode→mediator cascade is shown — by decomposition into a chloro↔bis-imidazole differential-solvation
 bracket and a 4,4′-dimethyl substituent term, benchmarked against the known group-8 ~1 V PCM error — to be a
 **quantified limitation of continuum solvation on charged transition-metal couples, not a failure of

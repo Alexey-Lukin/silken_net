@@ -148,7 +148,7 @@ To probe the implicit-solvation limit on the charge-changing octahedral couples,
 first/second-shell waters were added around the redox centre and the chloride ligand and the ΔSCF
 redox energy re-evaluated as a function of shell size,<sup>17,54</sup> benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
 (the ~1 V error reported for [Ru(H₂O)₆]²⁺ with PCM-type models<sup>19</sup>). The residual cascade gap was decomposed into a
-chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term.
+chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term. [finalise — revision step 3, 00_07 HW.5.IS: rebuilt like-for-like, and the cascade ΔSCF half-reaction (FADH₂ → FADH₂•⁺ + e⁻) named here.]
 
 ## 2.7 Reproducibility
 
@@ -165,7 +165,7 @@ rather than assumed: re-running the flavin single points (script 20) and the der
 under the lock (PySCF 2.13.1, geomeTRIC 1.1.1, Python 3.12, osx-arm64) reproduced the committed caches
 to within 4 × 10⁻¹⁰ Ha in total electronic energy and 10⁻¹⁰ eV in orbital energies, with every reported (rounded) quantity
 identical; the field-by-field record is committed beside the caches
-(`cache/reproduction/lock_rerun_2026-09-30.json`). The two heavier caches re-run under the lock
+(`cache/reproduction/lock_rerun_2026-10-16.json`). The two heavier caches re-run under the lock
 (`cache/reproduction/lock_rerun_2026-10-01.json`) behave differently from each other: the gas-phase FO-DFT Cu–Co
 coupling (script 24b) reproduces every reported field exactly at printed precision, whereas the B3LYP osmium
 couple (script 21f), converged on the same geometry in both environments (identical RDKit version), differs by
@@ -192,9 +192,9 @@ and by the device and closed-shell measurements above, not measured.
 
 What moves is the third decimal of ΔE_red and the second decimal of the Os(III) LUMO and of the orbital offset
 built on it: on the device couple (identical to the Me row of Table 4), ΔE_red −4.381 eV, LUMO −4.086 eV and
-offset −1.0514 eV in the recorded environment read −4.384, −4.096 and −1.0411 eV under the lock, so the Koopmans
-offset of §3.5 and Fig 3 becomes −1.04 eV. The shift is far below the ~1 eV continuum-solvation limit that the
-osmium results are themselves reported against, so it changes no conclusion drawn here, and the points of each
+offset +0.0676 eV in the recorded environment read −4.384, −4.096 and +0.0779 eV under the lock, so the Koopmans
+offset of §3.5 and Fig 3 becomes +0.08 eV. The shift is far below the ~1 eV continuum-solvation limit that the
+osmium results are themselves reported against [finalise — revision step 3, 00_07 HW.5.IS: that scale of the osmium results is re-read like-for-like, and the Koopmans offset on Os(III)'s own minimum (−0.003 eV) lies inside this shift], so it changes no conclusion drawn here, and the points of each
 series share one cavity convention. The lock is, moreover, not one environment across platforms: the reproductions
 above ran on osx-arm64, whereas on linux-64 the same lock resolves RDKit 2025.03.6 against the 2025.09.5 of the
 recorded environment and of the osx-arm64 lock, and under that version the geometry builder places the CF₃ member of

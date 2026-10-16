@@ -214,6 +214,9 @@ legend line stays in each, as the criterion allows.
   (the tuple stays, so a sourced reading can return as a bracket), Fig 3 (`60`), §3.2 · §3.6 · the Fig 3
   caption · abstract · introduction · conclusion · cover letter, and every canon mirror (SUMMARY · L3 ·
   PIPELINE_STATUS · `00_02` · the outline).
+  ⊕ **2026-10-16 — the 1,5-dihydro recompute (`00_07` HW.5.IS): `32` now gives −155 mV, 65 mV off −220 mV.** The
+  verdict above stands as written (−220 the only reading, judged under 100 mV); only its number moved, in every
+  place it lists. The text of this entry above is NOT rewritten.
 - §3.2 — the literature anode λ (~0.7–0.8 eV) "adopted in the rate calculations". ✅ 2026-10-01, route (c):
   the claim had no instrument — `marcus_rate` is called only by the cathode script `25`, the L4 kinetics
   (`30`/`30b`/`31`/`40`) carry no λ, and the 0.7 in `29b` (`LIT_LAMBDA_TOTAL_EV`) is a comparison constant

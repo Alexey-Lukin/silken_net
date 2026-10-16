@@ -30,6 +30,8 @@ something already known. Frame everything around the *insight*, never around "we
 
 ## 2. Our contribution framing (the most important decision)
 
+⚠️ **Under revision (revision step 3, `00_07` HW.5.IS):** on the 1,5-dihydro FADH₂ (2026-10-15) the raw B3LYP Koopmans offset (programmatic geometry) and the adiabatic ΔSCF come out downhill — one-electron readings, not like-for-like —, so «uphill in every method» and «the ~1 eV cascade gap» below no longer hold by the letter; the framing is rewritten like-for-like in step 3 (the ~1 V group-8 benchmark error is unaffected).
+
 Our honest finding is that the raw DFT cascade is uphill in every method, the cathode DET margin is
 conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one — and the gap
 is a quantified limit of implicit solvation. A first-timer's instinct is to

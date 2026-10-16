@@ -93,13 +93,14 @@ def fig3() -> None:
     fadh2_homo = flav["red"]["HOMO_eV"]  # cache-sourced (drift-proof), not a hardcoded mirror
     os3_lumo = osc["os3_plus"]["LUMO_eV"]
     raw_delta = fadh2_homo - os3_lumo
-    _close(fadh2_homo, -5.137, 0.01, "FADH₂ HOMO")
+    _close(fadh2_homo, -4.018, 0.01, "FADH₂ HOMO")
     _close(os3_lumo, -4.086, 0.01, "Os(III) LUMO (dimethyl)")
-    _close(raw_delta, -1.051, 0.01, "raw Δε (dimethyl)")
+    _close(raw_delta, 0.068, 0.01, "raw Δε (dimethyl)")
     e_pcet_ph7 = pcet["E_vs_SHE_mV"]["pH_7.0"]
-    _close(e_pcet_ph7, -158.4, 1.0, "PCET E° pH7")
+    _close(e_pcet_ph7, -155.4, 1.0, "PCET E° pH7")
     (d_exp,) = pcet["delta_vs_exp_pH7_mV"]  # vs −220 mV (ref 25), the only reading carried — 00_07 HW.5.IS
-    _close(d_exp, 61.6, 1.0, "PCET Δ vs exp −220")
+    _close(d_exp, 64.6, 1.0, "PCET Δ vs exp −220")
+    raw_dir = "downhill" if raw_delta > 0 else "uphill"   # Δε = donor − acceptor; > 0 = the electron goes down
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
 
@@ -110,27 +111,28 @@ def fig3() -> None:
         axa.text(x, e + 0.05, f"{e:.3f} eV", ha="center", va="bottom", fontsize=8, color=col)
     axa.text(0, fadh2_homo - 0.07, "FADH₂\n(donor HOMO)", ha="center", va="top", fontsize=7.8)
     axa.text(1, os3_lumo - 0.07, "Os(III)\n(acceptor LUMO)", ha="center", va="top", fontsize=7.8)
-    # electron-transfer arrow (uphill in raw frontier orbitals)
+    # electron-transfer arrow (its direction is the sign of raw Δε)
     axa.annotate("", xy=(1 - bw, os3_lumo), xytext=(bw, fadh2_homo),
                  arrowprops={"arrowstyle": "-|>", "color": C["purple"], "linewidth": 2.2})
     axa.text(0.5, (fadh2_homo + os3_lumo) / 2 + 0.04, "e⁻", ha="center", va="bottom",
              color=C["purple"], fontsize=12, fontweight="bold")
-    axa.text(0.5, os3_lumo + 0.13, f"raw Δε = {raw_delta:+.3f} eV (uphill)", ha="center",
+    lo, hi = min(fadh2_homo, os3_lumo), max(fadh2_homo, os3_lumo)   # limits follow the levels, never typed
+    axa.text(0.5, hi + 0.17, f"raw Δε = {raw_delta:+.3f} eV ({raw_dir}, programmatic geometry)", ha="center",
              va="bottom", fontsize=7.3, color=C["purple"])
 
     axa.text(0.02, 0.97,
              "Exp-anchored: +574 mV (−0.574 eV) downhill\n"
              "[E°(Os)+309 − E°(FAD-GDH)−265 mV vs SHE]\n"
-             "raw −1.05 eV = PCM solvation + substituent → Fig 5",
+             f"raw Δε {raw_delta:+.2f} eV (B3LYP Koopmans, one-electron — not like-for-like with it; → §3.5)",
              transform=axa.transAxes, fontsize=6.4, va="top", ha="left",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
     axa.text(0.98, 0.03,
              f"PCET E°(FAD/FADH₂) = {e_pcet_ph7:.0f} mV vs SHE @pH7\n"
-             f"(exp −220; Δ{d_exp:.0f} mV → flavin clean in implicit DFT)",
+             f"(exp −220; Δ{d_exp:.0f} mV — the proton-coupled flavin couple)",
              transform=axa.transAxes, fontsize=6.4, va="bottom", ha="right",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eefaf2", "ec": C["green"], "alpha": 0.92})
     axa.set_xlim(-0.55, 1.55)
-    axa.set_ylim(-5.75, -3.55)
+    axa.set_ylim(lo - 0.55, hi + 0.6)
     axa.set_xticks([])
     axa.set_ylabel("Orbital energy (eV)")
     axa.set_title("(a) Anode → mediator electron-transfer cascade")
@@ -144,9 +146,9 @@ def fig3() -> None:
     dered = np.array([c["dE_red_eV"] for c in cx])
     casc = np.array([c["cascade_delta_eV"] for c in cx])
     names = [c["name"] for c in cx]
-    _close(casc[names.index("bpy")], -0.9093, 0.005, "① cascade(H)")
-    _close(casc[names.index("so2cf3")], -0.2269, 0.005, "① cascade(SO₂CF₃)")
-    _close(casc[names.index("nme2")], -1.5013, 0.005, "① cascade(NMe₂)")
+    _close(casc[names.index("bpy")], 0.2097, 0.005, "① cascade(H)")
+    _close(casc[names.index("so2cf3")], 0.8921, 0.005, "① cascade(SO₂CF₃)")
+    _close(casc[names.index("nme2")], -0.3823, 0.005, "① cascade(NMe₂)")
 
     # Hammett LFER (classic monosubstituents OMe→NO₂, the linear regime): slope/intercept/r²
     # are COMPUTED in 21e over REF_LFER_SET and read from os_mediator_series.json — single
@@ -172,7 +174,7 @@ def fig3() -> None:
         "nme2": ("donor saturation", (2, 8)),
         "bpy": ("H (ref)", (5, -11)),
         "cf3": ("CF₃ inert", (6, -14)),
-        "so2cf3": ("SO₂CF₃ inert", (-6, -44)),   # below the CF₃ label, clear of the squares; not «optimum» — its order vs NO₂ is open (⚖️ 2026-10-15)
+        "so2cf3": ("SO₂CF₃ inert", (4, -13)),   # just under its own square; not «optimum» — its order vs NO₂ is open (⚖️ 2026-10-15)
         "no2": ("NO₂ unstable", (-4, 9)),
     }
     for n, (txt, off) in ann.items():
@@ -186,7 +188,7 @@ def fig3() -> None:
                      fontsize=6.3, color=C["blue"])
 
     axb.axvspan(-0.9, -0.55, color=C["yellow"], alpha=0.18, zorder=0)  # donor-saturation regime
-    axb.set_ylim(-5.5, 0.5)
+    axb.set_ylim(min(dered.min(), casc.min()) - 0.4, casc.max() + 0.5)   # every point on the axes
     axb.set_xlabel("Hammett σ$_{para}$ (4,4′-bpy substituent)")
     axb.set_ylabel("Energy (eV)")
     axb.set_title("(b) Mediator structure–activity (Hammett LFER)")
@@ -296,7 +298,7 @@ def fig5() -> None:
     n6 = grp8src["aquo_n6_innershell"]["dE_red_eV"]
     n18 = grp8src["aquo_n18_twoshell"]["dE_red_eV"]
     grp8 = n18 - n6
-    _close(k0, -1.054, 0.01, "② chloro k0 (dimethyl)")
+    _close(k0, 0.065, 0.01, "② chloro k0 (dimethyl)")
     _close(aqua_shift, 0.490, 0.02, "② aqua speciation shift (dimethyl)")
     _close(bisim_shift, 0.554, 0.02, "② bis-Im speciation shift (dimethyl)")
     _close(grp8, 0.982, 0.02, "② group-8 n6→n18")
@@ -316,7 +318,7 @@ def fig5() -> None:
     axa.set_xticks(kx)
     axa.set_xlabel("explicit H₂O on Cl⁻ ligand (k)")
     axa.set_ylabel("cascade Δ (eV)")
-    axa.set_title(f"(a) Explicit microsolvation\n3 H₂O close {closed:+.2f} eV (~22% of gap)")
+    axa.set_title(f"(a) Explicit microsolvation\n3 H₂O close {closed:+.2f} eV")
     axa.legend(loc="lower right", frameon=False)
 
     # ---- (b) speciation shift (B3LYP cascade-Δ vs ωB97X ΔE_red) + group-8 benchmark ----
@@ -341,6 +343,7 @@ def fig5() -> None:
     axb.set_xticks([*list(xs), gx])
     axb.set_xticklabels([*species, "group-8\nPCM error"])
     axb.set_ylabel("shift vs chloro / 2nd-shell shift (eV)")
+    # revision step 3, 00_07 HW.5.IS (self-review cluster 5): «group-8» rests on one Ru couple (ref 19) — retitle there
     axb.set_title("(b) Bracket functional-robust; aqua↔bis-Im order is not;\n[Os(H₂O)₆] recovers the ~1 V group-8 PCM error")
     axb.legend(loc="upper left", frameon=False)
     axb.set_ylim(0, 1.15)

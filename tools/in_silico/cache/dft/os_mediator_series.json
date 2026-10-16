@@ -51,7 +51,7 @@
       },
       "dE_red_eV": -3.9095910591877114,
       "converged": true,
-      "cascade_delta_eV": -1.5013
+      "cascade_delta_eV": -0.3823
     },
     {
       "name": "nh2",
@@ -102,7 +102,7 @@
       },
       "dE_red_eV": -3.9051624186588794,
       "converged": true,
-      "cascade_delta_eV": -1.4997
+      "cascade_delta_eV": -0.3807
     },
     {
       "name": "ome",
@@ -153,7 +153,7 @@
       },
       "dE_red_eV": -4.286242933783513,
       "converged": true,
-      "cascade_delta_eV": -1.1355
+      "cascade_delta_eV": -0.0165
     },
     {
       "name": "dmbpy",
@@ -204,7 +204,7 @@
       },
       "dE_red_eV": -4.380799366613249,
       "converged": true,
-      "cascade_delta_eV": -1.0514
+      "cascade_delta_eV": 0.0676
     },
     {
       "name": "bpy",
@@ -255,7 +255,7 @@
       },
       "dE_red_eV": -4.529655365611094,
       "converged": true,
-      "cascade_delta_eV": -0.9093
+      "cascade_delta_eV": 0.2097
     },
     {
       "name": "cl",
@@ -323,7 +323,7 @@
       },
       "dE_red_eV": -4.6972448602277455,
       "converged": true,
-      "cascade_delta_eV": -0.7516
+      "cascade_delta_eV": 0.3674
     },
     {
       "name": "dcbpy",
@@ -374,7 +374,7 @@
       },
       "dE_red_eV": -4.9363416186431115,
       "converged": true,
-      "cascade_delta_eV": -0.5424
+      "cascade_delta_eV": 0.5766
     },
     {
       "name": "no2",
@@ -425,7 +425,7 @@
       },
       "dE_red_eV": -5.261956952292413,
       "converged": true,
-      "cascade_delta_eV": -0.2319
+      "cascade_delta_eV": 0.8871
     },
     {
       "name": "cf3",
@@ -476,7 +476,7 @@
       },
       "dE_red_eV": -4.956825017560955,
       "converged": true,
-      "cascade_delta_eV": -0.5023
+      "cascade_delta_eV": 0.6167
     },
     {
       "name": "so2cf3",
@@ -527,7 +527,7 @@
       },
       "dE_red_eV": -5.2557696174359645,
       "converged": true,
-      "cascade_delta_eV": -0.2269
+      "cascade_delta_eV": 0.8921
     }
   ],
   "monotonic_with_sigma": false,

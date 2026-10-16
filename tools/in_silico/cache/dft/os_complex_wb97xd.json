@@ -31,6 +31,31 @@
     "LUMO_eV": -1.780542228878923,
     "gap_eV": 7.106087260052756
   },
+  "superseded_4a5_dihydro": {
+    "reason": "hand-added (commit 3dbd5bcdf), written by no script, read by nothing; computed on the 4a,5-dihydro tautomer the chain carried under the 1,5 label until 2026-10-15",
+    "fad_ox": {
+      "label": "FAD_ox lumiflavin (\u03c9B97X)",
+      "E_total_Ha": -872.2318464807634,
+      "converged": true,
+      "wall_seconds": 893.1585021018982
+    },
+    "fadh2_cation": {
+      "label": "FADH\u2082\u207a radical cation (\u03c9B97X)",
+      "charge": 1,
+      "spin": 1,
+      "E_total_Ha": -873.2417331466174,
+      "converged": true,
+      "wall_seconds": 1592.8956117630005
+    },
+    "delta_scf_correct": {
+      "IP_FADH2_eV": 5.391,
+      "EA_Os3_eV": 4.392,
+      "dG_eV": 0.998,
+      "direction": "UPHILL",
+      "discrepancy_from_exp_eV": 1.14,
+      "note": "Vertical \u0394SCF (same molecule, different charge). Discrepancy from vertical IP/EA + PCM solvation + no PCET. B3LYP corrected (-0.07 eV) remains best estimate."
+    }
+  },
   "fadh2_red": {
     "label": "FADH\u2082 lumiflavin (\u03c9B97X-D)",
     "charge": 0,
@@ -38,41 +63,30 @@
     "n_atoms": 33,
     "n_electrons": 136,
     "converged": true,
-    "wall_seconds": 470.0597050189972,
-    "E_total_Ha": -873.4398395731844,
-    "HOMO_Ha": -0.28165651455268464,
-    "LUMO_Ha": 0.01036913248249274,
-    "HOMO_eV": -7.664264206191842,
-    "LUMO_eV": 0.2821584690169303,
-    "gap_eV": 7.946422675208772
+    "wall_seconds": 504.6479139328003,
+    "E_total_Ha": -873.4419465516705,
+    "HOMO_Ha": -0.23777961758195543,
+    "LUMO_Ha": 0.04424387079786024,
+    "HOMO_eV": -6.470313015445908,
+    "LUMO_eV": 1.2039370572981642,
+    "gap_eV": 7.674250072744072
+  },
+  "fadh2_tautomer": {
+    "name": "1,5-dihydrolumiflavin",
+    "smiles": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3",
+    "H_on_ring_N": {
+      "N10": 0,
+      "N3": 1,
+      "N5": 1,
+      "N1": 1
+    },
+    "sp3_ring_carbons": []
   },
   "cascade": {
-    "donor_homo_eV": -7.664264206191842,
+    "donor_homo_eV": -6.470313015445908,
     "acceptor_lumo_eV": -1.780542228878923,
-    "delta_eV": -5.883721977312918,
+    "delta_eV": -4.689770786566985,
     "favorable": false,
     "verdict": "\u274c UPHILL"
-  },
-  "fad_ox": {
-    "label": "FAD_ox lumiflavin (\u03c9B97X)",
-    "E_total_Ha": -872.2318464807634,
-    "converged": true,
-    "wall_seconds": 893.1585021018982
-  },
-  "fadh2_cation": {
-    "label": "FADH\u2082\u207a radical cation (\u03c9B97X)",
-    "charge": 1,
-    "spin": 1,
-    "E_total_Ha": -873.2417331466174,
-    "converged": true,
-    "wall_seconds": 1592.8956117630005
-  },
-  "delta_scf_correct": {
-    "IP_FADH2_eV": 5.391,
-    "EA_Os3_eV": 4.392,
-    "dG_eV": 0.998,
-    "direction": "UPHILL",
-    "discrepancy_from_exp_eV": 1.14,
-    "note": "Vertical \u0394SCF (same molecule, different charge). Discrepancy from vertical IP/EA + PCM solvation + no PCET. B3LYP corrected (-0.07 eV) remains best estimate."
   }
 }

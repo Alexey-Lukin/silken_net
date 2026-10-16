@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple.
 
-WHY. The raw FADH₂→Os cascade is uphill in *every* implicit-solvent method
-(B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV) while the verified experimental
-driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
+WHY. On the 4a,5-dihydro donor the chain carried until 2026-10-15 the raw FADH₂→Os cascade came out
+uphill in every implicit-solvent method (B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV, plain bpy);
+on the 1,5-dihydro donor the B3LYP-Koopmans offset (programmatic geometry) and the adiabatic ΔSCF come out downhill (comparison.json ·
+delta_scf_corrections.json) — ⚠️ the reasoning below was written for the old numbers and is rewritten in revision step 3
+(00_07 HW.5.IS). The verified experimental driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
 Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
 GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to
-62 mV (free-flavin −220 mV), so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
+65 mV (free-flavin −220 mV), so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
 the charge-changing **Os(III)²⁺/Os(II)⁺** couple. This is the textbook failure of
 implicit (PCM) solvation for group-8 octahedral M(III/II): the ~1 V error is
 pinned on the *directionality of 2nd-shell H-bonds* that a continuum cannot model
@@ -299,13 +301,6 @@ def main(argv) -> int:
         stage_aqua(results, cache)
     if stage == "bisim":  # explicit-only (geometry-gated, see stage_bisim); not in "all"
         stage_bisim(results, cache)
-    summarize(results)
-    payload = {
-        "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; cluster-continuum micro-solvation",
-        "quantity": "ΔE_red(III→II) = E(Os II) − E(Os III), eV; cascadeΔ = HOMO(FADH₂ −5.137) − LUMO(OsIII)",
-        "limits": "vertical (no reorg relax); single shell not converged (n6 over / n18 under); LANL2DZ omits Os SOC",
-        "results": results,
-    }
     # merge with any cached records not recomputed this run (keep all stages)
     if OUT.exists():
         try:
@@ -315,6 +310,18 @@ def main(argv) -> int:
                     results.append(rec)
         except Exception:
             pass
+    # A reused or merged record carries the cascade of the donor HOMO it was written with — recompute every
+    # one from the current 20 cache, so a moved FADH₂ needs no SCF here (the 2026-10-15 1,5-dihydro recompute).
+    for r in results:
+        r["cascade_delta_eV"] = round(FADH2_HOMO_EV - r["os3"]["LUMO_eV"], 4)
+    summarize(results)
+    homo = f"{FADH2_HOMO_EV:.3f}".replace("-", "−")
+    payload = {
+        "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; cluster-continuum micro-solvation",
+        "quantity": f"ΔE_red(III→II) = E(Os II) − E(Os III), eV; cascadeΔ = HOMO(FADH₂ {homo}) − LUMO(OsIII)",
+        "limits": "vertical (no reorg relax); single shell not converged (n6 over / n18 under); LANL2DZ omits Os SOC",
+        "results": results,
+    }
     OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)} ({len(results)} records)")
     return 0

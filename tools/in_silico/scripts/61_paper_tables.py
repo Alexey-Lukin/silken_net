@@ -54,12 +54,12 @@ def build() -> str:
     dscf = _load("delta_scf_corrections.json")
     wb = _load("os_complex_wb97xd.json")           # plain — FADH₂ ωB97X HOMO (FAD unchanged)
     wb_dm = _load("os_complex_wb97xd_dmbpy.json")   # dimethyl Os (B1) — the real mediator
-    koop_dm = abs(wb["fadh2_red"]["HOMO_eV"] - wb_dm["os3_plus"]["LUMO_eV"])  # ωB97X Koopmans, dimethyl
+    koop_dm = wb_dm["os3_plus"]["LUMO_eV"] - wb["fadh2_red"]["HOMO_eV"]  # ωB97X Koopmans ΔG = −Δε, dimethyl
 
     # ── drift asserts vs SUMMARY canon ──
-    _close(dscf["dG_vertical_eV"], 1.395, 0.01, "T2 ΔSCF vertical (dimethyl)")
-    _close(dscf["dG_adiabatic_eV"], 1.0335, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
-    _close(koop_dm, 6.020, 0.01, "T2 Koopmans ωB97X (dimethyl)")
+    _close(dscf["dG_vertical_eV"], 0.095, 0.01, "T2 ΔSCF vertical (dimethyl)")
+    _close(dscf["dG_adiabatic_eV"], -0.0792, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
+    _close(koop_dm, 4.826, 0.01, "T2 Koopmans ωB97X (dimethyl)")
     _close(zif["pairs"][0]["t_ij_eV"], 0.00128, 1e-4, "T3 Cu-Co ΔSCF t_ij")
     _close(fodft["t_ij_eV"], 0.005462, 1e-4, "T3 Cu-Co FO-DFT t_ij")
     # 505a1fac4 (2026-09-21) split the single margin into a bracket, and 2026-09-24 added the λ(Cu)
@@ -71,8 +71,8 @@ def build() -> str:
     _close(ket["scenarios"]["computed λ (B3LYP)"]["margin_vs_turnover_at_dG0"], 0.00542, 0.0002,
            "T3 computed-λ margin (ΔG=0)")
     names = [c["name"] for c in series["complexes"]]
-    _close(series["complexes"][names.index("bpy")]["cascade_delta_eV"], -0.9093, 0.005, "T4 H cascade")
-    _close(series["complexes"][names.index("so2cf3")]["cascade_delta_eV"], -0.2269, 0.005, "T4 SO₂CF₃ cascade")
+    _close(series["complexes"][names.index("bpy")]["cascade_delta_eV"], 0.2097, 0.005, "T4 H cascade")
+    _close(series["complexes"][names.index("so2cf3")]["cascade_delta_eV"], 0.8921, 0.005, "T4 SO₂CF₃ cascade")
 
     md: list[str] = []
     md.append("# Tables — Стаття 1 (EBFC quantum chemistry)\n")
@@ -96,18 +96,26 @@ def build() -> str:
               "(the recorded environment — §2.7; the lock re-runs are separate records, SI S3).*\n")
 
     # ── Table 2 — cascade energetics, all methods ──
+    def direction(g: float) -> str:   # ΔG < 0 = downhill — read from the number, never typed beside it
+        return "downhill" if g < 0 else "uphill"
+
     koop = koop_dm
+    vert, adia = dscf["dG_vertical_eV"], dscf["dG_adiabatic_eV"]
     md.append("## Table 2. Anode→mediator cascade ΔG per electron, all methods\n")
     md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |")
     md.append("|---|---|---|---|")
-    md.append(f"| Koopmans ωB97X (orbital offset) | +{koop:.3f} | uphill | range-separation artefact — *never use* |")
-    md.append(f"| ΔSCF ωB97X (vertical) | +{dscf['dG_vertical_eV']:.3f} | uphill | +{dscf['dG_vertical_eV'] - EXP_VERIFIED_EV:.2f} |")
-    md.append(f"| **ΔSCF ωB97X (adiabatic)** | **+{dscf['dG_adiabatic_eV']:.3f}** | uphill | +{dscf['dG_adiabatic_eV'] - EXP_VERIFIED_EV:.2f} |")
-    md.append(f"| B3LYP Koopmans «corrected» | {B3LYP_CORRECTED_WITHDRAWN:+.2f} | — | **withdrawn** (tuned to the wrong −0.14) |")
-    md.append(f"| **Experiment (verified E°s)** | **{EXP_VERIFIED_EV:+.2f}** | **downhill** | reference |")
-    md.append("\n*The raw uphill ΔG is the implicit-solvation method limit (differential PCM solvation, "
-              "chloro↔bis-Im bracket + the 4,4′-dimethyl substituent, Fig 5 / ②); the verified +574 mV / "
-              "−0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*\n")
+    def sg(x: float, spec: str) -> str:   # the table's minus sign, not a hyphen
+        return f"{x:{spec}}".replace("-", "−")
+
+    md.append(f"| Koopmans ωB97X (orbital offset) | {sg(koop, '+.3f')} | {direction(koop)} | range-separation artefact — *never use* |")
+    md.append(f"| ΔSCF ωB97X (vertical) | {sg(vert, '+.3f')} | {direction(vert)} | {sg(vert - EXP_VERIFIED_EV, '+.2f')} |")
+    md.append(f"| **ΔSCF ωB97X (adiabatic)** | **{sg(adia, '+.3f')}** | {direction(adia)} | {sg(adia - EXP_VERIFIED_EV, '+.2f')} |")
+    md.append(f"| B3LYP Koopmans «corrected» | {sg(B3LYP_CORRECTED_WITHDRAWN, '+.2f')} | — | **withdrawn** (tuned to the wrong −0.14) |")
+    md.append(f"| **Experiment (verified E°s)** | **{sg(EXP_VERIFIED_EV, '+.2f')}** | **downhill** | reference |")
+    md.append("\n*FADH₂ = the 1,5-dihydro tautomer. [finalise — revision step 3, 00_07 HW.5.IS: these rows are one-electron "
+              "readings, not like-for-like with the verified value, so the difference column and the table are rebuilt "
+              "like-for-like in step 3.] The verified "
+              "+574 mV / −0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*\n")
 
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"
@@ -187,7 +195,7 @@ def build() -> str:
         n = c["name"]
         om = f"{omega[n]:+.3f}" if n in omega else "—"
         md.append(f"| {lbl.get(n, n)} | {c['sigma_para']:+.2f} | {c['dE_red_eV']:.3f} | "
-                  f"{c['os3']['LUMO_eV']:.3f} | {c['cascade_delta_eV']:.4f} | {note.get(n, '')} | {om} |")
+                  f"{c['os3']['LUMO_eV']:.3f} | {c['cascade_delta_eV']:+.4f} | {note.get(n, '')} | {om} |")
     lf_slope = series["lfer"]["slope_eV_per_sigma"]
     sub = ", ".join(lbl[n] for n in vs["common_fit_subset"])
     cs = vs["centre_decomposition"]["local_slope_eV_per_sigma"]
@@ -229,8 +237,8 @@ def build() -> str:
     undecided = "".join("; " + pair_clause(k, v) for k, v in open_pairs)
     if flipped:
         undecided += ("; relaxing both members reverses " + ", ".join("→".join(lbl[x] for x in f.split("-")) for f in flipped))
-    md.append(f"\n*Design rule: cascade Δ rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '.2f')} "
-              f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '.2f')} "
+    md.append(f"\n*Design rule: cascade Δ rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
+              f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: "

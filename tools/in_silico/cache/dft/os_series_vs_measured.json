@@ -819,19 +819,19 @@
       },
       "koopmans_cascade_delta_eV": {
         "ome": {
-          "programmatic": -1.1354641273210495,
-          "os3_on_os2_minimum": -1.1019012552189293,
-          "os3_on_own_minimum": -1.2777665568315277
+          "programmatic": -0.016458396365549355,
+          "os3_on_os2_minimum": 0.017104475736570812,
+          "os3_on_own_minimum": -0.15876082587602758
         },
         "dmbpy": {
-          "programmatic": -1.0514490468717659,
-          "os3_on_os2_minimum": -0.9533072868839563,
-          "os3_on_own_minimum": -1.1215765524563004
+          "programmatic": 0.06755668408373428,
+          "os3_on_os2_minimum": 0.16569844407154388,
+          "os3_on_own_minimum": -0.0025708215008002355
         },
         "bpy": {
-          "programmatic": -0.909290117432831,
-          "os3_on_os2_minimum": -0.8196257224142078,
-          "os3_on_own_minimum": -1.0003363604310653
+          "programmatic": 0.2097156135226692,
+          "os3_on_os2_minimum": 0.2993800085412923,
+          "os3_on_own_minimum": 0.11866937052443483
         }
       },
       "koopmans_cascade_delta_move_eV": {
@@ -1031,29 +1031,29 @@
       },
       "koopmans_cascade_delta_eV": {
         "ome": {
-          "programmatic": -1.1354641273210495,
-          "os3_on_os2_minimum": -1.1019012552189293,
-          "os3_on_own_minimum": -1.2777665568315277
+          "programmatic": -0.016458396365549355,
+          "os3_on_os2_minimum": 0.017104475736570812,
+          "os3_on_own_minimum": -0.15876082587602758
         },
         "dmbpy": {
-          "programmatic": -1.0514490468717659,
-          "os3_on_os2_minimum": -0.9533072868839563,
-          "os3_on_own_minimum": -1.1215765524563004
+          "programmatic": 0.06755668408373428,
+          "os3_on_os2_minimum": 0.16569844407154388,
+          "os3_on_own_minimum": -0.0025708215008002355
         },
         "bpy": {
-          "programmatic": -0.909290117432831,
-          "os3_on_os2_minimum": -0.8196257224142078,
-          "os3_on_own_minimum": -1.0003363604310653
+          "programmatic": 0.2097156135226692,
+          "os3_on_os2_minimum": 0.2993800085412923,
+          "os3_on_own_minimum": 0.11866937052443483
         },
         "cl": {
-          "programmatic": -0.7515871299593337,
-          "os3_on_os2_minimum": -0.6332186501713783,
-          "os3_on_own_minimum": -0.8180333758534664
+          "programmatic": 0.3674186009961664,
+          "os3_on_os2_minimum": 0.4857870807841218,
+          "os3_on_own_minimum": 0.3009723551020338
         },
         "no2": {
-          "programmatic": -0.23185890488284855,
-          "os3_on_os2_minimum": -0.130139665986035,
-          "os3_on_own_minimum": -0.4295278136500382
+          "programmatic": 0.8871468260726516,
+          "os3_on_os2_minimum": 0.9888660649694652,
+          "os3_on_own_minimum": 0.6894779173054619
         }
       },
       "koopmans_own_move_eV": {

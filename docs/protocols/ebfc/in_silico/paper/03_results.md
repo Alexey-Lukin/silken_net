@@ -24,21 +24,21 @@ substitutions) preserves this geometry.
 ## 3.2 Anode PCET: the FAD redox potential
 
 Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit, and in
-implicit solvent grossly over-stabilised, hydronium ion) recovers **E°(FAD/FADH₂) = −158 mV vs NHE** —
-62 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup> (Fig 3a). This is the paper's positive result on the anode side: a
+implicit solvent grossly over-stabilised, hydronium ion) recovers **E°(FAD/FADH₂) = −155 mV vs NHE** —
+65 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup> (Fig 3a). This is the paper's positive result on the anode side: a
 proton-coupled redox potential of a biological cofactor, reproduced by implicit-solvation DFT inside the
 ±0.15 V uncertainty of the absolute-SHE convention once the proton is handled correctly. It also isolates the cascade discrepancy discussed in §3.5 to the
-mediator side of the chain, not the flavin.
+mediator side of the chain, not the flavin. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
 
 The inner-sphere reorganisation energy of the first anode oxidation was likewise computed, not assumed.
 The naïve FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in continuum solvent (it
 fragments on relaxation); the physically correct, pH-7 first electron transfer is the deprotonated
-**FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.39 eV**.
-Adding a Marcus two-sphere outer-sphere term<sup>13</sup> gives a total of 0.76–0.86 eV for a
+**FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.46 eV**.
+Adding a Marcus two-sphere outer-sphere term<sup>13</sup> gives a total of 0.84–0.93 eV for a
 charge-delocalised, buried cofactor; this continuum estimate is, however,
-radius- and dielectric-dominated, so we treat it as indicative only. It overlaps the 0.7–0.8 eV range measured for
+radius- and dielectric-dominated, so we treat it as indicative only. It lies 0.04–0.13 eV above the 0.7–0.8 eV range measured for
 electron transfer at other protein redox centres (0.7 eV for azurin Cu(II/I), 0.8 eV for the cytochrome
-c/b₅ heme pair<sup>48</sup>), which shows that it is physically reasonable; no rate reported in this work
+c/b₅ heme pair<sup>48</sup>) — the same order, which is all this estimate can show; no rate reported in this work
 depends on it.
 
 ## 3.3 A structure–activity rule for the osmium mediator
@@ -253,18 +253,19 @@ experiment is the decisive empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 
-The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
-is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator — −1.04 eV under the
-conda-lock, §2.7 — the donor level *below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.15 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
+[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
+
+On the 1,5-dihydro donor the raw one-electron readings of the cascade FADH₂→Os have both signs: the B3LYP Koopmans
+HOMO−LUMO offset is +0.07 eV on the real 4,4′-dimethyl-bpy mediator (+0.08 eV under the conda-lock, §2.7 — the donor
+level just above the acceptor; Table 4, Me row), the adiabatic ΔSCF free energy −0.08 eV (Table 2; −0.23 eV for the plain-bpy parent, the 0.15 eV difference being the substituent term ①) and the vertical ΔSCF +0.10 eV (Table 2) — whereas the **experimentally verified** driving force
 is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
-potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH<sup>8</sup>). (The orbital offset and the free
-energy are distinct quantities, so their signs are not directly comparable; both nonetheless point the "wrong" way
-against experiment.) Both stand on the programmatic osmium geometry (§2.3): relaxing both oxidation states of the
+potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH<sup>8</sup>). None of these one-electron readings is like-for-like with that
+two-electron, two-proton driving force (the orbital offset and the free energy are distinct quantities as well). They stand on the programmatic osmium geometry (§2.3): relaxing both oxidation states of the
 dimethyl mediator at B3LYP (§3.3) moves its ΔE_red(III→II) by −0.026 eV (by coincidence the size of closing its
 chelates onto the target distances, §2.3) and its Koopmans offset by −0.070 eV (+0.098 eV with Os(III) kept vertical on
-the relaxed Os(II)), so at B3LYP neither sign turns (moves under 0.1 eV against offsets of about 1 eV); whether this
-holds for the ωB97X/def2-TZVP osmium side of the ΔSCF cascade was not computed. The discrepancy between the ΔSCF free energy and the verified value is the paper's
-methodological core, and we decompose rather than excuse it.
+the relaxed Os(II)), so at B3LYP the Koopmans offset falls to ≈ 0 on Os(III)'s own minimum (−0.003 eV, inside the 10 meV the conda-lock moves
+this LUMO, §2.7); whether the
+ωB97X/def2-TZVP osmium side of the ΔSCF cascade moves alike was not computed.
 
 The real mediator is the **chloro** complex [Os(4,4′-dimethyl-bpy)₂(PVI)Cl]⁺,<sup>8</sup> so the DFT chloro model is
 structurally correct and the gap is a **differential-solvation bracket** plus a substituent term (Fig 5).
@@ -276,7 +277,7 @@ poly(vinylimidazole) brush the sixth ligand may instead be a second chain imidaz
 substitution-inert Os(II) d⁶ couple, so the earlier "the experiment measures the aqua form" framing is withdrawn —
 aqua serves only as a methodological benchmark). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale: adding the
 second hydration shell shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation
-error.<sup>19</sup> A second, smaller axis is the **4,4′-dimethyl substituent** itself (+0.14 eV more uphill than plain bpy — the
+error.<sup>19</sup> A second, smaller axis is the **4,4′-dimethyl substituent** itself (0.14 eV less favourable than plain bpy — the
 donor methyls raise the Os(III) acceptor level, consistent with the Hammett series ①). Crucially, none of these
 contributions is tuned to the anchored cascade — the solvation term is benchmarked on a *separate* couple and the
 substituent term follows from the structure–activity series — so the discrepancy is decomposed independently rather
@@ -328,11 +329,10 @@ ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D projection f
 ![Figure 3](figures/fig3_cascade_lfer.png)
 
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
-rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
-is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +1.03 eV on the dimethyl mediator (+0.88 eV plain-bpy reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
-[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>); the
-raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
-proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies 62 mV from
+rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The raw frontier-orbital offset
+is +0.07 eV on the dimethyl mediator (the donor level just above the acceptor, programmatic geometry) and the adiabatic ΔSCF free energy −0.08 eV (−0.23 eV plain-bpy reference) — one-electron readings, not like-for-like with the verified driving force, which is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
+[the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>). The
+proton-referenced flavin potential, E°(FAD/FADH₂) = −155 mV vs SHE at pH 7, lies 65 mV from
 experiment (free flavin −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (B3LYP slope −0.92 eV/σ, r² = 1.00; fit over the
 OMe→NO₂ regime; the ωB97X cross-check is in Table 4), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
@@ -355,7 +355,7 @@ the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the comput
 ![Figure 5](figures/fig5_solvation_pcm.png)
 
 **Figure 5. The cascade gap decomposes into a chloro↔bis-Im differential-solvation bracket plus a substituent
-term** (the "limits of implicit solvation" result). *(a)* Adding explicit waters to the chloride of the real
+term** [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro donor the chloro k = 0 point is already downhill (+0.065 eV), so «closes the gap» is re-read like-for-like; the title of panel (b) rests «group-8» on one Ru couple, ref 19 (self-review cluster 5)] (the "limits of implicit solvation" result). *(a)* Adding explicit waters to the chloride of the real
 (chloro) dimethyl mediator monotonically closes the gap (+0.21 eV / three waters) — the **+1/+2 lower bracket**
 (the anionic Cl⁻ lowers the couple charge, so its continuum error is ≈5× smaller than the benchmark). *(b)* In the
 operating PVI brush the sixth ligand may be a second chain imidazole — the PVI-realistic **bis-imidazole (+2/+3)

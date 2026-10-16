@@ -540,7 +540,7 @@ def main() -> int:
         results["best_cascade_mediator"] = best["name"]
         print(f"\n  E° monotonic with σ? {'✅' if mono_E else '❌'}   "
               f"cascade Δ monotonic (rises with σ)? {'✅' if mono_casc else '❌'}")
-        print(f"  Least-uphill cascade: {best['name']} (Δ={best['cascade_delta_eV']:+.4f} eV) "
+        print(f"  Most favourable cascade: {best['name']} (Δ={best['cascade_delta_eV']:+.4f} eV) "
               f"→ design rule: electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment")
 
     # ── Hammett LFER slope (computed → JSON = single source for fig 60 / table 61 / prose) ──

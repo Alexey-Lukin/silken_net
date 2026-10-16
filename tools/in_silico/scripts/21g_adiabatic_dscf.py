@@ -20,9 +20,9 @@ with NO script — the generator was lost). Recomputes the headline composite ad
     ΔG_adiabatic = IP_adiabatic − EA_Os3     ← headline (Table 2, SUMMARY)
 
 The FAD side does not depend on the mediator (same flavin), so re-running with the
-dimethyl Os only changes EA_Os3 → ΔG. The raw cascade stays uphill in every method;
-the gap to the verified downhill driving force is the decomposed implicit-solvation
-limit (②). This script supplies the DFT mechanism number, not the verdict.
+dimethyl Os only changes EA_Os3 → ΔG. On the 1,5-dihydro donor the adiabatic ΔG comes out downhill and
+the vertical uphill; what the gap to the verified −0.574 eV is made of is revision step 3's (00_07 HW.5.IS).
+This script supplies the DFT mechanism number, not the verdict.
 
 Discipline: no density_fit; level_shift on the FADH₂⁺ doublet + SOSCF fallback; DFT
 jobs sequential. ~1.5-3 h (two geom-opts + three SP; the cache's `wall_seconds` is the measured figure).
@@ -122,7 +122,7 @@ def _opt(atoms, charge, spin, label, level_shift=0.0):
 def _load_ea_os3(plain: bool) -> tuple[float, str]:
     """EA_Os3 = E(Os III) − E(Os II) = the energy RELEASED on the Os(III)+e⁻→Os(II)
     reduction, as a positive magnitude — the cascade is dG = IP(FAD) − EA_Os3 (plain
-    orphan: +4.392 = E_os3−E_os2, dG = 5.276−4.392 = 0.884). ωB97X/def2-TZVP, drift-safe
+    orphan, on the 4a,5-dihydro donor: +4.392 = E_os3−E_os2, dG = 5.276−4.392 = 0.884). ωB97X/def2-TZVP, drift-safe
     from cache. (E_os2−E_os3 is the signed exothermic dE_red, the negative of this.)"""
     name = "os_complex_wb97xd.json" if plain else "os_complex_wb97xd_dmbpy.json"
     p = DFT_CACHE / name

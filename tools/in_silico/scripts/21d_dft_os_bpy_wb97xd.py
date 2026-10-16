@@ -6,8 +6,9 @@ L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex.
 Why ωB97X-D instead of B3LYP
 -----------------------------
 B3LYP systematically underestimates FADH₂ HOMO by ~0.6 eV (Bhattacharyya
-& Truhlar 2007), which is the main reason the raw Koopmans verdict is
-UPHILL even with the full bpy model. ωB97X-D is a range-separated hybrid
+& Truhlar 2007), which was read as the main reason the raw Koopmans verdict came out
+UPHILL even with the full bpy model — on the 4a,5-dihydro donor; on the 1,5-dihydro one it is downhill
+(comparison.json, 2026-10-15). ωB97X-D is a range-separated hybrid
 with empirical dispersion that:
   - Better treats charge-transfer states (the FAD→Os electron donation)
   - More accurate HOMO/LUMO through range separation (short-range exact

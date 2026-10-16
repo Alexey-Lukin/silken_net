@@ -3114,15 +3114,25 @@ def test_b1_dmbpy_wb97x_cache():
 
 
 def test_b2_adiabatic_dscf_cache():
-    """B2 (OS-RECOMPUTE): adiabatic ΔSCF generator — uphill dimethyl cascade, EA drift-safe
+    """B2 (OS-RECOMPUTE): adiabatic ΔSCF generator — the 1,5-dihydro donor, EA drift-safe
     from B1; vertical exceeds adiabatic (cation geometric relaxation)."""
     path = DFT / "delta_scf_corrections.json"
     if not path.exists():
         pytest.skip("B2 cache missing")
     d = json.loads(path.read_text())
     assert d["geom_opt_converged"]["FADH2"] and d["geom_opt_converged"]["FADH2_cation"]
-    assert 0.5 < d["dG_adiabatic_eV"] < 1.5, "adiabatic ΔG out of physical range"
+    # A sanity bound, not a direction: it catches a run that lost a charge or a state (an error of eVs) and
+    # CANNOT catch a wrong tautomer — the range written here before had been drawn around the 4a,5-dihydro
+    # result and read the corrected one as unphysical (00_07 HW.5.IS, 2026-10-15). The cation relaxation is bounded
+    # on its own, since the wider ΔG range alone would pass a fragmenting cation (the script-29 pathology).
+    assert -1.5 < d["dG_adiabatic_eV"] < 1.5, "adiabatic ΔG out of physical range"
     assert d["dG_vertical_eV"] > d["dG_adiabatic_eV"], "vertical must exceed adiabatic"
+    assert -0.5 < d["relaxation_eV"] < 0, f"cation relaxation {d['relaxation_eV']} eV — a fragmenting cation?"
+    # The label 21g writes after checking the SMILES-built INPUT (lib.flavin); the optimised geometries are not
+    # stored, so this pins the input's identity, not the geometry's.
+    assert d.get("fadh2_tautomer", {}).get("name") == "1,5-dihydrolumiflavin", (
+        f"delta_scf_corrections.json fadh2_tautomer={d.get('fadh2_tautomer')!r} — the donor must be the "
+        "1,5-dihydro tautomer (in-silico §Critical Rules #16); re-run 21g")
     # 🔴 IDENTITY, not range: `21g --plain` writes the plain-bpy REFERENCE into this SAME path, and the
     # two mediators sit ~0.3 eV apart — inside every range asserted above, so a reference run would pass
     # while two doc↔cache pins quote it as the DEVICE number. The file names itself; nothing read that.

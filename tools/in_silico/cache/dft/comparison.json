@@ -1,9 +1,9 @@
 {
-  "donor_homo_eV": -5.137012354676674,
+  "donor_homo_eV": -4.018006623721174,
   "acceptor_lumo_eV": -4.0855633078052795,
-  "delta_eV": -1.0514490468713946,
-  "favorable": false,
-  "verdict": "\u274c UPHILL \u2014 electron transfer FAD \u2192 Os is NOT favorable at this level of theory",
+  "delta_eV": 0.06755668408410553,
+  "favorable": true,
+  "verdict": "\u2705 DOWNHILL \u2014 electron transfer FAD \u2192 Os is energetically favorable",
   "fad": {
     "method": "B3LYP/6-31g(d)+PCM(water,C-PCM)",
     "ox": {
@@ -13,13 +13,13 @@
       "n_atoms": 31,
       "n_electrons": 134,
       "converged": true,
-      "wall_seconds": 62.95181584358215,
-      "E_total_Ha": -872.1150515126999,
-      "HOMO_Ha": -0.22741250075573619,
-      "LUMO_Ha": -0.1021419392936398,
-      "HOMO_eV": -6.188209395230375,
-      "LUMO_eV": -2.779423762033491,
-      "gap_eV": 3.408785633196884
+      "wall_seconds": 62.581873178482056,
+      "E_total_Ha": -872.1150515127008,
+      "HOMO_Ha": -0.22741250075573388,
+      "LUMO_Ha": -0.10214193929363694,
+      "HOMO_eV": -6.188209395230312,
+      "LUMO_eV": -2.7794237620334132,
+      "gap_eV": 3.4087856331968993
     },
     "red": {
       "label": "lumiflavin_red",
@@ -28,13 +28,24 @@
       "n_atoms": 33,
       "n_electrons": 136,
       "converged": true,
-      "wall_seconds": 61.28112483024597,
-      "E_total_Ha": -873.309964536006,
-      "HOMO_Ha": -0.18878172204233318,
-      "LUMO_Ha": -0.05852218798989745,
-      "HOMO_eV": -5.137012354676674,
-      "LUMO_eV": -1.5924698613534196,
-      "gap_eV": 3.544542493323255
+      "wall_seconds": 61.338995933532715,
+      "E_total_Ha": -873.3101823979116,
+      "HOMO_Ha": -0.14765901991904518,
+      "LUMO_Ha": -0.023006301730339705,
+      "HOMO_eV": -4.018006623721174,
+      "LUMO_eV": -0.6260333624760157,
+      "gap_eV": 3.391973261245158
+    },
+    "red_tautomer": {
+      "name": "1,5-dihydrolumiflavin",
+      "smiles": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3",
+      "H_on_ring_N": {
+        "N10": 0,
+        "N3": 1,
+        "N5": 1,
+        "N1": 1
+      },
+      "sp3_ring_carbons": []
     }
   },
   "os": {

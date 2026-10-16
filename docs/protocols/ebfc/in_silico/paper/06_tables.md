@@ -19,13 +19,13 @@
 
 | Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |
 |---|---|---|---|
-| Koopmans ωB97X (orbital offset) | +6.020 | uphill | range-separation artefact — *never use* |
-| ΔSCF ωB97X (vertical) | +1.395 | uphill | +1.97 |
-| **ΔSCF ωB97X (adiabatic)** | **+1.034** | uphill | +1.61 |
-| B3LYP Koopmans «corrected» | -0.07 | — | **withdrawn** (tuned to the wrong −0.14) |
-| **Experiment (verified E°s)** | **-0.57** | **downhill** | reference |
+| Koopmans ωB97X (orbital offset) | +4.826 | uphill | range-separation artefact — *never use* |
+| ΔSCF ωB97X (vertical) | +0.095 | uphill | +0.67 |
+| **ΔSCF ωB97X (adiabatic)** | **−0.079** | downhill | +0.49 |
+| B3LYP Koopmans «corrected» | −0.07 | — | **withdrawn** (tuned to the wrong −0.14) |
+| **Experiment (verified E°s)** | **−0.57** | **downhill** | reference |
 
-*The raw uphill ΔG is the implicit-solvation method limit (differential PCM solvation, chloro↔bis-Im bracket + the 4,4′-dimethyl substituent, Fig 5 / ②); the verified +574 mV / −0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*
+*FADH₂ = the 1,5-dihydro tautomer. [finalise — revision step 3, 00_07 HW.5.IS: these rows are one-electron readings, not like-for-like with the verified value, so the difference column and the table are rebuilt like-for-like in step 3.] The verified +574 mV / −0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*
 
 ## Table 3. Cathode DET hops, couplings and reorganisation energies
 
@@ -53,16 +53,16 @@ cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+
 
 | 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note | ω−B3 (eV) |
 |---|---|---|---|---|---|---|
-| NMe₂ | -0.83 | -3.910 | -3.636 | -1.5013 | donor saturation | +0.055 |
-| NH₂ | -0.66 | -3.905 | -3.637 | -1.4997 |  | +0.055 |
-| OMe | -0.27 | -4.286 | -4.002 | -1.1355 |  | — |
-| Me | -0.17 | -4.381 | -4.086 | -1.0514 |  | +0.138 |
-| H | +0.00 | -4.530 | -4.228 | -0.9093 | reference | +0.137 |
-| Cl | +0.23 | -4.697 | -4.385 | -0.7516 |  | — |
-| COOH | +0.45 | -4.936 | -4.595 | -0.5424 |  | — |
-| CF₃ | +0.54 | -4.957 | -4.635 | -0.5023 | inert option | — |
-| NO₂ | +0.78 | -5.262 | -4.905 | -0.2319 | unstable on cycling | +0.263 |
-| SO₂CF₃ | +0.96 | -5.256 | -4.910 | -0.2269 | inert; order vs NO₂ open | +0.184 |
+| NMe₂ | -0.83 | -3.910 | -3.636 | -0.3823 | donor saturation | +0.055 |
+| NH₂ | -0.66 | -3.905 | -3.637 | -0.3807 |  | +0.055 |
+| OMe | -0.27 | -4.286 | -4.002 | -0.0165 |  | — |
+| Me | -0.17 | -4.381 | -4.086 | +0.0676 |  | +0.138 |
+| H | +0.00 | -4.530 | -4.228 | +0.2097 | reference | +0.137 |
+| Cl | +0.23 | -4.697 | -4.385 | +0.3674 |  | — |
+| COOH | +0.45 | -4.936 | -4.595 | +0.5766 |  | — |
+| CF₃ | +0.54 | -4.957 | -4.635 | +0.6167 | inert option | — |
+| NO₂ | +0.78 | -5.262 | -4.905 | +0.8871 | unstable on cycling | +0.263 |
+| SO₂CF₃ | +0.96 | -5.256 | -4.910 | +0.8921 | inert; order vs NO₂ open | +0.184 |
 
-*Design rule: cascade Δ rises with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); the order of NO₂→SO₂CF₃ (+5.0 meV) is not decided — relaxing NO₂ alone moves NO₂'s own cascade Δ by −198 meV with Os(III) on its own minimum and +102 meV with Os(III) vertical, and SO₂CF₃ was not relaxed; ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is −0.79 against −0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point of that set, NO₂; outside the fit, SO₂CF₃ carries ω−B3 +0.184); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs −0.876 → −0.800 → −0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; with ωB97X also at 6-31G(d) on every point of Me, H, NO₂, the slope runs −0.931 → −0.789 → −0.791 eV/σ — functional ×0.85, basis ×1.00.*
+*Design rule: cascade Δ rises with σ (−0.38 NMe₂ → +0.89 SO₂CF₃); the order of NO₂→SO₂CF₃ (+5.0 meV) is not decided — relaxing NO₂ alone moves NO₂'s own cascade Δ by −198 meV with Os(III) on its own minimum and +102 meV with Os(III) vertical, and SO₂CF₃ was not relaxed; ΔE_red LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell optimum (~+309 mV) balances driving force vs overpotential. ωB97X/def2-TZVP cross-check: over Me, H, NO₂ the slope is −0.79 against −0.93 eV/σ at B3LYP (×0.85, resting on the one acceptor point of that set, NO₂; outside the fit, SO₂CF₃ carries ω−B3 +0.184); at Me/H, where ωB97X also exists with 6-31G(d), the local slope runs −0.876 → −0.800 → −0.878 eV/σ, i.e. the functional and the basis change pull opposite ways; with ωB97X also at 6-31G(d) on every point of Me, H, NO₂, the slope runs −0.931 → −0.789 → −0.791 eV/σ — functional ×0.85, basis ×1.00.*
 

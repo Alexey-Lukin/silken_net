@@ -1,0 +1,580 @@
+{
+  "what": "Run record of the flavin chain recomputed on the 1,5-dihydro FADH₂ (route A step 2, 00_07 HW.5.IS): the chain ran in a git worktree detached at fe041ad58; its logs and before/after snapshots lived under that worktree's gitignored cache/runs/flavin15/. This file keeps what the integration read from them (2026-10-16) so the claims about the run have a carrier in the tree once the worktree is removed.",
+  "worktree_commit": "fe041ad58",
+  "chain_log": [
+    "START Thu Oct 15 18:36:35 EEST 2026",
+    "21d=0 Thu Oct 15 18:45:01 EEST 2026",
+    "21g=0 Thu Oct 15 21:04:19 EEST 2026",
+    "33=0 Thu Oct 15 22:03:38 EEST 2026",
+    "29b=0 Thu Oct 15 23:18:50 EEST 2026",
+    "DONE Thu Oct 15 23:18:50 EEST 2026"
+  ],
+  "logs": {
+    "20": {
+      "bytes": 1128,
+      "open_shell_scf": 0,
+      "s2_min": null,
+      "s2_max": null,
+      "newton_or_soscf_lines": 0,
+      "not_converged_lines": 0,
+      "traceback_lines": 0
+    },
+    "21d": {
+      "bytes": 796,
+      "open_shell_scf": 0,
+      "s2_min": null,
+      "s2_max": null,
+      "newton_or_soscf_lines": 0,
+      "not_converged_lines": 0,
+      "traceback_lines": 0
+    },
+    "21g": {
+      "bytes": 354745,
+      "open_shell_scf": 55,
+      "s2_min": 0.7583116,
+      "s2_max": 0.75873131,
+      "newton_or_soscf_lines": 0,
+      "not_converged_lines": 0,
+      "traceback_lines": 0
+    },
+    "33": {
+      "bytes": 132373,
+      "open_shell_scf": 12,
+      "s2_min": 0.75757217,
+      "s2_max": 0.75785421,
+      "newton_or_soscf_lines": 0,
+      "not_converged_lines": 0,
+      "traceback_lines": 0
+    },
+    "29b": {
+      "bytes": 242545,
+      "open_shell_scf": 12,
+      "s2_min": 0.7577483,
+      "s2_max": 0.75808715,
+      "newton_or_soscf_lines": 0,
+      "not_converged_lines": 0,
+      "traceback_lines": 0
+    }
+  },
+  "field_diffs_before_after": {
+    "dft/lumiflavin.json": {
+      "ox.E_total_Ha": {
+        "before": -872.1150515126999,
+        "after": -872.1150515127008
+      },
+      "ox.HOMO_Ha": {
+        "before": -0.22741250075573619,
+        "after": -0.22741250075573388
+      },
+      "ox.HOMO_eV": {
+        "before": -6.188209395230375,
+        "after": -6.188209395230312
+      },
+      "ox.LUMO_Ha": {
+        "before": -0.1021419392936398,
+        "after": -0.10214193929363694
+      },
+      "ox.LUMO_eV": {
+        "before": -2.779423762033491,
+        "after": -2.7794237620334132
+      },
+      "ox.gap_eV": {
+        "before": 3.408785633196884,
+        "after": 3.4087856331968993
+      },
+      "red.E_total_Ha": {
+        "before": -873.309964536006,
+        "after": -873.3101823979116
+      },
+      "red.HOMO_Ha": {
+        "before": -0.18878172204233318,
+        "after": -0.14765901991904518
+      },
+      "red.HOMO_eV": {
+        "before": -5.137012354676674,
+        "after": -4.018006623721174
+      },
+      "red.LUMO_Ha": {
+        "before": -0.05852218798989745,
+        "after": -0.023006301730339705
+      },
+      "red.LUMO_eV": {
+        "before": -1.5924698613534196,
+        "after": -0.6260333624760157
+      },
+      "red.gap_eV": {
+        "before": 3.544542493323255,
+        "after": 3.391973261245158
+      },
+      "red_tautomer.H_on_ring_N.N1": {
+        "before": null,
+        "after": 1
+      },
+      "red_tautomer.H_on_ring_N.N10": {
+        "before": null,
+        "after": 0
+      },
+      "red_tautomer.H_on_ring_N.N3": {
+        "before": null,
+        "after": 1
+      },
+      "red_tautomer.H_on_ring_N.N5": {
+        "before": null,
+        "after": 1
+      },
+      "red_tautomer.name": {
+        "before": null,
+        "after": "1,5-dihydrolumiflavin"
+      },
+      "red_tautomer.smiles": {
+        "before": null,
+        "after": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+      }
+    },
+    "dft/os_complex_wb97xd.json": {
+      "cascade.delta_eV": {
+        "before": -5.883721977312918,
+        "after": -4.689770786566985
+      },
+      "cascade.donor_homo_eV": {
+        "before": -7.664264206191842,
+        "after": -6.470313015445908
+      },
+      "delta_scf_correct.EA_Os3_eV": {
+        "before": 4.392,
+        "after": null
+      },
+      "delta_scf_correct.IP_FADH2_eV": {
+        "before": 5.391,
+        "after": null
+      },
+      "delta_scf_correct.dG_eV": {
+        "before": 0.998,
+        "after": null
+      },
+      "delta_scf_correct.direction": {
+        "before": "UPHILL",
+        "after": null
+      },
+      "delta_scf_correct.discrepancy_from_exp_eV": {
+        "before": 1.14,
+        "after": null
+      },
+      "delta_scf_correct.note": {
+        "before": "Vertical ΔSCF (same molecule, different charge). Discrepancy from vertical IP/EA + PCM solvation + no PCET. B3LYP corrected (-0.07 eV) remains best estimate.",
+        "after": null
+      },
+      "fad_ox.E_total_Ha": {
+        "before": -872.2318464807634,
+        "after": null
+      },
+      "fad_ox.converged": {
+        "before": true,
+        "after": null
+      },
+      "fad_ox.label": {
+        "before": "FAD_ox lumiflavin (ωB97X)",
+        "after": null
+      },
+      "fadh2_cation.E_total_Ha": {
+        "before": -873.2417331466174,
+        "after": null
+      },
+      "fadh2_cation.charge": {
+        "before": 1,
+        "after": null
+      },
+      "fadh2_cation.converged": {
+        "before": true,
+        "after": null
+      },
+      "fadh2_cation.label": {
+        "before": "FADH₂⁺ radical cation (ωB97X)",
+        "after": null
+      },
+      "fadh2_cation.spin": {
+        "before": 1,
+        "after": null
+      },
+      "fadh2_red.E_total_Ha": {
+        "before": -873.4398395731844,
+        "after": -873.4419465516705
+      },
+      "fadh2_red.HOMO_Ha": {
+        "before": -0.28165651455268464,
+        "after": -0.23777961758195543
+      },
+      "fadh2_red.HOMO_eV": {
+        "before": -7.664264206191842,
+        "after": -6.470313015445908
+      },
+      "fadh2_red.LUMO_Ha": {
+        "before": 0.01036913248249274,
+        "after": 0.04424387079786024
+      },
+      "fadh2_red.LUMO_eV": {
+        "before": 0.2821584690169303,
+        "after": 1.2039370572981642
+      },
+      "fadh2_red.gap_eV": {
+        "before": 7.946422675208772,
+        "after": 7.674250072744072
+      },
+      "fadh2_tautomer.H_on_ring_N.N1": {
+        "before": null,
+        "after": 1
+      },
+      "fadh2_tautomer.H_on_ring_N.N10": {
+        "before": null,
+        "after": 0
+      },
+      "fadh2_tautomer.H_on_ring_N.N3": {
+        "before": null,
+        "after": 1
+      },
+      "fadh2_tautomer.H_on_ring_N.N5": {
+        "before": null,
+        "after": 1
+      },
+      "fadh2_tautomer.name": {
+        "before": null,
+        "after": "1,5-dihydrolumiflavin"
+      },
+      "fadh2_tautomer.smiles": {
+        "before": null,
+        "after": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.EA_Os3_eV": {
+        "before": null,
+        "after": 4.392
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.IP_FADH2_eV": {
+        "before": null,
+        "after": 5.391
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.dG_eV": {
+        "before": null,
+        "after": 0.998
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.direction": {
+        "before": null,
+        "after": "UPHILL"
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.discrepancy_from_exp_eV": {
+        "before": null,
+        "after": 1.14
+      },
+      "superseded_4a5_dihydro.delta_scf_correct.note": {
+        "before": null,
+        "after": "Vertical ΔSCF (same molecule, different charge). Discrepancy from vertical IP/EA + PCM solvation + no PCET. B3LYP corrected (-0.07 eV) remains best estimate."
+      },
+      "superseded_4a5_dihydro.fad_ox.E_total_Ha": {
+        "before": null,
+        "after": -872.2318464807634
+      },
+      "superseded_4a5_dihydro.fad_ox.converged": {
+        "before": null,
+        "after": true
+      },
+      "superseded_4a5_dihydro.fad_ox.label": {
+        "before": null,
+        "after": "FAD_ox lumiflavin (ωB97X)"
+      },
+      "superseded_4a5_dihydro.fadh2_cation.E_total_Ha": {
+        "before": null,
+        "after": -873.2417331466174
+      },
+      "superseded_4a5_dihydro.fadh2_cation.charge": {
+        "before": null,
+        "after": 1
+      },
+      "superseded_4a5_dihydro.fadh2_cation.converged": {
+        "before": null,
+        "after": true
+      },
+      "superseded_4a5_dihydro.fadh2_cation.label": {
+        "before": null,
+        "after": "FADH₂⁺ radical cation (ωB97X)"
+      },
+      "superseded_4a5_dihydro.fadh2_cation.spin": {
+        "before": null,
+        "after": 1
+      },
+      "superseded_4a5_dihydro.reason": {
+        "before": null,
+        "after": "hand-added (commit 3dbd5bcdf), written by no script, read by nothing; computed on the 4a,5-dihydro tautomer the chain carried under the 1,5 label until 2026-10-15"
+      }
+    },
+    "dft/delta_scf_corrections.json": {
+      "E_FADH2_Ha": {
+        "before": -873.4517779214837,
+        "after": -873.4492651258483
+      },
+      "E_FADH2_cation_adiabatic_Ha": {
+        "before": -873.2578714906117,
+        "after": -873.2962477907363
+      },
+      "E_FADH2_cation_vertical_Ha": {
+        "before": -873.2445807900256,
+        "after": -873.2898474170756
+      },
+      "IP_adiabatic_eV": {
+        "before": 5.2765,
+        "after": 4.1638
+      },
+      "IP_vertical_eV": {
+        "before": 5.6381,
+        "after": 4.338
+      },
+      "dG_adiabatic_eV": {
+        "before": 1.0335,
+        "after": -0.0792
+      },
+      "dG_vertical_eV": {
+        "before": 1.3952,
+        "after": 0.095
+      },
+      "fadh2_tautomer.name": {
+        "before": null,
+        "after": "1,5-dihydrolumiflavin"
+      },
+      "fadh2_tautomer.smiles": {
+        "before": null,
+        "after": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+      },
+      "geom_opt.FADH2.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH2.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 0.00017680532692043033
+      },
+      "geom_opt.FADH2.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH2.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH2.steps": {
+        "before": null,
+        "after": 12
+      },
+      "geom_opt.FADH2_cation.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH2_cation.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 2.624471885874155e-05
+      },
+      "geom_opt.FADH2_cation.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH2_cation.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH2_cation.steps": {
+        "before": null,
+        "after": 55
+      },
+      "geom_opt.optimizer": {
+        "before": null,
+        "after": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)"
+      },
+      "relaxation_eV": {
+        "before": -0.3617,
+        "after": -0.1742
+      }
+    },
+    "dft/pcet_cascade.json": {
+      "E_FADH2_Ha": {
+        "before": -873.4525983337478,
+        "after": -873.4499975608217
+      },
+      "E_FADH_radical_Ha": {
+        "before": -872.8061773512723,
+        "after": -872.8461716852337
+      },
+      "bare_IP_eV": {
+        "before": 5.391,
+        "after": 4.338
+      },
+      "bare_route_source": {
+        "before": null,
+        "after": "delta_scf_corrections.json (IP_vertical_eV · dG_vertical_eV, 21g)"
+      },
+      "cascade_bare_eV": {
+        "before": 0.998,
+        "after": 0.095
+      },
+      "cascade_pcet_eV": {
+        "before": 1.627,
+        "after": 0.468
+      },
+      "drop_vs_bare_eV": {
+        "before": 0.479,
+        "after": 0.373
+      },
+      "fadh2_tautomer.name": {
+        "before": null,
+        "after": "1,5-dihydrolumiflavin"
+      },
+      "fadh2_tautomer.smiles": {
+        "before": null,
+        "after": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+      },
+      "geom_opt.FADH2.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH2.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 8.75571862850276e-05
+      },
+      "geom_opt.FADH2.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH2.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH2.steps": {
+        "before": null,
+        "after": 11
+      },
+      "geom_opt.FADH_radical.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH_radical.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 0.00010070004005894792
+      },
+      "geom_opt.FADH_radical.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH_radical.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH_radical.steps": {
+        "before": null,
+        "after": 12
+      },
+      "geom_opt.optimizer": {
+        "before": null,
+        "after": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)"
+      },
+      "pcet_oxidation_cost_eV": {
+        "before": 5.87,
+        "after": 4.711
+      },
+      "semiquinone_site": {
+        "before": "N18",
+        "after": "N1"
+      },
+      "semiquinone_site_note": {
+        "before": null,
+        "after": "locant from topology (lib/flavin.locants); H removed from that nitrogen"
+      }
+    },
+    "dft/semiquinone_lambda.json": {
+      "E_an_at_Ran_Ha": {
+        "before": -872.2015949181273,
+        "after": -872.2414433849995
+      },
+      "E_an_at_Rrad_Ha": {
+        "before": -872.195463168817,
+        "after": -872.2352253835611
+      },
+      "E_rad_at_Ran_Ha": {
+        "before": -872.0618363144781,
+        "after": -872.1058282365361
+      },
+      "E_rad_at_Rrad_Ha": {
+        "before": -872.0699820229445,
+        "after": -872.1166772861907
+      },
+      "fadh2_tautomer.name": {
+        "before": null,
+        "after": "1,5-dihydrolumiflavin"
+      },
+      "fadh2_tautomer.smiles": {
+        "before": null,
+        "after": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+      },
+      "geom_opt.FADH_anion.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH_anion.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 3.16691442949768e-05
+      },
+      "geom_opt.FADH_anion.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH_anion.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH_anion.steps": {
+        "before": null,
+        "after": 34
+      },
+      "geom_opt.FADH_radical.converged": {
+        "before": null,
+        "after": true
+      },
+      "geom_opt.FADH_radical.final_grad_max_Ha_bohr": {
+        "before": null,
+        "after": 9.71491071177302e-05
+      },
+      "geom_opt.FADH_radical.maxsteps": {
+        "before": null,
+        "after": 100
+      },
+      "geom_opt.FADH_radical.returned": {
+        "before": null,
+        "after": "final"
+      },
+      "geom_opt.FADH_radical.steps": {
+        "before": null,
+        "after": 12
+      },
+      "geom_opt.optimizer": {
+        "before": null,
+        "after": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)"
+      },
+      "lambda_1_eV": {
+        "before": 0.16685339884534398,
+        "after": 0.16920043881720626
+      },
+      "lambda_2_eV": {
+        "before": 0.22165601932567733,
+        "after": 0.2952176805519389
+      },
+      "lambda_inner_eV": {
+        "before": 0.3885094181710213,
+        "after": 0.4644181193691452
+      },
+      "semiquinone_site": {
+        "before": "N18",
+        "after": "N1"
+      },
+      "semiquinone_site_note": {
+        "before": null,
+        "after": "locant from topology (lib/flavin.locants); H removed from that nitrogen of FADH₂"
+      }
+    }
+  },
+  "integration": "the five caches and ligands/lumiflavin_red.xyz were copied byte-identical into the main tree 2026-10-16; main held the before-snapshots and had not touched them since fe041ad58"
+}

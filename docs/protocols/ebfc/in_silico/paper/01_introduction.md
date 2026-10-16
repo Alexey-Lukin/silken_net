@@ -77,7 +77,7 @@ reporting;<sup>20,21</sup> the electronic-structure scripts use fixed seeds, and
 We report a first-principles, electronic-structure account of the electron-transfer energetics of a
 complete Gen-2.0 EBFC chain, and — equally — an honest assessment of where affordable
 implicit-solvation density-functional theory reaches its limit on this problem. Specifically, we (i)
-reproduce the proton-coupled FAD redox potential to within 62 mV of experiment using a thermodynamic
+reproduce the proton-coupled FAD redox potential to within 65 mV of experiment using a thermodynamic
 proton reference, isolating the cascade discrepancy to the mediator rather than the flavin; (ii)
 establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive in direction —
 its slope moves by ≈15 % between two method tiers and its donor pairs by up to 20.1 mV per substituent between the programmatic and the relaxed osmium geometries — and rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
@@ -88,7 +88,7 @@ earlier geometry-and-λ error had implied — together with the design levers (a
 conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) show
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
-4,4′-dimethyl substituent term, benchmarked against the known group-8 error — rather than a failure of the chemistry. The flavin redox tuning by the
+4,4′-dimethyl substituent term, benchmarked against the known group-8 error — rather than a failure of the chemistry. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The flavin redox tuning by the
 protein environment is computed in the same spirit.<sup>25,26</sup>
 
 The contribution is therefore both a set of mechanistic design rules and a transferable methodological

@@ -116,8 +116,9 @@ CONSERVATION = "chemistry/chem11_site_conservation.json"  # §2 conservation blo
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
-# Number class allows an optional leading dash of any flavour.
-N = rf"([{_DASHES}\-]?[\d.]+)"
+# Number class allows an optional leading sign: a dash of any flavour, or an explicit plus — a cascade
+# that changes sign is written «+0.068», and a class without «+» reads that cell as absent, not as drift.
+N = rf"([+{_DASHES}\-]?[\d.]+)"
 NSCI = rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
@@ -128,8 +129,27 @@ CHECKS = [
     ),
     (
         "cascade Δε ωB97X-table B3LYP col → comparison.json",
-        L3, rf"\| Δε \(dimethyl\) \| {N} eV \| \*\*[−–—\-]6\.020",
+        L3, rf"\| Δε \(dimethyl\) \| {N} eV \| \*\*[{_DASHES}\-][\d.]+",
         "dft/comparison.json", lambda d: d["delta_eV"], 0.001,
+    ),
+    (
+        "cascade Δε ωB97X-table ωB97X col → os_complex_wb97xd + _dmbpy",
+        L3, rf"\| Δε \(dimethyl\) \| [+{_DASHES}\-]?[\d.]+ eV \| \*\*{N} eV\*\*",
+        "dft/os_complex_wb97xd.json",
+        lambda d: d["fadh2_red"]["HOMO_eV"] - C("dft/os_complex_wb97xd_dmbpy.json")["os3_plus"]["LUMO_eV"], 0.001,
+    ),
+    (
+        "§2.7 Koopmans offset, recorded environment → comparison.json",
+        "docs/protocols/ebfc/in_silico/paper/02_methods.md", rf"offset {N} eV in the recorded environment read",
+        "dft/comparison.json", lambda d: d["delta_eV"], 0.0001,
+    ),
+    (
+        "§2.7 Koopmans offset under the lock → lumiflavin.json + lock record 2026-10-01",
+        "docs/protocols/ebfc/in_silico/paper/02_methods.md",
+        rf"read [{_DASHES}\-]?[\d.]+, [{_DASHES}\-]?[\d.]+ and {N} eV under the lock",
+        "dft/lumiflavin.json",
+        lambda d: d["red"]["HOMO_eV"] - C("reproduction/lock_rerun_2026-10-01.json")["files"]["dft/os_complex.json"]["per_field"]["os3_plus.LUMO_eV"]["lock_rerun"],
+        0.0001,
     ),
     (
         "cascade Δε k0 ladder → microsolvation_dmbpy.json (script 34 — DIFFERENT owner)",
@@ -156,7 +176,7 @@ CHECKS = [
     ),
     (
         "ΔSCF adiabatic → delta_scf_corrections.json",
-        SUMMARY, r"adiabatic \*\*\+([\d.]+)\*\* = IP_adiab",
+        SUMMARY, rf"adiabatic \*\*{N}\*\* = IP_adiab",
         "dft/delta_scf_corrections.json", lambda d: d["dG_adiabatic_eV"], 0.0005,
     ),
     (
@@ -432,7 +452,7 @@ CHECKS = [
            lambda d: d["relaxed_geometry_check"]["computed_pair_change"]["ome-dmbpy"] * 100, 0.5),
           ("SUMMARY", SUMMARY, "donor slope", rf"donor slope rises by \+{N} %",
            lambda d: d["relaxed_geometry_check"]["donor_slope_change"] * 100, 0.5),
-          ("SUMMARY", SUMMARY, "Koopmans offset move", rf"Koopmans offset \(−1\.05 eV\) moves by \+{N} eV",
+          ("SUMMARY", SUMMARY, "Koopmans offset move", rf"Koopmans offset \([+{_DASHES}\-]?[\d.]+ eV\) moves by \+{N} eV",
            lambda d: (next(c["os3"]["LUMO_eV"] for c in C("dft/os_mediator_series.json")["complexes"] if c["name"] == "dmbpy")
                       - C("dft/os_mediator_series_relaxed_os2.json")["complexes"]["dmbpy"]["os3"]["LUMO_eV"]), 0.0005))],
     *[(f"«up to 20.1 mV» donor pairs with both Os states relaxed in {where} → 83 adiabatic",
@@ -4093,7 +4113,7 @@ CHECKS += [
      lambda d: d["complexes"]["dmbpy"]["dE_red_adiabatic_eV"], 0.0005),
     ("PIPELINE D 10-13 Me point shift → relaxed_os3", PIPELINE, rf"серії — зсув {N} еВ \(вертикальний", OS3,
      lambda d: d["vs_vertical"]["point_shift_eV"]["dmbpy"], 0.0005),
-    ("PIPELINE D 10-13 Koopmans vertical → 83", PIPELINE, rf"\(−1\.05 еВ\) рухається на \+{N} еВ з Os\(III\)", V83,
+    ("PIPELINE D 10-13 Koopmans vertical → 83", PIPELINE, rf"\([+{_DASHES}\-]?[\d.]+ еВ\) рухається на \+{N} еВ з Os\(III\)", V83,
      lambda d: _koop(d, "dmbpy", "os3_on_os2_minimum"), 0.0005),
     ("PIPELINE D 10-13 Koopmans own → 83", PIPELINE, rf"і на {N} еВ з Os\(III\) на власному мінімумі — обидва", V83,
      lambda d: _koop(d, "dmbpy", "os3_on_own_minimum"), 0.0005),
@@ -4139,15 +4159,16 @@ CHECKS += [
      lambda d: _ad(d)["donor_slope_change"] * 100, 0.6),
     ("PIPELINE row 83 (d) slope ① → 83", PIPELINE, rf"the slope ① ≈ {N} eV by extrapolation", V83,
      lambda d: _ad(d)["d_first_trigger"]["extrapolated_eV"]["slope_1_over_lfer_span"], 0.005),
-    # the D note 2026-10-14: the numbers behind the ⚖️ leg (the leg collapses once answered; these stay)
+    # the D note 2026-10-14: the numbers behind the ⚖️ leg — pinned on the ⊕ 2026-10-16 dopiska beneath it (the 1,5-dihydro
+    # levels); the note itself keeps its 4a,5-dihydro numbers as the record, which no pin reads
     *[(f"PIPELINE D 10-14 cascade {g} {n} → 83", PIPELINE, anchor, V83,
        lambda d, g=g, n=n: _ad(d)["koopmans_cascade_delta_eV"][n][g], 0.0005)
-      for g, n, anchor in (("os3_on_own_minimum", "ome", rf"власний мінімум: OMe {N} < Me"),
-                           ("os3_on_own_minimum", "dmbpy", rf"власний мінімум: OMe [{_DASHES}\-]?[\d.]+ < Me {N} < H"),
-                           ("os3_on_own_minimum", "bpy", rf"< H {N} еВ; програмна"),
-                           ("programmatic", "ome", rf"програмна: {N} < "),
-                           ("programmatic", "dmbpy", rf"програмна: [{_DASHES}\-]?[\d.]+ < {N} < "),
-                           ("programmatic", "bpy", rf"програмна: [{_DASHES}\-]?[\d.]+ < [{_DASHES}\-]?[\d.]+ < {N}\)"))],
+      for g, n, anchor in (("os3_on_own_minimum", "ome", rf"ці рівні — власні мінімуми: OMe {N} < Me"),
+                           ("os3_on_own_minimum", "dmbpy", rf"ці рівні — власні мінімуми: OMe [+{_DASHES}\-]?[\d.]+ < Me {N} < H"),
+                           ("os3_on_own_minimum", "bpy", rf"власні мінімуми: OMe [+{_DASHES}\-]?[\d.]+ < Me [+{_DASHES}\-]?[\d.]+ < H {N} еВ; програмні"),
+                           ("programmatic", "ome", rf"програмні: {N} < "),
+                           ("programmatic", "dmbpy", rf"програмні: [+{_DASHES}\-]?[\d.]+ < {N} < "),
+                           ("programmatic", "bpy", rf"програмні: [+{_DASHES}\-]?[\d.]+ < [+{_DASHES}\-]?[\d.]+ < {N};"))],
     ("PIPELINE D 10-14 neighbour-gap move → 83", PIPELINE, rf"зсуваються ≤ {N} меВ — але там", V83,
      lambda d: 1000 * max(abs(_ad(d)["koopmans_neighbour_gap_eV"][g][k] - _ad(d)["koopmans_neighbour_gap_eV"]["programmatic"][k])
                           for g in ("os3_on_os2_minimum", "os3_on_own_minimum") for k in _ad(d)["koopmans_neighbour_gap_eV"][g]), 0.6),
@@ -4355,7 +4376,7 @@ CHECKS += [
      lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
     ("PIPELINE 83 (e) Koopmans own → 83 acceptors", PIPELINE, rf"\({N} eV on its own minimum\), so the condition is MET", V83,
      lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
-    ("PIPELINE D 10-15 Cl Table 4 cascade → os_mediator_series", PIPELINE, rf"\(Table 4: {N} еВ на програмній геометрії\)",
+    ("PIPELINE D 10-15 Cl Table 4 cascade → os_mediator_series", PIPELINE, rf"Table 4 дає Cl {N} еВ",
      "dft/os_mediator_series.json", lambda d: next(c for c in d["complexes"] if c["name"] == "cl")["cascade_delta_eV"], 0.00005),
     ("PIPELINE D 10-15 Cl Koopmans vertical → 83 acceptors", PIPELINE, rf"Os\(II\), рухається на \+{N} еВ, а з", V83,
      lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
@@ -4763,9 +4784,27 @@ def test_cathode_rct_reads_the_current_bracket():
         f"31b k_DET/turnover {got} ≠ the 25 bracket {expected} — re-run 31b")
 
 
-# ── reproduction record ⟷ the paper's reproducibility claim (§2.7, measured 2026-09-30) ──
+# ── reproduction record ⟷ the paper's reproducibility claim (§2.7, measured 2026-09-30 on the 4a,5-dihydro donor and
+#    re-made 2026-10-16 on the 1,5-dihydro one — the older record stays in the tree as the witness of that state) ──
 METHODS = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
-REPRO = "reproduction/lock_rerun_2026-09-30.json"
+REPRO = "reproduction/lock_rerun_2026-10-16.json"
+
+
+def _flat(x, p=""):
+    if isinstance(x, dict):
+        return {k2: v2 for k, v in x.items() for k2, v2 in _flat(v, f"{p}.{k}" if p else k).items()}
+    if isinstance(x, list):
+        return {k2: v2 for i, v in enumerate(x) for k2, v2 in _flat(v, f"{p}[{i}]").items()}
+    return {p: x}
+
+
+def _assert_record_describes_the_tree(record: str) -> None:
+    """A lock record must describe the caches the paper quotes TODAY: a re-run of a cache that leaves its old
+    record behind stays green on every bound alone (the 2026-09-30 record still holds the 4a,5-dihydro HOMO)."""
+    for cache, rec in C(record)["files"].items():
+        now = _flat(C(cache))
+        stale = [k for k, v in rec["per_field"].items() if now.get(k) != v["committed"]]
+        assert not stale, f"{record} describes a {cache} the tree no longer holds ({stale[:3]}) — re-run the lock record"
 
 
 def test_paper_reproduction_bound_is_backed_by_the_record():
@@ -4784,6 +4823,9 @@ def test_paper_reproduction_bound_is_backed_by_the_record():
     bound = float(found[0]) * 1e-10
     assert f"`cache/{REPRO}`" in text, f"§2.7 no longer names the record cache/{REPRO}"
     measured = max(f["max_abs_delta_total_energy_Ha"] for f in C(REPRO)["files"].values())
+    # The record must describe the caches the paper quotes TODAY: a re-run that leaves an old record behind stays
+    # green on the bound alone (the 2026-09-30 record still holds the 4a,5-dihydro HOMO).
+    _assert_record_describes_the_tree(REPRO)
     assert measured <= bound, (
         f"§2.7 says ≤ {bound:.2g} Ha but {REPRO} measured {measured:.3g} Ha — re-state §2.7 "
         f"(and PIPELINE_STATUS / the env header) from the record, never the record from the prose")
@@ -4825,6 +4867,7 @@ def test_paper_heavy_lock_rerun_is_stated_as_the_record_measured_it():
         assert token in text, (
             f"§2.7 no longer names {token!r} — the measured cause of the 21f split; without it the gap reads "
             f"as unexplained SCF numerics, the claim the attribution record refuted")
+    _assert_record_describes_the_tree(REPRO_HEAVY)
 
 
 # ── the CAUSE of that split (2026-10-01, script 75): PySCF 2.13.0 fixed the PCM radius of ECP atoms ──

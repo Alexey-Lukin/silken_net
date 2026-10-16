@@ -2,23 +2,48 @@
   "method": "Composite adiabatic \u0394SCF: geom-opt B3LYP/def2-SVP+PCM, SP \u03c9B97X/def2-TZVP+PCM. FAD side recomputed; EA_Os3 loaded drift-safe from the Os \u03c9B97X cache.",
   "mediator": "4,4'-dimethyl-bpy (real device, Zafar +309 mV)",
   "ea_os3_source": "os_complex_wb97xd_dmbpy.json",
-  "E_FADH2_Ha": -873.4517779214837,
-  "E_FADH2_cation_adiabatic_Ha": -873.2578714906117,
-  "E_FADH2_cation_vertical_Ha": -873.2445807900256,
-  "IP_vertical_eV": 5.6381,
-  "IP_adiabatic_eV": 5.2765,
-  "relaxation_eV": -0.3617,
+  "E_FADH2_Ha": -873.4492651258483,
+  "E_FADH2_cation_adiabatic_Ha": -873.2962477907363,
+  "E_FADH2_cation_vertical_Ha": -873.2898474170756,
+  "IP_vertical_eV": 4.338,
+  "IP_adiabatic_eV": 4.1638,
+  "relaxation_eV": -0.1742,
   "EA_Os3_eV": 4.243,
-  "dG_vertical_eV": 1.3952,
-  "dG_adiabatic_eV": 1.0335,
+  "dG_vertical_eV": 0.095,
+  "dG_adiabatic_eV": -0.0792,
   "geom_opt_converged": {
     "FADH2": true,
     "FADH2_cation": true
+  },
+  "geom_opt": {
+    "optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+    "FADH2": {
+      "converged": true,
+      "steps": 12,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 1015.6,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 0.00017680532692043033
+    },
+    "FADH2_cation": {
+      "converged": true,
+      "steps": 55,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 5323.2,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 2.624471885874155e-05
+    }
+  },
+  "fadh2_tautomer": {
+    "name": "1,5-dihydrolumiflavin",
+    "smiles": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
   },
   "sp_converged": {
     "FADH2": true,
     "cation_adiabatic": true,
     "cation_vertical": true
   },
-  "wall_seconds": 5026.3
+  "wall_seconds": 8357.2
 }

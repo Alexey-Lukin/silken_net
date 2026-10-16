@@ -3,9 +3,9 @@
 """
 L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•).
 
-Root-cause fix for the +0.998 eV UPHILL cascade artifact. The ΔSCF cascade
-used the BARE cation-radical IP:
-    FADH₂ → FADH₂•⁺ + e⁻        = +5.391 eV   (WRONG in water)
+Root-cause hypothesis for the UPHILL vertical ΔSCF cascade (written for its +0.998 eV on the 4a,5-dihydro
+donor the chain carried until 2026-10-15). The ΔSCF cascade used the BARE cation-radical IP:
+    FADH₂ → FADH₂•⁺ + e⁻        = IP_vertical of 21g   (WRONG in water)
 The uncompensated cation radical FADH₂•⁺ is pathological in implicit solvent
 (it also broke the Nelsen-λ script 29). The physically correct first oxidation
 step in water is PROTON-COUPLED — it sheds a proton concertedly:
@@ -14,14 +14,14 @@ with the proton handled by the thermodynamic proton reference (no explicit
 water, no QM/MM):
     Cost_PCET = [E(FADH•) − E(FADH₂)] + G*(H⁺,aq)
 
-Then the cascade vs the Os reduction (cached ΔSCF, −4.392 eV):
+Then the cascade vs the Os reduction (cached ΔSCF of the dimethyl device, os_complex_wb97xd_dmbpy.json):
     ΔG_cascade(PCET) = Cost_PCET + ΔE(Os III→II)
 
 Expectation (review): deprotonation relieves the cation-radical strain →
-Cost_PCET drops ~1–1.5 eV below +5.391 → cascade collapses toward DOWNHILL,
-matching experiment. (RESULT below: it does NOT flip — the residual gap is the
-PCM/speciation limit, not proton coupling; the verified driving force is −0.574 eV,
-E°(Os +309) − E°(FAD-GDH −265 mV SHE).)
+Cost_PCET drops ~1–1.5 eV below the bare IP → cascade collapses toward DOWNHILL,
+matching experiment. (RESULT below: it does NOT flip — Cost_PCET lies ABOVE the bare IP on both
+tautomers, so the cache's `drop_vs_bare_eV` holds that rise, not a drop; what the gap to the verified
+−0.574 eV, E°(Os +309) − E°(FAD-GDH −265 mV SHE), is made of — revision step 3, 00_07 HW.5.IS.)
 
 Levels: radical site screened at B3LYP/6-31G(d)+PCM (cheap), final energies
 at ωB97X/def2-TZVP+PCM (consistent with the cached cascade pieces).

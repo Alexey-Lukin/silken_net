@@ -1,7 +1,7 @@
 {
   "predictions": {
-    "E_cascade_eV": -1.0514490468713946,
-    "HOMO_FADH2_eV": -5.137012354676674,
+    "E_cascade_eV": 0.06755668408410553,
+    "HOMO_FADH2_eV": -4.018006623721174,
     "LUMO_Os3_eV": -4.0855633078052795,
     "delta_t_healthy_s": 135.2,
     "delta_t_stressed_s": 732.7,

@@ -10,14 +10,14 @@ rather than at the electronic-structure level. We report a first-principles acco
 electron-transfer energetics of a complete FAD-glucose-dehydrogenase / osmium-mediator / ZIF-nanozyme
 biofuel-cell chain, with an honest assessment of where affordable implicit-solvation DFT reaches its
 limit. A thermodynamic proton reference reproduces the
-proton-coupled FAD redox potential to within 62 mV of experiment; a Hammett structure–activity
+proton-coupled FAD redox potential to within 65 mV of experiment; a Hammett structure–activity
 relationship for the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈15 % shallower at ωB97X/def2-TZVP
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction
 and rationalises the empirical potential optimum; and a two-state diabatised coupling with first-principles
 reorganisation energies shows the bimetallic-ZIF cathode direct electron transfer — for an oriented
 enzyme–framework contact — to be conditional on the Co reorganisation energy: below enzymatic turnover at every corner of its bracket at
 the computed λ(Co), straddling turnover only at an assumed literature value, with explicit low-λ
-mitigation. The apparently uphill
+mitigation. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The apparently uphill
 anode→mediator cascade is shown to be a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
 4,4′-dimethyl substituent term, benchmarked against the known group-8 ~1 V implicit-solvation error — rather than a failure of the chemistry, with

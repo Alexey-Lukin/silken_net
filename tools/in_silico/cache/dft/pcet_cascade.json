@@ -1,20 +1,47 @@
 {
   "method": "PCET semiquinone: \u03c9B97X/def2-TZVP+PCM // B3LYP/6-31G(d)+PCM geom-opt; thermodynamic proton reference (G*(H+,aq)=-11.72 eV)",
-  "semiquinone_site": "N18",
-  "E_FADH2_Ha": -873.4525983337478,
-  "E_FADH_radical_Ha": -872.8061773512723,
+  "semiquinone_site": "N1",
+  "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen",
+  "fadh2_tautomer": {
+    "name": "1,5-dihydrolumiflavin",
+    "smiles": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+  },
+  "geom_opt": {
+    "optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+    "FADH2": {
+      "converged": true,
+      "steps": 11,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 881.1,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 8.75571862850276e-05
+    },
+    "FADH_radical": {
+      "converged": true,
+      "steps": 12,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 1199.2,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 0.00010070004005894792
+    }
+  },
+  "E_FADH2_Ha": -873.4499975608217,
+  "E_FADH_radical_Ha": -872.8461716852337,
   "G_star_H_aq_eV": -11.72,
-  "bare_IP_eV": 5.391,
-  "pcet_oxidation_cost_eV": 5.87,
-  "drop_vs_bare_eV": 0.479,
+  "bare_IP_eV": 4.338,
+  "bare_route_source": "delta_scf_corrections.json (IP_vertical_eV \u00b7 dG_vertical_eV, 21g)",
+  "pcet_oxidation_cost_eV": 4.711,
+  "drop_vs_bare_eV": 0.373,
   "os_reduction_eV": -4.243,
-  "cascade_pcet_eV": 1.627,
-  "cascade_bare_eV": 0.998,
+  "cascade_pcet_eV": 0.468,
+  "cascade_bare_eV": 0.095,
   "exp_cascade_eV": -0.574,
   "downhill": false,
   "converged": {
     "FADH2": true,
     "FADH_radical": true
   },
-  "wall_seconds": 4004.2975969314575
+  "wall_seconds": 3557.7991859912872
 }

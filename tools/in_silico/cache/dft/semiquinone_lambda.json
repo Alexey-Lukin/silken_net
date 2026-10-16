@@ -1,17 +1,43 @@
 {
   "method": "Nelsen 4-point at B3LYP/def2-SVP + C-PCM, FADH\u2022/FADH\u207b couple (seeded cross-SPs); rescues script 29 (FADH\u2082\u2022\u207a radical-cation pathology)",
   "couple": "FADH\u2022(neutral,doublet) / FADH\u207b(anion,singlet)",
-  "semiquinone_site": "N18",
+  "semiquinone_site": "N1",
+  "semiquinone_site_note": "locant from topology (lib/flavin.locants); H removed from that nitrogen of FADH\u2082",
+  "fadh2_tautomer": {
+    "name": "1,5-dihydrolumiflavin",
+    "smiles": "CC1=CC2=C(C=C1C)N(C)C3=C(N2)C(=O)NC(=O)N3"
+  },
+  "geom_opt": {
+    "optimizer": "lib/dft_utils.dft_optimize (grid response, conv_tol 1e-8)",
+    "FADH_radical": {
+      "converged": true,
+      "steps": 12,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 1309.3,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 9.71491071177302e-05
+    },
+    "FADH_anion": {
+      "converged": true,
+      "steps": 34,
+      "returned": "final",
+      "error": null,
+      "wall_seconds": 2729.7,
+      "maxsteps": 100,
+      "final_grad_max_Ha_bohr": 3.16691442949768e-05
+    }
+  },
   "physically_reasonable": true,
-  "E_rad_at_Rrad_Ha": -872.0699820229445,
-  "E_an_at_Ran_Ha": -872.2015949181273,
-  "E_rad_at_Ran_Ha": -872.0618363144781,
-  "E_an_at_Rrad_Ha": -872.195463168817,
-  "lambda_1_eV": 0.16685339884534398,
-  "lambda_2_eV": 0.22165601932567733,
-  "lambda_inner_eV": 0.3885094181710213,
+  "E_rad_at_Rrad_Ha": -872.1166772861907,
+  "E_an_at_Ran_Ha": -872.2414433849995,
+  "E_rad_at_Ran_Ha": -872.1058282365361,
+  "E_an_at_Rrad_Ha": -872.2352253835611,
+  "lambda_1_eV": 0.16920043881720626,
+  "lambda_2_eV": 0.2952176805519389,
+  "lambda_inner_eV": 0.4644181193691452,
   "literature_lambda_total_eV": 0.7,
   "lambda_total_comparison_basis": "TOTAL \u03bb of OTHER protein ET centres (azurin, cyt c/b5; ref 48); no flavin primary; consumed by no rate",
   "note": "inner-sphere only; Marcus outer-sphere \u03bb_o adds on top \u2192 total comparable to the 0.7\u20130.8 eV range of other protein ET centres (ref 48); no anode rate consumes it",
-  "wall_seconds": 3551.940439939499
+  "wall_seconds": 4511.286334991455
 }
