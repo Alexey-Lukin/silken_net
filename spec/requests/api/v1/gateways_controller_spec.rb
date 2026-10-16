@@ -54,15 +54,16 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
 
       # Чотири відсотки РІЗНІ свідомо: інакше пін проходив би через сусідній
       # вузол, і зіпсований `ORDER BY` (найстаріший замість найновішого) лишався
-      # б зеленим.
+      # б зеленим. Знак `%` несучий: сторінка друкує й дату пульсу як `ДД.ММ`,
+      # тож голе «16.1» збігалося зі штампом `16.10` і клало пін щороку 16.10–16.12.
       it "renders the LATEST heartbeat of EACH gateway, never an older one" do
         get "/gateways", headers: headers
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("87.1")  # csq 27 — свіжий пульс шлюзу A
-        expect(response.body).to include("64.5")  # csq 20 — свіжий пульс шлюзу B
-        expect(response.body).not_to include("16.1") # csq 5  — старий пульс A
-        expect(response.body).not_to include("25.8") # csq 8  — старий пульс B
+        expect(response.body).to include("87.1%")  # csq 27 — свіжий пульс шлюзу A
+        expect(response.body).to include("64.5%")  # csq 20 — свіжий пульс шлюзу B
+        expect(response.body).not_to include("16.1%") # csq 5  — старий пульс A
+        expect(response.body).not_to include("25.8%") # csq 8  — старий пульс B
       end
 
       # Виграш сам по собі: JSON-гілка телеметрії не віддає (`GatewayBlueprint` —
