@@ -26,10 +26,11 @@ CAN: say how far relaxing the geometry, then the ZPE, then the thermal terms mov
 CANNOT: (1) the Os side — no Hessian of the 66-atom ECP complex is computed, so a cascade built on (ii)/(iii) is corrected
 on the donor side only (95 says so); (2) anharmonicity, and the low modes (< 100 cm⁻¹) that RRHO turns into too much
 entropy — (ii) is the reading robust to them, and every frequency is kept in the cache so a quasi-RRHO treatment needs
-no recompute; and the reduced flavin's butterfly is a double well whose barrier (`saddle_above_minimum_meV`, ~meV) lies far
-below the zero-point level of its N5–H wag, so the vibrationally averaged structure is planar and the bend of
-`lumiflavin_red_opt.xyz` carries no structural meaning — counting the wag as a harmonic mode at the minimum (as here) and
-dropping it at the planar saddle bracket its anharmonic zero point; (3) explicit solvation; (4) PySCF marks the PCM Hessian experimental, and its Hessian carries no DFT grid
+no recompute; and the reduced flavin's butterfly is a double well whose planar saddle lies 117.5 meV above the minimum
+(`saddle_above_minimum_meV`, run 2 — the run-1 rigid cut's ~1 meV moved one hydrogen and understated it by two orders);
+that saddle is second order (the fold and the N10-methyl rotor), so its height bounds the inversion barrier from ABOVE
+only, and whether the fold's zero point clears that barrier is not computed — counting the fold as a harmonic mode at
+the minimum (as here) and dropping it at the planar saddle bracket its anharmonic zero point; (3) explicit solvation; (4) PySCF marks the PCM Hessian experimental, and its Hessian carries no DFT grid
 response while the geometry was minimised with it — soft modes can come out slightly imaginary; a mode under
 IMAG_TOL_CM is a DECLARED tolerance (not measured), it is dropped from (ii)/(iii) by PySCF and counted in the verdict;
 the path's checks are the water control (ZPE 0.571 eV, modes 1683 · 3716 · 3817 cm⁻¹, 2026-10-16) and the analytic
@@ -78,9 +79,9 @@ IMAG_TOL_CM = 20.0       # DECLARED tolerance for a slightly imaginary soft mode
 XH_MAX_A = 1.2
 SADDLE_ESCAPES = 2       # displace-and-reoptimise attempts after a Hessian finds a mode beyond IMAG_TOL_CM
 ESCAPE_STEP_A = 0.1      # largest atomic displacement of the summed step off the saddle (Å) — breaks a planar start's symmetry
-# An escape converges on geomeTRIC's TIGHT gradients with its DEFAULT displacement criteria: the reduced flavin's well is
-# ~1 meV deep along N5–H (a rigid cut of the saddle's 255i mode, 2026-10-16: −1.05 meV at 0.1 Å, +10.6 at 0.2 Å), where
-# the default gmax 4.5e-4 Ha/bohr is met within a step of the saddle; TIGHT's own dmax 6e-5 Å would hold three methyl
+# An escape converges on geomeTRIC's TIGHT gradients with its DEFAULT displacement criteria: next to the saddle the surface
+# is flat along N5–H (a rigid cut of the run-1 saddle's 255i mode: −1.05 meV at 0.1 Å, +10.6 at 0.2 Å — local only; the
+# relaxed fold went 117.5 meV down, run 2), so the default gmax 4.5e-4 Ha/bohr can be met within a step of the saddle; TIGHT's own dmax 6e-5 Å would hold three methyl
 # rotors to a trust radius of 4e-6 Å (geomeTRIC tmin = 0.1·drms) at the gradient noise floor. The escape's SCF runs at
 # conv_tol 1e-10, so the TIGHT grms 1e-5 sits above the gradient error, which falls with conv_tol (lib/dft_utils.dft_optimize).
 ESCAPE_CONV = {"convergence_set": "GAU_TIGHT", "convergence_drms": 1.2e-3, "convergence_dmax": 1.8e-3}
