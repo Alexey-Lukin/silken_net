@@ -268,7 +268,9 @@ SELF=${BASH_SOURCE[0]:-$0}
 # ⊕ 26812 → 26770 (−42) — посилання стаба `reference_web3_contract_skill` знято з хаба стабів разом із файлом. До факту.
 # ⊕ 26770 → 26249 (−521) — FOLD трьох епізод-файлів (founder: «працюй над відкладеними»): рядки сироти й seed зникли з індексу,
 #   посилання ре-роздачі знято з хаба У-ВЕЙ. До факту.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26249}
+# ⊕ 26249 → 26285 (+36) — ЗА КОРЕКТНІСТЬ: титул founder-а в преамбулі уточнено його словами 2026-10-17 («senior full-stack RoR engineer»
+#   звужувало так само, як імʼя файлу «physicist» спотворювало); чотири перейменування за брехливими іменами дали нетто ≈ 0.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26285}
 # The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
 # the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
 # whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
@@ -475,7 +477,7 @@ rb_dark() {
 # епізодів): рецепт промоції `generated/` протух, решту несуть скіл і CLAUDE.md §2, а founder-а «why» 06-13 переїхало
 # дослівно в тіло (11) `log_task_execution_workflow`. Опускання робить втрату git-видимою.
 # 2026-10-17: 179 → 180 — `feedback_external_sources`: половину «як машина читає зовнішні джерела» винесено
-# дослівно з `project_sentinelone_quarantine`, де вона жила під іменем корпоративного агента. Підняття робить новий дім
+# дослівно з `project_sentinelone_quarantine` (нині `project_dev_machine_env`), де вона жила під іменем корпоративного агента. Підняття робить новий дім
 # захищеним підлогою.
 # 2026-10-17: 180 → 177 — три епізод-файли згорнуто (рецепт DOC-T.118, founder: «працюй над відкладеними»): `project_orphan_verdict_2026_07`
 # (присуд — канон 04_01 §10, запис сесії — log_verdict_grounds (25)) · `project_doc_t33_t34_seed` (ремесло — guard-craft #184) ·
@@ -619,7 +621,9 @@ index_reach_expected() {
 # хабів кампанії того ж дня вже стиснуто (−107 B) і покрили решту; чужих не підрізано.
 # 2026-10-17: 41928 → 40668 (−1260) — описи трьох згорнутих епізод-файлів пішли разом із ними; описи журналу ре-роздачі
 # й sync-програми переписано під їхню нову роль. До факту.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-40668}
+# 2026-10-17: 40668 → 40694 (+26) — ЗА КОРЕКТНІСТЬ: опис професії founder-а його словами (Senior Lead Full-Stack Engineer); перелік стеку
+# в описі стиснуто (−18 B), повний — у тілі файлу.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-40694}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
