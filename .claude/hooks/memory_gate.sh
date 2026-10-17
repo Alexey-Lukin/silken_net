@@ -239,7 +239,18 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   founder-а в сторонні API не класти»): 2026-10-15 агент знову підставив email у `email=` Unpaywall, бо правило жило
 #   лише у файлі, а мить дії — написання брифу; піднято ХАБ-ІНЛАЙНОМ у рядок Subagent discipline (окремий рядок коштував би
 #   більше). Еvict-прохід цього разу не робився — бамп оплачує наступний прохід памʼяті.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26806}
+# ⚖️ 2026-10-17 — СТЕЛЮ РАТИФІКОВАНО founder-ом за рекомендацією: поточний рівень (~26.8 kB) І Є кап. Підстава:
+#   індекс НАСИЧЕНИЙ (вимір 09-21), а кап 24 kB (07-31) ставився як запобіжник від пере-видалення — і шість локально
+#   чесних бампів його переступили. Зовнішня стіна — харнес: 200 рядків / 25 KB, і рахує він СИМВОЛИ, не байти
+#   (виміряно 10-17: 26 805 B = 20 648 символів вантажаться цілком, у транскриптах жодної помилки «over its read
+#   limit»), тож ми на ~83% стіни. ⛔ Відтепер НОВИЙ ДІМ бампа не купує — лише витісненням ЗАПИСУ; бамп легальний
+#   тільки «за коректність» і тут же називає дефект, який лікує. Носій — рядок ⛔ у повідомленні index_check (пін 17c').
+#   Вексель 10-15 (+91) погашено ЦИМ присудом (ратифікований рівень його вже містить), не витісненням.
+#   Ціна, названа вголос: ~1k токенів на сесію понад липневий бюджет — назавжди.
+# ⊕ 26806 → 26812 (+6) — бамп ЗА КОРЕКТНІСТЬ (прохід памʼяті 2026-10-17): гліф `🔄`→`⚫` Biodiversity (E.59 у §🗄️
+#   з 10-12) · гачок `thorough_planning` вчив спростованого («compute-heavy sims», а тіло каже, що правило НЕ про
+#   ціну обчислень) · ⛔ `who_axis` забороняв переаудит обох осей, тоді як тіло звужує його до WHO (STAGE-🟢 — бокс).
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26812}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 # 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
@@ -1002,6 +1013,7 @@ index_check() {
     echo "      it gates BYTES, not entries — cheapest lever FIRST: compress a hook (detail belongs in the file),"
     echo "      then hub-inline a row under a neighbour (ORPHAN wants a LINK, not a row — the pointer survives);"
     echo "      deleting or merging a FILE is the LAST lever and FLOOR gates it"
+    echo "      ⛔ a NEW home never buys a bump — the ratchet IS the ceiling (⚖️ founder 2026-10-17); bump only «за коректність», naming the defect beside IDX_BASELINE"
   elif [ "$sz" -lt $((IDX_BASELINE - 400)) ]; then
     # "Smaller" is not "better" until you know WHICH of the three events it was.
     # Reach is the discriminator the old wording never asked for: compression and
@@ -2425,6 +2437,13 @@ selftest() {
   #          already exists as case 4: strip the link entirely and ORPHAN fires.
   _st_build "$d"
   _st_check "over-ratchet advice names the CHEAP lever, not only deletion" expect 'hub-inline a row' \
+            MEMORY_GATE_IDX_BASELINE=10
+
+  # 17c'. The RATIFIED CEILING (⚖️ founder 2026-10-17). Six bumps crossed the 24 kB cap one honest
+  #       step at a time, and the rule «a new home pays by eviction» stood in prose since 09-21 —
+  #       twice bypassed, because the one line a bumper reads mid-action never said it.
+  _st_build "$d"
+  _st_check "over-ratchet advice forbids buying a bump with a NEW home" expect 'ratchet IS the ceiling' \
             MEMORY_GATE_IDX_BASELINE=10
 
   _st_build "$d"
