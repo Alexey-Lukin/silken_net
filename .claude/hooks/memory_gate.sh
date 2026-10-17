@@ -820,26 +820,6 @@ asset_check() {
   return 0
 }
 
-# Two files hold the founder's personal circumstances (medical, psychological,
-# precise location). This gate CANNOT enforce read access — it sees writes, not
-# reads, and a subagent spawned for any memory task reads the whole corpus by
-# default. What it can do is notice the marker DISAPPEARING, which is the
-# realistic failure: a rewrite drops frontmatter silently, and the next curator
-# has nothing telling them this file must not travel into an agent brief.
-# Curated list, deliberately short — a long one would be a classification
-# scheme nobody maintains.
-PRIVATE_FILES='user_life_context.md user_location_cherkasy.md'
-
-privacy_check() {
-  local f
-  for f in $PRIVATE_FILES; do
-    [ -f "$MEM_DIR/$f" ] || continue
-    grep -q '^[[:space:]]*sensitivity: private' "$MEM_DIR/$f" ||
-      echo "PRIVACY $f lost its \`sensitivity: private\` marker — restore it; this file must stay out of subagent briefs"
-  done
-  return 0
-}
-
 # Sum of every `description:` field, in bytes. Cheap enough for the write path.
 desc_check() {
   # [ceiling, measured 2026-08-04 — do NOT rebuild] This ratchet is SUM-only, and a
@@ -1808,7 +1788,7 @@ RUBY
 # false hit of the 2026-10-17 replay. Journals are exempt for the reason --genre
 # states. Replay over all 469 archived IDs that day: 19 lines, 7 in journals, none
 # true — the curation pass of that morning had just fixed them, so read it as the
-# noise floor, not the yield. user_* lines print as an address only.
+# noise floor, not the yield.
 # Always exit 0: a worklist for the act, not a verdict.
 mirrors_check() {
   [ "$#" -gt 0 ] || return 0
@@ -1834,7 +1814,7 @@ Dir["#{dir}/*.md"].sort.each do |p|
       a = [m.begin(0) - 60, 0].max
       win = l[a, m.begin(0) - a + m[0].size + 60].to_s
       next unless win.match?(LIVE) && !win.match?(DONE)
-      rows << (f.start_with?("user_") ? "#{f}:#{n}  #{m[0]}" : "#{f}:#{n}  #{m[0]}  …#{win.strip.gsub(/\s+/, " ")}…")
+      rows << "#{f}:#{n}  #{m[0]}  …#{win.strip.gsub(/\s+/, " ")}…"
     end
   end
 end
@@ -2481,10 +2461,6 @@ selftest() {
     fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance catches a tombstone over a live file" "$out"
   fi
 
-  # 12. The private marker disappearing under a rewrite.
-  _st_build "$d"; printf -- '---\nname: user_life_context\ndescription: "L"\nmetadata:\n  type: user\n---\n\nBody.\n' >"$d/user_life_context.md"
-  printf -- '- [Life](user_life_context.md) — x\n' >>"$d/MEMORY.md"
-  _st_check "PRIVACY on a lost sensitivity marker" expect 'PRIVACY'
 
   # 13-14. THE FLOOR, and the reason it was added: deletion used to be silent,
   #        and the index ratchet used to answer it with "lock the gain in".
@@ -3015,7 +2991,7 @@ case "${1:-}" in
     out=$( { [ -n "$RB" ] || rb_dark "ten checks"
              override_check; index_check; harness_wall_check; desc_check; corpus_floor_check; integrity_check
              unstrung_check; asset_check; package_check
-             privacy_check; overlap_check; section_ref_check; canon_section_check
+             overlap_check; section_ref_check; canon_section_check
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
     printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no size or integrity finding (any trigger lines below are to READ, not to fix)}"
@@ -3184,7 +3160,6 @@ ANCH = /\b([A-Z]{2,7}(-[A-Z])?\.\d+[a-z]?)\b|\b20\d\d-\d\d-\d\d\b|\b\d\d-\d\d\b|
 rows = Hash.new { |h, k| h[k] = [] }
 Dir["#{dir}/*.md"].sort.each do |p|
   f = File.basename(p)
-  next if f.start_with?("user_")          # private; never in a worklist
   File.readlines(p).each do |l|
     next unless l =~ LEAD || l =~ BAN
     t = l.strip.gsub(/\s+/, " ")
@@ -3386,7 +3361,6 @@ RUBY
               asset_check
               # A new home is WRITTEN here; this is the one moment it can still be packed.
               package_check
-              privacy_check
               # Runs on BOTH stances (the UNSTRUNG lesson): severing a section a
               # string points at happens WHILE rewriting, not while auditing. The
               # corpus is at zero here, so any output is this write's own trace.

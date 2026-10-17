@@ -540,6 +540,13 @@ jobs:
         # script arm of the same carrier is rule I of the bash-guard battery above.
         run: bash .claude/hooks/ssot_guard_hint.sh --selftest
 
+      - name: Docs · compact-lock hook self-test
+        # The post-compaction lock (DOC-T.122) fails silent in one direction: a lock
+        # that never arms reads exactly like «nothing to stop». The battery pins every
+        # stance both ways — arm only on `compact`, release only on a skill-file Read,
+        # stop only once and only inside the repo — and each was mutation-verified.
+        run: bash .claude/hooks/compact_lock.sh --selftest
+
       - name: Docs · Generated skill indexes ⇄ their sources
         # One engine, a TABLE of targets (scripts/guard_craft_index.rb TARGETS) — a
         # copy per skill would be the second-home defect the engine exists to prevent.

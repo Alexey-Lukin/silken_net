@@ -13,6 +13,17 @@
         ]
       },
       {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/compact_lock.sh",
+            "timeout": 5,
+            "statusMessage": "Checking the post-compaction lock..."
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -55,6 +66,28 @@
             "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/memory_git_commit.sh",
             "timeout": 10,
             "statusMessage": "Versioning memory..."
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/compact_lock.sh --release",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/compact_lock.sh --arm",
+            "timeout": 5
           }
         ]
       }
