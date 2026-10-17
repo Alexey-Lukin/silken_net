@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.9.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.9.0) (2026-10-17)
+
+
+### Features
+
+* **cad:** ⚖️ ростер вербів — `switch` у Main; README — вказівник, `help` доповнено, носій над switch ([cc3526c](https://github.com/Alexey-Lukin/silken_net/commit/cc3526c97bfb7b3d4e8269ee51b2175a2d831240))
+* **gates:** guard_craft_index --check судить і стелі харнесу — індекс у голові, опис у видимій частині ([799aae4](https://github.com/Alexey-Lukin/silken_net/commit/799aae408a12c563e41868b76c5c0979729cdbd4))
+* **in-silico:** 97 — пружний дріт під кромками лайнера (HW.34, нога «notch-фактор») ([764b954](https://github.com/Alexey-Lukin/silken_net/commit/764b95421847db9cf7a01ef3e209c2fda045c060))
+* **memory:** замок компакції і path-rule гейтів; приватність user_* знято присудом founder-а (DOC-T.122) ([6430817](https://github.com/Alexey-Lukin/silken_net/commit/6430817be9145a9c1ac57f5c6662fbbadb2ae292))
+* **memory:** рука архівації друкує дзеркала стану в памʼяті ДО запису (DOC-T.122 ноги 1–2) ([11eaec9](https://github.com/Alexey-Lukin/silken_net/commit/11eaec907d10b7e1841d9ea952231f1d405db8a3))
+* **scripts:** skill_tier_probe — прилад рівня скілів закомічено, щоб його пастки не стали спадковими ([af60fbe](https://github.com/Alexey-Lukin/silken_net/commit/af60fbe5c76e538fc690a8cab47d1301c7c7b3c5))
+
+
+### Bug Fixes
+
+* **00_05,00_06,00_07,claude:** адверсар по діфу — канон казав сильніше, ніж виміряно ([4c7da55](https://github.com/Alexey-Lukin/silken_net/commit/4c7da5501a2292d05bcb11064e5cbfc5b2ad189d))
+* **00_07:** DOC-T.123 — «web3 у жодній сесії» було сліпотою приладу, не тишею домену ([7a34500](https://github.com/Alexey-Lukin/silken_net/commit/7a34500445e96fe78bf10bad576088106464bfd3))
+* **deps:** rbsecp256k1 6.0.0 → 6.0.2 + rubyzip 2.4.1 → 3.7.0 — CVE-2026-85396 вилікувано, ignore у bundler-audit знято ([a80796c](https://github.com/Alexey-Lukin/silken_net/commit/a80796ce269c9175fbd9815afd46a2c70591e8bd))
+* **gates:** повідомлення в мить червоного кажуть лік, а не лише «поза домом» ([c0b1d47](https://github.com/Alexey-Lukin/silken_net/commit/c0b1d47a48cef4567e3c018d7c19e9a7bc340fe1))
+* **hooks:** compact_lock — названо стелю, виміряну живою компакцією: правка ФАЙЛУ СКІЛА замка не зустрічає ([f8b963f](https://github.com/Alexey-Lukin/silken_net/commit/f8b963fcf194444b1e394403587052c2da468164))
+* **hooks:** адверсар по діфу — WRITE-TIME після компакції, route_check під self-test, шапка замка чесна ([ee21257](https://github.com/Alexey-Lukin/silken_net/commit/ee2125772750c830f0e6b701955b7d8f278cb2c5))
+* **in-silico:** SI-маніфест статті перегенеровано `72` після 96214a7d3 — `Smoke · In-silico` на main червоний з a9fb7f4b8 ([5c72cdc](https://github.com/Alexey-Lukin/silken_net/commit/5c72cdc01753f48713ba6beff1a149d0e8fb584e))
+* **legal-business:** опис повернув тригерні іменники concern-шару ([2826786](https://github.com/Alexey-Lukin/silken_net/commit/2826786afbbe328b48cfcc9595ea8b315add1dc3))
+* **memory-gate:** AMBIG судить аліас компаньйона в ЙОГО файлі; три голі цитати in-silico названо послідовністю ([a92d8a3](https://github.com/Alexey-Lukin/silken_net/commit/a92d8a3daefae74bd7897cc0ebe935f0bf711340))
+* **memory-gate:** правила запису памʼяті — живим носієм замість вирізаного коментаря ([3d063d1](https://github.com/Alexey-Lukin/silken_net/commit/3d063d1fbce83339ac97da2e18a65d84f066fc65))
+* **memory-maintenance:** адверсар по діфу — одна форма присуду «помітність», чесні межі ядра й голови ([7540c8e](https://github.com/Alexey-Lukin/silken_net/commit/7540c8e026c348ba5daf09f8a5e0828961d24137))
+* **memory:** переприсуд капу індексу з доказом — байтовий «ріст» був мовним зсувом; замок — стіна харнесу ([3efc7ae](https://github.com/Alexey-Lukin/silken_net/commit/3efc7aebc6b43b1733dcfca112316d3a4d304fd6))
+* **memory:** стійка запису гейта стояла на краю таймауту — canon_section_check сканував увесь корпус на кожен запис ([a1ae30e](https://github.com/Alexey-Lukin/silken_net/commit/a1ae30e6bc0831c2e9e7d0379547155c6a0342f4))
+
 ## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
