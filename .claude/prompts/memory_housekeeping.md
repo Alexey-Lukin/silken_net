@@ -91,6 +91,24 @@
 
 > 🔴 **Фінальний аудит обовʼязковий, і це не симетрія заради симетрії.** `corpus_floor_check` сам оголошує свою сліпоту (нетто-лічба; подія втрати — `rm`, а хук ловить `Edit|Write`) і сам каже, що лікує її ПРОЦЕДУРА — цей крок. Стартовий аудит міряє світ ДО прибирання. Порівняння з бекапом (`cmp` пофайлово + список зниклих) коштує один прогін і ловить рівно те, чого гейт не може.
 
+## 🔁 Режим 2 — 4-way sync: памʼять ↔ доменний скіл ↔ канон ↔ `00_07`, по одній §-секції за свіжу сесію
+Не «почистити дублі», а звести чотири поверхні до однієї правди: памʼять ROUTE-ить до канонічного дому, дрейф лагодять ОБАБІЧ — канон і скіл теж старіють проти памʼяті, і тоді правлять канон, — а прогалини дописують (founder 2026-07-17; цикл §00–§08 замкнено 2026-07-18, далі — для нових секцій). Результати по секціях і уроки програми → памʼять `project_memory_sync_program`. Рецепт, відпрацьований §05→§00:
+1. **Anchor:** skills `memory-maintenance` + `ssot-maintenance`, цей плейбук, `ruby scripts/doc_structure_map.rb NN_01 NN_xx`.
+2. **Baseline** health-gate (`memory_gate.sh --audit`) і SHA «до» — коміт перед першою правкою серії (корпус версіонований із 2026-08-08, тож `cp`-backup як «єдина safety-net» знято; пастка 19 скіла — «до» береться з історії, не зі `stash`).
+3. **READ** усіх §-memory (core + border) + domain-skill повністю. НЕ grep — READ (grep=false-negative на unicode/дужках/backtick).
+4. **Orient** сам: `doc_structure_map NN` + реальний `00_07 §NN` (не промт-snapshot) + 2-3 центральні canon-доми.
+5. **Fan-out READ-ONLY агентів** (findings = candidates, ти = gate; money/load-bearing = Opus, holistic = **fable**):
+   - 3× pairwise memory→(skill/canon/00_07) home-audit → RESTATE→route / STALE-drift / MEMORY-native.
+   - 1× **reverse-lens** (canon/skill/00_07 → memory): GAP (memory сліпа пляма) · REVERSE-STALE (memory права, canon застаріла → canon-fix) · SKILL↔CANON drift. ⬅ найцінніший «інший бік».
+   - 1× border-files · 1× code-behavior verify (top load-bearing → real code; mirror-decay proof).
+   - 1× **fable holistic target-architecture:** one-home map · big-file verdict · 4-way triangulation-conflicts · what-to-WRITE · synergy-redesign.
+6. **Gate кожну пропозицію** проти джерела (verify-before-cut: код-символи живі → decay низький → безпечно thin ФОРМУ; grep -F доказ restate).
+7. **Виконати за fable-порядком:** canon-fixes (найвища ціна помилки, найдешевші) → skill-slim (delta-over-canon + route) → canon/tracker-writes (gaps) → memory-restructure (Write + set-diff links + grep-F verbatim) + thinnings + synergy-links + durable-урок.
+8. **Closing-sweep:** grep shipped facts across ALL surfaces (named-list пропускає — sweep знаходить більше; **грепай ВСІ числові варіанти** [38/38.94/39], не точний рядок; + `^description:`-frontmatter, не лише тіла).
+9. **Verify:** health-gate exit=0 · index+corpus set-diff (0 links lost) · docs-gate **exit-code** (не tail) · frontmatter (`node_type`/`originSessionId`) intact.
+
+---
+
 ## 🧠 Durable-уроки
 
 > **Auto-consolidate — метод застосовується до себе.** Уроки живуть у 6 іменованих family нижче (стабільний каркас). Новий урок → **влий рядком у відповідну family**, НЕ приклеюй окремий date-stamped абзац (саме так секція колись розрослась у стіну, яку довелось рефакторити). Нова family — лише якщо принцип не лягає в жодну (тримай ≤~7). Family переросла ~6 рядків → стисни її тим самим методом. «Коли вивчено» → git, не текст.
