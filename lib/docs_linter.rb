@@ -480,9 +480,9 @@ module DocsLinter
       next if line.match?(RATE_MIRROR_RE)
 
       if line.match?(TOKENOMICS_RATE_RE)
-        "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 00_04 §3) → #{line.strip[0, 90]}"
+        "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 00_04 §3; a doc that must name it keeps the number and marks the SAME line as a mirror) → #{line.strip[0, 90]}"
       elsif line.match?(CARBON_RATE_RE)
-        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 00_04 §3) → #{line.strip[0, 90]}"
+        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 00_04 §3; a doc that must name it keeps the number and marks the SAME line as a mirror) → #{line.strip[0, 90]}"
       end
     end
   end
@@ -566,7 +566,7 @@ module DocsLinter
       next unless line.match?(SOLC_VERSION_RE)
       next if line.match?(SOLC_MIRROR_RE)
 
-      "solc/pragma version re-stated outside owner (05_03 Pragma table; code SSOT = contracts/foundry.toml + *.sol) → #{line.strip[0, 100]}"
+      "solc/pragma version re-stated outside owner (05_03 Pragma table; code SSOT = contracts/foundry.toml + *.sol; write `<pinned>` with a 05_03 ref on the same line — code fences are scanned too) → #{line.strip[0, 100]}"
     end
   end
 

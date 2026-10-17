@@ -7,8 +7,9 @@
 # loses its tail (the Gotchas of memory-maintenance and ssot-maintenance, the
 # Guard-craft pointer, in-silico's When Modifying, legal-business's gate traps) and
 # every companion file is out of context. Each skill's DESCRIPTION names its
-# companions and stays visible every turn — and still 11 of 13 repo edits after a
-# compaction were made without reading one. A pointer that is always visible is a
+# companions, but the skill listing is NOT re-injected after compaction (documented,
+# verified 2026-10-17, DOC-T.123), so after the cut nothing in context names them —
+# and 11 of 13 repo edits after a compaction were made without reading one. A pointer that is always visible is a
 # rule in disguise; this is a LOCK, one file, three stances:
 #   --arm      SessionStart, matcher `compact`: arm this session
 #   --release  PostToolUse Read of any `.claude/skills/*/*.md`: disarm
@@ -93,6 +94,6 @@ esac
 fp=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 [[ "$fp" == "$REPO/"* ]] || exit 0
 printf 'fired\n' > "$m"
-reason="[compact-lock] Після компакції тіла викликаних скілів повернуто обрізаними (~19.9 тис. символів тіла): хвіст довгого скіла і всі його компаньйони поза контекстом. Перш ніж правити ${fp#"$REPO/"}, прочитай Read-ом компаньйон свого домену (їхні імена — в описі скіла) або сам SKILL.md, тоді повтори правку. Зупинка одна на компакцію (DOC-T.122)."
+reason="[compact-lock] Після компакції тіла викликаних скілів повернуто обрізаними (~19.9 тис. символів тіла): хвіст довгого скіла і всі його компаньйони поза контекстом. Перш ніж правити ${fp#"$REPO/"}, прочитай Read-ом компаньйон свого домену (\`ls .claude/skills/<скіл>/\` — опис скіла після компакції не повертається) або сам SKILL.md, тоді повтори правку. Зупинка одна на компакцію (DOC-T.122)."
 jq -nc --arg r "$reason" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
 exit 0
