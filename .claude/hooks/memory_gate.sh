@@ -1453,6 +1453,14 @@ dir, repo = ARGV
 # тепер збираються з УСІХ його файлів: адреса `skill #N` належить скілу, а не
 # конкретному файлу всередині нього.
 #
+# ⚠️ Стеля, виміряна 2026-10-17: репо-сайти цитат ця перевірка судить лише в мить
+# запису в памʼять чи `--audit`, CI їх не бачить (у docs.yml — лише `--selftest`).
+# Перенос правил in-silico у діапазон сусідньої послідовності зробив три голі цитати
+# неоднозначними, пройшов коміт, pre-push і зелений CI, а почервонів на першому
+# записі в памʼять — за годину. Окремого CI-кроку не будуємо: носій стріляє майже
+# щосесії, а CI-крок вимагав би винести цей Ruby з хука; перший слід шкоди — ціну
+# переглянути.
+#
 # І номер лишається РЯДКОМ, не Integer: `10a` існує (вставка суфіксом, бо
 # перенумерація осиротила б цитати), а `to_i` схлопував би його в `10` — тобто
 # цитата `#10a` тихо резолвилась би в ЧУЖИЙ пункт, що гірше за фантом.
@@ -1479,11 +1487,13 @@ exit 0 if skills.empty?
 # calls all 45 of them duplicates and reds the gate on the healthiest invariant
 # in the tree. A number is ambiguous only when one FILE uses it twice.
 dups = Hash.new { |h, k| h[k] = [] }
+file_dups = {}
 skills.each_key do |nm|
   grouped = skill_files.select { |p| File.basename(File.dirname(p)) == nm }
   grouped.each do |p|
     nums = File.readlines(p).filter_map { |l| l[/\A\#{0,4}\s*(\d+[a-z]?)[.)] /, 1] }
-    dups[nm] |= nums.tally.select { |_n, c| c > 1 }.keys
+    file_dups[p] = nums.tally.select { |_n, c| c > 1 }.keys
+    dups[nm] |= file_dups[p]
   end
 end
 # 🔴 A skill's address space is reachable by MORE THAN ITS DIRECTORY NAME, and
@@ -1496,15 +1506,24 @@ end
 # have opened the identical hole for «gotchas #N».
 # Cure is generative, not a hard-coded alias: every non-SKILL.md file of a skill
 # lends the skill its basename. A future split needs no patch here.
+# 🔴 And such an alias NAMES THAT FILE, so AMBIG judges it in that file alone (the
+# unit above): `modifying #34` cites `modifying.md`, where 34 is one item, even when
+# SKILL.md carries two generated index blocks that both reach 34. Judged per skill,
+# every such citation went AMBIG the day one block grew into the other's range
+# (in-silico, 2026-10-17) — a false red on the form that already names its sequence.
 aliases = {}
+alias_file = {}
 skills.each_key { |nm| aliases[nm] = nm }
 skill_files.each do |p2|
   nm = File.basename(File.dirname(p2))
   base = File.basename(p2, ".md")
   next if base == "SKILL" || !skills.key?(nm)
-  aliases[base] ||= nm
-  cap = base.sub(/\A([a-z])/) { $1.upcase }
-  aliases[cap] ||= nm
+  [base, base.sub(/\A([a-z])/) { $1.upcase }].each do |a|
+    next if aliases.key?(a)
+
+    aliases[a] = nm
+    alias_file[a] = p2
+  end
 end
 names = aliases.keys.sort_by { |k| -k.length }
 
@@ -1644,7 +1663,8 @@ sources.each do |label, path|
           # A `§Section` between the skill name and the number disambiguates —
           # and that is not a proposal but the convention USAGE already settled
           # on: every live citation to a doubled number already carries one.
-          if dups[aliases[nm]].include?(n) && !w[0...Regexp.last_match.begin(0)].to_s.include?("§")
+          dset = alias_file[nm] ? file_dups.fetch(alias_file[nm], []) : dups[aliases[nm]]
+          if dset.include?(n) && !w[0...Regexp.last_match.begin(0)].to_s.include?("§")
             if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
               used_exempt[label] << "#{nm} ##{n}"
             else
@@ -2406,6 +2426,15 @@ selftest() {
   printf '1. **First item** — body.\n2. **Second item** — body.\n' >"$d.repo/.claude/skills/fixtureskill/mirror.md"
   printf '\nOperational pair → `fixtureskill` #1.\n' >>"$d/feedback_beta.md"
   _st_check "AMBIG silent on a number mirrored across a skill's files" reject 'AMBIG'
+
+  # 10m. A COMPANION's name is a file address [2026-10-17]: SKILL.md doubles 1 (two
+  #      generated blocks), but `mirror #1` names mirror.md, where 1 is one item.
+  #      Judged per skill this went AMBIG; the bare skill name must still go AMBIG.
+  _st_build "$d"
+  printf '1. **First item** — body.\n' >"$d.repo/.claude/skills/fixtureskill/mirror.md"
+  printf '\n## Second sequence\n\n1. **A step of another list** — body here.\n' >>"$d.repo/.claude/skills/fixtureskill/SKILL.md"
+  printf '\nOperational pair → `mirror` #1.\n' >>"$d/feedback_beta.md"
+  _st_check "AMBIG silent on a companion-named citation unique in its file" reject 'AMBIG'
 
   # 10i. PERIMETER [DOC-T.62, 2026-08-08]. Until this date the citation scan read
   #      the memory dir and nothing else, so a phantom in `docs/`, a skill citing

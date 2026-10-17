@@ -797,7 +797,7 @@ fi
 # and the third form even carries the `--` separator that reads as precision.
 #
 # Why no rule in a skill can hold this: the carrier has to fire at the moment of
-# `git add`, and the skill that states the rule (`in-silico` #21) is not loaded
+# `git add`, and the skill that states the rule (`in-silico` §When Modifying #21) is not loaded
 # then. The relapse was never about knowing the rule — its home was patched one
 # hour before relapse #2. Class: memory `feedback_rule_needs_a_carrier`.
 #
