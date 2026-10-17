@@ -21,7 +21,9 @@
 # one re-orientation, not a verdict on which skill the edit needed.
 # ⚠️ Ceilings, named: a skill read through Bash (`sed -n`, `cat`) does not disarm it
 # (the one stop still comes, and its reason says Read); files outside the repo — the
-# memory corpus, the scratchpad — pass untouched, the memory gate guards the first.
+# memory corpus, the scratchpad — pass untouched, the memory gate guards the first;
+# and an edit OF a skill file never meets the lock: Edit requires a Read of its target,
+# and that Read — even a few lines by offset — disarms it (measured live 2026-10-17).
 set -uo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
