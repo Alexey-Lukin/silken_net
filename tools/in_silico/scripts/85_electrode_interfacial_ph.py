@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 85 — How far each coin electrode's OWN current moves the pH at its face in the media the Stage-2 letter can mean
-(00_07 HW.5.IS, the 🤖 leg «оцінка інтерфейсного ΔpH на катоді» — its COIN half; the anchor half waits on HW.53,
-whose answer decides which electrolyte the anchor cathode sees at all — so nothing here is an anchor number).
+(00_07 HW.5.IS, the 🤖 leg «оцінка інтерфейсного ΔpH на катоді» — its COIN half; the anchor CATHODE waits on HW.53,
+whose answer decides which electrolyte it sees at all). One anchor number, conditional (2026-10-17, the leg «pH на грані
+АНОДА в анкері»): the anchor's anode with its gap filled with stagnant sap — the state the HW.53 bench sets by hand, so
+no bench run says whether a living stem keeps it (`anchor_anode`).
 
 THE QUESTION. Laccase in ZIF inactivates at pH ≥ 6 (01_03 §3.2, the BOD row). The coin letter
 (docs/protocols/procurement/anchor_coin_electrochem_rfq.md) says «Cathode medium: pH 4.5, air-exposed.» and names no
@@ -84,13 +86,25 @@ from pathlib import Path
 from scipy.optimize import brentq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import A_ELECTRODE, CACHE_DIR, F_CONST, J_MAX_25C, KM_GLUCOSE, R_GAS, REPO_ROOT
+from lib.constants import (
+    A_ELECTRODE,
+    BQ25570_PIN_CS_UW,
+    BQ25570_VIN_CS_MAX_MV,
+    BQ25570_VIN_CS_TYP_MV,
+    CACHE_DIR,
+    F_CONST,
+    J_MAX_25C,
+    KM_GLUCOSE,
+    R_GAS,
+    REPO_ROOT,
+)
 from lib.kinetics import ph_current_ratio
 from lib.utils import banner
 
 SI_DESCRIPTION = ("How far each Ti-coin electrode's own current shifts the pH at its face in the media the test letter "
                   "allows, from a steady diffusion-layer equation: the cathode as a fraction of its oxygen supply limit, "
-                  "the anode as the diffusion-layer thickness its predicted current tolerates.")  # its row in the paper SI (72): English, no repo jargon
+                  "the anode as the diffusion-layer thickness its predicted current tolerates; and the anchor's anode, "
+                  "conditional on sap filling its gap, as the current at which its face leaves the enzyme's pH band.")  # its row in the paper SI (72): English, no repo jargon
 SCRIPTS = Path(__file__).resolve().parent
 OUT = CACHE_DIR / "kinetics" / "electrode_interfacial_ph.json"
 
@@ -357,6 +371,73 @@ def anode() -> dict:
             "delta_star": out, "glucose_transport": "not computed — no free-solution D of glucose is sourced in the tree"}
 
 
+CEM = REPO_ROOT / "tools/cad/cem"
+ZONE1_SKUS = sorted(p for p in CEM.glob("anchor_zone1.*.json") if not p.name.endswith(".golden.json"))
+ANCHOR_GAP_STATES = {   # the three states 84 and the HW.53 bench name for the gap between the gyroid and the bore wall
+    "sap_gap": "the gap filled with sap, stagnant — computed below",
+    "air_gap": "no electrolyte in the gap — 84 leaves it not modelled (layer 1 then runs through contact points only)",
+    "ingrown": "wood in the gap: proton and malate transport through living sapwood has no source in the tree — not computed",
+}
+# The anchor's own cold-start draw: the BQ25570 needs P_IN(CS) at V_IN(CS) (02_03 §1.5) — typ and the worst-case column
+# the Stage-2 gates judge (V_IN(CS) MAX). Not the coin letter's load point B, which is a coin measurement.
+COLD_START_UA = {"typ": BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3,
+                 "worst": BQ25570_PIN_CS_UW / BQ25570_VIN_CS_MAX_MV * 1e3}
+
+
+def anchor_geometry(zone1_path) -> dict:
+    """The gyroid's envelope and the bore it stands in, read from the CEMs as 84 reads them: one Ø15 step takes the anode
+    and the sleeve (01_01 §4.3 C · 01_04 §3.1 item 2 · cathode_ionic_path_bench §2.1), so the bore wall is the Zone-2
+    sleeve's OD; the lattice length is the exposed anode (⚖️ HW.26 G1: only the lock's shank enters the sleeve). One
+    sleeve manifest serves every Zone-1 SKU, so the gap narrows as the lattice thickens."""
+    zone1 = json.loads(zone1_path.read_text(encoding="utf-8"))
+    sleeve = json.loads((CEM / "zone2_sleeve.json").read_text(encoding="utf-8"))
+    r_a = zone1["outer_diameter_mm"] / 20.0                                     # cm
+    r_b = (sleeve["bore_diameter_mm"] / 2.0 + sleeve["wall_thickness_mm"]) / 10.0
+    length = zone1["length_mm"] / 10.0
+    if r_b <= r_a:
+        raise SystemExit(f"{zone1['name']}: the lattice fills the bore — no gap to fill with sap")
+    return {"sku": zone1["name"], "anode_radius_cm": r_a, "bore_radius_cm": r_b, "gap_mm": round((r_b - r_a) * 10.0, 3),
+            "lattice_length_cm": length, "envelope_lateral_area_cm2": 2.0 * math.pi * r_a * length,
+            "bottom_cap_over_envelope": r_a / (2.0 * length), "annulus_delta_cm": r_a * math.log(r_b / r_a)}
+
+
+def anchor_anode() -> dict:
+    """The anchor's anode with its gap FILLED WITH STAGNANT SAP — the state the HW.53 bench SETS by hand (it fills the gap
+    with the recipe), so the bench cannot say whether a living stem keeps sap there; this is the answer conditional on that
+    state, per Zone-1 SKU. The ratified sap at its set-point lies stagnant across the annulus between the gyroid's envelope
+    and the bore wall, the bulk at the wall; steady radial diffusion in an annulus gives, per unit of the ENVELOPE's area,
+    the exact film δ = r_a·ln(r_b/r_a). Output: the envelope current density and the whole anode's current at which the
+    face reaches each edge, against the anchor's own cold-start draw (COLD_START_UA). The current is a bracket: its low end
+    is the envelope alone, its high end adds the bottom cap at the envelope's flux density (r_a/2L more; the cap faces the
+    bore's end, whose gap no manifest gives).
+    WHICH SIDE. Against the enzyme inside the lattice these currents are upper bounds: protons are made inside it, and the
+    wood wall adds its own resistance. Effects the other way are NOT in: migration (a few per cent, the coin block's own
+    figure), any flow through the gap (a stagnant film is the thickest it can be) and a CO₂/HCO₃⁻ buffer the recipe lacks —
+    each raises the currents. In a stagnant film ~1.7 mm thick the lactone has about δ²/D ≈ an hour to hydrolyse inside
+    it, so the n_H = 1.5 end is no longer the unlikely one it is on the coin; acid made inside the film moves the face
+    less than acid made at it, so the truth lies between the two n_H ends."""
+    out = {"states": ANCHOR_GAP_STATES, "cold_start_uA": {k: round(v, 1) for k, v in COLD_START_UA.items()},
+           "by_sku": {}}
+    for path in ZONE1_SKUS:
+        g = anchor_geometry(path)
+        per = {"geometry": g}
+        for edge in (PH_ANODE_KINETIC_EDGE, PH_ANODE_STABILITY_EDGE):
+            j = {n: [F_CONST * -proton_supply(PH_SAP, edge, sc, d, 1.0) * 1e-3 / (n * g["annulus_delta_cm"])
+                     for sc in READINGS for d in d_mal(25.0).values()] for n in N_H_ANODE}
+            every = [x for v in j.values() for x in v]
+            lo = min(every) * g["envelope_lateral_area_cm2"] * 1e6
+            hi = max(every) * g["envelope_lateral_area_cm2"] * (1.0 + g["bottom_cap_over_envelope"]) * 1e6
+            per[f"face_pH_{edge}"] = {
+                "j_envelope_uA_cm2": [round(min(every) * 1e6, 2), round(max(every) * 1e6, 2)],
+                "i_anode_uA": [round(lo, 1), round(hi, 1)],
+                "i_anode_uA_n1": [round(min(j[1.0]) * g["envelope_lateral_area_cm2"] * 1e6, 1),
+                                  round(max(j[1.0]) * g["envelope_lateral_area_cm2"] * (1.0 + g["bottom_cap_over_envelope"]) * 1e6, 1)],
+                "crossed_below_cold_start": {k: {"in_every_reading": hi < v, "in_some_reading": lo < v}
+                                             for k, v in COLD_START_UA.items()}}
+        out["by_sku"][g["sku"]] = per
+    return out
+
+
 def diagnostic_medium() -> dict:
     """The anode's day-0 check of ⚖️ 2026-10-12 (01_03 §3.5): the ratified sap at 5.75 with malic acid at BUFFERED_MALIC_MM —
     what it changes besides the buffer (ionic strength, KOH) and how much capacity it adds down to pH 4.5."""
@@ -377,7 +458,7 @@ def main() -> int:
     liu = checks["liu_fem_point"]
     print(f"  control 2 (Liu FEM, centre ≈ {LIU['ph_centre']}): conserving film {liu['film_pH_centre']}, single-D "
           f"bracket {liu['single_D_bracket_pH']}, passes for δ/a in {liu['passing_delta_over_radius']}")
-    cat, ano, diag = cathode(), anode(), diagnostic_medium()
+    cat, ano, diag, anc = cathode(), anode(), diagnostic_medium(), anchor_anode()
     for name, m in cat["media"].items():
         print(f"  cathode in {name}: f(pH 6) {m['f_pH6']} — citrate-like D {m['f_pH6_by_D_end']['citrate_like']}, "
               f"succinate-like {m['f_pH6_by_D_end']['succinate_like']}; crosses below the O₂ limit in "
@@ -392,20 +473,37 @@ def main() -> int:
                   f"{v['delta_star_um_n1']})")
     print(f"  anode check medium (malic {BUFFERED_MALIC_MM:.0f} mM, pH {PH_SAP}): capacity ×{diag['capacity_gain_to_pH_4.5']}, "
           f"I {diag['ionic_strength_mol_l']}")
+    cs = anc["cold_start_uA"]
+    print(f"  anchor anode, gap filled with stagnant sap — against its own cold-start draw {cs['typ']} (typ) · "
+          f"{cs['worst']} µA (worst, V_IN(CS) MAX):")
+    for sku, per in anc["by_sku"].items():
+        ag = per["geometry"]
+        print(f"    {sku}: Ø{20 * ag['anode_radius_cm']:g} in Ø{20 * ag['bore_radius_cm']:g}, gap {ag['gap_mm']} mm, "
+              f"δ {10 * ag['annulus_delta_cm']:.2f} mm, envelope {ag['envelope_lateral_area_cm2']:.1f} cm² (+cap "
+              f"{100 * ag['bottom_cap_over_envelope']:.1f} %) — "
+              + " · ".join(f"{edge}: {v['i_anode_uA']} µA (below worst cold start: every "
+                           f"{v['crossed_below_cold_start']['worst']['in_every_reading']}, some "
+                           f"{v['crossed_below_cold_start']['worst']['in_some_reading']})"
+                           for edge, v in per.items() if edge != "geometry"))
     out = {"script": Path(__file__).name,
            "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
-           "scope": "coin half of the 00_07 HW.5.IS leg; the anchor half waits on HW.53",
+           "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor "
+                    "cathode waits on HW.53, and which gap state a living stem keeps is not known",
            "recipe_mM": S67.RATIFIED_POINT_MM, "readings": [sc.key for sc in READINGS], "t_c": list(TEMPS_C),
            "constants": {f"{t_c:.0f}C": {"D_H_cm2_s": d_h(t_c), "D_O2_cm2_s": d_o2(t_c), "C_O2_air_mol_l": c_o2(t_c),
                                           "D_mal_cm2_s": d_mal(t_c)} for t_c in TEMPS_C}
                         | {"delta_natural_convection_um": list(DELTA_NATURAL_CONVECTION_UM), "sources": SOURCES},
-           "checks": checks, "cathode": cat, "anode": ano, "anode_check_medium": diag,
+           "checks": checks, "cathode": cat, "anode": ano, "anode_check_medium": diag, "anchor_anode_sap_gap": anc,
            "not_modelled": ["which medium and convection the laboratory will use (the letter fixes neither)",
                             "the pH inside the coatings — every shift here is a lower bound at the enzyme",
                             "glucose transport at the anode",
                             "a standard laccase buffer as the cathode medium",
                             "salting-out of O2 in the 0.25 M NaCl steps of test D (raises f)",
-                            "the anode at 20 °C — L4's current is a 25 °C ceiling"]}
+                            "the anode at 20 °C — L4's current is a 25 °C ceiling",
+                            "the anchor anode's gap state in a living stem, the pH inside its gyroid lattice and the wood "
+                            "wall's own resistance (both lower its currents); migration, flow through the gap and a "
+                            "CO2/HCO3- buffer (each raises them); the anchor's working current after cold start — the "
+                            "EBFC's own P–V curve (HW.13)"]}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")

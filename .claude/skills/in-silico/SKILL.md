@@ -204,7 +204,8 @@ L4 kinetics (CPU, seconds):
   lib/kinetics (MM + the [S]-dependent pH-ratio form; ONE home) → 30 · 30b · 85 — a change re-runs all three
   lib J_MAX_25C → 30 · 30b · 31 · 57      22 · 30 · 30b · 31 → 40
   67 (speciation, importlib) · lib J_MAX_25C · KM_GLUCOSE · ph_current_ratio → 85 (electrode_interfacial_ph.json — the pH at
-     the coin electrodes' faces; a change to 67's speciation or to the L4 anchor re-runs 85)
+     the coin electrodes' faces; a change to 67's speciation or to the L4 anchor re-runs 85) · tools/cad/cem → 85 (the
+     anchor anode's envelope and its bore, at runtime — a change to anchor_zone1 or zone2_sleeve re-runs 85)
 
 Paper: 60 (figures) · 61 (tables) read the L3/L3b caches — re-run them after any upstream change
 

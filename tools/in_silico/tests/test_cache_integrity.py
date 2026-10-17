@@ -4330,6 +4330,52 @@ def test_electrode_interfacial_ph_invariants():
     assert chk["capacity_gain_to_pH_4.5"] > 1.0 and chk["ionic_strength_mol_l"][1] > chk["ionic_strength_mol_l"][0]
 
 
+def test_electrode_interfacial_ph_anchor_anode():
+    """85's anchor anode with stagnant sap in its gap (2026-10-17), per Zone-1 SKU, against its own cold-start draw.
+
+    CAN catch: a SKU missing (every non-golden Zone-1 manifest must be there); a geometry not re-derivable from the CEMs
+    (the gyroid's envelope; the bore = the Zone-2 sleeve's OD; the exposed lattice); a film that is not the annulus' exact
+    r_a·ln(r_b/r_a) (a planar «δ = gap» would read ≈ 17 % thicker on pine); a current bracket that is not the envelope
+    density × the envelope at its low end and × (envelope + bottom cap) at its high end; an edge order broken (the
+    stability edge must need MORE current than the kinetic one, at both ends); the n_H = 1 range not inside the full one at
+    its high end; a cold-start draw that is not P_IN(CS)/V_IN(CS) from lib (typ and the MAX column) — the coin letter's
+    load point B was the yardstick before 2026-10-17, and the anchor's own draw is what its BQ25570 needs; a «below» flag
+    that is not its own comparison. CANNOT catch: which gap state a living stem keeps, the pH inside the lattice, the wood
+    wall's resistance, or migration, flow and CO₂ (each named in the docstring with its side).
+    """
+    from lib.constants import BQ25570_PIN_CS_UW, BQ25570_VIN_CS_MAX_MV, BQ25570_VIN_CS_TYP_MV
+
+    d = json.loads((KINETICS / "electrode_interfacial_ph.json").read_text(encoding="utf-8"))
+    a = d["anchor_anode_sap_gap"]
+    assert set(a["states"]) == {"sap_gap", "air_gap", "ingrown"}
+    cs = {"typ": BQ25570_PIN_CS_UW / BQ25570_VIN_CS_TYP_MV * 1e3, "worst": BQ25570_PIN_CS_UW / BQ25570_VIN_CS_MAX_MV * 1e3}
+    assert all(abs(a["cold_start_uA"][k] - v) <= 0.05 for k, v in cs.items()) and cs["worst"] < cs["typ"]
+    cem = REPO / "tools/cad/cem"
+    skus = sorted(p for p in cem.glob("anchor_zone1.*.json") if not p.name.endswith(".golden.json"))
+    sl = json.loads((cem / "zone2_sleeve.json").read_text(encoding="utf-8"))
+    r_b = (sl["bore_diameter_mm"] / 2.0 + sl["wall_thickness_mm"]) / 10.0
+    assert len(skus) == len(a["by_sku"])
+    for path in skus:
+        z1 = json.loads(path.read_text(encoding="utf-8"))
+        per = a["by_sku"][z1["name"]]
+        g = per["geometry"]
+        r_a, length = z1["outer_diameter_mm"] / 20.0, z1["length_mm"] / 10.0
+        assert abs(g["anode_radius_cm"] - r_a) < 1e-12 and abs(g["bore_radius_cm"] - r_b) < 1e-12, path.name
+        assert abs(g["annulus_delta_cm"] - r_a * math.log(r_b / r_a)) < 1e-12, path.name
+        assert abs(g["envelope_lateral_area_cm2"] - 2.0 * math.pi * r_a * length) < 1e-9, path.name
+        assert abs(g["bottom_cap_over_envelope"] - r_a / (2.0 * length)) < 1e-12, path.name
+        e55, e45 = per["face_pH_5.5"], per["face_pH_4.5"]
+        for i in (0, 1):
+            assert e55["i_anode_uA"][i] < e45["i_anode_uA"][i], path.name
+        for e in (e55, e45):
+            lo = e["j_envelope_uA_cm2"][0] * g["envelope_lateral_area_cm2"]
+            hi = e["j_envelope_uA_cm2"][1] * g["envelope_lateral_area_cm2"] * (1.0 + g["bottom_cap_over_envelope"])
+            assert abs(e["i_anode_uA"][0] - lo) <= 0.1 + 0.01 * lo and abs(e["i_anode_uA"][1] - hi) <= 0.1 + 0.01 * hi
+            assert e["i_anode_uA_n1"][1] == e["i_anode_uA"][1] and e["i_anode_uA_n1"][0] >= e["i_anode_uA"][0]
+            for k, v in e["crossed_below_cold_start"].items():
+                assert v == {"in_every_reading": e["i_anode_uA"][1] < cs[k], "in_some_reading": e["i_anode_uA"][0] < cs[k]}
+
+
 def test_cathode_ionic_path_literature_points_follow_from_the_readings():
     """84's literature points: each element resistance is the reading × the element's factor at the stated geometry end,
     and the Scots-pine floor is the sum of the lenient ends; the cells that «hold it» are exactly the open budgets ≥ it.

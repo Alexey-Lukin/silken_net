@@ -1,7 +1,7 @@
 {
   "script": "85_electrode_interfacial_ph.py",
   "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
-  "scope": "coin half of the 00_07 HW.5.IS leg; the anchor half waits on HW.53",
+  "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor cathode waits on HW.53, and which gap state a living stem keeps is not known",
   "recipe_mM": {
     "malic": 2.2,
     "oxalic": 0.0,
@@ -1212,12 +1212,446 @@
     ],
     "capacity_gain_to_pH_4.5": 3.62
   },
+  "anchor_anode_sap_gap": {
+    "states": {
+      "sap_gap": "the gap filled with sap, stagnant — computed below",
+      "air_gap": "no electrolyte in the gap — 84 leaves it not modelled (layer 1 then runs through contact points only)",
+      "ingrown": "wood in the gap: proton and malate transport through living sapwood has no source in the tree — not computed"
+    },
+    "cold_start_uA": {
+      "typ": 25.0,
+      "worst": 21.4
+    },
+    "by_sku": {
+      "anchor_zone1_broadleaf": {
+        "geometry": {
+          "sku": "anchor_zone1_broadleaf",
+          "anode_radius_cm": 0.5,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 2.5,
+          "lattice_length_cm": 3.8,
+          "envelope_lateral_area_cm2": 11.938052083641214,
+          "bottom_cap_over_envelope": 0.06578947368421052,
+          "annulus_delta_cm": 0.2027325540540822
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.35,
+            1.18
+          ],
+          "i_anode_uA": [
+            4.2,
+            15.0
+          ],
+          "i_anode_uA_n1": [
+            6.3,
+            15.0
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            3.7,
+            10.35
+          ],
+          "i_anode_uA": [
+            44.2,
+            131.7
+          ],
+          "i_anode_uA_n1": [
+            66.3,
+            131.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_graded_porosity": {
+        "geometry": {
+          "sku": "anchor_zone1_graded_porosity",
+          "anode_radius_cm": 0.55,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 2.0,
+          "lattice_length_cm": 4.0,
+          "envelope_lateral_area_cm2": 13.823007675795091,
+          "bottom_cap_over_envelope": 0.06875,
+          "annulus_delta_cm": 0.1705852105671117
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.42,
+            1.4
+          ],
+          "i_anode_uA": [
+            5.8,
+            20.7
+          ],
+          "i_anode_uA_n1": [
+            8.7,
+            20.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            4.4,
+            12.3
+          ],
+          "i_anode_uA": [
+            60.8,
+            181.8
+          ],
+          "i_anode_uA_n1": [
+            91.2,
+            181.8
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_mangrove": {
+        "geometry": {
+          "sku": "anchor_zone1_mangrove",
+          "anode_radius_cm": 0.55,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 2.0,
+          "lattice_length_cm": 4.2,
+          "envelope_lateral_area_cm2": 14.514158059584847,
+          "bottom_cap_over_envelope": 0.06547619047619048,
+          "annulus_delta_cm": 0.1705852105671117
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.42,
+            1.4
+          ],
+          "i_anode_uA": [
+            6.1,
+            21.7
+          ],
+          "i_anode_uA_n1": [
+            9.1,
+            21.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            4.4,
+            12.3
+          ],
+          "i_anode_uA": [
+            63.9,
+            190.3
+          ],
+          "i_anode_uA_n1": [
+            95.8,
+            190.3
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_oak": {
+        "geometry": {
+          "sku": "anchor_zone1_oak",
+          "anode_radius_cm": 0.6,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 1.5,
+          "lattice_length_cm": 4.0,
+          "envelope_lateral_area_cm2": 15.079644737231007,
+          "bottom_cap_over_envelope": 0.075,
+          "annulus_delta_cm": 0.13388613078852585
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.53,
+            1.79
+          ],
+          "i_anode_uA": [
+            8.0,
+            29.0
+          ],
+          "i_anode_uA_n1": [
+            12.0,
+            29.0
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            5.61,
+            15.67
+          ],
+          "i_anode_uA": [
+            84.6,
+            254.1
+          ],
+          "i_anode_uA_n1": [
+            126.8,
+            254.1
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_pine": {
+        "geometry": {
+          "sku": "anchor_zone1_pine",
+          "anode_radius_cm": 0.55,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 2.0,
+          "lattice_length_cm": 4.0,
+          "envelope_lateral_area_cm2": 13.823007675795091,
+          "bottom_cap_over_envelope": 0.06875,
+          "annulus_delta_cm": 0.1705852105671117
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.42,
+            1.4
+          ],
+          "i_anode_uA": [
+            5.8,
+            20.7
+          ],
+          "i_anode_uA_n1": [
+            8.7,
+            20.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            4.4,
+            12.3
+          ],
+          "i_anode_uA": [
+            60.8,
+            181.8
+          ],
+          "i_anode_uA_n1": [
+            91.2,
+            181.8
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_stepped": {
+        "geometry": {
+          "sku": "anchor_zone1_stepped",
+          "anode_radius_cm": 0.55,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 2.0,
+          "lattice_length_cm": 4.0,
+          "envelope_lateral_area_cm2": 13.823007675795091,
+          "bottom_cap_over_envelope": 0.06875,
+          "annulus_delta_cm": 0.1705852105671117
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.42,
+            1.4
+          ],
+          "i_anode_uA": [
+            5.8,
+            20.7
+          ],
+          "i_anode_uA_n1": [
+            8.7,
+            20.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": true,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            4.4,
+            12.3
+          ],
+          "i_anode_uA": [
+            60.8,
+            181.8
+          ],
+          "i_anode_uA_n1": [
+            91.2,
+            181.8
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      },
+      "anchor_zone1_tropical": {
+        "geometry": {
+          "sku": "anchor_zone1_tropical",
+          "anode_radius_cm": 0.65,
+          "bore_radius_cm": 0.75,
+          "gap_mm": 1.0,
+          "lattice_length_cm": 4.5,
+          "envelope_lateral_area_cm2": 18.37831702350029,
+          "bottom_cap_over_envelope": 0.07222222222222223,
+          "annulus_delta_cm": 0.0930155483664376
+        },
+        "face_pH_5.5": {
+          "j_envelope_uA_cm2": [
+            0.77,
+            2.57
+          ],
+          "i_anode_uA": [
+            14.1,
+            50.7
+          ],
+          "i_anode_uA_n1": [
+            21.1,
+            50.7
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": true
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": true
+            }
+          }
+        },
+        "face_pH_4.5": {
+          "j_envelope_uA_cm2": [
+            8.07,
+            22.56
+          ],
+          "i_anode_uA": [
+            148.3,
+            444.6
+          ],
+          "i_anode_uA_n1": [
+            222.5,
+            444.6
+          ],
+          "crossed_below_cold_start": {
+            "typ": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            },
+            "worst": {
+              "in_every_reading": false,
+              "in_some_reading": false
+            }
+          }
+        }
+      }
+    }
+  },
   "not_modelled": [
     "which medium and convection the laboratory will use (the letter fixes neither)",
     "the pH inside the coatings — every shift here is a lower bound at the enzyme",
     "glucose transport at the anode",
     "a standard laccase buffer as the cathode medium",
     "salting-out of O2 in the 0.25 M NaCl steps of test D (raises f)",
-    "the anode at 20 °C — L4's current is a 25 °C ceiling"
+    "the anode at 20 °C — L4's current is a 25 °C ceiling",
+    "the anchor anode's gap state in a living stem, the pH inside its gyroid lattice and the wood wall's own resistance (both lower its currents); migration, flow through the gap and a CO2/HCO3- buffer (each raises them); the anchor's working current after cold start — the EBFC's own P–V curve (HW.13)"
   ]
 }

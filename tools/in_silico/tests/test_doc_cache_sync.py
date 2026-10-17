@@ -125,7 +125,22 @@ def _sf97_floor(d: dict) -> float:
     """97's lowest drawn-wire SF under either edge inside ⌀0.10, rounded DOWN to the doc's one decimal — «не нижче» / «is» a floor."""
     return math.floor(min(f["sf_drawn_wire"] for r in d["rows"] if r["offset_um"] <= d["summary"]["tolerance_offset_um"]
                           for st in ("mouth", "exit") for f in r[st]["faces"].values()) * 10) / 10
-NSCI = rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
+
+
+def _pine85(d: dict) -> dict:
+    """85's anchor anode on the pine part — the one SUMMARY quotes by number."""
+    return d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_pine"]
+
+
+def _wbl(d: dict) -> dict:
+    """87's (C)-behind-the-liner block; the route and its seam requirements do not read the slope reading."""
+    return d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["wire_behind_liner"]
+
+
+def _up2(x: float) -> float:
+    """A requirement «k ≥ X» rounded UP to the doc's two decimals (in-silico §When Modifying #43)."""
+    return math.ceil(x * 100 - 1e-9) / 100
+NSCI =rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
     (
@@ -3898,6 +3913,27 @@ CHECKS += [
      FACE_PH, lambda d: _anode(d, 4.5, _ANODE_RUNS, 1), 0.5),
     ("face pH: 01_03 §3.5 unstirred δ low → 85", EBFC, rf"нерозмішувана комірка дає {N}–[\d.]+ мкм",
      FACE_PH, lambda d: d["constants"]["delta_natural_convection_um"][0], 0.0),
+    # ── the anchor's anode with sap in its gap (2026-10-17) — conditional; the currents are upper bounds ──
+    ("face pH: anchor anode envelope area, pine → 85", SUMMARY, rf"envelope Ø11, \*\*{N} cm²\*\*",
+     FACE_PH, lambda d: _pine85(d)["geometry"]["envelope_lateral_area_cm2"], 0.05),
+    ("face pH: anchor anode gap, pine → 85", SUMMARY, rf"the gap is \*\*{N} mm\*\*",
+     FACE_PH, lambda d: _pine85(d)["geometry"]["gap_mm"], 0.05),
+    ("face pH: anchor anode annulus film, pine → 85", SUMMARY, rf"r_a·ln\(r_b/r_a\) = \*\*{N} mm\*\*",
+     FACE_PH, lambda d: 10 * _pine85(d)["geometry"]["annulus_delta_cm"], 0.005),
+    ("face pH: anchor cold-start draw, worst-case column → 85", SUMMARY, rf"typical and \*\*{N}\*\* µA at the worst-case column",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["cold_start_uA"]["worst"], 0.05),
+    ("face pH: anchor anode current to pH 5.5, pine, low → 85", SUMMARY, rf"kinetic bracket \(pH 5\.5\) at \*\*{N}–[\d.]+ µA\*\*",
+     FACE_PH, lambda d: _pine85(d)["face_pH_5.5"]["i_anode_uA"][0], 0.05),
+    ("face pH: anchor anode current to pH 5.5, pine, high → 85", SUMMARY, rf"kinetic bracket \(pH 5\.5\) at \*\*[\d.]+–{N} µA\*\*",
+     FACE_PH, lambda d: _pine85(d)["face_pH_5.5"]["i_anode_uA"][1], 0.05),
+    ("face pH: anchor anode current to pH 4.5, pine, low → 85", SUMMARY, rf"stability band \(pH 4\.5\) at \*\*{N}–[\d.]+ µA\*\*",
+     FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][0], 0.05),
+    ("face pH: anchor anode current to pH 4.5, pine, high → 85", SUMMARY, rf"stability band \(pH 4\.5\) at \*\*[\d.]+–{N} µA\*\*",
+     FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][1], 0.05),
+    ("face pH: anchor anode current to pH 5.5, oak, high → 85", SUMMARY, rf"up to \*\*{N}\*\* µA on oak",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
+    ("face pH: anchor anode current to pH 5.5, tropical, high → 85", SUMMARY, rf"and \*\*{N}\*\* µA on tropical",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_tropical"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
 ]
 
 # ── HW.6 frost, real cloud (2026-10-12): ERA5 cover weighs 79's sky ends — canon 01_04 §3.1 ⊕ ──
@@ -5066,6 +5102,29 @@ def test_frost_worst_regime_label_matches_cache():
              "clear_diffuse_sun": "ясне небо з розсіяним сонцем", "overcast_diffuse_sun": "хмарність із розсіяним сонцем"}
     text = (REPO / CODIT).read_text(encoding="utf-8")
     assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text
+
+
+def test_anchor_anode_cold_start_words_match_cache():
+    """SUMMARY says in words which Zone-1 parts cross each edge below the anchor's worst-case cold-start draw; the currents
+    are pinned above, the words here. CAN catch: a rerun that moves a part across the draw while the text keeps its group
+    («in every reading» ⊥ «only in some»), the bottom cap no longer being what tips mangrove, or a part crossing pH 4.5 at
+    cold start under «no part crosses pH 4.5». CANNOT catch: whether the sap-gap state is the stem's.
+    """
+    a = json.loads((CACHE / FACE_PH).read_text(encoding="utf-8"))["anchor_anode_sap_gap"]
+    text = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
+    by = a["by_sku"]
+    every = {k for k, v in by.items() if v["face_pH_5.5"]["crossed_below_cold_start"]["worst"]["in_every_reading"]}
+    some = {k for k, v in by.items() if v["face_pH_5.5"]["crossed_below_cold_start"]["worst"]["in_some_reading"]} - every
+    assert every == {f"anchor_zone1_{x}" for x in ("broadleaf", "pine", "graded_porosity", "stepped")}
+    assert some == {f"anchor_zone1_{x}" for x in ("mangrove", "oak", "tropical")}
+    assert ("broadleaf, pine and pine's two topology variants cross pH 5.5 below the worst-case draw in every reading" in text
+            and "mangrove (the bottom cap tips it), oak and tropical only in some" in text)
+    m = by["anchor_zone1_mangrove"]
+    hi, cap = m["face_pH_5.5"]["i_anode_uA"][1], m["geometry"]["bottom_cap_over_envelope"]
+    assert hi / (1.0 + cap) < a["cold_start_uA"]["worst"] < hi            # without the cap mangrove would be «every»
+    assert not any(v["face_pH_4.5"]["crossed_below_cold_start"]["worst"]["in_some_reading"] for v in by.values())
+    assert "no part crosses pH 4.5 at cold start" in text
+    assert "load point B" not in text.split("**The anchor's anode")[1].split("**What it says:**")[0]
 
 
 def test_a3d_crosscheck_cannot_aggregate_the_exposure_gate_sentinel():
