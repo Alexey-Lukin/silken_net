@@ -270,7 +270,9 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   посилання ре-роздачі знято з хаба У-ВЕЙ. До факту.
 # ⊕ 26249 → 26285 (+36) — ЗА КОРЕКТНІСТЬ: титул founder-а в преамбулі уточнено його словами 2026-10-17 («senior full-stack RoR engineer»
 #   звужувало так само, як імʼя файлу «physicist» спотворювало); чотири перейменування за брехливими іменами дали нетто ≈ 0.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26285}
+# ⊕ 26285 → 25784 (−501) — мертвий носій знято (DOC-T.123): блок WRITE-TIME у верхньому HTML-коментарі
+#   харнес вирізає ще до інʼєкції індексу; правила тепер несе write_time_once. Зекономлене не стає запасом.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25784}
 # The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
 # the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
 # whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
@@ -1988,10 +1990,36 @@ route_check() {
         echo "      otherwise inline it under a hub row). The inbound-string half is NOT measured"
         echo "      here: unstrung_check owns it, and a brand-new file trips it BY DESIGN — write"
         echo "      the router first, which is the same order the 208-session measurement prescribed."
+        # The file's birth is the one moment «does this fact belong in memory at all?» is
+        # still cheap to answer — a curation pass later pays for it as an excision. The
+        # routing table lives in skill memory-maintenance §Type-routing; this is its carrier.
+        echo "      Belongs in memory at all? operational HOW → the domain skill · shipped WHAT or a verdict → canon"
+        echo "      (+ a 00_07 ID while open) · live state, trap, lesson, the founder's why → memory · a rule of the work → its playbook."
+        echo "      Name: <type>_[<NN>[<sub>]_]<subject> — a coordinate for project_* only, never a bare NN_NN; renaming is free"
+        echo "      now and later touches four registries (strings · index row · git routes · start-ritual packages)."
       }
       ;;
   esac
   return 0
+}
+
+# The write-time anti-wall rules used to stand in an HTML comment at the head of
+# MEMORY.md, and the harness strips block comments before it injects the index —
+# measured 2026-10-17: the injected index starts at its first heading, so that
+# carrier reached no session since at least 2026-08-08 while three memory rows
+# called it the cure. This is its replacement, at the moment the rules exist for:
+# ONCE per session, on the first write into the corpus (a line on every write is
+# the noise a reader learns to skim). No session id — a selftest or a foreign
+# caller — means no marker and no line (DOC-T.123).
+write_time_once() {
+  local sid=$1 mk
+  [ -n "$sid" ] || return 0
+  mk="${TMPDIR:-/tmp}/claude-memory-writetime-$sid"
+  [ -e "$mk" ] && return 0
+  : >"$mk" 2>/dev/null || return 0
+  echo "WRITE-TIME (once per session): a new lesson is a LINE in an existing family or home, never a dated paragraph ·"
+  echo "      hook, \`description\` and file header are three hand-synced mirrors — state lives in 00_07/canon, and no drifting"
+  echo "      count goes into a hook or a description · write the canon / skill / gate FIRST, then only the SEND into memory."
 }
 
 # --- Self-test ---------------------------------------------------------------
@@ -2765,6 +2793,26 @@ EOF
   if printf '%s' "$out" | grep -q 'OVERRIDE'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance declares foreign thresholds instead of trusting them"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance declares foreign thresholds instead of trusting them" "$out"; fi
 
+  # 29z. WRITE-TIME once per session — the live carrier that replaced a stripped HTML
+  #      comment (DOC-T.123). Three arms: the first write of a session prints it, the
+  #      second write of the SAME session does not, and a write with no session id never does.
+  _st_build "$d"
+  _wt_sid="selftest-wt-$$-$RANDOM"
+  _wt() { printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s/feedback_alpha.md"}}' "$1" "$d" |
+          env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" \
+              MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" MEMORY_GATE_DESC_BASELINE=800 \
+              MEMORY_GATE_CORPUS_FLOOR="$(ls "$d"/*.md 2>/dev/null | wc -l | tr -d ' ')" bash "$SELF" 2>&1; }
+  out=$(_wt "$_wt_sid")
+  if printf '%s' "$out" | grep -q 'WRITE-TIME'; then pass=$((pass+1)); printf '  ok    %s\n' "write-time rules arrive on the first write of a session"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write-time rules arrive on the first write of a session" "$out"; fi
+  out=$(_wt "$_wt_sid")
+  if printf '%s' "$out" | grep -q 'WRITE-TIME'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write-time rules stay silent on the second write of the same session" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "write-time rules stay silent on the second write of the same session"; fi
+  rm -f "${TMPDIR:-/tmp}/claude-memory-writetime-$_wt_sid"
+  out=$(_st_write "$d" feedback_alpha.md)
+  if printf '%s' "$out" | grep -q 'WRITE-TIME'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write-time rules stay silent without a session id" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "write-time rules stay silent without a session id"; fi
+
   # 30a-b. --stops, pinned on the pair that IS the design decision: it must find
   #        an anchored ⛔ ban, and must stay silent on a ⊥ counter-rule heading.
   #        Measured precision for a raw ⊥ sweep is ~15-20% — it marks a deliberate
@@ -3401,7 +3449,8 @@ RUBY
               if [ "$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)" = "Write" ] &&
                  [ "$(basename "$fp")" != "MEMORY.md" ]; then
                 route_check "$fp"
-              fi; } )
+              fi
+              write_time_once "$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)"; } )
     [ -z "$msgs" ] && exit 0
     jq -n --arg ctx "[memory-gate]
 $msgs" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$ctx}}'
