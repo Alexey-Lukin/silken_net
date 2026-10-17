@@ -132,6 +132,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 41. Before you apply a closed form to numbers taken from ANOTHER script's cache, name the two BODIES of that script's contact (or of whatever pair the formula is about) from ITS OWN `MODEL` section — never from the wording of the leg you are closing, and never from your mental picture of the part
 42. A new script in this package must declare an English `SI_DESCRIPTION`, or the paper-SI generator refuses to render and the doc↔cache pin reds with it
 43. A threshold quoted in a one-sided sentence is rounded toward the side that keeps the sentence TRUE, and the sentence is written so that side is the conservative one; and the statistic behind a physical «never» is checked for what it can SEE before it becomes the claim
+44. A cap on a SERIES route is its WEAKEST link, and a threshold at which a link gives way needs THAT link's own compliance — model the route by its stiff member alone and the threshold comes out an order of magnitude low, and the dichotomy «holds → still / gives way → moves» is false
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
