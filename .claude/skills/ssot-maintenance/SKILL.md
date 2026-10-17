@@ -36,6 +36,28 @@ These are the canonical homes. Read them before acting; never copy their content
 
 **Every fact has ONE canonical home (00_06 §2); everything else references it, never restates.** When a fact changes, edit it *only* at its home — references stay valid. A mirror must carry an explicit label saying it is one — the exact wording is `00_06 §2`'s to set, not this skill's. The linters below enforce *owner-only vocabulary*; the per-rule owner scoping lives in `00_06 §3.3` and is deliberately not restated here.
 
+## 🛡️ Guard-craft — a gate that actually catches
+
+**Lives in [`guard-craft-index.md`](guard-craft-index.md) — open it the moment the task is an EVENT rather than docs work** (building, hardening or debugging a gate · asking whether a spec can fail at all · mass-deleting · narrowing a rule · running a campaign · shipping anything a human executes by hand). It carries the recipe «Add a new drift guard», the craft's thesis, its design rules and the generated one-line index of the blindness shapes; their bodies are in [`guard-craft.md`](guard-craft.md), opened by number — cite `§Guard-craft #N`. Why it left this body, and the price → the head of that file.
+
+## Checklists
+
+**Before merge** (any docs change):
+
+```
+- [ ] ruby scripts/docs_check.rb   → green — but it is TWO steps of the `docs_check` job, never the band
+- [ ] ruby scripts/docs_band.rb    → green — the WHOLE `CI · Docs` lane, step list read from `docs.yml`
+      itself. ⛔ A roster of gates rots by construction — never re-add one here.
+- [ ] the band is NOT every lane that reads docs: `grep -l '<edited doc>' .github/workflows/*.yml`
+      — a hit outside `docs.yml` is your lane too (2026-09-23: a 02_02 prose edit, band green,
+      reddened `Smoke · In-silico L2` → local `pytest tools/in_silico/tests/test_doc_cache_sync.py`).
+- [ ] bin/rails docs:toc           → run if headings changed, then re-check green (regen, not in the band)
+- [ ] fact edited ONLY at its home (`00_06 §2`); mirrors labelled
+- [ ] no volatile counts · no blocker section in canon · Cross-references at top
+```
+
+**Wiki publish — ZERO-TOUCH** (since 2026-06-24): `.github/workflows/wiki.yml` publishes on every push to `main` touching `docs/**` (off-switch: repo var `DISABLE_WIKI_AUTOSYNC=true`). Do **NOT** run `wiki:sync PUSH=1` by hand after a normal canon-push — it RACES the CI run (non-fast-forward reject). A manual `bin/rails wiki:sync` (dry-run) stays a useful link-check before a big restructure. Detail → `[[project_wiki_sync]]`.
+
 ## Workflow — hunt → automate → fix
 
 The loop that stabilises the SSOT (repeat per drift class):
@@ -76,9 +98,22 @@ A heavier, specialised loop for *cementing* a tracker item — thinning a live o
 >
 > 🔴 **Дзеркало обох рецептів — НАДМІРНЕ звільнення, і воно тихіше, бо виглядає як виконаний присуд** (HW.33, 2026-09-14). Ратифікація звільняє ноги, що чекали САМЕ на неї, але нога буває гейтована ДВІЧІ, і свіп, що ключується на імені присуду, знімає обидва гейти одним рухом. Свіп присуду «вхід» (стелю передано в HW.9 входом) звільнив разом із приливом і ногу коміра, чию СТІНКУ не задає жоден артефакт, і креслення радома, що чекає корони (⚖️ HW.30); спіймано перечитуванням до коміту, гейт цього не бачить за побудовою — обидві ноги лишились формально валідними. **Звільняючи ногу, прочитай її текст цілком на інші «чекає · після · ⊂ · доки» і питай про КОЖЕН гейт окремо; звільнення — твердження про всі.**
 
+## Gotchas (hard-won)
+
+- **An ILLUSTRATIVE path is indistinguishable from a live claim — in EVERY file a gate scans, and there are at least three such gates.** `guard_registry_sync` resolves each path a `00_06 §3` row cites; `spec/quality/claude_prose_path_refs_spec.rb` resolves each backticked file path in `.claude/**/*.md`; `path_check` does it for the memory corpus. A plausible example path fails all of them exactly like a dead real one. **Describe the form in words; never spell an example path, however obviously fictional it looks.**
+- **A missing closing ` ``` ` fence silently desyncs EVERY fence-aware guard** (the `in_fence` toggle runs in every fence-aware `DocsLinter` method) + truncates the ToC — one unclosed fence disables them all at once. **Now HARD-gated**: `DocsLinter.unbalanced_code_fences` (DOC-T.45, 2026-07-18) counts fences by the SAME `line.start_with?` predicate the guards use, so `docs:check_refs` aborts on an odd count (reporting the opening line) — a mirror gate, self-consistent with what it protects.
+- **Subset `bin/rspec` runs trip the SimpleCov coverage gate** (a per-group `minimum_coverage` failure). That's an **artifact** of a partial resultset, not a real failure. The linter/ToC specs are pure units (`spec_helper`, no Rails/DB) — run them gate-free with `COVERAGE=0 bin/rspec spec/lib/docs_*_spec.rb`; for app-coverage truth run the full `bin/rspec` (`[[feedback_local_verify]]`).
+- **`db/structure.sql`**: never stage drive-by Postgres-version line diffs — restore from HEAD (`[[feedback_structure_sql]]`).
+- **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing. **Run it PLAIN** — never prepend `/usr/bin` to PATH (shadows the rvm ruby shim → system Ruby 2.6 → bundler crash); a `Gem::Resolver…GemParser` trace can also be a SentinelOne-eaten shim (`[[project_rvm_env_repair]]`).
+- **Homoglyph / mixed-script drift** (a Cyrillic letter inside a Latin word) — HARD-gated by `ruby scripts/homoglyph_check.rb` (perimeter = its `GLOBS`); scan by hand only files outside it.
+- **Stray COMBINING MARK inside a same-script word** — the homoglyph's sibling, and the cost is sharper: a word carrying `U+0301` is invisible to `grep` for that word, so it silently drops out of every sweep aimed at it (measured with a positive control — `grep` scored 0 on the affected line and 1 on a clean control). Same script, so no mixed-script scan sees it. Detector: `perl -CSD -ne 'while (/(\p{L}{0,6}\x{0301}\p{L}{0,6})/g) { print "$ARGV:$.: $1\n" }' $(git ls-files 'docs/*.md' '.claude/**/*.md' '.github/**')`. ⚠️ It stays a RECIPE, not a gate, and the reason is linguistic: Ukrainian legitimately marks stress to split homographs (the castle/lock pair is the schoolbook one), so artefact-vs-deliberate is a judgement no regex owns — read each hit. ⚠️ Describe that pair in words, never spell it: an accented example inside this file is itself a hit, and a detector whose first two findings are its own documentation is one a reader learns to skim (#10a, one surface over). Precision on the corpus at the time of writing was total (every hit an artefact, none a homograph), which is what made a hand sweep cheaper than any gate. ⛔ Do not "fix" these with a blind strip in a file you have not read: two of them were a mistyped word, not a mis-accented one, and stripping the mark alone would have cemented the typo.
+- **Encoding trap in the detector ITSELF:** a `perl -CSD` one-liner decodes input to characters, but a Cyrillic literal in the SCRIPT stays bytes without `use utf8` — so the match silently fails and reports a clean tree. This bit the very sweep that found the class. **Verify any non-ASCII matcher with a positive control before believing its zero.**
+- **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_comment_style]]`).
+- **zsh**: `status` is read-only; quote globs (`[[feedback_zsh_bash_gotchas]]`).
+
 ## Commands
 
-All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feedback_local_verify]]`).
+Where `ls bin/` has a binstub — **`bin/rails` / `bin/rspec` / `bin/rubocop`** — use it, never `bundle exec` for those (`[[feedback_local_verify]]`); `i18n-tasks` has none, so `bundle exec i18n-tasks …` (CLAUDE.md §3) is the legitimate exception.
 
 | Command | Does | Engine |
 |---|---|---|
@@ -90,7 +125,7 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 | `bin/rails wiki:sync` | **Dry-run** (default): clone wiki, transform links + carry images, show `--stat` diff + unresolved links. Publishes nothing. | `lib/wiki_link_normalizer.rb` |
 | `bin/rails wiki:sync PUSH=1` | Commit + push the canon `NN_NN` pages to the GitHub wiki (SSH to `*.wiki.git`). | ↑ |
 | `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb spec/lib/docs_graph_spec.rb` | Unit-test the linter / ToC / ref-graph engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
-| `ruby scripts/docs_check.rb [refs\|tracker]` | **Fast local** alias — runs `docs:check_refs` + `tracker:check` with **no Rails boot** (~0.3s vs ~1.2s; no `bundle`/DB — only `ruby`+`rake`). Reuses the exact rake bodies → those two steps cannot drift from CI. ⚠️ **Two steps of the `docs_check` job (ask `docs_band.rb --list` how many there are — the count grows) — NOT the lane**; reading its green as a verdict about the Docs lane reddened `main` three times (OPS.25). Read-only (ToC regen stays `bin/rails docs:toc`). | reuses `lib/tasks/docs.rake` + `tracker.rake` |
+| `ruby scripts/docs_check.rb [refs\|tracker]` | **Fast local** alias — runs `docs:check_refs` + `tracker:check` with **no Rails boot** (~0.3s vs ~1.2s; no `bundle`/DB — only `ruby`+`rake`). Reuses the exact rake bodies → those two steps cannot drift from CI. ⚠️ **Two steps of the `docs_check` job (ask `docs_band.rb --list` how many there are — the count grows) — NOT the lane** (the script prints this caveat itself on every run, OPS.25). Read-only (ToC regen stays `bin/rails docs:toc`). | reuses `lib/tasks/docs.rake` + `tracker.rake` |
 | `ruby scripts/docs_band.rb` | **The WHOLE `CI · Docs` lane** (~1.5 min, on-demand): step list read from `docs.yml` itself, so a hand-written roster cannot rot beside it. NOT-RUN is classified BEFORE launching (interpreter resolve · `ruby -c` · `bundle check`) and reds alongside FAIL — an empty finding-set is "clean" only if every check EXECUTED. ⚠️ `git add` first: `spdx_headers` enumerates via `git ls-files` — except a WARM background-compute output (in-silico §When Modifying #21 forbids staging it): then run the band in a clean worktree; the band's own refusal prints the recipe. | `.github/workflows/docs.yml` |
 | `ruby scripts/stan_audit.rb` | _(advisory, on-demand — ганяти на цемент/vilize-сесіях, НЕ CI-gate)_ три осі по registry-айтемах 00_07 — третя = **[x]-staleness** (чекнутий бокс із датою `✅ YYYY-MM-DD` старший ~14 днів → цементуй у Стан/канон і зрізай; бездатні = лічильник). Дві осі по `**Стан:**`-рядках: **canon-claim** (код-символ ∉ заявлені канон-доми айтема — ловить «Механіка — `NN_NN §X`» без змісту; FP-класи вбиті historical sweep'ом DOC-T.37 — повний exempt-перелік у шапці скрипта) + **volatile-numbers** (число+лічильне слово, класи A/B/C/D очима). Кожен хіт розібрати очима: FP / wrong-дім → Стан-реф-дожим / діра → канонізувати-migrate; новий повторюваний FP-клас → вбити В СКРИПТ. Метод/історія → `00_06 §3` | `scripts/stan_audit.rb` (standalone; реюзить `Tracker::Dashboard`-парсинг) |
 | `ruby scripts/tracker_report.rb --takeable` · `--critical-path` | _(advisory, on-demand — ПРИСУД, не борг)_ режими над `00_07`; ростер — `case` у скрипті. 🔴 Кожен друкує ВЛАСНУ сліпоту ПЕРЕД таблицею — читай преамбулу, не таблицю (інакше це палантір: числа правдиві над курованою множиною). Одиниця — НОГА, не пункт. Чому advisory і стелі → `00_06 §3.2` + шапка скрипта | `scripts/tracker_report.rb` (standalone; реюзить `Tracker::Dashboard`-парсинг) |
@@ -102,41 +137,6 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 > 🔴 **ЛІНЗИ ЗАПУСКАЮТЬ, а не переказують — і прогалина тут вимірюється РОСТЕРОМ, не памʼяттю** (2026-08-19). Вимірено на собі: із режимів `memory_gate.sh` роками ганялись ДВА (`--audit`, `--selftest`); `--weight`/`--oneway`/`--routes`/`--stops`/`--genre` — жодного разу, попри те що скіл `memory-maintenance` прямо велить «run the SEPARATE modes». **Вказівник на ростер (на відміну від пойменованого списку) про себе не нагадує**, тож практика тихо вироджується в один звичний виклик. Ростер бери з ДЖЕРЕЛА: `grep -oE '^\s+--[a-z-]+\)' .claude/hooks/memory_gate.sh`. ⊕ Найцінніший із них для ЦЬОГО скіла — `--stops`: обчислюваний **реєстр уже ВІДХИЛЕНОГО**, який агент «з холоду» перелічити не може, а одна промашка коштує сесії; читати ПЕРЕД вибором роботи. ⚠️ Кожна лінза оголошує СТЕЛЮ, і її треба брати разом із числом: `--stops` — «підлога, повний READ дає ×3.2»; `spec_claim_audit` — «шортліст, не вердикт» (перевірено: на найгострішому кандидаті мутація дала ВІСІМ червоних, тобто покриття вчетверо щільніше за гіпотезу лінзи); `stan_audit` вісь 1 дає хибний хіт на приватний метод, коли канон-дім несе публічний, **і тригериться власним поясненням у тілі пункту** — форму пиши словами, не токеном.
 
 CI: `docs.yml` is the home of the doc-gate RAKE PAIR. ⚠️ Not of every doc gate: the spec-shaped ones it runs (`spec/quality/*`, `spec/deploy/*`) are ALSO swept by `ci.yml`'s full-tree rspec, so those have two CI homes and double-run on a mixed PR. Its `changes` filter covers `docs/**` + `**.md` + **every source tree** — deliberately wide, because several gates scan them tree-wide (perimeters live in the scripts) and the pin/model-sync gates read specific files inside them; a gate whose input sits outside it never runs on its own PR (recipe step 6, `guard-craft-index.md`). `ci.yml` has no `paths-ignore`: its `changes` job skips code jobs on a docs-only diff and `ci-ok` still reports. Branch protection (`docs-ok`) → `06_07 §2`.
-
-## 🛡️ Guard-craft — a gate that actually catches
-
-**Lives in [`guard-craft-index.md`](guard-craft-index.md) — open it the moment the task is an EVENT rather than docs work** (building, hardening or debugging a gate · asking whether a spec can fail at all · mass-deleting · narrowing a rule · running a campaign · shipping anything a human executes by hand). It carries the recipe «Add a new drift guard», the craft's thesis, its design rules and the generated one-line index of the blindness shapes; their bodies are in [`guard-craft.md`](guard-craft.md), opened by number — cite `§Guard-craft #N`. Why it left this body, and the price → the head of that file.
-
-## Checklists
-
-**Before merge** (any docs change):
-
-```
-- [ ] ruby scripts/docs_check.rb   → green — but it is TWO steps of the `docs_check` job, never the band
-- [ ] ruby scripts/docs_band.rb    → green — the WHOLE `CI · Docs` lane, step list read from `docs.yml`
-      itself. ⛔ A roster of gates rots by construction — never re-add one here.
-- [ ] the band is NOT every lane that reads docs: `grep -l '<edited doc>' .github/workflows/*.yml`
-      — a hit outside `docs.yml` is your lane too (2026-09-23: a 02_02 prose edit, band green,
-      reddened `Smoke · In-silico L2` → local `pytest tools/in_silico/tests/test_doc_cache_sync.py`).
-- [ ] bin/rails docs:toc           → run if headings changed, then re-check green (regen, not in the band)
-- [ ] fact edited ONLY at its home (`00_06 §2`); mirrors labelled
-- [ ] no volatile counts · no blocker section in canon · Cross-references at top
-```
-
-**Wiki publish — ZERO-TOUCH** (since 2026-06-24): `.github/workflows/wiki.yml` publishes on every push to `main` touching `docs/**` (off-switch: repo var `DISABLE_WIKI_AUTOSYNC=true`). Do **NOT** run `wiki:sync PUSH=1` by hand after a normal canon-push — it RACES the CI run (non-fast-forward reject). A manual `bin/rails wiki:sync` (dry-run) stays a useful link-check before a big restructure. Detail → `[[project_wiki_sync]]`.
-
-## Gotchas (hard-won)
-
-- **Subset `bin/rspec` runs trip the SimpleCov coverage gate** (a per-group `minimum_coverage` failure). That's an **artifact** of a partial resultset, not a real failure. The linter/ToC specs are pure units (`spec_helper`, no Rails/DB) — run them gate-free with `COVERAGE=0 bin/rspec spec/lib/docs_*_spec.rb`; for app-coverage truth run the full `bin/rspec` (`[[feedback_local_verify]]`).
-- **`db/structure.sql`**: never stage drive-by Postgres-version line diffs — restore from HEAD (`[[feedback_structure_sql]]`).
-- **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing. **Run it PLAIN** — never prepend `/usr/bin` to PATH (shadows the rvm ruby shim → system Ruby 2.6 → bundler crash); a `Gem::Resolver…GemParser` trace can also be a SentinelOne-eaten shim (`[[project_rvm_env_repair]]`).
-- **A missing closing ` ``` ` fence silently desyncs EVERY fence-aware guard** (the `in_fence` toggle runs in every fence-aware `DocsLinter` method) + truncates the ToC — one unclosed fence disables them all at once. **Now HARD-gated**: `DocsLinter.unbalanced_code_fences` (DOC-T.45, 2026-07-18) counts fences by the SAME `line.start_with?` predicate the guards use, so `docs:check_refs` aborts on an odd count (reporting the opening line) — a mirror gate, self-consistent with what it protects.
-- **An ILLUSTRATIVE path is indistinguishable from a live claim — in EVERY file a gate scans, and there are at least three such gates.** `guard_registry_sync` resolves each path a `00_06 §3` row cites; `spec/quality/claude_prose_path_refs_spec.rb` resolves each backticked file path in `.claude/**/*.md`; `path_check` does it for the memory corpus. A plausible example path fails all of them exactly like a dead real one. **Describe the form in words; never spell an example path, however obviously fictional it looks.**
-- **Homoglyph / mixed-script drift** (a Cyrillic letter inside a Latin word) — HARD-gated by `ruby scripts/homoglyph_check.rb` (perimeter = its `GLOBS`); scan by hand only files outside it.
-- **Stray COMBINING MARK inside a same-script word** — the homoglyph's sibling, and the cost is sharper: a word carrying `U+0301` is invisible to `grep` for that word, so it silently drops out of every sweep aimed at it (measured with a positive control — `grep` scored 0 on the affected line and 1 on a clean control). Same script, so no mixed-script scan sees it. Detector: `perl -CSD -ne 'while (/(\p{L}{0,6}\x{0301}\p{L}{0,6})/g) { print "$ARGV:$.: $1\n" }' $(git ls-files 'docs/*.md' '.claude/**/*.md' '.github/**')`. ⚠️ It stays a RECIPE, not a gate, and the reason is linguistic: Ukrainian legitimately marks stress to split homographs (the castle/lock pair is the schoolbook one), so artefact-vs-deliberate is a judgement no regex owns — read each hit. ⚠️ Describe that pair in words, never spell it: an accented example inside this file is itself a hit, and a detector whose first two findings are its own documentation is one a reader learns to skim (#10a, one surface over). Precision on the corpus at the time of writing was total (every hit an artefact, none a homograph), which is what made a hand sweep cheaper than any gate. ⛔ Do not "fix" these with a blind strip in a file you have not read: two of them were a mistyped word, not a mis-accented one, and stripping the mark alone would have cemented the typo.
-- **Encoding trap in the detector ITSELF:** a `perl -CSD` one-liner decodes input to characters, but a Cyrillic literal in the SCRIPT stays bytes without `use utf8` — so the match silently fails and reports a clean tree. This bit the very sweep that found the class. **Verify any non-ASCII matcher with a positive control before believing its zero.**
-- **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_comment_style]]`).
-- **zsh**: `status` is read-only; quote globs (`[[feedback_zsh_bash_gotchas]]`).
 
 ## Keep this skill bounded
 
