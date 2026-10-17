@@ -1995,7 +1995,7 @@ route_check() {
         # The file's birth is the one moment «does this fact belong in memory at all?» is
         # still cheap to answer — a curation pass later pays for it as an excision. The
         # routing table lives in skill memory-maintenance §Type-routing; this is its carrier.
-        echo "      Belongs in memory at all? operational HOW → the domain skill · shipped WHAT or a verdict → canon"
+        echo "      Belongs in memory at all? operational HOW → the domain skill · shipped WHAT or a frozen decision → canon"
         echo "      (+ a 00_07 ID while open) · live state, trap, lesson, the founder's why → memory · a rule of the work → its playbook."
         echo "      Name: <type>_[<NN>[<sub>]_]<subject> — a coordinate for project_* only, never a bare NN_NN; renaming is free"
         echo "      now and later touches four registries (strings · index row · git routes · start-ritual packages)."
@@ -2021,7 +2021,8 @@ write_time_once() {
   : >"$mk" 2>/dev/null || return 0
   echo "WRITE-TIME (once per session): a new lesson is a LINE in an existing family or home, never a dated paragraph ·"
   echo "      hook, \`description\` and file header are three hand-synced mirrors — state lives in 00_07/canon, and no drifting"
-  echo "      count goes into a hook or a description · write the canon / skill / gate FIRST, then only the SEND into memory."
+  echo "      count goes into a hook or a description (a frozen date of a DECIDED event is provenance — keep it) ·"
+  echo "      write the canon / skill / gate FIRST, then only the SEND into memory."
 }
 
 # --- Self-test ---------------------------------------------------------------
@@ -2814,6 +2815,23 @@ EOF
   out=$(_st_write "$d" feedback_alpha.md)
   if printf '%s' "$out" | grep -q 'WRITE-TIME'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write-time rules stay silent without a session id" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "write-time rules stay silent without a session id"; fi
+
+  # 29y. route_check NEW — it had no case at all. A Write of a file the index does not
+  #      name must ask «does this belong in memory at all?» (the file-birth carrier,
+  #      DOC-T.123); an Edit of the same file must not (route_check is Write-only).
+  _st_build "$d"
+  printf -- '---\nname: feedback_newborn\ndescription: "x"\nmetadata:\n  type: feedback\n---\n\nbody\n' >"$d/feedback_newborn.md"
+  _rc() { printf '{"tool_name":"%s","tool_input":{"file_path":"%s/feedback_newborn.md"}}' "$1" "$d" |
+          env MEMORY_GATE_SELFTEST=1 MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" \
+              MEMORY_GATE_IDX_BASELINE="$(wc -c <"$d/MEMORY.md" | tr -d ' ')" MEMORY_GATE_DESC_BASELINE=800 \
+              MEMORY_GATE_CORPUS_FLOOR=1 bash "$SELF" 2>&1; }
+  out=$(_rc Write)
+  if printf '%s' "$out" | grep -q 'Belongs in memory at all'; then pass=$((pass+1)); printf '  ok    %s\n' "a new file's Write asks whether the fact belongs in memory"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a new file's Write asks whether the fact belongs in memory" "$out"; fi
+  out=$(_rc Edit)
+  if printf '%s' "$out" | grep -q 'Belongs in memory at all'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "an Edit of the same file does not ask it" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "an Edit of the same file does not ask it"; fi
+  rm -f "$d/feedback_newborn.md"
 
   # 30a-b. --stops, pinned on the pair that IS the design decision: it must find
   #        an anchored ⛔ ban, and must stay silent on a ⊥ counter-rule heading.

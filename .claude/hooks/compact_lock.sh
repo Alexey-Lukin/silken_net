@@ -8,10 +8,12 @@
 # Guard-craft pointer, in-silico's When Modifying, legal-business's gate traps) and
 # every companion file is out of context. Each skill's DESCRIPTION names its
 # companions, but the skill listing is NOT re-injected after compaction (documented,
-# verified 2026-10-17, DOC-T.123), so after the cut nothing in context names them —
-# and 11 of 13 repo edits after a compaction were made without reading one. A pointer that is always visible is a
-# rule in disguise; this is a LOCK, one file, three stances:
-#   --arm      SessionStart, matcher `compact`: arm this session
+# verified 2026-10-17, DOC-T.123), so after the cut only the re-attached heads of
+# already-invoked skills name them — and 11 of 13 repo edits after a compaction were
+# made without reading one. A pointer the reader may not even have is no carrier;
+# this is a LOCK, one file, three stances:
+#   --arm      SessionStart, matcher `compact`: arm this session — and reset the memory
+#              gate's once-per-session WRITE-TIME marker, whose line compaction dropped
 #   --release  PostToolUse Read of any `.claude/skills/*/*.md`: disarm
 #   (none)     PreToolUse Edit|Write of a file inside this repo while armed: DENY once,
 #              and record that it fired, so the retry passes
@@ -67,6 +69,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   c "a NON-compact SessionStart does not arm it"          silent "$(ed "$s" "$in_repo")"
   s="st-$$-h"; arm "$s"
   c "a sibling dir named like the repo is NOT the repo"   silent "$(ed "$s" "${REPO}-other/x.md")"
+  # The memory gate's WRITE-TIME marker — reset by a compaction, kept by any other start.
+  s="st-$$-i"; : > "$TMPDIR/claude-memory-writetime-$s"; arm "$s" >/dev/null; n=$((n + 1))
+  if [[ ! -e "$TMPDIR/claude-memory-writetime-$s" ]]; then printf '  ✓ %-58s %s\n' "a compaction re-arms the memory WRITE-TIME line" "reset"
+  else printf '  ✗ %-58s marker survived\n' "a compaction re-arms the memory WRITE-TIME line"; fails=$((fails + 1)); fi
+  s="st-$$-j"; : > "$TMPDIR/claude-memory-writetime-$s"; arm "$s" startup >/dev/null; n=$((n + 1))
+  if [[ -e "$TMPDIR/claude-memory-writetime-$s" ]]; then printf '  ✓ %-58s %s\n' "…a NON-compact SessionStart leaves it alone" "kept"
+  else printf '  ✗ %-58s marker removed\n' "…a NON-compact SessionStart leaves it alone"; fails=$((fails + 1)); fi
   if (( fails > 0 )); then echo "compact_lock --selftest: ${fails}/${n} FAILED"; exit 1; fi
   echo "compact_lock --selftest: OK (${n} cases — arm · release · once-only stop · repo scope)"
   exit 0
@@ -80,7 +89,13 @@ m=$(marker "$session")
 case "${1:-}" in
   --arm)
     src=$(printf '%s' "$input" | jq -r '.source // "compact"' 2>/dev/null)
-    [[ "$src" == "compact" ]] && printf 'armed\n' > "$m"
+    if [[ "$src" == "compact" ]]; then
+      printf 'armed\n' > "$m"
+      # memory_gate.sh shows its WRITE-TIME rules once per session; compaction drops
+      # that line from context while the session's riskiest appends are still ahead,
+      # so a compaction re-arms it too (DOC-T.123). Marker name — write_time_once there.
+      rm -f "${TMPDIR:-/tmp}/claude-memory-writetime-$session"
+    fi
     exit 0
     ;;
   --release)
