@@ -81,6 +81,8 @@
 #   ruby scripts/guard_craft_index.rb --check   # exit 1, якщо індекс розійшовся
 #   ruby scripts/guard_craft_index.rb --write   # перегенерувати блок у SKILL.md
 
+require "yaml"
+
 ROOT = File.expand_path("..", __dir__)
 
 # 🔴 ONE engine, a TABLE of targets — not a copy per skill. The repo's own
@@ -460,6 +462,53 @@ TARGETS.select { _1[:section] }.group_by { _1[:aux] }.each do |aux, rows|
 
   warn "guard_craft_index ✗ — #{File.basename(aux)}: item(s) #{stray.join(', ')} sit outside every " \
        "declared section — no index block renders them; move each under its `## <section>`"
+  ok = false
+end
+
+# 🔴 ДВІ СТЕЛІ ХАРНЕСУ, на яких носій мовчить сам (DOC-T.123; норма — `00_05 §2`, прилад —
+# `scripts/skill_tier_probe.rb`). (1) Після компакції повертається лише ГОЛОВА тіла SKILL.md
+# (документовано «5,000 tokens», виміряно ≈19.9 тис. символів, і лише для вже викликаних
+# скілів): індекс, що закінчується за нею, після компакції не існує, а компаньйон, якого
+# голова не називає, — теж. (2) Список скілів показує з `description` + `when_to_use` лише
+# перші 1 535 символів: хвіст, де стоять приклади-тригери, до моделі не доходить. Зріз —
+# константа ХАРНЕСУ, не наша; HEAD_CHARS узято з запасом під зміряним, і зміниться харнес —
+# переміряй приладом, а не підганяй число. ⚠️ Стеля осей: вони бачать позицію, а не те, чи
+# голова несе ПОТРІБНЕ, — прозові носії поза індексами судить читання.
+HEAD_CHARS    = 19_500
+LISTING_CHARS = 1_535
+skill_body = ->(f) { File.read(f).sub(/\A---\n.*?\n---\n/m, "") }
+TARGETS.each do |t|
+  skill_dir = File.dirname(t[:skill])
+  next unless skill_dir.include?("/.claude/skills/")
+
+  if File.basename(t[:skill]) == "SKILL.md"
+    body = skill_body.(t[:skill])
+    j = body.index(t[:close])
+    if j && j + t[:close].length > HEAD_CHARS
+      warn "guard_craft_index ✗ — #{t[:name]}: the index block ends at body char #{j + t[:close].length}, past the " \
+           "#{HEAD_CHARS} that survive compaction — move it up (`ruby scripts/skill_tier_probe.rb --reorder`)"
+      ok = false
+    end
+    named = File.basename(t[:aux])
+  else
+    body = skill_body.(File.join(skill_dir, "SKILL.md")) # the index lives in a companion (ssot-maintenance)
+    named = File.basename(t[:skill])
+  end
+  at = body.index(named)
+  next if at && at <= HEAD_CHARS
+
+  warn "guard_craft_index ✗ — #{t[:name]}: SKILL.md names #{named} #{at ? "first at body char #{at}" : "nowhere"} — " \
+       "after compaction nothing in its head points at the companion"
+  ok = false
+end
+Dir[File.join(ROOT, ".claude/skills/*/SKILL.md")].each do |f|
+  fm = File.read(f)[/\A---\n(.*?)\n---/m, 1] or next
+  y = YAML.safe_load(fm)
+  n = "#{y["description"]}#{y["when_to_use"]}".length
+  next if n <= LISTING_CHARS
+
+  warn "guard_craft_index ✗ — #{y["name"]}: description + when_to_use = #{n} chars; the skill listing shows " \
+       "#{LISTING_CHARS} and cuts the rest — put the use case, examples and «NOT this skill» first"
   ok = false
 end
 exit(ok ? 0 : 1)
