@@ -17,6 +17,8 @@ internal static class Program
     {
         try
         {
+            // This switch IS the verb roster (⚖️ founder 2026-10-17, DOC-T.123); `Help()` is its human copy — a verb
+            // added here gets its line there in the same commit.
             return (args.Length == 0 ? "help" : args[0]) switch
             {
                 "smoke" => RunHeadless(0.5f, Smoke),
@@ -1172,16 +1174,20 @@ internal static class Program
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  build <cem.json> --parts   anchor_assembly | anchor_axial_stack: also one STL per body → out/<name>.<part>.stl, all in the assembly frame\n" +
-            "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
-            "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
+            "  verify <cem.json> measure metrics → out/<name>.metrics.json + compare the committed *.golden.json, if any (exit 0/1)  [--write-golden]\n" +
+            "  sweep             generate + verify every cem/anchor_zone1.*.json\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
+            "  converge <cem.json>   topology-convergence ladder of an anchor_zone1 SKU over step divisors  [--divisors N,M] — a probe: no golden, no OK/FAILED\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
             "  build-record <cem.json>...  one batch's build-record JSON → stdout (commit + manifest sha256 + golden metrics; vendor fields EMPTY, filled from the order)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +
             "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]\n" +
-            "  fea <cem.json> --fit --walls <list>   the same fit on the shipped part  [--step-div N | --step-mm H | --with-radial]");
+            "  fea <cem.json> --fit --walls <list>   the same fit on the shipped part  [--step-div N | --step-mm H | --with-radial]\n" +
+            "  render <cem.json> PicoGK native-viewer screenshot → out/*.png (needs a display)\n" +
+            "  section <cem.json>  the same as a −X cutaway\n" +
+            "  probe <voxel-mm>  falsifiable probes of PicoGK-kernel assumptions, not of our geometry");
         return 0;
     }
 
