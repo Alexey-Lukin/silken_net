@@ -1302,8 +1302,8 @@ RUBY
 canon_section_check() {
   [ -n "$RB" ] || return 0
   [ -f "$REPO/lib/tracker/dashboard.rb" ] || return 0
-  "$RB" - "$MEM_DIR" "$REPO" <<'RUBY'
-dir, repo = ARGV
+  "$RB" - "$MEM_DIR" "$REPO" "${1:-}" <<'RUBY'
+dir, repo, only = ARGV
 begin
   require File.join(repo, "lib", "tracker", "dashboard")
 rescue Exception => e
@@ -1389,6 +1389,11 @@ docs = File.join(repo, "docs")
 exit 0 unless Dir.exist?(docs)
 used = Hash.new { |h, k| h[k] = [] }
 scanned = Dir.chdir(dir) { Dir["*.md"] }.sort
+# The WRITE stance passes the file being written: a ref is born only where somebody writes, and the
+# corpus-wide scan was 18.5 s of a ~25 s write path (measured 2026-10-17 under load, 5 MB corpus) against
+# a 30 s hook timeout that fails OPEN — i.e. the whole battery was close to not running at all, silently.
+# --audit passes nothing and keeps the whole corpus; EXEMPT-DEAD below already judges scanned files only.
+scanned &= [File.basename(only)] unless only.to_s.empty?
 scanned.each do |f|
   Tracker::Dashboard.file_section_dangling_refs(File.read(File.join(dir, f)), docs).each do |h|
     ref = h.to_s.delete("`")
@@ -2190,6 +2195,24 @@ selftest() {
   #      canonical after reading it here.
   _st_build "$d"; printf '\nProof form → `04_06 §A.999`.\n' >>"$d/feedback_beta.md"
   _st_check "CANONREF on a dead canon §-address" expect 'CANONREF'
+
+  # 10b′. The WRITE stance scans only the file being written (2026-10-17: the corpus-wide scan was 18.5 s
+  #       of a ~25 s write path against a 30 s hook timeout that fails OPEN). Both quadrants: a dead ref in
+  #       the WRITTEN file still fires at the moment of writing; one in ANOTHER file is --audit's job and
+  #       must not fire here — that half is what proves the scope exists at all.
+  _st_build "$d"; printf '\nProof form → `04_06 §A.999`.\n' >>"$d/feedback_beta.md"
+  out=$(_st_write "$d" feedback_beta.md)
+  if printf '%s' "$out" | grep -q 'CANONREF'; then
+    pass=$((pass+1)); printf '  ok    %s\n' "the WRITE stance still catches a dead canon ref in the written file"
+  else
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance still catches a dead canon ref in the written file" "$out"
+  fi
+  out=$(_st_write "$d" feedback_alpha.md)
+  if printf '%s' "$out" | grep -q 'CANONREF'; then
+    fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "the WRITE stance leaves another file's dead canon ref to --audit" "$out"
+  else
+    pass=$((pass+1)); printf '  ok    %s\n' "the WRITE stance leaves another file's dead canon ref to --audit"
+  fi
 
   # 10c. Its negative control. A check that fired on every `NN_NN §X` would pass
   #      10b just as happily, and the corpus is full of legitimately live canon
@@ -3290,8 +3313,9 @@ RUBY
               section_ref_check
               # Same reasoning one axis over: a canon §-ref is written HERE, and
               # this is the only moment the corpus can be told the address is
-              # already dead — nothing downstream ever re-reads it.
-              canon_section_check
+              # already dead — nothing downstream ever re-reads it. Scoped to the written
+              # file: the corpus-wide scan alone pushed this stance to its timeout.
+              canon_section_check "$fp"
               # Same moment, third address space: a `skill #N` is written HERE,
               # and no §-resolver downstream will ever look at it.
               skill_item_check
