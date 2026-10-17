@@ -472,7 +472,10 @@ rb_dark() {
 # 2026-10-17: 180 → 179 — `reference_web3_contract_skill` згорнуто й видалено (рецепт DOC-T.118; аудит сплячих
 # епізодів): рецепт промоції `generated/` протух, решту несуть скіл і CLAUDE.md §2, а founder-а «why» 06-13 переїхало
 # дослівно в тіло (11) `log_task_execution_workflow`. Опускання робить втрату git-видимою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
+# 2026-10-17: 179 → 180 — `feedback_external_sources`: половину «як машина читає зовнішні джерела» винесено
+# дослівно з `project_sentinelone_quarantine`, де вона жила під іменем корпоративного агента. Підняття робить новий дім
+# захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-180}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
