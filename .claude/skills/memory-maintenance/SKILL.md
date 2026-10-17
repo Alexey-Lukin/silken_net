@@ -62,6 +62,7 @@ the measurement and the provenance are in the companion. Numbering is append-onl
 17. Opposed frames do not protect against a shared READING habit — and the two costliest misses of a curation pass both arrived as a home that is not one
 18. Editing memory through `Bash` bypasses BOTH of its carriers silently — the growth gate and the auto-commit are hooked on `Edit|Write`, and nothing announces their absence
 19. Дзеркало пастки (18): авто-коміт робить ВАКУУМНИМ будь-яке порівняння «до/після», побудоване на робочому дереві — і брехня тут іде в бік «це не я»
+20. Нишпорка, що звіряє гачок індексу з тілом, приписує клаузу рядка-ХАБА не тому файлу — і рапортує «гачок обіцяє те, чого в тілі немає», хоч клауза живе в СУСІДА
 
 <!-- /MEMORY-TRAPS-INDEX -->
 

@@ -1796,6 +1796,54 @@ puts "   archival itself — `item_cementation.md` Фаза 5 — not a later sw
 RUBY
 }
 
+# ── MIRRORS · live-state glyphs beside the IDs of ONE archive act [DOC-T.122] ──
+# stale_state_check is the thermometer; this is the carrier at the EDGE it cannot
+# watch (guard-craft #82). The archive hint (ssot_guard_hint.sh, both arms) fires
+# BEFORE the write, while the item is still live in the tracker — so the
+# live/archived split stale_state_check borrows from the tracker cannot see it yet,
+# and the hint used to print only «run the sweep», a reminder. This prints the LINES:
+# every clause where a live-state glyph sits within 60 chars of an ID the act names,
+# unless the same window already says the item closed. Glyph, never the word
+# «відкрит»: the word also routes honest prose to a live successor, and it was the
+# false hit of the 2026-10-17 replay. Journals are exempt for the reason --genre
+# states. Replay over all 469 archived IDs that day: 19 lines, 7 in journals, none
+# true — the curation pass of that morning had just fixed them, so read it as the
+# noise floor, not the yield. user_* lines print as an address only.
+# Always exit 0: a worklist for the act, not a verdict.
+mirrors_check() {
+  [ "$#" -gt 0 ] || return 0
+  [ -d "$MEM_DIR" ] || { echo "SKIP  no memory corpus at $MEM_DIR"; return 0; }
+  [ -n "$RB" ] || { echo "DARK  mirrors_check did not run — no usable ruby"; return 0; }
+  "$RB" - "$MEM_DIR" "$@" <<'RUBY'
+dir, *ids = ARGV
+LIVE = /🔄|🟡|⚪|🔗|🟢|⏸|🌿/
+# stale_state_check's MARKED, plus the glyphs and the English verb that close an item in prose here.
+DONE = /🗄|архівн|archiv|історичн|закрит|closed|вичерпан|retired|resolved|✅|⚫/i
+CAP  = 12
+alt  = ids.uniq.sort_by { -_1.size }.map { Regexp.escape(_1) }.join("|")
+re   = /(?<![A-Za-z0-9_.\-])(?:#{alt})(?![A-Za-z0-9_]|\.[0-9])/
+rows = []
+Dir["#{dir}/*.md"].sort.each do |p|
+  f = File.basename(p)
+  next if f.start_with?("log_")
+  File.foreach(p, encoding: "UTF-8").with_index(1) do |l, n|
+    l = l.scrub
+    next unless l.match?(re)
+    l.enum_for(:scan, re).each do
+      m = Regexp.last_match
+      a = [m.begin(0) - 60, 0].max
+      win = l[a, m.begin(0) - a + m[0].size + 60].to_s
+      next unless win.match?(LIVE) && !win.match?(DONE)
+      rows << (f.start_with?("user_") ? "#{f}:#{n}  #{m[0]}" : "#{f}:#{n}  #{m[0]}  …#{win.strip.gsub(/\s+/, " ")}…")
+    end
+  end
+end
+rows.uniq!
+rows.first(CAP).each { puts "   #{_1}" }
+puts "   … +#{rows.size - CAP}: bash .claude/hooks/memory_gate.sh --mirrors #{ids.join(" ")}" if rows.size > CAP
+RUBY
+}
+
 broken_check() {
   local fn
   # Grammar lives in IDX_LINK_RE, not here — see the note at its definition for
@@ -2583,6 +2631,33 @@ selftest() {
   if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a live heir keeps the route honest" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "a live heir keeps the route honest"; fi
 
+  # 19f. MIRRORS, the edge twin: a live-state glyph beside an ID the act names is
+  #      PRINTED. No tracker here at all — the act fires before the write, so the
+  #      ID is still live and the scan must not need the tracker to say otherwise.
+  _st_build "$d"
+  printf '\nСтан: \xf0\x9f\x94\x84 ZZ.1 — у роботі.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_DIR="$d" bash "$SELF" --mirrors ZZ.1 2>&1)
+  if printf '%s' "$out" | grep -q 'feedback_beta.md:.*ZZ.1'; then pass=$((pass+1)); printf '  ok    %s\n' "MIRRORS prints a live glyph beside the act's ID"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "MIRRORS prints a live glyph beside the act's ID" "$out"; fi
+
+  # 19g. The half that proves it reads the WINDOW, not the glyph: the same clause
+  #      that names the closure goes quiet.
+  _st_build "$d"
+  printf '\n\xf0\x9f\x94\x84 ZZ.1 — закрито 10-17.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_DIR="$d" bash "$SELF" --mirrors ZZ.1 2>&1)
+  if [ -z "$out" ]; then pass=$((pass+1)); printf '  ok    %s\n' "MIRRORS: a named closure in the window silences it"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "MIRRORS: a named closure in the window silences it" "$out"; fi
+
+  # 19h. Two shapes that must stay quiet: a journal (dated chronicle — a glyph
+  #      there is provenance) and a LONGER ID that merely starts with the act's.
+  _st_build "$d"
+  printf '\n\xf0\x9f\x94\x84 ZZ.10 — у роботі.\n' >>"$d/feedback_beta.md"
+  printf '\xf0\x9f\x94\x84 ZZ.1 — у роботі.\n' >"$d/log_zz.md"
+  out=$(env MEMORY_GATE_DIR="$d" bash "$SELF" --mirrors ZZ.1 2>&1)
+  rm -f "$d/log_zz.md"
+  if [ -z "$out" ]; then pass=$((pass+1)); printf '  ok    %s\n' "MIRRORS: a journal and a longer ID stay quiet"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "MIRRORS: a journal and a longer ID stay quiet" "$out"; fi
+
   # 20. The verdict must not be quietly computed against foreign thresholds.
   _st_build "$d"
   out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_CORPUS_FLOOR=1 bash "$SELF" --audit 2>&1)
@@ -3248,6 +3323,11 @@ RUBY
     # WORKLIST (always exit 0) — see the block comment on stale_state_check for
     # why this cannot live in --audit and why its trigger is in the REPO, not here.
     stale_state_check
+    ;;
+  --mirrors)
+    # The EDGE twin of --stale-state: the archive hint calls it with the act's IDs.
+    shift
+    mirrors_check "$@"
     ;;
   --genre)
     # Journals are exempt HERE too, and the omission was not cosmetic: a journal

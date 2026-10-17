@@ -36,10 +36,26 @@ set -uo pipefail
 # the DOMINANT one (2,392 recorded calls wrote `00_07` by script in a month). That
 # rule prints this same text through `--archive-hint`, so the wording has one home.
 archive_hint() {
+  # Sweep 2 prints the memory LINES, not a command [DOC-T.122]: a reminder to run a
+  # sweep is the form that lost to the act. `--mirrors` is the edge twin of
+  # `--stale-state`, which cannot help here — this fires BEFORE the write, while the
+  # item is still live in the tracker. $1 comes from a fixed ID regex, so it is
+  # word-split on purpose.
+  local mirrors step2
+  mirrors=$(bash "$(dirname "$0")/memory_gate.sh" --mirrors $1 2>/dev/null)
+  if [[ "$mirrors" == SKIP* || "$mirrors" == DARK* ]]; then
+    step2="скан памʼяті не відбувся (${mirrors%%$'\n'*}); ⊕ ПІСЛЯ запису"
+  elif [[ -n "$mirrors" ]]; then
+    step2="у памʼяті біля ID цього акту стоїть гліф ЖИВОГО стану — перечитай кожен рядок і назви закриття або переадресуй на живого спадкоємця (ID не видаляй — це провенанс):
+${mirrors}
+   ⊕ ПІСЛЯ запису"
+  else
+    step2="гліфа живого стану біля цих ID у памʼяті немає; ⊕ ПІСЛЯ запису"
+  fi
   cat <<EOF
 [SSOT] Акт архівації чи зрізу пункту в \`00_07\`: $1— три вихідні свіпи, за якими не стоїть жоден CI, і нагадування на першу правку сесії до цієї миті не доживає (OPS.41):
 1. Хто чекав на МЕНЕ: \`grep -n "<ID>" docs/00_07*.md\` — читай контекст КОЖНОГО хіта на ⛔ · ЗАБЛОКОВАНО · до присуду · чекає на, ⊕ гліф 🔗 у рядку з цим ID (словника в нього немає).
-2. Хто шле СЮДИ по стан (джерело поза git): \`bash .claude/hooks/memory_gate.sh --stale-state\`.
+2. Хто шле СЮДИ по стан (джерело поза git): ${step2} — \`bash .claude/hooks/memory_gate.sh --stale-state\` (словник обіцянок стану; до запису пункт ще живий, тож цей прилад бачить його лише після).
 3. Чи не лишився я в 🚦 Critical Path: \`ruby scripts/tracker_report.rb --critical-path\` ⊕ слеш-форми \`/<номер>\` у рядках 🚦/⛓️ (звіт їх не бачить).
 ⊕ Архівація — теж зріз: урок, метод чи відкинута альтернатива з тіла мають доми ПОЗА трекером, і рядок архіву їх не переживе. ⚠️ ID зібрано з рядків-літералів правки, тож серед них буває й ЯКІР, а не архівований пункт. Метод — \`.claude/prompts/item_cementation.md\` (⚡ Шпаргалка · Фаза 5).
 EOF
@@ -85,11 +101,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
     else
       js=$(jq -nc --arg f "$fp" --arg o "$old" --arg w "$new" --arg s "st-$$-$n" '{tool_input:{file_path:$f,old_string:$o,new_string:$w},session_id:$s}')
     fi
-    out=$(printf '%s' "$js" | bash "$self")
+    # The archive hint scans the memory corpus [DOC-T.122]: an EMPTY one by default, so
+    # no case reads the developer's live corpus (absent on a CI runner anyway).
+    out=$(printf '%s' "$js" | MEMORY_GATE_DIR="${C_MEM:-$TMPDIR/mem-empty}" bash "$self")
     got="silent"
     [[ -n "$out" ]] && got="once"
     [[ "$out" == *"ТІЛО присуду"* ]] && got="verdict"
     [[ "$out" == *"Акт архівації"* ]] && got="archive"
+    [[ "$got" == "archive" && "$out" == *"project_fixt.md:1"* ]] && got="mirror"
     [[ "$out" == *"ТІЛО присуду"* && "$out" == *"Акт архівації"* ]] && got="both"
     if [[ "$got" == "$expect" ]]; then
       printf '  ✓ %-50s %s\n' "$name" "$got"
@@ -101,6 +120,11 @@ if [[ "${1:-}" == "--selftest" ]]; then
   c "archive: a NEW archive row"                   archive "$trk" '| FIXT.7 | **закрито** | x |' $'| FIXT.7 | **закрито** | x |\n| FIXT.9 | **закрито** | `00_06 §3` |'
   c "archive: a cut #### heading"                  archive "$trk" $'#### FIXT.8 — живий пункт\n- **Стан:** x\n' ''
   c "archive: a PREFIX-N-shaped ID counts"         archive "$trk" 'x' $'| FIXT-9 | **закрито** | `05_05 §3` |'
+  mkdir -p "$TMPDIR/mem-empty" "$TMPDIR/mem-fixt"
+  printf 'Стан: \xf0\x9f\x94\x84 FIXT.9 — у роботі.\n' > "$TMPDIR/mem-fixt/project_fixt.md"
+  C_MEM="$TMPDIR/mem-fixt"
+  c "archive: a memory mirror of the act is PRINTED" mirror "$trk" '| FIXT.7 | **закрито** | x |' $'| FIXT.7 | **закрито** | x |\n| FIXT.9 | **закрито** | `00_06 §3` |'
+  unset C_MEM
   c "archive: Write that adds a row"               archive "$trk" '@WRITE' $'#### FIXT.8 — живий пункт\n- **Стан:** x\n\n## 🗄️ Архів\n\n| FIXT.7 | **закрито** | `00_06 §3` |\n| FIXT.6 | **так** | `00_06 §3` |\n'
   c "no act: an EXISTING row edited in place"      once    "$trk" '| FIXT.7 | **закрито** | x |' '| FIXT.7 | **закрито ✅** | x |'
   c "no act: a heading RETITLED, not cut"          once    "$trk" '#### FIXT.8 — живий пункт' '#### FIXT.8 — живий пункт, нова назва'
