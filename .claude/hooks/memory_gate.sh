@@ -272,7 +272,8 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   звужувало так само, як імʼя файлу «physicist» спотворювало); чотири перейменування за брехливими іменами дали нетто ≈ 0.
 # ⊕ 26285 → 25784 (−501) — мертвий носій знято (DOC-T.123): блок WRITE-TIME у верхньому HTML-коментарі
 #   харнес вирізає ще до інʼєкції індексу; правила тепер несе write_time_once. Зекономлене не стає запасом.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25784}
+# ⊕ 25784 → 25780 (−4) — `project_vilize_07_08` → `project_vilize_00b`: «07_08» читалось як канон-адреса `NN_NN`.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25780}
 # The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
 # the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
 # whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
@@ -1353,7 +1354,7 @@ exempt = {
   # ІСТОРІЯ vilize-кампанії: субʼєкт речення факт («оновив §3, але забув §17.1
   # дзеркало»), і правку тоді робили САМЕ за тією адресою. Перенаведення на 02_06
   # зробило б запис хибним — guard-craft #29, «субʼєкт — адреса чи факт».
-  "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5", "07_01 §17",
+  "project_vilize_00b.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5", "07_01 §17",
                                 "07_01 §3", "07_03 §3"],
   # Фаза 2 DOC-T.83 (2026-08-22) забрала модуль 07 цілком: 07_03→00_02, 07_01→00_04.
   # Записи нижче — ІСТОРІЯ кампаній: субʼєкт речення факт («інвест-лексику знято
