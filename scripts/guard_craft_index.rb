@@ -167,7 +167,7 @@ TARGETS = [
   { name:  "in-silico (Critical Rules)",
     skill: File.join(ROOT, ".claude/skills/in-silico/SKILL.md"),
     aux:   File.join(ROOT, ".claude/skills/in-silico/rules.md"),
-    floor: 11,
+    floor: 47,
     open:  "<!-- INSILICO-RULES-INDEX:AUTO — generated from rules.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
     close: "<!-- /INSILICO-RULES-INDEX -->" },

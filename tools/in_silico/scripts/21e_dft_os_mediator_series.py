@@ -138,7 +138,7 @@ OUT_RELAXED3 = DFT_CACHE / "os_mediator_series_relaxed_os3.json"  # (3б): Os(II
 RELAX_POINTS = ["dmbpy", "ome", "bpy"]   # the decisive pair OMe−Me first; H for Me−H; acceptors only on request
 # (estimate for both states: the donors' optimisation ⊥ single-point time ratio × the acceptor's single point — 00_07 HW.5.IS)
 # Declared before the first run (00_07 HW.5.IS leg 3a): energy and gradient at Gaussian's default thresholds (geomeTRIC's
-# GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico, DFT Gotchas: displacement never met).
+# GAU), displacement at its loose ones — the Os–Cl mode is flat (skill in-silico §Critical Rules #23: displacement never met).
 # What bounds the error is the GRADIENT, not the step (run-path adversary, 2026-10-12): at the Os(II) minimum Os(III) is
 # not stationary, so a leftover geometry error δ ≤ gmax/k enters ΔE_red at first order — ≲ 2 meV a complex, ≲ 1 mV per
 # substituent on a pair (an estimate: λ(III) ≈ 0.03 eV, k ≈ 0.1 Ha/Bohr²), an order under the 16 mV asked about. Leg 3б
