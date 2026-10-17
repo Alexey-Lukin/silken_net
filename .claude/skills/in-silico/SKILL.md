@@ -226,7 +226,7 @@ Anchor mechanics (CPU):
      Soderberg line, the form) → 97 (wire_under_liner_edges.json — the wire under the edges as an elastic half-space under the layer; a
      change to 92's solve or path re-runs 97, and its cache test re-reads 92's shipped-shank row)
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
-  52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP) · 77 (anchor_torque_path.json:
+  52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
      `missing_datum` string), never its cache
   52 (z_stack_tolerance.json: squeeze window, groove, `rim_datum_creep`) · 73 (collar_wall_inversion.json: lug-root rows) · 87

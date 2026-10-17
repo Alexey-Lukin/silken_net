@@ -133,13 +133,18 @@ def _pine85(d: dict) -> dict:
 
 
 def _wbl(d: dict) -> dict:
-    """87's (C)-behind-the-liner block; the route and its seam requirements do not read the slope reading."""
-    return d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["wire_behind_liner"]
+    """87's (C)-behind-the-liner ceiling — it reads no slope reading."""
+    return d["C_wire_behind_liner"]
 
 
 def _up2(x: float) -> float:
     """A requirement «k ≥ X» rounded UP to the doc's two decimals (in-silico §When Modifying #43)."""
     return math.ceil(x * 100 - 1e-9) / 100
+
+
+def _down2(x: float) -> float:
+    """A floor «SF drops to X» rounded DOWN to the doc's two decimals (in-silico §When Modifying #43)."""
+    return math.floor(x * 100 + 1e-9) / 100
 NSCI =rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
@@ -1227,7 +1232,39 @@ CHECKS = [
           ("stem strain, whisker", rf"is ≈ [\d.]+–{N} µε at the source tree",
            lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["surface_strain_microstrain_source_tree"], 5),
           ("centre pad per 1000 µε, high", rf"… {N} % of the working compression per 1000 µε",
-           lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] * 100, 0.005))],
+           lambda d: d["by_slope_reading"]["median"]["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]["mu_lr_hi_dx_ceiling"] * 100, 0.005),
+          # (C) behind the liner, 2026-10-17 — a CEILING; the requirements round UP and the SF floor DOWN (in-silico
+          # §When Modifying #43), so they are pinned EXACTLY to the rounded value, never within a tolerance
+          ("liner wall ceiling", rf"so the wall caps it at \*\*{N}\*\* N",
+           lambda d: _wbl(d)["route"]["wall_capacity_N_at_23C"], 0.05),
+          ("wire stress at the ceiling", rf"\*\*{N}\*\* MPa on the wire, PEEK's 23 °C uniaxial yield",
+           lambda d: _wbl(d)["route"]["wire_stress_at_wall_capacity_MPa"], 0.05),
+          ("86's own k on Ti-6Al-4V", rf"from k ≥ {N} to \*\*[\d.]+\*\* on Ti-6Al-4V",
+           lambda d: _wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_86"], 0.00005),
+          ("seam k at the ceiling, Ti-6Al-4V", rf"to \*\*{N}\*\* on Ti-6Al-4V",
+           lambda d: _up2(_wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_at_route_capacity"]), 0),
+          ("seam k at the ceiling, Ta", rf"from 0\.3883 to \*\*{N}\*\* on Ta",
+           lambda d: _up2(_wbl(d)["by_alloy"]["Ta"]["seam_k_at_route_capacity"]), 0),
+          ("wire SF at the ceiling, Ta", rf"drops the wire's SF on Ta from [\d.]+ to \*\*{N}\*\*",
+           lambda d: _down2(_wbl(d)["by_alloy"]["Ta"]["sf_wire_at_route_capacity"]), 0),
+          ("seam k at the ceiling, CP-Ti-Gr4", rf"on CP-Ti-Gr4 \(\*\*{N}\*\*\)",
+           lambda d: _up2(_wbl(d)["by_alloy"]["CP-Ti-Gr4"]["seam_k_at_route_capacity"]), 0),
+          ("seam k at the ceiling, Ta, tightest branch", rf"on Ta even the tightest needs k ≥ \*\*{N}\*\*",
+           lambda d: _up2(min(_wbl(d)["by_alloy"]["Ta"]["seam_k_at_route_capacity_by_branch"].values())), 0))],
+    # 87's liner ceiling as 01_01 §1.4 «Співвісність» ⊕ 2026-10-17 quotes it — rounded thresholds pinned EXACTLY
+    *[(f"pogo sway transfer, {label} in 01_01 §1.4 → pogo_sway_transfer.json", "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md",
+       pattern, "mechanical/pogo_sway_transfer.json", resolver, tol)
+      for label, pattern, resolver, tol in (
+          ("seam k at the ceiling, Ti-6Al-4V", rf"вимагає `k` ≥ \*\*{N}\*\* на Ti-6Al-4V",
+           lambda d: _up2(_wbl(d)["by_alloy"]["Ti-6Al-4V"]["seam_k_at_route_capacity"]), 0),
+          ("seam k at the ceiling, Ta", rf"і ≥ \*\*{N}\*\* на Ta, а SF дроту",
+           lambda d: _up2(_wbl(d)["by_alloy"]["Ta"]["seam_k_at_route_capacity"]), 0),
+          ("wire SF at the ceiling, Ta", rf"SF дроту на Ta падає з [\d.]+ до \*\*{N}\*\*",
+           lambda d: _down2(_wbl(d)["by_alloy"]["Ta"]["sf_wire_at_route_capacity"]), 0),
+          ("Ti-15Zr tight branch at the ceiling", rf"тугою гілкою \(\*\*{N}\*\*\)",
+           lambda d: _wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["tight"], 0.00005),
+          ("Ti-15Zr ⌀0.10 at the ceiling", rf"і ⌀0\.10 \(\*\*{N}\*\*\)",
+           lambda d: _wbl(d)["by_alloy"]["Ti-15Zr"]["seam_k_at_route_capacity_by_branch"]["loose_50"], 0.00005))],
     ("pogo sway transfer, NOS displacement in the 01_02 bench table → pogo_sway_transfer.json",
      "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"сягає до [\d.]+–{N} мм", "mechanical/pogo_sway_transfer.json",
      lambda d: d["by_slope_reading"]["upper_whisker"]["stem_at_anchor_h_le_2m"]["nos_displacement_mm"], 0.5),

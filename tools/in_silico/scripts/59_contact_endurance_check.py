@@ -87,8 +87,9 @@ SPRING_DRAWING_MISSING = ("the full spring drawing — wire diameter, mean coil 
 SWAY_DEFLECTION_MISSING = ("the inputs script 87 names for the sway amplitude at the pin — whether the bayonet "
                            "keeps the rim from lifting at every temperature (it decides whether the pin slides at all; the "
                            "O-ring reaction is 88's band), "
-                           "the board stack's layout (its mass is estimated part by part in 87), the axial "
-                           "capacity of the Zone 1-2 press-fit and of the liner grip, and the stem's strain and "
+                           "the board stack's layout (its mass is estimated part by part in 87), the axial load "
+                           "at the bus wire's root and how much of the centre-pad shift reaches the pin (87 computes "
+                           "only the liner wall's ceiling on that load), and the stem's strain and "
                            "acceleration at anchor height on host-size pines (00_07 HW.43)")
 
 

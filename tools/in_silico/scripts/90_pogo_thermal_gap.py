@@ -27,9 +27,10 @@ a pin at radius r slides by (α_PEEK − α_Ti)·r per kelvin (the reading print
 board's own in-plane expansion, α_PEEK becomes FR-4's in-plane CTE, which no primary in the tree gives (a distributor lists
 13–15 ppm/K, i.e. a slide of about a fifth); per mm of radius, the outer pad's radius being the layout's (HW.9); the
 centre pad (the bus-wire end, r = 0) does not slide. (7) The centre pad's own path — the Ti wire
-inside the PEEK sleeve between the Zone 1↔2 press-fit and the liner grip — loads the wire or slips a grip; it is HW.34's
-(capacities not in the tree), named only — so every window statement here is about the OUTER pad: the centre pad's axial
-position rides on that path, and a slipping grip moves it by tens of µm on 20 K (00_07 HW.43). (8) The B2B pair beside the standoffs strains by their mismatch — not the pins'.
+inside the PEEK sleeve between the Zone 1↔2 press-fit and the liner grip — loads the wire and, as the wire slips in the
+liner near its held end, moves the pad; 87 computes the ceiling the liner wall puts on that axial force, not the split
+(HW.34/HW.43), named only here — so every window statement here is about the OUTER pad: the centre pad's axial position
+rides on that path, and a slipping grip moves it by tens of µm on 20 K (00_07 HW.43). (8) The B2B pair beside the standoffs strains by their mismatch — not the pins'.
 
 READINGS. Temperatures: the capsule requirement (−40…85 °C, `82`) and the models' edges (`81`'s −33.5 °C; `71`'s 55.0 °C
 for the canon finish α ≤ 0.5, a lumped mean), assembly at 20 °C. Isothermal (radome and stack together) and a radome-leads

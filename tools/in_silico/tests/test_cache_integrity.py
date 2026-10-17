@@ -2713,6 +2713,87 @@ def test_pogo_sway_transfer():
     assert wh["C_centre_pad_poisson"]["ratio_per_1000_microstrain"] == med["C_centre_pad_poisson"]["ratio_per_1000_microstrain"]
 
 
+def test_pogo_sway_transfer_wire_behind_liner():
+    """Script 87 (HW.43 · HW.34), (C) behind the liner: the ceiling the liner wall puts on the axial force at the wire's
+    root, and 86's seam requirement and wire SF at that ceiling.
+
+    CAN catch, recomputed from 55's and 86's CURRENT caches rather than copied from the script: the ceiling leaving
+    σ_y,PEEK·A_tube; the list of μ where a grip slips first leaving 55's rows (nominal as fitted, nominal relaxed to lib's
+    PEEK_RELAX_FLOOR, window floor); the seam k or the wire SF leaving 86's Soderberg (written here from 86's docstring,
+    not imported) with the wall's stress added to 86's amplitude, at ⌀0.10 and at each branch; 86's own k and SF on 86's
+    inputs no longer matching 86's binding row; an added amplitude that stops dividing by each branch's own room (the
+    branch ratios would move); the verdict's numbers drifting off the cache, a requirement rounded down or an SF floor
+    rounded up; the verdict losing its condition (the load the root carries is not computed). CANNOT catch: the axial load
+    the root actually carries, the wire's slip in the liner, the capture, PEEK in the cold or in compression, a parallel
+    tie in the wet gap — the docstring names each as outside the ceiling.
+    """
+    from lib.constants import ALLOY_BASELINE, PEEK_RELAX_FLOOR
+
+    path = MECHANICAL / "pogo_sway_transfer.json"
+    if not path.exists():
+        pytest.skip("pogo_sway_transfer.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    b55 = json.loads((MECHANICAL / "bus_mechanical.json").read_text(encoding="utf-8"))
+    d86 = json.loads((MECHANICAL / "coaxiality_allocation.json").read_text(encoding="utf-8"))
+    cp = b55["interference_window"]["cold_press_fit"]
+    rows55 = {r["at"]: r for r in cp["rows"]}
+    f_wall = cp["peek_yield_MPa"] * cp["tube_section_mm2"]
+    a_wire = math.pi * b55["geometry_mm"]["bus_dia"] ** 2 / 4.0
+    key = next(k for k in d86["by_geometry"] if k.startswith("shipped"))
+    g86, e86 = d86["by_geometry"][key], d86["branches"]["loose_50"]["radial_offset_budget_um"]
+    sf_t = d86["inputs"]["sf_target"]
+
+    def sod(amp, mean, se, sy):              # 86: SF = 1/(σa/σe + σm/σy); k = σ_a / (σ_e · (1/SF_t − σ_m/σ_y))
+        room = 1.0 / sf_t - mean / sy
+        return 1.0 / (amp / se + mean / sy), (amp / (se * room) if room > 0 else None)
+
+    w = d["C_wire_behind_liner"]
+    r = w["route"]
+    assert abs(r["wall_capacity_N_at_23C"] - f_wall) <= 0.05
+    assert abs(r["wire_stress_at_wall_capacity_MPa"] - f_wall / a_wire) <= 0.05
+    nominal = {m: v["friction_N"] for m, v in rows55["ratified_nominal"]["by_mu"].items()}
+    assert r["grip_friction_N_by_mu_ratified_nominal_as_fitted"] == nominal and r["relax_floor"] == PEEK_RELAX_FLOOR
+    assert r["mu_where_the_grip_slips_first"] == {
+        "ratified_nominal_as_fitted": sorted(m for m, f in nominal.items() if f < f_wall),
+        "ratified_nominal_relaxed_to_floor": sorted(m for m, f in nominal.items() if f * PEEK_RELAX_FLOOR < f_wall),
+        "window_floor": sorted(m for m, v in rows55["window_floor"]["by_mu"].items() if v["friction_N"] < f_wall)}
+    assert w["sf_target"] == sf_t and w["amplitude_86_MPa"] == g86["amplitude_MPa"] and w["offset_86_um"] == e86
+    assert set(w["by_alloy"]) == set(g86["by_alloy"])
+    for name, x in w["by_alloy"].items():
+        r86 = g86["by_alloy"][name]
+        own, capped = {}, {}
+        for bname, br in d86["branches"].items():
+            m_b = next(p["mean_MPa"] for p in r86["by_offset"] if p["offset_um"] == br["radial_offset_budget_um"])
+            own[bname] = sod(g86["amplitude_MPa"], m_b, r86["endurance_MPa"], r86["yield_MPa"])
+            capped[bname] = sod(g86["amplitude_MPa"] + f_wall / a_wire, m_b, r86["endurance_MPa"], r86["yield_MPa"])
+            assert abs(x["seam_k_at_route_capacity_by_branch"][bname] - capped[bname][1]) <= 1e-4, (name, bname)
+        b0 = next(b for b, br in d86["branches"].items() if br["radial_offset_budget_um"] == e86)
+        assert abs(x["seam_k_86"] - own[b0][1]) <= 1e-4 and abs(x["seam_k_at_route_capacity"] - capped[b0][1]) <= 1e-4
+        assert abs(x["sf_wire_86"] - own[b0][0]) <= 1e-3 and abs(x["sf_wire_at_route_capacity"] - capped[b0][0]) <= 1e-3
+        assert all(abs(capped[b][1] / capped["tight"][1] - own[b][1] / own["tight"][1]) <= 1e-9 for b in own), name
+    b86 = d86["branches"]["loose_50"]["by_geometry"][key]
+    assert abs(w["by_alloy"][b86["binding_alloy"]]["seam_k_86"] - b86["k_break_even_binding"]) <= 1e-3
+
+    def up(v):
+        return math.ceil(v * 100 - 1e-9) / 100
+
+    def down(v):
+        return math.floor(v * 100 + 1e-9) / 100
+
+    v, ba = d["verdict"], w["by_alloy"]
+    kr = {n: x["seam_k_at_route_capacity"] for n, x in ba.items()}
+    bind = max(kr, key=kr.get)
+    assert f"the wall caps it at {r['wall_capacity_N_at_23C']} N" in v
+    assert (f"from k ≥ {ba[ALLOY_BASELINE]['seam_k_86']:.4f} to {up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} and from "
+            f"{ba[bind]['seam_k_86']:.4f} to {up(kr[bind]):.2f} on {bind}") in v
+    assert (f"drops the wire's SF from {ba[bind]['sf_wire_86']:.2f} to {down(ba[bind]['sf_wire_at_route_capacity']):.2f} "
+            f"on {bind}") in v
+    above = [n for n, k in kr.items() if k > 1.0]
+    assert (f"on {' and '.join(above)} not even an unweakened wire keeps SF" in v) == bool(above)
+    assert f"even the tightest coaxiality branch needs k ≥ {up(min(ba[bind]['seam_k_at_route_capacity_by_branch'].values())):.2f}" in v
+    assert "the requirement lies between 86's own k and that reading" in v and "16 %" not in v
+
+
 def test_oring_reaction_band():
     """Script 88 (HW.43 · HW.33): the O-ring reaction from Parker Figure 2-4 + Table 2-3 over 52's squeeze window.
 

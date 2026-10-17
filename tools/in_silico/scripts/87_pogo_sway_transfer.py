@@ -35,18 +35,23 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       per-gram figure is the slope at small mass). ⚠️ The clamp is NOT coaxial: two pins below, one eccentric gasket above
       (02_01 поз. 24), so a lateral acceleration at the stack's centre-of-mass height adds a force PAIR m·a·h/s that
       m·a does not bound; h and s are layout quantities (HW.9) and are not in the tree — named, not computed.
-  (C) CENTRE PAD, mass-independent — a CEILING that reaches the pin only through two slips. Trunk bending puts a
+  (C) CENTRE PAD, mass-independent — a CEILING at the pin. Trunk bending puts a
       longitudinal strain κ·y across the stem, and its Poisson part μ_LR·ε_L is a RADIAL strain that varies along a
       radial anchor lying in the bending plane (wind along the anchor's azimuth; for an anchor at right angles to the
       wind it vanishes): wood at the anode's depth and at the flange is strained differently, imposing up to
       Δu = μ_LR · ε_s · Δx between them (ε_s the stem-surface strain AT THE ANCHOR'S AZIMUTH, Δx the depth span). The
       anchor resists it: the Zone 1↔2 press-fit with barbs ties the anode to the flange, and the bus-wire tip is tied
-      to the flange by the liner's grip on the wire and its capture in the pad plane (01_01 §1.4). So Δu moves the tip
-      against the pin only if the press-fit slips AND the liner slips on the wire; if the press-fit slips and the grip
-      holds, it loads the wire and its seam axially instead (not computed — 77 priced the press-fit in torsion only).
+      to the flange by the liner's grip on the wire and its capture in the pad plane (01_01 §1.4). ⊕ 2026-10-17 (revised
+      the same day after two adversarial passes): no press-fit has to slip. The sleeve between the anode and the flange is
+      PEEK, not a rigid body, and the wire spans the same distance beside it, so whatever share of Δu the wood imposes on
+      the anchor loads the wire, and the tip moves as the wire slips inside the soft liner near its held end. Every
+      axial force on the wire crosses the liner's own wall, so `wire_behind_liner` computes the CEILING the wall puts on
+      it and 86's seam requirement at that ceiling; how much load the root carries and how much of the term reaches the
+      pin — a shear-lag model with Coulomb slip, with the share of Δu and the sleeve's thermal growth — is not computed.
       Over the pin's working compression the ceiling is the force ratio Δu/x_min for a spring without barrel preload.
-  (D) THERMAL, not sway — the daily expansion mismatch of radome, stack, sleeve and wire moves the same contacts; not
-      computed here — script `90` prices it (`00_07` HW.43).
+  (D) THERMAL, not sway — the daily expansion mismatch of radome, stack, sleeve and wire moves the same contacts; script
+      `90` prices the outer pad's gap; the sleeve's growth on the centre pad's wire path, which 90 does not price, is
+      inside the liner's ceiling here, not computed on its own (`00_07` HW.43).
 
 STEM INPUT (Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 — one Scots pine, H 16.8 m, DBH 21.5 cm, tilt
 sensors at 0.1…12 m, the windiest interval of one January day, gusts to 15.0 m/s at the canopy top): the root plate
@@ -62,8 +67,11 @@ storm twice as windy multiplies every stem quantity here roughly ×4: these numb
 CAN show: the end-of-life normal force the rim needs and the O-ring reaction each clamp design needs (A); the inertial force ratio per gram of stack and the masses at which it
 reaches 10 % and at which the weakest pin unloads, static weight included (B, coaxial clamp), and that ratio at a
 part-by-part estimate of the stack's mass whose every row names its source; the centre-pad ratio per
-1000 µε of stem-surface strain and at the source day's strain (C); the quasi-static stiffness the stack's suspension
-needs. CANNOT show: the stack mass a scale would give, its centre-of-mass height and the pin spacing (layout, HW.9); the O-ring reaction (88) and the clamp the bayonet delivers; the
+1000 µε of stem-surface strain and at the source day's strain (C); behind the liner, the ceiling the liner wall puts on
+the axial force at the wire's root and 86's seam requirement and wire SF at it, per alloy and coaxiality branch (C); the
+quasi-static stiffness the stack's suspension needs. CANNOT show: the axial load the root actually carries and how much
+of (C) reaches the pin (the share of Δu the wood imposes, the sleeve's thermal growth, the wire's slip in the liner); the
+capture in the pad plane; PEEK's yield in the cold and in compression; a parallel tie in the wet gap; the stack mass a scale would give, its centre-of-mass height and the pin spacing (layout, HW.9); the O-ring reaction (88) and the clamp the bayonet delivers; the
 spring's τ_m and rate (the drawing, node_pogo_rfq п. 1a); μ_LR of green P. sylvestris (the bracket is nine pines at
 ≈ 12 % moisture, Wood Handbook 2021 Table 5–2); anything about OUR stems (canon hosts are DBH ≥ 38 cm, larger than the
 one source tree); the thermal path (D).
@@ -80,8 +88,10 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 from lib.constants import (
+    ALLOY_BASELINE,
     CACHE_DIR,
     INSTALL_ANGLE_DEG,
+    PEEK_RELAX_FLOOR,
     POGO_PIN_COUNT,
     REPO_ROOT,
     SWAY_F0_HZ_HIGH_READING,
@@ -157,6 +167,103 @@ def stem_at_anchor(slope2: float) -> dict:
             "accel_oscillation_m_s2": round(a_osc, 3), "accel_gravity_tilt_m_s2": round(a - a_osc, 3),
             "mean_curvature_rad_per_m": round(kappa, 5),
             "surface_strain_microstrain_source_tree": round(kappa * DBH_SOURCE_TREE_M / 2 * 1e6, 0)}
+
+
+# ── (C) behind the liner (2026-10-17, the HW.43 leg (1) «осьова ємність посадки Zone 1↔2 і хвата лайнера»). The wire runs
+# from its weld on the anode's top face to its tip in the pad plane; the liner grips it along its length and is held to the
+# flange at ONE end only, the top (01_01 §1.4) — so every axial force between the wire and the flange crosses the tube's own
+# wall. And the wire spans the anode-to-flange distance in PARALLEL with the PEEK sleeve, which is not a rigid body: whatever
+# share of Δu the wood imposes on the anchor reaches the wire, whether the Zone 1↔2 press-fit slips or not (77: its
+# friction capacity is zero at the band floor in summer, the barbs then carry it alone).
+BUS55 = CACHE_DIR / "mechanical" / "bus_mechanical.json"
+COAX86 = CACHE_DIR / "mechanical" / "coaxiality_allocation.json"
+s86 = _load("coax86", "86_coaxiality_allocation.py")   # its Soderberg form — the seam scale this compares on
+
+
+def up(x: float) -> float:
+    """A requirement «k ≥ X» rounds UP to two decimals (in-silico §When Modifying #43)."""
+    return math.ceil(x * 100 - 1e-9) / 100
+
+
+def down(x: float) -> float:
+    """A floor «SF drops to X» rounds DOWN to two decimals (in-silico §When Modifying #43)."""
+    return math.floor(x * 100 + 1e-9) / 100
+
+
+def wire_behind_liner() -> dict:
+    """The CEILING the liner puts on the axial force at the bus wire's root, and 86's seam requirement at that ceiling.
+
+    ROUTE. Every axial force between the wire and the flange crosses the liner's own wall, held at its top only (01_01
+    §1.4), so the wall's capacity σ_y,PEEK·A_tube caps it whatever the source — the (C) term, the sleeve's thermal growth
+    between the anode and the flange (the part of path (D) that 90 does not price), or both; a grip that slips first
+    (55's window floor; or the nominal grip at low μ once it relaxes to PEEK_RELAX_FLOOR, a conservative floor) caps it
+    lower, and the ceiling stands. The capture in the pad plane has no geometry yet (HW.9): a weaker one, too, gives way
+    at a lower force.
+    WHERE IT IS NOT A BOUND, named, not computed: the compressive half (PEEK's compressive yield and the capture's
+    push-out capacity are not in the tree — a stronger compressive side, or a compressive axial mean, raises the
+    requirement past this reading; the sign of Δu at a given anchor is not assigned either); a parallel axial tie — the
+    gap and the channel are wet by design (02_02 §3.5), so ice or hardened resin can tie the wire or the liner to the
+    sleeve beside the wall; PEEK colder than 23 °C (the source day is in January) and a multiaxial yield under the fit's
+    hoop tension, which move the wall's axial yield either way; the beam-column coupling of that tension with 86's
+    bending (a few per cent on the root moment, general mechanics).
+    SEAM, on 86's own scale: 86's Soderberg at 55's INFINITE_LIFE_SF, the wall's stress on the wire ADDED to 86's root
+    amplitude on the same section, in phase, with 86's mean — per alloy, at 86's ⌀0.10 offset and at each of its three
+    branches; Soderberg weighs amplitude above mean (σ_e < σ_y), so for a non-negative axial mean the worst split under
+    the cap is all amplitude. The same for the wire's own SF (k = 1).
+    NOT COMPUTED, and they decide where between 86's own k and this reading the requirement lies: the axial load the
+    root actually carries (how much of Δu the wood imposes — with the sleeve and the wire resisting in parallel — and
+    the sleeve's thermal growth), and how much of (C) reaches the pin instead: the soft tube collects the force near its
+    held end, the wire slips inside it there before the wall yields, so the split between stretching the wire and moving
+    the tip needs a shear-lag model with Coulomb slip, which is not in the tree."""
+    cp = json.loads(BUS55.read_text(encoding="utf-8"))["interference_window"]["cold_press_fit"]
+    rows55 = {r["at"]: r for r in cp["rows"]}
+    f_wall = cp["peek_yield_MPa"] * cp["tube_section_mm2"]                                   # N
+    nominal = {m: v["friction_N"] for m, v in rows55["ratified_nominal"]["by_mu"].items()}
+    d86 = json.loads(COAX86.read_text(encoding="utf-8"))
+    shipped_key = next(k for k in d86["by_geometry"] if k.startswith("shipped"))
+    shipped = d86["by_geometry"][shipped_key]
+    e86 = d86["branches"]["loose_50"]["radial_offset_budget_um"]
+    a_wire = math.pi * s55.D_BUS ** 2 / 4.0                                                     # mm²
+    sig_wall = f_wall / a_wire
+    by_alloy = {}
+    for name, r86 in shipped["by_alloy"].items():
+        def sod(sig_ax: float, offset: float, r86: dict = r86) -> tuple:
+            mean = next(p["mean_MPa"] for p in r86["by_offset"] if p["offset_um"] == offset)
+            return s86.soderberg(shipped["amplitude_MPa"] + sig_ax, mean, r86["endurance_MPa"], r86["yield_MPa"])
+
+        (sf86, k86), (sf_cap, k_cap) = sod(0.0, e86), sod(sig_wall, e86)
+        by_alloy[name] = {"endurance_MPa": r86["endurance_MPa"], "yield_MPa": r86["yield_MPa"],
+                          "seam_k_86": None if k86 is None else round(k86, 4),
+                          "seam_k_at_route_capacity": None if k_cap is None else round(k_cap, 4),
+                          "seam_k_at_route_capacity_by_branch": {
+                              b: (lambda k: None if k is None else round(k, 4))(sod(sig_wall, br["radial_offset_budget_um"])[1])
+                              for b, br in d86["branches"].items()},
+                          "sf_wire_86": round(sf86, 3), "sf_wire_at_route_capacity": round(sf_cap, 3)}
+    # Control: 86's own Soderberg on 86's own inputs must give back the k and SF 86 cached — it fails if this block reads
+    # the wrong offset, geometry or alloy row; it cannot see an error 86 itself makes.
+    b86 = d86["branches"]["loose_50"]["by_geometry"][shipped_key]
+    own = by_alloy[b86["binding_alloy"]]
+    if abs(own["seam_k_86"] - b86["k_break_even_binding"]) > 1e-3 or abs(own["sf_wire_86"] - b86["sf_wire_binding"]) > 1e-2:
+        raise SystemExit("control: 86's Soderberg on its own inputs no longer reproduces its cached binding k and SF")
+    return {"is": "a CEILING on the axial force at the wire's root (the liner wall, 23 °C, tensile half) and 86's seam "
+                  "requirement at it — where between 86's own k and this reading the requirement lies is not computed",
+            "route": {"wall_capacity_N_at_23C": round(f_wall, 1), "wire_stress_at_wall_capacity_MPa": round(sig_wall, 1),
+                      "peek_yield_MPa_23C": cp["peek_yield_MPa"], "tube_section_mm2": cp["tube_section_mm2"],
+                      "grip_friction_N_by_mu_ratified_nominal_as_fitted": nominal,
+                      "mu_where_the_grip_slips_first": {
+                          "ratified_nominal_as_fitted": sorted(m for m, f in nominal.items() if f < f_wall),
+                          "ratified_nominal_relaxed_to_floor": sorted(m for m, f in nominal.items()
+                                                                      if f * PEEK_RELAX_FLOOR < f_wall),
+                          "window_floor": sorted(m for m, v in rows55["window_floor"]["by_mu"].items()
+                                                 if v["friction_N"] < f_wall)},
+                      "relax_floor": PEEK_RELAX_FLOOR,
+                      "a_grip_slipping_first": "caps the force lower — the ceiling stands"},
+            "not_a_bound_where": ["the compressive half: PEEK's compressive yield and the capture's push-out capacity",
+                                  "a parallel tie in the wet gap or channel: ice or hardened resin",
+                                  "PEEK below 23 °C and a multiaxial yield under the fit's hoop tension (either way)",
+                                  "the beam-column coupling of the axial tension with 86's bending (a few per cent)"],
+            "amplitude_86_MPa": shipped["amplitude_MPa"], "offset_86_um": e86, "sf_target": s55.INFINITE_LIFE_SF,
+            "by_alloy": by_alloy}
 
 
 def main() -> int:
@@ -237,8 +344,10 @@ def main() -> int:
                 "suspension_k_N_per_mm_needed_at_ceiling":
                     round(m * (2 * math.pi * DAF_MARGIN * SWAY_F0_HZ_HIGH_READING) ** 2 / 1000, 3)},
             "C_centre_pad_poisson": {
-                "is": "a CEILING at the pin, reached only if the Zone 1↔2 press-fit AND the liner grip both slip; "
-                      "zero for an anchor at right angles to the wind",
+                "is": "a CEILING at the pin; how much of it reaches the pin — the wire stretching against the tip "
+                      "slipping in the liner near its held end — and how much of Δu the wood imposes are not computed "
+                      "(behind the liner: C_wire_behind_liner); no press-fit slip needed; zero for an anchor at right "
+                      "angles to the wind",
                 "ratio_per_1000_microstrain": poisson_per_1000,
                 "imposed_shift_um_at_source_strain": [round(du_lo, 1), round(du_hi, 1)],
                 "ratio_at_source_strain": [round(du_lo * 1e-3 / X_PRELOAD_MIN_MM, 4),
@@ -267,6 +376,35 @@ def main() -> int:
 
     est_lo = min(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][0] for r in rows.values())
     est_hi = max(r["B_inertia_coaxial"]["at_estimated_stack_mass"]["ratio_over_reduced_mean"][1] for r in rows.values())
+    wbl = wire_behind_liner()
+    ba, slips = wbl["by_alloy"], wbl["route"]["mu_where_the_grip_slips_first"]
+    print(f"  (C) behind the liner: the wall caps the axial force at {wbl['route']['wall_capacity_N_at_23C']} N "
+          f"({wbl['route']['wire_stress_at_wall_capacity_MPa']} MPa on the wire, PEEK at 23 °C); the grip slips first at μ "
+          f"{slips} — lower, the ceiling stands")
+    print("      seam k (86's own → at the cap) · wire SF: " + " · ".join(
+        f"{n} {x['seam_k_86']}→{x['seam_k_at_route_capacity']} · {x['sf_wire_86']}→{x['sf_wire_at_route_capacity']}"
+        for n, x in ba.items()))
+    kr = {n: x["seam_k_at_route_capacity"] for n, x in ba.items()}
+    bind = max(kr, key=lambda n: -1.0 if kr[n] is None else kr[n])
+    above_one = [n for n, k in kr.items() if k is None or k > 1.0]
+    wire_clause = (f"behind the liner the same term loads the bus wire whether the press-fit slips or not (the wire spans "
+                   f"the anode-to-flange distance beside the PEEK sleeve), and every axial force on the wire crosses the "
+                   f"liner's wall, so the wall caps it at {wbl['route']['wall_capacity_N_at_23C']} N "
+                   f"({wbl['route']['wire_stress_at_wall_capacity_MPa']} MPa on the wire; PEEK's 23 °C uniaxial yield) "
+                   f"whatever the source — this term, the sleeve's thermal growth between the anode and the flange, or "
+                   f"both — on its tensile half and barring a parallel tie (ice or hardened resin in the wet gap); a grip "
+                   f"or a capture that gives way first caps it lower. At that cap 86's own formula on the same section "
+                   f"raises the seam requirement from k ≥ {ba[ALLOY_BASELINE]['seam_k_86']:.4f} to "
+                   f"{up(kr[ALLOY_BASELINE]):.2f} on {ALLOY_BASELINE} and from {ba[bind]['seam_k_86']:.4f} to "
+                   f"{up(kr[bind]):.2f} on {bind}, and drops the wire's SF from {ba[bind]['sf_wire_86']:.2f} to "
+                   f"{down(ba[bind]['sf_wire_at_route_capacity']):.2f} on {bind}"
+                   + (f"; on {' and '.join(above_one)} not even an unweakened wire keeps SF {wbl['sf_target']:g}"
+                      if above_one else "")
+                   + f", and on {bind} even the tightest coaxiality branch needs k ≥ "
+                     f"{up(min(ba[bind]['seam_k_at_route_capacity_by_branch'].values())):.2f}. How much axial load the "
+                     "root carries (the share of Δu the wood imposes, the sleeve's thermal growth) and how much of the term "
+                     "reaches the pin instead (the wire slips inside the liner near its held end before the wall yields) "
+                     "are not computed, so the requirement lies between 86's own k and that reading. ")
     out = {
         "question": "HW.43 — the transfer «stem motion → load through the pogo pins»",
         "source": "Schindler & Kolbe 2020, Forests 11:145, doi 10.3390/f11020145 (one P. sylvestris, H 16.8 m, "
@@ -291,10 +429,16 @@ def main() -> int:
         "controls": {"slope_times_flux_reproduces_12m_tilt": {"deg": round(control, 2), "text_deg": NOS7_AT_MAX_DEG,
                                                               "note": "units only — same-interval regression"}},
         "by_slope_reading": rows,
+        "C_wire_behind_liner": wbl,
         "missing_data": ["the clamp the bayonet delivers, over temperature, against the ring's lift (does it keep the rim "
                          "from lifting?) — with the O-ring band of 88 it decides (A) at the end of life",
                          "the ring's stress relaxation — whether a clamp below 52's printed form lets the rim lift",
-                         "axial capacity of the Zone 1↔2 press-fit and of the liner's grip on the wire — decide whether (C) reaches the pin",
+                         "the axial load at the bus wire's root and how much of (C) reaches the pin instead — a shear-lag "
+                         "model with Coulomb slip of the wire in the liner, with the share of Δu the wood imposes (the "
+                         "sleeve and the wire resisting in parallel) and the sleeve's thermal growth (path D); the liner's "
+                         "ceiling on that load is computed, `C_wire_behind_liner`",
+                         "the liner's capture in the pad plane (HW.9); PEEK's compressive yield and its yield below 23 °C; "
+                         "ice or hardened resin in the wet gap as a parallel tie",
                          "stack mass by a scale (a part-by-part estimate is computed), centre-of-mass height and pin "
                          "spacing — layout HW.9",
                          "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
@@ -306,8 +450,8 @@ def main() -> int:
                     "stack's inertia is a fraction of "
                     f"the preload ({est_lo * 100:.1f}–{est_hi * 100:.1f} % at the part-by-part mass estimate of "
                     f"{stack_g[0]:.1f}–{stack_g[1]:.1f} g, × a pair factor the layout sets), and the centre-pad Poisson "
-                    "term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the "
-                    "pins slide (55's regime). The input describes one January day of one smaller tree."),
+                    "term is a ceiling at the pin; " + wire_clause + "When the rim "
+                    "does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."),
     }
     OUT_JSON.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     banner(f"Saved {OUT_JSON.relative_to(REPO_ROOT)}")

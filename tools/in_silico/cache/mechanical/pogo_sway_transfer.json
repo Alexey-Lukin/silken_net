@@ -140,7 +140,7 @@
         "suspension_k_N_per_mm_needed_at_ceiling": 0.243
       },
       "C_centre_pad_poisson": {
-        "is": "a CEILING at the pin, reached only if the Zone 1↔2 press-fit AND the liner grip both slip; zero for an anchor at right angles to the wind",
+        "is": "a CEILING at the pin; how much of it reaches the pin — the wire stretching against the tip slipping in the liner near its held end — and how much of Δu the wood imposes are not computed (behind the liner: C_wire_behind_liner); no press-fit slip needed; zero for an anchor at right angles to the wind",
         "ratio_per_1000_microstrain": {
           "mu_lr_lo_dx_nominal": 0.028,
           "mu_lr_hi_dx_ceiling": 0.0504
@@ -199,7 +199,7 @@
         "suspension_k_N_per_mm_needed_at_ceiling": 0.243
       },
       "C_centre_pad_poisson": {
-        "is": "a CEILING at the pin, reached only if the Zone 1↔2 press-fit AND the liner grip both slip; zero for an anchor at right angles to the wind",
+        "is": "a CEILING at the pin; how much of it reaches the pin — the wire stretching against the tip slipping in the liner near its held end — and how much of Δu the wood imposes are not computed (behind the liner: C_wire_behind_liner); no press-fit slip needed; zero for an anchor at right angles to the wind",
         "ratio_per_1000_microstrain": {
           "mu_lr_lo_dx_nominal": 0.028,
           "mu_lr_hi_dx_ceiling": 0.0504
@@ -215,14 +215,133 @@
       }
     }
   },
+  "C_wire_behind_liner": {
+    "is": "a CEILING on the axial force at the wire's root (the liner wall, 23 °C, tensile half) and 86's seam requirement at it — where between 86's own k and this reading the requirement lies is not computed",
+    "route": {
+      "wall_capacity_N_at_23C": 53.6,
+      "wire_stress_at_wall_capacity_MPa": 68.3,
+      "peek_yield_MPa_23C": 100.0,
+      "tube_section_mm2": 0.5365,
+      "grip_friction_N_by_mu_ratified_nominal_as_fitted": {
+        "0.1": 60.6,
+        "0.2": 121.1,
+        "0.3": 181.7,
+        "0.4": 242.3
+      },
+      "mu_where_the_grip_slips_first": {
+        "ratified_nominal_as_fitted": [],
+        "ratified_nominal_relaxed_to_floor": [
+          "0.1"
+        ],
+        "window_floor": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      "relax_floor": 0.65,
+      "a_grip_slipping_first": "caps the force lower — the ceiling stands"
+    },
+    "not_a_bound_where": [
+      "the compressive half: PEEK's compressive yield and the capture's push-out capacity",
+      "a parallel tie in the wet gap or channel: ice or hardened resin",
+      "PEEK below 23 °C and a multiaxial yield under the fit's hoop tension (either way)",
+      "the beam-column coupling of the axial tension with 86's bending (a few per cent)"
+    ],
+    "amplitude_86_MPa": 24.51,
+    "offset_86_um": 50,
+    "sf_target": 2.0,
+    "by_alloy": {
+      "Ti-15Zr": {
+        "endurance_MPa": 380.0,
+        "yield_MPa": 950.0,
+        "seam_k_86": 0.1331,
+        "seam_k_at_route_capacity": 0.5041,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 0.4885,
+          "loose_50": 0.5041,
+          "loose_100": 0.5481
+        },
+        "sf_wire_86": 12.504,
+        "sf_wire_at_route_capacity": 3.85
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "endurance_MPa": 360.0,
+        "yield_MPa": 900.0,
+        "seam_k_86": 0.1408,
+        "seam_k_at_route_capacity": 0.5331,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 0.5157,
+          "loose_50": 0.5331,
+          "loose_100": 0.5825
+        },
+        "sf_wire_86": 11.846,
+        "sf_wire_at_route_capacity": 3.647
+      },
+      "Ti-6Al-4V": {
+        "endurance_MPa": 352.0,
+        "yield_MPa": 880.0,
+        "seam_k_86": 0.1441,
+        "seam_k_at_route_capacity": 0.5456,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 0.5274,
+          "loose_50": 0.5456,
+          "loose_100": 0.5974
+        },
+        "sf_wire_86": 11.583,
+        "sf_wire_at_route_capacity": 3.566
+      },
+      "Ti-6Al-7Nb": {
+        "endurance_MPa": 340.0,
+        "yield_MPa": 850.0,
+        "seam_k_86": 0.1493,
+        "seam_k_at_route_capacity": 0.5656,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 0.546,
+          "loose_50": 0.5656,
+          "loose_100": 0.6214
+        },
+        "sf_wire_86": 11.188,
+        "sf_wire_at_route_capacity": 3.445
+      },
+      "CP-Ti-Gr4": {
+        "endurance_MPa": 192.0,
+        "yield_MPa": 480.0,
+        "seam_k_86": 0.272,
+        "seam_k_at_route_capacity": 1.03,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 0.9669,
+          "loose_50": 1.03,
+          "loose_100": 1.2317
+        },
+        "sf_wire_86": 6.318,
+        "sf_wire_at_route_capacity": 1.945
+      },
+      "Ta": {
+        "endurance_MPa": 138.0,
+        "yield_MPa": 345.0,
+        "seam_k_86": 0.3883,
+        "seam_k_at_route_capacity": 1.4705,
+        "seam_k_at_route_capacity_by_branch": {
+          "tight": 1.3452,
+          "loose_50": 1.4705,
+          "loose_100": 1.9193
+        },
+        "sf_wire_86": 4.541,
+        "sf_wire_at_route_capacity": 1.398
+      }
+    }
+  },
   "missing_data": [
     "the clamp the bayonet delivers, over temperature, against the ring's lift (does it keep the rim from lifting?) — with the O-ring band of 88 it decides (A) at the end of life",
     "the ring's stress relaxation — whether a clamp below 52's printed form lets the rim lift",
-    "axial capacity of the Zone 1↔2 press-fit and of the liner's grip on the wire — decide whether (C) reaches the pin",
+    "the axial load at the bus wire's root and how much of (C) reaches the pin instead — a shear-lag model with Coulomb slip of the wire in the liner, with the share of Δu the wood imposes (the sleeve and the wire resisting in parallel) and the sleeve's thermal growth (path D); the liner's ceiling on that load is computed, `C_wire_behind_liner`",
+    "the liner's capture in the pad plane (HW.9); PEEK's compressive yield and its yield below 23 °C; ice or hardened resin in the wet gap as a parallel tie",
     "stack mass by a scale (a part-by-part estimate is computed), centre-of-mass height and pin spacing — layout HW.9",
     "spring drawing (node_pogo_rfq п. 1a): τ_m and rate",
     "μ_LR of green P. sylvestris; stem strain and acceleration at anchor height on host-size pines"
   ],
   "not_computed": "(D) thermal cycling of the pogo contacts — script 90 (`00_07` HW.43)",
-  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the stack's inertia is a fraction of the preload (1.3–3.4 % at the part-by-part mass estimate of 6.0–7.8 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling that reaches the pin only if two press-fits slip; when the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
+  "verdict": "Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the stack's inertia is a fraction of the preload (1.3–3.4 % at the part-by-part mass estimate of 6.0–7.8 g, × a pair factor the layout sets), and the centre-pad Poisson term is a ceiling at the pin; behind the liner the same term loads the bus wire whether the press-fit slips or not (the wire spans the anode-to-flange distance beside the PEEK sleeve), and every axial force on the wire crosses the liner's wall, so the wall caps it at 53.6 N (68.3 MPa on the wire; PEEK's 23 °C uniaxial yield) whatever the source — this term, the sleeve's thermal growth between the anode and the flange, or both — on its tensile half and barring a parallel tie (ice or hardened resin in the wet gap); a grip or a capture that gives way first caps it lower. At that cap 86's own formula on the same section raises the seam requirement from k ≥ 0.1441 to 0.55 on Ti-6Al-4V and from 0.3883 to 1.48 on Ta, and drops the wire's SF from 4.54 to 1.39 on Ta; on CP-Ti-Gr4 and Ta not even an unweakened wire keeps SF 2, and on Ta even the tightest coaxiality branch needs k ≥ 1.35. How much axial load the root carries (the share of Δu the wood imposes, the sleeve's thermal growth) and how much of the term reaches the pin instead (the wire slips inside the liner near its held end before the wall yields) are not computed, so the requirement lies between 86's own k and that reading. When the rim does not hold, the pins slide (55's regime). The input describes one January day of one smaller tree."
 }
