@@ -240,17 +240,41 @@ SELF=${BASH_SOURCE[0]:-$0}
 #   лише у файлі, а мить дії — написання брифу; піднято ХАБ-ІНЛАЙНОМ у рядок Subagent discipline (окремий рядок коштував би
 #   більше). Еvict-прохід цього разу не робився — бамп оплачує наступний прохід памʼяті.
 # ⚖️ 2026-10-17 — СТЕЛЮ РАТИФІКОВАНО founder-ом за рекомендацією: поточний рівень (~26.8 kB) І Є кап. Підстава:
-#   індекс НАСИЧЕНИЙ (вимір 09-21), а кап 24 kB (07-31) ставився як запобіжник від пере-видалення — і шість локально
-#   чесних бампів його переступили. Зовнішня стіна — харнес: 200 рядків / 25 KB, і рахує він СИМВОЛИ, не байти
-#   (виміряно 10-17: 26 805 B = 20 648 символів вантажаться цілком, у транскриптах жодної помилки «over its read
-#   limit»), тож ми на ~83% стіни. ⛔ Відтепер НОВИЙ ДІМ бампа не купує — лише витісненням ЗАПИСУ; бамп легальний
-#   тільки «за коректність» і тут же називає дефект, який лікує. Носій — рядок ⛔ у повідомленні index_check (пін 17c').
-#   Вексель 10-15 (+91) погашено ЦИМ присудом (ратифікований рівень його вже містить), не витісненням.
-#   Ціна, названа вголос: ~1k токенів на сесію понад липневий бюджет — назавжди.
+#   індекс НАСИЧЕНИЙ (вимір 09-21), а кап 24 kB (07-31) ставився як запобіжник від пере-видалення — і шість [⚠️ ХИБНО:
+#   ~18 бампів після мінімуму 08-04, а ратчет НАРОДИВСЯ вже над капом — 24814 у 7efb3a029] локально
+#   чесних бампів його переступили. Зовнішня стіна — харнес: 200 рядків / 25 KB, і рахує він СИМВОЛИ [⚠️ точніше: НЕ
+#   байти; символи й UTF-16 тут не розрізнити] (виміряно 10-17: 26 805 B = 20 648 символів вантажаться цілком, у
+#   транскриптах жодної помилки «over its read limit»), тож ми на ~83% стіни. ⛔ Відтепер НОВИЙ ДІМ бампа не купує —
+#   лише витісненням ЗАПИСУ; бамп легальний тільки «за коректність» і тут же називає дефект, який лікує. Носій — рядок ⛔
+#   у повідомленні index_check (пін 17c') [⚠️ НЕ НОВИЙ: «a new entry earns its line only by displacing one» стояв там
+#   07-31→09-04, три бампи нових домів пройшли крізь нього, DOC-T.97 зняв його як хибну пораду]. Вексель 10-15 (+91)
+#   погашено ЦИМ присудом (ратифікований рівень його вже містить), не витісненням. Ціна: ~1k токенів на сесію [не виміряно].
+# ⊕ 2026-10-17, ТОГО Ж ДНЯ — ПЕРЕПРИСУД із доказом (адверсар «чи правда» спростував обидві підстави вище; founder
+#   «подумай ще» → прийняв нову рекомендацію). Вимір, якого перша подача не мала: 08-09 → 10-17 байти 24 033 → 26 812
+#   (+11.6%), а СИМВОЛИ 20 110 → 20 658 (+2.7%), рядки 120 → 119, доми 117 → 133. Ріст байтів — МОВНИЙ ЗСУВ (кирилиця
+#   15% → 24% символів, 2 B/символ), не ріст індексу. Тож: (1) IDX_BASELINE лишається ОБЛІКОМ ПОДАТКУ в байтах (для
+#   кирилиці байт — імовірно ближчий до токена проксі; НЕ виміряно), витіснення домів не потрібне; (2) справжній замок —
+#   стіна харнесу в ЇЇ одиниці, harness_wall_check нижче: число не наше, бампом його не обійти; (3) у мить бампу
+#   бамперу потрібен ФАКТ, а не заборона (заборону вже обходили): повідомлення index_check каже, що кирилиця коштує
+#   2 B/символ — нові гачки англійською, наявні не перекладати (пастка 7). Вексель 10-15 і смуга 21–22 kB — ДЕЛЕГОВАНИЙ
+#   вивід машини з присуду (стеля = поточний рівень ⇒ обидва втрачають зміст), не слово founder-а. Ціна: податок на
+#   читання росте з кириличністю гачків, і стоїть проти цього лише факт у мить дії. Найслабша ланка — токени не
+#   виміряні; `/context` (рядок MEMORY.md) закриває її одним прогоном.
 # ⊕ 26806 → 26812 (+6) — бамп ЗА КОРЕКТНІСТЬ (прохід памʼяті 2026-10-17): гліф `🔄`→`⚫` Biodiversity (E.59 у §🗄️
-#   з 10-12) · гачок `thorough_planning` вчив спростованого («compute-heavy sims», а тіло каже, що правило НЕ про
-#   ціну обчислень) · ⛔ `who_axis` забороняв переаудит обох осей, тоді як тіло звужує його до WHO (STAGE-🟢 — бокс).
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26812}
+#   з 10-12) · гачок `thorough_planning` звужував правило до одного інстансу («compute-heavy sims»; тіло: це лише
+#   інстанс класу «судження на фактах, що рухаються без нашого коміту») · ⛔ `who_axis` казав безумовно «🟢-осі
+#   §03a/§06/§05 аудитовано — НЕ переаудитовувати», тоді як тіло робить STAGE-половину лише часовим боксом, а «НІКОЛИ
+#   не переаудитовувати» — властивість WHO-осі, яку тримає гейт.
+# ⊕ 26812 → 26770 (−42) — посилання стаба `reference_web3_contract_skill` знято з хаба стабів разом із файлом. До факту.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26770}
+# The OUTER wall is not ours: Claude Code loads only the first 200 lines / 25 KB of MEMORY.md at session start and drops
+# the rest WITHOUT a sign (docs: code.claude.com/docs/en/memory). Unit measured 2026-10-17: NOT bytes (26 805 B loaded
+# whole, no «over its read limit» error in any transcript); characters and UTF-16 units cannot be told apart here
+# (20 648 vs 20 752), so the larger one is counted. A ratchet is bumped by whoever edits this file — this number cannot
+# be, which is why it is the lock and IDX_BASELINE is only the ledger (⚖️ founder 2026-10-17).
+HARNESS_UNITS=${MEMORY_GATE_HARNESS_UNITS:-25000}
+HARNESS_LINES=${MEMORY_GATE_HARNESS_LINES:-200}
+HARNESS_WARN_PCT=${MEMORY_GATE_HARNESS_WARN_PCT:-92}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 # 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
@@ -445,7 +469,10 @@ rb_dark() {
 # `log_verify_before_commit` — тіла рядків хабів, що досі не мали журналу. Підняття робить нові журнали захищеними підлогою.
 # 2026-10-08: 177 → 179 — `log_mutually_masking` і `log_dedup_id_search`: журнали-двійники двох останніх домів осі нижче
 # порогу стіни, переведених в індекс-форму (DOC-T.120). Підняття робить нові журнали захищеними підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-180}
+# 2026-10-17: 180 → 179 — `reference_web3_contract_skill` згорнуто й видалено (рецепт DOC-T.118; аудит сплячих
+# епізодів): рецепт промоції `generated/` протух, решту несуть скіл і CLAUDE.md §2, а founder-а «why» 06-13 переїхало
+# дослівно в тіло (11) `log_task_execution_workflow`. Опускання робить втрату git-видимою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-179}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -1013,7 +1040,8 @@ index_check() {
     echo "      it gates BYTES, not entries — cheapest lever FIRST: compress a hook (detail belongs in the file),"
     echo "      then hub-inline a row under a neighbour (ORPHAN wants a LINK, not a row — the pointer survives);"
     echo "      deleting or merging a FILE is the LAST lever and FLOOR gates it"
-    echo "      ⛔ a NEW home never buys a bump — the ratchet IS the ceiling (⚖️ founder 2026-10-17); bump only «за коректність», naming the defect beside IDX_BASELINE"
+    echo "      ⚠️ Cyrillic costs 2 B/char: 08-09→10-17 bytes +11.6% while chars +2.7% — most bumps were hooks turning Ukrainian, not growth."
+    echo "      New hooks in English, never translate old ones (trap 7); bump only «за коректність», naming the defect beside IDX_BASELINE (⚖️ 2026-10-17)"
   elif [ "$sz" -lt $((IDX_BASELINE - 400)) ]; then
     # "Smaller" is not "better" until you know WHICH of the three events it was.
     # Reach is the discriminator the old wording never asked for: compression and
@@ -1025,6 +1053,24 @@ index_check() {
     else
       echo "INDEX MEMORY.md = ${sz}B, below the ${IDX_BASELINE}B ratchet, reach intact (${links} files) — lower IDX_BASELINE here to lock the gain in"
     fi
+  fi
+  return 0
+}
+
+# The loaded-wall check (constants and provenance beside IDX_BASELINE). Counts UTF-16 units via iconv —
+# the larger of the two candidate units — and lines, and speaks only past HARNESS_WARN_PCT of either, so
+# on a healthy corpus it is silent and any line it prints is a real approach to the place where the tail
+# of the index stops being loaded.
+harness_wall_check() {
+  local units lines wu wl
+  [ -f "$IDX" ] || return 0
+  units=$(( $(iconv -f UTF-8 -t UTF-16LE "$IDX" 2>/dev/null | wc -c | tr -d ' ') / 2 ))
+  lines=$(wc -l <"$IDX" | tr -d ' ')
+  wu=$(( HARNESS_UNITS * HARNESS_WARN_PCT / 100 ))
+  wl=$(( HARNESS_LINES * HARNESS_WARN_PCT / 100 ))
+  if [ "$units" -ge "$wu" ] || [ "$lines" -ge "$wl" ]; then
+    echo "HARNESS MEMORY.md = ${units} UTF-16 units / ${lines} lines — past ${HARNESS_WARN_PCT}% of what Claude Code loads (${HARNESS_UNITS} / ${HARNESS_LINES}); beyond it the tail is dropped at session start WITHOUT a sign"
+    echo "      this ceiling is not ours and no bump moves it: consolidate ENTRIES now (hub-inline · demote to a string), not prose"
   fi
   return 0
 }
@@ -2439,12 +2485,23 @@ selftest() {
   _st_check "over-ratchet advice names the CHEAP lever, not only deletion" expect 'hub-inline a row' \
             MEMORY_GATE_IDX_BASELINE=10
 
-  # 17c'. The RATIFIED CEILING (⚖️ founder 2026-10-17). Six bumps crossed the 24 kB cap one honest
-  #       step at a time, and the rule «a new home pays by eviction» stood in prose since 09-21 —
-  #       twice bypassed, because the one line a bumper reads mid-action never said it.
+  # 17c'. The FACT a bumper needs mid-action (⚖️ founder 2026-10-17, re-verdict). ~18 bumps since
+  #       08-04 were mostly the index turning Ukrainian (bytes +11.6%, chars +2.7%), not growth. A
+  #       PROHIBITION was tried here before — «a new entry earns its line only by displacing one»,
+  #       07-31→09-04 — three new-home bumps went through it and DOC-T.97 removed it as misleading
+  #       lever advice. So this pins the measured CAUSE, not a ban.
   _st_build "$d"
-  _st_check "over-ratchet advice forbids buying a bump with a NEW home" expect 'ratchet IS the ceiling' \
+  _st_check "over-ratchet advice names the language cost of a bump" expect 'Cyrillic costs 2 B/char' \
             MEMORY_GATE_IDX_BASELINE=10
+
+  # 17f-17g. THE HARNESS WALL — the one ceiling no bump can move (Claude Code loads 200 lines / 25 KB of
+  #          MEMORY.md, unit measured as NOT bytes). Positive: a tiny wall must fire. Negative control: at
+  #          the real wall a small fixture stays silent, so the check is not a battery-wide echo.
+  _st_build "$d"
+  _st_check "HARNESS fires when the index nears the loaded-wall" expect 'HARNESS' \
+            MEMORY_GATE_HARNESS_UNITS=10
+  _st_build "$d"
+  _st_check "HARNESS stays silent far below the wall" reject 'HARNESS'
 
   _st_build "$d"
   _st_check "that advice stays silent while the index is under its ratchet" reject 'hub-inline a row' \
@@ -2858,7 +2915,7 @@ case "${1:-}" in
     # prints OK. An empty finding-set means "nothing wrong" only when every
     # check actually EXECUTED — so state the precondition before reading it.
     out=$( { [ -n "$RB" ] || rb_dark "ten checks"
-             override_check; index_check; desc_check; corpus_floor_check; integrity_check
+             override_check; index_check; harness_wall_check; desc_check; corpus_floor_check; integrity_check
              unstrung_check; asset_check; package_check
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
@@ -3206,6 +3263,8 @@ RUBY
               # the one that most needed to say whose thresholds it used.
               override_check
               index_check
+              # The loaded-wall: an index Edit is the moment the tail can start being dropped.
+              harness_wall_check
               desc_check
               # Loss is silent at the moment of action too — a Write that replaces
               # a corpus is the same tool call as a Write that grows one.
