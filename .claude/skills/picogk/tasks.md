@@ -109,7 +109,7 @@
   `lockGrooveZ` pays into BOTH, `cavityH` into RF alone — ⛔ but «raise the cavity» is a REMOVED branch: the
   ratified flat crown moves the headroom the other way, and the RF floor is set from BELOW by the board stack.
   The seal mate is pinned (`Assembly.SealLandBacksTheGroove`, one slot clearance of land each side, strict);
-  the boss, collar and crown state → the `Radome.cs` row of `SKILL.md` §Source Files; HW.8.8 is the bench leg that follows.
+  the boss, collar and crown state → `tools/cad/README.md` «Radome / Деталь 4 (shipped)» + «Deferred»; HW.8.8 is the bench leg that follows.
 - **Full axial stack (`AxialStack.cs`, SHIPPED)**: the SECOND integration artifact — brings ALL FOUR zones
   (anode → Zone-2 sleeve → flange → radome) into one axis and MEASURES the **press-fit** interfaces the
   capsule-end never touched: Zone1↔2 line-to-line (real +interference = the press-fit band on bench — band:
