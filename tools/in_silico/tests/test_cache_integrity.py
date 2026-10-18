@@ -4090,12 +4090,12 @@ def test_flange_cambium_frost_beam_by_azimuth():
     beam barely reaches it); the declared directions failing in any cell — the shift and the bark's hours above
     DEHARDEN_C not rising from north through east and west to south, a winter total with the flange spot above it
     more often than the bark beside it, the coldest hour under the flange not warmer on the south face than on the
-    north; a south-minus-north floor or a list of month exceptions that is not re-derivable from the runs; a
-    reflected-light scale off its own formula; a month split that loses hours; a summary not the min/max of its
-    runs; a verdict that stopped quoting the north and south medians and the south hours, or that stopped saying the
-    axis does not choose an azimuth by itself.
-    CANNOT catch: crown, neighbour or horizon shading (open-field DNI is the upper end of beam), ground-reflected
-    light, whether ERA5 DNI holds at trunk height, the real coupling, or a dose behind the hour counts.
+    north; a south-minus-north floor or a list of month exceptions that is not re-derivable from the runs; a month
+    split that loses hours; a summary not the min/max of its runs; a verdict that stopped quoting the north and south
+    medians and the south hours, or that stopped saying the axis does not choose an azimuth by itself; the series
+    timestep check past the shift band anywhere in the 30 years.
+    CANNOT catch: crown, neighbour or horizon shading (open-field DNI is the upper end of beam), whether ERA5 DNI holds
+    at trunk height, the real coupling, or a dose behind the hour counts. Ground-reflected light — the next test.
     """
     d = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))
     bs = d["beam_sun"]
@@ -4119,12 +4119,9 @@ def test_flange_cambium_frost_beam_by_azimuth():
             assert abs(ts["hours_above_deharden"][c] - ref) <= max(2, 0.02 * ref), (c, ts)
     warm = bs["timestep_check"]["warmest_winter_hour"]["hours_above_deharden"]
     assert any(v for c, v in warm.items() if not c.endswith("/bark")), warm
-    refl = bs["ground_reflected_not_modelled_scale"]
-    sky = d["inputs"]["sky_view"]
-    assert refl["winter_ghi_over_diffuse"] > 1.0
-    for a, v in refl["reflected_on_vertical_over_model_diffuse"].items():
-        assert abs(v - (1.0 - sky) * float(a) * refl["winter_ghi_over_diffuse"] / sky) <= 0.006, (a, v)
-    cell = {(r["form"], r["azimuth_deg"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in bs["runs"]}
+    for name, v in bs["timestep_check_series"].items():
+        assert v["shift_err_K_max"] <= 0.05 and v["frost_day_pairs"] > 0, (name, v)
+    cell ={(r["form"], r["azimuth_deg"], r["coupling"], r["wind_k"], r["bark_side"]): r for r in bs["runs"]}
     diffuse = {(r["regime"], r["coupling"], r["wind_k"], r["bark_side"]): r["shift_K"]["median"] for r in d["real_cloud"]["runs"]}
     for (form, a, cp, k, side), r in cell.items():
         h = r["winter_hours_above_deharden"]
@@ -4161,6 +4158,111 @@ def test_flange_cambium_frost_beam_by_azimuth():
         assert f"{s['median_K_range'][0]:+.1f}…{s['median_K_range'][1]:+.1f} K on a {face}" in d["verdict"]["text"]
     hs = so["winter_hours_above_deharden_per_year"]
     assert f"on a south face {hs['no_flange'][0]:.0f}–{hs['no_flange'][1]:.0f} hours a winter" in d["verdict"]["text"]
+
+
+def test_flange_cambium_frost_ground_reflected():
+    """79's ground-reflected light (2026-10-17, revised 2026-10-18): ρ·GHI through the ground's view share, open field, two
+    ends of snow × albedo.
+
+    CAN catch: a snow check whose κ is not its own agreement and shares (κ re-derived), a reanalysis below the κ gate, a
+    «never snow» agreement that is not 1 − the station's share; ends whose albedo is not the one read in Baker et al. 1990 /
+    Baker & Ruschy 1988 or whose snow source is not the declared reanalysis; a high end not above the low one in reflected
+    light; the declared directions failing in any cell — more reflected light making the bark's or the flange spot's
+    winter hours above DEHARDEN_C FEWER, or the coldest hour under the flange COLDER (none ≤ low ≤ high, cell by cell; a
+    sign error on the new term reds here); runs that are not the same cells as the records without it; a summary not
+    the min/max of its runs, a south-minus-north floor or an azimuth reading not re-derivable from them — the declared
+    range reading, its margin, and the cell-wise ratio added after the data; an end whose reanalysis is not the least
+    (low) or most (high) snowy at its depth; cell checks (low ≤ high per cell; hours rising over the records without it)
+    not re-derivable; a whole-series timestep gate missing a set or past its own tolerances; a verdict that stopped
+    quoting the two ends' size, that claims the declared azimuth readings hold when they do not, or that drops the
+    cell-wise ratio or the declared reading's margin without reflected light.
+    CANNOT catch: whether either reanalysis holds at the cell, whether St. Paul's albedo holds on a forest floor or under a
+    crown, or the real coupling — the declared ceilings.
+    """
+    d = json.loads((THERMAL / "flange_cambium_frost.json").read_text(encoding="utf-8"))
+    bs, gr = d["beam_sun"], d["beam_sun"]["ground_reflected"]
+    chk = gr["snow_check"]
+    for z, row in chk["depths_m"].items():
+        ss = row["station_snow_share"]
+        assert abs(row["never_snow_agreement"] - (1.0 - ss)) <= 0.0015, (z, row)
+        for name in gr["snow_sources"]:
+            r = row[name]
+            pe = r["snow_share"] * ss + (1.0 - r["snow_share"]) * (1.0 - ss)
+            assert abs(r["kappa"] - (r["agreement"] - pe) / (1.0 - pe)) <= 0.01, (z, name, r)
+            assert r["kappa"] >= 0.4, (z, name, r)
+    ends = gr["ends"]
+    assert (ends["low"]["snow_source"], ends["low"]["snow_depth_m_at_least"], ends["low"]["albedo_snow"],
+            ends["low"]["albedo_ground"]) == ("era5_land", 0.11, 0.5, 0.18)
+    assert (ends["high"]["snow_source"], ends["high"]["snow_depth_m_at_least"], ends["high"]["albedo_snow"],
+            ends["high"]["albedo_ground"]) == ("era5_land", 0.01, 0.8, 0.24)
+    share = gr["end_source_check_winter_daylight_snow_share"]
+    for e, pick in (("low", min), ("high", max)):
+        z = ends[e]["snow_depth_m_at_least"]
+        assert share[f"{ends[e]['snow_source']}/{z:g}"] == pick(share[f"{s}/{z:g}"] for s in gr["snow_sources"]), (e, share)
+        assert abs(share[f"{ends[e]['snow_source']}/{z:g}"] - ends[e]["winter_daylight_hours_with_snow_share"]) <= 0.0015, e
+        assert f"{z:g}" in chk["depths_m"], (e, z)   # the κ gate ran at the depth the end uses
+    assert 0.0 < ends["low"]["reflected_on_vertical_over_model_diffuse"] < ends["high"]["reflected_on_vertical_over_model_diffuse"]
+    key = lambda r: (r["form"], r["azimuth_deg"], r["coupling"], r["wind_k"], r["bark_side"])  # noqa: E731
+    none = {key(r): r for r in bs["runs"]}
+    by_end = {e: {key(r): r for r in gr["runs"] if r["reflect"] == e} for e in ("low", "high")}
+    assert set(by_end["low"]) == set(none) == set(by_end["high"])
+    for k, r0 in none.items():
+        r1, r2 = by_end["low"][k], by_end["high"][k]
+        for side in ("no_flange", "flange"):
+            assert (r0["winter_hours_above_deharden"][side] <= r1["winter_hours_above_deharden"][side]
+                    <= r2["winter_hours_above_deharden"][side]), (k, side)
+        assert r0["cambium_min_C"]["flange"] <= r1["cambium_min_C"]["flange"] <= r2["cambium_min_C"]["flange"], k
+    years = bs["years"]
+    for e, cells in by_end.items():
+        for a, by_cp in gr["by_azimuth"][e].items():
+            for cp, s in by_cp.items():
+                rows = [r for (_, az, c, _, _), r in cells.items() if az == int(a) and c == cp]
+                assert s["median_K_range"] == [min(r["shift_K"]["median"] for r in rows), max(r["shift_K"]["median"] for r in rows)]
+                hb = [r["winter_hours_above_deharden"]["no_flange"] / years for r in rows]
+                assert s["winter_hours_above_deharden_per_year"]["no_flange"] == [round(min(hb), 1), round(max(hb), 1)]
+        for cp in ("decoupled", "tied"):
+            dd = [cells[(f, 180, cp, k, sd)]["cambium_min_C"]["flange"] - cells[(f, 0, cp, k, sd)]["cambium_min_C"]["flange"]
+                  for (f, a, c, k, sd) in cells if a == 0 and c == cp]
+            assert gr["coldest_hour_under_flange_south_minus_north_K"][e][cp] == [round(min(dd), 2), round(max(dd), 2)]
+        fl = "winter_hours_above_deharden_per_year"
+        by = gr["by_azimuth"][e]
+        assert gr["readings"][e]["floor_south_warmer_every_cell"] == (gr["coldest_hour_under_flange_south_minus_north_K"][e]["tied"][0] > 0)
+        assert gr["readings"][e]["deharden_fewer_north_than_south_under_tied_flange"] == (
+            by["0"]["tied"][fl]["flange"][1] < by["180"]["tied"][fl]["flange"][0])
+    cw = "deharden_south_over_north_under_tied_flange_min_cellwise_added_after_data"
+    for e, cells in (("none", none), *by_end.items()):
+        by = bs["by_azimuth"] if e == "none" else gr["by_azimuth"][e]
+        rd = gr["readings"][e]
+        assert rd["deharden_range_margin_south_min_minus_north_max_per_year"] == round(
+            by["180"]["tied"][fl]["flange"][0] - by["0"]["tied"][fl]["flange"][1], 1), e
+        pairs = [(cells[(f, 180, "tied", k, sd)]["winter_hours_above_deharden"]["flange"], r["winter_hours_above_deharden"]["flange"])
+                 for (f, a, c, k, sd), r in cells.items() if a == 0 and c == "tied"]
+        assert rd[cw] == round(min(s / n for s, n in pairs if n > 0), 3), e
+        assert rd["cells_with_no_north_hours"] == sum(1 for _, n in pairs if n == 0), e
+    cc = gr["cell_checks"]
+    q = {"hours_above_deharden_flange": lambda r: r["winter_hours_above_deharden"]["flange"],
+         "hours_above_deharden_bark": lambda r: r["winter_hours_above_deharden"]["no_flange"],
+         "coldest_hour_flange": lambda r: r["cambium_min_C"]["flange"], "median_shift": lambda r: r["shift_K"]["median"]}
+    assert cc["monotone_low_to_high_every_cell"] == {
+        n: all(f(by_end["low"][k]) <= f(by_end["high"][k]) + 1e-9 for k in none) for n, f in q.items()}
+    assert all(cc["monotone_low_to_high_every_cell"].values()), cc   # 01_04 §3.1 says each of the four moves one way in every cell
+    assert cc["hours_above_deharden_rise_over_no_reflection_every_cell"] == {
+        e: all(by_end[e][k]["winter_hours_above_deharden"][s] >= none[k]["winter_hours_above_deharden"][s]
+               for k in none for s in ("no_flange", "flange")) for e in by_end}
+    series = bs["timestep_check_series"]
+    assert set(series) == {"beam_high_linear", "beam_high_b82", "diffuse_b82"}, set(series)
+    for name, v in series.items():
+        assert v["shift_err_K_max"] <= 0.05 and v["floor_err_K_max"] <= 0.15 and v["hours_within_tolerance"], (name, v)
+    text = d["verdict"]["text"]
+    lo, hi = ends["low"]["reflected_on_vertical_over_model_diffuse"], ends["high"]["reflected_on_vertical_over_model_diffuse"]
+    assert f"adds {lo:.2f}–{hi:.2f}× the model's diffuse term" in text
+    declared = ("floor_south_warmer_every_cell", "deharden_fewer_north_than_south_under_tied_flange")
+    hold = all(r[k] for r in gr["readings"].values() for k in declared)
+    assert ("both declared readings of the azimuth axis hold at both ends" in text) == hold
+    ratio = math.floor(min(gr["readings"][e][cw] for e in by_end) * 100 + 1e-9) / 100
+    assert f"the south has at least {ratio:.2f}× the north's hours under the tied flange at either end" in text
+    assert (f"without reflected light the declared reading held by "
+            f"{gr['readings']['none']['deharden_range_margin_south_min_minus_north_max_per_year']:.1f} h a winter") in text
 
 
 def test_capsule_cold_edge_sky_invariants():

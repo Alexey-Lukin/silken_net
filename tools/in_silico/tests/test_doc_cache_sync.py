@@ -4103,12 +4103,6 @@ CHECKS += [
      FLANGE_FROST, lambda d: _B79(d, 180)["colder_share_range"][0] * 100, 0.6),
     ("HW.6 · beam: south colder share, high → 79", CODIT, rf"холодніше в \*\*[\d.]+–{N} %\*\* морозних діб: кора",
      FLANGE_FROST, lambda d: _B79(d, 180)["colder_share_range"][1] * 100, 0.6),
-    ("HW.6 · beam: winter GHI over diffuse (reflected light, not modelled) → 79", CODIT, rf"сумарна радіація в \*\*{N}\*\* раза",
-     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["winter_ghi_over_diffuse"], 0.005),
-    ("HW.6 · beam: reflected over the model's diffuse, bare ground → 79", CODIT, rf"сягає \*\*{N}\*\*× розсіяного члена",
-     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["reflected_on_vertical_over_model_diffuse"]["0.2"], 0.005),
-    ("HW.6 · beam: reflected over the model's diffuse, snow → 79", CODIT, rf"ґрунтом і \*\*{N}\*\*× над снігом",
-     FLANGE_FROST, lambda d: d["beam_sun"]["ground_reflected_not_modelled_scale"]["reflected_on_vertical_over_model_diffuse"]["0.7"], 0.05),
     ("HW.6 · beam: coldest hour under the tied flange, south minus north, low → 79", CODIT,
      rf"на \*\*\+{N}…{_NN} K\*\* на краю повного звʼязку й", FLANGE_FROST,
      lambda d: d["beam_sun"]["coldest_hour_under_flange_south_minus_north_K"]["tied"][0], 0.005),
@@ -4145,6 +4139,134 @@ CHECKS += [
      FLANGE_FROST, lambda d: _B79(d, 180)["winter_cambium_max_C"]["no_flange"], 0.05),
     ("HW.6 · beam: warmest winter cambium under the tied flange, south → 79", CODIT, rf"°C під корою й \*\*{N}\*\* °C під фланцем",
      FLANGE_FROST, lambda d: _B79(d, 180)["winter_cambium_max_C"]["flange"], 0.05),
+]
+
+# ── HW.6 frost, ground-reflected light (2026-10-18): 79's `beam_sun.ground_reflected` — canon 01_04 §3.1 ⊕ ──
+# ⛔ Two sentences of that block are CLAIMS about booleans, not numbers — «the declared north-below-south reading does not
+# hold at either end» and «the floor is warmer on the south in every cell of both ends» (with «never more hours under the
+# flange in a winter total»). Their rows resolve to NaN when a re-run flips the boolean, so the sentence is refused as
+# phrased instead of passing on a number that still matches. The cell-wise ratio is computed here from the runs, on the
+# same cells (form · wind · bark side, tied) the floor reading uses — the like-for-like reading on one tree.
+_G79 = lambda d: d["beam_sun"]["ground_reflected"]  # noqa: E731
+_G79_ENDS = ("low", "high")
+
+
+def _r79_span(d, az, key, end, cp="tied"):
+    rows = [_G79(d)["by_azimuth"][e][str(az)][cp]["winter_hours_above_deharden_per_year"][key] for e in _G79_ENDS]
+    return min(r[0] for r in rows) if end == 0 else max(r[1] for r in rows)
+
+
+def _r79_end_span(d, end, az, cp="tied"):
+    return _G79(d)["by_azimuth"][end][str(az)][cp]["winter_hours_above_deharden_per_year"]["flange"]
+
+
+def _r79_declared_broken(d):
+    return not any(_G79(d)["readings"][e]["deharden_fewer_north_than_south_under_tied_flange"] for e in _G79_ENDS)
+
+
+def _r79_floor_holds(d):
+    g = _G79(d)
+    return all(g["readings"][e]["floor_south_warmer_every_cell"] and g["flange_never_above_bark_in_hours"][e] for e in _G79_ENDS)
+
+
+def _r79_cellwise_ratio(d, cp="tied"):
+    cells = {}
+    for r in _G79(d)["runs"]:
+        if r["coupling"] == cp:
+            cells.setdefault((r["reflect"], r["form"], r["wind_k"], r["bark_side"]), {})[r["azimuth_deg"]] = \
+                r["winter_hours_above_deharden"]["flange"]
+    return _down2(min(v[180] / v[0] for v in cells.values()))
+
+
+def _r79_kappas(d):
+    return [row[s]["kappa"] for row in _G79(d)["snow_check"]["depths_m"].values() for s in ("era5_land", "cerra")]
+
+
+CHECKS += [
+    ("HW.6 · reflected: snow check κ, low → 79", CODIT, rf"κ Коена на зимових добах — \*\*{N}–{_NN}\*\*",
+     FLANGE_FROST, lambda d: min(_r79_kappas(d)), 0.005),
+    ("HW.6 · reflected: snow check κ, high → 79", CODIT, rf"κ Коена на зимових добах — \*\*{_NN}–{N}\*\*",
+     FLANGE_FROST, lambda d: max(_r79_kappas(d)), 0.005),
+    ("HW.6 · reflected: snow albedo, fresh (high end) → 79", CODIT, rf"сніг \*\*{N}\*\* наступного дня",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["high"]["albedo_snow"], 0.0),
+    ("HW.6 · reflected: snow albedo, sample floor (low end) → 79", CODIT, rf"й \*\*{N}\*\* — підлога вибірки",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["low"]["albedo_snow"], 0.0),
+    ("HW.6 · reflected: bare-ground albedo, April (low end) → 79", CODIT, rf"медіани \*\*{N}\*\* \(квітень\)",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["low"]["albedo_ground"], 0.0),
+    ("HW.6 · reflected: bare-ground albedo, October (high end) → 79", CODIT, rf"і \*\*{N}\*\* \(жовтень\)",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["high"]["albedo_ground"], 0.0),
+    ("HW.6 · reflected: over the model's diffuse, low end → 79", CODIT, rf"відбите додає \*\*≈ {N}…",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["low"]["reflected_on_vertical_over_model_diffuse"], 0.05),
+    ("HW.6 · reflected: over the model's diffuse, high end → 79", CODIT, rf"відбите додає \*\*≈ [\d.]+…{N}\*\*",
+     FLANGE_FROST, lambda d: _G79(d)["ends"]["high"]["reflected_on_vertical_over_model_diffuse"], 0.05),
+    ("HW.6 · reflected: median shift move, low → 79", CODIT, rf"воно зсуває на \*\*\+{N}…{_NN} K\*\*",
+     FLANGE_FROST, lambda d: min(_G79(d)["readings"][e]["median_shift_minus_no_reflection_K"][0] for e in _G79_ENDS), 0.005),
+    ("HW.6 · reflected: median shift move, high → 79", CODIT, rf"воно зсуває на \*\*{_NN}…\+{N} K\*\*",
+     FLANGE_FROST, lambda d: max(_G79(d)["readings"][e]["median_shift_minus_no_reflection_K"][1] for e in _G79_ENDS), 0.005),
+    ("HW.6 · reflected: coldest hour under the flange move, low → 79", CODIT, rf"під фланцем гріє на \*\*\+{N}…{_NN} K\*\*",
+     FLANGE_FROST, lambda d: min(_G79(d)["readings"][e]["coldest_hour_under_flange_minus_no_reflection_K"][0] for e in _G79_ENDS), 0.005),
+    ("HW.6 · reflected: coldest hour under the flange move, high → 79", CODIT, rf"під фланцем гріє на \*\*{_NN}…\+{N} K\*\*",
+     FLANGE_FROST, lambda d: max(_G79(d)["readings"][e]["coldest_hour_under_flange_minus_no_reflection_K"][1] for e in _G79_ENDS), 0.005),
+    ("HW.6 · reflected: floor south minus north, tied, low (every cell, both ends) → 79", CODIT,
+     rf"обох кінців \(\*\*\+{N}…{_NN} K\*\* на повному", FLANGE_FROST,
+     lambda d: min(_G79(d)["coldest_hour_under_flange_south_minus_north_K"][e]["tied"][0] for e in _G79_ENDS)
+     if _r79_floor_holds(d) else float("nan"), 0.005),
+    ("HW.6 · reflected: floor south minus north, tied, high → 79", CODIT,
+     rf"обох кінців \(\*\*{_NN}…\+{N} K\*\* на повному", FLANGE_FROST,
+     lambda d: max(_G79(d)["coldest_hour_under_flange_south_minus_north_K"][e]["tied"][1] for e in _G79_ENDS), 0.005),
+    ("HW.6 · reflected: south hours above 13 °C under bark, low → 79", CODIT, rf"на південній грані — \*\*{N}–[\d.]+\*\* під корою, ",
+     FLANGE_FROST, lambda d: _r79_span(d, 180, "no_flange", 0), 0.6),
+    ("HW.6 · reflected: south hours above 13 °C under bark, high → 79", CODIT, rf"на південній грані — \*\*[\d.]+–{N}\*\* під корою, ",
+     FLANGE_FROST, lambda d: _r79_span(d, 180, "no_flange", 1), 0.6),
+    ("HW.6 · reflected: south hours above 13 °C under the tied flange, low → 79", CODIT, rf"під корою, \*\*{N}–[\d.]+\*\* під фланцем на повному",
+     FLANGE_FROST, lambda d: _r79_span(d, 180, "flange", 0), 0.6),
+    ("HW.6 · reflected: south hours above 13 °C under the tied flange, high → 79", CODIT, rf"під корою, \*\*[\d.]+–{N}\*\* під фланцем на повному",
+     FLANGE_FROST, lambda d: _r79_span(d, 180, "flange", 1), 0.6),
+    ("HW.6 · reflected: north hours above 13 °C under bark, low → 79", CODIT, rf"на північній — \*\*{N}–[\d.]+\*\* і \*\*",
+     FLANGE_FROST, lambda d: _r79_span(d, 0, "no_flange", 0), 0.6),
+    ("HW.6 · reflected: north hours above 13 °C under bark, high → 79", CODIT, rf"на північній — \*\*[\d.]+–{N}\*\* і \*\*",
+     FLANGE_FROST, lambda d: _r79_span(d, 0, "no_flange", 1), 0.6),
+    ("HW.6 · reflected: north hours above 13 °C under the tied flange, low → 79", CODIT, rf"\*\* і \*\*{N}–[\d.]+\*\*\. За сумою зими",
+     FLANGE_FROST, lambda d: _r79_span(d, 0, "flange", 0), 0.6),
+    ("HW.6 · reflected: north hours above 13 °C under the tied flange, high (never more than bark in a winter total) → 79", CODIT,
+     rf"\*\* і \*\*[\d.]+–{N}\*\*\. За сумою зими", FLANGE_FROST,
+     lambda d: _r79_span(d, 0, "flange", 1) if _r79_floor_holds(d) else float("nan"), 0.6),
+    ("HW.6 · reflected: month cells with more hours under the flange, low end → 79", CODIT, rf"помісячних винятків — \*\*{N}\*\* клітинки",
+     FLANGE_FROST, lambda d: len(_G79(d)["month_cells_flange_above_bark"]["low"]), 0.0),
+    ("HW.6 · reflected: month cells with more hours under the flange, high end → 79", CODIT, rf"і \*\*{N}\*\* на верхньому",
+     FLANGE_FROST, lambda d: len(_G79(d)["month_cells_flange_above_bark"]["high"]), 0.0),
+    # the declared range reading, per END — a north top of one end against a south bottom of the other is no pairing
+    ("HW.6 · reflected: declared reading broken — north top under the flange, low end → 79", CODIT,
+     rf"на нижньому кінці північ до \*\*{N}\*\*", FLANGE_FROST,
+     lambda d: _r79_end_span(d, "low", 0)[1] if _r79_declared_broken(d) else float("nan"), 0.05),
+    ("HW.6 · reflected: declared reading broken — south bottom under the flange, low end → 79", CODIT,
+     rf"південь від \*\*{N}\*\* годин за зиму; на верхньому", FLANGE_FROST,
+     lambda d: _r79_end_span(d, "low", 180)[0], 0.05),
+    ("HW.6 · reflected: declared reading broken — north top under the flange, high end → 79", CODIT,
+     rf"на верхньому — до \*\*{N}\*\* і від", FLANGE_FROST, lambda d: _r79_end_span(d, "high", 0)[1], 0.05),
+    ("HW.6 · reflected: declared reading broken — south bottom under the flange, high end → 79", CODIT,
+     rf"і від \*\*{N}\*\*\): на обох кінцях", FLANGE_FROST, lambda d: _r79_end_span(d, "high", 180)[0], 0.05),
+    ("HW.6 · reflected: declared reading's margin without reflected light → 79", CODIT,
+     rf"трималося із запасом лише \*\*{N}\*\* години", FLANGE_FROST,
+     lambda d: _G79(d)["readings"]["none"]["deharden_range_margin_south_min_minus_north_max_per_year"]
+     if _G79(d)["readings"]["none"]["deharden_fewer_north_than_south_under_tied_flange"] else float("nan"), 0.05),
+    # which reanalysis takes each end is asserted from the data (`check_reflect_ends`) — the shares the doc quotes for it
+    ("HW.6 · reflected: winter daylight snow share, ERA5-Land ≥ 11 cm (low end) → 79", CODIT,
+     rf"частка зимових світлових годин зі снігом \*\*{N}\*\* проти", FLANGE_FROST,
+     lambda d: _G79(d)["end_source_check_winter_daylight_snow_share"]["era5_land/0.11"], 0.005),
+    ("HW.6 · reflected: winter daylight snow share, CERRA ≥ 11 cm → 79", CODIT,
+     rf"проти \*\*{N}\*\* у CERRA на ≥ 11 см", FLANGE_FROST,
+     lambda d: _G79(d)["end_source_check_winter_daylight_snow_share"]["cerra/0.11"], 0.005),
+    ("HW.6 · reflected: winter daylight snow share, ERA5-Land ≥ 1 cm (high end) → 79", CODIT,
+     rf"і \*\*{N}\*\* проти \*\*[\d.]+\*\* на ≥ 1 см", FLANGE_FROST,
+     lambda d: _G79(d)["end_source_check_winter_daylight_snow_share"]["era5_land/0.01"], 0.005),
+    ("HW.6 · reflected: winter daylight snow share, CERRA ≥ 1 cm → 79", CODIT,
+     rf"проти \*\*{N}\*\* на ≥ 1 см", FLANGE_FROST,
+     lambda d: _G79(d)["end_source_check_winter_daylight_snow_share"]["cerra/0.01"], 0.005),
+    ("HW.6 · reflected: south over north under the flange, cell by cell (floored) → 79", CODIT, rf"щонайменше \*\*{N}×\*\* годин північної",
+     FLANGE_FROST, _r79_cellwise_ratio, 0.0),
+    ("HW.6 · reflected: south over north under the decoupled flange, cell by cell (floored) → 79", CODIT,
+     rf"на розвʼязаному — щонайменше \*\*{N}×\*\*", FLANGE_FROST, lambda d: _r79_cellwise_ratio(d, "decoupled"), 0.0),
 ]
 
 # leg (3б): Os(III) relaxed from each relaxed Os(II) (21e `b3lyp-relaxed-os3`), read by 83 as `relaxed_geometry_check.adiabatic`

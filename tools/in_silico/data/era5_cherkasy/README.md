@@ -107,3 +107,53 @@ https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&sta
   stratus deck at the same percentage radiate very differently, and the long-wave formulas `79` weighs with it
   were fitted on their own cloud measures, not on reanalysis cover — the role substitution is declared there.
 - **A cell average.** ERA5 cloud is a model field over ~0.25°, not an observation above one trunk.
+
+---
+
+# Hourly snow depth — two reanalyses near the same cell · daily snow depth at the nearest station that reports it, 1991–2020
+
+**What it is for:** `scripts/79_flange_cambium_frost.py` (HW.6, ground-reflected light on the trunk face): the albedo under
+the face switches between snow and bare ground with the snow on the ground, hour by hour.
+
+**Why not ERA5:** on this channel ERA5 carries no snow depth — the same query with `models=era5` returns `NaN` for every
+hour of `snow_depth` (probed 2026-10-17, January 2010, beside a finite `snowfall`; Open-Meteo's own variable table marks
+snow depth for ERA5-Land and CERRA only). So the two series below come from other reanalyses, at other grid points.
+
+**Provenance — the queries** (fetched 2026-10-17 with `curl`; each file is that CSV response, unchanged, gzipped):
+
+```
+https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&start_date=1991-01-01&end_date=2020-12-31&hourly=snow_depth&timezone=Europe%2FKyiv&models=era5_land&format=csv
+https://archive-api.open-meteo.com/v1/archive?latitude=49.44&longitude=32.06&start_date=1991-01-01&end_date=2020-12-31&hourly=snow_depth&timezone=Europe%2FKyiv&models=cerra&format=csv
+```
+
+→ `hourly_snow_era5_land_1991_2020.csv.gz` (grid point returned: 49.40 N, 32.10 E, 111 m — inside the ERA5 cell of the files
+above, not its centre) and `hourly_snow_cerra_1991_2020.csv.gz` (49.43 N, 32.06 E, 111 m). 262 992 hours each, no gaps,
+metres, on the same fixed UTC+3 clock; `79` refuses a file whose UTC offset, zone or hour labels differ from the air file's.
+
+**The station, for the check `79` runs against them** — GHCN-Daily, station `UPM00033377` Lubny (WMO 33377, GSN; 50.02 N,
+33.00 E, 156 m — about 100 km north-east of the cell): the station file
+
+```
+https://www.ncei.noaa.gov/pub/data/ghcn/daily/by_station/UPM00033377.csv.gz
+```
+
+fetched 2026-10-17, filtered to its `SNWD` rows of 1991–2020 and nothing else changed
+(`awk -F, '$3=="SNWD" && substr($2,1,4)>=1991 && substr($2,1,4)<=2020'`) → `ghcnd_UPM00033377_snwd_1991_2020.csv`
+(columns as GHCN delivers them: ID, date, element, value in mm, M-, Q- and S-flags, time). Neither the GHCN-Daily readme nor
+its NCEI product page states a use constraint (read 2026-10-17). The nearer station (Cherkasy, `UPM00033487`) reports no snow
+depth; Chyhyryn (`UPM00033605`) does, but sparsely in the years it covers and not at all in 1999–2011.
+
+**Declared ceiling — what these series are NOT:**
+- **Not ERA5, and not the cell.** Two other reanalyses at two other points; which one holds at the cell is not known, which
+  is why `79` checks both against the station and gives each end the reanalysis that end asks for, asserted from the data
+  (since 2026-10-18 ERA5-Land takes both ends: the less snowy at ≥ 11 cm, the snowier at ≥ 1 cm; CERRA is the opposite at
+  each depth, so it takes neither).
+- **The station reports only days WITH snow** — no zero is ever recorded — so a day without a record is read as snow-free,
+  the same reading a missed observation would get. Rows with a quality flag are dropped (one of them reads 1839 mm in
+  October).
+- **Disagreement is real and measured:** over the winters, ERA5-Land has snow (≥ 1 cm) on more days than the station
+  (Open-Meteo's own note: «Snow depth in ERA5-Land tends to be overestimated»), CERRA on about as many; the check's numbers
+  are in `79`'s cache, not here.
+- **Depth, not cover.** Snow ≥ 10.2 cm masks the ground for the albedo (Baker et al. 1990 keep only such days; `79` counts
+  ≥ 11 cm on the series' 1 cm grid); shallower snow lets the ground show, so a depth threshold — not the series alone —
+  decides what counts as snow-covered.
