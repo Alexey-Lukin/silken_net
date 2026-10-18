@@ -100,7 +100,7 @@
 | **Постачальник** | Challenge Bioproducts — виробник, ціни не публікує (2026-10-08), тож ціну дасть лише відповідь на цей запит; бюджетна оцінка й каталожна драбина — [`01_03 §5.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **Зберігання** | у темряві, **@4°C** |
 | **Acceptance / тест** | вхідний тест cross-linking хітозану при **pH 5.75** (сік — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) |
-| **Кількість** | г-масштаб для матриці Stage 2; уточнити |
+| **Кількість** | **міліграми, не грами** (виведено 2026-10-18): плівка Шару 4 — 10–20 мкм, геніпін 0.5–1 % ([`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md); % читаємо як масу на обʼєм гелю — канон одиниці не пише) — на робочій грані купона 2.01 см² бере ≤ 0.04 мг, тож навіть стеля «кожен купон замовлення Stage 2 несе анодний Шар 4» дає менше 5 мг. Витрату задає не плівка, а робочі розчини виконавця нанесення — зшивка Шару 3 і Шару 4 й вхідна перевірка ([`coin_immobilisation_protocol`](../ebfc/coin_immobilisation_protocol.md), поля 7 · 8 · 17), — тож обсяг замовлення питаємо в нього; рамка — найменша фасовка (25 мг) із запасом до 125 мг. Грамовий масштаб — лише під серію анкерів |
 | **Note** | закупка, не synth → найкоротший lead time зі стеку |
 
 ---
@@ -221,7 +221,7 @@
 |---|---|
 | A enzyme | RFQ — recombinant deglycosylated FAD-dependent glucose dehydrogenase, *Pichia* expression (R&D pilot) |
 | B nanozyme | RFQ — tri-metallic Co/Cu/Ce ZIF laccase-mimic nanozyme, solvothermal synthesis, 40–80 nm |
-| C genipin | RFQ — genipin >98%, gram scale, cold-chain |
+| C genipin | RFQ — genipin >98%, milligram scale for a pilot, cold-chain |
 | D membrane | RFQ — Nafion surface-grafted with PSBMA via SI-ATRP (fluoropolymer chemistry) |
 | E CNC | RFQ — cellulose nanocrystals, R&D quantity (purchase or acid hydrolysis) |
 | F mediator | RFQ — custom synthesis of an osmium redox polymer, Os(dmbpy)₂(PVI)Cl, R&D quantity |
@@ -259,7 +259,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 **C — genipin**
 
 - Product: genipin, purity **>98%** (used as a non-toxic crosslinker for chitosan; glutaraldehyde is not an acceptable substitute for our application).
-- Quantity: gram scale — please quote the pack sizes you stock and the per-gram price at each.
+- Quantity: milligram scale for a pilot round (tens of milligrams) — please quote the pack sizes you stock and the price of each; gram scale only for a later series.
 - Storage and shipping: must be shipped protected from light and held at 4 °C — state your cold-chain packaging and the temperature excursion it tolerates.
 - QC / acceptance: CoA stating purity and lot. We run an incoming functional check (chitosan crosslinking at pH 5.75) on receipt.
 
