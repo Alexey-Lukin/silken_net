@@ -285,6 +285,9 @@ def main() -> int:
             "series, so another defensible rule moves these dates — the P10 and the earliest years most",
             "the clock is a fixed UTC+3 (no DST): the night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and "
             "daily rain sums and soil means are cut at UTC+3 midnight",
+            f"dew hours are counted inside that window only, {len(NIGHT_HOURS)} hours long, so the hours per dew night are "
+            f"capped at {len(NIGHT_HOURS)}: a percentile equal to the cap means those nights fill the whole window and may "
+            "run longer, and the hours need not be consecutive",
         ],
         "rain_prose": rain_prose,
         "dew_prose": dew_prose,

@@ -158,7 +158,8 @@
     "open-field soil, not forest soil under canopy and litter, which warms later in spring",
     "thresholds are of xylogenesis from other sites and climates, not of resin pressure (the subject of 01_04 §3.5)",
     "crossing dates are as sharp as our rule (run_days, the anchor, «sustained»): a shorter return below is absorbed, a longer one moves the date; the sources dated onset and end from observed cambium, not from a temperature series, so another defensible rule moves these dates — the P10 and the earliest years most",
-    "the clock is a fixed UTC+3 (no DST): the night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and daily rain sums and soil means are cut at UTC+3 midnight"
+    "the clock is a fixed UTC+3 (no DST): the night window 20:00–06:59 UTC+3 is civil 19:00–05:59 in winter, and daily rain sums and soil means are cut at UTC+3 midnight",
+    "dew hours are counted inside that window only, 11 hours long, so the hours per dew night are capped at 11: a percentile equal to the cap means those nights fill the whole window and may run longer, and the hours need not be consecutive"
   ],
   "rain_prose": "Days with ≥ 1 mm: 27% (99.4 a year); on them the day's hourly-mean intensity has median 0.44 and P90 1.0 mm/h (max 4.6). ERA5 smooths downpours, so the percentiles are a LOWER bound on the intensity a coupon meets.",
   "dew_prose": "Dew nights (air criterion, T2m > 0 °C): 88.4 a year (24% of nights), median 5.0 h and P90 11.0 h of dew-point hours per such night; air at 2 m, not the coupon face.",
