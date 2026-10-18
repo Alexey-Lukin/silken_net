@@ -188,7 +188,7 @@ Measured for the same free couples: **+529** mV (Os +309 vs NHE − free FAD −
 | B3LYP corrected (−0.07) | −0.07 | withdrawn (tuned to wrong −0.14) |
 | **Experiment (verified E°s)** | **−0.574** | ref (Os +309 − FAD −265) |
 
-> **B2 ✅** (`21g` — reproducible, closes the orphan cache; on the 1,5-dihydro donor since 2026-10-15): adiabatic **−0.0792** = IP_adiab(FAD 4.164) − EA_Os3(dmbpy 4.243); 0.149 eV less favourable than plain (−0.228 — derived from the same IP and 21d's EA, since `21g --plain` writes into this same path and the plain number has no cache of its own) = the substituent term ①, exactly the B5/B3 shift. The vertical +0.095 (IP_vert 4.338; cation relaxation −0.174 eV) is cation-relaxation-sensitive. Which of the two is the headline is decided in revision step 3. The 4a,5-dihydro values these rows carried (+1.0335 · +1.40 · plain +0.884) live in git only — the cache's `superseded_4a5_dihydro` block holds the hand-added orphan pair (IP 5.391, dG 0.998), not these.
+> **B2 ✅** (`21g` — reproducible, closes the orphan cache; on the 1,5-dihydro donor since 2026-10-15): adiabatic **−0.0792** = IP_adiab(FAD 4.164) − EA_Os3(dmbpy 4.243); 0.149 eV less favourable than plain (−0.228 — derived from the same IP and 21d's EA, since `21g --plain` writes into this same path and the plain number has no cache of its own) = the substituent term ①, exactly the B5/B3 shift. The vertical +0.095 (IP_vert 4.338; cation relaxation −0.174 eV) is cation-relaxation-sensitive. Which of the two is the headline is decided in revision step 3. The 4a,5-dihydro values these rows carried (+1.0335 · +1.40 · plain +0.884) live in git only — the cache's `superseded_4a5_dihydro` block holds the hand-added orphan pair (IP 5.391, dG 0.998), not these. ⊕ (2026-10-16) from the flat start — `21g` re-run after `96`, `00_07` HW.5.IS.
 
 *vs the verified −0.574 eV (E°(Os +309 vs NHE) − E°(FAD-GDH −265 mV SHE); the old −0.14 was a +60 mV FAD artifact). Residual gap = differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent, decomposed by ② (§"Cluster-Continuum Micro-Solvation"). ⚠️ Revision step 3 — the «vs verified» column sets one-electron readings against a 2e⁻/2H⁺ value, not like-for-like (the note under the verdict above).
 
@@ -239,7 +239,7 @@ Measured for the same free couples: **+529** mV (Os +309 vs NHE − free FAD −
 Tests whether the raw cascade gap (above) is the implicit-solvation (PCM) limit, by
 adding explicit waters / probing speciation on the charge-changing **Os(III/II)**
 couple (the flavin couple is already within 65 mV of exp — script 32 — so it is not
-the culprit; ⚠️ revision step 3 — the note under the verdict above). Recomputed on the **real 4,4'-dimethyl-bpy mediator** (Zafar +309 mV vs
+the culprit [⊕ 2026-10-16: at the MMFF level only — with the ZPE on `32b`'s minimum the donor sits −210 mV off, the same order as the acceptor side, so this conclusion does not survive it either; rewritten in revision step 3]; ⚠️ revision step 3 — the note under the verdict above). Recomputed on the **real 4,4'-dimethyl-bpy mediator** (Zafar +309 mV vs
 NHE), not the plain-bpy model. B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; cascade
 Δ = HOMO(FADH₂ −4.018)−LUMO(OsIII). All ⟨S²⟩≈0.754 (clean doublets). Numbers:
 `dft/microsolvation_dmbpy.json`.
