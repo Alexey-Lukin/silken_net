@@ -3090,12 +3090,15 @@ def test_pogo_thermal_gap():
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
 def test_field_strain_campaign():
-    """Script 98 (HW.43): the field strain campaign's length by month from ERA5 wind, and its battery visits.
+    """Script 98 (HW.43): the field strain campaign's length, replayed year by year from ERA5 wind, and its battery trips.
     CAN catch: the power arithmetic leaving the primaries' figures (receiver + sensors; the control — ten sensors on 60 Ah
-    must give Nickl 2022's 152 h), battery days leaving Ah / A / 24, days leaving target / hours-per-day, visits leaving
-    ceil(days / battery days), the best and worst months not being the extremes, a monthly rate that grows past the next
-    threshold's (a higher threshold must be met no more often). CANNOT catch: the ERA5 hourly counts themselves (they need
-    the 262 992-hour series — the script reads it through 71's loader), nor whether 10 hours suffice."""
+    must give Nickl 2022's 152 h), battery days leaving Ah / A / 24, a quantile that is not an actual year's value at
+    numpy's «higher» index or that interpolates (p50 ≤ p75 ≤ p90 must hold and each must equal a sorted replay value), a
+    censored start not ranking last, a «within N days» share leaving the replay, trips leaving ceil(days / battery days)
+    + 1, the best start not being the smallest median, monthly rates that do not fall as the threshold rises, a month
+    with no strong hour that still claims a storm. CANNOT catch: the ERA5 hourly counts themselves (they need the
+    262 992-hour series — the script reads it through 71's loader, and its own control checks the storm runs against
+    the strong hours), nor whether 10 hours suffice."""
     path = MECHANICAL / "field_strain_campaign.json"
     if not path.exists():
         pytest.skip("field_strain_campaign.json not computed")
@@ -3106,20 +3109,34 @@ def test_field_strain_campaign():
     assert abs(60.0 / (pw["receiver_A"] + 10 * pw["tss_A"]) - pw["control_paper_h"]) <= 0.02 * pw["control_paper_h"]
     ah = {"60_Ah_as_in_the_papers": 60.0, "100_Ah_ours": 100.0}
     for k, a in ah.items():
-        assert abs(d["battery_days"][k] - a * pw["usable_fraction_ours"] / cur / 24.0) <= 0.05, k
+        assert abs(d["battery_days"][k] - a * pw["usable_fraction_ours"] / cur / 24.0) <= 0.005, k
     th = d["thresholds_ms"]
-    assert th["beaufort_4"] < th["p99_all_year"] < th["beaufort_5"] or th["beaufort_4"] < th["beaufort_5"]
-    assert len(d["by_month"]) == 12
+    order = sorted(th, key=th.get)                                     # rates must fall as the threshold rises
+    n_years = d["years"][1] - d["years"][0] + 1
     for m, r in d["by_month"].items():
-        assert r["beaufort_4"]["hours_per_day"] >= r["beaufort_5"]["hours_per_day"], m
-        for k, v in r.items():
-            need = d["target_hours_per_bin_ours"] / v["hours_per_day"]       # hours/day is rounded to 0.001 in the cache
-            assert abs(v["days_for_target"] - need) <= need * 0.0005 / v["hours_per_day"] + 0.06, (m, k)   # the rounding's own share
-            for key, bd in (("visits_60Ah", d["battery_days"]["60_Ah_as_in_the_papers"]),
-                            ("visits_100Ah", d["battery_days"]["100_Ah_ours"])):
-                assert v[key] in {math.ceil((v["days_for_target"] + e) / bd) for e in (-0.05, 0.0, 0.05)}, (m, k, key)
-    b5 = {m: r["beaufort_5"]["days_for_target"] for m, r in d["by_month"].items()}
-    assert d["best_month_beaufort_5"] == min(b5, key=b5.get) and d["worst_month_beaufort_5"] == max(b5, key=b5.get)
+        rates = [r["hours_per_day"][k] for k in order]
+        assert rates == sorted(rates, reverse=True), (m, rates)
+        if r["hours_per_day"]["beaufort_5"] == 0:
+            assert r["beaufort_5_storms_30y"] == 0 and r["years_without_beaufort_5"] == n_years, m
+        runs = r["replay_days_by_year"]
+        assert len(runs) == n_years and r["censored_years"] == sum(1 for x in runs if x is None)
+        ranked = sorted(x if x is not None else math.inf for x in runs)
+        for q in (50, 75, 90):
+            want = ranked[math.ceil(q / 100 * (n_years - 1))]      # numpy «higher»: an actual year's value
+            got = r["replay_days"][f"p{q}"]
+            assert (got is None) if math.isinf(want) else abs(got - want) <= 0.06, (m, q)
+        qs = [r["replay_days"][f"p{q}"] for q in (50, 75, 90) if r["replay_days"][f"p{q}"] is not None]
+        assert qs == sorted(qs), m
+        for days, share in r["share_within_days"].items():
+            assert abs(share - sum(1 for x in ranked if x <= float(days)) / n_years) <= 0.0006, (m, days)
+        for at, key in (("trips_at_median", "p50"), ("trips_at_p75", "p75")):
+            days = r["replay_days"][key]
+            for bk, bd in d["battery_days"].items():
+                want = None if days is None else math.ceil(days / bd) + 1
+                assert r[at][bk] == want or (days is not None and r[at][bk] in
+                                             {math.ceil((days + e) / bd) + 1 for e in (-0.05, 0.05)}), (m, at, bk)
+    med = {m: r["replay_days"]["p50"] for m, r in d["by_month"].items() if r["replay_days"]["p50"] is not None}
+    assert d["best_start_month"] == min(med, key=med.get)
 
 
 def test_sap_recipe_saturation():

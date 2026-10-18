@@ -250,8 +250,9 @@ Anchor mechanics (CPU):
      carries 74's dew point; 79's cache is control 1, 71's control 3) — a change to 71's lump or 79's sky re-runs 81
   52 · 71 (importlib: POGO constants · the hourly capsule temperature, checked against 71's cache) · 82 → 90 (the pogo
      gap's thermal travel; radome CEM pocket floor) — a change to 52's chain, 71's lump or lib's CTEs re-runs 90
-  71 → 98 (importlib: 71's hourly loader — the ERA5 10 m wind; the field strain campaign's length by month and its
-     battery visits, power figures read in the two TreeMMoSys primaries) — a change to 71's loader or the ERA5 file re-runs 98
+  71 → 98 (importlib: 71's hourly loader — the ERA5 10 m wind, fixed UTC+3; the field strain campaign's length replayed
+     year by year per start month and its battery trips, power figures read in the two TreeMMoSys primaries) — a change to
+     71's loader or the ERA5 file re-runs 98
   52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` by importlib and the radome CEM's lock-groove span:
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·

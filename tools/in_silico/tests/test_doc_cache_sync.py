@@ -5411,30 +5411,43 @@ def test_frost_worst_regime_label_matches_cache():
 
 
 def test_field_strain_sheet_matches_98():
-    """docs/protocols/anchor/field_strain_sensor_sheet.md §3 (HW.43) quotes 98's cache: the set's current, the battery
-    days, every row of the start-month table (hours/day at Beaufort 5, days to 10 h, visits on 60 / 100 Ah) and January's
-    Beaufort-4 rate. CAN catch a re-run of 98 (new ERA5 window, power figure, target) that leaves the sheet behind.
-    CANNOT catch whether the months chosen for the table are the right ones to show."""
+    """docs/protocols/anchor/field_strain_sensor_sheet.md (HW.43) quotes 98's cache: the set's current and battery days
+    (§3), every row of the start-month table (hours/day at Beaufort 5, years without, the replay's median and p75,
+    trips at both), §0's January count and December median/p75; SUMMARY §HW.43 ⊕ 98; and the numbers the ⚖️ leg in
+    00_07 HW.43 puts before the founder. CAN catch a re-run of 98 (new ERA5 window, power figure, target, quantile
+    rule) that leaves any of the three behind. CANNOT catch whether the months chosen for the table are the right ones."""
     d = json.loads((CACHE / "mechanical/field_strain_campaign.json").read_text(encoding="utf-8"))
+    bm, bd = d["by_month"], d["battery_days"]
     text = (REPO / "docs/protocols/anchor/field_strain_sensor_sheet.md").read_text(encoding="utf-8")
-    assert f"**{d['power']['current_A']:.3f} A**" in text
-    assert f"**{d['battery_days']['60_Ah_as_in_the_papers']:.1f}** доби" in text and f"**{d['battery_days']['100_Ah_ours']:.1f}** доби" in text
-    names = {"01": "січень", "02": "лютий", "03": "березень", "12": "грудень", "06": "червень"}
+    assert f"**{d['power']['current_A']:.4f} A**" in text
+    assert (f"**{bd['60_Ah_as_in_the_papers']:.1f}** доби" in text and f"**{bd['100_Ah_ours']:.1f}** доби" in text)
+    names = {"12": "грудень", "01": "січень", "02": "лютий", "03": "березень", "06": "червень"}
     for m, name in names.items():
-        b5 = d["by_month"][m]["beaufort_5"]
-        h, days, v60, v100 = b5["hours_per_day"], b5["days_for_target"], b5["visits_60Ah"], b5["visits_100Ah"]
-        cells = [f"{h:.2f}", f"{days:.1f}", f"{v60} / {v100}"]
-        if m == "01":                                   # January is the bold row
-            cells = [f"**{c}**" for c in cells]
-        row = f"| {name} | " + " | ".join(cells) + " |"
+        r = bm[m]
+        t50, t75 = r["trips_at_median"], r["trips_at_p75"]
+        row = (f"| {name} | {r['hours_per_day']['beaufort_5']:.2f} | {r['years_without_beaufort_5']} | "
+               f"{r['replay_days']['p50']:.0f} · {r['replay_days']['p75']:.0f} | "
+               f"{t50['60_Ah_as_in_the_papers']} / {t50['100_Ah_ours']} · {t75['60_Ah_as_in_the_papers']} / {t75['100_Ah_ours']} |")
         assert row in text, f"field sheet §3: expected the row {row!r}"
-    assert f"у січні — {d['by_month']['01']['beaufort_4']['hours_per_day']:.2f} год на добу" in text
-    assert f"навіть у січні трапляється в середньому **{d['by_month']['01']['beaufort_5']['hours_per_day']:.2f}**" in text
-    jan, jun = d["by_month"]["01"]["beaufort_5"], d["by_month"]["06"]["beaufort_5"]
+    assert f"**{bm['01']['years_without_beaufort_5']} із 30** січнів" in text
+    assert (f"медіану **{bm['12']['replay_days']['p50']:.0f}** доби, але p75 — **{bm['12']['replay_days']['p75']:.0f}**"
+            in text)
+    assert f"у січні в середньому {bm['01']['beaufort_5_hours_per_storm_mean']:.1f} год" in text
+    assert f"≈ {round(d['battery_Ah_for_90_days'], -1):.0f} А·год" in text
     summary = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
-    assert (f"comes on **{jan['hours_per_day']:.2f}** h/day in January and **{jun['hours_per_day']:.2f}** in June" in summary
-            and f"take **{jan['days_for_target']:.1f}** days from a January start" in summary
-            and f"cost **{jan['visits_60Ah']}** visits on 60 Ah or **{jan['visits_100Ah']}** on 100 Ah" in summary), "SUMMARY §HW.43 ⊕ 98"
+    best = bm[d["best_start_month"]]
+    for frag in (f"**{bm['01']['years_without_beaufort_5']}** of 30 Januaries",
+                 f"a median **{bm['12']['replay_days']['p50']:.0f}** days from 1 December (p75 **{bm['12']['replay_days']['p75']:.0f}**)",
+                 f"**{bm['12']['trips_at_median']['100_Ah_ours']}** trips on 100 Ah at the median",
+                 f"({d['power']['current_A']:.3f} A, the receiver"):
+        assert frag in summary, f"SUMMARY §HW.43 ⊕ 98: expected {frag!r}"
+    assert best["replay_days"]["p50"] <= bm["12"]["replay_days"]["p50"]
+    tracker = " ".join((REPO / "docs/00_07_Action_Plan_Tracker.md").read_text(encoding="utf-8").split())
+    for frag in (f"медіана {bm['12']['replay_days']['p50']:.0f} доби від 1 грудня, p75 — {bm['12']['replay_days']['p75']:.0f}",
+                 f"{bm['12']['trips_at_median']['100_Ah_ours']} поїздок на 100 А·год за медіанної зими і "
+                 f"{bm['12']['trips_at_p75']['100_Ah_ours']} за p75",
+                 f"{bm['01']['years_without_beaufort_5']} із 30 січнів"):
+        assert frag in tracker, f"00_07 HW.43 ⚖️: expected {frag!r}"
 
 
 def test_alloy_stiffness_table_is_fraction_times_modulus():
