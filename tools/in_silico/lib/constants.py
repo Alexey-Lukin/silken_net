@@ -291,10 +291,20 @@ ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti)
 E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
 NU_PEEK = 0.40                  # — PEEK Poisson's ratio
 SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
-# Board stack thermal expansion (HW.43, the pogo gap's thermal travel — script 90). FR-4 Z below Tg: Panasonic R-1755M /
-# R-1755V specification sheets (IPC-TM-650 2.4.24, «CTE pre/post Tg» Z row, typical; Tg 150 / 170 °C — the capsule never
-# reaches either). Steels: Parker O-Ring Handbook ORD 5700, Table 2-5 (p. 2-19), given in in/in/°F and converted ×1.8.
-ALPHA_FR4_Z_1K = (40e-6, 43e-6)          # 1/K — R-1755M · R-1755V, Z axis, pre-Tg
+# Board stack thermal expansion (HW.43, the pogo gap's thermal travel — script 90). FR-4 below Tg: Panasonic data sheets
+# «Laminate R-1755M» No. 19070538 and «Laminate R-1755V» No. 19070536 (both Jul. 2019, Panasonic's file server, read
+# 2026-10-18), IPC-TM-650 2.4.24, «CTE : α1 … < Tg» rows, typical («not guaranteed values»); the capsule never reaches
+# Tg. Z: 40 (M) · 44 (V); X 11–13 and Y 13–15 on both — in-plane spans 11–15. A second Panasonic typical value for R-1755V
+# exists: the Panasonic Industrial Devices Materials Europe «Specification Sheet», Revision 10 (24 Sept 2018) prints
+# «CTE (pre / post Tg) Z … 43/240», X 13, Y 15 — two typical values of one laminate disagree by 1 ppm/K, and the Z range
+# takes the larger. Steels: Parker O-Ring Handbook ORD 5700,
+# Table 2-5 (p. 2-19), given in in/in/°F and converted ×1.8.
+ALPHA_FR4_Z_1K = (40e-6, 44e-6)          # 1/K — R-1755M · R-1755V, Z axis, pre-Tg
+ALPHA_FR4_XY_1K = (11e-6, 15e-6)         # 1/K — X 11–13 · Y 13–15 on both sheets, pre-Tg (the pins' in-plane reading)
+# The pogo pin body: brass C36000 (02_02 §2.2 table). Copper Development Association, alloy data C36000 (alloys.copper.org,
+# read 2026-10-18): «Coefficient of Thermal Expansion 68-572 … 10 to -6 power per °F (68 – 572°F) 11.4» — a mean over
+# 20–300 °C, wider than the capsule's range; ×1.8 to 1/K.
+ALPHA_BRASS_C36000_1K = 11.4e-6 * 1.8    # 1/K
 ALPHA_STEEL_MILD_1K = 6.7e-6 * 1.8      # 1/K — Parker Table 2-5, «Steel, Mild»
 ALPHA_SS302_1K = 9.6e-6 * 1.8           # 1/K — Parker Table 2-5, «Stainless Steel, Type 302»
 

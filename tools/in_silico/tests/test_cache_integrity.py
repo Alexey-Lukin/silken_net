@@ -3003,14 +3003,24 @@ def test_pogo_thermal_gap():
     longer closing (gap + 2 decks + standoff = the radome's pocket floor); the coefficients leaving α·L sums with lib's
     CTEs; the seasonal gap changes leaving coefficient × (T − T_asm) on 82's readings; the window check leaving
     nominal ± 52's residual + the thermal compression; the daily stroke, force ratio and radial slide leaving
-    coefficient × the daily range; the tolerated radome lead leaving margin / stack coefficient. CANNOT catch: the daily
-    range itself (it needs 71's hourly run — the script checks 71 against its own cache), the gasket and pin-body terms
-    (not computed), or the stack's centring.
+    coefficient × the daily range; the tolerated radome lead leaving margin / (stack + pin) coefficient; the working
+    stroke leaving the gap less the brass pin body's α·L over 52's free length (lib's C36000), and the radome alone when it leads; the FR-4
+    in-plane slide readings leaving lib's in-plane CTE. CANNOT catch: the daily range itself (it needs 71's hourly run —
+    the script checks 71 against its own cache), the gasket term (not computed), or the stack's centring.
     """
     path = MECHANICAL / "pogo_thermal_gap.json"
     if not path.exists():
         pytest.skip("pogo_thermal_gap.json not computed")
-    from lib.constants import ALPHA_FR4_Z_1K, ALPHA_PEEK_1K, ALPHA_SS302_1K, ALPHA_STEEL_MILD_1K
+    from lib.constants import (
+        ALLOY_BASELINE,
+        ALLOY_PROPERTIES,
+        ALPHA_BRASS_C36000_1K,
+        ALPHA_FR4_XY_1K,
+        ALPHA_FR4_Z_1K,
+        ALPHA_PEEK_1K,
+        ALPHA_SS302_1K,
+        ALPHA_STEEL_MILD_1K,
+    )
     d = json.loads(path.read_text(encoding="utf-8"))
     z52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
     c82 = json.loads((MECHANICAL / "collar_running_clearance.json").read_text(encoding="utf-8"))
@@ -3031,6 +3041,13 @@ def test_pogo_thermal_gap():
     for k, v in gap.items():
         assert abs(co["gap"][k] - v) <= 1e-4, k
     assert gap["isothermal_low_stack"] < gap["isothermal_high_stack"] < gap["radome_leads_reading"]
+    pin = inp["pin_free_length_mm"] * ALPHA_BRASS_C36000_1K * 1e3   # the free length moves the tip: stroke = free − gap
+    assert inp["pin_free_length_mm"] == z52["springs"]["pogo"]["free_mm"] > inp["gap_mm_52"]
+    assert abs(co["pin_body"] - pin) <= 1e-4
+    stroke = {"isothermal_low_stack": gap["isothermal_low_stack"] - pin,
+              "isothermal_high_stack": gap["isothermal_high_stack"] - pin, "radome_leads_reading": radome_k}
+    for k, v in stroke.items():
+        assert abs(co["working_stroke"][k] - v) <= 1e-4, k
     t_asm = c82["inputs"]["t_ref_c"]
     travel, win, nom = inp["pogo_travel_mm"], inp["window"], inp["nominal_pct"]
     mitig = {m["label"]: m["residual_pz"] for m in z52["mitigation_escalation"]}
@@ -3039,6 +3056,8 @@ def test_pogo_thermal_gap():
         for cname, v in d["seasonal"][rname].items():
             cold, hot = -gap[cname] * (t_asm - t_min), gap[cname] * (t_max - t_asm)
             assert abs(v["gap_um_cold"] - cold) <= 0.06 and abs(v["gap_um_hot"] - hot) <= 0.06, (rname, cname)
+            cold, hot = -stroke[cname] * (t_asm - t_min), stroke[cname] * (t_max - t_asm)   # the pins follow the stroke
+            assert abs(v["stroke_um_cold"] - cold) <= 0.06 and abs(v["stroke_um_hot"] - hot) <= 0.06, (rname, cname)
             for label, res in mitig.items():
                 hi = nom + res / travel - cold * 1e-3 / travel                  # the cold closes the gap → more stroke
                 lo = nom - res / travel - hot * 1e-3 / travel
@@ -3050,20 +3069,24 @@ def test_pogo_thermal_gap():
     assert 0 < rng["median"] < rng["p95"] < rng["max"] and d["daily_days"] > 10000
     for cname, per in d["daily"].items():
         for st, v in per.items():
-            assert abs(v["stroke_um"] - gap[cname] * rng[st]) <= 0.02, (cname, st)
-            assert abs(v["force_ratio_over_min_preload"] - gap[cname] * rng[st] * 1e-3 / inp["x_preload_min_mm"]) <= 1e-4
+            assert abs(v["stroke_um"] - stroke[cname] * rng[st]) <= 0.02, (cname, st)
+            assert abs(v["force_ratio_over_min_preload"] - stroke[cname] * rng[st] * 1e-3 / inp["x_preload_min_mm"]) <= 1e-4
+    a_ti, sl = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"], d["radial_slide_um_per_mm_radius_per_K"]
+    want = {"isothermal": ALPHA_PEEK_1K - a_ti, "flange_held": ALPHA_PEEK_1K, "board_isothermal_low": ALPHA_FR4_XY_1K[0] - a_ti,
+            "board_isothermal_high": ALPHA_FR4_XY_1K[1] - a_ti, "board_flange_held_high": ALPHA_FR4_XY_1K[1]}
+    assert set(sl) == set(want) and all(abs(sl[k] - v * 1e3) <= 1e-4 for k, v in want.items())
     for k, per in d["radial_slide_daily_um_per_mm_radius"].items():
         for st, v in per.items():
             assert abs(v - d["radial_slide_um_per_mm_radius_per_K"][k] * rng[st]) <= 0.002, (k, st)
     req = d["seasonal"]["capsule_requirement"]
-    case_stack = {"isothermal_low_stack": stack_hi, "isothermal_high_stack": stack_lo}   # each case with its own stack
+    case_stack = {"isothermal_low_stack": stack_hi + pin, "isothermal_high_stack": stack_lo + pin}   # the pin lags with the stack
     lead = min(min(req[c]["window"]["L1 spacer only"]["margin_um"]) / st for c, st in case_stack.items())
     assert abs(d["radome_lead_tolerated_by_L1_K"] - lead) <= 0.1
     t_min, t_max = inp["temperature_readings_c"]["capsule_requirement"]
     room = ((win[1] - nom) * travel - mitig["L1 spacer only"]) * 1e3
     allowed = min(room / (t_max - t_asm), room / (t_asm - t_min))
     for a in ALPHA_FR4_Z_1K:                                                  # both FR-4 ends, not the kinder one
-        alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * a * 1e3 - allowed) / (inp["standoff_mm_52"] * 1e3)
+        alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * a * 1e3 - pin - allowed) / (inp["standoff_mm_52"] * 1e3)
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
 def test_sap_recipe_saturation():

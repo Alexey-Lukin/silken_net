@@ -20,12 +20,16 @@ spacing, so the script states the spacer CTE at which L1's margin reaches zero) 
 H·α_PEEK − Σ(L·α); PREMISE: the stack is SEATED on the floor — in fact it floats on a force balance of the pogo pair
 (≈ 0.8–1.9 N) against the pocket gasket (of the same order), two springs in series that set the working point and shrink
 the thermal stroke; (3) the pocket gasket between the RF deck and the floor (EPDM, its compressed height a PLACEHOLDER 0,
-HW.32) — as a CTE term, named, not computed; (4) the pin's own body below the board (brass; no
-primary in the tree) — pushes the tip down with heat, given per ppm/K; (5) the flange: the pads and the rim seat share its
+HW.32) — as a CTE term, named, not computed; (4) the pin's own body below the board — brass C36000 (CDA, 20.5 ppm/K,
+a 20–300 °C mean). The window is geometric: the compression is the pin's FREE length less the gap, so what moves the
+tip is the free length — 52's POGO_FREE, the barrel from the mount to its lip plus the plunger from its stop to the
+tip, taken as one brass column (the BeCu spring inside does not set the length) — and the WORKING STROKE moves by the
+gap's coefficient minus that column's; in the radome-leads reading the stack and the pin stay put, so there it is the
+radome alone; (5) the flange: the pads and the rim seat share its
 face, so its Ti does not enter thermally (52's DMLS Ti term is a static tolerance). Radially: (6) what holds the stack in-plane is not modelled: if the radome (PEEK) holds it,
-a pin at radius r slides by (α_PEEK − α_Ti)·r per kelvin (the reading printed, an upper one); if the pins follow the
-board's own in-plane expansion, α_PEEK becomes FR-4's in-plane CTE, which no primary in the tree gives (a distributor lists
-13–15 ppm/K, i.e. a slide of about a fifth); per mm of radius, the outer pad's radius being the layout's (HW.9); the
+a pin at radius r slides by (α_PEEK − α_Ti)·r per kelvin (the upper reading); if the pins follow the board's own in-plane
+expansion, α_PEEK becomes FR-4's in-plane CTE, 11–15 ppm/K (Panasonic R-1755M/V); both printed per mm of radius, the
+outer pad's radius being the layout's (HW.9); the
 centre pad (the bus-wire end, r = 0) does not slide. (7) The centre pad's own path — the Ti wire
 inside the PEEK sleeve between the Zone 1↔2 press-fit and the liner grip — loads the wire and, as the wire slips in the
 liner near its held end, moves the pad; 87 computes the ceiling the liner wall puts on that axial force, not the split
@@ -44,7 +48,9 @@ here; whether its second lever (the bayonet hard-stop) still acts under branch (
 
 CAN show: the gap's thermal coefficient and seasonal swing, the window check at `52`'s two mitigations with it, the
 daily stroke and its force ratio over the minimum preload (as `87` prices sway), the radial slide per mm of pad radius.
-CANNOT show: the pocket gasket's and the pin body's terms (placeholder / no primary), the stack's real centring, the
+CANNOT show: the pocket gasket's term (placeholder), the pin body's beyond one brass column at a 20–300 °C mean CTE,
+the spring force's own temperature dependence (the force ratio takes force ∝ stroke at a fixed rate, while the BeCu
+spring's modulus falls with temperature — no figure in the tree), the stack's real centring, the
 centre pad's wire path, a gradient inside the stack.
 """
 from __future__ import annotations
@@ -63,6 +69,8 @@ sys.path.insert(0, str(HERE.parent))
 from lib.constants import (
     ALLOY_BASELINE,
     ALLOY_PROPERTIES,
+    ALPHA_BRASS_C36000_1K,
+    ALPHA_FR4_XY_1K,
     ALPHA_FR4_Z_1K,
     ALPHA_PEEK_1K,
     ALPHA_SS302_1K,
@@ -117,8 +125,14 @@ def main() -> int:
     gap_um_k = {"isothermal_low_stack": radome_um_k - stack_um_k["high"],     # the smaller net coefficient
                 "isothermal_high_stack": radome_um_k - stack_um_k["low"],
                 "radome_leads_reading": radome_um_k}
-    pin_body_mm = gap                                            # the compressed pin spans the gap below the board
+    pin_body_mm = S52.POGO_FREE                                  # the FREE length moves the tip: stroke = free − gap
     pin_um_k_per_ppm = pin_body_mm * 1e-6 * 1e3                 # µm/K per 1 ppm/K of the pin's CTE
+    pin_um_k = pin_body_mm * ALPHA_BRASS_C36000_1K * 1e3        # µm/K — the brass body, down with heat
+    # the WORKING STROKE (what the pins' compression follows): the gap's opening minus the body's growth; when the
+    # radome leads, the stack and the pin stay put, so there it is the radome's alone
+    stroke_um_k = {"isothermal_low_stack": gap_um_k["isothermal_low_stack"] - pin_um_k,
+                   "isothermal_high_stack": gap_um_k["isothermal_high_stack"] - pin_um_k,
+                   "radome_leads_reading": radome_um_k}
 
     t_asm = c82["inputs"]["t_ref_c"]
     hot_model = c71["hot_bound_h_c_sensitivity"]["sunlit_still_air"][f"{DAILY_ALPHA:.2f}"]["t_cap_max_c"]
@@ -132,8 +146,9 @@ def main() -> int:
         for cname, coeff in gap_um_k.items():
             cold_um = -coeff * (t_asm - t_min)             # gap change in the cold (negative: the gap closes)
             hot_um = coeff * (t_max - t_asm)
+            s_cold, s_hot = -stroke_um_k[cname] * (t_asm - t_min), stroke_um_k[cname] * (t_max - t_asm)
             # the pins' compression moves opposite to the gap
-            comp_cold_pct, comp_hot_pct = -cold_um * 1e-3 / travel, -hot_um * 1e-3 / travel
+            comp_cold_pct, comp_hot_pct = -s_cold * 1e-3 / travel, -s_hot * 1e-3 / travel
             checks = {}
             for label, res in mitig.items():
                 hi = nominal_pct + res / travel + comp_cold_pct        # residual closes the gap AND the cold closes it
@@ -141,7 +156,8 @@ def main() -> int:
                 checks[label] = {"compression_pct_range": [round(lo * 100, 2), round(hi * 100, 2)],
                                  "holds_window": bool(win[0] <= lo and hi <= win[1]),
                                  "margin_um": [round((lo - win[0]) * travel * 1e3, 1), round((win[1] - hi) * travel * 1e3, 1)]}
-            per[cname] = {"gap_um_cold": round(cold_um, 1), "gap_um_hot": round(hot_um, 1), "window": checks}
+            per[cname] = {"gap_um_cold": round(cold_um, 1), "gap_um_hot": round(hot_um, 1),
+                          "stroke_um_cold": round(s_cold, 1), "stroke_um_hot": round(s_hot, 1), "window": checks}
         seasonal[rname] = per
 
     # Daily: 71's hourly capsule temperature, reproduced from its own code and checked against its cache.
@@ -161,18 +177,22 @@ def main() -> int:
                        if b - a >= 20])
     stats = {"median": float(np.median(ranges)), "p95": float(np.percentile(ranges, 95)), "max": float(ranges.max())}
     daily = {}
-    for cname, coeff in gap_um_k.items():
+    for cname, coeff in stroke_um_k.items():
         daily[cname] = {s: {"stroke_um": round(coeff * v, 2),
                             "force_ratio_over_min_preload": round(coeff * v * 1e-3 / x_preload_min, 4)}
                         for s, v in stats.items()}
-    slide_um_per_mm_k = {"isothermal": (ALPHA_PEEK_1K - a_ti) * 1e3, "flange_held": ALPHA_PEEK_1K * 1e3}
+    slide_um_per_mm_k = {"isothermal": (ALPHA_PEEK_1K - a_ti) * 1e3, "flange_held": ALPHA_PEEK_1K * 1e3,
+                         # the pins following the board's own in-plane expansion instead (FR-4, both ends)
+                         "board_isothermal_low": (ALPHA_FR4_XY_1K[0] - a_ti) * 1e3,
+                         "board_isothermal_high": (ALPHA_FR4_XY_1K[1] - a_ti) * 1e3,
+                         "board_flange_held_high": ALPHA_FR4_XY_1K[1] * 1e3}
     slide_daily_um_per_mm = {k: {s: round(v * stats[s], 3) for s in stats} for k, v in slide_um_per_mm_k.items()}
 
     req = seasonal["capsule_requirement"]
     l1 = "L1 spacer only"
-    # a radome that LEADS the stack by g kelvin adds stack·g to the gap change, so L1's isothermal margin tolerates
-    # g ≤ margin / stack-coefficient, each isothermal case with its OWN stack coefficient, the smaller of the two
-    case_stack = {"isothermal_low_stack": stack_um_k["high"], "isothermal_high_stack": stack_um_k["low"]}
+    # a radome that LEADS the stack by g kelvin adds (stack + pin)·g to the stroke change (the pin lags with the stack), so
+    # L1's isothermal margin tolerates g ≤ margin / (stack + pin), each isothermal case with its OWN stack, the smaller
+    case_stack = {"isothermal_low_stack": stack_um_k["high"] + pin_um_k, "isothermal_high_stack": stack_um_k["low"] + pin_um_k}
     leads = [min(req[c]["window"][l1]["margin_um"]) / st for c, st in case_stack.items()
              if min(req[c]["window"][l1]["margin_um"]) > 0]
     lead_tolerated_k = min(leads) if leads else None
@@ -180,7 +200,7 @@ def main() -> int:
     t_min_r, t_max_r = readings["capsule_requirement"]
     room_um = ((win[1] - nominal_pct) * travel - mitig[l1]) * 1e3            # to each window edge after the residual
     coef_allowed = min(room_um / (t_max_r - t_asm), room_um / (t_asm - t_min_r))
-    spacer_alpha_zero = {f"fr4_{int(a * 1e6)}": (radome_um_k - 2 * fr4 * a * 1e3 - coef_allowed) / (standoff * 1e3)
+    spacer_alpha_zero = {f"fr4_{int(a * 1e6)}": (radome_um_k - 2 * fr4 * a * 1e3 - pin_um_k - coef_allowed) / (standoff * 1e3)
                          for a in ALPHA_FR4_Z_1K}                       # 52's RSS residual; a linear one leaves no room
     iso_hi, grad = req["isothermal_high_stack"], req["radome_leads_reading"]
     verdict = (
@@ -189,7 +209,10 @@ def main() -> int:
         f"together and {gap_um_k['radome_leads_reading']:.2f} µm/K when the radome leads: over the capsule "
         f"requirement it closes by up to {-iso_hi['gap_um_cold']:.0f} µm in the cold and opens by "
         f"{iso_hi['gap_um_hot']:.0f} µm in the heat ({-grad['gap_um_cold']:.0f} / {grad['gap_um_hot']:.0f} µm with the "
-        f"radome-leads reading). Against 52's minimal mitigation ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
+        f"radome-leads reading). The pins' working stroke follows the gap less the growth of their own brass body "
+        f"({pin_um_k:.3f} µm/K, C36000 at 20.5 ppm/K over its {pin_body_mm:.2f} mm free length): {stroke_um_k['isothermal_low_stack']:.2f}–"
+        f"{stroke_um_k['isothermal_high_stack']:.2f} µm/K together, the radome's {stroke_um_k['radome_leads_reading']:.2f} "
+        f"µm/K when it leads. Against 52's minimal mitigation ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
         f"{(win[1] - nominal_pct) * travel * 1e3 - mitig[l1] * 1e3:.0f} µm to each window edge) the isothermal swing "
         f"{'holds' if iso_hi['window'][l1]['holds_window'] else 'breaks'} the 50–70 % window (margins "
         f"{iso_hi['window'][l1]['margin_um'][0]:.0f} / {iso_hi['window'][l1]['margin_um'][1]:.0f} µm) and the radome-leads "
@@ -207,13 +230,13 @@ def main() -> int:
         f"{max(v['p95']['force_ratio_over_min_preload'] for v in daily.values()) * 100:.1f} % of the minimum preload "
         f"once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by "
         f"{slide_daily_um_per_mm['isothermal']['p95']:.2f}–{slide_daily_um_per_mm['flange_held']['p95']:.2f} µm per mm of r "
-        f"on a 95th-percentile day (about a fifth of that if the pins follow the board's own expansion). The thermal swing is "
-        f"added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and "
-        f"the two axial terms not computed both SHRINK it — the pocket gasket (placeholder) expands as the PEEK does and "
-        f"pushes the stack the other way, the pin body (no primary; {pin_um_k_per_ppm:.4f} µm/K per ppm/K) pushes its tip "
-        f"against the gap's change — so, for a given temperature field and the seated premises, leaving them out keeps the "
-        f"stroke an upper estimate (the radome-leads reading and 71's daily range are readings, not bounds). Not computed "
-        f"either: the stack's real "
+        f"on a 95th-percentile day — {slide_daily_um_per_mm['board_isothermal_low']['p95']:.2f}–"
+        f"{slide_daily_um_per_mm['board_flange_held_high']['p95']:.2f} µm if the pins follow the board's own in-plane "
+        f"expansion (FR-4 11–15 ppm/K). The thermal swing is added linearly to 52's RSS residual (a systematic term on a "
+        f"statistical one — the conservative stacking), and the one axial term still not computed SHRINKS it — the pocket "
+        f"gasket (placeholder) expands as the PEEK does and pushes the stack the other way — so, for a given temperature "
+        f"field and the seated premises, leaving it out keeps the stroke an upper estimate (the radome-leads reading and "
+        f"71's daily range are readings, not bounds). Not computed either: the stack's real "
         f"centring and the centre pad's wire path (HW.34).")
 
     out = {
@@ -228,10 +251,12 @@ def main() -> int:
                    "temperature_readings_c": {k: list(v) for k, v in readings.items()},
                    "daily_series": f"71: {DAILY_CASE}, α {DAILY_ALPHA}, wind factor {k_wind}, ERA5 1991–2020 hourly; "
                                    f"no night-sky cooling — a reading whose error on the range has no known sign",
-                   "pin_body_below_board_mm": round(pin_body_mm, 3)},
+                   "pin_free_length_mm": round(pin_body_mm, 3), "alpha_brass_c36000_1K": ALPHA_BRASS_C36000_1K,
+                   "alpha_fr4_xy_1K": list(ALPHA_FR4_XY_1K)},
         "coefficients_um_per_K": {"radome": round(radome_um_k, 4), "stack": {k: round(v, 4) for k, v in stack_um_k.items()},
                                   "gap": {k: round(v, 4) for k, v in gap_um_k.items()},
-                                  "pin_body_per_ppm": round(pin_um_k_per_ppm, 5)},
+                                  "pin_body_per_ppm": round(pin_um_k_per_ppm, 5), "pin_body": round(pin_um_k, 4),
+                                  "working_stroke": {k: round(v, 4) for k, v in stroke_um_k.items()}},
         "seasonal": seasonal,
         "radome_lead_tolerated_by_L1_K": round(lead_tolerated_k, 1) if lead_tolerated_k else None,
         "spacer_alpha_1K_at_zero_L1_margin": {k: round(v, 8) for k, v in spacer_alpha_zero.items()},
@@ -246,7 +271,7 @@ def main() -> int:
         "radial_slide_um_per_mm_radius_per_K": {k: round(v, 4) for k, v in slide_um_per_mm_k.items()},
         "radial_slide_daily_um_per_mm_radius": slide_daily_um_per_mm,
         "missing_data": ["the pocket gasket's compressed height (placeholder 0, HW.32) and its EPDM expansion",
-                         "the pogo pin body's CTE (brass; no primary in the tree)",
+                         "the pin body beyond one brass column at a 20–300 °C mean CTE (C36000, CDA)",
                          "the pocket floor height itself (placeholder, HW.29)",
                          "what centres the stack radially, and the outer pad's radius (layout, HW.9)",
                          "night-sky cooling in the daily range (81 has it, 71 does not)",
@@ -259,7 +284,8 @@ def main() -> int:
     print(f"  gap coefficients µm/K: {out['coefficients_um_per_K']['gap']} · daily range K {out['daily_capsule_range_K']}")
     for rname, per in seasonal.items():
         for cname, v in per.items():
-            print(f"  {rname:20s} {cname:28s} gap {v['gap_um_cold']:+6.1f} / {v['gap_um_hot']:+6.1f} µm · "
+            print(f"  {rname:20s} {cname:28s} gap {v['gap_um_cold']:+6.1f} / {v['gap_um_hot']:+6.1f} µm · stroke "
+                  f"{v['stroke_um_cold']:+6.1f} / {v['stroke_um_hot']:+6.1f} µm · "
                   f"L1 {v['window'][l1]}")
     print(f"\n  VERDICT: {verdict}")
     print(f"  → {OUT_JSON.relative_to(HERE.parent.parent.parent)}")
