@@ -3850,7 +3850,7 @@ CHECKS += [
      R_OMEGA, lambda d: _pk(d, "2_inner_bark_sheet_max_ohm_sq") * d["factors"]["2_inner_bark_sheet"]["thickness_m"], 0.05),
     ("R_Ω dead-bark requirement per kΩ → 84", BENCH_R_OMEGA, rf"ρ ≤ \*\*{N}\*\* Ω·м \(поблажлива",
      R_OMEGA, lambda d: _pk(d, "3_dead_bark_rho_max_ohm_m"), 0.5),
-    ("R_Ω film requirement per kΩ → 84", BENCH_R_OMEGA, rf"R□ ≤ {N}·10⁵ Ω/□",
+    ("R_Ω film requirement per kΩ → 84", BENCH_R_OMEGA, rf"\| R□ ≤ {N}·10⁵ Ω/□ \|",   # the §2.2 table cell — the package of 2026-10-18 quotes the same number twice
      R_OMEGA, lambda d: _pk(d, "4_film_sheet_max_ohm_sq") / 1e5, 0.005),
     ("R_Ω catalyst-layer requirement per kΩ → 84", BENCH_R_OMEGA, rf"R□,cl·h_band ≤ {N} Ω·м",
      R_OMEGA, lambda d: _pk(d, "5_layer_sheet_x_band_height_max_ohm"), 0.05),
