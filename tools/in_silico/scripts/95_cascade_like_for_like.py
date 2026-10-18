@@ -144,7 +144,7 @@ def main() -> int:
           f"device (bound FAD-GDH) {meas_device * 1000:+.0f} mV")
     for k, label in LEVELS.items():
         print(f"  E°(FAD/FADH₂, pH 7) {label:30s} {e_fad[k] * 1000:+7.1f} mV → donor side {donor[k] * 1000:+7.1f} mV"
-              + ("   (one-sided: Os without thermochemistry)" if k in ONE_SIDED else ""))
+              + ("   (one-sided: Os without thermochemistry — but the both-sided row below)" if k in ONE_SIDED else ""))
     print(f"\n  {'form':44s} {'E°(Os) mV':>10s} {'acceptor':>9s}  " + "  ".join(f"{'cascade ' + str(i):>10s}"
                                                                           for i in range(len(LEVELS))))
     rows = []

@@ -311,8 +311,30 @@
   ],
   "both_sided": {
     "form": "chloro, both states relaxed (adiabatic)",
-    "computed": false,
-    "reason": "96 os_couple_thermo.json not run yet"
+    "computed": true,
+    "source": "96 os_couple_thermo.json",
+    "rrho_comparable": false,
+    "levels": {
+      "relaxed_electronic": {
+        "E_os_vs_SHE_V": 0.1263,
+        "acceptor_side_V": 0.1827,
+        "donor_side_V": 0.1013,
+        "cascade_V": 0.245,
+        "gap_to_measured_same_couples_V": 0.284,
+        "direction": "downhill"
+      },
+      "relaxed_plus_zpe": {
+        "E_os_vs_SHE_V": 0.1668,
+        "acceptor_side_V": 0.1422,
+        "donor_side_V": -0.2095,
+        "cascade_V": 0.5963,
+        "gap_to_measured_same_couples_V": -0.0673,
+        "direction": "downhill"
+      },
+      "relaxed_rrho_free_energy": {
+        "skipped": "96: the two Os states' soft-mode censuses differ — RRHO not comparable"
+      }
+    }
   },
   "cancellations": {
     "gap_max_V": 0.05,
@@ -349,10 +371,10 @@
     ]
   },
   "not_computed": [
-    "ZPE and thermal terms of the Os couple (96 not run) — the ZPE and RRHO levels correct the donor only",
+    "ZPE and thermal terms of every Os form but the adiabatic chloro one (96 corrects one form) — for the others the ZPE and RRHO levels correct the donor only",
     "protein shift of the bound cofactor (measured, carried)",
     "polymer film of the measured mediator vs one 1-MeIm molecule",
     "any ωB97X reading (no ωB97X PCET potential of the flavin)"
   ],
-  "verdict": "On one SHE scale at B3LYP/C-PCM the device chloro couple against the flavin couple at 32's protocol gives a downhill cascade of +255 mV against +529 mV measured for the same free couples; of the 274 mV between them +209 mV lie on the acceptor side and +65 mV on the donor side. Relaxing the flavin, then adding its ZPE, then its RRHO free energy moves the donor side to +101 · -210 · -199 mV, and the device cascade to +218 · +529 · +519 mV — the screening donor side (+65 mV) does not survive the zero-point term it omits. Within 50 mV of the measured cascade while each side is ≥ 100 mV off — an agreement by CANCELLATION, not a validation: «chloro (device, programmatic)» at relaxed + ZPE (-0.3 mV = donor -210 + acceptor +209); «chloro (device, programmatic)» at relaxed + RRHO free energy (+10.2 mV = donor -199 + acceptor +209); «chloro, both states relaxed (adiabatic)» at relaxed + ZPE (-26.8 mV = donor -210 + acceptor +183); «chloro, both states relaxed (adiabatic)» at relaxed + RRHO free energy (-16.3 mV = donor -199 + acceptor +183). Every form is downhill at every donor level; the acceptor side is smallest for «chloro + 3 H₂O on Cl⁻» (+7 mV), and «aqua (benchmark form)», «bis-imidazole (operando upper form)» overshoot the measured mediator. The ZPE and RRHO levels correct the donor only — no Os form carries thermochemistry, so those cascades are one-sided. The device cascade (+574 mV) adds the measured protein shift (-45 mV on the donor), which is not computed here."
+  "verdict": "On one SHE scale at B3LYP/C-PCM the device chloro couple against the flavin couple at 32's protocol gives a downhill cascade of +255 mV against +529 mV measured for the same free couples; of the 274 mV between them +209 mV lie on the acceptor side and +65 mV on the donor side. Relaxing the flavin, then adding its ZPE, then its RRHO free energy moves the donor side to +101 · -210 · -199 mV, and the device cascade to +218 · +529 · +519 mV — the screening donor side (+65 mV) does not survive the zero-point term it omits. Within 50 mV of the measured cascade while each side is ≥ 100 mV off — an agreement by CANCELLATION, not a validation: «chloro (device, programmatic)» at relaxed + ZPE (-0.3 mV = donor -210 + acceptor +209); «chloro (device, programmatic)» at relaxed + RRHO free energy (+10.2 mV = donor -199 + acceptor +209); «chloro, both states relaxed (adiabatic)» at relaxed + ZPE (-26.8 mV = donor -210 + acceptor +183); «chloro, both states relaxed (adiabatic)» at relaxed + RRHO free energy (-16.3 mV = donor -199 + acceptor +183). Every form is downhill at every donor level; the acceptor side is smallest for «chloro + 3 H₂O on Cl⁻» (+7 mV), and «aqua (benchmark form)», «bis-imidazole (operando upper form)» overshoot the measured mediator. The ZPE and RRHO levels correct the donor of every form and the Os side of «chloro, both states relaxed (adiabatic)» only (96): with both sides relaxed and corrected that form gives +245 · +596 · RRHO not comparable mV (electronic · ZPE · RRHO); every other form's ZPE/RRHO cascade is one-sided. The device cascade (+574 mV) adds the measured protein shift (-45 mV on the donor), which is not computed here."
 }

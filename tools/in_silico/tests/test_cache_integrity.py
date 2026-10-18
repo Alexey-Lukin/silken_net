@@ -3539,6 +3539,44 @@ def test_pcet_redox_potential_valid():
     assert data["couple"].startswith("FAD")
 
 
+def test_os_couple_thermo_is_its_states():
+    """96 (2026-10-18): the Os(III/II) couple of the adiabatic chloro form from its two states' energies and Hessians.
+    CAN catch: a level whose ΔG_red is not the difference of its two states' terms, a potential shift that is not that
+    difference's change (the SHE cancels), an imaginary mode kept without a class or classed against the gate the cache
+    records (≤ tolerance → tolerated; methyl share ≥ the minimum within the cap → torsion; anything else → skeletal, which
+    must be zero), and an RRHO level called comparable while the two states' soft-mode censuses differ. CANNOT catch:
+    whether the harmonic RRHO describes a floppy complex, nor the Os side of any other form (96 corrects one)."""
+    path = DFT / "os_couple_thermo.json"
+    if not path.exists():
+        pytest.skip("os_couple_thermo.json not computed")
+    d = json.loads(path.read_text())
+    s2, s3, ha_ev = d["species"]["os2"], d["species"]["os3"], 27.211386245988
+    terms = {"electronic": lambda s: s["E_Ha"], "plus_zpe": lambda s: s["E_Ha"] + s["ZPE_Ha"],
+             "rrho_free_energy": lambda s: s["G_tot_Ha"]}
+    for lvl, f in terms.items():
+        assert abs(d["dG_red_eV"][lvl] - (f(s2) - f(s3)) * ha_ev) < 1e-6, lvl
+        shift = -1000 * (d["dG_red_eV"][lvl] - d["dG_red_eV"]["electronic"])
+        assert abs(d["shift_vs_electronic_mV"][lvl] - shift) <= 0.1, lvl
+        assert abs(1000 * (d["E_os_vs_SHE_V"][lvl] - d["E_os_vs_SHE_V"]["electronic"]) - shift) <= 0.15, lvl
+    g = d["gate"]
+    assert len(s2["real_cm"]) + len(s2["imaginary"]) == len(s3["real_cm"]) + len(s3["imaginary"]), "a mode lost from a record"
+    for name, s in d["species"].items():
+        # the ZPE is the real modes' alone (½·h·c·Σν, 1 cm⁻¹ = 4.556335e-6 Ha): a dropped mode must not be in it
+        assert abs(s["ZPE_Ha"] - 0.5 * 4.556335e-6 * sum(s["real_cm"])) < 1e-6, f"{name}: ZPE is not the real modes' sum"
+        # the delegated rule by its own words — share ≥ min AND |ν| ≤ cap is a torsion, whatever the tolerance booking
+        assert all(m["methyl_weight"] >= g["methyl_weight_min"] or abs(m["cm"]) <= g["imag_tolerance_cm"]
+                   for m in s["imaginary"]), f"{name}: an imaginary mode that is neither methyl nor under the tolerance"
+        tol = [m for m in s["imaginary"] if abs(m["cm"]) <= g["imag_tolerance_cm"]]
+        tors = [m for m in s["imaginary"] if m not in tol and m["methyl_weight"] >= g["methyl_weight_min"]
+                and abs(m["cm"]) <= g["methyl_imag_max_cm"]]
+        assert (s["n_imag_tolerated"], s["n_methyl_torsion_imag"]) == (len(tol), len(tors)), name
+        assert s["n_skeletal_beyond_tolerance"] == len(s["imaginary"]) - len(tol) - len(tors) == 0, name
+        assert s["n_real_below_soft"] == sum(1 for c in s["real_cm"] if c < g["soft_cm"]), name
+        assert d["rrho_census"][name] == {"dropped_imaginary": len(s["imaginary"]), "real_below_50_cm": s["n_real_below_soft"]}
+    assert d["rrho_comparable"] == (d["rrho_census"]["os2"] == d["rrho_census"]["os3"])
+    assert abs(d["control_dE_red_vs_21e_meV"]) < 1.0, "96's electronic couple no longer reproduces 21e's"
+
+
 def test_cascade_like_for_like_is_its_inputs():
     """95 is a pure function of six caches (32 · 32b · 21f · 34 · 21e relaxed ×2): every form's E°(Os) and its cascade
     at each of 32b's donor levels must be what those caches give TODAY, and each gap must be its two sides. CAN catch: an

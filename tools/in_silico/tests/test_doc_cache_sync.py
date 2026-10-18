@@ -288,6 +288,28 @@ CHECKS = [
      "dft/cascade_like_for_like.json",
      lambda d: 1000 * abs(next(c["gap_V"] for c in d["cancellations"]["rows"]
                                if c["form"] == "chloro (device, programmatic)" and c["level"] == "relaxed_plus_zpe")), 0.05),
+    # ⊕ 2026-10-18 — 96: the adiabatic chloro form with thermochemistry on BOTH sides (95's both_sided row)
+    ("like-for-like 96 Os-side ZPE shift → os_couple_thermo", SUMMARY, rf"the ZPE moves E°\(Os\) by \*\*\+{N}\*\* mV",
+     "dft/os_couple_thermo.json", lambda d: d["shift_vs_electronic_mV"]["plus_zpe"], 0.05),
+    ("like-for-like both-sided electronic → cascade_like_for_like", SUMMARY, rf"the table's \*\*\+{N}\*\* mV on the electronic level",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_electronic"]["cascade_V"], 0.05),
+    ("like-for-like both-sided + ZPE → cascade_like_for_like", SUMMARY, rf"and \*\*\+{N}\*\* mV with the ZPE",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["cascade_V"], 0.05),
+    ("like-for-like both-sided + ZPE over the measured → cascade_like_for_like", SUMMARY, rf"\*\*{N}\*\* mV over the measured \+529",
+     "dft/cascade_like_for_like.json",
+     lambda d: -1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["gap_to_measured_same_couples_V"], 0.5),
+    ("like-for-like adiabatic + ZPE one-sided, in the footnote → cascade_like_for_like", SUMMARY, rf"against \+{N} one-sided",
+     "dft/cascade_like_for_like.json",
+     lambda d: 1000 * next(r for r in d["forms"] if r["form"] == "chloro, both states relaxed (adiabatic)")["by_donor_level"]["relaxed_plus_zpe"]["cascade_V"], 0.05),
+    ("like-for-like both-sided + ZPE, acceptor side → cascade_like_for_like", SUMMARY, rf"the acceptor side \+{N} and the donor",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["acceptor_side_V"], 0.5),
+    ("like-for-like both-sided + ZPE, donor side → cascade_like_for_like", SUMMARY, rf"the donor side {N} mV\. Its RRHO",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["donor_side_V"], 0.5),
+    # PIPELINE_STATUS row 96 — the three E°(Os) levels it prints
+    *[(f"PIPELINE 96 E°(Os) {lvl} → os_couple_thermo", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", pat,
+       "dft/os_couple_thermo.json", (lambda lv: lambda d: 1000 * d["E_os_vs_SHE_V"][lv])(lvl), 0.05)
+      for lvl, pat in (("electronic", rf"E°\(Os\) \+{N} mV vs SHE electronic"), ("plus_zpe", rf"\+{N} with the ZPE \(\+40\.6\)"),
+                       ("rrho_free_energy", rf"RRHO \(\+{N}\) not comparable"))],
     # ── Hammett LFER ──
     (
         "LFER slope → os_mediator_series.json",
