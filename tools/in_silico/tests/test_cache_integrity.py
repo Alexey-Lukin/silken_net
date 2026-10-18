@@ -3090,38 +3090,60 @@ def test_pogo_thermal_gap():
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
 def test_coating_cluster_cost():
-    """Script 99 (HW.40): basis sizes of model coating clusters and one SCF / a relaxation scaled from 96's timed run.
-    CAN catch: a composite model that is not the sum of its parts, an atom count leaving its composition, a ratio leaving
-    N / N_ref, one-SCF hours leaving ref_wall · shell · ratio^p over the declared exponent bracket (the open-shell bracket
-    ×2 … 96's UKS/RKS only on the open-shell models), a relaxation leaving hours · 96's relaxation/SCF ratio / 24, a larger
-    basis tier that is not larger, and the reference wall time drifting from 96's run log. CANNOT catch: the basis counts
-    themselves (they need PySCF's basis library), nor whether these clusters model the surface."""
+    """Script 99 (HW.40): basis sizes of model coating clusters (measured) and one SCF / a relaxation estimated from the
+    pipeline's own timed series. CAN catch: a series point's wall times drifting from the committed caches it was read
+    from, the fitted exponent leaving a log-log fit of those points, an anchor that is not the tier's largest SCF, an
+    estimate leaving anchor · shell · ratio^p over [p_fit, 3], a relaxation leaving hours × the relaxation/SCF ratios read
+    in 21e's relaxed caches, the UKS/RKS range leaving the series' pairs, an open-shell model with an even electron count
+    (or a closed one with an odd), a composite that is not the sum of its parts, a basis tier out of order. CANNOT catch:
+    the basis counts themselves (they need PySCF's basis library), nor whether these clusters model the surface."""
     path = DFT / "coating_cluster_cost.json"
     if not path.exists():
         pytest.skip("coating_cluster_cost.json not computed")
     d = json.loads(path.read_text(encoding="utf-8"))
-    ref, rows = d["reference"], d["by_model"]
-    log = (REPO / "tools/in_silico/cache/runs/96/run.log").read_text(encoding="utf-8")
-    assert f"'scf_wall_s': {ref['scf_wall_s_96']}" in log
-    assert ref["n_atoms"] == sum(ref["composition"].values())
-    for comp_name, parts in (("Zn_HAp_on_TiO2_16", ("Zn_HAp_cell", "TiO2_16")),
-                             ("PEDOT_PSS_on_TiO2_16", ("EDOT_trimer", "PSS_dimer", "TiO2_16"))):
-        want = {}
+    series = {c["name"]: c for c in json.loads((DFT / "os_mediator_series.json").read_text(encoding="utf-8"))["complexes"]}
+    wb = json.loads((DFT / "os_mediator_series_wb97x.json").read_text(encoding="utf-8"))["complexes"]
+    for tier, src in (("21e_b3lyp_631gd", series), ("21f_def2tzvp", wb)):
+        pts = d["series_points"][tier]
+        assert pts and set(pts) <= set(src), tier
+        for name, v in pts.items():
+            assert v["rks_s"] == src[name]["os2"]["wall_seconds"] and v["uks_s"] == src[name]["os3"]["wall_seconds"], name
+        x, y = np.log([v["nao"] for v in pts.values()]), np.log([v["rks_s"] for v in pts.values()])
+        assert abs(d["fit_exponent"][tier] - np.polyfit(x, y, 1)[0]) <= 0.006, tier
+        top = max(pts, key=lambda k: pts[k]["nao"])
+        assert d["anchor"][tier]["name"] == top and d["anchor"][tier]["nao"] == pts[top]["nao"], tier
+    ratios = [v["uks_s"] / v["rks_s"] for v in d["series_points"]["21e_b3lyp_631gd"].values()]
+    assert d["uks_over_rks_21e_series"] == [round(min(ratios), 2), round(max(ratios), 2)]
+    r2 = json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text(encoding="utf-8"))["complexes"]["dmbpy"]
+    r3 = json.loads((DFT / "os_mediator_series_relaxed_os3.json").read_text(encoding="utf-8"))["complexes"]["dmbpy"]
+    rel = d["relaxation_over_scf_21e_dmbpy"]
+    assert abs(rel["os2_from_octahedron"] - r2["geometry_os2_relaxed"]["info"]["wall_seconds"] / r2["os2"]["wall_seconds"]) <= 0.06
+    assert abs(rel["os3_from_os2_minimum"] - r3["geometry_os3_relaxed"]["info"]["wall_seconds"] / r3["os3"]["wall_seconds"]) <= 0.06
+    rows = d["by_model"]
+    for comp_name, parts, minus_h in (("Zn_HAp_on_TiO2_16", ("Zn_HAp_cell", "TiO2_16"), 0),
+                                      ("PEDOT_PSS_on_TiO2_16", ("EDOT_trimer_cation", "PSS_dimer", "TiO2_16"), 1)):
+        want: dict = {}
         for part in parts:
             for el, n in rows[part]["composition"].items():
                 want[el] = want.get(el, 0) + n
-        assert {k: v for k, v in rows[comp_name]["composition"].items() if v} == {k: v for k, v in want.items() if v}
+        want["H"] -= minus_h
+        assert rows[comp_name]["composition"] == want, comp_name
     for name, r in rows.items():
         assert r["n_atoms"] == sum(r["composition"].values()), name
-        assert r["nao"]["21f_def2tzvp"] > r["nao"]["21e_b3lyp_631gd"], name
-        ratio = r["nao"]["21e_b3lyp_631gd"] / ref["nao"]["21e_b3lyp_631gd"]
-        assert abs(r["ratio_to_ref_21e"] - ratio) <= 0.005, name
-        shells = (ref["uks_formal_ours"], ref["uks_over_rks_96"]) if r["open_shell"] else (1.0, 1.0)
-        hours = sorted(ref["scf_wall_s_96"] * s * ratio ** p / 3600 for p in d["exponent_bracket_ours"] for s in shells)
-        assert abs(r["one_scf_h_21e"]["low"] - hours[0]) <= 0.006 and abs(r["one_scf_h_21e"]["high"] - hours[-1]) <= 0.006
-        for end, h in (("low", hours[0]), ("high", hours[-1])):
-            assert abs(r["relaxation_days_21e"][end] - h * ref["relaxation_over_scf_96"] / 24) <= 0.06, (name, end)
-    assert rows["PEDOT_PSS_on_TiO2_16"]["open_shell"] and not rows["Zn_HAp_on_TiO2_16"]["open_shell"]
+        assert r["open_shell"] == (r["n_electrons"] % 2 == 1), name
+        assert r["nao"]["21f_def2tzvp"] > r["nao"]["21e_b3lyp_631gd"] >= r["nao"]["21e_lanl2dz_3d"], name
+        for tier, est in r["estimate"].items():
+            a, p_fit = d["anchor"][tier], d["fit_exponent"][tier]
+            ratio = r["nao"][tier] / a["nao"]
+            assert abs(est["ratio_to_anchor"] - ratio) <= 0.006, (name, tier)
+            shell = d["uks_over_rks_21e_series"] if r["open_shell"] else [1.0, 1.0]
+            ends = sorted(a["rks_s"] * s * ratio ** q / 3600 for s in shell for q in (p_fit, d["upper_exponent_ours"]))
+            # the cache's shell bounds are rounded to 0.01 — allow their share of the open-shell ends
+            tol = 0.006 + (ends[-1] * 0.005 / min(shell) if r["open_shell"] else 0)
+            assert abs(est["one_scf_h"]["low"] - ends[0]) <= tol and abs(est["one_scf_h"]["high"] - ends[-1]) <= tol, (name, tier)
+            lo, hi = min(rel.values()), max(rel.values())
+            assert abs(est["relaxation_days"]["low"] - est["one_scf_h"]["low"] * lo / 24) <= 0.06 + tol * lo / 24, (name, tier)
+            assert abs(est["relaxation_days"]["high"] - est["one_scf_h"]["high"] * hi / 24) <= 0.06 + tol * hi / 24, (name, tier)
 
 
 def test_field_strain_campaign():
