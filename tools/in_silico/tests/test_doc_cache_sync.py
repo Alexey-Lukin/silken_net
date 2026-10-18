@@ -5429,8 +5429,8 @@ def test_coating_cost_in_01_04_matches_99():
 def test_field_strain_sheet_matches_98():
     """docs/protocols/anchor/field_strain_sensor_sheet.md (HW.43) quotes 98's cache: the set's current and battery days
     (§3), every row of the start-month table (hours/day at Beaufort 5, years without, the replay's median and p75,
-    trips at both), §0's January count and December median/p75; SUMMARY §HW.43 ⊕ 98; and the numbers the ⚖️ leg in
-    00_07 HW.43 puts before the founder. CAN catch a re-run of 98 (new ERA5 window, power figure, target, quantile
+    trips at both), §0's January count and December median/p75; SUMMARY §HW.43 ⊕ 98; and the numbers of the ratified
+    ⚖️ 2026-10-18 in 01_02 §2.2 (the verdict was given on them). CAN catch a re-run of 98 (new ERA5 window, power figure, target, quantile
     rule) that leaves any of the three behind. CANNOT catch whether the months chosen for the table are the right ones."""
     d = json.loads((CACHE / "mechanical/field_strain_campaign.json").read_text(encoding="utf-8"))
     bm, bd = d["by_month"], d["battery_days"]
@@ -5458,12 +5458,13 @@ def test_field_strain_sheet_matches_98():
                  f"({d['power']['current_A']:.3f} A, the receiver"):
         assert frag in summary, f"SUMMARY §HW.43 ⊕ 98: expected {frag!r}"
     assert best["replay_days"]["p50"] <= bm["12"]["replay_days"]["p50"]
-    tracker = " ".join((REPO / "docs/00_07_Action_Plan_Tracker.md").read_text(encoding="utf-8").split())
-    for frag in (f"медіана {bm['12']['replay_days']['p50']:.0f} доби від 1 грудня, p75 — {bm['12']['replay_days']['p75']:.0f}",
-                 f"{bm['12']['trips_at_median']['100_Ah_ours']} поїздок на 100 А·год за медіанної зими і "
-                 f"{bm['12']['trips_at_p75']['100_Ah_ours']} за p75",
-                 f"{bm['01']['years_without_beaufort_5']} із 30 січнів"):
-        assert frag in tracker, f"00_07 HW.43 ⚖️: expected {frag!r}"
+    canon = " ".join((REPO / "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md").read_text(encoding="utf-8").split())
+    for frag in (f"медіана **{bm['12']['replay_days']['p50']:.0f}** доби від 1 грудня, p75 — **{bm['12']['replay_days']['p75']:.0f}**",
+                 f"**{bm['12']['trips_at_median']['100_Ah_ours']}** поїздок за медіанної зими і "
+                 f"**{bm['12']['trips_at_p75']['100_Ah_ours']}** за p75",
+                 f"**{bm['01']['years_without_beaufort_5']}** із 30 січнів",
+                 f"≈ **{round(d['battery_Ah_for_90_days'], -1):.0f}** А·год"):
+        assert frag in canon, f"01_02 §2.2 ⚖️ 2026-10-18 (ratified): expected {frag!r}"
 
 
 def test_alloy_stiffness_table_is_fraction_times_modulus():
