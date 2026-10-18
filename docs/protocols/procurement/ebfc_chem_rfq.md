@@ -100,7 +100,7 @@
 | **Постачальник** | Challenge Bioproducts — виробник, ціни не публікує (2026-10-08), тож ціну дасть лише відповідь на цей запит; бюджетна оцінка й каталожна драбина — [`01_03 §5.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **Зберігання** | у темряві, **@4°C** |
 | **Acceptance / тест** | вхідний тест cross-linking хітозану при **pH 5.75** (сік — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) |
-| **Кількість** | **міліграми, не грами** (виведено 2026-10-18): плівка Шару 4 — 10–20 мкм, геніпін 0.5–1 % ([`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md); % читаємо як масу на обʼєм гелю — канон одиниці не пише) — на робочій грані купона 2.01 см² бере ≤ 0.04 мг, тож навіть стеля «кожен купон замовлення Stage 2 несе анодний Шар 4» дає менше 5 мг. Витрату задає не плівка, а робочі розчини виконавця нанесення — зшивка Шару 3 і Шару 4 й вхідна перевірка ([`coin_immobilisation_protocol`](../ebfc/coin_immobilisation_protocol.md), поля 7 · 8 · 17), — тож обсяг замовлення питаємо в нього; рамка — найменша фасовка (25 мг) із запасом до 125 мг. Грамовий масштаб — лише під серію анкерів |
+| **Кількість** | **від кількох міліграмів до ≈ 0.3 г — залежно від прочитання рецепту, а не «грамовий масштаб»** (виведено 2026-10-18, переписано того ж дня за адверсаром): плівка Шару 4 — 10–20 мкм, геніпін 0.5–1 % ([`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)), а канон не каже ні одиниці відсотка, ні чи 10–20 мкм — набряклий гель чи висушена плівка. Два прочитання для стелі «кожен купон замовлення Stage 2 несе анодний Шар 4» (≈ 100 купонів, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24): **набряклий гель** (% — маса на обʼєм гелю) — 0.04 мг на грань 2.01 см², ≈ 4 мг на одну грань усіх купонів, ≈ 9 мг, якщо занурення вкриває обидві грані й край; **висушена плівка** (геніпін — 6–25 % сухої речовини рецепту, густина плівки ≈ 1.3 г/см³ — наше припущення) — 0.3–1.3 мг на грань, ≈ 30–300 мг на всі купони. Витрату задають ще й робочі розчини виконавця нанесення (зшивка Шарів 3 і 4, вхідна перевірка — [`coin_immobilisation_protocol`](../ebfc/coin_immobilisation_protocol.md), поля 7 · 8 · 17), тож обсяг питаємо в нього. Фасовки, які знаходимо, — Sigma-Aldrich G4796, 25 і 125 мг ([`01_03 §5.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)); у Challenge Bioproducts — запитом. Грами — лише під серію анкерів |
 | **Note** | закупка, не synth → найкоротший lead time зі стеку |
 
 ---
@@ -259,7 +259,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 **C — genipin**
 
 - Product: genipin, purity **>98%** (used as a non-toxic crosslinker for chitosan; glutaraldehyde is not an acceptable substitute for our application).
-- Quantity: milligram scale for a pilot round (tens of milligrams) — please quote the pack sizes you stock and the price of each; gram scale only for a later series.
+- Quantity: milligram scale for a pilot round, up to a few hundred milligrams — please quote the pack sizes you stock and the price of each; gram scale only for a later series.
 - Storage and shipping: must be shipped protected from light and held at 4 °C — state your cold-chain packaging and the temperature excursion it tolerates.
 - QC / acceptance: CoA stating purity and lot. We run an incoming functional check (chitosan crosslinking at pH 5.75) on receipt.
 
