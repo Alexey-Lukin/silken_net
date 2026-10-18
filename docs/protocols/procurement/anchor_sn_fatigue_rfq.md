@@ -139,10 +139,10 @@ One series — the production condition, tested in synthetic sap — on method A
 
 | Component | Concentration |
 |---|---|
-| Malic acid | 2.2 mM |
-| KNO₃ | 3.2 mM |
-| CaCl₂ | 1.0 mM |
-| MgSO₄ | 0.45 mM |
+| Malic acid | 0.40 mM |
+| KNO₃ | 0.0049 mM (4.9 µM) |
+| CaCl₂ | 0.18 mM |
+| MgSO₄ | 0.062 mM |
 | KOH | to the pH set-point — record the amount added per batch |
 
 - **pH: 5.75.** There is no added buffer system — malic acid is the only buffer and KOH sets the pH — so the medium is weakly buffered and small amounts of acid move its pH noticeably. Tell us how you set, hold and log pH over runs lasting days to months. A precipitate on the specimen would change both the medium and the surface under test, so check for one (Medium upkeep below). Quote medium preparation per batch.
@@ -330,10 +330,10 @@ Nothing is required from us for an initial quotation. On request we supply the m
 
 | Компонент | Концентрація |
 |---|---|
-| Яблучна кислота | 2,2 мМ |
-| KNO₃ | 3,2 мМ |
-| CaCl₂ | 1,0 мМ |
-| MgSO₄ | 0,45 мМ |
+| Яблучна кислота | 0,40 мМ |
+| KNO₃ | 0,0049 мМ (4,9 мкМ) |
+| CaCl₂ | 0,18 мМ |
+| MgSO₄ | 0,062 мМ |
 | KOH | до уставки pH — записувати кількість на кожну партію |
 
 11. **pH: 5,75.** Доданої буферної системи немає — єдиний буфер яблучна кислота, а pH задає KOH, — тож середовище слабко буферне: невелика кількість кислоти помітно зсуває pH. Опишіть, як ви задаєте, утримуєте й реєструєте pH у прогонах тривалістю від днів до місяців. Осад на зразку змінив би і середовище, і поверхню, що випробовується, тож перевіряйте, що його немає (п. 16). Ціна приготування середовища — за партію.

@@ -2489,7 +2489,7 @@
     1.54,
     1.766
   ],
-  "q6_ratified_point": {
+  "q6_point_2026_09_17_superseded": {
     "recipe_mM": {
       "malic": 2.2,
       "oxalic": 0.0,
@@ -2497,7 +2497,7 @@
       "cacl2": 1.0,
       "mgso4": 0.45
     },
-    "home": "01_02 §2.1 (⚖️ founder 2026-09-17)",
+    "home": "01_02 §2.1 (⚖️ founder 2026-09-17; SUPERSEDED 2026-10-18 — Q7)",
     "derivation": "oxalate removed; malic acid, KNO3, CaCl2 and MgSO4 at the geometric mid of their pre-verdict range, two significant figures",
     "readings": [
       "selected",
@@ -2563,6 +2563,162 @@
       }
     },
     "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the scale, not a prediction of the drift"
+  },
+  "q7_revised_point": {
+    "recipe_mM": {
+      "malic": 0.4,
+      "oxalic": 0.0,
+      "kno3": 0.0049,
+      "cacl2": 0.18,
+      "mgso4": 0.062
+    },
+    "home": "01_02 §2.1 (⚖️ founder 2026-10-18)",
+    "derivation": "Ca, Mg and K at the geometric mid of measured Norway spruce sap at the bottom of the stem (natural stands — the fertilized plot excluded); nitrate at the mid of the Scots pine shoot-sap range; malic acid solved so that KOH to pH 5.75 gives the measured-mid potassium; oxalate out; two significant figures",
+    "readings": [
+      "selected",
+      "selected_guenzel_apparent",
+      "selected_guenzel_i0",
+      "spread_si_high",
+      "spread_si_low",
+      "si_lowest_documented",
+      "si_highest_documented"
+    ],
+    "conditions": {
+      "setpoint": {
+        "ph": 5.75,
+        "tests": [
+          "coin",
+          "accelerated"
+        ],
+        "t_c": [
+          20.0,
+          25.0,
+          40.0
+        ],
+        "base_koh_mM": [
+          0.73,
+          0.738
+        ],
+        "potassium_total_mM": [
+          0.735,
+          0.743
+        ],
+        "ionic_strength_mol_l": [
+          0.00174,
+          0.00186
+        ],
+        "si_gypsum_max": -3.548,
+        "buffer_capacity_mM_per_pH_25c": 0.1318,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0143
+      },
+      "side_series": {
+        "ph": 4.5,
+        "tests": [
+          "coin"
+        ],
+        "t_c": [
+          20.0,
+          25.0
+        ],
+        "base_koh_mM": [
+          0.424,
+          0.433
+        ],
+        "potassium_total_mM": [
+          0.429,
+          0.438
+        ],
+        "ionic_strength_mol_l": [
+          0.0013,
+          0.00133
+        ],
+        "si_gypsum_max": -3.531,
+        "buffer_capacity_mM_per_pH_25c": 0.3087,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0315
+      }
+    },
+    "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the scale, not a prediction of the drift",
+    "measured": {
+      "trunk_base_mM": {
+        "cacl2": [
+          0.0998,
+          0.3169
+        ],
+        "mgso4": [
+          0.0411,
+          0.0946
+        ],
+        "k_total": [
+          0.5883,
+          0.9361
+        ]
+      },
+      "trunk_base_mg_per_l": {
+        "cacl2": [
+          4.0,
+          12.7
+        ],
+        "mgso4": [
+          1.0,
+          2.3
+        ],
+        "k_total": [
+          23.0,
+          36.6
+        ]
+      },
+      "rows_mg_per_l": {
+        "dambrine_1992_acid_brown_soil_mg_deficient": {
+          "Ca": 4.0,
+          "Mg": 1.0,
+          "K": 23.0
+        },
+        "this_study_podzol_control_n_deficient": {
+          "Ca": 12.7,
+          "Mg": 2.2,
+          "K": 36.6
+        },
+        "this_study_podzol_fertilized": {
+          "Ca": 20.2,
+          "Mg": 3.6,
+          "K": 58.6
+        },
+        "this_study_podzol_drought_stress": {
+          "Ca": 11.0,
+          "Mg": 2.3,
+          "K": 28.8
+        }
+      },
+      "rows_excluded": {
+        "this_study_podzol_fertilized": "years of complete nutrient solution, height growth ×3 — an intervention, not a natural stand (⚖️ founder 2026-10-18)"
+      },
+      "geometric_mid_mM": {
+        "cacl2": 0.1778,
+        "mgso4": 0.0624,
+        "k_total": 0.7421
+      },
+      "nitrate_mM": [
+        0.002,
+        0.012
+      ],
+      "nitrate_mid_mM": 0.0049,
+      "sources": {
+        "ca_mg_k": "Dambrine E., Martin F., Carisey N., Granier A., Hällgren J.-E., Bishop K. 1995, Plant Soil 168-169:233-241, doi:10.1007/BF00029333, Table 1, Picea abies, bottom of the stem — every row but the fertilized plot",
+        "nitrate": "Henriksson N. 2012, Measuring N uptake and transport in Pinus sylvestris to estimate mycorrhizal transfer efficiency, SLU Examensarbeten 2012:14, Fig. 1 (read off the figure; master's thesis, not peer-reviewed)"
+      },
+      "malic_solved_mM": 0.4023,
+      "potassium_total_at_point_mM": 0.7379,
+      "solve": {
+        "ph": 5.75,
+        "t_c": 25.0,
+        "reading": "selected"
+      }
+    },
+    "against_point_2026_09_17_setpoint": {
+      "ionic_strength_ratio": 0.135,
+      "buffer_capacity_ratio": 0.216,
+      "potassium_total_ratio": 0.101
+    }
   },
   "prices": {
     "cut_oxalate_keep_calcium": {
@@ -2714,7 +2870,7 @@
       "potassium_total_mM_max_if_koh": 17.973
     }
   },
-  "verdict": "Every corner of the PRE-VERDICT 01_02 §2.1 recipe (the ranges canon replaced with a point on 2026-09-17 — q6_ratified_point) is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the calcium and magnesium malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.3 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.4 / 4.7 / 3.3 µM — the same in both tests. The NEA-selected constants widen it ×1.40–1.58; the malate readings add at most ×1.19 on top of those. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
+  "verdict": "Every corner of the PRE-VERDICT 01_02 §2.1 recipe (the ranges canon replaced with a point on 2026-09-17 — revised 2026-10-18 — q6_point_2026_09_17_superseded, q7_revised_point) is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the calcium and magnesium malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.3 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.4 / 4.7 / 3.3 µM — the same in both tests. The NEA-selected constants widen it ×1.40–1.58; the malate readings add at most ×1.19 on top of those. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
   "caveats": [
     "Hypothesis from literature constants, not measurement (00_06 §0). No prepared solution was analysed.",
     "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its reviews; the largest ionic strength met at any canon corner under any reading is 0.030 mol/L. Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of water.",

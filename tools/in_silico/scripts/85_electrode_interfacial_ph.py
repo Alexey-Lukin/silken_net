@@ -9,7 +9,8 @@ no bench run says whether a living stem keeps it (`anchor_anode`).
 
 THE QUESTION. Laccase in ZIF inactivates at pH ≥ 6 (01_03 §3.2, the BOD row). The coin letter
 (docs/protocols/procurement/anchor_coin_electrochem_rfq.md) says «Cathode medium: pH 4.5, air-exposed.» and names no
-composition; the ratified sap (01_02 §2.1: malic acid 2.2 mM the only buffer, KOH sets the pH) is 5.75 for the
+composition; the ratified sap (01_02 §2.1, revised 2026-10-18 onto measured conifer sap: malic acid 0.40 mM the only
+buffer, KOH sets the pH — a PINE recipe, so every Zone-1 SKU below sits in it) is 5.75 for the
 electrode tests and 4.5 ONLY for the uncoated ICP-MS series. So the letter leaves the cathode medium to the laboratory,
 and this script prices the readings it allows (MEDIA): the sap brought to 4.5 · the sap at 5.75 (a one-compartment
 cell, where the cathode shares the anode's medium) · a buffered cathode medium (the sap's salts, malic acid at 10 mM,
@@ -29,7 +30,7 @@ those are a reviewer's readings, not this script's. The proton flux to a face at
     J_H(pH_s) = D_mal·[N(pH_b) − N(pH_s)]/δ_mal + D_H·([H⁺]_b − [H⁺]_s)/δ_H,
 with N the protons bound to solutes — malate, but for micromoles of bisulfate — (mol/L) from `67`'s speciation of the
 recipe: the same constants and Davies activities that gave canon its buffer capacity, over every documented malate
-reading `67` carries (Q6's set). OH⁻ is left out, as in `67` — so every face pH is held under 7 by assertion, and a
+reading `67` carries (the set Q6 and Q7 share). OH⁻ is left out, as in `67` — so every face pH is held under 7 by assertion, and a
 face whose malate is spent is reported as beyond this model, not given a number.
 
 THE CATHODE ANSWER IS ALMOST δ-FREE. O₂ reaches the face through the same layer, j_O2 = 4F·D_O2·C_O2/δ_O2, so the
@@ -52,8 +53,8 @@ CONSTANTS are read, not typed (SOURCES, each with where it was read): H⁺ and t
 conductances (Apelblat & Barthel 1991/1992), O₂ diffusion from Han & Bartels 1996 (its abstract's formula — the one
 reading in hand), O₂ solubility from the USGS table on Benson & Krause. Malate's own D was NOT found: it is bracketed
 between hydrogen citrate (larger) and hydrogen succinate (smaller); the succinate value is a best-fit its own source
-flags, and a C4 monoanion likely sits lower — so the high end is probably high, and it is the end that keeps the
-cathode face under pH 6: the bracket errs toward «no risk». The unstirred cell's δ in water, 150–1000 µm, is the range
+flags, and a C4 monoanion likely sits lower — so the high end is probably high, and it is the end that delays the
+cathode face's crossing of pH 6: the bracket errs toward «less risk». The unstirred cell's δ in water, 150–1000 µm, is the range
 Katona et al. 2021 review (their 135 µm is a DMF solution, left out).
 
 CONTROLS that can fail (raise, never warn):
@@ -188,7 +189,7 @@ LOAD_B_A = 25e-6                  # the letter's load point B (02_03 §1.5 cold-
 N_H_ANODE = (1.0, 1.5)            # protons per electron at the anode face: the mediator's own … + the lactone's acid
 FILMS = (("stagnant", 1.0), ("Levich", 2.0 / 3.0), ("transient", 0.5))   # flux ∝ D^p
 
-READINGS = [sc for sc in S67.SCENARIOS if sc.key != "hard_bound"]   # Q6's set: every documented malate reading
+READINGS = [sc for sc in S67.SCENARIOS if sc.key != "hard_bound"]   # every documented malate reading (the set 67's Q6 and Q7 share)
 TOTALS = S67.totals_mm(S67.RATIFIED_POINT_MM)
 TOTALS_BUFFERED = S67.totals_mm({**S67.RATIFIED_POINT_MM, "malic": BUFFERED_MALIC_MM})
 MEDIA = {   # name: (totals, bulk pH, what it is)
@@ -417,6 +418,9 @@ def anchor_anode() -> dict:
     it, so the n_H = 1.5 end is no longer the unlikely one it is on the coin; acid made inside the film moves the face
     less than acid made at it, so the truth lies between the two n_H ends."""
     out = {"states": ANCHOR_GAP_STATES, "cold_start_uA": {k: round(v, 1) for k, v in COLD_START_UA.items()},
+           "sap_is_pine_for_every_sku": "every Zone-1 part sits in the PINE recipe of 01_02 §2.1 (target Pinus sylvestris): "
+                                        "the broadleaf, oak, tropical and mangrove parts differ from pine only in the gap's "
+                                        "geometry here, and their own sap is not modelled",
            "by_sku": {}}
     for path in ZONE1_SKUS:
         g = anchor_geometry(path)

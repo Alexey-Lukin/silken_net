@@ -34,7 +34,10 @@ film over the non-catalytic buffer up to the band, and must ENTER the catalyst l
      axisymmetric finite volumes (graded grid, V = 0 on the plane and 3 m away). The gyroid (Ø11) stands in a Ø15 bore
      with a ≈ 2 mm gap (01_01, the fork-C note «Hexagonal Anti-Rotation Key»; install_and_log_bench §A) — two states: «sap gap» (the gap filled
      with sap, far more conductive than wood: the equipotential is the bore wall, Ø15) and «ingrown» (wood in the gap:
-     Ø11); an AIR gap — sap in the bore only in the pressure season (HW.53 desk) — is not modelled: layer 1 then runs
+     Ø11) — the real value lies between them. «Far more conductive» held for the sap this was written on; on the sap
+     revised 2026-10-18 limiting conductances give ≈ 60–70 Ω·m against the sapwood's 219–594, a contrast of 3–10× (our
+     estimate, not computed here), and the gap's own radial resistance over the 40 mm, ≈ 75 Ω, is 2–7 % of element 1 —
+     so «sap gap» is the optimistic end of the pair by about that much; an AIR gap — sap in the bore only in the pressure season (HW.53 desk) — is not modelled: layer 1 then runs
      through contact points only, and the path is open. d = L_sleeve − (dead bark under the flange + inner bark); L = the lattice length
      outside the sleeve: the whole 40 mm — since ⚖️ founder 2026-10-12 (00_07 HW.26 G1, branch (А)) only the lock's shank
      enters the sleeve, so the length is the VERDICT, not an input (no insertion number exists any more; the cache records

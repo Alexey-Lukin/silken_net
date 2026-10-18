@@ -4,15 +4,15 @@
     "totals_mM": {
       "Mal": 0.01,
       "Ox": 0.0,
-      "K": 0.0032,
-      "NO3": 0.0032,
-      "Ca": 0.001,
-      "Cl": 0.002,
-      "Mg": 0.00045000000000000004,
-      "SO4": 0.00045000000000000004
+      "K": 4.9e-06,
+      "NO3": 4.9e-06,
+      "Ca": 0.00017999999999999998,
+      "Cl": 0.00035999999999999997,
+      "Mg": 6.2e-05,
+      "SO4": 6.2e-05
     },
     "pH": 4.5,
-    "ionic_strength_selected": 0.0226,
+    "ionic_strength_selected": 0.0153,
     "matches_85": true
   },
   "davies_check": [
@@ -47,7 +47,7 @@
   ],
   "davies_step_error": {
     "worst_miss_0.1_to_0": 0.078,
-    "medium_step_share": 0.411,
+    "medium_step_share": 0.498,
     "reading": "the derived 0.1 → medium step is this share of the checked 0.1 → 0 one, so its error in log K scales by it"
   },
   "readings": {
@@ -97,135 +97,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 28.375470771149672,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 31.946792419119898,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 3.992,
-              "contribution": 26.121130254497483
+              "log_beta_used": 4.067,
+              "contribution": 29.55774036609915
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.266,
-              "contribution": 1.2543405166521893
+              "log_beta_used": 2.303,
+              "contribution": 1.3890520530207473
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 28.2114880226761,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 31.917629061820872,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 3.994,
-              "contribution": 25.965386982748075
+              "log_beta_used": 4.067,
+              "contribution": 29.530097923606455
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.267,
-              "contribution": 1.2461010399280246
+              "log_beta_used": 2.304,
+              "contribution": 1.3875311382144178
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 27.49359314369129,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 31.796558349434015,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 4.003,
-              "contribution": 25.283464164710438
+              "log_beta_used": 4.07,
+              "contribution": 29.415339114939666
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.272,
-              "contribution": 1.210128978980851
+              "log_beta_used": 2.305,
+              "contribution": 1.3812192344943504
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 28.375470771149672,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 31.946792419119898,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 3.992,
-              "contribution": 26.121130254497483
+              "log_beta_used": 4.067,
+              "contribution": 29.55774036609915
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.266,
-              "contribution": 1.2543405166521893
+              "log_beta_used": 2.303,
+              "contribution": 1.3890520530207473
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 28.375470771149672,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 31.946792419119898,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 3.992,
-              "contribution": 26.121130254497483
+              "log_beta_used": 4.067,
+              "contribution": 29.55774036609915
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.266,
-              "contribution": 1.2543405166521893
+              "log_beta_used": 2.303,
+              "contribution": 1.3890520530207473
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 27.703658287225448,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 31.82619937709272,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 4.0,
-              "contribution": 25.483027222996014
+              "log_beta_used": 4.069,
+              "contribution": 29.443435551110127
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.27,
-              "contribution": 1.2206310642294338
+              "log_beta_used": 2.304,
+              "contribution": 1.3827638259825925
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 28.162651260930897,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 31.917107477126933,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.64,
-              "log_beta_used": 3.994,
-              "contribution": 25.91899542244547
+              "log_beta_used": 4.067,
+              "contribution": 29.529603134994954
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.267,
-              "contribution": 1.2436558384854273
+              "log_beta_used": 2.304,
+              "contribution": 1.3875043421319813
             }
           ]
         }
@@ -277,135 +277,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 17.65603630215194,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 19.798046816348617,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.769,
-              "contribution": 15.639708524182932
+              "log_beta_used": 3.843,
+              "contribution": 17.673332734568508
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.174,
-              "contribution": 1.016327777969007
+              "log_beta_used": 2.212,
+              "contribution": 1.1247140817801096
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 17.555495090156388,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 19.780104072898812,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.771,
-              "contribution": 15.54586270511219
+              "log_beta_used": 3.844,
+              "contribution": 17.656627120994877
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.175,
-              "contribution": 1.0096323850441953
+              "log_beta_used": 2.212,
+              "contribution": 1.1234769519039363
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 17.11544035369102,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 19.705617377855702,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.78,
-              "contribution": 15.135036283691676
+              "log_beta_used": 3.846,
+              "contribution": 17.587274543525155
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.18,
-              "contribution": 0.9804040699993446
+              "log_beta_used": 2.213,
+              "contribution": 1.1183428343305477
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 17.65603630215194,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 19.798046816348617,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.769,
-              "contribution": 15.639708524182932
+              "log_beta_used": 3.843,
+              "contribution": 17.673332734568508
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.174,
-              "contribution": 1.016327777969007
+              "log_beta_used": 2.212,
+              "contribution": 1.1247140817801096
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 17.65603630215194,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 19.798046816348617,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.769,
-              "contribution": 15.639708524182932
+              "log_beta_used": 3.843,
+              "contribution": 17.673332734568508
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.174,
-              "contribution": 1.016327777969007
+              "log_beta_used": 2.212,
+              "contribution": 1.1247140817801096
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 17.24418133874735,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 19.72385278744998,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.778,
-              "contribution": 15.255244631382583
+              "log_beta_used": 3.846,
+              "contribution": 17.604253596585217
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.179,
-              "contribution": 0.9889367073647667
+              "log_beta_used": 2.213,
+              "contribution": 1.1195991908647662
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 17.525561370185375,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 19.779783604096423,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuL",
               "log_beta_source": 3.42,
-              "log_beta_used": 3.772,
-              "contribution": 15.517915741340115
+              "log_beta_used": 3.844,
+              "contribution": 17.656328439134796
             },
             {
               "species": "CuHL",
               "log_beta_source": 2.0,
-              "log_beta_used": 2.176,
-              "contribution": 1.0076456288452609
+              "log_beta_used": 2.212,
+              "contribution": 1.1234551649616271
             }
           ]
         }
@@ -457,135 +457,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 251.533215044131,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 282.6238241461077,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.434,
-              "contribution": 184.94125301993776
+              "log_beta_used": 4.472,
+              "contribution": 204.66431803060036
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.152,
-              "contribution": 65.59196202419325
+              "log_beta_used": 6.207,
+              "contribution": 76.95950611550735
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 249.37514825249102,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 282.20513403461746,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.435,
-              "contribution": 183.72289179453648
+              "log_beta_used": 4.472,
+              "contribution": 204.43919740081148
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.153,
-              "contribution": 64.65225645795454
+              "log_beta_used": 6.208,
+              "contribution": 76.76593663380598
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 240.04417009925612,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 280.47045812197615,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.44,
-              "contribution": 178.40421279625306
+              "log_beta_used": 4.473,
+              "contribution": 203.5049415851619
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.16,
-              "contribution": 60.639957303003044
+              "log_beta_used": 6.21,
+              "contribution": 75.96551653681423
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 251.533215044131,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 282.6238241461077,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.434,
-              "contribution": 184.94125301993776
+              "log_beta_used": 4.472,
+              "contribution": 204.66431803060036
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.152,
-              "contribution": 65.59196202419325
+              "log_beta_used": 6.207,
+              "contribution": 76.95950611550735
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 251.533215044131,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 282.6238241461077,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.434,
-              "contribution": 184.94125301993776
+              "log_beta_used": 4.472,
+              "contribution": 204.66431803060036
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.152,
-              "contribution": 65.59196202419325
+              "log_beta_used": 6.207,
+              "contribution": 76.95950611550735
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 242.75241689471082,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 280.89447573916004,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.439,
-              "contribution": 179.9568975502595
+              "log_beta_used": 4.473,
+              "contribution": 203.73356089156567
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.158,
-              "contribution": 61.795519344451314
+              "log_beta_used": 6.209,
+              "contribution": 76.16091484759437
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 248.7369440967405,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 282.19780270167445,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CuHL",
               "log_beta_source": 4.26,
-              "log_beta_used": 4.436,
-              "contribution": 183.36136159843187
+              "log_beta_used": 4.472,
+              "contribution": 204.43523282904903
             },
             {
               "species": "Cu(HL)2",
               "log_beta_source": 5.89,
-              "log_beta_used": 6.154,
-              "contribution": 64.37558249830863
+              "log_beta_used": 6.208,
+              "contribution": 76.76256987262542
             }
           ]
         }
@@ -637,135 +637,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 5.751176578743662,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 6.358595533559942,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.209,
-              "contribution": 4.307533412914722
+              "log_beta_used": 3.283,
+              "contribution": 4.867640030119463
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.814,
-              "contribution": 0.4436431658289398
+              "log_beta_used": 1.852,
+              "contribution": 0.49095550344047884
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 5.722406648871621,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 6.353454398741306,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.211,
-              "contribution": 4.28168612805743
+              "log_beta_used": 3.284,
+              "contribution": 4.8630389220783155
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.815,
-              "contribution": 0.44072052081419044
+              "log_beta_used": 1.852,
+              "contribution": 0.49041547666299085
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 5.596497034408232,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 6.332111989184187,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.22,
-              "contribution": 4.1685351358608225
+              "log_beta_used": 3.286,
+              "contribution": 4.8439376361265625
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.82,
-              "contribution": 0.42796189854741
+              "log_beta_used": 1.853,
+              "contribution": 0.4881743530576247
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 5.751176578743662,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 6.358595533559942,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.209,
-              "contribution": 4.307533412914722
+              "log_beta_used": 3.283,
+              "contribution": 4.867640030119463
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.814,
-              "contribution": 0.4436431658289398
+              "log_beta_used": 1.852,
+              "contribution": 0.49095550344047884
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 5.751176578743662,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 6.358595533559942,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.209,
-              "contribution": 4.307533412914722
+              "log_beta_used": 3.283,
+              "contribution": 4.867640030119463
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.814,
-              "contribution": 0.4436431658289398
+              "log_beta_used": 1.852,
+              "contribution": 0.49095550344047884
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 5.633329793868118,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 6.337336828231665,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.218,
-              "contribution": 4.201643264019937
+              "log_beta_used": 3.286,
+              "contribution": 4.848614055655915
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.819,
-              "contribution": 0.43168652984818046
+              "log_beta_used": 1.853,
+              "contribution": 0.48872277257574975
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 5.713842165356764,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 6.353362624580839,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 2.86,
-              "log_beta_used": 3.212,
-              "contribution": 4.27398889507821
+              "log_beta_used": 3.284,
+              "contribution": 4.862956658263101
             },
             {
               "species": "CoHL",
               "log_beta_source": 1.64,
-              "log_beta_used": 1.816,
-              "contribution": 0.43985327027855453
+              "log_beta_used": 1.852,
+              "contribution": 0.4904059663177374
             }
           ]
         }
@@ -817,135 +817,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 13.575942297989652,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 14.899821003119012,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.409,
-              "contribution": 6.826980382427333
+              "log_beta_used": 3.483,
+              "contribution": 7.71468954708755
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.909,
-              "contribution": 5.748961915562319
+              "log_beta_used": 5.983,
+              "contribution": 6.185131456031462
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 13.43874494845641,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 14.87301175387012,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.411,
-              "contribution": 6.786015196613407
+              "log_beta_used": 3.484,
+              "contribution": 7.707397282275357
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.911,
-              "contribution": 5.652729751843003
+              "log_beta_used": 5.984,
+              "contribution": 6.165614471594763
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 12.851877932095423,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 14.76216314789588,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.42,
-              "contribution": 6.606682959360782
+              "log_beta_used": 3.486,
+              "contribution": 7.67712378420317
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.92,
-              "contribution": 5.245194972734642
+              "log_beta_used": 5.986,
+              "contribution": 6.085039363692711
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 13.575942297989652,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 14.899821003119012,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.409,
-              "contribution": 6.826980382427333
+              "log_beta_used": 3.483,
+              "contribution": 7.71468954708755
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.909,
-              "contribution": 5.748961915562319
+              "log_beta_used": 5.983,
+              "contribution": 6.185131456031462
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 13.575942297989652,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 14.899821003119012,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.409,
-              "contribution": 6.826980382427333
+              "log_beta_used": 3.483,
+              "contribution": 7.71468954708755
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.909,
-              "contribution": 5.748961915562319
+              "log_beta_used": 5.983,
+              "contribution": 6.185131456031462
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 13.021050989879676,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 14.789220045729794,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.418,
-              "contribution": 6.659155806295294
+              "log_beta_used": 3.486,
+              "contribution": 7.684535409680333
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.918,
-              "contribution": 5.361895183584383
+              "log_beta_used": 5.986,
+              "contribution": 6.104684636049461
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 13.39837991581075,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 14.872547666875201,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CoL",
               "log_beta_source": 3.06,
-              "log_beta_used": 3.412,
-              "contribution": 6.773815904463855
+              "log_beta_used": 3.484,
+              "contribution": 7.707266902914639
             },
             {
               "species": "CoL2",
               "log_beta_source": 5.56,
-              "log_beta_used": 5.912,
-              "contribution": 5.624564011346894
+              "log_beta_used": 5.984,
+              "contribution": 6.165280763960562
             }
           ]
         }
@@ -997,135 +997,135 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 189.9521455657524,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 233.97774694196897,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 189.28178819799257,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 233.90792679957892,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.851,
-              "contribution": 186.754253410179
+              "log_beta_used": 4.961,
+              "contribution": 231.1335665280384
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.355,
-              "contribution": 1.5275347878135759
+              "log_beta_used": 2.41,
+              "contribution": 1.774360271540541
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 186.29998800440566,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 233.6178369502745,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.865,
-              "contribution": 183.80858070927462
+              "log_beta_used": 4.964,
+              "contribution": 230.84919520990945
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.362,
-              "contribution": 1.4914072951310524
+              "log_beta_used": 2.412,
+              "contribution": 1.7686417403650443
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 189.9521455657524,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 233.97774694196897,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 189.9521455657524,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 233.97774694196897,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 187.18502328819216,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 233.68917469396285,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.861,
-              "contribution": 184.68301480027165
+              "log_beta_used": 4.963,
+              "contribution": 230.9191320639666
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.36,
-              "contribution": 1.5020084879205167
+              "log_beta_used": 2.412,
+              "contribution": 1.7700426299962533
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 189.07690246387594,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 233.90639260365234,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.852,
-              "contribution": 186.5518285741665
+              "log_beta_used": 4.961,
+              "contribution": 231.13205752578418
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.356,
-              "contribution": 1.5250738897094194
+              "log_beta_used": 2.41,
+              "contribution": 1.774335077868171
             }
           ]
         }
@@ -1189,177 +1189,177 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 707.5398246696038,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 896.7166429376371,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.863,
-              "contribution": 517.5876791038514
+              "log_beta_used": 8.013,
+              "contribution": 662.7388959956681
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 700.7157914879479,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 895.4078136370416,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.851,
-              "contribution": 186.754253410179
+              "log_beta_used": 4.961,
+              "contribution": 231.1335665280384
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.355,
-              "contribution": 1.5275347878135759
+              "log_beta_used": 2.41,
+              "contribution": 1.774360271540541
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.868,
-              "contribution": 511.4340032899552
+              "log_beta_used": 8.014,
+              "contribution": 661.4998868374627
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 671.2234035055689,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 889.9863196135427,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.865,
-              "contribution": 183.80858070927462
+              "log_beta_used": 4.964,
+              "contribution": 230.84919520990945
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.362,
-              "contribution": 1.4914072951310524
+              "log_beta_used": 2.412,
+              "contribution": 1.7686417403650443
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.886,
-              "contribution": 484.92341550116316
+              "log_beta_used": 8.019,
+              "contribution": 656.3684826632682
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 707.5398246696038,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 896.7166429376371,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.863,
-              "contribution": 517.5876791038514
+              "log_beta_used": 8.013,
+              "contribution": 662.7388959956681
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 707.5398246696038,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 896.7166429376371,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.863,
-              "contribution": 517.5876791038514
+              "log_beta_used": 8.013,
+              "contribution": 662.7388959956681
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 679.7936764091924,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 891.3121336342034,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.861,
-              "contribution": 184.68301480027165
+              "log_beta_used": 4.963,
+              "contribution": 230.9191320639666
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.36,
-              "contribution": 1.5020084879205167
+              "log_beta_used": 2.412,
+              "contribution": 1.7700426299962533
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.881,
-              "contribution": 492.60865312100026
+              "log_beta_used": 8.018,
+              "contribution": 657.6229589402406
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 698.6850114612303,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 895.384112236028,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.852,
-              "contribution": 186.5518285741665
+              "log_beta_used": 4.961,
+              "contribution": 231.13205752578418
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.356,
-              "contribution": 1.5250738897094194
+              "log_beta_used": 2.41,
+              "contribution": 1.774335077868171
             },
             {
               "species": "CeL2 (La β₂)",
               "log_beta_source": 7.16,
-              "log_beta_used": 7.869,
-              "contribution": 509.60810899735435
+              "log_beta_used": 8.014,
+              "contribution": 661.4777196323757
             }
           ]
         }
@@ -1423,177 +1423,177 @@
           ]
         },
         "C_medium|selected": {
-          "alpha": 2157.7656181802895,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 2753.6407548094526,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.443,
-              "contribution": 1967.813472614537
+              "log_beta_used": 8.593,
+              "contribution": 2519.6630078674834
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 2133.6996378841527,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 2748.8603532281245,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.851,
-              "contribution": 186.754253410179
+              "log_beta_used": 4.961,
+              "contribution": 231.1335665280384
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.355,
-              "contribution": 1.5275347878135759
+              "log_beta_used": 2.41,
+              "contribution": 1.774360271540541
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.448,
-              "contribution": 1944.41784968616
+              "log_beta_used": 8.594,
+              "contribution": 2514.9524264285456
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 2029.9273940153207,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 2729.0612088261814,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.865,
-              "contribution": 183.80858070927462
+              "log_beta_used": 4.964,
+              "contribution": 230.84919520990945
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.362,
-              "contribution": 1.4914072951310524
+              "log_beta_used": 2.412,
+              "contribution": 1.7686417403650443
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.466,
-              "contribution": 1843.6274060109151
+              "log_beta_used": 8.599,
+              "contribution": 2495.443371875907
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 2157.7656181802895,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 2753.6407548094526,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.443,
-              "contribution": 1967.813472614537
+              "log_beta_used": 8.593,
+              "contribution": 2519.6630078674834
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 2157.7656181802895,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 2753.6407548094526,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.847,
-              "contribution": 187.41638593405239
+              "log_beta_used": 4.96,
+              "contribution": 231.2020096796106
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.354,
-              "contribution": 1.5357596317000175
+              "log_beta_used": 2.41,
+              "contribution": 1.7757372623583763
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.443,
-              "contribution": 1967.813472614537
+              "log_beta_used": 8.593,
+              "contribution": 2519.6630078674834
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 2060.030887811767,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 2733.9019323542757,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.861,
-              "contribution": 184.68301480027165
+              "log_beta_used": 4.963,
+              "contribution": 230.9191320639666
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.36,
-              "contribution": 1.5020084879205167
+              "log_beta_used": 2.412,
+              "contribution": 1.7700426299962533
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.461,
-              "contribution": 1872.8458645235748
+              "log_beta_used": 8.598,
+              "contribution": 2500.212757660313
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 2126.5528956615412,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 2748.774541668997,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.32,
-              "log_beta_used": 4.852,
-              "contribution": 186.5518285741665
+              "log_beta_used": 4.961,
+              "contribution": 231.13205752578418
             },
             {
               "species": "CeHL",
               "log_beta_source": 2.09,
-              "log_beta_used": 2.356,
-              "contribution": 1.5250738897094194
+              "log_beta_used": 2.41,
+              "contribution": 1.774335077868171
             },
             {
               "species": "CeL2 (Pr β₂)",
               "log_beta_source": 7.74,
-              "log_beta_used": 8.449,
-              "contribution": 1937.4759931976653
+              "log_beta_used": 8.594,
+              "contribution": 2514.8681490653444
             }
           ]
         }
@@ -1607,93 +1607,93 @@
       "quality": "secondary",
       "rows": {
         "C_medium|selected": {
-          "alpha": 200.33225894859845,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 246.9017584466122,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.874,
-              "contribution": 199.33225894859845
+              "log_beta_used": 4.987,
+              "contribution": 245.9017584466122
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 199.62802825367154,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 246.82896370166847,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.877,
-              "contribution": 198.62802825367154
+              "log_beta_used": 4.988,
+              "contribution": 245.82896370166847
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 196.4950706381027,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 246.52651214739043,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.891,
-              "contribution": 195.4950706381027
+              "log_beta_used": 4.991,
+              "contribution": 245.52651214739043
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 200.33225894859845,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 246.9017584466122,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.874,
-              "contribution": 199.33225894859845
+              "log_beta_used": 4.987,
+              "contribution": 245.9017584466122
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 200.33225894859845,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 246.9017584466122,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.874,
-              "contribution": 199.33225894859845
+              "log_beta_used": 4.987,
+              "contribution": 245.9017584466122
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 197.42510096491395,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 246.60089556393905,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.887,
-              "contribution": 196.42510096491395
+              "log_beta_used": 4.99,
+              "contribution": 245.60089556393905
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 199.41273331225727,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 246.82735875754048,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.11,
-              "log_beta_used": 4.878,
-              "contribution": 198.41273331225727
+              "log_beta_used": 4.988,
+              "contribution": 245.82735875754048
             }
           ]
         }
@@ -1707,93 +1707,93 @@
       "quality": "secondary",
       "rows": {
         "C_medium|selected": {
-          "alpha": 195.79490278177207,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 241.304351052514,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.864,
-              "contribution": 194.79490278177207
+              "log_beta_used": 4.977,
+              "contribution": 240.304351052514
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 195.10670233454994,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 241.23321331826497,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.867,
-              "contribution": 194.10670233454994
+              "log_beta_used": 4.978,
+              "contribution": 240.23321331826497
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 192.0450595409391,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 240.93764640188854,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.881,
-              "contribution": 191.0450595409391
+              "log_beta_used": 4.981,
+              "contribution": 239.93764640188854
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 195.79490278177207,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 241.304351052514,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.864,
-              "contribution": 194.79490278177207
+              "log_beta_used": 4.977,
+              "contribution": 240.304351052514
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 195.79490278177207,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 241.304351052514,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.864,
-              "contribution": 194.79490278177207
+              "log_beta_used": 4.977,
+              "contribution": 240.304351052514
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 192.9539197929167,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 241.01033664516174,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.877,
-              "contribution": 191.9539197929167
+              "log_beta_used": 4.98,
+              "contribution": 240.01033664516174
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 194.8963081043164,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 241.23164490712557,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 4.1,
-              "log_beta_used": 4.868,
-              "contribution": 193.8963081043164
+              "log_beta_used": 4.978,
+              "contribution": 240.23164490712557
             }
           ]
         }
@@ -1807,93 +1807,93 @@
       "quality": "secondary",
       "rows": {
         "C_medium|selected": {
-          "alpha": 906.6335933252701,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 1120.4914185028722,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.532,
-              "contribution": 905.6335933252701
+              "log_beta_used": 5.645,
+              "contribution": 1119.4914185028722
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 903.4859707346095,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 1120.1768883728305,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.535,
-              "contribution": 902.4859707346095
+              "log_beta_used": 5.646,
+              "contribution": 1119.1768883728305
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 889.475483683835,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 1118.8700982622136,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.549,
-              "contribution": 888.475483683835
+              "log_beta_used": 5.649,
+              "contribution": 1117.8700982622136
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 906.6335933252701,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 1120.4914185028722,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.532,
-              "contribution": 905.6335933252701
+              "log_beta_used": 5.645,
+              "contribution": 1119.4914185028722
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 906.6335933252701,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 1120.4914185028722,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.532,
-              "contribution": 905.6335933252701
+              "log_beta_used": 5.645,
+              "contribution": 1119.4914185028722
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 893.6366582471215,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 1119.1915794043923,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.545,
-              "contribution": 892.6366582471215
+              "log_beta_used": 5.648,
+              "contribution": 1118.1915794043923
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 902.522714775351,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 1120.1698514360785,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.0,
-              "log_beta_used": 5.536,
-              "contribution": 901.522714775351
+              "log_beta_used": 5.646,
+              "contribution": 1119.1698514360785
             }
           ]
         }
@@ -1907,93 +1907,93 @@
       "quality": "secondary",
       "rows": {
         "C_medium|selected": {
-          "alpha": 2628.710935706606,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 3242.6165009511656,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 5.994,
-              "contribution": 2627.710935706606
+              "log_beta_used": 6.107,
+              "contribution": 3241.6165009511656
             }
           ]
         },
         "C_medium|selected_guenzel_apparent": {
-          "alpha": 2619.4273671157503,
-          "ionic": 0.02236,
-          "p[H]": 4.437,
+          "alpha": 3241.6568793206293,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 5.997,
-              "contribution": 2618.4273671157503
+              "log_beta_used": 6.108,
+              "contribution": 3240.6568793206293
             }
           ]
         },
         "C_medium|selected_guenzel_i0": {
-          "alpha": 2578.1269422323976,
-          "ionic": 0.02135,
-          "p[H]": 4.438,
+          "alpha": 3237.6697913254907,
+          "ionic": 0.01506,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 6.011,
-              "contribution": 2577.1269422323976
+              "log_beta_used": 6.111,
+              "contribution": 3236.6697913254907
             }
           ]
         },
         "C_medium|spread_si_high": {
-          "alpha": 2628.710935706606,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 3242.6165009511656,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 5.994,
-              "contribution": 2627.710935706606
+              "log_beta_used": 6.107,
+              "contribution": 3241.6165009511656
             }
           ]
         },
         "C_medium|spread_si_low": {
-          "alpha": 2628.710935706606,
-          "ionic": 0.0226,
-          "p[H]": 4.437,
+          "alpha": 3242.6165009511656,
+          "ionic": 0.0153,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 5.994,
-              "contribution": 2627.710935706606
+              "log_beta_used": 6.107,
+              "contribution": 3241.6165009511656
             }
           ]
         },
         "C_medium|si_lowest_documented": {
-          "alpha": 2590.387129686205,
-          "ionic": 0.02164,
-          "p[H]": 4.438,
+          "alpha": 3238.6503557265114,
+          "ionic": 0.0151,
+          "p[H]": 4.447,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 6.007,
-              "contribution": 2589.387129686205
+              "log_beta_used": 6.11,
+              "contribution": 3237.6503557265114
             }
           ]
         },
         "C_medium|si_highest_documented": {
-          "alpha": 2616.5892270427858,
-          "ionic": 0.0223,
-          "p[H]": 4.437,
+          "alpha": 3241.635722036512,
+          "ionic": 0.01525,
+          "p[H]": 4.446,
           "terms": [
             {
               "species": "CeL",
               "log_beta_source": 5.23,
-              "log_beta_used": 5.998,
-              "contribution": 2615.5892270427858
+              "log_beta_used": 6.108,
+              "contribution": 3240.635722036512
             }
           ]
         }
@@ -2004,40 +2004,40 @@
     "Cu": {
       "alpha_min": 10.202039181779778,
       "alpha_min_at": "cu_nist_20 · B_activity_at_source_I",
-      "alpha_max_ADVERSE": 251.533215044131,
+      "alpha_max_ADVERSE": 282.6238241461077,
       "alpha_max_at": "cu_zab21 · C_medium|selected",
-      "alpha_max_without_secondary": 251.533215044131,
+      "alpha_max_without_secondary": 282.6238241461077,
       "medium_selected": {
-        "cu_nist_25": 28.375470771149672,
-        "cu_nist_20": 17.65603630215194,
-        "cu_zab21": 251.533215044131
+        "cu_nist_25": 31.946792419119898,
+        "cu_nist_20": 19.798046816348617,
+        "cu_zab21": 282.6238241461077
       }
     },
     "Co": {
       "alpha_min": 3.635923501509882,
       "alpha_min_at": "co_nist_20 · B_activity_at_source_I",
-      "alpha_max_ADVERSE": 13.575942297989652,
+      "alpha_max_ADVERSE": 14.899821003119012,
       "alpha_max_at": "co_zab21 · C_medium|selected",
-      "alpha_max_without_secondary": 13.575942297989652,
+      "alpha_max_without_secondary": 14.899821003119012,
       "medium_selected": {
-        "co_nist_20": 5.751176578743662,
-        "co_zab21": 13.575942297989652
+        "co_nist_20": 6.358595533559942,
+        "co_zab21": 14.899821003119012
       }
     },
     "Ce": {
       "alpha_min": 59.585888331304886,
       "alpha_min_at": "ce_buzko · B_activity_at_source_I",
-      "alpha_max_ADVERSE": 2628.710935706606,
+      "alpha_max_ADVERSE": 3242.6165009511656,
       "alpha_max_at": "ce_t1_ref11 · C_medium|selected",
-      "alpha_max_without_secondary": 2157.7656181802895,
+      "alpha_max_without_secondary": 2753.6407548094526,
       "medium_selected": {
-        "ce_buzko": 189.9521455657524,
-        "ce_buzko_b2La": 707.5398246696038,
-        "ce_buzko_b2Pr": 2157.7656181802895,
-        "ce_t1_ref3": 200.33225894859845,
-        "ce_t1_ref6": 195.79490278177207,
-        "ce_t1_ref10": 906.6335933252701,
-        "ce_t1_ref11": 2628.710935706606
+        "ce_buzko": 233.97774694196897,
+        "ce_buzko_b2La": 896.7166429376371,
+        "ce_buzko_b2Pr": 2753.6407548094526,
+        "ce_t1_ref3": 246.9017584466122,
+        "ce_t1_ref6": 241.304351052514,
+        "ce_t1_ref10": 1120.4914185028722,
+        "ce_t1_ref11": 3242.6165009511656
       }
     }
   },
@@ -2055,17 +2055,17 @@
   },
   "competition": {
     "free_L_mM_by_reading": {
-      "selected": 2.6629,
-      "selected_guenzel_apparent": 2.6342,
-      "selected_guenzel_i0": 2.5106,
-      "spread_si_high": 2.6629,
-      "spread_si_low": 2.6629,
-      "si_lowest_documented": 2.5462,
-      "si_highest_documented": 2.6258
+      "selected": 2.5353,
+      "selected_guenzel_apparent": 2.5297,
+      "selected_guenzel_i0": 2.5065,
+      "spread_si_high": 2.5353,
+      "spread_si_low": 2.5353,
+      "si_lowest_documented": 2.5122,
+      "si_highest_documented": 2.5296
     },
-    "free_L_spread_vs_selected": -0.0572,
-    "K_free_mM": 15.267,
-    "K_malate_would_hold_fraction_of_free_L": 0.0215,
+    "free_L_spread_vs_selected": -0.0114,
+    "K_free_mM": 11.945,
+    "K_malate_would_hold_fraction_of_free_L": 0.0183,
     "K_malate_note": "NIST 46 K⁺–L²⁻ log K 0.4 at I = 0 (row 154728), Davies-shifted to the medium; not in 67's model — the fraction by which α's 1:1 terms would drop"
   },
   "trace_metal_limit_cu": {

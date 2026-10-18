@@ -2140,7 +2140,7 @@ CHECKS = [
 # pinned on its own; the pre-verdict RANGES are no longer canon and are pinned nowhere — they survive only as the
 # premise of Q1–Q5, whose verdict and window the canon note still quotes as the ground of the choice. The window
 # is pinned per SLOT, because three levels in one phrase can keep two current.
-_RECIPE_LABELS = {"malic": "Яблучна кислота (malic acid)", "kno3": "KNO₃ (K⁺)", "cacl2": "CaCl₂ (Ca²⁺)",
+_RECIPE_LABELS = {"malic": "Яблучна кислота (malic acid)", "kno3": "KNO₃ (NO₃⁻)", "cacl2": "CaCl₂ (Ca²⁺)",
                   "mgso4": "MgSO₄ (Mg²⁺)"}
 _Q6_CONDITIONS = (("setpoint", "5\\.75"), ("side_series", "4\\.5"))
 _LEVELS = ("0.5", "1", "2")
@@ -2162,25 +2162,25 @@ def _one_window(d, fixed: str, i: int) -> float:
 CHECKS += [
     (f"01_02 §2.1 recipe {key} (canon → script 67 premise: re-run 67 on a recipe change)",
      METALLURGY, rf"\| {re.escape(label)} \| {N} mM \|",
-     SAP, lambda d, k=key: d["q6_ratified_point"]["recipe_mM"][k], 0.0)
+     SAP, lambda d, k=key: d["q7_revised_point"]["recipe_mM"][k], 0.0)
     for key, label in _RECIPE_LABELS.items()
 ] + [
     ("01_02 §2.1 pH set-point (canon → script 67 premise: re-run 67 on a recipe change)",
      METALLURGY, rf"\| pH \| \*\*{N}\*\* \(уставка\)",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["ph"], 0.0),
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["setpoint"]["ph"], 0.0),
     ("01_02 §2.1 pH side series (canon → script 67 premise: re-run 67 on a recipe change)",
      METALLURGY, rf"бічна серія \*\*{N}\*\* \(лише ICP-MS",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["side_series"]["ph"], 0.0),
-    ("01_02 §2.1 buffer capacity at the set-point → script 67 Q6 (2026-10-11; read by 01_03 §3.2, the cathode pH margin)",
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["side_series"]["ph"], 0.0),
+    ("01_02 §2.1 buffer capacity at the set-point → script 67 Q7 (read by 01_03 §3.2, the cathode pH margin)",
      METALLURGY, rf"ємність при уставці \*\*{N}\*\* мМ/pH",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.005),
-    ("01_02 §2.1 buffer capacity, side series → script 67 Q6 (2026-10-11)",
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.005),
+    ("01_02 §2.1 buffer capacity, side series → script 67 Q7",
      METALLURGY, rf"у бічній серії \*\*{N}\*\* мМ/pH",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["side_series"]["buffer_capacity_mM_per_pH_25c"], 0.005),
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["side_series"]["buffer_capacity_mM_per_pH_25c"], 0.005),
 ] + [
     (f"sap ratified point, {quantity} {end} at pH {ph_re.replace(chr(92), '')} → sap_recipe_saturation.json (01_02 §2.1)",
      METALLURGY, pattern, SAP,
-     lambda d, c=cond, q=key, j=j: d["q6_ratified_point"]["conditions"][c][q][j], 0.006)
+     lambda d, c=cond, q=key, j=j: d["q7_revised_point"]["conditions"][c][q][j], 0.006)
     for cond, ph_re in _Q6_CONDITIONS
     for quantity, key, pattern_of in (
         ("KOH", "base_koh_mM", lambda lo, p: (rf"\*\*{N}–[\d.]+ mM\*\* при pH {p}" if lo
@@ -2191,18 +2191,21 @@ CHECKS += [
     for j, end in enumerate(("low", "high"))
     for pattern in (pattern_of(j == 0, ph_re),)
 ] + [
-    ("sap ratified point, buffer capacity at the set-point → sap_recipe_saturation.json (01_02 §2.1)",
+    ("sap point of 2026-09-17 (history), buffer capacity at the set-point → sap_recipe_saturation.json (01_02 §2.1)",
      METALLURGY, rf"β ≈ {N} mM на одиницю pH при 5\.75",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.006),
-    ("sap ratified point, strong acid for −0.1 pH at the set-point → sap_recipe_saturation.json (01_02 §2.1)",
+     SAP, lambda d: d["q6_point_2026_09_17_superseded"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.006),
+    ("sap point of 2026-09-17 (history), strong acid for −0.1 pH → sap_recipe_saturation.json (01_02 §2.1)",
      METALLURGY, rf"pH на 0\.1 зсуває вже ≈ \*\*{N} mM\*\* сильної кислоти",
-     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["strong_acid_mM_lowering_pH_by_0p1_25c"], 0.0006),
+     SAP, lambda d: d["q6_point_2026_09_17_superseded"]["conditions"]["setpoint"]["strong_acid_mM_lowering_pH_by_0p1_25c"], 0.0006),
 ] + [
-    (f"sap ratified point, {what} → sap_recipe_saturation.json (SUMMARY §HW.3 Q6)", SUMMARY, pattern, SAP,
-     lambda d, c=cond, q=key, j=j: d["q6_ratified_point"]["conditions"][c][q] if j is None
-     else d["q6_ratified_point"]["conditions"][c][q][j], tol)
-    for cond, row in (("setpoint", r"\| pH 5\.75 \(coin 20–25 °C · accelerated — 40 °C isotherm, ⚖️ 2026-09-24\) \| "),
-                      ("side_series", r"\| pH 4\.5 \(coin side series, 20–25 °C\) \| "))
+    (f"sap {qkey[:2]} point, {what} → sap_recipe_saturation.json (SUMMARY §HW.3 {qkey[:2].upper()})", SUMMARY, pattern, SAP,
+     lambda d, c=cond, q=key, j=j, qk=qkey: d[qk]["conditions"][c][q] if j is None
+     else d[qk]["conditions"][c][q][j], tol)
+    for qkey, cond, row in (
+        ("q6_point_2026_09_17_superseded", "setpoint", r"\| pH 5\.75 \(coin 20–25 °C · accelerated — 40 °C isotherm, ⚖️ 2026-09-24\) \| "),
+        ("q6_point_2026_09_17_superseded", "side_series", r"\| pH 4\.5 \(coin side series, 20–25 °C\) \| "),
+        ("q7_revised_point", "setpoint", r"\| Q7 · pH 5\.75 \(coin 20–25 °C · accelerated — 40 °C isotherm\) \| "),
+        ("q7_revised_point", "side_series", r"\| Q7 · pH 4\.5 \(coin side series, 20–25 °C\) \| "))
     for what, key, j, pattern, tol in (
         (f"{cond} KOH low", "base_koh_mM", 0, row + rf"\*\*{N}–[\d.]+ mM\*\*", 0.006),
         (f"{cond} KOH high", "base_koh_mM", 1, row + rf"\*\*[\d.]+–{N} mM\*\*", 0.006),
@@ -2211,6 +2214,29 @@ CHECKS += [
         (f"{cond} strong acid for −0.1 pH", "strong_acid_mM_lowering_pH_by_0p1_25c", None,
          row + rf"(?:[^|]+\| ){{3}}{N} mM \|", 0.006),
     )
+] + [
+    (f"sap Q7 measured trunk-base {ion} {('low', 'high')[j]} → sap_recipe_saturation.json (01_02 §2.1 ⊕ 2026-10-18)",
+     METALLURGY, rf"\| {ion_md} \| [^|]+ \| " + (rf"\*\*{N}–[\d.]+\*\* мМ — низ стовбура" if j == 0 else rf"\*\*[\d.]+–{N}\*\* мМ — низ стовбура"),
+     SAP, lambda d, k=key, j=j: d["q7_revised_point"]["measured"]["trunk_base_mM"][k][j], tol)
+    for ion, ion_md, key, tol in (("K", "K⁺", "k_total", 0.006), ("Ca", "Ca²⁺", "cacl2", 0.006), ("Mg", "Mg²⁺", "mgso4", 0.0006))
+    for j in (0, 1)
+] + [
+    ("sap Q7 malic acid solved (01_02 §2.1 ⊕ 2026-10-18)", METALLURGY, rf"дав виміряний калій \({N} мМ\)",
+     SAP, lambda d: d["q7_revised_point"]["recipe_mM"]["malic"], 0.0),
+    ("sap Q7 ionic strength at the set-point (01_02 §2.1 ⊕)", METALLURGY, rf"іонна сила \*\*{N}\*\* мМ проти",
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["setpoint"]["ionic_strength_mol_l"][1] * 1e3, 0.006),
+    ("sap Q6 ionic strength at the set-point (01_02 §2.1 ⊕, the price's other end)", METALLURGY, rf"мМ проти {N}, буфер",
+     SAP, lambda d: d["q6_point_2026_09_17_superseded"]["conditions"]["setpoint"]["ionic_strength_mol_l"][1] * 1e3, 0.06),
+    ("sap Q7 buffer capacity (01_02 §2.1 ⊕)", METALLURGY, rf"буфер \*\*{N}\*\* мМ/pH проти",
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.006),
+    ("sap Q7 strong acid for −0.1 pH (01_02 §2.1 ⊕)", METALLURGY, rf"pH на 0\.1 зсуває вже ≈ \*\*{N}\*\* мМ сильної кислоти",
+     SAP, lambda d: d["q7_revised_point"]["conditions"]["setpoint"]["strong_acid_mM_lowering_pH_by_0p1_25c"], 0.0006),
+    ("sap Q7 against Q6, ionic strength (SUMMARY §HW.3 Q7)", SUMMARY, rf"ionic strength \*\*×{N}\*\*, buffer capacity",
+     SAP, lambda d: d["q7_revised_point"]["against_point_2026_09_17_setpoint"]["ionic_strength_ratio"], 0.0005),
+    ("sap Q7 against Q6, buffer capacity (SUMMARY §HW.3 Q7)", SUMMARY, rf"buffer capacity \*\*×{N}\*\*, potassium",
+     SAP, lambda d: d["q7_revised_point"]["against_point_2026_09_17_setpoint"]["buffer_capacity_ratio"], 0.005),
+    ("sap Q7 against Q6, potassium (SUMMARY §HW.3 Q7)", SUMMARY, rf"potassium \*\*×{N}\*\*\. Two things",
+     SAP, lambda d: d["q7_revised_point"]["against_point_2026_09_17_setpoint"]["potassium_total_ratio"], 0.005),
 ] + [
     (f"sap hard-bound window, {fixed} held at {level} mM → sap_recipe_saturation.json ({where})",
      doc_rel, pattern, SAP, lambda d, f=fixed, i=i: _one_window(d, f, i), 0.06)
@@ -3882,6 +3908,12 @@ CHECKS += [
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["Levich"][0], 0.005),
     ("face pH: film exponent, transient low corner → 85", SUMMARY, rf"moves the low corner [\d.]+ → [\d.]+ → {N}",
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6_by_film"]["transient"][0], 0.005),
+    ("face pH: free H⁺ share at the sap 4.5 crossing → 85", SUMMARY, rf"carries most of\nthe supply \({N} % at the low-D corner",
+     FACE_PH, lambda d: 100 * d["cathode"]["free_H_share_of_supply_sap_pH4.5_low_D"], 0.5),
+    ("face pH: anode check-medium ionic strength low → 85", EBFC, rf"іонна сила теж рухається \({N} → [\d.]+ моль/л",
+     FACE_PH, lambda d: d["anode_check_medium"]["ionic_strength_mol_l"][0], 0.00005),
+    ("face pH: anode check-medium ionic strength high → 85", EBFC, rf"іонна сила теж рухається \([\d.]+ → {N} моль/л",
+     FACE_PH, lambda d: d["anode_check_medium"]["ionic_strength_mol_l"][1], 0.0005),
     ("face pH: sap 4.5 f low → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*{N}–",
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["f_pH6"][0], 0.005),
     ("face pH: sap 4.5 f high → 85", SUMMARY, rf"the sap brought to 4\.5 \| \*\*[\d.]+–{N}\*\*",
@@ -3898,10 +3930,6 @@ CHECKS += [
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows_crossing_pH6_below_O2_limit"], 0.0),
     ("face pH: sap 4.5 corners total → 85", SUMMARY, rf"crosses pH 6 first in [\d]+ of {N} corners",
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows"], 0.0),
-    ("face pH: sap 4.5 face at the limit low → 85", SUMMARY, rf"the face is at pH {N}–[\d.]+, and in",
-     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["face_pH_at_O2_limit_where_reached"][0], 0.05),
-    ("face pH: sap 4.5 face at the limit high → 85", SUMMARY, rf"the face is at pH [\d.]+–{N}, and in",
-     FACE_PH, lambda d: _medium(d, "sap_pH4.5")["face_pH_at_O2_limit_where_reached"][1], 0.05),
     ("face pH: sap 4.5 malate spent first → 85", SUMMARY, rf"and in {N} corners the malate is spent first",
      FACE_PH, lambda d: _medium(d, "sap_pH4.5")["rows_beyond_model_at_O2_limit"], 0.0),
     ("face pH: sap 5.75 f low → 85", SUMMARY, rf"one compartment\) \| \*\*{N}–",
@@ -3916,9 +3944,9 @@ CHECKS += [
      FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["face_pH_at_O2_limit_where_reached"][0], 0.05),
     ("face pH: buffered face at the limit high → 85", SUMMARY, rf"never crosses; the face is at pH [\d.]+–{N} \|",
      FACE_PH, lambda d: _medium(d, "buffered_pH4.5")["face_pH_at_O2_limit_where_reached"][1], 0.05),
-    ("face pH: load B δ* low → 85", SUMMARY, rf"only for\s+δ ≥ {N}–[\d.]+ mm",
+    ("face pH: load B δ* low → 85", SUMMARY, rf"once\s+δ ≥ {N}–[\d.]+ mm",
      FACE_PH, lambda d: d["cathode"]["load_B_delta_star_mm_sap_pH4.5"][0], 0.005),
-    ("face pH: load B δ* high → 85", SUMMARY, rf"only for\s+δ ≥ [\d.]+–{N} mm",
+    ("face pH: load B δ* high → 85", SUMMARY, rf"once\s+δ ≥ [\d.]+–{N} mm",
      FACE_PH, lambda d: d["cathode"]["load_B_delta_star_mm_sap_pH4.5"][1], 0.05),
     ("face pH: anode ceiling current → 85", SUMMARY, rf"predicted current for the hold \({N} µA/cm²",
      FACE_PH, lambda d: d["anode"]["delta_star"]["face_pH_4.5"]["ceiling_hold"]["j_uA_cm2"], 0.5),
@@ -3967,10 +3995,9 @@ CHECKS += [
      FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][0], 0.05),
     ("face pH: anchor anode current to pH 4.5, pine, high → 85", SUMMARY, rf"stability band \(pH 4\.5\) at \*\*[\d.]+–{N} µA\*\*",
      FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][1], 0.05),
-    ("face pH: anchor anode current to pH 5.5, oak, high → 85", SUMMARY, rf"up to \*\*{N}\*\* µA on oak",
-     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
-    ("face pH: anchor anode current to pH 5.5, tropical, high → 85", SUMMARY, rf"and \*\*{N}\*\* µA on tropical",
-     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_tropical"]["face_pH_5.5"]["i_anode_uA"][1], 0.05),
+    ("face pH: anchor anode current to pH 4.5, broadleaf, low (the one part crossing below the worst draw) → 85", SUMMARY,
+     rf"the widest gap, 2\.5 mm, from \*\*{N}\*\* µA", FACE_PH,
+     lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_broadleaf"]["face_pH_4.5"]["i_anode_uA"][0], 0.05),
 ]
 
 # ── HW.6 frost, real cloud (2026-10-12): ERA5 cover weighs 79's sky ends — canon 01_04 §3.1 ⊕ ──
@@ -5143,24 +5170,23 @@ def test_frost_worst_regime_label_matches_cache():
 
 def test_anchor_anode_cold_start_words_match_cache():
     """SUMMARY says in words which Zone-1 parts cross each edge below the anchor's worst-case cold-start draw; the currents
-    are pinned above, the words here. CAN catch: a rerun that moves a part across the draw while the text keeps its group
-    («in every reading» ⊥ «only in some»), the bottom cap no longer being what tips mangrove, or a part crossing pH 4.5 at
-    cold start under «no part crosses pH 4.5». CANNOT catch: whether the sap-gap state is the stem's.
+    are pinned above, the words here (revised sap, 2026-10-18). CAN catch: a rerun that moves a part across the draw while
+    the text keeps its group («every part … in every reading» at pH 5.5; «only broadleaf, in some» at pH 4.5 on the worst
+    column, and who joins at the typical draw). CANNOT catch: whether the sap-gap state is the stem's, nor the broadleaf
+    parts' own sap — they sit in the pine recipe.
     """
     a = json.loads((CACHE / FACE_PH).read_text(encoding="utf-8"))["anchor_anode_sap_gap"]
     text = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
     by = a["by_sku"]
     every = {k for k, v in by.items() if v["face_pH_5.5"]["crossed_below_cold_start"]["worst"]["in_every_reading"]}
-    some = {k for k, v in by.items() if v["face_pH_5.5"]["crossed_below_cold_start"]["worst"]["in_some_reading"]} - every
-    assert every == {f"anchor_zone1_{x}" for x in ("broadleaf", "pine", "graded_porosity", "stepped")}
-    assert some == {f"anchor_zone1_{x}" for x in ("mangrove", "oak", "tropical")}
-    assert ("broadleaf, pine and pine's two topology variants cross pH 5.5 below the worst-case draw in every reading" in text
-            and "mangrove (the bottom cap tips it), oak and tropical only in some" in text)
-    m = by["anchor_zone1_mangrove"]
-    hi, cap = m["face_pH_5.5"]["i_anode_uA"][1], m["geometry"]["bottom_cap_over_envelope"]
-    assert hi / (1.0 + cap) < a["cold_start_uA"]["worst"] < hi            # without the cap mangrove would be «every»
-    assert not any(v["face_pH_4.5"]["crossed_below_cold_start"]["worst"]["in_some_reading"] for v in by.values())
-    assert "no part crosses pH 4.5 at cold start" in text
+    assert every == set(by), "«every Zone-1 part crosses pH 5.5 … in every reading» no longer holds"
+    assert "every Zone-1 part crosses pH 5.5 below the worst-case draw in every reading" in text
+    edge45 = lambda col, q: {k.removeprefix("anchor_zone1_") for k, v in by.items()  # noqa: E731
+                             if v["face_pH_4.5"]["crossed_below_cold_start"][col][q]}
+    assert edge45("worst", "in_some_reading") == {"broadleaf"} and not edge45("worst", "in_every_reading")
+    assert "pH 4.5 only broadleaf does, in some readings" in text
+    assert edge45("typ", "in_some_reading") == {"broadleaf", "pine", "graded_porosity", "stepped"}
+    assert "at the typical 25 µA draw pine and its two topology variants join it in some" in text
     assert "load point B" not in text.split("**The anchor's anode")[1].split("**What it says:**")[0]
 
 
@@ -5195,3 +5221,33 @@ def test_a3d_crosscheck_cannot_aggregate_the_exposure_gate_sentinel():
             assert not rec["a3d_score_is_sentinel"], f"{label} is ranked while being a sentinel"
             assert rec["a3d_score"] > 0.0, f"{label} is ranked with a non-positive score"
             assert 1 <= rec["rank_among_mature_positive"] <= rec["n_mature_positive"]
+
+
+# The sap recipe is MIRRORED into every lab letter and test plan that prepares it, and only 01_02's table was pinned —
+# so on the 2026-10-18 revision the S-N plan kept the 09-17 point as the live one and nothing turned red. This walks
+# every salt concentration written in docs/protocols/ (the in-silico results pages excluded: SUMMARY quotes the
+# history and the swept corners, each pinned on its own) and holds it to the live point in 67's cache. Malic acid is
+# the one salt with a second legitimate value — the cathode's buffered medium (⚖️ 2026-10-12, 01_03 §3.5), read from
+# 85's own constant. CAN catch: a mirror left on a superseded point, in any letter or plan, table or prose. CANNOT
+# catch: a mirror that writes the salt under another name or with the number BEFORE the name.
+_SAP_SALT = re.compile(r"(KNO₃|CaCl₂|MgSO₄|[Mm]alic acid|[Яя]блучна кислота)[^|\n\d]{0,12}?\|?\s*\**(\d+[.,]\d+|\d+)\**")
+
+
+def test_sap_recipe_mirrors_match_the_live_point():
+    point = json.loads((CACHE / SAP).read_text(encoding="utf-8"))["q7_revised_point"]["recipe_mM"]
+    src85 = (REPO / "tools/in_silico/scripts/85_electrode_interfacial_ph.py").read_text(encoding="utf-8")
+    buffered = float(re.search(r"^BUFFERED_MALIC_MM = ([\d.]+)", src85, re.M).group(1))
+    allowed = {"KNO₃": {point["kno3"]}, "CaCl₂": {point["cacl2"]}, "MgSO₄": {point["mgso4"]},
+               "malic": {point["malic"], buffered}}
+    bad, files = [], set()
+    for f in sorted((REPO / "docs/protocols").rglob("*.md")):
+        if "in_silico" in f.parts:
+            continue
+        for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            for m in _SAP_SALT.finditer(line):
+                salt = m.group(1) if m.group(1) in allowed else "malic"
+                files.add(f.name)
+                if float(m.group(2).replace(",", ".")) not in allowed[salt]:
+                    bad.append(f"{f.relative_to(REPO)}:{i}: {m.group(1)} {m.group(2)}")
+    assert len(files) >= 5, f"the walk found the recipe in only {sorted(files)} — the pattern no longer reads the letters"
+    assert not bad, "a recipe mirror off the live point (67 q7):\n" + "\n".join(bad)

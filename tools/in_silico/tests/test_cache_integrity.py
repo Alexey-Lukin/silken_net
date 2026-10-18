@@ -3071,9 +3071,14 @@ def test_sap_recipe_saturation():
       4. the malic-acid equation coefficients in the cache still reproduce the 25 °C constants in the cache — two
          transcriptions checked against each other, so an error made the same way in both passes; only the page
          image of the primary catches that;
-      5. the ratified point (Q6, ⚖️ 2026-09-17) is what its derivation says — no oxalate, the other four at the
-         geometric mid of the pre-verdict range — and prices a preparable medium: base positive and larger at the
-         higher pH, potassium = KNO3 + base, gypsum undersaturated, buffer capacity positive.
+      5. both points are what their derivations say — Q6 (⚖️ 2026-09-17, history): no oxalate, the other four at the
+         geometric mid of the pre-verdict range; Q7 (⚖️ 2026-10-18, live): no oxalate, Ca · Mg at the geometric mid
+         of the cache's measured trunk-base rows minus the excluded fertilized row, nitrate at its measured mid,
+         malate at the cache's solve — and each prices a preparable medium: base positive and larger at the higher
+         pH, potassium = KNO3 + base, gypsum undersaturated, buffer capacity positive. CANNOT catch: a wrong solve
+         (`malic_solved_mM` is checked only against the point it rounds to, and the potassium it gives against the
+         measured mid — a solve at the wrong pH or temperature that lands near that mid passes; the script asserts
+         the solve itself), or a mis-transcribed row (only the page images in the scratch tree catch that).
     """
     path = CHEMISTRY / "sap_recipe_saturation.json"
     if not path.exists():
@@ -3100,20 +3105,41 @@ def test_sap_recipe_saturation():
     malic, t_k = d["constants"]["malic_acid"], 298.15
     for (a3, a1, a2), k25 in zip((malic["pk1_equation"], malic["pk2_equation"]), malic["k_25c_printed"], strict=True):
         assert abs(a3 / t_k + a1 + a2 * t_k + math.log10(k25)) < 2e-3, "malic-acid equation ≠ its printed constant"
-    q6 = d["q6_ratified_point"]
-    assert q6["recipe_mM"]["oxalic"] == 0.0, "the verdict removed oxalate"
-    for key, (lo, hi) in d["recipe_ranges_mM"].items():
+    q6, q7 = d["q6_point_2026_09_17_superseded"], d["q7_revised_point"]
+    for q in (q6, q7):
+        assert q["recipe_mM"]["oxalic"] == 0.0, "oxalate stays out"
+    for key, (lo, hi) in d["recipe_ranges_mM"].items():   # Q6 — history: the 2026-09-17 derivation
         if key != "oxalic":
             assert q6["recipe_mM"][key] == float(f"{math.sqrt(lo * hi):.2g}"), f"{key}: not the geometric mid"
-    for name, c in q6["conditions"].items():
-        base_lo, base_hi = c["base_koh_mM"]
-        assert 0.0 < base_lo <= base_hi, name
-        for k_total, base in zip(c["potassium_total_mM"], c["base_koh_mM"], strict=True):
-            assert abs(k_total - (base + q6["recipe_mM"]["kno3"])) < 2e-3, f"{name}: K+ total ≠ KNO3 + base"
-        assert c["si_gypsum_max"] < 0.0 and c["buffer_capacity_mM_per_pH_25c"] > 0.0, name
-    setpoint, side = q6["conditions"]["setpoint"], q6["conditions"]["side_series"]
-    assert setpoint["ph"] > side["ph"] and setpoint["base_koh_mM"][0] > side["base_koh_mM"][1], \
-        "more malic acid is dissociated at the higher pH, so it must take more base"
+    # Q7 — the live point re-derived from the rows the cache carries (the script asserts the same; this catches a cache
+    # whose recorded rows and point disagree — a hand-edited cache or a script that stopped asserting).
+    meas = q7["measured"]
+    used = [r for k, r in meas["rows_mg_per_l"].items() if k not in meas["rows_excluded"]]
+    assert set(meas["rows_excluded"]) == {"this_study_podzol_fertilized"}, meas["rows_excluded"]
+    for key, ion in (("cacl2", "Ca"), ("mgso4", "Mg"), ("k_total", "K")):
+        lo, hi = min(r[ion] for r in used), max(r[ion] for r in used)
+        assert meas["trunk_base_mg_per_l"][key] == [lo, hi], key
+        mid = math.sqrt(lo * hi) / {"Ca": 40.078, "Mg": 24.305, "K": 39.098}[ion]
+        assert abs(meas["geometric_mid_mM"][key] - mid) < 1e-4, key
+        if key != "k_total":
+            assert q7["recipe_mM"][key] == float(f"{mid:.2g}"), f"{key}: not the measured trunk-base mid"
+    no3 = meas["nitrate_mM"]
+    assert q7["recipe_mM"]["kno3"] == float(f"{math.sqrt(no3[0] * no3[1]):.2g}"), "kno3: not the nitrate mid"
+    assert q7["recipe_mM"]["malic"] == float(f"{meas['malic_solved_mM']:.2g}"), "malic: not the solve"
+    assert abs(meas["potassium_total_at_point_mM"] - meas["geometric_mid_mM"]["k_total"]) < 0.02, \
+        "the rounded malate moved potassium off the measured mid by more than rounding"
+    for q in (q6, q7):
+        for name, c in q["conditions"].items():
+            base_lo, base_hi = c["base_koh_mM"]
+            assert 0.0 < base_lo <= base_hi, name
+            for k_total, base in zip(c["potassium_total_mM"], c["base_koh_mM"], strict=True):
+                assert abs(k_total - (base + q["recipe_mM"]["kno3"])) < 2e-3, f"{name}: K+ total ≠ KNO3 + base"
+            assert c["si_gypsum_max"] < 0.0 and c["buffer_capacity_mM_per_pH_25c"] > 0.0, name
+        setpoint, side = q["conditions"]["setpoint"], q["conditions"]["side_series"]
+        assert setpoint["ph"] > side["ph"] and setpoint["base_koh_mM"][0] > side["base_koh_mM"][1], \
+            "more malic acid is dissociated at the higher pH, so it must take more base"
+    vs = q7["against_point_2026_09_17_setpoint"]
+    assert vs["ionic_strength_ratio"] < 1.0 and vs["buffer_capacity_ratio"] < 1.0 and vs["potassium_total_ratio"] < 1.0, vs
     assert (CHEMISTRY / "sap_recipe_saturation.png").stat().st_size > 10_000
 
 
@@ -4397,7 +4423,23 @@ def test_electrode_interfacial_ph_invariants():
     for name, m in media.items():
         by = m["f_pH6_by_D_end"]
         assert by["citrate_like"][0] < by["succinate_like"][0] and by["citrate_like"][1] < by["succinate_like"][1], name
-        assert m["f_pH6_by_film"]["stagnant"][0] < m["f_pH6_by_film"]["Levich"][0] < m["f_pH6_by_film"]["transient"][0], name
+        # The docstring's claim, on every medium: f moves far less with the film exponent than with malate's D.
+        film = m["f_pH6_by_film"]
+        film_spread = max(abs(film[a][j] - film[b][j]) for a in film for b in film for j in (0, 1))
+        d_spread = min(by["succinate_like"][j] - by["citrate_like"][j] for j in (0, 1))
+        assert film_spread < d_spread, (name, film_spread, d_spread)
+    # The film ORDER stagnant < Levich < transient is a property of the BUFFER-carried regime, not a law: f ∝ (D/D_O2)^p
+    # per carrier, and for malate (D < D_O2) that ratio FALLS as p rises — stagnant p = 1 lowest, transient p = ½ highest;
+    # free H⁺ (D > D_O2) moves the other way. On the revised sap (2026-10-18) at pH 4.5 malate is NOT spent at the crossing
+    # (f_pH6 < f_malate_spent in every row, asserted above) — there is simply so little of it that free H⁺ carries most of
+    # the supply, and there the order breaks. So the order is pinned where malate carries the protons, and the break is
+    # tied to the cache's own share: it may break only where free H⁺ carries the majority.
+    for name in ("buffered_pH4.5", "sap_pH5.75"):
+        film = media[name]["f_pH6_by_film"]
+        assert film["stagnant"][0] < film["Levich"][0] < film["transient"][0], name
+    film = media["sap_pH4.5"]["f_pH6_by_film"]
+    if not film["stagnant"][0] < film["Levich"][0] < film["transient"][0]:
+        assert d["cathode"]["free_H_share_of_supply_sap_pH4.5_low_D"] > 0.5, "film order broke without free H⁺ carrying most"
     assert media["sap_pH5.75"]["f_pH6"][1] < media["sap_pH4.5"]["f_pH6"][0] < media["buffered_pH4.5"]["f_pH6"][0]
     ds = d["anode"]["delta_star"]
     for edge in ds.values():

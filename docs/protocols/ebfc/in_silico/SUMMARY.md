@@ -1278,7 +1278,9 @@ sets how much water is there to radiolyse.
 ## HW.3 — Does the Synthetic Xylem Sap Precipitate Its Own Chelator? (script 67)
 
 Spec home → [`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); decision ⚖️ founder 2026-09-17 — oxalate
-removed, the recipe is now a point (Q6). Q1–Q5 below price the ranges that point replaced and stay its ground.
+removed, the recipe is now a point (Q6); ⚖️ founder 2026-10-18 — that point revised onto measured conifer sap (Q7, the
+live recipe). Q1–Q5 below price the ranges the first point replaced and stay its ground; Q6 stays as the price the
+revision is read against.
 
 The recipe was written as ranges until then — malic acid 1–5, oxalic acid 0.5–2, KNO₃ 2–5, CaCl₂ 0.5–2, MgSO₄ 0.2–1 mM —
 and two tests run in it: the Stage-2 coin electrochemistry (pH 4.5–5.5, 20–25 °C,
@@ -1387,7 +1389,7 @@ to: the apparent constants add ×1.01–1.03 and the I = 0 constants ×1.06–1.
 oxalate constants, end to end, moves it ×1.54–1.77 — **the missing constant matters less than the constants we
 already have**, so chasing it is not what would widen the recipe. No reading comes within an order of magnitude of the canon ranges.
 
-**Q6 — the ratified point** (⚖️ founder 2026-09-17: oxalate out; malic acid 2.2 · KNO₃ 3.2 · CaCl₂ 1.0 · MgSO₄ 0.45 mM,
+**Q6 — the point of 2026-09-17, superseded 2026-10-18 by Q7** (⚖️ founder 2026-09-17: oxalate out; malic acid 2.2 · KNO₃ 3.2 · CaCl₂ 1.0 · MgSO₄ 0.45 mM,
 each the geometric mid of its old range, asserted by the script; pH 5.75 — the measured *P. sylvestris* sap pH,
 Tarvainen et al. 2023 — with a pH 4.5 side series of uncoated coupons under ICP-MS only). Over every documented
 reading and every temperature of the tests each condition belongs to:
@@ -1402,11 +1404,32 @@ number that matters is the last column: at the set-point a few hundredths of a m
 tenth, and a working anode produces acid — the model does not say how fast, so the figure is a scale, not a drift
 prediction — which makes medium replacement and a pH log conditions of the test rather than good practice.
 
+**Q7 — the revised point, the live recipe** (⚖️ founder 2026-10-18, refined the same day): calcium, magnesium and
+potassium at the geometric mid of measured Norway-spruce sap at the BOTTOM OF THE STEM, natural stands — every
+«bottom of the stem» row of Dambrine et al. 1995, Table 1, except the fertilized plot; nitrate at the mid of the
+Scots-pine shoot-sap range read off Henriksson 2012, Fig. 1; malic acid not measured but solved, so that KOH to pH 5.75
+(at 25 °C, on the selected constant readings) plus the potassium of KNO₃ gives the measured-mid potassium. Malic acid **0.40** · KNO₃ **0.0049** · CaCl₂ **0.18** · MgSO₄ **0.062** mM, the
+derivation asserted by the script:
+
+| Q7 condition | KOH to reach it | K⁺ total | β at 25 °C | strong acid for −0.1 pH |
+|---|---|---|---|---|
+| Q7 · pH 5.75 (coin 20–25 °C · accelerated — 40 °C isotherm) | **0.730–0.738 mM** | 0.735–0.743 mM | **0.13 mM/pH** | 0.014 mM |
+| Q7 · pH 4.5 (coin side series, 20–25 °C) | **0.424–0.433 mM** | 0.429–0.438 mM | **0.31 mM/pH** | 0.032 mM |
+
+Against Q6 at the set-point: ionic strength **×0.135**, buffer capacity **×0.22**, potassium **×0.10**. Two things the
+table does not say. The first point's ionic strength was about seven and a half times higher, so every reading of
+solution resistance — the coin test's `R_int` gate and the R_Ω bench that fills the anode gap with this sap — read
+optimistic on exactly the gated numbers. And the buffer is now four to five times weaker, so a working anode acidifies
+its medium faster (script `85` moved with it). ⚠️ The ions are Norway spruce's, not Scots pine's, and in which direction spruce errs for pine
+on sand is not established — in Dambrine's table only the fertilized plot, now excluded, runs higher — and dissolved
+CO₂, a buffer real sap may carry, is not in the recipe; the remedy is measuring the sap of our own pine logs
+(`00_07` HW.3). The recipe stands on pine data: the broadleaf anchor SKUs are not yet computed on their own sap (a desk leg looks for it, `00_07` HW.3).
+
 **Verdict** — 🔴 **The pre-verdict recipe had no member that is a stable solution.** Every corner of both tests'
 bands is supersaturated to all three calcium oxalate hydrates, by a margin no documented constant closes. The
 hard-bound window was the machine half of HW.3; which ion to lower was ⚖️, priced in Q2–Q4, and the founder
 removed oxalate on 2026-09-17 — its price is the buffering Q4 measures and the chelator the recipe no longer
-carries; what the chosen point takes is Q6. (`chemistry/sap_recipe_saturation.json`)
+carries; what that point took is Q6, and what the revised point takes is Q7. (`chemistry/sap_recipe_saturation.json`)
 
 ⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Structurally
 blind to: precipitation kinetics and the metastable zone — a supersaturated flask that has not clouded yet is
@@ -1457,37 +1480,40 @@ a 20 % one — and it is the linear regime only: in their 1 mM buffer the FEM re
 1991/1992, Nernst–Einstein); O₂ diffusion from the formula in Han & Bartels 1996 — its abstract, the one reading in
 hand; O₂ at air saturation from the USGS table on Benson & Krause. **Malate's own D was not found**: it is bracketed
 between hydrogen citrate (larger anion, as Liu model it) and hydrogen succinate (smaller). The succinate value is a
-best-fit its source flags and likely high — and it is the end that keeps the cathode's face under pH 6, so the bracket
-errs toward «no risk». Unstirred aqueous layers are 150–1000 µm (Katona et al. 2021's review).
+best-fit its source flags and likely high — and it is the end that delays the cathode face's crossing of pH 6, so the bracket
+errs toward «less risk». Unstirred aqueous layers are 150–1000 µm (Katona et al. 2021's review).
 
 **Cathode — a fraction of its own O₂ limit.** O₂ crosses the same layer, so the fraction f of the O₂ transport limit at
 which the face reaches pH 6 depends on the hydrodynamics only through the exponent of D in each flux — stagnant,
-convective or transient (a CV, a recessed window's first hours) moves the low corner 0.55 → 0.68 → 0.80 — and far more
-on malate's D, which nobody has measured:
+convective or transient (a CV, a recessed window's first hours) moves the low corner 0.22 → 0.20 → 0.21 in the sap at
+4.5 — out of order there, because with so little malate free H⁺, which diffuses faster than O₂, carries most of
+the supply (62 % at the low-D corner; in the buffered medium, where malate carries the protons, the order holds) — and far more on malate's D, which
+nobody has measured:
 
 | cathode medium | f at pH 6 | at the O₂ limit |
 |---|---|---|
-| the sap brought to 4.5 | **0.55–1.31** · citrate-like D 0.55–0.94, succinate-like 0.97–1.31 | crosses pH 6 first in 44 of 84 corners — every citrate-like one; where the model reaches the limit the face is at pH 5.4–6.8, and in 37 corners the malate is spent first |
-| the sap at 5.75 (one compartment) | **0.03–0.10** | crosses pH 6 first in every corner |
-| buffered: malic acid 10 mM, pH 4.5 | **1.99–5.58** | never crosses; the face is at pH 4.7–5.0 |
+| the sap brought to 4.5 | **0.20–0.33** · citrate-like D 0.20–0.23, succinate-like 0.27–0.33 | crosses pH 6 first in 84 of 84 corners, and in 84 corners the malate is spent first — no corner reaches the O₂ limit inside the model |
+| the sap at 5.75 (one compartment) | **0.01–0.02** | crosses pH 6 first in every corner |
+| buffered: malic acid 10 mM, pH 4.5 | **2.09–5.67** | never crosses; the face is at pH 4.7–5.0 |
 
-So in the sap at 4.5 a cathode that draws near its O₂ transport limit has no margin to the laccase threshold, and
-malate's D decides whether it crosses; whether a given cathode gets near that limit is its own kinetics — a CV plateau
-can be enzyme-limited. In a one-compartment cell the face crosses at a few % of the limit; the buffered medium keeps it
-about 1 pH unit below. The cold-start load B (25 µA on the 2 cm² face) reaches pH 6 in the sap at 4.5 only for
-δ ≥ 0.84–1.8 mm — at most the thickest natural-convection layers.
+So in the sap at 4.5 the face crosses pH 6 at a fifth to a third of the O₂ transport limit whatever malate's D — the
+revised sap (⚖️ 2026-10-18, a fifth of the old buffer) took the margin the first recipe left at the succinate-like
+end; whether a given cathode draws even that much is its own kinetics — a CV plateau can be enzyme-limited. In a
+one-compartment cell the face crosses at 1–2 % of the limit; the buffered medium keeps it about 1 pH unit below. The
+cold-start load B (25 µA on the 2 cm² face) reaches pH 6 in the sap at 4.5 once δ ≥ 0.33–0.52 mm — inside the range of
+unstirred layers.
 
 **Anode — a thickness.** At L4's predicted current for the hold (369 µA/cm², the pH-7.4 laboratory ceiling `J_MAX_25C`)
 its face leaves the acid end of the enzyme's measured stability band (pH 4.5, Sygmund 2011) once δ exceeds
-**20–57 µm** (31–57 µm at one proton per electron); at the pH bracket printed beside that ceiling (213–251 µA/cm²) once δ
-exceeds **30–99 µm**. Unstirred layers are 150–1000 µm. The face drops below 5.5 — the acid end of the only measured pH
-pair of the enzyme's kinetics, i.e. out of the L4 bracket itself — once δ exceeds 2–11 µm. Glucose transport, not
+**8–17 µm** (12–17 µm at one proton per electron); at the pH bracket printed beside that ceiling (213–251 µA/cm²) once δ
+exceeds **12–29 µm**. Unstirred layers are 150–1000 µm. The face drops below 5.5 — the acid end of the only measured pH
+pair of the enzyme's kinetics, i.e. out of the L4 bracket itself — once δ exceeds 0.6–2.8 µm. Glucose transport, not
 computed here, may cap the current in thick layers first; either way an unstirred cell cannot carry the ceiling current
 with the face inside the band. If the anode does approach that current, A's glucose series and C's hold measure the
 medium's buffer together with the enzyme. The coatings' own transport resistance comes on top, and stirring cannot
 remove it.
 
-**The anchor's anode — conditional on stagnant sap in its gap (2026-10-17; revised the same day after an adversarial pass — the first version read only the pine part, judged it against the coin letter's load point and called the currents upper bounds without the effects that push the other way).** In the anchor the gyroid stands in the Ø15 bore that also takes the sleeve; on the pine part (envelope Ø11, **13.8 cm²** of side) the gap is **2.0 mm** (both from the CEMs; one sleeve manifest serves every Zone-1 part, so the gap narrows as the lattice thickens). Which of three states a living stem keeps there — sap, air or ingrown wood — is not known, and the HW.53 bench cannot say: it fills the gap with the recipe by hand, so it SETS that state rather than measuring it. With the ratified sap lying stagnant in the gap and the bulk at the bore wall, steady radial diffusion gives a film of r_a·ln(r_b/r_a) = **1.71 mm** per unit of envelope on pine. The yardstick is the anchor's own cold-start draw, P_IN(CS)/V_IN(CS): 25.0 µA typical and **21.4** µA at the worst-case column the Stage-2 gates judge (`02_03 §1.5`). On pine the face leaves the enzyme's kinetic bracket (pH 5.5) at **5.8–20.7 µA** for the whole anode (the low end the envelope alone, the high end with the bottom cap at the envelope's flux density) — below the worst-case draw in every reading — and its stability band (pH 4.5) at **60.8–181.8 µA**, above it in every reading. By part: broadleaf, pine and pine's two topology variants cross pH 5.5 below the worst-case draw in every reading; mangrove (the bottom cap tips it), oak and tropical only in some — up to **29.0** µA on oak and **50.7** µA on tropical; no part crosses pH 4.5 at cold start. **Which side.** Against the enzyme inside the lattice the currents are upper bounds: protons are made inside it, which the envelope film does not see, and the wood wall adds its own resistance. Migration (a few per cent), any flow through the gap and a CO₂/HCO₃⁻ buffer the recipe lacks push the other way and are not in. In a film this thick the lactone has about an hour to hydrolyse inside it, so the n_H = 1.5 end is no longer the unlikely one it is on the coin; acid made inside the film moves the face less than acid made at it, so the truth lies between the two n_H ends. **What it says:** with stagnant sap in the gap, the anchor anode on most parts works below the pH at which its kinetics was measured already at its cold-start draw. Whether it stays inside the stability band after cold start depends on its working current — the EBFC's own P–V curve, which HW.13 measures. An air gap is not modelled (`84`: layer 1 then runs through contact points only), and ingrown wood is not computed (no transport data for living sapwood in the tree).
+**The anchor's anode — conditional on stagnant sap in its gap (2026-10-17; revised the same day after an adversarial pass — the first version read only the pine part, judged it against the coin letter's load point and called the currents upper bounds without the effects that push the other way; every number moved with the revised sap of 2026-10-18, whose buffer is a fifth of the first recipe's).** In the anchor the gyroid stands in the Ø15 bore that also takes the sleeve; on the pine part (envelope Ø11, **13.8 cm²** of side) the gap is **2.0 mm** (both from the CEMs; one sleeve manifest serves every Zone-1 part, so the gap narrows as the lattice thickens). Which of three states a living stem keeps there — sap, air or ingrown wood — is not known, and the HW.53 bench cannot say: it fills the gap with the recipe by hand, so it SETS that state rather than measuring it. With the ratified sap (the revised point, `01_02 §2.1`) lying stagnant in the gap and the bulk at the bore wall, steady radial diffusion gives a film of r_a·ln(r_b/r_a) = **1.71 mm** per unit of envelope on pine. The yardstick is the anchor's own cold-start draw, P_IN(CS)/V_IN(CS): 25.0 µA typical and **21.4** µA at the worst-case column the Stage-2 gates judge (`02_03 §1.5`). On pine the face leaves the enzyme's kinetic bracket (pH 5.5) at **1.9–5.2 µA** for the whole anode (the low end the envelope alone, the high end with the bottom cap at the envelope's flux density) — below the worst-case draw in every reading — and its stability band (pH 4.5) at **23.8–53.2 µA**, above it in every reading. By part: every Zone-1 part crosses pH 5.5 below the worst-case draw in every reading; pH 4.5 only broadleaf does, in some readings — the widest gap, 2.5 mm, from **17.3** µA — and at the typical 25 µA draw pine and its two topology variants join it in some. ⚠️ Every part here sits in the PINE recipe: the broadleaf, oak, tropical and mangrove parts differ from pine only in the gap's geometry, and their own sap is not modelled (`01_02 §2.1`). **Which side.** Against the enzyme inside the lattice the currents are upper bounds: protons are made inside it, which the envelope film does not see, and the wood wall adds its own resistance. Migration (a few per cent), any flow through the gap and a CO₂/HCO₃⁻ buffer the recipe lacks push the other way and are not in. In a film this thick the lactone has about an hour to hydrolyse inside it, so the n_H = 1.5 end is no longer the unlikely one it is on the coin; acid made inside the film moves the face less than acid made at it, so the truth lies between the two n_H ends. **What it says:** with stagnant sap in the gap, the anchor anode on every part works below the pH at which its kinetics was measured already at its cold-start draw, and the widest-gap part reaches the acid end of its stability band there too. Whether it stays inside the stability band after cold start depends on its working current — the EBFC's own P–V curve, which HW.13 measures. An air gap is not modelled (`84`: layer 1 then runs through contact points only), and ingrown wood is not computed (no transport data for living sapwood in the tree).
 
 ⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Every shift is a
 **lower bound at the enzyme**: protons are made or consumed under the anode's hydrogel and membrane and inside the
@@ -1511,14 +1537,14 @@ with pH 4.5 read three ways (p[H] and activity at the source's I, activity in th
 
 | metal | α (all readings) | of which |
 |---|---|---|
-| Co(II) | **3.6 – 14** | weakest in every reading |
-| Cu(II) | **10 – 250** | NIST 46 critical: 10 – 28; the top is Zabiszak 2021's model (no CuL) |
-| Ce(III) | **60 – 2600** | the one read measurement (Buzko, no β₂): 60 – 190; with the neighbours' questionable β₂ to ≈ 2200; the secondary 5.23 to ≈ 2600 |
+| Co(II) | **3.6 – 15** | weakest in every reading |
+| Cu(II) | **10 – 280** | NIST 46 critical: 10 – 32; the top is Zabiszak 2021's model (no CuL) |
+| Ce(III) | **60 – 3200** | the one read measurement (Buzko, no β₂): 60 – 230; with the neighbours' questionable β₂ to ≈ 2800; the secondary 5.23 to ≈ 3200 |
 
 So malate pulls hardest on **Ce**, the metal the verdict's weakest link did not name; the Cu and Ce brackets overlap.
-Competition barely moves it: the Ca/Mg–malate readings shift free malate by ≤ 6 %, K–malate (not in `67`) by ≈ 2 %. The
+Competition barely moves it: the Ca/Mg–malate readings shift free malate by ≤ 1.1 %, K–malate (not in `67`) by ≈ 2 %. (Numbers on the salts of the revised sap, 2026-10-18 — the lower ionic strength raised the α read at the medium's own I by 10–34 % and the per-metal maxima by 10–28 %; the readings at the source's I are unchanged.) The
 Davies step to the medium's I is derived and checked on NIST's own I = 0 rows (worst miss 0.08 over 0.1 → 0; the medium
-step is 0.41 of that).
+step is 0.50 of that).
 
 ⚠️ **Bounds.** α is an equilibrium, not a leaching rate: the framework's solubility, its proton-driven breakdown and
 the imidazole it releases are outside it. It is the trace-metal limit — the Cu dimer (NIST 46) reaches 10 % of CuL at

@@ -3,11 +3,11 @@
   "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
   "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor cathode waits on HW.53, and which gap state a living stem keeps is not known",
   "recipe_mM": {
-    "malic": 2.2,
+    "malic": 0.4,
     "oxalic": 0.0,
-    "kno3": 3.2,
-    "cacl2": 1.0,
-    "mgso4": 0.45
+    "kno3": 0.0049,
+    "cacl2": 0.18,
+    "mgso4": 0.062
   },
   "readings": [
     "selected",
@@ -55,7 +55,7 @@
   },
   "checks": {
     "titration_vs_67": {
-      "max_abs_dev_mol_l": 6.938893903907228e-18
+      "max_abs_dev_mol_l": 1.2468324983583301e-18
     },
     "liu_fem_point": {
       "source": "Liu et al. 2026, SI Fig. S4 (10 mM citrate, air, 300 s, centre of a 300 µm disk), read off the axes",
@@ -88,45 +88,42 @@
       "sap_pH4.5": {
         "what": "the ratified sap brought to 4.5 — a laboratory's likeliest reading of the letter",
         "bulk_pH": 4.5,
-        "ionic_strength_25C": 0.0109,
+        "ionic_strength_25C": 0.0013,
         "f_pH6": [
-          0.547,
-          1.307
+          0.199,
+          0.328
         ],
         "f_pH6_by_D_end": {
           "citrate_like": [
-            0.547,
-            0.935
+            0.199,
+            0.234
           ],
           "succinate_like": [
-            0.967,
-            1.307
+            0.269,
+            0.328
           ]
         },
         "f_pH6_by_film": {
           "stagnant": [
-            0.547,
-            1.132
+            0.216,
+            0.328
           ],
           "Levich": [
-            0.684,
-            1.235
+            0.199,
+            0.301
           ],
           "transient": [
-            0.796,
-            1.307
+            0.207,
+            0.299
           ]
         },
         "f_malate_spent": [
-          0.586,
-          1.43
+          0.214,
+          0.353
         ],
-        "rows_crossing_pH6_below_O2_limit": 44,
-        "rows_beyond_model_at_O2_limit": 37,
-        "face_pH_at_O2_limit_where_reached": [
-          5.41,
-          6.81
-        ],
+        "rows_crossing_pH6_below_O2_limit": 84,
+        "rows_beyond_model_at_O2_limit": 84,
+        "face_pH_at_O2_limit_where_reached": null,
         "rows": 84,
         "row_table": [
           {
@@ -135,8 +132,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "stagnant",
-            "f_pH6": 0.576888735055925,
-            "f_malate_spent": 0.6233994677858877,
+            "f_pH6": 0.2171598689042675,
+            "f_malate_spent": 0.23046136005614407,
             "face_pH_at_O2_limit": null
           },
           {
@@ -145,8 +142,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.7279807764289371,
-            "f_malate_spent": 0.7933109564693738,
+            "f_pH6": 0.2010833606106861,
+            "f_malate_spent": 0.2172686835302782,
             "face_pH_at_O2_limit": null
           },
           {
@@ -155,8 +152,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8492312260083553,
-            "f_malate_spent": 0.927767995497102,
+            "f_pH6": 0.20901862850219527,
+            "f_malate_spent": 0.2276895631579286,
             "face_pH_at_O2_limit": null
           },
           {
@@ -165,9 +162,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 1.0279365063152577,
-            "f_malate_spent": 1.118545897559037,
-            "face_pH_at_O2_limit": 5.885704529808567
+            "f_pH6": 0.3019538092988508,
+            "f_malate_spent": 0.3249562624499075,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -175,9 +172,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.1204164815493545,
-            "f_malate_spent": 1.224114855052793,
-            "face_pH_at_O2_limit": 5.656213001496725
+            "f_pH6": 0.2748586276866752,
+            "f_malate_spent": 0.2994843068281048,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -185,18 +182,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1860604515343112,
-            "f_malate_spent": 1.2975288037520236,
-            "face_pH_at_O2_limit": 5.552181819602505
-          },
-          {
-            "t_c": 20.0,
-            "reading": "selected_guenzel_apparent",
-            "D_end": "citrate_like",
-            "D_mal": 5.344963798704109e-06,
-            "film": "stagnant",
-            "f_pH6": 0.5728031581478772,
-            "f_malate_spent": 0.6177856366929502,
+            "f_pH6": 0.2723402522686947,
+            "f_malate_spent": 0.29825558036842503,
             "face_pH_at_O2_limit": null
           },
           {
@@ -204,9 +191,19 @@
             "reading": "selected_guenzel_apparent",
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
+            "film": "stagnant",
+            "f_pH6": 0.21699266908734893,
+            "f_malate_spent": 0.23018298902385573,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 20.0,
+            "reading": "selected_guenzel_apparent",
+            "D_end": "citrate_like",
+            "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.7219334843486188,
-            "f_malate_spent": 0.7849944897563845,
+            "f_pH6": 0.20083912364585757,
+            "f_malate_spent": 0.2168598595850019,
             "face_pH_at_O2_limit": null
           },
           {
@@ -215,8 +212,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8418643460050793,
-            "f_malate_spent": 0.9176346547450425,
+            "f_pH6": 0.2087220653846172,
+            "f_malate_spent": 0.22719248749258,
             "face_pH_at_O2_limit": null
           },
           {
@@ -225,9 +222,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 1.0196177079278252,
-            "f_malate_spent": 1.1071070677689918,
-            "face_pH_at_O2_limit": 5.914652773192248
+            "f_pH6": 0.3016171479367296,
+            "f_malate_spent": 0.3243931989593966,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -235,9 +232,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.1106860601819653,
-            "f_malate_spent": 1.2107303276671113,
-            "face_pH_at_O2_limit": 5.6696205362360965
+            "f_pH6": 0.27446695010641753,
+            "f_malate_spent": 0.29882778520487946,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -245,18 +242,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1755323260860129,
-            "f_malate_spent": 1.2830455250890451,
-            "face_pH_at_O2_limit": 5.560860378673255
-          },
-          {
-            "t_c": 20.0,
-            "reading": "selected_guenzel_i0",
-            "D_end": "citrate_like",
-            "D_mal": 5.344963798704109e-06,
-            "film": "stagnant",
-            "f_pH6": 0.5471994110053585,
-            "f_malate_spent": 0.585909952297609,
+            "f_pH6": 0.2719171402472884,
+            "f_malate_spent": 0.2975459047384464,
             "face_pH_at_O2_limit": null
           },
           {
@@ -264,9 +251,19 @@
             "reading": "selected_guenzel_i0",
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
+            "film": "stagnant",
+            "f_pH6": 0.21577833932842003,
+            "f_malate_spent": 0.22834729889705357,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 20.0,
+            "reading": "selected_guenzel_i0",
+            "D_end": "citrate_like",
+            "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.6840248965634589,
-            "f_malate_spent": 0.7377736245450841,
+            "f_pH6": 0.1990629632943235,
+            "f_malate_spent": 0.21416385083846912,
             "face_pH_at_O2_limit": null
           },
           {
@@ -275,8 +272,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.7956803752393772,
-            "f_malate_spent": 0.8600977510510035,
+            "f_pH6": 0.20656466949276767,
+            "f_malate_spent": 0.22391448061234975,
             "face_pH_at_O2_limit": null
           },
           {
@@ -285,9 +282,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 0.9674720805243089,
-            "f_malate_spent": 1.0421573208914312,
-            "face_pH_at_O2_limit": 6.2241951729088605
+            "f_pH6": 0.2991693481621979,
+            "f_malate_spent": 0.3206800629714033,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -295,9 +292,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.0496846158100965,
-            "f_malate_spent": 1.134733257675622,
-            "face_pH_at_O2_limit": 5.802840954573036
+            "f_pH6": 0.27161760481492364,
+            "f_malate_spent": 0.294498298061358,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -305,18 +302,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.109527658839861,
-            "f_malate_spent": 1.200809883122164,
-            "face_pH_at_O2_limit": 5.652364688574851
-          },
-          {
-            "t_c": 20.0,
-            "reading": "spread_si_high",
-            "D_end": "citrate_like",
-            "D_mal": 5.344963798704109e-06,
-            "film": "stagnant",
-            "f_pH6": 0.576888735055925,
-            "f_malate_spent": 0.6233994677858877,
+            "f_pH6": 0.26883862518239654,
+            "f_malate_spent": 0.29286587644122447,
             "face_pH_at_O2_limit": null
           },
           {
@@ -324,9 +311,19 @@
             "reading": "spread_si_high",
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
+            "film": "stagnant",
+            "f_pH6": 0.2171598689042675,
+            "f_malate_spent": 0.23046136005614407,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 20.0,
+            "reading": "spread_si_high",
+            "D_end": "citrate_like",
+            "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.7279807764289371,
-            "f_malate_spent": 0.7933109564693738,
+            "f_pH6": 0.2010833606106861,
+            "f_malate_spent": 0.2172686835302782,
             "face_pH_at_O2_limit": null
           },
           {
@@ -335,8 +332,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8492312260083553,
-            "f_malate_spent": 0.927767995497102,
+            "f_pH6": 0.20901862850219527,
+            "f_malate_spent": 0.2276895631579286,
             "face_pH_at_O2_limit": null
           },
           {
@@ -345,9 +342,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 1.0279365063152577,
-            "f_malate_spent": 1.118545897559037,
-            "face_pH_at_O2_limit": 5.885704529808567
+            "f_pH6": 0.3019538092988508,
+            "f_malate_spent": 0.3249562624499075,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -355,9 +352,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.1204164815493545,
-            "f_malate_spent": 1.224114855052793,
-            "face_pH_at_O2_limit": 5.656213001496725
+            "f_pH6": 0.2748586276866752,
+            "f_malate_spent": 0.2994843068281048,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -365,9 +362,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1860604515343112,
-            "f_malate_spent": 1.2975288037520236,
-            "face_pH_at_O2_limit": 5.552181819602505
+            "f_pH6": 0.2723402522686947,
+            "f_malate_spent": 0.29825558036842503,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -375,8 +372,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "stagnant",
-            "f_pH6": 0.576888735055925,
-            "f_malate_spent": 0.6233994677858877,
+            "f_pH6": 0.2171598689042675,
+            "f_malate_spent": 0.23046136005614407,
             "face_pH_at_O2_limit": null
           },
           {
@@ -385,8 +382,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.7279807764289371,
-            "f_malate_spent": 0.7933109564693738,
+            "f_pH6": 0.2010833606106861,
+            "f_malate_spent": 0.2172686835302782,
             "face_pH_at_O2_limit": null
           },
           {
@@ -395,8 +392,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8492312260083553,
-            "f_malate_spent": 0.927767995497102,
+            "f_pH6": 0.20901862850219527,
+            "f_malate_spent": 0.2276895631579286,
             "face_pH_at_O2_limit": null
           },
           {
@@ -405,9 +402,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 1.0279365063152577,
-            "f_malate_spent": 1.118545897559037,
-            "face_pH_at_O2_limit": 5.885704529808567
+            "f_pH6": 0.3019538092988508,
+            "f_malate_spent": 0.3249562624499075,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -415,9 +412,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.1204164815493545,
-            "f_malate_spent": 1.224114855052793,
-            "face_pH_at_O2_limit": 5.656213001496725
+            "f_pH6": 0.2748586276866752,
+            "f_malate_spent": 0.2994843068281048,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -425,9 +422,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1860604515343112,
-            "f_malate_spent": 1.2975288037520236,
-            "face_pH_at_O2_limit": 5.552181819602505
+            "f_pH6": 0.2723402522686947,
+            "f_malate_spent": 0.29825558036842503,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -435,8 +432,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "stagnant",
-            "f_pH6": 0.5533221437392787,
-            "f_malate_spent": 0.5937163501950881,
+            "f_pH6": 0.2160101205210596,
+            "f_malate_spent": 0.22870298782256984,
             "face_pH_at_O2_limit": null
           },
           {
@@ -445,8 +442,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.6930893994070041,
-            "f_malate_spent": 0.7493379013331313,
+            "f_pH6": 0.1994019099294005,
+            "f_malate_spent": 0.21468621928209713,
             "face_pH_at_O2_limit": null
           },
           {
@@ -455,8 +452,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8067234237442564,
-            "f_malate_spent": 0.874188348287937,
+            "f_pH6": 0.2069763459280793,
+            "f_malate_spent": 0.22454960925800752,
             "face_pH_at_O2_limit": null
           },
           {
@@ -465,9 +462,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 0.979941025147568,
-            "f_malate_spent": 1.058063395463944,
-            "face_pH_at_O2_limit": 6.119474185329563
+            "f_pH6": 0.29963647985419534,
+            "f_malate_spent": 0.3213995100509652,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -475,9 +472,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.0642706627035818,
-            "f_malate_spent": 1.1533446867383372,
-            "face_pH_at_O2_limit": 5.76483831880749
+            "f_pH6": 0.2721613189825129,
+            "f_malate_spent": 0.29533715557060675,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -485,9 +482,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1253098719563754,
-            "f_malate_spent": 1.2209490809626327,
-            "face_pH_at_O2_limit": 5.62770210998231
+            "f_pH6": 0.2694260544569351,
+            "f_malate_spent": 0.2937726489905066,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -495,8 +492,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "stagnant",
-            "f_pH6": 0.570263815663915,
-            "f_malate_spent": 0.6147677373933388,
+            "f_pH6": 0.21692988242935984,
+            "f_malate_spent": 0.23009414930327685,
             "face_pH_at_O2_limit": null
           },
           {
@@ -505,8 +502,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "Levich",
-            "f_pH6": 0.7181729784158669,
-            "f_malate_spent": 0.7805234116821652,
+            "f_pH6": 0.2007472004185129,
+            "f_malate_spent": 0.21672936516654745,
             "face_pH_at_O2_limit": null
           },
           {
@@ -515,8 +512,8 @@
             "D_end": "citrate_like",
             "D_mal": 5.344963798704109e-06,
             "film": "transient",
-            "f_pH6": 0.8372826927075981,
-            "f_malate_spent": 0.9121867073766333,
+            "f_pH6": 0.20861038536380336,
+            "f_malate_spent": 0.2270338170429346,
             "face_pH_at_O2_limit": null
           },
           {
@@ -525,9 +522,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "stagnant",
-            "f_pH6": 1.0144450631173,
-            "f_malate_spent": 1.1009574132844318,
-            "face_pH_at_O2_limit": 5.93513109415036
+            "f_pH6": 0.3014904833367914,
+            "f_malate_spent": 0.32421347672258277,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -535,9 +532,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "Levich",
-            "f_pH6": 1.1046344402671295,
-            "f_malate_spent": 1.2035344549423423,
-            "face_pH_at_O2_limit": 5.680670720512777
+            "f_pH6": 0.27431944965025645,
+            "f_malate_spent": 0.2986182181324526,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 20.0,
@@ -545,9 +542,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.093043896433224e-05,
             "film": "transient",
-            "f_pH6": 1.1689841999673591,
-            "f_malate_spent": 1.275258874947451,
-            "face_pH_at_O2_limit": 5.569067492797543
+            "f_pH6": 0.27175775805591545,
+            "f_malate_spent": 0.2973193658954559,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -555,8 +552,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "stagnant",
-            "f_pH6": 0.6322110161075953,
-            "f_malate_spent": 0.6836949506211134,
+            "f_pH6": 0.23393813358108811,
+            "f_malate_spent": 0.248527733100549,
             "face_pH_at_O2_limit": null
           },
           {
@@ -565,8 +562,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.8016642651527895,
-            "f_malate_spent": 0.873994333765975,
+            "f_pH6": 0.2195949524750325,
+            "f_malate_spent": 0.2374724017418726,
             "face_pH_at_O2_limit": null
           },
           {
@@ -575,9 +572,9 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.9354658380129568,
-            "f_malate_spent": 1.0223456253373295,
-            "face_pH_at_O2_limit": 6.491932615409954
+            "f_pH6": 0.2291585900977375,
+            "f_malate_spent": 0.24980096356100648,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -585,9 +582,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.1320713157262456,
-            "f_malate_spent": 1.23258337430832,
-            "face_pH_at_O2_limit": 5.624097989264691
+            "f_pH6": 0.32791156821756207,
+            "f_malate_spent": 0.3533011647455695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -595,9 +592,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.2352941009688738,
-            "f_malate_spent": 1.3501561678352474,
-            "face_pH_at_O2_limit": 5.484422572440681
+            "f_pH6": 0.3011170998901726,
+            "f_malate_spent": 0.32836356872748695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -605,18 +602,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.3071060317242689,
-            "f_malate_spent": 1.4304376467693896,
-            "face_pH_at_O2_limit": 5.411884286957151
-          },
-          {
-            "t_c": 25.0,
-            "reading": "selected_guenzel_apparent",
-            "D_end": "citrate_like",
-            "D_mal": 6.12e-06,
-            "film": "stagnant",
-            "f_pH6": 0.6277242599767744,
-            "f_malate_spent": 0.677524032923134,
+            "f_pH6": 0.2990267222111714,
+            "f_malate_spent": 0.3276987651308864,
             "face_pH_at_O2_limit": null
           },
           {
@@ -624,9 +611,19 @@
             "reading": "selected_guenzel_apparent",
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
+            "film": "stagnant",
+            "f_pH6": 0.23375433859158387,
+            "f_malate_spent": 0.24822071109095623,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 25.0,
+            "reading": "selected_guenzel_apparent",
+            "D_end": "citrate_like",
+            "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.7950410663991757,
-            "f_malate_spent": 0.8648775554564451,
+            "f_pH6": 0.21932704482950535,
+            "f_malate_spent": 0.23702254797576014,
             "face_pH_at_O2_limit": null
           },
           {
@@ -635,9 +632,9 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.9274088761432119,
-            "f_malate_spent": 1.0112530259088048,
-            "face_pH_at_O2_limit": 6.6648649395479636
+            "f_pH6": 0.22883371503266703,
+            "f_malate_spent": 0.2492547425748468,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -645,9 +642,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.122934226803006,
-            "f_malate_spent": 1.2200077316379836,
-            "face_pH_at_O2_limit": 5.635429101370757
+            "f_pH6": 0.32754129799604237,
+            "f_malate_spent": 0.35267989768559377,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -655,9 +652,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.2246367289736462,
-            "f_malate_spent": 1.33548327746735,
-            "face_pH_at_O2_limit": 5.490424838041168
+            "f_pH6": 0.30068742459815634,
+            "f_malate_spent": 0.3276411067352209,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -665,18 +662,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.2955916026759644,
-            "f_malate_spent": 1.4145832104212088,
-            "face_pH_at_O2_limit": 5.415707959881664
-          },
-          {
-            "t_c": 25.0,
-            "reading": "selected_guenzel_i0",
-            "D_end": "citrate_like",
-            "D_mal": 6.12e-06,
-            "film": "stagnant",
-            "f_pH6": 0.5995692817358318,
-            "f_malate_spent": 0.6424337118861487,
+            "f_pH6": 0.2985632050266898,
+            "f_malate_spent": 0.3269189066834475,
             "face_pH_at_O2_limit": null
           },
           {
@@ -684,9 +671,19 @@
             "reading": "selected_guenzel_i0",
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
+            "film": "stagnant",
+            "f_pH6": 0.23241839453514443,
+            "f_malate_spent": 0.24619548032283034,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 25.0,
+            "reading": "selected_guenzel_i0",
+            "D_end": "citrate_like",
+            "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.7534680645909374,
-            "f_malate_spent": 0.8130364436133266,
+            "f_pH6": 0.21737725165077035,
+            "f_malate_spent": 0.23405508224810323,
             "face_pH_at_O2_limit": null
           },
           {
@@ -695,8 +692,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.876832826368347,
-            "f_malate_spent": 0.9481768894622704,
+            "f_pH6": 0.22646856806158522,
+            "f_malate_spent": 0.24565156990531004,
             "face_pH_at_O2_limit": null
           },
           {
@@ -705,9 +702,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.0655841435194953,
-            "f_malate_spent": 1.1484982262731038,
-            "face_pH_at_O2_limit": 5.7481861043894105
+            "f_pH6": 0.3248470199491109,
+            "f_malate_spent": 0.3485817148958629,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -715,9 +712,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.1577369136219025,
-            "f_malate_spent": 1.2520484484742422,
-            "face_pH_at_O2_limit": 5.559080780974197
+            "f_pH6": 0.29755927389486914,
+            "f_malate_spent": 0.3228753508743629,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -725,18 +722,8 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.2233093391815468,
-            "f_malate_spent": 1.3244298431388737,
-            "face_pH_at_O2_limit": 5.467237599557186
-          },
-          {
-            "t_c": 25.0,
-            "reading": "spread_si_high",
-            "D_end": "citrate_like",
-            "D_mal": 6.12e-06,
-            "film": "stagnant",
-            "f_pH6": 0.6322110161075953,
-            "f_malate_spent": 0.6836949506211134,
+            "f_pH6": 0.29518815287262723,
+            "f_malate_spent": 0.32177451881548186,
             "face_pH_at_O2_limit": null
           },
           {
@@ -744,9 +731,19 @@
             "reading": "spread_si_high",
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
+            "film": "stagnant",
+            "f_pH6": 0.23393813358108811,
+            "f_malate_spent": 0.248527733100549,
+            "face_pH_at_O2_limit": null
+          },
+          {
+            "t_c": 25.0,
+            "reading": "spread_si_high",
+            "D_end": "citrate_like",
+            "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.8016642651527895,
-            "f_malate_spent": 0.873994333765975,
+            "f_pH6": 0.2195949524750325,
+            "f_malate_spent": 0.2374724017418726,
             "face_pH_at_O2_limit": null
           },
           {
@@ -755,9 +752,9 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.9354658380129568,
-            "f_malate_spent": 1.0223456253373295,
-            "face_pH_at_O2_limit": 6.491932615409954
+            "f_pH6": 0.2291585900977375,
+            "f_malate_spent": 0.24980096356100648,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -765,9 +762,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.1320713157262456,
-            "f_malate_spent": 1.23258337430832,
-            "face_pH_at_O2_limit": 5.624097989264691
+            "f_pH6": 0.32791156821756207,
+            "f_malate_spent": 0.3533011647455695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -775,9 +772,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.2352941009688738,
-            "f_malate_spent": 1.3501561678352474,
-            "face_pH_at_O2_limit": 5.484422572440681
+            "f_pH6": 0.3011170998901726,
+            "f_malate_spent": 0.32836356872748695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -785,9 +782,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.3071060317242689,
-            "f_malate_spent": 1.4304376467693896,
-            "face_pH_at_O2_limit": 5.411884286957151
+            "f_pH6": 0.2990267222111714,
+            "f_malate_spent": 0.3276987651308864,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -795,8 +792,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "stagnant",
-            "f_pH6": 0.6322110161075953,
-            "f_malate_spent": 0.6836949506211134,
+            "f_pH6": 0.23393813358108811,
+            "f_malate_spent": 0.248527733100549,
             "face_pH_at_O2_limit": null
           },
           {
@@ -805,8 +802,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.8016642651527895,
-            "f_malate_spent": 0.873994333765975,
+            "f_pH6": 0.2195949524750325,
+            "f_malate_spent": 0.2374724017418726,
             "face_pH_at_O2_limit": null
           },
           {
@@ -815,9 +812,9 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.9354658380129568,
-            "f_malate_spent": 1.0223456253373295,
-            "face_pH_at_O2_limit": 6.491932615409954
+            "f_pH6": 0.2291585900977375,
+            "f_malate_spent": 0.24980096356100648,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -825,9 +822,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.1320713157262456,
-            "f_malate_spent": 1.23258337430832,
-            "face_pH_at_O2_limit": 5.624097989264691
+            "f_pH6": 0.32791156821756207,
+            "f_malate_spent": 0.3533011647455695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -835,9 +832,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.2352941009688738,
-            "f_malate_spent": 1.3501561678352474,
-            "face_pH_at_O2_limit": 5.484422572440681
+            "f_pH6": 0.3011170998901726,
+            "f_malate_spent": 0.32836356872748695,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -845,9 +842,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.3071060317242689,
-            "f_malate_spent": 1.4304376467693896,
-            "face_pH_at_O2_limit": 5.411884286957151
+            "f_pH6": 0.2990267222111714,
+            "f_malate_spent": 0.3276987651308864,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -855,8 +852,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "stagnant",
-            "f_pH6": 0.6062844566961206,
-            "f_malate_spent": 0.6510060421251028,
+            "f_pH6": 0.2326731626297022,
+            "f_malate_spent": 0.24658761236203827,
             "face_pH_at_O2_limit": null
           },
           {
@@ -865,8 +862,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.7633829567122378,
-            "f_malate_spent": 0.8257009035577871,
+            "f_pH6": 0.21774901343270228,
+            "f_malate_spent": 0.2346296419225472,
             "face_pH_at_O2_limit": null
           },
           {
@@ -875,8 +872,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.8888947112541968,
-            "f_malate_spent": 0.9635860029462453,
+            "f_pH6": 0.22691950315585588,
+            "f_malate_spent": 0.2463492115614173,
             "face_pH_at_O2_limit": null
           },
           {
@@ -885,9 +882,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.079261883253584,
-            "f_malate_spent": 1.1659675472332867,
-            "face_pH_at_O2_limit": 5.716923697598792
+            "f_pH6": 0.3253607444968612,
+            "f_malate_spent": 0.34937520582988263,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -895,9 +892,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.1736918449742157,
-            "f_malate_spent": 1.2724310661292613,
-            "face_pH_at_O2_limit": 5.541361276225593
+            "f_pH6": 0.2981556809314196,
+            "f_malate_spent": 0.32379809021379197,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -905,9 +902,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.2405478082514911,
-            "f_malate_spent": 1.34645376351511,
-            "face_pH_at_O2_limit": 5.454487228978186
+            "f_pH6": 0.2958316190130738,
+            "f_malate_spent": 0.3227705660411639,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -915,8 +912,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "stagnant",
-            "f_pH6": 0.6249492157371219,
-            "f_malate_spent": 0.6742212197114454,
+            "f_pH6": 0.23368542793097127,
+            "f_malate_spent": 0.2481229592382117,
             "face_pH_at_O2_limit": null
           },
           {
@@ -925,8 +922,8 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "Levich",
-            "f_pH6": 0.7909424949819819,
-            "f_malate_spent": 0.8599975481661094,
+            "f_pH6": 0.2192263713570585,
+            "f_malate_spent": 0.23687928932494925,
             "face_pH_at_O2_limit": null
           },
           {
@@ -935,9 +932,9 @@
             "D_end": "citrate_like",
             "D_mal": 6.12e-06,
             "film": "transient",
-            "f_pH6": 0.9224224150732243,
-            "f_malate_spent": 1.005315253857292,
-            "face_pH_at_O2_limit": 6.805306828917848
+            "f_pH6": 0.22871156532372514,
+            "f_malate_spent": 0.24908078576610138,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -945,9 +942,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "stagnant",
-            "f_pH6": 1.117280434308736,
-            "f_malate_spent": 1.2132763716170254,
-            "face_pH_at_O2_limit": 5.645036633213263
+            "f_pH6": 0.327402204545386,
+            "f_malate_spent": 0.35248205763832724,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -955,9 +952,9 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "Levich",
-            "f_pH6": 1.2180408375373226,
-            "f_malate_spent": 1.327628998783336,
-            "face_pH_at_O2_limit": 5.496884045366406
+            "f_pH6": 0.30052586741130566,
+            "f_malate_spent": 0.3274110213702445,
+            "face_pH_at_O2_limit": null
           },
           {
             "t_c": 25.0,
@@ -965,47 +962,47 @@
             "D_end": "succinate_like",
             "D_mal": 1.251538625536283e-05,
             "film": "transient",
-            "f_pH6": 1.288464826482314,
-            "f_malate_spent": 1.4060963545530434,
-            "face_pH_at_O2_limit": 5.420839503168657
+            "f_pH6": 0.2983888752472223,
+            "f_malate_spent": 0.3266705354912659,
+            "face_pH_at_O2_limit": null
           }
         ]
       },
       "sap_pH5.75": {
         "what": "the ratified sap at its set-point — the cathode in a one-compartment cell",
         "bulk_pH": 5.75,
-        "ionic_strength_25C": 0.0138,
+        "ionic_strength_25C": 0.0019,
         "f_pH6": [
-          0.031,
-          0.095
+          0.01,
+          0.022
         ],
         "f_pH6_by_D_end": {
           "citrate_like": [
-            0.031,
-            0.067
+            0.01,
+            0.016
           ],
           "succinate_like": [
-            0.059,
-            0.095
+            0.017,
+            0.022
           ]
         },
         "f_pH6_by_film": {
           "stagnant": [
-            0.031,
-            0.078
+            0.01,
+            0.019
           ],
           "Levich": [
-            0.042,
-            0.088
+            0.012,
+            0.021
           ],
           "transient": [
-            0.05,
-            0.095
+            0.013,
+            0.022
           ]
         },
         "f_malate_spent": [
-          0.069,
-          0.218
+          0.022,
+          0.05
         ],
         "rows_crossing_pH6_below_O2_limit": 84,
         "rows_beyond_model_at_O2_limit": 84,
@@ -1015,44 +1012,44 @@
       "buffered_pH4.5": {
         "what": "the sap's salts with malic acid at 10 mM, pH 4.5 — the letter's cathode medium since ⚖️ 2026-10-12",
         "bulk_pH": 4.5,
-        "ionic_strength_25C": 0.0226,
+        "ionic_strength_25C": 0.0153,
         "f_pH6": [
-          1.986,
-          5.58
+          2.086,
+          5.67
         ],
         "f_pH6_by_D_end": {
           "citrate_like": [
-            1.986,
-            3.924
+            2.086,
+            3.987
           ],
           "succinate_like": [
-            3.904,
-            5.58
+            4.112,
+            5.67
           ]
         },
         "f_pH6_by_film": {
           "stagnant": [
-            1.986,
-            4.518
+            2.086,
+            4.587
           ],
           "Levich": [
-            2.82,
-            5.189
+            2.971,
+            5.272
           ],
           "transient": [
-            3.399,
-            5.58
+            3.585,
+            5.67
           ]
         },
         "f_malate_spent": [
-          2.144,
-          6.055
+          2.259,
+          6.163
         ],
         "rows_crossing_pH6_below_O2_limit": 0,
         "rows_beyond_model_at_O2_limit": 0,
         "face_pH_at_O2_limit_where_reached": [
           4.69,
-          5.01
+          5.0
         ],
         "rows": 84
       }
@@ -1061,10 +1058,10 @@
     "load_B_uA_cm2": 12.5,
     "load_B_area_cm2": 2.0,
     "load_B_delta_star_mm_sap_pH4.5": [
-      0.84,
-      1.8
+      0.33,
+      0.52
     ],
-    "free_H_share_of_supply_sap_pH4.5_low_D": 0.243
+    "free_H_share_of_supply_sap_pH4.5_low_D": 0.616
   },
   "anode": {
     "bulk_pH": 5.75,
@@ -1086,56 +1083,56 @@
         "ceiling_hold": {
           "j_uA_cm2": 368.6,
           "delta_star_um": [
-            1.9,
-            6.5
+            0.6,
+            1.6
           ],
           "delta_star_um_n1": [
-            2.9,
-            6.5
+            0.9,
+            1.6
           ]
         },
         "ceiling_series_top": {
           "j_uA_cm2": 689.4,
           "delta_star_um": [
-            1.0,
-            3.5
+            0.3,
+            0.9
           ],
           "delta_star_um_n1": [
-            1.6,
-            3.5
+            0.5,
+            0.9
           ]
         },
         "ph_bracket_hold_low": {
           "j_uA_cm2": 212.8,
           "delta_star_um": [
-            3.4,
-            11.2
+            1.1,
+            2.8
           ],
           "delta_star_um_n1": [
-            5.0,
-            11.2
+            1.6,
+            2.8
           ]
         },
         "ph_bracket_hold_high": {
           "j_uA_cm2": 250.7,
           "delta_star_um": [
-            2.8,
-            9.5
+            0.9,
+            2.4
           ],
           "delta_star_um_n1": [
-            4.3,
-            9.5
+            1.4,
+            2.4
           ]
         },
         "load_B": {
           "j_uA_cm2": 12.5,
           "delta_star_um": [
-            57.0,
-            191.4
+            18.4,
+            47.7
           ],
           "delta_star_um_n1": [
-            85.6,
-            191.4
+            27.6,
+            47.7
           ]
         }
       },
@@ -1143,56 +1140,56 @@
         "ceiling_hold": {
           "j_uA_cm2": 368.6,
           "delta_star_um": [
-            20.4,
-            56.9
+            8.0,
+            16.7
           ],
           "delta_star_um_n1": [
-            30.5,
-            56.9
+            12.0,
+            16.7
           ]
         },
         "ceiling_series_top": {
           "j_uA_cm2": 689.4,
           "delta_star_um": [
-            10.9,
-            30.4
+            4.3,
+            8.9
           ],
           "delta_star_um_n1": [
-            16.3,
-            30.4
+            6.4,
+            8.9
           ]
         },
         "ph_bracket_hold_low": {
           "j_uA_cm2": 212.8,
           "delta_star_um": [
-            35.3,
-            98.6
+            13.8,
+            28.8
           ],
           "delta_star_um_n1": [
-            52.9,
-            98.6
+            20.7,
+            28.8
           ]
         },
         "ph_bracket_hold_high": {
           "j_uA_cm2": 250.7,
           "delta_star_um": [
-            29.9,
-            83.7
+            11.7,
+            24.5
           ],
           "delta_star_um_n1": [
-            44.9,
-            83.7
+            17.6,
+            24.5
           ]
         },
         "load_B": {
           "j_uA_cm2": 12.5,
           "delta_star_um": [
-            600.6,
-            1678.9
+            235.2,
+            491.2
           ],
           "delta_star_um_n1": [
-            900.8,
-            1678.9
+            352.8,
+            491.2
           ]
         }
       }
@@ -1203,14 +1200,14 @@
     "malic_mM": 10.0,
     "pH": 5.75,
     "ionic_strength_mol_l": [
-      0.0138,
-      0.0355
+      0.0019,
+      0.0283
     ],
     "koh_mM": [
-      4.1,
-      18.82
+      0.73,
+      18.78
     ],
-    "capacity_gain_to_pH_4.5": 3.62
+    "capacity_gain_to_pH_4.5": 9.75
   },
   "anchor_anode_sap_gap": {
     "states": {
@@ -1222,6 +1219,7 @@
       "typ": 25.0,
       "worst": 21.4
     },
+    "sap_is_pine_for_every_sku": "every Zone-1 part sits in the PINE recipe of 01_02 §2.1 (target Pinus sylvestris): the broadleaf, oak, tropical and mangrove parts differ from pine only in the gap's geometry here, and their own sap is not modelled",
     "by_sku": {
       "anchor_zone1_broadleaf": {
         "geometry": {
@@ -1236,16 +1234,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.35,
-            1.18
+            0.11,
+            0.29
           ],
           "i_anode_uA": [
-            4.2,
-            15.0
+            1.4,
+            3.7
           ],
           "i_anode_uA_n1": [
-            6.3,
-            15.0
+            2.0,
+            3.7
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1260,25 +1258,25 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            3.7,
-            10.35
+            1.45,
+            3.03
           ],
           "i_anode_uA": [
-            44.2,
-            131.7
+            17.3,
+            38.5
           ],
           "i_anode_uA_n1": [
-            66.3,
-            131.7
+            26.0,
+            38.5
           ],
           "crossed_below_cold_start": {
             "typ": {
               "in_every_reading": false,
-              "in_some_reading": false
+              "in_some_reading": true
             },
             "worst": {
               "in_every_reading": false,
-              "in_some_reading": false
+              "in_some_reading": true
             }
           }
         }
@@ -1296,16 +1294,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.42,
-            1.4
+            0.13,
+            0.35
           ],
           "i_anode_uA": [
-            5.8,
-            20.7
+            1.9,
+            5.2
           ],
           "i_anode_uA_n1": [
-            8.7,
-            20.7
+            2.8,
+            5.2
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1320,21 +1318,21 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            4.4,
-            12.3
+            1.72,
+            3.6
           ],
           "i_anode_uA": [
-            60.8,
-            181.8
+            23.8,
+            53.2
           ],
           "i_anode_uA_n1": [
-            91.2,
-            181.8
+            35.7,
+            53.2
           ],
           "crossed_below_cold_start": {
             "typ": {
               "in_every_reading": false,
-              "in_some_reading": false
+              "in_some_reading": true
             },
             "worst": {
               "in_every_reading": false,
@@ -1356,16 +1354,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.42,
-            1.4
+            0.13,
+            0.35
           ],
           "i_anode_uA": [
-            6.1,
-            21.7
+            2.0,
+            5.4
           ],
           "i_anode_uA_n1": [
-            9.1,
-            21.7
+            2.9,
+            5.4
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1373,23 +1371,23 @@
               "in_some_reading": true
             },
             "worst": {
-              "in_every_reading": false,
+              "in_every_reading": true,
               "in_some_reading": true
             }
           }
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            4.4,
-            12.3
+            1.72,
+            3.6
           ],
           "i_anode_uA": [
-            63.9,
-            190.3
+            25.0,
+            55.7
           ],
           "i_anode_uA_n1": [
-            95.8,
-            190.3
+            37.5,
+            55.7
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1416,40 +1414,40 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.53,
-            1.79
+            0.17,
+            0.45
           ],
           "i_anode_uA": [
-            8.0,
-            29.0
+            2.6,
+            7.2
           ],
           "i_anode_uA_n1": [
-            12.0,
-            29.0
+            3.9,
+            7.2
           ],
           "crossed_below_cold_start": {
             "typ": {
-              "in_every_reading": false,
+              "in_every_reading": true,
               "in_some_reading": true
             },
             "worst": {
-              "in_every_reading": false,
+              "in_every_reading": true,
               "in_some_reading": true
             }
           }
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            5.61,
-            15.67
+            2.2,
+            4.59
           ],
           "i_anode_uA": [
-            84.6,
-            254.1
+            33.1,
+            74.3
           ],
           "i_anode_uA_n1": [
-            126.8,
-            254.1
+            49.7,
+            74.3
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1476,16 +1474,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.42,
-            1.4
+            0.13,
+            0.35
           ],
           "i_anode_uA": [
-            5.8,
-            20.7
+            1.9,
+            5.2
           ],
           "i_anode_uA_n1": [
-            8.7,
-            20.7
+            2.8,
+            5.2
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1500,21 +1498,21 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            4.4,
-            12.3
+            1.72,
+            3.6
           ],
           "i_anode_uA": [
-            60.8,
-            181.8
+            23.8,
+            53.2
           ],
           "i_anode_uA_n1": [
-            91.2,
-            181.8
+            35.7,
+            53.2
           ],
           "crossed_below_cold_start": {
             "typ": {
               "in_every_reading": false,
-              "in_some_reading": false
+              "in_some_reading": true
             },
             "worst": {
               "in_every_reading": false,
@@ -1536,16 +1534,16 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.42,
-            1.4
+            0.13,
+            0.35
           ],
           "i_anode_uA": [
-            5.8,
-            20.7
+            1.9,
+            5.2
           ],
           "i_anode_uA_n1": [
-            8.7,
-            20.7
+            2.8,
+            5.2
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1560,21 +1558,21 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            4.4,
-            12.3
+            1.72,
+            3.6
           ],
           "i_anode_uA": [
-            60.8,
-            181.8
+            23.8,
+            53.2
           ],
           "i_anode_uA_n1": [
-            91.2,
-            181.8
+            35.7,
+            53.2
           ],
           "crossed_below_cold_start": {
             "typ": {
               "in_every_reading": false,
-              "in_some_reading": false
+              "in_some_reading": true
             },
             "worst": {
               "in_every_reading": false,
@@ -1596,40 +1594,40 @@
         },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.77,
-            2.57
+            0.25,
+            0.64
           ],
           "i_anode_uA": [
-            14.1,
-            50.7
+            4.5,
+            12.6
           ],
           "i_anode_uA_n1": [
-            21.1,
-            50.7
+            6.8,
+            12.6
           ],
           "crossed_below_cold_start": {
             "typ": {
-              "in_every_reading": false,
+              "in_every_reading": true,
               "in_some_reading": true
             },
             "worst": {
-              "in_every_reading": false,
+              "in_every_reading": true,
               "in_some_reading": true
             }
           }
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            8.07,
-            22.56
+            3.16,
+            6.6
           ],
           "i_anode_uA": [
-            148.3,
-            444.6
+            58.1,
+            130.1
           ],
           "i_anode_uA_n1": [
-            222.5,
-            444.6
+            87.1,
+            130.1
           ],
           "crossed_below_cold_start": {
             "typ": {
