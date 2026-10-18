@@ -1,5 +1,5 @@
 {
-  "question": "Can the in-silico L3 tier carry cluster models of Zn-HAp and PEDOT:PSS on TiO2 (00_07 HW.40) — basis size measured from composition, SCF and relaxation cost estimated from the pipeline's own timed series.",
+  "question": "Can the in-silico L3 tier carry cluster models of Zn-HAp and PEDOT:PSS on TiO2 (00_07 HW.40) — basis size measured from composition, SCF, relaxation and Hessian cost estimated from the pipeline's own timed runs.",
   "tiers": {
     "21e_b3lyp_631gd": {
       "basis": {
@@ -35,55 +35,70 @@
       }
     }
   },
+  "ecp_core_electrons_lanl2dz_3d": {
+    "Ca": 10,
+    "Ti": 10,
+    "Zn": 18
+  },
   "series_points": {
     "21e_b3lyp_631gd": {
       "nme2": {
         "nao": 712,
+        "prim_per_nao": 1.9537,
         "rks_s": 796.7,
         "uks_s": 1459.0
       },
       "nh2": {
         "nao": 568,
+        "prim_per_nao": 1.956,
         "rks_s": 434.2,
         "uks_s": 797.6
       },
       "ome": {
         "nao": 632,
+        "prim_per_nao": 1.9541,
         "rks_s": 546.0,
         "uks_s": 961.3
       },
       "dmbpy": {
         "nao": 576,
+        "prim_per_nao": 1.9566,
         "rks_s": 467.2,
         "uks_s": 749.2
       },
       "bpy": {
         "nao": 504,
+        "prim_per_nao": 1.9583,
         "rks_s": 316.8,
         "uks_s": 568.7
       },
       "cl": {
         "nao": 568,
+        "prim_per_nao": 2.0687,
         "rks_s": 398.3,
         "uks_s": 683.7
       },
       "dcbpy": {
         "nao": 672,
+        "prim_per_nao": 1.9509,
         "rks_s": 534.2,
         "uks_s": 920.4
       },
       "no2": {
         "nao": 664,
+        "prim_per_nao": 1.9503,
         "rks_s": 532.5,
         "uks_s": 1185.2
       },
       "cf3": {
         "nao": 720,
+        "prim_per_nao": 1.9486,
         "rks_s": 611.9,
         "uks_s": 1019.2
       },
       "so2cf3": {
         "nao": 904,
+        "prim_per_nao": 2.0166,
         "rks_s": 1022.1,
         "uks_s": 1330.7
       }
@@ -91,21 +106,25 @@
     "21f_def2tzvp": {
       "nme2": {
         "nao": 1613,
+        "prim_per_nao": 1.4687,
         "rks_s": 7006.2,
         "uks_s": 24560.2
       },
       "nh2": {
         "nao": 1269,
+        "prim_per_nao": 1.476,
         "rks_s": 4318.4,
         "uks_s": 41014.8
       },
       "no2": {
         "nao": 1469,
+        "prim_per_nao": 1.482,
         "rks_s": 5040.1,
         "uks_s": 56073.5
       },
       "so2cf3": {
         "nao": 1989,
+        "prim_per_nao": 1.4987,
         "rks_s": 10084.1,
         "uks_s": 88165.3
       }
@@ -121,30 +140,132 @@
     "21e_b3lyp_631gd": {
       "name": "so2cf3",
       "nao": 904,
+      "prim_per_nao": 2.0166,
       "rks_s": 1022.1,
       "uks_s": 1330.7
     },
     "21f_def2tzvp": {
       "name": "so2cf3",
       "nao": 1989,
+      "prim_per_nao": 1.4987,
       "rks_s": 10084.1,
       "uks_s": 88165.3
     },
     "21e_lanl2dz_3d": {
       "name": "so2cf3",
       "nao": 904,
+      "prim_per_nao": 2.0166,
       "rks_s": 1022.1,
       "uks_s": 1330.7
     }
   },
-  "uks_over_rks_21e_series": [
-    1.3,
-    2.23
-  ],
-  "relaxation_over_scf_21e_dmbpy": {
-    "os2_from_octahedron": 60.5,
-    "os3_from_os2_minimum": 14.2
+  "open_shell_readings": {
+    "21e_routine_series": [
+      1.3,
+      2.23
+    ],
+    "34_microsolvated": [
+      3.54,
+      6.37
+    ],
+    "21f_wb97x_with_rescues": [
+      3.51,
+      11.13
+    ]
   },
+  "open_shell_factor_by_tier": {
+    "21e_b3lyp_631gd": [
+      1.3,
+      6.37
+    ],
+    "21e_lanl2dz_3d": [
+      1.3,
+      6.37
+    ],
+    "21f_def2tzvp": [
+      1.3,
+      11.13
+    ]
+  },
+  "relaxations_21e": {
+    "os2_dmbpy": {
+      "start": "long",
+      "steps": 52,
+      "scf_equivalents": 60.5,
+      "per_step": 1.163,
+      "maxsteps": 120
+    },
+    "os2_ome": {
+      "start": "long",
+      "steps": 48,
+      "scf_equivalents": 57.8,
+      "per_step": 1.205,
+      "maxsteps": 120
+    },
+    "os2_bpy": {
+      "start": "long",
+      "steps": 28,
+      "scf_equivalents": 35.5,
+      "per_step": 1.266,
+      "maxsteps": 120
+    },
+    "os2_cl": {
+      "start": "long",
+      "steps": 27,
+      "scf_equivalents": 32.8,
+      "per_step": 1.216,
+      "maxsteps": 120
+    },
+    "os2_no2": {
+      "start": "long",
+      "steps": 29,
+      "scf_equivalents": 38.0,
+      "per_step": 1.309,
+      "maxsteps": 120
+    },
+    "os3_dmbpy": {
+      "start": "near",
+      "steps": 15,
+      "scf_equivalents": 14.2,
+      "per_step": 0.948,
+      "maxsteps": 120
+    },
+    "os3_ome": {
+      "start": "near",
+      "steps": 31,
+      "scf_equivalents": 27.0,
+      "per_step": 0.872,
+      "maxsteps": 120
+    },
+    "os3_bpy": {
+      "start": "near",
+      "steps": 47,
+      "scf_equivalents": 39.6,
+      "per_step": 0.843,
+      "maxsteps": 120
+    },
+    "os3_cl": {
+      "start": "near",
+      "steps": 15,
+      "scf_equivalents": 12.7,
+      "per_step": 0.847,
+      "maxsteps": 120
+    },
+    "os3_no2": {
+      "start": "near",
+      "steps": 53,
+      "scf_equivalents": 58.4,
+      "per_step": 1.103,
+      "maxsteps": 120
+    }
+  },
+  "relaxation_scf_equivalents": {
+    "low_shortest_long_start": 32.8,
+    "high_steps_many_ours": 261.8,
+    "steps_many_ours": 200,
+    "per_step_high": 1.309
+  },
+  "rks_hessian_over_scf_96": 69.6,
   "gas_over_cpcm_dmbpy_os2": 0.55,
   "models_ours": "a size ladder, not a validated surface model — compositions and charges in the script",
   "by_model": {
@@ -163,38 +284,58 @@
         "21e_lanl2dz_3d": 472,
         "21f_def2tzvp": 1028
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.3732,
+        "21e_lanl2dz_3d": 1.9746,
+        "21f_def2tzvp": 1.6732
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 0.63,
+          "composition_factor": 1.18,
           "one_scf_h": {
-            "low": 0.07,
+            "low": 0.08,
             "high": 0.11
           },
           "relaxation_days": {
-            "low": 0.0,
+            "low": 0.1,
+            "high": 1.2
+          },
+          "rks_hessian_days": {
+            "low": 0.2,
             "high": 0.3
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 0.52,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.04,
             "high": 0.08
           },
           "relaxation_days": {
-            "low": 0.0,
+            "low": 0.1,
+            "high": 0.9
+          },
+          "rks_hessian_days": {
+            "low": 0.1,
             "high": 0.2
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 0.52,
+          "composition_factor": 1.12,
           "one_scf_h": {
-            "low": 0.39,
+            "low": 0.43,
             "high": 0.76
           },
           "relaxation_days": {
-            "low": 0.2,
-            "high": 1.9
+            "low": 0.6,
+            "high": 8.3
+          },
+          "rks_hessian_days": {
+            "low": 1.3,
+            "high": 2.2
           }
         }
       }
@@ -214,38 +355,58 @@
         "21e_lanl2dz_3d": 944,
         "21f_def2tzvp": 2056
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.3732,
+        "21e_lanl2dz_3d": 1.9746,
+        "21f_def2tzvp": 1.6732
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 1.26,
+          "composition_factor": 1.18,
           "one_scf_h": {
             "low": 0.44,
-            "high": 0.56
+            "high": 0.66
           },
           "relaxation_days": {
-            "low": 0.3,
-            "high": 1.4
+            "low": 0.6,
+            "high": 7.2
+          },
+          "rks_hessian_days": {
+            "low": 1.3,
+            "high": 1.9
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 1.04,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.31,
             "high": 0.32
           },
           "relaxation_days": {
-            "low": 0.2,
-            "high": 0.8
+            "low": 0.4,
+            "high": 3.5
+          },
+          "rks_hessian_days": {
+            "low": 0.9,
+            "high": 0.9
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 1.03,
+          "composition_factor": 1.12,
           "one_scf_h": {
             "low": 2.99,
-            "high": 3.09
+            "high": 3.45
           },
           "relaxation_days": {
-            "low": 1.8,
-            "high": 7.8
+            "low": 4.1,
+            "high": 37.7
+          },
+          "rks_hessian_days": {
+            "low": 8.7,
+            "high": 10.0
           }
         }
       }
@@ -267,38 +428,58 @@
         "21e_lanl2dz_3d": 602,
         "21f_def2tzvp": 1412
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.5254,
+        "21e_lanl2dz_3d": 2.0432,
+        "21f_def2tzvp": 1.6586
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 0.78,
+          "composition_factor": 1.25,
           "one_scf_h": {
-            "low": 0.14,
+            "low": 0.17,
             "high": 0.18
           },
           "relaxation_days": {
-            "low": 0.1,
-            "high": 0.4
+            "low": 0.2,
+            "high": 1.9
+          },
+          "rks_hessian_days": {
+            "low": 0.5,
+            "high": 0.5
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 0.67,
+          "composition_factor": 1.01,
           "one_scf_h": {
             "low": 0.08,
             "high": 0.13
           },
           "relaxation_days": {
-            "low": 0.0,
-            "high": 0.3
+            "low": 0.1,
+            "high": 1.4
+          },
+          "rks_hessian_days": {
+            "low": 0.2,
+            "high": 0.4
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 0.71,
+          "composition_factor": 1.11,
           "one_scf_h": {
-            "low": 1.0,
+            "low": 1.11,
             "high": 1.43
           },
           "relaxation_days": {
-            "low": 0.6,
-            "high": 3.6
+            "low": 1.5,
+            "high": 15.6
+          },
+          "rks_hessian_days": {
+            "low": 3.2,
+            "high": 4.1
           }
         }
       }
@@ -319,39 +500,56 @@
         "21e_lanl2dz_3d": 418,
         "21f_def2tzvp": 939
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.0502,
+        "21e_lanl2dz_3d": 2.0502,
+        "21f_def2tzvp": 1.4963
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 0.46,
+          "composition_factor": 1.02,
           "one_scf_h": {
-            "low": 0.04,
-            "high": 0.14
+            "low": 0.08,
+            "high": 0.18
           },
           "relaxation_days": {
-            "low": 0.0,
-            "high": 0.4
+            "low": 0.1,
+            "high": 2.0
+          },
+          "rks_hessian_days": {
+            "low": 0.2,
+            "high": 0.5
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 0.46,
+          "composition_factor": 1.02,
           "one_scf_h": {
-            "low": 0.04,
-            "high": 0.14
+            "low": 0.08,
+            "high": 0.18
           },
           "relaxation_days": {
-            "low": 0.0,
-            "high": 0.4
+            "low": 0.1,
+            "high": 2.0
+          },
+          "rks_hessian_days": {
+            "low": 0.2,
+            "high": 0.5
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 0.47,
+          "composition_factor": 1.0,
           "one_scf_h": {
-            "low": 0.38,
-            "high": 1.42
+            "low": 0.83,
+            "high": 3.28
           },
           "relaxation_days": {
-            "low": 0.2,
-            "high": 3.6
-          }
+            "low": 1.1,
+            "high": 35.8
+          },
+          "rks_hessian_days": null
         }
       }
     },
@@ -371,38 +569,58 @@
         "21e_lanl2dz_3d": 380,
         "21f_def2tzvp": 864
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.0211,
+        "21e_lanl2dz_3d": 2.0211,
+        "21f_def2tzvp": 1.4838
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 0.42,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.02,
             "high": 0.05
           },
           "relaxation_days": {
             "low": 0.0,
-            "high": 0.1
+            "high": 0.6
+          },
+          "rks_hessian_days": {
+            "low": 0.1,
+            "high": 0.2
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 0.42,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.02,
             "high": 0.05
           },
           "relaxation_days": {
             "low": 0.0,
-            "high": 0.1
+            "high": 0.6
+          },
+          "rks_hessian_days": {
+            "low": 0.1,
+            "high": 0.2
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 0.43,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.23,
             "high": 0.54
           },
           "relaxation_days": {
-            "low": 0.1,
-            "high": 1.4
+            "low": 0.3,
+            "high": 5.9
+          },
+          "rks_hessian_days": {
+            "low": 0.7,
+            "high": 1.6
           }
         }
       }
@@ -425,38 +643,58 @@
         "21e_lanl2dz_3d": 1546,
         "21f_def2tzvp": 3468
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.4317,
+        "21e_lanl2dz_3d": 2.0013,
+        "21f_def2tzvp": 1.6672
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 2.04,
+          "composition_factor": 1.21,
           "one_scf_h": {
             "low": 1.15,
-            "high": 2.41
+            "high": 2.91
           },
           "relaxation_days": {
-            "low": 0.7,
-            "high": 6.1
+            "low": 1.6,
+            "high": 31.7
+          },
+          "rks_hessian_days": {
+            "low": 3.3,
+            "high": 8.4
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 1.71,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 0.81,
             "high": 1.42
           },
           "relaxation_days": {
-            "low": 0.5,
-            "high": 3.6
+            "low": 1.1,
+            "high": 15.5
+          },
+          "rks_hessian_days": {
+            "low": 2.4,
+            "high": 4.1
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 1.74,
+          "composition_factor": 1.11,
           "one_scf_h": {
             "low": 8.37,
-            "high": 14.85
+            "high": 16.52
           },
           "relaxation_days": {
-            "low": 5.0,
-            "high": 37.4
+            "low": 11.4,
+            "high": 180.2
+          },
+          "rks_hessian_days": {
+            "low": 24.3,
+            "high": 47.9
           }
         }
       }
@@ -478,54 +716,76 @@
         "21e_lanl2dz_3d": 1740,
         "21f_def2tzvp": 3853
       },
+      "prim_per_nao": {
+        "21e_b3lyp_631gd": 2.2345,
+        "21e_lanl2dz_3d": 2.0029,
+        "21f_def2tzvp": 1.5881
+      },
       "estimate": {
         "21e_b3lyp_631gd": {
           "ratio_to_anchor": 2.14,
+          "composition_factor": 1.11,
           "one_scf_h": {
             "low": 1.64,
-            "high": 6.18
+            "high": 19.56
           },
           "relaxation_days": {
-            "low": 1.0,
-            "high": 15.6
+            "low": 2.2,
+            "high": 213.4
+          },
+          "rks_hessian_days": {
+            "low": 4.7,
+            "high": 56.7
           }
         },
         "21e_lanl2dz_3d": {
           "ratio_to_anchor": 1.92,
+          "composition_factor": 1.0,
           "one_scf_h": {
             "low": 1.33,
-            "high": 4.51
+            "high": 12.9
           },
           "relaxation_days": {
-            "low": 0.8,
-            "high": 11.4
+            "low": 1.8,
+            "high": 140.7
+          },
+          "rks_hessian_days": {
+            "low": 3.9,
+            "high": 37.4
           }
         },
         "21f_def2tzvp": {
           "ratio_to_anchor": 1.94,
+          "composition_factor": 1.06,
           "one_scf_h": {
             "low": 13.4,
-            "high": 45.41
+            "high": 240.15
           },
           "relaxation_days": {
-            "low": 7.9,
-            "high": 114.5
-          }
+            "low": 18.3,
+            "high": 2619.7
+          },
+          "rks_hessian_days": null
         }
       }
     }
   },
-  "dispersion_in_env": {
+  "env": {
+    "pyscf": "2.11.0",
     "dftd3": false,
     "dftd4": false,
-    "vv10_native_wb97x_v": true
+    "pyscf_dispersion": false,
+    "vv10_native": true,
+    "uks_nlc_hessian": false,
+    "pyscf_pbc": true
   },
   "not_modelled": [
     "whether a cluster of this size models the surface (cluster-size and termination convergence)",
-    "the SCF cycle count of these systems (taken as the series')",
-    "C-PCM in the series against vacuum for a surface model (gas/C-PCM recorded, not applied)",
-    "basis-set superposition (counterpoise)",
-    "any adsorption energy"
+    "the SCF cycle count and the optimiser step count of these systems (steps are a named reading)",
+    "VV10's own grid cost",
+    "C-PCM in the series against vacuum for a surface model (recorded, not applied)",
+    "the periodic route (pyscf.pbc)",
+    "any adsorption energy (complex + both fragments + counterpoise)"
   ],
-  "verdict": "Measured: Zn-HAp (one Zn-substituted cell) on a (TiO2)16 cluster has 116 atoms and 1844 basis functions at 21e's tier (1546 with LANL2DZ on the 3d metals, 3468 at def2-TZVP); PEDOT:PSS as the doped polaron on the same cluster has 154 atoms, 1099 electrons (a doublet) and 1932 functions. The pipeline's largest routine SCF at 21e's tier is so2cf3 (904 functions, 1022 s) and at def2-TZVP 21f's so2cf3 (1989 functions, 2.8 h Os(II), 24.5 h Os(III)), so the clusters are 2.04× and 2.14× the 21e anchor and about the size of what def2-TZVP already ran. Estimated: the series scale as N^1.96 (21e) and N^1.97 (ωB97X); extrapolating with p from the fit to 3, one 21e-tier SCF of Zn-HAp/TiO2 takes 1.1–2.4 h and a relaxation 0.7–6 days; PEDOT:PSS (open-shell factor 1.3–2.23 from the series' routine UKS/RKS pairs) 1.6–6.2 h and 1.0–16 days. D3/D4 are not installed, but PySCF carries VV10 natively (ωB97X-V-type functionals), so a dispersion-inclusive calculation needs no new dependency; at def2-TZVP, the tier such a functional runs at, one SCF of Zn-HAp/TiO2 is 8–15 h and a relaxation 5–37 days (VV10's own grid cost not included). So a cluster relaxation of one adsorbate is within reach of our CPU — days to weeks, one job at a time; an adsorption energy is 3 such SCFs (5 with counterpoise). What it cannot settle is whether a cluster models the surface: a periodic slab is the usual model, and a cluster study needs its own size and termination convergence, which multiplies the jobs."
+  "verdict": "Measured: Zn-HAp (one Zn-substituted cell) on a (TiO2)16 cluster has 116 atoms and 1844 basis functions at 21e's tier (3468 at def2-TZVP); PEDOT:PSS as the doped polaron on it has 154 atoms, 1099 electrons (a doublet) and 1932 functions — 2.04× and 2.14× the pipeline's largest routine SCF at that tier (so2cf3, 904 functions, 1022 s), and about the size def2-TZVP already ran (so2cf3, 1989 functions). Estimated, low end optimistic and high end pessimistic: (A) B3LYP/6-31G(d) without dispersion — one SCF of Zn-HAp/TiO2 1.1–2.9 h, a relaxation 1.6–31.7 days; PEDOT:PSS 1.6–19.6 h and 2–213 days. (B) dispersion-inclusive at def2-TZVP (VV10 is native; its own grid cost is not included) — Zn-HAp/TiO2 8–17 h per SCF and 11–180 days per relaxation, PEDOT:PSS 13–240 h and 18–2620 days. Each is ONE configuration; adsorption sites, cluster sizes and terminations multiply it, and an adsorption energy relaxes the complex and both fragments. A certified minimum adds a Hessian ≈ 70 SCFs for RKS, and PySCF 2.11.0 has no analytic UKS Hessian for a VV10 functional, so the PEDOT polaron's minimum cannot be certified that way. So single SCFs and a B3LYP screen of one configuration (days to a month) are within reach of our CPU; a dispersion-inclusive, size-converged cluster study is months of one CPU for Zn-HAp and up to years for the PEDOT polaron at the pessimistic end — the scale at which a collaborator or a compute allocation matters; the periodic route (pyscf.pbc is installed) is not assessed here."
 }

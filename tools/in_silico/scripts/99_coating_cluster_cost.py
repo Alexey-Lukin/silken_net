@@ -20,21 +20,28 @@ does not see positions. (2) From the committed caches, with the SAME count: the 
 complexes rebuilt by 21e's own builder from its SERIES table — the builder's atom and electron counts are checked against
 the cache) and 21f's ωB97X extremes (os_mediator_series_wb97x.json), each with its timed Os(II) RKS and Os(III) UKS SCF.
 
-WHAT IS ESTIMATED. (3) The scaling exponent p from a log-log fit of SCF wall time against basis size within each series
-(OURS as a fit); one SCF of a model = the tier's LARGEST routine SCF × (N / N_anchor)^p for p in [p_fit, 3] — the fit
-holds only up to the anchor, and beyond it 3 is a named upper reading, not a measurement. (4) The open-shell factor: the
-range of the 21e series' Os(III) UKS / Os(II) RKS ratio — routine runs (96's control SCF carried a stability analysis and
-is NOT used). (5) A relaxation = SCF × the relaxation/SCF ratio of 21e's relaxed dmbpy, read in both states: Os(II) from
-the programmatic octahedron (the long start) and Os(III) from the Os(II) minimum (the near start) — the ratio depends on
-where a relaxation starts. (6) The env's dispersion options: D3/D4 packages, and PySCF's native VV10 (non-local
-correlation in ωB97X-V-type functionals).
+WHAT IS ESTIMATED — every range is a bracket of NAMED readings, the low end optimistic, the high end pessimistic.
+(3) One SCF = the tier's LARGEST routine SCF (the anchor) × (N / N_anchor)^p: low p = the exponent fitted within the
+series (light-atom Os complexes), high p = 3 (OURS — beyond the fitted span); the high end also carries the composition
+reading — primitives per basis function of the model over the anchor's (the clusters' 26 all-electron 3d/Ca atoms are
+heavier per function than the series' light atoms). (4) The open-shell factor: low = the 21e series' routine Os(III)
+UKS / Os(II) RKS minimum; high = the pipeline's own harder records at the tier — 34's micro-solvated pairs (H-bonded
+waters, the closest analogue to a hydroxylated surface) at 21e's tier, 21f's ωB97X pairs at def2-TZVP (level shift,
+Newton rescues and a stability analysis included, so a ceiling, not a routine cost). (5) A relaxation: low = the
+shortest LONG-start relaxation of the five 21e Os(II) relaxations (a freshly built adsorbate is a long start, never the
+near start), in SCF-equivalents; high = STEPS_MANY optimiser steps (OURS — the clusters' many soft OH, H-bond and torsion
+modes; 21e caps at 120) × the largest SCF-equivalents per step of those relaxations. (6) A Hessian (the pipeline's
+minimum check, `relax_to_minimum`): 96's RKS Hessian/SCF ratio; for UKS with a VV10 functional PySCF has no analytic
+Hessian. (7) The env: D3/D4 and `pyscf.dispersion` absent; VV10 native (any functional can carry it); `pyscf.pbc`
+present, its periodic cost not assessed here.
 
-CAN: say how large these clusters are against the pipeline's own largest SCF, and the order of magnitude of one SCF and a
-relaxation. CANNOT: say whether a cluster of this size models the surface (a periodic slab is the usual model, and
-adsorption energies need cluster-size and termination convergence); the SCF cycle count of these systems (taken as the
-series'); the effect of C-PCM, which the series ran and a surface model in vacuum would not (the tree's gas/C-PCM pair
-is recorded, not applied); basis-set superposition (counterpoise: 5 SCFs per adsorption energy instead of 3); give any
-adsorption energy.
+CAN: say how large these clusters are against the pipeline's own largest SCF, and the order of magnitude of one SCF, a
+relaxation and a Hessian at two readings — B3LYP/6-31G(d) without dispersion, and the dispersion-inclusive def2-TZVP tier.
+CANNOT: say whether a cluster of this size models the surface (a periodic slab is the usual model, and adsorption
+energies need cluster-size and termination convergence); the SCF cycle count or the optimiser step count of these
+systems (no cache holds cycle counts; steps are a named reading); VV10's own grid cost; the effect of C-PCM, which the
+series ran and a surface model in vacuum would not (the gas/C-PCM pair is recorded, not applied); the periodic route;
+give any adsorption energy (one needs the complex and both fragments relaxed, plus counterpoise SCFs).
 
 Run:  python tools/in_silico/scripts/99_coating_cluster_cost.py      # seconds, no SCF
 """
@@ -71,7 +78,11 @@ TIERS = {
                        {"Os": "lanl2dz", "Ti": "lanl2dz", "Zn": "lanl2dz", "Ca": "lanl2dz"}),
     "21f_def2tzvp": ({"default": "def2-tzvp", "Os": "lanl2dz"}, {"Os": "lanl2dz"}),
 }
+MICRO_CACHE = DFT_CACHE / "microsolvation_dmbpy.json"           # 34's cluster-continuum pairs (H-bonded waters)
+THERMO_CACHE = DFT_CACHE / "os_couple_thermo.json"               # 96: the RKS Hessian against its SCF
+SCRIPT_21E = HERE / "21e_dft_os_mediator_series.py"
 P_HIGH = 3                              # OURS: the named upper reading beyond the fitted range
+STEPS_MANY = 200                        # OURS: optimiser steps of a soft 116–154-atom cluster (21e caps at 120)
 
 
 def ti_cluster(n: int) -> dict:
@@ -104,6 +115,11 @@ OPEN_SHELL = {"EDOT_trimer_cation", "PEDOT_PSS_on_TiO2_16"}
 
 def nao(composition: dict, tier: str, charge: int = 0) -> tuple[int, int]:
     """Basis functions and electrons of a composition at a tier; spin is set by parity."""
+    m = mol(composition, tier, charge)
+    return int(m.nao_nr()), int(m.nelectron)
+
+
+def mol(composition: dict, tier: str, charge: int = 0):
     from pyscf import gto
     basis, ecp = TIERS[tier]
     sym = [el for el, n in sorted(composition.items()) for _ in range(n)]
@@ -112,15 +128,14 @@ def nao(composition: dict, tier: str, charge: int = 0) -> tuple[int, int]:
     ecp = {k: v for k, v in ecp.items() if k in composition}
     for spin in (0, 1):
         try:
-            m = gto.M(atom=atoms, basis=basis, ecp=ecp, charge=charge, spin=spin, verbose=0, unit="Angstrom")
-            return int(m.nao_nr()), int(m.nelectron)
+            return gto.M(atom=atoms, basis=basis, ecp=ecp, charge=charge, spin=spin, verbose=0, unit="Angstrom")
         except RuntimeError:
             continue
     raise SystemExit(f"no consistent spin for {composition} at charge {charge}")
 
 
 def series_points() -> dict:
-    spec = importlib.util.spec_from_file_location("s21e", next(HERE.glob("21e_*.py")))
+    spec = importlib.util.spec_from_file_location("s21e", SCRIPT_21E)
     mod = importlib.util.module_from_spec(spec)
     sys.modules["s21e"] = mod
     spec.loader.exec_module(mod)
@@ -142,7 +157,9 @@ def series_points() -> dict:
             n, ne = nao(comp, tier, c["os2"]["charge"])
             if ne != c["os2"]["n_electrons"]:
                 raise SystemExit(f"{name} ({tier}): {ne} electrons against the cache's {c['os2']['n_electrons']}")
-            pts[tier][name] = {"nao": n, "rks_s": c["os2"]["wall_seconds"], "uks_s": c["os3"]["wall_seconds"]}
+            m = mol(comp, tier, c["os2"]["charge"])
+            pts[tier][name] = {"nao": n, "prim_per_nao": round(m.npgto_nr() / n, 4),
+                               "rks_s": c["os2"]["wall_seconds"], "uks_s": c["os3"]["wall_seconds"]}
     return pts
 
 
@@ -154,98 +171,140 @@ def fit_p(points: dict) -> float:
 
 def main() -> int:
     t0 = time.time()
-    banner("99 — coating clusters on TiO2: basis size measured, SCF and relaxation cost from the pipeline's series (HW.40)")
+    banner("99 — coating clusters on TiO2: basis size measured, SCF / relaxation / Hessian cost estimated (HW.40)")
+    import pyscf
+    from pyscf.dft import libxc
     pts = series_points()
     p_fit = {tier: round(fit_p(v), 2) for tier, v in pts.items()}
     anchor = {tier: max(v.items(), key=lambda kv: kv[1]["nao"]) for tier, v in pts.items()}
     anchor["21e_lanl2dz_3d"] = anchor["21e_b3lyp_631gd"]                  # the same Os-complex anchor (no 3d metal in it)
     p_fit["21e_lanl2dz_3d"] = p_fit["21e_b3lyp_631gd"]
-    uks = [v["uks_s"] / v["rks_s"] for v in pts["21e_b3lyp_631gd"].values()]
-    shell = (round(min(uks), 2), round(max(uks), 2))
-    r2 = json.loads(RELAX_OS2.read_text(encoding="utf-8"))["complexes"]["dmbpy"]
-    r3 = json.loads(RELAX_OS3.read_text(encoding="utf-8"))["complexes"]["dmbpy"]
-    relax = {"os2_from_octahedron": round(r2["geometry_os2_relaxed"]["info"]["wall_seconds"] / r2["os2"]["wall_seconds"], 1),
-             "os3_from_os2_minimum": round(r3["geometry_os3_relaxed"]["info"]["wall_seconds"] / r3["os3"]["wall_seconds"], 1)}
-    rel_lo, rel_hi = min(relax.values()), max(relax.values())
+
+    routine = [v["uks_s"] / v["rks_s"] for v in pts["21e_b3lyp_631gd"].values()]
+    micro = [r["os3"]["wall_seconds"] / r["os2"]["wall_seconds"]
+             for r in json.loads(MICRO_CACHE.read_text(encoding="utf-8"))["results"]]
+    wbx = [v["uks_s"] / v["rks_s"] for v in pts["21f_def2tzvp"].values()]
+    shell_readings = {"21e_routine_series": [round(min(routine), 2), round(max(routine), 2)],
+                      "34_microsolvated": [round(min(micro), 2), round(max(micro), 2)],
+                      "21f_wb97x_with_rescues": [round(min(wbx), 2), round(max(wbx), 2)]}
+    shell = {"21e_b3lyp_631gd": (shell_readings["21e_routine_series"][0], shell_readings["34_microsolvated"][1]),
+             "21e_lanl2dz_3d": (shell_readings["21e_routine_series"][0], shell_readings["34_microsolvated"][1]),
+             "21f_def2tzvp": (shell_readings["21e_routine_series"][0], shell_readings["21f_wb97x_with_rescues"][1])}
+
+    relax = {}
+    for state, path, key, start in (("os2", RELAX_OS2, "geometry_os2_relaxed", "long"),
+                                    ("os3", RELAX_OS3, "geometry_os3_relaxed", "near")):
+        for name, c in json.loads(path.read_text(encoding="utf-8"))["complexes"].items():
+            info = c[key]["info"]
+            eq = info["wall_seconds"] / c[state]["wall_seconds"]
+            relax[f"{state}_{name}"] = {"start": start, "steps": info["steps"], "scf_equivalents": round(eq, 1),
+                                        "per_step": round(eq / info["steps"], 3), "maxsteps": info["maxsteps"]}
+    long_ = [v for v in relax.values() if v["start"] == "long"]
+    relax_lo = min(v["scf_equivalents"] for v in long_)
+    per_step_hi = max(v["per_step"] for v in long_)
+    relax_hi = round(STEPS_MANY * per_step_hi, 1)
+    th = json.loads(THERMO_CACHE.read_text(encoding="utf-8"))["species"]["os2"]
+    hess_over_scf = round(th["hessian_wall_s"] / th["scf_wall_s"], 1)
     gas = json.loads(GAS_CACHE.read_text(encoding="utf-8"))["complexes"]["dmbpy"]["os2"]["wall_seconds"]
     pcm = {c["name"]: c for c in json.loads(SERIES_CACHE.read_text(encoding="utf-8"))["complexes"]}["dmbpy"]["os2"]["wall_seconds"]
 
     rows = {}
     for name, (comp, charge) in MODELS.items():
-        n, ne = {}, None
+        n, prim, ne = {}, {}, None
         for tier in TIERS:
-            n[tier], ne_t = nao(comp, tier, charge)
-            ne = ne_t if tier == "21e_b3lyp_631gd" else ne
+            m = mol(comp, tier, charge)
+            n[tier], prim[tier] = int(m.nao_nr()), round(m.npgto_nr() / m.nao_nr(), 4)
+            ne = int(m.nelectron) if tier == "21e_b3lyp_631gd" else ne
         if (name in OPEN_SHELL) != (ne % 2 == 1):
             raise SystemExit(f"{name}: {ne} electrons — the open-shell set and the parity disagree")
         est = {}
         for tier in TIERS:
             a = anchor[tier][1]
             ratio = n[tier] / a["nao"]
-            f = shell if name in OPEN_SHELL else (1.0, 1.0)
-            ends = sorted(a["rks_s"] * s * ratio ** p / 3600 for s in f for p in (p_fit[tier], P_HIGH))
-            est[tier] = {"ratio_to_anchor": round(ratio, 2), "one_scf_h": {"low": round(ends[0], 2), "high": round(ends[-1], 2)},
-                         "relaxation_days": {"low": round(ends[0] * rel_lo / 24, 1), "high": round(ends[-1] * rel_hi / 24, 1)}}
+            comp_f = max(1.0, prim[tier] / a["prim_per_nao"])
+            s_lo, s_hi = shell[tier] if name in OPEN_SHELL else (1.0, 1.0)
+            lo = a["rks_s"] * s_lo * ratio ** p_fit[tier] / 3600
+            hi = a["rks_s"] * s_hi * comp_f * ratio ** P_HIGH / 3600
+            lo, hi = min(lo, hi), max(lo, hi)
+            est[tier] = {"ratio_to_anchor": round(ratio, 2), "composition_factor": round(comp_f, 2),
+                         "one_scf_h": {"low": round(lo, 2), "high": round(hi, 2)},
+                         "relaxation_days": {"low": round(lo * relax_lo / 24, 1), "high": round(hi * relax_hi / 24, 1)},
+                         "rks_hessian_days": (None if name in OPEN_SHELL and tier == "21f_def2tzvp" else
+                                              {"low": round(lo * hess_over_scf / 24, 1),
+                                               "high": round(hi * hess_over_scf / 24, 1)})}
         rows[name] = {"composition": comp, "charge": charge, "n_atoms": sum(comp.values()), "n_electrons": ne,
-                      "open_shell": name in OPEN_SHELL, "nao": n, "estimate": est}
-    from pyscf.dft import libxc
-    disp = {"dftd3": bool(importlib.util.find_spec("dftd3")), "dftd4": bool(importlib.util.find_spec("dftd4")),
-            "vv10_native_wb97x_v": bool(libxc.nlc_coeff("wb97x-v"))}
+                      "open_shell": name in OPEN_SHELL, "nao": n, "prim_per_nao": prim, "estimate": est}
+    import inspect
+
+    import pyscf.hessian.uks as hess_uks
+    env = {"pyscf": pyscf.__version__,
+           "dftd3": bool(importlib.util.find_spec("dftd3")), "dftd4": bool(importlib.util.find_spec("dftd4")),
+           "pyscf_dispersion": bool(importlib.util.find_spec("pyscf.dispersion")),
+           "vv10_native": bool(libxc.nlc_coeff("wb97x-v")),
+           "uks_nlc_hessian": "UKS Hessian for NLC functional" not in inspect.getsource(hess_uks),
+           "pyscf_pbc": bool(importlib.util.find_spec("pyscf.pbc"))}
+    ecp_core = {el: int(mol({el: 1}, "21e_lanl2dz_3d", 0).atom_nelec_core(0)) for el in ("Ca", "Ti", "Zn")}
 
     z, pe = rows["Zn_HAp_on_TiO2_16"], rows["PEDOT_PSS_on_TiO2_16"]
     ae, af = anchor["21e_b3lyp_631gd"], anchor["21f_def2tzvp"]
-    ze, pee = z["estimate"]["21e_b3lyp_631gd"], pe["estimate"]["21e_b3lyp_631gd"]
-    zt = z["estimate"]["21f_def2tzvp"]
+    za, zt = z["estimate"]["21e_b3lyp_631gd"], z["estimate"]["21f_def2tzvp"]
+    pa, pt = pe["estimate"]["21e_b3lyp_631gd"], pe["estimate"]["21f_def2tzvp"]
+
+    def r(e, key, fmt=".0f"):
+        return f"{e[key]['low']:{fmt}}–{e[key]['high']:{fmt}}"
     verdict = (
         f"Measured: Zn-HAp (one Zn-substituted cell) on a (TiO2)16 cluster has {z['n_atoms']} atoms and "
-        f"{z['nao']['21e_b3lyp_631gd']} basis functions at 21e's tier ({z['nao']['21e_lanl2dz_3d']} with LANL2DZ on the 3d "
-        f"metals, {z['nao']['21f_def2tzvp']} at def2-TZVP); PEDOT:PSS as the doped polaron on the same cluster has "
-        f"{pe['n_atoms']} atoms, {pe['n_electrons']} electrons (a doublet) and {pe['nao']['21e_b3lyp_631gd']} functions. The "
-        f"pipeline's largest routine SCF at 21e's tier is {ae[0]} ({ae[1]['nao']} functions, {ae[1]['rks_s']:.0f} s) and at "
-        f"def2-TZVP 21f's {af[0]} ({af[1]['nao']} functions, {af[1]['rks_s'] / 3600:.1f} h Os(II), "
-        f"{af[1]['uks_s'] / 3600:.1f} h Os(III)), so the clusters are {ze['ratio_to_anchor']}× and "
-        f"{pee['ratio_to_anchor']}× the 21e anchor and about the size of what def2-TZVP already ran. Estimated: the series "
-        f"scale as N^{p_fit['21e_b3lyp_631gd']} (21e) and N^{p_fit['21f_def2tzvp']} (ωB97X); extrapolating with p from the "
-        f"fit to 3, one 21e-tier SCF of Zn-HAp/TiO2 takes {ze['one_scf_h']['low']:.1f}–{ze['one_scf_h']['high']:.1f} h and a "
-        f"relaxation {ze['relaxation_days']['low']:.1f}–{ze['relaxation_days']['high']:.0f} days; PEDOT:PSS (open-shell "
-        f"factor {shell[0]}–{shell[1]} from the series' routine UKS/RKS pairs) {pee['one_scf_h']['low']:.1f}–"
-        f"{pee['one_scf_h']['high']:.1f} h and {pee['relaxation_days']['low']:.1f}–{pee['relaxation_days']['high']:.0f} days. "
-        f"D3/D4 are not installed, but PySCF carries VV10 natively (ωB97X-V-type functionals), so a dispersion-inclusive "
-        f"calculation needs no new dependency; at def2-TZVP, the tier such a functional runs at, one SCF of Zn-HAp/TiO2 is "
-        f"{zt['one_scf_h']['low']:.0f}–{zt['one_scf_h']['high']:.0f} h and a relaxation {zt['relaxation_days']['low']:.0f}–"
-        f"{zt['relaxation_days']['high']:.0f} days (VV10's own grid cost not included). So a cluster relaxation of one adsorbate is within reach of our CPU — days to "
-        f"weeks, one job at a time; an adsorption energy is 3 such SCFs (5 with counterpoise). What it cannot settle is "
-        f"whether a cluster models the surface: a periodic slab is the usual model, and a cluster study needs its own size "
-        f"and termination convergence, which multiplies the jobs.")
+        f"{z['nao']['21e_b3lyp_631gd']} basis functions at 21e's tier ({z['nao']['21f_def2tzvp']} at def2-TZVP); "
+        f"PEDOT:PSS as the doped polaron on it has {pe['n_atoms']} atoms, {pe['n_electrons']} electrons (a doublet) and "
+        f"{pe['nao']['21e_b3lyp_631gd']} functions — {za['ratio_to_anchor']}× and {pa['ratio_to_anchor']}× the pipeline's "
+        f"largest routine SCF at that tier ({ae[0]}, {ae[1]['nao']} functions, {ae[1]['rks_s']:.0f} s), and about the size "
+        f"def2-TZVP already ran ({af[0]}, {af[1]['nao']} functions). Estimated, low end optimistic and high end "
+        f"pessimistic: (A) B3LYP/6-31G(d) without dispersion — one SCF of Zn-HAp/TiO2 {r(za, 'one_scf_h', '.1f')} h, a "
+        f"relaxation {r(za, 'relaxation_days', '.1f')} days; PEDOT:PSS {r(pa, 'one_scf_h', '.1f')} h and "
+        f"{r(pa, 'relaxation_days')} days. (B) dispersion-inclusive at def2-TZVP (VV10 is native; its own grid cost is not "
+        f"included) — Zn-HAp/TiO2 {r(zt, 'one_scf_h')} h per SCF and {r(zt, 'relaxation_days')} days per relaxation, "
+        f"PEDOT:PSS {r(pt, 'one_scf_h')} h and {r(pt, 'relaxation_days')} days. Each is ONE configuration; adsorption sites, "
+        f"cluster sizes and terminations multiply it, and an adsorption energy relaxes the complex and both fragments. A "
+        f"certified minimum adds a Hessian ≈ {hess_over_scf:.0f} SCFs for RKS, and PySCF {pyscf.__version__} has no analytic "
+        f"UKS Hessian for a VV10 functional, so the PEDOT polaron's minimum cannot be certified that way. So single SCFs and "
+        f"a B3LYP screen of one configuration (days to a month) are within reach of our CPU; a dispersion-inclusive, "
+        f"size-converged cluster study is months of one CPU for Zn-HAp and up to years for the PEDOT polaron at the "
+        f"pessimistic end — the scale at which a collaborator or a compute allocation matters; the periodic route "
+        f"(pyscf.pbc is installed) is not assessed here.")
 
     out = {
         "question": "Can the in-silico L3 tier carry cluster models of Zn-HAp and PEDOT:PSS on TiO2 (00_07 HW.40) — basis size "
-                    "measured from composition, SCF and relaxation cost estimated from the pipeline's own timed series.",
+                    "measured from composition, SCF, relaxation and Hessian cost estimated from the pipeline's own timed runs.",
         "tiers": {k: {"basis": v[0], "ecp": v[1]} for k, v in TIERS.items()},
+        "ecp_core_electrons_lanl2dz_3d": ecp_core,
         "series_points": pts,
         "fit_exponent": p_fit, "upper_exponent_ours": P_HIGH,
         "anchor": {k: {"name": v[0], **v[1]} for k, v in anchor.items()},
-        "uks_over_rks_21e_series": list(shell),
-        "relaxation_over_scf_21e_dmbpy": relax,
+        "open_shell_readings": shell_readings,
+        "open_shell_factor_by_tier": {k: list(v) for k, v in shell.items()},
+        "relaxations_21e": relax,
+        "relaxation_scf_equivalents": {"low_shortest_long_start": relax_lo, "high_steps_many_ours": relax_hi,
+                                       "steps_many_ours": STEPS_MANY, "per_step_high": per_step_hi},
+        "rks_hessian_over_scf_96": hess_over_scf,
         "gas_over_cpcm_dmbpy_os2": round(gas / pcm, 2),
         "models_ours": "a size ladder, not a validated surface model — compositions and charges in the script",
         "by_model": rows,
-        "dispersion_in_env": disp,
+        "env": env,
         "not_modelled": ["whether a cluster of this size models the surface (cluster-size and termination convergence)",
-                         "the SCF cycle count of these systems (taken as the series')",
-                         "C-PCM in the series against vacuum for a surface model (gas/C-PCM recorded, not applied)",
-                         "basis-set superposition (counterpoise)", "any adsorption energy"],
+                         "the SCF cycle count and the optimiser step count of these systems (steps are a named reading)",
+                         "VV10's own grid cost", "C-PCM in the series against vacuum for a surface model (recorded, not applied)",
+                         "the periodic route (pyscf.pbc)", "any adsorption energy (complex + both fragments + counterpoise)"],
         "verdict": verdict,
     }
     OUT_JSON.write_text(json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"  fit p: {p_fit} · anchors: { {k: (v[0], v[1]['nao']) for k, v in anchor.items()} } · UKS/RKS {shell} · "
-          f"relax/SCF {relax} · gas/C-PCM {gas / pcm:.2f}")
-    for name, r in rows.items():
-        e = r["estimate"]["21e_b3lyp_631gd"]
-        print(f"  {name:22s} {r['n_atoms']:4d} atoms · {r['n_electrons']} e · nao {r['nao']} · ×{e['ratio_to_anchor']} · "
-              f"SCF {e['one_scf_h']['low']}–{e['one_scf_h']['high']} h · relax {e['relaxation_days']['low']}–"
-              f"{e['relaxation_days']['high']} d{' (UKS)' if r['open_shell'] else ''}")
-    print(f"  dispersion: {disp}\n\n  VERDICT: {verdict}")
+    print(f"  fit p {p_fit} · shell {shell} · relax SCF-eq {relax_lo}…{relax_hi} · Hessian/SCF {hess_over_scf} · env {env}")
+    for name, row in rows.items():
+        for tier in ("21e_b3lyp_631gd", "21f_def2tzvp"):
+            e = row["estimate"][tier]
+            print(f"  {name:22s} {tier:16s} nao {row['nao'][tier]:5d} ×{e['ratio_to_anchor']} comp {e['composition_factor']} · "
+                  f"SCF {e['one_scf_h']['low']}–{e['one_scf_h']['high']} h · relax {e['relaxation_days']['low']}–"
+                  f"{e['relaxation_days']['high']} d")
+    print(f"\n  VERDICT: {verdict}")
     banner(f"✅ saved {OUT_JSON.name} · {time.time() - t0:.0f} s")
     return 0
 

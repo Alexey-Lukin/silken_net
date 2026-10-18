@@ -3090,13 +3090,15 @@ def test_pogo_thermal_gap():
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
 def test_coating_cluster_cost():
-    """Script 99 (HW.40): basis sizes of model coating clusters (measured) and one SCF / a relaxation estimated from the
-    pipeline's own timed series. CAN catch: a series point's wall times drifting from the committed caches it was read
-    from, the fitted exponent leaving a log-log fit of those points, an anchor that is not the tier's largest SCF, an
-    estimate leaving anchor · shell · ratio^p over [p_fit, 3], a relaxation leaving hours × the relaxation/SCF ratios read
-    in 21e's relaxed caches, the UKS/RKS range leaving the series' pairs, an open-shell model with an even electron count
-    (or a closed one with an odd), a composite that is not the sum of its parts, a basis tier out of order. CANNOT catch:
-    the basis counts themselves (they need PySCF's basis library), nor whether these clusters model the surface."""
+    """Script 99 (HW.40): basis sizes of model coating clusters (measured) and one SCF / a relaxation / an RKS Hessian
+    estimated from the pipeline's own timed runs, each as a bracket of named readings. CAN catch: a series point dropped or
+    added against its source cache, or its wall times drifting from it; the fitted exponent leaving a log-log fit of those
+    points; an anchor that is not the tier's largest SCF; an open-shell reading leaving the 21e series, 34's micro-solvated
+    pairs or 21f's ωB97X pairs; a relaxation reading leaving the 21e relaxed caches (the shortest long start; STEPS_MANY ×
+    the largest per-step cost); the Hessian ratio leaving 96's cache; an estimate leaving its formula (low: anchor · s_lo ·
+    ratio^p_fit; high: anchor · s_hi · composition · ratio^3); an electron count leaving ΣZ − charge or disagreeing with the
+    open-shell set; a composite that is not the sum of its parts; a basis count that the script's own builder no longer
+    reproduces (PySCF is in the env). CANNOT catch: whether these clusters model the surface, nor the real step count."""
     path = DFT / "coating_cluster_cost.json"
     if not path.exists():
         pytest.skip("coating_cluster_cost.json not computed")
@@ -3105,20 +3107,42 @@ def test_coating_cluster_cost():
     wb = json.loads((DFT / "os_mediator_series_wb97x.json").read_text(encoding="utf-8"))["complexes"]
     for tier, src in (("21e_b3lyp_631gd", series), ("21f_def2tzvp", wb)):
         pts = d["series_points"][tier]
-        assert pts and set(pts) <= set(src), tier
+        assert set(pts) == set(src), tier
         for name, v in pts.items():
             assert v["rks_s"] == src[name]["os2"]["wall_seconds"] and v["uks_s"] == src[name]["os3"]["wall_seconds"], name
         x, y = np.log([v["nao"] for v in pts.values()]), np.log([v["rks_s"] for v in pts.values()])
         assert abs(d["fit_exponent"][tier] - np.polyfit(x, y, 1)[0]) <= 0.006, tier
         top = max(pts, key=lambda k: pts[k]["nao"])
         assert d["anchor"][tier]["name"] == top and d["anchor"][tier]["nao"] == pts[top]["nao"], tier
-    ratios = [v["uks_s"] / v["rks_s"] for v in d["series_points"]["21e_b3lyp_631gd"].values()]
-    assert d["uks_over_rks_21e_series"] == [round(min(ratios), 2), round(max(ratios), 2)]
-    r2 = json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text(encoding="utf-8"))["complexes"]["dmbpy"]
-    r3 = json.loads((DFT / "os_mediator_series_relaxed_os3.json").read_text(encoding="utf-8"))["complexes"]["dmbpy"]
-    rel = d["relaxation_over_scf_21e_dmbpy"]
-    assert abs(rel["os2_from_octahedron"] - r2["geometry_os2_relaxed"]["info"]["wall_seconds"] / r2["os2"]["wall_seconds"]) <= 0.06
-    assert abs(rel["os3_from_os2_minimum"] - r3["geometry_os3_relaxed"]["info"]["wall_seconds"] / r3["os3"]["wall_seconds"]) <= 0.06
+    micro = json.loads((DFT / "microsolvation_dmbpy.json").read_text(encoding="utf-8"))["results"]
+    readings = {"21e_routine_series": [v["uks_s"] / v["rks_s"] for v in d["series_points"]["21e_b3lyp_631gd"].values()],
+                "34_microsolvated": [r["os3"]["wall_seconds"] / r["os2"]["wall_seconds"] for r in micro],
+                "21f_wb97x_with_rescues": [v["uks_s"] / v["rks_s"] for v in d["series_points"]["21f_def2tzvp"].values()]}
+    for k, v in readings.items():
+        assert d["open_shell_readings"][k] == [round(min(v), 2), round(max(v), 2)], k
+    lo_s = d["open_shell_readings"]["21e_routine_series"][0]
+    assert d["open_shell_factor_by_tier"]["21e_b3lyp_631gd"] == [lo_s, d["open_shell_readings"]["34_microsolvated"][1]]
+    assert d["open_shell_factor_by_tier"]["21f_def2tzvp"] == [lo_s, d["open_shell_readings"]["21f_wb97x_with_rescues"][1]]
+    relax = {}
+    for state, fname, key, start in (("os2", "os_mediator_series_relaxed_os2.json", "geometry_os2_relaxed", "long"),
+                                     ("os3", "os_mediator_series_relaxed_os3.json", "geometry_os3_relaxed", "near")):
+        for name, c in json.loads((DFT / fname).read_text(encoding="utf-8"))["complexes"].items():
+            info = c[key]["info"]
+            relax[f"{state}_{name}"] = (start, info["wall_seconds"] / c[state]["wall_seconds"], info["steps"])
+    assert set(relax) == set(d["relaxations_21e"])
+    longs = [v for v in relax.values() if v[0] == "long"]
+    rs = d["relaxation_scf_equivalents"]
+    assert abs(rs["low_shortest_long_start"] - min(eq for _, eq, _ in longs)) <= 0.06
+    assert abs(rs["per_step_high"] - max(eq / st for _, eq, st in longs)) <= 0.0006
+    assert abs(rs["high_steps_many_ours"] - rs["steps_many_ours"] * rs["per_step_high"]) <= 0.06
+    th = json.loads((DFT / "os_couple_thermo.json").read_text(encoding="utf-8"))["species"]["os2"]
+    assert abs(d["rks_hessian_over_scf_96"] - th["hessian_wall_s"] / th["scf_wall_s"]) <= 0.06
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("s99", Path(__file__).parents[1] / "scripts" / "99_coating_cluster_cost.py")
+    s99 = importlib.util.module_from_spec(spec)
+    sys.modules["s99"] = s99
+    spec.loader.exec_module(s99)
+    z_of = {"H": 1, "C": 6, "O": 8, "P": 15, "S": 16, "Ca": 20, "Ti": 22, "Zn": 30}
     rows = d["by_model"]
     for comp_name, parts, minus_h in (("Zn_HAp_on_TiO2_16", ("Zn_HAp_cell", "TiO2_16"), 0),
                                       ("PEDOT_PSS_on_TiO2_16", ("EDOT_trimer_cation", "PSS_dimer", "TiO2_16"), 1)):
@@ -3130,20 +3154,24 @@ def test_coating_cluster_cost():
         assert rows[comp_name]["composition"] == want, comp_name
     for name, r in rows.items():
         assert r["n_atoms"] == sum(r["composition"].values()), name
+        assert r["n_electrons"] == sum(z_of[el] * n for el, n in r["composition"].items()) - r["charge"], name
         assert r["open_shell"] == (r["n_electrons"] % 2 == 1), name
+        assert s99.nao(r["composition"], "21e_b3lyp_631gd", r["charge"])[0] == r["nao"]["21e_b3lyp_631gd"], name
         assert r["nao"]["21f_def2tzvp"] > r["nao"]["21e_b3lyp_631gd"] >= r["nao"]["21e_lanl2dz_3d"], name
         for tier, est in r["estimate"].items():
             a, p_fit = d["anchor"][tier], d["fit_exponent"][tier]
             ratio = r["nao"][tier] / a["nao"]
-            assert abs(est["ratio_to_anchor"] - ratio) <= 0.006, (name, tier)
-            shell = d["uks_over_rks_21e_series"] if r["open_shell"] else [1.0, 1.0]
-            ends = sorted(a["rks_s"] * s * ratio ** q / 3600 for s in shell for q in (p_fit, d["upper_exponent_ours"]))
-            # the cache's shell bounds are rounded to 0.01 — allow their share of the open-shell ends
-            tol = 0.006 + (ends[-1] * 0.005 / min(shell) if r["open_shell"] else 0)
-            assert abs(est["one_scf_h"]["low"] - ends[0]) <= tol and abs(est["one_scf_h"]["high"] - ends[-1]) <= tol, (name, tier)
-            lo, hi = min(rel.values()), max(rel.values())
-            assert abs(est["relaxation_days"]["low"] - est["one_scf_h"]["low"] * lo / 24) <= 0.06 + tol * lo / 24, (name, tier)
-            assert abs(est["relaxation_days"]["high"] - est["one_scf_h"]["high"] * hi / 24) <= 0.06 + tol * hi / 24, (name, tier)
+            comp_f = max(1.0, r["prim_per_nao"][tier] / a["prim_per_nao"])
+            assert abs(est["ratio_to_anchor"] - ratio) <= 0.006 and abs(est["composition_factor"] - comp_f) <= 0.006
+            s_lo, s_hi = d["open_shell_factor_by_tier"][tier] if r["open_shell"] else (1.0, 1.0)
+            ends = sorted((a["rks_s"] * s_lo * ratio ** p_fit / 3600,
+                           a["rks_s"] * s_hi * comp_f * ratio ** d["upper_exponent_ours"] / 3600))
+            assert abs(est["one_scf_h"]["low"] - ends[0]) <= 0.006 and abs(est["one_scf_h"]["high"] - ends[-1]) <= 0.006
+            assert abs(est["relaxation_days"]["low"] - est["one_scf_h"]["low"] * rs["low_shortest_long_start"] / 24) <= 0.06
+            assert abs(est["relaxation_days"]["high"] - est["one_scf_h"]["high"] * rs["high_steps_many_ours"] / 24) <= 0.3
+            hess = est["rks_hessian_days"]
+            assert (hess is None) == (r["open_shell"] and tier == "21f_def2tzvp"), (name, tier)
+    assert not d["env"]["uks_nlc_hessian"] or all(e["rks_hessian_days"] for r in rows.values() for e in r["estimate"].values())
 
 
 def test_field_strain_campaign():

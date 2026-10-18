@@ -5412,27 +5412,31 @@ def test_frost_worst_regime_label_matches_cache():
 
 def test_coating_cost_in_01_04_matches_99():
     """01_04 §4.3 «Surface-DFT колаборація» ⊕ (HW.40) quotes 99's cache: the composite's basis functions at two tiers and
-    its ratio to the anchor, the def2-TZVP anchor, the fitted exponent, one SCF and a relaxation at 21e's tier and at
-    def2-TZVP for Zn-HAp on (TiO2)16, the PEDOT:PSS ranges, and the dispersion statement (two-sided). CAN catch a re-run
-    of 99 or of its source series that leaves the canon behind. CANNOT catch whether the clusters are the right models."""
+    its ratio to the anchor, the def2-TZVP anchor, the fitted exponent, both readings (A: 21e tier, B: def2-TZVP) of one SCF
+    and a relaxation for Zn-HAp/TiO2 and PEDOT:PSS/TiO2, the RKS Hessian ratio, and the three env statements (two-sided).
+    CAN catch a re-run of 99 or of its source caches that leaves the canon behind. CANNOT catch whether the clusters are the
+    right models."""
     d = json.loads((CACHE / "dft/coating_cluster_cost.json").read_text(encoding="utf-8"))
     z, pe = d["by_model"]["Zn_HAp_on_TiO2_16"], d["by_model"]["PEDOT_PSS_on_TiO2_16"]
-    ze, zt, pee = z["estimate"]["21e_b3lyp_631gd"], z["estimate"]["21f_def2tzvp"], pe["estimate"]["21e_b3lyp_631gd"]
+    za, zt = z["estimate"]["21e_b3lyp_631gd"], z["estimate"]["21f_def2tzvp"]
+    pa, pt = pe["estimate"]["21e_b3lyp_631gd"], pe["estimate"]["21f_def2tzvp"]
     text = " ".join((REPO / "docs/01_04_CODIT_and_Xylemointegration.md").read_text(encoding="utf-8").split())
 
     def rng(e, key, fmt):
         return f"**{e[key]['low']:{fmt}}–{e[key]['high']:{fmt}}**"
-    for frag in (f"**{z['nao']['21e_b3lyp_631gd']}** базисні функції", f"у **{ze['ratio_to_anchor']}** раза",
+    for frag in (f"**{z['nao']['21e_b3lyp_631gd']}** базисні функції", f"у **{za['ratio_to_anchor']}** раза",
                  f"— **{z['nao']['21f_def2tzvp']}** проти **{d['anchor']['21f_def2tzvp']['nao']}**",
-                 f"за підгонкою — **{d['fit_exponent']['21e_b3lyp_631gd']}**",
-                 f"один SCF Zn-HAp/TiO₂ — {rng(ze, 'one_scf_h', '.1f')} год, релаксація — "
-                 f"**{ze['relaxation_days']['low']:.1f}–{ze['relaxation_days']['high']:.0f}** діб",
-                 f"{rng(pee, 'one_scf_h', '.1f')} год і **{pee['relaxation_days']['low']:.1f}–{pee['relaxation_days']['high']:.0f}** діб",
-                 f"один SCF Zn-HAp/TiO₂ — {rng(zt, 'one_scf_h', '.0f')} год, релаксація — {rng(zt, 'relaxation_days', '.0f')} діб"):
+                 f"від підгонки **{d['fit_exponent']['21e_b3lyp_631gd']}** до 3",
+                 f"один SCF Zn-HAp/TiO₂ — {rng(za, 'one_scf_h', '.1f')} год, релаксація — {rng(za, 'relaxation_days', '.1f')} діб",
+                 f"{rng(pa, 'one_scf_h', '.1f')} год і {rng(pa, 'relaxation_days', '.0f')} діб",
+                 f"Zn-HAp/TiO₂ — {rng(zt, 'one_scf_h', '.0f')} год на SCF і {rng(zt, 'relaxation_days', '.0f')} діб на релаксацію",
+                 f"PEDOT:PSS — {rng(pt, 'one_scf_h', '.0f')} год і {rng(pt, 'relaxation_days', '.0f')} діб",
+                 f"гесіан (≈ **{d['rks_hessian_over_scf_96']:.0f}** SCF для RKS)"):
         assert frag in text, f"01_04 §4.3 ⊕ 99: expected {frag!r}"
-    disp = d["dispersion_in_env"]
-    assert ("D3/D4 у середовищі немає" in text) == (not disp["dftd3"] and not disp["dftd4"])
-    assert ("PySCF має VV10 нативно" in text) == disp["vv10_native_wb97x_v"]
+    env = d["env"]
+    assert ("D3/D4 у середовищі немає" in text) == (not env["dftd3"] and not env["dftd4"])
+    assert ("VV10 у PySCF нативний" in text) == env["vv10_native"]
+    assert ("аналітичного UKS-гесіана для функціонала з VV10 у PySCF немає" in text) == (not env["uks_nlc_hessian"])
 
 
 def test_field_strain_sheet_matches_98():
