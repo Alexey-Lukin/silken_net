@@ -5427,16 +5427,34 @@ def test_coating_cost_in_01_04_matches_99():
 
 
 def test_field_strain_sheet_matches_98():
-    """docs/protocols/anchor/field_strain_sensor_sheet.md (HW.43) quotes 98's cache: the set's current and battery days
-    (§3), every row of the start-month table (hours/day at Beaufort 5, years without, the replay's median and p75,
-    trips at both), §0's January count and December median/p75; SUMMARY §HW.43 ⊕ 98; and the numbers of the ratified
-    ⚖️ 2026-10-18 in 01_02 §2.2 (the verdict was given on them). CAN catch a re-run of 98 (new ERA5 window, power figure, target, quantile
-    rule) that leaves any of the three behind. CANNOT catch whether the months chosen for the table are the right ones."""
+    """docs/protocols/anchor/field_strain_sensor_sheet.md (HW.43) quotes 98's cache: the ratified set's current and
+    battery days and the pair's (§3), every row of the uncapped start-month table (hours/day at Beaufort 5, years
+    without, the replay's median and p75, trips at both), the capped plan (share reached, hours by the cap, seasons with
+    none, trips), §0's counts; SUMMARY §HW.43 ⊕ 98; and the numbers of BOTH ratified ⚖️ 2026-10-18 in 01_02 §2.2 and the
+    ⊕ between them — the verdicts were given on them. CAN catch a re-run of 98 (new ERA5 window, power figure, target,
+    quantile rule, cap) that leaves any of the three behind. CANNOT catch whether the months chosen for the table are the
+    right ones, nor a ratified number that the cache no longer carries under the same key."""
     d = json.loads((CACHE / "mechanical/field_strain_campaign.json").read_text(encoding="utf-8"))
-    bm, bd = d["by_month"], d["battery_days"]
+    bm, bd, cap, third = d["by_month"], d["battery_days"], d["capped_by_start_month"], d["set_with_third_tss"]
+    dec = cap["12"]
     text = (REPO / "docs/protocols/anchor/field_strain_sensor_sheet.md").read_text(encoding="utf-8")
-    assert f"**{d['power']['current_A']:.4f} A**" in text
-    assert (f"**{bd['60_Ah_as_in_the_papers']:.1f}** доби" in text and f"**{bd['100_Ah_ours']:.1f}** доби" in text)
+    for frag in (f"**{third['current_A']:.4f} A**", f"**{third['battery_days']['100_Ah_ours']:.1f}** доби за повної ємності",
+                 f"— {d['power']['current_A']:.4f} A:", f"**{bd['60_Ah_as_in_the_papers']:.1f}** доби",
+                 f"**{bd['100_Ah_ours']:.1f}** доби",
+                 f"у **{bm['01']['years_without_beaufort_5']} із 30** січнів",
+                 f"медіану **{bm['12']['replay_days']['p50']:.0f}** доби, p75 — **{bm['12']['replay_days']['p75']:.0f}**, "
+                 f"p90 — **{bm['12']['replay_days']['p90']:.0f}**",
+                 f"набирають **{dec['share_reached_by_cap'] * 100:.0f} %** сезонів",
+                 f"**{dec['seasons_not_reached']} із {dec['n_seasons']}** сезонів не набирають її й до 1 травня",
+                 f"мету в **{dec['share_reached_by_cap'] * 100:.0f} %** сезонів (березневий — лише в "
+                 f"**{cap['03']['share_reached_by_cap'] * 100:.0f} %**)",
+                 f"медіанно набирається **{dec['beaufort_5_hours_by_cap_median']:.0f}** години Бофорт-5, а у "
+                 f"**{dec['seasons_with_zero_by_cap']}** із {dec['n_seasons']} сезонів — жодної",
+                 f"**{third['december_capped_trips_median']['100_Ah_ours']}** за медіани і щонайбільше "
+                 f"**{third['december_capped_trips_max']['100_Ah_ours']}**",
+                 f"у січні в середньому {bm['01']['beaufort_5_hours_per_storm_mean']:.1f} год",
+                 f"≈ {round(d['battery_Ah_for_90_days'], -1):.0f} А·год"):
+        assert frag in text, f"field sheet: expected {frag!r}"
     names = {"12": "грудень", "01": "січень", "02": "лютий", "03": "березень", "06": "червень"}
     for m, name in names.items():
         r = bm[m]
@@ -5445,38 +5463,35 @@ def test_field_strain_sheet_matches_98():
                f"{r['replay_days']['p50']:.0f} · {r['replay_days']['p75']:.0f} | "
                f"{t50['60_Ah_as_in_the_papers']} / {t50['100_Ah_ours']} · {t75['60_Ah_as_in_the_papers']} / {t75['100_Ah_ours']} |")
         assert row in text, f"field sheet §3: expected the row {row!r}"
-    assert f"**{bm['01']['years_without_beaufort_5']} із 30** січнів" in text
-    assert (f"медіану **{bm['12']['replay_days']['p50']:.0f}** доби, але p75 — **{bm['12']['replay_days']['p75']:.0f}**"
-            in text)
-    assert f"у січні в середньому {bm['01']['beaufort_5_hours_per_storm_mean']:.1f} год" in text
-    assert f"≈ {round(d['battery_Ah_for_90_days'], -1):.0f} А·год" in text
     summary = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
     for frag in (f"**{bm['01']['years_without_beaufort_5']}** of 30 Januaries",
                  f"a median **{bm['12']['replay_days']['p50']:.0f}** days from 1 December (p75 **{bm['12']['replay_days']['p75']:.0f}**)",
+                 f"(p90 **{bm['12']['replay_days']['p90']:.0f}** days from 1 December)",
+                 f"**{dec['share_reached_by_cap'] * 100:.0f}** % of seasons reach the target by then",
+                 f"at most **{third['december_capped_trips_max']['100_Ah_ours']}** trips under the cap",
                  f"**{bm['12']['trips_at_median']['100_Ah_ours']}** trips on 100 Ah at the median",
                  f"({d['power']['current_A']:.3f} A, the receiver"):
         assert frag in summary, f"SUMMARY §HW.43 ⊕ 98: expected {frag!r}"
     canon = " ".join((REPO / "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md").read_text(encoding="utf-8").split())
-    tracker43 = " ".join((REPO / "docs/00_07_Action_Plan_Tracker.md").read_text(encoding="utf-8").split())
-    for frag in (f"медіана **{bm['12']['replay_days']['p50']:.0f}** доби від 1 грудня, p75 — **{bm['12']['replay_days']['p75']:.0f}**",
+    for frag in (  # the first verdict, as ratified
+                 f"медіана **{bm['12']['replay_days']['p50']:.0f}** доби від 1 грудня, p75 — **{bm['12']['replay_days']['p75']:.0f}**",
                  f"**{bm['12']['trips_at_median']['100_Ah_ours']}** поїздок за медіанної зими і "
                  f"**{bm['12']['trips_at_p75']['100_Ah_ours']}** за p75",
                  f"**{bm['01']['years_without_beaufort_5']}** із 30 січнів",
                  f"≈ **{round(d['battery_Ah_for_90_days'], -1):.0f}** А·год",
-                 f"**{d['capped_by_start_month']['12']['seasons_not_reached']}** із {d['capped_by_start_month']['12']['n_seasons']} сезонів",
-                 f"p90 — **{bm['12']['replay_days']['p90']:.0f}** доби", f"**{bd['100_Ah_ours']:.1f}** доби акумулятора"):
-        assert frag in canon, f"01_02 §2.2 ⚖️ 2026-10-18 (ratified) and its ⊕: expected {frag!r}"
-    cap, third = d["capped_by_start_month"], d["set_with_third_tss"]
-    for frag in (f"{cap['12']['seasons_not_reached']} із {cap['12']['n_seasons']} сезонів не набирають 10 годин навіть до 1 травня",
-                 f"p90 — {bm['12']['replay_days']['p90']:.0f} доби від 1 грудня", f"100 А·год — {bd['100_Ah_ours']:.1f} доби",
-                 f"травень {d['beaufort_5_rate_after_april']['05']}, червень {d['beaufort_5_rate_after_april']['06']} год на добу",
-                 f"набирає мету в {cap['12']['share_reached_by_cap'] * 100:.0f} % сезонів, березневий — лише в {cap['03']['share_reached_by_cap'] * 100:.0f} %",
-                 f"медіанно {cap['12']['beaufort_5_hours_by_cap_median']:.0f} години",
-                 f"{cap['12']['trips_median']['100_Ah_ours']} за медіани і щонайбільше {cap['12']['trips_max']['100_Ah_ours']}",
-                 f"{third['current_A']} A, {third['battery_days']['100_Ah_ours']:.1f} доби на акумулятор, щонайбільше "
-                 f"{third['december_capped_trips_max']['100_Ah_ours']} поїздок",
-                 f"у {cap['12']['seasons_with_zero_by_cap']} із {cap['12']['n_seasons']} — порожнім"):
-        assert frag in tracker43, f"00_07 HW.43 ⚖️ (cap/start/cadence): expected {frag!r}"
+                 # its ⊕ (the two errors)
+                 f"**{dec['seasons_not_reached']}** із {dec['n_seasons']} сезонів",
+                 f"p90 — **{bm['12']['replay_days']['p90']:.0f}** доби", f"**{bd['100_Ah_ours']:.1f}** доби акумулятора",
+                 # the second verdict, as ratified
+                 f"травень **{d['beaufort_5_rate_after_april']['05']}**, червень **{d['beaufort_5_rate_after_april']['06']}** год на добу",
+                 f"набирає мету в **{dec['share_reached_by_cap'] * 100:.0f} %** сезонів, березневий — лише в "
+                 f"**{cap['03']['share_reached_by_cap'] * 100:.0f} %**",
+                 f"(**{bd['100_Ah_ours']:.1f}** доби на 100 А·год для пари, **{third['battery_days']['100_Ah_ours']:.1f}** — з третім TSS",
+                 f"медіанно **{dec['beaufort_5_hours_by_cap_median']:.0f}** години Бофорт-5",
+                 f"**{dec['trips_median']['100_Ah_ours']}** за медіани і щонайбільше **{dec['trips_max']['100_Ah_ours']}**",
+                 f"третім TSS (**{third['current_A']}** A) — щонайбільше **{third['december_capped_trips_max']['100_Ah_ours']}**",
+                 f"(у **{dec['seasons_with_zero_by_cap']}** із {dec['n_seasons']} сезонів — порожнім)"):
+        assert frag in canon, f"01_02 §2.2 — the two ⚖️ 2026-10-18 and the ⊕ between them: expected {frag!r}"
 
 
 def test_alloy_stiffness_table_is_fraction_times_modulus():
