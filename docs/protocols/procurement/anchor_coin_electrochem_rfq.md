@@ -234,6 +234,12 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 - Cyclic mechanical test of the hydrogel matrix: **±5 % strain at 0.1 Hz, 10,000 cycles**.
 - Anti-fouling (protein-adsorption) assay of the membrane against an **abietic-acid suspension, 10 mg/mL in synthetic sap, 7 days**.
 
+**H. Optional — the cathode breathing air behind a PTFE membrane** (only if you have, or can set up, a cell with an air side; if not, say so)
+
+- Three arms on fresh Ti-6Al-4V cathode coupons with the full cathode stack, three coupons each: (1) submerged, no membrane — as in our cathode tests; (2) air-breathing, a porous PTFE membrane with 0.22 µm pores clamped over the catalytic layer on the air side and the cathode medium on the layer side; (3) the same with 0.45 µm pores. We supply the membranes.
+- Per coupon: an ORR polarisation curve and a hold at one potential, the same for all three arms, for a duration you propose; the coupon's mass before and after, and a photograph of the layer once the membrane is removed.
+- Describe your cell — the area of the air-side window, and how and with what force the membrane is clamped — and quote this option separately.
+
 ### Data we need back
 
 Fitted parameters alone are not enough: we compare your measurements against our own models, may refit the raw data with a different equivalent circuit, and intend to publish the results.
@@ -360,6 +366,10 @@ Nothing is required from us for an initial quotation. On request we supply the w
 21. **G. Опційно — неелектрохімічні випробування з тієї самої програми** (у вас або через партнера; якщо ні — скажіть, ми знайдемо їх окремо):
    - циклічне механічне випробування гідрогелевої матриці: **±5 % деформації при 0,1 Гц, 10 000 циклів**;
    - тест на обростання (адсорбцію білка) мембрани проти **суспензії абієтинової кислоти, 10 мг/мл у синтетичному соку, 7 діб**.
+21а. **H. Опційно — катод, що дихає повітрям за мембраною PTFE** (лише якщо маєте або можете зібрати комірку з повітряною стороною; якщо ні — скажіть):
+   - три плечі на нових катодних купонах Ti-6Al-4V з повним катодним стеком, по три купони: (1) занурений, без мембрани — як у наших катодних випробуваннях; (2) дихає повітрям: пориста мембрана PTFE з порами 0,22 мкм притиснута до каталітичного шару з боку повітря, середовище катода — з боку шару; (3) те саме з порами 0,45 мкм. Мембрани постачаємо ми;
+   - на кожному купоні: поляризаційна крива відновлення кисню й утримання при одному потенціалі, однаковому для всіх трьох плечей, тривалістю, яку запропонуєте ви; маса купона до й після та фото шару після зняття мембрани;
+   - опишіть комірку — площу вікна з боку повітря, як і з якою силою притиснуто мембрану — і дайте ціну цієї опції окремо.
 
 *4. Відбір, зберігання й передача проб для аналізу іонів*
 
