@@ -162,6 +162,6 @@
     "dew hours are counted inside that window only, 11 hours long, so the hours per dew night are capped at 11: a percentile equal to the cap means those nights fill the whole window and may run longer, and the hours need not be consecutive"
   ],
   "rain_prose": "Days with ≥ 1 mm: 27% (99.4 a year); on them the day's hourly-mean intensity has median 0.44 and P90 1.0 mm/h (max 4.6). ERA5 smooths downpours, so the percentiles are a LOWER bound on the intensity a coupon meets.",
-  "dew_prose": "Dew nights (air criterion, T2m > 0 °C): 88.4 a year (24% of nights), median 5.0 h and P90 11.0 h of dew-point hours per such night; air at 2 m, not the coupon face.",
+  "dew_prose": "Dew nights (air criterion, T2m > 0 °C): 88.4 a year (24% of nights), median 5.0 h and P90 11.0 h of dew-point hours per such night (not necessarily consecutive; capped at the 11-hour window, so a P90 at the cap means those nights fill it); air at 2 m, not the coupon face.",
   "season_prose": "Soil 7–28 cm reaches 3.5 °C sustainedly (the first 5-day run after the last 5-day return below) at median 03-31 (P10–P90 03-18–04-06), implying cambial onset near 04-09 by the Siberian lead; daily mean air ≥ 8–9 °C sustainedly begins at median 04-07–04-17 and ends at 10-11–10-15. These are xylogenesis thresholds from other sites, not resin pressure, and open-field soil warms earlier than forest soil."
 }

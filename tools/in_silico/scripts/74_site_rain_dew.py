@@ -244,8 +244,9 @@ def main() -> int:
                   f"intensity a coupon meets.")
     dew_prose = (f"Dew nights (air criterion, T2m > 0 °C): {liq['nights_per_year']} a year "
                  f"({liq['fraction_of_nights']:.0%} of nights), median {liq['hours_per_dew_night_median']} h and "
-                 f"P90 {liq['hours_per_dew_night_p90']} h of dew-point hours per such night; air at 2 m, not "
-                 f"the coupon face.")
+                 f"P90 {liq['hours_per_dew_night_p90']} h of dew-point hours per such night (not necessarily "
+                 f"consecutive; capped at the {len(NIGHT_HOURS)}-hour window, so a P90 at the cap means those nights fill "
+                 f"it); air at 2 m, not the coupon face.")
     soil = s[f"soil_7_28cm_ge_{SOIL_ONSET_C}C_spring"]
     onset = s["soil_7_28cm_implied_cambial_onset"]
     a8, a9 = s["air_mean_ge_8C"], s["air_mean_ge_9C"]
