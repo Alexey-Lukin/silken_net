@@ -93,7 +93,7 @@ SAP_PROFILES = {
         "Mg_mM": 0.8,
         "Cl_mM": 0.8,
         "resin_acids": False,
-        "notes": "Deciduous. More tannins, less resin. Higher pH than pine.",
+        "notes": "Deciduous. Less resin. Higher pH than pine.",
     },
     "picea_abies": {
         "common_name": "Norway spruce",
