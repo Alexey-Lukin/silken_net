@@ -1643,16 +1643,25 @@ ALLOY_SKUS = ("Ti-6Al-4V", "Ti-6Al-7Nb", "CP-Ti-Gr4", "beta-Ti-13Nb-13Zr", "Ta",
 
 
 def test_gusak_degradation_multi_alloy():
-    """Script 51 outputs V/Al release per candidate alloy (Stage-2 bake-off, 01_02 §2.5).
+    """Script 51 outputs V/Al/Nb/Zr release per candidate alloy (Stage-2 bake-off, 01_02 §2.5).
     Sanity: 4V control ≈ 1.12 µg/cm²/yr V (the in-silico baseline — order of magnitude on an unsourced D, 01_02 §2.5);
-    every V-free alloy releases ~0."""
+    every V-free alloy releases ~0. Nb and Zr: a channel per alloy, zero where the alloy carries none, and — their D
+    being a placeholder equal to D(V) — the same release per wt% as V. CAN catch a lost channel or a channel fed by
+    the wrong element's wt%; CANNOT say the placeholder D is right, which only a measured release can."""
     path = KINETICS / "gusak_degradation.json"
     if not path.exists():
         pytest.skip("gusak_degradation.json not computed")
+    from lib.constants import ALLOY_PROPERTIES
     kd = json.loads(path.read_text())["kirkendall_diffusion"]
     for alloy in ALLOY_SKUS:
         assert alloy in kd, f"missing alloy {alloy}"
         assert "20" in kd[alloy] and "V_ug_cm2" in kd[alloy]["20"]
+        for el in ("Nb", "Zr"):
+            wt = ALLOY_PROPERTIES[alloy][f"{el}_wt"]
+            assert (kd[alloy]["20"][f"{el}_ug_cm2_placeholder_D"] > 0) == (wt > 0), (alloy, el)
+            v_per_wt = (kd["Ti-6Al-4V"]["20"]["V_ug_cm2"] / ALLOY_PROPERTIES["Ti-6Al-4V"]["V_wt"]
+                        * ALLOY_PROPERTIES[alloy]["rho_kg_m3"] / ALLOY_PROPERTIES["Ti-6Al-4V"]["rho_kg_m3"])
+            assert abs(kd[alloy]["20"][f"{el}_ug_cm2_placeholder_D"] - v_per_wt * wt) <= 1e-5 + 1e-6 * v_per_wt * wt, (alloy, el)
     assert abs(kd["Ti-6Al-4V"]["1"]["V_ug_cm2"] - 1.12) < 0.05   # control baseline preserved
     for vfree in ALLOY_SKUS[1:]:
         assert kd[vfree]["20"]["V_ug_cm2"] == 0.0, f"{vfree} should release zero V"

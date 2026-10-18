@@ -387,49 +387,54 @@ def edlc_endurance_hours():
 
 
 def kirkendall_diffusion():
-    """Fick's 1st law: V/Al diffusion through the passive oxide, PER candidate alloy (Stage-2
+    """Fick's 1st law: V/Al/Nb/Zr diffusion through the passive oxide, PER candidate alloy (Stage-2
     coin bake-off, 01_02 §2.5). Composition-driven: release ∝ bulk wt%, so 4% V gives the 56×
     baseline and every V-free alloy gives ~0. The oxide-diffusion D is a SHARED order-of-magnitude constant,
     labelled literature with NO source named — every release below is linear in it (per-alloy oxide diffusivity is rarely published; the composition effect dominates the small
-    Nb/Zr/Ta oxide-stability difference). Output is nested {alloy: {year: {...}}}."""
-    banner("2. Kirkendall Ion Diffusion (V/Al through the oxide) — per alloy")
+    Nb/Zr/Ta oxide-stability difference). Output is nested {alloy: {year: {...}}}.
+    Nb and Zr (00_07 HW.3, 2026-10-18): the ICP-MS letters ask for both, and without a channel the V-free candidates
+    have nothing to calibrate. CAN: give each alloy its Nb and Zr column, linear in its own wt% — a measured release
+    then calibrates D/L as m / (C0·t). CANNOT: say how fast Nb or Zr moves — their D is a PLACEHOLDER equal to D(V),
+    not a reading that they move like V. No Ti or Ta channel: this models a minor element crossing the base metal's
+    oxide, and Ti (or Ta, for the Ta coupon) is the base."""
+    banner("2. Kirkendall Ion Diffusion (V/Al/Nb/Zr through the oxide) — per alloy")
 
     # Diffusion coefficients through the passive oxide — labelled literature, SOURCE NOT NAMED (order of magnitude;
     # shared across Ti alloys, 01_02 §2.5). The release is linear in D, so the magnitude of D is the magnitude of the answer.
     D_V = 1e-20     # m²/s — V through TiO₂ (very slow, dense oxide)
     D_AL = 5e-20    # m²/s — Al through TiO₂ (slightly faster)
+    D_NB = D_V      # m²/s — PLACEHOLDER, uncalibrated, no source: set to D(V) only so the column exists
+    D_ZR = D_V      # m²/s — PLACEHOLDER, uncalibrated, no source: set to D(V) only so the column exists
     L_OXIDE = 5e-9  # m — passive layer thickness (5 nm)
     A = 2e-4        # m² (2 cm² coin face)
     V_TARGET = 0.02  # µg/cm² — toxicological target (01_02 §2.4)
 
     years = [1, 5, 10, 20, 40]
 
-    print(f"  D(V) = {D_V:.0e} m²/s, D(Al) = {D_AL:.0e} m²/s · oxide {L_OXIDE*1e9:.0f} nm · {A*1e4:.0f} cm²")
-    print(f"  {'alloy':>20s}  {'V wt%':>6s}  {'Al wt%':>6s}  {'V@20yr':>10s}  {'Al@20yr':>10s}  {'V safe':>7s}")
-    print(f"  {'-'*68}")
+    print(f"  D(V) = {D_V:.0e} m²/s, D(Al) = {D_AL:.0e} m²/s, D(Nb) = D(Zr) = {D_NB:.0e} m²/s (placeholder) · "
+          f"oxide {L_OXIDE*1e9:.0f} nm · {A*1e4:.0f} cm²")
+    print(f"  {'alloy':>20s}  {'V wt%':>6s}  {'Al wt%':>6s}  {'V@20yr':>10s}  {'Al@20yr':>10s}  {'Nb@20yr':>10s}  "
+          f"{'Zr@20yr':>10s}  {'V safe':>7s}")
+    print(f"  {'-'*92}")
 
     results = {}
     for alloy, props in ALLOY_PROPERTIES.items():
-        c0_v, c0_al, rho = props["V_wt"], props["Al_wt"], props["rho_kg_m3"]
-        # Steady-state Fick's 1st law flux: J = D · C0 / L  (C0 = wt-fraction · density)
-        j_v = D_V * (c0_v / 100 * rho) / L_OXIDE     # kg/(m²·s)
-        j_al = D_AL * (c0_al / 100 * rho) / L_OXIDE
+        rho = props["rho_kg_m3"]
+        # Steady-state Fick's 1st law flux: J = D · C0 / L  (C0 = wt-fraction · density), kg/(m²·s)
+        flux = {el: d * (props[f"{el}_wt"] / 100 * rho) / L_OXIDE
+                for el, d in (("V", D_V), ("Al", D_AL), ("Nb", D_NB), ("Zr", D_ZR))}
         per_year = {}
         for y in years:
             t = y * 365.25 * 86400  # seconds
-            m_v = j_v * A * t * 1e6
-            m_al = j_al * A * t * 1e6
-            m_v_cm2 = m_v / (A * 1e4)   # µg/cm²
-            m_al_cm2 = m_al / (A * 1e4)
-            per_year[str(y)] = {
-                "V_ug_cm2": round(m_v_cm2, 6),
-                "Al_ug_cm2": round(m_al_cm2, 6),
-                "V_safe": m_v_cm2 < V_TARGET,
-            }
-        v20 = per_year["20"]["V_ug_cm2"]
-        al20 = per_year["20"]["Al_ug_cm2"]
-        ok = "✅" if per_year["20"]["V_safe"] else "❌"
-        print(f"  {alloy:>20s}  {c0_v:>6.1f}  {c0_al:>6.1f}  {v20:>8.3f}µg  {al20:>8.3f}µg  {ok:>7s}")
+            m_cm2 = {el: j * A * t * 1e6 / (A * 1e4) for el, j in flux.items()}   # µg/cm²
+            # a placeholder D says so in the field's own name, so no reader takes the column for a prediction
+            per_year[str(y)] = {**{f"{el}_ug_cm2{'_placeholder_D' if el in ('Nb', 'Zr') else ''}": round(m, 6)
+                                   for el, m in m_cm2.items()},
+                                "V_safe": m_cm2["V"] < V_TARGET}
+        r20 = per_year["20"]
+        ok = "✅" if r20["V_safe"] else "❌"
+        print(f"  {alloy:>20s}  {props['V_wt']:>6.1f}  {props['Al_wt']:>6.1f}  {r20['V_ug_cm2']:>8.3f}µg  "
+              f"{r20['Al_ug_cm2']:>8.3f}µg  {r20['Nb_ug_cm2_placeholder_D']:>8.3f}µg  {r20['Zr_ug_cm2_placeholder_D']:>8.3f}µg  {ok:>7s}")
         results[alloy] = per_year
 
     print()
