@@ -5410,6 +5410,33 @@ def test_frost_worst_regime_label_matches_cache():
     assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text
 
 
+def test_field_strain_sheet_matches_98():
+    """docs/protocols/anchor/field_strain_sensor_sheet.md §3 (HW.43) quotes 98's cache: the set's current, the battery
+    days, every row of the start-month table (hours/day at Beaufort 5, days to 10 h, visits on 60 / 100 Ah) and January's
+    Beaufort-4 rate. CAN catch a re-run of 98 (new ERA5 window, power figure, target) that leaves the sheet behind.
+    CANNOT catch whether the months chosen for the table are the right ones to show."""
+    d = json.loads((CACHE / "mechanical/field_strain_campaign.json").read_text(encoding="utf-8"))
+    text = (REPO / "docs/protocols/anchor/field_strain_sensor_sheet.md").read_text(encoding="utf-8")
+    assert f"**{d['power']['current_A']:.3f} A**" in text
+    assert f"**{d['battery_days']['60_Ah_as_in_the_papers']:.1f}** доби" in text and f"**{d['battery_days']['100_Ah_ours']:.1f}** доби" in text
+    names = {"01": "січень", "02": "лютий", "03": "березень", "12": "грудень", "06": "червень"}
+    for m, name in names.items():
+        b5 = d["by_month"][m]["beaufort_5"]
+        h, days, v60, v100 = b5["hours_per_day"], b5["days_for_target"], b5["visits_60Ah"], b5["visits_100Ah"]
+        cells = [f"{h:.2f}", f"{days:.1f}", f"{v60} / {v100}"]
+        if m == "01":                                   # January is the bold row
+            cells = [f"**{c}**" for c in cells]
+        row = f"| {name} | " + " | ".join(cells) + " |"
+        assert row in text, f"field sheet §3: expected the row {row!r}"
+    assert f"у січні — {d['by_month']['01']['beaufort_4']['hours_per_day']:.2f} год на добу" in text
+    assert f"навіть у січні трапляється в середньому **{d['by_month']['01']['beaufort_5']['hours_per_day']:.2f}**" in text
+    jan, jun = d["by_month"]["01"]["beaufort_5"], d["by_month"]["06"]["beaufort_5"]
+    summary = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
+    assert (f"comes on **{jan['hours_per_day']:.2f}** h/day in January and **{jun['hours_per_day']:.2f}** in June" in summary
+            and f"take **{jan['days_for_target']:.1f}** days from a January start" in summary
+            and f"cost **{jan['visits_60Ah']}** visits on 60 Ah or **{jan['visits_100Ah']}** on 100 Ah" in summary), "SUMMARY §HW.43 ⊕ 98"
+
+
 def test_alloy_stiffness_table_is_fraction_times_modulus():
     """01_01 §5.2 ⊕ (2026-10-18, HW.33): the part's apparent stiffness in each bake-off alloy = the voxel-FE fraction of
     the finest grid (tools/cad/cache/fea — a cache this file's CACHE does not reach, read by path) × that alloy's

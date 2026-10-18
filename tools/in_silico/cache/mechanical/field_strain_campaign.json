@@ -1,0 +1,280 @@
+{
+  "question": "How long the HW.43 field strain campaign must run, by month, to collect strong-wind hours that let its strain-range histogram be weighted by the 30-year ERA5 wind climatology; and its battery visits.",
+  "wind_series": "ERA5 hourly 10 m wind, data/era5_cherkasy/hourly_1991_2020.csv.gz (71's loader), km/h → m/s",
+  "thresholds_ms": {
+    "beaufort_4": 5.5,
+    "beaufort_5": 8.0,
+    "p99_all_year": 7.389
+  },
+  "target_hours_per_bin_ours": 10.0,
+  "power": {
+    "receiver_A": 0.13,
+    "tss_A": 0.0263,
+    "trs_A": 0.03,
+    "n_tss": 4,
+    "n_trs": 1,
+    "current_A": 0.2652,
+    "control_ten_tss_60Ah_h": 152.7,
+    "control_paper_h": 152.0,
+    "usable_fraction_ours": 1.0,
+    "sources": {
+      "receiver_and_tss": "Nickl, Kolbe & Schindler 2022, HardwareX 12, e00379 (PMC9685482)",
+      "trs": "Kolbe & Schindler 2021, HardwareX 9, e00180 (PMC9041182)"
+    }
+  },
+  "battery_days": {
+    "60_Ah_as_in_the_papers": 9.4,
+    "100_Ah_ours": 15.7
+  },
+  "by_month": {
+    "01": {
+      "beaufort_4": {
+        "hours_per_day": 2.838,
+        "days_for_target": 3.5,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.198,
+        "days_for_target": 50.5,
+        "visits_60Ah": 6,
+        "visits_100Ah": 4
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.434,
+        "days_for_target": 23.0,
+        "visits_60Ah": 3,
+        "visits_100Ah": 2
+      }
+    },
+    "02": {
+      "beaufort_4": {
+        "hours_per_day": 2.625,
+        "days_for_target": 3.8,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.172,
+        "days_for_target": 58.1,
+        "visits_60Ah": 7,
+        "visits_100Ah": 4
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.384,
+        "days_for_target": 26.0,
+        "visits_60Ah": 3,
+        "visits_100Ah": 2
+      }
+    },
+    "03": {
+      "beaufort_4": {
+        "hours_per_day": 3.138,
+        "days_for_target": 3.2,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.192,
+        "days_for_target": 52.0,
+        "visits_60Ah": 6,
+        "visits_100Ah": 4
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.398,
+        "days_for_target": 25.1,
+        "visits_60Ah": 3,
+        "visits_100Ah": 2
+      }
+    },
+    "04": {
+      "beaufort_4": {
+        "hours_per_day": 2.108,
+        "days_for_target": 4.7,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.132,
+        "days_for_target": 75.6,
+        "visits_60Ah": 9,
+        "visits_100Ah": 5
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.316,
+        "days_for_target": 31.7,
+        "visits_60Ah": 4,
+        "visits_100Ah": 3
+      }
+    },
+    "05": {
+      "beaufort_4": {
+        "hours_per_day": 1.701,
+        "days_for_target": 5.9,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.087,
+        "days_for_target": 114.8,
+        "visits_60Ah": 13,
+        "visits_100Ah": 8
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.169,
+        "days_for_target": 59.2,
+        "visits_60Ah": 7,
+        "visits_100Ah": 4
+      }
+    },
+    "06": {
+      "beaufort_4": {
+        "hours_per_day": 1.216,
+        "days_for_target": 8.2,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.026,
+        "days_for_target": 391.3,
+        "visits_60Ah": 42,
+        "visits_100Ah": 25
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.101,
+        "days_for_target": 98.9,
+        "visits_60Ah": 11,
+        "visits_100Ah": 7
+      }
+    },
+    "07": {
+      "beaufort_4": {
+        "hours_per_day": 1.035,
+        "days_for_target": 9.7,
+        "visits_60Ah": 2,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.031,
+        "days_for_target": 320.7,
+        "visits_60Ah": 35,
+        "visits_100Ah": 21
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.104,
+        "days_for_target": 95.9,
+        "visits_60Ah": 11,
+        "visits_100Ah": 7
+      }
+    },
+    "08": {
+      "beaufort_4": {
+        "hours_per_day": 1.19,
+        "days_for_target": 8.4,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.038,
+        "days_for_target": 265.7,
+        "visits_60Ah": 29,
+        "visits_100Ah": 17
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.092,
+        "days_for_target": 108.1,
+        "visits_60Ah": 12,
+        "visits_100Ah": 7
+      }
+    },
+    "09": {
+      "beaufort_4": {
+        "hours_per_day": 1.469,
+        "days_for_target": 6.8,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.078,
+        "days_for_target": 128.6,
+        "visits_60Ah": 14,
+        "visits_100Ah": 9
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.178,
+        "days_for_target": 56.2,
+        "visits_60Ah": 6,
+        "visits_100Ah": 4
+      }
+    },
+    "10": {
+      "beaufort_4": {
+        "hours_per_day": 2.102,
+        "days_for_target": 4.8,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.085,
+        "days_for_target": 117.7,
+        "visits_60Ah": 13,
+        "visits_100Ah": 8
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.219,
+        "days_for_target": 45.6,
+        "visits_60Ah": 5,
+        "visits_100Ah": 3
+      }
+    },
+    "11": {
+      "beaufort_4": {
+        "hours_per_day": 2.371,
+        "days_for_target": 4.2,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.107,
+        "days_for_target": 93.8,
+        "visits_60Ah": 10,
+        "visits_100Ah": 6
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.281,
+        "days_for_target": 35.6,
+        "visits_60Ah": 4,
+        "visits_100Ah": 3
+      }
+    },
+    "12": {
+      "beaufort_4": {
+        "hours_per_day": 2.44,
+        "days_for_target": 4.1,
+        "visits_60Ah": 1,
+        "visits_100Ah": 1
+      },
+      "beaufort_5": {
+        "hours_per_day": 0.118,
+        "days_for_target": 84.5,
+        "visits_60Ah": 9,
+        "visits_100Ah": 6
+      },
+      "p99_all_year": {
+        "hours_per_day": 0.238,
+        "days_for_target": 42.1,
+        "visits_60Ah": 5,
+        "visits_100Ah": 3
+      }
+    }
+  },
+  "best_month_beaufort_5": "01",
+  "worst_month_beaufort_5": "06",
+  "not_modelled": [
+    "the ERA5 → sub-canopy wind transfer (the campaign measures it)",
+    "whether TARGET_HOURS suffices for the histogram's tail",
+    "interannual spread — per-month figures are 30-year means",
+    "battery derating in cold (USABLE_FRACTION = 1, as the papers' figure)"
+  ],
+  "verdict": "Over 1991–2020 the site cell's hourly ERA5 10 m wind reaches Beaufort 5 (8.0 m/s) on 0.20 h/day in month 01 and 0.03 h/day in month 06: 10 h at Beaufort 5 take ≈ 50 days starting in 01 and ≈ 391 days in 06. With the sheet's set (4 strain sensors and 1 tilt sensor on one receiver, 0.265 A) a 60 Ah battery lasts 9.4 days and a 100 Ah one 15.7, so the best month costs 6 / 4 visits (60 / 100 Ah) and the worst 42 / 25. The all-year 99th percentile of the hourly wind is 7.39 m/s. These are 30-year monthly means; a given winter can give half as much, and how ERA5's open-terrain wind maps to the wind under the canopy is what the campaign measures, not what this assumes."
+}

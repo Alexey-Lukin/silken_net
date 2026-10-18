@@ -3089,6 +3089,39 @@ def test_pogo_thermal_gap():
         alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * a * 1e3 - pin - allowed) / (inp["standoff_mm_52"] * 1e3)
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
+def test_field_strain_campaign():
+    """Script 98 (HW.43): the field strain campaign's length by month from ERA5 wind, and its battery visits.
+    CAN catch: the power arithmetic leaving the primaries' figures (receiver + sensors; the control — ten sensors on 60 Ah
+    must give Nickl 2022's 152 h), battery days leaving Ah / A / 24, days leaving target / hours-per-day, visits leaving
+    ceil(days / battery days), the best and worst months not being the extremes, a monthly rate that grows past the next
+    threshold's (a higher threshold must be met no more often). CANNOT catch: the ERA5 hourly counts themselves (they need
+    the 262 992-hour series — the script reads it through 71's loader), nor whether 10 hours suffice."""
+    path = MECHANICAL / "field_strain_campaign.json"
+    if not path.exists():
+        pytest.skip("field_strain_campaign.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    pw = d["power"]
+    cur = pw["receiver_A"] + pw["n_tss"] * pw["tss_A"] + pw["n_trs"] * pw["trs_A"]
+    assert abs(pw["current_A"] - cur) < 1e-4
+    assert abs(60.0 / (pw["receiver_A"] + 10 * pw["tss_A"]) - pw["control_paper_h"]) <= 0.02 * pw["control_paper_h"]
+    ah = {"60_Ah_as_in_the_papers": 60.0, "100_Ah_ours": 100.0}
+    for k, a in ah.items():
+        assert abs(d["battery_days"][k] - a * pw["usable_fraction_ours"] / cur / 24.0) <= 0.05, k
+    th = d["thresholds_ms"]
+    assert th["beaufort_4"] < th["p99_all_year"] < th["beaufort_5"] or th["beaufort_4"] < th["beaufort_5"]
+    assert len(d["by_month"]) == 12
+    for m, r in d["by_month"].items():
+        assert r["beaufort_4"]["hours_per_day"] >= r["beaufort_5"]["hours_per_day"], m
+        for k, v in r.items():
+            need = d["target_hours_per_bin_ours"] / v["hours_per_day"]       # hours/day is rounded to 0.001 in the cache
+            assert abs(v["days_for_target"] - need) <= need * 0.0005 / v["hours_per_day"] + 0.06, (m, k)   # the rounding's own share
+            for key, bd in (("visits_60Ah", d["battery_days"]["60_Ah_as_in_the_papers"]),
+                            ("visits_100Ah", d["battery_days"]["100_Ah_ours"])):
+                assert v[key] in {math.ceil((v["days_for_target"] + e) / bd) for e in (-0.05, 0.0, 0.05)}, (m, k, key)
+    b5 = {m: r["beaufort_5"]["days_for_target"] for m, r in d["by_month"].items()}
+    assert d["best_month_beaufort_5"] == min(b5, key=b5.get) and d["worst_month_beaufort_5"] == max(b5, key=b5.get)
+
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 
