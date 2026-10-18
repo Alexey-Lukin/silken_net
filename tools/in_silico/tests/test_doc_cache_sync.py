@@ -5367,6 +5367,28 @@ def test_frost_worst_regime_label_matches_cache():
     assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text
 
 
+def test_alloy_stiffness_table_is_fraction_times_modulus():
+    """01_01 §5.2 ⊕ (2026-10-18, HW.33): the part's apparent stiffness in each bake-off alloy = the voxel-FE fraction of
+    the finest grid (tools/cad/cache/fea — a cache this file's CACHE does not reach, read by path) × that alloy's
+    E_solid in lib.constants, and the gap to E_R/E_T 0.5–1.5 GPa = the radial figure over 1.5 … 0.5. CAN catch: a
+    re-run FE or a changed modulus that leaves the table behind, an alloy added to or dropped from constants but not
+    the table, the fractions quoted in the prose drifting from the cache. CANNOT catch: whether the moduli are right —
+    they are unsourced reference values, and the table says so — nor the Poisson ratio's effect on the fraction."""
+    from lib.constants import ALLOY_PROPERTIES
+    rows = json.loads((REPO / "tools/cad/cache/fea/anchor_zone1_pine.json").read_text(encoding="utf-8"))["rows"]
+    fine = min(rows, key=lambda r: r["step_mm"])
+    text = (REPO / "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md").read_text(encoding="utf-8")
+    assert f"(осьова **{fine['axial_ratio']:.4f}**, радіальна **{fine['radial_ratio']:.4f}**)" in text
+    label = {"Ti-6Al-4V": "Ti-6Al-4V (база)", "Ti-6Al-7Nb": "Ti-6Al-7Nb", "CP-Ti-Gr4": "CP-Ti Gr4",
+             "beta-Ti-13Nb-13Zr": "β-Ti-13Nb-13Zr", "Ta": "Ta (лише монета)", "Ti-15Zr": "Ti-15Zr"}
+    assert set(label) == set(ALLOY_PROPERTIES), "an alloy in lib.constants has no row in the 01_01 §5.2 table, or the reverse"
+    for key, name in label.items():
+        e = ALLOY_PROPERTIES[key]["E_GPa"]
+        ax, rad = fine["axial_ratio"] * e, fine["radial_ratio"] * e
+        row = f"| {name} | {e:g} | {ax:.1f} | {rad:.1f} | {rad / 1.5:.1f}–{rad / 0.5:.0f}× |"
+        assert row in text, f"01_01 §5.2 alloy table: expected the row {row!r}"
+
+
 def test_anchor_anode_cold_start_words_match_cache():
     """SUMMARY says in words which Zone-1 parts cross each edge below the anchor's worst-case cold-start draw; the currents
     are pinned above, the words here (revised sap, 2026-10-18; broadleaf and oak in the beech point Q8 the same day). CAN
