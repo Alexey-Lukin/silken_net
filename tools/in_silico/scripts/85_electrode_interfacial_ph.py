@@ -10,7 +10,8 @@ no bench run says whether a living stem keeps it (`anchor_anode`).
 THE QUESTION. Laccase in ZIF inactivates at pH ≥ 6 (01_03 §3.2, the BOD row). The coin letter
 (docs/protocols/procurement/anchor_coin_electrochem_rfq.md) says «Cathode medium: pH 4.5, air-exposed.» and names no
 composition; the ratified sap (01_02 §2.1, revised 2026-10-18 onto measured conifer sap: malic acid 0.40 mM the only
-buffer, KOH sets the pH — a PINE recipe, so every Zone-1 SKU below sits in it) is 5.75 for the
+buffer, KOH sets the pH — a PINE recipe; of the anchor's Zone-1 parts below, broadleaf and oak sit instead in 67's
+BEECH point Q8, ⚖️ founder 2026-10-18 — oak as a Fagaceae proxy) is 5.75 for the
 electrode tests and 4.5 ONLY for the uncoated ICP-MS series. So the letter leaves the cathode medium to the laboratory,
 and this script prices the readings it allows (MEDIA): the sap brought to 4.5 · the sap at 5.75 (a one-compartment
 cell, where the cathode shares the anode's medium) · a buffered cathode medium (the sap's salts, malic acid at 10 mM,
@@ -192,6 +193,13 @@ FILMS = (("stagnant", 1.0), ("Levich", 2.0 / 3.0), ("transient", 0.5))   # flux 
 READINGS = [sc for sc in S67.SCENARIOS if sc.key != "hard_bound"]   # every documented malate reading (the set 67's Q6 and Q7 share)
 TOTALS = S67.totals_mm(S67.RATIFIED_POINT_MM)
 TOTALS_BUFFERED = S67.totals_mm({**S67.RATIFIED_POINT_MM, "malic": BUFFERED_MALIC_MM})
+# The anchor parts' sap (⚖️ founder 2026-10-18): broadleaf (birch/maple, diffuse-porous) and oak sit in 67's beech point
+# Q8 — both as proxies, oak through the Fagaceae, no Q. robur or petraea trunk sap being in the tree (oak's own Q. rubra
+# reading rides beside it); every other part stays in the pine point. EVERY part is named — a new SKU must be assigned.
+SAPS = {"pine": (TOTALS, PH_SAP), "beech_q8": (S67.totals_mm(S67.BROADLEAF_POINT_MM), S67.BROADLEAF_PH)}
+SAP_BY_SKU = {"anchor_zone1_broadleaf": "beech_q8", "anchor_zone1_oak": "beech_q8", "anchor_zone1_pine": "pine",
+              "anchor_zone1_graded_porosity": "pine", "anchor_zone1_stepped": "pine", "anchor_zone1_tropical": "pine",
+              "anchor_zone1_mangrove": "pine"}
 MEDIA = {   # name: (totals, bulk pH, what it is)
     "sap_pH4.5": (TOTALS, 4.5, "the ratified sap brought to 4.5 — a laboratory's likeliest reading of the letter"),
     "sap_pH5.75": (TOTALS, PH_SAP, "the ratified sap at its set-point — the cathode in a one-compartment cell"),
@@ -405,7 +413,8 @@ def anchor_geometry(zone1_path) -> dict:
 def anchor_anode() -> dict:
     """The anchor's anode with its gap FILLED WITH STAGNANT SAP — the state the HW.53 bench SETS by hand (it fills the gap
     with the recipe), so the bench cannot say whether a living stem keeps sap there; this is the answer conditional on that
-    state, per Zone-1 SKU. The ratified sap at its set-point lies stagnant across the annulus between the gyroid's envelope
+    state, per Zone-1 SKU. Each part's sap (SAP_BY_SKU: the pine point or the beech point Q8) at its own pH lies
+    stagnant across the annulus between the gyroid's envelope
     and the bore wall, the bulk at the wall; steady radial diffusion in an annulus gives, per unit of the ENVELOPE's area,
     the exact film δ = r_a·ln(r_b/r_a). Output: the envelope current density and the whole anode's current at which the
     face reaches each edge, against the anchor's own cold-start draw (COLD_START_UA). The current is a bracket: its low end
@@ -418,15 +427,33 @@ def anchor_anode() -> dict:
     it, so the n_H = 1.5 end is no longer the unlikely one it is on the coin; acid made inside the film moves the face
     less than acid made at it, so the truth lies between the two n_H ends."""
     out = {"states": ANCHOR_GAP_STATES, "cold_start_uA": {k: round(v, 1) for k, v in COLD_START_UA.items()},
-           "sap_is_pine_for_every_sku": "every Zone-1 part sits in the PINE recipe of 01_02 §2.1 (target Pinus sylvestris): "
-                                        "the broadleaf, oak, tropical and mangrove parts differ from pine only in the gap's "
-                                        "geometry here, and their own sap is not modelled",
+           "sap_by_sku": {"pine": "the pine point of 01_02 §2.1 (67 Q7) at pH 5.75 — pine, its topology variants, "
+                                  "tropical and mangrove (whose own sap is not modelled)",
+                          "beech_q8": f"67 Q8 at pH {S67.BROADLEAF_PH} — broadleaf, and oak as a Fagaceae proxy "
+                                      "(⚖️ founder 2026-10-18); its malate is solved from potassium — a ceiling on that side, "
+                                      "while the buffers the recipe lacks push the other way"},
            "by_sku": {}}
+    q8 = S67.broadleaf_point()
+    acid, oak_own = q8["summer_acid_dates"], q8["oak_own_sap_reading"]
     for path in ZONE1_SKUS:
         g = anchor_geometry(path)
-        per = {"geometry": g}
+        sap = SAP_BY_SKU[g["sku"]]
+        totals, ph_b = SAPS[sap]
+        per = {"geometry": g, "sap": sap, "bulk_pH": ph_b}
+        if sap == "beech_q8":   # the dates the point's one pH hides: the bulk itself already at the band's edges
+            per["summer_acid_dates"] = {
+                **acid, "medians_below_kinetic_edge": all(x < PH_ANODE_KINETIC_EDGE for x in acid["ph_medians"]),
+                "medians_minus_stability_edge": [round(min(acid["ph_medians"]) - PH_ANODE_STABILITY_EDGE, 2),
+                                                 round(max(acid["ph_medians"]) - PH_ANODE_STABILITY_EDGE, 2)],
+                "lowest_tree_minus_stability_edge": round(acid["lowest_tree_ph"] - PH_ANODE_STABILITY_EDGE, 2)}
+        if g["sku"] == "anchor_zone1_oak":   # oak's own trunk sap (Q. rubra, one autumn date): where the bulk itself stands
+            lo, hi = oak_own["ph_range"]
+            per["own_sap_reading"] = {"source": oak_own["source"], "bulk_pH": [lo, hi],
+                                      "below_kinetic_edge": hi < PH_ANODE_KINETIC_EDGE,
+                                      "minus_stability_edge": [round(lo - PH_ANODE_STABILITY_EDGE, 2),
+                                                               round(hi - PH_ANODE_STABILITY_EDGE, 2)]}
         for edge in (PH_ANODE_KINETIC_EDGE, PH_ANODE_STABILITY_EDGE):
-            j = {n: [F_CONST * -proton_supply(PH_SAP, edge, sc, d, 1.0) * 1e-3 / (n * g["annulus_delta_cm"])
+            j = {n: [F_CONST * -proton_supply(ph_b, edge, sc, d, 1.0, 25.0, totals) * 1e-3 / (n * g["annulus_delta_cm"])
                      for sc in READINGS for d in d_mal(25.0).values()] for n in N_H_ANODE}
             every = [x for v in j.values() for x in v]
             lo = min(every) * g["envelope_lateral_area_cm2"] * 1e6
@@ -482,13 +509,23 @@ def main() -> int:
           f"{cs['worst']} µA (worst, V_IN(CS) MAX):")
     for sku, per in anc["by_sku"].items():
         ag = per["geometry"]
-        print(f"    {sku}: Ø{20 * ag['anode_radius_cm']:g} in Ø{20 * ag['bore_radius_cm']:g}, gap {ag['gap_mm']} mm, "
+        print(f"    {sku} [{per['sap']}, pH {per['bulk_pH']}]: Ø{20 * ag['anode_radius_cm']:g} in "
+              f"Ø{20 * ag['bore_radius_cm']:g}, gap {ag['gap_mm']} mm, "
               f"δ {10 * ag['annulus_delta_cm']:.2f} mm, envelope {ag['envelope_lateral_area_cm2']:.1f} cm² (+cap "
               f"{100 * ag['bottom_cap_over_envelope']:.1f} %) — "
               + " · ".join(f"{edge}: {v['i_anode_uA']} µA (below worst cold start: every "
                            f"{v['crossed_below_cold_start']['worst']['in_every_reading']}, some "
                            f"{v['crossed_below_cold_start']['worst']['in_some_reading']})"
-                           for edge, v in per.items() if edge != "geometry"))
+                           for edge, v in per.items() if edge.startswith("face_pH_")))
+        if "own_sap_reading" in per:
+            o = per["own_sap_reading"]
+            print(f"      own sap (Q. rubra, Van Die 1975): bulk pH {o['bulk_pH']} — below the kinetic edge "
+                  f"{o['below_kinetic_edge']}, {o['minus_stability_edge']} from the stability edge — before any current")
+        if "summer_acid_dates" in per:
+            a = per["summer_acid_dates"]
+            print(f"      summer acid dates: bulk pH medians {a['ph_medians']} — below the kinetic edge "
+                  f"{a['medians_below_kinetic_edge']}, {a['medians_minus_stability_edge']} from the stability edge, "
+                  f"lowest tree {a['lowest_tree_minus_stability_edge']:+} — before any current")
     out = {"script": Path(__file__).name,
            "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
            "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor "

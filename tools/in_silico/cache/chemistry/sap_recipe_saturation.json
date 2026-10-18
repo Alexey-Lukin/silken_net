@@ -2720,6 +2720,312 @@
       "potassium_total_ratio": 0.101
     }
   },
+  "q8_broadleaf_point": {
+    "recipe_mM": {
+      "malic": 0.95,
+      "oxalic": 0.0,
+      "kno3": 0.0,
+      "cacl2": 0.67,
+      "mgso4": 0.25
+    },
+    "home": "85 broadleaf and oak anchor parts (⚖️ founder 2026-10-18) — not a wet-test recipe",
+    "derivation": "Ca and Mg at the geometric mid of the beech trunk-base medians (Glavac 1990; no fertilization or liming named), pH at the median of the dated medians, malic acid solved so that KOH to that pH gives the mid potassium; nitrate and oxalate not measured — out; two significant figures",
+    "readings": [
+      "selected",
+      "selected_guenzel_apparent",
+      "selected_guenzel_i0",
+      "spread_si_high",
+      "spread_si_low",
+      "si_lowest_documented",
+      "si_highest_documented"
+    ],
+    "conditions": {
+      "setpoint": {
+        "ph": 5.95,
+        "tests": [
+          "anchor model (85)"
+        ],
+        "t_c": [
+          20.0,
+          25.0
+        ],
+        "base_koh_mM": [
+          1.804,
+          1.822
+        ],
+        "potassium_total_mM": [
+          1.804,
+          1.822
+        ],
+        "ionic_strength_mol_l": [
+          0.00488,
+          0.00558
+        ],
+        "si_gypsum_max": -2.516,
+        "buffer_capacity_mM_per_pH_25c": 0.2016,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0222
+      }
+    },
+    "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the scale, not a prediction of the drift",
+    "measured": {
+      "medians_by_date": {
+        "1988-10-27": {
+          "Ca_mg_l": 21,
+          "Mg_mg_l": 4.4,
+          "K_mg_l": 56,
+          "pH": null
+        },
+        "1988-11-10": {
+          "Ca_mg_l": 41,
+          "Mg_mg_l": 8.3,
+          "K_mg_l": 90,
+          "pH": null
+        },
+        "1988-11-24": {
+          "Ca_mg_l": 34,
+          "Mg_mg_l": 7.6,
+          "K_mg_l": 63,
+          "pH": null
+        },
+        "1988-12-08": {
+          "Ca_mg_l": 40,
+          "Mg_mg_l": 6.5,
+          "K_mg_l": 75,
+          "pH": 6.5
+        },
+        "1988-12-22": {
+          "Ca_mg_l": 38,
+          "Mg_mg_l": 8.8,
+          "K_mg_l": 73,
+          "pH": 6.38
+        },
+        "1989-01-05": {
+          "Ca_mg_l": 42,
+          "Mg_mg_l": 7.6,
+          "K_mg_l": 62,
+          "pH": 6.38
+        },
+        "1989-01-19": {
+          "Ca_mg_l": 32,
+          "Mg_mg_l": 7.4,
+          "K_mg_l": 58,
+          "pH": 6.3
+        },
+        "1989-02-02": {
+          "Ca_mg_l": 16,
+          "Mg_mg_l": 3.8,
+          "K_mg_l": 46,
+          "pH": 6.08
+        },
+        "1989-02-16": {
+          "Ca_mg_l": 42,
+          "Mg_mg_l": 8.4,
+          "K_mg_l": 50,
+          "pH": 6.05
+        },
+        "1989-03-02": {
+          "Ca_mg_l": 32,
+          "Mg_mg_l": 5.0,
+          "K_mg_l": 44,
+          "pH": 6.18
+        },
+        "1989-03-16": {
+          "Ca_mg_l": 44,
+          "Mg_mg_l": 13.8,
+          "K_mg_l": 68,
+          "pH": 6.02
+        },
+        "1989-03-30": {
+          "Ca_mg_l": 89,
+          "Mg_mg_l": 19.3,
+          "K_mg_l": 46,
+          "pH": 5.8
+        },
+        "1989-04-13": {
+          "Ca_mg_l": 62,
+          "Mg_mg_l": 18.4,
+          "K_mg_l": 55,
+          "pH": 5.68
+        },
+        "1989-04-27": {
+          "Ca_mg_l": 75,
+          "Mg_mg_l": 11.4,
+          "K_mg_l": 86,
+          "pH": 5.58
+        },
+        "1989-05-11": {
+          "Ca_mg_l": 43,
+          "Mg_mg_l": 7.8,
+          "K_mg_l": 47,
+          "pH": 5.7
+        },
+        "1989-05-25": {
+          "Ca_mg_l": 18,
+          "Mg_mg_l": 4.1,
+          "K_mg_l": 29,
+          "pH": 4.55
+        },
+        "1989-06-08": {
+          "Ca_mg_l": 27,
+          "Mg_mg_l": 9.1,
+          "K_mg_l": 48,
+          "pH": 5.73
+        },
+        "1989-06-22": {
+          "Ca_mg_l": 8,
+          "Mg_mg_l": 2.7,
+          "K_mg_l": 26,
+          "pH": 5.6
+        },
+        "1989-07-06": {
+          "Ca_mg_l": 13,
+          "Mg_mg_l": 3.8,
+          "K_mg_l": 38,
+          "pH": 4.52
+        },
+        "1989-07-20": {
+          "Ca_mg_l": 12,
+          "Mg_mg_l": 3.0,
+          "K_mg_l": 44,
+          "pH": 4.58
+        },
+        "1989-08-03": {
+          "Ca_mg_l": 11,
+          "Mg_mg_l": 3.1,
+          "K_mg_l": 34,
+          "pH": 5.8
+        },
+        "1989-08-17": {
+          "Ca_mg_l": 9,
+          "Mg_mg_l": 2.6,
+          "K_mg_l": 38,
+          "pH": 5.88
+        },
+        "1989-08-31": {
+          "Ca_mg_l": 9,
+          "Mg_mg_l": 2.4,
+          "K_mg_l": 82,
+          "pH": 5.95
+        },
+        "1989-09-14": {
+          "Ca_mg_l": 9,
+          "Mg_mg_l": 1.9,
+          "K_mg_l": 90,
+          "pH": 6.62
+        },
+        "1989-09-28": {
+          "Ca_mg_l": 13,
+          "Mg_mg_l": 2.8,
+          "K_mg_l": 184,
+          "pH": 6.15
+        },
+        "1989-10-12": {
+          "Ca_mg_l": 10,
+          "Mg_mg_l": 2.0,
+          "K_mg_l": 190,
+          "pH": 6.5
+        }
+      },
+      "range_of_medians_mg_l": {
+        "Ca": [
+          8,
+          89
+        ],
+        "Mg": [
+          1.9,
+          19.3
+        ],
+        "K": [
+          26,
+          190
+        ]
+      },
+      "range_of_medians_mM": {
+        "Ca": [
+          0.1996,
+          2.2207
+        ],
+        "Mg": [
+          0.0782,
+          0.7941
+        ],
+        "K": [
+          0.665,
+          4.8596
+        ]
+      },
+      "geometric_mid_mM": {
+        "Ca": 0.6658,
+        "Mg": 0.2491,
+        "K": 1.7977
+      },
+      "ph_medians_range": [
+        4.52,
+        6.62
+      ],
+      "ph_dates_with_value": 23,
+      "source": "Glavac V., Koenies H., Ebben U. 1990, New Phytol. 116:47-54, doi:10.1111/j.1469-8137.1990.tb00509.x, Figs 2, 4, 7, 10 — Fagus sylvatica, lowest trunk segment, medians of five trees per date, read off the page images",
+      "malic_solved_mM": 0.9468,
+      "potassium_total_at_point_mM": 1.8038,
+      "solve": {
+        "ph": 5.95,
+        "t_c": 25.0,
+        "reading": "selected"
+      }
+    },
+    "summer_acid_dates": {
+      "dates": [
+        "1989-05-25",
+        "1989-07-06",
+        "1989-07-20"
+      ],
+      "ph_medians": [
+        4.55,
+        4.52,
+        4.58
+      ],
+      "lowest_tree_ph": 3.81,
+      "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates"
+    },
+    "oak_own_sap_reading": {
+      "source": "Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):237-239, doi:10.1111/j.1438-8677.1975.tb01013.x, Table 1 — Quercus rubra trunk xylem vessel sap, two trees, 27 Oct 1974, free outflow from the lowest stem cut, read from the page image",
+      "ph_range": [
+        4.9,
+        5.0
+      ],
+      "trees_mM": {
+        "K": [
+          4.348,
+          4.527
+        ],
+        "Ca": [
+          0.437,
+          0.449
+        ],
+        "Mg": [
+          0.411,
+          0.473
+        ]
+      },
+      "conductivity_uS_cm": [
+        593,
+        672
+      ],
+      "beech_same_season_ph": [
+        6.15,
+        6.5,
+        6.62
+      ],
+      "why_a_reading_not_a_point": "one autumn date and two trees of red oak; no organic acid measured, so no buffer to solve — it says where the bulk pH stands, not what a current does to it"
+    },
+    "against_pine_point": {
+      "ca_ratio": 3.72,
+      "mg_ratio": 4.03,
+      "potassium_total_ratio": 2.45,
+      "buffer_capacity_ratio": 1.53,
+      "ionic_strength_ratio": 3.0
+    }
+  },
   "prices": {
     "cut_oxalate_keep_calcium": {
       "oxalate_max_uM_at_calcium_levels": {

@@ -4589,6 +4589,25 @@ def test_electrode_interfacial_ph_anchor_anode():
     sl = json.loads((cem / "zone2_sleeve.json").read_text(encoding="utf-8"))
     r_b = (sl["bore_diameter_mm"] / 2.0 + sl["wall_thickness_mm"]) / 10.0
     assert len(skus) == len(a["by_sku"])
+    # each part in its own sap (⚖️ 2026-10-18): broadleaf and oak in 67's beech point Q8 at its pH, the rest in the pine point
+    q8 = json.loads((CACHE / "chemistry" / "sap_recipe_saturation.json").read_text(encoding="utf-8"))["q8_broadleaf_point"]
+    beech = {"anchor_zone1_broadleaf", "anchor_zone1_oak"}
+    for name, per in a["by_sku"].items():
+        assert per["sap"] == ("beech_q8" if name in beech else "pine"), name
+        assert per["bulk_pH"] == (q8["conditions"]["setpoint"]["ph"] if name in beech else 5.75), name
+        assert ("summer_acid_dates" in per) == (name in beech), name
+        assert ("own_sap_reading" in per) == (name == "anchor_zone1_oak"), name
+        if name == "anchor_zone1_oak":
+            own = per["own_sap_reading"]
+            assert own["bulk_pH"] == q8["oak_own_sap_reading"]["ph_range"]
+            assert own["below_kinetic_edge"] == (own["bulk_pH"][1] < 5.5)
+            assert own["minus_stability_edge"] == [round(x - 4.5, 2) for x in own["bulk_pH"]]
+        if name in beech:
+            acid = per["summer_acid_dates"]
+            assert acid["ph_medians"] == q8["summer_acid_dates"]["ph_medians"], name
+            assert acid["medians_below_kinetic_edge"] == all(x < 5.5 for x in acid["ph_medians"]), name
+            assert acid["medians_minus_stability_edge"] == [round(min(acid["ph_medians"]) - 4.5, 2),
+                                                            round(max(acid["ph_medians"]) - 4.5, 2)], name
     for path in skus:
         z1 = json.loads(path.read_text(encoding="utf-8"))
         per = a["by_sku"][z1["name"]]

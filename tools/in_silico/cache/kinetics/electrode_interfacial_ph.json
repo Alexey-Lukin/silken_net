@@ -1219,7 +1219,10 @@
       "typ": 25.0,
       "worst": 21.4
     },
-    "sap_is_pine_for_every_sku": "every Zone-1 part sits in the PINE recipe of 01_02 §2.1 (target Pinus sylvestris): the broadleaf, oak, tropical and mangrove parts differ from pine only in the gap's geometry here, and their own sap is not modelled",
+    "sap_by_sku": {
+      "pine": "the pine point of 01_02 §2.1 (67 Q7) at pH 5.75 — pine, its topology variants, tropical and mangrove (whose own sap is not modelled)",
+      "beech_q8": "67 Q8 at pH 5.95 — broadleaf, and oak as a Fagaceae proxy (⚖️ founder 2026-10-18); its malate is solved from potassium — a ceiling on that side, while the buffers the recipe lacks push the other way"
+    },
     "by_sku": {
       "anchor_zone1_broadleaf": {
         "geometry": {
@@ -1232,18 +1235,40 @@
           "bottom_cap_over_envelope": 0.06578947368421052,
           "annulus_delta_cm": 0.2027325540540822
         },
+        "sap": "beech_q8",
+        "bulk_pH": 5.95,
+        "summer_acid_dates": {
+          "dates": [
+            "1989-05-25",
+            "1989-07-06",
+            "1989-07-20"
+          ],
+          "ph_medians": [
+            4.55,
+            4.52,
+            4.58
+          ],
+          "lowest_tree_ph": 3.81,
+          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates",
+          "medians_below_kinetic_edge": true,
+          "medians_minus_stability_edge": [
+            0.02,
+            0.08
+          ],
+          "lowest_tree_minus_stability_edge": -0.69
+        },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.11,
-            0.29
+            0.29,
+            0.9
           ],
           "i_anode_uA": [
-            1.4,
-            3.7
+            3.4,
+            11.5
           ],
           "i_anode_uA_n1": [
-            2.0,
-            3.7
+            5.1,
+            11.5
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1258,25 +1283,25 @@
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            1.45,
-            3.03
+            2.26,
+            5.62
           ],
           "i_anode_uA": [
-            17.3,
-            38.5
+            26.9,
+            71.6
           ],
           "i_anode_uA_n1": [
-            26.0,
-            38.5
+            40.4,
+            71.6
           ],
           "crossed_below_cold_start": {
             "typ": {
               "in_every_reading": false,
-              "in_some_reading": true
+              "in_some_reading": false
             },
             "worst": {
               "in_every_reading": false,
-              "in_some_reading": true
+              "in_some_reading": false
             }
           }
         }
@@ -1292,6 +1317,8 @@
           "bottom_cap_over_envelope": 0.06875,
           "annulus_delta_cm": 0.1705852105671117
         },
+        "sap": "pine",
+        "bulk_pH": 5.75,
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
             0.13,
@@ -1352,6 +1379,8 @@
           "bottom_cap_over_envelope": 0.06547619047619048,
           "annulus_delta_cm": 0.1705852105671117
         },
+        "sap": "pine",
+        "bulk_pH": 5.75,
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
             0.13,
@@ -1412,18 +1441,52 @@
           "bottom_cap_over_envelope": 0.075,
           "annulus_delta_cm": 0.13388613078852585
         },
+        "sap": "beech_q8",
+        "bulk_pH": 5.95,
+        "summer_acid_dates": {
+          "dates": [
+            "1989-05-25",
+            "1989-07-06",
+            "1989-07-20"
+          ],
+          "ph_medians": [
+            4.55,
+            4.52,
+            4.58
+          ],
+          "lowest_tree_ph": 3.81,
+          "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what acidifies the sap there is not reported, and the point's malate solve does not describe these dates",
+          "medians_below_kinetic_edge": true,
+          "medians_minus_stability_edge": [
+            0.02,
+            0.08
+          ],
+          "lowest_tree_minus_stability_edge": -0.69
+        },
+        "own_sap_reading": {
+          "source": "Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):237-239, doi:10.1111/j.1438-8677.1975.tb01013.x, Table 1 — Quercus rubra trunk xylem vessel sap, two trees, 27 Oct 1974, free outflow from the lowest stem cut, read from the page image",
+          "bulk_pH": [
+            4.9,
+            5.0
+          ],
+          "below_kinetic_edge": true,
+          "minus_stability_edge": [
+            0.4,
+            0.5
+          ]
+        },
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
-            0.17,
-            0.45
+            0.43,
+            1.36
           ],
           "i_anode_uA": [
-            2.6,
-            7.2
+            6.5,
+            22.1
           ],
           "i_anode_uA_n1": [
-            3.9,
-            7.2
+            9.8,
+            22.1
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1431,23 +1494,23 @@
               "in_some_reading": true
             },
             "worst": {
-              "in_every_reading": true,
+              "in_every_reading": false,
               "in_some_reading": true
             }
           }
         },
         "face_pH_4.5": {
           "j_envelope_uA_cm2": [
-            2.2,
-            4.59
+            3.41,
+            8.52
           ],
           "i_anode_uA": [
-            33.1,
-            74.3
+            51.5,
+            138.1
           ],
           "i_anode_uA_n1": [
-            49.7,
-            74.3
+            77.2,
+            138.1
           ],
           "crossed_below_cold_start": {
             "typ": {
@@ -1472,6 +1535,8 @@
           "bottom_cap_over_envelope": 0.06875,
           "annulus_delta_cm": 0.1705852105671117
         },
+        "sap": "pine",
+        "bulk_pH": 5.75,
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
             0.13,
@@ -1532,6 +1597,8 @@
           "bottom_cap_over_envelope": 0.06875,
           "annulus_delta_cm": 0.1705852105671117
         },
+        "sap": "pine",
+        "bulk_pH": 5.75,
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
             0.13,
@@ -1592,6 +1659,8 @@
           "bottom_cap_over_envelope": 0.07222222222222223,
           "annulus_delta_cm": 0.0930155483664376
         },
+        "sap": "pine",
+        "bulk_pH": 5.75,
         "face_pH_5.5": {
           "j_envelope_uA_cm2": [
             0.25,

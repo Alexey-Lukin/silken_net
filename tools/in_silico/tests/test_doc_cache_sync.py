@@ -3995,9 +3995,64 @@ CHECKS += [
      FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][0], 0.05),
     ("face pH: anchor anode current to pH 4.5, pine, high → 85", SUMMARY, rf"stability band \(pH 4\.5\) at \*\*[\d.]+–{N} µA\*\*",
      FACE_PH, lambda d: _pine85(d)["face_pH_4.5"]["i_anode_uA"][1], 0.05),
-    ("face pH: anchor anode current to pH 4.5, broadleaf, low (the one part crossing below the worst draw) → 85", SUMMARY,
-     rf"the widest gap, 2\.5 mm, from \*\*{N}\*\* µA", FACE_PH,
+    # ⊕ 2026-10-18 (⚖️ founder): broadleaf and oak in their own sap — the beech point of 67 Q8
+    ("face pH: anchor anode current to pH 4.5, broadleaf in its own sap, low → 85", SUMMARY,
+     rf"starts at \*\*{N}\*\* µA in its own", FACE_PH,
      lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_broadleaf"]["face_pH_4.5"]["i_anode_uA"][0], 0.05),
+    ("face pH: anchor anode current to pH 5.5, oak in beech sap, low → 85", SUMMARY, rf"oak only in some, from \*\*{N}\*\* µA",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["face_pH_5.5"]["i_anode_uA"][0], 0.05),
+    ("sap: beech point pH (Q8) → 67", SUMMARY, rf"Glavac et al\. 1990; pH \*\*{N}\*\*",
+     SAP, lambda d: d["q8_broadleaf_point"]["conditions"]["setpoint"]["ph"], 0.0),
+    ("sap: beech point buffer capacity (Q8) → 67", SUMMARY, rf"buffer \*\*{N}\*\* mM/pH — ×",
+     SAP, lambda d: d["q8_broadleaf_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.0005),
+    ("sap: beech point buffer over the pine point (Q8) → 67", SUMMARY, rf"— ×\*\*{N}\*\* the pine point's",
+     SAP, lambda d: d["q8_broadleaf_point"]["against_pine_point"]["buffer_capacity_ratio"], 0.005),
+    ("sap: beech summer acid dates, lowest median (Q8) → 67", SUMMARY, rf"medians \*\*{N}\*\*–\*\*[\d.]+\*\*, the lowest tree",
+     SAP, lambda d: min(d["q8_broadleaf_point"]["summer_acid_dates"]["ph_medians"]), 0.0),
+    ("sap: beech summer acid dates, highest median (Q8) → 67", SUMMARY, rf"medians \*\*[\d.]+\*\*–\*\*{N}\*\*, the lowest tree",
+     SAP, lambda d: max(d["q8_broadleaf_point"]["summer_acid_dates"]["ph_medians"]), 0.0),
+    ("sap: oak's own trunk sap pH, high (Van Die 1975) → 67", SUMMARY, rf"late October\): pH \*\*[\d.]+\*\*–\*\*{N}\*\*",
+     SAP, lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["ph_range"][1], 0.0),
+    ("sap: beech September–October pH, high (Q8) → 67", SUMMARY, rf"September–October stands at \*\*[\d.]+\*\*–\*\*{N}\*\*",
+     SAP, lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["beech_same_season_ph"][-1], 0.0),
+    ("face pH: oak's own sap above the stability edge, low → 85", SUMMARY, rf"\*\*{N}\*\*–[\d.]+ above the stability edge",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["own_sap_reading"]["minus_stability_edge"][0], 0.0),
+    ("face pH: oak's own sap above the stability edge, high → 85", SUMMARY, rf"\*\*[\d.]+\*\*–{N} above the stability edge",
+     FACE_PH, lambda d: d["anchor_anode_sap_gap"]["by_sku"]["anchor_zone1_oak"]["own_sap_reading"]["minus_stability_edge"][1], 0.0),
+    ("sap: beech summer acid dates, lowest tree (Q8) → 67", SUMMARY, rf"the lowest tree \*\*{N}\*\* — the bulk",
+     SAP, lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["lowest_tree_ph"], 0.0),
+    # 01_02 §2.1 ⊕ — the broadleaf point as canon states it
+    ("sap 01_02: beech point Ca (Q8) → 67", METALLURGY, rf"Точка: Ca \*\*{N}\*\* мМ", SAP,
+     lambda d: d["q8_broadleaf_point"]["recipe_mM"]["cacl2"], 0.0),
+    ("sap 01_02: beech point Mg (Q8) → 67", METALLURGY, rf"· Mg \*\*{N}\*\* мМ · K", SAP,
+     lambda d: d["q8_broadleaf_point"]["recipe_mM"]["mgso4"], 0.0),
+    ("sap 01_02: beech point K, the geometric mid KOH is solved to (Q8) → 67", METALLURGY,
+     rf"· K \*\*{N}\*\* мМ \(геометрична середина; його дає KOH\)", SAP,
+     lambda d: d["q8_broadleaf_point"]["measured"]["geometric_mid_mM"]["K"], 0.005),
+    ("sap 01_02: beech point malic, solved (Q8) → 67", METALLURGY, rf"малат \*\*{N}\*\* мМ \(виведений\)", SAP,
+     lambda d: d["q8_broadleaf_point"]["recipe_mM"]["malic"], 0.0),
+    ("sap 01_02: beech point pH (Q8) → 67", METALLURGY, rf"pH \*\*{N}\*\*\s*\(медіана медіан\)", SAP,
+     lambda d: d["q8_broadleaf_point"]["conditions"]["setpoint"]["ph"], 0.0),
+    ("sap 01_02: beech summer acid dates, lowest median (Q8) → 67", METALLURGY, rf"медіани pH \*\*{N}–[\d.]+\*\*", SAP,
+     lambda d: min(d["q8_broadleaf_point"]["summer_acid_dates"]["ph_medians"]), 0.0),
+    ("sap 01_02: beech summer acid dates, highest median (Q8) → 67", METALLURGY, rf"медіани pH \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: max(d["q8_broadleaf_point"]["summer_acid_dates"]["ph_medians"]), 0.0),
+    ("sap 01_02: beech lowest tree (Q8) → 67", METALLURGY, rf"найкисліше дерево \*\*{N}\*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["summer_acid_dates"]["lowest_tree_ph"], 0.0),
+    ("sap 01_02: beech dates read (Q8) → 67", METALLURGY, rf"по \*\*{N}\*\* датах", SAP,
+     lambda d: len(d["q8_broadleaf_point"]["measured"]["medians_by_date"]), 0.0),
+    ("sap 01_02: oak's own sap pH, low (Van Die 1975) → 67", METALLURGY, rf"стовбура без тиску: pH \*\*{N}–[\d.]+\*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["ph_range"][0], 0.0),
+    ("sap 01_02: beech September–October pH, low (Q8) → 67", METALLURGY, rf"стоїть на \*\*{N}–[\d.]+\*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["beech_same_season_ph"][0], 0.0),
+    ("sap 01_02: oak's own sap pH, high (Van Die 1975) → 67", METALLURGY, rf"стовбура без тиску: pH \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["ph_range"][1], 0.0),
+    ("sap 01_02: beech September–October pH, high (Q8) → 67", METALLURGY, rf"стоїть на \*\*[\d.]+–{N}\*\*", SAP,
+     lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["beech_same_season_ph"][-1], 0.0),
+    ("sap: oak's own trunk sap pH, low (Van Die 1975) → 67", SUMMARY, rf"late October\): pH \*\*{N}\*\*–",
+     SAP, lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["ph_range"][0], 0.0),
+    ("sap: beech September–October pH, low (Q8) → 67", SUMMARY, rf"September–October stands at \*\*{N}\*\*–",
+     SAP, lambda d: d["q8_broadleaf_point"]["oak_own_sap_reading"]["beech_same_season_ph"][0], 0.0),
 ]
 
 # ── HW.6 frost, real cloud (2026-10-12): ERA5 cover weighs 79's sky ends — canon 01_04 §3.1 ⊕ ──
@@ -5292,23 +5347,35 @@ def test_frost_worst_regime_label_matches_cache():
 
 def test_anchor_anode_cold_start_words_match_cache():
     """SUMMARY says in words which Zone-1 parts cross each edge below the anchor's worst-case cold-start draw; the currents
-    are pinned above, the words here (revised sap, 2026-10-18). CAN catch: a rerun that moves a part across the draw while
-    the text keeps its group («every part … in every reading» at pH 5.5; «only broadleaf, in some» at pH 4.5 on the worst
-    column, and who joins at the typical draw). CANNOT catch: whether the sap-gap state is the stem's, nor the broadleaf
-    parts' own sap — they sit in the pine recipe.
+    are pinned above, the words here (revised sap, 2026-10-18; broadleaf and oak in the beech point Q8 the same day). CAN
+    catch: a rerun that moves a part across the draw while the text keeps its group (every part but oak «in every
+    reading» at pH 5.5, oak «only in some»; «no part» at pH 4.5 on the worst column, and who does at the typical draw),
+    or a part leaving the sap the text gives it. CANNOT catch: whether the sap-gap state is the stem's, whether beech
+    sap is oak's, nor how much of the beech potassium malate really balances.
     """
     a = json.loads((CACHE / FACE_PH).read_text(encoding="utf-8"))["anchor_anode_sap_gap"]
     text = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
     by = a["by_sku"]
-    every = {k for k, v in by.items() if v["face_pH_5.5"]["crossed_below_cold_start"]["worst"]["in_every_reading"]}
-    assert every == set(by), "«every Zone-1 part crosses pH 5.5 … in every reading» no longer holds"
-    assert "every Zone-1 part crosses pH 5.5 below the worst-case draw in every reading" in text
-    edge45 = lambda col, q: {k.removeprefix("anchor_zone1_") for k, v in by.items()  # noqa: E731
-                             if v["face_pH_4.5"]["crossed_below_cold_start"][col][q]}
-    assert edge45("worst", "in_some_reading") == {"broadleaf"} and not edge45("worst", "in_every_reading")
-    assert "pH 4.5 only broadleaf does, in some readings" in text
-    assert edge45("typ", "in_some_reading") == {"broadleaf", "pine", "graded_porosity", "stepped"}
-    assert "at the typical 25 µA draw pine and its two topology variants join it in some" in text
+    short = lambda k: k.removeprefix("anchor_zone1_")  # noqa: E731
+    assert {short(k) for k, v in by.items() if v["sap"] == "beech_q8"} == {"broadleaf", "oak"}
+    assert "broadleaf and oak in the beech point of `67` Q8" in text
+    edge = lambda e, col, q: {short(k) for k, v in by.items()  # noqa: E731
+                              if v[f"face_pH_{e}"]["crossed_below_cold_start"][col][q]}
+    assert edge("5.5", "worst", "in_every_reading") == {short(k) for k in by} - {"oak"}
+    assert "oak" in edge("5.5", "worst", "in_some_reading")
+    assert "Every pine-sap part, and broadleaf, crosses pH 5.5 below the worst-case draw in every reading; oak only in some" in text
+    assert not edge("4.5", "worst", "in_some_reading")
+    assert "No part crosses pH 4.5 below the worst-case draw in any reading" in text
+    assert edge("4.5", "typ", "in_some_reading") == {"pine", "graded_porosity", "stepped"}
+    assert "at the typical 25 µA draw pine and its two topology variants do in some" in text
+    acid = by["anchor_zone1_broadleaf"]["summer_acid_dates"]
+    assert acid["medians_below_kinetic_edge"] and acid["medians_minus_stability_edge"][0] >= 0 > acid["lowest_tree_minus_stability_edge"]
+    assert "the bulk is then below the kinetic edge and at the stability edge before any current" in text
+    import datetime
+    named = [datetime.date.fromisoformat(x) for x in acid["dates"]]
+    assert f"({named[0].day} May, {named[1].day} and {named[2].day} July)" in text and [x.month for x in named] == [5, 7, 7]
+    assert by["anchor_zone1_oak"]["own_sap_reading"]["below_kinetic_edge"] and "oak's own sap stands below the kinetic edge" in text
+    assert "both as proxies" in text
     assert "load point B" not in text.split("**The anchor's anode")[1].split("**What it says:**")[0]
 
 

@@ -36,6 +36,14 @@ revision is read against.
       1995, Table 1 — natural stands; the fertilized plot is excluded); nitrate at the mid of the range read off the Scots pine sap figure (Henriksson 2012); malic
       acid not measured but SOLVED — the amount whose KOH to pH 5.75 (selected reading, 25 °C) makes exactly that
       potassium. Same questions as Q6: base, potassium total, ionic strength, buffer capacity.
+  Q8  THE BROADLEAF POINT (⚖️ founder 2026-10-18) — a model input for 85's broadleaf and oak anchor parts, NOT a
+      wet-test recipe. The same rule as Q7 on European beech sap from the bottom of the stem (Glavac et al. 1990,
+      a stand whose methods name no fertilization or liming, medians of five trees on 26 dates read off its
+      figures): Ca and Mg at the geometric mid of the dated medians, pH at their median, malic acid solved from the
+      mid potassium; nitrate and organic acids are not reported there. The summer dates whose sap pH falls to ≈ 4.5 —
+      coinciding, the paper says, with its highest nitrate (unpublished) — are returned beside it; the point's malate
+      solve does not describe them. Broadleaf (birch/maple) and oak both ride on it as proxies; oak's own trunk sap
+      (Q. rubra, one autumn date) is returned as a further reading.
 
 THE CONSTANT THAT DOES NOT EXIST, and why the window does not need it. No open primary gives the calcium or
 magnesium malate complex at I = 0; the only measured values found are APPARENT constants in a Na+ medium at
@@ -152,6 +160,55 @@ RATIFIED_PH = {"setpoint": (5.75, ("coin", "accelerated")), "side_series": (4.5,
 # 20–40 °C cycle belongs to no test any more), the coin test keeps 20–25 °C (01_03 §3.5). Q6 prices these;
 # Q1–Q5 keep pricing the TESTS bands the verdicts replaced.
 RATIFIED_T_C = {"coin": (20.0, 25.0), "accelerated": (40.0,)}
+#
+# ── Q8, the BROADLEAF point (⚖️ founder 2026-10-18) — a MODEL INPUT for 85's broadleaf and oak anchor parts, never a
+# wet-test recipe: the coin and the corrosion tests stay on the pine point above. Same rule as Q7: the bottom of the
+# stem, an unfertilized stand, the geometric mid of the measured range, malic acid solved from potassium. Source: European
+# beech (Fagus sylvatica), Glavac, Koenies & Ebben 1990, New Phytol. 116:47–54, doi:10.1111/j.1469-8137.1990.tb00509.x
+# — a 42-year stand near Kassel on acid brown earth (its methods name no fertilization or liming), five trees felled
+# every two weeks from 27 Oct 1988 to 12 Oct 1989 (the summary's «mid-October 1988 to mid-October 1989»), the lowest trunk segment (10–140 cm above ground) displaced with
+# water and its second ~200 ml fraction, «pure tracheal sap», analysed by AAS; pH by glass electrode on fresh sap.
+# Each row is the MEDIAN OF FIVE TREES on one date, READ OFF Figs 2 (Ca), 4 (Mg), 7 (K) and 10 (pH) from the page
+# images (2026-10-18; read-off error about ±2 mg/L for Ca and K, ±0.3 for Mg, ±0.03 pH); pH is not plotted for
+# 27 Oct, 10 Nov and 24 Nov 1988. Nitrate and organic acids are NOT reported there — the paper says its low-pH dates
+# «coincided with the highest nitrate xylem sap concentration» and cites unpublished data — so nitrate stays out of
+# the point and malic acid is solved as for pine. That credits ALL the potassium to malate (on that side the buffer is
+# a ceiling — real sap also balances potassium with nitrate, sulphate, amino acids), while calcium and magnesium sit on
+# unbuffered chloride and sulphate and CO2, phosphate and amino-acid buffers are absent (each pushes the other way):
+# the direction of the total buffer is NOT established. Broadleaf (birch, maple) and oak sit on this point as proxies
+# — beech for the diffuse-porous part, Fagaceae for oak, no Q. robur or petraea trunk sap having been found — the move
+# Q7 makes with Norway spruce for Scots pine.
+BEECH_TRUNK_BASE_MEDIANS = {   # date: (Ca mg/L · Fig 2, Mg mg/L · Fig 4, K mg/L · Fig 7, pH · Fig 10 or None)
+    "1988-10-27": (21, 4.4, 56, None), "1988-11-10": (41, 8.3, 90, None),
+    "1988-11-24": (34, 7.6, 63, None), "1988-12-08": (40, 6.5, 75, 6.50), "1988-12-22": (38, 8.8, 73, 6.38),
+    "1989-01-05": (42, 7.6, 62, 6.38), "1989-01-19": (32, 7.4, 58, 6.30), "1989-02-02": (16, 3.8, 46, 6.08),
+    "1989-02-16": (42, 8.4, 50, 6.05), "1989-03-02": (32, 5.0, 44, 6.18), "1989-03-16": (44, 13.8, 68, 6.02),
+    "1989-03-30": (89, 19.3, 46, 5.80), "1989-04-13": (62, 18.4, 55, 5.68), "1989-04-27": (75, 11.4, 86, 5.58),
+    "1989-05-11": (43, 7.8, 47, 5.70), "1989-05-25": (18, 4.1, 29, 4.55), "1989-06-08": (27, 9.1, 48, 5.73),
+    "1989-06-22": (8, 2.7, 26, 5.60), "1989-07-06": (13, 3.8, 38, 4.52), "1989-07-20": (12, 3.0, 44, 4.58),
+    "1989-08-03": (11, 3.1, 34, 5.80), "1989-08-17": (9, 2.6, 38, 5.88), "1989-08-31": (9, 2.4, 82, 5.95),
+    "1989-09-14": (9, 1.9, 90, 6.62), "1989-09-28": (13, 2.8, 184, 6.15), "1989-10-12": (10, 2.0, 190, 6.50),
+}
+BEECH_SOURCE = ("Glavac V., Koenies H., Ebben U. 1990, New Phytol. 116:47-54, doi:10.1111/j.1469-8137.1990.tb00509.x, "
+                "Figs 2, 4, 7, 10 — Fagus sylvatica, lowest trunk segment, medians of five trees per date, read off the "
+                "page images")
+BEECH_ACID_DATES = ("1989-05-25", "1989-07-06", "1989-07-20")   # the paper's own named low-pH dates (p. 52)
+BEECH_LOWEST_TREE_PH = 3.81    # Fig. 10, the lowest whisker (6 Jul 1989), read off
+# Oak's OWN trunk sap, found the same day (the founder brought the lead): Quercus rubra, Van Die & Willemse 1975,
+# Acta Bot. Neerl. 24(2):237–239, doi:10.1111/j.1438-8677.1975.tb01013.x, Table 1, read from the page image — two
+# 16–20-year trees in the woods near Lunteren (NL), 27 Oct 1974, about half the leaves down; the stem cut at 1.8 m and
+# the fluid that flowed freely out of the lowest wound surface of the ~4 m stem part collected (first ml discarded) —
+# no applied pressure or suction. One autumn date, red oak, not Q. robur; no organic acids measured («organic» there is
+# sugars and nitrogen). Kept as oak's second NAMED reading beside the beech proxy, not as a point.
+OAK_RUBRA_VESSEL_SAP = {   # tree: pH range, K · Ca · Mg · Na in mg/ml as printed, conductivity in 10⁻⁶ Ω⁻¹cm⁻¹ (25 °C)
+    "I": {"pH": (4.9, 5.0), "K_mg_ml": 0.170, "Ca_mg_ml": 0.0175, "Mg_mg_ml": 0.010, "Na_mg_ml": 0.0018, "conductivity": 593},
+    "II": {"pH": (4.9, 5.0), "K_mg_ml": 0.177, "Ca_mg_ml": 0.0180, "Mg_mg_ml": 0.0115, "Na_mg_ml": 0.0040, "conductivity": 672},
+}
+OAK_RUBRA_SOURCE = ("Van Die J., Willemse P.C.M. 1975, Acta Bot. Neerl. 24(2):237-239, doi:10.1111/j.1438-8677.1975.tb01013.x, "
+                    "Table 1 — Quercus rubra trunk xylem vessel sap, two trees, 27 Oct 1974, free outflow from the lowest "
+                    "stem cut, read from the page image")
+BROADLEAF_POINT_MM = {"malic": 0.95, "oxalic": 0.0, "kno3": 0.0, "cacl2": 0.67, "mgso4": 0.25}
+BROADLEAF_PH = 5.95            # the median of the dated pH medians
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
 # ⚠️ PRE-VERDICT, like RECIPE_RANGES_MM above: the pH bands below (and their `ph_home` strings) are the two canon
 # bands as they stood BEFORE 2026-09-17. Canon no longer carries either — §2.1 is a set-point (5.75) plus a side
@@ -799,15 +856,85 @@ def revised_point() -> dict:
     return out
 
 
-def price_point(point: dict, home: str, derivation: str) -> dict:
+def broadleaf_point() -> dict:
+    """Q8 — the broadleaf point (⚖️ founder 2026-10-18), 85's input for the broadleaf and oak anchor parts. Asserts that
+    BROADLEAF_POINT_MM and BROADLEAF_PH ARE their derivation from the beech medians: Ca and Mg at the geometric mid of
+    the dated medians' range (two significant figures), pH at the median of the dated pH medians, and the malic acid
+    that, titrated to that pH with KOH at POINT_SOLVE_T_C on the selected reading, gives the mid potassium; nitrate and
+    oxalate out (not measured). Also returns the paper's low-pH dates, which the point's single pH hides. CAN catch a
+    typed point drifted from the transcription or the solve; CANNOT make the beech oak, read a figure better than by
+    eye, or say how much of the potassium malate really balances — the solve credits it all (a ceiling on that side,
+    while the buffers the recipe lacks push the other way, so the total's direction is not established)."""
+    rows = list(BEECH_TRUNK_BASE_MEDIANS.values())
+    rng = {ion: (min(r[i] for r in rows), max(r[i] for r in rows)) for i, ion in enumerate(("Ca", "Mg", "K"))}
+    mids = {ion: math.sqrt(lo * hi) / MOLAR_G[ion] for ion, (lo, hi) in rng.items()}
+    assert BROADLEAF_POINT_MM["cacl2"] == _sig2(mids["Ca"]), "cacl2: not the beech trunk-base mid"
+    assert BROADLEAF_POINT_MM["mgso4"] == _sig2(mids["Mg"]), "mgso4: not the beech trunk-base mid"
+    assert BROADLEAF_POINT_MM["kno3"] == 0.0 and BROADLEAF_POINT_MM["oxalic"] == 0.0, "nitrate and oxalate: not measured"
+    phs = sorted(r[3] for r in rows if r[3] is not None)
+    assert round(float(np.median(phs)), 2) == BROADLEAF_PH, "pH: not the median of the dated medians"
+    m = model_for(SC["selected"], POINT_SOLVE_T_C)
+
+    def k_total(malic: float) -> float:
+        return speciate(m, totals_mm({**BROADLEAF_POINT_MM, "malic": malic}), BROADLEAF_PH).base_mol_l / MM
+    malic_solved = brentq(lambda x: k_total(x) - mids["K"], 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
+    assert BROADLEAF_POINT_MM["malic"] == _sig2(malic_solved), (
+        f"malic: the solve gives {malic_solved:.4f} mM, the point says {BROADLEAF_POINT_MM['malic']}")
+    out = price_point(BROADLEAF_POINT_MM, "85 broadleaf and oak anchor parts (⚖️ founder 2026-10-18) — not a wet-test recipe",
+                      "Ca and Mg at the geometric mid of the beech trunk-base medians (Glavac 1990; no fertilization or liming named), "
+                      "pH at the median of the dated medians, malic acid solved so that KOH to that pH gives the mid "
+                      "potassium; nitrate and oxalate not measured — out; two significant figures",
+                      conditions={"setpoint": (BROADLEAF_PH, ["anchor model (85)"], [20.0, 25.0])})
+    acid = {d: BEECH_TRUNK_BASE_MEDIANS[d] for d in BEECH_ACID_DATES}
+    assert sorted(phs)[:len(acid)] == sorted(r[3] for r in acid.values()), "the named low-pH dates are not the lowest"
+    out["measured"] = {
+        "medians_by_date": {d: dict(zip(("Ca_mg_l", "Mg_mg_l", "K_mg_l", "pH"), r, strict=True))
+                            for d, r in BEECH_TRUNK_BASE_MEDIANS.items()},
+        "range_of_medians_mg_l": {ion: list(v) for ion, v in rng.items()},
+        "range_of_medians_mM": {ion: [round(lo / MOLAR_G[ion], 4), round(hi / MOLAR_G[ion], 4)] for ion, (lo, hi) in rng.items()},
+        "geometric_mid_mM": {ion: round(v, 4) for ion, v in mids.items()},
+        "ph_medians_range": [phs[0], phs[-1]], "ph_dates_with_value": len(phs),
+        "source": BEECH_SOURCE, "malic_solved_mM": round(malic_solved, 4),
+        "potassium_total_at_point_mM": round(k_total(BROADLEAF_POINT_MM["malic"]), 4),
+        "solve": {"ph": BROADLEAF_PH, "t_c": POINT_SOLVE_T_C, "reading": SC["selected"].key}}
+    out["summer_acid_dates"] = {
+        "dates": list(BEECH_ACID_DATES), "ph_medians": [r[3] for r in acid.values()],
+        "lowest_tree_ph": BEECH_LOWEST_TREE_PH,
+        "why": "the paper: they «coincided with the highest nitrate xylem sap concentration» (unpublished data) — what "
+               "acidifies the sap there is not reported, and the point's malate solve does not describe these dates"}
+    oak = OAK_RUBRA_VESSEL_SAP.values()
+    out["oak_own_sap_reading"] = {
+        "source": OAK_RUBRA_SOURCE,
+        "ph_range": [min(r["pH"][0] for r in oak), max(r["pH"][1] for r in oak)],
+        "trees_mM": {ion: [round(min(r[f"{ion}_mg_ml"] for r in oak) * 1e3 / MOLAR_G[ion], 3),
+                           round(max(r[f"{ion}_mg_ml"] for r in oak) * 1e3 / MOLAR_G[ion], 3)] for ion in ("K", "Ca", "Mg")},
+        "conductivity_uS_cm": [min(r["conductivity"] for r in oak), max(r["conductivity"] for r in oak)],
+        "beech_same_season_ph": sorted(r[3] for d, r in BEECH_TRUNK_BASE_MEDIANS.items()   # September–October with a pH
+                                       if d[5:7] in ("09", "10") and r[3] is not None),
+        "why_a_reading_not_a_point": "one autumn date and two trees of red oak; no organic acid measured, so no buffer to "
+                                     "solve — it says where the bulk pH stands, not what a current does to it"}
+    pine = revised_point()["conditions"]["setpoint"]
+    new = out["conditions"]["setpoint"]
+    out["against_pine_point"] = {
+        "ca_ratio": round(BROADLEAF_POINT_MM["cacl2"] / RATIFIED_POINT_MM["cacl2"], 2),
+        "mg_ratio": round(BROADLEAF_POINT_MM["mgso4"] / RATIFIED_POINT_MM["mgso4"], 2),
+        "potassium_total_ratio": round(new["potassium_total_mM"][1] / pine["potassium_total_mM"][1], 2),
+        "buffer_capacity_ratio": round(new["buffer_capacity_mM_per_pH_25c"] / pine["buffer_capacity_mM_per_pH_25c"], 2),
+        "ionic_strength_ratio": round(new["ionic_strength_mol_l"][1] / pine["ionic_strength_mol_l"][1], 2)}
+    return out
+
+
+def price_point(point: dict, home: str, derivation: str, conditions: dict | None = None) -> dict:
     """What a recipe point takes to prepare: the base to reach each pH condition, and how weakly it buffers there.
     Every documented reading at every temperature of the tests the condition belongs to — the hard bound is an SI
-    construct, not a reading, so it prices nothing here."""
+    construct, not a reading, so it prices nothing here. `conditions` ({name: (pH, uses, temperatures)}) prices a
+    point outside the ratified tests; by default the ratified pH conditions at their tests' temperatures."""
     tot = totals_mm(point)
     readings = [sc for sc in SCENARIOS if sc.key != "hard_bound"]
+    conds = conditions or {name: (ph, tests, sorted({t for test in tests for t in RATIFIED_T_C[test]}))
+                           for name, (ph, tests) in RATIFIED_PH.items()}
     conditions_out = {}
-    for name, (ph, tests) in RATIFIED_PH.items():
-        temps = sorted({t for test in tests for t in RATIFIED_T_C[test]})
+    for name, (ph, tests, temps) in conds.items():
         base, ionic, si_gypsum = [], [], []
         for sc in readings:
             for t_c in temps:
@@ -1016,6 +1143,15 @@ def main() -> int:
           f"buffer capacity ×{q7['against_point_2026_09_17_setpoint']['buffer_capacity_ratio']}, "
           f"K+ ×{q7['against_point_2026_09_17_setpoint']['potassium_total_ratio']}; malic solved "
           f"{q7['measured']['malic_solved_mM']} mM")
+    q8 = broadleaf_point()
+    banner("Q8 — the broadleaf point (⚖️ 2026-10-18; beech trunk base — 85's broadleaf and oak parts, no wet test)")
+    c8 = q8["conditions"]["setpoint"]
+    print(f"  recipe {q8['recipe_mM']} at pH {c8['ph']}: KOH {c8['base_koh_mM'][0]:.3f}–{c8['base_koh_mM'][1]:.3f} mM; "
+          f"I {c8['ionic_strength_mol_l'][1] * 1e3:.2f} mM; β(25 °C) {c8['buffer_capacity_mM_per_pH_25c']:.3f} mM/pH")
+    print(f"  against the pine point: Ca ×{q8['against_pine_point']['ca_ratio']}, Mg ×{q8['against_pine_point']['mg_ratio']}, "
+          f"K+ ×{q8['against_pine_point']['potassium_total_ratio']}, β ×{q8['against_pine_point']['buffer_capacity_ratio']}")
+    print(f"  summer acid dates {q8['summer_acid_dates']['dates']}: pH medians {q8['summer_acid_dates']['ph_medians']}, "
+          f"lowest tree {q8['summer_acid_dates']['lowest_tree_ph']} — beside the point, outside its malate solve")
 
     banner("Prices of the two directions")
     loss = []
@@ -1131,6 +1267,7 @@ def main() -> int:
         "q5_oxalate_spread_low_end_over_high_end": oxalate_spread,
         "q6_point_2026_09_17_superseded": q6,
         "q7_revised_point": q7,
+        "q8_broadleaf_point": q8,
         "prices": prices,
         "verdict": verdict,
         "caveats": [
