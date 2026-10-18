@@ -1,0 +1,214 @@
+{
+  "question": "Can the in-silico L3 tier carry cluster models of Zn-HAp and PEDOT:PSS on TiO2 (00_07 HW.40) — basis size and the cost of one SCF, measured from composition and scaled from the pipeline's own timed run.",
+  "reference": {
+    "system": "21e Os(II) dmbpy, relaxed (os_mediator_series_relaxed_os2.json)",
+    "composition": {
+      "Os": 1,
+      "C": 28,
+      "N": 6,
+      "H": 30,
+      "Cl": 1
+    },
+    "n_atoms": 66,
+    "nao": {
+      "21e_b3lyp_631gd": 576,
+      "21f_def2tzvp": 1293
+    },
+    "scf_wall_s_96": 656.8,
+    "uks_over_rks_96": 11.51,
+    "uks_formal_ours": 2.0,
+    "relaxation_over_scf_96": 43.3
+  },
+  "tiers": {
+    "21e_b3lyp_631gd": {
+      "default": "6-31g*",
+      "Os": "lanl2dz"
+    },
+    "21f_def2tzvp": {
+      "default": "def2-tzvp",
+      "Os": "lanl2dz"
+    }
+  },
+  "exponent_bracket_ours": [
+    3,
+    4
+  ],
+  "models_ours": "a size ladder, not a validated surface model — compositions in the script",
+  "by_model": {
+    "TiO2_8": {
+      "composition": {
+        "Ti": 8,
+        "O": 20,
+        "H": 8
+      },
+      "n_atoms": 36,
+      "nao": {
+        "21e_b3lyp_631gd": 568,
+        "21f_def2tzvp": 1028
+      },
+      "ratio_to_ref_21e": 0.99,
+      "open_shell": false,
+      "one_scf_h_21e": {
+        "low": 0.17,
+        "high": 0.17
+      },
+      "relaxation_days_21e": {
+        "low": 0.3,
+        "high": 0.3
+      }
+    },
+    "TiO2_16": {
+      "composition": {
+        "Ti": 16,
+        "O": 40,
+        "H": 16
+      },
+      "n_atoms": 72,
+      "nao": {
+        "21e_b3lyp_631gd": 1136,
+        "21f_def2tzvp": 2056
+      },
+      "ratio_to_ref_21e": 1.97,
+      "open_shell": false,
+      "one_scf_h_21e": {
+        "low": 1.4,
+        "high": 2.76
+      },
+      "relaxation_days_21e": {
+        "low": 2.5,
+        "high": 5.0
+      }
+    },
+    "Zn_HAp_cell": {
+      "composition": {
+        "Ca": 9,
+        "Zn": 1,
+        "P": 6,
+        "O": 26,
+        "H": 2
+      },
+      "n_atoms": 44,
+      "nao": {
+        "21e_b3lyp_631gd": 708,
+        "21f_def2tzvp": 1412
+      },
+      "ratio_to_ref_21e": 1.23,
+      "open_shell": false,
+      "one_scf_h_21e": {
+        "low": 0.34,
+        "high": 0.42
+      },
+      "relaxation_days_21e": {
+        "low": 0.6,
+        "high": 0.8
+      }
+    },
+    "EDOT_trimer": {
+      "composition": {
+        "C": 18,
+        "H": 14,
+        "O": 6,
+        "S": 3
+      },
+      "n_atoms": 41,
+      "nao": {
+        "21e_b3lyp_631gd": 418,
+        "21f_def2tzvp": 939
+      },
+      "ratio_to_ref_21e": 0.73,
+      "open_shell": true,
+      "one_scf_h_21e": {
+        "low": 0.1,
+        "high": 0.8
+      },
+      "relaxation_days_21e": {
+        "low": 0.2,
+        "high": 1.4
+      }
+    },
+    "PSS_dimer": {
+      "composition": {
+        "C": 16,
+        "H": 18,
+        "O": 6,
+        "S": 2
+      },
+      "n_atoms": 42,
+      "nao": {
+        "21e_b3lyp_631gd": 380,
+        "21f_def2tzvp": 864
+      },
+      "ratio_to_ref_21e": 0.66,
+      "open_shell": false,
+      "one_scf_h_21e": {
+        "low": 0.03,
+        "high": 0.05
+      },
+      "relaxation_days_21e": {
+        "low": 0.1,
+        "high": 0.1
+      }
+    },
+    "Zn_HAp_on_TiO2_16": {
+      "composition": {
+        "Ca": 9,
+        "H": 18,
+        "O": 66,
+        "P": 6,
+        "Ti": 16,
+        "Zn": 1
+      },
+      "n_atoms": 116,
+      "nao": {
+        "21e_b3lyp_631gd": 1844,
+        "21f_def2tzvp": 3468
+      },
+      "ratio_to_ref_21e": 3.2,
+      "open_shell": false,
+      "one_scf_h_21e": {
+        "low": 5.99,
+        "high": 19.16
+      },
+      "relaxation_days_21e": {
+        "low": 10.8,
+        "high": 34.6
+      }
+    },
+    "PEDOT_PSS_on_TiO2_16": {
+      "composition": {
+        "C": 34,
+        "H": 48,
+        "O": 52,
+        "S": 5,
+        "Ti": 16
+      },
+      "n_atoms": 155,
+      "nao": {
+        "21e_b3lyp_631gd": 1934,
+        "21f_def2tzvp": 3859
+      },
+      "ratio_to_ref_21e": 3.36,
+      "open_shell": true,
+      "one_scf_h_21e": {
+        "low": 13.81,
+        "high": 266.9
+      },
+      "relaxation_days_21e": {
+        "low": 24.9,
+        "high": 481.5
+      }
+    }
+  },
+  "dispersion_in_env": {
+    "dftd3": false,
+    "dftd4": false,
+    "pyscf.dispersion": false
+  },
+  "not_modelled": [
+    "whether a cluster of this size models the surface (cluster-size and termination convergence)",
+    "the SCF cycle count of these systems (taken equal to the reference's)",
+    "basis-set superposition (counterpoise)",
+    "any adsorption energy"
+  ],
+  "verdict": "At 21e's tier the reference Os(dmbpy) complex (66 atoms) has 576 basis functions and its Os(II) SCF took 657 s in 96's run. Zn-HAp (one Zn-substituted unit cell) on a (TiO2)16 cluster has 116 atoms and 1844 functions (3.2× the reference): one closed-shell SCF ≈ 6.0–19.2 h (N³–N⁴ from the reference), a relaxation ≈ 11–35 days at 96's relaxation/SCF ratio (43). PEDOT:PSS (an EDOT trimer and a sulfonic-acid dimer) on the same cluster has 155 atoms and 1934 functions (3.36×), and as the oxidised polaron it is a UKS doublet: ≈ 14–267 h for one SCF (open-shell factor ×2 formal to ×11.5 — 96's Os(III), a harder shell), a relaxation ≈ 25–482 days. An adsorption energy needs the complex and both fragments (twice that with counterpoise). The env carries no dispersion correction (dftd3, dftd4, pyscf.dispersion absent), which an adsorption energy on an oxide is expected to need (our expectation — no source in the tree). So one single-point screen is within reach of our CPU; a relaxed, dispersion-corrected, size-converged adsorption study is not without a new dependency and weeks to over a year of one CPU — and whether a cluster models the surface at all is the first question, which this count cannot answer."
+}

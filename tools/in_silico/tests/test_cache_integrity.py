@@ -3089,6 +3089,41 @@ def test_pogo_thermal_gap():
         alpha0 = (radome_k - 2 * inp["fr4_deck_mm_52"] * a * 1e3 - pin - allowed) / (inp["standoff_mm_52"] * 1e3)
         assert abs(d["spacer_alpha_1K_at_zero_L1_margin"][f"fr4_{int(a * 1e6)}"] - alpha0) <= 1e-8
 
+def test_coating_cluster_cost():
+    """Script 99 (HW.40): basis sizes of model coating clusters and one SCF / a relaxation scaled from 96's timed run.
+    CAN catch: a composite model that is not the sum of its parts, an atom count leaving its composition, a ratio leaving
+    N / N_ref, one-SCF hours leaving ref_wall · shell · ratio^p over the declared exponent bracket (the open-shell bracket
+    ×2 … 96's UKS/RKS only on the open-shell models), a relaxation leaving hours · 96's relaxation/SCF ratio / 24, a larger
+    basis tier that is not larger, and the reference wall time drifting from 96's run log. CANNOT catch: the basis counts
+    themselves (they need PySCF's basis library), nor whether these clusters model the surface."""
+    path = DFT / "coating_cluster_cost.json"
+    if not path.exists():
+        pytest.skip("coating_cluster_cost.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    ref, rows = d["reference"], d["by_model"]
+    log = (REPO / "tools/in_silico/cache/runs/96/run.log").read_text(encoding="utf-8")
+    assert f"'scf_wall_s': {ref['scf_wall_s_96']}" in log
+    assert ref["n_atoms"] == sum(ref["composition"].values())
+    for comp_name, parts in (("Zn_HAp_on_TiO2_16", ("Zn_HAp_cell", "TiO2_16")),
+                             ("PEDOT_PSS_on_TiO2_16", ("EDOT_trimer", "PSS_dimer", "TiO2_16"))):
+        want = {}
+        for part in parts:
+            for el, n in rows[part]["composition"].items():
+                want[el] = want.get(el, 0) + n
+        assert {k: v for k, v in rows[comp_name]["composition"].items() if v} == {k: v for k, v in want.items() if v}
+    for name, r in rows.items():
+        assert r["n_atoms"] == sum(r["composition"].values()), name
+        assert r["nao"]["21f_def2tzvp"] > r["nao"]["21e_b3lyp_631gd"], name
+        ratio = r["nao"]["21e_b3lyp_631gd"] / ref["nao"]["21e_b3lyp_631gd"]
+        assert abs(r["ratio_to_ref_21e"] - ratio) <= 0.005, name
+        shells = (ref["uks_formal_ours"], ref["uks_over_rks_96"]) if r["open_shell"] else (1.0, 1.0)
+        hours = sorted(ref["scf_wall_s_96"] * s * ratio ** p / 3600 for p in d["exponent_bracket_ours"] for s in shells)
+        assert abs(r["one_scf_h_21e"]["low"] - hours[0]) <= 0.006 and abs(r["one_scf_h_21e"]["high"] - hours[-1]) <= 0.006
+        for end, h in (("low", hours[0]), ("high", hours[-1])):
+            assert abs(r["relaxation_days_21e"][end] - h * ref["relaxation_over_scf_96"] / 24) <= 0.06, (name, end)
+    assert rows["PEDOT_PSS_on_TiO2_16"]["open_shell"] and not rows["Zn_HAp_on_TiO2_16"]["open_shell"]
+
+
 def test_field_strain_campaign():
     """Script 98 (HW.43): the field strain campaign's length, replayed year by year from ERA5 wind, and its battery trips.
     CAN catch: the power arithmetic leaving the primaries' figures (receiver + sensors; the control — ten sensors on 60 Ah

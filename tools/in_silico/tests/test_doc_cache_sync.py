@@ -5410,6 +5410,22 @@ def test_frost_worst_regime_label_matches_cache():
     assert f"**+{d['verdict']['tied_max_K']:.1f} K** ({words[d['verdict']['tied_max_regime']]})" in text
 
 
+def test_coating_cost_in_01_04_matches_99():
+    """01_04 §4.3 «Surface-DFT колаборація» ⊕ (HW.40) quotes 99's cache: the composite's basis functions and ratio, one SCF
+    and a relaxation for Zn-HAp on (TiO2)16, and the PEDOT:PSS SCF and relaxation ceiling. CAN catch a re-run of 99 or of
+    96 (the reference wall time) that leaves the canon behind. CANNOT catch whether the clusters are the right models."""
+    d = json.loads((CACHE / "dft/coating_cluster_cost.json").read_text(encoding="utf-8"))
+    z, pe = d["by_model"]["Zn_HAp_on_TiO2_16"], d["by_model"]["PEDOT_PSS_on_TiO2_16"]
+    text = " ".join((REPO / "docs/01_04_CODIT_and_Xylemointegration.md").read_text(encoding="utf-8").split())
+    for frag in (f"**{z['nao']['21e_b3lyp_631gd']}** базисні функції", f"у **{z['ratio_to_ref_21e']}** раза",
+                 f"один SCF — **{z['one_scf_h_21e']['low']:.0f}–{z['one_scf_h_21e']['high']:.0f}** год",
+                 f"релаксація — **{z['relaxation_days_21e']['low']:.0f}–{z['relaxation_days_21e']['high']:.0f}** діб",
+                 f"**{pe['one_scf_h_21e']['low']:.0f}–{pe['one_scf_h_21e']['high']:.0f}** год на SCF",
+                 f"до **{pe['relaxation_days_21e']['high']:.0f}** діб"):
+        assert frag in text, f"01_04 §4.3 ⊕ 99: expected {frag!r}"
+    assert ("Дисперсійної поправки в середовищі немає" in text) == (not any(d["dispersion_in_env"].values()))
+
+
 def test_field_strain_sheet_matches_98():
     """docs/protocols/anchor/field_strain_sensor_sheet.md (HW.43) quotes 98's cache: the set's current and battery days
     (§3), every row of the start-month table (hours/day at Beaufort 5, years without, the replay's median and p75,

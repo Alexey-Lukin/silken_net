@@ -253,6 +253,8 @@ Anchor mechanics (CPU):
   71 → 98 (importlib: 71's hourly loader — the ERA5 10 m wind, fixed UTC+3; the field strain campaign's length replayed
      year by year per start month and its battery trips, power figures read in the two TreeMMoSys primaries) — a change to
      71's loader or the ERA5 file re-runs 98
+  21e relaxed (os_mediator_series_relaxed_os2.json — the reference composition) · 96's run log (`scf_wall_s`) → 99
+     (coating_cluster_cost.json — basis sizes and scaled SCF cost of coating clusters, no SCF); a re-run of 96 re-runs 99
   52 · 71 · 73 · 82 · 88 → 89 (caches only, plus 88's `wall_for_force` by importlib and the radome CEM's lock-groove span:
      the bayonet clamp over its fit and temperature) — a change to any of the five re-runs 89
   52 · 71 · 73 · 81 → 82 (caches only: 73's socket band Ø · 52's collar chain and print floor · 71's capsule requirement ·
