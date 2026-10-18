@@ -189,6 +189,18 @@ Per-alloy **STL** plus a dimensioned **DXF** drawing with title block, one set p
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+## 5a. Ідентифікація купонів — текст на мить замовлення (PO), не правка листа
+
+> ⚖️ **РАТИФІКОВАНО founder 2026-10-18, за рекомендацією:** ідентифікатор купона `<сплав>-<серійний>` народжується на етикетці пакета у вендора — інструкцією в PO разом із +N купонів, а не правкою листа (форма — як ⚖️ 2026-10-15 про +N), тож сигнал 📬 і «слати» листа від 2026-10-15 цим не скидаються; ⛔ жодної мітки на самому купоні. **Ціна:** вендор може взяти за маркування окремо, і рядка в котируванні під нього не буде; ідентичність купона поза пакетом тримає дисципліна рук — наша й лабораторії. **Найслабша ланка:** постійної мітки на деталі немає, тож два Ti-сплави, переплутані ПІСЛЯ розпакування, вагою не розрізнити — підозрілий купон розсудить лише елементний аналіз (EDS/XRF: Al · V · Nb · Zr), якого як перевірки ідентичності при прийманні жоден наш лист не замовляє (EDS корозійного ТЗ на 12-му тижні — інший предмет, лише для корозійних купонів і запізно). Нога в трекері — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24, замовлення Stage 2.
+
+**Навіщо.** Купонів по 12 на сплав (Ti-6Al-4V — більше), сплавів шість, і на вигляд вони однакові. Вагою Ti-сплави не розрізнити: вирішальна пара — CP-Ti і Ti-6Al-7Nb з майже однаковою густиною (≈ 4.51 і 4.52 г/см³, довідкові значення, не з дерева), а креслення задає допуск лише діаметра (±0.1 мм — уже ±1.25 % маси), товщини не задає зовсім; вирізняються лише масивний Ta (у кілька разів важчий; Ta-покриття на Ti — ні) і Au (колір). Переплутаний пакет мовчки переносить результат на інший сплав, і ніщо далі по ланцюгу цього не побачить. А ідентифікатор купона далі по ланцюгу ВЖЕ вимагають усі вимірювальні листи: лабораторія — «coupon ID» у метаданих кожного запису ([`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md), EN «Data we need back» · UA ТЗ 1 п. 26), корозійний тест — акт із переліком ідентифікаторів і журнал по купону ([`anchor_accelerated_corrosion_rfq`](anchor_accelerated_corrosion_rfq.md) пп. 23 і 31). Народитись він може лише тут: лист друк-бюро просить тільки «individually pouched».
+
+**Текст для PO — англійською, вставити дослівно:**
+
+> **Identification.** Keep each alloy's coupons separate and traceable through every step — HIP, etching and baking included; if alloys share a run, state how you keep them apart. Pouch each coupon individually, as in our request, and label every pouch with: (1) the alloy designation as in the alloy table of our request — for a coated coupon, the coating and the base alloy (our drawings carry the same part name for every alloy); (2) a coupon serial within that alloy, one continuous sequence across this order and never reused — coupons of an alloy added on another line or build continue it; (3) the build number; (4) the powder lot. Keep the coupons of each alloy in a separate outer bag labelled with the alloy. In the certificate of conformance or the packing list, map each alloy's serial range to its build and powder lot. Do not laser-mark, engrave or ink the coupons themselves: they are corrosion and ion-release specimens, a mark changes the surface we measure, and the loop is our electrical contact.
+
+**На нашому боці, при прийманні:** пакети звірити з CoC або пакувальним листом; ідентифікатор купона — `<сплав>-<серійний>` з етикетки; купон, вийнятий із пакета, іде в підписаний контейнер, ніколи в спільну тару; той самий ідентифікатор — в акт передачі лабораторії і в кожен рядок її звіту (листи лабораторій це вже просять — ↑).
+
 ## 6. Cross-references
 
 | Ресурс | Що бере |
