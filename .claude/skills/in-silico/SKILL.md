@@ -14,8 +14,8 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 | `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
 | `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
 | `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance; §2 = the CHEM.11 freeze design (N→Q sequons, the 600 aa invariant, compensating substitutions) |
-| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §2.1` | Synthetic xylem sap — the RATIFIED recipe point and pH setpoint; owner-script `67`, doc↔cache pinned |
-| `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: DFT-redox is self-owned (Стаття 1 goes WITHOUT an external collaborator — ⚖️ founder 2026-09-23, explicit-water QM/MM is its named limit; a collaborator is a follow-up option only) · in-vitro EBFC enzymology = profile biochemist/electrochemist, TBD · xylem-sap composition — no partner: the recipe point is ratified (pH from a primary source, ion concentrations unsourced — `01_02 §2.1`; the open measurement — `00_07` HW.3) |
+| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §2.1` | Synthetic xylem sap — the RATIFIED recipe point and pH setpoint; owner-script `67`, doc↔cache pinned, and every salt concentration in `docs/protocols/` held to the live point by `test_sap_recipe_mirrors_match_the_live_point` — a moved point reds every letter that still carries the old one |
+| `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: DFT-redox is self-owned (Стаття 1 goes WITHOUT an external collaborator — ⚖️ founder 2026-09-23, explicit-water QM/MM is its named limit; a collaborator is a follow-up option only) · in-vitro EBFC enzymology = profile biochemist/electrochemist, TBD · xylem-sap composition — no partner: the recipe point is ratified (pH from a primary source; the ions re-anchored ⚖️ 2026-10-18 on measured conifer sap — Norway spruce, not Scots pine — `01_02 §2.1`; our pine's own sap comes from the log-day logs, `00_07` HW.3) |
 | `docs/00_02_Academic_Integration_and_IP.md` §2 | Publication plan — Стаття 1 |
 | `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
 | `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon (ratified verdicts live THERE) + the open-work items: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
@@ -133,6 +133,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 42. A new script in this package must declare an English `SI_DESCRIPTION`, or the paper-SI generator refuses to render and the doc↔cache pin reds with it
 43. A threshold quoted in a one-sided sentence is rounded toward the side that keeps the sentence TRUE, and the sentence is written so that side is the conservative one; and the statistic behind a physical «never» is checked for what it can SEE before it becomes the claim
 44. A cap on a SERIES route is its WEAKEST link, and a threshold at which a link gives way needs THAT link's own compliance — model the route by its stiff member alone and the threshold comes out an order of magnitude low, and the dichotomy «holds → still / gives way → moves» is false
+45. «Conservative», «overstates», «the adverse end» is a claim about the DIRECTION of an error, and it needs a ground of its own — check that it does not rest on the datum you excluded, or on the input's extremes standing in for the output's
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
