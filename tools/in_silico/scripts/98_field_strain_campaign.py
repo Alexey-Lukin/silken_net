@@ -42,7 +42,7 @@ anchor's azimuth need not be known — plus one tilt sensor beside them at ancho
 tree the forest access application asks for. The 100 Ah battery is OURS (a larger stock size).
 
 Clock: the ERA5 file runs on a fixed UTC+3 clock (data/era5_cherkasy/README.md); month starts here are cut at UTC+3
-midnight. A field record in UTC is joined to the file after subtracting 3 h — the sheet's §2.
+midnight. To join a field record in UTC, subtract 3 h from the file's labels — the sheet's §2.
 
 Run:  python tools/in_silico/scripts/98_field_strain_campaign.py      # seconds
 """
@@ -69,10 +69,13 @@ BEAUFORT_MS = {"beaufort_4": 5.5, "beaufort_5": 8.0}     # WMO anchors as script
 TARGET_HOURS = 10                                        # OURS: Beaufort-5 hours the campaign must collect
 RECEIVER_A, TSS_A, TRS_A = 0.13, 0.0263, 0.03            # Nickl 2022 (receiver, strain sensor) · Kolbe 2021 Table 1 (tilt)
 N_TSS, N_TRS = 2, 1                                      # the primary's perpendicular pair + one tilt sensor beside it
+N_TSS_WITH_THIRD = 3                                     # the variant: a third TSS opposite one of the pair (redundancy, common mode)
 BATTERY_AH = {"60_Ah_as_in_the_papers": 60.0, "100_Ah_ours": 100.0}
 USABLE_FRACTION = 1.0                                    # OURS: the full rating, as the papers' 152 h figure uses it
 CHECK_TEN_TSS_H = 152.0                                  # Nickl 2022: ten sensors, 60 Ah → 152 h — the control
 WITHIN_DAYS = (30, 60, 90)                               # the share of years whose campaign ends within these
+CAP_MONTH_DAY = (5, 1)                                   # OURS, a candidate cap: the campaign stops at 1 May (end of April)
+WINTER_STARTS = (12, 1, 2, 3)
 
 
 def _load(name: str, file: str):
@@ -149,6 +152,48 @@ def main() -> int:
             "trips_at_median": trips(q["p50"]),
             "trips_at_p75": trips(q["p75"]),
         }
+    # (4) the same replay with a cap: stop at the target OR at 1 May of the season, whichever first — what the campaign
+    # collects by then, and the trips it costs at most. A season whose cap lies beyond the series is dropped, not ranked.
+    index = {s: i for i, s in enumerate(stamp)}
+    capped = {}
+    for m in WINTER_STARTS:
+        seasons = []
+        for y in years:
+            cap_year = y + 1 if m == 12 else y
+            cap_key = f"{cap_year}-{CAP_MONTH_DAY[0]:02d}-{CAP_MONTH_DAY[1]:02d}T00:00"
+            if cap_key not in index:
+                continue
+            s0 = int(np.flatnonzero(day1 & (month == m) & (year == y))[0])
+            c = index[cap_key]
+            got = int(strong[s0:c].sum())
+            full = replay_days(strong, s0, TARGET_HOURS)
+            used = min(full, (c - s0) / 24.0) if full is not None else (c - s0) / 24.0
+            seasons.append({"start_year": y, "beaufort_5_hours_by_cap": got, "reached": got >= TARGET_HOURS,
+                            "days_used": round(used, 2)})
+        hrs = np.array([s["beaufort_5_hours_by_cap"] for s in seasons])
+        used = np.array([s["days_used"] for s in seasons])
+        capped[f"{m:02d}"] = {
+            "n_seasons": len(seasons),
+            "share_reached_by_cap": round(float(np.mean([s["reached"] for s in seasons])), 3),
+            "seasons_not_reached": int(sum(1 for s in seasons if not s["reached"])),
+            "seasons_with_zero_by_cap": int((hrs == 0).sum()),
+            "beaufort_5_hours_by_cap_median": float(np.percentile(hrs, 50, method="higher")),
+            "days_used_median": float(np.percentile(used, 50, method="higher")),
+            "days_used_max": round(float(used.max()), 2),
+            "trips_max": {k: int(np.ceil(used.max() / bd)) + 1 for k, bd in battery_days.items()},
+            "trips_median": {k: int(np.ceil(float(np.percentile(used, 50, method="higher")) / bd)) + 1
+                             for k, bd in battery_days.items()},
+            "seasons": seasons,
+        }
+    month_rate = {f"{m:02d}": by_month[f"{m:02d}"]["hours_per_day"]["beaufort_5"] for m in range(1, 13)}
+    # the variant set: a third strain sensor — its current, battery days and the capped December trips
+    cur3 = RECEIVER_A + N_TSS_WITH_THIRD * TSS_A + N_TRS * TRS_A
+    bd3 = {k: round(ah * USABLE_FRACTION / cur3 / 24.0, 2) for k, ah in BATTERY_AH.items()}
+    dec = capped["12"]
+    third = {"n_tss": N_TSS_WITH_THIRD, "current_A": round(cur3, 4), "battery_days": bd3,
+             "december_capped_trips_median": {k: int(np.ceil(dec["days_used_median"] / b)) + 1 for k, b in bd3.items()},
+             "december_capped_trips_max": {k: int(np.ceil(dec["days_used_max"] / b)) + 1 for k, b in bd3.items()}}
+
     med = {m: r["replay_days"]["p50"] for m, r in by_month.items() if r["replay_days"]["p50"] is not None}
     best = min(med, key=med.get)
     rb = by_month[best]
@@ -157,11 +202,15 @@ def main() -> int:
     verdict = (
         f"Replayed over 1991–2020, a campaign that must collect {TARGET_HOURS} hours of ERA5 10 m wind ≥ 8.0 m/s (Beaufort 5) "
         f"at the site cell takes a median {rb['replay_days']['p50']:.0f} days from a start on the 1st of month {best} "
-        f"(p75 {rb['replay_days']['p75']:.0f}, p90 {rb['replay_days']['p90']:.0f}) — the shortest start month; the winter "
-        f"starts rank {' < '.join(winter)} by median, and January takes {jan['replay_days']['p50']:.0f} (p75 "
-        f"{jan['replay_days']['p75']:.0f}), because {jan['years_without_beaufort_5']} of {len(years)} Januaries have no "
-        f"Beaufort-5 hour at all: the hours come in storms ({jan['beaufort_5_storms_30y']} January storms in 30 years, "
-        f"{jan['beaufort_5_hours_per_storm_mean']:.1f} h each on average), so {TARGET_HOURS} hours are about two storms. "
+        f"(p75 {rb['replay_days']['p75']:.0f}, p90 {rb['replay_days']['p90']:.0f}); the winter starts rank "
+        f"{' < '.join(winter)} by median, and January's {jan['replay_days']['p50']:.0f} — like the others — sits inside the "
+        f"scatter of 30 years, so December–March is one window, not a ranking. The hours come in storms: "
+        f"{jan['years_without_beaufort_5']} of {len(years)} Januaries have no Beaufort-5 hour at all, and the January storms "
+        f"last {jan['beaufort_5_hours_per_storm_mean']:.1f} h on average, so {TARGET_HOURS} hours are about two storms. "
+        f"Capped at 1 May, a 1 December start reaches the target in {capped['12']['share_reached_by_cap'] * 100:.0f} % of "
+        f"{capped['12']['n_seasons']} seasons ({capped['12']['seasons_not_reached']} do not), against "
+        f"{capped['03']['share_reached_by_cap'] * 100:.0f} % from 1 March, for at most "
+        f"{capped['12']['trips_max']['100_Ah_ours']} trips on 100 Ah. "
         f"The sheet's set ({N_TSS} strain sensors at right angles and {N_TRS} tilt sensor on one receiver, {current_a:.4f} A) "
         f"runs {battery_days['60_Ah_as_in_the_papers']:.1f} days on 60 Ah and {battery_days['100_Ah_ours']:.1f} on 100 Ah, so "
         f"the median campaign from month {best} costs {rb['trips_at_median']['60_Ah_as_in_the_papers']} / "
@@ -189,6 +238,10 @@ def main() -> int:
         "battery_Ah_for_90_days": round(current_a * 24 * 90),     # what one battery would need for the application's quarter
         "by_month": by_month,
         "best_start_month": best,
+        "capped_at": f"{CAP_MONTH_DAY[1]:02d}.{CAP_MONTH_DAY[0]:02d} of the season (ours, a candidate)",
+        "capped_by_start_month": capped,
+        "beaufort_5_rate_after_april": {m: month_rate[m] for m in ("05", "06", "07", "08", "09")},
+        "set_with_third_tss": third,
         "not_modelled": ["the ERA5 → sub-canopy wind transfer (the campaign measures it; ≈ 2 storms cannot show it is stable)",
                          "whether TARGET_HOURS suffices for the histogram's tail",
                          "battery derating in cold and depth of discharge (USABLE_FRACTION = 1 — the trips are a floor)"],

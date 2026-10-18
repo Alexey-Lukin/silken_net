@@ -3160,8 +3160,6 @@ def test_field_strain_campaign():
             want = ranked[math.ceil(q / 100 * (n_years - 1))]      # numpy «higher»: an actual year's value
             got = r["replay_days"][f"p{q}"]
             assert (got is None) if math.isinf(want) else abs(got - want) <= 0.06, (m, q)
-        qs = [r["replay_days"][f"p{q}"] for q in (50, 75, 90) if r["replay_days"][f"p{q}"] is not None]
-        assert qs == sorted(qs), m
         for days, share in r["share_within_days"].items():
             assert abs(share - sum(1 for x in ranked if x <= float(days)) / n_years) <= 0.0006, (m, days)
         for at, key in (("trips_at_median", "p50"), ("trips_at_p75", "p75")):
@@ -3172,6 +3170,32 @@ def test_field_strain_campaign():
                                              {math.ceil((days + e) / bd) + 1 for e in (-0.05, 0.05)}), (m, at, bk)
     med = {m: r["replay_days"]["p50"] for m, r in d["by_month"].items() if r["replay_days"]["p50"] is not None}
     assert d["best_start_month"] == min(med, key=med.get)
+    for m, c in d["capped_by_start_month"].items():               # the 1-May cap, recomputed from its season list
+        ss = c["seasons"]
+        assert c["n_seasons"] == len(ss) and c["seasons_not_reached"] == sum(1 for s in ss if not s["reached"]), m
+        assert all(s["reached"] == (s["beaufort_5_hours_by_cap"] >= d["target_beaufort_5_hours_ours"]) for s in ss), m
+        assert abs(c["share_reached_by_cap"] - (1 - c["seasons_not_reached"] / len(ss))) <= 0.0006, m
+        assert c["seasons_with_zero_by_cap"] == sum(1 for s in ss if s["beaufort_5_hours_by_cap"] == 0), m
+        hrs = sorted(s["beaufort_5_hours_by_cap"] for s in ss)
+        used = sorted(s["days_used"] for s in ss)
+        assert c["beaufort_5_hours_by_cap_median"] == hrs[math.ceil(0.5 * (len(ss) - 1))], m
+        assert abs(c["days_used_median"] - used[math.ceil(0.5 * (len(ss) - 1))]) <= 0.006 and c["days_used_max"] == used[-1]
+        for bk, bd in d["battery_days"].items():
+            assert c["trips_max"][bk] == math.ceil(c["days_used_max"] / bd) + 1, (m, bk)
+            assert c["trips_median"][bk] == math.ceil(c["days_used_median"] / bd) + 1, (m, bk)
+        by_year = dict(zip(range(d["years"][0], d["years"][1] + 1), d["by_month"][m]["replay_days_by_year"], strict=True))
+        for s in ss:                                   # a reached season used no more days than its uncapped replay
+            full = by_year[s["start_year"]]
+            assert (not s["reached"]) or (full is not None and abs(s["days_used"] - full) <= 0.006), (m, s["start_year"])
+    th = d["set_with_third_tss"]
+    cur3 = pw["receiver_A"] + th["n_tss"] * pw["tss_A"] + pw["n_trs"] * pw["trs_A"]
+    assert th["n_tss"] == pw["n_tss"] + 1 and abs(th["current_A"] - cur3) < 1e-4
+    dec = d["capped_by_start_month"]["12"]
+    for k, a in ah.items():
+        bd3 = th["battery_days"][k]
+        assert abs(bd3 - a * pw["usable_fraction_ours"] / cur3 / 24.0) <= 0.005, k
+        assert th["december_capped_trips_max"][k] == math.ceil(dec["days_used_max"] / bd3) + 1, k
+        assert th["december_capped_trips_median"][k] == math.ceil(dec["days_used_median"] / bd3) + 1, k
 
 
 def test_sap_recipe_saturation():

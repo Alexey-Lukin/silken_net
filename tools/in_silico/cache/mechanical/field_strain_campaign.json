@@ -768,10 +768,826 @@
     }
   },
   "best_start_month": "02",
+  "capped_at": "01.05 of the season (ours, a candidate)",
+  "capped_by_start_month": {
+    "12": {
+      "n_seasons": 29,
+      "share_reached_by_cap": 0.793,
+      "seasons_not_reached": 6,
+      "seasons_with_zero_by_cap": 2,
+      "beaufort_5_hours_by_cap_median": 23.0,
+      "days_used_median": 67.54,
+      "days_used_max": 152.0,
+      "trips_max": {
+        "60_Ah_as_in_the_papers": 14,
+        "100_Ah_ours": 9
+      },
+      "trips_median": {
+        "60_Ah_as_in_the_papers": 7,
+        "100_Ah_ours": 5
+      },
+      "seasons": [
+        {
+          "start_year": 1991,
+          "beaufort_5_hours_by_cap": 18,
+          "reached": true,
+          "days_used": 48.75
+        },
+        {
+          "start_year": 1992,
+          "beaufort_5_hours_by_cap": 56,
+          "reached": true,
+          "days_used": 53.46
+        },
+        {
+          "start_year": 1993,
+          "beaufort_5_hours_by_cap": 10,
+          "reached": true,
+          "days_used": 127.83
+        },
+        {
+          "start_year": 1994,
+          "beaufort_5_hours_by_cap": 22,
+          "reached": true,
+          "days_used": 89.21
+        },
+        {
+          "start_year": 1995,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 152.0
+        },
+        {
+          "start_year": 1996,
+          "beaufort_5_hours_by_cap": 56,
+          "reached": true,
+          "days_used": 55.04
+        },
+        {
+          "start_year": 1997,
+          "beaufort_5_hours_by_cap": 7,
+          "reached": false,
+          "days_used": 151.0
+        },
+        {
+          "start_year": 1998,
+          "beaufort_5_hours_by_cap": 11,
+          "reached": true,
+          "days_used": 139.62
+        },
+        {
+          "start_year": 1999,
+          "beaufort_5_hours_by_cap": 23,
+          "reached": true,
+          "days_used": 29.04
+        },
+        {
+          "start_year": 2000,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 151.0
+        },
+        {
+          "start_year": 2001,
+          "beaufort_5_hours_by_cap": 40,
+          "reached": true,
+          "days_used": 60.88
+        },
+        {
+          "start_year": 2002,
+          "beaufort_5_hours_by_cap": 37,
+          "reached": true,
+          "days_used": 67.54
+        },
+        {
+          "start_year": 2003,
+          "beaufort_5_hours_by_cap": 9,
+          "reached": false,
+          "days_used": 152.0
+        },
+        {
+          "start_year": 2004,
+          "beaufort_5_hours_by_cap": 41,
+          "reached": true,
+          "days_used": 57.79
+        },
+        {
+          "start_year": 2005,
+          "beaufort_5_hours_by_cap": 5,
+          "reached": false,
+          "days_used": 151.0
+        },
+        {
+          "start_year": 2006,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 49.88
+        },
+        {
+          "start_year": 2007,
+          "beaufort_5_hours_by_cap": 13,
+          "reached": true,
+          "days_used": 144.21
+        },
+        {
+          "start_year": 2008,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 151.0
+        },
+        {
+          "start_year": 2009,
+          "beaufort_5_hours_by_cap": 29,
+          "reached": true,
+          "days_used": 28.58
+        },
+        {
+          "start_year": 2010,
+          "beaufort_5_hours_by_cap": 50,
+          "reached": true,
+          "days_used": 67.21
+        },
+        {
+          "start_year": 2011,
+          "beaufort_5_hours_by_cap": 15,
+          "reached": true,
+          "days_used": 116.58
+        },
+        {
+          "start_year": 2012,
+          "beaufort_5_hours_by_cap": 36,
+          "reached": true,
+          "days_used": 104.62
+        },
+        {
+          "start_year": 2013,
+          "beaufort_5_hours_by_cap": 38,
+          "reached": true,
+          "days_used": 43.17
+        },
+        {
+          "start_year": 2014,
+          "beaufort_5_hours_by_cap": 37,
+          "reached": true,
+          "days_used": 61.67
+        },
+        {
+          "start_year": 2015,
+          "beaufort_5_hours_by_cap": 53,
+          "reached": true,
+          "days_used": 26.17
+        },
+        {
+          "start_year": 2016,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 117.62
+        },
+        {
+          "start_year": 2017,
+          "beaufort_5_hours_by_cap": 29,
+          "reached": true,
+          "days_used": 24.5
+        },
+        {
+          "start_year": 2018,
+          "beaufort_5_hours_by_cap": 18,
+          "reached": true,
+          "days_used": 24.79
+        },
+        {
+          "start_year": 2019,
+          "beaufort_5_hours_by_cap": 29,
+          "reached": true,
+          "days_used": 71.88
+        }
+      ]
+    },
+    "01": {
+      "n_seasons": 30,
+      "share_reached_by_cap": 0.7,
+      "seasons_not_reached": 9,
+      "seasons_with_zero_by_cap": 2,
+      "beaufort_5_hours_by_cap_median": 16.0,
+      "days_used_median": 85.71,
+      "days_used_max": 121.0,
+      "trips_max": {
+        "60_Ah_as_in_the_papers": 12,
+        "100_Ah_ours": 8
+      },
+      "trips_median": {
+        "60_Ah_as_in_the_papers": 9,
+        "100_Ah_ours": 6
+      },
+      "seasons": [
+        {
+          "start_year": 1991,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 25.67
+        },
+        {
+          "start_year": 1992,
+          "beaufort_5_hours_by_cap": 18,
+          "reached": true,
+          "days_used": 17.75
+        },
+        {
+          "start_year": 1993,
+          "beaufort_5_hours_by_cap": 56,
+          "reached": true,
+          "days_used": 22.46
+        },
+        {
+          "start_year": 1994,
+          "beaufort_5_hours_by_cap": 10,
+          "reached": true,
+          "days_used": 96.83
+        },
+        {
+          "start_year": 1995,
+          "beaufort_5_hours_by_cap": 16,
+          "reached": true,
+          "days_used": 94.54
+        },
+        {
+          "start_year": 1996,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 121.0
+        },
+        {
+          "start_year": 1997,
+          "beaufort_5_hours_by_cap": 50,
+          "reached": true,
+          "days_used": 24.29
+        },
+        {
+          "start_year": 1998,
+          "beaufort_5_hours_by_cap": 7,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 1999,
+          "beaufort_5_hours_by_cap": 11,
+          "reached": true,
+          "days_used": 108.62
+        },
+        {
+          "start_year": 2000,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 74.5
+        },
+        {
+          "start_year": 2001,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2002,
+          "beaufort_5_hours_by_cap": 40,
+          "reached": true,
+          "days_used": 29.88
+        },
+        {
+          "start_year": 2003,
+          "beaufort_5_hours_by_cap": 37,
+          "reached": true,
+          "days_used": 36.54
+        },
+        {
+          "start_year": 2004,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 121.0
+        },
+        {
+          "start_year": 2005,
+          "beaufort_5_hours_by_cap": 41,
+          "reached": true,
+          "days_used": 26.79
+        },
+        {
+          "start_year": 2006,
+          "beaufort_5_hours_by_cap": 3,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2007,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 18.88
+        },
+        {
+          "start_year": 2008,
+          "beaufort_5_hours_by_cap": 13,
+          "reached": true,
+          "days_used": 113.21
+        },
+        {
+          "start_year": 2009,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2010,
+          "beaufort_5_hours_by_cap": 6,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2011,
+          "beaufort_5_hours_by_cap": 50,
+          "reached": true,
+          "days_used": 36.21
+        },
+        {
+          "start_year": 2012,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 85.71
+        },
+        {
+          "start_year": 2013,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 81.83
+        },
+        {
+          "start_year": 2014,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 75.5
+        },
+        {
+          "start_year": 2015,
+          "beaufort_5_hours_by_cap": 37,
+          "reached": true,
+          "days_used": 30.67
+        },
+        {
+          "start_year": 2016,
+          "beaufort_5_hours_by_cap": 43,
+          "reached": true,
+          "days_used": 18.08
+        },
+        {
+          "start_year": 2017,
+          "beaufort_5_hours_by_cap": 8,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2018,
+          "beaufort_5_hours_by_cap": 17,
+          "reached": true,
+          "days_used": 108.46
+        },
+        {
+          "start_year": 2019,
+          "beaufort_5_hours_by_cap": 6,
+          "reached": false,
+          "days_used": 120.0
+        },
+        {
+          "start_year": 2020,
+          "beaufort_5_hours_by_cap": 29,
+          "reached": true,
+          "days_used": 40.88
+        }
+      ]
+    },
+    "02": {
+      "n_seasons": 30,
+      "share_reached_by_cap": 0.633,
+      "seasons_not_reached": 11,
+      "seasons_with_zero_by_cap": 3,
+      "beaufort_5_hours_by_cap_median": 12.0,
+      "days_used_median": 70.33,
+      "days_used_max": 90.0,
+      "trips_max": {
+        "60_Ah_as_in_the_papers": 9,
+        "100_Ah_ours": 6
+      },
+      "trips_median": {
+        "60_Ah_as_in_the_papers": 7,
+        "100_Ah_ours": 5
+      },
+      "seasons": [
+        {
+          "start_year": 1991,
+          "beaufort_5_hours_by_cap": 1,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 1992,
+          "beaufort_5_hours_by_cap": 1,
+          "reached": false,
+          "days_used": 90.0
+        },
+        {
+          "start_year": 1993,
+          "beaufort_5_hours_by_cap": 17,
+          "reached": true,
+          "days_used": 5.33
+        },
+        {
+          "start_year": 1994,
+          "beaufort_5_hours_by_cap": 10,
+          "reached": true,
+          "days_used": 65.83
+        },
+        {
+          "start_year": 1995,
+          "beaufort_5_hours_by_cap": 16,
+          "reached": true,
+          "days_used": 63.54
+        },
+        {
+          "start_year": 1996,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 90.0
+        },
+        {
+          "start_year": 1997,
+          "beaufort_5_hours_by_cap": 16,
+          "reached": true,
+          "days_used": 70.33
+        },
+        {
+          "start_year": 1998,
+          "beaufort_5_hours_by_cap": 7,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 1999,
+          "beaufort_5_hours_by_cap": 11,
+          "reached": true,
+          "days_used": 77.62
+        },
+        {
+          "start_year": 2000,
+          "beaufort_5_hours_by_cap": 11,
+          "reached": true,
+          "days_used": 43.54
+        },
+        {
+          "start_year": 2001,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2002,
+          "beaufort_5_hours_by_cap": 29,
+          "reached": true,
+          "days_used": 13.67
+        },
+        {
+          "start_year": 2003,
+          "beaufort_5_hours_by_cap": 37,
+          "reached": true,
+          "days_used": 5.54
+        },
+        {
+          "start_year": 2004,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 90.0
+        },
+        {
+          "start_year": 2005,
+          "beaufort_5_hours_by_cap": 31,
+          "reached": true,
+          "days_used": 27.33
+        },
+        {
+          "start_year": 2006,
+          "beaufort_5_hours_by_cap": 3,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2007,
+          "beaufort_5_hours_by_cap": 17,
+          "reached": true,
+          "days_used": 50.83
+        },
+        {
+          "start_year": 2008,
+          "beaufort_5_hours_by_cap": 10,
+          "reached": true,
+          "days_used": 82.96
+        },
+        {
+          "start_year": 2009,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2010,
+          "beaufort_5_hours_by_cap": 3,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2011,
+          "beaufort_5_hours_by_cap": 50,
+          "reached": true,
+          "days_used": 5.21
+        },
+        {
+          "start_year": 2012,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 54.71
+        },
+        {
+          "start_year": 2013,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 50.83
+        },
+        {
+          "start_year": 2014,
+          "beaufort_5_hours_by_cap": 27,
+          "reached": true,
+          "days_used": 45.08
+        },
+        {
+          "start_year": 2015,
+          "beaufort_5_hours_by_cap": 23,
+          "reached": true,
+          "days_used": 66.25
+        },
+        {
+          "start_year": 2016,
+          "beaufort_5_hours_by_cap": 28,
+          "reached": true,
+          "days_used": 10.54
+        },
+        {
+          "start_year": 2017,
+          "beaufort_5_hours_by_cap": 8,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2018,
+          "beaufort_5_hours_by_cap": 13,
+          "reached": true,
+          "days_used": 77.62
+        },
+        {
+          "start_year": 2019,
+          "beaufort_5_hours_by_cap": 6,
+          "reached": false,
+          "days_used": 89.0
+        },
+        {
+          "start_year": 2020,
+          "beaufort_5_hours_by_cap": 25,
+          "reached": true,
+          "days_used": 23.67
+        }
+      ]
+    },
+    "03": {
+      "n_seasons": 30,
+      "share_reached_by_cap": 0.5,
+      "seasons_not_reached": 15,
+      "seasons_with_zero_by_cap": 6,
+      "beaufort_5_hours_by_cap_median": 10.0,
+      "days_used_median": 61.0,
+      "days_used_max": 61.0,
+      "trips_max": {
+        "60_Ah_as_in_the_papers": 7,
+        "100_Ah_ours": 5
+      },
+      "trips_median": {
+        "60_Ah_as_in_the_papers": 7,
+        "100_Ah_ours": 5
+      },
+      "seasons": [
+        {
+          "start_year": 1991,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 1992,
+          "beaufort_5_hours_by_cap": 1,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 1993,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 1994,
+          "beaufort_5_hours_by_cap": 10,
+          "reached": true,
+          "days_used": 37.83
+        },
+        {
+          "start_year": 1995,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 35.71
+        },
+        {
+          "start_year": 1996,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 1997,
+          "beaufort_5_hours_by_cap": 16,
+          "reached": true,
+          "days_used": 42.33
+        },
+        {
+          "start_year": 1998,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 1999,
+          "beaufort_5_hours_by_cap": 6,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2000,
+          "beaufort_5_hours_by_cap": 3,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2001,
+          "beaufort_5_hours_by_cap": 2,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2002,
+          "beaufort_5_hours_by_cap": 16,
+          "reached": true,
+          "days_used": 7.67
+        },
+        {
+          "start_year": 2003,
+          "beaufort_5_hours_by_cap": 27,
+          "reached": true,
+          "days_used": 20.67
+        },
+        {
+          "start_year": 2004,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2005,
+          "beaufort_5_hours_by_cap": 11,
+          "reached": true,
+          "days_used": 19.67
+        },
+        {
+          "start_year": 2006,
+          "beaufort_5_hours_by_cap": 3,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2007,
+          "beaufort_5_hours_by_cap": 17,
+          "reached": true,
+          "days_used": 22.83
+        },
+        {
+          "start_year": 2008,
+          "beaufort_5_hours_by_cap": 9,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2009,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2010,
+          "beaufort_5_hours_by_cap": 0,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2011,
+          "beaufort_5_hours_by_cap": 15,
+          "reached": true,
+          "days_used": 39.54
+        },
+        {
+          "start_year": 2012,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 25.71
+        },
+        {
+          "start_year": 2013,
+          "beaufort_5_hours_by_cap": 30,
+          "reached": true,
+          "days_used": 22.83
+        },
+        {
+          "start_year": 2014,
+          "beaufort_5_hours_by_cap": 27,
+          "reached": true,
+          "days_used": 17.08
+        },
+        {
+          "start_year": 2015,
+          "beaufort_5_hours_by_cap": 23,
+          "reached": true,
+          "days_used": 38.25
+        },
+        {
+          "start_year": 2016,
+          "beaufort_5_hours_by_cap": 17,
+          "reached": true,
+          "days_used": 32.58
+        },
+        {
+          "start_year": 2017,
+          "beaufort_5_hours_by_cap": 8,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2018,
+          "beaufort_5_hours_by_cap": 13,
+          "reached": true,
+          "days_used": 49.62
+        },
+        {
+          "start_year": 2019,
+          "beaufort_5_hours_by_cap": 6,
+          "reached": false,
+          "days_used": 61.0
+        },
+        {
+          "start_year": 2020,
+          "beaufort_5_hours_by_cap": 12,
+          "reached": true,
+          "days_used": 46.67
+        }
+      ]
+    }
+  },
+  "beaufort_5_rate_after_april": {
+    "05": 0.087,
+    "06": 0.026,
+    "07": 0.031,
+    "08": 0.038,
+    "09": 0.078
+  },
+  "set_with_third_tss": {
+    "n_tss": 3,
+    "current_A": 0.2389,
+    "battery_days": {
+      "60_Ah_as_in_the_papers": 10.46,
+      "100_Ah_ours": 17.44
+    },
+    "december_capped_trips_median": {
+      "60_Ah_as_in_the_papers": 8,
+      "100_Ah_ours": 5
+    },
+    "december_capped_trips_max": {
+      "60_Ah_as_in_the_papers": 16,
+      "100_Ah_ours": 10
+    }
+  },
   "not_modelled": [
     "the ERA5 → sub-canopy wind transfer (the campaign measures it; ≈ 2 storms cannot show it is stable)",
     "whether TARGET_HOURS suffices for the histogram's tail",
     "battery derating in cold and depth of discharge (USABLE_FRACTION = 1 — the trips are a floor)"
   ],
-  "verdict": "Replayed over 1991–2020, a campaign that must collect 10 hours of ERA5 10 m wind ≥ 8.0 m/s (Beaufort 5) at the site cell takes a median 70 days from a start on the 1st of month 02 (p75 125, p90 294) — the shortest start month; the winter starts rank 02 < 12 < 03 < 01 by median, and January takes 86 (p75 142), because 14 of 30 Januaries have no Beaufort-5 hour at all: the hours come in storms (41 January storms in 30 years, 4.5 h each on average), so 10 hours are about two storms. The sheet's set (2 strain sensors at right angles and 1 tilt sensor on one receiver, 0.2126 A) runs 11.8 days on 60 Ah and 19.6 on 100 Ah, so the median campaign from month 02 costs 7 / 5 trips (60 / 100 Ah: installation, swaps, removal) and the p75 one 12 / 8. The battery days take the full rating in winter cold, so the trips are a floor; and how ERA5's open-terrain wind maps to the wind under the canopy is what the campaign measures, not what this assumes."
+  "verdict": "Replayed over 1991–2020, a campaign that must collect 10 hours of ERA5 10 m wind ≥ 8.0 m/s (Beaufort 5) at the site cell takes a median 70 days from a start on the 1st of month 02 (p75 125, p90 294); the winter starts rank 02 < 12 < 03 < 01 by median, and January's 86 — like the others — sits inside the scatter of 30 years, so December–March is one window, not a ranking. The hours come in storms: 14 of 30 Januaries have no Beaufort-5 hour at all, and the January storms last 4.5 h on average, so 10 hours are about two storms. Capped at 1 May, a 1 December start reaches the target in 79 % of 29 seasons (6 do not), against 50 % from 1 March, for at most 9 trips on 100 Ah. The sheet's set (2 strain sensors at right angles and 1 tilt sensor on one receiver, 0.2126 A) runs 11.8 days on 60 Ah and 19.6 on 100 Ah, so the median campaign from month 02 costs 7 / 5 trips (60 / 100 Ah: installation, swaps, removal) and the p75 one 12 / 8. The battery days take the full rating in winter cold, so the trips are a floor; and how ERA5's open-terrain wind maps to the wind under the canopy is what the campaign measures, not what this assumes."
 }
