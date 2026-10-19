@@ -5568,8 +5568,9 @@ def test_field_strain_sheet_matches_98():
 
 def test_field_battery_type_matches_98():
     """The campaign battery (98 §5, HW.43, 2026-10-19): the sheet's §3 (table, readings, swap calendars, the ratified
-    paragraph), SUMMARY §HW.43 ⊕, the ⊕ on the second ⚖️ and the third ⚖️ with its post-«так» ⊕ in 01_02 §2.2, and the
-    swap-rule ⚖️ leg in 00_07 HW.43 quote 98's `battery_type` — masses, prices, below-floor counts per source, the AGM
+    paragraph), SUMMARY §HW.43 ⊕, the ⊕ on the second ⚖️, the third ⚖️ with its post-«так» ⊕ and the fourth ⚖️ (the
+    freezer measurement, its full form moved there from the 00_07 HW.43 leg on its ratification) in 01_02 §2.2 quote 98's
+    `battery_type` — masses, prices, below-floor counts per source, the AGM
     freezing at the 1 December anchor (what the ratified text quotes) and over the first-swap day (its ⊕), humidity, the
     battery-day ranges per chemistry, the trips at the derated resource (ratified text) and under the ratified rule (⊕),
     and the swap calendars. CAN catch a re-run leaving any home behind and a range quoted from the other chemistry.
@@ -5730,7 +5731,6 @@ def test_field_battery_type_matches_98():
                  f"вище {rh['spec_pct']} % стоїть **{rh['share_of_campaign_hours'] * 100:.0f} %** годин кампанії",
                  f"годину Бофорт-5 за {n} кампаній — **{neg(bt['coldest_air_in_a_beaufort_5_hour_C'])}** °C"):
         assert frag in canon, f"01_02 §2.2 (battery ⊕ / third ⚖️ / its ⊕): expected {frag!r}"
-    tracker = " ".join((REPO / "docs/00_07_Action_Plan_Tracker.md").read_text(encoding="utf-8").split())
     tm = [r["trips_median"] for r in rules.values()]
     ts = [v["seasons"] for r in rules.values() for v in r["at_risk_by_lifepo4_reading"].values()]
     for frag in (f"календарі дають від {min(tm)} до {max(tm)} поїздок медіанно й від {min(ts)} до {max(ts)} кампаній із відсічкою",
@@ -5742,7 +5742,7 @@ def test_field_battery_type_matches_98():
                  f"≥ {need['14']} % — обмін раз на 14 діб усю кампанію, без прогнозу й лічильника ({be[hi]['trips_median']} поїздок "
                  f"медіанно й до {be[hi]['trips_max']})",
                  f"від {be[hi]['trips_median']} · {be[hi]['trips_max']} до {be[lo]['trips_median']} · {be[lo]['trips_max']} поїздок"):
-        assert frag in tracker, f"00_07 HW.43 ⚖️ swap-rule leg: expected {frag!r}"
+        assert frag in canon, f"01_02 §2.2, the fourth ⚖️ (the freezer measurement, ratified 2026-10-19): expected {frag!r}"
 
 
 def test_alloy_stiffness_table_is_fraction_times_modulus():
