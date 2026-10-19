@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 322 · 20,445,416 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 322 · 20,544,563 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -132,13 +132,13 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/95_cascade_like_for_like.py` | `3b0c3eb5cea0ab0bf704fee9a3ab09058bdefd27bfdd8de557d1ffce99eaed63` | L3 anode cascade like-for-like: the 2e⁻/2H⁺ FAD potential at 32b's four levels (MMFF electronic = 32 · relaxed · + ZPE · + RRHO) against the Os(III/II) couple of each computed form (21f · 34 · 21e relaxed) on one SHE scale, the distance to the measured cascade split by side; no SCF |
 | `tools/in_silico/scripts/96_os_couple_thermo.py` | `fc359c81f58b66416783b377d7519c6957aa68ee6e57eba2c34c43306381035f` | L3 Os(III/II) couple harmonic thermochemistry (analytic C-PCM Hessian, B3LYP/6-31G(d)+LANL2DZ(Os)) on the device mediator's adiabatic chloro form, so the like-for-like cascade (95) carries the ZPE and RRHO terms on both sides for that form |
 | `tools/in_silico/scripts/97_wire_under_liner_edges.py` | `fd666e26dc7c06238fc7f6f84bcc5bd729bb91f585cf948e8f4aec1ef62ce4e6` | The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, and the weld knockdown below which the welded root stays the critical section |
-| `tools/in_silico/scripts/98_field_strain_campaign.py` | `cdefbbbe598d7f2a4597d7b1588fdadbe134e4e564ce0947ebf4673b68a40f37` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
+| `tools/in_silico/scripts/98_field_strain_campaign.py` | `c8eed84df9fd9275d08d1a4088d4ec872e76f923ce6062209cac5fd89e5a7b8a` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
 | `tools/in_silico/scripts/99_coating_cluster_cost.py` | `2603422d38565f96a319d8bc0da5d3f4b55e7d9d61d1584dcc3b0f9e43df59db` | The basis size of model coating clusters (Zn-substituted hydroxyapatite and PEDOT:PSS on a TiO2 cluster) at the pipeline's tiers, and the cost of one SCF and of a relaxation extrapolated from the pipeline's own timed series. |
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `010404b2bedc1ebbf9b6dfb3816309c988e6f1f17b9ee27a77837e8263f10ed6` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `8bff061cd846f6657298b2beee43556a6101b48925e59c7c8af9d8346641a7c6` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `294068b611f75312eca95e54dfe69e570b11fbc8dadafcf8f0aa1d01ca491738` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `1816ca45289c98836f4a65d4a2d6d0c110e79304e8ba20eb80d12c1983421a5c` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -254,7 +254,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `0cb6ea63053fb6a149ccc21e26e00ded17decd1aa7d14ca797b72e4ce136d5b9` | 5,541 |
 | `tools/in_silico/cache/mechanical/contact_endurance_check.json` | `4008c4cf748d3a44c80b9ab3e49677e532beba9b99081a5eff5bd5c769fc4b1c` | 9,991 |
-| `tools/in_silico/cache/mechanical/field_strain_campaign.json` | `7a0b2be90f147c5d417199a11639edd73e40ee32681447e6381e09af620b26d6` | 37,021 |
+| `tools/in_silico/cache/mechanical/field_strain_campaign.json` | `cd262b585a5c6c63d5f05fd564a46ec68cc5940d2c96ea28a530a57e1e246c49` | 76,422 |
 | `tools/in_silico/cache/mechanical/gyroid_ligament.json` | `41cc2c716ea0a1e0fd3d95a6334107ec9ab2a86a7389bc47ed9d400344724d78` | 5,519 |
 | `tools/in_silico/cache/mechanical/liner_exit_contact.json` | `43f02a31b7835f5a8e258cc326c84ad3d3e7866866388eee291d88b1c09ff0c4` | 63,748 |
 | `tools/in_silico/cache/mechanical/liner_mouth_contact.json` | `e0075f1f91e83f0e4cd89b59e9fba3a0f03f95ff203592d41f1ea3f07e6b416b` | 161,368 |

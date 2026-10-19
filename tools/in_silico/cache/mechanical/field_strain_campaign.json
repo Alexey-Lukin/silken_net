@@ -1584,10 +1584,1613 @@
       "100_Ah_ours": 10
     }
   },
+  "battery_type": {
+    "question": "Which chemistry for the 12 V 100 Ah campaign battery: AGM lead-acid ⊥ LiFePO4 — by mass, price and what the site's winter does to each (desk leg of HW.43); and which swap calendar for it.",
+    "set": "3 TSS + 1 TRS on receiver V2 (the ratified set)",
+    "current_A": 0.2389,
+    "rate_of_100_Ah": "C/419",
+    "battery_days_full_rating": 17.44,
+    "swap_days_ratified_ours": 14,
+    "capacity_fraction_needed_for_swap": 0.803,
+    "capacity_fraction_needed_for_swap_days": {
+      "10": 0.573,
+      "14": 0.803
+    },
+    "battery_temperature": "ERA5 2 m air of the site cell, hourly and as a 24-hour trailing mean for the thermal mass (ours); ASSUMED no colder than the box on the ground",
+    "seasons": 29,
+    "campaign_span": "1 December → 10 Beaufort-5 hours or 1 May (the capped December replay above)",
+    "air_min_C": -27.4,
+    "coldest_air_in_a_beaufort_5_hour_C": -9.0,
+    "coldest_24h_mean_air_in_a_beaufort_5_hour_C": -10.1,
+    "coldest_mean_air_over_days_C": {
+      "1": -25.0,
+      "3": -23.6,
+      "5": -22.2,
+      "7": -20.6,
+      "10": -17.7,
+      "14": -16.9
+    },
+    "coldest_fortnight_mean_C": {
+      "by_season": [
+        -4.3,
+        -8.9,
+        -10.5,
+        -7.7,
+        -11.6,
+        -13.0,
+        -8.2,
+        -7.8,
+        -7.6,
+        -4.0,
+        -10.1,
+        -11.1,
+        -6.7,
+        -9.7,
+        -14.0,
+        -5.0,
+        -7.9,
+        -8.3,
+        -13.0,
+        -11.2,
+        -16.9,
+        -9.0,
+        -12.7,
+        -6.0,
+        -8.1,
+        -8.1,
+        -7.8,
+        -5.9,
+        -0.1
+      ],
+      "median": -8.2,
+      "min": -16.9
+    },
+    "trips_every_14_days": {
+      "median": 6,
+      "max": 12
+    },
+    "types": {
+      "agm_lead_acid": {
+        "examples": {
+          "LogicPower LPM-MG 12V 100 Ah": {
+            "mass_kg": 28.29,
+            "price_uah": 9314,
+            "discharge_C": [
+              -15,
+              50
+            ],
+            "charge_C": [
+              -10,
+              50
+            ],
+            "source": "logicpower.ua, product 3877, «specifications» tab; the card's schema.org availability reads OutOfStock on 2026-10-19 (an «AGM мультигелевий» product)"
+          },
+          "Rolls R12-100AGM": {
+            "mass_kg": 27.0,
+            "capacity_Ah_c20": 100,
+            "capacity_Ah_c100": 110,
+            "source": "Rolls Battery datasheet R12-100AGM, Rev. 7, August 2024 (at our ≈ C/419 the rating is at least the 100-hour 110 Ah, so the AGM battery days below, on 100 Ah, are low by up to ≈ 10 %)"
+          }
+        },
+        "discharge_floors": {
+          "LogicPower LPM-MG": {
+            "floor_C": -15,
+            "hours_below_by_season": {
+              "air_hourly": [
+                0,
+                48,
+                76,
+                65,
+                112,
+                85,
+                68,
+                78,
+                0,
+                1,
+                38,
+                72,
+                15,
+                0,
+                239,
+                0,
+                21,
+                30,
+                18,
+                0,
+                260,
+                6,
+                0,
+                17,
+                0,
+                46,
+                0,
+                0,
+                0
+              ],
+              "air_24h_mean": [
+                0,
+                43,
+                61,
+                47,
+                89,
+                90,
+                69,
+                57,
+                0,
+                0,
+                24,
+                23,
+                0,
+                0,
+                219,
+                0,
+                0,
+                30,
+                0,
+                0,
+                280,
+                0,
+                0,
+                0,
+                0,
+                22,
+                0,
+                0,
+                0
+              ]
+            },
+            "seasons_with_hours_below": {
+              "air_hourly": 19,
+              "air_24h_mean": 13
+            },
+            "beaufort_5_hours_below": 0
+          },
+          "Lifeline (operating range)": {
+            "floor_C": -40,
+            "hours_below_by_season": {
+              "air_hourly": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "air_24h_mean": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "seasons_with_hours_below": {
+              "air_hourly": 0,
+              "air_24h_mean": 0
+            },
+            "beaufort_5_hours_below": 0
+          }
+        },
+        "cold_readings": {
+          "lifeline_c20": {
+            "points": [
+              [
+                -20,
+                0.68
+              ],
+              [
+                0,
+                0.9
+              ],
+              [
+                25,
+                1.0
+              ]
+            ],
+            "rate": "C/20",
+            "basis": "the highest curve on its page, which rises as the current falls (C/1 … C/20); the manual's own text gives less (≈ 60 % at −18 °C, current not stated) — not a proven floor at our current",
+            "source": "Lifeline Technical Manual 6-0101 Rev. F, Appendix C p. 38 «Capacity versus Temperature», C/20 curve, read off the page image at its −4 °F and 32 °F marks; the manual's text (§5.8) gives «about 60 %» for continuous operation at −18 °C, current not stated — below this curve there",
+            "threshold_mean_C_for_14_day_swap": -8.8,
+            "battery_days_at_median_coldest_fortnight": 14.1,
+            "battery_days_at_coldest_fortnight": 12.4,
+            "trips_by_season": [
+              5,
+              5,
+              10,
+              7,
+              12,
+              5,
+              11,
+              11,
+              3,
+              11,
+              6,
+              6,
+              11,
+              5,
+              11,
+              5,
+              11,
+              11,
+              3,
+              6,
+              9,
+              8,
+              4,
+              5,
+              3,
+              9,
+              3,
+              3,
+              6
+            ],
+            "trips_median": 6,
+            "trips_max": 12,
+            "shortest_battery_days": 12.46,
+            "ratified_rule": {
+              "trips_by_season": [
+                5,
+                5,
+                11,
+                8,
+                12,
+                5,
+                12,
+                11,
+                4,
+                12,
+                6,
+                6,
+                12,
+                6,
+                12,
+                5,
+                12,
+                12,
+                4,
+                6,
+                10,
+                9,
+                5,
+                6,
+                3,
+                10,
+                3,
+                3,
+                7
+              ],
+              "trips_median": 6,
+              "trips_max": 12
+            }
+          },
+          "rolls": {
+            "points": [
+              [
+                -15,
+                0.65
+              ],
+              [
+                0,
+                0.85
+              ],
+              [
+                25,
+                1.0
+              ],
+              [
+                40,
+                1.02
+              ]
+            ],
+            "rate": "not stated",
+            "basis": "current not stated — not shown to be a floor; below −15 °C extrapolated along the sheet's coldest segment",
+            "source": "Rolls R12-100AGM datasheet, «Capacity Affect by Temperature»",
+            "threshold_mean_C_for_14_day_swap": -3.5,
+            "battery_days_at_median_coldest_fortnight": 12.9,
+            "battery_days_at_coldest_fortnight": 10.9,
+            "trips_by_season": [
+              5,
+              5,
+              10,
+              8,
+              13,
+              6,
+              12,
+              11,
+              3,
+              12,
+              6,
+              7,
+              12,
+              5,
+              12,
+              5,
+              11,
+              12,
+              4,
+              6,
+              10,
+              9,
+              4,
+              6,
+              3,
+              10,
+              3,
+              3,
+              6
+            ],
+            "trips_median": 6,
+            "trips_max": 13,
+            "shortest_battery_days": 11.12,
+            "ratified_rule": {
+              "trips_by_season": [
+                5,
+                5,
+                11,
+                8,
+                13,
+                6,
+                12,
+                12,
+                4,
+                12,
+                6,
+                7,
+                12,
+                6,
+                13,
+                5,
+                12,
+                12,
+                4,
+                6,
+                10,
+                9,
+                5,
+                6,
+                3,
+                10,
+                3,
+                3,
+                7
+              ],
+              "trips_median": 7,
+              "trips_max": 13
+            }
+          }
+        },
+        "readings_range": {
+          "battery_days_at_median_coldest_fortnight": [
+            12.9,
+            14.1
+          ],
+          "battery_days_at_coldest_fortnight": [
+            10.9,
+            12.4
+          ],
+          "trips_median": [
+            6,
+            6
+          ],
+          "trips_max": [
+            12,
+            13
+          ],
+          "ratified_rule_trips_median": [
+            6,
+            7
+          ],
+          "ratified_rule_trips_max": [
+            12,
+            13
+          ]
+        },
+        "freezing": {
+          "freezing_point_C_by_soc": [
+            [
+              0,
+              -6.0
+            ],
+            [
+              25,
+              -13.0
+            ],
+            [
+              50,
+              -25.0
+            ],
+            [
+              75,
+              -47.0
+            ],
+            [
+              100,
+              -70.0
+            ]
+          ],
+          "maker_on_freezing": "Lifeline 6-0101 Rev. F: «resistant to damage by freezing temperatures» against flooded batteries (§3.1, Table 3-1); and (§5.8) in cold climates «the state of charge should be kept at a maximum to prevent freezing», frozen batteries «are not capable of charging or discharging except at very low rates, and may be permanently damaged by expansion of the electrolyte», and a battery whose container shows cracking «is no longer serviceable»",
+          "by_swap_days": {
+            "10": {
+              "soc_at_swap_pct": 42.7,
+              "freezing_point_at_swap_C": -21.5,
+              "freeze_hours_by_season": {
+                "air_hourly": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "air_24h_mean": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "seasons_with_freeze_hours": {
+                "air_hourly": 0,
+                "air_24h_mean": 0
+              },
+              "seasons_with_freeze_hours_over_first_swap_day": {
+                "air_hourly": [
+                  0,
+                  3
+                ],
+                "air_24h_mean": [
+                  0,
+                  2
+                ]
+              }
+            },
+            "11": {
+              "soc_at_swap_pct": 36.9,
+              "freezing_point_at_swap_C": -18.7,
+              "freeze_hours_by_season": {
+                "air_hourly": [
+                  0,
+                  1,
+                  3,
+                  0,
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  25,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  14,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "air_24h_mean": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  40,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  13,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "seasons_with_freeze_hours": {
+                "air_hourly": 5,
+                "air_24h_mean": 2
+              },
+              "seasons_with_freeze_hours_over_first_swap_day": {
+                "air_hourly": [
+                  1,
+                  5
+                ],
+                "air_24h_mean": [
+                  0,
+                  3
+                ]
+              }
+            },
+            "12": {
+              "soc_at_swap_pct": 31.2,
+              "freezing_point_at_swap_C": -16.0,
+              "freeze_hours_by_season": {
+                "air_hourly": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  14,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "air_24h_mean": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  13,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "seasons_with_freeze_hours": {
+                "air_hourly": 3,
+                "air_24h_mean": 1
+              },
+              "seasons_with_freeze_hours_over_first_swap_day": {
+                "air_hourly": [
+                  3,
+                  9
+                ],
+                "air_24h_mean": [
+                  1,
+                  5
+                ]
+              }
+            },
+            "13": {
+              "soc_at_swap_pct": 25.5,
+              "freezing_point_at_swap_C": -13.2,
+              "freeze_hours_by_season": {
+                "air_hourly": [
+                  0,
+                  0,
+                  23,
+                  24,
+                  4,
+                  5,
+                  0,
+                  8,
+                  0,
+                  0,
+                  8,
+                  14,
+                  0,
+                  0,
+                  57,
+                  0,
+                  0,
+                  10,
+                  0,
+                  0,
+                  64,
+                  0,
+                  0,
+                  13,
+                  0,
+                  4,
+                  0,
+                  0,
+                  0
+                ],
+                "air_24h_mean": [
+                  0,
+                  0,
+                  26,
+                  24,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  5,
+                  7,
+                  0,
+                  0,
+                  49,
+                  0,
+                  0,
+                  11,
+                  0,
+                  0,
+                  54,
+                  0,
+                  0,
+                  14,
+                  0,
+                  4,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "seasons_with_freeze_hours": {
+                "air_hourly": 12,
+                "air_24h_mean": 9
+              },
+              "seasons_with_freeze_hours_over_first_swap_day": {
+                "air_hourly": [
+                  6,
+                  12
+                ],
+                "air_24h_mean": [
+                  4,
+                  9
+                ]
+              }
+            },
+            "14": {
+              "soc_at_swap_pct": 19.7,
+              "freezing_point_at_swap_C": -11.5,
+              "freeze_hours_by_season": {
+                "air_hourly": [
+                  0,
+                  0,
+                  4,
+                  0,
+                  68,
+                  64,
+                  1,
+                  0,
+                  0,
+                  0,
+                  20,
+                  10,
+                  16,
+                  0,
+                  158,
+                  0,
+                  0,
+                  0,
+                  0,
+                  6,
+                  47,
+                  0,
+                  0,
+                  0,
+                  0,
+                  13,
+                  0,
+                  0,
+                  0
+                ],
+                "air_24h_mean": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  70,
+                  46,
+                  0,
+                  0,
+                  0,
+                  0,
+                  8,
+                  0,
+                  3,
+                  0,
+                  185,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  33,
+                  0,
+                  0,
+                  0,
+                  0,
+                  9,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "seasons_with_freeze_hours": {
+                "air_hourly": 11,
+                "air_24h_mean": 7
+              },
+              "seasons_with_freeze_hours_over_first_swap_day": {
+                "air_hourly": [
+                  10,
+                  16
+                ],
+                "air_24h_mean": [
+                  7,
+                  12
+                ]
+              }
+            }
+          }
+        }
+      },
+      "lifepo4": {
+        "examples": {
+          "LogicPower LP LiFePO4 12.8V 100 Ah (BMS 100A/50A) Smart BT": {
+            "mass_kg": 9.67,
+            "price_uah": 16074,
+            "discharge_C": [
+              -20,
+              60
+            ],
+            "charge_C": [
+              0,
+              40
+            ],
+            "humidity_pct": [
+              10,
+              80
+            ],
+            "source": "logicpower.ua, product 24662 (InStock 2026-10-19), passport 0024662-datasheet.pdf (internal BMS, Bluetooth; prismatic cells of an unnamed maker; humidity 10–80 % RH); BMS manual BMS-JK-12V_24V.pdf, all 32 page images read: no low-temperature discharge cut-off stated, only the ranges (discharge −20…+60, charge 0…+40 °C, charging stops below 0 °C, p. 8); use in improper conditions voids the warranty (p. 8), warranty only in suitable climatic conditions (p. 28); after storage below 5 °C wait for room temperature and no condensate (p. 17); charge a battery kept below the charge range only after ≥ 4 h at room temperature (p. 20); not warranty cases (p. 21): operation outside the allowed temperatures and humidity, condensation, and deep discharge — a long stay cut off at low voltage; keep from rain and damp (p. 25); the app's remaining percent is the remainder of a set full capacity (p. 12, our reading)"
+          },
+          "Victron LiFePO4 12.8/100 Smart": {
+            "mass_kg": 14.0,
+            "discharge_C": [
+              -20,
+              50
+            ],
+            "charge_C": [
+              5,
+              50
+            ],
+            "source": "Victron datasheet «12,8 & 25,6 Volt Lithium-Iron-Phosphate Batteries Smart» (needs an external BMS)"
+          }
+        },
+        "discharge_floors": {
+          "LogicPower LP LiFePO4 · Victron (operating range)": {
+            "floor_C": -20,
+            "hours_below_by_season": {
+              "air_hourly": [
+                0,
+                10,
+                29,
+                2,
+                2,
+                6,
+                55,
+                13,
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                128,
+                0,
+                0,
+                2,
+                0,
+                0,
+                90,
+                0,
+                0,
+                0,
+                0,
+                5,
+                0,
+                0,
+                0
+              ],
+              "air_24h_mean": [
+                0,
+                0,
+                25,
+                0,
+                0,
+                0,
+                52,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                115,
+                0,
+                0,
+                0,
+                0,
+                0,
+                53,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "seasons_with_hours_below": {
+              "air_hourly": 12,
+              "air_24h_mean": 4
+            },
+            "beaufort_5_hours_below": 0
+          }
+        },
+        "cold_readings": {
+          "eve_cell_0p5c": {
+            "points": [
+              [
+                -20,
+                0.55
+              ],
+              [
+                0,
+                0.8
+              ],
+              [
+                10,
+                0.85
+              ],
+              [
+                25,
+                1.0
+              ]
+            ],
+            "rate": "0.5C",
+            "discharge_soc_floor_pct": [
+              [
+                -20,
+                30
+              ],
+              [
+                -10,
+                20
+              ],
+              [
+                0,
+                10
+              ],
+              [
+                10,
+                0
+              ]
+            ],
+            "basis": "a cell minimum at 0.5C down to 2.0 V per cell, below a pack's 10.5 V cut-off (2.625 V per cell) — not shown to be a floor for a pack",
+            "source": "EVE LF100LA specification RD-LF100LA-S01-LF rev. B, Table 4 and §3.7.3.2 (the 0.5C current is in the Chinese text of the method only)",
+            "threshold_mean_C_for_14_day_swap": 0.6,
+            "battery_days_at_median_coldest_fortnight": 12.2,
+            "battery_days_at_coldest_fortnight": 10.3,
+            "trips_by_season": [
+              5,
+              6,
+              11,
+              8,
+              13,
+              6,
+              12,
+              12,
+              4,
+              12,
+              6,
+              7,
+              12,
+              6,
+              13,
+              5,
+              12,
+              12,
+              4,
+              7,
+              10,
+              9,
+              5,
+              6,
+              3,
+              10,
+              3,
+              3,
+              7
+            ],
+            "trips_median": 7,
+            "trips_max": 13,
+            "shortest_battery_days": 10.42,
+            "ratified_rule": {
+              "trips_by_season": [
+                5,
+                6,
+                11,
+                8,
+                13,
+                6,
+                13,
+                12,
+                4,
+                12,
+                6,
+                7,
+                13,
+                6,
+                13,
+                5,
+                12,
+                13,
+                4,
+                7,
+                10,
+                9,
+                5,
+                6,
+                3,
+                10,
+                3,
+                3,
+                7
+              ],
+              "trips_median": 7,
+              "trips_max": 13
+            }
+          },
+          "victron_pack_le_1c": {
+            "points": [
+              [
+                -20,
+                0.5
+              ],
+              [
+                0,
+                0.8
+              ],
+              [
+                25,
+                1.0
+              ]
+            ],
+            "rate": "≤ 1C",
+            "basis": "the maker's nominal for any current up to 1C, ours included (to 11.2 V); whether with margin at our current, the sheet does not say",
+            "source": "Victron LiFePO4 Smart datasheet, «Nominal capacity @ 25 / 0 / −20 °C»",
+            "threshold_mean_C_for_14_day_swap": 0.3,
+            "battery_days_at_median_coldest_fortnight": 11.8,
+            "battery_days_at_coldest_fortnight": 9.5,
+            "trips_by_season": [
+              5,
+              6,
+              11,
+              8,
+              13,
+              6,
+              12,
+              12,
+              4,
+              12,
+              6,
+              7,
+              12,
+              6,
+              13,
+              5,
+              12,
+              12,
+              4,
+              7,
+              11,
+              9,
+              5,
+              6,
+              3,
+              10,
+              3,
+              3,
+              7
+            ],
+            "trips_median": 7,
+            "trips_max": 13,
+            "shortest_battery_days": 9.58,
+            "ratified_rule": {
+              "trips_by_season": [
+                5,
+                6,
+                11,
+                8,
+                14,
+                6,
+                13,
+                12,
+                4,
+                12,
+                6,
+                7,
+                13,
+                6,
+                13,
+                5,
+                12,
+                13,
+                4,
+                7,
+                11,
+                9,
+                5,
+                6,
+                3,
+                10,
+                3,
+                3,
+                7
+              ],
+              "trips_median": 7,
+              "trips_max": 14
+            }
+          }
+        },
+        "readings_range": {
+          "battery_days_at_median_coldest_fortnight": [
+            11.8,
+            12.2
+          ],
+          "battery_days_at_coldest_fortnight": [
+            9.5,
+            10.3
+          ],
+          "trips_median": [
+            7,
+            7
+          ],
+          "trips_max": [
+            13,
+            13
+          ],
+          "ratified_rule_trips_median": [
+            7,
+            7
+          ],
+          "ratified_rule_trips_max": [
+            13,
+            14
+          ]
+        }
+      }
+    },
+    "swap_rules_lifepo4": {
+      "every_14_days": {
+        "rule": {
+          "short_days": 14,
+          "short_months": [],
+          "long_days": 14
+        },
+        "trips_by_season": [
+          5,
+          5,
+          11,
+          8,
+          12,
+          5,
+          12,
+          11,
+          4,
+          12,
+          6,
+          6,
+          12,
+          6,
+          12,
+          5,
+          12,
+          12,
+          4,
+          6,
+          10,
+          9,
+          5,
+          6,
+          3,
+          10,
+          3,
+          3,
+          7
+        ],
+        "trips_median": 6,
+        "trips_max": 12,
+        "at_risk_by_lifepo4_reading": {
+          "eve_cell_0p5c": {
+            "intervals": 100,
+            "seasons": 26
+          },
+          "victron_pack_le_1c": {
+            "intervals": 99,
+            "seasons": 25
+          }
+        }
+      },
+      "december_to_february_every_10_else_14": {
+        "rule": {
+          "short_days": 10,
+          "short_months": [
+            12,
+            1,
+            2
+          ],
+          "long_days": 14
+        },
+        "trips_by_season": [
+          6,
+          7,
+          13,
+          10,
+          15,
+          7,
+          15,
+          14,
+          4,
+          15,
+          8,
+          8,
+          15,
+          7,
+          15,
+          6,
+          15,
+          15,
+          4,
+          8,
+          13,
+          12,
+          6,
+          8,
+          4,
+          12,
+          4,
+          4,
+          9
+        ],
+        "trips_median": 8,
+        "trips_max": 15,
+        "at_risk_by_lifepo4_reading": {
+          "eve_cell_0p5c": {
+            "intervals": 4,
+            "seasons": 4
+          },
+          "victron_pack_le_1c": {
+            "intervals": 6,
+            "seasons": 5
+          }
+        }
+      },
+      "december_to_march_every_10_else_14": {
+        "rule": {
+          "short_days": 10,
+          "short_months": [
+            12,
+            1,
+            2,
+            3
+          ],
+          "long_days": 14
+        },
+        "trips_by_season": [
+          6,
+          7,
+          14,
+          10,
+          16,
+          7,
+          16,
+          15,
+          4,
+          16,
+          8,
+          8,
+          16,
+          7,
+          16,
+          6,
+          16,
+          16,
+          4,
+          8,
+          13,
+          12,
+          6,
+          8,
+          4,
+          13,
+          4,
+          4,
+          9
+        ],
+        "trips_median": 8,
+        "trips_max": 16,
+        "at_risk_by_lifepo4_reading": {
+          "eve_cell_0p5c": {
+            "intervals": 0,
+            "seasons": 0
+          },
+          "victron_pack_le_1c": {
+            "intervals": 2,
+            "seasons": 2
+          }
+        }
+      },
+      "every_10_days": {
+        "rule": {
+          "short_days": 10,
+          "short_months": [],
+          "long_days": 10
+        },
+        "trips_by_season": [
+          6,
+          7,
+          14,
+          10,
+          17,
+          7,
+          17,
+          15,
+          4,
+          17,
+          8,
+          8,
+          17,
+          7,
+          17,
+          6,
+          16,
+          17,
+          4,
+          8,
+          13,
+          12,
+          6,
+          8,
+          4,
+          13,
+          4,
+          4,
+          9
+        ],
+        "trips_median": 8,
+        "trips_max": 17,
+        "at_risk_by_lifepo4_reading": {
+          "eve_cell_0p5c": {
+            "intervals": 0,
+            "seasons": 0
+          },
+          "victron_pack_le_1c": {
+            "intervals": 2,
+            "seasons": 2
+          }
+        }
+      },
+      "ratified_rule_on_victron_reading": {
+        "rule": "min(14 days, the Victron reading's resource at the interval's mean temperature — known in advance here, a forecast in the field), no margin",
+        "trips_by_season": [
+          5,
+          6,
+          11,
+          8,
+          14,
+          6,
+          13,
+          12,
+          4,
+          12,
+          6,
+          7,
+          13,
+          6,
+          13,
+          5,
+          12,
+          13,
+          4,
+          7,
+          11,
+          9,
+          5,
+          6,
+          3,
+          10,
+          3,
+          3,
+          7
+        ],
+        "trips_median": 7,
+        "trips_max": 14,
+        "at_risk_by_lifepo4_reading": {
+          "eve_cell_0p5c": {
+            "intervals": 1,
+            "seasons": 1
+          },
+          "victron_pack_le_1c": {
+            "intervals": 0,
+            "seasons": 0
+          }
+        }
+      }
+    },
+    "freezer_test": {
+      "temperature_C": -18.0,
+      "accepted_mean_C": [
+        -20.0,
+        -18.0
+      ],
+      "stop_Ah_for_14_days_at_this_current": 80.3,
+      "stop_Ah_rounded_up": 81,
+      "stop_Ah_with_10_pct_current_margin": 89,
+      "band_shape": "the measured fraction at the freezer temperature joined linearly to the full rating at +25 °C (ours)",
+      "band_ends_under_the_ratified_rule": {
+        "0.58": {
+          "curve": [
+            [
+              -18.0,
+              0.58
+            ],
+            [
+              25.0,
+              1.0
+            ]
+          ],
+          "trips_by_season": [
+            5,
+            6,
+            11,
+            8,
+            14,
+            6,
+            13,
+            12,
+            4,
+            13,
+            6,
+            7,
+            13,
+            6,
+            13,
+            5,
+            12,
+            13,
+            4,
+            7,
+            11,
+            10,
+            5,
+            6,
+            3,
+            11,
+            3,
+            3,
+            7
+          ],
+          "trips_median": 7,
+          "trips_max": 14,
+          "shortest_full_interval_h": 251,
+          "intervals_shorter_than_14_days": 159
+        },
+        "0.81": {
+          "curve": [
+            [
+              -18.0,
+              0.81
+            ],
+            [
+              25.0,
+              1.0
+            ]
+          ],
+          "trips_by_season": [
+            5,
+            5,
+            11,
+            8,
+            12,
+            5,
+            12,
+            11,
+            4,
+            12,
+            6,
+            6,
+            12,
+            6,
+            12,
+            5,
+            12,
+            12,
+            4,
+            6,
+            10,
+            9,
+            5,
+            6,
+            3,
+            10,
+            3,
+            3,
+            7
+          ],
+          "trips_median": 6,
+          "trips_max": 12,
+          "shortest_full_interval_h": 336,
+          "intervals_shorter_than_14_days": 0
+        }
+      }
+    },
+    "air_rh_above_spec": {
+      "spec_pct": 80,
+      "share_of_campaign_hours": 0.655,
+      "share_by_season_min_max": [
+        0.56,
+        0.98
+      ]
+    },
+    "derating_rule": "each battery runs until the charge drawn reaches the rating times the reading's capacity fraction at the mean air temperature of its own interval so far; it is swapped then (or at 14 days, under the ratified rule)",
+    "readings_basis": "no sheet measures our current and no reading is a proven floor there: Lifeline's C/20 is the highest curve on its page while its own text gives less; Victron's nominal is stated for any current ≤ 1C, ours included; Rolls states no current; the EVE row is a cell minimum to a cut-off below a pack's — see each reading's «basis»; the readings differ in kind and current, so they do not rank the two chemistries",
+    "verdict": "For the ratified set (0.2389 A, C/419 of 100 Ah) over the ratified campaign of 29 seasons: AGM weighs 27–28 kg and LiFePO4 9.7–14 kg per battery, carried in and out on every swap. An AGM's electrolyte freezes at a temperature set by its state of charge, which falls with the ampere-hours drawn: swapped every 14 days it is at 19.7 % by the swap (point -11.5 °C), and the ERA5 air goes below the point of its current charge in 7–12 of 29 campaigns on the 24-hour mean, as the first swap moves over the cycle; the maker rates AGM against flooded batteries as resistant to freezing damage but tells the user to keep the charge at a maximum, since a frozen battery discharges only at very low rates and may be damaged. LiFePO4 holds no water; its sheets allow discharge to -20 °C, which the air crosses in 4 campaigns on the 24-hour mean, and the coldest air in any Beaufort-5 hour is -9.0 °C (0 target hours below a discharge floor). The LiFePO4 sheet's humidity ends at 80 % RH, and the air is above it 66 % of the campaign hours. No maker's cold reading is measured at our current; on them a battery lasts 10.9–12.4 days (AGM) and 9.5–10.3 (LiFePO4) in the coldest fortnight of 29 seasons, and under the ratified min(14 days, resource) a LiFePO4 campaign costs 7 trips at the median and up to 13–14. Against the LiFePO4 readings (a battery empty at least an hour before its swap), the ratified rule run on the Victron reading with the interval's mean temperature known cuts off in 0–1 of 29 campaigns, swapping every 14 days in 25–26, and every 10 days from December to March in 0–2 — whether the readings hold at our current, only a measurement shows."
+  },
   "not_modelled": [
     "the ERA5 → sub-canopy wind transfer (the campaign measures it; ≈ 2 storms cannot show it is stable)",
     "whether TARGET_HOURS suffices for the histogram's tail",
-    "battery derating in cold and depth of discharge (USABLE_FRACTION = 1 — the trips are a floor)"
+    "cold derating in the trips above (USABLE_FRACTION = 1 — those trips are a floor); battery_type prices it with the makers' readings, none of them measured at our current",
+    "the battery's own temperature (assumed no colder than the 2 m air)"
   ],
   "verdict": "Replayed over 1991–2020, a campaign that must collect 10 hours of ERA5 10 m wind ≥ 8.0 m/s (Beaufort 5) at the site cell takes a median 70 days from a start on the 1st of month 02 (p75 125, p90 294); the winter starts rank 02 < 12 < 03 < 01 by median, and January's 86 — like the others — sits inside the scatter of 30 years, so December–March is one window, not a ranking. The hours come in storms: 14 of 30 Januaries have no Beaufort-5 hour at all, and the January storms last 4.5 h on average, so 10 hours are about two storms. Capped at 1 May, a 1 December start reaches the target in 79 % of 29 seasons (6 do not), against 50 % from 1 March, for at most 9 trips on 100 Ah. The sheet's set (2 strain sensors at right angles and 1 tilt sensor on one receiver, 0.2126 A) runs 11.8 days on 60 Ah and 19.6 on 100 Ah, so the median campaign from month 02 costs 7 / 5 trips (60 / 100 Ah: installation, swaps, removal) and the p75 one 12 / 8. The battery days take the full rating in winter cold, so the trips are a floor; and how ERA5's open-terrain wind maps to the wind under the canopy is what the campaign measures, not what this assumes."
 }

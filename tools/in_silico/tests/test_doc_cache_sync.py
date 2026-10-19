@@ -5507,6 +5507,185 @@ def test_field_strain_sheet_matches_98():
         assert frag in canon, f"01_02 §2.2 — the two ⚖️ 2026-10-18 and the ⊕ between them: expected {frag!r}"
 
 
+def test_field_battery_type_matches_98():
+    """The campaign battery (98 §5, HW.43, 2026-10-19): the sheet's §3 (table, readings, swap calendars, the ratified
+    paragraph), SUMMARY §HW.43 ⊕, the ⊕ on the second ⚖️ and the third ⚖️ with its post-«так» ⊕ in 01_02 §2.2, and the
+    swap-rule ⚖️ leg in 00_07 HW.43 quote 98's `battery_type` — masses, prices, below-floor counts per source, the AGM
+    freezing at the 1 December anchor (what the ratified text quotes) and over the first-swap day (its ⊕), humidity, the
+    battery-day ranges per chemistry, the trips at the derated resource (ratified text) and under the ratified rule (⊕),
+    and the swap calendars. CAN catch a re-run leaving any home behind and a range quoted from the other chemistry.
+    CANNOT catch whether the makers' sheets are transcribed right, nor what each reading's «basis» says."""
+    d = json.loads((CACHE / "mechanical/field_strain_campaign.json").read_text(encoding="utf-8"))
+    bt, third = d["battery_type"], d["set_with_third_tss"]
+    agm, lfp = bt["types"]["agm_lead_acid"], bt["types"]["lifepo4"]
+    n = bt["seasons"]
+    by = agm["freezing"]["by_swap_days"]
+    f14 = by[str(bt["swap_days_ratified_ours"])]
+    ex_a, ex_l = agm["examples"], lfp["examples"]
+    lp_a, lp_l = ex_a["LogicPower LPM-MG 12V 100 Ah"], ex_l["LogicPower LP LiFePO4 12.8V 100 Ah (BMS 100A/50A) Smart BT"]
+    fl_lp, fl_ll = agm["discharge_floors"]["LogicPower LPM-MG"], agm["discharge_floors"]["Lifeline (operating range)"]
+    fl_l = next(iter(lfp["discharge_floors"].values()))
+    ra, rl = agm["readings_range"], lfp["readings_range"]
+    c14, rh, rules = bt["coldest_fortnight_mean_C"], bt["air_rh_above_spec"], bt["swap_rules_lifepo4"]
+    need = {k: math.ceil(v * 100) for k, v in bt["capacity_fraction_needed_for_swap_days"].items()}   # rounded up
+    ft = bt["freezer_test"]
+    be = ft["band_ends_under_the_ratified_rule"]
+    lo, hi = sorted(be, key=float)
+    cm = bt["coldest_mean_air_over_days_C"]
+    soc_floor = {str(a): b for a, b in lfp["cold_readings"]["eve_cell_0p5c"]["discharge_soc_floor_pct"]}
+
+    def r2(pair, fmt=".1f"):
+        return f"{pair[0]:{fmt}}–{pair[1]:{fmt}}" if pair[0] != pair[1] else f"{pair[0]:{fmt}}"
+
+    def uah(x):
+        return f"{x:,}".replace(",", " ")
+
+    def neg(x):
+        return f"{x:.1f}".replace("-", "−")
+
+    def c(f, r):
+        return f["seasons_with_freeze_hours"][r]
+
+    def ph(f, r):
+        return r2(f["seasons_with_freeze_hours_over_first_swap_day"][r], "d")
+
+    def risk(rule):
+        return rules[rule]["at_risk_by_lifepo4_reading"]
+
+    others = [k for k in sorted(by, key=int) if k != str(bt["swap_days_ratified_ours"])]
+    sheet = (REPO / "docs/protocols/anchor/field_strain_sensor_sheet.md").read_text(encoding="utf-8")
+    for frag in (f"≈ **{bt['rate_of_100_Ah']}** від 100 А·год", f"кампанію кожного з **{n}** сезонів",
+                 f"**{lp_a['mass_kg']:.2f}** кг (LogicPower LPM-MG 12V 100 Ah)",
+                 f"**{ex_a['Rolls R12-100AGM']['mass_kg']:.0f}** кг (Rolls R12-100AGM)",
+                 f"**{lp_l['mass_kg']:.2f}** кг (LogicPower LP LiFePO4",
+                 f"**{ex_l['Victron LiFePO4 12.8/100 Smart']['mass_kg']:.0f}** кг (Victron LiFePO4 Smart",
+                 f"| **{uah(lp_a['price_uah'])}** ₴ — на картці «немає в наявності» | **{uah(lp_l['price_uah'])}** ₴ — у наявності |",
+                 f"| **{fl_lp['seasons_with_hours_below']['air_24h_mean']}** · **{fl_lp['seasons_with_hours_below']['air_hourly']}** "
+                 f"за межею LogicPower; **{fl_ll['seasons_with_hours_below']['air_24h_mean']}** · "
+                 f"**{fl_ll['seasons_with_hours_below']['air_hourly']}** за межею Lifeline | "
+                 f"**{fl_l['seasons_with_hours_below']['air_24h_mean']}** · **{fl_l['seasons_with_hours_below']['air_hourly']}** |",
+                 f"лишається **{f14['soc_at_swap_pct']:.1f}** %, точка — **{neg(f14['freezing_point_at_swap_C'])}** °C",
+                 f"в **{ph(f14, 'air_24h_mean')}** із {n} кампаній за добовим середнім (**{ph(f14, 'air_hourly')}** погодинно)",
+                 f"за обміну раз на {' · '.join(others)} діб — у **{' · '.join(ph(by[k], 'air_24h_mean') for k in others)}** (добове)",
+                 f"повітря ERA5 вище {rh['spec_pct']} % — **{rh['share_of_campaign_hours'] * 100:.0f} %** годин кампанії "
+                 f"(**{rh['share_by_season_min_max'][0] * 100:.0f}–{rh['share_by_season_min_max'][1] * 100:.0f} %** по сезонах)",
+                 f"годину Бофорт-5 за {n} кампаній — **{neg(bt['coldest_air_in_a_beaufort_5_hour_C'])}** °C (за добовим "
+                 f"середнім — **{neg(bt['coldest_24h_mean_air_in_a_beaufort_5_hour_C'])}** °C)",
+                 f"потребує щонайменше **{need['14']}** % номінальної ємності, раз на 10 — **{need['10']}** %",
+                 f"нижче **{soc_floor['-20']}** % заряду при −20 °C, **{soc_floor['-10']}** % при −10 °C і **{soc_floor['0']}** % при 0 °C",
+                 f"медіанного сезону ({neg(c14['median'])} °C) акумулятор тримає "
+                 f"**{r2(ra['battery_days_at_median_coldest_fortnight'])}** доби для AGM і "
+                 f"**{r2(rl['battery_days_at_median_coldest_fortnight'])}** для LiFePO₄",
+                 f"у найхолоднішу з {n} ({neg(c14['min'])} °C) — **{r2(ra['battery_days_at_coldest_fortnight'])}** і "
+                 f"**{r2(rl['battery_days_at_coldest_fortnight'])}**",
+                 f"поїздок для LiFePO₄ **{r2(rl['ratified_rule_trips_median'], 'd')}** медіанно й до "
+                 f"**{r2(rl['ratified_rule_trips_max'], 'd')}** (за сталих 14 діб — {bt['trips_every_14_days']['median']} і "
+                 f"{bt['trips_every_14_days']['max']}, за повної ємності — {third['december_capped_trips_median']['100_Ah_ours']} і "
+                 f"{third['december_capped_trips_max']['100_Ah_ours']})",
+                 f"(температура відома наперед, без запасу) | **{rules['ratified_rule_on_victron_reading']['trips_median']}** · "
+                 f"**{rules['ratified_rule_on_victron_reading']['trips_max']}** | "
+                 f"**{risk('ratified_rule_on_victron_reading')['eve_cell_0p5c']['seasons']}** · "
+                 f"**{risk('ratified_rule_on_victron_reading')['victron_pack_le_1c']['seasons']}** |",
+                 f"| раз на 14 діб | {rules['every_14_days']['trips_median']} · {rules['every_14_days']['trips_max']} | "
+                 f"**{risk('every_14_days')['eve_cell_0p5c']['seasons']}** · **{risk('every_14_days')['victron_pack_le_1c']['seasons']}** |",
+                 f"| грудень–лютий раз на 10, далі раз на 14 | {rules['december_to_february_every_10_else_14']['trips_median']} · "
+                 f"{rules['december_to_february_every_10_else_14']['trips_max']} | "
+                 f"**{risk('december_to_february_every_10_else_14')['eve_cell_0p5c']['seasons']}** · "
+                 f"**{risk('december_to_february_every_10_else_14')['victron_pack_le_1c']['seasons']}** |",
+                 f"| грудень–березень раз на 10, далі раз на 14 | {rules['december_to_march_every_10_else_14']['trips_median']} · "
+                 f"{rules['december_to_march_every_10_else_14']['trips_max']} | "
+                 f"{risk('december_to_march_every_10_else_14')['eve_cell_0p5c']['seasons']} · "
+                 f"{risk('december_to_march_every_10_else_14')['victron_pack_le_1c']['seasons']} |",
+                 f"| раз на 10 діб | {rules['every_10_days']['trips_median']} · {rules['every_10_days']['trips_max']} | "
+                 f"{risk('every_10_days')['eve_cell_0p5c']['seasons']} · {risk('every_10_days')['victron_pack_le_1c']['seasons']} |",
+                 f"**{ft['stop_Ah_rounded_up']}** А·год за струму первинок {bt['current_A']} A",
+                 f"мета **{ft['stop_Ah_with_10_pct_current_margin']}** А·год (запас 10 % на струм",
+                 f"середня має лягти між {neg(ft['accepted_mean_C'][0]).replace('.0', '')} і "
+                 f"{neg(ft['accepted_mean_C'][1]).replace('.0', '')} °C",
+                 f"не покриває найхолоднішої десятидобової смуги запису, {neg(cm['10'])} °C",
+                 f"найхолодніші 3-, 5- і 7-добові середні запису — **{neg(cm['3'])}**, **{neg(cm['5'])}**, **{neg(cm['7'])}** °C",
+                 f"**≥ {need['14']} %** — обмін раз на 14 діб усю кампанію", f"не холодніша за {neg(cm['14'])} °C",
+                 f"поїздок **{be[hi]['trips_median']}** медіанно й до **{be[hi]['trips_max']}**. Чому",
+                 f"від {be[hi]['trips_median']} · {be[hi]['trips_max']} поїздок біля {need['14']} % до **{be[lo]['trips_median']}** · "
+                 f"**{be[lo]['trips_max']}** біля {need['10']} %",
+                 f"(а раз на 10 — уже {rules['every_10_days']['trips_median']} · {rules['every_10_days']['trips_max']} поїздок)",
+                 # the ratified paragraph, verbatim
+                 f"**{lp_l['mass_kg']:.2f}** кг і **{uah(lp_l['price_uah'])}** ₴ кожен",
+                 f"в {c(f14, 'air_24h_mean')} кампаніях із {n} за добовим середнім; виробник",
+                 f"ресурс у найхолоднішу двотижневу смугу {r2(rl['battery_days_at_coldest_fortnight'])} доби, у медіанного сезону "
+                 f"{r2(rl['battery_days_at_median_coldest_fortnight'])}, поїздок {r2(rl['trips_median'], 'd')} медіанно й до "
+                 f"{r2(rl['trips_max'], 'd')}",
+                 f"повітря нижче −20 °C буває в {fl_l['seasons_with_hours_below']['air_24h_mean']} кампаніях із {n}"):
+        assert frag in sheet, f"field sheet §3 (battery type): expected {frag!r}"
+    b5 = sum(f["beaufort_5_hours_below"] for t in (agm, lfp) for f in t["discharge_floors"].values())
+    assert b5 == 0, "the sheet says the cold cut-off costs no target hour"
+    summary = " ".join((REPO / SUMMARY).read_text(encoding="utf-8").split())
+    for frag in (f"it is at {f14['soc_at_swap_pct']:.1f} % by then, where the point is {neg(f14['freezing_point_at_swap_C'])} °C",
+                 f"**{ph(f14, 'air_24h_mean')}** of {n} campaigns on the 24-hour mean (**{ph(f14, 'air_hourly')}** hour by hour)",
+                 f"against **{ph(by[min(by, key=int)], 'air_24h_mean')}** for swaps every {min(by, key=int)} days",
+                 f"crosses in **{fl_l['seasons_with_hours_below']['air_24h_mean']}** / "
+                 f"**{fl_l['seasons_with_hours_below']['air_hourly']}** campaigns",
+                 f"exceeds in **{rh['share_of_campaign_hours'] * 100:.0f} %** of the campaign hours",
+                 f"**{r2(ra['battery_days_at_median_coldest_fortnight'])}** days (AGM) and "
+                 f"**{r2(rl['battery_days_at_median_coldest_fortnight'])}** (LiFePO4) in the median season's coldest fortnight, "
+                 f"**{r2(ra['battery_days_at_coldest_fortnight'])}** and **{r2(rl['battery_days_at_coldest_fortnight'])}** in the "
+                 f"coldest of {n}",
+                 f"costs **{r2(rl['ratified_rule_trips_median'], 'd')}** trips at the median and up to "
+                 f"**{r2(rl['ratified_rule_trips_max'], 'd')}**",
+                 f"known costs **{rules['ratified_rule_on_victron_reading']['trips_median']}** trips at the median and up to "
+                 f"**{rules['ratified_rule_on_victron_reading']['trips_max']}** with cut-offs in "
+                 f"**{risk('ratified_rule_on_victron_reading')['eve_cell_0p5c']['seasons']}** / "
+                 f"**{risk('ratified_rule_on_victron_reading')['victron_pack_le_1c']['seasons']}** campaigns",
+                 f"swapping every 14 days, in **{risk('every_14_days')['eve_cell_0p5c']['seasons']}** / "
+                 f"**{risk('every_14_days')['victron_pack_le_1c']['seasons']}**",
+                 f"in **{risk('december_to_march_every_10_else_14')['eve_cell_0p5c']['seasons']}** / "
+                 f"**{risk('december_to_march_every_10_else_14')['victron_pack_le_1c']['seasons']}** for "
+                 f"**{rules['december_to_march_every_10_else_14']['trips_median']}** trips at the median and up to "
+                 f"**{rules['december_to_march_every_10_else_14']['trips_max']}**",
+                 f"stop at **{ft['stop_Ah_rounded_up']}** Ah",
+                 f"(**{be[hi]['trips_median']}** trips at the median and up to **{be[hi]['trips_max']}**), at {need['10']} % it costs "
+                 f"**{be[lo]['trips_median']}** and **{be[lo]['trips_max']}**"):
+        assert frag in summary, f"SUMMARY §HW.43 ⊕ battery: expected {frag!r}"
+    canon = " ".join((REPO / "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md").read_text(encoding="utf-8").split())
+    pooled = {k: [min(ra[k][0], rl[k][0]), max(ra[k][1], rl[k][1])]
+              for k in ("battery_days_at_median_coldest_fortnight", "battery_days_at_coldest_fortnight")}
+    for frag in (  # the ⊕ on the second ⚖️
+                 f"тримає **{r2(pooled['battery_days_at_median_coldest_fortnight'])}** доби в найхолоднішу двотижневу смугу "
+                 f"медіанного сезону і **{r2(pooled['battery_days_at_coldest_fortnight'])}** — у найхолоднішу з {n}",
+                 # the third ⚖️ 2026-10-19, as ratified — its numbers were the grounds of the «так»
+                 f"(LogicPower LP LiFePO4 — **{lp_l['mass_kg']:.2f}** кг і **{uah(lp_l['price_uah'])}** ₴ кожен",
+                 f"маса ≈ втричі менша за AGM (**{lp_a['mass_kg']:.2f}** кг)",
+                 f"в **{c(f14, 'air_24h_mean')}** із {n} кампаній за добовим середнім (**{c(f14, 'air_hourly')}** — погодинно; за "
+                 f"обміну раз на {min(by, key=int)} діб — **{c(by[min(by, key=int)], 'air_24h_mean')}**)",
+                 f"ресурс у найхолоднішу двотижневу смугу **{r2(rl['battery_days_at_coldest_fortnight'])}** доби (медіанний сезон — "
+                 f"**{r2(rl['battery_days_at_median_coldest_fortnight'])}**), поїздок **{r2(rl['trips_median'], 'd')}** медіанно й "
+                 f"до **{r2(rl['trips_max'], 'd')}**",
+                 f"повітря нижче −20 °C буває в **{fl_l['seasons_with_hours_below']['air_24h_mean']}** кампаніях із {n}",
+                 # its post-«так» ⊕
+                 f"виходить **{ph(f14, 'air_24h_mean')}** кампаній за добовим середнім (**{ph(f14, 'air_hourly')}** погодинно), тож "
+                 f"{f14['seasons_with_freeze_hours_over_first_swap_day']['air_24h_mean'][0]} — мінімум, а за обміну раз на "
+                 f"{min(by, key=int)} діб — **{ph(by[min(by, key=int)], 'air_24h_mean')}**",
+                 f"— **{r2(rl['ratified_rule_trips_median'], 'd')}** медіанно й до **{r2(rl['ratified_rule_trips_max'], 'd')}** (у "
+                 f"присуді — {r2(rl['trips_max'], 'd')}, з обміном точно на ресурсі; за сталих 14 діб — "
+                 f"**{bt['trips_every_14_days']['median']}** і **{bt['trips_every_14_days']['max']}**)",
+                 f"вище {rh['spec_pct']} % стоїть **{rh['share_of_campaign_hours'] * 100:.0f} %** годин кампанії",
+                 f"годину Бофорт-5 за {n} кампаній — **{neg(bt['coldest_air_in_a_beaufort_5_hour_C'])}** °C"):
+        assert frag in canon, f"01_02 §2.2 (battery ⊕ / third ⚖️ / its ⊕): expected {frag!r}"
+    tracker = " ".join((REPO / "docs/00_07_Action_Plan_Tracker.md").read_text(encoding="utf-8").split())
+    tm = [r["trips_median"] for r in rules.values()]
+    ts = [v["seasons"] for r in rules.values() for v in r["at_risk_by_lifepo4_reading"].values()]
+    for frag in (f"календарі дають від {min(tm)} до {max(tm)} поїздок медіанно й від {min(ts)} до {max(ts)} кампаній із відсічкою",
+                 f"найхолоднішу двотижневу ({neg(cm['14'])} °C) і десятидобову ({neg(cm['10'])} °C) смугу {n} сезонів",
+                 f"частка ≥ {need['14']} % — 14 діб, ≥ {need['10']} % — 10 діб",
+                 f"найхолодніші 3–7-добові середні запису холодніші, {neg(cm['3'])}…{neg(cm['7'])} °C",
+                 f"тривалий розряд нижче {soc_floor['-20']} % при −20 °C заборонено",
+                 f"мета зупинки — {ft['stop_Ah_rounded_up']} А·год", f"без виміру — {ft['stop_Ah_with_10_pct_current_margin']} А·год",
+                 f"≥ {need['14']} % — обмін раз на 14 діб усю кампанію, без прогнозу й лічильника ({be[hi]['trips_median']} поїздок "
+                 f"медіанно й до {be[hi]['trips_max']})",
+                 f"від {be[hi]['trips_median']} · {be[hi]['trips_max']} до {be[lo]['trips_median']} · {be[lo]['trips_max']} поїздок"):
+        assert frag in tracker, f"00_07 HW.43 ⚖️ swap-rule leg: expected {frag!r}"
+
+
 def test_alloy_stiffness_table_is_fraction_times_modulus():
     """01_01 §5.2 ⊕ (2026-10-18, HW.33): the part's apparent stiffness in each bake-off alloy = the voxel-FE fraction of
     the finest grid (tools/cad/cache/fea — a cache this file's CACHE does not reach, read by path) × that alloy's

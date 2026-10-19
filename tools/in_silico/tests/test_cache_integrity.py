@@ -3246,6 +3246,126 @@ def test_field_strain_campaign():
         assert abs(bd3 - a * pw["usable_fraction_ours"] / cur3 / 24.0) <= 0.005, k
         assert th["december_capped_trips_max"][k] == math.ceil(dec["days_used_max"] / bd3) + 1, k
         assert th["december_capped_trips_median"][k] == math.ceil(dec["days_used_median"] / bd3) + 1, k
+    # (5) the battery type. CAN catch: the set's current or battery days leaving the third-TSS variant, the swap fraction
+    # leaving 14 / battery days, a threshold or a fortnight's battery days leaving its sheet's piecewise line (extrapolated
+    # along the coldest segment), a derated chain giving FEWER trips than the full rating in the same season, a quantile
+    # that is not an actual season's value, a per-type range leaving its readings, a season count leaving its per-season
+    # list, an AGM state of charge or freezing point at a swap leaving the table, a reading without its «basis», the
+    # 14-day cap or calendar that REMOVES batteries, a shorter calendar with MORE cut-offs, the 14-day calendar leaving
+    # ceil(days / 14) + 1, the ratified rule's chain leaving the Victron reading's trips or cutting off on its own
+    # reading, a longer coldest mean that is colder, the cache calling a reading a floor or the air the cold side again,
+    # and verdict prose without the computed counts. CANNOT catch: the hourly ERA5 counts themselves (the cut-off and
+    # freezing counts need the 262 992-hour series), nor the sheets' transcriptions.
+    bt = d["battery_type"]
+    bd = th["battery_days"]["100_Ah_ours"]
+    assert abs(bt["current_A"] - th["current_A"]) < 1e-4 and bt["battery_days_full_rating"] == bd
+    assert abs(bt["capacity_fraction_needed_for_swap"] - bt["swap_days_ratified_ours"] / bd) <= 0.0006
+    n = bt["seasons"]
+    assert n == dec["n_seasons"]
+
+    def frac(points, t):
+        ts, fs = [p[0] for p in points], [p[1] for p in points]
+        if t < ts[0]:
+            return fs[0] + (fs[1] - fs[0]) / (ts[1] - ts[0]) * (t - ts[0])
+        for (t0, f0), (t1, f1) in itertools.pairwise(points):
+            if t0 <= t <= t1:
+                return f0 + (f1 - f0) * (t - t0) / (t1 - t0)
+        return fs[-1]
+
+    def higher(xs, q):
+        return sorted(xs)[math.ceil(q * (len(xs) - 1))]
+
+    def interp(x, table):
+        i = next(j for j in range(1, len(table)) if table[j][0] >= x)
+        return table[i - 1][1] + (x - table[i - 1][0]) * (table[i][1] - table[i - 1][1]) / (table[i][0] - table[i - 1][0])
+
+    c14 = bt["coldest_fortnight_mean_C"]
+    assert len(c14["by_season"]) == n and c14["min"] == min(c14["by_season"])
+    assert abs(c14["median"] - higher(c14["by_season"], 0.5)) <= 0.051
+    full_trips = [math.ceil(s["days_used"] / bd) + 1 for s in dec["seasons"]]
+    need = bt["capacity_fraction_needed_for_swap"]
+    for name, ty in bt["types"].items():
+        for src, fl in ty["discharge_floors"].items():
+            for r, v in fl["hours_below_by_season"].items():
+                assert len(v) == n and fl["seasons_with_hours_below"][r] == sum(1 for x in v if x > 0), (name, src, r)
+        for rn, rd in ty["cold_readings"].items():
+            assert rd.get("basis"), (name, rn)                            # every reading names what kind it is
+            pts = rd["points"]
+            ts, fs = [p[0] for p in pts], [p[1] for p in pts]
+            assert fs == sorted(fs), (name, rn)                           # capacity rises with temperature
+            i = next(j for j in range(1, len(pts)) if fs[j] >= need)
+            want = ts[i - 1] + (need - fs[i - 1]) * (ts[i] - ts[i - 1]) / (fs[i] - fs[i - 1])
+            assert abs(rd["threshold_mean_C_for_14_day_swap"] - want) <= 0.15, (name, rn)
+            for key, t in (("battery_days_at_median_coldest_fortnight", c14["median"]),
+                           ("battery_days_at_coldest_fortnight", c14["min"])):
+                assert abs(rd[key] - frac(pts, t) * bd) <= 0.15, (name, rn, key)
+            tr = rd["trips_by_season"]
+            assert len(tr) == n and all(c >= f for c, f in zip(tr, full_trips, strict=True)), (name, rn)
+            assert rd["trips_median"] == higher(tr, 0.5) and rd["trips_max"] == max(tr), (name, rn)
+            assert rd["shortest_battery_days"] is None or rd["shortest_battery_days"] <= bd, (name, rn)
+        rr, rs = ty["readings_range"], ty["cold_readings"].values()
+        for key in ("battery_days_at_median_coldest_fortnight", "battery_days_at_coldest_fortnight", "trips_median",
+                    "trips_max"):
+            assert rr[key] == [min(r[key] for r in rs), max(r[key] for r in rs)], (name, key)
+    fz = bt["types"]["agm_lead_acid"]["freezing"]
+    assert fz["maker_on_freezing"]
+    for days, f in fz["by_swap_days"].items():
+        assert abs(f["soc_at_swap_pct"] - 100 * (1 - int(days) / bd)) <= 0.06, days
+        assert abs(f["freezing_point_at_swap_C"] - interp(f["soc_at_swap_pct"], fz["freezing_point_C_by_soc"])) <= 0.1, days
+        for r, v in f["freeze_hours_by_season"].items():
+            assert len(v) == n and f["seasons_with_freeze_hours"][r] == sum(1 for x in v if x > 0), (days, r)
+    full14 = [math.ceil(s["days_used"] / bt["swap_days_ratified_ours"]) + 1 for s in dec["seasons"]]
+    assert bt["trips_every_14_days"] == {"median": higher(full14, 0.5), "max": max(full14)}
+    for name, ty in bt["types"].items():                         # the 14-day cap can only add batteries
+        for rn, rd in ty["cold_readings"].items():
+            rr = rd["ratified_rule"]
+            assert all(a >= b for a, b in zip(rr["trips_by_season"], rd["trips_by_season"], strict=True)), (name, rn)
+            assert all(a >= b for a, b in zip(rr["trips_by_season"], full14, strict=True)), (name, rn)
+            assert rr["trips_median"] == higher(rr["trips_by_season"], 0.5) and rr["trips_max"] == max(rr["trips_by_season"])
+    rules = bt["swap_rules_lifepo4"]
+    assert rules["every_14_days"]["trips_by_season"] == full14
+    for rname, ru in rules.items():
+        assert ru["trips_median"] == higher(ru["trips_by_season"], 0.5) and ru["trips_max"] == max(ru["trips_by_season"]), rname
+    for rn in bt["types"]["lifepo4"]["cold_readings"]:           # shorter intervals can only remove cut-offs
+        risk = [rules[k]["at_risk_by_lifepo4_reading"][rn]["seasons"]
+                for k in ("every_10_days", "december_to_march_every_10_else_14", "december_to_february_every_10_else_14",
+                          "every_14_days")]
+        assert risk == sorted(risk), (rn, risk)
+    inc = rules["ratified_rule_on_victron_reading"]
+    vic = bt["types"]["lifepo4"]["cold_readings"]["victron_pack_le_1c"]["ratified_rule"]
+    assert inc["trips_by_season"] == vic["trips_by_season"]       # one rule, two codes
+    assert inc["at_risk_by_lifepo4_reading"]["victron_pack_le_1c"]["seasons"] == 0   # swapped when its own reading empties
+    cm = bt["coldest_mean_air_over_days_C"]
+    assert [cm[k] for k in sorted(cm, key=int)] == sorted(cm.values())   # a longer mean is never colder
+    assert abs(cm["14"] - c14["min"]) <= 0.051 and cm["1"] >= bt["air_min_C"]
+    for dd, fr in bt["capacity_fraction_needed_for_swap_days"].items():
+        assert abs(fr - int(dd) / bd) <= 0.0006, dd
+    rh = bt["air_rh_above_spec"]
+    ft = bt["freezer_test"]                                       # the pass/fail stop and the band's ends
+    stop = bt["swap_days_ratified_ours"] * 24 * bt["current_A"]
+    assert abs(ft["stop_Ah_for_14_days_at_this_current"] - stop) <= 0.06
+    assert ft["stop_Ah_rounded_up"] == math.ceil(stop) and ft["stop_Ah_with_10_pct_current_margin"] == math.ceil(stop * 1.1)
+    assert ft["accepted_mean_C"][1] <= bt["coldest_mean_air_over_days_C"]["10"], "the freezer window misses the 10-day mean"
+    be = ft["band_ends_under_the_ratified_rule"]
+    lo, hi = sorted(be, key=float)
+    assert be[hi]["trips_by_season"] == full14, "at the band's top end the ratified rule must give 14-day swaps"
+    assert be[hi]["intervals_shorter_than_14_days"] == 0 and be[hi]["shortest_full_interval_h"] == 24 * bt["swap_days_ratified_ours"]
+    assert be[lo]["intervals_shorter_than_14_days"] >= be[hi]["intervals_shorter_than_14_days"]
+    assert all(a >= b for a, b in zip(be[lo]["trips_by_season"], be[hi]["trips_by_season"], strict=True))
+    for k, v in be.items():
+        assert v["trips_median"] == higher(v["trips_by_season"], 0.5) and v["trips_max"] == max(v["trips_by_season"]), k
+    f14 = fz["by_swap_days"][str(bt["swap_days_ratified_ours"])]
+    v = bt["verdict"]
+    ph = f14["seasons_with_freeze_hours_over_first_swap_day"]["air_24h_mean"]
+    assert f"in {ph[0]}–{ph[1]} of {n} campaigns on the 24-hour mean" in v
+    lfp = next(iter(bt["types"]["lifepo4"]["discharge_floors"].values()))
+    assert f"crosses in {lfp['seasons_with_hours_below']['air_24h_mean']} campaigns on the 24-hour mean" in v
+    assert f"above it {rh['share_of_campaign_hours'] * 100:.0f} % of the campaign hours" in v
+    blob = json.dumps(d, ensure_ascii=False)
+    for allowed in ("not a proven floor", "no reading is a proven floor", "not shown to be a floor"):
+        blob = blob.replace(allowed, "")
+    assert not re.search(r"each a floor|shown to be a floor|(?:reading|curve)s? (?:is|are) a floor|the cold side", blob), \
+        "the cache calls a reading a floor or the air the cold side"
 
 
 def test_sap_recipe_saturation():
