@@ -427,6 +427,16 @@ CHECKS = [
           ("PIPELINE row 95", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"turns up to {N} of 32 cells uphill",
            lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
       )],
+    # ⊕ 2026-10-19 — `94`: the weakest link of the SOC submission measured as a threshold; the status row prints its
+    # range, read here from the cache (the submission in 00_07 copies it, unpinned: 00_07 is outside this job's paths)
+    *[(f"{where} SOC quenching threshold {k} → os_soc_quenching_model", doc_rel, pat, "dft/os_soc_quenching_model.json",
+       (lambda kk, ii: lambda d: d["summary"][kk][ii])(k, i), 0.0)
+      for where, doc_rel, pats in (
+          ("PIPELINE row 94", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md",
+           (rf"is ≥ {N}–[\d.]+ eV \(hole on a single orbital\)", rf"is ≥ [\d.]+–{N} eV \(hole on a single orbital\)",
+            rf"or ≥ {N}–[\d.]+ eV \(on a degenerate pair", rf"or ≥ [\d.]+–{N} eV \(on a degenerate pair")),)
+      for k, i, pat in zip(("one_up_threshold_eV", "one_up_threshold_eV", "two_up_threshold_eV", "two_up_threshold_eV"),
+                           (0, 1, 0, 1), pats)],
     ("SUMMARY Conclusion first flip → cascade_like_for_like", SUMMARY, rf"reverses a cell beyond \*\*\+{N}\*\* mV",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
     ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* mV",

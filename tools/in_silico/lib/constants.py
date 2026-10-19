@@ -212,6 +212,9 @@ CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (
 #   stabilises Os(III) (t2g⁵), so it LOWERS E°(Os) and every cascade with it — a literature size at the octahedral value
 #   (a lower symmetry quenches it), carried as a shift of every cell, never added to a computed E°.
 OS_SOC_SHIFT_V = -0.30
+# The same abstract's Os³⁺ ²T₂g Kramers-doublet ↔ quartet splitting, cm⁻¹ (= 3ζ/2 in octahedral symmetry) — the ζ range
+#   the one-hole quenching model `94` starts from.
+OS3_SOC_SPLIT_CM1 = (4155.0, 5061.0)
 # The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
 #   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
 SHE_ABS_ALT_V = 4.44

@@ -1,0 +1,103 @@
+{
+  "model": "one t2g hole, H = diag(ε) ⊗ 1 + ζ L·S on xy·yz·xz; f = SOC stabilisation of Os(III) / ζ; ζ = ⅔ × the Os³⁺ ²T₂g splitting of Srnec et al. 2008 (OS3_SOC_SPLIT_CM1); normalisation A: the whole OS_SOC_SHIFT_V scales with f; B: only ζ scales, the remainder stays",
+  "first_flip_margin_V": 0.2185,
+  "soc_shift_octahedral_V": -0.3,
+  "by_splitting": {
+    "split_4155_cm1": {
+      "zeta_eV": 0.343436,
+      "f_target": {
+        "A_whole_shift_scales": 0.728333,
+        "B_only_zeta_scales": 0.762692
+      },
+      "threshold_eV": {
+        "A_whole_shift_scales": {
+          "one_up": 0.157351,
+          "two_up": 0.501914
+        },
+        "B_only_zeta_scales": {
+          "one_up": 0.134929,
+          "two_up": 0.391749
+        }
+      },
+      "rhombic_f": {
+        "D0.2_eV": {
+          "delta0.00_eV": 0.849258,
+          "delta0.05_eV": 0.765878,
+          "delta0.10_eV": 0.69006,
+          "delta0.20_eV": 0.561217,
+          "delta0.30_eV": 0.460639
+        },
+        "D0.3_eV": {
+          "delta0.00_eV": 0.798957,
+          "delta0.05_eV": 0.71898,
+          "delta0.10_eV": 0.646824,
+          "delta0.20_eV": 0.525557,
+          "delta0.30_eV": 0.432052
+        },
+        "D0.5_eV": {
+          "delta0.00_eV": 0.728861,
+          "delta0.05_eV": 0.653283,
+          "delta0.10_eV": 0.585941,
+          "delta0.20_eV": 0.474764,
+          "delta0.30_eV": 0.39075
+        }
+      }
+    },
+    "split_5061_cm1": {
+      "zeta_eV": 0.418323,
+      "f_target": {
+        "A_whole_shift_scales": 0.728333,
+        "B_only_zeta_scales": 0.805174
+      },
+      "threshold_eV": {
+        "A_whole_shift_scales": {
+          "one_up": 0.191661,
+          "two_up": 0.611357
+        },
+        "B_only_zeta_scales": {
+          "one_up": 0.13211,
+          "two_up": 0.34856
+        }
+      },
+      "rhombic_f": {
+        "D0.2_eV": {
+          "delta0.00_eV": 0.8707,
+          "delta0.05_eV": 0.800488,
+          "delta0.10_eV": 0.735272,
+          "delta0.20_eV": 0.620176,
+          "delta0.30_eV": 0.525009
+        },
+        "D0.3_eV": {
+          "delta0.00_eV": 0.824358,
+          "delta0.05_eV": 0.756742,
+          "delta0.10_eV": 0.694289,
+          "delta0.20_eV": 0.584974,
+          "delta0.30_eV": 0.495479
+        },
+        "D0.5_eV": {
+          "delta0.00_eV": 0.756217,
+          "delta0.05_eV": 0.692219,
+          "delta0.10_eV": 0.633659,
+          "delta0.20_eV": 0.532554,
+          "delta0.30_eV": 0.451143
+        }
+      }
+    }
+  },
+  "summary": {
+    "one_up_threshold_eV": [
+      0.14,
+      0.2
+    ],
+    "two_up_threshold_eV": [
+      0.35,
+      0.62
+    ],
+    "quoted_rounding": "up to 0.01 eV — a sufficiency threshold",
+    "note": "every cell stays downhill with the quenched shift if the t2g splitting of Os(III) is at least the threshold — one_up: the hole on a single orbital, two_up: on a degenerate pair (a split pair, rhombic_f, lowers it further); the device complex's splitting is not in any cache — do not read it from the Os(III) HOMO–LUMO gap"
+  },
+  "cannot": [
+    "the device complex's t2g splitting (no cache holds it)",
+    "a SOC calculation: ζ is carried over, covalency as in the literature value, the second-order term a normalisation choice"
+  ]
+}

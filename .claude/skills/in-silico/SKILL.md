@@ -182,6 +182,8 @@ L3 DFT anode (CPU):
   29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
   32 (E°(FAD) · SHE_abs · the measured free flavin) · 21f · 34 · 21e relaxed (the dmbpy ΔE_red of each Os form) → 95
      (cascade_like_for_like.json — the cascade like-for-like, no SCF; a change to any of them re-runs 95)
+  95 (`shared_shifts.terms.spin_orbit_os.first_flip_at_V`) · lib.constants OS_SOC_SHIFT_V · OS3_SOC_SPLIT_CM1 → 94
+     (os_soc_quenching_model.json — the t2g splitting that keeps every cell downhill with a quenched SOC; no SCF)
   20 (importlib: the RDKit/MMFF builder, checked against ligands/lumiflavin_{ox,red}.xyz) · 32 (importlib: the proton
      reference and SHE) → 32b (pcet_redox_potential_thermo.json + ligands/lumiflavin_*_opt.xyz); 32b → 95 (the donor at its four levels; 95 refuses when 32b's MMFF level is not 32's)
   lib/dft_utils.relax_to_minimum (the saddle escape: Hessian → step off → re-optimise; ONE home) → 32b · and through `relax_checked`
