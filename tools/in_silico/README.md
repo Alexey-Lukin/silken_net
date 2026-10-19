@@ -54,7 +54,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: contact-graph shortest path from the first FAD atoms (NOT a Beratan–Onuchic pathway — self-review cluster 6), single snapshot | < 1 s |
 | 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): a contact-graph cost over MD frames from script 27's GAFF-prefix sources (not 28's start; no path recorded — cluster 6; image_molecules PBC unwrap) | ~few min |
-| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM (superseded by 29b) | ~1-2 h |
+| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM on the 4a,5-dihydro tautomer it ran on (superseded by 29b) | ~1-2 h |
 | 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.46 eV); geometries through lib `relax_checked` (Hessian per species, saddle escape) | hours (CPU) |
 | 29c | `29c_outer_sphere_lambda.py` | L3: outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ; radius/ε-dominated → INDICATIVE | ~1 s |
 | 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference | < 1 s |

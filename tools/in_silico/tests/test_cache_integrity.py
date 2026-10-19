@@ -1300,8 +1300,13 @@ def test_relax_to_minimum_runs_the_real_stack(monkeypatch, tmp_path):
     # relax_checked on a doublet: minimum, its height, its checkpoint
     reset()
     runs = runs_dir("b")
-    _, summ, chk = dft_utils.relax_checked(water, 1, 1, label="cat", runs=runs, level_shift_open=0.2, conv_tol=1e-8, max_cycle=300)
+    geo, summ, chk = dft_utils.relax_checked(water, 1, 1, label="cat", runs=runs, level_shift_open=0.2, conv_tol=1e-8, max_cycle=300)
     assert summ["minimum"] and chk["saddle_above_minimum_meV"] == [round(0.005 * 27.211386245988 * 1000, 2)] and chk["harmonic"]["s2"] == 0.754
+    # the record carries the point it describes (a later check reads it instead of re-optimising), and a path outside the
+    # repo — this tmp_path — is written as its bare file name (lib `repo_relative`)
+    assert [s for s, _ in chk["geometry"]] == [s for s, _ in geo]
+    assert np.allclose([p for _, p in chk["geometry"]], [p for _, p in geo])
+    assert chk["harmonic"]["hessian_file"] == "hessian_cat.npy"
     assert (runs / "opt_cat.checkpoint.xyz").exists()
     # refusals, each with its reason, none a crash
     for case, kw, needle in (("<S²> of another state", {"s2": [0.754, 0.95], "saddle_at": set()}, "<S²>"),
@@ -3949,6 +3954,61 @@ def test_pcet_cascade_converged():
     assert data["converged"]["FADH2"] is True
     assert data["converged"]["FADH_radical"] is True
     assert 4.0 < data["pcet_oxidation_cost_eV"] < 7.0  # physical oxidation cost range
+
+
+# 33's FADH₂ repeats 32b's reduced flavin (same builder, protocol and escape), so the two minima must coincide. Measured
+# −3.9e-6 Ha (33 ran 2026-10-19 04:23 → 11:26) — 3.9× geomeTRIC's per-step energy criterion (1e-6 Ha), the scale at which
+# two optimisations onto ONE point agree; 1e-5 Ha (0.27 meV) leaves room for that and lies far under the planar saddle
+# either run met first (4.3e-3 Ha: 117.6 meV over 33's minimum, 117.5 over 32b's). It does NOT separate a second minimum lying closer than 0.27 meV.
+FADH2_MINIMUM_VS_32B_TOL_HA = 1e-5
+
+
+def test_flavin_chain_stands_on_minima():
+    """The step-2 flavin chain (21g · 33 · 29b), re-run 2026-10-18/19 through lib `relax_checked` after the planar RDKit/MMFF
+    start had been found to converge to a saddle (00_07 HW.5.IS): every species it optimises is a minimum by its own
+    Hessian, its escapes went DOWN, and 33's FADH₂ lands on 32b's minimum.
+    CAN catch: a cache written from a geometry nobody classified (a re-run without `relax_checked`, or the pre-2026-10-18
+    caches, which had no `minimum_check`) · a species whose last attempt was still a saddle · a saddle record at or below
+    its minimum, or a later saddle above an earlier one (an escape that climbed) · a doublet whose Hessian SCF lost or
+    contaminated its <S²> · 33's FADH₂ more than 1e-5 Ha off 32b's minimum.
+    CANNOT catch: a minimum that is not the lowest one (another conformer), nor a second minimum within 1e-5 Ha of 32b's ·
+    that 21g's def2-SVP minimum is the same fold as 32b's 6-31G(d) one — these caches keep no minimum geometry (lib records
+    it from the next run; the fold, 21.1°, was read from a gitignored checkpoint, against 32b's cached 24.3°) · the DFT grid
+    response the Hessian omits (32b CANNOT 4)."""
+    from lib.constants import S2_MAX_DOUBLET
+    chain = {"delta_scf_corrections.json": {"FADH2": False, "FADH2_cation": True},
+             "pcet_cascade.json": {"FADH2": False, "FADH_radical": True},
+             "semiquinone_lambda.json": {"FADH_radical": True, "FADH_anion": False}}   # species → is a doublet
+    for name, species in chain.items():
+        d = json.loads((DFT / name).read_text())
+        for sp, doublet in species.items():
+            what = f"{name} {sp}"
+            assert d["geom_opt"][sp]["converged"] is True and d["geom_opt"][sp]["minimum"] is True, f"{what}: not a converged minimum"
+            mc = d["minimum_check"][sp]
+            assert mc["harmonic"]["n_imag_beyond_tolerance"] == 0, f"{what}: the cached point has a mode beyond the tolerance"
+            heights = mc["saddle_above_minimum_meV"]
+            assert len(heights) == len(mc["saddles"]), f"{what}: a saddle without its height, or the reverse"
+            assert all(h > 0 for h in heights), f"{what}: a saddle at or below its minimum — the escape did not go down"
+            assert heights == sorted(heights, reverse=True), f"{what}: a later saddle above an earlier one {heights}"
+            if doublet:
+                assert mc["harmonic"]["s2"] <= S2_MAX_DOUBLET, f"{what}: <S²> {mc['harmonic']['s2']:.3f} — contaminated"
+    control = json.loads((DFT / "pcet_cascade.json").read_text())["control_FADH2_minimum_vs_32b_Ha"]
+    assert abs(control) <= FADH2_MINIMUM_VS_32B_TOL_HA, f"33's FADH₂ lies {control:+.2e} Ha from 32b's minimum"
+
+
+def test_no_cache_records_a_machine_path():
+    """A cache points at its side files (Hessians under the gitignored `cache/runs/`) relative to the repo root, never by
+    this machine's absolute path (lib `repo_relative`). Two committed caches — 32b's and 96's — carried the home
+    directory into the paper-SI bundle until 2026-10-19, and the three chain caches would have on their first commit.
+    CAN catch: in any COMMITTED cache JSON, a POSIX path under a machine root (/Users · /home · /private · /tmp · /var ·
+    /opt · /Volumes · /mnt · /root) or a Windows drive path, anywhere in a string. CANNOT catch: a path under another root,
+    or a relative path that resolves nowhere — the side files are not in the tree by design."""
+    import subprocess
+    pattern = re.compile(r'(?<![\w.])/(?:Users|home|private|tmp|var|opt|Volumes|mnt|root)/|\b[A-Za-z]:[\\/]{1,2}[\w.-]')
+    listed = subprocess.run(["git", "-C", str(REPO), "ls-files", "-z", "--", "tools/in_silico/cache/*.json",
+                             "tools/in_silico/cache/**/*.json"], capture_output=True, check=True).stdout.decode().split("\0")
+    hits = [f for f in listed if f and pattern.search((REPO / f).read_text(encoding="utf-8"))]
+    assert listed and not hits, f"caches recording a machine path: {hits}"
 
 
 def test_xylem_sap_sweep_results():

@@ -5,7 +5,8 @@ L3 — Nelsen 4-point reorganization energy λ for the FADH•/FADH⁻ anode cou
 
 Rescues script 29, which computed λ for FADH₂ → FADH₂•⁺ (radical CATION) — a
 species that is pathological in implicit solvent (uncompensated cation radical →
-+160 eV cross-terms / non-convergence; see PIPELINE_STATUS, script 29 row).
++160 eV cross-terms / non-convergence; see PIPELINE_STATUS, script 29 row) — on the 4a,5-dihydro tautomer
+script 29 ran on; on the 1,5-dihydro donor 21g relaxes FADH₂•⁺ to a minimum (its Hessian, 2026-10-19).
 
 The physically correct FIRST electron transfer at the anode (pH 7, where the
 reduced flavin is the anion FADH⁻) is a clean one-electron oxidation:

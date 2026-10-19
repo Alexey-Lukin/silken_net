@@ -146,7 +146,7 @@
       "n_imag_beyond_tolerance": 0,
       "n_modes_below_100cm": 2,
       "hessian_wall_s": 2231.0,
-      "hessian_file": "/Users/oleksiilukin/silken_net/tools/in_silico/cache/runs/32b/hessian_ox.npy",
+      "hessian_file": "tools/in_silico/cache/runs/32b/hessian_ox.npy",
       "relaxed_geometry": [
         [
           "C",
@@ -542,7 +542,7 @@
               "scf_converged": true
             }
           },
-          "hessian_file": "/Users/oleksiilukin/silken_net/tools/in_silico/cache/runs/32b/hessian_red_saddle0.npy",
+          "hessian_file": "tools/in_silico/cache/runs/32b/hessian_red_saddle0.npy",
           "geometry": [
             [
               "C",
@@ -915,7 +915,7 @@
       "n_imag_beyond_tolerance": 0,
       "n_modes_below_100cm": 3,
       "hessian_wall_s": 2082.9,
-      "hessian_file": "/Users/oleksiilukin/silken_net/tools/in_silico/cache/runs/32b/hessian_red.npy",
+      "hessian_file": "tools/in_silico/cache/runs/32b/hessian_red.npy",
       "relaxed_geometry": [
         [
           "C",

@@ -4,8 +4,8 @@
 
 WHY. On the 4a,5-dihydro donor the chain carried until 2026-10-15 the raw FADH₂→Os cascade came out
 uphill in every implicit-solvent method (B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV, plain bpy);
-on the 1,5-dihydro donor the B3LYP-Koopmans offset (programmatic geometry) and the adiabatic ΔSCF come out downhill (comparison.json ·
-delta_scf_corrections.json) — ⚠️ the reasoning below was written for the old numbers and is rewritten in revision step 3
+on the 1,5-dihydro donor the B3LYP-Koopmans offset (programmatic geometry) comes out downhill and the adiabatic ΔSCF uphill on
+the minimum (downhill from the planar saddle until 2026-10-19; comparison.json · delta_scf_corrections.json) — ⚠️ the reasoning below was written for the old numbers and is rewritten in revision step 3
 (00_07 HW.5.IS). The verified experimental driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
 Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
 GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to

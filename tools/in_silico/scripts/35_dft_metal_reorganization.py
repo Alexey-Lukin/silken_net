@@ -15,7 +15,7 @@ for a hop: λ_hop(M1-M2) = (λ_M1 + λ_M2)/2). Aquo is a robust, well-behaved pr
 the ZIF imidazolate-N first shell — inner-sphere λ is dominated by the M–L bond
 contraction on oxidation, only modestly ligand-dependent. This is the well-behaved
 re-use of script 29's machinery (which failed ONLY for the pathological flavin
-radical cation; closed-shell/localised metal d/f states are fine).
+radical cation of the 4a,5-dihydro tautomer — the 1,5 one relaxes to a minimum, 21g; closed-shell/localised metal d/f states are fine).
 
   λ = [E(red @ ox_geom) − E(red @ red_geom)] + [E(ox @ red_geom) − E(ox @ ox_geom)]
 

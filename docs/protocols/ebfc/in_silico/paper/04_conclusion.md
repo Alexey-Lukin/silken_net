@@ -21,7 +21,7 @@ literature value (turnover needs λ(Co) ≲ 2.0 eV at zero driving force on the 
 adverse corner) — a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy
 metal, conductive-MOF band transport, or an acid-stable enzyme-free catalyst.
 
-[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
+[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
 
 The paper's methodological core is the honest treatment of the cascade. The raw computed driving force
 is uphill in every method, against an experimentally downhill cascade; rather than hide the gap behind a

@@ -42,6 +42,15 @@ def C(rel: str):
     return _CACHE[rel]
 
 
+def _dscf_vertical_eV(d) -> float:
+    """21g's vertical ΔG from its DEFINITION — its energies and B1's — never from the 4-decimal display row: 0.38745 is
+    stored as 0.3875, so a 3-decimal quote of the row reads +0.388 against a true +0.387 (in-silico §When Modifying #6)."""
+    from lib.constants import HARTREE_TO_EV
+    b1 = C("dft/os_complex_wb97xd_dmbpy.json")
+    ea = (b1["os3_plus"]["E_total_Ha"] - b1["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV
+    return (d["E_FADH2_cation_vertical_Ha"] - d["E_FADH2_Ha"]) * HARTREE_TO_EV - ea
+
+
 def doc(rel: str) -> str:
     """Read a doc by path relative to the repo root."""
     if rel not in _DOC:
@@ -104,6 +113,7 @@ def _to_float(s: str) -> float:
 
 SUMMARY = "docs/protocols/ebfc/in_silico/SUMMARY.md"
 L3 = "docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md"
+PIPELINE = "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md"
 CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"  # thermal-penetration cache (§3.5) — a non-SUMMARY doc-target
 BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland geometry (§3.5), owner = script 52
 COAXIAL = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"  # anchor geometry; §1.4 bus + liner, owner = script 55
@@ -210,6 +220,56 @@ CHECKS = [
         SUMMARY, r"IP_adiab\(FAD ([\d.]+)\)",
         "dft/delta_scf_corrections.json", lambda d: d["IP_adiabatic_eV"], 0.001,
     ),
+    # The step-2 flavin chain re-run from the butterfly minimum (00_07 HW.5.IS, 2026-10-19): the adiabatic ΔG crossed zero
+    # (−0.079 → +0.048 eV) and none of the numbers below had a pin — the PCET cascade, the vertical ΔSCF and the saddle
+    # heights were quoted unguarded in SUMMARY · L3 · PIPELINE_STATUS
+    ("ΔSCF vertical, all-methods table → delta_scf_corrections.json", SUMMARY, rf"\| ΔSCF ωB97X \(vertical\) \| {N} \|",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.0005),
+    ("ΔSCF adiabatic, all-methods table → delta_scf_corrections.json", SUMMARY, rf"\| \*\*ΔSCF ωB97X \(adiabatic\)\*\* \| \*\*{N}\*\*",
+     "dft/delta_scf_corrections.json", lambda d: d["dG_adiabatic_eV"], 0.0005),
+    ("ΔSCF vertical, B2 → delta_scf_corrections.json", SUMMARY, rf"The vertical {N} \(IP_vert",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.0005),
+    ("IP_vert, B2 → delta_scf_corrections.json", SUMMARY, r"\(IP_vert ([\d.]+);",
+     "dft/delta_scf_corrections.json", lambda d: d["IP_vertical_eV"], 0.001),
+    ("cation relaxation, B2 → delta_scf_corrections.json", SUMMARY, rf"cation relaxation {N} eV\)",
+     "dft/delta_scf_corrections.json", lambda d: d["relaxation_eV"], 0.001),
+    ("ΔSCF adiabatic, L3 row → delta_scf_corrections.json", SUMMARY, rf"uphill: the adiabatic ΔSCF \(ΔG {N} eV\)",
+     "dft/delta_scf_corrections.json", lambda d: d["dG_adiabatic_eV"], 0.005),
+    ("PCET cascade, L3 row → pcet_cascade.json", SUMMARY, rf"and PCET \(ΔG {N} eV\)",
+     "dft/pcet_cascade.json", lambda d: d["cascade_pcet_eV"], 0.005),
+    ("PCET oxidation cost → pcet_cascade.json", L3, rf"PCET oxidation cost = \*\*{N} eV\*\*",
+     "dft/pcet_cascade.json", lambda d: d["pcet_oxidation_cost_eV"], 0.005),
+    ("PCET rise over the bare IP → pcet_cascade.json", L3, rf"than the bare IP \({N} eV;",
+     "dft/pcet_cascade.json", lambda d: d["drop_vs_bare_eV"], 0.005),
+    ("PCET cascade, L3 → pcet_cascade.json", L3, rf"Cascade = \*\*{N} eV \(still uphill\)",
+     "dft/pcet_cascade.json", lambda d: d["cascade_pcet_eV"], 0.0005),
+    ("21g FADH₂ saddle height → delta_scf_corrections.json", PIPELINE, rf"\*\*{N}\*\* meV above its minimum on `21g`",
+     "dft/delta_scf_corrections.json", lambda d: d["minimum_check"]["FADH2"]["saddle_above_minimum_meV"][0], 0.05),
+    ("33 FADH₂ saddle height → pcet_cascade.json", PIPELINE, rf"and \*\*{N}\*\* meV\s+on `33`",
+     "dft/pcet_cascade.json", lambda d: d["minimum_check"]["FADH2"]["saddle_above_minimum_meV"][0], 0.05),
+    # the copies the round-2 review found unpinned (L3 · the PIPELINE banner · SUMMARY's L3 row)
+    ("ΔSCF vertical, L3 full row → delta_scf_corrections.json", L3, rf"\*\*{N} \(UPHILL\)\*\*",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.0005),
+    ("ΔSCF vertical, L3 methods table → delta_scf_corrections.json", L3, rf"\| ΔSCF ωB97X \(vertical\) \| {N} \| [\d.]+ \| same molecule",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.0005),
+    ("IP_vert, L3 half-reaction → delta_scf_corrections.json", L3, rf"\| \*\*{N}\*\* \(cost; `IP_vertical_eV`",
+     "dft/delta_scf_corrections.json", lambda d: d["IP_vertical_eV"], 0.001),
+    ("IP_adiab, L3 relaxation → delta_scf_corrections.json", L3, rf"IP relaxation \(1,5-dihydro\): [\d.]+ → {N} eV",
+     "dft/delta_scf_corrections.json", lambda d: d["IP_adiabatic_eV"], 0.001),
+    ("cation relaxation, L3 → delta_scf_corrections.json", L3, rf"IP relaxation \(1,5-dihydro\): [\d.]+ → [\d.]+ eV \({N} eV\)",
+     "dft/delta_scf_corrections.json", lambda d: d["relaxation_eV"], 0.001),
+    ("ΔSCF adiabatic, banner → delta_scf_corrections.json", PIPELINE, rf"adiabatic ΔG [{_DASHES}\-]0\.079 → \*\*{N}\*\* eV",
+     "dft/delta_scf_corrections.json", lambda d: d["dG_adiabatic_eV"], 0.0005),
+    ("ΔSCF vertical, banner → delta_scf_corrections.json", PIPELINE, rf"vertical \+0\.095 → {N}, IP_adiab",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.0005),
+    ("IP_adiab, banner → delta_scf_corrections.json", PIPELINE, rf"IP_adiab 4\.164 → {N}; `33`",
+     "dft/delta_scf_corrections.json", lambda d: d["IP_adiabatic_eV"], 0.001),
+    ("PCET cost, banner → pcet_cascade.json", PIPELINE, rf"PCET cost 4\.711 → {N} eV",
+     "dft/pcet_cascade.json", lambda d: d["pcet_oxidation_cost_eV"], 0.0005),
+    ("PCET cascade, banner → pcet_cascade.json", PIPELINE, rf"cascade\s+\+0\.468 → \*\*{N}\*\* eV",
+     "dft/pcet_cascade.json", lambda d: d["cascade_pcet_eV"], 0.0005),
+    ("ΔSCF vertical, SUMMARY L3 row → delta_scf_corrections.json", SUMMARY, rf"the vertical ΔSCF \(ΔG {N}\)",
+     "dft/delta_scf_corrections.json", _dscf_vertical_eV, 0.005),
     (
         "PCET E°(FAD/FADH₂) pH7 → pcet_redox_potential.json",
         SUMMARY, rf"E°\(FAD/FADH₂\) = \*\*{N} mV vs NHE",
@@ -4390,7 +4450,6 @@ CHECKS += [
 ]
 
 # leg (3б): Os(III) relaxed from each relaxed Os(II) (21e `b3lyp-relaxed-os3`), read by 83 as `relaxed_geometry_check.adiabatic`
-PIPELINE = "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md"
 METHODS = "docs/protocols/ebfc/in_silico/paper/02_methods.md"
 V83 = "dft/os_series_vs_measured.json"
 OS3 = "dft/os_mediator_series_relaxed_os3.json"

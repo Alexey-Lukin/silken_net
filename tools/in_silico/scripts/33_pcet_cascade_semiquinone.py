@@ -7,7 +7,8 @@ Root-cause hypothesis for the UPHILL vertical ΔSCF cascade (written for its +0.
 donor the chain carried until 2026-10-15). The ΔSCF cascade used the BARE cation-radical IP:
     FADH₂ → FADH₂•⁺ + e⁻        = IP_vertical of 21g   (WRONG in water)
 The uncompensated cation radical FADH₂•⁺ is pathological in implicit solvent
-(it also broke the Nelsen-λ script 29). The physically correct first oxidation
+(it also broke the Nelsen-λ script 29) — measured on the 4a,5-dihydro tautomer; on the 1,5-dihydro donor
+21g relaxes FADH₂•⁺ to a minimum (its Hessian, 2026-10-19). The physically correct first oxidation
 step in water is PROTON-COUPLED — it sheds a proton concertedly:
     FADH₂ → FADH• + H⁺ + e⁻
 with the proton handled by the thermodynamic proton reference (no explicit
@@ -29,8 +30,9 @@ at ωB97X/def2-TZVP+PCM (consistent with the cached cascade pieces).
 2026-10-15 (the 1,5-dihydro recompute, in-silico §Critical Rules #16): the flavin SMILES comes from lib/flavin.py and
 is checked before any SCF; the semiquinone site is recorded by LOCANT (an RDKit index is not one — N1 of the new
 SMILES and N5 of the retired one are both index 18); geometry goes through `lib/dft_utils.dft_optimize`, whose
-convergence flag is real; and the bare-IP comparison is LOADED from 21g's cache (`IP_vertical_eV`, `dG_vertical_eV` —
-the same ωB97X/def2-TZVP+PCM tier on the optimised neutral) instead of the typed 5.391 / 0.998, which were hand-added
+convergence flag is real (since 2026-10-18 through `relax_checked`: a Hessian per species, an escape off a saddle); and the bare-IP comparison is LOADED from 21g's cache (`IP_vertical_eV`, `dG_vertical_eV` —
+the same ωB97X/def2-TZVP+PCM tier, on 21g's def2-SVP minimum of the neutral — 35 meV from this script's 6-31G(d)
+one at that tier) instead of the typed 5.391 / 0.998, which were hand-added
 numbers on the 4a,5 tautomer. Run AFTER 21g.
 """
 from __future__ import annotations
@@ -183,7 +185,8 @@ def main() -> int:
 
     # --- geometry-optimize BOTH neutral species (B3LYP/6-31G(d)+PCM) ---
     # Both are well-behaved closed-shell/doublet neutrals — no cation-radical
-    # pathology (that only afflicts FADH₂•⁺, which we never optimize). Relaxing
+    # pathology (script 29 met it in FADH₂•⁺ on the 4a,5-dihydro tautomer; 21g relaxes the 1,5 one to a minimum,
+    # and this script never optimizes it). Relaxing
     # is essential: an unrelaxed semiquinone is artificially strained.
     banner("Geometry optimization (B3LYP/6-31G(d)+PCM)")
     t = time.time()

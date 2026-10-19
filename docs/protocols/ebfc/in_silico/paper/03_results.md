@@ -28,11 +28,11 @@ implicit solvent grossly over-stabilised, hydronium ion) recovers **E°(FAD/FADH
 65 mV positive of the experimental free-flavin value, −220 mV<sup>25</sup> (Fig 3a). This is the paper's positive result on the anode side: a
 proton-coupled redox potential of a biological cofactor, reproduced by implicit-solvation DFT inside the
 ±0.15 V uncertainty of the absolute-SHE convention once the proton is handled correctly. It also isolates the cascade discrepancy discussed in §3.5 to the
-mediator side of the chain, not the flavin. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
+mediator side of the chain, not the flavin. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
 
 The inner-sphere reorganisation energy of the first anode oxidation was likewise computed, not assumed.
 The naïve FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in continuum solvent (it
-fragments on relaxation); the physically correct, pH-7 first electron transfer is the deprotonated
+fragments on relaxation) [finalise — revision step 3, 00_07 HW.5.IS: measured on the retired 4a,5-dihydro tautomer (script 29); on the 1,5-dihydro donor FADH₂•⁺ relaxes to a minimum by its Hessian (script 21g), and the λ of that couple was not computed — rewritten in step 3]; the physically correct, pH-7 first electron transfer is the deprotonated
 **FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.46 eV**.
 Adding a Marcus two-sphere outer-sphere term<sup>13</sup> gives a total of 0.84–0.93 eV for a
 charge-delocalised, buried cofactor; this continuum estimate is, however,
@@ -253,11 +253,11 @@ experiment is the decisive empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 
-[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
+[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
 
-On the 1,5-dihydro donor the raw one-electron readings of the cascade FADH₂→Os have both signs: the B3LYP Koopmans
+On the 1,5-dihydro donor the raw one-electron readings of the cascade FADH₂→Os point both ways (an orbital offset Δε > 0 reads downhill, a ΔG > 0 uphill): the B3LYP Koopmans
 HOMO−LUMO offset is +0.07 eV on the real 4,4′-dimethyl-bpy mediator (+0.08 eV under the conda-lock, §2.7 — the donor
-level just above the acceptor; Table 4, Me row), the adiabatic ΔSCF free energy −0.08 eV (Table 2; −0.23 eV for the plain-bpy parent, the 0.15 eV difference being the substituent term ①) and the vertical ΔSCF +0.10 eV (Table 2) — whereas the **experimentally verified** driving force
+level just above the acceptor; Table 4, Me row), the adiabatic ΔSCF free energy +0.05 eV (Table 2; −0.10 eV for the plain-bpy parent, the 0.15 eV difference being the substituent term ①) and the vertical ΔSCF +0.39 eV (Table 2) — whereas the **experimentally verified** driving force
 is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
 potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH<sup>8</sup>). None of these one-electron readings is like-for-like with that
 two-electron, two-proton driving force (the orbital offset and the free energy are distinct quantities as well). They stand on the programmatic osmium geometry (§2.3): relaxing both oxidation states of the
@@ -329,8 +329,8 @@ ceiling.<sup>48</sup> No tunnelling pathway is drawn (§3.1). *A 2D projection f
 ![Figure 3](figures/fig3_cascade_lfer.png)
 
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
-rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) and the adiabatic ΔSCF (Table 2) downhill, the vertical ΔSCF uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The raw frontier-orbital offset
-is +0.07 eV on the dimethyl mediator (the donor level just above the acceptor, programmatic geometry) and the adiabatic ΔSCF free energy −0.08 eV (−0.23 eV plain-bpy reference) — one-electron readings, not like-for-like with the verified driving force, which is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
+rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The raw frontier-orbital offset
+is +0.07 eV on the dimethyl mediator (the donor level just above the acceptor, programmatic geometry) and the adiabatic ΔSCF free energy +0.05 eV (−0.10 eV plain-bpy reference) — one-electron readings, not like-for-like with the verified driving force, which is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
 [the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>62</sup>). The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −155 mV vs SHE at pH 7, lies 65 mV from
 experiment (free flavin −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺

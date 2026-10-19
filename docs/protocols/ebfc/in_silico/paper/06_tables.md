@@ -20,8 +20,8 @@
 | Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |
 |---|---|---|---|
 | Koopmans ωB97X (orbital offset) | +4.826 | uphill | range-separation artefact — *never use* |
-| ΔSCF ωB97X (vertical) | +0.095 | uphill | +0.67 |
-| **ΔSCF ωB97X (adiabatic)** | **−0.079** | downhill | +0.49 |
+| ΔSCF ωB97X (vertical) | +0.387 | uphill | +0.96 |
+| **ΔSCF ωB97X (adiabatic)** | **+0.048** | uphill | +0.62 |
 | B3LYP Koopmans «corrected» | −0.07 | — | **withdrawn** (tuned to the wrong −0.14) |
 | **Experiment (verified E°s)** | **−0.57** | **downhill** | reference |
 

@@ -1,7 +1,7 @@
 {
   "method": "Marcus two-sphere outer-sphere \u03bb_o (dielectric continuum); analytical, INDICATIVE",
   "caveat": "radius/distance/local-\u03b5 dominated \u2192 grid not one number (00_07); no anode rate consumes \u03bb",
-  "lambda_inner_eV": 0.4644181193691452,
+  "lambda_inner_eV": 0.4644181191835306,
   "literature_total_eV": 0.7,
   "comparison_basis": "TOTAL \u03bb of OTHER protein ET centres (ref 48); no flavin primary; consumed by no rate",
   "params": {
@@ -32,7 +32,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.9916736333600894,
-      "lambda_total_eV": 1.4560917527292345
+      "lambda_total_eV": 1.45609175254362
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -43,7 +43,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.5639387662179879,
-      "lambda_total_eV": 1.028356885587133
+      "lambda_total_eV": 1.0283568854015184
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -54,7 +54,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 1.4284426413416724,
-      "lambda_total_eV": 1.8928607607108177
+      "lambda_total_eV": 1.892860760525203
     },
     {
       "radii_label": "hard-sphere (3.5/5.0)",
@@ -65,7 +65,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.8123178369096352,
-      "lambda_total_eV": 1.2767359562787803
+      "lambda_total_eV": 1.276735956093166
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -76,7 +76,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.6600065009499475,
-      "lambda_total_eV": 1.1244246203190926
+      "lambda_total_eV": 1.1244246201334782
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -87,7 +87,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.37532837348960035,
-      "lambda_total_eV": 0.8397464928587455
+      "lambda_total_eV": 0.839746492673131
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -98,7 +98,7 @@
       "eps_s_label": "water (78)",
       "eps_s": 78.3553,
       "lambda_o_eV": 0.8250081261874345,
-      "lambda_total_eV": 1.2894262455565797
+      "lambda_total_eV": 1.289426245370965
     },
     {
       "radii_label": "delocalized (6.0/6.0)",
@@ -109,7 +109,7 @@
       "eps_s_label": "buried (~4)",
       "eps_s": 4.0,
       "lambda_o_eV": 0.46916046686200047,
-      "lambda_total_eV": 0.9335785862311456
+      "lambda_total_eV": 0.933578586045531
     }
   ],
   "lambda_o_range_eV": [
@@ -117,12 +117,12 @@
     1.4284426413416724
   ],
   "lambda_total_range_eV": [
-    0.8397464928587455,
-    1.8928607607108177
+    0.839746492673131,
+    1.892860760525203
   ],
   "lambda_total_physical_end_eV": [
-    0.8397464928587455,
-    0.9335785862311456
+    0.839746492673131,
+    0.933578586045531
   ],
   "verdict": "the two-sphere \u03bb_o is radius/\u03b5-DOMINATED (\u03bb_total 0.84\u20131.89 eV across plausible assumptions): naive hard-spheres in bulk water over-estimate (\u226b0.7), while charge delocalized over the flavin \u03c0-system in the buried low-\u03b5 pocket lies 0.04\u20130.13 eV above the 0.7\u20130.8 eV range of other protein ET centres, ref 48 (0.84\u20130.93). \u2192 no anode Marcus rate consumes \u03bb; this estimate only shows the computed total is of the order of other protein ET centres and WHY it is indicative (the point-sphere continuum model cannot pin \u03bb_o to better than its radius assumption)."
 }

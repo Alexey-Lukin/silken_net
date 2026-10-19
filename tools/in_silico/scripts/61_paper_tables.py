@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, PAPER_DIR, REPO_ROOT
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, PAPER_DIR, REPO_ROOT
 
 SI_DESCRIPTION = "61 — Paper Tables T1–T4, generated from the cache (drift-safe)."  # its row in the paper SI (72): English, no repo jargon
 
@@ -57,8 +57,8 @@ def build() -> str:
     koop_dm = wb_dm["os3_plus"]["LUMO_eV"] - wb["fadh2_red"]["HOMO_eV"]  # ωB97X Koopmans ΔG = −Δε, dimethyl
 
     # ── drift asserts vs SUMMARY canon ──
-    _close(dscf["dG_vertical_eV"], 0.095, 0.01, "T2 ΔSCF vertical (dimethyl)")
-    _close(dscf["dG_adiabatic_eV"], -0.0792, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
+    _close(dscf["dG_vertical_eV"], 0.3875, 0.01, "T2 ΔSCF vertical (dimethyl)")
+    _close(dscf["dG_adiabatic_eV"], 0.0482, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
     _close(koop_dm, 4.826, 0.01, "T2 Koopmans ωB97X (dimethyl)")
     _close(zif["pairs"][0]["t_ij_eV"], 0.00128, 1e-4, "T3 Cu-Co ΔSCF t_ij")
     _close(fodft["t_ij_eV"], 0.005462, 1e-4, "T3 Cu-Co FO-DFT t_ij")
@@ -100,7 +100,14 @@ def build() -> str:
         return "downhill" if g < 0 else "uphill"
 
     koop = koop_dm
-    vert, adia = dscf["dG_vertical_eV"], dscf["dG_adiabatic_eV"]
+    # the ΔSCF rows from their DEFINITION — 21g's energies and B1's — never from the 4-decimal display rows: the vertical
+    # 0.38745 is stored as 0.3875 and would print +0.388 (in-silico §When Modifying #6); the display rows stay a control
+    ea_dm = (wb_dm["os3_plus"]["E_total_Ha"] - wb_dm["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV
+    vert = (dscf["E_FADH2_cation_vertical_Ha"] - dscf["E_FADH2_Ha"]) * HARTREE_TO_EV - ea_dm
+    adia = (dscf["E_FADH2_cation_adiabatic_Ha"] - dscf["E_FADH2_Ha"]) * HARTREE_TO_EV - ea_dm
+    # 6e-5 = the display rows' rounding bound (round(·, 4) → 5e-5) plus 1e-5 for the float path
+    _close(vert, dscf["dG_vertical_eV"], 6e-5, "T2 ΔSCF vertical vs its cached display row")
+    _close(adia, dscf["dG_adiabatic_eV"], 6e-5, "T2 ΔSCF adiabatic vs its cached display row")
     md.append("## Table 2. Anode→mediator cascade ΔG per electron, all methods\n")
     md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |")
     md.append("|---|---|---|---|")

@@ -164,6 +164,8 @@ def harmonic(atoms, charge: int, spin: int, hessian_path, imag_tol_cm: float, la
 
     from pyscf.hessian import thermo
 
+    from .utils import repo_relative
+
     mol, mf = _scf_object(atoms, charge, spin, **{**protocol, "conv_tol": 1e-9})
     e = float(mf.kernel())
     if not mf.converged:
@@ -180,7 +182,7 @@ def harmonic(atoms, charge: int, spin: int, hessian_path, imag_tol_cm: float, la
            "imaginary_cm": imag, "real_cm": [round(float(x), 2) for x in real],
            "n_imag_tolerated": sum(v <= imag_tol_cm for v in imag), "n_imag_beyond_tolerance": sum(v > imag_tol_cm for v in imag),
            "n_modes_below_100cm": int(np.sum(real < 100.0)), "hessian_wall_s": round(time.time() - t0, 1),
-           "hessian_file": str(hessian_path),
+           "hessian_file": repo_relative(hessian_path),
            "_escape_modes": [np.asarray(freq["norm_mode"][i]) for i, v in enumerate(nu) if abs(v.imag) > imag_tol_cm]}
     if spin:
         out["s2"] = float(mf.spin_square()[0])
@@ -241,7 +243,7 @@ def relax_to_minimum(start, charge: int, spin: int, *, label: str, tag: str, run
     from pathlib import Path
 
     from .constants import S2_MAX_DOUBLET
-    from .utils import banner
+    from .utils import banner, repo_relative
 
     runs = Path(runs)
     for attempt in range(max_escapes + 1):
@@ -257,7 +259,8 @@ def relax_to_minimum(start, charge: int, spin: int, *, label: str, tag: str, run
         if on_relaxed:
             on_relaxed(relaxed, info)
         banner(f"(ii)/(iii) Hessian {tag}" + (f" — saddle escape {attempt}" if attempt else ""))
-        th = harmonic(relaxed, charge, spin, runs / f"hessian_{tag}.npy", imag_tol_cm, label=f"{tag} Hessian single point",
+        hess = runs / f"hessian_{tag}.npy"
+        th = harmonic(relaxed, charge, spin, hess, imag_tol_cm, label=f"{tag} Hessian single point",
                       temperature_K=temperature_K, pressure_Pa=pressure_Pa, **protocol)
         last = info["final_step"] or {}
         if "E_Ha" in last and abs(th["E_Ha"] - last["E_Ha"]) > STATE_TOL_HA:
@@ -270,10 +273,10 @@ def relax_to_minimum(start, charge: int, spin: int, *, label: str, tag: str, run
             return relaxed, th, info
         modes = th.pop("_escape_modes")
         saddle_hess = runs / f"hessian_{tag}_saddle{attempt}.npy"
-        Path(th["hessian_file"]).replace(saddle_hess)
+        hess.replace(saddle_hess)
         if on_saddle:
             on_saddle({**{k: th[k] for k in ("E_Ha", "ZPE_Ha", "G_tot_Ha", "imaginary_cm", "real_cm")}, "geom_opt": info,
-                       "hessian_file": str(saddle_hess), "geometry": [(s, [float(x) for x in p]) for s, p in relaxed]})
+                       "hessian_file": repo_relative(saddle_hess), "geometry": [(s, [float(x) for x in p]) for s, p in relaxed]})
         print(f"  {tag}: saddle (imaginary {[round(v, 1) for v in th['imaginary_cm']]} cm⁻¹) — stepping "
               f"{step_a} Å along each mode beyond {imag_tol_cm} cm⁻¹ and re-optimising", flush=True)
         start = escape_geometry(relaxed, modes, step_a)
@@ -286,11 +289,16 @@ def relax_checked(atoms, charge: int, spin: int, *, label: str, runs, imag_tol_c
     (21g · 33 · 29b): never raises on the optimisation's own failures. Returns (atoms, summary, minimum_check) —
     `summary["converged"]` is geomeTRIC's verdict on the last run, `summary["minimum"]` whether the point it reached is a
     minimum (no mode beyond `imag_tol_cm` after at most `max_escapes` escapes, and every escape went DOWN); the caller
-    gates on both. `minimum_check` holds the harmonic record (frequencies, ZPE, RRHO, <S²> on an open shell) and every
-    saddle met with its height over the minimum — the measure of what a planar start had cost the number. Every
-    optimisation is checked against the species' own start for a moved proton or a stretched X–H (`xh_max_a`; FADH₂•⁺
-    in C-PCM stretches one), and a Hessian whose SCF fails or lands on another state is a refusal with its reason, not
-    a crash — the side file keeps the hours already spent."""
+    gates on both. `minimum_check` holds the harmonic record (frequencies, ZPE, RRHO, <S²> on an open shell), every
+    saddle met with its height over the minimum — the measure of what a planar start had cost the number — and the
+    geometry of the point the record describes, so a later check reads it instead of re-optimising (the caches of the
+    2026-10-18/19 chain predate this field: they hold their saddles' geometries only). Every optimisation is checked
+    against the species' own start for a moved proton or a stretched X–H (`xh_max_a` — the guard against the
+    4a,5-dihydro cation's pathology of script 29; on the 1,5-dihydro donor `21g`'s FADH₂•⁺ passed it — 1.10 Å at most, read from the run's gitignored checkpoint),
+    and a Hessian whose SCF fails or lands on another state is a refusal with its reason, not a crash — the side file
+    keeps the hours already spent. CANNOT: tell a methyl torsion from a skeletal saddle — `96`'s methyl-share rule is not
+    here, so a spurious methyl mode beyond `imag_tol_cm` costs up to `max_escapes` useless escapes and then refuses
+    (safely: no number is written from a saddle)."""
     from pathlib import Path
 
     class _Stop(Exception):
@@ -323,7 +331,8 @@ def relax_checked(atoms, charge: int, spin: int, *, label: str, runs, imag_tol_c
         summary["error"] = refusal
     summary["final_grad_max_Ha_bohr"] = (info.get("final_step") or {}).get("grad_max_Ha_bohr")
     check = {"imag_tolerance_cm": imag_tol_cm, "max_escapes": max_escapes, "step_A": step_a,
-             "saddles": [{k: v for k, v in sd.items() if k != "geom_opt"} for sd in saddles]}
+             "saddles": [{k: v for k, v in sd.items() if k != "geom_opt"} for sd in saddles],
+             "geometry": [(s, [float(x) for x in c]) for s, c in relaxed]}
     summary["minimum"] = False
     if th is not None:
         modes = th.pop("_escape_modes")

@@ -71,7 +71,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import CACHE_DIR, DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, S2_MAX_DOUBLET
 from lib.dft_utils import _scf_object
-from lib.utils import banner
+from lib.utils import banner, repo_relative
 
 SI_DESCRIPTION = ("L3 Os(III/II) couple harmonic thermochemistry (analytic C-PCM Hessian, B3LYP/6-31G(d)+LANL2DZ(Os)) on the "
                   "device mediator's adiabatic chloro form, so the like-for-like cascade (95) carries the ZPE and RRHO terms "
@@ -247,7 +247,7 @@ def main(argv) -> int:
                 hess = mf.Hessian().kernel()
                 np.save(hess_file, hess)
                 rec["hessian_wall_s"], rec["hessian_reused"] = round(time.time() - t0, 1), False
-            rec["hessian_file"] = str(hess_file)
+            rec["hessian_file"] = repo_relative(hess_file)
             rec.update(analyse(mol, mf, hess))
             dump(partial)
             print(f"  {tag}: ZPE {rec['ZPE_Ha'] * HARTREE_TO_EV:.4f} eV · imaginary {rec['imaginary']} · real below "

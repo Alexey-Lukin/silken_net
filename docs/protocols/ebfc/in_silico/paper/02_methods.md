@@ -54,7 +54,10 @@ The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
 single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
-geometries relaxed and the osmium couple kept vertical on its programmatic geometry; the osmium optimisations
+geometries relaxed and the osmium couple kept vertical on its programmatic geometry; every flavin geometry optimised
+in DFT here (this cross-check, the proton-coupled cascade test of §2.4 and the semiquinone λ of §2.5) is a minimum by
+its analytic C-PCM Hessian, a stationary point with an imaginary mode beyond 20i cm⁻¹ having been stepped off along those
+modes and re-optimised; the osmium optimisations
 in this work — the Os(II) points of OMe, Me, H, Cl and NO₂ in the substituent check of §3.3 and their Os(III) points relaxed
 from them, converged at the default energy and gradient thresholds and the loose displacement threshold the flat Os–Cl
 mode needs — do not enter the cascade; §3.5 reports what they do to the device couple's cascade numbers. The
@@ -132,7 +135,7 @@ both assumptions are labelled as such in the scripts that consume them, and the 
 adverse corner rather than as a measurement. For the anode the
 physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used — the naïve
 FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in implicit solvent and does not yield
-a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
+a meaningful λ [finalise — revision step 3, 00_07 HW.5.IS: measured on the retired 4a,5-dihydro tautomer (script 29); on the 1,5-dihydro donor FADH₂•⁺ relaxes to a minimum by its Hessian (script 21g), and the λ of that couple was not computed — rewritten in step 3]. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
 
 **Thermal ensemble.** Frames were taken from a separate explicit-solvent molecular-dynamics production
 trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for

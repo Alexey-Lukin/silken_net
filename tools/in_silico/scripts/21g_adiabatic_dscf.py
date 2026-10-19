@@ -9,7 +9,8 @@ with NO script — the generator was lost). Recomputes the headline composite ad
   FAD side (geom-opt B3LYP/def2-SVP → SP ωB97X/def2-TZVP, both PCM):
     IP_vertical  = E(FADH₂⁺ @ FADH₂ geom)   − E(FADH₂)
     IP_adiabatic = E(FADH₂⁺ @ FADH₂⁺ geom)  − E(FADH₂)
-    relaxation   = IP_adiabatic − IP_vertical   (small: lumiflavin is rigid planar)
+    relaxation   = IP_adiabatic − IP_vertical   (not small on the 1,5-dihydro donor: its FADH₂ minimum is folded and
+                                                 the cation relaxes nearly flat — the cache's `relaxation_eV`)
 
   Os side (LOADED, not hardcoded — drift-safe):
     EA_Os3 = E(Os II) − E(Os III) from os_complex_wb97xd_dmbpy.json (B1, the REAL
@@ -20,8 +21,8 @@ with NO script — the generator was lost). Recomputes the headline composite ad
     ΔG_adiabatic = IP_adiabatic − EA_Os3     ← headline (Table 2, SUMMARY)
 
 The FAD side does not depend on the mediator (same flavin), so re-running with the
-dimethyl Os only changes EA_Os3 → ΔG. On the 1,5-dihydro donor the adiabatic ΔG comes out downhill and
-the vertical uphill; what the gap to the verified −0.574 eV is made of is revision step 3's (00_07 HW.5.IS).
+dimethyl Os only changes EA_Os3 → ΔG. On the 1,5-dihydro donor's minimum both come out uphill (the adiabatic
+one read downhill only from the planar saddle the start converges to, until the 2026-10-19 re-run); what the gap to the verified −0.574 eV is made of is revision step 3's (00_07 HW.5.IS).
 This script supplies the DFT mechanism number, not the verdict.
 
 Discipline: no density_fit; level_shift on the FADH₂⁺ doublet + SOSCF fallback; DFT
