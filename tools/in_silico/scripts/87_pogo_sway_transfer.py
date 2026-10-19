@@ -21,7 +21,7 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       and the ring's relaxation R(t) is not modelled — and a lift is TAKEN as not undone (conservative for (A): lifted,
       the normal force is L; reseated, 2C − L ≥ L; a lift is likely to stay, because the ledge PEEK creeps under it, `52`,
       and an elastic lift could reseat), so for a weaker clamp the needed reaction is the one left after
-      20 years. ⚠️ Temperature is not modelled: in the loop lug → ledge → rim → flange the PEEK is squeezed between two
+      20 years. ⚠️ Temperature is not modelled HERE (`89` models the clamp over temperature): in the loop lug → ledge → rim → flange the PEEK is squeezed between two
       Ti faces over the same span, so cold unloads the clamp and heat raises it, and the ring's own contraction takes
       squeeze in the cold — «L stays ≤ L0» (resin swell raises it too — 02_02 §3.2's swell thresholds are bench limits on free rings) and
       the clamp itself are conditions, not results. Computed: the end-of-life normal force the rim needs, and the O-ring
@@ -42,9 +42,10 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       Δu = μ_LR · ε_s · Δx between them (ε_s the stem-surface strain AT THE ANCHOR'S AZIMUTH, Δx the depth span). The
       anchor resists it: the Zone 1↔2 press-fit with barbs ties the anode to the flange, and the bus-wire tip is tied
       to the flange by the liner's grip on the wire and its capture in the pad plane (01_01 §1.4). ⊕ 2026-10-17 (revised
-      the same day after two adversarial passes): no press-fit has to slip. The sleeve between the anode and the flange is
+      the same day after two adversarial passes): the Zone 1↔2 press-fit need not slip. The sleeve between the anode and the flange is
       PEEK, not a rigid body, and the wire spans the same distance beside it, so whatever share of Δu the wood imposes on
-      the anchor loads the wire, and the tip moves as the wire slips inside the soft liner near its held end. Every
+      the anchor loads the wire, and the tip moves as the wire slips inside the soft liner near the liner's held end — a
+      local slip of the liner's grip, itself an interference fit (55's cold press-fit). Every
       axial force on the wire crosses the liner's own wall, so `wire_behind_liner` computes the CEILING the wall puts on
       it and 86's seam requirement at that ceiling; how much load the root carries and how much of the term reaches the
       pin — a shear-lag model with Coulomb slip, with the share of Δu and the sleeve's thermal growth — is not computed.
@@ -169,7 +170,8 @@ def stem_at_anchor(slope2: float) -> dict:
             "surface_strain_microstrain_source_tree": round(kappa * DBH_SOURCE_TREE_M / 2 * 1e6, 0)}
 
 
-# ── (C) behind the liner (2026-10-17, the HW.43 leg (1) «осьова ємність посадки Zone 1↔2 і хвата лайнера»). The wire runs
+# ── (C) behind the liner (2026-10-17, the HW.43 leg (1) «осьова ємність посадки Zone 1↔2 і хвата лайнера» — the leg's
+#    name then; the unknown is now the axial load at the root and the share of (C) that reaches the pin). The wire runs
 # from its weld on the anode's top face to its tip in the pad plane; the liner grips it along its length and is held to the
 # flange at ONE end only, the top (01_01 §1.4) — so every axial force between the wire and the flange crosses the tube's own
 # wall. And the wire spans the anode-to-flange distance in PARALLEL with the PEEK sleeve, which is not a rigid body: whatever
@@ -345,8 +347,9 @@ def main() -> int:
                     round(m * (2 * math.pi * DAF_MARGIN * SWAY_F0_HZ_HIGH_READING) ** 2 / 1000, 3)},
             "C_centre_pad_poisson": {
                 "is": "a CEILING at the pin; how much of it reaches the pin — the wire stretching against the tip "
-                      "slipping in the liner near its held end — and how much of Δu the wood imposes are not computed "
-                      "(behind the liner: C_wire_behind_liner); no press-fit slip needed; zero for an anchor at right "
+                      "slipping in the liner near the liner's held end — and how much of Δu the wood imposes are not computed "
+                      "(behind the liner: C_wire_behind_liner); no slip of the Zone 1↔2 press-fit needed — the wire slips "
+                      "locally in the liner's grip near the liner's held end; zero for an anchor at right "
                       "angles to the wind",
                 "ratio_per_1000_microstrain": poisson_per_1000,
                 "imposed_shift_um_at_source_strain": [round(du_lo, 1), round(du_hi, 1)],
@@ -446,7 +449,7 @@ def main() -> int:
         "not_computed": "(D) thermal cycling of the pogo contacts — script 90 (`00_07` HW.43)",
         "verdict": ("Sway reaches the pins along four paths. While the rim holds — with margin early in life, and at the "
                     "end of life with a clamp at 52's printed form and the initial reaction in A_rim, or with what a weaker "
-                    "clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled) — the "
+                    "clamp's ring has left after 20 years (88 prices the reaction; temperature is not modelled here — 89) — the "
                     "stack's inertia is a fraction of "
                     f"the preload ({est_lo * 100:.1f}–{est_hi * 100:.1f} % at the part-by-part mass estimate of "
                     f"{stack_g[0]:.1f}–{stack_g[1]:.1f} g, × a pair factor the layout sets), and the centre-pad Poisson "

@@ -278,7 +278,7 @@ def main() -> int:
                                 "and the normal force is then what the ring has left — less than a constant-squeeze "
                                 "relaxation datum says, because the ledge PEEK creeping under a lift takes squeeze (52); the friction bound runs through the lug "
                                 "ledge (the rim's share can be zero), with µ from 55's dry PEEK–Ti sweep — the ring is "
-                                "greased; temperature is not modelled"},
+                                "greased; temperature is not modelled here — 89"},
         "missing_data": ["the compound's own compression-load curve at 15–35 % for CS 1.78 (the band spans compounds)",
                          "its stress relaxation over the service life at the capsule's envelope (ISO 3384-type data) — "
                          "it moves 52's requirement between its two ends",
