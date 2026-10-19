@@ -108,7 +108,7 @@ def main() -> int:
 
     print()
     print("  ⚠️ Screening tier: electronic E as proxy for G (no ZPE/thermal,")
-    print("     MMFF geometry). Main uncertainty = SHE_abs convention (±0.15 V).")
+    print("     MMFF geometry). SHE_abs convention: 4.281 V here; 4.44 V, also in use, lies 0.159 V away.")
     print("     Refinement: geom-opt + thermal G at ωB97X (needs CPU).")
 
     output = {
@@ -125,7 +125,7 @@ def main() -> int:
         "exp_free_flavin_pH7_sources": ["ref 25 (PMC4480342) quoting its ref 105"],
         "delta_vs_exp_pH7_mV": deltas,
         "valid_proton_reference": bool(verdict),
-        "caveats": "Electronic E proxy for G; SHE_abs convention ±0.15 V; "
+        "caveats": "Electronic E proxy for G; SHE_abs convention 4.281 V (the other value in use, 4.44 V, lies 0.159 V away); "
                    "geom-opt+thermal at wB97X is the publication-grade refinement.",
     }
     OUT_JSON.write_text(json.dumps(output, indent=2))

@@ -3889,7 +3889,7 @@ def test_cascade_like_for_like_is_its_inputs():
     at each of 32b's donor levels must be what those caches give TODAY, and each gap must be its two sides. CAN catch: an
     upstream re-run (a new Os form, a recomputed flavin at any level) that left 95's cache stale · a sign flip in the
     side split · 32b's MMFF level drifting from 32's protocol. CANNOT catch: whether the like-for-like reading itself is
-    right, nor that the ZPE and RRHO levels correct one side only — that is the script's docstring and revision step 3."""
+    right, nor that the ZPE and RRHO levels correct one side only — that is the script's docstring and the paper's §3.5."""
     path = DFT / "cascade_like_for_like.json"
     if not path.exists():
         pytest.skip("95 not run")
@@ -3911,7 +3911,7 @@ def test_cascade_like_for_like_is_its_inputs():
                json.loads((DFT / "os_mediator_series_relaxed_os2.json").read_text())["complexes"]["dmbpy"]["dE_red_eV"],
            "chloro, both states relaxed (adiabatic)":
                json.loads((DFT / "os_mediator_series_relaxed_os3.json").read_text())["complexes"]["dmbpy"]["dE_red_adiabatic_eV"],
-           "aqua (benchmark form)": micro["aqua_meim_h2o"], "bis-imidazole (operando upper form)": micro["bisim_meim2"]}
+           "aqua (methodological reference)": micro["aqua_meim_h2o"], "bis-imidazole (operando form)": micro["bisim_meim2"]}
     assert [r["form"] for r in d["forms"]] == list(src), "95's forms are not the forms its inputs hold — re-run 95"
     for r in d["forms"]:
         assert r["dE_red_III_to_II_eV"] == src[r["form"]], f"{r['form']}: 95 holds a stale ΔE_red — re-run 95"

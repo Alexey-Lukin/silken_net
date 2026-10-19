@@ -10,8 +10,8 @@ data-driven paper figures into `docs/protocols/ebfc/in_silico/paper/figures/`:
                               (b) mediator Hammett LFER design rule (①)
   * fig4_cathode_det.png    — (a) ZIF Cu-Co-Ce coupling ladder; (b) k_DET margin
                               vs reorganization-energy scenario (③, conditional on λ(Co))
-  * fig5_solvation_pcm.png  — (a) explicit Cl⁻-water series; (b) speciation shift
-                              (B3LYP↔ωB97X) + group-8 [Os(H₂O)₆] PCM benchmark (②)
+  * fig5_cascade_like_for_like.png — (a) the cascade like for like per Os form and donor level (95);
+                              (b) its gap split into the donor and acceptor sides (cancellations named)
   * figS1_betad_ensemble.png — WITHDRAWN 2026-10-15 (cluster 6): no longer generated, `figS1()` kept as the record
 
 Every headline number is cross-checked against the SUMMARY.md canon with an
@@ -100,7 +100,8 @@ def fig3() -> None:
     _close(e_pcet_ph7, -155.4, 1.0, "PCET E° pH7")
     (d_exp,) = pcet["delta_vs_exp_pH7_mV"]  # vs −220 mV (ref 25), the only reading carried — 00_07 HW.5.IS
     _close(d_exp, 64.6, 1.0, "PCET Δ vs exp −220")
-    raw_dir = "downhill" if raw_delta > 0 else "uphill"   # Δε = donor − acceptor; > 0 = the electron goes down
+    e_zpe = _load("pcet_redox_potential_thermo.json")["E_vs_SHE_mV"]["relaxed_plus_zpe"]["pH_7.0"]
+    _close(e_zpe, -429.5, 1.0, "PCET E° pH7, relaxed + ZPE (32b)")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
 
@@ -111,13 +112,10 @@ def fig3() -> None:
         axa.text(x, e + 0.05, f"{e:.3f} eV", ha="center", va="bottom", fontsize=8, color=col)
     axa.text(0, fadh2_homo - 0.07, "FADH₂\n(donor HOMO)", ha="center", va="top", fontsize=7.8)
     axa.text(1, os3_lumo - 0.07, "Os(III)\n(acceptor LUMO)", ha="center", va="top", fontsize=7.8)
-    # electron-transfer arrow (its direction is the sign of raw Δε)
-    axa.annotate("", xy=(1 - bw, os3_lumo), xytext=(bw, fadh2_homo),
-                 arrowprops={"arrowstyle": "-|>", "color": C["purple"], "linewidth": 2.2})
-    axa.text(0.5, (fadh2_homo + os3_lumo) / 2 + 0.04, "e⁻", ha="center", va="bottom",
-             color=C["purple"], fontsize=12, fontweight="bold")
+    # no electron-transfer arrow: a one-electron orbital offset carries no direction for the 2e⁻/2H⁺ step
+    # (⚖️ founder 2026-10-19, D — no conclusion from the sign of a one-electron reading)
     lo, hi = min(fadh2_homo, os3_lumo), max(fadh2_homo, os3_lumo)   # limits follow the levels, never typed
-    axa.text(0.5, hi + 0.17, f"raw Δε = {raw_delta:+.3f} eV ({raw_dir}, programmatic geometry)", ha="center",
+    axa.text(0.5, hi + 0.17, f"Koopmans offset Δε = {raw_delta:+.3f} eV (programmatic Os geometry;\n≈ 0 on Os(III)'s own minimum)", ha="center",
              va="bottom", fontsize=7.3, color=C["purple"])
 
     axa.text(0.02, 0.97,
@@ -127,15 +125,15 @@ def fig3() -> None:
              transform=axa.transAxes, fontsize=6.4, va="top", ha="left",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
     axa.text(0.98, 0.03,
-             f"PCET E°(FAD/FADH₂) = {e_pcet_ph7:.0f} mV vs SHE @pH7\n"
-             f"(exp −220; Δ{d_exp:.0f} mV — the proton-coupled flavin couple)",
+             f"PCET E°(FAD/FADH₂), pH 7: {e_pcet_ph7:.0f} mV (MMFF geometries, electronic)\n"
+             f"{e_zpe:.0f} mV relaxed + ZPE (32b); exp −220 — neither is a validation (§3.2)".replace("-", "−"),
              transform=axa.transAxes, fontsize=6.4, va="bottom", ha="right",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eefaf2", "ec": C["green"], "alpha": 0.92})
     axa.set_xlim(-0.55, 1.55)
     axa.set_ylim(lo - 0.55, hi + 0.6)
     axa.set_xticks([])
     axa.set_ylabel("Orbital energy (eV)")
-    axa.set_title("(a) Anode → mediator electron-transfer cascade")
+    axa.set_title("(a) Frontier-orbital levels (one-electron)")
     axa.grid(True, axis="y", alpha=0.25)
 
     # ---- (b) Hammett LFER ----
@@ -164,7 +162,7 @@ def fig3() -> None:
              label=f"ΔE_red LFER  {slope:.2f} eV/σ (r²={r2:.2f})")
 
     axb.scatter(sig, dered, s=42, color=C["blue"], zorder=3, label="ΔE_red(III→II)")
-    axb.scatter(sig, casc, s=42, marker="s", color=C["red"], zorder=3, label="cascade Δ")
+    axb.scatter(sig, casc, s=42, marker="s", color=C["red"], zorder=3, label="Koopmans offset Δε")
     # mark unstable NO₂ with an open ring
     i_no2 = names.index("no2")
     axb.scatter(sig[i_no2], casc[i_no2], s=140, facecolors="none", edgecolors="k", lw=1.1, zorder=4)
@@ -281,75 +279,76 @@ def fig4() -> None:
 # Fig 5 — solvation / PCM limit (②): (a) explicit waters · (b) speciation + benchmark
 # ─────────────────────────────────────────────────────────────────────────────
 def fig5() -> None:
-    micro = {r["name"]: r for r in _load("microsolvation_dmbpy.json")["results"]}   # dimethyl mediator (the device Os)
-    # [Os(H₂O)₆] group-8 benchmark is bpy-independent → from the plain cache (the dmbpy run omits n18)
-    grp8src = {r["name"]: r for r in _load("microsolvation.json")["results"]}
-    wb = {f["name"]: f for f in _load("wb97x_speciation_dmbpy.json")["forms"]}       # B4 ωB97X dimethyl cross-check
+    """Fig 5 — the cascade like for like (`95`; ⚖️ founder 2026-10-16 «напрямок + таблиця»): (a) every Os form at the four
+    donor levels against the measured cascade for the same free couples; (b) each (form, level) as its donor and acceptor
+    side — the gap is their sum, so a point on the anti-diagonal band is two errors cancelling (95 names them), never a
+    validation. Signs are kept: no abs() anywhere (in-silico §When Modifying #5)."""
+    lfl = _load("cascade_like_for_like.json")
+    levels = [("mmff_electronic", "MMFF el. (32)", "o", C["grey"]), ("relaxed_electronic", "relaxed el. (32b)", "s", C["blue"]),
+              ("relaxed_plus_zpe", "+ ZPE, flavin only", "^", C["red"]), ("relaxed_rrho_free_energy", "+ RRHO, flavin only", "v", C["orange"])]
+    short = {"chloro (device, programmatic)": "Cl\n(device)", "chloro + 1 H₂O on Cl⁻": "Cl\n+1 H₂O", "chloro + 2 H₂O on Cl⁻": "Cl\n+2 H₂O",
+             "chloro + 3 H₂O on Cl⁻": "Cl\n+3 H₂O", "chloro, Os(II) relaxed, Os(III) vertical": "Cl, Os(II)\nrelaxed",
+             "chloro, both states relaxed (adiabatic)": "Cl, both\nrelaxed", "aqua (methodological reference)": "aqua\n(ref.)",
+             "bis-imidazole (operando form)": "bis-Im"}
+    forms = lfl["forms"]
+    meas = lfl["measured"]["cascade_same_couples_V"] * 1000
+    _close(meas, 529.0, 0.5, "measured cascade, same free couples")
+    _close(forms[0]["by_donor_level"]["relaxed_plus_zpe"]["cascade_V"] * 1000, 529.3, 1.0, "device form, + ZPE")
+    bs = lfl["both_sided"]["levels"]
+    i_bs = [f["form"] for f in forms].index(lfl["both_sided"]["form"])
+    vals = [f["by_donor_level"][k]["cascade_V"] * 1000 for f in forms for k, *_ in levels]
+    vals.append(bs["relaxed_plus_zpe"]["cascade_V"] * 1000)
+    if min(vals) <= 0:   # panel (a)'s title is read from the points, never typed
+        sys.exit(f"CANON DRIFT [Fig 5]: a like-for-like cascade is not downhill (min {min(vals):+.1f} mV) — rewrite §3.5")
 
-    k0 = micro["mediator_k0_clwaters"]["cascade_delta_eV"]
-    kseries = [
-        (0, micro["mediator_k0_clwaters"]["cascade_delta_eV"]),
-        (1, micro["mediator_k1_clwaters"]["cascade_delta_eV"]),
-        (2, micro["mediator_k2_clwaters"]["cascade_delta_eV"]),
-        (3, micro["mediator_k3_clwaters"]["cascade_delta_eV"]),
-    ]
-    aqua_shift = micro["aqua_meim_h2o"]["cascade_delta_eV"] - k0
-    bisim_shift = micro["bisim_meim2"]["cascade_delta_eV"] - k0
-    n6 = grp8src["aquo_n6_innershell"]["dE_red_eV"]
-    n18 = grp8src["aquo_n18_twoshell"]["dE_red_eV"]
-    grp8 = n18 - n6
-    _close(k0, 0.065, 0.01, "② chloro k0 (dimethyl)")
-    _close(aqua_shift, 0.490, 0.02, "② aqua speciation shift (dimethyl)")
-    _close(bisim_shift, 0.554, 0.02, "② bis-Im speciation shift (dimethyl)")
-    _close(grp8, 0.982, 0.02, "② group-8 n6→n18")
+    fig, (axa, axb) = plt.subplots(1, 2, figsize=(10.6, 4.5))
 
-    fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
+    # ---- (a) the cascade per form and donor level ----
+    xs = np.arange(len(forms))
+    offs = np.linspace(-0.27, 0.27, len(levels))
+    for (k, lab, mk, col), o in zip(levels, offs, strict=True):
+        axa.scatter(xs + o, [f["by_donor_level"][k]["cascade_V"] * 1000 for f in forms], marker=mk, s=28, color=col,
+                    label=lab, zorder=3)
+    axa.scatter([i_bs + offs[2]], [bs["relaxed_plus_zpe"]["cascade_V"] * 1000], marker="*", s=120, color=C["purple"],
+                zorder=4, label="+ ZPE on both sides (96)")
+    axa.axhline(meas, color="k", ls="--", lw=1.0, label=f"measured: free flavin, film-bound Os ({meas:+.0f} mV)")
+    axa.axhline(0, color="k", lw=0.6)
+    axa.set_xticks(xs)
+    axa.set_xticklabels([short[f["form"]] for f in forms], fontsize=6.4)
+    axa.set_ylabel("cascade E°(Os) − E°(FAD/FADH₂), mV   (> 0 = downhill)")
+    axa.set_ylim(min(0.0, min(vals)) - 40, max(vals) + 160)
+    axa.set_title(f"(a) Downhill in every form at every donor level\n(smallest {min(vals):+.0f} mV; one SHE scale, B3LYP/C-PCM)")
+    axa.legend(fontsize=6.0, loc="upper left", frameon=False, ncol=2)
 
-    # ---- (a) explicit Cl⁻-water series ----
-    kx = np.array([k for k, _ in kseries])
-    ky = np.array([v for _, v in kseries])
-    slope, intercept = np.polyfit(kx, ky, 1)
-    axa.plot(kx, slope * kx + intercept, color=C["grey"], lw=1.2, ls="--",
-             label=f"{slope:.3f} eV / water")
-    axa.scatter(kx, ky, s=48, color=C["blue"], zorder=3)
-    for k, v in kseries:
-        axa.annotate(f"{v:.3f}", (k, v), textcoords="offset points", xytext=(4, 6), fontsize=6.8)
-    closed = ky[-1] - ky[0]
-    axa.set_xticks(kx)
-    axa.set_xlabel("explicit H₂O on Cl⁻ ligand (k)")
-    axa.set_ylabel("cascade Δ (eV)")
-    axa.set_title(f"(a) Explicit microsolvation\n3 H₂O close {closed:+.2f} eV")
-    axa.legend(loc="lower right", frameon=False)
-
-    # ---- (b) speciation shift (B3LYP cascade-Δ vs ωB97X ΔE_red) + group-8 benchmark ----
-    species = ["aqua", "bis-Im"]
-    b3 = [aqua_shift, bisim_shift]
-    wbsh = [abs(wb["aqua"]["shift_vs_chloro_eV"]), abs(wb["bisim"]["shift_vs_chloro_eV"])]
-    xs = np.arange(len(species))
-    w = 0.36
-    axb.bar(xs - w / 2, b3, width=w, color=C["blue"], label="B3LYP |Δ cascade|", zorder=3)
-    axb.bar(xs + w / 2, wbsh, width=w, color=C["sky"], label="ωB97X |Δ(ΔE_red)|", zorder=3)
-    for x, v in zip(xs - w / 2, b3, strict=False):
-        axb.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=6.8)
-    for x, v in zip(xs + w / 2, wbsh, strict=False):
-        axb.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=6.8)
-
-    # group-8 PCM benchmark bar (separate category)
-    gx = len(species)
-    axb.bar([gx], [grp8], width=w * 1.3, color=C["orange"], zorder=3, label="[Os(H₂O)₆] n6→n18")
-    axb.text(gx, grp8 + 0.012, f"{grp8:.2f}", ha="center", fontsize=6.8)
-
-    axb.axhline(0, color="k", lw=0.6)
-    axb.set_xticks([*list(xs), gx])
-    axb.set_xticklabels([*species, "group-8\nPCM error"])
-    axb.set_ylabel("shift vs chloro / 2nd-shell shift (eV)")
-    # revision step 3, 00_07 HW.5.IS (self-review cluster 5): «group-8» rests on one Ru couple (ref 19) — retitle there
-    axb.set_title("(b) Bracket functional-robust; aqua↔bis-Im order is not;\n[Os(H₂O)₆] recovers the ~1 V group-8 PCM error")
-    axb.legend(loc="upper left", frameon=False)
-    axb.set_ylim(0, 1.15)
+    # ---- (b) the gap split into its two sides ----
+    gap_max = lfl["cancellations"]["gap_max_V"] * 1000
+    donor = {k: lfl["flavin"]["levels"][k]["donor_side_V"] * 1000 for k, *_ in levels}
+    acc = [f["acceptor_side_V"] * 1000 for f in forms]
+    xs_all = [*donor.values(), bs["relaxed_plus_zpe"]["donor_side_V"] * 1000]
+    ys_all = [*acc, bs["relaxed_plus_zpe"]["acceptor_side_V"] * 1000]
+    lo, hi = min(xs_all + ys_all) - 60, max(xs_all + ys_all) + 60
+    line = np.array([lo, hi])
+    axb.fill_between(line, -line - gap_max, -line + gap_max, color=C["green"], alpha=0.18, lw=0,
+                     label=f"|gap| ≤ {gap_max:.0f} mV")
+    axb.plot(line, -line, color=C["green"], lw=0.9)
+    for k, lab, mk, col in levels:
+        axb.scatter([donor[k]] * len(forms), acc, marker=mk, s=26, color=col, label=lab, zorder=3)
+    axb.scatter([bs["relaxed_plus_zpe"]["donor_side_V"] * 1000], [bs["relaxed_plus_zpe"]["acceptor_side_V"] * 1000],
+                marker="*", s=120, color=C["purple"], zorder=4, label="+ ZPE on both sides (96)")
+    for f, a in zip(forms, acc, strict=True):
+        axb.annotate(short[f["form"]].replace("\n", " "), (max(donor.values()), a), textcoords="offset points",
+                     xytext=(6, -2), fontsize=5.4, color=C["grey"])
+    axb.axhline(0, color="k", lw=0.5)
+    axb.axvline(0, color="k", lw=0.5)
+    axb.set_xlim(lo, hi)
+    axb.set_ylim(lo, hi)
+    axb.set_xlabel("donor side: computed − measured flavin, mV")
+    axb.set_ylabel("acceptor side: measured − computed Os, mV")
+    axb.set_title("(b) The gap is the sum of the two sides —\non the band they cancel; no point is a validation")
+    axb.legend(fontsize=5.8, loc="lower left", frameon=False)
 
     fig.tight_layout()
-    out = PAPER_FIG_DIR / "fig5_solvation_pcm.png"
+    out = PAPER_FIG_DIR / "fig5_cascade_like_for_like.png"
     fig.savefig(out)
     plt.close(fig)
     print(f"  ✓ {out.relative_to(REPO_ROOT)}")

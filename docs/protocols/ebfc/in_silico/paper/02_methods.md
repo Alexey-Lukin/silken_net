@@ -26,10 +26,11 @@ reported here is computed on it.
 All density-functional calculations used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
 geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
-energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the adiabatic cascade, §2.3; six members of the
+energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for cross-checks (the one-electron ΔSCF readings, §2.3; six members of the
 Hammett series, vertical, §3.3). The
 basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL2DZ** effective-core potential
-and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> The
+and basis<sup>40</sup> on the transition metals (Os, Cu, Co, Ru) and the **Stuttgart RSC** ECP/basis on cerium.<sup>41</sup> Both pseudopotentials are scalar-relativistic, so spin–orbit
+coupling is not computed; its size for the osmium couple is taken from the literature in §3.5. The
 adiabatic ωB97X cross-check (§2.3) replaced 6-31G(d) by **def2-TZVP**<sup>42</sup> on the non-metal atoms, keeping LANL2DZ
 on osmium, and so did the ωB97X Hammett cross-check, whose NH₂ and NO₂ ends were also computed with the 6-31G(d)/LANL2DZ basis of the B3LYP tier, as was the ωB97X speciation cross-check. In the ωB97X Hammett cross-check an open-shell Os(III) state was accepted on its ⟨S²⟩ (≤ 0.80; a pure doublet is 0.75), not on convergence alone. For its end points (NMe₂, NH₂, NO₂, SO₂CF₃) the value was read from run logs that are not part of the deposited data, and one run failed — NO₂ at ωB97X/6-31G(d), where the second-order solver had reached a spin-contaminated state that its record still marked as converged; it was recomputed from a doublet start built from its Os(II) orbitals, and that record carries ⟨S²⟩, internal stability and an aufbau filling. No ⟨S²⟩ was kept for the B3LYP Hammett series, whose points rest on SCF convergence. Aqueous
 solvation was treated with the **C-PCM** continuum<sup>43,44</sup> (ε = 78.3553) for the redox, speciation and
@@ -53,14 +54,14 @@ second-order (Newton) solver taking over where DIIS stalled. Heavy-metal `densit
 The mediator (Os(III)/Os(II)) and flavin redox energies were obtained by **ΔSCF**, i.e. as the
 total-energy difference between the two charge/spin states at a fixed (vertical) geometry, rather
 than from Koopmans orbital energies; an **adiabatic** ΔSCF (geometry optimised at B3LYP/def2-SVP,
-single point at ωB97X/def2-TZVP) was computed for the cascade as a composite cross-check — the flavin
+single point at ωB97X/def2-TZVP) was computed as a one-electron reading of the first oxidation (Table 2b) — the flavin
 geometries relaxed and the osmium couple kept vertical on its programmatic geometry; every flavin geometry optimised
-in DFT here (this cross-check, the proton-coupled cascade test of §2.4 and the semiquinone λ of §2.5) is a minimum by
+in DFT here (this reading, the proton-coupled route of §2.4 and the semiquinone λ of §2.5) is a minimum by
 its analytic C-PCM Hessian, a stationary point with an imaginary mode beyond 20i cm⁻¹ having been stepped off along those
 modes and re-optimised; the osmium optimisations
 in this work — the Os(II) points of OMe, Me, H, Cl and NO₂ in the substituent check of §3.3 and their Os(III) points relaxed
 from them, converged at the default energy and gradient thresholds and the loose displacement threshold the flat Os–Cl
-mode needs — do not enter the cascade; §3.5 reports what they do to the device couple's cascade numbers. The
+mode needs — enter the like-for-like cascade of §3.5 as two of its osmium forms (Table 2). The
 osmium mediator was built as the full cis-[Os(bpy)₂(L)(X)]ⁿ⁺ octahedron by rigid-body placement
 of MMFF94s-optimised<sup>45,46</sup> ligands (RDKit<sup>47</sup> cannot embed an octahedral metal centre) onto assumed
 target distances — Os–N(bpy) 2.06 Å at a 78° bite, Os–N(L) and Os–O 2.10 Å, Os–Cl 2.38 Å — for which no primary
@@ -95,9 +96,32 @@ recomputed.
 The FAD/FADH₂ potential is a 2 e⁻/2 H⁺ process, so the proton was handled by a **thermodynamic
 proton reference** (the experimental aqueous proton free energy<sup>16</sup>) rather than by an explicit
 hydronium ion — implicit solvent over-stabilises small cations such as H₃O⁺ by several eV and is
-unsuitable for proton-transfer corrections. The same reference was used to test whether a
-proton-coupled re-framing of the first anode oxidation (FADH₂ → FADH• + H⁺ + e⁻) alters the
-cascade thermodynamics.
+unsuitable for proton-transfer corrections. The same reference gives the proton-coupled
+one-electron route of the first anode oxidation, FADH₂ → FADH• + H⁺ + e⁻ (Table 2b), with ωB97X/def2-TZVP energies on
+B3LYP/6-31G(d) geometries.
+
+**Thermochemistry of the flavin couple and the like-for-like cascade.** The oxidised and the 1,5-dihydro reduced
+flavin (lumiflavin core) were optimised at B3LYP/6-31G(d) in C-PCM water through the shared geomeTRIC optimiser (with
+the DFT grid response in the gradient), each confirmed a minimum by its analytic C-PCM Hessian — the planar starting
+geometry of the reduced flavin converged first to a planar saddle 117.5 meV above the butterfly minimum, reached from
+it by a step along its imaginary modes and a re-optimisation — and given zero-point and rigid-rotor–harmonic-oscillator (RRHO) thermal
+terms at 298.15 K, so that E°(FAD/FADH₂) is reported at four levels (MMFF geometries, relaxed, + zero-point energy,
++ RRHO free energy), each with the same proton reference. For one osmium form — the device chloro couple with both
+oxidation states relaxed — analytic Hessians of both states give the osmium side its zero-point and RRHO terms as
+well; an imaginary mode beyond 20i cm⁻¹ that is a methyl torsion (at most 150i cm⁻¹, at least 0.8 of its squared
+amplitude on CH₃ groups) is recorded and dropped from the zero-point and thermal sums rather than treated as a skeletal
+saddle, and the couple's RRHO free energy is not used when the soft-mode censuses of its two states (imaginary modes and
+real modes below 50 cm⁻¹) differ — in this form Os(III) carries two small imaginary modes, both methyl torsions, at
+22.8i cm⁻¹ and at 14.2i cm⁻¹ under the 20i tolerance, both left out of the sums, so the couple has a zero-point level but
+no RRHO level. These Hessians, like the flavin's, omit the DFT grid response that the optimisation gradient includes. The cascade is then assembled on
+one SHE scale (|SHE_abs| = 4.281 V, the convention of the proton reference) as E°(Os) − E°(FAD/FADH₂, pH 7) for each
+osmium form and each flavin level, without a further SCF; its donor side (computed − measured free flavin) and
+acceptor side (measured − computed osmium) are reported separately, and an agreement with the measured cascade
+within 50 mV while each side is at least 100 mV off is flagged as a cancellation (the 50 and 100 mV thresholds are ours). The
+other absolute-SHE value in common use, 4.44 V, lies 159 mV away; the cascade inherits that difference in full when the
+proton free energy moves with it — E°(Os) has no proton to compensate — and the donor/acceptor split moves by it
+otherwise. That shift, the literature size of spin–orbit coupling on osmium and the ωB97X−B3LYP difference on the device
+couple are set against every cell in §3.5, since every cell shares them.
 
 ## 2.5 Electron-transfer kinetics
 
@@ -133,9 +157,9 @@ computed and half cited. The literature-λ scenario of §3.4 and Table 3 pairs t
 textbook values at the remaining nodes (Co 1.4, Ce 1.0 and Ru 0.8 eV), likewise without a cited primary;
 both assumptions are labelled as such in the scripts that consume them, and the scenario is read at its
 adverse corner rather than as a measurement. For the anode the
-physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used — the naïve
-FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in implicit solvent and does not yield
-a meaningful λ [finalise — revision step 3, 00_07 HW.5.IS: measured on the retired 4a,5-dihydro tautomer (script 29); on the 1,5-dihydro donor FADH₂•⁺ relaxes to a minimum by its Hessian (script 21g), and the λ of that couple was not computed — rewritten in step 3]. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
+physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used; the radical-cation couple
+FADH₂/FADH₂•⁺ was not — on the retired 4a,5-dihydro tautomer its cation fragmented on relaxation in continuum
+solvent, and on the 1,5-dihydro donor, where it relaxes to a minimum, its λ was not computed. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
 
 **Thermal ensemble.** Frames were taken from a separate explicit-solvent molecular-dynamics production
 trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for
@@ -149,9 +173,9 @@ on its frames — a contact-graph search from source atoms other than those of t
 
 To probe the implicit-solvation limit on the charge-changing octahedral couples, explicit
 first/second-shell waters were added around the redox centre and the chloride ligand and the ΔSCF
-redox energy re-evaluated as a function of shell size,<sup>17,54</sup> benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
-(the ~1 V error reported for [Ru(H₂O)₆]²⁺ with PCM-type models<sup>19</sup>). The residual cascade gap was decomposed into a
-chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term. [finalise — revision step 3, 00_07 HW.5.IS: rebuilt like-for-like, and the cascade ΔSCF half-reaction (FADH₂ → FADH₂•⁺ + e⁻) named here.]
+redox energy re-evaluated as a function of shell size,<sup>17,54</sup> compared with the [Os(H₂O)₆]³⁺/²⁺ couple
+(the ~1 V error reported for [Ru(H₂O)₆]²⁺ with PCM-type models<sup>19</sup>). The resulting osmium forms enter the like-for-like cascade of §3.5 (Table 2) as forms,
+not as corrections: their shifts are reported, and no gap is decomposed into them.
 
 ## 2.7 Reproducibility
 
@@ -187,8 +211,8 @@ values of the device couple to 5.4 × 10⁻¹⁰ Ha in both oxidation states, an
 far beyond a change of cavity — which points to a different SCF solution rather than to the cavity, so that state
 is not attributed (2.13.0 also changed SCF defaults). The bug acts on every calculation with an ECP metal in the
 continuum — both tiers of the osmium couples, the Hammett, speciation and micro-solvation series and the Co/Ce/Ru
-reorganisation energies — and on the quantities derived from them (the Koopmans offset and the adiabatic ΔSCF of
-Table 2, the PCET cascade, the cathode λ); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
+reorganisation energies — and on the quantities derived from them (the Koopmans offset, the adiabatic ΔSCF and
+the PCET route of Table 2b, every E°(Os) of the like-for-like Table 2, the cathode λ); the flavin chain (no ECP) and the gas-phase ZIF couplings lie outside it
 by construction, which is why scripts 20, 32 and 24b reproduced exactly. Of the committed caches in that class only
 the B3LYP device couple was re-run under the lock; for the others the size of the gap is bounded by this argument
 and by the device and closed-shell measurements above, not measured.
@@ -196,8 +220,9 @@ and by the device and closed-shell measurements above, not measured.
 What moves is the third decimal of ΔE_red and the second decimal of the Os(III) LUMO and of the orbital offset
 built on it: on the device couple (identical to the Me row of Table 4), ΔE_red −4.381 eV, LUMO −4.086 eV and
 offset +0.0676 eV in the recorded environment read −4.384, −4.096 and +0.0779 eV under the lock, so the Koopmans
-offset of §3.5 and Fig 3 becomes +0.08 eV. The shift is far below the ~1 eV continuum-solvation limit that the
-osmium results are themselves reported against [finalise — revision step 3, 00_07 HW.5.IS: that scale of the osmium results is re-read like-for-like, and the Koopmans offset on Os(III)'s own minimum (−0.003 eV) lies inside this shift], so it changes no conclusion drawn here, and the points of each
+offset of §3.5 and Fig 3 becomes +0.08 eV. The shift (10 meV) is far below the protocol dependence of the like-for-like cascade
+(§3.5, hundreds of millivolts), though larger than the Koopmans offset on Os(III)'s own minimum (−0.003 eV), whose sign
+no conclusion here rests on; it changes no conclusion drawn here, and the points of each
 series share one cavity convention. The lock is, moreover, not one environment across platforms: the reproductions
 above ran on osx-arm64, whereas on linux-64 the same lock resolves RDKit 2025.03.6 against the 2025.09.5 of the
 recorded environment and of the osx-arm64 lock, and under that version the geometry builder places the CF₃ member of

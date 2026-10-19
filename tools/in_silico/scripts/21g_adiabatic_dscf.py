@@ -22,7 +22,7 @@ with NO script — the generator was lost). Recomputes the headline composite ad
 
 The FAD side does not depend on the mediator (same flavin), so re-running with the
 dimethyl Os only changes EA_Os3 → ΔG. On the 1,5-dihydro donor's minimum both come out uphill (the adiabatic
-one read downhill only from the planar saddle the start converges to, until the 2026-10-19 re-run); what the gap to the verified −0.574 eV is made of is revision step 3's (00_07 HW.5.IS).
+one read downhill only from the planar saddle the start converges to, until the 2026-10-19 re-run); these one-electron readings are not like-for-like with the verified −0.574 eV — the cascade like for like is 95's.
 This script supplies the DFT mechanism number, not the verdict.
 
 Discipline: no density_fit; level_shift on the FADH₂⁺ doublet + SOSCF fallback; DFT

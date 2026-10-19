@@ -5,8 +5,8 @@
 WHY. On the 4a,5-dihydro donor the chain carried until 2026-10-15 the raw FADH₂→Os cascade came out
 uphill in every implicit-solvent method (B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV, plain bpy);
 on the 1,5-dihydro donor the B3LYP-Koopmans offset (programmatic geometry) comes out downhill and the adiabatic ΔSCF uphill on
-the minimum (downhill from the planar saddle until 2026-10-19; comparison.json · delta_scf_corrections.json) — ⚠️ the reasoning below was written for the old numbers and is rewritten in revision step 3
-(00_07 HW.5.IS). The verified experimental driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
+the minimum (downhill from the planar saddle until 2026-10-19; comparison.json · delta_scf_corrections.json) — ⚠️ the reasoning below was written for the old numbers; since 2026-10-19 the paper
+uses these forms in the like-for-like cascade (95) as forms and decomposes no gap into them (00_07 HW.5.IS). The verified experimental driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
 Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
 GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to
 65 mV (free-flavin −220 mV), so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
@@ -23,6 +23,9 @@ gap-closing direction, on TWO systems:
              metal + basis as the Os mediator complexes below, so the recovered
              PCM error transfers directly. (⛔ 'the real mediator' is NOT a name
              for anything computed in this file — see the mediator bullet.) Validates the protocol vs a known group-8 case.
+             ⊕ 2026-10-19: it validates nothing — the second shell LOWERS this couple's E° by 0.98 eV, the
+             opposite of the chloride waters, which raise the device couple's; it sizes the continuum-error class on
+             a small +2/+3 couple and is no benchmark the device couple is read against (SUMMARY, the ② banner).
   • mediator — the plain-bpy PARENT cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ (≡ ① reference / 21b). ⛔ NOT the device mediator: that is Zafar's 4,4'-dimethyl-bpy complex (21f, os_complex.json canon) — 'the real mediator' stood here and was superseded by the OS-RECOMPUTE with
              k=0..3 explicit waters H-bonded to the Cl⁻ ligand (the dominant
              directional H-bond site PCM gets wrong). k=0 reuses ① from cache.

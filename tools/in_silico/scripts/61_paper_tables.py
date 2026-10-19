@@ -22,11 +22,6 @@ from lib.constants import DFT_CACHE, HARTREE_TO_EV, PAPER_DIR, REPO_ROOT
 
 SI_DESCRIPTION = "61 — Paper Tables T1–T4, generated from the cache (drift-safe)."  # its row in the paper SI (72): English, no repo jargon
 
-# Canon values that live in SUMMARY prose (not a single cache field) — kept here as
-# explicit constants WITH a source note, and cross-checked against cache where one exists.
-B3LYP_CORRECTED_WITHDRAWN = -0.07     # SUMMARY: tuned to the wrong −0.14 → withdrawn, do NOT cite
-EXP_VERIFIED_EV = -0.574             # E°(Os)+309 − E°(FAD-GDH)−265 mV SHE (Zafar 2012 + Schachinger 2023)
-
 
 def _load(name: str) -> dict:
     p = DFT_CACHE / name
@@ -86,43 +81,108 @@ def build() -> str:
     md.append("## Table 1. Levels of theory\n")
     md.append("| Tier | Functional | Basis / ECP | Solvent | Used for |")
     md.append("|---|---|---|---|---|")
-    md.append("| Screening | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, mediator series (①), speciation (②) |")
-    md.append("| Publication — cascade | ωB97X (FAD geometries B3LYP/def2-SVP) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | adiabatic ΔSCF cross-check |")
+    md.append("| Cascade like for like · series · speciation | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, the like-for-like cascade (Table 2), mediator series (①), speciation (②) |")
+    md.append("| Thermochemistry | B3LYP + analytic C-PCM Hessian; RRHO at 298.15 K | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | the flavin E° at four levels (32b); the Os couple's zero-point energy, one form (96) |")
+    md.append("| ωB97X one-electron readings | ωB97X single points (FAD geometries B3LYP/def2-SVP for the ΔSCF, B3LYP/6-31G(d) for the proton-coupled route) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | vertical and adiabatic ΔSCF of the first oxidation; the proton-coupled one-electron route with the proton reference (Table 2b) |")
     md.append("| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |")
-    md.append("| PCET | B3LYP/6-31G(d) + thermodynamic proton reference (Isse–Gennaro) | — | PCM | FAD E°; semiquinone cascade |")
+    md.append("| PCET | B3LYP + thermodynamic proton reference (Isse–Gennaro) | 6-31G(d) | C-PCM (water) | the 2e⁻/2H⁺ FAD E° (32, 32b) |")
     md.append("| Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |")
     md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); two-state orbital diabatisation, FO-DFT label (24b) | none (gas phase) | ZIF inter-metal t_ij |")
     md.append("\n*Reproducibility: scripted, fixed-seed DFT in `tools/in_silico`; every DFT cache behind these tables computed with PySCF 2.11.0 "
               "(the recorded environment — §2.7; the lock re-runs are separate records, SI S3).*\n")
 
-    # ── Table 2 — cascade energetics, all methods ──
-    def direction(g: float) -> str:   # ΔG < 0 = downhill — read from the number, never typed beside it
-        return "downhill" if g < 0 else "uphill"
+    # ── Table 2 — the cascade like for like (95; ⚖️ founder 2026-10-16 «напрямок + таблиця»), then the one-electron
+    # readings of the same step for the record — their sign carries no conclusion (⚖️ founder 2026-10-19, D) ──
+    lfl = _load("cascade_like_for_like.json")
+    levels = ("mmff_electronic", "relaxed_electronic", "relaxed_plus_zpe", "relaxed_rrho_free_energy")
+    meas = lfl["measured"]
+    _close(meas["cascade_same_couples_V"], 0.529, 1e-9, "T2 measured cascade, same free couples")
+    _close(lfl["forms"][0]["by_donor_level"]["relaxed_electronic"]["cascade_V"], 0.2185, 0.0006, "T2 device form, relaxed el.")
+    _close(lfl["both_sided"]["levels"]["relaxed_plus_zpe"]["cascade_V"], 0.5963, 0.0006, "T2 both-sided chloro, + ZPE")
 
-    koop = koop_dm
+    def sg(x: float, spec: str) -> str:   # the table's minus sign, not a hyphen
+        return f"{x:{spec}}".replace("-", "−")
+
+    def mv(v: float) -> str:
+        return sg(v * 1000, "+.1f")
+
+    def mv0(v: float, signed: bool = True) -> str:   # a measured value or a threshold — whole millivolts
+        return sg(v * 1000, "+.0f" if signed else ".0f")
+
+    cells = [f["by_donor_level"][k]["cascade_V"] for f in lfl["forms"] for k in levels]
+    cells += [lfl["both_sided"]["levels"][k]["cascade_V"] for k in ("relaxed_electronic", "relaxed_plus_zpe")]
+    if min(cells) <= 0:   # the caption's «every cell is downhill» is read from the cells, never typed
+        sys.exit(f"CANON DRIFT [T2]: a like-for-like cell is not downhill (min {min(cells) * 1000:+.1f} mV) — rewrite §3.5")
+
+    sh = lfl["shared_shifts"]
+    soc, conv = sh["terms"]["spin_orbit_os"], sh["terms"]["she_abs_4_44"]
+    both = sh["combined"]["spin_orbit_os + she_abs_4_44"]
+    film = _load("os_series_vs_measured.json")["pvi_series"]["loading_control"]["shift_mV"] / 1000.0   # §3.3's 135 mV
+    flv = lfl["flavin"]["levels"]
+    md.append("## Table 2. The anode→mediator cascade like for like — the 2e⁻/2H⁺ flavin couple against each Os(III/II) "
+              "form on one SHE scale\n")
+    md.append("| Os form (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM) | E°(Os) vs SHE, mV | acceptor side, mV | cascade, flavin MMFF el. "
+              "| cascade, flavin relaxed el. | cascade, flavin + ZPE ¹ | cascade, flavin + RRHO ¹ |")
+    md.append("|---|---|---|---|---|---|---|")
+    md.append("| *flavin: E°(FAD/FADH₂) at pH 7, mV (donor side)* | | | "
+              + " | ".join(f"*{mv(flv[k]['E_pH7_computed_V'])} ({mv(flv[k]['donor_side_V'])})*" for k in levels) + " |")
+    for f in lfl["forms"]:
+        md.append(f"| {f['form']} | {mv(f['E_os_vs_SHE_V'])} | {mv(f['acceptor_side_V'])} | "
+                  + " | ".join(mv(f["by_donor_level"][k]["cascade_V"]) for k in levels) + " |")
+    bs = lfl["both_sided"]["levels"]
+    md.append(f"| {lfl['both_sided']['form']}, Os side with its own ZPE ² | {mv(bs['relaxed_electronic']['E_os_vs_SHE_V'])} el. / "
+              f"{mv(bs['relaxed_plus_zpe']['E_os_vs_SHE_V'])} + ZPE | "
+              f"{mv(bs['relaxed_electronic']['acceptor_side_V'])} el. / {mv(bs['relaxed_plus_zpe']['acceptor_side_V'])} + ZPE | — | {mv(bs['relaxed_electronic']['cascade_V'])} | "
+              f"{mv(bs['relaxed_plus_zpe']['cascade_V'])} | not comparable ³ |")
+    md.append(f"| **Measured (free flavin; film-bound mediator, pH 7.4)** | **{mv0(meas['E_os_V'])}** | | "
+              + " | ".join(f"**{mv0(meas['cascade_same_couples_V'])}**" for _ in levels) + " |")
+    canc = "; ".join(f"{c['form']} at {flv[c['level']]['label']} ({mv(c['gap_V'])} mV = donor {mv(c['donor_side_V'])} + "
+                     f"acceptor {mv(c['acceptor_side_V'])})" for c in lfl["cancellations"]["rows"])
+    md.append(f"\n*Cascade = E°(Os) − E°(FAD/FADH₂, pH 7) in mV, > 0 = downhill; every cell is downhill (smallest "
+              f"{mv(min(cells))} mV). Donor side = computed − measured free flavin "
+              f"({mv0(lfl['flavin']['E_pH7_measured_free_V'])} mV); acceptor side = measured ({mv0(meas['E_os_V'])} mV) − "
+              f"computed Os; their sum is the gap to the measured {mv0(meas['cascade_same_couples_V'])} mV (the free flavin against the "
+              f"film-bound mediator, whose preparation moves its E°′ by {mv0(film, False)} mV, §3.3; the flavin at pH 7, the film "
+              f"at pH 7.4). The device's {mv0(meas['cascade_device_V'])} mV adds the measured protein shift of the bound cofactor "
+              f"({mv0(meas['protein_shift_V'])} mV), which is not computed here. The flavin levels: MMFF "
+              "geometries (script 32), relaxed (32b), + its zero-point energy, + its RRHO free energy. ¹ One-sided: these "
+              "levels correct the flavin only — every Os form stays at its electronic energy, except the row marked ². "
+              "² Both Os states relaxed and given their own zero-point energy (script 96). ³ The two Os states' soft-mode "
+              f"censuses differ, so their RRHO free energies are not compared. Every cell shares one functional, one continuum, one "
+              f"absolute-SHE convention ({lfl['conventions']['SHE_abs_V']} V) and a scalar-relativistic osmium, which the cells do "
+              f"not test: spin–orbit coupling on osmium, omitted, reverses a cell beyond {mv(soc['first_flip_at_V'])[1:]} mV and at its "
+              f"octahedral literature value ({mv0(soc['shift_V'])} mV, not computed) turns up to {soc['n_uphill']} of the "
+              f"{soc['n_cells']} cells uphill, while against the measured flavin the device couple stays at "
+              f"{mv(soc['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} mV; the alternative 4.44 V convention "
+              f"({mv0(conv['shift_V'])} mV) turns {'none' if not conv['n_uphill'] else conv['n_uphill']}, the two together "
+              f"{both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
+              f"(|gap| ≤ {mv0(lfl['cancellations']['gap_max_V'], False)} mV while each side is ≥ "
+              f"{mv0(lfl['cancellations']['each_side_min_V'], False)} "
+              f"mV off): {canc}.*\n")
     # the ΔSCF rows from their DEFINITION — 21g's energies and B1's — never from the 4-decimal display rows: the vertical
     # 0.38745 is stored as 0.3875 and would print +0.388 (in-silico §When Modifying #6); the display rows stay a control
     ea_dm = (wb_dm["os3_plus"]["E_total_Ha"] - wb_dm["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV
     vert = (dscf["E_FADH2_cation_vertical_Ha"] - dscf["E_FADH2_Ha"]) * HARTREE_TO_EV - ea_dm
     adia = (dscf["E_FADH2_cation_adiabatic_Ha"] - dscf["E_FADH2_Ha"]) * HARTREE_TO_EV - ea_dm
     # 6e-5 = the display rows' rounding bound (round(·, 4) → 5e-5) plus 1e-5 for the float path
-    _close(vert, dscf["dG_vertical_eV"], 6e-5, "T2 ΔSCF vertical vs its cached display row")
-    _close(adia, dscf["dG_adiabatic_eV"], 6e-5, "T2 ΔSCF adiabatic vs its cached display row")
-    md.append("## Table 2. Anode→mediator cascade ΔG per electron, all methods\n")
-    md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |")
-    md.append("|---|---|---|---|")
-    def sg(x: float, spec: str) -> str:   # the table's minus sign, not a hyphen
-        return f"{x:{spec}}".replace("-", "−")
-
-    md.append(f"| Koopmans ωB97X (orbital offset) | {sg(koop, '+.3f')} | {direction(koop)} | range-separation artefact — *never use* |")
-    md.append(f"| ΔSCF ωB97X (vertical) | {sg(vert, '+.3f')} | {direction(vert)} | {sg(vert - EXP_VERIFIED_EV, '+.2f')} |")
-    md.append(f"| **ΔSCF ωB97X (adiabatic)** | **{sg(adia, '+.3f')}** | {direction(adia)} | {sg(adia - EXP_VERIFIED_EV, '+.2f')} |")
-    md.append(f"| B3LYP Koopmans «corrected» | {sg(B3LYP_CORRECTED_WITHDRAWN, '+.2f')} | — | **withdrawn** (tuned to the wrong −0.14) |")
-    md.append(f"| **Experiment (verified E°s)** | **{sg(EXP_VERIFIED_EV, '+.2f')}** | **downhill** | reference |")
-    md.append("\n*FADH₂ = the 1,5-dihydro tautomer. [finalise — revision step 3, 00_07 HW.5.IS: these rows are one-electron "
-              "readings, not like-for-like with the verified value, so the difference column and the table are rebuilt "
-              "like-for-like in step 3.] The verified "
-              "+574 mV / −0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*\n")
+    _close(vert, dscf["dG_vertical_eV"], 6e-5, "T2b ΔSCF vertical vs its cached display row")
+    _close(adia, dscf["dG_adiabatic_eV"], 6e-5, "T2b ΔSCF adiabatic vs its cached display row")
+    pc = _load("pcet_cascade.json")
+    pcet = (pc["E_FADH_radical_Ha"] - pc["E_FADH2_Ha"]) * HARTREE_TO_EV + pc["G_star_H_aq_eV"] - ea_dm
+    _close(pcet, pc["cascade_pcet_eV"], 6e-4, "T2b PCET route vs its cached display row (3 decimals)")
+    md.append("## Table 2b. One-electron readings of the same step — not like-for-like with the 2e⁻/2H⁺ driving force\n")
+    md.append("| Reading (ωB97X/def2-TZVP, the device dimethyl mediator) | ΔE/e⁻ (eV), > 0 = uphill |")
+    md.append("|---|---|")
+    md.append(f"| ΔSCF, vertical | {sg(vert, '+.3f')} |")
+    md.append(f"| ΔSCF, adiabatic (FAD side relaxed; Os vertical) | {sg(adia, '+.3f')} |")
+    md.append(f"| Proton-coupled route FADH₂ → FADH• + H⁺ + e⁻ (proton reference; B3LYP/6-31G(d) geometries) | {sg(pcet, '+.3f')} |")
+    md.append("\n*Electronic energy differences per electron transferred (the proton-coupled route adds the proton reference). "
+              f"The ωB97X Koopmans offset, Δε = ε_HOMO(FADH₂) − ε_LUMO(Os(III)) = {sg(-koop_dm, '+.3f')} eV in Table 4's sign "
+              "(> 0 = downhill), is a range-separation artefact and is not used. FADH₂ = the 1,5-dihydro "
+              "tautomer; the flavin geometries are minima by their Hessians, the osmium side vertical on its programmatic "
+              "geometry. These are "
+              "one-electron quantities set against no two-electron value here, and no conclusion is drawn from their sign; the "
+              "B3LYP orbital offset is in Table 4 (Me row).*\n")
 
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"
@@ -186,10 +246,10 @@ def build() -> str:
               + ".*\n")
 
     # ── Table 4 — mediator structure–activity series ──
-    md.append("## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)\n")
+    md.append("## Table 4. Osmium mediator series — ΔE_red and the Koopmans offset vs Hammett σ (①)\n")
     md.append("cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at constant charge; B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; "
               "last column — the same ΔSCF at ωB97X/def2-TZVP on the same geometry, minus the B3LYP value.\n")
-    md.append("| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | cascade Δ (eV) | note | ω−B3 (eV) |")
+    md.append("| 4,4′-X | σ_para | ΔE_red(III→II) (eV) | Os(III) LUMO (eV) | Koopmans offset Δε (eV) | note | ω−B3 (eV) |")
     md.append("|---|---|---|---|---|---|---|")
     lbl = {"nme2": "NMe₂", "nh2": "NH₂", "ome": "OMe", "dmbpy": "Me", "bpy": "H",
            "cl": "Cl", "dcbpy": "COOH", "cf3": "CF₃", "no2": "NO₂", "so2cf3": "SO₂CF₃"}
@@ -238,13 +298,13 @@ def build() -> str:
         rel = v["relaxed_member"]
         other = hi if rel == lo else lo
         return (f"the order of {lbl[lo]}→{lbl[hi]} ({m(v['programmatic_koopmans_gap_meV'], '+.1f')} meV) is not "
-                f"decided — relaxing {lbl[rel]} alone moves {lbl[rel]}'s own cascade Δ by "
+                f"decided — relaxing {lbl[rel]} alone moves {lbl[rel]}'s own Koopmans offset by "
                 f"{m(mv['os3_on_own_minimum'], '+.0f')} meV with Os(III) on its own minimum and "
                 f"{m(mv['os3_on_os2_minimum'], '+.0f')} meV with Os(III) vertical, and {lbl[other]} was not relaxed")
     undecided = "".join("; " + pair_clause(k, v) for k, v in open_pairs)
     if flipped:
         undecided += ("; relaxing both members reverses " + ", ".join("→".join(lbl[x] for x in f.split("-")) for f in flipped))
-    md.append(f"\n*Design rule: cascade Δ rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
+    md.append(f"\n*Design rule: the Koopmans offset rises with σ ({m(ends_casc[0]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[0]['name']]} → {m(ends_casc[1]['cascade_delta_eV'], '+.2f')} "
               f"{lbl[ends_casc[1]['name']]}){undecided}; ΔE_red "
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "

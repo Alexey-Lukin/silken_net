@@ -99,6 +99,18 @@ _SUP_MAP = ({c: str(i) for i, c in enumerate(_SUP)}
             | dict.fromkeys(_DASHES, "-") | {_SUP_MINUS: "-"})
 
 
+def _hexa(d: dict, name: str) -> float:
+    """ΔE_red (eV) of one [Os(H₂O)ₙ] shell row of 34's microsolvation.json."""
+    return next(r for r in d["results"] if r["name"] == name)["dE_red_eV"]
+
+
+def _ss_after(d: dict, form: str, level: str) -> float:
+    """A cell's cascade (mV) after spin–orbit coupling alone — read from 95's `shared_shifts`, NaN when that cell does not
+    flip (the doc names it as one that does)."""
+    hit = [u for u in d["shared_shifts"]["terms"]["spin_orbit_os"]["uphill"] if u["form"] == form and u["level"] == level]
+    return 1000 * hit[0]["after_V"] if hit else float("nan")
+
+
 def _to_float(s: str) -> float:
     if s == "∞":
         return math.inf
@@ -321,7 +333,7 @@ CHECKS = [
           ("frictionless k=1", rf"/ ×\*\*{N}\*\* \(frictionless, 50 µm\)", "frictionless", "1"),
           ("k=0.388", rf"or ×\*\*{N}\*\* with `k` 0.388", "bonded", "0.388"))],
     # The like-for-like block (32b's four donor levels · 95's table, 2026-10-16) — every table cell, so the thesis «direction +
-    # table» of revision step 3 cannot quote a cascade its caches no longer give.
+    # table» of the like-for-like revision cannot quote a cascade its caches no longer give.
     *[(f"like-for-like flavin {key} → pcet_redox_potential_thermo", SUMMARY, anchor, "dft/pcet_redox_potential_thermo.json",
        lambda d, key=key: d["E_vs_SHE_mV"][key]["pH_7.0"], 0.05)
       for key, anchor in (("mmff_electronic", rf"\*\*{N}\*\* mV on the MMFF geometries \(32's protocol"),
@@ -337,9 +349,9 @@ CHECKS = [
            next(r for r in d["forms"] if r["form"] == form)), 0.05)
       for form in ("chloro (device, programmatic)", *(f"chloro + {k} H₂O on Cl⁻" for k in (1, 2, 3)),
                    "chloro, Os(II) relaxed, Os(III) vertical", "chloro, both states relaxed (adiabatic)",
-                   "aqua (benchmark form)", "bis-imidazole (operando upper form)")
+                   "aqua (methodological reference)", "bis-imidazole (operando form)")
       for j in range(6)],
-    ("like-for-like measured same couples → cascade_like_for_like", SUMMARY, rf"same free couples: \*\*{N}\*\* mV",
+    ("like-for-like measured same couples → cascade_like_for_like", SUMMARY, rf"film-bound mediator: \*\*{N}\*\* mV",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["measured"]["cascade_same_couples_V"], 0.5),
     ("like-for-like smallest cascade → cascade_like_for_like", SUMMARY, rf"smallest: \*\*{N}\*\* mV",
      "dft/cascade_like_for_like.json",
@@ -365,6 +377,64 @@ CHECKS = [
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["acceptor_side_V"], 0.5),
     ("like-for-like both-sided + ZPE, donor side → cascade_like_for_like", SUMMARY, rf"the donor side {N} mV\. Its RRHO",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["both_sided"]["levels"]["relaxed_plus_zpe"]["donor_side_V"], 0.5),
+    # ⊕ 2026-10-19 — the choices every cell shares (95 `shared_shifts`): §3.5 states the direction as the protocol's, and
+    # every number it sets against the cells is read here (referee rounds 2–3 of step 3 — spin–orbit coupling on Os, set
+    # against the computed AND the measured flavin)
+    *[(f"paper §3.5 shared shift: {lab} → cascade_like_for_like", PAPER_RESULTS, pat, "dft/cascade_like_for_like.json", fn, tol)
+      for lab, pat, fn, tol in (
+          ("smallest cascade", rf"the smallest cascade, \+{N} mV, is the device form", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
+          ("SOC size", rf"by ≈ {N} mV in octahedral homoleptic complexes,<sup>19,63</sup>", lambda d: -1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"], 0.5),
+          ("first-flip threshold", rf"beyond the smallest margin, {N} mV,", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
+          ("SOC cells uphill", rf"at the full octahedral value {N} of the 32 cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"], 0.0),
+          ("SOC cells counted", rf"value [\d]+ of the {N} cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_cells"], 0.0),
+          ("SOC device MMFF", rf"electronic flavin\s+levels \(to {N} and", lambda d: _ss_after(d, "chloro (device, programmatic)", "mmff_electronic"), 0.05),
+          ("SOC device relaxed", rf"levels \(to [{_DASHES}\-]?[\d.]+ and {N} mV\), the doubly", lambda d: _ss_after(d, "chloro (device, programmatic)", "relaxed_electronic"), 0.05),
+          ("SOC adiabatic MMFF", rf"the doubly relaxed form on both \(to {N} and", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "mmff_electronic"), 0.05),
+          ("SOC adiabatic relaxed", rf"\(to [{_DASHES}\-]?[\d.]+ and {N} mV\) and the one-water", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "relaxed_electronic"), 0.05),
+          ("SOC one water relaxed", rf"relaxed level \(to {N} mV\) — so five", lambda d: _ss_after(d, "chloro + 1 H₂O on Cl⁻", "relaxed_electronic"), 0.05),
+          ("electronic flavin above measured (MMFF)", rf"flavin levels {N} and [\d.]+ mV above the measured", lambda d: 1000 * d["flavin"]["levels"]["mmff_electronic"]["donor_side_V"], 0.5),
+          ("electronic flavin above measured (relaxed)", rf"flavin levels [\d.]+ and {N} mV above the measured", lambda d: 1000 * d["flavin"]["levels"]["relaxed_electronic"]["donor_side_V"], 0.5),
+          ("SOC ZPE/RRHO floor", rf"keep\s+at least \+{N} mV", lambda d: 1000 * (min(r["by_donor_level"][k]["cascade_V"] for r in d["forms"] for k in ("relaxed_plus_zpe", "relaxed_rrho_free_energy")) + d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"]), 0.05),
+          ("SOC device vs measured flavin", rf"with the full\s+shift lies at \+{N} mV", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+          ("4.44 V shift", rf"lowers every E°\(Os\) and every cascade by {N} mV", lambda d: -1000 * d["shared_shifts"]["terms"]["she_abs_4_44"]["shift_V"], 0.5),
+          ("SOC + 4.44 V cells uphill", rf"together with the full spin–orbit shift {N} of the 32", lambda d: d["shared_shifts"]["combined"]["spin_orbit_os + she_abs_4_44"]["n_uphill"], 0.0),
+          ("functional, Os side", rf"lowers the device couple's E°\(Os\) by {N} mV \(Table 4;", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),
+          ("functional only", rf"Table 4; {N} mV of it the functional", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["functional_only_6_31gd_V"], 0.5),
+          ("Os ZPE raises", rf"zero-point energy \(\+{N} mV where computed", lambda d: 1000 * (d["both_sided"]["levels"]["relaxed_plus_zpe"]["E_os_vs_SHE_V"] - d["both_sided"]["levels"]["relaxed_electronic"]["E_os_vs_SHE_V"]), 0.5),
+          ("protein shift raises", rf"bound flavin \(\+{N} mV, §3\.6\)", lambda d: -1000 * d["measured"]["protein_shift_V"], 0.5),
+          ("limits: SOC", rf"spin–orbit coupling on osmium \(≈ {N} mV at its octahedral value, not\s+computed", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"], 0.5),
+          ("limits: acceptor side before", rf"acceptor side from \+{N} to", lambda d: 1000 * d["forms"][0]["acceptor_side_V"], 0.5),
+          ("limits: acceptor side after", rf"acceptor side from \+[\d.]+ to \+{N} mV", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["device_acceptor_side_after_V"], 0.5),
+          ("limits: functional", rf"functional \({N} mV on the osmium side", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),
+          ("limits: convention", rf"\({N} mV between 4\.281 and 4\.44 V\)", lambda d: -1000 * d["shared_shifts"]["terms"]["she_abs_4_44"]["shift_V"], 0.5),
+      )],
+    *[(f"paper §3.5 hexa-aqua {lab} → microsolvation.json", PAPER_RESULTS, pat, "dft/microsolvation.json", fn, tol)
+      for lab, pat, fn, tol in (
+          ("second-shell shift", rf"a second shell lowers E° by {N} V", lambda d: _hexa(d, "aquo_n18_twoshell") - _hexa(d, "aquo_n6_innershell"), 0.005),
+          ("n6", rf"ΔE_red going from\s+{N} to", lambda d: _hexa(d, "aquo_n6_innershell"), 0.0005),
+          ("n18", rf"ΔE_red going from\s+[{_DASHES}\-]?[\d.]+ to {N} eV", lambda d: _hexa(d, "aquo_n18_twoshell"), 0.0005),
+      )],
+    *[(f"{where} SOC cells uphill → cascade_like_for_like", doc_rel, pat, "dft/cascade_like_for_like.json", fn, 0.0)
+      for where, doc_rel, pat, fn in (
+          ("SUMMARY Conclusion", SUMMARY, rf"turns up to \*\*{N}\*\* of the 32 uphill",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
+          ("SUMMARY Conclusion + 4.44 V", SUMMARY, rf"with the spin–orbit shift \*\*{N}\*\*\)",
+           lambda d: d["shared_shifts"]["combined"]["spin_orbit_os + she_abs_4_44"]["n_uphill"]),
+          ("paper §4", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"turns up to {N} of the 32 cells uphill at its octahedral",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
+          ("OUTLINE §3.5", "docs/protocols/ebfc/in_silico/paper/00_OUTLINE.md", rf"turns up to {N} of the 32 cells uphill at its octahedral value",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
+          ("PIPELINE row 95", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"turns up to {N} of 32 cells uphill",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
+      )],
+    ("SUMMARY Conclusion first flip → cascade_like_for_like", SUMMARY, rf"reverses a cell beyond \*\*\+{N}\*\* mV",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
+    ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* mV",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+    ("PIPELINE row 95 device vs measured flavin → cascade_like_for_like", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"device couple stays at \+{N} mV",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+    ("SUMMARY Conclusion functional, Os side → cascade_like_for_like", SUMMARY, rf"device couple's Os side \({N} mV\)",
+     "dft/cascade_like_for_like.json", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),
     # PIPELINE_STATUS row 96 — the three E°(Os) levels it prints
     *[(f"PIPELINE 96 E°(Os) {lvl} → os_couple_thermo", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", pat,
        "dft/os_couple_thermo.json", (lambda lv: lambda d: 1000 * d["E_os_vs_SHE_V"][lv])(lvl), 0.05)
@@ -4783,7 +4853,7 @@ CHECKS += [
      lambda d: _aq_source(d, "cl", "ome"), 0.005),
     ("paper §3.3 Cl ref 8 donors within → 83 adiabatic", PAPER_RESULTS, rf"donor pairs come within {N} mV per substituent of experiment", V83,
      lambda d: max(p["adiabatic_gap_mV"] for p in _ad(d)["pairs_vs_measured"] if p["series_name"] == "ref 8"), 0.05),
-    ("paper §3.3 Cl Koopmans own minimum → 83 acceptors", PAPER_RESULTS, rf"Cl's Koopmans cascade Δ moves by {N} eV with Os\(III\) on its", V83,
+    ("paper §3.3 Cl Koopmans own minimum → 83 acceptors", PAPER_RESULTS, rf"Cl's Koopmans offset moves by {N} eV with Os\(III\) on its", V83,
      lambda d: _ac_koop(d, "cl", "os3_on_own_minimum"), 0.0005),
     ("paper §3.3 Cl Koopmans vertical → 83 acceptors", PAPER_RESULTS, rf"by \+{N} eV with Os\(III\) vertical on the relaxed Os\(II\)", V83,
      lambda d: _ac_koop(d, "cl", "os3_on_os2_minimum"), 0.0005),
@@ -4922,9 +4992,9 @@ CHECKS += [
     ("paper §3.3 NO₂ move/gap, the gap → 83 acceptors", PAPER_RESULTS, rf"times the {N} meV that", V83,
      lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
     # paper §3.3 — the SO₂CF₃ sentence (⚖️ 2026-10-15: a candidate, not an optimum): its gap above NO₂, both signs of NO₂'s own move
-    ("paper §3.3 SO₂CF₃ gap above NO₂ → 83 half-relaxed", PAPER_RESULTS, rf"the cascade Δ of \*\*SO₂CF₃\*\* lies {N} meV above NO₂'s", V83,
+    ("paper §3.3 SO₂CF₃ gap above NO₂ → 83 half-relaxed", PAPER_RESULTS, rf"the Koopmans offset of \*\*SO₂CF₃\*\* lies {N} meV above NO₂'s", V83,
      lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.5),
-    ("paper §3.3 SO₂CF₃ clause: NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves\s+its own cascade Δ by \+{N} eV with Os\(III\) vertical", V83,
+    ("paper §3.3 SO₂CF₃ clause: NO₂ move, Os(III) vertical → 83 acceptors", PAPER_RESULTS, rf"relaxing NO₂ alone moves\s+its own Koopmans offset by \+{N} eV with Os\(III\) vertical", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
     ("paper §3.3 SO₂CF₃ clause: NO₂ move, own minimum → 83 acceptors", PAPER_RESULTS, rf"vertical and by {N} eV on its own", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.005),
@@ -4948,9 +5018,9 @@ CHECKS += [
      lambda d: _ac_slope(d, "slope_1_relaxed_fit_members", "adiabatic_eV_per_sigma"), 0.0005),
     ("OUTLINE §3.3 NO₂/SO₂CF₃ gap → 83 acceptors", OUTLINE, rf"NO₂/SO₂CF₃ \({N} meV\) undecided", V83,
      lambda d: _ac(d)["table4_neighbours_half_relaxed"]["no2-so2cf3"]["programmatic_koopmans_gap_meV"], 0.06),
-    ("OUTLINE §3.3 NO₂ move vertical → 83 acceptors", OUTLINE, rf"Koopmans cascade Δ moving \+{N} / ", V83,
+    ("OUTLINE §3.3 NO₂ move vertical → 83 acceptors", OUTLINE, rf"Koopmans offset moving \+{N} / ", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_os2_minimum"), 0.005),
-    ("OUTLINE §3.3 NO₂ move own → 83 acceptors", OUTLINE, rf"Koopmans cascade Δ moving \+[\d.]+ / {N} eV\)", V83,
+    ("OUTLINE §3.3 NO₂ move own → 83 acceptors", OUTLINE, rf"Koopmans offset moving \+[\d.]+ / {N} eV\)", V83,
      lambda d: _ac_koop(d, "no2", "os3_on_own_minimum"), 0.005),
     # SUMMARY §Mediator, limits (2)–(4)
     ("SUMMARY (2) NO₂ λ_III → relaxed_os3", SUMMARY, rf"\*\*NO₂, relaxed the same way\*\* \(λ_III {N} meV", OS3,
@@ -5005,6 +5075,17 @@ CHECKS += [
 ]
 
 _COUNT_WORDS = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+
+
+def test_paper_35_shared_shift_word_claims_hold():
+    """§3.5 says in WORDS what no number pin can read: the 4.44 V convention alone «turns no cell uphill», the functional
+    term is «the osmium side only» of the device couple, and every cell stays downhill without the shared terms (95)."""
+    d = C("dft/cascade_like_for_like.json")["shared_shifts"]
+    text = doc(PAPER_RESULTS)
+    assert "alone it turns no cell uphill" in text and d["terms"]["she_abs_4_44"]["n_uphill"] == 0, \
+        "§3.5 says the 4.44 V convention alone turns no cell uphill — 95's shared_shifts disagrees, rewrite the sentence"
+    assert d["terms"]["functional_os_side"]["applies_to"] == "chloro (device, programmatic)", \
+        "§3.5 sets the functional term against the device couple only — 95 now applies it elsewhere"
 
 
 def test_paper_33_acceptor_column_claim_holds():

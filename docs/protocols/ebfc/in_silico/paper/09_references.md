@@ -46,6 +46,17 @@
 > Ar–NHOH in Britton–Robinson buffer at pH 11; «under acidic conditions» appears there only as a summary of other
 > works (its refs 12, 28, 32), not as its own measurement — grafted films, not the 4,4′-nitro-bpy ligand and not the operating pH, so it supports the chemistry,
 > not the device; re-read 2026-10-15).
+>
+> **2026-10-19 — ref 63 added (Srnec et al. 2008, spin–orbit coupling on Os(II/III)).** Printed from its Crossref record
+> (vol 130, issue 33; online 2008-07-23, print 2008-08-01 → 2008). The −300 mV for the osmium(II/III) complexes is read in
+> its ABSTRACT, verbatim from the publication page of a co-author's institute («an approximately −300 mV shift for the
+> osmium(II/III) complexes»; «inclusion of SOC is necessary to avoid systematic errors of ∼300 mV»; the M³⁺ ²T₂g ground state
+> splits into a Kramers doublet and a quartet by 1354–1573 cm⁻¹ in Ru³⁺ and 4155–5061 cm⁻¹ in Os³⁺, «the main contribution»);
+> the body was not read. Its set is homoleptic — [M(H₂O)₆], [MCl₆], [M(NH₃)₆], [M(en)₃], [M(bipy)₃], [M(CN)₆].
+> §3.5 cites both: ref 19's abstract also names ~0.3 V of spin–orbit correction for Os (read in the self-review round 1,
+> row 5 of `docs/protocols/paper/stattia1_self_review_round1.md`) — a secondary statement of the same group's result, whose
+> primary computation is ref 63 (in-silico §Critical Rules #43). Ref 63's value is for octahedral homoleptic complexes;
+> §3.5 says the C₁ device complex may quench it.
 
 ## Claims still without a source (`[CITATION NEEDED]` in the text)
 
@@ -216,7 +227,7 @@ legend line stays in each, as the criterion allows.
   PIPELINE_STATUS · `00_02` · the outline).
   ⊕ **2026-10-16 — the 1,5-dihydro recompute (`00_07` HW.5.IS): `32` now gives −155 mV, 65 mV off −220 mV.** The
   verdict above stands as written (−220 the only reading, judged under 100 mV); only its number moved, in every
-  place it lists. The text of this entry above is NOT rewritten.
+  place it lists. The text of this entry above is NOT rewritten. ⊕ **2026-10-19 (the like-for-like revision):** the 65 mV is the screening level (MMFF geometries, electronic); with relaxed geometries and the zero-point energy (`32b`) the computed couple sits −210 mV from −220, so the paper reads the 65 mV as no validation at any level (§3.2) — the −220 reading itself stands.
 - §3.2 — the literature anode λ (~0.7–0.8 eV) "adopted in the rate calculations". ✅ 2026-10-01, route (c):
   the claim had no instrument — `marcus_rate` is called only by the cathode script `25`, the L4 kinetics
   (`30`/`30b`/`31`/`40`) carry no λ, and the 0.7 in `29b` (`LIT_LAMBDA_TOTAL_EV`) is a comparison constant
@@ -334,6 +345,7 @@ legend line stays in each, as the criterion allows.
 60. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
 61. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
 62. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
+63. Srnec, M.; Chalupský, J.; Fojta, M.; Zendlová, L.; Havran, L.; Hocek, M.; Kývala, M.; Rulíšek, L. Effect of Spin−Orbit Coupling on Reduction Potentials of Octahedral Ruthenium(II/III) and Osmium(II/III) Complexes. *J. Am. Chem. Soc.* **2008**, *130*, 10947–10954. DOI: 10.1021/ja800616s.
 
 ## Verified but not cited in the text (NOT part of the numbered list)
 

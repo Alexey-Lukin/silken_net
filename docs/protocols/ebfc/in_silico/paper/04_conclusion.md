@@ -5,9 +5,10 @@
 
 We have computed the electron-transfer energetics of a FAD–osmium enzymatic biofuel cell from first
 principles, following the electron from the buried flavin to the external circuit. Four results stand on
-their own. The **PCET potential of the FAD cofactor** is recovered to within 65 mV of experiment once
-the proton is treated thermodynamically, and the anode reorganisation energy is obtained from the
-physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
+their own. The **PCET potential of the FAD cofactor** becomes computable with implicit solvation once the proton
+is treated thermodynamically — at the screening level 65 mV from experiment, with relaxed geometries and the
+zero-point energy ≈200 mV more negative, so no level validates it — and the anode reorganisation energy is obtained
+from the physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
 rule** for the osmium mediator gives a design handle that is predictive in direction — a ωB97X/def2-TZVP
 cross-check keeps its donor plateau and makes its slope ≈15 % shallower, and relaxing both osmium oxidation states moves
 its donor pairs by up to 20.1 mV per substituent, so the magnitude of its donor part rests on the geometry as well as
@@ -21,19 +22,24 @@ literature value (turnover needs λ(Co) ≲ 2.0 eV at zero driving force on the 
 adverse corner) — a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy
 metal, conductive-MOF band transport, or an acid-stable enzyme-free catalyst.
 
-[finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.]
-
-The paper's methodological core is the honest treatment of the cascade. The raw computed driving force
-is uphill in every method, against an experimentally downhill cascade; rather than hide the gap behind a
-fortuitous error cancellation, we **decompose** it into a chloro↔bis-imidazole differential-solvation
-bracket and a 4,4′-dimethyl substituent term, each computed and benchmarked against the known ~1 V group-8 PCM
-error. The residual is therefore a quantified, transferable limitation of continuum solvation on charged
-transition-metal redox couples — not a failure of the chemistry — whose rigorous closure is
-explicit-water QM/MM of the correct molecular species.
+The paper's methodological core is the honest treatment of the cascade. Set like for like — the two-electron,
+two-proton flavin couple against each one-electron osmium couple on one SHE scale — the computed cascade is
+downhill in every osmium form at every level of the flavin treatment, consistent with the measured direction; but that
+holds within one functional, one continuum, one absolute-SHE convention and a scalar-relativistic osmium.
+Spin–orbit coupling on osmium, of known sign and omitted here, turns up to 5 of the 32 cells uphill at its octahedral
+literature value — the device couple on the flavin levels that lie above the measured flavin among them — while
+against the measured flavin the device couple stays just downhill; at that value the protocol does not determine the sign,
+and the direction rests on the protocol rather than being established by it. The finding is how far its magnitude, and where the remaining gap sits, move with the protocol — by
+hundreds of millivolts — so we report them as method-dependent and attribute the gap to neither side. Where a computed value
+lands within millivolts of the measured one, both sides are large and opposite, and we name the agreement a
+cancellation rather than a validation. One-electron readings of the same step — orbital offsets, ΔSCF energies and
+the proton-coupled route — are not like-for-like with that driving force and carry no conclusion here. Closing the
+magnitude takes explicit-water QM/MM of the chloro species and of the reduced flavin, spin–orbit coupling on osmium
+and a model of the mediator film.
 
 The immediate experimental test is the impedance (EIS) of the forthcoming Ti-coin half-cell, for which
-the present work supplies concrete predictions; the QM/MM treatment of the cascade and the protein-bound
-cofactor potential is the natural next computational step. The broader message is that the
+the present work supplies concrete predictions; the QM/MM treatment of the cascade with spin–orbit coupling on osmium,
+and the protein-bound cofactor potential, are the natural next computational steps. The broader message is that the
 electronic-structure level — under-used in the biofuel-cell literature relative to experimental and
 reaction-diffusion modelling — yields both mechanistic design rules and an honest account of where
 today's affordable methods reach their limit.

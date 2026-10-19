@@ -30,18 +30,18 @@ something already known. Frame everything around the *insight*, never around "we
 
 ## 2. Our contribution framing (the most important decision)
 
-⚠️ **Under revision (revision step 3, `00_07` HW.5.IS):** on the 1,5-dihydro FADH₂ (2026-10-15; ΔSCF geometries re-run from the minimum 2026-10-19) the raw B3LYP Koopmans offset (programmatic geometry) comes out downhill and the adiabatic ΔSCF uphill — one-electron readings, not like-for-like —, so «uphill in every method» below no longer holds by the letter, and «the ~1 eV cascade gap» survives only as the vertical ΔSCF reading (+0.96 eV from the verified value), not like-for-like either; the framing is rewritten like-for-like in step 3 (the ~1 V group-8 benchmark error is unaffected).
+**Revised 2026-10-19 (the like-for-like revision, `00_07` HW.5.IS):** the cascade is framed like for like — direction and table (⚖️ founder 2026-10-16) — not as a decomposed ~1 eV gap; one-electron readings carry no conclusion.
 
-Our honest finding is that the raw DFT cascade is uphill in every method, the cathode DET margin is
-conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one — and the gap
-is a quantified limit of implicit solvation. A first-timer's instinct is to
+Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol — whose
+omitted spin–orbit coupling on osmium could reverse the device couple — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
+conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real
 insights to sell (all are "new physical insight"):
 
-1. **A quantified, decomposed methods limit.** The ~1 eV cascade gap is *not* hand-waved — it
-   decomposes into mediator **speciation** + **PCM differential solvation**, each computed, benchmarked
-   on the [Os(H₂O)₆] group-8 ~1 V error. That is a transferable lesson for anyone doing implicit-solvent
-   redox DFT on charged metal complexes.
+1. **A like-for-like cascade with its protocol dependence measured.** The two-electron, two-proton flavin couple
+   against each one-electron osmium form on one SHE scale: the direction holds in every cell, the magnitude moves by
+   hundreds of millivolts with the protocol, and agreements within millivolts are shown to be cancellations — a
+   transferable lesson for anyone comparing implicit-solvent redox DFT with a measured cascade.
 2. **A predictive design rule.** The Hammett LFER for the Os(III/II) mediator + the cascade-alignment
    rule gives a *predictive handle* and rationalizes the known experimental optimum — predictive value
    (in DIRECTION: a ωB97X/def2-TZVP cross-check moves the slope by ≈15 %, so its magnitude is method-dependent)
@@ -50,13 +50,13 @@ insights to sell (all are "new physical insight"):
    an earlier artifact) + the low-λ-metal / conductive-MOF / enzyme-free design levers.
 
 > **Rule of thumb:** every claim is one of {*positive result*, *quantified limitation*, *design rule*,
-> *prediction*}. None is "validation". An honest negative, properly decomposed, is a strong paper; a
+> *prediction*}. None is "validation". An honest limit, properly measured, is a strong paper; a
 > dishonest positive gets desk-rejected or retracted.
 
 ## 3. Section-by-section how-to
 
 ### Abstract (write LAST, ~150–200 words, one paragraph)
-Formula: **problem → gap → what we did (methods) → 3 headline numbers → the honest limit + its fix →
+Formula: **problem → gap → what we did (methods) → 3 headline numbers → the honest limit + what would lift it →
 outlook.** No citations, no abbreviations on first sight. The TOC graphic (required) is a small visual
 of the same story.
 
@@ -78,10 +78,10 @@ a genuine selling point — say so. Draft is in [`02_methods.md`](02_methods.md)
 
 ### Results (write second; pull every number from SUMMARY)
 One subsection per finding, in the OUTLINE order. Each: state what was computed → the number (→ figure/
-table) → one sentence of interpretation. **Be transparent**: report the uphill raw values *and* the
-verified experimental cascade; show the λ-sensitivity honestly. Figures carry the story (a reviewer
+table) → one sentence of interpretation. **Be transparent**: report the like-for-like cascade *and* the
+verified experimental one; show the λ-sensitivity honestly. Figures carry the story (a reviewer
 reads figures first): a cascade/Marcus diagram, the Hammett plot, the ZIF hop ladder, the
-solvation-gap-closing plot. Pitfall: don't bury the honest numbers — lead with them.
+like-for-like cascade plot. Pitfall: don't bury the honest numbers — lead with them.
 
 ### Discussion (can merge with Results at JPCB)
 What the results *mean*: the methods lesson (when does implicit solvent fail, and by how much), the
@@ -97,7 +97,7 @@ EIS predictions). No new information.
 
 > **Voice & register (set 2026-06-06, by the founder's delegation):** academic-formal but clear and
 > unfussy — the register of a rigorous methods paper, not a vision essay. Honest and precise: state what
-> the data shows, name limits plainly (the contribution *is* the honest decomposition). **Systems-clarity**
+> the data shows, name limits plainly (the contribution *is* the honest like-for-like comparison). **Systems-clarity**
 > (the author's signature): present the EBFC as a chain (anode→mediator→cathode), each result a link, and
 > let the structure carry the argument. Drawn from the author's formal-physics register (the DM-EFT work)
 > + the SilkenNet systems-thinking + the honesty ethos — but the poetic "living-wood / archival-burden"
@@ -108,7 +108,7 @@ EIS predictions). No new information.
 - **Figures > prose** for results; each must stand alone (self-contained caption). Aim ~5 figures + ~4
   tables (see OUTLINE §4). A required **TOC graphic** = the one-glance summary.
 - **References:** ACS style (numbered). Cite the method originators (Marcus, Nelsen, Beratan–Onuchic,
-  the Hammett/Lever LFER, the group-8 PCM benchmark) and the experimental anchors. Use a reference
+  the Hammett/Lever LFER, the PCM-type aqua-couple error, ref 19 — one Ru couple) and the experimental anchors. Use a reference
   manager (Zotero/Paperpile) — do *not* hand-format.
 - **Length:** JPCB Articles have no hard limit but value concision; ~6000–8000 words + figures is
   typical. Confirm current limits on the ACS author-guidelines page at draft-freeze.
@@ -136,7 +136,7 @@ Methods → Results → Introduction → Discussion/Conclusions → Abstract + T
 ## 6. First-timer pitfalls (self-review checklist)
 
 - [ ] No overclaiming — no "validation"/"proves"; every claim matches the data's strength.
-- [ ] The honest negatives are *foregrounded* and decomposed, not hidden.
+- [ ] The honest negatives are *foregrounded* and measured, not hidden.
 - [ ] Methods reproducible (versions, basis/ECP, solvent params, SI coordinates).
 - [ ] Every number traces to SUMMARY (One-Home); change a result → change SUMMARY, not the paper twice.
 - [ ] Intro funnels to a single clear gap; ~40–60 refs; prior art credited (esp. the experimental Os-GcGDH

@@ -65,10 +65,11 @@ systematically misestimates the reduction potentials of small, highly charged tr
 with errors of ~1 V reported for [Ru(H₂O)₆]²⁺ under PCM-type models, because a continuum cannot reproduce the
 directional second-shell hydrogen bonding around a +2/+3 couple (a COSMO-RS treatment largely removes that
 error).<sup>17,19</sup>
-The osmium mediator at the centre of this device is precisely such a couple.
+The osmium mediator at the centre of this device is related to such couples, and how far its own computed potential
+moves is part of what §3.5 measures.
 Rather than treat this as a nuisance to be absorbed into an empirical correction, we make it part of the
-result — quantifying the error on a clean benchmark and decomposing the device-level discrepancy into its
-physical contributions. Reproducibility is treated with the same seriousness: every calculation is
+result — comparing the cascade like for like on one scale and measuring how far its magnitude moves with the
+protocol, rather than decomposing the discrepancy into contributions. Reproducibility is treated with the same seriousness: every calculation is
 scripted and run from a recorded, version-exact environment, in line with current best-practice DFT
 reporting;<sup>20,21</sup> the electronic-structure scripts use fixed seeds, and the molecular dynamics are stochastic.
 
@@ -77,19 +78,20 @@ reporting;<sup>20,21</sup> the electronic-structure scripts use fixed seeds, and
 We report a first-principles, electronic-structure account of the electron-transfer energetics of a
 complete Gen-2.0 EBFC chain, and — equally — an honest assessment of where affordable
 implicit-solvation density-functional theory reaches its limit on this problem. Specifically, we (i)
-reproduce the proton-coupled FAD redox potential to within 65 mV of experiment using a thermodynamic
-proton reference, isolating the cascade discrepancy to the mediator rather than the flavin; (ii)
+make the proton-coupled FAD redox potential computable with implicit solvation through a thermodynamic proton
+reference, and measure how far its agreement with experiment survives relaxed geometries and zero-point energy; (ii)
 establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive in direction —
 its slope moves by ≈15 % between two method tiers and its donor pairs by up to 20.1 mV per substituent between the programmatic and the relaxed osmium geometries — and rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
 bimetallic-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
 finding a margin conditional on the Co reorganisation energy — below enzymatic turnover at the computed λ(Co),
 straddling it only at an assumed literature value; a corrected finding, not the orders-of-magnitude artefact an
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,
-conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) show
-that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
-transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
-4,4′-dimethyl substituent term, benchmarked against the known group-8 error — rather than a failure of the chemistry. [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] The flavin redox tuning by the
-protein environment is computed in the same spirit.<sup>25,26</sup>
+conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) compare the anode→mediator
+cascade like for like — the two-electron, two-proton flavin couple against each one-electron osmium couple on one
+SHE scale — finding it downhill in every osmium form at every level of the flavin treatment within one protocol, a direction
+that spin–orbit coupling on osmium, which the protocol omits, could reverse for the device couple, while its magnitude
+stays method-dependent, and naming the near-exact agreements that arise from cancelling errors. The flavin redox tuning by the
+protein environment is taken from experiment;<sup>25,26</sup> computing it is a follow-up.
 
 The contribution is therefore both a set of mechanistic design rules and a transferable methodological
 lesson; it is explicitly *not* a re-confirmation of the experimentally known cascade. The scope is the

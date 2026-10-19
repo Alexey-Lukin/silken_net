@@ -5,7 +5,7 @@
 WHY. Script 32 reads E°(FAD/FADH₂) from ELECTRONIC energies of MMFF94s geometries (its own docstring: «screening tier …
 no ZPE/thermal, MMFF geometry»), and the like-for-like cascade (95) rests its donor side on that number. The PCET couple
 gains two X–H bonds, so the omitted zero-point and thermal terms are larger on this side than on the one-electron Os
-couple — revision step 3 (00_07 HW.5.IS) measures them before the thesis is rewritten (⚖️ founder 2026-10-16).
+couple — measured here before the thesis was rewritten like for like (⚖️ founder 2026-10-16, 00_07 HW.5.IS).
 
 One knob at a time (in-silico §When Modifying #36), each a separate E°:
   (0) control — at start, 32's formula on 20's cached energies must give 32's cached potentials; then the shared-library

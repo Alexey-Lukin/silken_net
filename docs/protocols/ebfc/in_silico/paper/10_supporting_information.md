@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 322 · 20,589,293 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 322 · 20,768,958 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -28,7 +28,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 |---|---|---|
 | `tools/in_silico/lib/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/lib/beam_contact.py` | `5a8c75cb965b62461a7ac6a22fdb09b73516311ce8e4f1b40e3382d2041a6f63` | A clamped Euler-Bernoulli rod in a rigid channel — unilateral contact solved by an active set. |
-| `tools/in_silico/lib/constants.py` | `021cec1a7ce145cb9a3f483964a70c6b8df408e699a329abcb745a02b45a424d` | Shared physical and project constants for the in-silico pipeline. |
+| `tools/in_silico/lib/constants.py` | `5bc27ed787e03e54b7e1e3cda81f6b2466d8768105d31c71fe2769762962d2e1` | Shared physical and project constants for the in-silico pipeline. |
 | `tools/in_silico/lib/dft_utils.py` | `d2a4008c6a3de0984d592beef374f972920dc4f01e505b700cac654c8dc126ca` | Shared DFT utility functions for L3 quantum chemistry scripts. |
 | `tools/in_silico/lib/flavin.py` | `32d7f91f691dbf2868d619a3f928cb5819f708507271477c1f78d7deb406b044` | Lumiflavin — the ONE home of the flavin SMILES the L3 chain computes on, and the check that the reduced form is the |
 | `tools/in_silico/lib/geometry.py` | `70dcca1d51fc0f4fd166b5d6dd13345c74b87eb6aa516327d5f8b2f0688be30e` | Shared geometry utilities for placing molecules in MD boxes. |
@@ -60,7 +60,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | `eadf7fade68ae11e21ca7683e73164e21409bb8f59ea88f765fe975a47264241` | L3 step 2d — publication-grade DFT: ωB97X-D / def2-TZVP for Os complex. |
 | `tools/in_silico/scripts/21e_dft_os_mediator_series.py` | `918a5ba5197c946e44445a3da95ee0753eea3ed9106f7ccd6921b62e6cd4b825` | L3 task ① — Os-mediator structure-property series (full Hammett range). |
 | `tools/in_silico/scripts/21f_dft_os_dimethyl.py` | `0a65698e0ff49a64fa0f26e905b180ffe14b4662a0fd2a9fc9ca83700a492777` | L3 — Os mediator on the real 4,4'-dimethyl-2,2'-bipyridine ligand of the device mediator. |
-| `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `e6745e4cad865104dcc6c36da6b1ded06eebc91996447cc5fe3f4371005efb45` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
+| `tools/in_silico/scripts/21g_adiabatic_dscf.py` | `60e2cf763f4289d7e30afeb4166966f04e623de06aec5908abbf98cb890d0f33` | L3 — Adiabatic ΔSCF generator for the FADH₂→Os cascade. |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | `b4f57fd034ece9056c67dc02911a96192509ed1a5c97d160dbbe83bd6b8c902c` | L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner. |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | `a702d36b58a99b4cd0fcf9217ee98bce1c3aabb06a719ccadf571d9c6ba50d0e` | L3b step 1 — build bimetallic ZIF cluster models for hopping integral calculations. |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | `dd7fb931b0bf0df99f84954aeebea70d7856a45a46b6ac1131245a8a4a4f1f85` | L3b step 2 — ΔSCF hopping integrals for DET through ZIF nanozyme cathode. |
@@ -78,10 +78,10 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | `32e86c4eebd08d6ae06c68a83f1b35a8287e765b62566aa55465a2d71b71d732` | L4b — Monte Carlo uncertainty analysis for delta_t predictions. |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | `75d2566cbfe471907ee69987aba4eea5a51603834f23022a787e004f0bdbe013` | L4b — EIS (Electrochemical Impedance Spectroscopy) model for Gen 2.0 EBFC. |
 | `tools/in_silico/scripts/31b_cathode_det_rct.py` | `fd3424f32c82d3a68c76061baf619de8e59007978f1239de09cfc18142769bb7` | 31b — cathode DET charge-transfer resistance band (③, INDICATIVE). |
-| `tools/in_silico/scripts/32_pcet_redox_potential.py` | `4e5830f8ccd490dcd13eb6d1abcb08b358d8d9503fb812c31655bae8633f158e` | L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference. |
-| `tools/in_silico/scripts/32b_pcet_redox_thermo.py` | `6086e01738b965ae6d95b7c1c7d892ca25ff91d78fa0d14f12e1018c88f59076` | L3 FAD/FADH₂ PCET potential with B3LYP/6-31G(d)+C-PCM relaxed geometries and harmonic thermochemistry (analytic C-PCM Hessian): E° read at one knob at a time — geometry, then ZPE, then RRHO thermal free energy |
-| `tools/in_silico/scripts/33_pcet_cascade_semiquinone.py` | `62b0965f5acc10564d47540bf7169342b9be0443ea5fec514b7d526a28907ffd` | L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•). |
-| `tools/in_silico/scripts/34_dft_microsolvation.py` | `a9ea01d2a742a01a764f9a578c9326397df30ef0ff7db409094c51eb60bd18f9` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
+| `tools/in_silico/scripts/32_pcet_redox_potential.py` | `0dff4075fe04dbc3e302cf300a772311547067ed589cf41219a506439fda776f` | L3 — PCET redox potential of FAD/FADH₂ via the thermodynamic proton reference. |
+| `tools/in_silico/scripts/32b_pcet_redox_thermo.py` | `7436e0e7ce347ae0cd1779d5a5bcf88fe7bb8ca531fcfca12ac1f12af8ff0abc` | L3 FAD/FADH₂ PCET potential with B3LYP/6-31G(d)+C-PCM relaxed geometries and harmonic thermochemistry (analytic C-PCM Hessian): E° read at one knob at a time — geometry, then ZPE, then RRHO thermal free energy |
+| `tools/in_silico/scripts/33_pcet_cascade_semiquinone.py` | `de6192c7997c586a9d7002a8672be9ebe530f4e2759ef9a3dfc4ddf472f9abaf` | L3 — PCET-corrected anode oxidation via the neutral semiquinone (FADH•). |
+| `tools/in_silico/scripts/34_dft_microsolvation.py` | `03ff37fb776ffd5b36d88da397d0f254c0214fdaf93f54c60940f38d56479f4c` | L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple. |
 | `tools/in_silico/scripts/34b_wb97x_speciation.py` | `33843c1fffdd84edf8780c25c7cea1be2446b562261d356aeafd82e8cf1ee9af` | L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im). |
 | `tools/in_silico/scripts/35_dft_metal_reorganization.py` | `f65eedded7cf7976f40565c44796fb19c92aad26879b30b546ce598a7cc12518` | L3b task ③ — computed inner-sphere reorganization energy λ for the ZIF metal hops. |
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | `1b5ffabf3a813629ec831aa5c9c11db24063697c01794fcf961ce52a7fdd5a28` | Ti-coin Stage 2 — compare in-silico predictions vs experimental data. |
@@ -95,8 +95,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/57_gdl_breakthrough.py` | `c499587651ab9c61db0d8fafea1f711708622ee75808a73f57304504f29ba8d2` | PTFE gas-diffusion membrane of the cathode: liquid-entry (breakthrough) pressure and the O₂ budget. |
 | `tools/in_silico/scripts/58_thermal_install_field.py` | `019c603112ff0c5363a0a6a44ecacc40868d69a9f5420bec569780db0b903a26` | Radial thermal field of the thermal-install procedure: does the cambium stay below 50 °C? |
 | `tools/in_silico/scripts/59_contact_endurance_check.py` | `34b9e1e9088f8b208b1290734388b3810f035bd6b3fe9f756a44e59e303fef97` | Endurance-limit review of the contact and elastic parts (pogo spring, hydrogel matrix, PEEK lock barbs) against the wind cycle budget. |
-| `tools/in_silico/scripts/60_paper_figures.py` | `4bcd7e66c29a2ca6ed78a547e6fc39fa89da09ba68ec0d07052869db903085ae` | Publication figures, rendered entirely from the cached DFT results. |
-| `tools/in_silico/scripts/61_paper_tables.py` | `3173e2b97bf5e332897ee8968fb87767606c9792ae790d6bcc300661356a597d` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
+| `tools/in_silico/scripts/60_paper_figures.py` | `b7c888258a5076d39d35fbb01267a167e02f14cc9a910a8a7ac2fd3acd9ed678` | Publication figures, rendered entirely from the cached DFT results. |
+| `tools/in_silico/scripts/61_paper_tables.py` | `2050e5e342de004cc8c99d2b9e7fdeeb450332c34df402ace331e8bf2211ae1d` | 61 — Paper Tables T1–T4, generated from the cache (drift-safe). |
 | `tools/in_silico/scripts/62_wind_duty_cycle.py` | `008a9f5f92299c409237fb5cab21b64d514c9b1623794ee00c0be32922ae4980` | Wind duty cycle for the Cherkasy pine forest from open meteorological data — the anchor's cycle budget. |
 | `tools/in_silico/scripts/63_delta_t_aux_power_sensitivity.py` | `fa78a1f9da90d9584498ef7f8d8e2cdf1ee1a76ecc0461e3a527a3ee3b55e008` | Does a second power source on the same BQ25570 rail contaminate the recharge-interval signal delta_t? |
 | `tools/in_silico/scripts/64_teg_across_peek_break.py` | `04a03c4ee245c785f7d17cf19b5f68619f37a609a5e6f9315fc40e09f639fbc1` | Can a Bi₂Te₃ thermoelectric generator be mounted across the anchor's PEEK break instead of glued to the bark? |
@@ -129,7 +129,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/91_liner_exit_contact.py` | `8e8e3dbe48f765106feceebf80b4984cf8e59cd900130bd284a486cc3559be19` | Contact of the bus rod's PEEK liner with the Ti channel at its exit, as an elastic-layer contact problem coupled to the rod's bending. |
 | `tools/in_silico/scripts/92_liner_mouth_contact.py` | `79731dc593664033e55f4825a77db90abdec5274196fe19de9587b1901da546b` | Contact of the bus rod's PEEK liner with the Ti channel at its mouth under an offset of the channel axis, two patches coupled through the rod's bending. |
 | `tools/in_silico/scripts/93_malate_metal_chelation.py` | `d0113672603db590c2bc0c61f1ddee94c962194e66309a3f698e010c2539587d` | How strongly the cathode medium's malate (10 mM, pH 4.5) pulls the nanozyme's copper, cobalt and cerium into solution at equilibrium: the side-reaction coefficient of each trace metal over every stability-constant set read in its source. |
-| `tools/in_silico/scripts/95_cascade_like_for_like.py` | `3b0c3eb5cea0ab0bf704fee9a3ab09058bdefd27bfdd8de557d1ffce99eaed63` | L3 anode cascade like-for-like: the 2e⁻/2H⁺ FAD potential at 32b's four levels (MMFF electronic = 32 · relaxed · + ZPE · + RRHO) against the Os(III/II) couple of each computed form (21f · 34 · 21e relaxed) on one SHE scale, the distance to the measured cascade split by side; no SCF |
+| `tools/in_silico/scripts/95_cascade_like_for_like.py` | `da98345d8db16229a8a3995d997bd8b0fbcba3ed1c8ffd5d3a4f0379e8b0078d` | L3 anode cascade like-for-like: the 2e⁻/2H⁺ FAD potential at 32b's four levels (MMFF electronic = 32 · relaxed · + ZPE · + RRHO) against the Os(III/II) couple of each computed form (21f · 34 · 21e relaxed) on one SHE scale, the distance to the measured cascade split by side; no SCF |
 | `tools/in_silico/scripts/96_os_couple_thermo.py` | `e2aa5ad79dda39725cca0bf5c824ab659744da5b695c5b9699743d776e899f71` | L3 Os(III/II) couple harmonic thermochemistry (analytic C-PCM Hessian, B3LYP/6-31G(d)+LANL2DZ(Os)) on the device mediator's adiabatic chloro form, so the like-for-like cascade (95) carries the ZPE and RRHO terms on both sides for that form |
 | `tools/in_silico/scripts/97_wire_under_liner_edges.py` | `fd666e26dc7c06238fc7f6f84bcc5bd729bb91f585cf948e8f4aec1ef62ce4e6` | The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, and the weld knockdown below which the welded root stays the critical section |
 | `tools/in_silico/scripts/98_field_strain_campaign.py` | `c8eed84df9fd9275d08d1a4088d4ec872e76f923ce6062209cac5fd89e5a7b8a` | How long a field campaign of stem-strain sensors must run to collect strong-wind hours, replayed over 30 years of hourly reanalysis wind at the site for each start month, and how many battery trips that costs. |
@@ -137,8 +137,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `09b2ba849f11cc84da86b36c492fd8f0f414ea171f57f0f30b9705f97f221eaf` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `caff09aa7ffafaa4941cc941baab09882e8b8dcfeba5a1d3e6e20a2e0d2bce67` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `64948a0e773838a7940a01de4e66794c9871eefea756b82cd68b1f9693bd8fa3` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `a57779875c7ee2d474622ed584e55646d239295ed9b605056ca5fa147bc45b27` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -168,7 +168,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 
 | File | SHA-256 | Bytes |
 |---|---|---|
-| `tools/in_silico/cache/dft/cascade_like_for_like.json` | `b90368d202ef0ef9e470b10822eba5bf9b1c847b45395f4b57fb8c06d27d42f7` | 13,748 |
+| `tools/in_silico/cache/dft/cascade_like_for_like.json` | `1e76a9dc51a660bd058f89090aea6ba08ee0e4d136ca5c4841b2df1218577b15` | 21,442 |
 | `tools/in_silico/cache/dft/cathode_ket_lambda.json` | `5dbe7831fce3f3e72164f555d18adf1b79f2e92c400509bd7de32d18af4f2c3e` | 22,564 |
 | `tools/in_silico/cache/dft/coating_cluster_cost.json` | `6eb279a3e95b856e32713dbb9ce2025449a349dd0a5fe555427c38331c9b56d4` | 19,289 |
 | `tools/in_silico/cache/dft/comparison.json` | `c63c59502434933b0f60f63825efa7c000d02f08b6148094ccd1dd33a8c3088b` | 2,697 |
@@ -200,7 +200,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/dft/os_series_vs_measured.json` | `b860d7f2596c56ce338f7b553f88a7190163e6855df0d26c7a81a370fdefc229` | 44,730 |
 | `tools/in_silico/cache/dft/outer_sphere_lambda.json` | `9d395fceb824526b6fc2d7d835e800718f3bf6fafe17c9226bb535e0c9ce2f3e` | 3,942 |
 | `tools/in_silico/cache/dft/pcet_cascade.json` | `eb89dc05f591b558976b65df0db137d1185d5ca68eeb3043478ee610cdcfddfb` | 14,794 |
-| `tools/in_silico/cache/dft/pcet_redox_potential.json` | `66e75138992a9aea986240423a97b2e29cf16ea22b5c76766d3d54a7aab8c0e1` | 728 |
+| `tools/in_silico/cache/dft/pcet_redox_potential.json` | `399f75f34bd60ce5407ab5762ed9402559fc9ac6167c4763bc97d62f16b8cc80` | 775 |
 | `tools/in_silico/cache/dft/pcet_redox_potential_thermo.json` | `c1af0c4d65a4f47bf6c86d14d664c74862f1067004518e1a8a725a7448945db9` | 26,462 |
 | `tools/in_silico/cache/dft/semiquinone_lambda.json` | `c04d1e6cea5ecad29253b1618437d2c01ce8e2029ebee1e563a0eee376009f25` | 6,514 |
 | `tools/in_silico/cache/dft/tunneling_ensemble.json` | `24d9e4e8f8ef7bc6912710ff5d815484c935e5d9a028bfde97cfcc01c514965b` | 576 |
@@ -398,9 +398,9 @@ Rendered from the committed caches (and the PDB for Fig 2) by the scripts named;
 | `docs/protocols/ebfc/in_silico/paper/figures/fig1_graphical_abstract_draft.png` | `0e16b5ec4809d3aba5bde03d634fe2c58db7282627f282e5a84bb10ef1ae4eaa` | `fig1_graphical_abstract_draft.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path.png` | `d8a3a42e55f5fa8fd5dd8093b871d31794b0f33c5b4f0f6c11801904b6de0089` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig2_structure_path_pymol.png` | `bd32b1809d7d7a0beef816a699c9a806bdc27cb2ae5febcfdb0a0c27b8e1d727` | `fig2_pymol_cartoon.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cascade_lfer.png` | `7d6ff7d72f7b4e50107e53d1cd4d6a36a21635309f6a1bb67c5695f76b4c0d2c` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig3_cascade_lfer.png` | `e963cf1266e12217f86178de851368db2b12bf2619b1cf01cdca1acb680d0e90` | `60_paper_figures.py` |
 | `docs/protocols/ebfc/in_silico/paper/figures/fig4_cathode_det.png` | `fc0a6fa7760fcf5553dc17e6c21506e3fd1cf4f4017e8743d45259075ef4d061` | `60_paper_figures.py` |
-| `docs/protocols/ebfc/in_silico/paper/figures/fig5_solvation_pcm.png` | `5f9dc372d1f04f4d648c04379b484f9dabebb75097bd7852b494314f4d1551f9` | `60_paper_figures.py` |
+| `docs/protocols/ebfc/in_silico/paper/figures/fig5_cascade_like_for_like.png` | `cdf28c7ff38e2cc7ea15e6a2141a7ec093a69bf8ccf9dd6d08ff4116fbc6c1cc` | `60_paper_figures.py` |
 
 ## S7. Reproduction recipe
 

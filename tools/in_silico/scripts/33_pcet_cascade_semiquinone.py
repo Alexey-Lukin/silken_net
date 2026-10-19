@@ -21,8 +21,8 @@ Then the cascade vs the Os reduction (cached ΔSCF of the dimethyl device, os_co
 Expectation (review): deprotonation relieves the cation-radical strain →
 Cost_PCET drops ~1–1.5 eV below the bare IP → cascade collapses toward DOWNHILL,
 matching experiment. (RESULT below: it does NOT flip — Cost_PCET lies ABOVE the bare IP on both
-tautomers, so the cache's `drop_vs_bare_eV` holds that rise, not a drop; what the gap to the verified
-−0.574 eV, E°(Os +309) − E°(FAD-GDH −265 mV SHE), is made of — revision step 3, 00_07 HW.5.IS.)
+tautomers, so the cache's `drop_vs_bare_eV` holds that rise, not a drop; this one-electron route is not
+like-for-like with the verified −0.574 eV, E°(Os +309) − E°(FAD-GDH −265 mV SHE) — the cascade like for like is 95's.)
 
 Levels: radical site screened at B3LYP/6-31G(d)+PCM (cheap), final energies
 at ωB97X/def2-TZVP+PCM (consistent with the cached cascade pieces).

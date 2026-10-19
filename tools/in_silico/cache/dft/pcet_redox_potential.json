@@ -21,5 +21,5 @@
     64.6
   ],
   "valid_proton_reference": true,
-  "caveats": "Electronic E proxy for G; SHE_abs convention \u00b10.15 V; geom-opt+thermal at wB97X is the publication-grade refinement."
+  "caveats": "Electronic E proxy for G; SHE_abs convention 4.281 V (the other value in use, 4.44 V, lies 0.159 V away); geom-opt+thermal at wB97X is the publication-grade refinement."
 }

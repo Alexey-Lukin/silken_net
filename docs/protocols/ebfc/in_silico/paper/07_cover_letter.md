@@ -31,23 +31,23 @@ Enzymatic biofuel cells (EBFCs) are a promising route to self-powered, long-live
 their performance is governed by electron-transfer (ET) steps that the field has characterised almost
 exclusively **experimentally and with macro-kinetic / reaction-diffusion models** — rarely at the
 electronic-structure level. We address that gap with a first-principles account of the complete ET
-chain of a FAD-glucose-dehydrogenase / osmium-mediator / ZIF-nanozyme cell, **together with an honest,
-quantified assessment of where affordable implicit-solvation DFT reaches its limit** on this class of
-problem. The contribution is therefore **mechanistic and methodological — not a re-confirmation** of an
+chain of a FAD-glucose-dehydrogenase / osmium-mediator / ZIF-nanozyme cell, **together with an honest
+assessment of how far affordable implicit-solvation DFT can be read** on this class of problem. The contribution is therefore **mechanistic and methodological — not a re-confirmation** of an
 experimentally known device.
 
-Four results stand on their own: (1) a thermodynamic proton reference reproduces the proton-coupled
-FAD redox potential to within 65 mV of experiment; (2) a Hammett structure–activity relationship for
+Four results stand on their own: (1) a thermodynamic proton reference makes the proton-coupled
+FAD redox potential computable with implicit solvation — 65 mV from experiment at the screening level, ≈200 mV
+more negative with relaxed geometries and zero-point energy, so we validate it at no level; (2) a Hammett structure–activity relationship for
 the osmium mediator (slope −0.92 eV per σ unit at B3LYP; ≈15 % shallower at ωB97X/def2-TZVP
 over the shared points; its donor pairs move by up to 20.1 mV per substituent when both osmium oxidation states are relaxed) furnishes a design rule predictive in direction and
 rationalises the empirical potential optimum; (3) a two-state diabatised coupling with first-principles
 reorganisation energies shows the bimetallic-ZIF cathode direct electron transfer to be *rate-limiting* at the
 computed Co reorganisation energy and to straddle enzymatic turnover only at an assumed literature value — a verdict
-conditional on λ(Co) — with an explicit low-λ mitigation path; and (4) [finalise — revision step 3, 00_07 HW.5.IS: on the 1,5-dihydro FADH₂ (recomputed 2026-10-15; its ΔSCF geometries re-run from the minimum 2026-10-19) the raw one-electron readings of the cascade point both ways — the B3LYP Koopmans offset (Table 4, Me row; programmatic geometry, ≈ 0 on Os(III)'s own minimum) downhill, the adiabatic and the vertical ΔSCF (Table 2) uphill — and none is like-for-like with the verified driving force, so the framing of this passage no longer holds; it is rewritten like-for-like in step 3.] the apparently
-uphill anode→mediator cascade is shown — by decomposition into a chloro↔bis-imidazole differential-solvation
-bracket and a 4,4′-dimethyl substituent term, benchmarked against the known group-8 ~1 V PCM error — to be a
-**quantified limitation of continuum solvation on charged transition-metal couples, not a failure of
-the chemistry**, with explicit-water QM/MM identified as the route to closure.
+conditional on λ(Co) — with an explicit low-λ mitigation path; and (4) the anode→mediator cascade, compared like for like (the two-electron, two-proton flavin couple against
+each one-electron osmium couple on one SHE scale), is downhill in every osmium form at every level of the flavin
+treatment within one protocol — a direction that spin–orbit coupling on osmium, omitted here, could reverse for the device
+couple — while its magnitude is method-dependent and its near-exact agreements are named as cancellations, with
+explicit-water QM/MM and spin–orbit coupling on osmium identified as the next steps toward the magnitude.
 
 We believe the manuscript is well matched to *J. Phys. Chem. B*: it sits squarely at the intersection
 of **enzyme/redox catalysis and computational electronic-structure methodology**, and extends the
@@ -56,8 +56,9 @@ journal's recent model-driven redox-mediator design literature. A distinguishing
 recorded, version-exact environment (committed with them; §2.7 states what a re-run under a newer PySCF moves), and the full pipeline is provided for the reviewers.
 
 This work is original, has not been published previously, and is not under consideration elsewhere.
-Explicit-solvation QM/MM of the cascade, which the manuscript identifies as the route to closure, is
-outside its scope and is stated as a limit of the method.
+Explicit-solvation QM/MM of the cascade, which the manuscript identifies as one step toward the cascade's magnitude,
+is outside its scope and is stated as a limit of the method; spin–orbit coupling on osmium is not computed, and its
+literature size is set against every cell.
 The author is the founder of the SilkenNet project, an open-hardware forest-monitoring platform of which
 the biofuel cell studied here is a component and which is intended for commercial deployment. No patent
 has been or will be filed on the work disclosed here (defensive-publication posture); the code, hardware

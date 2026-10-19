@@ -193,7 +193,8 @@ DELTA_MEMBRANE = 20e-4       # cm (20 µm) — Layers 4+5 thickness
 N_ELECTRONS = 2              # electrons per glucose (FAD → FADH₂)
 
 # ── Cascade anchors (experimental E°, verified — the AUTHORITATIVE cascade verdict;
-#    how far raw DFT sits from it, and why, is revision step 3 — 00_07 HW.5.IS). One-Home: SUMMARY/L3/paper link here.
+#    computed like for like the cascade is downhill in every Os form within the protocol — spin–orbit coupling on Os, which
+#    it omits, could reverse the device couple — its magnitude method-dependent — 95, SUMMARY). One-Home: SUMMARY/L3/paper link here.
 # Os mediator [Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺: +309 mV vs NHE (Zafar et al. 2012, Anal. Chem. 84, 334,
 #   doi:10.1021/ac202647z, Table 1 — the best-performing of six Os polymers, +15…+489 mV window, wired to GcGDH;
 #   its Ag/AgCl(0.1M KCl) reference is +288 mV vs NHE, p. 336). The reading +21 mV vs that reference is printed in the
@@ -203,6 +204,17 @@ E_OS_MEDIATOR_MV_NHE = 309        # was a +200 mV under-specified anchor pre-OS-
 E_FAD_GDH_MV_SHE = -265
 OS_DEVICE_MEDIATOR_LIGAND = "4,4'-dimethyl-2,2'-bipyridine"  # os_complex.json identity (21f = sole owner)
 CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (−0.574 eV downhill)
+# Shared shifts of the like-for-like cascade (95 `shared_shifts`) — choices EVERY cell shares, so the cells cannot test them.
+# Spin–orbit coupling on Os(II/III) is NOT computed here (LANL2DZ is a scalar-relativistic ECP). Srnec, Chalupský, Fojta,
+#   Zendlová, Havran, Hocek, Kývala & Rulíšek 2008, J. Am. Chem. Soc. 130, 10947 (DOI 10.1021/ja800616s; ABSTRACT read,
+#   2026-10-19): with SOC, «an approximately −300 mV shift for the osmium(II/III) complexes», systematic over six ligand sets
+#   ([M(bipy)₃] among them); the Os³⁺ ²T₂g splits by 4155–5061 cm⁻¹ («the main contribution»), so ζ ≈ 0.34–0.42 eV. It
+#   stabilises Os(III) (t2g⁵), so it LOWERS E°(Os) and every cascade with it — a literature size at the octahedral value
+#   (a lower symmetry quenches it), carried as a shift of every cell, never added to a computed E°.
+OS_SOC_SHIFT_V = -0.30
+# The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
+#   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
+SHE_ABS_ALT_V = 4.44
 
 # ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
 # Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)
