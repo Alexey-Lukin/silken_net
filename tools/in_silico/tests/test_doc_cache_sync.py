@@ -436,7 +436,7 @@ CHECKS = [
            (rf"is ≥ {N}–[\d.]+ eV \(hole on a single orbital\)", rf"is ≥ [\d.]+–{N} eV \(hole on a single orbital\)",
             rf"or ≥ {N}–[\d.]+ eV \(on a degenerate pair", rf"or ≥ [\d.]+–{N} eV \(on a degenerate pair")),)
       for k, i, pat in zip(("one_up_threshold_eV", "one_up_threshold_eV", "two_up_threshold_eV", "two_up_threshold_eV"),
-                           (0, 1, 0, 1), pats)],
+                           (0, 1, 0, 1), pats, strict=True)],
     ("SUMMARY Conclusion first flip → cascade_like_for_like", SUMMARY, rf"reverses a cell beyond \*\*\+{N}\*\* mV",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
     ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* mV",
