@@ -52,6 +52,7 @@ Run:  conda activate silken_md
 """
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import sys
@@ -290,15 +291,15 @@ def main() -> int:
             margin[r][key(cv)], d_target[r][key(cv)] = {}, {}
         for n in N_GRID:
             dfc, dfk = pooled_df(C_ARMS, n), pooled_df(CATHODE_ARMS, n)
-            sol = {"two_arm_equal": solve_increasing(lambda u: two_arm_power(u, s, n, n), P_TARGET),
-                   "two_arm_single": solve_increasing(lambda u: two_arm_power(u, s, 1, n), P_TARGET),
-                   "two_arm_equal_pooled": solve_increasing(lambda u: two_arm_power(u, s, n, n, dfc), P_TARGET),
-                   "two_arm_single_pooled": solve_increasing(lambda u: two_arm_power(u, s, 1, n, dfk), P_TARGET),
+            sol = {"two_arm_equal": solve_increasing(lambda u, s=s, n=n: two_arm_power(u, s, n, n), P_TARGET),
+                   "two_arm_single": solve_increasing(lambda u, s=s, n=n: two_arm_power(u, s, 1, n), P_TARGET),
+                   "two_arm_equal_pooled": solve_increasing(lambda u, s=s, n=n, df=dfc: two_arm_power(u, s, n, n, df), P_TARGET),
+                   "two_arm_single_pooled": solve_increasing(lambda u, s=s, n=n, df=dfk: two_arm_power(u, s, 1, n, df), P_TARGET),
                    "lower_bound_pooled": solve_increasing(
-                       lambda u: pass_probability("lower_bound", u, s, n, dfc), P_TARGET),
-                   "selection": solve_increasing(lambda u: correct_selection(u, s, n, k), P_TARGET)}
+                       lambda u, s=s, n=n, df=dfc: pass_probability("lower_bound", u, s, n, df), P_TARGET),
+                   "selection": solve_increasing(lambda u, s=s, n=n: correct_selection(u, s, n, k), P_TARGET)}
             for r in READINGS:
-                sol[r] = solve_increasing(lambda u, r=r: pass_probability(r, u, s, n), P_TARGET)
+                sol[r] = solve_increasing(lambda u, r=r, s=s, n=n: pass_probability(r, u, s, n), P_TARGET)
                 d_target[r][key(cv)][str(n)] = r6(pass_probability(
                     r, math.log(COIN_CHLORIDE_TARGET_RATIO / COIN_CHLORIDE_MIN_RATIO), s, n))
                 margin[r][key(cv)][str(n)] = r6(math.exp(sol[r]))
@@ -341,8 +342,8 @@ def main() -> int:
 
     # ── findings, read from the numbers ──
     def trend(rows):
-        up = all(all(a < b for a, b in zip(row, row[1:])) for row in rows)
-        down = all(all(a > b for a, b in zip(row, row[1:])) for row in rows)
+        up = all(all(a < b for a, b in itertools.pairwise(row)) for row in rows)
+        down = all(all(a > b for a, b in itertools.pairwise(row)) for row in rows)
         return "grows" if up else "shrinks" if down else "mixed"
 
     gate_trend = {r: trend([[margin[r][key(cv)][str(n)] for n in N_GRID] for cv in CV_ASSUMED]) for r in READINGS}

@@ -4908,8 +4908,15 @@ def test_coin_replicate_power_invariants():
     """
     import importlib.util
 
-    from lib.constants import (COIN_BENCHMARK_ALLOYS, COIN_CONTROL_ALLOY, COIN_ELECTRODE_ARMS, COIN_HOLD_DAYS,
-                               COIN_ORDER_CONTROL_HIGH, COIN_RESERVE_12WK_PER_ALLOY, COIN_UNCOATED_ICPMS_PER_ALLOY)
+    from lib.constants import (
+        COIN_BENCHMARK_ALLOYS,
+        COIN_CONTROL_ALLOY,
+        COIN_ELECTRODE_ARMS,
+        COIN_HOLD_DAYS,
+        COIN_ORDER_CONTROL_HIGH,
+        COIN_RESERVE_12WK_PER_ALLOY,
+        COIN_UNCOATED_ICPMS_PER_ALLOY,
+    )
     d = json.loads((KINETICS / "coin_replicate_power.json").read_text(encoding="utf-8"))
     conv = d["conventions"]
     ns, cvs = [str(n) for n in conv["n_grid"]], [f"{cv:.2f}" for cv in conv["cv_assumed_NOT_MEASURED"]]
