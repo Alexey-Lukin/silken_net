@@ -8,8 +8,8 @@ Purpose
 When CV/EIS measurements arrive from Ti-coin tests (01_03 §3.5), this
 script loads the in-silico predictions (L3 DFT, L4 kinetics, L4b EIS)
 and generates a comparison report with statistical metrics, plus the
-coin's ACCEPTANCE gates (V_OC, R_int), which are judged against thresholds,
-not against a prediction.
+coin's ACCEPTANCE gates (V_OC, R_int; and C · D · E per arm), which are judged
+against thresholds, not against a prediction.
 
 Status: a FRAME, untested on real data (00_07 HW.24). The field list and the
 normalisation follow the lab letter's repo layer (anchor_coin_electrochem_rfq §4).
@@ -19,6 +19,15 @@ is an error — a typo or a new field must not drop out of the report silently:
   COMPARED       — has a prediction; counted in «Overall agreement».
   REPORTED_ONLY  — no prediction exists; printed as «NO PREDICTION», never counted.
   GATES          — acceptance gates (01_03 §3.5 · 02_03 §1.5); pass/fail, not agreement.
+  ARM_GATES      — the gates C · D · E: a dict arm label → LIST of ratios, one per coupon (retention · chloride
+                   ratio · recovery); each arm is judged and printed under its own label. ⚖️ RATIFIED 2026-10-20 (01_03 §3.5, under the thresholds): the arm's GEOMETRIC MEAN
+                   is judged; the one-sided 95 % lower confidence bound is printed beside it, never judged; no
+                   «every coupon». E's threshold is full recovery minus the instrument's repeatability band —
+                   `cv_scan_sigma` (σ of one scan, ×√2 for a ratio of two scans) or `cv_repeatability_r` (a
+                   repeatability limit, √2 already in it); without one of them the RECORD is refused, as R_int
+                   without R_partition. ⚠️ The two routes are not equivalent: ISO 5725 r = 1.96·√2·σ, so r also
+                   carries a 95 % coverage factor the σ route lacks — submitted to the founder (00_07 HW.24).
+  GATE_INPUTS    — inputs a gate needs that are not gates themselves (the joint · the band).
   METADATA       — inputs to the normalisation (the O-ring window area).
 
 What the checks here CAN and CANNOT catch (in-silico §When Modifying #8):
@@ -33,7 +42,12 @@ What the checks here CAN and CANNOT catch (in-silico §When Modifying #8):
     measures VIN(CS) of our batch. The convention flips a verdict — a coin at V_OC exactly at
     VIN(CS) max passes the V_OC gate yet has no R_int ceiling at max, while typ gives it one — so the
     typ ceiling is printed beside it (`gate_line`) and recorded in the report, as a reference only.
-  - Thresholds come from lib.constants (mirrors of 02_03 §1.1), never typed here.
+  - Thresholds come from lib.constants (mirrors of 02_03 §1.1 and 01_03 §3.5), never typed here.
+  - C · D · E: the lower bound needs t₀.₉₅ quantiles, carried as a table (stdlib only — the bare CI job runs
+    these tests) and pinned against scipy in test_cache_integrity; an arm of one coupon has no bound (n/a).
+    The band of E is the instrument's, a FLOOR: re-mounting, drift between the two measurements and the
+    coupons' different response are not in it, and if E is measured by another technique than the CV
+    whose repeatability the lab states, the band must be asked again.
 
 Usage
 -----
@@ -52,6 +66,8 @@ Run
 from __future__ import annotations
 
 import json
+import math
+import statistics
 import sys
 from pathlib import Path
 
@@ -60,6 +76,9 @@ from lib.constants import (
     BQ25570_PIN_CS_UW,
     BQ25570_VIN_CS_MAX_MV,
     BQ25570_VIN_CS_TYP_MV,
+    COIN_CHLORIDE_MIN_RATIO,
+    COIN_RETENTION_30D_MIN,
+    COIN_UCST_RECOVERY_RATIO,
     DFT_CACHE,
     KINETICS_DIR,
     REPO_ROOT,
@@ -128,7 +147,11 @@ EXPERIMENTAL = {
     # "j_cv_peak_uA_cm2": 300,      # CV peak current density — reported only
     # "Rs_ohm": 75,                 # EIS high-freq intercept — cell-dependent, reported only
     # "delta_t_measured_s": 45,     # Measured charge time at 25°C — reported only
-    # "stability_30d_pct": 92,      # Activity retention after 30 days — reported only
+    # "retention_30d_by_coupon": {"anode Ti-6Al-7Nb": [0.91, 0.86], "cathode 4V nanozyme": [0.88, 0.84]},  # C, per arm
+    # "chloride_ratio_by_coupon": {"cathode 4V (D)": [1.04, 0.97]},   # D — at 0.25 M NaCl / chloride-free start
+    # "ucst_recovery_by_coupon": {"anode 4V membrane (E)": [0.99, 1.01]},   # E — after −10 → +25 °C / pre-freeze
+    # "cv_scan_sigma": 0.02,        # E's band: the lab's σ of ONE scan (fraction) — OR the next line, never both
+    # "cv_repeatability_r": 0.05,   # E's band: the lab's repeatability limit r (fraction, ISO 5725)
     # "OCV_mV": 750,                # V_OC of the pair — acceptance gate
     # "R_int_ohm": 4000,            # two-point R_int (V_OC + cell voltage at ≈25 µA) — acceptance gate
     # "R_partition_ohm": 300,       # the compartment JOINT alone (EIS, two identical inert electrodes, no coupons)
@@ -141,13 +164,25 @@ COMPARED = {
     "Rct_ohm": "Rct_ohm_cm2",       # measured Ω × exposed_area_cm2 against the model's Ω·cm²
     "Cdl_uF_cm2": "Cdl_uF_cm2",
 }
-REPORTED_ONLY = {"j_cv_peak_uA_cm2", "Rs_ohm", "delta_t_measured_s", "stability_30d_pct"}
+REPORTED_ONLY = {"j_cv_peak_uA_cm2", "Rs_ohm", "delta_t_measured_s"}
 GATES = {"OCV_mV", "R_int_ohm"}
+# Gate per list key: its label and threshold (mirrors of 01_03 §3.5 via lib.constants). E's threshold is lowered by
+# the band at judgement time (`e_band`).
+ARM_GATES = {
+    "retention_30d_by_coupon": ("C retention", COIN_RETENTION_30D_MIN),
+    "chloride_ratio_by_coupon": ("D chloride", COIN_CHLORIDE_MIN_RATIO),
+    "ucst_recovery_by_coupon": ("E recovery", COIN_UCST_RECOVERY_RATIO),
+}
+# One-sided 95 % Student-t quantiles by degrees of freedom (pinned against scipy.stats.t.ppf in test_cache_integrity).
+T_ONE_SIDED_95 = {1: 6.3138, 2: 2.9200, 3: 2.3534, 4: 2.1318, 5: 2.0150, 6: 1.9432, 7: 1.8946, 8: 1.8595,
+                  9: 1.8331, 10: 1.8125, 11: 1.7959, 12: 1.7823, 13: 1.7709, 14: 1.7613, 15: 1.7531, 16: 1.7459,
+                  17: 1.7396, 18: 1.7341, 19: 1.7291, 20: 1.7247, 21: 1.7207, 22: 1.7171, 23: 1.7139, 24: 1.7109,
+                  25: 1.7081, 26: 1.7056, 27: 1.7033, 28: 1.7011, 29: 1.6991, 30: 1.6973}
 # ⚖️ founder 2026-10-12 (00_07 HW.24): the coin cell has two compartments, so the two-point R_int carries the joint
 # (membrane / frit / salt bridge) too — a property of the CELL, not of the electrodes, which the cold-start gate must
 # not charge to the pair. The lab measures the joint alone (measurement B, anchor_coin_electrochem_rfq) and it is
 # subtracted here; EIS A sees each electrode in its own three-electrode cell and cannot see the joint.
-GATE_INPUTS = {"R_partition_ohm"}
+GATE_INPUTS = {"R_partition_ohm", "cv_scan_sigma", "cv_repeatability_r"}
 METADATA = {"exposed_area_cm2"}
 
 
@@ -171,7 +206,7 @@ def unit_of(key: str) -> str:
 
 
 def check_keys(exp: dict) -> None:
-    unknown = set(exp) - set(COMPARED) - REPORTED_ONLY - GATES - GATE_INPUTS - METADATA
+    unknown = set(exp) - set(COMPARED) - REPORTED_ONLY - GATES - set(ARM_GATES) - GATE_INPUTS - METADATA
     if unknown:
         raise SystemExit(f"EXPERIMENTAL keys in no class: {sorted(unknown)} — classify them above")
     if "Rct_ohm" in exp and "exposed_area_cm2" not in exp:
@@ -184,6 +219,43 @@ def check_keys(exp: dict) -> None:
     if "R_partition_ohm" in exp and not 0.0 <= exp["R_partition_ohm"] < exp.get("R_int_ohm", float("inf")):
         raise SystemExit("R_partition_ohm must lie in [0, R_int_ohm): a joint at least as resistive as the whole cell "
                          "means the two readings are not of one configuration")
+    for key in set(ARM_GATES) & set(exp):
+        arms = exp[key]
+        if not isinstance(arms, dict) or not arms:
+            raise SystemExit(f"{key} must be a dict arm label → list of ratios — a record names the arm it judges")
+        for arm, values in arms.items():
+            if not (isinstance(arm, str) and arm.strip()):
+                raise SystemExit(f"{key}: every arm needs a non-empty label")
+            if not isinstance(values, list) or not values or not all(_positive(v) for v in values):
+                raise SystemExit(f"{key}[{arm!r}] must be a non-empty list of finite positive ratios, one per coupon")
+            if len(values) - 1 > max(T_ONE_SIDED_95):
+                raise SystemExit(f"{key}[{arm!r}]: more coupons than the t table carries — extend T_ONE_SIDED_95")
+    bands = [k for k in ("cv_scan_sigma", "cv_repeatability_r") if k in exp]
+    if "ucst_recovery_by_coupon" in exp and len(bands) != 1:
+        raise SystemExit("ucst_recovery_by_coupon needs exactly one band — cv_scan_sigma OR cv_repeatability_r: E's "
+                         "threshold is full recovery minus the instrument's repeatability (⚖️ 2026-10-20, 01_03 §3.5)")
+    if any(not _positive(exp[k]) for k in bands) or (bands and not 0.0 < e_band(exp) < 1.0):
+        raise SystemExit("the repeatability band must be a finite positive fraction whose derived band lies in (0, 1)")
+
+
+def _positive(v) -> bool:
+    """A finite positive real — not a bool (isinstance(True, int) holds), not inf or NaN."""
+    return type(v) in (int, float) and math.isfinite(v) and v > 0
+
+
+def e_band(exp: dict) -> float:
+    """E's band: σ of one scan ×√2 (a ratio of two scans), or a repeatability limit r, which carries the √2 already."""
+    return math.sqrt(2.0) * exp["cv_scan_sigma"] if "cv_scan_sigma" in exp else exp["cv_repeatability_r"]
+
+
+def arm_gate(values: list[float], threshold: float) -> dict:
+    """⚖️ 2026-10-20: the arm's geometric mean is judged; its one-sided 95 % lower bound is printed, never judged."""
+    logs = [math.log(v) for v in values]
+    mean = statistics.fmean(logs)
+    bound = (math.exp(mean - T_ONE_SIDED_95[len(logs) - 1] * statistics.stdev(logs) / math.sqrt(len(logs)))
+             if len(logs) > 1 else None)
+    return {"measured": math.exp(mean), "lower_bound": bound, "n": len(logs), "limit": threshold,
+            "pass": math.exp(mean) >= threshold}
 
 
 def acceptance_gates(exp: dict) -> list[dict]:
@@ -201,6 +273,16 @@ def acceptance_gates(exp: dict) -> list[dict]:
                          "limit": ceiling,
                          "limit_at_typ": r_int_ceiling_ohm(v_oc, BQ25570_VIN_CS_TYP_MV),
                          "pass": ceiling is not None and electrodes <= ceiling})
+    for key, (label, threshold) in ARM_GATES.items():
+        for arm, values in exp.get(key, {}).items():
+            row = {"gate": f"{label} — {arm}", "arm": arm}
+            if key == "ucst_recovery_by_coupon":
+                band = e_band(exp)
+                row |= {"band": band, "band_route": "σ×√2" if "cv_scan_sigma" in exp else "r"}
+                row |= arm_gate(values, threshold - band)
+            else:
+                row |= arm_gate(values, threshold)
+            rows.append(row)
     return rows
 
 
@@ -208,6 +290,12 @@ def gate_line(g: dict) -> str:
     """One printed gate row; the R_int row carries its typ ceiling beside the judged max one."""
     def shown(limit):
         return "impossible" if limit is None else f"{limit:.0f}"
+    if "lower_bound" in g:   # an arm gate: a ratio, judged on the mean, the bound beside it
+        bound = "n/a" if g["lower_bound"] is None else f"{g['lower_bound']:.3f}"
+        band = f"  [limit = 1 − band {g['band']:.3f}, {g['band_route']}]" if "band" in g else ""
+        return (f"  {g['gate']:<34s} measured {g['measured']:>8.3f}  limit {g['limit']:>10.3f}  "
+                f"{'PASS' if g['pass'] else 'FAIL'}{band}  (one-sided 95 % lower bound {bound}, n = {g['n']} — "
+                f"printed, not judged)")
     typ = f"  (typ ceiling {shown(g['limit_at_typ'])})" if "limit_at_typ" in g else ""
     split = (f"  [cell {g['cell_R_int_ohm']:.0f} − joint {g['partition_ohm']:.0f}]" if "partition_ohm" in g else "")
     return (f"  {g['gate']:<34s} measured {g['measured']:>8.0f}  limit {shown(g['limit']):>10s}  "

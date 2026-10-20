@@ -1587,8 +1587,9 @@ A smaller difference reads «≈» by default, not by measurement — and the ca
 The gold coupon is single by the coupon letter, and a single coupon's own spread never averages out: with any number of
 titanium coupons against it and the spread known exactly, its contrast stays above ×1.32 at CV 10 % (×1.74 at CV 20 %).
 
-**Gates C · D · E** — canon writes «≥ threshold» without saying of what: the arm's geometric mean · its one-sided 95 %
-lower confidence bound · every coupon. The three readings move apart with n — the margin a good arm needs shrinks under
+**Gates C · D · E** — three readings of «≥ threshold»: the arm's geometric mean · its one-sided 95 % lower confidence
+bound · every coupon. Canon judges by the arm mean with the bound printed beside it (⚖️ 2026-10-20, `01_03 §3.5`); all
+three stay here because the choice was priced on them. The three readings move apart with n — the margin a good arm needs shrinks under
 the first two and grows under the third — so the replicate count and the reading are one decision. The largest CV at
 which a gate's best case still passes with P 0.80 (C: an arm that loses nothing, ×1.25 above 80 %; D: an arm on its
 own +7.5 % target against −10 %; D is measured on its own arm only, so its bound has no pooled row):
@@ -1608,7 +1609,7 @@ passes with probability 0.66 at n = 2 and 0.29 at n = 6. Under the arm mean an a
 passes half the time at every n. **E has no row:** its threshold is full recovery, so an electrode recovering exactly
 100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.5ⁿ (every coupon) whatever the spread; only a
 recovery above 100 % (drift, rehydration — not a design state, and this model caps the best case there) would pass more
-often. The gate needs a tolerance band.
+often. Canon therefore judges E against 100 % minus the instrument's repeatability band (⚖️ 2026-10-20).
 
 **Selection** among the four Zone-1 candidates (Ti-6Al-4V is the control; Ta is the coin-only bioinertness benchmark —
 its manifest and the coupon letter, while `01_02 §2.5` rule (в) still lists its σ_e among the V-free candidates): for
@@ -1618,7 +1619,8 @@ the ICP-MS rank.
 
 **Budget.** At the coupon letter's quote point (12 per alloy, 3 of them electrode coupons; 19 for Ti-6Al-4V) the control
 carries n = 2 and CP-Ti n = 3, while the four alloys with an anode and a cathode arm (Ti-6Al-7Nb · Ti-13Nb-13Zr · Ta ·
-Ti-15Zr) carry 2 + 1, one arm on a single replicate. Coupons per alloy = electrode arms × n + 3 uncoated (ICP-MS) + 6
+Ti-15Zr) carry 2 + 1, one arm on a single replicate; the PO puts n coupons on every comparative arm, the gold coupon and
+the day-0 cathodes included (⚖️ delegated 2026-10-20, `01_03 §3.5`). Coupons per alloy = electrode arms × n + 3 uncoated (ICP-MS) + 6
 reserve: the two-arm alloys need 13 at n = 2 and 15 at n = 3, Ti-6Al-4V 19 and 24. The 30-day hold C on the anodes
 and the Ti-6Al-4V pair runs 480 channel-days at n = 2 and 720 at n = 3 — a floor, since the ratified channel order ends
 in «→ the rest», which names no arm.

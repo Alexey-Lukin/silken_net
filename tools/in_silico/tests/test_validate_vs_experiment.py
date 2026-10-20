@@ -139,12 +139,80 @@ def test_coin_gate_and_layout_constants_mirror_canon():
     assert q and hi, "anchor_alloy_rfq quantity sentences not found — the pin lost its anchor"
     total, electrode, uncoated, reserve = (int(x) for x in q.groups())
     assert total == electrode + uncoated + reserve, "the letter's 12 no longer splits into its three parts"
-    assert _literal("COIN_ORDER_PER_ALLOY") == total
+    assert _literal("COIN_QUOTE_PER_ALLOY") == total
     assert _literal("COIN_UNCOATED_ICPMS_PER_ALLOY") == uncoated
     assert _literal("COIN_RESERVE_12WK_PER_ALLOY") == reserve
-    assert _literal("COIN_ORDER_CONTROL_HIGH") == int(hi.group(2))
+    assert _literal("COIN_QUOTE_CONTROL_HIGH") == int(hi.group(2))
     arms = _literal("COIN_ELECTRODE_ARMS")[_literal("COIN_CONTROL_ALLOY")]
     assert len(arms) * 2 + uncoated + reserve == int(hi.group(2)), "the control's arms × 2 no longer give «at 19»"
     for alloy in _literal("COIN_BENCHMARK_ALLOYS"):
         cem = (REPO / f"tools/cad/cem/ti_coin.{alloy.lower()}.json").read_text(encoding="utf-8")
         assert "NOT an anchor candidate" in cem, f"{alloy} is mirrored as a coin-only benchmark; its manifest no longer says so"
+
+
+# ── gates C · D · E (⚖️ 2026-10-20, 01_03 §3.5 under the thresholds): the arm's geometric mean is judged, the one-sided
+# 95 % lower bound is printed beside it and never judged, «every coupon» is not a reading; E against full recovery minus
+# the instrument's repeatability band. CAN catch: a gate that judges per coupon or on the bound; a bound on the wrong df,
+# spread or scale (its value is pinned); D on the wrong threshold; E judged without its band or with the wrong √2; a
+# record that does not name its arm; a bool, inf or string passing as a ratio or a band. CANNOT catch whether the lab's
+# band fits E's technique, or the open σ-route ⊥ r-route question (a ceiling in 40's header).
+def _row(exp, gate, arm="arm"):
+    return {g["gate"]: g for g in v40.acceptance_gates(exp)}[f"{gate} — {arm}"]
+
+
+def test_arm_gate_judges_the_geometric_mean_not_every_coupon():
+    row = _row({"retention_30d_by_coupon": {"arm": [0.95, 0.78, 0.92]}}, "C retention")
+    assert row["limit"] == _literal("COIN_RETENTION_30D_MIN") and row["arm"] == "arm"
+    assert row["measured"] == pytest.approx((0.95 * 0.78 * 0.92) ** (1 / 3)) and row["pass"]   # one coupon below 0.80
+
+
+def test_lower_bound_is_printed_not_judged_and_its_value_is_pinned():
+    row = _row({"retention_30d_by_coupon": {"arm": [0.85, 0.82]}}, "C retention")
+    # scipy: exp(mean(log) − t.ppf(0.95, 1)·stdev(log)/√2) = 0.7453377; df = n, pstdev or a linear-scale bound miss it
+    assert row["lower_bound"] == pytest.approx(0.745338, abs=1e-5)
+    assert row["pass"] and row["lower_bound"] < row["limit"]          # the mean clears 0.80, its bound does not
+    line = v40.gate_line(row)
+    assert "PASS" in line and "one-sided 95 % lower bound 0.745" in line and "printed, not judged" in line
+
+
+def test_each_arm_is_judged_under_its_own_label():
+    rows = {g["gate"]: g for g in v40.acceptance_gates(
+        {"retention_30d_by_coupon": {"anode Ti-15Zr": [0.9, 0.88], "cathode 4V nanozyme": [0.7, 0.72]}})}
+    assert rows["C retention — anode Ti-15Zr"]["pass"] and not rows["C retention — cathode 4V nanozyme"]["pass"]
+
+
+@pytest.mark.parametrize("values,passes", [([0.95, 0.93], True), ([0.89, 0.88], False)])
+def test_d_is_judged_against_its_own_threshold(values, passes):
+    row = _row({"chloride_ratio_by_coupon": {"arm": values}}, "D chloride")
+    assert row["limit"] == _literal("COIN_CHLORIDE_MIN_RATIO") and row["pass"] is passes
+
+
+def test_one_coupon_has_no_bound():
+    row = _row({"chloride_ratio_by_coupon": {"arm": [0.95]}}, "D chloride")
+    assert row["lower_bound"] is None and "lower bound n/a" in v40.gate_line(row)
+
+
+@pytest.mark.parametrize("band,passes,route", [({"cv_scan_sigma": 0.01}, True, "σ×√2"),       # limit 1 − 0.01·√2
+                                               ({"cv_repeatability_r": 0.01}, False, "r")])   # limit 0.99
+def test_e_is_judged_against_full_recovery_minus_the_band(band, passes, route):
+    row = _row({"ucst_recovery_by_coupon": {"arm": [0.99, 0.985]}, **band}, "E recovery")
+    assert row["measured"] == pytest.approx((0.99 * 0.985) ** 0.5) and row["pass"] is passes
+    assert f"[limit = 1 − band {row['band']:.3f}, {route}]" in v40.gate_line(row)
+
+
+@pytest.mark.parametrize("exp", [
+    {"ucst_recovery_by_coupon": {"arm": [0.99, 1.0]}},                          # E without its band
+    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": 0.01, "cv_repeatability_r": 0.02},   # two bands
+    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": 0.8},         # derived band √2·0.8 ≥ 1
+    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": "0.01"},      # a string band
+    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_repeatability_r": True},   # a bool band
+    {"retention_30d_by_coupon": [0.9, 0.88]},                                   # a bare list — no arm named
+    {"retention_30d_by_coupon": {"": [0.9]}},                                   # an empty arm label
+    {"retention_30d_by_coupon": {"arm": [True, True]}},                         # bools as ratios
+    {"retention_30d_by_coupon": {"arm": [float("inf"), 0.9]}},                  # an infinite ratio
+    {"chloride_ratio_by_coupon": {"arm": []}},
+    {"stability_30d_pct": 92},                                                  # the retired single-coupon key
+])
+def test_bad_arm_input_refuses(exp):
+    with pytest.raises(SystemExit):
+        v40.check_keys(exp)

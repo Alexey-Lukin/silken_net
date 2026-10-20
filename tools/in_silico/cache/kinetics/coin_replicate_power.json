@@ -166,7 +166,7 @@
       "0.20": 1.741649,
       "0.30": 2.276034
     },
-    "note": "single_vs_n — ONE coupon on one side (the gold coupon by order) against n on the other; _pooled — the spread pooled over the arms of the same quantity (conventions); single_coupon_floor — its limit with any n and a known spread (a z-test): the one coupon's own spread never averages out"
+    "note": "single_vs_n — ONE coupon on one side (the gold coupon at the letter's quote point) against n on the other; _pooled — the spread pooled over the arms of the same quantity (conventions); single_coupon_floor — its limit with any n and a known spread (a z-test): the one coupon's own spread never averages out"
   },
   "gate": {
     "thresholds": {
@@ -589,7 +589,7 @@
           }
         },
         "gold_coupons_needed": 2,
-        "gold_coupons_ordered": 1,
+        "gold_coupons_at_quote_point": 1,
         "test_A_coupons": 30,
         "C_channels": 16,
         "C_channel_days": 480,
@@ -636,7 +636,7 @@
           }
         },
         "gold_coupons_needed": 3,
-        "gold_coupons_ordered": 1,
+        "gold_coupons_at_quote_point": 1,
         "test_A_coupons": 45,
         "C_channels": 24,
         "C_channel_days": 720,
@@ -683,7 +683,7 @@
           }
         },
         "gold_coupons_needed": 4,
-        "gold_coupons_ordered": 1,
+        "gold_coupons_at_quote_point": 1,
         "test_A_coupons": 60,
         "C_channels": 32,
         "C_channel_days": 960,
@@ -730,7 +730,7 @@
           }
         },
         "gold_coupons_needed": 5,
-        "gold_coupons_ordered": 1,
+        "gold_coupons_at_quote_point": 1,
         "test_A_coupons": 75,
         "C_channels": 40,
         "C_channel_days": 1200,
@@ -777,7 +777,7 @@
           }
         },
         "gold_coupons_needed": 6,
-        "gold_coupons_ordered": 1,
+        "gold_coupons_at_quote_point": 1,
         "test_A_coupons": 90,
         "C_channels": 48,
         "C_channel_days": 1440,
@@ -908,5 +908,5 @@
       "Ti-15Zr"
     ]
   },
-  "verdict": "Gate readings move apart with n: the margin a good arm needs grows with n when every coupon must pass, shrinks under the lower confidence bound (pooled: shrinks) and shrinks under the arm mean — so n and the reading of «≥ threshold» are one decision. Under the arm-mean reading an arm sitting exactly at its threshold passes half the time at every n. Gate E's threshold is full recovery itself, so an electrode recovering exactly 100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.25…0.015625 (every coupon) — whatever the spread. At the coupon letter's quote point (12 per alloy, 19 for Ti-6Al-4V) the two-arm alloys Ta, Ti-13Nb-13Zr, Ti-15Zr, Ti-6Al-7Nb carry their electrode coupons as 2 + 1, i.e. one arm on a single replicate; the gold coupon is single by order."
+  "verdict": "Gate readings move apart with n: the margin a good arm needs grows with n when every coupon must pass, shrinks under the lower confidence bound (pooled: shrinks) and shrinks under the arm mean — so n and the reading of «≥ threshold» are one decision. Under the arm-mean reading an arm sitting exactly at its threshold passes half the time at every n. Gate E's threshold is full recovery itself, so an electrode recovering exactly 100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.25…0.015625 (every coupon) — whatever the spread. At the coupon letter's quote point (12 per alloy, 19 for Ti-6Al-4V) the two-arm alloys Ta, Ti-13Nb-13Zr, Ti-15Zr, Ti-6Al-7Nb carry their electrode coupons as 2 + 1, i.e. one arm on a single replicate; the gold coupon is single at the quote point."
 }

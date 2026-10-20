@@ -4904,7 +4904,7 @@ def test_coin_replicate_power_invariants():
     margins do not show; pass probabilities at the threshold that are not exactly 0.5 · α · 0.5ⁿ; budget arithmetic
     that no longer reproduces the letter's «at 19»; a Monte Carlo control outside its declared tolerance; a cache
     stale against the code (one cell recomputed from the module). CANNOT catch: whether the CV grid is realistic —
-    no coin has been measured — or which reading of «≥ threshold» canon means.
+    no coin has been measured; the reading of «≥ threshold» is a verdict homed in 01_03 §3.5, not a property of a cache.
     """
     import importlib.util
 
@@ -4913,7 +4913,7 @@ def test_coin_replicate_power_invariants():
         COIN_CONTROL_ALLOY,
         COIN_ELECTRODE_ARMS,
         COIN_HOLD_DAYS,
-        COIN_ORDER_CONTROL_HIGH,
+        COIN_QUOTE_CONTROL_HIGH,
         COIN_RESERVE_12WK_PER_ALLOY,
         COIN_UNCOATED_ICPMS_PER_ALLOY,
     )
@@ -4966,7 +4966,7 @@ def test_coin_replicate_power_invariants():
             assert row["coupons_needed"] == len(COIN_ELECTRODE_ARMS[alloy]) * int(n) + non_electrode
             assert row["fits_letter_quote"] == (row["coupons_needed"] <= row["letter_quote_point"])
         assert b["C_channel_days"] == c_arms * int(n) * COIN_HOLD_DAYS
-    assert d["budget"]["by_n"]["2"]["per_alloy"][COIN_CONTROL_ALLOY]["coupons_needed"] == COIN_ORDER_CONTROL_HIGH
+    assert d["budget"]["by_n"]["2"]["per_alloy"][COIN_CONTROL_ALLOY]["coupons_needed"] == COIN_QUOTE_CONTROL_HIGH
     ceiling = d["budget"]["letter_ceiling"]
     single_rep = sorted(a for a, c in ceiling.items() if c["max_equal_n_per_arm"] < 2)
     assert d["findings"]["alloys_whose_letter_quote_gives_an_arm_a_single_replicate"] == single_rep
@@ -5001,6 +5001,21 @@ def test_coin_replicate_power_invariants():
     p = s100.pass_probability("lower_bound", math.log(best / thr), s100.sigma_log(cv_star), 3)
     assert p == pytest.approx(conv["p_target"], abs=2e-3), "max_cv does not return P_TARGET at its own CV"
 
+
+
+def test_script_40_t_table_matches_scipy():
+    """Script 40 carries one-sided 95 % t quantiles as a table so it stays stdlib-only in the bare CI job; this pins the
+    table to scipy here, where scipy is installed. CAN catch: a mistyped or shifted entry. CANNOT catch: a df the table
+    does not carry — 40 refuses that itself."""
+    import importlib.util
+
+    from scipy import stats
+    spec = importlib.util.spec_from_file_location("s40", REPO / "tools/in_silico/scripts/40_validate_vs_experiment.py")
+    s40 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s40)
+    assert sorted(s40.T_ONE_SIDED_95) == list(range(1, 31))
+    for df, value in s40.T_ONE_SIDED_95.items():
+        assert value == pytest.approx(stats.t.ppf(0.95, df), abs=5e-5), df
 
 def test_electrode_interfacial_ph_invariants():
     """85 (00_07 HW.5.IS, the coin half of the ΔpH leg, 2026-10-12): invariants that hold whatever the constants move to.

@@ -9,8 +9,9 @@ a row by price — but the coin carries three DIFFERENT kinds of decision, and �
               titanium, branches (1)/(2) of the cathode-lever rule, 01_03 §3.2): the smallest ratio of the two arms'
               geometric means a two-sample t-test on log values detects with power P_TARGET at two-sided ALPHA.
               Below it the contrast reads «≈» by default, not by measurement — and the lever rule ACTS on «≈».
-  gate      — one arm against a fixed threshold (C · D · E, 01_03 §3.5). Canon writes «≥ threshold» without saying of
-              WHAT; three readings are carried, and they move in OPPOSITE directions with n: the arm's geometric mean ·
+  gate      — one arm against a fixed threshold (C · D · E, 01_03 §3.5). Three readings of «≥ threshold» are carried —
+              canon judges by the arm mean (ratified 2026-10-20 on these rows), and all three stay because the choice
+              was priced on them; they move in OPPOSITE directions with n: the arm's geometric mean ·
               its one-sided (1 − ALPHA) lower confidence bound · every coupon. Output: the margin above the threshold a
               good arm needs to pass with probability P_TARGET (one table serves every gate — the threshold cancels in
               a ratio), the pass probability of an arm sitting exactly at the threshold, the pass probability where
@@ -42,8 +43,8 @@ in both readings · the three gate readings and the pooled bound · argmax selec
 cells and fails the run beyond 4 standard errors (`control`).
 CANNOT: (1) give the CV; (2) speak for a metric whose spread is not log-normal, or say which of the two readings holds
 (that is whether the arms share one spread — measured only by the coin itself); (3) price anything — it counts, the
-quote prices; (4) say which reading of «≥ threshold» canon means, or whether the day-0 cathodes of the flange
-candidates are «comparative arms» in the sense of 01_03 §3.5 — both are verdicts; (5) cover the ICP-MS series (n = 3
+quote prices; (4) make the decisions it prices — the gates' reading (ratified 2026-10-20) and the single-replicate
+arms (delegated 2026-10-20) are verdicts, homed in 01_03 §3.5; (5) cover the ICP-MS series (n = 3
 by the letter; its spread near the LOQ is another metric) or test H; (6) count C channels beyond the anodes and the
 Ti-6Al-4V pair — the ratified channel order ends in «→ the rest», which names no arm.
 
@@ -68,10 +69,10 @@ from lib.constants import (
     COIN_CHLORIDE_TARGET_RATIO,
     COIN_CONTROL_ALLOY,
     COIN_ELECTRODE_ARMS,
-    COIN_GOLD_COUPONS,
+    COIN_GOLD_COUPONS_AT_QUOTE,
     COIN_HOLD_DAYS,
-    COIN_ORDER_CONTROL_HIGH,
-    COIN_ORDER_PER_ALLOY,
+    COIN_QUOTE_CONTROL_HIGH,
+    COIN_QUOTE_PER_ALLOY,
     COIN_RESERVE_12WK_PER_ALLOY,
     COIN_RETENTION_30D_MIN,
     COIN_UCST_RECOVERY_RATIO,
@@ -202,13 +203,13 @@ def key(cv: float) -> str:
 def budget(n: int) -> dict:
     per_alloy = {}
     for alloy, arms in COIN_ELECTRODE_ARMS.items():
-        quote = COIN_ORDER_CONTROL_HIGH if alloy == COIN_CONTROL_ALLOY else COIN_ORDER_PER_ALLOY
+        quote = COIN_QUOTE_CONTROL_HIGH if alloy == COIN_CONTROL_ALLOY else COIN_QUOTE_PER_ALLOY
         need = len(arms) * n + NON_ELECTRODE
         per_alloy[alloy] = {"electrode_arms": len(arms), "coupons_needed": need, "letter_quote_point": quote,
                             "fits_letter_quote": need <= quote}
     electrode = sum(len(arms) * n for arms in COIN_ELECTRODE_ARMS.values())
     return {"per_alloy": per_alloy,
-            "gold_coupons_needed": n, "gold_coupons_ordered": COIN_GOLD_COUPONS,
+            "gold_coupons_needed": n, "gold_coupons_at_quote_point": COIN_GOLD_COUPONS_AT_QUOTE,
             "test_A_coupons": electrode + n,
             "C_channels": C_ARMS * n, "C_channel_days": C_ARMS * n * COIN_HOLD_DAYS,
             "test_D_coupons": n, "test_E_coupons": n}
@@ -218,7 +219,7 @@ def letter_ceiling() -> dict:
     """The largest equal n per arm the letter's quote point carries, per alloy (its electrode coupons ÷ its arms)."""
     out = {}
     for alloy, arms in COIN_ELECTRODE_ARMS.items():
-        quote = COIN_ORDER_CONTROL_HIGH if alloy == COIN_CONTROL_ALLOY else COIN_ORDER_PER_ALLOY
+        quote = COIN_QUOTE_CONTROL_HIGH if alloy == COIN_CONTROL_ALLOY else COIN_QUOTE_PER_ALLOY
         electrode = quote - NON_ELECTRODE
         out[alloy] = {"electrode_coupons": electrode, "electrode_arms": len(arms),
                       "max_equal_n_per_arm": electrode // len(arms), "split_if_unequal": electrode % len(arms) != 0}
@@ -335,9 +336,9 @@ def main() -> int:
 
     # ── the letter's arithmetic must reproduce from the mirrored layout (the 4V quote point) ──
     control_need_at_2 = budget(2)["per_alloy"][COIN_CONTROL_ALLOY]["coupons_needed"]
-    if control_need_at_2 != COIN_ORDER_CONTROL_HIGH:
+    if control_need_at_2 != COIN_QUOTE_CONTROL_HIGH:
         raise RuntimeError(f"layout mirror ≠ letter: the control needs {control_need_at_2} at n=2, the letter quotes "
-                           f"{COIN_ORDER_CONTROL_HIGH}")
+                           f"{COIN_QUOTE_CONTROL_HIGH}")
     ceiling = letter_ceiling()
 
     # ── findings, read from the numbers ──
@@ -372,9 +373,9 @@ def main() -> int:
                      f"(every coupon) — whatever the spread.")
     single = findings["alloys_whose_letter_quote_gives_an_arm_a_single_replicate"]
     if single:
-        lines.append(f"At the coupon letter's quote point ({COIN_ORDER_PER_ALLOY} per alloy, {COIN_ORDER_CONTROL_HIGH} "
+        lines.append(f"At the coupon letter's quote point ({COIN_QUOTE_PER_ALLOY} per alloy, {COIN_QUOTE_CONTROL_HIGH} "
                      f"for {COIN_CONTROL_ALLOY}) the two-arm alloys {', '.join(single)} carry their electrode coupons "
-                     f"as 2 + 1, i.e. one arm on a single replicate; the gold coupon is single by order.")
+                     f"as 2 + 1, i.e. one arm on a single replicate; the gold coupon is single at the quote point.")
 
     result = {
         "script": Path(__file__).name,
@@ -406,7 +407,7 @@ def main() -> int:
                     "single_coupon_floor": {key(cv): r6(math.exp(
                         (stats.norm.ppf(1.0 - ALPHA / 2.0) + stats.norm.ppf(P_TARGET)) * sigma_log(cv)))
                         for cv in CV_ASSUMED},
-                    "note": "single_vs_n — ONE coupon on one side (the gold coupon by order) against n on the other; "
+                    "note": "single_vs_n — ONE coupon on one side (the gold coupon at the letter's quote point) against n on the other; "
                             "_pooled — the spread pooled over the arms of the same quantity (conventions); "
                             "single_coupon_floor — its limit with any n and a known spread (a z-test): the one coupon's "
                             "own spread never averages out"},
