@@ -5233,6 +5233,109 @@ CHECKS += [
 ]
 
 
+# ── HW.43 wire–liner shear lag (102, 2026-10-20) ⟷ SUMMARY §«The Bus Wire in Its Liner». Requirements «k ≥ X» round UP;
+# ranges of shares and ratios round OUTWARD; «at least» travel rounds DOWN (in-silico §When Modifying #43).
+SHEAR = "mechanical/wire_liner_shear_lag.json"
+_SHEAR_ROWS = (("Ti-15Zr", "Ti-15Zr"), ("β-Ti-13Nb-13Zr", "beta-Ti-13Nb-13Zr"), ("Ti-6Al-4V", "Ti-6Al-4V"),
+               ("Ti-6Al-7Nb", "Ti-6Al-7Nb"), ("CP-Ti Gr4", "CP-Ti-Gr4"), ("Ta", "Ta"))
+
+
+def _up2(x):
+    return math.ceil(round(x * 100, 9)) / 100
+
+
+def _down2(x):
+    return math.floor(round(x * 100, 9)) / 100
+
+
+def _shear_row(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(7)]
+    cells = [num[0], f"{num[1]} – {num[2]}", num[3], num[4], f"{num[5]} from {num[6]}"]
+    return rf"(?m)^\| {label} \| " + r" \| ".join(cells) + r" \|$"
+
+
+def _pad(d, floor):
+    v = [x["fraction_of_shift"] for k, x in d["pad_sway_share1_upper_whisker_high"].items() if k.startswith("window_floor") == floor]
+    return v
+
+
+CHECKS += [
+    *[(f"shear {key} col {j} → 102", SUMMARY, _shear_row(label, j), SHEAR, res, 0.0)
+      for label, key in _SHEAR_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: d["seam_by_alloy"][k]["seam_k_86"])(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["gentle_one_sided"]["seam_k"]))(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["1"]["gentle_one_sided"]["seam_k"]))(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.25"]["seam_k_adverse_sway"]))(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["by_share"]["0.5"]["seam_k_adverse_sway"]))(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["seam_k_at_wall_ceiling_87"]))(key),
+          (lambda k: lambda d: _up2(d["seam_by_alloy"][k]["adverse_share_at_wall_cap_exact"]))(key)))],
+    ("shear sleeve ratio → 102", SUMMARY, rf"the sleeve is {N}× stiffer axially", SHEAR,
+     lambda d: math.floor(d["sleeve_vs_wire"]["ratio"]), 0.0),
+    ("shear stick F at 5 um → 102", SUMMARY, rf"by up to {N} % and [\d.]+ % at a 5 µm shift", SHEAR,
+     lambda d: math.ceil(round(-d["controls"]["stick_compliance_at_tightest_grip"][0]["F_rel"] * 1000, 9)) / 10, 0.0),
+    ("shear stick pad at 5 um → 102", SUMMARY, rf"by up to [\d.]+ % and {N} % at a 5 µm shift", SHEAR,
+     lambda d: math.ceil(round(d["controls"]["stick_compliance_at_tightest_grip"][0]["pad_rel"] * 1000, 9)) / 10, 0.0),
+    ("shear stick at 30 um → 102", SUMMARY, rf"by at most\s+{N} % at 30 µm", SHEAR,
+     lambda d: math.ceil(round(max(abs(d["controls"]["stick_compliance_at_tightest_grip"][-1]["F_rel"]),
+                                   abs(d["controls"]["stick_compliance_at_tightest_grip"][-1]["pad_rel"])) * 1000, 9)) / 10, 0.0),
+    ("shear wire stretch low → 102", SUMMARY, rf"at most {N} – [\d.]+ µm at the wall's cap", SHEAR,
+     lambda d: math.floor(round(min(v["wire_stretch_at_wall_cap_um_max"] for v in d["seam_by_alloy"].values()) * 10, 9)) / 10, 0.0),
+    ("shear wire stretch high → 102", SUMMARY, rf"at most [\d.]+ – {N} µm at the wall's cap", SHEAR,
+     lambda d: math.ceil(round(max(v["wire_stretch_at_wall_cap_um_max"] for v in d["seam_by_alloy"].values()) * 10, 9)) / 10, 0.0),
+    ("shear hot past larger count → 102", SUMMARY, rf"past the larger margin on {N} of 4 readings", SHEAR,
+     lambda d: d["thermal"]["against_l1"]["hot_floor_part_past_larger_lower_margin"], 0.0),
+    *[(f"shear flip {name} {end} → 102", SUMMARY, pat, SHEAR,
+       (lambda kk, ii: lambda d: _ceil1(d["thermal"]["flip_vs_larger_margin_ppm_K"][kk][ii]))(key, i), 0.0)
+      for name, key, pats in (
+          ("cold bark", "cold_flange_on_bark", (rf"stays\s+above\s+{N}\s+–\s+[\d.]+\s+ppm/K", rf"stays\s+above\s+[\d.]+\s+–\s+{N}\s+ppm/K")),
+          ("cold gap", "cold_zone3_fit_gap_only", (rf"\({N}\s+–\s+[\d.]+\s+if\s+a\s+Zone-3", rf"\([\d.]+\s+–\s+{N}\s+if\s+a\s+Zone-3")),
+          ("hot bark", "hot_floor_part_flange_on_bark", (rf"the\s+hot\s+one\s+above\s+{N}\s+–", rf"the\s+hot\s+one\s+above\s+[\d.]+\s+–\s+{N}\s+—")))
+      for i, (end, pat) in enumerate((("low", pats[0]), ("high", pats[1])))],
+    ("shear free PEEK → 102", SUMMARY, rf"against\s+{N}\s+for\s+free\s+PEEK", SHEAR, lambda d: d["thermal"]["alpha_peek_free_ppm_K"], 0.0),
+    ("shear tightest hot → 102", SUMMARY, rf"tightest\s+grip\s+recedes\s+{N}\s+µm,\s+past\s+both", SHEAR,
+     lambda d: _floor1(d["thermal"]["tightest_grip_hot_recession_um_bark_span_capsule_edge"]), 0.0),
+    ("shear tangent ratio → 102", SUMMARY, rf"and\s+{N}×\s+at\s+the\s+first\s+micron", SHEAR,
+     lambda d: _floor1(d["sleeve_vs_wire"]["ratio_at_initial_tangent"]), 0.0),
+    ("shear preload low → 102", SUMMARY, rf"adds\s+{N}\s+–\s+[\d.]+\s+N\s+of\s+mean", SHEAR,
+     lambda d: math.floor(round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_gentle_nominal_relaxed_mu_low"] * 10, 9)) / 10, 0.0),
+    ("shear preload high → 102", SUMMARY, rf"adds\s+[\d.]+\s+–\s+{N}\s+N\s+of\s+mean", SHEAR,
+     lambda d: math.ceil(round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_relaxed_liner"] * 10, 9)) / 10, 0.0),
+    ("shear preload share of yield → 102", SUMMARY, rf"up to {N} % of the wall's 23 °C yield", SHEAR,
+     lambda d: math.ceil(round(d["seam_by_alloy"]["Ta"]["hot_preload"]["wall_stress_share_of_23C_yield"] * 100, 9)), 0.0),
+    ("shear preload k → 102", SUMMARY, rf"lifts its requirement to {N} with no sway", SHEAR,
+     lambda d: _up2(d["seam_by_alloy"]["Ta"]["by_share"]["0"]["seam_k_adverse_with_preload"]), 0.0),
+    ("shear pad grip low → 102", SUMMARY, rf"share-1 bound, {N} – [\d.]+ % of a sway shift", SHEAR,
+     lambda d: math.floor(round(min(_pad(d, False)) * 100, 9)), 0.0),
+    ("shear pad grip high → 102", SUMMARY, rf"share-1 bound, [\d.]+ – {N} % of a sway shift", SHEAR,
+     lambda d: math.ceil(round(max(_pad(d, False)) * 100, 9)), 0.0),
+    ("shear pad floor low → 102", SUMMARY, rf"{N} – [\d.]+ % on a part at the window floor", SHEAR,
+     lambda d: math.floor(round(min(_pad(d, True)) * 100, 9)), 0.0),
+    ("shear pad floor high → 102", SUMMARY, rf"[\d.]+ – {N} % on a part at the window floor", SHEAR,
+     lambda d: math.ceil(round(max(_pad(d, True)) * 100, 9)), 0.0),
+    ("shear pad ratio low → 102", SUMMARY, rf"{N} – [\d.]+ % of the pin's minimum preload", SHEAR,
+     lambda d: math.floor(round(min(x["force_ratio_over_min_preload"] for x in d["pad_sway_share1_upper_whisker_high"].values()) * 1000, 9)) / 10, 0.0),
+    ("shear pad ratio high → 102", SUMMARY, rf"[\d.]+ – {N} % of the pin's minimum preload", SHEAR,
+     lambda d: math.ceil(round(max(x["force_ratio_over_min_preload"] for x in d["pad_sway_share1_upper_whisker_high"].values()) * 1000, 9)) / 10, 0.0),
+    ("shear per-K low → 102", SUMMARY, rf"outgrows\s+the\s+Ti\s+wire\s+by\s+{N}\s+–\s+[\d.]+\s+µm/K", SHEAR,
+     lambda d: _down2(min(v["shift_um_per_K"] for v in d["thermal"]["by_reading"].values())), 0.0),
+    ("shear per-K high → 102", SUMMARY, rf"outgrows\s+the\s+Ti\s+wire\s+by\s+[\d.]+\s+–\s+{N}\s+µm/K", SHEAR,
+     lambda d: _up2(max(v["shift_um_per_K"] for v in d["thermal"]["by_reading"].values())), 0.0),
+    ("shear hot floor low → 102", SUMMARY, rf"pad\s+recedes\s+{N}\s+–\s+[\d.]+\s+µm\s+against", SHEAR,
+     lambda d: math.floor(round(min(v["hot"]["pad_recedes_um"] for k, v in d["thermal"]["by_reading"].items() if "__window_floor__" in k) * 10, 9)) / 10, 0.0),
+    ("shear hot floor high → 102", SUMMARY, rf"pad\s+recedes\s+[\d.]+\s+–\s+{N}\s+µm\s+against", SHEAR,
+     lambda d: math.ceil(round(max(v["hot"]["pad_recedes_um"] for k, v in d["thermal"]["by_reading"].items() if "__window_floor__" in k) * 10, 9)) / 10, 0.0),
+    ("shear L1 lower small → 102", SUMMARY, rf"against\s+{N}\s+–\s+[\d.]+\s+µm\s+to\s+the\s+lower\s+edge", SHEAR, lambda d: d["thermal"]["l1_margin_to_lower_edge_min_um"], 0.0),
+    ("shear L1 lower large → 102", SUMMARY, rf"against\s+[\d.]+\s+–\s+{N}\s+µm\s+to\s+the\s+lower\s+edge", SHEAR,
+     lambda d: max(m[0] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 0.0),
+    ("shear cold min → 102", SUMMARY, rf"protrudes\s+at\s+least\s+{N}\s+µm\s+on\s+every\s+part", SHEAR,
+     lambda d: math.floor(round(d["thermal"]["against_l1"]["cold_min_protrusion_um"] * 10, 9)) / 10, 0.0),
+    ("shear L1 upper small → 102", SUMMARY, rf"upper\s+edge\s+of\s+{N}\s+–\s+[\d.]+\s+µm", SHEAR, lambda d: d["thermal"]["l1_margin_to_upper_edge_min_um"], 0.0),
+    ("shear L1 upper large → 102", SUMMARY, rf"upper\s+edge\s+of\s+[\d.]+\s+–\s+{N}\s+µm", SHEAR,
+     lambda d: max(m[1] for m in d["thermal"]["l1_margin_um_90_model_edges"].values()), 0.0),
+]
+
+
 # ── HW.26 bus torsion budget (101, 2026-10-20) ⟷ SUMMARY §«How Far Can the Bus Wire Twist?». Angles and margins are
 # «below it, harmless» thresholds — rounded DOWN; torque ranges round OUTWARD; the wind's «at most» rotation rounds UP
 # (in-silico §When Modifying #43).

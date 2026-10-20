@@ -48,7 +48,8 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       local slip of the liner's grip, itself an interference fit (55's cold press-fit). Every
       axial force on the wire crosses the liner's own wall, so `wire_behind_liner` computes the CEILING the wall puts on
       it and 86's seam requirement at that ceiling; how much load the root carries and how much of the term reaches the
-      pin — a shear-lag model with Coulomb slip, with the share of Δu and the sleeve's thermal growth — is not computed.
+      pin — a shear-lag model with Coulomb slip, with the share of Δu and the sleeve's thermal growth — is not computed
+      here (`102`, 2026-10-20).
       Over the pin's working compression the ceiling is the force ratio Δu/x_min for a spring without barrel preload.
   (D) THERMAL, not sway — the daily expansion mismatch of radome, stack, sleeve and wire moves the same contacts; script
       `90` prices the outer pad's gap; the sleeve's growth on the centre pad's wire path, which 90 does not price, is
@@ -216,7 +217,7 @@ def wire_behind_liner() -> dict:
     root actually carries (how much of Δu the wood imposes — with the sleeve and the wire resisting in parallel — and
     the sleeve's thermal growth), and how much of (C) reaches the pin instead: the soft tube collects the force near its
     held end, the wire slips inside it there before the wall yields, so the split between stretching the wire and moving
-    the tip needs a shear-lag model with Coulomb slip, which is not in the tree."""
+    the tip needs a shear-lag model with Coulomb slip — `102` (2026-10-20)."""
     cp = json.loads(BUS55.read_text(encoding="utf-8"))["interference_window"]["cold_press_fit"]
     rows55 = {r["at"]: r for r in cp["rows"]}
     f_wall = cp["peek_yield_MPa"] * cp["tube_section_mm2"]                                   # N

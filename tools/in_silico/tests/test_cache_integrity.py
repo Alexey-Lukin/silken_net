@@ -5018,6 +5018,188 @@ def test_script_40_t_table_matches_scipy():
         assert value == pytest.approx(stats.t.ppf(0.95, df), abs=5e-5), df
 
 
+
+def test_wire_liner_shear_lag_invariants():
+    """102 (00_07 HW.43, the shear-lag leg): what must hold whatever the inputs move to — recomputed HERE from the lib's
+    constants, `55`'s spans and grip rows, and the `77`/`79`/`86`/`87`/`90` caches, not from the script's algebra.
+
+    CAN catch: a thermal shift per kelvin off (α_PEEK·L_PEEK + α_flange·L_Ti − α_wire·L_wire); a window-floor part that
+    still grips at the hot edge; a root force that does not invert δ(F) = share·shift through the closed form
+    re-implemented here; a seam k off Soderberg — re-implemented here on `86`'s cached amplitude, mean, endurance and
+    yield — in every uncapped cell, and a capped cell off `87`'s ceiling reading; a requirement that falls as the share
+    grows, or a gentle corner above the adverse; a grip row off `55`; a force past the wall's cap; the exact cap share and
+    the wire's stretch at the cap off the closed form; a pad fraction outside [0, 1] or a floor part passing less than a
+    gripping one; `79` (at `90`'s surface α)/`86`/`87`/`90` inputs stale against their caches; a sleeve ratio off E·A/L
+    over the secant; a cold CTE flip threshold whose protrusion is not the margin (closed form re-implemented) or a hot one
+    off its analytic value α_Ti + m/(L_PEEK·ΔT), its `None` included; a row maximum that is not the max of its cells; the
+    controls drifting past 0.2 %, or stick compliance pointing the non-conservative way at either grip. CANNOT catch: the share at any bond state (sway or heat), the
+    compressive half, a tie of ice or resin, the capture, the wall's creep — the script's declared ceilings.
+    """
+    import importlib.util
+
+    from lib.constants import (
+        ALLOY_BASELINE,
+        ALLOY_PROPERTIES,
+        ALPHA_PEEK_1K,
+        D_BUS_ROD_MM,
+        E_PEEK_PA,
+        PEEK_RELAX_FLOOR,
+    )
+    d = json.loads((MECHANICAL / "wire_liner_shear_lag.json").read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("s55_shear", REPO / "tools/in_silico/scripts/55_bus_mechanical.py")
+    s55 = importlib.util.module_from_spec(spec)
+    sys.modules["s55_shear"] = s55          # 55 declares dataclasses, which look their module up here
+    spec.loader.exec_module(s55)
+    a, L = s55.PEEK_GAP_MM - s55.LINER_PROTRUSION_MM, s55.LINER_LENGTH_MM
+    assert (d["geometry"]["bare_run_mm"], d["geometry"]["liner_run_mm"]) == pytest.approx((a, L), abs=1e-9)
+    cp = json.loads((MECHANICAL / "bus_mechanical.json").read_text(encoding="utf-8"))["interference_window"]["cold_press_fit"]
+    rows = {r["at"]: r for r in cp["rows"]}
+    ea_l = E_PEEK_PA / 1e6 * cp["tube_section_mm2"]
+    cap = cp["peek_yield_MPa"] * cp["tube_section_mm2"]
+    area = math.pi * D_BUS_ROD_MM ** 2 / 4
+
+    def delta_of(f, q, ea_w):                  # the docstring's closed form, re-implemented
+        s_sum = ea_w + ea_l
+        r = ea_l / s_sum
+        s_top, s_bot = f * (1 - r) / q, f * r / q
+        return (f * a / ea_w + s_bot * f * (1 - r / 2) / ea_w + (L - s_top - s_bot) * f / s_sum
+                + s_top * f * (1 + r) / (2 * ea_l))
+
+    # inputs against their homes
+    d86 = json.loads((MECHANICAL / "coaxiality_allocation.json").read_text(encoding="utf-8"))
+    shipped = d86["by_geometry"][next(k for k in d86["by_geometry"] if k.startswith("shipped"))]
+    d87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
+    d90 = json.loads((MECHANICAL / "pogo_thermal_gap.json").read_text(encoding="utf-8"))
+    th = d["thermal"]
+    assert th["l1_margin_um_90_model_edges"] == {c: d90["seasonal"]["model_edges"][c]["window"]["L1 spacer only"]["margin_um"]
+                                                 for c in ("isothermal_low_stack", "isothermal_high_stack")}
+    assert th["temperatures_c"]["capsule_model_edges_90"] == d90["inputs"]["temperature_readings_c"]["model_edges"]
+    heat = json.loads((REPO / "tools/in_silico/cache/thermal/flange_cambium_heat.json").read_text(encoding="utf-8"))["runs"]
+    frost = json.loads((REPO / "tools/in_silico/cache/thermal/flange_cambium_frost.json").read_text(encoding="utf-8"))["runs"]
+    cam = th["temperatures_c"]["cambium_under_flange_79"]
+    assert cam[0] == min(x["cambium_min_C_model_lower_bound"]["flange"] for x in frost)
+    spec90 = importlib.util.spec_from_file_location("s90_shear", REPO / "tools/in_silico/scripts/90_pogo_thermal_gap.py")
+    s90 = importlib.util.module_from_spec(spec90)
+    sys.modules["s90_shear"] = s90
+    spec90.loader.exec_module(s90)
+    assert cam[1] == max(x["cambium_max_C"] for x in heat if x["case"] == s90.DAILY_CASE and x["alpha"] == s90.DAILY_ALPHA)
+    shift_hi = max(d87["by_slope_reading"]["upper_whisker"]["C_centre_pad_poisson"]["imposed_shift_um_at_source_strain"])
+    sf = s55.INFINITE_LIFE_SF
+
+    def k_sod(f_amp, f_mean, r86, mean86):     # Soderberg's break-even k, re-implemented on 86's cached inputs
+        sa = shipped["amplitude_MPa"] + f_amp / area
+        sm = mean86 + max(f_mean, 0.0) / area
+        room = 1.0 / sf - sm / r86["yield_MPa"]
+        return sa / (r86["endurance_MPa"] * room) if room > 0 else None
+
+    q_gentle = rows["ratified_nominal"]["by_mu"]["0.1"]["friction_N"] / L * PEEK_RELAX_FLOOR
+    for alloy, row in d["seam_by_alloy"].items():
+        r86 = shipped["by_alloy"][alloy]
+        mean86 = next(o["mean_MPa"] for o in r86["by_offset"] if o["offset_um"] == 50)
+        k86 = next(o["k_break_even"] for o in r86["by_offset"] if o["offset_um"] == 50)
+        assert row["gentle_grip_N_per_mm"] == pytest.approx(q_gentle, abs=1e-3)
+        assert row["seam_k_86"] == pytest.approx(k86, abs=1e-4), alloy
+        assert row["seam_k_at_wall_ceiling_87"] == d87["C_wire_behind_liner"]["by_alloy"][alloy]["seam_k_at_route_capacity"]
+        ea_w = ALLOY_PROPERTIES[alloy]["E_GPa"] * 1e3 * area
+        q_adv = rows["window_ceiling"]["by_mu"]["0.4"]["friction_N"] / L
+        assert row["adverse_grip_N_per_mm"] == pytest.approx(q_adv, abs=1e-3)
+        ks, prev = [], None
+        for sh, g in row["by_share"].items():
+            rev = g["adverse"]["sway_reversed"]
+            assert rev["F_amp_N"] <= cap + 1e-6 and g["adverse"]["sway_reversed_hot_preload"]["F_amp_N"] <= cap + 1e-6
+            if not rev["wall_or_slip_reached"] and rev["F_amp_N"] > 0:
+                assert delta_of(rev["F_amp_N"], q_adv, ea_w) == pytest.approx(float(sh) * shift_hi * 1e-3, rel=2e-4), (alloy, sh)
+            assert g["gentle_one_sided"]["seam_k"] <= g["seam_k_adverse_sway"] + 1e-9, (alloy, sh)
+            for cname, cell in g["adverse"].items():
+                if cname.startswith("sway_reversed") and cell["wall_or_slip_reached"] and cell["F_mean_N"] == 0.0:
+                    assert cell["seam_k"] == pytest.approx(row["seam_k_at_wall_ceiling_87"], abs=2e-4), (alloy, sh, cname)
+                expected = k_sod(cell["F_amp_N"], cell["F_mean_N"], r86, mean86)
+                assert (cell["seam_k"] is None) == (expected is None), (alloy, sh, cname)
+                if expected is not None:
+                    assert cell["seam_k"] == pytest.approx(expected, abs=2e-4), (alloy, sh, cname)
+            adv = g["adverse"]
+            assert g["seam_k_adverse_sway"] == max(adv["sway_reversed"]["seam_k"], adv["sway_one_sided"]["seam_k"])
+            assert g["seam_k_adverse_with_preload"] == max(c["seam_k"] for c in adv.values())
+            gen = g["gentle_one_sided"]
+            assert gen["seam_k"] == pytest.approx(k_sod(gen["F_amp_N"], gen["F_mean_N"], r86, mean86), abs=2e-4), (alloy, sh)
+            if prev is not None:
+                assert g["seam_k_adverse_sway"] >= prev - 1e-9, (alloy, sh)
+            prev = g["seam_k_adverse_sway"]
+            ks.append(g["seam_k_adverse_sway"])
+        assert ks[0] == pytest.approx(row["seam_k_86"], abs=1e-4)
+        assert row["wire_stretch_at_wall_cap_um_max"] == pytest.approx(cap * (a + L) / ea_w * 1e3, abs=0.006), alloy
+        if row["adverse_share_at_wall_cap_exact"] is not None:
+            assert row["adverse_share_at_wall_cap_exact"] == pytest.approx(delta_of(cap, q_adv, ea_w) / (shift_hi * 1e-3), abs=1e-4)
+    # the pad
+    pads = d["pad_sway_share1_upper_whisker_high"]
+    assert all(0.0 <= v["fraction_of_shift"] <= 1.0 for v in pads.values())
+    assert min(v["fraction_of_shift"] for k, v in pads.items() if k.startswith("window_floor")) >= \
+        max(v["fraction_of_shift"] for k, v in pads.items() if not k.startswith("window_floor"))
+    # heat
+    a_fl = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    spans = {"gap_and_shank_disc_on_sleeve_top": (s55.PEEK_GAP_MM + s55.SHANK_LEN_MM, s55.FLANGE_THK_MM),
+             "gap_only_shank_held_at_its_end": (s55.PEEK_GAP_MM, s55.SHANK_LEN_MM + s55.FLANGE_THK_MM)}
+    for key, v in th["by_reading"].items():
+        peek, ti = spans[key.split("__")[0]]
+        per_k = (ALPHA_PEEK_1K * peek + a_fl * ti - a_fl * (a + L)) * 1e3
+        assert v["shift_um_per_K"] == pytest.approx(per_k, abs=1e-4), key
+        if "__window_floor__" in key:
+            assert v["hot"]["grip_N_per_mm"] == 0.0 and v["hot"]["root_F_N"] == 0.0, key
+            assert v["hot"]["pad_recedes_um"] == pytest.approx(v["hot"]["shift_um"], abs=0.011), key
+    al = th["against_l1"]
+    floor_hot = [v["hot"]["pad_recedes_um"] for k, v in th["by_reading"].items() if "__window_floor__" in k]
+    assert al["hot_floor_part_past_smaller_lower_margin"] == sum(x > th["l1_margin_to_lower_edge_min_um"] for x in floor_hot)
+    assert al["cold_min_protrusion_um"] == min(v["cold"]["pad_protrudes_um"] for v in th["by_reading"].values())
+    # the sleeve and the controls
+    g77 = json.loads((MECHANICAL / "anchor_torque_path.json").read_text(encoding="utf-8"))["geometry"]
+    a_sl = math.pi * ((g77["sleeve_outer_radius_m"] * 1e3) ** 2 - (g77["shank_radius_m"] * 1e3) ** 2)
+    k_sl = E_PEEK_PA / 1e6 * a_sl / (s55.PEEK_GAP_MM + s55.SHANK_LEN_MM)
+    assert d["sleeve_vs_wire"]["sleeve_k_N_per_mm"] == pytest.approx(k_sl, abs=0.1)
+    k_wire = min(cap, rows["window_ceiling"]["by_mu"]["0.4"]["friction_N"]) / (shift_hi * 1e-3)
+    assert d["sleeve_vs_wire"]["ratio"] == pytest.approx(k_sl / k_wire, abs=0.06)
+    t_ref = d90["inputs"]["assembly_temperature_c"]
+    dalpha_r = (ALPHA_PEEK_1K - a_fl) * D_BUS_ROD_MM / 2 * 1e3
+    temps = th["temperatures_c"]
+    for key, v in th["flip_effective_cte_ppm_K"].items():
+        sname, tname = key.split("__")
+        peek = spans[sname][0]
+        t_lo, t_hi = temps[tname]
+        cold = v["cold_tightest_grip_vs_upper_margin_ppm_K"]
+        lo_m, hi_m = sorted(cold, key=float)
+        assert a_fl * 1e6 < cold[lo_m] <= cold[hi_m] < ALPHA_PEEK_1K * 1e6
+        # cold: at the threshold the tightest grip's protrusion equals the margin — the closed form re-implemented here
+        i20 = rows["window_ceiling"]["interference_radial_um"]
+        q_cold = rows["window_ceiling"]["by_mu"]["0.4"]["friction_N"] / L * (i20 - dalpha_r * (t_lo - t_ref)) / i20
+        ea_wb = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3 * area
+        ea_lr = ea_l * PEEK_RELAX_FLOOR
+        for m_key, alpha in cold.items():
+            dlt = abs((alpha * 1e-6 - a_fl) * peek * (t_lo - t_ref))
+            s_sum = ea_wb + ea_lr
+            r = ea_lr / s_sum
+            quad = (r * (1 - r / 2) / ea_wb - 1 / s_sum + (1 - r ** 2) / (2 * ea_lr)) / q_cold
+            lin = a / ea_wb + L / s_sum
+            f = (-lin + math.sqrt(lin ** 2 + 4 * quad * dlt)) / (2 * quad)
+            assert f < cap
+            pad = f * (1 - r) / q_cold * f * ((1 + r) / (2 * ea_lr) - (1 - r) / (2 * ea_wb)) * 1e3
+            assert pad == pytest.approx(float(m_key), abs=0.01), (key, m_key)
+        # hot: a floor part grips with nothing there, so the threshold is analytic — α_Ti + m/(L_PEEK·ΔT)
+        for m_key, alpha in v["hot_floor_part_vs_lower_margin_ppm_K"].items():
+            exact = (a_fl + float(m_key) * 1e-3 / (peek * (t_hi - t_ref))) * 1e6
+            if exact > ALPHA_PEEK_1K * 1e6:
+                assert alpha is None, (key, m_key)
+            else:
+                assert alpha == pytest.approx(exact, abs=2e-3), (key, m_key)
+    c = d["controls"]
+    for v in c["virgin"]:
+        assert v["F_fe_wall_shear_N"] <= v["F_closed_N"] * (1 + 1e-3) and v["pad_fe_wall_shear_um"] >= v["pad_closed_um"] * (1 - 1e-3)
+        assert v["F_fe_rigid_N"] == pytest.approx(v["F_closed_N"], rel=2e-3)
+        assert v["pad_fe_rigid_um"] == pytest.approx(v["pad_closed_um"], rel=2e-3, abs=1e-3)
+    m = c["masing_loop"]
+    assert m["F_amp_fe_N"] == pytest.approx(m["F_amp_masing_N"], rel=2e-3)
+    assert abs(m["F_mean_fe_N"] - m["F_mean_masing_N"]) <= 2e-3 * m["F_amp_masing_N"]
+    assert 0.0 < c["stick_compliance_effect_on_F_max"] < 0.05
+    assert all(s["F_rel"] <= 1e-3 and s["pad_rel"] >= -1e-3 for s in c["stick_compliance_at_tightest_grip"])
+
 def test_bus_torsion_budget_invariants():
     """101 (00_07 HW.26, the bus-twist leg): every cell against its closed form, recomputed HERE from `55`'s spans, the
     lib's alloy and PEEK constants and `55`'s and `77`'s caches — not from the script's own algebra.
