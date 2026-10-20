@@ -49,7 +49,7 @@ Sway reaches the pins along four paths; this file computes two to a number and s
       axial force on the wire crosses the liner's own wall, so `wire_behind_liner` computes the CEILING the wall puts on
       it and 86's seam requirement at that ceiling; how much load the root carries and how much of the term reaches the
       pin — a shear-lag model with Coulomb slip, with the share of Δu and the sleeve's thermal growth — is not computed
-      here (`102`, 2026-10-20).
+      here (`102`, 2026-10-20; the share of Δu itself, per bond state — `103`).
       Over the pin's working compression the ceiling is the force ratio Δu/x_min for a spring without barrel preload.
   (D) THERMAL, not sway — the daily expansion mismatch of radome, stack, sleeve and wire moves the same contacts; script
       `90` prices the outer pad's gap; the sleeve's growth on the centre pad's wire path, which 90 does not price, is

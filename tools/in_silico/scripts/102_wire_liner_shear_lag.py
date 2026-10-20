@@ -549,7 +549,7 @@ def main() -> int:
                  f"if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above "
                  f"{up1(hot_bark[0]):.1f}–{up1(hot_bark[1]):.1f} (free PEEK {ALPHA_PEEK_1K * 1e6:.0f}; a «holds while above X» "
                  f"threshold rounds up); the wood's radial CTE is not "
-                 f"in the tree.")
+                 f"in `102` (`103` takes xylem's).")
     lines.append(f"The sleeve is {math.floor(k_sleeve / k_wire_secant)}× stiffer axially than the wire at the adverse share-1 point and "
                  f"{down1(k_sleeve / k_wire_tangent):.1f}× at the first micron, so the wire adds between a twelfth and a quarter to the "
                  f"anchor's stiffness and does not set the share.")
