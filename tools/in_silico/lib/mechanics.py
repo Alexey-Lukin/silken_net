@@ -43,3 +43,14 @@ def thermal_interference(t_c: float, t_assembly_c: float, alpha_sleeve: float,
     sleeve (PEEK) shrinks onto the shaft (Ti) → grips harder, so the interference grows in the cold.
     """
     return (alpha_sleeve - alpha_shaft) * (t_assembly_c - t_c) * b
+
+
+def bonded_fit_section(e_ti: float, alpha_ti: float, a_ti: float, e_peek: float, alpha_peek: float, a_peek: float,
+                       peek_relax: float) -> tuple[dict, float]:
+    """A Ti shank pressed into a PEEK bore, read as BONDED over its whole run: the axial stiffness per load
+    ({"sway": unrelaxed PEEK, "slow": PEEK × peek_relax}, in the units of E·A given) and the run's free CTE on the
+    relaxed PEEK, by the rule of mixtures. One rule for every fit of the anchor (102 · 103) — the adverse end of the
+    run's thermal reading: the interference sits only on the barbed contact zone, and a shank held at its end leaves
+    the run at the Ti's own CTE."""
+    ea = {"sway": e_ti * a_ti + e_peek * a_peek, "slow": e_ti * a_ti + e_peek * peek_relax * a_peek}
+    return ea, (e_ti * a_ti * alpha_ti + e_peek * peek_relax * a_peek * alpha_peek) / ea["slow"]

@@ -5075,9 +5075,16 @@ def test_anchor_wood_share_invariants():
     for k, v in k_a.items():
         assert st["anode_bond"][k] == pytest.approx(v, abs=0.1), k
     bonds = {"anode_bond_stiff": max(k_a.values()), "anode_bond_soft": min(k_a.values())}
+    # the anode's shank pressed into the sleeve, read bonded over its run (the fits' one rule): its free CTE by mixtures
+    lock1 = json.loads((REPO / "tools/cad/cem/mechanical_lock.zone1.json").read_text(encoding="utf-8"))
+    l_z1 = lock1["shank_length_mm"]
+    ea1_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3 * math.pi / 4 * (lock1["shank_diameter_mm"] ** 2 - lock1["bore_diameter_mm"] ** 2)
+    ea1_p = E_PEEK_PA / 1e6 * PEEK_RELAX_FLOOR * math.pi * (r_s ** 2 - r_b ** 2)
+    al_z1 = (ea1_ti * aa + ea1_p * ap) / (ea1_ti + ea1_p)
+    assert d["geometry"]["zone1_shank_in_sleeve"]["alpha_bonded_ppm_K"] == pytest.approx(al_z1 * 1e6, abs=1e-4)
 
-    def w_a(dv):
-        return aw * dv - aa * (dv - span)
+    def w_a(dv, ax=aw, bonded=True):
+        return ax * dv - (al_z1 if bonded else aa) * l_z1 - aa * (dv - span - l_z1)
 
     def kc_of(kf, ka):
         return 0.0 if kf == 0 else 1 / (1 / ka + 1 / kf)
@@ -5086,9 +5093,9 @@ def test_anchor_wood_share_invariants():
         kc = kc_of(kf, ka)
         return kc / (kc + ks["sway"])
 
-    def ae2(kf, ka, dv):
+    def ae2(kf, ka, dv, ax=aw, bonded=True):
         kc, e0 = kc_of(kf, ka), ap * span
-        return (e0 + (w_a(dv) - e0) * kc / (kc + ks["slow"])) / span * 1e6
+        return (e0 + (w_a(dv, ax, bonded) - e0) * kc / (kc + ks["slow"])) / span * 1e6
 
     def seg(ka, dd, load):
         return ka / (ka + ks[load] * span / (span - dd))
@@ -5096,10 +5103,10 @@ def test_anchor_wood_share_invariants():
     def sh3(ka, dd, dv, rigid_bark=False):
         return (dd / dv if rigid_bark else 0.0) + seg(ka, dd, "sway") * (dv - dd) / dv
 
-    def ae3(ka, dd, dv, rigid_bark=False):
+    def ae3(ka, dd, dv, rigid_bark=False, ax=aw, bonded=True):
         e_lo = ap * (span - dd)
-        upper = aw * dd if rigid_bark else ap * dd
-        return (upper + e_lo + (w_a(dv) - aw * dd - e_lo) * seg(ka, dd, "slow")) / span * 1e6
+        upper = ax * dd if rigid_bark else ap * dd
+        return (upper + e_lo + (w_a(dv, ax, bonded) - ax * dd - e_lo) * seg(ka, dd, "slow")) / span * 1e6
 
     sh = d["share"]
     read2 = [sh2(kf, ka) for kf in kf_read.values() for ka in k_a.values()]
@@ -5219,6 +5226,16 @@ def test_anchor_wood_share_invariants():
         v = d["readings"]["state3"][side]["holds_only_deeper_than_mm"]
         assert f"deeper than {math.floor(v * 10) / 10:g} mm" in d["verdict"], side
     assert h["thresholds_102_ppm_K"] == {"cold": thr_flip["cold_flange_on_bark"], "hot": thr_flip["hot_floor_part_flange_on_bark"]}
+
+    def cte_min(ax=aw, bonded=True):
+        v = [ae2(kf, ka, dv, ax, bonded) for kf in (0.0, 1e12) for ka in bonds.values() for dv in dvs.values()]
+        return min(v + [ae3(ka, dd, dv, rb, ax, bonded) for rb in (False, True) for ka in bonds.values() for dd in grid_d for dv in dvs.values()])
+    ax_rev = h["xylem_cte_at_which_the_wood_reverses_the_travel_ppm_K"] * 1e-6        # lands on the sign change
+    assert cte_min(ax_rev) == pytest.approx(rev, abs=2e-3)
+    ti_end = h["zone1_shank_held_at_its_end"]                                          # the favourable end, Ti alone
+    floor_ti = min(w_a(dv, bonded=False) for dv in dvs.values()) / span * 1e6
+    assert (ti_end["cte_min_ppm_K"], ti_end["cte_floor_span_follows_the_wood_ppm_K"]) == pytest.approx((cte_min(bonded=False), floor_ti), abs=2e-3)
+    assert ti_end["cte_min_ppm_K"] >= h["cte_min_ppm_K_over_the_model"] and floor_ti >= floor
     c = d["controls"]
     assert c["solver_vs_closed_forms_max_miss"] < 1e-6 and max(c["monotone_worst_step"].values()) < 1e-8
     assert c["pad_travel_monotone_in_shift_worst_step"] <= 1e-12
@@ -5405,6 +5422,244 @@ def test_wire_liner_shear_lag_invariants():
     assert abs(m["F_mean_fe_N"] - m["F_mean_masing_N"]) <= 2e-3 * m["F_amp_masing_N"]
     assert 0.0 < c["stick_compliance_effect_on_F_max"] < 0.05
     assert all(s["F_rel"] <= 1e-3 and s["pad_rel"] >= -1e-3 for s in c["stick_compliance_at_tightest_grip"])
+    # the hot preload on both spans — `103`'s seam input for each premise: the relaxed liner's virgin force at the span's
+    # hot shift, by the closed form re-implemented here; and the gap-only span's hot threshold row
+    t_hot = temps["capsule_model_edges_90"][1]
+    i20c = rows["window_ceiling"]["interference_radial_um"]
+    q_hot = rows["window_ceiling"]["by_mu"]["0.4"]["friction_N"] / L * max(0.0, i20c - dalpha_r * (t_hot - t_ref)) / i20c
+    ea_lr = ea_l * PEEK_RELAX_FLOOR
+
+    def delta_relaxed(f, ea_w):
+        s_sum = ea_w + ea_lr
+        r = ea_lr / s_sum
+        s_top, s_bot = f * (1 - r) / q_hot, f * r / q_hot
+        return (f * a / ea_w + s_bot * f * (1 - r / 2) / ea_w + (L - s_top - s_bot) * f / s_sum
+                + s_top * f * (1 + r) / (2 * ea_lr))
+    for alloy, row in d["seam_by_alloy"].items():
+        hp, ea_w = row["hot_preload"], ALLOY_PROPERTIES[alloy]["E_GPa"] * 1e3 * area
+        fl = s55.cem("cathode_flange")
+        ea3_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3 * math.pi / 4 * (fl["shank_diameter_mm"] ** 2 - fl["bore_diameter_mm"] ** 2)
+        ea3_p = E_PEEK_PA / 1e6 * PEEK_RELAX_FLOOR * a_sl
+        al3 = (ea3_ti * a_fl + ea3_p * ALPHA_PEEK_1K) / (ea3_ti + ea3_p)      # the shank's run bonded, by mixtures
+        assert hp["zone3_fit_bonded_shank"]["alpha_shank_run_ppm_K"] == pytest.approx(al3 * 1e6, abs=1e-4)
+        peek32, ti32 = spans["gap_and_shank_disc_on_sleeve_top"]
+        for cell, shift_key, grow in ((hp, "shift_um_span32", ALPHA_PEEK_1K * peek32 + a_fl * ti32),
+                                      (hp["zone3_fit_bonded_shank"], "shift_um",
+                                       ALPHA_PEEK_1K * s55.PEEK_GAP_MM + al3 * s55.SHANK_LEN_MM + a_fl * s55.FLANGE_THK_MM)):
+            shift = (grow - ALLOY_PROPERTIES[alloy]["alpha_1K"] * (a + L)) * (t_hot - t_ref)
+            assert cell[shift_key] == pytest.approx(shift * 1e3, abs=0.006), (alloy, shift_key)
+            assert not cell["capped"] and cell["F_N_relaxed_liner"] < min(q_hot * L, cap), alloy
+            assert delta_relaxed(cell["F_N_relaxed_liner"], ea_w) == pytest.approx(shift, rel=1e-3), (alloy, shift_key)
+    gap_hot = [v["hot_floor_part_vs_lower_margin_ppm_K"] for k, v in th["flip_effective_cte_ppm_K"].items()
+               if k.startswith("gap_only")]
+    big = max(gap_hot[0], key=float)
+    vals = [x[big] for x in gap_hot if x[big] is not None]
+    assert th["flip_vs_larger_margin_ppm_K"]["hot_floor_part_zone3_fit_gap_only"] == ([min(vals), max(vals)] if vals else [])
+
+
+def test_anchor_wood_share_zone3_fit_invariants():
+    """103's `zone3_fit` block (00_07 HW.43, the heat with the flange on a Zone-3 fit, closed 2026-10-20): the sleeve as
+    TWO sections — the Zone-3 shank's run, the CEM's Ti shank (less the bus channel) bonded to the PEEK around it, and the
+    PEEK gap below it — recomputed HERE from the CEM, the lib and the caches by the closed forms of each state, not by
+    the script's 3-node solver or its element chain.
+
+    CAN catch: the composite's section, stiffness or CTE off its rule of mixtures; the CTE read over the wrong length
+    (`102`'s gap-only convention: the shank's run at the flange alloy's CTE); a state-2 share or CTE off the series chain
+    over the two sections; a state-3 share or CTE at a rigid tie off its segments when the tie sits inside or below the
+    shank's run; a threshold that does not land its event (Ta's seam on `102`'s gap-only preload); a reading off its
+    definition; the CTE floor, the sign-change CTE, the coupled floor, the reversed fraction or the «only shortens» flag
+    off their forms on the gap; the element-chain control or the monotone controls out of tolerance. CANNOT: judge the
+    rigid fit (its holding force is not in the tree), the CEM's placeholder shank, or a rigid tie on the Ti run as a
+    model of a callus ring — the script's declared ceilings.
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, E_PEEK_PA, PEEK_RELAX_FLOOR
+    d = json.loads((MECHANICAL / "anchor_wood_share.json").read_text(encoding="utf-8"))
+    z = d["zone3_fit"]
+    spec = importlib.util.spec_from_file_location("s103_z3", REPO / "tools/in_silico/scripts/103_anchor_wood_share.py")
+    s103 = importlib.util.module_from_spec(spec)
+    sys.modules["s103_z3"] = s103
+    spec.loader.exec_module(s103)
+    s55 = s103.s55
+    g77 = json.loads((MECHANICAL / "anchor_torque_path.json").read_text(encoding="utf-8"))["geometry"]
+    b78 = json.loads((REPO / "tools/in_silico/cache/thermal/flange_cambium_heat.json").read_text(encoding="utf-8"))
+    d87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
+    d102 = json.loads((MECHANICAL / "wire_liner_shear_lag.json").read_text(encoding="utf-8"))
+    d86 = json.loads((MECHANICAL / "coaxiality_allocation.json").read_text(encoding="utf-8"))
+    fl = json.loads((REPO / "tools/cad/cem/cathode_flange.json").read_text(encoding="utf-8"))
+    ti = ALLOY_PROPERTIES[ALLOY_BASELINE]
+    aw, ap, aa = s103.ALPHA_XYLEM_GREEN_1K, ALPHA_PEEK_1K, ti["alpha_1K"]
+    l_sh = fl["shank_length_mm"]
+    span = s55.PEEK_GAP_MM + l_sh
+    gap = span - l_sh
+    r_s, r_b = g77["sleeve_outer_radius_m"] * 1e3, g77["shank_radius_m"] * 1e3
+    a_p = math.pi * (r_s ** 2 - r_b ** 2)
+    a_sh = math.pi / 4 * (fl["shank_diameter_mm"] ** 2 - fl["bore_diameter_mm"] ** 2)
+    ea_p = {"sway": E_PEEK_PA / 1e6 * a_p, "slow": E_PEEK_PA / 1e6 * PEEK_RELAX_FLOOR * a_p}
+    ea_ti = ti["E_GPa"] * 1e3 * a_sh
+    ea_c = {ld: ea_ti + v for ld, v in ea_p.items()}
+    al_c = (ea_ti * aa + ea_p["slow"] * ap) / ea_c["slow"]
+    assert z["shank"]["ti_section_mm2"] == pytest.approx(a_sh, abs=0.006)
+    assert z["alpha_composite_ppm_K"] == pytest.approx(al_c * 1e6, abs=1e-4)
+    assert z["composite_vs_102_gap_only_offset_ppm_K"] == pytest.approx((al_c - aa) * l_sh / gap * 1e6, abs=1e-4)
+
+    def comp(d1, d2, ld):
+        return max(0.0, min(d2, l_sh) - d1) / ea_c[ld] + max(0.0, d2 - max(d1, l_sh)) / ea_p[ld]
+
+    def free(d1, d2):
+        return max(0.0, min(d2, l_sh) - d1) * al_c + max(0.0, d2 - max(d1, l_sh)) * ap
+
+    def cte(s):                                        # `102`'s gap-only convention: the shank's run at the Ti's CTE
+        return (s - aa * l_sh) / gap * 1e6
+    ks = {ld: 1 / comp(0.0, span, ld) for ld in ("sway", "slow")}
+    assert z["stiffness_N_per_mm"]["sleeve_whole"] == pytest.approx(ks, abs=0.1)
+    assert z["cte_free_sleeve_ppm_K"] == pytest.approx(cte(free(0.0, span)), abs=1e-4)
+    ann = math.pi / 4 * (b78["bark"]["flange_diameter_mm"] ** 2 - (2 * r_s) ** 2)
+    barks = {"thin_contact_78": b78["bark"]["thin_mm"], "thick_side_78": b78["bark"]["thick_mm"]}
+    tie = {t: tv + b78["inputs"]["phloem_mm"] for t, tv in barks.items()}
+    dvs = {k: v * 1e3 for k, v in d87["inputs"]["depth_span_m"].items()}
+    dv_ceil, d_deep = max(dvs.values()), max(tie.values())
+    assert min(tie.values()) < l_sh < d_deep        # the two install-day cambium readings sit either side of the shank's end
+    kf_read = [ev * ann / tv for ev in s103.E_BARK_RADIAL_MPA.values() for tv in barks.values()]
+    k_a = [2 * math.pi * math.sqrt(lr * rt) * g77["gyroid_length_m"] * 1e3 / ln
+           for lr, rt in s103.G_PAIRS_MPA.values() for ln in s103.LN_R_OVER_R]
+    bonds = {"anode_bond_stiff": max(k_a), "anode_bond_soft": min(k_a)}
+
+    lock1 = json.loads((REPO / "tools/cad/cem/mechanical_lock.zone1.json").read_text(encoding="utf-8"))
+    l_z1 = lock1["shank_length_mm"]
+    ea1_ti = ti["E_GPa"] * 1e3 * math.pi / 4 * (lock1["shank_diameter_mm"] ** 2 - lock1["bore_diameter_mm"] ** 2)
+    al_z1 = (ea1_ti * aa + ea_p["slow"] * ap) / (ea1_ti + ea_p["slow"])
+
+    def w_a(dv, ax=aw):
+        return ax * dv - al_z1 * l_z1 - aa * (dv - span - l_z1)
+
+    def kc_of(kf, ka):
+        return 0.0 if kf == 0 else 1 / (1 / ka + 1 / kf)
+
+    def sh2(kf, ka):
+        kc = kc_of(kf, ka)
+        return kc / (kc + ks["sway"])
+
+    def ae2(kf, ka, dv, ax=aw):
+        kc, e0 = kc_of(kf, ka), free(0.0, span)
+        return cte(e0 + (w_a(dv, ax) - e0) * kc / (kc + ks["slow"]))
+
+    def seg(ka, dd, ld):
+        return ka / (ka + 1 / comp(dd, span, ld))
+
+    def sh3(ka, dd, dv, rigid_bark=False):
+        return (dd / dv if rigid_bark else 0.0) + seg(ka, dd, "sway") * (dv - dd) / dv
+
+    def ae3(ka, dd, dv, rigid_bark=False, ax=aw):
+        e_lo = free(dd, span)
+        upper = ax * dd if rigid_bark else free(0.0, dd)
+        return cte(upper + e_lo + (w_a(dv, ax) - ax * dd - e_lo) * seg(ka, dd, "slow"))
+
+    sh = z["share"]
+    read2 = [sh2(kf, ka) for kf in kf_read for ka in k_a]
+    assert (sh["state2_at_air_dry_readings"]["min"], sh["state2_at_air_dry_readings"]["max"]) == pytest.approx((min(read2), max(read2)), abs=1e-4)
+    depths = [s103.DEPTH_MIN + (dd - s103.DEPTH_MIN) * i / 40 for dd in tie.values() for i in range(41)]
+    for b, ka in bonds.items():
+        assert sh["state2_cap_rigid_bark"][b] == pytest.approx(ka / (ka + ks["sway"]), abs=1e-4), b
+        free3 = [sh3(ka, dd, dv) * dv / dv_ceil for dd in depths for dv in dvs.values()]
+        got = sh["state3_no_bearing_any_depth_of_102_shift"][b]
+        assert (got["min"], got["max"]) == pytest.approx((min(free3), max(free3)), abs=1e-4), b
+        assert sh["state3_cap_rigid_bark_of_102_shift"][b] == pytest.approx(
+            max(sh3(ka, dd, dv, True) * dv / dv_ceil for dd in depths for dv in dvs.values()), abs=2e-4), b
+
+    # Ta's seam on `102`'s own closed form with `102`'s preload on the gap-only span
+    geo = d102["geometry"]
+    shipped = d86["by_geometry"][next(k for k in d86["by_geometry"] if k.startswith("shipped"))]["by_alloy"]
+    amp86, off86 = d102["seam_86_inputs"]["amplitude_MPa"], d102["seam_86_inputs"]["offset_um"]
+    grips = d102["grip"]["by_part_N_per_mm_at_20C"]["window_ceiling"]
+    shift_hi = max(d102["sway_input"]["shift_um_87"]["upper_whisker"]) * 1e-3
+
+    def seam(alloy, share, preload):
+        row86 = shipped[alloy]
+        mean86 = next(o["mean_MPa"] for o in row86["by_offset"] if o["offset_um"] == off86)
+        pair = s103.s102.Pair(grips[max(grips, key=float)], ALLOY_PROPERTIES[alloy]["E_GPa"] * 1e3 * geo["wire_area_mm2"],
+                              geo["liner_EA_N"], geo["bare_run_mm"], geo["liner_run_mm"], geo["wall_cap_N_23C"])
+        c = pair.cycle(share * shift_hi, 0.0)
+        f_amp, f_mean = c["F_amp"], c["F_mean"]
+        if preload:
+            f_mean = min(f_mean + d102["seam_by_alloy"][alloy]["hot_preload"]["zone3_fit_bonded_shank"]["F_N_relaxed_liner"], pair.cap - f_amp)
+        return s103.s102.soderberg_k(amp86, mean86, f_amp, f_mean, geo["wire_area_mm2"], row86)
+
+    def event(name, share, c):
+        if name.startswith("share_"):
+            return share - float(name.split("_")[1])
+        if name.startswith("ta_k1_"):
+            return seam("Ta", share, name.endswith("hot_preload")) - 1.0
+        return float(name.split("_")[2]) - c
+    thr_flip = d102["thermal"]["flip_vs_larger_margin_ppm_K"]
+    names = {f"share_{r:g}" for r in s103.SHARE_ROWS} | {"ta_k1_sway_alone", "ta_k1_hot_preload"} | \
+        {f"hot_flip_{x:g}" for x in thr_flip["hot_floor_part_zone3_fit_gap_only"]} | \
+        {f"cold_flip_{x:g}" for x in thr_flip["cold_zone3_fit_gap_only"]}
+    T2, T3 = z["state2_bearing_N_per_mm"], z["state3_tie_depth_mm_no_bearing"]
+    assert set(T2) == names == set(T3)
+    for name in names:
+        for key, v2 in T2[name].items():
+            dk, b = key.split("__")
+            ka, dv = bonds[b], dvs[dk]
+
+            def ev2(kf, ka=ka, dv=dv, name=name):
+                return event(name, sh2(kf, ka) * dv / dv_ceil, ae2(kf, ka, dv))
+
+            def ev3(dd, ka=ka, dv=dv, name=name):
+                return event(name, sh3(ka, dd, dv) * dv / dv_ceil, ae3(ka, dd, dv))
+            v3 = T3[name][key]
+            if v2 is None:
+                assert ev2(1e12) < 0, (name, key)
+            elif v2 == 0.0:
+                assert ev2(s103.KF_LO) >= 0, (name, key)
+            else:
+                assert abs(ev2(v2)) < 2e-3, (name, key, v2)
+            if v3 is None:
+                assert ev3(s103.DEPTH_MIN) < 0, (name, key)
+            elif v3 == "deepest":
+                assert ev3(d_deep) >= 0, (name, key)
+            else:
+                assert ev3(v3 - 1e-3) >= -2e-3 and ev3(v3 + 1e-3) <= 2e-3, (name, key, v3)
+
+    def group(thr, name):
+        return {f"{x}__{k}": v for x, vals in thr.items() if x == name or x.startswith(name + "_flip_") for k, v in vals.items()}
+    for name, cell in z["readings"]["state2"].items():
+        stiff = [v for k, v in group(T2, name).items() if k.endswith("anode_bond_stiff")]
+        soft = [v for k, v in group(T2, name).items() if k.endswith("anode_bond_soft")]
+        assert cell == {"no_below": None if None in stiff else min(stiff), "yes_above": None if None in soft else max(soft)}, name
+    for name, cell in z["readings"]["state3"].items():
+        dep = [v for k, v in group(T3, name).items() if k.endswith("anode_bond_stiff")]
+        assert cell["reached_at_any_depth"] == ("deepest" in dep), name
+    sv = z["seam_on_102_closed_form"]["Ta"]
+    assert sv["state1"]["hot_preload"] == pytest.approx(seam("Ta", 0.0, True), abs=2e-4)
+    for b, ka in bonds.items():
+        least = sv["state3_least_any_depth_and_bearing"][b]
+        for corner, pre in (("adverse_reversed", False), ("adverse_reversed_hot_preload", True)):
+            assert least[corner] == pytest.approx(min(seam("Ta", sh3(ka, d_deep, dv) * dv / dv_ceil, pre) for dv in dvs.values()), abs=2e-4)
+
+    # the heat: the CTE floor over the ends of every axis and the depth axis, against the sign change on the gap
+    h = z["heat"]
+    grid_d = [s103.DEPTH_MIN + (d_deep - s103.DEPTH_MIN) * i / 40 for i in range(41)]
+    ctes = [ae2(kf, ka, dv) for kf in (0.0, 1e12) for ka in bonds.values() for dv in dvs.values()]
+    ctes += [ae3(ka, dd, dv, rb) for rb in (False, True) for ka in bonds.values() for dd in grid_d for dv in dvs.values()]
+    rev = aa * (s55.PEEK_GAP_MM - s55.LINER_PROTRUSION_MM + s55.LINER_LENGTH_MM - s55.FLANGE_THK_MM - l_sh) / gap * 1e6
+    floor = cte(min(w_a(dv) for dv in dvs.values()))
+    assert (h["cte_min_ppm_K_over_the_model"], h["cte_travel_reverses_ppm_K_102"]) == pytest.approx((min(ctes), rev), abs=2e-3)
+    assert h["wood_only_shortens_the_pad_travel"] == (min(ctes) > rev)
+    assert h["cte_floor_span_follows_the_wood_ppm_K"] == pytest.approx(floor, abs=1e-5)
+    assert h["reversed_shift_per_K_at_most_of_free_sleeve"] == pytest.approx((rev - floor) / (cte(free(0.0, span)) - rev), abs=1e-5)
+    gd = h["deeper_tie_reaching_the_sign_change_mm_from_flange_seat"]
+    assert d_deep < gd < span and ae3(bonds["anode_bond_stiff"], gd, dv_ceil, True) == pytest.approx(rev, abs=2e-3)
+    assert h["thresholds_102_ppm_K"] == {"cold": thr_flip["cold_zone3_fit_gap_only"], "hot": thr_flip["hot_floor_part_zone3_fit_gap_only"]}
+    ax_rev = h["xylem_cte_at_which_the_wood_reverses_the_travel_ppm_K"] * 1e-6        # lands on the sign change
+    ctes_rev = [ae2(kf, ka, dv, ax_rev) for kf in (0.0, 1e12) for ka in bonds.values() for dv in dvs.values()]
+    ctes_rev += [ae3(ka, dd, dv, rb, ax_rev) for rb in (False, True) for ka in bonds.values() for dd in grid_d for dv in dvs.values()]
+    assert min(ctes_rev) == pytest.approx(rev, abs=2e-3)
+    assert f"never falls below {math.floor(round(min(ctes) * 100, 9)) / 100:.2f} ppm/K" in z["verdict"]
+    c = d["controls"]
+    assert c["solver_vs_element_chain_max_miss_of_load_scale"] < 1e-8 and max(c["monotone_worst_step_zone3_fit"].values()) < 1e-8
+
 
 def test_bus_torsion_budget_invariants():
     """101 (00_07 HW.26, the bus-twist leg): every cell against its closed form, recomputed HERE from `55`'s spans, the

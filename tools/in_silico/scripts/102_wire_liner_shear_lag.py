@@ -58,7 +58,7 @@ capsule's being a ceiling; (8) the anode face moving inside its own 18 mm press-
 (HW.8.9) — spans scale with it; (10) whether the sway shift is reversed or one-sided at a given anchor — both printed;
 (11) the THERMAL share: the heat reading takes the sleeve's FREE growth — the wood holding nothing — while a bonded anode
 and a flange on the bark make the distance follow the wood's own radial expansion, which the tree does not carry; so the
-pad-vs-window result is printed with the span's effective CTE at which it flips (`103`: within its model the wood only lowers it, never past the travel's sign change — the free sleeve is the adverse end), and the seam's hot preload (a share-0
+pad-vs-window result is printed with the span's effective CTE at which it flips (`103`: within its model the wood only lowers it, never past the travel's sign change — the free sleeve is the adverse end, with the flange on the bark and on a Zone-3 fit), and the seam's hot preload (a share-0
 heat under a share-s sway) is inconsistent at high shares, moot where the cap binds; (12) the liner's own expansion over
 its run (PEEK on Ti) — δ enters at the liner's top only; with it the force falls and the pad's travel rises a little.
 
@@ -89,6 +89,7 @@ from lib.constants import (
     PEEK_RELAX_FLOOR,
     REPO_ROOT,
 )
+from lib.mechanics import bonded_fit_section
 from lib.utils import banner
 
 SI_DESCRIPTION = ("Shear-lag model of the anchor's bus wire in its press-fitted PEEK liner with Coulomb slip: the axial "
@@ -315,6 +316,11 @@ def main() -> int:
              "gap_only_shank_held_at_its_end": (s55.PEEK_GAP_MM, s55.SHANK_LEN_MM + s55.FLANGE_THK_MM)}
     alpha_fl = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
     geo77 = json.loads((MECH / "anchor_torque_path.json").read_text(encoding="utf-8"))["geometry"]
+    a_sleeve = math.pi * ((geo77["sleeve_outer_radius_m"] * 1e3) ** 2 - (geo77["shank_radius_m"] * 1e3) ** 2)
+    # a Zone-3 fit read as bonded over the shank's run — lib.mechanics, the one rule `103` applies to both fits: its free CTE
+    a_shank3 = math.pi / 4.0 * (s55.cem("cathode_flange")["shank_diameter_mm"] ** 2 - s55.D_CHANNEL_MM ** 2)
+    _, alpha_shank3 = bonded_fit_section(ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3, alpha_fl, a_shank3, e_peek,
+                                         ALPHA_PEEK_1K, a_sleeve, PEEK_RELAX_FLOOR)
 
     def dth_per_k(span: tuple[float, float], alpha_w: float) -> float:
         peek, ti = span
@@ -342,6 +348,11 @@ def main() -> int:
         pre_gentle = Pair(q_of("ratified_nominal", min(mu_sweep), relaxed=True, t_c=t_hot), ea_w, ea_l * PEEK_RELAX_FLOOR,
                           a, L, wall_cap)
         f_th_gentle, _, _ = pre_gentle.virgin(d_th_hot)
+        # the same preload under a Zone-3 fit, the shank's run bonded (its free CTE above) — `103` reads it for that premise
+        d_th_hot_gap = (ALPHA_PEEK_1K * s55.PEEK_GAP_MM + alpha_shank3 * s55.SHANK_LEN_MM + alpha_fl * s55.FLANGE_THK_MM
+                        - p["alpha_1K"] * (a + L)) * (t_hot - t_ref)
+        f_th_gap, _, th_capped_gap = preload.virgin(d_th_hot_gap)
+        f_th_gap_gentle, _, _ = pre_gentle.virgin(d_th_hot_gap)
 
         def case(c: dict, f_pre: float, adverse: Pair = adverse) -> dict:
             mean = c["F_mean"] + f_pre
@@ -380,7 +391,13 @@ def main() -> int:
                            "hot_preload": {"shift_um_span32": round(d_th_hot * 1e3, 2), "F_N_relaxed_liner": round(f_th, 2),
                                            "wall_stress_share_of_23C_yield": round(f_th / wall_cap, 3),
                                            "F_N_gentle_nominal_relaxed_mu_low": round(f_th_gentle, 2),
-                                           "capped": th_capped, "t_c": t_hot}}
+                                           "capped": th_capped, "t_c": t_hot,
+                                           "zone3_fit_bonded_shank": {"shift_um": round(d_th_hot_gap * 1e3, 2),
+                                                                      "alpha_shank_run_ppm_K": round(alpha_shank3 * 1e6, 4),
+                                                                  "F_N_relaxed_liner": round(f_th_gap, 2),
+                                                                  "wall_stress_share_of_23C_yield": round(f_th_gap / wall_cap, 3),
+                                                                  "F_N_gentle_nominal_relaxed_mu_low": round(f_th_gap_gentle, 2),
+                                                                  "capped": th_capped_gap}}}
 
     # ── sway: how much of the shift reaches the pad (share 1, the upper whisker's high end, reversed) ──
     ea_base = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e3 * area_w
@@ -458,10 +475,11 @@ def main() -> int:
     cold_bark = flip_range(bark, "cold_tightest_grip_vs_upper_margin_ppm_K", l1_hi_max)
     cold_gap = flip_range(gap_only, "cold_tightest_grip_vs_upper_margin_ppm_K", l1_hi_max)
     hot_bark = flip_range(bark, "hot_floor_part_vs_lower_margin_ppm_K", l1_lo_max)
+    hot_gap = flip_range(gap_only, "hot_floor_part_vs_lower_margin_ppm_K", l1_lo_max)   # a reading the free sleeve never
+    #                                                                                      flips has no threshold here
     tight_hot_bark = thermal[f"{bark}__capsule_model_edges_90__window_ceiling__mu{max(mu_sweep):g}"]["hot"]["pad_recedes_um"]
 
     # ── the sleeve sets the share, not the wire ──
-    a_sleeve = math.pi * ((geo77["sleeve_outer_radius_m"] * 1e3) ** 2 - (geo77["shank_radius_m"] * 1e3) ** 2)
     span32 = sum(spans["gap_and_shank_disc_on_sleeve_top"][:1])
     k_sleeve = e_peek * a_sleeve / span32
     adv_base = Pair(q_of("window_ceiling", max(mu_sweep)), ea_base, ea_l, a, L, wall_cap)
@@ -544,7 +562,7 @@ def main() -> int:
                  f"{l1_lo:g}–{l1_lo_max:g} µm to the lower edge (past the larger in "
                  f"{against_l1['hot_floor_part_past_larger_lower_margin']} of {len(floor_hot)}); on the shipped span at the capsule "
                  f"edge even the tightest grip recedes {down1(tight_hot_bark):.1f} µm. With a bonded anode and the flange on the bark "
-                 f"the span follows the wood's radial expansion instead, and the cold result holds only while its effective CTE "
+                 f"the span follows the wood's radial expansion instead, and the cold result holds while its effective CTE "
                  f"stays above {up1(cold_bark[0]):.1f}–{up1(cold_bark[1]):.1f} ppm/K ({up1(cold_gap[0]):.1f}–{up1(cold_gap[1]):.1f} "
                  f"if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above "
                  f"{up1(hot_bark[0]):.1f}–{up1(hot_bark[1]):.1f} (free PEEK {ALPHA_PEEK_1K * 1e6:.0f}; a «holds while above X» "
@@ -574,7 +592,8 @@ def main() -> int:
                     "premise": "the sleeve's FREE growth — the wood holding nothing (CANNOT 11)",
                     "flip_effective_cte_ppm_K": flip, "alpha_peek_free_ppm_K": round(ALPHA_PEEK_1K * 1e6, 1),
                     "flip_vs_larger_margin_ppm_K": {"cold_flange_on_bark": cold_bark, "cold_zone3_fit_gap_only": cold_gap,
-                                                    "hot_floor_part_flange_on_bark": hot_bark},
+                                                    "hot_floor_part_flange_on_bark": hot_bark,
+                                                    "hot_floor_part_zone3_fit_gap_only": hot_gap},
                     "tightest_grip_hot_recession_um_bark_span_capsule_edge": tight_hot_bark,
                     "l1_margin_basis": "isothermal readings of 90 — the radome-leads reading breaks L1 at the same edges",
                     "liner_modulus": "relaxed (× PEEK_RELAX_FLOOR) — a seasonal load"},

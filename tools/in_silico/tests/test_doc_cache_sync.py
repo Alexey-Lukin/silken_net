@@ -5268,14 +5268,14 @@ CHECKS += [
     ("share cap3 soft → 103", SUMMARY, rf"up to [\d.]+ ⊥ {N} at a rigid bark \|", SHARE, lambda d: _up2(d["share"]["state3_cap_rigid_bark_of_102_shift"][_SS]), 0.0),
     ("share tie thin → 103", SUMMARY, rf"— {N} ⊥ [\d.]+ mm below\s+the flange seat", SHARE, lambda d: round(d["geometry"]["flange_seat_to_install_day_cambium_mm"]["thin_contact_78"], 1), 0.0),
     ("share tie thick → 103", SUMMARY, rf"— [\d.]+ ⊥ {N} mm below\s+the flange seat", SHARE, lambda d: round(d["geometry"]["flange_seat_to_install_day_cambium_mm"]["thick_side_78"], 1), 0.0),
-    ("share cte floor → 103", SUMMARY, rf"never below {N} ppm/K \(a rigid bark", SHARE, lambda d: _down2(d["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
+    ("share cte floor → 103", SUMMARY, rf"never below\s+{N} ppm/K \(a rigid bark", SHARE, lambda d: _down2(d["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
     ("share cte coupled → 103", SUMMARY, rf"cannot fall below\s+{N} ppm/K, the span following", SHARE, lambda d: _down2(d["heat"]["cte_floor_span_follows_the_wood_ppm_K"]), 0.0),
     ("share reversed pct → 103", SUMMARY, rf"stays under {N} % of", SHARE, lambda d: _ceil1(d["heat"]["reversed_shift_per_K_at_most_of_free_sleeve"] * 100), 0.0),
     ("share grip depth → 103", SUMMARY, rf"a rigid tie {N} mm below the flange\s+seat", SHARE, lambda d: d["heat"]["deeper_tie_reaching_the_sign_change_mm_from_flange_seat"], 0.0),
-    ("share grip face → 103", SUMMARY, rf"only within {N} mm of the anode face", SHARE,
+    ("share grip face → 103", SUMMARY, rf"only within {N} mm of\s+the anode face", SHARE,
      lambda d: _up2(d["geometry"]["span_mm"] - d["heat"]["deeper_tie_reaching_the_sign_change_mm_from_flange_seat"]), 0.0),
-    ("share cte reverse → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel changes sign", SHARE, lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"], 0.0),
-    ("share cte flag → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel changes sign", SHARE,
+    ("share cte reverse → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel\s+changes sign", SHARE, lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"], 0.0),
+    ("share cte flag → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel\s+changes sign", SHARE,
      lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"] if d["heat"]["wood_only_shortens_the_pad_travel"] else -1.0, 0.0),
     ("share s2 cold → 103", SUMMARY, rf"below {N} N/mm \(cold\) ⊥ [\d.]+ N/mm \(hot\)", SHARE, lambda d: math.floor(d["readings"]["state2"]["cold"]["no_below"]), 0.0),
     ("share s2 hot → 103", SUMMARY, rf"below [\d.]+ N/mm \(cold\) ⊥ {N} N/mm \(hot\)", SHARE, lambda d: math.floor(d["readings"]["state2"]["hot"]["no_below"]), 0.0),
@@ -5323,6 +5323,104 @@ CHECKS += [
 ]
 
 
+# ── 103's Zone-3-fit premise (2026-10-20) ⟷ SUMMARY's paragraph «A Zone-3 fit locating the flange» and PIPELINE_STATUS 103
+def _z(d):
+    return d["zone3_fit"]
+
+
+def _z_cold_capsule_depth(d):
+    """The stiff-bond state-3 depth the cold conclusion needs on the capsule-edge reading — its threshold looked up in
+    `102`'s cache by reading — the largest over the anode's two bond depths, a «deepest» one never holding — or NaN unless
+    the prose around it holds: the cold one on the cambium reading and the hot one reached at the deepest tie at every bond
+    depth («at no depth»), and at the soft bond both held at every depth."""
+    flips = C("mechanical/wire_liner_shear_lag.json")["thermal"]["flip_effective_cte_ppm_K"]
+    cold = {k.split("__", 1)[1]: v["cold_tightest_grip_vs_upper_margin_ppm_K"] for k, v in flips.items() if k.startswith("gap_only")}
+    x = {t: v[max(v, key=float)] for t, v in cold.items()}
+    dep = _z(d)["state3_tie_depth_mm_no_bearing"]
+
+    def stiff(name):
+        return [v for k, v in dep[name].items() if k.endswith(_SH)]
+    cap, cam = stiff(f"cold_flip_{x['capsule_model_edges_90']:g}"), stiff(f"cold_flip_{x['cambium_under_flange_79']:g}")
+    hot = [v for n in dep if n.startswith("hot_flip_") for v in stiff(n)]
+    soft = [v for n in dep if n.startswith(("hot_flip_", "cold_flip_")) for k, v in dep[n].items() if k.endswith(_SS)]
+    num = [v for v in cap if isinstance(v, float)]
+    ok = all(v == "deepest" for v in cam) and all(v == "deepest" for v in hot) and all(v is None for v in soft) and num and None not in cap
+    return math.floor(max(num) * 10) / 10 if ok else float("nan")
+
+
+CHECKS += [
+    ("z3 shank Ø → 103", SUMMARY, rf"carries a Ø{N} placeholder in clearance", SHARE, lambda d: _z(d)["shank"]["diameter_mm_cem"], 0.0),
+    ("z3 shank length → 103", SUMMARY, rf"bonded over its {N} mm by the same rule", SHARE, lambda d: _z(d)["shank"]["length_mm"], 0.0),
+    ("z3 composite CTE → 103", SUMMARY, rf"with the PEEK around it grows at {N} ppm/K", SHARE, lambda d: round(_z(d)["alpha_composite_ppm_K"], 2), 0.0),
+    ("z3 offset → 103", SUMMARY, rf"ppm/K, {N} above `102`'s gap-only reading", SHARE, lambda d: round(_z(d)["cte_free_sleeve_ppm_K"] - 47.0, 1), 0.0),
+    ("z3 free gap → 103", SUMMARY, rf"the free gap grows\s+at {N} ppm/K", SHARE, lambda d: round(_z(d)["cte_free_sleeve_ppm_K"], 1), 0.0),
+    ("z3 gap → 103", SUMMARY, rf"only the {N} mm gap below it is PEEK", SHARE,
+     lambda d: _z(d)["sections_mm"]["peek_gap"][1] - _z(d)["sections_mm"]["peek_gap"][0], 0.0),
+    ("z3 cap2 stiff → 103", SUMMARY, rf"state 2 capped at {N}\s+\(stiff bond\) ⊥", SHARE, lambda d: _up2(_z(d)["share"]["state2_cap_rigid_bark"][_SH]), 0.0),
+    ("z3 cap2 soft → 103", SUMMARY, rf"\(stiff bond\) ⊥ {N} \(soft\), state 3 with no bearing", SHARE, lambda d: _up2(_z(d)["share"]["state2_cap_rigid_bark"][_SS]), 0.0),
+    ("z3 s3 low → 103", SUMMARY, rf"state 3 with no bearing {N} – [\d.]+ — and the heat", SHARE, lambda d: _down2(_s3(_z(d), "min")), 0.0),
+    ("z3 s3 high → 103", SUMMARY, rf"state 3 with no bearing [\d.]+ – {N} — and the heat", SHARE, lambda d: _up2(_s3(_z(d), "max")), 0.0),
+    ("z3 cte floor → 103", SUMMARY, rf"the gap's CTE never falls below {N} ppm/K", SHARE, lambda d: _down2(_z(d)["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
+    ("z3 cte reverse → 103", SUMMARY, rf"above {N} ppm/K, where the pad's travel changes\s+sign on the gap-only span", SHARE,
+     lambda d: _z(d)["heat"]["cte_travel_reverses_ppm_K_102"] if _z(d)["heat"]["wood_only_shortens_the_pad_travel"] else float("nan"), 0.0),
+    ("z3 cte coupled → 103", SUMMARY, rf"gap following the wood outright gives {N} ppm/K", SHARE,
+     lambda d: _down2(_z(d)["heat"]["cte_floor_span_follows_the_wood_ppm_K"]), 0.0),
+    ("z3 reversed pct → 103", SUMMARY, rf"a reversed shift per\s+kelvin under {N} %", SHARE,
+     lambda d: _ceil1(_z(d)["heat"]["reversed_shift_per_K_at_most_of_free_sleeve"] * 100), 0.0),
+    ("z3 s2 cold → 103", SUMMARY, rf"the cold conclusion does not flip below {N} N/mm", SHARE, lambda d: math.floor(_z(d)["readings"]["state2"]["cold"]["no_below"]), 0.0),
+    ("z3 s2 hot → 103", SUMMARY, rf"and the hot one below {N} N/mm, and never at the soft bond", SHARE,
+     lambda d: (math.floor(_z(d)["readings"]["state2"]["hot"]["no_below"])
+                if _z(d)["readings"]["state2"]["hot"]["yes_above"] is None and _z(d)["readings"]["state2"]["cold"]["yes_above"] is None
+                else float("nan")), 0.0),
+    ("z3 preload Ta gap → 102", SUMMARY, rf"on the fit's span is {N} N on Ta", "mechanical/wire_liner_shear_lag.json",
+     lambda d: round(d["seam_by_alloy"]["Ta"]["hot_preload"]["zone3_fit_bonded_shank"]["F_N_relaxed_liner"], 1), 0.0),
+    ("z3 preload Ta bark → 102", SUMMARY, rf"N on Ta against {N} N on the 32 mm one", "mechanical/wire_liner_shear_lag.json",
+     lambda d: round(d["seam_by_alloy"]["Ta"]["hot_preload"]["F_N_relaxed_liner"], 1), 0.0),
+    ("z3 Ta state1 → 103", SUMMARY, rf"yet\s+Ta still needs {N} in state 1", SHARE,
+     lambda d: (_up2(_z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"])
+                if _z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"] > _z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["sway"]
+                else float("nan")), 0.0),
+    ("z3 Ta 86 → 103", SUMMARY, rf"not acceptable against {N} at a share of zero", SHARE,
+     lambda d: round(_z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 3), 0.0),
+    ("z3 Ta s2 preload → 103", SUMMARY, rf"preload in state 2 not below {N} N/mm", SHARE,
+     lambda d: math.floor(_z(d)["readings"]["state2"]["ta_k1_hot_preload"]["no_below"]), 0.0),
+    ("z3 Ta s3 stiff sway → 103", SUMMARY, rf"it needs at least {N} on the sway alone and [\d.]+\s+with the preload at the stiff bond", SHARE,
+     lambda d: _down2(_z(d)["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed"]), 0.0),
+    ("z3 Ta s3 stiff preload → 103", SUMMARY, rf"it needs at least [\d.]+ on the sway alone and {N}\s+with the preload at the stiff bond", SHARE,
+     lambda d: _down2(_z(d)["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"]), 0.0),
+    ("z3 Ta s3 soft sway → 103", SUMMARY, rf"binds\),\s+{N} and [\d.]+ at the soft one\.", SHARE,
+     lambda d: _down2(_z(d)["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SS]["adverse_reversed"]), 0.0),
+    ("z3 Ta s3 soft preload → 103", SUMMARY, rf"binds\),\s+[\d.]+ and {N} at the soft one\.", SHARE,
+     lambda d: _down2(_z(d)["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SS]["adverse_reversed_hot_preload"]), 0.0),
+    ("z3 s3 cold capsule depth → 103", SUMMARY, rf"holds only while the tie sits deeper than {N} mm on the capsule-edge reading", SHARE,
+     _z_cold_capsule_depth, 0.0),
+    ("z3 deepest tie → 103", SUMMARY, rf"the\s+deepest tie is {N} mm, and at the anode's full bond depth not even there", SHARE,
+     lambda d: max(d["geometry"]["flange_seat_to_install_day_cambium_mm"].values()), 0.0),
+    ("share xylem threshold → 103", SUMMARY, rf"CTE stays above {N} ppm/K: below it the deepest tie", SHARE,
+     lambda d: _up2(d["heat"]["xylem_cte_at_which_the_wood_reverses_the_travel_ppm_K"]), 0.0),
+    ("z3 xylem threshold → 103", SUMMARY, rf"xylem's CTE above the same {N} ppm/K", SHARE,
+     lambda d: _up2(_z(d)["heat"]["xylem_cte_at_which_the_wood_reverses_the_travel_ppm_K"]), 0.0),
+    ("share zone-1 alpha → 103", SUMMARY, rf"sleeve's bottom grows at {N} ppm/K", SHARE,
+     lambda d: round(d["geometry"]["zone1_shank_in_sleeve"]["alpha_bonded_ppm_K"], 2), 0.0),
+    ("share ti-end floor bark → 103", SUMMARY, rf"the CTE floor is {N} ppm/K on the bark", SHARE,
+     lambda d: _down2(d["heat"]["zone1_shank_held_at_its_end"]["cte_min_ppm_K"]), 0.0),
+    ("share ti-end floor fit → 103", SUMMARY, rf"ppm/K on the bark and {N} on the fit", SHARE,
+     lambda d: _down2(_z(d)["heat"]["zone1_shank_held_at_its_end"]["cte_min_ppm_K"]), 0.0),
+    ("share ti-end coupled bark → 103", SUMMARY, rf"outright\s+gives {N} and [\d.]+\. The heat", SHARE,
+     lambda d: _down2(d["heat"]["zone1_shank_held_at_its_end"]["cte_floor_span_follows_the_wood_ppm_K"]), 0.0),
+    ("share ti-end coupled fit → 103", SUMMARY, rf"outright\s+gives [\d.]+ and {N}\. The heat", SHARE,
+     lambda d: _down2(_z(d)["heat"]["zone1_shank_held_at_its_end"]["cte_floor_span_follows_the_wood_ppm_K"]), 0.0),
+    ("pipeline 103 xylem", PIPELINE, rf"while xylem's CTE stays above {N} — one reading", SHARE,
+     lambda d: _up2(d["heat"]["xylem_cte_at_which_the_wood_reverses_the_travel_ppm_K"]), 0.0),
+    ("pipeline 103 z3 cte floor", PIPELINE, rf"the gap's CTE never falls below {N} ppm/K \(the travel reverses", SHARE,
+     lambda d: _down2(_z(d)["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
+    ("pipeline 103 z3 cte reverse", PIPELINE, rf"\(the travel reverses at {N} on the gap-only span\)", SHARE,
+     lambda d: _z(d)["heat"]["cte_travel_reverses_ppm_K_102"] if _z(d)["heat"]["wood_only_shortens_the_pad_travel"] else float("nan"), 0.0),
+    ("pipeline 103 z3 Ta state1", PIPELINE, rf"Ta still needs {N} with the preload at a share of zero", SHARE,
+     lambda d: _up2(_z(d)["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"]), 0.0),
+]
+
+
 def test_wood_share_prose_claims_hold():
     """103: the prose claims no number carries, each held to the cache — SUMMARY «never at any bearing at the soft one»
     (every soft-bond state-2 reading of both pad conclusions None, not just one), «at the soft bond with no bearing it
@@ -5334,6 +5432,21 @@ def test_wood_share_prose_claims_hold():
     assert all(v is None for n in pads for k, v in d["state3_tie_depth_mm_no_bearing"][n].items() if k.endswith(_SS))
     kf_max = max(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())
     assert kf_max < min(d["readings"]["state2"][s]["no_below"] for s in ("hot", "cold"))
+    # the Zone-3 fit (02_02 §3.5 ⊕ · 01_01 §1.4 ⊕): «сухі прочитання лежать нижче й цих порогів» · the free sleeve the
+    # adverse end under both premises · Ta not acceptable against its own `86` at a share of zero, and past k 1 in the
+    # mature state at the stiff bond whatever the tie's depth and the bearing
+    z = d["zone3_fit"]
+    assert kf_max < min(z["readings"]["state2"][s]["no_below"] for s in ("hot", "cold"))
+    assert d["heat"]["wood_only_shortens_the_pad_travel"] and z["heat"]["wood_only_shortens_the_pad_travel"]
+    ta = z["seam_on_102_closed_form"]["Ta"]
+    assert ta["state1"]["hot_preload"] > ta["state1"]["sway"]
+    assert ta["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"] >= 1.0
+    # SUMMARY's Zone-3 paragraph: «in state 3 with no bearing neither holds at any tie depth on either temperature reading
+    # … at the soft bond both hold at every depth», «and never at the soft bond» (state 2)
+    zd = z["state3_tie_depth_mm_no_bearing"]
+    zpads = [n for n in zd if n.startswith(("hot_flip_", "cold_flip_"))]
+    assert all(v is None for n in zpads for k, v in zd[n].items() if k.endswith(_SS))
+    assert all(z["readings"]["state2"][s]["yes_above"] is None for s in ("hot", "cold"))
 
 
 def test_wood_share_state2_table_matches_cache():

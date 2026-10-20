@@ -789,9 +789,9 @@ every part and grip — the tightest part at μ 0.4 included — against `90`'s 
 edge of 11.8 – 14.8 µm; at the hot edge a part at the window floor grips with nothing and its pad recedes 18.4 – 43.1 µm
 against 17.4 – 19.3 µm to the lower edge, past the larger margin on 3 of 4 readings; on the shipped span at the capsule edge even the tightest grip
 recedes 26.3 µm, past both. The smallest protrusion
-comes from a reading below the wall's cap, and a capture or wall that gives way moves the pad further. **The premise decides it** (📌 2026-10-20 — not for pricing a fix: within the model the wood only shortens the thermal travel, `103`,
+comes from a reading below the wall's cap, and a capture or wall that gives way moves the pad further. **The premise decides it** (📌 2026-10-20 — not for pricing a fix: within the model the wood only shortens the thermal travel, with the flange on the bark and on a rigid Zone-3 fit (the placeholder shank) alike, `103`,
 §«How Much of the Stem's Shift Reaches the Anchor?»): a bonded anode and a flange on the bark make the span follow the wood's own radial
-expansion instead, and the cold result then holds only while the span's effective CTE stays above 25.2 – 25.8 ppm/K by
+expansion instead, and the cold result then holds while the span's effective CTE stays above 25.2 – 25.8 ppm/K by
 reading (38.1 – 39.1 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above
 25.9 – 31.3 — against 47 for free PEEK, and each threshold rounded up; the wood's radial CTE is not in `102` (📌 `103`
 takes xylem's). So
@@ -833,21 +833,24 @@ No stiffness constant here is a green value for *P. sylvestris* (Bounds).
 sleeve toward the flange, so the tie sits anywhere between the flange and the install-day cambium — 11.3 ⊥ 24 mm below
 the flange seat on the thin ⊥ thick bark, the deepest it can be.
 
-**The heat: within the model, the wood only shortens the centre pad's thermal travel.** Holding the span lowers its
-effective CTE, but over every state, bond, bearing and tie depth the model spans never below 12.26 ppm/K (a rigid bark
-and the deepest tie at the stiff bond) — above the 8.6 ppm/K at which the pad's travel changes sign on `102`'s span,
-and on `102`'s own wire–liner pair the travel never falls as the shift grows (a control checks it). So, with the wood
-side at xylem's CTE, the free-sleeve reading `102` prices is the adverse end of the pad's thermal travel in every
-state, and a fix priced against it holds whatever the bond and the tie. A channel grip — a deeper tie of the same kind,
-not computed — reaches the sign change only within 0.71 mm of the anode face (a rigid tie 31.29 mm below the flange
-seat, at a rigid bark and the stiff bond), and even then, with the wood side at xylem's CTE, the CTE cannot fall below
-6.63 ppm/K, the span following the wood outright, so a reversed shift per kelvin stays under 5.2 % of the free
-sleeve's. Not in the tree, and of unsettled sign — able to lengthen the travel or to reverse it further: the bark's own
+**The heat: within the model, the wood only shortens the centre pad's thermal travel.** Every fit of the anchor is read
+by one rule — bonded over its run (`lib.mechanics`), the adverse end of its thermal reading, since the interference sits
+on the barbed zone only — so the anode's 18 mm shank in the sleeve's bottom grows at 9.36 ppm/K, not at the Ti's 8.6.
+Holding the span lowers its effective CTE, but over every state, bond, bearing and tie depth the model spans never below
+12.05 ppm/K (a rigid bark and the deepest tie at the stiff bond) — above the 8.6 ppm/K at which the pad's travel
+changes sign on `102`'s span, and on `102`'s own wire–liner pair the travel never falls as the shift grows (a control
+checks it). So, with the wood side at xylem's CTE, the free-sleeve reading `102` prices is the adverse end of the pad's
+thermal travel in every state, and a fix priced against it holds whatever the bond and the tie — while xylem's radial
+CTE stays above 5.95 ppm/K: below it the deepest tie at a rigid bark can reverse the travel, and the one reading taken
+is 7.9. A channel grip — a deeper tie of the same kind, not computed — reaches the sign change only within 0.75 mm of
+the anode face (a rigid tie 31.25 mm below the flange seat, at a rigid bark and the stiff bond), and even then, with the
+wood side at xylem's CTE, the CTE cannot fall below 6.20 ppm/K, the span following the wood outright, so a reversed
+shift per kelvin stays under 6.3 % of the free sleeve's. Not in the tree, and of unsettled sign — able to lengthen the travel or to reverse it further: the bark's own
 thermal and humidity strain, its growth preload and frost. Whether the wood brings the pad back inside L1 stays open: in state 2, not while the bearing
-stays below 10411 N/mm (cold) ⊥ 5088 N/mm (hot) at the stiff bond, and never at any bearing at the soft one; in state 3
-at the stiff bond, the pad stays out only while the tie sits deeper than 9.2 mm (cold) ⊥ 14.1 mm (hot), even with no
-bearing, and at the soft bond with no bearing it stays out at every depth. The flange is taken as located by the bark
-(a Zone-3 fit, HW.8.9, is not computed here).
+stays below 10091 N/mm (cold) ⊥ 4984 N/mm (hot) at the stiff bond, and never at any bearing at the soft one; in state 3
+at the stiff bond, the pad stays out only while the tie sits deeper than 9.5 mm (cold) ⊥ 14.4 mm (hot), even with no
+bearing, and at the soft bond with no bearing it stays out at every depth. Here the flange is located by the bark; a
+Zone-3 fit locating it is the paragraph below the seam.
 
 **The bearing settles state 2 only.** The bark enters state 2 only as the bearing's stiffness k_F = E·A/t over the
 flange's annulus (A = 520.8 mm²) — what a flange mock pressed on faced bark measures as force over settlement. No
@@ -863,8 +866,8 @@ above which it happens at any bond:
 | the share reaches `102`'s 0.25 row | 3927 N/mm | never |
 | Ta's seam passes k 1 on the sway alone (adverse reversed corner) | 3604 N/mm | never |
 | Ta's seam passes k 1 with `102`'s hot preload (adverse reversed corner) | 970 N/mm | 4137 N/mm |
-| the centre pad's hot conclusion flips | 5088 N/mm | never |
-| the centre pad's cold conclusion flips | 10411 N/mm | never |
+| the centre pad's hot conclusion flips | 4984 N/mm | never |
+| the centre pad's cold conclusion flips | 10091 N/mm | never |
 
 In the mature state the tie's depth and stiffness, the anode bond and the bearing decide together, and of these only
 the bearing can be measured on a log — where it no longer settles anything alone.
@@ -876,13 +879,41 @@ and 1.18 with the preload whatever the tie's depth and the bearing (0.48 ⊥ 0.7
 preload at the stiff bond, which is the moist-Scots-pine end of G, an upper end for green wood. Ti-6Al-4V needs at most
 0.55 at any share — the same as `102` gives at a share of 1, since the liner's wall caps it.
 
+**A Zone-3 fit locating the flange.** Canon puts the Zone-3 shank in the sleeve under interference (Ø11, `01_01 §1`),
+while the CEM still carries a Ø9 placeholder in clearance (HW.8.9); `103` reads the placeholder and takes the fit as
+rigid — a fit that slips gives back the bark reading — and bonded over its 14 mm by the same rule as the anode's: the
+Ti shank with the PEEK around it grows at 9.76 ppm/K, so only the 18 mm gap below it is PEEK, and the effective CTE is
+read on that gap in `102`'s convention (the shank's run at the Ti's 8.6). The sway share falls — state 2 capped at 0.60
+(stiff bond) ⊥ 0.10 (soft), state 3 with no bearing 0.02 – 0.59 — and the heat keeps its direction: over every state,
+bond, bearing and tie depth the gap's CTE never falls below 14.73 ppm/K, above 8.6 ppm/K, where the pad's travel changes
+sign on the gap-only span. So within the model, with the wood side at xylem's CTE above the same 5.95 ppm/K, the free
+sleeve is the adverse end of the thermal travel under either premise — the deciding corner, a rigid tie at the thick
+bark's install-day cambium, sits below the shank, so the two premises share that margin. On the fit the free gap grows
+at 47.9 ppm/K, 0.9 above `102`'s gap-only reading — about 2 % more travel per kelvin — so a fix priced on that span
+carries the offset. The gap following the wood outright gives 4.33 ppm/K, a reversed shift per kelvin under 10.9 % of
+the free sleeve's. At the stiff bond the wood brings the pad back inside L1 more readily than on the bark: in state 2
+the cold conclusion does not flip below 3324 N/mm and the hot one below 3223 N/mm, and never at the soft bond; in state 3
+with no bearing the cold one holds only while the tie sits deeper than 23.8 mm on the capsule-edge reading — the
+deepest tie is 24 mm, and at the anode's full bond depth not even there — and at no depth on the cambium reading, the
+hot one at no depth (a hot threshold exists on the capsule-edge reading only — at the cambium the free gap does not
+leave the window hot), while at the soft bond both hold at every depth. On the seam `102`'s hot preload on the fit's span is 35.9 N on Ta against 48.3 N on the 32 mm one, yet
+Ta still needs 0.55 in state 1 — not acceptable against 0.388 at a share of zero — and its seam passes k 1 with the
+preload in state 2 not below 1940 N/mm at the stiff bond; in state 3 it needs at least 0.93 on the sway alone and 1.18
+with the preload at the stiff bond (the deepest tie sits below the shank, and with the preload the wall's cap binds),
+0.48 and 0.68 at the soft one.
+
 ⚠️ **Bounds.** The bark's growth preload against the flange and its humidity strain are not in the tree, and the span's
 wood side is taken at green pine xylem's 7.9 ppm/K. Frost is not a coefficient, and even its sign at a tie in the
 wound's reaction zone is not settled (green-wood specimens frost-shrink, heat-killed xylem swelled); ice in the anode's
 gap ties it at the cold edge with an unknown strength, and a channel grip is a deeper tie of the same kind, not
 computed. G is a green-radiata ⊥ moist-Scots-pine bracket (the radiata values carry one significant figure) and the
 anode bond our order-of-magnitude form with a bracket on its log term; for the slow heat the PEEK is relaxed and the
-bark and wood are not. The tie is rigid. Cache: `mechanical/anchor_wood_share.json`.
+bark and wood are not. The tie is rigid — on the Ti-reinforced run of a Zone-3 fit a bound further still from the
+wood's own stiffness. Every fit is read bonded over its run, the adverse end; with the anode's shank held at its end
+(Ti alone) the CTE floor is 12.26 ppm/K on the bark and 15.11 on the fit, and the span following the wood outright
+gives 6.63 and 5.10. The heat's direction stands on one reading of xylem's radial CTE (Sevanto et al. 2005's Scots
+pine mean). The Zone-3 reading stands on the CEM's placeholder shank and a rigid fit, whose holding force is
+not in the tree; it re-runs when HW.8.9 fixes the shank's diameter and length. Cache: `mechanical/anchor_wood_share.json`.
 
 ---
 

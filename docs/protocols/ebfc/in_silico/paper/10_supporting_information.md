@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 332 · 21,101,337 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 332 · 21,168,825 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -34,7 +34,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/lib/geometry.py` | `70dcca1d51fc0f4fd166b5d6dd13345c74b87eb6aa516327d5f8b2f0688be30e` | Shared geometry utilities for placing molecules in MD boxes. |
 | `tools/in_silico/lib/kinetics.py` | `1e189a5b58451d498b382dc99e0c841dd3a5317fa2a006f83daa532abc791146` | Shared Michaelis-Menten / pH forms for the L4 kinetics scripts (30, 30b) and the face-pH estimate (85). |
 | `tools/in_silico/lib/md_utils.py` | `8d8c7a3fa1d2cbedc88c81811bb54d7781e06e2ca0ec47d8a500ccec718b2251` | Shared MD utility functions for L2 molecular dynamics scripts. |
-| `tools/in_silico/lib/mechanics.py` | `3a5034ca5204666b5ae5f5858dbd58e258da449eeb293d61b8c06bec94651d70` | Shared thick-wall (Lamé) mechanics helpers for the anchor's titanium–PEEK press-fit. |
+| `tools/in_silico/lib/mechanics.py` | `70937d90d40661b4c7292262ab949836c52257dc219832c7190915154ec7993a` | Shared thick-wall (Lamé) mechanics helpers for the anchor's titanium–PEEK press-fit. |
 | `tools/in_silico/lib/os_geometry.py` | `c6c89f016883729718e1572663cecab06122319cc313ec6c62bcd1ffc63dad6b` | Parameterized octahedral Os-complex geometry builder (shared SSOT). |
 | `tools/in_silico/lib/utils.py` | `5b554ffeed72dbc839fb93ee97b9dc12246032577bc69f1019a658aa82f80a9b` | Shared utility functions for the in-silico pipeline. |
 | `tools/in_silico/lib/xylem_sap.py` | `97cae8dbaa6a9072e8bae96bd784f61e58f2df3cf6772752dc0f40974c279321` | Xylem sap composition profiles for different tree species. |
@@ -48,8 +48,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/08_parameterize_sbma.py` | `e75be6f2572e2e16510f6616149bdde068a5a02ffc10eba1d456662cecdce8d7` | L2 step 2g — parameterize SBMA monomer (zwitterionic anti-biofouling) for GAFF. |
 | `tools/in_silico/scripts/100_coin_replicate_power.py` | `a2e519d4ab6d095349f7e691a6d42fa6d95569fc1247e4c7132c8c2843d5abdb` | Statistical design of the Stage-2 coin test: the smallest arm-to-arm ratio, the margin above an acceptance threshold under three readings of the gate, and the alloy-selection gap that 2–6 replicate coupons per arm resolve, under an assumed log-normal coupon-to-coupon spread estimated per contrast or pooled over the arms that share it, with the coupon budget per replicate count and a Monte Carlo check of every closed form; no SCF |
 | `tools/in_silico/scripts/101_bus_torsion_budget.py` | `53685f27147a81388a4a59d6f308c59975344bda64f91e93f55a0b5d8e53d44f` | Torsion budget of the anchor's welded bus wire: the elastic twist angle and torque to first surface yield over the run from the weld root to the pad plane, per candidate alloy, under two yield criteria and two readings of the twisted run, set against the torque at which the press-fitted PEEK liner — the only in-tree holder of the wire's top — yields in torsion or its grip slips, the wire yield below which that order flips, and the stem-torsion rotation at the sleeve's bark end; no solve |
-| `tools/in_silico/scripts/102_wire_liner_shear_lag.py` | `dd0d3ed040c7664fc7b0e62843554ec62a2276894081535bc85ca6ffb5e23dc3` | Shear-lag model of the anchor's bus wire in its press-fitted PEEK liner with Coulomb slip: the axial load at the weld root and the travel of the centre contact pad against the flange when trunk bending or temperature shifts the flange against the anode, as a function of the share of the shift the wood imposes, per tolerance part and friction coefficient, with the seam requirement it implies and an independent finite-element check; no solve |
-| `tools/in_silico/scripts/103_anchor_wood_share.py` | `abb721790bd53a95de255c19d8fd9f4bae2eb815f87e01680378a60979dcb449` | The share of a living stem's radial shift that the wood imposes on the anchor, per bond state of the anode and the sleeve, from the stiffness of the bark bearing, the anode's bond in the xylem, a tie of the sleeve at the cambium and the PEEK sleeve, with the bark-bearing stiffness at which the share reaches each seam requirement and each contact-pad conclusion flips, at both ends of the anode-bond bracket; no solve |
+| `tools/in_silico/scripts/102_wire_liner_shear_lag.py` | `b04e0f21b7f3ad4176114f6ac75d1c4eba49d4efc8a8c152bd43846a098a2642` | Shear-lag model of the anchor's bus wire in its press-fitted PEEK liner with Coulomb slip: the axial load at the weld root and the travel of the centre contact pad against the flange when trunk bending or temperature shifts the flange against the anode, as a function of the share of the shift the wood imposes, per tolerance part and friction coefficient, with the seam requirement it implies and an independent finite-element check; no solve |
+| `tools/in_silico/scripts/103_anchor_wood_share.py` | `02d349a57ddfeedf88fcdde399436e7c896e69384c3ae6bd22c32fbb6a05a8b2` | The share of a living stem's radial shift that the wood imposes on the anchor, per bond state of the anode and the sleeve, from the stiffness of the bark bearing, the anode's bond in the xylem, a tie of the sleeve at the cambium and the PEEK sleeve, with the bark-bearing stiffness at which the share reaches each seam requirement and each contact-pad conclusion flips, at both ends of the anode-bond bracket, for the flange located by the bark and by a rigid Zone-3 fit; no solve |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | `b56c5791d674b8d4be97c986afa3bc74d9343331ed706dc380dcff25e551bd41` | L2 — full stability MD: GcGDH + FAD + genipin matrix in xylem-like water box. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `c4a7ac5844f2e508bb1b87fe49435f205b848cb07452994531359f5399a8732d` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
@@ -142,8 +142,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `f3770390515da057f9fb6a0f025956cd26bb829944a8725db3b1dd7900b36fdf` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `f9389e6247de02db19673963526264df78601649cfa82973f313e059ce239797` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `97b0d6d7112d540b1300147f7ae36ae26b8388b8f0017d442937a477c87c7ef6` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `fa7ddf3224d3eda385612f80d8904caf6b474ec559ae0e48527368d16271bb31` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -254,7 +254,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.json` | `dac7658314bf1e37d92beaf31b4146e430617e9f78bb3f94c4365878882b75ea` | 15,304 |
 | `tools/in_silico/cache/mechanical/anchor_thermal_bridge.png` | `50f53691c01e9960a36d2508299b4b3deabf3234f6eb444bf42331a7938d0ba8` | 110,967 |
 | `tools/in_silico/cache/mechanical/anchor_torque_path.json` | `c2752d18386c03bab9edb8256d42841edcb34e48aed038158da65ffcaa7d16b4` | 16,509 |
-| `tools/in_silico/cache/mechanical/anchor_wood_share.json` | `95f1afd985c2dd024376a564c7f654cb597d57be2076048fc74ae38c5f38fd65` | 12,800 |
+| `tools/in_silico/cache/mechanical/anchor_wood_share.json` | `f2c7539d54b60eb357e95658db166afa03d1db224f79bd52d71711dbf313bc08` | 26,111 |
 | `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `9db04c34870047e20b76c92aa747b0935e22b1c1d16b2ae2f7fa01650731fd1f` | 71,669 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `69cba405183613e4b462f6e5ff7717f7eb49888d34186f7eac7e1dc775a44088` | 72,799 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `68de8e77fc683f471c2816bcf92f32922c97a3294ce61820d317646b7f0ac35c` | 234,387 |
@@ -276,7 +276,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/thermal_install_field.json` | `d2176765f0e5ce740b4293ec9faeaa557bf196827596d3664bfe791e2bd4e660` | 31,116 |
 | `tools/in_silico/cache/mechanical/thermal_install_field.png` | `5833b01cd2f5705da4e1f3771df6854808eddee5b0cce5666119998df933a387` | 272,271 |
 | `tools/in_silico/cache/mechanical/wind_duty_cycle.json` | `678670894a04ba007117efa9fee4b62c7b2cafda7fa78c7b3a5a83fdc6bba901` | 5,923 |
-| `tools/in_silico/cache/mechanical/wire_liner_shear_lag.json` | `44d94674828c3d27cae1570b007759ce8b2a92581315d71546e086aee0fbea38` | 56,119 |
+| `tools/in_silico/cache/mechanical/wire_liner_shear_lag.json` | `3cca2659bda571d13cc35efee8b2bb8edc5d79cdeefa7ff5b02c37f8c35ef081` | 57,923 |
 | `tools/in_silico/cache/mechanical/wire_under_liner_edges.json` | `bbd8736a2b06587e9ab5978989f90666ac0209b9d145fb2148020aa0ba7a4be9` | 69,047 |
 | `tools/in_silico/cache/mechanical/z_stack_tolerance.json` | `ee36b7ca74ef30779060ccb7b2359d64b81bcafe59c30aaaf1682354588edfa4` | 33,086 |
 
