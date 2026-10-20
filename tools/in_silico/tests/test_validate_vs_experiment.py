@@ -143,6 +143,8 @@ def test_coin_gate_and_layout_constants_mirror_canon():
     assert _literal("COIN_UNCOATED_ICPMS_PER_ALLOY") == uncoated
     assert _literal("COIN_RESERVE_12WK_PER_ALLOY") == reserve
     assert _literal("COIN_QUOTE_CONTROL_HIGH") == int(hi.group(2))
+    # E's band factor (⚖️ 2026-10-20): the canon's «1.96·√2·σ» and 40's constant are one number
+    assert "1.96·√2·σ" in doc and v40.REPEATABILITY_COVERAGE_95 == 1.96
     arms = _literal("COIN_ELECTRODE_ARMS")[_literal("COIN_CONTROL_ALLOY")]
     assert len(arms) * 2 + uncoated + reserve == int(hi.group(2)), "the control's arms × 2 no longer give «at 19»"
     for alloy in _literal("COIN_BENCHMARK_ALLOYS"):
@@ -153,9 +155,9 @@ def test_coin_gate_and_layout_constants_mirror_canon():
 # ── gates C · D · E (⚖️ 2026-10-20, 01_03 §3.5 under the thresholds): the arm's geometric mean is judged, the one-sided
 # 95 % lower bound is printed beside it and never judged, «every coupon» is not a reading; E against full recovery minus
 # the instrument's repeatability band. CAN catch: a gate that judges per coupon or on the bound; a bound on the wrong df,
-# spread or scale (its value is pinned); D on the wrong threshold; E judged without its band or with the wrong √2; a
+# spread or scale (its value is pinned); D on the wrong threshold; E judged without its band or with the wrong 1.96·√2; a
 # record that does not name its arm; a bool, inf or string passing as a ratio or a band. CANNOT catch whether the lab's
-# band fits E's technique, or the open σ-route ⊥ r-route question (a ceiling in 40's header).
+# band fits E's technique (a ceiling in 40's header).
 def _row(exp, gate, arm="arm"):
     return {g["gate"]: g for g in v40.acceptance_gates(exp)}[f"{gate} — {arm}"]
 
@@ -192,10 +194,15 @@ def test_one_coupon_has_no_bound():
     assert row["lower_bound"] is None and "lower bound n/a" in v40.gate_line(row)
 
 
-@pytest.mark.parametrize("band,passes,route", [({"cv_scan_sigma": 0.01}, True, "σ×√2"),       # limit 1 − 0.01·√2
-                                               ({"cv_repeatability_r": 0.01}, False, "r")])   # limit 0.99
-def test_e_is_judged_against_full_recovery_minus_the_band(band, passes, route):
+# ⚖️ 2026-10-20: both routes are the ISO 5725 limit at 95 % — σ of one scan → 1.96·√2·σ, the lab's r as is.
+@pytest.mark.parametrize("band,width,passes,route", [
+    ({"cv_scan_sigma": 0.005}, 1.96 * 2 ** 0.5 * 0.005, True, "1.96·√2·σ"),   # limit 0.98614: 0.98750 passes
+    ({"cv_scan_sigma": 0.004}, 1.96 * 2 ** 0.5 * 0.004, False, "1.96·√2·σ"),  # limit 0.98891 — √2·σ alone gave 0.99434
+    ({"cv_repeatability_r": 0.01}, 0.01, False, "r"),                         # limit 0.99 — r taken as is
+])
+def test_e_is_judged_against_full_recovery_minus_the_band(band, width, passes, route):
     row = _row({"ucst_recovery_by_coupon": {"arm": [0.99, 0.985]}, **band}, "E recovery")
+    assert row["band"] == pytest.approx(width) and row["limit"] == pytest.approx(1.0 - width)
     assert row["measured"] == pytest.approx((0.99 * 0.985) ** 0.5) and row["pass"] is passes
     assert f"[limit = 1 − band {row['band']:.3f}, {route}]" in v40.gate_line(row)
 
@@ -203,7 +210,7 @@ def test_e_is_judged_against_full_recovery_minus_the_band(band, passes, route):
 @pytest.mark.parametrize("exp", [
     {"ucst_recovery_by_coupon": {"arm": [0.99, 1.0]}},                          # E without its band
     {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": 0.01, "cv_repeatability_r": 0.02},   # two bands
-    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": 0.8},         # derived band √2·0.8 ≥ 1
+    {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": 0.4},         # derived band 1.96·√2·0.4 ≥ 1
     {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_scan_sigma": "0.01"},      # a string band
     {"ucst_recovery_by_coupon": {"arm": [0.99]}, "cv_repeatability_r": True},   # a bool band
     {"retention_30d_by_coupon": [0.9, 0.88]},                                   # a bare list — no arm named

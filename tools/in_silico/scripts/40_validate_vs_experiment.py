@@ -23,10 +23,10 @@ is an error — a typo or a new field must not drop out of the report silently:
                    ratio · recovery); each arm is judged and printed under its own label. ⚖️ RATIFIED 2026-10-20 (01_03 §3.5, under the thresholds): the arm's GEOMETRIC MEAN
                    is judged; the one-sided 95 % lower confidence bound is printed beside it, never judged; no
                    «every coupon». E's threshold is full recovery minus the instrument's repeatability band —
-                   `cv_scan_sigma` (σ of one scan, ×√2 for a ratio of two scans) or `cv_repeatability_r` (a
-                   repeatability limit, √2 already in it); without one of them the RECORD is refused, as R_int
-                   without R_partition. ⚠️ The two routes are not equivalent: ISO 5725 r = 1.96·√2·σ, so r also
-                   carries a 95 % coverage factor the σ route lacks — submitted to the founder (00_07 HW.24).
+                   `cv_scan_sigma` (σ of one scan → 1.96·√2·σ) or `cv_repeatability_r` (a repeatability limit r,
+                   taken as is). Both routes are the ISO 5725 repeatability limit at 95 % — r = 1.96·√2·σ (⚖️
+                   founder 2026-10-20, the correction of the first wording, 01_03 §3.5). Without one of them the
+                   RECORD is refused, as R_int without R_partition.
   GATE_INPUTS    — inputs a gate needs that are not gates themselves (the joint · the band).
   METADATA       — inputs to the normalisation (the O-ring window area).
 
@@ -173,6 +173,8 @@ ARM_GATES = {
     "chloride_ratio_by_coupon": ("D chloride", COIN_CHLORIDE_MIN_RATIO),
     "ucst_recovery_by_coupon": ("E recovery", COIN_UCST_RECOVERY_RATIO),
 }
+# The ISO 5725 repeatability limit r = 1.96·√2·σ_r: the two-sided 95 % normal quantile (⚖️ 2026-10-20 — E's band).
+REPEATABILITY_COVERAGE_95 = 1.96
 # One-sided 95 % Student-t quantiles by degrees of freedom (pinned against scipy.stats.t.ppf in test_cache_integrity).
 T_ONE_SIDED_95 = {1: 6.3138, 2: 2.9200, 3: 2.3534, 4: 2.1318, 5: 2.0150, 6: 1.9432, 7: 1.8946, 8: 1.8595,
                   9: 1.8331, 10: 1.8125, 11: 1.7959, 12: 1.7823, 13: 1.7709, 14: 1.7613, 15: 1.7531, 16: 1.7459,
@@ -244,8 +246,11 @@ def _positive(v) -> bool:
 
 
 def e_band(exp: dict) -> float:
-    """E's band: σ of one scan ×√2 (a ratio of two scans), or a repeatability limit r, which carries the √2 already."""
-    return math.sqrt(2.0) * exp["cv_scan_sigma"] if "cv_scan_sigma" in exp else exp["cv_repeatability_r"]
+    """E's band — the ISO 5725 repeatability limit at 95 % by either route: σ of one scan → 1.96·√2·σ (two scans,
+    95 % coverage), or the lab's limit r, which already is that (⚖️ 2026-10-20, 01_03 §3.5)."""
+    if "cv_scan_sigma" in exp:
+        return REPEATABILITY_COVERAGE_95 * math.sqrt(2.0) * exp["cv_scan_sigma"]
+    return exp["cv_repeatability_r"]
 
 
 def arm_gate(values: list[float], threshold: float) -> dict:
@@ -278,7 +283,7 @@ def acceptance_gates(exp: dict) -> list[dict]:
             row = {"gate": f"{label} — {arm}", "arm": arm}
             if key == "ucst_recovery_by_coupon":
                 band = e_band(exp)
-                row |= {"band": band, "band_route": "σ×√2" if "cv_scan_sigma" in exp else "r"}
+                row |= {"band": band, "band_route": "1.96·√2·σ" if "cv_scan_sigma" in exp else "r"}
                 row |= arm_gate(values, threshold - band)
             else:
                 row |= arm_gate(values, threshold)
