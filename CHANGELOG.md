@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.9.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.8.0...v0.9.0) (2026-10-20)
+
+
+### Features
+
+* **cad/HW.51:** build-record `/2` — білд, лот порошку й сертифікат по кожному маніфесту ([f00fd45](https://github.com/Alexey-Lukin/silken_net/commit/f00fd453e6bdb7fc02a801b68c98602afbc62203))
+* **cad:** ⚖️ ростер вербів — `switch` у Main; README — вказівник, `help` доповнено, носій над switch ([cc3526c](https://github.com/Alexey-Lukin/silken_net/commit/cc3526c97bfb7b3d4e8269ee51b2175a2d831240))
+* **gates:** guard_craft_index --check судить і стелі харнесу — індекс у голові, опис у видимій частині ([799aae4](https://github.com/Alexey-Lukin/silken_net/commit/799aae408a12c563e41868b76c5c0979729cdbd4))
+* **HW.24:** застосовано два присуди 2026-10-20 — гейти C·D·E за середнім плеча (ратифіковано) і n купонів на кожне плече (делеговано); `40` судить C·D·E ([cb17545](https://github.com/Alexey-Lukin/silken_net/commit/cb175458e9275d981d55696fc2dbd8dc6a587f6e))
+* **HW.24:** смуга E — обидва шляхи на 95 % (ратифіковано): σ однієї розгортки → 1.96·√2·σ, межа r — як є ([6210757](https://github.com/Alexey-Lukin/silken_net/commit/6210757cf4069e480ffc954da49b05fda689ebde))
+* **HW.26:** бюджет закручування шини Ø1.0 по сплаву — і першим здається утримувач верху дроту, ізоляція каналу ([34375bd](https://github.com/Alexey-Lukin/silken_net/commit/34375bdb2c4aa6f46194e490d3660b4141bf83a0))
+* **hw43:** тип акумулятора кампанії — LiFePO₄ (третій ⚖️ founder 2026-10-19, застосовано); поправки після «так» ⊕; новий ⚖️ — вимір ємності на морозі ([03f0486](https://github.com/Alexey-Lukin/silken_net/commit/03f048629bb416179791ea296cbaa5f7f34fc475))
+* **in-silico/51:** канали Nb і Zr у Kirkendall-моделі — D-заглушка = D(V), позначена в імені поля ([e1197ab](https://github.com/Alexey-Lukin/silken_net/commit/e1197abb48bf8d393c6ad2aeadc06264da2378a6))
+* **in-silico/67,85:** листяні анкерні SKU на власному соку — точка бука Q8 (Glavac 1990), власний сік дуба Q. rubra поруч ([de38baa](https://github.com/Alexey-Lukin/silken_net/commit/de38baa7a31364de0428928bc9c78b070d4fd48e))
+* **in-silico/67:** ⚖️ 2026-10-18 — рецепт синтетичного соку переякорено на виміряний сік хвойних (Q7), «A без підживлених»; 85 · 93 перераховано, дзеркала й носій ([829fdc5](https://github.com/Alexey-Lukin/silken_net/commit/829fdc53a473c6d9c584011d423dcba790659e47))
+* **in-silico/79:** відбите від землі світло — сніг ERA5-Land · CERRA, звірений зі станцією Лубни; кінці входу з даних, піни по кінцях ([41a3973](https://github.com/Alexey-Lukin/silken_net/commit/41a3973ce773ee1daaed1232d022b5bb319f0f4a))
+* **in-silico/85:** анод анкера за стоячого соку в зазорі — по всіх SKU Zone 1, проти власного струму холодного старту ([afcbdde](https://github.com/Alexey-Lukin/silken_net/commit/afcbdde262bb36b87576131bdd872686de5cb1e4))
+* **in-silico/87:** (C) за лайнером — стеля осьової сили на корені шини і вимога до шва `86` на ній ([47b6b17](https://github.com/Alexey-Lukin/silken_net/commit/47b6b17fa8870401733207bac818411d7810bc00))
+* **in-silico/90:** КТР корпусу піна (латунь C36000) по його вільній довжині і FR-4 у площині — з первинок; два типові Z R-1755V; робочий хід піна ([07b6ed0](https://github.com/Alexey-Lukin/silken_net/commit/07b6ed0cd9801aff8a7787353562d684d574399a))
+* **in-silico/96,95:** термохімія пари Os(III/II) з обох боків — адіабатична хлоро-форма з ZPE +596 мВ (на 67 понад виміряні +529, залишок двох протилежних похибок) ([b223ad1](https://github.com/Alexey-Lukin/silken_net/commit/b223ad15e21c2b649b165122a80e80dd53215364))
+* **in-silico/98:** аркуш приладу польового датчика HW.43 — тривалість кампанії з вітру ERA5 і поїздки на живлення ([8bffffa](https://github.com/Alexey-Lukin/silken_net/commit/8bffffade5c7f325858da8afcf110cc91bfb8e21))
+* **in-silico/99:** чи тягне наш L3-конвеєр кластерну модель покриттів на TiO₂ — розмір базису й вартість SCF без прогону (HW.40) ([2291af2](https://github.com/Alexey-Lukin/silken_net/commit/2291af23359b3fb4803aeec76ab9bf8a922c4729))
+* **in-silico/HW.24:** `100` — таблиця потужності реплік Stage 2; дві ⚖️ подано ([87710b8](https://github.com/Alexey-Lukin/silken_net/commit/87710b896134811b24fbde4b9be584831bb950a5))
+* **in-silico/HW.5.IS:** `94` — найслабша ланка подання про SOC виміряна як поріг (модель однієї дірки t2g, без SCF); пороги в поданні — з кешу, округлені вгору ([a861c89](https://github.com/Alexey-Lukin/silken_net/commit/a861c89bacd48f81c08728c9ff96d9ec4e541f03))
+* **in-silico/HW.5.IS:** ланцюг 21g · 33 · 29b з мінімуму метелика — адіабатичний ΔSCF перетнув нуль (−0.079 → +0.048 еВ, uphill); піни мінімумів і чисел ланцюга; шляхи Гессіанів відносно репо ([05684cc](https://github.com/Alexey-Lukin/silken_net/commit/05684cc05b8fd98b6aa626e67a6d10db98137ab6))
+* **in-silico:** 97 — пружний дріт під кромками лайнера (HW.34, нога «notch-фактор») ([764b954](https://github.com/Alexey-Lukin/silken_net/commit/764b95421847db9cf7a01ef3e209c2fda045c060))
+* **memory:** замок компакції і path-rule гейтів; приватність user_* знято присудом founder-а (DOC-T.122) ([6430817](https://github.com/Alexey-Lukin/silken_net/commit/6430817be9145a9c1ac57f5c6662fbbadb2ae292))
+* **memory:** рука архівації друкує дзеркала стану в памʼяті ДО запису (DOC-T.122 ноги 1–2) ([11eaec9](https://github.com/Alexey-Lukin/silken_net/commit/11eaec907d10b7e1841d9ea952231f1d405db8a3))
+* **paper/HW.5.IS:** ревізія — крок 3, теза like-for-like («напрямок + таблиця», ⚖️ founder 2026-10-16): каскад downhill у кожній комірці в межах протоколу; SOC на Os за октаедричного значення лишає знак невизначеним; нові Table 2 і Fig 5; ⚖️ подано ([f5e47de](https://github.com/Alexey-Lukin/silken_net/commit/f5e47de15aee0cf397b9ea2886cb9770f74288d3))
+* **scripts:** skill_tier_probe — прилад рівня скілів закомічено, щоб його пастки не стали спадковими ([af60fbe](https://github.com/Alexey-Lukin/silken_net/commit/af60fbe5c76e538fc690a8cab47d1301c7c7b3c5))
+
+
+### Bug Fixes
+
+* **00_05,00_06,00_07,claude:** адверсар по діфу — канон казав сильніше, ніж виміряно ([4c7da55](https://github.com/Alexey-Lukin/silken_net/commit/4c7da5501a2292d05bcb11064e5cbfc5b2ad189d))
+* **00_07:** DOC-T.123 — «web3 у жодній сесії» було сліпотою приладу, не тишею домену ([7a34500](https://github.com/Alexey-Lukin/silken_net/commit/7a34500445e96fe78bf10bad576088106464bfd3))
+* **deps:** rbsecp256k1 6.0.0 → 6.0.2 + rubyzip 2.4.1 → 3.7.0 — CVE-2026-85396 вилікувано, ignore у bundler-audit знято ([a80796c](https://github.com/Alexey-Lukin/silken_net/commit/a80796ce269c9175fbd9815afd46a2c70591e8bd))
+* **gates:** повідомлення в мить червоного кажуть лік, а не лише «поза домом» ([c0b1d47](https://github.com/Alexey-Lukin/silken_net/commit/c0b1d47a48cef4567e3c018d7c19e9a7bc340fe1))
+* **hooks:** compact_lock — названо стелю, виміряну живою компакцією: правка ФАЙЛУ СКІЛА замка не зустрічає ([f8b963f](https://github.com/Alexey-Lukin/silken_net/commit/f8b963fcf194444b1e394403587052c2da468164))
+* **hooks:** адверсар по діфу — WRITE-TIME після компакції, route_check під self-test, шапка замка чесна ([ee21257](https://github.com/Alexey-Lukin/silken_net/commit/ee2125772750c830f0e6b701955b7d8f278cb2c5))
+* **HW.43:** друга рамка адверсара — першоджерело `87` теж казало ширше («no press-fit has to slip» до піна); виправлено там і в кеші, умови «поки підйомна сила не перевищує початкової» й «тримає лише за нульової чутливості» повернуто ([f1b000e](https://github.com/Alexey-Lukin/silken_net/commit/f1b000e022426f8fc834de63355b89603041d8c2))
+* **HW.43:** за адверсаром цементації — умови найгіршого випадку повернуто в «на морозі обід відпускає»; спростоване «лише якщо проковзнуть обидві» знято ще з чотирьох носіїв ([d5d28a1](https://github.com/Alexey-Lukin/silken_net/commit/d5d28a1801d99229cf2e4fe8dfcb4e5fb723eab4))
+* **HW.5.IS:** за адверсаром цементації — результати присуду 2026-10-15 про акцептори повернуто в «Стан» і ногу D; перелік «що лишилось до депонування» в `00_02` замінено вказівником ([6ab4d36](https://github.com/Alexey-Lukin/silken_net/commit/6ab4d3682ffe9bb97df7c3ac5ca35f5f059d3848))
+* **HW.5.IS:** нога кроку 3 — лише умова переподання D, як виписано, і на своєму місці; два застарілі вказівники 2026-10-15 ([7301c98](https://github.com/Alexey-Lukin/silken_net/commit/7301c98e2f2c06899626d2418f795bb8f3a45bfb))
+* **hw25:** адреса цитати `legal-business` — «§Доменні правила [#11](https://github.com/Alexey-Lukin/silken_net/issues/11)», не голий номер ([3b3a792](https://github.com/Alexey-Lukin/silken_net/commit/3b3a792933983d8084c1f967d4811976ddfc8273))
+* **hw25:** лист кліматичним лабораторіям — другий раунд адверсарія: маркування на зразку, подія без сушіння, ворота методики; стеля роси в прозі `74` ([a98465b](https://github.com/Alexey-Lukin/silken_net/commit/a98465b66ef85c6f38d0f61515d675a0271d42fa))
+* **hw25:** лист кліматичним лабораторіям — логістика зразків, контролі й подія детектора, базовий варіант 10 тримачів; стеля вікна роси в `74` ([15e146a](https://github.com/Alexey-Lukin/silken_net/commit/15e146a10cf1594d9b261c0de8fa1f49854d10e8))
+* **hw53,hw5:** третій раунд адверсара — межі містка й умова гніту в носіях присуду, DE-5000 відпадає й за амплітудою, контроль K позначено машинним, нижній кінець набряклого гелю — 1 мг ([b64667f](https://github.com/Alexey-Lukin/silken_net/commit/b64667fdd9c25c06298a43b004f4745079e25a98))
+* **hw53:** ратифікований текст пакета відновлено дослівно з 📌; перегляд підстави — ⊕, а не переписування; шар 5 подано окремим ⚖️ — виправлення адверсара до a8fd0b105 ([9309d55](https://github.com/Alexey-Lukin/silken_net/commit/9309d55004e362d454ada62dbe7073a56ae0b004))
+* **hw5:** Spec D — «маршрут не єдиний» знято (джерела показують продукт, не маршрут); геніпін — нижній кінець сухої плівки з 10 мкм; виправлення адверсара до c63f4357b і 53df15c6c ([2c7bfbe](https://github.com/Alexey-Lukin/silken_net/commit/2c7bfbe48d04f1598e6cb33956e6e061fead04bd))
+* **hw5:** геніпін — дужка двох прочитань рецепту (кілька мг ⊥ ≈ 0.3 г) замість хибної «стелі» &lt; 5 мг; виправлення адверсара до 6bdafeeb9 ([c63f435](https://github.com/Alexey-Lukin/silken_net/commit/c63f4357b74e8855b6f2c3b83caf8afe07d1d842))
+* **in-silico/98:** тривалість кампанії — програванням 30 реальних років, а не середньою швидкістю; набір у межах заявки на доступ ([c7973f3](https://github.com/Alexey-Lukin/silken_net/commit/c7973f3b0cf3bab2dd2c65bea51a7e37e29e0246))
+* **in-silico/99:** вартість кластерів покриттів — з закомічених серій конвеєра, показник за підгонкою; висновок перевернуто: кластерну релаксацію наш CPU тягне ([99b6118](https://github.com/Alexey-Lukin/silken_net/commit/99b6118a3f61d7842e226b063a90666ba4f2f774))
+* **in-silico/99:** дві оцінки окремо — B3LYP-скринінг тягнемо, дисперсійне дослідження зі збіжністю — місяці–роки CPU; кроки, гесіан і межі VV10 названо ([ea72a9f](https://github.com/Alexey-Lukin/silken_net/commit/ea72a9fbc678ca59f3f9d4756ff3ed9807a1954f))
+* **in-silico/HW.24:** `100` — ruff: лямбди циклу прив'язують змінні, `itertools.pairwise` ([818beaf](https://github.com/Alexey-Lukin/silken_net/commit/818beaf6907c5255862d1e6806ff4694e5c5b97c))
+* **in-silico:** SI-маніфест статті перегенеровано `72` після 96214a7d3 — `Smoke · In-silico` на main червоний з a9fb7f4b8 ([5c72cdc](https://github.com/Alexey-Lukin/silken_net/commit/5c72cdc01753f48713ba6beff1a149d0e8fb584e))
+* **in-silico:** піни `94` — `zip(..., strict=True)`: розбіжність довжин має падати, а не мовчки обрізати піни ([cb13371](https://github.com/Alexey-Lukin/silken_net/commit/cb133711d9c6e0e053f676deaaafe9b19dc1ef41))
+* **legal-business:** опис повернув тригерні іменники concern-шару ([2826786](https://github.com/Alexey-Lukin/silken_net/commit/2826786afbbe328b48cfcc9595ea8b315add1dc3))
+* **memory-gate:** AMBIG судить аліас компаньйона в ЙОГО файлі; три голі цитати in-silico названо послідовністю ([a92d8a3](https://github.com/Alexey-Lukin/silken_net/commit/a92d8a3daefae74bd7897cc0ebe935f0bf711340))
+* **memory-gate:** правила запису памʼяті — живим носієм замість вирізаного коментаря ([3d063d1](https://github.com/Alexey-Lukin/silken_net/commit/3d063d1fbce83339ac97da2e18a65d84f066fc65))
+* **memory-maintenance:** адверсар по діфу — одна форма присуду «помітність», чесні межі ядра й голови ([7540c8e](https://github.com/Alexey-Lukin/silken_net/commit/7540c8e026c348ba5daf09f8a5e0828961d24137))
+* **memory:** переприсуд капу індексу з доказом — байтовий «ріст» був мовним зсувом; замок — стіна харнесу ([3efc7ae](https://github.com/Alexey-Lukin/silken_net/commit/3efc7aebc6b43b1733dcfca112316d3a4d304fd6))
+* **memory:** стійка запису гейта стояла на краю таймауту — canon_section_check сканував увесь корпус на кожен запис ([a1ae30e](https://github.com/Alexey-Lukin/silken_net/commit/a1ae30e6bc0831c2e9e7d0379547155c6a0342f4))
+
 ## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-21)
 
 
