@@ -113,3 +113,38 @@ def test_cold_start_constants_mirror_canon():
     assert float(vin.group(1)) == _literal("BQ25570_VIN_CS_TYP_MV")
     assert float(vin.group(2)) == _literal("BQ25570_VIN_CS_MAX_MV")
     assert float(pin.group(1)) == _literal("BQ25570_PIN_CS_UW")
+
+
+def test_coin_gate_and_layout_constants_mirror_canon():
+    """The C/D/E thresholds and the coupon layout script 100 reads (00_07 HW.24) against their homes.
+
+    CAN catch: a threshold edited on one side only; a layout whose control arms × 2 + the non-electrode coupons no
+    longer give the letter's «at 19»; the letter's 12 = 3 + 3 + 6 split moving. CANNOT catch: which electrode arms
+    an alloy carries beyond the control's count — that layout lives in 01_03 §3.5 prose.
+    """
+    doc = (REPO / "docs" / "01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md").read_text(encoding="utf-8")
+    c = re.search(r"^> - \*\*30-day stability:\*\* ≥ \*\*(\d+)% retention\*\*", doc, re.M)
+    d = re.search(r"^> - \*\*Chloride:\*\* .*НЕ нижче −(\d+)% \(ZIF-гібрид ціль \*\*\+([\d.]+)%\*\*", doc, re.M)
+    e = re.search(r"^> - \*\*UCST recovery:\*\* .*відновлюється до \*\*(\d+)%\*\*", doc, re.M)
+    assert c and d and e, "01_03 §3.5 gate lines not found — the pin lost its anchor"
+    assert _literal("COIN_RETENTION_30D_MIN") == pytest.approx(int(c.group(1)) / 100)
+    assert _literal("COIN_CHLORIDE_MIN_RATIO") == pytest.approx(1 - int(d.group(1)) / 100)
+    assert _literal("COIN_CHLORIDE_TARGET_RATIO") == pytest.approx(1 + float(d.group(2)) / 100)
+    assert _literal("COIN_UCST_RECOVERY_RATIO") == pytest.approx(int(e.group(1)) / 100)
+
+    letter = (REPO / "docs/protocols/procurement/anchor_alloy_rfq.md").read_text(encoding="utf-8")
+    q = re.search(r"\*\*Quantity: (\d+) per alloy\*\* — (\d+) for electrode testing, (\d+) for an uncoated ion-release "
+                  r"series and (\d+) uncoated coupons held in reserve", letter)
+    hi = re.search(r"quote it at (\d+) and at (\d+)\.", letter)
+    assert q and hi, "anchor_alloy_rfq quantity sentences not found — the pin lost its anchor"
+    total, electrode, uncoated, reserve = (int(x) for x in q.groups())
+    assert total == electrode + uncoated + reserve, "the letter's 12 no longer splits into its three parts"
+    assert _literal("COIN_ORDER_PER_ALLOY") == total
+    assert _literal("COIN_UNCOATED_ICPMS_PER_ALLOY") == uncoated
+    assert _literal("COIN_RESERVE_12WK_PER_ALLOY") == reserve
+    assert _literal("COIN_ORDER_CONTROL_HIGH") == int(hi.group(2))
+    arms = _literal("COIN_ELECTRODE_ARMS")[_literal("COIN_CONTROL_ALLOY")]
+    assert len(arms) * 2 + uncoated + reserve == int(hi.group(2)), "the control's arms × 2 no longer give «at 19»"
+    for alloy in _literal("COIN_BENCHMARK_ALLOYS"):
+        cem = (REPO / f"tools/cad/cem/ti_coin.{alloy.lower()}.json").read_text(encoding="utf-8")
+        assert "NOT an anchor candidate" in cem, f"{alloy} is mirrored as a coin-only benchmark; its manifest no longer says so"

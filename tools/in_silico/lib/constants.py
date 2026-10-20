@@ -171,6 +171,36 @@ BQ25570_PIN_CS_UW = 15.0         # µW — a POWER, not 15 µA (02_03 §1.1)
 # Combi-CLEA electrode and relabelled Gen 2.0 later (provenance: 02_03 §1.5 ⊕, 00_07 HW.53); a coin in sap, i.e. with
 # NO path through a tree. MIRROR of 02_03 §1.5 prose, edit there; consumed by 84 as one of two readings.
 R_INT_EBFC_EST_KOHM = (5.0, 20.0)
+# ── Stage-2 coin: the other acceptance thresholds — MIRRORS of 01_03 §3.5 («Квантитативні acceptance-пороги»), edit
+# there. Each is a RATIO of one coupon's current to its own reference (day 0 · chloride-free start · pre-freeze). ──
+COIN_RETENTION_30D_MIN = 0.80        # C: ≥ 80 % retention of j_max after the 30-day hold
+COIN_CHLORIDE_MIN_RATIO = 0.90       # D: the cathode not below −10 % at 0.25 M NaCl
+COIN_CHLORIDE_TARGET_RATIO = 1.075   # D: the ZIF-hybrid target +7.5 %
+COIN_UCST_RECOVERY_RATIO = 1.00      # E: the current recovers to 100 % after −10 °C → +25 °C
+COIN_HOLD_DAYS = 30
+# ── Stage-2 coin layout — MIRRORS of 01_03 §3.5 «Розкладка Stage 2» (⚖️ founder 2026-09-18) and of the coupon letter
+# anchor_alloy_rfq («12 per alloy — 3 for electrode testing, 3 for an uncoated ion-release series and 6 … in reserve»;
+# Ti-6Al-4V quoted at 12 and at 19 = its five electrode arms × 2 + 3 + 6). Edit there. Per alloy: electrode arm → does
+# it run the 30-day hold C. Ti-6Al-4V is the control, never a Zone-1 candidate (01_02 §2.5). The gold-coated coupon
+# is one extra Ti coupon, cathode day 0 only. ──
+COIN_CONTROL_ALLOY = "Ti-6Al-4V"
+# Coin-only reference, not a Zone-1 candidate: cem/ti_coin.ta.json («coin-only, NOT an anchor candidate») and the coupon
+# letter («benchmark біоінертності … coin-only»). ⚠️ 01_02 §2.5 rule (в) still lists Ta's σ_e among «V-free кандидати».
+COIN_BENCHMARK_ALLOYS = ("Ta",)
+COIN_ELECTRODE_ARMS = {
+    "Ti-6Al-4V": {"anode": True, "cathode_nanozyme": True, "cathode_no_nanozyme": True,
+                  "cathode_chloride_D": False, "anode_membrane_E": False},
+    "Ti-6Al-7Nb": {"anode": True, "cathode": False},
+    "CP-Ti Gr4": {"anode": True},
+    "Ti-13Nb-13Zr": {"anode": True, "cathode": False},
+    "Ta": {"anode": True, "cathode": False},
+    "Ti-15Zr": {"anode": True, "cathode": False},
+}
+COIN_GOLD_COUPONS = 1
+COIN_ORDER_PER_ALLOY = 12
+COIN_ORDER_CONTROL_HIGH = 19
+COIN_UNCOATED_ICPMS_PER_ALLOY = 3
+COIN_RESERVE_12WK_PER_ALLOY = 6
 # ── Node energy chain — MIRRORS of 02_03 §9.4/§9.6 Scenario C (ECB 16 B frame, SF9,
 # +14 dBm, 300 nA sleep — the Standby-class target, not the shipped STOP2, 00_07 FW.54);
 # the chain's home is tools/firmware/tx_cadence_budget.rb,

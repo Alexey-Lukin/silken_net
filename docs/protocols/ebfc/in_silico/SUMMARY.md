@@ -1559,6 +1559,77 @@ the imidazole it releases are outside it. It is the trace-metal limit — the Cu
 
 ---
 
+## HW.24 — How Many Replicate Coupons per Arm? (script 100)
+
+`01_03 §3.5` leaves the number of replicate coupons per arm «after the lab's prices». `100` turns it into a choice of a
+row by price, under an **assumed** coupon-to-coupon spread: log-normal, one CV in every arm, power and pass probability
+0.80, two-sided α 0.05. No coin has been measured; the lab's stated repeatability of repeated scans on one coupon
+(test A) is a floor on the CV, not its value. Where the spread is estimated is itself a bracket of two readings:
+**own** — from the coupons of the contrast or the arm (robust if the arms' spreads differ) ⊥ **pooled** — over every arm
+that measures the same quantity (the eight arms of the hold C for the 30-day retention, the seven titanium-cathode arms
+for a day-0 cathode current), valid only if they share one CV. Ratios below are rounded up (a contrast is detected
+only above it), CV ceilings and probabilities down. A seeded Monte Carlo of the same decision rules checks every
+closed form in both readings.
+
+**Two arms** — a two-sample t-test on log values (the matched ZIF pair on Ti-6Al-4V · two alloys · the cathode on gold
+against titanium): the smallest ratio of the two arms' geometric means it detects, own ⊥ pooled.
+
+| n per arm | CV 10 % | CV 20 % | one coupon against n, CV 10 % | CV 20 % |
+|---|---|---|---|---|
+| 2 | ×1.76 ⊥ ×1.38 | ×3.07 ⊥ ×1.89 | ×7.36 ⊥ ×1.50 | ×52.56 ⊥ ×2.22 |
+| 3 | ×1.36 ⊥ ×1.28 | ×1.84 ⊥ ×1.63 | ×1.92 ⊥ ×1.42 | ×3.65 ⊥ ×2.00 |
+| 4 | ×1.27 ⊥ ×1.23 | ×1.61 ⊥ ×1.51 | ×1.61 ⊥ ×1.39 | ×2.57 ⊥ ×1.92 |
+| 5 | ×1.23 ⊥ ×1.20 | ×1.50 ⊥ ×1.44 | ×1.51 ⊥ ×1.38 | ×2.27 ⊥ ×1.88 |
+| 6 | ×1.20 ⊥ ×1.18 | ×1.43 ⊥ ×1.39 | ×1.47 ⊥ ×1.37 | ×2.13 ⊥ ×1.86 |
+
+A smaller difference reads «≈» by default, not by measurement — and the cathode-lever rule (`01_03 §3.2`) acts on
+«≈»: branch (3) on «the nanozyme arm ≈ the arm without it», branches (1)/(2) on «the cathode on gold ≈ on titanium».
+The gold coupon is single by the coupon letter, and a single coupon's own spread never averages out: with any number of
+titanium coupons against it and the spread known exactly, its contrast stays above ×1.32 at CV 10 % (×1.74 at CV 20 %).
+
+**Gates C · D · E** — canon writes «≥ threshold» without saying of what: the arm's geometric mean · its one-sided 95 %
+lower confidence bound · every coupon. The three readings move apart with n — the margin a good arm needs shrinks under
+the first two and grows under the third — so the replicate count and the reading are one decision. The largest CV at
+which a gate's best case still passes with P 0.80 (C: an arm that loses nothing, ×1.25 above 80 %; D: an arm on its
+own +7.5 % target against −10 %; D is measured on its own arm only, so its bound has no pooled row):
+
+| gate · reading | n = 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| C · arm mean | 38.8 % | 48.4 % | 56.9 % | 64.8 % | 72.4 % |
+| C · lower bound | 3.8 % | 9.7 % | 13.5 % | 16.5 % | 18.9 % |
+| C · lower bound, pooled | 11.6 % | 14.9 % | 17.5 % | 19.8 % | 21.8 % |
+| C · every coupon | 17.9 % | 15.3 % | 13.9 % | 13.1 % | 12.4 % |
+| D · arm mean | 30.5 % | 37.8 % | 44.1 % | 49.9 % | 55.3 % |
+| D · lower bound | 3.0 % | 7.7 % | 10.8 % | 13.1 % | 15.0 % |
+| D · every coupon | 14.2 % | 12.1 % | 11.1 % | 10.4 % | 9.9 % |
+
+Under «every coupon» each added replicate fails a good arm more often: at CV 20 % an electrode exactly on D's target
+passes with probability 0.66 at n = 2 and 0.29 at n = 6. Under the arm mean an arm sitting exactly at its threshold
+passes half the time at every n. **E has no row:** its threshold is full recovery, so an electrode recovering exactly
+100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.5ⁿ (every coupon) whatever the spread; only a
+recovery above 100 % (drift, rehydration — not a design state, and this model caps the best case there) would pass more
+often. The gate needs a tolerance band.
+
+**Selection** among the four Zone-1 candidates (Ti-6Al-4V is the control; Ta is the coin-only bioinertness benchmark —
+its manifest and the coupon letter, while `01_02 §2.5` rule (в) still lists its σ_e among the V-free candidates): for
+the highest sample mean to pick the best 4 times in 5 it must lead the others by ×1.12 at n = 3 and CV 10 % (×1.25 at
+CV 20 %) — conditional on one current metric deciding, since canon names no rule that combines current, retention and
+the ICP-MS rank.
+
+**Budget.** At the coupon letter's quote point (12 per alloy, 3 of them electrode coupons; 19 for Ti-6Al-4V) the control
+carries n = 2 and CP-Ti n = 3, while the four alloys with an anode and a cathode arm (Ti-6Al-7Nb · Ti-13Nb-13Zr · Ta ·
+Ti-15Zr) carry 2 + 1, one arm on a single replicate. Coupons per alloy = electrode arms × n + 3 uncoated (ICP-MS) + 6
+reserve: the two-arm alloys need 13 at n = 2 and 15 at n = 3, Ti-6Al-4V 19 and 24. The 30-day hold C on the anodes
+and the Ti-6Al-4V pair runs 480 channel-days at n = 2 and 720 at n = 3 — a floor, since the ratified channel order ends
+in «→ the rest», which names no arm.
+
+⚠️ **Bounds.** The CV is assumed, and which spread reading holds is itself measured only by the coin; a metric whose
+spread is not log-normal is outside the model. For C · D · E the compared quantity is a ratio on one coupon, whose
+spread is the coupons' different RESPONSE plus two scans' repeatability — not the loading spread of `j_max`, so its CV
+row may sit lower. The ICP-MS series (3 per alloy by the letter) and test H are not covered. The model counts the
+priced units; the quote prices them. Cache: `kinetics/coin_replicate_power.json`.
+---
+
 ## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (scripts 69 · 80)
 
 Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2 (also the home of the freeze verdict, ⚖️ 2026-10-04); open legs → `00_07` HW.5.IS / CHEM.11.

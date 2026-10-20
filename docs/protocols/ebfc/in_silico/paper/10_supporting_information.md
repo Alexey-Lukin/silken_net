@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 324 · 20,783,289 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 326 · 20,851,704 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -28,7 +28,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 |---|---|---|
 | `tools/in_silico/lib/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/lib/beam_contact.py` | `5a8c75cb965b62461a7ac6a22fdb09b73516311ce8e4f1b40e3382d2041a6f63` | A clamped Euler-Bernoulli rod in a rigid channel — unilateral contact solved by an active set. |
-| `tools/in_silico/lib/constants.py` | `9ad217607d2da4247291f61e0281d6e04bc4ad0240dd94d3b541fd56fa92c5f5` | Shared physical and project constants for the in-silico pipeline. |
+| `tools/in_silico/lib/constants.py` | `57241cdd8d19253af3b90933cba29ca61b32172fd32d350c3ed527a5b28c56be` | Shared physical and project constants for the in-silico pipeline. |
 | `tools/in_silico/lib/dft_utils.py` | `d2a4008c6a3de0984d592beef374f972920dc4f01e505b700cac654c8dc126ca` | Shared DFT utility functions for L3 quantum chemistry scripts. |
 | `tools/in_silico/lib/flavin.py` | `32d7f91f691dbf2868d619a3f928cb5819f708507271477c1f78d7deb406b044` | Lumiflavin — the ONE home of the flavin SMILES the L3 chain computes on, and the check that the reduced form is the |
 | `tools/in_silico/lib/geometry.py` | `70dcca1d51fc0f4fd166b5d6dd13345c74b87eb6aa516327d5f8b2f0688be30e` | Shared geometry utilities for placing molecules in MD boxes. |
@@ -46,6 +46,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/06_parameterize_ppy.py` | `306b79bf36a02b2554bad3ece3d303ce387b28f044142603549542613e2c022a` | L2 step 2e — parameterize polypyrrole (PPy) oligomer for GAFF. |
 | `tools/in_silico/scripts/07_parameterize_pvi.py` | `5436510655a0106d4d0d6f87b6970766cd33789f746e957fddec362d583905b5` | L2 step 2f — parameterize poly(vinylimidazole) backbone (PVI, no Os) for GAFF. |
 | `tools/in_silico/scripts/08_parameterize_sbma.py` | `e75be6f2572e2e16510f6616149bdde068a5a02ffc10eba1d456662cecdce8d7` | L2 step 2g — parameterize SBMA monomer (zwitterionic anti-biofouling) for GAFF. |
+| `tools/in_silico/scripts/100_coin_replicate_power.py` | `3c30e84179e0b6739a6c430c14eceb6512bd6d51846bcf830465e2c7197bcb79` | Statistical design of the Stage-2 coin test: the smallest arm-to-arm ratio, the margin above an acceptance threshold under three readings of the gate, and the alloy-selection gap that 2–6 replicate coupons per arm resolve, under an assumed log-normal coupon-to-coupon spread estimated per contrast or pooled over the arms that share it, with the coupon budget per replicate count and a Monte Carlo check of every closed form; no SCF |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | `b56c5791d674b8d4be97c986afa3bc74d9343331ed706dc380dcff25e551bd41` | L2 — full stability MD: GcGDH + FAD + genipin matrix in xylem-like water box. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `c4a7ac5844f2e508bb1b87fe49435f205b848cb07452994531359f5399a8732d` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
@@ -138,10 +139,10 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `64948a0e773838a7940a01de4e66794c9871eefea756b82cd68b1f9693bd8fa3` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `dc05471c8ebe5ba02cf11d163c000061fc093aaf8cf5ae7535a0b320d1a511a8` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `3d4057dd6b714aa3f5ecac2393c2f626c8f4554b66686b51ae2fe5d6ada0d6c9` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `d60b7a6c2623df3e1d35233d57d498e55cd4efbe1bf41f913a282195fd61a4f9` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
-| `tools/in_silico/tests/test_validate_vs_experiment.py` | `4d0e9df441312ad5bb9c49e11cb1a13f757869057616bfaad9bead5266f6d2b1` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
+| `tools/in_silico/tests/test_validate_vs_experiment.py` | `3cd6f1f2c717bd76b1179572f499a102e0d40fadc99d77877fa32ea97180288f` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
 ## S3. Reference outputs — the committed caches
 
@@ -218,6 +219,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 |---|---|---|
 | `tools/in_silico/cache/kinetics/cathode_det_rct.json` | `cbc6df86561abb5af2b91df944746baada54e2573d814dd6bd3c8b9501e88648` | 5,673 |
 | `tools/in_silico/cache/kinetics/cathode_ionic_path.json` | `a3c441dd4ada80aad271d9c128e89f2b47b52eb802c10ccae47dc1b3862c6e6d` | 10,323 |
+| `tools/in_silico/cache/kinetics/coin_replicate_power.json` | `117794c57b8bf97a198e552679e191142bd2e1cbaa283fd47d336a2229d1faf0` | 23,470 |
 | `tools/in_silico/cache/kinetics/delta_t_aux_power_sensitivity.json` | `928324654a47c77d30bf9e4a921dd8916d9421604c11dc1b420b12df4993146e` | 21,324 |
 | `tools/in_silico/cache/kinetics/delta_t_heatmap.png` | `87f2882c22bca8a9b4f69862a64d12634700cb5cb66a5842a3d0df660a2c2705` | 98,902 |
 | `tools/in_silico/cache/kinetics/delta_t_lookup.json` | `e35048010689622eca81d4d01490b1b9f4a5f1f205bd09ec31067c7c0974ef89` | 4,489 |

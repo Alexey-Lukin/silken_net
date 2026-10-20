@@ -4896,6 +4896,105 @@ def test_malate_metal_chelation_invariants():
     assert abs(d["competition"]["free_L_spread_vs_selected"]) < 0.1
 
 
+def test_coin_replicate_power_invariants():
+    """100 (00_07 HW.24, the replicate-power leg): what must hold whatever the assumed spread grid moves to.
+
+    CAN catch: a two-arm table that stops falling with n or rising with CV; a single-coupon contrast easier than an
+    equal-n one; the three gate readings losing their opposite trends, or the findings/verdict stating a trend the
+    margins do not show; pass probabilities at the threshold that are not exactly 0.5 · α · 0.5ⁿ; budget arithmetic
+    that no longer reproduces the letter's «at 19»; a Monte Carlo control outside its declared tolerance; a cache
+    stale against the code (one cell recomputed from the module). CANNOT catch: whether the CV grid is realistic —
+    no coin has been measured — or which reading of «≥ threshold» canon means.
+    """
+    import importlib.util
+
+    from lib.constants import (COIN_BENCHMARK_ALLOYS, COIN_CONTROL_ALLOY, COIN_ELECTRODE_ARMS, COIN_HOLD_DAYS,
+                               COIN_ORDER_CONTROL_HIGH, COIN_RESERVE_12WK_PER_ALLOY, COIN_UNCOATED_ICPMS_PER_ALLOY)
+    d = json.loads((KINETICS / "coin_replicate_power.json").read_text(encoding="utf-8"))
+    conv = d["conventions"]
+    ns, cvs = [str(n) for n in conv["n_grid"]], [f"{cv:.2f}" for cv in conv["cv_assumed_NOT_MEASURED"]]
+
+    eq, single = d["two_arm"]["ratio_detectable_equal_n"], d["two_arm"]["ratio_detectable_single_vs_n"]
+    for cv in cvs:
+        assert all(eq[cv][a] > eq[cv][b] for a, b in itertools.pairwise(ns)), cv
+        assert all(single[cv][n] > eq[cv][n] for n in ns), cv
+    for n in ns:
+        assert all(eq[a][n] < eq[b][n] for a, b in itertools.pairwise(cvs)), n
+    # the pooled reading has more degrees of freedom, so it resolves more in every cell; the single coupon's own spread
+    # never averages out, so no n takes its contrast below the known-spread floor
+    floor = d["two_arm"]["single_coupon_floor"]
+    for cv in cvs:
+        for n in ns:
+            assert d["two_arm"]["ratio_detectable_equal_n_pooled"][cv][n] < eq[cv][n], (cv, n)
+            assert floor[cv] < d["two_arm"]["ratio_detectable_single_vs_n_pooled"][cv][n] < single[cv][n], (cv, n)
+
+    g = d["gate"]
+    expect = {"every_coupon": "grows", "lower_bound": "shrinks", "arm_mean": "shrinks"}
+    assert d["findings"]["gate_margin_with_n"]["lower_bound_pooled"] == "shrinks"
+    for r, direction in expect.items():
+        for cv in cvs:
+            row = [g["margin_ratio_needed"][r][cv][n] for n in ns]
+            pairs = list(itertools.pairwise(row))
+            assert all(a < b for a, b in pairs) if direction == "grows" else all(a > b for a, b in pairs), (r, cv)
+        assert d["findings"]["gate_margin_with_n"][r] == direction
+        assert f"{direction} with n when every coupon" in d["verdict"] if r == "every_coupon" else True
+    for n in ns:
+        assert g["p_pass_at_threshold"]["arm_mean"][n] == 0.5
+        assert g["p_pass_at_threshold"]["lower_bound"][n] == pytest.approx(conv["alpha"], abs=1e-4)
+        assert g["p_pass_at_threshold"]["every_coupon"][n] == pytest.approx(0.5 ** int(n), abs=1e-4)
+    for cv in cvs:
+        tgt = g["D_p_pass_at_target"]
+        # non-strict: the cache rounds to 6 decimals, and a tight spread saturates the arm mean at 1.0
+        assert all(tgt["every_coupon"][cv][a] >= tgt["every_coupon"][cv][b] for a, b in itertools.pairwise(ns))
+        assert all(tgt["arm_mean"][cv][a] <= tgt["arm_mean"][cv][b] for a, b in itertools.pairwise(ns))
+
+    assert COIN_CONTROL_ALLOY not in d["selection"]["candidates"]
+    assert not set(COIN_BENCHMARK_ALLOYS) & set(d["selection"]["candidates"])
+    assert len(d["selection"]["candidates"]) == len(COIN_ELECTRODE_ARMS) - 1 - len(COIN_BENCHMARK_ALLOYS)
+    non_electrode = COIN_UNCOATED_ICPMS_PER_ALLOY + COIN_RESERVE_12WK_PER_ALLOY
+    c_arms = sum(v for arms in COIN_ELECTRODE_ARMS.values() for v in arms.values())
+    for n in ns:
+        b = d["budget"]["by_n"][n]
+        for alloy, row in b["per_alloy"].items():
+            assert row["coupons_needed"] == len(COIN_ELECTRODE_ARMS[alloy]) * int(n) + non_electrode
+            assert row["fits_letter_quote"] == (row["coupons_needed"] <= row["letter_quote_point"])
+        assert b["C_channel_days"] == c_arms * int(n) * COIN_HOLD_DAYS
+    assert d["budget"]["by_n"]["2"]["per_alloy"][COIN_CONTROL_ALLOY]["coupons_needed"] == COIN_ORDER_CONTROL_HIGH
+    ceiling = d["budget"]["letter_ceiling"]
+    single_rep = sorted(a for a, c in ceiling.items() if c["max_equal_n_per_arm"] < 2)
+    assert d["findings"]["alloys_whose_letter_quote_gives_an_arm_a_single_replicate"] == single_rep
+    assert all(a in d["verdict"] for a in single_rep)
+
+    ctl = d["control"]
+    assert ctl["tolerance"] == pytest.approx(4.0 * math.sqrt(conv["p_target"] * (1 - conv["p_target"]) / ctl["trials"]),
+                                             abs=1e-4)
+    for cell in ctl["cells"]:
+        assert cell["worst_miss"] <= ctl["tolerance"], cell
+        assert max(abs(p - conv["p_target"]) for p in cell["p_simulated"].values()) == pytest.approx(cell["worst_miss"],
+                                                                                                    abs=1e-4)
+
+    spec = importlib.util.spec_from_file_location("s100", REPO / "tools/in_silico/scripts/100_coin_replicate_power.py")
+    s100 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(s100)
+    sig = s100.sigma_log(0.10)
+    u = s100.solve_increasing(lambda x: s100.two_arm_power(x, sig, 3, 3), conv["p_target"])
+    assert math.exp(u) == pytest.approx(eq["0.10"]["3"], abs=1e-4), "the cache is stale against script 100"
+
+    mx = g["max_cv_for_best_case"]
+    assert all(v is None for r in mx["E"]["by_reading"].values() for v in r.values()), "E's best case IS its threshold"
+    assert all(mx["C"]["by_reading"]["lower_bound_pooled"][n] > mx["C"]["by_reading"]["lower_bound"][n] for n in ns)
+    assert "lower_bound_pooled" not in mx["D"]["by_reading"], "D is measured on its own arm only — nothing to pool"
+    for gate in ("C", "D"):
+        rows = mx[gate]["by_reading"]
+        assert all(rows["every_coupon"][a] > rows["every_coupon"][b] for a, b in itertools.pairwise(ns)), gate
+        for r in ("arm_mean", "lower_bound"):
+            assert all(rows[r][a] < rows[r][b] for a, b in itertools.pairwise(ns)), (gate, r)
+    best, thr = mx["C"]["best_case_ratio"], mx["C"]["threshold"]
+    cv_star = mx["C"]["by_reading"]["lower_bound"]["3"]
+    p = s100.pass_probability("lower_bound", math.log(best / thr), s100.sigma_log(cv_star), 3)
+    assert p == pytest.approx(conv["p_target"], abs=2e-3), "max_cv does not return P_TARGET at its own CV"
+
+
 def test_electrode_interfacial_ph_invariants():
     """85 (00_07 HW.5.IS, the coin half of the ΔpH leg, 2026-10-12): invariants that hold whatever the constants move to.
 

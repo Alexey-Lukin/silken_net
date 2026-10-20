@@ -5151,6 +5151,88 @@ CHECKS += [
 ]
 
 
+# ── HW.24 replicate power (100, 2026-10-20) ⟷ SUMMARY §«How Many Replicate Coupons per Arm?». The section rounds ratios
+# UP and CV ceilings and probabilities DOWN (in-silico §When Modifying #43), so each pin checks the ROUNDED number exactly.
+REPL = "kinetics/coin_replicate_power.json"
+
+
+def _ceil2(x):
+    return math.ceil(round(x * 100, 9)) / 100
+
+
+def _floor2(x):
+    return math.floor(round(x * 100, 9)) / 100
+
+
+def _floor_pct1(x):
+    return math.floor(round(x * 1000, 9)) / 10
+
+
+def _cells(head, j, width, unit=""):
+    """A table row of `width` cells after `head`, the j-th one captured."""
+    cells = [(N if i == j else r"[\d.]+") + unit for i in range(width)]
+    return rf"(?m)^\| {head} \| " + r" \| ".join(cells) + r" \|$"
+
+
+def _bracket_cell(n, j, half):
+    """The two-arm table: four «×own ⊥ ×pooled» cells per row; capture one half of the j-th."""
+    cells = []
+    for i in range(4):
+        own, pooled = (N if (i == j and half == 0) else r"[\d.]+"), (N if (i == j and half == 1) else r"[\d.]+")
+        cells.append(rf"×{own} ⊥ ×{pooled}")
+    return rf"(?m)^\| {n} \| " + r" \| ".join(cells) + r" \|$"
+
+
+_TWO_ARM_KEYS = (("ratio_detectable_equal_n", "0.10"), ("ratio_detectable_equal_n", "0.20"),
+                 ("ratio_detectable_single_vs_n", "0.10"), ("ratio_detectable_single_vs_n", "0.20"))
+CHECKS += [
+    *[(f"replicate two-arm n={n} col {j} {'pooled' if h else 'own'} → 100", SUMMARY, _bracket_cell(n, j, h), REPL,
+       (lambda nn, kk, cc: lambda d: _ceil2(d["two_arm"][kk][cc][nn]))(n, key + ("_pooled" if h else ""), cv), 0.0)
+      for n in "23456" for j, (key, cv) in enumerate(_TWO_ARM_KEYS) for h in (0, 1)],
+    *[(f"replicate single-coupon floor CV {cv} → 100", SUMMARY, pat, REPL,
+       (lambda cc: lambda d: _floor2(d["two_arm"]["single_coupon_floor"][cc]))(cv), 0.0)
+      for cv, pat in (("0.10", rf"stays above ×{N} at CV 10 %"), ("0.20", rf"\(×{N} at CV 20 %\)\.\n"))],
+    *[(f"replicate gate {g} {r} n={n} → 100", SUMMARY, _cells(f"{g} · {label}", j, 5, " %"), REPL,
+       (lambda gg, rr, nn: lambda d: _floor_pct1(d["gate"]["max_cv_for_best_case"][gg]["by_reading"][rr][nn]))(g, r, n),
+       0.0)
+      for g, rows in (("C", (("arm_mean", "arm mean"), ("lower_bound", "lower bound"),
+                             ("lower_bound_pooled", "lower bound, pooled"), ("every_coupon", "every coupon"))),
+                      ("D", (("arm_mean", "arm mean"), ("lower_bound", "lower bound"), ("every_coupon", "every coupon"))))
+      for r, label in rows
+      for j, n in enumerate("23456")],
+    ("replicate C best-case margin → 100", SUMMARY, rf"an arm that loses nothing, ×{N} above 80 %", REPL,
+     lambda d: d["gate"]["max_cv_for_best_case"]["C"]["best_case_ratio"] / d["gate"]["max_cv_for_best_case"]["C"]["threshold"],
+     0.0),
+    ("replicate D target every-coupon n=2 → 100", SUMMARY, rf"passes with probability {N} at n = 2 and [\d.]+ at n = 6",
+     REPL, lambda d: _floor2(d["gate"]["D_p_pass_at_target"]["every_coupon"]["0.20"]["2"]), 0.0),
+    ("replicate D target every-coupon n=6 → 100", SUMMARY, rf"passes with probability [\d.]+ at n = 2 and {N} at n = 6",
+     REPL, lambda d: _floor2(d["gate"]["D_p_pass_at_target"]["every_coupon"]["0.20"]["6"]), 0.0),
+    ("replicate E arm mean at threshold → 100", SUMMARY, rf"100 % passes with probability {N} \(arm mean\)",
+     REPL, lambda d: d["gate"]["p_pass_at_threshold"]["arm_mean"]["2"], 0.0),
+    ("replicate E lower bound at threshold → 100", SUMMARY, rf"\(arm mean\), {N} \(lower bound\)",
+     REPL, lambda d: d["gate"]["p_pass_at_threshold"]["lower_bound"]["2"], 1e-4),
+    ("replicate selection n=3 CV10 → 100", SUMMARY, rf"lead the others by ×{N} at n = 3 and CV 10 %",
+     REPL, lambda d: _ceil2(d["selection"]["ratio_needed"]["0.10"]["3"]), 0.0),
+    ("replicate selection n=3 CV20 → 100", SUMMARY, rf"\(×{N} at\nCV 20 %\)",
+     REPL, lambda d: _ceil2(d["selection"]["ratio_needed"]["0.20"]["3"]), 0.0),
+    *[(f"replicate budget {label} → 100", SUMMARY, pat, REPL, res, 0.0) for label, pat, res in (
+        ("control ceiling", rf"the control\s+carries n = {N} and",
+         lambda d: d["budget"]["letter_ceiling"]["Ti-6Al-4V"]["max_equal_n_per_arm"]),
+        ("CP-Ti ceiling", rf"and CP-Ti n = {N},", lambda d: d["budget"]["letter_ceiling"]["CP-Ti Gr4"]["max_equal_n_per_arm"]),
+        ("two-arm n=2", rf"two-arm alloys need {N} at n = 2",
+         lambda d: d["budget"]["by_n"]["2"]["per_alloy"]["Ti-6Al-7Nb"]["coupons_needed"]),
+        ("two-arm n=3", rf"need [\d.]+ at n = 2 and {N} at n = 3, Ti-6Al-4V",
+         lambda d: d["budget"]["by_n"]["3"]["per_alloy"]["Ti-6Al-7Nb"]["coupons_needed"]),
+        ("control n=2", rf"Ti-6Al-4V {N} and [\d.]+\. The 30-day",
+         lambda d: d["budget"]["by_n"]["2"]["per_alloy"]["Ti-6Al-4V"]["coupons_needed"]),
+        ("control n=3", rf"Ti-6Al-4V [\d.]+ and {N}\. The 30-day",
+         lambda d: d["budget"]["by_n"]["3"]["per_alloy"]["Ti-6Al-4V"]["coupons_needed"]),
+        ("C n=2", rf"runs {N} channel-days at n = 2", lambda d: d["budget"]["by_n"]["2"]["C_channel_days"]),
+        ("C n=3", rf"channel-days at n = 2 and {N} at n = 3", lambda d: d["budget"]["by_n"]["3"]["C_channel_days"]),
+    )],
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

@@ -1,0 +1,912 @@
+{
+  "script": "100_coin_replicate_power.py",
+  "conventions": {
+    "n_grid": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "cv_assumed_NOT_MEASURED": [
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ],
+    "sigma_log": {
+      "0.05": 0.049969,
+      "0.10": 0.099751,
+      "0.20": 0.198042,
+      "0.30": 0.29356
+    },
+    "alpha": 0.05,
+    "p_target": 0.8,
+    "two_arm_test": "two-sample t on log values, two-sided, equal spread in both arms",
+    "spread_readings": {
+      "own": "estimated from the contrast's or the arm's own coupons — robust if the arms' spreads differ; the adverse end",
+      "pooled": "estimated over every arm that measures the same quantity — the 30-day retention over the 8 arms of the hold C, a day-0 cathode current over the 7 titanium-cathode arms; valid only if they share one CV (this model's assumption); the optimistic end. D and E are measured on their own arm only — no pooled reading",
+      "pooled_arms": {
+        "hold_C": 8,
+        "titanium_cathodes": 7
+      }
+    },
+    "gate_readings": {
+      "arm_mean": "the arm's geometric mean ≥ threshold",
+      "lower_bound": "the one-sided 95% lower confidence bound of the geometric mean ≥ threshold",
+      "every_coupon": "every coupon ≥ threshold"
+    },
+    "selection_rule": "the highest sample geometric mean picks the winner; the other candidates equal",
+    "cv_floor": "the lab's stated repeatability of repeated scans on one coupon (test A) — a FLOOR on the between-coupon CV, not its value"
+  },
+  "two_arm": {
+    "ratio_detectable_equal_n": {
+      "0.05": {
+        "2": 1.326439,
+        "3": 1.165848,
+        "4": 1.126329,
+        "5": 1.106452,
+        "6": 1.093869
+      },
+      "0.10": {
+        "2": 1.757589,
+        "3": 1.358425,
+        "4": 1.268054,
+        "5": 1.223775,
+        "6": 1.196149
+      },
+      "0.20": {
+        "2": 3.063719,
+        "3": 1.83706,
+        "4": 1.60238,
+        "5": 1.493204,
+        "6": 1.427026
+      },
+      "0.30": {
+        "2": 5.25742,
+        "3": 2.463276,
+        "4": 2.011529,
+        "5": 1.811754,
+        "6": 1.694012
+      }
+    },
+    "ratio_detectable_single_vs_n": {
+      "0.05": {
+        "2": 2.717264,
+        "3": 1.385693,
+        "4": 1.268409,
+        "5": 1.228597,
+        "6": 1.208831
+      },
+      "0.10": {
+        "2": 7.356064,
+        "3": 1.917813,
+        "4": 1.607437,
+        "5": 1.508294,
+        "6": 1.46024
+      },
+      "0.20": {
+        "2": 52.553566,
+        "3": 3.643106,
+        "4": 2.565959,
+        "5": 2.261302,
+        "6": 2.120515
+      },
+      "0.30": {
+        "2": 355.197334,
+        "3": 6.796364,
+        "4": 4.042368,
+        "5": 3.351737,
+        "6": 3.047109
+      }
+    },
+    "ratio_detectable_equal_n_pooled": {
+      "0.05": {
+        "2": 1.173448,
+        "3": 1.129491,
+        "4": 1.108689,
+        "5": 1.095608,
+        "6": 1.086358
+      },
+      "0.10": {
+        "2": 1.376159,
+        "3": 1.275172,
+        "4": 1.228718,
+        "5": 1.199948,
+        "6": 1.179809
+      },
+      "0.20": {
+        "2": 1.88498,
+        "3": 1.620286,
+        "4": 1.505201,
+        "5": 1.436037,
+        "6": 1.388583
+      },
+      "0.30": {
+        "2": 2.559119,
+        "3": 2.04494,
+        "4": 1.833372,
+        "5": 1.709891,
+        "6": 1.626807
+      }
+    },
+    "ratio_detectable_single_vs_n_pooled": {
+      "0.05": {
+        "2": 1.221532,
+        "3": 1.189892,
+        "4": 1.178387,
+        "5": 1.172186,
+        "6": 1.168264
+      },
+      "0.10": {
+        "2": 1.491029,
+        "3": 1.414926,
+        "4": 1.387746,
+        "5": 1.373208,
+        "6": 1.36405
+      },
+      "0.20": {
+        "2": 2.210202,
+        "3": 1.991867,
+        "4": 1.916621,
+        "5": 1.876963,
+        "6": 1.852193
+      },
+      "0.30": {
+        "2": 3.240081,
+        "3": 2.777137,
+        "4": 2.623052,
+        "5": 2.543003,
+        "6": 2.493415
+      }
+    },
+    "single_coupon_floor": {
+      "0.05": 1.150264,
+      "0.10": 1.322418,
+      "0.20": 1.741649,
+      "0.30": 2.276034
+    },
+    "note": "single_vs_n — ONE coupon on one side (the gold coupon by order) against n on the other; _pooled — the spread pooled over the arms of the same quantity (conventions); single_coupon_floor — its limit with any n and a known spread (a z-test): the one coupon's own spread never averages out"
+  },
+  "gate": {
+    "thresholds": {
+      "C_retention_30d": 0.8,
+      "D_chloride": 0.9,
+      "D_chloride_target": 1.075,
+      "E_recovery": 1.0
+    },
+    "margin_ratio_needed": {
+      "arm_mean": {
+        "0.05": {
+          "2": 1.030184,
+          "3": 1.024578,
+          "4": 1.02125,
+          "5": 1.018985,
+          "6": 1.017317
+        },
+        "0.10": {
+          "2": 1.061161,
+          "3": 1.049664,
+          "4": 1.04287,
+          "5": 1.038259,
+          "6": 1.034868
+        },
+        "0.20": {
+          "2": 1.125084,
+          "3": 1.101013,
+          "4": 1.086909,
+          "5": 1.077388,
+          "6": 1.070414
+        },
+        "0.30": {
+          "2": 1.190892,
+          "3": 1.153319,
+          "4": 1.131488,
+          "5": 1.116827,
+          "6": 1.106127
+        }
+      },
+      "lower_bound": {
+        "0.05": {
+          "2": 1.335705,
+          "3": 1.12164,
+          "4": 1.085928,
+          "5": 1.070289,
+          "6": 1.061043
+        },
+        "0.10": {
+          "2": 1.782184,
+          "3": 1.257539,
+          "4": 1.178877,
+          "5": 1.145228,
+          "6": 1.125564
+        },
+        "0.20": {
+          "2": 3.149423,
+          "3": 1.576106,
+          "4": 1.386406,
+          "5": 1.308946,
+          "6": 1.264702
+        },
+        "0.30": {
+          "2": 5.476888,
+          "3": 1.962833,
+          "4": 1.623028,
+          "5": 1.49044,
+          "6": 1.416375
+        }
+      },
+      "every_coupon": {
+        "0.05": {
+          "2": 1.064475,
+          "3": 1.075863,
+          "4": 1.083498,
+          "5": 1.089195,
+          "6": 1.093716
+        },
+        "0.10": {
+          "2": 1.132844,
+          "3": 1.157166,
+          "4": 1.173617,
+          "5": 1.185968,
+          "6": 1.195815
+        },
+        "0.20": {
+          "2": 1.280994,
+          "3": 1.336174,
+          "4": 1.374152,
+          "5": 1.403011,
+          "6": 1.426234
+        },
+        "0.30": {
+          "2": 1.443505,
+          "3": 1.536626,
+          "4": 1.601809,
+          "5": 1.651926,
+          "6": 1.692618
+        }
+      }
+    },
+    "margin_ratio_needed_lower_bound_pooled_C": {
+      "0.05": {
+        "2": 1.101143,
+        "3": 1.077855,
+        "4": 1.066042,
+        "5": 1.058421,
+        "6": 1.052958
+      },
+      "0.10": {
+        "2": 1.21208,
+        "3": 1.161448,
+        "4": 1.136174,
+        "5": 1.120018,
+        "6": 1.108508
+      },
+      "0.20": {
+        "2": 1.465005,
+        "3": 1.346008,
+        "4": 1.288481,
+        "5": 1.252361,
+        "6": 1.226939
+      },
+      "0.30": {
+        "2": 1.761268,
+        "3": 1.55342,
+        "4": 1.456029,
+        "5": 1.395936,
+        "6": 1.354139
+      }
+    },
+    "p_pass_at_threshold": {
+      "arm_mean": {
+        "2": 0.5,
+        "3": 0.5,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.5
+      },
+      "lower_bound": {
+        "2": 0.05,
+        "3": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "every_coupon": {
+        "2": 0.25,
+        "3": 0.125,
+        "4": 0.0625,
+        "5": 0.03125,
+        "6": 0.015625
+      }
+    },
+    "D_p_pass_at_target": {
+      "arm_mean": {
+        "0.05": {
+          "2": 1.0,
+          "3": 1.0,
+          "4": 1.0,
+          "5": 1.0,
+          "6": 1.0
+        },
+        "0.10": {
+          "2": 0.994116,
+          "3": 0.998983,
+          "4": 0.999816,
+          "5": 0.999966,
+          "6": 0.999994
+        },
+        "0.20": {
+          "2": 0.897747,
+          "3": 0.939905,
+          "4": 0.963623,
+          "5": 0.977581,
+          "6": 0.986013
+        },
+        "0.30": {
+          "2": 0.803993,
+          "3": 0.85276,
+          "4": 0.886961,
+          "5": 0.912037,
+          "6": 0.930908
+        }
+      },
+      "lower_bound": {
+        "0.05": {
+          "2": 0.568522,
+          "3": 0.975496,
+          "4": 0.999673,
+          "5": 0.999998,
+          "6": 1.0
+        },
+        "0.10": {
+          "2": 0.306707,
+          "3": 0.635624,
+          "4": 0.847723,
+          "5": 0.942896,
+          "6": 0.97988
+        },
+        "0.20": {
+          "2": 0.163457,
+          "3": 0.282337,
+          "4": 0.400685,
+          "5": 0.506341,
+          "6": 0.597329
+        },
+        "0.30": {
+          "2": 0.120202,
+          "3": 0.182016,
+          "4": 0.243999,
+          "5": 0.303,
+          "6": 0.358678
+        }
+      },
+      "every_coupon": {
+        "0.05": {
+          "2": 0.999623,
+          "3": 0.999435,
+          "4": 0.999247,
+          "5": 0.999058,
+          "6": 0.99887
+        },
+        "0.10": {
+          "2": 0.926528,
+          "3": 0.891842,
+          "4": 0.858455,
+          "5": 0.826317,
+          "6": 0.795383
+        },
+        "0.20": {
+          "2": 0.664536,
+          "3": 0.541724,
+          "4": 0.441608,
+          "5": 0.359995,
+          "6": 0.293465
+        },
+        "0.30": {
+          "2": 0.529253,
+          "3": 0.38503,
+          "4": 0.280109,
+          "5": 0.203779,
+          "6": 0.148248
+        }
+      }
+    },
+    "max_cv_for_best_case": {
+      "C": {
+        "best_case_ratio": 1.0,
+        "threshold": 0.8,
+        "by_reading": {
+          "arm_mean": {
+            "2": 0.388531,
+            "3": 0.484538,
+            "4": 0.569826,
+            "5": 0.64898,
+            "6": 0.724344
+          },
+          "lower_bound": {
+            "2": 0.038535,
+            "3": 0.097364,
+            "4": 0.135882,
+            "5": 0.165258,
+            "6": 0.18986
+          },
+          "every_coupon": {
+            "2": 0.179885,
+            "3": 0.153376,
+            "4": 0.139714,
+            "5": 0.131063,
+            "6": 0.124955
+          },
+          "lower_bound_pooled": {
+            "2": 0.116117,
+            "3": 0.149548,
+            "4": 0.175685,
+            "5": 0.19829,
+            "6": 0.21862
+          }
+        }
+      },
+      "D": {
+        "best_case_ratio": 1.075,
+        "threshold": 0.9,
+        "by_reading": {
+          "arm_mean": {
+            "2": 0.305344,
+            "3": 0.378238,
+            "4": 0.441773,
+            "5": 0.499637,
+            "6": 0.55371
+          },
+          "lower_bound": {
+            "2": 0.03068,
+            "3": 0.07746,
+            "4": 0.108017,
+            "5": 0.131264,
+            "6": 0.150687
+          },
+          "every_coupon": {
+            "2": 0.142817,
+            "3": 0.121868,
+            "4": 0.111052,
+            "5": 0.104198,
+            "6": 0.099356
+          }
+        }
+      },
+      "E": {
+        "best_case_ratio": 1.0,
+        "threshold": 1.0,
+        "by_reading": {
+          "arm_mean": {
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null
+          },
+          "lower_bound": {
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null
+          },
+          "every_coupon": {
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null
+          }
+        }
+      }
+    },
+    "note": "margin_ratio_needed — true value / threshold for P(pass) = p_target; the same table for C, D, E. max_cv_for_best_case — the largest coupon-to-coupon CV at which the gate's best case (no loss · D's own target · full recovery) still passes with p_target; null where no spread lets it. lower_bound_pooled exists for C only (the retention every arm of the hold measures)"
+  },
+  "selection": {
+    "candidates": [
+      "Ti-6Al-7Nb",
+      "CP-Ti Gr4",
+      "Ti-13Nb-13Zr",
+      "Ti-15Zr"
+    ],
+    "control_excluded": "Ti-6Al-4V",
+    "benchmark_excluded": [
+      "Ta"
+    ],
+    "ratio_needed": {
+      "0.05": {
+        "2": 1.06918,
+        "3": 1.056136,
+        "4": 1.048436,
+        "5": 1.043214,
+        "6": 1.039376
+      },
+      "0.10": {
+        "2": 1.142861,
+        "3": 1.115196,
+        "4": 1.099025,
+        "5": 1.088123,
+        "6": 1.080146
+      },
+      "0.20": {
+        "2": 1.303579,
+        "3": 1.241679,
+        "4": 1.206187,
+        "5": 1.18255,
+        "6": 1.165399
+      },
+      "0.30": {
+        "2": 1.481391,
+        "3": 1.378324,
+        "4": 1.320328,
+        "5": 1.282156,
+        "6": 1.254689
+      }
+    },
+    "conditional_on": "one current metric deciding — canon names no rule combining current, retention and the ICP-MS rank"
+  },
+  "budget": {
+    "by_n": {
+      "2": {
+        "per_alloy": {
+          "Ti-6Al-4V": {
+            "electrode_arms": 5,
+            "coupons_needed": 19,
+            "letter_quote_point": 19,
+            "fits_letter_quote": true
+          },
+          "Ti-6Al-7Nb": {
+            "electrode_arms": 2,
+            "coupons_needed": 13,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "CP-Ti Gr4": {
+            "electrode_arms": 1,
+            "coupons_needed": 11,
+            "letter_quote_point": 12,
+            "fits_letter_quote": true
+          },
+          "Ti-13Nb-13Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 13,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ta": {
+            "electrode_arms": 2,
+            "coupons_needed": 13,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-15Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 13,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          }
+        },
+        "gold_coupons_needed": 2,
+        "gold_coupons_ordered": 1,
+        "test_A_coupons": 30,
+        "C_channels": 16,
+        "C_channel_days": 480,
+        "test_D_coupons": 2,
+        "test_E_coupons": 2
+      },
+      "3": {
+        "per_alloy": {
+          "Ti-6Al-4V": {
+            "electrode_arms": 5,
+            "coupons_needed": 24,
+            "letter_quote_point": 19,
+            "fits_letter_quote": false
+          },
+          "Ti-6Al-7Nb": {
+            "electrode_arms": 2,
+            "coupons_needed": 15,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "CP-Ti Gr4": {
+            "electrode_arms": 1,
+            "coupons_needed": 12,
+            "letter_quote_point": 12,
+            "fits_letter_quote": true
+          },
+          "Ti-13Nb-13Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 15,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ta": {
+            "electrode_arms": 2,
+            "coupons_needed": 15,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-15Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 15,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          }
+        },
+        "gold_coupons_needed": 3,
+        "gold_coupons_ordered": 1,
+        "test_A_coupons": 45,
+        "C_channels": 24,
+        "C_channel_days": 720,
+        "test_D_coupons": 3,
+        "test_E_coupons": 3
+      },
+      "4": {
+        "per_alloy": {
+          "Ti-6Al-4V": {
+            "electrode_arms": 5,
+            "coupons_needed": 29,
+            "letter_quote_point": 19,
+            "fits_letter_quote": false
+          },
+          "Ti-6Al-7Nb": {
+            "electrode_arms": 2,
+            "coupons_needed": 17,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "CP-Ti Gr4": {
+            "electrode_arms": 1,
+            "coupons_needed": 13,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-13Nb-13Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 17,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ta": {
+            "electrode_arms": 2,
+            "coupons_needed": 17,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-15Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 17,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          }
+        },
+        "gold_coupons_needed": 4,
+        "gold_coupons_ordered": 1,
+        "test_A_coupons": 60,
+        "C_channels": 32,
+        "C_channel_days": 960,
+        "test_D_coupons": 4,
+        "test_E_coupons": 4
+      },
+      "5": {
+        "per_alloy": {
+          "Ti-6Al-4V": {
+            "electrode_arms": 5,
+            "coupons_needed": 34,
+            "letter_quote_point": 19,
+            "fits_letter_quote": false
+          },
+          "Ti-6Al-7Nb": {
+            "electrode_arms": 2,
+            "coupons_needed": 19,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "CP-Ti Gr4": {
+            "electrode_arms": 1,
+            "coupons_needed": 14,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-13Nb-13Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 19,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ta": {
+            "electrode_arms": 2,
+            "coupons_needed": 19,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-15Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 19,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          }
+        },
+        "gold_coupons_needed": 5,
+        "gold_coupons_ordered": 1,
+        "test_A_coupons": 75,
+        "C_channels": 40,
+        "C_channel_days": 1200,
+        "test_D_coupons": 5,
+        "test_E_coupons": 5
+      },
+      "6": {
+        "per_alloy": {
+          "Ti-6Al-4V": {
+            "electrode_arms": 5,
+            "coupons_needed": 39,
+            "letter_quote_point": 19,
+            "fits_letter_quote": false
+          },
+          "Ti-6Al-7Nb": {
+            "electrode_arms": 2,
+            "coupons_needed": 21,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "CP-Ti Gr4": {
+            "electrode_arms": 1,
+            "coupons_needed": 15,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-13Nb-13Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 21,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ta": {
+            "electrode_arms": 2,
+            "coupons_needed": 21,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          },
+          "Ti-15Zr": {
+            "electrode_arms": 2,
+            "coupons_needed": 21,
+            "letter_quote_point": 12,
+            "fits_letter_quote": false
+          }
+        },
+        "gold_coupons_needed": 6,
+        "gold_coupons_ordered": 1,
+        "test_A_coupons": 90,
+        "C_channels": 48,
+        "C_channel_days": 1440,
+        "test_D_coupons": 6,
+        "test_E_coupons": 6
+      }
+    },
+    "letter_ceiling": {
+      "Ti-6Al-4V": {
+        "electrode_coupons": 10,
+        "electrode_arms": 5,
+        "max_equal_n_per_arm": 2,
+        "split_if_unequal": false
+      },
+      "Ti-6Al-7Nb": {
+        "electrode_coupons": 3,
+        "electrode_arms": 2,
+        "max_equal_n_per_arm": 1,
+        "split_if_unequal": true
+      },
+      "CP-Ti Gr4": {
+        "electrode_coupons": 3,
+        "electrode_arms": 1,
+        "max_equal_n_per_arm": 3,
+        "split_if_unequal": false
+      },
+      "Ti-13Nb-13Zr": {
+        "electrode_coupons": 3,
+        "electrode_arms": 2,
+        "max_equal_n_per_arm": 1,
+        "split_if_unequal": true
+      },
+      "Ta": {
+        "electrode_coupons": 3,
+        "electrode_arms": 2,
+        "max_equal_n_per_arm": 1,
+        "split_if_unequal": true
+      },
+      "Ti-15Zr": {
+        "electrode_coupons": 3,
+        "electrode_arms": 2,
+        "max_equal_n_per_arm": 1,
+        "split_if_unequal": true
+      }
+    },
+    "C_arms_counted": "the anodes and the Ti-6Al-4V pair; the channel order's «→ the rest» names no arm"
+  },
+  "control": {
+    "trials": 200000,
+    "seed": 20261020,
+    "tolerance": 0.003578,
+    "cells": [
+      {
+        "n": 2,
+        "cv": 0.3,
+        "p_simulated": {
+          "two_arm_equal": 0.799485,
+          "two_arm_single": 0.798775,
+          "two_arm_equal_pooled": 0.801105,
+          "two_arm_single_pooled": 0.79936,
+          "arm_mean": 0.79856,
+          "lower_bound": 0.79864,
+          "every_coupon": 0.80013,
+          "lower_bound_pooled": 0.798335,
+          "selection": 0.8006
+        },
+        "worst_miss": 0.001665
+      },
+      {
+        "n": 4,
+        "cv": 0.1,
+        "p_simulated": {
+          "two_arm_equal": 0.801845,
+          "two_arm_single": 0.800565,
+          "two_arm_equal_pooled": 0.801175,
+          "two_arm_single_pooled": 0.800135,
+          "arm_mean": 0.79947,
+          "lower_bound": 0.80011,
+          "every_coupon": 0.80102,
+          "lower_bound_pooled": 0.80183,
+          "selection": 0.79958
+        },
+        "worst_miss": 0.001845
+      }
+    ]
+  },
+  "findings": {
+    "gate_margin_with_n": {
+      "arm_mean": "shrinks",
+      "lower_bound": "shrinks",
+      "every_coupon": "grows",
+      "lower_bound_pooled": "shrinks"
+    },
+    "arm_mean_passes_a_borderline_arm_at_every_n": true,
+    "full_recovery_pass_probability": {
+      "arm_mean": {
+        "2": 0.5,
+        "3": 0.5,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.5
+      },
+      "lower_bound": {
+        "2": 0.05,
+        "3": 0.05,
+        "4": 0.05,
+        "5": 0.05,
+        "6": 0.05
+      },
+      "every_coupon": {
+        "2": 0.25,
+        "3": 0.125,
+        "4": 0.0625,
+        "5": 0.03125,
+        "6": 0.015625
+      }
+    },
+    "alloys_whose_letter_quote_gives_an_arm_a_single_replicate": [
+      "Ta",
+      "Ti-13Nb-13Zr",
+      "Ti-15Zr",
+      "Ti-6Al-7Nb"
+    ],
+    "selection_candidates": [
+      "Ti-6Al-7Nb",
+      "CP-Ti Gr4",
+      "Ti-13Nb-13Zr",
+      "Ti-15Zr"
+    ]
+  },
+  "verdict": "Gate readings move apart with n: the margin a good arm needs grows with n when every coupon must pass, shrinks under the lower confidence bound (pooled: shrinks) and shrinks under the arm mean — so n and the reading of «≥ threshold» are one decision. Under the arm-mean reading an arm sitting exactly at its threshold passes half the time at every n. Gate E's threshold is full recovery itself, so an electrode recovering exactly 100 % passes with probability 0.5 (arm mean), 0.05 (lower bound) or 0.25…0.015625 (every coupon) — whatever the spread. At the coupon letter's quote point (12 per alloy, 19 for Ti-6Al-4V) the two-arm alloys Ta, Ti-13Nb-13Zr, Ti-15Zr, Ti-6Al-7Nb carry their electrode coupons as 2 + 1, i.e. one arm on a single replicate; the gold coupon is single by order."
+}
