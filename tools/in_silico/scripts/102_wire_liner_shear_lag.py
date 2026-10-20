@@ -47,7 +47,8 @@ axial stiffness against the wire's, to show the wire does not set the share. Con
 solve of the two bars with an elastic-Coulomb interface and return mapping, (a) with a near-rigid interface — it must
 reproduce the closed form's virgin curve and Masing loop, (b) with the liner wall's own shear stiffness — its difference
 is printed as the stick compliance the closed form leaves out.
-CANNOT: (1) give the share at any bond state — the wood–anode coupling is not in the tree; (2) the compressive half —
+CANNOT: (1) give the share at any bond state — the wood–anode coupling is not in `102` (`103` gives it per state,
+conditional on the bark's bearing, the anode bond and the sleeve's tie); (2) the compressive half —
 PEEK's compressive yield and the capture's push-out are not in the tree, so the model is taken symmetric and the cold
 side is a reading; (3) a parallel tie of ice or resin in the wet gap or channel; (4) the capture's strength or form —
 taken as seizing the liner's top end; (5) the liner wall's creep under a sustained axial load, its fatigue as an
@@ -57,7 +58,7 @@ capsule's being a ceiling; (8) the anode face moving inside its own 18 mm press-
 (HW.8.9) — spans scale with it; (10) whether the sway shift is reversed or one-sided at a given anchor — both printed;
 (11) the THERMAL share: the heat reading takes the sleeve's FREE growth — the wood holding nothing — while a bonded anode
 and a flange on the bark make the distance follow the wood's own radial expansion, which the tree does not carry; so the
-pad-vs-window result is printed with the span's effective CTE at which it flips, and the seam's hot preload (a share-0
+pad-vs-window result is printed with the span's effective CTE at which it flips (`103`: within its model the wood only lowers it, never past the travel's sign change — the free sleeve is the adverse end), and the seam's hot preload (a share-0
 heat under a share-s sway) is inconsistent at high shares, moot where the cap binds; (12) the liner's own expansion over
 its run (PEEK on Ti) — δ enters at the liner's top only; with it the force falls and the pad's travel rises a little.
 
@@ -425,7 +426,7 @@ def main() -> int:
 
     # ── the thermal share: at which effective CTE of the span does each pad conclusion flip ──
     # The heat reading above takes PEEK's FREE growth over the span. A bonded anode and a flange on the bark make the span
-    # follow the wood instead — its radial CTE is not in the tree — so print the effective CTE (in place of α_PEEK over the
+    # follow the wood instead — its radial CTE is not in `102` (`103` takes xylem's) — so print the effective CTE (in place of α_PEEK over the
     # PEEK length) at which (a) the tightest grip's cold protrusion falls to each upper margin and (b) the floor part's hot
     # recession falls to each lower margin, per span and temperature reading.
     def pad_at(alpha_eff: float, span: tuple[float, float], t_c: float, part: str, mu: float) -> float:

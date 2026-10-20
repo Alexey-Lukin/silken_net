@@ -789,15 +789,17 @@ every part and grip — the tightest part at μ 0.4 included — against `90`'s 
 edge of 11.8 – 14.8 µm; at the hot edge a part at the window floor grips with nothing and its pad recedes 18.4 – 43.1 µm
 against 17.4 – 19.3 µm to the lower edge, past the larger margin on 3 of 4 readings; on the shipped span at the capsule edge even the tightest grip
 recedes 26.3 µm, past both. The smallest protrusion
-comes from a reading below the wall's cap, and a capture or wall that gives way moves the pad further. **The premise decides it:** a bonded anode and a flange on the bark make the span follow the wood's own radial
+comes from a reading below the wall's cap, and a capture or wall that gives way moves the pad further. **The premise decides it** (📌 2026-10-20 — not for pricing a fix: within the model the wood only shortens the thermal travel, `103`,
+§«How Much of the Stem's Shift Reaches the Anchor?»): a bonded anode and a flange on the bark make the span follow the wood's own radial
 expansion instead, and the cold result then holds only while the span's effective CTE stays above 25.2 – 25.8 ppm/K by
 reading (38.1 – 39.1 if a Zone-3 fit locates the flange and only the gap follows the wood), the hot one above
-25.9 – 31.3 — against 47 for free PEEK, and each threshold rounded up; the wood's radial CTE is not in the tree. So
+25.9 – 31.3 — against 47 for free PEEK, and each threshold rounded up; the wood's radial CTE is not in `102` (📌 `103`
+takes xylem's). So
 where L1 keeps the outer pins in their window — isothermally; at the same edges the radome-leads reading breaks it
 (`90`) — it keeps the centre one only if the wood holds the span below those thresholds.
 
-⚠️ **Bounds.** The share at any bond state is not computed (the wood–anode coupling is not in the tree) — for the sway
-and for the heat alike. The compressive half is taken symmetric (PEEK's compressive yield and the capture's push-out are
+⚠️ **Bounds.** The share at any bond state is not computed here (the wood–anode coupling is not in `102`) — for the
+sway and for the heat alike; 📌 `103` computes it per state, conditional on the bark's bearing, the anode bond and the sleeve's tie — its depth and stiffness. The compressive half is taken symmetric (PEEK's compressive yield and the capture's push-out are
 not in the tree). Not modelled: a tie of ice or resin in the wet gap or channel; the capture's strength and form (taken
 as seizing the liner's top); the wall's creep under a sustained load, its fatigue as an insulator and its plastic strain
 past the cap; the liner's own expansion over its run (it would lower the force and raise the pad's travel a little);
@@ -805,6 +807,82 @@ the weld's residual tension and HAZ; a temperature profile along the span (one t
 capsule's is a ceiling); the anode face moving inside its own press-fit; the placeholder Zone-3 shank (HW.8.9). The
 sway shift is one January day of one smaller pine (`87`) — a storm twice as windy roughly quadruples it. Cache:
 `mechanical/wire_liner_shear_lag.json`.
+
+---
+
+## HW.43 — How Much of the Stem's Shift Reaches the Anchor? (script 103)
+
+`102` leaves the share of the stem's shift the wood imposes on the anchor free, and prices the heat on the PEEK
+sleeve's free growth. `103` takes the share per bond state from what canon says holds each place the wood touches the
+anchor (`01_04 §2`, `§3.1`, `§3.3`): the anode, a Ø11 gyroid in the Ø15 channel, free until the callus fills it and
+bonded after; the sleeve, snug in the same channel and later tied by a callus ring that grows over Zone 2's outer edge;
+the flange, seated on faced dead bark that rises against it as the stem grows. One solver carries every state — the
+sleeve as two segments on three nodes, with the bark bearing at the flange, the tie below it and the anode bond at the
+anode's depth — and controls hold it to the closed forms of the simpler states. The anode bond is a shear lag in both
+radius-normal planes at once (G_eff = √(G_LR·G_RT): about 24 MPa for green *P. radiata* ⊥ 234 MPa for *P.
+sylvestris* at 22.8 % MC); the seam at each share is `102`'s own closed form, held to `102`'s cached grid by a control.
+No stiffness constant here is a green value for *P. sylvestris* (Bounds).
+
+| state | what reaches the anchor | share of the sway shift |
+|---|---|---|
+| 1 — anode not bonded | nothing at the anode end: 2 mm of radial clearance around the gyroid | 0, unless the channel grips the sleeve or ice fills the gap |
+| 2 — anode bonded, sleeve free below the bark | the anode bond, the sleeve and the bark bearing in series | 0.00 – 0.10 at the air-dry bark readings; the anode bond caps it at 0.72 (stiff) ⊥ 0.15 (soft) |
+| 3 — a rigid callus tie of the sleeve, the bark bearing acting too (canon's mature state) | the segment above the tie follows the wood through the bark, the one below through the anode bond | 0.02 – 0.71 over the tie's depth with no bearing, up to 0.72 ⊥ 0.30 at a rigid bark |
+
+**The tie's depth is an axis.** Callus grows from the cambium outward, and the stem's growth carries new wood along the
+sleeve toward the flange, so the tie sits anywhere between the flange and the install-day cambium — 11.3 ⊥ 24 mm below
+the flange seat on the thin ⊥ thick bark, the deepest it can be.
+
+**The heat: within the model, the wood only shortens the centre pad's thermal travel.** Holding the span lowers its
+effective CTE, but over every state, bond, bearing and tie depth the model spans never below 12.26 ppm/K (a rigid bark
+and the deepest tie at the stiff bond) — above the 8.6 ppm/K at which the pad's travel changes sign on `102`'s span,
+and on `102`'s own wire–liner pair the travel never falls as the shift grows (a control checks it). So, with the wood
+side at xylem's CTE, the free-sleeve reading `102` prices is the adverse end of the pad's thermal travel in every
+state, and a fix priced against it holds whatever the bond and the tie. A channel grip — a deeper tie of the same kind,
+not computed — reaches the sign change only within 0.71 mm of the anode face (a rigid tie 31.29 mm below the flange
+seat, at a rigid bark and the stiff bond), and even then, with the wood side at xylem's CTE, the CTE cannot fall below
+6.63 ppm/K, the span following the wood outright, so a reversed shift per kelvin stays under 5.2 % of the free
+sleeve's. Not in the tree, and of unsettled sign — able to lengthen the travel or to reverse it further: the bark's own
+thermal and humidity strain, its growth preload and frost. Whether the wood brings the pad back inside L1 stays open: in state 2, not while the bearing
+stays below 10411 N/mm (cold) ⊥ 5088 N/mm (hot) at the stiff bond, and never at any bearing at the soft one; in state 3
+at the stiff bond, the pad stays out only while the tie sits deeper than 9.2 mm (cold) ⊥ 14.1 mm (hot), even with no
+bearing, and at the soft bond with no bearing it stays out at every depth. The flange is taken as located by the bark
+(a Zone-3 fit, HW.8.9, is not computed here).
+
+**The bearing settles state 2 only.** The bark enters state 2 only as the bearing's stiffness k_F = E·A/t over the
+flange's annulus (A = 520.8 mm²) — what a flange mock pressed on faced bark measures as force over settlement. No
+green value of the bark's modulus was found, and the two air-dry readings — 0.87 MPa (giant sequoia, whole bark) and
+18 MPa (*P. taeda* outer bark, read off a load cell's travel) — give 21 – 1126 N/mm and bound the green bearing in
+neither direction: green bark is softer than air-dry, and the paper's own wood cube suggests the load-cell reading
+understates thin blocks by under 2×. The share rises with the bearing and the bond, so each state-2 conclusion has a
+bearing below which it does not happen at the stiff bond — hence at any bond — and, where the soft bond reaches it, one
+above which it happens at any bond:
+
+| what happens in state 2 | not below (stiff bond) | at any bond above |
+|---|---|---|
+| the share reaches `102`'s 0.25 row | 3927 N/mm | never |
+| Ta's seam passes k 1 on the sway alone (adverse reversed corner) | 3604 N/mm | never |
+| Ta's seam passes k 1 with `102`'s hot preload (adverse reversed corner) | 970 N/mm | 4137 N/mm |
+| the centre pad's hot conclusion flips | 5088 N/mm | never |
+| the centre pad's cold conclusion flips | 10411 N/mm | never |
+
+In the mature state the tie's depth and stiffness, the anode bond and the bearing decide together, and of these only
+the bearing can be measured on a log — where it no longer settles anything alone.
+
+**The seam.** Ta on the adverse reversed corner needs 0.3883 on the sway alone in state 1 and 0.64 with `102`'s seasonal
+hot preload, which is the anchor's own mismatch and acts in every state; in state 2 at the air-dry bark readings, up
+to 0.72 on the sway alone and up to 1.03 with the preload; in state 3 at the stiff bond, at least 0.93 on the sway alone
+and 1.18 with the preload whatever the tie's depth and the bearing (0.48 ⊥ 0.79 at the soft one) — past k 1 with the
+preload at the stiff bond, which is the moist-Scots-pine end of G, an upper end for green wood. Ti-6Al-4V needs at most
+0.55 at any share — the same as `102` gives at a share of 1, since the liner's wall caps it.
+
+⚠️ **Bounds.** The bark's growth preload against the flange and its humidity strain are not in the tree, and the span's
+wood side is taken at green pine xylem's 7.9 ppm/K. Frost is not a coefficient, and even its sign at a tie in the
+wound's reaction zone is not settled (green-wood specimens frost-shrink, heat-killed xylem swelled); ice in the anode's
+gap ties it at the cold edge with an unknown strength, and a channel grip is a deeper tie of the same kind, not
+computed. G is a green-radiata ⊥ moist-Scots-pine bracket (the radiata values carry one significant figure) and the
+anode bond our order-of-magnitude form with a bracket on its log term; for the slow heat the PEEK is relaxed and the
+bark and wood are not. The tie is rigid. Cache: `mechanical/anchor_wood_share.json`.
 
 ---
 
@@ -989,7 +1067,7 @@ no FEA, no fabricated numbers where the open literature genuinely does not have 
 **Verdict** — 🟡 Genuinely partial. No part is fully closed, and that is the honest result: each
 gets a named numeric threshold or a named reason the closed-form method does not apply, plus the
 exact missing datum that would close it (for the pogo spring the vendor spring drawing first, ⚖️ 2026-09-22, then a
-torsional S-N reference and the inputs script `87` names for the sway transfer — the clamp the bayonet delivers over temperature against the ring's lift, the O-ring force, the stack's mass and layout, the axial load at the bus wire's root and the share of the centre-pad term that reaches the pin (since 2026-10-17 in place of the press-fit and liner-grip capacities; since 2026-10-20 computed by `102` as a function of the share the wood imposes, which stays open), and the stem strain and acceleration at anchor height; HW.26's FEA output for the barb; and for the cycle budget a
+torsional S-N reference and the inputs script `87` names for the sway transfer — the clamp the bayonet delivers over temperature against the ring's lift, the O-ring force, the stack's mass and layout, the axial load at the bus wire's root and the share of the centre-pad term that reaches the pin (since 2026-10-17 in place of the press-fit and liner-grip capacities; since 2026-10-20 computed by `102` as a function of the share the wood imposes, and that share by `103`, conditional on the bark's bearing, the anode bond and the sleeve's tie), and the stem strain and acceleration at anchor height; HW.26's FEA output for the barb; and for the cycle budget a
 strain-range histogram at anchor height from a strain gauge on the trunk — not an anemometer, whose wind would still
 pass two unmeasured multipliers, ⚖️ 2026-09-23, [`01_02 §2.2`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)). The one clean correction is the
 genipin-matrix removal from the checkbox's own S-N framing — the durability question that actually

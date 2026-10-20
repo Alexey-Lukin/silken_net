@@ -5233,6 +5233,128 @@ CHECKS += [
 ]
 
 
+# ── HW.43 the wood's share (103, 2026-10-20) ⟷ SUMMARY §«How Much of the Stem's Shift Reaches the Anchor?». Ranges and
+# sets of thresholds round OUTWARD, «up to» UP, «no less than» DOWN (in-silico §When Modifying #43).
+SHARE = "mechanical/anchor_wood_share.json"
+
+
+def _vals(d, *path):
+    x = d
+    for k in path:
+        x = x[k]
+    return [v for v in x.values() if v is not None]
+
+
+_SH = "anode_bond_stiff"
+_SS = "anode_bond_soft"
+
+
+def _s3(d, side):
+    v = [x[side] for x in d["share"]["state3_no_bearing_any_depth_of_102_shift"].values()]
+    return min(v) if side == "min" else max(v)
+
+
+CHECKS += [
+    ("share G radiata → 103", SUMMARY, rf"√\(G_LR·G_RT\): about {N} MPa for green", SHARE, lambda d: round(d["inputs"]["G_eff_MPa"]["green_p_radiata_lowest_group"]), 0.0),
+    ("share G scots → 103", SUMMARY, rf"⊥ {N} MPa for \*P\.\s+sylvestris\* at 22\.8 % MC", SHARE, lambda d: round(d["inputs"]["G_eff_MPa"]["scots_pine_22_8pct_mc"]), 0.0),
+    ("share clearance → 103", SUMMARY, rf"nothing at the anode end: {N} mm of radial clearance", SHARE, lambda d: d["geometry"]["anode_radial_clearance_mm"], 0.0),
+    ("share state2 low → 103", SUMMARY, rf"\| {N} – [\d.]+ at the air-dry bark readings;", SHARE, lambda d: _down2(d["share"]["state2_at_air_dry_readings"]["min"]), 0.0),
+    ("share state2 high → 103", SUMMARY, rf"\| [\d.]+ – {N} at the air-dry bark readings;", SHARE, lambda d: _up2(d["share"]["state2_at_air_dry_readings"]["max"]), 0.0),
+    ("share cap2 stiff → 103", SUMMARY, rf"the anode bond caps it at {N} \(stiff\)", SHARE, lambda d: _up2(d["share"]["state2_cap_rigid_bark"][_SH]), 0.0),
+    ("share cap2 soft → 103", SUMMARY, rf"caps it at [\d.]+ \(stiff\) ⊥ {N} \(soft\)", SHARE, lambda d: _up2(d["share"]["state2_cap_rigid_bark"][_SS]), 0.0),
+    ("share state3 low → 103", SUMMARY, rf"\| {N} – [\d.]+ over the tie's depth with no bearing", SHARE, lambda d: _down2(_s3(d, "min")), 0.0),
+    ("share state3 high → 103", SUMMARY, rf"\| [\d.]+ – {N} over the tie's depth with no bearing", SHARE, lambda d: _up2(_s3(d, "max")), 0.0),
+    ("share cap3 stiff → 103", SUMMARY, rf"up to {N} ⊥ [\d.]+ at a rigid bark \|", SHARE, lambda d: _up2(d["share"]["state3_cap_rigid_bark_of_102_shift"][_SH]), 0.0),
+    ("share cap3 soft → 103", SUMMARY, rf"up to [\d.]+ ⊥ {N} at a rigid bark \|", SHARE, lambda d: _up2(d["share"]["state3_cap_rigid_bark_of_102_shift"][_SS]), 0.0),
+    ("share tie thin → 103", SUMMARY, rf"— {N} ⊥ [\d.]+ mm below\s+the flange seat", SHARE, lambda d: round(d["geometry"]["flange_seat_to_install_day_cambium_mm"]["thin_contact_78"], 1), 0.0),
+    ("share tie thick → 103", SUMMARY, rf"— [\d.]+ ⊥ {N} mm below\s+the flange seat", SHARE, lambda d: round(d["geometry"]["flange_seat_to_install_day_cambium_mm"]["thick_side_78"], 1), 0.0),
+    ("share cte floor → 103", SUMMARY, rf"never below {N} ppm/K \(a rigid bark", SHARE, lambda d: _down2(d["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
+    ("share cte coupled → 103", SUMMARY, rf"cannot fall below\s+{N} ppm/K, the span following", SHARE, lambda d: _down2(d["heat"]["cte_floor_span_follows_the_wood_ppm_K"]), 0.0),
+    ("share reversed pct → 103", SUMMARY, rf"stays under {N} % of", SHARE, lambda d: _ceil1(d["heat"]["reversed_shift_per_K_at_most_of_free_sleeve"] * 100), 0.0),
+    ("share grip depth → 103", SUMMARY, rf"a rigid tie {N} mm below the flange\s+seat", SHARE, lambda d: d["heat"]["deeper_tie_reaching_the_sign_change_mm_from_flange_seat"], 0.0),
+    ("share grip face → 103", SUMMARY, rf"only within {N} mm of the anode face", SHARE,
+     lambda d: _up2(d["geometry"]["span_mm"] - d["heat"]["deeper_tie_reaching_the_sign_change_mm_from_flange_seat"]), 0.0),
+    ("share cte reverse → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel changes sign", SHARE, lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"], 0.0),
+    ("share cte flag → 103", SUMMARY, rf"above the {N} ppm/K at which the pad's travel changes sign", SHARE,
+     lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"] if d["heat"]["wood_only_shortens_the_pad_travel"] else -1.0, 0.0),
+    ("share s2 cold → 103", SUMMARY, rf"below {N} N/mm \(cold\) ⊥ [\d.]+ N/mm \(hot\)", SHARE, lambda d: math.floor(d["readings"]["state2"]["cold"]["no_below"]), 0.0),
+    ("share s2 hot → 103", SUMMARY, rf"below [\d.]+ N/mm \(cold\) ⊥ {N} N/mm \(hot\)", SHARE, lambda d: math.floor(d["readings"]["state2"]["hot"]["no_below"]), 0.0),
+    ("share s3 cold depth → 103", SUMMARY, rf"deeper than {N} mm \(cold\) ⊥ [\d.]+\s+mm \(hot\)", SHARE,
+     lambda d: math.floor(d["readings"]["state3"]["cold"]["holds_only_deeper_than_mm"] * 10) / 10, 0.0),
+    ("share s3 hot depth → 103", SUMMARY, rf"deeper than [\d.]+ mm \(cold\) ⊥ {N}\s+mm \(hot\)", SHARE,
+     lambda d: math.floor(d["readings"]["state3"]["hot"]["holds_only_deeper_than_mm"] * 10) / 10, 0.0),
+    ("share annulus → 103", SUMMARY, rf"\(A = {N} mm²\)", SHARE, lambda d: d["geometry"]["flange_annulus_mm2"], 0.0),
+    ("share bark E low → 103", SUMMARY, rf"readings — {N} MPa \(giant", SHARE, lambda d: d["inputs"]["E_bark_radial_MPa_air_dry"]["sequoia_whole_bark_air_dry"], 0.0),
+    ("share bark E mid → 103", SUMMARY, rf"whole bark\) and\s+{N} MPa \(\*P\. taeda\*", SHARE, lambda d: d["inputs"]["E_bark_radial_MPa_air_dry"]["p_taeda_outer_bark_air_dry"], 0.0),
+    ("share read kF low → 103", SUMMARY, rf"give {N} – [\d.]+ N/mm and bound", SHARE, lambda d: math.floor(min(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
+    ("share read kF high → 103", SUMMARY, rf"give [\d.]+ – {N} N/mm and bound", SHARE, lambda d: math.ceil(max(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())), 0.0),
+    ("share Ta state1 → 103", SUMMARY, rf"corner needs {N} on the sway alone in state 1", SHARE, lambda d: d["seam_on_102_closed_form"]["Ta"]["state1"]["sway"], 0.0),
+    ("share Ta state1 preload → 103", SUMMARY, rf"state 1 and {N} with `102`'s seasonal", SHARE, lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state1"]["hot_preload"]), 0.0),
+    ("share Ta state2 sway → 103", SUMMARY, rf"up\s+to {N} on the sway alone and up to", SHARE,
+     lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state2_at_air_dry_readings_max"]["adverse_reversed"]), 0.0),
+    ("share Ta state2 preload → 103", SUMMARY, rf"and up to {N} with the preload;", SHARE,
+     lambda d: _up2(d["seam_on_102_closed_form"]["Ta"]["state2_at_air_dry_readings_max"]["adverse_reversed_hot_preload"]), 0.0),
+    ("share Ta state3 stiff sway → 103", SUMMARY, rf"at least {N} on the sway alone\s+and [\d.]+ with the preload", SHARE,
+     lambda d: _down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed"]), 0.0),
+    ("share Ta state3 stiff preload → 103", SUMMARY, rf"at least [\d.]+ on the sway alone\s+and {N} with the preload", SHARE,
+     lambda d: _down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"]), 0.0),
+    ("share Ta state3 soft sway → 103", SUMMARY, rf"\({N} ⊥ [\d.]+ at the soft one\)", SHARE,
+     lambda d: _down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SS]["adverse_reversed"]), 0.0),
+    ("share Ta state3 soft preload → 103", SUMMARY, rf"\([\d.]+ ⊥ {N} at the soft one\)", SHARE,
+     lambda d: _down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SS]["adverse_reversed_hot_preload"]), 0.0),
+    ("share Ta past k1 → 103", SUMMARY, rf"and {N} with the preload whatever the tie's depth", SHARE,
+     lambda d: (_down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"])
+                if d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"] >= 1.0 else -1.0), 0.0),
+    ("share 4V any share → 103", SUMMARY, rf"Ti-6Al-4V needs at most\s+{N} at any share", SHARE,
+     lambda d: _up2(max(d["seam_on_102_closed_form"]["Ti-6Al-4V"]["at_share_1"].values())), 0.0),
+    ("share 4V share1 → 102", SUMMARY, rf"Ti-6Al-4V needs at most\s+{N} at any share", "mechanical/wire_liner_shear_lag.json",
+     lambda d: _up2(max(v["seam_k"] for v in d["seam_by_alloy"]["Ti-6Al-4V"]["by_share"]["1"]["adverse"].values())), 0.0),
+    ("share xylem CTE → 103", SUMMARY, rf"green pine xylem's {N} ppm/K", SHARE, lambda d: d["inputs"]["alpha_xylem_green_ppm_K"], 0.0),
+    ("pipeline 103 cap2 stiff", PIPELINE, rf"capped by the anode bond at {N} \(stiff\)", SHARE, lambda d: _up2(d["share"]["state2_cap_rigid_bark"][_SH]), 0.0),
+    ("pipeline 103 cap2 soft", PIPELINE, rf"\(stiff\) ⊥ {N} \(soft\) with the sleeve free", SHARE, lambda d: _up2(d["share"]["state2_cap_rigid_bark"][_SS]), 0.0),
+    ("pipeline 103 read low", PIPELINE, rf"ties it\), {N}–[\d.]+ at the air-dry", SHARE, lambda d: _down2(d["share"]["state2_at_air_dry_readings"]["min"]), 0.0),
+    ("pipeline 103 read high", PIPELINE, rf"ties it\), [\d.]+–{N} at the air-dry", SHARE, lambda d: _up2(d["share"]["state2_at_air_dry_readings"]["max"]), 0.0),
+    ("pipeline 103 s3 low", PIPELINE, rf"with the sleeve free, {N}–[\d.]+ over the tie's depth", SHARE, lambda d: _down2(_s3(d, "min")), 0.0),
+    ("pipeline 103 s3 high", PIPELINE, rf"with the sleeve free, [\d.]+–{N} over the tie's depth", SHARE, lambda d: _up2(_s3(d, "max")), 0.0),
+    ("pipeline 103 cte floor", PIPELINE, rf"stays above {N} ppm/K, past the", SHARE, lambda d: _down2(d["heat"]["cte_min_ppm_K_over_the_model"]), 0.0),
+    ("pipeline 103 cte reverse", PIPELINE, rf"past the {N} at which the travel reverses", SHARE, lambda d: d["heat"]["cte_travel_reverses_ppm_K_102"], 0.0),
+    ("pipeline 103 Ta least", PIPELINE, rf"Ta needs at least {N} with the preload", SHARE,
+     lambda d: _down2(d["seam_on_102_closed_form"]["Ta"]["state3_least_any_depth_and_bearing"][_SH]["adverse_reversed_hot_preload"]), 0.0),
+]
+
+
+def test_wood_share_prose_claims_hold():
+    """103: the prose claims no number carries, each held to the cache — SUMMARY «never at any bearing at the soft one»
+    (every soft-bond state-2 reading of both pad conclusions None, not just one), «at the soft bond with no bearing it
+    stays out at every depth» (every soft-bond state-3 depth reading of both None), and 02_02 §3.5 ⊕ «сухі прочитання
+    лежать нижче порогів `103`» (the stiffest air-dry bearing below both pad conclusions' state-2 «no below»)."""
+    d = json.loads((REPO / "tools/in_silico/cache" / SHARE).read_text(encoding="utf-8"))
+    pads = [n for n in d["state2_bearing_N_per_mm"] if n.startswith(("hot_flip_", "cold_flip_"))]
+    assert all(v is None for n in pads for k, v in d["state2_bearing_N_per_mm"][n].items() if k.endswith(_SS))
+    assert all(v is None for n in pads for k, v in d["state3_tie_depth_mm_no_bearing"][n].items() if k.endswith(_SS))
+    kf_max = max(d["stiffness_N_per_mm"]["bark_bearing_at_air_dry_readings"].values())
+    assert kf_max < min(d["readings"]["state2"][s]["no_below"] for s in ("hot", "cold"))
+
+
+def test_wood_share_state2_table_matches_cache():
+    """103: SUMMARY's state-2 table rebuilt from the cache, cell by cell — «never» included, which no numeric pin can see:
+    the «at any bond above» cell is «never» exactly when the cache holds None (the soft bond never reaches it); numbers
+    round to the side that keeps the cell true (floor for «not below», ceil for «above»)."""
+    d = json.loads((REPO / "tools/in_silico/cache" / SHARE).read_text(encoding="utf-8"))
+    text = (REPO / SUMMARY).read_text(encoding="utf-8")
+    labels = {"share_0.25": "the share reaches `102`'s 0.25 row",
+              "ta_k1_sway_alone": "Ta's seam passes k 1 on the sway alone (adverse reversed corner)",
+              "ta_k1_hot_preload": "Ta's seam passes k 1 with `102`'s hot preload (adverse reversed corner)",
+              "hot": "the centre pad's hot conclusion flips", "cold": "the centre pad's cold conclusion flips"}
+    assert set(labels) == set(d["readings"]["state2"])
+    for name, label in labels.items():
+        no, yes = d["readings"]["state2"][name]["no_below"], d["readings"]["state2"][name]["yes_above"]
+        a = "never" if no is None else ("any bearing" if no == 0.0 else f"{math.floor(no)} N/mm")
+        b = "never" if yes is None else f"{math.ceil(yes)} N/mm"
+        row = f"| {label} | {a} | {b} |"
+        assert row in text, f"SUMMARY state-2 table row drifted from the cache — expected:\n{row}"
+
+
 # ── HW.43 wire–liner shear lag (102, 2026-10-20) ⟷ SUMMARY §«The Bus Wire in Its Liner». Requirements «k ≥ X» round UP;
 # ranges of shares and ratios round OUTWARD; «at least» travel rounds DOWN (in-silico §When Modifying #43).
 SHEAR = "mechanical/wire_liner_shear_lag.json"
