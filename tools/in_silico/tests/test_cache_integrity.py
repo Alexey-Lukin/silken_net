@@ -5017,6 +5017,99 @@ def test_script_40_t_table_matches_scipy():
     for df, value in s40.T_ONE_SIDED_95.items():
         assert value == pytest.approx(stats.t.ppf(0.95, df), abs=5e-5), df
 
+
+def test_bus_torsion_budget_invariants():
+    """101 (00_07 HW.26, the bus-twist leg): every cell against its closed form, recomputed HERE from `55`'s spans, the
+    lib's alloy and PEEK constants and `55`'s and `77`'s caches — not from the script's own algebra.
+
+    CAN catch: a wrong yield factor or a swapped criterion (each of the four angle cells is recomputed with σ_y/√3 and
+    σ_y/2); an inverted or mis-sized liner share (the «liner_bonded» length is rebuilt from the liner's own GJ); a run,
+    a span or a liner ID/OD that no longer matches `55`; a wire or tube yield torque off τ·J/r; a grip off μ·p·A·d/2 with
+    `55`'s pressure and area, or a creep factor off PEEK_RELAX_FLOOR; a flip threshold off the tube's torque over the
+    wire's Tresca torque per MPa; a wind rotation stale against `77` or taken at the centroid instead of the bark end,
+    and its torque off the stiff bound; a margin, a knockdown or a flag that does not follow from those. CANNOT catch:
+    a wrong pressure or factor INSIDE `55`'s or `77`'s cache (their own tests' domain), fracture beyond first yield, a
+    drawn wire's or the weld HAZ's own yield, the capture's strength, a parallel tie, or whether an event slips the
+    flange at all — the script's declared ceilings.
+    """
+    import importlib.util
+
+    from lib.constants import (
+        ALLOY_PROPERTIES,
+        D_BUS_ROD_MM,
+        E_PEEK_PA,
+        NU_PEEK,
+        PEEK_RELAX_FLOOR,
+        SIGMA_YIELD_PEEK_PA,
+    )
+    d = json.loads((MECHANICAL / "bus_torsion_budget.json").read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("s55_torsion", REPO / "tools/in_silico/scripts/55_bus_mechanical.py")
+    s55 = importlib.util.module_from_spec(spec)
+    sys.modules["s55_torsion"] = s55          # 55 declares dataclasses, which look their module up here
+    spec.loader.exec_module(s55)
+    dw, r = D_BUS_ROD_MM, D_BUS_ROD_MM / 2
+    bare = s55.PEEK_GAP_MM - s55.LINER_PROTRUSION_MM
+    lin = s55.LINER_LENGTH_MM
+    l_id = s55.LINER_BORE_SPECIFIED_MM
+    l_od = l_id + 2 * s55.LINER_WALL_MM
+    geo = d["geometry"]
+    assert geo["run_mm"] == pytest.approx(s55.PEEK_GAP_MM + s55.BORE_DEPTH_MM, abs=1e-6), "the cache is stale against 55"
+    assert (geo["bare_run_mm"], geo["liner_run_mm"]) == pytest.approx((bare, lin), abs=1e-6)
+    assert (geo["liner_id_mm"], geo["liner_od_mm"]) == pytest.approx((l_id, l_od), abs=1e-5)
+    j_w = math.pi / 32 * dw ** 4
+    j_l = math.pi / 32 * (l_od ** 4 - l_id ** 4)
+    gj_l = E_PEEK_PA / 1e6 / (2 * (1 + NU_PEEK)) * j_l
+    k = {"von_mises": 1 / math.sqrt(3), "tresca": 0.5}
+
+    h = d["holder"]
+    tube = {c: kk * SIGMA_YIELD_PEEK_PA / 1e6 * j_l / (l_od / 2) for c, kk in k.items()}
+    for c in k:
+        assert h["liner_tube_first_yield_torque_Nmm"][c] == pytest.approx(tube[c], abs=0.006)
+    win = json.loads((MECHANICAL / "bus_mechanical.json").read_text(encoding="utf-8"))["interference_window"]
+    p_nom = win["per_um_radial_MPa"]["P_c"] * (dw - l_id) / 2 * 1e3
+    normal = p_nom * win["cold_press_fit"]["contact_area_mm2"]
+    assert h["grip_nominal_pressure_MPa"] == pytest.approx(p_nom, abs=6e-4)
+    assert h["grip_normal_force_N"] == pytest.approx(normal, abs=0.06)
+    grips = h["grip_torque_Nmm_by_mu"]
+    assert grips["fit_floor_40C"] == 0.0
+    for mu in win["axial_friction_lock"]["mu_sweep"]:
+        assert grips["nominal_fit_20C"][f"{mu:g}"] == pytest.approx(mu * normal * r, abs=0.06)
+        assert grips["creep_relaxed_fit"][f"{mu:g}"] == pytest.approx(mu * normal * r * PEEK_RELAX_FLOOR, abs=0.06)
+    tube_hi = max(tube.values())
+    assert h["tube_yields_below_grip_on_every_mu"] == {
+        "nominal_fit": tube_hi < min(grips["nominal_fit_20C"].values()),
+        "creep_relaxed_fit": tube_hi < min(grips["creep_relaxed_fit"].values())}
+    flip = tube_hi / (0.5 * j_w / r)
+    assert d["wire_yield_below_which_the_order_flips_MPa"] == pytest.approx(flip, abs=0.06)
+
+    wb = json.loads((MECHANICAL / "anchor_torque_path.json").read_text(encoding="utf-8"))["wind_bracket"]
+    wind = max(s["rotation_gyroid_vs_sleeve_rad"] for s in wb["species"]) * wb["bark_end_peak_factor"]["rigid_gyroid"]
+    assert d["wind_bark_end"]["rotation_max_rad"] == pytest.approx(wind, rel=1e-9), "stale against 77, or not the bark end"
+
+    wind_torques = []
+    for alloy, row in d["by_alloy"].items():
+        p = ALLOY_PROPERTIES[alloy]
+        g = p["E_GPa"] * 1e3 / (2 * (1 + p["nu"]))
+        share = g * j_w / (g * j_w + gj_l)
+        lengths = {"top_clamped": bare + lin, "liner_bonded": bare + lin * share}
+        wind_torques.append(wind * g * j_w / lengths["liner_bonded"])
+        for c, kk in k.items():
+            tau = kk * p["yield_MPa"]
+            assert row["wire_yield_torque_Nmm"][c] == pytest.approx(tau * j_w / r, abs=0.006), (alloy, c)
+            for run, length in lengths.items():
+                assert row["theta_y_rad"][f"{c}__{run}"] == pytest.approx(tau * length / (g * r), abs=2e-6), (alloy, c, run)
+        lo = min(row["theta_y_rad"].values())
+        assert lo == row["theta_y_rad"]["tresca__liner_bonded"], alloy
+        assert row["theta_y_deg_min"] == pytest.approx(math.degrees(lo), abs=1e-3)
+        assert row["theta_y_deg_max"] == pytest.approx(math.degrees(row["theta_y_rad"]["von_mises__top_clamped"]), abs=1e-3)
+        assert row["margin_over_wind_bark_end"] == pytest.approx(lo / wind, abs=0.06), alloy
+        assert row["root_yield_knockdown_tolerated"] == pytest.approx(flip / p["yield_MPa"], abs=6e-4), alloy
+        assert row["tube_yields_before_wire"] == (tube_hi < min(row["wire_yield_torque_Nmm"].values())), alloy
+    assert d["wind_bark_end"]["torque_through_wire_max_Nmm"] == pytest.approx(max(wind_torques), abs=6e-5)
+    assert d["findings"]["tube_yields_before_wire_on_every_alloy"] == all(
+        row["tube_yields_before_wire"] for row in d["by_alloy"].values())
+
+
 def test_electrode_interfacial_ph_invariants():
     """85 (00_07 HW.5.IS, the coin half of the ΔpH leg, 2026-10-12): invariants that hold whatever the constants move to.
 

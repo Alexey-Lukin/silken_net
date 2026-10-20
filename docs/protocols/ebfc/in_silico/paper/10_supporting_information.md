@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 326 · 20,865,079 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 328 · 20,901,664 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -47,6 +47,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/07_parameterize_pvi.py` | `5436510655a0106d4d0d6f87b6970766cd33789f746e957fddec362d583905b5` | L2 step 2f — parameterize poly(vinylimidazole) backbone (PVI, no Os) for GAFF. |
 | `tools/in_silico/scripts/08_parameterize_sbma.py` | `e75be6f2572e2e16510f6616149bdde068a5a02ffc10eba1d456662cecdce8d7` | L2 step 2g — parameterize SBMA monomer (zwitterionic anti-biofouling) for GAFF. |
 | `tools/in_silico/scripts/100_coin_replicate_power.py` | `a2e519d4ab6d095349f7e691a6d42fa6d95569fc1247e4c7132c8c2843d5abdb` | Statistical design of the Stage-2 coin test: the smallest arm-to-arm ratio, the margin above an acceptance threshold under three readings of the gate, and the alloy-selection gap that 2–6 replicate coupons per arm resolve, under an assumed log-normal coupon-to-coupon spread estimated per contrast or pooled over the arms that share it, with the coupon budget per replicate count and a Monte Carlo check of every closed form; no SCF |
+| `tools/in_silico/scripts/101_bus_torsion_budget.py` | `53685f27147a81388a4a59d6f308c59975344bda64f91e93f55a0b5d8e53d44f` | Torsion budget of the anchor's welded bus wire: the elastic twist angle and torque to first surface yield over the run from the weld root to the pad plane, per candidate alloy, under two yield criteria and two readings of the twisted run, set against the torque at which the press-fitted PEEK liner — the only in-tree holder of the wire's top — yields in torsion or its grip slips, the wire yield below which that order flips, and the stem-torsion rotation at the sleeve's bark end; no solve |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | `b56c5791d674b8d4be97c986afa3bc74d9343331ed706dc380dcff25e551bd41` | L2 — full stability MD: GcGDH + FAD + genipin matrix in xylem-like water box. |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | `28c8a0919352ea39c45ea353f1764bf90a12cb12bef5ce397970e4a62d174ac7` | L2-extended — full matrix stability MD: protein + FAD + genipin + chitosan + CNC. |
 | `tools/in_silico/scripts/12_temperature_sweep_md.py` | `c4a7ac5844f2e508bb1b87fe49435f205b848cb07452994531359f5399a8732d` | L2 — temperature sweep: full matrix stability at multiple temperatures. |
@@ -139,8 +140,8 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig1_graphical_abstract_draft.py` | `56fa0b5e5e7f4388817a94f5b415088e068e2e1ad61920ada56d5521c77aa927` | Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender). |
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
-| `tools/in_silico/tests/test_cache_integrity.py` | `632bc5779d0f7cfac0afa397d6f83a5f07a6e02d50d1fc60becf6e150b208f0c` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `d60b7a6c2623df3e1d35233d57d498e55cd4efbe1bf41f913a282195fd61a4f9` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_cache_integrity.py` | `c1cbf4d86e57e38d71f4a8f766d8374d2811838ed75bccb4d6ed7fc4ffca5da9` | Verify integrity of committed in-silico cache and ligand files. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `733af762354694bc9cad2dbe5598f4b32b8afd8e5a29f785cb2f206629fe356a` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -254,6 +255,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/mechanical/bayonet_thermal_clamp.json` | `9db04c34870047e20b76c92aa747b0935e22b1c1d16b2ae2f7fa01650731fd1f` | 71,669 |
 | `tools/in_silico/cache/mechanical/bus_contact_equilibrium.json` | `69cba405183613e4b462f6e5ff7717f7eb49888d34186f7eac7e1dc775a44088` | 72,799 |
 | `tools/in_silico/cache/mechanical/bus_mechanical.json` | `68de8e77fc683f471c2816bcf92f32922c97a3294ce61820d317646b7f0ac35c` | 234,387 |
+| `tools/in_silico/cache/mechanical/bus_torsion_budget.json` | `b4013141afe2ffd2b4fbc855d794c0006c0aadb90bba86d5948c637b13849e38` | 8,066 |
 | `tools/in_silico/cache/mechanical/coaxiality_allocation.json` | `eab64258c6f4e38df440791f62bbef7a90b85479ff56b3d30eecd74ab28d3f5b` | 24,988 |
 | `tools/in_silico/cache/mechanical/collar_running_clearance.json` | `3b9f44aa783c38fc39ee18bfb5eff2ae2dd3a46d38982ccfe242e68d67cd05c3` | 4,209 |
 | `tools/in_silico/cache/mechanical/collar_wall_inversion.json` | `0cb6ea63053fb6a149ccc21e26e00ded17decd1aa7d14ca797b72e4ce136d5b9` | 5,541 |

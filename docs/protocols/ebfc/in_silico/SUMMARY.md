@@ -740,6 +740,58 @@ window is what the two RFQs answer — wider means sorting around the same targe
 ⊕ **2026-10-14/15 (`92`):** within the ratified ⌀0.10 the mouth edge keeps the PEEK below its flow pressure over the cycle on every swept shank and entry radius, but the EXIT edge passes 1·σ_y at r 0.05 mm (×1.18 at 50 µm; below 3·σ_y) — under an offset the exit radius has a floor of 0.1 mm (shipped shank, entry radius 0.2 mm, flush exit, zero interference); and from ≈ 30 µm the wire under the mouth edge swings more than the root (×1.88 once the mouth stays loaded) — «sound» in that regime needs that section's notch factor, which no model here gives.
 ---
 
+## HW.26 — How Far Can the Bus Wire Twist? (script 101)
+
+Once HW.8.9 makes the Zone-3 shank a fit, an event torque on the flange (the bayonet, a branch, an animal) reacts
+through the Zone-1 shank's friction too, and slip under force means rotation without a bound — and with it the bus
+twists (`01_01 §4.3` C, «Межі присуду»). `101` gives the angle and the torque at which the Ø1.0 wire's surface first
+yields, per candidate alloy, over the run from the weld root to the pad plane: 17 mm of bare wire in the PEEK gap
+plus 18 mm under the liner, 35 mm in all (`55`'s spans, from the CEMs; the Zone-3 shank length in them is still a
+placeholder, HW.8.9). Two readings make each range: von Mises ⊥ Tresca, and the run twisting as bare wire (which needs
+a capture that clamps the wire itself) ⊥ the liner bonded to it as a parallel tube (the stiff bound, which pushes
+more of the angle into the bare run). Angles and margins are rounded down, torque ranges outward.
+
+| alloy | σ_y, MPa | elastic below | yield torque, N·mm | × the wind's rotation |
+|---|---|---|---|---|
+| Ta | 345 | 9.7 – 11.5° | 33.8 – 39.2 | ≥ 62 |
+| CP-Ti Gr4 | 480 | 24.0 – 28.6° | 47.1 – 54.5 | ≥ 152 |
+| Ti-6Al-4V | 880 | 41.3 – 49.2° | 86.3 – 99.8 | ≥ 262 |
+| Ti-6Al-7Nb | 850 | 41.9 – 50.0° | 83.4 – 96.4 | ≥ 266 |
+| Ti-15Zr | 950 | 49.0 – 58.5° | 93.2 – 107.7 | ≥ 311 |
+| β-Ti-13Nb-13Zr | 900 | 57.5 – 69.2° | 88.3 – 102.1 | ≥ 365 |
+
+**What turns the wire's top gives way first.** The wire's top end is the contact pad, and nothing in the tree holds
+it but the PEEK liner, captured at the pad plane by a feature not yet designed — a series, so the wire twists to its
+yield only if every link carries its yield torque (in-silico §When Modifying #44). The liner tube first yields in
+torsion at 13.7 – 15.9 N·mm, below the wire on every alloy; its grip on the wire carries 30.3 – 121.1 N·mm at the
+nominal fit (μ swept 0.1 – 0.4, 20 °C) and no less than 19.7 N·mm after creep, so the tube goes before the grip —
+except at the fit's floor (+40 °C), where the grip is zero and slips at once. With the tree's holder an unbounded
+event slip therefore yields or slips the liner, or slips the capture. That is not a soft outcome: the liner is the
+channel's insulation through the cathode (`01_01 §1.4`), in the pad plane today's flange has no other dielectric
+between the bus end and the cathode metal (`02_02 §1.2`; the ratified PEEK ring is built after the HW.9 pin), and any
+rotation there loads the channel closure (a requirement, not yet drawn). The FMEA row is about that insulation, not
+about the bus as a conductor. The wire itself yields only if another link carries its torque: a capture that clamps
+the wire, or a parallel tie of ice or hardened resin in the wet gap or channel (`87`), which can feed torque into the
+wire through the grip without crossing the tube's top — no number in the tree bounds such a tie. The order holds for
+any wire yield above 162 MPa; tantalum, the weakest, keeps it while its weld root keeps at least 47 % of the table's
+yield.
+
+The wind's rotation at the sleeve's bark end, where the flange sits (`77` × its rigid-gyroid bark-end factor), is at
+most 2.75 mrad and forces at most 0.55 N·mm through the wire — far below the tube's yield and the wire's budget on
+any alloy.
+
+⚠️ **Bounds.** First yield, not fracture: plastic twisting and the turns a drawn wire survives are not in the tree.
+The wire's yield is `lib.constants` ALLOY_PROPERTIES, as in `86` — a drawn wire's own yield is not there, β-Ti's has no
+source, and the weld root's heat-affected-zone yield is not in the tree (the 162 MPa threshold stands in for it). The
+tube's figure is first yield of a free tube: the fit's own stress, +40 °C and creep each lower it — safe for the
+order, but not the torque the liner survives. The capture is not designed; the order assumes one that seizes the
+liner's top end, while one that clamps the liner's OD over the flange disc passes torque through the wall into the
+grip. No rotation at which the liner gives way is given — it needs the liner's own compliance with Coulomb slip, so
+that switch is cut. Whether an event slips the flange at all is the event-torque verdict's question. Cache:
+`mechanical/bus_torsion_budget.json`.
+
+---
+
 ## HW.6 — Thermal install: the radial field the 1D estimate could not see (script 58)
 
 ⚖️ **Процедуру ЗНЯТО founder'ом 2026-09-09** — канон [`01_04 §3.5`](../../../01_04_CODIT_and_Xylemointegration.md)

@@ -5233,6 +5233,66 @@ CHECKS += [
 ]
 
 
+# ── HW.26 bus torsion budget (101, 2026-10-20) ⟷ SUMMARY §«How Far Can the Bus Wire Twist?». Angles and margins are
+# «below it, harmless» thresholds — rounded DOWN; torque ranges round OUTWARD; the wind's «at most» rotation rounds UP
+# (in-silico §When Modifying #43).
+TORSION = "mechanical/bus_torsion_budget.json"
+_TORSION_ROWS = (("Ta", "Ta"), ("CP-Ti Gr4", "CP-Ti-Gr4"), ("Ti-6Al-4V", "Ti-6Al-4V"), ("Ti-6Al-7Nb", "Ti-6Al-7Nb"),
+                 ("Ti-15Zr", "Ti-15Zr"), ("β-Ti-13Nb-13Zr", "beta-Ti-13Nb-13Zr"))
+
+
+def _floor1(x):
+    return math.floor(round(x * 10, 9)) / 10
+
+
+def _ceil1(x):
+    return math.ceil(round(x * 10, 9)) / 10
+
+
+def _torsion_row(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(6)]
+    cells = [num[0], f"{num[1]} – {num[2]}°", f"{num[3]} – {num[4]}", f"≥ {num[5]}"]
+    return rf"(?m)^\| {label} \| " + r" \| ".join(cells) + r" \|$"
+
+
+def _torsion_margin(d, key):
+    return math.floor(d["by_alloy"][key]["theta_y_deg_min"] / math.degrees(d["wind_bark_end"]["rotation_max_rad"]))
+
+
+CHECKS += [
+    *[(f"torsion {key} col {j} → 101", SUMMARY, _torsion_row(label, j), TORSION, res, 0.0)
+      for label, key in _TORSION_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: d["by_alloy"][k]["yield_MPa"])(key),
+          (lambda k: lambda d: _floor1(d["by_alloy"][k]["theta_y_deg_min"]))(key),
+          (lambda k: lambda d: _floor1(d["by_alloy"][k]["theta_y_deg_max"]))(key),
+          (lambda k: lambda d: _floor1(d["by_alloy"][k]["wire_yield_torque_Nmm"]["tresca"]))(key),
+          (lambda k: lambda d: _ceil1(d["by_alloy"][k]["wire_yield_torque_Nmm"]["von_mises"]))(key),
+          (lambda k: lambda d: _torsion_margin(d, k))(key)))],
+    ("torsion bare run → 101", SUMMARY, rf"{N} mm of bare wire in the PEEK gap", TORSION, lambda d: d["geometry"]["bare_run_mm"], 0.0),
+    ("torsion liner run → 101", SUMMARY, rf"plus {N} mm under the liner", TORSION, lambda d: d["geometry"]["liner_run_mm"], 0.0),
+    ("torsion whole run → 101", SUMMARY, rf"under the liner, {N} mm in all", TORSION, lambda d: d["geometry"]["run_mm"], 0.0),
+    ("torsion tube yield low → 101", SUMMARY, rf"torsion at {N} – [\d.]+ N·mm, below the wire", TORSION,
+     lambda d: _floor1(d["holder"]["liner_tube_first_yield_torque_Nmm"]["tresca"]), 0.0),
+    ("torsion tube yield high → 101", SUMMARY, rf"torsion at [\d.]+ – {N} N·mm, below the wire", TORSION,
+     lambda d: _ceil1(d["holder"]["liner_tube_first_yield_torque_Nmm"]["von_mises"]), 0.0),
+    ("torsion grip low → 101", SUMMARY, rf"carries {N} – [\d.]+ N·mm at the", TORSION,
+     lambda d: _floor1(min(d["holder"]["grip_torque_Nmm_by_mu"]["nominal_fit_20C"].values())), 0.0),
+    ("torsion grip high → 101", SUMMARY, rf"carries [\d.]+ – {N} N·mm at the", TORSION,
+     lambda d: _ceil1(max(d["holder"]["grip_torque_Nmm_by_mu"]["nominal_fit_20C"].values())), 0.0),
+    ("torsion grip after creep → 101", SUMMARY, rf"no less than {N} N·mm after creep", TORSION,
+     lambda d: _floor1(min(d["holder"]["grip_torque_Nmm_by_mu"]["creep_relaxed_fit"].values())), 0.0),
+    ("torsion flip yield → 101", SUMMARY, rf"any wire yield above {N} MPa", TORSION,
+     lambda d: math.ceil(d["wire_yield_below_which_the_order_flips_MPa"]), 0.0),
+    ("torsion Ta root knockdown → 101", SUMMARY, rf"keeps at least {N} % of the table's", TORSION,
+     lambda d: math.ceil(round(d["wire_yield_below_which_the_order_flips_MPa"] / d["by_alloy"]["Ta"]["yield_MPa"] * 100, 9)), 0.0),
+    ("torsion wind bark-end max → 101", SUMMARY, rf"most {N} mrad and forces", TORSION,
+     lambda d: _ceil2(d["wind_bark_end"]["rotation_max_rad"] * 1e3), 0.0),
+    ("torsion wind torque → 101", SUMMARY, rf"forces at most {N} N·mm through the wire", TORSION,
+     lambda d: _ceil2(d["wind_bark_end"]["torque_through_wire_max_Nmm"]), 0.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
