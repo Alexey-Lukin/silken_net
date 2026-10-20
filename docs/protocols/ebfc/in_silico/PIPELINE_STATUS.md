@@ -14,8 +14,10 @@
 > **Ran 2026-10-14 10:59 → 2026-10-15 12:30 — the acceptors (⚖️ founder 2026-10-14, the note under D):** `21e b3lyp-relaxed-os2`
 > then `b3lyp-relaxed-os3` on Cl, then on NO₂ (SO₂CF₃ only on the founder's word after NO₂), estimate 17–37 h. It ran
 > in the git worktree `/Users/oleksiilukin/silken_net-acceptors` (detached at `6e5315d70`; 25.5 h end to end, of it Cl 6.4 h and NO₂ 18.0 h of optimisation), on that tree's own copies of
-> the (3а)/(3б) caches, so the main tree's caches stay committed and green; log `tools/in_silico/21e_relaxed_acceptors_2026-10-14.log`
-> there; after each point the chain snapshots both caches to `tools/in_silico/cache/runs/acceptors/after_{cl,no2}/`.
+> the (3а)/(3б) caches, so the main tree's caches stay committed and green; after each point the chain snapshots both caches
+> to `tools/in_silico/cache/runs/acceptors/after_{cl,no2}/`. The log `tools/in_silico/21e_relaxed_acceptors_2026-10-14.log` and
+> both snapshots are kept in THIS tree, outside git; the worktree was removed 2026-10-20, its two caches byte-identical to
+> the committed ones.
 > **Copy back only from a snapshot**, and only when both `vs_series` and `vs_vertical` are present, no `*_partial` key is
 > left, and every Os(II) complex has its `dE_red_eV` and an adiabatic row; and only after `git diff --quiet 6e5315d70 HEAD --`
 > on the three caches, `21e`, `lib/dft_utils.py` and `lib/constants.py`. Exit codes do not mean success — judge each
