@@ -135,6 +135,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 44. A cap on a SERIES route is its WEAKEST link, and a threshold at which a link gives way needs THAT link's own compliance — model the route by its stiff member alone and the threshold comes out an order of magnitude low, and the dichotomy «holds → still / gives way → moves» is false
 45. «Conservative», «overstates», «the adverse end» is a claim about the DIRECTION of an error, and it needs a ground of its own — check that it does not rest on the datum you excluded, or on the input's extremes standing in for the output's
 46. A sign claim over N cells that share one functional, one continuum, one reference convention and one relativistic treatment is ONE claim, not N — set its smallest margin against every shared term of known sign, the ones your own limits paragraph names included, before calling the sign robust
+47. A design or precision table's degrees of freedom are an analysis READING, not a given — estimate the spread per contrast (robust if the arms differ) ⊥ pooled over the arms that measure the SAME quantity (licensed by a one-spread assumption the model already makes): publish both, and pool only across one quantity
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
