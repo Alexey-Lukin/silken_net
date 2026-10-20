@@ -4,7 +4,7 @@
 >
 > **Honesty line (mirrors Methods §2.7):** the numbers were computed in the RECORDED environment of S1 (PySCF 2.11.0 · geomeTRIC 1.1 · Python 3.12); the conda-lock beside it was generated later and resolves PySCF 2.13.1, so a re-run under the lock is a reproduction attempt, not a replay. The committed caches (S3) ARE the reported results — re-running a DFT script writes a new cache and is a new measurement. The size of the lock gap was MEASURED (records under `cache/reproduction/`, listed in S3): for scripts 20 and 32 total energies agree to ≤ 4e-10 Ha and every reported number is identical, and the gas-phase FO-DFT coupling of script 24b reproduces exactly; the B3LYP osmium couple of script 21f does NOT — its ΔE_red(III→II) reads −4.3841 eV under the lock against the committed −4.3808 eV — because PySCF 2.13.0 fixed the PCM switching radius of ECP atoms (pull request 3159), a change every metal-in-continuum number inherits; script 75 attributes the 21f gap to that fix. None of these runs touched the committed caches.
 >
-> Files in this manifest: 332 · 21,168,825 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
+> Files in this manifest: 332 · 21,183,843 bytes. Bundle for upload: `python tools/in_silico/scripts/72_paper_supporting_information.py --bundle out/si --zip`.
 
 ## S1. Recorded computational environment
 
@@ -133,7 +133,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/91_liner_exit_contact.py` | `8e8e3dbe48f765106feceebf80b4984cf8e59cd900130bd284a486cc3559be19` | Contact of the bus rod's PEEK liner with the Ti channel at its exit, as an elastic-layer contact problem coupled to the rod's bending. |
 | `tools/in_silico/scripts/92_liner_mouth_contact.py` | `79731dc593664033e55f4825a77db90abdec5274196fe19de9587b1901da546b` | Contact of the bus rod's PEEK liner with the Ti channel at its mouth under an offset of the channel axis, two patches coupled through the rod's bending. |
 | `tools/in_silico/scripts/93_malate_metal_chelation.py` | `d0113672603db590c2bc0c61f1ddee94c962194e66309a3f698e010c2539587d` | How strongly the cathode medium's malate (10 mM, pH 4.5) pulls the nanozyme's copper, cobalt and cerium into solution at equilibrium: the side-reaction coefficient of each trace metal over every stability-constant set read in its source. |
-| `tools/in_silico/scripts/94_os_soc_quenching_model.py` | `d5cdbd6999d103c8800a8b78989091693fae28a622f17edb32c482808551bcec` | L3 spin–orbit quenching of the Os(II/III) couple: one-hole t2g model with ζ from the literature Os³⁺ splitting, the t2g splitting that keeps the SOC-shifted like-for-like cascade (95) downhill, under two normalisations and three splitting patterns; no SCF |
+| `tools/in_silico/scripts/94_os_soc_quenching_model.py` | `cb5ff70ca9108ed74b975dd40eab7c9636249671b649dfd58c6f6417917987e6` | L3 spin–orbit quenching of the Os(II/III) couple: one-hole t2g model with ζ from the literature Os³⁺ splitting, the t2g splitting that keeps the SOC-shifted like-for-like cascade (95) downhill, under two normalisations and three splitting patterns; no SCF |
 | `tools/in_silico/scripts/95_cascade_like_for_like.py` | `da98345d8db16229a8a3995d997bd8b0fbcba3ed1c8ffd5d3a4f0379e8b0078d` | L3 anode cascade like-for-like: the 2e⁻/2H⁺ FAD potential at 32b's four levels (MMFF electronic = 32 · relaxed · + ZPE · + RRHO) against the Os(III/II) couple of each computed form (21f · 34 · 21e relaxed) on one SHE scale, the distance to the measured cascade split by side; no SCF |
 | `tools/in_silico/scripts/96_os_couple_thermo.py` | `e2aa5ad79dda39725cca0bf5c824ab659744da5b695c5b9699743d776e899f71` | L3 Os(III/II) couple harmonic thermochemistry (analytic C-PCM Hessian, B3LYP/6-31G(d)+LANL2DZ(Os)) on the device mediator's adiabatic chloro form, so the like-for-like cascade (95) carries the ZPE and RRHO terms on both sides for that form |
 | `tools/in_silico/scripts/97_wire_under_liner_edges.py` | `fd666e26dc7c06238fc7f6f84bcc5bd729bb91f585cf948e8f4aec1ef62ce4e6` | The bus wire under the liner's edges: the mouth and exit contact pressure carried through the PEEK layer onto the Ti surface (layer on an elastic half-space), added to the wire's nominal bending along the drag cycle, and the weld knockdown below which the welded root stays the critical section |
@@ -143,7 +143,7 @@ Numbered scripts are listed in pipeline order (the numeric prefix encodes the DA
 | `tools/in_silico/scripts/fig2_pymol_cartoon.py` | `6f09934132a342adc8c015a420f9f421b43d17282a99d17684dcd10d783db392` | Fig 2 (publication cartoon) — dgrGcGDH AF3 structure + the burial depth of the flavin. |
 | `tools/in_silico/tests/__init__.py` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | — |
 | `tools/in_silico/tests/test_cache_integrity.py` | `97b0d6d7112d540b1300147f7ae36ae26b8388b8f0017d442937a477c87c7ef6` | Verify integrity of committed in-silico cache and ligand files. |
-| `tools/in_silico/tests/test_doc_cache_sync.py` | `fa7ddf3224d3eda385612f80d8904caf6b474ec559ae0e48527368d16271bb31` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
+| `tools/in_silico/tests/test_doc_cache_sync.py` | `c7b7d380cf0a7890ac51c1b375e6cd156cbc2ddf1ad832903330653b280c9ab7` | Doc↔cache numeric-drift guard for the EBFC in-silico pipeline. |
 | `tools/in_silico/tests/test_unified_lame.py` | `9404448725a1958b11a2ff6fc1f5ebaeb05ebec5a20f0cca1482968ff3c22f14` | Unit gates for the unified thick-wall Lamé core (lib.mechanics). |
 | `tools/in_silico/tests/test_validate_vs_experiment.py` | `e5adcef7857fa9223eaa52b2b8eccde1bfb6597ce663bf677bc3c849164bfdd9` | Script 40 (Ti-coin Stage 2 comparison) — its acceptance gates and key classes, plus the |
 
@@ -203,7 +203,7 @@ Every JSON is written by exactly one owner script (in-silico rule «one cache pe
 | `tools/in_silico/cache/dft/os_mediator_series_wb97x.json` | `94f3bb3a519f67bfe9430ea77682feb191a2d163478bf98f48b980c03b0f12b8` | 11,327 |
 | `tools/in_silico/cache/dft/os_mediator_series_wb97x_631gd.json` | `8cc9c9d7564963d409a09f14406d2ff4a22748d97e9d0fd299244a4fa609d609` | 2,586 |
 | `tools/in_silico/cache/dft/os_series_vs_measured.json` | `b860d7f2596c56ce338f7b553f88a7190163e6855df0d26c7a81a370fdefc229` | 44,730 |
-| `tools/in_silico/cache/dft/os_soc_quenching_model.json` | `69d18ba1bb2a638caaa8f6390dffb7719a8b722d4e4a52d9e13079791297ed09` | 3,268 |
+| `tools/in_silico/cache/dft/os_soc_quenching_model.json` | `94f7ee603e93bebc57b36960e0dd27b6a0af66994d58c94b21635b2dc0edeed8` | 10,251 |
 | `tools/in_silico/cache/dft/outer_sphere_lambda.json` | `9d395fceb824526b6fc2d7d835e800718f3bf6fafe17c9226bb535e0c9ce2f3e` | 3,942 |
 | `tools/in_silico/cache/dft/pcet_cascade.json` | `eb89dc05f591b558976b65df0db137d1185d5ca68eeb3043478ee610cdcfddfb` | 14,794 |
 | `tools/in_silico/cache/dft/pcet_redox_potential.json` | `399f75f34bd60ce5407ab5762ed9402559fc9ac6167c4763bc97d62f16b8cc80` | 775 |

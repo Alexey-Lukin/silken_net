@@ -7,7 +7,8 @@
       "zeta_eV": 0.343436,
       "f_target": {
         "A_whole_shift_scales": 0.728333,
-        "B_only_zeta_scales": 0.762692
+        "B_only_zeta_scales": 0.762692,
+        "C_stabilisation_itself": 0.636217
       },
       "threshold_eV": {
         "A_whole_shift_scales": {
@@ -17,6 +18,10 @@
         "B_only_zeta_scales": {
           "one_up": 0.134929,
           "two_up": 0.391749
+        },
+        "C_stabilisation_itself": {
+          "one_up": 0.223123,
+          "two_up": 1.042121
         }
       },
       "rhombic_f": {
@@ -41,13 +46,15 @@
           "delta0.20_eV": 0.474764,
           "delta0.30_eV": 0.39075
         }
-      }
+      },
+      "pair_floor_mV_C": 171.7
     },
     "split_5061_cm1": {
       "zeta_eV": 0.418323,
       "f_target": {
         "A_whole_shift_scales": 0.728333,
-        "B_only_zeta_scales": 0.805174
+        "B_only_zeta_scales": 0.805174,
+        "C_stabilisation_itself": 0.522324
       },
       "threshold_eV": {
         "A_whole_shift_scales": {
@@ -57,6 +64,10 @@
         "B_only_zeta_scales": {
           "one_up": 0.13211,
           "two_up": 0.34856
+        },
+        "C_stabilisation_itself": {
+          "one_up": 0.391105,
+          "two_up": 9.150825
         }
       },
       "rhombic_f": {
@@ -81,7 +92,8 @@
           "delta0.20_eV": 0.532554,
           "delta0.30_eV": 0.451143
         }
-      }
+      },
+      "pair_floor_mV_C": 209.2
     }
   },
   "summary": {
@@ -94,7 +106,210 @@
       0.62
     ],
     "quoted_rounding": "up to 0.01 eV — a sufficiency threshold",
-    "note": "every cell stays downhill with the quenched shift if the t2g splitting of Os(III) is at least the threshold — one_up: the hole on a single orbital, two_up: on a degenerate pair (a split pair, rhombic_f, lowers it further); the device complex's splitting is not in any cache — do not read it from the Os(III) HOMO–LUMO gap"
+    "A_B_not_a_criterion": "ref 63's own rows refute A and B (vs_ref63_table_s2) — these two ranges are kept for the record",
+    "C_upper_zeta_one_up_threshold_eV": 0.4,
+    "C_upper_zeta_two_up_threshold_eV": 9.16,
+    "C_upper_zeta_pair_floor_mV": 209.2,
+    "note": "every cell stays downhill with the quenched shift if the t2g splitting of Os(III) is at least the threshold — one_up: the hole on a single orbital, two_up: on a degenerate pair (a split pair, rhombic_f, lowers it further); only the C reading at the upper ζ is supported by ref 63's own rows (vs_ref63_table_s2), and under it a hole on a pair never gets below the margin in practice; the device complex's splitting is not in any cache — do not read it from the Os(III) HOMO–LUMO gap"
+  },
+  "vs_ref63_table_s2": {
+    "source": "Srnec et al. 2008 (ref 63) SI Table S2, CASSCF(5,3)/CASPT2/CASSI, TZP/DZ, every Os row",
+    "by_splitting": {
+      "split_4155_cm1": {
+        "[OsCl6]4-/3-": {
+          "f": 0.967818,
+          "cassi_mV": 400.0,
+          "model_mV": {
+            "A_whole_shift_scales": 290.3,
+            "B_only_zeta_scales": 288.9,
+            "C_stabilisation_itself": 332.4
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -109.7,
+            "B_only_zeta_scales": -111.1,
+            "C_stabilisation_itself": -67.6
+          }
+        },
+        "[Os(NH3)6]2+/3+": {
+          "f": 0.8577,
+          "cassi_mV": 362.0,
+          "model_mV": {
+            "A_whole_shift_scales": 257.3,
+            "B_only_zeta_scales": 251.1,
+            "C_stabilisation_itself": 294.6
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -104.7,
+            "B_only_zeta_scales": -110.9,
+            "C_stabilisation_itself": -67.4
+          }
+        },
+        "[Os(CN)6]4-/3-": {
+          "f": 0.929807,
+          "cassi_mV": 333.0,
+          "model_mV": {
+            "A_whole_shift_scales": 278.9,
+            "B_only_zeta_scales": 275.9,
+            "C_stabilisation_itself": 319.3
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -54.1,
+            "B_only_zeta_scales": -57.1,
+            "C_stabilisation_itself": -13.7
+          }
+        },
+        "[Os(en)3]2+/3+": {
+          "f": 0.659462,
+          "cassi_mV": 292.0,
+          "model_mV": {
+            "A_whole_shift_scales": 197.8,
+            "B_only_zeta_scales": 183.0,
+            "C_stabilisation_itself": 226.5
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -94.2,
+            "B_only_zeta_scales": -109.0,
+            "C_stabilisation_itself": -65.5
+          }
+        },
+        "[Os(bipy)3]2+/3+": {
+          "f": 0.564759,
+          "cassi_mV": 250.0,
+          "model_mV": {
+            "A_whole_shift_scales": 169.4,
+            "B_only_zeta_scales": 150.5,
+            "C_stabilisation_itself": 194.0
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -80.6,
+            "B_only_zeta_scales": -99.5,
+            "C_stabilisation_itself": -56.0
+          }
+        },
+        "[Os(H2O)6]2+/3+": {
+          "f": 0.280757,
+          "cassi_mV": 152.0,
+          "model_mV": {
+            "A_whole_shift_scales": 84.2,
+            "B_only_zeta_scales": 53.0,
+            "C_stabilisation_itself": 96.4
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -67.8,
+            "B_only_zeta_scales": -99.0,
+            "C_stabilisation_itself": -55.6
+          }
+        }
+      },
+      "split_5061_cm1": {
+        "[OsCl6]4-/3-": {
+          "f": 0.973498,
+          "cassi_mV": 400.0,
+          "model_mV": {
+            "A_whole_shift_scales": 292.0,
+            "B_only_zeta_scales": 288.9,
+            "C_stabilisation_itself": 407.2
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -108.0,
+            "B_only_zeta_scales": -111.1,
+            "C_stabilisation_itself": 7.2
+          }
+        },
+        "[Os(NH3)6]2+/3+": {
+          "f": 0.881976,
+          "cassi_mV": 362.0,
+          "model_mV": {
+            "A_whole_shift_scales": 264.6,
+            "B_only_zeta_scales": 250.6,
+            "C_stabilisation_itself": 369.0
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -97.4,
+            "B_only_zeta_scales": -111.4,
+            "C_stabilisation_itself": 7.0
+          }
+        },
+        "[Os(CN)6]4-/3-": {
+          "f": 0.942108,
+          "cassi_mV": 333.0,
+          "model_mV": {
+            "A_whole_shift_scales": 282.6,
+            "B_only_zeta_scales": 275.8,
+            "C_stabilisation_itself": 394.1
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -50.4,
+            "B_only_zeta_scales": -57.2,
+            "C_stabilisation_itself": 61.1
+          }
+        },
+        "[Os(en)3]2+/3+": {
+          "f": 0.711333,
+          "cassi_mV": 292.0,
+          "model_mV": {
+            "A_whole_shift_scales": 213.4,
+            "B_only_zeta_scales": 179.2,
+            "C_stabilisation_itself": 297.6
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -78.6,
+            "B_only_zeta_scales": -112.8,
+            "C_stabilisation_itself": 5.6
+          }
+        },
+        "[Os(bipy)3]2+/3+": {
+          "f": 0.62558,
+          "cassi_mV": 250.0,
+          "model_mV": {
+            "A_whole_shift_scales": 187.7,
+            "B_only_zeta_scales": 143.4,
+            "C_stabilisation_itself": 261.7
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -62.3,
+            "B_only_zeta_scales": -106.6,
+            "C_stabilisation_itself": 11.7
+          }
+        },
+        "[Os(H2O)6]2+/3+": {
+          "f": 0.337521,
+          "cassi_mV": 152.0,
+          "model_mV": {
+            "A_whole_shift_scales": 101.3,
+            "B_only_zeta_scales": 22.9,
+            "C_stabilisation_itself": 141.2
+          },
+          "model_minus_cassi_mV": {
+            "A_whole_shift_scales": -50.7,
+            "B_only_zeta_scales": -129.1,
+            "C_stabilisation_itself": -10.8
+          }
+        }
+      }
+    },
+    "A_B_model_minus_cassi_mV": {
+      "A_whole_shift_scales": [
+        -109.7,
+        -50.4
+      ],
+      "B_only_zeta_scales": [
+        -129.1,
+        -57.1
+      ]
+    },
+    "C_upper_zeta_model_minus_cassi_mV": {
+      "[OsCl6]4-/3-": 7.2,
+      "[Os(NH3)6]2+/3+": 7.0,
+      "[Os(CN)6]4-/3-": 61.1,
+      "[Os(en)3]2+/3+": 5.6,
+      "[Os(bipy)3]2+/3+": 11.7,
+      "[Os(H2O)6]2+/3+": -10.8
+    },
+    "bipy_cassi_mV": 250.0,
+    "bipy_cassi_past_first_flip": true,
+    "bipy_hole_pattern": "one_up — the 1²A hole on a single orbital, the 2²A/3²A pair 0.281–0.283 eV above",
+    "reading": "A and B under-predict every row and are not a criterion; C at the upper ζ is the reading ref 63's rows support (all but [Os(CN)6] within a dozen mV)"
   },
   "cannot": [
     "the device complex's t2g splitting (no cache holds it)",

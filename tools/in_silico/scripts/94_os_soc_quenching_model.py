@@ -16,6 +16,16 @@ B — only ζ scales and the remainder (−300 mV − ζ: by Srnec «the main co
 as an unquenched second-order Os(II) term) stays. Patterns: «one up» (the hole on a single orbital Δ above a pair),
 «two up» (the hole on a pair Δ above the third orbital), and a rhombic grid (the upper pair at D, itself split by δ).
 
+CALIBRATION (⊕ 2026-10-20, 00_07 HW.5.IS, the literature pass ⚖️ (з)). Srnec et al. 2008 (ref 63) tabulate in their SI
+(Table S2, CASSCF(5,3)/CASPT2/CASSI) for six Os(II/III) couples the two excited ²A states of the t2g hole WITHOUT SOC —
+the scalar levels this model takes as input — and the SOC shift of E° each one gets. Fed those levels, the model is read
+three ways against them: A and B (above) under-predict EVERY row, by tens to over a hundred mV, because they anchor the
+unquenched shift to the abstract's «≈ 300 mV» while the model's own octahedral stabilisation is ζ, 343–418 meV here; C —
+the stabilisation itself, ζ·f — at the upper ζ reproduces five rows within a dozen mV and misses [Os(CN)₆] by sixty, at
+the lower ζ it under-predicts every row. Only C at the upper ζ is a reading ref 63 supports; its thresholds are printed
+beside A and B, which stay for the record and are NOT a criterion. Ref 63's own row for [Os(bipy)₃], the closest ligand
+set it treats, is past the first-flip margin.
+
 CAN: say, inside this model, which t2g splitting keeps every like-for-like cell downhill with SOC. CANNOT: (1) give the
 device complex's splitting — no cache holds its t2g levels (the Os(III) UKS HOMO–LUMO gap is an exchange-inflated
 occupied→hole gap, ≈ 2 eV, and must NOT be read as Δ); (2) replace a SOC calculation — ζ is carried over from Srnec's
@@ -44,6 +54,17 @@ SI_DESCRIPTION = ("L3 spin–orbit quenching of the Os(II/III) couple: one-hole 
 
 OUT = DFT_CACHE / "os_soc_quenching_model.json"
 CM1_PER_EV = 8065.544
+# Srnec, Chalupský, Fojta, Zendlová, Havlas, Rulíšek 2008, J. Am. Chem. Soc. 130, 10947 (ref 63), SI Table S2, every Os row,
+# basis TZP/DZ: the 2²A and 3²A states of the t2g hole without SOC, cm⁻¹ above 1²A (CASSCF(5,3)/CASPT2), and ΔE0, the SOC
+# shift of the reduction potential, mV (CASSI) — read 2026-10-20 from the SI PDF's text layer (pdf.js, page S3)
+SRNEC_TABLE_S2_OS = {
+    "[OsCl6]4-/3-": (78.0, 194.0, -400.0),
+    "[Os(NH3)6]2+/3+": (610.0, 638.0, -362.0),
+    "[Os(CN)6]4-/3-": (293.0, 305.0, -333.0),
+    "[Os(en)3]2+/3+": (1609.0, 1709.0, -292.0),
+    "[Os(bipy)3]2+/3+": (2265.0, 2281.0, -250.0),
+    "[Os(H2O)6]2+/3+": (4845.0, 6389.0, -152.0),
+}
 
 
 def _l_dot_s() -> np.ndarray:
@@ -121,12 +142,38 @@ def main() -> int:
                                          for pat, fun in (("one_up", one_up), ("two_up", two_up))}
         row["rhombic_f"] = {f"D{d:.1f}_eV": {f"delta{dl:.2f}_eV": round(stabilisation((0.0, d / zeta, (d + dl) / zeta)), 6)
                                              for dl in (0.0, 0.05, 0.1, 0.2, 0.3)} for d in (0.2, 0.3, 0.5)}
+        # C — the stabilisation itself is the shift (f_target = margin / ζ); the reading ref 63's rows support at the upper ζ
+        t_c = margin / zeta
+        row["f_target"]["C_stabilisation_itself"] = round(t_c, 6)
+        row["threshold_eV"]["C_stabilisation_itself"] = {pat: (None if (x := threshold(fun, t_c, hi=200.0)) is None else round(x * zeta, 6))
+                                                         for pat, fun in (("one_up", one_up), ("two_up", two_up))}
+        row["pair_floor_mV_C"] = round(zeta / 2 * 1e3, 1)
         rows[f"split_{split:.0f}_cm1"] = row
         print(f"  ζ = {zeta:.3f} eV: " + " · ".join(
             f"{n[:1]}: one-up ≥ {v['one_up']:.3f} / two-up ≥ {v['two_up']:.3f} eV" for n, v in row["threshold_eV"].items()))
-    allv = [v for r in rows.values() for n in r["threshold_eV"].values() for v in n.values() if v is not None]
-    one = [r["threshold_eV"][n]["one_up"] for r in rows.values() for n in r["threshold_eV"]]
-    two = [r["threshold_eV"][n]["two_up"] for r in rows.values() for n in r["threshold_eV"]]
+    ab = ("A_whole_shift_scales", "B_only_zeta_scales")
+    allv = [v for r in rows.values() for n in ab for v in r["threshold_eV"][n].values() if v is not None]
+    one = [r["threshold_eV"][n]["one_up"] for r in rows.values() for n in ab]
+    two = [r["threshold_eV"][n]["two_up"] for r in rows.values() for n in ab]
+    # ── the calibration against ref 63's own rows: each row's scalar hole levels in, its CASSI shift out ──
+    vs63 = {}
+    for split in OS3_SOC_SPLIT_CM1:
+        zeta = (2.0 / 3.0) * split / CM1_PER_EV
+        cells = {}
+        for cname, (e2, e3, shift) in SRNEC_TABLE_S2_OS.items():
+            f = stabilisation((-e3 / CM1_PER_EV / zeta, -e2 / CM1_PER_EV / zeta, 0.0))   # the hole in the 1²A level
+            model = {"A_whole_shift_scales": soc * f, "B_only_zeta_scales": (soc - zeta) + zeta * f,
+                     "C_stabilisation_itself": zeta * f}
+            cells[cname] = {"f": round(f, 6), "cassi_mV": -shift,
+                            "model_mV": {k: round(v * 1e3, 1) for k, v in model.items()},
+                            "model_minus_cassi_mV": {k: round(v * 1e3 + shift, 1) for k, v in model.items()}}
+        vs63[f"split_{split:.0f}_cm1"] = cells
+    dev = {n: [c["model_minus_cassi_mV"][n] for r in vs63.values() for c in r.values()] for n in ("A_whole_shift_scales", "B_only_zeta_scales")}
+    hi = vs63[f"split_{max(OS3_SOC_SPLIT_CM1):.0f}_cm1"]
+    c_hi = {k: c["model_minus_cassi_mV"]["C_stabilisation_itself"] for k, c in hi.items()}
+    bipy = "[Os(bipy)3]2+/3+"
+    if not all(x < 0 for v in dev.values() for x in v):
+        raise SystemExit("A and B no longer under-predict every row of ref 63 — re-read the calibration prose")
     result = {
         "model": "one t2g hole, H = diag(ε) ⊗ 1 + ζ L·S on xy·yz·xz; f = SOC stabilisation of Os(III) / ζ; ζ = ⅔ × "
                  "the Os³⁺ ²T₂g splitting of Srnec et al. 2008 (OS3_SOC_SPLIT_CM1); normalisation A: the whole "
@@ -139,10 +186,28 @@ def main() -> int:
         "summary": {"one_up_threshold_eV": [_up(min(one)), _up(max(one))],
                     "two_up_threshold_eV": [_up(min(two)), _up(max(two))],
                     "quoted_rounding": "up to 0.01 eV — a sufficiency threshold",
+                    "A_B_not_a_criterion": "ref 63's own rows refute A and B (vs_ref63_table_s2) — these two ranges are kept for the record",
+                    "C_upper_zeta_one_up_threshold_eV": _up(hi_c1) if (hi_c1 := rows[f"split_{max(OS3_SOC_SPLIT_CM1):.0f}_cm1"]["threshold_eV"]["C_stabilisation_itself"]["one_up"]) is not None else None,
+                    "C_upper_zeta_two_up_threshold_eV": _up(hi_c2) if (hi_c2 := rows[f"split_{max(OS3_SOC_SPLIT_CM1):.0f}_cm1"]["threshold_eV"]["C_stabilisation_itself"]["two_up"]) is not None else None,
+                    "C_upper_zeta_pair_floor_mV": rows[f"split_{max(OS3_SOC_SPLIT_CM1):.0f}_cm1"]["pair_floor_mV_C"],
                     "note": "every cell stays downhill with the quenched shift if the t2g splitting of Os(III) is at "
                             "least the threshold — one_up: the hole on a single orbital, two_up: on a degenerate pair "
-                            "(a split pair, rhombic_f, lowers it further); the device complex's splitting is not in "
-                            "any cache — do not read it from the Os(III) HOMO–LUMO gap"},
+                            "(a split pair, rhombic_f, lowers it further); only the C reading at the upper ζ is "
+                            "supported by ref 63's own rows (vs_ref63_table_s2), and under it a hole on a pair never "
+                            "gets below the margin in practice; the device complex's splitting is not in any cache — "
+                            "do not read it from the Os(III) HOMO–LUMO gap"},
+        "vs_ref63_table_s2": {
+            "source": "Srnec et al. 2008 (ref 63) SI Table S2, CASSCF(5,3)/CASPT2/CASSI, TZP/DZ, every Os row",
+            "by_splitting": vs63,
+            "A_B_model_minus_cassi_mV": {k: [min(v), max(v)] for k, v in dev.items()},
+            "C_upper_zeta_model_minus_cassi_mV": c_hi,
+            "bipy_cassi_mV": -SRNEC_TABLE_S2_OS[bipy][2],
+            "bipy_cassi_past_first_flip": -SRNEC_TABLE_S2_OS[bipy][2] > margin * 1e3,
+            "bipy_hole_pattern": "one_up — the 1²A hole on a single orbital, the 2²A/3²A pair "
+                                 f"{SRNEC_TABLE_S2_OS[bipy][0] / CM1_PER_EV:.3f}–{SRNEC_TABLE_S2_OS[bipy][1] / CM1_PER_EV:.3f} eV above",
+            "reading": "A and B under-predict every row and are not a criterion; C at the upper ζ is the reading ref 63's "
+                       "rows support (all but [Os(CN)6] within a dozen mV)",
+        },
         "cannot": ["the device complex's t2g splitting (no cache holds it)",
                    "a SOC calculation: ζ is carried over, covalency as in the literature value, the second-order "
                    "term a normalisation choice"],
@@ -151,8 +216,12 @@ def main() -> int:
     OUT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     s = result["summary"]
-    print(f"  quoted (rounded up): one-up ≥ {s['one_up_threshold_eV'][0]:.2f}–{s['one_up_threshold_eV'][1]:.2f} eV · "
-          f"two-up ≥ {s['two_up_threshold_eV'][0]:.2f}–{s['two_up_threshold_eV'][1]:.2f} eV")
+    v = result["vs_ref63_table_s2"]
+    print(f"  A/B (record only — ref 63's rows refute them, model − CASSI {min(min(x) for x in v['A_B_model_minus_cassi_mV'].values()):.0f}…"
+          f"{max(max(x) for x in v['A_B_model_minus_cassi_mV'].values()):.0f} mV): one-up ≥ {s['one_up_threshold_eV'][0]:.2f}–"
+          f"{s['one_up_threshold_eV'][1]:.2f} eV · two-up ≥ {s['two_up_threshold_eV'][0]:.2f}–{s['two_up_threshold_eV'][1]:.2f} eV")
+    print(f"  C at the upper ζ (ref 63's rows within a dozen mV but [Os(CN)6]): one-up ≥ {s['C_upper_zeta_one_up_threshold_eV']:.2f} eV · "
+          f"a hole on a pair floors at {s['C_upper_zeta_pair_floor_mV']:.1f} mV · ref 63's [Os(bipy)3] {v['bipy_cassi_mV']:.0f} mV")
     return 0
 
 

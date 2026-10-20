@@ -437,6 +437,23 @@ CHECKS = [
             rf"or ≥ {N}–[\d.]+ eV \(on a degenerate pair", rf"or ≥ [\d.]+–{N} eV \(on a degenerate pair")),)
       for k, i, pat in zip(("one_up_threshold_eV", "one_up_threshold_eV", "two_up_threshold_eV", "two_up_threshold_eV"),
                            (0, 1, 0, 1), pats, strict=True)],
+    # ⊕ 2026-10-20 — `94` against ref 63's own Table S2 (the literature pass ⚖️ (з)): the row prints the deficit of A/B,
+    # the reach of C at the upper ζ, its thresholds and ref 63's [Os(bipy)3] shift
+    ("PIPELINE row 94 A/B deficit low → os_soc", PIPELINE, rf"every row by {N}–[\d.]+ mV — the two ranges", "dft/os_soc_quenching_model.json",
+     lambda d: math.floor(min(-max(v) for v in d["vs_ref63_table_s2"]["A_B_model_minus_cassi_mV"].values())), 0.0),
+    ("PIPELINE row 94 A/B deficit high → os_soc", PIPELINE, rf"every row by [\d.]+–{N} mV — the two ranges", "dft/os_soc_quenching_model.json",
+     lambda d: math.ceil(max(-min(v) for v in d["vs_ref63_table_s2"]["A_B_model_minus_cassi_mV"].values())), 0.0),
+    ("PIPELINE row 94 C reach → os_soc", PIPELINE, rf"reproduces five rows within {N} mV", "dft/os_soc_quenching_model.json",
+     lambda d: (math.ceil(max(abs(x) for k, x in d["vs_ref63_table_s2"]["C_upper_zeta_model_minus_cassi_mV"].items() if "CN" not in k))
+                if sum(abs(x) <= 12 for x in d["vs_ref63_table_s2"]["C_upper_zeta_model_minus_cassi_mV"].values()) == 5 else float("nan")), 0.0),
+    ("PIPELINE row 94 C cyanide → os_soc", PIPELINE, rf"\[Os\(CN\)₆\] by \+{N}\)", "dft/os_soc_quenching_model.json",
+     lambda d: round(d["vs_ref63_table_s2"]["C_upper_zeta_model_minus_cassi_mV"]["[Os(CN)6]4-/3-"]), 0.0),
+    ("PIPELINE row 94 C one-up → os_soc", PIPELINE, rf"a single orbital needs ≥ {N} eV", "dft/os_soc_quenching_model.json",
+     lambda d: d["summary"]["C_upper_zeta_one_up_threshold_eV"], 0.0),
+    ("PIPELINE row 94 C pair floor → os_soc", PIPELINE, rf"cannot get below {N} mV", "dft/os_soc_quenching_model.json",
+     lambda d: math.floor(d["summary"]["C_upper_zeta_pair_floor_mV"]), 0.0),
+    ("PIPELINE row 94 bipy → os_soc", PIPELINE, rf"ref 63 computes −{N} mV for \[Os\(bipy\)₃\]", "dft/os_soc_quenching_model.json",
+     lambda d: d["vs_ref63_table_s2"]["bipy_cassi_mV"] if d["vs_ref63_table_s2"]["bipy_cassi_past_first_flip"] else float("nan"), 0.0),
     ("SUMMARY Conclusion first flip → cascade_like_for_like", SUMMARY, rf"reverses a cell beyond \*\*\+{N}\*\* mV",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
     ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* mV",
