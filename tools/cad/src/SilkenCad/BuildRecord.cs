@@ -15,8 +15,16 @@ namespace SilkenCad;
 // Two halves, two writers:
 //   · MODEL — generated here, pure-managed (no Library.Go): the commit, each manifest's sha256 (the SAME
 //     bytes-hash the drawing prints — `Cem.ReadWithSha256`), the committed golden metrics, the kernel version.
-//   · VENDOR — typed in by a human from the order. Generated EMPTY: every field null, never a plausible
-//     placeholder (picogk gotcha #11) — a guessed batch number is a fabricated trace.
+//   · VENDOR — typed in by a human from the order. Generated EMPTY: every field null except each entry's
+//     `manifest`, never a plausible placeholder (picogk gotcha #11) — a guessed batch number is a fabricated trace.
+//     Since /2 the build, its date, the powder lot and the certificate are recorded PER MANIFEST (= per SKU; in the
+//     coin bake-off, per alloy), as a list of builds: one batch of coupons spans several alloys, hence several powder
+//     lots, and one alloy can span two builds — /1 held one of each per batch, which a real order could fill only
+//     with free text. The list sits in THIS half, not in the model `parts`, because the two halves are also the
+//     public/private cut: under git goes the model half plus `vendor_name`, while lots, builds and certificates are
+//     the vendor's operational facts and stay outside it (00_07 HW.51) — the price is that a vendor entry is joined
+//     to its part by the `manifest` text and position, which match only as GENERATED (pin
+//     `The_Vendor_Half_Lists_One_Part_Per_Manifest_In_The_Model_Order`; once filled, see ceiling 3).
 // 🔴 A null in the MODEL half is never silent: it has an entry in `absent_because` saying why (pin
 //    `Every_Null_In_The_Model_Half_Names_Its_Reason`). The vendor half has ONE block note instead, because a
 //    human fills it field by field and a per-field reason would go stale the moment a value lands beside it.
@@ -26,12 +34,15 @@ namespace SilkenCad;
 //  2. `golden_metrics` are the committed REGRESSION baseline (Golden.cs), COPIED, not re-measured: model numbers
 //     at the baseline's voxel, never the printed batch; a baseline gone stale after a manifest edit is copied as
 //     it stands (only `verify` sees that); and a kind with no baseline gets none.
-//  3. Nothing validates a FILLED record — the vendor half is free text the moment a human writes it.
+//  3. Nothing validates a FILLED record — the vendor half is free text the moment a human writes it, and nothing
+//     re-checks that `vendor.parts[i].manifest` still names `parts[i]`.
+//  4. A coated SKU's declared coating — process and each layer thickness (`ti_coin.au`) — has no slot: it stays
+//     free text in the vendor's documents.
 internal static class BuildRecord
 {
     // Bump on ANY change to the key set (pin `The_Schema_Is_Pinned_Key_By_Key`): a record already filled by hand
     // keeps the version it was cut with, and a reader decades on must know which keys to expect.
-    internal const string Schema = "silkennet.build_record/1";
+    internal const string Schema = "silkennet.build_record/2";
 
     private const string Note =
         "Build-record of ONE batch (tools/cad `build-record`, 00_07 HW.51). MODEL half generated from the tree; "
@@ -68,24 +79,30 @@ internal static class BuildRecord
         IReadOnlyDictionary<string, JsonElement>? GoldenMetrics,
         IReadOnlyDictionary<string, string> AbsentBecause);
 
-    // The fields the order returns. `powder_lot` is not in the leg's own list: it is here because the RFQ asks for
-    // a CoC PER POWDER LOT (anchor_alloy_rfq §QC deliverables) and reused powder picks up oxygen lot by lot — the
-    // one vendor datum a recall 15 years on would search by.
-    internal sealed record Vendor
+    // The fields the order returns. `powder_lot` is here because the RFQ asks for a CoC PER POWDER LOT
+    // (anchor_alloy_rfq §QC deliverables) and reused powder picks up oxygen lot by lot — the one vendor datum a recall
+    // 15 years on would search by. `coupon_serials` is the range the PO's identification text asks the vendor to map
+    // to its build and powder lot (anchor_alloy_rfq §5a).
+    internal sealed record Vendor(IReadOnlyList<VendorPart> Parts)
     {
         [JsonPropertyName("_filled_from")]
         public string FilledFrom { get; init; } =
             "THE ORDER, by hand (00_07 HW.51, human leg). null = NOT YET RECEIVED, never «none»: copy what the vendor's "
-            + "documents say, never a guess. `material_certificate` + `powder_lot` = the CoC per powder lot the RFQ asks "
-            + "for (lot/heat number, O/N/H chemistry, virgin/reuse mix — anchor_alloy_rfq §QC deliverables).";
+            + "documents say, never a guess. `parts` follows the model half's `parts` one to one; under each, one "
+            + "`builds` entry per build × powder lot its coupons came from — copy the entry for each further one. "
+            + "`coupon_serials` = the serial range the CoC or packing list maps to that build and lot (anchor_alloy_rfq "
+            + "§5a); `material_certificate` + `powder_lot` = the CoC per powder lot the RFQ asks for (lot/heat number, "
+            + "O/N/H chemistry, virgin/reuse mix — anchor_alloy_rfq §QC deliverables).";
 
         public string? VendorName { get; init; }
         public string? BatchNumber { get; init; }
-        public string? BuildNumber { get; init; }
-        public string? BuildDate { get; init; }
-        public string? MaterialCertificate { get; init; }
-        public string? PowderLot { get; init; }
+        public IReadOnlyList<VendorPart> Parts { get; init; } = Parts;
     }
+
+    internal sealed record VendorPart(string Manifest, IReadOnlyList<VendorBuild> Builds);
+
+    internal sealed record VendorBuild(
+        string? CouponSerials, string? BuildNumber, string? BuildDate, string? PowderLot, string? MaterialCertificate);
 
     internal static int Print(IEnumerable<string> cemPaths, string? gitCommit)
     {
@@ -105,7 +122,9 @@ internal static class BuildRecord
         if (strKernel is null)
             oAbsent["picogk_version"] = "the loaded PicoGK assembly carries no informational version";
 
-        return new Record(Schema, Note, new Generator(gitCommit, strKernel, oAbsent), [.. cemPaths.Select(PartOf)], new Vendor());
+        Part[] aParts = [.. cemPaths.Select(PartOf)];
+        VendorPart[] aVendor = [.. aParts.Select(p => new VendorPart(p.Manifest, [new VendorBuild(null, null, null, null, null)]))];
+        return new Record(Schema, Note, new Generator(gitCommit, strKernel, oAbsent), aParts, new Vendor(aVendor));
     }
 
     private static Part PartOf(string strPath)

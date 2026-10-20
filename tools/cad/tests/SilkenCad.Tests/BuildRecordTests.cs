@@ -40,13 +40,35 @@ public class BuildRecordTests
     public void The_Schema_Is_Pinned_Key_By_Key()
     {
         JsonElement r = RecordOf(null, CemPath("anchor_zone1.pine.json"));
-        Assert.Equal("silkennet.build_record/1", r.GetProperty("schema").GetString());
+        Assert.Equal("silkennet.build_record/2", r.GetProperty("schema").GetString());
         Assert.Equal(new[] { "schema", "_note", "generator", "parts", "vendor" }, Keys(r));
         Assert.Equal(new[] { "git_commit", "picogk_version", "absent_because" }, Keys(r.GetProperty("generator")));
         Assert.Equal(new[] { "manifest", "kind", "name", "cem_sha256", "voxel_size_mm", "golden_metrics", "absent_because" },
                      Keys(OnlyPart(r)));
-        Assert.Equal(new[] { "_filled_from", "vendor_name", "batch_number", "build_number", "build_date", "material_certificate", "powder_lot" },
-                     Keys(r.GetProperty("vendor")));
+        JsonElement vendor = r.GetProperty("vendor");
+        Assert.Equal(new[] { "_filled_from", "vendor_name", "batch_number", "parts" }, Keys(vendor));
+        JsonElement vendorPart = vendor.GetProperty("parts").EnumerateArray().Single();
+        Assert.Equal(new[] { "manifest", "builds" }, Keys(vendorPart));
+        Assert.Equal(new[] { "coupon_serials", "build_number", "build_date", "powder_lot", "material_certificate" },
+                     Keys(vendorPart.GetProperty("builds").EnumerateArray().Single()));
+    }
+
+    // /2: one batch of coupons spans several alloys, hence several powder lots, and the vendor lists them PER MANIFEST.
+    // The entry's `manifest` is the one machine-written value in the vendor half — it must follow the model half, in
+    // order, or a hand-filled lot lands on the wrong alloy.
+    [Fact]
+    public void The_Vendor_Half_Lists_One_Part_Per_Manifest_In_The_Model_Order()
+    {
+        JsonElement r = RecordOf(null, CemPath("ti_coin.json"), CemPath("anchor_zone1.pine.json"));
+        string?[] model = [.. r.GetProperty("parts").EnumerateArray().Select(p => p.GetProperty("manifest").GetString())];
+        string?[] vendor = [.. r.GetProperty("vendor").GetProperty("parts").EnumerateArray()
+                              .Select(p => p.GetProperty("manifest").GetString())];
+        Assert.Equal(new[] { "cem/ti_coin.json", "cem/anchor_zone1.pine.json" }, model);
+        Assert.Equal(model, vendor);
+        // every part, not only the first: one generated build entry each, and nothing in it filled
+        Assert.All(r.GetProperty("vendor").GetProperty("parts").EnumerateArray(), p =>
+            Assert.All(p.GetProperty("builds").EnumerateArray().Single().EnumerateObject(),
+                       f => Assert.Equal(JsonValueKind.Null, f.Value.ValueKind)));
     }
 
     // The record and the sheet share ONE hashing helper, so comparing them alone would stay green if that helper
@@ -166,8 +188,12 @@ public class BuildRecordTests
     {
         JsonElement vendor = RecordOf("0123abc", CemPath("ti_coin.json")).GetProperty("vendor");
         Assert.Contains("THE ORDER", vendor.GetProperty("_filled_from").GetString());
-        Assert.All(vendor.EnumerateObject().Where(p => p.Name != "_filled_from"),
+        Assert.All(vendor.EnumerateObject().Where(p => p.Name is not ("_filled_from" or "parts")),
                    p => Assert.True(p.Value.ValueKind == JsonValueKind.Null,
                                     $"vendor.{p.Name} is generated as {p.Value.GetRawText()} — only the order may fill it"));
+        JsonElement build = vendor.GetProperty("parts").EnumerateArray().Single().GetProperty("builds").EnumerateArray().Single();
+        Assert.All(build.EnumerateObject(),
+                   p => Assert.True(p.Value.ValueKind == JsonValueKind.Null,
+                                    $"vendor.parts[].builds[].{p.Name} is generated as {p.Value.GetRawText()} — only the order may fill it"));
     }
 }
