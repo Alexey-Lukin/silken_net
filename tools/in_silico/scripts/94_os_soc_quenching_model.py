@@ -9,7 +9,8 @@ heteroleptic, so its t2g levels are split and SOC is partly quenched. This scrip
 on the t2g splitting: how large a splitting keeps the quenched shift below the first-flip margin.
 
 MODEL. Low-spin d⁵ = one hole in t2g. Hamiltonian of the t2g electron levels: diag(ε₁, ε₂, ε₃) ⊗ 1₂ + ζ L·S (real d basis,
-l = 2, restricted to xy · yz · xz); the hole sits in the highest level, so the SOC stabilisation of the Os(III) ground state
+l = 2, restricted to xy · yz · xz); the hole sits in the highest level (on Os by 92 %: Mulliken spin density 0.917–0.925 in the relaxed caches), so
+the SOC stabilisation of the Os(III) ground state
 is max eig(H) − max ε. In Oh it equals ζ (doublet–quartet split 3ζ/2), so ζ = ⅔ × Srnec's Os³⁺ splitting
 (OS3_SOC_SPLIT_CM1). f = stabilisation / ζ. Two normalisations bound the shift: A — the whole −300 mV scales with f;
 B — only ζ scales and the remainder (−300 mV − ζ: by Srnec «the main contribution» is the M³⁺ splitting, the rest is taken
@@ -45,26 +46,27 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, OS3_SOC_SPLIT_CM1, OS_SOC_SHIFT_V, REPO_ROOT
+from lib.constants import DFT_CACHE, OS3_SOC_SPLIT_CM1, OS_SOC_SHIFT_V, REPO_ROOT, SRNEC_TABLE_S2_OS
 from lib.utils import banner
 
 SI_DESCRIPTION = ("L3 spin–orbit quenching of the Os(II/III) couple: one-hole t2g model with ζ from the literature Os³⁺ "
-                  "splitting, the t2g splitting that keeps the SOC-shifted like-for-like cascade (95) downhill, under two "
-                  "normalisations and three splitting patterns; no SCF")
+                  "splitting, the t2g splitting that keeps the SOC-shifted like-for-like cascade (95) downhill, under three "
+                  "normalisations checked against the six Os couples of Srnec et al. 2008 (SI Table S2) — only the "
+                  "stabilisation itself at the upper ζ reproduces them — and three splitting patterns; no SCF")
 
 OUT = DFT_CACHE / "os_soc_quenching_model.json"
+# The literature pass ⚖️ (з), 2026-10-20: low-spin Os(III) analogues with a measured or fitted t2g splitting — the ground of
+# «no analogue found reaches the C threshold». Neither is the device complex; each carries how it was read.
+ANALOGUES_READ = [
+    {"complex": "[Os(bpy)3]3+", "what": "two interconfigurational (dpi->dpi) near-IR bands, cm-1", "value": [4580, 5090],
+     "source": "Kober & Meyer 1983, Inorg. Chem. 22, 1614 — quoted by D'Alessandro et al. 2006, Inorg. Chem. 45, 3261",
+     "access": "second-hand: D'Alessandro's full text read; the primary's first page only (it states a 2A1 ground state)"},
+    {"complex": "low-spin Os(III) chlorido / ammine / indazole complexes", "what": "|Delta/zeta| from EPR g-tensor fits",
+     "value": [0.23, 0.50],
+     "source": "Buchel et al. 2017, Dalton Trans. 46, 11925, Table 4 (McGarvey t2g-hole analysis)", "access": "full text read"},
+]
+
 CM1_PER_EV = 8065.544
-# Srnec, Chalupský, Fojta, Zendlová, Havlas, Rulíšek 2008, J. Am. Chem. Soc. 130, 10947 (ref 63), SI Table S2, every Os row,
-# basis TZP/DZ: the 2²A and 3²A states of the t2g hole without SOC, cm⁻¹ above 1²A (CASSCF(5,3)/CASPT2), and ΔE0, the SOC
-# shift of the reduction potential, mV (CASSI) — read 2026-10-20 from the SI PDF's text layer (pdf.js, page S3)
-SRNEC_TABLE_S2_OS = {
-    "[OsCl6]4-/3-": (78.0, 194.0, -400.0),
-    "[Os(NH3)6]2+/3+": (610.0, 638.0, -362.0),
-    "[Os(CN)6]4-/3-": (293.0, 305.0, -333.0),
-    "[Os(en)3]2+/3+": (1609.0, 1709.0, -292.0),
-    "[Os(bipy)3]2+/3+": (2265.0, 2281.0, -250.0),
-    "[Os(H2O)6]2+/3+": (4845.0, 6389.0, -152.0),
-}
 
 
 def _l_dot_s() -> np.ndarray:
@@ -196,6 +198,7 @@ def main() -> int:
                             "supported by ref 63's own rows (vs_ref63_table_s2), and under it a hole on a pair never "
                             "gets below the margin in practice; the device complex's splitting is not in any cache — "
                             "do not read it from the Os(III) HOMO–LUMO gap"},
+        "analogues_read": ANALOGUES_READ,
         "vs_ref63_table_s2": {
             "source": "Srnec et al. 2008 (ref 63) SI Table S2, CASSCF(5,3)/CASPT2/CASSI, TZP/DZ, every Os row",
             "by_splitting": vs63,

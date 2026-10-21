@@ -16,6 +16,7 @@ reorganisation energies make the bimetallic-ZIF cathode's direct electron transf
 contact, conditional on λ(Co): below enzymatic turnover at the computed value, straddling it only at an assumed one.
 Compared like for like on one SHE scale — the two-electron, two-proton flavin couple against each one-electron osmium
 couple — the anode→mediator cascade is downhill in every computed case, but spin–orbit coupling on osmium, which the
-protocol omits, could reverse it for the device couple, so the direction rests on the protocol; the gap to experiment
+protocol omits, reverses it for the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃], so the
+direction rests on the protocol; the gap to experiment
 moves with the protocol by hundreds of millivolts, and near-exact agreements are cancellations. Impedance signatures are
 predicted for the experimental test.

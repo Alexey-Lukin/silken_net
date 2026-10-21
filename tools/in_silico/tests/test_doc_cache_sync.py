@@ -104,10 +104,10 @@ def _hexa(d: dict, name: str) -> float:
     return next(r for r in d["results"] if r["name"] == name)["dE_red_eV"]
 
 
-def _ss_after(d: dict, form: str, level: str) -> float:
-    """A cell's cascade (mV) after spin–orbit coupling alone — read from 95's `shared_shifts`, NaN when that cell does not
-    flip (the doc names it as one that does)."""
-    hit = [u for u in d["shared_shifts"]["terms"]["spin_orbit_os"]["uphill"] if u["form"] == form and u["level"] == level]
+def _ss_after(d: dict, form: str, level: str, term: str = "spin_orbit_os") -> float:
+    """A cell's cascade (mV) after spin–orbit coupling alone — read from 95's `shared_shifts` (the octahedral term, or
+    `spin_orbit_os_ref63_bipy`, the reading taken), NaN when that cell does not flip (the doc names it as one that does)."""
+    hit = [u for u in d["shared_shifts"]["terms"][term]["uphill"] if u["form"] == form and u["level"] == level]
     return 1000 * hit[0]["after_V"] if hit else float("nan")
 
 
@@ -385,26 +385,34 @@ CHECKS = [
           ("smallest cascade", rf"the smallest cascade, \+{N} mV, is the device form", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
           ("SOC size", rf"by ≈ {N} mV in octahedral homoleptic complexes,<sup>19,63</sup>", lambda d: -1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"], 0.5),
           ("first-flip threshold", rf"beyond the smallest margin, {N} mV,", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
-          ("SOC cells uphill", rf"at the full octahedral value {N} of the 32 cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"], 0.0),
-          ("SOC cells counted", rf"value [\d]+ of the {N} cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_cells"], 0.0),
+          ("SOC bipy size", rf"ref 63 computes\s+{N} mV \(its Supporting Information, Table S2", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["shift_V"], 0.5),
+          ("SOC bipy cells uphill", rf"At the \[Os\(bpy\)₃\] value {N} of the 32 cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_uphill"], 0.0),
+          ("SOC bipy device relaxed", rf"both on the relaxed electronic flavin level \(to {N} and", lambda d: _ss_after(d, "chloro (device, programmatic)", "relaxed_electronic", "spin_orbit_os_ref63_bipy"), 0.05),
+          ("SOC bipy adiabatic relaxed", rf"flavin level \(to [{_DASHES}\-]?[\d.]+ and {N} mV\); at the full", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "relaxed_electronic", "spin_orbit_os_ref63_bipy"), 0.05),
+          ("SOC cells uphill", rf"at the full octahedral value {N}, an upper count", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"], 0.0),
+          ("SOC bipy cells counted", rf"value [\d]+ of the {N} cells turn uphill", lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_cells"], 0.0),
           ("SOC device MMFF", rf"electronic flavin\s+levels \(to {N} and", lambda d: _ss_after(d, "chloro (device, programmatic)", "mmff_electronic"), 0.05),
           ("SOC device relaxed", rf"levels \(to [{_DASHES}\-]?[\d.]+ and {N} mV\), the doubly", lambda d: _ss_after(d, "chloro (device, programmatic)", "relaxed_electronic"), 0.05),
           ("SOC adiabatic MMFF", rf"the doubly relaxed form on both \(to {N} and", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "mmff_electronic"), 0.05),
-          ("SOC adiabatic relaxed", rf"\(to [{_DASHES}\-]?[\d.]+ and {N} mV\) and the one-water", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "relaxed_electronic"), 0.05),
-          ("SOC one water relaxed", rf"relaxed level \(to {N} mV\) — so five", lambda d: _ss_after(d, "chloro + 1 H₂O on Cl⁻", "relaxed_electronic"), 0.05),
+          ("SOC adiabatic relaxed", rf"\(to [{_DASHES}\-]?[\d.]+ and\s+{N} mV\) and the one-water", lambda d: _ss_after(d, "chloro, both states relaxed (adiabatic)", "relaxed_electronic"), 0.05),
+          ("SOC one water relaxed", rf"relaxed level \(to {N} mV\)\. Which cells flip", lambda d: _ss_after(d, "chloro + 1 H₂O on Cl⁻", "relaxed_electronic"), 0.05),
           ("electronic flavin above measured (MMFF)", rf"flavin levels {N} and [\d.]+ mV above the measured", lambda d: 1000 * d["flavin"]["levels"]["mmff_electronic"]["donor_side_V"], 0.5),
           ("electronic flavin above measured (relaxed)", rf"flavin levels [\d.]+ and {N} mV above the measured", lambda d: 1000 * d["flavin"]["levels"]["relaxed_electronic"]["donor_side_V"], 0.5),
           ("SOC ZPE/RRHO floor", rf"keep\s+at least \+{N} mV", lambda d: 1000 * (min(r["by_donor_level"][k]["cascade_V"] for r in d["forms"] for k in ("relaxed_plus_zpe", "relaxed_rrho_free_energy")) + d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"]), 0.05),
-          ("SOC device vs measured flavin", rf"with the full\s+shift lies at \+{N} mV", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+          ("SOC bipy device vs measured flavin", rf"lies at \+{N} mV with the \[Os\(bpy\)₃\] shift", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+          ("SOC device vs measured flavin", rf"and at \+{N} mV with the full one", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
           ("4.44 V shift", rf"lowers every E°\(Os\) and every cascade by {N} mV", lambda d: -1000 * d["shared_shifts"]["terms"]["she_abs_4_44"]["shift_V"], 0.5),
-          ("SOC + 4.44 V cells uphill", rf"together with the full spin–orbit shift {N} of the 32", lambda d: d["shared_shifts"]["combined"]["spin_orbit_os + she_abs_4_44"]["n_uphill"], 0.0),
+          ("SOC bipy + 4.44 V cells uphill", rf"together with the spin–orbit shift {N} of the 32 at the", lambda d: d["shared_shifts"]["combined"]["spin_orbit_os_ref63_bipy + she_abs_4_44"]["n_uphill"], 0.0),
+          ("SOC + 4.44 V cells uphill", rf"size and {N} at the full one —", lambda d: d["shared_shifts"]["combined"]["spin_orbit_os + she_abs_4_44"]["n_uphill"], 0.0),
           ("functional, Os side", rf"lowers the device couple's E°\(Os\) by {N} mV \(Table 4;", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),
           ("functional only", rf"Table 4; {N} mV of it the functional", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["functional_only_6_31gd_V"], 0.5),
           ("Os ZPE raises", rf"zero-point energy \(\+{N} mV where computed", lambda d: 1000 * (d["both_sided"]["levels"]["relaxed_plus_zpe"]["E_os_vs_SHE_V"] - d["both_sided"]["levels"]["relaxed_electronic"]["E_os_vs_SHE_V"]), 0.5),
           ("protein shift raises", rf"bound flavin \(\+{N} mV, §3\.6\)", lambda d: -1000 * d["measured"]["protein_shift_V"], 0.5),
-          ("limits: SOC", rf"spin–orbit coupling on osmium \(≈ {N} mV at its octahedral value, not\s+computed", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"], 0.5),
-          ("limits: acceptor side before", rf"acceptor side from \+{N} to", lambda d: 1000 * d["forms"][0]["acceptor_side_V"], 0.5),
-          ("limits: acceptor side after", rf"acceptor side from \+[\d.]+ to \+{N} mV", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["device_acceptor_side_after_V"], 0.5),
+          ("limits: SOC bipy", rf"spin–orbit coupling on osmium \({N} mV as ref 63 computes it for", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["shift_V"], 0.5),
+          ("limits: SOC", rf"\[Os\(bpy\)₃\], ≈ {N} mV at its octahedral value, not computed here", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["shift_V"], 0.5),
+          ("limits: acceptor side before", rf"acceptor side from\s+\+{N} to", lambda d: 1000 * d["forms"][0]["acceptor_side_V"], 0.5),
+          ("limits: acceptor side after bipy", rf"acceptor side from\s+\+[\d.]+ to \+{N} ⊥", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["device_acceptor_side_after_V"], 0.5),
+          ("limits: acceptor side after", rf"to \+[\d.]+ ⊥ \+{N} mV\); the", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["device_acceptor_side_after_V"], 0.5),
           ("limits: functional", rf"functional \({N} mV on the osmium side", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),
           ("limits: convention", rf"\({N} mV between 4\.281 and 4\.44 V\)", lambda d: -1000 * d["shared_shifts"]["terms"]["she_abs_4_44"]["shift_V"], 0.5),
       )],
@@ -416,15 +424,25 @@ CHECKS = [
       )],
     *[(f"{where} SOC cells uphill → cascade_like_for_like", doc_rel, pat, "dft/cascade_like_for_like.json", fn, 0.0)
       for where, doc_rel, pat, fn in (
-          ("SUMMARY Conclusion", SUMMARY, rf"turns up to \*\*{N}\*\* of the 32 uphill",
+          ("SUMMARY Conclusion bipy", SUMMARY, rf"it turns \*\*{N}\*\* of the 32 uphill, the device form among them",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_uphill"]),
+          ("SUMMARY Conclusion", SUMMARY, rf"at the full octahedral value up to \*\*{N}\*\*",
            lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
-          ("SUMMARY Conclusion + 4.44 V", SUMMARY, rf"with the spin–orbit shift \*\*{N}\*\*\)",
+          ("SUMMARY Conclusion + 4.44 V bipy", SUMMARY, rf"with the spin–orbit shift \*\*{N}\*\* ⊥",
+           lambda d: d["shared_shifts"]["combined"]["spin_orbit_os_ref63_bipy + she_abs_4_44"]["n_uphill"]),
+          ("SUMMARY Conclusion + 4.44 V", SUMMARY, rf"with the spin–orbit shift \*\*[\d]+\*\* ⊥ \*\*{N}\*\* at the",
            lambda d: d["shared_shifts"]["combined"]["spin_orbit_os + she_abs_4_44"]["n_uphill"]),
-          ("paper §4", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"turns up to {N} of the 32 cells uphill at its octahedral",
+          ("paper §4 bipy", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"turns {N} of the 32 cells uphill at the literature size for",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_uphill"]),
+          ("paper §4", "docs/protocols/ebfc/in_silico/paper/04_conclusion.md", rf"and up to {N} at its octahedral literature value",
            lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
-          ("OUTLINE §3.5", "docs/protocols/ebfc/in_silico/paper/00_OUTLINE.md", rf"turns up to {N} of the 32 cells uphill at its octahedral value",
+          ("OUTLINE §3.5 bipy", "docs/protocols/ebfc/in_silico/paper/00_OUTLINE.md", rf"turns {N} of the 32 cells uphill at ref 63's",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_uphill"]),
+          ("OUTLINE §3.5", "docs/protocols/ebfc/in_silico/paper/00_OUTLINE.md", rf"and up to {N} at its octahedral value, while",
            lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
-          ("PIPELINE row 95", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"turns up to {N} of 32 cells uphill",
+          ("PIPELINE row 95 bipy", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"−250 mV — it turns {N} of 32 cells uphill and leaves",
+           lambda d: d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["n_uphill"]),
+          ("PIPELINE row 95", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"−300 mV, turns up to {N} of 32 cells uphill",
            lambda d: d["shared_shifts"]["terms"]["spin_orbit_os"]["n_uphill"]),
       )],
     # ⊕ 2026-10-19 — `94`: the weakest link of the SOC submission measured as a threshold; the status row prints its
@@ -456,9 +474,15 @@ CHECKS = [
      lambda d: d["vs_ref63_table_s2"]["bipy_cassi_mV"] if d["vs_ref63_table_s2"]["bipy_cassi_past_first_flip"] else float("nan"), 0.0),
     ("SUMMARY Conclusion first flip → cascade_like_for_like", SUMMARY, rf"reverses a cell beyond \*\*\+{N}\*\* mV",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["first_flip_at_V"], 0.05),
-    ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* mV",
+    ("SUMMARY Conclusion bipy size → cascade_like_for_like", SUMMARY, rf"\(\*\*{N}\*\* mV, its SI Table S2",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["shift_V"], 0.5),
+    ("SUMMARY Conclusion bipy device vs measured flavin → cascade_like_for_like", SUMMARY, rf"shifted device couple lies at \*\*\+{N}\*\* ⊥",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+    ("SUMMARY Conclusion device vs measured flavin → cascade_like_for_like", SUMMARY, rf"⊥ \*\*\+{N}\*\* mV, so at either value",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
-    ("PIPELINE row 95 device vs measured flavin → cascade_like_for_like", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"device couple stays at \+{N} mV",
+    ("PIPELINE row 95 bipy device vs measured flavin → cascade_like_for_like", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"device couple against the measured flavin at \+{N} mV, the octahedral",
+     "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os_ref63_bipy"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
+    ("PIPELINE row 95 device vs measured flavin → cascade_like_for_like", "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md", rf"the device couple stays at \+{N} mV — at that value",
      "dft/cascade_like_for_like.json", lambda d: 1000 * d["shared_shifts"]["terms"]["spin_orbit_os"]["against_measured_flavin"]["by_form_V"]["chloro (device, programmatic)"], 0.05),
     ("SUMMARY Conclusion functional, Os side → cascade_like_for_like", SUMMARY, rf"device couple's Os side \({N} mV\)",
      "dft/cascade_like_for_like.json", lambda d: -1000 * d["shared_shifts"]["terms"]["functional_os_side"]["shift_V"], 0.5),

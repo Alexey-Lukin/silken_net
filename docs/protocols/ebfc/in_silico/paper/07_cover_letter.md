@@ -45,8 +45,8 @@ reorganisation energies shows the bimetallic-ZIF cathode direct electron transfe
 computed Co reorganisation energy and to straddle enzymatic turnover only at an assumed literature value — a verdict
 conditional on λ(Co) — with an explicit low-λ mitigation path; and (4) the anode→mediator cascade, compared like for like (the two-electron, two-proton flavin couple against
 each one-electron osmium couple on one SHE scale), is downhill in every osmium form at every level of the flavin
-treatment within one protocol — a direction that spin–orbit coupling on osmium, omitted here, could reverse for the device
-couple — while its magnitude is method-dependent and its near-exact agreements are named as cancellations, with
+treatment within one protocol — a direction that spin–orbit coupling on osmium, omitted here, reverses for the device
+couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — while its magnitude is method-dependent and its near-exact agreements are named as cancellations, with
 explicit-water QM/MM and spin–orbit coupling on osmium identified as the next steps toward the magnitude.
 
 We believe the manuscript is well matched to *J. Phys. Chem. B*: it sits squarely at the intersection
@@ -58,7 +58,8 @@ recorded, version-exact environment (committed with them; §2.7 states what a re
 This work is original, has not been published previously, and is not under consideration elsewhere.
 Explicit-solvation QM/MM of the cascade, which the manuscript identifies as one step toward the cascade's magnitude,
 is outside its scope and is stated as a limit of the method; spin–orbit coupling on osmium is not computed, and its
-literature size is set against every cell.
+size computed for [Os(bpy)₃] in the literature, with the octahedral value as an upper count, is set against every
+cell.
 The author is the founder of the SilkenNet project, an open-hardware forest-monitoring platform of which
 the biofuel cell studied here is a component and which is intended for commercial deployment. No patent
 has been or will be filed on the work disclosed here (defensive-publication posture); the code, hardware

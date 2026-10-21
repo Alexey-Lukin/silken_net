@@ -116,7 +116,9 @@ def build() -> str:
 
     sh = lfl["shared_shifts"]
     soc, conv = sh["terms"]["spin_orbit_os"], sh["terms"]["she_abs_4_44"]
+    bipy = sh["terms"]["spin_orbit_os_ref63_bipy"]
     both = sh["combined"]["spin_orbit_os + she_abs_4_44"]
+    both_bipy = sh["combined"]["spin_orbit_os_ref63_bipy + she_abs_4_44"]
     film = _load("os_series_vs_measured.json")["pvi_series"]["loading_control"]["shift_mV"] / 1000.0   # §3.3's 135 mV
     flv = lfl["flavin"]["levels"]
     md.append("## Table 2. The anode→mediator cascade like for like — the 2e⁻/2H⁺ flavin couple against each Os(III/II) "
@@ -150,12 +152,14 @@ def build() -> str:
               "² Both Os states relaxed and given their own zero-point energy (script 96). ³ The two Os states' soft-mode "
               f"censuses differ, so their RRHO free energies are not compared. Every cell shares one functional, one continuum, one "
               f"absolute-SHE convention ({lfl['conventions']['SHE_abs_V']} V) and a scalar-relativistic osmium, which the cells do "
-              f"not test: spin–orbit coupling on osmium, omitted, reverses a cell beyond {mv(soc['first_flip_at_V'])[1:]} mV and at its "
-              f"octahedral literature value ({mv0(soc['shift_V'])} mV, not computed) turns up to {soc['n_uphill']} of the "
-              f"{soc['n_cells']} cells uphill, while against the measured flavin the device couple stays at "
+              f"not test: spin–orbit coupling on osmium, omitted, reverses a cell beyond {mv(soc['first_flip_at_V'])[1:]} mV; at "
+              f"the size ref 63 computes for [Os(bpy)₃] ({mv0(bipy['shift_V'])} mV) it turns {bipy['n_uphill']} of the "
+              f"{bipy['n_cells']} cells uphill and at its octahedral literature value ({mv0(soc['shift_V'])} mV) up to "
+              f"{soc['n_uphill']}, while against the measured flavin the device couple stays at "
+              f"{mv(bipy['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} ⊥ "
               f"{mv(soc['against_measured_flavin']['by_form_V'][lfl['forms'][0]['form']])} mV; the alternative 4.44 V convention "
-              f"({mv0(conv['shift_V'])} mV) turns {'none' if not conv['n_uphill'] else conv['n_uphill']}, the two together "
-              f"{both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
+              f"({mv0(conv['shift_V'])} mV) turns {'none' if not conv['n_uphill'] else conv['n_uphill']}, with spin–orbit coupling "
+              f"{both_bipy['n_uphill']} ⊥ {both['n_uphill']} (§3.5). Agreements by cancellation, not validations — thresholds ours "
               f"(|gap| ≤ {mv0(lfl['cancellations']['gap_max_V'], False)} mV while each side is ≥ "
               f"{mv0(lfl['cancellations']['each_side_min_V'], False)} "
               f"mV off): {canc}.*\n")

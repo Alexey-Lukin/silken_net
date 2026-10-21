@@ -89,7 +89,8 @@ earlier geometry-and-λ error had implied — together with the design levers (a
 conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) compare the anode→mediator
 cascade like for like — the two-electron, two-proton flavin couple against each one-electron osmium couple on one
 SHE scale — finding it downhill in every osmium form at every level of the flavin treatment within one protocol, a direction
-that spin–orbit coupling on osmium, which the protocol omits, could reverse for the device couple, while its magnitude
+that spin–orbit coupling on osmium, which the protocol omits, reverses for the device couple on one flavin level at
+the literature size for homoleptic [Os(bpy)₃], while its magnitude
 stays method-dependent, and naming the near-exact agreements that arise from cancelling errors. The flavin redox tuning by the
 protein environment is taken from experiment;<sup>25,26</sup> computing it is a follow-up.
 

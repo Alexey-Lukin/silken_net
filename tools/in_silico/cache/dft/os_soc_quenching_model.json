@@ -112,6 +112,28 @@
     "C_upper_zeta_pair_floor_mV": 209.2,
     "note": "every cell stays downhill with the quenched shift if the t2g splitting of Os(III) is at least the threshold — one_up: the hole on a single orbital, two_up: on a degenerate pair (a split pair, rhombic_f, lowers it further); only the C reading at the upper ζ is supported by ref 63's own rows (vs_ref63_table_s2), and under it a hole on a pair never gets below the margin in practice; the device complex's splitting is not in any cache — do not read it from the Os(III) HOMO–LUMO gap"
   },
+  "analogues_read": [
+    {
+      "complex": "[Os(bpy)3]3+",
+      "what": "two interconfigurational (dpi->dpi) near-IR bands, cm-1",
+      "value": [
+        4580,
+        5090
+      ],
+      "source": "Kober & Meyer 1983, Inorg. Chem. 22, 1614 — quoted by D'Alessandro et al. 2006, Inorg. Chem. 45, 3261",
+      "access": "second-hand: D'Alessandro's full text read; the primary's first page only (it states a 2A1 ground state)"
+    },
+    {
+      "complex": "low-spin Os(III) chlorido / ammine / indazole complexes",
+      "what": "|Delta/zeta| from EPR g-tensor fits",
+      "value": [
+        0.23,
+        0.5
+      ],
+      "source": "Buchel et al. 2017, Dalton Trans. 46, 11925, Table 4 (McGarvey t2g-hole analysis)",
+      "access": "full text read"
+    }
+  ],
   "vs_ref63_table_s2": {
     "source": "Srnec et al. 2008 (ref 63) SI Table S2, CASSCF(5,3)/CASPT2/CASSI, TZP/DZ, every Os row",
     "by_splitting": {

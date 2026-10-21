@@ -226,7 +226,7 @@ N_ELECTRONS = 2              # electrons per glucose (FAD → FADH₂)
 
 # ── Cascade anchors (experimental E°, verified — the AUTHORITATIVE cascade verdict;
 #    computed like for like the cascade is downhill in every Os form within the protocol — spin–orbit coupling on Os, which
-#    it omits, could reverse the device couple — its magnitude method-dependent — 95, SUMMARY). One-Home: SUMMARY/L3/paper link here.
+#    it omits, reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — its magnitude method-dependent — 95, SUMMARY). One-Home: SUMMARY/L3/paper link here.
 # Os mediator [Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺: +309 mV vs NHE (Zafar et al. 2012, Anal. Chem. 84, 334,
 #   doi:10.1021/ac202647z, Table 1 — the best-performing of six Os polymers, +15…+489 mV window, wired to GcGDH;
 #   its Ag/AgCl(0.1M KCl) reference is +288 mV vs NHE, p. 336). The reading +21 mV vs that reference is printed in the
@@ -247,6 +247,20 @@ OS_SOC_SHIFT_V = -0.30
 # The same abstract's Os³⁺ ²T₂g Kramers-doublet ↔ quartet splitting, cm⁻¹ (= 3ζ/2 in octahedral symmetry) — the ζ range
 #   the one-hole quenching model `94` starts from.
 OS3_SOC_SPLIT_CM1 = (4155.0, 5061.0)
+# ⊕ 2026-10-20 (00_07 HW.5.IS, ⚖️ (к) founder 2026-10-20): the same paper's SI Table S2 (CASSCF(5,3)/CASPT2/CASSI, basis
+#   TZP/DZ), every Os row — the 2²A and 3²A states of the t2g hole WITHOUT SOC, cm⁻¹ above 1²A, and ΔE0, the SOC shift of
+#   E°, mV — read 2026-10-20 from the SI PDF's text layer (pdf.js, page S3). The abstract's «≈ −300 mV» summarises rows that
+#   spread from −152 to −400 mV; the cascade reads the row of the closest ligand set, [Os(bipy)₃], with the octahedral
+#   value kept as the upper count (`95`), and `94` calibrates its one-hole model on all six.
+SRNEC_TABLE_S2_OS = {
+    "[OsCl6]4-/3-": (78.0, 194.0, -400.0),
+    "[Os(NH3)6]2+/3+": (610.0, 638.0, -362.0),
+    "[Os(CN)6]4-/3-": (293.0, 305.0, -333.0),
+    "[Os(en)3]2+/3+": (1609.0, 1709.0, -292.0),
+    "[Os(bipy)3]2+/3+": (2265.0, 2281.0, -250.0),
+    "[Os(H2O)6]2+/3+": (4845.0, 6389.0, -152.0),
+}
+OS_SOC_SHIFT_BIPY_V = SRNEC_TABLE_S2_OS["[Os(bipy)3]2+/3+"][2] / 1000.0
 # The other absolute-SHE value in common use beside 32's Isse–Gennaro 4.281 V; the flavin's E° does not move with it when
 #   the proton free energy moves consistently, so E°(Os), which has no proton, carries the whole difference.
 SHE_ABS_ALT_V = 4.44

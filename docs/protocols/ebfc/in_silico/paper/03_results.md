@@ -280,17 +280,21 @@ level. That holds within the protocol: every cell shares one functional, one con
 (|SHE_abs| = 4.281 V) and a scalar-relativistic osmium, and varying the flavin level and the osmium form tests none of
 them. One term the protocol omits has a known sign: spin–orbit coupling, absent from the LANL2DZ pseudopotential,
 stabilises Os(III) and lowers Os(II/III) potentials — by ≈ 300 mV in octahedral homoleptic complexes,<sup>19,63</sup> by less
-where a lower symmetry quenches it, as it may in the C₁ device complex. A shift beyond the smallest margin, 218.5 mV,
-reverses a cell; at the full octahedral value 5 of the 32 cells turn uphill — the device form on both electronic flavin
-levels (to −44.8 and −81.5 mV), the doubly relaxed form on both (to −18.3 and −55.0 mV) and the one-water form on the
-relaxed level (to −18.1 mV) — so five is an upper count. Which cells flip depends as much on the flavin as on the osmium:
-those five sit on flavin levels 65 and 101 mV above the measured flavin potential, the + ZPE and + RRHO cells, which keep
-at least +218.8 mV, on levels about 200 mV below it, and against the measured free flavin the device couple with the full
-shift lies at +19.8 mV. With spin–orbit coupling at that value, the protocol does not determine the sign of the device
-cascade. Two
+where a lower symmetry quenches it; for [Os(bpy)₃]²⁺/³⁺ itself — homoleptic and D₃, the closest ligand set it treats —
+ref 63 computes −250 mV (its Supporting Information, Table S2, CASSCF/CASPT2/CASSI), while the t2g splitting of the C₁
+device complex, which sets how far it quenches, is not computed here. A shift beyond the smallest margin, 218.5 mV,
+reverses a cell. At the [Os(bpy)₃] value 2 of the 32 cells turn uphill — the device form and the doubly relaxed form,
+both on the relaxed electronic flavin level (to −31.5 and −5.0 mV); at the full octahedral value 5, an upper count —
+the device form on both electronic flavin levels (to −44.8 and −81.5 mV), the doubly relaxed form on both (to −18.3 and
+−55.0 mV) and the one-water form on the relaxed level (to −18.1 mV). Which cells flip depends as much on the flavin as
+on the osmium: the five sit on flavin levels 65 and 101 mV above the measured flavin potential (the two at the
+[Os(bpy)₃] value on the 101 mV one), the + ZPE and + RRHO cells, which with the full shift keep at least +218.8 mV, on
+levels about 200 mV below it, and against the measured free flavin the device couple
+lies at +69.8 mV with the [Os(bpy)₃] shift and at +19.8 mV with the full one. With spin–orbit coupling at either value,
+the protocol does not determine the sign of the device cascade. Two
 alternative choices lower E°(Os) relative to ours without being errors of known sign: the other absolute-SHE value in
 common use, 4.44 V, lowers every E°(Os) and every cascade by 159 mV when the proton free energy moves with it (E°(Os) has
-no proton to compensate) — alone it turns no cell uphill, together with the full spin–orbit shift 12 of the 32 —, and
+no proton to compensate) — alone it turns no cell uphill, together with the spin–orbit shift 10 of the 32 at the [Os(bpy)₃] size and 12 at the full one —, and
 ωB97X lowers the device couple's E°(Os) by 138 mV (Table 4; 134 mV of it the functional, the rest the basis), with no
 ωB97X flavin potential to say what it does to the cascade. Terms that raise E°(Os) or the cascade are not netted against
 these: the osmium zero-point energy (+41 mV where computed, below), the explicit waters on the chloride (+63 to +72 mV
@@ -331,8 +335,9 @@ computed.
 
 **What limits the magnitude.** Neither side is attributed, and the candidate sources are not ranked. On the acceptor
 side: the continuum treatment of the charge-changing octahedral couple (each explicit water on the chloride moves
-E°(Os) by +63 to +72 mV, the series unconverged); spin–orbit coupling on osmium (≈ −300 mV at its octahedral value, not
-computed, which would widen the device form's acceptor side from +209 to +509 mV); the
+E°(Os) by +63 to +72 mV, the series unconverged); spin–orbit coupling on osmium (−250 mV as ref 63 computes it for
+[Os(bpy)₃], ≈ −300 mV at its octahedral value, not computed here, which would widen the device form's acceptor side from
++209 to +459 ⊥ +509 mV); the
 functional (138 mV on the osmium side of the device couple); the osmium geometry (up to 113 mV between the programmatic
 and the relaxed forms, Table 2); and the polymer film against one molecule (135 mV between preparations of the measured
 complex, §3.3). On the donor side, none of them sized here: lumiflavin for FAD, the basis and the functional, the
@@ -417,8 +422,8 @@ the assumed literature λ(Co) of 1.4 eV, ×1.9×10⁻⁵ to ×0.17 at the comput
 (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM, one SHE scale) at the four levels of the flavin — MMFF electronic, relaxed electronic,
 + zero-point energy and + RRHO free energy, the last two correcting the flavin only — and, for the doubly relaxed chloro
 form, with the zero-point energy on both sides (star); dashed, the measured +529 mV (free flavin; film-bound mediator).
-Every point is downhill within this protocol, which omits spin–orbit coupling on osmium (≈ −300 mV at its octahedral value;
-with it the protocol does not determine the sign of the device cascade, §3.5); how far a point lies from the measured value depends on the protocol. *(b)* The same points as their donor side (computed − measured flavin) and acceptor side (measured −
+Every point is downhill within this protocol, which omits spin–orbit coupling on osmium (−250 mV for [Os(bpy)₃] in ref 63,
+≈ −300 mV at its octahedral value; at either the protocol does not determine the sign of the device cascade, §3.5); how far a point lies from the measured value depends on the protocol. *(b)* The same points as their donor side (computed − measured flavin) and acceptor side (measured −
 computed osmium): the gap is their sum, so a point on the shaded band (|gap| ≤ 50 mV) with both sides at least 100 mV off
 — thresholds we set — is two large errors cancelling, as for the device form at the + ZPE level (0.3 mV from −210 and
 +209 mV); none is a validation.

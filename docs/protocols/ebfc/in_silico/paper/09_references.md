@@ -55,8 +55,12 @@
 > the body was not read. Its set is homoleptic — [M(H₂O)₆], [MCl₆], [M(NH₃)₆], [M(en)₃], [M(bipy)₃], [M(CN)₆].
 > §3.5 cites both: ref 19's abstract also names ~0.3 V of spin–orbit correction for Os (read in the self-review round 1,
 > row 5 of `docs/protocols/paper/stattia1_self_review_round1.md`) — a secondary statement of the same group's result, whose
-> primary computation is ref 63 (in-silico §Critical Rules #43). Ref 63's value is for octahedral homoleptic complexes;
-> §3.5 says the C₁ device complex may quench it.
+> primary computation is ref 63 (in-silico §Critical Rules #43). Ref 63's value is for octahedral homoleptic complexes.
+> ⊕ **2026-10-20 — its SI read** (Table S2, page S3, the ACS SI PDF's text layer): per complex the CASSI shift runs from
+> −152 mV ([Os(H₂O)₆]) to −400 mV ([OsCl₆]), and for [Os(bipy)₃] it is −250 mV, with the two excited ²A states of the t2g
+> hole at 2265 and 2281 cm⁻¹ — §3.5 sets that row, the closest ligand set the paper treats, against every cell, the
+> abstract's ≈ −300 mV staying the octahedral upper count (⚖️ founder 2026-10-20; the transcription is
+> `tools/in_silico/lib/constants.py` `SRNEC_TABLE_S2_OS`).
 
 ## Claims still without a source (`[CITATION NEEDED]` in the text)
 

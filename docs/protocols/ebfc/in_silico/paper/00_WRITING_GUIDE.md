@@ -33,7 +33,7 @@ something already known. Frame everything around the *insight*, never around "we
 **Revised 2026-10-19 (the like-for-like revision, `00_07` HW.5.IS):** the cascade is framed like for like — direction and table (⚖️ founder 2026-10-16) — not as a decomposed ~1 eV gap; one-electron readings carry no conclusion.
 
 Our honest finding is that the cascade, compared like for like, is downhill in every form within one protocol — whose
-omitted spin–orbit coupling on osmium could reverse the device couple — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
+omitted spin–orbit coupling on osmium reverses the device couple on one flavin level at the literature size for homoleptic [Os(bpy)₃] — while its magnitude is method-dependent and its near-exact agreements are cancellations; the cathode DET margin is
 conditional on λ(Co) — below turnover at the computed value, straddling it only at an assumed one. A first-timer's instinct is to
 hide this and claim "validation". **Do the opposite — the honesty IS the contribution.** Three real
 insights to sell (all are "new physical insight"):

@@ -26,9 +26,10 @@ The paper's methodological core is the honest treatment of the cascade. Set like
 two-proton flavin couple against each one-electron osmium couple on one SHE scale — the computed cascade is
 downhill in every osmium form at every level of the flavin treatment, consistent with the measured direction; but that
 holds within one functional, one continuum, one absolute-SHE convention and a scalar-relativistic osmium.
-Spin–orbit coupling on osmium, of known sign and omitted here, turns up to 5 of the 32 cells uphill at its octahedral
-literature value — the device couple on the flavin levels that lie above the measured flavin among them — while
-against the measured flavin the device couple stays just downhill; at that value the protocol does not determine the sign,
+Spin–orbit coupling on osmium, of known sign and omitted here, turns 2 of the 32 cells uphill at the literature size for
+homoleptic [Os(bpy)₃] and up to 5 at its octahedral literature value — the device couple on flavin levels that lie
+above the measured flavin among them — while against the measured flavin the device couple stays downhill; at either value
+the protocol does not determine the sign,
 and the direction rests on the protocol rather than being established by it. The finding is how far its magnitude, and where the remaining gap sits, move with the protocol — by
 hundreds of millivolts — so we report them as method-dependent and attribute the gap to neither side. Where a computed value
 lands within millivolts of the measured one, both sides are large and opposite, and we name the agreement a
