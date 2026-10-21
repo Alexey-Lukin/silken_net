@@ -6052,3 +6052,209 @@ def test_cathode_ionic_path_literature_points_follow_from_the_readings():
     for p in pts:   # counted, never «most» by eye
         assert p["open_cells_exceeded"] == {end: sorted(k for k, v in req.items() if v["budget_ohm"] < p["element_ohm"][i])
                                             for i, end in enumerate(("lenient", "adverse"))}, p["source"]
+
+
+def test_printed_part_sway_stress_invariants():
+    """105 (00_07 HW.23, the printed-part sway-stress leg): every cell recomputed HERE from the CEMs, the voxel-FE cache,
+    `87`'s, `102`'s, `103`'s and `52`'s caches, the lib's alloys and `55`'s markers — not from the script's algebra; the
+    disc by an independent finite-difference solve of the plate, at the shank root and across the groove.
+
+    CAN catch: a stale FEA row, a wrong solid fraction or Richardson step, an RMS factor off √(ratio/φ); a binds-above
+    threshold off ε_e/(SF·f·r/R) (× √(3+2ν) on the any-state reading) or rounded DOWN; a depth fraction off the CEM depth,
+    the host radius or `103`'s bark; a source-day flag that does not follow; a force off `103`'s closed forms (state 2
+    k_s·k_A/(k_A+k_s), state 3 series(k_A, k_lower)·(1−d/dv) over `103`'s grid, the rigid-sleeve k_A) or off `102`'s
+    adverse shift; a section, a barb width or formula that no longer matches the CEM; a disc stress per newton, a groove
+    stress taken on the hoop moment instead of the radial one, a groove thickness; a Soderberg SF, K_f or mean off `86`'s
+    form on any of the three cycle readings or on the wrong route's endurance; a junction or mass-path number; a verdict
+    list of alloys that disagrees with the flags. CANNOT catch: the plate MODEL itself (both solves are Kirchhoff), the
+    energy bound's premises (Hill on a ≈2-cell part, E_z* against the FE readings), k_p, t_L, any K_t, the static means —
+    the script's declared ceilings.
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, DBH_MIN_CM, E_PEEK_PA
+
+    d = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+    d87 = json.loads((MECHANICAL / "pogo_sway_transfer.json").read_text(encoding="utf-8"))
+    d102 = json.loads((MECHANICAL / "wire_liner_shear_lag.json").read_text(encoding="utf-8"))
+    d103 = json.loads((MECHANICAL / "anchor_wood_share.json").read_text(encoding="utf-8"))
+    d52 = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))
+    fea = json.loads((REPO / "tools/cad/cache/fea/anchor_zone1_pine.json").read_text(encoding="utf-8"))
+    cem = REPO / "tools/cad/cem"
+    lock1 = json.loads((cem / "mechanical_lock.zone1.json").read_text(encoding="utf-8"))
+    flange = json.loads((cem / "cathode_flange.json").read_text(encoding="utf-8"))
+    sleeve = json.loads((cem / "zone2_sleeve.json").read_text(encoding="utf-8"))
+    pine = json.loads((cem / "anchor_zone1.pine.json").read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("s55_105", REPO / "tools/in_silico/scripts/55_bus_mechanical.py")
+    s55 = importlib.util.module_from_spec(spec)
+    sys.modules["s55_105"] = s55
+    spec.loader.exec_module(s55)
+    inp = d["inputs"]
+    g = d103["geometry"]
+
+    # the gyroid's energy bound
+    rows = sorted(fea["rows"], key=lambda r: r["step_mm"])
+    phi = 1 - rows[0]["porosity"]
+    rich = {k: rows[0][f"{k}_ratio"] + (rows[0][f"{k}_ratio"] - rows[1][f"{k}_ratio"]) / (rows[1]["step_mm"] / rows[0]["step_mm"] - 1)
+            for k in ("radial", "axial")}
+    f = {"radial_richardson": math.sqrt(rich["radial"] / phi), "axial_richardson": math.sqrt(rich["axial"] / phi)}
+    assert inp["solid_fraction"] == pytest.approx(phi, abs=1e-12)
+    assert inp["rms_factor_by_reading"] == pytest.approx(f, abs=1e-12)
+    div = {"near_uniaxial": 1.0, "any_state": math.sqrt(3 + 2 * fea["poisson_ratio"])}
+    r_host = DBH_MIN_CM * 10 / 2
+    r_g = r_host - (g["shift_span_mm_87"]["ceiling_full_depth_77"] - g["anode_length_mm"])
+    frac = {"dbh_min_sensor_on_bark": r_g / r_host, "large_stem_limit": 1.0}
+    for side, bark in g["bark_mm_78"].items():
+        frac[f"dbh_min_sensor_on_xylem_{side}"] = r_g / (r_host - bark - g["phloem_mm_78"])
+    assert inp["depth_fraction"] == pytest.approx(frac, abs=1e-12)
+    for al, p in ALLOY_PROPERTIES.items():
+        se = s55.ENDURANCE_OVER_YIELD * s55.AS_PRINTED_DERATE * p["yield_MPa"]
+        assert d["alloys"][al]["endurance_printed_MPa"] == pytest.approx(se, rel=1e-12), al
+        assert d["alloys"][al]["endurance_wrought_MPa"] == pytest.approx(se / s55.AS_PRINTED_DERATE * s55.WROUGHT_DERATE, rel=1e-12)
+        eps_e = se / (p["E_GPa"] * 1e3) * 1e6
+        for dk, fr in frac.items():
+            for sk, dv_ in div.items():
+                for sf in (1.0, 2.0):
+                    cell = d["gyroid_binds_above_surface_strain_ue"][al][f"{dk}|{sk}|sf{sf:g}"]
+                    for fk, fv in f.items():
+                        exact = eps_e / sf * dv_ / (fv * fr)
+                        assert exact - 1e-6 <= cell[fk] < exact + 1, (al, dk, sk, sf, fk)   # rounded UP
+    for rd in ("median", "upper_whisker"):
+        eps = d87["by_slope_reading"][rd]["stem_at_anchor_h_le_2m"]["surface_strain_microstrain_source_tree"]
+        for al in ALLOY_PROPERTIES:
+            for k, v in d["gyroid_source_day_exceeds"][rd][al].items():
+                for fk, flag in v.items():
+                    assert flag == (eps > d["gyroid_binds_above_surface_strain_ue"][al][k][fk])
+
+    # the forces — 103's closed forms over 103's grid, 102's adverse shift
+    span = g["span_mm"]
+    a_sl = math.pi / 4 * ((sleeve["bore_diameter_mm"] + 2 * sleeve["wall_thickness_mm"]) ** 2 - sleeve["bore_diameter_mm"] ** 2)
+    ea_p = E_PEEK_PA / 1e6 * a_sl
+    z3 = d103["zone3_fit"]
+    l_run = z3["sections_mm"]["composite_run"][1]
+    ea_c = z3["stiffness_N_per_mm"]["composite_run"]["sway"] * l_run
+    comp = {"a_flange_on_bark": lambda a, b: (b - a) / ea_p,
+            "b_zone3_fit": lambda a, b: max(0, min(b, l_run) - max(a, 0)) / ea_c + max(0, min(b, span) - max(a, l_run)) / ea_p}
+    ka = d103["stiffness_N_per_mm"]["anode_bond"]
+    bonds = {"anode_bond_stiff": max(ka.values()), "anode_bond_soft": min(ka.values())}
+    dvs = list(g["shift_span_mm_87"].values())
+    ties = list(g["flange_seat_to_install_day_cambium_mm"].values())
+    grid = sorted({0.5 + (t - 0.5) * i / 40 for t in ties for i in range(41)})
+    for pn, cf in comp.items():
+        ks = 1 / cf(0, span)
+        for bn, k in bonds.items():
+            fz = d["forces_N_per_mm_of_shift"][pn][bn]
+            assert fz["state2_rigid_bark_per_mm"] == pytest.approx(ks * k / (k + ks), rel=1e-9)
+            fa = max(1 / (1 / k + cf(dd, span)) * (1 - dd / dv) * dv / max(dvs) for dd in grid for dv in dvs)
+            assert fz["state3_bond_per_mm_max_over_ties"] == pytest.approx(fa, rel=1e-9)
+            assert fz["rigid_sleeve_bond_per_mm"] == k
+    shift = {rd: d102["sway_input"]["shift_um_87"][rd][1] * 1e-3 for rd in ("median", "upper_whisker")}
+
+    # the solid members and the disc (an independent FD plate)
+    def barb_s(F, c):
+        h = c["barb_height_mm"]
+        w = h / math.tan(math.radians(c["lead_angle_deg"])) + h / math.tan(math.radians(c["trail_angle_deg"]))
+        return 6 * F / c["barb_rows"] / (math.pi * c["shank_diameter_mm"]) * h / w ** 2
+
+    def check(a, sig, al, se):
+        sy = ALLOY_PROPERTIES[al]["yield_MPa"]
+        for cyc, (sa, sm) in (("one_sided", (sig / 2, sig / 2)), ("reversed", (sig, 0.0)), ("on_preload", (sig, sig))):
+            sf = 1 / (sa / se + sm / sy)
+            assert (a[cyc]["sf_at_kf1"], a[cyc]["kf_at_sf2"]) == pytest.approx((sf, sf / 2), rel=1e-9), (cyc, al)
+        room = 0.5 - sig / se
+        assert (a["mean_at_sf2_MPa"] is None) == (room <= 0)
+        if room > 0:
+            assert a["mean_at_sf2_MPa"] == pytest.approx(sy * room, rel=1e-9)
+
+    a1 = math.pi / 4 * lock1["shank_diameter_mm"] ** 2
+    a1g = math.pi / 4 * (lock1["shank_diameter_mm"] - 2 * lock1["groove_depth_mm"]) ** 2
+    kinds = {"state2_rigid_bark": "state2_rigid_bark_per_mm", "state3_rigid_tie_max": "state3_bond_per_mm_max_over_ties",
+             "rigid_sleeve": "rigid_sleeve_bond_per_mm"}
+    for key, cell in d["zone1_members"].items():
+        pn, bn, kind, rd = key.split("|")
+        F = d["forces_N_per_mm_of_shift"][pn][bn][kinds[kind]] * shift[rd]
+        assert cell["force_N"] == pytest.approx(F, rel=1e-9)
+        for m, sig in (("zone1_shank", F / a1), ("zone1_groove_root", F / a1g), ("zone1_barb_root_bending", barb_s(F, lock1))):
+            assert cell["members"][m]["sigma_n_MPa"] == pytest.approx(sig, rel=1e-9)
+            for al in ALLOY_PROPERTIES:
+                check(cell["members"][m]["printed"][al], sig, al, d["alloys"][al]["endurance_printed_MPa"])
+
+    gl = d52["applied_gland"]
+    b, a, c, t = flange["shank_diameter_mm"] / 2, flange["flange_diameter_mm"] / 2, g["channel_radius_mm"], flange["flange_thickness_mm"]
+    rs = sleeve["bore_diameter_mm"] / 2
+    tg = t - gl["flange_groove_depth_mm"]
+    nu, n = fea["poisson_ratio"], 6000
+    r = np.linspace(b, a, n + 1)
+    h_ = r[1] - r[0]
+
+    def frac_in(lo, hi):
+        if hi - lo < 1e-12:
+            return (r >= lo).astype(float)
+        return np.clip((r * r - lo * lo) / (hi * hi - lo * lo), 0, 1)
+
+    cases = {"b_pull_at_shank|uniform_over_bark_annulus": ((b, b), (c, a)), "b_pull_at_shank|rim_only_dished_seat": ((b, b), (a, a)),
+             "b_pull_at_shank|channel_edge_only": ((b, b), (c, c)), "a_sleeve_face_press|uniform_over_bark_annulus": ((rs, c), (c, a)),
+             "a_sleeve_face_press|rim_only_dished_seat": ((rs, c), (a, a))}
+    assert set(d["disc_MPa_per_N"]) == set(cases)
+    gr = (r >= gl["flange_groove_r_mm"][0]) & (r <= gl["flange_groove_r_mm"][1])
+    for name, (ld, rc) in cases.items():
+        rhs = (frac_in(*ld) - frac_in(*rc)) / (2 * math.pi * r)
+        m = np.zeros((n + 1, n + 1))
+        m[0, 0], rhs[0] = 1, 0
+        idx = np.arange(1, n)
+        m[idx, idx - 1] = 1 / h_ ** 2 - 1 / (2 * h_ * r[idx])
+        m[idx, idx] = -2 / h_ ** 2 - 1 / r[idx] ** 2
+        m[idx, idx + 1] = 1 / h_ ** 2 + 1 / (2 * h_ * r[idx])
+        m[n, n], m[n, n - 1], m[n, n - 2], rhs[n] = 3 / (2 * h_) + nu / a, -2 / h_, 1 / (2 * h_), 0
+        ph = np.linalg.solve(m, rhs)
+        dph = np.gradient(ph, h_, edge_order=2)
+        m_r, m_t = dph + nu * ph / r, ph / r + nu * dph
+        got = d["disc_MPa_per_N"][name]
+        assert got["shank_root_MPa_per_N"] == pytest.approx(6 * max(abs(m_r[0]), abs(m_t[0])) / t ** 2, rel=2e-3), name
+        assert got["groove_radial_MPa_per_N"] == pytest.approx(6 * abs(m_r[gr]).max() / tg ** 2, rel=2e-3), name
+        assert got["groove_hoop_plate_MPa_per_N"] == pytest.approx(6 * abs(m_t[gr]).max() / t ** 2, rel=2e-3), name
+    a3 = z3["shank"]["ti_section_mm2"]
+    for key, cell in d["zone3_members"].items():
+        pn, bn, kind, rd = key.split("|")
+        per = (d["forces_N_per_mm_of_shift"][pn][bn]["state2_rigid_bark_per_mm"] if kind == "state2_rigid_bark"
+               else d["forces_N_per_mm_of_shift"][pn]["air_dry_bark_max_per_mm"])
+        F = per * shift[rd]
+        assert cell["force_N"] == pytest.approx(F, rel=1e-9)
+        expect = {}
+        if pn == "b_zone3_fit":
+            expect = {"zone3_shank": F / a3, "zone3_barb_root_bending": barb_s(F, flange)}
+        for name, v in d["disc_MPa_per_N"].items():
+            if name.startswith(pn[0] + "_"):
+                expect[f"disc_shank_root|{name}"] = v["shank_root_MPa_per_N"] * F
+                expect[f"disc_groove|{name}"] = v["groove_radial_MPa_per_N"] * F
+        assert set(cell["members"]) == set(expect), key
+        for mname, sig in expect.items():
+            mem = cell["members"][mname]
+            assert mem["sigma_n_MPa"] == pytest.approx(sig, rel=1e-9)
+            check(mem["printed"], sig, ALLOY_BASELINE, d["alloys"][ALLOY_BASELINE]["endurance_printed_MPa"])
+            check(mem["cnc_wrought"], sig, ALLOY_BASELINE, d["alloys"][ALLOY_BASELINE]["endurance_wrought_MPa"])
+
+    # the junction, the axial term and the mass path
+    fr_b = frac["dbh_min_sensor_on_bark"]
+    assert d["junction"]["layer_over_wood_strain"] == pytest.approx(lock1["shank_diameter_mm"] / 2 / pine["gyroid_period_rim_mm"], rel=1e-12)
+    fa = d["forces_N_per_mm_of_shift"]["b_zone3_fit"]["anode_bond_stiff"]["state3_bond_per_mm_max_over_ties"] * shift["upper_whisker"]
+    for al in ALLOY_PROPERTIES:
+        rms = fa / a1 * math.sqrt(1 / (rows[0]["axial_ratio"] * phi))
+        got = d["gyroid_axial_term_mature_stiff_bond_upper"]["by_alloy"][al]
+        assert got["rms_MPa"] == pytest.approx(rms, rel=1e-12)
+        assert got["over_sf2_line"] == pytest.approx(rms / (d["alloys"][al]["endurance_printed_MPa"] / 2), rel=1e-12)
+    for rd in ("median", "upper_whisker"):
+        eps = d87["by_slope_reading"][rd]["stem_at_anchor_h_le_2m"]["surface_strain_microstrain_source_tree"]
+        assert d["junction"]["mismatch_um_at_tL1_sensor_on_bark"][rd] == pytest.approx(eps * fr_b * lock1["shank_diameter_mm"] / 2 * 1e-3, rel=1e-12)
+        acc = d87["by_slope_reading"][rd]["stem_at_anchor_h_le_2m"]["accel_m_s2"]
+        mom = d87["inputs"]["mass_ceiling_g"] / 1e3 * (9.80665 + acc) * d87["inputs"]["capsule_envelope_mm"][1]
+        dd, bo = flange["shank_diameter_mm"], flange["bore_diameter_mm"]
+        assert d["mass_path"][rd]["zone3_shank_bending_MPa"] == pytest.approx(mom * 32 * dd / (math.pi * (dd ** 4 - bo ** 4)), rel=1e-12)
+
+    # the verdict's alloy lists are the flags, not a hand-typed list; its mass-path bound is an upper bound
+    up = d["gyroid_source_day_exceeds"]["upper_whisker"]
+    lo = ", ".join(sorted(al for al in ALLOY_PROPERTIES if up[al]["large_stem_limit|near_uniaxial|sf2"]["radial_richardson"]))
+    assert f"exceeds them for {lo} on the lower reading" in d["verdict"]
+    mmax = max(v["zone3_shank_bending_MPa"] for v in d["mass_path"].values())
+    bound = float(re.search(r"mass path stays below ([0-9.]+) MPa", d["verdict"]).group(1))
+    assert mmax < bound

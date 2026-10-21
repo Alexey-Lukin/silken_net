@@ -5899,6 +5899,118 @@ CHECKS += [
 ]
 
 
+# ── HW.23 sway stress in the anchor's titanium parts (105, 2026-10-21) ⟷ SUMMARY §«What the Stem's Sway Puts into the
+# Anchor's Titanium Parts». The binds-above strains are cached rounded UP (a «binds above X» sentence); a lower bound and a
+# «harmless below it» K_f round DOWN; forces and nominal stresses are computed values, rounded to the shown digits
+# (in-silico §When Modifying #43).
+SWAY105 = "mechanical/printed_part_sway_stress.json"
+_SWAY105_ROWS = (("Ta", "Ta"), ("CP-Ti Gr4", "CP-Ti-Gr4"), ("Ti-6Al-4V", "Ti-6Al-4V"), ("Ti-6Al-7Nb", "Ti-6Al-7Nb"),
+                 ("Ti-15Zr", "Ti-15Zr"), ("β-Ti-13Nb-13Zr", "beta-Ti-13Nb-13Zr"))
+_SWAY105_DISC = (("uniform over the bark annulus (`103`'s bearing area)", "b_pull_at_shank|uniform_over_bark_annulus"),
+                 ("at the rim only (a dished seat — adverse)", "b_pull_at_shank|rim_only_dished_seat"),
+                 ("at the channel's edge only", "b_pull_at_shank|channel_edge_only"))
+_SW_Z1 = "b_zone3_fit|anode_bond_stiff|state3_rigid_tie_max|upper_whisker"
+_SW_Z3 = "b_zone3_fit|anode_bond_stiff|state2_rigid_bark|upper_whisker"
+
+
+def _floor2(x):
+    return math.floor(round(x * 100, 9)) / 100
+
+
+def _sway105_row(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(7)]
+    cells = [num[0], num[1], f"{num[2]} ⊥ {num[3]}", f"{num[4]} ⊥ {num[5]}", num[6]]
+    return rf"(?m)^\| {re.escape(label)} \| " + r" \| ".join(cells) + r" \|$"
+
+
+def _sway105_disc(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(2)]
+    return rf"(?m)^\| {re.escape(label)} \| {num[0]} \| {num[1]} \|$"
+
+
+def _sw_g(d, al, cell, fk="radial_richardson"):
+    return d["gyroid_binds_above_surface_strain_ue"][al][cell][fk]
+
+
+CHECKS += [
+    *[(f"sway105 {key} col {j} → 105", SUMMARY, _sway105_row(label, j), SWAY105, res, 0.0)
+      for label, key in _SWAY105_ROWS
+      for j, res in enumerate((
+          (lambda k: lambda d: round(d["alloys"][k]["endurance_printed_MPa"], 1))(key),
+          (lambda k: lambda d: d["strain_figure_of_merit_vs_baseline"][k])(key),
+          (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|near_uniaxial|sf2"))(key),
+          (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|near_uniaxial|sf2", "axial_richardson"))(key),
+          (lambda k: lambda d: _sw_g(d, k, "dbh_min_sensor_on_bark|near_uniaxial|sf2"))(key),
+          (lambda k: lambda d: _sw_g(d, k, "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2"))(key),
+          (lambda k: lambda d: _sw_g(d, k, "large_stem_limit|any_state|sf2"))(key)))],
+    *[(f"sway105 disc {key} col {j} → 105", SUMMARY, _sway105_disc(label, j), SWAY105, res, 0.0)
+      for label, key in _SWAY105_DISC
+      for j, res in enumerate((
+          (lambda k: lambda d: round(d["disc_MPa_per_N"][k]["shank_root_MPa_per_N"] * d["zone3_members"][_SW_Z3]["force_N"], 2))(key),
+          (lambda k: lambda d: round(d["disc_MPa_per_N"][k]["groove_radial_MPa_per_N"] * d["zone3_members"][_SW_Z3]["force_N"], 2))(key)))],
+    ("sway105 rms low → 105", SUMMARY, rf"RMS stress at ≥ {N}–[\d.]+ `E_s · ε`", SWAY105,
+     lambda d: _floor2(d["inputs"]["rms_factor_by_reading"]["radial_richardson"]), 0.0),
+    ("sway105 rms high → 105", SUMMARY, rf"RMS stress at ≥ [\d.]+–{N} `E_s · ε`", SWAY105,
+     lambda d: _floor2(d["inputs"]["rms_factor_by_reading"]["axial_richardson"]), 0.0),
+    ("sway105 source strain → 105", SUMMARY, rf"one gust of one January day\), {N} µε at", SWAY105,
+     lambda d: d["inputs"]["stem_readings_87"]["upper_whisker"]["surface_strain_ue"], 0.0),
+    ("sway105 median strain → 105", SUMMARY, rf"and its median \({N} µε\) for Ta only", SWAY105,
+     lambda d: d["inputs"]["stem_readings_87"]["median"]["surface_strain_ue"], 0.0),
+    ("sway105 junction mismatch → 105", SUMMARY, rf"junction absorbs {N} µm of radial mismatch", SWAY105,
+     lambda d: round(d["junction"]["mismatch_um_at_tL1_sensor_on_bark"]["upper_whisker"], 1), 0.0),
+    ("sway105 junction ratio → 105", SUMMARY, rf"{N}× the wood's strain over one", SWAY105,
+     lambda d: d["junction"]["layer_over_wood_strain"], 0.0),
+    ("sway105 junction period → 105", SUMMARY, rf"over one {N} mm rim period", SWAY105,
+     lambda d: d["junction"]["rim_period_mm"], 0.0),
+    ("sway105 F_A stiff → 105", SUMMARY, rf"install-day cambium, {N} N on a stiff bond", SWAY105,
+     lambda d: round(d["zone1_members"][_SW_Z1]["force_N"]), 0.0),
+    ("sway105 F_A soft → 105", SUMMARY, rf"on a stiff bond and {N} N on a soft", SWAY105,
+     lambda d: round(d["zone1_members"]["b_zone3_fit|anode_bond_soft|state3_rigid_tie_max|upper_whisker"]["force_N"]), 0.0),
+    ("sway105 F_A rigid sleeve → 105", SUMMARY, rf"one; {N} N with a rigid sleeve", SWAY105,
+     lambda d: math.ceil(d["zone1_members"]["b_zone3_fit|anode_bond_stiff|rigid_sleeve|upper_whisker"]["force_N"]), 0.0),
+    ("sway105 z1 shank → 105", SUMMARY, rf"loads the Zone 1 shank at {N} MPa", SWAY105,
+     lambda d: round(d["zone1_members"][_SW_Z1]["members"]["zone1_shank"]["sigma_n_MPa"], 2), 0.0),
+    ("sway105 z1 shank kf → 105", SUMMARY, rf"4V: {N} reversed — the tie", SWAY105,
+     lambda d: _floor2(d["zone1_members"][_SW_Z1]["members"]["zone1_shank"]["printed"]["Ti-6Al-4V"]["reversed"]["kf_at_sf2"]), 0.0),
+    ("sway105 z1 groove → 105", SUMMARY, rf"groove root at {N} \([\d.]+\)", SWAY105,
+     lambda d: round(d["zone1_members"][_SW_Z1]["members"]["zone1_groove_root"]["sigma_n_MPa"], 2), 0.0),
+    ("sway105 z1 groove kf → 105", SUMMARY, rf"groove root at [\d.]+ \({N}\)", SWAY105,
+     lambda d: _floor2(d["zone1_members"][_SW_Z1]["members"]["zone1_groove_root"]["printed"]["Ti-6Al-4V"]["reversed"]["kf_at_sf2"]), 0.0),
+    ("sway105 z1 barb → 105", SUMMARY, rf"equal rows\ntaken, at {N} MPa", SWAY105,
+     lambda d: round(d["zone1_members"][_SW_Z1]["members"]["zone1_barb_root_bending"]["sigma_n_MPa"], 2), 0.0),
+    ("sway105 z1 barb kf → 105", SUMMARY, rf"taken, at [\d.]+ MPa \({N}\)", SWAY105,
+     lambda d: _floor2(d["zone1_members"][_SW_Z1]["members"]["zone1_barb_root_bending"]["printed"]["Ti-6Al-4V"]["reversed"]["kf_at_sf2"]), 0.0),
+    *[(f"sway105 axial {al} → 105", SUMMARY, pat, SWAY105,
+       (lambda k: lambda d: _floor2(d["gyroid_axial_term_mature_stiff_bond_upper"]["by_alloy"][k]["over_sf2_line"]))(al), 0.0)
+      for al, pat in (("Ti-6Al-4V", rf"gives {N} of the SF-2 line on 4V"), ("CP-Ti-Gr4", rf"\({N} on CP-Ti,"),
+                      ("Ta", rf"\n{N} on Ta\)"))],
+    ("sway105 F_F → 105", SUMMARY, rf"reacted on a rigid bark at\n{N} N", SWAY105,
+     lambda d: round(d["zone3_members"][_SW_Z3]["force_N"]), 0.0),
+    ("sway105 disc kf printed → 105", SUMMARY, rf"reaches SF 2 at K_f {N} printed ⊥", SWAY105,
+     lambda d: _floor2(d["zone3_members"][_SW_Z3]["members"]["disc_shank_root|b_pull_at_shank|rim_only_dished_seat"]["printed"]["one_sided"]["kf_at_sf2"]), 0.0),
+    ("sway105 disc kf cnc → 105", SUMMARY, rf"printed ⊥ {N} on the\nCNC route", SWAY105,
+     lambda d: _floor2(d["zone3_members"][_SW_Z3]["members"]["disc_shank_root|b_pull_at_shank|rim_only_dished_seat"]["cnc_wrought"]["one_sided"]["kf_at_sf2"]), 0.0),
+    ("sway105 air-dry force → 105", SUMMARY, rf"air-dry bark reading the force is {N} N", SWAY105,
+     lambda d: round(d["zone3_members"]["b_zone3_fit|anode_bond_stiff|state2_air_dry_bark_max|upper_whisker"]["force_N"], 1), 0.0),
+    ("sway105 premise a low → 105", SUMMARY, rf"top face \({N}–[\d.]+ MPa at", SWAY105,
+     lambda d: round(min(v["sigma_n_MPa"] for k, v in d["zone3_members"]["a_flange_on_bark|anode_bond_stiff|state2_rigid_bark|upper_whisker"]["members"].items() if k.startswith("disc_shank_root")), 1), 0.0),
+    ("sway105 premise a high → 105", SUMMARY, rf"top face \([\d.]+–{N} MPa at", SWAY105,
+     lambda d: round(max(v["sigma_n_MPa"] for v in d["zone3_members"]["a_flange_on_bark|anode_bond_stiff|state2_rigid_bark|upper_whisker"]["members"].values()), 1), 0.0),
+    ("sway105 premise a force → 105", SUMMARY, rf"MPa at {N} N\)\. The Zone 3", SWAY105,
+     lambda d: round(d["zone3_members"]["a_flange_on_bark|anode_bond_stiff|state2_rigid_bark|upper_whisker"]["force_N"]), 0.0),
+    ("sway105 z3 shank → 105", SUMMARY, rf"The Zone 3 shank carries {N} MPa", SWAY105,
+     lambda d: round(d["zone3_members"][_SW_Z3]["members"]["zone3_shank"]["sigma_n_MPa"], 2), 0.0),
+    ("sway105 z3 barb → 105", SUMMARY, rf"its barb root\n{N} MPa", SWAY105,
+     lambda d: round(d["zone3_members"][_SW_Z3]["members"]["zone3_barb_root_bending"]["sigma_n_MPa"], 2), 0.0),
+    ("sway105 z3 barb kf printed → 105", SUMMARY, rf"one-sided {N} printed ⊥ [\d.]+ CNC\)", SWAY105,
+     lambda d: _floor2(d["zone3_members"][_SW_Z3]["members"]["zone3_barb_root_bending"]["printed"]["one_sided"]["kf_at_sf2"]), 0.0),
+    ("sway105 z3 barb kf cnc → 105", SUMMARY, rf"one-sided [\d.]+ printed ⊥ {N} CNC\)", SWAY105,
+     lambda d: _floor2(d["zone3_members"][_SW_Z3]["members"]["zone3_barb_root_bending"]["cnc_wrought"]["one_sided"]["kf_at_sf2"]), 0.0),
+    ("sway105 mass → 105", SUMMARY, rf"lever arm stays below {N} MPa", SWAY105,
+     lambda d: math.ceil(round(max(v["zone3_shank_bending_MPa"] for v in d["mass_path"].values()) * 100, 9)) / 100, 0.0),
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

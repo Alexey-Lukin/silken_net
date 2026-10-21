@@ -999,6 +999,91 @@ radial CTE stays above 5.95 ppm/K, and the bark's own strain, growth preload and
 
 ---
 
+## HW.23 — What the Stem's Sway Puts into the Anchor's Titanium Parts (script 105)
+
+The S-N plan (`docs/protocols/anchor/sn_fatigue_test_plan.md` §1.3) accepts a printed part by its endurance against
+`K_f · S · σ_n`, and until `105` no model gave `σ_n` for the shanks, the barbs or the flange — for the gyroid it now gives only a lower
+bound. `105` lists
+every path the sway takes into them (in-silico §Critical Rules #15 — the full list, with each one's status, is the
+cache's `paths`) and prices the ones a closed form reaches. The endurance markers are `55`'s and OURS (`0.40 × 0.5 × σ_y`
+printed, `× 1.0` for the CNC route the flange may take — `01_02 §1.7`), not a standard; SF 2 is `55`'s line.
+
+**The gyroid is strain-controlled.** Bonded to the wood (the callus grows into it — `01_04 §2`), it follows the stem's
+longitudinal strain across its section, so its ligament stress scales with `E_s · ε`, not with a force, and the figure
+of merit of its alloy is `σ_e / E_s`, not `σ_e`. An energy bound (Hill, and the macro energy at a given strain being
+least in uniaxial stress) puts the ligaments' RMS stress at ≥ 0.43–0.51 `E_s · ε` on the two voxel-FE readings — and it
+is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading is the in-plane traction modulus the
+bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
+only while that modulus is at least the reading; a binding claim takes the lower one. The table gives the stem's surface
+strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
+RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 lowers every cell, a share below 1 (not excluded — a
+gyroid stiffer than the wood, Ta's, takes less) raises it. No cell is a strain below which the gyroid is safe.
+
+| alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
+|---|---|---|---|---|---|
+| Ta | 69.0 | 0.23 | 430 ⊥ 360 | 583 ⊥ 510 | 825 |
+| CP-Ti Gr4 | 96.0 | 0.58 | 1069 ⊥ 896 | 1451 ⊥ 1267 | 2051 |
+| Ti-6Al-4V | 176.0 | 1.00 | 1853 ⊥ 1553 | 2514 ⊥ 2197 | 3555 |
+| Ti-6Al-7Nb | 170.0 | 1.03 | 1911 ⊥ 1602 | 2593 ⊥ 2266 | 3668 |
+| Ti-15Zr | 190.0 | 1.19 | 2200 ⊥ 1844 | 2985 ⊥ 2608 | 4222 |
+| β-Ti-13Nb-13Zr | 180.0 | 1.41 | 2605 ⊥ 2184 | 3535 ⊥ 3089 | 5000 |
+
+The DBH-38 columns read the gyroid's shallow end (50 mm below the seat) through linear bending, against a sensor on the
+bark and on the xylem under `103`'s thick bark; they are the field sensor's numbers (`00_07` HW.43), not a transfer from
+another tree. The one stem reading in the tree — `87`'s source pine (DBH 21.5 cm, one gust of one January day), 1837 µε at
+its surface, which `87` refuses to carry to our stems — placed on a large stem exceeds the lower-reading threshold for
+CP-Ti Gr4 and Ta only (Ti-6Al-4V and Ti-6Al-7Nb as well on the higher reading; in any stress state Ta only on the lower
+reading, CP-Ti Gr4 too on the higher), and its median (918 µε) for Ta only on the lower reading (CP-Ti Gr4 too on the
+higher). β-Ti's high figure stands on a yield the tree carries without a source. Whether a host's stem
+crosses these strains often enough is the field histogram's question, not this table's.
+
+**The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
+shank in the soft sleeve does not, so the first cell layer at the junction absorbs 7.4 µm of radial mismatch on the
+source day (sensor on bark, DBH 38) — 2.75× the wood's strain over one 2.0 mm rim period. That is an order of the
+layer's distortion, not a stress; the stress needs a junction model.
+
+**The anode's bond force** (`103`'s closed forms, held to its cached share caps on its own depth grid; `102`'s adverse
+shift): in the mature state, with the callus tie at the install-day cambium, 746 N on a stiff bond and 103 N on a soft
+one; 1654 N with a rigid sleeve at `103`'s stiff bond. It loads the Zone 1 shank at 7.85 MPa (K_f at SF 2 on the printed
+4V: 11.20 reversed — the tie carries both halves), the DIN-471 groove root at 8.62 (10.20), and a barb root, equal rows
+taken, at 26.33 MPa (3.34). The tie reverses the force, so the outward half lands on the barbs' lead flank — the ratchet's
+easy side, which `01_01 §4.3` A says nothing loads in service; a row's ratchet force is not in the tree. The gyroid
+carries the same force axially at its shank end: its own lower bound gives 0.47 of the SF-2 line on 4V (0.87 on CP-Ti,
+1.21 on Ta) at that force — not additive with the in-plane bound, whose cross term has no established sign.
+
+**The flange disc** carries the bearing force only in `103`'s state 2 here — with a callus tie and a rigid bark both
+holding, a titanium run between them would carry the wood's own strain, a corner with no physical meaning, so the
+mature-state disc force is not bounded. On a Zone-3 fit (HW.8.9) the pull at the shank, reacted on a rigid bark at
+673 N, gives the disc as an annular Kirchhoff plate (inner edge on the shank, outer free; the closed form held to an
+independent finite-difference solve at the shank root and inside the groove):
+
+| reaction | at the shank root, MPa | across the O-ring groove (radial moment, t − 1.34 mm), MPa |
+|---|---|---|
+| uniform over the bark annulus (`103`'s bearing area) | 72.59 | 20.38 |
+| at the rim only (a dished seat — adverse) | 97.12 | 68.60 |
+| at the channel's edge only | 37.65 | 2.60 |
+
+On the adverse seat, one-sided (a bearing without preload), the shank root reaches SF 2 at K_f 1.51 printed ⊥ 2.58 on the
+CNC route; the same number is its un-notched SF when a preload at least the force carries both halves — the only way a
+bearing reacts both. On `103`'s air-dry bark reading the force is 65.9 N, an order lower: the bark bearing
+decides the disc. With the flange on the bark (`103`'s premise (a)) the disc carries the force only through a preloaded
+bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3 shank carries 10.83 MPa and its barb root
+38.72 MPa (K_f at SF 2 one-sided 3.78 printed ⊥ 6.49 CNC). The capsule's mass on its lever arm stays below 0.33 MPa.
+
+⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
+anticlastic curvature (S5) is not computed. E_z*, k_p and the junction's stress need a voxel field's stresses under an off-axis traction case and a
+junction model (gyroid + solid + sleeve end + wood); t_L needs an orthotropic Eshelby closed form on the wood's full
+constants, which the tree does not carry, and the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
+not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,
+the disc's fillet, the groove's corners), no barb rows' split, no static mean (the PEEK's cold pull, heat, the bark's
+growth preload and humidity strain — printed instead: the mean at which each member reaches SF 2). Ice, the collar and
+the lug root (`73`/`89`), the printed face under the weld (`102`'s seam), the PEEK side of the barbs (HW.26's FEA), the
+storm's few cycles and the daily heat are other forms. A bearing that reacts both halves of a cycle needs the growth
+preload at least the force — `103`'s linear bearing presumes the contact holds. Cache:
+`mechanical/printed_part_sway_stress.json`.
+
+---
+
 ## HW.26 — How Far Can the Bus Wire Twist? (script 101)
 
 Once HW.8.9 makes the Zone-3 shank a fit, an event torque on the flange (the bayonet, a branch, an animal) reacts
