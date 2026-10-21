@@ -246,6 +246,12 @@ Anchor mechanics (CPU):
      · 77 (anchor_torque_path.json: the sleeve section) · 86 · 90 (pogo_thermal_gap.json: the L1/L2 margins and residuals) →
      104 (pad_travel_remedies.json — the remedies' prices for the centre pad's travel, held and with the sway); a re-run of
      52, 90, 102 or 103, or a change to the flange CEM, re-runs 104
+  87 (pogo_sway_transfer.json: the stem readings, the mass ceiling) · 102 (wire_liner_shear_lag.json: the sway shift) ·
+     103 (anchor_wood_share.json: its share caps, reproduced from its closed forms on its own depth grid; the sleeve
+     stiffnesses, the bond bracket, the bearing area) · 52 (z_stack_tolerance.json: the applied gland) · 86 (importlib:
+     soderberg; through it 55's endurance markers) · tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios) ·
+     tools/cad/cem (lock, flange, sleeve, pine anode) → 105 (printed_part_sway_stress.json — the sway stress in the
+     anchor's titanium parts); a re-run of 87, 102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its
