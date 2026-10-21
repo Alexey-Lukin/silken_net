@@ -5457,6 +5457,147 @@ def test_wire_liner_shear_lag_invariants():
     assert th["flip_vs_larger_margin_ppm_K"]["hot_floor_part_zone3_fit_gap_only"] == ([min(vals), max(vals)] if vals else [])
 
 
+def test_pad_travel_remedies_invariants():
+    """104 (00_07 HW.43, the leg «ціни ліків ходу центральної площадки», 2026-10-21): the prices of the remedies for the
+    centre pad's thermal travel, recomputed HERE from the caches by closed forms — `52`'s residual rule by `math.hypot` on
+    its members, rounded as `52`'s cache carries it; the need from the cached worst travel and `90`'s margins; the stroke
+    from `90`'s half-window; the δ routes' shift per kelvin from the CTEs.
+
+    CAN catch: a residual or gain off `52`'s rule or `90`'s rounding; a need on the wrong edge, margin or reading; a spare
+    off gain − need on either reading; a closing stroke off the half-window; a closing run whose shank does not take up
+    the gap; the held + sway need below the held one, below its own kept points, or above the held need plus the sway at
+    the largest share (its bounds); the routes that keep the wire–liner pair closing at different shifts per kelvin (the
+    mechanism the verdict quotes: closing the need pins δ/K); a seam requirement that rises under a δ route at a corner the wall does not cap, or moves
+    at one it caps; the placeholder-shank sensitivity off its sign. CANNOT: re-derive the pad's travel or the sway
+    amplitude (`102`'s Pair — the script's control (a) holds it to `102`'s cache), or judge the readings the script
+    declares (two readings, bonded shank, every grip).
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K
+    d = json.loads((MECHANICAL / "pad_travel_remedies.json").read_text(encoding="utf-8"))
+    d90 = json.loads((MECHANICAL / "pogo_thermal_gap.json").read_text(encoding="utf-8"))
+    d103 = json.loads((MECHANICAL / "anchor_wood_share.json").read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("s52_104", REPO / "tools/in_silico/scripts/52_z_stack_tolerance.py")
+    s52 = importlib.util.module_from_spec(spec)
+    sys.modules["s52_104"] = s52
+    spec.loader.exec_module(s52)
+
+    def c3(x):
+        return math.ceil(round(x * 1000, 9)) / 1000
+    cnc, half_step = s52.TOL_PZ["CNC_radome"], s52.SPACER_STEP / 2
+    res90 = d90["inputs"]["mitigation_residual_mm_52"]
+    assert c3(math.hypot(cnc, half_step)) == res90["L1 spacer only"]
+    assert c3(math.hypot(cnc / 2, half_step)) == res90["L2 spacer + bayonet hard-stop"]
+    l2 = "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)"
+    fine, l2fine = "spacer step 0.05 mm", "L2 hard-stop + spacer step 0.05 mm"
+    res = {l2: c3(math.hypot(cnc / 2, half_step)), fine: c3(math.hypot(cnc, 0.025)), "spacer step → 0 (the lever's bound)": c3(cnc),
+           l2fine: c3(math.hypot(cnc / 2, 0.025))}
+    for k, r in res.items():
+        assert d["window_side_gain_um"][k] == pytest.approx((res90["L1 spacer only"] - r) * 1e3, abs=1e-6)
+    win = d90["seasonal"]["model_edges"]
+    half = d90["inputs"]["window"][1] - d90["inputs"]["nominal_pct"]
+    s0 = d90["inputs"]["pogo_travel_mm"]
+    ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    a_s3 = d103["zone3_fit"]["alpha_composite_ppm_K"] * 1e-6
+    gap0, shank0 = d["inputs"]["gap_mm"], d["inputs"]["shank_mm"]
+    per_k = {}
+    for sp, b in d["by_span"].items():
+        for margins, key, worst_key in ((("isothermal_low_stack", "isothermal_high_stack"), "need_um", "need_um_isothermal_worst"),
+                                        (("radome_leads_reading",), "need_um_radome_leads_by_temp", "need_um_radome_leads")):
+            worst = -1e9
+            for t, tr in b["travel_um_max"].items():
+                for s_ in margins:
+                    lo, hi = win[s_]["window"]["L1 spacer only"]["margin_um"]
+                    n = max(tr["cold"] - hi, tr["hot"] - lo)
+                    assert b[key][f"{t}__{s_}"]["need"] == pytest.approx(n, abs=1e-3)
+                    worst = max(worst, n)
+            assert b[worst_key] == pytest.approx(worst, abs=1e-3)
+        held = b["need_um_isothermal_worst"]
+        top = b["sway_alone_at_the_largest_share"]
+        shift = d["inputs"]["shift_um_87"]
+        for rd, v in b["need_um_held_plus_sway"].items():
+            g_max = top[rd]["share"] * max(shift[rd])                    # the sway's increment is bounded by its shift
+            assert v["free_sleeve_need"] == pytest.approx(held, abs=0.01)
+            assert held - 1e-3 <= v["need_on_kept_points"] <= v["need"] + 1e-6 <= held + g_max + 1e-3
+            assert v["sway_shift_um"] == pytest.approx(v["share"] * max(shift[rd]), abs=1e-4)
+            vl = b["need_um_held_plus_sway_radome_leads"][rd]
+            assert vl["need"] >= v["need"] - 1e-6 and vl["need"] <= b["need_um_radome_leads"] + g_max + 1e-3
+            for k, g in d["window_side_gain_um"].items():
+                assert b["window_side"][k][f"spare_um_held_plus_sway_{rd}_radome_leads"] == pytest.approx(g - vl["need"], abs=1e-3)
+            br = b["window_breach_pct_of_stroke"][f"held_plus_sway_{rd}"]
+            assert br["over_upper_edge"] == pytest.approx(v["cold_over_upper"] / (s0 * 10), abs=1e-4)
+            assert br["under_lower_edge"] == pytest.approx(v["hot_over_lower"] / (s0 * 10), abs=1e-4)
+            for k, g in d["window_side_gain_um"].items():
+                assert b["window_side"][k][f"spare_um_held_plus_sway_{rd}"] == pytest.approx(g - v["need"], abs=1e-3)
+            assert b["stroke"][f"stroke_mm_closing_held_plus_sway_{rd}"] == pytest.approx(s0 + max(0.0, v["need"]) / (half * 1e3), abs=1e-4)
+        for k, g in d["window_side_gain_um"].items():
+            assert b["window_side"][k]["spare_um_held"] == pytest.approx(g - held, abs=1e-3)
+        assert b["stroke"]["stroke_mm_closing_held"] == pytest.approx(s0 + held / (half * 1e3), abs=1e-4)
+        assert b["stroke"]["stroke_mm_with_L2_held"] == pytest.approx(s0 + max(0.0, held - d["window_side_gain_um"][l2]) / (half * 1e3), abs=1e-4)
+        rl, rc = b["run_length"], b["run_cte"]
+        if sp == "18":
+            assert rl["shank_mm_closing"] == pytest.approx(shank0 + gap0 - rl["gap_mm_closing"], abs=1e-3)
+            assert rc["cte_ppm_K_free_gap_with_bonded_shank"] == pytest.approx((ALPHA_PEEK_1K + (a_s3 - ti) * shank0 / gap0) * 1e6, abs=1e-3)
+            per_k["18_length"] = (ALPHA_PEEK_1K - ti) * rl["gap_mm_closing"] + (a_s3 - ti) * rl["shank_mm_closing"]
+            per_k["18_cte"] = (rc["cte_ppm_K_closing"] * 1e-6 - ti) * gap0 + (a_s3 - ti) * shank0
+            sens = b["need_um_by_placeholder_shank"]
+            assert sens["10"] > sens["14"] > sens["18"] and sens["14"] == pytest.approx(held, abs=1e-3)
+            assert b["need_um_isothermal_worst_shank_as_ti"] < held                       # the bonded shank is the adverse end
+            est = b["placeholder_shank_estimate"]
+            slope = (sens["10"] - sens["14"]) / 4.0
+            worst_l2f = min(v for k_, v in b["window_side"][l2fine].items() if k_.startswith("spare_um"))
+            assert est["slope_um_per_mm_held"] == pytest.approx(slope, abs=1e-4)
+            assert est["shortest_shank_mm_closing_with_l2fine"] == pytest.approx(shank0 - worst_l2f / slope, abs=1e-3)
+        else:
+            assert rl["route"] == "gap then shank" and rl["peek_run_mm_closing"] == pytest.approx(rl["gap_mm_closing"] + rl["shank_mm_closing"], abs=1e-3)
+            per_k["32_cte"] = (rc["cte_ppm_K_closing"] * 1e-6 - ti) * (gap0 + shank0)
+        for v in top.values():
+            assert v["over_l1_um"] == pytest.approx(v["amp_um"] - min(min(win[s_]["window"]["L1 spacer only"]["margin_um"])
+                                                                   for s_ in ("isothermal_low_stack", "isothermal_high_stack")), abs=1e-3)
+        for sm in b["seam_hot_preload"].values():
+            for route in ("run_length", "run_cte"):
+                assert sm[route]["F_hot_N"] < sm["today"]["F_hot_N"] and sm[route]["seam_k_no_sway"] <= sm["today"]["seam_k_no_sway"]
+    # closing the need pins the shift per kelvin where the wire–liner pair stays as it is — both CTE routes and the 18 mm
+    # length route (the 32 mm length route cuts the shank and the liner run with it, so it is left out)
+    assert max(per_k.values()) / min(per_k.values()) == pytest.approx(1.0, abs=0.005)
+    sw = d["by_span"]["18"]["seam_with_sway"]
+    st3 = sw["Ta"]["state3_least_stiff_bond"]
+    assert min(st3["today"]["k"], st3["run_length"]["k"], st3["run_cte"]["k"]) > 1.0 > st3["sway_alone"]["k"]
+    for corners in sw.values():
+        for c in corners.values():
+            if c["today"]["cap_binds"] and c["run_cte"]["cap_binds"]:
+                assert c["run_cte"]["k"] == pytest.approx(c["today"]["k"], abs=1e-9)   # the wall caps it: δ changes nothing
+            elif not c["run_cte"]["cap_binds"]:
+                assert c["run_cte"]["k"] <= c["today"]["k"] + 1e-9
+    assert max(c[r]["k"] for c in sw[ALLOY_BASELINE].values() for r in ("today", "run_length", "run_cte")) < 1.0
+    c = d["controls"]
+    assert c["pad_travel_vs_102_max_miss_um"] <= 0.006 and c["seam_vs_102_103_max_miss"] <= 2e-4
+    assert c["seam_sway_corners_vs_103_max_miss"] <= 2e-3 and c["residuals_and_l2_step_vs_90_max_miss_um"] <= 0.05
+
+
+def test_anchor_wood_share_cte_share_front():
+    """103's (CTE, share) fronts (2026-10-21, read by 104): per premise, the configurations no other beats on both axes,
+    kept every FRONT_STEP of share. CAN catch: a front that is not non-dominated (a CTE that rises along it, a share that
+    does not); ends off the model's own extremes (the free sleeve at share 0; the larger rigid-bark cap of states 2 and 3;
+    a CTE below the model's floor); kept points closer than the declared step. CANNOT: see a configuration
+    the grids do not visit — the front is the grids' front."""
+    d = json.loads((MECHANICAL / "anchor_wood_share.json").read_text(encoding="utf-8"))
+    for block, sh, cte_free, cte_min in ((d, d["share"], 47.0, d["heat"]["cte_min_ppm_K_over_the_model"]),
+                                         (d["zone3_fit"], d["zone3_fit"]["share"], d["zone3_fit"]["cte_free_sleeve_ppm_K"],
+                                          d["zone3_fit"]["heat"]["cte_min_ppm_K_over_the_model"])):
+        fr = block["cte_share_front"]
+        ctes, shs = fr["cte_ppm_K"], fr["share_of_102_shift"]
+        assert len(ctes) == len(shs) >= 2
+        assert all(b < a + 1e-9 for a, b in itertools.pairwise(ctes))
+        assert all(b > a for a, b in itertools.pairwise(shs))
+        assert all(b - a >= fr["step"] - 1e-9 for a, b in itertools.pairwise(shs[:-1]))
+        assert ctes[0] == pytest.approx(cte_free, abs=1e-3) and shs[0] == 0.0
+        cap = max(*sh["state2_cap_rigid_bark"].values(), *sh["state3_cap_rigid_bark_of_102_shift"].values())
+        assert shs[-1] == pytest.approx(cap, abs=1e-4)
+        assert min(ctes) >= cte_min - 1e-3
+
+
 def test_anchor_wood_share_zone3_fit_invariants():
     """103's `zone3_fit` block (00_07 HW.43, the heat with the flange on a Zone-3 fit, closed 2026-10-20): the sleeve as
     TWO sections — the Zone-3 shank's run, the CEM's Ti shank (less the bus channel) bonded to the PEEK around it, and the

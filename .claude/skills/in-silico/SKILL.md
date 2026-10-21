@@ -238,6 +238,12 @@ Anchor mechanics (CPU):
   102 (importlib: Pair, soderberg_k; its cache: the grid, the flip CTEs, the hot preload per span) · 55 (importlib: spans,
      CEM shank Ø and length) · 77 · 78 · 86 · 87 → 103 (anchor_wood_share.json — the wood's share per bond state, the flange
      on the bark and on a Zone-3 fit); a change to 102's closed form or to the flange CEM re-runs 103
+  102 (importlib: Pair, soderberg_k; its cache: temperatures, the share-0 seam control, the sway shift) · 103 (its cache:
+     the composite, the shares, the (CTE, share) fronts, the seam corners it controls against) · 52 (importlib: TOL_PZ ·
+     SPACER_STEP · POGO_TRAVEL_TOL · rss) · 55 (importlib: spans, liner, CEM flange shank Ø; bus_mechanical.json: the grip rows)
+     · 77 (anchor_torque_path.json: the sleeve section) · 86 · 90 (pogo_thermal_gap.json: the L1/L2 margins and residuals) →
+     104 (pad_travel_remedies.json — the remedies' prices for the centre pad's travel, held and with the sway); a re-run of
+     52, 90, 102 or 103, or a change to the flange CEM, re-runs 104
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

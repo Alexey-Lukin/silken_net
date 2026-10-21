@@ -70,7 +70,9 @@ as a bracket.
 
 CAN: give per state and premise the share of the sway shift, its cap at a rigid bark, the seam requirement it implies on
 `102`'s closed form, the bearing stiffness at which each state-2 conclusion is reached at either end of the bond
-bracket, and the tie's depth at which each state-3 conclusion is reached with no bearing.
+bracket, and the tie's depth at which each state-3 conclusion is reached with no bearing; and per premise the (CTE, share)
+front — the configurations no other beats on both — that `104` adds the held travel and the sway on (its ends held to
+the free sleeve, the largest cap and the CTE floor by a control).
 CANNOT: (1) give the bark bearing's green stiffness or its growth preload, the sleeve's grip in the Ø15 channel, or the
 callus ring's stiffness and depth — all unmeasured, so the bearing and the tie's depth are axes and the tie is taken at
 its rigid end (a channel grip is a deeper tie of the same kind, not computed); (2) give
@@ -152,6 +154,7 @@ SHARE_ROWS = (0.25, 0.5)   # `102`'s seam rows the bearing thresholds are taken 
 TIE_RIGID = 1e12           # N/mm — the rigid tie of state 3
 KF_LO, KF_HI = 1e-3, 1e8   # N/mm — the bearing axis a threshold is sought on
 DEPTH_MIN = 0.5            # mm — the shallowest tie below the flange seat the depth axis starts at
+FRONT_STEP = 0.005         # the share step the (CTE, share) front is kept at (`104` bounds what falls between)
 FE_STEP = 0.5              # mm — the element of the control chain; its tie depths and section boundaries sit on nodes
 
 
@@ -605,7 +608,44 @@ def main() -> int:
             table3[n] = {"reached_at_any_depth": "deepest" in dep,
                          "holds_only_deeper_than_mm": None if "deepest" in dep or all(v is None for v in dep)
                          else max(v for v in dep if v is not None)}
+        # the (CTE, share) pairs no other configuration beats on both — over the bearing, tie, bond, tie depth and bond depth
+        # grids. `104` adds the held travel at the CTE to the sway at the share; both rise (the travel in the CTE above its sign change, the sway in the share),
+        # so their sum's maximum over these configurations lies on this front, whose top end is the free sleeve (share 0).
+        # Kept every FRONT_STEP of share: a dropped point lies in the box of two kept neighbours, so `104` bounds the sum
+        # from above by each kept CTE with the NEXT kept share
+        pts = []
+        d_front = sorted({*grid_d, *(d for ds in depths.values() for d in ds)})
+        for kf in (*grid_f, TIE_RIGID):
+            for ka in grid_a:
+                for dv in dx_mm.values():
+                    for kt in grid_t:
+                        for d in (d_front if kt > 0 else (5.0,)):
+                            pts.append((a_eff(sl, kf, kt, ka, d, dv), share(sl, kf, kt, ka, d, dv) * dv / dv_ceil, kf, kt, ka, d, dv))
+        pts.sort(key=lambda p: (-p[0], -p[1]))
+        full, s_top = [], -1.0
+        for a, sh, *_ in pts:
+            if sh > s_top + 1e-12:
+                full.append((a, sh))
+                s_top = sh
+        # control: the front's ends are the model's own extremes — its least share-0 point the free sleeve, its largest
+        # share the larger rigid-bark cap of states 2 and 3 (over the same depths), and no configuration below the CTE floor
+        if abs(full[0][0] - cte_free) > 1e-9 or abs(full[-1][1] - max(*cap2.values(), *cap3.values())) > 1e-9 or min(p[0] for p in pts) < cte_min[0] - 1e-9:
+            raise RuntimeError(f"control: the (CTE, share) front's ends are not the model's free sleeve, cap and CTE floor: "
+                               f"{full[0][0]} vs {cte_free}; {full[-1][1]} vs {max(*cap2.values(), *cap3.values())}; {min(p[0] for p in pts)} vs {cte_min[0]}")
+        kept = [full[0]]
+        for a, sh in full[1:-1]:
+            if sh - kept[-1][1] >= FRONT_STEP:
+                kept.append((a, sh))
+        if len(kept) > 1 and full[-1][1] - kept[-1][1] < FRONT_STEP:
+            kept[-1] = full[-1]          # the end replaces a near neighbour: the dropped point lies in their box
+        else:
+            kept.append(full[-1])
+        front = {"cte_ppm_K": [round(a, 6) for a, _ in kept], "share_of_102_shift": [round(sh, 6) for _, sh in kept],
+                 "points_on_the_full_front": len(full), "step": FRONT_STEP,
+                 "reading": "non-dominated (CTE, share) pairs over the model's grids, every FRONT_STEP of share; a dropped "
+                            "point lies between two kept neighbours on both axes"}
         return {
+            "front": front,
             "sleeve": sl, "thr2": thr2, "dep3": dep3, "table2": table2, "table3": table3, "seam": seam,
             "s2_read": s2_read, "cap2": cap2, "s3_free": s3_free, "cap3": cap3, "cold_thr": cold_thr, "hot_thr": hot_thr,
             "heat": {"thresholds_102_ppm_K": {"cold": flips[flip_keys[premise][0]], "hot": flips[flip_keys[premise][1]]},
@@ -783,6 +823,7 @@ def main() -> int:
         "state3_tie_depth_mm_no_bearing": bark["dep3"],
         "readings": {"state2": bark["table2"], "state3": bark["table3"]},
         "heat": heat_bark,
+        "cte_share_front": bark["front"],
         "seam_on_102_closed_form": bark["seam"],
         "zone3_fit": {
             "premise": "the Zone-3 shank fitted RIGIDLY in the sleeve over its run (01_01 §1: Ø11 under interference; the "
@@ -801,6 +842,7 @@ def main() -> int:
             "state3_tie_depth_mm_no_bearing": z3["dep3"],
             "readings": {"state2": z3["table2"], "state3": z3["table3"]},
             "heat": z3["heat"],
+            "cte_share_front": z3["front"],
             "seam_on_102_closed_form": z3["seam"],
             "preload_102": "hot_preload.zone3_fit_bonded_shank — `102`'s span with the Zone-3 shank's run bonded (lib.mechanics)",
             "verdict": verdict_z3,

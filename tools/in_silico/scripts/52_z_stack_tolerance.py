@@ -62,6 +62,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ── Spring specs (canon) ──
 POGO_TRAVEL = 1.40   # mm — Mill-Max 0906/0908 datasheet NOMINAL travel, .055" ± .005" (02_02 §2.2, ⚖️ 2026-09-18 HW.43);
                      # 1.52 (.060") is the UPPER end of that tolerance, not the nominal
+POGO_TRAVEL_TOL = 0.005 * 25.4   # mm — that datasheet's ± .005" on the travel (not in this chain; `104` prices it)
 ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
 # ── Working windows (fraction) ──

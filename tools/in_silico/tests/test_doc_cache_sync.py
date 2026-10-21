@@ -5509,6 +5509,218 @@ def test_wood_share_state2_table_matches_cache():
         assert row in text, f"SUMMARY state-2 table row drifted from the cache — expected:\n{row}"
 
 
+# ── HW.43 the remedies' prices (104, 2026-10-21) ⟷ SUMMARY §«What Each Remedy for the Centre Pad's Travel Buys and
+# Costs», PIPELINE_STATUS 104 and 02_02 §3.5 ⊕ 2026-10-21. A need, a shortfall, a load, a requirement «k ≥ X», a «from X mm»
+# stroke and a «≥ X» shank round UP; a gain, a spare, a «≤ X» gap, run or CTE round DOWN (in-silico §When Modifying #43).
+REMEDY = "mechanical/pad_travel_remedies.json"
+_L2 = "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)"
+_L2F = "L2 hard-stop + spacer step 0.05 mm"
+_L2ROW = r"0\.10 → 0\.05 mm\), \+[\d.]+ µm \| "
+_FROW = r"L2 with a 0\.05 mm spacer step, \+[\d.]+ µm \| "
+
+
+def _u1(x):
+    return math.ceil(round(x * 10, 9)) / 10
+
+
+def _d1(x):
+    return math.floor(round(x * 10, 9)) / 10
+
+
+def _u3(x):
+    return math.ceil(round(x * 1000, 9)) / 1000
+
+
+def _rs(d, sp):
+    return d["by_span"][sp]
+
+
+def _low(d, sp):
+    return max(v["need"] for k, v in _rs(d, sp)["need_um"].items() if k.endswith("low_stack"))
+
+
+def _hs(d, sp, rd):
+    return _rs(d, sp)["need_um_held_plus_sway"][rd]["need"]
+
+
+def _sp(d, sp, k, what):
+    return _rs(d, sp)["window_side"][k][what]
+
+
+def _st(d, sp, k):
+    return _rs(d, sp)["stroke"][k]
+
+
+def _ta(d, sp, r):
+    return _rs(d, sp)["seam_hot_preload"]["Ta"][r]
+
+
+def _f_same(d):
+    return max(_ta(d, "18", "run_length")["F_hot_N"], _ta(d, "18", "run_cte")["F_hot_N"], _ta(d, "32", "run_cte")["F_hot_N"])
+
+
+def _c3(d):
+    return _rs(d, "18")["seam_with_sway"]["Ta"]["state3_least_stiff_bond"]
+
+
+def _alone(d, sp, rd):
+    return _rs(d, sp)["sway_alone_at_the_largest_share"][rd]["amp_um"]
+
+
+_P90 = "mechanical/pogo_thermal_gap.json"
+CHECKS += [
+    # SUMMARY
+    ("104 control → 104", SUMMARY, r"re-derives `102`'s cached pad travel to " + N + r" µm\)", REMEDY, lambda d: _u3(d["controls"]["pad_travel_vs_102_max_miss_um"]), 0.0),
+    ("104 cold 18 → 104", SUMMARY, r"the cold protrusion on the 18 mm span is\s+" + N + r" µm, not", REMEDY,
+     lambda d: _u1(_rs(d, "18")["travel_um_max"]["capsule_model_edges_90"]["cold"]), 0.0),
+    ("104 cold 18 Ti → 102", SUMMARY, r"µm, not " + N + r"\. The Zone-3 shank", "mechanical/wire_liner_shear_lag.json",
+     lambda d: _u1(max(v["cold"]["pad_protrudes_um"] for k, v in d["thermal"]["by_reading"].items() if k.startswith("gap_only"))), 0.0),
+    ("104 need Ti → 104", SUMMARY, r"the need is " + N + r" µm instead of", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst_shank_as_ti"]), 0.0),
+    ("104 need bonded → 104", SUMMARY, r"µm instead of " + N + r"\)\.", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
+    ("104 18 held → 104", SUMMARY, r"under interference \| " + N + r" ⊥", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
+    ("104 18 low → 104", SUMMARY, r"under interference \| [\d.]+ ⊥ " + N + r" µm", REMEDY, lambda d: _u1(_low(d, "18")), 0.0),
+    ("104 18 leads → 104", SUMMARY, r"under interference \| [\d.]+ ⊥ [\d.]+ µm \| " + N + r" µm", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_radome_leads"]), 0.0),
+    ("104 18 sway med → 104", SUMMARY, r"under interference \| [\d.]+ ⊥ [\d.]+ µm \| [\d.]+ µm \| " + N + r" ⊥", REMEDY, lambda d: _u1(_hs(d, "18", "median")), 0.0),
+    ("104 18 sway uw → 104", SUMMARY, r"under interference \| [\d.]+ ⊥ [\d.]+ µm \| [\d.]+ µm \| [\d.]+ ⊥ " + N + r" µm", REMEDY, lambda d: _u1(_hs(d, "18", "upper_whisker")), 0.0),
+    ("104 32 held → 104", SUMMARY, r"the shank in the gap \| " + N + r" ⊥", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_isothermal_worst"]), 0.0),
+    ("104 32 low → 104", SUMMARY, r"the shank in the gap \| [\d.]+ ⊥ " + N + r" µm", REMEDY, lambda d: _u1(_low(d, "32")), 0.0),
+    ("104 32 leads → 104", SUMMARY, r"the shank in the gap \| [\d.]+ ⊥ [\d.]+ µm \| " + N + r" µm", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_radome_leads"]), 0.0),
+    ("104 32 sway med → 104", SUMMARY, r"the shank in the gap \| [\d.]+ ⊥ [\d.]+ µm \| [\d.]+ µm \| " + N + r" ⊥", REMEDY, lambda d: _u1(_hs(d, "32", "median")), 0.0),
+    ("104 32 sway uw → 104", SUMMARY, r"the shank in the gap \| [\d.]+ ⊥ [\d.]+ µm \| [\d.]+ µm \| [\d.]+ ⊥ " + N + r" µm", REMEDY, lambda d: _u1(_hs(d, "32", "upper_whisker")), 0.0),
+    ("104 alone 18 med → 104", SUMMARY, r"the sway alone swings ±" + N + r" ⊥", REMEDY, lambda d: _u1(_alone(d, "18", "median")), 0.0),
+    ("104 alone 18 uw → 104", SUMMARY, r"swings ±[\d.]+ ⊥ ±" + N + r" µm on the 18 mm span", REMEDY, lambda d: _u1(_alone(d, "18", "upper_whisker")), 0.0),
+    ("104 alone 32 med → 104", SUMMARY, r"\(±" + N + r" ⊥ ±[\d.]+ on the 32 mm one\)", REMEDY, lambda d: _u1(_alone(d, "32", "median")), 0.0),
+    ("104 alone 32 uw → 104", SUMMARY, r"⊥ ±" + N + r" on the 32 mm one\)", REMEDY, lambda d: _u1(_alone(d, "32", "upper_whisker")), 0.0),
+    ("104 L2 gain → 104", SUMMARY, r"0\.10 → 0\.05 mm\), \+" + N + r" µm \|", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2]), 0.0),
+    ("104 L2 held → 104", SUMMARY, _L2ROW + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held")), 0.0),
+    ("104 L2 leads → 104", SUMMARY, _L2ROW + r"[\d.]+ · " + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_radome_leads")), 0.0),
+    ("104 L2 med → 104", SUMMARY, _L2ROW + r"[\d.]+ · [\d.]+ · " + N + r" ⊥", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held_plus_sway_median")), 0.0),
+    ("104 L2 uw → 104", SUMMARY, _L2ROW + r"[\d.]+ · [\d.]+ · [\d.]+ ⊥ " + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 L2 both → 104", SUMMARY, _L2ROW + r"[\d.]+ · [\d.]+ · [\d.]+ ⊥ [\d.]+ · \(" + N + r"\) \|", REMEDY,
+     lambda d: _u1(-_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 L2 32 held → 104", SUMMARY, _L2ROW + r"[^|]+\| \(" + N + r"\) · \(", REMEDY, lambda d: _u1(-_sp(d, "32", _L2, "spare_um_held")), 0.0),
+    ("104 L2 32 uw → 104", SUMMARY, _L2ROW + r"[^|]+\| \([\d.]+\) · \(" + N + r"\) \|", REMEDY,
+     lambda d: _u1(-_sp(d, "32", _L2, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 L2F gain → 104", SUMMARY, r"L2 with a 0\.05 mm spacer step, \+" + N + r" µm \|", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2F]), 0.0),
+    ("104 L2F held → 104", SUMMARY, _FROW + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held")), 0.0),
+    ("104 L2F leads → 104", SUMMARY, _FROW + r"[\d.]+ · " + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_radome_leads")), 0.0),
+    ("104 L2F med → 104", SUMMARY, _FROW + r"[\d.]+ · [\d.]+ · " + N + r" ⊥", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_median")), 0.0),
+    ("104 L2F uw → 104", SUMMARY, _FROW + r"[\d.]+ · [\d.]+ · [\d.]+ ⊥ " + N + r" · ", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 L2F both → 104", SUMMARY, _FROW + r"[\d.]+ · [\d.]+ · [\d.]+ ⊥ [\d.]+ · " + N + r" \|", REMEDY,
+     lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 L2F 32 held → 104", SUMMARY, _FROW + r"[^|]+\| " + N + r" · \(", REMEDY, lambda d: _d1(_sp(d, "32", _L2F, "spare_um_held")), 0.0),
+    ("104 L2F 32 uw → 104", SUMMARY, _FROW + r"[^|]+\| [\d.]+ · \(" + N + r"\) \|", REMEDY,
+     lambda d: _u1(-_sp(d, "32", _L2F, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 L2F worst → 104", SUMMARY, r"with the upper-whisker sway — by " + N + r" µm, which holds", REMEDY,
+     lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 shank min → 104", SUMMARY, r"the shank stays above about " + N + r" mm:", REMEDY, lambda d: _u1(_rs(d, "18")["placeholder_shank_estimate"]["shortest_shank_mm_closing_with_l2fine"]), 0.0),
+    ("104 shank slope → 104", SUMMARY, r"with the shank, " + N + r" µm per mm,", REMEDY, lambda d: round(_rs(d, "18")["placeholder_shank_estimate"]["slope_um_per_mm_held"], 1), 0.0),
+    ("104 leads+sway 18 med → 104", SUMMARY, r"µm \| [\d.]+ ⊥ [\d.]+ µm \| " + N + r" ⊥ [\d.]+ µm \|\n\| 32 mm", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_held_plus_sway_radome_leads"]["median"]["need"]), 0.0),
+    ("104 leads+sway 18 uw → 104", SUMMARY, r"µm \| [\d.]+ ⊥ [\d.]+ µm \| [\d.]+ ⊥ " + N + r" µm \|\n\| 32 mm", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_held_plus_sway_radome_leads"]["upper_whisker"]["need"]), 0.0),
+    ("104 leads+sway 32 uw → 104", SUMMARY, r"the shank in the gap \| [^|]+\| [^|]+\| [^|]+\| [\d.]+ ⊥ " + N + r" µm \|", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_held_plus_sway_radome_leads"]["upper_whisker"]["need"]), 0.0),
+    ("104 breach up → 104", SUMMARY, r"on the 18 mm span — " + N + r" % of the stroke past 70 %", REMEDY, lambda d: _u1(_rs(d, "18")["window_breach_pct_of_stroke"]["held"]["over_upper_edge"]), 0.0),
+    ("104 breach lo → 104", SUMMARY, r"past 70 % and " + N + r" %\s+under 50 % held", REMEDY, lambda d: _u1(_rs(d, "18")["window_breach_pct_of_stroke"]["held"]["under_lower_edge"]), 0.0),
+    ("104 breach sway up → 104", SUMMARY, r"under 50 % held, " + N + r" ⊥", REMEDY, lambda d: _u1(_rs(d, "18")["window_breach_pct_of_stroke"]["held_plus_sway_upper_whisker"]["over_upper_edge"]), 0.0),
+    ("104 breach sway lo → 104", SUMMARY, r"under 50 % held, [\d.]+ ⊥ " + N + r" % with the upper-whisker sway", REMEDY, lambda d: _u1(_rs(d, "18")["window_breach_pct_of_stroke"]["held_plus_sway_upper_whisker"]["under_lower_edge"]), 0.0),
+    ("104 step fine → 104", SUMMARY, r"none at all, \+" + N + r" ⊥", REMEDY, lambda d: _d1(d["window_side_gain_um"]["spacer step 0.05 mm"]), 0.0),
+    ("104 step zero → 104", SUMMARY, r"none at all, \+[\d.]+ ⊥ \+" + N + r" µm", REMEDY, lambda d: _d1(d["window_side_gain_um"]["spacer step → 0 (the lever's bound)"]), 0.0),
+    ("104 stroke held → 104", SUMMARY, r"keep 60 % nominal \| from " + N + r" mm · ", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held")), 0.0),
+    ("104 stroke leads → 104", SUMMARY, r"keep 60 % nominal \| from [\d.]+ mm · " + N + r" · ", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_radome_leads")), 0.0),
+    ("104 stroke med → 104", SUMMARY, r"keep 60 % nominal \| from [\d.]+ mm · [\d.]+ · " + N + r" ⊥", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_median")), 0.0),
+    ("104 stroke uw → 104", SUMMARY, r"keep 60 % nominal \| from [\d.]+ mm · [\d.]+ · [\d.]+ ⊥ " + N + r" · ", REMEDY,
+     lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
+    ("104 stroke both → 104", SUMMARY, r"keep 60 % nominal \| from [\d.]+ mm · [\d.]+ · [\d.]+ ⊥ [\d.]+ · " + N + r" \|", REMEDY,
+     lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 stroke 32 → 104", SUMMARY, r"\| from " + N + r" mm · [\d.]+; with L2", REMEDY, lambda d: _u3(_st(d, "32", "stroke_mm_closing_held")), 0.0),
+    ("104 stroke 32 uw → 104", SUMMARY, r"mm · " + N + r"; with L2", REMEDY, lambda d: _u3(_st(d, "32", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
+    ("104 stroke 32 L2 → 104", SUMMARY, r"; with L2 " + N + r" · ", REMEDY, lambda d: _u3(_st(d, "32", "stroke_mm_with_L2_held")), 0.0),
+    ("104 stroke 32 L2 uw → 104", SUMMARY, r"; with L2 [\d.]+ · " + N + r" \|", REMEDY, lambda d: _u3(_st(d, "32", "stroke_mm_with_L2_held_plus_sway_upper_whisker")), 0.0),
+    ("104 gap → 104", SUMMARY, r"\| gap ≤ " + N + r" mm — the Zone-3 shank", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
+    ("104 shank → 104", SUMMARY, r"the Zone-3 shank ≥ " + N + r" mm — held only", REMEDY, lambda d: _u1(_rs(d, "18")["run_length"]["shank_mm_closing"]), 0.0),
+    ("104 run 32 → 104", SUMMARY, r"\| run ≤ " + N + r" mm, the shank cut", REMEDY, lambda d: _d1(_rs(d, "32")["run_length"]["peek_run_mm_closing"]), 0.0),
+    ("104 shank 32 → 104", SUMMARY, r"the shank cut to " + N + r" — held only", REMEDY, lambda d: _d1(_rs(d, "32")["run_length"]["shank_mm_closing"]), 0.0),
+    ("104 cte 18 → 104", SUMMARY, r"\| ≤ " + N + r" ppm/K \(", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing"]), 0.0),
+    ("104 cte both → 104", SUMMARY, r"ppm/K \(" + N + r" if the grade fills", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing_grade_in_the_shank_composite_too"]), 0.0),
+    ("104 cte 32 → 104", SUMMARY, r"\| ≤ " + N + r" ppm/K — held only \|", REMEDY, lambda d: _d1(_rs(d, "32")["run_cte"]["cte_ppm_K_closing"]), 0.0),
+    ("104 outer L1 → 90", SUMMARY, r"radome-leading upper margin from " + N + r" µm to", _P90,
+     lambda d: d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L1 spacer only"]["margin_um"][1], 0.0),
+    ("104 outer L2 → 90", SUMMARY, r"upper margin from \S+ µm to " + N + r"\)", _P90,
+     lambda d: d["seasonal"]["model_edges"]["radome_leads_reading"]["window"]["L2 spacer + bayonet hard-stop"]["margin_um"][1], 0.0),
+    ("104 recentring lo → 90", SUMMARY, r"at today's gap " + N + r" ⊥", _P90, lambda d: -d["inputs"]["window"][0], 0.0),
+    ("104 recentring hi → 90", SUMMARY, r"at today's gap \S+ ⊥ \+" + N + r" µm per µm", _P90, lambda d: d["inputs"]["window"][1], 0.0),
+    ("104 F same → 104", SUMMARY, r"one hot preload, " + N + r" N on Ta;", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
+    ("104 F 32 len → 104", SUMMARY, r"and lands at " + N + r" N — against", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
+    ("104 F 18 today → 104", SUMMARY, r"against " + N + r" N today on the 18 mm span", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
+    ("104 F 32 today → 104", SUMMARY, r"span and\s+" + N + r" N on the 32 mm one\.", REMEDY, lambda d: _u1(_ta(d, "32", "today")["F_hot_N"]), 0.0),
+    ("104 k today → 104", SUMMARY, r"with no sway falls from k " + N + r"\s+to", REMEDY, lambda d: _u3(_ta(d, "18", "today")["seam_k_no_sway"]), 0.0),
+    ("104 k route → 104", SUMMARY, r"falls from k [\d.]+\s+to " + N + r", and", REMEDY,
+     lambda d: _u3(max(_ta(d, "18", "run_length")["seam_k_no_sway"], _ta(d, "18", "run_cte")["seam_k_no_sway"])), 0.0),
+    ("104 corner today → 104", SUMMARY, r"from at least " + N + r" to", REMEDY, lambda d: _u3(_c3(d)["today"]["k"]), 0.0),
+    ("104 corner route → 104", SUMMARY, r"from at least [\d.]+ to " + N + r" — the", REMEDY, lambda d: _u3(max(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"])), 0.0),
+    ("104 sway alone k → 104", SUMMARY, r"sway alone asks " + N + r" there", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
+    ("104 cap → 104", SUMMARY, r"change nothing \(Ta " + N + r"\)", REMEDY, lambda d: _u3(_rs(d, "18")["seam_with_sway"]["Ta"]["state3_cap_stiff_bond"]["today"]["k"]), 0.0),
+    ("104 ti → 104", SUMMARY, r"no corner passes " + N + r"\.", REMEDY,
+     lambda d: _u3(max(c[r]["k"] for c in _rs(d, "18")["seam_with_sway"]["Ti-6Al-4V"].values() for r in ("today", "run_length", "run_cte"))), 0.0),
+    ("104 shank 10 → 104", SUMMARY, r"the 18 mm span to " + N + r" ⊥", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
+    ("104 shank 18 → 104", SUMMARY, r"the 18 mm span to [\d.]+ ⊥ " + N + r" µm", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["18"]), 0.0),
+    ("104 pin tol → 104", SUMMARY, r"the datasheet's ±" + N + r" mm on its travel", REMEDY, lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
+    ("104 brass → 104", SUMMARY, r"\(up to " + N + r" µm per\s+mm of extra free length", REMEDY, lambda d: _u1(_st(d, "18", "pin_body_um_per_mm_extra_free_length_at_far_edge")), 0.0),
+    # PIPELINE_STATUS
+    ("104 P control → 104", PIPELINE, r"cached pad travel on both spans to " + N + r" µm\)", REMEDY, lambda d: _u3(d["controls"]["pad_travel_vs_102_max_miss_um"]), 0.0),
+    ("104 P held → 104", PIPELINE, r"the need on 18 mm is " + N + r" µm held", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
+    ("104 P med → 104", PIPELINE, r"µm held and " + N + r" ⊥", REMEDY, lambda d: _u1(_hs(d, "18", "median")), 0.0),
+    ("104 P uw → 104", PIPELINE, r"µm held and [\d.]+ ⊥ " + N + r" with the sway", REMEDY, lambda d: _u1(_hs(d, "18", "upper_whisker")), 0.0),
+    ("104 P 32 → 104", PIPELINE, r"\(" + N + r" held on 32 mm\)", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_isothermal_worst"]), 0.0),
+    ("104 P L2 → 104", PIPELINE, r"\(L2\) adds " + N + r" µm — spare", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2]), 0.0),
+    ("104 P L2 held → 104", PIPELINE, r"adds [\d.]+ µm — spare " + N + r" ⊥", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held")), 0.0),
+    ("104 P L2 uw → 104", PIPELINE, r"adds [\d.]+ µm — spare [\d.]+ ⊥ " + N + r" on 18 mm, short", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 P L2 32 → 104", PIPELINE, r"on 18 mm, short " + N + r" on 32 —", REMEDY, lambda d: _u1(-_sp(d, "32", _L2, "spare_um_held")), 0.0),
+    ("104 P L2F → 104", PIPELINE, r"0\.05 mm spacer step " + N + r" —", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2F]), 0.0),
+    ("104 P L2F held → 104", PIPELINE, r"spacer step [\d.]+ — spare " + N + r" ⊥", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held")), 0.0),
+    ("104 P L2F uw → 104", PIPELINE, r"spacer step [\d.]+ — spare [\d.]+ ⊥ " + N + r" on 18 mm \(", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 P L2F both → 104", PIPELINE, r"on 18 mm \(" + N + r" with the radome leading too", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 P shank min → 104", PIPELINE, r"the shank stays above about " + N + r" mm\)", REMEDY, lambda d: _u1(_rs(d, "18")["placeholder_shank_estimate"]["shortest_shank_mm_closing_with_l2fine"]), 0.0),
+    ("104 P L2F 32 → 104", PIPELINE, r"mm\), " + N + r" held on 32;", REMEDY, lambda d: _d1(_sp(d, "32", _L2F, "spare_um_held")), 0.0),
+    ("104 P leads+sway → 104", PIPELINE, r"\(" + N + r" with the radome leading too\)", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_held_plus_sway_radome_leads"]["upper_whisker"]["need"]), 0.0),
+    ("104 P stroke → 104", PIPELINE, r"a stroke closes it from " + N + r" ⊥", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held")), 0.0),
+    ("104 P stroke uw → 104", PIPELINE, r"a stroke closes it from [\d.]+ ⊥ " + N + r" mm", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
+    ("104 P gap → 104", PIPELINE, r"\(a\s+" + N + r" mm gap or", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
+    ("104 P cte → 104", PIPELINE, r"mm gap or " + N + r" ppm/K on 18 mm", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing"]), 0.0),
+    ("104 P F lo → 104", PIPELINE, r"routes land at " + N + r"–", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
+    ("104 P F hi → 104", PIPELINE, r"routes land at [\d.]+–" + N + r" N", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
+    ("104 P F today → 104", PIPELINE, r"on Ta against " + N + r" — Ta's", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
+    ("104 P corner → 104", PIPELINE, r"stiff-bond corner at least\s+" + N + r" →", REMEDY, lambda d: _u3(_c3(d)["today"]["k"]), 0.0),
+    ("104 P corner route → 104", PIPELINE, r"corner at least\s+[\d.]+ → " + N + r", past k 1", REMEDY, lambda d: _u3(max(_c3(d)["run_length"]["k"], _c3(d)["run_cte"]["k"])), 0.0),
+    # 02_02 §3.5 ⊕ 2026-10-21
+    ("104 B held → 104", BLIND_MATE, r"запас L1 на " + N + r" мкм утримуваним", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_isothermal_worst"]), 0.0),
+    ("104 B med → 104", BLIND_MATE, r"утримуваним і на\s+" + N + r" ⊥", REMEDY, lambda d: _u1(_hs(d, "18", "median")), 0.0),
+    ("104 B uw → 104", BLIND_MATE, r"утримуваним і на\s+[\d.]+ ⊥ " + N + r" з гойданням", REMEDY, lambda d: _u1(_hs(d, "18", "upper_whisker")), 0.0),
+    ("104 B 32 → 104", BLIND_MATE, r"на 32-мм плейсхолдері — на " + N + r" утримуваним", REMEDY, lambda d: _u1(_rs(d, "32")["need_um_isothermal_worst"]), 0.0),
+    ("104 B L2 → 104", BLIND_MATE, r"навпіл: \+" + N + r" мкм до обох", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2]), 0.0),
+    ("104 B L2 held → 104", BLIND_MATE, r"на 18 мм резерв " + N + r" утримуваним ⊥", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held")), 0.0),
+    ("104 B L2 uw → 104", BLIND_MATE, r"утримуваним ⊥ " + N + r" з гойданням на вусі, на 32 мм бракує", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 B L2 32 → 104", BLIND_MATE, r"на 32 мм бракує " + N + r";", REMEDY, lambda d: _u1(-_sp(d, "32", _L2, "spare_um_held")), 0.0),
+    ("104 B L2F → 104", BLIND_MATE, r"0\.05 мм — \+" + N + r", на 18 мм", REMEDY, lambda d: _d1(d["window_side_gain_um"][_L2F]), 0.0),
+    ("104 B L2F held → 104", BLIND_MATE, r", на 18 мм " + N + r" ⊥ [\d.]+, на 32 мм", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held")), 0.0),
+    ("104 B L2F uw → 104", BLIND_MATE, r", на 18 мм [\d.]+ ⊥ " + N + r", на 32 мм", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 B L2F 32 → 104", BLIND_MATE, r", на 32 мм " + N + r" утримуваним \(і", REMEDY, lambda d: _d1(_sp(d, "32", _L2F, "spare_um_held")), 0.0),
+    ("104 B L2F both → 104", BLIND_MATE, r"утримуваним \(і " + N + r" на 18 мм, коли", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 B shank min → 104", BLIND_MATE, r"хвостовик довший за ≈ " + N + r" мм\)", REMEDY, lambda d: _u1(_rs(d, "18")["placeholder_shank_estimate"]["shortest_shank_mm_closing_with_l2fine"]), 0.0),
+    ("104 B leads+sway → 104", BLIND_MATE, r"; " + N + r", коли ще й радом випереджає\)", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_held_plus_sway_radome_leads"]["upper_whisker"]["need"]), 0.0),
+    ("104 B stroke → 104", BLIND_MATE, r"хід від " + N + r" ⊥", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held")), 0.0),
+    ("104 B stroke uw → 104", BLIND_MATE, r"хід від [\d.]+ ⊥ " + N + r" мм", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
+    ("104 B gap → 104", BLIND_MATE, r"зазор ≤ " + N + r" мм \(хвостовик", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
+    ("104 B shank → 104", BLIND_MATE, r"хвостовик Zone 3 ≥ " + N + r"\s+мм — нижче", REMEDY, lambda d: _u1(_rs(d, "18")["run_length"]["shank_mm_closing"]), 0.0),
+    ("104 B cte → 104", BLIND_MATE, r"або КТР\s+PEEK у прогоні ≤ " + N + r" ppm/K", REMEDY, lambda d: _d1(_rs(d, "18")["run_cte"]["cte_ppm_K_closing"]), 0.0),
+    ("104 B F lo → 104", BLIND_MATE, r"приземляються на " + N + r"–", REMEDY, lambda d: _u1(_f_same(d)), 0.0),
+    ("104 B F hi → 104", BLIND_MATE, r"приземляються на [\d.]+–" + N + r" Н", REMEDY, lambda d: _u1(_ta(d, "32", "run_length")["F_hot_N"]), 0.0),
+    ("104 B F today → 104", BLIND_MATE, r"на Ta замість " + N + r", але", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
+    ("104 B alone → 104", BLIND_MATE, r"саме гойдання вже просить " + N + r",", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
+    ("104 B shank 10 → 104", BLIND_MATE, r"на 10 мм піднімає утримувану потребу до " + N + r"\s+мкм", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
+    ("104 B pin tol → 104", BLIND_MATE, r"допуск ходу ±" + N + r" мм", REMEDY, lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
+]
+
+
 # ── HW.43 wire–liner shear lag (102, 2026-10-20) ⟷ SUMMARY §«The Bus Wire in Its Liner». Requirements «k ≥ X» round UP;
 # ranges of shares and ratios round OUTWARD; «at least» travel rounds DOWN (in-silico §When Modifying #43).
 SHEAR = "mechanical/wire_liner_shear_lag.json"

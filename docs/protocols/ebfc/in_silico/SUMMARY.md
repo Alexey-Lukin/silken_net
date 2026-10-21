@@ -917,6 +917,88 @@ not in the tree; it re-runs when HW.8.9 fixes the shank's diameter and length. C
 
 ---
 
+## HW.43 — What Each Remedy for the Centre Pad's Travel Buys and Costs (script 104)
+
+`102` leaves the centre pad outside `90`'s isothermal L1 margin on the free-sleeve reading, and `103` shows that within
+its model the wood only shortens that thermal travel. `104` prices each remedy, on both of `102`'s spans, in
+micrometres against the margin and in load on the bus wire's seam, on `102`'s own wire–liner pair (a control
+re-derives `102`'s cached pad travel to 0.005 µm) and on every grip of `102`'s window — the loosest, a part at the
+window floor relaxed at μ 0.1, is not among the four `102`'s heat reads, so the cold protrusion on the 18 mm span is
+35.5 µm, not 34.0. The Zone-3 shank there is read bonded to the PEEK over its run (the fits' one rule; with it as Ti
+the need is 22.9 µm instead of 23.7).
+
+**Two readings, both priced.** *Held:* the seasonal edges alone — the whole travel in state 1, the anchor's first
+winter before the callus, where `103`'s share is 0 (unless ice in the gap ties the anode at the cold edge — not
+bounded). *Held + sway:* once the wood holds the anchor, the stem's sway rides on the seasonal position — unlike `90`'s
+daily swing, which lies inside the seasonal edges `90` already judges — so the window takes their sum: the held part
+at a state's effective CTE (the wood shortens it) and the sway at the same state's share, both read off `103`'s
+(CTE, share) front. The sway's increment is bounded by its own shift — the pad travel is the shift less the wire's
+stretch, which never falls as the shift grows — so the sum is an upper end: the coincidence of the seasonal edge with
+`87`'s shift at its high end.
+
+| span | held (high ⊥ low stack) | held, radome leading | held + sway (`87`'s median ⊥ upper whisker) | held + sway, radome leading |
+|---|---|---|---|---|
+| 18 mm — the Zone-3 fit, canon's Ø11 under interference | 23.7 ⊥ 20.7 µm | 37.3 µm | 24.8 ⊥ 37.8 µm | 38.4 ⊥ 51.4 µm |
+| 32 mm — the placeholder, the shank in the gap | 51.1 ⊥ 48.1 µm | 64.7 µm | 51.4 ⊥ 60.4 µm | 65.0 ⊥ 74.0 µm |
+
+Left as is, the stroke leaves the window on both sides on the 18 mm span — 1.7 % of the stroke past 70 % and 0.6 %
+under 50 % held, 2.7 ⊥ 2.2 % with the upper-whisker sway — and the low side is the canon's loss-of-force direction
+(`02_02 §3.5`, «Z-стек задовгий»).
+
+At `103`'s largest share the sway alone swings ±20.3 ⊥ ±41.3 µm on the 18 mm span (±22.4 ⊥ ±45.5 on the 32 mm one) —
+past L1's smaller margin at both shift readings — so on the held + sway reading no remedy that acts on δ closes the need
+by itself: the held part cannot go below zero.
+
+What each remedy buys — the spare it leaves, a shortfall in parentheses:
+
+| family | remedy | 18 mm: held · radome leading · + sway (median ⊥ upper whisker) · both (upper whisker) | 32 mm: held · + sway (upper whisker) |
+|---|---|---|---|
+| L1 residual | bayonet hard-stop (L2 — `52`'s CNC member 0.10 → 0.05 mm), +41.0 µm | 17.3 · 3.7 · 16.2 ⊥ 3.2 · (10.4) | (10.1) · (19.4) |
+| | L2 with a 0.05 mm spacer step, +56.0 µm | 32.3 · 18.7 · 31.2 ⊥ 18.2 · 4.6 | 4.9 · (4.4) |
+| | the CNC member at ±0.05 mm by a tolerance class | as L2, if the member is machining tolerance | as L2 |
+| | a 0.05 mm spacer step ⊥ none at all, +8.0 ⊥ +12.0 µm | short | short |
+| pin's window | a longer stroke, the deck re-spaced to keep 60 % nominal | from 1.637 mm · 1.773 · 1.648 ⊥ 1.778 · 1.914 | from 1.911 mm · 2.004; with L2 1.501 · 1.594 |
+| δ itself | the PEEK run's length | gap ≤ 5.6 mm — the Zone-3 shank ≥ 26.4 mm — held only | run ≤ 5.8 mm, the shank cut to 4.3 — held only |
+| | the PEEK run's effective CTE | ≤ 21.5 ppm/K (22.1 if the grade fills the shank's composite too) — held only | ≤ 16.3 ppm/K — held only |
+
+**The window side is one member, and it lifts the outer pad too.** `52`'s residual is rss(CNC member, spacer
+half-step), carried to the micrometre as `52`'s cache and `90` carry it. The CNC member dominates: the spacer step
+alone cannot reach the 18 mm need even at zero, while the bayonet hard-stop halves the member as `52` models
+deterministic engagement (L2, already in `52` and `90`). A tolerance class reaches the same number only if the member
+is machining tolerance — `52` names it engagement, whose play a hard-stop removes. Every window remedy moves `90`'s
+margins for the outer pad as well (L2 lifts its radome-leading upper margin from −1.8 µm to 39.2). A longer stroke
+stands on no part of `52`'s residual; it moves the margins by the window's half-width only if the deck is re-spaced to
+keep the nominal at 60 % — at today's gap −0.5 ⊥ +0.7 µm per µm of stroke. L2 with the finer step closes every reading
+on the 14 mm placeholder shank, the worst — the radome leading with the upper-whisker sway — by 4.6 µm, which holds while
+the shank stays above about 11.7 mm: the held reading's slope with the shank, 2.0 µm per mm, carried over as an estimate,
+since `103`'s front moves with the shank too.
+
+**The seam does not choose between the δ routes — closing the need does.** Where the wire–liner pair stays as it is — both CTE routes
+and the length route on 18 mm — it fixes the shift per kelvin and with it one hot preload, 20.9 N on Ta; the length
+route on 32 mm cuts the shank and the liner run with it and lands at 22.3 N — against 35.9 N today on the 18 mm span and
+48.4 N on the 32 mm one. `86`'s seam requirement on 18 mm with no sway falls from k 0.547
+to 0.467, and with `103`'s sway on top at its least state-3 corner on a stiff bond from at least 1.187 to 1.120 — the
+sway alone asks 0.931 there, so Ta's seam stays past k 1 either way; at `103`'s caps the liner wall binds and the δ
+routes change nothing (Ta 1.471), the length route even raising some capped corners slightly (its longer liner run
+grips more); on Ti-6Al-4V no corner passes 0.528. The window side leaves the seam where it is.
+
+**Sensitivity, and what is not priced.** The placeholder shank (HW.8.9) at `92`'s 10 ⊥ 18 mm moves the held need on
+the 18 mm span to 31.7 ⊥ 16.0 µm — at the short end, past L2's radome-leading and upper-whisker spares. Not priced: the
+pin's own height — the datasheet's ±0.127 mm on its travel, which, as far as it is the plunger's free length, moves the
+compression at a fixed gap by its whole size, past every spare here — has no member in `52`'s chain (HW.8.7).
+
+⚠️ **Bounds.** No grade's CTE or modulus is in the tree: the CTE route is a threshold, and a filled grade also moves the
+Zone 1↔2 press-fit (`50`/`51`/`56` and its ratified band) and the liner's thermal grip. Whether the hard-stop acts under
+branch (а) is `52`'s rerun at the root move. A longer pin's own free length moves `90`'s thermal term (up to 1.1 µm per
+mm of extra free length at the far edge). The gap has other duties — it is the thermal break G1 set at 18 mm (⚖️
+2026-10-12, `54`'s frost gate) and the wire's unsupported run — and a shank beyond `92`'s 10–18 mm sweep loses that
+script's contact results: the length routes price length only. The held + sway sum is the coincidence of the seasonal
+edge with the sway at its high end, and both readings carry `103`'s bounds: the wood «only shortens» while xylem's
+radial CTE stays above 5.95 ppm/K, and the bark's own strain, growth preload and frost are out of the model. Cache:
+`mechanical/pad_travel_remedies.json`.
+
+---
+
 ## HW.26 — How Far Can the Bus Wire Twist? (script 101)
 
 Once HW.8.9 makes the Zone-3 shank a fit, an event torque on the flange (the bayonet, a branch, an animal) reacts
