@@ -1,0 +1,2666 @@
+{
+  "script": "106",
+  "question": "00_07 HW.23 — the share t_L of the wood's in-plane strain the bonded gyroid takes (orthotropic Eshelby)",
+  "inputs": {
+    "wood_source": "Güntekin & Akar 2019, Drewno 62(204):41–53, doi 10.12841/wood.1644-3985.220.09, Tables 1–4 (the authors' own rows), P. sylvestris sapwood, compression",
+    "wood": {
+      "rh45": {
+        "mc_pct": {
+          "L": 8.0,
+          "R": 8.1,
+          "T": 8.1,
+          "G": 8.2
+        },
+        "E_L": 15621.0,
+        "nu_LR": 0.41,
+        "nu_LT": 0.69,
+        "E_R": 804.0,
+        "nu_RT": 0.69,
+        "nu_RL": 0.083,
+        "E_T": 682.0,
+        "nu_TR": 0.64,
+        "nu_TL": 0.057,
+        "G_LR": 1041.0,
+        "G_LT": 911.0,
+        "G_RT": 108.0
+      },
+      "rh65": {
+        "mc_pct": {
+          "L": 12.5,
+          "R": 12.7,
+          "T": 12.1,
+          "G": 12.2
+        },
+        "E_L": 14998.0,
+        "nu_LR": 0.6,
+        "nu_LT": 0.74,
+        "E_R": 763.0,
+        "nu_RT": 0.69,
+        "nu_RL": 0.075,
+        "E_T": 532.0,
+        "nu_TR": 0.68,
+        "nu_TL": 0.063,
+        "G_LR": 1007.0,
+        "G_LT": 903.0,
+        "G_RT": 107.0
+      },
+      "rh85": {
+        "mc_pct": {
+          "L": 17.4,
+          "R": 17.0,
+          "T": 17.0,
+          "G": 17.7
+        },
+        "E_L": 13058.0,
+        "nu_LR": 0.51,
+        "nu_LT": 0.69,
+        "E_R": 569.0,
+        "nu_RT": 0.63,
+        "nu_RL": 0.071,
+        "E_T": 362.0,
+        "nu_TR": 0.5,
+        "nu_TL": 0.065,
+        "G_LR": 828.0,
+        "G_LT": 737.0,
+        "G_RT": 86.0
+      },
+      "rh95": {
+        "mc_pct": {
+          "L": 21.6,
+          "R": 20.59,
+          "T": 23.3,
+          "G": 22.8
+        },
+        "E_L": 10230.0,
+        "nu_LR": 0.39,
+        "nu_LT": 0.6,
+        "E_R": 420.0,
+        "nu_RT": 0.73,
+        "nu_RL": 0.164,
+        "E_T": 283.0,
+        "nu_TR": 0.55,
+        "nu_TL": 0.084,
+        "G_LR": 737.0,
+        "G_LT": 655.0,
+        "G_RT": 74.0
+      }
+    },
+    "transcription_vs_printed_aggregates": {
+      "E_L/E_T rh65": {
+        "computed": 28.19172932330827,
+        "printed": 28.0
+      },
+      "E_R/E_T rh65": {
+        "computed": 1.4342105263157894,
+        "printed": 1.4
+      },
+      "G_LR/G_RT rh65": {
+        "computed": 9.411214953271028,
+        "printed": 9.4
+      },
+      "G_LT/G_RT rh65": {
+        "computed": 8.439252336448599,
+        "printed": 8.4
+      },
+      "E_L/G_LR rh65": {
+        "computed": 14.893743793445879,
+        "printed": 14.8
+      },
+      "E_L/G_LT rh65": {
+        "computed": 16.60908084163898,
+        "printed": 16.0
+      },
+      "E_L/G_RT rh65": {
+        "computed": 140.16822429906543,
+        "printed": 140.0
+      },
+      "decrease E_T %": {
+        "computed": 58.50439882697947,
+        "printed": 58.0
+      },
+      "decrease E_R %": {
+        "computed": 47.76119402985075,
+        "printed": 47.0
+      },
+      "decrease E_L %": {
+        "computed": 34.51123487612829,
+        "printed": 34.0
+      },
+      "decrease G_RT %": {
+        "computed": 31.481481481481477,
+        "printed": 31.0
+      },
+      "decrease G_LR %": {
+        "computed": 29.202689721421716,
+        "printed": 29.0
+      },
+      "decrease G_LT %": {
+        "computed": 28.100987925356748,
+        "printed": 28.0
+      }
+    },
+    "transcription_aggregates_cover": "ratios of the E and G rows of 45, 65 and 95 % RH, to the printed digit (a row's common scale would pass); no Poisson ratio, nothing of 85 % RH",
+    "symmetrisation_readings": {
+      "stiff": "each pair's coupling from the test loaded along its stiffer axis",
+      "soft": "from the test loaded along its softer axis",
+      "mean": "the two compliance entries averaged"
+    },
+    "fe_readings_richardson_105": {
+      "radial_richardson": 0.06619330386987676,
+      "axial_richardson": 0.09419304523408444
+    },
+    "solid_fraction_105": 0.3547993269862114,
+    "solid_poisson_fe": 0.342,
+    "lattice_roots": [
+      {
+        "C11": 0.1154035348259368,
+        "C12": 0.040686242074864876,
+        "nu": 0.2606592365156742,
+        "E100": 0.09419304523408444,
+        "inside_voigt": true
+      },
+      {
+        "C11": 0.27482090742606735,
+        "C12": -0.11873113052526571,
+        "nu": -0.7606592365156742,
+        "E100": 0.09419304523408438,
+        "inside_voigt": false
+      }
+    ],
+    "lattice_reading": {
+      "C11_over_E_s": 0.1154035348259368,
+      "C12_over_E_s": 0.040686242074864876,
+      "nu_star": 0.2606592365156742,
+      "E100_over_E_s": 0.09419304523408444,
+      "zener_voigt_ceiling": 3.538418067413779,
+      "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); C44 unmeasured, swept"
+    },
+    "theta_deg": [
+      0.0,
+      2.5,
+      5.0,
+      7.5,
+      10.0,
+      12.5,
+      15.0,
+      17.5,
+      20.0,
+      22.5,
+      25.0,
+      27.5,
+      30.0,
+      32.5,
+      35.0,
+      37.5,
+      40.0,
+      42.5,
+      45.0
+    ],
+    "zener_grid": [
+      0.003538418067413779,
+      0.00420541775472467,
+      0.004998148368793452,
+      0.00594031046937172,
+      0.007060072224515726,
+      0.008390911564703169,
+      0.009972617084876748,
+      0.011852477618752485,
+      0.014086696050534744,
+      0.016742069633288784,
+      0.019897987051069394,
+      0.023648801931708922,
+      0.028106653772052913,
+      0.03340482061388598,
+      0.039701703706737514,
+      0.047185563288502055,
+      0.056080147071255096,
+      0.06665137970918227,
+      0.0792153132461136,
+      0.0941475762401272,
+      0.11189460406918769,
+      0.13298698617441282,
+      0.15805532928842558,
+      0.18784911091758522,
+      0.22325908674761355,
+      0.2653439218950933,
+      0.31536184220919267,
+      0.374808251914267,
+      0.4454604422618816,
+      0.5294307278633252,
+      0.6292295993391643,
+      0.747840780383899,
+      0.8888104332545024,
+      1.0563531796922379,
+      1.255478107024401,
+      1.4921385266969127,
+      1.7734099626238706,
+      2.107701690737471,
+      2.505008154214255,
+      2.977207771031534,
+      3.538418067413779
+    ],
+    "pore_readings": {
+      "pores_carry_nothing": "the bare lattice — the composite's LOWER stiffness end",
+      "pores_additive_host_sapwood": "lattice + (1 − φ)·C_wood — a reading, NO bound",
+      "pores_voigt_phase_bound": "φ·C_Ti + (1 − φ)·C_wood — the composite's UPPER stiffness end if the tissue in the pores is no stiffer than the host's sapwood in every direction"
+    },
+    "ring": "read as the host's xylem — OUR reading: 01_04 §2's phases say nothing of the ring around Zone 1; a soft ring is not modelled"
+  },
+  "wood_readings": {
+    "rh45|stiff": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 5.8361682201087334e-05,
+      "hole_control": {
+        "kt_eshelby": 5.7703812951499,
+        "kt_lekhnitskii": 5.77038129514989,
+        "traction_residual": 2.5327497992258197e-17
+      },
+      "covariance_control": 1.9567680809018384e-15,
+      "quadrature_change_at_2n": 2.4424906541753444e-15
+    },
+    "rh45|soft": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 1.898045933229731e-05,
+      "hole_control": {
+        "kt_eshelby": 5.6226324446982305,
+        "kt_lekhnitskii": 5.622632444698099,
+        "traction_residual": 1.1122295440143736e-17
+      },
+      "covariance_control": 5.218048215738236e-15,
+      "quadrature_change_at_2n": 3.1086244689504383e-15
+    },
+    "rh45|mean": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 4.3701495096279316e-05,
+      "hole_control": {
+        "kt_eshelby": 5.668432676434588,
+        "kt_lekhnitskii": 5.6684326764345485,
+        "traction_residual": 4.023525304756592e-17
+      },
+      "covariance_control": 2.6922908347160046e-15,
+      "quadrature_change_at_2n": 2.7478019859472624e-15
+    },
+    "rh65|stiff": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 6.01395678836779e-05,
+      "hole_control": {
+        "kt_eshelby": 5.829898738201847,
+        "kt_lekhnitskii": 5.829898738201834,
+        "traction_residual": 1.9945846720189408e-17
+      },
+      "covariance_control": 1.5543122344752192e-15,
+      "quadrature_change_at_2n": 1.4155343563970746e-15
+    },
+    "rh65|soft": {
+      "positive_definite": false,
+      "compliance_min_eigenvalue": -1.0421691922296469e-05
+    },
+    "rh65|mean": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 4.015799240103565e-05,
+      "hole_control": {
+        "kt_eshelby": 5.575173270872969,
+        "kt_lekhnitskii": 5.575173270873024,
+        "traction_residual": 9.281013380694529e-18
+      },
+      "covariance_control": 1.6653345369377348e-15,
+      "quadrature_change_at_2n": 1.0019762797242038e-14
+    },
+    "rh85|stiff": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 7.25353231009028e-05,
+      "hole_control": {
+        "kt_eshelby": 6.130273571305112,
+        "kt_lekhnitskii": 6.1302735713050955,
+        "traction_residual": 3.2500800363940592e-18
+      },
+      "covariance_control": 5.6066262743570405e-15,
+      "quadrature_change_at_2n": 9.992007221626409e-16
+    },
+    "rh85|soft": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 2.0342874866577416e-05,
+      "hole_control": {
+        "kt_eshelby": 5.667860318122598,
+        "kt_lekhnitskii": 5.667860318122588,
+        "traction_residual": 3.9712646569887357e-16
+      },
+      "covariance_control": 9.42648736845797e-15,
+      "quadrature_change_at_2n": 1.765254609153999e-14
+    },
+    "rh85|mean": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 5.5390292962847026e-05,
+      "hole_control": {
+        "kt_eshelby": 5.902032049378851,
+        "kt_lekhnitskii": 5.902032049378859,
+        "traction_residual": 2.8269313197684894e-17
+      },
+      "covariance_control": 2.589942149633373e-15,
+      "quadrature_change_at_2n": 3.164135620181696e-15
+    },
+    "rh95|stiff": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 9.349410815379313e-05,
+      "hole_control": {
+        "kt_eshelby": 5.857249715929823,
+        "kt_lekhnitskii": 5.857249715929857,
+        "traction_residual": 2.888708203345347e-17
+      },
+      "covariance_control": 1.4432899320127035e-15,
+      "quadrature_change_at_2n": 1.2212453270876722e-15
+    },
+    "rh95|soft": {
+      "positive_definite": false,
+      "compliance_min_eigenvalue": -0.0001293072681527875
+    },
+    "rh95|mean": {
+      "positive_definite": true,
+      "compliance_min_eigenvalue": 2.1013967724441105e-05,
+      "hole_control": {
+        "kt_eshelby": 5.590922057796043,
+        "kt_lekhnitskii": 5.590922057795909,
+        "traction_residual": 9.218671457636137e-17
+      },
+      "covariance_control": 8.43769498715119e-15,
+      "quadrature_change_at_2n": 2.098321516541546e-14
+    }
+  },
+  "wood_readings_excluded_not_a_material": [
+    "rh65|soft",
+    "rh95|soft"
+  ],
+  "cells": {
+    "Ti-6Al-4V|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.386941672338882,
+      "t_L_at_voigt_C44_min_over_theta": 0.8253125493363502,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.386941672338882,
+      "t_L_at_C44_zero_max_over_theta": 5.499723810622043,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.055251240922182,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8118176460618545,
+      "t_L_at_voigt_C44_min_over_theta": 0.5803517441655421,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8118176460618545,
+      "t_L_at_C44_zero_max_over_theta": 1.404076664352391,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.45683962390918825,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4342124781473606,
+      "t_L_at_voigt_C44_min_over_theta": 0.4342124781473606,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4342124781473606,
+      "t_L_at_C44_zero_max_over_theta": 0.4342124781473606,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.6278614894769672,
+      "t_L_at_voigt_C44_min_over_theta": 1.089177521617648,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.6278614894769672,
+      "t_L_at_C44_zero_max_over_theta": 4.628461847719805,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8076108679476721,
+      "t_L_at_voigt_C44_min_over_theta": 0.6641320805345776,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8076108679476721,
+      "t_L_at_C44_zero_max_over_theta": 1.1161477128686685,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.210810279272395,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.685787316301772,
+      "t_L_at_voigt_C44_min_over_theta": 0.685787316301772,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.685787316301772,
+      "t_L_at_C44_zero_max_over_theta": 0.685787316301772,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5047439912983749,
+      "t_L_at_voigt_C44_min_over_theta": 0.9533195355535198,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5047439912983749,
+      "t_L_at_C44_zero_max_over_theta": 5.120247357638555,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.977054132526466,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8535462109487718,
+      "t_L_at_voigt_C44_min_over_theta": 0.6501083514574745,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8535462109487718,
+      "t_L_at_C44_zero_max_over_theta": 1.3564575307431141,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.49422393936223585,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5837258326527976,
+      "t_L_at_voigt_C44_min_over_theta": 0.5837258326527976,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5837258326527976,
+      "t_L_at_C44_zero_max_over_theta": 0.5837258326527976,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.3817696134842008,
+      "t_L_at_voigt_C44_min_over_theta": 0.8420933910288754,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.3817696134842008,
+      "t_L_at_C44_zero_max_over_theta": 5.6240129820932845,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.1044385323253274,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8192427649054423,
+      "t_L_at_voigt_C44_min_over_theta": 0.600755731875673,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8192427649054423,
+      "t_L_at_C44_zero_max_over_theta": 1.4060194280643112,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4593254982574742,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4731998409848741,
+      "t_L_at_voigt_C44_min_over_theta": 0.4731998409848741,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4731998409848741,
+      "t_L_at_C44_zero_max_over_theta": 0.4731998409848741,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4710846820375372,
+      "t_L_at_voigt_C44_min_over_theta": 0.9330465065665037,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4710846820375372,
+      "t_L_at_C44_zero_max_over_theta": 5.058069723875809,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.7660929879034475,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8267802336125127,
+      "t_L_at_voigt_C44_min_over_theta": 0.63203692931643,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8267802336125127,
+      "t_L_at_C44_zero_max_over_theta": 1.314701104430923,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4194285054254202,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5788289674038478,
+      "t_L_at_voigt_C44_min_over_theta": 0.5788289674038478,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5788289674038478,
+      "t_L_at_C44_zero_max_over_theta": 0.5788289674038478,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.2381682620408736,
+      "t_L_at_voigt_C44_min_over_theta": 0.7466261671529318,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.2381682620408736,
+      "t_L_at_C44_zero_max_over_theta": 6.036306024078253,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.5750149477386959,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7668117266747423,
+      "t_L_at_voigt_C44_min_over_theta": 0.5530587342415021,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7668117266747423,
+      "t_L_at_C44_zero_max_over_theta": 1.4165199713238708,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.38133138959817225,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4195253810718534,
+      "t_L_at_voigt_C44_min_over_theta": 0.4195253810718534,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4195253810718534,
+      "t_L_at_C44_zero_max_over_theta": 0.4195253810718534,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.484073439038892,
+      "t_L_at_voigt_C44_min_over_theta": 0.9930444671568353,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.484073439038892,
+      "t_L_at_C44_zero_max_over_theta": 4.970214830039314,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.430118540972357,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.705327280042806,
+      "t_L_at_voigt_C44_min_over_theta": 0.5948314069652552,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.705327280042806,
+      "t_L_at_C44_zero_max_over_theta": 0.9519946924384866,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6349517162497743,
+      "t_L_at_voigt_C44_min_over_theta": 0.6349517162497743,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6349517162497743,
+      "t_L_at_C44_zero_max_over_theta": 0.6349517162497743,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.3494085750754212,
+      "t_L_at_voigt_C44_min_over_theta": 0.8616233464323398,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.3494085750754212,
+      "t_L_at_C44_zero_max_over_theta": 5.5705667968111054,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.1251032045124427,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8033779014801983,
+      "t_L_at_voigt_C44_min_over_theta": 0.6163700778582616,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8033779014801983,
+      "t_L_at_C44_zero_max_over_theta": 1.340142270026474,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.3838810760567502,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5612332028156142,
+      "t_L_at_voigt_C44_min_over_theta": 0.5612332028156142,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5612332028156142,
+      "t_L_at_C44_zero_max_over_theta": 0.5612332028156142,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0117981186810496,
+      "t_L_at_voigt_C44_min_over_theta": 0.602016423626616,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0117981186810496,
+      "t_L_at_C44_zero_max_over_theta": 5.77976206921636,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.0228863227135179,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6760176094246774,
+      "t_L_at_voigt_C44_min_over_theta": 0.47067727096605816,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6760176094246774,
+      "t_L_at_C44_zero_max_over_theta": 1.4107039266105823,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.27849939101406557,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.34264094897331726,
+      "t_L_at_voigt_C44_min_over_theta": 0.34264094897331726,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.34264094897331726,
+      "t_L_at_C44_zero_max_over_theta": 0.34264094897331726,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4076389010095955,
+      "t_L_at_voigt_C44_min_over_theta": 1.0165828779327502,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4076389010095955,
+      "t_L_at_C44_zero_max_over_theta": 4.541338002038958,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7522127005335291,
+      "t_L_at_voigt_C44_min_over_theta": 0.675168429086486,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7522127005335291,
+      "t_L_at_C44_zero_max_over_theta": 0.9304025322643722,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-4V|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7487474966554025,
+      "t_L_at_voigt_C44_min_over_theta": 0.7487474966554025,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7487474966554025,
+      "t_L_at_C44_zero_max_over_theta": 0.7487474966554025,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4528110901498845,
+      "t_L_at_voigt_C44_min_over_theta": 0.8662426380485738,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4528110901498845,
+      "t_L_at_C44_zero_max_over_theta": 5.501231761091809,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.326965623812072,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8325091632122604,
+      "t_L_at_voigt_C44_min_over_theta": 0.5988445095518066,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8325091632122604,
+      "t_L_at_C44_zero_max_over_theta": 1.4041355349619613,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.49391119704051456,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4463411390074386,
+      "t_L_at_voigt_C44_min_over_theta": 0.4463411390074386,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4463411390074386,
+      "t_L_at_C44_zero_max_over_theta": 0.4463411390074386,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.6873257668228236,
+      "t_L_at_voigt_C44_min_over_theta": 1.1270911561999397,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.6873257668228236,
+      "t_L_at_C44_zero_max_over_theta": 4.630856021628176,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8165891549193224,
+      "t_L_at_voigt_C44_min_over_theta": 0.6711935066055004,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8165891549193224,
+      "t_L_at_C44_zero_max_over_theta": 1.1186052014170988,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2265649170055214,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6756621513323166,
+      "t_L_at_voigt_C44_min_over_theta": 0.6756621513323166,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6756621513323166,
+      "t_L_at_C44_zero_max_over_theta": 0.6756621513323166,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5677299265610452,
+      "t_L_at_voigt_C44_min_over_theta": 0.9926499079284098,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5677299265610452,
+      "t_L_at_C44_zero_max_over_theta": 5.122205110306023,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.442123887735293,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8696197934628531,
+      "t_L_at_voigt_C44_min_over_theta": 0.6640747572786121,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8696197934628531,
+      "t_L_at_C44_zero_max_over_theta": 1.3565576539178386,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5308511086663977,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5835521793470528,
+      "t_L_at_voigt_C44_min_over_theta": 0.5835521793470528,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5835521793470528,
+      "t_L_at_C44_zero_max_over_theta": 0.5835521793470528,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4453480526440206,
+      "t_L_at_voigt_C44_min_over_theta": 0.8813543029628147,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4453480526440206,
+      "t_L_at_C44_zero_max_over_theta": 5.624674277615503,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.386668470217469,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8389959211808011,
+      "t_L_at_voigt_C44_min_over_theta": 0.6183261804279158,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8389959211808011,
+      "t_L_at_C44_zero_max_over_theta": 1.406019322235424,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.49616715607962414,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4811166551669043,
+      "t_L_at_voigt_C44_min_over_theta": 0.4811166551669043,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4811166551669043,
+      "t_L_at_C44_zero_max_over_theta": 0.4811166551669043,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5323003695085295,
+      "t_L_at_voigt_C44_min_over_theta": 0.9710412617834454,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5323003695085295,
+      "t_L_at_C44_zero_max_over_theta": 5.059654146166181,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.1768903551114374,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8417281672503497,
+      "t_L_at_voigt_C44_min_over_theta": 0.6448475335778227,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8417281672503497,
+      "t_L_at_C44_zero_max_over_theta": 1.315078276354125,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.44908245074527997,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5775046748631563,
+      "t_L_at_voigt_C44_min_over_theta": 0.5775046748631563,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5775046748631563,
+      "t_L_at_C44_zero_max_over_theta": 0.5775046748631563,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.2978833927486986,
+      "t_L_at_voigt_C44_min_over_theta": 0.7826463599416467,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.2978833927486986,
+      "t_L_at_C44_zero_max_over_theta": 6.036454850693282,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.7625984068204856,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7874587388303841,
+      "t_L_at_voigt_C44_min_over_theta": 0.5708859001837406,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7874587388303841,
+      "t_L_at_C44_zero_max_over_theta": 1.416524336183566,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.41163328886555967,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4277875405133412,
+      "t_L_at_voigt_C44_min_over_theta": 0.4277875405133412,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4277875405133412,
+      "t_L_at_C44_zero_max_over_theta": 0.4277875405133412,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5391618232593207,
+      "t_L_at_voigt_C44_min_over_theta": 1.0263308069873187,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5391618232593207,
+      "t_L_at_C44_zero_max_over_theta": 4.970873428407765,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7120571219546242,
+      "t_L_at_voigt_C44_min_over_theta": 0.5999159075230579,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7120571219546242,
+      "t_L_at_C44_zero_max_over_theta": 0.9547803755282922,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6215120227263038,
+      "t_L_at_voigt_C44_min_over_theta": 0.6215120227263038,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6215120227263038,
+      "t_L_at_C44_zero_max_over_theta": 0.6215120227263038,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4066749675199663,
+      "t_L_at_voigt_C44_min_over_theta": 0.8959174113088435,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4066749675199663,
+      "t_L_at_C44_zero_max_over_theta": 5.570928867595755,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.4050281632463166,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.819199211128164,
+      "t_L_at_voigt_C44_min_over_theta": 0.6297037668001442,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.819199211128164,
+      "t_L_at_C44_zero_max_over_theta": 1.34035452822554,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4116652755877297,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.557647282673232,
+      "t_L_at_voigt_C44_min_over_theta": 0.557647282673232,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.557647282673232,
+      "t_L_at_C44_zero_max_over_theta": 0.557647282673232,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0627906145714718,
+      "t_L_at_voigt_C44_min_over_theta": 0.6320507601840356,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0627906145714718,
+      "t_L_at_C44_zero_max_over_theta": 5.779939042867238,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.1269211400415964,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6970327498316476,
+      "t_L_at_voigt_C44_min_over_theta": 0.4876507490994559,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6970327498316476,
+      "t_L_at_C44_zero_max_over_theta": 1.410724222535456,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.3000389192248983,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.3508215568679962,
+      "t_L_at_voigt_C44_min_over_theta": 0.3508215568679962,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.3508215568679962,
+      "t_L_at_C44_zero_max_over_theta": 0.3508215568679962,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4524072811276374,
+      "t_L_at_voigt_C44_min_over_theta": 1.0431072842417866,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4524072811276374,
+      "t_L_at_C44_zero_max_over_theta": 4.541849130339813,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7568334069783789,
+      "t_L_at_voigt_C44_min_over_theta": 0.6784377030698189,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7568334069783789,
+      "t_L_at_C44_zero_max_over_theta": 0.9326778167509441,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-6Al-7Nb|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7259846953701024,
+      "t_L_at_voigt_C44_min_over_theta": 0.7259846953701024,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7259846953701024,
+      "t_L_at_C44_zero_max_over_theta": 0.7259846953701024,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4429889808987153,
+      "t_L_at_voigt_C44_min_over_theta": 0.8601118034516781,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4429889808987153,
+      "t_L_at_C44_zero_max_over_theta": 5.501005184233821,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.2839529539940453,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8294786372345314,
+      "t_L_at_voigt_C44_min_over_theta": 0.5961138071496888,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8294786372345314,
+      "t_L_at_C44_zero_max_over_theta": 1.404126725980656,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.48826005172457937,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4486872322844026,
+      "t_L_at_voigt_C44_min_over_theta": 0.4486872322844026,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4486872322844026,
+      "t_L_at_C44_zero_max_over_theta": 0.4486872322844026,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.678474859423658,
+      "t_L_at_voigt_C44_min_over_theta": 1.1214136638382306,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.678474859423658,
+      "t_L_at_C44_zero_max_over_theta": 4.630496224791284,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8152712872849018,
+      "t_L_at_voigt_C44_min_over_theta": 0.6701537815682724,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8152712872849018,
+      "t_L_at_C44_zero_max_over_theta": 1.1182391144840373,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.22417837461811185,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6997800584652294,
+      "t_L_at_voigt_C44_min_over_theta": 0.6997800584652294,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6997800584652294,
+      "t_L_at_C44_zero_max_over_theta": 0.6997800584652294,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5583433256618846,
+      "t_L_at_voigt_C44_min_over_theta": 0.9867585368450009,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5583433256618846,
+      "t_L_at_C44_zero_max_over_theta": 5.121910923149593,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.3672284410239284,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8672678133576106,
+      "t_L_at_voigt_C44_min_over_theta": 0.6620160593262276,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8672678133576106,
+      "t_L_at_C44_zero_max_over_theta": 1.3565426917134198,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.525294882787589,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.600418854688504,
+      "t_L_at_voigt_C44_min_over_theta": 0.600418854688504,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.600418854688504,
+      "t_L_at_C44_zero_max_over_theta": 0.600418854688504,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4358642161760502,
+      "t_L_at_voigt_C44_min_over_theta": 0.8754721987449343,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4358642161760502,
+      "t_L_at_C44_zero_max_over_theta": 5.6245748346730435,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.341908822218111,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8361017084594254,
+      "t_L_at_voigt_C44_min_over_theta": 0.6157308268793582,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8361017084594254,
+      "t_L_at_C44_zero_max_over_theta": 1.4060193381013315,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4905529422891146,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.48829916821241215,
+      "t_L_at_voigt_C44_min_over_theta": 0.48829916821241215,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.48829916821241215,
+      "t_L_at_C44_zero_max_over_theta": 0.48829916821241215,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5231758809799085,
+      "t_L_at_voigt_C44_min_over_theta": 0.9653486012680023,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5231758809799085,
+      "t_L_at_C44_zero_max_over_theta": 5.059415949933498,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.1110783081682514,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.83954057324523,
+      "t_L_at_voigt_C44_min_over_theta": 0.6429599050319709,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.83954057324523,
+      "t_L_at_C44_zero_max_over_theta": 1.3150218694461657,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4445939552951553,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5950563454256335,
+      "t_L_at_voigt_C44_min_over_theta": 0.5950563454256335,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5950563454256335,
+      "t_L_at_C44_zero_max_over_theta": 0.5950563454256335,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.2889603766562494,
+      "t_L_at_voigt_C44_min_over_theta": 0.7772436599040674,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.2889603766562494,
+      "t_L_at_C44_zero_max_over_theta": 6.0364324425154505,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.7331551392991367,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7844269336916551,
+      "t_L_at_voigt_C44_min_over_theta": 0.568246780557738,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7844269336916551,
+      "t_L_at_C44_zero_max_over_theta": 1.4165236802115975,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.40701648049877415,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.43345809540475105,
+      "t_L_at_voigt_C44_min_over_theta": 0.43345809540475105,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.43345809540475105,
+      "t_L_at_C44_zero_max_over_theta": 0.43345809540475105,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5309439247732062,
+      "t_L_at_voigt_C44_min_over_theta": 1.0213387815287325,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5309439247732062,
+      "t_L_at_C44_zero_max_over_theta": 4.970774268076971,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7110676454191204,
+      "t_L_at_voigt_C44_min_over_theta": 0.5991669834869561,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7110676454191204,
+      "t_L_at_C44_zero_max_over_theta": 0.954362888515334,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6474651438130302,
+      "t_L_at_voigt_C44_min_over_theta": 0.6474651438130302,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6474651438130302,
+      "t_L_at_C44_zero_max_over_theta": 0.6474651438130302,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.3981217204464258,
+      "t_L_at_voigt_C44_min_over_theta": 0.8907730477316803,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.3981217204464258,
+      "t_L_at_C44_zero_max_over_theta": 5.570874352388027,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.360683253184322,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8168793994186581,
+      "t_L_at_voigt_C44_min_over_theta": 0.627733936709258,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8168793994186581,
+      "t_L_at_C44_zero_max_over_theta": 1.3403226510190136,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4074540657082668,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5775445130060933,
+      "t_L_at_voigt_C44_min_over_theta": 0.5775445130060933,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5775445130060933,
+      "t_L_at_C44_zero_max_over_theta": 0.5775445130060933,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0551587613598894,
+      "t_L_at_voigt_C44_min_over_theta": 0.6275411121001803,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0551587613598894,
+      "t_L_at_C44_zero_max_over_theta": 5.779912387583032,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.1107989271882726,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.693936766492146,
+      "t_L_at_voigt_C44_min_over_theta": 0.4851307856669,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.693936766492146,
+      "t_L_at_C44_zero_max_over_theta": 1.4107211708707617,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.296762029351619,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.35465841972485507,
+      "t_L_at_voigt_C44_min_over_theta": 0.35465841972485507,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.35465841972485507,
+      "t_L_at_C44_zero_max_over_theta": 0.35465841972485507,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4457205768330645,
+      "t_L_at_voigt_C44_min_over_theta": 1.0391261345187686,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4457205768330645,
+      "t_L_at_C44_zero_max_over_theta": 4.5417721327208245,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7561527887128427,
+      "t_L_at_voigt_C44_min_over_theta": 0.6779553507049966,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7561527887128427,
+      "t_L_at_C44_zero_max_over_theta": 0.9323364037562434,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "CP-Ti-Gr4|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7620430806230065,
+      "t_L_at_voigt_C44_min_over_theta": 0.7620430806230065,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7620430806230065,
+      "t_L_at_C44_zero_max_over_theta": 0.7620430806230065,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.7267197225171456,
+      "t_L_at_voigt_C44_min_over_theta": 1.0412285235583914,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.7267197225171456,
+      "t_L_at_C44_zero_max_over_theta": 5.5078044706007745,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.9100563211937847,
+      "t_L_at_voigt_C44_min_over_theta": 0.6714551955722902,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9100563211937847,
+      "t_L_at_C44_zero_max_over_theta": 1.4043855806513108,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.671078351001461,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5126879323616059,
+      "t_L_at_voigt_C44_min_over_theta": 0.5126879323616059,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5126879323616059,
+      "t_L_at_C44_zero_max_over_theta": 0.5126879323616059,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.9318925907568831,
+      "t_L_at_voigt_C44_min_over_theta": 1.2889025273955084,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.9318925907568831,
+      "t_L_at_C44_zero_max_over_theta": 4.641302615638026,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8508843706783492,
+      "t_L_at_voigt_C44_min_over_theta": 0.6986365531529782,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8508843706783492,
+      "t_L_at_C44_zero_max_over_theta": 1.1287632597016923,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.29876660298774516,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.718133987283342,
+      "t_L_at_voigt_C44_min_over_theta": 0.718133987283342,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.718133987283342,
+      "t_L_at_C44_zero_max_over_theta": 0.718133987283342,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.8287077238666622,
+      "t_L_at_voigt_C44_min_over_theta": 1.160818997843158,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.8287077238666622,
+      "t_L_at_C44_zero_max_over_theta": 5.130743012249435,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.9296127396017958,
+      "t_L_at_voigt_C44_min_over_theta": 0.7184106065515419,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9296127396017958,
+      "t_L_at_C44_zero_max_over_theta": 1.3569795188334908,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.7004393440738794,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6463738014990972,
+      "t_L_at_voigt_C44_min_over_theta": 0.6463738014990972,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6463738014990972,
+      "t_L_at_C44_zero_max_over_theta": 0.6463738014990972,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.7103000163224567,
+      "t_L_at_voigt_C44_min_over_theta": 1.0494302451911421,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.7103000163224567,
+      "t_L_at_C44_zero_max_over_theta": 5.627571383060299,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.9131885647817138,
+      "t_L_at_voigt_C44_min_over_theta": 0.6874382636507711,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9131885647817138,
+      "t_L_at_C44_zero_max_over_theta": 1.4060188673581455,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.671935384217352,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5460405838442239,
+      "t_L_at_voigt_C44_min_over_theta": 0.5460405838442239,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5460405838442239,
+      "t_L_at_C44_zero_max_over_theta": 0.5460405838442239,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.7862288292174253,
+      "t_L_at_voigt_C44_min_over_theta": 1.1337369124161394,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.7862288292174253,
+      "t_L_at_C44_zero_max_over_theta": 5.066583861403924,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8975998822788128,
+      "t_L_at_voigt_C44_min_over_theta": 0.6945971588557356,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8975998822788128,
+      "t_L_at_C44_zero_max_over_theta": 1.316674952776995,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5845016386853811,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6373930696301199,
+      "t_L_at_voigt_C44_min_over_theta": 0.6373930696301199,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6373930696301199,
+      "t_L_at_C44_zero_max_over_theta": 0.6373930696301199,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.549382925490118,
+      "t_L_at_voigt_C44_min_over_theta": 0.9379363918771945,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.549382925490118,
+      "t_L_at_C44_zero_max_over_theta": 6.0371120981035435,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.8778038743769305,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8659530062633077,
+      "t_L_at_voigt_C44_min_over_theta": 0.6419018210852367,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8659530062633077,
+      "t_L_at_C44_zero_max_over_theta": 1.4165433852437423,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5561158339056435,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.48916445118411567,
+      "t_L_at_voigt_C44_min_over_theta": 0.48916445118411567,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.48916445118411567,
+      "t_L_at_C44_zero_max_over_theta": 0.48916445118411567,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.7688053832713333,
+      "t_L_at_voigt_C44_min_over_theta": 1.1697169941658134,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.7688053832713333,
+      "t_L_at_C44_zero_max_over_theta": 4.973781559361721,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.73804956166085,
+      "t_L_at_voigt_C44_min_over_theta": 0.6197189932576157,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.73804956166085,
+      "t_L_at_C44_zero_max_over_theta": 0.9667282671025529,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6557809810130958,
+      "t_L_at_voigt_C44_min_over_theta": 0.6557809810130958,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6557809810130958,
+      "t_L_at_C44_zero_max_over_theta": 0.6557809810130958,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.6471887367023803,
+      "t_L_at_voigt_C44_min_over_theta": 1.0438650448964804,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.6471887367023803,
+      "t_L_at_C44_zero_max_over_theta": 5.572527801841113,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8789040979584228,
+      "t_L_at_voigt_C44_min_over_theta": 0.6822116890253656,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8789040979584228,
+      "t_L_at_C44_zero_max_over_theta": 1.341276849629917,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5396835130534522,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6165292699326687,
+      "t_L_at_voigt_C44_min_over_theta": 0.6165292699326687,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6165292699326687,
+      "t_L_at_C44_zero_max_over_theta": 0.6165292699326687,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.2796804211290138,
+      "t_L_at_voigt_C44_min_over_theta": 0.7623942427135876,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.2796804211290138,
+      "t_L_at_C44_zero_max_over_theta": 5.78072230359279,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.6867574113961006,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7784197273058805,
+      "t_L_at_voigt_C44_min_over_theta": 0.5564148854148182,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7784197273058805,
+      "t_L_at_C44_zero_max_over_theta": 1.4108130727238457,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.40174341779196887,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4054156699786278,
+      "t_L_at_voigt_C44_min_over_theta": 0.4054156699786278,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4054156699786278,
+      "t_L_at_C44_zero_max_over_theta": 0.4054156699786278,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.6404505536415477,
+      "t_L_at_voigt_C44_min_over_theta": 1.157945246044722,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.6404505536415477,
+      "t_L_at_C44_zero_max_over_theta": 4.544113733099886,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7748744269290901,
+      "t_L_at_voigt_C44_min_over_theta": 0.691297172950417,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7748744269290901,
+      "t_L_at_C44_zero_max_over_theta": 0.9425116414984773,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "beta-Ti-13Nb-13Zr|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7550782753519141,
+      "t_L_at_voigt_C44_min_over_theta": 0.7550782753519141,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7550782753519141,
+      "t_L_at_C44_zero_max_over_theta": 0.7550782753519141,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.9428289527506867,
+      "t_L_at_voigt_C44_min_over_theta": 0.5601882890288631,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9428289527506867,
+      "t_L_at_C44_zero_max_over_theta": 5.490219443491524,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.8947064651189843,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6453525433514092,
+      "t_L_at_voigt_C44_min_over_theta": 0.4433907614284556,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6453525433514092,
+      "t_L_at_C44_zero_max_over_theta": 1.4036919369290988,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2502082434079605,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.33339638798603843,
+      "t_L_at_voigt_C44_min_over_theta": 0.33339638798603843,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.33339638798603843,
+      "t_L_at_C44_zero_max_over_theta": 0.33339638798603843,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.2202403412930398,
+      "t_L_at_voigt_C44_min_over_theta": 0.8430505242678233,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.2202403412930398,
+      "t_L_at_C44_zero_max_over_theta": 4.6133935798347645,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.7764373314204358,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7352336121122278,
+      "t_L_at_voigt_C44_min_over_theta": 0.6092169123339755,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7352336121122278,
+      "t_L_at_C44_zero_max_over_theta": 1.099429839710076,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.11860760183887317,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6500247954038406,
+      "t_L_at_voigt_C44_min_over_theta": 0.6500247954038406,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6500247954038406,
+      "t_L_at_C44_zero_max_over_theta": 0.6500247954038406,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0778080618482861,
+      "t_L_at_voigt_C44_min_over_theta": 0.6986325902168591,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0778080618482861,
+      "t_L_at_C44_zero_max_over_theta": 5.107917089079231,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.187662688110927,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7224939501357382,
+      "t_L_at_voigt_C44_min_over_theta": 0.5445687613119727,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7224939501357382,
+      "t_L_at_C44_zero_max_over_theta": 1.3557955719872914,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2816013462445478,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5070838257382567,
+      "t_L_at_voigt_C44_min_over_theta": 0.5070838257382567,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5070838257382567,
+      "t_L_at_C44_zero_max_over_theta": 0.5070838257382567,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.9544637297824886,
+      "t_L_at_voigt_C44_min_over_theta": 0.588281544579417,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9544637297824886,
+      "t_L_at_C44_zero_max_over_theta": 5.619873621573618,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.9114437067677019,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6609639388916883,
+      "t_L_at_voigt_C44_min_over_theta": 0.4710784308331044,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6609639388916883,
+      "t_L_at_C44_zero_max_over_theta": 1.4060201080904415,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.25319806305606113,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.38187621051084697,
+      "t_L_at_voigt_C44_min_over_theta": 0.38187621051084697,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.38187621051084697,
+      "t_L_at_C44_zero_max_over_theta": 0.38187621051084697,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0568574225448324,
+      "t_L_at_voigt_C44_min_over_theta": 0.68753110880745,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0568574225448324,
+      "t_L_at_C44_zero_max_over_theta": 5.048129701723891,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.1350298898114513,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7048593526586149,
+      "t_L_at_voigt_C44_min_over_theta": 0.534780984689064,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7048593526586149,
+      "t_L_at_C44_zero_max_over_theta": 1.3122244033269812,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.24391339237512216,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5074495712369863,
+      "t_L_at_voigt_C44_min_over_theta": 0.5074495712369863,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5074495712369863,
+      "t_L_at_C44_zero_max_over_theta": 0.5074495712369863,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.8430495740761558,
+      "t_L_at_voigt_C44_min_over_theta": 0.5160802279228229,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8430495740761558,
+      "t_L_at_C44_zero_max_over_theta": 6.035384385046789,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.7259783694970519,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6051839645448823,
+      "t_L_at_voigt_C44_min_over_theta": 0.4243767935869719,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6051839645448823,
+      "t_L_at_C44_zero_max_over_theta": 1.4164925073494234,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2113476133529076,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.3338013081269142,
+      "t_L_at_voigt_C44_min_over_theta": 0.3338013081269142,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.3338013081269142,
+      "t_L_at_C44_zero_max_over_theta": 0.3338013081269142,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.1140812611167594,
+      "t_L_at_voigt_C44_min_over_theta": 0.7797842275217567,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.1140812611167594,
+      "t_L_at_C44_zero_max_over_theta": 4.96613564021394,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.3484481544303746,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6517618963784388,
+      "t_L_at_voigt_C44_min_over_theta": 0.5554699448400857,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6517618963784388,
+      "t_L_at_C44_zero_max_over_theta": 0.9340407442154771,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6164762070268552,
+      "t_L_at_voigt_C44_min_over_theta": 0.6164762070268552,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6164762070268552,
+      "t_L_at_C44_zero_max_over_theta": 0.6164762070268552,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.9689791955392056,
+      "t_L_at_voigt_C44_min_over_theta": 0.6423439000522139,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.9689791955392056,
+      "t_L_at_C44_zero_max_over_theta": 5.5683245234529055,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.9315628576892437,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.6773354069888317,
+      "t_L_at_voigt_C44_min_over_theta": 0.5180309362829842,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6773354069888317,
+      "t_L_at_C44_zero_max_over_theta": 1.3387987883166725,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.22123370953754967,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.49736533114279013,
+      "t_L_at_voigt_C44_min_over_theta": 0.49736533114279013,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.49736533114279013,
+      "t_L_at_C44_zero_max_over_theta": 0.49736533114279013,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 0.6791846568689993,
+      "t_L_at_voigt_C44_min_over_theta": 0.41154625978239273,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6791846568689993,
+      "t_L_at_C44_zero_max_over_theta": 5.778669294406283,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5086940929400517,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.51693579444573,
+      "t_L_at_voigt_C44_min_over_theta": 0.3514819624925276,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.51693579444573,
+      "t_L_at_C44_zero_max_over_theta": 1.4105767587150986,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.15618057339171823,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.2671363451343015,
+      "t_L_at_voigt_C44_min_over_theta": 0.2671363451343015,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.2671363451343015,
+      "t_L_at_C44_zero_max_over_theta": 0.2671363451343015,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.1103128733946819,
+      "t_L_at_voigt_C44_min_over_theta": 0.8478417567798235,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.1103128733946819,
+      "t_L_at_C44_zero_max_over_theta": 4.538186347617747,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.458734121218719,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7160742688073822,
+      "t_L_at_voigt_C44_min_over_theta": 0.6502597365638106,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7160742688073822,
+      "t_L_at_C44_zero_max_over_theta": 0.9158942308720026,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ta|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7557837666867526,
+      "t_L_at_voigt_C44_min_over_theta": 0.7557837666867526,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7557837666867526,
+      "t_L_at_C44_zero_max_over_theta": 0.7557837666867526,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4831638345184308,
+      "t_L_at_voigt_C44_min_over_theta": 0.8852500026385939,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4831638345184308,
+      "t_L_at_C44_zero_max_over_theta": 5.501935796802696,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.4659995683187566,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.841756409375764,
+      "t_L_at_voigt_C44_min_over_theta": 0.6072247479188184,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.841756409375764,
+      "t_L_at_C44_zero_max_over_theta": 1.4041628248193743,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5116565274773661,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4564738116974122,
+      "t_L_at_voigt_C44_min_over_theta": 0.4564738116974122,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4564738116974122,
+      "t_L_at_C44_zero_max_over_theta": 0.4564738116974122,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.7146416624209018,
+      "t_L_at_voigt_C44_min_over_theta": 1.144689596088208,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.7146416624209018,
+      "t_L_at_C44_zero_max_over_theta": 4.631974144756407,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8206178065588728,
+      "t_L_at_voigt_C44_min_over_theta": 0.6743787223395393,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8206178065588728,
+      "t_L_at_C44_zero_max_over_theta": 1.1197357005627744,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.2340241173745755,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6951933309507223,
+      "t_L_at_voigt_C44_min_over_theta": 0.6951933309507223,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6951933309507223,
+      "t_L_at_C44_zero_max_over_theta": 0.6951933309507223,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.5967245581475042,
+      "t_L_at_voigt_C44_min_over_theta": 1.0109151923354616,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.5967245581475042,
+      "t_L_at_C44_zero_max_over_theta": 5.12311928673457,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8767922272293147,
+      "t_L_at_voigt_C44_min_over_theta": 0.6703851008217246,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8767922272293147,
+      "t_L_at_C44_zero_max_over_theta": 1.3566039626990976,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5482360901278838,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh45|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.6016133144060348,
+      "t_L_at_voigt_C44_min_over_theta": 0.6016133144060348,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.6016133144060348,
+      "t_L_at_C44_zero_max_over_theta": 0.6016133144060348,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4746628811281015,
+      "t_L_at_voigt_C44_min_over_theta": 0.8995934143861766,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4746628811281015,
+      "t_L_at_C44_zero_max_over_theta": 5.624983454779211,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.5315658546670434,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8478296167380149,
+      "t_L_at_voigt_C44_min_over_theta": 0.6262928400489898,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8478296167380149,
+      "t_L_at_C44_zero_max_over_theta": 1.406019273015319,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.5137924868654367,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4938374391353724,
+      "t_L_at_voigt_C44_min_over_theta": 0.4938374391353724,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4938374391353724,
+      "t_L_at_C44_zero_max_over_theta": 0.4938374391353724,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.560489115258691,
+      "t_L_at_voigt_C44_min_over_theta": 0.9886934975999732,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.560489115258691,
+      "t_L_at_C44_zero_max_over_theta": 5.060394578065879,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 3.3916765161746585,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8484001628667002,
+      "t_L_at_voigt_C44_min_over_theta": 0.6506320827071369,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8484001628667002,
+      "t_L_at_C44_zero_max_over_theta": 1.3152529546951013,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.4631041617707352,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh65|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5955765312375372,
+      "t_L_at_voigt_C44_min_over_theta": 0.5955765312375372,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5955765312375372,
+      "t_L_at_C44_zero_max_over_theta": 0.5955765312375372,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.3254990881786046,
+      "t_L_at_voigt_C44_min_over_theta": 0.7994126691348558,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.3254990881786046,
+      "t_L_at_C44_zero_max_over_theta": 6.0365245837398875,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.8571417227584,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7967264554215319,
+      "t_L_at_voigt_C44_min_over_theta": 0.5789995320849959,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7967264554215319,
+      "t_L_at_C44_zero_max_over_theta": 1.416526374761253,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.42612575006291953,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.4391174259929142,
+      "t_L_at_voigt_C44_min_over_theta": 0.4391174259929142,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.4391174259929142,
+      "t_L_at_C44_zero_max_over_theta": 0.4391174259929142,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|soft|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.564564657975785,
+      "t_L_at_voigt_C44_min_over_theta": 1.0418212405152536,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.564564657975785,
+      "t_L_at_C44_zero_max_over_theta": 4.971182005569895,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|soft|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7150856208813238,
+      "t_L_at_voigt_C44_min_over_theta": 0.60221084988072,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7150856208813238,
+      "t_L_at_C44_zero_max_over_theta": 0.956075204830563,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|soft|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.64099250465888,
+      "t_L_at_voigt_C44_min_over_theta": 0.64099250465888,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.64099250465888,
+      "t_L_at_C44_zero_max_over_theta": 0.64099250465888,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.433137648261319,
+      "t_L_at_voigt_C44_min_over_theta": 0.9118832834962339,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.433137648261319,
+      "t_L_at_C44_zero_max_over_theta": 5.571098515497846,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 2.548462345189761,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.8262835022738338,
+      "t_L_at_voigt_C44_min_over_theta": 0.6357510358371833,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.8262835022738338,
+      "t_L_at_C44_zero_max_over_theta": 1.340453544137059,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.42483394330852975,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh85|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.5768900617164593,
+      "t_L_at_voigt_C44_min_over_theta": 0.5768900617164593,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.5768900617164593,
+      "t_L_at_C44_zero_max_over_theta": 0.5768900617164593,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|stiff|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.0864376027872347,
+      "t_L_at_voigt_C44_min_over_theta": 0.6460563763407703,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.0864376027872347,
+      "t_L_at_C44_zero_max_over_theta": 5.780022013399984,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 1.178181776906323,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|stiff|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.706518352452795,
+      "t_L_at_voigt_C44_min_over_theta": 0.49541383169499875,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.706518352452795,
+      "t_L_at_C44_zero_max_over_theta": 1.4107337096379353,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": 0.31031403616402864,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.360142189639815,
+      "t_L_at_voigt_C44_min_over_theta": 0.360142189639815,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.360142189639815,
+      "t_L_at_C44_zero_max_over_theta": 0.360142189639815,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|mean|pores_carry_nothing": {
+      "t_L_theta0_any_C44": 1.4730954161503338,
+      "t_L_at_voigt_C44_min_over_theta": 1.055468186673403,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 1.4730954161503338,
+      "t_L_at_C44_zero_max_over_theta": 4.542088831896814,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|mean|pores_additive_host_sapwood": {
+      "t_L_theta0_any_C44": 0.7589192896558999,
+      "t_L_at_voigt_C44_min_over_theta": 0.6799175350042291,
+      "theta_of_min_deg": 45.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7589192896558999,
+      "t_L_at_C44_zero_max_over_theta": 0.933737644887073,
+      "theta_of_max_at_C44_zero_deg": 45.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    },
+    "Ti-15Zr|rh95|mean|pores_voigt_phase_bound": {
+      "t_L_theta0_any_C44": 0.7505365317546363,
+      "t_L_at_voigt_C44_min_over_theta": 0.7505365317546363,
+      "theta_of_min_deg": 0.0,
+      "t_L_at_voigt_C44_max_over_theta": 0.7505365317546363,
+      "t_L_at_C44_zero_max_over_theta": 0.7505365317546363,
+      "theta_of_max_at_C44_zero_deg": 0.0,
+      "zener_at_which_t_L_is_1_theta45": null,
+      "theta0_independent_of_C44": true
+    }
+  },
+  "additive_outside_the_pore_ends_interval": [
+    "Ti-6Al-4V|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-6Al-4V|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-6Al-4V|rh95|mean|t_L_at_voigt_C44_min_over_theta",
+    "Ti-6Al-7Nb|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-6Al-7Nb|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-6Al-7Nb|rh95|mean|t_L_at_voigt_C44_min_over_theta",
+    "CP-Ti-Gr4|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "CP-Ti-Gr4|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "CP-Ti-Gr4|rh95|mean|t_L_theta0_any_C44",
+    "CP-Ti-Gr4|rh95|mean|t_L_at_voigt_C44_min_over_theta",
+    "beta-Ti-13Nb-13Zr|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "beta-Ti-13Nb-13Zr|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "beta-Ti-13Nb-13Zr|rh95|mean|t_L_at_voigt_C44_min_over_theta",
+    "Ta|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ta|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ta|rh95|mean|t_L_theta0_any_C44",
+    "Ta|rh95|mean|t_L_at_voigt_C44_min_over_theta",
+    "Ti-15Zr|rh45|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-15Zr|rh85|soft|t_L_at_voigt_C44_min_over_theta",
+    "Ti-15Zr|rh95|mean|t_L_at_voigt_C44_min_over_theta"
+  ],
+  "moisture_grid_points": {
+    "stiff": {
+      "groups": [
+        "rh45",
+        "rh65",
+        "rh85",
+        "rh95"
+      ],
+      "falling": 2069,
+      "rising": 0,
+      "neither": 11953,
+      "points": 14022
+    },
+    "soft": {
+      "groups": [
+        "rh45",
+        "rh85"
+      ],
+      "falling": 12453,
+      "rising": 1569,
+      "neither": 0,
+      "points": 14022
+    },
+    "mean": {
+      "groups": [
+        "rh45",
+        "rh65",
+        "rh85",
+        "rh95"
+      ],
+      "falling": 3669,
+      "rising": 0,
+      "neither": 10353,
+      "points": 14022
+    }
+  },
+  "theta0_share_over_modelled_set": {
+    "Ti-6Al-4V": {
+      "lowest": 0.34264094897331726,
+      "lowest_cell": "Ti-6Al-4V|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.6278614894769672,
+      "highest_cell": "Ti-6Al-4V|rh45|soft|pores_carry_nothing"
+    },
+    "Ti-6Al-7Nb": {
+      "lowest": 0.3508215568679962,
+      "lowest_cell": "Ti-6Al-7Nb|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.6873257668228236,
+      "highest_cell": "Ti-6Al-7Nb|rh45|soft|pores_carry_nothing"
+    },
+    "CP-Ti-Gr4": {
+      "lowest": 0.35465841972485507,
+      "lowest_cell": "CP-Ti-Gr4|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.678474859423658,
+      "highest_cell": "CP-Ti-Gr4|rh45|soft|pores_carry_nothing"
+    },
+    "beta-Ti-13Nb-13Zr": {
+      "lowest": 0.4054156699786278,
+      "lowest_cell": "beta-Ti-13Nb-13Zr|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.9318925907568831,
+      "highest_cell": "beta-Ti-13Nb-13Zr|rh45|soft|pores_carry_nothing"
+    },
+    "Ta": {
+      "lowest": 0.2671363451343015,
+      "lowest_cell": "Ta|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.2202403412930398,
+      "highest_cell": "Ta|rh45|soft|pores_carry_nothing"
+    },
+    "Ti-15Zr": {
+      "lowest": 0.360142189639815,
+      "lowest_cell": "Ti-15Zr|rh95|stiff|pores_voigt_phase_bound",
+      "highest": 1.7146416624209018,
+      "highest_cell": "Ti-15Zr|rh45|soft|pores_carry_nothing"
+    }
+  },
+  "gyroid_binds_above_surface_strain_ue_theta0_lowest_share": {
+    "axial_richardson": {
+      "Ti-6Al-4V": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 12300.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 6150.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 23608.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 11804.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 11567.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 5784.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 22201.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 11101.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 10746.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 5373.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 20626.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 10313.0,
+        "large_stem_limit|near_uniaxial|sf1": 9063.0,
+        "large_stem_limit|near_uniaxial|sf2": 4532.0,
+        "large_stem_limit|any_state|sf1": 17395.0,
+        "large_stem_limit|any_state|sf2": 8698.0
+      },
+      "Ti-6Al-7Nb": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 12392.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 6196.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 23785.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 11893.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 11654.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 5827.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 22367.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 11184.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 10827.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 5414.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 20781.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 10391.0,
+        "large_stem_limit|near_uniaxial|sf1": 9131.0,
+        "large_stem_limit|near_uniaxial|sf2": 4566.0,
+        "large_stem_limit|any_state|sf1": 17526.0,
+        "large_stem_limit|any_state|sf2": 8763.0
+      },
+      "CP-Ti-Gr4": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 6856.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 3428.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 13159.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 6580.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 6447.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 3224.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 12374.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 6187.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 5990.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 2995.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 11497.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 5749.0,
+        "large_stem_limit|near_uniaxial|sf1": 5052.0,
+        "large_stem_limit|near_uniaxial|sf2": 2526.0,
+        "large_stem_limit|any_state|sf1": 9696.0,
+        "large_stem_limit|any_state|sf2": 4848.0
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 14619.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 7310.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 28058.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 14029.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 13747.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 6874.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 26386.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 13193.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 12772.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 6386.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 24514.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 12257.0,
+        "large_stem_limit|near_uniaxial|sf1": 10772.0,
+        "large_stem_limit|near_uniaxial|sf2": 5386.0,
+        "large_stem_limit|any_state|sf1": 20674.0,
+        "large_stem_limit|any_state|sf2": 10337.0
+      },
+      "Ta": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 3658.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 1829.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 7021.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 3511.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 3440.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 1720.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 6603.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 3302.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 3196.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 1598.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 6134.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 3067.0,
+        "large_stem_limit|near_uniaxial|sf1": 2696.0,
+        "large_stem_limit|near_uniaxial|sf2": 1348.0,
+        "large_stem_limit|any_state|sf1": 5174.0,
+        "large_stem_limit|any_state|sf2": 2587.0
+      },
+      "Ti-15Zr": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 13896.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 6948.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 26672.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 13336.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 13068.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 6534.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 25082.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 12541.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 12141.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 6071.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 23303.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 11652.0,
+        "large_stem_limit|near_uniaxial|sf1": 10240.0,
+        "large_stem_limit|near_uniaxial|sf2": 5120.0,
+        "large_stem_limit|any_state|sf1": 19653.0,
+        "large_stem_limit|any_state|sf2": 9827.0
+      }
+    },
+    "radial_richardson": {
+      "Ti-6Al-4V": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 14673.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 7337.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 28162.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 14081.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 13798.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 6899.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 26483.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 13242.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 12819.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 6410.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 24604.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 12302.0,
+        "large_stem_limit|near_uniaxial|sf1": 10811.0,
+        "large_stem_limit|near_uniaxial|sf2": 5406.0,
+        "large_stem_limit|any_state|sf1": 20751.0,
+        "large_stem_limit|any_state|sf2": 10376.0
+      },
+      "Ti-6Al-7Nb": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 14783.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 7392.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 28373.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 14187.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 13901.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 6951.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 26682.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 13341.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 12915.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 6458.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 24789.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 12395.0,
+        "large_stem_limit|near_uniaxial|sf1": 10893.0,
+        "large_stem_limit|near_uniaxial|sf2": 5447.0,
+        "large_stem_limit|any_state|sf1": 20906.0,
+        "large_stem_limit|any_state|sf2": 10453.0
+      },
+      "CP-Ti-Gr4": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 8178.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 4089.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 15697.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 7849.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 7691.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 3846.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 14761.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 7381.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 7145.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 3573.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 13714.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 6857.0,
+        "large_stem_limit|near_uniaxial|sf1": 6026.0,
+        "large_stem_limit|near_uniaxial|sf2": 3013.0,
+        "large_stem_limit|any_state|sf1": 11566.0,
+        "large_stem_limit|any_state|sf2": 5783.0
+      },
+      "beta-Ti-13Nb-13Zr": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 17438.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 8719.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 33470.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 16735.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 16399.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 8200.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 31475.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 15738.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 15236.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 7618.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 29242.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 14621.0,
+        "large_stem_limit|near_uniaxial|sf1": 12849.0,
+        "large_stem_limit|near_uniaxial|sf2": 6425.0,
+        "large_stem_limit|any_state|sf1": 24662.0,
+        "large_stem_limit|any_state|sf2": 12331.0
+      },
+      "Ta": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 4364.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 2182.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 8375.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 4188.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 4104.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 2052.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 7876.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 3938.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 3813.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 1907.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 7317.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 3659.0,
+        "large_stem_limit|near_uniaxial|sf1": 3216.0,
+        "large_stem_limit|near_uniaxial|sf2": 1608.0,
+        "large_stem_limit|any_state|sf1": 6171.0,
+        "large_stem_limit|any_state|sf2": 3086.0
+      },
+      "Ti-15Zr": {
+        "dbh_min_sensor_on_bark|near_uniaxial|sf1": 16577.0,
+        "dbh_min_sensor_on_bark|near_uniaxial|sf2": 8289.0,
+        "dbh_min_sensor_on_bark|any_state|sf1": 31817.0,
+        "dbh_min_sensor_on_bark|any_state|sf2": 15909.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf1": 15589.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|near_uniaxial|sf2": 7795.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf1": 29920.0,
+        "dbh_min_sensor_on_xylem_thin_contact_78|any_state|sf2": 14960.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf1": 14483.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|near_uniaxial|sf2": 7242.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf1": 27798.0,
+        "dbh_min_sensor_on_xylem_thick_side_78|any_state|sf2": 13899.0,
+        "large_stem_limit|near_uniaxial|sf1": 12215.0,
+        "large_stem_limit|near_uniaxial|sf2": 6108.0,
+        "large_stem_limit|any_state|sf1": 23444.0,
+        "large_stem_limit|any_state|sf2": 11722.0
+      }
+    }
+  },
+  "threshold_ratio_vs_baseline_theta0_lowest_share": {
+    "Ti-6Al-4V": 1.0,
+    "Ti-6Al-7Nb": 1.0075022065313328,
+    "CP-Ti-Gr4": 0.557369814651368,
+    "beta-Ti-13Nb-13Zr": 1.1884377758164166,
+    "Ta": 0.2974404236540159,
+    "Ti-15Zr": 1.1297440423654015
+  },
+  "source_day_theta0_large_stem_sf2": {
+    "axial_richardson": {
+      "median": {
+        "exceeds": [],
+        "margin_over_threshold": {
+          "Ti-6Al-4V": 0.20255957634598412,
+          "Ti-6Al-7Nb": 0.20105124835742444,
+          "CP-Ti-Gr4": 0.36342042755344417,
+          "beta-Ti-13Nb-13Zr": 0.17044188637207575,
+          "Ta": 0.6810089020771514,
+          "Ti-15Zr": 0.179296875
+        }
+      },
+      "upper_whisker": {
+        "exceeds": [
+          "Ta"
+        ],
+        "margin_over_threshold": {
+          "Ti-6Al-4V": 0.4053398058252427,
+          "Ti-6Al-7Nb": 0.40232150678931233,
+          "CP-Ti-Gr4": 0.7272367379255741,
+          "beta-Ti-13Nb-13Zr": 0.3410694392870405,
+          "Ta": 1.3627596439169138,
+          "Ti-15Zr": 0.3587890625
+        }
+      }
+    },
+    "radial_richardson": {
+      "median": {
+        "exceeds": [],
+        "margin_over_threshold": {
+          "Ti-6Al-4V": 0.16981132075471697,
+          "Ti-6Al-7Nb": 0.16853313750688453,
+          "CP-Ti-Gr4": 0.3046797212080982,
+          "beta-Ti-13Nb-13Zr": 0.14287937743190662,
+          "Ta": 0.5708955223880597,
+          "Ti-15Zr": 0.15029469548133595
+        }
+      },
+      "upper_whisker": {
+        "exceeds": [
+          "Ta"
+        ],
+        "margin_over_threshold": {
+          "Ti-6Al-4V": 0.33980762116167224,
+          "Ti-6Al-7Nb": 0.3372498623095282,
+          "CP-Ti-Gr4": 0.6096913375373382,
+          "beta-Ti-13Nb-13Zr": 0.2859143968871595,
+          "Ta": 1.1424129353233832,
+          "Ti-15Zr": 0.3007531106745252
+        }
+      }
+    }
+  },
+  "source_day_at_t1_axial_reading_105": {
+    "median": [
+      "CP-Ti-Gr4",
+      "Ta"
+    ],
+    "upper_whisker": [
+      "CP-Ti-Gr4",
+      "Ta",
+      "Ti-6Al-4V",
+      "Ti-6Al-7Nb"
+    ]
+  },
+  "off_axis_threshold_factor_theta45": {
+    "Ti-6Al-4V": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.261353071641409,
+        "threshold_factor_max": 38.99331643451817
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.6795415110590756,
+        "threshold_factor_max": 2.16010766100602
+      }
+    },
+    "Ti-6Al-7Nb": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.2582178265505717,
+        "threshold_factor_max": 38.08405351717709
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.6566827667666825,
+        "threshold_factor_max": 2.1097373418536214
+      }
+    },
+    "CP-Ti-Gr4": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.258666134166287,
+        "threshold_factor_max": 37.672042178232864
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.6600074198475295,
+        "threshold_factor_max": 2.0869132034870033
+      }
+    },
+    "beta-Ti-13Nb-13Zr": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.247855758039614,
+        "threshold_factor_max": 32.95557605714768
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.5742415140943533,
+        "threshold_factor_max": 1.8256357453836287
+      }
+    },
+    "Ta": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.2951361673856643,
+        "threshold_factor_max": 50.01456069193102
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.8729710856218693,
+        "threshold_factor_max": 2.77065009061022
+      }
+    },
+    "Ti-15Zr": {
+      "at_grid_floor": {
+        "threshold_factor_min": 2.2568719975008826,
+        "threshold_factor_max": 37.098422042978214
+      },
+      "at_voigt_ceiling": {
+        "threshold_factor_min": 0.6465869362148037,
+        "threshold_factor_max": 2.05513644372481
+      }
+    }
+  },
+  "e_z_star_105_premise_theta45": {
+    "radial_richardson": {
+      "zener_below_which_E110_falls_under_reading": 0.5984165297787118
+    },
+    "axial_richardson": {
+      "zener_below_which_E110_falls_under_reading": 1.0
+    },
+    "E110_over_E_s_at_grid_floor": 0.0005276670323776825,
+    "E110_over_E_s_at_voigt_ceiling": 0.17194498555355764
+  },
+  "junction_share_sup_at_C44_zero": 6.0371120981035435,
+  "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": {
+    "zener_1_of_ceiling": {
+      "pores_carry_nothing": 45.0,
+      "pores_additive_host_sapwood": 45.0,
+      "pores_voigt_phase_bound": 0.0
+    },
+    "zener_0.3_of_ceiling": {
+      "pores_carry_nothing": 45.0,
+      "pores_additive_host_sapwood": 45.0,
+      "pores_voigt_phase_bound": 0.0
+    }
+  },
+  "not_computed": [
+    "C44 of the lattice — the voxel-FE leg's shear case (00_07 HW.23)",
+    "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
+    "a green (above fibre saturation) wood set, and the share's direction with moisture",
+    "S_1212 of an anisotropic matrix against an independent closed form",
+    "the finite length, the bending gradient along R, the curved rings, the bark's proximity, S5"
+  ],
+  "controls": {
+    "isotropic_cylinder_max_error": 7.771561172376096e-16,
+    "isotropic_inclusion_max_error": 7.771561172376096e-16,
+    "t_L_rise_with_C44_worst": 0.0,
+    "mirror_45_worst": 2.6645352591003757e-15
+  },
+  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's unmeasured shear modulus C44; at the moistest group (95 % RH) it is 0.267–1.641 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (20 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the modelled set (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading, and its median for none; at t_L = 1 on the axial reading the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem and stops below fibre saturation, so its lowest share is not a floor."
+}

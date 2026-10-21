@@ -6011,6 +6011,140 @@ CHECKS += [
 ]
 
 
+
+# ── HW.23 the share of the wood's strain the bonded gyroid takes (106, 2026-10-21) ⟷ SUMMARY §«How Much of the Wood's
+# Strain the Bonded Gyroid Takes». θ = 0 shares are rounded to the shown digits; «highest … (rounded up)» and «up to X»
+# round UP; 105's binds-above strains at the lowest θ = 0 share are cached rounded UP; «a Zener ratio of at most X» rounds
+# UP, «below a Zener ratio of X» DOWN, «×X over it» DOWN (in-silico §When Modifying #43).
+SHARE106 = "mechanical/gyroid_wood_strain_share.json"
+_SHARE106_ROWS = (("Ta", "Ta"), ("CP-Ti Gr4", "CP-Ti-Gr4"), ("Ti-6Al-4V", "Ti-6Al-4V"), ("Ti-6Al-7Nb", "Ti-6Al-7Nb"),
+                  ("Ti-15Zr", "Ti-15Zr"), ("β-Ti-13Nb-13Zr", "beta-Ti-13Nb-13Zr"))
+_SHARE106_FILLS = ("pores_carry_nothing", "pores_additive_host_sapwood", "pores_voigt_phase_bound")
+_S106_LS = "large_stem_limit|near_uniaxial|sf2"
+
+
+def _share106_row(label, j):
+    num = [N if j == k else r"[\d.]+" for k in range(6)]
+    cells = [f"{num[0]} ⊥ {num[1]} ⊥ {num[2]}", num[3], f"{num[4]} ⊥ {num[5]}"]
+    return rf"(?m)^\| {re.escape(label)} \| " + r" \| ".join(cells) + r" \|$"
+
+
+def _floor_n(x, n):
+    return math.floor(round(x * 10 ** n, 9)) / 10 ** n
+
+
+def _ceil_n(x, n):
+    return math.ceil(round(x * 10 ** n, 9)) / 10 ** n
+
+
+def _sh106(d, al, fill, g="rh95", rd="stiff"):
+    return round(d["cells"][f"{al}|{g}|{rd}|{fill}"]["t_L_theta0_any_C44"], 3)
+
+
+def _ba106(d, fk, al):
+    return d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk][al][_S106_LS]
+
+
+def _mo106(d, rd, k):
+    return d["moisture_grid_points"][rd][k]
+
+
+CHECKS += [
+    *[(f"share106 {key} col {j} → 106", SUMMARY, _share106_row(label, j), SHARE106, res, 0.0)
+      for label, key in _SHARE106_ROWS
+      for j, res in enumerate((
+          *[(lambda k, fl: lambda d: _sh106(d, k, fl))(key, fill) for fill in _SHARE106_FILLS],
+          (lambda k: lambda d: _ceil_n(d["theta0_share_over_modelled_set"][k]["highest"], 3))(key),
+          (lambda k: lambda d: _ba106(d, "axial_richardson", k))(key),
+          (lambda k: lambda d: _ba106(d, "radial_richardson", k))(key)))],
+    ("share106 nu* → 106", SUMMARY, rf"cubic body\s+\(ν\* {N}; the other root", SHARE106,
+     lambda d: round(d["inputs"]["lattice_reading"]["nu_star"], 3), 0.0),
+    ("share106 zener ceiling → 106", SUMMARY, rf"a Zener ratio of at\s+most {N}\)", SHARE106,
+     lambda d: _ceil_n(d["inputs"]["lattice_reading"]["zener_voigt_ceiling"], 3), 0.0),
+    ("share106 Ta stiff bare → 106", SUMMARY, rf"bare lattice: {N} on the\s+stiffer-axis reading", SHARE106,
+     lambda d: _sh106(d, "Ta", "pores_carry_nothing"), 0.0),
+    ("share106 Ta mean bare → 106", SUMMARY, rf"reading, {N} on the mean one\)", SHARE106,
+     lambda d: _sh106(d, "Ta", "pores_carry_nothing", rd="mean"), 0.0),
+    ("share106 crossings → 106", SUMMARY, rf"inside the admissible C44 in {N} of the", SHARE106,
+     lambda d: sum(1 for v in d["cells"].values() if v["zener_at_which_t_L_is_1_theta45"] is not None), 0.0),
+    ("share106 C44 cells → 106", SUMMARY, rf"of the {N} cells the lattice's C44 enters", SHARE106,
+     lambda d: sum(1 for k in d["cells"] if not k.endswith("voigt_phase_bound")), 0.0),
+    ("share106 outside → 106", SUMMARY, rf"outside the two ends'\s+shares in {N} cell-fields", SHARE106,
+     lambda d: len(d["additive_outside_the_pore_ends_interval"]), 0.0),
+    ("share106 Ta margin axial → 106", SUMMARY, rf"\(×{N} ⊥ ×[\d.]+ over it\)", SHARE106,
+     lambda d: _floor_n(d["source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]["margin_over_threshold"]["Ta"], 2), 0.0),
+    ("share106 Ta margin radial → 106", SUMMARY, rf"\(×[\d.]+ ⊥ ×{N} over it\)", SHARE106,
+     lambda d: _floor_n(d["source_day_theta0_large_stem_sf2"]["radial_richardson"]["upper_whisker"]["margin_over_threshold"]["Ta"], 2), 0.0),
+    ("share106 E110 radial → 106", SUMMARY, rf"radial reading below a Zener\s+ratio of {N} \(", SHARE106,
+     lambda d: _floor_n(d["e_z_star_105_premise_theta45"]["radial_richardson"]["zener_below_which_E110_falls_under_reading"], 3), 0.0),
+    ("share106 E110 axial → 106", SUMMARY, rf"\(under the axial one below {N}, where", SHARE106,
+     lambda d: _floor_n(d["e_z_star_105_premise_theta45"]["axial_richardson"]["zener_below_which_E110_falls_under_reading"], 3), 0.0),
+    ("share106 junction θ0 → 106", SUMMARY, rf"up to {N} at θ = 0 over the modelled set", SHARE106,
+     lambda d: _ceil_n(max(v["highest"] for v in d["theta0_share_over_modelled_set"].values()), 3), 0.0),
+    ("share106 junction sup → 106", SUMMARY, rf"and up to {N} off the axis as C44", SHARE106,
+     lambda d: _ceil_n(d["junction_share_sup_at_C44_zero"], 3), 0.0),
+    ("share106 moist stiff fall → 106", SUMMARY, rf"from 45 to 95 % RH at {N} of", SHARE106,
+     lambda d: _mo106(d, "stiff", "falling"), 0.0),
+    ("share106 moist points → 106", SUMMARY, rf"at [\d]+ of {N} points, rises at none", SHARE106,
+     lambda d: _mo106(d, "stiff", "points"), 0.0),
+    ("share106 moist stiff neither → 106", SUMMARY, rf"does\s+neither at {N};", SHARE106,
+     lambda d: _mo106(d, "stiff", "neither"), 0.0),
+    ("share106 moist mean fall → 106", SUMMARY, rf"on the mean reading {N} fall", SHARE106,
+     lambda d: _mo106(d, "mean", "falling"), 0.0),
+    ("share106 moist mean neither → 106", SUMMARY, rf"fall and {N} do neither", SHARE106,
+     lambda d: _mo106(d, "mean", "neither"), 0.0),
+    ("share106 moist soft fall → 106", SUMMARY, rf"material groups\) {N} fall", SHARE106,
+     lambda d: _mo106(d, "soft", "falling"), 0.0),
+    ("share106 moist soft rise → 106", SUMMARY, rf"fall and {N} rise\.", SHARE106,
+     lambda d: _mo106(d, "soft", "rising"), 0.0),
+]
+
+
+def test_share106_categorical_sentences_follow_the_cache():
+    """106's SUMMARY sentences that name SETS are recomposed here from the cache and must stand in the doc: who the source
+    day binds on each reading, the lists at t_L = 1, the readings excluded, the alloys the pore reading carries across 1,
+    where the lowest and the highest θ = 0 share sit, the moisture counts' «rises at none» and «its only material
+    groups». CAN catch: a re-run that moves a set while the prose keeps the old one. CANNOT catch: a sentence this test
+    does not compose (the bounds paragraph, the «what settles» list)."""
+    d = json.loads((CACHE / SHARE106).read_text(encoding="utf-8"))
+    text = " ".join(doc(SUMMARY).split())
+    names = {"CP-Ti-Gr4": "CP-Ti Gr4", "beta-Ti-13Nb-13Zr": "β-Ti-13Nb-13Zr"}
+
+    def lst(xs):
+        xs = [names.get(x, x) for x in xs]
+        return " and ".join(xs) if len(xs) < 3 else ", ".join(xs[:-1]) + " and " + xs[-1]
+
+    sd, t1 = d["source_day_theta0_large_stem_sf2"], d["source_day_at_t1_axial_reading_105"]
+    for fk in ("axial_richardson", "radial_richardson"):
+        assert sd[fk]["upper_whisker"]["exceeds"] == ["Ta"] and not sd[fk]["median"]["exceeds"], fk
+    assert "upper whisker then exceeds the threshold for Ta only on both readings" in text and "its median for none" in text
+    assert f"the upper whisker exceeded it for {lst(t1['upper_whisker'])} and the median for {lst(t1['median'])}." in text
+    assert sorted(d["wood_readings_excluded_not_a_material"]) == ["rh65|soft", "rh95|soft"]
+    assert "the softer-axis reading is not a material at 65 and 95 % RH" in text
+    alloys = sorted({k.split("|")[0] for k in d["cells"]})
+    for g in ("rh45", "rh65", "rh85", "rh95"):
+        crossed = sorted(al for al in alloys
+                         if d["cells"][f"{al}|{g}|stiff|pores_carry_nothing"]["t_L_theta0_any_C44"] > 1
+                         > d["cells"][f"{al}|{g}|stiff|pores_voigt_phase_bound"]["t_L_theta0_any_C44"])
+        assert crossed == [al for al in alloys if al != "Ta"], g
+    assert "on every alloy but Ta on the stiffer-axis reading" in text
+    t0 = d["theta0_share_over_modelled_set"]
+    assert all(v["lowest_cell"].endswith("|rh95|stiff|pores_voigt_phase_bound") for v in t0.values())
+    assert all(v["highest_cell"].endswith("|rh45|soft|pores_carry_nothing") for v in t0.values())
+    assert "the Voigt-phase-bound cell of the stiffer-axis reading at 95 % RH" in text
+    assert "the highest is the bare lattice on the driest softer-axis reading" in text
+    m = d["moisture_grid_points"]
+    assert m["stiff"]["rising"] == 0 and "rises at none" in text
+    assert m["soft"]["groups"] == ["rh45", "rh85"] and "(45 → 85 % RH, its only material groups)" in text
+    ang = d["ligament_factor_argmin_theta_deg_baseline_rh95_stiff"]
+    for probe in ang.values():
+        assert probe == {"pores_carry_nothing": 45.0, "pores_additive_host_sapwood": 45.0, "pores_voigt_phase_bound": 0.0}
+    assert "(45° on the bare and additive readings, 0° on the Voigt phase bound," in text
+    ta_mean = [d["cells"][f"Ta|{g}|mean|pores_carry_nothing"]["t_L_theta0_any_C44"] for g in ("rh45", "rh65", "rh85", "rh95")]
+    assert [x < 1 for x in ta_mean] == [False, False, True, False], ta_mean
+    assert "the bare lattice is below 1 at 85 % RH only" in text
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):

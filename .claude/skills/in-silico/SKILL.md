@@ -136,6 +136,7 @@ append-only since — cite `in-silico §When Modifying #N`.
 45. «Conservative», «overstates», «the adverse end» is a claim about the DIRECTION of an error, and it needs a ground of its own — check that it does not rest on the datum you excluded, or on the input's extremes standing in for the output's
 46. A sign claim over N cells that share one functional, one continuum, one reference convention and one relativistic treatment is ONE claim, not N — set its smallest margin against every shared term of known sign, the ones your own limits paragraph names included, before calling the sign robust
 47. A design or precision table's degrees of freedom are an analysis READING, not a given — estimate the spread per contrast (robust if the arms differ) ⊥ pooled over the arms that measure the SAME quantity (licensed by a one-spread assumption the model already makes): publish both, and pool only across one quantity
+48. A bound is about PHASES and bounds stiffness, not response
 
 <!-- /INSILICO-MODIFYING-INDEX -->
 
@@ -254,6 +255,11 @@ Anchor mechanics (CPU):
      tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios) · tools/cad/cem (lock, flange, sleeve, pine
      anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
      102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
+  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings, the solid
+     fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows
+     105's readings are held to) · lib ALLOY_PROPERTIES → 106 (gyroid_wood_strain_share.json — the share t_L of the
+     wood's strain the bonded gyroid takes; the Scots pine constants live in the script); a re-run of 105 or the FEA
+     sweep re-runs 106
   73 → 52 (collar_wall_inversion.json: the lug-root capacity the rim-clamp requirement is checked against)
   52 (importlib: POGO_TRAVEL · POGO_WIN; z_stack_tolerance.json `rim_datum_creep` · `applied_gland` rim cavity) · 55 (importlib: MU_SWEEP · D_BUS · INFINITE_LIFE_SF; bus_mechanical.json `interference_window.cold_press_fit`, the liner wall's ceiling) · 86 (importlib: soderberg; coaxiality_allocation.json, the seam k it carries the ceiling onto) · 77 (anchor_torque_path.json:
      the depth span) · tools/cad/cem (radome envelope) → 87 (pogo_sway_transfer.json); 59 quotes 87 by name only (its

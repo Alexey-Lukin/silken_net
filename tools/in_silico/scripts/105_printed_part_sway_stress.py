@@ -11,7 +11,8 @@ regime: a part below its endurance limit at the amplitude it sees does not care 
 bus with).
 
 CHAIN (in-silico §Critical Rules #15; joints named from canon). Wood → gyroid (Zone 1, Ø11 × 40 network, in the Ø15
-narrow step: a 2 mm radial gap the callus fills and turns into xylem — 01_04 §2, the design state) → the monolithic
+narrow step: a 2 mm radial gap the callus fills — 01_04 §2 Phase 2; Phase 3 turns the callus INSIDE Zone 1 into xylem,
+and says nothing of the ring) → the monolithic
 Zone 1 shank (Ø11 × 18, four barb rows, a DIN-471 groove still in the CEM — HW.26 G3) → hot press-fit + barbs → the PEEK
 sleeve (Ø15/Ø11 × 50), tied at the cambium by the callus ring in the mature state (`103` state 3) → the Zone 3 shank
 under `103`'s two premises: (a) in clearance, the disc resting on the sleeve's top face; (b) a rigid Zone-3 fit (HW.8.9)
@@ -53,8 +54,8 @@ MODEL.
   traction-BC modulus for a finite part. The two Richardson-extrapolated FE ratios are therefore READINGS, not ends:
   the bound holds only while E_z* is at least the reading. A binding claim takes the LOWER reading. The output is the
   stem's SURFACE strain above which the bound alone puts the ligaments at σ_e/S at t_L = 1 and k_p = 1 (t_L the share
-  of the wood's in-plane strain the gyroid takes — not established in either direction: a stiffer-than-wood gyroid, Ta,
-  takes less; k_p ≥ 1 its peak over RMS stress), rounded UP (a «binds above X» sentence). k_p > 1 lowers X, t_L < 1
+  of the wood's in-plane strain the gyroid takes — `106`: on both sides of 1, decided by the tissue in the pores, the
+  wood reading and, off the cube axis, the lattice's C44; k_p ≥ 1 its peak over RMS stress), rounded UP (a «binds above X» sentence). k_p > 1 lowers X, t_L < 1
   raises it; no strain is shown harmless. The strain at the gyroid is the surface strain times r/R (linear bending),
   read for a sensor on the bark and on the xylem (`103`'s bark bracket) at a DBH-38 host's gyroid shallow end, and at
   r/R → 1. The source day's surface strain (`87`, one tree of DBH 21.5 cm, which `87` refuses to transfer) is set
@@ -84,8 +85,10 @@ each solid member's nominal stress, the K_f at which it reaches SF 2 per cycle r
 which it does; the force the sway puts on the barbs' easy flank; the junction's mismatch; the mass path.
 CANNOT: (1) show any part SAFE from the gyroid bound; give k_p, E_z* or the junction's stress — a voxel field's stresses
 under an off-axis traction case (`VoxelFea.cs` returns stiffness only, in-silico §When Modifying #24) and a junction
-model (gyroid + solid + sleeve end + wood); (2) give t_L — an orthotropic Eshelby closed form needs the wood's full
-constants, which the tree does not carry; the callus annulus's stiffness is unknown (01_04 §2); (3) count how often a
+model (gyroid + solid + sleeve end + wood); (2) give t_L — `106` does (orthotropic Eshelby on Scots pine's measured
+constants), and it hangs on the tissue in the pores, the wood reading and moisture, and off the cube axis on the
+lattice's unmeasured shear modulus; the
+callus annulus's stiffness is unknown (01_04 §2); (3) count how often a
 host's stem reaches the threshold — the field strain sensor (00_07 HW.43) does; `62` counts first-mode cycles, not
 strain ranges; (4) give any K_t, the barb rows' split, the force at which a barb row ratchets on its lead flank, the
 bark bearing's stiffness and preload, or any static mean; (5) price the collar and lug root (`73`/`89`), the printed
@@ -514,7 +517,7 @@ def main() -> int:
         f"when a preload ≥ F carries both halves. On the air-dry bark reading "
         f"the force is {z3_dry['force_N']:.0f} N; the mature-state disc force is not bounded. The mass path stays below "
         f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: E_z*, k_p and the "
-        f"junction (an off-axis traction voxel case with stresses, a junction model), t_L (orthotropic Eshelby), the "
+        f"junction (an off-axis traction voxel case with stresses, a junction model), t_L (`106` — conditional), the "
         f"count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the "
         f"static means, ice, the collar and lug root.")
 
@@ -522,7 +525,7 @@ def main() -> int:
         "script": Path(__file__).name,
         "question": "00_07 HW.23 — cyclic stress from stem sway in the printed parts of the shipped geometry",
         "paths": {
-            "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; t_L, k_p not computed",
+            "S1_S3_inplane_strain_on_gyroid": "a lower bound here (energy) — conditional on E_z*; t_L in `106` (conditional), k_p not computed",
             "J_gyroid_shank_junction": "NOT COMPUTED — a candidate the bound cannot see; needs a junction model",
             "S2_bond_force_zone1": "computed here (nominal) — shank, groove root, barbs; the easy flank is loaded",
             "S2_bearing_force_zone3_disc": "computed here (nominal, state 2) — Zone 3 shank and barbs (premise b), disc "
@@ -581,7 +584,7 @@ def main() -> int:
         "not_computed": [
             "E_z* and k_p — an off-axis traction voxel case with element stresses (VoxelFea returns stiffness only)",
             "the gyroid⊥shank junction's stress — a junction model (gyroid + solid + sleeve end + wood)",
-            "t_L — the share of the wood's in-plane strain the bonded gyroid takes (orthotropic Eshelby; the callus annulus)",
+            "t_L — the share of the wood's in-plane strain the bonded gyroid takes: `106`, conditional on the tissue in the pores, the wood reading and C44",
             "the count of host-stem strain cycles above the threshold — the field strain sensor, 00_07 HW.43",
             "any K_t; the barb rows' split; a barb row's ratchet force on its lead flank; the bark bearing's stiffness",
             "the static means — cold, heat, growth preload, the dead bark's humidity strain",

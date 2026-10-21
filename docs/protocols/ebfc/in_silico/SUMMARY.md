@@ -1016,8 +1016,8 @@ is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
 only while that modulus is at least the reading; a binding claim takes the lower one. The table gives the stem's surface
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
-RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 lowers every cell, a share below 1 (not excluded — a
-gyroid stiffer than the wood, Ta's, takes less) raises it. No cell is a strain below which the gyroid is safe.
+RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 lowers every cell, a share below 1 raises it (the share
+itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe.
 
 | alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
 |---|---|---|---|---|---|
@@ -1040,7 +1040,8 @@ crosses these strains often enough is the field histogram's question, not this t
 **The junction is a candidate the bound cannot see.** At t_L = 1 the bonded gyroid moves with the wood while the solid
 shank in the soft sleeve does not, so the first cell layer at the junction absorbs 7.4 µm of radial mismatch on the
 source day (sensor on bark, DBH 38) — 2.75× the wood's strain over one 2.0 mm rim period. That is an order of the
-layer's distortion, not a stress; the stress needs a junction model.
+layer's distortion, not a stress; the stress needs a junction model. The mismatch scales with t_L, so its adverse end
+is the HIGHEST share (`106`, next section), not 1.
 
 **The anode's bond force** (`103`'s closed forms, held to its cached share caps on its own depth grid; `102`'s adverse
 shift): in the mature state, with the callus tie at the install-day cambium, 746 N on a stiff bond and 103 N on a soft
@@ -1072,8 +1073,8 @@ bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3
 
 ⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
 anticlastic curvature (S5) is not computed. E_z*, k_p and the junction's stress need a voxel field's stresses under an off-axis traction case and a
-junction model (gyroid + solid + sleeve end + wood); t_L needs an orthotropic Eshelby closed form on the wood's full
-constants, which the tree does not carry, and the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
+junction model (gyroid + solid + sleeve end + wood); t_L is `106`'s (next section) and hangs on the tissue in the pores,
+the wood's reading and moisture, and off the cube axis on the lattice's shear modulus; the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,
 the disc's fillet, the groove's corners), no barb rows' split, no static mean (the PEEK's cold pull, heat, the bark's
 growth preload and humidity strain — printed instead: the mean at which each member reaches SF 2). Ice, the collar and
@@ -1081,6 +1082,91 @@ the lug root (`73`/`89`), the printed face under the weld (`102`'s seam), the PE
 storm's few cycles and the daily heat are other forms. A bearing that reacts both halves of a cycle needs the growth
 preload at least the force — `103`'s linear bearing presumes the contact holds. Cache:
 `mechanical/printed_part_sway_stress.json`.
+
+---
+
+## HW.23 — How Much of the Wood's Strain the Bonded Gyroid Takes (script 106)
+
+`105`'s gyroid bound takes the bonded lattice to follow the wood's longitudinal strain exactly, t_L = 1, and the bound
+reads σ_RMS ≥ √(E_s·E_z*/φ)·t_L·ε — so a binding claim stands on t_L and on the lattice's in-plane modulus E_z* of the
+SAME cell. `106` computes the share as an Eshelby inclusion: the Ø11 gyroid as a circular cylinder along the stem's
+radius, bonded in Scots pine sapwood under the stem's bending stress, on the measured constants of Güntekin & Akar 2019
+(*Drewno* 62(204):41–53, compression, four moisture groups at 45–95 % RH — the paper's own rows; its printed aggregates
+hold ratios of the E and G rows of 45, 65 and 95 % RH to the printed digit, while the Poisson ratios and the 85 % RH row were read
+off the tables only). Its compliances are not symmetric, so each pair's coupling is read three ways — from the test
+loaded along the pair's stiffer axis, along its softer one, or the mean — and the softer-axis reading is not a material
+at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios as one homogeneous cubic body
+(ν* 0.261; the other root breaks the Voigt bound) — kinematic-side readings, so the tensor may be stiffer than the true
+lattice's; its shear modulus C44 no FE case measures, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at
+most 3.539). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
+readings: nothing (the bare lattice — the composite's lower stiffness end), Voigt's
+phase bound φ·C_Ti + (1 − φ)·C_wood (its upper stiffness end, if the tissue in the pores — Phase 3's xylem — is no
+stiffer than the host's sapwood in every direction, which nothing measures), and the additive C_lattice + (1 − φ)·C_wood
+— a reading, not a bound.
+
+**The share lies on both sides of 1.** At θ = 0 — a cube axis on the stem's axis — it does not depend on C44, and which
+side of 1 it takes depends on the pore reading (it crosses 1 between the bare lattice and the Voigt phase bound on every
+alloy but Ta on the stiffer-axis reading) and on the symmetrisation reading (Ta, 95 % RH, bare lattice: 0.679 on the
+stiffer-axis reading, 1.110 on the mean one) — and for Ta on the mean reading the moisture group as well (the bare
+lattice is below 1 at 85 % RH only). Off the axis C44 enters too: the share falls as C44 rises, and at θ = 45°
+it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters.
+
+| alloy | t_L at θ = 0, 95 % RH, stiffer-axis reading: pores carry nothing ⊥ additive ⊥ Voigt phase bound | highest θ = 0 share over the modelled set | binds above, µε, SF 2, near-uniaxial ligaments, large stem, at the lowest θ = 0 share: this tensor's E[100] ⊥ `105`'s lower reading |
+|---|---|---|---|
+| Ta | 0.679 ⊥ 0.517 ⊥ 0.267 | 1.221 | 1348 ⊥ 1608 |
+| CP-Ti Gr4 | 1.055 ⊥ 0.694 ⊥ 0.355 | 1.679 | 2526 ⊥ 3013 |
+| Ti-6Al-4V | 1.012 ⊥ 0.676 ⊥ 0.343 | 1.628 | 4532 ⊥ 5406 |
+| Ti-6Al-7Nb | 1.063 ⊥ 0.697 ⊥ 0.351 | 1.688 | 4566 ⊥ 5447 |
+| Ti-15Zr | 1.086 ⊥ 0.707 ⊥ 0.360 | 1.715 | 5120 ⊥ 6108 |
+| β-Ti-13Nb-13Zr | 1.280 ⊥ 0.778 ⊥ 0.405 | 1.932 | 5386 ⊥ 6425 |
+
+The lowest θ = 0 share over the modelled set is, for every alloy, the Voigt-phase-bound cell of the stiffer-axis
+reading at 95 % RH; the highest is the bare lattice on the driest softer-axis
+reading (rounded up). The stiffness ends do NOT bracket the share: the additive reading falls outside the two ends'
+shares in 20 cell-fields, so the lowest share is the minimum of what is computed, never a floor.
+
+**For `105`'s binding sentences the only C44-free figure is at θ = 0**, where the same tensor gives E_z* = E[100]
+(filling the pores leaves the skeleton's energy at a given boundary strain at least the bare skeleton's): the bound alone
+binds above `105`'s threshold over t_L, at the lowest θ = 0 share — the table's right column, on this tensor's own
+E[100] (`105`'s axial reading) and on `105`'s lower reading, which `105`'s rule takes for a binding claim — a weaker modulus than the
+tensor's, so conservative for a binding sentence; rounded up
+from `105`'s unrounded threshold. On a large stem the source day's upper whisker then exceeds the threshold for Ta only
+on both readings (×1.36 ⊥ ×1.14 over it), and its median for none; at t_L = 1 on the axial reading the upper whisker
+exceeded it for CP-Ti Gr4, Ta, Ti-6Al-4V and Ti-6Al-7Nb and the median for CP-Ti Gr4 and Ta. The column's ratios across
+alloys are the gyroid's figure of merit with the share — σ_e/(E_s·t_L), with t_L depending on the alloy (its E_s, and its ν
+in the Voigt phase bound) — not σ_e/E_s alone. Off the axis E[110] falls with C44 while the share stays finite, so the threshold has no ceiling as C44
+falls and no binding figure exists there without C44; at θ = 45° E[110] falls under `105`'s radial reading below a Zener
+ratio of 0.598 (under the axial one below 1.000, where E[110] = E[100]).
+
+**What settles the share:** C44 (the voxel-FE leg's shear case), the tissue in the pores and the ring, which reading
+of the paper's non-symmetric compliances holds, and a green wood's constants. The install angle becomes a choice only
+with C44 AND the tissue in the pores: at one C44 the angle that minimises the ligaments' stress factor √(E_z*(θ))·t_L(θ) — and so
+raises their threshold — differs between pore readings (45° on the bare and additive readings, 0° on the Voigt phase
+bound, at Ti-6Al-4V's 95 % RH stiffer-axis cell, both at C44's ceiling and at 0.3 of it); the junction's criterion is t_L(θ). The lowest share is the
+lowest of the MODELLED set: the ring is read as the host's xylem, and a soft ring drives the share to 0 in its limit.
+
+**The junction** (`105`'s first-layer mismatch, priced at t_L = 1) scales with the share the other way, so its adverse
+end is the HIGHEST share: up to 1.932 at θ = 0 over the modelled set, and up to 6.038 off the axis as C44 → 0 — on a
+lattice tensor read from kinematic-side cases, so an input end, not shown to be the output's.
+
+**Moisture.** Across the source's groups the share takes no single direction. Over the full grid of angles and C44, on
+the stiffer-axis reading it falls monotonically from 45 to 95 % RH at 2069 of 14022 points, rises at none and does
+neither at 11953; on the mean reading 3669 fall and 10353 do neither; on the softer-axis one (45 → 85 % RH, its only
+material groups) 12453 fall and 1569 rise. A living stem's sapwood is wetter than any group the source measured: a green
+stem's share is not established, in value or in direction.
+
+⚠️ **Bounds.** One source and one stand (Turkey), compression, below fibre saturation. The lattice reading assumes the
+two FE cases describe one homogeneous cubic body — `VoxelFea` calls its ratios «NOT a material property» — and the
+shipped part is graded, so «cubic» holds locally; Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
+the sweep). C44, the tissue in the pores and the ring are unmeasured: the ring is read as the host's xylem (ours —
+`01_04 §2`'s phases say nothing of it). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending
+gradient along the radius, the curved rings, the bark's proximity and the transverse shear (S5) are not modelled.
+Controls: Mura's tensor against the isotropic cylinder's closed form (seven entries), a hole in every live wood reading
+against Lekhnitskii's K_t (the normal block — S_1212 of an anisotropic matrix has no independent closed-form check
+here), its covariance under a rotation about the axis, a finite isotropic inclusion against Goodier/Muskhelishvili — each
+to round-off; t_L non-increasing in C44 (asserted on the grid) and mirror-symmetric about 45° (asserted on one wood
+reading at the C44 grid's ends). Cache:
+`mechanical/gyroid_wood_strain_share.json`.
 
 ---
 

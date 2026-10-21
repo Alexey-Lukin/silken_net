@@ -6258,3 +6258,234 @@ def test_printed_part_sway_stress_invariants():
     mmax = max(v["zone3_shank_bending_MPa"] for v in d["mass_path"].values())
     bound = float(re.search(r"mass path stays below ([0-9.]+) MPa", d["verdict"]).group(1))
     assert mmax < bound
+
+
+
+
+def test_gyroid_wood_strain_share_invariants():
+    """106 (00_07 HW.23, the orthotropic-Eshelby leg): cells recomputed HERE by another ARITHMETIC — Mura's integral by
+    Gauss–Legendre on [0, π] (the script: midpoints on [0, 2π]), the wood's compliance built as a 4th-order tensor and
+    inverted by a 9×9 pseudo-inverse (the script: a Voigt 6×6), the lattice's cubic tensor written on its cube axes (the
+    script: a rotated Voigt matrix), the inclusion solved 9×9 (the script: Mandel 6×6), the Voigt root chosen by a gap
+    computed here. SHARED with the script, so not independent: the WOOD constants, the stiff/soft/mean rule and the
+    equivalent-inclusion equation — the model, which the transcription check and the script's closed-form controls hold.
+
+    CAN catch: a transcription that no longer matches the paper's printed aggregates; a positive-definiteness flag that
+    does not follow from the readings; the lattice reading off the two cached FE ratios or a wrong Voigt root; a θ = 0
+    share off the Eshelby solution at every alloy's lowest and highest θ = 0 cell; a θ = 0 share that moves with C44; a
+    wrong argmin angle at a sample; a crossing count or a crossing Zener ratio that does not follow; the E110 thresholds
+    off the cubic closed form; an off-axis factor or the junction's C44 = 0 supremum off the solution; 105's thresholds at
+    θ = 0 not built from 105's own inputs, the reading and the lowest θ = 0 share, or rounded down; a source-day list or
+    the additive-outside list that does not follow from the cells; the controls' cached errors above their tolerances;
+    a verdict whose numbers are not the cells'. CANNOT catch: the MODEL (an infinite bonded cylinder in an infinite
+    homogeneous matrix, the three pore readings, the homogeneous cubic reading of the FE cases) — the script's declared
+    ceilings; a wrong number in the paper's tables beyond its printed aggregates (no Poisson ratio and no 85 % RH value
+    has one); the full-grid moisture counts, which only the script computes.
+    """
+    import importlib.util
+
+    from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES
+
+    spec = importlib.util.spec_from_file_location("s106_t", REPO / "tools/in_silico/scripts/106_gyroid_wood_strain_share.py")
+    s106 = importlib.util.module_from_spec(spec)
+    sys.modules["s106_t"] = s106
+    spec.loader.exec_module(s106)
+    d = json.loads((MECHANICAL / "gyroid_wood_strain_share.json").read_text(encoding="utf-8"))
+    d105 = json.loads((MECHANICAL / "printed_part_sway_stress.json").read_text(encoding="utf-8"))
+    fea = json.loads((REPO / "tools/cad/cache/fea/anchor_zone1_pine.json").read_text(encoding="utf-8"))
+    wood = s106.WOOD
+    assert d["inputs"]["wood"] == wood
+
+    for name, f, digits, printed in s106.PRINTED_AGGREGATES:
+        assert math.floor(round(f(wood) * 10 ** digits, 9)) / 10 ** digits == printed, name
+
+    i3 = np.eye(3)
+
+    def compliance4(w, rd):
+        stiff = {(0, 1): -w["nu_LT"] / w["E_L"], (0, 2): -w["nu_LR"] / w["E_L"], (1, 2): -w["nu_RT"] / w["E_R"]}
+        soft = {(0, 1): -w["nu_TL"] / w["E_T"], (0, 2): -w["nu_RL"] / w["E_R"], (1, 2): -w["nu_TR"] / w["E_T"]}
+        cpl = {"stiff": stiff, "soft": soft, "mean": {k: (stiff[k] + soft[k]) / 2 for k in stiff}}[rd]
+        e = {0: w["E_L"], 1: w["E_T"], 2: w["E_R"]}
+        g = {(1, 2): w["G_RT"], (0, 2): w["G_LR"], (0, 1): w["G_LT"]}
+        s = np.zeros((3, 3, 3, 3))
+        for i in range(3):
+            s[i, i, i, i] = 1 / e[i]
+        for (i, j), v in cpl.items():
+            s[i, i, j, j] = s[j, j, i, i] = v
+        for (i, j), gv in g.items():
+            for a, b in ((i, j), (j, i)):
+                for c, dd in ((i, j), (j, i)):
+                    s[a, b, c, dd] = 1 / (4 * gv)
+        return s
+
+    def nine(t):
+        return t.reshape(9, 9)
+
+    def eshelby_gl(c, n=64):
+        x, wts = np.polynomial.legendre.leggauss(n)
+        om = (x + 1) * math.pi / 2
+        g = np.zeros((3, 3, 3, 3))
+        for o, wt in zip(om, wts, strict=True):
+            xi = np.array([math.cos(o), math.sin(o), 0.0])
+            kinv = np.linalg.inv(np.einsum("ijkl,j,l->ik", c, xi, xi))
+            g += 2 * wt * math.pi / 2 * np.einsum("ip,j,q->ipjq", kinv, xi, xi)
+        return np.einsum("ipjq,pqmn->ijmn", g + np.einsum("jpiq->ipjq", g), c) / (4 * math.pi)
+
+    def iso4(e, nu):
+        lam, mu = e * nu / ((1 + nu) * (1 - 2 * nu)), e / (2 * (1 + nu))
+        return (lam * np.einsum("ij,kl->ijkl", i3, i3)
+                + mu * (np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("il,jk->ijkl", i3, i3)))
+
+    def cubic4(c11, c12, c44, th):
+        axes = [np.array([math.cos(th), math.sin(th), 0.0]), np.array([-math.sin(th), math.cos(th), 0.0]),
+                np.array([0.0, 0.0, 1.0])]
+        c = (c12 * np.einsum("ij,kl->ijkl", i3, i3)
+             + c44 * (np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("il,jk->ijkl", i3, i3)))
+        for e in axes:
+            c += (c11 - c12 - 2 * c44) * np.einsum("i,j,k,l->ijkl", e, e, e, e)
+        return c
+
+    # the lattice reading: both roots of the two cached FE ratios, the Voigt gap computed HERE
+    r_r = d105["inputs"]["fe_readings_richardson"]["radial_richardson"]
+    r_a = d105["inputs"]["fe_readings_richardson"]["axial_richardson"]
+    phi, nu_s = d105["inputs"]["solid_fraction"], fea["poisson_ratio"]
+    pp = r_r / ((1 + nu_s) * (1 - 2 * nu_s))
+    solid = phi * nine(iso4(1.0, nu_s))
+    inside = []
+    for q in ((3 * pp - math.sqrt(9 * pp * pp - 8 * pp * r_a)) / 2, (3 * pp + math.sqrt(9 * pp * pp - 8 * pp * r_a)) / 2):
+        gap = np.linalg.eigvalsh(solid - nine(cubic4((pp + q) / 2, (pp - q) / 2, 0.0, 0.0)))
+        if gap[np.argsort(np.abs(gap))[3:]].min() >= -1e-12:
+            inside.append(((pp + q) / 2, (pp - q) / 2))
+    assert len(inside) == 1, "the Voigt gap computed here does not single out one root"
+    lat = d["inputs"]["lattice_reading"]
+    c11, c12 = lat["C11_over_E_s"], lat["C12_over_E_s"]
+    assert (c11, c12) == pytest.approx(inside[0], rel=1e-12)
+    assert lat["zener_voigt_ceiling"] == pytest.approx(2 * phi / (2 * (1 + nu_s)) / (c11 - c12), rel=1e-12)
+
+    for g, w in wood.items():
+        for rd in ("stiff", "soft", "mean"):
+            ev = np.linalg.eigvalsh(nine(compliance4(w, rd)))
+            sym6 = ev[np.argsort(np.abs(ev))[3:]]                 # drop the 3 antisymmetric zeros by MAGNITUDE, not by sign
+            assert d["wood_readings"][f"{g}|{rd}"]["positive_definite"] == bool(sym6.min() > 0), (g, rd, sym6)
+    for v in d["wood_readings"].values():
+        if v["positive_definite"]:
+            assert v["covariance_control"] < 1e-10 and v["quadrature_change_at_2n"] < 1e-10
+            assert v["hole_control"]["kt_eshelby"] == pytest.approx(v["hole_control"]["kt_lekhnitskii"], rel=1e-10)
+    assert d["controls"]["isotropic_cylinder_max_error"] < 1e-12 and d["controls"]["isotropic_inclusion_max_error"] < 1e-12
+    assert d["controls"]["t_L_rise_with_C44_worst"] < 1e-9 and d["controls"]["mirror_45_worst"] < 1e-9
+
+    memo = {}
+
+    def matrix(g, rd):
+        if (g, rd) not in memo:
+            cm = np.linalg.pinv(nine(compliance4(wood[g], rd))).reshape(3, 3, 3, 3)
+            memo[(g, rd)] = (cm, np.linalg.pinv(nine(cm)).reshape(3, 3, 3, 3), eshelby_gl(cm))
+        return memo[(g, rd)]
+
+    def t_l(al, g, rd, fill, th_deg, a):
+        cm, sm, sesh = matrix(g, rd)
+        e_s = ALLOY_PROPERTIES[al]["E_GPa"] * 1e3
+        if fill == "pores_voigt_phase_bound":
+            ci = phi * iso4(e_s, ALLOY_PROPERTIES[al]["nu"]) + (1 - phi) * cm
+        else:
+            ci = e_s * cubic4(c11, c12, a * (c11 - c12) / 2, math.radians(th_deg))
+            if fill == "pores_additive_host_sapwood":
+                ci = ci + (1 - phi) * cm
+        sig = np.zeros((3, 3))
+        sig[0, 0] = 1.0
+        e_inf = np.einsum("ijkl,kl->ij", sm, sig)
+        amat = np.einsum("ik,jl->ijkl", i3, i3) + np.einsum("ijpq,pqrs,rskl->ijkl", sesh, sm, ci - cm)
+        e_i = np.linalg.solve(nine(amat), e_inf.reshape(9)).reshape(3, 3)
+        return e_i[0, 0] / e_inf[0, 0]
+
+    a_v = lat["zener_voigt_ceiling"]
+    a_floor = d["inputs"]["zener_grid"][0]
+    t0 = d["theta0_share_over_modelled_set"]
+    for al in ALLOY_PROPERTIES:
+        for which in ("lowest_cell", "highest_cell"):
+            _, g, rd, fill = t0[al][which].split("|")
+            cell = d["cells"][t0[al][which]]
+            assert t_l(al, g, rd, fill, 0.0, a_v) == pytest.approx(cell["t_L_theta0_any_C44"], rel=1e-9)
+            assert t_l(al, g, rd, fill, 0.0, 1e-2 * a_v) == pytest.approx(cell["t_L_theta0_any_C44"], rel=1e-9)
+        cells = {k: v for k, v in d["cells"].items() if k.startswith(f"{al}|")}
+        assert t0[al]["lowest"] == min(v["t_L_theta0_any_C44"] for v in cells.values())
+        assert t0[al]["highest"] == max(v["t_L_theta0_any_C44"] for v in cells.values())
+    # a sample: the argmin angle at the ceiling, the C44 = 0 maximum, the crossing — over the script's own θ grid
+    for al, g, rd, fill in (("Ti-6Al-4V", "rh95", "stiff", "pores_carry_nothing"),
+                            ("Ta", "rh65", "mean", "pores_additive_host_sapwood")):
+        cell = d["cells"][f"{al}|{g}|{rd}|{fill}"]
+        at_av = [t_l(al, g, rd, fill, th, a_v) for th in s106.THETA_DEG]
+        assert s106.THETA_DEG[int(np.argmin(at_av))] == cell["theta_of_min_deg"]
+        assert min(at_av) == pytest.approx(cell["t_L_at_voigt_C44_min_over_theta"], rel=1e-9)
+        assert max(t_l(al, g, rd, fill, th, 0.0) for th in s106.THETA_DEG) == pytest.approx(
+            cell["t_L_at_C44_zero_max_over_theta"], rel=1e-9)
+        if cell["zener_at_which_t_L_is_1_theta45"] is not None:
+            assert t_l(al, g, rd, fill, 45.0, cell["zener_at_which_t_L_is_1_theta45"]) == pytest.approx(1.0, abs=1e-8)
+    assert d["junction_share_sup_at_C44_zero"] == max(v["t_L_at_C44_zero_max_over_theta"] for v in d["cells"].values())
+    # the crossing count behind the prose: a sign change of t_L − 1 between the grid's ends at 45°, every lattice cell
+    for key, v in d["cells"].items():
+        al, g, rd, fill = key.split("|")
+        if fill == "pores_voigt_phase_bound":
+            assert v["zener_at_which_t_L_is_1_theta45"] is None
+            continue
+        crosses = (t_l(al, g, rd, fill, 45.0, a_floor) - 1) * (t_l(al, g, rd, fill, 45.0, a_v) - 1) <= 0
+        assert (v["zener_at_which_t_L_is_1_theta45"] is not None) == crosses, key
+    assert all(v["theta0_independent_of_C44"] for v in d["cells"].values())
+
+    # E110 at 45° against the cubic closed form, and one alloy's off-axis factor
+    s11 = (c11 + c12) / ((c11 - c12) * (c11 + 2 * c12))
+    s12 = -c12 / ((c11 - c12) * (c11 + 2 * c12))
+    ez = d["e_z_star_105_premise_theta45"]
+    for fk, reading in (("radial_richardson", r_r), ("axial_richardson", r_a)):
+        a_need = 2 / (4 * (1 / reading - (s11 + s12) / 2)) / (c11 - c12)
+        assert ez[fk]["zener_below_which_E110_falls_under_reading"] == pytest.approx(a_need, rel=1e-9)
+    e110_v = 1 / ((s11 + s12) / 2 + 1 / (4 * a_v * (c11 - c12) / 2))
+    assert ez["E110_over_E_s_at_voigt_ceiling"] == pytest.approx(e110_v, rel=1e-12)
+    live = [k for k, v in d["wood_readings"].items() if v["positive_definite"]]
+    facs = [math.sqrt(r_a / e110_v) / t_l("Ta", *k.split("|"), fill, 45.0, a_v) for k in live for fill in s106.FILLS]
+    assert d["off_axis_threshold_factor_theta45"]["Ta"]["at_voigt_ceiling"]["threshold_factor_min"] == pytest.approx(min(facs), rel=1e-9)
+    assert d["off_axis_threshold_factor_theta45"]["Ta"]["at_voigt_ceiling"]["threshold_factor_max"] == pytest.approx(max(facs), rel=1e-9)
+
+    # the additive reading outside the pore ends' interval, from the cells
+    outside = []
+    for al in ALLOY_PROPERTIES:
+        for k in live:
+            ends = [d["cells"][f"{al}|{k}|{f}"] for f in ("pores_carry_nothing", "pores_voigt_phase_bound")]
+            mid = d["cells"][f"{al}|{k}|pores_additive_host_sapwood"]
+            for fld in ("t_L_theta0_any_C44", "t_L_at_voigt_C44_min_over_theta"):
+                lo, hi = sorted(e[fld] for e in ends)
+                if not lo - 1e-12 <= mid[fld] <= hi + 1e-12:
+                    outside.append(f"{al}|{k}|{fld}")
+    assert sorted(outside) == sorted(d["additive_outside_the_pore_ends_interval"])
+
+    # 105's thresholds at θ = 0 from 105's own inputs, each reading and the lowest θ = 0 share (rounded UP)
+    stem = d105["inputs"]["stem_readings_87"]
+    cell_ls = "large_stem_limit|near_uniaxial|sf2"
+    for fk, ratio in (("axial_richardson", r_a), ("radial_richardson", r_r)):
+        f_read = math.sqrt(ratio / phi)
+        ba = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"][fk]
+        for al in ALLOY_PROPERTIES:
+            lim = d105["alloys"][al]["endurance_strain_printed_ue"]
+            for dk, frac in d105["inputs"]["depth_fraction"].items():
+                for sk, div in d105["inputs"]["stress_state_divisor"].items():
+                    for sf in (1, 2):
+                        assert ba[al][f"{dk}|{sk}|sf{sf}"] == math.ceil(round(lim / sf * div / (f_read * frac * t0[al]["lowest"]), 9))
+        for rd in ("median", "upper_whisker"):
+            eps = stem[rd]["surface_strain_ue"]
+            assert d["source_day_theta0_large_stem_sf2"][fk][rd]["exceeds"] == sorted(
+                al for al in ALLOY_PROPERTIES if eps > ba[al][cell_ls])
+    for rd in ("median", "upper_whisker"):
+        assert d["source_day_at_t1_axial_reading_105"][rd] == sorted(
+            al for al in ALLOY_PROPERTIES
+            if stem[rd]["surface_strain_ue"] > d105["gyroid_binds_above_surface_strain_ue"][al][cell_ls]["axial_richardson"])
+    ba_a = d["gyroid_binds_above_surface_strain_ue_theta0_lowest_share"]["axial_richardson"]
+    for al in ALLOY_PROPERTIES:
+        assert d["threshold_ratio_vs_baseline_theta0_lowest_share"][al] == pytest.approx(
+            ba_a[al][cell_ls] / ba_a[ALLOY_BASELINE][cell_ls], rel=1e-12)
+
+    # the verdict's numbers are the cells'
+    for al in ALLOY_PROPERTIES:
+        assert f"{al} {math.floor(round(t0[al]['lowest'] * 1000, 9)) / 1000:.3f}" in d["verdict"]
+    up = ", ".join(d["source_day_theta0_large_stem_sf2"]["axial_richardson"]["upper_whisker"]["exceeds"]) or "none"
+    assert f"upper whisker exceeds the large-stem threshold for {up} on" in d["verdict"]
+    assert f"({len(d['additive_outside_the_pore_ends_interval'])} cell-fields fall outside them)" in d["verdict"]
