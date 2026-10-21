@@ -104,7 +104,7 @@
       },
       "shank_length_mm": {
         "class": "placeholder",
-        "from": "14 мм іде в парі з shank_diameter_mm під той самий reconcile (00_07 HW.8.9); несе F2-бюджет і нижній торець каналу"
+        "from": "14 мм іде в парі з shank_diameter_mm під той самий reconcile (00_07 HW.8.9); несе F2-бюджет і нижній торець каналу; нижня межа ≈ 12 мм — обраний лік центральної площадки (⚖️ 2026-10-21, 02_02 §3.5)"
       },
       "bore_diameter_mm": {
         "class": "derived",
@@ -290,7 +290,7 @@
       },
       "shank_length_mm": {
         "class": "placeholder",
-        "from": "14 мм іде в парі з shank_diameter_mm під той самий reconcile (00_07 HW.8.9); дзеркало cathode_flange.shank_length_mm, яке несе F2-бюджет вставляння і нижній торець каналу"
+        "from": "14 мм іде в парі з shank_diameter_mm під той самий reconcile (00_07 HW.8.9); дзеркало cathode_flange.shank_length_mm, яке несе F2-бюджет вставляння і нижній торець каналу; нижня межа ≈ 12 мм — обраний лік центральної площадки (⚖️ 2026-10-21, 02_02 §3.5)"
       },
       "bore_diameter_mm": {
         "class": "derived",

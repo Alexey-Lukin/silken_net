@@ -16,8 +16,9 @@ depth — not by where the bayonet seats the rim. `TOL_OR` therefore has one con
 the bayonet hard-stop touches it. ⚠️ That holds only while the bayonet CLAMPS the rim onto the face; `rim_datum_creep`
 states the initial clamp it needs, and without it the lugs, not the groove, set the squeeze.
 
-DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
-spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
+DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected spacer
+(off the measured DMLS+PCB stack) is the mitigation — at a 0.1 mm step it holds this chain's windows (L1); the design's
+minimal mitigation, the centre pad included, is the 0.05 mm step with the bayonet hard-stop (L3, ⚖️ 2026-10-21, 02_02 §3.5). RF antenna Z-clearance is enforced here as
 a GEOMETRIC constraint at OUR 12 mm working floor (02_01 §5.3 itself asks ≥ 8 mm, 10-15 desirable — see
 RF_ANT_TI_CLEARANCE_MIN); which number is ACCEPTANCE is settled by a mock-up measurement (⚖️ 2026-09-17,
 02_01 §5.3), neither by this script nor by a lab VNA session — the geometry is self-owned, blocked on no one.
@@ -220,6 +221,8 @@ TOL_OR_PRE_BRANCH_A = {"DMLS_Ti_seat": 0.15, "CNC_radome_rim": 0.10}   # the ret
 # A selective 0.1 mm spacer removes the MEASURED rigid stack (DMLS+PCB+B2B), leaving only the CNC PEEK
 # engagement + the spacer half-step as residual (see residual() in main). It acts on the SHARED gap only.
 SPACER_STEP = 0.10   # mm — eccentric spacer increment (02_02 §3.5); residual ±half-step
+SPACER_STEP_FINE = 0.05   # mm — the finer step of the design's minimal mitigation, with the bayonet hard-stop; it closes
+                          # every computed reading of the centre pad (⚖️ founder 2026-10-21, 02_02 §3.5; priced by `104`)
 
 
 def rss(tols: list[float]) -> float:
@@ -790,7 +793,7 @@ def main() -> int:
     # ── Mitigation escalation: each lever shrinks the residual until both windows hold ──
     banner("Mitigation escalation (spacer removes measured DMLS+PCB+B2B; bayonet hard-stop halves CNC)")
 
-    def residual(bayonet: bool, spacer: bool) -> tuple[float, float]:
+    def residual(bayonet: bool, spacer: bool, step: float = SPACER_STEP) -> tuple[float, float]:
         """Residual gap tolerance (±) after levers, for the SHARED gap: bayonet hard-stop → deterministic
         engagement (CNC 0.10→0.05); spacer → only CNC + spacer half-step survive (measured stack removed).
         The O-ring chain is untouched by either lever since branch (а): the rim is a datum on the flange
@@ -799,13 +802,15 @@ def main() -> int:
         cnc_pz = 0.05 if bayonet else TOL_PZ["CNC_radome"]
         res_or = rss(list(TOL_OR.values()))
         if spacer:
-            return rss([cnc_pz, SPACER_STEP / 2]), res_or
+            return rss([cnc_pz, step / 2]), res_or
         return rss([v for k, v in TOL_PZ.items() if k != "CNC_radome"] + [cnc_pz]), res_or
 
     escalation = []
     final_label = None
-    for label, bayo, spac in [("L1 spacer only", False, True), ("L2 spacer + bayonet hard-stop", True, True)]:
-        rp, ro = residual(bayo, spac)
+    for label, bayo, spac, step in [("L1 spacer only", False, True, SPACER_STEP),
+                                    ("L2 spacer + bayonet hard-stop", True, True, SPACER_STEP),
+                                    (f"L3 spacer {SPACER_STEP_FINE:g} mm + bayonet hard-stop", True, True, SPACER_STEP_FINE)]:
+        rp, ro = residual(bayo, spac, step)
         ecases = [assess("nominal", 0.0, 0.0), assess("residual +", rp, ro), assess("residual -", -rp, -ro)]
         ok = all(c["pass"] for c in ecases)
         print(f"  {label}:  Power↔Zone3 ±{rp:.2f}  O-ring ±{ro:.2f} mm")
@@ -947,7 +952,9 @@ def main() -> int:
 
     banner("Verdict")
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
-    print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
+    print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'} — this "
+          f"chain's own windows (outer pads, O-ring); the design's minimal mitigation, the centre pad included, is "
+          f"'{escalation[-1]['label']}' (⚖️ 2026-10-21, priced by `104`).")
     print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
     print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone —")
     print("     while the bayonet CLAMPS the rim there (rim_datum_creep: the minimum initial clamp, delivered by no part yet; without it the lugs set the squeeze).")
@@ -973,6 +980,13 @@ def main() -> int:
         "unmitigated": {"cases": unmit, "pass": raw_ok},
         "mitigation_escalation": escalation,
         "min_mitigation_pass": final_label,
+        "min_mitigation_pass_reads": "this chain's own windows (the outer pads at one temperature, the O-ring); the design's "
+                                     "minimal mitigation — see minimal_mitigation_ratified",
+        "minimal_mitigation_ratified": {"label": escalation[-1]["label"], "pass_52_windows": escalation[-1]["pass"],
+                                        "centre_pad": "priced by 104 (its cache: by_span.18.window_side, the L2-with-finer-step "
+                                                      "rows); the pin's own height is outside this chain (00_07 HW.8.7)",
+                                        "ground": "⚖️ founder 2026-10-21, 02_02 §3.5: the centre pad's thermal travel and "
+                                                  "the sway on it, priced by 104 (00_07 HW.43)"},
         "parker_face_reconciliation": {
             "residual_half_width_pct_points": round(half_pct * 100, 2),
             "residual_half_width_pct_points_pre_branch_a": round(half_pct_pre * 100, 2),
@@ -1006,7 +1020,8 @@ def main() -> int:
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
                           "note": "geometric (self-owned); a design point, not the acceptance floor — that is "
                                   "settled by a mock-up measurement (⚖️ 2026-09-17, 02_01 §5.3)"},
-        "verdict": (f"2-spring Z-stack holds at '{final_label}'"
+        "verdict": (f"2-spring Z-stack holds at '{final_label}' — this chain's windows; the design's minimal mitigation is "
+                    f"'{escalation[-1]['label']}' (⚖️ 2026-10-21, 02_02 §3.5)"
                     if mit_ok else "no ladder level holds — widen O-ring CS / bigger pogo travel"),
     }
     json_path = OUT_DIR / "z_stack_tolerance.json"

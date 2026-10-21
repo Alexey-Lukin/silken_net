@@ -5,7 +5,7 @@ whether `52`'s mitigations still hold the mid-stroke window (00_07 HW.43, the le
 якої в `52` немає»; `87` prices sway, this prices heat and cold).
 
 QUESTION. `52` budgets the Power-Deck ↔ Zone-3 gap at one temperature: the pins sit at 60 % of their travel at the
-nominal gap, the window is 50–70 %, and the minimal mitigation that passes (a measured spacer) leaves ±0.112 mm. The gap
+nominal gap, the window is 50–70 %, and `52`'s first mitigation that passes (a measured spacer, L1) leaves ±0.112 mm. The gap
 is the difference of two columns that expand differently — the radome's PEEK from the rim to the pocket floor, and the
 board stack hanging from that floor — so temperature moves it, and the window margin left after the mitigation is the
 budget it eats.
@@ -42,11 +42,12 @@ READING (the radome moves, the stack stays) — not a bound: the floor hangs fro
 so a lagging wall can push the lead higher. The daily cycle: `71`'s hourly capsule temperature over 30 ERA5 years
 (sunlit, α 0.5, the aging wind factor), its daily range — a READING whose error has no known sign on the range: `71`
 takes the worst direct-sun gain (the day's peak up) and has no night-sky cooling (the night's minimum up), and as one
-lump with an adiabatic base it cannot give a shell/stack lag. Only `52`'s MINIMAL mitigation (the spacer, L1) is judged
-here; whether its second lever (the bayonet hard-stop) still acts under branch (а), where the rim seats the radome, is
+lump with an adiabatic base it cannot give a shell/stack lag. Only `52`'s L1 (the spacer) is judged in the prose —
+every rung of its ladder is printed as a window, and the design's minimal mitigation since ⚖️ 2026-10-21 is L3, the
+finer step with the hard-stop (02_02 §3.5); whether its second lever (the bayonet hard-stop) still acts under branch (а), where the rim seats the radome, is
 `52`'s question for the root-package re-run (canon keeps it live, 02_02 §3.5), not this script's.
 
-CAN show: the gap's thermal coefficient and seasonal swing, the window check at `52`'s two mitigations with it, the
+CAN show: the gap's thermal coefficient and seasonal swing, the window check at every rung of `52`'s ladder with it, the
 daily stroke and its force ratio over the minimum preload (as `87` prices sway), the radial slide per mm of pad radius.
 CANNOT show: the pocket gasket's term (placeholder), the pin body's beyond one brass column at a 20–300 °C mean CTE,
 the spring force's own temperature dependence (the force ratio takes force ∝ stroke at a fixed rate, while the BeCu
@@ -212,7 +213,7 @@ def main() -> int:
         f"radome-leads reading). The pins' working stroke follows the gap less the growth of their own brass body "
         f"({pin_um_k:.3f} µm/K, C36000 at 20.5 ppm/K over its {pin_body_mm:.2f} mm free length): {stroke_um_k['isothermal_low_stack']:.2f}–"
         f"{stroke_um_k['isothermal_high_stack']:.2f} µm/K together, the radome's {stroke_um_k['radome_leads_reading']:.2f} "
-        f"µm/K when it leads. Against 52's minimal mitigation ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
+        f"µm/K when it leads. Against 52's L1 ({l1}, ±{mitig[l1]:.3f} mm, which leaves "
         f"{(win[1] - nominal_pct) * travel * 1e3 - mitig[l1] * 1e3:.0f} µm to each window edge) the isothermal swing "
         f"{'holds' if iso_hi['window'][l1]['holds_window'] else 'breaks'} the 50–70 % window (margins "
         f"{iso_hi['window'][l1]['margin_um'][0]:.0f} / {iso_hi['window'][l1]['margin_um'][1]:.0f} µm) and the radome-leads "
@@ -263,8 +264,9 @@ def main() -> int:
         "premises": ["the rim stays seated on the flange face (89: the cold unloads a stiff clamp)",
                      "the stack is seated on the pocket floor (it floats on the pogo pair against the pocket gasket)",
                      "the OUTER pad only — the centre pad rides on the wire path (HW.34)",
-                     "only 52's minimal mitigation (L1, the spacer) is judged; whether L2 acts under branch (а) is 52's "
-                     "question (canon keeps it live)"],
+                     "52's L1 (the spacer) is judged in the prose; every rung of 52's ladder is printed as a window — L3, "
+                     "the finer step with the hard-stop, is the design's minimal mitigation since ⚖️ 2026-10-21 (02_02 §3.5); "
+                     "whether the hard-stop acts under branch (а) is 52's question (canon keeps it live)"],
         "daily_capsule_range_K": {k: round(v, 2) for k, v in stats.items()},
         "daily_days": len(ranges),
         "daily": daily,

@@ -5717,7 +5717,22 @@ CHECKS += [
     ("104 B F today → 104", BLIND_MATE, r"на Ta замість " + N + r", але", REMEDY, lambda d: _u1(_ta(d, "18", "today")["F_hot_N"]), 0.0),
     ("104 B alone → 104", BLIND_MATE, r"саме гойдання вже просить " + N + r",", REMEDY, lambda d: _u3(_c3(d)["sway_alone"]["k"]), 0.0),
     ("104 B shank 10 → 104", BLIND_MATE, r"на 10 мм піднімає утримувану потребу до " + N + r"\s+мкм", REMEDY, lambda d: _u1(_rs(d, "18")["need_um_by_placeholder_shank"]["10"]), 0.0),
-    ("104 B pin tol → 104", BLIND_MATE, r"допуск ходу ±" + N + r" мм", REMEDY, lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
+    ("104 B pin tol → 104", BLIND_MATE, r"— допуск ходу ±" + N + r" мм, наскільки він вихід плунжера, перекриває кожен резерв тут", REMEDY,
+     lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
+    # the verdict's full form (⚖️ founder 2026-10-21) in the same paragraph
+    ("104 V worst → 104", BLIND_MATE, r"з резервом " + N + r" мкм на\s+плейсхолдері 14 мм", REMEDY, lambda d: _d1(_sp(d, "18", _L2F, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 V slope → 104", BLIND_MATE, r"\(≈ " + N + r" мкм на мм — оцінка", REMEDY, lambda d: round(_rs(d, "18")["placeholder_shank_estimate"]["slope_um_per_mm_held"], 1), 0.0),
+    ("104 V shank → 104", BLIND_MATE, r"доки хвостовик довший за ≈ " + N + r" мм; закриває", REMEDY, lambda d: _u1(_rs(d, "18")["placeholder_shank_estimate"]["shortest_shank_mm_closing_with_l2fine"]), 0.0),
+    ("104 V L3 step → 90", BLIND_MATE, r"запаси L3 = L1 \+ " + N + r" мкм", "mechanical/pogo_thermal_gap.json",
+     lambda d: round(d["seasonal"]["model_edges"]["isothermal_high_stack"]["window"]["L3 spacer 0.05 mm + bayonet hard-stop"]["margin_um"][1]
+                     - d["seasonal"]["model_edges"]["isothermal_high_stack"]["window"]["L1 spacer only"]["margin_um"][1], 1), 0.0),
+    ("104 V pin tol → 104", BLIND_MATE, r"і допуск ходу\s+±" + N + r" мм, наскільки", REMEDY, lambda d: round(_st(d, "18", "pin_travel_tolerance_mm_not_in_52_chain"), 3), 0.0),
+    ("104 V fallback → 104", BLIND_MATE, r"разом із кроком, від " + N + r" мм; модель", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_with_fine_step_held_plus_sway_upper_whisker")), 0.0),
+    ("104 V a uw → 104", BLIND_MATE, r"на вусі гойдання " + N + r" мкм, разом", REMEDY, lambda d: _d1(_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker")), 0.0),
+    ("104 V a both → 104", BLIND_MATE, r"випередженням радома бракує " + N + r"; \(в\)", REMEDY, lambda d: _u1(-_sp(d, "18", _L2, "spare_um_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 V c uw → 104", BLIND_MATE, r"довший хід — від " + N + r" мм \(", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker")), 0.0),
+    ("104 V c both → 104", BLIND_MATE, r"мм \(" + N + r" у\s+найгіршому куті\)", REMEDY, lambda d: _u3(_st(d, "18", "stroke_mm_closing_held_plus_sway_upper_whisker_radome_leads")), 0.0),
+    ("104 V g gap → 104", BLIND_MATE, r"коротший PEEK — зазор ≤ " + N + r" мм, нижче розриву", REMEDY, lambda d: _d1(_rs(d, "18")["run_length"]["gap_mm_closing"]), 0.0),
 ]
 
 

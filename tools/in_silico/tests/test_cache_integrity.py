@@ -5489,6 +5489,10 @@ def test_pad_travel_remedies_invariants():
     res90 = d90["inputs"]["mitigation_residual_mm_52"]
     assert c3(math.hypot(cnc, half_step)) == res90["L1 spacer only"]
     assert c3(math.hypot(cnc / 2, half_step)) == res90["L2 spacer + bayonet hard-stop"]
+    # the ratified minimal mitigation (⚖️ 2026-10-21): `52`'s L3 rung is the finer step with the hard-stop — 104's (б)
+    l3 = f"L3 spacer {s52.SPACER_STEP_FINE:g} mm + bayonet hard-stop"
+    assert c3(math.hypot(cnc / 2, s52.SPACER_STEP_FINE / 2)) == res90[l3]
+    assert json.loads((MECHANICAL / "z_stack_tolerance.json").read_text(encoding="utf-8"))["minimal_mitigation_ratified"]["label"] == l3
     l2 = "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)"
     fine, l2fine = "spacer step 0.05 mm", "L2 hard-stop + spacer step 0.05 mm"
     res = {l2: c3(math.hypot(cnc / 2, half_step)), fine: c3(math.hypot(cnc, 0.025)), "spacer step → 0 (the lever's bound)": c3(cnc),

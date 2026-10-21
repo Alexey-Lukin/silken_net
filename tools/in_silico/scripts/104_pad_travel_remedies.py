@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """104 — what each remedy for the centre pad's thermal travel buys against the pogo window and costs on the seam
-(00_07 HW.43, the leg «ціни ліків ходу центральної площадки»; no solve).
+(00_07 HW.43, the leg «ціни ліків ходу центральної площадки» — applied: ⚖️ founder 2026-10-21 chose (б), `52`'s L3
+rung, 02_02 §3.5; no solve).
 
 WHY. `102` (2026-10-20) found the centre pad leaving `90`'s L1 margin on the free-sleeve reading — at the cold edge on
 every part and grip, at the hot edge on a part at the window floor — and `103` that within its model the wood only
@@ -102,16 +103,13 @@ GRIPS_102 = (("window_floor", False, "min"), ("ratified_nominal", True, "min"), 
              ("window_ceiling", False, "max"))   # the four `102`'s heat reads
 STACKS = ("isothermal_low_stack", "isothermal_high_stack")
 LEADS = "radome_leads_reading"
-STEP_FINE = 0.05   # mm — a finer spacer step, priced as one point on the lever
 GAP_MIN = 0.5      # mm — the shortest bare run the length route goes down to (the wire still crossing the gap)
 SPANS = {"gap_and_shank_disc_on_sleeve_top": "32", "gap_only_shank_held_at_its_end": "18"}
 FRONT_OF = {"18": "zone3_fit", "32": "flange_on_bark"}       # `103`'s premise behind each span
 SHANKS_HW89 = (10.0, 18.0)   # mm — `92`'s swept ends of the placeholder Zone-3 shank (HW.8.9)
 L2 = "L2 bayonet hard-stop (CNC member 0.10 → 0.05 mm)"
 CLASS = "the CNC member at ±0.05 mm by a tolerance class (if it is machining tolerance)"
-FINE = f"spacer step {STEP_FINE:g} mm"
 ZERO = "spacer step → 0 (the lever's bound)"
-L2FINE = f"L2 hard-stop + spacer step {STEP_FINE:g} mm"
 
 
 def _load(name: str, file: str):
@@ -125,6 +123,10 @@ def _load(name: str, file: str):
 s55 = _load("bus55", "55_bus_mechanical.py")
 s52 = _load("zstack52", "52_z_stack_tolerance.py")
 s102 = _load("liner102", "102_wire_liner_shear_lag.py")
+STEP_FINE = s52.SPACER_STEP_FINE   # the finer spacer step — its home is `52` (the ratified L3 rung)
+L3_90 = f"L3 spacer {STEP_FINE:g} mm + bayonet hard-stop"   # `90`'s window of that rung
+FINE = f"spacer step {STEP_FINE:g} mm"
+L2FINE = f"L2 hard-stop + spacer step {STEP_FINE:g} mm"
 
 
 def bisect(fn, lo: float, hi: float, n: int = 100) -> float | None:
@@ -337,8 +339,11 @@ def main() -> int:
     # control (c): `52`'s rule as `52` caches it re-derives `90`'s residuals, and the L2 gain `90`'s own margin step
     l2_step = [w["window"]["L2 spacer + bayonet hard-stop"]["margin_um"][i] - w["window"]["L1 spacer only"]["margin_um"][i]
                for w in win90.values() for i in (0, 1)]
+    l3_step = [w["window"][L3_90]["margin_um"][i] - w["window"]["L1 spacer only"]["margin_um"][i]
+               for w in win90.values() for i in (0, 1)]
     miss_c = max(abs(ceil3(s52.rss([cnc, half_step])) - res90["L1 spacer only"]) * 1e3,
-                 abs(residual[L2] - res90["L2 spacer + bayonet hard-stop"]) * 1e3, *(abs(s - gain[L2]) for s in l2_step))
+                 abs(residual[L2] - res90["L2 spacer + bayonet hard-stop"]) * 1e3, abs(residual[L2FINE] - res90[L3_90]) * 1e3,
+                 *(abs(s - gain[L2]) for s in l2_step), *(abs(s - gain[L2FINE]) for s in l3_step))
     if miss_c > 0.05 + 1e-9:
         raise RuntimeError(f"control (c): `52`'s residual rule misses `90`'s residuals or L2 step by {miss_c:.3f} µm")
 

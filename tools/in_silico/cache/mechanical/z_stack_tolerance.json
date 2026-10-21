@@ -155,9 +155,48 @@
         }
       ],
       "pass": true
+    },
+    {
+      "label": "L3 spacer 0.05 mm + bayonet hard-stop",
+      "residual_pz": 0.056,
+      "residual_or": 0.05,
+      "cases": [
+        {
+          "label": "nominal",
+          "d_pz": 0.0,
+          "d_or": 0.0,
+          "pogo_pct": 0.6,
+          "oring_pct": 0.24499999999999997,
+          "pass": true
+        },
+        {
+          "label": "residual +",
+          "d_pz": 0.05590169943749475,
+          "d_or": 0.05,
+          "pogo_pct": 0.5600702146875037,
+          "oring_pct": 0.2169101123595505,
+          "pass": true
+        },
+        {
+          "label": "residual -",
+          "d_pz": -0.05590169943749475,
+          "d_or": -0.05,
+          "pogo_pct": 0.6399297853124963,
+          "oring_pct": 0.27308988764044945,
+          "pass": true
+        }
+      ],
+      "pass": true
     }
   ],
   "min_mitigation_pass": "L1 spacer only",
+  "min_mitigation_pass_reads": "this chain's own windows (the outer pads at one temperature, the O-ring); the design's minimal mitigation \u2014 see minimal_mitigation_ratified",
+  "minimal_mitigation_ratified": {
+    "label": "L3 spacer 0.05 mm + bayonet hard-stop",
+    "pass_52_windows": true,
+    "centre_pad": "priced by 104 (its cache: by_span.18.window_side, the L2-with-finer-step rows); the pin's own height is outside this chain (00_07 HW.8.7)",
+    "ground": "\u2696\ufe0f founder 2026-10-21, 02_02 \u00a73.5: the centre pad's thermal travel and the sway on it, priced by 104 (00_07 HW.43)"
+  },
   "parker_face_reconciliation": {
     "residual_half_width_pct_points": 2.81,
     "residual_half_width_pct_points_pre_branch_a": 3.97,
@@ -876,5 +915,5 @@
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); a design point, not the acceptance floor \u2014 that is settled by a mock-up measurement (\u2696\ufe0f 2026-09-17, 02_01 \u00a75.3)"
   },
-  "verdict": "2-spring Z-stack holds at 'L1 spacer only'"
+  "verdict": "2-spring Z-stack holds at 'L1 spacer only' \u2014 this chain's windows; the design's minimal mitigation is 'L3 spacer 0.05 mm + bayonet hard-stop' (\u2696\ufe0f 2026-10-21, 02_02 \u00a73.5)"
 }

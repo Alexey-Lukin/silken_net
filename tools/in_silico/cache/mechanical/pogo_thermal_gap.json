@@ -24,7 +24,8 @@
     ],
     "mitigation_residual_mm_52": {
       "L1 spacer only": 0.112,
-      "L2 spacer + bayonet hard-stop": 0.071
+      "L2 spacer + bayonet hard-stop": 0.071,
+      "L3 spacer 0.05 mm + bayonet hard-stop": 0.056
     },
     "assembly_temperature_c": 20.0,
     "temperature_readings_c": {
@@ -93,6 +94,17 @@
               52.9,
               54.2
             ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              54.85,
+              65.06
+            ],
+            "holds_window": true,
+            "margin_um": [
+              67.9,
+              69.2
+            ]
           }
         }
       },
@@ -123,6 +135,17 @@
               49.4,
               50.9
             ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              54.6,
+              65.29
+            ],
+            "holds_window": true,
+            "margin_um": [
+              64.4,
+              65.9
+            ]
           }
         }
       },
@@ -152,6 +175,17 @@
             "margin_um": [
               32.8,
               35.6
+            ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              53.41,
+              66.39
+            ],
+            "holds_window": true,
+            "margin_um": [
+              47.8,
+              50.6
             ]
           }
         }
@@ -185,6 +219,17 @@
               60.3,
               55.8
             ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              55.38,
+              64.95
+            ],
+            "holds_window": true,
+            "margin_um": [
+              75.3,
+              70.8
+            ]
           }
         }
       },
@@ -214,6 +259,17 @@
             "margin_um": [
               58.4,
               52.8
+            ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              55.25,
+              65.15
+            ],
+            "holds_window": true,
+            "margin_um": [
+              73.4,
+              67.8
             ]
           }
         }
@@ -245,6 +301,17 @@
               49.5,
               39.2
             ]
+          },
+          "L3 spacer 0.05 mm + bayonet hard-stop": {
+            "compression_pct_range": [
+              54.61,
+              66.13
+            ],
+            "holds_window": true,
+            "margin_um": [
+              64.5,
+              54.2
+            ]
           }
         }
       }
@@ -259,7 +326,7 @@
     "the rim stays seated on the flange face (89: the cold unloads a stiff clamp)",
     "the stack is seated on the pocket floor (it floats on the pogo pair against the pocket gasket)",
     "the OUTER pad only — the centre pad rides on the wire path (HW.34)",
-    "only 52's minimal mitigation (L1, the spacer) is judged; whether L2 acts under branch (а) is 52's question (canon keeps it live)"
+    "52's L1 (the spacer) is judged in the prose; every rung of 52's ladder is printed as a window — L3, the finer step with the hard-stop, is the design's minimal mitigation since ⚖️ 2026-10-21 (02_02 §3.5); whether the hard-stop acts under branch (а) is 52's question (canon keeps it live)"
   ],
   "daily_capsule_range_K": {
     "median": 14.46,
@@ -353,5 +420,5 @@
     "night-sky cooling in the daily range (81 has it, 71 does not)",
     "the centre pad's wire path inside the PEEK sleeve (HW.34)"
   ],
-  "verdict": "The gap is the radome's PEEK column (11.85 mm to the pocket floor) minus the board stack hanging from it, so it moves by 0.28–0.33 µm/K with both together and 0.56 µm/K when the radome leads: over the capsule requirement it closes by up to 20 µm in the cold and opens by 22 µm in the heat (33 / 36 µm with the radome-leads reading). The pins' working stroke follows the gap less the growth of their own brass body (0.031 µm/K, C36000 at 20.5 ppm/K over its 1.49 mm free length): 0.25–0.30 µm/K together, the radome's 0.56 µm/K when it leads. Against 52's minimal mitigation (L1 spacer only, ±0.112 mm, which leaves 28 µm to each window edge) the isothermal swing holds the 50–70 % window (margins 8 / 10 µm) and the radome-leads reading breaks it (-8 / -5 µm) — L1 tolerates a radome leading the stack by about 33 K at the extremes, and its isothermal margin reaches zero only for a spacing member of CTE -4.0…-5.6 ppm/K (if the B2B body, not the steel standoff, sets the spacing — its LCP CTE is not in the tree), against 52's RSS residual — a linear sum of the same two terms (±0.15 mm) leaves no room even at the assembly temperature. This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path (HW.34). Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median 14.5 K and a 95th percentile 24.9 K, a pin stroke of 3.6–13.8 µm — 0.5–2.0 % of the minimum preload once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by 0.95–1.17 µm per mm of r on a 95th-percentile day — 0.06–0.37 µm if the pins follow the board's own in-plane expansion (FR-4 11–15 ppm/K). The thermal swing is added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and the one axial term still not computed SHRINKS it — the pocket gasket (placeholder) expands as the PEEK does and pushes the stack the other way — so, for a given temperature field and the seated premises, leaving it out keeps the stroke an upper estimate (the radome-leads reading and 71's daily range are readings, not bounds). Not computed either: the stack's real centring and the centre pad's wire path (HW.34)."
+  "verdict": "The gap is the radome's PEEK column (11.85 mm to the pocket floor) minus the board stack hanging from it, so it moves by 0.28–0.33 µm/K with both together and 0.56 µm/K when the radome leads: over the capsule requirement it closes by up to 20 µm in the cold and opens by 22 µm in the heat (33 / 36 µm with the radome-leads reading). The pins' working stroke follows the gap less the growth of their own brass body (0.031 µm/K, C36000 at 20.5 ppm/K over its 1.49 mm free length): 0.25–0.30 µm/K together, the radome's 0.56 µm/K when it leads. Against 52's L1 (L1 spacer only, ±0.112 mm, which leaves 28 µm to each window edge) the isothermal swing holds the 50–70 % window (margins 8 / 10 µm) and the radome-leads reading breaks it (-8 / -5 µm) — L1 tolerates a radome leading the stack by about 33 K at the extremes, and its isothermal margin reaches zero only for a spacing member of CTE -4.0…-5.6 ppm/K (if the B2B body, not the steel standoff, sets the spacing — its LCP CTE is not in the tree), against 52's RSS residual — a linear sum of the same two terms (±0.15 mm) leaves no room even at the assembly temperature. This is the OUTER pad, with the rim and the stack seated: the centre pad rides on the wire path (HW.34). Daily, 71's capsule (a reading — its error on the range has no known sign) swings by a median 14.5 K and a 95th percentile 24.9 K, a pin stroke of 3.6–13.8 µm — 0.5–2.0 % of the minimum preload once a day — and, if the radome holds the stack in-plane, a pin at radius r slides by 0.95–1.17 µm per mm of r on a 95th-percentile day — 0.06–0.37 µm if the pins follow the board's own in-plane expansion (FR-4 11–15 ppm/K). The thermal swing is added linearly to 52's RSS residual (a systematic term on a statistical one — the conservative stacking), and the one axial term still not computed SHRINKS it — the pocket gasket (placeholder) expands as the PEEK does and pushes the stack the other way — so, for a given temperature field and the seated premises, leaving it out keeps the stroke an upper estimate (the radome-leads reading and 71's daily range are readings, not bounds). Not computed either: the stack's real centring and the centre pad's wire path (HW.34)."
 }

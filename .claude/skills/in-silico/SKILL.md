@@ -240,7 +240,7 @@ Anchor mechanics (CPU):
      on the bark and on a Zone-3 fit); a change to 102's closed form or to the flange CEM re-runs 103
   102 (importlib: Pair, soderberg_k; its cache: temperatures, the share-0 seam control, the sway shift) · 103 (its cache:
      the composite, the shares, the (CTE, share) fronts, the seam corners it controls against) · 52 (importlib: TOL_PZ ·
-     SPACER_STEP · POGO_TRAVEL_TOL · rss) · 55 (importlib: spans, liner, CEM flange shank Ø; bus_mechanical.json: the grip rows)
+     SPACER_STEP · SPACER_STEP_FINE · POGO_TRAVEL_TOL · rss; its cache: the L3 rung's residual) · 55 (importlib: spans, liner, CEM flange shank Ø; bus_mechanical.json: the grip rows)
      · 77 (anchor_torque_path.json: the sleeve section) · 86 · 90 (pogo_thermal_gap.json: the L1/L2 margins and residuals) →
      104 (pad_travel_remedies.json — the remedies' prices for the centre pad's travel, held and with the sway); a re-run of
      52, 90, 102 or 103, or a change to the flange CEM, re-runs 104
