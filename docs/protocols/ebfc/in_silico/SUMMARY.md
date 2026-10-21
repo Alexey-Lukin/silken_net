@@ -1016,7 +1016,8 @@ is a LOWER bound: it can show a ligament binding, never safe. Neither FE reading
 bound needs (the radial case is a kinematic shell loading, the axial one E[100] of a cubic lattice), so the bound holds
 only while that modulus is at least the reading; a binding claim takes the lower one. The table gives the stem's surface
 strain above which the bound alone puts the ligaments at SF 2, at a share of the wood's strain t_L = 1 and a peak over
-RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 lowers every cell, a share below 1 raises it (the share
+RMS k_p = 1, with near-uniaxial ligaments; a peak factor above 1 — the actual state's, of which the periodic case's k_p is only the
+uniaxial-state reading — lowers every cell, a share below 1 raises it (the share
 itself — `106`, the next section: it lies on both sides of 1). No cell is a strain below which the gyroid is safe.
 
 | alloy | σ_e printed, MPa | σ_e/E_s vs Ti-6Al-4V | binds above, µε: large stem (lower ⊥ higher reading) | DBH 38, sensor on bark ⊥ on xylem (thick bark), lower reading | any stress state, large stem, lower reading |
@@ -1072,7 +1073,8 @@ bearing, pressed by the sleeve's top face (31.9–49.1 MPa at 473 N). The Zone 3
 38.72 MPa (K_f at SF 2 one-sided 3.78 printed ⊥ 6.49 CNC). The capsule's mass on its lever arm stays below 0.33 MPa.
 
 ⚠️ **Bounds.** The shank's nominal is its axial term only: the pin's bending by the stem's transverse shear and its
-anticlastic curvature (S5) is not computed. E_z*, k_p and the junction's stress need a voxel field's stresses under an off-axis traction case and a
+anticlastic curvature (S5) is not computed. E_z* and k_p of the INFINITE lattice come from the periodic voxel case (`01_01 §5.2`; its k_p is a
+uniaxial-state reading, never a multiplier of this bound), which this script does not read yet; the finite part's E_z* under traction and the junction's stress need a traction case on the part and a
 junction model (gyroid + solid + sleeve end + wood); t_L is `106`'s (next section) and hangs on the tissue in the pores,
 the wood's reading and moisture, and off the cube axis on the lattice's shear modulus; the callus annulus's stiffness is unknown. `62` counts first-mode cycles,
 not strain ranges, so no amplitude here is paired with a count — the field record does that. No K_t (barb root, groove,
@@ -1096,9 +1098,11 @@ hold ratios of the E and G rows of 45, 65 and 95 % RH to the printed digit, whil
 off the tables only). Its compliances are not symmetric, so each pair's coupling is read three ways — from the test
 loaded along the pair's stiffer axis, along its softer one, or the mean — and the softer-axis reading is not a material
 at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios as one homogeneous cubic body
-(ν* 0.261; the other root breaks the Voigt bound) — kinematic-side readings, so the tensor may be stiffer than the true
-lattice's; its shear modulus C44 no FE case measures, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at
-most 3.539). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
+(ν* 0.261; the other root breaks the Voigt bound) — read as kinematic-side, i.e. possibly stiffer than the finite part under
+traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`) its in-plane dilatational term C11 + C12 is lower on every
+density-matched pairing of basis and rung, while the sign of its deviatoric term depends on the pairing — so no stiffness
+ordering between the two is established. C44 the periodic case measures for the infinite lattice; this script does not read it
+yet, so it is swept up to Voigt's ceiling φ·μ_s (a Zener ratio of at most 3.539). The cube's angle θ to the stem's axis is the anchor's rotation at install, swept 0–45°. The pores take three
 readings: nothing (the bare lattice — the composite's lower stiffness end), Voigt's
 phase bound φ·C_Ti + (1 − φ)·C_wood (its upper stiffness end, if the tissue in the pores — Phase 3's xylem — is no
 stiffer than the host's sapwood in every direction, which nothing measures), and the additive C_lattice + (1 − φ)·C_wood
@@ -1138,7 +1142,7 @@ in the Voigt phase bound) — not σ_e/E_s alone. Off the axis E[110] falls with
 falls and no binding figure exists there without C44; at θ = 45° E[110] falls under `105`'s radial reading below a Zener
 ratio of 0.598 (under the axial one below 1.000, where E[110] = E[100]).
 
-**What settles the share:** C44 (the voxel-FE leg's shear case), the tissue in the pores and the ring, which reading
+**What settles the share:** C44 (measured for the infinite lattice by the periodic voxel case, `01_01 §5.2`, not yet read here), the tissue in the pores and the ring, which reading
 of the paper's non-symmetric compliances holds, and a green wood's constants. The install angle becomes a choice only
 with C44 AND the tissue in the pores: at one C44 the angle that minimises the ligaments' stress factor √(E_z*(θ))·t_L(θ) — and so
 raises their threshold — differs between pore readings (45° on the bare and additive readings, 0° on the Voigt phase
@@ -1158,7 +1162,8 @@ stem's share is not established, in value or in direction.
 ⚠️ **Bounds.** One source and one stand (Turkey), compression, below fibre saturation. The lattice reading assumes the
 two FE cases describe one homogeneous cubic body — `VoxelFea` calls its ratios «NOT a material property» — and the
 shipped part is graded, so «cubic» holds locally; Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
-the sweep). C44, the tissue in the pores and the ring are unmeasured: the ring is read as the host's xylem (ours —
+the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
+and the ring are unmeasured: the ring is read as the host's xylem (ours —
 `01_04 §2`'s phases say nothing of it). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending
 gradient along the radius, the curved rings, the bark's proximity and the transverse shear (S5) are not modelled.
 Controls: Mura's tensor against the isotropic cylinder's closed form (seven entries), a hole in every live wood reading

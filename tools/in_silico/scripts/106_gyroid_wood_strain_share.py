@@ -35,8 +35,11 @@ anisotropic matrix): ε^I = [I + S : C_m⁻¹ : (C_I − C_m)]⁻¹ : ε^∞, wi
   axial case is E[001] = r_a·E_s (uniaxial stress between frictionless platens) and the radial case, an equibiaxial
   in-plane strain with the ends held, is C11 + C12 = r_r·E_s/((1 + ν_s)(1 − 2ν_s)) — the solid envelope's same test as
   its normaliser. Two roots; the one outside the Voigt bound φ·C_s (Loewner order) is refused. Both readings sit on the
-  kinematic side of a traction modulus (`105`), so this tensor may be stiffer than the true lattice's — an input end, not
-  shown to be the output's. C44 no FE case measures: it is swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound,
+  kinematic side of a traction modulus (`105`), so this tensor may be stiffer than the finite part under traction — while
+  against the INFINITE lattice of the periodic voxel case (01_01 §5.2) its in-plane dilatational term C11 + C12 is lower
+  on every density-matched pairing, while the sign of its deviatoric term depends on the pairing, so no stiffness ordering
+  between the two is established — an input end, not shown to be the output's. C44, which that periodic case measures
+  for the infinite lattice, is not read here: it is swept over (0, φ·μ_s] — Voigt's ceiling (a tighter bound,
   Hashin–Shtrikman's, would narrow it) — as the Zener ratio A* = 2·C44/(C11 − C12) ∈ (0, A*_V]. The cube's rotation θ
   about the anode's axis against L is the anchor's rotation at install, which the model leaves free: swept over 0–45°
   (cubic symmetry and the matrix's mirror close the rest — asserted).
@@ -63,7 +66,8 @@ the Zener ratio at which t_L crosses 1 at 45°, how many cells the additive read
 grid points fall, rise or neither across the measured moisture groups, the θ = 0 share's range and the `105` thresholds
 at its lowest on two readings, the off-axis threshold factor at the C44 grid's ends, the junction's share at θ = 0 and
 at C44 = 0; the lattice's off-axis modulus against `105`'s readings.
-CANNOT: (1) give C44 — the voxel-FE leg's shear case (00_07 HW.23) does; (2) give the stiffness of the tissue in the
+CANNOT: (1) read C44 — the periodic voxel case measures it for the infinite lattice (01_01 §5.2), and reading it into the
+share, with the body it is read on named, is open work (00_07 HW.23); (2) give the stiffness of the tissue in the
 pores or of the ring — a soft ring decouples the gyroid and drives t_L to 0 in its limit (no monotonicity shown); our
 reading of the ring (= the host's xylem) is the only ring modelled, so the lowest share here is the lowest of the
 MODELLED set, not of the admissible one; (3) give a GREEN wood's share or its direction — the source's wettest group is
@@ -96,7 +100,7 @@ from lib.utils import banner
 SI_DESCRIPTION = ("The share of a living stem's in-plane bending strain that a bonded titanium gyroid lattice takes, "
                   "from an orthotropic Eshelby solution for a circular cylinder on the measured elastic constants of "
                   "Scots pine sapwood at four moisture levels, with the lattice's cubic constants read from two voxel "
-                  "finite-element cases and its unmeasured shear modulus swept up to the Voigt bound; the install "
+                  "finite-element cases and its shear modulus, which a periodic voxel case measures for the infinite lattice and this script does not yet read, swept up to the Voigt bound; the install "
                   "angle and three readings of the pore filling are swept as well; closed forms checked against three "
                   "independent solutions, no finite elements")
 
@@ -583,7 +587,8 @@ def main() -> int:
     sd_a, sd_r = source_day["axial_richardson"], source_day["radial_richardson"]
     verdict = (
         f"t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) "
-        f"it does not depend on the lattice's unmeasured shear modulus C44; at the moistest group (95 % RH) it is "
+        f"it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel "
+        f"case, not read here); at the moistest group (95 % RH) it is "
         f"{floor_to(min(cells[k]['t_L_theta0_any_C44'] for k in rh95), 3):.3f}–"
         f"{ceil_to(max(cells[k]['t_L_theta0_any_C44'] for k in rh95), 3):.3f} over the alloys, the material symmetrisation "
         f"readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the "
@@ -620,7 +625,7 @@ def main() -> int:
             "lattice_reading": {"C11_over_E_s": lat["C11"], "C12_over_E_s": lat["C12"], "nu_star": lat["nu"],
                                 "E100_over_E_s": lat["E100"], "zener_voigt_ceiling": a_voigt,
                                 "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); "
-                                      "C44 unmeasured, swept"},
+                                      "C44 not read here (the periodic voxel case measures it for the infinite lattice), swept"},
             "theta_deg": list(THETA_DEG),
             "zener_grid": [float(a) for a in a_grid],
             "pore_readings": {
@@ -646,7 +651,7 @@ def main() -> int:
         "junction_share_sup_at_C44_zero": junction_sup,
         "ligament_factor_argmin_theta_deg_baseline_rh95_stiff": angle_probe,
         "not_computed": [
-            "C44 of the lattice — the voxel-FE leg's shear case (00_07 HW.23)",
+            "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
             "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
             "a green (above fibre saturation) wood set, and the share's direction with moisture",
             "S_1212 of an anisotropic matrix against an independent closed form",

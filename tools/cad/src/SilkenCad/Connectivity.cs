@@ -241,7 +241,10 @@ internal static class Connectivity
     // keep (it summarises clusters, it does not label cells). VoxelFea needs the labels: a floating
     // island is a rigid-body mode in a stiffness matrix, so it must be excluded from the mesh rather
     // than counted. Same 6-connectivity and the same Outside handling — one home for both.
-    internal static bool[] LargestComponentMask(in Grid grid, Phase phase)
+    // `bPeriodic` glues each face to its opposite (VoxelFea's period cell, a 3-torus): a ligament the cell
+    // boundary cuts is one body with its continuation on the far face, and read without the wrap it would be
+    // dropped as an island while it carries load in the infinite lattice.
+    internal static bool[] LargestComponentMask(in Grid grid, Phase phase, bool bPeriodic = false)
     {
         Phase[] cells = grid.Cells;
         int nx = grid.Nx, ny = grid.Ny, nz = grid.Nz;
@@ -249,6 +252,7 @@ internal static class Connectivity
         Array.Fill(aLabel, -1);
         var oStack = new Stack<int>();
         int nLabel = 0, nBest = -1, nBestSize = 0;
+        int nWrapI = bPeriodic ? (nx - 1) * ny * nz : -1, nWrapJ = bPeriodic ? (ny - 1) * nz : -1, nWrapK = bPeriodic ? nz - 1 : -1;
 
         for (int s = 0; s < cells.Length; s++)
         {
@@ -263,12 +267,12 @@ internal static class Connectivity
                 int i = c / (ny * nz);
                 int j = (c / nz) % ny;
                 int k = c % nz;
-                PushLabel(i > 0 ? c - (ny * nz) : -1, cells, aLabel, oStack, phase, nLabel);
-                PushLabel(i < nx - 1 ? c + (ny * nz) : -1, cells, aLabel, oStack, phase, nLabel);
-                PushLabel(j > 0 ? c - nz : -1, cells, aLabel, oStack, phase, nLabel);
-                PushLabel(j < ny - 1 ? c + nz : -1, cells, aLabel, oStack, phase, nLabel);
-                PushLabel(k > 0 ? c - 1 : -1, cells, aLabel, oStack, phase, nLabel);
-                PushLabel(k < nz - 1 ? c + 1 : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(i > 0 ? c - (ny * nz) : bPeriodic ? c + nWrapI : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(i < nx - 1 ? c + (ny * nz) : bPeriodic ? c - nWrapI : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(j > 0 ? c - nz : bPeriodic ? c + nWrapJ : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(j < ny - 1 ? c + nz : bPeriodic ? c - nWrapJ : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(k > 0 ? c - 1 : bPeriodic ? c + nWrapK : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(k < nz - 1 ? c + 1 : bPeriodic ? c - nWrapK : -1, cells, aLabel, oStack, phase, nLabel);
             }
             if (nSize > nBestSize) { nBestSize = nSize; nBest = nLabel; }
             nLabel++;

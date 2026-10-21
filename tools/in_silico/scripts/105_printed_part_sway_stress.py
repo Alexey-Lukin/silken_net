@@ -84,10 +84,12 @@ and whether the source day reaches it; the anode's bond force and the bearing fo
 each solid member's nominal stress, the K_f at which it reaches SF 2 per cycle reading and route, and the static mean at
 which it does; the force the sway puts on the barbs' easy flank; the junction's mismatch; the mass path.
 CANNOT: (1) show any part SAFE from the gyroid bound; give k_p, E_z* or the junction's stress — a voxel field's stresses
-under an off-axis traction case (`VoxelFea.cs` returns stiffness only, in-silico §When Modifying #24) and a junction
+under an off-axis traction case — the infinite lattice's field comes from the periodic voxel case (`fea --periodic`,
+01_01 §5.2; the lattice's elastic half is the CAD side's, in-silico §When Modifying #24), which this script does not
+read, while a traction case on the finite part exists nowhere — and a junction
 model (gyroid + solid + sleeve end + wood); (2) give t_L — `106` does (orthotropic Eshelby on Scots pine's measured
 constants), and it hangs on the tissue in the pores, the wood reading and moisture, and off the cube axis on the
-lattice's unmeasured shear modulus; the
+lattice's shear modulus (measured for the infinite lattice by the periodic voxel case, not read here); the
 callus annulus's stiffness is unknown (01_04 §2); (3) count how often a
 host's stem reaches the threshold — the field strain sensor (00_07 HW.43) does; `62` counts first-mode cycles, not
 strain ranges; (4) give any K_t, the barb rows' split, the force at which a barb row ratchets on its lead flank, the
@@ -516,8 +518,9 @@ def main() -> int:
         f"printed route ⊥ {down2(wdc['one_sided']['kf_at_sf2']):.2f} on the CNC route — the same number is its un-notched SF "
         f"when a preload ≥ F carries both halves. On the air-dry bark reading "
         f"the force is {z3_dry['force_N']:.0f} N; the mature-state disc force is not bounded. The mass path stays below "
-        f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: E_z*, k_p and the "
-        f"junction (an off-axis traction voxel case with stresses, a junction model), t_L (`106` — conditional), the "
+        f"{up2(max(v['zone3_shank_bending_MPa'] for v in mass_path.values())):.2f} MPa. Not computed: E_z* and k_p (the "
+        f"infinite lattice's come from `fea --periodic`, not read here; the finite part's — no traction case), the "
+        f"junction (a junction model), t_L (`106` — conditional), the "
         f"count of host-stem cycles above the threshold (the field sensor), any K_t, a barb row's ratchet force, the "
         f"static means, ice, the collar and lug root.")
 
@@ -582,7 +585,7 @@ def main() -> int:
         "zone3_members": zone3,
         "mass_path": mass_path,
         "not_computed": [
-            "E_z* and k_p — an off-axis traction voxel case with element stresses (VoxelFea returns stiffness only)",
+            "E_z* and k_p — the infinite lattice's come from the periodic voxel case (fea --periodic), not read here; the finite part's under traction — no case",
             "the gyroid⊥shank junction's stress — a junction model (gyroid + solid + sleeve end + wood)",
             "t_L — the share of the wood's in-plane strain the bonded gyroid takes: `106`, conditional on the tissue in the pores, the wood reading and C44",
             "the count of host-stem strain cycles above the threshold — the field strain sensor, 00_07 HW.43",

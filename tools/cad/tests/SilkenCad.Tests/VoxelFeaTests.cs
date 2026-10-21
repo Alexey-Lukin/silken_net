@@ -453,6 +453,235 @@ public class VoxelFeaTests
         }
     }
 
+    // ── Periodic homogenisation (`fea --periodic`, VoxelFea.PeriodicHomogenization, 00_07 HW.23) ─────────────────────
+    //
+    // 🔑 Same shape as the rest of this file: every pin is a case whose answer is known before the solve, so the tensor
+    // `106` is to read its C44 from, and the field `105` its peak from, are proven right, not merely stable.
+
+    private static Connectivity.Grid Box(int nx, int ny, int nz, float fStepMm, Func<int, int, int, bool> fnSolid)
+    {
+        var aCells = new Phase[nx * ny * nz];
+        var grid = new Connectivity.Grid(aCells, nx, ny, nz, fStepMm);
+        for (int i = 0; i < nx; i++)
+            for (int j = 0; j < ny; j++)
+                for (int k = 0; k < nz; k++)
+                    aCells[grid.Index(i, j, k)] = fnSolid(i, j, k) ? Phase.Solid : Phase.Pore;
+        return grid;
+    }
+
+    // 🔴 THE calibration of the periodic case. A fully solid cell takes every macro strain homogeneously — the fluctuation
+    // is zero and the load K·(E·x) cancels at every node of the torus — so the tensor must be the solid's own, entry for
+    // entry, to round-off. One number per entry checks the wrap, the load assembly, the Gauss-point stress average and the
+    // cell-volume convention together.
+    // MUTATION: mesh the cell OPEN (`Build` for `BuildPeriodic`) ⇒ the far faces carry an unbalanced load, the fluctuation
+    // relaxes them, and the cell's rotations are left unpinned — the tensor leaves the solid's.
+    // ⚠️ Blind by construction to a CONSISTENTLY twisted gluing of the faces: any consistent gluing of a solid cell admits the
+    // same homogeneous solution. The two-period and cubic pins below are the ones a twist would break.
+    [Fact]
+    public void A_Solid_Period_Cell_Returns_The_Solid_Tensor_Exactly()
+    {
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(Box(4, 4, 6, 0.25f, (_, _, _) => true));
+        double[,] aD = VoxelFea.IsotropicStiffness(VoxelFea.SolidPoissonRatio);
+        Assert.True(r.Converged);
+        for (int i = 0; i < 6; i++)
+            for (int j = 0; j < 6; j++)
+                Assert.True(Math.Abs(r.C[i, j] - aD[i, j]) < 1e-12,
+                    $"C[{i},{j}] = {r.C[i, j]:F12} against the solid's {aD[i, j]:F12} — a homogeneous field has no discretisation error");
+    }
+
+    // 🔴 The non-trivial closed form: a periodic SLAB (solid layers in a pore matrix, stacked along z). In-plane the
+    // layers are free on both faces, so any in-plane strain puts them in PLANE STRESS — they must contract through their
+    // thickness, a fluctuation the solver has to find — and the cell carries the plane-stress stiffness times the solid
+    // fraction; across the layers it carries nothing at all. Exact for trilinear hexes (every field is linear), so it
+    // checks the wrap in x and y, the fluctuation, the load and the average at once.
+    // MUTATION: drop the macro-strain load (`aLoad` all zero) ⇒ the fluctuation is zero, the layers keep ε_zz = 0 and the
+    // in-plane entries read the plane-STRAIN stiffness (λ + 2μ)·φ instead.
+    [Fact]
+    public void A_Periodic_Slab_Reads_Plane_Stress_Times_Its_Fraction_And_Nothing_Across()
+    {
+        const double dFraction = 0.5;
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(
+            Box(4, 4, 8, 0.25f, (_, _, k) => k is >= 2 and < 6), dTol: 1e-12);
+        double nu = VoxelFea.SolidPoissonRatio, dMu = 1.0 / (2.0 * (1.0 + nu));
+        double dPlane = dFraction / (1.0 - (nu * nu));
+        Assert.True(r.Converged);
+        (int I, int J, double Expected, string What)[] aCases =
+        [
+            (0, 0, dPlane, "C11 = φ·E/(1 − ν²)"), (1, 1, dPlane, "C22"), (0, 1, dPlane * nu, "C12 = φ·νE/(1 − ν²)"),
+            (5, 5, dFraction * dMu, "C66 = φ·μ"), (2, 2, 0.0, "C33 — nothing across the layers"),
+            (3, 3, 0.0, "C44"), (4, 4, 0.0, "C55"), (0, 2, 0.0, "C13"),
+        ];
+        foreach ((int i, int j, double dExpected, string strWhat) in aCases)
+            Assert.True(Math.Abs(r.C[i, j] - dExpected) < 1e-9,
+                $"{strWhat}: C[{i},{j}] = {r.C[i, j]:F12}, the closed form gives {dExpected:F12}");
+    }
+
+    // 🔴 A ligament the cell boundary cuts is ONE body with its continuation on the far face. Two pieces that touch only
+    // through the wrap must be kept together on the torus and split without it.
+    // MUTATION: drop the wrap terms in Connectivity.LargestComponentMask (`bPeriodic ? c + nWrapI : -1` → `-1`) ⇒ reds.
+    [Fact]
+    public void The_Periodic_Mask_Keeps_A_Body_That_Is_Whole_Only_Across_The_Wrap()
+    {
+        Connectivity.Grid grid = Box(8, 2, 2, 0.25f, (i, _, _) => i is 0 or 1 or 7);
+        int nPeriodic = Connectivity.LargestComponentMask(grid, Phase.Solid, bPeriodic: true).Count(b => b);
+        int nOpen = Connectivity.LargestComponentMask(grid, Phase.Solid).Count(b => b);
+        Assert.Equal(12, nPeriodic); // i = 7 wraps onto i = 0: one body of three layers
+        Assert.Equal(8, nOpen);      // without the wrap the two-layer piece is the largest
+    }
+
+    // 🔴 The cell is ONE period of an infinite lattice, so two periods are the same lattice: their tensors must agree to the
+    // solver's precision. A seam the wrap fails to glue cuts the lattice into slabs one cell thick, and a one-period cell and a
+    // two-period cell then hold slabs of different thickness. (The slab pin above never wraps in z — its seams are pore — so
+    // this and the solid-cell pin are the two that hold the z seam.)
+    // ⚠️ Relabelling the torus (`(i + 1) % nx` for `i % nx`) is NOT a defect this can see, and must not be listed as one: it
+    // renames every node consistently, so the mesh is the same lattice and the tensor does not move.
+    // MUTATION: cut the z seam in BuildPeriodic (`k % nz` → `Math.Min(k, nz - 1)`) ⇒ the two cells disagree and this reds.
+    [Fact]
+    public void One_Period_And_Two_Periods_Of_The_Gyroid_Give_One_Tensor()
+    {
+        VoxelFea.PeriodicResult rOne = VoxelFea.PeriodicHomogenization(VoxelFea.SampleLatticeCube(2.0f, 0.10f, bNetwork: true, 1, 8), dTol: 1e-11);
+        VoxelFea.PeriodicResult rTwo = VoxelFea.PeriodicHomogenization(VoxelFea.SampleLatticeCube(2.0f, 0.10f, bNetwork: true, 2, 8), dTol: 1e-11);
+        Assert.True(rOne.Converged && rTwo.Converged);
+        Assert.True(Math.Abs(rOne.SolidFraction - rTwo.SolidFraction) < 1e-12, "two periods of one lattice hold the same metal fraction");
+        double dScale = rOne.C[0, 0];
+        for (int i = 0; i < 6; i++)
+            for (int j = 0; j < 6; j++)
+                Assert.True(Math.Abs(rOne.C[i, j] - rTwo.C[i, j]) < 1e-7 * dScale,
+                    $"C[{i},{j}]: one period {rOne.C[i, j]:F10}, two periods {rTwo.C[i, j]:F10}");
+    }
+
+    // 🔴 The gyroid's cyclic axis permutation (x, y, z) → (y, z, x) maps the lattice onto itself, so it maps the SAMPLED grid
+    // onto itself too — checked first, cell for cell, because a tensor pin on a grid that is not symmetric would be judging the
+    // sampler — and then the three cubic families of the tensor must be flat to the solver's precision, with the averaged
+    // stress matching the strain energy (Hill–Mandel) and every pair of solves reciprocal.
+    // ⚠️ Hill–Mandel is an IDENTITY of the formulation (CG from zero keeps the iterate orthogonal to its residual), so its
+    // assert catches a stress readout inconsistent with the energy — never a wrong solution; the closed forms above hold that.
+    // MUTATION: swap two Voigt shear rows in StrainDisplacementAt (γ_yz ⇄ γ_zx) ⇒ the shear family splits and the readout no
+    // longer matches the energy.
+    [Fact]
+    public void The_Gyroid_Period_Cell_Is_Cubic_And_Its_Stress_Matches_Its_Energy()
+    {
+        Connectivity.Grid grid = VoxelFea.SampleLatticeCube(2.0f, 0.10f, bNetwork: true, 1, 12);
+        for (int i = 0; i < grid.Nx; i++)
+            for (int j = 0; j < grid.Ny; j++)
+                for (int k = 0; k < grid.Nz; k++)
+                    Assert.Equal(grid.Cells[grid.Index(i, j, k)], grid.Cells[grid.Index(j, k, i)]);
+
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, dTol: 1e-11);
+        VoxelFea.CubicReading cubic = VoxelFea.Cubic(r.C);
+        Assert.True(r.Converged);
+        Assert.True(cubic.EquivalentSpread < 1e-7, $"a cubic family spreads by {cubic.EquivalentSpread:E2}");
+        Assert.True(r.HillMandelWorst < 1e-9, $"averaged stress against strain energy: {r.HillMandelWorst:E2}");
+        Assert.True(r.ReciprocityWorst < 1e-9, $"C is not symmetric: {r.ReciprocityWorst:E2}");
+        Assert.True(cubic.C44 > 0.0 && cubic.C11 > cubic.C12, "a stable cubic body has C44 > 0 and C11 > C12");
+    }
+
+    // 🔴 The field reading on the case where the field is known everywhere: a solid cell under a unit uniaxial stress at any
+    // angle is uniform — every Gauss point carries exactly that stress, so its largest principal stress, its von Mises and
+    // the energy-equivalent RMS are all 1, and the modulus along the direction is E_solid.
+    // MUTATION: superpose the six fields with the macro STRESS instead of the macro strain (`aSigmaMacro[k]` for
+    // `aStrainMacro[k]`) ⇒ the field is no longer uniaxial and the quantiles leave 1.
+    [Fact]
+    public void A_Solid_Cell_Under_Uniaxial_Stress_Reads_A_Uniform_Unit_Field()
+    {
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(Box(4, 4, 4, 0.25f, (_, _, _) => true), [30.0]);
+        VoxelFea.UniaxialField f = Assert.Single(r.Fields);
+        Assert.True(Math.Abs(f.ModulusRatio - 1.0) < 1e-12, $"E along 30° = {f.ModulusRatio:F12} of E_solid");
+        Assert.True(Math.Abs(f.SigmaWPerMacroStress - 1.0) < 1e-12, $"σ_W = {f.SigmaWPerMacroStress:F12} for a unit stress");
+        foreach (double q in f.PrincipalOverSigmaW.Concat(f.VonMisesOverSigmaW))
+            Assert.True(Math.Abs(q - 1.0) < 1e-9, $"a uniform field read a quantile of {q:F12} over σ_W");
+        Assert.True(f.EnergyIdentityResidual < 1e-12);
+    }
+
+    // 🔴 On the real lattice the field is NOT uniform, and the check that it is the right field is energetic: the Gauss-point
+    // energy of the superposed field, over the metal and back to the cell, must equal the macro energy the tensor gives
+    // (½·Σ²/E_dir) — a superposition with wrong coefficients, or a stress read at points the element matrix does not integrate,
+    // breaks it. Along the cube axis the modulus must also be the cubic reading's E[100], and RMS can never exceed the peak.
+    // MUTATION: read the field at the element CENTROID instead of the eight Gauss points ⇒ the averaged strain loses its
+    // bending part and the energy falls short of the tensor's; drop `Array.Sort(aPrincipal)` ⇒ the quantiles stop ascending.
+    [Fact]
+    public void The_Gyroid_Field_Energy_Reproduces_The_Tensor_It_Was_Superposed_From()
+    {
+        VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(
+            VoxelFea.SampleLatticeCube(2.0f, 0.10f, bNetwork: true, 1, 12), [0.0, 45.0], dTol: 1e-11);
+        VoxelFea.CubicReading cubic = VoxelFea.Cubic(r.C);
+        foreach (VoxelFea.UniaxialField f in r.Fields)
+        {
+            Assert.True(f.EnergyIdentityResidual < 1e-8, $"θ = {f.ThetaDeg}: field energy against the tensor's, {f.EnergyIdentityResidual:E2}");
+            // Canon quotes p50…p99.9 from this field, so the quantiles themselves are pinned: ascending, straddling the RMS on a
+            // field that is not uniform, and consistent with the share of metal above the RMS.
+            double[] q = f.PrincipalOverSigmaW;
+            for (int i = 1; i < q.Length; i++)
+                Assert.True(q[i] >= q[i - 1], $"θ = {f.ThetaDeg}: quantile {VoxelFea.FieldQuantiles[i]} reads {q[i]:F4} below its predecessor {q[i - 1]:F4} — the sample is not sorted");
+            Assert.True(q[0] < 1.0 && q[^1] > 1.0, $"θ = {f.ThetaDeg}: a non-uniform field must have its median below the RMS and its peak above");
+            int iFirstAbove = Array.FindIndex(q, x => x > 1.0);
+            Assert.True(f.ShareAboveSigmaW <= 1.0 - VoxelFea.FieldQuantiles[iFirstAbove - 1] + 1e-12 && f.ShareAboveSigmaW > 0.0,
+                $"θ = {f.ThetaDeg}: {f.ShareAboveSigmaW:P2} of the metal above the RMS is inconsistent with quantile {VoxelFea.FieldQuantiles[iFirstAbove - 1]} at {q[iFirstAbove - 1]:F4}");
+        }
+        Assert.True(Math.Abs((r.Fields[0].ModulusRatio / cubic.E100) - 1.0) < 1e-7,
+            $"E along [100] from the field {r.Fields[0].ModulusRatio:F10} against the cubic reading {cubic.E100:F10}");
+        Assert.True(Math.Abs((r.Fields[1].ModulusRatio / cubic.E110) - 1.0) < 1e-7,
+            $"E along [110] from the field {r.Fields[1].ModulusRatio:F10} against the cubic reading {cubic.E110:F10}");
+    }
+
+    // The closed-form principal stresses keep the three invariants of any symmetric tensor: the trace, the squared norm and
+    // the determinant — a sign or a phase slip in the trigonometric form breaks at least one.
+    // MUTATION: take the middle root as `dQ − dS1 − dS3` (drop the factor 3) ⇒ the trace reds.
+    [Fact]
+    public void Principal_Stresses_Keep_The_Three_Invariants()
+    {
+        var rng = new Random(20261021);
+        for (int n = 0; n < 2000; n++)
+        {
+            double[] s = [.. Enumerable.Range(0, 6).Select(_ => (2.0 * rng.NextDouble()) - 1.0)];
+            (double s1, double s2, double s3) = VoxelFea.PrincipalStresses(s);
+            Assert.True(s1 >= s2 && s2 >= s3, "principal stresses must come back ordered");
+            double dTrace = s[0] + s[1] + s[2];
+            double dNorm = (s[0] * s[0]) + (s[1] * s[1]) + (s[2] * s[2]) + (2.0 * ((s[3] * s[3]) + (s[4] * s[4]) + (s[5] * s[5])));
+            double dDet = (s[0] * ((s[1] * s[2]) - (s[3] * s[3]))) - (s[5] * ((s[5] * s[2]) - (s[3] * s[4]))) + (s[4] * ((s[5] * s[3]) - (s[1] * s[4])));
+            Assert.True(Math.Abs(s1 + s2 + s3 - dTrace) < 1e-12, "trace");
+            Assert.True(Math.Abs((s1 * s1) + (s2 * s2) + (s3 * s3) - dNorm) < 1e-11, "squared norm");
+            Assert.True(Math.Abs((s1 * s2 * s3) - dDet) < 1e-11, "determinant");
+        }
+    }
+
+    // The two refusals: an odd cell count glues two elements of one colour across the wrap (a data race in the scatter), and
+    // an Outside cell means the grid is a specimen with a boundary, not a period cell.
+    [Fact]
+    public void The_Periodic_Case_Refuses_An_Odd_Cell_Count_And_An_Outside_Cell()
+    {
+        Assert.Throws<ArgumentException>(() => VoxelFea.PeriodicHomogenization(Box(4, 4, 5, 0.25f, (_, _, _) => true)));
+        Connectivity.Grid grid = Box(4, 4, 4, 0.25f, (_, _, _) => true);
+        grid.Cells[0] = Phase.Outside;
+        Assert.Throws<ArgumentException>(() => VoxelFea.PeriodicHomogenization(grid));
+    }
+
+    // 🔴 A periodic cache name carries topology, wall level and cell count, never lands on a committed file of another
+    // family, and refuses a level it would have to round (two levels on one file is the quiet overwrite of picogk gotcha #14).
+    // ⚠️ The period and the field angles are NOT in the name: fea_canon_sync holds the period against the cube ladder and
+    // each field row by its angle, so a run at another period or angle set reds the gate rather than this pin.
+    // MUTATION: drop the cell token from Program.PeriodicCacheName ⇒ one and two cells share a file and the uniqueness half reds.
+    [Fact]
+    public void Periodic_Cache_Names_Carry_Topology_Wall_And_Cells_And_Never_Land_On_Another_Family()
+    {
+        string strCache = Path.Combine(Path.GetDirectoryName(CemFixtures.Dir())!, "cache", "fea");
+        HashSet<string> aOthers = [.. Directory.GetFiles(strCache, "*.json").Select(p => Path.GetFileName(p))
+            .Where(n => !n.StartsWith("periodic_homogenization.", StringComparison.Ordinal))];
+        Assert.Contains("anchor_zone1_pine.json", aOthers); // counter-lamp: the pinned part sweep is in the set
+
+        var oRowOfName = new Dictionary<string, string>();
+        foreach (bool bSheet in new[] { false, true })
+            foreach (float fWall in new[] { -0.40f, -0.15f, 0.0f, 0.05f, 0.10f, 0.60f })
+                foreach (int nCells in new[] { 1, 2, 3 })
+                {
+                    string strName = Program.PeriodicCacheName(bSheet, fWall, nCells)!;
+                    Assert.DoesNotContain(strName, aOthers);
+                    string strRow = $"{(bSheet ? "sheet" : "network")} · {fWall} · {nCells}";
+                    Assert.True(oRowOfName.TryAdd(strName, strRow), $"{strName} would hold two rows: {oRowOfName.GetValueOrDefault(strName)} and {strRow}");
+                }
+        Assert.Null(Program.PeriodicCacheName(false, 0.1005f, 1));
+    }
+
     // 🔴 (ґ) A dilation cache name can never land on a pinned file, nor on another dilation row. The other `fea` families'
     // committed files are read from the directory itself, never from a roster, and every name the verb can write for a
     // shipped anchor — both elements, every offset either element sweeps by default, each committed step token, rod or not

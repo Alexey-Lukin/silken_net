@@ -173,7 +173,7 @@
       "nu_star": 0.2606592365156742,
       "E100_over_E_s": 0.09419304523408444,
       "zener_voigt_ceiling": 3.538418067413779,
-      "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); C44 unmeasured, swept"
+      "is": "both FE cases read as ONE homogeneous cubic body (kinematic-side readings); C44 not read here (the periodic voxel case measures it for the infinite lattice), swept"
     },
     "theta_deg": [
       0.0,
@@ -2650,7 +2650,7 @@
     }
   },
   "not_computed": [
-    "C44 of the lattice — the voxel-FE leg's shear case (00_07 HW.23)",
+    "C44 read into the share — the periodic voxel case measures it for the infinite lattice; reading it is open (00_07 HW.23)",
     "the stiffness of the tissue in the pores and of the ring — a soft ring drives t_L to 0 in its limit",
     "a green (above fibre saturation) wood set, and the share's direction with moisture",
     "S_1212 of an anisotropic matrix against an independent closed form",
@@ -2662,5 +2662,5 @@
     "t_L_rise_with_C44_worst": 0.0,
     "mirror_45_worst": 2.6645352591003757e-15
   },
-  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's unmeasured shear modulus C44; at the moistest group (95 % RH) it is 0.267–1.641 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (20 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the modelled set (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading, and its median for none; at t_L = 1 on the axial reading the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem and stops below fibre saturation, so its lowest share is not a floor."
+  "verdict": "t_L is not 1, and it lies on both sides of 1 over the modelled set. With a cube axis on the stem's axis (θ = 0) it does not depend on the lattice's shear modulus C44 (measured for the infinite lattice by the periodic voxel case, not read here); at the moistest group (95 % RH) it is 0.267–1.641 over the alloys, the material symmetrisation readings and the three pore readings, and which side of 1 it takes depends on the pore reading and on the symmetrisation reading. Off that axis C44 enters too: t_L falls as C44 rises, and at θ = 45° it crosses 1 inside the admissible C44 in 88 of the 120 cells the lattice's C44 enters. The pore readings' stiffness ends do not bracket the share (20 cell-fields fall outside them). Across the source's moisture groups the share takes no single direction. For 105, the only C44-free binding figure is at θ = 0 (E_z* = E[100] of this tensor): at the lowest θ = 0 share of the modelled set (Ti-6Al-4V 0.342, Ti-6Al-7Nb 0.350, CP-Ti-Gr4 0.354, beta-Ti-13Nb-13Zr 0.405, Ta 0.267, Ti-15Zr 0.360) the source day's upper whisker exceeds the large-stem threshold for Ta on this tensor's E[100] and for Ta on 105's lower reading, and its median for none; at t_L = 1 on the axial reading the upper whisker exceeded it for CP-Ti-Gr4, Ta, Ti-6Al-4V, Ti-6Al-7Nb and the median for CP-Ti-Gr4, Ta. Off the axis the threshold has no ceiling as C44 falls. The modelled set reads the ring as the host's xylem and stops below fibre saturation, so its lowest share is not a floor."
 }

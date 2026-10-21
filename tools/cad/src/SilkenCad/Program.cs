@@ -39,7 +39,7 @@ internal static class Program
                     ? BuildRecord.Print(args[1..], CadRev())
                     : Fail("usage: CAD_REV=$(git rev-parse HEAD) build-record <cem.json>... > <batch>.json"),
                 // Voxel-FE elasticity (VoxelFea.cs) — pure-managed like `draw`, no Library.Go.
-                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder"),
+                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder | fea --periodic"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
                 // Falsifiable probes of KERNEL assumptions (Probe.cs) — not of our geometry.
@@ -1185,6 +1185,9 @@ internal static class Program
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]\n" +
             "  fea <cem.json> --fit --walls <list>   the same fit on the shipped part  [--step-div N | --step-mm H | --with-radial]\n" +
+            "  fea --periodic    the lattice's EFFECTIVE tensor (C11 · C12 · C44) and its ligament stress field, periodic conditions on one\n" +
+            "                    period cell — a material, not the part → cache/fea/periodic_homogenization.*  [--wall | --period | --cells |\n" +
+            "                    --steps-per-period | --thetas | --sheet]\n" +
             "  render <cem.json> PicoGK native-viewer screenshot → out/*.png (needs a display)\n" +
             "  section <cem.json>  the same as a −X cutaway\n" +
             "  probe <voxel-mm>  falsifiable probes of PicoGK-kernel assumptions, not of our geometry");
@@ -1219,9 +1222,19 @@ internal static class Program
         {
             // ⛔ One axis per run: `--dilate` sweeps the face OFFSET at one step. A flag of another axis silently
             //    ignored would write an intent-shaped row under a caption nobody asked for, so it is refused.
-            if (args.Contains("--fit") || args.Contains("--ladder") || args.Contains("--sweep"))
-                return Fail("fea --dilate sweeps the face offset at ONE step — run --sweep, --fit and --ladder separately");
+            if (args.Contains("--fit") || args.Contains("--ladder") || args.Contains("--sweep") || args.Contains("--periodic"))
+                return Fail("fea --dilate sweeps the face offset at ONE step — run --sweep, --fit, --ladder and --periodic separately");
             return FeaDilation(args);
+        }
+        if (args.Contains("--periodic"))
+        {
+            // ⛔ One specimen per run: the periodic case reads the MATERIAL (a period cell), every other verb a specimen —
+            //    a flag of theirs silently ignored here would caption a material number as a part's.
+            string[] aForeign = ["--fit", "--ladder", "--sweep", "--step-div", "--step-mm", "--walls", "--with-radial", "--face-offsets-mm"];
+            if (args.Any(a => aForeign.Contains(a) || a.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+                return Fail("fea --periodic reads one period cell of the lattice at its own --steps-per-period ladder, not a manifest — " +
+                            "a part or cube flag here would be silently ignored, so run those verbs separately");
+            return FeaPeriodic(args);
         }
         // ⚠️ `--fit` has TWO specimens and canon 01_01 §5.2 asks for BOTH: the lattice cube answers
         //    "what are C and n for this material", the shipped part answers "does the part lie on
@@ -1578,6 +1591,145 @@ internal static class Program
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"→ {strOut}");
         return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The lattice's EFFECTIVE tensor and its ligament stress field, under PERIODIC conditions on one period cell
+    // (VoxelFea.PeriodicHomogenization, 00_07 HW.23). It answers what the specimen verbs cannot: the shear modulus C44 — no
+    // specimen case loads shear — and, per in-plane angle θ from [100] in the (001) plane (the plane across the anchor's axis),
+    // the modulus under uniaxial STRESS and the ligaments' peak over their RMS energy-equivalent stress.
+    // ⚠️ The specimen is the MATERIAL, not the part — the declared ceiling lives in VoxelFea; the part's own numbers are
+    // `fea <cem>`. Rows are steps-per-period (the staircase ladder); the file is one topology · wall · cell count, and its name
+    // carries all three, so a run at another wall or cell count can never land on a committed ladder (picogk gotcha #14).
+    private static int FeaPeriodic(string[] args)
+    {
+        float fPeriod = ArgFloat(args, "--period", 2.0f);
+        float fWall = ArgFloat(args, "--wall", 0.10f);
+        bool bSheet = args.Contains("--sheet");
+        int nCells = ArgInt(args, "--cells", 1);
+        int[] aSteps = [.. (ArgStr(args, "--steps-per-period", PeriodicDefaultSteps) ?? "").Split(',').Select(s => int.Parse(s.Trim()))];
+        double[] aThetas = [.. (ArgStr(args, "--thetas", "0,22.5,45") ?? "").Split(',')
+            .Select(s => double.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture))];
+        string? strName = PeriodicCacheName(bSheet, fWall, nCells);
+        if (strName is null)
+            return Fail($"fea --periodic: the wall {fWall} is not a whole thousandth — the cache name carries it in thousandths");
+        if (aSteps.Any(s => s * nCells % 2 != 0))
+            return Fail("fea --periodic: every steps-per-period × cells must be even — the periodic colouring needs it (VoxelFea)");
+
+        Console.WriteLine($"fea --periodic — {(bSheet ? "sheet" : "network")} gyroid, period {fPeriod} mm, wall {fWall}, " +
+                          $"{nCells}-cell period cell, ν = {VoxelFea.SolidPoissonRatio}");
+        Console.WriteLine("  ⚠️ a MATERIAL property of the infinite lattice at this level — not the shipped part (finite, graded, cut at its rim);");
+        Console.WriteLine("     the cube is phase-locked, so the staircase reads as scatter along the ladder — read the ladder, never a row; a");
+        Console.WriteLine("     field MAXIMUM does not converge along it — the quantiles are the reading, the max is not.");
+        Console.WriteLine($"{"steps",6} {"elements",10} {"poros.",8} {"C11/Es",9} {"C12/Es",9} {"C44/Es",9} {"nu*",7} {"Zener",7} " +
+                          $"{"E100/Es",9} {"E110/Es",9} {"HM",8} {"recip",8}");
+
+        var aRows = new List<Dictionary<string, object>>();
+        double dCalibration = double.NaN;
+        bool bConverged = true;
+        foreach (int nSteps in aSteps)
+        {
+            Connectivity.Grid grid = VoxelFea.SampleLatticeCube(fPeriod, fWall, !bSheet, nCells, nSteps);
+            if (double.IsNaN(dCalibration))
+            {
+                // A fully solid cell must return the solid's own tensor to round-off (VoxelFeaTests) — run once, on the
+                // cheapest rung, as proof rather than as an assertion.
+                double[,] aCs = VoxelFea.PeriodicHomogenization(VoxelFea.SolidCounterpart(grid)).C;
+                double[,] aD = VoxelFea.IsotropicStiffness(VoxelFea.SolidPoissonRatio);
+                dCalibration = 0.0;
+                for (int i = 0; i < 6; i++)
+                    for (int j = 0; j < 6; j++)
+                        dCalibration = Math.Max(dCalibration, Math.Abs(aCs[i, j] - aD[i, j]));
+            }
+
+            VoxelFea.PeriodicResult r = VoxelFea.PeriodicHomogenization(grid, aThetas);
+            VoxelFea.CubicReading cubic = VoxelFea.Cubic(r.C);
+            bConverged &= r.Converged;
+            double dPorosity = Connectivity.Porosity(grid);
+            Console.WriteLine($"{nSteps,6} {r.Elements,10:N0} {dPorosity,8:P1} {cubic.C11,9:F5} {cubic.C12,9:F5} {cubic.C44,9:F5} " +
+                              $"{cubic.Nu,7:F4} {cubic.Zener,7:F4} {cubic.E100,9:F5} {cubic.E110,9:F5} {r.HillMandelWorst,8:E1} {r.ReciprocityWorst,8:E1}");
+            foreach (VoxelFea.UniaxialField f in r.Fields)
+                Console.WriteLine($"         θ {f.ThetaDeg,5:0.##}°  E/Es {f.ModulusRatio:F5}  σ_W/Σ {f.SigmaWPerMacroStress:F4}  max|σ_i|/σ_W " +
+                                  string.Join(" ", VoxelFea.FieldQuantiles.Select((q, i) => $"{QuantileLabel(q)} {f.PrincipalOverSigmaW[i]:F3}")) +
+                                  $"  · above σ_W {f.ShareAboveSigmaW:P1}");
+
+            static Dictionary<string, double> Quantiles(double[] a)
+                => VoxelFea.FieldQuantiles.Select((q, i) => (QuantileLabel(q), a[i])).ToDictionary(p => p.Item1, p => p.Item2);
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["steps_per_period"] = nSteps,
+                ["step_mm"] = r.StepMm,
+                ["cells_per_side"] = nCells,
+                ["elements"] = r.Elements,
+                ["dofs"] = r.Dofs,
+                ["porosity"] = dPorosity,
+                ["solid_fraction_meshed"] = r.SolidFraction,
+                ["discarded_island_fraction"] = r.DiscardedIslandFraction,
+                ["C"] = Enumerable.Range(0, 6).Select(i => Enumerable.Range(0, 6).Select(j => r.C[i, j]).ToArray()).ToArray(),
+                ["C11"] = cubic.C11,
+                ["C12"] = cubic.C12,
+                ["C44"] = cubic.C44,
+                ["nu_star"] = cubic.Nu,
+                ["zener"] = cubic.Zener,
+                ["E100"] = cubic.E100,
+                ["E110"] = cubic.E110,
+                ["cubic_equivalent_spread"] = cubic.EquivalentSpread,
+                ["cubic_off_axis_max"] = cubic.OffCubicMax,
+                ["hill_mandel_worst"] = r.HillMandelWorst,
+                ["reciprocity_worst"] = r.ReciprocityWorst,
+                ["iterations"] = r.Iterations,
+                ["residuals"] = r.Residuals,
+                ["converged"] = r.Converged,
+                ["fields"] = r.Fields.Select(f => new Dictionary<string, object>
+                {
+                    ["theta_deg"] = f.ThetaDeg,
+                    ["modulus_ratio"] = f.ModulusRatio,
+                    ["sigma_w_per_macro_stress"] = f.SigmaWPerMacroStress,
+                    ["energy_identity_residual"] = f.EnergyIdentityResidual,
+                    ["principal_over_sigma_w"] = Quantiles(f.PrincipalOverSigmaW),
+                    ["von_mises_over_sigma_w"] = Quantiles(f.VonMisesOverSigmaW),
+                    ["share_above_sigma_w"] = f.ShareAboveSigmaW,
+                }).ToArray(),
+            });
+        }
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        string strOut = Path.Combine("cache", "fea", strName);
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "Effective stiffness of the lattice (Voigt [xx, yy, zz, yz, zx, xy], engineering shear, units of E_solid) and its "
+                      + "ligament stress field under a unit uniaxial macro stress along (cos θ, sin θ, 0), from PERIODIC conditions on one "
+                      + "period cell — a MATERIAL property of the infinite lattice, not the shipped part, nor the finite part's modulus under "
+                      + "traction. Read the steps ladder, never a row. Field quantiles are over Gauss points; the max does not "
+                      + "converge along the ladder and is not a reading.",
+            ["boundary_condition"] = "periodic",
+            ["topology"] = bSheet ? "sheet" : "network",
+            ["period_mm"] = fPeriod,
+            ["wall_param"] = fWall,
+            ["cells_per_side"] = nCells,
+            ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
+            ["solid_calibration_max_abs_error"] = dCalibration,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"solid calibration |C − D|max {dCalibration:E1} · → {strOut}");
+        return bConverged ? 0 : 1;
+    }
+
+    // The ladder a bare `fea --periodic` writes — the committed one, so a run without flags reproduces the file rather than
+    // replacing it with a shorter ladder (picogk gotcha #14).
+    internal const string PeriodicDefaultSteps = "16,24,32,48,64";
+
+    private static string QuantileLabel(double q) => q >= 1.0 ? "max" : $"p{q * 100:0.#}";
+
+    // The file of one periodic ladder: topology · wall (in thousandths, `m` for a negative level) · cells. Null when the wall
+    // is not a whole thousandth, because then the name would round two different levels onto one file.
+    internal static string? PeriodicCacheName(bool bSheet, float fWall, int nCells)
+    {
+        double dMilli = fWall * 1000.0;
+        long nMilli = (long)Math.Round(dMilli);
+        if (Math.Abs(dMilli - nMilli) > 1e-3)
+            return null;
+        string strWall = nMilli < 0 ? $"m{-nMilli}" : $"{nMilli}";
+        return $"periodic_homogenization.{(bSheet ? "sheet" : "network")}.w{strWall}.c{nCells}.json";
     }
 
     // The Gibson-Ashby COEFFICIENTS, measured instead of assumed (00_07 HW.33).

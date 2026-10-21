@@ -30,6 +30,9 @@
 #      two cache families by the same log-log interpolation canon describes.
 #   7. THE CANONICAL PAIR (§5.2/§5.5) — the ratified lattice · axial · `/32` C/n wherever canon states it in prose,
 #      and the two E figures canon computes with it, re-derived at the tolerance each input actually carries.
+#   8. THE PERIODIC TENSOR AND FIELD (§5.2, HW.23) — the effective-tensor ladder and the field-quantile rows against
+#      `periodic_homogenization.*`, that file's provenance and controls, and every sentence canon derives from it —
+#      including the one that sets it beside the PART's two readings, recomputed by `105`'s own Richardson rule.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS, never the prose around them. A row can match perfectly under a sentence that
@@ -195,6 +198,22 @@ end
 if (m = canon[/повний розкид по всіх шести рунгах ([0-9.]+) %/, 1])
   anchors += 1
   flag(failures, "ladder full spread", spread_pct.round(2), m.to_f) if (m.to_f - spread_pct).abs > 0.01
+end
+
+# The Richardson row of the sweep table and the one sentence that derives from it — UNPINNED until 2026-10-21, and
+# stale from the welded re-measurement of 2026-09-18 until then: the row still carried the printed-core era's band, so
+# a correct cache stood under a wrong extrapolation for a month with every layer green.
+pair = sweep["rows"].sort_by { |r| r["step_mm"] }.first(2)
+richardson = ->(key, order) { pair[0][key] + ((pair[0][key] - pair[1][key]) / (((pair[1]["step_mm"] / pair[0]["step_mm"])**order) - 1.0)) }
+if (m = canon.match(/\| екстраполяція Річардсона \(1-й ⊥ 2-й порядок\) \| ([0-9.]+)–([0-9.]+) \| ([0-9.]+)–([0-9.]+) \|/))
+  anchors += 1
+  want = [ richardson.call("axial_ratio", 1), richardson.call("axial_ratio", 2), richardson.call("radial_ratio", 1), richardson.call("radial_ratio", 2) ]
+  m.captures.zip(want).each { |q, v| flag(failures, "Richardson row of the sweep table", format("%.3f", v), q) if format("%.3f", v) != q }
+end
+if (m = canon.match(/екстраполяція Річардсона опускає радіальну на ≈ (\d+)–(\d+) %/))
+  anchors += 1
+  drops = [ 2, 1 ].map { |o| (1 - (richardson.call("radial_ratio", o) / pair[0]["radial_ratio"])) * 100 }
+  m.captures.zip(drops).each { |q, v| flag(failures, "Richardson radial drop", format("%.0f", v), q) if format("%.0f", v) != q }
 end
 
 # ── The WITH-ROD run: the RECORD of a branch that no longer exists. ──────────────────────────────
@@ -470,7 +489,7 @@ if dilation_anchors < EXPECTED_DILATION_ANCHORS
               "rewording has DISARMED a comparison; find the reworded sentence, do not lower this number"
 end
 
-EXPECTED_ANCHORS = 8
+EXPECTED_ANCHORS = 10
 if anchors < EXPECTED_ANCHORS
   failures << "only #{anchors} of #{EXPECTED_ANCHORS} derivation anchors matched — a canon rewording has "\
               "DISARMED a comparison; find the reworded sentence, do not lower this number"
@@ -586,11 +605,192 @@ else
   failures << "canonical pair: #{pair_path} is not committed — the ratified pair has no cache to derive from"
 end
 
+# ── 8. THE PERIODIC TENSOR AND FIELD (01_01 §5.2, HW.23) ─────────────────────────────────────────────────
+#
+# 🔴 Added 2026-10-21 with `fea --periodic`, for the reason layers 4 and 5 exist: the numbers live in a file family
+# (`periodic_homogenization.*`) no other layer opens. Held: (a) TRANSCRIPTION of both tables — the tensor ladder and the
+# field quantiles at the finest rung; (b) PROVENANCE — the file calls itself periodic and a MATERIAL, is network at level
+# 0.10 on one cell, at the cube ladder's period and the sweep's ν, every rung converged, and its controls sit inside the
+# solver's precision; (c) DERIVATION — every number canon computes FROM the file, and the comparison with the part's two
+# readings on every density-matched PAIR of basis (first- and second-order Richardson) and rung (the ladder's rungs whose
+# porosity matches the part's), the part's readings built as `106` builds them (radial → C11 + C12 by the plane-strain
+# normaliser, axial → E[100]).
+# 🔴 Why pairs: the first version compared ONE basis against ONE rung and read a 0.4 % agreement of the deviatoric term
+# off it; round 2 showed it was +3.5 % on second order, round 3 that it is −1.7 % against /24 — the ladder's own scatter
+# is wider than the difference. So a difference is claimed only where it keeps ONE sign on every pair, and where it does
+# not, the sentence that says «not established» is held to the sign change. «Equal step» is no basis: the raw /16 part
+# row is not converged and the phase-locked cube is at another density there.
+# ⚠️ Hill–Mandel here is an IDENTITY of the formulation (it holds at any CG iterate from a zero start): its check catches
+# only a stress readout inconsistent with the energy (another B, another point, another sign), never a wrong solution.
+# ⛔ DECLARED CEILING: it pins the numbers and the sentences built on them, never the instrument (VoxelFeaTests holds the
+# closed forms) nor which of the two bodies a consumer should read — that reading is not a number.
+PERIODIC = File.join(ROOT, "tools/cad/cache/fea/periodic_homogenization.network.w100.c1.json")
+CACHE_105 = File.join(ROOT, "tools/in_silico/cache/mechanical/printed_part_sway_stress.json")
+periodic_rows_seen = 0
+periodic_anchors = 0
+if File.exist?(PERIODIC)
+  per = JSON.parse(File.read(PERIODIC))
+  failures << "periodic cache does not call itself periodic" unless per["boundary_condition"] == "periodic"
+  failures << "periodic cache is not the network branch at level 0.10 on one cell" unless per["topology"] == "network" &&
+                                                                                        (per["wall_param"] - 0.10).abs < 1e-6 &&
+                                                                                        per["cells_per_side"] == 1
+  failures << "periodic cache's note does not call it a MATERIAL property" unless per["_note"].to_s.include?("MATERIAL")
+  failures << "periodic solid calibration is #{per['solid_calibration_max_abs_error']}, not round-off" unless per["solid_calibration_max_abs_error"] < 1e-10
+  # «на тому самому кроці» (against the cube ladder) and «рівний крок» (against the part) are claims about the PERIOD and
+  # the STEP, and «драбини куба» one about the same LATTICE — its topology and wall level.
+  failures << "periodic cache is at period #{per['period_mm']} mm, the cube ladder at #{ladder['period_mm']} mm — canon compares them at one step" unless (per["period_mm"] - ladder["period_mm"]).abs < 1e-9
+  failures << "canon sets the periodic /16 cell against the cube ladder «на тому самому кроці»; the ladder is at /#{ladder['steps_per_period']}" unless ladder["steps_per_period"] == 16
+  failures << "the cube ladder is #{ladder['topology']} at level #{ladder['wall_param']}, the periodic cell #{per['topology']} at #{per['wall_param']} — not one lattice" unless ladder["topology"] == per["topology"] && (ladder["wall_param"] - per["wall_param"]).abs < 1e-9
+  failures << "periodic cache's ν #{per['poisson_ratio']} is not the sweep's #{sweep['poisson_ratio']}" unless (per["poisson_ratio"] - sweep["poisson_ratio"]).abs < 1e-12
+  per["rows"].each do |r|
+    tag = "periodic /#{r['steps_per_period']}"
+    failures << "#{tag}: a rung did not converge — canon must not quote it" unless r["converged"]
+    failures << "#{tag}: the stress readout is inconsistent with the energy (Hill–Mandel #{r['hill_mandel_worst']})" unless r["hill_mandel_worst"] < 1e-8
+    failures << "#{tag}: reciprocity #{r['reciprocity_worst']}" unless r["reciprocity_worst"] < 1e-7
+    failures << "#{tag}: a cubic family spreads by #{r['cubic_equivalent_spread']}" unless r["cubic_equivalent_spread"] < 1e-6
+    r["fields"].each do |f|
+      failures << "#{tag} θ #{f['theta_deg']}: field energy identity #{f['energy_identity_residual']}" unless f["energy_identity_residual"] < 1e-7
+    end
+  end
+  rung = ->(steps) { per["rows"].find { |r| r["steps_per_period"] == steps } }
+  render = ->(value, quoted) { format("%#{quoted.start_with?('+') ? '+' : ''}.#{quoted.include?('.') ? quoted.split('.').last.length : 0}f", value).sub(/\A-/, "−") }
+
+  # (a) the tensor ladder — anchored on the 9-cell shape; no other §5.2 table has it.
+  canon.scan(/^\| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([0-9.]+) %\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
+    steps, *quoted = Regexp.last_match.captures
+    r = rung.call(steps.to_i)
+    next failures << "periodic table row період/#{steps} has no rung in the cache" if r.nil?
+
+    periodic_rows_seen += 1
+    cached = [ r["porosity"] * 100.0, r["C11"], r["C12"], r["C44"], r["nu_star"], r["zener"], r["E100"], r["E110"] ]
+    %w[porosity C11 C12 C44 ν* A E100 E110].zip(cached, quoted).each do |cell, value, q|
+      flag(failures, "periodic /#{steps} #{cell}", render.call(value, q), q) if render.call(value, q) != q
+    end
+  end
+  EXPECTED_PERIODIC_ROWS = per["rows"].size
+  if periodic_rows_seen < EXPECTED_PERIODIC_ROWS
+    failures << "only #{periodic_rows_seen} of #{EXPECTED_PERIODIC_ROWS} periodic-tensor rows matched — a canon rewording has "\
+                "DISARMED the comparison; fix the row shape, do not lower this number"
+  end
+
+  # (a) the field quantiles at the finest rung.
+  finest = per["rows"].max_by { |r| r["steps_per_period"] }
+  field_rows_seen = 0
+  canon.scan(/^\| θ = ([0-9.]+)° \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \| ([0-9.]+) \|$/) do
+    theta, *quoted = Regexp.last_match.captures
+    f = finest["fields"].find { |x| (x["theta_deg"] - theta.to_f).abs < 1e-9 }
+    next failures << "periodic field row θ = #{theta}° has no field in the finest rung" if f.nil?
+
+    field_rows_seen += 1
+    q = f["principal_over_sigma_w"]
+    cached = [ f["modulus_ratio"], q["p50"], q["p90"], q["p99"], q["p99.9"], q["max"] ]
+    %w[E p50 p90 p99 p99.9 max].zip(cached, quoted).each do |cell, value, qq|
+      flag(failures, "periodic field θ #{theta}° #{cell}", render.call(value, qq), qq) if render.call(value, qq) != qq
+    end
+  end
+  if field_rows_seen < finest["fields"].size
+    failures << "only #{field_rows_seen} of #{finest['fields'].size} periodic field rows matched — fix the row shape"
+  end
+
+  # (c) DERIVATIONS. The part's two readings, each built as `106` builds its body, set against the lattice on every
+  # density-matched PAIR of basis and rung — never against one rung: the ladder's own scatter is larger than several of
+  # the differences, so a sign read off one rung was the defect two adversary rounds of 2026-10-21/22 found in turn.
+  nu = sweep["poisson_ratio"]
+  two = sweep["rows"].sort_by { |r| r["step_mm"] }.first(2)
+  rich = ->(key, order) { two[0][key] + ((two[0][key] - two[1][key]) / (((two[1]["step_mm"] / two[0]["step_mm"])**order) - 1.0)) }
+  body = lambda do |radial, axial|
+    bulk = radial / ((1 + nu) * (1 - (2 * nu)))
+    dev = ((3 * bulk) - Math.sqrt((9 * bulk * bulk) - (8 * bulk * axial))) / 2
+    { axial:, bulk:, dev:, nu: (bulk - dev) / 2 / bulk }
+  end
+  # The part readings `105` takes (its first-order Richardson) are held to 105's OWN cache, not to this reimplementation.
+  if File.exist?(CACHE_105)
+    r105 = JSON.parse(File.read(CACHE_105)).dig("inputs", "fe_readings_richardson") || {}
+    { "radial_richardson" => rich.call("radial_ratio", 1), "axial_richardson" => rich.call("axial_ratio", 1) }.each do |key, mine|
+      failures << "105's cached #{key} #{r105[key].inspect} is not this layer's first-order Richardson #{mine} — the rule moved" unless r105[key] && (r105[key] - mine).abs < 1e-12
+    end
+  else
+    failures << "105's cache is not committed — the part readings `105` takes have nothing to be held to"
+  end
+  equal16 = rung.call(16)
+  matched = per["rows"].select { |r| (r["porosity"] - two[0]["porosity"]).abs < 0.005 }.sort_by { |r| r["steps_per_period"] }
+  if matched.empty?
+    failures << "no periodic rung sits within half a point of the part's porosity — canon's density-matched pairs have no rung"
+  else
+    # The rung RANGE canon quotes is read from canon and held to the density-matched set; no rung list lives here.
+    lo_s = matched.first["steps_per_period"]
+    hi_s = matched.last["steps_per_period"]
+    inside = per["rows"].map { |r| r["steps_per_period"] }.select { |st| st.between?(lo_s, hi_s) }.sort
+    failures << "the density-matched rungs #{matched.map { |r| r['steps_per_period'] }} are not one run of the ladder (#{inside}) — canon quotes them as a range" unless inside == matched.map { |r| r["steps_per_period"] }
+    failures << "canon refuses /16 for its density; /16 is #{equal16['porosity']} against the part's #{two[0]['porosity']}" if (equal16["porosity"] - two[0]["porosity"]).abs < 0.005
+    bases = [ body.call(rich.call("radial_ratio", 1), rich.call("axial_ratio", 1)), body.call(rich.call("radial_ratio", 2), rich.call("axial_ratio", 2)) ]
+    pairs = bases.product(matched)
+    dil_low = pairs.map { |pt, r| (1 - (pt[:bulk] / (r["C11"] + r["C12"]))) * 100 }
+    dev_gap = pairs.map { |pt, r| ((pt[:dev] / (r["C11"] - r["C12"])) - 1) * 100 }
+    axial_gap = pairs.map { |pt, r| ((pt[:axial] / r["E100"]) - 1) * 100 }
+    shift16 = [ 1, 2 ].map { |o| ((rich.call("axial_ratio", o) / two[0]["axial_ratio"]) - 1).abs * 100 }
+    mu_s = 1.0 / (2 * (1 + nu))
+    field = ->(r, theta) { r["fields"].find { |x| (x["theta_deg"] - theta).abs < 1e-9 } || {} }
+    pq = ->(r, theta, q) { field.call(r, theta).dig("principal_over_sigma_w", q) }
+    band = ->(theta, q) { matched.map { |r| pq.call(r, theta, q) }.minmax }
+    spread = ->(v) { (v.max / v.min) - 1 }
+    plateau_rows = ladder["rows"].select { |r| r["cells_per_side"] >= 6 }
+    plateau = plateau_rows.map { |r| r["axial_ratio"] }
+    kp_fall = ->(r) { (1 - ((pq.call(r, 45.0, "p99") * Math.sqrt(field.call(r, 45.0)["modulus_ratio"])) / (pq.call(r, 0.0, "p99") * Math.sqrt(field.call(r, 0.0)["modulus_ratio"])))) * 100 }
+    re_dil = /стійко розходиться в ньому ОДИН член — рівновісний розтяг у площині `C11 \+ C12`:\*\* на всіх парах «база × рунг» рівної густини він нижчий за матеріальний на (\d+)–(\d+) %, звідси й `ν\*` (\d+(?:\.\d+)?) проти (\d+(?:\.\d+)?)\./
+    checks = [
+      [ /порозність (\d+(?:\.\d+)?) % проти (\d+(?:\.\d+)?) % у деталі pine на період\/16/,
+        [ finest["porosity"] * 100, two[0]["porosity"] * 100 ] ],
+      [ /\*\*C44 — (\d+(?:\.\d+)?) стелі Фойгта/, [ finest["C44"] / (finest["solid_fraction_meshed"] * mu_s) ] ],
+      [ /`A` ≈ (\d+(?:\.\d+)?), тобто/, [ finest["zener"] ] ],
+      [ /`E\[110\]` ≈ (\d+(?:\.\d+)?)·`E\[100\]`/, [ finest["E110"] / finest["E100"] ] ],
+      [ /її `E\[100\]` \((\d+(?:\.\d+)?)\) лежить усередині драбини з плитами без тертя на тому самому кроці \((\d+(?:\.\d+)?)–(\d+(?:\.\d+)?)\), на (\d+(?:\.\d+)?) % нижче її плато (\d+)–(\d+) комірок/,
+        [ equal16["E100"], ladder["rows"].map { |r| r["axial_ratio"] }.min, ladder["rows"].map { |r| r["axial_ratio"] }.max,
+          (1 - (equal16["E100"] / (plateau.sum / plateau.size))) * 100, *plateau_rows.map { |r| r["cells_per_side"] }.minmax ] ],
+      [ /Осьове читання ДЕТАЛІ відносно `E\[100\]` ґратки — на всіх парах «база × рунг» рівної густини \(Річардсон 1-го й 2-го порядку деталі проти рунгів період\/(\d+)–\/(\d+)\) — від (−\d+(?:\.\d+)?) % до (\+\d+(?:\.\d+)?) %: деталь нижча на (\d+) парах із (\d+), але знака розриву драбина не встановлює\. Рівний крок базою не є: сира деталь на період\/16 ще не збіглась \(екстраполяція зсуває її осьове читання на (\d+)–(\d+) %\), а фазово-замкнений куб там на іншій густині \((\d+(?:\.\d+)?) % проти (\d+(?:\.\d+)?) %\)/,
+        [ lo_s, hi_s, axial_gap.min, axial_gap.max, axial_gap.count(&:negative?), pairs.size, shift16.min, shift16.max,
+          equal16["porosity"] * 100, two[0]["porosity"] * 100 ] ],
+      [ re_dil, [ dil_low.min, dil_low.max, bases[0][:nu], finest["nu_star"] ] ],
+      [ /Девіаторний член `C11 − C12` міняє знак від пари до пари: тіло вище за матеріальний на (\d+) парах із (\d+) \(від (−\d+(?:\.\d+)?) % до (\+\d+(?:\.\d+)?) %\), тож порядку жорсткості між двома тензорами вимір не встановлює/,
+        [ dev_gap.count(&:positive?), pairs.size, dev_gap.min, dev_gap.max ] ],
+      [ /На рунгах рівної густини \(період\/(\d+)–\/(\d+)\) p99 лежить у смузі (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) на θ = 0 і (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?) на θ = 45°, p99\.9 на θ = 0 — у смузі (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?), а максимум не збігається \(на θ = 0 — (\d+(?:\.\d+)?)–(\d+(?:\.\d+)?)\), тож прочитанням він не є/,
+        [ lo_s, hi_s, *band.call(0.0, "p99"), *band.call(45.0, "p99"), *band.call(0.0, "p99.9"), *band.call(0.0, "max") ] ],
+      [ /на кожному рунгу драбини він на 45° нижчий, ніж на 0°, а `√E` — вищий, тож добуток `k_p·√E` за p99 від 0° до 45° падає \(на рунгах рівної густини — на (\d+)–(\d+) %\)/,
+        matched.map(&kp_fall).minmax ]
+    ]
+    checks.each do |re, values|
+      m = canon.match(re)
+      next failures << "periodic derivation /#{re.source[0, 60]}…/ is gone or reworded — fix its shape, do not drop it" if m.nil?
+
+      periodic_anchors += 1
+      m.captures.zip(values).each do |quoted, value|
+        flag(failures, "periodic derivation «#{m[0][0, 70]}…»", render.call(value, quoted), quoted) if render.call(value, quoted) != quoted
+      end
+    end
+    # The words the numbers stand under, held to the numbers — each word in a regex above, each claim here:
+    lo, hi = ladder["rows"].map { |r| r["axial_ratio"] }.minmax
+    failures << "periodic /16 E[100] #{equal16['E100']} is not inside the cube ladder #{lo}–#{hi}, as canon says" unless equal16["E100"].between?(lo, hi)
+    failures << "«стійко … нижчий»: the in-plane dilatational term is not lower on every pair; #{dil_low}" unless dil_low.all?(&:positive?)
+    failures << "«міняє знак»: the deviatoric gap keeps ONE sign over the pairs — canon must say which; #{dev_gap}" unless dev_gap.min.negative? && dev_gap.max.positive?
+    failures << "«знака розриву драбина не встановлює»: the axial gap keeps ONE sign over the pairs — canon must say which; #{axial_gap}" unless axial_gap.min.negative? && axial_gap.max.positive?
+    # ν* is quoted once per tensor and holds for every base and every density-matched rung — the quoted digits decide.
+    if (mdil = canon.match(re_dil))
+      failures << "canon quotes ν* #{mdil[3]} for the part body; the two bases give #{bases.map { |b| b[:nu] }}" unless bases.all? { |b| render.call(b[:nu], mdil[3]) == mdil[3] }
+      failures << "canon quotes ν* #{mdil[4]} for the lattice; the density-matched rungs give #{matched.map { |r| r['nu_star'] }}" unless matched.all? { |r| render.call(r["nu_star"], mdil[4]) == mdil[4] }
+    end
+    failures << "«максимум не збігається»: its spread over the matched rungs is not wider than three times p99's" unless spread.call(matched.map { |r| pq.call(r, 0.0, "max") }) > 3 * spread.call(matched.map { |r| pq.call(r, 0.0, "p99") })
+    failures << "«на кожному рунгу драбини … нижчий … вищий»: k_p does not fall and √E rise on every rung" unless per["rows"].all? { |r| pq.call(r, 45.0, "p99") < pq.call(r, 0.0, "p99") && field.call(r, 45.0)["modulus_ratio"] > field.call(r, 0.0)["modulus_ratio"] }
+  end
+else
+  failures << "the periodic cache is not committed — canon §5.2 quotes it (`fea --periodic`)"
+end
+
 if failures.empty?
   puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
        "zero row = the pinned sweep field for field, + the graded pair of §5.5, + the canonical pair as quoted #{pair_quotes}× " \
-       "and #{pair_derivations} derivations with it)"
+       "and #{pair_derivations} derivations with it, + #{periodic_rows_seen} periodic-tensor rows and #{periodic_anchors} of " \
+       "their derivations)"
   exit 0
 end
 
