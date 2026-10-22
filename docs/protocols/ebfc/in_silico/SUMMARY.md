@@ -1099,7 +1099,8 @@ radius, bonded in Scots pine sapwood under the stem's bending stress, on the mea
 hold ratios of the E and G rows of 45, 65 and 95 % RH to the printed digit, while the Poisson ratios and the 85 % RH row were read
 off the tables only). Its compliances are not symmetric, so each pair's coupling is read three ways — from the test
 loaded along the pair's stiffer axis, along its softer one, or the mean — and the softer-axis reading is not a material
-at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios as one homogeneous cubic body
+at 65 and 95 % RH. The lattice's C11 and C12 come from reading `105`'s two voxel-FE ratios (the axial one in doubt from above — `01_01 §5.2`,
+`00_07` HW.23) as one homogeneous cubic body
 (ν* 0.261; the other root breaks the Voigt bound) — read as kinematic-side, i.e. possibly stiffer than the finite part under
 traction; against the INFINITE lattice of the periodic case (`01_01 §5.2`) its in-plane dilatational term C11 + C12 is lower on every
 density-matched pairing of basis and rung, while the sign of its deviatoric term depends on the pairing — so no stiffness

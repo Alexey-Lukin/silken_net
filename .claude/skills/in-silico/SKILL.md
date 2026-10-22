@@ -255,7 +255,8 @@ Anchor mechanics (CPU):
      tools/cad/cache/fea/anchor_zone1_pine.json (the voxel-FE ratios) · tools/cad/cem (lock, flange, sleeve, pine
      anode) → 105 (printed_part_sway_stress.json — the sway stress in the anchor's titanium parts); a re-run of 87,
      102, 103, 52 or the FEA sweep, or a change to those CEMs, re-runs 105
-  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings, the solid
+  105 (importlib: richardson_p1, rms_factor, NU_SOLID; printed_part_sway_stress.json: the Richardson FE readings — the
+     axial one in doubt from above, which reading `105`/`106` take is the open leg `00_07` HW.23 —, the solid
      fraction, the binds-above cells, the stem readings) · tools/cad/cache/fea/anchor_zone1_pine.json (ν and the rows
      105's readings are held to) · lib ALLOY_PROPERTIES → 106 (gyroid_wood_strain_share.json — the share t_L of the
      wood's strain the bonded gyroid takes; the Scots pine constants live in the script); a re-run of 105 or the FEA
