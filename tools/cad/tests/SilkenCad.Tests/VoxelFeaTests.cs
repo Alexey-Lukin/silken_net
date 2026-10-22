@@ -203,7 +203,7 @@ public class VoxelFeaTests
 
     // 🔴 ⊕ HW.33 (в): the graded pine part is constant-period ALONG z, so every step of its pinned sweep (rim/N) locks
     // the axis every cell while its full lock stays 0, and a step from the diameter locks neither. The stepped part has
-    // no single axial period, but each of its zones keeps a constant one, so its rim zone (1.3) is locked WHOLE at rim/8.
+    // no single axial period, but each of its zones keeps a constant one, so its rim zone (period 1.3) is locked WHOLE at rim/8.
     // MUTATION: make Zone1Anode.AxialPeriodMm return the CORE period ⇒ /6 reads a two-cell repeat (2.5 / (2.0/6) = 7.5) and
     // reds; route the stepped part past the zoned branch of PhaseLockCells (`if (!bZoned || fPeriodRim > 0f) return 0;` — a plain
     // early return does not compile, CS0162) ⇒ the stepped row reads 0 and reds.
@@ -220,9 +220,31 @@ public class VoxelFeaTests
         AnchorCem cem = CemFixtures.Anchor(strCem);
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
         float fStep = nDiv > 0 ? fPeriodMin / nDiv : cem.OuterDiameterMm / -nDiv;      // < 0: a step from the diameter
-        bool bZoned = cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
         Assert.Equal(nAxial, VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem)));
-        Assert.Equal(nFull, VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm, bZoned));
+        Assert.Equal(nFull, VoxelFea.PhaseLockCells(fStep, cem));
+    }
+
+    // 🔴 The count and the zone the verbs print come from ONE home, the one `Program.WarnPhaseLock` calls — no caller
+    // re-derives «zoned»: on the stepped part rim/8 locks the rim zone only and 0.25 (11/44) the core zone only; a pair of
+    // commensurate zones (core 2.6, rim 1.3) locks both, the tighter every two cells; a constant-period part locks whole;
+    // the graded part never does. MUTATION: pass `bZoned: false` in PhaseLockCells(step, cem) ⇒ the stepped rows read 0 and red.
+    [Theory]
+    [InlineData("anchor_zone1.stepped.json", 0f, 0.1625f, 1, "rim zone only")]
+    [InlineData("anchor_zone1.stepped.json", 0f, 0.25f, 1, "core zone only")]
+    [InlineData("anchor_zone1.stepped.json", 2.6f, 0.34666667f, 2, "both zones")]
+    [InlineData("anchor_zone1.graded_porosity.json", 0f, 0.25f, 1, "constant period")]
+    [InlineData("anchor_zone1.pine.json", 0f, 0.25f, 0, null)]
+    public void The_Lock_And_Its_Zone_Come_From_One_Home(string strCem, float fCoreOverride, float fStep, int nFull, string? strWhere)
+    {
+        AnchorCem cem = CemFixtures.Anchor(strCem);
+        if (fCoreOverride > 0f)
+            cem = cem with { GyroidPeriodMm = fCoreOverride };
+        Assert.Equal(nFull, VoxelFea.PhaseLockCells(fStep, cem));
+        string? strGot = VoxelFea.PhaseLockWhere(fStep, cem);
+        if (strWhere is null)
+            Assert.Null(strGot);
+        else
+            Assert.Contains(strWhere, strGot);
     }
 
     // 🔴 The same claims read through the REAL generator and sampler, not the arithmetic: on the shipped pine part at a

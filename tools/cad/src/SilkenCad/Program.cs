@@ -2257,21 +2257,15 @@ internal static class Program
         return 2;
     }
 
-    // The sampler's lock line, one home for every fea verb; returns the FULL lock (0 when only the axis locks). A stepped
-    // part keeps a constant period per zone, so a step dividing one zone's period locks that zone whole while the other may
-    // still resolve every wall; a graded part locks only along z, printed where the full lock is silent.
+    // The sampler's lock line, one printer for every fea verb (the decision and the zone's name live in VoxelFea); returns
+    // the FULL lock (0 when only the axis locks). A graded part locks only along z, printed where the full lock is silent.
     private static int WarnPhaseLock(float fStep, AnchorCem cem, string strConsequence)
     {
-        bool bZoned = cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
-        int nCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm, bZoned);
+        int nCells = VoxelFea.PhaseLockCells(fStep, cem);
         if (nCells > 0)
         {
-            bool bTwoZones = bZoned && cem.GyroidPeriodRimMm > 0f && cem.GyroidPeriodRimMm != cem.GyroidPeriodMm;
-            bool bRim = VoxelFea.RepeatCells(fStep, cem.GyroidPeriodRimMm) > 0;
-            string strWhere = !bTwoZones || (bRim && VoxelFea.RepeatCells(fStep, cem.GyroidPeriodMm) > 0) ? "constant period"
-                : $"constant period in the {(bRim ? "rim" : "core")} zone only — the other zone may still resolve every wall";
-            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling ({strWhere}; the phase repeats every {nCells} cell(s)) — " +
-                              $"{strConsequence} (VoxelFea.PhaseLockCells)");
+            Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling ({VoxelFea.PhaseLockWhere(fStep, cem)}; the phase repeats every " +
+                              $"{nCells} cell(s)) — {strConsequence} (VoxelFea.PhaseLockCells)");
             return nCells;
         }
         int nAxial = VoxelFea.AxialPhaseLockCells(fStep, Zone1Anode.AxialPeriodMm(cem));

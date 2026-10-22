@@ -587,6 +587,25 @@ internal static class VoxelFea
         return nCore == 0 ? nRim : nRim == 0 ? nCore : Math.Min(nCore, nRim);
     }
 
+    // The PART's lock — one home for every caller (the fea verbs' line, its --fit hint and the pins), so none of them
+    // re-derives whether the two periods are zones (stepped) or a gradient (graded).
+    internal static int PhaseLockCells(float fStepMm, AnchorCem cem)
+        => PhaseLockCells(fStepMm, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm, IsZoned(cem));
+
+    // Where the part's full lock sits, in the verbs' words; null when the part does not lock whole.
+    internal static string? PhaseLockWhere(float fStepMm, AnchorCem cem)
+    {
+        if (PhaseLockCells(fStepMm, cem) == 0)
+            return null;
+        if (!IsZoned(cem) || cem.GyroidPeriodRimMm <= 0f || cem.GyroidPeriodRimMm == cem.GyroidPeriodMm)
+            return "constant period";
+        bool bCore = RepeatCells(fStepMm, cem.GyroidPeriodMm) > 0, bRim = RepeatCells(fStepMm, cem.GyroidPeriodRimMm) > 0;
+        return bCore && bRim ? "constant period in both zones"
+            : $"constant period in the {(bRim ? "rim" : "core")} zone only — the other zone may still resolve every wall";
+    }
+
+    private static bool IsZoned(AnchorCem cem) => cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase);
+
     // ⊕ 2026-10-22, HW.33 (в): the graded part is constant-period ALONG z (Zone1Anode.AxialPeriodMm — the rim's) while
     // its in-plane phase still drifts with radius. No wall staircase, then (PhaseLockCells stays 0, and the sampled pin
     // in VoxelFeaTests shows close walls resolving on the shipped pine part), but a step that divides the axial period
