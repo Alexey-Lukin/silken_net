@@ -42,7 +42,22 @@ CONTROLS (runtime gates, NaN-safe; each CAN fail — in-silico §When Modifying 
   energy balance — on EVERY lossy row, P_in − P_rad must equal the power dissipated INSIDE, integrated by quadrature
     over the interior field, whose amplitudes come from value continuity inward and not from c_n's formula (catches
     a wrong matching, an interior amplitude or a layer's R that the exterior coefficients alone would not expose);
-  truncation — the series at N and at N + 15 must agree (catches a cut-off that clips the source's spectrum).
+  truncation — the series at N and at N + 15 must agree (catches a cut-off that clips the source's spectrum);
+  width sweep — the sweep's rows at the three NAMED widths must equal the named readings' rows field by field (catches a
+    sweep that builds its stem differently from the readings it extends; it CANNOT catch an extreme between two grid
+    widths — the step is the ground there, see WIDTH SWEEP).
+WIDTH SWEEP (00_07 HW.6; the adversarial review of 2026-10-22, F1). The sapwood width acts RESONANTLY: wet sapwood at
+Mavrovic's thawed ε has an in-medium wavelength λ₀/Re√ε ≈ 7.8 cm at the carrier (`width_sweep.sapwood_wavelength_cm`),
+so every output swings up and down as the width grows, about every λ/2 ≈ 3.9 cm. Named widths bracket an output only
+where it is monotone between them, so no set of named widths can name a consumer's worst case; the sweep runs the
+three-layer Scots stem (dead bark · sapwood at the thawed ε · heartwood at the dry proxy) over the MEASURED width axis,
+2.2–13.6 cm in 0.2 cm steps (≈ λ/39) plus the three named widths, under every bark, stem, standoff and polarization the
+readings run, and writes each consumer's extreme with the width, bark, stem and standoff that produce it. The axis ends:
+2.2 cm is Björklund 1999's narrowest stem (Table 2, p. 123, CT at 3.5–4.5 m); the wide end is the widest per-radius
+staining width of Bieker & Rust 2010 Fig. 2 (p. 269, read from the page image: 18 radii, staining ≈ 4.0–13.4 cm, ERT
+≈ 3.8–11.6 cm at 0.3 m), carried to 13.6 cm; Björklund's widest stem, 90 mm, lies inside. The sweep's rows skip the
+N + 15 truncation re-solve (the series order depends on βρ′ alone, which the sweep does not change; the named
+readings run it at every stem and standoff) and keep the energy balance.
 NOT guarded at runtime: the far field's ORIENTATION (a swap of front and back, (−j)^n for j^n, passes every gate — the
 invariants test's direct closed form catches it) and the per-layer split of the absorbed power. CANNOT catch a wrong
 INPUT — a permittivity, a radius or a standoff — nor anything the 2-D idealization drops.
@@ -66,12 +81,16 @@ may be higher than every reading here; and the wettest bark swept here is a coni
 Ulaby 1987, Fig. A.36 (balsam fir, lab, ≈ 19.4 − j4.7 — interpolated between grid markers whose frequencies are inferred
 from a dry branch's figures, not measured at 868 MHz); a wetter bark is not swept, and that this bark is dominated by its
 wet phloem is OUR hypothesis (ground: the Franchois 1998 abstract on two other conifers) — the figure's title says only
-trunk bark; and the sapwood's WIDTH is read at the sources' heights, not at the node's (which canon does not fix):
-Bieker & Rust 2010 at 0.3 m above ground give two widths of one quantity by two methods — staining 8.1 cm ⊥ resistivity
-tomography 6.1 cm — and both are named readings, the 2 cm between their boundaries carried wet ⊥ dry; Björklund 1999's
-narrowest stem, 22 mm, is a width at 3.5–4.5 m, where by his text the sapwood is narrower than at the butt and about
-constant above 3 m, so below 3 m the same stem's sapwood is wider than that figure; (6) a stem that is not round, a node
-not on a radius, the radial profile inside a layer (each layer is uniform).
+trunk bark; and the sapwood's WIDTH is read at the sources' heights, not at the node's (canon assumes one without
+fixing it: 03_03 reads the stem «на висоті грудей», 01_02 bounds the mount «≤ 2.0 м»): Bieker & Rust 2010 at 0.3 m
+above ground give the MEANS over 18 radii of one quantity by two methods — staining 8.1 ± 0.6 cm ⊥ resistivity
+tomography 6.1 ± 0.5 cm, an SE-like spread beside Fig. 2's per-radius range — and both means are named readings, the
+2 cm between their boundaries carried wet ⊥ dry; Björklund 1999's narrowest stem, 22 mm, is a width at 3.5–4.5 m. On
+his two-stand examples the sapwood was widest at the butt and rather constant above 3 m, so below 3 m a given stem's
+sapwood is LIKELY, not established, to be wider than that figure (his own Introduction cites sapwood width as
+relatively constant along the trunk). The width axis itself is swept (WIDTH SWEEP), so height gives no consumer a
+direction; (6) a stem that is not round, a node not on a radius, the radial profile inside a layer (each layer is
+uniform).
 
 Run:  conda activate silken_md
       python tools/in_silico/scripts/107_stem_radio_shadow.py
@@ -251,7 +270,9 @@ PERMITTIVITY: dict = {
 # the 2.5 and 6 mm samples; the plateau is carried to the axis.
 MAV_S2_OUTER, MAV_S2_OUTER_DEPTH_M = 35.2 - 10.27j, 0.00425
 MAV_S2_PLATEAU = 14.05 - 4.82j
-# Scots pine's sapwood width — two methods on the same stems at the same height, 2 cm apart. Bieker & Rust 2010, Silva
+# Scots pine's sapwood width — two methods on the same stems at the same height, 2 cm apart IN THE MEAN (each is a mean
+# over 9 trees × 2 radii with its printed ± — not an end of the width axis: Fig. 2's per-radius widths run ≈ 4.0–13.4 cm
+# by staining and ≈ 3.8–11.6 cm by ERT, and the axis is swept, WIDTH SWEEP). Bieker & Rust 2010, Silva
 # Fennica 44(2):267–273, doi:10.14214/sf.153 (9 trees, DBH 24–49.5 cm, near Göttingen; read in the source 2026-10-22):
 # «Mean sapwood width from staining was 8.1 cm ± 0.6 cm and 6.1 ± 0.5 for the tomograms» (§3, p. 269); the electrodes
 # went in «at constant height (30 cm) above ground» (§2.1, pp. 268–269) and the stained discs were cut in the
@@ -259,18 +280,22 @@ MAV_S2_PLATEAU = 14.05 - 4.82j
 # reads the gap as staining over-estimating the active sapwood («it is likely», §4) — moisture falls before extractives
 # reach a stainable level, a premise its §1 takes from Bergström 2003 — and in the same paragraph says the resistivity
 # boundary «is not just an effect of the higher water content in the sapwood» (resin, pit closure). For a PERMITTIVITY
-# neither width is the wet width, so both are NAMED readings (in-silico §When Modifying #11): the 2 cm band between the
+# neither width is the wet width — the moisture border lies between them: p. 270 cites Rust (1999) for CT, the
+# moisture-border method Björklund used, reading 17 % below staining, ≈ 8.1/1.17 ≈ 6.9 cm, inside 6.1–8.1 — so both are
+# NAMED readings (in-silico §When Modifying #11): the 2 cm band between the
 # two boundaries is carried dry (6.1 cm — the band in the heartwood proxy) ⊥ wet (8.1 cm — the band at the sapwood's ε).
-# Which width is adverse depends on the consumer; the cache names the reading at each end of every span it prints
-# (`findings.<pol>.ends_by_reading`), so no doc has to type it.
+# Which reading is at each end of a span over the NAMED readings, the cache names (`findings.<pol>.ends_by_reading`); which
+# WIDTH is adverse for a consumer only the sweep can say (`width_sweep.extremes`), because the output is not monotone in it.
 SCOTS_SAPWOOD_ERT_M = 0.061
 SCOTS_SAPWOOD_STAIN_M = 0.081
+SCOTS_SAPWOOD_HEIGHT_M = {"bieker_rust_2010": [0.3, 0.3], "bjorklund_1999": [3.5, 4.5]}   # where each width was read
 # ⊕ the thin end: 22 mm, the narrowest of 198 stems in Björklund 1999, Silva Fennica 33(2):119–129, doi:10.14214/sf.662,
 # Table 2 (p. 123: CT of fresh logs «at 3.5–4.5 m height», Sweden 57–66 °N; mean 46, widest 90 mm). CT reads the
 # moisture border and the transition zone is counted as heartwood (p. 122), so it is a WET width. Its HEIGHT is the
 # qualifier: «Sapwood width was biggest at the butt end of the stem, and was rather constant above 3 m height» (p. 123,
-# read on the stems chosen to show the vertical variation, a sub-sample of two stands) — below 3 m the same stem's sapwood
-# is wider than this figure. Our hosts are bigger (his DBH-class means 244–331 mm, Table 1, and the sapwood widens with
+# read on the stems chosen to show the vertical variation, a sub-sample of two stands) — below 3 m a given stem's sapwood
+# is LIKELY, not established, to be wider than this figure (his Introduction, p. 120, cites sapwood width as relatively
+# constant along the trunk). Our hosts are bigger (his DBH-class means 244–331 mm, Table 1, and the sapwood widens with
 # the class, Table 3) and further south; Bieker & Rust's two widths are at 0.3 m, near the butt.
 SCOTS_SAPWOOD_THIN_M = 0.022
 # No primary in the tree measures pine BARK or pine HEARTWOOD near 1 GHz, so both are read at named proxies:
@@ -311,20 +336,29 @@ for _bark, _be in (("bark_dry", BARK_DRY), ("bark_wet", BARK_WET), ("bark_phloem
                   "layer, then the plateau carried to the axis"}
     PERMITTIVITY[f"scots_sapwood_6cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_ERT_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
+        "sapwood_width_m": SCOTS_SAPWOOD_ERT_M, "width_read_at_height_m": SCOTS_SAPWOOD_HEIGHT_M["bieker_rust_2010"],
         "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 6.1 cm (Bieker & Rust "
                   "2010, ERT at 0.3 m — the band to the staining boundary in the heartwood proxy) at Mavrovic's "
                   "thawed ε1cm · heartwood at the dry proxy"}
     PERMITTIVITY[f"scots_sapwood_8cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_STAIN_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
+        "sapwood_width_m": SCOTS_SAPWOOD_STAIN_M, "width_read_at_height_m": SCOTS_SAPWOOD_HEIGHT_M["bieker_rust_2010"],
         "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 8.1 cm (Bieker & Rust "
                   "2010, benzidine staining at 0.3 m — the band to the ERT boundary at the sapwood's ε) at Mavrovic's "
                   "thawed ε1cm · heartwood at the dry proxy"}
     PERMITTIVITY[f"scots_sapwood_2cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_THIN_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
+        "sapwood_width_m": SCOTS_SAPWOOD_THIN_M, "width_read_at_height_m": SCOTS_SAPWOOD_HEIGHT_M["bjorklund_1999"],
         "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 2.2 cm (Björklund 1999's "
                   "narrowest stem, CT at 3.5–4.5 m — above 3 m, where his sapwood is narrower than at the butt) at "
                   "Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
 GEOMETRY: dict = {}              # filled in main() from lib and the CEM (drift-proof), each with its referent
+# WIDTH SWEEP (docstring): the measured axis — Björklund 1999's narrowest stem to past Bieker & Rust 2010 Fig. 2's widest
+# per-radius staining width (≈ 13.4 cm) — in steps ≪ λ/2 of the wet sapwood, plus the three named widths
+SWEEP_W_LOW_M, SWEEP_W_HIGH_M, SWEEP_STEP_M = SCOTS_SAPWOOD_THIN_M, 0.136, 0.002
+SWEEP_BARKS = {"bark_dry": BARK_DRY, "bark_wet": BARK_WET, "bark_phloem": BARK_PHLOEM}
+SWEEP_KEYS = ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "deepest_below_front_dB",
+              "phi_min_deg", "efficiency")
 POLARIZATIONS = ("TM", "TE")
 Z_STACK = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"   # `52`'s vertical stack: the RF deck over the flange
 # ⛔ Not the CAD's «antenna ↔ Ti 8.0 at the bayonet datum»: that figure takes the cavity top for the antenna plane and
@@ -349,7 +383,7 @@ def stem_layers(dbh_m: float, reading: dict):
     return list(reversed(rows))   # axis outward; the outermost radius is the surface
 
 
-def run_case(dbh_m, standoff_m, reading_name, pol, reading=None):
+def run_case(dbh_m, standoff_m, reading_name, pol, reading=None, truncation=True):
     layers = stem_layers(dbh_m, reading or PERMITTIVITY[reading_name])
     a = layers[-1][0]
     rho = a + standoff_m
@@ -362,9 +396,11 @@ def run_case(dbh_m, standoff_m, reading_name, pol, reading=None):
     field = np.abs(far_field(beta, ns, c, rho, phi, pol)) ** 2 / front_free   # same current, against the free front lobe
     g = field / (p_in / p0)                                                    # same INPUT power — the 2-D indicator
     # control — truncation (NaN-safe: a comparison with NaN must fail, not pass)
-    _, ns2, c2, _ = solve(layers, rho, pol, n + 15)
-    trunc = float(np.max(np.abs(far_field(beta, ns, c, rho, phi, pol) - far_field(beta, ns2, c2, rho, phi, pol))))
-    if not trunc <= TOL_TRUNC:
+    trunc = math.nan
+    if truncation:
+        _, ns2, c2, _ = solve(layers, rho, pol, n + 15)
+        trunc = float(np.max(np.abs(far_field(beta, ns, c, rho, phi, pol) - far_field(beta, ns2, c2, rho, phi, pol))))
+    if truncation and not trunc <= TOL_TRUNC:
         raise RuntimeError(f"series not converged at N={n}: max|ΔF| {trunc:.2e} > {TOL_TRUNC}")
     # control — energy balance against the interior volume integral (the interior's unit is the line source's)
     by_layer = absorbed_by_layer(beta, ns, interior, pol)
@@ -421,6 +457,82 @@ def _span(values, nd=1):
     lo, hi = min(values), max(values)
     f = 10 ** nd
     return [math.floor(lo * f) / f, math.ceil(hi * f) / f]
+
+
+def _sweep_fields(r):
+    """A row's consumer quantities as the findings compute them (the deepest null below the front is derived)."""
+    return {k: (round(r["gain_dB"]["0"] - r["gain_dB_min"], 3) if k == "deepest_below_front_dB" else r[k])
+            for k in SWEEP_KEYS}
+
+
+def width_sweep(cases):
+    """The sapwood width over its measured axis (docstring WIDTH SWEEP): the three-layer Scots stem at every width of the
+    grid and the three named widths, under every bark, stem, standoff and polarization the readings run. Returns the
+    sweep's block: each consumer's extreme over the whole axis and per bark, with every row that attains it (width, bark,
+    stem, standoff), the per-width envelope, and the control that the named widths reproduce the readings' rows."""
+    grid = [round(SWEEP_W_LOW_M + i * SWEEP_STEP_M, 6)
+            for i in range(round((SWEEP_W_HIGH_M - SWEEP_W_LOW_M) / SWEEP_STEP_M) + 1)]
+    named = {SCOTS_SAPWOOD_THIN_M: "2cm", SCOTS_SAPWOOD_ERT_M: "6cm", SCOTS_SAPWOOD_STAIN_M: "8cm"}
+    widths = sorted(set(grid) | set(named))
+    rows = []
+    for bark, be in SWEEP_BARKS.items():
+        for w in widths:
+            reading = {"layers": [(BARK_T_M, be), (w, MAV_RED_PINE_THAWED), (None, HEART_DRY)]}
+            for pol in POLARIZATIONS:
+                for dbh in GEOMETRY["dbh_m"]["values"]:
+                    for so in GEOMETRY["standoff_m"]["values"]:
+                        r = run_case(dbh, so, f"sweep_{bark}", pol, reading=reading, truncation=False)
+                        rows.append({"w_cm": round(w * 100, 2), "bark": bark, "polarization": pol, "dbh_m": dbh,
+                                     "standoff_mm": r["standoff_mm"], **_sweep_fields(r)})
+    # control — the sweep's rows at the named widths equal the named readings' rows, field by field
+    worst = 0.0
+    for w, tag in named.items():
+        for bark in SWEEP_BARKS:
+            ref = {(r["polarization"], r["dbh_m"], r["standoff_mm"]): r for r in cases
+                   if r["permittivity"] == f"scots_sapwood_{tag}_{bark}"}
+            got = [r for r in rows if r["w_cm"] == round(w * 100, 2) and r["bark"] == bark]
+            if len(got) != len(ref) or not ref:
+                raise RuntimeError(f"width-sweep control: {tag} {bark} has {len(got)} sweep rows against {len(ref)}")
+            for r in got:
+                c = _sweep_fields(ref[(r["polarization"], r["dbh_m"], r["standoff_mm"])])
+                miss = max(abs(r[k] - c[k]) for k in SWEEP_KEYS)
+                if not miss <= 0.0:
+                    raise RuntimeError(f"width-sweep control: {tag} {bark} {r['polarization']} misses by {miss}")
+                worst = max(worst, miss)
+
+    def _at(sel, k, v):
+        return [{f: r[f] for f in ("w_cm", "bark", "dbh_m", "standoff_mm")} for r in sel if r[k] == v]
+
+    def _ext(sel):
+        out = {}
+        for k in SWEEP_KEYS:
+            lo, hi = min(r[k] for r in sel), max(r[k] for r in sel)
+            out[k] = {"min": lo, "min_at": _at(sel, k, lo), "max": hi, "max_at": _at(sel, k, hi)}
+        return out
+
+    extremes, by_bark, by_width = {}, {}, {}
+    for pol in POLARIZATIONS:
+        sel = [r for r in rows if r["polarization"] == pol]
+        extremes[pol] = _ext(sel)
+        by_bark[pol] = {b: _ext([r for r in sel if r["bark"] == b]) for b in SWEEP_BARKS}
+        by_width[pol] = {k: [[round(w * 100, 2), min(r[k] for r in sel if r["w_cm"] == round(w * 100, 2)),
+                              max(r[k] for r in sel if r["w_cm"] == round(w * 100, 2))] for w in widths]
+                         for k in ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg")}
+    lam_cm = C0 / F_HZ / float(np.sqrt(complex(MAV_RED_PINE_THAWED)).real) * 100
+    return {
+        "what": "the three-layer Scots stem (dead bark · sapwood at Mavrovic's thawed ε · heartwood at the dry proxy) "
+                "over the measured sapwood-width axis — the output is resonant in the width, so named widths cannot "
+                "bracket it (docstring WIDTH SWEEP); rows skip the N + 15 truncation re-solve and keep the energy balance",
+        "axis_cm": [round(SWEEP_W_LOW_M * 100, 2), round(SWEEP_W_HIGH_M * 100, 2)], "step_cm": round(SWEEP_STEP_M * 100, 2),
+        "named_widths_cm": sorted(round(w * 100, 2) for w in named),
+        "n_widths": len(widths), "n_rows": len(rows),
+        "axis_ends": {"low": "Björklund 1999 Table 2 (p. 123): the narrowest of 198 stems, 22 mm, CT at 3.5–4.5 m",
+                      "high": "Bieker & Rust 2010 Fig. 2 (p. 269, page image): the widest per-radius staining width, "
+                              "≈ 13.4 cm at 0.3 m (ERT ≈ 11.6 cm); Björklund 1999's widest stem, 90 mm, lies inside"},
+        "sapwood_wavelength_cm": round(lam_cm, 2), "half_wavelength_cm": round(lam_cm / 2, 2),
+        "extremes": extremes, "by_bark": by_bark, "by_width": by_width,
+        "controls": {"named_widths_reproduce_the_readings_max_abs_miss": worst},
+    }
 
 
 def main() -> int:
@@ -507,6 +619,8 @@ def main() -> int:
         pol: [min(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles),
               max(phloem_control[k][pol]["front_minus_back_dB_floor"] for k in singles)] for pol in POLARIZATIONS}
     controls["phloem_reading"] = phloem_control
+    sweep = width_sweep(cases)
+    sx = sweep["extremes"]
     tm, te = findings["TM"], findings["TE"]
     verdict = (
         f"In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem "
@@ -517,8 +631,15 @@ def main() -> int:
         f"it stays within 3 dB of the front only to {tm['within_3dB_of_front_to_deg'][0]}–"
         f"{tm['within_3dB_of_front_to_deg'][1]}°. A dipole tangential to the bark (TE, horizontal E): "
         f"{te['front_minus_back_dB'][0]:.1f}–{te['front_minus_back_dB'][1]:.1f} dB behind, "
-        f"{te['front_minus_side_dB'][0]:.1f}–{te['front_minus_side_dB'][1]:.1f} dB at 90°. Ranges span every reading "
-        f"of the stem's permittivity, diameter and the antenna's standoff in this cache. The 2-D efficiency indicator — "
+        f"{te['front_minus_side_dB'][0]:.1f}–{te['front_minus_side_dB'][1]:.1f} dB at 90°. Ranges span every NAMED "
+        f"reading of the stem's permittivity, diameter and the antenna's standoff in this cache; over the sapwood "
+        f"width's measured axis ({sweep['axis_cm'][0]}–{sweep['axis_cm'][1]} cm, the width sweep — the output is "
+        f"resonant in the width) the TM 3-dB sector runs {sx['TM']['within_3dB_of_front_to_deg']['min']}–"
+        f"{sx['TM']['within_3dB_of_front_to_deg']['max']}°, the TM loss at 90° reaches "
+        f"{_span([sx['TM']['front_minus_side_dB']['max']])[1]:.1f} dB, and the back spans "
+        f"{_span([sx['TM']['front_minus_back_dB']['min']])[0]:.1f}–{_span([sx['TM']['front_minus_back_dB']['max']])[1]:.1f} "
+        f"dB (TM) and {_span([sx['TE']['front_minus_back_dB']['min']])[0]:.1f}–"
+        f"{_span([sx['TE']['front_minus_back_dB']['max']])[1]:.1f} dB (TE). The 2-D efficiency indicator — "
         f"what the near field loses into the stem — is {tm['efficiency_2d'][0]:.2f}–{tm['efficiency_2d'][1]:.2f} (TM) "
         f"and {te['efficiency_2d'][0]:.2f}–{te['efficiency_2d'][1]:.2f} (TE); it is not the 3-D antenna efficiency.")
     result = {
@@ -534,6 +655,7 @@ def main() -> int:
             "efficiency": "P_rad/P_in in 2-D — an indicator of the near-field loss, not the 3-D antenna efficiency",
         },
         "readings": {"permittivity": {n: {"layers_bark_inward": [[t, e.real, -e.imag] for t, e in r["layers"]],
+                                          **{k: r[k] for k in ("sapwood_width_m", "width_read_at_height_m") if k in r},
                                           "source": r["source"]} for n, r in PERMITTIVITY.items()},
                      "geometry": {k: {"values": v["values"], "referent": v["referent"], "source": v["source"]}
                                   for k, v in GEOMETRY.items()},
@@ -544,6 +666,7 @@ def main() -> int:
         "controls": controls,
         "cases": cases,
         "findings": findings,
+        "width_sweep": sweep,
         "verdict": verdict,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -561,6 +684,13 @@ def main() -> int:
         print(f"  control A.36 {alt} ({c['eps'][0]} − j{c['eps'][1]}): floors TM {c['TM']['front_minus_back_dB_floor']}"
               f" (raw {c['TM']['floor_moves_raw_dB']:+.3f} dB) · TE {c['TE']['front_minus_back_dB_floor']}"
               f" (raw {c['TE']['floor_moves_raw_dB']:+.3f} dB)")
+    print(f"  width sweep {sweep['axis_cm'][0]}–{sweep['axis_cm'][1]} cm, {sweep['n_widths']} widths, {sweep['n_rows']} rows "
+          f"(named widths reproduce the readings: max miss {sweep['controls']['named_widths_reproduce_the_readings_max_abs_miss']})")
+    for pol in POLARIZATIONS:
+        for k in SWEEP_KEYS:
+            e = sweep["extremes"][pol][k]
+            print(f"    {pol} {k:28s} min {e['min']} at {[a['w_cm'] for a in e['min_at']]} · max {e['max']} at "
+                  f"{[a['w_cm'] for a in e['max_at']]}")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)}")
     return 0
 

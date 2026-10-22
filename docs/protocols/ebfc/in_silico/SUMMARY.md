@@ -1396,19 +1396,25 @@ bark), then one of four interiors — the
 red pines' measured radial profile (Supplement Fig. S2, 26 May: 35.2 − j10.27 at 2.5 mm, a plateau of 14.05 − j4.82
 from 6 mm, no dry heartwood within the probe's reach), Scots pine's sapwood by both methods of Bieker & Rust 2010
 (*Silva Fennica* 44:267, 0.3 m above ground: «Mean sapwood width from staining was 8.1 cm ± 0.6 cm and 6.1 ± 0.5 for
-the tomograms»), or the narrowest stem's 2.2 cm (Björklund 1999, *Silva Fennica* 33:119, Table 2 — CT of fresh logs
+the tomograms» — means over 9 trees × 2 radii with an SE-like spread, while the single radii of their Fig. 2 run
+≈ 4.0 – 13.4 cm by staining and ≈ 3.8 – 11.6 cm by ERT, so neither mean is an end of the width axis), or the narrowest
+stem's 2.2 cm (Björklund 1999, *Silva Fennica* 33:119, Table 2 — CT of fresh logs
 at 3.5–4.5 m), each sapwood around a dry heartwood proxy. The two widths at 0.3 m are two named readings, not a pick:
 the source reads the gap as staining over-estimating the active sapwood («it is likely»), yet says the resistivity
 boundary «is not just an effect of the higher water content in the sapwood», so neither boundary is the moisture
-border a permittivity needs, and the 2 cm between them is carried wet (8.1 cm) ⊥ dry (6.1 cm). Björklund's width
-carries its height: «Sapwood width was biggest at the butt end of the stem, and was rather constant above 3 m
-height» (read on his stems chosen to show the vertical variation), so below 3 m the same stem's sapwood is wider
-than 2.2 cm. No source in the tree measures any of them at 868 MHz. A.36 does not print its grid: the marker frequencies are inferred from the same session's A.38/A.39, which are
+border a permittivity needs, and the 2 cm between them is carried wet (8.1 cm) ⊥ dry (6.1 cm). The moisture border
+lies between them: Bieker & Rust (p. 270) cite Rust (1999) for a 17 % gap between computer tomography — the
+moisture-border method Björklund used — and staining, ≈ 8.1/1.17 ≈ 6.9 cm if that gap carries over to these stems.
+Björklund's width carries its height: «Sapwood width was biggest at the butt end of the stem, and was rather constant
+above 3 m height» (read on his examples from two stands), so below 3 m a given stem's sapwood is likely, not
+established, to be wider than 2.2 cm — his Introduction cites sapwood width as relatively constant along the trunk,
+and canon assumes a mount height without fixing it (breast height in 03_03, ≤ 2.0 m in 01_02). No source in the tree measures any of them at 868 MHz. A.36 does not print its grid: the marker frequencies are inferred from the same session's A.38/A.39, which are
 a dry branch, and the markers overlap. The figure's 0.8 GHz ε′ marker is depressed in that session (on A.38 and A.40
 too), so a control in the cache re-runs the «phloem» rows at the reading that skips it, ≈ 19.63 − j4.68:
 it lowers the TM floor by 0.08 dB, to 10.5 at the cache's outward rounding. Over the four single-reading interpolations (two readers,
 each with ⊥ without that marker) the floors span 10.4 – 10.6 dB (TM) and 7.6 – 7.7 dB (TE): the floors printed below
-hold at the mean of the two readings.
+hold at the mean of the two readings. The two tables below span the sixteen named readings; the swept sapwood-width
+axis is in «What it says».
 
 | polarization | behind the stem (180°), below the front | deepest null below the front, at | at 90° | within 3 dB of the front to | front field against the free front lobe, same current | 2-D efficiency |
 |---|---|---|---|---|---|---|
@@ -1424,20 +1430,27 @@ The back's depth by the stem's interior — how much of it is wet:
 | 6.1 cm of sapwood around a dry heartwood | 22 – 33.4 dB | 13.9 – 21.8 dB |
 | 2.2 cm of sapwood around a dry heartwood | 10.6 – 22.2 dB | 7.7 – 17.4 dB |
 
-**What it says.** Behind its own stem a node is weaker than when it faces the gateway on every reading — by at least
+**What it says.** Behind its own stem a node is weaker than when it faces the gateway on every named reading — by at least
 10.6 dB with its E along the stem, the co-polar case, and by at least 7.7 dB with E horizontal — and already at 90° the
 TM node is 6.1 – 9.7 dB down, staying within 3 dB of its front only to 53 – 66° either side. The horizontal node is not
 the milder one: its free pattern already has a null along the bark, so at 90° it is 9.2 – 21.1 dB down; behind a wet
 stem the order of the two flips with the reading, the stem and the standoff (compared pair by pair), and behind
 thin sapwood over a dry core TM is the deeper one nearly everywhere. The depth behind depends on how much of the stem is wet: a wet interior — the season, the
 868 MHz step and the wettest conifer all fall inside it — puts TM at 24.9 – 34.5 dB; a thin wet shell over a dry core,
-under the wettest bark, brings it to 10.6 dB. Which sapwood width is the adverse one depends on the consumer, and the
-cache names the reading at each end of every span (`ends_by_reading`). The narrowest 3-dB sector, 53°, is the 8.1 cm
-staining width under the «phloem» bark (the 6.1 cm tomography width under the same bark: 57°), and so is the largest
-TM loss at 90°, 9.7 dB. The floors behind are the 2.2 cm width under that bark; on the three widths computed the floor
-under each bark is lowest at 2.2 cm, so for a node below 3 m, where Björklund's sapwood is wider, they are the
-conservative side — between 2.2 and 6.1 cm the model is not run. The deepest back, 34.5 dB, is the wettest homogeneous
-conifer, neither width. The stem is wider than a wavelength (λ = 34.5 cm); the deepest null sits
+under the wettest bark, brings it to 10.6 dB. On the named readings the cache names the reading at each end of every
+span (`ends_by_reading`), but no named width can name a consumer's adverse end: wet sapwood resonates — its
+in-medium wavelength at the carrier is ≈ 7.75 cm, so every output swings with the width about every 3.87 cm — and
+named readings bracket an output only where it is monotone between them. So `107` sweeps the width over its measured
+axis (`width_sweep`), 2.2 – 13.6 cm in 0.2 cm steps — Björklund's narrowest stem to past the widest radius of Bieker
+& Rust's Fig. 2, ≈ 13.4 cm by staining — under every bark, stem, standoff and polarization, the named widths included.
+On that axis the narrowest TM 3-dB sector is 52°, at 3.2 – 4.0 and 7.4 – 7.8 cm under the «phloem» bark (the 8.1 cm
+staining mean gives 53°, the 6.1 cm tomography mean under the same bark 57°), and the widest is 71°; the largest TM
+loss at 90° is 10.3 dB, at 3.4 cm; the TM floor behind is 10.2 dB at 2.8 cm — inside the axis, not at its thin end
+(under the dry bark 12.8 dB at 4.0 cm, against 20.5 at 2.2) — while the TE floor stays 7.7 dB at 2.2 cm; the back
+reaches 54.9 dB (TM, at 7.4 cm) and 71.1 dB (TE, at 13.0 cm), deeper than any named reading, and the deepest TM null
+moves up to 52° off the straight line. No width is the conservative one for every consumer, and the mount's height
+gives none of them a direction. The stem is wider than a wavelength (λ = 34.5 cm); on the named readings the deepest
+null sits
 up to 42° off the straight line through the stem (at 138.25 – 180°), and on most readings 180° is itself a local
 maximum where the waves creeping round both sides meet in phase. The standoff sets the near-field indicator: a TM node
 radiates 0.13 – 0.65 of its input power with the RF deck 12.85 mm over the bark and 0.18 – 0.7 at 16.85 mm.

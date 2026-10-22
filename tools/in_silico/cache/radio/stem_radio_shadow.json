@@ -96,6 +96,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.061,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark dry proxy) · sapwood 6.1 cm (Bieker & Rust 2010, ERT at 0.3 m — the band to the staining boundary in the heartwood proxy) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_8cm_bark_dry": {
@@ -120,6 +125,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.081,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark dry proxy) · sapwood 8.1 cm (Bieker & Rust 2010, benzidine staining at 0.3 m — the band to the ERT boundary at the sapwood's ε) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_2cm_bark_dry": {
@@ -143,6 +153,11 @@
             2.79,
             0.539
           ]
+        ],
+        "sapwood_width_m": 0.022,
+        "width_read_at_height_m": [
+          3.5,
+          4.5
         ],
         "source": "dead bark by stem (bark dry proxy) · sapwood 2.2 cm (Björklund 1999's narrowest stem, CT at 3.5–4.5 m — above 3 m, where his sapwood is narrower than at the butt) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
@@ -192,6 +207,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.061,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark wet proxy) · sapwood 6.1 cm (Bieker & Rust 2010, ERT at 0.3 m — the band to the staining boundary in the heartwood proxy) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_8cm_bark_wet": {
@@ -216,6 +236,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.081,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark wet proxy) · sapwood 8.1 cm (Bieker & Rust 2010, benzidine staining at 0.3 m — the band to the ERT boundary at the sapwood's ε) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_2cm_bark_wet": {
@@ -239,6 +264,11 @@
             2.79,
             0.539
           ]
+        ],
+        "sapwood_width_m": 0.022,
+        "width_read_at_height_m": [
+          3.5,
+          4.5
         ],
         "source": "dead bark by stem (bark wet proxy) · sapwood 2.2 cm (Björklund 1999's narrowest stem, CT at 3.5–4.5 m — above 3 m, where his sapwood is narrower than at the butt) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
@@ -288,6 +318,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.061,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · sapwood 6.1 cm (Bieker & Rust 2010, ERT at 0.3 m — the band to the staining boundary in the heartwood proxy) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_8cm_bark_phloem": {
@@ -312,6 +347,11 @@
             0.539
           ]
         ],
+        "sapwood_width_m": 0.081,
+        "width_read_at_height_m": [
+          0.3,
+          0.3
+        ],
         "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · sapwood 8.1 cm (Bieker & Rust 2010, benzidine staining at 0.3 m — the band to the ERT boundary at the sapwood's ε) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       },
       "scots_sapwood_2cm_bark_phloem": {
@@ -335,6 +375,11 @@
             2.79,
             0.539
           ]
+        ],
+        "sapwood_width_m": 0.022,
+        "width_read_at_height_m": [
+          3.5,
+          4.5
         ],
         "source": "dead bark by stem (bark phloem proxy: El-Rayes & Ulaby A.36 balsam-fir trunk bark, interpolated to 868 MHz; phloem-dominated is our hypothesis) · sapwood 2.2 cm (Björklund 1999's narrowest stem, CT at 3.5–4.5 m — above 3 m, where his sapwood is narrower than at the butt) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"
       }
@@ -11976,5 +12021,4937 @@
       }
     }
   },
-  "verdict": "In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem (TM) is 10.6–34.5 dB below its level with the gateway in front, and its deepest null lies 13.4–54.4 dB below the front at 138.25–180.0° from it; at 90° it is 6.1–9.7 dB down, and it stays within 3 dB of the front only to 53–66°. A dipole tangential to the bark (TE, horizontal E): 7.7–48.0 dB behind, 9.2–21.1 dB at 90°. Ranges span every reading of the stem's permittivity, diameter and the antenna's standoff in this cache. The 2-D efficiency indicator — what the near field loses into the stem — is 0.13–0.70 (TM) and 0.15–0.54 (TE); it is not the 3-D antenna efficiency."
+  "width_sweep": {
+    "what": "the three-layer Scots stem (dead bark · sapwood at Mavrovic's thawed ε · heartwood at the dry proxy) over the measured sapwood-width axis — the output is resonant in the width, so named widths cannot bracket it (docstring WIDTH SWEEP); rows skip the N + 15 truncation re-solve and keep the energy balance",
+    "axis_cm": [
+      2.2,
+      13.6
+    ],
+    "step_cm": 0.2,
+    "named_widths_cm": [
+      2.2,
+      6.1,
+      8.1
+    ],
+    "n_widths": 60,
+    "n_rows": 2160,
+    "axis_ends": {
+      "low": "Björklund 1999 Table 2 (p. 123): the narrowest of 198 stems, 22 mm, CT at 3.5–4.5 m",
+      "high": "Bieker & Rust 2010 Fig. 2 (p. 269, page image): the widest per-radius staining width, ≈ 13.4 cm at 0.3 m (ERT ≈ 11.6 cm); Björklund 1999's widest stem, 90 mm, lies inside"
+    },
+    "sapwood_wavelength_cm": 7.75,
+    "half_wavelength_cm": 3.87,
+    "extremes": {
+      "TM": {
+        "front_minus_back_dB": {
+          "min": 10.271,
+          "min_at": [
+            {
+              "w_cm": 2.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 54.891,
+          "max_at": [
+            {
+              "w_cm": 7.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            }
+          ]
+        },
+        "front_minus_side_dB": {
+          "min": 5.216,
+          "min_at": [
+            {
+              "w_cm": 3.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 10.209,
+          "max_at": [
+            {
+              "w_cm": 3.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "within_3dB_of_front_to_deg": {
+          "min": 52,
+          "min_at": [
+            {
+              "w_cm": 3.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 4.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 71,
+          "max_at": [
+            {
+              "w_cm": 2.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            }
+          ]
+        },
+        "deepest_below_front_dB": {
+          "min": 11.541,
+          "min_at": [
+            {
+              "w_cm": 2.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 81.137,
+          "max_at": [
+            {
+              "w_cm": 10.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "phi_min_deg": {
+          "min": 128.95,
+          "min_at": [
+            {
+              "w_cm": 3.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 180.0,
+          "max_at": [
+            {
+              "w_cm": 2.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 3.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 2.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 2.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 4.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 4.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 5.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 5.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 6.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 8.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 8.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 8.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "efficiency": {
+          "min": 0.11299,
+          "min_at": [
+            {
+              "w_cm": 2.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 0.69392,
+          "max_at": [
+            {
+              "w_cm": 2.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            }
+          ]
+        }
+      },
+      "TE": {
+        "front_minus_back_dB": {
+          "min": 7.744,
+          "min_at": [
+            {
+              "w_cm": 2.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 71.026,
+          "max_at": [
+            {
+              "w_cm": 13.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            }
+          ]
+        },
+        "front_minus_side_dB": {
+          "min": 8.275,
+          "min_at": [
+            {
+              "w_cm": 3.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 21.551,
+          "max_at": [
+            {
+              "w_cm": 5.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            }
+          ]
+        },
+        "within_3dB_of_front_to_deg": {
+          "min": 37,
+          "min_at": [
+            {
+              "w_cm": 3.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 3.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 4.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 4.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 4.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 4.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 16.85
+            }
+          ],
+          "max": 55,
+          "max_at": [
+            {
+              "w_cm": 3.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "deepest_below_front_dB": {
+          "min": 18.779,
+          "min_at": [
+            {
+              "w_cm": 3.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 85.501,
+          "max_at": [
+            {
+              "w_cm": 8.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "phi_min_deg": {
+          "min": 106.3,
+          "min_at": [
+            {
+              "w_cm": 2.4,
+              "bark": "bark_dry",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            }
+          ],
+          "max": 180.0,
+          "max_at": [
+            {
+              "w_cm": 13.0,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.4,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.6,
+              "bark": "bark_wet",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 9.0,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 9.2,
+              "bark": "bark_wet",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 9.8,
+              "bark": "bark_wet",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 7.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 8.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 8.1,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.2,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 8.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 9.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 9.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 9.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 9.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.5,
+              "standoff_mm": 16.85
+            },
+            {
+              "w_cm": 10.4,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 10.6,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 10.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            },
+            {
+              "w_cm": 11.0,
+              "bark": "bark_phloem",
+              "dbh_m": 0.38,
+              "standoff_mm": 12.85
+            }
+          ]
+        },
+        "efficiency": {
+          "min": 0.14034,
+          "min_at": [
+            {
+              "w_cm": 2.8,
+              "bark": "bark_phloem",
+              "dbh_m": 0.6,
+              "standoff_mm": 12.85
+            }
+          ],
+          "max": 0.53161,
+          "max_at": [
+            {
+              "w_cm": 2.2,
+              "bark": "bark_dry",
+              "dbh_m": 0.6,
+              "standoff_mm": 16.85
+            }
+          ]
+        }
+      }
+    },
+    "by_bark": {
+      "TM": {
+        "bark_dry": {
+          "front_minus_back_dB": {
+            "min": 12.891,
+            "min_at": [
+              {
+                "w_cm": 4.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 54.891,
+            "max_at": [
+              {
+                "w_cm": 7.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 5.896,
+            "min_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 8.859,
+            "max_at": [
+              {
+                "w_cm": 5.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 54,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 65,
+            "max_at": [
+              {
+                "w_cm": 3.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 14.072,
+            "min_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 66.914,
+            "max_at": [
+              {
+                "w_cm": 5.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 132.75,
+            "min_at": [
+              {
+                "w_cm": 5.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.34474,
+            "min_at": [
+              {
+                "w_cm": 4.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.69392,
+            "max_at": [
+              {
+                "w_cm": 2.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        },
+        "bark_wet": {
+          "front_minus_back_dB": {
+            "min": 10.361,
+            "min_at": [
+              {
+                "w_cm": 3.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 41.031,
+            "max_at": [
+              {
+                "w_cm": 7.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 5.216,
+            "min_at": [
+              {
+                "w_cm": 3.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 8.624,
+            "max_at": [
+              {
+                "w_cm": 5.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 57,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 71,
+            "max_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 12.26,
+            "min_at": [
+              {
+                "w_cm": 3.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 66.54,
+            "max_at": [
+              {
+                "w_cm": 4.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 129.05,
+            "min_at": [
+              {
+                "w_cm": 4.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.2254,
+            "min_at": [
+              {
+                "w_cm": 4.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.52341,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        },
+        "bark_phloem": {
+          "front_minus_back_dB": {
+            "min": 10.271,
+            "min_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 39.801,
+            "max_at": [
+              {
+                "w_cm": 6.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 5.577,
+            "min_at": [
+              {
+                "w_cm": 2.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 10.209,
+            "max_at": [
+              {
+                "w_cm": 3.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 52,
+            "min_at": [
+              {
+                "w_cm": 3.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 67,
+            "max_at": [
+              {
+                "w_cm": 2.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 11.541,
+            "min_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 81.137,
+            "max_at": [
+              {
+                "w_cm": 10.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 128.95,
+            "min_at": [
+              {
+                "w_cm": 3.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 4.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 4.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 5.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 6.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 8.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 8.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 8.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.11299,
+            "min_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.33639,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        }
+      },
+      "TE": {
+        "bark_dry": {
+          "front_minus_back_dB": {
+            "min": 11.35,
+            "min_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 71.026,
+            "max_at": [
+              {
+                "w_cm": 13.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 13.072,
+            "min_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 21.551,
+            "max_at": [
+              {
+                "w_cm": 5.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 39,
+            "min_at": [
+              {
+                "w_cm": 4.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 5.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 10.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 10.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 10.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 44,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 26.714,
+            "min_at": [
+              {
+                "w_cm": 8.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 85.501,
+            "max_at": [
+              {
+                "w_cm": 8.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 106.3,
+            "min_at": [
+              {
+                "w_cm": 2.4,
+                "bark": "bark_dry",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 13.0,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.25988,
+            "min_at": [
+              {
+                "w_cm": 4.6,
+                "bark": "bark_dry",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.53161,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_dry",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        },
+        "bark_wet": {
+          "front_minus_back_dB": {
+            "min": 8.218,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 51.004,
+            "max_at": [
+              {
+                "w_cm": 8.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 8.275,
+            "min_at": [
+              {
+                "w_cm": 3.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 15.24,
+            "max_at": [
+              {
+                "w_cm": 5.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 41,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 55,
+            "max_at": [
+              {
+                "w_cm": 3.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 18.779,
+            "min_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 62.3,
+            "max_at": [
+              {
+                "w_cm": 7.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 118.15,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 8.4,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.6,
+                "bark": "bark_wet",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.0,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.8,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.21365,
+            "min_at": [
+              {
+                "w_cm": 4.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.40374,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_wet",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        },
+        "bark_phloem": {
+          "front_minus_back_dB": {
+            "min": 7.744,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 44.798,
+            "max_at": [
+              {
+                "w_cm": 11.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "front_minus_side_dB": {
+            "min": 9.071,
+            "min_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 17.56,
+            "max_at": [
+              {
+                "w_cm": 4.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          },
+          "within_3dB_of_front_to_deg": {
+            "min": 37,
+            "min_at": [
+              {
+                "w_cm": 3.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 3.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 4.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 50,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 2.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 3.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "deepest_below_front_dB": {
+            "min": 20.421,
+            "min_at": [
+              {
+                "w_cm": 6.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 80.128,
+            "max_at": [
+              {
+                "w_cm": 3.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "phi_min_deg": {
+            "min": 118.45,
+            "min_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ],
+            "max": 180.0,
+            "max_at": [
+              {
+                "w_cm": 7.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 7.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 8.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 8.1,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 8.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 9.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 9.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 9.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.5,
+                "standoff_mm": 16.85
+              },
+              {
+                "w_cm": 10.4,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 10.6,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 10.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              },
+              {
+                "w_cm": 11.0,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 12.85
+              }
+            ]
+          },
+          "efficiency": {
+            "min": 0.14034,
+            "min_at": [
+              {
+                "w_cm": 2.8,
+                "bark": "bark_phloem",
+                "dbh_m": 0.6,
+                "standoff_mm": 12.85
+              }
+            ],
+            "max": 0.26654,
+            "max_at": [
+              {
+                "w_cm": 2.2,
+                "bark": "bark_phloem",
+                "dbh_m": 0.38,
+                "standoff_mm": 16.85
+              }
+            ]
+          }
+        }
+      }
+    },
+    "by_width": {
+      "TM": {
+        "front_minus_back_dB": [
+          [
+            2.2,
+            10.628,
+            22.11
+          ],
+          [
+            2.4,
+            10.646,
+            22.033
+          ],
+          [
+            2.6,
+            10.451,
+            21.438
+          ],
+          [
+            2.8,
+            10.271,
+            20.366
+          ],
+          [
+            3.0,
+            10.517,
+            19.146
+          ],
+          [
+            3.2,
+            10.361,
+            20.404
+          ],
+          [
+            3.4,
+            10.418,
+            21.516
+          ],
+          [
+            3.6,
+            10.649,
+            22.519
+          ],
+          [
+            3.8,
+            10.671,
+            23.441
+          ],
+          [
+            4.0,
+            11.173,
+            24.301
+          ],
+          [
+            4.2,
+            12.107,
+            25.113
+          ],
+          [
+            4.4,
+            13.374,
+            25.89
+          ],
+          [
+            4.6,
+            14.521,
+            26.63
+          ],
+          [
+            4.8,
+            15.765,
+            27.311
+          ],
+          [
+            5.0,
+            17.132,
+            27.876
+          ],
+          [
+            5.2,
+            18.474,
+            28.241
+          ],
+          [
+            5.4,
+            19.647,
+            28.348
+          ],
+          [
+            5.6,
+            20.362,
+            28.819
+          ],
+          [
+            5.8,
+            21.005,
+            30.799
+          ],
+          [
+            6.0,
+            21.68,
+            32.728
+          ],
+          [
+            6.1,
+            22.062,
+            33.369
+          ],
+          [
+            6.2,
+            22.492,
+            33.615
+          ],
+          [
+            6.4,
+            23.464,
+            34.684
+          ],
+          [
+            6.6,
+            24.283,
+            39.801
+          ],
+          [
+            6.8,
+            25.36,
+            39.567
+          ],
+          [
+            7.0,
+            26.835,
+            41.031
+          ],
+          [
+            7.2,
+            25.724,
+            41.608
+          ],
+          [
+            7.4,
+            24.994,
+            54.891
+          ],
+          [
+            7.6,
+            24.64,
+            41.609
+          ],
+          [
+            7.8,
+            24.582,
+            34.998
+          ],
+          [
+            8.0,
+            24.371,
+            31.657
+          ],
+          [
+            8.1,
+            23.764,
+            30.554
+          ],
+          [
+            8.2,
+            23.287,
+            29.702
+          ],
+          [
+            8.4,
+            22.649,
+            29.019
+          ],
+          [
+            8.6,
+            22.317,
+            28.496
+          ],
+          [
+            8.8,
+            22.185,
+            28.764
+          ],
+          [
+            9.0,
+            22.227,
+            29.138
+          ],
+          [
+            9.2,
+            22.379,
+            29.609
+          ],
+          [
+            9.4,
+            22.586,
+            30.164
+          ],
+          [
+            9.6,
+            22.81,
+            30.779
+          ],
+          [
+            9.8,
+            23.027,
+            31.425
+          ],
+          [
+            10.0,
+            23.228,
+            32.075
+          ],
+          [
+            10.2,
+            23.418,
+            32.721
+          ],
+          [
+            10.4,
+            23.615,
+            33.37
+          ],
+          [
+            10.6,
+            23.84,
+            34.047
+          ],
+          [
+            10.8,
+            24.116,
+            34.776
+          ],
+          [
+            11.0,
+            24.46,
+            35.562
+          ],
+          [
+            11.2,
+            24.879,
+            36.379
+          ],
+          [
+            11.4,
+            25.367,
+            37.154
+          ],
+          [
+            11.6,
+            25.777,
+            37.918
+          ],
+          [
+            11.8,
+            26.232,
+            38.793
+          ],
+          [
+            12.0,
+            26.388,
+            39.161
+          ],
+          [
+            12.2,
+            26.383,
+            38.887
+          ],
+          [
+            12.4,
+            26.406,
+            38.116
+          ],
+          [
+            12.6,
+            26.465,
+            37.121
+          ],
+          [
+            12.8,
+            26.562,
+            36.104
+          ],
+          [
+            13.0,
+            26.691,
+            35.169
+          ],
+          [
+            13.2,
+            26.71,
+            34.351
+          ],
+          [
+            13.4,
+            26.421,
+            33.656
+          ],
+          [
+            13.6,
+            26.116,
+            33.075
+          ]
+        ],
+        "front_minus_side_dB": [
+          [
+            2.2,
+            6.177,
+            8.822
+          ],
+          [
+            2.4,
+            5.81,
+            8.596
+          ],
+          [
+            2.6,
+            5.577,
+            9.063
+          ],
+          [
+            2.8,
+            5.475,
+            9.575
+          ],
+          [
+            3.0,
+            5.392,
+            9.909
+          ],
+          [
+            3.2,
+            5.373,
+            10.15
+          ],
+          [
+            3.4,
+            5.216,
+            10.209
+          ],
+          [
+            3.6,
+            5.274,
+            10.145
+          ],
+          [
+            3.8,
+            5.611,
+            10.051
+          ],
+          [
+            4.0,
+            6.033,
+            10.042
+          ],
+          [
+            4.2,
+            6.386,
+            9.909
+          ],
+          [
+            4.4,
+            6.912,
+            9.698
+          ],
+          [
+            4.6,
+            7.487,
+            9.44
+          ],
+          [
+            4.8,
+            7.917,
+            9.152
+          ],
+          [
+            5.0,
+            8.18,
+            8.843
+          ],
+          [
+            5.2,
+            8.022,
+            8.859
+          ],
+          [
+            5.4,
+            7.786,
+            8.832
+          ],
+          [
+            5.6,
+            7.528,
+            8.756
+          ],
+          [
+            5.8,
+            7.236,
+            8.646
+          ],
+          [
+            6.0,
+            6.959,
+            8.51
+          ],
+          [
+            6.1,
+            6.838,
+            8.435
+          ],
+          [
+            6.2,
+            6.734,
+            8.442
+          ],
+          [
+            6.4,
+            6.537,
+            8.7
+          ],
+          [
+            6.6,
+            6.395,
+            8.977
+          ],
+          [
+            6.8,
+            6.321,
+            9.239
+          ],
+          [
+            7.0,
+            6.197,
+            9.456
+          ],
+          [
+            7.2,
+            6.077,
+            9.639
+          ],
+          [
+            7.4,
+            6.03,
+            9.779
+          ],
+          [
+            7.6,
+            6.04,
+            9.838
+          ],
+          [
+            7.8,
+            6.135,
+            9.822
+          ],
+          [
+            8.0,
+            6.305,
+            9.744
+          ],
+          [
+            8.1,
+            6.412,
+            9.686
+          ],
+          [
+            8.2,
+            6.529,
+            9.617
+          ],
+          [
+            8.4,
+            6.784,
+            9.456
+          ],
+          [
+            8.6,
+            7.023,
+            9.276
+          ],
+          [
+            8.8,
+            7.2,
+            9.09
+          ],
+          [
+            9.0,
+            7.362,
+            8.913
+          ],
+          [
+            9.2,
+            7.495,
+            8.758
+          ],
+          [
+            9.4,
+            7.543,
+            8.637
+          ],
+          [
+            9.6,
+            7.523,
+            8.564
+          ],
+          [
+            9.8,
+            7.426,
+            8.557
+          ],
+          [
+            10.0,
+            7.274,
+            8.592
+          ],
+          [
+            10.2,
+            7.136,
+            8.663
+          ],
+          [
+            10.4,
+            7.02,
+            8.761
+          ],
+          [
+            10.6,
+            6.937,
+            8.875
+          ],
+          [
+            10.8,
+            6.816,
+            8.993
+          ],
+          [
+            11.0,
+            6.706,
+            9.102
+          ],
+          [
+            11.2,
+            6.624,
+            9.198
+          ],
+          [
+            11.4,
+            6.574,
+            9.29
+          ],
+          [
+            11.6,
+            6.558,
+            9.352
+          ],
+          [
+            11.8,
+            6.574,
+            9.381
+          ],
+          [
+            12.0,
+            6.618,
+            9.376
+          ],
+          [
+            12.2,
+            6.68,
+            9.34
+          ],
+          [
+            12.4,
+            6.76,
+            9.28
+          ],
+          [
+            12.6,
+            6.85,
+            9.202
+          ],
+          [
+            12.8,
+            6.936,
+            9.114
+          ],
+          [
+            13.0,
+            7.016,
+            9.024
+          ],
+          [
+            13.2,
+            7.084,
+            8.939
+          ],
+          [
+            13.4,
+            7.136,
+            8.867
+          ],
+          [
+            13.6,
+            7.17,
+            8.811
+          ]
+        ],
+        "within_3dB_of_front_to_deg": [
+          [
+            2.2,
+            54,
+            66
+          ],
+          [
+            2.4,
+            55,
+            67
+          ],
+          [
+            2.6,
+            55,
+            69
+          ],
+          [
+            2.8,
+            53,
+            71
+          ],
+          [
+            3.0,
+            53,
+            71
+          ],
+          [
+            3.2,
+            52,
+            70
+          ],
+          [
+            3.4,
+            52,
+            68
+          ],
+          [
+            3.6,
+            52,
+            67
+          ],
+          [
+            3.8,
+            52,
+            65
+          ],
+          [
+            4.0,
+            52,
+            64
+          ],
+          [
+            4.2,
+            53,
+            62
+          ],
+          [
+            4.4,
+            54,
+            60
+          ],
+          [
+            4.6,
+            54,
+            59
+          ],
+          [
+            4.8,
+            55,
+            58
+          ],
+          [
+            5.0,
+            56,
+            58
+          ],
+          [
+            5.2,
+            56,
+            59
+          ],
+          [
+            5.4,
+            56,
+            60
+          ],
+          [
+            5.6,
+            56,
+            61
+          ],
+          [
+            5.8,
+            56,
+            62
+          ],
+          [
+            6.0,
+            57,
+            63
+          ],
+          [
+            6.1,
+            57,
+            64
+          ],
+          [
+            6.2,
+            56,
+            64
+          ],
+          [
+            6.4,
+            55,
+            65
+          ],
+          [
+            6.6,
+            54,
+            66
+          ],
+          [
+            6.8,
+            54,
+            66
+          ],
+          [
+            7.0,
+            53,
+            66
+          ],
+          [
+            7.2,
+            53,
+            66
+          ],
+          [
+            7.4,
+            52,
+            66
+          ],
+          [
+            7.6,
+            52,
+            66
+          ],
+          [
+            7.8,
+            52,
+            65
+          ],
+          [
+            8.0,
+            53,
+            64
+          ],
+          [
+            8.1,
+            53,
+            63
+          ],
+          [
+            8.2,
+            53,
+            63
+          ],
+          [
+            8.4,
+            53,
+            62
+          ],
+          [
+            8.6,
+            54,
+            61
+          ],
+          [
+            8.8,
+            54,
+            60
+          ],
+          [
+            9.0,
+            55,
+            60
+          ],
+          [
+            9.2,
+            55,
+            60
+          ],
+          [
+            9.4,
+            56,
+            61
+          ],
+          [
+            9.6,
+            56,
+            61
+          ],
+          [
+            9.8,
+            56,
+            62
+          ],
+          [
+            10.0,
+            55,
+            62
+          ],
+          [
+            10.2,
+            55,
+            63
+          ],
+          [
+            10.4,
+            55,
+            63
+          ],
+          [
+            10.6,
+            54,
+            64
+          ],
+          [
+            10.8,
+            54,
+            64
+          ],
+          [
+            11.0,
+            54,
+            63
+          ],
+          [
+            11.2,
+            54,
+            63
+          ],
+          [
+            11.4,
+            53,
+            63
+          ],
+          [
+            11.6,
+            53,
+            63
+          ],
+          [
+            11.8,
+            53,
+            62
+          ],
+          [
+            12.0,
+            54,
+            62
+          ],
+          [
+            12.2,
+            54,
+            61
+          ],
+          [
+            12.4,
+            54,
+            61
+          ],
+          [
+            12.6,
+            54,
+            61
+          ],
+          [
+            12.8,
+            55,
+            60
+          ],
+          [
+            13.0,
+            55,
+            61
+          ],
+          [
+            13.2,
+            55,
+            61
+          ],
+          [
+            13.4,
+            55,
+            61
+          ],
+          [
+            13.6,
+            55,
+            61
+          ]
+        ]
+      },
+      "TE": {
+        "front_minus_back_dB": [
+          [
+            2.2,
+            7.744,
+            17.362
+          ],
+          [
+            2.4,
+            8.006,
+            17.27
+          ],
+          [
+            2.6,
+            8.251,
+            17.122
+          ],
+          [
+            2.8,
+            8.52,
+            16.958
+          ],
+          [
+            3.0,
+            8.869,
+            16.857
+          ],
+          [
+            3.2,
+            9.341,
+            17.354
+          ],
+          [
+            3.4,
+            9.948,
+            17.704
+          ],
+          [
+            3.6,
+            10.405,
+            17.914
+          ],
+          [
+            3.8,
+            10.755,
+            18.004
+          ],
+          [
+            4.0,
+            11.106,
+            18.006
+          ],
+          [
+            4.2,
+            11.494,
+            17.953
+          ],
+          [
+            4.4,
+            11.676,
+            18.164
+          ],
+          [
+            4.6,
+            11.99,
+            18.216
+          ],
+          [
+            4.8,
+            12.4,
+            18.229
+          ],
+          [
+            5.0,
+            12.872,
+            18.825
+          ],
+          [
+            5.2,
+            13.382,
+            19.402
+          ],
+          [
+            5.4,
+            13.775,
+            19.954
+          ],
+          [
+            5.6,
+            13.851,
+            20.482
+          ],
+          [
+            5.8,
+            13.892,
+            20.996
+          ],
+          [
+            6.0,
+            13.921,
+            21.509
+          ],
+          [
+            6.1,
+            13.938,
+            21.768
+          ],
+          [
+            6.2,
+            13.959,
+            22.032
+          ],
+          [
+            6.4,
+            14.023,
+            22.577
+          ],
+          [
+            6.6,
+            14.13,
+            23.148
+          ],
+          [
+            6.8,
+            14.295,
+            23.744
+          ],
+          [
+            7.0,
+            14.537,
+            24.995
+          ],
+          [
+            7.2,
+            14.874,
+            27.291
+          ],
+          [
+            7.4,
+            15.327,
+            30.037
+          ],
+          [
+            7.6,
+            15.911,
+            32.951
+          ],
+          [
+            7.8,
+            16.64,
+            34.434
+          ],
+          [
+            8.0,
+            17.187,
+            33.066
+          ],
+          [
+            8.1,
+            17.325,
+            33.738
+          ],
+          [
+            8.2,
+            17.481,
+            34.546
+          ],
+          [
+            8.4,
+            17.846,
+            38.021
+          ],
+          [
+            8.6,
+            18.281,
+            51.004
+          ],
+          [
+            8.8,
+            18.793,
+            38.176
+          ],
+          [
+            9.0,
+            19.392,
+            45.365
+          ],
+          [
+            9.2,
+            20.093,
+            40.552
+          ],
+          [
+            9.4,
+            20.658,
+            36.516
+          ],
+          [
+            9.6,
+            20.336,
+            37.153
+          ],
+          [
+            9.8,
+            20.113,
+            34.964
+          ],
+          [
+            10.0,
+            19.977,
+            32.443
+          ],
+          [
+            10.2,
+            19.923,
+            31.66
+          ],
+          [
+            10.4,
+            19.948,
+            32.661
+          ],
+          [
+            10.6,
+            20.055,
+            32.113
+          ],
+          [
+            10.8,
+            20.248,
+            36.14
+          ],
+          [
+            11.0,
+            20.534,
+            44.798
+          ],
+          [
+            11.2,
+            20.821,
+            44.79
+          ],
+          [
+            11.4,
+            20.947,
+            36.895
+          ],
+          [
+            11.6,
+            20.948,
+            32.971
+          ],
+          [
+            11.8,
+            21.053,
+            34.135
+          ],
+          [
+            12.0,
+            21.251,
+            35.819
+          ],
+          [
+            12.2,
+            21.528,
+            37.897
+          ],
+          [
+            12.4,
+            21.872,
+            40.557
+          ],
+          [
+            12.6,
+            22.269,
+            44.218
+          ],
+          [
+            12.8,
+            22.706,
+            50.159
+          ],
+          [
+            13.0,
+            22.975,
+            71.026
+          ],
+          [
+            13.2,
+            23.275,
+            52.542
+          ],
+          [
+            13.4,
+            23.622,
+            46.482
+          ],
+          [
+            13.6,
+            23.622,
+            46.394
+          ]
+        ],
+        "front_minus_side_dB": [
+          [
+            2.2,
+            9.254,
+            17.617
+          ],
+          [
+            2.4,
+            9.129,
+            16.85
+          ],
+          [
+            2.6,
+            9.196,
+            16.892
+          ],
+          [
+            2.8,
+            9.071,
+            17.17
+          ],
+          [
+            3.0,
+            8.764,
+            17.331
+          ],
+          [
+            3.2,
+            8.476,
+            17.264
+          ],
+          [
+            3.4,
+            8.3,
+            17.006
+          ],
+          [
+            3.6,
+            8.275,
+            16.703
+          ],
+          [
+            3.8,
+            8.401,
+            16.517
+          ],
+          [
+            4.0,
+            8.643,
+            16.561
+          ],
+          [
+            4.2,
+            8.944,
+            16.893
+          ],
+          [
+            4.4,
+            9.25,
+            17.52
+          ],
+          [
+            4.6,
+            9.525,
+            18.395
+          ],
+          [
+            4.8,
+            9.747,
+            19.416
+          ],
+          [
+            5.0,
+            9.909,
+            20.419
+          ],
+          [
+            5.2,
+            10.009,
+            21.192
+          ],
+          [
+            5.4,
+            10.05,
+            21.551
+          ],
+          [
+            5.6,
+            10.035,
+            21.447
+          ],
+          [
+            5.8,
+            9.972,
+            20.993
+          ],
+          [
+            6.0,
+            9.871,
+            20.362
+          ],
+          [
+            6.1,
+            9.81,
+            20.025
+          ],
+          [
+            6.2,
+            9.746,
+            19.693
+          ],
+          [
+            6.4,
+            9.61,
+            19.072
+          ],
+          [
+            6.6,
+            9.477,
+            18.545
+          ],
+          [
+            6.8,
+            9.361,
+            18.134
+          ],
+          [
+            7.0,
+            9.274,
+            17.844
+          ],
+          [
+            7.2,
+            9.224,
+            17.674
+          ],
+          [
+            7.4,
+            9.218,
+            17.617
+          ],
+          [
+            7.6,
+            9.252,
+            17.66
+          ],
+          [
+            7.8,
+            9.318,
+            17.788
+          ],
+          [
+            8.0,
+            9.404,
+            17.983
+          ],
+          [
+            8.1,
+            9.45,
+            18.098
+          ],
+          [
+            8.2,
+            9.496,
+            18.22
+          ],
+          [
+            8.4,
+            9.584,
+            18.47
+          ],
+          [
+            8.6,
+            9.658,
+            18.702
+          ],
+          [
+            8.8,
+            9.716,
+            18.886
+          ],
+          [
+            9.0,
+            9.755,
+            19.001
+          ],
+          [
+            9.2,
+            9.777,
+            19.037
+          ],
+          [
+            9.4,
+            9.783,
+            18.996
+          ],
+          [
+            9.6,
+            9.775,
+            18.893
+          ],
+          [
+            9.8,
+            9.756,
+            18.744
+          ],
+          [
+            10.0,
+            9.727,
+            18.569
+          ],
+          [
+            10.2,
+            9.693,
+            18.386
+          ],
+          [
+            10.4,
+            9.657,
+            18.209
+          ],
+          [
+            10.6,
+            9.624,
+            18.049
+          ],
+          [
+            10.8,
+            9.598,
+            17.914
+          ],
+          [
+            11.0,
+            9.583,
+            17.809
+          ],
+          [
+            11.2,
+            9.578,
+            17.737
+          ],
+          [
+            11.4,
+            9.584,
+            17.7
+          ],
+          [
+            11.6,
+            9.599,
+            17.696
+          ],
+          [
+            11.8,
+            9.619,
+            17.724
+          ],
+          [
+            12.0,
+            9.639,
+            17.779
+          ],
+          [
+            12.2,
+            9.658,
+            17.857
+          ],
+          [
+            12.4,
+            9.67,
+            17.951
+          ],
+          [
+            12.6,
+            9.676,
+            18.05
+          ],
+          [
+            12.8,
+            9.673,
+            18.148
+          ],
+          [
+            13.0,
+            9.663,
+            18.237
+          ],
+          [
+            13.2,
+            9.646,
+            18.311
+          ],
+          [
+            13.4,
+            9.625,
+            18.366
+          ],
+          [
+            13.6,
+            9.601,
+            18.399
+          ]
+        ],
+        "within_3dB_of_front_to_deg": [
+          [
+            2.2,
+            40,
+            50
+          ],
+          [
+            2.4,
+            40,
+            51
+          ],
+          [
+            2.6,
+            40,
+            52
+          ],
+          [
+            2.8,
+            39,
+            53
+          ],
+          [
+            3.0,
+            38,
+            54
+          ],
+          [
+            3.2,
+            38,
+            55
+          ],
+          [
+            3.4,
+            38,
+            54
+          ],
+          [
+            3.6,
+            37,
+            54
+          ],
+          [
+            3.8,
+            37,
+            52
+          ],
+          [
+            4.0,
+            37,
+            50
+          ],
+          [
+            4.2,
+            37,
+            49
+          ],
+          [
+            4.4,
+            37,
+            48
+          ],
+          [
+            4.6,
+            37,
+            47
+          ],
+          [
+            4.8,
+            38,
+            47
+          ],
+          [
+            5.0,
+            38,
+            47
+          ],
+          [
+            5.2,
+            39,
+            47
+          ],
+          [
+            5.4,
+            39,
+            48
+          ],
+          [
+            5.6,
+            39,
+            48
+          ],
+          [
+            5.8,
+            40,
+            49
+          ],
+          [
+            6.0,
+            40,
+            50
+          ],
+          [
+            6.1,
+            40,
+            50
+          ],
+          [
+            6.2,
+            40,
+            50
+          ],
+          [
+            6.4,
+            40,
+            51
+          ],
+          [
+            6.6,
+            40,
+            51
+          ],
+          [
+            6.8,
+            39,
+            52
+          ],
+          [
+            7.0,
+            39,
+            52
+          ],
+          [
+            7.2,
+            39,
+            52
+          ],
+          [
+            7.4,
+            39,
+            51
+          ],
+          [
+            7.6,
+            39,
+            51
+          ],
+          [
+            7.8,
+            38,
+            50
+          ],
+          [
+            8.0,
+            38,
+            49
+          ],
+          [
+            8.1,
+            38,
+            49
+          ],
+          [
+            8.2,
+            38,
+            49
+          ],
+          [
+            8.4,
+            38,
+            48
+          ],
+          [
+            8.6,
+            38,
+            48
+          ],
+          [
+            8.8,
+            39,
+            48
+          ],
+          [
+            9.0,
+            39,
+            48
+          ],
+          [
+            9.2,
+            39,
+            48
+          ],
+          [
+            9.4,
+            39,
+            48
+          ],
+          [
+            9.6,
+            39,
+            48
+          ],
+          [
+            9.8,
+            39,
+            49
+          ],
+          [
+            10.0,
+            39,
+            49
+          ],
+          [
+            10.2,
+            39,
+            49
+          ],
+          [
+            10.4,
+            39,
+            50
+          ],
+          [
+            10.6,
+            40,
+            50
+          ],
+          [
+            10.8,
+            40,
+            50
+          ],
+          [
+            11.0,
+            39,
+            50
+          ],
+          [
+            11.2,
+            39,
+            50
+          ],
+          [
+            11.4,
+            39,
+            50
+          ],
+          [
+            11.6,
+            39,
+            49
+          ],
+          [
+            11.8,
+            39,
+            49
+          ],
+          [
+            12.0,
+            39,
+            49
+          ],
+          [
+            12.2,
+            39,
+            49
+          ],
+          [
+            12.4,
+            39,
+            49
+          ],
+          [
+            12.6,
+            39,
+            49
+          ],
+          [
+            12.8,
+            39,
+            48
+          ],
+          [
+            13.0,
+            39,
+            49
+          ],
+          [
+            13.2,
+            40,
+            49
+          ],
+          [
+            13.4,
+            40,
+            49
+          ],
+          [
+            13.6,
+            40,
+            49
+          ]
+        ]
+      }
+    },
+    "controls": {
+      "named_widths_reproduce_the_readings_max_abs_miss": 0.0
+    }
+  },
+  "verdict": "In the horizontal plane, with the gateway straight behind the stem the field of a short dipole along the stem (TM) is 10.6–34.5 dB below its level with the gateway in front, and its deepest null lies 13.4–54.4 dB below the front at 138.25–180.0° from it; at 90° it is 6.1–9.7 dB down, and it stays within 3 dB of the front only to 53–66°. A dipole tangential to the bark (TE, horizontal E): 7.7–48.0 dB behind, 9.2–21.1 dB at 90°. Ranges span every NAMED reading of the stem's permittivity, diameter and the antenna's standoff in this cache; over the sapwood width's measured axis (2.2–13.6 cm, the width sweep — the output is resonant in the width) the TM 3-dB sector runs 52–71°, the TM loss at 90° reaches 10.3 dB, and the back spans 10.2–54.9 dB (TM) and 7.7–71.1 dB (TE). The 2-D efficiency indicator — what the near field loses into the stem — is 0.13–0.70 (TM) and 0.15–0.54 (TE); it is not the 3-D antenna efficiency."
 }

@@ -6810,3 +6810,40 @@ def test_stem_radio_shadow_invariants():
     c = d["controls"]
     assert c["free_space_max_abs_F_minus_free"] <= tol["free_space"]
     assert c["lossless_max_rel_power_miss"] <= tol["lossless"]
+
+
+def test_stem_radio_shadow_width_sweep():
+    """107's sapwood-width sweep (00_07 HW.6; the adversarial review of 2026-10-22, F1): the width is a resonant input,
+    so the sweep — not the three named widths — carries each consumer's extreme.
+
+    CAN catch: an axis that no longer reaches the measured ends (Björklund 1999's 22 mm, the cache's own thin reading;
+    past ≈ 13.4 cm, Bieker & Rust 2010 Fig. 2's widest radius); a step that is not much finer than half the sapwood's
+    in-medium wavelength; a sweep that skipped a named width or a bark × stem × standoff × polarization cell; a
+    recorded reproduction miss above zero; an extreme that is not the extreme of the per-width envelope it sits beside,
+    or whose attaining rows do not carry it; a named reading's row outside the sweep's span at its own width. CANNOT
+    catch: an extreme BETWEEN two grid widths (the step is its ground), a wrong input, or what the 2-D model drops.
+    """
+    d = json.loads((RADIO / "stem_radio_shadow.json").read_text(encoding="utf-8"))
+    sw = d["width_sweep"]
+    thin_cm = round(d["readings"]["permittivity"]["scots_sapwood_2cm_bark_dry"]["sapwood_width_m"] * 100, 2)
+    assert sw["axis_cm"][0] <= thin_cm, "the axis starts above the thinnest measured stem"
+    assert sw["axis_cm"][1] >= 13.4, "the axis stops short of Bieker & Rust's widest radius (Fig. 2, ≈ 13.4 cm)"
+    assert sw["step_cm"] <= 0.2 and sw["step_cm"] <= sw["half_wavelength_cm"] / 10
+    assert sw["controls"]["named_widths_reproduce_the_readings_max_abs_miss"] == 0.0
+    named = {round(r["sapwood_width_m"] * 100, 2) for n, r in d["readings"]["permittivity"].items()
+             if n.startswith("scots_sapwood_")}
+    assert named <= set(sw["named_widths_cm"]), "a named width is not in the sweep"
+    cells = len(d["readings"]["geometry"]["dbh_m"]["values"]) * len(d["readings"]["geometry"]["standoff_m"]["values"])
+    assert sw["n_rows"] == sw["n_widths"] * 3 * 2 * cells, "the sweep skipped a bark, stem, standoff or polarization cell"
+    for pol, by_key in sw["by_width"].items():
+        for key, env in by_key.items():
+            assert len(env) == sw["n_widths"]
+            e = sw["extremes"][pol][key]
+            assert e["min"] == min(v[1] for v in env) and e["max"] == max(v[2] for v in env), f"{pol} {key}"
+            assert {a["w_cm"] for a in e["min_at"]} == {v[0] for v in env if v[1] == e["min"]}, f"{pol} {key} min_at"
+            assert {a["w_cm"] for a in e["max_at"]} == {v[0] for v in env if v[2] == e["max"]}, f"{pol} {key} max_at"
+            at = {v[0]: v for v in env}
+            for r in d["cases"]:
+                if r["polarization"] == pol and r["permittivity"].startswith("scots_sapwood_"):
+                    w = round(d["readings"]["permittivity"][r["permittivity"]]["sapwood_width_m"] * 100, 2)
+                    assert at[w][1] <= r[key] <= at[w][2], f"{r['permittivity']} {pol} {key} outside the sweep at {w}"
