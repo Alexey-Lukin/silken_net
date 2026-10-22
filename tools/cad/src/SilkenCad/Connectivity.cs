@@ -84,7 +84,9 @@ internal static class Connectivity
     // opening and the wall scan stand on this grid. Since the welded branch (2026-09-18) that radius is 0 —
     // the part is printed without a core, the bus wire is an assembly part — so the grid is the whole lattice
     // cross-section.
-    // The gyroid SDF is periodic, so the absolute Z origin only shifts the phase, never the topology/porosity.
+    // A constant-period gyroid SDF is periodic, so for it the absolute Z origin only shifts the phase. The GRADED one
+    // is not: its z·k′(r) phase term grows from z = 0 (this grid starts there), so the origin decides where the axial
+    // distortion is largest (00_07 HW.33).
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {
         float fROuter = cem.OuterDiameterMm / 2f;

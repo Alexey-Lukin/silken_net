@@ -227,6 +227,9 @@ end
 # neither the with-rod row nor the annulus baseline it is quoted against can be re-measured by any verb
 # in this tree. The baseline therefore reads from the FROZEN pre-A sweep, never from the live one — a
 # comparison against today's sweep would be two different specimens wearing one sentence.
+# ⚠️ Both records stay byte-frozen, so their `_note` still says «a single row is an UPPER bound, read the sweep» —
+# RETRACTED 2026-10-22 (the instrument ceiling in VoxelFea.cs and 01_01 §5.2: the element error is one-signed only
+# within one run, and the staircase shows no sign); the correction lives here and in canon, never in the records.
 rod_path = File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.with_rod.json")
 frozen_path = File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.printed_core_branch.json")
 frozen = File.exist?(frozen_path) ? JSON.parse(File.read(frozen_path)) : nil

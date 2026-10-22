@@ -1163,7 +1163,8 @@ stem's share is not established, in value or in direction.
 
 ⚠️ **Bounds.** One source and one stand (Turkey), compression, below fibre saturation. The lattice reading assumes the
 two FE cases describe one homogeneous cubic body — `VoxelFea` calls its ratios «NOT a material property» — and the
-shipped part is graded, so «cubic» holds locally; Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
+shipped part is graded, so «cubic» holds locally — in the cross-section: along the axis the graded generator's phase also
+gains a radial term, unmeasured (`00_07` HW.33); Voigt's ceiling on C44 is loose (a Hashin–Shtrikman bound would narrow
 the sweep). C44 is measured for the infinite lattice by the periodic voxel case (`01_01 §5.2`) but not read here; the tissue in the pores
 and the ring are unmeasured: the ring is read as the host's xylem (ours —
 `01_04 §2`'s phases say nothing of it). An infinite cylinder in an infinite matrix: the 40 mm length on Ø11, the bending

@@ -166,7 +166,10 @@ internal sealed class DilatedField(IImplicit oInner, Func<Vector3, bool> fnInBod
 // (founder 2026-06-21; the constant-vs-graded fork has a BIOLOGICAL criterion, ⚖️ 2026-09-17 — 01_01 §5.5). Phase uses the LEAP-style
 // coord/period(r): a spatially-varying frequency is not strictly periodic (cells distort slightly
 // across the gradient) but stays bicontinuous → porosity is MEASURED per radial shell, never derived
-// (gotcha #4). Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
+// (gotcha #4). ⚠️ «Slightly» holds in the cross-section only: Z is scaled by the same 2π/period(r),
+// so the phase also gains z·k′(r), a radial wavenumber that grows with height — along the axis the
+// PHASE is not slightly distorted (pore and ligament by height are not measured), and whether to
+// grade only the in-plane phase is open (00_07 HW.33; the factory STL waits on it, HW.1). Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more
 // surface); network = one solid channel (one side of eq; bending-dominated, lower E) — the HW.33 axis.
 internal sealed class GradedCartesianGyroid : IImplicit
 {

@@ -110,7 +110,9 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   it. Ground + declared ceilings: `01_01 §5.5`.
 - **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
-  porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle. For a
+  porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle — and the
+  ~0.8× is the CROSS-SECTION's bound: Z is scaled by the same 2π/P(r), so the phase gains a
+  z·k′(r) term that grows with height, with no measured bound (`00_07` HW.33). For a
   STRONG pore contrast use `topology: stepped` (µ-LPBF only, not an SLM candidate — `01_01 §5.5`; constant-period zones → distortion only at the
   thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
   (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings
