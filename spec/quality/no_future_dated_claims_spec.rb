@@ -80,8 +80,16 @@ module FutureDatedClaimGate
     files.sum { |f| File.read(f).scan(DATE).size }
   end
 
+  # `.claude/**` іде файловою системою, тож живий агентський worktree
+  # (`.claude/worktrees/*` — повна вкладена копія репо) вносив у корпус навіть
+  # файли поза GLOBS (виміряно 2026-10-22: дві копії bench-RUNBOOK червонили
+  # повну сюїту). Виняток по КЛАСУ, і судиться ВІДНОСНИЙ шлях — як у
+  # `claude_prose_path_refs_spec`, інакше в ізольованому агенті гейт німіє.
   def files
-    GLOBS.flat_map { |g| Dir[REPO_ROOT.join(g)] }.select { |f| File.file?(f) }.sort
+    GLOBS.flat_map { |g| Dir[REPO_ROOT.join(g)] }
+         .select { |f| File.file?(f) }
+         .reject { |f| Pathname(f).relative_path_from(REPO_ROOT).to_s.start_with?(".claude/worktrees/") }
+         .sort
   end
 
   def violations
