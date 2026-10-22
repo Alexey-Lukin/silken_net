@@ -173,7 +173,7 @@ RATIFIED_T_C = {"coin": (20.0, 25.0), "accelerated": (40.0,)}
 # every two weeks from 27 Oct 1988 to 12 Oct 1989 (the summary's «mid-October 1988 to mid-October 1989»), the lowest trunk segment (10–140 cm above ground) displaced with
 # water and its second ~200 ml fraction, «pure tracheal sap», analysed by AAS; pH by glass electrode on fresh sap.
 # Each row is the MEDIAN OF FIVE TREES on one date, READ OFF Figs 2 (Ca), 4 (Mg), 7 (K) and 10 (pH) from the page
-# images (2026-10-18; read-off error about ±2 mg/L for Ca and K, ±0.3 for Mg, ±0.03 pH); pH is not plotted for
+# images (2026-10-18; read-off error → BEECH_READ_OFF_ERROR below); pH is not plotted for
 # 27 Oct, 10 Nov and 24 Nov 1988. Nitrate and organic acids are NOT reported there — the paper says its low-pH dates
 # «coincided with the highest nitrate xylem sap concentration» and cites unpublished data. The nitrate was printed
 # later (Glavac & Jochheim 1993 — BEECH_TRUNK_BASE_NITRATE below), and the point takes it by the same rule (⚖️ founder
@@ -198,6 +198,9 @@ BEECH_TRUNK_BASE_MEDIANS = {   # date: (Ca mg/L · Fig 2, Mg mg/L · Fig 4, K mg
 BEECH_SOURCE = ("Glavac V., Koenies H., Ebben U. 1990, New Phytol. 116:47-54, doi:10.1111/j.1469-8137.1990.tb00509.x, "
                 "Figs 2, 4, 7, 10 — Fagus sylvatica, lowest trunk segment, medians of five trees per date, read off the "
                 "page images")
+# The read-off error of one dated median off those figures (2026-10-18) — its one home: 85's flip control judges each
+# threshold against it, and the docs that quote it are pinned to it.
+BEECH_READ_OFF_ERROR = {"Ca_mg_l": 2.0, "Mg_mg_l": 0.3, "K_mg_l": 2.0, "pH": 0.03}
 BEECH_ACID_DATES = ("1989-05-25", "1989-07-06", "1989-07-20")   # the paper's own named low-pH dates (p. 52)
 BEECH_LOWEST_TREE_PH = 3.81    # Fig. 10, the lowest whisker (6 Jul 1989), read off
 # Nitrate of the SAME stand on the SAME dates, printed three years later (⚖️ founder 2026-10-22, HW.3 (А₀) — option (А)
@@ -903,21 +906,46 @@ def beech_nitrate_mm(reading: int | None = None) -> dict:
             for d, (n1, n2, s1, s2) in BEECH_TRUNK_BASE_NITRATE.items()}
 
 
-def broadleaf_k_total(malic: float, kno3: float) -> float:
+def broadleaf_k_total(malic: float, kno3: float, cacl2: float | None = None, ph: float | None = None) -> float:
     """Potassium total (mM) of the Q8 point at a malic acid and a KNO3: the KOH to BROADLEAF_PH (selected reading,
-    POINT_SOLVE_T_C) plus the KNO3 — the nitrate on potassium, as in revised_point()."""
-    p = {**BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3}
-    return speciate(model_for(SC["selected"], POINT_SOLVE_T_C), totals_mm(p), BROADLEAF_PH).base_mol_l / MM + kno3
+    POINT_SOLVE_T_C) plus the KNO3 — the nitrate on potassium, as in revised_point(). 85's flip control can also set
+    the CaCl2 and the pH (default: the point's)."""
+    p = {**BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3} | ({} if cacl2 is None else {"cacl2": cacl2})
+    ph = BROADLEAF_PH if ph is None else ph
+    return speciate(model_for(SC["selected"], POINT_SOLVE_T_C), totals_mm(p), ph).base_mol_l / MM + kno3
 
 
-def broadleaf_malic_solved(k_min_shift_mg_l: float = 0.0, kno3: float | None = None) -> float:
+def broadleaf_malic_solved(k_range_mg_l: tuple[float, float] | None = None, kno3: float | None = None,
+                           cacl2: float | None = None, ph: float | None = None) -> float:
     """The Q8 malic solve (mM): the malic acid whose KOH to BROADLEAF_PH, with the KNO3, gives the geometric mid of the
-    dated beech potassium medians. By default the point's own solve; 85's flip control moves the potassium MINIMUM by
-    `k_min_shift_mg_l` (one median's read-off error) and can set the KNO3 (default: the point's)."""
+    dated beech potassium medians. By default the point's own solve; 85's flip control passes the potassium range's
+    ends (mg/L) after it has moved a dated median, and can set the KNO3, the CaCl2 and the pH."""
     k = [r[2] for r in BEECH_TRUNK_BASE_MEDIANS.values()]
-    k_mid = math.sqrt((min(k) + k_min_shift_mg_l) * max(k)) / MOLAR_G["K"]
+    lo, hi = (min(k), max(k)) if k_range_mg_l is None else k_range_mg_l
+    k_mid = math.sqrt(lo * hi) / MOLAR_G["K"]
     kno3 = BROADLEAF_POINT_MM["kno3"] if kno3 is None else kno3
-    return brentq(lambda x: broadleaf_k_total(x, kno3) - k_mid, 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
+    return brentq(lambda x: broadleaf_k_total(x, kno3, cacl2, ph) - k_mid, 0.01, 5.0, xtol=1e-9)   # no acid: pH 5.95 would need a negative base
+
+
+def broadleaf_rederived(shift: dict | None = None, kno3: float | None = None, rounded: bool = True) -> tuple[dict, float]:
+    """Q8's point (mM) and pH re-derived by broadleaf_point()'s rule after moving dated medians — 85's flip control.
+    `shift` maps (date, column) — "Ca_mg_l", "K_mg_l" or "pH" — to what is added to that date's median; the ranges'
+    ends and the pH median are then taken afresh over every date, so a moved end stops being the end once it passes
+    the next value. `kno3` replaces the point's nitrate. `rounded` keeps the rule's roundings (two significant figures
+    for the CaCl2 mid and the malate, the pH median on the transcription's 0.01 grid); False leaves them continuous.
+    MgSO4 stays the point's."""
+    col = {"Ca_mg_l": 0, "K_mg_l": 2, "pH": 3}
+    rows = {d: list(r) for d, r in BEECH_TRUNK_BASE_MEDIANS.items()}
+    for (date, c), v in (shift or {}).items():
+        rows[date][col[c]] += v
+    ca, k = [r[0] for r in rows.values()], [r[2] for r in rows.values()]
+    ph = float(np.median([r[3] for r in rows.values() if r[3] is not None]))
+    sig = _sig2 if rounded else float
+    ph = round(ph, 2) if rounded else ph
+    cacl2 = sig(math.sqrt(min(ca) * max(ca)) / MOLAR_G["Ca"])
+    kno3 = BROADLEAF_POINT_MM["kno3"] if kno3 is None else kno3
+    malic = sig(broadleaf_malic_solved((min(k), max(k)), kno3, cacl2, ph))
+    return {**BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3, "cacl2": cacl2}, ph
 
 
 def broadleaf_point() -> dict:

@@ -1721,32 +1721,384 @@
         }
       }
     },
-    "oak_verdict_k_min_flip": {
+    "oak_verdict_read_off_flip": {
       "sku": "anchor_zone1_oak",
       "edge_pH": 5.5,
       "cold_start": "worst",
-      "cold_start_uA": 21.429,
-      "k_min_date": "1989-06-22",
-      "k_min_mg_l": 26,
-      "point": {
-        "kno3_mM": 0.05,
-        "malic_point_mM": 0.92,
-        "i_upper_uA": 21.479,
-        "margin_uA": 0.051,
-        "k_min_shift_to_flip_mg_l": -0.3013,
-        "malic_point_at_flip_mM": 0.91,
-        "i_upper_at_flip_uA": 21.278
+      "cold_start_uA": 21.4286,
+      "read_off_error": {
+        "K_mg_l": 2.0,
+        "Ca_mg_l": 2.0,
+        "pH": 0.03
       },
-      "kno3_zero": {
-        "kno3_mM": 0.0,
-        "malic_point_mM": 0.95,
-        "i_upper_uA": 22.097,
-        "margin_uA": 0.668,
-        "k_min_shift_to_flip_mg_l": -1.7214,
-        "malic_point_at_flip_mM": 0.91,
-        "i_upper_at_flip_uA": 21.29
+      "axes": {
+        "K_min": {
+          "date": "1989-06-22",
+          "column": "K_mg_l",
+          "reading": 26,
+          "adverse_sign": -1.0,
+          "read_off_error": 2.0
+        },
+        "K_max": {
+          "date": "1989-10-12",
+          "column": "K_mg_l",
+          "reading": 190,
+          "adverse_sign": -1.0,
+          "read_off_error": 2.0
+        },
+        "pH_median": {
+          "date": "1989-08-31",
+          "column": "pH",
+          "reading": 5.95,
+          "adverse_sign": -1.0,
+          "read_off_error": 0.03
+        },
+        "Ca_min": {
+          "date": "1989-06-22",
+          "column": "Ca_mg_l",
+          "reading": 8,
+          "adverse_sign": 1.0,
+          "read_off_error": 2.0
+        }
       },
-      "reading": "the verdict holds while the potassium minimum is read less than |k_min_shift_to_flip_mg_l| lower (the bisection's no-flip end, so the true edge lies a hair further); the point moves in steps of 0.01 mM malate, so the flip sits where the solve crosses a rounding edge"
+      "by_nitrate": {
+        "point": {
+          "kno3_mM": 0.05,
+          "malic_point_mM": 0.92,
+          "i_upper_uA": 21.4794,
+          "margin_uA": 0.0508,
+          "rule": {
+            "K_min": {
+              "shift_to_flip": -0.30144,
+              "no_flip_end": -0.30136,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.278,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -2.2023,
+              "no_flip_end": -2.20222,
+              "within_read_off_error": false,
+              "i_upper_at_flip_uA": 21.278,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.01,
+              "no_flip_end": 0.0,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.164,
+              "malic_at_flip_mM": 0.92,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.94
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          },
+          "unrounded": {
+            "K_min": {
+              "shift_to_flip": -0.1741,
+              "no_flip_end": -0.17403,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -1.27228,
+              "no_flip_end": -1.2722,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.00219,
+              "no_flip_end": -0.00219,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9207,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.9478
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          }
+        },
+        "R1": {
+          "kno3_mM": 0.049,
+          "malic_point_mM": 0.92,
+          "i_upper_uA": 21.4796,
+          "margin_uA": 0.051,
+          "rule": {
+            "K_min": {
+              "shift_to_flip": -0.3302,
+              "no_flip_end": -0.33012,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.278,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -2.41272,
+              "no_flip_end": -2.41264,
+              "within_read_off_error": false,
+              "i_upper_at_flip_uA": 21.278,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.01,
+              "no_flip_end": 0.0,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.165,
+              "malic_at_flip_mM": 0.92,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.94
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          },
+          "unrounded": {
+            "K_min": {
+              "shift_to_flip": -0.2037,
+              "no_flip_end": -0.20363,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -1.48819,
+              "no_flip_end": -1.48811,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.00256,
+              "no_flip_end": -0.00255,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9213,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.9474
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          }
+        },
+        "R2": {
+          "kno3_mM": 0.051,
+          "malic_point_mM": 0.92,
+          "i_upper_uA": 21.4791,
+          "margin_uA": 0.0505,
+          "rule": {
+            "K_min": {
+              "shift_to_flip": -0.2726,
+              "no_flip_end": -0.27252,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.277,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -1.99173,
+              "no_flip_end": -1.99165,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.277,
+              "malic_at_flip_mM": 0.91,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.01,
+              "no_flip_end": 0.0,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.164,
+              "malic_at_flip_mM": 0.92,
+              "cacl2_at_flip_mM": 0.67,
+              "pH_at_flip": 5.94
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          },
+          "unrounded": {
+            "K_min": {
+              "shift_to_flip": -0.14458,
+              "no_flip_end": -0.1445,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "K_max": {
+              "shift_to_flip": -1.05629,
+              "no_flip_end": -1.05621,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9173,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.95
+            },
+            "pH_median": {
+              "shift_to_flip": -0.00182,
+              "no_flip_end": -0.00182,
+              "within_read_off_error": true,
+              "i_upper_at_flip_uA": 21.429,
+              "malic_at_flip_mM": 0.9202,
+              "cacl2_at_flip_mM": 0.6658,
+              "pH_at_flip": 5.9482
+            },
+            "Ca_min": {
+              "shift_to_flip": null,
+              "no_flip_end": null,
+              "within_read_off_error": false
+            }
+          }
+        }
+      },
+      "grid_check": {
+        "K_min": {
+          "span": [
+            -4.0,
+            4.0
+          ],
+          "step": 0.1,
+          "points": 81,
+          "transitions": 1
+        },
+        "K_max": {
+          "span": [
+            -4.0,
+            4.0
+          ],
+          "step": 0.1,
+          "points": 81,
+          "transitions": 1
+        },
+        "pH_median": {
+          "span": [
+            -0.06,
+            0.06
+          ],
+          "step": 0.01,
+          "points": 13,
+          "transitions": 1
+        },
+        "Ca_min": {
+          "span": [
+            -4.0,
+            4.0
+          ],
+          "step": 0.1,
+          "points": 81,
+          "transitions": 0
+        }
+      },
+      "pair_example": {
+        "shift": {
+          "K_max": -2.0,
+          "K_min": -0.05
+        },
+        "i_upper_uA": 21.2776,
+        "margin_uA": -0.151
+      },
+      "menu": {
+        "none": {
+          "kno3_mM": 0.0,
+          "i_upper_uA": 22.0969,
+          "margin_uA": 0.6683,
+          "in_every_reading": false,
+          "flag_steady_within_read_off_error": {
+            "K_min": false,
+            "K_max": true,
+            "pH_median": false,
+            "Ca_min": true
+          },
+          "outside_read_off_noise": false
+        },
+        "mid": {
+          "kno3_mM": 0.05,
+          "i_upper_uA": 21.4794,
+          "margin_uA": 0.0508,
+          "in_every_reading": false,
+          "flag_steady_within_read_off_error": {
+            "K_min": false,
+            "K_max": true,
+            "pH_median": false,
+            "Ca_min": true
+          },
+          "outside_read_off_noise": false
+        },
+        "dated_median": {
+          "kno3_mM": 0.054,
+          "i_upper_uA": 21.4784,
+          "margin_uA": 0.0498,
+          "in_every_reading": false,
+          "flag_steady_within_read_off_error": {
+            "K_min": false,
+            "K_max": false,
+            "pH_median": false,
+            "Ca_min": true
+          },
+          "outside_read_off_noise": false
+        },
+        "summer_mean_low": {
+          "kno3_mM": 0.37,
+          "i_upper_uA": 17.967,
+          "margin_uA": -3.4616,
+          "in_every_reading": true,
+          "flag_steady_within_read_off_error": {
+            "K_min": true,
+            "K_max": true,
+            "pH_median": true,
+            "Ca_min": true
+          },
+          "outside_read_off_noise": true
+        },
+        "summer_mean_high": {
+          "kno3_mM": 0.39,
+          "i_upper_uA": 17.76,
+          "margin_uA": -3.6686,
+          "in_every_reading": true,
+          "flag_steady_within_read_off_error": {
+            "K_min": true,
+            "K_max": true,
+            "pH_median": true,
+            "Ca_min": true
+          },
+          "outside_read_off_noise": true
+        }
+      },
+      "reading": "per axis, ONE dated median moved, the rest as read; shift_to_flip is the bisection's flip end and no_flip_end its other end (the true edge lies between); under the rule the point moves in steps, so a threshold sits where a step falls; a null shift means no flip out to five read-off errors"
     }
   },
   "not_modelled": [

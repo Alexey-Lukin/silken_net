@@ -80,6 +80,7 @@ Run:  python tools/in_silico/scripts/85_electrode_interfacial_ph.py      # secon
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import math
 import sys
@@ -421,43 +422,113 @@ def _anchor_currents(g: dict, totals: dict, ph_b: float, edge: float) -> tuple[d
     return j, every, lo, hi
 
 
-def oak_k_min_flip(edge: float = PH_ANODE_KINETIC_EDGE, cold: str = "worst") -> dict:
-    """Control (review of ⚖️ 2026-10-22, 00_07 HW.3 (А₀)): how much LOWER the Q8 potassium minimum — the 22 Jun 1989
-    median, read off Fig 7 to about ±2 mg/L — must be read before oak's verdict at `edge` against the `cold` cold start
-    flips from «below it in some reading» to «in every reading». The point is re-derived by 67's own rule (the malate
-    re-solved from the shifted geometric mid, two significant figures; Ca, Mg, pH and nitrate untouched) and oak's
-    current bracket recomputed as anchor_anode() computes it — on the point's nitrate and, for comparison, with KNO3 = 0
-    (the point before ⚖️ 2026-10-22). Bisection on the shift: less potassium → less malate → a weaker buffer → a lower
-    current, so the flag is monotone in it (checked at the bracket's ends). CAN show how much of the transcription's own
-    error the verdict has; CANNOT say which way the read-off errs, nor move any other median (each would move the mid)."""
+# The nitrate options of 00_07 HW.3 (А₀) before ⚖️ 2026-10-22 picked (А): (Б) none · (А) the mid · (Д) the dated
+# median · (В) the summer mean, its two readings — the menu the flip control prices.
+OAK_FLIP_MENU_MM = {"none": 0.0, "mid": 0.050, "dated_median": 0.054, "summer_mean_low": 0.37, "summer_mean_high": 0.39}
+
+
+def oak_verdict_read_off_flip(edge: float = PH_ANODE_KINETIC_EDGE, cold: str = "worst") -> dict:
+    """Control (reviews of ⚖️ 2026-10-22, 00_07 HW.3 (А₀)): how far ONE dated Q8 median, read off its figure, must move
+    before oak's verdict at `edge` against the `cold` cold start flips from «below it in some reading» to «in every
+    reading» — per axis, the rest as read: the potassium minimum (Fig 7), the potassium maximum, the pH median (Fig 10)
+    and the calcium minimum (Fig 2), each against its read-off error (67 BEECH_READ_OFF_ERROR). Of the medians the rule
+    reads, only a range's two ends and the pH median move the point; an interior one does so only by passing an end,
+    which 67's broadleaf_rederived() follows (it re-takes the ends over every date). The point is re-derived by 67's own
+    rule and oak's current bracket recomputed as anchor_anode() does — on the point's nitrate and on each reading's (R1,
+    R2), under the rule's roundings (the point then moves in steps: 0.01 mM of malate or CaCl2, the pH on its 0.01 grid,
+    so a threshold sits where a step falls, and the pH is judged by those steps) and with them dropped («unrounded»).
+    Bisection between no shift and five read-off errors in the direction that lowers the current; whether the flag is
+    monotone is checked on a grid over ±2 errors of each axis (both directions) at the point's nitrate — one transition,
+    or none. The menu prices every nitrate option the same way: is the flag constant over ±1 error on every axis? CAN
+    show which single read-off the verdict survives and which it does not; CANNOT say which way a read-off errs, nor
+    bound read-offs that move together (one pair is printed as an example), nor reach the Mg ends (not an axis here)."""
     g = anchor_geometry(CEM / "anchor_zone1.oak.json")
-    k_min = min(r[2] for r in S67.BEECH_TRUNK_BASE_MEDIANS.values())
+    med, err = S67.BEECH_TRUNK_BASE_MEDIANS, S67.BEECH_READ_OFF_ERROR
+    phs = sorted((r[3], d) for d, r in med.items() if r[3] is not None)
+    axes = {   # axis: (the date whose median moves, its column, the direction that lowers oak's current)
+        "K_min": (min(med, key=lambda d: med[d][2]), "K_mg_l", -1.0),
+        "K_max": (max(med, key=lambda d: med[d][2]), "K_mg_l", -1.0),
+        "pH_median": (phs[len(phs) // 2][1], "pH", -1.0),
+        "Ca_min": (min(med, key=lambda d: med[d][0]), "Ca_mg_l", 1.0)}
+    col = {"Ca_mg_l": 0, "K_mg_l": 2, "pH": 3}
+    cs = COLD_START_UA[cold]
+    readings = S67.broadleaf_point()["measured"]["nitrate"]["point_by_reading_mM"]
+    assert S67.broadleaf_rederived() == ({**S67.BROADLEAF_POINT_MM}, S67.BROADLEAF_PH), "the re-derivation is not the point"
 
-    def upper(shift: float, kno3: float) -> tuple[float, float]:
-        malic = S67._sig2(S67.broadleaf_malic_solved(shift, kno3))
-        totals = S67.totals_mm({**S67.BROADLEAF_POINT_MM, "malic": malic, "kno3": kno3})
-        return _anchor_currents(g, totals, S67.BROADLEAF_PH, edge)[3], malic
+    def upper(shift: dict, kno3: float, rounded: bool = True) -> tuple[float, dict, float]:
+        point, ph = S67.broadleaf_rederived(shift, kno3, rounded)
+        return _anchor_currents(g, S67.totals_mm(point), ph, edge)[3], point, ph
 
-    out = {}
-    for name, kno3 in (("point", S67.BROADLEAF_POINT_MM["kno3"]), ("kno3_zero", 0.0)):
-        flips = lambda s, kno3=kno3: upper(s, kno3)[0] < COLD_START_UA[cold]   # noqa: E731
-        a, b = -0.5 * k_min, 0.0
-        assert flips(a) and not flips(b), f"{name}: the oak flag does not change across [{a}, {b}] mg/L"
-        while b - a > 1e-4:
-            mid = 0.5 * (a + b)
-            a, b = (mid, b) if flips(mid) else (a, mid)
-        hi0, malic0 = upper(0.0, kno3)
-        hi_flip, malic_flip = upper(a, kno3)
-        out[name] = {"kno3_mM": kno3, "malic_point_mM": malic0, "i_upper_uA": round(hi0, 3),
-                     "margin_uA": round(hi0 - COLD_START_UA[cold], 3),
-                     "k_min_shift_to_flip_mg_l": round(b, 4), "malic_point_at_flip_mM": malic_flip,
-                     "i_upper_at_flip_uA": round(hi_flip, 3)}
-    return {"sku": g["sku"], "edge_pH": edge, "cold_start": cold, "cold_start_uA": round(COLD_START_UA[cold], 3),
-            "k_min_date": min(S67.BEECH_TRUNK_BASE_MEDIANS, key=lambda d: S67.BEECH_TRUNK_BASE_MEDIANS[d][2]),
-            "k_min_mg_l": k_min, **out,
-            "reading": "the verdict holds while the potassium minimum is read less than |k_min_shift_to_flip_mg_l| lower "
-                       "(the bisection's no-flip end, so the true edge lies a hair further); the point moves in steps of "
-                       "0.01 mM malate, so the flip sits where the solve crosses a rounding edge"}
+    def flips(axis: str, s: float, kno3: float, rounded: bool = True) -> bool:
+        return upper({axis_key(axis): s}, kno3, rounded)[0] < cs
+
+    def axis_key(axis: str) -> tuple[str, str]:
+        return axes[axis][0], axes[axis][1]
+
+    def threshold(axis: str, kno3: float, rounded: bool) -> dict:
+        _, c, sign = axes[axis]
+        if rounded and c == "pH":   # the reading's own grid: the first 0.01 step that flips, out to five errors
+            steps = [round(sign * 0.01 * i, 2) for i in range(1, round(5 * err[c] / 0.01) + 1)]
+            hit = next((s for s in steps if flips(axis, s, kno3)), None)
+            no_flip = None if hit is None else round(hit - sign * 0.01, 2)
+        else:
+            a, b = sign * 5.0 * err[c], 0.0
+            if not flips(axis, a, kno3, rounded):
+                hit = no_flip = None
+            else:
+                while abs(b - a) > 5e-5 * err[c]:
+                    mid = 0.5 * (a + b)
+                    a, b = (mid, b) if flips(axis, mid, kno3, rounded) else (a, mid)
+                hit, no_flip = a, b
+        row = {"shift_to_flip": None if hit is None else round(hit, 5), "no_flip_end": None if no_flip is None else round(no_flip, 5),
+               "within_read_off_error": hit is not None and abs(hit) <= err[c] + 1e-9}
+        if hit is not None:
+            i_hit, p_hit, ph_hit = upper({axis_key(axis): hit}, kno3, rounded)
+            row |= {"i_upper_at_flip_uA": round(i_hit, 3), "malic_at_flip_mM": round(p_hit["malic"], 4),
+                    "cacl2_at_flip_mM": round(p_hit["cacl2"], 4), "pH_at_flip": round(ph_hit, 4)}
+        return row
+
+    assert not any(flips(a, 0.0, S67.BROADLEAF_POINT_MM["kno3"]) for a in axes), "oak's verdict is already flipped at the point"
+    by_nitrate = {}
+    for name, kno3 in (("point", S67.BROADLEAF_POINT_MM["kno3"]), ("R1", readings["R1"]), ("R2", readings["R2"])):
+        hi0, p0, _ = upper({}, kno3)
+        by_nitrate[name] = {"kno3_mM": kno3, "malic_point_mM": p0["malic"], "i_upper_uA": round(hi0, 4),
+                            "margin_uA": round(hi0 - cs, 4),
+                            "rule": {a: threshold(a, kno3, True) for a in axes},
+                            "unrounded": {a: threshold(a, kno3, False) for a in axes}}
+    kno3 = S67.BROADLEAF_POINT_MM["kno3"]
+    grid = {}
+    for a, (_, c, _) in axes.items():
+        step = 0.01 if c == "pH" else err[c] / 20.0
+        n = round(2.0 * err[c] / step)
+        flags = [flips(a, round(i * step, 6), kno3) for i in range(-n, n + 1)]
+        grid[a] = {"span": [-2.0 * err[c], 2.0 * err[c]], "step": step, "points": len(flags),
+                   "transitions": sum(x != y for x, y in itertools.pairwise(flags))}
+    assert all(v["transitions"] <= 1 for v in grid.values()), f"the oak flag is not monotone on the grid: {grid}"
+    pair = {"K_max": -err["K_mg_l"], "K_min": -0.05}
+    i_pair = upper({axis_key(a): s for a, s in pair.items()}, kno3)[0]
+    menu = {}
+    for name, x in OAK_FLIP_MENU_MM.items():
+        hi0 = upper({}, x)[0]
+        every = hi0 < cs
+        steady = {}
+        for a, (_, c, _) in axes.items():
+            step = 0.01 if c == "pH" else err[c] / 10.0
+            n = round(err[c] / step)
+            steady[a] = all((upper({axis_key(a): round(i * step, 6)}, x)[0] < cs) == every for i in range(-n, n + 1))
+        menu[name] = {"kno3_mM": x, "i_upper_uA": round(hi0, 4), "margin_uA": round(hi0 - cs, 4),
+                      "in_every_reading": every, "flag_steady_within_read_off_error": steady,
+                      "outside_read_off_noise": all(steady.values())}
+    return {"sku": g["sku"], "edge_pH": edge, "cold_start": cold, "cold_start_uA": round(cs, 4),
+            "read_off_error": {c: err[c] for c in ("K_mg_l", "Ca_mg_l", "pH")},
+            "axes": {a: {"date": d, "column": c, "reading": med[d][col[c]], "adverse_sign": s, "read_off_error": err[c]}
+                     for a, (d, c, s) in axes.items()},
+            "by_nitrate": by_nitrate, "grid_check": grid,
+            "pair_example": {"shift": pair, "i_upper_uA": round(i_pair, 4), "margin_uA": round(i_pair - cs, 4)},
+            "menu": menu,
+            "reading": "per axis, ONE dated median moved, the rest as read; shift_to_flip is the bisection's flip end and "
+                       "no_flip_end its other end (the true edge lies between); under the rule the point moves in steps, "
+                       "so a threshold sits where a step falls; a null shift means no flip out to five read-off errors"}
 
 
 def anchor_anode() -> dict:
@@ -514,7 +585,7 @@ def anchor_anode() -> dict:
                 "crossed_below_cold_start": {k: {"in_every_reading": hi < v, "in_some_reading": lo < v}
                                              for k, v in COLD_START_UA.items()}}
         out["by_sku"][g["sku"]] = per
-    out["oak_verdict_k_min_flip"] = oak_k_min_flip()
+    out["oak_verdict_read_off_flip"] = oak_verdict_read_off_flip()
     return out
 
 
@@ -575,11 +646,15 @@ def main() -> int:
             print(f"      summer acid dates: bulk pH medians {a['ph_medians']} — below the kinetic edge "
                   f"{a['medians_below_kinetic_edge']}, {a['medians_minus_stability_edge']} from the stability edge, "
                   f"lowest tree {a['lowest_tree_minus_stability_edge']:+} — before any current")
-    fl = anc["oak_verdict_k_min_flip"]
-    print(f"    control — oak at pH {fl['edge_pH']} vs the {fl['cold_start']} cold start {fl['cold_start_uA']} µA: margin "
-          f"{fl['point']['margin_uA']} µA; flips once the K minimum ({fl['k_min_date']}, {fl['k_min_mg_l']} mg/L) is read "
-          f"{fl['point']['k_min_shift_to_flip_mg_l']} mg/L off (KNO3 = 0: margin {fl['kno3_zero']['margin_uA']} µA, "
-          f"{fl['kno3_zero']['k_min_shift_to_flip_mg_l']} mg/L)")
+    fl = anc["oak_verdict_read_off_flip"]
+    print(f"    control — oak at pH {fl['edge_pH']} vs the {fl['cold_start']} cold start {fl['cold_start_uA']:.2f} µA, "
+          f"one median read off at a time (shift to flip · rule / unrounded; read-off error {fl['read_off_error']}):")
+    for v in fl["by_nitrate"].values():
+        print(f"      KNO3 {v['kno3_mM']} mM: upper end {v['i_upper_uA']:.2f} µA, margin {v['margin_uA']} µA — "
+              + " · ".join(f"{a} {v['rule'][a]['shift_to_flip']} / {v['unrounded'][a]['shift_to_flip']}" for a in fl["axes"]))
+    print(f"      grid transitions {({a: g['transitions'] for a, g in fl['grid_check'].items()})}; pair "
+          f"{fl['pair_example']['shift']} → margin {fl['pair_example']['margin_uA']} µA; menu outside the read-off noise: "
+          f"{({k: m['outside_read_off_noise'] for k, m in fl['menu'].items()})}")
     out = {"script": Path(__file__).name,
            "question": "pH at the Stage-2 coin electrodes' faces under their own current, in the media the letter allows",
            "scope": "coin half of the 00_07 HW.5.IS leg, plus the anchor ANODE conditional on a sap-filled gap; the anchor "
