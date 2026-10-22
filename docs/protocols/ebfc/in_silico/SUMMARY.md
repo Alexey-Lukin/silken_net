@@ -1383,21 +1383,27 @@ Inputs, each a named reading: stems of DBH 38 · 50 · 60 cm (the smallest host,
 that table's single bark less the ≤ 3 mm live phloem — derived); the RF deck — the booster's radiating ground — 12.85 –
 16.85 mm over the bark line, which is the flange's underside (`52`'s rows of the deck over the flange's top face plus the
 flange's 3.0 placeholder thickness; the low end is the named-alternative B2B 6 row — not the CAD's «antenna ↔ Ti 8.0»,
-which measures the room to the cavity top); the carrier 868.2 MHz, read from the firmware's PHY; and thirteen
+which measures the room to the cavity top); the carrier 868.2 MHz, read from the firmware's PHY; and sixteen
 permittivity readings. Four are homogeneous, from Mavrovic et al. 2018 (*Geosci. Instrum. Method. Data Syst.* 7:195,
 Table 3 — in situ, an L-band probe centred at 1.4 GHz): red pine thawed, the first 1 cm under the bark, 19.38 − j6.26
 with ε″ carried flat ⊥ scaled to 868 MHz as if all of it were ionic (−j10.09); red spruce thawed, the table's wettest
-conifer, 27.66 − j7.72; red pine frozen, the whole profile's average, 8.80 − j3.17. Nine are layered: a dry, a wet or a
+conifer, 27.66 − j7.72; red pine frozen, the whole profile's average, 8.80 − j3.17. Twelve are layered: a dry, a wet or a
 «phloem» bark (proxies: Şahin Kol 2009's dry Scots pine sapwood, El-Rayes & Ulaby 1987's poplar bark side at 1 GHz,
 and their balsam-fir trunk bark of Fig. A.36 at ≈ 19.4 − j4.7, the mean of two page-image readings interpolated
 between the 0.8 and 0.9 GHz markers — not measured at 868 MHz; that this bark is dominated by its wet phloem is our
 hypothesis, grounded on the Franchois 1998 abstract on two other conifers, while the figure's title says only trunk
-bark), then one of three interiors — the
+bark), then one of four interiors — the
 red pines' measured radial profile (Supplement Fig. S2, 26 May: 35.2 − j10.27 at 2.5 mm, a plateau of 14.05 − j4.82
-from 6 mm, no dry heartwood within the probe's reach), Scots pine's 6.1 cm of water-conducting sapwood (Bieker & Rust
-2010, *Silva Fennica* 44:267, resistivity tomography at 0.3 m) or the narrowest stem's 2.2 cm (Björklund 1999, *Silva
-Fennica* 33:119, Table 2), each sapwood around a dry heartwood proxy. No source in the tree measures any of them at
-868 MHz. A.36 does not print its grid: the marker frequencies are inferred from the same session's A.38/A.39, which are
+from 6 mm, no dry heartwood within the probe's reach), Scots pine's sapwood by both methods of Bieker & Rust 2010
+(*Silva Fennica* 44:267, 0.3 m above ground: «Mean sapwood width from staining was 8.1 cm ± 0.6 cm and 6.1 ± 0.5 for
+the tomograms»), or the narrowest stem's 2.2 cm (Björklund 1999, *Silva Fennica* 33:119, Table 2 — CT of fresh logs
+at 3.5–4.5 m), each sapwood around a dry heartwood proxy. The two widths at 0.3 m are two named readings, not a pick:
+the source reads the gap as staining over-estimating the active sapwood («it is likely»), yet says the resistivity
+boundary «is not just an effect of the higher water content in the sapwood», so neither boundary is the moisture
+border a permittivity needs, and the 2 cm between them is carried wet (8.1 cm) ⊥ dry (6.1 cm). Björklund's width
+carries its height: «Sapwood width was biggest at the butt end of the stem, and was rather constant above 3 m
+height» (read on his stems chosen to show the vertical variation), so below 3 m the same stem's sapwood is wider
+than 2.2 cm. No source in the tree measures any of them at 868 MHz. A.36 does not print its grid: the marker frequencies are inferred from the same session's A.38/A.39, which are
 a dry branch, and the markers overlap. The figure's 0.8 GHz ε′ marker is depressed in that session (on A.38 and A.40
 too), so a control in the cache re-runs the «phloem» rows at the reading that skips it, ≈ 19.63 − j4.68:
 it lowers the TM floor by 0.08 dB, to 10.5 at the cache's outward rounding. Over the four single-reading interpolations (two readers,
@@ -1406,25 +1412,32 @@ hold at the mean of the two readings.
 
 | polarization | behind the stem (180°), below the front | deepest null below the front, at | at 90° | within 3 dB of the front to | front field against the free front lobe, same current | 2-D efficiency |
 |---|---|---|---|---|---|---|
-| TM — E along the stem | 10.6 – 34.5 dB | 13.4 – 54.4 dB, 138.25 – 180° | 6.1 – 9.4 dB | 54 – 66° | −5.9 … +1.4 dB | 0.13 – 0.7 |
-| TE — E horizontal, tangential dipole | 7.7 – 48 dB | 20.5 – 59.9 dB, 118.15 – 174.7° | 9.2 – 21.1 dB | 38 – 50° | −5.5 … +1.7 dB | 0.15 – 0.54 |
+| TM — E along the stem | 10.6 – 34.5 dB | 13.4 – 54.4 dB, 138.25 – 180° | 6.1 – 9.7 dB | 53 – 66° | −5.9 … +1.4 dB | 0.13 – 0.7 |
+| TE — E horizontal, tangential dipole | 7.7 – 48 dB | 20.5 – 59.9 dB, 108.25 – 180° | 9.2 – 21.1 dB | 38 – 50° | −5.5 … +1.7 dB | 0.15 – 0.54 |
 
 The back's depth by the stem's interior — how much of it is wet:
 
 | interior | TM behind the stem | TE behind the stem |
 |---|---|---|
 | wet throughout (the four homogeneous readings and the red pines' profile under any bark) | 24.9 – 34.5 dB | 20.8 – 48 dB |
+| 8.1 cm of sapwood around a dry heartwood | 23.7 – 30.6 dB | 17.3 – 33.8 dB |
 | 6.1 cm of sapwood around a dry heartwood | 22 – 33.4 dB | 13.9 – 21.8 dB |
 | 2.2 cm of sapwood around a dry heartwood | 10.6 – 22.2 dB | 7.7 – 17.4 dB |
 
 **What it says.** Behind its own stem a node is weaker than when it faces the gateway on every reading — by at least
 10.6 dB with its E along the stem, the co-polar case, and by at least 7.7 dB with E horizontal — and already at 90° the
-TM node is 6.1 – 9.4 dB down, staying within 3 dB of its front only to 54 – 66° either side. The horizontal node is not
+TM node is 6.1 – 9.7 dB down, staying within 3 dB of its front only to 53 – 66° either side. The horizontal node is not
 the milder one: its free pattern already has a null along the bark, so at 90° it is 9.2 – 21.1 dB down; behind a wet
 stem the order of the two flips with the reading, the stem and the standoff (compared pair by pair), and behind
 thin sapwood over a dry core TM is the deeper one nearly everywhere. The depth behind depends on how much of the stem is wet: a wet interior — the season, the
 868 MHz step and the wettest conifer all fall inside it — puts TM at 24.9 – 34.5 dB; a thin wet shell over a dry core,
-under the wettest bark, brings it to 10.6 dB. The stem is wider than a wavelength (λ = 34.5 cm); the deepest null sits
+under the wettest bark, brings it to 10.6 dB. Which sapwood width is the adverse one depends on the consumer, and the
+cache names the reading at each end of every span (`ends_by_reading`). The narrowest 3-dB sector, 53°, is the 8.1 cm
+staining width under the «phloem» bark (the 6.1 cm tomography width under the same bark: 57°), and so is the largest
+TM loss at 90°, 9.7 dB. The floors behind are the 2.2 cm width under that bark; on the three widths computed the floor
+under each bark is lowest at 2.2 cm, so for a node below 3 m, where Björklund's sapwood is wider, they are the
+conservative side — between 2.2 and 6.1 cm the model is not run. The deepest back, 34.5 dB, is the wettest homogeneous
+conifer, neither width. The stem is wider than a wavelength (λ = 34.5 cm); the deepest null sits
 up to 42° off the straight line through the stem (at 138.25 – 180°), and on most readings 180° is itself a local
 maximum where the waves creeping round both sides meet in phase. The standoff sets the near-field indicator: a TM node
 radiates 0.13 – 0.65 of its input power with the RF deck 12.85 mm over the bark and 0.18 – 0.7 at 16.85 mm.
@@ -1441,7 +1454,8 @@ near field too; the booster's 8 – 10 mm offset from the anchor's axis, the can
 path loss are out. The permittivities were measured in situ at the probe's 1.4 GHz centre, at the trunk's daily minimum
 (15:00 – 18:00) and mostly at the end of spring; the step to 868 MHz is bracketed (flat ⊥ all-ionic; if Table 3 is a
 1 – 2 GHz average the all-ionic end is ≈ 3 % higher), not measured; bark and heartwood are proxies — no pine bark or
-heartwood primary near 1 GHz is in the tree — and the bark is swept at its thin ends only. Every layer is isotropic,
+heartwood primary near 1 GHz is in the tree — and the bark is swept at its thin ends only. The sapwood widths are
+read at their sources' heights (0.3 m; 3.5 – 4.5 m), not at the node's, which canon does not fix. Every layer is isotropic,
 while a TM source sees ε along the grain and the in-situ probe read a mixed face (lab spruce puts ε′∥/ε′⊥ at 2.2 –
 2.4), so the longitudinal ε may be higher than every reading here. The S2 profile is transcribed from the page image
 (±0.2 on ε′, ±0.05 on ε″) and smoothed by the probe's 10 mm reach. Controls: free space (the field with every ε_r = 1

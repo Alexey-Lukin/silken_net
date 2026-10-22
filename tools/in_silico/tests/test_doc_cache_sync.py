@@ -6842,6 +6842,7 @@ def _shadow_row(label, j):
 
 _SHADOW_GROUPS = (("wet throughout (the four homogeneous readings and the red pines' profile under any bark)",
                    lambda n: not n.startswith("scots_")),
+                  ("8.1 cm of sapwood around a dry heartwood", lambda n: n.startswith("scots_sapwood_8cm_")),
                   ("6.1 cm of sapwood around a dry heartwood", lambda n: n.startswith("scots_sapwood_6cm_")),
                   ("2.2 cm of sapwood around a dry heartwood", lambda n: n.startswith("scots_sapwood_2cm_")))
 
@@ -6882,10 +6883,57 @@ CHECKS += [
 # ⊕ 2026-10-22, the A.36 re-read: the PROSE that prints the same floors, sectors and group spans — SUMMARY's «What it
 # says», 01_04 §3.1's 📡 inset and 02_01 §5.3's — each recomposed from the cache at the cache's own outward rounding.
 # The tables above were pinned and the sentences were not, so one re-run moved the TM floor under nine unpinned copies;
-# a sentence that negates a span («−9.2…−21.1 дБ») is pinned through its sign. ⚠️ The RF bench sheet's §8 copy is NOT
-# pinned: its file is outside this workflow's trigger paths (`test_every_doc_target_triggers_this_guard`).
+# a sentence that negates a span («−9.2…−21.1 дБ») is pinned through its sign. ⊕ 2026-10-22 evening: the RF bench
+# sheet's §8 copy is pinned too — its path joined both trigger lists of the workflow the same day
+# (`test_every_doc_target_triggers_this_guard` had refused the first pins while it was outside them).
 def _shf(pol, key, end, sign=1.0):
     return lambda d: sign * d["findings"][pol][key][end]
+
+
+# ⊕ 2026-10-22 evening — the ratified azimuth text in 01_04 §3.1 (and its 📡 inset) was written on THIRTEEN readings;
+# the 8.1 cm staining reading joined the next hour and narrowed the TM sector, and the ratified text is not rewritten
+# (a dated ⊕ beside it carries the sixteen). Its numbers are pinned as the RECORD they are: recomposed from the cache's
+# own rows restricted to the thirteen readings it read, at the cache's outward rounding — NaN if that set is not 13.
+def _sh_ratified_set(name):
+    return not name.startswith("scots_sapwood_8cm_")
+
+
+def _sh13(pol, key, end):
+    def f(d):
+        rows = [r for r in d["cases"] if r["polarization"] == pol and _sh_ratified_set(r["permittivity"])]
+        if len({r["permittivity"] for r in rows}) != 13:
+            return math.nan
+        vals = [r[key] for r in rows]
+        if key == "within_3dB_of_front_to_deg":
+            return min(vals) if end == 0 else max(vals)
+        return math.floor(min(vals) * 10) / 10 if end == 0 else math.ceil(max(vals) * 10) / 10
+    return f
+
+
+def _sh_end_is(pol, key, end, prefix, value):
+    """`value` when every reading at that end of the span starts with `prefix`, NaN otherwise — a doc sentence that
+    names WHICH reading is adverse is pinned through the cache's `ends_by_reading`, not typed."""
+    return lambda d: (value(d) if all(n.startswith(prefix) for n in d["findings"][pol]["ends_by_reading"][key][end])
+                      else math.nan)
+
+
+def _sh_reading_min(pol, key, reading):
+    return lambda d: min(r[key] for r in d["cases"] if r["polarization"] == pol and r["permittivity"] == reading)
+
+
+def _sh_floor_lowest_at_thin(d):
+    """2.2 when, under each bark and in both polarizations, the floor behind is lowest on the 2.2 cm width."""
+    for pol in POLS_SHADOW:
+        by = d["findings"][pol]["by_reading_front_minus_back_dB"]
+        for bark in ("bark_dry", "bark_wet", "bark_phloem"):
+            thin = by[f"scots_sapwood_2cm_{bark}"][0]
+            if not all(thin < by[f"scots_sapwood_{w}_{bark}"][0] for w in ("6cm", "8cm")):
+                return math.nan
+    return 2.2
+
+
+POLS_SHADOW = ("TM", "TE")
+RF_BENCH = "docs/protocols/hardware/rf_mockup_bench_sheet.md"
 
 
 def _shg(pol, member, end):
@@ -6896,7 +6944,7 @@ def _sh_skip(d):
     return d["controls"]["phloem_reading"]["skip_the_0p8_GHz_point"]
 
 
-_SH_WET, _SH_6CM, _SH_2CM = (m for _, m in _SHADOW_GROUPS)
+_SH_WET, _SH_8CM, _SH_6CM, _SH_2CM = (m for _, m in _SHADOW_GROUPS)
 _SHX, _SHD = r"[\d.]+", rf"[{_DASHES}]"
 _SH_PHLOEM = lambda d: d["readings"]["permittivity"]["scots_sapwood_2cm_bark_phloem"]["layers_bark_inward"][0]  # noqa: E731
 CHECKS += [
@@ -6955,22 +7003,22 @@ CHECKS += [
      _shf("TE", "front_minus_side_dB", 0, -1.0), 0.0),
     ("shadow 01_04 TE side null, deep end → 107", CODIT, rf"нуль збоку, {_SHD}{_SHX}…{N} дБ на 90°", SHADOW,
      _shf("TE", "front_minus_side_dB", 1, -1.0), 0.0),
-    ("shadow 01_04 TM at 90° → 107", CODIT, rf"на 90° до шлюзу втрачає {N}–{_SHX} дБ", SHADOW,
-     _shf("TM", "front_minus_side_dB", 0), 0.0),
-    ("shadow 01_04 TM at 90°, top → 107", CODIT, rf"на 90° до шлюзу втрачає {_SHX}–{N} дБ", SHADOW,
-     _shf("TM", "front_minus_side_dB", 1), 0.0),
-    ("shadow 01_04 TM 3-dB sector → 107", CODIT, rf"тримається лише до {N}–{_SHX}° обабіч", SHADOW,
-     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
-    ("shadow 01_04 TM 3-dB sector, top → 107", CODIT, rf"тримається лише до {_SHX}–{N}° обабіч", SHADOW,
-     _shf("TM", "within_3dB_of_front_to_deg", 1), 0.0),
+    ("shadow 01_04 TM at 90° (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"на 90° до шлюзу втрачає {N}–{_SHX} дБ", SHADOW, _sh13("TM", "front_minus_side_dB", 0), 0.0),
+    ("shadow 01_04 TM at 90°, top (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"на 90° до шлюзу втрачає {_SHX}–{N} дБ", SHADOW, _sh13("TM", "front_minus_side_dB", 1), 0.0),
+    ("shadow 01_04 TM 3-dB sector (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"тримається лише до {N}–{_SHX}° обабіч", SHADOW, _sh13("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 TM 3-dB sector, top (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"тримається лише до {_SHX}–{N}° обабіч", SHADOW, _sh13("TM", "within_3dB_of_front_to_deg", 1), 0.0),
     ("shadow 01_04 wet interior TM → 107", CODIT, rf"з мокрим нутром — {N}–{_SHX} дБ", SHADOW,
      _shg("TM", _SH_WET, 0), 0.0),
     ("shadow 01_04 wet interior TM, top → 107", CODIT, rf"з мокрим нутром — {_SHX}–{N} дБ", SHADOW,
      _shg("TM", _SH_WET, 1), 0.0),
     ("shadow 01_04 thin shell TM floor → 107", CODIT, rf"під найвологішою корою — від {N}\. Стовбур", SHADOW,
      _shg("TM", _SH_2CM, 0), 0.0),
-    ("shadow 01_04 north-face sector → 107", CODIT, rf"у секторі ±{N}° від північної грані", SHADOW,
-     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 north-face sector (ratified inset — the thirteen readings) → 107", CODIT,
+     rf"у секторі ±{N}° від північної грані", SHADOW, _sh13("TM", "within_3dB_of_front_to_deg", 0), 0.0),
     ("shadow 01_04 back of the north face → 107", CODIT, rf"до {N}–{_SHX} дБ \(тил\)", SHADOW,
      _shf("TM", "front_minus_back_dB", 0), 0.0),
     ("shadow 01_04 back of the north face, top → 107", CODIT, rf"до {_SHX}–{N} дБ \(тил\)", SHADOW,
@@ -7003,6 +7051,93 @@ CHECKS += [
      lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][0], 0.0),
     ("shadow 02_01 far-standoff efficiency, top → 107", HW_BOM, rf"і {_SHX}–{N} на 16\.85 мм", SHADOW,
      lambda d: d["findings"]["TM"]["by_standoff_efficiency_2d"]["16.85"][1], 0.0),
+]
+
+
+# ⊕ 2026-10-22 evening — the sapwood width at two heights and two methods (00_07 HW.6, the leg «`107`: заболонь за
+# висотою й кандидат-прочитання 8.1 см»): the 8.1 cm staining width joined as a named reading beside the 6.1 cm
+# tomography width. Each sentence that names WHICH reading is adverse is pinned through `ends_by_reading`; the widths
+# themselves through the readings' own layers; the RF bench sheet's §8 copy through the live floors.
+def _sh_width_cm(reading):
+    return lambda d: round(d["readings"]["permittivity"][reading]["layers_bark_inward"][1][0] * 100, 2)
+
+
+_SH_SECTOR = lambda d: d["findings"]["TM"]["within_3dB_of_front_to_deg"][0]  # noqa: E731
+CHECKS += [
+    # SUMMARY — the inputs and «What it says»
+    ("shadow staining width → 107", SUMMARY, rf"from staining was {N} cm ± 0\.6 cm", SHADOW,
+     _sh_width_cm("scots_sapwood_8cm_bark_dry"), 0.0),
+    ("shadow tomography width → 107", SUMMARY, rf"± 0\.6 cm and {N} ± 0\.5 for", SHADOW,
+     _sh_width_cm("scots_sapwood_6cm_bark_dry"), 0.0),
+    ("shadow Björklund thin width → 107", SUMMARY, rf"the narrowest stem's {N} cm \(Björklund", SHADOW,
+     _sh_width_cm("scots_sapwood_2cm_bark_dry"), 0.0),
+    ("shadow prose narrowest sector is the staining width → 107", SUMMARY,
+     rf"The narrowest 3-dB sector, {N}°, is the 8\.1 cm", SHADOW,
+     _sh_end_is("TM", "within_3dB_of_front_to_deg", 0, "scots_sapwood_8cm_bark_phloem", _SH_SECTOR), 0.0),
+    ("shadow prose tomography width, same bark, sector → 107", SUMMARY,
+     rf"tomography width under the same bark: {N}°\)", SHADOW,
+     _sh_reading_min("TM", "within_3dB_of_front_to_deg", "scots_sapwood_6cm_bark_phloem"), 0.0),
+    ("shadow prose largest TM loss at 90° is the staining width → 107", SUMMARY, rf"TM loss at 90°, {N} dB\. The floors",
+     SHADOW, _sh_end_is("TM", "front_minus_side_dB", 1, "scots_sapwood_8cm_bark_phloem", _shf("TM", "front_minus_side_dB", 1)),
+     0.0),
+    ("shadow prose floors lowest at the thin width → 107", SUMMARY, rf"under each bark is lowest at {N} cm, so for a node",
+     SHADOW, _sh_floor_lowest_at_thin, 0.0),
+    ("shadow prose deepest back is the wettest homogeneous conifer → 107", SUMMARY,
+     rf"The deepest back, {N} dB, is the wettest homogeneous", SHADOW,
+     _sh_end_is("TM", "front_minus_back_dB", 1, "thawed_red_spruce_wet", _shf("TM", "front_minus_back_dB", 1)), 0.0),
+    # 01_04 §3.1 — the dated ⊕ beside the ratified text (the sixteen readings; «було» is the thirteen-reading record)
+    ("shadow 01_04 ⊕ TM 3-dB sector → 107", CODIT, rf"сектор 3 дБ для E вздовж стовбура — \*\*{N}–{_SHX}°\*\*", SHADOW,
+     _shf("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 ⊕ TM 3-dB sector, top → 107", CODIT, rf"сектор 3 дБ для E вздовж стовбура — \*\*{_SHX}–{N}°\*\*",
+     SHADOW, _shf("TM", "within_3dB_of_front_to_deg", 1), 0.0),
+    ("shadow 01_04 ⊕ sector before (thirteen readings) → 107", CODIT, rf"\(було {N}–{_SHX}°\)", SHADOW,
+     _sh13("TM", "within_3dB_of_front_to_deg", 0), 0.0),
+    ("shadow 01_04 ⊕ sector before, top (thirteen readings) → 107", CODIT, rf"\(було {_SHX}–{N}°\)", SHADOW,
+     _sh13("TM", "within_3dB_of_front_to_deg", 1), 0.0),
+    ("shadow 01_04 ⊕ narrowest is the staining width → 107", CODIT,
+     rf"найвужчий дає фарбування {N} см під «флоемною» корою", SHADOW,
+     _sh_end_is("TM", "within_3dB_of_front_to_deg", 0, "scots_sapwood_8cm_bark_phloem",
+                _sh_width_cm("scots_sapwood_8cm_bark_phloem")), 0.0),
+    ("shadow 01_04 ⊕ tomography width, same bark, sector → 107", CODIT, rf"томографія 6\.1 см під тією ж корою — {N}°",
+     SHADOW, _sh_reading_min("TM", "within_3dB_of_front_to_deg", "scots_sapwood_6cm_bark_phloem"), 0.0),
+    ("shadow 01_04 ⊕ ±50° holds on all readings → 107", CODIT, rf"\*\*±{N}° тримає 3 дБ і на шістнадцяти прочитаннях",
+     SHADOW, lambda d: 50.0 if _SH_SECTOR(d) >= 50 else math.nan, 0.0),
+    ("shadow 01_04 ⊕ margin now → 107", CODIT, rf"але запас — {N}° замість", SHADOW, lambda d: _SH_SECTOR(d) - 50, 0.0),
+    ("shadow 01_04 ⊕ margin before (thirteen readings) → 107", CODIT, rf"замість {N}°\*\*", SHADOW,
+     lambda d: _sh13("TM", "within_3dB_of_front_to_deg", 0)(d) - 50, 0.0),
+    ("shadow 01_04 ⊕ north-face sector → 107", CODIT, rf"сходяться, — ±{N}° від північної грані", SHADOW, _SH_SECTOR, 0.0),
+    ("shadow 01_04 ⊕ TM at 90° → 107", CODIT, rf"на 90° E вздовж стовбура втрачає {N}–{_SHX} дБ", SHADOW,
+     _shf("TM", "front_minus_side_dB", 0), 0.0),
+    ("shadow 01_04 ⊕ TM at 90°, top → 107", CODIT, rf"на 90° E вздовж стовбура втрачає {_SHX}–{N} дБ", SHADOW,
+     _shf("TM", "front_minus_side_dB", 1), 0.0),
+    ("shadow 01_04 ⊕ TM floor unmoved → 107", CODIT, rf"верхи тилу \({N}–{_SHX} і", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow 01_04 ⊕ TM top unmoved → 107", CODIT, rf"верхи тилу \({_SHX}–{N} і", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow 01_04 ⊕ TE floor unmoved → 107", CODIT, rf"і {N}–{_SHX} дБ\): підлогу", SHADOW,
+     _shf("TE", "front_minus_back_dB", 0), 0.0),
+    ("shadow 01_04 ⊕ TE top unmoved → 107", CODIT, rf"і {_SHX}–{N} дБ\): підлогу", SHADOW,
+     _shf("TE", "front_minus_back_dB", 1), 0.0),
+    ("shadow 01_04 ⊕ floor lowest at the thin width → 107", CODIT,
+     rf"підлогу тримає тонка заболонь {N} см, а на трьох", SHADOW, _sh_floor_lowest_at_thin, 0.0),
+    ("shadow 01_04 ⊕ deepest TM back is the wet spruce → 107", CODIT, rf"мокра ялина, {N}; E горизонтальне", SHADOW,
+     _sh_end_is("TM", "front_minus_back_dB", 1, "thawed_red_spruce_wet", _shf("TM", "front_minus_back_dB", 1)), 0.0),
+    ("shadow 01_04 ⊕ deepest TE back is the red pine profile → 107", CODIT, rf"профіль червоної сосни, {N}\)\. Висоту",
+     SHADOW, _sh_end_is("TE", "front_minus_back_dB", 1, "red_pine_profile_", _shf("TE", "front_minus_back_dB", 1)), 0.0),
+    # 02_01 §5.3 — the widths and which one holds the floor
+    ("shadow 02_01 staining width → 107", HW_BOM, rf"фарбування {N} ⊥ томографія", SHADOW,
+     _sh_width_cm("scots_sapwood_8cm_bark_dry"), 0.0),
+    ("shadow 02_01 tomography width → 107", HW_BOM, rf"⊥ томографія {N} см", SHADOW,
+     _sh_width_cm("scots_sapwood_6cm_bark_dry"), 0.0),
+    ("shadow 02_01 the floor is the thin width → 107", HW_BOM, rf"Björklund 1999 на {N}–4\.5 м; підлогу тримає остання",
+     SHADOW, _sh_end_is("TM", "front_minus_back_dB", 0, "scots_sapwood_2cm_", lambda d: 3.5), 0.0),
+    # the RF bench sheet §8 — the stem-shadow copy (its path joined the workflow's triggers 2026-10-22)
+    ("shadow RF bench §8 TM floor → 107", RF_BENCH, rf"робить тил вузла на {N}–{_SHX} дБ слабшим", SHADOW,
+     _shf("TM", "front_minus_back_dB", 0), 0.0),
+    ("shadow RF bench §8 TM top → 107", RF_BENCH, rf"робить тил вузла на {_SHX}–{N} дБ слабшим", SHADOW,
+     _shf("TM", "front_minus_back_dB", 1), 0.0),
+    ("shadow RF bench §8 A.36 span TM → 107", RF_BENCH, rf"окремими його інтерполяціями — від {N}\) \(\[", SHADOW,
+     lambda d: d["controls"]["phloem_reading"]["floor_span_over_single_readings"]["TM"][0], 0.0),
 ]
 
 

@@ -66,8 +66,12 @@ may be higher than every reading here; and the wettest bark swept here is a coni
 Ulaby 1987, Fig. A.36 (balsam fir, lab, ≈ 19.4 − j4.7 — interpolated between grid markers whose frequencies are inferred
 from a dry branch's figures, not measured at 868 MHz); a wetter bark is not swept, and that this bark is dominated by its
 wet phloem is OUR hypothesis (ground: the Franchois 1998 abstract on two other conifers) — the figure's title says only
-trunk bark; (6) a stem that is not round, a node not on a
-radius, the radial profile inside a layer (each layer is uniform).
+trunk bark; and the sapwood's WIDTH is read at the sources' heights, not at the node's (which canon does not fix):
+Bieker & Rust 2010 at 0.3 m above ground give two widths of one quantity by two methods — staining 8.1 cm ⊥ resistivity
+tomography 6.1 cm — and both are named readings, the 2 cm between their boundaries carried wet ⊥ dry; Björklund 1999's
+narrowest stem, 22 mm, is a width at 3.5–4.5 m, where by his text the sapwood is narrower than at the butt and about
+constant above 3 m, so below 3 m the same stem's sapwood is wider than that figure; (6) a stem that is not round, a node
+not on a radius, the radial profile inside a layer (each layer is uniform).
 
 Run:  conda activate silken_md
       python tools/in_silico/scripts/107_stem_radio_shadow.py
@@ -247,11 +251,27 @@ PERMITTIVITY: dict = {
 # the 2.5 and 6 mm samples; the plateau is carried to the axis.
 MAV_S2_OUTER, MAV_S2_OUTER_DEPTH_M = 35.2 - 10.27j, 0.00425
 MAV_S2_PLATEAU = 14.05 - 4.82j
-# Scots pine's water-conducting sapwood, 6.1 ± 0.5 cm by electrical-resistivity tomography (8.1 ± 0.6 by staining) —
-# Bieker & Rust 2010, Silva Fennica 44:267 (9 trees, DBH 24–49.5 cm, Lower Saxony); read in the source.
+# Scots pine's sapwood width — two methods on the same stems at the same height, 2 cm apart. Bieker & Rust 2010, Silva
+# Fennica 44(2):267–273, doi:10.14214/sf.153 (9 trees, DBH 24–49.5 cm, near Göttingen; read in the source 2026-10-22):
+# «Mean sapwood width from staining was 8.1 cm ± 0.6 cm and 6.1 ± 0.5 for the tomograms» (§3, p. 269); the electrodes
+# went in «at constant height (30 cm) above ground» (§2.1, pp. 268–269) and the stained discs were cut in the
+# tomography's plane (§2.2); staining is «about 28% ± 3% higher than that measured by ERT» (§4, p. 270). The source
+# reads the gap as staining over-estimating the active sapwood («it is likely», §4) — moisture falls before extractives
+# reach a stainable level, a premise its §1 takes from Bergström 2003 — and in the same paragraph says the resistivity
+# boundary «is not just an effect of the higher water content in the sapwood» (resin, pit closure). For a PERMITTIVITY
+# neither width is the wet width, so both are NAMED readings (in-silico §When Modifying #11): the 2 cm band between the
+# two boundaries is carried dry (6.1 cm — the band in the heartwood proxy) ⊥ wet (8.1 cm — the band at the sapwood's ε).
+# Which width is adverse depends on the consumer; the cache names the reading at each end of every span it prints
+# (`findings.<pol>.ends_by_reading`), so no doc has to type it.
 SCOTS_SAPWOOD_ERT_M = 0.061
-# ⊕ the thin end: 22 mm, the narrowest stem of Björklund 1999, Silva Fennica 33:119, Table 2 (198 Scots pines, CT of fresh
-# logs at 3.5–4.5 m, Sweden 57–66 °N — a moisture border; mean 46, widest 90 mm); our hosts are bigger and further south.
+SCOTS_SAPWOOD_STAIN_M = 0.081
+# ⊕ the thin end: 22 mm, the narrowest of 198 stems in Björklund 1999, Silva Fennica 33(2):119–129, doi:10.14214/sf.662,
+# Table 2 (p. 123: CT of fresh logs «at 3.5–4.5 m height», Sweden 57–66 °N; mean 46, widest 90 mm). CT reads the
+# moisture border and the transition zone is counted as heartwood (p. 122), so it is a WET width. Its HEIGHT is the
+# qualifier: «Sapwood width was biggest at the butt end of the stem, and was rather constant above 3 m height» (p. 123,
+# read on the stems chosen to show the vertical variation, a sub-sample of two stands) — below 3 m the same stem's sapwood
+# is wider than this figure. Our hosts are bigger (his DBH-class means 244–331 mm, Table 1, and the sapwood widens with
+# the class, Table 3) and further south; Bieker & Rust's two widths are at 0.3 m, near the butt.
 SCOTS_SAPWOOD_THIN_M = 0.022
 # No primary in the tree measures pine BARK or pine HEARTWOOD near 1 GHz, so both are read at named proxies:
 #   dry end — Şahin Kol 2009, BioResources 4:1663, Table 1: P. sylvestris sapwood at 2.45 GHz, tangential, MC 12 %
@@ -292,11 +312,18 @@ for _bark, _be in (("bark_dry", BARK_DRY), ("bark_wet", BARK_WET), ("bark_phloem
     PERMITTIVITY[f"scots_sapwood_6cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_ERT_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
         "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 6.1 cm (Bieker & Rust "
-                  "2010, ERT at 0.3 m) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
+                  "2010, ERT at 0.3 m — the band to the staining boundary in the heartwood proxy) at Mavrovic's "
+                  "thawed ε1cm · heartwood at the dry proxy"}
+    PERMITTIVITY[f"scots_sapwood_8cm_{_bark}"] = {
+        "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_STAIN_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
+        "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 8.1 cm (Bieker & Rust "
+                  "2010, benzidine staining at 0.3 m — the band to the ERT boundary at the sapwood's ε) at Mavrovic's "
+                  "thawed ε1cm · heartwood at the dry proxy"}
     PERMITTIVITY[f"scots_sapwood_2cm_{_bark}"] = {
         "layers": [(BARK_T_M, _be), (SCOTS_SAPWOOD_THIN_M, MAV_RED_PINE_THAWED), (None, HEART_DRY)],
         "source": f"dead bark by stem ({_BARK_PROXY[_bark]}) · sapwood 2.2 cm (Björklund 1999's "
-                  "narrowest stem) at Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
+                  "narrowest stem, CT at 3.5–4.5 m — above 3 m, where his sapwood is narrower than at the butt) at "
+                  "Mavrovic's thawed ε1cm · heartwood at the dry proxy"}
 GEOMETRY: dict = {}              # filled in main() from lib and the CEM (drift-proof), each with its referent
 POLARIZATIONS = ("TM", "TE")
 Z_STACK = CACHE_DIR / "mechanical" / "z_stack_tolerance.json"   # `52`'s vertical stack: the RF deck over the flange
@@ -440,6 +467,11 @@ def main() -> int:
             "by_standoff_efficiency_2d": {
                 str(round(s * 1e3, 3)): _span([r["efficiency"] for r in rows if r["standoff_mm"] == round(s * 1e3, 3)], 2)
                 for s in GEOMETRY["standoff_m"]["values"]},
+            # the reading(s) at each end of a span — which reading is ADVERSE is the consumer's end, read here, not typed
+            "ends_by_reading": {
+                k: [sorted({r["permittivity"] for r in rows if r[k] == min(x[k] for x in rows)}),
+                    sorted({r["permittivity"] for r in rows if r[k] == max(x[k] for x in rows)})]
+                for k in ("front_minus_back_dB", "front_minus_side_dB", "within_3dB_of_front_to_deg", "efficiency")},
         }
     # control — the A.36 bark reading's own interpolation (a CONTROL, not a named reading): every *_bark_phloem row
     # re-run at each alternative, the other rows kept; what each alternative does to the floors the findings print

@@ -39,6 +39,7 @@ on:
       - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
       - 'docs/protocols/anchor/install_and_log_bench.md'
       - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
+      - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -74,6 +75,7 @@ jobs:
               - 'docs/protocols/anchor/gdl_rain_dew_stand.md'
               - 'docs/protocols/anchor/install_and_log_bench.md'
               - 'docs/protocols/ebfc/cathode_ionic_path_bench.md'
+              - 'docs/protocols/hardware/rf_mockup_bench_sheet.md'
               - '.github/workflows/in_silico_smoke.yml'
 
   lock_sync:
